@@ -1,0 +1,16 @@
+pip>=19.2.3
+pytest-runner>=5.1
+pytest
+pytest-cov
+teamcity-messages
+matplotlib
+pandas
+scipy
+numpy
+pyproj
+netCDF4
+xarray
+gitpython
+ipykernel
+spyder-kernels==0.*
+cookiecutter
