@@ -67,10 +67,9 @@ def change_os(var, enforce=None):
         elif enforce == 'windows':
             osys = 'linux'
 
-    if '/p/' in var and osys == 'linux':
-        return var.replace('/p/','p:\\').replace('/','\\')
-    elif osys == 'linux':
-        return var.replace('/','\\')
+
+    if osys == 'linux':
+        return var[1] + ':\\'+ var[2:].replace('/','\\')
     elif ':\\' in var and osys == 'windows':
         return '/' + var.replace(':\\','/').replace('\\','/')
 
