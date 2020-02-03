@@ -2,7 +2,8 @@ INSTALL GITHUB:
 Download git from https://git-scm.com/download/win
 install with default settings
 open command line in a folder where you want your github repo, eg C:\DATA\GitHub
-git clone https://github.com/RSchueder/dflowutil.git
+git clone https://github.com/openearth/dfm_tools.git
+OR: git clone https://github.com/openearth/dfm_tools.git -b edits_jelmer
 
 INSTALL PYTHON:
 Download the newest anaconda 64 bit
