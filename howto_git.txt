@@ -27,6 +27,13 @@ pip install -e dfm_tools
 (pip developer mode, any updates to folder by github will be available)
 (also install all packages in requirements.txt)
 
+USE IT IN YOUR SCRIPTS:
+import dflowutil
+import dfm_tools
+dflowutil.BalanceFile('test.txt')
+(latter is still empty)
+
+
 NOTES
 >> activate github_pyenv
 	python
