@@ -1,0 +1,57 @@
+INSTALL GITHUB:
+Download git from https://git-scm.com/download/win
+install with default settings
+open command line in a folder where you want your github repo, eg C:\DATA\GitHub
+git clone https://github.com/openearth/dfm_tools.git
+OR: git clone --branch edits_jelmer https://github.com/openearth/dfm_tools.git
+
+INSTALL PYTHON:
+Download the newest anaconda 64 bit
+install, including PATH checkbox
+
+OPTIONAL: CREATE SEPARATE PYTHON ENVIRONMENT:
+open command line where your environment.yml file is located:
+>> conda create -n github_pyenv
+>> activate github_pyenv
+	python -c "import sys; print(sys.executable)"
+	(the resulting path you need some steps later)
+>> deactivate
+open spyder from start menu or anaconda or anything
+Go to Tools >> Preferences >> Python interpreter >> point to github_pyenv python.exe (print of sys.executable)
+restart IPython console
+
+LINK GITHUB CLONE VIA PIP:
+open command window
+navigate to github clone folder
+optional: activate github_pyenv
+pip install -e dfm_tools
+(pip developer mode, any updates to folder by github will be available)
+(also install all packages in requirements.txt)
+
+USE IT IN YOUR SCRIPTS:
+import dflowutil
+import dfm_tools
+dflowutil.BalanceFile('test.txt')
+(latter is still empty)
+
+COMMITTING EDITS TO GITHUB
+open GIT bash window
+navigate to local dfm_tools folder
+git config --global user.email [emailaddress]
+git config --global user.name [username]
+git add .
+git commit -m "message to be included with your commit"
+git push origin master
+OR: git push origin edits_jelmer
+
+NOTES
+>> activate github_pyenv
+	python
+		exit()
+	deactivate
+	ipython
+		exit
+	deactivate	
+>> conda info --envs
+>> conda remove -n github_pyenv --all
+
