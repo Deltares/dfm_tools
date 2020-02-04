@@ -44,6 +44,8 @@ git add .
 git commit -m "message to be included with your commit"
 git push origin master
 OR: git push origin edits_jelmer
+git pull origin master
+(gets edits from master to current local branch)
 
 NOTES
 >> conda activate github_env
