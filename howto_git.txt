@@ -3,7 +3,9 @@ Download git from https://git-scm.com/download/win
 install with default settings
 open command line in a folder where you want your github repo, eg C:\DATA\GitHub
 git clone https://github.com/openearth/dfm_tools.git
-OR: git clone --branch edits_jelmer https://github.com/openearth/dfm_tools.git
+(master branch gets cloned)
+optional: git checkout inprogress
+(changes to inprogress branch? necessary when you want to do edits later on)
 
 INSTALL PYTHON:
 Download the newest anaconda 64 bit
@@ -40,10 +42,10 @@ open GIT bash window
 navigate to local dfm_tools folder
 git config --global user.email [emailaddress]
 git config --global user.name [username]
+git checkout inprogress
 git add .
 git commit -m "message to be included with your commit"
-git push origin master
-OR: git push origin edits_jelmer
+git push origin inprogress
 git pull origin master
 (gets edits from master to current local branch)
 
