@@ -10,21 +10,22 @@ Download the newest anaconda 64 bit
 install, including PATH checkbox
 
 OPTIONAL: CREATE SEPARATE PYTHON ENVIRONMENT:
-open command line where your environment.yml file is located:
->> conda create -n github_pyenv
->> activate github_pyenv
+open command line
+>> conda create -n github_env python=3.7 spyder-kernels=0.* ipykernel
+(spyder-kernel=0.* is for spyder 3, for spyder 4 you should leave the version out)
+>> conda activate github_env
 	python -c "import sys; print(sys.executable)"
 	(the resulting path you need some steps later)
->> deactivate
+>> conda deactivate
 open spyder from start menu or anaconda or anything
-Go to Tools >> Preferences >> Python interpreter >> point to github_pyenv python.exe (print of sys.executable)
+Go to Tools >> Preferences >> Python interpreter >> point to github_env python.exe (print of sys.executable)
 restart IPython console
 
 LINK GITHUB CLONE VIA PIP:
 open command window
 navigate to github clone folder
-optional: activate github_pyenv
-pip install -e dfm_tools
+optional: >> activate github_env
+>> python -m pip install -e dfm_tools
 (pip developer mode, any updates to folder by github will be available)
 (also install all packages in requirements.txt)
 
@@ -43,15 +44,16 @@ git add .
 git commit -m "message to be included with your commit"
 git push origin master
 OR: git push origin edits_jelmer
+git pull origin master
+(gets edits from master to current local branch)
 
 NOTES
->> activate github_pyenv
+>> conda activate github_env
 	python
 		exit()
-	deactivate
 	ipython
 		exit
-	deactivate	
+	conda deactivate	
 >> conda info --envs
->> conda remove -n github_pyenv --all
+>> conda remove -n github_env --all
 

@@ -11,6 +11,3 @@ pyproj
 netCDF4
 xarray
 gitpython
-ipykernel
-spyder-kernels==0.*
-cookiecutter
