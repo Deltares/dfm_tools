@@ -86,6 +86,8 @@ def read_deltares_ini(filename):
             
             if comment:
                 data.loc[i]['comment'] = comment.group(1)
+            else:
+                data.loc[i]['comment'] = ''
             if section:
                 current_section = section.group(1)
                 data.loc[i]['section'] = current_section  
@@ -96,36 +98,15 @@ def read_deltares_ini(filename):
     
     return data
 
-def write_deltares_ini(filedata, f):
+def write_deltares_ini(filedata, filename):
+    keylen = filedata.key.str.len().max()+1
+    f = open(filename,'w')
     for i, row in filedata.iterrows():
         if row['section'] and not row['key'] and not row['comment']:
             f.write('[{}]'.format(row['section']))
         elif row['key']:
-            f.write('{: <18}= {}'.format(row['key'], row['value']))
+            f.write('{: <{}}= {}'.format(row['key'], keylen, row['value']))
         if row['comment']:
             f.write('{}'.format(row['comment']))
         f.write('\n')
 
-
-def read(filename, verbose=False):
-    """
-    Reads mdw file
-    
-    Arguments:
-    filename: str, filename (if necessary, including path)  
-    verbose: bool, if True, prints contents of mdw file
-
-    Returns:
-    configparser object (similar to dict)
-
-    """
-
-    parsed_data = read_deltares_ini(filename)
-
-    return parsed_data
-
-
-def write(parsed_data, filename):
-    with open(filename, 'w') as f:
-        write_deltares_ini(parsed_data, f)
-        

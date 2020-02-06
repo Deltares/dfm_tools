@@ -12,12 +12,18 @@ class UGrid:
     @staticmethod
     def fromfile(filename):
         import netCDF4
+        from dfm_tools.get_varname_mapnc import get_varname_mapnc
         ds = netCDF4.Dataset(filename)
-        netnodex = ds.variables['NetNode_x'][:]
-        netnodey = ds.variables['NetNode_y'][:]
-        netnodez = ds.variables['NetNode_z'][:]
-        netelemnode = ds.variables['NetElemNode'][:]
-        netlink = ds.variables['NetLink'][:]
+        varname_netnodex = get_varname_mapnc(ds,'NetNode_x')
+        varname_netnodey = get_varname_mapnc(ds,'NetNode_y')
+        varname_netnodez = get_varname_mapnc(ds,'NetNode_z')
+        varname_netelemnode = get_varname_mapnc(ds,'NetElemNode')
+        #varname_netlink = get_varname_mapnc(ds,'NetLink')
+        netnodex = ds.variables[varname_netnodex][:]
+        netnodey = ds.variables[varname_netnodey][:]
+        netnodez = ds.variables[varname_netnodez][:]
+        netelemnode = ds.variables[varname_netelemnode][:]
+        #netlink = ds.variables[varname_netlink][:]
         ds.close()
         ugrid = UGrid(netnodex, netnodey, netnodez, netelemnode)
         return ugrid
