@@ -55,8 +55,8 @@ Optional: git pull origin master
 (gets edits from master to current local branch, might induce conflicts)
 git add .
 git commit -m "message to be included with your commit"
-git push origin branchname
-DO NOT: git push origin master
+git push
+(pushes changes to server, do not do this in while working in the master)
 (local changes are now also visible under branchname on github, there you can request merging with master)
 
 NOTES
