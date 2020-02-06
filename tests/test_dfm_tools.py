@@ -5,7 +5,13 @@
 import pytest
 
 
-from dfm_tools import dfm_tools
+from dfm_tools.grid import UGrid
+
+
+file_map = r'n:\My Documents\werkmap\vanJulien_shortmodelfiles\DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'
+file_net = r'n:\My Documents\werkmap\vanJulien_shortmodelfiles\DFM_3D_z_Grevelingen\computations\run01\Grevelingen_FM_grid_20190603_net.nc'
+
+data_nc = UGrid.fromfile(file_net)
 
 
 @pytest.fixture
