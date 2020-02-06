@@ -3,7 +3,7 @@ Download git from https://git-scm.com/download/win
 install with default settings
 open command line in a folder where you want to clone the dfm_tools github repo, eg C:\DATA\GitHub
 git clone https://github.com/openearth/dfm_tools.git
-(master gets cloned to local drive, not master branch?)
+(repos gets cloned to local drive, checkout of master branch)
 
 INSTALL PYTHON:
 Download the newest anaconda 64 bit
@@ -37,7 +37,7 @@ dflowutil.BalanceFile('test.txt')
 
 COMMITTING EDITS TO GITHUB:
 open GIT bash window
-navigate to local dfm_tools folder
+navigate to local dfm_tools folder (not to folder above, then git does not work)
 git config --global user.email [emailaddress]
 git config --global user.name [username]
 CREATE YOUR OWN BRANCH:
