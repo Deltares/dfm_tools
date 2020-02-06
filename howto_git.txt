@@ -1,11 +1,9 @@
 INSTALL GITHUB:
 Download git from https://git-scm.com/download/win
 install with default settings
-open command line in a folder where you want your github repo, eg C:\DATA\GitHub
+open command line in a folder where you want to clone the dfm_tools github repo, eg C:\DATA\GitHub
 git clone https://github.com/openearth/dfm_tools.git
-(master branch gets cloned)
-optional: git checkout inprogress
-(changes to inprogress branch? necessary when you want to do edits later on)
+(master gets cloned to local drive, not master branch?)
 
 INSTALL PYTHON:
 Download the newest anaconda 64 bit
@@ -37,17 +35,29 @@ import dfm_tools
 dflowutil.BalanceFile('test.txt')
 (latter is still empty)
 
-COMMITTING EDITS TO GITHUB
+COMMITTING EDITS TO GITHUB:
 open GIT bash window
 navigate to local dfm_tools folder
 git config --global user.email [emailaddress]
 git config --global user.name [username]
-git checkout inprogress
+CREATE YOUR OWN BRANCH:
+1:
+	manually create a branch on website
+	git remote update origin --prune
+	(update local branch list)
+	git checkout branchname
+	(checkout branch)
+2:
+	git checkout --branch branchname
+	(create new branch and checkout)
+REALLY COMMIT AND PUSH:
+Optional: git pull origin master
+(gets edits from master to current local branch)
 git add .
 git commit -m "message to be included with your commit"
-git push origin inprogress
-git pull origin master
-(gets edits from master to current local branch)
+git push origin branchname
+DO NOT: git push origin master
+(local changes are now also visible under branchname on github, there you can request merging with master)
 
 NOTES
 >> conda activate github_env
