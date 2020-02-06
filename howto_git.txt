@@ -9,7 +9,7 @@ INSTALL PYTHON:
 Download the newest anaconda 64 bit
 install, including PATH checkbox
 
-OPTIONAL: CREATE SEPARATE PYTHON ENVIRONMENT:
+OPTIONAL: CREATE SEPARATE PYTHON ENVIRONMENT AND LINK FROM SPYDER:
 open command line
 >> conda create -n github_env python=3.7 spyder-kernels=0.* ipykernel
 (spyder-kernel=0.* is for spyder 3, for spyder 4 you should leave the version out)
@@ -41,13 +41,13 @@ navigate to local dfm_tools folder (not to folder above, then git does not work)
 git config --global user.email [emailaddress]
 git config --global user.name [username]
 CREATE YOUR OWN BRANCH:
-1:
+option 1:
 	manually create a branch on website
 	git remote update origin --prune
 	(update local branch list)
 	git checkout branchname
 	(checkout branch)
-2:
+option 2:
 	git checkout --branch branchname
 	(create new branch and checkout, combination of git branch and git checkout commands)
 REALLY COMMIT AND PUSH:
