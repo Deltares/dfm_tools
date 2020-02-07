@@ -88,3 +88,52 @@ class UGrid:
             featurestr = ",\n".join([layer.GetFeature(i).ExportToJson() for i in range(layer.GetFeatureCount())])
             return '{ "type": "FeatureCollection",\n"features": [\n%s\n] }' % (featurestr, )
         datasource= None
+
+
+
+def plot_net(file_nc, var_values=None):
+    import netCDF4
+    import matplotlib.pyplot as plt
+    #plt.close('all')
+    import matplotlib.collections
+    #import matplotlib.cm as cm
+    import numpy as np
+
+    data_nc = netCDF4.Dataset(file_nc)
+    node_x = data_nc.variables['mesh2d_node_x'][:]
+    node_y = data_nc.variables['mesh2d_node_y'][:]
+    faces = data_nc.variables['mesh2d_face_nodes'][:, :]
+    if var_values == None:
+        values = None
+    else:
+        values = data_nc.variables[var_values][0, :]
+    #list(data_nc.variables.keys())
+
+    quatrangles = faces-1 #convert 1-based indexing to 0-based indexing
+    def quatplot(node_x,node_y, quatrangles, values, ax=None, **kwargs):
+        #https://stackoverflow.com/questions/49640311/matplotlib-unstructered-quadrilaterals-instead-of-triangles
+        #https://stackoverflow.com/questions/52202014/how-can-i-plot-2d-fem-results-using-matplotlib
+        if not ax: ax=plt.gca()
+        yz = np.c_[node_x,node_y]
+        verts= yz[quatrangles]
+        verts[quatrangles.mask==True,:] = np.nan #remove all masked values by making them nan
+        pc = matplotlib.collections.PolyCollection(verts, **kwargs)
+        pc.set_array(values)
+        ax.add_collection(pc)
+        ax.autoscale()
+        return pc
+    
+    
+    fig, ax = plt.subplots()
+    ax.set_aspect('equal')
+
+    if var_values == None:
+        pc = quatplot(node_x, node_y, quatrangles, values, ax=None, linewidth=0.5, color="crimson", facecolor="None")
+    else:
+        pc = quatplot(node_x, node_y, quatrangles, values, ax=None, linewidth=0.5)#, cmap="jet")
+        fig.colorbar(pc, ax=ax)
+    #plt.plot(node_x,node_y, marker="o", ls="", color="crimson")
+    plt.title('This is the plot for: quad')
+    plt.xlabel('Y Axis')
+    plt.ylabel('Z Axis')
+

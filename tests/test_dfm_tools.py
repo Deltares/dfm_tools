@@ -58,6 +58,21 @@ def Test_mdu(self):
     assert 1==1
 
 
+def Test_dflowutil_mesh(self):
+    from dfm_tools.grid import plot_net
+    
+    #plt.close('all')
+    file_net = r'n:\My Documents\werkmap\vanJulien_shortmodelfiles\DFM_3D_z_Grevelingen\computations\run01\Grevelingen_FM_grid_20190603_net.nc'
+    file_map = r'n:\My Documents\werkmap\vanJulien_shortmodelfiles\DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'
+    
+    file_nc = file_net
+    plot_net(file_nc)
+    file_nc = file_map
+    plot_net(file_nc,var_values='mesh2d_s1')
+    
+    
+    
+    
 @pytest.fixture
 def response():
     """Sample pytest fixture.
