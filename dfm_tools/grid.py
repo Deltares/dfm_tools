@@ -61,7 +61,7 @@ def get_mapfilelist(file_nc, multipart=None):
         file_ncs = [file_nc]
     return file_ncs
 
-
+#TODO: get_hismodeldata (aparte functie of generiek maken?)
 
 def get_mapmodeldata(file_nc, var_values=None, multipart=None, timestep=None, lay=None):
     from netCDF4 import Dataset
