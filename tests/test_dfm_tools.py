@@ -5,6 +5,20 @@
 import pytest
 
 
+def Test_mdu(self):
+    #from netCDF4 import Dataset
+    from dfm_tools.mdu import read_deltares_ini, write_deltares_ini
+    
+    filename_mdu = r'n:\My Documents\werkmap\vanJulien_shortmodelfiles\DFM_3D_z_Grevelingen\computations\run01\Grevelingen-FM.mdu'
+    filename_mdu_out = r'n:\My Documents\werkmap\vanJulien_shortmodelfiles\DFM_3D_z_Grevelingen\computations\run01\Grevelingen-FM_out.mdu'
+    
+    data_mdu = read_deltares_ini(filename_mdu)
+    write_deltares_ini(data_mdu, filename_mdu_out)
+    
+    
+    assert 1==1
+
+
 def Test_getvarnamemapnc(self):
     from netCDF4 import Dataset
     
@@ -31,7 +45,7 @@ def Test_getvarnamemapnc(self):
     assert 1==1
 
 
-def Test_UGrid(self):
+def Test_grid_UGrid(self):
     #from netCDF4 import Dataset
     from dfm_tools.grid import UGrid
     
@@ -44,21 +58,7 @@ def Test_UGrid(self):
     assert 1==1
 
 
-def Test_mdu(self):
-    #from netCDF4 import Dataset
-    from dfm_tools.mdu import read_deltares_ini, write_deltares_ini
-    
-    filename_mdu = r'n:\My Documents\werkmap\vanJulien_shortmodelfiles\DFM_3D_z_Grevelingen\computations\run01\Grevelingen-FM.mdu'
-    filename_mdu_out = r'n:\My Documents\werkmap\vanJulien_shortmodelfiles\DFM_3D_z_Grevelingen\computations\run01\Grevelingen-FM_out.mdu'
-    
-    data_mdu = read_deltares_ini(filename_mdu)
-    write_deltares_ini(data_mdu, filename_mdu_out)
-    
-    
-    assert 1==1
-
-
-def Test_dflowutil_mesh(self):
+def Test_grid_plotnet(self):
     from dfm_tools.grid import plot_net
     
     #plt.close('all')
