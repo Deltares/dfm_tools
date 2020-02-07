@@ -97,15 +97,16 @@ def Test_grid_getmapnetdata_getmapmodeldata_plotnetmap(self):
     from dfm_tools.grid import get_mapnetdata, get_mapmodeldata, plot_netmapdata
     
     file_map8 = r'n:\My Documents\werkmap\vanJulien_shortmodelfiles\DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'
+    file_map_rmm = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\computations\run_156\DFM_OUTPUT_RMM_dflowfm\RMM_dflowfm_0000_map.nc'
     
     print('plot only grid from mapdata')
-    ugrid_all = get_mapnetdata(file_map8)#,multipart=False)
+    ugrid_all = get_mapnetdata(file_nc=file_map8)#,multipart=False)
     fig, ax = plt.subplots()
     pc = plot_netmapdata(ugrid_all.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
     ax.set_aspect('equal')
     
     print('plot grid and values from mapdata')
-    data_frommap = get_mapmodeldata(file_map8, var_values='mesh2d_sa1', timestep=3, lay=33)#, multipart=False)
+    data_frommap = get_mapmodeldata(file_nc=file_map8, var_values='mesh2d_sa1', timestep=3, lay=33)#, multipart=False)
     data_frommap_flat = data_frommap.flatten()
     fig, ax = plt.subplots()
     pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
@@ -114,7 +115,23 @@ def Test_grid_getmapnetdata_getmapmodeldata_plotnetmap(self):
     #plt.plot(node_x,node_y, marker="o", ls="", color="crimson")
     ax.set_aspect('equal')
 
-    
+    print('plot only grid from mapdata (RMM)')
+    ugrid_all = get_mapnetdata(file_nc=file_map_rmm)#,multipart=False)
+    fig, ax = plt.subplots()
+    pc = plot_netmapdata(ugrid_all.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
+    ax.set_aspect('equal')
+
+    print('plot grid and values from mapdata (RMM)')
+    ugrid_all = get_mapnetdata(file_nc=file_map_rmm)#,multipart=False)
+    #data_frommap = get_mapmodeldata(file_nc=file_map_rmm, var_values='mesh2d_s1', timestep=50, lay=0)#, multipart=False)
+    data_frommap = get_mapmodeldata(file_nc=file_map_rmm, var_values='mesh2d_ucx', timestep=50, lay=0)#, multipart=False)
+    data_frommap_flat = data_frommap.flatten()
+    fig, ax = plt.subplots()
+    pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
+    pc.set_clim([-1,1])
+    fig.colorbar(pc, ax=ax)
+    #plt.plot(node_x,node_y, marker="o", ls="", color="crimson")
+    ax.set_aspect('equal')
 
 
 

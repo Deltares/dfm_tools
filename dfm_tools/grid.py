@@ -142,8 +142,12 @@ def get_mapmodeldata(file_nc, var_values=None, multipart=None, timestep=None, la
             domain_no = np.bincount(domain).argmax() #meest voorkomende domeinnummer
             nonghost_ids = domain==domain_no
         
-            values_all = np.ma.concatenate([values_all,values[:,nonghost_ids,:]],axis=concat_axis)
-        else:
+            if nc_values_ndims == 2:
+                values_all = np.ma.concatenate([values_all,values[:,nonghost_ids]],axis=concat_axis)
+            if nc_values_ndims == 3:
+                values_all = np.ma.concatenate([values_all,values[:,nonghost_ids,:]],axis=concat_axis)
+        else: #1 domain
+            #TODO: 1 domain with multiple layers would now go wrong, fix it
             values_all = np.ma.concatenate([values_all,values],axis=concat_axis)
     
     #TODO: add requested times and layers to outputdata        
@@ -154,8 +158,10 @@ def get_mapmodeldata(file_nc, var_values=None, multipart=None, timestep=None, la
 
 
 
-def get_mapnetdata(file_nc, var_values=None, multipart=None, timestep=0, lay=None):
-    from dfm_tools.grid import get_mapfilelist
+def get_mapnetdata(file_nc, multipart=None):
+    import numpy as np
+    
+    from dfm_tools.grid import get_mapfilelist, UGrid
 
     file_ncs = get_mapfilelist(file_nc, multipart)
     #get all data
@@ -181,28 +187,30 @@ def get_mapnetdata(file_nc, var_values=None, multipart=None, timestep=0, lay=Non
         #TODO: simplify the two blocks below
         #increase size of verts_all if too small for verts
         if verts_all.shape[1] < verts.shape[1]:
+            tofew_cols = verts_all.shape[1] - verts.shape[1]
             verts_all_cordimsize = np.ma.zeros((verts_all.shape[0],verts.shape[1],verts_all.shape[2]))
-            verts_all_cordimsize[:,:-1,:] = verts_all
+            verts_all_cordimsize[:,:tofew_cols,:] = verts_all
             verts_all_cordimsize.mask = True
-            verts_all_cordimsize.mask[:,:-1,:] = faces_all.mask
+            verts_all_cordimsize.mask[:,:tofew_cols,:] = verts_all.mask
             faces_all_cordimsize = np.ma.zeros((faces_all.shape[0],faces.shape[1]),dtype='int32')
-            faces_all_cordimsize[:,:-1] = faces_all
+            faces_all_cordimsize[:,:tofew_cols] = faces_all
             faces_all_cordimsize.mask = True
-            faces_all_cordimsize.mask[:,:-1] = faces_all.mask
+            faces_all_cordimsize.mask[:,:tofew_cols] = faces_all.mask
         else:
             verts_all_cordimsize = verts_all
             faces_all_cordimsize = faces_all
             
         #increase size of verts if too small for verts_all
         if verts.shape[1] < verts_all.shape[1]:
+            tofew_cols = verts.shape[1] - verts_all.shape[1]
             verts_cordimsize = np.ma.zeros((verts.shape[0],verts_all.shape[1],verts.shape[2]))
-            verts_cordimsize[:,:-1,:] = verts
+            verts_cordimsize[:,:tofew_cols,:] = verts
             verts_cordimsize.mask = True
-            verts_cordimsize.mask[:,:-1,:] = faces.mask
+            verts_cordimsize.mask[:,:tofew_cols,:] = verts.mask
             faces_cordimsize = np.ma.zeros((faces.shape[0],faces_all.shape[1]),dtype='int32')
-            faces_cordimsize[:,:-1] = faces
+            faces_cordimsize[:,:tofew_cols] = faces
             faces_cordimsize.mask = True
-            faces_cordimsize.mask[:,:-1] = faces.mask
+            faces_cordimsize.mask[:,:tofew_cols] = faces.mask
         else:
             verts_cordimsize = verts
             faces_cordimsize = faces
