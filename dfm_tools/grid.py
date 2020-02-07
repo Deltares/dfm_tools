@@ -29,6 +29,7 @@ class UGrid:
         mesh2d_node_x = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_node_x')][:]
         mesh2d_node_y = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_node_y')][:]
         #mesh2d_node_z = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_node_z')][:]
+        #TODO: add node_z again, necessary for slicing?
         mesh2d_face_nodes = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_face_nodes')][:, :]
         verts = nodexyfaces2verts(mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes) #xy coordinates of face nodes
 
