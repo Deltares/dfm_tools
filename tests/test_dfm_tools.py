@@ -68,61 +68,80 @@ def Test_grid_getnetdata_plotnet(self):
     import matplotlib.pyplot as plt
     plt.close('all')
 
-    from dfm_tools.grid import get_mapnetdata, plot_netmapdata
+    from dfm_tools.grid import get_netdata, plot_netmapdata
 
     file_net = r'n:\My Documents\werkmap\vanJulien_shortmodelfiles\DFM_3D_z_Grevelingen\computations\run01\Grevelingen_FM_grid_20190603_net.nc'
+    file_net = r'c:\DATA\werkmap\vanJulien_shortmodelfiles\DFM_3D_z_Grevelingen\computations\run01\Grevelingen_FM_grid_20190603_net.nc'
     file_net_rmm = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\01_Rooster\final_totaalmodel\rooster_rmm_v1p5_net.nc'
 
     print('plot only grid from net.nc')
-    ugrid = get_mapnetdata(file_net)
+    ugrid = get_netdata(file_nc=file_net)
     fig, ax = plt.subplots()
     pc = plot_netmapdata(ugrid.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
     ax.set_aspect('equal')
 
     print('plot only grid from net.nc (RMM)')
-    ugrid = get_mapnetdata(file_net_rmm)
+    ugrid = get_netdata(file_net_rmm)
     fig, ax = plt.subplots()
     pc = plot_netmapdata(ugrid.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
     ax.set_aspect('equal')
    
 
 
-def Test_grid_getmapnetdata_getmapmodeldata_plotnetmap(self):
+def Test_grid_getnetdata_getmapmodeldata_plotnetmapdata(self):
     """
     this test retrieves grid data, retrieves map data, and plots it
     """
     import matplotlib.pyplot as plt
     plt.close('all')
     
-    from dfm_tools.grid import get_mapnetdata, get_mapmodeldata, plot_netmapdata
+    from dfm_tools.grid import get_netdata, get_mapmodeldata, plot_netmapdata
     
     file_map8 = r'n:\My Documents\werkmap\vanJulien_shortmodelfiles\DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'
+    file_map8 = r'c:\DATA\werkmap\vanJulien_shortmodelfiles\DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'
     file_map_rmm = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\computations\run_156\DFM_OUTPUT_RMM_dflowfm\RMM_dflowfm_0000_map.nc'
     
     print('plot only grid from mapdata')
-    ugrid_all = get_mapnetdata(file_nc=file_map8)#,multipart=False)
+    ugrid_all = get_netdata(file_nc=file_map8)#,multipart=False)
     fig, ax = plt.subplots()
     pc = plot_netmapdata(ugrid_all.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
     ax.set_aspect('equal')
     
-    print('plot grid and values from mapdata')
+    print('plot grid and values from mapdata (constantvalue, 1 dim)')
+    data_frommap = get_mapmodeldata(file_nc=file_map8, var_values='mesh2d_flowelem_bl', timestep=3, lay=33)#, multipart=False)
+    data_frommap_flat = data_frommap.flatten()
+    fig, ax = plt.subplots()
+    pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
+    #pc.set_clim([28,30.2])
+    fig.colorbar(pc, ax=ax)
+    ax.set_aspect('equal')
+
+    print('plot grid and values from mapdata (waterlevel, 2dim)')
+    data_frommap = get_mapmodeldata(file_nc=file_map8, var_values='mesh2d_s1', timestep=3, lay=33)#, multipart=False)
+    data_frommap_flat = data_frommap.flatten()
+    fig, ax = plt.subplots()
+    pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
+    pc.set_clim([-0.5,1])
+    fig.colorbar(pc, ax=ax)
+    ax.set_aspect('equal')
+
+    print('plot grid and values from mapdata (salinity on layer, 3dim)')
     data_frommap = get_mapmodeldata(file_nc=file_map8, var_values='mesh2d_sa1', timestep=3, lay=33)#, multipart=False)
     data_frommap_flat = data_frommap.flatten()
     fig, ax = plt.subplots()
     pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
     pc.set_clim([28,30.2])
     fig.colorbar(pc, ax=ax)
-    #plt.plot(node_x,node_y, marker="o", ls="", color="crimson")
     ax.set_aspect('equal')
 
     print('plot only grid from mapdata (RMM)')
-    ugrid_all = get_mapnetdata(file_nc=file_map_rmm)#,multipart=False)
+    ugrid_all = get_netdata(file_nc=file_map_rmm)#,multipart=False)
     fig, ax = plt.subplots()
     pc = plot_netmapdata(ugrid_all.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
     ax.set_aspect('equal')
 
     print('plot grid and values from mapdata (RMM)')
-    ugrid_all = get_mapnetdata(file_nc=file_map_rmm)#,multipart=False)
+    ugrid_all = get_netdata(file_nc=file_map_rmm)#,multipart=False)
     #data_frommap = get_mapmodeldata(file_nc=file_map_rmm, var_values='mesh2d_s1', timestep=50, lay=0)#, multipart=False)
     data_frommap = get_mapmodeldata(file_nc=file_map_rmm, var_values='mesh2d_ucx', timestep=50, lay=0)#, multipart=False)
     data_frommap_flat = data_frommap.flatten()
@@ -130,7 +149,6 @@ def Test_grid_getmapnetdata_getmapmodeldata_plotnetmap(self):
     pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
     pc.set_clim([-1,1])
     fig.colorbar(pc, ax=ax)
-    #plt.plot(node_x,node_y, marker="o", ls="", color="crimson")
     ax.set_aspect('equal')
 
 
@@ -140,18 +158,19 @@ def Test_maplora(self):
     import matplotlib.pyplot as plt
     plt.close('all')
     
-    from dfm_tools.grid import get_mapnetdata, plot_netmapdata
+    from dfm_tools.grid import get_netdata, get_mapmodeldata, plot_netmapdata
 
     file_maplora = r'p:\11201806-sophie\Oosterschelde\WAQ\r02\postprocessing\oost_tracer_2_map.nc'
     
-    ugrid_lora = get_mapnetdata(file_maplora)
+    ugrid_lora = get_netdata(file_maplora)
 
     data_nc = Dataset(file_maplora)
     list(data_nc.variables.keys())
+
+
     
     var_names = ['mesh2d_FColi','mesh2d_HIWAI','mesh2d_Pharma']
     var_clims = [None,[0,100000000000],[0,10000]]
-    #pc.set_clim(var_clims[0])
     for var_name, var_clim in zip(var_names, var_clims):
         data_fromnc = data_nc.variables[var_name]
         
@@ -163,7 +182,17 @@ def Test_maplora(self):
         ax.set_aspect('equal')
         ax.set_xlabel(var_name)
 
-    
+    #TODO: check if this now also works
+    """
+    print('plot grid and values from mapdata (constantvalue, 1 dim)')
+    data_frommap = get_mapmodeldata(file_nc=file_maplora, var_values='mesh2d_FColi', timestep=3, lay=33)#, multipart=False)
+    data_frommap_flat = data_frommap.flatten()
+    fig, ax = plt.subplots()
+    pc = plot_netmapdata(ugrid_lora.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
+    #pc.set_clim([28,30.2])
+    fig.colorbar(pc, ax=ax)
+    ax.set_aspect('equal')
+    """
 
     
     

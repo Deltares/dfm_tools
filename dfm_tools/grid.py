@@ -104,53 +104,69 @@ def get_mapmodeldata(file_nc, var_values=None, multipart=None, timestep=None, la
     
     
     file_ncs = get_mapfilelist(file_nc, multipart)
+    
     for iF, file_nc_sel in enumerate(file_ncs):
         print('processing mapdata from domain %04d of %04d'%(iF, len(file_ncs)-1))
         data_nc = Dataset(file_nc_sel)
-        #list(data_nc.variables.keys())
         
-        #values = get_mapmodeldata(data_nc, var_values=var_values, multipart=multipart, timestep=timestep, lay=lay)
+        # check if requested variable is in netcdf
+        nc_varkeys = list(data_nc.variables.keys())
+        if var_values not in nc_varkeys:
+            raise Exception('ERROR: requested variable %s not in netcdf, available are: %s'%(var_values, nc_varkeys))
+        #TODO: check ndims of requested variable, eg no timestep/lay arguments should be provided for bedlevel)
+        
         nc_values = data_nc.variables[var_values]
         #nc_values_shape = nc_values.shape
         nc_values_dims = nc_values.dimensions
         nc_values_ndims = len(nc_values_dims)
     
-
-        #select values
-        if nc_values_ndims == 2:
-            values = nc_values[list_timestep,:]
-        elif nc_values_ndims == 3:
-            values = nc_values[list_timestep,:,list_lay]
-        else:
-            raise Exception('incorrect number of dimensions: %s'%(nc_values_ndims))
-        
-        if iF == 0:
-            #setup initial array
-            if nc_values_ndims == 2:
-                values_all = np.ma.empty((len(list_timestep),0))
-                concat_axis = 1
-            elif nc_values_ndims == 3:
-                values_all = np.ma.empty((len(list_timestep),0,len(list_lay)))
-                concat_axis = 1
-            else:
-                raise Exception('incorrect number of dimensions: %s'%(nc_values_ndims))
-
         #filter ghost cells
         varn = get_varname_mapnc(data_nc,'mesh2d_flowelem_domain')
         if varn != []: # domain variable is present, so there are multiple domains
             domain = data_nc.variables['mesh2d_flowelem_domain'][:]
             domain_no = np.bincount(domain).argmax() #meest voorkomende domeinnummer
             nonghost_ids = domain==domain_no
-        
-            if nc_values_ndims == 2:
+
+            
+        # 1 dimension (faces)
+        if nc_values_ndims == 1:
+            #print('WARNING: untested number of dimensions: %s'%(nc_values_ndims))
+            if iF == 0: #setup initial array
+                values_all = np.ma.empty((0))    
+            values = nc_values[:]
+            concat_axis = 0
+            if varn != []: # domain variable is present, so there are multiple domains
+                values_all = np.ma.concatenate([values_all,values[nonghost_ids]],axis=concat_axis)
+            else:
+                values_all = np.ma.concatenate([values_all,values],axis=concat_axis)
+
+        # 2 dimensions (time, faces)
+        elif nc_values_ndims == 2:
+            if iF == 0: #setup initial array
+                values_all = np.ma.empty((len(list_timestep),0))    
+            #select values
+            values = nc_values[list_timestep,:]
+            concat_axis = 1
+            if varn != []: # domain variable is present, so there are multiple domains
                 values_all = np.ma.concatenate([values_all,values[:,nonghost_ids]],axis=concat_axis)
-            if nc_values_ndims == 3:
+            else:
+                values_all = np.ma.concatenate([values_all,values],axis=concat_axis)
+        # 3 dimensions (time, faces, layers)?
+        elif nc_values_ndims == 3:
+            if iF == 0: #setup initial array
+                values_all = np.ma.empty((len(list_timestep),0,len(list_lay)))
+            #select values
+            values = nc_values[list_timestep,:,list_lay]
+            concat_axis = 1
+            if varn != []: # domain variable is present, so there are multiple domains
                 values_all = np.ma.concatenate([values_all,values[:,nonghost_ids,:]],axis=concat_axis)
-        else: #1 domain
-            #TODO: 1 domain with multiple layers would now go wrong, fix it
-            values_all = np.ma.concatenate([values_all,values],axis=concat_axis)
+            else:
+                values_all = np.ma.concatenate([values_all,values],axis=concat_axis)
+
+        else:
+            raise Exception('unanticipated number of dimensions: %s'%(nc_values_ndims))
     
-    #TODO: add requested times and layers to outputdata        
+    #TODO: add requested times and layers to outputdata (class?)     
     return values_all
 
 
@@ -158,7 +174,7 @@ def get_mapmodeldata(file_nc, var_values=None, multipart=None, timestep=None, la
 
 
 
-def get_mapnetdata(file_nc, multipart=None):
+def get_netdata(file_nc, multipart=None):
     import numpy as np
     
     from dfm_tools.grid import get_mapfilelist, UGrid
@@ -166,6 +182,13 @@ def get_mapnetdata(file_nc, multipart=None):
     file_ncs = get_mapfilelist(file_nc, multipart)
     #get all data
     num_nodes = [0]
+    verts_shape2_all = []
+    for iF, file_nc_sel in enumerate(file_ncs):
+        print('analyzing netdata from domain %04d of %04d'%(iF, len(file_ncs)-1))
+        ugrid = UGrid.fromfile(file_nc_sel)
+        verts_shape2_all.append(ugrid.verts.shape[1])
+    verts_shape2_max = np.max(verts_shape2_all)
+        
     for iF, file_nc_sel in enumerate(file_ncs):
         print('processing netdata from domain %04d of %04d'%(iF, len(file_ncs)-1))
         #data_nc = Dataset(file_nc_sel)
@@ -181,45 +204,40 @@ def get_mapnetdata(file_nc, multipart=None):
         if iF == 0:
             node_x_all = np.ma.empty((0,))
             node_y_all = np.ma.empty((0,))
-            verts_all = np.ma.empty((0,verts.shape[1],verts.shape[2]))
-            faces_all = np.ma.empty((0,faces.shape[1]),dtype='int32')
+            verts_all = np.ma.empty((0,verts_shape2_max,verts.shape[2]))
+            faces_all = np.ma.empty((0,verts_shape2_max),dtype='int32')
         
-        #TODO: simplify the two blocks below
-        #increase size of verts_all if too small for verts
-        if verts_all.shape[1] < verts.shape[1]:
-            tofew_cols = verts_all.shape[1] - verts.shape[1]
-            verts_all_cordimsize = np.ma.zeros((verts_all.shape[0],verts.shape[1],verts_all.shape[2]))
-            verts_all_cordimsize[:,:tofew_cols,:] = verts_all
-            verts_all_cordimsize.mask = True
-            verts_all_cordimsize.mask[:,:tofew_cols,:] = verts_all.mask
-            faces_all_cordimsize = np.ma.zeros((faces_all.shape[0],faces.shape[1]),dtype='int32')
-            faces_all_cordimsize[:,:tofew_cols] = faces_all
-            faces_all_cordimsize.mask = True
-            faces_all_cordimsize.mask[:,:tofew_cols] = faces_all.mask
-        else:
-            verts_all_cordimsize = verts_all
-            faces_all_cordimsize = faces_all
-            
+        #if necessary, add masked column(s) to increase size to max in domains
+        if verts.shape[1] < verts_shape2_max:
+            tofew_cols = -(verts.shape[1] - verts_shape2_max)
+            vcol_extra = verts[:,[0],:]
+            vcol_extra.mask = True
+            fcol_extra = faces[:,[0]]
+            fcol_extra.mask = True
+            for iC in range(tofew_cols):
+                verts = np.hstack([verts,vcol_extra])
+                faces = np.hstack([faces,fcol_extra])
+        """
         #increase size of verts if too small for verts_all
-        if verts.shape[1] < verts_all.shape[1]:
-            tofew_cols = verts.shape[1] - verts_all.shape[1]
-            verts_cordimsize = np.ma.zeros((verts.shape[0],verts_all.shape[1],verts.shape[2]))
+        if verts.shape[1] < verts_shape2_max:
+            tofew_cols = verts.shape[1] - verts_shape2_max
+            verts_cordimsize = np.ma.zeros((verts.shape[0],verts_shape2_max,verts.shape[2]))
             verts_cordimsize[:,:tofew_cols,:] = verts
             verts_cordimsize.mask = True
             verts_cordimsize.mask[:,:tofew_cols,:] = verts.mask
-            faces_cordimsize = np.ma.zeros((faces.shape[0],faces_all.shape[1]),dtype='int32')
+            faces_cordimsize = np.ma.zeros((faces.shape[0],verts_shape2_max),dtype='int32')
             faces_cordimsize[:,:tofew_cols] = faces
             faces_cordimsize.mask = True
             faces_cordimsize.mask[:,:tofew_cols] = faces.mask
         else:
             verts_cordimsize = verts
             faces_cordimsize = faces
-
+        """
         #merge all
         node_x_all = np.ma.concatenate([node_x_all,node_x])
         node_y_all = np.ma.concatenate([node_y_all,node_y])
-        verts_all = np.ma.concatenate([verts_all_cordimsize,verts_cordimsize])
-        faces_all = np.ma.concatenate([faces_all_cordimsize,faces_cordimsize+np.sum(num_nodes)])
+        verts_all = np.ma.concatenate([verts_all,verts])
+        faces_all = np.ma.concatenate([faces_all,faces+np.sum(num_nodes)])
         num_nodes.append(node_x.shape[0])
 
         
