@@ -134,6 +134,15 @@ def Test_grid_getnetdata_getmapmodeldata_plotnetmapdata(self):
     fig.colorbar(pc, ax=ax)
     ax.set_aspect('equal')
 
+    print('plot grid and values from mapdata (temperature on layer, 3dim)')
+    data_frommap = get_mapmodeldata(file_nc=file_map8, var_values='mesh2d_tem1', timestep=3, lay=33)#, multipart=False)
+    data_frommap_flat = data_frommap.flatten()
+    fig, ax = plt.subplots()
+    pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
+    pc.set_clim([4,10])
+    fig.colorbar(pc, ax=ax)
+    ax.set_aspect('equal')
+
     print('plot only grid from mapdata (RMM)')
     ugrid_all = get_netdata(file_nc=file_map_rmm)#,multipart=False)
     fig, ax = plt.subplots()
