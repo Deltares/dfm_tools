@@ -28,11 +28,11 @@ class UGrid:
 
         mesh2d_node_x = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_node_x')][:]
         mesh2d_node_y = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_node_y')][:]
-        #mesh2d_node_z = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_node_z')][:]
-        #TODO: add node_z again, necessary for slicing?
+        mesh2d_node_z = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_node_z')][:]
         mesh2d_face_nodes = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_face_nodes')][:, :]
         verts = nodexyfaces2verts(mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes) #xy coordinates of face nodes
-
+        #TODO: couple with get_varname_mapnc function to make more generic for older grids/mapfiles
+        
         #remove ghost cells
         varn = get_varname_mapnc(data_nc,'mesh2d_flowelem_domain')
         if varn != []: # domain variable is present, so there are multiple domains
@@ -43,7 +43,7 @@ class UGrid:
         
         
         data_nc.close()
-        ugrid = UGrid(mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes, verts, mesh2d_node_z=None)
+        ugrid = UGrid(mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes, verts, mesh2d_node_z=mesh2d_node_z)
         return ugrid
 
 
@@ -52,7 +52,7 @@ def get_mapfilelist(file_nc, multipart=None):
     import re
     import glob
     lastpart = file_nc.split('_')[-2]
-    if multipart != False and len(lastpart) == 4 and lastpart.isdigit(): #if part before '_map.nc' is eg '0000'
+    if file_nc.endswith('_map.nc') and multipart != False and len(lastpart) == 4 and lastpart.isdigit(): #if part before '_map.nc' is eg '0000'
         filename_start = re.compile('(.*)_([0-9]+)_map.nc').search(file_nc).group(1)
         #filename_number = re.compile('(.*)_([0-9]+)_map.nc').search(file_nc).group(2)
         #file_ncs = [file_nc.replace('_%s_map.nc','_%04d_map.nc'%(filename_number, domain_id)) for domain_id in range(ndomains)]
@@ -61,19 +61,39 @@ def get_mapfilelist(file_nc, multipart=None):
         file_ncs = [file_nc]
     return file_ncs
 
-#TODO: get_hismodeldata (aparte functie of generiek maken?)
+def get_timesfromnc(file_nc):
+    from netCDF4 import Dataset,num2date#,date2num
+    import numpy as np
+    
+    data_nc = Dataset(file_nc)
+    data_nc_timevar = data_nc.variables['time']    
+    
+    time0 = data_nc_timevar[0]
+    time1 = data_nc_timevar[1]
+    timeend = data_nc_timevar[-1]
+    timeinc = time1-time0
+    
+    data_nc_times = np.arange(time0,timeend+timeinc,timeinc)
+    data_nc_datetimes = num2date(data_nc_times, units = data_nc_timevar.units)
+    
+    
+    return data_nc_times, data_nc_datetimes
 
-def get_mapmodeldata(file_nc, var_values=None, multipart=None, timestep=None, lay=None):
+
+def get_hismapmodeldata(file_nc, var_values=None, multipart=None, timestep=None, lay=None):
     from netCDF4 import Dataset
     import numpy as np
     
     from dfm_tools.get_varname_mapnc import get_varname_mapnc
-    from dfm_tools.grid import get_mapfilelist
+    from dfm_tools.grid import get_mapfilelist, get_timesfromnc
     
-    if timestep == None:
+    if timestep is None:
         raise Exception('ERROR: paramter timestep not privided')
     if lay == None:
         raise Exception('ERROR: paramter lay not privided')
+    
+    #get times
+    data_nc_times, data_nc_datetimes = get_timesfromnc(file_nc)
     
     #convert timestep to list if it is not already
     if type(timestep)==int:
@@ -81,7 +101,12 @@ def get_mapmodeldata(file_nc, var_values=None, multipart=None, timestep=None, la
     elif type(timestep)==list:
         list_timestep = timestep
     elif type(timestep)==range:
-        list_timestep = list(timestep)
+        list_timestep = timestep
+    elif timestep == 'all':
+        list_timestep = range(len(data_nc_times))
+    else:
+        print('WARNING: timestep variable type not predifined (%s), take as it comes'%(type(timestep)))
+        list_timestep = timestep
     #TODO: add check for list of ints
     #TODO: add option for all timesteps
     #TODO: add option for timesteps by timestamp instead of integer
@@ -94,7 +119,10 @@ def get_mapmodeldata(file_nc, var_values=None, multipart=None, timestep=None, la
     elif type(lay)==list:
         list_lay = lay
     elif type(lay)==range:
-        list_lay = list(lay)
+        list_lay = lay
+    else:
+        print('WARNING: lay variable type not predifined (%s), take as it comes'%(type(lay)))
+        list_lay = lay
     #TODO: add check for list of ints
     #TODO: add option for all layers
     #TODO: add check for minmax layers (not lower than 0 and not higher than nlayers)
@@ -166,7 +194,7 @@ def get_mapmodeldata(file_nc, var_values=None, multipart=None, timestep=None, la
         else:
             raise Exception('unanticipated number of dimensions: %s'%(nc_values_ndims))
     
-    #TODO: add requested times and layers to outputdata (class?)     
+    #TODO: add requested times and layers to outputdata, also multiple variables with different dimensions? (class?)     
     return values_all
 
 
@@ -197,6 +225,7 @@ def get_netdata(file_nc, multipart=None):
         ugrid = UGrid.fromfile(file_nc_sel)
         node_x = ugrid.mesh2d_node_x
         node_y = ugrid.mesh2d_node_y
+        node_z = ugrid.mesh2d_node_z
         faces = ugrid.mesh2d_face_nodes
         verts = ugrid.verts
 
@@ -204,6 +233,7 @@ def get_netdata(file_nc, multipart=None):
         if iF == 0:
             node_x_all = np.ma.empty((0,))
             node_y_all = np.ma.empty((0,))
+            node_z_all = np.ma.empty((0,))
             verts_all = np.ma.empty((0,verts_shape2_max,verts.shape[2]))
             faces_all = np.ma.empty((0,verts_shape2_max),dtype='int32')
         
@@ -236,6 +266,7 @@ def get_netdata(file_nc, multipart=None):
         #merge all
         node_x_all = np.ma.concatenate([node_x_all,node_x])
         node_y_all = np.ma.concatenate([node_y_all,node_y])
+        node_z_all = np.ma.concatenate([node_z_all,node_z])
         verts_all = np.ma.concatenate([verts_all,verts])
         faces_all = np.ma.concatenate([faces_all,faces+np.sum(num_nodes)])
         num_nodes.append(node_x.shape[0])
@@ -255,7 +286,12 @@ def plot_netmapdata(verts, values=None, ax=None, **kwargs):
     #https://stackoverflow.com/questions/49640311/matplotlib-unstructered-quadrilaterals-instead-of-triangles
     import matplotlib.pyplot as plt
     import matplotlib.collections
-
+    
+    #check if data size is equal
+    if not values is None:
+        if verts.shape[0] != values.shape[0]:
+            raise Exception('ERROR: size of grid and values is not equal, cannot plot')
+    
     if not ax: ax=plt.gca()
     pc = matplotlib.collections.PolyCollection(verts, **kwargs)
     pc.set_array(values)
