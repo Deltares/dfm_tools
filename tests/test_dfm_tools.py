@@ -102,12 +102,12 @@ def Test_grid_gethismodeldata(self):
     
     #GREVELINGEN
     print('plot grid and values from mapdata (constantvalue, 1 dim)')
-    data_fromhis = get_hismapmodeldata(file_nc=file_his, var_values='salinity', timestep=np.arange(0,-1), lay=5)#, multipart=False)
+    data_fromhis = get_hismapmodeldata(file_nc=file_his, var_values='salinity', timestep=range(10), lay=5)#, multipart=False)
     fig, ax = plt.subplots()
     
     #pc = plot_netmapdata(ugrid.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
     #pc.set_clim([28,30.2])
-    fig.colorbar(pc, ax=ax)
+    #fig.colorbar(pc, ax=ax)
     ax.set_aspect('equal')
     
     
@@ -129,7 +129,7 @@ def Test_grid_getnetdata_getmapmodeldata_plotnetmapdata(self):
     print('plot grid and values from mapdata (constantvalue, 1 dim)')
     ugrid = get_netdata(file_nc=file_map1)#,multipart=False)
     iT = 3 #for iT in range(10):
-    data_frommap = get_hismapmodeldata(file_nc=file_map1, var_values='mesh2d_sa1', timestep='all', lay=5)#, multipart=False)
+    data_frommap = get_hismapmodeldata(file_nc=file_map1, var_values='mesh2d_sa1', timestep=3, lay=5)#, multipart=False)
     data_frommap_flat = data_frommap.flatten()
     fig, ax = plt.subplots()
     pc = plot_netmapdata(ugrid.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
