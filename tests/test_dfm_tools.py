@@ -96,19 +96,17 @@ def Test_grid_gethismodeldata(self):
     import matplotlib.pyplot as plt
     plt.close('all')
     
-    from dfm_tools.grid import get_hismapmodeldata, plot_netmapdata
+    from dfm_tools.grid import get_hismapmodeldata
     
     file_his = r'c:\DATA\werkmap\vanJulien_shortmodelfiles\DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_his.nc'
     
     #GREVELINGEN
     print('plot grid and values from mapdata (constantvalue, 1 dim)')
-    data_fromhis = get_hismapmodeldata(file_nc=file_his, var_values='salinity', timestep=range(10), lay=5)#, multipart=False)
+    data_fromhis = get_hismapmodeldata(file_nc=file_his, var_values='salinity', timestep='all', lay=5)#, multipart=False)
+    data_fromhis_flat = data_fromhis[:,:,0]
+
     fig, ax = plt.subplots()
-    
-    #pc = plot_netmapdata(ugrid.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
-    #pc.set_clim([28,30.2])
-    #fig.colorbar(pc, ax=ax)
-    ax.set_aspect('equal')
+    ax.plot(list(range(len(data_fromhis))),data_fromhis_flat,'-')
     
     
 def Test_grid_getnetdata_getmapmodeldata_plotnetmapdata(self):
@@ -128,7 +126,7 @@ def Test_grid_getnetdata_getmapmodeldata_plotnetmapdata(self):
     #CURVIBEND
     print('plot grid and values from mapdata (constantvalue, 1 dim)')
     ugrid = get_netdata(file_nc=file_map1)#,multipart=False)
-    iT = 3 #for iT in range(10):
+    #iT = 3 #for iT in range(10):
     data_frommap = get_hismapmodeldata(file_nc=file_map1, var_values='mesh2d_sa1', timestep=3, lay=5)#, multipart=False)
     data_frommap_flat = data_frommap.flatten()
     fig, ax = plt.subplots()

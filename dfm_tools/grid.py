@@ -11,8 +11,8 @@ class UGrid:
         else:
             self.mesh2d_node_z = np.zeros(self.mesh2d_node_x.shape)
     @staticmethod
-    def fromfile(filename_nc):
-        import netCDF4
+    def fromfile(file_nc):
+        from netCDF4 import Dataset
         from dfm_tools.get_varname_mapnc import get_varname_mapnc
         
         def nodexyfaces2verts(node_x,node_y, faces):
@@ -24,7 +24,7 @@ class UGrid:
             verts[quatrangles.mask==True,:] = np.nan #remove all masked values by making them nan
             return verts
         
-        data_nc = netCDF4.Dataset(filename_nc)
+        data_nc = Dataset(file_nc)
 
         mesh2d_node_x = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_node_x')][:]
         mesh2d_node_y = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_node_y')][:]
@@ -51,6 +51,11 @@ def get_mapfilelist(file_nc, multipart=None):
     #get list of mapfiles
     import re
     import glob
+    import os
+    
+    if not os.path.exists(file_nc):
+        raise Exception('ERROR: file does not exist: %s'%(file_nc))
+    
     lastpart = file_nc.split('_')[-2]
     if file_nc.endswith('_map.nc') and multipart != False and len(lastpart) == 4 and lastpart.isdigit(): #if part before '_map.nc' is eg '0000'
         filename_start = re.compile('(.*)_([0-9]+)_map.nc').search(file_nc).group(1)
@@ -60,6 +65,9 @@ def get_mapfilelist(file_nc, multipart=None):
     else:
         file_ncs = [file_nc]
     return file_ncs
+
+
+
 
 def get_timesfromnc(file_nc):
     from netCDF4 import Dataset,num2date#,date2num
@@ -76,57 +84,82 @@ def get_timesfromnc(file_nc):
     data_nc_times = np.arange(time0,timeend+timeinc,timeinc)
     data_nc_datetimes = num2date(data_nc_times, units = data_nc_timevar.units)
     
+    return data_nc_datetimes
+
+
+
+#TODO: add get timeid from datetime datetime-list datetime-range, do with pandas daterange?
+def get_timeid_fromdatetime(data_nc_datetimes, timestep):
+    import pandas as pd
     
-    return data_nc_times, data_nc_datetimes
+    if type(timestep) is not list:
+        timestep = [timestep]
+    
+    #timestep = dt.datetime(2001,1,1)
+    
+    #list_timestep = 
+    
+    return list_timestep
+
+
+
 
 
 def get_hismapmodeldata(file_nc, var_values=None, multipart=None, timestep=None, lay=None):
     from netCDF4 import Dataset
     import numpy as np
+    import datetime as dt
     
     from dfm_tools.get_varname_mapnc import get_varname_mapnc
     from dfm_tools.grid import get_mapfilelist, get_timesfromnc
     
-    if timestep is None:
-        raise Exception('ERROR: paramter timestep not privided')
-    if lay == None:
-        raise Exception('ERROR: paramter lay not privided')
-    
     #get times
-    data_nc_times, data_nc_datetimes = get_timesfromnc(file_nc)
+    data_nc_datetimes = get_timesfromnc(file_nc)
     
-    #convert timestep to list if it is not already
-    if type(timestep)==int:
+    if timestep is None:
+        raise Exception('ERROR: paramter timestep not provided')
+    #convert timestep to list of int if it is not already
+    if timestep == 'all':
+        list_timestep = range(len(data_nc_datetimes))
+    elif type(timestep)==list or type(timestep)==range or type(timestep)==type(np.arange(1,2,0.5)):
+        if type(timestep[0])==int: #list/range/ndarray of int
+            list_timestep = timestep
+        elif type(timestep[0])==type(dt.datetime(1,1,1)): #list/range/ndarray of datetime
+            raise Exception('not yet possible')
+            #TODO: add possibility to convert datetime-list (and datetime-range and pandas daterange or so) to timeid
+            list_timestep = get_timeid_fromdatetime(data_nc_datetimes, timestep)
+        else:
+            raise Exception('ERROR: timestep variable type not anticipated (%s), (list/range/ndarray of) datetime/int are accepted (or "all")'%(type(timestep)))
+    elif type(timestep)==int:
         list_timestep = [timestep]
-    elif type(timestep)==list:
-        list_timestep = timestep
-    elif type(timestep)==range:
-        list_timestep = timestep
-    elif timestep == 'all':
-        list_timestep = range(len(data_nc_times))
+    elif type(timestep)==type(dt.datetime(1,1,1)):
+        raise Exception('not yet possible')
+        #TODO: add possibility to convert datetime to timeid
+        list_timestep = get_timeid_fromdatetime(data_nc_datetimes, timestep)
     else:
-        print('WARNING: timestep variable type not predifined (%s), take as it comes'%(type(timestep)))
-        list_timestep = timestep
-    #TODO: add check for list of ints
-    #TODO: add option for all timesteps
+        raise Exception('ERROR: timestep variable type not anticipated (%s), (list/range/ndarray of) datetime/int are accepted (or "all")'%(type(timestep)))
     #TODO: add option for timesteps by timestamp instead of integer
     #TODO: add check for minmax timesteps (not lower than 0 and not higher than ntimesteps)
     #TODO: 0/1-based indexing for timesteps?
     
-    #convert layer to list if it is not already
-    if type(lay)==int:
+    #convert layer to list of int if it is not already
+    if lay == 'all':
+        raise Exception('not yet possible')
+        #TODO: add possibility to retrieve all layers (get nlayers from datafile, if layers are present)
+    elif type(lay)==list or type(lay)==range or type(lay)==type(np.arange(1,2,0.5)):
+        if type(lay[0])==int: #list/range/ndarray of int
+            list_lay = lay
+        else:
+            raise Exception('ERROR: timestep lay type not anticipated (%s), (list/range/ndarray of) int are accepted (or "all")'%(type(lay)))            
+    elif type(lay)==int:
         list_lay = [lay]
-    elif type(lay)==list:
-        list_lay = lay
-    elif type(lay)==range:
-        list_lay = lay
     else:
-        print('WARNING: lay variable type not predifined (%s), take as it comes'%(type(lay)))
-        list_lay = lay
+        raise Exception('ERROR: timestep lay type not anticipated (%s), (list/range/ndarray of) int are accepted (or "all")'%(type(lay)))
     #TODO: add check for list of ints
     #TODO: add option for all layers
     #TODO: add check for minmax layers (not lower than 0 and not higher than nlayers)
     #TODO: 0/1-based indexing for layers?
+    #TODO: lay may be None, but not if 3D modeldata (possible in map and his). if no layers are present in requested variable, trow error if lay is requested
     
     #TODO: add retrieval via depth (then dflowutil.mesh can be removed?)
     
@@ -194,7 +227,7 @@ def get_hismapmodeldata(file_nc, var_values=None, multipart=None, timestep=None,
         else:
             raise Exception('unanticipated number of dimensions: %s'%(nc_values_ndims))
     
-    #TODO: add requested times and layers to outputdata, also multiple variables with different dimensions? (class?)     
+    #TODO: add requested times and layers to outputdata (necessary for plotting his and more), also multiple variables with different dimensions? (class?)     
     return values_all
 
 
