@@ -7,8 +7,8 @@ from setuptools import setup, find_packages
 with open('README.rst') as readme_file:
     readme = readme_file.read()
 
-with open('HISTORY.rst') as history_file:
-    history = history_file.read()
+#with open('HISTORY.rst') as history_file:
+#    history = history_file.read()
 
 #requirements = [ ]
 with open('requirements.txt') as f:
@@ -34,7 +34,7 @@ setup(
     ],
     description="dfm_tools are post-processing tools for Delft3D FM",
     install_requires=requirements,
-    long_description=readme + '\n\n' + history,
+    long_description=readme ,#+ '\n\n' + history,
     include_package_data=True,
     keywords='dfm_tools',
     name='dfm_tools',

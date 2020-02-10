@@ -143,7 +143,7 @@ def Test_grid_getnetdata_getmapmodeldata_plotnetmapdata(self):
     ax.set_aspect('equal')
     
     print('plot grid and values from mapdata (constantvalue, 1 dim)')
-    data_frommap = get_hismapmodeldata(file_nc=file_map8, var_values='mesh2d_flowelem_bl', timestep=3, lay=33)#, multipart=False)
+    data_frommap = get_hismapmodeldata(file_nc=file_map8, var_values='mesh2d_flowelem_bl')#, multipart=False)
     data_frommap_flat = data_frommap.flatten()
     fig, ax = plt.subplots()
     pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
@@ -152,7 +152,7 @@ def Test_grid_getnetdata_getmapmodeldata_plotnetmapdata(self):
     ax.set_aspect('equal')
 
     print('plot grid and values from mapdata (waterlevel, 2dim)')
-    data_frommap = get_hismapmodeldata(file_nc=file_map8, var_values='mesh2d_s1', timestep=3, lay=33)#, multipart=False)
+    data_frommap = get_hismapmodeldata(file_nc=file_map8, var_values='mesh2d_s1', timestep=3)#, multipart=False)
     data_frommap_flat = data_frommap.flatten()
     fig, ax = plt.subplots()
     pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
@@ -203,11 +203,11 @@ def Test_maplora(self):
     import matplotlib.pyplot as plt
     plt.close('all')
     
-    from dfm_tools.grid import get_netdata, get_hismapmodeldata, plot_netmapdata
+    from dfm_tools.grid import get_netdata, plot_netmapdata#, get_hismapmodeldata
 
     file_maplora = r'p:\11201806-sophie\Oosterschelde\WAQ\r02\postprocessing\oost_tracer_2_map.nc'
     
-    ugrid_lora = get_netdata(file_maplora)
+    ugrid_lora = get_netdata(file_nc=file_maplora)
 
     data_nc = Dataset(file_maplora)
     list(data_nc.variables.keys())
@@ -226,8 +226,8 @@ def Test_maplora(self):
         fig.colorbar(pc, ax=ax)
         ax.set_aspect('equal')
         ax.set_xlabel(var_name)
-
-    #TODO: check if this now also works
+    """
+    #this would be default, but does not work because timevar is non-standard
     print('plot grid and values from mapdata (constantvalue, 1 dim)')
     data_frommap = get_hismapmodeldata(file_nc=file_maplora, var_values='mesh2d_FColi', timestep=3, lay=33)#, multipart=False)
     data_frommap_flat = data_frommap.flatten()
@@ -236,7 +236,7 @@ def Test_maplora(self):
     #pc.set_clim([28,30.2])
     fig.colorbar(pc, ax=ax)
     ax.set_aspect('equal')
-    
+    """
 
     
     
