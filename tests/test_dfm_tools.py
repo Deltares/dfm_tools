@@ -196,8 +196,8 @@ def Test_grid_getnetdata_getmapmodeldata_plotnetmapdata(self):
 
     print('plot grid and values from mapdata (RMM)')
     ugrid_all = get_netdata(file_nc=file_map_rmm)#,multipart=False)
-    #data_frommap = get_hismapmodeldata(file_nc=file_map_rmm, var_values='mesh2d_s1', timestep=50, lay=0)#, multipart=False)
-    data_frommap = get_hismapmodeldata(file_nc=file_map_rmm, var_values='mesh2d_ucx', timestep=50, lay=0)#, multipart=False)
+    #data_frommap = get_hismapmodeldata(file_nc=file_map_rmm, var_values='mesh2d_s1', timestep=50)#, multipart=False)
+    data_frommap = get_hismapmodeldata(file_nc=file_map_rmm, var_values='mesh2d_ucx', timestep=50)#, multipart=False)
     data_frommap_flat = data_frommap.flatten()
     fig, ax = plt.subplots()
     pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
@@ -206,7 +206,7 @@ def Test_grid_getnetdata_getmapmodeldata_plotnetmapdata(self):
     ax.set_aspect('equal')
 
 
-def Test_maplora_old(self):
+def Test_maplora(self):
     import matplotlib.pyplot as plt
     plt.close('all')
     
