@@ -14,6 +14,11 @@ Features
 
 TODO
 --------
+- discuss the (future) structure: which functions in which class/script, function names, argument names?
+- allowed to be freely available? add ownrisk-license
+- register on PyPI, for easier install via pip (for regular users, not developers):
+	- https://the-hitchhikers-guide-to-packaging.readthedocs.io/en/latest/quickstart.html#register-your-package-with-the-python-package-index-pypi 
+	- also add version numbers (only master branch?)
 - select data based on datetime (now only timestep/index): get_timeid_fromdatetime
 - add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?)
 - hisinfo per station opvragen (now only all)
@@ -25,7 +30,9 @@ TODO
 	- https://github.com/pyugrid/pyugrid/tree/master/notebook_examples
 	- https://stackoverflow.com/questions/15748767/interpolation-subsampling-of-3d-data-in-python-without-vtk/15753011#15753011
 - write documentation as comments and generate automatically
-- create testbank (keep example codelines) and setup auto-testing online
+- create testbank (keep example codelines) and setup auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
+- add comparable functions for sobek and Delft3D
+- collect more functions/scripts from other users and bundle/couple
 
 
 How to work with this git repository
