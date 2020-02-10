@@ -14,7 +14,6 @@ Features
 
 TODO
 --------
-- move round datetimes to get_timesfromnc (should be pandas Series first)
 - discuss the (future) structure: which functions in which class/script, function names, argument names?
 - allowed to be freely available? add ownrisk-license
 - register on PyPI, for easier install via pip (for regular users, not developers):
