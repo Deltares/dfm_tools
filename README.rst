@@ -15,7 +15,7 @@ Features
 * TODO
 - select data based on datetime (now only timestep/index): get_timeid_fromdatetime
 - add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?)
-- hisinfo per station opvragen
+- hisinfo per station opvragen (now only all)
 - add requested variablename(?), times and layers to outputdata (necessary for plotting his and more), also multiple variables with different dimensions? (class?)     
 - add polygon/crossection
 - add inpolygon selection of data

@@ -10,6 +10,8 @@ def get_varname_mapnc(data_nc,varname_requested):
     
     #VARIABLE names used within different versions of Delft3D-Flexible Mesh
     varnames_list = pd.DataFrame()
+    varnames_list['time'] = ['time','nmesh2d_dlwq_time',''] # time
+    
     varnames_list['mesh2d_node_x'] = ['mesh2d_node_x','NetNode_x','mesh2d_agg_node_x'] # x-coordinate of nodes
     varnames_list['mesh2d_node_y'] = ['mesh2d_node_y','NetNode_y','mesh2d_agg_node_y'] # y-coordinate of nodes
     varnames_list['mesh2d_node_z'] = ['mesh2d_node_z','NetNode_z',''] # z-coordinate of nodes
@@ -59,12 +61,16 @@ def get_varname_mapnc(data_nc,varname_requested):
     data_nc_varnames_list = list(data_nc.variables.keys())
     if varname_requested in data_nc_varnames_list:
         varname = varname_requested
-    if varname_pdcol in data_nc_varnames_list:
+    elif varname_pdcol in data_nc_varnames_list:
         varname = varname_pdcol
     else:
-        var_options = list(varnames_list[varname_requested])
+        var_options = list(varnames_list[varname_pdcol])
         varname = [var for var in var_options if var in data_nc_varnames_list]
-    
+        if varname == []:
+            varname = None
+        else:
+            varname = varname[0]
+
     return varname
 
 

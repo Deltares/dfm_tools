@@ -102,9 +102,18 @@ def Test_grid_gethismodeldata(self):
     
     #GREVELINGEN
     print('plot grid and values from mapdata (constantvalue, 1 dim)')
+    data_fromhis = get_hismapmodeldata(file_nc=file_his, var_values='bedlevel')#, multipart=False)
+    fig, ax = plt.subplots()
+    ax.plot(list(range(len(data_fromhis))),data_fromhis,'-')
+
+    print('plot grid and values from mapdata (waterlevel, 2 dim)')
+    data_fromhis = get_hismapmodeldata(file_nc=file_his, var_values='waterlevel', timestep='all')#, multipart=False)
+    fig, ax = plt.subplots()
+    ax.plot(list(range(len(data_fromhis))),data_fromhis,'-')
+    
+    print('plot grid and values from mapdata (salinity, 3 dim)')
     data_fromhis = get_hismapmodeldata(file_nc=file_his, var_values='salinity', timestep='all', lay=5)#, multipart=False)
     data_fromhis_flat = data_fromhis[:,:,0]
-
     fig, ax = plt.subplots()
     ax.plot(list(range(len(data_fromhis))),data_fromhis_flat,'-')
     
@@ -197,46 +206,29 @@ def Test_grid_getnetdata_getmapmodeldata_plotnetmapdata(self):
     ax.set_aspect('equal')
 
 
-
-def Test_maplora(self):
-    from netCDF4 import Dataset
+def Test_maplora_old(self):
     import matplotlib.pyplot as plt
     plt.close('all')
     
-    from dfm_tools.grid import get_netdata, plot_netmapdata#, get_hismapmodeldata
+    from dfm_tools.grid import get_netdata, plot_netmapdata, get_hismapmodeldata
 
     file_maplora = r'p:\11201806-sophie\Oosterschelde\WAQ\r02\postprocessing\oost_tracer_2_map.nc'
     
     ugrid_lora = get_netdata(file_nc=file_maplora)
 
-    data_nc = Dataset(file_maplora)
-    list(data_nc.variables.keys())
-
-
-    
+    print('plot grid and values from mapdata (constantvalue, 1 dim)')
     var_names = ['mesh2d_FColi','mesh2d_HIWAI','mesh2d_Pharma']
     var_clims = [None,[0,100000000000],[0,10000]]
     for var_name, var_clim in zip(var_names, var_clims):
-        data_fromnc = data_nc.variables[var_name]
-        
+        data_frommap = get_hismapmodeldata(file_nc=file_maplora, var_values=var_name)#, multipart=False)
         fig, ax = plt.subplots()
-        pc = plot_netmapdata(ugrid_lora.verts, values=data_fromnc, ax=None, linewidth=0.5, cmap="jet")
+        pc = plot_netmapdata(ugrid_lora.verts, values=data_frommap, ax=None, linewidth=0.5, cmap="jet")
         if var_clim != None:
             pc.set_clim(var_clim)
         fig.colorbar(pc, ax=ax)
         ax.set_aspect('equal')
         ax.set_xlabel(var_name)
-    """
-    #this would be default, but does not work because timevar is non-standard
-    print('plot grid and values from mapdata (constantvalue, 1 dim)')
-    data_frommap = get_hismapmodeldata(file_nc=file_maplora, var_values='mesh2d_FColi', timestep=3, lay=33)#, multipart=False)
-    data_frommap_flat = data_frommap.flatten()
-    fig, ax = plt.subplots()
-    pc = plot_netmapdata(ugrid_lora.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
-    #pc.set_clim([28,30.2])
-    fig.colorbar(pc, ax=ax)
-    ax.set_aspect('equal')
-    """
+
 
     
     

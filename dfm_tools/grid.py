@@ -28,7 +28,7 @@ class UGrid:
 
         mesh2d_node_x = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_node_x')][:]
         mesh2d_node_y = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_node_y')][:]
-        if get_varname_mapnc(data_nc,'mesh2d_node_z') != []: # node_z variable is present
+        if get_varname_mapnc(data_nc,'mesh2d_node_z') is not None: # node_z variable is present
             mesh2d_node_z = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_node_z')][:]
         else:
             mesh2d_node_z = None
@@ -37,7 +37,7 @@ class UGrid:
         
         #remove ghost cells
         varn = get_varname_mapnc(data_nc,'mesh2d_flowelem_domain')
-        if varn != []: # domain variable is present, so there are multiple domains
+        if varn is not None: # domain variable is present, so there are multiple domains
             domain = data_nc.variables[varn][:]
             domain_no = np.bincount(domain).argmax() #meest voorkomende domeinnummer
             verts = verts[domain==domain_no]
@@ -90,8 +90,11 @@ def get_timesfromnc(file_nc):
     from netCDF4 import Dataset,num2date#,date2num
     import numpy as np
     
+    from dfm_tools.get_varname_mapnc import get_varname_mapnc
+    
     data_nc = Dataset(file_nc)
-    data_nc_timevar = data_nc.variables['time']    
+    varname_time = get_varname_mapnc(data_nc,'time')
+    data_nc_timevar = data_nc.variables[varname_time]    
     
     time0 = data_nc_timevar[0]
     time1 = data_nc_timevar[1]
@@ -214,7 +217,7 @@ def get_hismapmodeldata(file_nc, var_values=None, multipart=None, timestep=None,
         
         #filter ghost cells
         varn = get_varname_mapnc(data_nc,'mesh2d_flowelem_domain')
-        if varn != []: # domain variable is present, so there are multiple domains
+        if varn is not None: # domain variable is present, so there are multiple domains
             domain = data_nc.variables['mesh2d_flowelem_domain'][:]
             domain_no = np.bincount(domain).argmax() #meest voorkomende domeinnummer
             nonghost_ids = domain==domain_no
@@ -227,7 +230,7 @@ def get_hismapmodeldata(file_nc, var_values=None, multipart=None, timestep=None,
                 values_all = np.ma.empty((0))    
             values = nc_values[:]
             concat_axis = 0
-            if varn != []: # domain variable is present, so there are multiple domains
+            if varn is not None: # domain variable is present, so there are multiple domains
                 values_all = np.ma.concatenate([values_all,values[nonghost_ids]],axis=concat_axis)
             else:
                 values_all = np.ma.concatenate([values_all,values],axis=concat_axis)
@@ -239,7 +242,7 @@ def get_hismapmodeldata(file_nc, var_values=None, multipart=None, timestep=None,
             #select values
             values = nc_values[time_ids,:]
             concat_axis = 1
-            if varn != []: # domain variable is present, so there are multiple domains
+            if varn is not None: # domain variable is present, so there are multiple domains
                 values_all = np.ma.concatenate([values_all,values[:,nonghost_ids]],axis=concat_axis)
             else:
                 values_all = np.ma.concatenate([values_all,values],axis=concat_axis)
@@ -250,7 +253,7 @@ def get_hismapmodeldata(file_nc, var_values=None, multipart=None, timestep=None,
             #select values
             values = nc_values[time_ids,:,layer_ids]
             concat_axis = 1
-            if varn != []: # domain variable is present, so there are multiple domains
+            if varn is not None: # domain variable is present, so there are multiple domains
                 values_all = np.ma.concatenate([values_all,values[:,nonghost_ids,:]],axis=concat_axis)
             else:
                 values_all = np.ma.concatenate([values_all,values],axis=concat_axis)
