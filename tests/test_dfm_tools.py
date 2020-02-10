@@ -226,19 +226,25 @@ def Test_maplora(self):
     
     from dfm_tools.grid import get_netdata, plot_netmapdata, get_hismapmodeldata
 
+    file_maplora = r'p:\11201806-sophie\Oosterschelde\WAQ\r03\postprocessing\oost_tracer_map.nc'
     file_maplora = r'p:\11201806-sophie\Oosterschelde\WAQ\r02\postprocessing\oost_tracer_2_map.nc'
-    #file_maplora = r'p:\11201806-sophie\Oosterschelde\WAQ\r03\postprocessing\oost_tracer_map.nc'
     
     ugrid_lora = get_netdata(file_nc=file_maplora)
 
     print('plot grid and values from mapdata (constantvalue, 1 dim)')
-    var_names = ['mesh2d_FColi','mesh2d_HIWAI','Mspaf','mesh2d_Pharma']
+    var_names = ['mesh2d_FColi','mesh2d_HIWAI','mesh2d_mspaf','mesh2d_Pharma']
     var_clims = [None,[0,100000000000],None,[0,10000]]
     var_names = ['mesh2d_FColi','mesh2d_HIWAI','mesh2d_Pharma']
     var_clims = [None,[0,100000000000],[0,10000]]
+    #var_names = ['mesh2d_Pharma']
+    #var_clims = [[0,10000]]
     for var_name, var_clim in zip(var_names, var_clims):
-        data_frommap = get_hismapmodeldata(file_nc=file_maplora, varname=var_name)#, multipart=False)
         fig, ax = plt.subplots()
+        if 'oost_tracer_2_map' in file_maplora:
+            data_frommap = get_hismapmodeldata(file_nc=file_maplora, varname=var_name)#, multipart=False)
+        else:
+            data_frommap = get_hismapmodeldata(file_nc=file_maplora, varname=var_name, timestep='all', lay=5)#, multipart=False)
+            data_frommap = data_frommap.flatten()
         pc = plot_netmapdata(ugrid_lora.verts, values=data_frommap, ax=None, linewidth=0.5, cmap="jet")
         if var_clim != None:
             pc.set_clim(var_clim)
@@ -247,7 +253,6 @@ def Test_maplora(self):
         ax.set_xlabel(var_name)
 
 
-    
     
 @pytest.fixture
 def response():

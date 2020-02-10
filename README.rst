@@ -25,12 +25,11 @@ TODO
 - hisinfo per station opvragen (now only all), also add requested stations to output as values_all.stations
 - perform actions by dimension names instead of ndims (station_name variable has two dimensions but no time)
 - add requested variablename(?), times and layers to outputdata (necessary for plotting his and more), 
-- add polygon/crossection
-- add inpolygon selection of data
-- Dfm_tools slicing ugrid:
+- add selection by polygon/crossection, slicing ugrid:
 	- https://stackoverflow.com/questions/47868134/how-to-slice-2d-grid-from-3d-irrigular-data
 	- https://github.com/pyugrid/pyugrid/tree/master/notebook_examples
 	- https://stackoverflow.com/questions/15748767/interpolation-subsampling-of-3d-data-in-python-without-vtk/15753011#15753011
+- add inpolygon selection of data
 - write documentation as comments and generate automatically
 - create testbank (keep example codelines) and setup auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
 - add comparable functions for sobek and Delft3D

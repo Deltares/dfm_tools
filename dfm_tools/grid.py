@@ -180,14 +180,18 @@ def get_hismapmodeldata(file_nc, varname, timestep=None, lay=None, stations=None
     data_nc_datetimes_pd = get_timesfromnc(file_nc)
     #get variable and dimension info
     nc_varkeys, nc_values, nc_values_shape, nc_values_dims = get_ncvardims(file_nc, varname)
+    data_nc = Dataset(file_nc)
     
     #TIMES CHECKS
-    if 'time' not in nc_values_dims: #only faces/stations dimensions, no times or layers
+    #if 'time' in nc_values_dims: #dimension time is available in variable
+    #    
+    dimn_time = get_varname_mapnc(data_nc,'time')
+    if dimn_time not in nc_values_dims: #only faces/stations dimensions, no times or layers
         if timestep is not None:
             raise Exception('ERROR: netcdf file variable (%s) does not contain times, but parameter timestep is provided'%(varname))
     else: #time is first dimension
         if timestep is None:
-            raise Exception('ERROR: paramter timestep not provided')
+            raise Exception('ERROR: netcdf variable contains a time dimension, but paramter timestep not provided')
         #convert timestep to list of int if it is not already
         if timestep == 'all':
             time_ids = range(len(data_nc_datetimes_pd))
@@ -211,15 +215,16 @@ def get_hismapmodeldata(file_nc, varname, timestep=None, lay=None, stations=None
             raise Exception('ERROR: requested end timestep (%d) is larger than available in netcdf file (%d)'%(np.max(time_ids),len(data_nc_datetimes_pd)))
     
     #LAYER CHECKS
-    data_nc = Dataset(file_nc)
-    varn = get_varname_mapnc(data_nc,'nmesh2d_layer')
-    if varn is None or varn not in nc_values_dims: #only time and faces/stations dimensions, no layers
+    dimn_layer = get_varname_mapnc(data_nc,'nmesh2d_layer')
+    if dimn_layer is None or dimn_layer not in nc_values_dims: #only time and faces/stations dimensions, no layers
         if lay is not None:
-            raise Exception('ERROR: netcdf file variable (%s) does not contain layers, but parameter lay is provided'%(varname))
+            raise Exception('ERROR: netcdf variable (%s) does not contain layers, but parameter lay is provided'%(varname))
     else: #layers are present in variable
-        nlayers = nc_values_shape[2]
+        #nlayers = nc_values_shape[2]
+        dimn_layer_id = nc_values_dims.index(dimn_layer)
+        nlayers = nc_values_shape[dimn_layer_id]
         if lay is None:
-            raise Exception('ERROR: netcdf file contains layers, but paramter lay not provided')
+            raise Exception('ERROR: netcdf variable contains a layer dimension, but paramter lay not provided')
         #convert layer to list of int if it is not already
         if lay == 'all':
             layer_ids = range(nlayers)
@@ -239,8 +244,8 @@ def get_hismapmodeldata(file_nc, varname, timestep=None, lay=None, stations=None
             raise Exception('ERROR: requested max layer (%d) is larger than available in netcdf file (%d)'%(np.max(layer_ids),nlayers))
     
     #check ghost cell existence
-    varn_dimfaces = get_varname_mapnc(data_nc,'mesh2d_nFaces')
-    if varn_dimfaces in nc_values_dims:
+    dimn_faces = get_varname_mapnc(data_nc,'mesh2d_nFaces')
+    if dimn_faces in nc_values_dims:
         var_ghostaffected = True
     else:
         var_ghostaffected = False
@@ -257,7 +262,6 @@ def get_hismapmodeldata(file_nc, varname, timestep=None, lay=None, stations=None
         
         # 1 dimension (faces/stations)
         if nc_values_ndims == 1:
-            #print('WARNING: untested number of dimensions: %s'%(nc_values_ndims))
             if iF == 0: #setup initial array
                 values_all = np.ma.empty((0))    
             values = nc_values[:]
@@ -269,6 +273,8 @@ def get_hismapmodeldata(file_nc, varname, timestep=None, lay=None, stations=None
 
         # 2 dimensions (time, faces/stations)
         elif nc_values_ndims == 2:
+            if not (nc_values_dims[0] == dimn_time): # and nc_values_dims[1] == dimn_faces
+                raise Exception('ERROR: unexpected dimension order, should be something like (time, faces/stations, layers): %s'%(str(nc_values_dims)))
             if iF == 0: #setup initial array
                 values_all = np.ma.empty((len(time_ids),0))    
             #select values
@@ -278,28 +284,45 @@ def get_hismapmodeldata(file_nc, varname, timestep=None, lay=None, stations=None
                 values_all = np.ma.concatenate([values_all,values[:,nonghost_ids]],axis=concat_axis)
             else:
                 values_all = np.ma.concatenate([values_all,values],axis=concat_axis)
+        
         # 3 dimensions (time, faces/stations, layers)
         elif nc_values_ndims == 3:
-            if iF == 0: #setup initial array
-                values_all = np.ma.empty((len(time_ids),0,len(layer_ids)))
-            #select values
-            values = nc_values[time_ids,:,layer_ids]
-            concat_axis = 1
-            if ghostcells_bool and var_ghostaffected: # domain variable is present, so there are multiple domains
-                values_all = np.ma.concatenate([values_all,values[:,nonghost_ids,:]],axis=concat_axis)
+            #if not (nc_values_dims[0] == dimn_time and nc_values_dims[2] == dimn_layer): # and nc_values_dims[1] == dimn_faces
+            #    raise Exception('ERROR: unexpected dimension order, should be something like (time, faces/stations, layers): %s'%(str(nc_values_dims)))
+            if (nc_values_dims[0] == dimn_time and nc_values_dims[2] == dimn_layer): # and nc_values_dims[1] == dimn_faces
+                if iF == 0: #setup initial array
+                    values_all = np.ma.empty((len(time_ids),0,len(layer_ids)))
+                #select values
+                values = nc_values[time_ids,:,layer_ids]
+                concat_axis = 1
+                if ghostcells_bool and var_ghostaffected: # domain variable is present, so there are multiple domains
+                    values_all = np.ma.concatenate([values_all,values[:,nonghost_ids,:]],axis=concat_axis)
+                else:
+                    values_all = np.ma.concatenate([values_all,values],axis=concat_axis)
+            elif (nc_values_dims[0] == dimn_time and nc_values_dims[1] == dimn_layer): #TODO: remove this exception for files Lora?
+                print('WARNING: unexpected dimension order, supported for waqfiles Lora: %s'%(str(nc_values_dims)))
+                if iF == 0: #setup initial array
+                    values_all = np.ma.empty((len(time_ids),len(layer_ids),0))
+                #select values
+                values = nc_values[time_ids,layer_ids,:]
+                concat_axis = 2
+                if ghostcells_bool and var_ghostaffected: # domain variable is present, so there are multiple domains
+                    values_all = np.ma.concatenate([values_all,values[:,:,nonghost_ids]],axis=concat_axis)
+                else:
+                    values_all = np.ma.concatenate([values_all,values],axis=concat_axis)
             else:
-                values_all = np.ma.concatenate([values_all,values],axis=concat_axis)
+                raise Exception('ERROR: unexpected dimension order: %s'%(str(nc_values_dims)))
 
         else:
             raise Exception('unanticipated number of dimensions: %s'%(nc_values_ndims))
         
         #add metadata
         values_all.varname = varname
-        if 'time' in nc_values_dims: #only faces/stations dimensions, no times or layers
+        if dimn_time in nc_values_dims: #only faces/stations dimensions, no times or layers
             values_all.times = data_nc_datetimes_pd.iloc[time_ids]
         else:
             values_all.times = None
-        if varn is None or varn not in nc_values_dims: #only time and faces/stations dimensions, no layers
+        if dimn_layer is None or dimn_layer not in nc_values_dims: #only time and faces/stations dimensions, no layers
             values_all.layers = None
         else:
             values_all.layers = layer_ids
