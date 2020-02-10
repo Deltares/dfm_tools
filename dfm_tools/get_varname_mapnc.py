@@ -40,12 +40,12 @@ def get_varname_mapnc(data_nc,varname_requested):
     
     
     ### DIMENSION names used within different versions of Delft3D-Flexible Mesh
-    dimnames_list = pd.DataFrame()
-    dimnames_list['nmesh2d_node'] = ['nmesh2d_node','mesh2d_nNodes','nNetNode','']#'NetElemNode'] # number of nodes
-    dimnames_list['nmesh2d_face'] = ['nmesh2d_face','mesh2d_nFaces','nNetElem','nFlowElem'] # number of faces
-    dimnames_list['nmesh2d_edge'] = ['nmesh2d_edge','','nNetLink',''] # number of velocity-points
+    #dimnames_list = pd.DataFrame()
+    varnames_list['nmesh2d_node'] = ['nmesh2d_node','mesh2d_nNodes','']#,'nNetNode','NetElemNode'] # number of nodes
+    varnames_list['nmesh2d_face'] = ['nmesh2d_face','mesh2d_nFaces','']#,'nNetElem','nFlowElem'] # number of faces
+    varnames_list['nmesh2d_edge'] = ['nmesh2d_edge','','']#,'nNetLink'] # number of velocity-points
     
-    dimnames_list['nmesh2d_layer'] = ['nmesh2d_layer','mesh2d_nLayers','laydim',''] # layer
+    varnames_list['nmesh2d_layer'] = ['nmesh2d_layer','mesh2d_nLayers','']#,'laydim'] # layer
     
     #look for correct pd column
     pdcol_bool = varnames_list.eq(varname_requested).any()
@@ -57,20 +57,30 @@ def get_varname_mapnc(data_nc,varname_requested):
     else:
         varname_pdcol = varname_pdcol[0]
     
-    #check what is in netcdf file
     data_nc_varnames_list = list(data_nc.variables.keys())
-    if varname_requested in data_nc_varnames_list:
-        varname = varname_requested
-    elif varname_pdcol in data_nc_varnames_list:
-        varname = varname_pdcol
-    else:
-        var_options = list(varnames_list[varname_pdcol])
-        varname = [var for var in var_options if var in data_nc_varnames_list]
-        if varname == []:
-            varname = None
+    data_nc_dimnames_list = list(data_nc.dimensions.keys())
+    
+    def get_vardimname(data_nc_names_list):
+        #check what is in netcdf file
+        if varname_requested in data_nc_names_list:
+            varname = varname_requested
+        elif varname_pdcol in data_nc_names_list:
+            varname = varname_pdcol
         else:
-            varname = varname[0]
-
+            var_options = list(varnames_list[varname_pdcol])
+            varname = [var for var in var_options if var in data_nc_names_list]
+            if varname == []:
+                varname = None
+            else:
+                varname = varname[0]
+        return varname
+    
+    varname = get_vardimname(data_nc_varnames_list)
+    if varname is None:
+        varname = get_vardimname(data_nc_dimnames_list)
+    if varname is None:
+        print('WARNING: var/dim name %s or equivalent not found in netCDF file with variables:\n%s \nand dimensions:\n%s'%(varname_requested, data_nc_varnames_list, data_nc_dimnames_list))
+    
     return varname
 
 

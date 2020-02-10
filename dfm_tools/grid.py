@@ -1,7 +1,7 @@
 import numpy as np
 class UGrid:
     """Unstructured grid"""
-    def __init__(self, mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes, verts, mesh2d_node_z=None, *args, **kwargs):
+    def __init__(self, mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes, verts, mesh2d_node_z=None, mesh2d_edge_x=None, mesh2d_edge_y=None, *args, **kwargs):
         self.mesh2d_node_x = mesh2d_node_x
         self.mesh2d_node_y = mesh2d_node_y
         self.mesh2d_face_nodes = mesh2d_face_nodes
@@ -10,10 +10,13 @@ class UGrid:
             self.mesh2d_node_z = mesh2d_node_z
         else:
             self.mesh2d_node_z = np.zeros(self.mesh2d_node_x.shape)
+        self.mesh2d_edge_x = mesh2d_edge_x #can be none?
+        self.mesh2d_edge_y = mesh2d_edge_y #can be none?
     @staticmethod
     def fromfile(file_nc):
         from netCDF4 import Dataset
         from dfm_tools.get_varname_mapnc import get_varname_mapnc
+        from dfm_tools.grid import ghostcell_filter
         
         def nodexyfaces2verts(node_x,node_y, faces):
             quatrangles = faces-1 #convert 1-based indexing to 0-based indexing
@@ -35,17 +38,18 @@ class UGrid:
         mesh2d_face_nodes = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_face_nodes')][:, :]
         verts = nodexyfaces2verts(mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes) #xy coordinates of face nodes
         
-        #remove ghost cells
-        varn = get_varname_mapnc(data_nc,'mesh2d_flowelem_domain')
-        if varn is not None: # domain variable is present, so there are multiple domains
-            domain = data_nc.variables[varn][:]
-            domain_no = np.bincount(domain).argmax() #meest voorkomende domeinnummer
-            verts = verts[domain==domain_no]
-            mesh2d_face_nodes = mesh2d_face_nodes[domain==domain_no]
+        mesh2d_edge_x = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_edge_x')][:]
+        mesh2d_edge_y = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_edge_y')][:]
+        #mesh2d_edge_nodes = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_edge_nodes')][:]
         
+        #remove ghost cells from faces and verts
+        ghostcells_bool, nonghost_ids = ghostcell_filter(file_nc)
+        if ghostcells_bool:
+            mesh2d_face_nodes = mesh2d_face_nodes[nonghost_ids]
+            verts = verts[nonghost_ids]
         
         data_nc.close()
-        ugrid = UGrid(mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes, verts, mesh2d_node_z=mesh2d_node_z)
+        ugrid = UGrid(mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes, verts, mesh2d_node_z=mesh2d_node_z, mesh2d_edge_x=mesh2d_edge_x, mesh2d_edge_y=mesh2d_edge_y)
         return ugrid
 
 
@@ -75,14 +79,40 @@ def get_ncvardims(file_nc, var_values):
     data_nc = Dataset(file_nc)
     # check if requested variable is in netcdf
     nc_varkeys = list(data_nc.variables.keys())
+    nc_varlongnames = []
+    for nc_var in data_nc.variables:
+        try:
+            nc_varlongnames.append(data_nc.variables[nc_var].long_name)
+        except:
+            nc_varlongnames.append('NO long_name defined')
     if var_values not in nc_varkeys:
-        raise Exception('ERROR: requested variable %s not in netcdf, available are: %s'%(var_values, nc_varkeys))
+        raise Exception('ERROR: requested variable %s not in netcdf, available are:\n%s'%(var_values, '\n'.join(map(str,['%-25s: %s'%(nck,ncln) for nck,ncln in zip(nc_varkeys, nc_varlongnames)]))))
     
     nc_values = data_nc.variables[var_values]
     nc_values_shape = nc_values.shape
     nc_values_dims = nc_values.dimensions
     #nc_values_ndims = len(nc_values_dims)
     return nc_varkeys, nc_values, nc_values_shape, nc_values_dims
+
+
+
+def ghostcell_filter(file_nc):
+    from netCDF4 import Dataset
+    
+    from dfm_tools.get_varname_mapnc import get_varname_mapnc
+    
+    data_nc = Dataset(file_nc)
+    
+    varn_domain = get_varname_mapnc(data_nc,'mesh2d_flowelem_domain')
+    if varn_domain is not None: # domain variable is present, so there are multiple domains
+        ghostcells_bool = True
+        domain = data_nc.variables[varn_domain][:]
+        domain_no = np.bincount(domain).argmax() #meest voorkomende domeinnummer
+        nonghost_ids = domain==domain_no
+    else:
+        ghostcells_bool = False
+        nonghost_ids = None
+    return ghostcells_bool, nonghost_ids
 
 
 
@@ -135,12 +165,12 @@ def get_hismapmodeldata(file_nc, var_values=None, multipart=None, timestep=None,
     lay: (list/range/ndarray of) 0-based int
     """
     
-    from netCDF4 import Dataset
     import numpy as np
     import datetime as dt
+    from netCDF4 import Dataset
     
+    from dfm_tools.grid import get_mapfilelist, get_ncvardims, get_timesfromnc, ghostcell_filter
     from dfm_tools.get_varname_mapnc import get_varname_mapnc
-    from dfm_tools.grid import get_mapfilelist, get_ncvardims, get_timesfromnc
     
     #get times
     data_nc_datetimes = get_timesfromnc(file_nc)
@@ -210,19 +240,18 @@ def get_hismapmodeldata(file_nc, var_values=None, multipart=None, timestep=None,
     
     for iF, file_nc_sel in enumerate(file_ncs):
         print('processing mapdata from domain %04d of %04d'%(iF, len(file_ncs)-1))
-        data_nc = Dataset(file_nc_sel)
         
         nc_varkeys, nc_values, nc_values_shape, nc_values_dims = get_ncvardims(file_nc_sel, var_values)
         nc_values_ndims = len(nc_values_shape)
+        ghostcells_bool, nonghost_ids = ghostcell_filter(file_nc_sel)
+        data_nc = Dataset(file_nc)
+        varn_dimfaces = get_varname_mapnc(data_nc,'mesh2d_nFaces')
         
-        #filter ghost cells
-        varn = get_varname_mapnc(data_nc,'mesh2d_flowelem_domain')
-        if varn is not None: # domain variable is present, so there are multiple domains
-            domain = data_nc.variables['mesh2d_flowelem_domain'][:]
-            domain_no = np.bincount(domain).argmax() #meest voorkomende domeinnummer
-            nonghost_ids = domain==domain_no
-
-            
+        if varn_dimfaces in nc_values_dims:
+            var_ghostaffected = True
+        else:
+            var_ghostaffected = False
+        
         # 1 dimension (faces)
         if nc_values_ndims == 1:
             #print('WARNING: untested number of dimensions: %s'%(nc_values_ndims))
@@ -230,7 +259,7 @@ def get_hismapmodeldata(file_nc, var_values=None, multipart=None, timestep=None,
                 values_all = np.ma.empty((0))    
             values = nc_values[:]
             concat_axis = 0
-            if varn is not None: # domain variable is present, so there are multiple domains
+            if ghostcells_bool and var_ghostaffected: # domain variable is present, so there are multiple domains
                 values_all = np.ma.concatenate([values_all,values[nonghost_ids]],axis=concat_axis)
             else:
                 values_all = np.ma.concatenate([values_all,values],axis=concat_axis)
@@ -242,7 +271,7 @@ def get_hismapmodeldata(file_nc, var_values=None, multipart=None, timestep=None,
             #select values
             values = nc_values[time_ids,:]
             concat_axis = 1
-            if varn is not None: # domain variable is present, so there are multiple domains
+            if ghostcells_bool and var_ghostaffected: # domain variable is present, so there are multiple domains
                 values_all = np.ma.concatenate([values_all,values[:,nonghost_ids]],axis=concat_axis)
             else:
                 values_all = np.ma.concatenate([values_all,values],axis=concat_axis)
@@ -253,7 +282,7 @@ def get_hismapmodeldata(file_nc, var_values=None, multipart=None, timestep=None,
             #select values
             values = nc_values[time_ids,:,layer_ids]
             concat_axis = 1
-            if varn is not None: # domain variable is present, so there are multiple domains
+            if ghostcells_bool and var_ghostaffected: # domain variable is present, so there are multiple domains
                 values_all = np.ma.concatenate([values_all,values[:,nonghost_ids,:]],axis=concat_axis)
             else:
                 values_all = np.ma.concatenate([values_all,values],axis=concat_axis)
@@ -294,7 +323,9 @@ def get_netdata(file_nc, multipart=None):
         node_z = ugrid.mesh2d_node_z
         faces = ugrid.mesh2d_face_nodes
         verts = ugrid.verts
-
+        mesh2d_edge_x = ugrid.mesh2d_edge_x
+        mesh2d_edge_y = ugrid.mesh2d_edge_y
+        
         #setup initial array
         if iF == 0:
             node_x_all = np.ma.empty((0,))
@@ -302,6 +333,8 @@ def get_netdata(file_nc, multipart=None):
             node_z_all = np.ma.empty((0,))
             verts_all = np.ma.empty((0,verts_shape2_max,verts.shape[2]))
             faces_all = np.ma.empty((0,verts_shape2_max),dtype='int32')
+            mesh2d_edge_x_all = np.ma.empty((0,))
+            mesh2d_edge_y_all = np.ma.empty((0,))
         
         #if necessary, add masked column(s) to increase size to max in domains
         if verts.shape[1] < verts_shape2_max:
@@ -335,14 +368,16 @@ def get_netdata(file_nc, multipart=None):
         node_z_all = np.ma.concatenate([node_z_all,node_z])
         verts_all = np.ma.concatenate([verts_all,verts])
         faces_all = np.ma.concatenate([faces_all,faces+np.sum(num_nodes)])
+        mesh2d_edge_x_all = np.ma.concatenate([mesh2d_edge_x_all,mesh2d_edge_x])
+        mesh2d_edge_y_all = np.ma.concatenate([mesh2d_edge_y_all,mesh2d_edge_y])
         num_nodes.append(node_x.shape[0])
 
         
     #set all invalid values to the same value (tends to differ between partitions)
-    faces_all.data[faces_all.mask] = -999
-    faces_all.fill_value = -999
+    #faces_all.data[faces_all.mask] = -999
+    #faces_all.fill_value = -999
     
-    ugrid_all = UGrid(node_x_all, node_y_all, faces_all, verts_all)
+    ugrid_all = UGrid(node_x_all, node_y_all, faces_all, verts_all, node_z=node_z_all, mesh2d_edge_x=mesh2d_edge_x_all, mesh2d_edge_y=mesh2d_edge_y_all)
     
     return ugrid_all
 

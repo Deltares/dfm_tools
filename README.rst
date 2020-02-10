@@ -19,7 +19,9 @@ TODO
 - register on PyPI, for easier install via pip (for regular users, not developers):
 	- https://the-hitchhikers-guide-to-packaging.readthedocs.io/en/latest/quickstart.html#register-your-package-with-the-python-package-index-pypi 
 	- also add version numbers (only master branch?)
+	- also add changelog besides commit comments?
 - select data based on datetime (now only timestep/index): get_timeid_fromdatetime
+- how to plot properties on edges (scatter is slow)
 - add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?)
 - hisinfo per station opvragen (now only all)
 - add requested variablename(?), times and layers to outputdata (necessary for plotting his and more), also multiple variables with different dimensions? (class?)     
