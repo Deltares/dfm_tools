@@ -46,7 +46,7 @@ How to work with this git repository
 	- ``conda env create -f environment.yml`` (sometimes you need to press enter if it hangs extremely long)
 	- ``conda info --envs`` (shows github_env virtual environment)
 	- ``conda activate github_env``
-	- ``python -c "import sys; print(sys.executable)"`` (the resulting path you need some steps later)
+	- ``python -c "import sys; print(sys.executable)"`` (the resulting path you need some steps later, eg C:\Users\[user]\AppData\Local\Continuum\anaconda3\envs\github_env\python.exe)
 	- ``conda deactivate``
 	- open spyder from start menu or anaconda or anything
 	- Go to Tools >> Preferences >> Python interpreter >> point to github_env python.exe (print of sys.executable)
