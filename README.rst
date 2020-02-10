@@ -29,12 +29,11 @@ TODO
 
 How to work with this git repository
 --------
-INSTALL GITHUB:
-------------
-- Download git from https://git-scm.com/download/win, install with default settings
-- open command line in a folder where you want to clone the dfm_tools github repo, eg C:\DATA\GitHub
-- git clone https://github.com/openearth/dfm_tools.git (repos gets cloned to local drive, checkout of master branch)
-- to update: ??
+- INSTALL GITHUB:
+	- Download git from https://git-scm.com/download/win, install with default settings
+	- open command line in a folder where you want to clone the dfm_tools github repo, eg C:\DATA\GitHub
+	- git clone https://github.com/openearth/dfm_tools.git (repos gets cloned to local drive, checkout of master branch)
+	- to update: ??
 
 INSTALL PYTHON:
 - Download the newest anaconda 64 bit
