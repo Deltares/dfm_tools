@@ -12,7 +12,6 @@ Features
 - plot net data with map data
 - select data based on variable, timestep, layer
 
-
 TODO
 --------
 - select data based on datetime (now only timestep/index): get_timeid_fromdatetime
@@ -25,8 +24,8 @@ TODO
 	- https://stackoverflow.com/questions/47868134/how-to-slice-2d-grid-from-3d-irrigular-data
 	- https://github.com/pyugrid/pyugrid/tree/master/notebook_examples
 	- https://stackoverflow.com/questions/15748767/interpolation-subsampling-of-3d-data-in-python-without-vtk/15753011#15753011
-- documentatie schrijven als comments en automatisch laten genereren
-- testbank maken en online zetten
+- write documentation as comments and generate automatically
+- create testbank (keep example codelines) and setup auto-testing online
 
 
 How to work with this git repository
