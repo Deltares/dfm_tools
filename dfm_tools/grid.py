@@ -1,7 +1,7 @@
 import numpy as np
 class UGrid:
     """Unstructured grid"""
-    def __init__(self, mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes, verts, mesh2d_node_z=None, mesh2d_edge_x=None, mesh2d_edge_y=None, *args, **kwargs):
+    def __init__(self, mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes, verts, mesh2d_node_z=None, edge_verts=None, *args, **kwargs):
         self.mesh2d_node_x = mesh2d_node_x
         self.mesh2d_node_y = mesh2d_node_y
         self.mesh2d_face_nodes = mesh2d_face_nodes
@@ -10,8 +10,7 @@ class UGrid:
             self.mesh2d_node_z = mesh2d_node_z
         else:
             self.mesh2d_node_z = np.zeros(self.mesh2d_node_x.shape)
-        self.mesh2d_edge_x = mesh2d_edge_x #can be none?
-        self.mesh2d_edge_y = mesh2d_edge_y #can be none?
+        self.edge_verts=edge_verts #can be none?
     @staticmethod
     def fromfile(file_nc):
         from netCDF4 import Dataset
@@ -40,7 +39,8 @@ class UGrid:
         
         mesh2d_edge_x = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_edge_x')][:]
         mesh2d_edge_y = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_edge_y')][:]
-        #mesh2d_edge_nodes = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_edge_nodes')][:]
+        mesh2d_edge_nodes = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_edge_nodes')][:]
+        edge_verts = nodexyfaces2verts(mesh2d_edge_x, mesh2d_edge_y, mesh2d_edge_nodes) #xy coordinates of face nodes
         
         #remove ghost cells from faces and verts
         ghostcells_bool, nonghost_ids = ghostcell_filter(file_nc)
@@ -49,7 +49,7 @@ class UGrid:
             verts = verts[nonghost_ids]
         
         data_nc.close()
-        ugrid = UGrid(mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes, verts, mesh2d_node_z=mesh2d_node_z, mesh2d_edge_x=mesh2d_edge_x, mesh2d_edge_y=mesh2d_edge_y)
+        ugrid = UGrid(mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes, verts, mesh2d_node_z=mesh2d_node_z, edge_verts=edge_verts)
         return ugrid
 
 
@@ -178,7 +178,7 @@ def get_hismapmodeldata(file_nc, var_values=None, multipart=None, timestep=None,
     nc_varkeys, nc_values, nc_values_shape, nc_values_dims = get_ncvardims(file_nc, var_values)
     
     #TIMES CHECKS
-    if len(nc_values_shape) == 1: #only faces/stations dimensions, no times or layers
+    if 'time' not in nc_values_dims: #only faces/stations dimensions, no times or layers
         if timestep is not None:
             raise Exception('ERROR: netcdf file variable (%s) does not contain times, but parameter timestep is provided'%(var_values))
     else: #time is first dimension
@@ -245,14 +245,14 @@ def get_hismapmodeldata(file_nc, var_values=None, multipart=None, timestep=None,
         nc_values_ndims = len(nc_values_shape)
         ghostcells_bool, nonghost_ids = ghostcell_filter(file_nc_sel)
         data_nc = Dataset(file_nc)
-        varn_dimfaces = get_varname_mapnc(data_nc,'mesh2d_nFaces')
         
+        varn_dimfaces = get_varname_mapnc(data_nc,'mesh2d_nFaces')
         if varn_dimfaces in nc_values_dims:
             var_ghostaffected = True
         else:
             var_ghostaffected = False
         
-        # 1 dimension (faces)
+        # 1 dimension (faces/stations)
         if nc_values_ndims == 1:
             #print('WARNING: untested number of dimensions: %s'%(nc_values_ndims))
             if iF == 0: #setup initial array
@@ -323,8 +323,9 @@ def get_netdata(file_nc, multipart=None):
         node_z = ugrid.mesh2d_node_z
         faces = ugrid.mesh2d_face_nodes
         verts = ugrid.verts
-        mesh2d_edge_x = ugrid.mesh2d_edge_x
-        mesh2d_edge_y = ugrid.mesh2d_edge_y
+        #mesh2d_edge_x = ugrid.mesh2d_edge_x
+        #mesh2d_edge_y = ugrid.mesh2d_edge_y
+        edge_verts = ugrid.edge_verts
         
         #setup initial array
         if iF == 0:
@@ -333,9 +334,10 @@ def get_netdata(file_nc, multipart=None):
             node_z_all = np.ma.empty((0,))
             verts_all = np.ma.empty((0,verts_shape2_max,verts.shape[2]))
             faces_all = np.ma.empty((0,verts_shape2_max),dtype='int32')
-            mesh2d_edge_x_all = np.ma.empty((0,))
-            mesh2d_edge_y_all = np.ma.empty((0,))
-        
+            #mesh2d_edge_x_all = np.ma.empty((0,))
+            #mesh2d_edge_y_all = np.ma.empty((0,))
+            edge_verts_all = np.ma.empty((0,2,edge_verts.shape[2]))
+            
         #if necessary, add masked column(s) to increase size to max in domains
         if verts.shape[1] < verts_shape2_max:
             tofew_cols = -(verts.shape[1] - verts_shape2_max)
@@ -368,8 +370,9 @@ def get_netdata(file_nc, multipart=None):
         node_z_all = np.ma.concatenate([node_z_all,node_z])
         verts_all = np.ma.concatenate([verts_all,verts])
         faces_all = np.ma.concatenate([faces_all,faces+np.sum(num_nodes)])
-        mesh2d_edge_x_all = np.ma.concatenate([mesh2d_edge_x_all,mesh2d_edge_x])
-        mesh2d_edge_y_all = np.ma.concatenate([mesh2d_edge_y_all,mesh2d_edge_y])
+        #mesh2d_edge_x_all = np.ma.concatenate([mesh2d_edge_x_all,mesh2d_edge_x])
+        #mesh2d_edge_y_all = np.ma.concatenate([mesh2d_edge_y_all,mesh2d_edge_y])
+        edge_verts_all = np.ma.concatenate([edge_verts_all,edge_verts])
         num_nodes.append(node_x.shape[0])
 
         
@@ -377,7 +380,7 @@ def get_netdata(file_nc, multipart=None):
     #faces_all.data[faces_all.mask] = -999
     #faces_all.fill_value = -999
     
-    ugrid_all = UGrid(node_x_all, node_y_all, faces_all, verts_all, node_z=node_z_all, mesh2d_edge_x=mesh2d_edge_x_all, mesh2d_edge_y=mesh2d_edge_y_all)
+    ugrid_all = UGrid(node_x_all, node_y_all, faces_all, verts_all, node_z=node_z_all, edge_verts=edge_verts_all)
     
     return ugrid_all
 

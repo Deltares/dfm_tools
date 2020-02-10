@@ -78,8 +78,8 @@ def get_varname_mapnc(data_nc,varname_requested):
     varname = get_vardimname(data_nc_varnames_list)
     if varname is None:
         varname = get_vardimname(data_nc_dimnames_list)
-    if varname is None:
-        print('WARNING: var/dim name %s or equivalent not found in netCDF file with variables:\n%s \nand dimensions:\n%s'%(varname_requested, data_nc_varnames_list, data_nc_dimnames_list))
+    #if varname is None:
+    #    print('WARNING: var/dim name %s or equivalent not found in netCDF file with variables:\n%s \nand dimensions:\n%s'%(varname_requested, data_nc_varnames_list, data_nc_dimnames_list))
     
     return varname
 

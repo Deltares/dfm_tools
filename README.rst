@@ -24,6 +24,7 @@ TODO
 - how to plot properties on edges (scatter is slow)
 - add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?)
 - hisinfo per station opvragen (now only all)
+- perform actions by dimension names instead of ndims (station_name variable has two dimensions but no time)
 - add requested variablename(?), times and layers to outputdata (necessary for plotting his and more), also multiple variables with different dimensions? (class?)     
 - add polygon/crossection
 - add inpolygon selection of data
