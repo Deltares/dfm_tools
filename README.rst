@@ -31,17 +31,18 @@ TODO
 
 How to work with this git repository
 --------
-- INSTALL GITHUB:
+- Install Github:
 	- Download git from https://git-scm.com/download/win, install with default settings
 	- open command line in a folder where you want to clone the dfm_tools github repo, eg C:\DATA\GitHub
 	- ``git clone https://github.com/openearth/dfm_tools.git`` (repos gets cloned to local drive, checkout of master branch)
-	- to update: ``??``
+	- to update: ``git pull`` (?)
+	- NOTE: it is also possible to download the zip from https://github.com/openearth/dfm_tools, but this is not recommended since getting the updates is easier this way
 
-- INSTALL PYTHON:
+- Install Python:
 	- Download the newest anaconda 64 bit
 	- install, including PATH checkbox
 
-- OPTIONAL: CREATE SEPARATE PYTHON ENVIRONMENT AND LINK FROM SPYDER:
+- Optional: create separate python environment and link from Spyder:
 	- open command line and navigate to dfm_tools folder, eg C:\DATA\GitHub\dfm_tools
 	- ``conda env create -f environment.yml`` (sometimes you need to press enter if it hangs extremely long)
 	- ``conda info --envs`` (shows github_env virtual environment)
@@ -53,22 +54,22 @@ How to work with this git repository
 	- restart IPython console
 	- optional: ``conda remove -n github_env --all`` (to remove it again when necessary)
 
-- LINK GITHUB CLONE VIA PIP:
+- Install your local github clone via pip:
 	- open command window, navigate to dfm_tools folder, eg C:\DATA\GitHub\dfm_tools
 	- optional: >> activate github_env
 	- >> python -m pip install -e .
 	- (pip developer mode, any updates to folder by github will be available)
 	- (also install all packages in requirements.txt)
 
-- USE IT IN YOUR SCRIPTS:
+- Use it in your scripts:
 	- from dfm_tools.grid import get_netdata, get_hismapmodeldata, plot_netmapdata
 	- check tests folder for examples
 
 
 How to contribute to this git repository
 --------
-- BRANCHING:
-	- First request rights to contribute
+- First request rights to contribute
+- Branching:
 	- open git bash window in local dfm_tools folder (eg C:\DATA\GitHub\dfm_tools)
 	- ``git config --global user.email [emailaddress]``
 	- ``git config --global user.name [username]``
@@ -81,8 +82,9 @@ How to contribute to this git repository
 		- open git bash window in local dfm_tools folder (eg C:\DATA\GitHub\dfm_tools)
 		- ``git checkout --branch branchname`` (create new branch and checkout, combination of git branch and git checkout commands)
 
-- REALLY COMMIT AND PUSH:
+- Commit and push your changes to your online branch:
 	- optional: ``git pull origin master`` (gets edits from master to current local branch, might induce conflicts. maybe better to just push to your branch and then handle pull request on github website)
 	- ``git add .``
 	- ``git commit -m "message to be included with your commit"``
-	- ``git push`` (pushes changes to server, do not do this in while working in the master. local changes are now also visible under branchname on github, there you can request merging with master)
+	- ``git push`` (pushes changes to server, do not do this in while working in the master)
+- Request merging of your branch on https://github.com/openearth/dfm_tools/branches
