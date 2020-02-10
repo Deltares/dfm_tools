@@ -22,9 +22,9 @@ TODO
 - add polygon/crossection
 - add inpolygon selection of data
 - Dfm_tools slicing ugrid:
-	https://stackoverflow.com/questions/47868134/how-to-slice-2d-grid-from-3d-irrigular-data
-	https://github.com/pyugrid/pyugrid/tree/master/notebook_examples
-	https://stackoverflow.com/questions/15748767/interpolation-subsampling-of-3d-data-in-python-without-vtk/15753011#15753011
+	- https://stackoverflow.com/questions/47868134/how-to-slice-2d-grid-from-3d-irrigular-data
+	- https://github.com/pyugrid/pyugrid/tree/master/notebook_examples
+	- https://stackoverflow.com/questions/15748767/interpolation-subsampling-of-3d-data-in-python-without-vtk/15753011#15753011
 - documentatie schrijven als comments en automatisch laten genereren
 - testbank maken en online zetten
 
@@ -44,14 +44,14 @@ How to work with this git repository
 - OPTIONAL: CREATE SEPARATE PYTHON ENVIRONMENT AND LINK FROM SPYDER:
 	- open command line and navigate to dfm_tools folder, eg C:\DATA\GitHub\dfm_tools
 	- ``conda env create -f environment.yml`` (sometimes you need to press enter if it hangs extremely long)
-	- ``conda info --envs (shows github_env virtual environment)``
+	- ``conda info --envs`` (shows github_env virtual environment)
 	- ``conda activate github_env``
 	- ``python -c "import sys; print(sys.executable)"`` (the resulting path you need some steps later)
 	- ``conda deactivate``
 	- open spyder from start menu or anaconda or anything
 	- Go to Tools >> Preferences >> Python interpreter >> point to github_env python.exe (print of sys.executable)
 	- restart IPython console
-	- ``conda remove -n github_env --all`` (to remove it again when necessary)
+	- optional: ``conda remove -n github_env --all`` (to remove it again when necessary)
 
 - LINK GITHUB CLONE VIA PIP:
 	- open command window, navigate to dfm_tools folder, eg C:\DATA\GitHub\dfm_tools
@@ -69,19 +69,20 @@ How to contribute to this git repository
 --------
 - BRANCHING:
 	- First request rights to contribute
-	- open GIT bash window
-	- navigate to local dfm_tools folder (not to folder above, then git does not work)
+	- open git bash window in local dfm_tools folder (eg C:\DATA\GitHub\dfm_tools)
 	- ``git config --global user.email [emailaddress]``
 	- ``git config --global user.name [username]``
 	- Create your own branch option 1:
-		- manually create a branch on website
+		- manually create a branch on https://github.com/openearth/dfm_tools
+		- open git bash window in local dfm_tools folder (eg C:\DATA\GitHub\dfm_tools)
 		- ``git remote update origin --prune`` (update local branch list)
 		- ``git checkout branchname`` (checkout branch)
 	- Create your own branch option 2:
+		- open git bash window in local dfm_tools folder (eg C:\DATA\GitHub\dfm_tools)
 		- ``git checkout --branch branchname`` (create new branch and checkout, combination of git branch and git checkout commands)
 
 - REALLY COMMIT AND PUSH:
-	- Optional: ``git pull origin master`` (gets edits from master to current local branch, might induce conflicts. maybe better to just push to your branch and then handle pull request on github website)
+	- optional: ``git pull origin master`` (gets edits from master to current local branch, might induce conflicts. maybe better to just push to your branch and then handle pull request on github website)
 	- ``git add .``
 	- ``git commit -m "message to be included with your commit"``
 	- ``git push`` (pushes changes to server, do not do this in while working in the master. local changes are now also visible under branchname on github, there you can request merging with master)
