@@ -41,7 +41,7 @@ INSTALL PYTHON:
 
 OPTIONAL: CREATE SEPARATE PYTHON ENVIRONMENT AND LINK FROM SPYDER:
 - open command line and navigate to dfm_tools folder, eg C:\DATA\GitHub\dfm_tools
-- ''conda env create -f environment.yml''
+- ``conda env create -f environment.yml``
 (sometimes you need to press enter if it hangs extremely long)
 - >> conda info --envs (shows github_env virtual environment)
 >> conda activate github_env
