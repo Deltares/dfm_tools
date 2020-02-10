@@ -14,18 +14,18 @@ Features
 
 TODO
 --------
+- move round datetimes to get_timesfromnc (should be pandas Series first)
 - discuss the (future) structure: which functions in which class/script, function names, argument names?
 - allowed to be freely available? add ownrisk-license
 - register on PyPI, for easier install via pip (for regular users, not developers):
 	- https://the-hitchhikers-guide-to-packaging.readthedocs.io/en/latest/quickstart.html#register-your-package-with-the-python-package-index-pypi 
 	- also add version numbers (only master branch?)
 	- also add changelog besides commit comments?
-- select data based on datetime (now only timestep/index): get_timeid_fromdatetime
 - how to plot properties on edges (scatter is slow)
 - add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?)
-- hisinfo per station opvragen (now only all)
+- hisinfo per station opvragen (now only all), also add requested stations to output as values_all.stations
 - perform actions by dimension names instead of ndims (station_name variable has two dimensions but no time)
-- add requested variablename(?), times and layers to outputdata (necessary for plotting his and more), also multiple variables with different dimensions? (class?)     
+- add requested variablename(?), times and layers to outputdata (necessary for plotting his and more), 
 - add polygon/crossection
 - add inpolygon selection of data
 - Dfm_tools slicing ugrid:

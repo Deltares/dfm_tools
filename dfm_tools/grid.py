@@ -73,7 +73,7 @@ def get_mapfilelist(file_nc, multipart=None):
     return file_ncs
 
 
-def get_ncvardims(file_nc, var_values):
+def get_ncvardims(file_nc, varname):
     from netCDF4 import Dataset
     
     data_nc = Dataset(file_nc)
@@ -85,10 +85,10 @@ def get_ncvardims(file_nc, var_values):
             nc_varlongnames.append(data_nc.variables[nc_var].long_name)
         except:
             nc_varlongnames.append('NO long_name defined')
-    if var_values not in nc_varkeys:
-        raise Exception('ERROR: requested variable %s not in netcdf, available are:\n%s'%(var_values, '\n'.join(map(str,['%-25s: %s'%(nck,ncln) for nck,ncln in zip(nc_varkeys, nc_varlongnames)]))))
+    if varname not in nc_varkeys:
+        raise Exception('ERROR: requested variable %s not in netcdf, available are:\n%s'%(varname, '\n'.join(map(str,['%-25s: %s'%(nck,ncln) for nck,ncln in zip(nc_varkeys, nc_varlongnames)]))))
     
-    nc_values = data_nc.variables[var_values]
+    nc_values = data_nc.variables[varname]
     nc_values_shape = nc_values.shape
     nc_values_dims = nc_values.dimensions
     #nc_values_ndims = len(nc_values_dims)
@@ -119,6 +119,7 @@ def ghostcell_filter(file_nc):
 def get_timesfromnc(file_nc):
     from netCDF4 import Dataset,num2date#,date2num
     import numpy as np
+    import pandas as pd
     
     from dfm_tools.get_varname_mapnc import get_varname_mapnc
     
@@ -133,36 +134,39 @@ def get_timesfromnc(file_nc):
     
     data_nc_times = np.arange(time0,timeend+timeinc,timeinc)
     data_nc_datetimes = num2date(data_nc_times, units = data_nc_timevar.units)
+    data_nc_datetimes_pd = pd.Series(data_nc_datetimes).dt.round(freq='S')
     
-    return data_nc_datetimes
+    return data_nc_datetimes_pd
 
 
 
-#TODO: add get timeid from datetime datetime-list datetime-range, do with pandas daterange?
-"""
-def get_timeid_fromdatetime(data_nc_datetimes, timestep):
+
+def get_timeid_fromdatetime(data_nc_datetimes_pd, timestep):
     import pandas as pd
     
-    if type(timestep) is not list:
-        timestep = [timestep]
-    
-    #timestep = dt.datetime(2001,1,1)
-    
-    #time_ids = 
+    timestep_pd = pd.Series(timestep)#.dt.round(freq='S')
+
+    #check if all requested times (timestep) are in netcdf file
+    times_bool_reqinfile = timestep_pd.isin(data_nc_datetimes_pd)
+    if not (times_bool_reqinfile == True).all():
+        raise Exception('ERROR: not all requested times are in netcdf file:\n%s\navailable in netcdf file are:\n\tstart: %s\n\tstop: %s\n\tinterval: %s'%(timestep_pd[-times_bool_reqinfile], data_nc_datetimes_pd.iloc[0], data_nc_datetimes_pd.iloc[-1], data_nc_datetimes_pd.iloc[1]-data_nc_datetimes_pd.iloc[0]))
+        
+    #get ids of requested times in netcdf file
+    times_bool_fileinreq = data_nc_datetimes_pd.isin(timestep_pd)
+    time_ids = np.where(times_bool_fileinreq)[0]
     
     return time_ids
-"""
 
 
 
 
-def get_hismapmodeldata(file_nc, var_values=None, multipart=None, timestep=None, lay=None):
+def get_hismapmodeldata(file_nc, varname, timestep=None, lay=None, stations=None, multipart=None):
     """
     file_nc: path to netcdf file
-    var_values: string of netcdf variable name (standard_name?)
-    multipart: set to False if you want only one of the map domains, can be left out otherwise
+    varname: string of netcdf variable name (standard_name?)
     timestep: (list/range/ndarray of) 0-based int or datetime. Can be used to select one or more specific timesteps, or 'all'
     lay: (list/range/ndarray of) 0-based int
+    multipart: set to False if you want only one of the map domains, can be left out otherwise
     """
     
     import numpy as np
@@ -173,45 +177,45 @@ def get_hismapmodeldata(file_nc, var_values=None, multipart=None, timestep=None,
     from dfm_tools.get_varname_mapnc import get_varname_mapnc
     
     #get times
-    data_nc_datetimes = get_timesfromnc(file_nc)
+    data_nc_datetimes_pd = get_timesfromnc(file_nc)
     #get variable and dimension info
-    nc_varkeys, nc_values, nc_values_shape, nc_values_dims = get_ncvardims(file_nc, var_values)
+    nc_varkeys, nc_values, nc_values_shape, nc_values_dims = get_ncvardims(file_nc, varname)
     
     #TIMES CHECKS
     if 'time' not in nc_values_dims: #only faces/stations dimensions, no times or layers
         if timestep is not None:
-            raise Exception('ERROR: netcdf file variable (%s) does not contain times, but parameter timestep is provided'%(var_values))
+            raise Exception('ERROR: netcdf file variable (%s) does not contain times, but parameter timestep is provided'%(varname))
     else: #time is first dimension
         if timestep is None:
             raise Exception('ERROR: paramter timestep not provided')
         #convert timestep to list of int if it is not already
         if timestep == 'all':
-            time_ids = range(len(data_nc_datetimes))
+            time_ids = range(len(data_nc_datetimes_pd))
         elif type(timestep)==list or type(timestep)==range or type(timestep)==type(np.arange(1,2,0.5)):
             if type(timestep[0])==int: #list/range/ndarray of int
                 time_ids = timestep
-            elif type(timestep[0])==type(dt.datetime(1,1,1)): #list/range/ndarray of datetime
-                raise Exception('not yet possible to retrieve based on datetime (only time indices)')
-                #time_ids = get_timeid_fromdatetime(data_nc_datetimes, timestep)
+            elif type(timestep[0])==type(dt.datetime(1,1,1)) or type(timestep[0])==type(np.datetime64(year=1900,month=1,day=1)): #list/range/ndarray of datetime
+                time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, timestep)
             else:
-                raise Exception('ERROR: timestep variable type not anticipated (%s), (list/range/ndarray of) datetime/int are accepted (or "all")'%(type(timestep)))
+                raise Exception('ERROR: 1timestep variable type not anticipated (%s), (list/range/ndarray of) datetime/int are accepted (or "all")'%(type(timestep)))
         elif type(timestep)==int:
             time_ids = [timestep]
         elif type(timestep)==type(dt.datetime(1,1,1)):
-            raise Exception('not yet possible to retrieve based on datetime (only time indices)')
-            #time_ids = get_timeid_fromdatetime(data_nc_datetimes, timestep)
+            time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, [timestep])
         else:
-            raise Exception('ERROR: timestep variable type not anticipated (%s), (list/range/ndarray of) datetime/int are accepted (or "all")'%(type(timestep)))
+            raise Exception('ERROR: 2timestep variable type not anticipated (%s), (list/range/ndarray of) datetime/int are accepted (or "all")'%(type(timestep)))
         #check if requested times are within range of netcdf
         if np.min(time_ids) < 0:
             raise Exception('ERROR: requested start timestep (%d) is negative'%(np.min(time_ids)))
-        if np.max(time_ids) > len(data_nc_datetimes):
-            raise Exception('ERROR: requested end timestep (%d) is larger than available in netcdf file (%d)'%(np.max(time_ids),len(data_nc_datetimes)))
+        if np.max(time_ids) > len(data_nc_datetimes_pd):
+            raise Exception('ERROR: requested end timestep (%d) is larger than available in netcdf file (%d)'%(np.max(time_ids),len(data_nc_datetimes_pd)))
     
     #LAYER CHECKS
-    if len(nc_values_shape) < 3: #only time and faces/stations dimensions, no layers
+    data_nc = Dataset(file_nc)
+    varn = get_varname_mapnc(data_nc,'nmesh2d_layer')
+    if varn is None or varn not in nc_values_dims: #only time and faces/stations dimensions, no layers
         if lay is not None:
-            raise Exception('ERROR: netcdf file variable (%s) does not contain layers, but parameter lay is provided'%(var_values))
+            raise Exception('ERROR: netcdf file variable (%s) does not contain layers, but parameter lay is provided'%(varname))
     else: #layers are present in variable
         nlayers = nc_values_shape[2]
         if lay is None:
@@ -233,7 +237,13 @@ def get_hismapmodeldata(file_nc, var_values=None, multipart=None, timestep=None,
             raise Exception('ERROR: requested minimal layer (%d) is negative'%(np.min(layer_ids)))
         if np.max(layer_ids) > nlayers:
             raise Exception('ERROR: requested max layer (%d) is larger than available in netcdf file (%d)'%(np.max(layer_ids),nlayers))
-        
+    
+    #check ghost cell existence
+    varn_dimfaces = get_varname_mapnc(data_nc,'mesh2d_nFaces')
+    if varn_dimfaces in nc_values_dims:
+        var_ghostaffected = True
+    else:
+        var_ghostaffected = False
     
     file_ncs = get_mapfilelist(file_nc, multipart)
     
@@ -241,16 +251,9 @@ def get_hismapmodeldata(file_nc, var_values=None, multipart=None, timestep=None,
     for iF, file_nc_sel in enumerate(file_ncs):
         print('processing mapdata from domain %04d of %04d'%(iF, len(file_ncs)-1))
         
-        nc_varkeys, nc_values, nc_values_shape, nc_values_dims = get_ncvardims(file_nc_sel, var_values)
+        nc_varkeys, nc_values, nc_values_shape, nc_values_dims = get_ncvardims(file_nc_sel, varname)
         nc_values_ndims = len(nc_values_shape)
         ghostcells_bool, nonghost_ids = ghostcell_filter(file_nc_sel)
-        data_nc = Dataset(file_nc)
-        
-        varn_dimfaces = get_varname_mapnc(data_nc,'mesh2d_nFaces')
-        if varn_dimfaces in nc_values_dims:
-            var_ghostaffected = True
-        else:
-            var_ghostaffected = False
         
         # 1 dimension (faces/stations)
         if nc_values_ndims == 1:
@@ -289,7 +292,21 @@ def get_hismapmodeldata(file_nc, var_values=None, multipart=None, timestep=None,
 
         else:
             raise Exception('unanticipated number of dimensions: %s'%(nc_values_ndims))
-    
+        
+        #add metadata
+        values_all.varname = varname
+        if 'time' in nc_values_dims: #only faces/stations dimensions, no times or layers
+            values_all.times = data_nc_datetimes_pd.iloc[time_ids]
+        else:
+            values_all.times = None
+        if varn is None or varn not in nc_values_dims: #only time and faces/stations dimensions, no layers
+            values_all.layers = None
+        else:
+            values_all.layers = layer_ids
+        #if :
+        #    values_all.stations = ...
+        #else:
+        #    values_all.stations = None
     return values_all
 
 

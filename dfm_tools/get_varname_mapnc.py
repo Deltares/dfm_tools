@@ -45,7 +45,7 @@ def get_varname_mapnc(data_nc,varname_requested):
     varnames_list['nmesh2d_face'] = ['nmesh2d_face','mesh2d_nFaces','']#,'nNetElem','nFlowElem'] # number of faces
     varnames_list['nmesh2d_edge'] = ['nmesh2d_edge','','']#,'nNetLink'] # number of velocity-points
     
-    varnames_list['nmesh2d_layer'] = ['nmesh2d_layer','mesh2d_nLayers','']#,'laydim'] # layer
+    varnames_list['nmesh2d_layer'] = ['nmesh2d_layer','mesh2d_nLayers','laydim'] # layer
     
     #look for correct pd column
     pdcol_bool = varnames_list.eq(varname_requested).any()
