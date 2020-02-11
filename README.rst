@@ -16,6 +16,7 @@ Features
 
 TODO project
 --------
+- add shapely library to requirements?
 - hisinfo per station opvragen (now only all), also add requested stations to output as values_all.stations
 - add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?) (refer depth wrt reference level, water level or bed level, z variable is not correct in dfm-mapfile yet), also needed for his? (no mesh2d_node_z there)
 - perform actions by dimension names instead of ndims (station_name variable has two dimensions but no time)
@@ -30,7 +31,7 @@ TODO
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/plotting_example.ipynb
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/vector_plotting_example.ipynb
 - create overview tree of all functions, also add missing functions here
-- remove varnames which are not grid related from translation table
+- remove varnames which are not gridvarname or dimension related from translation table
 - add variable to values_all with dimension names
 - construeer tijden op basis van 2 en 3 (1 en 2), alleen als timevec langer dan 2
 - discuss the (future) structure: which functions in which class/script, function names, argument names?
@@ -49,6 +50,7 @@ TODO
 	- https://stackoverflow.com/questions/15748767/interpolation-subsampling-of-3d-data-in-python-without-vtk/15753011#15753011
 	- https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.griddata.html#scipy.interpolate.griddata
 	- https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.Rbf.html
+	- https://github.com/modflowpy/flopy/issues/536#2.2
 - add inpolygon selection of data
 - add polygon read/write function, add ginput polygon function (click in plot)
 - write documentation as comments and generate automatically

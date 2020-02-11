@@ -1,15 +1,16 @@
 import numpy as np
 class UGrid:
     """Unstructured grid"""
-    def __init__(self, mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes, verts, mesh2d_node_z=None, edge_verts=None, *args, **kwargs):
+    def __init__(self, mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes, verts, mesh2d_node_z=None, edge_verts=None):
         self.mesh2d_node_x = mesh2d_node_x
         self.mesh2d_node_y = mesh2d_node_y
         self.mesh2d_face_nodes = mesh2d_face_nodes
         self.verts = verts
-        if mesh2d_node_z is not None:
-            self.mesh2d_node_z = mesh2d_node_z
-        else:
-            self.mesh2d_node_z = np.zeros(self.mesh2d_node_x.shape)
+        self.mesh2d_node_z = mesh2d_node_z
+        #if mesh2d_node_z is not None:
+        #    self.mesh2d_node_z = mesh2d_node_z
+        #else:
+        #    self.mesh2d_node_z = np.zeros(self.mesh2d_node_x.shape)
         self.edge_verts=edge_verts #can be none?
     @staticmethod
     def fromfile(file_nc):
@@ -212,8 +213,8 @@ def get_hismapmodeldata(file_nc, varname, timestep=None, lay=None, stations=None
         #check if requested times are within range of netcdf
         if np.min(time_ids) < 0:
             raise Exception('ERROR: requested start timestep (%d) is negative'%(np.min(time_ids)))
-        if np.max(time_ids) > len(data_nc_datetimes_pd):
-            raise Exception('ERROR: requested end timestep (%d) is larger than available in netcdf file (%d)'%(np.max(time_ids),len(data_nc_datetimes_pd)))
+        if np.max(time_ids) > len(data_nc_datetimes_pd)-1:
+            raise Exception('ERROR: requested end timestep (%d) is larger than available in netcdf file (%d)'%(np.max(time_ids),len(data_nc_datetimes_pd)-1))
     
     #LAYER CHECKS
     dimn_layer = get_varname_mapnc(data_nc,'nmesh2d_layer')
@@ -372,7 +373,10 @@ def get_netdata(file_nc, multipart=None):
         if iF == 0:
             node_x_all = np.ma.empty((0,))
             node_y_all = np.ma.empty((0,))
-            node_z_all = np.ma.empty((0,))
+            if node_z is not None:
+                node_z_all = np.ma.empty((0,))
+            else:
+                node_z_all = None
             verts_all = np.ma.empty((0,verts_shape2_max,verts.shape[2]))
             faces_all = np.ma.empty((0,verts_shape2_max),dtype='int32')
             #mesh2d_edge_x_all = np.ma.empty((0,))
@@ -408,7 +412,8 @@ def get_netdata(file_nc, multipart=None):
         #merge all
         node_x_all = np.ma.concatenate([node_x_all,node_x])
         node_y_all = np.ma.concatenate([node_y_all,node_y])
-        node_z_all = np.ma.concatenate([node_z_all,node_z])
+        if node_z is not None:
+            node_z_all = np.ma.concatenate([node_z_all,node_z])
         verts_all = np.ma.concatenate([verts_all,verts])
         faces_all = np.ma.concatenate([faces_all,faces+np.sum(num_nodes)])
         #mesh2d_edge_x_all = np.ma.concatenate([mesh2d_edge_x_all,mesh2d_edge_x])
@@ -416,13 +421,12 @@ def get_netdata(file_nc, multipart=None):
         edge_verts_all = np.ma.concatenate([edge_verts_all,edge_verts])
         num_nodes.append(node_x.shape[0])
 
-        
     #set all invalid values to the same value (tends to differ between partitions)
     #faces_all.data[faces_all.mask] = -999
     #faces_all.fill_value = -999
     
-    ugrid_all = UGrid(node_x_all, node_y_all, faces_all, verts_all, node_z=node_z_all, edge_verts=edge_verts_all)
-    
+    ugrid_all = UGrid(node_x_all, node_y_all, faces_all, verts_all, mesh2d_node_z=node_z_all, edge_verts=edge_verts_all)
+    ugrid_all
     return ugrid_all
 
 
