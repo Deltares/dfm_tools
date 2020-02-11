@@ -18,7 +18,7 @@ class UGrid:
         from dfm_tools.grid import ghostcell_filter
         
         def nodexyfaces2verts(node_x,node_y, faces):
-            quatrangles = faces-1 #convert 1-based indexing to 0-based indexing
+            quatrangles = faces-1 #convert 1-based indexing of cell numbering in ugrid to 0-based indexing
             #https://stackoverflow.com/questions/49640311/matplotlib-unstructered-quadrilaterals-instead-of-triangles
             #https://stackoverflow.com/questions/52202014/how-can-i-plot-2d-fem-results-using-matplotlib
             yz = np.c_[node_x,node_y]
@@ -30,8 +30,9 @@ class UGrid:
 
         mesh2d_node_x = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_node_x')][:]
         mesh2d_node_y = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_node_y')][:]
-        if get_varname_mapnc(data_nc,'mesh2d_node_z') is not None: # node_z variable is present
-            mesh2d_node_z = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_node_z')][:]
+        varn_mesh2d_node_z = get_varname_mapnc(data_nc,'mesh2d_node_z')
+        if varn_mesh2d_node_z is not None: # node_z variable is present
+            mesh2d_node_z = data_nc.variables[varn_mesh2d_node_z][:]
         else:
             mesh2d_node_z = None
         mesh2d_face_nodes = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_face_nodes')][:, :]

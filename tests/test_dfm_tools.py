@@ -109,13 +109,13 @@ def Test_grid_gethismodeldata(self):
     print('plot grid and values from mapdata (waterlevel, 2 dim)')
     data_fromhis = get_hismapmodeldata(file_nc=file_his, varname='waterlevel', timestep='all')#, multipart=False)
     fig, ax = plt.subplots()
-    ax.plot(list(range(len(data_fromhis))),data_fromhis,'-')
+    ax.plot(data_fromhis.times,data_fromhis,'-')
     
     print('plot grid and values from mapdata (salinity, 3 dim)')
     data_fromhis = get_hismapmodeldata(file_nc=file_his, varname='salinity', timestep='all', lay=5)#, multipart=False)
     data_fromhis_flat = data_fromhis[:,:,0]
     fig, ax = plt.subplots()
-    ax.plot(list(range(len(data_fromhis))),data_fromhis_flat,'-')
+    ax.plot(data_fromhis.times,data_fromhis_flat,'-')
     
     
 def Test_grid_getnetdata_getmapmodeldata_plotnetmapdata(self):
@@ -157,7 +157,7 @@ def Test_grid_getnetdata_getmapmodeldata_plotnetmapdata(self):
     #pc.set_clim([28,30.2])
     fig.colorbar(pc, ax=ax)
     ax.set_aspect('equal')
-    
+        
     #GREVELINGEN
     print('plot only grid from mapdata')
     ugrid_all = get_netdata(file_nc=file_map8)#,multipart=False)
