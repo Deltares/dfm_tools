@@ -23,6 +23,12 @@ TODO project
 
 TODO
 --------
+- style guide: https://www.python.org/dev/peps/pep-0008/
+- pyugrid (ghostcells? sowieso goed voor plotopties):
+	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/Delft3D%20examples.ipynb
+	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/connectivity_example.ipynb
+	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/plotting_example.ipynb
+	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/vector_plotting_example.ipynb
 - create overview tree of all functions, also add missing functions here
 - remove varnames which are not grid related from translation table
 - add variable to values_all with dimension names
