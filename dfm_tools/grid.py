@@ -1,7 +1,7 @@
 import numpy as np
 class UGrid:
     """Unstructured grid"""
-    def __init__(self, mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes, verts, mesh2d_node_z=None, *args, **kwargs):
+    def __init__(self, mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes, verts, mesh2d_node_z=None, edge_verts=None, *args, **kwargs):
         self.mesh2d_node_x = mesh2d_node_x
         self.mesh2d_node_y = mesh2d_node_y
         self.mesh2d_face_nodes = mesh2d_face_nodes
@@ -10,13 +10,15 @@ class UGrid:
             self.mesh2d_node_z = mesh2d_node_z
         else:
             self.mesh2d_node_z = np.zeros(self.mesh2d_node_x.shape)
+        self.edge_verts=edge_verts #can be none?
     @staticmethod
     def fromfile(file_nc):
         from netCDF4 import Dataset
         from dfm_tools.get_varname_mapnc import get_varname_mapnc
+        from dfm_tools.grid import ghostcell_filter
         
         def nodexyfaces2verts(node_x,node_y, faces):
-            quatrangles = faces-1 #convert 1-based indexing to 0-based indexing
+            quatrangles = faces-1 #convert 1-based indexing of cell numbering in ugrid to 0-based indexing
             #https://stackoverflow.com/questions/49640311/matplotlib-unstructered-quadrilaterals-instead-of-triangles
             #https://stackoverflow.com/questions/52202014/how-can-i-plot-2d-fem-results-using-matplotlib
             yz = np.c_[node_x,node_y]
@@ -28,24 +30,27 @@ class UGrid:
 
         mesh2d_node_x = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_node_x')][:]
         mesh2d_node_y = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_node_y')][:]
-        if get_varname_mapnc(data_nc,'mesh2d_node_z') is not None: # node_z variable is present
-            mesh2d_node_z = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_node_z')][:]
+        varn_mesh2d_node_z = get_varname_mapnc(data_nc,'mesh2d_node_z')
+        if varn_mesh2d_node_z is not None: # node_z variable is present
+            mesh2d_node_z = data_nc.variables[varn_mesh2d_node_z][:]
         else:
             mesh2d_node_z = None
         mesh2d_face_nodes = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_face_nodes')][:, :]
         verts = nodexyfaces2verts(mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes) #xy coordinates of face nodes
         
-        #remove ghost cells
-        varn = get_varname_mapnc(data_nc,'mesh2d_flowelem_domain')
-        if varn is not None: # domain variable is present, so there are multiple domains
-            domain = data_nc.variables[varn][:]
-            domain_no = np.bincount(domain).argmax() #meest voorkomende domeinnummer
-            verts = verts[domain==domain_no]
-            mesh2d_face_nodes = mesh2d_face_nodes[domain==domain_no]
+        mesh2d_edge_x = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_edge_x')][:]
+        mesh2d_edge_y = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_edge_y')][:]
+        mesh2d_edge_nodes = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_edge_nodes')][:]
+        edge_verts = nodexyfaces2verts(mesh2d_edge_x, mesh2d_edge_y, mesh2d_edge_nodes) #xy coordinates of face nodes
         
+        #remove ghost cells from faces and verts
+        ghostcells_bool, nonghost_ids = ghostcell_filter(file_nc)
+        if ghostcells_bool:
+            mesh2d_face_nodes = mesh2d_face_nodes[nonghost_ids]
+            verts = verts[nonghost_ids]
         
         data_nc.close()
-        ugrid = UGrid(mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes, verts, mesh2d_node_z=mesh2d_node_z)
+        ugrid = UGrid(mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes, verts, mesh2d_node_z=mesh2d_node_z, edge_verts=edge_verts)
         return ugrid
 
 
@@ -69,16 +74,22 @@ def get_mapfilelist(file_nc, multipart=None):
     return file_ncs
 
 
-def get_ncvardims(file_nc, var_values):
+def get_ncvardims(file_nc, varname):
     from netCDF4 import Dataset
     
     data_nc = Dataset(file_nc)
     # check if requested variable is in netcdf
     nc_varkeys = list(data_nc.variables.keys())
-    if var_values not in nc_varkeys:
-        raise Exception('ERROR: requested variable %s not in netcdf, available are: %s'%(var_values, nc_varkeys))
+    nc_varlongnames = []
+    for nc_var in data_nc.variables:
+        try:
+            nc_varlongnames.append(data_nc.variables[nc_var].long_name)
+        except:
+            nc_varlongnames.append('NO long_name defined')
+    if varname not in nc_varkeys:
+        raise Exception('ERROR: requested variable %s not in netcdf, available are:\n%s'%(varname, '\n'.join(map(str,['%-25s: %s'%(nck,ncln) for nck,ncln in zip(nc_varkeys, nc_varlongnames)]))))
     
-    nc_values = data_nc.variables[var_values]
+    nc_values = data_nc.variables[varname]
     nc_values_shape = nc_values.shape
     nc_values_dims = nc_values.dimensions
     #nc_values_ndims = len(nc_values_dims)
@@ -86,9 +97,30 @@ def get_ncvardims(file_nc, var_values):
 
 
 
+def ghostcell_filter(file_nc):
+    from netCDF4 import Dataset
+    
+    from dfm_tools.get_varname_mapnc import get_varname_mapnc
+    
+    data_nc = Dataset(file_nc)
+    
+    varn_domain = get_varname_mapnc(data_nc,'mesh2d_flowelem_domain')
+    if varn_domain is not None: # domain variable is present, so there are multiple domains
+        ghostcells_bool = True
+        domain = data_nc.variables[varn_domain][:]
+        domain_no = np.bincount(domain).argmax() #meest voorkomende domeinnummer
+        nonghost_ids = domain==domain_no
+    else:
+        ghostcells_bool = False
+        nonghost_ids = None
+    return ghostcells_bool, nonghost_ids
+
+
+
 def get_timesfromnc(file_nc):
     from netCDF4 import Dataset,num2date#,date2num
     import numpy as np
+    import pandas as pd
     
     from dfm_tools.get_varname_mapnc import get_varname_mapnc
     
@@ -103,89 +135,97 @@ def get_timesfromnc(file_nc):
     
     data_nc_times = np.arange(time0,timeend+timeinc,timeinc)
     data_nc_datetimes = num2date(data_nc_times, units = data_nc_timevar.units)
+    data_nc_datetimes_pd = pd.Series(data_nc_datetimes).dt.round(freq='S')
     
-    return data_nc_datetimes
+    return data_nc_datetimes_pd
 
 
 
-#TODO: add get timeid from datetime datetime-list datetime-range, do with pandas daterange?
-"""
-def get_timeid_fromdatetime(data_nc_datetimes, timestep):
+
+def get_timeid_fromdatetime(data_nc_datetimes_pd, timestep):
     import pandas as pd
     
-    if type(timestep) is not list:
-        timestep = [timestep]
-    
-    #timestep = dt.datetime(2001,1,1)
-    
-    #time_ids = 
+    timestep_pd = pd.Series(timestep)#.dt.round(freq='S')
+
+    #check if all requested times (timestep) are in netcdf file
+    times_bool_reqinfile = timestep_pd.isin(data_nc_datetimes_pd)
+    if not (times_bool_reqinfile == True).all():
+        raise Exception('ERROR: not all requested times are in netcdf file:\n%s\navailable in netcdf file are:\n\tstart: %s\n\tstop: %s\n\tinterval: %s'%(timestep_pd[-times_bool_reqinfile], data_nc_datetimes_pd.iloc[0], data_nc_datetimes_pd.iloc[-1], data_nc_datetimes_pd.iloc[1]-data_nc_datetimes_pd.iloc[0]))
+        
+    #get ids of requested times in netcdf file
+    times_bool_fileinreq = data_nc_datetimes_pd.isin(timestep_pd)
+    time_ids = np.where(times_bool_fileinreq)[0]
     
     return time_ids
-"""
 
 
 
 
-def get_hismapmodeldata(file_nc, var_values=None, multipart=None, timestep=None, lay=None):
+def get_hismapmodeldata(file_nc, varname, timestep=None, lay=None, stations=None, multipart=None):
     """
     file_nc: path to netcdf file
-    var_values: string of netcdf variable name (standard_name?)
-    multipart: set to False if you want only one of the map domains, can be left out otherwise
+    varname: string of netcdf variable name (standard_name?)
     timestep: (list/range/ndarray of) 0-based int or datetime. Can be used to select one or more specific timesteps, or 'all'
     lay: (list/range/ndarray of) 0-based int
+    multipart: set to False if you want only one of the map domains, can be left out otherwise
     """
     
-    from netCDF4 import Dataset
     import numpy as np
     import datetime as dt
+    from netCDF4 import Dataset
     
+    from dfm_tools.grid import get_mapfilelist, get_ncvardims, get_timesfromnc, ghostcell_filter
     from dfm_tools.get_varname_mapnc import get_varname_mapnc
-    from dfm_tools.grid import get_mapfilelist, get_ncvardims, get_timesfromnc
     
     #get times
-    data_nc_datetimes = get_timesfromnc(file_nc)
+    data_nc_datetimes_pd = get_timesfromnc(file_nc)
     #get variable and dimension info
-    nc_varkeys, nc_values, nc_values_shape, nc_values_dims = get_ncvardims(file_nc, var_values)
+    nc_varkeys, nc_values, nc_values_shape, nc_values_dims = get_ncvardims(file_nc, varname)
+    data_nc = Dataset(file_nc)
     
     #TIMES CHECKS
-    if len(nc_values_shape) == 1: #only faces/stations dimensions, no times or layers
+    #if 'time' in nc_values_dims: #dimension time is available in variable
+    #    
+    dimn_time = get_varname_mapnc(data_nc,'time')
+    if dimn_time not in nc_values_dims: #only faces/stations dimensions, no times or layers
         if timestep is not None:
-            raise Exception('ERROR: netcdf file variable (%s) does not contain times, but parameter timestep is provided'%(var_values))
+            raise Exception('ERROR: netcdf file variable (%s) does not contain times, but parameter timestep is provided'%(varname))
     else: #time is first dimension
         if timestep is None:
-            raise Exception('ERROR: paramter timestep not provided')
+            raise Exception('ERROR: netcdf variable contains a time dimension, but paramter timestep not provided')
         #convert timestep to list of int if it is not already
         if timestep == 'all':
-            time_ids = range(len(data_nc_datetimes))
+            time_ids = range(len(data_nc_datetimes_pd))
         elif type(timestep)==list or type(timestep)==range or type(timestep)==type(np.arange(1,2,0.5)):
             if type(timestep[0])==int: #list/range/ndarray of int
                 time_ids = timestep
-            elif type(timestep[0])==type(dt.datetime(1,1,1)): #list/range/ndarray of datetime
-                raise Exception('not yet possible to retrieve based on datetime (only time indices)')
-                #time_ids = get_timeid_fromdatetime(data_nc_datetimes, timestep)
+            elif type(timestep[0])==type(dt.datetime(1,1,1)) or type(timestep[0])==type(np.datetime64(year=1900,month=1,day=1)): #list/range/ndarray of datetime
+                time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, timestep)
             else:
-                raise Exception('ERROR: timestep variable type not anticipated (%s), (list/range/ndarray of) datetime/int are accepted (or "all")'%(type(timestep)))
+                raise Exception('ERROR: 1timestep variable type not anticipated (%s), (list/range/ndarray of) datetime/int are accepted (or "all")'%(type(timestep)))
         elif type(timestep)==int:
             time_ids = [timestep]
         elif type(timestep)==type(dt.datetime(1,1,1)):
-            raise Exception('not yet possible to retrieve based on datetime (only time indices)')
-            #time_ids = get_timeid_fromdatetime(data_nc_datetimes, timestep)
+            time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, [timestep])
         else:
-            raise Exception('ERROR: timestep variable type not anticipated (%s), (list/range/ndarray of) datetime/int are accepted (or "all")'%(type(timestep)))
+            raise Exception('ERROR: 2timestep variable type not anticipated (%s), (list/range/ndarray of) datetime/int are accepted (or "all")'%(type(timestep)))
         #check if requested times are within range of netcdf
         if np.min(time_ids) < 0:
             raise Exception('ERROR: requested start timestep (%d) is negative'%(np.min(time_ids)))
-        if np.max(time_ids) > len(data_nc_datetimes):
-            raise Exception('ERROR: requested end timestep (%d) is larger than available in netcdf file (%d)'%(np.max(time_ids),len(data_nc_datetimes)))
+        if np.max(time_ids) > len(data_nc_datetimes_pd):
+            raise Exception('ERROR: requested end timestep (%d) is larger than available in netcdf file (%d)'%(np.max(time_ids),len(data_nc_datetimes_pd)))
     
     #LAYER CHECKS
-    if len(nc_values_shape) < 3: #only time and faces/stations dimensions, no layers
+    dimn_layer = get_varname_mapnc(data_nc,'nmesh2d_layer')
+    if dimn_layer is None or dimn_layer not in nc_values_dims: #only time and faces/stations dimensions, no layers
         if lay is not None:
-            raise Exception('ERROR: netcdf file variable (%s) does not contain layers, but parameter lay is provided'%(var_values))
+            raise Exception('ERROR: netcdf variable (%s) does not contain layers, but parameter lay is provided'%(varname))
     else: #layers are present in variable
-        nlayers = nc_values_shape[2]
+        #nlayers = nc_values_shape[2]
+        dimn_layer_id = nc_values_dims.index(dimn_layer)
+        nlayers = nc_values_shape[dimn_layer_id]
         if lay is None:
-            raise Exception('ERROR: netcdf file contains layers, but paramter lay not provided')
+            raise Exception('ERROR: netcdf variable contains a layer dimension, but paramter lay not provided')
         #convert layer to list of int if it is not already
         if lay == 'all':
             layer_ids = range(nlayers)
@@ -203,64 +243,94 @@ def get_hismapmodeldata(file_nc, var_values=None, multipart=None, timestep=None,
             raise Exception('ERROR: requested minimal layer (%d) is negative'%(np.min(layer_ids)))
         if np.max(layer_ids) > nlayers:
             raise Exception('ERROR: requested max layer (%d) is larger than available in netcdf file (%d)'%(np.max(layer_ids),nlayers))
-        
+    
+    #check ghost cell existence
+    dimn_faces = get_varname_mapnc(data_nc,'mesh2d_nFaces')
+    if dimn_faces in nc_values_dims:
+        var_ghostaffected = True
+    else:
+        var_ghostaffected = False
     
     file_ncs = get_mapfilelist(file_nc, multipart)
     
     
     for iF, file_nc_sel in enumerate(file_ncs):
         print('processing mapdata from domain %04d of %04d'%(iF, len(file_ncs)-1))
-        data_nc = Dataset(file_nc_sel)
         
-        nc_varkeys, nc_values, nc_values_shape, nc_values_dims = get_ncvardims(file_nc_sel, var_values)
+        nc_varkeys, nc_values, nc_values_shape, nc_values_dims = get_ncvardims(file_nc_sel, varname)
         nc_values_ndims = len(nc_values_shape)
+        ghostcells_bool, nonghost_ids = ghostcell_filter(file_nc_sel)
         
-        #filter ghost cells
-        varn = get_varname_mapnc(data_nc,'mesh2d_flowelem_domain')
-        if varn is not None: # domain variable is present, so there are multiple domains
-            domain = data_nc.variables['mesh2d_flowelem_domain'][:]
-            domain_no = np.bincount(domain).argmax() #meest voorkomende domeinnummer
-            nonghost_ids = domain==domain_no
-
-            
-        # 1 dimension (faces)
+        # 1 dimension (faces/stations)
         if nc_values_ndims == 1:
-            #print('WARNING: untested number of dimensions: %s'%(nc_values_ndims))
             if iF == 0: #setup initial array
                 values_all = np.ma.empty((0))    
             values = nc_values[:]
             concat_axis = 0
-            if varn is not None: # domain variable is present, so there are multiple domains
+            if ghostcells_bool and var_ghostaffected: # domain variable is present, so there are multiple domains
                 values_all = np.ma.concatenate([values_all,values[nonghost_ids]],axis=concat_axis)
             else:
                 values_all = np.ma.concatenate([values_all,values],axis=concat_axis)
 
         # 2 dimensions (time, faces/stations)
         elif nc_values_ndims == 2:
+            if not (nc_values_dims[0] == dimn_time): # and nc_values_dims[1] == dimn_faces
+                raise Exception('ERROR: unexpected dimension order, should be something like (time, faces/stations, layers): %s'%(str(nc_values_dims)))
             if iF == 0: #setup initial array
                 values_all = np.ma.empty((len(time_ids),0))    
             #select values
             values = nc_values[time_ids,:]
             concat_axis = 1
-            if varn is not None: # domain variable is present, so there are multiple domains
+            if ghostcells_bool and var_ghostaffected: # domain variable is present, so there are multiple domains
                 values_all = np.ma.concatenate([values_all,values[:,nonghost_ids]],axis=concat_axis)
             else:
                 values_all = np.ma.concatenate([values_all,values],axis=concat_axis)
+        
         # 3 dimensions (time, faces/stations, layers)
         elif nc_values_ndims == 3:
-            if iF == 0: #setup initial array
-                values_all = np.ma.empty((len(time_ids),0,len(layer_ids)))
-            #select values
-            values = nc_values[time_ids,:,layer_ids]
-            concat_axis = 1
-            if varn is not None: # domain variable is present, so there are multiple domains
-                values_all = np.ma.concatenate([values_all,values[:,nonghost_ids,:]],axis=concat_axis)
+            #if not (nc_values_dims[0] == dimn_time and nc_values_dims[2] == dimn_layer): # and nc_values_dims[1] == dimn_faces
+            #    raise Exception('ERROR: unexpected dimension order, should be something like (time, faces/stations, layers): %s'%(str(nc_values_dims)))
+            if (nc_values_dims[0] == dimn_time and nc_values_dims[2] == dimn_layer): # and nc_values_dims[1] == dimn_faces
+                if iF == 0: #setup initial array
+                    values_all = np.ma.empty((len(time_ids),0,len(layer_ids)))
+                #select values
+                values = nc_values[time_ids,:,layer_ids]
+                concat_axis = 1
+                if ghostcells_bool and var_ghostaffected: # domain variable is present, so there are multiple domains
+                    values_all = np.ma.concatenate([values_all,values[:,nonghost_ids,:]],axis=concat_axis)
+                else:
+                    values_all = np.ma.concatenate([values_all,values],axis=concat_axis)
+            elif (nc_values_dims[0] == dimn_time and nc_values_dims[1] == dimn_layer): #TODO: remove this exception for files Lora?
+                print('WARNING: unexpected dimension order, supported for waqfiles Lora: %s'%(str(nc_values_dims)))
+                if iF == 0: #setup initial array
+                    values_all = np.ma.empty((len(time_ids),len(layer_ids),0))
+                #select values
+                values = nc_values[time_ids,layer_ids,:]
+                concat_axis = 2
+                if ghostcells_bool and var_ghostaffected: # domain variable is present, so there are multiple domains
+                    values_all = np.ma.concatenate([values_all,values[:,:,nonghost_ids]],axis=concat_axis)
+                else:
+                    values_all = np.ma.concatenate([values_all,values],axis=concat_axis)
             else:
-                values_all = np.ma.concatenate([values_all,values],axis=concat_axis)
+                raise Exception('ERROR: unexpected dimension order: %s'%(str(nc_values_dims)))
 
         else:
             raise Exception('unanticipated number of dimensions: %s'%(nc_values_ndims))
-    
+        
+        #add metadata
+        values_all.varname = varname
+        if dimn_time in nc_values_dims: #only faces/stations dimensions, no times or layers
+            values_all.times = data_nc_datetimes_pd.iloc[time_ids]
+        else:
+            values_all.times = None
+        if dimn_layer is None or dimn_layer not in nc_values_dims: #only time and faces/stations dimensions, no layers
+            values_all.layers = None
+        else:
+            values_all.layers = layer_ids
+        #if :
+        #    values_all.stations = ...
+        #else:
+        #    values_all.stations = None
     return values_all
 
 
@@ -294,7 +364,10 @@ def get_netdata(file_nc, multipart=None):
         node_z = ugrid.mesh2d_node_z
         faces = ugrid.mesh2d_face_nodes
         verts = ugrid.verts
-
+        #mesh2d_edge_x = ugrid.mesh2d_edge_x
+        #mesh2d_edge_y = ugrid.mesh2d_edge_y
+        edge_verts = ugrid.edge_verts
+        
         #setup initial array
         if iF == 0:
             node_x_all = np.ma.empty((0,))
@@ -302,7 +375,10 @@ def get_netdata(file_nc, multipart=None):
             node_z_all = np.ma.empty((0,))
             verts_all = np.ma.empty((0,verts_shape2_max,verts.shape[2]))
             faces_all = np.ma.empty((0,verts_shape2_max),dtype='int32')
-        
+            #mesh2d_edge_x_all = np.ma.empty((0,))
+            #mesh2d_edge_y_all = np.ma.empty((0,))
+            edge_verts_all = np.ma.empty((0,2,edge_verts.shape[2]))
+            
         #if necessary, add masked column(s) to increase size to max in domains
         if verts.shape[1] < verts_shape2_max:
             tofew_cols = -(verts.shape[1] - verts_shape2_max)
@@ -335,14 +411,17 @@ def get_netdata(file_nc, multipart=None):
         node_z_all = np.ma.concatenate([node_z_all,node_z])
         verts_all = np.ma.concatenate([verts_all,verts])
         faces_all = np.ma.concatenate([faces_all,faces+np.sum(num_nodes)])
+        #mesh2d_edge_x_all = np.ma.concatenate([mesh2d_edge_x_all,mesh2d_edge_x])
+        #mesh2d_edge_y_all = np.ma.concatenate([mesh2d_edge_y_all,mesh2d_edge_y])
+        edge_verts_all = np.ma.concatenate([edge_verts_all,edge_verts])
         num_nodes.append(node_x.shape[0])
 
         
     #set all invalid values to the same value (tends to differ between partitions)
-    faces_all.data[faces_all.mask] = -999
-    faces_all.fill_value = -999
+    #faces_all.data[faces_all.mask] = -999
+    #faces_all.fill_value = -999
     
-    ugrid_all = UGrid(node_x_all, node_y_all, faces_all, verts_all)
+    ugrid_all = UGrid(node_x_all, node_y_all, faces_all, verts_all, node_z=node_z_all, edge_verts=edge_verts_all)
     
     return ugrid_all
 

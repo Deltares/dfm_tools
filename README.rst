@@ -10,30 +10,51 @@ Features
 - read net data
 - read map and his data
 - plot net data with map data
-- select data based on variable, timestep, layer
+- select all data based on variable, timestep/datetime, layer
+- merge partitions and delete ghostcells automatically
+- take over masks in original data
+
+TODO project
+--------
+- hisinfo per station opvragen (now only all), also add requested stations to output as values_all.stations
+- add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?) (refer depth wrt reference level, water level or bed level, z variable is not correct in dfm-mapfile yet), also needed for his? (no mesh2d_node_z there)
+- perform actions by dimension names instead of ndims (station_name variable has two dimensions but no time)
+- overleg met Lauriane/Maialen
 
 TODO
 --------
+- style guide: https://www.python.org/dev/peps/pep-0008/
+- pyugrid (ghostcells? sowieso goed voor plotopties):
+	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/Delft3D%20examples.ipynb
+	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/connectivity_example.ipynb
+	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/plotting_example.ipynb
+	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/vector_plotting_example.ipynb
+- create overview tree of all functions, also add missing functions here
+- remove varnames which are not grid related from translation table
+- add variable to values_all with dimension names
+- construeer tijden op basis van 2 en 3 (1 en 2), alleen als timevec langer dan 2
 - discuss the (future) structure: which functions in which class/script, function names, argument names?
 - allowed to be freely available? add ownrisk-license
 - register on PyPI, for easier install via pip (for regular users, not developers):
 	- https://the-hitchhikers-guide-to-packaging.readthedocs.io/en/latest/quickstart.html#register-your-package-with-the-python-package-index-pypi 
 	- also add version numbers (only master branch?)
-- select data based on datetime (now only timestep/index): get_timeid_fromdatetime
-- add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?)
-- hisinfo per station opvragen (now only all)
-- add requested variablename(?), times and layers to outputdata (necessary for plotting his and more), also multiple variables with different dimensions? (class?)     
-- add polygon/crossection
-- add inpolygon selection of data
-- Dfm_tools slicing ugrid:
+	- also add changelog besides commit comments?
+- how to plot properties on edges (scatter is slow), maybe create dual mesh and plot like faces
+- add requested variablename(?), times and layers to outputdata (necessary for plotting his and more)
+- add plot of structured grid (CMEMS etc)
+- add foufiles
+- add selection by polygon/crossection, slicing ugrid:
 	- https://stackoverflow.com/questions/47868134/how-to-slice-2d-grid-from-3d-irrigular-data
 	- https://github.com/pyugrid/pyugrid/tree/master/notebook_examples
 	- https://stackoverflow.com/questions/15748767/interpolation-subsampling-of-3d-data-in-python-without-vtk/15753011#15753011
+	- https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.griddata.html#scipy.interpolate.griddata
+	- https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.Rbf.html
+- add inpolygon selection of data
+- add polygon read/write function, add ginput polygon function (click in plot)
 - write documentation as comments and generate automatically
 - create testbank (keep example codelines) and setup auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
 - add comparable functions for sobek and Delft3D
 - collect more functions/scripts from other users and bundle/couple
-
 
 How to work with this git repository
 --------
