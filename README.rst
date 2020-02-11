@@ -14,8 +14,18 @@ Features
 - merge partitions and delete ghostcells automatically
 - take over masks in original data
 
+TODO project
+--------
+- hisinfo per station opvragen (now only all), also add requested stations to output as values_all.stations
+- add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?) (refer depth wrt reference level, water level or bed level, z variable is not correct in dfm-mapfile yet), also needed for his? (no mesh2d_node_z there)
+- perform actions by dimension names instead of ndims (station_name variable has two dimensions but no time)
+- overleg met Lauriane/Maialen
+
 TODO
 --------
+- create overview tree of all functions, also add missing functions here
+- remove varnames which are not grid related from translation table
+- add variable to values_all with dimension names
 - construeer tijden op basis van 2 en 3 (1 en 2), alleen als timevec langer dan 2
 - discuss the (future) structure: which functions in which class/script, function names, argument names?
 - allowed to be freely available? add ownrisk-license
@@ -23,10 +33,7 @@ TODO
 	- https://the-hitchhikers-guide-to-packaging.readthedocs.io/en/latest/quickstart.html#register-your-package-with-the-python-package-index-pypi 
 	- also add version numbers (only master branch?)
 	- also add changelog besides commit comments?
-- how to plot properties on edges (scatter is slow)
-- add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?)
-- hisinfo per station opvragen (now only all), also add requested stations to output as values_all.stations
-- perform actions by dimension names instead of ndims (station_name variable has two dimensions but no time)
+- how to plot properties on edges (scatter is slow), maybe create dual mesh and plot like faces
 - add requested variablename(?), times and layers to outputdata (necessary for plotting his and more)
 - add plot of structured grid (CMEMS etc)
 - add foufiles
