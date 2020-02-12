@@ -259,23 +259,19 @@ def get_hismapmodeldata(file_nc, varname, timestep=None, lay=None, depth=None, s
     #nc_varkeys, nc_dimkeys, nc_values, nc_values_shape, nc_values_dims = get_ncvardims(file_nc, varname)
     dummy, dummy, dummy, nc_values_shape, nc_values_dims = get_ncvardims(file_nc, varname)
     data_nc = Dataset(file_nc)
-    #get times
-    data_nc_datetimes_pd = get_timesfromnc(file_nc)
-    #get stations
-    station_name_list_pd = get_hisstationlist(file_nc)
     
     #TIMES CHECKS
-    #if 'time' in nc_values_dims: #dimension time is available in variable
-    #    
     dimn_time = get_varname_mapnc(data_nc,'time')
-    if dimn_time not in nc_values_dims: #only faces/stations dimensions, no times or layers
+    if dimn_time not in nc_values_dims: #dimension time is available in variable
         if timestep is not None:
             raise Exception('ERROR: netcdf file variable (%s) does not contain times, but parameter timestep is provided'%(varname))
     else: #time is first dimension
         if timestep is None:
             raise Exception('ERROR: netcdf variable contains a time dimension, but parameter timestep not provided')
         #convert timestep to list of int if it is not already
-        if timestep == 'all':
+        #get times
+        data_nc_datetimes_pd = get_timesfromnc(file_nc)
+        if timestep is str('all'):
             time_ids = range(len(data_nc_datetimes_pd))
         elif type(timestep)==list or type(timestep)==range or type(timestep)==type(np.arange(1,2,0.5)):
             if type(timestep[0])==int: #list/range/ndarray of int
@@ -308,11 +304,11 @@ def get_hismapmodeldata(file_nc, varname, timestep=None, lay=None, depth=None, s
         if lay is None:
             raise Exception('ERROR: netcdf variable contains a layer dimension, but parameter lay not provided')
         #convert layer to list of int if it is not already
-        if lay == 'all':
+        if lay is str('all'):
             layer_ids = range(nlayers)
         elif type(lay)==list or type(lay)==range or type(lay)==type(np.arange(1,2,0.5)):
             if type(lay[0])==int: #list/range/ndarray of int
-                layer_ids = lay
+                layer_ids = np.unique(lay)
             else:
                 raise Exception('ERROR: timestep lay type not anticipated (%s), (list/range/ndarray of) int are accepted (or "all")'%(type(lay)))            
         elif type(lay)==int:
@@ -337,8 +333,10 @@ def get_hismapmodeldata(file_nc, varname, timestep=None, lay=None, depth=None, s
     else: #stations are present
         if station is None:
             raise Exception('ERROR: netcdf variable contains a station dimension, but parameter station not provided')
+        #get stations
+        station_name_list_pd = get_hisstationlist(file_nc)
         #convert timestep to list of int if it is not already
-        if station == 'all':
+        if station is str('all'):
             station_ids = range(len(station_name_list_pd))
         elif type(station)==list or type(station)==range or type(station)==type(np.arange(1,2,0.5)):
             if type(station[0])==int: #list/range/ndarray of int
@@ -443,8 +441,8 @@ def get_hismapmodeldata(file_nc, varname, timestep=None, lay=None, depth=None, s
             raise Exception('unanticipated number of dimensions: %s'%(nc_values_ndims))
         
         #add metadata
-        values_all.var_name = varname
-        values_all.var_dimension = nc_values_dims
+        values_all.var_varname = varname
+        values_all.var_dimensionnames = nc_values_dims
         if dimn_time in nc_values_dims: #only faces/stations dimensions, no times or layers
             values_all.var_times = data_nc_datetimes_pd.iloc[time_ids]
         else:

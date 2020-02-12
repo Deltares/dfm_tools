@@ -35,17 +35,13 @@ TODO high priority (before launch)
 
 TODO high priority
 --------
-- *hisinfo per station opvragen (now only all), also add requested stations to output as values_all.stations
+- construct time array based on time 2 and 3 (1 and 2), only if timevec is longer than 2 (otherwise retrieve entire time array)
 - add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?) (refer depth wrt reference level, water level or bed level, z variable is not correct in dfm-mapfile yet), also needed for his? (no mesh2d_node_z there)
 - perform actions by dimension names instead of ndims (eg station_name variable has two dimensions but no time)
 
 TODO medium term
 --------
 - layerzfrombedlevel keyword in mdu changes how zlayering is set up. Catch this exception with a keyword if necessary
-- construct time array based on time 2 and 3 (1 and 2), only if timevec is longer than 2 (otherwise retrieve entire time array)
-- add requested variablename(?), times and layers to outputdata (necessary for plotting his and more):
-	- make sure requesting double times/stations/layers/depths does not result in errors (pandas.isin only provides ids for all values once, ordered?)
-	- add variable to values_all with dimension names
 - as user: get stationlist, dimensionlist, variablelist, more? (partly internally available)
 - add minimal version numbers to requirements.txt
 

@@ -116,6 +116,7 @@ def Test_grid_gethismodeldata_Nithin(self):
     data_fromhis = get_hismapmodeldata(file_nc=file_his, varname='bedlevel', station=station)#, multipart=False)
     fig, ax = plt.subplots()
     ax.plot(data_fromhis.var_stations,data_fromhis,'-')
+    ax.tick_params('x',rotation=30)
 
     data_fromhis = get_hismapmodeldata(file_nc=file_his, varname='waterlevel', timestep='all', station=station)#, multipart=False)
     fig, ax = plt.subplots()
@@ -141,20 +142,21 @@ def Test_grid_gethismodeldata(self):
     
     #GREVELINGEN
     print('plot grid and values from mapdata (constantvalue, 1 dim)')
-    data_fromhis = get_hismapmodeldata(file_nc=file_his, varname='bedlevel')#, multipart=False)
+    data_fromhis = get_hismapmodeldata(file_nc=file_his, varname='bedlevel', station='all')#, multipart=False)
     fig, ax = plt.subplots()
-    ax.plot(list(range(len(data_fromhis))),data_fromhis,'-')
+    ax.plot(data_fromhis.var_stations,data_fromhis,'-')
+    ax.tick_params('x',rotation=30)
 
     print('plot grid and values from mapdata (waterlevel, 2 dim)')
-    data_fromhis = get_hismapmodeldata(file_nc=file_his, varname='waterlevel', timestep='all')#, multipart=False)
+    data_fromhis = get_hismapmodeldata(file_nc=file_his, varname='waterlevel', timestep='all', station='all')#, multipart=False)
     fig, ax = plt.subplots()
-    ax.plot(data_fromhis.times,data_fromhis,'-')
+    ax.plot(data_fromhis.var_times,data_fromhis,'-')
     
     print('plot grid and values from mapdata (salinity, 3 dim)')
-    data_fromhis = get_hismapmodeldata(file_nc=file_his, varname='salinity', timestep='all', lay=5)#, multipart=False)
+    data_fromhis = get_hismapmodeldata(file_nc=file_his, varname='salinity', timestep='all', lay=5, station='all')#, multipart=False)
     data_fromhis_flat = data_fromhis[:,:,0]
     fig, ax = plt.subplots()
-    ax.plot(data_fromhis.times,data_fromhis_flat,'-')
+    ax.plot(data_fromhis.var_times,data_fromhis_flat,'-')
     
     
     
@@ -304,7 +306,7 @@ def Test_grid_get_modeldata_onintersection(self):
     from dfm_tools.polygon import LineBuilder#, Polygon
     
     file_map = r'c:\DATA\werkmap\vanJulien_shortmodelfiles\DFM_sigma_curved_bend\DFM_OUTPUT_cb_3d\cb_3d_map.nc'
-    #file_map = r'c:\DATA\werkmap\vanJulien_shortmodelfiles\DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'
+    file_map = r'c:\DATA\werkmap\vanJulien_shortmodelfiles\DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'
     #file_map = r'p:\11203379-mwra-new-bem-model\waq_model\simulations\A31_1year_20191219\DFM_OUTPUT_MB_02_waq\MB_02_waq_0000_map.nc'
     
     if 'cb_3d_map' in file_map:
@@ -315,6 +317,7 @@ def Test_grid_get_modeldata_onintersection(self):
                                [2934.63837418, 1134.16019127]])
         line_array = np.array([[ 104.15421399, 2042.7077107 ],
                                [2913.47878063, 2102.48057382]])
+        clim = None
     elif 'Grevelingen' in file_map:
         timestep = 3
         layno = 35
@@ -323,12 +326,14 @@ def Test_grid_get_modeldata_onintersection(self):
                                [ 64053.73427496, 419407.58239502]])
         line_array = np.array([[ 53181.96942503, 424270.83361629],
                                [ 55160.15232593, 416913.77136685]])
+        clim = [-25,5]
     elif 'DFM_OUTPUT_MB_02_waq' in file_map:
         timestep = 30
         layno = 5
         convert2merc = True
         line_array = np.array([[42.38, 42.38],
                                [-70.98, -70.25]])
+        clim = None
     else:
         raise Exception('ERROR: no settings provided for this mapfile')
     
@@ -368,7 +373,7 @@ def Test_grid_get_modeldata_onintersection(self):
     fig, ax_crs = plt.subplots()
     pc = plot_netmapdata(crs_verts, values=data_frommap_sel_flat, ax=ax_crs, linewidth=0.5, cmap="jet")
     fig.colorbar(pc, ax=ax_crs)
-    ax_crs.set_ylim([-25,5])
+    ax_crs.set_ylim(clim)
 
 
 
