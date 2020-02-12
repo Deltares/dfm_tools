@@ -280,8 +280,8 @@ def get_hismapmodeldata(file_nc, varname, timestep=None, lay=None, stations=None
         #check if requested layers are within range of netcdf
         if np.min(layer_ids) < 0:
             raise Exception('ERROR: requested minimal layer (%d) is negative'%(np.min(layer_ids)))
-        if np.max(layer_ids) > nlayers:
-            raise Exception('ERROR: requested max layer (%d) is larger than available in netcdf file (%d)'%(np.max(layer_ids),nlayers))
+        if np.max(layer_ids) > nlayers-1:
+            raise Exception('ERROR: requested max layer (%d) is larger than available in netcdf file (%d)'%(np.max(layer_ids),nlayers-1))
     
     #check ghost cell existence
     dimn_faces = get_varname_mapnc(data_nc,'mesh2d_nFaces')
