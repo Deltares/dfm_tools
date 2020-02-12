@@ -35,6 +35,7 @@ TODO high priority (before launch)
 
 TODO high priority
 --------
+- redefine distance in intersect function, now straight polyline would be the best since distance is calculated from edge/polyline intersection to first point of polyline
 - construct time array based on time 2 and 3 (1 and 2), only if timevec is longer than 2 (otherwise retrieve entire time array)
 - add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?) (refer depth wrt reference level, water level or bed level, z variable is not correct in dfm-mapfile yet), also needed for his? (no mesh2d_node_z there)
 - perform actions by dimension names instead of ndims (eg station_name variable has two dimensions but no time)
