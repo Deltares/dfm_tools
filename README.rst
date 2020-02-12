@@ -56,7 +56,7 @@ How to work with this git repository
 --------
 - Install Github:
 	- Download git from https://git-scm.com/download/win, install with default settings
-	- open command line in a folder where you want to clone the dfm_tools github repo, eg C:\DATA\GitHub
+	- open command line in a folder where you want to clone the dfm_tools github repo, eg C:\\DATA\\GitHub
 	- ``git clone https://github.com/openearth/dfm_tools.git`` (repos gets cloned to local drive, checkout of master branch)
 	- to update: ``git pull`` (?)
 	- NOTE: it is also possible to download the zip from https://github.com/openearth/dfm_tools, but this is not recommended since getting the updates is easier this way
@@ -67,11 +67,11 @@ How to work with this git repository
 	- install, including PATH checkbox
 
 - Optional: create separate python environment and link from Spyder:
-	- open command line and navigate to dfm_tools folder, eg C:\DATA\GitHub\dfm_tools
+	- open command line and navigate to dfm_tools folder, eg C:\\DATA\\GitHub\\dfm_tools
 	- ``conda env create -f environment.yml`` (sometimes you need to press enter if it hangs extremely long)
 	- ``conda info --envs`` (shows github_env virtual environment)
 	- ``conda activate github_env``
-	- ``python -c "import sys; print(sys.executable)"`` (the resulting path you need some steps later, eg C:\Users\[user]\AppData\Local\Continuum\anaconda3\envs\github_env\python.exe)
+	- ``python -c "import sys; print(sys.executable)"`` (the resulting path you need some steps later, eg C:\\Users\\[user]\\AppData\\Local\\Continuum\\anaconda3\\envs\\github_env\\python.exe)
 	- ``conda deactivate``
 	- open spyder from start menu or anaconda or anything
 	- Go to Tools >> Preferences >> Python interpreter >> point to github_env python.exe (print of sys.executable)
@@ -94,16 +94,16 @@ How to contribute to this git repository
 --------
 - First request rights to contribute
 - Branching:
-	- open git bash window in local dfm_tools folder (eg C:\DATA\GitHub\dfm_tools)
+	- open git bash window in local dfm_tools folder (eg C:\\DATA\\GitHub\\dfm_tools)
 	- ``git config --global user.email [emailaddress]``
 	- ``git config --global user.name [username]``
 	- Create your own branch option 1:
 		- manually create a branch on https://github.com/openearth/dfm_tools
-		- open git bash window in local dfm_tools folder (eg C:\DATA\GitHub\dfm_tools)
+		- open git bash window in local dfm_tools folder (eg C:\\DATA\\GitHub\\dfm_tools)
 		- ``git remote update origin --prune`` (update local branch list)
 		- ``git checkout branchname`` (checkout branch)
 	- Create your own branch option 2:
-		- open git bash window in local dfm_tools folder (eg C:\DATA\GitHub\dfm_tools)
+		- open git bash window in local dfm_tools folder (eg C:\\DATA\\GitHub\\dfm_tools)
 		- ``git checkout --branch branchname`` (create new branch and checkout, combination of git branch and git checkout commands)
 
 - Commit and push your changes to your online branch:
