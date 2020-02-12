@@ -166,14 +166,18 @@ def get_timesfromnc(file_nc):
     
     data_nc = Dataset(file_nc)
     varname_time = get_varname_mapnc(data_nc,'time')
-    data_nc_timevar = data_nc.variables[varname_time]    
+    data_nc_timevar = data_nc.variables[varname_time]
     
-    time0 = data_nc_timevar[0]
-    time1 = data_nc_timevar[1]
-    timeend = data_nc_timevar[-1]
-    timeinc = time1-time0
-    
-    data_nc_times = np.arange(time0,timeend+timeinc,timeinc)
+    if len(data_nc_timevar)<3: #this rarely is the case, but just to be sure
+        data_nc_times = data_nc_timevar[:]
+    else:
+        time0= data_nc_timevar[0] 
+        time1 = data_nc_timevar[1] 
+        time2 = data_nc_timevar[2]
+        timeend = data_nc_timevar[-1]
+        timeinc = time2-time1 # the interval between 0 and 1 is not per definition representative, so take 1 and 2
+        
+        data_nc_times = np.arange(time0,timeend+timeinc,timeinc)
     data_nc_datetimes = num2date(data_nc_times, units = data_nc_timevar.units)
     data_nc_datetimes_pd = pd.Series(data_nc_datetimes).dt.round(freq='S')
     
@@ -466,10 +470,16 @@ def get_hismapmodeldata(file_nc, varname, timestep=None, lay=None, depth=None, s
 
 
 
-def get_modeldata_onintersection(file_nc, line_array, intersect_gridnos, intersect_coords, timestep, convert2merc=None):
+def get_modeldata_onintersection(file_nc, line_array=None, intersect_gridnos=None, intersect_coords=None, timestep=None, convert2merc=None):
     from netCDF4 import Dataset
+    from shapely.geometry import LineString, MultiPoint#, Point
+
     from dfm_tools.get_varname_mapnc import get_varname_mapnc
     
+    def calc_dist(x1,x2,y1,y2):
+        distance = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+        return distance
+
     # Convert lat/lon corrdinates to x/y mercator projection
     def merc(lat, lon):
         r_major = 6378137.000
@@ -481,11 +491,36 @@ def get_modeldata_onintersection(file_nc, line_array, intersect_gridnos, interse
         return (x, y)
     #merc = np.vectorize(merc)
     
+    print('calculating distance for all crossed cells, from first point of line (should not take long, but if it does, optimisation is needed)')
+    nlinecoords = line_array.shape[0]
+    nlinedims = len(line_array.shape)
+    ncrosscells = intersect_coords.shape[0]
+    if nlinecoords<2 or nlinedims != 2:
+        raise Exception('ERROR: line_array should at least contain two xy points [[x,y],[x,y]]')
     crs_xstart = intersect_coords[:,0,0]
     crs_xstop = intersect_coords[:,0,1]
     crs_ystart = intersect_coords[:,1,0]
     crs_ystop = intersect_coords[:,1,1]
     
+    cross_points_start = MultiPoint(intersect_coords[:,:,0])
+    #cross_points_stop = MultiPoint(intersect_coords[:,:,1])
+    distperline_tostart = np.empty((ncrosscells,nlinecoords-1))
+    #distperline_tostop = np.empty((ncrosscells,nlinecoords-1))
+    linepart_length = np.empty((nlinecoords-1))
+    for iL in range(nlinecoords-1):
+        #calculate length of lineparts
+        
+        line_section_part = LineString(line_array[iL:iL+2,:])
+        linepart_length[iL] = line_section_part.length
+        #print(line_array_part)
+        for iP in range(ncrosscells):
+            distperline_tostart[iP,iL] = line_section_part.distance(cross_points_start[iP])
+            #distperline_tostop[iP,iL] = line_section_part.distance(cross_points_stop[iP])
+    linepart_lengthcum = np.cumsum(linepart_length)
+    cross_points_closestlineid = np.argmin(distperline_tostart,axis=1)
+    print('finished calculating distance for all crossed cells, from first point of line')
+    
+
     data_frommap_wl3 = get_hismapmodeldata(file_nc, varname='mesh2d_s1', timestep=timestep)#, multipart=False)
     data_frommap_wl3_sel = data_frommap_wl3[0,intersect_gridnos]
     data_frommap_bl = get_hismapmodeldata(file_nc, varname='mesh2d_flowelem_bl')#, multipart=False)
@@ -512,10 +547,15 @@ def get_modeldata_onintersection(file_nc, line_array, intersect_gridnos, interse
         line_array_x0, line_array_y0 = merc(line_array[0,0],line_array[0,1])
         crs_xstart, crs_ystart = merc(crs_xstart,crs_ystart)
         crs_xstop, crs_ystop = merc(crs_xstart,crs_ystart)
-        
-    crs_dist_starts = np.sqrt((crs_xstart - line_array[0,0])**2 + (crs_ystart - line_array[0,1])**2)
-    crs_dist_stops = np.sqrt((crs_xstop - line_array[0,0])**2 + (crs_ystop - line_array[0,1])**2)
-    #TODO: distance is now from first clicked point, but should be distance along line
+    
+
+    #calculate distance from points to 'previous' linepoint
+    crs_dist_starts_fromprevlinepoint = calc_dist(line_array[cross_points_closestlineid,0], crs_xstart, line_array[cross_points_closestlineid,1], crs_ystart)
+    crs_dist_stops_fromprevlinepoint = calc_dist(line_array[cross_points_closestlineid,0], crs_xstop, line_array[cross_points_closestlineid,1], crs_ystop)
+    #add lenght of previous lineparts to it
+    crs_dist_starts = crs_dist_starts_fromprevlinepoint + linepart_lengthcum[cross_points_closestlineid]
+    crs_dist_stops = crs_dist_stops_fromprevlinepoint + linepart_lengthcum[cross_points_closestlineid]
+    
     
     crs_verts_x_all = np.empty((0,4,1))
     crs_verts_z_all = np.empty((0,4,1))
