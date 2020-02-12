@@ -86,7 +86,8 @@ def Test_grid_getnetdata_plotnet(self):
     fig, ax = plt.subplots()
     plot_netmapdata(ugrid.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
     ax.set_aspect('equal')
-   
+ 
+    
 
 def Test_grid_gethismodeldata_Nithin(self):
     """
@@ -102,6 +103,9 @@ def Test_grid_gethismodeldata_Nithin(self):
     file_net = r'c:\DATA\werkmap\vanNithin_shortmodelfiles\myortho3_RGFGRID_net.nc'
     file_his = r'c:\DATA\werkmap\vanNithin_shortmodelfiles\tttz_0000_his.nc'
     
+    station = ['Peiraias', 'Ovrios_2','Ovrios','Ovrios']
+    #station = ['Peiraias']
+
     print('plot only grid from net.nc')
     ugrid = get_netdata(file_nc=file_net)
     fig, ax = plt.subplots()
@@ -109,21 +113,18 @@ def Test_grid_gethismodeldata_Nithin(self):
     ax.set_aspect('equal')
     
     #NITHIN
-    print('plot grid and values from mapdata (constantvalue, 1 dim)')
-    data_fromhis = get_hismapmodeldata(file_nc=file_his, varname='bedlevel')#, multipart=False)
+    data_fromhis = get_hismapmodeldata(file_nc=file_his, varname='bedlevel', station=station)#, multipart=False)
     fig, ax = plt.subplots()
-    ax.plot(list(range(len(data_fromhis))),data_fromhis,'-')
+    ax.plot(data_fromhis.var_stations,data_fromhis,'-')
 
-    print('plot grid and values from mapdata (waterlevel, 2 dim)')
-    data_fromhis = get_hismapmodeldata(file_nc=file_his, varname='waterlevel', timestep='all')#, multipart=False)
+    data_fromhis = get_hismapmodeldata(file_nc=file_his, varname='waterlevel', timestep='all', station=station)#, multipart=False)
     fig, ax = plt.subplots()
-    ax.plot(data_fromhis.times,data_fromhis,'-')
+    ax.plot(data_fromhis.var_times,data_fromhis,'-')
     
-    print('plot grid and values from mapdata (salinity, 3 dim)')
-    data_fromhis = get_hismapmodeldata(file_nc=file_his, varname='salinity', timestep='all', lay=5)#, multipart=False)
+    data_fromhis = get_hismapmodeldata(file_nc=file_his, varname='salinity', timestep='all', lay=5, station=station)#, multipart=False)
     data_fromhis_flat = data_fromhis[:,:,0]
     fig, ax = plt.subplots()
-    ax.plot(data_fromhis.times,data_fromhis_flat,'-')
+    ax.plot(data_fromhis.var_times,data_fromhis_flat,'-')
     
     
 
@@ -154,6 +155,7 @@ def Test_grid_gethismodeldata(self):
     data_fromhis_flat = data_fromhis[:,:,0]
     fig, ax = plt.subplots()
     ax.plot(data_fromhis.times,data_fromhis_flat,'-')
+    
     
     
 def Test_grid_getnetdata_getmapmodeldata_plotnetmapdata(self):

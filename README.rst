@@ -24,7 +24,7 @@ License
 
 TODO high priority (before launch)
 --------
-- discuss the (future) structure: which functions in which class/script, function names, argument names?
+- discuss the (future) structure: which functions in which class/script, function names, argument names? (rename lay?)
 - style guide: https://www.python.org/dev/peps/pep-0008/
 - dfm_tools: ugrid class naar ugrid functie en rest van functies in get_dfm script? Poly from ginput naar class polygon.fromplotwindow(ax?)? Intersect naar los script of bij get_dfm?
 - add ownrisk-license
@@ -37,15 +37,17 @@ TODO high priority
 --------
 - *hisinfo per station opvragen (now only all), also add requested stations to output as values_all.stations
 - add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?) (refer depth wrt reference level, water level or bed level, z variable is not correct in dfm-mapfile yet), also needed for his? (no mesh2d_node_z there)
-- perform actions by dimension names instead of ndims (station_name variable has two dimensions but no time)
+- perform actions by dimension names instead of ndims (eg station_name variable has two dimensions but no time)
 
 TODO medium term
 --------
 - layerzfrombedlevel keyword in mdu changes how zlayering is set up. Catch this exception with a keyword if necessary
 - construct time array based on time 2 and 3 (1 and 2), only if timevec is longer than 2 (otherwise retrieve entire time array)
-- add variable to values_all with dimension names
-- add requested variablename(?), times and layers to outputdata (necessary for plotting his and more)
+- add requested variablename(?), times and layers to outputdata (necessary for plotting his and more):
+	- make sure requesting double times/stations/layers/depths does not result in errors (pandas.isin only provides ids for all values once, ordered?)
+	- add variable to values_all with dimension names
 - as user: get stationlist, dimensionlist, variablelist, more? (partly internally available)
+- add minimal version numbers to requirements.txt
 
 TODO longterm
 --------
@@ -56,8 +58,9 @@ TODO longterm
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/plotting_example.ipynb
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/vector_plotting_example.ipynb
 - how to plot properties on edges (scatter is slow), maybe create dual mesh and plot like faces. most relevant variables are also available on faces, so is this necessary?
+- add (look for) readwrite functions for general datafromats (tim, tekal etc)
 - add plot of structured grid (CMEMS etc)
-- add foufiles
+- add foufiles, rstfiles? (partitioned but with different dimensions)
 - add inpolygon selection of data
 - create overview tree of all functions, also add missing functions here
 - write documentation as comments and generate automatically
