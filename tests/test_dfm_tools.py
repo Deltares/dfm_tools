@@ -97,10 +97,10 @@ def Test_grid_gethismodeldata_Nithin(self):
     
     from dfm_tools.grid import get_netdata, plot_netmapdata, get_hismapmodeldata
     
-    file_net = r'n:\My Documents\werkmap\vanNithin_shortmodelfiles\myortho3_net.nc'
+    file_net = r'c:\DATA\werkmap\vanNithin_shortmodelfiles\myortho3_net.nc'
     #file_net = r'n:\My Documents\werkmap\vanNithin_shortmodelfiles\myortho3_withcellinfo_net.nc'
-    file_net = r'n:\My Documents\werkmap\vanNithin_shortmodelfiles\myortho3_RGFGRID_net.nc'
-    file_his = r'n:\My Documents\werkmap\vanNithin_shortmodelfiles\tttz_0000_his.nc'
+    file_net = r'c:\DATA\werkmap\vanNithin_shortmodelfiles\myortho3_RGFGRID_net.nc'
+    file_his = r'c:\DATA\werkmap\vanNithin_shortmodelfiles\tttz_0000_his.nc'
     
     print('plot only grid from net.nc')
     ugrid = get_netdata(file_nc=file_net)
@@ -352,7 +352,6 @@ def Test_grid_get_modeldata_onintersection(self):
     
     #derive vertices from cross section (distance from first point)
     crs_verts = get_modeldata_onintersection(file_nc=file_map, line_array=line_array, intersect_gridnos=intersect_gridnos, intersect_coords=intersect_coords, timestep=timestep, convert2merc=convert2merc)
-    
     
     #get data to plot and select data for cross section (gridnos)
     data_frommap = get_hismapmodeldata(file_nc=file_map, varname='mesh2d_sa1', timestep=timestep, lay='all')#, multipart=False)

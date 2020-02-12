@@ -15,42 +15,54 @@ Features
 - take over masks in original data
 - selection/plotting by polygon/crossection, so slicing the ugrid data
 
-TODO project
+License
 --------
-- hisinfo per station opvragen (now only all), also add requested stations to output as values_all.stations
+- this toolbox is free to use, but completely at your own risk (a proper licence file will be added soon)
+- this toolbox is now only available via github, once the structure is decided upon, it will be registered on pypi so pip installing is possible without checkout
+- there is no warranty whatsoever, users are responsible to check the output themselves
+- it might be that script names, function names, argument names and more will slightly change in the upcoming weeks. This would mean the script you create now might need some edits to work with the toolbox in the future.
+
+TODO high priority (before launch)
+--------
+- discuss the (future) structure: which functions in which class/script, function names, argument names?
+- style guide: https://www.python.org/dev/peps/pep-0008/
+- dfm_tools: ugrid class naar ugrid functie en rest van functies in get_dfm script? Poly from ginput naar class polygon.fromplotwindow(ax?)? Intersect naar los script of bij get_dfm?
+- add ownrisk-license
+- register on PyPI, for easier install via pip (for regular users, not developers):
+	- https://the-hitchhikers-guide-to-packaging.readthedocs.io/en/latest/quickstart.html#register-your-package-with-the-python-package-index-pypi 
+	- also add version numbers (only master branch), git commit automatic numbers?
+	- also add changelog besides commit comments?
+
+TODO high priority
+--------
+- *hisinfo per station opvragen (now only all), also add requested stations to output as values_all.stations
 - add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?) (refer depth wrt reference level, water level or bed level, z variable is not correct in dfm-mapfile yet), also needed for his? (no mesh2d_node_z there)
 - perform actions by dimension names instead of ndims (station_name variable has two dimensions but no time)
-- overleg met Lauriane/Maialen
-- dfm_tools: ugrid class naar ugrid functie en rest van functies in get_dfm script? Poly from ginput naar class polygon.fromplotwindow(ax?)? Intersect naar los script of bij get_dfm?
 
-TODO
+TODO medium term
 --------
-- style guide: https://www.python.org/dev/peps/pep-0008/
+- layerzfrombedlevel keyword in mdu changes how zlayering is set up. Catch this exception with a keyword if necessary
+- construct time array based on time 2 and 3 (1 and 2), only if timevec is longer than 2 (otherwise retrieve entire time array)
+- add variable to values_all with dimension names
+- add requested variablename(?), times and layers to outputdata (necessary for plotting his and more)
+- as user: get stationlist, dimensionlist, variablelist, more? (partly internally available)
+
+TODO longterm
+--------
+- add polygon read/write function, add ginput polygon function (click in plot) (already partly exists in intersect/slice testscript)
 - pyugrid (ghostcells en mapmergen worden afgehandeld?), voorbeelden in ieder geval als inspiratie voor plotopties):
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/Delft3D%20examples.ipynb
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/connectivity_example.ipynb
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/plotting_example.ipynb
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/vector_plotting_example.ipynb
-- create overview tree of all functions, also add missing functions here
-- remove varnames which are not gridvarname or dimension related from translation table
-- add variable to values_all with dimension names
-- construeer tijden op basis van 2 en 3 (1 en 2), alleen als timevec langer dan 2
-- discuss the (future) structure: which functions in which class/script, function names, argument names?
-- allowed to be freely available? add ownrisk-license
-- register on PyPI, for easier install via pip (for regular users, not developers):
-	- https://the-hitchhikers-guide-to-packaging.readthedocs.io/en/latest/quickstart.html#register-your-package-with-the-python-package-index-pypi 
-	- also add version numbers (only master branch?)
-	- also add changelog besides commit comments?
 - how to plot properties on edges (scatter is slow), maybe create dual mesh and plot like faces. most relevant variables are also available on faces, so is this necessary?
-- add requested variablename(?), times and layers to outputdata (necessary for plotting his and more)
 - add plot of structured grid (CMEMS etc)
 - add foufiles
 - add inpolygon selection of data
-- add polygon read/write function, add ginput polygon function (click in plot) (already partly exists in intersect/slice testscript)
+- create overview tree of all functions, also add missing functions here
 - write documentation as comments and generate automatically
 - create testbank (keep example codelines) and setup auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
 - add comparable functions for sobek and Delft3D
-- collect more functions/scripts from other users and bundle/couple
 
 How to work with this git repository
 --------
