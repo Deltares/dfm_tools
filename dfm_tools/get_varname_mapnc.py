@@ -32,18 +32,18 @@ def get_varname_mapnc(data_nc,varname_requested):
     varnames_list['mesh2d_flowelem_bl'] = ['mesh2d_flowelem_bl','FlowElem_bl','',''] # bed level
     varnames_list['mesh2d_flowelem_ba'] = ['mesh2d_flowelem_ba','FlowElem_bac','',''] # area (m2) of cell faces
     
-    varnames_list['mesh2d_ucx'] = ['mesh2d_ucx','ucx','',''] # 
-    varnames_list['mesh2d_ucy'] = ['mesh2d_ucy','ucy','',''] # 
+    #varnames_list['mesh2d_ucx'] = ['mesh2d_ucx','ucx','',''] # 
+    #varnames_list['mesh2d_ucy'] = ['mesh2d_ucy','ucy','',''] # 
     varnames_list['mesh2d_layer_z'] = ['mesh2d_layer_z','LayCoord_cc','',''] # 
-    varnames_list['mesh2d_sa1'] = ['mesh2d_sa1','sa1','',''] # 
-    varnames_list['mesh2d_tem1'] = ['mesh2d_tem1','tem1','',''] # 
+    #varnames_list['mesh2d_sa1'] = ['mesh2d_sa1','sa1','',''] # 
+    #varnames_list['mesh2d_tem1'] = ['mesh2d_tem1','tem1','',''] # 
     
     
     ### DIMENSION names used within different versions of Delft3D-Flexible Mesh
     #dimnames_list = pd.DataFrame()
-    varnames_list['nmesh2d_node'] = ['nmesh2d_node','mesh2d_nNodes','','']#,'nNetNode','NetElemNode'] # number of nodes
-    varnames_list['nmesh2d_face'] = ['nmesh2d_face','mesh2d_nFaces','','']#,'nNetElem','nFlowElem'] # number of faces
-    varnames_list['nmesh2d_edge'] = ['nmesh2d_edge','','','']#,'nNetLink'] # number of velocity-points
+    varnames_list['nmesh2d_node'] = ['nmesh2d_node','mesh2d_nNodes','nNetNode',''] # number of nodes
+    varnames_list['nmesh2d_face'] = ['nmesh2d_face','mesh2d_nFaces','nNetElem','nFlowElem'] # number of faces
+    varnames_list['nmesh2d_edge'] = ['nmesh2d_edge','nNetLink','',''] # number of velocity-points
     
     varnames_list['nmesh2d_layer'] = ['nmesh2d_layer','mesh2d_nLayers','laydim','nmesh2d_layer_dlwq'] # layer
     

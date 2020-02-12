@@ -1,15 +1,16 @@
 import numpy as np
 class UGrid:
     """Unstructured grid"""
-    def __init__(self, mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes, verts, mesh2d_node_z=None, edge_verts=None, *args, **kwargs):
+    def __init__(self, mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes, verts, mesh2d_node_z=None, edge_verts=None):
         self.mesh2d_node_x = mesh2d_node_x
         self.mesh2d_node_y = mesh2d_node_y
         self.mesh2d_face_nodes = mesh2d_face_nodes
         self.verts = verts
-        if mesh2d_node_z is not None:
-            self.mesh2d_node_z = mesh2d_node_z
-        else:
-            self.mesh2d_node_z = np.zeros(self.mesh2d_node_x.shape)
+        self.mesh2d_node_z = mesh2d_node_z
+        #if mesh2d_node_z is not None:
+        #    self.mesh2d_node_z = mesh2d_node_z
+        #else:
+        #    self.mesh2d_node_z = np.zeros(self.mesh2d_node_x.shape)
         self.edge_verts=edge_verts #can be none?
     @staticmethod
     def fromfile(file_nc):
@@ -35,14 +36,22 @@ class UGrid:
             mesh2d_node_z = data_nc.variables[varn_mesh2d_node_z][:]
         else:
             mesh2d_node_z = None
-        mesh2d_face_nodes = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_face_nodes')][:, :]
+        varn_mesh2d_face_nodes = get_varname_mapnc(data_nc,'mesh2d_face_nodes')
+        if varn_mesh2d_face_nodes is not None: # node_z variable is present
+            mesh2d_face_nodes = data_nc.variables[varn_mesh2d_face_nodes][:, :]
+        else:
+            raise Exception('ERROR: provided file does not contain a variable mesh2d_face_nodes or similar:\n%s\nPlease do one of the following:\n- plot grid from *_map.nc file\n- import and export the grid with RGFGRID\n- import and save the gridd "with cellfinfo" from interacter'%(file_nc))
         verts = nodexyfaces2verts(mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes) #xy coordinates of face nodes
         
-        mesh2d_edge_x = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_edge_x')][:]
-        mesh2d_edge_y = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_edge_y')][:]
-        mesh2d_edge_nodes = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_edge_nodes')][:]
-        edge_verts = nodexyfaces2verts(mesh2d_edge_x, mesh2d_edge_y, mesh2d_edge_nodes) #xy coordinates of face nodes
-        
+        varn_mesh2d_edge_x = get_varname_mapnc(data_nc,'mesh2d_edge_x')
+        if varn_mesh2d_edge_x is not None: # mesh2d_edge_x (and mesh2d_edge_y) variable is present
+            mesh2d_edge_x = data_nc.variables[varn_mesh2d_edge_x][:]
+            mesh2d_edge_y = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_edge_y')][:]
+            mesh2d_edge_nodes = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_edge_nodes')][:]
+            edge_verts = nodexyfaces2verts(mesh2d_edge_x, mesh2d_edge_y, mesh2d_edge_nodes) #xy coordinates of face nodes
+        else:
+            edge_verts = None
+            
         #remove ghost cells from faces and verts
         ghostcells_bool, nonghost_ids = ghostcell_filter(file_nc)
         if ghostcells_bool:
@@ -53,6 +62,36 @@ class UGrid:
         ugrid = UGrid(mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes, verts, mesh2d_node_z=mesh2d_node_z, edge_verts=edge_verts)
         return ugrid
 
+    def polygon_intersect(self, line_array):
+        from shapely.geometry import Polygon, LineString
+        import numpy as np
+        
+        print('finding crossing flow links (can take a while)')
+        #allpol = []
+        intersect_gridnos = np.empty((0),dtype=int)
+        intersect_coords1 = np.empty((0,2))
+        intersect_coords2 = np.empty((0,2))
+        line_section = LineString(line_array)
+        for iP, pol_data in enumerate(self.verts):
+            pol_data_nonan = pol_data[~np.isnan(pol_data).all(axis=1)]
+            pol_shp = Polygon(pol_data_nonan)
+            #allpol.append(pol_shp)
+            intersection_line = pol_shp.intersection(line_section).coords
+            if intersection_line != []:
+                intersect_gridnos = np.concatenate([intersect_gridnos,[iP]])
+                intersect_coords1=np.concatenate([intersect_coords1,np.array([list(intersection_line)[0]])])
+                intersect_coords2=np.concatenate([intersect_coords2,np.array([list(intersection_line)[1]])])
+                #all_intersect.append(list(intersection_line))
+            #print(iP)
+        intersect_coords = np.stack([intersect_coords1,intersect_coords2], axis=2)
+        #dimensions (gridnos, xy, firstsecond)
+        #allpol_multi = MultiPolygon(allpol)
+        #intersection_line = allpol_multi.intersection(line_section).coords #does not work
+        print('done finding crossing flow links')
+        return intersect_gridnos, intersect_coords
+    
+    
+    
 
 def get_mapfilelist(file_nc, multipart=None):
     #get list of mapfiles
@@ -212,8 +251,8 @@ def get_hismapmodeldata(file_nc, varname, timestep=None, lay=None, stations=None
         #check if requested times are within range of netcdf
         if np.min(time_ids) < 0:
             raise Exception('ERROR: requested start timestep (%d) is negative'%(np.min(time_ids)))
-        if np.max(time_ids) > len(data_nc_datetimes_pd):
-            raise Exception('ERROR: requested end timestep (%d) is larger than available in netcdf file (%d)'%(np.max(time_ids),len(data_nc_datetimes_pd)))
+        if np.max(time_ids) > len(data_nc_datetimes_pd)-1:
+            raise Exception('ERROR: requested end timestep (%d) is larger than available in netcdf file (%d)'%(np.max(time_ids),len(data_nc_datetimes_pd)-1))
     
     #LAYER CHECKS
     dimn_layer = get_varname_mapnc(data_nc,'nmesh2d_layer')
@@ -259,8 +298,11 @@ def get_hismapmodeldata(file_nc, varname, timestep=None, lay=None, stations=None
         
         nc_varkeys, nc_values, nc_values_shape, nc_values_dims = get_ncvardims(file_nc_sel, varname)
         nc_values_ndims = len(nc_values_shape)
-        ghostcells_bool, nonghost_ids = ghostcell_filter(file_nc_sel)
-        
+        if var_ghostaffected:
+            ghostcells_bool, nonghost_ids = ghostcell_filter(file_nc_sel)
+        else:
+            ghostcells_bool = False
+            
         # 1 dimension (faces/stations)
         if nc_values_ndims == 1:
             if iF == 0: #setup initial array
@@ -335,6 +377,83 @@ def get_hismapmodeldata(file_nc, varname, timestep=None, lay=None, stations=None
 
 
 
+def get_modeldata_onintersection(file_nc, line_array, intersect_gridnos, intersect_coords, timestep, convert2merc=None):
+    from netCDF4 import Dataset
+    from dfm_tools.get_varname_mapnc import get_varname_mapnc
+    
+    # Convert lat/lon corrdinates to x/y mercator projection
+    def merc(lat, lon):
+        r_major = 6378137.000
+        x = r_major * np.radians(lon)
+        scale = x/lon
+        y = 180.0/np.pi * np.log(np.tan(np.pi/4.0 + lat * (np.pi/180.0)/2.0)) * scale
+        #x = lon
+        #y = lat
+        return (x, y)
+    #merc = np.vectorize(merc)
+    
+    crs_xstart = intersect_coords[:,0,0]
+    crs_xstop = intersect_coords[:,0,1]
+    crs_ystart = intersect_coords[:,1,0]
+    crs_ystop = intersect_coords[:,1,1]
+    
+    data_frommap_wl3 = get_hismapmodeldata(file_nc, varname='mesh2d_s1', timestep=timestep)#, multipart=False)
+    data_frommap_wl3_sel = data_frommap_wl3[0,intersect_gridnos]
+    data_frommap_bl = get_hismapmodeldata(file_nc, varname='mesh2d_flowelem_bl')#, multipart=False)
+    data_frommap_bl_sel = data_frommap_bl[intersect_gridnos]
+    
+    
+    data_nc = Dataset(file_nc)
+    #nlay = data_frommap.shape[2]
+    #nlay = data_nc.variables[varname].shape[2]
+    dimn_layer = get_varname_mapnc(data_nc,'nmesh2d_layer')
+    nlay = data_nc.dimensions[dimn_layer].size
+    varn_layer_z = get_varname_mapnc(data_nc,'mesh2d_layer_z')
+    if varn_layer_z is None:
+        laytyp = 'sigmalayer'
+        #zvals_cen = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay)
+        zvals_interface = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay+1)
+    else:
+        laytyp = 'zlayer'
+        #zvals_cen = get_hismapmodeldata(file_nc=file_map, varname='mesh2d_layer_z', lay='all')#, multipart=False)
+        #zvals_interface = get_hismapmodeldata(file_nc=file_map, varname='mesh2d_interface_z')#, multipart=False)
+        zvals_interface = data_nc.variables['mesh2d_interface_z'][:]
+    
+    if convert2merc:
+        line_array_x0, line_array_y0 = merc(line_array[0,0],line_array[0,1])
+        crs_xstart, crs_ystart = merc(crs_xstart,crs_ystart)
+        crs_xstop, crs_ystop = merc(crs_xstart,crs_ystart)
+        
+    crs_dist_starts = np.sqrt((crs_xstart - line_array[0,0])**2 + (crs_ystart - line_array[0,1])**2)
+    crs_dist_stops = np.sqrt((crs_xstop - line_array[0,0])**2 + (crs_ystop - line_array[0,1])**2)
+    #TODO: distance is now from first clicked point, but should be distance along line
+    
+    crs_verts_x_all = np.empty((0,4,1))
+    crs_verts_z_all = np.empty((0,4,1))
+    #data_frommap_sel_flat = np.empty((0))
+    for iL in range(nlay):
+        zval_lay_bot = zvals_interface[iL]
+        zval_lay_top = zvals_interface[iL+1]
+        crs_verts_x = np.array([[crs_dist_starts,crs_dist_stops,crs_dist_stops,crs_dist_starts]]).T
+        if laytyp == 'sigmalayer':
+            crs_verts_z = np.array([[zval_lay_bot,zval_lay_bot,zval_lay_top,zval_lay_top]]).T
+        elif laytyp == 'zlayer':
+            crs_verts_z = np.repeat(np.array([[zval_lay_bot,zval_lay_bot,zval_lay_top,zval_lay_top]]).T[np.newaxis],repeats=crs_verts_x.shape[0],axis=0)
+            #top z-layer is extended to water level, if wl is higher than zval_lay_top
+            if iL == nlay-1:
+                crs_verts_z[:,2,0] = np.maximum(zval_lay_top,data_frommap_wl3_sel.data)
+                crs_verts_z[:,3,0] = np.maximum(zval_lay_top,data_frommap_wl3_sel.data)
+            # zval_lay_bot lower than bedlevel should be overwritten with bedlevel
+            zvalbot_belowbl_bool = crs_verts_z[:,0,0]<data_frommap_bl_sel
+            crs_verts_z[zvalbot_belowbl_bool,0,0] = data_frommap_bl_sel[zvalbot_belowbl_bool]
+            crs_verts_z[zvalbot_belowbl_bool,1,0] = data_frommap_bl_sel[zvalbot_belowbl_bool]
+        crs_verts_x_all = np.concatenate([crs_verts_x_all, crs_verts_x])
+        crs_verts_z_all = np.concatenate([crs_verts_z_all, crs_verts_z])
+        #data_frommap_sel_flat = np.concatenate([data_frommap_sel_flat,data_frommap_sel[:,iL]])
+    crs_verts = np.concatenate([crs_verts_x_all, crs_verts_z_all], axis=2)
+    return crs_verts
+
+
 
 
 
@@ -372,12 +491,18 @@ def get_netdata(file_nc, multipart=None):
         if iF == 0:
             node_x_all = np.ma.empty((0,))
             node_y_all = np.ma.empty((0,))
-            node_z_all = np.ma.empty((0,))
+            if node_z is not None:
+                node_z_all = np.ma.empty((0,))
+            else:
+                node_z_all = None
             verts_all = np.ma.empty((0,verts_shape2_max,verts.shape[2]))
             faces_all = np.ma.empty((0,verts_shape2_max),dtype='int32')
             #mesh2d_edge_x_all = np.ma.empty((0,))
             #mesh2d_edge_y_all = np.ma.empty((0,))
-            edge_verts_all = np.ma.empty((0,2,edge_verts.shape[2]))
+            if edge_verts is not None:
+                edge_verts_all = np.ma.empty((0,2,edge_verts.shape[2]))
+            else:
+                edge_verts_all = None
             
         #if necessary, add masked column(s) to increase size to max in domains
         if verts.shape[1] < verts_shape2_max:
@@ -408,21 +533,22 @@ def get_netdata(file_nc, multipart=None):
         #merge all
         node_x_all = np.ma.concatenate([node_x_all,node_x])
         node_y_all = np.ma.concatenate([node_y_all,node_y])
-        node_z_all = np.ma.concatenate([node_z_all,node_z])
+        if node_z is not None:
+            node_z_all = np.ma.concatenate([node_z_all,node_z])
         verts_all = np.ma.concatenate([verts_all,verts])
         faces_all = np.ma.concatenate([faces_all,faces+np.sum(num_nodes)])
         #mesh2d_edge_x_all = np.ma.concatenate([mesh2d_edge_x_all,mesh2d_edge_x])
         #mesh2d_edge_y_all = np.ma.concatenate([mesh2d_edge_y_all,mesh2d_edge_y])
-        edge_verts_all = np.ma.concatenate([edge_verts_all,edge_verts])
+        if edge_verts is not None:
+            edge_verts_all = np.ma.concatenate([edge_verts_all,edge_verts])
         num_nodes.append(node_x.shape[0])
 
-        
     #set all invalid values to the same value (tends to differ between partitions)
     #faces_all.data[faces_all.mask] = -999
     #faces_all.fill_value = -999
     
-    ugrid_all = UGrid(node_x_all, node_y_all, faces_all, verts_all, node_z=node_z_all, edge_verts=edge_verts_all)
-    
+    ugrid_all = UGrid(node_x_all, node_y_all, faces_all, verts_all, mesh2d_node_z=node_z_all, edge_verts=edge_verts_all)
+    ugrid_all
     return ugrid_all
 
 
