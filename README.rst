@@ -79,9 +79,9 @@ How to work with this git repository
 	- optional: ``conda remove -n github_env --all`` (to remove it again when necessary)
 
 - Install your local github clone via pip (developer mode):
-	- open command window, navigate to dfm_tools folder, eg C:\DATA\GitHub\dfm_tools
-	- optional: >> activate github_env
-	- >> python -m pip install -e .
+	- open command window, navigate to dfm_tools folder, eg C:\\DATA\\GitHub\\dfm_tools
+	- optional: >> ``activate github_env``
+	- ``python -m pip install -e .``
 	- (pip developer mode, any updates to folder by github will be available)
 	- (also install all packages in requirements.txt)
 

@@ -261,7 +261,7 @@ def Test_grid_get_modeldata_onintersection(self):
     import numpy as np
     
     from dfm_tools.grid import get_netdata, get_hismapmodeldata, get_modeldata_onintersection, plot_netmapdata
-    from polygon import LineBuilder#, Polygon
+    from dfm_tools.polygon import LineBuilder#, Polygon
     
     file_map = r'c:\DATA\werkmap\vanJulien_shortmodelfiles\DFM_sigma_curved_bend\DFM_OUTPUT_cb_3d\cb_3d_map.nc'
     file_map = r'c:\DATA\werkmap\vanJulien_shortmodelfiles\DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'
