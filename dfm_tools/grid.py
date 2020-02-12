@@ -36,14 +36,22 @@ class UGrid:
             mesh2d_node_z = data_nc.variables[varn_mesh2d_node_z][:]
         else:
             mesh2d_node_z = None
-        mesh2d_face_nodes = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_face_nodes')][:, :]
+        varn_mesh2d_face_nodes = get_varname_mapnc(data_nc,'mesh2d_face_nodes')
+        if varn_mesh2d_face_nodes is not None: # node_z variable is present
+            mesh2d_face_nodes = data_nc.variables[varn_mesh2d_face_nodes][:, :]
+        else:
+            raise Exception('ERROR: provided file does not contain a variable mesh2d_face_nodes or similar:\n%s\nPlease do one of the following:\n- plot grid from *_map.nc file\n- import and export the grid with RGFGRID\n- import and save the gridd "with cellfinfo" from interacter'%(file_nc))
         verts = nodexyfaces2verts(mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes) #xy coordinates of face nodes
         
-        mesh2d_edge_x = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_edge_x')][:]
-        mesh2d_edge_y = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_edge_y')][:]
-        mesh2d_edge_nodes = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_edge_nodes')][:]
-        edge_verts = nodexyfaces2verts(mesh2d_edge_x, mesh2d_edge_y, mesh2d_edge_nodes) #xy coordinates of face nodes
-        
+        varn_mesh2d_edge_x = get_varname_mapnc(data_nc,'mesh2d_edge_x')
+        if varn_mesh2d_edge_x is not None: # mesh2d_edge_x (and mesh2d_edge_y) variable is present
+            mesh2d_edge_x = data_nc.variables[varn_mesh2d_edge_x][:]
+            mesh2d_edge_y = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_edge_y')][:]
+            mesh2d_edge_nodes = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_edge_nodes')][:]
+            edge_verts = nodexyfaces2verts(mesh2d_edge_x, mesh2d_edge_y, mesh2d_edge_nodes) #xy coordinates of face nodes
+        else:
+            edge_verts = None
+            
         #remove ghost cells from faces and verts
         ghostcells_bool, nonghost_ids = ghostcell_filter(file_nc)
         if ghostcells_bool:
@@ -290,8 +298,11 @@ def get_hismapmodeldata(file_nc, varname, timestep=None, lay=None, stations=None
         
         nc_varkeys, nc_values, nc_values_shape, nc_values_dims = get_ncvardims(file_nc_sel, varname)
         nc_values_ndims = len(nc_values_shape)
-        ghostcells_bool, nonghost_ids = ghostcell_filter(file_nc_sel)
-        
+        if var_ghostaffected:
+            ghostcells_bool, nonghost_ids = ghostcell_filter(file_nc_sel)
+        else:
+            ghostcells_bool = False
+            
         # 1 dimension (faces/stations)
         if nc_values_ndims == 1:
             if iF == 0: #setup initial array
@@ -488,7 +499,10 @@ def get_netdata(file_nc, multipart=None):
             faces_all = np.ma.empty((0,verts_shape2_max),dtype='int32')
             #mesh2d_edge_x_all = np.ma.empty((0,))
             #mesh2d_edge_y_all = np.ma.empty((0,))
-            edge_verts_all = np.ma.empty((0,2,edge_verts.shape[2]))
+            if edge_verts is not None:
+                edge_verts_all = np.ma.empty((0,2,edge_verts.shape[2]))
+            else:
+                edge_verts_all = None
             
         #if necessary, add masked column(s) to increase size to max in domains
         if verts.shape[1] < verts_shape2_max:
@@ -525,7 +539,8 @@ def get_netdata(file_nc, multipart=None):
         faces_all = np.ma.concatenate([faces_all,faces+np.sum(num_nodes)])
         #mesh2d_edge_x_all = np.ma.concatenate([mesh2d_edge_x_all,mesh2d_edge_x])
         #mesh2d_edge_y_all = np.ma.concatenate([mesh2d_edge_y_all,mesh2d_edge_y])
-        edge_verts_all = np.ma.concatenate([edge_verts_all,edge_verts])
+        if edge_verts is not None:
+            edge_verts_all = np.ma.concatenate([edge_verts_all,edge_verts])
         num_nodes.append(node_x.shape[0])
 
     #set all invalid values to the same value (tends to differ between partitions)

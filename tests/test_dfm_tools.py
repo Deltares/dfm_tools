@@ -88,6 +88,44 @@ def Test_grid_getnetdata_plotnet(self):
     ax.set_aspect('equal')
    
 
+def Test_grid_gethismodeldata_Nithin(self):
+    """
+    this test retrieves his data#, and plots it
+    """
+    import matplotlib.pyplot as plt
+    plt.close('all')
+    
+    from dfm_tools.grid import get_netdata, plot_netmapdata, get_hismapmodeldata
+    
+    file_net = r'n:\My Documents\werkmap\vanNithin_shortmodelfiles\myortho3_net.nc'
+    #file_net = r'n:\My Documents\werkmap\vanNithin_shortmodelfiles\myortho3_withcellinfo_net.nc'
+    file_net = r'n:\My Documents\werkmap\vanNithin_shortmodelfiles\myortho3_RGFGRID_net.nc'
+    file_his = r'n:\My Documents\werkmap\vanNithin_shortmodelfiles\tttz_0000_his.nc'
+    
+    print('plot only grid from net.nc')
+    ugrid = get_netdata(file_nc=file_net)
+    fig, ax = plt.subplots()
+    plot_netmapdata(ugrid.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
+    ax.set_aspect('equal')
+    
+    #NITHIN
+    print('plot grid and values from mapdata (constantvalue, 1 dim)')
+    data_fromhis = get_hismapmodeldata(file_nc=file_his, varname='bedlevel')#, multipart=False)
+    fig, ax = plt.subplots()
+    ax.plot(list(range(len(data_fromhis))),data_fromhis,'-')
+
+    print('plot grid and values from mapdata (waterlevel, 2 dim)')
+    data_fromhis = get_hismapmodeldata(file_nc=file_his, varname='waterlevel', timestep='all')#, multipart=False)
+    fig, ax = plt.subplots()
+    ax.plot(data_fromhis.times,data_fromhis,'-')
+    
+    print('plot grid and values from mapdata (salinity, 3 dim)')
+    data_fromhis = get_hismapmodeldata(file_nc=file_his, varname='salinity', timestep='all', lay=5)#, multipart=False)
+    data_fromhis_flat = data_fromhis[:,:,0]
+    fig, ax = plt.subplots()
+    ax.plot(data_fromhis.times,data_fromhis_flat,'-')
+    
+    
 
 def Test_grid_gethismodeldata(self):
     """
@@ -264,7 +302,7 @@ def Test_grid_get_modeldata_onintersection(self):
     from dfm_tools.polygon import LineBuilder#, Polygon
     
     file_map = r'c:\DATA\werkmap\vanJulien_shortmodelfiles\DFM_sigma_curved_bend\DFM_OUTPUT_cb_3d\cb_3d_map.nc'
-    file_map = r'c:\DATA\werkmap\vanJulien_shortmodelfiles\DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'
+    #file_map = r'c:\DATA\werkmap\vanJulien_shortmodelfiles\DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'
     #file_map = r'p:\11203379-mwra-new-bem-model\waq_model\simulations\A31_1year_20191219\DFM_OUTPUT_MB_02_waq\MB_02_waq_0000_map.nc'
     
     if 'cb_3d_map' in file_map:
