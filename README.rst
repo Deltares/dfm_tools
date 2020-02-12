@@ -24,8 +24,11 @@ License
 
 TODO high priority (before launch)
 --------
-- discuss the (future) structure: which functions in which class/script, function names, argument names? (rename lay?)
-- dfm_tools: ugrid class naar ugrid functie en rest van functies in get_dfm script? Poly from ginput naar class polygon.fromplotwindow(ax?)? Intersect naar los script of bij get_dfm?
+- discuss dfm_tools structure:
+	- ugrid class naar ugrid functie en rest van functies in get_dfm script? Intersect naar los script of bij get_dfm?
+	- which functions in which class/script
+	- function names (eg rename get_hismapmodeldata to get_netcdfdata)
+	- argument names (eg rename lay?)
 - add ownrisk-license
 - register on PyPI, for easier install via pip (for regular users, not developers):
 	- https://the-hitchhikers-guide-to-packaging.readthedocs.io/en/latest/quickstart.html#register-your-package-with-the-python-package-index-pypi 
@@ -35,17 +38,16 @@ TODO high priority (before launch)
 TODO high priority
 --------
 - convert latlon to merc in intersect function, testcase needed
-- add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?) (refer depth wrt reference level, water level or bed level, z variable is not correct in dfm-mapfile yet)
-- add depth array (interfaces/centers) to his variables, also to map variables (z/sigma layer calculation is already in get_modeldata_onintersection function)
 - perform actions by dimension names instead of ndims (eg station_name variable has two dimensions but no time)
-
-TODO medium term
---------
-- layerzfrombedlevel keyword in mdu changes how zlayering is set up. Catch this exception with a keyword if necessary
-- as user: get stationlist, dimensionlist, variablelist, more? (partly internally available)
+- add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?) (refer depth wrt reference level, water level or bed level, z variable is not correct in dfm-mapfile yet)
+- retrieve correct depths:
+	- add depth array (interfaces/centers) to his and map variables (z/sigma layer calculation is already in get_modeldata_onintersection function)
+	- depths can be retrieved from mesh2d_layer_z/mesh2d_layer_sigma, but has no time dimension so untrue for sigma and maybe for z? (wrong in dflowfm?)
+	- layerzfrombedlevel keyword in mdu changes how zlayering is set up. Catch this exception with a keyword if necessary
 
 TODO longterm
 --------
+- as user: get stationlist, dimensionlist, variablelist, more? (partly internally available)
 - add minimal version numbers to requirements.txt
 - add polygon read/write function, add ginput polygon function (click in plot) (already partly exists in intersect/slice testscript)
 - style guide: https://www.python.org/dev/peps/pep-0008/

@@ -491,6 +491,16 @@ def get_modeldata_onintersection(file_nc, line_array=None, intersect_gridnos=Non
         return (x, y)
     #merc = np.vectorize(merc)
     
+    #check if all necessary arguments are provided
+    if line_array is None:
+        raise Exception('ERROR: argument line_array not provided')
+    if intersect_gridnos is None:
+        raise Exception('ERROR: argument intersect_gridnos not provided')
+    if intersect_coords is None:
+        raise Exception('ERROR: argument intersect_coords not provided')
+    if timestep is None:
+        raise Exception('ERROR: argument timestep not provided')
+    
     print('calculating distance for all crossed cells, from first point of line (should not take long, but if it does, optimisation is needed)')
     nlinecoords = line_array.shape[0]
     nlinedims = len(line_array.shape)

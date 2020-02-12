@@ -141,22 +141,31 @@ def Test_grid_gethismodeldata(self):
     file_his = r'c:\DATA\werkmap\vanJulien_shortmodelfiles\DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_his.nc'
     
     #GREVELINGEN
-    print('plot grid and values from mapdata (constantvalue, 1 dim)')
+    print('plot bedlevel from his')
     data_fromhis = get_hismapmodeldata(file_nc=file_his, varname='bedlevel', station='all')#, multipart=False)
     fig, ax = plt.subplots()
     ax.plot(data_fromhis.var_stations,data_fromhis,'-')
     ax.tick_params('x',rotation=30)
 
-    print('plot grid and values from mapdata (waterlevel, 2 dim)')
+    print('plot waterlevel from his')
     data_fromhis = get_hismapmodeldata(file_nc=file_his, varname='waterlevel', timestep='all', station='all')#, multipart=False)
     fig, ax = plt.subplots()
     ax.plot(data_fromhis.var_times,data_fromhis,'-')
     
-    print('plot grid and values from mapdata (salinity, 3 dim)')
+    print('plot salinity from his')
     data_fromhis = get_hismapmodeldata(file_nc=file_his, varname='salinity', timestep='all', lay=5, station='all')#, multipart=False)
     data_fromhis_flat = data_fromhis[:,:,0]
     fig, ax = plt.subplots()
     ax.plot(data_fromhis.var_times,data_fromhis_flat,'-')
+
+    print('plot salinity,bedlevel')
+    #depth retrieval is probably wrong
+    data_fromhis_depth = get_hismapmodeldata(file_nc=file_his, varname='zcoordinate_c', timestep=4, lay='all', station='Bommenede')#, multipart=False)
+    data_fromhis_depth_flat = data_fromhis_depth[0,0,:]
+    data_fromhis = get_hismapmodeldata(file_nc=file_his, varname='salinity', timestep=4, lay='all', station='Bommenede')#, multipart=False)
+    data_fromhis_flat = data_fromhis[0,0,:]
+    fig, ax = plt.subplots()
+    ax.plot(data_fromhis_flat, data_fromhis_depth_flat,'-')
     
     
     
@@ -182,6 +191,7 @@ def Test_grid_getnetdata_getmapmodeldata_plotnetmapdata(self):
     #iT = 3 #for iT in range(10):
     data_frommap = get_hismapmodeldata(file_nc=file_map1, varname='mesh2d_sa1', timestep=np.arange(dt.datetime(2001,1,1),dt.datetime(2001,1,2),dt.timedelta(hours=1)), lay=5)#, multipart=False)
     data_frommap_flat = data_frommap[0,:,0]
+    #data_frommap_depth = get_hismapmodeldata(file_nc=file_map1, varname='mesh2d_layer_sigma', lay='all')#, multipart=False)
     fig, ax = plt.subplots()
     pc = plot_netmapdata(ugrid.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
     #pc.set_clim([28,30.2])
