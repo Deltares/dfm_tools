@@ -141,22 +141,31 @@ def Test_grid_gethismodeldata(self):
     file_his = r'c:\DATA\werkmap\vanJulien_shortmodelfiles\DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_his.nc'
     
     #GREVELINGEN
-    print('plot grid and values from mapdata (constantvalue, 1 dim)')
+    print('plot bedlevel from his')
     data_fromhis = get_hismapmodeldata(file_nc=file_his, varname='bedlevel', station='all')#, multipart=False)
     fig, ax = plt.subplots()
     ax.plot(data_fromhis.var_stations,data_fromhis,'-')
     ax.tick_params('x',rotation=30)
 
-    print('plot grid and values from mapdata (waterlevel, 2 dim)')
+    print('plot waterlevel from his')
     data_fromhis = get_hismapmodeldata(file_nc=file_his, varname='waterlevel', timestep='all', station='all')#, multipart=False)
     fig, ax = plt.subplots()
     ax.plot(data_fromhis.var_times,data_fromhis,'-')
     
-    print('plot grid and values from mapdata (salinity, 3 dim)')
+    print('plot salinity from his')
     data_fromhis = get_hismapmodeldata(file_nc=file_his, varname='salinity', timestep='all', lay=5, station='all')#, multipart=False)
     data_fromhis_flat = data_fromhis[:,:,0]
     fig, ax = plt.subplots()
     ax.plot(data_fromhis.var_times,data_fromhis_flat,'-')
+
+    print('plot salinity,bedlevel')
+    #depth retrieval is probably wrong
+    data_fromhis_depth = get_hismapmodeldata(file_nc=file_his, varname='zcoordinate_c', timestep=4, lay='all', station='Bommenede')#, multipart=False)
+    data_fromhis_depth_flat = data_fromhis_depth[0,0,:]
+    data_fromhis = get_hismapmodeldata(file_nc=file_his, varname='salinity', timestep=4, lay='all', station='Bommenede')#, multipart=False)
+    data_fromhis_flat = data_fromhis[0,0,:]
+    fig, ax = plt.subplots()
+    ax.plot(data_fromhis_flat, data_fromhis_depth_flat,'-')
     
     
     
@@ -182,6 +191,7 @@ def Test_grid_getnetdata_getmapmodeldata_plotnetmapdata(self):
     #iT = 3 #for iT in range(10):
     data_frommap = get_hismapmodeldata(file_nc=file_map1, varname='mesh2d_sa1', timestep=np.arange(dt.datetime(2001,1,1),dt.datetime(2001,1,2),dt.timedelta(hours=1)), lay=5)#, multipart=False)
     data_frommap_flat = data_frommap[0,:,0]
+    #data_frommap_depth = get_hismapmodeldata(file_nc=file_map1, varname='mesh2d_layer_sigma', lay='all')#, multipart=False)
     fig, ax = plt.subplots()
     pc = plot_netmapdata(ugrid.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
     #pc.set_clim([28,30.2])
@@ -326,6 +336,9 @@ def Test_grid_get_modeldata_onintersection(self):
                                [ 64053.73427496, 419407.58239502]])
         line_array = np.array([[ 53181.96942503, 424270.83361629],
                                [ 55160.15232593, 416913.77136685]])
+        line_array = np.array([[ 52787.21854294, 424392.10414528],
+                               [ 55017.72655174, 416403.77313703],
+                               [ 65288.43784807, 419360.49305567]])
         clim = [-25,5]
     elif 'DFM_OUTPUT_MB_02_waq' in file_map:
         timestep = 30
@@ -341,17 +354,17 @@ def Test_grid_get_modeldata_onintersection(self):
     ugrid = get_netdata(file_nc=file_map)#,multipart=False)
     
     #create plot with ugrid and cross section line
-    fig, ax = plt.subplots()
-    pc = plot_netmapdata(ugrid.verts, values=None, ax=ax, linewidth=0.5, color='crimson', facecolor="None")
+    fig, ax_input = plt.subplots()
+    pc = plot_netmapdata(ugrid.verts, values=None, ax=ax_input, linewidth=0.5, color='crimson', facecolor="None")
     #pc.set_clim([28,30.2])
     #fig.colorbar(pc, ax=ax)
-    ax.set_aspect('equal')
+    ax_input.set_aspect('equal')
     if 0: #click interactive polygon
         #pol_frominput = Polygon.frominteractive(ax)
-        line, = ax.plot([], [],'o-')  # empty line
+        line, = ax_input.plot([], [],'o-')  # empty line
         linebuilder = LineBuilder(line)
         line_array = linebuilder.line_array
-    ax.plot(line_array[:,0],line_array[:,1])
+    ax_input.plot(line_array[:,0],line_array[:,1])
     
     
     #intersect function, find crossed cell numbers (gridnos) and coordinates of intersection (2 per crossed cell)
@@ -360,6 +373,10 @@ def Test_grid_get_modeldata_onintersection(self):
     #derive vertices from cross section (distance from first point)
     crs_verts = get_modeldata_onintersection(file_nc=file_map, line_array=line_array, intersect_gridnos=intersect_gridnos, intersect_coords=intersect_coords, timestep=timestep, convert2merc=convert2merc)
     
+    #get bed layer
+    data_frommap_bl = get_hismapmodeldata(file_nc=file_map, varname='mesh2d_flowelem_bl')#, multipart=False)
+    pc = plot_netmapdata(ugrid.verts, values=data_frommap_bl, ax=ax_input, linewidth=0.5, cmap="jet")
+
     #get data to plot and select data for cross section (gridnos)
     data_frommap = get_hismapmodeldata(file_nc=file_map, varname='mesh2d_sa1', timestep=timestep, lay='all')#, multipart=False)
     data_frommap_sel = data_frommap[0,intersect_gridnos,:]
@@ -367,13 +384,14 @@ def Test_grid_get_modeldata_onintersection(self):
     
     #plot crossed cells (gridnos) in first plot
     data_frommap_flat = data_frommap[0,intersect_gridnos,layno]
-    pc = plot_netmapdata(ugrid.verts[intersect_gridnos,:,:], values=data_frommap_flat, ax=ax, linewidth=0.5, cmap="jet")
+    pc = plot_netmapdata(ugrid.verts[intersect_gridnos,:,:], values=data_frommap_flat, ax=ax_input, linewidth=0.5, cmap="jet")
     
     #plot cross section
-    fig, ax_crs = plt.subplots()
-    pc = plot_netmapdata(crs_verts, values=data_frommap_sel_flat, ax=ax_crs, linewidth=0.5, cmap="jet")
-    fig.colorbar(pc, ax=ax_crs)
-    ax_crs.set_ylim(clim)
+    fig, ax = plt.subplots()
+    pc = plot_netmapdata(crs_verts, values=data_frommap_sel_flat, ax=ax, linewidth=0.5, cmap='jet')
+    fig.colorbar(pc, ax=ax)
+    ax.set_ylim(clim)
+    
 
 
 
