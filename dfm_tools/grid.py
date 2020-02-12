@@ -312,7 +312,7 @@ def get_hismapmodeldata(file_nc, varname, timestep=None, lay=None, depth=None, s
             layer_ids = range(nlayers)
         elif type(lay)==list or type(lay)==range or type(lay)==type(np.arange(1,2,0.5)):
             if type(lay[0])==int: #list/range/ndarray of int
-                layer_ids = lay
+                layer_ids = np.unique(lay)
             else:
                 raise Exception('ERROR: timestep lay type not anticipated (%s), (list/range/ndarray of) int are accepted (or "all")'%(type(lay)))            
         elif type(lay)==int:
@@ -443,8 +443,8 @@ def get_hismapmodeldata(file_nc, varname, timestep=None, lay=None, depth=None, s
             raise Exception('unanticipated number of dimensions: %s'%(nc_values_ndims))
         
         #add metadata
-        values_all.var_name = varname
-        values_all.var_dimension = nc_values_dims
+        values_all.var_varname = varname
+        values_all.var_dimensionnames = nc_values_dims
         if dimn_time in nc_values_dims: #only faces/stations dimensions, no times or layers
             values_all.var_times = data_nc_datetimes_pd.iloc[time_ids]
         else:
