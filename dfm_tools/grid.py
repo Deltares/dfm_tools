@@ -54,6 +54,36 @@ class UGrid:
         ugrid = UGrid(mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes, verts, mesh2d_node_z=mesh2d_node_z, edge_verts=edge_verts)
         return ugrid
 
+    def polygon_intersect(self, line_array):
+        from shapely.geometry import Polygon, LineString
+        import numpy as np
+        
+        print('finding crossing flow links (can take a while)')
+        #allpol = []
+        intersect_gridnos = np.empty((0),dtype=int)
+        intersect_coords1 = np.empty((0,2))
+        intersect_coords2 = np.empty((0,2))
+        line_section = LineString(line_array)
+        for iP, pol_data in enumerate(self.verts):
+            pol_data_nonan = pol_data[~np.isnan(pol_data).all(axis=1)]
+            pol_shp = Polygon(pol_data_nonan)
+            #allpol.append(pol_shp)
+            intersection_line = pol_shp.intersection(line_section).coords
+            if intersection_line != []:
+                intersect_gridnos = np.concatenate([intersect_gridnos,[iP]])
+                intersect_coords1=np.concatenate([intersect_coords1,np.array([list(intersection_line)[0]])])
+                intersect_coords2=np.concatenate([intersect_coords2,np.array([list(intersection_line)[1]])])
+                #all_intersect.append(list(intersection_line))
+            #print(iP)
+        intersect_coords = np.stack([intersect_coords1,intersect_coords2], axis=2)
+        #dimensions (gridnos, xy, firstsecond)
+        #allpol_multi = MultiPolygon(allpol)
+        #intersection_line = allpol_multi.intersection(line_section).coords #does not work
+        print('done finding crossing flow links')
+        return intersect_gridnos, intersect_coords
+    
+    
+    
 
 def get_mapfilelist(file_nc, multipart=None):
     #get list of mapfiles
@@ -334,6 +364,83 @@ def get_hismapmodeldata(file_nc, varname, timestep=None, lay=None, stations=None
         #    values_all.stations = None
     return values_all
 
+
+
+def get_modeldata_onintersection(file_nc, line_array, intersect_gridnos, intersect_coords, timestep, convert2merc=None):
+    from netCDF4 import Dataset
+    from dfm_tools.get_varname_mapnc import get_varname_mapnc
+    
+    # Convert lat/lon corrdinates to x/y mercator projection
+    def merc(lat, lon):
+        r_major = 6378137.000
+        x = r_major * np.radians(lon)
+        scale = x/lon
+        y = 180.0/np.pi * np.log(np.tan(np.pi/4.0 + lat * (np.pi/180.0)/2.0)) * scale
+        #x = lon
+        #y = lat
+        return (x, y)
+    #merc = np.vectorize(merc)
+    
+    crs_xstart = intersect_coords[:,0,0]
+    crs_xstop = intersect_coords[:,0,1]
+    crs_ystart = intersect_coords[:,1,0]
+    crs_ystop = intersect_coords[:,1,1]
+    
+    data_frommap_wl3 = get_hismapmodeldata(file_nc, varname='mesh2d_s1', timestep=timestep)#, multipart=False)
+    data_frommap_wl3_sel = data_frommap_wl3[0,intersect_gridnos]
+    data_frommap_bl = get_hismapmodeldata(file_nc, varname='mesh2d_flowelem_bl')#, multipart=False)
+    data_frommap_bl_sel = data_frommap_bl[intersect_gridnos]
+    
+    
+    data_nc = Dataset(file_nc)
+    #nlay = data_frommap.shape[2]
+    #nlay = data_nc.variables[varname].shape[2]
+    dimn_layer = get_varname_mapnc(data_nc,'nmesh2d_layer')
+    nlay = data_nc.dimensions[dimn_layer].size
+    varn_layer_z = get_varname_mapnc(data_nc,'mesh2d_layer_z')
+    if varn_layer_z is None:
+        laytyp = 'sigmalayer'
+        #zvals_cen = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay)
+        zvals_interface = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay+1)
+    else:
+        laytyp = 'zlayer'
+        #zvals_cen = get_hismapmodeldata(file_nc=file_map, varname='mesh2d_layer_z', lay='all')#, multipart=False)
+        #zvals_interface = get_hismapmodeldata(file_nc=file_map, varname='mesh2d_interface_z')#, multipart=False)
+        zvals_interface = data_nc.variables['mesh2d_interface_z'][:]
+    
+    if convert2merc:
+        line_array_x0, line_array_y0 = merc(line_array[0,0],line_array[0,1])
+        crs_xstart, crs_ystart = merc(crs_xstart,crs_ystart)
+        crs_xstop, crs_ystop = merc(crs_xstart,crs_ystart)
+        
+    crs_dist_starts = np.sqrt((crs_xstart - line_array[0,0])**2 + (crs_ystart - line_array[0,1])**2)
+    crs_dist_stops = np.sqrt((crs_xstop - line_array[0,0])**2 + (crs_ystop - line_array[0,1])**2)
+    #TODO: distance is now from first clicked point, but should be distance along line
+    
+    crs_verts_x_all = np.empty((0,4,1))
+    crs_verts_z_all = np.empty((0,4,1))
+    #data_frommap_sel_flat = np.empty((0))
+    for iL in range(nlay):
+        zval_lay_bot = zvals_interface[iL]
+        zval_lay_top = zvals_interface[iL+1]
+        crs_verts_x = np.array([[crs_dist_starts,crs_dist_stops,crs_dist_stops,crs_dist_starts]]).T
+        if laytyp == 'sigmalayer':
+            crs_verts_z = np.array([[zval_lay_bot,zval_lay_bot,zval_lay_top,zval_lay_top]]).T
+        elif laytyp == 'zlayer':
+            crs_verts_z = np.repeat(np.array([[zval_lay_bot,zval_lay_bot,zval_lay_top,zval_lay_top]]).T[np.newaxis],repeats=crs_verts_x.shape[0],axis=0)
+            #top z-layer is extended to water level, if wl is higher than zval_lay_top
+            if iL == nlay-1:
+                crs_verts_z[:,2,0] = np.maximum(zval_lay_top,data_frommap_wl3_sel.data)
+                crs_verts_z[:,3,0] = np.maximum(zval_lay_top,data_frommap_wl3_sel.data)
+            # zval_lay_bot lower than bedlevel should be overwritten with bedlevel
+            zvalbot_belowbl_bool = crs_verts_z[:,0,0]<data_frommap_bl_sel
+            crs_verts_z[zvalbot_belowbl_bool,0,0] = data_frommap_bl_sel[zvalbot_belowbl_bool]
+            crs_verts_z[zvalbot_belowbl_bool,1,0] = data_frommap_bl_sel[zvalbot_belowbl_bool]
+        crs_verts_x_all = np.concatenate([crs_verts_x_all, crs_verts_x])
+        crs_verts_z_all = np.concatenate([crs_verts_z_all, crs_verts_z])
+        #data_frommap_sel_flat = np.concatenate([data_frommap_sel_flat,data_frommap_sel[:,iL]])
+    crs_verts = np.concatenate([crs_verts_x_all, crs_verts_z_all], axis=2)
+    return crs_verts
 
 
 

@@ -3,7 +3,7 @@ dependencies:
   - python=3.7
   - pip>=19.2.3
   - pip:
-    - pytest==5.0.1
+    - pytest>=5.0.1
     - pytest-cov
     - teamcity-messages
     - spyder-kernels==0.*

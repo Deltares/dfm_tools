@@ -32,11 +32,11 @@ def get_varname_mapnc(data_nc,varname_requested):
     varnames_list['mesh2d_flowelem_bl'] = ['mesh2d_flowelem_bl','FlowElem_bl','',''] # bed level
     varnames_list['mesh2d_flowelem_ba'] = ['mesh2d_flowelem_ba','FlowElem_bac','',''] # area (m2) of cell faces
     
-    varnames_list['mesh2d_ucx'] = ['mesh2d_ucx','ucx','',''] # 
-    varnames_list['mesh2d_ucy'] = ['mesh2d_ucy','ucy','',''] # 
+    #varnames_list['mesh2d_ucx'] = ['mesh2d_ucx','ucx','',''] # 
+    #varnames_list['mesh2d_ucy'] = ['mesh2d_ucy','ucy','',''] # 
     varnames_list['mesh2d_layer_z'] = ['mesh2d_layer_z','LayCoord_cc','',''] # 
-    varnames_list['mesh2d_sa1'] = ['mesh2d_sa1','sa1','',''] # 
-    varnames_list['mesh2d_tem1'] = ['mesh2d_tem1','tem1','',''] # 
+    #varnames_list['mesh2d_sa1'] = ['mesh2d_sa1','sa1','',''] # 
+    #varnames_list['mesh2d_tem1'] = ['mesh2d_tem1','tem1','',''] # 
     
     
     ### DIMENSION names used within different versions of Delft3D-Flexible Mesh

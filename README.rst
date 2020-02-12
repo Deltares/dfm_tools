@@ -13,19 +13,20 @@ Features
 - select all data based on variable, timestep/datetime, layer
 - merge partitions and delete ghostcells automatically
 - take over masks in original data
+- selection/plotting by polygon/crossection, so slicing the ugrid data
 
 TODO project
 --------
-- add shapely library to requirements?
 - hisinfo per station opvragen (now only all), also add requested stations to output as values_all.stations
 - add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?) (refer depth wrt reference level, water level or bed level, z variable is not correct in dfm-mapfile yet), also needed for his? (no mesh2d_node_z there)
 - perform actions by dimension names instead of ndims (station_name variable has two dimensions but no time)
 - overleg met Lauriane/Maialen
+- dfm_tools: ugrid class naar ugrid functie en rest van functies in get_dfm script? Poly from ginput naar class polygon.fromplotwindow(ax?)? Intersect naar los script of bij get_dfm?
 
 TODO
 --------
 - style guide: https://www.python.org/dev/peps/pep-0008/
-- pyugrid (ghostcells? sowieso goed voor plotopties):
+- pyugrid (ghostcells en mapmergen worden afgehandeld?), voorbeelden in ieder geval als inspiratie voor plotopties):
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/Delft3D%20examples.ipynb
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/connectivity_example.ipynb
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/plotting_example.ipynb
@@ -40,19 +41,12 @@ TODO
 	- https://the-hitchhikers-guide-to-packaging.readthedocs.io/en/latest/quickstart.html#register-your-package-with-the-python-package-index-pypi 
 	- also add version numbers (only master branch?)
 	- also add changelog besides commit comments?
-- how to plot properties on edges (scatter is slow), maybe create dual mesh and plot like faces
+- how to plot properties on edges (scatter is slow), maybe create dual mesh and plot like faces. most relevant variables are also available on faces, so is this necessary?
 - add requested variablename(?), times and layers to outputdata (necessary for plotting his and more)
 - add plot of structured grid (CMEMS etc)
 - add foufiles
-- add selection by polygon/crossection, slicing ugrid:
-	- https://stackoverflow.com/questions/47868134/how-to-slice-2d-grid-from-3d-irrigular-data
-	- https://github.com/pyugrid/pyugrid/tree/master/notebook_examples
-	- https://stackoverflow.com/questions/15748767/interpolation-subsampling-of-3d-data-in-python-without-vtk/15753011#15753011
-	- https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.griddata.html#scipy.interpolate.griddata
-	- https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.Rbf.html
-	- https://github.com/modflowpy/flopy/issues/536#2.2
 - add inpolygon selection of data
-- add polygon read/write function, add ginput polygon function (click in plot)
+- add polygon read/write function, add ginput polygon function (click in plot) (already partly exists in intersect/slice testscript)
 - write documentation as comments and generate automatically
 - create testbank (keep example codelines) and setup auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
 - add comparable functions for sobek and Delft3D
@@ -66,6 +60,7 @@ How to work with this git repository
 	- ``git clone https://github.com/openearth/dfm_tools.git`` (repos gets cloned to local drive, checkout of master branch)
 	- to update: ``git pull`` (?)
 	- NOTE: it is also possible to download the zip from https://github.com/openearth/dfm_tools, but this is not recommended since getting the updates is easier this way
+	- NOTE: in the near future (hopefully within a week), this package should be installable via pip, after registering on PyPI. then users do not need github anymore, only developers do
 
 - Install Python:
 	- Download the newest anaconda 64 bit
@@ -83,7 +78,7 @@ How to work with this git repository
 	- restart IPython console
 	- optional: ``conda remove -n github_env --all`` (to remove it again when necessary)
 
-- Install your local github clone via pip:
+- Install your local github clone via pip (developer mode):
 	- open command window, navigate to dfm_tools folder, eg C:\DATA\GitHub\dfm_tools
 	- optional: >> activate github_env
 	- >> python -m pip install -e .

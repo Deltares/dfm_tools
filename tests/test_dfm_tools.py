@@ -253,6 +253,86 @@ def Test_maplora(self):
         ax.set_xlabel(var_name)
 
 
+
+
+def Test_grid_get_modeldata_onintersection(self):
+    import matplotlib.pyplot as plt
+    plt.close('all')
+    import numpy as np
+    
+    from dfm_tools.grid import get_netdata, get_hismapmodeldata, get_modeldata_onintersection, plot_netmapdata
+    from polygon import LineBuilder#, Polygon
+    
+    file_map = r'c:\DATA\werkmap\vanJulien_shortmodelfiles\DFM_sigma_curved_bend\DFM_OUTPUT_cb_3d\cb_3d_map.nc'
+    file_map = r'c:\DATA\werkmap\vanJulien_shortmodelfiles\DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'
+    #file_map = r'p:\11203379-mwra-new-bem-model\waq_model\simulations\A31_1year_20191219\DFM_OUTPUT_MB_02_waq\MB_02_waq_0000_map.nc'
+    
+    if 'cb_3d_map' in file_map:
+        timestep = 72
+        layno = 5
+        convert2merc = None
+        line_array = np.array([[ 185.08667065, 2461.11775254],
+                               [2934.63837418, 1134.16019127]])
+        line_array = np.array([[ 104.15421399, 2042.7077107 ],
+                               [2913.47878063, 2102.48057382]])
+    elif 'Grevelingen' in file_map:
+        timestep = 3
+        layno = 35
+        convert2merc = None
+        line_array = np.array([[ 56267.59146475, 415644.67447155],
+                               [ 64053.73427496, 419407.58239502]])
+        line_array = np.array([[ 53181.96942503, 424270.83361629],
+                               [ 55160.15232593, 416913.77136685]])
+    elif 'DFM_OUTPUT_MB_02_waq' in file_map:
+        timestep = 30
+        layno = 5
+        convert2merc = True
+        line_array = np.array([[42.38, 42.38],
+                               [-70.98, -70.25]])
+    else:
+        raise Exception('ERROR: no settings provided for this mapfile')
+    
+    
+    ugrid = get_netdata(file_nc=file_map)#,multipart=False)
+    
+    #create plot with ugrid and cross section line
+    fig, ax = plt.subplots()
+    pc = plot_netmapdata(ugrid.verts, values=None, ax=ax, linewidth=0.5, color='crimson', facecolor="None")
+    #pc.set_clim([28,30.2])
+    #fig.colorbar(pc, ax=ax)
+    ax.set_aspect('equal')
+    if 0: #click interactive polygon
+        #pol_frominput = Polygon.frominteractive(ax)
+        line, = ax.plot([], [],'o-')  # empty line
+        linebuilder = LineBuilder(line)
+        line_array = linebuilder.line_array
+    ax.plot(line_array[:,0],line_array[:,1])
+    
+    
+    #intersect function, find crossed cell numbers (gridnos) and coordinates of intersection (2 per crossed cell)
+    intersect_gridnos, intersect_coords = ugrid.polygon_intersect(line_array)
+    
+    #derive vertices from cross section (distance from first point)
+    crs_verts = get_modeldata_onintersection(file_nc=file_map, line_array=line_array, intersect_gridnos=intersect_gridnos, intersect_coords=intersect_coords, timestep=timestep, convert2merc=convert2merc)
+    
+    
+    #get data to plot and select data for cross section (gridnos)
+    data_frommap = get_hismapmodeldata(file_nc=file_map, varname='mesh2d_sa1', timestep=timestep, lay='all')#, multipart=False)
+    data_frommap_sel = data_frommap[0,intersect_gridnos,:]
+    data_frommap_sel_flat = data_frommap_sel.T.flatten()
+    
+    #plot crossed cells (gridnos) in first plot
+    data_frommap_flat = data_frommap[0,intersect_gridnos,layno]
+    pc = plot_netmapdata(ugrid.verts[intersect_gridnos,:,:], values=data_frommap_flat, ax=ax, linewidth=0.5, cmap="jet")
+    
+    #plot cross section
+    fig, ax_crs = plt.subplots()
+    pc = plot_netmapdata(crs_verts, values=data_frommap_sel_flat, ax=ax_crs, linewidth=0.5, cmap="jet")
+    fig.colorbar(pc, ax=ax_crs)
+    ax_crs.set_ylim([-25,5])
+
+
+
     
 @pytest.fixture
 def response():
