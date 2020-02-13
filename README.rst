@@ -22,6 +22,31 @@ License
 - there is no warranty whatsoever, users are responsible to check the output themselves
 - it might be that script names, function names, argument names and more will slightly change in the upcoming weeks. This would mean the script you create now might need some edits to work with the toolbox in the future.
 
+How to work with this git repository
+--------
+- Install Github:
+	- Download git from https://git-scm.com/download/win, install with default settings
+	- open command line in a folder where you want to clone the dfm_tools github repo, eg C:\\DATA\\GitHub
+	- ``git clone https://github.com/openearth/dfm_tools.git`` (repos gets cloned to local drive, checkout of master branch)
+	- to update: navigate to dfm_tools folder and ``git pull``
+	- NOTE: it is also possible to download the zip from https://github.com/openearth/dfm_tools, but this is not recommended since getting the updates is easier this way
+	- NOTE: in the near future (hopefully within a week), this package should be installable via pip, after registering on PyPI. then users do not need github anymore, only developers do
+
+- Install Python:
+	- Download the newest anaconda 64 bit
+	- install, including PATH checkbox
+
+- Install your local github clone via pip (developer mode):
+	- open command window, navigate to dfm_tools folder, eg C:\\DATA\\GitHub\\dfm_tools
+	- optional: create and activate a separate Python virtual environment
+	- ``python -m pip install -e .``
+	- (pip developer mode, any updates to folder by github will be available)
+	- (also install all packages in requirements.txt)
+
+- Use it in your scripts:
+	- from dfm_tools.grid import get_netdata, get_ncmodeldata, plot_netmapdata
+	- check tests folder for examples
+
 TODO high priority (before launch)
 --------
 - discuss dfm_tools structure:
@@ -69,55 +94,6 @@ TODO longterm
 - create testbank (keep example codelines) and setup auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
 - add comparable functions for sobek and Delft3D
 
-How to work with this git repository
---------
-- Install Github:
-	- Download git from https://git-scm.com/download/win, install with default settings
-	- open command line in a folder where you want to clone the dfm_tools github repo, eg C:\\DATA\\GitHub
-	- ``git clone https://github.com/openearth/dfm_tools.git`` (repos gets cloned to local drive, checkout of master branch)
-	- to update: navigate to dfm_tools folder and ``git pull``
-	- NOTE: it is also possible to download the zip from https://github.com/openearth/dfm_tools, but this is not recommended since getting the updates is easier this way
-	- NOTE: in the near future (hopefully within a week), this package should be installable via pip, after registering on PyPI. then users do not need github anymore, only developers do
-
-- Install Python:
-	- Download the newest anaconda 64 bit
-	- install, including PATH checkbox
-
-- Install your local github clone via pip (developer mode):
-	- open command window, navigate to dfm_tools folder, eg C:\\DATA\\GitHub\\dfm_tools
-	- optional: create and activate a separate Python virtual environment
-	- ``python -m pip install -e .``
-	- (pip developer mode, any updates to folder by github will be available)
-	- (also install all packages in requirements.txt)
-
-- Use it in your scripts:
-	- from dfm_tools.grid import get_netdata, get_ncmodeldata, plot_netmapdata
-	- check tests folder for examples
-
-
-How to contribute to this git repository
---------
-- First request rights to contribute
-- Branching:
-	- open git bash window in local dfm_tools folder (eg C:\\DATA\\GitHub\\dfm_tools)
-	- ``git config --global user.email [emailaddress]``
-	- ``git config --global user.name [username]``
-	- Create your own branch option 1:
-		- manually create a branch on https://github.com/openearth/dfm_tools
-		- open git bash window in local dfm_tools folder (eg C:\\DATA\\GitHub\\dfm_tools)
-		- ``git remote update origin --prune`` (update local branch list)
-		- ``git checkout branchname`` (checkout branch)
-	- Create your own branch option 2:
-		- open git bash window in local dfm_tools folder (eg C:\\DATA\\GitHub\\dfm_tools)
-		- ``git checkout --branch branchname`` (create new branch and checkout, combination of git branch and git checkout commands)
-
-- Commit and push your changes to your online branch:
-	- optional: ``git pull origin master`` (gets edits from master to current local branch, might induce conflicts. maybe better to just push to your branch and then handle pull request on github website)
-	- ``git add .``
-	- ``git commit -m "message to be included with your commit"``
-	- ``git push`` (pushes changes to server, do not do this in while working in the master)
-- Request merging of your branch on https://github.com/openearth/dfm_tools/branches
-
 Related information
 --------
 - Create a separate python environment and link from Spyder:
@@ -131,3 +107,24 @@ Related information
 	- Go to Tools >> Preferences >> Python interpreter >> point to github_env python.exe (print of sys.executable)
 	- restart IPython console
 	- optional: ``conda remove -n github_env --all`` (to remove it again when necessary)
+- how to contribute to this git repository
+	- First request rights to contribute
+	- Branching:
+		- open git bash window in local dfm_tools folder (eg C:\\DATA\\GitHub\\dfm_tools)
+		- ``git config --global user.email [emailaddress]``
+		- ``git config --global user.name [username]``
+		- Create your own branch option 1:
+			- manually create a branch on https://github.com/openearth/dfm_tools
+			- open git bash window in local dfm_tools folder (eg C:\\DATA\\GitHub\\dfm_tools)
+			- ``git remote update origin --prune`` (update local branch list)
+			- ``git checkout branchname`` (checkout branch)
+		- Create your own branch option 2:
+			- open git bash window in local dfm_tools folder (eg C:\\DATA\\GitHub\\dfm_tools)
+			- ``git checkout --branch branchname`` (create new branch and checkout, combination of git branch and git checkout commands)
+
+	- Commit and push your changes to your online branch:
+		- optional: ``git pull origin master`` (gets edits from master to current local branch, might induce conflicts. maybe better to just push to your branch and then handle pull request on github website)
+		- ``git add .``
+		- ``git commit -m "message to be included with your commit"``
+		- ``git push`` (pushes changes to server, do not do this in while working in the master)
+	- Request merging of your branch on https://github.com/openearth/dfm_tools/branches
