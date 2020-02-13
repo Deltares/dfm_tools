@@ -47,6 +47,7 @@ TODO high priority
 
 TODO longterm
 --------
+- make patched zt plots from hisfile (careful, z interfaces data in hisfile is wrong)
 - as user: get stationlist, dimensionlist, variablelist, more? (partly internally available)
 - add minimal version numbers to requirements.txt
 - add polygon read/write function, add ginput polygon function (click in plot) (already partly exists in intersect/slice testscript)

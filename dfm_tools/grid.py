@@ -93,7 +93,7 @@ class UGrid:
     
     
 
-def get_mapfilelist(file_nc, multipart=None):
+def get_ncfilelist(file_nc, multipart=None):
     #get list of mapfiles
     import re
     import glob
@@ -103,11 +103,12 @@ def get_mapfilelist(file_nc, multipart=None):
         raise Exception('ERROR: file does not exist: %s'%(file_nc))
     
     lastpart = file_nc.split('_')[-2]
-    if file_nc.endswith('_map.nc') and multipart != False and len(lastpart) == 4 and lastpart.isdigit(): #if part before '_map.nc' is eg '0000'
-        filename_start = re.compile('(.*)_([0-9]+)_map.nc').search(file_nc).group(1)
+    nctype = file_nc.split('_')[-1]
+    if file_nc.endswith('_%s'%(nctype)) and multipart != False and len(lastpart) == 4 and lastpart.isdigit(): #if part before '_map.nc' is eg '0000'
+        filename_start = re.compile('(.*)_([0-9]+)_%s'%(nctype)).search(file_nc).group(1)
         #filename_number = re.compile('(.*)_([0-9]+)_map.nc').search(file_nc).group(2)
         #file_ncs = [file_nc.replace('_%s_map.nc','_%04d_map.nc'%(filename_number, domain_id)) for domain_id in range(ndomains)]
-        file_ncs = glob.glob('%s*_map.nc'%(filename_start))
+        file_ncs = glob.glob('%s*_%s'%(filename_start,nctype))
     else:
         file_ncs = [file_nc]
     return file_ncs
@@ -256,7 +257,7 @@ def get_hismapmodeldata(file_nc, varname, timestep=None, lay=None, depth=None, s
     import datetime as dt
     from netCDF4 import Dataset
     
-    from dfm_tools.grid import get_mapfilelist, get_ncvardims, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter
+    from dfm_tools.grid import get_ncfilelist, get_ncvardims, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter
     from dfm_tools.get_varname_mapnc import get_varname_mapnc
     
     #get variable and dimension info
@@ -369,7 +370,7 @@ def get_hismapmodeldata(file_nc, varname, timestep=None, lay=None, depth=None, s
     else:
         var_ghostaffected = False
     
-    file_ncs = get_mapfilelist(file_nc, multipart)
+    file_ncs = get_ncfilelist(file_nc, multipart)
     
     
     for iF, file_nc_sel in enumerate(file_ncs):
@@ -599,9 +600,9 @@ def get_modeldata_onintersection(file_nc, line_array=None, intersect_gridnos=Non
 def get_netdata(file_nc, multipart=None):
     import numpy as np
     
-    from dfm_tools.grid import get_mapfilelist, UGrid
+    from dfm_tools.grid import get_ncfilelist, UGrid
 
-    file_ncs = get_mapfilelist(file_nc, multipart)
+    file_ncs = get_ncfilelist(file_nc, multipart)
     #get all data
     num_nodes = [0]
     verts_shape2_all = []
