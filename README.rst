@@ -30,7 +30,7 @@ How to work with this git repository
 	- Download git from https://git-scm.com/download/win, install with default settings
 	- open command line in a folder where you want to clone the dfm_tools github repo, eg C:\\DATA\\GitHub
 	- ``git clone https://github.com/openearth/dfm_tools.git`` (repos gets cloned to local drive, checkout of master branch)
-	- to update: navigate to dfm_tools folder and ``git pull``
+	- to update: navigate to dfm_tools folder and ``git pull`` (combination of git fetch and git merge)
 	- NOTE: in the near future (hopefully within a week), this package should be installable via pip, after registering on PyPI. then users do not need github anymore, only developers do
 
 - Install Python:
@@ -122,8 +122,8 @@ Related information
 			- open git bash window in local dfm_tools folder (eg C:\\DATA\\GitHub\\dfm_tools)
 			- ``git checkout --branch branchname`` (create new branch and checkout, combination of git branch and git checkout commands)
 		- get clean checkout again (overwrite local changes):
-			- ``git fetch --all``
-			- ``git reset --hard origin/branchname``
+			- ``git fetch --all`` (fetches changes)
+			- ``git reset --hard`` (resets local checkout of repos branch to server version)
 
 	- Commit and push your changes to your online branch:
 		- optional: ``git pull origin master`` (gets edits from master to current local branch, might induce conflicts. maybe better to just push to your branch and then handle pull request on github website)
