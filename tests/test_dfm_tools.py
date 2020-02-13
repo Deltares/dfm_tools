@@ -58,8 +58,7 @@ def Test_grid_UGrid(self):
     #file_net = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\01_Rooster\final_totaalmodel\rooster_rmm_v1p5_net.nc'
     
     data_ncUG = UGrid.fromfile(file_net)
-    test = data_ncUG.cellcoords()
-    print(test)
+    print(data_ncUG)
     assert 1==1
 
 
@@ -188,12 +187,11 @@ def Test_grid_gethismodeldata(self):
 
     print('plot salinity,bedlevel')
     #depth retrieval is probably wrong
-    data_fromhis_depth = get_ncmodeldata(file_nc=file_his, varname='zcoordinate_c', timestep=4, layer='all', station='Bommenede')#, multipart=False)
-    data_fromhis_depth_flat = data_fromhis_depth[0,0,:]
-    data_fromhis = get_ncmodeldata(file_nc=file_his, varname='salinity', timestep=4, layer='all', station='Bommenede')#, multipart=False)
-    data_fromhis_flat = data_fromhis[0,0,:]
+    data_fromhis_depth = get_ncmodeldata(file_nc=file_his, varname='zcoordinate_c', timestep=4, layer='all', station='all')#, multipart=False)
+    data_fromhis = get_ncmodeldata(file_nc=file_his, varname='salinity', timestep=4, layer='all', station='all')#, multipart=False)
     fig, ax = plt.subplots()
-    ax.plot(data_fromhis_flat, data_fromhis_depth_flat,'-')
+    ax.plot(data_fromhis[0,:,:].T, data_fromhis_depth[0,:,:].T,'-')
+    ax.legend(data_fromhis.var_stations)
     
     
     
@@ -347,11 +345,10 @@ def Test_grid_get_modeldata_onintersection(self):
     file_map = r'c:\DATA\werkmap\vanJulien_shortmodelfiles\DFM_sigma_curved_bend\DFM_OUTPUT_cb_3d\cb_3d_map.nc'
     file_map = r'c:\DATA\werkmap\vanJulien_shortmodelfiles\DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'
     #file_map = r'p:\11203379-mwra-new-bem-model\waq_model\simulations\A31_1year_20191219\DFM_OUTPUT_MB_02_waq\MB_02_waq_0000_map.nc'
-    file_map = r'p:\11205258-006-kpp2020_rmm-g6\jelmer_mwra\MB_02_waq_0000_map.nc'
+    #file_map = r'p:\11205258-006-kpp2020_rmm-g6\jelmer_mwra\MB_02_waq_0000_map.nc'
     #file_map = r'p:\1204257-dcsmzuno\2013-2017\3D-DCSM-FM\A17b\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0000_map.nc'
-    
-    runtime_tstart = dt.datetime.now()
-    
+    #file_map = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\computations\run_156\DFM_OUTPUT_RMM_dflowfm\RMM_dflowfm_0000_map.nc'
+        
     if 'cb_3d_map' in file_map:
         timestep = 72
         layno = 5
@@ -361,7 +358,8 @@ def Test_grid_get_modeldata_onintersection(self):
                                [2934.63837418, 1134.16019127]])
         line_array = np.array([[ 104.15421399, 2042.7077107 ],
                                [2913.47878063, 2102.48057382]])
-        clim = None
+        val_ylim = None
+        clim_bl = None
     elif 'Grevelingen' in file_map:
         timestep = 3
         layno = 35
@@ -374,7 +372,8 @@ def Test_grid_get_modeldata_onintersection(self):
         #line_array = np.array([[ 52787.21854294, 424392.10414528],
         #                       [ 55017.72655174, 416403.77313703],
         #                       [ 65288.43784807, 419360.49305567]])
-        clim = [-25,5]
+        val_ylim = [-25,5]
+        clim_bl = None
     elif 'DFM_OUTPUT_MB_02_waq' in file_map or 'jelmer_mwra' in file_map:
         timestep = 30
         layno = 5
@@ -385,7 +384,8 @@ def Test_grid_get_modeldata_onintersection(self):
                                [-69.6762489 ,  42.38341792]])
         #line_array = np.array([[-70.87382752,  42.39103758], #dummy for partition 0000
         #                       [-70.42078633,  42.24876018]])
-        clim = None
+        val_ylim = None
+        clim_bl = None
     elif 'DCSM-FM_0_5nm' in file_map:
         timestep = 365
         layno = 5
@@ -396,7 +396,34 @@ def Test_grid_get_modeldata_onintersection(self):
                                [ 1.89808917, 50.75191083]])
         #line_array = np.array([[10.17702481, 57.03663877], #dummy for partition 0000
         #                       [12.38583134, 57.61284917]])
-        clim = None
+        val_ylim = None
+        clim_bl = None
+    elif 'DFM_OUTPUT_RMM_dflowfm' in file_map:
+        timestep = 365
+        layno = None
+        convert2merc = None
+        multipart = None
+        #provide xy order, so lonlat
+        line_array = np.array([[ 65655.72699961, 444092.54776465],
+                               [ 78880.42720631, 435019.78832052]])
+        #line_array = np.array([[ 88851.05823362, 413359.68286755], #dummy for partition 0000
+        #                       [ 96948.34387646, 412331.45611925]])
+        line_array = np.array([[129830.71514789, 425739.69372125], #waal
+                               [131025.04347471, 425478.43439976],
+                               [132126.06490098, 425758.35510136],
+                               [133227.08632726, 426299.53512444],
+                               [133824.25049067, 426504.81030561],
+                               [134981.25605726, 426355.51926476],
+                               [136810.07130769, 425329.14335891],
+                               [137668.49479259, 425049.22265731],
+                               [139534.63280323, 425403.78887934],
+                               [140281.08800748, 425403.78887934],
+                               [142464.46947993, 424620.01091487],
+                               [143434.86124547, 424694.65643529],
+                               [146271.39102164, 425534.41854008],
+                               [148566.74077473, 426094.25994327]])
+        val_ylim = None
+        clim_bl = [-10,10]
     else:
         raise Exception('ERROR: no settings provided for this mapfile')
     
@@ -407,9 +434,9 @@ def Test_grid_get_modeldata_onintersection(self):
     
     #create plot with ugrid and cross section line
     fig, ax_input = plt.subplots()
-    pc = plot_netmapdata(ugrid.verts, values=data_frommap_bl, ax=ax_input, linewidth=0.5, edgecolors='face')#, color='crimson', facecolor="None")
-    #pc.set_clim([28,30.2])
-    #fig.colorbar(pc, ax=ax)
+    pc = plot_netmapdata(ugrid.verts, values=data_frommap_bl, ax=ax_input, linewidth=0.5)#, edgecolors='face')#, color='crimson', facecolor="None")
+    pc.set_clim(clim_bl)
+    fig.colorbar(pc, ax=ax_input)
     ax_input.set_aspect('equal')
     if 0: #click interactive polygon
         #pol_frominput = Polygon.frominteractive(ax)
@@ -417,9 +444,9 @@ def Test_grid_get_modeldata_onintersection(self):
         linebuilder = LineBuilder(line)
         line_array = linebuilder.line_array
     ax_input.plot(line_array[:,0],line_array[:,1])
-    fig.colorbar(pc, ax=ax_input)
     
     
+    runtime_tstart = dt.datetime.now() #start timer
     #intersect function, find crossed cell numbers (gridnos) and coordinates of intersection (2 per crossed cell)
     intersect_gridnos, intersect_coords = ugrid.polygon_intersect(line_array)
     #derive vertices from cross section (distance from first point)
@@ -433,12 +460,16 @@ def Test_grid_get_modeldata_onintersection(self):
     #pc = plot_netmapdata(ugrid.verts[intersect_gridnos,:,:], values=data_frommap_flat, ax=ax_input, linewidth=0.5, cmap="jet")
     
     #plot cross section
-    data_frommap_sel = data_frommap[0,intersect_gridnos,:]
-    data_frommap_sel_flat = data_frommap_sel.T.flatten()
+    if len(data_frommap.shape) == 3:
+        data_frommap_sel = data_frommap[0,intersect_gridnos,:]
+        data_frommap_sel_flat = data_frommap_sel.T.flatten()
+    elif len(data_frommap.shape) == 2: #for 2D models, no layers 
+        data_frommap_sel = data_frommap[0,intersect_gridnos]
+        data_frommap_sel_flat = data_frommap_sel
     fig, ax = plt.subplots()
     pc = plot_netmapdata(crs_verts, values=data_frommap_sel_flat, ax=ax, linewidth=0.5, cmap='jet')
     fig.colorbar(pc, ax=ax)
-    ax.set_ylim(clim)
+    ax.set_ylim(val_ylim)
     
     runtime_tstop = dt.datetime.now()
     runtime_timedelta = (runtime_tstop-runtime_tstart).total_seconds()

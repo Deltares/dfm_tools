@@ -15,12 +15,14 @@ Features
 - take over masks in original data
 - selection/plotting by polyline/crossection (slicing the ugrid data)
 
-License
+Terms of use
 --------
-- this toolbox is free to use, but completely at your own risk (a proper licence file will be added soon)
-- this toolbox is now only available via github, once the structure is decided upon, it will be registered on pypi so pip installing is possible without checkout
-- there is no warranty whatsoever, users are responsible to check the output themselves
+- a proper licence file will be added soon
+- this toolbox is free to use, but there is no warranty whatsoever, users are responsible to check the output themselves
+- this toolbox is now only available via github, once the structure is decided upon, it will be registered on pypi so pip installing and updating is possible without checkout
 - it might be that script names, function names and arguments will slightly change in the upcoming weeks. This would mean the script you create now might need some edits to work with the toolbox in the future. this is mainly the case for the second intersection functions
+- please check the TODO sections for known inaccuracies
+- please do not use the dflowutil/dflowutil_examples scripts if you did not before, this will be phased out eventually. All you probably need is dfm_tools
 
 How to work with this git repository
 --------
@@ -28,7 +30,7 @@ How to work with this git repository
 	- Download git from https://git-scm.com/download/win, install with default settings
 	- open command line in a folder where you want to clone the dfm_tools github repo, eg C:\\DATA\\GitHub
 	- ``git clone https://github.com/openearth/dfm_tools.git`` (repos gets cloned to local drive, checkout of master branch)
-	- to update: navigate to dfm_tools folder and ``git pull``
+	- to update: navigate to dfm_tools folder and ``git pull`` (combination of git fetch and git merge)
 	- NOTE: in the near future (hopefully within a week), this package should be installable via pip, after registering on PyPI. then users do not need github anymore, only developers do
 
 - Install Python:
@@ -56,9 +58,14 @@ TODO high priority (before launch)
 	- https://the-hitchhikers-guide-to-packaging.readthedocs.io/en/latest/quickstart.html#register-your-package-with-the-python-package-index-pypi 
 	- also add version numbers (only master branch), git commit automatic minor numbers?
 	- also add changelog besides commit comments?
+- check if everything also runs on other python installations
+	- add minimal version numbers to requirements.txt (maybe also to environment.yml)
+- exclude dflowutil from package?	
+- fix cross section for RMM (layer should raise error, because 2D)
 
 TODO
 --------
+- create outputfigures from tests in testfolder, add outputpath to .gitignore. also update print statements so they are useful
 - add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?) (refer depth wrt reference level, water level or bed level, z variable is not correct in dfm-mapfile yet)
 - retrieve correct depths:
 	- add depth array (interfaces/centers) to his and map variables (z/sigma layer calculation is already in get_modeldata_onintersection function)
@@ -70,7 +77,6 @@ TODO
 	- https://stackoverflow.com/questions/31542843/inpolygon-for-python-examples-of-matplotlib-path-path-contains-points-method
 - make patched zt plots from hisfile (careful, z interfaces data in hisfile is wrong)
 - as user: get stationlist, dimensionlist, variablelist, more? (partly internally available)
-- add minimal version numbers to requirements.txt (also environment.yml?)
 - add polygon read/write function, add ginput polygon function (click in plot) (already partly exists in intersect/slice testscript)
 - style guide: https://www.python.org/dev/peps/pep-0008/
 - pyugrid (ghostcells en mapmergen worden afgehandeld?), voorbeelden in ieder geval als inspiratie voor plotopties):
@@ -115,6 +121,10 @@ Related information
 		- Create your own branch option 2:
 			- open git bash window in local dfm_tools folder (eg C:\\DATA\\GitHub\\dfm_tools)
 			- ``git checkout --branch branchname`` (create new branch and checkout, combination of git branch and git checkout commands)
+		- get clean checkout again (overwrite local changes):
+			- ``git fetch --all`` (fetches changes)
+			- ``git reset --hard`` (resets local checkout of repos branch to server version)
+			- ``git pull`` (fetches and merges changes, local checkout of repos branch is now updated again)
 
 	- Commit and push your changes to your online branch:
 		- optional: ``git pull origin master`` (gets edits from master to current local branch, might induce conflicts. maybe better to just push to your branch and then handle pull request on github website)
