@@ -339,6 +339,7 @@ def Test_grid_get_modeldata_onintersection(self):
     import matplotlib.pyplot as plt
     plt.close('all')
     import numpy as np
+    import datetime as dt
     
     from dfm_tools.grid import get_netdata, get_ncmodeldata, get_modeldata_onintersection, plot_netmapdata
     from dfm_tools.polygon import LineBuilder#, Polygon
@@ -346,8 +347,10 @@ def Test_grid_get_modeldata_onintersection(self):
     file_map = r'c:\DATA\werkmap\vanJulien_shortmodelfiles\DFM_sigma_curved_bend\DFM_OUTPUT_cb_3d\cb_3d_map.nc'
     file_map = r'c:\DATA\werkmap\vanJulien_shortmodelfiles\DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'
     #file_map = r'p:\11203379-mwra-new-bem-model\waq_model\simulations\A31_1year_20191219\DFM_OUTPUT_MB_02_waq\MB_02_waq_0000_map.nc'
-    #file_map = r'p:\11205258-006-kpp2020_rmm-g6\jelmer_mwra\MB_02_waq_0000_map.nc'
-    file_map = r'p:\1204257-dcsmzuno\2013-2017\3D-DCSM-FM\A17b\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0000_map.nc'
+    file_map = r'p:\11205258-006-kpp2020_rmm-g6\jelmer_mwra\MB_02_waq_0000_map.nc'
+    #file_map = r'p:\1204257-dcsmzuno\2013-2017\3D-DCSM-FM\A17b\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0000_map.nc'
+    
+    runtime_tstart = dt.datetime.now()
     
     if 'cb_3d_map' in file_map:
         timestep = 72
@@ -380,8 +383,8 @@ def Test_grid_get_modeldata_onintersection(self):
         #provide xy order, so lonlat
         line_array = np.array([[-71.10395926,  42.3404146 ],
                                [-69.6762489 ,  42.38341792]])
-        line_array = np.array([[-70.87382752,  42.39103758], #dummy for partition 0000
-                               [-70.42078633,  42.24876018]])
+        #line_array = np.array([[-70.87382752,  42.39103758], #dummy for partition 0000
+        #                       [-70.42078633,  42.24876018]])
         clim = None
     elif 'DCSM-FM_0_5nm' in file_map:
         timestep = 365
@@ -404,7 +407,7 @@ def Test_grid_get_modeldata_onintersection(self):
     
     #create plot with ugrid and cross section line
     fig, ax_input = plt.subplots()
-    pc = plot_netmapdata(ugrid.verts, values=data_frommap_bl, ax=ax_input, linewidth=0.5, color='crimson', facecolor="None")
+    pc = plot_netmapdata(ugrid.verts, values=data_frommap_bl, ax=ax_input, linewidth=0.5, edgecolors='face')#, color='crimson', facecolor="None")
     #pc.set_clim([28,30.2])
     #fig.colorbar(pc, ax=ax)
     ax_input.set_aspect('equal')
@@ -414,6 +417,7 @@ def Test_grid_get_modeldata_onintersection(self):
         linebuilder = LineBuilder(line)
         line_array = linebuilder.line_array
     ax_input.plot(line_array[:,0],line_array[:,1])
+    fig.colorbar(pc, ax=ax_input)
     
     
     #intersect function, find crossed cell numbers (gridnos) and coordinates of intersection (2 per crossed cell)
@@ -436,6 +440,9 @@ def Test_grid_get_modeldata_onintersection(self):
     fig.colorbar(pc, ax=ax)
     ax.set_ylim(clim)
     
+    runtime_tstop = dt.datetime.now()
+    runtime_timedelta = (runtime_tstop-runtime_tstart).total_seconds()
+    print('caculating and plotting cross section finished in %.1f seconds'%(runtime_timedelta))
 
 
     

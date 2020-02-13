@@ -34,6 +34,10 @@ def get_varname_mapnc(data_nc,varname_requested):
     
     varnames_list['mesh2d_layer_z'] = ['mesh2d_layer_z','LayCoord_cc','',''] # 
     
+    #non-grid variables necessary for layer calculation for intersection/cross section) funtion
+    varnames_list['mesh2d_s1'] = ['mesh2d_s1','','',''] # water level
+    varnames_list['mesh2d_flowelem_bl'] = ['mesh2d_flowelem_bl','','',''] # bed level
+
     #varnames_list['mesh2d_ucx'] = ['mesh2d_ucx','ucx','',''] # 
     #varnames_list['mesh2d_ucy'] = ['mesh2d_ucy','ucy','',''] # 
     #varnames_list['mesh2d_sa1'] = ['mesh2d_sa1','sa1','',''] # 
