@@ -347,8 +347,9 @@ def Test_grid_get_modeldata_onintersection(self):
     file_map = r'c:\DATA\werkmap\vanJulien_shortmodelfiles\DFM_sigma_curved_bend\DFM_OUTPUT_cb_3d\cb_3d_map.nc'
     file_map = r'c:\DATA\werkmap\vanJulien_shortmodelfiles\DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'
     #file_map = r'p:\11203379-mwra-new-bem-model\waq_model\simulations\A31_1year_20191219\DFM_OUTPUT_MB_02_waq\MB_02_waq_0000_map.nc'
-    file_map = r'p:\11205258-006-kpp2020_rmm-g6\jelmer_mwra\MB_02_waq_0000_map.nc'
+    #file_map = r'p:\11205258-006-kpp2020_rmm-g6\jelmer_mwra\MB_02_waq_0000_map.nc'
     #file_map = r'p:\1204257-dcsmzuno\2013-2017\3D-DCSM-FM\A17b\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0000_map.nc'
+    file_map = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\computations\run_156\DFM_OUTPUT_RMM_dflowfm\RMM_dflowfm_0000_map.nc'
     
     runtime_tstart = dt.datetime.now()
     
@@ -397,6 +398,14 @@ def Test_grid_get_modeldata_onintersection(self):
         #line_array = np.array([[10.17702481, 57.03663877], #dummy for partition 0000
         #                       [12.38583134, 57.61284917]])
         clim = None
+    elif 'DFM_OUTPUT_RMM_dflowfm' in file_map:
+        timestep = 365
+        layno = 5
+        convert2merc = None
+        multipart = None
+        #provide xy order, so lonlat
+        line_array = np.array([[ 65655.72699961, 444092.54776465],
+                               [ 78880.42720631, 435019.78832052]])
     else:
         raise Exception('ERROR: no settings provided for this mapfile')
     
@@ -407,7 +416,7 @@ def Test_grid_get_modeldata_onintersection(self):
     
     #create plot with ugrid and cross section line
     fig, ax_input = plt.subplots()
-    pc = plot_netmapdata(ugrid.verts, values=data_frommap_bl, ax=ax_input, linewidth=0.5, edgecolors='face')#, color='crimson', facecolor="None")
+    pc = plot_netmapdata(ugrid.verts, values=data_frommap_bl, ax=ax_input, linewidth=0.5)#, edgecolors='face')#, color='crimson', facecolor="None")
     #pc.set_clim([28,30.2])
     #fig.colorbar(pc, ax=ax)
     ax_input.set_aspect('equal')

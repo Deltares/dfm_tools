@@ -22,6 +22,7 @@ Terms of use
 - this toolbox is now only available via github, once the structure is decided upon, it will be registered on pypi so pip installing and updating is possible without checkout
 - it might be that script names, function names and arguments will slightly change in the upcoming weeks. This would mean the script you create now might need some edits to work with the toolbox in the future. this is mainly the case for the second intersection functions
 - please check the TODO sections for known inaccuracies
+- please do not use the dflowutil/dflowutil_examples scripts if you did not before, this will be phased out eventually. All you probably need is dfm_tools
 
 How to work with this git repository
 --------
@@ -59,6 +60,8 @@ TODO high priority (before launch)
 	- also add changelog besides commit comments?
 - check if everything also runs on other python installations
 	- add minimal version numbers to requirements.txt (maybe also to environment.yml)
+- exclude dflowutil from package?	
+- fix cross section for RMM (layer should raise error, because 2D)
 
 TODO
 --------
