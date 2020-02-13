@@ -57,6 +57,8 @@ TODO high priority (before launch)
 	- https://the-hitchhikers-guide-to-packaging.readthedocs.io/en/latest/quickstart.html#register-your-package-with-the-python-package-index-pypi 
 	- also add version numbers (only master branch), git commit automatic minor numbers?
 	- also add changelog besides commit comments?
+- check if everything also runs on other python installations
+	- add minimal version numbers to requirements.txt (maybe also to environment.yml)
 
 TODO
 --------
@@ -71,7 +73,6 @@ TODO
 	- https://stackoverflow.com/questions/31542843/inpolygon-for-python-examples-of-matplotlib-path-path-contains-points-method
 - make patched zt plots from hisfile (careful, z interfaces data in hisfile is wrong)
 - as user: get stationlist, dimensionlist, variablelist, more? (partly internally available)
-- add minimal version numbers to requirements.txt (also environment.yml?)
 - add polygon read/write function, add ginput polygon function (click in plot) (already partly exists in intersect/slice testscript)
 - style guide: https://www.python.org/dev/peps/pep-0008/
 - pyugrid (ghostcells en mapmergen worden afgehandeld?), voorbeelden in ieder geval als inspiratie voor plotopties):
