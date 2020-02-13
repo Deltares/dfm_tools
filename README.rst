@@ -121,6 +121,9 @@ Related information
 		- Create your own branch option 2:
 			- open git bash window in local dfm_tools folder (eg C:\\DATA\\GitHub\\dfm_tools)
 			- ``git checkout --branch branchname`` (create new branch and checkout, combination of git branch and git checkout commands)
+		- get clean checkout again (overwrite local changes):
+			- ``git fetch --all``
+			- ``git reset --hard origin/branchname``
 
 	- Commit and push your changes to your online branch:
 		- optional: ``git pull origin master`` (gets edits from master to current local branch, might induce conflicts. maybe better to just push to your branch and then handle pull request on github website)
