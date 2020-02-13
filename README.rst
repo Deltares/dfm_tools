@@ -65,7 +65,7 @@ TODO high priority (before launch)
 
 TODO
 --------
-- create outputfigures from tests in testfolder, add outputpath to .gitignore
+- create outputfigures from tests in testfolder, add outputpath to .gitignore. also update print statements so they are useful
 - add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?) (refer depth wrt reference level, water level or bed level, z variable is not correct in dfm-mapfile yet)
 - retrieve correct depths:
 	- add depth array (interfaces/centers) to his and map variables (z/sigma layer calculation is already in get_modeldata_onintersection function)
@@ -124,6 +124,7 @@ Related information
 		- get clean checkout again (overwrite local changes):
 			- ``git fetch --all`` (fetches changes)
 			- ``git reset --hard`` (resets local checkout of repos branch to server version)
+			- ``git pull`` (fetches and merges changes, local checkout of repos branch is now updated again)
 
 	- Commit and push your changes to your online branch:
 		- optional: ``git pull origin master`` (gets edits from master to current local branch, might induce conflicts. maybe better to just push to your branch and then handle pull request on github website)

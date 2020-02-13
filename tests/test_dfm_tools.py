@@ -58,8 +58,7 @@ def Test_grid_UGrid(self):
     #file_net = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\01_Rooster\final_totaalmodel\rooster_rmm_v1p5_net.nc'
     
     data_ncUG = UGrid.fromfile(file_net)
-    test = data_ncUG.cellcoords()
-    print(test)
+    print(data_ncUG)
     assert 1==1
 
 
@@ -188,12 +187,11 @@ def Test_grid_gethismodeldata(self):
 
     print('plot salinity,bedlevel')
     #depth retrieval is probably wrong
-    data_fromhis_depth = get_ncmodeldata(file_nc=file_his, varname='zcoordinate_c', timestep=4, layer='all', station='Bommenede')#, multipart=False)
-    data_fromhis_depth_flat = data_fromhis_depth[0,0,:]
-    data_fromhis = get_ncmodeldata(file_nc=file_his, varname='salinity', timestep=4, layer='all', station='Bommenede')#, multipart=False)
-    data_fromhis_flat = data_fromhis[0,0,:]
+    data_fromhis_depth = get_ncmodeldata(file_nc=file_his, varname='zcoordinate_c', timestep=4, layer='all', station='all')#, multipart=False)
+    data_fromhis = get_ncmodeldata(file_nc=file_his, varname='salinity', timestep=4, layer='all', station='all')#, multipart=False)
     fig, ax = plt.subplots()
-    ax.plot(data_fromhis_flat, data_fromhis_depth_flat,'-')
+    ax.plot(data_fromhis[0,:,:].T, data_fromhis_depth[0,:,:].T,'-')
+    ax.legend(data_fromhis.var_stations)
     
     
     
@@ -446,7 +444,6 @@ def Test_grid_get_modeldata_onintersection(self):
         linebuilder = LineBuilder(line)
         line_array = linebuilder.line_array
     ax_input.plot(line_array[:,0],line_array[:,1])
-    fig.colorbar(pc, ax=ax_input)
     
     
     runtime_tstart = dt.datetime.now() #start timer
