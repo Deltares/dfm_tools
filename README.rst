@@ -15,12 +15,13 @@ Features
 - take over masks in original data
 - selection/plotting by polyline/crossection (slicing the ugrid data)
 
-License
+Terms of use
 --------
-- this toolbox is free to use, but completely at your own risk (a proper licence file will be added soon)
-- this toolbox is now only available via github, once the structure is decided upon, it will be registered on pypi so pip installing is possible without checkout
-- there is no warranty whatsoever, users are responsible to check the output themselves
+- a proper licence file will be added soon
+- this toolbox is free to use, but there is no warranty whatsoever, users are responsible to check the output themselves
+- this toolbox is now only available via github, once the structure is decided upon, it will be registered on pypi so pip installing and updating is possible without checkout
 - it might be that script names, function names and arguments will slightly change in the upcoming weeks. This would mean the script you create now might need some edits to work with the toolbox in the future. this is mainly the case for the second intersection functions
+- please check the TODO sections for known inaccuracies
 
 How to work with this git repository
 --------
