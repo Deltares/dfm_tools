@@ -66,23 +66,56 @@ class UGrid:
         from shapely.geometry import Polygon, LineString
         import numpy as np
         
-        print('finding crossing flow links (can take a while)')
+        print('finding crossing flow links (can take a while if linebox over xy covers a lot of cells)')
         #allpol = []
         intersect_gridnos = np.empty((0),dtype=int)
         intersect_coords1 = np.empty((0,2))
         intersect_coords2 = np.empty((0,2))
         line_section = LineString(line_array)
-        for iP, pol_data in enumerate(self.verts):
+        
+        verts_xmax = np.nanmax(self.verts[:,:,0].data,axis=1)
+        verts_xmin = np.nanmin(self.verts[:,:,0].data,axis=1)
+        verts_ymax = np.nanmax(self.verts[:,:,1].data,axis=1)
+        verts_ymin = np.nanmin(self.verts[:,:,1].data,axis=1)
+        
+        cellinlinebox_all_bool = (((np.min(line_array[:,0]) < verts_xmax) &
+                                   (np.max(line_array[:,0]) > verts_xmin)) &
+                                  ((np.min(line_array[:,1]) < verts_ymax) & 
+                                   (np.max(line_array[:,1]) > verts_ymin))
+                                  )
+        verts_inlinebox = self.verts[cellinlinebox_all_bool,:,:]
+        verts_inlinebox_nos = np.where(cellinlinebox_all_bool)[0]
+        
+        for iP, pol_data in enumerate(verts_inlinebox):
             pol_data_nonan = pol_data[~np.isnan(pol_data).all(axis=1)]
             pol_shp = Polygon(pol_data_nonan)
             #allpol.append(pol_shp)
             intersection_line = pol_shp.intersection(line_section).coords
             if intersection_line != []:
-                intersect_gridnos = np.concatenate([intersect_gridnos,[iP]])
+                intersect_gridnos = np.concatenate([intersect_gridnos,[verts_inlinebox_nos[iP]]])
                 intersect_coords1=np.concatenate([intersect_coords1,np.array([list(intersection_line)[0]])])
                 intersect_coords2=np.concatenate([intersect_coords2,np.array([list(intersection_line)[1]])])
                 #all_intersect.append(list(intersection_line))
             #print(iP)
+        """
+        for iP, pol_data in enumerate(self.verts):
+            cellinlinebox_bool = ((np.min(line_array[:,0]) < np.nanmax(pol_data[:,0]) or 
+                                   np.max(line_array[:,0]) > np.nanmin(pol_data[:,0])) and
+                                  (np.min(line_array[:,1]) < np.nanmax(pol_data[:,1]) or 
+                                   np.max(line_array[:,1]) > np.nanmin(pol_data[:,1]))
+                                  )
+            if cellinlinebox_bool: #check if any of the polygon coordinates falls in boundbox of line
+                pol_data_nonan = pol_data[~np.isnan(pol_data).all(axis=1)]
+                pol_shp = Polygon(pol_data_nonan)
+                #allpol.append(pol_shp)
+                intersection_line = pol_shp.intersection(line_section).coords
+                if intersection_line != []:
+                    intersect_gridnos = np.concatenate([intersect_gridnos,[iP]])
+                    intersect_coords1=np.concatenate([intersect_coords1,np.array([list(intersection_line)[0]])])
+                    intersect_coords2=np.concatenate([intersect_coords2,np.array([list(intersection_line)[1]])])
+                    #all_intersect.append(list(intersection_line))
+                #print(iP)
+        """
         intersect_coords = np.stack([intersect_coords1,intersect_coords2], axis=2)
         #dimensions (gridnos, xy, firstsecond)
         #allpol_multi = MultiPolygon(allpol)
@@ -172,13 +205,14 @@ def get_timesfromnc(file_nc):
     if len(data_nc_timevar)<3: #this rarely is the case, but just to be sure
         data_nc_times = data_nc_timevar[:]
     else:
-        time0= data_nc_timevar[0] 
+        time0 = data_nc_timevar[0] 
         time1 = data_nc_timevar[1] 
         time2 = data_nc_timevar[2]
         timeend = data_nc_timevar[-1]
         timeinc = time2-time1 # the interval between 0 and 1 is not per definition representative, so take 1 and 2
         
-        data_nc_times = np.arange(time0,timeend+timeinc,timeinc)
+        data_nc_times_from1 = np.arange(time1,timeend+timeinc,timeinc)
+        data_nc_times = np.concatenate([[time0],data_nc_times_from1])
     data_nc_datetimes = num2date(data_nc_times, units = data_nc_timevar.units)
     data_nc_datetimes_pd = pd.Series(data_nc_datetimes).dt.round(freq='S')
     
@@ -244,7 +278,7 @@ def get_stationid_fromstationlist(station_name_list_pd, station):
 
 
 
-def get_hismapmodeldata(file_nc, varname, timestep=None, lay=None, depth=None, station=None, multipart=None):
+def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, station=None, multipart=None):
     """
     file_nc: path to netcdf file
     varname: string of netcdf variable name (standard_name?)
@@ -300,26 +334,26 @@ def get_hismapmodeldata(file_nc, varname, timestep=None, lay=None, depth=None, s
     #LAYER CHECKS
     dimn_layer = get_varname_mapnc(data_nc,'nmesh2d_layer')
     if dimn_layer is None or dimn_layer not in nc_values_dims: #only time and faces/stations dimensions, no layers
-        if lay is not None:
-            raise Exception('ERROR: netcdf variable (%s) does not contain layers, but parameter lay is provided'%(varname))
+        if layer is not None:
+            raise Exception('ERROR: netcdf variable (%s) does not contain layers, but parameter layer is provided'%(varname))
     else: #layers are present in variable
         #nlayers = nc_values_shape[2]
         dimn_layer_id = nc_values_dims.index(dimn_layer)
         nlayers = nc_values_shape[dimn_layer_id]
-        if lay is None:
-            raise Exception('ERROR: netcdf variable contains a layer dimension, but parameter lay not provided')
+        if layer is None:
+            raise Exception('ERROR: netcdf variable contains a layer dimension, but parameter layer not provided')
         #convert layer to list of int if it is not already
-        if lay is str('all'):
+        if layer is str('all'):
             layer_ids = range(nlayers)
-        elif type(lay)==list or type(lay)==range or type(lay)==type(np.arange(1,2,0.5)):
-            if type(lay[0])==int: #list/range/ndarray of int
-                layer_ids = np.unique(lay)
+        elif type(layer)==list or type(layer)==range or type(layer)==type(np.arange(1,2,0.5)):
+            if type(layer[0])==int: #list/range/ndarray of int
+                layer_ids = np.unique(layer)
             else:
-                raise Exception('ERROR: timestep lay type not anticipated (%s), (list/range/ndarray of) int are accepted (or "all")'%(type(lay)))            
-        elif type(lay)==int:
-            layer_ids = [lay]
+                raise Exception('ERROR: timestep lay type not anticipated (%s), (list/range/ndarray of) int are accepted (or "all")'%(type(layer)))            
+        elif type(layer)==int:
+            layer_ids = [layer]
         else:
-            raise Exception('ERROR: timestep lay type not anticipated (%s), (list/range/ndarray of) int are accepted (or "all")'%(type(lay)))
+            raise Exception('ERROR: timestep lay type not anticipated (%s), (list/range/ndarray of) int are accepted (or "all")'%(type(layer)))
         #check if requested layers are within range of netcdf
         if np.min(layer_ids) < 0:
             raise Exception('ERROR: requested minimal layer (%d) is negative'%(np.min(layer_ids)))
@@ -471,9 +505,9 @@ def get_hismapmodeldata(file_nc, varname, timestep=None, lay=None, depth=None, s
 
 
 
-def get_modeldata_onintersection(file_nc, line_array=None, intersect_gridnos=None, intersect_coords=None, timestep=None, convert2merc=None):
+def get_modeldata_onintersection(file_nc, line_array=None, intersect_gridnos=None, intersect_coords=None, timestep=None, multipart=None, convert2merc=None):
     from netCDF4 import Dataset
-    from shapely.geometry import LineString, MultiPoint#, Point
+    from shapely.geometry import LineString, Point#, MultiPoint
 
     from dfm_tools.get_varname_mapnc import get_varname_mapnc
     
@@ -481,18 +515,26 @@ def get_modeldata_onintersection(file_nc, line_array=None, intersect_gridnos=Non
         distance = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
         return distance
 
+    def calc_dist_latlon(x1,x2,y1,y2):
+        #https://gis.stackexchange.com/questions/80881/what-is-unit-of-shapely-length-attribute
+        distance = np.arccos(np.sin(np.radians(y1))*np.sin(np.radians(y2))+np.cos(np.radians(y1))*np.cos(np.radians(y2))*np.cos(np.radians(x2)-np.radians(x1)))*6371000
+        return distance
+
     # Convert lat/lon corrdinates to x/y mercator projection
-    def merc(lat, lon):
+    def merc(lonx, laty):
         r_major = 6378137.000
-        x = r_major * np.radians(lon)
-        scale = x/lon
-        y = 180.0/np.pi * np.log(np.tan(np.pi/4.0 + lat * (np.pi/180.0)/2.0)) * scale
+        x = r_major * np.radians(lonx)
+        scale = x/lonx
+        y = 180.0/np.pi * np.log(np.tan(np.pi/4.0 + laty * (np.pi/180.0)/2.0)) * scale
         #x = lon
         #y = lat
         return (x, y)
     #merc = np.vectorize(merc)
     
+    
     #check if all necessary arguments are provided
+    if file_nc is None:
+        raise Exception('ERROR: argument file_nc not provided')
     if line_array is None:
         raise Exception('ERROR: argument line_array not provided')
     if intersect_gridnos is None:
@@ -508,33 +550,45 @@ def get_modeldata_onintersection(file_nc, line_array=None, intersect_gridnos=Non
     ncrosscells = intersect_coords.shape[0]
     if nlinecoords<2 or nlinedims != 2:
         raise Exception('ERROR: line_array should at least contain two xy points [[x,y],[x,y]]')
+
     crs_xstart = intersect_coords[:,0,0]
     crs_xstop = intersect_coords[:,0,1]
     crs_ystart = intersect_coords[:,1,0]
     crs_ystop = intersect_coords[:,1,1]
-    
-    cross_points_start = MultiPoint(intersect_coords[:,:,0])
+    """
+    else:
+        crs_xstart,crs_ystart = merc(intersect_coords[:,0,0], intersect_coords[:,1,0])
+        crs_xstop,crs_ystop = merc(intersect_coords[:,0,1], intersect_coords[:,1,1])
+        line_array_x0, line_array_y0 = merc(line_array[:,0],line_array[:,1])
+        line_array = np.hstack([line_array_x0[:,np.newaxis],line_array_y0[:,np.newaxis]])
+    """
+    #cross_points_start = MultiPoint(intersect_coords[:,:,0])
     #cross_points_stop = MultiPoint(intersect_coords[:,:,1])
     distperline_tostart = np.empty((ncrosscells,nlinecoords-1))
     #distperline_tostop = np.empty((ncrosscells,nlinecoords-1))
-    linepart_length = np.empty((nlinecoords-1))
+    linepart_length = np.zeros((nlinecoords))
     for iL in range(nlinecoords-1):
         #calculate length of lineparts
         
         line_section_part = LineString(line_array[iL:iL+2,:])
-        linepart_length[iL] = line_section_part.length
+        if not convert2merc:
+            linepart_length[iL+1] = line_section_part.length
+        else:
+            linepart_length[iL+1] = calc_dist_latlon(line_array[iL,0],line_array[iL+1,0],line_array[iL,1],line_array[iL+1,1])
+
         #print(line_array_part)
         for iP in range(ncrosscells):
-            distperline_tostart[iP,iL] = line_section_part.distance(cross_points_start[iP])
+            #distperline_tostart[iP,iL] = line_section_part.distance(cross_points_start[iP])
+            distperline_tostart[iP,iL] = line_section_part.distance(Point(crs_xstart[iP],crs_ystart[iP]))
             #distperline_tostop[iP,iL] = line_section_part.distance(cross_points_stop[iP])
     linepart_lengthcum = np.cumsum(linepart_length)
     cross_points_closestlineid = np.argmin(distperline_tostart,axis=1)
     print('finished calculating distance for all crossed cells, from first point of line')
     
 
-    data_frommap_wl3 = get_hismapmodeldata(file_nc, varname='mesh2d_s1', timestep=timestep)#, multipart=False)
+    data_frommap_wl3 = get_ncmodeldata(file_nc, varname='mesh2d_s1', timestep=timestep, multipart=multipart)
     data_frommap_wl3_sel = data_frommap_wl3[0,intersect_gridnos]
-    data_frommap_bl = get_hismapmodeldata(file_nc, varname='mesh2d_flowelem_bl')#, multipart=False)
+    data_frommap_bl = get_ncmodeldata(file_nc, varname='mesh2d_flowelem_bl', multipart=multipart)
     data_frommap_bl_sel = data_frommap_bl[intersect_gridnos]
     
     
@@ -550,23 +604,20 @@ def get_modeldata_onintersection(file_nc, line_array=None, intersect_gridnos=Non
         zvals_interface = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay+1)
     else:
         laytyp = 'zlayer'
-        #zvals_cen = get_hismapmodeldata(file_nc=file_map, varname='mesh2d_layer_z', lay='all')#, multipart=False)
-        #zvals_interface = get_hismapmodeldata(file_nc=file_map, varname='mesh2d_interface_z')#, multipart=False)
+        #zvals_cen = get_ncmodeldata(file_nc=file_map, varname='mesh2d_layer_z', lay='all')#, multipart=False)
+        #zvals_interface = get_ncmodeldata(file_nc=file_map, varname='mesh2d_interface_z')#, multipart=False)
         zvals_interface = data_nc.variables['mesh2d_interface_z'][:]
     
-    if convert2merc:
-        line_array_x0, line_array_y0 = merc(line_array[0,0],line_array[0,1])
-        crs_xstart, crs_ystart = merc(crs_xstart,crs_ystart)
-        crs_xstop, crs_ystop = merc(crs_xstart,crs_ystart)
     
 
-    #calculate distance from points to 'previous' linepoint
-    crs_dist_starts_fromprevlinepoint = calc_dist(line_array[cross_points_closestlineid,0], crs_xstart, line_array[cross_points_closestlineid,1], crs_ystart)
-    crs_dist_stops_fromprevlinepoint = calc_dist(line_array[cross_points_closestlineid,0], crs_xstop, line_array[cross_points_closestlineid,1], crs_ystop)
-    #add lenght of previous lineparts to it
-    crs_dist_starts = crs_dist_starts_fromprevlinepoint + linepart_lengthcum[cross_points_closestlineid]
-    crs_dist_stops = crs_dist_stops_fromprevlinepoint + linepart_lengthcum[cross_points_closestlineid]
-    
+    #calculate distance from points to 'previous' linepoint, add lenght of previous lineparts to it
+    if not convert2merc:
+        crs_dist_starts = calc_dist(line_array[cross_points_closestlineid,0], crs_xstart, line_array[cross_points_closestlineid,1], crs_ystart) + linepart_lengthcum[cross_points_closestlineid]
+        crs_dist_stops = calc_dist(line_array[cross_points_closestlineid,0], crs_xstop, line_array[cross_points_closestlineid,1], crs_ystop) + linepart_lengthcum[cross_points_closestlineid]
+    else:
+        crs_dist_starts = calc_dist_latlon(line_array[cross_points_closestlineid,0], crs_xstart, line_array[cross_points_closestlineid,1], crs_ystart) + linepart_lengthcum[cross_points_closestlineid]
+        crs_dist_stops = calc_dist_latlon(line_array[cross_points_closestlineid,0], crs_xstop, line_array[cross_points_closestlineid,1], crs_ystop) + linepart_lengthcum[cross_points_closestlineid]
+        
     
     crs_verts_x_all = np.empty((0,4,1))
     crs_verts_z_all = np.empty((0,4,1))

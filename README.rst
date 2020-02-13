@@ -29,6 +29,7 @@ TODO high priority (before launch)
 	- which functions in which class/script
 	- function names (eg rename get_hismapmodeldata to get_netcdfdata)
 	- argument names (eg rename lay?)
+- robustness: make s1/bl variable retrieval for intersection also work for older files (or more input)
 - add ownrisk-license
 - register on PyPI, for easier install via pip (for regular users, not developers):
 	- https://the-hitchhikers-guide-to-packaging.readthedocs.io/en/latest/quickstart.html#register-your-package-with-the-python-package-index-pypi 
@@ -49,7 +50,7 @@ TODO longterm
 --------
 - make patched zt plots from hisfile (careful, z interfaces data in hisfile is wrong)
 - as user: get stationlist, dimensionlist, variablelist, more? (partly internally available)
-- add minimal version numbers to requirements.txt
+- add minimal version numbers to requirements.txt (also environment.yml?)
 - add polygon read/write function, add ginput polygon function (click in plot) (already partly exists in intersect/slice testscript)
 - style guide: https://www.python.org/dev/peps/pep-0008/
 - pyugrid (ghostcells en mapmergen worden afgehandeld?), voorbeelden in ieder geval als inspiratie voor plotopties):
@@ -90,7 +91,7 @@ How to work with this git repository
 	- (also install all packages in requirements.txt)
 
 - Use it in your scripts:
-	- from dfm_tools.grid import get_netdata, get_hismapmodeldata, plot_netmapdata
+	- from dfm_tools.grid import get_netdata, get_ncmodeldata, plot_netmapdata
 	- check tests folder for examples
 
 

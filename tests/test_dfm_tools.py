@@ -99,17 +99,18 @@ def Test_foufiles(self):
     import matplotlib.pyplot as plt
     plt.close('all')
     
-    from dfm_tools.grid import get_netdata, plot_netmapdata, get_hismapmodeldata
+    from dfm_tools.grid import get_netdata, plot_netmapdata, get_ncmodeldata
     
     file_net_rmm = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\01_Rooster\final_totaalmodel\rooster_rmm_v1p5_net.nc'
     file_fou = r'c:\DATA\werkmap\vanJulien_shortmodelfiles\DFM_fou_RMM\RMM_dflowfm_0000_fou.nc'
 
     ugrid = get_netdata(file_nc=file_net_rmm)
-    data_fromfou = get_hismapmodeldata(file_nc=file_fou, varname='mesh2d_fourier003_mean')#, multipart=False)
+    data_fromfou = get_ncmodeldata(file_nc=file_fou, varname='mesh2d_fourier003_mean')#, multipart=False)
 
     fig, ax = plt.subplots()
     plot_netmapdata(ugrid.verts, values=data_fromfou, ax=None, linewidth=0.5, color="crimson", facecolor="None")
     ax.set_aspect('equal')
+    #this does not work yet, size of fou-array and grid are not equal
 
         
     
@@ -123,7 +124,7 @@ def Test_grid_gethismodeldata_Nithin(self):
     import matplotlib.pyplot as plt
     plt.close('all')
     
-    from dfm_tools.grid import get_netdata, plot_netmapdata, get_hismapmodeldata
+    from dfm_tools.grid import get_netdata, plot_netmapdata, get_ncmodeldata
     
     file_net = r'c:\DATA\werkmap\vanNithin_shortmodelfiles\myortho3_net.nc'
     #file_net = r'n:\My Documents\werkmap\vanNithin_shortmodelfiles\myortho3_withcellinfo_net.nc'
@@ -140,16 +141,16 @@ def Test_grid_gethismodeldata_Nithin(self):
     ax.set_aspect('equal')
     
     #NITHIN
-    data_fromhis = get_hismapmodeldata(file_nc=file_his, varname='bedlevel', station=station)#, multipart=False)
+    data_fromhis = get_ncmodeldata(file_nc=file_his, varname='bedlevel', station=station)#, multipart=False)
     fig, ax = plt.subplots()
     ax.plot(data_fromhis.var_stations,data_fromhis,'-')
     ax.tick_params('x',rotation=30)
 
-    data_fromhis = get_hismapmodeldata(file_nc=file_his, varname='waterlevel', timestep='all', station=station)#, multipart=False)
+    data_fromhis = get_ncmodeldata(file_nc=file_his, varname='waterlevel', timestep='all', station=station)#, multipart=False)
     fig, ax = plt.subplots()
     ax.plot(data_fromhis.var_times,data_fromhis,'-')
     
-    data_fromhis = get_hismapmodeldata(file_nc=file_his, varname='salinity', timestep='all', lay=5, station=station)#, multipart=False)
+    data_fromhis = get_ncmodeldata(file_nc=file_his, varname='salinity', timestep='all', layer=5, station=station)#, multipart=False)
     data_fromhis_flat = data_fromhis[:,:,0]
     fig, ax = plt.subplots()
     ax.plot(data_fromhis.var_times,data_fromhis_flat,'-')
@@ -163,33 +164,33 @@ def Test_grid_gethismodeldata(self):
     import matplotlib.pyplot as plt
     plt.close('all')
     
-    from dfm_tools.grid import get_hismapmodeldata
+    from dfm_tools.grid import get_ncmodeldata
     
     file_his = r'c:\DATA\werkmap\vanJulien_shortmodelfiles\DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_his.nc'
     
     #GREVELINGEN
     print('plot bedlevel from his')
-    data_fromhis = get_hismapmodeldata(file_nc=file_his, varname='bedlevel', station='all')#, multipart=False)
+    data_fromhis = get_ncmodeldata(file_nc=file_his, varname='bedlevel', station='all')#, multipart=False)
     fig, ax = plt.subplots()
     ax.plot(data_fromhis.var_stations,data_fromhis,'-')
     ax.tick_params('x',rotation=30)
 
     print('plot waterlevel from his')
-    data_fromhis = get_hismapmodeldata(file_nc=file_his, varname='waterlevel', timestep='all', station='all')#, multipart=False)
+    data_fromhis = get_ncmodeldata(file_nc=file_his, varname='waterlevel', timestep='all', station='all')#, multipart=False)
     fig, ax = plt.subplots()
     ax.plot(data_fromhis.var_times,data_fromhis,'-')
     
     print('plot salinity from his')
-    data_fromhis = get_hismapmodeldata(file_nc=file_his, varname='salinity', timestep='all', lay=5, station='all')#, multipart=False)
+    data_fromhis = get_ncmodeldata(file_nc=file_his, varname='salinity', timestep='all', layer=5, station='all')#, multipart=False)
     data_fromhis_flat = data_fromhis[:,:,0]
     fig, ax = plt.subplots()
     ax.plot(data_fromhis.var_times,data_fromhis_flat,'-')
 
     print('plot salinity,bedlevel')
     #depth retrieval is probably wrong
-    data_fromhis_depth = get_hismapmodeldata(file_nc=file_his, varname='zcoordinate_c', timestep=4, lay='all', station='Bommenede')#, multipart=False)
+    data_fromhis_depth = get_ncmodeldata(file_nc=file_his, varname='zcoordinate_c', timestep=4, layer='all', station='Bommenede')#, multipart=False)
     data_fromhis_depth_flat = data_fromhis_depth[0,0,:]
-    data_fromhis = get_hismapmodeldata(file_nc=file_his, varname='salinity', timestep=4, lay='all', station='Bommenede')#, multipart=False)
+    data_fromhis = get_ncmodeldata(file_nc=file_his, varname='salinity', timestep=4, layer='all', station='Bommenede')#, multipart=False)
     data_fromhis_flat = data_fromhis[0,0,:]
     fig, ax = plt.subplots()
     ax.plot(data_fromhis_flat, data_fromhis_depth_flat,'-')
@@ -205,7 +206,7 @@ def Test_grid_getnetdata_getmapmodeldata_plotnetmapdata(self):
     import datetime as dt
     import numpy as np
     
-    from dfm_tools.grid import get_netdata, get_hismapmodeldata, plot_netmapdata
+    from dfm_tools.grid import get_netdata, get_ncmodeldata, plot_netmapdata
     
     file_map1 = r'c:\DATA\werkmap\vanJulien_shortmodelfiles\DFM_sigma_curved_bend\DFM_OUTPUT_cb_3d\cb_3d_map.nc'
     file_map8 = r'n:\My Documents\werkmap\vanJulien_shortmodelfiles\DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'
@@ -216,9 +217,9 @@ def Test_grid_getnetdata_getmapmodeldata_plotnetmapdata(self):
     print('plot grid and values from mapdata (constantvalue, 1 dim)')
     ugrid = get_netdata(file_nc=file_map1)#,multipart=False)
     #iT = 3 #for iT in range(10):
-    data_frommap = get_hismapmodeldata(file_nc=file_map1, varname='mesh2d_sa1', timestep=np.arange(dt.datetime(2001,1,1),dt.datetime(2001,1,2),dt.timedelta(hours=1)), lay=5)#, multipart=False)
+    data_frommap = get_ncmodeldata(file_nc=file_map1, varname='mesh2d_sa1', timestep=np.arange(dt.datetime(2001,1,1),dt.datetime(2001,1,2),dt.timedelta(hours=1)), layer=5)#, multipart=False)
     data_frommap_flat = data_frommap[0,:,0]
-    #data_frommap_depth = get_hismapmodeldata(file_nc=file_map1, varname='mesh2d_layer_sigma', lay='all')#, multipart=False)
+    #data_frommap_depth = get_ncmodeldata(file_nc=file_map1, varname='mesh2d_layer_sigma', layer='all')#, multipart=False)
     fig, ax = plt.subplots()
     pc = plot_netmapdata(ugrid.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
     #pc.set_clim([28,30.2])
@@ -229,7 +230,7 @@ def Test_grid_getnetdata_getmapmodeldata_plotnetmapdata(self):
     print('plot grid and values from mapdata (constantvalue, 1 dim)')
     ugrid = get_netdata(file_nc=file_map1)#,multipart=False)
     #iT = 3 #for iT in range(10):
-    data_frommap = get_hismapmodeldata(file_nc=file_map1, varname='mesh2d_sa1', timestep=3, lay=5)#, multipart=False)
+    data_frommap = get_ncmodeldata(file_nc=file_map1, varname='mesh2d_sa1', timestep=3, layer=5)#, multipart=False)
     data_frommap_flat = data_frommap.flatten()
     fig, ax = plt.subplots()
     pc = plot_netmapdata(ugrid.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
@@ -245,7 +246,7 @@ def Test_grid_getnetdata_getmapmodeldata_plotnetmapdata(self):
     ax.set_aspect('equal')
     
     print('plot grid and values from mapdata (constantvalue, 1 dim)')
-    data_frommap = get_hismapmodeldata(file_nc=file_map8, varname='mesh2d_flowelem_bl')#, multipart=False)
+    data_frommap = get_ncmodeldata(file_nc=file_map8, varname='mesh2d_flowelem_bl')#, multipart=False)
     data_frommap_flat = data_frommap.flatten()
     fig, ax = plt.subplots()
     pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
@@ -254,7 +255,7 @@ def Test_grid_getnetdata_getmapmodeldata_plotnetmapdata(self):
     ax.set_aspect('equal')
 
     print('plot grid and values from mapdata (waterlevel, 2dim)')
-    data_frommap = get_hismapmodeldata(file_nc=file_map8, varname='mesh2d_s1', timestep=3)#, multipart=False)
+    data_frommap = get_ncmodeldata(file_nc=file_map8, varname='mesh2d_s1', timestep=3)#, multipart=False)
     data_frommap_flat = data_frommap.flatten()
     fig, ax = plt.subplots()
     pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
@@ -263,7 +264,7 @@ def Test_grid_getnetdata_getmapmodeldata_plotnetmapdata(self):
     ax.set_aspect('equal')
 
     print('plot grid and values from mapdata (salinity on layer, 3dim)')
-    data_frommap = get_hismapmodeldata(file_nc=file_map8, varname='mesh2d_sa1', timestep=3, lay=33)#, multipart=False)
+    data_frommap = get_ncmodeldata(file_nc=file_map8, varname='mesh2d_sa1', timestep=3, layer=33)#, multipart=False)
     data_frommap_flat = data_frommap.flatten()
     fig, ax = plt.subplots()
     pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
@@ -272,7 +273,7 @@ def Test_grid_getnetdata_getmapmodeldata_plotnetmapdata(self):
     ax.set_aspect('equal')
 
     print('plot grid and values from mapdata (temperature on layer, 3dim)')
-    data_frommap = get_hismapmodeldata(file_nc=file_map8, varname='mesh2d_tem1', timestep=3, lay=33)#, multipart=False)
+    data_frommap = get_ncmodeldata(file_nc=file_map8, varname='mesh2d_tem1', timestep=3, layer=33)#, multipart=False)
     data_frommap_flat = data_frommap.flatten()
     fig, ax = plt.subplots()
     pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
@@ -289,8 +290,8 @@ def Test_grid_getnetdata_getmapmodeldata_plotnetmapdata(self):
 
     print('plot grid and values from mapdata (RMM)')
     ugrid_all = get_netdata(file_nc=file_map_rmm)#,multipart=False)
-    #data_frommap = get_hismapmodeldata(file_nc=file_map_rmm, varname='mesh2d_s1', timestep=50)#, multipart=False)
-    data_frommap = get_hismapmodeldata(file_nc=file_map_rmm, varname='mesh2d_ucx', timestep=50)#, multipart=False)
+    #data_frommap = get_ncmodeldata(file_nc=file_map_rmm, varname='mesh2d_s1', timestep=50)#, multipart=False)
+    data_frommap = get_ncmodeldata(file_nc=file_map_rmm, varname='mesh2d_ucx', timestep=50)#, multipart=False)
     data_frommap_flat = data_frommap.flatten()
     fig, ax = plt.subplots()
     pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
@@ -303,7 +304,7 @@ def Test_maplora(self):
     import matplotlib.pyplot as plt
     plt.close('all')
     
-    from dfm_tools.grid import get_netdata, plot_netmapdata, get_hismapmodeldata
+    from dfm_tools.grid import get_netdata, plot_netmapdata, get_ncmodeldata
 
     file_maplora = r'p:\11201806-sophie\Oosterschelde\WAQ\r03\postprocessing\oost_tracer_map.nc'
     file_maplora = r'p:\11201806-sophie\Oosterschelde\WAQ\r02\postprocessing\oost_tracer_2_map.nc'
@@ -320,9 +321,9 @@ def Test_maplora(self):
     for var_name, var_clim in zip(var_names, var_clims):
         fig, ax = plt.subplots()
         if 'oost_tracer_2_map' in file_maplora:
-            data_frommap = get_hismapmodeldata(file_nc=file_maplora, varname=var_name)#, multipart=False)
+            data_frommap = get_ncmodeldata(file_nc=file_maplora, varname=var_name)#, multipart=False)
         else:
-            data_frommap = get_hismapmodeldata(file_nc=file_maplora, varname=var_name, timestep='all', lay=5)#, multipart=False)
+            data_frommap = get_ncmodeldata(file_nc=file_maplora, varname=var_name, timestep='all', layer=5)#, multipart=False)
             data_frommap = data_frommap.flatten()
         pc = plot_netmapdata(ugrid_lora.verts, values=data_frommap, ax=None, linewidth=0.5, cmap="jet")
         if var_clim != None:
@@ -339,18 +340,20 @@ def Test_grid_get_modeldata_onintersection(self):
     plt.close('all')
     import numpy as np
     
-    from dfm_tools.grid import get_netdata, get_hismapmodeldata, get_modeldata_onintersection, plot_netmapdata
+    from dfm_tools.grid import get_netdata, get_ncmodeldata, get_modeldata_onintersection, plot_netmapdata
     from dfm_tools.polygon import LineBuilder#, Polygon
     
     file_map = r'c:\DATA\werkmap\vanJulien_shortmodelfiles\DFM_sigma_curved_bend\DFM_OUTPUT_cb_3d\cb_3d_map.nc'
     file_map = r'c:\DATA\werkmap\vanJulien_shortmodelfiles\DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'
     #file_map = r'p:\11203379-mwra-new-bem-model\waq_model\simulations\A31_1year_20191219\DFM_OUTPUT_MB_02_waq\MB_02_waq_0000_map.nc'
-    file_map = r'p:\11205258-006-kpp2020_rmm-g6\jelmer_mwra\MB_02_waq_0000_map.nc'
+    #file_map = r'p:\11205258-006-kpp2020_rmm-g6\jelmer_mwra\MB_02_waq_0000_map.nc'
+    file_map = r'p:\1204257-dcsmzuno\2013-2017\3D-DCSM-FM\A17b\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0000_map.nc'
     
     if 'cb_3d_map' in file_map:
         timestep = 72
         layno = 5
         convert2merc = None
+        multipart = None
         line_array = np.array([[ 185.08667065, 2461.11775254],
                                [2934.63837418, 1134.16019127]])
         line_array = np.array([[ 104.15421399, 2042.7077107 ],
@@ -360,96 +363,48 @@ def Test_grid_get_modeldata_onintersection(self):
         timestep = 3
         layno = 35
         convert2merc = None
+        multipart = None
         line_array = np.array([[ 56267.59146475, 415644.67447155],
                                [ 64053.73427496, 419407.58239502]])
         line_array = np.array([[ 53181.96942503, 424270.83361629],
                                [ 55160.15232593, 416913.77136685]])
-        line_array = np.array([[ 52787.21854294, 424392.10414528],
-                               [ 55017.72655174, 416403.77313703],
-                               [ 65288.43784807, 419360.49305567]])
+        #line_array = np.array([[ 52787.21854294, 424392.10414528],
+        #                       [ 55017.72655174, 416403.77313703],
+        #                       [ 65288.43784807, 419360.49305567]])
         clim = [-25,5]
     elif 'DFM_OUTPUT_MB_02_waq' in file_map or 'jelmer_mwra' in file_map:
         timestep = 30
         layno = 5
         convert2merc = True
+        multipart = None
+        #provide xy order, so lonlat
         line_array = np.array([[-71.10395926,  42.3404146 ],
                                [-69.6762489 ,  42.38341792]])
         line_array = np.array([[-70.87382752,  42.39103758], #dummy for partition 0000
                                [-70.42078633,  42.24876018]])
         clim = None
-    else:
-        raise Exception('ERROR: no settings provided for this mapfile')
-    
-    
-    ugrid = get_netdata(file_nc=file_map)#,multipart=False)
-    
-    #create plot with ugrid and cross section line
-    fig, ax_input = plt.subplots()
-    pc = plot_netmapdata(ugrid.verts, values=None, ax=ax_input, linewidth=0.5, color='crimson', facecolor="None")
-    #pc.set_clim([28,30.2])
-    #fig.colorbar(pc, ax=ax)
-    ax_input.set_aspect('equal')
-    if 0: #click interactive polygon
-        #pol_frominput = Polygon.frominteractive(ax)
-        line, = ax_input.plot([], [],'o-')  # empty line
-        linebuilder = LineBuilder(line)
-        line_array = linebuilder.line_array
-    ax_input.plot(line_array[:,0],line_array[:,1])
-    
-    
-    #intersect function, find crossed cell numbers (gridnos) and coordinates of intersection (2 per crossed cell)
-    intersect_gridnos, intersect_coords = ugrid.polygon_intersect(line_array)
-    
-    #derive vertices from cross section (distance from first point)
-    crs_verts = get_modeldata_onintersection(file_nc=file_map, line_array=line_array, intersect_gridnos=intersect_gridnos, intersect_coords=intersect_coords, timestep=timestep, convert2merc=convert2merc)
-    
-    #get bed layer
-    data_frommap_bl = get_hismapmodeldata(file_nc=file_map, varname='mesh2d_flowelem_bl')#, multipart=False)
-    pc = plot_netmapdata(ugrid.verts, values=data_frommap_bl, ax=ax_input, linewidth=0.5, cmap="jet")
-
-    #get data to plot
-    data_frommap = get_hismapmodeldata(file_nc=file_map, varname='mesh2d_sa1', timestep=timestep, lay='all')#, multipart=False)
-    
-    #plot crossed cells (gridnos) in first plot
-    data_frommap_flat = data_frommap[0,intersect_gridnos,layno]
-    pc = plot_netmapdata(ugrid.verts[intersect_gridnos,:,:], values=data_frommap_flat, ax=ax_input, linewidth=0.5, cmap="jet")
-    
-    #plot cross section
-    data_frommap_sel = data_frommap[0,intersect_gridnos,:]
-    data_frommap_sel_flat = data_frommap_sel.T.flatten()
-    fig, ax = plt.subplots()
-    pc = plot_netmapdata(crs_verts, values=data_frommap_sel_flat, ax=ax, linewidth=0.5, cmap='jet')
-    fig.colorbar(pc, ax=ax)
-    ax.set_ylim(clim)
-    
-
-def Test_grid_get_modeldata_onintersection_DCSM(self):
-    import matplotlib.pyplot as plt
-    plt.close('all')
-    import numpy as np
-    
-    from dfm_tools.grid import get_netdata, get_hismapmodeldata, get_modeldata_onintersection, plot_netmapdata
-    from dfm_tools.polygon import LineBuilder#, Polygon
-
-    file_map = r'p:\1204257-dcsmzuno\2013-2017\3D-DCSM-FM\A17b\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0000_map.nc'
-    
-    if 'DCSM-FM_0_5nm' in file_map:
-        timestep = 731
+    elif 'DCSM-FM_0_5nm' in file_map:
+        timestep = 365
         layno = 5
-        convert2merc = None
+        convert2merc = True
+        multipart = None
+        #provide xy order, so lonlat
         line_array = np.array([[ 0.97452229, 51.13407643],
                                [ 1.89808917, 50.75191083]])
-        line_array = np.array([[10.17702481, 57.03663877],
-                               [12.38583134, 57.61284917]])
+        #line_array = np.array([[10.17702481, 57.03663877], #dummy for partition 0000
+        #                       [12.38583134, 57.61284917]])
         clim = None
     else:
         raise Exception('ERROR: no settings provided for this mapfile')
-
-    ugrid = get_netdata(file_nc=file_map,multipart=False)
+    
+    
+    ugrid = get_netdata(file_nc=file_map, multipart=multipart)
+    #get bed layer
+    data_frommap_bl = get_ncmodeldata(file_nc=file_map, varname='mesh2d_flowelem_bl', multipart=multipart)
     
     #create plot with ugrid and cross section line
     fig, ax_input = plt.subplots()
-    pc = plot_netmapdata(ugrid.verts, values=None, ax=ax_input, linewidth=0.5, color='crimson', facecolor="None")
+    pc = plot_netmapdata(ugrid.verts, values=data_frommap_bl, ax=ax_input, linewidth=0.5, color='crimson', facecolor="None")
     #pc.set_clim([28,30.2])
     #fig.colorbar(pc, ax=ax)
     ax_input.set_aspect('equal')
@@ -459,23 +414,19 @@ def Test_grid_get_modeldata_onintersection_DCSM(self):
         linebuilder = LineBuilder(line)
         line_array = linebuilder.line_array
     ax_input.plot(line_array[:,0],line_array[:,1])
-
+    
+    
     #intersect function, find crossed cell numbers (gridnos) and coordinates of intersection (2 per crossed cell)
     intersect_gridnos, intersect_coords = ugrid.polygon_intersect(line_array)
-    
     #derive vertices from cross section (distance from first point)
-    crs_verts = get_modeldata_onintersection(file_nc=file_map, line_array=line_array, intersect_gridnos=intersect_gridnos, intersect_coords=intersect_coords, timestep=timestep, convert2merc=convert2merc)
+    crs_verts = get_modeldata_onintersection(file_nc=file_map, line_array=line_array, intersect_gridnos=intersect_gridnos, intersect_coords=intersect_coords, timestep=timestep, convert2merc=convert2merc, multipart=multipart)
     
-    #get bed layer
-    data_frommap_bl = get_hismapmodeldata(file_nc=file_map, varname='mesh2d_flowelem_bl', multipart=False)
-    pc = plot_netmapdata(ugrid.verts, values=data_frommap_bl, ax=ax_input, linewidth=0.5, cmap="jet")
-
     #get data to plot
-    data_frommap = get_hismapmodeldata(file_nc=file_map, varname='mesh2d_sa1', timestep=timestep, lay='all', multipart=False)
+    data_frommap = get_ncmodeldata(file_nc=file_map, varname='mesh2d_sa1', timestep=timestep, layer='all', multipart=multipart)
     
     #plot crossed cells (gridnos) in first plot
-    data_frommap_flat = data_frommap[0,intersect_gridnos,layno]
-    pc = plot_netmapdata(ugrid.verts[intersect_gridnos,:,:], values=data_frommap_flat, ax=ax_input, linewidth=0.5, cmap="jet")
+    #data_frommap_flat = data_frommap[0,intersect_gridnos,layno]
+    #pc = plot_netmapdata(ugrid.verts[intersect_gridnos,:,:], values=data_frommap_flat, ax=ax_input, linewidth=0.5, cmap="jet")
     
     #plot cross section
     data_frommap_sel = data_frommap[0,intersect_gridnos,:]
@@ -484,6 +435,8 @@ def Test_grid_get_modeldata_onintersection_DCSM(self):
     pc = plot_netmapdata(crs_verts, values=data_frommap_sel_flat, ax=ax, linewidth=0.5, cmap='jet')
     fig.colorbar(pc, ax=ax)
     ax.set_ylim(clim)
+    
+
 
     
 @pytest.fixture
