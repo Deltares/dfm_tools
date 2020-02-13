@@ -89,8 +89,11 @@ class UGrid:
         for iP, pol_data in enumerate(verts_inlinebox):
             pol_data_nonan = pol_data[~np.isnan(pol_data).all(axis=1)]
             pol_shp = Polygon(pol_data_nonan)
-            #allpol.append(pol_shp)
-            intersection_line = pol_shp.intersection(line_section).coords
+            try:
+                intersection_line = pol_shp.intersection(line_section).coords
+            except: #in the rare case that a cell (pol_shp) is crossed by multiple parts of the line
+                intersection_line = pol_shp.intersection(line_section)[0].coords
+            
             if intersection_line != []:
                 intersect_gridnos = np.concatenate([intersect_gridnos,[verts_inlinebox_nos[iP]]])
                 intersect_coords1=np.concatenate([intersect_coords1,np.array([list(intersection_line)[0]])])
@@ -315,9 +318,13 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     
     #LAYER CHECKS
     dimn_layer = get_varname_mapnc(data_nc,'nmesh2d_layer')
-    if dimn_layer is None or dimn_layer not in nc_values_dims: #only time and faces/stations dimensions, no layers
+    if dimn_layer is None or dimn_layer not in nc_values_dims: #no layer dimension in model and/or variable
         if layer is not None:
-            raise Exception('ERROR: netcdf variable (%s) does not contain layers, but parameter layer is provided'%(varname))
+            if layer is str('all'): #even for 2D model without layer dimension, it is allowed to ask for 'all' layers
+                nlayers = 1 #has to be one for nlayers-1 test
+                layer_ids = [0] #cannot be range, because range(0,0) has not np.min()
+            else:
+                raise Exception('ERROR: netcdf variable (%s) does not contain layers, but parameter layer is provided'%(varname))
     else: #layers are present in variable
         #nlayers = nc_values_shape[2]
         dimn_layer_id = nc_values_dims.index(dimn_layer)
@@ -556,7 +563,11 @@ def get_modeldata_onintersection(file_nc, line_array=None, intersect_gridnos=Non
     #nlay = data_frommap.shape[2]
     #nlay = data_nc.variables[varname].shape[2]
     dimn_layer = get_varname_mapnc(data_nc,'nmesh2d_layer')
-    nlay = data_nc.dimensions[dimn_layer].size
+    if dimn_layer is None: #no layers, 2D model
+        nlay = 1
+    else:
+        nlay = data_nc.dimensions[dimn_layer].size
+    
     varn_layer_z = get_varname_mapnc(data_nc,'mesh2d_layer_z')
     if varn_layer_z is None:
         laytyp = 'sigmalayer'
