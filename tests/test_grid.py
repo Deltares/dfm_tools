@@ -530,7 +530,10 @@ def test_grid_get_modeldata_onintersection(file_nc):
 def getmakeoutputdir(function_name):
     dir_output = os.path.join(dir_testoutput,function_name)
     if os.path.exists(dir_output):
-        shutil.rmtree(dir_output)
+        try:
+            shutil.rmtree(dir_output)
+        except:
+            print('dir_output could not be removed')
     if not os.path.exists(dir_output):
         os.mkdir(dir_output)
     return dir_output
