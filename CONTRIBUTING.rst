@@ -70,12 +70,8 @@ Ready to contribute? Here's how to set up `dfm_tools` for local development.
 	$ mkvirtualenv dfm_tools_env
 	$ cd dfm_tools_env/
 	$ python setup.py develop
+    $ alternatively: use the steps decscribed in the README.rst
 
-    $ alternatively:
-	- ``python -m venv c:\path\to\dfm_tools_env`` (if you configured the PATH and PATHEXT variables for your Python installation, otherwise use ``path\to\base\bin\python`` instead of just ``python``)
-	- navigate to dfm_tools github folder
-	- ``c:\path\to\dfm_tools_env\Scripts\python setup.py develop``
-	
 4. Create a branch for local development::
 
     $ git checkout -b name-of-your-bugfix-or-feature
