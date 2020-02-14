@@ -247,25 +247,4 @@ def get_stationid_fromstationlist(station_name_list_pd, station):
 
 
 
-def plot_netmapdata(verts, values=None, ax=None, **kwargs):
-    #https://stackoverflow.com/questions/52202014/how-can-i-plot-2d-fem-results-using-matplotlib
-    #https://stackoverflow.com/questions/49640311/matplotlib-unstructered-quadrilaterals-instead-of-triangles
-    import matplotlib.pyplot as plt
-    import matplotlib.collections
-    
-    #check if data size is equal
-    if not values is None:
-        if verts.shape[0] != values.shape[0]:
-            raise Exception('ERROR: size of grid and values is not equal, cannot plot')
-    
-    if not ax: ax=plt.gca()
-    pc = matplotlib.collections.PolyCollection(verts, **kwargs)
-    pc.set_array(values)
-    ax.add_collection(pc)
-    ax.autoscale()
-    return pc
-
-
-
-
 

@@ -129,8 +129,8 @@ TODO
 - create overview tree of all functions, also add missing functions here
 - write documentation as comments and generate automatically
 - improve testbank:
-	- parametrize importtest (and add other libraries from requirements)
 	- parametrize test_grid_gethismodeldata
+	- rename test_grid
 	- arrange auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
 	- replace 10**-9 by 1E-9
 - add comparable functions for sobek and Delft3D

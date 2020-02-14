@@ -24,7 +24,7 @@ def test_getvarnamemapnc():
     
     from netCDF4 import Dataset
     
-    from dfm_tools.get_varname_mapnc import get_varname_mapnc
+    from dfm_tools.get_nc_helpers import get_varname_mapnc
     
     file_map = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc')
     #file_net = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\Grevelingen_FM_grid_20190603_net.nc')
@@ -134,8 +134,7 @@ def test_getnetdata_plotnet(file_nc):
     import matplotlib.pyplot as plt
     plt.close('all')
 
-    from dfm_tools.get_nc import get_netdata
-    from dfm_tools.get_nc_helpers import plot_netmapdata
+    from dfm_tools.get_nc import get_netdata, plot_netmapdata
 
     print('plot only grid from net.nc')
     ugrid = get_netdata(file_nc=file_nc)
@@ -161,8 +160,7 @@ def test_grid_gethismodeldata():
     import matplotlib.pyplot as plt
     plt.close('all')
     
-    from dfm_tools.get_nc import get_netdata, get_ncmodeldata
-    from dfm_tools.get_nc_helpers import plot_netmapdata
+    from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
     
     file_his = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_his.nc')
     
@@ -247,8 +245,7 @@ def test_grid_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
     import matplotlib.pyplot as plt
     plt.close('all')
     
-    from dfm_tools.get_nc import get_netdata, get_ncmodeldata
-    from dfm_tools.get_nc_helpers import plot_netmapdata
+    from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
     
     if 'cb_3d_map' in file_nc:
         timestep = 3
@@ -343,8 +340,7 @@ def test_mapOS(file_nc):
     import matplotlib.pyplot as plt
     plt.close('all')
     
-    from dfm_tools.get_nc import get_netdata, plot_netmapdata
-    from dfm_tools.get_nc_helpers import plot_netmapdata
+    from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
 
     ugrid = get_netdata(file_nc=file_nc)
 
