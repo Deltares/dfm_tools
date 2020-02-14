@@ -356,7 +356,7 @@ def test_mapOS(file_nc):
 
     for var_name, var_clim in zip(var_names, var_clims):
         fig, ax = plt.subplots()
-        if 'oost_tracer_2_map' in file_nc:
+        if 0:#'oost_tracer_2_map' in file_nc:
             data_frommap = get_ncmodeldata(file_nc=file_nc, varname=var_name)#, multipart=False)
         else:
             data_frommap = get_ncmodeldata(file_nc=file_nc, varname=var_name, timestep='all', layer=5)#, multipart=False)
