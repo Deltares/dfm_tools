@@ -13,11 +13,9 @@ dfm_tools
         :target: https://dfm-tools.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
-
 .. image:: https://pyup.io/repos/github/openearth/dfm_tools/shield.svg
      :target: https://pyup.io/repos/github/openearth/dfm_tools/
      :alt: Updates
-
 
 
 dfm_tools are post-processing tools for Delft3D FM
@@ -185,7 +183,10 @@ Related information
 
 Credits
 -------
+
 This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
+
 .. _Cookiecutter: https://github.com/audreyr/cookiecutter
 .. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
+
 
