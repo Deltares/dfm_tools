@@ -12,8 +12,6 @@ import shutil
 
 dir_tests = os.path.join(os.path.realpath(__file__), os.pardir)
 dir_testoutput = os.path.join(dir_tests,'test_output')
-if os.path.exists(dir_testoutput):
-    shutil.rmtree(dir_testoutput)
 if not os.path.exists(dir_testoutput):
     os.mkdir(dir_testoutput)
 dir_testinput = os.path.join(r'c:/DATA/werkmap','dfm_tools_testdata')
@@ -531,6 +529,8 @@ def test_grid_get_modeldata_onintersection(file_nc):
 
 def getmakeoutputdir(function_name):
     dir_output = os.path.join(dir_testoutput,function_name)
+    if os.path.exists(dir_output):
+        shutil.rmtree(dir_output)
     if not os.path.exists(dir_output):
         os.mkdir(dir_output)
     return dir_output
