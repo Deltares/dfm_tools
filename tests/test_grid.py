@@ -367,7 +367,7 @@ def test_mapOS(file_nc):
         fig.colorbar(pc, ax=ax)
         ax.set_aspect('equal')
         ax.set_xlabel(var_name)
-        plt.savefig(os.path.join(dir_output,os.path.basename(file_nc).replace('.nc','')))
+        plt.savefig(os.path.join(dir_output,'%s_%s'%(os.path.basename(file_nc).replace('.nc',''),var_name)))
         
 
 
