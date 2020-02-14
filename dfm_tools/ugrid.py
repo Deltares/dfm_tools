@@ -73,7 +73,7 @@ class UGrid:
         try:
             from shapely.geometry import Polygon, LineString
         except:
-            raise Exception('ERROR: cannot ')
+            raise Exception('ERROR: cannot execute import shapely.geometry, check known bugs on https://github.com/openearth/dfm_tools for a solution')
             
         print('finding crossing flow links (can take a while if linebox over xy covers a lot of cells)')
         #allpol = []

@@ -242,7 +242,10 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
 def get_modeldata_onintersection(file_nc, line_array=None, intersect_gridnos=None, intersect_coords=None, timestep=None, multipart=None, convert2merc=None):
     import numpy as np
     from netCDF4 import Dataset
-    from shapely.geometry import LineString, Point#, MultiPoint
+    try:
+        from shapely.geometry import LineString, Point#, MultiPoint
+    except:
+        raise Exception('ERROR: cannot execute import shapely.geometry, check known bugs on https://github.com/openearth/dfm_tools for a solution')
 
     from dfm_tools.get_varname_mapnc import get_varname_mapnc
     
