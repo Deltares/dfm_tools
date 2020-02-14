@@ -356,11 +356,7 @@ def test_mapOS(file_nc):
 
     for var_name, var_clim in zip(var_names, var_clims):
         fig, ax = plt.subplots()
-        if 1:#'oost_tracer_2_map' in file_nc:
-            data_frommap = get_ncmodeldata(file_nc=file_nc, varname=var_name)#, multipart=False)
-        else:
-            data_frommap = get_ncmodeldata(file_nc=file_nc, varname=var_name, timestep='all', layer=5)#, multipart=False)
-            data_frommap = data_frommap.flatten()
+        data_frommap = get_ncmodeldata(file_nc=file_nc, varname=var_name)#, multipart=False)
         pc = plot_netmapdata(ugrid.verts, values=data_frommap, ax=None, linewidth=0.5, cmap="jet")
         if var_clim != None:
             pc.set_clim(var_clim)
