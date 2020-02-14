@@ -349,11 +349,11 @@ def test_mapOS(file_nc):
         var_names = ['mesh2d_FColi','mesh2d_HIWAI','mesh2d_mspaf','mesh2d_Pharma']
         var_clims = [None,[0,100000000000],None,[0,10000]]
     elif 'oost_tracer_2_map' in file_nc:
-        var_names = ['mesh2d_FColi','mesh2d_HIWAI','mesh2d_Pharma']
+        var_names = ['mesh2d_FColi_1','mesh2d_HIWAI_1','mesh2d_Pharma_1']
         var_clims = [None,[0,100000000000],[0,10000]]
     else:
-        var_names = ['mesh2d_Pharma']
-        var_clims = [[0,10000]]
+        raise Exception('ERROR: no settings provided for this mapfile')
+
     for var_name, var_clim in zip(var_names, var_clims):
         fig, ax = plt.subplots()
         if 'oost_tracer_2_map' in file_nc:
