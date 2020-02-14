@@ -39,10 +39,8 @@ Features
 
 Terms of use
 --------
-- a proper licence file will be added soon
-- this toolbox is free to use, but there is no warranty whatsoever, users are responsible to check the output themselves
-- this toolbox is now only available via github, once the structure is decided upon, it will be registered on pypi so pip installing and updating is possible without checkout
-- it might be that script names, function names and arguments will slightly change in the upcoming weeks. This would mean the script you create now might need some edits to work with the toolbox in the future. this is mainly the case for the second intersection functions
+- this toolbox is now only available via github, it will soon be registered on pypi so pip installing and updating is possible without github checkout
+- it might be that function names and arguments names will slightly change in the upcoming weeks. This would mean the script you create now might need some edits to work with the toolbox in the future. this is mainly the case for the get_modeldata_onintersection() function
 - please check the TODO sections for known inaccuracies
 - please do not use the dflowutil/dflowutil_examples scripts if you did not before, this will be phased out eventually. All you probably need is dfm_tools
 
@@ -80,7 +78,6 @@ TODO high priority (before launch)
 - discuss dfm_tools structure, which functions in which class/script:
 	- improve name and input of second intersect
 	- rename merc keyword to calcdist_forlatloncoords or something
-- add ownrisk-license
 - register on PyPI, for easier install via pip (for regular users, not developers):
 	- https://the-hitchhikers-guide-to-packaging.readthedocs.io/en/latest/quickstart.html#register-your-package-with-the-python-package-index-pypi 
 	- also add version numbers (only master branch), git commit automatic minor numbers? (bumpversion comes with cookiecutter?)
@@ -91,6 +88,7 @@ TODO high priority (before launch)
 
 TODO
 --------
+- update license with Deltares terms
 - add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?) (refer depth wrt reference level, water level or bed level, z variable is not correct in dfm-mapfile yet)
 - retrieve correct depths:
 	- add depth array (interfaces/centers) to his and map variables (z/sigma layer calculation is already in get_modeldata_onintersection function)
