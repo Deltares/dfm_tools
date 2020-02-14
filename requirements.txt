@@ -1,7 +1,3 @@
-os
-sys
-glob
-shutil
 scipy
 numpy
 datetime

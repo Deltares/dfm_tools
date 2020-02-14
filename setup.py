@@ -23,7 +23,7 @@ setup(
     author_email='jelmer.veenstra@deltares.nl',
     python_requires='>=3.5',
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: Beta',
         'Intended Audience :: Modellers',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Natural Language :: English',
