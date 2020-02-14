@@ -101,7 +101,7 @@ def test_foufiles():
     import matplotlib.pyplot as plt
     plt.close('all')
     
-    from dfm_tools.grid import get_netdata, get_ncmodeldata#,plot_netmapdata
+    from dfm_tools.grid import get_netdata, get_ncmodeldata
     
     file_net_rmm = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\01_Rooster\final_totaalmodel\rooster_rmm_v1p5_net.nc'
     file_fou = os.path.join(dir_testinput,r'DFM_fou_RMM\RMM_dflowfm_0000_fou.nc')
