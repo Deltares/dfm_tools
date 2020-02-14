@@ -140,6 +140,7 @@ Related information
 	- Request merging of your branch on https://github.com/openearth/dfm_tools/branches
 - run test bank:
 	- create python virtual environment with environment.yml (developer/test dependencies are there)
+	- fix the bug related to geos.py (section 'known bugs')
 	- open command line in local dfm_tools folder
 	- ``pytest -v --tb=short`` (runs all tests)
 	- ``pytest -v --tb=short -m unittest``
