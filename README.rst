@@ -18,7 +18,7 @@ dfm_tools
      :alt: Updates
 
 
-dfm_tools are post-processing tools for Delft3D FM
+dfm_tools are post-processing tools for Delft3D FM model outputfiles and more
 
 
 * Free software: GNU General Public License v3
@@ -78,12 +78,8 @@ How to work with this git repository
 TODO high priority (before launch)
 --------
 - discuss dfm_tools structure, which functions in which class/script:
-	- ugrid class naar ugrid script en rest van functies in get_dfm script? maybe also get_dfm_helpers?
-	- Intersect naar los script of bij get_dfm?
 	- improve name and input of second intersect
 	- rename merc keyword to calcdist_forlatloncoords or something
-	- move ugrid to ugrid function
-	- rename grid.py to get_fromnc.py (maybe helpers in separate get_fromnc_helpers.py script?), update test scripts
 - add ownrisk-license
 - register on PyPI, for easier install via pip (for regular users, not developers):
 	- https://the-hitchhikers-guide-to-packaging.readthedocs.io/en/latest/quickstart.html#register-your-package-with-the-python-package-index-pypi 
@@ -130,9 +126,7 @@ TODO
 - write documentation as comments and generate automatically
 - improve testbank:
 	- parametrize test_grid_gethismodeldata
-	- rename test_grid
 	- arrange auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
-	- replace 10**-9 by 1E-9
 - add comparable functions for sobek and Delft3D
 
 Related information

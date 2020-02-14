@@ -368,7 +368,7 @@ def get_modeldata_onintersection(file_nc, line_array=None, intersect_gridnos=Non
 def get_netdata(file_nc, multipart=None):
     import numpy as np
     
-    from ugrid import UGrid
+    from dfm_tools.ugrid import UGrid
     from dfm_tools.get_nc_helpers import get_ncfilelist
 
     file_ncs = get_ncfilelist(file_nc, multipart)
