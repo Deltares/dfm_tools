@@ -132,3 +132,10 @@ Related information
 		- ``git commit -m "message to be included with your commit"``
 		- ``git push`` (pushes changes to server, do not do this in while working in the master)
 	- Request merging of your branch on https://github.com/openearth/dfm_tools/branches
+- run test bank:
+	- create python virtual environment with environment.yml (developer/test dependencies are there)
+	- open command line in local dfm_tools folder
+	- ``pytest -v --tb=short`` (runs all tests)
+	- ``pytest -v --tb=short -m unittest``
+	- ``pytest -v --tb=short -m systemtest``
+	- ``pytest -v --tb=short -m acceptance``

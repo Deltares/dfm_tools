@@ -13,6 +13,7 @@ dir_tests = os.path.join(os.path.realpath(__file__), os.pardir)
 dir_testoutput = os.path.join(dir_tests,'test_output')
 if not os.path.exists(dir_testoutput):
     os.mkdir(dir_testoutput)
+dir_testinput = os.path.join(r'c:/DATA/werkmap','dfm_tools_testdata')
 
 
 @pytest.mark.acceptance
@@ -29,7 +30,7 @@ def test_mdu():
     from dfm_tools.mdu import read_deltares_ini, write_deltares_ini    
         
     try:
-        filename_mdu = r'c:\DATA\werkmap\vanJulien_shortmodelfiles\DFM_3D_z_Grevelingen\computations\run01\Grevelingen-FM.mdu'
+        filename_mdu = os.path.join(dir_testinput, r'DFM_3D_z_Grevelingen\computations\run01\Grevelingen-FM.mdu')
         data_mdu = read_deltares_ini(filename_mdu)
         print(data_mdu)
         import_success = True

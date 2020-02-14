@@ -8,7 +8,6 @@ Created on Thu Feb 13 23:10:51 2020
 import pytest
 import inspect
 import os
-import sys
 
 dir_tests = os.path.join(os.path.realpath(__file__), os.pardir)
 dir_testoutput = os.path.join(dir_tests,'test_output')
@@ -44,7 +43,7 @@ def test_getvarnamemapnc():
 
 
 
-@pytest.mark.parametrize("file_nc, expected_size", [pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'), 44804, id='frompartitionedmap Grevelingen'),
+@pytest.mark.parametrize("file_nc, expected_size", [pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'), 5599, id='from 1 map partion Grevelingen'),
                                                     #pytest.param(r'p:\11205258-006-kpp2020_rmm-g6\C_Work\01_Rooster\final_totaalmodel\rooster_rmm_v1p5_net.nc', 44804?, id='fromnet RMM'),
                                                     pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\Grevelingen_FM_grid_20190603_net.nc'), 44804, id='fromnet Grevelingen')])
 @pytest.mark.unittest
@@ -53,6 +52,19 @@ def test_UGrid(file_nc, expected_size):
     from dfm_tools.grid import UGrid
     
     ugrid = UGrid.fromfile(file_nc)
+    
+    assert ugrid.verts.shape[0] == expected_size
+
+
+@pytest.mark.parametrize("file_nc, expected_size", [pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'), 44796, id='from partitioned map Grevelingen'),
+                                                    #pytest.param(r'p:\11205258-006-kpp2020_rmm-g6\C_Work\01_Rooster\final_totaalmodel\rooster_rmm_v1p5_net.nc', 44804?, id='fromnet RMM'),
+                                                    pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\Grevelingen_FM_grid_20190603_net.nc'), 44804, id='fromnet Grevelingen')])
+@pytest.mark.unittest
+def test_getnetdata(file_nc, expected_size):
+    #from netCDF4 import Dataset
+    from dfm_tools.grid import get_netdata
+    
+    ugrid = get_netdata(file_nc)
     
     assert ugrid.verts.shape[0] == expected_size
 
@@ -66,13 +78,8 @@ def test_getncmodeldata_timeid():
     
     assert (data_frommap.data[0,0,0] - 31. ) < 10**-9
     
-@pytest.mark.testtest
-def test_testtest():
-    try:
-        test=dfsaf
-    except Exception:
-        print("Unexpected error:", sys.exc_info()[1])
-    
+
+
 
 @pytest.mark.unittest
 def test_getncmodeldata_datetime():
@@ -122,6 +129,7 @@ def test_getnetdata_plotnet(file_nc):
     """
 
     dir_output = getmakeoutputdir(function_name=inspect.currentframe().f_code.co_name)
+    #dir_output = dir_testoutput
 
     import matplotlib.pyplot as plt
     plt.close('all')
@@ -147,6 +155,7 @@ def test_grid_gethismodeldata():
     this test retrieves his data and plots it
     """
     dir_output = getmakeoutputdir(function_name=inspect.currentframe().f_code.co_name)
+    #dir_output = dir_testoutput
 
     import matplotlib.pyplot as plt
     plt.close('all')
@@ -222,102 +231,100 @@ def test_grid_gethismodeldata():
     
     
 
+@pytest.mark.parametrize("file_nc", [pytest.param(os.path.join(dir_testinput,r'DFM_sigma_curved_bend\DFM_OUTPUT_cb_3d\cb_3d_map.nc'), id='curvibend'),
+                                     pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'), id='Grevelingen'),
+                                     pytest.param(r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\computations\run_156\DFM_OUTPUT_RMM_dflowfm\RMM_dflowfm_0000_map.nc', id='RMM')])
 @pytest.mark.acceptance
-def test_grid_getnetdata_getmapmodeldata_plotnetmapdata():
+def test_grid_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
     """
     this test retrieves grid data, retrieves map data, and plots it
     """
     dir_output = getmakeoutputdir(function_name=inspect.currentframe().f_code.co_name)
+    #dir_output = dir_testoutput
 
     import matplotlib.pyplot as plt
     plt.close('all')
     
     from dfm_tools.grid import get_netdata, get_ncmodeldata, plot_netmapdata
     
-    file_map1 = os.path.join(dir_testinput,r'DFM_sigma_curved_bend\DFM_OUTPUT_cb_3d\cb_3d_map.nc')
-    file_map8 = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc')
-    file_map_rmm = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\computations\run_156\DFM_OUTPUT_RMM_dflowfm\RMM_dflowfm_0000_map.nc'
-    
-    #CURVIBEND
-    print('plot grid and values from mapdata (constantvalue, 1 dim)')
-    ugrid = get_netdata(file_nc=file_map1)#,multipart=False)
-    #iT = 3 #for iT in range(10):
-    data_frommap = get_ncmodeldata(file_nc=file_map1, varname='mesh2d_sa1', timestep=3, layer=5)#, multipart=False)
-    data_frommap_flat = data_frommap.flatten()
-    fig, ax = plt.subplots()
-    pc = plot_netmapdata(ugrid.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
-    #pc.set_clim([28,30.2])
-    fig.colorbar(pc, ax=ax)
-    ax.set_aspect('equal')
-    plt.savefig(os.path.join(dir_output,'curvibend_mesh2d_sa1'))
+    if 'cb_3d_map' in file_nc:
+        timestep = 3
+        layer = 5
+        clim_wl = [-0.5,1]
+        clim_sal = None
+        clim_tem = None
+    elif 'Grevelingen-FM_0000_map' in file_nc:
+        timestep = 3
+        layer = 33
+        clim_wl = [-0.5,1]
+        clim_sal = [28,30.2]
+        clim_tem = [4,10]
+    elif 'RMM_dflowfm_0000_map' in file_nc:
+        timestep = 50
+        layer = None
+        clim_wl = None
+        clim_sal = None
+        clim_tem = None
+    else:
+        raise Exception('ERROR: no settings provided for this mapfile')
         
-    #GREVELINGEN
-    print('plot only grid from mapdata')
-    ugrid_all = get_netdata(file_nc=file_map8)#,multipart=False)
-    fig, ax = plt.subplots()
-    pc = plot_netmapdata(ugrid_all.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
-    ax.set_aspect('equal')
-    plt.savefig(os.path.join(dir_output,'grevelingen_grid'))
     
-    print('plot grid and values from mapdata (constantvalue, 1 dim)')
-    data_frommap = get_ncmodeldata(file_nc=file_map8, varname='mesh2d_flowelem_bl')#, multipart=False)
-    data_frommap_flat = data_frommap.flatten()
-    fig, ax = plt.subplots()
-    pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
-    #pc.set_clim([28,30.2])
-    fig.colorbar(pc, ax=ax)
-    ax.set_aspect('equal')
-    plt.savefig(os.path.join(dir_output,'grevelingen_mesh2d_flowelem_bl'))
-
-    print('plot grid and values from mapdata (waterlevel, 2dim)')
-    data_frommap = get_ncmodeldata(file_nc=file_map8, varname='mesh2d_s1', timestep=3)#, multipart=False)
-    data_frommap_flat = data_frommap.flatten()
-    fig, ax = plt.subplots()
-    pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
-    pc.set_clim([-0.5,1])
-    fig.colorbar(pc, ax=ax)
-    ax.set_aspect('equal')
-    plt.savefig(os.path.join(dir_output,'grevelingen_mesh2d_s1'))
-
-    print('plot grid and values from mapdata (salinity on layer, 3dim)')
-    data_frommap = get_ncmodeldata(file_nc=file_map8, varname='mesh2d_sa1', timestep=3, layer=33)#, multipart=False)
-    data_frommap_flat = data_frommap.flatten()
-    fig, ax = plt.subplots()
-    pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
-    pc.set_clim([28,30.2])
-    fig.colorbar(pc, ax=ax)
-    ax.set_aspect('equal')
-    plt.savefig(os.path.join(dir_output,'grevelingen_mesh2d_sa1'))
-
-    print('plot grid and values from mapdata (temperature on layer, 3dim)')
-    data_frommap = get_ncmodeldata(file_nc=file_map8, varname='mesh2d_tem1', timestep=3, layer=33)#, multipart=False)
-    data_frommap_flat = data_frommap.flatten()
-    fig, ax = plt.subplots()
-    pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
-    pc.set_clim([4,10])
-    fig.colorbar(pc, ax=ax)
-    ax.set_aspect('equal')
-    plt.savefig(os.path.join(dir_output,'grevelingen_mesh2d_tem1'))
-
-    #RMM
-    print('plot only grid from mapdata (RMM)')
-    ugrid_all = get_netdata(file_nc=file_map_rmm)#,multipart=False)
+    #PLOT GRID
+    print('plot only grid from mapdata')
+    ugrid_all = get_netdata(file_nc=file_nc)#,multipart=False)
     fig, ax = plt.subplots()
     pc = plot_netmapdata(ugrid_all.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
     ax.set_aspect('equal')
-    plt.savefig(os.path.join(dir_output,'rmm_grid'))
+    plt.savefig(os.path.join(dir_output,'%s_grid'%(os.path.basename(file_nc).replace('.nc',''))))
 
-    print('plot grid and values from mapdata (RMM)')
-    ugrid_all = get_netdata(file_nc=file_map_rmm)#,multipart=False)
-    #data_frommap = get_ncmodeldata(file_nc=file_map_rmm, varname='mesh2d_s1', timestep=50)#, multipart=False)
-    data_frommap = get_ncmodeldata(file_nc=file_map_rmm, varname='mesh2d_ucx', timestep=50)#, multipart=False)
+
+    #PLOT bedlevel
+    if not 'cb_3d_map' in file_nc:
+        print('plot grid and values from mapdata (constantvalue, 1 dim)')
+        ugrid = get_netdata(file_nc=file_nc)#,multipart=False)
+        #iT = 3 #for iT in range(10):
+        data_frommap = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_flowelem_bl')#, multipart=False)
+        data_frommap_flat = data_frommap.flatten()
+        fig, ax = plt.subplots()
+        pc = plot_netmapdata(ugrid.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
+        #pc.set_clim([28,30.2])
+        fig.colorbar(pc, ax=ax)
+        ax.set_aspect('equal')
+        plt.savefig(os.path.join(dir_output,'%s_mesh2d_flowelem_bl'%(os.path.basename(file_nc).replace('.nc',''))))
+        
+    
+    #PLOT water level on map
+    print('plot grid and values from mapdata (waterlevel, 2dim)')
+    data_frommap = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_s1', timestep=timestep)#, multipart=False)
     data_frommap_flat = data_frommap.flatten()
     fig, ax = plt.subplots()
     pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
-    pc.set_clim([-1,1])
+    pc.set_clim(clim_wl)
     fig.colorbar(pc, ax=ax)
     ax.set_aspect('equal')
-    plt.savefig(os.path.join(dir_output,'rmm_mesh2d_ucx'))
+    plt.savefig(os.path.join(dir_output,'%s_mesh2d_s1'%(os.path.basename(file_nc).replace('.nc',''))))
+
+    #PLOT var layer on map
+    if not 'RMM_dflowfm_0000_map' in file_nc:
+        print('plot grid and values from mapdata (salinity on layer, 3dim)')
+        data_frommap = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sa1', timestep=timestep, layer=layer)#, multipart=False)
+        data_frommap_flat = data_frommap.flatten()
+        fig, ax = plt.subplots()
+        pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
+        pc.set_clim(clim_sal)
+        fig.colorbar(pc, ax=ax)
+        ax.set_aspect('equal')
+        plt.savefig(os.path.join(dir_output,'%s_mesh2d_sa1'%(os.path.basename(file_nc).replace('.nc',''))))
+    
+        print('plot grid and values from mapdata (temperature on layer, 3dim)')
+        data_frommap = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_tem1', timestep=timestep, layer=layer)#, multipart=False)
+        data_frommap_flat = data_frommap.flatten()
+        fig, ax = plt.subplots()
+        pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
+        pc.set_clim(clim_tem)
+        fig.colorbar(pc, ax=ax)
+        ax.set_aspect('equal')
+        plt.savefig(os.path.join(dir_output,'%s_mesh2d_tem1'%(os.path.basename(file_nc).replace('.nc',''))))
 
 
 
@@ -328,6 +335,7 @@ def test_grid_getnetdata_getmapmodeldata_plotnetmapdata():
 def test_mapOS(file_nc):
 
     dir_output = getmakeoutputdir(function_name=inspect.currentframe().f_code.co_name)
+    #dir_output = dir_testoutput
 
     import matplotlib.pyplot as plt
     plt.close('all')
@@ -375,6 +383,7 @@ def test_mapOS(file_nc):
 def test_grid_get_modeldata_onintersection(file_nc):
 
     dir_output = getmakeoutputdir(function_name=inspect.currentframe().f_code.co_name)
+    #dir_output = dir_testoutput
 
     import matplotlib.pyplot as plt
     plt.close('all')
