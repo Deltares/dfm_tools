@@ -24,6 +24,12 @@ Terms of use
 - please check the TODO sections for known inaccuracies
 - please do not use the dflowutil/dflowutil_examples scripts if you did not before, this will be phased out eventually. All you probably need is dfm_tools
 
+Known bugs
+--------
+- the line ``import shapely.geometry`` does not work, while ``import shapely`` does, solution:
+	- find geos.py in your environment (eg %userprofile%\\AppData\\Local\\Continuum\\anaconda3\\envs\\github_env\\Lib\\site-packages\\shapely\\geos.py)
+	- replace ``if os.getenv('CONDA_PREFIX', ''):`` with ``if 0: #os.getenv('CONDA_PREFIX', ''):`` on line 143
+	
 How to work with this git repository
 --------
 - Install Github:
@@ -91,7 +97,7 @@ TODO
 - add foufiles, rstfiles? (partitioned but with different dimensions, should already partially work)
 - create overview tree of all functions, also add missing functions here
 - write documentation as comments and generate automatically
-- create testbank (keep example codelines) and setup auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
+- improve testbank and arrange auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
 - add comparable functions for sobek and Delft3D
 
 Related information
