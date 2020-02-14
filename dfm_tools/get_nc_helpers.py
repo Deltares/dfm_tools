@@ -184,7 +184,9 @@ def get_timesfromnc(file_nc):
         data_nc_times_from1 = np.arange(time1,timeend+timeinc,timeinc)
         data_nc_times = np.concatenate([[time0],data_nc_times_from1])
     data_nc_datetimes = num2date(data_nc_times, units = data_nc_timevar.units)
-    data_nc_datetimes_pd = pd.Series(data_nc_datetimes).dt.round(freq='S')
+    #data_nc_datetimes_pd = pd.Series(data_nc_datetimes).dt.round(freq='S')
+    nptimes = data_nc_datetimes.astype('datetime64[ns]') #convert to numpy first, pandas does not take all cftime datasets
+    data_nc_datetimes_pd = pd.Series(nptimes).dt.round(freq='S')
     
     return data_nc_datetimes_pd
 
