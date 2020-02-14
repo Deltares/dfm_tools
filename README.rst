@@ -100,6 +100,8 @@ TODO
 	- add depth array (interfaces/centers) to his and map variables (z/sigma layer calculation is already in get_modeldata_onintersection function)
 	- depths can be retrieved from mesh2d_layer_z/mesh2d_layer_sigma, but has no time dimension so untrue for sigma and maybe for z? (wrong in dflowfm?)
 	- layerzfrombedlevel keyword in mdu changes how zlayering is set up. Catch this exception with a keyword if necessary
+- remove hardcoded 'stations' dimension lookup
+- dimn_time is now actually variable name which does not work if time dimname is not the same as time varname
 - contributing method: environment.yml (README.rst) or requirements.dev (CONTRIBUTING.rst)?
 - perform actions by dimension names instead of ndims (eg station_name variable has two dimensions but no time)
 - make merc keyword always optional by testing for minmax all vertsx between -181 and 361 and minmax all vertsy (lat) between -91 and 91 (+range for overlap for eg gtsm model)

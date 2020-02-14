@@ -49,7 +49,7 @@ def test_getvarnamemapnc():
 @pytest.mark.unittest
 def test_UGrid(file_nc, expected_size):
     #from netCDF4 import Dataset
-    from dfm_tools.grid import UGrid
+    from dfm_tools.ugrid import UGrid
     
     ugrid = UGrid.fromfile(file_nc)
     
@@ -62,7 +62,7 @@ def test_UGrid(file_nc, expected_size):
 @pytest.mark.unittest
 def test_getnetdata(file_nc, expected_size):
     #from netCDF4 import Dataset
-    from dfm_tools.grid import get_netdata
+    from dfm_tools.get_nc import get_netdata
     
     ugrid = get_netdata(file_nc)
     
@@ -71,7 +71,7 @@ def test_getnetdata(file_nc, expected_size):
 
 @pytest.mark.unittest
 def test_getncmodeldata_timeid():
-    from dfm_tools.grid import get_ncmodeldata
+    from dfm_tools.get_nc import get_ncmodeldata
     
     file_map1 = os.path.join(dir_testinput,r'DFM_sigma_curved_bend\DFM_OUTPUT_cb_3d\cb_3d_map.nc')
     data_frommap = get_ncmodeldata(file_nc=file_map1, varname='mesh2d_sa1', timestep=1, layer=5)#, multipart=False)
@@ -86,7 +86,7 @@ def test_getncmodeldata_datetime():
     import numpy as np
     import datetime as dt
     
-    from dfm_tools.grid import get_ncmodeldata
+    from dfm_tools.get_nc import get_ncmodeldata
 
     file_map1 = os.path.join(dir_testinput,r'DFM_sigma_curved_bend\DFM_OUTPUT_cb_3d\cb_3d_map.nc')
     data_frommap = get_ncmodeldata(file_nc=file_map1, varname='mesh2d_sa1', timestep=np.arange(dt.datetime(2001,1,1),dt.datetime(2001,1,2),dt.timedelta(hours=1)), layer=5)#, multipart=False)
@@ -101,7 +101,7 @@ def test_foufiles():
     import matplotlib.pyplot as plt
     plt.close('all')
     
-    from dfm_tools.grid import get_netdata, get_ncmodeldata
+    from dfm_tools.get_nc import get_netdata, get_ncmodeldata
     
     file_net_rmm = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\01_Rooster\final_totaalmodel\rooster_rmm_v1p5_net.nc'
     file_fou = os.path.join(dir_testinput,r'DFM_fou_RMM\RMM_dflowfm_0000_fou.nc')
@@ -134,7 +134,8 @@ def test_getnetdata_plotnet(file_nc):
     import matplotlib.pyplot as plt
     plt.close('all')
 
-    from dfm_tools.grid import get_netdata, plot_netmapdata
+    from dfm_tools.get_nc import get_netdata
+    from dfm_tools.get_nc_helpers import plot_netmapdata
 
     print('plot only grid from net.nc')
     ugrid = get_netdata(file_nc=file_nc)
@@ -160,7 +161,8 @@ def test_grid_gethismodeldata():
     import matplotlib.pyplot as plt
     plt.close('all')
     
-    from dfm_tools.grid import get_netdata, get_ncmodeldata, plot_netmapdata
+    from dfm_tools.get_nc import get_netdata, get_ncmodeldata
+    from dfm_tools.get_nc_helpers import plot_netmapdata
     
     file_his = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_his.nc')
     
@@ -245,7 +247,8 @@ def test_grid_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
     import matplotlib.pyplot as plt
     plt.close('all')
     
-    from dfm_tools.grid import get_netdata, get_ncmodeldata, plot_netmapdata
+    from dfm_tools.get_nc import get_netdata, get_ncmodeldata
+    from dfm_tools.get_nc_helpers import plot_netmapdata
     
     if 'cb_3d_map' in file_nc:
         timestep = 3
@@ -340,7 +343,8 @@ def test_mapOS(file_nc):
     import matplotlib.pyplot as plt
     plt.close('all')
     
-    from dfm_tools.grid import get_netdata, plot_netmapdata, get_ncmodeldata
+    from dfm_tools.get_nc import get_netdata, plot_netmapdata
+    from dfm_tools.get_nc_helpers import plot_netmapdata
 
     ugrid = get_netdata(file_nc=file_nc)
 
@@ -386,7 +390,7 @@ def test_grid_get_modeldata_onintersection(file_nc):
     import numpy as np
     import datetime as dt
     
-    from dfm_tools.grid import get_netdata, get_ncmodeldata, get_modeldata_onintersection, plot_netmapdata
+    from dfm_tools.get_nc import get_netdata, get_ncmodeldata, get_modeldata_onintersection, plot_netmapdata
     from dfm_tools.polygon import LineBuilder#, Polygon
     
         

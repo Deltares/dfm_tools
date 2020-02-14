@@ -21,8 +21,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     import datetime as dt
     from netCDF4 import Dataset
     
-    from dfm_tools.grid import get_ncfilelist, get_ncvardims, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter
-    from dfm_tools.get_varname_mapnc import get_varname_mapnc
+    from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvardims, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_mapnc
     
     #get variable and dimension info
     #nc_varkeys, nc_dimkeys, nc_values, nc_values_shape, nc_values_dims = get_ncvardims(file_nc, varname)
@@ -99,7 +98,6 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         raise Exception('ERROR: depth argument is provided, but this is not implemented yet')
     
     #STATION CHECKS
-    #dimn_time = get_varname_mapnc(data_nc,'time')
     if 'stations' not in nc_values_dims: #only faces/stations dimensions, no times or layers
         if station is not None:
             raise Exception('ERROR: netcdf file variable (%s) does not contain stations, but parameter station is provided'%(varname))
@@ -131,7 +129,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
             raise Exception('ERROR: requested end station (%d) is larger than available in netcdf file (%d)'%(np.max(station_ids),len(station_name_list_pd)-1))
      
     
-    #check ghost cell existence
+    #check faces existence, variable could have ghost cells if partitioned
     dimn_faces = get_varname_mapnc(data_nc,'mesh2d_nFaces')
     if dimn_faces in nc_values_dims:
         var_ghostaffected = True
@@ -196,8 +194,8 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
                     values_all = np.ma.concatenate([values_all,values[:,station_ids,:]],axis=concat_axis)
                 else: #no selection
                     values_all = np.ma.concatenate([values_all,values],axis=concat_axis)
-            elif (nc_values_dims[0] == dimn_time and nc_values_dims[1] == dimn_layer): #TODO: remove this exception for files Lora?
-                print('WARNING: unexpected dimension order, supported for waqfiles Lora: %s'%(str(nc_values_dims)))
+            elif (nc_values_dims[0] == dimn_time and nc_values_dims[1] == dimn_layer):
+                print('WARNING: unexpected dimension order, supported for offline waqfiles OS: %s'%(str(nc_values_dims)))
                 if iF == 0: #setup initial array
                     values_all = np.ma.empty((len(time_ids),len(layer_ids),0))
                 #select values
@@ -243,11 +241,11 @@ def get_modeldata_onintersection(file_nc, line_array=None, intersect_gridnos=Non
     import numpy as np
     from netCDF4 import Dataset
     try:
-        from shapely.geometry import LineString, Point#, MultiPoint
+        from shapely.geometry import LineString, Point
     except:
         raise Exception('ERROR: cannot execute import shapely.geometry, check known bugs on https://github.com/openearth/dfm_tools for a solution')
 
-    from dfm_tools.get_varname_mapnc import get_varname_mapnc
+    from dfm_tools.get_nc_helpers import get_varname_mapnc
     
     def calc_dist(x1,x2,y1,y2):
         distance = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
@@ -255,6 +253,7 @@ def get_modeldata_onintersection(file_nc, line_array=None, intersect_gridnos=Non
 
     def calc_dist_latlon(x1,x2,y1,y2):
         #https://gis.stackexchange.com/questions/80881/what-is-unit-of-shapely-length-attribute
+        #calculate distance in meters between latlon coordinates
         distance = np.arccos(np.sin(np.radians(y1))*np.sin(np.radians(y2))+np.cos(np.radians(y1))*np.cos(np.radians(y2))*np.cos(np.radians(x2)-np.radians(x1)))*6371000
         return distance
 
@@ -282,6 +281,7 @@ def get_modeldata_onintersection(file_nc, line_array=None, intersect_gridnos=Non
     crs_ystart = intersect_coords[:,1,0]
     crs_ystop = intersect_coords[:,1,1]
 
+    #calculate distance between celledge-linepart crossing (is zero when line iL crosses cell)
     distperline_tostart = np.empty((ncrosscells,nlinecoords-1))
     #distperline_tostop = np.empty((ncrosscells,nlinecoords-1))
     linepart_length = np.zeros((nlinecoords))
@@ -369,7 +369,7 @@ def get_netdata(file_nc, multipart=None):
     import numpy as np
     
     from ugrid import UGrid
-    from dfm_tools.grid import get_ncfilelist
+    from dfm_tools.get_nc_helpers import get_ncfilelist
 
     file_ncs = get_ncfilelist(file_nc, multipart)
     #get all data
