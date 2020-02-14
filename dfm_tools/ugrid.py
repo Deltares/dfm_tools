@@ -22,8 +22,7 @@ class UGrid:
     def fromfile(file_nc):
         import numpy as np
         from netCDF4 import Dataset
-        from dfm_tools.get_varname_mapnc import get_varname_mapnc
-        from dfm_tools.grid import ghostcell_filter
+        from dfm_tools.get_nc_helpers import get_varname_mapnc, ghostcell_filter
         
         def nodexyfaces2verts(node_x,node_y, faces):
             quatrangles = faces-1 #convert 1-based indexing of cell numbering in ugrid to 0-based indexing
@@ -70,9 +69,12 @@ class UGrid:
         return ugrid
 
     def polygon_intersect(self, line_array):
-        from shapely.geometry import Polygon, LineString
         import numpy as np
-        
+        try:
+            from shapely.geometry import Polygon, LineString
+        except:
+            raise Exception('ERROR: cannot ')
+            
         print('finding crossing flow links (can take a while if linebox over xy covers a lot of cells)')
         #allpol = []
         intersect_gridnos = np.empty((0),dtype=int)

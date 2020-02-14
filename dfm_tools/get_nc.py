@@ -1,160 +1,9 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Feb 14 12:45:11 2020
 
-    
-    
-
-def get_ncfilelist(file_nc, multipart=None):
-    #get list of mapfiles
-    import re
-    import glob
-    import os
-    
-    if not os.path.exists(file_nc):
-        raise Exception('ERROR: file does not exist: %s'%(file_nc))
-    
-    lastpart = file_nc.split('_')[-2]
-    nctype = file_nc.split('_')[-1]
-    if file_nc.endswith('_%s'%(nctype)) and multipart != False and len(lastpart) == 4 and lastpart.isdigit(): #if part before '_map.nc' is eg '0000'
-        filename_start = re.compile('(.*)_([0-9]+)_%s'%(nctype)).search(file_nc).group(1)
-        #filename_number = re.compile('(.*)_([0-9]+)_map.nc').search(file_nc).group(2)
-        #file_ncs = [file_nc.replace('_%s_map.nc','_%04d_map.nc'%(filename_number, domain_id)) for domain_id in range(ndomains)]
-        file_ncs = glob.glob('%s*_%s'%(filename_start,nctype))
-    else:
-        file_ncs = [file_nc]
-    return file_ncs
-
-
-def get_ncvardims(file_nc, varname):
-    from netCDF4 import Dataset
-    
-    data_nc = Dataset(file_nc)
-    # check if requested variable is in netcdf
-    nc_varkeys = list(data_nc.variables.keys())
-    nc_dimkeys = list(data_nc.dimensions.keys())
-    nc_varlongnames = []
-    for nc_var in data_nc.variables:
-        try:
-            nc_varlongnames.append(data_nc.variables[nc_var].long_name)
-        except:
-            nc_varlongnames.append('NO long_name defined')
-    if varname not in nc_varkeys:
-        raise Exception('ERROR: requested variable %s not in netcdf, available are:\n%s'%(varname, '\n'.join(map(str,['%-25s: %s'%(nck,ncln) for nck,ncln in zip(nc_varkeys, nc_varlongnames)]))))
-    
-    nc_values = data_nc.variables[varname]
-    nc_values_shape = nc_values.shape
-    nc_values_dims = nc_values.dimensions
-    #nc_values_ndims = len(nc_values_dims)
-    return nc_varkeys, nc_dimkeys, nc_values, nc_values_shape, nc_values_dims
-
-
-
-def ghostcell_filter(file_nc):
-    import numpy as np
-    from netCDF4 import Dataset
-    
-    from dfm_tools.get_varname_mapnc import get_varname_mapnc
-    
-    data_nc = Dataset(file_nc)
-    
-    varn_domain = get_varname_mapnc(data_nc,'mesh2d_flowelem_domain')
-    if varn_domain is not None: # domain variable is present, so there are multiple domains
-        ghostcells_bool = True
-        domain = data_nc.variables[varn_domain][:]
-        domain_no = np.bincount(domain).argmax() #meest voorkomende domeinnummer
-        nonghost_ids = domain==domain_no
-    else:
-        ghostcells_bool = False
-        nonghost_ids = None
-    return ghostcells_bool, nonghost_ids
-
-
-
-def get_timesfromnc(file_nc):
-    from netCDF4 import Dataset,num2date#,date2num
-    import numpy as np
-    import pandas as pd
-    
-    from dfm_tools.get_varname_mapnc import get_varname_mapnc
-    
-    data_nc = Dataset(file_nc)
-    varname_time = get_varname_mapnc(data_nc,'time')
-    data_nc_timevar = data_nc.variables[varname_time]
-    
-    if len(data_nc_timevar)<3: #this rarely is the case, but just to be sure
-        data_nc_times = data_nc_timevar[:]
-    else:
-        time0 = data_nc_timevar[0] 
-        time1 = data_nc_timevar[1] 
-        time2 = data_nc_timevar[2]
-        timeend = data_nc_timevar[-1]
-        timeinc = time2-time1 # the interval between 0 and 1 is not per definition representative, so take 1 and 2
-        
-        data_nc_times_from1 = np.arange(time1,timeend+timeinc,timeinc)
-        data_nc_times = np.concatenate([[time0],data_nc_times_from1])
-    data_nc_datetimes = num2date(data_nc_times, units = data_nc_timevar.units)
-    data_nc_datetimes_pd = pd.Series(data_nc_datetimes).dt.round(freq='S')
-    
-    return data_nc_datetimes_pd
-
-
-
-
-def get_timeid_fromdatetime(data_nc_datetimes_pd, timestep):
-    import numpy as np
-    import pandas as pd
-    
-    timestep_pd = pd.Series(timestep)#.dt.round(freq='S')
-
-    #check if all requested times (timestep) are in netcdf file
-    times_bool_reqinfile = timestep_pd.isin(data_nc_datetimes_pd)
-    if not (times_bool_reqinfile == True).all():
-        raise Exception('ERROR: not all requested times are in netcdf file:\n%s\navailable in netcdf file are:\n\tstart: %s\n\tstop: %s\n\tinterval: %s'%(timestep_pd[-times_bool_reqinfile], data_nc_datetimes_pd.iloc[0], data_nc_datetimes_pd.iloc[-1], data_nc_datetimes_pd.iloc[1]-data_nc_datetimes_pd.iloc[0]))
-        
-    #get ids of requested times in netcdf file
-    times_bool_fileinreq = data_nc_datetimes_pd.isin(timestep_pd)
-    time_ids = np.where(times_bool_fileinreq)[0]
-    
-    return time_ids
-
-
-
-def get_hisstationlist(file_nc):
-    from netCDF4 import Dataset, chartostring
-    import pandas as pd
-    
-    data_nc = Dataset(file_nc)
-    #varn_station_name = get_varname_mapnc(data_nc,'station_name')
-    station_name_char = data_nc.variables['station_name'][:]
-    station_name_list = chartostring(station_name_char)
-    
-    station_name_list_pd = pd.Series(station_name_list)
-    
-    return station_name_list_pd
-
-
-
-
-def get_stationid_fromstationlist(station_name_list_pd, station):
-    import numpy as np
-    import pandas as pd
-    
-    station_pd = pd.Series(station)
-
-    #check if all requested stations are in netcdf file
-    stations_bool_reqinfile = station_pd.isin(station_name_list_pd)
-    if not (stations_bool_reqinfile == True).all():
-        raise Exception('ERROR: not all requested stations are in netcdf file:\n%s\navailable in netcdf file are:\n%s'%(station_pd[-stations_bool_reqinfile], station_name_list_pd))
-    
-    #get ids of requested stations in netcdf file
-    station_bool_fileinreq = station_name_list_pd.isin(station_pd)
-    station_ids = np.where(station_bool_fileinreq)[0]
-    #station_names = np.where(station_bool_fileinreq)[0]
-
-    
-    return station_ids
-
-
-
-
+@author: veenstra
+"""
 
 
 def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, station=None, multipart=None):
@@ -162,7 +11,9 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     file_nc: path to netcdf file
     varname: string of netcdf variable name (standard_name?)
     timestep: (list/range/ndarray of) 0-based int or datetime. Can be used to select one or more specific timesteps, or 'all'
-    lay: (list/range/ndarray of) 0-based int
+    layer: (list/range/ndarray of) 0-based int
+    depth
+    station
     multipart: set to False if you want only one of the map domains, can be left out otherwise
     """
     
@@ -590,27 +441,5 @@ def get_netdata(file_nc, multipart=None):
     ugrid_all = UGrid(node_x_all, node_y_all, faces_all, verts_all, mesh2d_node_z=node_z_all, edge_verts=edge_verts_all)
     ugrid_all
     return ugrid_all
-
-
-def plot_netmapdata(verts, values=None, ax=None, **kwargs):
-    #https://stackoverflow.com/questions/52202014/how-can-i-plot-2d-fem-results-using-matplotlib
-    #https://stackoverflow.com/questions/49640311/matplotlib-unstructered-quadrilaterals-instead-of-triangles
-    import matplotlib.pyplot as plt
-    import matplotlib.collections
-    
-    #check if data size is equal
-    if not values is None:
-        if verts.shape[0] != values.shape[0]:
-            raise Exception('ERROR: size of grid and values is not equal, cannot plot')
-    
-    if not ax: ax=plt.gca()
-    pc = matplotlib.collections.PolyCollection(verts, **kwargs)
-    pc.set_array(values)
-    ax.add_collection(pc)
-    ax.autoscale()
-    return pc
-
-
-
 
 
