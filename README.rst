@@ -47,7 +47,7 @@ Terms of use
 Known bugs
 --------
 - the line ``import shapely.geometry`` does not work, while ``import shapely`` does, solution:
-	- find geos.py in your environment (eg %userprofile%\\AppData\\Local\\Continuum\\anaconda3\\envs\\github_env\\Lib\\site-packages\\shapely\\geos.py)
+	- find geos.py in your environment (eg %userprofile%\\AppData\\Local\\Continuum\\anaconda3\\envs\\dfm_tools_env\\Lib\\site-packages\\shapely\\geos.py)
 	- replace ``if os.getenv('CONDA_PREFIX', ''):`` with ``if 0:`` on line 143
 	
 How to work with this git repository
@@ -126,16 +126,16 @@ TODO
 Related information
 --------
 - Create a separate python environment and link from Spyder:
-	- open command line and navigate to dfm_tools folder, eg C:\\DATA\\GitHub\\dfm_tools
+	- open command line and navigate to dfm_tools github folder, eg C:\\DATA\\GitHub\\dfm_tools
 	- ``conda env create -f environment.yml`` (sometimes you need to press enter if it hangs extremely long)
-	- ``conda info --envs`` (shows github_env virtual environment)
-	- ``conda activate github_env``
-	- ``python -c "import sys; print(sys.executable)"`` (the resulting path you need some steps later, eg C:\\Users\\[user]\\AppData\\Local\\Continuum\\anaconda3\\envs\\github_env\\python.exe)
+	- ``conda info --envs`` (shows dfm_tools_env virtual environment)
+	- ``conda activate dfm_tools_env``
+	- ``python -c "import sys; print(sys.executable)"`` (the resulting path you need some steps later, eg C:\\Users\\[user]\\AppData\\Local\\Continuum\\anaconda3\\envs\\dfm_tools_env\\python.exe)
 	- ``conda deactivate``
 	- open spyder from start menu or anaconda or anything
-	- Go to Tools >> Preferences >> Python interpreter >> point to github_env python.exe (print of sys.executable)
+	- Go to Tools >> Preferences >> Python interpreter >> point to dfm_tools_env python.exe (print of sys.executable)
 	- restart IPython console
-	- optional: ``conda remove -n github_env --all`` (to remove it again when necessary)
+	- optional: ``conda remove -n dfm_tools_env --all`` (to remove it again when necessary)
 - how to contribute to this git repository
 	- First request rights to contribute
 	- Branching:
