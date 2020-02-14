@@ -28,7 +28,7 @@ Known bugs
 --------
 - the line ``import shapely.geometry`` does not work, while ``import shapely`` does, solution:
 	- find geos.py in your environment (eg %userprofile%\\AppData\\Local\\Continuum\\anaconda3\\envs\\github_env\\Lib\\site-packages\\shapely\\geos.py)
-	- replace ``if os.getenv('CONDA_PREFIX', ''):`` with ``if 0: #os.getenv('CONDA_PREFIX', ''):`` on line 143
+	- replace ``if os.getenv('CONDA_PREFIX', ''):`` with ``if 0:`` on line 143
 	
 How to work with this git repository
 --------
@@ -64,14 +64,10 @@ TODO high priority (before launch)
 	- https://the-hitchhikers-guide-to-packaging.readthedocs.io/en/latest/quickstart.html#register-your-package-with-the-python-package-index-pypi 
 	- also add version numbers (only master branch), git commit automatic minor numbers?
 	- also add changelog besides commit comments?
-- check if everything also runs on other python installations
-	- add minimal version numbers to requirements.txt (maybe also to environment.yml)
-- exclude dflowutil from package?	
-- fix cross section for RMM (layer should raise error, because 2D)
+- exclude dflowutil from package?
 
 TODO
 --------
-- create outputfigures from tests in testfolder, add outputpath to .gitignore. also update print statements so they are useful
 - add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?) (refer depth wrt reference level, water level or bed level, z variable is not correct in dfm-mapfile yet)
 - retrieve correct depths:
 	- add depth array (interfaces/centers) to his and map variables (z/sigma layer calculation is already in get_modeldata_onintersection function)
@@ -95,6 +91,7 @@ TODO
 - add (look for) readwrite functions for general datafromats (tim, tekal etc)
 - add plot of structured grid (CMEMS etc)
 - add foufiles, rstfiles? (partitioned but with different dimensions, should already partially work)
+- add minimal version numbers to requirements.txt (maybe also to environment.yml)
 - create overview tree of all functions, also add missing functions here
 - write documentation as comments and generate automatically
 - improve testbank and arrange auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
