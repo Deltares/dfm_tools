@@ -2,7 +2,28 @@
 dfm_tools
 =========
 
-dfm_tools are post-processing tools for Delft3D FM
+
+.. image:: https://img.shields.io/pypi/v/dfm_tools.svg
+        :target: https://pypi.python.org/pypi/dfm_tools
+
+.. image:: https://img.shields.io/travis/openearth/dfm_tools.svg
+        :target: https://travis-ci.org/openearth/dfm_tools
+
+.. image:: https://readthedocs.org/projects/dfm-tools/badge/?version=latest
+        :target: https://dfm-tools.readthedocs.io/en/latest/?badge=latest
+        :alt: Documentation Status
+
+.. image:: https://pyup.io/repos/github/openearth/dfm_tools/shield.svg
+     :target: https://pyup.io/repos/github/openearth/dfm_tools/
+     :alt: Updates
+
+
+dfm_tools are post-processing tools for Delft3D FM model outputfiles and more
+
+
+* Free software: GNU General Public License v3
+* Documentation: https://dfm-tools.readthedocs.io.
+
 
 
 Features
@@ -14,21 +35,20 @@ Features
 - merge partitions and delete ghostcells automatically
 - take over masks in original data
 - selection/plotting by polyline/crossection (slicing the ugrid data)
+- pytest testbank
 
 Terms of use
 --------
-- a proper licence file will be added soon
-- this toolbox is free to use, but there is no warranty whatsoever, users are responsible to check the output themselves
-- this toolbox is now only available via github, once the structure is decided upon, it will be registered on pypi so pip installing and updating is possible without checkout
-- it might be that script names, function names and arguments will slightly change in the upcoming weeks. This would mean the script you create now might need some edits to work with the toolbox in the future. this is mainly the case for the second intersection functions
+- this toolbox is now only available via github, it will soon be registered on pypi so pip installing and updating is possible without github checkout
+- it might be that function names and arguments names will slightly change in the upcoming weeks. This would mean the script you create now might need some edits to work with the toolbox in the future. this is mainly the case for the get_modeldata_onintersection() function
 - please check the TODO sections for known inaccuracies
 - please do not use the dflowutil/dflowutil_examples scripts if you did not before, this will be phased out eventually. All you probably need is dfm_tools
 
 Known bugs
 --------
 - the line ``import shapely.geometry`` does not work, while ``import shapely`` does, solution:
-	- find geos.py in your environment (eg %userprofile%\\AppData\\Local\\Continuum\\anaconda3\\envs\\github_env\\Lib\\site-packages\\shapely\\geos.py)
-	- replace ``if os.getenv('CONDA_PREFIX', ''):`` with ``if 0: #os.getenv('CONDA_PREFIX', ''):`` on line 143
+	- find geos.py in your environment (eg %userprofile%\\AppData\\Local\\Continuum\\anaconda3\\envs\\dfm_tools_env\\Lib\\site-packages\\shapely\\geos.py)
+	- replace ``if os.getenv('CONDA_PREFIX', ''):`` with ``if 0:`` on line 143
 	
 How to work with this git repository
 --------
@@ -36,7 +56,7 @@ How to work with this git repository
 	- Download git from https://git-scm.com/download/win, install with default settings
 	- open command line in a folder where you want to clone the dfm_tools github repo, eg C:\\DATA\\GitHub
 	- ``git clone https://github.com/openearth/dfm_tools.git`` (repos gets cloned to local drive, checkout of master branch)
-	- to update: navigate to dfm_tools folder and ``git pull`` (combination of git fetch and git merge)
+	- to update: navigate to dfm_tools folder in git bash window and ``git pull`` (combination of git fetch and git merge)
 	- NOTE: in the near future (hopefully within a week), this package should be installable via pip, after registering on PyPI. then users do not need github anymore, only developers do
 
 - Install Python:
@@ -46,44 +66,44 @@ How to work with this git repository
 - Install your local github clone via pip (developer mode):
 	- open command window, navigate to dfm_tools folder, eg C:\\DATA\\GitHub\\dfm_tools
 	- optional: create and activate a separate Python virtual environment (see related information for a possible method)
-	- ``python -m pip install -e .``
-	- (pip developer mode, any updates to folder by github will be available trough update via ``git pull``)
-	- (this installs all packages in requirements.txt)
-
+	- ``python -m pip install -e .`` (pip developer mode, any updates to the local folder by github (with ``git pull``) are immediately available in your python. It also installs all required packages)
+	- ``python -c "import dfm_tools; print(dfm_tools.__version)"`` (print version number of the installed dfm_tools package)
+	
 - Use it in your scripts:
-	- from dfm_tools.grid import get_netdata, get_ncmodeldata, plot_netmapdata
-	- check tests folder for examples
+	- from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
+	- check scripts in tests folder on github for examples
 
 TODO high priority (before launch)
 --------
-- discuss dfm_tools structure, which functions in which class/script:
-	- ugrid class naar ugrid script en rest van functies in get_dfm script? maybe also get_dfm_helpers?
-	- Intersect naar los script of bij get_dfm?
-- add ownrisk-license
 - register on PyPI, for easier install via pip (for regular users, not developers):
 	- https://the-hitchhikers-guide-to-packaging.readthedocs.io/en/latest/quickstart.html#register-your-package-with-the-python-package-index-pypi 
-	- also add version numbers (only master branch), git commit automatic minor numbers?
+	- also add version numbers (only master branch), git commit automatic minor numbers? (bumpversion comes with cookiecutter?)
 	- also add changelog besides commit comments?
-- check if everything also runs on other python installations
-	- add minimal version numbers to requirements.txt (maybe also to environment.yml)
-- exclude dflowutil from package?	
-- fix cross section for RMM (layer should raise error, because 2D)
+- exclude dflowutil from pypi package?
 
 TODO
 --------
-- create outputfigures from tests in testfolder, add outputpath to .gitignore. also update print statements so they are useful
+- update license with Deltares terms
+- paths to project folders in test scripts are ok?
 - add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?) (refer depth wrt reference level, water level or bed level, z variable is not correct in dfm-mapfile yet)
 - retrieve correct depths:
 	- add depth array (interfaces/centers) to his and map variables (z/sigma layer calculation is already in get_modeldata_onintersection function)
 	- depths can be retrieved from mesh2d_layer_z/mesh2d_layer_sigma, but has no time dimension so untrue for sigma and maybe for z? (wrong in dflowfm?)
 	- layerzfrombedlevel keyword in mdu changes how zlayering is set up. Catch this exception with a keyword if necessary
+- remove hardcoded 'stations' dimension lookup
+- dimn_time is now actually variable name which does not work if time dimname is not the same as time varname
+- contributing method: environment.yml (README.rst) or requirements_dev.txt (CONTRIBUTING.rst)?
 - perform actions by dimension names instead of ndims (eg station_name variable has two dimensions but no time)
+- make merc keyword always optional by testing for minmax all vertsx between -181 and 361 and minmax all vertsy (lat) between -91 and 91 (+range for overlap for eg gtsm model)
+- optimize get_ncmodeldata for layerdepths/bedlevel/waterlevel (second intersect function), only retrieve necessary information for crossection
 - add inpolygon/inboundbox selection of data:
-	- to optimize intersect function when retrieving bed level and water level, but also to retrieve other mapdata data faster
+	- to optimize intersect function when retrieving bed level and water level (do that with len(firstlinepart) optional keyword)
+	- to retrieve other mapdata data faster
 	- https://stackoverflow.com/questions/31542843/inpolygon-for-python-examples-of-matplotlib-path-path-contains-points-method
 - make patched zt plots from hisfile (careful, z interfaces data in hisfile is wrong)
 - as user: get stationlist, dimensionlist, variablelist, more? (partly internally available)
-- add polygon read/write function, add ginput polygon function (click in plot) (already partly exists in intersect/slice testscript)
+- add polygon read/write function (also ldb files)
+- add polygon ginput function (click in plot) (already partly exists in intersect/slice testscript)
 - style guide: https://www.python.org/dev/peps/pep-0008/
 - pyugrid (ghostcells en mapmergen worden afgehandeld?), voorbeelden in ieder geval als inspiratie voor plotopties):
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/Delft3D%20examples.ipynb
@@ -95,24 +115,27 @@ TODO
 - add (look for) readwrite functions for general datafromats (tim, tekal etc)
 - add plot of structured grid (CMEMS etc)
 - add foufiles, rstfiles? (partitioned but with different dimensions, should already partially work)
+- add minimal version numbers to requirements.txt (maybe also to environment.yml)
 - create overview tree of all functions, also add missing functions here
 - write documentation as comments and generate automatically
-- improve testbank and arrange auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
+- improve testbank:
+	- parametrize test_grid_gethismodeldata
+	- arrange auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
 - add comparable functions for sobek and Delft3D
 
 Related information
 --------
 - Create a separate python environment and link from Spyder:
-	- open command line and navigate to dfm_tools folder, eg C:\\DATA\\GitHub\\dfm_tools
+	- open command line and navigate to dfm_tools github folder, eg C:\\DATA\\GitHub\\dfm_tools
 	- ``conda env create -f environment.yml`` (sometimes you need to press enter if it hangs extremely long)
-	- ``conda info --envs`` (shows github_env virtual environment)
-	- ``conda activate github_env``
-	- ``python -c "import sys; print(sys.executable)"`` (the resulting path you need some steps later, eg C:\\Users\\[user]\\AppData\\Local\\Continuum\\anaconda3\\envs\\github_env\\python.exe)
+	- ``conda info --envs`` (shows dfm_tools_env virtual environment)
+	- ``conda activate dfm_tools_env``
+	- ``python -c "import sys; print(sys.executable)"`` (the resulting path you need some steps later, eg C:\\Users\\[user]\\AppData\\Local\\Continuum\\anaconda3\\envs\\dfm_tools_env\\python.exe)
 	- ``conda deactivate``
 	- open spyder from start menu or anaconda or anything
-	- Go to Tools >> Preferences >> Python interpreter >> point to github_env python.exe (print of sys.executable)
+	- Go to Tools >> Preferences >> Python interpreter >> point to dfm_tools_env python.exe (print of sys.executable)
 	- restart IPython console
-	- optional: ``conda remove -n github_env --all`` (to remove it again when necessary)
+	- optional: ``conda remove -n dfm_tools_env --all`` (to remove it again when necessary)
 - how to contribute to this git repository
 	- First request rights to contribute
 	- Branching:
@@ -146,3 +169,14 @@ Related information
 	- ``pytest -v --tb=short -m unittest``
 	- ``pytest -v --tb=short -m systemtest``
 	- ``pytest -v --tb=short -m acceptance``
+	- ``pytest -v --tb=short tests\test_grid.py::test_mapOS``
+
+Credits
+-------
+
+This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
+
+.. _Cookiecutter: https://github.com/audreyr/cookiecutter
+.. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
+
+

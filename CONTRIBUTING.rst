@@ -64,11 +64,13 @@ Ready to contribute? Here's how to set up `dfm_tools` for local development.
 
     $ git clone git@github.com:your_name_here/dfm_tools.git
 
-3. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development::
+3. Install your local copy into a virtualenv called dfm_tools_env:
 
-    $ mkvirtualenv dfm_tools
-    $ cd dfm_tools/
-    $ python setup.py develop
+    $ Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development::
+	$ mkvirtualenv dfm_tools_env
+	$ cd dfm_tools_env/
+	$ python setup.py develop
+    $ alternatively: use the steps decscribed in the README.rst
 
 4. Create a branch for local development::
 

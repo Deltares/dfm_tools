@@ -1,266 +1,9 @@
-import numpy as np
-class UGrid:
-    """Unstructured grid"""
-    def __init__(self, mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes, verts, mesh2d_node_z=None, edge_verts=None):
-        self.mesh2d_node_x = mesh2d_node_x
-        self.mesh2d_node_y = mesh2d_node_y
-        self.mesh2d_face_nodes = mesh2d_face_nodes
-        self.verts = verts
-        self.mesh2d_node_z = mesh2d_node_z
-        #if mesh2d_node_z is not None:
-        #    self.mesh2d_node_z = mesh2d_node_z
-        #else:
-        #    self.mesh2d_node_z = np.zeros(self.mesh2d_node_x.shape)
-        self.edge_verts=edge_verts #can be none?
-    @staticmethod
-    def fromfile(file_nc):
-        from netCDF4 import Dataset
-        from dfm_tools.get_varname_mapnc import get_varname_mapnc
-        from dfm_tools.grid import ghostcell_filter
-        
-        def nodexyfaces2verts(node_x,node_y, faces):
-            quatrangles = faces-1 #convert 1-based indexing of cell numbering in ugrid to 0-based indexing
-            #https://stackoverflow.com/questions/49640311/matplotlib-unstructered-quadrilaterals-instead-of-triangles
-            #https://stackoverflow.com/questions/52202014/how-can-i-plot-2d-fem-results-using-matplotlib
-            yz = np.c_[node_x,node_y]
-            verts= yz[quatrangles]
-            verts[quatrangles.mask==True,:] = np.nan #remove all masked values by making them nan
-            return verts
-        
-        data_nc = Dataset(file_nc)
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Feb 14 12:45:11 2020
 
-        mesh2d_node_x = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_node_x')][:]
-        mesh2d_node_y = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_node_y')][:]
-        varn_mesh2d_node_z = get_varname_mapnc(data_nc,'mesh2d_node_z')
-        if varn_mesh2d_node_z is not None: # node_z variable is present
-            mesh2d_node_z = data_nc.variables[varn_mesh2d_node_z][:]
-        else:
-            mesh2d_node_z = None
-        varn_mesh2d_face_nodes = get_varname_mapnc(data_nc,'mesh2d_face_nodes')
-        if varn_mesh2d_face_nodes is not None: # node_z variable is present
-            mesh2d_face_nodes = data_nc.variables[varn_mesh2d_face_nodes][:, :]
-        else:
-            raise Exception('ERROR: provided file does not contain a variable mesh2d_face_nodes or similar:\n%s\nPlease do one of the following:\n- plot grid from *_map.nc file\n- import and export the grid with RGFGRID\n- import and save the gridd "with cellfinfo" from interacter'%(file_nc))
-        verts = nodexyfaces2verts(mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes) #xy coordinates of face nodes
-        
-        varn_mesh2d_edge_x = get_varname_mapnc(data_nc,'mesh2d_edge_x')
-        if varn_mesh2d_edge_x is not None: # mesh2d_edge_x (and mesh2d_edge_y) variable is present
-            mesh2d_edge_x = data_nc.variables[varn_mesh2d_edge_x][:]
-            mesh2d_edge_y = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_edge_y')][:]
-            mesh2d_edge_nodes = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_edge_nodes')][:]
-            edge_verts = nodexyfaces2verts(mesh2d_edge_x, mesh2d_edge_y, mesh2d_edge_nodes) #xy coordinates of face nodes
-        else:
-            edge_verts = None
-            
-        #remove ghost cells from faces and verts
-        ghostcells_bool, nonghost_ids = ghostcell_filter(file_nc)
-        if ghostcells_bool:
-            mesh2d_face_nodes = mesh2d_face_nodes[nonghost_ids]
-            verts = verts[nonghost_ids]
-        
-        data_nc.close()
-        ugrid = UGrid(mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes, verts, mesh2d_node_z=mesh2d_node_z, edge_verts=edge_verts)
-        return ugrid
-
-    def polygon_intersect(self, line_array):
-        from shapely.geometry import Polygon, LineString
-        import numpy as np
-        
-        print('finding crossing flow links (can take a while if linebox over xy covers a lot of cells)')
-        #allpol = []
-        intersect_gridnos = np.empty((0),dtype=int)
-        intersect_coords1 = np.empty((0,2))
-        intersect_coords2 = np.empty((0,2))
-        line_section = LineString(line_array)
-        
-        verts_xmax = np.nanmax(self.verts[:,:,0].data,axis=1)
-        verts_xmin = np.nanmin(self.verts[:,:,0].data,axis=1)
-        verts_ymax = np.nanmax(self.verts[:,:,1].data,axis=1)
-        verts_ymin = np.nanmin(self.verts[:,:,1].data,axis=1)
-        
-        cellinlinebox_all_bool = (((np.min(line_array[:,0]) < verts_xmax) &
-                                   (np.max(line_array[:,0]) > verts_xmin)) &
-                                  ((np.min(line_array[:,1]) < verts_ymax) & 
-                                   (np.max(line_array[:,1]) > verts_ymin))
-                                  )
-        verts_inlinebox = self.verts[cellinlinebox_all_bool,:,:]
-        verts_inlinebox_nos = np.where(cellinlinebox_all_bool)[0]
-        
-        for iP, pol_data in enumerate(verts_inlinebox):
-            pol_data_nonan = pol_data[~np.isnan(pol_data).all(axis=1)]
-            pol_shp = Polygon(pol_data_nonan)
-            try:
-                intersection_line = pol_shp.intersection(line_section).coords
-            except: #in the rare case that a cell (pol_shp) is crossed by multiple parts of the line
-                intersection_line = pol_shp.intersection(line_section)[0].coords
-            
-            if intersection_line != []:
-                intersect_gridnos = np.concatenate([intersect_gridnos,[verts_inlinebox_nos[iP]]])
-                intersect_coords1=np.concatenate([intersect_coords1,np.array([list(intersection_line)[0]])])
-                intersect_coords2=np.concatenate([intersect_coords2,np.array([list(intersection_line)[1]])])
-                #all_intersect.append(list(intersection_line))
-            #print(iP)
-
-        intersect_coords = np.stack([intersect_coords1,intersect_coords2], axis=2)
-        #dimensions (gridnos, xy, firstsecond)
-        #allpol_multi = MultiPolygon(allpol)
-        #intersection_line = allpol_multi.intersection(line_section).coords #does not work
-        print('done finding crossing flow links')
-        return intersect_gridnos, intersect_coords
-    
-    
-    
-
-def get_ncfilelist(file_nc, multipart=None):
-    #get list of mapfiles
-    import re
-    import glob
-    import os
-    
-    if not os.path.exists(file_nc):
-        raise Exception('ERROR: file does not exist: %s'%(file_nc))
-    
-    lastpart = file_nc.split('_')[-2]
-    nctype = file_nc.split('_')[-1]
-    if file_nc.endswith('_%s'%(nctype)) and multipart != False and len(lastpart) == 4 and lastpart.isdigit(): #if part before '_map.nc' is eg '0000'
-        filename_start = re.compile('(.*)_([0-9]+)_%s'%(nctype)).search(file_nc).group(1)
-        #filename_number = re.compile('(.*)_([0-9]+)_map.nc').search(file_nc).group(2)
-        #file_ncs = [file_nc.replace('_%s_map.nc','_%04d_map.nc'%(filename_number, domain_id)) for domain_id in range(ndomains)]
-        file_ncs = glob.glob('%s*_%s'%(filename_start,nctype))
-    else:
-        file_ncs = [file_nc]
-    return file_ncs
-
-
-def get_ncvardims(file_nc, varname):
-    from netCDF4 import Dataset
-    
-    data_nc = Dataset(file_nc)
-    # check if requested variable is in netcdf
-    nc_varkeys = list(data_nc.variables.keys())
-    nc_dimkeys = list(data_nc.dimensions.keys())
-    nc_varlongnames = []
-    for nc_var in data_nc.variables:
-        try:
-            nc_varlongnames.append(data_nc.variables[nc_var].long_name)
-        except:
-            nc_varlongnames.append('NO long_name defined')
-    if varname not in nc_varkeys:
-        raise Exception('ERROR: requested variable %s not in netcdf, available are:\n%s'%(varname, '\n'.join(map(str,['%-25s: %s'%(nck,ncln) for nck,ncln in zip(nc_varkeys, nc_varlongnames)]))))
-    
-    nc_values = data_nc.variables[varname]
-    nc_values_shape = nc_values.shape
-    nc_values_dims = nc_values.dimensions
-    #nc_values_ndims = len(nc_values_dims)
-    return nc_varkeys, nc_dimkeys, nc_values, nc_values_shape, nc_values_dims
-
-
-
-def ghostcell_filter(file_nc):
-    from netCDF4 import Dataset
-    
-    from dfm_tools.get_varname_mapnc import get_varname_mapnc
-    
-    data_nc = Dataset(file_nc)
-    
-    varn_domain = get_varname_mapnc(data_nc,'mesh2d_flowelem_domain')
-    if varn_domain is not None: # domain variable is present, so there are multiple domains
-        ghostcells_bool = True
-        domain = data_nc.variables[varn_domain][:]
-        domain_no = np.bincount(domain).argmax() #meest voorkomende domeinnummer
-        nonghost_ids = domain==domain_no
-    else:
-        ghostcells_bool = False
-        nonghost_ids = None
-    return ghostcells_bool, nonghost_ids
-
-
-
-def get_timesfromnc(file_nc):
-    from netCDF4 import Dataset,num2date#,date2num
-    import numpy as np
-    import pandas as pd
-    
-    from dfm_tools.get_varname_mapnc import get_varname_mapnc
-    
-    data_nc = Dataset(file_nc)
-    varname_time = get_varname_mapnc(data_nc,'time')
-    data_nc_timevar = data_nc.variables[varname_time]
-    
-    if len(data_nc_timevar)<3: #this rarely is the case, but just to be sure
-        data_nc_times = data_nc_timevar[:]
-    else:
-        time0 = data_nc_timevar[0] 
-        time1 = data_nc_timevar[1] 
-        time2 = data_nc_timevar[2]
-        timeend = data_nc_timevar[-1]
-        timeinc = time2-time1 # the interval between 0 and 1 is not per definition representative, so take 1 and 2
-        
-        data_nc_times_from1 = np.arange(time1,timeend+timeinc,timeinc)
-        data_nc_times = np.concatenate([[time0],data_nc_times_from1])
-    data_nc_datetimes = num2date(data_nc_times, units = data_nc_timevar.units)
-    data_nc_datetimes_pd = pd.Series(data_nc_datetimes).dt.round(freq='S')
-    
-    return data_nc_datetimes_pd
-
-
-
-
-def get_timeid_fromdatetime(data_nc_datetimes_pd, timestep):
-    import pandas as pd
-    
-    timestep_pd = pd.Series(timestep)#.dt.round(freq='S')
-
-    #check if all requested times (timestep) are in netcdf file
-    times_bool_reqinfile = timestep_pd.isin(data_nc_datetimes_pd)
-    if not (times_bool_reqinfile == True).all():
-        raise Exception('ERROR: not all requested times are in netcdf file:\n%s\navailable in netcdf file are:\n\tstart: %s\n\tstop: %s\n\tinterval: %s'%(timestep_pd[-times_bool_reqinfile], data_nc_datetimes_pd.iloc[0], data_nc_datetimes_pd.iloc[-1], data_nc_datetimes_pd.iloc[1]-data_nc_datetimes_pd.iloc[0]))
-        
-    #get ids of requested times in netcdf file
-    times_bool_fileinreq = data_nc_datetimes_pd.isin(timestep_pd)
-    time_ids = np.where(times_bool_fileinreq)[0]
-    
-    return time_ids
-
-
-
-def get_hisstationlist(file_nc):
-    from netCDF4 import Dataset, chartostring
-    import pandas as pd
-    
-    data_nc = Dataset(file_nc)
-    #varn_station_name = get_varname_mapnc(data_nc,'station_name')
-    station_name_char = data_nc.variables['station_name'][:]
-    station_name_list = chartostring(station_name_char)
-    
-    station_name_list_pd = pd.Series(station_name_list)
-    
-    return station_name_list_pd
-
-
-
-
-def get_stationid_fromstationlist(station_name_list_pd, station):
-    import pandas as pd
-    
-    station_pd = pd.Series(station)
-
-    #check if all requested stations are in netcdf file
-    stations_bool_reqinfile = station_pd.isin(station_name_list_pd)
-    if not (stations_bool_reqinfile == True).all():
-        raise Exception('ERROR: not all requested stations are in netcdf file:\n%s\navailable in netcdf file are:\n%s'%(station_pd[-stations_bool_reqinfile], station_name_list_pd))
-    
-    #get ids of requested stations in netcdf file
-    station_bool_fileinreq = station_name_list_pd.isin(station_pd)
-    station_ids = np.where(station_bool_fileinreq)[0]
-    #station_names = np.where(station_bool_fileinreq)[0]
-
-    
-    return station_ids
-
-
-
-
+@author: veenstra
+"""
 
 
 def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, station=None, multipart=None):
@@ -268,7 +11,9 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     file_nc: path to netcdf file
     varname: string of netcdf variable name (standard_name?)
     timestep: (list/range/ndarray of) 0-based int or datetime. Can be used to select one or more specific timesteps, or 'all'
-    lay: (list/range/ndarray of) 0-based int
+    layer: (list/range/ndarray of) 0-based int
+    depth
+    station
     multipart: set to False if you want only one of the map domains, can be left out otherwise
     """
     
@@ -276,8 +21,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     import datetime as dt
     from netCDF4 import Dataset
     
-    from dfm_tools.grid import get_ncfilelist, get_ncvardims, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter
-    from dfm_tools.get_varname_mapnc import get_varname_mapnc
+    from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvardims, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_mapnc
     
     #get variable and dimension info
     #nc_varkeys, nc_dimkeys, nc_values, nc_values_shape, nc_values_dims = get_ncvardims(file_nc, varname)
@@ -354,7 +98,6 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         raise Exception('ERROR: depth argument is provided, but this is not implemented yet')
     
     #STATION CHECKS
-    #dimn_time = get_varname_mapnc(data_nc,'time')
     if 'stations' not in nc_values_dims: #only faces/stations dimensions, no times or layers
         if station is not None:
             raise Exception('ERROR: netcdf file variable (%s) does not contain stations, but parameter station is provided'%(varname))
@@ -386,7 +129,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
             raise Exception('ERROR: requested end station (%d) is larger than available in netcdf file (%d)'%(np.max(station_ids),len(station_name_list_pd)-1))
      
     
-    #check ghost cell existence
+    #check faces existence, variable could have ghost cells if partitioned
     dimn_faces = get_varname_mapnc(data_nc,'mesh2d_nFaces')
     if dimn_faces in nc_values_dims:
         var_ghostaffected = True
@@ -451,8 +194,8 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
                     values_all = np.ma.concatenate([values_all,values[:,station_ids,:]],axis=concat_axis)
                 else: #no selection
                     values_all = np.ma.concatenate([values_all,values],axis=concat_axis)
-            elif (nc_values_dims[0] == dimn_time and nc_values_dims[1] == dimn_layer): #TODO: remove this exception for files Lora?
-                print('WARNING: unexpected dimension order, supported for waqfiles Lora: %s'%(str(nc_values_dims)))
+            elif (nc_values_dims[0] == dimn_time and nc_values_dims[1] == dimn_layer):
+                print('WARNING: unexpected dimension order, supported for offline waqfiles OS: %s'%(str(nc_values_dims)))
                 if iF == 0: #setup initial array
                     values_all = np.ma.empty((len(time_ids),len(layer_ids),0))
                 #select values
@@ -494,11 +237,15 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
 
 
 
-def get_modeldata_onintersection(file_nc, line_array=None, intersect_gridnos=None, intersect_coords=None, timestep=None, multipart=None, convert2merc=None):
+def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None, intersect_coords=None, timestep=None, multipart=None, calcdist_fromlatlon=None):
+    import numpy as np
     from netCDF4 import Dataset
-    from shapely.geometry import LineString, Point#, MultiPoint
+    try:
+        from shapely.geometry import LineString, Point
+    except:
+        raise Exception('ERROR: cannot execute import shapely.geometry, check known bugs on https://github.com/openearth/dfm_tools for a solution')
 
-    from dfm_tools.get_varname_mapnc import get_varname_mapnc
+    from dfm_tools.get_nc_helpers import get_varname_mapnc
     
     def calc_dist(x1,x2,y1,y2):
         distance = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
@@ -506,6 +253,7 @@ def get_modeldata_onintersection(file_nc, line_array=None, intersect_gridnos=Non
 
     def calc_dist_latlon(x1,x2,y1,y2):
         #https://gis.stackexchange.com/questions/80881/what-is-unit-of-shapely-length-attribute
+        #calculate distance in meters between latlon coordinates
         distance = np.arccos(np.sin(np.radians(y1))*np.sin(np.radians(y2))+np.cos(np.radians(y1))*np.cos(np.radians(y2))*np.cos(np.radians(x2)-np.radians(x1)))*6371000
         return distance
 
@@ -519,7 +267,7 @@ def get_modeldata_onintersection(file_nc, line_array=None, intersect_gridnos=Non
     if intersect_coords is None:
         raise Exception('ERROR: argument intersect_coords not provided')
     if timestep is None:
-        raise Exception('ERROR: argument timestep not provided')
+        raise Exception('ERROR: argument timestep not provided, this is necessary to retrieve correct water level')
     
     print('calculating distance for all crossed cells, from first point of line (should not take long, but if it does, optimisation is needed)')
     nlinecoords = line_array.shape[0]
@@ -533,13 +281,14 @@ def get_modeldata_onintersection(file_nc, line_array=None, intersect_gridnos=Non
     crs_ystart = intersect_coords[:,1,0]
     crs_ystop = intersect_coords[:,1,1]
 
+    #calculate distance between celledge-linepart crossing (is zero when line iL crosses cell)
     distperline_tostart = np.empty((ncrosscells,nlinecoords-1))
     #distperline_tostop = np.empty((ncrosscells,nlinecoords-1))
     linepart_length = np.zeros((nlinecoords))
     for iL in range(nlinecoords-1):
         #calculate length of lineparts
         line_section_part = LineString(line_array[iL:iL+2,:])
-        if not convert2merc:
+        if not calcdist_fromlatlon:
             linepart_length[iL+1] = line_section_part.length
         else:
             linepart_length[iL+1] = calc_dist_latlon(line_array[iL,0],line_array[iL+1,0],line_array[iL,1],line_array[iL+1,1])
@@ -580,7 +329,7 @@ def get_modeldata_onintersection(file_nc, line_array=None, intersect_gridnos=Non
         zvals_interface = data_nc.variables['mesh2d_interface_z'][:]
     
     #calculate distance from points to 'previous' linepoint, add lenght of previous lineparts to it
-    if not convert2merc:
+    if not calcdist_fromlatlon:
         crs_dist_starts = calc_dist(line_array[cross_points_closestlineid,0], crs_xstart, line_array[cross_points_closestlineid,1], crs_ystart) + linepart_lengthcum[cross_points_closestlineid]
         crs_dist_stops = calc_dist(line_array[cross_points_closestlineid,0], crs_xstop, line_array[cross_points_closestlineid,1], crs_ystop) + linepart_lengthcum[cross_points_closestlineid]
     else:
@@ -619,7 +368,8 @@ def get_modeldata_onintersection(file_nc, line_array=None, intersect_gridnos=Non
 def get_netdata(file_nc, multipart=None):
     import numpy as np
     
-    from dfm_tools.grid import get_ncfilelist, UGrid
+    from dfm_tools.ugrid import UGrid
+    from dfm_tools.get_nc_helpers import get_ncfilelist
 
     file_ncs = get_ncfilelist(file_nc, multipart)
     #get all data
@@ -696,6 +446,9 @@ def get_netdata(file_nc, multipart=None):
     return ugrid_all
 
 
+
+
+
 def plot_netmapdata(verts, values=None, ax=None, **kwargs):
     #https://stackoverflow.com/questions/52202014/how-can-i-plot-2d-fem-results-using-matplotlib
     #https://stackoverflow.com/questions/49640311/matplotlib-unstructered-quadrilaterals-instead-of-triangles
@@ -713,6 +466,7 @@ def plot_netmapdata(verts, values=None, ax=None, **kwargs):
     ax.add_collection(pc)
     ax.autoscale()
     return pc
+
 
 
 
