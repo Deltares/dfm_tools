@@ -8,7 +8,6 @@ Created on Thu Feb 13 23:10:51 2020
 import pytest
 import inspect
 import os
-import shutil
 
 dir_tests = os.path.join(os.path.realpath(__file__), os.pardir)
 dir_testoutput = os.path.join(dir_tests,'test_output')

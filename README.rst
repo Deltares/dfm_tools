@@ -2,7 +2,30 @@
 dfm_tools
 =========
 
+
+.. image:: https://img.shields.io/pypi/v/dfm_tools.svg
+        :target: https://pypi.python.org/pypi/dfm_tools
+
+.. image:: https://img.shields.io/travis/openearth/dfm_tools.svg
+        :target: https://travis-ci.org/openearth/dfm_tools
+
+.. image:: https://readthedocs.org/projects/dfm-tools/badge/?version=latest
+        :target: https://dfm-tools.readthedocs.io/en/latest/?badge=latest
+        :alt: Documentation Status
+
+
+.. image:: https://pyup.io/repos/github/openearth/dfm_tools/shield.svg
+     :target: https://pyup.io/repos/github/openearth/dfm_tools/
+     :alt: Updates
+
+
+
 dfm_tools are post-processing tools for Delft3D FM
+
+
+* Free software: GNU General Public License v3
+* Documentation: https://dfm-tools.readthedocs.io.
+
 
 
 Features
@@ -14,6 +37,7 @@ Features
 - merge partitions and delete ghostcells automatically
 - take over masks in original data
 - selection/plotting by polyline/crossection (slicing the ugrid data)
+- pytest testbank
 
 Terms of use
 --------
@@ -36,7 +60,7 @@ How to work with this git repository
 	- Download git from https://git-scm.com/download/win, install with default settings
 	- open command line in a folder where you want to clone the dfm_tools github repo, eg C:\\DATA\\GitHub
 	- ``git clone https://github.com/openearth/dfm_tools.git`` (repos gets cloned to local drive, checkout of master branch)
-	- to update: navigate to dfm_tools folder and ``git pull`` (combination of git fetch and git merge)
+	- to update: navigate to dfm_tools folder in git bash window and ``git pull`` (combination of git fetch and git merge)
 	- NOTE: in the near future (hopefully within a week), this package should be installable via pip, after registering on PyPI. then users do not need github anymore, only developers do
 
 - Install Python:
@@ -46,10 +70,9 @@ How to work with this git repository
 - Install your local github clone via pip (developer mode):
 	- open command window, navigate to dfm_tools folder, eg C:\\DATA\\GitHub\\dfm_tools
 	- optional: create and activate a separate Python virtual environment (see related information for a possible method)
-	- ``python -m pip install -e .``
-	- (pip developer mode, any updates to folder by github will be available trough update via ``git pull``)
-	- (this installs all packages in requirements.txt)
-
+	- ``python -m pip install -e .`` (pip developer mode, any updates to the local folder by github (with ``git pull``) are immediately available in your python. It also installs all required packages)
+	- ``python -c "import dfm_tools; print(dfm_tools.__version)"`` (print version number of the installed dfm_tools package)
+	
 - Use it in your scripts:
 	- from dfm_tools.grid import get_netdata, get_ncmodeldata, plot_netmapdata
 	- check tests folder for examples
@@ -59,12 +82,18 @@ TODO high priority (before launch)
 - discuss dfm_tools structure, which functions in which class/script:
 	- ugrid class naar ugrid script en rest van functies in get_dfm script? maybe also get_dfm_helpers?
 	- Intersect naar los script of bij get_dfm?
+	- improve name and input of second intersect
+	- rename merc keyword to calcdist_forlatloncoords or something
+	- move ugrid to ugrid function
+	- rename grid.py to get_fromnc.py (maybe helpers in separate get_fromnc_helpers.py script?), update test scripts
 - add ownrisk-license
 - register on PyPI, for easier install via pip (for regular users, not developers):
 	- https://the-hitchhikers-guide-to-packaging.readthedocs.io/en/latest/quickstart.html#register-your-package-with-the-python-package-index-pypi 
-	- also add version numbers (only master branch), git commit automatic minor numbers?
+	- also add version numbers (only master branch), git commit automatic minor numbers? (bumpversion comes with cookiecutter?)
 	- also add changelog besides commit comments?
-- exclude dflowutil from package?
+- exclude dflowutil from pypi package?
+- naam voor intern contact toevoegen (of verwijzen naar issuepagina)
+- files cookiecutter opnieuw maken: https://cookiecutter.readthedocs.io/en/1.7.0/README.html
 
 TODO
 --------
@@ -73,13 +102,18 @@ TODO
 	- add depth array (interfaces/centers) to his and map variables (z/sigma layer calculation is already in get_modeldata_onintersection function)
 	- depths can be retrieved from mesh2d_layer_z/mesh2d_layer_sigma, but has no time dimension so untrue for sigma and maybe for z? (wrong in dflowfm?)
 	- layerzfrombedlevel keyword in mdu changes how zlayering is set up. Catch this exception with a keyword if necessary
+- contributing method: environment.yml (README.rst) or requirements.dev (CONTRIBUTING.rst)?
 - perform actions by dimension names instead of ndims (eg station_name variable has two dimensions but no time)
+- make merc keyword always optional by testing for minmax all vertsx between -181 and 361 and minmax all vertsy (lat) between -91 and 91 (+range for overlap for eg gtsm model)
+- optimize get_ncmodeldata for layerdepths/bedlevel/waterlevel (second intersect function), only retrieve necessary information for crossection
 - add inpolygon/inboundbox selection of data:
-	- to optimize intersect function when retrieving bed level and water level, but also to retrieve other mapdata data faster
+	- to optimize intersect function when retrieving bed level and water level (do that with len(firstlinepart) optional keyword)
+	- to retrieve other mapdata data faster
 	- https://stackoverflow.com/questions/31542843/inpolygon-for-python-examples-of-matplotlib-path-path-contains-points-method
 - make patched zt plots from hisfile (careful, z interfaces data in hisfile is wrong)
 - as user: get stationlist, dimensionlist, variablelist, more? (partly internally available)
-- add polygon read/write function, add ginput polygon function (click in plot) (already partly exists in intersect/slice testscript)
+- add polygon read/write function (also ldb files)
+- add polygon ginput function (click in plot) (already partly exists in intersect/slice testscript)
 - style guide: https://www.python.org/dev/peps/pep-0008/
 - pyugrid (ghostcells en mapmergen worden afgehandeld?), voorbeelden in ieder geval als inspiratie voor plotopties):
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/Delft3D%20examples.ipynb
@@ -94,7 +128,11 @@ TODO
 - add minimal version numbers to requirements.txt (maybe also to environment.yml)
 - create overview tree of all functions, also add missing functions here
 - write documentation as comments and generate automatically
-- improve testbank and arrange auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
+- improve testbank:
+	- parametrize importtest (and add other libraries from requirements)
+	- parametrize test_grid_gethismodeldata
+	- arrange auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
+	- replace 10**-9 by 1E-9
 - add comparable functions for sobek and Delft3D
 
 Related information
@@ -144,3 +182,10 @@ Related information
 	- ``pytest -v --tb=short -m systemtest``
 	- ``pytest -v --tb=short -m acceptance``
 	- ``pytest -v --tb=short tests\test_grid.py::test_mapOS``
+
+Credits
+-------
+This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
+.. _Cookiecutter: https://github.com/audreyr/cookiecutter
+.. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
+

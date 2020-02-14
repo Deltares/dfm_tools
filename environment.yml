@@ -5,7 +5,6 @@ dependencies:
   - pip:
     - pytest>=5.0.1
     - pytest-cov
-    - teamcity-messages
     - spyder-kernels==0.*
     - ipykernel
     - pyqt5
