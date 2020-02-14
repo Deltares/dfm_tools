@@ -237,7 +237,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
 
 
 
-def get_modeldata_onintersection(file_nc, line_array=None, intersect_gridnos=None, intersect_coords=None, timestep=None, multipart=None, convert2merc=None):
+def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None, intersect_coords=None, timestep=None, multipart=None, calcdist_fromlatlon=None):
     import numpy as np
     from netCDF4 import Dataset
     try:
@@ -267,7 +267,7 @@ def get_modeldata_onintersection(file_nc, line_array=None, intersect_gridnos=Non
     if intersect_coords is None:
         raise Exception('ERROR: argument intersect_coords not provided')
     if timestep is None:
-        raise Exception('ERROR: argument timestep not provided')
+        raise Exception('ERROR: argument timestep not provided, this is necessary to retrieve correct water level')
     
     print('calculating distance for all crossed cells, from first point of line (should not take long, but if it does, optimisation is needed)')
     nlinecoords = line_array.shape[0]
@@ -288,7 +288,7 @@ def get_modeldata_onintersection(file_nc, line_array=None, intersect_gridnos=Non
     for iL in range(nlinecoords-1):
         #calculate length of lineparts
         line_section_part = LineString(line_array[iL:iL+2,:])
-        if not convert2merc:
+        if not calcdist_fromlatlon:
             linepart_length[iL+1] = line_section_part.length
         else:
             linepart_length[iL+1] = calc_dist_latlon(line_array[iL,0],line_array[iL+1,0],line_array[iL,1],line_array[iL+1,1])
@@ -329,7 +329,7 @@ def get_modeldata_onintersection(file_nc, line_array=None, intersect_gridnos=Non
         zvals_interface = data_nc.variables['mesh2d_interface_z'][:]
     
     #calculate distance from points to 'previous' linepoint, add lenght of previous lineparts to it
-    if not convert2merc:
+    if not calcdist_fromlatlon:
         crs_dist_starts = calc_dist(line_array[cross_points_closestlineid,0], crs_xstart, line_array[cross_points_closestlineid,1], crs_ystart) + linepart_lengthcum[cross_points_closestlineid]
         crs_dist_stops = calc_dist(line_array[cross_points_closestlineid,0], crs_xstop, line_array[cross_points_closestlineid,1], crs_ystop) + linepart_lengthcum[cross_points_closestlineid]
     else:

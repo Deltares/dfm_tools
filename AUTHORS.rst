@@ -12,5 +12,6 @@ Development Lead
 Contributors
 ------------
 
-* Rudy Schueder (dflowutils)
+* Rudy Schueder (dflowutils scripts)
+* Koen Berends (mdu read/writing)
 * you?

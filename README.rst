@@ -70,21 +70,16 @@ How to work with this git repository
 	- ``python -c "import dfm_tools; print(dfm_tools.__version)"`` (print version number of the installed dfm_tools package)
 	
 - Use it in your scripts:
-	- from dfm_tools.grid import get_netdata, get_ncmodeldata, plot_netmapdata
-	- check tests folder for examples
+	- from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
+	- check scripts in tests folder on github for examples
 
 TODO high priority (before launch)
 --------
-- discuss dfm_tools structure, which functions in which class/script:
-	- improve name and input of second intersect
-	- rename merc keyword to calcdist_forlatloncoords or something
 - register on PyPI, for easier install via pip (for regular users, not developers):
 	- https://the-hitchhikers-guide-to-packaging.readthedocs.io/en/latest/quickstart.html#register-your-package-with-the-python-package-index-pypi 
 	- also add version numbers (only master branch), git commit automatic minor numbers? (bumpversion comes with cookiecutter?)
 	- also add changelog besides commit comments?
 - exclude dflowutil from pypi package?
-- naam voor intern contact toevoegen (of verwijzen naar issuepagina)
-- files cookiecutter opnieuw maken: https://cookiecutter.readthedocs.io/en/1.7.0/README.html
 
 TODO
 --------

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""Tests for `dfm_tools` package environment"""
+"""Tests for dfm_tools package environment"""
 
 import pytest
 #import inspect

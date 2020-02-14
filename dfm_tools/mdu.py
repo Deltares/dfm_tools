@@ -2,7 +2,6 @@
 from collections import OrderedDict
 import re
 import pandas as pd
-__version__ = "$Revision:  $"
 
 """
 Example use:

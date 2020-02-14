@@ -96,7 +96,7 @@ def test_getncmodeldata_datetime():
 
 
 @pytest.mark.systemtest
-def test_foufiles():
+def test_getplotfoudata():
     
     import matplotlib.pyplot as plt
     plt.close('all')
@@ -150,7 +150,7 @@ def test_getnetdata_plotnet(file_nc):
     
     
 @pytest.mark.acceptance
-def test_grid_gethismodeldata():
+def test_gethismodeldata():
     """
     this test retrieves his data and plots it
     """
@@ -235,7 +235,7 @@ def test_grid_gethismodeldata():
                                      pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'), id='Grevelingen'),
                                      pytest.param(r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\computations\run_156\DFM_OUTPUT_RMM_dflowfm\RMM_dflowfm_0000_map.nc', id='RMM')])
 @pytest.mark.acceptance
-def test_grid_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
+def test_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
     """
     this test retrieves grid data, retrieves map data, and plots it
     """
@@ -332,7 +332,7 @@ def test_grid_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
 @pytest.mark.parametrize("file_nc", [pytest.param(r'p:\11201806-sophie\Oosterschelde\WAQ\r03\postprocessing\oost_tracer_map.nc', id='oost_tracer_map'),
                                      pytest.param(r'p:\11201806-sophie\Oosterschelde\WAQ\r02\postprocessing\oost_tracer_2_map.nc', id='oost_tracer_2_map')])
 @pytest.mark.acceptance
-def test_mapOS(file_nc):
+def test_getplotmapWAQOS(file_nc):
 
     dir_output = getmakeoutputdir(function_name=inspect.currentframe().f_code.co_name)
     #dir_output = dir_testoutput
@@ -376,24 +376,28 @@ def test_mapOS(file_nc):
                                      pytest.param(r'p:\1204257-dcsmzuno\2013-2017\3D-DCSM-FM\A17b\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0000_map.nc', id='DCSM-FM_0_5nm_0000_map'),
                                      pytest.param(r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\computations\run_156\DFM_OUTPUT_RMM_dflowfm\RMM_dflowfm_0000_map.nc', id='RMM_dflowfm_0000_map')])
 @pytest.mark.acceptance
-def test_grid_get_modeldata_onintersection(file_nc):
+def test_getxzcoordsonintersection_plotcrossect(file_nc):
 
     dir_output = getmakeoutputdir(function_name=inspect.currentframe().f_code.co_name)
-    #dir_output = dir_testoutput
-
+    """
+    #manual test variables (run this script first to get the variable dir_testoutput)
+    dir_output = dir_testoutput
+    file_nc = 'p:\\1204257-dcsmzuno\\2013-2017\\3D-DCSM-FM\\A17b\\DFM_OUTPUT_DCSM-FM_0_5nm\\DCSM-FM_0_5nm_0000_map.nc'
+    """
+    
     import matplotlib.pyplot as plt
     plt.close('all')
     import numpy as np
     import datetime as dt
     
-    from dfm_tools.get_nc import get_netdata, get_ncmodeldata, get_modeldata_onintersection, plot_netmapdata
-    from dfm_tools.polygon import LineBuilder#, Polygon
+    from dfm_tools.get_nc import get_netdata, get_ncmodeldata, get_xzcoords_onintersection, plot_netmapdata
+    from dfm_tools.polygon import LineBuilder
     
-        
+    
     if 'cb_3d_map' in file_nc:
         timestep = 72
         layno = 5
-        convert2merc = None
+        calcdist_fromlatlon = None
         multipart = None
         line_array = np.array([[ 185.08667065, 2461.11775254],
                                [2934.63837418, 1134.16019127]])
@@ -404,7 +408,7 @@ def test_grid_get_modeldata_onintersection(file_nc):
     elif 'Grevelingen' in file_nc:
         timestep = 3
         layno = 35
-        convert2merc = None
+        calcdist_fromlatlon = None
         multipart = None
         line_array = np.array([[ 56267.59146475, 415644.67447155],
                                [ 64053.73427496, 419407.58239502]])
@@ -418,7 +422,7 @@ def test_grid_get_modeldata_onintersection(file_nc):
     elif 'MB_02_waq_0000_map' in file_nc:
         timestep = 30
         layno = 5
-        convert2merc = True
+        calcdist_fromlatlon = True
         multipart = None
         #provide xy order, so lonlat
         line_array = np.array([[-71.10395926,  42.3404146 ],
@@ -430,19 +434,21 @@ def test_grid_get_modeldata_onintersection(file_nc):
     elif 'DCSM-FM_0_5nm' in file_nc:
         timestep = 365
         layno = 5
-        convert2merc = True
+        calcdist_fromlatlon = True
         multipart = None
         #provide xy order, so lonlat
         line_array = np.array([[ 0.97452229, 51.13407643],
                                [ 1.89808917, 50.75191083]])
-        #line_array = np.array([[10.17702481, 57.03663877], #dummy for partition 0000
-        #                       [12.38583134, 57.61284917]])
+        line_array = np.array([[10.17702481, 57.03663877], #dummy for partition 0000
+                               [12.38583134, 57.61284917]])
+        line_array = np.array([[ 8.92659074, 56.91538014],
+                               [ 8.58447136, 58.66874192]])
         val_ylim = None
-        clim_bl = None
+        clim_bl = [-500,0]
     elif 'DFM_OUTPUT_RMM_dflowfm' in file_nc:
         timestep = 365
         layno = None
-        convert2merc = None
+        calcdist_fromlatlon = None
         multipart = None
         #provide xy order, so lonlat
         line_array = np.array([[ 65655.72699961, 444092.54776465],
@@ -475,7 +481,7 @@ def test_grid_get_modeldata_onintersection(file_nc):
     
     #create plot with ugrid and cross section line
     fig, ax_input = plt.subplots()
-    pc = plot_netmapdata(ugrid.verts, values=data_frommap_bl, ax=ax_input, linewidth=0.5)#, edgecolors='face')#, color='crimson', facecolor="None")
+    pc = plot_netmapdata(ugrid.verts, values=data_frommap_bl, ax=ax_input, linewidth=0.5, edgecolors='face', cmap='jet')#, color='crimson', facecolor="None")
     pc.set_clim(clim_bl)
     fig.colorbar(pc, ax=ax_input)
     ax_input.set_aspect('equal')
@@ -484,14 +490,14 @@ def test_grid_get_modeldata_onintersection(file_nc):
         line, = ax_input.plot([], [],'o-')  # empty line
         linebuilder = LineBuilder(line)
         line_array = linebuilder.line_array
-    ax_input.plot(line_array[:,0],line_array[:,1])
+    ax_input.plot(line_array[:,0],line_array[:,1],'b',linewidth=3)
     
     
     runtime_tstart = dt.datetime.now() #start timer
     #intersect function, find crossed cell numbers (gridnos) and coordinates of intersection (2 per crossed cell)
     intersect_gridnos, intersect_coords = ugrid.polygon_intersect(line_array)
     #derive vertices from cross section (distance from first point)
-    crs_verts = get_modeldata_onintersection(file_nc=file_nc, line_array=line_array, intersect_gridnos=intersect_gridnos, intersect_coords=intersect_coords, timestep=timestep, convert2merc=convert2merc, multipart=multipart)
+    crs_verts = get_xzcoords_onintersection(file_nc=file_nc, line_array=line_array, intersect_gridnos=intersect_gridnos, intersect_coords=intersect_coords, timestep=timestep, calcdist_fromlatlon=calcdist_fromlatlon, multipart=multipart)
     
     #get data to plot
     data_frommap = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sa1', timestep=timestep, layer='all', multipart=multipart)
