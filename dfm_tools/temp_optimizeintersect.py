@@ -133,27 +133,71 @@ def segment_angles(line_array_ls):
                for cs, p0 in zip(segmentpairs, points)]
     # calculate angle between vectors
     angles = [angle(v[0], v[1]) for v in vectors]
-    
-    angle_wrtx_list = []
+    angles = np.array(angles)
 
-    for cs in segmentpairs[0]:
-        print(cs)
-        #coord1 = np.array(cs[0][0])
-        #coord2 = np.array(cs[0][1])
-        
-        dx = cs[1][0] - cs[0][0]
-        dy = cs[1][1] - cs[0][1]
-        angle_wrtx_list.append(np.rad2deg(np.arctan2(dy,dx)))
     
-    
-    return angles, points, angle_wrtx_list
+    return angles, points
 
+
+from shapely.geometry import LineString, Point
+
+#crs_xstart = intersect_coords[:,0,0]
+#crs_xstop = intersect_coords[:,0,1]
+#crs_ystart = intersect_coords[:,1,0]
+#crs_ystop = intersect_coords[:,1,1]
+
+#nlinedims = len(line_array.shape)
+#ncrosscells = intersect_coords.shape[0]
+
+
+#line_array_ls = LineString(line_array)
+#angles, points = segment_angles(line_array_ls)
+
+#calculate angles wrt x axis
+angles_wrtx = []
+#line_part_list = []
+nlinecoords = line_array.shape[0]
+for iL in range(nlinecoords-1):
+    #line_part = line_array[iL:iL+2,:]
+    #line_part_list.append(line_part)
+    dx = line_array[iL+1,0] - line_array[iL,0]
+    dy = line_array[iL+1,1] - line_array[iL,1]
+    angles_wrtx.append(np.rad2deg(np.arctan2(dy,dx)))
+angles_wrtx = np.array(angles_wrtx)
+angles = 180-np.sign(np.diff(angles_wrtx))*np.diff(angles_wrtx)
+angles_toprev = np.diff(angles_wrtx)
+
+
+dist = 2000
+angtot = angles_wrtx[:-1] + np.sign(angles_wrtx[:-1])*0.5*angles
+angtot_wrtx = angles_wrtx[:-1] + 0.5*(180+angles_toprev)
+#angtot_wrtx_otherside = 180-(angles_wrtx[:-1] + 0.5*(180+angles_toprev))
+#print(angtot)
+
+#dxynewpoints = dist * np.array([np.cos(np.deg2rad(angtot_wrtx)),np.sin(np.deg2rad(angtot_wrtx))]).T
+#newpoints1 = line_array[1:-1]+dxynewpoints
+#newpoints2 = line_array[1:-1]-dxynewpoints
+angtot_wrtx_ext = np.insert(angtot_wrtx,[0,-1],[angtot_wrtx[0],angtot_wrtx[-1]])
+dxynewpoints = dist * np.array([np.cos(np.deg2rad(angtot_wrtx_ext)),np.sin(np.deg2rad(angtot_wrtx_ext))]).T
+newpoints1 = line_array+dxynewpoints
+newpoints2 = line_array-dxynewpoints
+
+
+plt.plot(newpoints1[:,0],newpoints1[:,1], 'o-')
+plt.plot(newpoints2[:,0],newpoints2[:,1], 'o-')
+ax_input.grid()
+
+
+
+
+"""
+#perpendicular line
 def perpendicular_line(l1, length):
-    """Create a new Line perpendicular to this linear entity which passes
+    #Create a new Line perpendicular to this linear entity which passes
     through the point `p`.
 
 
-    """
+    
     dx = l1.coords[1][0] - l1.coords[0][0]
     dy = l1.coords[1][1] - l1.coords[0][1]
 
@@ -174,39 +218,15 @@ def perpendicular_line(l1, length):
     return l2
 
 
-from shapely.geometry import LineString, Point
-
-#crs_xstart = intersect_coords[:,0,0]
-#crs_xstop = intersect_coords[:,0,1]
-#crs_ystart = intersect_coords[:,1,0]
-#crs_ystop = intersect_coords[:,1,1]
-
-#nlinedims = len(line_array.shape)
-#ncrosscells = intersect_coords.shape[0]
-
-
-line_array_ls = LineString(line_array)
-angles, points, angle_wrtx_list = segment_angles(line_array_ls)
-
-dist = 2000
-
 polyline_half1 = []
 polyline_half2 = []
-
-line2_list = []
-nlinecoords = line_array.shape[0]
-for iL in range(nlinecoords-1):
-    #calculate length of lineparts
-    line_part_ls = LineString(line_array[iL:iL+2,:])
-    line2_list.append(perpendicular_line(line_part_ls, dist))
 
 
 xcoords = [x[0] for x in line2_list[0].coords]
 ycoords = [x[1] for x in line2_list[0].coords]
 
-plt.plot(xcoords,ycoords, 'o-r')
+plt.plot(xcoords, ycoords, 'o-r')
 
-"""
 line_section_list = []
 for iL in range(nlinecoords-1):
     #calculate length of lineparts

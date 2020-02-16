@@ -18,7 +18,7 @@ dfm_tools
      :alt: Updates
 
 
-dfm_tools are post-processing tools for Delft3D FM model outputfiles and more
+dfm_tools are Python post-processing tools for Delft3D FM model outputfiles (netCDF) and more
 
 
 * Free software: GNU General Public License v3
