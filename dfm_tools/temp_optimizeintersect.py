@@ -174,13 +174,16 @@ angtot_wrtx = angles_wrtx[:-1] + 0.5*(180+angles_toprev)
 #angtot_wrtx_otherside = 180-(angles_wrtx[:-1] + 0.5*(180+angles_toprev))
 #print(angtot)
 
-#dxynewpoints = dist * np.array([np.cos(np.deg2rad(angtot_wrtx)),np.sin(np.deg2rad(angtot_wrtx))]).T
-#newpoints1 = line_array[1:-1]+dxynewpoints
-#newpoints2 = line_array[1:-1]-dxynewpoints
-angtot_wrtx_ext = np.insert(angtot_wrtx,[0,-1],[angtot_wrtx[0],angtot_wrtx[-1]])
-dxynewpoints = dist * np.array([np.cos(np.deg2rad(angtot_wrtx_ext)),np.sin(np.deg2rad(angtot_wrtx_ext))]).T
-newpoints1 = line_array+dxynewpoints
-newpoints2 = line_array-dxynewpoints
+if 0:
+    dxynewpoints = dist * np.array([np.cos(np.deg2rad(angtot_wrtx)),np.sin(np.deg2rad(angtot_wrtx))]).T
+    newpoints1 = line_array[1:-1]+dxynewpoints
+    newpoints2 = line_array[1:-1]-dxynewpoints
+else:
+    angtot_wrtx_ext = np.insert(angtot_wrtx,[0,-1],[angtot_wrtx[0],angtot_wrtx[-1]])
+    #angtot_wrtx_ext = np.array([0]+list(angtot_wrtx)+[0])
+    dxynewpoints = dist * np.array([np.cos(np.deg2rad(angtot_wrtx_ext)),np.sin(np.deg2rad(angtot_wrtx_ext))]).T
+    newpoints1 = line_array+dxynewpoints
+    newpoints2 = line_array-dxynewpoints
 
 
 plt.plot(newpoints1[:,0],newpoints1[:,1], 'o-')
