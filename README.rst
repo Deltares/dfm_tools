@@ -85,6 +85,7 @@ TODO
 --------
 - update license with Deltares terms
 - paths to project folders in test scripts are ok?
+- optimize intersect, calc box around line with angles between lineparts: https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/applications/hydrotools/hydrotools/gis/shapely_tools.py
 - add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?) (refer depth wrt reference level, water level or bed level, z variable is not correct in dfm-mapfile yet)
 - retrieve correct depths:
 	- add depth array (interfaces/centers) to his and map variables (z/sigma layer calculation is already in get_modeldata_onintersection function)
