@@ -164,7 +164,7 @@ Related information
 		- optional: ``git pull origin master`` (gets edits from master to current local branch, might induce conflicts. maybe better to just push to your branch and then handle pull request on github website)
 		- ``git add .``
 		- ``git commit -m "message to be included with your commit"``
-		- bumpversion: ``bumpversion --current-version 0.2.0 minor``
+		- bumpversion: ``bumpversion minor`` or ``bumpversion patch`` (changes version numbers in files and commits changes)
 		- ``git push`` (pushes changes to server, do not do this in while working in the master)
 	- Request merging of your branch on https://github.com/openearth/dfm_tools/branches
 - run test bank:
