@@ -521,7 +521,7 @@ def test_getxzcoordsonintersection_plotcrossect(file_nc):
     
     runtime_tstop = dt.datetime.now()
     runtime_timedelta = (runtime_tstop-runtime_tstart).total_seconds()
-    print('caculating and plotting cross section finished in %.1f seconds'%(runtime_timedelta))
+    print('calculating and plotting cross section finished in %.1f seconds'%(runtime_timedelta))
 
 
 

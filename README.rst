@@ -40,7 +40,6 @@ Features
 Terms of use
 --------
 - this toolbox is now only available via github, it will soon be registered on pypi so pip installing and updating is possible without github checkout
-- it might be that function names and arguments names will slightly change in the upcoming weeks. This would mean the script you create now might need some edits to work with the toolbox in the future. this is mainly the case for the get_modeldata_onintersection() function
 - please check the TODO sections for known inaccuracies
 - please do not use the dflowutil/dflowutil_examples scripts if you did not before, this will be phased out eventually. All you probably need is dfm_tools
 
@@ -77,15 +76,20 @@ TODO high priority (before launch)
 --------
 - register on PyPI, for easier install via pip (for regular users, not developers):
 	- https://the-hitchhikers-guide-to-packaging.readthedocs.io/en/latest/quickstart.html#register-your-package-with-the-python-package-index-pypi 
-	- also add version numbers (only master branch), git commit automatic minor numbers? (bumpversion comes with cookiecutter?)
+	- also add version numbers (only master branch), git commit automatic minor numbers?
+	- how is bumpversion activated, by python setup.py arg?
 	- also add changelog besides commit comments?
 - exclude dflowutil from pypi package?
 
 TODO
 --------
 - update license with Deltares terms
+- get xydata of stations upon retrieval of data
+- check order of values_all.stations and values itself if requested in wrong order
 - paths to project folders in test scripts are ok?
-- optimize intersect, calc box around line with angles between lineparts: https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/applications/hydrotools/hydrotools/gis/shapely_tools.py
+- optimize intersect, calc box around line with angles between lineparts
+	- only calc inpolygon from subset of first lineboundbox filter
+	- only needs one line for inpolygonbox instead of two. Dan kan begin/eindcoord met rechte hoek (+90/-90) op het begin/einde ipv 0
 - add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?) (refer depth wrt reference level, water level or bed level, z variable is not correct in dfm-mapfile yet)
 - retrieve correct depths:
 	- add depth array (interfaces/centers) to his and map variables (z/sigma layer calculation is already in get_modeldata_onintersection function)
