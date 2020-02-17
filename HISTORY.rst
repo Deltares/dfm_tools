@@ -2,9 +2,13 @@
 History
 =======
 
+0.4.1 (2020-02-17)
+------------------
+
 0.2.0 (2020-02-14)
 ------------------
-* First release on PyPI.
+* restructured scripts and functions
+* added safeguard for shapely import bug
 
 0.1.16 (2020-02-14)
 ------------------

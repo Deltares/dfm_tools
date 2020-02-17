@@ -36,12 +36,13 @@ Features
 - take over masks in original data
 - selection/plotting by polyline/crossection (slicing the ugrid data)
 - pytest testbank
+- examples of unformatted plots: n:\\My Documents\\My Bulletin\\info dfm_tools\\info dfm_tools.pptx
 
 Terms of use
 --------
 - this toolbox is now only available via github, it will soon be registered on pypi so pip installing and updating is possible without github checkout
-- please check the TODO sections for known inaccuracies
-- please do not use the dflowutil/dflowutil_examples scripts if you did not before, this will be phased out eventually. All you probably need is dfm_tools
+- please do not use the dflowutil/dflowutil_examples scripts if you did not before, the important functions will be merged with dfm_tools soon
+- please check the TODO sections for known inaccuracies or features that are not yet available
 
 Known bugs
 --------
@@ -56,7 +57,7 @@ How to work with this git repository
 	- open command line in a folder where you want to clone the dfm_tools github repo, eg C:\\DATA\\GitHub
 	- ``git clone https://github.com/openearth/dfm_tools.git`` (repos gets cloned to local drive, checkout of master branch)
 	- to update: navigate to dfm_tools folder in git bash window and ``git pull`` (combination of git fetch and git merge)
-	- NOTE: in the near future (hopefully within a week), this package should be installable via pip, after registering on PyPI. then users do not need github anymore, only developers do
+	- NOTE: in the near future, this package should be installable via pip, after registration on PyPI.
 
 - Install Python:
 	- Download the newest anaconda 64 bit
@@ -72,17 +73,13 @@ How to work with this git repository
 	- from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
 	- check scripts in tests folder on github for examples
 
-TODO high priority (before launch)
---------
-- register on PyPI, for easier install via pip (for regular users, not developers):
-	- https://the-hitchhikers-guide-to-packaging.readthedocs.io/en/latest/quickstart.html#register-your-package-with-the-python-package-index-pypi 
-	- also add version numbers (only master branch), git commit automatic minor numbers?
-	- how is bumpversion activated, by python setup.py arg?
-	- also add changelog besides commit comments?
-- exclude dflowutil from pypi package?
-
 TODO
 --------
+- register on PyPI, for easier install via pip (easier for regular users):
+	- https://the-hitchhikers-guide-to-packaging.readthedocs.io/en/latest/quickstart.html#register-your-package-with-the-python-package-index-pypi
+	- https://packaging.python.org/tutorials/packaging-projects/
+	- how to automate this process?
+	- also add changelog besides commit comments?
 - update license with Deltares terms
 - get xydata of stations upon retrieval of data
 - check order of values_all.stations and values itself if requested in wrong order
@@ -161,11 +158,16 @@ Related information
 			- ``git pull`` (fetches and merges changes, local checkout of repos branch is now updated again)
 
 	- Commit and push your changes to your online branch:
+		- open git bash window in local dfm_tools folder (eg C:\\DATA\\GitHub\\dfm_tools)
 		- optional: ``git pull origin master`` (gets edits from master to current local branch, might induce conflicts. maybe better to just push to your branch and then handle pull request on github website)
 		- ``git add .``
 		- ``git commit -m "message to be included with your commit"``
-		- bumpversion: ``bumpversion major`` or ``bumpversion minor`` or ``bumpversion patch`` (changes version numbers in files and commits changes)
 		- ``git push`` (pushes changes to server, do not do this in while working in the master)
+	- increasing the version number (with bumpversion):
+		- open cmd window in local dfm_tools folder (eg C:\\DATA\\GitHub\\dfm_tools)
+		- optional: ``conda activate dfm_tools_env``
+		- ``bumpversion major`` or ``bumpversion minor`` or ``bumpversion patch`` (changes version numbers in files and commits changes)
+		- push your changes with ``git push`` (from git bash window or cmd also ok?)
 	- Request merging of your branch on https://github.com/openearth/dfm_tools/branches
 - run test bank:
 	- create python virtual environment with environment.yml (developer/test dependencies are there)
