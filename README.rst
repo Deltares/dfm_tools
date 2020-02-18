@@ -44,12 +44,6 @@ Terms of use
 - please do not use the dflowutil/dflowutil_examples scripts if you did not before, the important functions will be merged with dfm_tools soon
 - please check the TODO sections for known inaccuracies or features that are not yet available
 
-Known bugs
---------
-- the line ``import shapely.geometry`` does not work, while ``import shapely`` does (OSError: [WinError 126] The specified module could not be found), solution:
-	- find geos.py in your environment (eg %userprofile%\\AppData\\Local\\Continuum\\anaconda3\\envs\\dfm_tools_env\\Lib\\site-packages\\shapely\\geos.py)
-	- replace ``if os.getenv('CONDA_PREFIX', ''):`` with ``if 0:`` on line 143 (this disables this if statement and redirects to else)
-	
 How to work with this git repository
 --------
 - Install Python:
@@ -67,6 +61,12 @@ How to work with this git repository
 	- from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
 	- check scripts in tests folder on github for examples
 
+Known bugs
+--------
+- the line ``import shapely.geometry`` does not work, while ``import shapely`` does (OSError: [WinError 126] The specified module could not be found), solution:
+	- find geos.py in your environment (eg %userprofile%\\AppData\\Local\\Continuum\\anaconda3\\envs\\dfm_tools_env\\Lib\\site-packages\\shapely\\geos.py)
+	- replace ``if os.getenv('CONDA_PREFIX', ''):`` with ``if 0:`` on line 143 (this disables this if statement and redirects to else)
+	
 TODO
 --------
 - register on PyPI, for easier install via pip (easier for regular users):
@@ -75,6 +75,7 @@ TODO
 	- how to automate this process?
 	- also add changelog besides commit comments?
 - update license with Deltares terms
+- update all text files and documentations
 - get xydata of stations upon retrieval of data
 - check order of values_all.stations and values itself if requested in wrong order
 - paths to project folders in test scripts are ok?
