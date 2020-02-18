@@ -56,8 +56,8 @@ How to work with this git repository
 	- Download the newest anaconda 64 bit
 	- install, including PATH checkbox
 
-- Install your local github clone via pip (developer mode):
-	- optional: create and activate a separate Python virtual environment (see related information for a possible method)
+- Install the code from github via pip:
+	- optional (but recommended): create and activate a separate Python virtual environment (see related information for a possible method)
 	- open command window
 	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this also updates it to the latest version if you already installed, and it also installs all required packages)
 	- ``python -c "import dfm_tools; print(dfm_tools.__version__)"`` (print version number of the installed dfm_tools package)

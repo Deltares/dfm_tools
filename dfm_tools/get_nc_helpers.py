@@ -3,6 +3,8 @@
 Created on Fri Feb 14 12:43:19 2020
 
 @author: veenstra
+
+helper functions for functions in get_nc.py
 """
 
     
