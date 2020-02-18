@@ -121,11 +121,6 @@ TODO
 
 Related information
 --------
-- Install your local github clone via pip (developer mode) (old method):
-	- open command window, navigate to dfm_tools folder, eg C:\\DATA\\GitHub\\dfm_tools
-	- optional: create and activate a separate Python virtual environment (see related information for a possible method)
-	- ``python -m pip install -e .`` (pip developer mode, any updates to the local folder by github (with ``git pull``) are immediately available in your python. It also installs all required packages)
-	- ``python -c "import dfm_tools; print(dfm_tools.__version)"`` (print version number of the installed dfm_tools package)
 - Create a separate python environment and link from Spyder:
 	- open command line and navigate to dfm_tools github folder, eg C:\\DATA\\GitHub\\dfm_tools
 	- ``conda env create -f environment.yml`` (sometimes you need to press enter if it hangs extremely long)
@@ -138,12 +133,17 @@ Related information
 	- restart IPython console
 	- optional: ``conda remove -n dfm_tools_env --all`` (to remove it again when necessary)
 - how to contribute to this git repository
-	- First request rights to contribute
+	- First request rights to contribute with the current developers
 	- Get a local checkout of the github repository:
 		- Download git from https://git-scm.com/download/win, install with default settings
 		- open command line in a folder where you want to clone the dfm_tools github repo, eg C:\\DATA\\GitHub
 		- ``git clone https://github.com/openearth/dfm_tools.git`` (repos gets cloned to local drive, checkout of master branch)
 		- to update: navigate to dfm_tools folder in git bash window and ``git pull`` (combination of git fetch and git merge)
+	- Install your local github clone via pip (developer mode):
+		- open command window, navigate to dfm_tools folder, eg C:\\DATA\\GitHub\\dfm_tools
+		- optional: create and activate a separate Python virtual environment (see related information for a possible method)
+		- ``python -m pip install -e .`` (pip developer mode, any updates to the local folder by github (with ``git pull``) are immediately available in your python. It also installs all required packages)
+		- ``python -c "import dfm_tools; print(dfm_tools.__version)"`` (print version number of the installed dfm_tools package)
 	- Branching:
 		- open git bash window in local dfm_tools folder (eg C:\\DATA\\GitHub\\dfm_tools)
 		- ``git config --global user.email [emailaddress]``
