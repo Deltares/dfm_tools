@@ -46,7 +46,7 @@ Terms of use
 
 Known bugs
 --------
-- the line ``import shapely.geometry`` does not work, while ``import shapely`` does, solution:
+- the line ``import shapely.geometry`` does not work, while ``import shapely`` does (OSError: [WinError 126] The specified module could not be found), solution:
 	- find geos.py in your environment (eg %userprofile%\\AppData\\Local\\Continuum\\anaconda3\\envs\\dfm_tools_env\\Lib\\site-packages\\shapely\\geos.py)
 	- replace ``if os.getenv('CONDA_PREFIX', ''):`` with ``if 0:`` on line 143
 	
