@@ -59,7 +59,7 @@ How to work with this git repository
 - Install the code from github via pip:
 	- optional (but recommended): create and activate a separate Python virtual environment (see related information for a possible method)
 	- open command window
-	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this also updates it to the latest version if you already installed, and it also installs all required packages)
+	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this also installs all required packages) (this also updates it to the latest version if you already installed it before)
 	- ``python -c "import dfm_tools; print(dfm_tools.__version__)"`` (print version number of the installed dfm_tools package)
 	- test if you can import shapely.geometry: ``import shapely.geometry`` (if not, look at the known bugs section in this readme. You will need this when slicing data)
 	
