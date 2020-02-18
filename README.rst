@@ -44,12 +44,6 @@ Terms of use
 - please do not use the dflowutil/dflowutil_examples scripts if you did not before, the important functions will be merged with dfm_tools soon
 - please check the TODO sections for known inaccuracies or features that are not yet available
 
-Known bugs
---------
-- the line ``import shapely.geometry`` does not work, while ``import shapely`` does (OSError: [WinError 126] The specified module could not be found), solution:
-	- find geos.py in your environment (eg %userprofile%\\AppData\\Local\\Continuum\\anaconda3\\envs\\dfm_tools_env\\Lib\\site-packages\\shapely\\geos.py)
-	- replace ``if os.getenv('CONDA_PREFIX', ''):`` with ``if 0:`` on line 143 (this disables this if statement and redirects to else)
-	
 How to work with this git repository
 --------
 - Install Python:
@@ -59,14 +53,20 @@ How to work with this git repository
 - Install the code from github via pip:
 	- optional (but recommended): create and activate a separate Python virtual environment (see related information for a possible method)
 	- open command window
-	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this also updates it to the latest version if you already installed, and it also installs all required packages)
+	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this also installs all required packages) (this also updates it to the latest version if you already installed it before)
 	- ``python -c "import dfm_tools; print(dfm_tools.__version__)"`` (print version number of the installed dfm_tools package)
-	- test if you can import shapely.geometry: ``import shapely.geometry`` (if not, look at the known bugs section in this readme. You will need this when slicing data)
+	- test if you can import shapely.geometry: ``python -c "import shapely.geometry"`` (if not, look at the known bugs section in this readme. You will need this when slicing data)
 	
 - Use it in your scripts:
 	- from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
 	- check scripts in tests folder on github for examples
 
+Known bugs
+--------
+- the line ``import shapely.geometry`` does not work, while ``import shapely`` does (OSError: [WinError 126] The specified module could not be found), solution:
+	- find geos.py in your environment (eg %userprofile%\\AppData\\Local\\Continuum\\anaconda3\\envs\\dfm_tools_env\\Lib\\site-packages\\shapely\\geos.py)
+	- replace ``if os.getenv('CONDA_PREFIX', ''):`` with ``if 0:`` on line 143 (this disables this if statement and redirects to else)
+	
 TODO
 --------
 - register on PyPI, for easier install via pip (easier for regular users):
@@ -75,6 +75,7 @@ TODO
 	- how to automate this process?
 	- also add changelog besides commit comments?
 - update license with Deltares terms
+- update all text files and documentations
 - get xydata of stations upon retrieval of data
 - check order of values_all.stations and values itself if requested in wrong order
 - paths to project folders in test scripts are ok?
@@ -121,11 +122,6 @@ TODO
 
 Related information
 --------
-- Install your local github clone via pip (developer mode) (old method):
-	- open command window, navigate to dfm_tools folder, eg C:\\DATA\\GitHub\\dfm_tools
-	- optional: create and activate a separate Python virtual environment (see related information for a possible method)
-	- ``python -m pip install -e .`` (pip developer mode, any updates to the local folder by github (with ``git pull``) are immediately available in your python. It also installs all required packages)
-	- ``python -c "import dfm_tools; print(dfm_tools.__version)"`` (print version number of the installed dfm_tools package)
 - Create a separate python environment and link from Spyder:
 	- open command line and navigate to dfm_tools github folder, eg C:\\DATA\\GitHub\\dfm_tools
 	- ``conda env create -f environment.yml`` (sometimes you need to press enter if it hangs extremely long)
@@ -138,12 +134,17 @@ Related information
 	- restart IPython console
 	- optional: ``conda remove -n dfm_tools_env --all`` (to remove it again when necessary)
 - how to contribute to this git repository
-	- First request rights to contribute
+	- First request rights to contribute with the current developers
 	- Get a local checkout of the github repository:
 		- Download git from https://git-scm.com/download/win, install with default settings
 		- open command line in a folder where you want to clone the dfm_tools github repo, eg C:\\DATA\\GitHub
 		- ``git clone https://github.com/openearth/dfm_tools.git`` (repos gets cloned to local drive, checkout of master branch)
 		- to update: navigate to dfm_tools folder in git bash window and ``git pull`` (combination of git fetch and git merge)
+	- Install your local github clone via pip (developer mode):
+		- open command window, navigate to dfm_tools folder, eg C:\\DATA\\GitHub\\dfm_tools
+		- optional: create and activate a separate Python virtual environment (see related information for a possible method)
+		- ``python -m pip install -e .`` (pip developer mode, any updates to the local folder by github (with ``git pull``) are immediately available in your python. It also installs all required packages)
+		- ``python -c "import dfm_tools; print(dfm_tools.__version)"`` (print version number of the installed dfm_tools package)
 	- Branching:
 		- open git bash window in local dfm_tools folder (eg C:\\DATA\\GitHub\\dfm_tools)
 		- ``git config --global user.email [emailaddress]``
