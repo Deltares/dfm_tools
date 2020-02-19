@@ -37,17 +37,13 @@ Features
 - selection/plotting by polyline/crossection (slicing the ugrid data)
 - pytest testbank
 - examples of unformatted plots: n:\\My Documents\\My Bulletin\\info dfm_tools\\info dfm_tools.pptx
-
-Terms of use
---------
-- this toolbox is now only available via github, it will soon be registered on pypi so pip installing and updating is possible without github checkout
-- please do not use the dflowutil/dflowutil_examples scripts if you did not before, the important functions will be merged with dfm_tools soon
 - please check the TODO sections for known inaccuracies or features that are not yet available
+
 
 How to work with this git repository
 --------
 - Install Python:
-	- Download the newest anaconda 64 bit
+	- Download the newest anaconda 64 bit: https://repo.anaconda.com/archive/Anaconda3-2019.10-Windows-x86_64.exe
 	- install, including PATH checkbox
 
 - Install the code from github via pip:
@@ -67,18 +63,11 @@ Known bugs
 	- find geos.py in your environment (eg %userprofile%\\AppData\\Local\\Continuum\\anaconda3\\envs\\dfm_tools_env\\Lib\\site-packages\\shapely\\geos.py)
 	- replace ``if os.getenv('CONDA_PREFIX', ''):`` with ``if 0:`` on line 143 (this disables this if statement and redirects to else)
 	
-TODO
+Wishlist
 --------
-- register on PyPI, for easier install via pip (easier for regular users):
-	- https://the-hitchhikers-guide-to-packaging.readthedocs.io/en/latest/quickstart.html#register-your-package-with-the-python-package-index-pypi
-	- https://packaging.python.org/tutorials/packaging-projects/
-	- how to automate this process?
-	- also add changelog besides commit comments?
-- update license with Deltares terms
-- update all text files and documentations
+- select/check functions in dflowutil folder and merge with dfm_tools
 - get xydata of stations upon retrieval of data
 - check order of values_all.stations and values itself if requested in wrong order
-- paths to project folders in test scripts are ok?
 - optimize intersect, calc box around line with angles between lineparts
 	- only calc inpolygon from subset of first lineboundbox filter
 	- only needs one line for inpolygonbox instead of two. Dan kan begin/eindcoord met rechte hoek (+90/-90) op het begin/einde ipv 0
@@ -89,7 +78,6 @@ TODO
 	- layerzfrombedlevel keyword in mdu changes how zlayering is set up. Catch this exception with a keyword if necessary
 - remove hardcoded 'stations' dimension lookup
 - dimn_time is now actually variable name which does not work if time dimname is not the same as time varname
-- contributing method: environment.yml (README.rst) or requirements_dev.txt (CONTRIBUTING.rst)?
 - perform actions by dimension names instead of ndims (eg station_name variable has two dimensions but no time)
 - make merc keyword always optional by testing for minmax all vertsx between -181 and 361 and minmax all vertsy (lat) between -91 and 91 (+range for overlap for eg gtsm model)
 - optimize get_ncmodeldata for layerdepths/bedlevel/waterlevel (second intersect function), only retrieve necessary information for crossection
@@ -101,7 +89,6 @@ TODO
 - as user: get stationlist, dimensionlist, variablelist, more? (partly internally available)
 - add polygon read/write function (also ldb files)
 - add polygon ginput function (click in plot) (already partly exists in intersect/slice testscript)
-- style guide: https://www.python.org/dev/peps/pep-0008/
 - pyugrid (ghostcells en mapmergen worden afgehandeld?), voorbeelden in ieder geval als inspiratie voor plotopties):
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/Delft3D%20examples.ipynb
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/connectivity_example.ipynb
@@ -112,13 +99,28 @@ TODO
 - add (look for) readwrite functions for general datafromats (tim, tekal etc)
 - add plot of structured grid (CMEMS etc)
 - add foufiles, rstfiles? (partitioned but with different dimensions, should already partially work)
-- add minimal version numbers to requirements.txt (maybe also to environment.yml)
-- create overview tree of all functions, also add missing functions here
-- write documentation as comments and generate automatically
 - improve testbank:
 	- parametrize test_grid_gethismodeldata
 	- arrange auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
 - add comparable functions for sobek and Delft3D
+
+
+TODO
+--------
+- register on PyPI, for easier install via pip (easier for regular users):
+	- https://the-hitchhikers-guide-to-packaging.readthedocs.io/en/latest/quickstart.html#register-your-package-with-the-python-package-index-pypi
+	- https://packaging.python.org/tutorials/packaging-projects/
+	- how to automate this process?
+	- also add changelog besides commit comments?
+- update license with Deltares terms
+- update all text files and documentations
+- write documentation as comments and generate automatically
+- create overview tree of all functions, also add missing functions here
+- paths to project folders in test scripts are ok?
+- add minimal version numbers to requirements.txt (maybe also to environment.yml)
+- style guide: https://www.python.org/dev/peps/pep-0008/
+- contributing method: environment.yml (README.rst) or requirements_dev.txt (CONTRIBUTING.rst)?
+
 
 Related information
 --------
