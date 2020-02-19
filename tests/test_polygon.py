@@ -25,10 +25,14 @@ def test_readpolygon(file_pol):
     
     from dfm_tools.polygon import Polygon
     
-    #file_pol = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\geometry\structures\Grevelingen-FM_BL_fxw.pliz')
+    #file_pol = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\geometry\structures\Grevelingen-FM_BL_fxw.pli')
     #file_pol = os.path.join(dir_testinput,r'world.ldb')
     
-    data_polX, data_polY, data_polNAMES = Polygon.fromfile(file_pol)
-    
+    data_pol = Polygon.fromfile(file_pol)
+    data_pol_x = data_pol.x
+    data_pol_y = data_pol.y
+    data_pol_names = data_pol.name
+    data_pol_linearray = data_pol.line_array
+
     
     
