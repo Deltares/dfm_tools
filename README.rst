@@ -50,8 +50,9 @@ How to work with this git repository
 	- optional (but recommended): create and activate a separate Python virtual environment (see related information for a possible method)
 	- open command window
 	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this also installs all required packages) (this also updates it to the latest version if you already installed it before)
-	- ``python -c "import dfm_tools; print(dfm_tools.__version__)"`` (print version number of the installed dfm_tools package)
-	- test if you can import shapely.geometry: ``python -c "import shapely.geometry"`` (if not, look at the known bugs section in this readme. You will need this when slicing data)
+	- quick test:
+		- ``python -c "import dfm_tools; print(dfm_tools.__version__)"`` (print version number of the installed dfm_tools package)
+		- test if you can import shapely.geometry: ``python -c "import shapely.geometry"`` (if not, look at the known bugs section in this readme. You will need this when slicing data)
 	
 - Use it in your scripts:
 	- from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
@@ -63,7 +64,7 @@ Known bugs
 	- find geos.py in your environment (eg %userprofile%\\AppData\\Local\\Continuum\\anaconda3\\envs\\dfm_tools_env\\Lib\\site-packages\\shapely\\geos.py)
 	- replace ``if os.getenv('CONDA_PREFIX', ''):`` with ``if 0:`` on line 143 (this disables this if statement and redirects to else)
 	
-Wishlist
+TODO wishlist
 --------
 - select/check functions in dflowutil folder and merge with dfm_tools
 - get xydata of stations upon retrieval of data
