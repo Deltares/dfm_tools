@@ -36,7 +36,7 @@ Features
 - take over masks in original data
 - selection/plotting by polyline/crossection (slicing the ugrid data)
 - pytest testbank
-- examples of unformatted plots: n:\\My Documents\\My Bulletin\\info dfm_tools\\info dfm_tools.pptx
+- examples of unformatted plots: n:\\Deltabox\\Bulletin\\veenstra\\info dfm_tools
 - please check the TODO sections for known inaccuracies or features that are not yet available
 
 
