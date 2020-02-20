@@ -47,12 +47,14 @@ How to work with this git repository
 	- install, including PATH checkbox
 
 - Install the code from github via pip:
+	- download and install git from https://git-scm.com/download/win
 	- optional (but recommended): create and activate a separate Python virtual environment (see related information for a possible method)
 	- open command window
 	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this also installs all required packages) (this also updates it to the latest version if you already installed it before)
 	- quick test:
 		- ``python -c "import dfm_tools; print(dfm_tools.__version__)"`` (print version number of the installed dfm_tools package)
 		- test if you can import shapely.geometry: ``python -c "import shapely.geometry"`` (if not, look at the known bugs section in this readme. You will need this when slicing data)
+	- Note: we will try to distribute dfm_tools via PyPI soon, so installation is slightly easier
 	
 - Use it in your scripts:
 	- from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
