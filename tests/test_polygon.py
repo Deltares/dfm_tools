@@ -33,6 +33,8 @@ def test_readpolygon(file_pol):
     file_pol = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\geometry\structures\Grevelingen-FM_BL_fxw.pliz')
     file_pol = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\geometry\structures\Grevelingen-FM_BL_fxw.pli')
     file_pol = os.path.join(dir_testinput,r'world.ldb')
+    file_pol = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\geometry_j13_6-w3\rmm_v1p3_fixed_weirs.pliz'
+    file_pol = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\geometry_j13_6-w3\structures\rmm_v1p3_structures.pli'
     """
     
     pol_data_list, pol_name_list = Polygon.fromfile(file_pol)
