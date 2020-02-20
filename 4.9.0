@@ -1,5 +1,0 @@
-Requirement already satisfied: proj in c:\users\veenstra\appdata\local\continuum\anaconda3\envs\dfm_tools_env\lib\site-packages (0.1.0)
-Requirement already satisfied: click>=3.3 in c:\users\veenstra\appdata\local\continuum\anaconda3\envs\dfm_tools_env\lib\site-packages (from proj) (7.0)
-Requirement already satisfied: arrow>=0.4.4 in c:\users\veenstra\appdata\local\continuum\anaconda3\envs\dfm_tools_env\lib\site-packages (from proj) (0.15.5)
-Requirement already satisfied: python-dateutil in c:\users\veenstra\appdata\local\continuum\anaconda3\envs\dfm_tools_env\lib\site-packages (from arrow>=0.4.4->proj) (2.8.1)
-Requirement already satisfied: six>=1.5 in c:\users\veenstra\appdata\local\continuum\anaconda3\envs\dfm_tools_env\lib\site-packages (from python-dateutil->arrow>=0.4.4->proj) (1.14.0)
