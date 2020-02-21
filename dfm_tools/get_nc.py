@@ -153,18 +153,23 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
             
         
         values_selid = []
-        for iD in range(nc_values_ndims):
-            if nc_values_dims[iD] == dimn_faces:
+        values_dimlens = [] #list(nc_values.shape)
+        for iD, nc_values_dimsel in enumerate(nc_values_dims):
+            if nc_values_dimsel == dimn_faces:
                 if ghostcells_bool: # domain variable is present, so there are multiple domains
-                    values_selid.append([nonghost_ids])
+                    values_selid.append(nonghost_ids)
                 else:
                     values_selid.append(range(nc_values.shape[iD]))
-            elif nc_values_dims[iD] == 'stations' or nc_values_dims[iD] == 'general_structures' or nc_values_dims[iD] == 'cross_section':
+                values_dimlens.append(0)
+            elif nc_values_dimsel == 'stations' or nc_values_dims[iD] == 'general_structures' or nc_values_dims[iD] == 'cross_section':
                 values_selid.append([station_ids])
-            elif nc_values_dims[iD] == dimn_time:
+                values_dimlens.append(len(station_ids))
+            elif nc_values_dimsel == dimn_time:
                 values_selid.append(time_ids)
-            elif nc_values_dims[iD] == dimn_layer:
+                values_dimlens.append(len(time_ids))
+            elif nc_values_dimsel == dimn_layer:
                 values_selid.append(layer_ids)
+                values_dimlens.append(len(layer_ids))
             else:
                 print('WARNING: not a predifined dimension name')
         """
@@ -245,8 +250,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
 
         
         #initialize array
-        values_dimlens = nc_values.shape
-        values_dimlens[concat_axis] = 0
+        #values_dimlens[concat_axis] = 0 #not necessary, already set in dimloop
         if iF == 0:
             values_all = np.ma.empty(values_dimlens)
         #concatenate array
