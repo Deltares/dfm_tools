@@ -254,19 +254,22 @@ def test_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
     if 'cb_3d_map' in file_nc:
         timestep = 3
         layer = 5
+        clim_bl = None
         clim_wl = [-0.5,1]
         clim_sal = None
         clim_tem = None
     elif 'Grevelingen-FM_0000_map' in file_nc:
         timestep = 3
         layer = 33
+        clim_bl = None
         clim_wl = [-0.5,1]
         clim_sal = [28,30.2]
         clim_tem = [4,10]
     elif 'RMM_dflowfm_0000_map' in file_nc:
         timestep = 50
         layer = None
-        clim_wl = None
+        clim_bl = [-10,10]
+        clim_wl = [-2,2]
         clim_sal = None
         clim_tem = None
     else:
@@ -291,7 +294,7 @@ def test_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
         data_frommap_flat = data_frommap.flatten()
         fig, ax = plt.subplots()
         pc = plot_netmapdata(ugrid.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
-        #pc.set_clim([28,30.2])
+        pc.set_clim(clim_bl)
         fig.colorbar(pc, ax=ax)
         ax.set_aspect('equal')
         plt.savefig(os.path.join(dir_output,'%s_mesh2d_flowelem_bl'%(os.path.basename(file_nc).replace('.nc',''))))
