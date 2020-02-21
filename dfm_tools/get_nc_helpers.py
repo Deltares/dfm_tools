@@ -243,7 +243,7 @@ def get_stationid_fromstationlist(station_name_list_pd, station):
     
     #get ids of requested stations in netcdf file
     station_bool_fileinreq = station_name_list_pd.isin(station_pd)
-    station_ids = np.where(station_bool_fileinreq)[0]
+    station_ids = list(np.where(station_bool_fileinreq)[0])
     #station_names = np.where(station_bool_fileinreq)[0]
 
     return station_ids

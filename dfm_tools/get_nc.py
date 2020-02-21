@@ -140,7 +140,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
             print('processing mapdata from domain %04d of %04d'%(iF, len(file_ncs)-1))
         
         nc_varkeys, nc_dimkeys, nc_values, nc_values_shape, nc_values_dims = get_ncvardims(file_nc_sel, varname)
-        nc_values_ndims = len(nc_values_shape)
+        #nc_values_ndims = len(nc_values_shape)
         
         #check faces existence, variable could have ghost cells if partitioned
         dimn_faces = get_varname_mapnc(data_nc,'mesh2d_nFaces')
@@ -151,7 +151,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
             ghostcells_bool = False
             #nonghost_ids = range
             
-        
+        concat_axis = 0 #default value, overwritten by faces/stations dimension
         values_selid = []
         values_dimlens = [] #list(nc_values.shape)
         for iD, nc_values_dimsel in enumerate(nc_values_dims):
@@ -173,7 +173,9 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
                 values_selid.append(layer_ids)
                 values_dimlens.append(len(layer_ids))
             else:
-                print('WARNING: not a predifined dimension name')
+                print('WARNING: not a predefined dimension name')
+                values_selid.append(range(nc_values.shape[iD]))
+                values_dimlens.append(nc_values.shape[iD])
         """
         # 1 dimension nc_values_dims==(faces/stations)
         if nc_values_ndims == 1:
@@ -233,7 +235,6 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         
         
         #initialize array
-        #values_dimlens[concat_axis] = 0 #not necessary, already set in dimloop
         if iF == 0:
             values_all = np.ma.empty(values_dimlens)
         #concatenate array
