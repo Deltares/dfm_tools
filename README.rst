@@ -70,7 +70,6 @@ TODO wishlist
 --------
 - select/check functions in dflowutil folder and merge with dfm_tools
 - get xydata of stations upon retrieval of data
-- check order of values_all.stations and values itself if requested in wrong order
 - optimize intersect, calc box around line with angles between lineparts
 	- only calc inpolygon from subset of first lineboundbox filter
 	- only needs one line for inpolygonbox instead of two. Dan kan begin/eindcoord met rechte hoek (+90/-90) op het begin/einde ipv 0

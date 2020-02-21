@@ -29,7 +29,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     data_nc = Dataset(file_nc)
     
     #CHECK VARNAME, IS THERE A SEPARATE DEFINITION TO RETRIEVE DATA?
-    if varname == 'station_name' or varname == 'general_structure_id':
+    if varname == 'station_name' or varname == 'general_structure_id' or varname == 'cross_section_name':
         raise Exception('ERROR: variable "%s" should be retrieved with separate function:\nstation_names = get_hisstationlist(file_nc=file_nc, varname_stat="%s")'%(varname,varname))
 
     #TIMES CHECKS
@@ -97,7 +97,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         raise Exception('ERROR: depth argument is provided, but this is not implemented yet')
     
     #STATION/GENERAL_STRUCTURES CHECKS
-    if 'stations' not in nc_values_dims and 'general_structures' not in nc_values_dims: #no station dimension
+    if 'stations' not in nc_values_dims and 'general_structures' not in nc_values_dims and 'cross_section' not in nc_values_dims: #no station dimension
         if station is not None:
             raise Exception('ERROR: netcdf file variable (%s) does not contain stations/general_structures, but parameter station is provided'%(varname))
     else: #stations are present
@@ -107,6 +107,8 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
             station_name_list_pd = get_hisstationlist(file_nc) #get stations
         elif 'general_structures' in nc_values_dims:
             station_name_list_pd = get_hisstationlist(file_nc,varname_stat='general_structure_id') #get stations            
+        elif 'cross_section' in nc_values_dims:
+            station_name_list_pd = get_hisstationlist(file_nc,varname_stat='cross_section_name') #get stations            
         #convert station to list of int if it is not already
         if station is str('all'):
             station_ids = range(len(station_name_list_pd))
@@ -154,15 +156,15 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         # 1 dimension nc_values_dims==(faces/stations)
         if nc_values_ndims == 1:
             if iF == 0: #setup initial array
-                values_all = np.ma.empty((0))    
-            values = nc_values[:]
+                values_all = np.ma.empty((0))
+            #values = nc_values[:]
             concat_axis = 0
             if ghostcells_bool and var_ghostaffected: # domain variable is present, so there are multiple domains
-                values_all = np.ma.concatenate([values_all,values[nonghost_ids]],axis=concat_axis)
-            elif 'stations' in nc_values_dims or 'general_structures' in nc_values_dims: #select stations instead of faces
-                values_all = np.ma.concatenate([values_all,values[station_ids]],axis=concat_axis)
+                values_all = np.ma.concatenate([values_all,nc_values[nonghost_ids]],axis=concat_axis)
+            elif 'stations' in nc_values_dims or 'general_structures' in nc_values_dims or 'cross_section' in nc_values_dims: #select stations instead of faces
+                values_all = np.ma.concatenate([values_all,nc_values[station_ids]],axis=concat_axis)
             else:
-                values_all = np.ma.concatenate([values_all,values],axis=concat_axis)
+                values_all = np.ma.concatenate([values_all,nc_values[:]],axis=concat_axis)
 
         # 2 dimensions nc_values_dims==(time, faces/stations)
         elif nc_values_ndims == 2:
@@ -171,14 +173,14 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
             if iF == 0: #setup initial array
                 values_all = np.ma.empty((len(time_ids),0))    
             #select values
-            values = nc_values[time_ids,:]
+            #values = nc_values[time_ids,:]
             concat_axis = 1
             if ghostcells_bool and var_ghostaffected: # domain variable is present, so there are multiple domains
-                values_all = np.ma.concatenate([values_all,values[:,nonghost_ids]],axis=concat_axis)
-            elif 'stations' in nc_values_dims or 'general_structures' in nc_values_dims: #select stations instead of faces
-                values_all = np.ma.concatenate([values_all,values[:,station_ids]],axis=concat_axis)
+                values_all = np.ma.concatenate([values_all,nc_values[time_ids,nonghost_ids]],axis=concat_axis)
+            elif 'stations' in nc_values_dims or 'general_structures' in nc_values_dims or 'cross_section' in nc_values_dims: #select stations instead of faces
+                values_all = np.ma.concatenate([values_all,nc_values[time_ids,station_ids]],axis=concat_axis)
             else: #no selection
-                values_all = np.ma.concatenate([values_all,values],axis=concat_axis)
+                values_all = np.ma.concatenate([values_all,nc_values[:,:]],axis=concat_axis)
         
         # 3 dimensions nc_values_dims==(time, faces/stations, layers)
         elif nc_values_ndims == 3:
@@ -188,25 +190,25 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
                 if iF == 0: #setup initial array
                     values_all = np.ma.empty((len(time_ids),0,len(layer_ids)))
                 #select values
-                values = nc_values[time_ids,:,layer_ids]
+                #values = nc_values[time_ids,:,layer_ids]
                 concat_axis = 1
                 if ghostcells_bool and var_ghostaffected: # domain variable is present, so there are multiple domains
-                    values_all = np.ma.concatenate([values_all,values[:,nonghost_ids,:]],axis=concat_axis)
-                elif 'stations' in nc_values_dims or 'general_structures' in nc_values_dims: #select stations instead of faces
-                    values_all = np.ma.concatenate([values_all,values[:,station_ids,:]],axis=concat_axis)
+                    values_all = np.ma.concatenate([values_all,nc_values[time_ids,nonghost_ids,layer_ids]],axis=concat_axis)
+                elif 'stations' in nc_values_dims or 'general_structures' in nc_values_dims or 'cross_section' in nc_values_dims: #select stations instead of faces
+                    values_all = np.ma.concatenate([values_all,nc_values[time_ids,station_ids,layer_ids]],axis=concat_axis)
                 else: #no selection
-                    values_all = np.ma.concatenate([values_all,values],axis=concat_axis)
+                    values_all = np.ma.concatenate([values_all,nc_values[time_ids,:,layer_ids]],axis=concat_axis)
             elif (nc_values_dims[0] == dimn_time and nc_values_dims[1] == dimn_layer):
                 print('WARNING: unexpected dimension order, supported for offline waqfiles OS: %s'%(str(nc_values_dims)))
                 if iF == 0: #setup initial array
                     values_all = np.ma.empty((len(time_ids),len(layer_ids),0))
                 #select values
-                values = nc_values[time_ids,layer_ids,:]
+                #values = nc_values[time_ids,layer_ids,:]
                 concat_axis = 2
                 if ghostcells_bool and var_ghostaffected: # domain variable is present, so there are multiple domains
-                    values_all = np.ma.concatenate([values_all,values[:,:,nonghost_ids]],axis=concat_axis)
+                    values_all = np.ma.concatenate([values_all,nc_values[time_ids,layer_ids,nonghost_ids]],axis=concat_axis)
                 else:
-                    values_all = np.ma.concatenate([values_all,values],axis=concat_axis)
+                    values_all = np.ma.concatenate([values_all,nc_values[time_ids,layer_ids,:]],axis=concat_axis)
             else:
                 raise Exception('ERROR: unexpected 3D dimension order: %s'%(str(nc_values_dims)))
 
@@ -224,7 +226,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
             values_all.var_layers = layer_ids
         else:
             values_all.var_layers = None
-        if 'stations' in nc_values_dims or 'general_structures' in nc_values_dims:
+        if 'stations' in nc_values_dims or 'general_structures' in nc_values_dims or 'cross_section' in nc_values_dims:
             values_all.var_stations = station_name_list_pd.iloc[station_ids]
         else:
             values_all.var_stations = None
