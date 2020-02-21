@@ -161,10 +161,11 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
                 else:
                     values_selid.append(range(nc_values.shape[iD]))
                 values_dimlens.append(0) #because concatenate axis
+                concat_axis = iD
             elif nc_values_dimsel == 'stations' or nc_values_dims[iD] == 'general_structures' or nc_values_dims[iD] == 'cross_section':
                 values_selid.append(station_ids)
                 values_dimlens.append(0) #because concatenate axis
-                #values_dimlens.append(len(station_ids))
+                concat_axis = iD
             elif nc_values_dimsel == dimn_time:
                 values_selid.append(time_ids)
                 values_dimlens.append(len(time_ids))
@@ -230,25 +231,6 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
             raise Exception('unanticipated number of dimensions: %s'%(nc_values_ndims))
         """
         
-        #get concat axis
-        # 1 dimension nc_values_dims==(faces/stations)
-        if nc_values_ndims == 1:
-            concat_axis = 0
-        # 2 dimensions nc_values_dims==(time, faces/stations)
-        elif nc_values_ndims == 2:
-            concat_axis = 1
-        # 3 dimensions nc_values_dims==(time, faces/stations, layers)
-        elif nc_values_ndims == 3:
-            if (nc_values_dims[0] == dimn_time and nc_values_dims[2] == dimn_layer): # and nc_values_dims[1] == dimn_faces
-                concat_axis = 1
-            elif (nc_values_dims[0] == dimn_time and nc_values_dims[1] == dimn_layer):
-                print('WARNING: unexpected dimension order, supported for offline waqfiles OS: %s'%(str(nc_values_dims)))
-                concat_axis = 2
-            else:
-                raise Exception('ERROR: unexpected 3D dimension order: %s'%(str(nc_values_dims)))
-        else:
-            raise Exception('unanticipated number of dimensions: %s'%(nc_values_ndims))
-
         
         #initialize array
         #values_dimlens[concat_axis] = 0 #not necessary, already set in dimloop
