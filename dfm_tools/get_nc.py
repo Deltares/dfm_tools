@@ -151,7 +151,23 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
             ghostcells_bool = False
             #nonghost_ids = range
             
-            
+        
+        values_selid = []
+        for iD in range(nc_values_ndims):
+            if nc_values_dims[iD] == dimn_faces:
+                if ghostcells_bool: # domain variable is present, so there are multiple domains
+                    values_selid.append([nonghost_ids])
+                else:
+                    values_selid.append(range(nc_values.shape[iD]))
+            elif nc_values_dims[iD] == 'stations' or nc_values_dims[iD] == 'general_structures' or nc_values_dims[iD] == 'cross_section':
+                values_selid.append([station_ids])
+            elif nc_values_dims[iD] == dimn_time:
+                values_selid.append(time_ids)
+            elif nc_values_dims[iD] == dimn_layer:
+                values_selid.append(layer_ids)
+            else:
+                print('WARNING: not a predifined dimension name')
+        """
         # 1 dimension nc_values_dims==(faces/stations)
         if nc_values_ndims == 1:
             #select values
@@ -206,8 +222,31 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
 
         else:
             raise Exception('unanticipated number of dimensions: %s'%(nc_values_ndims))
+        """
+        
+        #get concat axis
+        # 1 dimension nc_values_dims==(faces/stations)
+        if nc_values_ndims == 1:
+            concat_axis = 0
+        # 2 dimensions nc_values_dims==(time, faces/stations)
+        elif nc_values_ndims == 2:
+            concat_axis = 1
+        # 3 dimensions nc_values_dims==(time, faces/stations, layers)
+        elif nc_values_ndims == 3:
+            if (nc_values_dims[0] == dimn_time and nc_values_dims[2] == dimn_layer): # and nc_values_dims[1] == dimn_faces
+                concat_axis = 1
+            elif (nc_values_dims[0] == dimn_time and nc_values_dims[1] == dimn_layer):
+                print('WARNING: unexpected dimension order, supported for offline waqfiles OS: %s'%(str(nc_values_dims)))
+                concat_axis = 2
+            else:
+                raise Exception('ERROR: unexpected 3D dimension order: %s'%(str(nc_values_dims)))
+        else:
+            raise Exception('unanticipated number of dimensions: %s'%(nc_values_ndims))
+
         
         #initialize array
+        values_dimlens = nc_values.shape
+        values_dimlens[concat_axis] = 0
         if iF == 0:
             values_all = np.ma.empty(values_dimlens)
         #concatenate array
