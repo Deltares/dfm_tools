@@ -69,8 +69,6 @@ Known bugs
 TODO wishlist
 --------
 - select/check functions in dflowutil folder and merge with dfm_tools
-- get xydata of stations upon retrieval of data
-- check order of values_all.stations and values itself if requested in wrong order
 - optimize intersect, calc box around line with angles between lineparts
 	- only calc inpolygon from subset of first lineboundbox filter
 	- only needs one line for inpolygonbox instead of two. Dan kan begin/eindcoord met rechte hoek (+90/-90) op het begin/einde ipv 0
@@ -81,7 +79,6 @@ TODO wishlist
 	- layerzfrombedlevel keyword in mdu changes how zlayering is set up. Catch this exception with a keyword if necessary
 - remove hardcoded 'stations' dimension lookup
 - dimn_time is now actually variable name which does not work if time dimname is not the same as time varname
-- perform actions by dimension names instead of ndims (eg station_name variable has two dimensions but no time)
 - make merc keyword always optional by testing for minmax all vertsx between -181 and 361 and minmax all vertsy (lat) between -91 and 91 (+range for overlap for eg gtsm model)
 - optimize get_ncmodeldata for layerdepths/bedlevel/waterlevel (second intersect function), only retrieve necessary information for crossection
 - add inpolygon/inboundbox selection of data:

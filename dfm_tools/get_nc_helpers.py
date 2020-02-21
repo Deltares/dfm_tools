@@ -152,14 +152,12 @@ def ghostcell_filter(file_nc):
     
     varn_domain = get_varname_mapnc(data_nc,'mesh2d_flowelem_domain')
     if varn_domain is not None: # domain variable is present, so there are multiple domains
-        ghostcells_bool = True
         domain = data_nc.variables[varn_domain][:]
         domain_no = np.bincount(domain).argmax() #meest voorkomende domeinnummer
         nonghost_ids = domain==domain_no
     else:
-        ghostcells_bool = False
         nonghost_ids = None
-    return ghostcells_bool, nonghost_ids
+    return nonghost_ids
 
 
 
@@ -214,13 +212,13 @@ def get_timeid_fromdatetime(data_nc_datetimes_pd, timestep):
 
 
 
-def get_hisstationlist(file_nc):
+def get_hisstationlist(file_nc,varname_stat='station_name'):
     from netCDF4 import Dataset, chartostring
     import pandas as pd
     
     data_nc = Dataset(file_nc)
     #varn_station_name = get_varname_mapnc(data_nc,'station_name')
-    station_name_char = data_nc.variables['station_name'][:]
+    station_name_char = data_nc.variables[varname_stat][:]
     station_name_list = chartostring(station_name_char)
     
     station_name_list_pd = pd.Series(station_name_list)
@@ -243,7 +241,7 @@ def get_stationid_fromstationlist(station_name_list_pd, station):
     
     #get ids of requested stations in netcdf file
     station_bool_fileinreq = station_name_list_pd.isin(station_pd)
-    station_ids = np.where(station_bool_fileinreq)[0]
+    station_ids = list(np.where(station_bool_fileinreq)[0])
     #station_names = np.where(station_bool_fileinreq)[0]
 
     return station_ids
