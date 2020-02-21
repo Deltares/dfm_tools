@@ -132,6 +132,9 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
             raise Exception('ERROR: requested highest station id (%d) is larger than available in netcdf file (%d)'%(np.max(station_ids),len(station_name_list_pd)-1))
      
     
+    #check faces existence, variable could have ghost cells if partitioned
+    dimn_faces = get_varname_mapnc(data_nc,'mesh2d_nFaces')
+
     file_ncs = get_ncfilelist(file_nc, multipart)
     
     
@@ -140,26 +143,14 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
             print('processing mapdata from domain %04d of %04d'%(iF, len(file_ncs)-1))
         
         nc_varkeys, nc_dimkeys, nc_values, nc_values_shape, nc_values_dims = get_ncvardims(file_nc_sel, varname)
-        #nc_values_ndims = len(nc_values_shape)
         
-        #check faces existence, variable could have ghost cells if partitioned
-        dimn_faces = get_varname_mapnc(data_nc,'mesh2d_nFaces')
-        if dimn_faces in nc_values_dims:
-            ghostcells_bool, nonghost_ids = ghostcell_filter(file_nc_sel)
-            #concat_axis = nc_values_dims.index(dimn_faces)
-        else:
-            ghostcells_bool = False
-            #nonghost_ids = range
-            
         concat_axis = 0 #default value, overwritten by faces/stations dimension
         values_selid = []
         values_dimlens = [] #list(nc_values.shape)
         for iD, nc_values_dimsel in enumerate(nc_values_dims):
-            if nc_values_dimsel == dimn_faces:
-                if ghostcells_bool: # domain variable is present, so there are multiple domains
-                    values_selid.append(nonghost_ids)
-                else:
-                    values_selid.append(range(nc_values.shape[iD]))
+            if nc_values_dimsel == dimn_faces: # domain variable is present, so there are multiple domains
+                nonghost_ids = ghostcell_filter(file_nc_sel)
+                values_selid.append(nonghost_ids)
                 values_dimlens.append(0) #because concatenate axis
                 concat_axis = iD
             elif nc_values_dimsel == 'stations' or nc_values_dims[iD] == 'general_structures' or nc_values_dims[iD] == 'cross_section':
@@ -176,63 +167,6 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
                 print('WARNING: not a predefined dimension name')
                 values_selid.append(range(nc_values.shape[iD]))
                 values_dimlens.append(nc_values.shape[iD])
-        """
-        # 1 dimension nc_values_dims==(faces/stations)
-        if nc_values_ndims == 1:
-            #select values
-            values_dimlens = [0]
-            concat_axis = 0
-            if ghostcells_bool: # domain variable is present, so there are multiple domains
-                values_selid = [nonghost_ids]
-            elif 'stations' in nc_values_dims or 'general_structures' in nc_values_dims or 'cross_section' in nc_values_dims: #select stations instead of faces
-                values_selid = [station_ids]
-            else:
-                values_selid = [range(nc_values.shape[0])]
-
-        # 2 dimensions nc_values_dims==(time, faces/stations)
-        elif nc_values_ndims == 2:
-            if not (nc_values_dims[0] == dimn_time): # and nc_values_dims[1] == dimn_faces
-                raise Exception('ERROR: unexpected dimension order, should be something like (time, faces/stations): %s'%(str(nc_values_dims)))
-            #select values
-            values_dimlens = [len(time_ids),0]
-            concat_axis = 1
-            if ghostcells_bool: # domain variable is present, so there are multiple domains
-                values_selid = [time_ids,nonghost_ids]
-            elif 'stations' in nc_values_dims or 'general_structures' in nc_values_dims or 'cross_section' in nc_values_dims: #select stations instead of faces
-                values_selid = [time_ids,station_ids]
-            else: #no selection
-                values_selid = [time_ids,range(nc_values.shape[1])]
-        
-        # 3 dimensions nc_values_dims==(time, faces/stations, layers)
-        elif nc_values_ndims == 3:
-            #if not (nc_values_dims[0] == dimn_time and nc_values_dims[2] == dimn_layer): # and nc_values_dims[1] == dimn_faces
-            #    raise Exception('ERROR: unexpected dimension order, should be something like (time, faces/stations, layers): %s'%(str(nc_values_dims)))
-            if (nc_values_dims[0] == dimn_time and nc_values_dims[2] == dimn_layer): # and nc_values_dims[1] == dimn_faces
-                #select values
-                values_dimlens = [len(time_ids),0,len(layer_ids)]
-                concat_axis = 1
-                if ghostcells_bool: # domain variable is present, so there are multiple domains
-                    values_selid = [time_ids,nonghost_ids,layer_ids]
-                elif 'stations' in nc_values_dims or 'general_structures' in nc_values_dims or 'cross_section' in nc_values_dims: #select stations instead of faces
-                    values_selid = [time_ids,station_ids,layer_ids]
-                else: #no selection
-                    values_selid = [time_ids,range(nc_values.shape[1]),layer_ids]
-            elif (nc_values_dims[0] == dimn_time and nc_values_dims[1] == dimn_layer):
-                print('WARNING: unexpected dimension order, supported for offline waqfiles OS: %s'%(str(nc_values_dims)))
-                #select values
-                values_dimlens = [len(time_ids),len(layer_ids),0]
-                concat_axis = 2
-                if ghostcells_bool: # domain variable is present, so there are multiple domains
-                    values_selid = [time_ids,layer_ids,nonghost_ids]
-                else:
-                    values_selid = [time_ids,layer_ids,range(nc_values.shape[2])]
-            else:
-                raise Exception('ERROR: unexpected 3D dimension order: %s'%(str(nc_values_dims)))
-
-        else:
-            raise Exception('unanticipated number of dimensions: %s'%(nc_values_ndims))
-        """
-        
         
         #initialize array
         if iF == 0:
