@@ -152,14 +152,12 @@ def ghostcell_filter(file_nc):
     
     varn_domain = get_varname_mapnc(data_nc,'mesh2d_flowelem_domain')
     if varn_domain is not None: # domain variable is present, so there are multiple domains
-        ghostcells_bool = True
         domain = data_nc.variables[varn_domain][:]
         domain_no = np.bincount(domain).argmax() #meest voorkomende domeinnummer
         nonghost_ids = domain==domain_no
     else:
-        ghostcells_bool = False
         nonghost_ids = None
-    return ghostcells_bool, nonghost_ids
+    return nonghost_ids
 
 
 

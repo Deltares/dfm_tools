@@ -150,7 +150,10 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         for iD, nc_values_dimsel in enumerate(nc_values_dims):
             if nc_values_dimsel == dimn_faces: # domain variable is present, so there are multiple domains
                 nonghost_ids = ghostcell_filter(file_nc_sel)
-                values_selid.append(nonghost_ids)
+                if nonghost_ids is None:
+                    values_selid.append(range(nc_values.shape[iD]))
+                else:
+                    values_selid.append(nonghost_ids)
                 values_dimlens.append(0) #because concatenate axis
                 concat_axis = iD
             elif nc_values_dimsel == 'stations' or nc_values_dims[iD] == 'general_structures' or nc_values_dims[iD] == 'cross_section':
