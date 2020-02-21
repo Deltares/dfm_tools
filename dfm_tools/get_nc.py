@@ -155,8 +155,8 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
             
         # 1 dimension nc_values_dims==(faces/stations)
         if nc_values_ndims == 1:
-            if iF == 0: #setup initial array
-                values_all = np.ma.empty((0))
+            #select values
+            values_dimlens = [0]
             concat_axis = 0
             if ghostcells_bool and var_ghostaffected: # domain variable is present, so there are multiple domains
                 values_selid = [nonghost_ids]
@@ -169,9 +169,8 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         elif nc_values_ndims == 2:
             if not (nc_values_dims[0] == dimn_time): # and nc_values_dims[1] == dimn_faces
                 raise Exception('ERROR: unexpected dimension order, should be something like (time, faces/stations): %s'%(str(nc_values_dims)))
-            if iF == 0: #setup initial array
-                values_all = np.ma.empty((len(time_ids),0))    
             #select values
+            values_dimlens = [len(time_ids),0]
             concat_axis = 1
             if ghostcells_bool and var_ghostaffected: # domain variable is present, so there are multiple domains
                 values_selid = [time_ids,nonghost_ids]
@@ -185,9 +184,8 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
             #if not (nc_values_dims[0] == dimn_time and nc_values_dims[2] == dimn_layer): # and nc_values_dims[1] == dimn_faces
             #    raise Exception('ERROR: unexpected dimension order, should be something like (time, faces/stations, layers): %s'%(str(nc_values_dims)))
             if (nc_values_dims[0] == dimn_time and nc_values_dims[2] == dimn_layer): # and nc_values_dims[1] == dimn_faces
-                if iF == 0: #setup initial array
-                    values_all = np.ma.empty((len(time_ids),0,len(layer_ids)))
                 #select values
+                values_dimlens = [len(time_ids),0,len(layer_ids)]
                 concat_axis = 1
                 if ghostcells_bool and var_ghostaffected: # domain variable is present, so there are multiple domains
                     values_selid = [time_ids,nonghost_ids,layer_ids]
@@ -197,9 +195,8 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
                     values_selid = [time_ids,range(nc_values.shape[1]),layer_ids]
             elif (nc_values_dims[0] == dimn_time and nc_values_dims[1] == dimn_layer):
                 print('WARNING: unexpected dimension order, supported for offline waqfiles OS: %s'%(str(nc_values_dims)))
-                if iF == 0: #setup initial array
-                    values_all = np.ma.empty((len(time_ids),len(layer_ids),0))
                 #select values
+                values_dimlens = [len(time_ids),len(layer_ids),0]
                 concat_axis = 2
                 if ghostcells_bool and var_ghostaffected: # domain variable is present, so there are multiple domains
                     values_selid = [time_ids,layer_ids,nonghost_ids]
@@ -211,6 +208,10 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         else:
             raise Exception('unanticipated number of dimensions: %s'%(nc_values_ndims))
         
+        #initialize array
+        if iF == 0:
+            values_all = np.ma.empty(values_dimlens)
+        #concatenate array
         values_all = np.ma.concatenate([values_all,nc_values[values_selid]],axis=concat_axis)
         
         #add metadata
