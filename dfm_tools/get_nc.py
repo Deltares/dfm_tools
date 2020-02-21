@@ -168,7 +168,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
             else:
                 #values_all = np.ma.concatenate([values_all,nc_values[:]],axis=concat_axis)
                 values_selid = [range(nc_values.shape[0])]
-            values_all = np.ma.concatenate([values_all,nc_values[values_selid]],axis=concat_axis)
+            #values_all = np.ma.concatenate([values_all,nc_values[values_selid]],axis=concat_axis)
 
         # 2 dimensions nc_values_dims==(time, faces/stations)
         elif nc_values_ndims == 2:
@@ -188,7 +188,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
             else: #no selection
                 #values_all = np.ma.concatenate([values_all,nc_values[time_ids,:]],axis=concat_axis)
                 values_selid = [time_ids,range(nc_values.shape[1])]
-            values_all = np.ma.concatenate([values_all,nc_values[values_selid]],axis=concat_axis)    
+            #values_all = np.ma.concatenate([values_all,nc_values[values_selid]],axis=concat_axis)    
         
         # 3 dimensions nc_values_dims==(time, faces/stations, layers)
         elif nc_values_ndims == 3:
@@ -209,7 +209,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
                 else: #no selection
                     #values_all = np.ma.concatenate([values_all,nc_values[time_ids,:,layer_ids]],axis=concat_axis)
                     values_selid = [time_ids,range(nc_values.shape[1]),layer_ids]
-                values_all = np.ma.concatenate([values_all,nc_values[values_selid]],axis=concat_axis)
+                #values_all = np.ma.concatenate([values_all,nc_values[values_selid]],axis=concat_axis)
             elif (nc_values_dims[0] == dimn_time and nc_values_dims[1] == dimn_layer):
                 print('WARNING: unexpected dimension order, supported for offline waqfiles OS: %s'%(str(nc_values_dims)))
                 if iF == 0: #setup initial array
@@ -223,12 +223,14 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
                 else:
                     #values_all = np.ma.concatenate([values_all,nc_values[time_ids,layer_ids,:]],axis=concat_axis)
                     values_selid = [time_ids,layer_ids,range(nc_values.shape[2])]
-                values_all = np.ma.concatenate([values_all,nc_values[values_selid]],axis=concat_axis)
+                #values_all = np.ma.concatenate([values_all,nc_values[values_selid]],axis=concat_axis)
             else:
                 raise Exception('ERROR: unexpected 3D dimension order: %s'%(str(nc_values_dims)))
 
         else:
             raise Exception('unanticipated number of dimensions: %s'%(nc_values_ndims))
+        
+        values_all = np.ma.concatenate([values_all,nc_values[values_selid]],axis=concat_axis)
         
         #add metadata
         values_all.var_varname = varname
