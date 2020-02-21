@@ -147,7 +147,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     
     for iF, file_nc_sel in enumerate(file_ncs):
         if len(file_ncs) > 1:
-            print('processing partitioned netcdf data from domain %04d of %04d'%(iF, len(file_ncs)-1))
+            print('processing mapdata from domain %04d of %04d'%(iF, len(file_ncs)-1))
         
         nc_varkeys, nc_dimkeys, nc_values, nc_values_shape, nc_values_dims = get_ncvardims(file_nc_sel, varname)
         nc_values_ndims = len(nc_values_shape)
