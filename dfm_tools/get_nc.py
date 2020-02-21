@@ -68,13 +68,8 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     dimn_layer = get_varname_mapnc(data_nc,'nmesh2d_layer')
     if dimn_layer is None or dimn_layer not in nc_values_dims: #no layer dimension in model and/or variable
         if layer is not None:
-            #if layer is str('all') or layer == 0 or layer == [0]: #even for 2D model without layer dimension, it is allowed to ask for 'all' layers
-            #    nlayers = 1 #has to be one for nlayers-1 test
-            #    layer_ids = [0] #cannot be range, because range(0,0) has not np.min()
-            #else:
             raise Exception('ERROR: netcdf variable (%s) does not contain layers, but parameter layer is provided'%(varname))
     else: #layers are present in variable
-        #nlayers = nc_values_shape[2]
         dimn_layer_id = nc_values_dims.index(dimn_layer)
         nlayers = nc_values_shape[dimn_layer_id]
         if layer is None:
