@@ -160,10 +160,11 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
                     values_selid.append(nonghost_ids)
                 else:
                     values_selid.append(range(nc_values.shape[iD]))
-                values_dimlens.append(0)
+                values_dimlens.append(0) #because concatenate axis
             elif nc_values_dimsel == 'stations' or nc_values_dims[iD] == 'general_structures' or nc_values_dims[iD] == 'cross_section':
-                values_selid.append([station_ids])
-                values_dimlens.append(len(station_ids))
+                values_selid.append(station_ids)
+                values_dimlens.append(0) #because concatenate axis
+                #values_dimlens.append(len(station_ids))
             elif nc_values_dimsel == dimn_time:
                 values_selid.append(time_ids)
                 values_dimlens.append(len(time_ids))
