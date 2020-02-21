@@ -157,18 +157,13 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         if nc_values_ndims == 1:
             if iF == 0: #setup initial array
                 values_all = np.ma.empty((0))
-            #values = nc_values[:]
             concat_axis = 0
             if ghostcells_bool and var_ghostaffected: # domain variable is present, so there are multiple domains
-                #values_all = np.ma.concatenate([values_all,nc_values[nonghost_ids]],axis=concat_axis)
                 values_selid = [nonghost_ids]
             elif 'stations' in nc_values_dims or 'general_structures' in nc_values_dims or 'cross_section' in nc_values_dims: #select stations instead of faces
-                #values_all = np.ma.concatenate([values_all,nc_values[station_ids]],axis=concat_axis)
                 values_selid = [station_ids]
             else:
-                #values_all = np.ma.concatenate([values_all,nc_values[:]],axis=concat_axis)
                 values_selid = [range(nc_values.shape[0])]
-            #values_all = np.ma.concatenate([values_all,nc_values[values_selid]],axis=concat_axis)
 
         # 2 dimensions nc_values_dims==(time, faces/stations)
         elif nc_values_ndims == 2:
@@ -177,18 +172,13 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
             if iF == 0: #setup initial array
                 values_all = np.ma.empty((len(time_ids),0))    
             #select values
-            #values = nc_values[time_ids,:]
             concat_axis = 1
             if ghostcells_bool and var_ghostaffected: # domain variable is present, so there are multiple domains
-                #values_all = np.ma.concatenate([values_all,nc_values[time_ids,nonghost_ids]],axis=concat_axis)
                 values_selid = [time_ids,nonghost_ids]
             elif 'stations' in nc_values_dims or 'general_structures' in nc_values_dims or 'cross_section' in nc_values_dims: #select stations instead of faces
-                #values_all = np.ma.concatenate([values_all,nc_values[time_ids,station_ids]],axis=concat_axis)
                 values_selid = [time_ids,station_ids]
             else: #no selection
-                #values_all = np.ma.concatenate([values_all,nc_values[time_ids,:]],axis=concat_axis)
                 values_selid = [time_ids,range(nc_values.shape[1])]
-            #values_all = np.ma.concatenate([values_all,nc_values[values_selid]],axis=concat_axis)    
         
         # 3 dimensions nc_values_dims==(time, faces/stations, layers)
         elif nc_values_ndims == 3:
@@ -198,32 +188,23 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
                 if iF == 0: #setup initial array
                     values_all = np.ma.empty((len(time_ids),0,len(layer_ids)))
                 #select values
-                #values = nc_values[time_ids,:,layer_ids]
                 concat_axis = 1
                 if ghostcells_bool and var_ghostaffected: # domain variable is present, so there are multiple domains
-                    #values_all = np.ma.concatenate([values_all,nc_values[time_ids,nonghost_ids,layer_ids]],axis=concat_axis)
                     values_selid = [time_ids,nonghost_ids,layer_ids]
                 elif 'stations' in nc_values_dims or 'general_structures' in nc_values_dims or 'cross_section' in nc_values_dims: #select stations instead of faces
-                    #values_all = np.ma.concatenate([values_all,nc_values[time_ids,station_ids,layer_ids]],axis=concat_axis)
                     values_selid = [time_ids,station_ids,layer_ids]
                 else: #no selection
-                    #values_all = np.ma.concatenate([values_all,nc_values[time_ids,:,layer_ids]],axis=concat_axis)
                     values_selid = [time_ids,range(nc_values.shape[1]),layer_ids]
-                #values_all = np.ma.concatenate([values_all,nc_values[values_selid]],axis=concat_axis)
             elif (nc_values_dims[0] == dimn_time and nc_values_dims[1] == dimn_layer):
                 print('WARNING: unexpected dimension order, supported for offline waqfiles OS: %s'%(str(nc_values_dims)))
                 if iF == 0: #setup initial array
                     values_all = np.ma.empty((len(time_ids),len(layer_ids),0))
                 #select values
-                #values = nc_values[time_ids,layer_ids,:]
                 concat_axis = 2
                 if ghostcells_bool and var_ghostaffected: # domain variable is present, so there are multiple domains
-                    #values_all = np.ma.concatenate([values_all,nc_values[time_ids,layer_ids,nonghost_ids]],axis=concat_axis)
                     values_selid = [time_ids,layer_ids,nonghost_ids]
                 else:
-                    #values_all = np.ma.concatenate([values_all,nc_values[time_ids,layer_ids,:]],axis=concat_axis)
                     values_selid = [time_ids,layer_ids,range(nc_values.shape[2])]
-                #values_all = np.ma.concatenate([values_all,nc_values[values_selid]],axis=concat_axis)
             else:
                 raise Exception('ERROR: unexpected 3D dimension order: %s'%(str(nc_values_dims)))
 
