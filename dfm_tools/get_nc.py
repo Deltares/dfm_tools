@@ -180,7 +180,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
             elif 'stations' in nc_values_dims or 'general_structures' in nc_values_dims or 'cross_section' in nc_values_dims: #select stations instead of faces
                 values_all = np.ma.concatenate([values_all,nc_values[time_ids,station_ids]],axis=concat_axis)
             else: #no selection
-                values_all = np.ma.concatenate([values_all,nc_values[:]],axis=concat_axis)
+                values_all = np.ma.concatenate([values_all,nc_values[time_ids,:]],axis=concat_axis)
         
         # 3 dimensions nc_values_dims==(time, faces/stations, layers)
         elif nc_values_ndims == 3:
