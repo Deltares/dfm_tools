@@ -59,8 +59,8 @@ class UGrid:
             edge_verts = None
             
         #remove ghost cells from faces and verts
-        ghostcells_bool, nonghost_ids = ghostcell_filter(file_nc)
-        if ghostcells_bool:
+        nonghost_ids = ghostcell_filter(file_nc)
+        if nonghost_ids is not None:
             mesh2d_face_nodes = mesh2d_face_nodes[nonghost_ids]
             verts = verts[nonghost_ids]
         
