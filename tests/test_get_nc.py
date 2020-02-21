@@ -506,7 +506,10 @@ def test_getxzcoordsonintersection_plotcrossect(file_nc):
     crs_verts = get_xzcoords_onintersection(file_nc=file_nc, line_array=line_array, intersect_gridnos=intersect_gridnos, intersect_coords=intersect_coords, timestep=timestep, calcdist_fromlatlon=calcdist_fromlatlon, multipart=multipart)
     
     #get data to plot
-    data_frommap = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sa1', timestep=timestep, layer='all', multipart=multipart)
+    if 'DFM_OUTPUT_RMM_dflowfm' in file_nc:
+        data_frommap = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sa1', timestep=timestep, multipart=multipart)
+    else:
+        data_frommap = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sa1', timestep=timestep, layer='all', multipart=multipart)
     
     #plot crossed cells (gridnos) in first plot
     print(layno)#data_frommap_flat = data_frommap[0,intersect_gridnos,layno]
