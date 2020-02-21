@@ -34,7 +34,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
 
     #TIMES CHECKS
     dimn_time = get_varname_mapnc(data_nc,'time')
-    if dimn_time is None or dimn_time not in nc_values_dims: #dimension time is not available in variable
+    if dimn_time not in nc_values_dims: #dimension time is not available in variable
         if timestep is not None:
             raise Exception('ERROR: netcdf file variable (%s) does not contain times, but parameter timestep is provided'%(varname))
     else: #time is first dimension
@@ -66,7 +66,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     
     #LAYER CHECKS
     dimn_layer = get_varname_mapnc(data_nc,'nmesh2d_layer')
-    if dimn_layer is None or dimn_layer not in nc_values_dims: #no layer dimension in model and/or variable
+    if dimn_layer not in nc_values_dims: #no layer dimension in model and/or variable
         if layer is not None:
             raise Exception('ERROR: netcdf variable (%s) does not contain layers, but parameter layer is provided'%(varname))
     else: #layers are present in variable
@@ -132,13 +132,6 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
             raise Exception('ERROR: requested highest station id (%d) is larger than available in netcdf file (%d)'%(np.max(station_ids),len(station_name_list_pd)-1))
      
     
-    #check faces existence, variable could have ghost cells if partitioned
-    dimn_faces = get_varname_mapnc(data_nc,'mesh2d_nFaces')
-    if dimn_faces in nc_values_dims:
-        var_ghostaffected = True
-    else:
-        var_ghostaffected = False
-    
     file_ncs = get_ncfilelist(file_nc, multipart)
     
     
@@ -148,17 +141,23 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         
         nc_varkeys, nc_dimkeys, nc_values, nc_values_shape, nc_values_dims = get_ncvardims(file_nc_sel, varname)
         nc_values_ndims = len(nc_values_shape)
-        if var_ghostaffected:
+        
+        #check faces existence, variable could have ghost cells if partitioned
+        dimn_faces = get_varname_mapnc(data_nc,'mesh2d_nFaces')
+        if dimn_faces in nc_values_dims:
             ghostcells_bool, nonghost_ids = ghostcell_filter(file_nc_sel)
+            #concat_axis = nc_values_dims.index(dimn_faces)
         else:
             ghostcells_bool = False
+            #nonghost_ids = range
+            
             
         # 1 dimension nc_values_dims==(faces/stations)
         if nc_values_ndims == 1:
             #select values
             values_dimlens = [0]
             concat_axis = 0
-            if ghostcells_bool and var_ghostaffected: # domain variable is present, so there are multiple domains
+            if ghostcells_bool: # domain variable is present, so there are multiple domains
                 values_selid = [nonghost_ids]
             elif 'stations' in nc_values_dims or 'general_structures' in nc_values_dims or 'cross_section' in nc_values_dims: #select stations instead of faces
                 values_selid = [station_ids]
@@ -172,7 +171,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
             #select values
             values_dimlens = [len(time_ids),0]
             concat_axis = 1
-            if ghostcells_bool and var_ghostaffected: # domain variable is present, so there are multiple domains
+            if ghostcells_bool: # domain variable is present, so there are multiple domains
                 values_selid = [time_ids,nonghost_ids]
             elif 'stations' in nc_values_dims or 'general_structures' in nc_values_dims or 'cross_section' in nc_values_dims: #select stations instead of faces
                 values_selid = [time_ids,station_ids]
@@ -187,7 +186,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
                 #select values
                 values_dimlens = [len(time_ids),0,len(layer_ids)]
                 concat_axis = 1
-                if ghostcells_bool and var_ghostaffected: # domain variable is present, so there are multiple domains
+                if ghostcells_bool: # domain variable is present, so there are multiple domains
                     values_selid = [time_ids,nonghost_ids,layer_ids]
                 elif 'stations' in nc_values_dims or 'general_structures' in nc_values_dims or 'cross_section' in nc_values_dims: #select stations instead of faces
                     values_selid = [time_ids,station_ids,layer_ids]
@@ -198,7 +197,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
                 #select values
                 values_dimlens = [len(time_ids),len(layer_ids),0]
                 concat_axis = 2
-                if ghostcells_bool and var_ghostaffected: # domain variable is present, so there are multiple domains
+                if ghostcells_bool: # domain variable is present, so there are multiple domains
                     values_selid = [time_ids,layer_ids,nonghost_ids]
                 else:
                     values_selid = [time_ids,layer_ids,range(nc_values.shape[2])]
