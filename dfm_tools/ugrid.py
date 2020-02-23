@@ -68,8 +68,9 @@ class UGrid:
         ugrid = UGrid(mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes, verts, mesh2d_node_z=mesh2d_node_z, edge_verts=edge_verts)
         return ugrid
 
-    def polygon_intersect(self, line_array):
+    def polygon_intersect(self, line_array, optimize_dist=None):
         import numpy as np
+        from matplotlib.path import Path
         try:
             from shapely.geometry import Polygon, LineString
         except:
@@ -87,11 +88,39 @@ class UGrid:
         verts_ymax = np.nanmax(self.verts[:,:,1].data,axis=1)
         verts_ymin = np.nanmin(self.verts[:,:,1].data,axis=1)
         
-        cellinlinebox_all_bool = (((np.min(line_array[:,0]) < verts_xmax) &
-                                   (np.max(line_array[:,0]) > verts_xmin)) &
-                                  ((np.min(line_array[:,1]) < verts_ymax) & 
-                                   (np.max(line_array[:,1]) > verts_ymin))
-                                  )
+        if optimize_dist is None:
+            cellinlinebox_all_bool = (((np.min(line_array[:,0]) < verts_xmax) &
+                                       (np.max(line_array[:,0]) > verts_xmin)) &
+                                      ((np.min(line_array[:,1]) < verts_ymax) & 
+                                       (np.max(line_array[:,1]) > verts_ymin))
+                                      )
+        elif type(optimize_dist) is int:
+            #calculate angles wrt x axis
+            angles_wrtx = []
+            nlinecoords = line_array.shape[0]
+            for iL in range(nlinecoords-1):
+                dx = line_array[iL+1,0] - line_array[iL,0]
+                dy = line_array[iL+1,1] - line_array[iL,1]
+                angles_wrtx.append(np.rad2deg(np.arctan2(dy,dx)))
+            angles_toprev = np.concatenate([[90],np.diff(angles_wrtx),[90]])
+            angles_wrtx_ext = np.concatenate([[angles_wrtx[0]-90],np.array(angles_wrtx),[angles_wrtx[-1]+90]])
+            angtot_wrtx = angles_wrtx_ext[:-1] + 0.5*(180+angles_toprev)
+            #distance over xy-axis from original points
+            dxynewpoints = optimize_dist * np.array([np.cos(np.deg2rad(angtot_wrtx)),np.sin(np.deg2rad(angtot_wrtx))]).T
+            newpoints1 = line_array+dxynewpoints
+            newpoints2 = line_array-dxynewpoints
+            pol_inpol = np.concatenate([newpoints1, np.flip(newpoints2,axis=0)])
+            pol_inpol_path = Path(pol_inpol)
+            bool_all = []
+            for iC in range(self.verts.shape[1]):
+                test = pol_inpol_path.contains_points(self.verts[:,iC,:])
+                bool_all.append(test)
+            test_all = np.array(bool_all)
+            cellinlinebox_all_bool = (test_all==True).any(axis=0)
+        else:
+            raise Exception('ERROR: invalid type for optimize_dist argument')
+        
+        
         verts_inlinebox = self.verts[cellinlinebox_all_bool,:,:]
         verts_inlinebox_nos = np.where(cellinlinebox_all_bool)[0]
         
