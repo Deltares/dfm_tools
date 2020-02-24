@@ -94,7 +94,7 @@ class UGrid:
                                       ((np.min(line_array[:,1]) < verts_ymax) & 
                                        (np.max(line_array[:,1]) > verts_ymin))
                                       )
-        elif type(optimize_dist) is int:
+        elif type(optimize_dist) is int or type(optimize_dist) is float:
             #calculate angles wrt x axis
             angles_wrtx = []
             nlinecoords = line_array.shape[0]
