@@ -178,25 +178,25 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         #concatenate array
         values_all = np.ma.concatenate([values_all,nc_values[values_selid]],axis=concat_axis)
         
-        #add metadata
-        values_all.var_varname = varname
-        values_all.var_dimensionnames = nc_values_dims
-        if dimn_time in nc_values_dims: #only faces/stations dimensions, no times or layers
-            values_all.var_times = data_nc_datetimes_pd.iloc[time_ids]
-        else:
-            values_all.var_times = None
-        if dimn_layer in nc_values_dims: #only time and faces/stations dimensions, no layers
-            values_all.var_layers = layer_ids
-        else:
-            values_all.var_layers = None
-        if 'stations' in nc_values_dims or 'general_structures' in nc_values_dims or 'cross_section' in nc_values_dims:
-            values_all.var_stations = station_name_list_pd.iloc[station_ids]
-        else:
-            values_all.var_stations = None
-        #if :
-        #    values_all.stations = ...
-        #else:
-        #    values_all.stations = None
+    #add metadata
+    values_all.var_varname = varname
+    values_all.var_dimensionnames = nc_values_dims
+    if dimn_time in nc_values_dims: #only faces/stations dimensions, no times or layers
+        values_all.var_times = data_nc_datetimes_pd.iloc[time_ids]
+    else:
+        values_all.var_times = None
+    if dimn_layer in nc_values_dims: #only time and faces/stations dimensions, no layers
+        values_all.var_layers = layer_ids
+    else:
+        values_all.var_layers = None
+    if 'stations' in nc_values_dims or 'general_structures' in nc_values_dims or 'cross_section' in nc_values_dims:
+        values_all.var_stations = station_name_list_pd.iloc[station_ids]
+    else:
+        values_all.var_stations = None
+    #if :
+    #    values_all.stations = ...
+    #else:
+    #    values_all.stations = None
     return values_all
 
 
