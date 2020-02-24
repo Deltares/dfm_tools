@@ -69,9 +69,6 @@ Known bugs
 TODO wishlist
 --------
 - select/check functions in dflowutil folder and merge with dfm_tools
-- optimize intersect, calc box around line with angles between lineparts
-	- only calc inpolygon from subset of first lineboundbox filter
-	- only needs one line for inpolygonbox instead of two. Dan kan begin/eindcoord met rechte hoek (+90/-90) op het begin/einde ipv 0
 - add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?) (refer depth wrt reference level, water level or bed level, z variable is not correct in dfm-mapfile yet)
 - retrieve correct depths:
 	- add depth array (interfaces/centers) to his and map variables (z/sigma layer calculation is already in get_modeldata_onintersection function)
@@ -82,11 +79,11 @@ TODO wishlist
 - make merc keyword always optional by testing for minmax all vertsx between -181 and 361 and minmax all vertsy (lat) between -91 and 91 (+range for overlap for eg gtsm model)
 - optimize get_ncmodeldata for layerdepths/bedlevel/waterlevel (second intersect function), only retrieve necessary information for crossection
 - add inpolygon/inboundbox selection of data:
+	- optimize_dist keyword now draws inpolygon around line
 	- to optimize intersect function when retrieving bed level and water level (do that with len(firstlinepart) optional keyword)
 	- to retrieve other mapdata data faster
-	- https://stackoverflow.com/questions/31542843/inpolygon-for-python-examples-of-matplotlib-path-path-contains-points-method
 - make patched zt plots from hisfile (careful, z interfaces data in hisfile is wrong)
-- as user: get stationlist, dimensionlist, variablelist, more? (partly internally available)
+- as user: get dimensionlist, variablelist, more? (partly internally available)
 - add polygon read/write function (also ldb files)
 - add polygon ginput function (click in plot) (already partly exists in intersect/slice testscript)
 - pyugrid (ghostcells en mapmergen worden afgehandeld?), voorbeelden in ieder geval als inspiratie voor plotopties):

@@ -29,9 +29,10 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     data_nc = Dataset(file_nc)
     
     #CHECK VARNAME, IS THERE A SEPARATE DEFINITION TO RETRIEVE DATA?
-    if varname == 'station_name' or varname == 'general_structure_id' or varname == 'cross_section_name':
+    varname_stat_validvals = ['station_name', 'general_structure_id', 'cross_section_name']
+    if varname in varname_stat_validvals:
         raise Exception('ERROR: variable "%s" should be retrieved with separate function:\nstation_names = get_hisstationlist(file_nc=file_nc, varname_stat="%s")'%(varname,varname))
-
+    
     #TIMES CHECKS
     dimn_time = get_varname_mapnc(data_nc,'time')
     if dimn_time not in nc_values_dims: #dimension time is not available in variable
