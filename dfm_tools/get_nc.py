@@ -159,8 +159,9 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
                 concat_axis = iD
             elif nc_values_dimsel == 'stations' or nc_values_dims[iD] == 'general_structures' or nc_values_dims[iD] == 'cross_section':
                 values_selid.append(station_ids)
-                values_dimlens.append(0) #because concatenate axis
-                concat_axis = iD
+                #values_dimlens.append(0) #because concatenate axis
+                #concat_axis = iD
+                values_dimlens.append(len(station_ids))
             elif nc_values_dimsel == dimn_time:
                 values_selid.append(time_ids)
                 values_dimlens.append(len(time_ids))
@@ -172,12 +173,15 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
                 values_selid.append(range(nc_values.shape[iD]))
                 values_dimlens.append(nc_values.shape[iD])
         
-        #initialize array
-        if iF == 0:
-            values_all = np.ma.empty(values_dimlens)
-        #concatenate array
-        values_all = np.ma.concatenate([values_all,nc_values[values_selid]],axis=concat_axis)
-        
+        if len(file_ncs) > 1:
+            #initialize array
+            if iF == 0:
+                values_all = np.ma.empty(values_dimlens)
+            #concatenate array
+            values_all = np.ma.concatenate([values_all,nc_values[values_selid]],axis=concat_axis)
+        else:
+            values_all = nc_values[values_selid]
+            
     #add metadata
     values_all.var_varname = varname
     values_all.var_dimensionnames = nc_values_dims
