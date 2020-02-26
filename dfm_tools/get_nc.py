@@ -47,7 +47,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         if timestep is str('all'):
             time_ids = range(len(data_nc_datetimes_pd))
         elif type(timestep)==list or type(timestep)==range or type(timestep)==type(np.arange(1,2,0.5)):
-            if type(timestep[0])==int or type(timestep[0])==np.int64 : #list/range/ndarray of int
+            if type(timestep[0])==int or type(timestep[0])==np.int64: #list/range/ndarray of int
                 time_ids = timestep
             elif type(timestep[0])==type(dt.datetime(1,1,1)) or type(timestep[0])==type(np.datetime64(year=1900,month=1,day=1)): #list/range/ndarray of datetime
                 time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, timestep)
@@ -79,7 +79,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         if layer is str('all'):
             layer_ids = range(nlayers)
         elif type(layer)==list or type(layer)==range or type(layer)==type(np.arange(1,2,0.5)):
-            if type(layer[0])==int: #list/range/ndarray of int
+            if type(layer[0])==int or type(layer[0])==np.int64: #list/range/ndarray of int
                 layer_ids = np.unique(layer)
             else:
                 raise Exception('ERROR: timestep lay type not anticipated (%s), (list/range/ndarray of) int are accepted (or "all")'%(type(layer)))            
@@ -114,7 +114,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         if station is str('all'):
             station_ids = range(len(station_name_list_pd))
         elif type(station)==list or type(station)==range or type(station)==type(np.arange(1,2,0.5)):
-            if type(station[0])==int: #list/range/ndarray of int
+            if type(station[0])==int or type(station[0])==np.int64: #list/range/ndarray of int
                 station_ids = station
             elif type(station[0])==str: #list/range/ndarray of str
                 station_ids = get_stationid_fromstationlist(station_name_list_pd, station)
