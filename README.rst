@@ -181,7 +181,7 @@ Related information
 	- ``pytest -v --tb=short -m unittest``
 	- ``pytest -v --tb=short -m systemtest``
 	- ``pytest -v --tb=short -m acceptance``
-	- ``pytest -v --tb=short tests\test_grid.py::test_mapOS``
+	- ``pytest -v --tb=short tests\test_get_nc.py::test_getplotmapWAQOS``
 
 Credits
 -------
