@@ -126,10 +126,9 @@ def test_getplotfoudata():
 def test_getnetdata_plotnet(file_nc):
     """
     this test retrieves grid data and plots it
-    """
-    """
-    file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\Grevelingen_FM_grid_20190603_net.nc')
-    file_nc = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\01_Rooster\final_totaalmodel\rooster_rmm_v1p5_net.nc'
+    
+    file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','Grevelingen_FM_grid_20190603_net.nc')
+    file_nc = 'p:\\11205258-006-kpp2020_rmm-g6\\C_Work\\01_Rooster\\final_totaalmodel\\rooster_rmm_v1p5_net.nc'
     """
     
     dir_output = getmakeoutputdir(function_name=inspect.currentframe().f_code.co_name)
@@ -242,7 +241,7 @@ def test_gethismodeldata():
 def test_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
     """
     this test retrieves grid data, retrieves map data, and plots it
-    file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc')
+    file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc')
     """
     dir_output = getmakeoutputdir(function_name=inspect.currentframe().f_code.co_name)
     #dir_output = dir_testoutput
@@ -337,7 +336,7 @@ def test_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
 
 
 
-@pytest.mark.parametrize("file_nc", [pytest.param(r'p:\11201806-sophie\Oosterschelde\WAQ\r03\postprocessing\oost_tracer_map.nc', id='oost_tracer_map'),
+@pytest.mark.parametrize("file_nc", [pytest.param(r'p:\11201806-sophie\Oosterschelde\WAQ\r03\postprocessing\oost_tracer_map_backup.nc', id='oost_tracer_map'),
                                      pytest.param(r'p:\11201806-sophie\Oosterschelde\WAQ\r02\postprocessing\oost_tracer_2_map.nc', id='oost_tracer_2_map')])
 @pytest.mark.acceptance
 def test_getplotmapWAQOS(file_nc):
@@ -389,7 +388,10 @@ def test_getxzcoordsonintersection_plotcrossect(file_nc):
     """
     #manual test variables (run this script first to get the variable dir_testoutput)
     dir_output = dir_testoutput
+    file_nc = os.path.join(dir_testinput,r'DFM_sigma_curved_bend\DFM_OUTPUT_cb_3d\cb_3d_map.nc')
+    file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc')
     file_nc = 'p:\\1204257-dcsmzuno\\2013-2017\\3D-DCSM-FM\\A17b\\DFM_OUTPUT_DCSM-FM_0_5nm\\DCSM-FM_0_5nm_0000_map.nc'
+    file_nc = 'p:\\11205258-006-kpp2020_rmm-g6\\C_Work\\08_RMM_FMmodel\\computations\\run_156\\DFM_OUTPUT_RMM_dflowfm\\RMM_dflowfm_0000_map.nc'
     """
     
     import matplotlib.pyplot as plt
@@ -412,6 +414,7 @@ def test_getxzcoordsonintersection_plotcrossect(file_nc):
                                [2913.47878063, 2102.48057382]])
         val_ylim = None
         clim_bl = None
+        #optimize_dist = None
     elif 'Grevelingen' in file_nc:
         timestep = 3
         layno = 35
@@ -426,6 +429,7 @@ def test_getxzcoordsonintersection_plotcrossect(file_nc):
         #                       [ 65288.43784807, 419360.49305567]])
         val_ylim = [-25,5]
         clim_bl = None
+        #optimize_dist = 150
     elif 'MB_02_waq_0000_map' in file_nc:
         timestep = 30
         layno = 5
@@ -438,6 +442,7 @@ def test_getxzcoordsonintersection_plotcrossect(file_nc):
         #                       [-70.42078633,  42.24876018]])
         val_ylim = None
         clim_bl = None
+        #optimize_dist = None
     elif 'DCSM-FM_0_5nm' in file_nc:
         timestep = 365
         layno = 5
@@ -452,6 +457,7 @@ def test_getxzcoordsonintersection_plotcrossect(file_nc):
                                [ 8.58447136, 58.66874192]])
         val_ylim = None
         clim_bl = [-500,0]
+        #optimize_dist = 0.1
     elif 'DFM_OUTPUT_RMM_dflowfm' in file_nc:
         timestep = 365
         layno = None
@@ -478,6 +484,7 @@ def test_getxzcoordsonintersection_plotcrossect(file_nc):
                                [148566.74077473, 426094.25994327]])
         val_ylim = None
         clim_bl = [-10,10]
+        #optimize_dist = 150
     else:
         raise Exception('ERROR: no settings provided for this mapfile')
     
@@ -502,7 +509,7 @@ def test_getxzcoordsonintersection_plotcrossect(file_nc):
     
     runtime_tstart = dt.datetime.now() #start timer
     #intersect function, find crossed cell numbers (gridnos) and coordinates of intersection (2 per crossed cell)
-    intersect_gridnos, intersect_coords = ugrid.polygon_intersect(line_array)
+    intersect_gridnos, intersect_coords = ugrid.polygon_intersect(line_array, optimize_dist=None)
     #derive vertices from cross section (distance from first point)
     crs_verts = get_xzcoords_onintersection(file_nc=file_nc, line_array=line_array, intersect_gridnos=intersect_gridnos, intersect_coords=intersect_coords, timestep=timestep, calcdist_fromlatlon=calcdist_fromlatlon, multipart=multipart)
     

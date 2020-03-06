@@ -29,9 +29,10 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     data_nc = Dataset(file_nc)
     
     #CHECK VARNAME, IS THERE A SEPARATE DEFINITION TO RETRIEVE DATA?
-    if varname == 'station_name' or varname == 'general_structure_id' or varname == 'cross_section_name':
+    varname_stat_validvals = ['station_name', 'general_structure_id', 'cross_section_name']
+    if varname in varname_stat_validvals:
         raise Exception('ERROR: variable "%s" should be retrieved with separate function:\nstation_names = get_hisstationlist(file_nc=file_nc, varname_stat="%s")'%(varname,varname))
-
+    
     #TIMES CHECKS
     dimn_time = get_varname_mapnc(data_nc,'time')
     if dimn_time not in nc_values_dims: #dimension time is not available in variable
@@ -46,7 +47,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         if timestep is str('all'):
             time_ids = range(len(data_nc_datetimes_pd))
         elif type(timestep)==list or type(timestep)==range or type(timestep)==type(np.arange(1,2,0.5)):
-            if type(timestep[0])==int: #list/range/ndarray of int
+            if type(timestep[0])==int or type(timestep[0])==np.int64: #list/range/ndarray of int
                 time_ids = timestep
             elif type(timestep[0])==type(dt.datetime(1,1,1)) or type(timestep[0])==type(np.datetime64(year=1900,month=1,day=1)): #list/range/ndarray of datetime
                 time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, timestep)
@@ -78,7 +79,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         if layer is str('all'):
             layer_ids = range(nlayers)
         elif type(layer)==list or type(layer)==range or type(layer)==type(np.arange(1,2,0.5)):
-            if type(layer[0])==int: #list/range/ndarray of int
+            if type(layer[0])==int or type(layer[0])==np.int64: #list/range/ndarray of int
                 layer_ids = np.unique(layer)
             else:
                 raise Exception('ERROR: timestep lay type not anticipated (%s), (list/range/ndarray of) int are accepted (or "all")'%(type(layer)))            
@@ -113,7 +114,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         if station is str('all'):
             station_ids = range(len(station_name_list_pd))
         elif type(station)==list or type(station)==range or type(station)==type(np.arange(1,2,0.5)):
-            if type(station[0])==int: #list/range/ndarray of int
+            if type(station[0])==int or type(station[0])==np.int64: #list/range/ndarray of int
                 station_ids = station
             elif type(station[0])==str: #list/range/ndarray of str
                 station_ids = get_stationid_fromstationlist(station_name_list_pd, station)
@@ -158,8 +159,9 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
                 concat_axis = iD
             elif nc_values_dimsel == 'stations' or nc_values_dims[iD] == 'general_structures' or nc_values_dims[iD] == 'cross_section':
                 values_selid.append(station_ids)
-                values_dimlens.append(0) #because concatenate axis
-                concat_axis = iD
+                #values_dimlens.append(0) #because concatenate axis
+                #concat_axis = iD
+                values_dimlens.append(len(station_ids))
             elif nc_values_dimsel == dimn_time:
                 values_selid.append(time_ids)
                 values_dimlens.append(len(time_ids))
@@ -171,31 +173,34 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
                 values_selid.append(range(nc_values.shape[iD]))
                 values_dimlens.append(nc_values.shape[iD])
         
-        #initialize array
-        if iF == 0:
-            values_all = np.ma.empty(values_dimlens)
-        #concatenate array
-        values_all = np.ma.concatenate([values_all,nc_values[values_selid]],axis=concat_axis)
-        
-        #add metadata
-        values_all.var_varname = varname
-        values_all.var_dimensionnames = nc_values_dims
-        if dimn_time in nc_values_dims: #only faces/stations dimensions, no times or layers
-            values_all.var_times = data_nc_datetimes_pd.iloc[time_ids]
+        if len(file_ncs) > 1:
+            #initialize array
+            if iF == 0:
+                values_all = np.ma.empty(values_dimlens)
+            #concatenate array
+            values_all = np.ma.concatenate([values_all,nc_values[values_selid]],axis=concat_axis)
         else:
-            values_all.var_times = None
-        if dimn_layer in nc_values_dims: #only time and faces/stations dimensions, no layers
-            values_all.var_layers = layer_ids
-        else:
-            values_all.var_layers = None
-        if 'stations' in nc_values_dims or 'general_structures' in nc_values_dims or 'cross_section' in nc_values_dims:
-            values_all.var_stations = station_name_list_pd.iloc[station_ids]
-        else:
-            values_all.var_stations = None
-        #if :
-        #    values_all.stations = ...
-        #else:
-        #    values_all.stations = None
+            values_all = nc_values[values_selid]
+            
+    #add metadata
+    values_all.var_varname = varname
+    values_all.var_dimensionnames = nc_values_dims
+    if dimn_time in nc_values_dims: #only faces/stations dimensions, no times or layers
+        values_all.var_times = data_nc_datetimes_pd.iloc[time_ids]
+    else:
+        values_all.var_times = None
+    if dimn_layer in nc_values_dims: #only time and faces/stations dimensions, no layers
+        values_all.var_layers = layer_ids
+    else:
+        values_all.var_layers = None
+    if 'stations' in nc_values_dims or 'general_structures' in nc_values_dims or 'cross_section' in nc_values_dims:
+        values_all.var_stations = station_name_list_pd.iloc[station_ids]
+    else:
+        values_all.var_stations = None
+    #if :
+    #    values_all.stations = ...
+    #else:
+    #    values_all.stations = None
     return values_all
 
 

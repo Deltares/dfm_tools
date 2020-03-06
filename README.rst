@@ -14,8 +14,8 @@ dfm_tools
         :alt: Documentation Status
 
 .. image:: https://pyup.io/repos/github/openearth/dfm_tools/shield.svg
-     :target: https://pyup.io/repos/github/openearth/dfm_tools/
-     :alt: Updates
+        :target: https://pyup.io/repos/github/openearth/dfm_tools/
+        :alt: Updates
 
 
 dfm_tools are Python post-processing tools for Delft3D FM model outputfiles (netCDF) and more
@@ -69,9 +69,6 @@ Known bugs
 TODO wishlist
 --------
 - select/check functions in dflowutil folder and merge with dfm_tools
-- optimize intersect, calc box around line with angles between lineparts
-	- only calc inpolygon from subset of first lineboundbox filter
-	- only needs one line for inpolygonbox instead of two. Dan kan begin/eindcoord met rechte hoek (+90/-90) op het begin/einde ipv 0
 - add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?) (refer depth wrt reference level, water level or bed level, z variable is not correct in dfm-mapfile yet)
 - retrieve correct depths:
 	- add depth array (interfaces/centers) to his and map variables (z/sigma layer calculation is already in get_modeldata_onintersection function)
@@ -82,11 +79,11 @@ TODO wishlist
 - make merc keyword always optional by testing for minmax all vertsx between -181 and 361 and minmax all vertsy (lat) between -91 and 91 (+range for overlap for eg gtsm model)
 - optimize get_ncmodeldata for layerdepths/bedlevel/waterlevel (second intersect function), only retrieve necessary information for crossection
 - add inpolygon/inboundbox selection of data:
+	- optimize_dist keyword now draws inpolygon around line
 	- to optimize intersect function when retrieving bed level and water level (do that with len(firstlinepart) optional keyword)
 	- to retrieve other mapdata data faster
-	- https://stackoverflow.com/questions/31542843/inpolygon-for-python-examples-of-matplotlib-path-path-contains-points-method
 - make patched zt plots from hisfile (careful, z interfaces data in hisfile is wrong)
-- as user: get stationlist, dimensionlist, variablelist, more? (partly internally available)
+- as user: get dimensionlist, variablelist, more? (partly internally available)
 - add polygon read/write function (also ldb files)
 - add polygon ginput function (click in plot) (already partly exists in intersect/slice testscript)
 - pyugrid (ghostcells en mapmergen worden afgehandeld?), voorbeelden in ieder geval als inspiratie voor plotopties):
@@ -125,7 +122,7 @@ TODO
 Related information
 --------
 - Create a separate python environment and link from Spyder:
-	- open command line and navigate to dfm_tools github folder, eg C:\\DATA\\GitHub\\dfm_tools
+	- open command line and navigate to dfm_tools github folder, eg C:\\DATA\\dfm_tools
 	- ``conda env create -f environment.yml`` (sometimes you need to press enter if it hangs extremely long)
 	- ``conda info --envs`` (shows dfm_tools_env virtual environment)
 	- ``conda activate dfm_tools_env``
@@ -139,25 +136,25 @@ Related information
 	- First request rights to contribute with the current developers
 	- Get a local checkout of the github repository:
 		- Download git from https://git-scm.com/download/win, install with default settings
-		- open command line in a folder where you want to clone the dfm_tools github repo, eg C:\\DATA\\GitHub
+		- open command line in a folder where you want to clone the dfm_tools github repo, eg C:\\DATA
 		- ``git clone https://github.com/openearth/dfm_tools.git`` (repos gets cloned to local drive, checkout of master branch)
 		- to update: navigate to dfm_tools folder in git bash window and ``git pull`` (combination of git fetch and git merge)
 	- Install your local github clone via pip (developer mode):
-		- open command window, navigate to dfm_tools folder, eg C:\\DATA\\GitHub\\dfm_tools
+		- open command window, navigate to dfm_tools folder, eg C:\\DATA\\dfm_tools
 		- optional: create and activate a separate Python virtual environment (see related information for a possible method)
 		- ``python -m pip install -e .`` (pip developer mode, any updates to the local folder by github (with ``git pull``) are immediately available in your python. It also installs all required packages)
 		- ``python -c "import dfm_tools; print(dfm_tools.__version)"`` (print version number of the installed dfm_tools package)
 	- Branching:
-		- open git bash window in local dfm_tools folder (eg C:\\DATA\\GitHub\\dfm_tools)
+		- open git bash window in local dfm_tools folder (eg C:\\DATA\\dfm_tools)
 		- ``git config --global user.email [emailaddress]``
 		- ``git config --global user.name [username]``
 		- Create your own branch option 1:
 			- manually create a branch on https://github.com/openearth/dfm_tools
-			- open git bash window in local dfm_tools folder (eg C:\\DATA\\GitHub\\dfm_tools)
+			- open git bash window in local dfm_tools folder (eg C:\\DATA\\dfm_tools)
 			- ``git remote update origin --prune`` (update local branch list)
 			- ``git checkout branchname`` (checkout branch)
 		- Create your own branch option 2:
-			- open git bash window in local dfm_tools folder (eg C:\\DATA\\GitHub\\dfm_tools)
+			- open git bash window in local dfm_tools folder (eg C:\\DATA\\dfm_tools)
 			- ``git checkout --branch branchname`` (create new branch and checkout, combination of git branch and git checkout commands)
 		- get clean checkout again (overwrite local changes):
 			- ``git fetch --all`` (fetches changes)
@@ -165,13 +162,13 @@ Related information
 			- ``git pull`` (fetches and merges changes, local checkout of repos branch is now updated again)
 
 	- Commit and push your changes to your online branch:
-		- open git bash window in local dfm_tools folder (eg C:\\DATA\\GitHub\\dfm_tools)
+		- open git bash window in local dfm_tools folder (eg C:\\DATA\\dfm_tools)
 		- optional: ``git pull origin master`` (gets edits from master to current local branch, might induce conflicts. maybe better to just push to your branch and then handle pull request on github website)
 		- ``git add .``
 		- ``git commit -m "message to be included with your commit"``
 		- ``git push`` (pushes changes to server, do not do this in while working in the master)
 	- increasing the version number (with bumpversion):
-		- open cmd window in local dfm_tools folder (eg C:\\DATA\\GitHub\\dfm_tools)
+		- open cmd window in local dfm_tools folder (eg C:\\DATA\\dfm_tools)
 		- optional: ``conda activate dfm_tools_env``
 		- ``bumpversion major`` or ``bumpversion minor`` or ``bumpversion patch`` (changes version numbers in files and commits changes)
 		- push your changes with ``git push`` (from git bash window or cmd also ok?)
@@ -184,7 +181,7 @@ Related information
 	- ``pytest -v --tb=short -m unittest``
 	- ``pytest -v --tb=short -m systemtest``
 	- ``pytest -v --tb=short -m acceptance``
-	- ``pytest -v --tb=short tests\test_grid.py::test_mapOS``
+	- ``pytest -v --tb=short tests\test_get_nc.py::test_getplotmapWAQOS``
 
 Credits
 -------

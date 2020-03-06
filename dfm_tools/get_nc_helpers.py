@@ -216,13 +216,16 @@ def get_hisstationlist(file_nc,varname_stat='station_name'):
     from netCDF4 import Dataset, chartostring
     import pandas as pd
     
-    data_nc = Dataset(file_nc)
-    #varn_station_name = get_varname_mapnc(data_nc,'station_name')
-    station_name_char = data_nc.variables[varname_stat][:]
-    station_name_list = chartostring(station_name_char)
-    
-    station_name_list_pd = pd.Series(station_name_list)
-    
+    varname_stat_validvals = ['station_name', 'general_structure_id', 'cross_section_name']
+    if varname_stat in varname_stat_validvals:
+        data_nc = Dataset(file_nc)
+        #varn_station_name = get_varname_mapnc(data_nc,'station_name')
+        station_name_char = data_nc.variables[varname_stat][:]
+        station_name_list = chartostring(station_name_char)
+        
+        station_name_list_pd = pd.Series(station_name_list)
+    else:
+        raise Exception('ERROR: invalid value provided for varname_stat argument (%s), should be one of: %s'%(varname_stat, varname_stat_validvals))
     return station_name_list_pd
 
 
