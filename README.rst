@@ -14,8 +14,8 @@ dfm_tools
         :alt: Documentation Status
 
 .. image:: https://pyup.io/repos/github/openearth/dfm_tools/shield.svg
-     :target: https://pyup.io/repos/github/openearth/dfm_tools/
-     :alt: Updates
+        :target: https://pyup.io/repos/github/openearth/dfm_tools/
+        :alt: Updates
 
 
 dfm_tools are Python post-processing tools for Delft3D FM model outputfiles (netCDF) and more
@@ -122,7 +122,7 @@ TODO
 Related information
 --------
 - Create a separate python environment and link from Spyder:
-	- open command line and navigate to dfm_tools github folder, eg C:\\DATA\\GitHub\\dfm_tools
+	- open command line and navigate to dfm_tools github folder, eg C:\\DATA\\dfm_tools
 	- ``conda env create -f environment.yml`` (sometimes you need to press enter if it hangs extremely long)
 	- ``conda info --envs`` (shows dfm_tools_env virtual environment)
 	- ``conda activate dfm_tools_env``
@@ -136,25 +136,25 @@ Related information
 	- First request rights to contribute with the current developers
 	- Get a local checkout of the github repository:
 		- Download git from https://git-scm.com/download/win, install with default settings
-		- open command line in a folder where you want to clone the dfm_tools github repo, eg C:\\DATA\\GitHub
+		- open command line in a folder where you want to clone the dfm_tools github repo, eg C:\\DATA
 		- ``git clone https://github.com/openearth/dfm_tools.git`` (repos gets cloned to local drive, checkout of master branch)
 		- to update: navigate to dfm_tools folder in git bash window and ``git pull`` (combination of git fetch and git merge)
 	- Install your local github clone via pip (developer mode):
-		- open command window, navigate to dfm_tools folder, eg C:\\DATA\\GitHub\\dfm_tools
+		- open command window, navigate to dfm_tools folder, eg C:\\DATA\\dfm_tools
 		- optional: create and activate a separate Python virtual environment (see related information for a possible method)
 		- ``python -m pip install -e .`` (pip developer mode, any updates to the local folder by github (with ``git pull``) are immediately available in your python. It also installs all required packages)
 		- ``python -c "import dfm_tools; print(dfm_tools.__version)"`` (print version number of the installed dfm_tools package)
 	- Branching:
-		- open git bash window in local dfm_tools folder (eg C:\\DATA\\GitHub\\dfm_tools)
+		- open git bash window in local dfm_tools folder (eg C:\\DATA\\dfm_tools)
 		- ``git config --global user.email [emailaddress]``
 		- ``git config --global user.name [username]``
 		- Create your own branch option 1:
 			- manually create a branch on https://github.com/openearth/dfm_tools
-			- open git bash window in local dfm_tools folder (eg C:\\DATA\\GitHub\\dfm_tools)
+			- open git bash window in local dfm_tools folder (eg C:\\DATA\\dfm_tools)
 			- ``git remote update origin --prune`` (update local branch list)
 			- ``git checkout branchname`` (checkout branch)
 		- Create your own branch option 2:
-			- open git bash window in local dfm_tools folder (eg C:\\DATA\\GitHub\\dfm_tools)
+			- open git bash window in local dfm_tools folder (eg C:\\DATA\\dfm_tools)
 			- ``git checkout --branch branchname`` (create new branch and checkout, combination of git branch and git checkout commands)
 		- get clean checkout again (overwrite local changes):
 			- ``git fetch --all`` (fetches changes)
@@ -162,13 +162,13 @@ Related information
 			- ``git pull`` (fetches and merges changes, local checkout of repos branch is now updated again)
 
 	- Commit and push your changes to your online branch:
-		- open git bash window in local dfm_tools folder (eg C:\\DATA\\GitHub\\dfm_tools)
+		- open git bash window in local dfm_tools folder (eg C:\\DATA\\dfm_tools)
 		- optional: ``git pull origin master`` (gets edits from master to current local branch, might induce conflicts. maybe better to just push to your branch and then handle pull request on github website)
 		- ``git add .``
 		- ``git commit -m "message to be included with your commit"``
 		- ``git push`` (pushes changes to server, do not do this in while working in the master)
 	- increasing the version number (with bumpversion):
-		- open cmd window in local dfm_tools folder (eg C:\\DATA\\GitHub\\dfm_tools)
+		- open cmd window in local dfm_tools folder (eg C:\\DATA\\dfm_tools)
 		- optional: ``conda activate dfm_tools_env``
 		- ``bumpversion major`` or ``bumpversion minor`` or ``bumpversion patch`` (changes version numbers in files and commits changes)
 		- push your changes with ``git push`` (from git bash window or cmd also ok?)
