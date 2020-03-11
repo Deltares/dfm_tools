@@ -169,6 +169,14 @@ def test_gethismodeldata(file_nc):
     
     from dfm_tools.get_nc import get_ncmodeldata
     
+    def cen2cor(time_cen):
+        #convert time centers2corners (more accurate representation in zt-plot, but can also be skipped)
+        import pandas as pd
+        time_int = (time_cen.iloc[2]-time_cen.iloc[1])
+        time_cor = data_fromhis_temp.var_times-time_int/2
+        time_cor = time_cor.append(pd.Series([time_cor.iloc[-1]+time_int]))
+        return time_cor
+
     if 'Grevelingen-FM_0000' in file_nc:
         #file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_his.nc')
         station = 'all'
@@ -212,9 +220,10 @@ def test_gethismodeldata(file_nc):
     #data_fromhis_zcen = get_ncmodeldata(file_nc=file_his, varname='zcoordinate_c', timestep=range(40,100), layer= 'all', station=station_zt)
     data_fromhis_zcor = get_ncmodeldata(file_nc=file_nc, varname='zcoordinate_w', timestep=range(40,100), station=station_zt)
     data_fromhis_temp = get_ncmodeldata(file_nc=file_nc, varname='temperature', timestep=range(40,100), layer= 'all', station=station_zt)
-    # generate 2 2d grids for the x & y bounds (not necessary for zcor, but possible)
+    time_cor = cen2cor(data_fromhis_temp.var_times)
+    # generate 2 2d grids for the x & y bounds (you can also give one 2D array as input in case of eg time varying z coordinates)
     z_mesh, time_mesh = np.meshgrid(data_fromhis_zcor[0,0,:],
-                                    data_fromhis_temp.var_times)
+                                    time_cor)
     fig, ax = plt.subplots(figsize=(12,5))
     c = ax.pcolormesh(time_mesh, z_mesh, data_fromhis_temp[:,0,:],cmap='jet')
     fig.colorbar(c)

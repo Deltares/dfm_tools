@@ -87,7 +87,6 @@ TODO wishlist
 	- example in test_get_nc.test_gethismodeldata()
 	- WARNING: part of the z interfaces/center data in dflowfm hisfile is currently wrong, check your figures carefully
 	- layer argument now has to be provided when retrieving zcoordinate_c (centers) from hisfile, but not when retrieving zcoordinate_w (interfaces), align this.
-	- no support for 2D models yet (sigma has different variable name)
 - as user: get dimensionlist, variablelist, more? (partly internally available)
 - add polygon read/write function (also ldb files)
 - add polygon ginput function (click in plot) (already partly exists in intersect/slice testscript)
