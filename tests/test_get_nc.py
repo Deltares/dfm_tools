@@ -222,8 +222,7 @@ def test_gethismodeldata(file_nc):
     data_fromhis_temp = get_ncmodeldata(file_nc=file_nc, varname='temperature', timestep=range(40,100), layer= 'all', station=station_zt)
     time_cor = cen2cor(data_fromhis_temp.var_times)
     # generate 2 2d grids for the x & y bounds (you can also give one 2D array as input in case of eg time varying z coordinates)
-    z_mesh, time_mesh = np.meshgrid(data_fromhis_zcor[0,0,:],
-                                    time_cor)
+    z_mesh, time_mesh = np.meshgrid(data_fromhis_zcor[0,0,:],time_cor)
     fig, ax = plt.subplots(figsize=(12,5))
     c = ax.pcolormesh(time_mesh, z_mesh, data_fromhis_temp[:,0,:],cmap='jet')
     fig.colorbar(c)
