@@ -32,6 +32,7 @@ Features
 - read map and his data
 - plot net data with map data
 - select all data based on variable, timestep/datetime, layer, station (not yet on depth)
+- plotting zt-plots (see wishlist section for inaccuracies)
 - merge partitions and delete ghostcells automatically
 - take over masks in original data
 - selection/plotting by polyline/crossection (slicing the ugrid data)
@@ -82,7 +83,11 @@ TODO wishlist
 	- optimize_dist keyword now draws inpolygon around line
 	- to optimize intersect function when retrieving bed level and water level (do that with len(firstlinepart) optional keyword)
 	- to retrieve other mapdata data faster
-- make patched zt plots from hisfile (careful, z interfaces data in hisfile is wrong)
+- improve zt plots from hisfile:
+	- example in test_get_nc.test_gethismodeldata()
+	- WARNING: part of the z interfaces/center data in dflowfm hisfile is currently wrong, check your figures carefully
+	- layer argument now has to be provided when retrieving zcoordinate_c (centers) from hisfile, but not when retrieving zcoordinate_w (interfaces), align this.
+	- no support for 2D models yet (sigma has different variable name)
 - as user: get dimensionlist, variablelist, more? (partly internally available)
 - add polygon read/write function (also ldb files)
 - add polygon ginput function (click in plot) (already partly exists in intersect/slice testscript)

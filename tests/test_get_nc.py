@@ -121,7 +121,8 @@ def test_getplotfoudata():
 
     
 @pytest.mark.parametrize("file_nc", [pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\Grevelingen_FM_grid_20190603_net.nc'), id='Grevelingen'),
-                                      pytest.param(r'p:\11205258-006-kpp2020_rmm-g6\C_Work\01_Rooster\final_totaalmodel\rooster_rmm_v1p5_net.nc', id='RMM')])
+                                     pytest.param(os.path.join(dir_testinput,'vanNithin','myortho3_RGFGRID_net.nc'), id='Nithin'),
+                                     pytest.param(r'p:\11205258-006-kpp2020_rmm-g6\C_Work\01_Rooster\final_totaalmodel\rooster_rmm_v1p5_net.nc', id='RMM')])
 @pytest.mark.acceptance
 def test_getnetdata_plotnet(file_nc):
     """
@@ -152,85 +153,75 @@ def test_getnetdata_plotnet(file_nc):
     
     
     
+@pytest.mark.parametrize("file_nc", [pytest.param(os.path.join(dir_testinput,'vanNithin','tttz_0000_his.nc'), id='Nithin'),
+                                     pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_his.nc'), id='Grevelingen')])
 @pytest.mark.acceptance
-def test_gethismodeldata():
+def test_gethismodeldata(file_nc):
     """
     this test retrieves his data and plots it
     """
     dir_output = getmakeoutputdir(function_name=inspect.currentframe().f_code.co_name)
     #dir_output = dir_testoutput
 
+    import numpy as np
     import matplotlib.pyplot as plt
     plt.close('all')
     
-    from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
+    from dfm_tools.get_nc import get_ncmodeldata
     
-    file_his = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_his.nc')
+    if 'Grevelingen-FM_0000' in file_nc:
+        #file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_his.nc')
+        station = 'all'
+        station_zt = 'Bommenede'
+    elif 'tttz' in file_nc: #NITHIN
+        #file_nc = os.path.join(dir_testinput,'vanNithin','tttz_0000_his.nc')
+        station = ['Peiraias', 'Ovrios_2','Ovrios','Ovrios']
+        station_zt = 'Ortholithi'
     
-    #GREVELINGEN
     print('plot bedlevel from his')
-    data_fromhis = get_ncmodeldata(file_nc=file_his, varname='bedlevel', station='all')#, multipart=False)
+    data_fromhis = get_ncmodeldata(file_nc=file_nc, varname='bedlevel', station=station)#, multipart=False)
     fig, ax = plt.subplots()
     ax.plot(data_fromhis.var_stations,data_fromhis,'-')
-    ax.tick_params('x',rotation=30)
-    plt.savefig(os.path.join(dir_output,'bedlevel'))
+    ax.tick_params('x',rotation=90)
+    plt.savefig(os.path.join(dir_output,'%s_bedlevel'%(os.path.basename(file_nc).replace('.nc',''))))
 
     print('plot waterlevel from his')
-    data_fromhis = get_ncmodeldata(file_nc=file_his, varname='waterlevel', timestep='all', station='all')#, multipart=False)
+    data_fromhis = get_ncmodeldata(file_nc=file_nc, varname='waterlevel', timestep='all', station=station)#, multipart=False)
     fig, ax = plt.subplots()
     ax.plot(data_fromhis.var_times,data_fromhis,'-')
-    plt.savefig(os.path.join(dir_output,'waterlevel'))
+    plt.savefig(os.path.join(dir_output,'%s_waterlevel'%(os.path.basename(file_nc).replace('.nc',''))))
     
     print('plot salinity from his')
-    data_fromhis = get_ncmodeldata(file_nc=file_his, varname='salinity', timestep='all', layer=5, station='all')#, multipart=False)
+    data_fromhis = get_ncmodeldata(file_nc=file_nc, varname='salinity', timestep='all', layer=5, station=station)#, multipart=False)
     data_fromhis_flat = data_fromhis[:,:,0]
     fig, ax = plt.subplots()
     ax.plot(data_fromhis.var_times,data_fromhis_flat,'-')
-    plt.savefig(os.path.join(dir_output,'salinity'))
+    plt.savefig(os.path.join(dir_output,'%s_salinity'%(os.path.basename(file_nc).replace('.nc',''))))
 
-    print('plot salinity,bedlevel')
+    print('plot salinity over depth')
     #depth retrieval is probably wrong
-    data_fromhis_depth = get_ncmodeldata(file_nc=file_his, varname='zcoordinate_c', timestep=4, layer='all', station='all')#, multipart=False)
-    data_fromhis = get_ncmodeldata(file_nc=file_his, varname='salinity', timestep=4, layer='all', station='all')#, multipart=False)
+    data_fromhis_depth = get_ncmodeldata(file_nc=file_nc, varname='zcoordinate_c', timestep=4, layer='all', station=station)
+    data_fromhis = get_ncmodeldata(file_nc=file_nc, varname='salinity', timestep=4, layer='all', station=station)
     fig, ax = plt.subplots()
     ax.plot(data_fromhis[0,:,:].T, data_fromhis_depth[0,:,:].T,'-')
     ax.legend(data_fromhis.var_stations)
-    plt.savefig(os.path.join(dir_output,'salinity over depth per station'))
+    plt.savefig(os.path.join(dir_output,'%s_salinityoverdepth'%(os.path.basename(file_nc).replace('.nc',''))))
+
+    print('zt temperature plot')
+    #WARNING: layers in dfowfm hisfile are currently incorrect, check your figures carefully
+    #data_fromhis_zcen = get_ncmodeldata(file_nc=file_his, varname='zcoordinate_c', timestep=range(40,100), layer= 'all', station=station_zt)
+    data_fromhis_zcor = get_ncmodeldata(file_nc=file_nc, varname='zcoordinate_w', timestep=range(40,100), station=station_zt)
+    data_fromhis_temp = get_ncmodeldata(file_nc=file_nc, varname='temperature', timestep=range(40,100), layer= 'all', station=station_zt)
+    # generate 2 2d grids for the x & y bounds (not necessary for zcor, but possible)
+    z_mesh, time_mesh = np.meshgrid(data_fromhis_zcor[0,0,:],
+                                    data_fromhis_temp.var_times)
+    fig, ax = plt.subplots(figsize=(12,5))
+    c = ax.pcolormesh(time_mesh, z_mesh, data_fromhis_temp[:,0,:],cmap='jet')
+    fig.colorbar(c)
+    plt.savefig(os.path.join(dir_output,'%s_zt_temp'%(os.path.basename(file_nc).replace('.nc',''))))
+
     
 
-    #NITHIN
-    
-    #file_net = os.path.join(dir_testinput,'vanNithin','myortho3_net.nc')
-    #file_net =  os.path.join(dir_testinput,'vanNithin','myortho3_withcellinfo_net.nc')
-    file_net = os.path.join(dir_testinput,'vanNithin','myortho3_RGFGRID_net.nc')
-    file_his = os.path.join(dir_testinput,'vanNithin','tttz_0000_his.nc')
-    
-    station = ['Peiraias', 'Ovrios_2','Ovrios','Ovrios']
-    #station = ['Peiraias']
-
-    print('plot only grid from net.nc')
-    ugrid = get_netdata(file_nc=file_net)
-    fig, ax = plt.subplots()
-    plot_netmapdata(ugrid.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
-    ax.set_aspect('equal')
-    plt.savefig(os.path.join(dir_output,'nithin_grid'))
-    
-    data_fromhis = get_ncmodeldata(file_nc=file_his, varname='bedlevel', station=station)#, multipart=False)
-    fig, ax = plt.subplots()
-    ax.plot(data_fromhis.var_stations,data_fromhis,'-')
-    ax.tick_params('x',rotation=30)
-    plt.savefig(os.path.join(dir_output,'nithin_bedlevel'))
-
-    data_fromhis = get_ncmodeldata(file_nc=file_his, varname='waterlevel', timestep='all', station=station)#, multipart=False)
-    fig, ax = plt.subplots()
-    ax.plot(data_fromhis.var_times,data_fromhis,'-')
-    plt.savefig(os.path.join(dir_output,'nithin_waterlevel'))
-    
-    data_fromhis = get_ncmodeldata(file_nc=file_his, varname='salinity', timestep='all', layer=5, station=station)#, multipart=False)
-    data_fromhis_flat = data_fromhis[:,:,0]
-    fig, ax = plt.subplots()
-    ax.plot(data_fromhis.var_times,data_fromhis_flat,'-')
-    plt.savefig(os.path.join(dir_output,'nithin_salinity'))
     
     
 
@@ -388,7 +379,7 @@ def test_getxzcoordsonintersection_plotcrossect(file_nc):
     """
     #manual test variables (run this script first to get the variable dir_testoutput)
     dir_output = dir_testoutput
-    file_nc = os.path.join(dir_testinput,r'DFM_sigma_curved_bend\DFM_OUTPUT_cb_3d\cb_3d_map.nc')
+    file_nc = os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_cb_3d\\cb_3d_map.nc')
     file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc')
     file_nc = 'p:\\1204257-dcsmzuno\\2013-2017\\3D-DCSM-FM\\A17b\\DFM_OUTPUT_DCSM-FM_0_5nm\\DCSM-FM_0_5nm_0000_map.nc'
     file_nc = 'p:\\11205258-006-kpp2020_rmm-g6\\C_Work\\08_RMM_FMmodel\\computations\\run_156\\DFM_OUTPUT_RMM_dflowfm\\RMM_dflowfm_0000_map.nc'
