@@ -117,12 +117,11 @@ def get_varname_mapnc(data_nc,varname_requested):
     return varname
 
 
-
-def get_ncvardims(file_nc, varname):
+def get_ncvarlist(file_nc):
     from netCDF4 import Dataset
     
     data_nc = Dataset(file_nc)
-    # check if requested variable is in netcdf
+    
     nc_varkeys = list(data_nc.variables.keys())
     nc_dimkeys = list(data_nc.dimensions.keys())
     nc_varlongnames = []
@@ -131,9 +130,38 @@ def get_ncvardims(file_nc, varname):
             nc_varlongnames.append(data_nc.variables[nc_var].long_name)
         except:
             nc_varlongnames.append('NO long_name defined')
+    nc_dimlongnames = []
+    for nc_dim in data_nc.dimensions:
+        try:
+            nc_dimlongnames.append(data_nc.dimensions[nc_dim].long_name)
+        except:
+            nc_dimlongnames.append('NO long_name defined')
+    return nc_varkeys, nc_varlongnames, nc_dimkeys, nc_dimlongnames
+
+
+
+def get_ncmatchingvarlist(file_nc, pattern):
+    import pandas as pd
+    
+    nc_varkeys, nc_varlongnames, nc_dimkeys, nc_dimlongnames = get_ncvarlist(file_nc=file_nc)
+    vars_pd = pd.DataFrame({'nc_varkeys': nc_varkeys, 'nc_varlongnames': nc_varlongnames})
+    #dims_pd = pd.DataFrame({'nc_dimkeys': nc_dimkeys, 'nc_dimlongnames': nc_dimlongnames})
+
+    vars_pd_matching = vars_pd[vars_pd.loc[:,'nc_varlongnames'].str.match(pattern)]
+    
+    return vars_pd_matching
+    
+
+
+def get_ncvardims(file_nc, varname):
+    from netCDF4 import Dataset
+    
+    nc_varkeys, nc_varlongnames, nc_dimkeys, nc_dimlongnames = get_ncvarlist(file_nc=file_nc)
+    # check if requested variable is in netcdf
     if varname not in nc_varkeys:
         raise Exception('ERROR: requested variable %s not in netcdf, available are:\n%s'%(varname, '\n'.join(map(str,['%-25s: %s'%(nck,ncln) for nck,ncln in zip(nc_varkeys, nc_varlongnames)]))))
     
+    data_nc = Dataset(file_nc)
     nc_values = data_nc.variables[varname]
     nc_values_shape = nc_values.shape
     nc_values_dims = nc_values.dimensions
