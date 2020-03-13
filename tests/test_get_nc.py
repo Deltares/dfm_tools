@@ -43,6 +43,31 @@ def test_getvarnamemapnc():
 
 
 
+
+
+@pytest.mark.unittest    
+def test_getncmatchingvarlist():
+    """
+    this test tests retrieves a pandas list of variable long names in a netcdf that match the pattern, useful for waq variables.
+    """
+    #import pandas as pd
+    from dfm_tools.get_nc_helpers import get_ncmatchingvarlist#, get_ncvarlist
+    
+    file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc')
+
+    #nc_varkeys, nc_varlongnames, nc_dimkeys, nc_dimlongnames = get_ncvarlist(file_nc=file_nc)
+    #vars_pd = pd.DataFrame({'nc_varkeys': nc_varkeys, 'nc_varlongnames': nc_varlongnames})
+    #dims_pd = pd.DataFrame({'nc_dimkeys': nc_dimkeys, 'nc_dimlongnames': nc_dimlongnames})
+
+    pattern = 'Flow .*component'
+    vars_pd_matching = get_ncmatchingvarlist(file_nc=file_nc, pattern=pattern)
+    varkeys_list_matching = list(vars_pd_matching['nc_varkeys'])
+    
+    assert varkeys_list_matching == ['mesh2d_ucx', 'mesh2d_ucy', 'mesh2d_ucz', 'mesh2d_ucxa', 'mesh2d_ucya']
+
+
+
+
 @pytest.mark.parametrize("file_nc, expected_size", [pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'), 5599, id='from 1 map partion Grevelingen'),
                                                     #pytest.param(r'p:\11205258-006-kpp2020_rmm-g6\C_Work\01_Rooster\final_totaalmodel\rooster_rmm_v1p5_net.nc', 44804?, id='fromnet RMM'),
                                                     pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\Grevelingen_FM_grid_20190603_net.nc'), 44804, id='fromnet Grevelingen')])
