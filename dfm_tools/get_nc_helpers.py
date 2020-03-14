@@ -117,8 +117,9 @@ def get_varname_mapnc(data_nc,varname_requested):
     return varname
 
 
-def get_ncvarlist(file_nc):
+def get_ncvardimlist(file_nc):
     from netCDF4 import Dataset
+    import pandas as pd
     
     data_nc = Dataset(file_nc)
     
@@ -136,30 +137,26 @@ def get_ncvarlist(file_nc):
             nc_dimlongnames.append(data_nc.dimensions[nc_dim].long_name)
         except:
             nc_dimlongnames.append('NO long_name defined')
-    return nc_varkeys, nc_varlongnames, nc_dimkeys, nc_dimlongnames
 
-
-
-def get_ncmatchingvarlist(file_nc, pattern):
-    import pandas as pd
-    
-    nc_varkeys, nc_varlongnames, nc_dimkeys, nc_dimlongnames = get_ncvarlist(file_nc=file_nc)
     vars_pd = pd.DataFrame({'nc_varkeys': nc_varkeys, 'nc_varlongnames': nc_varlongnames})
-    #dims_pd = pd.DataFrame({'nc_dimkeys': nc_dimkeys, 'nc_dimlongnames': nc_dimlongnames})
+    dims_pd = pd.DataFrame({'nc_dimkeys': nc_dimkeys, 'nc_dimlongnames': nc_dimlongnames})
+    return vars_pd, dims_pd
 
-    vars_pd_matching = vars_pd[vars_pd.loc[:,'nc_varlongnames'].str.match(pattern)]
-    
-    return vars_pd_matching
     
 
 
 def get_ncvardims(file_nc, varname):
     from netCDF4 import Dataset
     
-    nc_varkeys, nc_varlongnames, nc_dimkeys, nc_dimlongnames = get_ncvarlist(file_nc=file_nc)
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    nc_varkeys = list(vars_pd['nc_varkeys'])
+    #nc_varlongnames = list(vars_pd['nc_varlongnames'])
+    nc_dimkeys = list(dims_pd['nc_dimkeys'])
+    
     # check if requested variable is in netcdf
     if varname not in nc_varkeys:
-        raise Exception('ERROR: requested variable %s not in netcdf, available are:\n%s'%(varname, '\n'.join(map(str,['%-25s: %s'%(nck,ncln) for nck,ncln in zip(nc_varkeys, nc_varlongnames)]))))
+        #raise Exception('ERROR: requested variable %s not in netcdf, available are:\n%s'%(varname, '\n'.join(map(str,['%-25s: %s'%(nck,ncln) for nck,ncln in zip(nc_varkeys, nc_varlongnames)]))))
+        raise Exception('ERROR: requested variable %s not in netcdf, available are:\n%s\nUse command "vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)" to obtain full list as variable.'%(varname, vars_pd))
     
     data_nc = Dataset(file_nc)
     nc_values = data_nc.variables[varname]
