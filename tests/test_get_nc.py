@@ -51,16 +51,14 @@ def test_getncmatchingvarlist():
     this test tests retrieves a pandas list of variable long names in a netcdf that match the pattern, useful for waq variables.
     """
     #import pandas as pd
-    from dfm_tools.get_nc_helpers import get_ncmatchingvarlist#, get_ncvarlist
+    from dfm_tools.get_nc_helpers import get_ncvardimlist
     
     file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc')
 
-    #nc_varkeys, nc_varlongnames, nc_dimkeys, nc_dimlongnames = get_ncvarlist(file_nc=file_nc)
-    #vars_pd = pd.DataFrame({'nc_varkeys': nc_varkeys, 'nc_varlongnames': nc_varlongnames})
-    #dims_pd = pd.DataFrame({'nc_dimkeys': nc_dimkeys, 'nc_dimlongnames': nc_dimlongnames})
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
 
     pattern = 'Flow .*component'
-    vars_pd_matching = get_ncmatchingvarlist(file_nc=file_nc, pattern=pattern)
+    vars_pd_matching = vars_pd[vars_pd.loc[:,'nc_varlongnames'].str.match(pattern)]
     varkeys_list_matching = list(vars_pd_matching['nc_varkeys'])
     
     assert varkeys_list_matching == ['mesh2d_ucx', 'mesh2d_ucy', 'mesh2d_ucz', 'mesh2d_ucxa', 'mesh2d_ucya']
