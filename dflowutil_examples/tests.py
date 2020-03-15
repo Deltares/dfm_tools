@@ -3,6 +3,18 @@ examples of key functionality in dflowutil
 https://github.com/RSchueder/dflowutil
 
 '''
+
+#import pytest
+#import inspect
+import os
+
+#dir_tests = os.path.join(os.path.realpath(__file__), os.pardir)
+#dir_testoutput = os.path.join(dir_tests,'test_output')
+#if not os.path.exists(dir_testoutput):
+#    os.mkdir(dir_testoutput)
+dir_testinput = os.path.join(r'c:/DATA/werkmap','dfm_tools_testdata')
+
+
 import numpy as np
 import matplotlib.pyplot as plt
 from dflowutil.boundary import read_bc
@@ -19,7 +31,7 @@ turbo_colormap_data = [[0.18995,0.07176,0.23217],[0.19483,0.08339,0.26149],[0.19
 #################################################################################
 # plot map
 #################################################################################
-mapdir = 'd:\\projects\\dflowutil\\tests\DSD\\00_src\\DFM_OUTPUT_current_situation\\'
+mapdir = 'd:\\projects\\dflowutil\\tests\DSD\\00_src\\DFM_OUTPUT_current_situation\\' #outputfolder does not exist
 
 '''
 elem = 'salinity'
@@ -29,7 +41,7 @@ depth = -1.0
 lim = [15, 30]
 
 dflowutil.plot_nc_map(mapdir, elem, time, depth = None, layer = 1, lim = lim)
-pol = r'p:\11200975-hongkongwaq\HYDRO\HK-FM_model\ldb\world_hk_combined_EPSG-4326.pol'
+pol = r'p:\11200975-hongkongwaq\HYDRO\HK-FM_model\ldb\world_hk_combined_EPSG-4326.pol' #access denied
 XY = dflowutil.utils.read_polygon(pol)
 plt.plot(XY[:,0], XY[:,1], '-k', linewidth = 0.5)
 '''
@@ -37,8 +49,8 @@ plt.plot(XY[:,0], XY[:,1], '-k', linewidth = 0.5)
 # create initial conditions
 #################################################################################
 '''
-substances = dflowutil.SubFile(r'p:\11200975-hongkongwaq\WAQ\03_baseCase\01_substances\HATS_PCA_v3ep.sub').substances
-out = 'p:\\11200975-hongkongwaq\\WAQ\\03_baseCase\\A07\\wrong_ref_date_DFM_OUTPUT_HK-FMWAQ\\rst\\'
+substances = dflowutil.SubFile(r'p:\11200975-hongkongwaq\WAQ\03_baseCase\01_substances\HATS_PCA_v3ep.sub').substances #access denied
+out = 'p:\\11200975-hongkongwaq\\WAQ\\03_baseCase\\A07\\wrong_ref_date_DFM_OUTPUT_HK-FMWAQ\\rst\\' #access denied
 dflowutil.rst_to_xyz(mapdir, substances, -1, out, rst = False)
 '''
 #################################################################################
@@ -61,8 +73,10 @@ plt.ylim([-1000, 0])
 # LSP file
 #################################################################################
 
-procfile = r'd:\projects\IMPAQT\MALG\code\tables\procesm.asc'
-lspfile = r'd:\projects\IMPAQT\MALG\testbench\tidal_flume_farm\Farm3D\farm3D.lsp'
+#procfile = r'd:\projects\IMPAQT\MALG\code\tables\procesm.asc'
+procfile = r'p:\11202512-h2020_impaqt\05_MALG\code\tables\proces.asc'
+#lspfile = r'd:\projects\IMPAQT\MALG\testbench\tidal_flume_farm\Farm3D\farm3D.lsp'
+lspfile = r'p:\11202512-h2020_impaqt\05_MALG\testbench\tidal_flume_farm\Farm3D\farm3D.lsp'
 lsp = LspFile(lspfile, procfile)
 lsp.lsp_to_table('test.csv')
 lsp.lsp_to_latex('test.txt')
@@ -71,7 +85,7 @@ lsp.lsp_to_latex('test.txt')
 # Balance file
 #################################################################################
 
-file = r'd:\projects\dflowutil\tests\dflowutil_test_data\HK-FMWAQ_0000_wq_proc_bal.txt'
+file = r'd:\projects\dflowutil\tests\dflowutil_test_data\HK-FMWAQ_0000_wq_proc_bal.txt' #does not exist
 prn = BalanceFile(file)
 prn.extract_balances(['BalArea1'],['365-730'])
 df = prn.areas['BalArea1']['OXY']['Inflows']
@@ -84,11 +98,11 @@ with open('prn_areas.pkl', 'wb') as f:
 #################################################################################
 # Show WAQ segment on grid
 #################################################################################
-'''
+"""
 plt.close('all')
 
-file = r'p:\1221207-kuweit-iczm-marshlands\02_Marshlands\task_5D_-_Water_Quality\02_modelSetup\03_loads\UAE_diffuse_loads.def'
-grd = r'p:\1221207-kuweit-iczm-marshlands\02_Marshlands\task_5C_-_Sediment_Transport\model_setup\coupling\final\aggregations\7_zones_4x4\7_zones_4x4_waqgeom.nc'
+file = 'p:\\1221207-kuweit-iczm-marshlands\\02_Marshlands\\task_5D_-_Water_Quality\\02_modelSetup\\03_loads\\UAE_diffuse_loads.def'
+grd = 'p:\\1221207-kuweit-iczm-marshlands\\02_Marshlands\\task_5C_-_Sediment_Transport\\model_setup\\coupling\\final\\aggregations\\7_zones_4x4\\7_zones_4x4_waqgeom.nc'
 
 segs = dict()
 with open(file, 'r') as def_file:
@@ -101,25 +115,27 @@ with open(file, 'r') as def_file:
 
 show_waq_segment(grd, 8, segs)
 
-grd = r'p:\11202512-h2020_impaqt\03_waterquality\03_baseCase\RT_spin\NZB_waqgeom_UGRID.nc'
+grd = 'p:\\11202512-h2020_impaqt\\03_waterquality\\03_baseCase\\RT_spin\\NZB_waqgeom_UGRID.nc'
 segs = {'module_1 (11)': 448023,
        'module_1 (12)': 491961,
        'module_1 (13)': 535899}
 
 show_waq_segment(grd, 20, segs)
-'''
+"""
+
 a = 1
 #################################################################################
 # Make DFMWAQ model
 #################################################################################
 '''
-mdu = r'p:\11203715-006-d-hydro-grevelingen\communicatie\201908XX_verzonden_aan_RWS\model\2008\computations\run01\Grevelingen-FM_save.mdu'
+#mdu = r'p:\11203715-006-d-hydro-grevelingen\communicatie\201908XX_verzonden_aan_RWS\model\2008\computations\run01\Grevelingen-FM_save.mdu'
+mdu = os.path.join(dir_testinput, 'DFM_3D_z_Grevelingen\\computations\\run01\\Grevelingen-FM.mdu'
 # boundaries for that mdu
-ext = [r'p:\11203715-006-d-hydro-grevelingen\WAQ\DFMWAQ\model_2008\computations\run01\Grevelingen-FM_bnd.ext']
+ext = [os.path.join(dir_testinput, 'DFM_3D_z_Grevelingen\\computations\\run01\\Grevelingen-FM_bnd.ext')]
 # location of new model
 new_bnd_dir = 'p:\\11203715-006-d-hydro-grevelingen\\WAQ\\DFMWAQ\\model_2008\\computations\\run01_othersub\\'
 # sub file to use
-subfile = dflowutil.SubFile(r'p:\11201302-guayaquil\03_waterquality\03_baseCase\01_substances\guayas_V11.sub')
+subfile = dflowutil.SubFile(r'p:\11201302-guayaquil\03_waterquality\03_baseCase\01_substances\guayas_V11.sub') #does not exist
 # initial conditions
 ini = {'OXY' : 7}
 # kernel version

@@ -3,21 +3,32 @@ A tutorial on how to make initial conditions for a DFMWAQ model
 
 '''
 
+#import pytest
+#import inspect
+import os
+
+#dir_tests = os.path.join(os.path.realpath(__file__), os.pardir)
+#dir_testoutput = os.path.join(dir_tests,'test_output')
+#if not os.path.exists(dir_testoutput):
+#    os.mkdir(dir_testoutput)
+dir_testinput = os.path.join(r'c:/DATA/werkmap','dfm_tools_testdata')
+
+
 from dflowutil.SubFile import SubFile
 from dflowutil.BalanceFile import BalanceFile
 import matplotlib.pyplot as plt
 import numpy as np
-import seaborn as sns
+#import seaborn as sns
 import pylab
 import os
-sns.set()
+#sns.set()
 
 '''
 examine balances
 '''
 
-sub_file = r'd:\projects\dflowutil\tests\DSD\01_substances\guayas_V11.sub'
-bal_file = r'd:\projects\dflowutil\tests\DSD\R02\DFM_OUTPUT_current_situation\current_situation_wq_proc_bal.txt'
+sub_file = os.path.join(dir_testinput,'DSD\\01_substances\\guayas_V11.sub')
+bal_file =  os.path.join(dir_testinput,'DSD\\R02\DFM_OUTPUT_current_situation\current_situation_wq_proc_bal.txt') #does not exist
 subs = SubFile(sub_file)
 prn = BalanceFile(bal_file)
 area = ['Domain']

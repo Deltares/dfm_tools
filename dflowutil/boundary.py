@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
-from .utils import find_last, check_data_path, change_os, pdistf, row2array
-from .SubFile import SubFile
+from dflowutil.utils import find_last, check_data_path, change_os, pdistf, row2array
+from dflowutil.SubFile import SubFile
 import datetime
 
 def boundary_from_ext(var):
@@ -113,6 +113,7 @@ def read_bc(pli_file, bc_file):
     plt.pcolormesh(meshX, meshY, C)
 
     '''
+    from dflowutil.utils import read_pli
     non_data = ['ame', 'orcing', 'unction', 'ertical', 'ime', 'uantity', 'nit', 'ince']
     pli = read_pli(pli_file)
     data = {}
