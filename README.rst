@@ -115,6 +115,7 @@ TODO
 	- how to automate this process?
 	- also add changelog besides commit comments?
 - publish some example figures online, maybe py-notebook and example data?
+- put testdata on shared location?
 - update license with Deltares terms
 - update all text files and documentations
 - write documentation as comments and generate automatically
