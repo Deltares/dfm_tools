@@ -393,7 +393,8 @@ def test_gethirlam():
     mesh2d_node_y = data_nc.variables['y'][:]
     
     fig, ax = plt.subplots()
-    plt.scatter(mesh2d_node_x,mesh2d_node_y,1,c='b')
+    plt.scatter(mesh2d_node_x,mesh2d_node_y,0.1,c='b')
+    fig, ax = plt.subplots()
     plt.contourf(mesh2d_node_x,mesh2d_node_y,airp)
     #plt.pcolor(mesh2d_node_x,mesh2d_node_y,airp,linewidth=0.5)
     
