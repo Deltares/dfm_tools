@@ -50,11 +50,9 @@ def test_getncmatchingvarlist():
     """
     this test tests retrieves a pandas list of variable long names in a netcdf that match the pattern, useful for waq variables.
     """
-    #import pandas as pd
     from dfm_tools.get_nc_helpers import get_ncvardimlist
     
     file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc')
-
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
 
     pattern = 'Flow .*component'
@@ -362,6 +360,45 @@ def test_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
         fig.colorbar(pc, ax=ax)
         ax.set_aspect('equal')
         plt.savefig(os.path.join(dir_output,'%s_mesh2d_tem1'%(os.path.basename(file_nc).replace('.nc',''))))
+
+
+
+def test_gethirlam():
+    import os
+    import matplotlib.pyplot as plt
+    #import numpy as np
+    from netCDF4 import Dataset
+    plt.close('all')
+    
+    from dfm_tools.get_nc import get_netdata, plot_netmapdata
+    from dfm_tools.get_nc_helpers import get_ncvardimlist#, get_varname_mapnc
+    
+    # test Grevelingen
+    file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc')
+    data_nc = Dataset(file_nc)
+    #mesh2d_node_xRMM = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_node_x')][:]
+    #mesh2d_node_yRMM = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_node_y')][:]
+    ugrid = get_netdata(file_nc=file_nc)
+    fig, ax = plt.subplots()
+    plot_netmapdata(ugrid.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
+    ax.set_aspect('equal')
+    
+    #hirlam
+    file_nc = r'p:\1204257-dcsmzuno\2014\data\meteo\HIRLAM72_2018\h72_201803.nc'
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    data_nc = Dataset(file_nc)
+    
+    airp = data_nc.variables['air_pressure_fixed_height'][0,:,:]
+    mesh2d_node_x = data_nc.variables['x'][:]
+    mesh2d_node_y = data_nc.variables['y'][:]
+    
+    fig, ax = plt.subplots()
+    plt.scatter(mesh2d_node_x,mesh2d_node_y,1,c='b')
+    plt.contourf(mesh2d_node_x,mesh2d_node_y,airp)
+    #plt.pcolor(mesh2d_node_x,mesh2d_node_y,airp,linewidth=0.5)
+    
+
+
 
 
 

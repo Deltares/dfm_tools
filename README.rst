@@ -69,7 +69,7 @@ Known bugs
 	
 TODO wishlist
 --------
-- select/check functions in dflowutil folder and merge with dfm_tools
+- select/check functions in dflowutil folder and merge with dfm_tools (including dflowutil_examples/test_dflowutil.py and others)
 - add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?) (refer depth wrt reference level, water level or bed level, z variable is not correct in dfm-mapfile yet)
 - retrieve correct depths:
 	- add depth array (interfaces/centers) to his and map variables (z/sigma layer calculation is already in get_modeldata_onintersection function)
@@ -96,7 +96,9 @@ TODO wishlist
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/connectivity_example.ipynb
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/plotting_example.ipynb
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/vector_plotting_example.ipynb
-- any grid: https://github.com/NOAA-ORR-ERD/gridded
+- any grid:
+	- https://github.com/NOAA-ORR-ERD/gridded
+	- tests.test_get_nc.test_gethirlam() is eerste opzet voor hirlam data, werkt heel anders dan D-flow FM
 - how to plot properties on edges (scatter is slow), maybe create dual mesh and plot like faces. most relevant variables are also available on faces, so is this necessary?
 - add (look for) readwrite functions for general datafromats (tim, tekal etc)
 - add plot of structured grid (CMEMS etc)
