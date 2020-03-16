@@ -58,7 +58,8 @@ def test_getncmatchingvarlist():
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
 
     pattern = 'Flow .*component'
-    vars_pd_matching = vars_pd[vars_pd.loc[:,'nc_varlongnames'].str.match(pattern)]
+    vars_pd_matching = vars_pd[vars_pd.loc[:,'nc_varlongnames'].str.match(pattern)] #does not have to stop after pattern
+    #vars_pd_matching = vars_pd[vars_pd.loc[:,'nc_varlongnames'].str.startswith('Flow') & vars_pd.loc[:,'nc_varlongnames'].str.endswith('component')]
     varkeys_list_matching = list(vars_pd_matching['nc_varkeys'])
     
     assert varkeys_list_matching == ['mesh2d_ucx', 'mesh2d_ucy', 'mesh2d_ucz', 'mesh2d_ucxa', 'mesh2d_ucya']

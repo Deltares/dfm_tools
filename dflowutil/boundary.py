@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
-from .utils import find_last, check_data_path, change_os, pdistf, row2array
-from .SubFile import SubFile
+from dflowutil.utils import find_last, check_data_path, change_os, pdistf, row2array, read_pli
+from dflowutil.SubFile import SubFile
 import datetime
 
 def boundary_from_ext(var):
