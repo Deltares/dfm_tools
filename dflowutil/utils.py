@@ -377,9 +377,9 @@ def show_waq_segment(grd,nolay,segments):
     # including the nth + 1 layer
     blay   = np.arange(1,segspl*nolay+2,segspl)
 
-    plot_net(grd)
+    #plot_net(grd)
 
-    plt.gca().set_aspect('equal', adjustable='box')
+    #plt.gca().set_aspect('equal', adjustable='box')
 
     for sind, ss in enumerate(segments.keys()):
         # find the first segment in this layer     
