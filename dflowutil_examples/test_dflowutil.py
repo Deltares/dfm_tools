@@ -29,12 +29,13 @@ turbo_colormap_data = [[0.18995,0.07176,0.23217],[0.19483,0.08339,0.26149],[0.19
 from dflowutil.boundary import read_bc
 from dflowutil.LspFile import LspFile
 from dflowutil.BalanceFile import BalanceFile
-from dflowutil.utils import show_waq_segment, read_polygon, rst_to_xyz
-from dflowutil.mesh import plot_nc_map, plot_net
+from dflowutil.utils import show_waq_segment, rst_to_xyz#, read_polygon
+from dflowutil.mesh import plot_nc_map#, plot_net
 from dflowutil.SubFile import SubFile
 from dflowutil.DFMWAQModel import DFMWAQModel
-from dfm_tools.get_nc import plot_netmapdata, get_ncmodeldata, get_netdata
 
+from dfm_tools.get_nc import plot_netmapdata, get_ncmodeldata, get_netdata
+from dfm_tools.polygon import Polygon
 
 
 #################################################################################
@@ -54,11 +55,15 @@ fig, ax = plt.subplots()
 ugrid = get_netdata(grd)
 pc = plot_netmapdata(ugrid.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
 """
+fig, ax = plt.subplots()
 #pol = r'p:\11200975-hongkongwaq\HYDRO\HK-FM_model\ldb\world_hk_combined_EPSG-4326.pol' #access denied
 pol = os.path.join(dir_testinput,'HK','world_hk_combined_EPSG-4326.pol')
-XY = read_polygon(pol)
-plt.plot(XY[:,0], XY[:,1], '-k', linewidth = 0.5)
-
+#XY = read_polygon(pol)
+#plt.plot(XY[:,0], XY[:,1], '-r', linewidth = 0.5)
+pol_data_list, pol_name_list = Polygon.fromfile(pol) #check wheter z-coordinate is -999, is NaN in HK
+for iP, pol_data in enumerate(pol_data_list):
+    nonan_bool = pol_data[:,2]!=-999
+    plt.plot(pol_data[nonan_bool,0], pol_data[nonan_bool,1], '-k', linewidth = 0.5)
 #################################################################################
 # create initial conditions
 #################################################################################
@@ -83,8 +88,8 @@ data = read_bc(pli_file, bc_file)
 tt = 5
 meshX, meshY = np.meshgrid(data['distance'], data['zprofile'])
 C = np.squeeze(data['salinitybnd'][:,:,tt])
+fig, ax = plt.subplots()
 plt.pcolormesh(meshX, meshY, C, cmap = ListedColormap(turbo_colormap_data))
-
 plt.ylim([-1000, 0])
 
 #################################################################################
