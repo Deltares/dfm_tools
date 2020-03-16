@@ -9,7 +9,10 @@ https://github.com/RSchueder/dflowutil
 import os
 
 dir_tests = os.path.join(os.path.realpath(__file__), os.pardir)
-dir_testoutput = os.path.join(dir_tests,'test_output')
+#dir_testoutput = os.path.join(dir_tests,'test_output')
+#if not os.path.exists(dir_testoutput):
+#    os.mkdir(dir_testoutput)
+dir_testoutput = os.path.join(dir_tests,'..','tests','test_output')
 if not os.path.exists(dir_testoutput):
     os.mkdir(dir_testoutput)
 dir_testoutput = os.path.join(dir_tests,'test_output','test_dflowutil')

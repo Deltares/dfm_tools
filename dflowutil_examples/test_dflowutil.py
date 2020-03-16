@@ -9,10 +9,11 @@ https://github.com/RSchueder/dflowutil
 import os
 
 dir_tests = os.path.join(os.path.realpath(__file__), os.pardir)
-dir_testoutput = os.path.join(dir_tests,'test_output')
+
+dir_testoutput = os.path.join(dir_tests,'..','tests','test_output')
 if not os.path.exists(dir_testoutput):
     os.mkdir(dir_testoutput)
-dir_testoutput = os.path.join(dir_tests,'test_output','test_dflowutil')
+dir_testoutput = os.path.join(dir_tests,'..','tests','test_output','test_dflowutil')
 if not os.path.exists(dir_testoutput):
     os.mkdir(dir_testoutput)
 dir_testinput = os.path.join(r'c:/DATA/werkmap','dfm_tools_testdata')
@@ -67,8 +68,9 @@ file_subst = os.path.join(dir_testinput,'HK',r'03_baseCase\01_substances\HATS_PC
 substances = SubFile(file_subst).substances #access denied
 #out = 'p:\\11200975-hongkongwaq\\WAQ\\03_baseCase\\A07\\wrong_ref_date_DFM_OUTPUT_HK-FMWAQ\\rst\\' #access denied
 out = os.path.join(dir_testinput,'HK','03_baseCase\\A07\\wrong_ref_date_DFM_OUTPUT_HK-FMWAQ\\rst_JV') #access denied
+"""
 rst_to_xyz(mapdir, file_subst, -1, out, rst = False)
-
+"""
 #################################################################################
 # plot bc boundary
 #################################################################################
