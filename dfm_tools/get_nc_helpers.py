@@ -117,6 +117,8 @@ def get_varname_mapnc(data_nc,varname_requested):
     return varname
 
 
+
+
 def get_ncvardimlist(file_nc):
     from netCDF4 import Dataset
     import pandas as pd
@@ -203,11 +205,17 @@ def get_timesfromnc(file_nc):
         time0 = data_nc_timevar[0] 
         time1 = data_nc_timevar[1] 
         time2 = data_nc_timevar[2]
-        timeend = data_nc_timevar[-1]
+        timemin2 = data_nc_timevar[-2]
+        timemin1 = data_nc_timevar[-1]
         timeinc = time2-time1 # the interval between 0 and 1 is not per definition representative, so take 1 and 2
-        
-        data_nc_times_from1 = np.arange(time1,timeend+timeinc,timeinc)
-        data_nc_times = np.concatenate([[time0],data_nc_times_from1])
+        timeincend = timemin1-timemin2
+        if timeinc == timeincend: #reconstruct time array to save time
+            print('reading time dimension: reconstruct array')
+            data_nc_times_from1 = np.arange(time1,timemin1+timeinc,timeinc)
+            data_nc_times = np.concatenate([[time0],data_nc_times_from1])
+        else:
+            print('reading time dimension: read entire array')
+            data_nc_times = data_nc_timevar[:]
     data_nc_datetimes = num2date(data_nc_times, units = data_nc_timevar.units)
     #data_nc_datetimes_pd = pd.Series(data_nc_datetimes).dt.round(freq='S')
     nptimes = data_nc_datetimes.astype('datetime64[ns]') #convert to numpy first, pandas does not take all cftime datasets

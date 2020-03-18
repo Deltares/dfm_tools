@@ -16,7 +16,7 @@ if not os.path.exists(dir_testoutput):
 dir_testoutput = os.path.join(dir_tests,'..','tests','test_output','test_dflowutil')
 if not os.path.exists(dir_testoutput):
     os.mkdir(dir_testoutput)
-dir_testinput = os.path.join(r'c:/DATA/werkmap','dfm_tools_testdata')
+dir_testinput = os.path.join(r'c:/DATA','dfm_tools_testdata')
 
 
 import numpy as np
@@ -141,7 +141,7 @@ with open(file, 'r') as def_file:
 fig, ax = plt.subplots()
 ugrid = get_netdata(grd)
 pc = plot_netmapdata(ugrid.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
-
+ax.set_aspect(1./np.cos(np.mean(ax.get_ylim())/180*np.pi),adjustable='box') # see Matlab axislat()
 show_waq_segment(grd, 8, segs)
 
 

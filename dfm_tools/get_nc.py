@@ -19,6 +19,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     
     import numpy as np
     import datetime as dt
+    import pandas as pd
     from netCDF4 import Dataset
     
     from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvardims, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_mapnc
@@ -52,13 +53,15 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
             elif type(timestep[0])==type(dt.datetime(1,1,1)) or type(timestep[0])==type(np.datetime64(year=1900,month=1,day=1)): #list/range/ndarray of datetime
                 time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, timestep)
             else:
-                raise Exception('ERROR: 1timestep variable type not anticipated (%s), (list/range/ndarray of) datetime/int are accepted (or "all")'%(type(timestep)))
+                raise Exception('ERROR: timestep variable type is list/range/ndarray (%s), but type of timestep[0] not anticipated (%s), options:\n - int\n - np.int64\n - datetime\n - np.datetime64'%(type(timestep),type(timestep[0])))
+        elif type(timestep)==type(pd.date_range(start=dt.datetime(2000,1,1),periods=10)): #pandas date range
+            time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, timestep)
         elif type(timestep)==int:
             time_ids = [timestep]
         elif type(timestep)==type(dt.datetime(1,1,1)):
             time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, [timestep])
         else:
-            raise Exception('ERROR: 2timestep variable type not anticipated (%s), (list/range/ndarray of) datetime/int are accepted (or "all")'%(type(timestep)))
+            raise Exception('ERROR: timestep variable type not anticipated (%s), options:\n - datetime/int\n - list/range/ndarray of datetime/int\n - pandas daterange\n - "all"'%(type(timestep)))
         #check if requested times are within range of netcdf
         if np.min(time_ids) < 0:
             raise Exception('ERROR: requested start timestep (%d) is negative'%(np.min(time_ids)))

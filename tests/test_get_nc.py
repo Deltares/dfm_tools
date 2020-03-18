@@ -13,7 +13,7 @@ dir_tests = os.path.join(os.path.realpath(__file__), os.pardir)
 dir_testoutput = os.path.join(dir_tests,'test_output')
 if not os.path.exists(dir_testoutput):
     os.mkdir(dir_testoutput)
-dir_testinput = os.path.join(r'c:/DATA/werkmap','dfm_tools_testdata')
+dir_testinput = os.path.join(r'c:/DATA','dfm_tools_testdata')
 
 
 @pytest.mark.unittest    
@@ -181,6 +181,7 @@ def test_getnetdata_plotnet(file_nc):
 def test_gethismodeldata(file_nc):
     """
     this test retrieves his data and plots it
+    file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_his.nc')
     """
     dir_output = getmakeoutputdir(function_name=inspect.currentframe().f_code.co_name)
     #dir_output = dir_testoutput
