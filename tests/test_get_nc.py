@@ -374,6 +374,9 @@ def test_gethirlam():
     from dfm_tools.get_nc import get_netdata, plot_netmapdata
     from dfm_tools.get_nc_helpers import get_ncvardimlist#, get_varname_mapnc
     
+    dir_output = getmakeoutputdir(function_name=inspect.currentframe().f_code.co_name)
+    #dir_output = dir_testoutput
+
     # test Grevelingen
     file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc')
     data_nc = Dataset(file_nc)
@@ -395,9 +398,17 @@ def test_gethirlam():
     
     fig, ax = plt.subplots()
     plt.scatter(mesh2d_node_x,mesh2d_node_y,0.1,c='b')
+    plt.savefig(os.path.join(dir_output,'hirlam_scatter'))
+
+    fig, ax = plt.subplots()
+    plt.plot(mesh2d_node_x,mesh2d_node_y,'-b',linewidth=0.2)
+    plt.plot(mesh2d_node_x.T,mesh2d_node_y.T,'-b',linewidth=0.2)
+    plt.savefig(os.path.join(dir_output,'hirlam_mesh'))
+
     fig, ax = plt.subplots()
     plt.contourf(mesh2d_node_x,mesh2d_node_y,airp)
     #plt.pcolor(mesh2d_node_x,mesh2d_node_y,airp,linewidth=0.5)
+    plt.savefig(os.path.join(dir_output,'hirlam_airpcontour'))
     
 
 
