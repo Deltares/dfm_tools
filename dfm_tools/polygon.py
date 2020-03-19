@@ -80,14 +80,14 @@ class Polygon:
                     
                     if len(pol_comment_temp)==data_pol.shape[1]: #expected format
                         pol_data_pd = pd.DataFrame(data_pol,columns=pol_comment_temp)
+                        if 'date' in pol_comment_temp[0].lower():
+                            try:
+                                pol_data_datetime = pd.to_datetime(pol_data_pd.iloc[:,0]*1000000+pol_data_pd.iloc[:,1],format='%Y%m%d%H%M%S')
+                                pol_data_pd.insert(0, 'datetime', pol_data_datetime)
+                            except:
+                                print('WARNING: conversion from date/time column to datetime failed, incorrect format of first two columns?')
                     else:
                         pol_data_pd = pd.DataFrame(data_pol)
-                        print('WARNING: number of comments does not correspond with number of column, no not used as column names')
-                    try:
-                        pol_data_datetime = pd.to_datetime(pol_data_pd.iloc[:,0]*1000000+pol_data_pd.iloc[:,1],format='%Y%m%d%H%M%S')
-                        pol_data_pd.insert(0, 'datetime', pol_data_datetime)
-                    except:
-                        print('WARNING: conversion from date/time column to datetime failed, incorrect format of first two columns?')
                     pol_data_pd_list.append(pol_data_pd)
                     
                     # reset comment list for next block
