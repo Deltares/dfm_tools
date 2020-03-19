@@ -9,11 +9,9 @@ import pytest
 import inspect
 import os
 
-dir_tests = os.path.join(os.path.realpath(__file__), os.pardir)
-dir_testoutput = os.path.join(dir_tests,'test_output')
-if not os.path.exists(dir_testoutput):
-    os.mkdir(dir_testoutput)
-dir_testinput = os.path.join(r'c:/DATA/werkmap','dfm_tools_testdata')
+dir_testinput = os.path.join(r'c:/DATA','dfm_tools_testdata')
+from tests.TestUtils import getmakeoutputdir
+
 
 
 @pytest.mark.acceptance
@@ -22,8 +20,8 @@ def test_mdu():
     tests whether mdu file can be imported and exported
     """
 
-    this_function_name = inspect.currentframe().f_code.co_name
-    dir_output = os.path.join(dir_testoutput,this_function_name)
+    dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
+    #dir_output = '.'
     if not os.path.exists(dir_output):
         os.mkdir(dir_output)
 
@@ -46,4 +44,3 @@ def test_mdu():
     
     assert import_success == True
     assert export_success == True
-

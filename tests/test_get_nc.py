@@ -9,11 +9,8 @@ import pytest
 import inspect
 import os
 
-dir_tests = os.path.join(os.path.realpath(__file__), os.pardir)
-dir_testoutput = os.path.join(dir_tests,'test_output')
-if not os.path.exists(dir_testoutput):
-    os.mkdir(dir_testoutput)
-dir_testinput = os.path.join(r'c:/DATA/werkmap','dfm_tools_testdata')
+dir_testinput = os.path.join(r'c:/DATA','dfm_tools_testdata')
+from tests.TestUtils import getmakeoutputdir
 
 
 @pytest.mark.unittest    
@@ -50,11 +47,9 @@ def test_getncmatchingvarlist():
     """
     this test tests retrieves a pandas list of variable long names in a netcdf that match the pattern, useful for waq variables.
     """
-    #import pandas as pd
     from dfm_tools.get_nc_helpers import get_ncvardimlist
     
     file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc')
-
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
 
     pattern = 'Flow .*component'
@@ -72,7 +67,6 @@ def test_getncmatchingvarlist():
                                                     pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\Grevelingen_FM_grid_20190603_net.nc'), 44804, id='fromnet Grevelingen')])
 @pytest.mark.unittest
 def test_UGrid(file_nc, expected_size):
-    #from netCDF4 import Dataset
     from dfm_tools.ugrid import UGrid
     
     ugrid = UGrid.fromfile(file_nc)
@@ -85,7 +79,6 @@ def test_UGrid(file_nc, expected_size):
                                                     pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\Grevelingen_FM_grid_20190603_net.nc'), 44804, id='fromnet Grevelingen')])
 @pytest.mark.unittest
 def test_getnetdata(file_nc, expected_size):
-    #from netCDF4 import Dataset
     from dfm_tools.get_nc import get_netdata
     
     ugrid = get_netdata(file_nc)
@@ -122,22 +115,26 @@ def test_getncmodeldata_datetime():
 @pytest.mark.systemtest
 def test_getplotfoudata():
     
+    dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
+    #dir_output = '.'
+
     import matplotlib.pyplot as plt
     plt.close('all')
     
-    from dfm_tools.get_nc import get_netdata, get_ncmodeldata
+    from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
     
-    file_net_rmm = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\01_Rooster\final_totaalmodel\rooster_rmm_v1p5_net.nc'
-    file_fou = os.path.join(dir_testinput,r'DFM_fou_RMM\RMM_dflowfm_0000_fou.nc')
+    file_nc = os.path.join(dir_testinput,r'DFM_fou_RMM\RMM_dflowfm_0000_fou.nc')
 
-    ugrid = get_netdata(file_nc=file_net_rmm)
-    data_fromfou = get_ncmodeldata(file_nc=file_fou, varname='mesh2d_fourier003_mean')#, multipart=False)
+    ugrid = get_netdata(file_nc=file_nc)
+    data_fromfou = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_fourier003_mean')#, multipart=False)
     
-    #fig, ax = plt.subplots()
-    #plot_netmapdata(ugrid.verts, values=data_fromfou, ax=None, linewidth=0.5, color="crimson", facecolor="None")
-    #ax.set_aspect('equal')
+    fig, ax = plt.subplots()
+    pc = plot_netmapdata(ugrid.verts, values=data_fromfou, ax=None, linewidth=0.5, color="crimson", facecolor="None")
+    pc.set_clim([0,10])
+    fig.colorbar(pc)
+    ax.set_aspect('equal')
+    plt.savefig(os.path.join(dir_output,os.path.basename(file_nc).replace('.nc','')))
 
-    #this does not work yet, size of fou-array and grid are not equal (due to new grid vs old foufile? check new foufiles)
     assert ugrid.verts.shape[0] == data_fromfou.shape[0]
 
 
@@ -156,8 +153,8 @@ def test_getnetdata_plotnet(file_nc):
     file_nc = 'p:\\11205258-006-kpp2020_rmm-g6\\C_Work\\01_Rooster\\final_totaalmodel\\rooster_rmm_v1p5_net.nc'
     """
     
-    dir_output = getmakeoutputdir(function_name=inspect.currentframe().f_code.co_name)
-    #dir_output = dir_testoutput
+    dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
+    #dir_output = '.'
 
     import matplotlib.pyplot as plt
     plt.close('all')
@@ -175,17 +172,46 @@ def test_getnetdata_plotnet(file_nc):
     
     
     
+@pytest.mark.acceptance
+def test_getsobekmodeldata():
+    """
+    this test retrieves sobek observation data and plots it
+    """
+    dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
+    #dir_output = '.'
+
+    import matplotlib.pyplot as plt
+    plt.close('all')
+
+    from dfm_tools.get_nc import get_ncmodeldata
+    #from dfm_tools.get_nc_helpers import get_hisstationlist
+    
+    file_nc = os.path.join(dir_testinput,'KenmerkendeWaarden','observations.nc')
+    
+    #station_names = get_hisstationlist(file_nc=file_nc, varname_stat="observation_id")
+    data_fromsobek = get_ncmodeldata(file_nc=file_nc, varname='water_level', station=['Maasmond','HKVHLD','MO_1035.00'], timestep='all')
+    
+    fig, ax = plt.subplots()
+    for iL in range(data_fromsobek.shape[1]):
+        ax.plot(data_fromsobek.var_times,data_fromsobek[:,iL],'-', label=data_fromsobek.var_stations.iloc[iL])
+    ax.legend()
+    plt.savefig(os.path.join(dir_output,'%s_waterlevel'%(os.path.basename(file_nc).replace('.nc',''))))
+    
+    
+    
+    
     
     
 @pytest.mark.parametrize("file_nc", [pytest.param(os.path.join(dir_testinput,'vanNithin','tttz_0000_his.nc'), id='Nithin'),
-                                     pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_his.nc'), id='Grevelingen')])
+                                     pytest.param(os.path.join(dir_testinput,'DFM_3D_z_Grevelingen\\computations\\run01\\DFM_OUTPUT_Grevelingen-FM\\Grevelingen-FM_0000_his.nc'), id='Grevelingen')])
 @pytest.mark.acceptance
 def test_gethismodeldata(file_nc):
     """
     this test retrieves his data and plots it
+    file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen\\computations\\run01\\DFM_OUTPUT_Grevelingen-FM\\Grevelingen-FM_0000_his.nc')
     """
-    dir_output = getmakeoutputdir(function_name=inspect.currentframe().f_code.co_name)
-    #dir_output = dir_testoutput
+    dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
+    #dir_output = '.'
 
     import numpy as np
     import matplotlib.pyplot as plt
@@ -273,8 +299,8 @@ def test_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
     this test retrieves grid data, retrieves map data, and plots it
     file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc')
     """
-    dir_output = getmakeoutputdir(function_name=inspect.currentframe().f_code.co_name)
-    #dir_output = dir_testoutput
+    dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
+    #dir_output = '.'
 
     import matplotlib.pyplot as plt
     plt.close('all')
@@ -365,14 +391,90 @@ def test_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
 
 
 
+@pytest.mark.acceptance
+def test_gethirlam():
+    ## WARNING: THIS TEST IS NOT YET FINISHED, WILL BE IMPROVED AND LINKED TO INTERNAL FUNCTIONS ASAP
+    import os
+    import matplotlib.pyplot as plt
+    import numpy as np
+    from netCDF4 import Dataset
+    plt.close('all')
+    
+    from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
+    from dfm_tools.get_nc_helpers import get_ncvardimlist#, get_varname_mapnc
+    
+    dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
+    #dir_output = '.'
 
-@pytest.mark.parametrize("file_nc", [pytest.param(r'p:\11201806-sophie\Oosterschelde\WAQ\r03\postprocessing\oost_tracer_map_backup.nc', id='oost_tracer_map'),
-                                     pytest.param(r'p:\11201806-sophie\Oosterschelde\WAQ\r02\postprocessing\oost_tracer_2_map.nc', id='oost_tracer_2_map')])
+    # test Grevelingen
+    file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc')
+    data_nc = Dataset(file_nc)
+    #mesh2d_node_xRMM = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_node_x')][:]
+    #mesh2d_node_yRMM = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_node_y')][:]
+    ugrid = get_netdata(file_nc=file_nc)
+    fig, ax = plt.subplots()
+    plot_netmapdata(ugrid.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
+    ax.set_aspect('equal')
+    
+    #hirlam
+    file_nc = r'p:\1204257-dcsmzuno\2014\data\meteo\HIRLAM72_2018\h72_201803.nc'
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    data_nc = Dataset(file_nc)
+    
+    airp = data_nc.variables['air_pressure_fixed_height'][0,:,:]
+    mesh2d_node_x = data_nc.variables['x'][:]
+    mesh2d_node_y = data_nc.variables['y'][:]
+    
+    fig, ax = plt.subplots()
+    plt.scatter(mesh2d_node_x,mesh2d_node_y,0.1,c='b')
+    plt.savefig(os.path.join(dir_output,'hirlam_scatter'))
+
+    fig, ax = plt.subplots()
+    plt.plot(mesh2d_node_x,mesh2d_node_y,'-b',linewidth=0.2)
+    plt.plot(mesh2d_node_x.T,mesh2d_node_y.T,'-b',linewidth=0.2)
+    plt.savefig(os.path.join(dir_output,'hirlam_mesh'))
+
+    fig, ax = plt.subplots()
+    plt.contourf(mesh2d_node_x,mesh2d_node_y,airp)
+    #plt.pcolor(mesh2d_node_x,mesh2d_node_y,airp,linewidth=0.5)
+    plt.savefig(os.path.join(dir_output,'hirlam_airpcontour'))
+    
+
+    #ERA5
+    file_nc = r'p:\11200665-c3s-codec\2_Hydro\ECWMF_meteo\meteo\ERA-5\2000\ERA5_metOcean_atm_19991201_19991231.nc'
+    #data_nc = Dataset(file_nc)
+    #ugrid = get_netdata(file_nc=file_nc)
+    
+    data_lon = get_ncmodeldata(file_nc=file_nc, varname='longitude', multipart=False)
+    data_lat = get_ncmodeldata(file_nc=file_nc, varname='latitude')
+    data_psl = get_ncmodeldata(file_nc=file_nc, varname='msl',timestep=10, multipart=False)
+    lons,lats = np.meshgrid(data_lon,data_lat)
+    
+    fig, ax = plt.subplots()
+    plt.plot(lons, lats,'-b',linewidth=0.2)
+    plt.plot(lons.T, lats.T,'-b',linewidth=0.2)
+    plt.savefig(os.path.join(dir_output,'ERA5_mesh'))
+
+    fig, ax = plt.subplots()
+    plt.contourf(lons, lats, data_psl[0,:,:])
+    #plt.pcolor(mesh2d_node_x,mesh2d_node_y,airp,linewidth=0.5)
+    plt.savefig(os.path.join(dir_output,'ERA5_mslcontour'))
+
+    #plot_netmapdata(ugrid.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
+
+
+
+
+
+@pytest.mark.parametrize("file_nc", [pytest.param('p:\\11201806-sophie\\Oosterschelde\\WAQ\\r03\\postprocessing\\oost_tracer_map_backup.nc', id='oost_tracer_map'),
+                                     pytest.param('p:\\11201806-sophie\\Oosterschelde\\WAQ\\r02\\postprocessing\\oost_tracer_2_map.nc', id='oost_tracer_2_map')])
 @pytest.mark.acceptance
 def test_getplotmapWAQOS(file_nc):
-
-    dir_output = getmakeoutputdir(function_name=inspect.currentframe().f_code.co_name)
-    #dir_output = dir_testoutput
+    dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
+    """
+    file_nc = 'p:\\11201806-sophie\\Oosterschelde\\WAQ\\r03\\postprocessing\\oost_tracer_map_backup.nc'
+    dir_output = '.'
+    """
 
     import matplotlib.pyplot as plt
     plt.close('all')
@@ -414,10 +516,10 @@ def test_getplotmapWAQOS(file_nc):
 @pytest.mark.acceptance
 def test_getxzcoordsonintersection_plotcrossect(file_nc):
 
-    dir_output = getmakeoutputdir(function_name=inspect.currentframe().f_code.co_name)
+    dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
     """
     #manual test variables (run this script first to get the variable dir_testoutput)
-    dir_output = dir_testoutput
+    dir_output = '.'
     file_nc = os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_cb_3d\\cb_3d_map.nc')
     file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc')
     file_nc = 'p:\\1204257-dcsmzuno\\2013-2017\\3D-DCSM-FM\\A17b\\DFM_OUTPUT_DCSM-FM_0_5nm\\DCSM-FM_0_5nm_0000_map.nc'
@@ -575,14 +677,3 @@ def test_getxzcoordsonintersection_plotcrossect(file_nc):
 
 
 
-
-
-# region // Helpers
-
-def getmakeoutputdir(function_name):
-    dir_output = os.path.join(dir_testoutput,function_name)
-    if not os.path.exists(dir_output):
-        os.mkdir(dir_output)
-    return dir_output
-
-# endregion

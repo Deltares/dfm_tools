@@ -19,6 +19,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     
     import numpy as np
     import datetime as dt
+    import pandas as pd
     from netCDF4 import Dataset
     
     from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvardims, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_mapnc
@@ -29,7 +30,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     data_nc = Dataset(file_nc)
     
     #CHECK VARNAME, IS THERE A SEPARATE DEFINITION TO RETRIEVE DATA?
-    varname_stat_validvals = ['station_name', 'general_structure_id', 'cross_section_name']
+    varname_stat_validvals = ['station_name', 'general_structure_id', 'cross_section_name', 'observation_id'] #DFM stations, DFM gs, DFM crs, Sobek stations
     if varname in varname_stat_validvals:
         raise Exception('ERROR: variable "%s" should be retrieved with separate function:\nstation_names = get_hisstationlist(file_nc=file_nc, varname_stat="%s")'%(varname,varname))
     
@@ -52,13 +53,15 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
             elif type(timestep[0])==type(dt.datetime(1,1,1)) or type(timestep[0])==type(np.datetime64(year=1900,month=1,day=1)): #list/range/ndarray of datetime
                 time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, timestep)
             else:
-                raise Exception('ERROR: 1timestep variable type not anticipated (%s), (list/range/ndarray of) datetime/int are accepted (or "all")'%(type(timestep)))
+                raise Exception('ERROR: timestep variable type is list/range/ndarray (%s), but type of timestep[0] not anticipated (%s), options:\n - int\n - np.int64\n - datetime\n - np.datetime64'%(type(timestep),type(timestep[0])))
+        elif type(timestep)==type(pd.date_range(start=dt.datetime(2000,1,1),periods=10)): #pandas date range
+            time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, timestep)
         elif type(timestep)==int:
             time_ids = [timestep]
         elif type(timestep)==type(dt.datetime(1,1,1)):
             time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, [timestep])
         else:
-            raise Exception('ERROR: 2timestep variable type not anticipated (%s), (list/range/ndarray of) datetime/int are accepted (or "all")'%(type(timestep)))
+            raise Exception('ERROR: timestep variable type not anticipated (%s), options:\n - datetime/int\n - list/range/ndarray of datetime/int\n - pandas daterange\n - "all"'%(type(timestep)))
         #check if requested times are within range of netcdf
         if np.min(time_ids) < 0:
             raise Exception('ERROR: requested start timestep (%d) is negative'%(np.min(time_ids)))
@@ -98,18 +101,17 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         raise Exception('ERROR: depth argument is provided, but this is not implemented yet')
     
     #STATION/GENERAL_STRUCTURES CHECKS
-    if 'stations' not in nc_values_dims and 'general_structures' not in nc_values_dims and 'cross_section' not in nc_values_dims: #no station dimension
+    dimname_stat_validvals = ['stations', 'general_structures', 'cross_section', 'id'] #DFM stations, DFM gs, DFM crs, Sobek stations
+    dimname_stat_validvals_boolpresent = [x in nc_values_dims for x in dimname_stat_validvals]
+    if not any(dimname_stat_validvals_boolpresent):
         if station is not None:
             raise Exception('ERROR: netcdf file variable (%s) does not contain stations/general_structures, but parameter station is provided'%(varname))
     else: #stations are present
         if station is None:
             raise Exception('ERROR: netcdf variable contains a station/general_structures dimension, but parameter station not provided (can be "all")')
-        if 'stations' in nc_values_dims:
-            station_name_list_pd = get_hisstationlist(file_nc) #get stations
-        elif 'general_structures' in nc_values_dims:
-            station_name_list_pd = get_hisstationlist(file_nc,varname_stat='general_structure_id') #get stations            
-        elif 'cross_section' in nc_values_dims:
-            station_name_list_pd = get_hisstationlist(file_nc,varname_stat='cross_section_name') #get stations            
+        #get appropriate station list
+        dimname_stat_validvals_id = np.where(dimname_stat_validvals_boolpresent)[0][0]
+        station_name_list_pd = get_hisstationlist(file_nc,varname_stat=varname_stat_validvals[dimname_stat_validvals_id])
         #convert station to list of int if it is not already
         if station is str('all'):
             station_ids = range(len(station_name_list_pd))
@@ -131,7 +133,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
             raise Exception('ERROR: requested lowest station id (%d) is negative'%(np.min(station_ids)))
         if np.max(station_ids) > len(station_name_list_pd)-1:
             raise Exception('ERROR: requested highest station id (%d) is larger than available in netcdf file (%d)'%(np.max(station_ids),len(station_name_list_pd)-1))
-     
+    
     
     #check faces existence, variable could have ghost cells if partitioned
     dimn_faces = get_varname_mapnc(data_nc,'mesh2d_nFaces')
@@ -157,7 +159,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
                     values_selid.append(nonghost_ids)
                 values_dimlens.append(0) #because concatenate axis
                 concat_axis = iD
-            elif nc_values_dimsel == 'stations' or nc_values_dims[iD] == 'general_structures' or nc_values_dims[iD] == 'cross_section':
+            elif nc_values_dimsel in dimname_stat_validvals:
                 values_selid.append(station_ids)
                 #values_dimlens.append(0) #because concatenate axis
                 #concat_axis = iD
@@ -193,7 +195,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         values_all.var_layers = layer_ids
     else:
         values_all.var_layers = None
-    if 'stations' in nc_values_dims or 'general_structures' in nc_values_dims or 'cross_section' in nc_values_dims:
+    if any(dimname_stat_validvals_boolpresent):
         values_all.var_stations = station_name_list_pd.iloc[station_ids]
     else:
         values_all.var_stations = None

@@ -37,9 +37,10 @@ Features
 - take over masks in original data
 - selection/plotting by polyline/crossection (slicing the ugrid data)
 - pytest testbank
-- examples of unformatted plots: n:\\Deltabox\\Bulletin\\veenstra\\info dfm_tools
+- examples of unformatted plots created by testbank scripts in tests folder: n:\\Deltabox\\Bulletin\\veenstra\\info dfm_tools
 - please check the TODO sections for known inaccuracies or features that are not yet available
-
+- read grd, dep and tekal (tek, pli, pliz, pol, ldb) data
+- read sobek observation point data
 
 How to work with this git repository
 --------
@@ -69,7 +70,7 @@ Known bugs
 	
 TODO wishlist
 --------
-- select/check functions in dflowutil folder and merge with dfm_tools
+- select/check functions in dflowutil folder and merge with dfm_tools (including dflowutil_examples/test_dflowutil.py and others)
 - add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?) (refer depth wrt reference level, water level or bed level, z variable is not correct in dfm-mapfile yet)
 - retrieve correct depths:
 	- add depth array (interfaces/centers) to his and map variables (z/sigma layer calculation is already in get_modeldata_onintersection function)
@@ -92,23 +93,25 @@ TODO wishlist
 - add polygon read/write function (also ldb files)
 - add polygon ginput function (click in plot) (already partly exists in intersect/slice testscript)
 - pyugrid (ghostcells en mapmergen worden afgehandeld?), voorbeelden in ieder geval als inspiratie voor plotopties):
+	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/COMT_example.ipynb
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/Delft3D%20examples.ipynb
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/connectivity_example.ipynb
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/plotting_example.ipynb
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/vector_plotting_example.ipynb
-- any grid: https://github.com/NOAA-ORR-ERD/gridded
-- how to plot properties on edges (scatter is slow), maybe create dual mesh and plot like faces. most relevant variables are also available on faces, so is this necessary?
-- add (look for) readwrite functions for general datafromats (tim, tekal etc)
-- add plot of structured grid (CMEMS etc)
-- add foufiles, rstfiles? (partitioned but with different dimensions, should already partially work)
-- improve testbank:
-	- parametrize test_grid_gethismodeldata
-	- arrange auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
-- add comparable functions for sobek and Delft3D
+- make grid reading more flexible:
+	- improve plots for structured grid (CMEMS, ERA5, hirlam, grd etc)
+	- https://github.com/NOAA-ORR-ERD/gridded
+	- tests.test_get_nc.test_gethirlam() is eerste opzet voor hirlam/ERA5 data, werkt heel anders dan D-flow FM
+	- how to plot properties on edges (scatter is slow), maybe create dual mesh and plot like faces. most relevant variables are also available on faces, so is this necessary?
+	- add support for rstfiles (different way of storing grid data, only face nodes present?)
+- add (look for) readwrite functions for general datafromats (tim, bc, tekal write etc)
+- expand Delft3D and Sobek read options
+- arrange auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
 
 
-TODO
+TODO non-content
 --------
+- update install/venv manuals, venv manual is now not in line with user-install
 - register on PyPI, for easier install via pip (easier for regular users):
 	- https://the-hitchhikers-guide-to-packaging.readthedocs.io/en/latest/quickstart.html#register-your-package-with-the-python-package-index-pypi
 	- https://packaging.python.org/tutorials/packaging-projects/

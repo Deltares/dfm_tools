@@ -3,7 +3,8 @@ dependencies:
   - python=3.7
   - pip>=19.2.3
   - pip:
-    - pip>=19.2.3
+    - pytest>=5.0.1
+    - spyder-kernels==0.*
     - bump2version>=0.5.11
     - wheel>=0.33.6
     - watchdog>=0.9.0
@@ -13,7 +14,5 @@ dependencies:
     - Sphinx>=1.8.5
     - twine>=1.14.0
     - Click>=7.0
-    - pytest>=5.0.1
     - pytest-runner>=5.1
-    - spyder-kernels==0.*
-    - pyqt5
+    
