@@ -425,9 +425,11 @@ def test_gethirlam():
                                      pytest.param(r'p:\11201806-sophie\Oosterschelde\WAQ\r02\postprocessing\oost_tracer_2_map.nc', id='oost_tracer_2_map')])
 @pytest.mark.acceptance
 def test_getplotmapWAQOS(file_nc):
-
     dir_output = getmakeoutputdir(function_name=inspect.currentframe().f_code.co_name)
-    #dir_output = dir_testoutput
+    """
+    file_nc = r'p:\11201806-sophie\Oosterschelde\WAQ\r03\postprocessing\oost_tracer_map_backup.nc'
+    dir_output = dir_testoutput
+    """
 
     import matplotlib.pyplot as plt
     plt.close('all')
