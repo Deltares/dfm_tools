@@ -39,7 +39,7 @@ Features
 - pytest testbank
 - examples of unformatted plots: n:\\Deltabox\\Bulletin\\veenstra\\info dfm_tools
 - please check the TODO sections for known inaccuracies or features that are not yet available
-
+- read grd, dep and tekal data
 
 How to work with this git repository
 --------
