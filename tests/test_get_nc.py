@@ -120,22 +120,27 @@ def test_getncmodeldata_datetime():
 @pytest.mark.systemtest
 def test_getplotfoudata():
     
+    dir_output = getmakeoutputdir(function_name=inspect.currentframe().f_code.co_name)
+    #dir_output = dir_testoutput
+
     import matplotlib.pyplot as plt
     plt.close('all')
     
-    from dfm_tools.get_nc import get_netdata, get_ncmodeldata
+    from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
     
-    file_net_rmm = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\01_Rooster\final_totaalmodel\rooster_rmm_v1p5_net.nc'
-    file_fou = os.path.join(dir_testinput,r'DFM_fou_RMM\RMM_dflowfm_0000_fou.nc')
+    #file_net_rmm = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\01_Rooster\final_totaalmodel\rooster_rmm_v1p5_net.nc'
+    file_nc = os.path.join(dir_testinput,r'DFM_fou_RMM\RMM_dflowfm_0000_fou.nc')
 
-    ugrid = get_netdata(file_nc=file_net_rmm)
-    data_fromfou = get_ncmodeldata(file_nc=file_fou, varname='mesh2d_fourier003_mean')#, multipart=False)
+    ugrid = get_netdata(file_nc=file_nc)
+    data_fromfou = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_fourier003_mean')#, multipart=False)
     
-    #fig, ax = plt.subplots()
-    #plot_netmapdata(ugrid.verts, values=data_fromfou, ax=None, linewidth=0.5, color="crimson", facecolor="None")
-    #ax.set_aspect('equal')
+    fig, ax = plt.subplots()
+    pc = plot_netmapdata(ugrid.verts, values=data_fromfou, ax=None, linewidth=0.5, color="crimson", facecolor="None")
+    pc.set_clim([0,10])
+    fig.colorbar(pc)
+    ax.set_aspect('equal')
+    plt.savefig(os.path.join(dir_output,os.path.basename(file_nc).replace('.nc','')))
 
-    #this does not work yet, size of fou-array and grid are not equal (due to new grid vs old foufile? check new foufiles)
     assert ugrid.verts.shape[0] == data_fromfou.shape[0]
 
 
