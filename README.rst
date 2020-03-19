@@ -40,6 +40,7 @@ Features
 - examples of unformatted plots created by testbank scripts in tests folder: n:\\Deltabox\\Bulletin\\veenstra\\info dfm_tools
 - please check the TODO sections for known inaccuracies or features that are not yet available
 - read grd, dep and tekal (tek, pli, pliz, pol, ldb) data
+- read sobek observation point data
 
 How to work with this git repository
 --------
@@ -104,8 +105,8 @@ TODO wishlist
 	- how to plot properties on edges (scatter is slow), maybe create dual mesh and plot like faces. most relevant variables are also available on faces, so is this necessary?
 	- add support for rstfiles (different way of storing grid data, only face nodes present?)
 - add (look for) readwrite functions for general datafromats (tim, bc, tekal write etc)
+- expand Delft3D and Sobek read options
 - arrange auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
-- add comparable functions for sobek and Delft3D
 
 
 TODO non-content
