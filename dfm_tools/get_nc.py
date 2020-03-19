@@ -30,7 +30,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     data_nc = Dataset(file_nc)
     
     #CHECK VARNAME, IS THERE A SEPARATE DEFINITION TO RETRIEVE DATA?
-    varname_stat_validvals = ['station_name', 'general_structure_id', 'cross_section_name']
+    varname_stat_validvals = ['station_name', 'general_structure_id', 'cross_section_name', 'observation_id'] #DFM stations, DFM gs, DFM crs, Sobek stations
     if varname in varname_stat_validvals:
         raise Exception('ERROR: variable "%s" should be retrieved with separate function:\nstation_names = get_hisstationlist(file_nc=file_nc, varname_stat="%s")'%(varname,varname))
     
@@ -101,18 +101,17 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         raise Exception('ERROR: depth argument is provided, but this is not implemented yet')
     
     #STATION/GENERAL_STRUCTURES CHECKS
-    if 'stations' not in nc_values_dims and 'general_structures' not in nc_values_dims and 'cross_section' not in nc_values_dims: #no station dimension
+    dimname_stat_validvals = ['stations', 'general_structures', 'cross_section', 'id'] #DFM stations, DFM gs, DFM crs, Sobek stations
+    dimname_stat_validvals_boolpresent = [x in nc_values_dims for x in dimname_stat_validvals]
+    if not any(dimname_stat_validvals_boolpresent):
         if station is not None:
             raise Exception('ERROR: netcdf file variable (%s) does not contain stations/general_structures, but parameter station is provided'%(varname))
     else: #stations are present
         if station is None:
             raise Exception('ERROR: netcdf variable contains a station/general_structures dimension, but parameter station not provided (can be "all")')
-        if 'stations' in nc_values_dims:
-            station_name_list_pd = get_hisstationlist(file_nc) #get stations
-        elif 'general_structures' in nc_values_dims:
-            station_name_list_pd = get_hisstationlist(file_nc,varname_stat='general_structure_id') #get stations            
-        elif 'cross_section' in nc_values_dims:
-            station_name_list_pd = get_hisstationlist(file_nc,varname_stat='cross_section_name') #get stations            
+        #get appropriate station list
+        dimname_stat_validvals_id = np.where(dimname_stat_validvals_boolpresent)[0][0]
+        station_name_list_pd = get_hisstationlist(file_nc,varname_stat=varname_stat_validvals[dimname_stat_validvals_id])
         #convert station to list of int if it is not already
         if station is str('all'):
             station_ids = range(len(station_name_list_pd))
@@ -134,7 +133,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
             raise Exception('ERROR: requested lowest station id (%d) is negative'%(np.min(station_ids)))
         if np.max(station_ids) > len(station_name_list_pd)-1:
             raise Exception('ERROR: requested highest station id (%d) is larger than available in netcdf file (%d)'%(np.max(station_ids),len(station_name_list_pd)-1))
-     
+    
     
     #check faces existence, variable could have ghost cells if partitioned
     dimn_faces = get_varname_mapnc(data_nc,'mesh2d_nFaces')
@@ -160,7 +159,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
                     values_selid.append(nonghost_ids)
                 values_dimlens.append(0) #because concatenate axis
                 concat_axis = iD
-            elif nc_values_dimsel == 'stations' or nc_values_dims[iD] == 'general_structures' or nc_values_dims[iD] == 'cross_section':
+            elif nc_values_dimsel in dimname_stat_validvals:
                 values_selid.append(station_ids)
                 #values_dimlens.append(0) #because concatenate axis
                 #concat_axis = iD
@@ -196,7 +195,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         values_all.var_layers = layer_ids
     else:
         values_all.var_layers = None
-    if 'stations' in nc_values_dims or 'general_structures' in nc_values_dims or 'cross_section' in nc_values_dims:
+    if any(dimname_stat_validvals_boolpresent):
         values_all.var_stations = station_name_list_pd.iloc[station_ids]
     else:
         values_all.var_stations = None

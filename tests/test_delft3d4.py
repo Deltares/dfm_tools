@@ -9,11 +9,8 @@ import pytest
 import inspect
 import os
 
-dir_tests = os.path.join(os.path.realpath(__file__), os.pardir)
-dir_testoutput = os.path.join(dir_tests,'test_output')
-if not os.path.exists(dir_testoutput):
-    os.mkdir(dir_testoutput)
 dir_testinput = os.path.join(r'c:/DATA','dfm_tools_testdata')
+from tests.TestUtils import getmakeoutputdir
 
 
 @pytest.mark.unittest    
@@ -26,8 +23,8 @@ def test_delft3d4():
     from dfm_tools.delft3d4 import grid
     from dfm_tools.delft3d4 import dep
     
-    dir_output = getmakeoutputdir(function_name=inspect.currentframe().f_code.co_name)
-    #dir_output = dir_testoutput
+    dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
+    #dir_output = '.'
 
     #file_d3d_grid = r'c:\DATA\werkmap\dfm_tools_testdata\D3D_3D_sigma_curved_bend\bendcurv.grd'
     file_d3d_grid = os.path.join(dir_testinput, 'brazil_patos_lagoon_52S_32E', 'lake_and_sea_5_xy.grd')
@@ -56,12 +53,3 @@ def test_delft3d4():
     #data_mdf = mdf.read(file_d3d_mdf)
 
 
-# region // Helpers
-
-def getmakeoutputdir(function_name):
-    dir_output = os.path.join(dir_testoutput,function_name)
-    if not os.path.exists(dir_output):
-        os.mkdir(dir_output)
-    return dir_output
-
-# endregion

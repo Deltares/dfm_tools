@@ -248,13 +248,14 @@ def get_timeid_fromdatetime(data_nc_datetimes_pd, timestep):
 def get_hisstationlist(file_nc,varname_stat='station_name'):
     from netCDF4 import Dataset, chartostring
     import pandas as pd
+    import numpy as np
     
-    varname_stat_validvals = ['station_name', 'general_structure_id', 'cross_section_name']
+    varname_stat_validvals = ['station_name', 'general_structure_id', 'cross_section_name','observation_id']
     if varname_stat in varname_stat_validvals:
         data_nc = Dataset(file_nc)
-        #varn_station_name = get_varname_mapnc(data_nc,'station_name')
         station_name_char = data_nc.variables[varname_stat][:]
-        station_name_list = chartostring(station_name_char)
+        station_name_list_raw = chartostring(station_name_char)
+        station_name_list = np.char.strip(station_name_list_raw) #necessary step for Sobek
         
         station_name_list_pd = pd.Series(station_name_list)
     else:

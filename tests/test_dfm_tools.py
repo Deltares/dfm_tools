@@ -6,11 +6,9 @@ import pytest
 #import inspect
 import os
 
-dir_tests = os.path.join(os.path.realpath(__file__), os.pardir)
-dir_testoutput = os.path.join(dir_tests,'test_output')
-if not os.path.exists(dir_testoutput):
-    os.mkdir(dir_testoutput)
 dir_testinput = os.path.join(r'c:/DATA','dfm_tools_testdata')
+#from tests.TestUtils import getmakeoutputdir
+
 
 statement_list = ['import os','import sys','import glob','import shutil','import scipy','import numpy','import datetime','import pandas','import matplotlib','import netCDF4','import click','import shapely','import shapely.geometry','from shapely.geometry import Point']
 @pytest.mark.parametrize("statement", [pytest.param('%s'%(stat), id='%s'%(stat)) for stat in statement_list])
