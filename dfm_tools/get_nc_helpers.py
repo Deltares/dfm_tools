@@ -33,7 +33,7 @@ def get_ncfilelist(file_nc, multipart=None):
 
 
 
-def get_varname_mapnc(data_nc,varname_requested):
+def get_varname_fromnc(data_nc,varname_requested):
     import pandas as pd
     
     #VARIABLE names used within different versions of Delft3D-Flexible Mesh
@@ -122,50 +122,57 @@ def get_varname_mapnc(data_nc,varname_requested):
 def get_ncvardimlist(file_nc):
     from netCDF4 import Dataset
     import pandas as pd
+    import numpy as np
     
     data_nc = Dataset(file_nc)
     
     nc_varkeys = list(data_nc.variables.keys())
     nc_dimkeys = list(data_nc.dimensions.keys())
-    nc_varlongnames = []
-    for nc_var in data_nc.variables:
-        try:
-            nc_varlongnames.append(data_nc.variables[nc_var].long_name)
-        except:
-            nc_varlongnames.append('NO long_name defined')
-    nc_dimlongnames = []
-    for nc_dim in data_nc.dimensions:
-        try:
-            nc_dimlongnames.append(data_nc.dimensions[nc_dim].long_name)
-        except:
-            nc_dimlongnames.append('NO long_name defined')
-
-    vars_pd = pd.DataFrame({'nc_varkeys': nc_varkeys, 'nc_varlongnames': nc_varlongnames})
-    dims_pd = pd.DataFrame({'nc_dimkeys': nc_dimkeys, 'nc_dimlongnames': nc_dimlongnames})
+    vars_pd = pd.DataFrame({'nc_varkeys': nc_varkeys})
+    dims_pd = pd.DataFrame({'nc_dimkeys': nc_dimkeys})
+    var_attr_name_list = ['standard_name','long_name','coordinates','units','mesh','location']
+    for iV, nc_var in enumerate(data_nc.variables):
+        #get non-attribute properties of netcdf variable
+        if iV==0:
+            vars_pd['shape'] = np.nan
+            vars_pd['dimensions'] = np.nan
+        vars_pd.loc[iV,'shape'] = str(data_nc.variables[nc_var].shape)
+        vars_pd.loc[iV,'dimensions'] = str(data_nc.variables[nc_var].dimensions)
+        #get attributes properties of netcdf variable
+        for attr_name in var_attr_name_list:
+            if iV==0:
+                vars_pd[attr_name] = ''
+            try:
+                vars_pd.loc[iV, attr_name] = data_nc.variables[nc_var].getncattr(attr_name)
+            except:
+                pass
+    for iD, nc_dim in enumerate(data_nc.dimensions):
+        #get non-attribute properties of netcdf variable
+        if iD==0:
+            dims_pd['name'] = np.nan
+            dims_pd['size'] = np.nan
+        dims_pd.loc[iD,'name'] = data_nc.dimensions[nc_dim].name
+        dims_pd.loc[iD,'size'] = data_nc.dimensions[nc_dim].size
     return vars_pd, dims_pd
 
     
 
 
-def get_ncvardims(file_nc, varname):
+def get_ncvarobject(file_nc, varname):
     from netCDF4 import Dataset
     
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
     nc_varkeys = list(vars_pd['nc_varkeys'])
-    #nc_varlongnames = list(vars_pd['nc_varlongnames'])
-    nc_dimkeys = list(dims_pd['nc_dimkeys'])
     
     # check if requested variable is in netcdf
     if varname not in nc_varkeys:
         #raise Exception('ERROR: requested variable %s not in netcdf, available are:\n%s'%(varname, '\n'.join(map(str,['%-25s: %s'%(nck,ncln) for nck,ncln in zip(nc_varkeys, nc_varlongnames)]))))
-        raise Exception('ERROR: requested variable %s not in netcdf, available are:\n%s\nUse command "vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)" to obtain full list as variable.'%(varname, vars_pd))
+        raise Exception('ERROR: requested variable %s not in netcdf, available are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_ncvardimlist; vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)'%(varname, vars_pd))
     
     data_nc = Dataset(file_nc)
-    nc_values = data_nc.variables[varname]
-    nc_values_shape = nc_values.shape
-    nc_values_dims = nc_values.dimensions
-    #nc_values_ndims = len(nc_values_dims)
-    return nc_varkeys, nc_dimkeys, nc_values, nc_values_shape, nc_values_dims
+    nc_varobject = data_nc.variables[varname]
+    
+    return nc_varobject
 
 
 
@@ -173,11 +180,11 @@ def ghostcell_filter(file_nc):
     import numpy as np
     from netCDF4 import Dataset
     
-    #from dfm_tools.get_nc_helpers import get_varname_mapnc
+    #from dfm_tools.get_nc_helpers import get_varname_fromnc
     
     data_nc = Dataset(file_nc)
     
-    varn_domain = get_varname_mapnc(data_nc,'mesh2d_flowelem_domain')
+    varn_domain = get_varname_fromnc(data_nc,'mesh2d_flowelem_domain')
     if varn_domain is not None: # domain variable is present, so there are multiple domains
         domain = data_nc.variables[varn_domain][:]
         domain_no = np.bincount(domain).argmax() #meest voorkomende domeinnummer
@@ -188,31 +195,43 @@ def ghostcell_filter(file_nc):
 
 
 
-def get_timesfromnc(file_nc):
+def get_timesfromnc(file_nc, force_noreconstruct=False):
+    """
+    retrieves time array from netcdf file.
+    Since long time arrays take a long time to retrieve at once, reconstruction is tried
+    in dflowfm an array can start with 0 (initial), followed by a tstart and increading with intervals to tend
+    therefore, the interval at the start and end of the time array is not always equal to the 'real' time interval
+    reconstruction takes care of this.
+    if you still feel like the resulting timeseries is incorrect, use the keyword force_noreconstruct
+    """
+    
     from netCDF4 import Dataset,num2date#,date2num
     import numpy as np
     import pandas as pd
     
-    #from dfm_tools.get_nc_helpers import get_varname_mapnc
-    
+    #from dfm_tools.get_nc_helpers import get_varname_fromnc
+
     data_nc = Dataset(file_nc)
-    varname_time = get_varname_mapnc(data_nc,'time')
+    varname_time = get_varname_fromnc(data_nc,'time')
     data_nc_timevar = data_nc.variables[varname_time]
     
-    if len(data_nc_timevar)<3: #this rarely is the case, but just to be sure
+    if len(data_nc_timevar)<3 or force_noreconstruct==True: #shorter than 3 rarely is the case, but just to be sure
         data_nc_times = data_nc_timevar[:]
+        print('reading time dimension: read entire array (len < 3 or force_noreconstruct==True)')
     else:
         time0 = data_nc_timevar[0] 
         time1 = data_nc_timevar[1] 
         time2 = data_nc_timevar[2]
+        timemin3 = data_nc_timevar[-3]
         timemin2 = data_nc_timevar[-2]
         timemin1 = data_nc_timevar[-1]
-        timeinc = time2-time1 # the interval between 0 and 1 is not per definition representative, so take 1 and 2
-        timeincend = timemin1-timemin2
-        if timeinc == timeincend: #reconstruct time array to save time
+        timeinc_poststart = time2-time1 # the interval between 0 and 1 is not per definition representative, so take 1 and 2
+        timeinc_preend = timemin2-timemin3
+        #timeinc_end = timemin1-timemin2
+        if timeinc_poststart == timeinc_preend: #reconstruct time array to save time
             print('reading time dimension: reconstruct array')
-            data_nc_times_from1 = np.arange(time1,timemin1+timeinc,timeinc)
-            data_nc_times = np.concatenate([[time0],data_nc_times_from1])
+            data_nc_times_from1 = np.arange(time1,timemin1,timeinc_poststart)
+            data_nc_times = np.concatenate([[time0],data_nc_times_from1,[timemin1]])
         else:
             print('reading time dimension: read entire array')
             data_nc_times = data_nc_timevar[:]

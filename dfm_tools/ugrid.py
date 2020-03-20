@@ -22,7 +22,7 @@ class UGrid:
     def fromfile(file_nc):
         import numpy as np
         from netCDF4 import Dataset
-        from dfm_tools.get_nc_helpers import get_varname_mapnc, ghostcell_filter
+        from dfm_tools.get_nc_helpers import get_varname_fromnc, ghostcell_filter
         
         def nodexyfaces2verts(node_x,node_y, faces):
             quatrangles = faces-1 #convert 1-based indexing of cell numbering in ugrid to 0-based indexing
@@ -35,25 +35,25 @@ class UGrid:
         
         data_nc = Dataset(file_nc)
 
-        mesh2d_node_x = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_node_x')][:]
-        mesh2d_node_y = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_node_y')][:]
-        varn_mesh2d_node_z = get_varname_mapnc(data_nc,'mesh2d_node_z')
+        mesh2d_node_x = data_nc.variables[get_varname_fromnc(data_nc,'mesh2d_node_x')][:]
+        mesh2d_node_y = data_nc.variables[get_varname_fromnc(data_nc,'mesh2d_node_y')][:]
+        varn_mesh2d_node_z = get_varname_fromnc(data_nc,'mesh2d_node_z')
         if varn_mesh2d_node_z is not None: # node_z variable is present
             mesh2d_node_z = data_nc.variables[varn_mesh2d_node_z][:]
         else:
             mesh2d_node_z = None
-        varn_mesh2d_face_nodes = get_varname_mapnc(data_nc,'mesh2d_face_nodes')
+        varn_mesh2d_face_nodes = get_varname_fromnc(data_nc,'mesh2d_face_nodes')
         if varn_mesh2d_face_nodes is not None: # node_z variable is present
             mesh2d_face_nodes = data_nc.variables[varn_mesh2d_face_nodes][:, :]
         else:
             raise Exception('ERROR: provided file does not contain a variable mesh2d_face_nodes or similar:\n%s\nPlease do one of the following:\n- plot grid from *_map.nc file\n- import and export the grid with RGFGRID\n- import and save the gridd "with cellfinfo" from interacter'%(file_nc))
         verts = nodexyfaces2verts(mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes) #xy coordinates of face nodes
         
-        varn_mesh2d_edge_x = get_varname_mapnc(data_nc,'mesh2d_edge_x')
+        varn_mesh2d_edge_x = get_varname_fromnc(data_nc,'mesh2d_edge_x')
         if varn_mesh2d_edge_x is not None: # mesh2d_edge_x (and mesh2d_edge_y) variable is present
             mesh2d_edge_x = data_nc.variables[varn_mesh2d_edge_x][:]
-            mesh2d_edge_y = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_edge_y')][:]
-            mesh2d_edge_nodes = data_nc.variables[get_varname_mapnc(data_nc,'mesh2d_edge_nodes')][:]
+            mesh2d_edge_y = data_nc.variables[get_varname_fromnc(data_nc,'mesh2d_edge_y')][:]
+            mesh2d_edge_nodes = data_nc.variables[get_varname_fromnc(data_nc,'mesh2d_edge_nodes')][:]
             edge_verts = nodexyfaces2verts(mesh2d_edge_x, mesh2d_edge_y, mesh2d_edge_nodes) #xy coordinates of face nodes
         else:
             edge_verts = None

@@ -24,7 +24,7 @@ def test_delft3d4():
     from dfm_tools.delft3d4 import dep
     
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
-    #dir_output = '.'
+    #dir_output = './test_output'
 
     #file_d3d_grid = r'c:\DATA\werkmap\dfm_tools_testdata\D3D_3D_sigma_curved_bend\bendcurv.grd'
     file_d3d_grid = os.path.join(dir_testinput, 'brazil_patos_lagoon_52S_32E', 'lake_and_sea_5_xy.grd')

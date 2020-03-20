@@ -21,7 +21,7 @@ def test_mdu():
     """
 
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
-    #dir_output = '.'
+    #dir_output = './test_output'
     if not os.path.exists(dir_output):
         os.mkdir(dir_output)
 

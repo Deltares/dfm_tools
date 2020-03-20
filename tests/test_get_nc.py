@@ -13,55 +13,6 @@ dir_testinput = os.path.join(r'c:/DATA','dfm_tools_testdata')
 from tests.TestUtils import getmakeoutputdir
 
 
-@pytest.mark.unittest    
-def test_getvarnamemapnc():
-    """
-    this test tests if a netcdf varname can be retrieved from the 'dictionary' and if the variable can be retrieved from de netcdf
-    """
-    
-    from netCDF4 import Dataset
-    
-    from dfm_tools.get_nc_helpers import get_varname_mapnc
-    
-    file_map = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc')
-    #file_net = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\Grevelingen_FM_grid_20190603_net.nc')
-    
-    file_nc = file_map
-    data_nc = Dataset(file_nc)
-    varname_requested = 'NetNode_y' #is actually in file, so this is not a good test
-    
-    varname = get_varname_mapnc(data_nc,varname_requested)
-    data_nc_var = data_nc.variables[varname]
-    dimname = data_nc_var.dimensions[0]
-    
-    # Vefiry expectations
-    assert varname == 'mesh2d_node_y'
-    assert dimname == 'nmesh2d_node'
-
-
-
-
-
-@pytest.mark.unittest    
-def test_getncmatchingvarlist():
-    """
-    this test tests retrieves a pandas list of variable long names in a netcdf that match the pattern, useful for waq variables.
-    """
-    from dfm_tools.get_nc_helpers import get_ncvardimlist
-    
-    file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc')
-    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
-
-    pattern = 'Flow .*component'
-    vars_pd_matching = vars_pd[vars_pd.loc[:,'nc_varlongnames'].str.match(pattern)] #does not have to stop after pattern
-    #vars_pd_matching = vars_pd[vars_pd.loc[:,'nc_varlongnames'].str.startswith('Flow') & vars_pd.loc[:,'nc_varlongnames'].str.endswith('component')]
-    varkeys_list_matching = list(vars_pd_matching['nc_varkeys'])
-    
-    assert varkeys_list_matching == ['mesh2d_ucx', 'mesh2d_ucy', 'mesh2d_ucz', 'mesh2d_ucxa', 'mesh2d_ucya']
-
-
-
-
 @pytest.mark.parametrize("file_nc, expected_size", [pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'), 5599, id='from 1 map partion Grevelingen'),
                                                     #pytest.param(r'p:\11205258-006-kpp2020_rmm-g6\C_Work\01_Rooster\final_totaalmodel\rooster_rmm_v1p5_net.nc', 44804?, id='fromnet RMM'),
                                                     pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\Grevelingen_FM_grid_20190603_net.nc'), 44804, id='fromnet Grevelingen')])
@@ -74,6 +25,8 @@ def test_UGrid(file_nc, expected_size):
     assert ugrid.verts.shape[0] == expected_size
 
 
+
+
 @pytest.mark.parametrize("file_nc, expected_size", [pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'), 44796, id='from partitioned map Grevelingen'),
                                                     #pytest.param(r'p:\11205258-006-kpp2020_rmm-g6\C_Work\01_Rooster\final_totaalmodel\rooster_rmm_v1p5_net.nc', 44804?, id='fromnet RMM'),
                                                     pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\Grevelingen_FM_grid_20190603_net.nc'), 44804, id='fromnet Grevelingen')])
@@ -84,6 +37,7 @@ def test_getnetdata(file_nc, expected_size):
     ugrid = get_netdata(file_nc)
     
     assert ugrid.verts.shape[0] == expected_size
+
 
 
 @pytest.mark.unittest
@@ -116,7 +70,7 @@ def test_getncmodeldata_datetime():
 def test_getplotfoudata():
     
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
-    #dir_output = '.'
+    #dir_output = './test_output'
 
     import matplotlib.pyplot as plt
     plt.close('all')
@@ -133,7 +87,7 @@ def test_getplotfoudata():
     pc.set_clim([0,10])
     fig.colorbar(pc)
     ax.set_aspect('equal')
-    plt.savefig(os.path.join(dir_output,os.path.basename(file_nc).replace('.nc','')))
+    plt.savefig(os.path.join(dir_output,os.path.basename(file_nc).replace('.','')))
 
     assert ugrid.verts.shape[0] == data_fromfou.shape[0]
 
@@ -154,7 +108,7 @@ def test_getnetdata_plotnet(file_nc):
     """
     
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
-    #dir_output = '.'
+    #dir_output = './test_output'
 
     import matplotlib.pyplot as plt
     plt.close('all')
@@ -166,7 +120,7 @@ def test_getnetdata_plotnet(file_nc):
     fig, ax = plt.subplots()
     plot_netmapdata(ugrid.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
     ax.set_aspect('equal')
-    plt.savefig(os.path.join(dir_output,os.path.basename(file_nc).replace('.nc','')))
+    plt.savefig(os.path.join(dir_output,os.path.basename(file_nc).replace('.','')))
     
 
     
@@ -178,7 +132,7 @@ def test_getsobekmodeldata():
     this test retrieves sobek observation data and plots it
     """
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
-    #dir_output = '.'
+    #dir_output = './test_output'
 
     import matplotlib.pyplot as plt
     plt.close('all')
@@ -195,7 +149,7 @@ def test_getsobekmodeldata():
     for iL in range(data_fromsobek.shape[1]):
         ax.plot(data_fromsobek.var_times,data_fromsobek[:,iL],'-', label=data_fromsobek.var_stations.iloc[iL])
     ax.legend()
-    plt.savefig(os.path.join(dir_output,'%s_waterlevel'%(os.path.basename(file_nc).replace('.nc',''))))
+    plt.savefig(os.path.join(dir_output,'%s_waterlevel'%(os.path.basename(file_nc).replace('.',''))))
     
     
     
@@ -211,7 +165,7 @@ def test_gethismodeldata(file_nc):
     file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen\\computations\\run01\\DFM_OUTPUT_Grevelingen-FM\\Grevelingen-FM_0000_his.nc')
     """
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
-    #dir_output = '.'
+    #dir_output = './test_output'
 
     import numpy as np
     import matplotlib.pyplot as plt
@@ -241,20 +195,20 @@ def test_gethismodeldata(file_nc):
     fig, ax = plt.subplots()
     ax.plot(data_fromhis.var_stations,data_fromhis,'-')
     ax.tick_params('x',rotation=90)
-    plt.savefig(os.path.join(dir_output,'%s_bedlevel'%(os.path.basename(file_nc).replace('.nc',''))))
+    plt.savefig(os.path.join(dir_output,'%s_bedlevel'%(os.path.basename(file_nc).replace('.',''))))
 
     print('plot waterlevel from his')
     data_fromhis = get_ncmodeldata(file_nc=file_nc, varname='waterlevel', timestep='all', station=station)#, multipart=False)
     fig, ax = plt.subplots()
     ax.plot(data_fromhis.var_times,data_fromhis,'-')
-    plt.savefig(os.path.join(dir_output,'%s_waterlevel'%(os.path.basename(file_nc).replace('.nc',''))))
+    plt.savefig(os.path.join(dir_output,'%s_waterlevel'%(os.path.basename(file_nc).replace('.',''))))
     
     print('plot salinity from his')
     data_fromhis = get_ncmodeldata(file_nc=file_nc, varname='salinity', timestep='all', layer=5, station=station)#, multipart=False)
     data_fromhis_flat = data_fromhis[:,:,0]
     fig, ax = plt.subplots()
     ax.plot(data_fromhis.var_times,data_fromhis_flat,'-')
-    plt.savefig(os.path.join(dir_output,'%s_salinity'%(os.path.basename(file_nc).replace('.nc',''))))
+    plt.savefig(os.path.join(dir_output,'%s_salinity'%(os.path.basename(file_nc).replace('.',''))))
 
     print('plot salinity over depth')
     #depth retrieval is probably wrong
@@ -263,7 +217,7 @@ def test_gethismodeldata(file_nc):
     fig, ax = plt.subplots()
     ax.plot(data_fromhis[0,:,:].T, data_fromhis_depth[0,:,:].T,'-')
     ax.legend(data_fromhis.var_stations)
-    plt.savefig(os.path.join(dir_output,'%s_salinityoverdepth'%(os.path.basename(file_nc).replace('.nc',''))))
+    plt.savefig(os.path.join(dir_output,'%s_salinityoverdepth'%(os.path.basename(file_nc).replace('.',''))))
 
     print('zt temperature plot')
     #WARNING: layers in dfowfm hisfile are currently incorrect, check your figures carefully
@@ -283,7 +237,7 @@ def test_gethismodeldata(file_nc):
     #contour
     CS = ax.contour(time_mesh_cen,data_fromhis_zcen[:,0,:],data_fromhis_temp[:,0,:],6, colors='k', linewidths=0.8, linestyles='solid')
     ax.clabel(CS, fontsize=10)
-    plt.savefig(os.path.join(dir_output,'%s_zt_temp'%(os.path.basename(file_nc).replace('.nc',''))))
+    plt.savefig(os.path.join(dir_output,'%s_zt_temp'%(os.path.basename(file_nc).replace('.',''))))
 
     
 
@@ -300,7 +254,7 @@ def test_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
     file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc')
     """
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
-    #dir_output = '.'
+    #dir_output = './test_output'
 
     import matplotlib.pyplot as plt
     plt.close('all')
@@ -338,7 +292,7 @@ def test_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
     fig, ax = plt.subplots()
     pc = plot_netmapdata(ugrid_all.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
     ax.set_aspect('equal')
-    plt.savefig(os.path.join(dir_output,'%s_grid'%(os.path.basename(file_nc).replace('.nc',''))))
+    plt.savefig(os.path.join(dir_output,'%s_grid'%(os.path.basename(file_nc).replace('.',''))))
 
 
     #PLOT bedlevel
@@ -353,7 +307,7 @@ def test_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
         pc.set_clim(clim_bl)
         fig.colorbar(pc, ax=ax)
         ax.set_aspect('equal')
-        plt.savefig(os.path.join(dir_output,'%s_mesh2d_flowelem_bl'%(os.path.basename(file_nc).replace('.nc',''))))
+        plt.savefig(os.path.join(dir_output,'%s_mesh2d_flowelem_bl'%(os.path.basename(file_nc).replace('.',''))))
         
     
     #PLOT water level on map
@@ -365,7 +319,7 @@ def test_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
     pc.set_clim(clim_wl)
     fig.colorbar(pc, ax=ax)
     ax.set_aspect('equal')
-    plt.savefig(os.path.join(dir_output,'%s_mesh2d_s1'%(os.path.basename(file_nc).replace('.nc',''))))
+    plt.savefig(os.path.join(dir_output,'%s_mesh2d_s1'%(os.path.basename(file_nc).replace('.',''))))
 
     #PLOT var layer on map
     if not 'RMM_dflowfm_0000_map' in file_nc:
@@ -377,7 +331,7 @@ def test_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
         pc.set_clim(clim_sal)
         fig.colorbar(pc, ax=ax)
         ax.set_aspect('equal')
-        plt.savefig(os.path.join(dir_output,'%s_mesh2d_sa1'%(os.path.basename(file_nc).replace('.nc',''))))
+        plt.savefig(os.path.join(dir_output,'%s_mesh2d_sa1'%(os.path.basename(file_nc).replace('.',''))))
     
         print('plot grid and values from mapdata (temperature on layer, 3dim)')
         data_frommap = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_tem1', timestep=timestep, layer=layer)#, multipart=False)
@@ -387,7 +341,7 @@ def test_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
         pc.set_clim(clim_tem)
         fig.colorbar(pc, ax=ax)
         ax.set_aspect('equal')
-        plt.savefig(os.path.join(dir_output,'%s_mesh2d_tem1'%(os.path.basename(file_nc).replace('.nc',''))))
+        plt.savefig(os.path.join(dir_output,'%s_mesh2d_tem1'%(os.path.basename(file_nc).replace('.',''))))
 
 
 
@@ -400,7 +354,7 @@ def test_getplotmapWAQOS(file_nc):
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
     """
     file_nc = 'p:\\11201806-sophie\\Oosterschelde\\WAQ\\r03\\postprocessing\\oost_tracer_map_backup.nc'
-    dir_output = '.'
+    dir_output = './test_output'
     """
 
     import matplotlib.pyplot as plt
@@ -431,7 +385,7 @@ def test_getplotmapWAQOS(file_nc):
         fig.colorbar(pc, ax=ax)
         ax.set_aspect('equal')
         ax.set_xlabel(var_name)
-        plt.savefig(os.path.join(dir_output,'%s_%s'%(os.path.basename(file_nc).replace('.nc',''),var_name)))
+        plt.savefig(os.path.join(dir_output,'%s_%s'%(os.path.basename(file_nc).replace('.',''),var_name)))
         
 
 
@@ -448,7 +402,7 @@ def test_getxzcoordsonintersection_plotcrossect(file_nc):
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
     """
     #manual test variables (run this script first to get the variable dir_testoutput)
-    dir_output = '.'
+    dir_output = './test_output'
     file_nc = os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_cb_3d\\cb_3d_map.nc')
     file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc')
     file_nc = 'p:\\1204257-dcsmzuno\\2013-2017\\3D-DCSM-FM\\A17b\\DFM_OUTPUT_DCSM-FM_0_5nm\\DCSM-FM_0_5nm_0000_map.nc'
@@ -583,7 +537,7 @@ def test_getxzcoordsonintersection_plotcrossect(file_nc):
     #plot crossed cells (gridnos) in first plot
     print(layno)#data_frommap_flat = data_frommap[0,intersect_gridnos,layno]
     #pc = plot_netmapdata(ugrid.verts[intersect_gridnos,:,:], values=data_frommap_flat, ax=ax_input, linewidth=0.5, cmap="jet")
-    plt.savefig(os.path.join(dir_output,'%s_gridbed'%(os.path.basename(file_nc).replace('.nc',''))))
+    plt.savefig(os.path.join(dir_output,'%s_gridbed'%(os.path.basename(file_nc).replace('.',''))))
 
     #plot cross section
     if len(data_frommap.shape) == 3:
@@ -596,7 +550,7 @@ def test_getxzcoordsonintersection_plotcrossect(file_nc):
     pc = plot_netmapdata(crs_verts, values=data_frommap_sel_flat, ax=ax, linewidth=0.5, cmap='jet')
     fig.colorbar(pc, ax=ax)
     ax.set_ylim(val_ylim)
-    plt.savefig(os.path.join(dir_output,'%s_crossect'%(os.path.basename(file_nc).replace('.nc',''))))
+    plt.savefig(os.path.join(dir_output,'%s_crossect'%(os.path.basename(file_nc).replace('.',''))))
     
     runtime_tstop = dt.datetime.now()
     runtime_timedelta = (runtime_tstop-runtime_tstart).total_seconds()
@@ -606,3 +560,89 @@ def test_getxzcoordsonintersection_plotcrossect(file_nc):
 
 
 
+def test_morphology():
+    dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
+    """
+    dir_output = './test_output'
+    """
+    
+    import matplotlib.pyplot as plt
+    plt.close('all')
+    #import numpy as np
+    #import datetime as dt
+
+    from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata#, get_xzcoords_onintersection
+    from dfm_tools.get_nc_helpers import get_ncvardimlist, get_hisstationlist
+    
+    #MAPFILE
+    file_nc = r'p:\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\fm\DFM_OUTPUT_inlet\inlet_map.nc'
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    vars_pd_sel = vars_pd[vars_pd['dimensions'].str.contains('mesh2d_nFaces') & vars_pd['long_name'].str.contains('wave')]
+    
+    ugrid = get_netdata(file_nc=file_nc)
+    #get bed layer
+    #data_frommap_bl = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_flowelem_bl')
+    var_names = ['mesh2d_mor_bl','mesh2d_hwav']#,'mesh2d_ssn']
+    var_clims = [[-50,0],None]
+    tids = [0,-1]
+    for iV, varname in enumerate(var_names):
+        data_frommap = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=tids)
+        var_longname = vars_pd['long_name'][vars_pd['nc_varkeys']==varname].iloc[0]
+    
+        fig, (axs) = plt.subplots(len(tids),1, figsize=(6,8))
+        fig.suptitle('%s (%s)'%(var_names[iV], var_longname))
+        tids = [0,-1]
+        for iA, ax in enumerate(axs):
+            if len(data_frommap.shape) == 2:
+                data_frommap_flat = data_frommap[tids[iA],:]
+            elif len(data_frommap.shape) == 3:
+                data_frommap_flat = data_frommap[tids[iA],0,:]
+            pc = plot_netmapdata(ugrid.verts, values=data_frommap_flat, ax=ax, linewidth=0.5, cmap='jet', clim=var_clims[iA])
+            cbar = fig.colorbar(pc, ax=ax)
+            cbar.set_label('%s (%s)'%(data_frommap.var_varname, data_frommap.var_object.units))
+            ax.set_aspect('equal')
+            ax.set_title('t=%d (%s)'%(tids[iA], data_frommap.var_times.iloc[tids[iA]]))
+            #ax1.set_ylim(val_ylim)
+        fig.tight_layout()
+        plt.savefig(os.path.join(dir_output,'%s_%s'%(os.path.basename(file_nc).replace('.',''), varname)))
+        
+        
+        
+    #HISFILE
+    file_nc = r'p:\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\fm\DFM_OUTPUT_inlet\inlet_his.nc'
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    vars_pd_sel = vars_pd[vars_pd['long_name'].str.contains('level')]
+    stat_list = get_hisstationlist(file_nc,varname_stat='station_name')
+    crs_list = get_hisstationlist(file_nc,varname_stat='cross_section_name')
+    
+    var_names = ['waterlevel','bedlevel']#,'mesh2d_ssn']
+    var_clims = [[-50,0],None]
+    tids = [0,-1]
+    for iV, varname in enumerate(var_names):
+        data_fromhis = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep='all', station='all')
+        var_longname = vars_pd['long_name'][vars_pd['nc_varkeys']==varname].iloc[0]
+    
+        fig, ax = plt.subplots(1,1, figsize=(10,5))
+        if len(data_fromhis.shape) == 2:
+            data_frommap_flat = data_fromhis[:,0]
+        elif len(data_fromhis.shape) == 3:
+            data_frommap_flat = data_fromhis[:,0,0]
+        for iS, stat in enumerate(data_fromhis.var_stations):
+            ax.plot(data_fromhis.var_times, data_frommap_flat, linewidth=0.5, label=data_fromhis.var_stations.iloc[iS])
+        ax.legend()
+        ax.set_ylabel('%s (%s)'%(data_fromhis.var_varname,data_fromhis.var_object.units))
+        #ax.set_xlim([data_fromhis.var_times[0], data_fromhis.var_times[100]])
+        ax.set_xlim(data_fromhis.var_times[[0,2000]])
+        fig.tight_layout()
+        plt.savefig(os.path.join(dir_output,'%s_%s'%(os.path.basename(file_nc).replace('.',''), varname)))
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
