@@ -75,7 +75,9 @@ TODO wishlist
 - select/check functions in dflowutil folder and merge with dfm_tools:
 	- including dflowutil_examples/test_dflowutil.py and other test scripts
 	- dflowutil contains eg readwrite functions for general datafromats (tim, bc)
-- add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?) (refer depth wrt reference level, water level or bed level, z variable is not correct in dfm-mapfile yet)
+- add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?):
+	- refer depth wrt reference level, water level or bed level, z variable is not correct in dfm-mapfile yet)
+	- see test_workinprogress.py
 - retrieve correct depths:
 	- add depth array (interfaces/centers) to his and map variables (z/sigma layer calculation is already in get_modeldata_onintersection function)
 	- depths can be retrieved from mesh2d_layer_z/mesh2d_layer_sigma, but has no time dimension so untrue for sigma and maybe for z? (wrong in dflowfm?)
@@ -113,6 +115,7 @@ TODO wishlist
 	- add support for rstfiles (different way of storing grid data, only face nodes present?)
 	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/OpenEarthTools/openearthtools/io/dflowfm/patch2tri.py
 	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/OpenEarthTools/openearthtools/io/netcdf
+	- see test_workinprogress.py
 
 
 TODO non-content
