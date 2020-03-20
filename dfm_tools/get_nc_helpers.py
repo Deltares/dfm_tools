@@ -141,7 +141,7 @@ def get_ncvardimlist(file_nc):
         #get attributes properties of netcdf variable
         for attr_name in var_attr_name_list:
             if iV==0:
-                vars_pd[attr_name] = np.nan
+                vars_pd[attr_name] = ''
             try:
                 vars_pd.loc[iV, attr_name] = data_nc.variables[nc_var].getncattr(attr_name)
             except:

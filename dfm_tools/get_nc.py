@@ -108,11 +108,11 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         if station is not None:
             raise Exception('ERROR: netcdf file variable (%s) does not contain stations/general_structures, but parameter station is provided'%(varname))
     else: #stations are present
-        if station is None:
-            raise Exception('ERROR: netcdf variable contains a station/general_structures dimension, but parameter station not provided (can be "all")')
         #get appropriate station list
         dimname_stat_validvals_id = np.where(dimname_stat_validvals_boolpresent)[0][0]
         station_name_list_pd = get_hisstationlist(file_nc,varname_stat=varname_stat_validvals[dimname_stat_validvals_id])
+        if station is None:
+            raise Exception('ERROR: netcdf variable contains a station/general_structures dimension, but parameter station not provided (can be "all"), available stations/crs/generalstructures:\n%s\nretrieve entire station list:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist; get_hisstationlist(file_nc,varname_stat="%s")'%(station_name_list_pd, varname_stat_validvals[dimname_stat_validvals_id]))
         #convert station to list of int if it is not already
         if station is str('all'):
             station_ids = range(len(station_name_list_pd))

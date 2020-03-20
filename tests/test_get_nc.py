@@ -572,7 +572,7 @@ def test_morphology():
     #import datetime as dt
 
     from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata#, get_xzcoords_onintersection
-    from dfm_tools.get_nc_helpers import get_ncvardimlist
+    from dfm_tools.get_nc_helpers import get_ncvardimlist, get_hisstationlist
     
     #MAPFILE
     file_nc = r'p:\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\fm\DFM_OUTPUT_inlet\inlet_map.nc'
@@ -611,29 +611,27 @@ def test_morphology():
     #HISFILE
     file_nc = r'p:\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\fm\DFM_OUTPUT_inlet\inlet_his.nc'
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
-    vars_pd_sel = vars_pd[vars_pd['dimensions'].str.contains('mesh2d_nFaces') & vars_pd['long_name'].str.contains('wave')]
-
-    var_names = ['mesh2d_mor_bl','mesh2d_hwav']#,'mesh2d_ssn']
+    vars_pd_sel = vars_pd[vars_pd['long_name'].str.contains('level')]
+    stat_list = get_hisstationlist(file_nc,varname_stat='station_name')
+    crs_list = get_hisstationlist(file_nc,varname_stat='cross_section_name')
+    
+    var_names = ['bedlevel','bedlevel']#,'mesh2d_ssn']
     var_clims = [[-50,0],None]
     tids = [0,-1]
     for iV, varname in enumerate(var_names):
-        data_fromhis = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=tids)
+        data_fromhis = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep='all', station='all')
         var_longname = vars_pd['long_name'][vars_pd['nc_varkeys']==varname].iloc[0]
     
-        fig, (axs) = plt.subplots(len(tids),1, figsize=(6,8))
-        fig.suptitle('%s (%s)'%(var_names[iV], var_longname))
-        tids = [0,-1]
-        for iA, ax in enumerate(axs):
-            if len(data_fromhis.shape) == 2:
-                data_frommap_flat = data_fromhis[tids[iA],:]
-            elif len(data_fromhis.shape) == 3:
-                data_frommap_flat = data_fromhis[tids[iA],0,:]
-            pc = plot_netmapdata(ugrid.verts, values=data_frommap_flat, ax=ax, linewidth=0.5, cmap='jet', clim=var_clims[iA])
-            cbar = fig.colorbar(pc, ax=ax)
-            cbar.set_label('%s (%s)'%(data_fromhis.var_varname, data_fromhis.var_object.units))
-            ax.set_aspect('equal')
-            ax.set_title('t=%d (%s)'%(tids[iA], data_fromhis.var_times.iloc[tids[iA]]))
-            #ax1.set_ylim(val_ylim)
+        fig, ax = plt.subplots(1,1)#, figsize=(6,8))
+        if len(data_fromhis.shape) == 2:
+            data_frommap_flat = data_fromhis[:,0]
+        elif len(data_fromhis.shape) == 3:
+            data_frommap_flat = data_fromhis[:,0,0]
+        for iS, stat in enumerate(data_fromhis.var_stations):
+            ax.plot(data_fromhis.var_times, data_frommap_flat, linewidth=0.5, label=data_fromhis.var_stations.iloc[iS])
+        ax.legend()
+        #ax.set_title('t=%d (%s)'%(tids[iA], data_fromhis.var_times.iloc[tids[iA]]))
+        ax.set_xlim()
         fig.tight_layout()
         plt.savefig(os.path.join(dir_output,'%s_%s'%(os.path.basename(file_nc).replace('.nc',''), varname)))
     

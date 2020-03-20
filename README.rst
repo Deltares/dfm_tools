@@ -72,6 +72,7 @@ Known bugs
 
 TODO wishlist
 --------
+- retrieve station/crs/gs list corresponding to a variable with get_hisstationlist(), now already used in stations/gs/crs check of get_nc.get_ncmodeldata()
 - select/check functions in dflowutil folder and merge with dfm_tools:
 	- including dflowutil_examples/test_dflowutil.py and other test scripts
 	- dflowutil contains eg readwrite functions for general datafromats (tim, bc)
