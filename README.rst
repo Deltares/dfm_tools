@@ -68,16 +68,28 @@ Known bugs
 - the line ``import shapely.geometry`` does not work, while ``import shapely`` does (OSError: [WinError 126] The specified module could not be found), solution:
 	- find geos.py in your environment (eg %userprofile%\\AppData\\Local\\Continuum\\anaconda3\\envs\\dfm_tools_env\\Lib\\site-packages\\shapely\\geos.py)
 	- replace ``if os.getenv('CONDA_PREFIX', ''):`` with ``if 0:`` on line 143 (this disables this if statement and redirects to else)
-	
+
+
 TODO wishlist
 --------
-- select/check functions in dflowutil folder and merge with dfm_tools (including dflowutil_examples/test_dflowutil.py and others)
+- select/check functions in dflowutil folder and merge with dfm_tools:
+	- including dflowutil_examples/test_dflowutil.py and other test scripts
+	- dflowutil contains eg readwrite functions for general datafromats (tim, bc)
 - add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?) (refer depth wrt reference level, water level or bed level, z variable is not correct in dfm-mapfile yet)
 - retrieve correct depths:
 	- add depth array (interfaces/centers) to his and map variables (z/sigma layer calculation is already in get_modeldata_onintersection function)
 	- depths can be retrieved from mesh2d_layer_z/mesh2d_layer_sigma, but has no time dimension so untrue for sigma and maybe for z? (wrong in dflowfm?)
 	- layerzfrombedlevel keyword in mdu changes how zlayering is set up. Catch this exception with a keyword if necessary
+- improve zt plots from hisfile:
+	- example in test_get_nc.test_gethismodeldata()
+	- WARNING: part of the z interfaces/center data in dflowfm hisfile is currently wrong, check your figures carefully
+	- layer argument now has to be provided when retrieving zcoordinate_c (centers) from hisfile, but not when retrieving zcoordinate_w (interfaces), align this.
+	- check center/corner correctness, pcolormesh does not completely correspond with contours
+- add tekal write functions
+- expand Delft3D read and plot options
+- expand general netcdf read and plot options (Sobek, ERA5, hirlam, SFINCS)
 - remove hardcoded 'stations' dimension lookup
+- raise understandable error when no mesh2d_edge_x var in netcdf, instead of keyerror none (eg with get_netdata on hirlam files)
 - dimn_time is now actually variable name which does not work if time dimname is not the same as time varname
 - make merc keyword always optional by testing for minmax all vertsx between -181 and 361 and minmax all vertsy (lat) between -91 and 91 (+range for overlap for eg gtsm model)
 - optimize get_ncmodeldata for layerdepths/bedlevel/waterlevel (second intersect function), only retrieve necessary information for crossection
@@ -85,13 +97,6 @@ TODO wishlist
 	- optimize_dist keyword now draws inpolygon around line
 	- to optimize intersect function when retrieving bed level and water level (do that with len(firstlinepart) optional keyword)
 	- to retrieve other mapdata data faster
-- improve zt plots from hisfile:
-	- example in test_get_nc.test_gethismodeldata()
-	- WARNING: part of the z interfaces/center data in dflowfm hisfile is currently wrong, check your figures carefully
-	- layer argument now has to be provided when retrieving zcoordinate_c (centers) from hisfile, but not when retrieving zcoordinate_w (interfaces), align this.
-	- check center/corner correctness, pcolormesh does not completely correspond with contours
-- as user: get dimensionlist, variablelist, more? (partly internally available)
-- add polygon read/write function (also ldb files)
 - add polygon ginput function (click in plot) (already partly exists in intersect/slice testscript)
 - pyugrid (ghostcells en mapmergen worden afgehandeld?), voorbeelden in ieder geval als inspiratie voor plotopties):
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/COMT_example.ipynb
@@ -105,9 +110,8 @@ TODO wishlist
 	- tests.test_get_nc.test_gethirlam() is eerste opzet voor hirlam/ERA5 data, werkt heel anders dan D-flow FM
 	- how to plot properties on edges (scatter is slow), maybe create dual mesh and plot like faces. most relevant variables are also available on faces, so is this necessary?
 	- add support for rstfiles (different way of storing grid data, only face nodes present?)
-- add (look for) readwrite functions for general datafromats (tim, bc, tekal write etc)
-- expand Delft3D and Sobek read options
-- arrange auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
+	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/OpenEarthTools/openearthtools/io/dflowfm/patch2tri.py
+	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/OpenEarthTools/openearthtools/io/netcdf
 
 
 TODO non-content
@@ -119,7 +123,9 @@ TODO non-content
 	- how to automate this process?
 	- also add changelog besides commit comments?
 - publish some example figures online, maybe py-notebook and example data?
-- put testdata on shared location?
+- arrange auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
+- put testdata on deltares shared location?
+- put testdata and testoutput on github and create jupyter notebook instead of pptx?
 - update license with Deltares terms
 - update all text files and documentations
 - write documentation as comments and generate automatically
