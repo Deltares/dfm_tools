@@ -87,6 +87,7 @@ TODO wishlist
 	- check center/corner correctness, pcolormesh does not completely correspond with contours
 - add tekal write functions
 - expand Delft3D read and plot options
+- add sattelite basemap (cartopy/basemap), get latlon projection for axis
 - expand general netcdf read and plot options (Sobek, ERA5, hirlam, SFINCS)
 - remove hardcoded 'stations' dimension lookup
 - raise understandable error when no mesh2d_edge_x var in netcdf, instead of keyerror none (eg with get_netdata on hirlam files)
