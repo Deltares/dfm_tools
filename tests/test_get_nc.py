@@ -70,7 +70,7 @@ def test_getncmodeldata_datetime():
 def test_getplotfoudata():
     
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
-    #dir_output = '.'
+    #dir_output = './test_output'
 
     import matplotlib.pyplot as plt
     plt.close('all')
@@ -108,7 +108,7 @@ def test_getnetdata_plotnet(file_nc):
     """
     
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
-    #dir_output = '.'
+    #dir_output = './test_output'
 
     import matplotlib.pyplot as plt
     plt.close('all')
@@ -132,7 +132,7 @@ def test_getsobekmodeldata():
     this test retrieves sobek observation data and plots it
     """
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
-    #dir_output = '.'
+    #dir_output = './test_output'
 
     import matplotlib.pyplot as plt
     plt.close('all')
@@ -165,7 +165,7 @@ def test_gethismodeldata(file_nc):
     file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen\\computations\\run01\\DFM_OUTPUT_Grevelingen-FM\\Grevelingen-FM_0000_his.nc')
     """
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
-    #dir_output = '.'
+    #dir_output = './test_output'
 
     import numpy as np
     import matplotlib.pyplot as plt
@@ -254,7 +254,7 @@ def test_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
     file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc')
     """
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
-    #dir_output = '.'
+    #dir_output = './test_output'
 
     import matplotlib.pyplot as plt
     plt.close('all')
@@ -354,7 +354,7 @@ def test_getplotmapWAQOS(file_nc):
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
     """
     file_nc = 'p:\\11201806-sophie\\Oosterschelde\\WAQ\\r03\\postprocessing\\oost_tracer_map_backup.nc'
-    dir_output = '.'
+    dir_output = './test_output'
     """
 
     import matplotlib.pyplot as plt
@@ -402,7 +402,7 @@ def test_getxzcoordsonintersection_plotcrossect(file_nc):
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
     """
     #manual test variables (run this script first to get the variable dir_testoutput)
-    dir_output = '.'
+    dir_output = './test_output'
     file_nc = os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_cb_3d\\cb_3d_map.nc')
     file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc')
     file_nc = 'p:\\1204257-dcsmzuno\\2013-2017\\3D-DCSM-FM\\A17b\\DFM_OUTPUT_DCSM-FM_0_5nm\\DCSM-FM_0_5nm_0000_map.nc'
@@ -560,3 +560,90 @@ def test_getxzcoordsonintersection_plotcrossect(file_nc):
 
 
 
+def test_morphology():
+    dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
+    """
+    dir_output = './test_output'
+    """
+    
+    import matplotlib.pyplot as plt
+    plt.close('all')
+    #import numpy as np
+    #import datetime as dt
+
+    from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata#, get_xzcoords_onintersection
+    from dfm_tools.get_nc_helpers import get_ncvardimlist
+    
+    #MAPFILE
+    file_nc = r'p:\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\fm\DFM_OUTPUT_inlet\inlet_map.nc'
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    vars_pd_sel = vars_pd[vars_pd['dimensions'].str.contains('mesh2d_nFaces') & vars_pd['long_name'].str.contains('wave')]
+    
+    ugrid = get_netdata(file_nc=file_nc)
+    #get bed layer
+    #data_frommap_bl = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_flowelem_bl')
+    var_names = ['mesh2d_mor_bl','mesh2d_hwav']#,'mesh2d_ssn']
+    var_clims = [[-50,0],None]
+    tids = [0,-1]
+    for iV, varname in enumerate(var_names):
+        data_frommap = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=tids)
+        var_longname = vars_pd['long_name'][vars_pd['nc_varkeys']==varname].iloc[0]
+    
+        fig, (axs) = plt.subplots(len(tids),1, figsize=(6,8))
+        fig.suptitle('%s (%s)'%(var_names[iV], var_longname))
+        tids = [0,-1]
+        for iA, ax in enumerate(axs):
+            if len(data_frommap.shape) == 2:
+                data_frommap_flat = data_frommap[tids[iA],:]
+            elif len(data_frommap.shape) == 3:
+                data_frommap_flat = data_frommap[tids[iA],0,:]
+            pc = plot_netmapdata(ugrid.verts, values=data_frommap_flat, ax=ax, linewidth=0.5, cmap='jet', clim=var_clims[iA])
+            cbar = fig.colorbar(pc, ax=ax)
+            cbar.set_label('%s (%s)'%(data_frommap.var_varname, data_frommap.var_object.units))
+            ax.set_aspect('equal')
+            ax.set_title('t=%d (%s)'%(tids[iA], data_frommap.var_times.iloc[tids[iA]]))
+            #ax1.set_ylim(val_ylim)
+        fig.tight_layout()
+        plt.savefig(os.path.join(dir_output,'%s_%s'%(os.path.basename(file_nc).replace('.nc',''), varname)))
+        
+        
+        
+    #HISFILE
+    file_nc = r'p:\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\fm\DFM_OUTPUT_inlet\inlet_his.nc'
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    vars_pd_sel = vars_pd[vars_pd['dimensions'].str.contains('mesh2d_nFaces') & vars_pd['long_name'].str.contains('wave')]
+
+    var_names = ['mesh2d_mor_bl','mesh2d_hwav']#,'mesh2d_ssn']
+    var_clims = [[-50,0],None]
+    tids = [0,-1]
+    for iV, varname in enumerate(var_names):
+        data_fromhis = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=tids)
+        var_longname = vars_pd['long_name'][vars_pd['nc_varkeys']==varname].iloc[0]
+    
+        fig, (axs) = plt.subplots(len(tids),1, figsize=(6,8))
+        fig.suptitle('%s (%s)'%(var_names[iV], var_longname))
+        tids = [0,-1]
+        for iA, ax in enumerate(axs):
+            if len(data_fromhis.shape) == 2:
+                data_frommap_flat = data_fromhis[tids[iA],:]
+            elif len(data_fromhis.shape) == 3:
+                data_frommap_flat = data_fromhis[tids[iA],0,:]
+            pc = plot_netmapdata(ugrid.verts, values=data_frommap_flat, ax=ax, linewidth=0.5, cmap='jet', clim=var_clims[iA])
+            cbar = fig.colorbar(pc, ax=ax)
+            cbar.set_label('%s (%s)'%(data_fromhis.var_varname, data_fromhis.var_object.units))
+            ax.set_aspect('equal')
+            ax.set_title('t=%d (%s)'%(tids[iA], data_fromhis.var_times.iloc[tids[iA]]))
+            #ax1.set_ylim(val_ylim)
+        fig.tight_layout()
+        plt.savefig(os.path.join(dir_output,'%s_%s'%(os.path.basename(file_nc).replace('.nc',''), varname)))
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    

@@ -122,26 +122,37 @@ def get_varname_fromnc(data_nc,varname_requested):
 def get_ncvardimlist(file_nc):
     from netCDF4 import Dataset
     import pandas as pd
+    import numpy as np
     
     data_nc = Dataset(file_nc)
     
     nc_varkeys = list(data_nc.variables.keys())
     nc_dimkeys = list(data_nc.dimensions.keys())
-    nc_varlongnames = []
-    for nc_var in data_nc.variables:
-        try:
-            nc_varlongnames.append(data_nc.variables[nc_var].long_name)
-        except:
-            nc_varlongnames.append('NO long_name defined')
-    nc_dimlongnames = []
-    for nc_dim in data_nc.dimensions:
-        try:
-            nc_dimlongnames.append(data_nc.dimensions[nc_dim].long_name)
-        except:
-            nc_dimlongnames.append('NO long_name defined')
-
-    vars_pd = pd.DataFrame({'nc_varkeys': nc_varkeys, 'nc_varlongnames': nc_varlongnames})
-    dims_pd = pd.DataFrame({'nc_dimkeys': nc_dimkeys, 'nc_dimlongnames': nc_dimlongnames})
+    vars_pd = pd.DataFrame({'nc_varkeys': nc_varkeys})
+    dims_pd = pd.DataFrame({'nc_dimkeys': nc_dimkeys})
+    var_attr_name_list = ['standard_name','long_name','coordinates','units','mesh','location']
+    for iV, nc_var in enumerate(data_nc.variables):
+        #get non-attribute properties of netcdf variable
+        if iV==0:
+            vars_pd['shape'] = np.nan
+            vars_pd['dimensions'] = np.nan
+        vars_pd.loc[iV,'shape'] = str(data_nc.variables[nc_var].shape)
+        vars_pd.loc[iV,'dimensions'] = str(data_nc.variables[nc_var].dimensions)
+        #get attributes properties of netcdf variable
+        for attr_name in var_attr_name_list:
+            if iV==0:
+                vars_pd[attr_name] = np.nan
+            try:
+                vars_pd.loc[iV, attr_name] = data_nc.variables[nc_var].getncattr(attr_name)
+            except:
+                pass
+    for iD, nc_dim in enumerate(data_nc.dimensions):
+        #get non-attribute properties of netcdf variable
+        if iD==0:
+            dims_pd['name'] = np.nan
+            dims_pd['size'] = np.nan
+        dims_pd.loc[iD,'name'] = data_nc.dimensions[nc_dim].name
+        dims_pd.loc[iD,'size'] = data_nc.dimensions[nc_dim].size
     return vars_pd, dims_pd
 
     
@@ -156,7 +167,7 @@ def get_ncvarobject(file_nc, varname):
     # check if requested variable is in netcdf
     if varname not in nc_varkeys:
         #raise Exception('ERROR: requested variable %s not in netcdf, available are:\n%s'%(varname, '\n'.join(map(str,['%-25s: %s'%(nck,ncln) for nck,ncln in zip(nc_varkeys, nc_varlongnames)]))))
-        raise Exception('ERROR: requested variable %s not in netcdf, available are:\n%s\nUse command "vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)" to obtain full list as variable.'%(varname, vars_pd))
+        raise Exception('ERROR: requested variable %s not in netcdf, available are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_ncvardimlist; vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)'%(varname, vars_pd))
     
     data_nc = Dataset(file_nc)
     nc_varobject = data_nc.variables[varname]

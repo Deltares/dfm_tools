@@ -30,7 +30,7 @@ def test_readpolygon(file_pol):
     """
     
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
-    #dir_output = '.'
+    #dir_output = './test_output'
     
     import matplotlib.pyplot as plt
     plt.close('all')
