@@ -13,55 +13,6 @@ dir_testinput = os.path.join(r'c:/DATA','dfm_tools_testdata')
 from tests.TestUtils import getmakeoutputdir
 
 
-@pytest.mark.unittest    
-def test_getvarnamemapnc():
-    """
-    this test tests if a netcdf varname can be retrieved from the 'dictionary' and if the variable can be retrieved from de netcdf
-    """
-    
-    from netCDF4 import Dataset
-    
-    from dfm_tools.get_nc_helpers import get_varname_mapnc
-    
-    file_map = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc')
-    #file_net = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\Grevelingen_FM_grid_20190603_net.nc')
-    
-    file_nc = file_map
-    data_nc = Dataset(file_nc)
-    varname_requested = 'NetNode_y' #is actually in file, so this is not a good test
-    
-    varname = get_varname_mapnc(data_nc,varname_requested)
-    data_nc_var = data_nc.variables[varname]
-    dimname = data_nc_var.dimensions[0]
-    
-    # Vefiry expectations
-    assert varname == 'mesh2d_node_y'
-    assert dimname == 'nmesh2d_node'
-
-
-
-
-
-@pytest.mark.unittest    
-def test_getncmatchingvarlist():
-    """
-    this test tests retrieves a pandas list of variable long names in a netcdf that match the pattern, useful for waq variables.
-    """
-    from dfm_tools.get_nc_helpers import get_ncvardimlist
-    
-    file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc')
-    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
-
-    pattern = 'Flow .*component'
-    vars_pd_matching = vars_pd[vars_pd.loc[:,'nc_varlongnames'].str.match(pattern)] #does not have to stop after pattern
-    #vars_pd_matching = vars_pd[vars_pd.loc[:,'nc_varlongnames'].str.startswith('Flow') & vars_pd.loc[:,'nc_varlongnames'].str.endswith('component')]
-    varkeys_list_matching = list(vars_pd_matching['nc_varkeys'])
-    
-    assert varkeys_list_matching == ['mesh2d_ucx', 'mesh2d_ucy', 'mesh2d_ucz', 'mesh2d_ucxa', 'mesh2d_ucya']
-
-
-
-
 @pytest.mark.parametrize("file_nc, expected_size", [pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'), 5599, id='from 1 map partion Grevelingen'),
                                                     #pytest.param(r'p:\11205258-006-kpp2020_rmm-g6\C_Work\01_Rooster\final_totaalmodel\rooster_rmm_v1p5_net.nc', 44804?, id='fromnet RMM'),
                                                     pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\Grevelingen_FM_grid_20190603_net.nc'), 44804, id='fromnet Grevelingen')])
@@ -74,6 +25,8 @@ def test_UGrid(file_nc, expected_size):
     assert ugrid.verts.shape[0] == expected_size
 
 
+
+
 @pytest.mark.parametrize("file_nc, expected_size", [pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'), 44796, id='from partitioned map Grevelingen'),
                                                     #pytest.param(r'p:\11205258-006-kpp2020_rmm-g6\C_Work\01_Rooster\final_totaalmodel\rooster_rmm_v1p5_net.nc', 44804?, id='fromnet RMM'),
                                                     pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\Grevelingen_FM_grid_20190603_net.nc'), 44804, id='fromnet Grevelingen')])
@@ -84,6 +37,7 @@ def test_getnetdata(file_nc, expected_size):
     ugrid = get_netdata(file_nc)
     
     assert ugrid.verts.shape[0] == expected_size
+
 
 
 @pytest.mark.unittest

@@ -188,31 +188,41 @@ def ghostcell_filter(file_nc):
 
 
 
-def get_timesfromnc(file_nc):
+def get_timesfromnc(file_nc, force_noreconstruct=False):
+    """
+    retrieves time array from netcdf file.
+    Since long time arrays take a long time to retrieve at once, reconstruction is tried
+    in dflowfm an array can start with 0 (initial), followed by a tstart and increading with intervals to tend
+    therefore, the interval at the start and end of the time array is not always equal to the 'real' time interval
+    reconstruction takes care of this.
+    if you still feel like the resulting timeseries is incorrect, use the keyword force_noreconstruct
+    """
+    
     from netCDF4 import Dataset,num2date#,date2num
     import numpy as np
     import pandas as pd
-    
-    #from dfm_tools.get_nc_helpers import get_varname_mapnc
     
     data_nc = Dataset(file_nc)
     varname_time = get_varname_mapnc(data_nc,'time')
     data_nc_timevar = data_nc.variables[varname_time]
     
-    if len(data_nc_timevar)<3: #this rarely is the case, but just to be sure
+    if len(data_nc_timevar)<3 or force_noreconstruct==True: #shorter than 3 rarely is the case, but just to be sure
         data_nc_times = data_nc_timevar[:]
+        print('reading time dimension: read entire array (len < 3 or force_noreconstruct==True)')
     else:
         time0 = data_nc_timevar[0] 
         time1 = data_nc_timevar[1] 
         time2 = data_nc_timevar[2]
+        timemin3 = data_nc_timevar[-3]
         timemin2 = data_nc_timevar[-2]
         timemin1 = data_nc_timevar[-1]
-        timeinc = time2-time1 # the interval between 0 and 1 is not per definition representative, so take 1 and 2
-        timeincend = timemin1-timemin2
-        if timeinc == timeincend: #reconstruct time array to save time
+        timeinc_poststart = time2-time1 # the interval between 0 and 1 is not per definition representative, so take 1 and 2
+        timeinc_preend = timemin2-timemin3
+        #timeinc_end = timemin1-timemin2
+        if timeinc_poststart == timeinc_preend: #reconstruct time array to save time
             print('reading time dimension: reconstruct array')
-            data_nc_times_from1 = np.arange(time1,timemin1+timeinc,timeinc)
-            data_nc_times = np.concatenate([[time0],data_nc_times_from1])
+            data_nc_times_from1 = np.arange(time1,timemin1,timeinc_poststart)
+            data_nc_times = np.concatenate([[time0],data_nc_times_from1,[timemin1]])
         else:
             print('reading time dimension: read entire array')
             data_nc_times = data_nc_timevar[:]
