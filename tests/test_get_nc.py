@@ -615,14 +615,14 @@ def test_morphology():
     stat_list = get_hisstationlist(file_nc,varname_stat='station_name')
     crs_list = get_hisstationlist(file_nc,varname_stat='cross_section_name')
     
-    var_names = ['bedlevel','bedlevel']#,'mesh2d_ssn']
+    var_names = ['waterlevel','bedlevel']#,'mesh2d_ssn']
     var_clims = [[-50,0],None]
     tids = [0,-1]
     for iV, varname in enumerate(var_names):
         data_fromhis = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep='all', station='all')
         var_longname = vars_pd['long_name'][vars_pd['nc_varkeys']==varname].iloc[0]
     
-        fig, ax = plt.subplots(1,1)#, figsize=(6,8))
+        fig, ax = plt.subplots(1,1, figsize=(10,5))
         if len(data_fromhis.shape) == 2:
             data_frommap_flat = data_fromhis[:,0]
         elif len(data_fromhis.shape) == 3:
@@ -630,8 +630,9 @@ def test_morphology():
         for iS, stat in enumerate(data_fromhis.var_stations):
             ax.plot(data_fromhis.var_times, data_frommap_flat, linewidth=0.5, label=data_fromhis.var_stations.iloc[iS])
         ax.legend()
-        #ax.set_title('t=%d (%s)'%(tids[iA], data_fromhis.var_times.iloc[tids[iA]]))
-        ax.set_xlim()
+        ax.set_ylabel('%s (%s)'%(data_fromhis.var_varname,data_fromhis.var_object.units))
+        #ax.set_xlim([data_fromhis.var_times[0], data_fromhis.var_times[100]])
+        ax.set_xlim(data_fromhis.var_times[[0,2000]])
         fig.tight_layout()
         plt.savefig(os.path.join(dir_output,'%s_%s'%(os.path.basename(file_nc).replace('.nc',''), varname)))
     
