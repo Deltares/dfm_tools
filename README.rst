@@ -96,7 +96,6 @@ TODO wishlist
 	- both packages can only be installed via conda? so not possible as a pip dependency, add other test?
 	- test install them and decide on which package
 - expand general netcdf read and plot options (Sobek, ERA5, hirlam, SFINCS)
-- remove hardcoded 'stations' dimension lookup
 - raise understandable error when no mesh2d_edge_x var in netcdf, instead of keyerror none (eg with get_netdata on hirlam files)
 - dimn_time is now actually variable name which does not work if time dimname is not the same as time varname
 - make merc keyword always optional by testing for minmax all vertsx between -181 and 361 and minmax all vertsy (lat) between -91 and 91 (+range for overlap for eg gtsm model)
@@ -112,6 +111,7 @@ TODO wishlist
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/connectivity_example.ipynb
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/plotting_example.ipynb
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/vector_plotting_example.ipynb
+	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/applications/delft3dfm/dflowfmpyplot/pyd3dfm/streamline_ug.py (streamline plotting for structured grids, but many settings)
 - make grid reading more flexible:
 	- improve plots for structured grid (CMEMS, ERA5, hirlam, grd etc)
 	- https://github.com/NOAA-ORR-ERD/gridded

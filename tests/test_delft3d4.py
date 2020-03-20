@@ -33,22 +33,20 @@ def test_delft3d4():
     #file_d3d_mdf = os.path.join(dir_testinput, 'D3D_3D_sigma_curved_bend','cb2-sal-added-3d.mdf')
     
     data_grd = grid.Grid.fromfile(file_d3d_grid)
-    grd_x = data_grd.x
-    grd_y = data_grd.y
     grd_shape = data_grd.shape
     data_dep = dep.Dep.read(file_d3d_dep,grd_shape)
     
     fig, ax = plt.subplots(1,1)
-    ax.plot(data_grd.x.transpose(), data_grd.y.transpose(), 'g')
-    ax.plot(data_grd.x, data_grd.y, 'g')
-    ax.scatter(grd_x,grd_y,5,c='b')
+    ax.plot(data_grd.x.transpose(), data_grd.y.transpose(), 'g', linewidth=0.5)
+    ax.plot(data_grd.x, data_grd.y, 'g', linewidth=0.5)
+    #ax.scatter(data_grd.x,data_grd.y,2,c=data_dep.val[0:-1,0:-1])
     ax.set_aspect('equal')
     plt.savefig(os.path.join(dir_output,'d3d_grd'))
     
     fig, ax = plt.subplots(1,1)
     ax.pcolor(data_grd.x,data_grd.y,data_dep.val[0:-1,0:-1])
     ax.set_aspect('equal')
-    plt.savefig(os.path.join(dir_output,'d3d_dep'))
+    plt.savefig(os.path.join(dir_output,'d3d_deppcolor'))
     
     #data_mdf = mdf.read(file_d3d_mdf)
 
