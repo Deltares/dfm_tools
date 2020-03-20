@@ -39,8 +39,9 @@ Features
 - pytest testbank
 - examples of unformatted plots created by testbank scripts in tests folder: n:\\Deltabox\\Bulletin\\veenstra\\info dfm_tools
 - please check the TODO sections for known inaccuracies or features that are not yet available
-- read grd, dep and tekal (tek, pli, pliz, pol, ldb) data
-- read sobek observation point data
+- tekal (tek, pli, pliz, pol, ldb) data
+- read Delft3D files (grd, dep), although grid handling is still work in progress
+- read almost any netcdf (ERA5, hirlam, SFINCS map, SFINCS his, Sobek observation), although grid handling and plotting is still work in progress
 
 How to work with this git repository
 --------
