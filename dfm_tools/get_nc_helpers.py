@@ -147,7 +147,7 @@ def get_ncvardimlist(file_nc):
     
 
 
-def get_ncvar_valshapedims(file_nc, varname):
+def get_ncvarobject(file_nc, varname):
     from netCDF4 import Dataset
     
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
@@ -159,11 +159,9 @@ def get_ncvar_valshapedims(file_nc, varname):
         raise Exception('ERROR: requested variable %s not in netcdf, available are:\n%s\nUse command "vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)" to obtain full list as variable.'%(varname, vars_pd))
     
     data_nc = Dataset(file_nc)
-    nc_values = data_nc.variables[varname]
-    nc_values_shape = nc_values.shape
-    nc_values_dims = nc_values.dimensions
-    #nc_values_ndims = len(nc_values_dims)
-    return nc_values, nc_values_shape, nc_values_dims
+    nc_varobject = data_nc.variables[varname]
+    
+    return nc_varobject
 
 
 

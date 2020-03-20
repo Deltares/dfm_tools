@@ -27,7 +27,7 @@ def test_workinprogress():
     from dfm_tools.get_nc_helpers import get_ncvardimlist, get_hisstationlist#, get_varname_fromnc
     
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
-    #dir_output = '.'
+    #dir_output = './test_output'
 
     # test Grevelingen (integrated example, where all below should move towards)
     file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc')
@@ -81,8 +81,8 @@ def test_workinprogress():
 
 
     #SFINCS
-    #file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\01_Implementation\14_restartfile\sfincs_map.nc'
-    file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\03_Application\22_Tsunami_Japan_Sendai\sfincs_map.nc'
+    file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\01_Implementation\14_restartfile\sfincs_map.nc'
+    #file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\03_Application\22_Tsunami_Japan_Sendai\sfincs_map.nc'
     
     data_fromnc_x = get_ncmodeldata(file_nc=file_nc, varname='x')
     data_fromnc_y = get_ncmodeldata(file_nc=file_nc, varname='y')
@@ -104,6 +104,7 @@ def test_workinprogress():
     plt.savefig(os.path.join(dir_output,'SFINCS_meshedge'))
     fig, ax = plt.subplots()
     ax.contourf(data_fromnc_edgex, data_fromnc_edgey, data_fromnc_vmax[0,:,:])
+    plt.title('%s (%s)'%(data_fromnc_vmax.var_varname, data_fromnc_vmax.var_object.units))
     plt.savefig(os.path.join(dir_output,'SFINCS_ucontour'))
 
     #SFINCS HIS

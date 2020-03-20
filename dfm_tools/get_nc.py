@@ -22,10 +22,10 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     import pandas as pd
     from netCDF4 import Dataset
     
-    from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvar_valshapedims, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_fromnc
+    from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvarobject, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_fromnc
     
     #get variable info
-    dummy, nc_values_shape, nc_values_dims = get_ncvar_valshapedims(file_nc, varname)
+    nc_varobject = get_ncvarobject(file_nc, varname)
     data_nc = Dataset(file_nc)
     
     #CHECK VARNAME, IS THERE A SEPARATE DEFINITION TO RETRIEVE DATA?
@@ -35,7 +35,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     
     #TIMES CHECKS
     dimn_time = get_varname_fromnc(data_nc,'time')
-    if dimn_time not in nc_values_dims: #dimension time is not available in variable
+    if dimn_time not in nc_varobject.dimensions: #dimension time is not available in variable
         if timestep is not None:
             raise Exception('ERROR: netcdf file variable (%s) does not contain times, but parameter timestep is provided'%(varname))
     else: #time is first dimension
@@ -69,12 +69,12 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     
     #LAYER CHECKS
     dimn_layer = get_varname_fromnc(data_nc,'nmesh2d_layer')
-    if dimn_layer not in nc_values_dims: #no layer dimension in model and/or variable
+    if dimn_layer not in nc_varobject.dimensions: #no layer dimension in model and/or variable
         if layer is not None:
             raise Exception('ERROR: netcdf variable (%s) does not contain layers, but parameter layer is provided'%(varname))
     else: #layers are present in variable
-        dimn_layer_id = nc_values_dims.index(dimn_layer)
-        nlayers = nc_values_shape[dimn_layer_id]
+        dimn_layer_id = nc_varobject.dimensions.index(dimn_layer)
+        nlayers = nc_varobject.shape[dimn_layer_id]
         if layer is None:
             raise Exception('ERROR: netcdf variable contains a layer dimension, but parameter layer not provided (can be "all")')
         #convert layer to list of int if it is not already
@@ -101,7 +101,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     
     #STATION/GENERAL_STRUCTURES CHECKS
     dimname_stat_validvals = ['stations', 'general_structures', 'cross_section', 'id'] #DFM stations, DFM gs, DFM crs, Sobek stations
-    dimname_stat_validvals_boolpresent = [x in nc_values_dims for x in dimname_stat_validvals]
+    dimname_stat_validvals_boolpresent = [x in nc_varobject.dimensions for x in dimname_stat_validvals]
     if not any(dimname_stat_validvals_boolpresent):
         if station is not None:
             raise Exception('ERROR: netcdf file variable (%s) does not contain stations/general_structures, but parameter station is provided'%(varname))
@@ -144,16 +144,16 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         if len(file_ncs) > 1:
             print('processing mapdata from domain %04d of %04d'%(iF, len(file_ncs)-1))
         
-        nc_values, nc_values_shape, nc_values_dims = get_ncvar_valshapedims(file_nc_sel, varname)
+        nc_varobject = get_ncvarobject(file_nc_sel, varname)
         
         concat_axis = 0 #default value, overwritten by faces/stations dimension
         values_selid = []
         values_dimlens = [] #list(nc_values.shape)
-        for iD, nc_values_dimsel in enumerate(nc_values_dims):
+        for iD, nc_values_dimsel in enumerate(nc_varobject.dimensions):
             if nc_values_dimsel == dimn_faces: # domain variable is present, so there are multiple domains
                 nonghost_ids = ghostcell_filter(file_nc_sel)
                 if nonghost_ids is None:
-                    values_selid.append(range(nc_values.shape[iD]))
+                    values_selid.append(range(nc_varobject.shape[iD]))
                 else:
                     values_selid.append(nonghost_ids)
                 values_dimlens.append(0) #because concatenate axis
@@ -171,26 +171,26 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
                 values_dimlens.append(len(layer_ids))
             else:
                 print('WARNING: not a predefined dimension name')
-                values_selid.append(range(nc_values.shape[iD]))
-                values_dimlens.append(nc_values.shape[iD])
+                values_selid.append(range(nc_varobject.shape[iD]))
+                values_dimlens.append(nc_varobject.shape[iD])
         
         if len(file_ncs) > 1:
             #initialize array
             if iF == 0:
                 values_all = np.ma.empty(values_dimlens)
             #concatenate array
-            values_all = np.ma.concatenate([values_all,nc_values[values_selid]],axis=concat_axis)
+            values_all = np.ma.concatenate([values_all,nc_varobject[values_selid]],axis=concat_axis)
         else:
-            values_all = nc_values[values_selid]
+            values_all = nc_varobject[values_selid]
             
     #add metadata
     values_all.var_varname = varname
-    values_all.var_dimensionnames = nc_values_dims
-    if dimn_time in nc_values_dims: #only faces/stations dimensions, no times or layers
+    values_all.var_object = nc_varobject
+    if dimn_time in nc_varobject.dimensions: #only faces/stations dimensions, no times or layers
         values_all.var_times = data_nc_datetimes_pd.iloc[time_ids]
     else:
         values_all.var_times = None
-    if dimn_layer in nc_values_dims: #only time and faces/stations dimensions, no layers
+    if dimn_layer in nc_varobject.dimensions: #only time and faces/stations dimensions, no layers
         values_all.var_layers = layer_ids
     else:
         values_all.var_layers = None
@@ -198,10 +198,6 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         values_all.var_stations = station_name_list_pd.iloc[station_ids]
     else:
         values_all.var_stations = None
-    #if :
-    #    values_all.stations = ...
-    #else:
-    #    values_all.stations = None
     return values_all
 
 
@@ -210,6 +206,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
 
 
 def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None, intersect_coords=None, timestep=None, multipart=None, calcdist_fromlatlon=None):
+    print('WARNING: the function dfm_tools.get_nc.get_xzcoords_onintersection() will be improved, input variables and outputformat might change in the future')
     import numpy as np
     from netCDF4 import Dataset
     try:
