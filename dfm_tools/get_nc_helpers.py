@@ -33,7 +33,7 @@ def get_ncfilelist(file_nc, multipart=None):
 
 
 
-def get_varname_mapnc(data_nc,varname_requested):
+def get_varname_fromnc(data_nc,varname_requested):
     import pandas as pd
     
     #VARIABLE names used within different versions of Delft3D-Flexible Mesh
@@ -147,13 +147,11 @@ def get_ncvardimlist(file_nc):
     
 
 
-def get_ncvardims(file_nc, varname):
+def get_ncvar_valshapedims(file_nc, varname):
     from netCDF4 import Dataset
     
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
     nc_varkeys = list(vars_pd['nc_varkeys'])
-    #nc_varlongnames = list(vars_pd['nc_varlongnames'])
-    nc_dimkeys = list(dims_pd['nc_dimkeys'])
     
     # check if requested variable is in netcdf
     if varname not in nc_varkeys:
@@ -165,7 +163,7 @@ def get_ncvardims(file_nc, varname):
     nc_values_shape = nc_values.shape
     nc_values_dims = nc_values.dimensions
     #nc_values_ndims = len(nc_values_dims)
-    return nc_varkeys, nc_dimkeys, nc_values, nc_values_shape, nc_values_dims
+    return nc_values, nc_values_shape, nc_values_dims
 
 
 
@@ -173,11 +171,11 @@ def ghostcell_filter(file_nc):
     import numpy as np
     from netCDF4 import Dataset
     
-    #from dfm_tools.get_nc_helpers import get_varname_mapnc
+    #from dfm_tools.get_nc_helpers import get_varname_fromnc
     
     data_nc = Dataset(file_nc)
     
-    varn_domain = get_varname_mapnc(data_nc,'mesh2d_flowelem_domain')
+    varn_domain = get_varname_fromnc(data_nc,'mesh2d_flowelem_domain')
     if varn_domain is not None: # domain variable is present, so there are multiple domains
         domain = data_nc.variables[varn_domain][:]
         domain_no = np.bincount(domain).argmax() #meest voorkomende domeinnummer
@@ -202,8 +200,10 @@ def get_timesfromnc(file_nc, force_noreconstruct=False):
     import numpy as np
     import pandas as pd
     
+    #from dfm_tools.get_nc_helpers import get_varname_fromnc
+
     data_nc = Dataset(file_nc)
-    varname_time = get_varname_mapnc(data_nc,'time')
+    varname_time = get_varname_fromnc(data_nc,'time')
     data_nc_timevar = data_nc.variables[varname_time]
     
     if len(data_nc_timevar)<3 or force_noreconstruct==True: #shorter than 3 rarely is the case, but just to be sure

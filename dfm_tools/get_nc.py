@@ -22,11 +22,10 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     import pandas as pd
     from netCDF4 import Dataset
     
-    from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvardims, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_mapnc
+    from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvar_valshapedims, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_fromnc
     
-    #get variable and dimension info
-    #nc_varkeys, nc_dimkeys, nc_values, nc_values_shape, nc_values_dims = get_ncvardims(file_nc, varname)
-    dummy, dummy, dummy, nc_values_shape, nc_values_dims = get_ncvardims(file_nc, varname)
+    #get variable info
+    dummy, nc_values_shape, nc_values_dims = get_ncvar_valshapedims(file_nc, varname)
     data_nc = Dataset(file_nc)
     
     #CHECK VARNAME, IS THERE A SEPARATE DEFINITION TO RETRIEVE DATA?
@@ -35,7 +34,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         raise Exception('ERROR: variable "%s" should be retrieved with separate function:\nstation_names = get_hisstationlist(file_nc=file_nc, varname_stat="%s")'%(varname,varname))
     
     #TIMES CHECKS
-    dimn_time = get_varname_mapnc(data_nc,'time')
+    dimn_time = get_varname_fromnc(data_nc,'time')
     if dimn_time not in nc_values_dims: #dimension time is not available in variable
         if timestep is not None:
             raise Exception('ERROR: netcdf file variable (%s) does not contain times, but parameter timestep is provided'%(varname))
@@ -69,7 +68,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
             raise Exception('ERROR: requested end timestep (%d) is larger than available in netcdf file (%d)'%(np.max(time_ids),len(data_nc_datetimes_pd)-1))
     
     #LAYER CHECKS
-    dimn_layer = get_varname_mapnc(data_nc,'nmesh2d_layer')
+    dimn_layer = get_varname_fromnc(data_nc,'nmesh2d_layer')
     if dimn_layer not in nc_values_dims: #no layer dimension in model and/or variable
         if layer is not None:
             raise Exception('ERROR: netcdf variable (%s) does not contain layers, but parameter layer is provided'%(varname))
@@ -136,7 +135,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     
     
     #check faces existence, variable could have ghost cells if partitioned
-    dimn_faces = get_varname_mapnc(data_nc,'mesh2d_nFaces')
+    dimn_faces = get_varname_fromnc(data_nc,'mesh2d_nFaces')
 
     file_ncs = get_ncfilelist(file_nc, multipart)
     
@@ -145,7 +144,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         if len(file_ncs) > 1:
             print('processing mapdata from domain %04d of %04d'%(iF, len(file_ncs)-1))
         
-        nc_varkeys, nc_dimkeys, nc_values, nc_values_shape, nc_values_dims = get_ncvardims(file_nc_sel, varname)
+        nc_values, nc_values_shape, nc_values_dims = get_ncvar_valshapedims(file_nc_sel, varname)
         
         concat_axis = 0 #default value, overwritten by faces/stations dimension
         values_selid = []
@@ -218,7 +217,7 @@ def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None
     except:
         raise Exception('ERROR: cannot execute import shapely.geometry, check known bugs on https://github.com/openearth/dfm_tools for a solution')
 
-    from dfm_tools.get_nc_helpers import get_varname_mapnc
+    from dfm_tools.get_nc_helpers import get_varname_fromnc
     
     def calc_dist(x1,x2,y1,y2):
         distance = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
@@ -275,22 +274,22 @@ def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None
     
     data_nc = Dataset(file_nc)
     
-    varn_mesh2d_s1 = get_varname_mapnc(data_nc,'mesh2d_s1')
+    varn_mesh2d_s1 = get_varname_fromnc(data_nc,'mesh2d_s1')
     data_frommap_wl3 = get_ncmodeldata(file_nc, varname=varn_mesh2d_s1, timestep=timestep, multipart=multipart)
     data_frommap_wl3_sel = data_frommap_wl3[0,intersect_gridnos]
-    varn_mesh2d_flowelem_bl = get_varname_mapnc(data_nc,'mesh2d_flowelem_bl')
+    varn_mesh2d_flowelem_bl = get_varname_fromnc(data_nc,'mesh2d_flowelem_bl')
     data_frommap_bl = get_ncmodeldata(file_nc, varname=varn_mesh2d_flowelem_bl, multipart=multipart)
     data_frommap_bl_sel = data_frommap_bl[intersect_gridnos]
     
     #nlay = data_frommap.shape[2]
     #nlay = data_nc.variables[varname].shape[2]
-    dimn_layer = get_varname_mapnc(data_nc,'nmesh2d_layer')
+    dimn_layer = get_varname_fromnc(data_nc,'nmesh2d_layer')
     if dimn_layer is None: #no layers, 2D model
         nlay = 1
     else:
         nlay = data_nc.dimensions[dimn_layer].size
     
-    varn_layer_z = get_varname_mapnc(data_nc,'mesh2d_layer_z')
+    varn_layer_z = get_varname_fromnc(data_nc,'mesh2d_layer_z')
     if varn_layer_z is None:
         laytyp = 'sigmalayer'
         #zvals_cen = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay)
