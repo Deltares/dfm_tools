@@ -121,26 +121,24 @@ TODO wishlist
 	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/OpenEarthTools/openearthtools/io/dflowfm/patch2tri.py
 	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/OpenEarthTools/openearthtools/io/netcdf
 	- see test_workinprogress.py
-- ax keyword verwijderen uit plotmapmodeldata
+- ax keyword verwijderen uit plotmapmodeldata?
 
 TODO non-content
 --------
-- update install/venv manuals, venv manual is now not in line with user-install
+- update/delete cookiecutter text files
+- add documentation in comments of functions
+- put testdata on deltares shared location?
+- put testdata and testoutput on github and create jupyter notebook instead of pptx?
+- arrange auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
 - register on PyPI, for easier install via pip (easier for regular users):
 	- https://the-hitchhikers-guide-to-packaging.readthedocs.io/en/latest/quickstart.html#register-your-package-with-the-python-package-index-pypi
 	- https://packaging.python.org/tutorials/packaging-projects/
 	- how to automate this process?
 	- also add changelog besides commit comments?
-- publish some example figures online, maybe py-notebook and example data?
-- arrange auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
-- put testdata on deltares shared location?
-- put testdata and testoutput on github and create jupyter notebook instead of pptx?
 - update license with Deltares terms
-- update all text files and documentations
-- write documentation as comments and generate automatically
+- write documentation as comments and generate automatically?
 - create overview tree of all functions, also add missing functions here
 - paths to project folders in test scripts are ok?
-- add minimal version numbers to requirements.txt (maybe also to environment.yml)
 - style guide: https://www.python.org/dev/peps/pep-0008/
 - contributing method: environment.yml (README.rst) or requirements_dev.txt (CONTRIBUTING.rst)?
 
