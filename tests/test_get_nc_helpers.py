@@ -45,7 +45,7 @@ def test_getvarnamemapnc():
     
     from netCDF4 import Dataset
     
-    from dfm_tools.get_nc_helpers import get_varname_mapnc
+    from dfm_tools.get_nc_helpers import get_varname_fromnc
     
     file_map = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc')
     #file_net = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\Grevelingen_FM_grid_20190603_net.nc')
@@ -54,7 +54,7 @@ def test_getvarnamemapnc():
     data_nc = Dataset(file_nc)
     varname_requested = 'NetNode_y' #is actually in file, so this is not a good test
     
-    varname = get_varname_mapnc(data_nc,varname_requested)
+    varname = get_varname_fromnc(data_nc,varname_requested)
     data_nc_var = data_nc.variables[varname]
     dimname = data_nc_var.dimensions[0]
     

@@ -24,7 +24,7 @@ def test_workinprogress():
     plt.close('all')
     
     from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
-    from dfm_tools.get_nc_helpers import get_ncvardimlist, get_hisstationlist#, get_varname_mapnc
+    from dfm_tools.get_nc_helpers import get_ncvardimlist, get_hisstationlist#, get_varname_fromnc
     
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
     #dir_output = '.'
@@ -81,7 +81,8 @@ def test_workinprogress():
 
 
     #SFINCS
-    file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\01_Implementation\14_restartfile\sfincs_map.nc'
+    #file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\01_Implementation\14_restartfile\sfincs_map.nc'
+    file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\03_Application\22_Tsunami_Japan_Sendai\sfincs_map.nc'
     
     data_fromnc_x = get_ncmodeldata(file_nc=file_nc, varname='x')
     data_fromnc_y = get_ncmodeldata(file_nc=file_nc, varname='y')
@@ -106,7 +107,8 @@ def test_workinprogress():
     plt.savefig(os.path.join(dir_output,'SFINCS_ucontour'))
 
     #SFINCS HIS
-    file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\01_Implementation\14_restartfile\sfincs_his.nc'
+    #file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\01_Implementation\14_restartfile\sfincs_his.nc'
+    file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\03_Application\22_Tsunami_Japan_Sendai\sfincs_his.nc'
     
     station_names = get_hisstationlist(file_nc=file_nc)
     data_fromnc_his = get_ncmodeldata(file_nc=file_nc, varname='point_zs', station='all', timestep='all')
@@ -125,7 +127,7 @@ def test_trygetondepth():
     from netCDF4 import Dataset
     
     from dfm_tools.get_nc import get_ncmodeldata#, get_netdata
-    from dfm_tools.get_nc_helpers import get_varname_mapnc
+    from dfm_tools.get_nc_helpers import get_varname_fromnc
     
     #code from test_get_nc test d
     file_nc = os.path.join(dir_testinput,r'DFM_sigma_curved_bend\DFM_OUTPUT_cb_3d\cb_3d_map.nc')
@@ -146,21 +148,21 @@ def test_trygetondepth():
     #code from get_xzcoords_onintersection
     data_nc = Dataset(file_nc)
     
-    varn_mesh2d_s1 = get_varname_mapnc(data_nc,'mesh2d_s1')
+    varn_mesh2d_s1 = get_varname_fromnc(data_nc,'mesh2d_s1')
     data_frommap_wl3 = get_ncmodeldata(file_nc, varname=varn_mesh2d_s1, timestep=timestep, multipart=multipart)
     data_frommap_wl3 = data_frommap_wl3[0,:]
     #data_frommap_wl3_sel = data_frommap_wl3[0,intersect_gridnos]
-    varn_mesh2d_flowelem_bl = get_varname_mapnc(data_nc,'mesh2d_flowelem_bl')
+    varn_mesh2d_flowelem_bl = get_varname_fromnc(data_nc,'mesh2d_flowelem_bl')
     data_frommap_bl = get_ncmodeldata(file_nc, varname=varn_mesh2d_flowelem_bl, multipart=multipart)
     #data_frommap_bl_sel = data_frommap_bl[intersect_gridnos]
     
-    dimn_layer = get_varname_mapnc(data_nc,'nmesh2d_layer')
+    dimn_layer = get_varname_fromnc(data_nc,'nmesh2d_layer')
     if dimn_layer is None: #no layers, 2D model
         nlay = 1
     else:
         nlay = data_nc.dimensions[dimn_layer].size
     
-    varn_layer_z = get_varname_mapnc(data_nc,'mesh2d_layer_z')
+    varn_layer_z = get_varname_fromnc(data_nc,'mesh2d_layer_z')
     if varn_layer_z is None:
         laytyp = 'sigmalayer'
         #zvals_cen = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay)
