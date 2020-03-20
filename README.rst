@@ -56,8 +56,8 @@ How to work with dfm_tools
 		- spyder-kernals is optional, but necessary if you want to set Spyder to find your venv/interpreter manually
 	- ``conda activate dfm_tools_env``
 	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this also installs all required packages) (this also updates it to the latest version if you already installed it before)
-	- test if dfm_tools is properly installed by printing the version number: ``python -c "import dfm_tools; print(dfm_tools.__version__)"``
-	- test if you can import shapely.geometry: ``python -c "import shapely.geometry"`` (if not, look at the known bugs section in this readme. You will need this when slicing data)
+	- test by printing dfm_tools version number: ``python -c "import dfm_tools; print(dfm_tools.__version__)"`` (this should just work)
+	- test by importing shapely.geometry: ``python -c "import shapely.geometry"`` (if you get an error, look at the known bugs section in this readme. You will need this when slicing data)
 	
 - Use it in your scripts:
 	- launch Spyder:
