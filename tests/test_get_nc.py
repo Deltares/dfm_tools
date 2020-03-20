@@ -412,8 +412,10 @@ def test_getplotmapWAQOS(file_nc):
 
     print('plot grid and values from mapdata (constantvalue, 1 dim)')
     if 'oost_tracer_map' in file_nc:
-        var_names = ['mesh2d_FColi_1','mesh2d_HIWAI_1','mesh2d_mspaf_1','mesh2d_Pharma_1'] #nieuwe file, te veel dimensies
-        var_clims = [None,[0,100000000000],None,[0,10000]]
+        #var_names = ['mesh2d_FColi_1','mesh2d_HIWAI_1','mesh2d_mspaf_1','mesh2d_Pharma_1'] #nieuwe file, te veel dimensies
+        #var_clims = [None,[0,100000000000],None,[0,10000]]
+        var_names = ['mesh2d_FColi_1','mesh2d_HIWAI_1','mesh2d_Pharma_1'] #nieuwe file, te veel dimensies
+        var_clims = [None,[0,100000000000],[0,10000]]
     elif 'oost_tracer_2_map' in file_nc:
         var_names = ['mesh2d_FColi','mesh2d_HIWAI','mesh2d_Pharma'] #oude file
         var_clims = [None,[0,100000000000],[0,10000]]
