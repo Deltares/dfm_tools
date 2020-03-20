@@ -51,18 +51,15 @@ How to work with dfm_tools
 
 - Install the code from github via pip:
 	- open command window
-	- ``conda create --name dfm_tools_env python=3.7 spyder-kernels==0.*``
-		- creating a venv is optional but recommended
-		- spyder-kernals is optional, but necessary if you want to set Spyder to find your venv/interpreter manually
+	- ``conda create --name dfm_tools_env python=3.7 spyder-kernels==0.*`` (creating a venv is optional but recommended)
 	- ``conda activate dfm_tools_env``
 	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this also installs all required packages) (this also updates it to the latest version if you already installed it before)
 	- test by printing dfm_tools version number: ``python -c "import dfm_tools; print(dfm_tools.__version__)"`` (this should just work)
 	- test by importing shapely.geometry: ``python -c "import shapely.geometry"`` (if you get an error, look at the known bugs section in this readme. You will need this when slicing data)
 	
 - Use it in your scripts:
-	- launch Spyder:
-		- open anaconda navigator, select your venv, launch Spyder from here
-		- Note: if you don't want to start Spyder via anaconda navigator, see developer information for an alternative method to link Spyder to your venv 
+	- launch Spyder: open anaconda navigator, select your venv, launch Spyder from here
+	- Note: if you don't want to start Spyder via anaconda navigator, see developer information for an alternative method to link Spyder to your venv 
 	- from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
 	- check scripts in tests folder on github for examples
 
