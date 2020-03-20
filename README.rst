@@ -89,7 +89,10 @@ TODO wishlist
 	- check center/corner correctness, pcolormesh does not completely correspond with contours
 - add tekal write functions
 - expand Delft3D read and plot options
-- add sattelite basemap (cartopy/basemap), get latlon projection for axis
+- add sattelite basemap (cartopy/basemap):
+	- get latlon projection for axis
+	- both packages can only be installed via conda? so not possible as a pip dependency, add other test?
+	- test install them and decide on which package
 - expand general netcdf read and plot options (Sobek, ERA5, hirlam, SFINCS)
 - remove hardcoded 'stations' dimension lookup
 - raise understandable error when no mesh2d_edge_x var in netcdf, instead of keyerror none (eg with get_netdata on hirlam files)
@@ -116,7 +119,7 @@ TODO wishlist
 	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/OpenEarthTools/openearthtools/io/dflowfm/patch2tri.py
 	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/OpenEarthTools/openearthtools/io/netcdf
 	- see test_workinprogress.py
-
+- ax keyword verwijderen uit plotmapmodeldata
 
 TODO non-content
 --------
