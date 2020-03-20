@@ -10,7 +10,7 @@ import inspect
 import os
 
 dir_testinput = os.path.join(r'c:/DATA','dfm_tools_testdata')
-from tests.TestUtils import getmakeoutputdir
+from dfm_tools.testutils import getmakeoutputdir
 
 
 @pytest.mark.parametrize("file_nc, expected_size", [pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'), 5599, id='from 1 map partion Grevelingen'),
@@ -347,13 +347,13 @@ def test_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
 
 
 
-@pytest.mark.parametrize("file_nc", [pytest.param('p:\\11201806-sophie\\Oosterschelde\\WAQ\\r03\\postprocessing\\oost_tracer_map_backup.nc', id='oost_tracer_map'),
-                                     pytest.param('p:\\11201806-sophie\\Oosterschelde\\WAQ\\r02\\postprocessing\\oost_tracer_2_map.nc', id='oost_tracer_2_map')])
+@pytest.mark.parametrize("file_nc", [pytest.param('p:\\11201806-sophie\\Oosterschelde\\WAQ\\r02\\postprocessing\\oost_tracer_2_map.nc', id='oost_tracer_2_map')])
 @pytest.mark.acceptance
 def test_getplotmapWAQOS(file_nc):
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
     """
-    file_nc = 'p:\\11201806-sophie\\Oosterschelde\\WAQ\\r03\\postprocessing\\oost_tracer_map_backup.nc'
+    file_nc = 'p:\\11201806-sophie\\Oosterschelde\\WAQ\\r03\\postprocessing\\oost_tracer_map.nc' #constantly changes name and dimensions, removed from testbank
+    file_nc = 'p:\\11201806-sophie\\Oosterschelde\\WAQ\\r02\\postprocessing\\oost_tracer_2_map.nc'
     dir_output = './test_output'
     """
 
@@ -366,10 +366,8 @@ def test_getplotmapWAQOS(file_nc):
 
     print('plot grid and values from mapdata (constantvalue, 1 dim)')
     if 'oost_tracer_map' in file_nc:
-        #var_names = ['mesh2d_FColi_1','mesh2d_HIWAI_1','mesh2d_mspaf_1','mesh2d_Pharma_1'] #nieuwe file, te veel dimensies
-        #var_clims = [None,[0,100000000000],None,[0,10000]]
-        var_names = ['mesh2d_FColi_1','mesh2d_HIWAI_1','mesh2d_Pharma_1'] #nieuwe file, te veel dimensies
-        var_clims = [None,[0,100000000000],[0,10000]]
+        var_names = ['FColi1','HIWAI1','mspaf1','Pharma1'] #nieuwe file, te veel dimensies
+        var_clims = [None,[0,100000000000],None,[0,10000]]
     elif 'oost_tracer_2_map' in file_nc:
         var_names = ['mesh2d_FColi','mesh2d_HIWAI','mesh2d_Pharma'] #oude file
         var_clims = [None,[0,100000000000],[0,10000]]
