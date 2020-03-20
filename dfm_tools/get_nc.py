@@ -87,7 +87,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
                 layer_ids = np.unique(layer)
             else:
                 raise Exception('ERROR: timestep lay type not anticipated (%s), (list/range/ndarray of) int are accepted (or "all")'%(type(layer)))            
-        elif type(layer)==int or type(timestep)==np.int32 or type(timestep)==np.int64:
+        elif type(layer)==int or type(layer)==np.int32 or type(layer)==np.int64:
             layer_ids = [layer]
         else:
             raise Exception('ERROR: timestep lay type not anticipated (%s), (list/range/ndarray of) int are accepted (or "all")'%(type(layer)))
@@ -117,13 +117,13 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         if station is str('all'):
             station_ids = range(len(station_name_list_pd))
         elif type(station)==list or type(station)==range or type(station)==type(np.arange(1,2,0.5)):
-            if type(station[0])==int or type(layer[0])==np.int32 or type(station[0])==np.int64: #list/range/ndarray of int
+            if type(station[0])==int or type(station[0])==np.int32 or type(station[0])==np.int64: #list/range/ndarray of int
                 station_ids = station
             elif type(station[0])==str: #list/range/ndarray of str
                 station_ids = get_stationid_fromstationlist(station_name_list_pd, station)
             else:
                 raise Exception('ERROR1: station variable type not anticipated (%s), (list/range/ndarray of) strings or ints are accepted (or "all")'%(type(station)))
-        elif type(station)==int or type(timestep)==np.int32 or type(timestep)==np.int64:
+        elif type(station)==int or type(station)==np.int32 or type(station)==np.int64:
             station_ids = [station]
         elif type(station)==str:
             station_ids = get_stationid_fromstationlist(station_name_list_pd, [station])
