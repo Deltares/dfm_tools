@@ -87,7 +87,7 @@ def test_getplotfoudata():
     pc.set_clim([0,10])
     fig.colorbar(pc)
     ax.set_aspect('equal')
-    plt.savefig(os.path.join(dir_output,os.path.basename(file_nc).replace('.nc','')))
+    plt.savefig(os.path.join(dir_output,os.path.basename(file_nc).replace('.','')))
 
     assert ugrid.verts.shape[0] == data_fromfou.shape[0]
 
@@ -120,7 +120,7 @@ def test_getnetdata_plotnet(file_nc):
     fig, ax = plt.subplots()
     plot_netmapdata(ugrid.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
     ax.set_aspect('equal')
-    plt.savefig(os.path.join(dir_output,os.path.basename(file_nc).replace('.nc','')))
+    plt.savefig(os.path.join(dir_output,os.path.basename(file_nc).replace('.','')))
     
 
     
@@ -149,7 +149,7 @@ def test_getsobekmodeldata():
     for iL in range(data_fromsobek.shape[1]):
         ax.plot(data_fromsobek.var_times,data_fromsobek[:,iL],'-', label=data_fromsobek.var_stations.iloc[iL])
     ax.legend()
-    plt.savefig(os.path.join(dir_output,'%s_waterlevel'%(os.path.basename(file_nc).replace('.nc',''))))
+    plt.savefig(os.path.join(dir_output,'%s_waterlevel'%(os.path.basename(file_nc).replace('.',''))))
     
     
     
@@ -195,20 +195,20 @@ def test_gethismodeldata(file_nc):
     fig, ax = plt.subplots()
     ax.plot(data_fromhis.var_stations,data_fromhis,'-')
     ax.tick_params('x',rotation=90)
-    plt.savefig(os.path.join(dir_output,'%s_bedlevel'%(os.path.basename(file_nc).replace('.nc',''))))
+    plt.savefig(os.path.join(dir_output,'%s_bedlevel'%(os.path.basename(file_nc).replace('.',''))))
 
     print('plot waterlevel from his')
     data_fromhis = get_ncmodeldata(file_nc=file_nc, varname='waterlevel', timestep='all', station=station)#, multipart=False)
     fig, ax = plt.subplots()
     ax.plot(data_fromhis.var_times,data_fromhis,'-')
-    plt.savefig(os.path.join(dir_output,'%s_waterlevel'%(os.path.basename(file_nc).replace('.nc',''))))
+    plt.savefig(os.path.join(dir_output,'%s_waterlevel'%(os.path.basename(file_nc).replace('.',''))))
     
     print('plot salinity from his')
     data_fromhis = get_ncmodeldata(file_nc=file_nc, varname='salinity', timestep='all', layer=5, station=station)#, multipart=False)
     data_fromhis_flat = data_fromhis[:,:,0]
     fig, ax = plt.subplots()
     ax.plot(data_fromhis.var_times,data_fromhis_flat,'-')
-    plt.savefig(os.path.join(dir_output,'%s_salinity'%(os.path.basename(file_nc).replace('.nc',''))))
+    plt.savefig(os.path.join(dir_output,'%s_salinity'%(os.path.basename(file_nc).replace('.',''))))
 
     print('plot salinity over depth')
     #depth retrieval is probably wrong
@@ -217,7 +217,7 @@ def test_gethismodeldata(file_nc):
     fig, ax = plt.subplots()
     ax.plot(data_fromhis[0,:,:].T, data_fromhis_depth[0,:,:].T,'-')
     ax.legend(data_fromhis.var_stations)
-    plt.savefig(os.path.join(dir_output,'%s_salinityoverdepth'%(os.path.basename(file_nc).replace('.nc',''))))
+    plt.savefig(os.path.join(dir_output,'%s_salinityoverdepth'%(os.path.basename(file_nc).replace('.',''))))
 
     print('zt temperature plot')
     #WARNING: layers in dfowfm hisfile are currently incorrect, check your figures carefully
@@ -237,7 +237,7 @@ def test_gethismodeldata(file_nc):
     #contour
     CS = ax.contour(time_mesh_cen,data_fromhis_zcen[:,0,:],data_fromhis_temp[:,0,:],6, colors='k', linewidths=0.8, linestyles='solid')
     ax.clabel(CS, fontsize=10)
-    plt.savefig(os.path.join(dir_output,'%s_zt_temp'%(os.path.basename(file_nc).replace('.nc',''))))
+    plt.savefig(os.path.join(dir_output,'%s_zt_temp'%(os.path.basename(file_nc).replace('.',''))))
 
     
 
@@ -292,7 +292,7 @@ def test_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
     fig, ax = plt.subplots()
     pc = plot_netmapdata(ugrid_all.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
     ax.set_aspect('equal')
-    plt.savefig(os.path.join(dir_output,'%s_grid'%(os.path.basename(file_nc).replace('.nc',''))))
+    plt.savefig(os.path.join(dir_output,'%s_grid'%(os.path.basename(file_nc).replace('.',''))))
 
 
     #PLOT bedlevel
@@ -307,7 +307,7 @@ def test_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
         pc.set_clim(clim_bl)
         fig.colorbar(pc, ax=ax)
         ax.set_aspect('equal')
-        plt.savefig(os.path.join(dir_output,'%s_mesh2d_flowelem_bl'%(os.path.basename(file_nc).replace('.nc',''))))
+        plt.savefig(os.path.join(dir_output,'%s_mesh2d_flowelem_bl'%(os.path.basename(file_nc).replace('.',''))))
         
     
     #PLOT water level on map
@@ -319,7 +319,7 @@ def test_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
     pc.set_clim(clim_wl)
     fig.colorbar(pc, ax=ax)
     ax.set_aspect('equal')
-    plt.savefig(os.path.join(dir_output,'%s_mesh2d_s1'%(os.path.basename(file_nc).replace('.nc',''))))
+    plt.savefig(os.path.join(dir_output,'%s_mesh2d_s1'%(os.path.basename(file_nc).replace('.',''))))
 
     #PLOT var layer on map
     if not 'RMM_dflowfm_0000_map' in file_nc:
@@ -331,7 +331,7 @@ def test_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
         pc.set_clim(clim_sal)
         fig.colorbar(pc, ax=ax)
         ax.set_aspect('equal')
-        plt.savefig(os.path.join(dir_output,'%s_mesh2d_sa1'%(os.path.basename(file_nc).replace('.nc',''))))
+        plt.savefig(os.path.join(dir_output,'%s_mesh2d_sa1'%(os.path.basename(file_nc).replace('.',''))))
     
         print('plot grid and values from mapdata (temperature on layer, 3dim)')
         data_frommap = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_tem1', timestep=timestep, layer=layer)#, multipart=False)
@@ -341,7 +341,7 @@ def test_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
         pc.set_clim(clim_tem)
         fig.colorbar(pc, ax=ax)
         ax.set_aspect('equal')
-        plt.savefig(os.path.join(dir_output,'%s_mesh2d_tem1'%(os.path.basename(file_nc).replace('.nc',''))))
+        plt.savefig(os.path.join(dir_output,'%s_mesh2d_tem1'%(os.path.basename(file_nc).replace('.',''))))
 
 
 
@@ -385,7 +385,7 @@ def test_getplotmapWAQOS(file_nc):
         fig.colorbar(pc, ax=ax)
         ax.set_aspect('equal')
         ax.set_xlabel(var_name)
-        plt.savefig(os.path.join(dir_output,'%s_%s'%(os.path.basename(file_nc).replace('.nc',''),var_name)))
+        plt.savefig(os.path.join(dir_output,'%s_%s'%(os.path.basename(file_nc).replace('.',''),var_name)))
         
 
 
@@ -537,7 +537,7 @@ def test_getxzcoordsonintersection_plotcrossect(file_nc):
     #plot crossed cells (gridnos) in first plot
     print(layno)#data_frommap_flat = data_frommap[0,intersect_gridnos,layno]
     #pc = plot_netmapdata(ugrid.verts[intersect_gridnos,:,:], values=data_frommap_flat, ax=ax_input, linewidth=0.5, cmap="jet")
-    plt.savefig(os.path.join(dir_output,'%s_gridbed'%(os.path.basename(file_nc).replace('.nc',''))))
+    plt.savefig(os.path.join(dir_output,'%s_gridbed'%(os.path.basename(file_nc).replace('.',''))))
 
     #plot cross section
     if len(data_frommap.shape) == 3:
@@ -550,7 +550,7 @@ def test_getxzcoordsonintersection_plotcrossect(file_nc):
     pc = plot_netmapdata(crs_verts, values=data_frommap_sel_flat, ax=ax, linewidth=0.5, cmap='jet')
     fig.colorbar(pc, ax=ax)
     ax.set_ylim(val_ylim)
-    plt.savefig(os.path.join(dir_output,'%s_crossect'%(os.path.basename(file_nc).replace('.nc',''))))
+    plt.savefig(os.path.join(dir_output,'%s_crossect'%(os.path.basename(file_nc).replace('.',''))))
     
     runtime_tstop = dt.datetime.now()
     runtime_timedelta = (runtime_tstop-runtime_tstart).total_seconds()
@@ -604,7 +604,7 @@ def test_morphology():
             ax.set_title('t=%d (%s)'%(tids[iA], data_frommap.var_times.iloc[tids[iA]]))
             #ax1.set_ylim(val_ylim)
         fig.tight_layout()
-        plt.savefig(os.path.join(dir_output,'%s_%s'%(os.path.basename(file_nc).replace('.nc',''), varname)))
+        plt.savefig(os.path.join(dir_output,'%s_%s'%(os.path.basename(file_nc).replace('.',''), varname)))
         
         
         
@@ -634,7 +634,7 @@ def test_morphology():
         #ax.set_xlim([data_fromhis.var_times[0], data_fromhis.var_times[100]])
         ax.set_xlim(data_fromhis.var_times[[0,2000]])
         fig.tight_layout()
-        plt.savefig(os.path.join(dir_output,'%s_%s'%(os.path.basename(file_nc).replace('.nc',''), varname)))
+        plt.savefig(os.path.join(dir_output,'%s_%s'%(os.path.basename(file_nc).replace('.',''), varname)))
     
     
     
