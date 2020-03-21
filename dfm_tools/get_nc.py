@@ -17,6 +17,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     multipart: set to False if you want only one of the map domains, can be left out otherwise
     """
     
+    import warnings
     import numpy as np
     import datetime as dt
     import pandas as pd
@@ -176,7 +177,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
                 values_selid.append(layer_ids)
                 values_dimlens.append(len(layer_ids))
             else:
-                print('WARNING: not a predefined dimension name')
+                warnings.warn('WARNING: not a predefined dimension name')
                 values_selid.append(range(nc_varobject.shape[iD]))
                 values_dimlens.append(nc_varobject.shape[iD])
         
@@ -212,7 +213,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
 
 
 def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None, intersect_coords=None, timestep=None, multipart=None, calcdist_fromlatlon=None):
-    print('WARNING: the function dfm_tools.get_nc.get_xzcoords_onintersection() will be improved, input variables and outputformat might change in the future')
+    import warnings
     import numpy as np
     from netCDF4 import Dataset
     try:
@@ -222,6 +223,8 @@ def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None
 
     from dfm_tools.get_nc_helpers import get_varname_fromnc
     
+    warnings.warn('WARNING: the function dfm_tools.get_nc.get_xzcoords_onintersection() will be improved, input variables and outputformat might change in the future')
+
     def calc_dist(x1,x2,y1,y2):
         distance = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
         return distance

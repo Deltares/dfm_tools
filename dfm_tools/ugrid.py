@@ -34,14 +34,20 @@ class UGrid:
             return verts
         
         data_nc = Dataset(file_nc)
-
-        mesh2d_node_x = data_nc.variables[get_varname_fromnc(data_nc,'mesh2d_node_x')][:]
-        mesh2d_node_y = data_nc.variables[get_varname_fromnc(data_nc,'mesh2d_node_y')][:]
+        
+        varn_mesh2d_node_x = get_varname_fromnc(data_nc,'mesh2d_node_x')
+        varn_mesh2d_node_y = get_varname_fromnc(data_nc,'mesh2d_node_y')
+        if varn_mesh2d_node_x is None or varn_mesh2d_node_y is None:
+            raise Exception('file does not contain variables varn_mesh2d_node_x and varn_mesh2d_node_y or similar, are you sure this is an unstructured grid')
+        mesh2d_node_x = data_nc.variables[varn_mesh2d_node_x][:]
+        mesh2d_node_y = data_nc.variables[varn_mesh2d_node_y][:]
+        
         varn_mesh2d_node_z = get_varname_fromnc(data_nc,'mesh2d_node_z')
         if varn_mesh2d_node_z is not None: # node_z variable is present
             mesh2d_node_z = data_nc.variables[varn_mesh2d_node_z][:]
         else:
             mesh2d_node_z = None
+
         varn_mesh2d_face_nodes = get_varname_fromnc(data_nc,'mesh2d_face_nodes')
         if varn_mesh2d_face_nodes is not None: # node_z variable is present
             mesh2d_face_nodes = data_nc.variables[varn_mesh2d_face_nodes][:, :]
@@ -146,3 +152,21 @@ class UGrid:
         print('done finding crossing flow links')
         return intersect_gridnos, intersect_coords
     
+
+
+
+def meshgridxy2verts(x_coords, y_coords):
+    import numpy as np
+    
+    grid_verts = np.empty(shape=((x_coords.shape[0]-1)*(y_coords.shape[1]-1),4,2))
+    grid_verts[:] = np.nan
+    grid_verts[:,0,0] = x_coords[:-1,1:].flatten()
+    grid_verts[:,1,0] = x_coords[:-1,:-1].flatten()
+    grid_verts[:,2,0] = x_coords[1:,:-1].flatten()
+    grid_verts[:,3,0] = x_coords[1:,1:].flatten()
+    grid_verts[:,0,1] = y_coords[:-1,1:].flatten()
+    grid_verts[:,1,1] = y_coords[:-1,:-1].flatten()
+    grid_verts[:,2,1] = y_coords[1:,:-1].flatten()
+    grid_verts[:,3,1] = y_coords[1:,1:].flatten()
+    
+    return grid_verts
