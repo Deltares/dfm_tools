@@ -68,6 +68,7 @@ Known bugs
 - the line ``import shapely.geometry`` does not work, while ``import shapely`` does (OSError: [WinError 126] The specified module could not be found), solution:
 	- find geos.py in your environment (eg %userprofile%\\AppData\\Local\\Continuum\\anaconda3\\envs\\dfm_tools_env\\Lib\\site-packages\\shapely\\geos.py)
 	- replace ``if os.getenv('CONDA_PREFIX', ''):`` with ``if 0:`` on line 143 (this disables this if statement and redirects to else)
+- report other bugs and feature requests at the developers or at https://github.com/openearth/dfm_tools/issues (include OS, dfm_tools version, reproduction steps)
 
 
 TODO wishlist
@@ -121,26 +122,24 @@ TODO wishlist
 	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/OpenEarthTools/openearthtools/io/dflowfm/patch2tri.py
 	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/OpenEarthTools/openearthtools/io/netcdf
 	- see test_workinprogress.py
-- ax keyword verwijderen uit plotmapmodeldata
+- ax keyword verwijderen uit plotmapmodeldata?
 
 TODO non-content
 --------
-- update install/venv manuals, venv manual is now not in line with user-install
+- update/delete cookiecutter text files
+- add documentation in comments of functions
+- put testdata on deltares shared location?
+- put testdata and testoutput on github and create jupyter notebook instead of pptx?
+- arrange auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
 - register on PyPI, for easier install via pip (easier for regular users):
 	- https://the-hitchhikers-guide-to-packaging.readthedocs.io/en/latest/quickstart.html#register-your-package-with-the-python-package-index-pypi
 	- https://packaging.python.org/tutorials/packaging-projects/
 	- how to automate this process?
 	- also add changelog besides commit comments?
-- publish some example figures online, maybe py-notebook and example data?
-- arrange auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
-- put testdata on deltares shared location?
-- put testdata and testoutput on github and create jupyter notebook instead of pptx?
 - update license with Deltares terms
-- update all text files and documentations
-- write documentation as comments and generate automatically
+- write documentation as comments and generate automatically?
 - create overview tree of all functions, also add missing functions here
 - paths to project folders in test scripts are ok?
-- add minimal version numbers to requirements.txt (maybe also to environment.yml)
 - style guide: https://www.python.org/dev/peps/pep-0008/
 - contributing method: environment.yml (README.rst) or requirements_dev.txt (CONTRIBUTING.rst)?
 
@@ -210,12 +209,20 @@ Developer information: how to contribute to this git repository
 	- push your changes with ``git push`` (from git bash window or cmd also ok?)
 - Request merging of your branch on https://github.com/openearth/dfm_tools/branches
 
+
 Credits
 -------
+
+- Development lead
+	- Jelmer Veenstra <jelmer.veenstra@deltares.nl>
+	- Lora Buckman
+	- Julien Groenenboom
+- Contributors
+	- Rudy Schueder (dflowutils scripts)
+	- Koen Berends (mdu read/writing)
+	- you?
 
 This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
 
 .. _Cookiecutter: https://github.com/audreyr/cookiecutter
 .. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
-
-

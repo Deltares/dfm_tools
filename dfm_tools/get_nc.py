@@ -28,8 +28,15 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     nc_varobject = get_ncvarobject(file_nc, varname)
     data_nc = Dataset(file_nc)
     
-    #CHECK VARNAME, IS THERE A SEPARATE DEFINITION TO RETRIEVE DATA?
     varname_stat_validvals = ['station_name', 'general_structure_id', 'cross_section_name', 'observation_id'] #DFM stations, DFM gs, DFM crs, Sobek stations
+    dimname_stat_validvals = ['stations', 'general_structures', 'cross_section', 'id'] #DFM stations, DFM gs, DFM crs, Sobek stations
+    listtype_int = [int, np.int, np.int8, np.int16, np.int32, np.int64]
+    listtype_str = [str]
+    listtype_range = [list, range, np.ndarray]
+    listtype_datetime = [dt.datetime, np.datetime64]
+    listtype_daterange = [pd.date_range]
+    
+    #CHECK VARNAME, IS THERE A SEPARATE DEFINITION TO RETRIEVE DATA?
     if varname in varname_stat_validvals:
         raise Exception('ERROR: variable "%s" should be retrieved with separate function:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist; station_names = get_hisstationlist(file_nc=file_nc, varname_stat="%s")'%(varname,varname))
     
@@ -46,24 +53,22 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         data_nc_datetimes_pd = get_timesfromnc(file_nc)
         if timestep is str('all'):
             time_ids = range(len(data_nc_datetimes_pd))
-        elif type(timestep)==list or type(timestep)==range or type(timestep)==type(np.arange(1,2,0.5)):
-            if type(timestep[0])==int or type(timestep[0])==np.int32 or type(timestep[0])==np.int64: #list/range/ndarray of int
+        elif type(timestep) in listtype_range:
+            if type(timestep[0]) in listtype_int:
                 time_ids = timestep
-            elif type(timestep[0])==type(dt.datetime(1,1,1)) or type(timestep[0])==type(np.datetime64(year=1900,month=1,day=1)): #list/range/ndarray of datetime
+            elif type(timestep[0]) in listtype_datetime:
                 time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, timestep)
             else:
                 raise Exception('ERROR: timestep variable type is list/range/ndarray (%s), but type of timestep[0] not anticipated (%s), options:\n - int\n - np.int64\n - datetime\n - np.datetime64'%(type(timestep),type(timestep[0])))
-        elif type(timestep)==type(pd.date_range(start=dt.datetime(2000,1,1),periods=10)): #pandas date range
+        elif type(timestep) in listtype_daterange:
             time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, timestep)
-        elif type(timestep)==int or type(timestep)==np.int32 or type(timestep)==np.int64:
+        elif type(timestep) in listtype_int:
             time_ids = [timestep]
-        elif type(timestep)==type(dt.datetime(1,1,1)):
+        elif type(timestep) in listtype_datetime:
             time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, [timestep])
         else:
             raise Exception('ERROR: timestep variable type not anticipated (%s), options:\n - datetime/int\n - list/range/ndarray of datetime/int\n - pandas daterange\n - "all"'%(type(timestep)))
         #check if requested times are within range of netcdf
-        #if np.min(time_ids) < 0:
-        #    raise Exception('ERROR: requested start timestep (%d) is negative'%(np.min(time_ids)))
         if np.max(time_ids) > len(data_nc_datetimes_pd)-1:
             raise Exception('ERROR: requested maximum timestep (%d) is larger than available in netcdf file (%d)'%(np.max(time_ids),len(data_nc_datetimes_pd)-1))
         if np.min(time_ids) < -len(data_nc_datetimes_pd):
@@ -82,12 +87,12 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         #convert layer to list of int if it is not already
         if layer is str('all'):
             layer_ids = range(nlayers)
-        elif type(layer)==list or type(layer)==range or type(layer)==type(np.arange(1,2,0.5)):
-            if type(layer[0])==int or type(layer[0])==np.int32 or type(layer[0])==np.int64: #list/range/ndarray of int
+        elif type(layer) in listtype_range:
+            if type(layer[0]) in listtype_int:
                 layer_ids = np.unique(layer)
             else:
                 raise Exception('ERROR: timestep lay type not anticipated (%s), (list/range/ndarray of) int are accepted (or "all")'%(type(layer)))            
-        elif type(layer)==int or type(layer)==np.int32 or type(layer)==np.int64:
+        elif type(layer) in listtype_int:
             layer_ids = [layer]
         else:
             raise Exception('ERROR: timestep lay type not anticipated (%s), (list/range/ndarray of) int are accepted (or "all")'%(type(layer)))
@@ -102,7 +107,6 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         raise Exception('ERROR: depth argument is provided, but this is not implemented yet')
     
     #STATION/GENERAL_STRUCTURES CHECKS
-    dimname_stat_validvals = ['stations', 'general_structures', 'cross_section', 'id'] #DFM stations, DFM gs, DFM crs, Sobek stations
     dimname_stat_validvals_boolpresent = [x in nc_varobject.dimensions for x in dimname_stat_validvals]
     if not any(dimname_stat_validvals_boolpresent):
         if station is not None:
@@ -116,22 +120,20 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         #convert station to list of int if it is not already
         if station is str('all'):
             station_ids = range(len(station_name_list_pd))
-        elif type(station)==list or type(station)==range or type(station)==type(np.arange(1,2,0.5)):
-            if type(station[0])==int or type(station[0])==np.int32 or type(station[0])==np.int64: #list/range/ndarray of int
+        elif type(station) in listtype_range:
+            if type(station[0]) in listtype_int:
                 station_ids = station
-            elif type(station[0])==str: #list/range/ndarray of str
+            elif type(station[0]) in listtype_str:
                 station_ids = get_stationid_fromstationlist(station_name_list_pd, station)
             else:
                 raise Exception('ERROR1: station variable type not anticipated (%s), (list/range/ndarray of) strings or ints are accepted (or "all")'%(type(station)))
-        elif type(station)==int or type(station)==np.int32 or type(station)==np.int64:
+        elif type(station) in listtype_int:
             station_ids = [station]
-        elif type(station)==str:
+        elif type(station) in listtype_str:
             station_ids = get_stationid_fromstationlist(station_name_list_pd, [station])
         else:
             raise Exception('ERROR2: station variable type not anticipated (%s), (list/range/ndarray of) strings or ints are accepted (or "all")'%(type(station)))
         #check if requested times are within range of netcdf
-        #if np.min(station_ids) < 0:
-        #    raise Exception('ERROR: requested lowest station id (%d) is negative'%(np.min(station_ids)))
         if np.max(station_ids) > len(station_name_list_pd)-1:
             raise Exception('ERROR: requested highest station id (%d) is larger than available in netcdf file (%d)'%(np.max(station_ids),len(station_name_list_pd)-1))
         if np.min(station_ids) < -len(station_name_list_pd):
@@ -189,12 +191,12 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
             
     #add metadata
     values_all.var_varname = varname
-    values_all.var_object = nc_varobject
-    if dimn_time in nc_varobject.dimensions: #only faces/stations dimensions, no times or layers
+    values_all.var_object = nc_varobject #this is the netcdf variable, so contains properties like shape/units/dimensions
+    if dimn_time in nc_varobject.dimensions:
         values_all.var_times = data_nc_datetimes_pd.iloc[time_ids]
     else:
         values_all.var_times = None
-    if dimn_layer in nc_varobject.dimensions: #only time and faces/stations dimensions, no layers
+    if dimn_layer in nc_varobject.dimensions:
         values_all.var_layers = layer_ids
     else:
         values_all.var_layers = None

@@ -59,8 +59,8 @@ def test_getncmodeldata_datetime():
     
     from dfm_tools.get_nc import get_ncmodeldata
 
-    file_map1 = os.path.join(dir_testinput,r'DFM_sigma_curved_bend\DFM_OUTPUT_cb_3d\cb_3d_map.nc')
-    data_frommap = get_ncmodeldata(file_nc=file_map1, varname='mesh2d_sa1', timestep=np.arange(dt.datetime(2001,1,1),dt.datetime(2001,1,2),dt.timedelta(hours=1)), layer=5)#, multipart=False)
+    file_nc = os.path.join(dir_testinput,r'DFM_sigma_curved_bend\DFM_OUTPUT_cb_3d\cb_3d_map.nc')
+    data_frommap = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sa1', timestep=np.arange(dt.datetime(2001,1,1),dt.datetime(2001,1,2),dt.timedelta(hours=1)), layer=5)#, multipart=False)
     
     assert (data_frommap.data[0,0,0] - 31. ) < 1E-9
     
@@ -566,7 +566,7 @@ def test_morphology():
     
     import matplotlib.pyplot as plt
     plt.close('all')
-    #import numpy as np
+    import numpy as np
     #import datetime as dt
 
     from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata#, get_xzcoords_onintersection
@@ -575,37 +575,137 @@ def test_morphology():
     #MAPFILE
     file_nc = r'p:\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\fm\DFM_OUTPUT_inlet\inlet_map.nc'
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
-    vars_pd_sel = vars_pd[vars_pd['dimensions'].str.contains('mesh2d_nFaces') & vars_pd['long_name'].str.contains('wave')]
+    vars_pd_sel = vars_pd[vars_pd['long_name'].str.contains('wave')]
+    #vars_pd_sel = vars_pd[vars_pd['dimensions'].str.contains('mesh2d_nFaces') & vars_pd['long_name'].str.contains('wave')]
     
     ugrid = get_netdata(file_nc=file_nc)
-    #get bed layer
-    #data_frommap_bl = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_flowelem_bl')
-    var_names = ['mesh2d_mor_bl','mesh2d_hwav']#,'mesh2d_ssn']
-    var_clims = [[-50,0],None]
-    tids = [0,-1]
-    for iV, varname in enumerate(var_names):
-        data_frommap = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=tids)
-        var_longname = vars_pd['long_name'][vars_pd['nc_varkeys']==varname].iloc[0]
+
+    varname = 'mesh2d_mor_bl'
+    var_clims = [-50,0]
+    var_longname = vars_pd['long_name'][vars_pd['nc_varkeys']==varname].iloc[0]
+    fig, (ax1, ax2, ax3) = plt.subplots(3,1, figsize=(6,9))
+    fig.suptitle('%s (%s)'%(varname, var_longname))
     
-        fig, (axs) = plt.subplots(len(tids),1, figsize=(6,8))
-        fig.suptitle('%s (%s)'%(var_names[iV], var_longname))
-        tids = [0,-1]
-        for iA, ax in enumerate(axs):
-            if len(data_frommap.shape) == 2:
-                data_frommap_flat = data_frommap[tids[iA],:]
-            elif len(data_frommap.shape) == 3:
-                data_frommap_flat = data_frommap[tids[iA],0,:]
-            pc = plot_netmapdata(ugrid.verts, values=data_frommap_flat, ax=ax, linewidth=0.5, cmap='jet', clim=var_clims[iA])
-            cbar = fig.colorbar(pc, ax=ax)
-            cbar.set_label('%s (%s)'%(data_frommap.var_varname, data_frommap.var_object.units))
-            ax.set_aspect('equal')
-            ax.set_title('t=%d (%s)'%(tids[iA], data_frommap.var_times.iloc[tids[iA]]))
-            #ax1.set_ylim(val_ylim)
+    data_frommap_0 = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=0)
+    pc = plot_netmapdata(ugrid.verts, values=data_frommap_0.flatten(), ax=ax1, linewidth=0.5, cmap='jet', clim=var_clims)
+    cbar = fig.colorbar(pc, ax=ax1)
+    cbar.set_label('%s (%s)'%(data_frommap_0.var_varname, data_frommap_0.var_object.units))
+    ax1.set_title('t=0 (%s)'%(data_frommap_0.var_times.iloc[0]))
+    
+    data_frommap_end = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=-1)
+    pc = plot_netmapdata(ugrid.verts, values=data_frommap_end.flatten(), ax=ax2, linewidth=0.5, cmap='jet', clim=var_clims)
+    cbar = fig.colorbar(pc, ax=ax2)
+    cbar.set_label('%s (%s)'%(data_frommap_end.var_varname, data_frommap_end.var_object.units))
+    ax2.set_title('t=end (%s)'%(data_frommap_end.var_times.iloc[0]))
+    
+    pc = plot_netmapdata(ugrid.verts, values=(data_frommap_end-data_frommap_0).flatten(), ax=ax3, linewidth=0.5, cmap='jet', clim=[-3,3])
+    cbar = fig.colorbar(pc, ax=ax3)
+    cbar.set_label('%s (%s)'%(data_frommap_0.var_varname, data_frommap_0.var_object.units))
+    ax3.set_title('t=end-0 (difference)')
+
+    for ax in (ax1, ax2, ax3):
+        ax.set_aspect('equal')
+        #ax1.set_ylim(val_ylim)
+    fig.tight_layout()
+    plt.savefig(os.path.join(dir_output,'%s_%s'%(os.path.basename(file_nc).replace('.',''), varname)))
+
+
+
+    varname = 'mesh2d_hwav'
+    var_longname = vars_pd['long_name'][vars_pd['nc_varkeys']==varname].iloc[0]
+    fig, (ax2) = plt.subplots(1,1)
+    fig.suptitle('%s (%s)'%(varname, var_longname))
+    
+    data_frommap = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=-1)
+    pc = plot_netmapdata(ugrid.verts, values=data_frommap.flatten(), ax=ax2, linewidth=0.5, cmap='jet')
+    cbar = fig.colorbar(pc, ax=ax2)
+    cbar.set_label('%s (%s)'%(data_frommap.var_varname, data_frommap.var_object.units))
+    ax2.set_title('t=end (%s)'%(data_frommap.var_times.iloc[0]))
+    ax2.set_aspect('equal')
+
+    fig.tight_layout()
+    plt.savefig(os.path.join(dir_output,'%s_%s'%(os.path.basename(file_nc).replace('.',''), varname)))
+
+    
+    
+    
+    
+    #COMFILE
+    file_nc = r'p:\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\fm\DFM_OUTPUT_inlet\inlet_com.nc'
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    vars_pd_sel = vars_pd[vars_pd['long_name'].str.contains('wave')]
+    #vars_pd_sel = vars_pd[vars_pd['dimensions'].str.contains('mesh2d_nFaces') & vars_pd['long_name'].str.contains('wave')]
+    
+    ugrid = get_netdata(file_nc=file_nc)
+    
+    #construct different ugrid (with bnds?)
+    data_fromnc_FlowElemContour_x = get_ncmodeldata(file_nc=file_nc, varname='FlowElemContour_x')
+    data_fromnc_FlowElemContour_y = get_ncmodeldata(file_nc=file_nc, varname='FlowElemContour_y')
+    data_fromnc_FlowElemContour_xy = np.stack([data_fromnc_FlowElemContour_x,data_fromnc_FlowElemContour_y],axis=2)
+
+    varname_list = ['hrms', 'tp', 'dir']#, 'distot', 'wlen']
+    for varname in varname_list:
+        var_longname = vars_pd['long_name'][vars_pd['nc_varkeys']==varname].iloc[0]
+        fig, (ax1) = plt.subplots(1,1)#2,1, figsize=(6,8))
+        fig.suptitle('%s (%s)'%(varname, var_longname))
+        
+        timestep = 0
+        data_frommap = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep)
+        pc = plot_netmapdata(data_fromnc_FlowElemContour_xy, values=data_frommap.flatten(), ax=ax1, linewidth=0.5, cmap='jet')
+        cbar = fig.colorbar(pc, ax=ax1)
+        cbar.set_label('%s (%s)'%(data_frommap.var_varname, data_frommap.var_object.units))
+        ax1.set_title('t=%d (%s)'%(timestep, data_frommap.var_times.iloc[0]))
+        ax1.set_aspect('equal')
+        
         fig.tight_layout()
         plt.savefig(os.path.join(dir_output,'%s_%s'%(os.path.basename(file_nc).replace('.',''), varname)))
+    
+
+    
+    
+    #WAVM FILE
+    file_nc = r'p:\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\wave\wavm-inlet.nc'
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    vars_pd_sel = vars_pd[vars_pd['long_name'].str.contains('wave')]
+    #vars_pd_sel = vars_pd[vars_pd['dimensions'].str.contains('mesh2d_nFaces') & vars_pd['long_name'].str.contains('wave')]
+    
+    #ugrid = get_netdata(file_nc=file_nc)
+    
+    #get cell center coordinates from regular grid
+    data_fromnc_x = get_ncmodeldata(file_nc=file_nc, varname='x')
+    data_fromnc_y = get_ncmodeldata(file_nc=file_nc, varname='y')
+    
+    varname_list = ['hsign', 'dir', 'pdir', 'period', 'rtp', 'dspr', 'qb', 'steepw', 'wlength', 'tmm10', 'dhsign', 'drtm01', 'setup']
+    varname_list = ['hsign', 'dir', 'period']
+    for varname in varname_list:
+        var_longname = vars_pd['long_name'][vars_pd['nc_varkeys']==varname].iloc[0]
+        fig, (ax1, ax2) = plt.subplots(2,1, figsize=(12,6))
+        fig.suptitle('%s (%s)'%(varname, var_longname))
         
+        timestep = 10
+        data_frommap = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep)
+        #pc = plot_netmapdata(ugrid.verts, values=data_frommap.flatten(), ax=ax1, linewidth=0.5, cmap='jet')
+        ax1.contourf(data_fromnc_x, data_fromnc_y, data_frommap[0,:,:])
+        cbar = fig.colorbar(pc, ax=ax1)
+        cbar.set_label('%s (%s)'%(data_frommap.var_varname, data_frommap.var_object.units))
+        ax1.set_title('t=%d (%s)'%(timestep, data_frommap.var_times.iloc[0]))
+        ax1.set_aspect('equal')
         
+        timestep = -1
+        data_frommap = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep)
+        #pc = plot_netmapdata(ugrid.verts, values=data_frommap.flatten(), ax=ax1, linewidth=0.5, cmap='jet')
+        ax2.contourf(data_fromnc_x, data_fromnc_y, data_frommap[0,:,:])
+        cbar = fig.colorbar(pc, ax=ax2)
+        cbar.set_label('%s (%s)'%(data_frommap.var_varname, data_frommap.var_object.units))
+        ax2.set_title('t=%d (%s)'%(timestep, data_frommap.var_times.iloc[0]))
+        ax2.set_aspect('equal')
         
+        fig.tight_layout()
+        plt.savefig(os.path.join(dir_output,'%s_%s'%(os.path.basename(file_nc).replace('.',''), varname)))
+    
+    
+    
+    
     #HISFILE
     file_nc = r'p:\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\fm\DFM_OUTPUT_inlet\inlet_his.nc'
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
@@ -614,23 +714,16 @@ def test_morphology():
     crs_list = get_hisstationlist(file_nc,varname_stat='cross_section_name')
     
     var_names = ['waterlevel','bedlevel']#,'mesh2d_ssn']
-    var_clims = [[-50,0],None]
-    tids = [0,-1]
     for iV, varname in enumerate(var_names):
         data_fromhis = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep='all', station='all')
         var_longname = vars_pd['long_name'][vars_pd['nc_varkeys']==varname].iloc[0]
     
         fig, ax = plt.subplots(1,1, figsize=(10,5))
-        if len(data_fromhis.shape) == 2:
-            data_frommap_flat = data_fromhis[:,0]
-        elif len(data_fromhis.shape) == 3:
-            data_frommap_flat = data_fromhis[:,0,0]
         for iS, stat in enumerate(data_fromhis.var_stations):
-            ax.plot(data_fromhis.var_times, data_frommap_flat, linewidth=0.5, label=data_fromhis.var_stations.iloc[iS])
+            ax.plot(data_fromhis.var_times, data_fromhis[:,iS], linewidth=1, label=data_fromhis.var_stations.iloc[iS])
         ax.legend()
         ax.set_ylabel('%s (%s)'%(data_fromhis.var_varname,data_fromhis.var_object.units))
-        #ax.set_xlim([data_fromhis.var_times[0], data_fromhis.var_times[100]])
-        ax.set_xlim(data_fromhis.var_times[[0,2000]])
+        ax.set_xlim(data_fromhis.var_times[[0,3000]])
         fig.tight_layout()
         plt.savefig(os.path.join(dir_output,'%s_%s'%(os.path.basename(file_nc).replace('.',''), varname)))
     
