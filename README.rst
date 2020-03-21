@@ -68,6 +68,7 @@ Known bugs
 - the line ``import shapely.geometry`` does not work, while ``import shapely`` does (OSError: [WinError 126] The specified module could not be found), solution:
 	- find geos.py in your environment (eg %userprofile%\\AppData\\Local\\Continuum\\anaconda3\\envs\\dfm_tools_env\\Lib\\site-packages\\shapely\\geos.py)
 	- replace ``if os.getenv('CONDA_PREFIX', ''):`` with ``if 0:`` on line 143 (this disables this if statement and redirects to else)
+- report other bugs and feature requests at the developers or at https://github.com/openearth/dfm_tools/issues (include OS, dfm_tools version, reproduction steps)
 
 
 TODO wishlist
@@ -208,12 +209,20 @@ Developer information: how to contribute to this git repository
 	- push your changes with ``git push`` (from git bash window or cmd also ok?)
 - Request merging of your branch on https://github.com/openearth/dfm_tools/branches
 
+
 Credits
 -------
+
+- Development lead
+	- Jelmer Veenstra <jelmer.veenstra@deltares.nl>
+	- Lora Buckman
+	- Julien Groenenboom
+- Contributors
+	- Rudy Schueder (dflowutils scripts)
+	- Koen Berends (mdu read/writing)
+	- you?
 
 This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
 
 .. _Cookiecutter: https://github.com/audreyr/cookiecutter
 .. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
-
-
