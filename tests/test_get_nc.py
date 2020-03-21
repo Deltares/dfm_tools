@@ -750,7 +750,6 @@ def test_morphology():
         data_frommap = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep)
         
         ax = ax1
-        #pc = plot_netmapdata(ugrid.verts, values=data_frommap[0,:,:], ax=ax, linewidth=0.5, cmap='jet')
         pc = ax.pcolor(data_fromnc_x, data_fromnc_y, data_frommap[0,:,:], cmap='jet')
         cbar = fig.colorbar(pc, ax=ax)
         cbar.set_label('%s (%s)'%(data_frommap.var_varname, data_frommap.var_object.units))
@@ -759,7 +758,6 @@ def test_morphology():
         
         ax = ax2
         pc = plot_netmapdata(grid_verts, values=data_frommap[0,:,:].flatten(), ax=ax, linewidth=1, cmap='jet')
-        #ax2.contourf(data_fromnc_x, data_fromnc_y, data_frommap[0,:,:])
         cbar = fig.colorbar(pc, ax=ax)
         cbar.set_label('%s (%s)'%(data_frommap.var_varname, data_frommap.var_object.units))
         ax.set_title('t=%d (%s)'%(timestep, data_frommap.var_times.iloc[0]))
@@ -772,10 +770,9 @@ def test_morphology():
         fig.suptitle('%s (%s)'%(varname, var_longname))
         timestep = -1
         data_frommap = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep)
-
+        
         ax = ax1
-        #pc = plot_netmapdata(ugrid.verts, values=data_frommap[0,:,:], ax=ax, linewidth=0.5, cmap='jet')
-        pc = ax.contourf(data_fromnc_x, data_fromnc_y, data_frommap[0,:,:])
+        pc = ax.pcolor(data_fromnc_x, data_fromnc_y, data_frommap[0,:,:], cmap='jet')
         cbar = fig.colorbar(pc, ax=ax)
         cbar.set_label('%s (%s)'%(data_frommap.var_varname, data_frommap.var_object.units))
         ax.set_title('t=%d (%s)'%(timestep, data_frommap.var_times.iloc[0]))
@@ -783,7 +780,6 @@ def test_morphology():
         
         ax = ax2
         pc = plot_netmapdata(grid_verts, values=data_frommap[0,:,:].flatten(), ax=ax, linewidth=0.5, cmap='jet')
-        #pc = ax.contourf(data_fromnc_x, data_fromnc_y, data_frommap[0,:,:])
         cbar = fig.colorbar(pc, ax=ax)
         cbar.set_label('%s (%s)'%(data_frommap.var_varname, data_frommap.var_object.units))
         ax.set_title('t=%d (%s)'%(timestep, data_frommap.var_times.iloc[0]))
