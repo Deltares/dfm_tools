@@ -191,12 +191,12 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
             
     #add metadata
     values_all.var_varname = varname
-    values_all.var_object = nc_varobject
-    if dimn_time in nc_varobject.dimensions: #only faces/stations dimensions, no times or layers
+    values_all.var_object = nc_varobject #this is the netcdf variable, so contains properties like shape/units/dimensions
+    if dimn_time in nc_varobject.dimensions:
         values_all.var_times = data_nc_datetimes_pd.iloc[time_ids]
     else:
         values_all.var_times = None
-    if dimn_layer in nc_varobject.dimensions: #only time and faces/stations dimensions, no layers
+    if dimn_layer in nc_varobject.dimensions:
         values_all.var_layers = layer_ids
     else:
         values_all.var_layers = None
