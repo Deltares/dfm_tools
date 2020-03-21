@@ -30,7 +30,6 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     
     varname_stat_validvals = ['station_name', 'general_structure_id', 'cross_section_name', 'observation_id'] #DFM stations, DFM gs, DFM crs, Sobek stations
     dimname_stat_validvals = ['stations', 'general_structures', 'cross_section', 'id'] #DFM stations, DFM gs, DFM crs, Sobek stations
-    dimname_stat_validvals_boolpresent = [x in nc_varobject.dimensions for x in dimname_stat_validvals]
     listtype_int = [int, np.int, np.int8, np.int16, np.int32, np.int64]
     listtype_str = [str]
     listtype_range = [list, range, np.ndarray]
@@ -108,6 +107,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         raise Exception('ERROR: depth argument is provided, but this is not implemented yet')
     
     #STATION/GENERAL_STRUCTURES CHECKS
+    dimname_stat_validvals_boolpresent = [x in nc_varobject.dimensions for x in dimname_stat_validvals]
     if not any(dimname_stat_validvals_boolpresent):
         if station is not None:
             raise Exception('ERROR: netcdf file variable (%s) does not contain stations/general_structures, but parameter station is provided'%(varname))
