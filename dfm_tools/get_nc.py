@@ -1,5 +1,31 @@
 # -*- coding: utf-8 -*-
 """
+GNU GENERAL PUBLIC LICENSE
+	      Version 3, 29 June 2007
+
+dfm_tools are post-processing tools for Delft3D FM
+Copyright (C) 2020 Deltares
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+INFORMATION
+This script is part of dfm_tools: https://github.com/openearth/dfm_tools
+Check the README.rst on github for other available functions
+Check the tests folder on github for example scripts (this is the dfm_tools pytest testbank)
+Check the pptx and example figures in (created by the testbank): N:/Deltabox/Bulletin/veenstra/info dfm_tools
+
 Created on Fri Feb 14 12:45:11 2020
 
 @author: veenstra
@@ -435,14 +461,30 @@ def plot_netmapdata(verts, values=None, ax=None, **kwargs):
     
     #check if data size is equal
     if not values is None:
-        if verts.shape[0] != values.shape[0]:
-            raise Exception('ERROR: size of grid and values is not equal, cannot plot')
+        if verts.shape[:-2] != values.shape:
+            raise Exception('size of first two dimensions of verts and dimensions of values is not equal, cannot plot')
     
+    #convert to 3D
+    if len(verts.shape) == 4 and verts.shape[-2] == 4 and verts.shape[-1] == 2: #from regular grid
+        # flatten first two dimensions to one
+        verts_3D = verts.reshape(-1,verts.shape[2],verts.shape[3])
+        if not values is None:
+            values_3D = values.reshape(-1)
+        else:
+            values_3D = None
+    elif len(verts.shape) == 3 and verts.shape[-1] == 2: #from ugrid
+        verts_3D = verts
+        values_3D = values
+    else:
+        raise Exception('dimensions should be [m,n,4,2] or [cells,maxcorners,2], last dimension is xy')
+
+
     if not ax: ax=plt.gca()
-    pc = matplotlib.collections.PolyCollection(verts, **kwargs)
-    pc.set_array(values)
+    pc = matplotlib.collections.PolyCollection(verts_3D, **kwargs)
+    pc.set_array(values_3D)
     ax.add_collection(pc)
     ax.autoscale()
+    
     return pc
 
 

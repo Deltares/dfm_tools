@@ -150,6 +150,9 @@ def test_getnetdata_plotnet_regular(file_nc):
     plt.close('all')
     
     from dfm_tools.get_nc import get_ncmodeldata, plot_netmapdata#, get_xzcoords_onintersection
+    from dfm_tools.regulargrid import meshgridxy2verts, center2corner
+    from dfm_tools.get_nc_helpers import get_ncvardimlist
+    
     
     #get cell center coordinates from regular grid
     if 'ERA5_metOcean_atm' in file_nc:
@@ -160,23 +163,20 @@ def test_getnetdata_plotnet_regular(file_nc):
         data_fromnc_x = get_ncmodeldata(file_nc=file_nc, varname='x')
         data_fromnc_y = get_ncmodeldata(file_nc=file_nc, varname='y')
     
-    from dfm_tools.center2corner import center2corner
-    from dfm_tools.ugrid import meshgridxy2verts
-    from dfm_tools.get_nc_helpers import get_ncvardimlist
-    
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
-    x_cen_withbnd, y_cen_withbnd = center2corner(data_fromnc_x, data_fromnc_y)
+    x_cen_withbnd = center2corner(data_fromnc_x)
+    y_cen_withbnd = center2corner(data_fromnc_y)
     grid_verts = meshgridxy2verts(x_cen_withbnd, y_cen_withbnd)
         
-    fig, (ax1, ax2) = plt.subplots(2,1, figsize=(10,9))
-    ax = ax1
+    fig, axs = plt.subplots(2,1, figsize=(10,9))
+    ax = axs[0]
     ax.set_title('xy center data converted to xy corners')
     ax.plot(data_fromnc_x,data_fromnc_y, linewidth=0.5, color='blue')
     ax.plot(data_fromnc_x.T,data_fromnc_y.T, linewidth=0.5, color='blue')
     ax.plot(x_cen_withbnd,y_cen_withbnd, linewidth=0.5, color='crimson')
     ax.plot(x_cen_withbnd.T,y_cen_withbnd.T, linewidth=0.5, color='crimson')
     ax.set_aspect('equal')
-    ax = ax2
+    ax = axs[1]
     ax.set_title('xy corner data converted to vertices (useful for map plotting)')
     plot_netmapdata(grid_verts, values=None, ax=ax, linewidth=0.5, color='crimson', facecolor='None')
     ax.set_aspect('equal')
@@ -606,6 +606,7 @@ def test_getxzcoordsonintersection_plotcrossect(file_nc):
     elif len(data_frommap.shape) == 2: #for 2D models, no layers 
         data_frommap_sel = data_frommap[0,intersect_gridnos]
         data_frommap_sel_flat = data_frommap_sel
+
     fig, ax = plt.subplots()
     pc = plot_netmapdata(crs_verts, values=data_frommap_sel_flat, ax=ax, linewidth=0.5, cmap='jet')
     fig.colorbar(pc, ax=ax)
@@ -633,8 +634,7 @@ def test_morphology():
 
     from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata#, get_xzcoords_onintersection
     from dfm_tools.get_nc_helpers import get_ncvardimlist, get_hisstationlist
-    from dfm_tools.center2corner import center2corner
-    from dfm_tools.ugrid import meshgridxy2verts
+    from dfm_tools.regulargrid import meshgridxy2verts, center2corner
     
     #MAPFILE
     file_nc = r'p:\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\fm\DFM_OUTPUT_inlet\inlet_map.nc'
@@ -647,29 +647,32 @@ def test_morphology():
     varname = 'mesh2d_mor_bl'
     var_clims = [-50,0]
     var_longname = vars_pd['long_name'][vars_pd['nc_varkeys']==varname].iloc[0]
-    fig, (ax1, ax2, ax3) = plt.subplots(3,1, figsize=(6,9))
+    fig, axs = plt.subplots(3,1, figsize=(6,9))
     fig.suptitle('%s (%s)'%(varname, var_longname))
     
+    ax = axs[0]
     data_frommap_0 = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=0)
-    pc = plot_netmapdata(ugrid.verts, values=data_frommap_0.flatten(), ax=ax1, linewidth=0.5, cmap='jet', clim=var_clims)
-    cbar = fig.colorbar(pc, ax=ax1)
+    pc = plot_netmapdata(ugrid.verts, values=data_frommap_0.flatten(), ax=ax, linewidth=0.5, cmap='jet', clim=var_clims)
+    cbar = fig.colorbar(pc, ax=ax)
     cbar.set_label('%s (%s)'%(data_frommap_0.var_varname, data_frommap_0.var_object.units))
-    ax1.set_title('t=0 (%s)'%(data_frommap_0.var_times.iloc[0]))
+    ax.set_title('t=0 (%s)'%(data_frommap_0.var_times.iloc[0]))
     
+    ax = axs[1]
     data_frommap_end = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=-1)
-    pc = plot_netmapdata(ugrid.verts, values=data_frommap_end.flatten(), ax=ax2, linewidth=0.5, cmap='jet', clim=var_clims)
-    cbar = fig.colorbar(pc, ax=ax2)
+    pc = plot_netmapdata(ugrid.verts, values=data_frommap_end.flatten(), ax=ax, linewidth=0.5, cmap='jet', clim=var_clims)
+    cbar = fig.colorbar(pc, ax=ax)
     cbar.set_label('%s (%s)'%(data_frommap_end.var_varname, data_frommap_end.var_object.units))
-    ax2.set_title('t=end (%s)'%(data_frommap_end.var_times.iloc[0]))
+    ax.set_title('t=end (%s)'%(data_frommap_end.var_times.iloc[0]))
     
-    pc = plot_netmapdata(ugrid.verts, values=(data_frommap_end-data_frommap_0).flatten(), ax=ax3, linewidth=0.5, cmap='jet', clim=[-3,3])
-    cbar = fig.colorbar(pc, ax=ax3)
+    ax = axs[1]
+    pc = plot_netmapdata(ugrid.verts, values=(data_frommap_end-data_frommap_0).flatten(), ax=ax, linewidth=0.5, cmap='jet', clim=[-3,3])
+    cbar = fig.colorbar(pc, ax=ax)
     cbar.set_label('%s (%s)'%(data_frommap_0.var_varname, data_frommap_0.var_object.units))
-    ax3.set_title('t=end-0 (difference)')
+    ax.set_title('t=end-0 (difference)')
 
-    for ax in (ax1, ax2, ax3):
+    for ax in axs:
         ax.set_aspect('equal')
-        #ax1.set_ylim(val_ylim)
+        #ax.set_ylim(val_ylim)
     fig.tight_layout()
     plt.savefig(os.path.join(dir_output,'%s_%s'%(os.path.basename(file_nc).replace('.',''), varname)))
 
@@ -677,15 +680,15 @@ def test_morphology():
 
     varname = 'mesh2d_hwav'
     var_longname = vars_pd['long_name'][vars_pd['nc_varkeys']==varname].iloc[0]
-    fig, (ax2) = plt.subplots(1,1)
+    fig, ax = plt.subplots(1,1)
     fig.suptitle('%s (%s)'%(varname, var_longname))
     
     data_frommap = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=-1)
-    pc = plot_netmapdata(ugrid.verts, values=data_frommap.flatten(), ax=ax2, linewidth=0.5, cmap='jet')
-    cbar = fig.colorbar(pc, ax=ax2)
+    pc = plot_netmapdata(ugrid.verts, values=data_frommap.flatten(), ax=ax, linewidth=0.5, cmap='jet')
+    cbar = fig.colorbar(pc, ax=ax)
     cbar.set_label('%s (%s)'%(data_frommap.var_varname, data_frommap.var_object.units))
-    ax2.set_title('t=end (%s)'%(data_frommap.var_times.iloc[0]))
-    ax2.set_aspect('equal')
+    ax.set_title('t=end (%s)'%(data_frommap.var_times.iloc[0]))
+    ax.set_aspect('equal')
 
     fig.tight_layout()
     plt.savefig(os.path.join(dir_output,'%s_%s'%(os.path.basename(file_nc).replace('.',''), varname)))
@@ -710,16 +713,16 @@ def test_morphology():
     varname_list = ['hrms', 'tp', 'dir']#, 'distot', 'wlen']
     for varname in varname_list:
         var_longname = vars_pd['long_name'][vars_pd['nc_varkeys']==varname].iloc[0]
-        fig, (ax1) = plt.subplots(1,1)#2,1, figsize=(6,8))
+        fig, ax = plt.subplots()#fig, axs = plt.subplots(2,1, figsize=(6,8))
         fig.suptitle('%s (%s)'%(varname, var_longname))
         
         timestep = 0
         data_frommap = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep)
-        pc = plot_netmapdata(data_fromnc_FlowElemContour_xy, values=data_frommap.flatten(), ax=ax1, linewidth=0.5, cmap='jet')
-        cbar = fig.colorbar(pc, ax=ax1)
+        pc = plot_netmapdata(data_fromnc_FlowElemContour_xy, values=data_frommap.flatten(), ax=ax, linewidth=0.5, cmap='jet')
+        cbar = fig.colorbar(pc, ax=ax)
         cbar.set_label('%s (%s)'%(data_frommap.var_varname, data_frommap.var_object.units))
-        ax1.set_title('t=%d (%s)'%(timestep, data_frommap.var_times.iloc[0]))
-        ax1.set_aspect('equal')
+        ax.set_title('t=%d (%s)'%(timestep, data_frommap.var_times.iloc[0]))
+        ax.set_aspect('equal')
         
         fig.tight_layout()
         plt.savefig(os.path.join(dir_output,'%s_%s'%(os.path.basename(file_nc).replace('.',''), varname)))
@@ -735,7 +738,8 @@ def test_morphology():
     #get cell center coordinates from regular grid, convert to grid_verts on corners
     data_fromnc_x = get_ncmodeldata(file_nc=file_nc, varname='x')
     data_fromnc_y = get_ncmodeldata(file_nc=file_nc, varname='y')
-    x_cen_withbnd, y_cen_withbnd = center2corner(data_fromnc_x, data_fromnc_y)
+    x_cen_withbnd = center2corner(data_fromnc_x)
+    y_cen_withbnd = center2corner(data_fromnc_y)
     grid_verts = meshgridxy2verts(x_cen_withbnd, y_cen_withbnd)
 
     #varname_list = ['hsign', 'dir', 'pdir', 'period', 'rtp', 'dspr', 'qb', 'steepw', 'wlength', 'tmm10', 'dhsign', 'drtm01', 'setup']
@@ -744,20 +748,20 @@ def test_morphology():
     for varname in varname_list:
         var_longname = vars_pd['long_name'][vars_pd['nc_varkeys']==varname].iloc[0]
         
-        fig, (ax1, ax2) = plt.subplots(2,1, figsize=(12,7))
+        fig, axs = plt.subplots(2,1, figsize=(12,7))
         fig.suptitle('%s (%s)'%(varname, var_longname))
         timestep = 10
         data_frommap = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep)
         
-        ax = ax1
+        ax = axs[0]
         pc = ax.pcolor(data_fromnc_x, data_fromnc_y, data_frommap[0,:,:], cmap='jet')
         cbar = fig.colorbar(pc, ax=ax)
         cbar.set_label('%s (%s)'%(data_frommap.var_varname, data_frommap.var_object.units))
         ax.set_title('t=%d (%s)'%(timestep, data_frommap.var_times.iloc[0]))
         ax.set_aspect('equal')
         
-        ax = ax2
-        pc = plot_netmapdata(grid_verts, values=data_frommap[0,:,:].flatten(), ax=ax, linewidth=1, cmap='jet')
+        ax = axs[1]
+        pc = plot_netmapdata(grid_verts, values=data_frommap[0,:,:], ax=ax, linewidth=1, cmap='jet')
         cbar = fig.colorbar(pc, ax=ax)
         cbar.set_label('%s (%s)'%(data_frommap.var_varname, data_frommap.var_object.units))
         ax.set_title('t=%d (%s)'%(timestep, data_frommap.var_times.iloc[0]))
@@ -766,20 +770,20 @@ def test_morphology():
         fig.tight_layout()
         plt.savefig(os.path.join(dir_output,'%s_%s_t%d'%(os.path.basename(file_nc).replace('.',''), varname,timestep)))
 
-        fig, (ax1, ax2) = plt.subplots(2,1, figsize=(12,7))
+        fig, axs = plt.subplots(2,1, figsize=(12,7))
         fig.suptitle('%s (%s)'%(varname, var_longname))
         timestep = -1
         data_frommap = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep)
         
-        ax = ax1
+        ax = axs[0]
         pc = ax.pcolor(data_fromnc_x, data_fromnc_y, data_frommap[0,:,:], cmap='jet')
         cbar = fig.colorbar(pc, ax=ax)
         cbar.set_label('%s (%s)'%(data_frommap.var_varname, data_frommap.var_object.units))
         ax.set_title('t=%d (%s)'%(timestep, data_frommap.var_times.iloc[0]))
         ax.set_aspect('equal')
         
-        ax = ax2
-        pc = plot_netmapdata(grid_verts, values=data_frommap[0,:,:].flatten(), ax=ax, linewidth=0.5, cmap='jet')
+        ax = axs[1]
+        pc = plot_netmapdata(grid_verts, values=data_frommap[0,:,:], ax=ax, linewidth=0.5, cmap='jet')
         cbar = fig.colorbar(pc, ax=ax)
         cbar.set_label('%s (%s)'%(data_frommap.var_varname, data_frommap.var_object.units))
         ax.set_title('t=%d (%s)'%(timestep, data_frommap.var_times.iloc[0]))
