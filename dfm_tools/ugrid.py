@@ -155,18 +155,3 @@ class UGrid:
 
 
 
-def meshgridxy2verts(x_coords, y_coords):
-    import numpy as np
-    
-    grid_verts = np.empty(shape=((x_coords.shape[0]-1)*(y_coords.shape[1]-1),4,2))
-    grid_verts[:] = np.nan
-    grid_verts[:,0,0] = x_coords[:-1,1:].flatten()
-    grid_verts[:,1,0] = x_coords[:-1,:-1].flatten()
-    grid_verts[:,2,0] = x_coords[1:,:-1].flatten()
-    grid_verts[:,3,0] = x_coords[1:,1:].flatten()
-    grid_verts[:,0,1] = y_coords[:-1,1:].flatten()
-    grid_verts[:,1,1] = y_coords[:-1,:-1].flatten()
-    grid_verts[:,2,1] = y_coords[1:,:-1].flatten()
-    grid_verts[:,3,1] = y_coords[1:,1:].flatten()
-    
-    return grid_verts
