@@ -23,10 +23,10 @@ INFORMATION
 This script is part of dfm_tools: https://github.com/openearth/dfm_tools
 Check the README.rst on github for other available functions
 Check the ‘tests’ folder on github for example scripts (this is the pytest testbank of dfm_tools)
-Check the pptx and example figures in (created by the testbank): N:\Deltabox\Bulletin\veenstra\info dfm_tools
+Check the pptx and example figures in (created by the testbank): N:/Deltabox/Bulletin/veenstra/info dfm_tools
 
-#   Original author: Koen D. Berends (Deltares / University of Twente)
-#   k.d.berends@utwente.nl / koen.berends@deltares.nl
+Original author: Koen D. Berends (Deltares / University of Twente)
+k.d.berends@utwente.nl / koen.berends@deltares.nl
 """
 
 
