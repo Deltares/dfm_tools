@@ -1,65 +1,33 @@
-"""read/write Delft3D-FM *.mdu input files to/from dictionary"""
-from collections import OrderedDict
-import re
-import pandas as pd
-
 """
-Example use:
+GNU GENERAL PUBLIC LICENSE
+	      Version 3, 29 June 2007
 
-data = mdu.read('ref.mdu')
+dfm_tools are post-processing tools for Delft3D FM
+Copyright (C) 2020 Deltares
 
-# Print all sections
-print (data['section'].unique())
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-# Print all keys in section 'numerics'
-print (data[data['section'] == 'numerics'].key.values)
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-# Print value of key 'TimeStepType' in section 'Numerics'
-print data[(data['section'] == 'numerics') & 
-           (data['key'] == 'TimeStepType')]
+INFORMATION
+This script is part of dfm_tools: https://github.com/openearth/dfm_tools
+Check the README.rst on github for other available functions
+Check the ‘tests’ folder on github for example scripts (this is the pytest testbank of dfm_tools)
+Check the pptx and example figures in (created by the testbank): N:\Deltabox\Bulletin\veenstra\info dfm_tools
 
-# Change value to 5
-data.loc[(data['section'] == 'numerics') & 
-         (data['key'] == 'TimeStepType'), 
-         'value'] = 5
-
-# Write to file
-mdu.write(data, 'ref_mod.mdu')
-
-"""
-
-#  Copyright notice
-#   --------------------------------------------------------------------
 #   Original author: Koen D. Berends (Deltares / University of Twente)
 #   k.d.berends@utwente.nl / koen.berends@deltares.nl
-#
-#   This library is free software: you can redistribute it and/or modify
-#   it under the terms of the GNU General Public License as published by
-#   the Free Software Foundation, either version 3 of the License, or
-#   (at your option) any later version.
-#
-#   This library is distributed in the hope that it will be useful,
-#   but WITHOUT ANY WARRANTY; without even the implied warranty of
-#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#   GNU General Public License for more details.
-#
-#   You should have received a copy of the GNU General Public License
-#   along with this library.  If not, see <http://www.gnu.org/licenses/>.
-#   --------------------------------------------------------------------
-#
-# This tool is part of <a href="http://www.OpenEarth.eu">OpenEarthTools</a>.
-# OpenEarthTools is an online collaboration to share and manage data and
-# programming tools in an open source, version controlled environment.
-# Sign up to recieve regular updates of this function, and to contribute
-# your own tools.
-
-# $Id: $
-# $Date: $
-# $Author:$
-# $Revision: $
-# $HeadURL: $
-# $Keywords: $
+"""
 
 
 def read_deltares_ini(filename):
@@ -68,7 +36,36 @@ def read_deltares_ini(filename):
     headers. Therefore, we adopt a different structure where each 
     section is one entry in a list. 
 
+    read/write Delft3D-FM *.mdu input files to/from dictionary
+    
+    Example use:
+    
+    data = mdu.read('ref.mdu')
+    
+    # Print all sections
+    print (data['section'].unique())
+    
+    # Print all keys in section 'numerics'
+    print (data[data['section'] == 'numerics'].key.values)
+    
+    
+    # Print value of key 'TimeStepType' in section 'Numerics'
+    print data[(data['section'] == 'numerics') & 
+    	   (data['key'] == 'TimeStepType')]
+    
+    # Change value to 5
+    data.loc[(data['section'] == 'numerics') & 
+    	 (data['key'] == 'TimeStepType'), 
+    	 'value'] = 5
+    
+    # Write to file
+    mdu.write(data, 'ref_mod.mdu')
+
+
     """
+    from collections import OrderedDict
+    import re
+    import pandas as pd
 
     data = pd.DataFrame(columns=('section', 'key', 'value', 'comment'))
     current_section = ''

@@ -607,8 +607,7 @@ def test_getxzcoordsonintersection_plotcrossect(file_nc):
         data_frommap_sel = data_frommap[0,intersect_gridnos]
         data_frommap_sel_flat = data_frommap_sel
 
-    fig, axs = plt.subplots()
-    ax = axs[0]
+    fig, ax = plt.subplots()
     pc = plot_netmapdata(crs_verts, values=data_frommap_sel_flat, ax=ax, linewidth=0.5, cmap='jet')
     fig.colorbar(pc, ax=ax)
     ax.set_ylim(val_ylim)
@@ -681,10 +680,9 @@ def test_morphology():
 
     varname = 'mesh2d_hwav'
     var_longname = vars_pd['long_name'][vars_pd['nc_varkeys']==varname].iloc[0]
-    fig, axs = plt.subplots(1,1)
+    fig, ax = plt.subplots(1,1)
     fig.suptitle('%s (%s)'%(varname, var_longname))
     
-    ax = axs[0]
     data_frommap = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=-1)
     pc = plot_netmapdata(ugrid.verts, values=data_frommap.flatten(), ax=ax, linewidth=0.5, cmap='jet')
     cbar = fig.colorbar(pc, ax=ax)
@@ -715,10 +713,9 @@ def test_morphology():
     varname_list = ['hrms', 'tp', 'dir']#, 'distot', 'wlen']
     for varname in varname_list:
         var_longname = vars_pd['long_name'][vars_pd['nc_varkeys']==varname].iloc[0]
-        fig, axs = plt.subplots(1,1)#2,1, figsize=(6,8))
+        fig, ax = plt.subplots()#fig, axs = plt.subplots(2,1, figsize=(6,8))
         fig.suptitle('%s (%s)'%(varname, var_longname))
         
-        ax = axs[0]
         timestep = 0
         data_frommap = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep)
         pc = plot_netmapdata(data_fromnc_FlowElemContour_xy, values=data_frommap.flatten(), ax=ax, linewidth=0.5, cmap='jet')
@@ -810,10 +807,9 @@ def test_morphology():
         data_fromhis = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep='all', station='all')
         var_longname = vars_pd['long_name'][vars_pd['nc_varkeys']==varname].iloc[0]
     
-        fig, axs = plt.subplots(1,1, figsize=(10,5))
+        fig, ax = plt.subplots(1,1, figsize=(10,5))
         for iS, stat in enumerate(data_fromhis.var_stations):
             ax.plot(data_fromhis.var_times, data_fromhis[:,iS], linewidth=1, label=data_fromhis.var_stations.iloc[iS])
-        ax = axs[0]
         ax.legend()
         ax.set_ylabel('%s (%s)'%(data_fromhis.var_varname,data_fromhis.var_object.units))
         ax.set_xlim(data_fromhis.var_times[[0,3000]])

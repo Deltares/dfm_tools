@@ -217,9 +217,10 @@ Credits
 	- Jelmer Veenstra <jelmer.veenstra@deltares.nl>
 	- Lora Buckman
 	- Julien Groenenboom
-- Contributors
+- Other contributors
 	- Rudy Schueder (dflowutils scripts)
 	- Koen Berends (mdu read/writing)
+	- Gerben de Boer (corner2center)
 	- you?
 
 This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
