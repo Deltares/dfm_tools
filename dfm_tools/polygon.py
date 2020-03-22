@@ -31,9 +31,10 @@ class Polygon:
         #self.line_array = np.c_[self.x, self.y]
         
     def fromfile(file_pol, pd_output=False):
+        import warnings
         import numpy as np
         import pandas as pd
-        print('WARNING: the function dfm_tools.polygon.Polygon.fromfile() will be improved, outputformat will change')
+        warnings.warn('the function dfm_tools.polygon.Polygon.fromfile() will be improved, outputformat will change')
         '''
         reads a pli boundary into an array
         tekal_output==True: create pandas array of tekal file, including comments

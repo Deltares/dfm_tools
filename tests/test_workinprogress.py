@@ -56,9 +56,9 @@ def test_workinprogress():
     plt.savefig(os.path.join(dir_output,'hirlam_mesh'))
 
     fig, ax = plt.subplots()
-    ax.contourf(mesh2d_node_x,mesh2d_node_y,airp)
+    ax.pcolor(mesh2d_node_x,mesh2d_node_y,airp)
     #plt.pcolor(mesh2d_node_x,mesh2d_node_y,airp,linewidth=0.5)
-    plt.savefig(os.path.join(dir_output,'hirlam_airpcontour'))
+    plt.savefig(os.path.join(dir_output,'hirlam_airp_pcolor'))
     
 
     #ERA5
@@ -75,9 +75,9 @@ def test_workinprogress():
     plt.savefig(os.path.join(dir_output,'ERA5_mesh'))
 
     fig, ax = plt.subplots()
-    ax.contourf(lons, lats, data_psl[0,:,:])
+    ax.pcolor(lons, lats, data_psl[0,:,:])
     #plt.pcolor(mesh2d_node_x,mesh2d_node_y,airp,linewidth=0.5)
-    plt.savefig(os.path.join(dir_output,'ERA5_mslcontour'))
+    plt.savefig(os.path.join(dir_output,'ERA5_msl_pcolor'))
 
 
     #SFINCS
@@ -92,8 +92,8 @@ def test_workinprogress():
     ax.plot(data_fromnc_x.T, data_fromnc_y.T,'-b',linewidth=0.2)
     plt.savefig(os.path.join(dir_output,'SFINCS_mesh'))
     fig, ax = plt.subplots()
-    ax.contourf(data_fromnc_x, data_fromnc_y, data_fromnc_zs[0,:,:])
-    plt.savefig(os.path.join(dir_output,'SFINCS_zscontour'))
+    ax.pcolor(data_fromnc_x, data_fromnc_y, data_fromnc_zs[0,:,:])
+    plt.savefig(os.path.join(dir_output,'SFINCS_zs_pcolor'))
 
     data_fromnc_edgex = get_ncmodeldata(file_nc=file_nc, varname='edge_x')
     data_fromnc_edgey = get_ncmodeldata(file_nc=file_nc, varname='edge_y')
@@ -103,9 +103,9 @@ def test_workinprogress():
     ax.plot(data_fromnc_edgex.T, data_fromnc_edgey.T,'-b',linewidth=0.2)
     plt.savefig(os.path.join(dir_output,'SFINCS_meshedge'))
     fig, ax = plt.subplots()
-    ax.contourf(data_fromnc_edgex, data_fromnc_edgey, data_fromnc_vmax[0,:,:])
+    ax.pcolor(data_fromnc_edgex, data_fromnc_edgey, data_fromnc_vmax[0,:,:])
     plt.title('%s (%s)'%(data_fromnc_vmax.var_varname, data_fromnc_vmax.var_object.units))
-    plt.savefig(os.path.join(dir_output,'SFINCS_ucontour'))
+    plt.savefig(os.path.join(dir_output,'SFINCS_u_pcolor'))
 
     #SFINCS HIS
     #file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\01_Implementation\14_restartfile\sfincs_his.nc'
@@ -120,6 +120,8 @@ def test_workinprogress():
     ax.legend()
     plt.savefig(os.path.join(dir_output,'SFINCS_hiszs'))
     
+
+
 
 
 
