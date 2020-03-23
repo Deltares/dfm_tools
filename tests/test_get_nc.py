@@ -639,7 +639,7 @@ def test_morphology():
     #MAPFILE
     file_nc = r'p:\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\fm\DFM_OUTPUT_inlet\inlet_map.nc'
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
-    vars_pd_sel = vars_pd[vars_pd['long_name'].str.contains('wave')]
+    vars_pd_sel = vars_pd[vars_pd['long_name'].str.contains('transport')]
     #vars_pd_sel = vars_pd[vars_pd['dimensions'].str.contains('mesh2d_nFaces') & vars_pd['long_name'].str.contains('wave')]
     
     ugrid = get_netdata(file_nc=file_nc)
@@ -815,6 +815,42 @@ def test_morphology():
         ax.set_xlim(data_fromhis.var_times[[0,3000]])
         fig.tight_layout()
         plt.savefig(os.path.join(dir_output,'%s_%s'%(os.path.basename(file_nc).replace('.',''), varname)))
+    
+    
+    
+    #MAPFILE TRANSPORT
+    file_nc = r'p:\11203869-morwaqeco3d\04-Breakwater\02_FM_201910\01_FM_MF25_Max_30s_User_1200s\fm\DFM_OUTPUT_straight_coast\straight_coast_map.nc'
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    vars_pd_sel = vars_pd[vars_pd['long_name'].str.contains('transport')]
+    #vars_pd_sel = vars_pd[vars_pd['dimensions'].str.contains('mesh2d_nFaces') & vars_pd['long_name'].str.contains('wave')]
+    
+    ugrid = get_netdata(file_nc=file_nc)
+    timestep = 10
+    data_frommap_facex = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_face_x')
+    data_frommap_facey = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_face_y')
+    data_frommap_transx = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sxtot', timestep=timestep)
+    data_frommap_transy = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sytot', timestep=timestep)
+    magnitude = (data_frommap_transx ** 2 + data_frommap_transy ** 2) ** 0.5
+    
+    plt.close('all')
+    fig, ax = plt.subplots(1,1, figsize=(10,8))
+    quiv = ax.quiver(data_frommap_facex, data_frommap_facey, data_frommap_transx[0,0,:], data_frommap_transy[0,0,:],
+                     magnitude[0,0,:], scale=0.015)
+    cbar = fig.colorbar(quiv, ax=ax)
+    cbar.set_label('%s and %s (%s)'%(data_frommap_transx.var_varname, data_frommap_transy.var_varname, data_frommap_transy.var_object.units))
+    ax.set_title('t=%d (%s)'%(timestep, data_frommap_transx.var_times.iloc[0]))
+    ax.set_aspect('equal')
+    fig.tight_layout()
+    plt.savefig(os.path.join(dir_output,'%s_%s_%s_t%d'%(os.path.basename(file_nc).replace('.',''), data_frommap_transx.var_varname, data_frommap_transy.var_varname,timestep)))
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
