@@ -819,8 +819,8 @@ def test_morphology():
     
     
     #MAPFILE TRANSPORT
-    #file_nc = r'p:\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\fm\DFM_OUTPUT_inlet\inlet_map.nc'
-    file_nc = r'p:\11203869-morwaqeco3d\04-Breakwater\02_FM_201910\01_FM_MF25_Max_30s_User_1200s\fm\DFM_OUTPUT_straight_coast\straight_coast_map.nc'
+    file_nc = r'p:\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\fm\DFM_OUTPUT_inlet\inlet_map.nc'
+    #file_nc = r'p:\11203869-morwaqeco3d\04-Breakwater\02_FM_201910\01_FM_MF25_Max_30s_User_1200s\fm\DFM_OUTPUT_straight_coast\straight_coast_map.nc'
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
     vars_pd_sel = vars_pd[vars_pd['long_name'].str.contains('transport')]
     #vars_pd_sel = vars_pd[vars_pd['dimensions'].str.contains('mesh2d_nFaces') & vars_pd['long_name'].str.contains('wave')]
@@ -834,7 +834,7 @@ def test_morphology():
     magnitude = (data_frommap_transx ** 2 + data_frommap_transy ** 2) ** 0.5
     
     #plt.close('all')
-    fig, ax = plt.subplots(1,1, figsize=(10,8))
+    fig, ax = plt.subplots(1,1, figsize=(14,8))
     quiv = ax.quiver(data_frommap_facex, data_frommap_facey, data_frommap_transx[0,0,:], data_frommap_transy[0,0,:],
                      magnitude[0,0,:])#, scale=0.015)
     cbar = fig.colorbar(quiv, ax=ax)
