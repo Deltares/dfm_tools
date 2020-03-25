@@ -122,9 +122,7 @@ def test_getnetdata_plotnet(file_nc):
     ax.set_aspect('equal')
     plt.savefig(os.path.join(dir_output,os.path.basename(file_nc).replace('.','')))
     
-
-    file_nc = r'p:\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\wave\wavm-inlet.nc'
-
+    
 
 
 
@@ -774,7 +772,21 @@ def test_morphology():
         
         fig.tight_layout()
         plt.savefig(os.path.join(dir_output,'%s_%s'%(os.path.basename(file_nc).replace('.',''), varname)))
-    
+        
+        if varname == 'dir':
+            #also plot with vectors
+            ax = axs[0]
+            ax.clear()
+            pc = ax.quiver(data_fromnc_x, data_fromnc_y, 1,1,data_frommap[0,:,:],
+                           angles=90-data_frommap[0,:,:], cmap='jet', scale=100)
+            for ax in axs:
+                ax.set_title('t=%d (%s)'%(timestep, data_frommap.var_times.iloc[0]))
+                ax.set_aspect('equal')
+            plt.savefig(os.path.join(dir_output,'%s_%s_vec'%(os.path.basename(file_nc).replace('.',''), varname)))
+            for ax in axs:
+                ax.set_xlim([25000,65000])
+                ax.set_ylim([2500,15000])
+            plt.savefig(os.path.join(dir_output,'%s_%s_veczoom'%(os.path.basename(file_nc).replace('.',''), varname)))
     
     
     
@@ -798,6 +810,9 @@ def test_morphology():
         ax.set_xlim(data_fromhis.var_times[[0,3000]])
         fig.tight_layout()
         plt.savefig(os.path.join(dir_output,'%s_%s'%(os.path.basename(file_nc).replace('.',''), varname)))
+    
+    
+    
     
     
     
@@ -829,13 +844,69 @@ def test_morphology():
     
     
     
+    # interpolate to regular grid
+    
+    dist = 2000
+    reg_x_vec = np.linspace(np.min(data_frommap_facex),np.max(data_frommap_facex),int(np.ceil((np.max(data_frommap_facex)-np.min(data_frommap_facex))/dist)))
+    reg_y_vec = np.linspace(np.min(data_frommap_facey),np.max(data_frommap_facey),int(np.ceil((np.max(data_frommap_facey)-np.min(data_frommap_facey))/dist)))
+    reg_grid = np.meshgrid(reg_x_vec,reg_y_vec)
+    X = reg_grid[0]
+    Y = reg_grid[1]
+    from scipy.interpolate import griddata
+    
+    U = griddata((data_frommap_facex,data_frommap_facey),data_frommap_transx[0,0,:],tuple(reg_grid),method='linear')
+    V = griddata((data_frommap_facex,data_frommap_facey),data_frommap_transy[0,0,:],tuple(reg_grid),method='linear')
+    speed = np.sqrt(U*U + V*V)
+    
+    fig, ax = plt.subplots(1,1, figsize=(14,8))
+    quiv = ax.quiver(X, Y, U, V, speed)
+    cbar = fig.colorbar(quiv, ax=ax)
+    cbar.set_label('%s and %s (%s)'%(data_frommap_transx.var_varname, data_frommap_transy.var_varname, data_frommap_transy.var_object.units))
+    ax.set_title('t=%d (%s)'%(timestep, data_frommap_transx.var_times.iloc[0]))
+    ax.set_aspect('equal')
+    fig.tight_layout()
+    plt.savefig(os.path.join(dir_output,'%s_%s_%s_t%d_regquiver'%(os.path.basename(file_nc).replace('.',''), data_frommap_transx.var_varname, data_frommap_transy.var_varname,timestep)))
+
+
+
+    
+    #xs = X.flatten()
+    #ys = Y.flatten()
+    #seed_points = np.array([list(xs), list(ys)])
+
+    
+
+    fig, ax = plt.subplots(1,1, figsize=(14,8))
+    strm = ax.streamplot(X, Y, U, V, color=speed, density=2, linewidth=1+2*speed/np.max(speed))#, cmap='winter', 
+    #                      minlength=0.01, maxlength = 2, arrowstyle='fancy')#,
+    #                      integration_direction='forward')#, start_points = seed_points.T)
+    #strm = ax.streamplot(X, Y, U, V, color=speed, linewidth=1+2*speed/np.max(speed), density=10,# cmap='winter',
+    #                     minlength=0.0001, maxlength = 0.07, arrowstyle='fancy',
+    #                     integration_direction='forward', start_points = seed_points.T)
+    cbar = fig.colorbar(strm.lines)
+    cbar.set_label('%s and %s (%s)'%(data_frommap_transx.var_varname, data_frommap_transy.var_varname, data_frommap_transy.var_object.units))
+    ax.set_title('t=%d (%s)'%(timestep, data_frommap_transx.var_times.iloc[0]))
+    ax.set_aspect('equal')
+    fig.tight_layout()
+    plt.savefig(os.path.join(dir_output,'%s_%s_%s_t%d_regstreamplot'%(os.path.basename(file_nc).replace('.',''), data_frommap_transx.var_varname, data_frommap_transy.var_varname,timestep)))
+
     
     
     
+    """
+    #DOES NOT WORK
+    #https://stackoverflow.com/questions/51843313/flow-visualisation-in-python-using-curved-path-following-vectors
+    from dfm_tools.modplot import velovect
     
-    
-    
-    
+    fig, ax = plt.subplots(1,1, figsize=(14,8))
+    quiv_curved = velovect(ax,X,Y,U,V, arrowstyle='fancy', scale = 1.5, grains = 15, color='k')
+    cbar = fig.colorbar(strm.lines)
+    cbar.set_label('%s and %s (%s)'%(data_frommap_transx.var_varname, data_frommap_transy.var_varname, data_frommap_transy.var_object.units))
+    ax.set_title('t=%d (%s)'%(timestep, data_frommap_transx.var_times.iloc[0]))
+    ax.set_aspect('equal')
+    fig.tight_layout()
+    plt.savefig(os.path.join(dir_output,'%s_%s_%s_t%d_regstreamplot'%(os.path.basename(file_nc).replace('.',''), data_frommap_transx.var_varname, data_frommap_transy.var_varname,timestep)))
+    """
     
     
     
