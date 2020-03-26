@@ -820,7 +820,7 @@ def test_morphology():
     file_nc = r'p:\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\fm\DFM_OUTPUT_inlet\inlet_map.nc'
     #file_nc = r'p:\11203869-morwaqeco3d\04-Breakwater\02_FM_201910\01_FM_MF25_Max_30s_User_1200s\fm\DFM_OUTPUT_straight_coast\straight_coast_map.nc'
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
-    vars_pd_sel = vars_pd[vars_pd['long_name'].str.contains('transport')]
+    #vars_pd_sel = vars_pd[vars_pd['long_name'].str.contains('transport')]
     #vars_pd_sel = vars_pd[vars_pd['dimensions'].str.contains('mesh2d_nFaces') & vars_pd['long_name'].str.contains('wave')]
     
     ugrid = get_netdata(file_nc=file_nc)
@@ -841,6 +841,8 @@ def test_morphology():
     ax.set_aspect('equal')
     fig.tight_layout()
     plt.savefig(os.path.join(dir_output,'%s_%s_%s_t%d'%(os.path.basename(file_nc).replace('.',''), data_frommap_transx.var_varname, data_frommap_transy.var_varname,timestep)))
+    xlim_get = ax.get_xlim()
+    ylim_get = ax.get_ylim()
     
     
     
@@ -854,8 +856,8 @@ def test_morphology():
     Y = reg_grid[1]
     from scipy.interpolate import griddata
     
-    U = griddata((data_frommap_facex,data_frommap_facey),data_frommap_transx[0,0,:],tuple(reg_grid),method='linear')
-    V = griddata((data_frommap_facex,data_frommap_facey),data_frommap_transy[0,0,:],tuple(reg_grid),method='linear')
+    U = griddata((data_frommap_facex,data_frommap_facey),data_frommap_transx[0,0,:],tuple(reg_grid),method='nearest')
+    V = griddata((data_frommap_facex,data_frommap_facey),data_frommap_transy[0,0,:],tuple(reg_grid),method='nearest')
     speed = np.sqrt(U*U + V*V)
     
     fig, ax = plt.subplots(1,1, figsize=(14,8))
@@ -863,6 +865,8 @@ def test_morphology():
     cbar = fig.colorbar(quiv, ax=ax)
     cbar.set_label('%s and %s (%s)'%(data_frommap_transx.var_varname, data_frommap_transy.var_varname, data_frommap_transy.var_object.units))
     ax.set_title('t=%d (%s)'%(timestep, data_frommap_transx.var_times.iloc[0]))
+    ax.set_xlim(xlim_get)
+    ax.set_ylim(ylim_get)
     ax.set_aspect('equal')
     fig.tight_layout()
     plt.savefig(os.path.join(dir_output,'%s_%s_%s_t%d_regquiver'%(os.path.basename(file_nc).replace('.',''), data_frommap_transx.var_varname, data_frommap_transy.var_varname,timestep)))
@@ -873,9 +877,6 @@ def test_morphology():
     #xs = X.flatten()
     #ys = Y.flatten()
     #seed_points = np.array([list(xs), list(ys)])
-
-    
-
     fig, ax = plt.subplots(1,1, figsize=(14,8))
     strm = ax.streamplot(X, Y, U, V, color=speed, density=2, linewidth=1+2*speed/np.max(speed))#, cmap='winter', 
     #                      minlength=0.01, maxlength = 2, arrowstyle='fancy')#,
@@ -886,27 +887,27 @@ def test_morphology():
     cbar = fig.colorbar(strm.lines)
     cbar.set_label('%s and %s (%s)'%(data_frommap_transx.var_varname, data_frommap_transy.var_varname, data_frommap_transy.var_object.units))
     ax.set_title('t=%d (%s)'%(timestep, data_frommap_transx.var_times.iloc[0]))
+    ax.set_xlim(xlim_get)
+    ax.set_ylim(ylim_get)
     ax.set_aspect('equal')
     fig.tight_layout()
     plt.savefig(os.path.join(dir_output,'%s_%s_%s_t%d_regstreamplot'%(os.path.basename(file_nc).replace('.',''), data_frommap_transx.var_varname, data_frommap_transy.var_varname,timestep)))
-
     
     
     
-    """
-    #DOES NOT WORK
-    #https://stackoverflow.com/questions/51843313/flow-visualisation-in-python-using-curved-path-following-vectors
+    
     from dfm_tools.modplot import velovect
-    
     fig, ax = plt.subplots(1,1, figsize=(14,8))
-    quiv_curved = velovect(ax,X,Y,U,V, arrowstyle='fancy', scale = 1.5, grains = 15, color='k')
-    cbar = fig.colorbar(strm.lines)
+    quiv_curved = velovect(ax,X,Y,U,V, arrowstyle='fancy', scale = 5, grains = 25, color=speed)
+    cbar = fig.colorbar(quiv_curved.lines)
     cbar.set_label('%s and %s (%s)'%(data_frommap_transx.var_varname, data_frommap_transy.var_varname, data_frommap_transy.var_object.units))
     ax.set_title('t=%d (%s)'%(timestep, data_frommap_transx.var_times.iloc[0]))
+    ax.set_xlim(xlim_get)
+    ax.set_ylim(ylim_get)
     ax.set_aspect('equal')
     fig.tight_layout()
-    plt.savefig(os.path.join(dir_output,'%s_%s_%s_t%d_regstreamplot'%(os.path.basename(file_nc).replace('.',''), data_frommap_transx.var_varname, data_frommap_transy.var_varname,timestep)))
-    """
+    plt.savefig(os.path.join(dir_output,'%s_%s_%s_t%d_curvedquiver'%(os.path.basename(file_nc).replace('.',''), data_frommap_transx.var_varname, data_frommap_transy.var_varname,timestep)))
+    
     
     
     

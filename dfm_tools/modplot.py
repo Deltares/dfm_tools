@@ -2,16 +2,18 @@
 """
 Created on Wed Mar 25 15:26:55 2020
 
-@author: https://github.com/kieranmrhunt/curved-quivers/blob/master/modplot.py
-
+@author: Kieran Hunt
+https://github.com/kieranmrhunt/curved-quivers/blob/master/modplot.py
+https://stackoverflow.com/questions/51843313/flow-visualisation-in-python-using-curved-path-following-vectors
+    
 Streamline plotting for 2D vector fields.
 """
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-import six
-from six.moves import xrange
-from scipy.interpolate import interp1d
+#import six
+#from six.moves import xrange
+#from scipy.interpolate import interp1d
 
 import numpy as np
 import matplotlib
@@ -403,6 +405,7 @@ class StreamMask(object):
 
 def get_integrator(u, v, dmap, minlength, resolution, magnitude):
 
+    import warnings
     # rescale velocity onto grid-coordinates for integrations.
     u, v = dmap.data2grid(u, v)
 
@@ -414,8 +417,10 @@ def get_integrator(u, v, dmap, minlength, resolution, magnitude):
     def forward_time(xi, yi):
         ds_dt = interpgrid(speed, xi, yi)
         if ds_dt == 0:
-            raise TerminateTrajectory()
-        dt_ds = 1. / ds_dt
+            dt_ds = 0
+            warnings.warn('TerminateTrajectory()')
+        else:
+            dt_ds = 1. / ds_dt
         ui = interpgrid(u, xi, yi)
         vi = interpgrid(v, xi, yi)
         return ui * dt_ds, vi * dt_ds
@@ -504,8 +509,9 @@ def _integrate_rk12(x0, y0, dmap, f, resolution, magnitude):
             stotal += ds
             hit_edge = True
             break
-        except TerminateTrajectory:
-            break
+        except:# TerminateTrajectory:
+            #break
+            pass
 
         dx1 = ds * k1x
         dy1 = ds * k1y
@@ -601,7 +607,7 @@ def interpgrid(a, xi, yi):
 
     if not isinstance(xi, np.ndarray):
         if np.ma.is_masked(ai):
-            raise TerminateTrajectory
+            raise Exception('TerminateTrajectory')
 
     return ai
 

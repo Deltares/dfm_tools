@@ -61,7 +61,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     listtype_str = [str]
     listtype_range = [list, range, np.ndarray]
     listtype_datetime = [dt.datetime, np.datetime64]
-    listtype_daterange = [pd.date_range]
+    listtype_daterange = [pd.DatetimeIndex]
     
     #CHECK VARNAME, IS THERE A SEPARATE DEFINITION TO RETRIEVE DATA?
     if varname in varname_stat_validvals:
