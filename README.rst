@@ -59,7 +59,8 @@ How to work with dfm_tools
 	
 - Use it in your scripts:
 	- launch Spyder: open anaconda navigator, select your venv, launch Spyder from here
-	- Note: if you don't want to start Spyder via anaconda navigator, see developer information for an alternative method to link Spyder to your venv 
+	- Note: if you don't want to start Spyder via anaconda navigator, see developer information for an alternative method to link Spyder to your venv
+	- Note: if you get an error related to ``spyder-kernels``, check the known bugs section
 	- from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
 	- check scripts in tests folder on github for examples
 
@@ -68,6 +69,12 @@ Known bugs
 - the line ``import shapely.geometry`` does not work, while ``import shapely`` does (OSError: [WinError 126] The specified module could not be found), solution:
 	- find geos.py in your environment (eg %userprofile%\\AppData\\Local\\Continuum\\anaconda3\\envs\\dfm_tools_env\\Lib\\site-packages\\shapely\\geos.py)
 	- replace ``if os.getenv('CONDA_PREFIX', ''):`` with ``if 0:`` on line 143 (this disables this if statement and redirects to else)
+- you get the message that spyder-kernels' is not installed or the wrong version:
+	- Spyder 3.* needs spyder-kernels==0.* (installed with instructions), Spyder 4.* needs spyder-kernels>=1.*``
+	- open command window
+	- ``conda activate dfm_tools_env``
+	- ``python -m pip install spyder-kernels>=1.*``
+	- restart Spyder console and it should work
 - report other bugs and feature requests at the developers or at https://github.com/openearth/dfm_tools/issues (include OS, dfm_tools version, reproduction steps)
 
 
