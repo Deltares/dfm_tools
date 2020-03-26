@@ -126,7 +126,6 @@ TODO wishlist
 
 TODO non-content
 --------
-- remove pyqt5 from requirements (crashed spyder on macbook)
 - update/delete cookiecutter text files
 - add documentation in comments of functions
 - put testdata on deltares shared location?
