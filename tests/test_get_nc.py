@@ -100,15 +100,15 @@ def test_getplotfoudata():
                                      pytest.param(r'p:\11205258-006-kpp2020_rmm-g6\C_Work\01_Rooster\final_totaalmodel\rooster_rmm_v1p5_net.nc', id='RMM')])
 @pytest.mark.acceptance
 def test_getnetdata_plotnet(file_nc):
+    dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
     """
     this test retrieves grid data and plots it
     
     file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','Grevelingen_FM_grid_20190603_net.nc')
     file_nc = 'p:\\11205258-006-kpp2020_rmm-g6\\C_Work\\01_Rooster\\final_totaalmodel\\rooster_rmm_v1p5_net.nc'
+    dir_output = './test_output'
     """
     
-    dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
-    #dir_output = './test_output'
 
     import matplotlib.pyplot as plt
     plt.close('all')
