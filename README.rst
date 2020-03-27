@@ -113,7 +113,7 @@ TODO wishlist
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/plotting_example.ipynb
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/vector_plotting_example.ipynb
 	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/applications/delft3dfm/dflowfmpyplot/pyd3dfm/streamline_ug.py (streamline plotting for structured grids, but many settings)
-- existing readwrite functions: https://github.com/openearth/delft3dfmpy	
+- existing dfm model setup functions: https://github.com/openearth/delft3dfmpy (arthur van dam)	
 - make grid reading more flexible:
 	- improve plots for structured grid (CMEMS, ERA5, hirlam, grd etc)
 	- https://github.com/NOAA-ORR-ERD/gridded
@@ -129,6 +129,7 @@ TODO non-content
 --------
 - update/delete cookiecutter text files
 - add documentation in comments of functions
+- create overview of scripts and functions, including missing features
 - put testdata on deltares shared location?
 - put testdata and testoutput on github and create jupyter notebook instead of pptx?
 - arrange auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
