@@ -58,7 +58,7 @@ How to work with dfm_tools
 	- test by importing shapely.geometry: ``python -c "import shapely.geometry"`` (if you get an error, look at the known bugs section in this readme. You will need this when slicing data)
 	
 - Use it in your scripts:
-	- launch Spyder: open anaconda navigator, select your venv, launch Spyder from here
+	- launch Spyder: open anaconda navigator, select dfm_tools_env from the drop down menu, launch Spyder from here
 	- Note: if you don't want to start Spyder via anaconda navigator, see developer information for an alternative method to link Spyder to your venv
 	- Note: if you get an error related to ``spyder-kernels``, check the known bugs section
 	- from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
@@ -69,12 +69,6 @@ Known bugs
 - the line ``import shapely.geometry`` does not work, while ``import shapely`` does (OSError: [WinError 126] The specified module could not be found), solution:
 	- find geos.py in your environment (eg %userprofile%\\AppData\\Local\\Continuum\\anaconda3\\envs\\dfm_tools_env\\Lib\\site-packages\\shapely\\geos.py)
 	- replace ``if os.getenv('CONDA_PREFIX', ''):`` with ``if 0:`` on line 143 (this disables this if statement and redirects to else)
-- you get the message that spyder-kernels' is not installed or the wrong version:
-	- Spyder 3.* needs spyder-kernels==0.* (installed with instructions), Spyder 4.* needs spyder-kernels>=1.*``
-	- open command window
-	- ``conda activate dfm_tools_env``
-	- ``python -m pip install spyder-kernels>=1.*``
-	- restart Spyder console and it should work
 - report other bugs and feature requests at the developers or at https://github.com/openearth/dfm_tools/issues (include OS, dfm_tools version, reproduction steps)
 
 
@@ -120,6 +114,7 @@ TODO wishlist
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/plotting_example.ipynb
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/vector_plotting_example.ipynb
 	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/applications/delft3dfm/dflowfmpyplot/pyd3dfm/streamline_ug.py (streamline plotting for structured grids, but many settings)
+- existing readwrite functions: https://github.com/openearth/delft3dfmpy	
 - make grid reading more flexible:
 	- improve plots for structured grid (CMEMS, ERA5, hirlam, grd etc)
 	- https://github.com/NOAA-ORR-ERD/gridded
@@ -173,6 +168,20 @@ Developer information: how to contribute to this git repository
 	- open spyder from start menu or anaconda or anything
 	- Go to Tools >> Preferences >> Python interpreter >> point to dfm_tools_env python.exe (print of sys.executable)
 	- restart IPython console
+	- Known bugs with this method (instead of launching Spyder via anaconda navigator):
+		- you get the message that spyder-kernels' is not installed or the wrong version:
+			- Spyder 3.* needs spyder-kernels==0.* (installed with instructions/environment.yml), Spyder 4.* needs spyder-kernels>=1.*``
+			- open command window
+			- ``conda activate dfm_tools_env``
+			- ``python -m pip install spyder-kernels>=1.*``
+			- restart Spyder console and it should work
+		- figures are struggling:
+			- your matplotlib backend is probably 'Tkagg' instead of 'Qt5Agg' (execute ``import matplotlib; matplotlib.get_backend()`` from the Spyder console)
+			- open command window
+			- ``conda activate dfm_tools_env``
+			- ``python -m pip install pyqt5>=5.7.1``
+			- restart Spyder console and it should work better
+			- Note: pyqt5 was previously part of the requirements, but it caused errors for some users upon installation
 - Install your local github clone via pip (developer mode):
 	- open command window, navigate to dfm_tools folder, eg C:\\DATA\\dfm_tools
 	- ``conda activate dfm_tools_env``
