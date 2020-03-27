@@ -51,16 +51,15 @@ How to work with dfm_tools
 
 - Install the code from github via pip:
 	- open command window
-	- ``conda create --name dfm_tools_env python=3.7 spyder-kernels==0.*`` (creating a venv is optional but recommended)
+	- ``conda create --name dfm_tools_env python=3.7`` (creating a venv is optional but recommended)
 	- ``conda activate dfm_tools_env``
 	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this also installs all required packages) (this also updates it to the latest version if you already installed it before)
 	- test by printing dfm_tools version number: ``python -c "import dfm_tools; print(dfm_tools.__version__)"`` (this should just work)
 	- test by importing shapely.geometry: ``python -c "import shapely.geometry"`` (if you get an error, look at the known bugs section in this readme. You will need this when slicing data)
 	
 - Use it in your scripts:
-	- launch Spyder: open anaconda navigator, select dfm_tools_env from the drop down menu, launch Spyder from here
-	- Note: if you don't want to start Spyder via anaconda navigator, see developer information for an alternative method to link Spyder to your venv
-	- Note: if you get an error related to ``spyder-kernels``, check the known bugs section
+	- launch Spyder: open anaconda navigator, select dfm_tools_env from the drop down menu, install Spyder here, launch Spyder from here
+	- Note: if you don't want to start Spyder via anaconda navigator (and install Spyder for each environment separately), see developer information for an alternative method to link Spyder to your venv
 	- from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
 	- check scripts in tests folder on github for examples
 
@@ -159,7 +158,7 @@ Developer information: how to contribute to this git repository
 	- ``conda env create -f environment.yml`` (sometimes you need to press enter if it hangs extremely long)
 	- ``conda info --envs`` (shows dfm_tools_env virtual environment)
 	- to remove: ``conda remove -n dfm_tools_env --all`` (to remove it again when necessary)
-- Optional: link to your venv from Spyder
+- Optional: link to your venv from Spyder (no separate Spyder installation necessary in venv)
 	- alternative: you can also start spyder via Anaconda Navigator, after selecting your venv
 	- open command line and navigate to dfm_tools github folder, eg C:\\DATA\\dfm_tools
 	- ``conda activate dfm_tools_env``
@@ -169,11 +168,10 @@ Developer information: how to contribute to this git repository
 	- Go to Tools >> Preferences >> Python interpreter >> point to dfm_tools_env python.exe (print of sys.executable)
 	- restart IPython console
 	- Known bugs with this method (instead of launching Spyder via anaconda navigator):
-		- you get the message that spyder-kernels' is not installed or the wrong version:
-			- Spyder 3.* needs spyder-kernels==0.* (installed with instructions/environment.yml), Spyder 4.* needs spyder-kernels>=1.*``
+		- you get the message that 'spyder-kernels' is not installed or the wrong version:
 			- open command window
 			- ``conda activate dfm_tools_env``
-			- ``python -m pip install spyder-kernels>=1.*``
+			- ``python -m pip install spyder-kernels>=1.*`` (for Spyder 4.*) OR ``python -m pip install spyder-kernels==0.*`` (for Spyder 3.*)
 			- restart Spyder console and it should work
 		- figures are struggling:
 			- your matplotlib backend is probably 'Tkagg' instead of 'Qt5Agg' (execute ``import matplotlib; matplotlib.get_backend()`` from the Spyder console)
