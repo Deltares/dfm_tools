@@ -417,6 +417,12 @@ def test_waqua_netcdf_convertedwith_getdata():
         getdata.pl -f SDS-A01 -v SEP,VELU,VELV -o netcdf -d SDS-A01_map
         getdata.pl -f SDS-A01 -v ZWL,ZCURU,ZCURV,NAMWL,NAMC -o netcdf -d SDS-A01_his
         
+    get the netcdf files via putty with:
+        module load simona
+        cd /p/archivedprojects/1230049-zoutlastbeperking/Gaten_langsdam/Simulaties/OSR-model_GatenLangsdam/berekeningen/run7
+        getdata.pl -f SDS-nsctri -v SEP,VELU,VELV -o netcdf -d SDS-nsctri_map
+        getdata.pl -f SDS-nsctri -v ZWL,ZCURU,ZCURV,NAMWL,NAMC -o netcdf -d SDS-nsctri_his
+        
     dir_output = './test_output'
     """
     import datetime as dt
@@ -475,13 +481,6 @@ def test_waqua_netcdf_convertedwith_getdata():
     
     
     
-    """
-    get the netcdf files via putty with:
-        module load simona
-        cd /p/archivedprojects/1230049-zoutlastbeperking/Gaten_langsdam/Simulaties/OSR-model_GatenLangsdam/berekeningen/run7
-        getdata.pl -f SDS-nsctri -v SEP,VELU,VELV -o netcdf -d SDS-nsctri_map
-        getdata.pl -f SDS-nsctri -v ZWL,ZCURU,ZCURV,NAMWL,NAMC -o netcdf -d SDS-nsctri_his
-    """
     #MAP OSR
     file_nc = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\ZZ_Jelmer\SDS-nsctri_map.nc'
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
