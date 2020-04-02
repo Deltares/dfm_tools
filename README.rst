@@ -119,12 +119,11 @@ TODO wishlist
 	- improve plots for structured grid (CMEMS, ERA5, hirlam, grd etc)
 	- https://github.com/NOAA-ORR-ERD/gridded
 	- tests.test_get_nc.test_gethirlam() is eerste opzet voor hirlam/ERA5 data, werkt heel anders dan D-flow FM
-	- how to plot properties on edges (scatter is slow), maybe create dual mesh and plot like faces. most relevant variables are also available on faces, so is this necessary?
+	- how to plot properties on edges/nodes (scatter is slow), maybe create dual mesh and plot like faces. most relevant variables are also available on faces, so is this necessary?
 	- add support for rstfiles (different way of storing grid data, only face nodes present?)
 	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/OpenEarthTools/openearthtools/io/dflowfm/patch2tri.py
 	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/OpenEarthTools/openearthtools/io/netcdf
 	- see test_workinprogress.py
-- ax keyword verwijderen uit plotmapmodeldata?
 
 TODO non-content
 --------

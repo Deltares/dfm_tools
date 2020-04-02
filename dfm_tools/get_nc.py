@@ -55,8 +55,9 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     nc_varobject = get_ncvarobject(file_nc, varname)
     data_nc = Dataset(file_nc)
     
-    varname_stat_validvals = ['station_name', 'general_structure_id', 'cross_section_name', 'observation_id'] #DFM stations, DFM gs, DFM crs, Sobek stations
-    dimname_stat_validvals = ['stations', 'general_structures', 'cross_section', 'id'] #DFM stations, DFM gs, DFM crs, Sobek stations
+    #variable/dimension names for: DFM stations, DFM gs, DFM crs, Sobek stations, WAQUA_getdata_netcdf WL-stations, WAQUA_getdata_netcdf CUR-stations
+    varname_stat_validvals = ['station_name', 'general_structure_id', 'cross_section_name', 'observation_id', 'NAMWL', 'NAMC']
+    dimname_stat_validvals = ['stations', 'general_structures', 'cross_section', 'id', 'STATION', 'STATIONCUR']
     listtype_int = [int, np.int, np.int8, np.int16, np.int32, np.int64]
     listtype_str = [str]
     listtype_range = [list, range, np.ndarray]

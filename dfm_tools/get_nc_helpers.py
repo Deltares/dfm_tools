@@ -45,13 +45,16 @@ def get_ncfilelist(file_nc, multipart=None):
     if not os.path.exists(file_nc):
         raise Exception('ERROR: file does not exist: %s'%(file_nc))
     
-    lastpart = file_nc.split('_')[-2]
-    nctype = file_nc.split('_')[-1]
-    if file_nc.endswith('_%s'%(nctype)) and multipart != False and len(lastpart) == 4 and lastpart.isdigit(): #if part before '_map.nc' is eg '0000'
-        filename_start = re.compile('(.*)_([0-9]+)_%s'%(nctype)).search(file_nc).group(1)
-        #filename_number = re.compile('(.*)_([0-9]+)_map.nc').search(file_nc).group(2)
-        #file_ncs = [file_nc.replace('_%s_map.nc','_%04d_map.nc'%(filename_number, domain_id)) for domain_id in range(ndomains)]
-        file_ncs = glob.glob('%s*_%s'%(filename_start,nctype))
+    if '_' in file_nc:
+        lastpart = file_nc.split('_')[-2]
+        nctype = file_nc.split('_')[-1]
+        if file_nc.endswith('_%s'%(nctype)) and multipart != False and len(lastpart) == 4 and lastpart.isdigit(): #if part before '_map.nc' is eg '0000'
+            filename_start = re.compile('(.*)_([0-9]+)_%s'%(nctype)).search(file_nc).group(1)
+            #filename_number = re.compile('(.*)_([0-9]+)_map.nc').search(file_nc).group(2)
+            #file_ncs = [file_nc.replace('_%s_map.nc','_%04d_map.nc'%(filename_number, domain_id)) for domain_id in range(ndomains)]
+            file_ncs = glob.glob('%s*_%s'%(filename_start,nctype))
+        else:
+            file_ncs = [file_nc]
     else:
         file_ncs = [file_nc]
     return file_ncs
@@ -64,7 +67,7 @@ def get_varname_fromnc(data_nc,varname_requested):
     
     #VARIABLE names used within different versions of Delft3D-Flexible Mesh
     varnames_list = pd.DataFrame()
-    varnames_list['time'] = ['time','nmesh2d_dlwq_time','',''] # time
+    varnames_list['time'] = ['time','nmesh2d_dlwq_time','TIME',''] # time
     
     varnames_list['mesh2d_node_x'] = ['mesh2d_node_x','NetNode_x','mesh2d_agg_node_x',''] # x-coordinate of nodes
     varnames_list['mesh2d_node_y'] = ['mesh2d_node_y','NetNode_y','mesh2d_agg_node_y',''] # y-coordinate of nodes
@@ -261,6 +264,7 @@ def get_timesfromnc(file_nc, force_noreconstruct=False):
         else:
             print('reading time dimension: read entire array')
             data_nc_times = data_nc_timevar[:]
+            
     data_nc_datetimes = num2date(data_nc_times, units = data_nc_timevar.units)
     #data_nc_datetimes_pd = pd.Series(data_nc_datetimes).dt.round(freq='S')
     nptimes = data_nc_datetimes.astype('datetime64[ns]') #convert to numpy first, pandas does not take all cftime datasets
@@ -295,7 +299,7 @@ def get_hisstationlist(file_nc,varname_stat='station_name'):
     import pandas as pd
     import numpy as np
     
-    varname_stat_validvals = ['station_name', 'general_structure_id', 'cross_section_name','observation_id']
+    varname_stat_validvals = ['station_name', 'general_structure_id', 'cross_section_name', 'observation_id', 'NAMWL', 'NAMC']
     if varname_stat in varname_stat_validvals:
         data_nc = Dataset(file_nc)
         station_name_char = data_nc.variables[varname_stat][:]

@@ -137,3 +137,30 @@ def corner2center(cor):
         raise NotImplementedError('only 1D and 2D arrays implemented, only intervals and pixels, no voxels')
     return cen
       
+
+
+
+
+
+def uva2xymagdeg(u,v,alpha=0):
+    import numpy as np
+    
+    """
+    this function converts velocities in m,n-direction (defined mathematically, so 0 on x-axis and increasing counter-clockwise)
+    alpha is a matrix with orientations of cells, with respect to the north (varname='ALFAS') in D3D output
+    output:
+        vec_x - velocity in x-direction (east)
+        vec_y - velocity in y-direction (east)
+        vec_x - velocity in x-direction (east)
+        vec_x - velocity in x-direction (east)
+    """
+    vel_magn = np.sqrt(u**2 + v**2)
+    direction_math_deg = np.rad2deg(np.arctan2(v, u))+alpha
+    direction_naut_deg = (90-direction_math_deg)%360
+    vel_x = vel_magn*np.cos(np.deg2rad(direction_math_deg))
+    vel_y = vel_magn*np.sin(np.deg2rad(direction_math_deg))
+    return vel_x, vel_y, vel_magn, direction_naut_deg
+
+
+
+
