@@ -185,7 +185,118 @@ def test_trygetondepth():
     
 
 
+def test_delft3D_netcdf():
+    dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
+    """
+    dir_output = './test_output'
+    """
+    
+    import numpy as np
+    import matplotlib.pyplot as plt
+    plt.close('all')
+    
+    from dfm_tools.get_nc import get_ncmodeldata#, get_netdata, plot_netmapdata
+    from dfm_tools.get_nc_helpers import get_ncvardimlist#, get_hisstationlist, get_varname_fromnc
+    
+    def uva2xymagdeg(u,v,alpha=0):
+        """
+        this function converts velocities in m,n-direction (defined mathematically, so 0 on x-axis and increasing counter-clockwise)
+        alpha is a matrix with orientations of cells, with respect to the north (varname='ALFAS') in D3D output
+        output:
+            vec_x - velocity in x-direction (east)
+            vec_y - velocity in y-direction (east)
+            vec_x - velocity in x-direction (east)
+            vec_x - velocity in x-direction (east)
+        """
+        vel_magn = np.sqrt(u**2 + v**2)
+        direction_math_deg = np.rad2deg(np.arctan2(v, u))+alpha
+        direction_naut_deg = (90-direction_math_deg)%360
+        vel_x = vel_magn*np.cos(np.deg2rad(direction_math_deg))
+        vel_y = vel_magn*np.sin(np.deg2rad(direction_math_deg))
+        return vel_x, vel_y, vel_magn, direction_naut_deg
 
+    file_nc = r'p:\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\063_netcdf\trim-thiery_002_coarse - Copy.nc'
+    
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    #data_nc = Dataset(file_nc)
+    #dir_output = './test_output'
+    
+    #data_nc_XZ = get_ncmodeldata(file_nc=file_nc, varname='X')
+    data_nc_XZ = get_ncmodeldata(file_nc=file_nc, varname='XZ')
+    data_nc_YZ = get_ncmodeldata(file_nc=file_nc, varname='YZ')
+    data_nc_ALFAS = get_ncmodeldata(file_nc=file_nc, varname='ALFAS')
+    data_nc_U1 = get_ncmodeldata(file_nc=file_nc, varname='U1',timestep='all')
+    data_nc_V1 = get_ncmodeldata(file_nc=file_nc, varname='V1',timestep='all')
+    #data_nc_S1 = get_ncmodeldata(file_nc=file_nc, varname='S1',timestep='all')
+    data_nc_QNET = get_ncmodeldata(file_nc=file_nc, varname='QNET',timestep='all')
+    
+    mask_XY = (data_nc_XZ==0) & (data_nc_YZ==0)
+    mask_U = data_nc_U1==-999.
+    mask_V = data_nc_V1==-999.
+    #mask_U = (get_ncmodeldata(file_nc=file_nc, varname='KCU')==0)
+    #mask_V = (get_ncmodeldata(file_nc=file_nc, varname='KCV')==0)
+    data_nc_XZ[mask_XY] = np.nan
+    data_nc_YZ[mask_XY] = np.nan
+    data_nc_U1[mask_U] = np.nan
+    data_nc_V1[mask_V] = np.nan
+    #masking should work but quiver does not read masks for X and Y, so use own
+    #data_nc_XZ.mask = mask_XY
+    #data_nc_YZ.mask = mask_XY
+    #data_nc_U1.mask = mask_U
+    #data_nc_V1.mask = mask_V
+    
+    fig, ax = plt.subplots()
+    ax.plot(data_nc_XZ,data_nc_YZ,'-b',linewidth=0.2)
+    ax.plot(data_nc_XZ.T,data_nc_YZ.T,'-b',linewidth=0.2)
+    ax.set_aspect('equal')
+    plt.savefig(os.path.join(dir_output,'kivu_mesh'))
+    
+    fig, axs = plt.subplots(1,3, figsize=(16,7))
+    for iT, timestep in enumerate([1,10,15]):
+        ax=axs[iT]
+        vel_x, vel_y, vel_magn, direction_naut_deg = uva2xymagdeg(u=data_nc_U1[timestep,90,:,:],v=data_nc_V1[timestep,90,:,:],alpha=data_nc_ALFAS)
+        #pc = ax.pcolor(data_nc_XZ,data_nc_YZ,direction_naut_deg,cmap='jet')
+        #pc.set_clim([0,360])
+        pc = ax.pcolor(data_nc_XZ,data_nc_YZ,vel_magn,cmap='jet')
+        pc.set_clim([0,0.15])
+        cbar = fig.colorbar(pc, ax=ax)
+        cbar.set_label('velocity magnitude (%s)'%(data_nc_U1.var_object.units))
+        ax.set_title('t=%d (%s)'%(timestep, data_nc_U1.var_times.iloc[timestep]))
+        ax.set_aspect('equal')
+        ax.quiver(data_nc_XZ[::2,::2], data_nc_YZ[::2,::2], vel_x[::2,::2], vel_y[::2,::2], 
+                  scale=3,color='w',width=0.005)#, edgecolor='face', cmap='jet')
+    fig.tight_layout()
+    plt.savefig(os.path.join(dir_output,'kivu_velocity_pcolor'))
+
+    fig, axs = plt.subplots(1,3, figsize=(16,7))
+    for iT, timestep in enumerate([1,10,15]):
+        ax=axs[iT]
+        vel_x, vel_y, vel_magn, direction_naut_deg = uva2xymagdeg(u=data_nc_U1[timestep,90,:,:],v=data_nc_V1[timestep,90,:,:],alpha=data_nc_ALFAS)
+        #pc = ax.pcolor(data_nc_XZ,data_nc_YZ,vel_magn,cmap='jet')
+        ax.set_title('t=%d (%s)'%(timestep, data_nc_U1.var_times.iloc[timestep]))
+        ax.set_aspect('equal')
+        pc = ax.quiver(data_nc_XZ[::2,::2], data_nc_YZ[::2,::2], vel_x[::2,::2], vel_y[::2,::2], vel_magn[::2,::2],
+                  scale=3,color='w',width=0.005, edgecolor='face', cmap='jet')
+        pc.set_clim([0,0.15])
+        cbar = fig.colorbar(pc, ax=ax)
+        cbar.set_label('velocity magnitude (%s)'%(data_nc_U1.var_object.units))
+    fig.tight_layout()
+    plt.savefig(os.path.join(dir_output,'kivu_velocity'))
+    
+    #evaporation
+    fig, axs = plt.subplots(1,3, figsize=(16,7))
+    for iT, timestep in enumerate([1,10,15]):
+        ax=axs[iT]
+        pc = ax.pcolor(data_nc_XZ,data_nc_YZ,data_nc_QNET[iT,:,:],cmap='jet')
+        pc.set_clim([-60,60])
+        cbar = fig.colorbar(pc, ax=ax)
+        cbar.set_label('velocity magnitude (%s)'%(data_nc_U1.var_object.units))
+        ax.set_title('t=%d (%s)'%(timestep, data_nc_U1.var_times.iloc[timestep]))
+        ax.set_aspect('equal')
+    fig.tight_layout()
+    plt.savefig(os.path.join(dir_output,'kivu_Qnet'))
+
+ 
 
 
 
