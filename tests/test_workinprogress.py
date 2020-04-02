@@ -528,8 +528,8 @@ def test_waqua_netcdf_convertedwith_getdata():
     data_nc_NAMWL = get_hisstationlist(file_nc=file_nc, varname_stat='NAMWL')
     #data_nc_NAMC = get_hisstationlist(file_nc=file_nc, varname_stat='NAMC')
     data_nc_ZWL = get_ncmodeldata(file_nc=file_nc, varname='ZWL',timestep='all',station='all')
-    #data_nc_ZCURU = get_ncmodeldata(file_nc=file_nc, varname='ZCURU',timestep='all',station='all')
-    #data_nc_ZCURV = get_ncmodeldata(file_nc=file_nc, varname='ZCURV',timestep='all',station='all')
+    #data_nc_ZCURU = get_ncmodeldata(file_nc=file_nc, varname='ZCURU',timestep='all',station='all',layer='all')
+    #data_nc_ZCURV = get_ncmodeldata(file_nc=file_nc, varname='ZCURV',timestep='all',station='all',layer='all')
 
     fig, ax = plt.subplots(figsize=(16,7))
     for iS in range(10):
