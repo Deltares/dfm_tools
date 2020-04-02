@@ -67,33 +67,33 @@ def get_varname_fromnc(data_nc,varname_requested):
     
     #VARIABLE names used within different versions of Delft3D-Flexible Mesh
     varnames_list = pd.DataFrame()
-    varnames_list['time'] = ['time','nmesh2d_dlwq_time','TIME',''] # time
+    varnames_list['time'] = ['time','nmesh2d_dlwq_time','TIME','',''] # time
     
-    varnames_list['mesh2d_node_x'] = ['mesh2d_node_x','NetNode_x','mesh2d_agg_node_x',''] # x-coordinate of nodes
-    varnames_list['mesh2d_node_y'] = ['mesh2d_node_y','NetNode_y','mesh2d_agg_node_y',''] # y-coordinate of nodes
-    varnames_list['mesh2d_node_z'] = ['mesh2d_node_z','NetNode_z','',''] # z-coordinate of nodes
+    varnames_list['mesh2d_node_x'] = ['mesh2d_node_x','NetNode_x','mesh2d_agg_node_x','',''] # x-coordinate of nodes
+    varnames_list['mesh2d_node_y'] = ['mesh2d_node_y','NetNode_y','mesh2d_agg_node_y','',''] # y-coordinate of nodes
+    varnames_list['mesh2d_node_z'] = ['mesh2d_node_z','NetNode_z','','',''] # z-coordinate of nodes
     
-    varnames_list['mesh2d_face_x'] = ['mesh2d_face_x','FlowElem_xzw','mesh2d_agg_face_x',''] # x-coordinate of faces
-    varnames_list['mesh2d_face_y'] = ['mesh2d_face_y','FlowElem_yzw','mesh2d_agg_face_y',''] # y-coordinate of faces
+    varnames_list['mesh2d_face_x'] = ['mesh2d_face_x','FlowElem_xzw','mesh2d_agg_face_x','',''] # x-coordinate of faces
+    varnames_list['mesh2d_face_y'] = ['mesh2d_face_y','FlowElem_yzw','mesh2d_agg_face_y','',''] # y-coordinate of faces
     
-    varnames_list['mesh2d_edge_x'] = ['mesh2d_edge_x','','',''] # x-coordinate of velocity-points
-    varnames_list['mesh2d_edge_y'] = ['mesh2d_edge_y','','',''] # y-coordinate of velocity-points
+    varnames_list['mesh2d_edge_x'] = ['mesh2d_edge_x','','','',''] # x-coordinate of velocity-points
+    varnames_list['mesh2d_edge_y'] = ['mesh2d_edge_y','','','',''] # y-coordinate of velocity-points
     
-    varnames_list['mesh2d_edge_nodes'] = ['mesh2d_edge_nodes','NetLink','',''] # 'link between two netnodes' / 'Mapping from every edge to the two nodes that it connects'
-    varnames_list['mesh2d_face_nodes'] = ['mesh2d_face_nodes','NetElemNode','mesh2d_agg_face_nodes',''] # 
+    varnames_list['mesh2d_edge_nodes'] = ['mesh2d_edge_nodes','NetLink','','',''] # 'link between two netnodes' / 'Mapping from every edge to the two nodes that it connects'
+    varnames_list['mesh2d_face_nodes'] = ['mesh2d_face_nodes','NetElemNode','mesh2d_agg_face_nodes','',''] # 
     
-    varnames_list['mesh2d_face_x_bnd'] = ['mesh2d_face_x_bnd','FlowElemContour_x','mesh2d_agg_face_x_bnd',''] # x-coordinates of flow element contours
-    varnames_list['mesh2d_face_y_bnd'] = ['mesh2d_face_y_bnd','FlowElemContour_y','mesh2d_agg_face_y_bnd',''] # y-coordinates of flow element contours
+    varnames_list['mesh2d_face_x_bnd'] = ['mesh2d_face_x_bnd','FlowElemContour_x','mesh2d_agg_face_x_bnd','',''] # x-coordinates of flow element contours
+    varnames_list['mesh2d_face_y_bnd'] = ['mesh2d_face_y_bnd','FlowElemContour_y','mesh2d_agg_face_y_bnd','',''] # y-coordinates of flow element contours
     
-    varnames_list['mesh2d_flowelem_domain'] = ['mesh2d_flowelem_domain','FlowElemDomain','',''] # flow element domain
-    varnames_list['mesh2d_flowelem_bl'] = ['mesh2d_flowelem_bl','FlowElem_bl','',''] # bed level
-    varnames_list['mesh2d_flowelem_ba'] = ['mesh2d_flowelem_ba','FlowElem_bac','',''] # area (m2) of cell faces
+    varnames_list['mesh2d_flowelem_domain'] = ['mesh2d_flowelem_domain','FlowElemDomain','','',''] # flow element domain
+    varnames_list['mesh2d_flowelem_bl'] = ['mesh2d_flowelem_bl','FlowElem_bl','','',''] # bed level
+    varnames_list['mesh2d_flowelem_ba'] = ['mesh2d_flowelem_ba','FlowElem_bac','','',''] # area (m2) of cell faces
     
-    varnames_list['mesh2d_layer_z'] = ['mesh2d_layer_z','LayCoord_cc','',''] # 
+    varnames_list['mesh2d_layer_z'] = ['mesh2d_layer_z','LayCoord_cc','','',''] # 
     
     #non-grid variables necessary for layer calculation for intersection/cross section) funtion
-    varnames_list['mesh2d_s1'] = ['mesh2d_s1','','',''] # water level
-    varnames_list['mesh2d_flowelem_bl'] = ['mesh2d_flowelem_bl','','',''] # bed level
+    varnames_list['mesh2d_s1'] = ['mesh2d_s1','','','',''] # water level
+    varnames_list['mesh2d_flowelem_bl'] = ['mesh2d_flowelem_bl','','','',''] # bed level
 
     #varnames_list['mesh2d_ucx'] = ['mesh2d_ucx','ucx','',''] # 
     #varnames_list['mesh2d_ucy'] = ['mesh2d_ucy','ucy','',''] # 
@@ -103,11 +103,11 @@ def get_varname_fromnc(data_nc,varname_requested):
     
     ### DIMENSION names used within different versions of Delft3D-Flexible Mesh
     #dimnames_list = pd.DataFrame()
-    varnames_list['nmesh2d_node'] = ['nmesh2d_node','mesh2d_nNodes','nNetNode',''] # number of nodes
-    varnames_list['nmesh2d_face'] = ['nmesh2d_face','mesh2d_nFaces','nNetElem','nFlowElem'] # number of faces
-    varnames_list['nmesh2d_edge'] = ['nmesh2d_edge','nNetLink','',''] # number of velocity-points
+    varnames_list['nmesh2d_node'] = ['nmesh2d_node','mesh2d_nNodes','nNetNode','',''] # number of nodes
+    varnames_list['nmesh2d_face'] = ['nmesh2d_face','mesh2d_nFaces','nNetElem','nFlowElem',''] # number of faces
+    varnames_list['nmesh2d_edge'] = ['nmesh2d_edge','nNetLink','','',''] # number of velocity-points
     
-    varnames_list['nmesh2d_layer'] = ['nmesh2d_layer','mesh2d_nLayers','laydim','nmesh2d_layer_dlwq'] # layer
+    varnames_list['nmesh2d_layer'] = ['nmesh2d_layer','mesh2d_nLayers','laydim','nmesh2d_layer_dlwq','LAYER'] # layer
     
     #look for correct pd column
     pdcol_bool = varnames_list.eq(varname_requested).any()
