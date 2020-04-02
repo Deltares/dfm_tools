@@ -17,21 +17,22 @@ from dfm_tools.testutils import getmakeoutputdir
 @pytest.mark.acceptance
 def test_workinprogress():
     ## WARNING: THIS TEST IS NOT YET FINISHED, WILL BE IMPROVED AND LINKED TO INTERNAL FUNCTIONS ASAP
+    dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
+    """
+    dir_output = './test_output'
+    """
+    
     import os
     import matplotlib.pyplot as plt
     import numpy as np
-    from netCDF4 import Dataset
     plt.close('all')
     
     from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
     from dfm_tools.get_nc_helpers import get_ncvardimlist, get_hisstationlist#, get_varname_fromnc
     
-    dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
-    #dir_output = './test_output'
 
     # test Grevelingen (integrated example, where all below should move towards)
     file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc')
-    data_nc = Dataset(file_nc)
     ugrid = get_netdata(file_nc=file_nc)
     fig, ax = plt.subplots()
     plot_netmapdata(ugrid.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
@@ -40,25 +41,24 @@ def test_workinprogress():
     #hirlam
     file_nc = r'p:\1204257-dcsmzuno\2014\data\meteo\HIRLAM72_2018\h72_201803.nc'
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
-    data_nc = Dataset(file_nc)
     
-    airp = data_nc.variables['air_pressure_fixed_height'][0,:,:]
-    mesh2d_node_x = data_nc.variables['x'][:]
-    mesh2d_node_y = data_nc.variables['y'][:]
+    mesh2d_node_x = get_ncmodeldata(file_nc=file_nc, varname='x')
+    mesh2d_node_y = get_ncmodeldata(file_nc=file_nc, varname='y')
+    data_v = get_ncmodeldata(file_nc=file_nc, varname='northward_wind',timestep=0)[0,:,:]
+    data_u = get_ncmodeldata(file_nc=file_nc, varname='eastward_wind',timestep=0)[0,:,:]
+    #airp = get_ncmodeldata(file_nc=file_nc, varname='air_pressure_fixed_height',timestep=0)[0,:,:]
+    magn = np.sqrt(data_u**2 + data_v**2)
     
-    fig, ax = plt.subplots()
-    ax.scatter(mesh2d_node_x,mesh2d_node_y,0.1,c='b')
-    plt.savefig(os.path.join(dir_output,'hirlam_scatter'))
-
     fig, ax = plt.subplots()
     ax.plot(mesh2d_node_x,mesh2d_node_y,'-b',linewidth=0.2)
     ax.plot(mesh2d_node_x.T,mesh2d_node_y.T,'-b',linewidth=0.2)
     plt.savefig(os.path.join(dir_output,'hirlam_mesh'))
 
+    
     fig, ax = plt.subplots()
-    ax.pcolor(mesh2d_node_x,mesh2d_node_y,airp)
+    ax.pcolor(mesh2d_node_x,mesh2d_node_y,magn)
     #plt.pcolor(mesh2d_node_x,mesh2d_node_y,airp,linewidth=0.5)
-    plt.savefig(os.path.join(dir_output,'hirlam_airp_pcolor'))
+    plt.savefig(os.path.join(dir_output,'hirlam_magn_pcolor'))
     
 
     #ERA5
