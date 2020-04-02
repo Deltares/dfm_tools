@@ -215,6 +215,9 @@ def test_trygetondepth():
 def test_delft3D_netcdf():
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
     """
+    to get delft3D to write netCDF output instead of .dat files, add these lines to your mdf:
+        FlNcdf= #maphis#
+        ncFormat=4
     dir_output = './test_output'
     """
     
@@ -317,8 +320,14 @@ def test_delft3D_netcdf_convertedwith_getdata():
         module load simona
         cd /p/1220688-lake-kivu/3_modelling/1_FLOW/7_heatfluxinhis/063
         getdata.pl -f trim-thiery_002_coarse.dat -v S1,U1,V1,ALFAS,QEVA -o netcdf
+        http://simona.deltares.nl/release/doc/usedoc/getdata/getdata.pdf
+        
+    get the netcdf files via putty with:
+        module load simona
         cd ./D3D_3D_sigma_curved_bend
         getdata.pl -f trim-cb2-sal-added-3d.dat -v S1,U1,V1,ALFAS -o netcdf
+        http://simona.deltares.nl/release/doc/usedoc/getdata/getdata.pdf
+
     dir_output = './test_output'
     """
     
@@ -416,12 +425,21 @@ def test_waqua_netcdf_convertedwith_getdata():
         cd /p/1204257-dcsmzuno/2019/DCSMv6/A01
         getdata.pl -f SDS-A01 -v SEP,VELU,VELV -o netcdf -d SDS-A01_map
         getdata.pl -f SDS-A01 -v ZWL,ZCURU,ZCURV,NAMWL,NAMC -o netcdf -d SDS-A01_his
+        http://simona.deltares.nl/release/doc/usedoc/getdata/getdata.pdf
         
     get the netcdf files via putty with:
         module load simona
         cd /p/archivedprojects/1230049-zoutlastbeperking/Gaten_langsdam/Simulaties/OSR-model_GatenLangsdam/berekeningen/run7
         getdata.pl -f SDS-nsctri -v SEP,VELU,VELV -o netcdf -d SDS-nsctri_map
         getdata.pl -f SDS-nsctri -v ZWL,ZCURU,ZCURV,NAMWL,NAMC -o netcdf -d SDS-nsctri_his
+        http://simona.deltares.nl/release/doc/usedoc/getdata/getdata.pdf
+
+    get the netcdf files via putty with:
+        module load simona
+        cd /p/11205258-006-kpp2020_rmm-g6/C_Work/07_WAQUAresultaten/j15
+        getdata.pl -f SDS-riv_tba -v SEP,VELU,VELV -o netcdf -d SDS-riv_tba_map
+        getdata.pl -f SDS-riv_tba -v ZWL,ZCURU,ZCURV,NAMWL,NAMC -o netcdf -d SDS-riv_tba_his
+        http://simona.deltares.nl/release/doc/usedoc/getdata/getdata.pdf
         
     dir_output = './test_output'
     """
@@ -540,5 +558,62 @@ def test_waqua_netcdf_convertedwith_getdata():
     
     
     
+    #MAP RMM
+    file_nc = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\07_WAQUAresultaten\j15\SDS-riv_tba_map.nc'
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    
+    data_nc_x = get_ncmodeldata(file_nc=file_nc, varname='grid_x')
+    data_nc_y = get_ncmodeldata(file_nc=file_nc, varname='grid_y')
+    data_nc_xcen = np.mean(data_nc_x, axis=2)
+    data_nc_ycen = np.mean(data_nc_y, axis=2)
+    
+    timestep = 1
+    data_nc_SEP = get_ncmodeldata(file_nc=file_nc, varname='SEP',timestep=timestep)
+    data_nc_VELU = get_ncmodeldata(file_nc=file_nc, varname='VELU',timestep=timestep, layer=0)
+    data_nc_VELV = get_ncmodeldata(file_nc=file_nc, varname='VELV',timestep=timestep, layer=0)
+    
+    fig, ax = plt.subplots(figsize=(16,7))
+    pc = ax.pcolor(data_nc_xcen,data_nc_ycen,data_nc_SEP[0,:,:],cmap='jet')
+    pc.set_clim([0,3])
+    cbar = fig.colorbar(pc, ax=ax)
+    cbar.set_label('%s (%s)'%(data_nc_SEP.var_varname, data_nc_SEP.var_object.units))
+    ax.set_title('t=%d (%s)'%(timestep, data_nc_SEP.var_times.loc[timestep]))
+    ax.set_aspect('equal')
+    fig.tight_layout()
+    plt.savefig(os.path.join(dir_output,'waqua_RMM_map_wl'))
+
+    fig, ax = plt.subplots()
+    vel_magn = np.sqrt(data_nc_VELU**2 + data_nc_VELV**2)
+    pc = ax.pcolor(data_nc_xcen,data_nc_ycen,vel_magn[0,:,:,0],cmap='jet')
+    pc.set_clim([0,1])
+    cbar = fig.colorbar(pc, ax=ax)
+    cbar.set_label('velocity magnitude (%s)'%(data_nc_VELU.var_object.units))
+    ax.set_title('t=%d (%s)'%(timestep, data_nc_VELU.var_times.loc[timestep]))
+    ax.set_aspect('equal')
+    thinning = 10
+    ax.quiver(data_nc_xcen[::thinning,::thinning], data_nc_ycen[::thinning,::thinning], data_nc_VELU[0,::thinning,::thinning,0], data_nc_VELV[0,::thinning,::thinning,0], 
+              color='w',scale=10)#,width=0.005)#, edgecolor='face', cmap='jet')
+    ax.set_xlim([61000, 72000])
+    ax.set_ylim([438000, 446000])
+    fig.tight_layout()
+    plt.savefig(os.path.join(dir_output,'waqua_RMM_map_vel'))
+    
+    
+    #HIS RMM
+    file_nc = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\07_WAQUAresultaten\j15\SDS-riv_tba_his.nc'
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    data_nc_NAMWL = get_hisstationlist(file_nc=file_nc, varname_stat='NAMWL')
+    #data_nc_NAMC = get_hisstationlist(file_nc=file_nc, varname_stat='NAMC')
+    data_nc_ZWL = get_ncmodeldata(file_nc=file_nc, varname='ZWL',timestep='all',station='all')
+    #data_nc_ZCURU = get_ncmodeldata(file_nc=file_nc, varname='ZCURU',timestep='all',station='all',layer='all')
+    #data_nc_ZCURV = get_ncmodeldata(file_nc=file_nc, varname='ZCURV',timestep='all',station='all',layer='all')
+
+    fig, ax = plt.subplots(figsize=(16,7))
+    for iS in range(10):
+        ax.plot(data_nc_ZWL.var_times,data_nc_ZWL[:,iS],label=data_nc_NAMWL.iloc[iS], linewidth=1)
+    ax.legend()
+    ax.set_ylabel('%s (%s)'%(data_nc_ZWL.var_varname, data_nc_ZWL.var_object.units))
+    ax.set_xlim([data_nc_ZWL.var_times[0],data_nc_ZWL.var_times[0]+dt.timedelta(days=14)])
+    plt.savefig(os.path.join(dir_output,'waqua_RMM_his_ZWL'))
 
     
