@@ -91,16 +91,15 @@ TODO wishlist
 	- WARNING: part of the z interfaces/center data in dflowfm hisfile is currently wrong, check your figures carefully
 	- layer argument now has to be provided when retrieving zcoordinate_c (centers) from hisfile, but not when retrieving zcoordinate_w (interfaces), align this.
 	- check center/corner correctness, pcolormesh does not completely correspond with contours
-- convert data to kml (google earth) or shp
+- IO:
+	- convert data to kml (google earth) or shp?
+	- add tekal write functions
+	- expand Delft3D read and plot options
 - add variable units to plots in test bench (``plt.title('%s (%s)'%(data_fromnc.var_varname, data_fromnc.var_object.units))``)
-- add tekal write functions
-- expand Delft3D read and plot options
 - add satellite basemap (cartopy/basemap):
 	- get latlon projection for axis
 	- both packages can only be installed via conda? so not possible as a pip dependency, add other test?
 	- test install them and decide on which package
-- expand general netcdf read and plot options (Sobek, ERA5, hirlam, SFINCS)
-- raise understandable error when no mesh2d_edge_x var in netcdf, instead of keyerror none (e.g. with get_netdata on hirlam files)
 - dimn_time is now actually variable name which does not work if time dimname is not the same as time varname
 - make merc keyword always optional by testing for minmax all vertsx between -181 and 361 and minmax all vertsy (lat) between -91 and 91 (+range for overlap for e.g. gtsm model)
 - optimize get_ncmodeldata for layerdepths/bedlevel/waterlevel (second intersect function), only retrieve necessary information for crossection
@@ -109,15 +108,10 @@ TODO wishlist
 	- to optimize intersect function when retrieving bed level and water level (do that with len(firstlinepart) optional keyword)
 	- to retrieve other mapdata data faster
 - add polygon ginput function (click in plot) (already partly exists in intersect/slice testscript)
-- pyugrid (ghostcells en mapmergen worden afgehandeld?), voorbeelden in ieder geval als inspiratie voor plotopties):
-	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/COMT_example.ipynb
-	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/Delft3D%20examples.ipynb
-	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/connectivity_example.ipynb
-	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/plotting_example.ipynb
-	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/vector_plotting_example.ipynb
-	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/applications/delft3dfm/dflowfmpyplot/pyd3dfm/streamline_ug.py (streamline plotting for structured grids, but many settings)
 - existing dfm model setup functions: https://github.com/openearth/delft3dfmpy (arthur van dam)	
 - make grid reading more flexible:
+	- raise understandable error when no mesh2d_edge_x var in netcdf, instead of keyerror none (e.g. with get_netdata on hirlam files)
+	- if no ugrid in netfile, try to read provided xy variables and make meshgrid or convert cen2cor or cor2cen if necessary (how to test this?)
 	- improve plots for structured grid (CMEMS, ERA5, hirlam, grd etc)
 	- https://github.com/NOAA-ORR-ERD/gridded
 	- tests.test_get_nc.test_gethirlam() is eerste opzet voor hirlam/ERA5 data, werkt heel anders dan D-flow FM
@@ -126,6 +120,13 @@ TODO wishlist
 	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/OpenEarthTools/openearthtools/io/dflowfm/patch2tri.py
 	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/OpenEarthTools/openearthtools/io/netcdf
 	- see test_workinprogress.py
+- pyugrid (ghostcells en mapmergen worden afgehandeld?), voorbeelden in ieder geval als inspiratie voor plotopties):
+	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/COMT_example.ipynb
+	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/Delft3D%20examples.ipynb
+	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/connectivity_example.ipynb
+	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/plotting_example.ipynb
+	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/vector_plotting_example.ipynb
+	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/applications/delft3dfm/dflowfmpyplot/pyd3dfm/streamline_ug.py (streamline plotting for structured grids, but many settings)
 
 TODO non-content
 --------
