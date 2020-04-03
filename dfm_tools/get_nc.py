@@ -168,8 +168,10 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     
     #check faces existence, variable could have ghost cells if partitioned
     dimn_faces = get_varname_fromnc(data_nc,'mesh2d_nFaces')
+    dimn_nodes = get_varname_fromnc(data_nc,'mesh2d_nNodes')
+    dimn_edges = get_varname_fromnc(data_nc,'nmesh2d_edge')
     dimn_nFlowElem = get_varname_fromnc(data_nc,'nFlowElem')
-    #dimn_nodes = get_varname_fromnc(data_nc,'mesh2d_nNodes')
+    dimn_nFlowLink = get_varname_fromnc(data_nc,'nFlowLink')
     
     file_ncs = get_ncfilelist(file_nc, multipart)
     
@@ -183,12 +185,16 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         values_selid = []
         values_dimlens = [] #list(nc_values.shape)
         for iD, nc_values_dimsel in enumerate(nc_varobject.dimensions):
-            if nc_values_dimsel == dimn_faces or nc_values_dimsel == dimn_nFlowElem: # domain-like variable is present, so there are multiple domains
+            if nc_values_dimsel in [dimn_faces, dimn_nFlowElem]: # domain-like variable is present, so there are multiple domains
                 nonghost_ids = ghostcell_filter(file_nc_sel)
                 if nonghost_ids is None:
                     values_selid.append(range(nc_varobject.shape[iD]))
                 else:
                     values_selid.append(nonghost_ids)
+                values_dimlens.append(0) #because concatenate axis
+                concat_axis = iD
+            elif nc_values_dimsel in [dimn_nodes, dimn_edges, dimn_nFlowLink]: # domain-like variable is present, so there are multiple domains
+                values_selid.append(range(nc_varobject.shape[iD]))
                 values_dimlens.append(0) #because concatenate axis
                 concat_axis = iD
             elif nc_values_dimsel in dimname_stat_validvals:

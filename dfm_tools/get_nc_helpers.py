@@ -111,8 +111,9 @@ def get_varname_fromnc(data_nc,varname_requested):
     #dimnames_list = pd.DataFrame()
     varnames_list['nmesh2d_node'] = ['nmesh2d_node','mesh2d_nNodes','nNetNode','','',''] # number of nodes
     varnames_list['nmesh2d_face'] = ['nmesh2d_face','mesh2d_nFaces','nNetElem','','',''] # number of faces
-    varnames_list['nFlowElem'] = ['nFlowElem','','','','',''] # number of flow elements
     varnames_list['nmesh2d_edge'] = ['nmesh2d_edge','nNetLink','','','',''] # number of velocity-points
+    varnames_list['nFlowElem'] = ['nFlowElem','','','','',''] # number of flow elements
+    varnames_list['nFlowLink'] = ['nFlowLink','','','','',''] # number of flow elements
     
     varnames_list['nmesh2d_layer'] = ['nmesh2d_layer','mesh2d_nLayers','laydim','nmesh2d_layer_dlwq','LAYER','KMAXOUT_RESTR'] # layer
     
