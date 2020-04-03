@@ -509,7 +509,8 @@ def EXCLUDE_test_delft3D_netcdf_convertedwith_getdata():
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
     
     data_nc_ZWL = get_ncmodeldata(file_nc=file_nc, varname='his-series:ZWL',timestep='all')#,station='all')
-    #layers and stations are not yet taken care of properly (stations are incorrectly parsed so var/dim is commented in validvals list to avoid crash, 'Layers' dimension is not yet added to translation table)
+    #stations are not yet taken care of properly (var 'his-const:NAMST' and dim 'Station' should be added to validvals list to avoid crash, but stations are incorrectly parsed so this will cause a crash
+    #layers are not yet taken care of properly ('Layers' dimension is not yet added to translation table)
     #data_nc_NAMST = get_ncmodeldata(file_nc=file_nc, varname='his-const:NAMST') #this should not work
     #data_nc_NAMST = get_hisstationlist(file_nc=file_nc, varname_stat='his-const:NAMST')
     #data_nc_ZCURU = get_ncmodeldata(file_nc=file_nc, varname='his-series:ZCURU',timestep='all')#,layer='all',station='all')
