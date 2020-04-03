@@ -399,7 +399,7 @@ def test_delft3D_netcdf():
     
  
 
-#WARNING: this is excluded from the testbench, since Delft3D models that were converted with getdata.pl sometimes give corrupt variables (see comments in code for details)
+#WARNING: this is excluded from the testbench, since Delft3D models that were converted with getdata.pl sometimes give corrupt variables (see comments in code for details). NEFIS conversion is not fully up to date in getdata.pl, whereas WAQUA conversion is
 def EXCLUDE_test_delft3D_netcdf_convertedwith_getdata():
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
     """
