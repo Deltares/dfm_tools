@@ -91,10 +91,14 @@ TODO wishlist
 	- WARNING: part of the z interfaces/center data in dflowfm hisfile is currently wrong, check your figures carefully
 	- layer argument now has to be provided when retrieving zcoordinate_c (centers) from hisfile, but not when retrieving zcoordinate_w (interfaces), align this.
 	- check center/corner correctness, pcolormesh does not completely correspond with contours
-- IO:
+- io-functions:
 	- convert data to kml (google earth) or shp?
 	- add tekal write functions
-	- expand Delft3D read and plot options
+- add tidal analysis:
+	- https://github.com/sam-cox/pytides
+	- https://github.com/pwcazenave/tappy
+	- https://pypi.org/project/UTide/
+	- https://github.com/moflaher/ttide_py
 - add variable units to plots in test bench (``plt.title('%s (%s)'%(data_fromnc.var_varname, data_fromnc.var_object.units))``)
 - add satellite basemap (cartopy/basemap):
 	- get latlon projection for axis
