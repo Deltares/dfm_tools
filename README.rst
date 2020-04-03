@@ -96,6 +96,8 @@ TODO wishlist
 	- add tekal write functions
 - add tidal analysis:
 	- https://github.com/sam-cox/pytides
+	- https://pypi.org/project/pytides/
+	- https://pypi.org/project/tidepy/
 	- https://github.com/pwcazenave/tappy
 	- https://pypi.org/project/UTide/
 	- https://github.com/moflaher/ttide_py
