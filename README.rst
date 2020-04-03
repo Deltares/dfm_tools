@@ -28,22 +28,30 @@ dfm_tools are Python post-processing tools for Delft3D FM model outputfiles (net
 
 Features
 --------
-- read net data
-- read map and his data
-- plot net data with map data
-- select all data based on variable, timestep/datetime, layer, station (not yet on depth)
-- plotting z,t-plots (see wishlist section for inaccuracies)
-- merge partitions and delete ghostcells automatically
-- take over masks in original data
-- selection/plotting by polyline/crossection (slicing the ugrid data)
-- pytest testbank
-- examples of unformatted plots created by testbank scripts in tests folder: n:\\Deltabox\\Bulletin\\veenstra\\info dfm_tools
+- supported formats:
+	- D-Flow FM output data (net, map, his, fou, rst files)
+	- almost any other netCDF (ERA5, hirlam, SFINCS map, SFINCS his, Sobek observation)
+	- Delft3D netCDF output files (you can get netcdf output with keywords in your mdf)
+	- converted Delft3D and waqua data (converted to netCDF with getdata.pl) (Delft3D conversion with getdata.pl is not flawless, preferably rerun with netCDF as outputformat instead)
+- data handling:
+	- select all data based on variable, timestep/datetime, layer, station (not yet on depth)
+	- get feedback about available variables, timesteps/datetimes, layers, stations when you retrieve the wrong ones
+	- retrieve lists of variables, timesteps/datetimes, stations, cross sections, general structures
+	- selection/plotting by polyline/crossection (slicing the ugrid data)
+	- merge partitions and delete ghostcells automatically
+	- take over masks in original data
+- plotting:
+	- plot flexible mesh net/map variables as polycollections/patches
+	- plot regular grid variables with pcolor (work in progress)
+	- plotting z,t-plots (see wishlist section for inaccuracies)
+	- plot anything you like and how you like it
+- other io functions:
+	- tekal (.tek, .pli, .pliz, .pol, .ldb) data
+	- read Delft3D files (.grd, .dep)
+	- read/write mdu file
+- pytest testbank (folder 'tests' on github)
+- examples of unformatted plots created by testbank in tests folder: n:\\Deltabox\\Bulletin\\veenstra\\info dfm_tools
 - please check the TODO sections for known inaccuracies or features that are not yet available
-- tekal (.tek, .pli, .pliz, .pol, .ldb) data
-- read Delft3D files (.grd, .dep), although grid handling is still work in progress
-- read almost any netcdf (ERA5, hirlam, SFINCS map, SFINCS his, Sobek observation), although grid handling and plotting is still work in progress
-- read Delft3D netCDF output files (you can get netcdf output with keywords in your mdf)
-- read converted Delft3D and waqua data (converted to netCDF with getdata.pl) (Delft3D conversion with getdata.pl is not flawless, preferably rerun with netCDF as outputformat instead)
 
 How to work with dfm_tools
 --------
