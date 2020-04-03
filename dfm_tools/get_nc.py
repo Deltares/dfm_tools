@@ -150,13 +150,13 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
             if type(station[0]) in listtype_int:
                 station_ids = station
             elif type(station[0]) in listtype_str:
-                station_ids = get_stationid_fromstationlist(station_name_list_pd, station)
+                station_ids = get_stationid_fromstationlist(station_name_list_pd, station, varname_stat_validvals[dimname_stat_validvals_id])
             else:
                 raise Exception('ERROR1: station variable type not anticipated (%s), (list/range/ndarray of) strings or ints are accepted (or "all")'%(type(station)))
         elif type(station) in listtype_int:
             station_ids = [station]
         elif type(station) in listtype_str:
-            station_ids = get_stationid_fromstationlist(station_name_list_pd, [station])
+            station_ids = get_stationid_fromstationlist(station_name_list_pd, [station], varname_stat_validvals[dimname_stat_validvals_id])
         else:
             raise Exception('ERROR2: station variable type not anticipated (%s), (list/range/ndarray of) strings or ints are accepted (or "all")'%(type(station)))
         #check if requested times are within range of netcdf
@@ -168,21 +168,24 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     
     #check faces existence, variable could have ghost cells if partitioned
     dimn_faces = get_varname_fromnc(data_nc,'mesh2d_nFaces')
-
-    file_ncs = get_ncfilelist(file_nc, multipart)
+    dimn_nodes = get_varname_fromnc(data_nc,'mesh2d_nNodes')
+    dimn_edges = get_varname_fromnc(data_nc,'nmesh2d_edge')
+    dimn_nFlowElem = get_varname_fromnc(data_nc,'nFlowElem')
+    dimn_nFlowLink = get_varname_fromnc(data_nc,'nFlowLink')
     
+    file_ncs = get_ncfilelist(file_nc, multipart)
     
     for iF, file_nc_sel in enumerate(file_ncs):
         if len(file_ncs) > 1:
             print('processing mapdata from domain %04d of %04d'%(iF, len(file_ncs)-1))
         
         nc_varobject = get_ncvarobject(file_nc_sel, varname)
-        
-        concat_axis = 0 #default value, overwritten by faces/stations dimension
+
+        concat_axis = 0 #default value, overwritten by faces dimension
         values_selid = []
         values_dimlens = [] #list(nc_values.shape)
         for iD, nc_values_dimsel in enumerate(nc_varobject.dimensions):
-            if nc_values_dimsel == dimn_faces: # domain variable is present, so there are multiple domains
+            if nc_values_dimsel in [dimn_faces, dimn_nFlowElem]: # domain-like variable is present, so there are multiple domains
                 nonghost_ids = ghostcell_filter(file_nc_sel)
                 if nonghost_ids is None:
                     values_selid.append(range(nc_varobject.shape[iD]))
@@ -190,10 +193,12 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
                     values_selid.append(nonghost_ids)
                 values_dimlens.append(0) #because concatenate axis
                 concat_axis = iD
+            elif nc_values_dimsel in [dimn_nodes, dimn_edges, dimn_nFlowLink]: # domain-like variable is present, so there are multiple domains
+                values_selid.append(range(nc_varobject.shape[iD]))
+                values_dimlens.append(0) #because concatenate axis
+                concat_axis = iD
             elif nc_values_dimsel in dimname_stat_validvals:
                 values_selid.append(station_ids)
-                #values_dimlens.append(0) #because concatenate axis
-                #concat_axis = iD
                 values_dimlens.append(len(station_ids))
             elif nc_values_dimsel == dimn_time:
                 values_selid.append(time_ids)
@@ -205,7 +210,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
                 warnings.warn('WARNING: not a predefined dimension name')
                 values_selid.append(range(nc_varobject.shape[iD]))
                 values_dimlens.append(nc_varobject.shape[iD])
-        
+
         if len(file_ncs) > 1:
             #initialize array
             if iF == 0:

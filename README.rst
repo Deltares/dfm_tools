@@ -28,22 +28,30 @@ dfm_tools are Python post-processing tools for Delft3D FM model outputfiles (net
 
 Features
 --------
-- read net data
-- read map and his data
-- plot net data with map data
-- select all data based on variable, timestep/datetime, layer, station (not yet on depth)
-- plotting z,t-plots (see wishlist section for inaccuracies)
-- merge partitions and delete ghostcells automatically
-- take over masks in original data
-- selection/plotting by polyline/crossection (slicing the ugrid data)
-- pytest testbank
-- examples of unformatted plots created by testbank scripts in tests folder: n:\\Deltabox\\Bulletin\\veenstra\\info dfm_tools
+- supported formats:
+	- D-Flow FM output data (net, map, his, fou, rst files)
+	- almost any other netCDF (ERA5, hirlam, SFINCS map, SFINCS his, Sobek observation)
+	- Delft3D netCDF output files (you can get netcdf output with keywords in your mdf)
+	- converted Delft3D and waqua data (converted to netCDF with getdata.pl) (Delft3D conversion with getdata.pl is not flawless, preferably rerun with netCDF as outputformat instead)
+- data handling:
+	- select all data based on variable, timestep/datetime, layer, station (not yet on depth)
+	- get feedback about available variables, timesteps/datetimes, layers, stations when you retrieve the wrong ones
+	- retrieve lists of variables, timesteps/datetimes, stations, cross sections, general structures
+	- selection/plotting by polyline/crossection (slicing the ugrid data)
+	- merge partitions and delete ghostcells automatically
+	- take over masks in original data
+- plotting:
+	- plot flexible mesh net/map variables as polycollections/patches
+	- plot regular grid variables with pcolor (work in progress)
+	- plotting z,t-plots (see wishlist section for inaccuracies)
+	- plot anything you like and how you like it
+- other io functions:
+	- tekal (.tek, .pli, .pliz, .pol, .ldb) data
+	- read Delft3D files (.grd, .dep)
+	- read/write mdu file
+- pytest testbank (folder 'tests' on github)
+- examples of unformatted plots created by testbank in tests folder: n:\\Deltabox\\Bulletin\\veenstra\\info dfm_tools
 - please check the TODO sections for known inaccuracies or features that are not yet available
-- tekal (.tek, .pli, .pliz, .pol, .ldb) data
-- read Delft3D files (.grd, .dep), although grid handling is still work in progress
-- read almost any netcdf (ERA5, hirlam, SFINCS map, SFINCS his, Sobek observation), although grid handling and plotting is still work in progress
-- read Delft3D netCDF output files (you can get netcdf output with keywords in your mdf)
-- read converted Delft3D and waqua data (converted to netCDF with getdata.pl) (Delft3D conversion with getdata.pl is not flawless, preferably rerun with netCDF as outputformat instead)
 
 How to work with dfm_tools
 --------
@@ -70,6 +78,7 @@ Known bugs
 	- reproduce: ``python -c "import shapely.geometry"`` should give the same error, while ``import shapely`` works without error
 	- find geos.py in your environment (eg C:\\Users\\%USERNAME%\\AppData\\Local\\Continuum\\anaconda3\\envs\\dfm_tools_env\\Lib\\site-packages\\shapely\\geos.py)
 	- replace ``if os.getenv('CONDA_PREFIX', ''):`` with ``if 0:`` on line 143 (this disables this if statement and redirects to else)
+	- this issue is being resolved: https://github.com/Toblerity/Shapely/pull/843
 - report other bugs and feature requests at the developers or at https://github.com/openearth/dfm_tools/issues (include OS, dfm_tools version, reproduction steps)
 
 
@@ -79,6 +88,7 @@ TODO wishlist
 - select/check functions in dflowutil folder and merge with dfm_tools:
 	- including dflowutil_examples/test_dflowutil.py and other test scripts
 	- dflowutil contains e.g. read/write functions for general datafromats (tim, bc)
+	- same for MBay scripts
 - add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?):
 	- refer depth w.r.t. reference level, water level or bed level
 	- see test_workinprogress.py
@@ -91,10 +101,16 @@ TODO wishlist
 	- WARNING: part of the z interfaces/center data in dflowfm hisfile is currently wrong, check your figures carefully
 	- layer argument now has to be provided when retrieving zcoordinate_c (centers) from hisfile, but not when retrieving zcoordinate_w (interfaces), align this.
 	- check center/corner correctness, pcolormesh does not completely correspond with contours
-- IO:
+- io-functions:
 	- convert data to kml (google earth) or shp?
 	- add tekal write functions
-	- expand Delft3D read and plot options
+- add tidal analysis:
+	- https://github.com/sam-cox/pytides
+	- https://pypi.org/project/pytides/
+	- https://pypi.org/project/tidepy/
+	- https://github.com/pwcazenave/tappy
+	- https://pypi.org/project/UTide/
+	- https://github.com/moflaher/ttide_py
 - add variable units to plots in test bench (``plt.title('%s (%s)'%(data_fromnc.var_varname, data_fromnc.var_object.units))``)
 - add satellite basemap (cartopy/basemap):
 	- get latlon projection for axis
@@ -108,7 +124,10 @@ TODO wishlist
 	- to optimize intersect function when retrieving bed level and water level (do that with len(firstlinepart) optional keyword)
 	- to retrieve other mapdata data faster
 - add polygon ginput function (click in plot) (already partly exists in intersect/slice testscript)
-- existing dfm model setup functions: https://github.com/openearth/delft3dfmpy (arthur van dam)	
+- existing dfm model setup functions (and other useful stuff):
+	 - https://github.com/openearth/delft3dfmpy (arthur van dam)	
+	 - https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/applications/delft3dfm (fiat, sobek etc)
+	 - https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/applications/delft3dfm/dflowfmpyplot/pyd3dfm/streamline_ug.py (streamline plotting for structured grids, but many settings)
 - make grid reading more flexible:
 	- raise understandable error when no mesh2d_edge_x var in netcdf, instead of keyerror none (e.g. with get_netdata on hirlam files)
 	- if no ugrid in netfile, try to read provided xy variables and make meshgrid or convert cen2cor or cor2cen if necessary (how to test this?)
@@ -120,13 +139,12 @@ TODO wishlist
 	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/OpenEarthTools/openearthtools/io/dflowfm/patch2tri.py
 	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/OpenEarthTools/openearthtools/io/netcdf
 	- see test_workinprogress.py
-- pyugrid (ghostcells en mapmergen worden afgehandeld?), voorbeelden in ieder geval als inspiratie voor plotopties):
+- pyugrid (ghostcells en mapmergen worden afgehandeld? meer dan 4 nodes per cel?), voorbeelden in ieder geval als inspiratie voor plotopties):
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/COMT_example.ipynb
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/Delft3D%20examples.ipynb
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/connectivity_example.ipynb
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/plotting_example.ipynb
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/vector_plotting_example.ipynb
-	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/applications/delft3dfm/dflowfmpyplot/pyd3dfm/streamline_ug.py (streamline plotting for structured grids, but many settings)
 
 TODO non-content
 --------

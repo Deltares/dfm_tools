@@ -66,16 +66,19 @@ def test_getncmodeldata_datetime():
     
 
 
-@pytest.mark.systemtest
-def test_getplotfoudata():
-    
+@pytest.mark.acceptance
+def test_getplotfourstdata():
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
-    #dir_output = './test_output'
-
+    """
+    dir_output = './test_output'
+    """
+    
     import matplotlib.pyplot as plt
     plt.close('all')
     
     from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
+    from dfm_tools.get_nc_helpers import get_ncvardimlist
+    
     
     file_nc = os.path.join(dir_testinput,r'DFM_fou_RMM\RMM_dflowfm_0000_fou.nc')
 
@@ -88,8 +91,43 @@ def test_getplotfoudata():
     fig.colorbar(pc)
     ax.set_aspect('equal')
     plt.savefig(os.path.join(dir_output,os.path.basename(file_nc).replace('.','')))
-
+    
     assert ugrid.verts.shape[0] == data_fromfou.shape[0]
+    
+    
+    file_nc = os.path.join(dir_testinput,r'DFM_fou_RMM\RMM_dflowfm_0006_20131127_000000_rst.nc')
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    #ugrid = get_netdata(file_nc=file_nc) #does not work, so scatter has to be used
+    ugrid_FlowElem_xzw = get_ncmodeldata(file_nc=file_nc, varname='FlowElem_xzw', multipart=False)
+    ugrid_FlowElem_yzw = get_ncmodeldata(file_nc=file_nc, varname='FlowElem_yzw', multipart=False)
+    data_s1 = get_ncmodeldata(file_nc=file_nc, varname='s1',timestep=0, multipart=False)
+    
+    fig, ax = plt.subplots(figsize=(10,4))
+    pc = plt.scatter(ugrid_FlowElem_xzw,ugrid_FlowElem_yzw,1, data_s1[0,:],cmap='jet')
+    pc.set_clim([0,2])
+    fig.colorbar(pc)
+    ax.set_aspect('equal')
+    fig.tight_layout()
+    plt.savefig(os.path.join(dir_output,os.path.basename(file_nc).replace('.','')))
+    
+    #keep this test to check flow link handling by get_nc.py (does not have domains)
+    #ugrid_FlowLink_xu = get_ncmodeldata(file_nc=file_nc, varname='FlowLink_xu', multipart=False)
+    #ugrid_FlowLink_yu = get_ncmodeldata(file_nc=file_nc, varname='FlowLink_yu', multipart=False)
+    data_q1 = get_ncmodeldata(file_nc=file_nc, varname='q1',timestep=0, multipart=False)
+    
+    """
+    fig, ax = plt.subplots(figsize=(10,4))
+    pc = plt.scatter(ugrid_FlowLink_xu,ugrid_FlowLink_yu,1, data_q1[0,:],cmap='jet')
+    pc.set_clim(None)
+    fig.colorbar(pc)
+    ax.set_aspect('equal')
+    fig.tight_layout()
+    plt.savefig(os.path.join(dir_output,os.path.basename(file_nc).replace('.','')))
+    """
+
+    assert len(data_q1[0,:]) == 138756
+
+
 
 
 
