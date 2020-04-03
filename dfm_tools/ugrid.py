@@ -64,7 +64,7 @@ class UGrid:
         varn_mesh2d_node_x = get_varname_fromnc(data_nc,'mesh2d_node_x')
         varn_mesh2d_node_y = get_varname_fromnc(data_nc,'mesh2d_node_y')
         if varn_mesh2d_node_x is None or varn_mesh2d_node_y is None:
-            raise Exception('file does not contain variables varn_mesh2d_node_x and varn_mesh2d_node_y or similar, are you sure this is an unstructured grid')
+            raise Exception('file does not contain variables "mesh2d_node_x" and "mesh2d_node_y" or similar, are you sure this is an unstructured grid?')
         mesh2d_node_x = data_nc.variables[varn_mesh2d_node_x][:]
         mesh2d_node_y = data_nc.variables[varn_mesh2d_node_y][:]
         

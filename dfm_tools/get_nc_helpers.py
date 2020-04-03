@@ -46,10 +46,16 @@ def get_ncfilelist(file_nc, multipart=None):
         raise Exception('ERROR: file does not exist: %s'%(file_nc))
     
     if '_' in file_nc:
-        lastpart = file_nc.split('_')[-2]
         nctype = file_nc.split('_')[-1]
+        if nctype == 'rst.nc' and len(file_nc.split('_')) >= 4:
+            lastpart = file_nc.split('_')[-4]
+        else:
+            lastpart = file_nc.split('_')[-2]
         if file_nc.endswith('_%s'%(nctype)) and multipart != False and len(lastpart) == 4 and lastpart.isdigit(): #if part before '_map.nc' is eg '0000'
-            filename_start = re.compile('(.*)_([0-9]+)_%s'%(nctype)).search(file_nc).group(1)
+            if nctype == 'rst.nc' and len(file_nc.split('_')) >= 4:
+                filename_start = re.compile('(.*)_([0-9]+)_(.*)_(.*)_%s'%(nctype)).search(file_nc).group(1)
+            else:
+                filename_start = re.compile('(.*)_([0-9]+)_%s'%(nctype)).search(file_nc).group(1)
             #filename_number = re.compile('(.*)_([0-9]+)_map.nc').search(file_nc).group(2)
             #file_ncs = [file_nc.replace('_%s_map.nc','_%04d_map.nc'%(filename_number, domain_id)) for domain_id in range(ndomains)]
             file_ncs = glob.glob('%s*_%s'%(filename_start,nctype))
@@ -104,7 +110,8 @@ def get_varname_fromnc(data_nc,varname_requested):
     ### DIMENSION names used within different versions of Delft3D-Flexible Mesh
     #dimnames_list = pd.DataFrame()
     varnames_list['nmesh2d_node'] = ['nmesh2d_node','mesh2d_nNodes','nNetNode','','',''] # number of nodes
-    varnames_list['nmesh2d_face'] = ['nmesh2d_face','mesh2d_nFaces','nNetElem','nFlowElem','',''] # number of faces
+    varnames_list['nmesh2d_face'] = ['nmesh2d_face','mesh2d_nFaces','nNetElem','','',''] # number of faces
+    varnames_list['nFlowElem'] = ['nFlowElem','','','','',''] # number of flow elements
     varnames_list['nmesh2d_edge'] = ['nmesh2d_edge','nNetLink','','','',''] # number of velocity-points
     
     varnames_list['nmesh2d_layer'] = ['nmesh2d_layer','mesh2d_nLayers','laydim','nmesh2d_layer_dlwq','LAYER','KMAXOUT_RESTR'] # layer

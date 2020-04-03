@@ -168,9 +168,10 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     
     #check faces existence, variable could have ghost cells if partitioned
     dimn_faces = get_varname_fromnc(data_nc,'mesh2d_nFaces')
-
-    file_ncs = get_ncfilelist(file_nc, multipart)
+    dimn_nFlowElem = get_varname_fromnc(data_nc,'nFlowElem')
+    #dimn_nodes = get_varname_fromnc(data_nc,'mesh2d_nNodes')
     
+    file_ncs = get_ncfilelist(file_nc, multipart)
     
     for iF, file_nc_sel in enumerate(file_ncs):
         if len(file_ncs) > 1:
@@ -178,11 +179,19 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         
         nc_varobject = get_ncvarobject(file_nc_sel, varname)
         
-        concat_axis = 0 #default value, overwritten by faces/stations dimension
+        concat_axis = 0 #default value, overwritten by faces dimension
         values_selid = []
         values_dimlens = [] #list(nc_values.shape)
         for iD, nc_values_dimsel in enumerate(nc_varobject.dimensions):
-            if nc_values_dimsel == dimn_faces: # domain variable is present, so there are multiple domains
+            if nc_values_dimsel == dimn_faces: # domain-like variable is present, so there are multiple domains
+                nonghost_ids = ghostcell_filter(file_nc_sel)
+                if nonghost_ids is None:
+                    values_selid.append(range(nc_varobject.shape[iD]))
+                else:
+                    values_selid.append(nonghost_ids)
+                values_dimlens.append(0) #because concatenate axis
+                concat_axis = iD
+            if nc_values_dimsel == dimn_nFlowElem: # domain-like variable is present, so there are multiple domains
                 nonghost_ids = ghostcell_filter(file_nc_sel)
                 if nonghost_ids is None:
                     values_selid.append(range(nc_varobject.shape[iD]))
@@ -192,8 +201,6 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
                 concat_axis = iD
             elif nc_values_dimsel in dimname_stat_validvals:
                 values_selid.append(station_ids)
-                #values_dimlens.append(0) #because concatenate axis
-                #concat_axis = iD
                 values_dimlens.append(len(station_ids))
             elif nc_values_dimsel == dimn_time:
                 values_selid.append(time_ids)
@@ -205,7 +212,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
                 warnings.warn('WARNING: not a predefined dimension name')
                 values_selid.append(range(nc_varobject.shape[iD]))
                 values_dimlens.append(nc_varobject.shape[iD])
-        
+
         if len(file_ncs) > 1:
             #initialize array
             if iF == 0:
