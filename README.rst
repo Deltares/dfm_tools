@@ -88,6 +88,7 @@ TODO wishlist
 - select/check functions in dflowutil folder and merge with dfm_tools:
 	- including dflowutil_examples/test_dflowutil.py and other test scripts
 	- dflowutil contains e.g. read/write functions for general datafromats (tim, bc)
+	- same for MBay scripts
 - add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?):
 	- refer depth w.r.t. reference level, water level or bed level
 	- see test_workinprogress.py
