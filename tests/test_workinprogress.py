@@ -427,7 +427,7 @@ def EXCLUDE_test_delft3D_netcdf_convertedwith_getdata():
     plt.close('all')
     
     from dfm_tools.get_nc import get_ncmodeldata#, get_netdata, plot_netmapdata
-    from dfm_tools.get_nc_helpers import get_ncvardimlist, get_hisstationlist#, get_varname_fromnc
+    from dfm_tools.get_nc_helpers import get_ncvardimlist#, get_hisstationlist, get_varname_fromnc
     from dfm_tools.regulargrid import uva2xymagdeg
     
     #file_nc = r'p:\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\063\trim-thiery_002_coarse.nc' #werkt niet
