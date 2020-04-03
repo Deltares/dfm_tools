@@ -67,7 +67,7 @@ def test_getncmodeldata_datetime():
 
 
 @pytest.mark.systemtest
-def test_getplotfoudata():
+def test_getplotfourstdata():
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
     """
     dir_output = './test_output'
@@ -93,21 +93,6 @@ def test_getplotfoudata():
 
     assert ugrid.verts.shape[0] == data_fromfou.shape[0]
 
-
-
-
-
-def test_getplotrstdata():
-    dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
-    """
-    dir_output = './test_output'
-    """
-    
-    import matplotlib.pyplot as plt
-    plt.close('all')
-    
-    from dfm_tools.get_nc import get_ncmodeldata#, get_netdata, plot_netmapdata
-    #from dfm_tools.get_nc_helpers import ghostcell_fiter, get_ncvardimlist
     
     file_nc = os.path.join(dir_testinput,r'DFM_fou_RMM\RMM_dflowfm_0006_20131127_000000_rst.nc')
     #vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
@@ -123,6 +108,8 @@ def test_getplotrstdata():
     ax.set_aspect('equal')
     fig.tight_layout()
     plt.savefig(os.path.join(dir_output,os.path.basename(file_nc).replace('.','')))
+
+
 
 
 

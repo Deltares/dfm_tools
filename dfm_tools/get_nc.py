@@ -178,20 +178,12 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
             print('processing mapdata from domain %04d of %04d'%(iF, len(file_ncs)-1))
         
         nc_varobject = get_ncvarobject(file_nc_sel, varname)
-        
+
         concat_axis = 0 #default value, overwritten by faces dimension
         values_selid = []
         values_dimlens = [] #list(nc_values.shape)
         for iD, nc_values_dimsel in enumerate(nc_varobject.dimensions):
-            if nc_values_dimsel == dimn_faces: # domain-like variable is present, so there are multiple domains
-                nonghost_ids = ghostcell_filter(file_nc_sel)
-                if nonghost_ids is None:
-                    values_selid.append(range(nc_varobject.shape[iD]))
-                else:
-                    values_selid.append(nonghost_ids)
-                values_dimlens.append(0) #because concatenate axis
-                concat_axis = iD
-            if nc_values_dimsel == dimn_nFlowElem: # domain-like variable is present, so there are multiple domains
+            if nc_values_dimsel == dimn_faces or nc_values_dimsel == dimn_nFlowElem: # domain-like variable is present, so there are multiple domains
                 nonghost_ids = ghostcell_filter(file_nc_sel)
                 if nonghost_ids is None:
                     values_selid.append(range(nc_varobject.shape[iD]))
