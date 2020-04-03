@@ -473,7 +473,7 @@ def test_getxzcoordsonintersection_plotcrossect(file_nc):
     import datetime as dt
     
     from dfm_tools.get_nc import get_netdata, get_ncmodeldata, get_xzcoords_onintersection, plot_netmapdata
-    from dfm_tools.polygon import LineBuilder
+    from dfm_tools.io.polygon import LineBuilder
     
     
     if 'cb_3d_map' in file_nc:

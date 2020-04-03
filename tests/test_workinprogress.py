@@ -399,7 +399,7 @@ def test_delft3D_netcdf():
     
  
 
-#WARNING: this is excluded from the testbench, since Delft3D models that were converted with getdata.pl sometimes give corrupt variables (see comments in code for details)
+#WARNING: this is excluded from the testbench, since Delft3D models that were converted with getdata.pl sometimes give corrupt variables (see comments in code for details). NEFIS conversion is not fully up to date in getdata.pl, whereas WAQUA conversion is
 def EXCLUDE_test_delft3D_netcdf_convertedwith_getdata():
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
     """
@@ -427,7 +427,7 @@ def EXCLUDE_test_delft3D_netcdf_convertedwith_getdata():
     plt.close('all')
     
     from dfm_tools.get_nc import get_ncmodeldata#, get_netdata, plot_netmapdata
-    from dfm_tools.get_nc_helpers import get_ncvardimlist, get_hisstationlist#, get_varname_fromnc
+    from dfm_tools.get_nc_helpers import get_ncvardimlist#, get_hisstationlist, get_varname_fromnc
     from dfm_tools.regulargrid import uva2xymagdeg
     
     #file_nc = r'p:\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\063\trim-thiery_002_coarse.nc' #werkt niet
@@ -509,7 +509,8 @@ def EXCLUDE_test_delft3D_netcdf_convertedwith_getdata():
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
     
     data_nc_ZWL = get_ncmodeldata(file_nc=file_nc, varname='his-series:ZWL',timestep='all')#,station='all')
-    #layers and stations are not yet taken care of properly (stations are incorrectly parsed so var/dim is commented in validvals list to avoid crash, 'Layers' dimension is not yet added to translation table)
+    #stations are not yet taken care of properly (var 'his-const:NAMST' and dim 'Station' should be added to validvals list to avoid crash, but stations are incorrectly parsed so this will cause a crash
+    #layers are not yet taken care of properly ('Layers' dimension is not yet added to translation table)
     #data_nc_NAMST = get_ncmodeldata(file_nc=file_nc, varname='his-const:NAMST') #this should not work
     #data_nc_NAMST = get_hisstationlist(file_nc=file_nc, varname_stat='his-const:NAMST')
     #data_nc_ZCURU = get_ncmodeldata(file_nc=file_nc, varname='his-series:ZCURU',timestep='all')#,layer='all',station='all')

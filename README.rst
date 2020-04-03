@@ -43,7 +43,7 @@ Features
 - read Delft3D files (.grd, .dep), although grid handling is still work in progress
 - read almost any netcdf (ERA5, hirlam, SFINCS map, SFINCS his, Sobek observation), although grid handling and plotting is still work in progress
 - read Delft3D netCDF output files (you can get netcdf output with keywords in your mdf)
-- read converted Delft3D and waqua data (converted to netCDF with getdata.pl)
+- read converted Delft3D and waqua data (converted to netCDF with getdata.pl) (Delft3D conversion with getdata.pl is not flawless, preferably rerun with netCDF as outputformat instead)
 
 How to work with dfm_tools
 --------
