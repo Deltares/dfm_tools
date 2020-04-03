@@ -222,22 +222,22 @@ def test_delft3D_netcdf():
     """
     
     import numpy as np
+    import datetime as dt
     import matplotlib.pyplot as plt
     plt.close('all')
     
     from dfm_tools.get_nc import get_ncmodeldata#, get_netdata, plot_netmapdata
-    from dfm_tools.get_nc_helpers import get_ncvardimlist#, get_hisstationlist, get_varname_fromnc
+    from dfm_tools.get_nc_helpers import get_ncvardimlist, get_hisstationlist#, get_varname_fromnc
     from dfm_tools.regulargrid import uva2xymagdeg
 
     file_nc = r'p:\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\063_netcdf\trim-thiery_002_coarse.nc'
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
     
-    #data_nc_XZ = get_ncmodeldata(file_nc=file_nc, varname='X')
     data_nc_XZ = get_ncmodeldata(file_nc=file_nc, varname='XZ')
     data_nc_YZ = get_ncmodeldata(file_nc=file_nc, varname='YZ')
     data_nc_ALFAS = get_ncmodeldata(file_nc=file_nc, varname='ALFAS') #contains rotation of all cells wrt real world
-    data_nc_U1 = get_ncmodeldata(file_nc=file_nc, varname='U1',timestep='all')
-    data_nc_V1 = get_ncmodeldata(file_nc=file_nc, varname='V1',timestep='all')
+    data_nc_U1 = get_ncmodeldata(file_nc=file_nc, varname='U1',timestep='all',layer='all')
+    data_nc_V1 = get_ncmodeldata(file_nc=file_nc, varname='V1',timestep='all',layer='all')
     #data_nc_S1 = get_ncmodeldata(file_nc=file_nc, varname='S1',timestep='all')
     data_nc_QNET = get_ncmodeldata(file_nc=file_nc, varname='QNET',timestep='all')
     #data_nc_QEVA = get_ncmodeldata(file_nc=file_nc, varname='QEVA',timestep='all')
@@ -302,18 +302,105 @@ def test_delft3D_netcdf():
         pc = ax.pcolor(data_nc_XZ,data_nc_YZ,data_nc_QNET[iT,:,:],cmap='jet')
         pc.set_clim([-60,60])
         cbar = fig.colorbar(pc, ax=ax)
-        cbar.set_label('velocity magnitude (%s)'%(data_nc_U1.var_object.units))
+        cbar.set_label('%s (%s)'%(data_nc_QNET.var_varname, data_nc_QNET.var_object.units))
         ax.set_title('t=%d (%s)'%(timestep, data_nc_U1.var_times.iloc[timestep]))
         ax.set_aspect('equal')
     fig.tight_layout()
     plt.savefig(os.path.join(dir_output,'kivu_Qnet'))
 
 
+    #FROM HIS data
+    file_nc = r'p:\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\063_netcdf\trih-thiery_002_coarse.nc'
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    
+    data_nc_NAMST = get_hisstationlist(file_nc=file_nc, varname_stat='NAMST')
+    data_nc_ZWL = get_ncmodeldata(file_nc=file_nc, varname='ZWL',timestep='all',station='all')
+    #data_nc_ZCURU = get_ncmodeldata(file_nc=file_nc, varname='ZCURU',timestep='all',station='all',layer='all')
+    #data_nc_ZCURV = get_ncmodeldata(file_nc=file_nc, varname='ZCURV',timestep='all',station='all',layer='all')
 
+    fig, ax = plt.subplots(figsize=(16,7))
+    for iS in range(10):
+        ax.plot(data_nc_ZWL.var_times,data_nc_ZWL[:,iS],label=data_nc_NAMST.iloc[iS], linewidth=1)
+    ax.legend()
+    ax.set_ylabel('%s (%s)'%(data_nc_ZWL.var_varname, data_nc_ZWL.var_object.units))
+    ax.set_xlim([data_nc_ZWL.var_times[0],data_nc_ZWL.var_times[0]+dt.timedelta(days=14)])
+    plt.savefig(os.path.join(dir_output,'kivu_his_ZWL'))
+
+
+
+
+    #from MAP DATA CURVEDBEND
+    file_nc = os.path.join(dir_testinput,'D3D_3D_sigma_curved_bend_nc\\trim-cb2-sal-added-3d.nc')
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    
+    data_nc_XZ = get_ncmodeldata(file_nc=file_nc, varname='XZ')
+    data_nc_YZ = get_ncmodeldata(file_nc=file_nc, varname='YZ')
+    data_nc_ALFAS = get_ncmodeldata(file_nc=file_nc, varname='ALFAS') #contains rotation of all cells wrt real world
+    data_nc_U1 = get_ncmodeldata(file_nc=file_nc, varname='U1',timestep='all',layer='all')
+    data_nc_V1 = get_ncmodeldata(file_nc=file_nc, varname='V1',timestep='all',layer='all')
+    #data_nc_S1 = get_ncmodeldata(file_nc=file_nc, varname='S1',timestep='all')
+    
+    mask_XY = (data_nc_XZ==0) & (data_nc_YZ==0)
+    #mask_U = data_nc_U1==-999.
+    #mask_V = data_nc_V1==-999.
+    #mask_U = (get_ncmodeldata(file_nc=file_nc, varname='KCU')==0)
+    #mask_V = (get_ncmodeldata(file_nc=file_nc, varname='KCV')==0)
+    data_nc_XZ[mask_XY] = np.nan
+    data_nc_YZ[mask_XY] = np.nan
+    #data_nc_U1[mask_U] = np.nan
+    #data_nc_V1[mask_V] = np.nan
+    #masking should work but quiver does not read masks for X and Y, so use own
+    #data_nc_XZ.mask = mask_XY
+    #data_nc_YZ.mask = mask_XY
+    #data_nc_U1.mask = mask_U
+    #data_nc_V1.mask = mask_V
+    
+    fig, ax = plt.subplots()
+    ax.plot(data_nc_XZ,data_nc_YZ,'-b',linewidth=0.2)
+    ax.plot(data_nc_XZ.T,data_nc_YZ.T,'-b',linewidth=0.2)
+    ax.set_aspect('equal')
+    plt.savefig(os.path.join(dir_output,'curvedbend_mesh'))
+    
+    fig, axs = plt.subplots(1,3, figsize=(16,5))
+    for iT, timestep in enumerate([0,2,4]):
+        ax=axs[iT]
+        vel_x, vel_y, vel_magn, direction_naut_deg = uva2xymagdeg(u=data_nc_U1[timestep,9,:,:],v=data_nc_V1[timestep,9,:,:],alpha=data_nc_ALFAS)
+        pc = ax.pcolor(data_nc_XZ,data_nc_YZ,vel_magn,cmap='jet')
+        pc.set_clim([0,1.2])
+        cbar = fig.colorbar(pc, ax=ax)
+        cbar.set_label('velocity magnitude (%s)'%(data_nc_U1.var_object.units))
+        ax.set_title('t=%d (%s)'%(timestep, data_nc_U1.var_times.iloc[timestep]))
+        ax.set_aspect('equal')
+        ax.quiver(data_nc_XZ[::2,::2], data_nc_YZ[::2,::2], vel_x[::2,::2], vel_y[::2,::2],
+                  scale=8,color='w',width=0.005)#, edgecolor='face', cmap='jet')
+    fig.tight_layout()
+    plt.savefig(os.path.join(dir_output,'curvedbend_velocity_pcolor'))
+
+
+    #FROM HIS data curvedbend
+    file_nc = os.path.join(dir_testinput,'D3D_3D_sigma_curved_bend_nc\\trih-cb2-sal-added-3d.nc')
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    
+    data_nc_NAMST = get_hisstationlist(file_nc=file_nc, varname_stat='NAMST')
+    data_nc_ZWL = get_ncmodeldata(file_nc=file_nc, varname='ZWL',timestep='all',station='all')
+    #data_nc_ZCURU = get_ncmodeldata(file_nc=file_nc, varname='ZCURU',timestep='all',station='all',layer='all')
+    #data_nc_ZCURV = get_ncmodeldata(file_nc=file_nc, varname='ZCURV',timestep='all',station='all',layer='all')
+
+    fig, ax = plt.subplots(figsize=(16,7))
+    for iS in range(5):
+        ax.plot(data_nc_ZWL.var_times,data_nc_ZWL[:,iS],label=data_nc_NAMST.iloc[iS], linewidth=1)
+    ax.legend()
+    ax.set_ylabel('%s (%s)'%(data_nc_ZWL.var_varname, data_nc_ZWL.var_object.units))
+    ax.set_xlim([data_nc_ZWL.var_times[0],data_nc_ZWL.var_times[0]+dt.timedelta(days=2)])
+    plt.savefig(os.path.join(dir_output,'curvedbend_his_ZWL'))
+
+
+
+    
  
 
-
-def test_delft3D_netcdf_convertedwith_getdata():
+#WARNING: this is excluded from the testbench, since Delft3D models that were converted with getdata.pl sometimes give corrupt variables (see comments in code for details)
+def EXCLUDE_test_delft3D_netcdf_convertedwith_getdata():
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
     """
     get the netcdf files via putty with:
@@ -321,22 +408,26 @@ def test_delft3D_netcdf_convertedwith_getdata():
         cd /p/1220688-lake-kivu/3_modelling/1_FLOW/7_heatfluxinhis/063
         getdata.pl -f trim-thiery_002_coarse.dat -v S1,U1,V1,ALFAS,QEVA -o netcdf
         http://simona.deltares.nl/release/doc/usedoc/getdata/getdata.pdf
+        #double precision in trimfile causes this conversion to fail, use netCDF output in Delft3D instead
         
     get the netcdf files via putty with:
         module load simona
         cd ./D3D_3D_sigma_curved_bend
         getdata.pl -f trim-cb2-sal-added-3d.dat -v S1,U1,V1,ALFAS -o netcdf
+        getdata.pl -f trih-cb2-sal-added-3d.dat -v ZWL,ZCURU,ZCURV,ALFAS,NAMST -o netcdf
         http://simona.deltares.nl/release/doc/usedoc/getdata/getdata.pdf
+        #faulty data in NAMST variable, station names are not available
 
     dir_output = './test_output'
     """
     
     import numpy as np
+    import datetime as dt
     import matplotlib.pyplot as plt
     plt.close('all')
     
     from dfm_tools.get_nc import get_ncmodeldata#, get_netdata, plot_netmapdata
-    from dfm_tools.get_nc_helpers import get_ncvardimlist#, get_hisstationlist, get_varname_fromnc
+    from dfm_tools.get_nc_helpers import get_ncvardimlist, get_hisstationlist#, get_varname_fromnc
     from dfm_tools.regulargrid import uva2xymagdeg
     
     #file_nc = r'p:\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\063\trim-thiery_002_coarse.nc' #werkt niet
@@ -412,6 +503,27 @@ def test_delft3D_netcdf_convertedwith_getdata():
     fig.tight_layout()
     plt.savefig(os.path.join(dir_output,'curvedbend_velocity'))
     
+
+    #FROM HIS data
+    file_nc = r'c:\DATA\dfm_tools_testdata\D3D_3D_sigma_curved_bend\trih-cb2-sal-added-3d.nc'
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    
+    data_nc_ZWL = get_ncmodeldata(file_nc=file_nc, varname='his-series:ZWL',timestep='all')#,station='all')
+    #layers and stations are not yet taken care of properly (stations are incorrectly parsed so var/dim is commented in validvals list to avoid crash, 'Layers' dimension is not yet added to translation table)
+    #data_nc_NAMST = get_ncmodeldata(file_nc=file_nc, varname='his-const:NAMST') #this should not work
+    #data_nc_NAMST = get_hisstationlist(file_nc=file_nc, varname_stat='his-const:NAMST')
+    #data_nc_ZCURU = get_ncmodeldata(file_nc=file_nc, varname='his-series:ZCURU',timestep='all')#,layer='all',station='all')
+    #data_nc_ZCURV = get_ncmodeldata(file_nc=file_nc, varname='his-series:ZCURV',timestep='all')#,layer='all',station='all')
+
+    fig, ax = plt.subplots(figsize=(16,7))
+    for iS in range(6):
+        ax.plot(data_nc_ZWL.var_times,data_nc_ZWL[:,iS], linewidth=1,label='unknown, broken NAMST variable')#,label=data_nc_NAMST.iloc[iS])
+    ax.legend()
+    ax.set_ylabel('%s (%s)'%(data_nc_ZWL.var_varname, data_nc_ZWL.var_object.units))
+    ax.set_xlim([data_nc_ZWL.var_times[0],data_nc_ZWL.var_times[0]+dt.timedelta(days=2)])
+    plt.savefig(os.path.join(dir_output,'curvedbend_his_ZWL'))
+
+
 
 
 

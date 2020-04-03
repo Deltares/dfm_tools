@@ -49,15 +49,13 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     import pandas as pd
     from netCDF4 import Dataset
     
-    from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvarobject, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_fromnc
+    from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvarobject, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_fromnc, get_vardimname_stat_validvals
     
     #get variable info
     nc_varobject = get_ncvarobject(file_nc, varname)
     data_nc = Dataset(file_nc)
     
-    #variable/dimension names for: DFM stations, DFM gs, DFM crs, Sobek stations, WAQUA_getdata_netcdf WL-stations, WAQUA_getdata_netcdf CUR-stations
-    varname_stat_validvals = ['station_name', 'general_structure_id', 'cross_section_name', 'observation_id', 'NAMWL', 'NAMC']
-    dimname_stat_validvals = ['stations', 'general_structures', 'cross_section', 'id', 'STATION', 'STATIONCUR']
+    varname_stat_validvals, dimname_stat_validvals = get_vardimname_stat_validvals()
     listtype_int = [int, np.int, np.int8, np.int16, np.int32, np.int64]
     listtype_str = [str]
     listtype_range = [list, range, np.ndarray]
