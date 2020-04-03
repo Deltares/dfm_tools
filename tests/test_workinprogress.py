@@ -29,7 +29,7 @@ def test_workinprogress():
     
     from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
     from dfm_tools.get_nc_helpers import get_ncvardimlist, get_hisstationlist#, get_varname_fromnc
-    
+    from dfm_tools.io.polygon import Polygon
 
     # test Grevelingen (integrated example, where all below should move towards)
     file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc')
@@ -60,6 +60,45 @@ def test_workinprogress():
     #plt.pcolor(mesh2d_node_x,mesh2d_node_y,airp,linewidth=0.5)
     plt.savefig(os.path.join(dir_output,'hirlam_magn_pcolor'))
     
+    
+    
+    #COSMO
+    file_nc = r'p:\1220688-lake-kivu\2_data\COSMO\COSMOCLM_2012_out02_merged_4Wouter.nc'
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    
+    xcen = get_ncmodeldata(file_nc=file_nc, varname='lon')
+    ycen = get_ncmodeldata(file_nc=file_nc, varname='lat')
+    data_U10M = get_ncmodeldata(file_nc=file_nc, varname='U_10M', timestep=range(20))
+    data_V10M = get_ncmodeldata(file_nc=file_nc, varname='V_10M', timestep=range(20))
+    #xcen, ycen = np.meshgrid(data_lon, data_lat)
+    magn = np.sqrt(data_U10M**2 + data_V10M**2)
+
+    fig, ax = plt.subplots()
+    ax.plot(xcen, ycen, '-b', linewidth=0.2)
+    ax.plot(xcen.T, ycen.T, '-b', linewidth=0.2)
+    plt.savefig(os.path.join(dir_output,'COSMO_mesh'))
+
+    file_ldb = r'p:\1220688-lake-kivu\3_modelling\1_FLOW\4_CH4_CO2_included\008\lake_kivu_geo.ldb'
+    data_ldb = Polygon.fromfile(file_ldb, pd_output=True)
+    
+    fig, axs = plt.subplots(1,3, figsize=(16,6))
+    for iT, timestep in enumerate([0,1,10]):
+        ax=axs[iT]
+        pc = ax.pcolor(xcen, ycen, magn[timestep,:,:], cmap='jet')
+        pc.set_clim([0,5])
+        cbar = fig.colorbar(pc, ax=ax)
+        cbar.set_label('velocity magnitude (%s)'%(data_V10M.var_object.units))
+        ax.set_title('t=%d (%s)'%(timestep, data_V10M.var_times.loc[timestep]))
+        ax.set_aspect('equal')
+        ax.plot(data_ldb[0].loc[:,0], data_ldb[0].loc[:,1], 'k', linewidth=0.5)
+        thinning = 2
+        ax.quiver(xcen[::thinning,::thinning], ycen[::thinning,::thinning], data_U10M[timestep,::thinning,::thinning], data_V10M[timestep,::thinning,::thinning], 
+                  color='w',scale=50,width=0.008)#, edgecolor='face', cmap='jet')
+    fig.tight_layout()
+    plt.savefig(os.path.join(dir_output,'COSMO_magn_pcolor'))
+
+
+
 
     #ERA5
     file_nc = r'p:\11200665-c3s-codec\2_Hydro\ECWMF_meteo\meteo\ERA-5\2000\ERA5_metOcean_atm_19991201_19991231.nc'
