@@ -150,13 +150,13 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
             if type(station[0]) in listtype_int:
                 station_ids = station
             elif type(station[0]) in listtype_str:
-                station_ids = get_stationid_fromstationlist(station_name_list_pd, station)
+                station_ids = get_stationid_fromstationlist(station_name_list_pd, station, varname_stat_validvals[dimname_stat_validvals_id])
             else:
                 raise Exception('ERROR1: station variable type not anticipated (%s), (list/range/ndarray of) strings or ints are accepted (or "all")'%(type(station)))
         elif type(station) in listtype_int:
             station_ids = [station]
         elif type(station) in listtype_str:
-            station_ids = get_stationid_fromstationlist(station_name_list_pd, [station])
+            station_ids = get_stationid_fromstationlist(station_name_list_pd, [station], varname_stat_validvals[dimname_stat_validvals_id])
         else:
             raise Exception('ERROR2: station variable type not anticipated (%s), (list/range/ndarray of) strings or ints are accepted (or "all")'%(type(station)))
         #check if requested times are within range of netcdf
