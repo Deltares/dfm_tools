@@ -112,7 +112,7 @@ class Polygon:
                                 pol_data_datetime = pd.to_datetime(pol_data_pd.iloc[:,0]*1000000+pol_data_pd.iloc[:,1],format='%Y%m%d%H%M%S')
                                 pol_data_pd.insert(0, 'datetime', pol_data_datetime)
                             except:
-                                print('WARNING: conversion from date/time column to datetime failed, incorrect format of first two columns?')
+                                warnings.warn('conversion from date/time column to datetime failed, incorrect format of first two columns?')
                     else:
                         pol_data_pd = pd.DataFrame(data_pol)
                     pol_data_pd_list.append(pol_data_pd)

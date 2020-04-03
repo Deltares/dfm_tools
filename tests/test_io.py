@@ -96,8 +96,9 @@ def test_mdu():
                                       pytest.param(os.path.join(dir_testinput,'DFM_3D_z_Grevelingen\\geometry\\structures\\Grevelingen-FM_BL_fxw.pli'), id='Grevelingen pli'),
                                       pytest.param(os.path.join(dir_testinput,'world.ldb'), id='world'),
                                       pytest.param(os.path.join(dir_testinput,'Maeslant.tek'), id='Maeslant')])
-@pytest.mark.unittest    
+@pytest.mark.unittest
 def test_readpolygon(file_pol):
+    dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
     """
     this test tests if a netcdf varname can be retrieved from the 'dictionary' and if the variable can be retrieved from de netcdf
     file_pol = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen\\geometry\\structures\\Grevelingen-FM_BL_fxw.pliz')
@@ -106,10 +107,11 @@ def test_readpolygon(file_pol):
     file_pol = 'p:\\11205258-006-kpp2020_rmm-g6\\C_Work\\08_RMM_FMmodel\\geometry_j13_6-w3\\rmm_v1p3_fixed_weirs.pliz'
     file_pol = 'p:\\11205258-006-kpp2020_rmm-g6\\C_Work\\08_RMM_FMmodel\\geometry_j13_6-w3\\structures\\rmm_v1p3_structures.pli'
     file_pol = 'p:\\11205258-006-kpp2020_rmm-g6\\C_Work\\04_randvoorwaarden\\keringen\\Maeslantkering\\Maeslant.tek'
+    file_pol = os.path.join(dir_testinput,'Maeslant.tek')
+    
+    dir_output = './test_output'
     """
     
-    dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
-    #dir_output = './test_output'
     
     import matplotlib.pyplot as plt
     plt.close('all')
