@@ -111,7 +111,7 @@ def test_getplotrstdata():
     
     file_nc = os.path.join(dir_testinput,r'DFM_fou_RMM\RMM_dflowfm_0006_20131127_000000_rst.nc')
     #vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
-    #ugrid = get_netdata(file_nc=file_nc)
+    #ugrid = get_netdata(file_nc=file_nc) #does not work, so scatter has to be used
     ugrid_FlowElem_xzw = get_ncmodeldata(file_nc=file_nc, varname='FlowElem_xzw', multipart=False)
     ugrid_FlowElem_yzw = get_ncmodeldata(file_nc=file_nc, varname='FlowElem_yzw', multipart=False)
     data_s1 = get_ncmodeldata(file_nc=file_nc, varname='s1',timestep=0, multipart=False)
