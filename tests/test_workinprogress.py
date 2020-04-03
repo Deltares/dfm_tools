@@ -95,7 +95,47 @@ def test_workinprogress():
         ax.quiver(xcen[::thinning,::thinning], ycen[::thinning,::thinning], data_U10M[timestep,::thinning,::thinning], data_V10M[timestep,::thinning,::thinning], 
                   color='w',scale=50,width=0.008)#, edgecolor='face', cmap='jet')
     fig.tight_layout()
-    plt.savefig(os.path.join(dir_output,'COSMO_magn_pcolor'))
+    plt.savefig(os.path.join(dir_output,'COSMO_magn_pcolorquiver'))
+
+
+
+    dist = 0.1
+    reg_x_vec = np.linspace(np.min(xcen),np.max(xcen),int(np.ceil((np.max(xcen)-np.min(xcen))/dist)))
+    reg_y_vec = np.linspace(np.min(ycen),np.max(ycen),int(np.ceil((np.max(ycen)-np.min(ycen))/dist)))
+    reg_grid = np.meshgrid(reg_x_vec,reg_y_vec)
+    X = reg_grid[0]
+    Y = reg_grid[1]
+    from scipy.interpolate import griddata
+    from dfm_tools.modplot import velovect
+    
+    fig, axs = plt.subplots(1,3, figsize=(16,6))
+    for iT, timestep in enumerate([0,1,10]):
+        ax=axs[iT]
+        #pc = ax.pcolor(xcen, ycen, magn[timestep,:,:], cmap='jet')
+        #pc.set_clim([0,5])
+        U = griddata((xcen.flatten(),ycen.flatten()),data_U10M[timestep,:,:].flatten(),tuple(reg_grid),method='nearest')
+        V = griddata((xcen.flatten(),ycen.flatten()),data_V10M[timestep,:,:].flatten(),tuple(reg_grid),method='nearest')
+        speed = np.sqrt(U*U + V*V)
+        quiv_curved = velovect(ax,X,Y,U,V, arrowstyle='fancy', scale = 5, grains = 25, color=speed)#, cmap='jet')
+        ax.set_aspect('equal')
+        cbar = fig.colorbar(quiv_curved.lines, ax=ax)
+        cbar.set_label('velocity magnitude (%s)'%(data_V10M.var_object.units))
+        ax.set_title('t=%d (%s)'%(timestep, data_V10M.var_times.loc[timestep]))
+        ax.set_aspect('equal')
+        ax.plot(data_ldb[0].loc[:,0], data_ldb[0].loc[:,1], 'k', linewidth=0.5)
+        thinning = 2
+        ax.quiver(xcen[::thinning,::thinning], ycen[::thinning,::thinning], data_U10M[timestep,::thinning,::thinning], data_V10M[timestep,::thinning,::thinning], 
+                  color='w',scale=50,width=0.008)#, edgecolor='face', cmap='jet')
+    fig.tight_layout()
+    plt.savefig(os.path.join(dir_output,'COSMO_magn_curvedquiver'))
+
+
+
+
+
+
+
+
 
 
 
