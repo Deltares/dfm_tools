@@ -123,8 +123,11 @@ def test_readpolygon(file_pol):
     
     fig, ax = plt.subplots()
     for iP, pol_data in enumerate(pol_data_list):
-        if 'datetime' in pol_data_pd_list[iP].columns.tolist():
-            ax.plot(pol_data_pd_list[iP].loc[:,'datetime'],pol_data[:,2:],'-',linewidth=0.5)
+        pd_collist = pol_data_pd_list[iP].columns.tolist()
+        if 'datetime' in pd_collist:
+            for iV in range(3,len(pd_collist)):
+                ax.plot(pol_data_pd_list[iP].loc[:,'datetime'],pol_data_pd_list[iP].iloc[:,iV],'-',label=pd_collist[iV], linewidth=0.5)
+            ax.legend()
         else:
             ax.plot(pol_data[:,0],pol_data[:,1],'-',linewidth=0.5)
     plt.savefig(os.path.join(dir_output,os.path.basename(file_pol).replace('.','')))

@@ -104,15 +104,20 @@ class Polygon:
                     data_pol_nanbool = data_pol==999.999
                     data_pol[data_pol_nanbool] = np.nan
                     pol_data_list.append(data_pol)
-                    
                     if len(pol_comment_temp)==data_pol.shape[1]: #expected format
                         pol_data_pd = pd.DataFrame(data_pol,columns=pol_comment_temp)
-                        if 'date' in pol_comment_temp[0].lower():
+                        if 'date' in pol_comment_temp[0].lower() and 'time' in pol_comment_temp[1].lower():
+                            #first convert columns to integers, since they were before
+                            #pol_data_pd.iloc[:,0] = pol_data_pd.iloc[:,0].astype(int)
+                            #pol_data_pd.iloc[:,1] = pol_data_pd.iloc[:,1].astype(int)
                             try:
-                                pol_data_datetime = pd.to_datetime(pol_data_pd.iloc[:,0]*1000000+pol_data_pd.iloc[:,1],format='%Y%m%d%H%M%S')
+                                #add datetime column with parsed dates
+                                #pol_data_datetime = pd.to_datetime(pol_data_pd.iloc[:,0]*1000000+pol_data_pd.iloc[:,1],format='%Y%m%d%H%M%S') #this does not work anymore
+                                pol_data_datetime = (pol_data_pd.iloc[:,0]*1000000+pol_data_pd.iloc[:,1]).astype('datetime64[ns]').dt.round(freq='S')
                                 pol_data_pd.insert(0, 'datetime', pol_data_datetime)
                             except:
                                 warnings.warn('conversion from date/time column to datetime failed, incorrect format of first two columns?')
+                                print('conversion from date/time column to datetime failed, incorrect format of first two columns?')
                     else:
                         pol_data_pd = pd.DataFrame(data_pol)
                     pol_data_pd_list.append(pol_data_pd)
