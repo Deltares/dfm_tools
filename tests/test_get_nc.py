@@ -109,18 +109,19 @@ def test_getplotrstdata():
     from dfm_tools.get_nc import get_ncmodeldata#, get_netdata, plot_netmapdata
     #from dfm_tools.get_nc_helpers import ghostcell_fiter, get_ncvardimlist
     
-    file_nc = os.path.join(dir_testinput,r'DFM_fou_RMM\RMM_dflowfm_0002_20131127_000000_rst.nc')
+    file_nc = os.path.join(dir_testinput,r'DFM_fou_RMM\RMM_dflowfm_0006_20131127_000000_rst.nc')
     #vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
     #ugrid = get_netdata(file_nc=file_nc)
-    ugrid_FlowElem_xzw = get_ncmodeldata(file_nc=file_nc, varname='FlowElem_xzw')
-    ugrid_FlowElem_yzw = get_ncmodeldata(file_nc=file_nc, varname='FlowElem_yzw')
-    data_s1 = get_ncmodeldata(file_nc=file_nc, varname='s1',timestep=0)
+    ugrid_FlowElem_xzw = get_ncmodeldata(file_nc=file_nc, varname='FlowElem_xzw', multipart=False)
+    ugrid_FlowElem_yzw = get_ncmodeldata(file_nc=file_nc, varname='FlowElem_yzw', multipart=False)
+    data_s1 = get_ncmodeldata(file_nc=file_nc, varname='s1',timestep=0, multipart=False)
     
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(10,4))
     pc = plt.scatter(ugrid_FlowElem_xzw,ugrid_FlowElem_yzw,[], data_s1[0,:],cmap='jet')
     pc.set_clim([0,2])
     fig.colorbar(pc)
     ax.set_aspect('equal')
+    fig.tight_layout()
     plt.savefig(os.path.join(dir_output,os.path.basename(file_nc).replace('.','')))
 
 
