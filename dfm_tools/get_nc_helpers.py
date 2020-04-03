@@ -45,13 +45,16 @@ def get_ncfilelist(file_nc, multipart=None):
     if not os.path.exists(file_nc):
         raise Exception('ERROR: file does not exist: %s'%(file_nc))
     
-    lastpart = file_nc.split('_')[-2]
-    nctype = file_nc.split('_')[-1]
-    if file_nc.endswith('_%s'%(nctype)) and multipart != False and len(lastpart) == 4 and lastpart.isdigit(): #if part before '_map.nc' is eg '0000'
-        filename_start = re.compile('(.*)_([0-9]+)_%s'%(nctype)).search(file_nc).group(1)
-        #filename_number = re.compile('(.*)_([0-9]+)_map.nc').search(file_nc).group(2)
-        #file_ncs = [file_nc.replace('_%s_map.nc','_%04d_map.nc'%(filename_number, domain_id)) for domain_id in range(ndomains)]
-        file_ncs = glob.glob('%s*_%s'%(filename_start,nctype))
+    if '_' in file_nc:
+        lastpart = file_nc.split('_')[-2]
+        nctype = file_nc.split('_')[-1]
+        if file_nc.endswith('_%s'%(nctype)) and multipart != False and len(lastpart) == 4 and lastpart.isdigit(): #if part before '_map.nc' is eg '0000'
+            filename_start = re.compile('(.*)_([0-9]+)_%s'%(nctype)).search(file_nc).group(1)
+            #filename_number = re.compile('(.*)_([0-9]+)_map.nc').search(file_nc).group(2)
+            #file_ncs = [file_nc.replace('_%s_map.nc','_%04d_map.nc'%(filename_number, domain_id)) for domain_id in range(ndomains)]
+            file_ncs = glob.glob('%s*_%s'%(filename_start,nctype))
+        else:
+            file_ncs = [file_nc]
     else:
         file_ncs = [file_nc]
     return file_ncs
@@ -64,33 +67,33 @@ def get_varname_fromnc(data_nc,varname_requested):
     
     #VARIABLE names used within different versions of Delft3D-Flexible Mesh
     varnames_list = pd.DataFrame()
-    varnames_list['time'] = ['time','nmesh2d_dlwq_time','',''] # time
+    varnames_list['time'] = ['time','nmesh2d_dlwq_time','TIME','','',''] # time
     
-    varnames_list['mesh2d_node_x'] = ['mesh2d_node_x','NetNode_x','mesh2d_agg_node_x',''] # x-coordinate of nodes
-    varnames_list['mesh2d_node_y'] = ['mesh2d_node_y','NetNode_y','mesh2d_agg_node_y',''] # y-coordinate of nodes
-    varnames_list['mesh2d_node_z'] = ['mesh2d_node_z','NetNode_z','',''] # z-coordinate of nodes
+    varnames_list['mesh2d_node_x'] = ['mesh2d_node_x','NetNode_x','mesh2d_agg_node_x','','',''] # x-coordinate of nodes
+    varnames_list['mesh2d_node_y'] = ['mesh2d_node_y','NetNode_y','mesh2d_agg_node_y','','',''] # y-coordinate of nodes
+    varnames_list['mesh2d_node_z'] = ['mesh2d_node_z','NetNode_z','','','',''] # z-coordinate of nodes
     
-    varnames_list['mesh2d_face_x'] = ['mesh2d_face_x','FlowElem_xzw','mesh2d_agg_face_x',''] # x-coordinate of faces
-    varnames_list['mesh2d_face_y'] = ['mesh2d_face_y','FlowElem_yzw','mesh2d_agg_face_y',''] # y-coordinate of faces
+    varnames_list['mesh2d_face_x'] = ['mesh2d_face_x','FlowElem_xzw','mesh2d_agg_face_x','','',''] # x-coordinate of faces
+    varnames_list['mesh2d_face_y'] = ['mesh2d_face_y','FlowElem_yzw','mesh2d_agg_face_y','','',''] # y-coordinate of faces
     
-    varnames_list['mesh2d_edge_x'] = ['mesh2d_edge_x','','',''] # x-coordinate of velocity-points
-    varnames_list['mesh2d_edge_y'] = ['mesh2d_edge_y','','',''] # y-coordinate of velocity-points
+    varnames_list['mesh2d_edge_x'] = ['mesh2d_edge_x','','','','',''] # x-coordinate of velocity-points
+    varnames_list['mesh2d_edge_y'] = ['mesh2d_edge_y','','','','',''] # y-coordinate of velocity-points
     
-    varnames_list['mesh2d_edge_nodes'] = ['mesh2d_edge_nodes','NetLink','',''] # 'link between two netnodes' / 'Mapping from every edge to the two nodes that it connects'
-    varnames_list['mesh2d_face_nodes'] = ['mesh2d_face_nodes','NetElemNode','mesh2d_agg_face_nodes',''] # 
+    varnames_list['mesh2d_edge_nodes'] = ['mesh2d_edge_nodes','NetLink','','','',''] # 'link between two netnodes' / 'Mapping from every edge to the two nodes that it connects'
+    varnames_list['mesh2d_face_nodes'] = ['mesh2d_face_nodes','NetElemNode','mesh2d_agg_face_nodes','','',''] # 
     
-    varnames_list['mesh2d_face_x_bnd'] = ['mesh2d_face_x_bnd','FlowElemContour_x','mesh2d_agg_face_x_bnd',''] # x-coordinates of flow element contours
-    varnames_list['mesh2d_face_y_bnd'] = ['mesh2d_face_y_bnd','FlowElemContour_y','mesh2d_agg_face_y_bnd',''] # y-coordinates of flow element contours
+    varnames_list['mesh2d_face_x_bnd'] = ['mesh2d_face_x_bnd','FlowElemContour_x','mesh2d_agg_face_x_bnd','','',''] # x-coordinates of flow element contours
+    varnames_list['mesh2d_face_y_bnd'] = ['mesh2d_face_y_bnd','FlowElemContour_y','mesh2d_agg_face_y_bnd','','',''] # y-coordinates of flow element contours
     
-    varnames_list['mesh2d_flowelem_domain'] = ['mesh2d_flowelem_domain','FlowElemDomain','',''] # flow element domain
-    varnames_list['mesh2d_flowelem_bl'] = ['mesh2d_flowelem_bl','FlowElem_bl','',''] # bed level
-    varnames_list['mesh2d_flowelem_ba'] = ['mesh2d_flowelem_ba','FlowElem_bac','',''] # area (m2) of cell faces
+    varnames_list['mesh2d_flowelem_domain'] = ['mesh2d_flowelem_domain','FlowElemDomain','','','',''] # flow element domain
+    varnames_list['mesh2d_flowelem_bl'] = ['mesh2d_flowelem_bl','FlowElem_bl','','','',''] # bed level
+    varnames_list['mesh2d_flowelem_ba'] = ['mesh2d_flowelem_ba','FlowElem_bac','','','',''] # area (m2) of cell faces
     
-    varnames_list['mesh2d_layer_z'] = ['mesh2d_layer_z','LayCoord_cc','',''] # 
+    varnames_list['mesh2d_layer_z'] = ['mesh2d_layer_z','LayCoord_cc','','','',''] # 
     
     #non-grid variables necessary for layer calculation for intersection/cross section) funtion
-    varnames_list['mesh2d_s1'] = ['mesh2d_s1','','',''] # water level
-    varnames_list['mesh2d_flowelem_bl'] = ['mesh2d_flowelem_bl','','',''] # bed level
+    varnames_list['mesh2d_s1'] = ['mesh2d_s1','','','','',''] # water level
+    varnames_list['mesh2d_flowelem_bl'] = ['mesh2d_flowelem_bl','','','','',''] # bed level
 
     #varnames_list['mesh2d_ucx'] = ['mesh2d_ucx','ucx','',''] # 
     #varnames_list['mesh2d_ucy'] = ['mesh2d_ucy','ucy','',''] # 
@@ -100,11 +103,11 @@ def get_varname_fromnc(data_nc,varname_requested):
     
     ### DIMENSION names used within different versions of Delft3D-Flexible Mesh
     #dimnames_list = pd.DataFrame()
-    varnames_list['nmesh2d_node'] = ['nmesh2d_node','mesh2d_nNodes','nNetNode',''] # number of nodes
-    varnames_list['nmesh2d_face'] = ['nmesh2d_face','mesh2d_nFaces','nNetElem','nFlowElem'] # number of faces
-    varnames_list['nmesh2d_edge'] = ['nmesh2d_edge','nNetLink','',''] # number of velocity-points
+    varnames_list['nmesh2d_node'] = ['nmesh2d_node','mesh2d_nNodes','nNetNode','','',''] # number of nodes
+    varnames_list['nmesh2d_face'] = ['nmesh2d_face','mesh2d_nFaces','nNetElem','nFlowElem','',''] # number of faces
+    varnames_list['nmesh2d_edge'] = ['nmesh2d_edge','nNetLink','','','',''] # number of velocity-points
     
-    varnames_list['nmesh2d_layer'] = ['nmesh2d_layer','mesh2d_nLayers','laydim','nmesh2d_layer_dlwq'] # layer
+    varnames_list['nmesh2d_layer'] = ['nmesh2d_layer','mesh2d_nLayers','laydim','nmesh2d_layer_dlwq','LAYER','KMAXOUT_RESTR'] # layer
     
     #look for correct pd column
     pdcol_bool = varnames_list.eq(varname_requested).any()
@@ -141,6 +144,8 @@ def get_varname_fromnc(data_nc,varname_requested):
     #    print('WARNING: var/dim name %s or equivalent not found in netCDF file with variables:\n%s \nand dimensions:\n%s'%(varname_requested, data_nc_varnames_list, data_nc_dimnames_list))
     
     return varname
+
+
 
 
 
@@ -261,6 +266,7 @@ def get_timesfromnc(file_nc, force_noreconstruct=False):
         else:
             print('reading time dimension: read entire array')
             data_nc_times = data_nc_timevar[:]
+            
     data_nc_datetimes = num2date(data_nc_times, units = data_nc_timevar.units)
     #data_nc_datetimes_pd = pd.Series(data_nc_datetimes).dt.round(freq='S')
     nptimes = data_nc_datetimes.astype('datetime64[ns]') #convert to numpy first, pandas does not take all cftime datasets
@@ -290,17 +296,31 @@ def get_timeid_fromdatetime(data_nc_datetimes_pd, timestep):
 
 
 
+
+
+
+def get_vardimname_stat_validvals():
+    #variable/dim names for:   DFM stations,   DFM gs,                 DFM crs,              Sobek stations,    WAQUA_getdata_netcdf WL/CUR-stations,  Delft3D netCDF stations,   Delft3D_getdata_netcdf stations (NAMST variable is invalid format)
+    varname_stat_validvals = ['station_name', 'general_structure_id', 'cross_section_name', 'observation_id',  'NAMWL',   'NAMC',                      'NAMST']#,                 'his-const:NAMST']
+    dimname_stat_validvals = ['stations',     'general_structures',   'cross_section',      'id',              'STATION', 'STATIONCUR',                'NOSTAT']#,                'Station']
+    return varname_stat_validvals, dimname_stat_validvals
+
+
+
+
 def get_hisstationlist(file_nc,varname_stat='station_name'):
     from netCDF4 import Dataset, chartostring
     import pandas as pd
     import numpy as np
     
-    varname_stat_validvals = ['station_name', 'general_structure_id', 'cross_section_name','observation_id']
+    from dfm_tools.get_nc_helpers import get_vardimname_stat_validvals
+    
+    varname_stat_validvals, dimname_stat_validvals = get_vardimname_stat_validvals()
     if varname_stat in varname_stat_validvals:
         data_nc = Dataset(file_nc)
         station_name_char = data_nc.variables[varname_stat][:]
         station_name_list_raw = chartostring(station_name_char)
-        station_name_list = np.char.strip(station_name_list_raw) #necessary step for Sobek
+        station_name_list = np.char.strip(station_name_list_raw) #necessary step for Sobek and maybe others
         
         station_name_list_pd = pd.Series(station_name_list)
     else:
