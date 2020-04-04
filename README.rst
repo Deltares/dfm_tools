@@ -50,6 +50,7 @@ Features
 	- read Delft3D files (.grd, .dep)
 	- read/write mdu file
 
+
 General info
 --------
 - for examples, check https://github.com/openearth/dfm_tools/tests (this is also the pytest testbank)
@@ -70,16 +71,32 @@ How to work with dfm_tools
 	- optional: ``conda install basemap`` (for basemaps on plots)
 	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this command installs all required packages and it also updates dfm_tools to the latest version if you already installed it before)
 	- test by printing dfm_tools version number: ``python -c "import dfm_tools; print(dfm_tools.__version__)"`` (also try this in Spyder, to check if you are working in the dfm_tools_env venv)
-- Use it in your scripts:
 	- launch Spyder: open anaconda navigator, select dfm_tools_env from the drop-down menu, install Spyder here, launch Spyder from here
 	- Note: if you don't want to start Spyder via anaconda navigator (or do not want to install Spyder for each environment separately), see developer information for an alternative method to link Spyder to your venv
-	- for examples, check https://github.com/openearth/dfm_tools/tests (this is also the pytest testbank)
-example
 
-```python
-from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
-test
-```
+- Use it in your scripts:
+``from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata``
+``data_fromnc = get_ncmodeldata(file_nc='path_to_file')``
+#Import statements:
+``import matplotlib.pyplot as plt``
+``from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata``
+``from dfm_tools.get_nc_helpers import get_ncvardimlist, get_timesfromnc, get_hisstationlist``
+- Get lists with vars/dims, times, station/crs/structures:
+``vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)``
+``times_pd = get_timesfromnc(file_nc=file_nc)`
+``statlist_pd = get_hisstationlist(file_nc)``
+	- ``gs_pd = get_hisstationlist(file_nc, varname_stat='general_structure_id')``
+- Retrieve his data:
+	- ``data_fromhis = get_ncmodeldata(file_nc=file_nc, varname='bedlevel', station='all')#, multipart=False)``
+	- ``fig, ax = plt.subplots()``
+	- ``ax.plot(data_fromhis.var_stations,data_fromhis,'-')``
+- Retrieve net/map data, plot map data on grid:
+	- ``ugrid = get_netdata(file_nc=file_nc)#, multipart=False)``
+	- ``data_frommap = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_flowelem_bl’)#, multipart=False)``
+	- OR:``data_frommap = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sa1', timestep=timestep, layer=layer)``
+	- ``fig, ax = plt.subplots()``
+	- ``pc = plot_netmapdata(ugrid.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap=‘jet’)``
+	- for more examples, check https://github.com/openearth/dfm_tools/tests (this is also the pytest testbank)
 
 TODO wishlist
 --------
