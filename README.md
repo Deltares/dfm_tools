@@ -77,13 +77,13 @@ How to install dfm_tools
 	- open command window (or anaconda prompt)
 	- ``conda create --name dfm_tools_env python=3.7 git`` (creating a venv is recommended, but at least do ``conda install git`` if you choose not to)
 	- ``conda activate dfm_tools_env``
-	- optional: ``conda install shapely`` (for slicing 2D/3D data)
-	- optional: ``conda install -c conda-forge cartopy`` (for satellite imagery on plots) (conda-forge is needed since main channel forces shapely==1.6.4.* dependency which is not sufficient)
+	- optional: ``conda install -c conda-forge shapely`` (for slicing 2D/3D data) (conda-forge channel is necessary since main channel does not have shapely>=1.7, lower is not sufficient)
+	- optional: ``conda install -c conda-forge cartopy`` (for satellite imagery on plots)
 	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this command installs all required packages and it also updates dfm_tools to the latest version if you already installed it before)
 	- test by printing dfm_tools version number: ``python -c "import dfm_tools; print(dfm_tools.__version__)"`` (also try this in Spyder, to check if you are working in the dfm_tools_env venv)
 - launch Spyder:
-	- open anaconda navigator, select dfm_tools_env from the drop-down menu, install Spyder here, launch Spyder from here
-	- Note: if you don't want to start Spyder via anaconda navigator (or do not want to install Spyder for each environment separately), see developer information for an alternative method to link Spyder to your venv
+	- for the first time in your venv: open anaconda navigator, select dfm_tools_env from the drop-down menu, install Spyder here (and launch Spyder from here)
+	- open 'Spyder(dfm_tools_env)' via your windows start menu
 
 
 TODO wishlist
@@ -114,7 +114,7 @@ TODO wishlist
 	- https://scitools.org.uk/cartopy/docs/v0.15/_modules/cartopy/mpl/geoaxes.html (stock_img() en background_img())
 	- https://github.com/SciTools/cartopy/blob/master/lib/cartopy/data/raster/natural_earth/images.json
 	- https://github.com/SciTools/cartopy/blob/master/lib/cartopy/data/raster/natural_earth/50-natural-earth-1-downsampled.png
-	- plotting gridliner with cartopy: https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/COMT_example.ipynb
+	- plotting ax.gridlines(draw_labels=True) with cartopy: https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/connectivity_example.ipynb
 - add more io-functions:
 	- convert data to kml (google earth) or shp?
 	- add tekal write functions
@@ -147,11 +147,12 @@ TODO wishlist
 	- add support for rstfiles (different way of storing grid data, only face nodes present?)
 	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/OpenEarthTools/openearthtools/io/dflowfm/patch2tri.py (equivalent van MIA)
 	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/OpenEarthTools/openearthtools/io/netcdf
-	- plotting edges/nodes/faces: https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/connectivity_example.ipynb
+	- plotting edges/nodes/faces and legend: https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/connectivity_example.ipynb
 
 
 TODO non-content
 --------
+- if you ``conda install -c conda-forge cartopy`` after dfm_tools installation, numpy cannot be found by cartopy. First ``conda install numpy`` and maybe rest of requirements.txt?
 - add variable units to plots in test bench (``plt.title('%s (%s)'%(data_fromnc.var_varname, data_fromnc.var_object.units))``)
 - readme korter maken (developer info naar aparte file)
 - update/delete cookiecutter text files
@@ -170,7 +171,7 @@ TODO non-content
 - create overview tree of all functions, also add missing functions here
 - paths to project folders in test scripts are ok?
 - style guide: https://www.python.org/dev/peps/pep-0008/
-- contributing method: environment.yml (README.rst) or requirements_dev.txt (CONTRIBUTING.rst)?
+- contributing method: environment.yml (README.md) or requirements_dev.txt (CONTRIBUTING.rst)?
 
 
 Developer information: how to contribute to this git repository
@@ -194,7 +195,8 @@ Developer information: how to contribute to this git repository
 	- ``conda activate dfm_tools_env``
 	- ``python -m pip install -e .`` (pip developer mode, any updates to the local folder by github (with ``git pull``) are immediately available in your python. It also installs all required packages)
 	- test if dfm_tools is properly installed by printing the version number: ``python -c "import dfm_tools; print(dfm_tools.__version__)"``
-- Optional: link to your venv from Spyder (then no separate Spyder installation necessary in venv)
+	- do not forget to install shapely and cartopy in your venv (see normal installation manual)
+- REMOVE THIS PART DUE TO CARTOPY ISSUES WITH THIS METHOD IF SPYDER IS NOT UP TO DATE, AND ALL THE KNOWN BUGS? Optional: link to your venv from Spyder (then no separate Spyder installation necessary in venv)
 	- alternative: you can also start spyder via Anaconda Navigator, after selecting your venv
 	- open command line and navigate to dfm_tools github folder, e.g. C:\\DATA\\dfm_tools
 	- ``conda activate dfm_tools_env``

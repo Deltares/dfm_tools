@@ -10,7 +10,7 @@ dir_testinput = os.path.join(r'c:/DATA','dfm_tools_testdata')
 #from dfm_tools.testutils import getmakeoutputdir
 
 
-statement_list = ['import os','import sys','import glob','import shutil','import scipy','import numpy','import datetime','import pandas','import matplotlib','import netCDF4','import click','import shapely','import shapely.geometry','from shapely.geometry import Point']
+statement_list = ['import os','import sys','import glob','import shutil','import scipy','import numpy','import datetime','import pandas','import matplotlib','import netCDF4','import click','import shapely','import shapely.geometry','from shapely.geometry import Point', 'import cartopy']
 @pytest.mark.parametrize("statement", [pytest.param('%s'%(stat), id='%s'%(stat)) for stat in statement_list])
 @pytest.mark.unittest
 def test_import_libraries(statement):

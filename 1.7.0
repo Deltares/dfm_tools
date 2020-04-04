@@ -1,49 +1,0 @@
-Collecting package metadata (repodata.json): ...working... done
-Solving environment: ...working... done
-
-## Package Plan ##
-
-  environment location: C:\Users\veenstra\AppData\Local\Continuum\anaconda3\envs\dfm_tools_env
-
-  added / updated specs:
-    - cartopy
-    - shapely
-
-
-The following packages will be downloaded:
-
-    package                    |            build
-    ---------------------------|-----------------
-    cartopy-0.17.0             |py37h814cdbc_1004         2.1 MB  conda-forge
-    shapely-1.6.4              |py37h7d20962_1005         391 KB  conda-forge
-    ------------------------------------------------------------
-                                           Total:         2.5 MB
-
-The following NEW packages will be INSTALLED:
-
-  python_abi         conda-forge/win-64::python_abi-3.7-1_cp37m
-
-The following packages will be UPDATED:
-
-  cartopy            pkgs/main::cartopy-0.17.0-py37h5ae985~ --> conda-forge::cartopy-0.17.0-py37h814cdbc_1004
-  shapely            pkgs/main::shapely-1.6.4-py37h222a598~ --> conda-forge::shapely-1.6.4-py37h7d20962_1005
-
-The following packages will be SUPERSEDED by a higher-priority channel:
-
-  ca-certificates     pkgs/main::ca-certificates-2020.1.1-0 --> conda-forge::ca-certificates-2019.11.28-hecc5488_0
-  certifi              pkgs/main::certifi-2019.11.28-py37_1 --> conda-forge::certifi-2019.11.28-py37hc8dfbb8_1
-  openssl              pkgs/main::openssl-1.1.1f-he774522_0 --> conda-forge::openssl-1.1.1f-hfa6e2cd_0
-
-
-Proceed ([y]/n)? 
-
-Downloading and Extracting Packages
-cartopy-0.17.0       | 2.1 MB    |            |   0% cartopy-0.17.0       | 2.1 MB    |            |   1% cartopy-0.17.0       | 2.1 MB    | ##6        |  27% cartopy-0.17.0       | 2.1 MB    | #########6 |  96% cartopy-0.17.0       | 2.1 MB    | ########## | 100% 
-shapely-1.6.4        | 391 KB    |            |   0% shapely-1.6.4        | 391 KB    | ########## | 100% 
-Preparing transaction: ...working... done
-Verifying transaction: ...working... done
-Executing transaction: ...working... done
-Rolling back transaction: ...working... done
-Terminate batch job (Y/N)? 
-Terminate batch job (Y/N)? 
-Terminate batch job (Y/N)? 
