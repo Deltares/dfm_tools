@@ -158,8 +158,7 @@ TODO wishlist
 
 TODO non-content
 --------
-- mdu etc naar IO map verplaatsen (hier ook dep, grd, tekal, etc)
-- readme korter maken (developer info naar aparte file), readthedocs en andere broken links weghalen
+- readme korter maken (developer info naar aparte file)
 - update/delete cookiecutter text files
 - add documentation in comments of functions
 - create overview of scripts and functions, including missing features
