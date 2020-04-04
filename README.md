@@ -43,7 +43,7 @@ import matplotlib.pyplot as plt
 from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
 from dfm_tools.get_nc_helpers import get_ncvardimlist, get_timesfromnc, get_hisstationlist
 
-#define files. you will most probably get error messages if the file you use has a different set up, but these should be self-explanatory
+#define files. you will probably get error messages with your own file, but these should be self-explanatory
 file_nc_map = 'path_to_file'
 file_nc_his = 'path_to_file'
 
@@ -61,8 +61,8 @@ axs[1].plot(data_fromhis_wl.var_times,data_fromhis_wl,'-')
 
 #retrieve net/map data, plot map data on grid
 ugrid = get_netdata(file_nc=file_nc_map)#, multipart=False)
-data_frommap_bl = get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_flowelem_bl')#, multipart=False)
-data_frommap_sal = get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_sa1', timestep=2, layer='all')#, multipart=False)
+data_frommap_bl = get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_flowelem_bl')
+data_frommap_sal = get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_sa1', timestep=2, layer='all')
 fig, axs = plt.subplots(2,1,figsize=(6,8))
 pc = plot_netmapdata(ugrid.verts, values=data_frommap_bl, ax=axs[0], linewidth=0.5, cmap='jet')
 pc = plot_netmapdata(ugrid.verts, values=data_frommap_sal[0,:,-1], ax=axs[1], linewidth=0.5, cmap='jet')
