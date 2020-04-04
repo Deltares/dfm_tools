@@ -799,4 +799,72 @@ def test_waqua_netcdf_convertedwith_getdata():
     ax.set_xlim([data_nc_ZWL.var_times[0],data_nc_ZWL.var_times[0]+dt.timedelta(days=14)])
     plt.savefig(os.path.join(dir_output,'waqua_RMM_his_ZWL'))
 
+
+
     
+
+
+
+def test_cartopy_satellite_coastlines():
+    dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
+    
+    """
+    dir_output = './test_output'
+    """
+    #import matplotlib
+    #matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    plt.close('all')
+    import numpy as np
+    import cartopy.crs as ccrs
+    
+    from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata, plot_cartopybasemap
+    from dfm_tools.get_nc_helpers import get_ncvardimlist
+    
+    
+    #HIRLAM
+    file_nc = r'p:\1204257-dcsmzuno\2014\data\meteo\HIRLAM72_2018\h72_201803.nc'
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    
+    timestep = 0
+    mesh2d_node_x = get_ncmodeldata(file_nc=file_nc, varname='x')
+    mesh2d_node_y = get_ncmodeldata(file_nc=file_nc, varname='y')
+    data_v = get_ncmodeldata(file_nc=file_nc, varname='northward_wind',timestep=timestep)
+    data_u = get_ncmodeldata(file_nc=file_nc, varname='eastward_wind',timestep=timestep)
+    #airp = get_ncmodeldata(file_nc=file_nc, varname='air_pressure_fixed_height',timestep=0)[0,:,:]
+    magn = np.sqrt(data_u**2 + data_v**2)[0,:,:]
+    
+    fig, ax = plt.subplots()
+    ax.pcolor(mesh2d_node_x[:200,:200],mesh2d_node_y[:200,:200],magn[:200,:200])
+    plt.savefig(os.path.join(dir_output,'cartopy_transformno'))
+    
+    fig, ax = plt.subplots(subplot_kw={'projection': ccrs.PlateCarree()})
+    ax.pcolor(mesh2d_node_x[:200,:200],mesh2d_node_y[:200,:200],magn[:200,:200])#, transform=ccrs.PlateCarree())
+    plt.savefig(os.path.join(dir_output,'cartopy_transformyes'))
+    
+    fig, ax = plt.subplots(subplot_kw={'projection': ccrs.PlateCarree()}) #provide axis projection on initialisation, cannot be edited later on
+    domain = [np.min(mesh2d_node_x[:200,:200]),np.max(mesh2d_node_x[:200,:200]),np.min(mesh2d_node_y[:200,:200]),np.max(mesh2d_node_y[:200,:200])]
+    ax = plot_cartopybasemap(ax=ax, domain=domain, add_features = ['background_image', 'line_coasts', 'line_countries'], format_degree=True)
+    pc = ax.pcolor(mesh2d_node_x[:200,:200],mesh2d_node_y[:200,:200],magn[:200,:200])#, transform=ccrs.PlateCarree())
+    cbar = fig.colorbar(pc, ax=ax)
+    cbar.set_label('velocity magnitude (%s)'%(data_v.var_object.units))
+    plt.savefig(os.path.join(dir_output,'cartopy_moreoptions'))
+    
+    
+    #GREVELINGEN
+    file_nc_map = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen\\computations\\run01\\DFM_OUTPUT_Grevelingen-FM\\Grevelingen-FM_0000_map.nc')
+    ugrid = get_netdata(file_nc=file_nc_map)
+    data_frommap_bl = get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_flowelem_bl')
+    
+    fig, ax = plt.subplots(1,1, subplot_kw={'projection': ccrs.epsg(28992)}) #provide axis projection on initialisation, cannot be edited later on
+    domain = [np.nanmin(ugrid.verts[:,:,0]),np.nanmax(ugrid.verts[:,:,0]),np.nanmin(ugrid.verts[:,:,1]),np.nanmax(ugrid.verts[:,:,1])]
+    ax = plot_cartopybasemap(ax=ax, domain=domain, add_features = ['foreground_land', 'line_coasts'], tickinterval=[5000,5000], alpha=0.5)
+    pc = plot_netmapdata(ugrid.verts, values=data_frommap_bl, ax=ax, linewidth=0.5, cmap='jet')
+    plt.savefig(os.path.join(dir_output,'cartopy_grevelingen_RD'))
+
+    
+
+
+
+
+

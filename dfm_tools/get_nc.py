@@ -496,3 +496,66 @@ def plot_netmapdata(verts, values=None, ax=None, **kwargs):
 
 
 
+
+
+def plot_cartopybasemap(ax=None, domain=None, add_features=None, format_degree=None, tickinterval=[5,5], alpha=1):
+    import cartopy.crs as ccrs
+    import cartopy.feature as cfeature 
+    import numpy as np
+    import cartopy.mpl.ticker as cticker
+    import matplotlib.pyplot as plt
+    
+    if ax == None: #create new ax/figure
+        ax = plt.axes(projection=ccrs.PlateCarree())
+        proj = ccrs.PlateCarree()
+    else:
+        try:
+            proj = ax.projection #retrieve projection from map
+        except:
+            raise Exception('ERROR: provided ax variable does not have a projection system, please add or provide no ax argument')
+        
+    if domain:
+        ax.set_extent(domain, crs=proj)
+    
+    possible_features = ['background_image', 'foreground_land', 'foreground_water', 'line_coasts', 'line_countries']
+    if add_features:
+        if type(add_features) != list:
+            raise Exception('ERROR: add_features argument should be None or list, options: %s'%(possible_features))
+        for add_feat in add_features:
+            if add_feat not in possible_features:
+                raise Exception('ERROR: add_features should contain list of features to add, options: %s'%(possible_features))
+        
+        if 'background_image' in add_features:
+            #ax.stock_img(name = 'ne_shaded')
+            ax.background_img(name = 'ne_shaded', resolution='low')
+        if 'foreground_land' in add_features:
+            ax.add_feature(cfeature.NaturalEarthFeature('physical', 'land', '10m',edgecolor='face',facecolor=cfeature.COLORS['land']), alpha=alpha)     
+        if 'foreground_water' in add_features:
+            ax.add_feature(cfeature.NaturalEarthFeature('physical', 'ocean', '50m',edgecolor='face',facecolor=cfeature.COLORS['water']))     
+        if 'line_coasts' in add_features:
+            ax.coastlines(resolution='10m',edgecolor='gray',linewidth=0.5,zorder=11)
+        if 'line_countries' in add_features:
+            countries = cfeature.NaturalEarthFeature(
+                category='cultural',
+                name='admin_0_countries',
+                scale='10m',
+                facecolor='none')
+            ax.add_feature(countries, edgecolor='gray',linewidth=0.5)
+    
+    if domain:
+        ax.set_xticks(np.arange(domain[0],domain[1],tickinterval[0]), crs=proj)
+        ax.set_yticks(np.arange(domain[2],domain[3],tickinterval[1]), crs=proj)
+    
+    if format_degree:
+        lon_formatter = cticker.LongitudeFormatter()
+        lat_formatter = cticker.LatitudeFormatter()
+        ax.xaxis.set_major_formatter(lon_formatter)
+        ax.yaxis.set_major_formatter(lat_formatter)
+    
+    #ax.grid(linewidth=2, color='black', alpha=0.8, linestyle='--')
+
+    return ax
+
+
+
+
