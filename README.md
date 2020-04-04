@@ -1,29 +1,9 @@
-=========
 dfm_tools
 =========
 
-
-.. image:: https://img.shields.io/pypi/v/dfm_tools.svg
-        :target: https://pypi.python.org/pypi/dfm_tools
-
-.. image:: https://img.shields.io/travis/openearth/dfm_tools.svg
-        :target: https://travis-ci.org/openearth/dfm_tools
-
-.. image:: https://readthedocs.org/projects/dfm-tools/badge/?version=latest
-        :target: https://dfm-tools.readthedocs.io/en/latest/?badge=latest
-        :alt: Documentation Status
-
-.. image:: https://pyup.io/repos/github/openearth/dfm_tools/shield.svg
-        :target: https://pyup.io/repos/github/openearth/dfm_tools/
-        :alt: Updates
-
-
 dfm_tools are Python post-processing tools for Delft3D FM model outputfiles (netCDF) and more
 
-
-* Free software: GNU General Public License v3
-* Documentation: https://dfm-tools.readthedocs.io.
-
+- Free software: GNU General Public License v3
 
 
 Features
@@ -49,37 +29,61 @@ Features
 	- tekal (.tek, .pli, .pliz, .pol, .ldb) data
 	- read Delft3D files (.grd, .dep)
 	- read/write mdu file
-- pytest testbank (folder 'tests' on github)
-- examples of unformatted plots created by testbank in tests folder: n:\\Deltabox\\Bulletin\\veenstra\\info dfm_tools
+
+
+Example usage
+--------
+```python
+#import statements
+import matplotlib.pyplot as plt
+from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
+from dfm_tools.get_nc_helpers import get_ncvardimlist, get_timesfromnc, get_hisstationlist
+
+#define files. you will probably get error messages with your own file, but these should be self-explanatory
+file_nc_map = 'path_to_file'
+file_nc_his = 'path_to_file'
+
+#get lists with vars/dims, times, station/crs/structures
+vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc_map)
+times_pd = get_timesfromnc(file_nc=file_nc_map)
+statlist_pd = get_hisstationlist(file_nc=file_nc_his, varname_stat='station_name')
+
+#retrieve his data
+data_fromhis_bl = get_ncmodeldata(file_nc=file_nc_his, varname='bedlevel', station='all')
+data_fromhis_wl = get_ncmodeldata(file_nc=file_nc_his, varname='waterlevel', station='all', timestep= 'all')
+fig, axs = plt.subplots(2,1,figsize=(6,8))
+axs[0].plot(data_fromhis_bl.var_stations,data_fromhis_bl,'-')
+axs[1].plot(data_fromhis_wl.var_times,data_fromhis_wl,'-')
+
+#retrieve net/map data, plot map data on grid
+ugrid = get_netdata(file_nc=file_nc_map)#, multipart=False)
+data_frommap_bl = get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_flowelem_bl')
+data_frommap_sal = get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_sa1', timestep=2, layer='all')
+fig, axs = plt.subplots(2,1,figsize=(6,8))
+pc = plot_netmapdata(ugrid.verts, values=data_frommap_bl, ax=axs[0], linewidth=0.5, cmap='jet')
+pc = plot_netmapdata(ugrid.verts, values=data_frommap_sal[0,:,-1], ax=axs[1], linewidth=0.5, cmap='jet')
+```
+- for more examples, check https://github.com/openearth/dfm_tools/tests (this is also the pytest testbank)
+- examples of (mostly unformatted) figures created by this pytest testbank: n:\\Deltabox\\Bulletin\\veenstra\\info dfm_tools
 - please check the TODO sections for known inaccuracies or features that are not yet available
+- please report other bugs and feature requests at the developers or at https://github.com/openearth/dfm_tools/issues (include OS, dfm_tools version, reproduction steps)
 
-How to work with dfm_tools
+
+How to install dfm_tools
 --------
-- Install Python and git:
-	- download and install (including PATH checkbox) the newest anaconda 64 bit, for instance: https://repo.anaconda.com/archive/Anaconda3-2019.10-Windows-x86_64.exe
-	- download and install git from https://git-scm.com/download/win
-
-- Install the code from github via pip:
-	- open command window
-	- ``conda create --name dfm_tools_env python=3.7`` (creating a venv is optional but recommended)
+- download and install the newest anaconda 64 bit (including PATH checkbox), for instance: https://repo.anaconda.com/archive/Anaconda3-2019.10-Windows-x86_64.exe
+- install dfm_tools from github
+	- open command window (or anaconda prompt)
+	- ``conda create --name dfm_tools_env python=3.7 git`` (creating a venv is optional but recommended)
 	- ``conda activate dfm_tools_env``
-	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this also installs all required packages) (this also updates it to the latest version if you already installed it before)
-	- test by printing dfm_tools version number: ``python -c "import dfm_tools; print(dfm_tools.__version__)"`` (you can also try this in Spyder)
-	
-- Use it in your scripts:
-	- launch Spyder: open anaconda navigator, select dfm_tools_env from the drop-down menu, install Spyder here, launch Spyder from here
-	- Note: if you don't want to start Spyder via anaconda navigator (and install Spyder for each environment separately), see developer information for an alternative method to link Spyder to your venv
-	- from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
-	- check scripts in tests folder on github for examples
-
-Known bugs
---------
-- you get an error when slicing data (cross sections of 2D/3D data (OSError: [WinError 126] The specified module could not be found):
-	- reproduce: ``python -c "import shapely.geometry"`` should give the same error, while ``import shapely`` works without error
-	- find geos.py in your environment (eg C:\\Users\\%USERNAME%\\AppData\\Local\\Continuum\\anaconda3\\envs\\dfm_tools_env\\Lib\\site-packages\\shapely\\geos.py)
-	- replace ``if os.getenv('CONDA_PREFIX', ''):`` with ``if 0:`` on line 143 (this disables this if statement and redirects to else)
-	- this issue is being resolved: https://github.com/Toblerity/Shapely/pull/843
-- report other bugs and feature requests at the developers or at https://github.com/openearth/dfm_tools/issues (include OS, dfm_tools version, reproduction steps)
+	- optional: ``conda install shapely`` (for slicing 2D/3D data, installing via conda instead of dfm_tools pip solves geos issue)
+	- optional: ``conda install -c conda-forge cartopy`` (for satellite imagery on plots)
+	- optional: ``conda install basemap`` (for basemaps on plots)
+	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this command installs all required packages and it also updates dfm_tools to the latest version if you already installed it before)
+	- test by printing dfm_tools version number: ``python -c "import dfm_tools; print(dfm_tools.__version__)"`` (also try this in Spyder, to check if you are working in the dfm_tools_env venv)
+- launch Spyder:
+	- open anaconda navigator, select dfm_tools_env from the drop-down menu, install Spyder here, launch Spyder from here
+	- Note: if you don't want to start Spyder via anaconda navigator (or do not want to install Spyder for each environment separately), see developer information for an alternative method to link Spyder to your venv
 
 
 TODO wishlist
@@ -114,7 +118,8 @@ TODO wishlist
 - add variable units to plots in test bench (``plt.title('%s (%s)'%(data_fromnc.var_varname, data_fromnc.var_object.units))``)
 - add satellite basemap (cartopy/basemap):
 	- get latlon projection for axis
-	- both packages can only be installed via conda? so not possible as a pip dependency, add other test?
+	- add test if cartopy/basemap is installed
+	- installing basemap reverts cartopy from conda-forge to main, probably inconvenient
 	- test install them and decide on which package
 - dimn_time is now actually variable name which does not work if time dimname is not the same as time varname
 - make merc keyword always optional by testing for minmax all vertsx between -181 and 361 and minmax all vertsy (lat) between -91 and 91 (+range for overlap for e.g. gtsm model)
@@ -146,10 +151,10 @@ TODO wishlist
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/plotting_example.ipynb
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/vector_plotting_example.ipynb
 
+
 TODO non-content
 --------
-- mdu etc naar IO map verplaatsen (hier ook dep, grd, tekal, etc)
-- readme korter maken (developer info naar aparte file), readthedocs en andere broken links weghalen
+- readme korter maken (developer info naar aparte file)
 - update/delete cookiecutter text files
 - add documentation in comments of functions
 - create overview of scripts and functions, including missing features
@@ -171,7 +176,10 @@ TODO non-content
 
 Developer information: how to contribute to this git repository
 --------
-- First request rights to contribute with the current developers
+- First request github rights to contribute with the current developers
+	- Jelmer Veenstra <jelmer.veenstra@deltares.nl>
+	- Lora Buckman
+	- Julien Groenenboom
 - Get a local checkout of the github repository:
 	- Download git from https://git-scm.com/download/win, install with default settings
 	- open command line in a folder where you want to clone the dfm_tools github repo, e.g. C:\\DATA
@@ -204,6 +212,12 @@ Developer information: how to contribute to this git repository
 			- ``python -m pip install pyqt5>=5.7.1``
 			- restart Spyder console and it should work better
 			- Note: pyqt5 was previously part of the requirements, but it caused errors for some users upon installation
+		- you could get an error when slicing data (cross sections of 2D/3D data) (OSError: [WinError 126] The specified module could not be found):
+			- this happens when you install shapely via pip in a conda environment
+			- reproduce: ``python -c "import shapely.geometry"`` should give the same error, while ``python -c "import shapely"`` works without error
+			- open command window
+			- ``conda activate dfm_tools_env``
+			- ``conda install shapely`` (this fixes the geos dependency, which causes the error)
 - Install your local github clone via pip (developer mode):
 	- open command window, navigate to dfm_tools folder, e.g. C:\\DATA\\dfm_tools
 	- ``conda activate dfm_tools_env``
@@ -247,16 +261,3 @@ Developer information: how to contribute to this git repository
 	- push your changes with ``git push`` (from git bash window or cmd also ok?)
 - Request merging of your branch on https://github.com/openearth/dfm_tools/branches
 
-
-Credits
--------
-
-- Development lead
-	- Jelmer Veenstra <jelmer.veenstra@deltares.nl>
-	- Lora Buckman
-	- Julien Groenenboom
-
-This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
-
-.. _Cookiecutter: https://github.com/audreyr/cookiecutter
-.. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage

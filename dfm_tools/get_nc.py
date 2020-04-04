@@ -123,10 +123,10 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         else:
             raise Exception('ERROR: timestep lay type not anticipated (%s), (list/range/ndarray of) int are accepted (or "all")'%(type(layer)))
         #check if requested layers are within range of netcdf
-        if np.min(layer_ids) < 0:
-            raise Exception('ERROR: requested minimal layer (%d) is negative'%(np.min(layer_ids)))
         if np.max(layer_ids) > nlayers-1:
             raise Exception('ERROR: requested max layer (%d) is larger than available in netcdf file (%d)'%(np.max(layer_ids),nlayers-1))
+        if np.min(layer_ids) < -nlayers:
+            raise Exception('ERROR: requested min layer (%d) is larger than available in netcdf file (%d)'%(np.min(layer_ids),-nlayers))
     
     #DEPTH CHECKS
     if depth is not None:
@@ -246,10 +246,10 @@ def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None
     import warnings
     import numpy as np
     from netCDF4 import Dataset
-    try:
-        from shapely.geometry import LineString, Point
-    except:
-        raise Exception('ERROR: cannot execute import shapely.geometry, check known bugs on https://github.com/openearth/dfm_tools for a solution')
+    
+    from dfm_tools.testutils import try_importmodule
+    try_importmodule(modulename='shapely')
+    from shapely.geometry import LineString, Point
 
     from dfm_tools.get_nc_helpers import get_varname_fromnc
     
