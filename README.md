@@ -100,6 +100,9 @@ Example usage
 	- ``pc = plot_netmapdata(ugrid.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap=‘jet’)``
 - for more examples, check https://github.com/openearth/dfm_tools/tests (this is also the pytest testbank)
 
+```python
+import matplotlib.pyplot as plt
+```
 
 TODO wishlist
 --------
