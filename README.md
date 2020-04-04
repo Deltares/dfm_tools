@@ -3,10 +3,11 @@ dfm_tools
 
 dfm_tools are Python post-processing tools for Delft3D FM model outputfiles (netCDF) and more
 
-
 * Free software: GNU General Public License v3
-* Documentation: https://dfm-tools.readthedocs.io.
-
+- Development lead
+	- Jelmer Veenstra <jelmer.veenstra@deltares.nl>
+	- Lora Buckman
+	- Julien Groenenboom
 
 
 Features
@@ -260,16 +261,3 @@ Developer information: how to contribute to this git repository
 	- push your changes with ``git push`` (from git bash window or cmd also ok?)
 - Request merging of your branch on https://github.com/openearth/dfm_tools/branches
 
-
-Credits
--------
-
-- Development lead
-	- Jelmer Veenstra <jelmer.veenstra@deltares.nl>
-	- Lora Buckman
-	- Julien Groenenboom
-
-This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
-
-.. _Cookiecutter: https://github.com/audreyr/cookiecutter
-.. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
