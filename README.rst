@@ -75,6 +75,7 @@ How to work with dfm_tools
 	- Note: if you don't want to start Spyder via anaconda navigator (or do not want to install Spyder for each environment separately), see developer information for an alternative method to link Spyder to your venv
 	- for examples, check https://github.com/openearth/dfm_tools/tests (this is also the pytest testbank)
 example
+
 ```python
 from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
 test
