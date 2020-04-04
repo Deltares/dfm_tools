@@ -58,7 +58,7 @@ How to work with dfm_tools (old)
 --------
 - Install dfm_tools from github:
 	- download and install the newest anaconda 64 bit (including PATH checkbox), for instance: https://repo.anaconda.com/archive/Anaconda3-2019.10-Windows-x86_64.exe
-	- open command window
+	- open command window (or anaconda prompt)
 	- ``conda create --name dfm_tools_env python=3.7 git`` (creating a venv is optional but recommended)
 	- ``conda activate dfm_tools_env``
 	- ``conda install shapely`` (for slicing)
