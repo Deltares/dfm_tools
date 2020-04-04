@@ -131,15 +131,6 @@ def test_workinprogress():
 
 
 
-
-
-
-
-
-
-
-
-
     #ERA5
     file_nc = r'p:\11200665-c3s-codec\2_Hydro\ECWMF_meteo\meteo\ERA-5\2000\ERA5_metOcean_atm_19991201_19991231.nc'
     

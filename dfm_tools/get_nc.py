@@ -123,10 +123,10 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         else:
             raise Exception('ERROR: timestep lay type not anticipated (%s), (list/range/ndarray of) int are accepted (or "all")'%(type(layer)))
         #check if requested layers are within range of netcdf
-        if np.min(layer_ids) < 0:
-            raise Exception('ERROR: requested minimal layer (%d) is negative'%(np.min(layer_ids)))
         if np.max(layer_ids) > nlayers-1:
             raise Exception('ERROR: requested max layer (%d) is larger than available in netcdf file (%d)'%(np.max(layer_ids),nlayers-1))
+        if np.min(layer_ids) < -nlayers:
+            raise Exception('ERROR: requested min layer (%d) is larger than available in netcdf file (%d)'%(np.min(layer_ids),-nlayers))
     
     #DEPTH CHECKS
     if depth is not None:

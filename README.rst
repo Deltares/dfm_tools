@@ -49,9 +49,13 @@ Features
 	- tekal (.tek, .pli, .pliz, .pol, .ldb) data
 	- read Delft3D files (.grd, .dep)
 	- read/write mdu file
-- pytest testbank (folder 'tests' on github)
-- examples of unformatted plots created by testbank in tests folder: n:\\Deltabox\\Bulletin\\veenstra\\info dfm_tools
+
+General info
+--------
+- for examples, check https://github.com/openearth/dfm_tools/tests (this is also the pytest testbank)
+- examples of (mostly unformatted) figures created by this pytest testbank: n:\\Deltabox\\Bulletin\\veenstra\\info dfm_tools
 - please check the TODO sections for known inaccuracies or features that are not yet available
+- please report other bugs and feature requests at the developers or at https://github.com/openearth/dfm_tools/issues (include OS, dfm_tools version, reproduction steps)
 
 
 How to work with dfm_tools
@@ -66,23 +70,12 @@ How to work with dfm_tools
 	- optional: ``conda install basemap`` (for basemaps on plots)
 	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this command installs all required packages and it also updates dfm_tools to the latest version if you already installed it before)
 	- test by printing dfm_tools version number: ``python -c "import dfm_tools; print(dfm_tools.__version__)"`` (also try this in Spyder, to check if you are working in the dfm_tools_env venv)
-	
 - Use it in your scripts:
 	- launch Spyder: open anaconda navigator, select dfm_tools_env from the drop-down menu, install Spyder here, launch Spyder from here
 	- Note: if you don't want to start Spyder via anaconda navigator (or do not want to install Spyder for each environment separately), see developer information for an alternative method to link Spyder to your venv
-	- from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
-	- check scripts in tests folder on github for examples
-
-
-Known bugs
---------
-- you get an error when slicing data (cross sections of 2D/3D data) (OSError: [WinError 126] The specified module could not be found):
-	- this happens when you install shapely via pip in a conda environment
-	- reproduce: ``python -c "import shapely.geometry"`` should give the same error, while ``python -c "import shapely"`` works without error
-	- open command window
-	- ``conda activate dfm_tools_env``
-	- ``conda install shapely`` (this fixes the geos dependency, which causes the error)
-- report other bugs and feature requests at the developers or at https://github.com/openearth/dfm_tools/issues (include OS, dfm_tools version, reproduction steps)
+	- for examples, check https://github.com/openearth/dfm_tools/tests (this is also the pytest testbank)
+	- ``from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
+	test``
 
 
 TODO wishlist
@@ -150,6 +143,7 @@ TODO wishlist
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/plotting_example.ipynb
 	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/vector_plotting_example.ipynb
 
+
 TODO non-content
 --------
 - mdu etc naar IO map verplaatsen (hier ook dep, grd, tekal, etc)
@@ -208,6 +202,12 @@ Developer information: how to contribute to this git repository
 			- ``python -m pip install pyqt5>=5.7.1``
 			- restart Spyder console and it should work better
 			- Note: pyqt5 was previously part of the requirements, but it caused errors for some users upon installation
+		- you could get an error when slicing data (cross sections of 2D/3D data) (OSError: [WinError 126] The specified module could not be found):
+			- this happens when you install shapely via pip in a conda environment
+			- reproduce: ``python -c "import shapely.geometry"`` should give the same error, while ``python -c "import shapely"`` works without error
+			- open command window
+			- ``conda activate dfm_tools_env``
+			- ``conda install shapely`` (this fixes the geos dependency, which causes the error)
 - Install your local github clone via pip (developer mode):
 	- open command window, navigate to dfm_tools folder, e.g. C:\\DATA\\dfm_tools
 	- ``conda activate dfm_tools_env``
