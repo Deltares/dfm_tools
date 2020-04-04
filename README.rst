@@ -74,26 +74,6 @@ How to work with dfm_tools
 	- check scripts in tests folder on github for examples
 
 
-How to work with dfm_tools (old)
---------
-NO: - Install Python and git:
-NO: 	- download and install (including PATH checkbox) the newest anaconda 64 bit, for instance: https://repo.anaconda.com/archive/Anaconda3-2019.10-Windows-x86_64.exe
-NO: 	- download and install git from https://git-scm.com/download/win
-NO: 
-NO: - Install the code from github via pip:
-NO: 	- open command window
-NO: 	- ``conda create --name dfm_tools_env python=3.7`` (creating a venv is optional but recommended)
-NO: 	- ``conda activate dfm_tools_env``
-NO: 	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this also installs all required packages) (this also updates it to the latest version if you already installed it before)
-NO: 	- test by printing dfm_tools version number: ``python -c "import dfm_tools; print(dfm_tools.__version__)"`` (you can also try this in Spyder)
-NO: 	
-NO: - Use it in your scripts:
-NO: 	- launch Spyder: open anaconda navigator, select dfm_tools_env from the drop-down menu, install Spyder here, launch Spyder from here
-NO: 	- Note: if you don't want to start Spyder via anaconda navigator (and install Spyder for each environment separately), see developer information for an alternative method to link Spyder to your venv
-NO: 	- from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
-NO: 	- check scripts in tests folder on github for examples
-
-
 Known bugs
 --------
 - you get an error when slicing data (cross sections of 2D/3D data) (OSError: [WinError 126] The specified module could not be found):
@@ -101,11 +81,7 @@ Known bugs
 	- reproduce: ``python -c "import shapely.geometry"`` should give the same error, while ``python -c "import shapely"`` works without error
 	- open command window
 	- ``conda activate dfm_tools_env``
-	- ``conda install shapely`` (this fixes the geos dependency)
-	- it should now work
-	- NO: find geos.py in your environment (eg C:\\Users\\%USERNAME%\\AppData\\Local\\Continuum\\anaconda3\\envs\\dfm_tools_env\\Lib\\site-packages\\shapely\\geos.py)
-	- NO: replace ``if os.getenv('CONDA_PREFIX', ''):`` with ``if 0:`` on line 143 (this disables this if statement and redirects to else)
-	- NO: this issue is being resolved: https://github.com/Toblerity/Shapely/pull/843
+	- ``conda install shapely`` (this fixes the geos dependency, which causes the error)
 - report other bugs and feature requests at the developers or at https://github.com/openearth/dfm_tools/issues (include OS, dfm_tools version, reproduction steps)
 
 
