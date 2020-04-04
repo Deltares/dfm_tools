@@ -106,7 +106,7 @@ TODO wishlist
 	- layer argument now has to be provided when retrieving zcoordinate_c (centers) from hisfile, but not when retrieving zcoordinate_w (interfaces), align this.
 	- check center/corner correctness, pcolormesh does not completely correspond with contours
 - improve cartopy satellite/basemap background:
-	- add test if cartopy/basemap is installed before importing it, since these are optional modules
+	- add test if cartopy is installed before importing it, since these are optional modules (also cartopy import in user script, so does not work)
 	- add more settings for linewidth/facecolor/alpha/linecolor
 	- load geotiffs with satellite imagery (or png's where limits are provided by user) (files provided by user or automatically downloaded from predifined or provided source)
 	- load World Imagery data from arcgis mapserver (e.g. https://www.arcgis.com/home/item.html?id=10df2279f9684e4a9f6a7f08febac2a9)
@@ -114,6 +114,7 @@ TODO wishlist
 	- https://scitools.org.uk/cartopy/docs/v0.15/_modules/cartopy/mpl/geoaxes.html (stock_img() en background_img())
 	- https://github.com/SciTools/cartopy/blob/master/lib/cartopy/data/raster/natural_earth/images.json
 	- https://github.com/SciTools/cartopy/blob/master/lib/cartopy/data/raster/natural_earth/50-natural-earth-1-downsampled.png
+	- plotting gridliner with cartopy: https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/COMT_example.ipynb
 - add more io-functions:
 	- convert data to kml (google earth) or shp?
 	- add tekal write functions
@@ -140,19 +141,13 @@ TODO wishlist
 	- raise understandable error when no mesh2d_edge_x var in netcdf, instead of keyerror none (e.g. with get_netdata on hirlam files)
 	- if no ugrid in netfile, try to read provided xy variables and make meshgrid or convert cen2cor or cor2cen if necessary (how to test this?)
 	- improve plots for structured grid (CMEMS, ERA5, hirlam, grd etc)
-	- https://github.com/NOAA-ORR-ERD/gridded
+	- https://github.com/NOAA-ORR-ERD/gridded (https://github.com/pyugrid/pyugrid is merged into gridded) (ghostcells en mapmergen worden afgehandeld? meer dan 4 nodes per cel? support for stations?)
 	- tests.test_get_nc.test_gethirlam() is eerste opzet voor hirlam/ERA5 data, werkt heel anders dan D-flow FM
 	- how to plot properties on edges/nodes (scatter is slow), maybe create dual mesh and plot like faces. most relevant variables are also available on faces, so is this necessary?
 	- add support for rstfiles (different way of storing grid data, only face nodes present?)
-	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/OpenEarthTools/openearthtools/io/dflowfm/patch2tri.py
+	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/OpenEarthTools/openearthtools/io/dflowfm/patch2tri.py (equivalent van MIA)
 	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/OpenEarthTools/openearthtools/io/netcdf
-	- see test_workinprogress.py
-- pyugrid (ghostcells en mapmergen worden afgehandeld? meer dan 4 nodes per cel?), voorbeelden in ieder geval als inspiratie voor plotopties):
-	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/COMT_example.ipynb
-	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/Delft3D%20examples.ipynb
-	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/connectivity_example.ipynb
-	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/plotting_example.ipynb
-	- https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/vector_plotting_example.ipynb
+	- plotting edges/nodes/faces: https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/connectivity_example.ipynb
 
 
 TODO non-content
