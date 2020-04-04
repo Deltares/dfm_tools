@@ -65,7 +65,7 @@ How to work with dfm_tools
 	- optional: ``conda install -c conda-forge cartopy`` (for satellite imagery on plots)
 	- optional: ``conda install basemap`` (for basemaps on plots)
 	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this command installs all required packages and it also updates dfm_tools to the latest version if you already installed it before)
-	- test by printing dfm_tools version number: ``python -c "import dfm_tools; print(dfm_tools.__version__)"``(also try this in Spyder, to check if you are working in the dfm_tools_env venv)
+	- test by printing dfm_tools version number: ``python -c "import dfm_tools; print(dfm_tools.__version__)"`` (also try this in Spyder, to check if you are working in the dfm_tools_env venv)
 	
 - Use it in your scripts:
 	- launch Spyder: open anaconda navigator, select dfm_tools_env from the drop-down menu, install Spyder here, launch Spyder from here
