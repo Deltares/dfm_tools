@@ -201,7 +201,6 @@ Developer information: how to contribute to this git repository
 	- ``conda activate dfm_tools_env``
 	- ``python -m pip install -e .`` (pip developer mode, any updates to the local folder by github (with ``git pull``) are immediately available in your python. It also installs all required packages)
 	- test if dfm_tools is properly installed by printing the version number: ``python -c "import dfm_tools; print(dfm_tools.__version__)"``
-	- test if you can import shapely.geometry: ``python -c "import shapely.geometry"`` (if not, look at the 'known bugs' section in this readme. You will need this when slicing data)
 - Optional: link to your venv from Spyder (then no separate Spyder installation necessary in venv)
 	- alternative: you can also start spyder via Anaconda Navigator, after selecting your venv
 	- open command line and navigate to dfm_tools github folder, e.g. C:\\DATA\\dfm_tools
