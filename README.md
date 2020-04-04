@@ -64,7 +64,7 @@ fig, axs = plt.subplots(2,1,figsize=(6,8))
 pc = plot_netmapdata(ugrid.verts, values=data_frommap_bl, ax=axs[0], linewidth=0.5, cmap='jet')
 pc = plot_netmapdata(ugrid.verts, values=data_frommap_sal[0,:,-1], ax=axs[1], linewidth=0.5, cmap='jet')
 ```
-- for more examples, check https://github.com/openearth/dfm_tools/tests (this is also the pytest testbank)
+- for more examples, check https://github.com/openearth/dfm_tools/tree/master/tests (this is also the pytest testbank)
 - examples of (mostly unformatted) figures created by this pytest testbank: n:\\Deltabox\\Bulletin\\veenstra\\info dfm_tools
 - please check the TODO sections for known inaccuracies or features that are not yet available
 - please report other bugs and feature requests at the developers or at https://github.com/openearth/dfm_tools/issues (include OS, dfm_tools version, reproduction steps)
@@ -196,34 +196,6 @@ Developer information: how to contribute to this git repository
 	- ``python -m pip install -e .`` (pip developer mode, any updates to the local folder by github (with ``git pull``) are immediately available in your python. It also installs all required packages)
 	- test if dfm_tools is properly installed by printing the version number: ``python -c "import dfm_tools; print(dfm_tools.__version__)"``
 	- do not forget to install shapely and cartopy in your venv (see normal installation manual)
-- REMOVE THIS PART DUE TO CARTOPY ISSUES WITH THIS METHOD IF SPYDER IS NOT UP TO DATE, AND ALL THE KNOWN BUGS? Optional: link to your venv from Spyder (then no separate Spyder installation necessary in venv)
-	- alternative: you can also start spyder via Anaconda Navigator, after selecting your venv
-	- open command line and navigate to dfm_tools github folder, e.g. C:\\DATA\\dfm_tools
-	- ``conda activate dfm_tools_env``
-	- ``python -c "import sys; print(sys.executable)"`` (the resulting path you need some steps later, e.g. C:\\Users\\%USERNAME%\\AppData\\Local\\Continuum\\anaconda3\\envs\\dfm_tools_env\\python.exe)
-	- ``conda deactivate``
-	- open spyder from start menu or anaconda or anything
-	- Go to Tools >> Preferences >> Python interpreter >> point to dfm_tools_env python.exe (print of sys.executable)
-	- restart IPython console
-	- Known bugs with this method (instead of launching Spyder via anaconda navigator):
-		- you get the message that 'spyder-kernels' is not installed or the wrong version:
-			- open command window
-			- ``conda activate dfm_tools_env``
-			- ``python -m pip install spyder-kernels>=1.*`` (for Spyder 4.*) OR ``python -m pip install spyder-kernels==0.*`` (for Spyder 3.*)
-			- restart Spyder console and it should work
-		- figures are struggling:
-			- your matplotlib backend is probably 'Tkagg' instead of 'Qt5Agg' (execute ``import matplotlib; matplotlib.get_backend()`` from the Spyder console)
-			- open command window
-			- ``conda activate dfm_tools_env``
-			- ``python -m pip install pyqt5>=5.7.1``
-			- restart Spyder console and it should work better
-			- Note: pyqt5 was previously part of the requirements, but it caused errors for some users upon installation
-		- you could get an error when slicing data (cross sections of 2D/3D data) (OSError: [WinError 126] The specified module could not be found):
-			- this happens when you install shapely via pip in a conda environment
-			- reproduce: ``python -c "import shapely.geometry"`` should give the same error, while ``python -c "import shapely"`` works without error
-			- open command window
-			- ``conda activate dfm_tools_env``
-			- ``conda install shapely`` (this fixes the geos dependency, which causes the error)
 - Branching:
 	- open git bash window in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
 	- ``git config --global user.email [emailaddress]``
