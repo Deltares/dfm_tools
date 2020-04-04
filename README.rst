@@ -59,10 +59,10 @@ General info
 - please report other bugs and feature requests at the developers or at https://github.com/openearth/dfm_tools/issues (include OS, dfm_tools version, reproduction steps)
 
 
-How to work with dfm_tools
+How to install dfm_tools from github
 --------
-- Install dfm_tools from github:
-	- download and install the newest anaconda 64 bit (including PATH checkbox), for instance: https://repo.anaconda.com/archive/Anaconda3-2019.10-Windows-x86_64.exe
+- download and install the newest anaconda 64 bit (including PATH checkbox), for instance: https://repo.anaconda.com/archive/Anaconda3-2019.10-Windows-x86_64.exe
+- install dfm_tools from github
 	- open command window (or anaconda prompt)
 	- ``conda create --name dfm_tools_env python=3.7 git`` (creating a venv is optional but recommended)
 	- ``conda activate dfm_tools_env``
@@ -71,32 +71,35 @@ How to work with dfm_tools
 	- optional: ``conda install basemap`` (for basemaps on plots)
 	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this command installs all required packages and it also updates dfm_tools to the latest version if you already installed it before)
 	- test by printing dfm_tools version number: ``python -c "import dfm_tools; print(dfm_tools.__version__)"`` (also try this in Spyder, to check if you are working in the dfm_tools_env venv)
-	- launch Spyder: open anaconda navigator, select dfm_tools_env from the drop-down menu, install Spyder here, launch Spyder from here
+- launch Spyder:
+	- open anaconda navigator, select dfm_tools_env from the drop-down menu, install Spyder here, launch Spyder from here
 	- Note: if you don't want to start Spyder via anaconda navigator (or do not want to install Spyder for each environment separately), see developer information for an alternative method to link Spyder to your venv
 
-- Use it in your scripts:
-``from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata``
-``data_fromnc = get_ncmodeldata(file_nc='path_to_file')``
-#Import statements:
-``import matplotlib.pyplot as plt``
-``from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata``
-``from dfm_tools.get_nc_helpers import get_ncvardimlist, get_timesfromnc, get_hisstationlist``
-- Get lists with vars/dims, times, station/crs/structures:
-``vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)``
-``times_pd = get_timesfromnc(file_nc=file_nc)`
-``statlist_pd = get_hisstationlist(file_nc)``
+
+Example usage
+--------
+- import statements:
+	- ``import matplotlib.pyplot as plt``
+	- ``from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata``
+	- ``from dfm_tools.get_nc_helpers import get_ncvardimlist, get_timesfromnc, get_hisstationlist``
+	- ``file_nc = 'path_to_file'
+- get lists with vars/dims, times, station/crs/structures:
+	- ``vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)``
+	- ``times_pd = get_timesfromnc(file_nc=file_nc)`
+	- ``statlist_pd = get_hisstationlist(file_nc)``
 	- ``gs_pd = get_hisstationlist(file_nc, varname_stat='general_structure_id')``
-- Retrieve his data:
+- retrieve his data:
 	- ``data_fromhis = get_ncmodeldata(file_nc=file_nc, varname='bedlevel', station='all')#, multipart=False)``
 	- ``fig, ax = plt.subplots()``
 	- ``ax.plot(data_fromhis.var_stations,data_fromhis,'-')``
-- Retrieve net/map data, plot map data on grid:
+- retrieve net/map data, plot map data on grid:
 	- ``ugrid = get_netdata(file_nc=file_nc)#, multipart=False)``
-	- ``data_frommap = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_flowelem_bl’)#, multipart=False)``
-	- OR:``data_frommap = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sa1', timestep=timestep, layer=layer)``
+	- ``data_frommap_bl = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_flowelem_bl’)#, multipart=False)``
+	- ``data_frommap_sal = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sa1', timestep=timestep, layer=layer)``
 	- ``fig, ax = plt.subplots()``
 	- ``pc = plot_netmapdata(ugrid.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap=‘jet’)``
-	- for more examples, check https://github.com/openearth/dfm_tools/tests (this is also the pytest testbank)
+- for more examples, check https://github.com/openearth/dfm_tools/tests (this is also the pytest testbank)
+
 
 TODO wishlist
 --------
