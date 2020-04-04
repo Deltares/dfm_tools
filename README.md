@@ -82,13 +82,13 @@ How to install dfm_tools
 	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this command installs all required packages and it also updates dfm_tools to the latest version if you already installed it before)
 	- test by printing dfm_tools version number: ``python -c "import dfm_tools; print(dfm_tools.__version__)"`` (also try this in Spyder, to check if you are working in the dfm_tools_env venv)
 - launch Spyder:
-	- for the first time in your venv: open anaconda navigator, select dfm_tools_env from the drop-down menu, install Spyder here (and launch Spyder from here)
-	- open 'Spyder(dfm_tools_env)' via your windows start menu
+	- open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder', since dfm_tools was installed in dfm_tools_env)
 
 
 TODO wishlist
 --------
 - retrieve station/crs/gs list corresponding to a variable with get_hisstationlist(), now already used in stations/gs/crs check of get_nc.get_ncmodeldata()
+- merge station/layer/times checks, these parts of get_nc.py have a lot of overlap
 - select/check functions in dflowutil folder and merge with dfm_tools:
 	- including dflowutil_examples/test_dflowutil.py and other test scripts
 	- dflowutil contains e.g. read/write functions for general datafromats (tim, bc)
