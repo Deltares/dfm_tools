@@ -431,9 +431,13 @@ def test_delft3D_netcdf():
     ax.set_aspect('equal')
     plt.savefig(os.path.join(dir_output,'curvedbend_mesh'))
     
-    fig, axs = plt.subplots(1,3, figsize=(16,5))
-    for iT, timestep in enumerate([0,2,4]):
-        ax=axs[iT]
+    ncol=2
+    fig, axs = plt.subplots(2,ncol, figsize=(10,8))
+    for iT, timestep in enumerate([0,1,2,4]):
+        id0 = int(np.floor(iT/ncol))
+        id1 = iT%ncol
+        #print('[%s,%s]'%(id0,id1))
+        ax=axs[id0,id1]
         vel_x, vel_y, vel_magn, direction_naut_deg = uva2xymagdeg(u=data_nc_U1[timestep,9,:,:],v=data_nc_V1[timestep,9,:,:],alpha=data_nc_ALFAS)
         pc = ax.pcolor(data_nc_XZ,data_nc_YZ,vel_magn,cmap='jet')
         pc.set_clim([0,1.2])
