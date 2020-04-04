@@ -799,4 +799,92 @@ def test_waqua_netcdf_convertedwith_getdata():
     ax.set_xlim([data_nc_ZWL.var_times[0],data_nc_ZWL.var_times[0]+dt.timedelta(days=14)])
     plt.savefig(os.path.join(dir_output,'waqua_RMM_his_ZWL'))
 
+
+
     
+
+
+
+def test_cartopy_satellite_coastlines():
+    dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
+    
+    """
+    dir_output = './test_output'
+    """
+    import matplotlib.pyplot as plt
+    plt.close('all')
+    #import matplotlib
+    #matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import cartopy.crs as ccrs
+    import cartopy.feature as cfeature 
+    import numpy as np
+    import cartopy.mpl.ticker as cticker
+    
+    from dfm_tools.get_nc import get_ncmodeldata
+    from dfm_tools.get_nc_helpers import get_ncvardimlist
+    
+    def plot_basemap(ax, domain):
+        #author: Muis
+        #ax = plt.axes(projection=ccrs.PlateCarree())
+        ax.set_extent(domain)         
+        #ax.stock_img()
+        ax.add_feature(cfeature.NaturalEarthFeature('physical', 'land', '10m',edgecolor='face',facecolor=cfeature.COLORS['land']))     
+        #ax.add_feature(cfeature.NaturalEarthFeature('physical', 'ocean', '50m',edgecolor='face',facecolor=cfeature.COLORS['water']))     
+    
+        ax.coastlines(resolution='10m',edgecolor='gray',linewidth=0.5,zorder=11)
+        countries = cfeature.NaturalEarthFeature(
+            category='cultural',
+            name='admin_0_countries',
+            scale='10m',
+            facecolor='none')
+        ax.add_feature(countries, edgecolor='gray',linewidth=0.5)
+        ax.set_xticks(np.arange(domain[0],domain[1],5), crs=ccrs.PlateCarree())
+        #ax.set_xticklabels(np.arange(domain[0],domain[1],1),fontsize=15)
+        ax.set_yticks(np.arange(domain[2],domain[3],5), crs=ccrs.PlateCarree())
+        #ax.set_yticklabels(np.arange(domain[2],domain[3],1),fontsize=15)
+    #    ax.yaxis.tick_left()
+        lon_formatter = cticker.LongitudeFormatter()
+        lat_formatter = cticker.LatitudeFormatter()
+        ax.xaxis.set_major_formatter(lon_formatter)
+        ax.yaxis.set_major_formatter(lat_formatter)
+        ax.grid(linewidth=2, color='black', alpha=0.1, linestyle='--')
+    
+        return ax
+    
+    
+    file_nc = r'p:\1204257-dcsmzuno\2014\data\meteo\HIRLAM72_2018\h72_201803.nc'
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    
+    mesh2d_node_x = get_ncmodeldata(file_nc=file_nc, varname='x')
+    mesh2d_node_y = get_ncmodeldata(file_nc=file_nc, varname='y')
+    data_v = get_ncmodeldata(file_nc=file_nc, varname='northward_wind',timestep=0)[0,:,:]
+    data_u = get_ncmodeldata(file_nc=file_nc, varname='eastward_wind',timestep=0)[0,:,:]
+    #airp = get_ncmodeldata(file_nc=file_nc, varname='air_pressure_fixed_height',timestep=0)[0,:,:]
+    magn = np.sqrt(data_u**2 + data_v**2)
+    
+    
+    
+    fig, ax = plt.subplots(subplot_kw={'projection': ccrs.PlateCarree()})
+    ax = plot_basemap(ax, [np.min(mesh2d_node_x[:200,:200]),np.max(mesh2d_node_x[:200,:200]),np.min(mesh2d_node_y[:200,:200]),np.max(mesh2d_node_y[:200,:200])])
+    ax.pcolor(mesh2d_node_x[:200,:200],mesh2d_node_y[:200,:200],magn[:200,:200])
+    plt.savefig(os.path.join(dir_output,'cartopy_option1'))
+
+    
+    """
+    plt.figure(figsize=(13,6.2))
+    ax = plt.subplot(111, projection=ccrs.PlateCarree())
+    pc = ax.pcolor(mesh2d_node_x[:200,:200],mesh2d_node_y[:200,:200],magn[:200,:200], transform=ccrs.PlateCarree())
+    ax.coastlines()
+    """
+    
+    fig, axs = plt.subplots(1,2, figsize=(13,6), subplot_kw={'projection': ccrs.PlateCarree()})
+    for iP in [0]:
+        ax = axs[iP]
+        pc = ax.pcolor(mesh2d_node_x[:200,:200],mesh2d_node_y[:200,:200],magn[:200,:200], transform=ccrs.PlateCarree())
+        ax.coastlines()
+    #ax.stock_img()
+    plt.savefig(os.path.join(dir_output,'cartopy_option1'))
+
+
+

@@ -77,8 +77,9 @@ How to install dfm_tools
 	- ``conda create --name dfm_tools_env python=3.7 git`` (creating a venv is recommended, but at least do ``conda install git`` if you choose not to)
 	- ``conda activate dfm_tools_env``
 	- optional: ``conda install shapely`` (for slicing 2D/3D data)
-	- optional: ``conda install -c conda-forge cartopy`` (for satellite imagery on plots, dependencies not validated yet)
-	- optional: ``conda install basemap`` (for basemaps on plots, dependencies not validated yet)
+	- optional: ``conda install cartopy`` (for satellite imagery on plots, dependencies not validated yet)
+	- NO: optional: ``conda install -c conda-forge cartopy`` (for satellite imagery on plots, dependencies not validated yet)
+	- NO: optional: ``conda install basemap`` (for satellite imagery and basemaps on plots, dependencies not validated yet)
 	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this command installs all required packages and it also updates dfm_tools to the latest version if you already installed it before)
 	- test by printing dfm_tools version number: ``python -c "import dfm_tools; print(dfm_tools.__version__)"`` (also try this in Spyder, to check if you are working in the dfm_tools_env venv)
 - launch Spyder:
@@ -117,7 +118,8 @@ TODO wishlist
 	- https://github.com/moflaher/ttide_py
 - add variable units to plots in test bench (``plt.title('%s (%s)'%(data_fromnc.var_varname, data_fromnc.var_object.units))``)
 - add satellite basemap (cartopy/basemap):
-	- installing basemap reverts cartopy from conda-forge to main, probably inconvenient
+	- installing cartopy from conda-forge also changes shapely/geos version to conda-forge, probably inconvenient
+	- installing basemap from main reverts cartopy from conda-forge to main, probably inconvenient
 	- test both and check dependencies
 	- add test if cartopy/basemap is installed before importing it, since these are optional modules
 	- also to get latlon projection for axis?
