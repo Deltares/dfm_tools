@@ -61,7 +61,7 @@ How to work with dfm_tools (old)
 	- open command window (or anaconda prompt)
 	- ``conda create --name dfm_tools_env python=3.7 git`` (creating a venv is optional but recommended)
 	- ``conda activate dfm_tools_env``
-	- ``conda install shapely`` (for slicing)
+	- optional: ``conda install shapely`` (for slicing 2D/3D data, installing via conda instead of dfm_tools pip solves geos issue)
 	- optional: ``conda install -c conda-forge cartopy`` (for satellite imagery on plots)
 	- optional: ``conda install basemap`` (for basemaps on plots)
 	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this command installs all required packages and it also updates dfm_tools to the latest version if you already installed it before)
@@ -141,7 +141,8 @@ TODO wishlist
 - add variable units to plots in test bench (``plt.title('%s (%s)'%(data_fromnc.var_varname, data_fromnc.var_object.units))``)
 - add satellite basemap (cartopy/basemap):
 	- get latlon projection for axis
-	- both packages can only be installed via conda? so not possible as a pip dependency, add other test?
+	- add test if cartopy/basemap is installed
+	- installing basemap reverts cartopy from conda-forge to main, probably inconvenient
 	- test install them and decide on which package
 - dimn_time is now actually variable name which does not work if time dimname is not the same as time varname
 - make merc keyword always optional by testing for minmax all vertsx between -181 and 361 and minmax all vertsy (lat) between -91 and 91 (+range for overlap for e.g. gtsm model)
