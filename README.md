@@ -3,7 +3,7 @@ dfm_tools
 
 dfm_tools are Python post-processing tools for Delft3D FM model outputfiles (netCDF) and more
 
-* Free software: GNU General Public License v3
+- Free software: GNU General Public License v3
 - Development lead
 	- Jelmer Veenstra <jelmer.veenstra@deltares.nl>
 	- Lora Buckman
@@ -37,28 +37,25 @@ Features
 
 Example usage
 --------
-- import statements:
 ```python
+#import statements
 import matplotlib.pyplot as plt
 from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
 from dfm_tools.get_nc_helpers import get_ncvardimlist, get_timesfromnc, get_hisstationlist
 file_nc = 'path_to_file'
-```
-- get lists with vars/dims, times, station/crs/structures:
-```python
+
+#get lists with vars/dims, times, station/crs/structures
 vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
 times_pd = get_timesfromnc(file_nc=file_nc)
 statlist_pd = get_hisstationlist(file_nc)
 gs_pd = get_hisstationlist(file_nc, varname_stat='general_structure_id')
-```
-- retrieve his data:
-```python
+
+#retrieve his data
 data_fromhis = get_ncmodeldata(file_nc=file_nc, varname='bedlevel', station='all')#, multipart=False)
 fig, ax = plt.subplots()
 ax.plot(data_fromhis.var_stations,data_fromhis,'-')
-```
-- retrieve net/map data, plot map data on grid:
-```python
+
+#retrieve net/map data, plot map data on grid
 ugrid = get_netdata(file_nc=file_nc)#, multipart=False)
 data_frommap_bl = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_flowelem_bl’)#, multipart=False)
 data_frommap_sal = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sa1', timestep=timestep, layer=layer)
