@@ -42,25 +42,30 @@ Example usage
 import matplotlib.pyplot as plt
 from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
 from dfm_tools.get_nc_helpers import get_ncvardimlist, get_timesfromnc, get_hisstationlist
-file_nc = 'path_to_file'
+
+#define files. you will most probably get error messages if the file you use has a different set up, but these should be self-explanatory
+file_nc_map = 'path_to_file'
+file_nc_his = 'path_to_file'
 
 #get lists with vars/dims, times, station/crs/structures
-vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
-times_pd = get_timesfromnc(file_nc=file_nc)
-statlist_pd = get_hisstationlist(file_nc)
-gs_pd = get_hisstationlist(file_nc, varname_stat='general_structure_id')
+vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc_map)
+times_pd = get_timesfromnc(file_nc=file_nc_map)
+statlist_pd = get_hisstationlist(file_nc=file_nc_his, varname_stat='station_name')
 
 #retrieve his data
-data_fromhis = get_ncmodeldata(file_nc=file_nc, varname='bedlevel', station='all')#, multipart=False)
-fig, ax = plt.subplots()
-ax.plot(data_fromhis.var_stations,data_fromhis,'-')
+data_fromhis_bl = get_ncmodeldata(file_nc=file_nc_his, varname='bedlevel', station='all')
+data_fromhis_wl = get_ncmodeldata(file_nc=file_nc_his, varname='waterlevel', station='all', timestep= 'all')
+fig, axs = plt.subplots(2,1,figsize=(6,8))
+axs[0].plot(data_fromhis_bl.var_stations,data_fromhis_bl,'-')
+axs[1].plot(data_fromhis_wl.var_times,data_fromhis_wl,'-')
 
 #retrieve net/map data, plot map data on grid
-ugrid = get_netdata(file_nc=file_nc)#, multipart=False)
-data_frommap_bl = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_flowelem_bl’)#, multipart=False)
-data_frommap_sal = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sa1', timestep=timestep, layer=layer)
-fig, ax = plt.subplots()
-pc = plot_netmapdata(ugrid.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap=‘jet’)
+ugrid = get_netdata(file_nc=file_nc_map)#, multipart=False)
+data_frommap_bl = get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_flowelem_bl')#, multipart=False)
+data_frommap_sal = get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_sa1', timestep=2, layer='all')#, multipart=False)
+fig, axs = plt.subplots(2,1,figsize=(6,8))
+pc = plot_netmapdata(ugrid.verts, values=data_frommap_bl, ax=axs[0], linewidth=0.5, cmap='jet')
+pc = plot_netmapdata(ugrid.verts, values=data_frommap_sal[0,:,-1], ax=axs[1], linewidth=0.5, cmap='jet')
 ```
 - for more examples, check https://github.com/openearth/dfm_tools/tests (this is also the pytest testbank)
 - examples of (mostly unformatted) figures created by this pytest testbank: n:\\Deltabox\\Bulletin\\veenstra\\info dfm_tools
