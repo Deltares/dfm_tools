@@ -864,6 +864,15 @@ def test_cartopy_satellite_coastlines():
     magn = np.sqrt(data_u**2 + data_v**2)
     
     
+    fig, ax = plt.subplots()
+    pc = ax.pcolor(mesh2d_node_x[:200,:200],mesh2d_node_y[:200,:200],magn[:200,:200])
+    plt.savefig(os.path.join(dir_output,'cartopy_transformno'))
+    
+    fig, ax = plt.subplots(subplot_kw={'projection': ccrs.PlateCarree()})
+    pc = ax.pcolor(mesh2d_node_x[:200,:200],mesh2d_node_y[:200,:200],magn[:200,:200], transform=ccrs.PlateCarree())
+    plt.savefig(os.path.join(dir_output,'cartopy_transformonly'))
+
+
     
     fig, ax = plt.subplots(subplot_kw={'projection': ccrs.PlateCarree()})
     ax = plot_basemap(ax, [np.min(mesh2d_node_x[:200,:200]),np.max(mesh2d_node_x[:200,:200]),np.min(mesh2d_node_y[:200,:200]),np.max(mesh2d_node_y[:200,:200])])
