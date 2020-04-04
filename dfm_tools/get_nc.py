@@ -246,10 +246,10 @@ def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None
     import warnings
     import numpy as np
     from netCDF4 import Dataset
-    try:
-        from shapely.geometry import LineString, Point
-    except:
-        raise Exception('ERROR: cannot execute import shapely.geometry, check known bugs on https://github.com/openearth/dfm_tools for a solution')
+    
+    from dfm_tools.testutils import try_importmodule
+    try_importmodule(modulename='shapely')
+    from shapely.geometry import LineString, Point
 
     from dfm_tools.get_nc_helpers import get_varname_fromnc
     

@@ -43,3 +43,15 @@ def getmakeoutputdir(script_dir, function_name):
     if not os.path.exists(dir_output):
         os.mkdir(dir_output)
     return dir_output
+
+
+def try_importmodule(modulename=None):
+    try:
+        exec('import %s'%(modulename))
+    except:
+        raise Exception('ERROR: module %s not found, execute "conda install %s" in your command window (or anaconda prompt) after activating dfm_tools_env'%(modulename, modulename))
+    if modulename == 'shapely':
+        try:
+            import shapely.geometry
+        except:
+            raise Exception('ERROR: cannot execute "import shapely.geometry", execute "conda install shapely" in your command window (or anaconda prompt) after activating dfm_tools_env')

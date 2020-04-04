@@ -98,6 +98,7 @@ NO: 	- check scripts in tests folder on github for examples
 Known bugs
 --------
 - you get an error when slicing data (cross sections of 2D/3D data) (OSError: [WinError 126] The specified module could not be found):
+	- this happens when you install shapely via pip in a conda environment
 	- reproduce: ``python -c "import shapely.geometry"`` should give the same error, while ``python -c "import shapely"`` works without error
 	- open command window
 	- ``conda activate dfm_tools_env``

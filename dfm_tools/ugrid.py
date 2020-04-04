@@ -103,10 +103,10 @@ class UGrid:
     def polygon_intersect(self, line_array, optimize_dist=None):
         import numpy as np
         from matplotlib.path import Path
-        try:
-            from shapely.geometry import Polygon, LineString
-        except:
-            raise Exception('ERROR: cannot execute import shapely.geometry, check known bugs on https://github.com/openearth/dfm_tools for a solution')
+        
+        from dfm_tools.testutils import try_importmodule
+        try_importmodule(modulename='shapely')
+        from shapely.geometry import LineString, Polygon
             
         print('finding crossing flow links (can take a while if linebox over xy covers a lot of cells)')
         #allpol = []
