@@ -23,6 +23,7 @@ Features
 - plotting:
 	- plot flexible mesh net/map variables as polycollections/patches
 	- plot regular grid variables with pcolor (work in progress)
+	- plot cartopy features (land, sea, landboundary, country borders, satellite background)
 	- plotting z,t-plots (see wishlist section for inaccuracies)
 	- plot anything you like and how you like it
 - other io functions:
@@ -106,7 +107,16 @@ TODO wishlist
 	- WARNING: part of the z interfaces/center data in dflowfm hisfile is currently wrong, check your figures carefully
 	- layer argument now has to be provided when retrieving zcoordinate_c (centers) from hisfile, but not when retrieving zcoordinate_w (interfaces), align this.
 	- check center/corner correctness, pcolormesh does not completely correspond with contours
-- io-functions:
+- improve cartopy satellite/basemap background:
+	- add test if cartopy/basemap is installed before importing it, since these are optional modules
+	- add more settings for linewidth/facecolor/alpha/linecolor
+	- load geotiffs with satellite imagery (or png's where limits are provided by user) (files provided by user or automatically downloaded from predifined or provided source)
+	- load World Imagery data from arcgis mapserver (e.g. https://www.arcgis.com/home/item.html?id=10df2279f9684e4a9f6a7f08febac2a9)
+	- https://stackoverflow.com/questions/12116050/how-to-plot-remote-image-from-http-url
+	- https://scitools.org.uk/cartopy/docs/v0.15/_modules/cartopy/mpl/geoaxes.html (stock_img() en background_img())
+	- https://github.com/SciTools/cartopy/blob/master/lib/cartopy/data/raster/natural_earth/images.json
+	- https://github.com/SciTools/cartopy/blob/master/lib/cartopy/data/raster/natural_earth/50-natural-earth-1-downsampled.png
+- add more io-functions:
 	- convert data to kml (google earth) or shp?
 	- add tekal write functions
 - add tidal analysis:
@@ -116,13 +126,6 @@ TODO wishlist
 	- https://github.com/pwcazenave/tappy
 	- https://pypi.org/project/UTide/
 	- https://github.com/moflaher/ttide_py
-- add variable units to plots in test bench (``plt.title('%s (%s)'%(data_fromnc.var_varname, data_fromnc.var_object.units))``)
-- add satellite basemap (cartopy/basemap):
-	- installing cartopy from conda-forge also changes shapely/geos version to conda-forge, probably inconvenient
-	- installing basemap from main reverts cartopy from conda-forge to main, probably inconvenient
-	- test both and check dependencies
-	- add test if cartopy/basemap is installed before importing it, since these are optional modules
-	- also to get latlon projection for axis?
 - dimn_time is now actually variable name which does not work if time dimname is not the same as time varname
 - make merc keyword always optional by testing for minmax all vertsx between -181 and 361 and minmax all vertsy (lat) between -91 and 91 (+range for overlap for e.g. gtsm model)
 - optimize get_ncmodeldata for layerdepths/bedlevel/waterlevel (second intersect function), only retrieve necessary information for crossection
@@ -156,6 +159,7 @@ TODO wishlist
 
 TODO non-content
 --------
+- add variable units to plots in test bench (``plt.title('%s (%s)'%(data_fromnc.var_varname, data_fromnc.var_object.units))``)
 - readme korter maken (developer info naar aparte file)
 - update/delete cookiecutter text files
 - add documentation in comments of functions
@@ -192,7 +196,13 @@ Developer information: how to contribute to this git repository
 	- ``conda env create -f environment.yml`` (sometimes you need to press enter if it hangs extremely long)
 	- ``conda info --envs`` (shows dfm_tools_env virtual environment)
 	- to remove: ``conda remove -n dfm_tools_env --all`` (to remove it again when necessary)
-- Optional: link to your venv from Spyder (no separate Spyder installation necessary in venv)
+- Install your local github clone via pip (developer mode):
+	- open command window, navigate to dfm_tools folder, e.g. C:\\DATA\\dfm_tools
+	- ``conda activate dfm_tools_env``
+	- ``python -m pip install -e .`` (pip developer mode, any updates to the local folder by github (with ``git pull``) are immediately available in your python. It also installs all required packages)
+	- test if dfm_tools is properly installed by printing the version number: ``python -c "import dfm_tools; print(dfm_tools.__version__)"``
+	- test if you can import shapely.geometry: ``python -c "import shapely.geometry"`` (if not, look at the 'known bugs' section in this readme. You will need this when slicing data)
+- Optional: link to your venv from Spyder (then no separate Spyder installation necessary in venv)
 	- alternative: you can also start spyder via Anaconda Navigator, after selecting your venv
 	- open command line and navigate to dfm_tools github folder, e.g. C:\\DATA\\dfm_tools
 	- ``conda activate dfm_tools_env``
@@ -220,12 +230,6 @@ Developer information: how to contribute to this git repository
 			- open command window
 			- ``conda activate dfm_tools_env``
 			- ``conda install shapely`` (this fixes the geos dependency, which causes the error)
-- Install your local github clone via pip (developer mode):
-	- open command window, navigate to dfm_tools folder, e.g. C:\\DATA\\dfm_tools
-	- ``conda activate dfm_tools_env``
-	- ``python -m pip install -e .`` (pip developer mode, any updates to the local folder by github (with ``git pull``) are immediately available in your python. It also installs all required packages)
-	- test if dfm_tools is properly installed by printing the version number: ``python -c "import dfm_tools; print(dfm_tools.__version__)"``
-	- test if you can import shapely.geometry: ``python -c "import shapely.geometry"`` (if not, look at the 'known bugs' section in this readme. You will need this when slicing data)
 - Branching:
 	- open git bash window in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
 	- ``git config --global user.email [emailaddress]``
