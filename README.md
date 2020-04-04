@@ -80,7 +80,6 @@ How to install dfm_tools
 	- optional: ``conda install shapely`` (for slicing 2D/3D data)
 	- optional: ``conda install cartopy`` (for satellite imagery on plots, dependencies not validated yet)
 	- NO: optional: ``conda install -c conda-forge cartopy`` (for satellite imagery on plots, dependencies not validated yet)
-	- NO: optional: ``conda install basemap`` (for satellite imagery and basemaps on plots, dependencies not validated yet)
 	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this command installs all required packages and it also updates dfm_tools to the latest version if you already installed it before)
 	- test by printing dfm_tools version number: ``python -c "import dfm_tools; print(dfm_tools.__version__)"`` (also try this in Spyder, to check if you are working in the dfm_tools_env venv)
 - launch Spyder:
