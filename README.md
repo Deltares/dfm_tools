@@ -101,6 +101,7 @@ TODO wishlist
 	- add depth array (interfaces/centers) to his and map variables (z/sigma layer calculation is already in get_modeldata_onintersection function)
 	- depths can be retrieved from mesh2d_layer_z/mesh2d_layer_sigma, but has no time dimension so untrue for sigma and maybe for z? (wrong in dflowfm?)
 	- layerzfrombedlevel keyword in mdu changes how zlayering is set up. Catch this exception with a keyword if necessary
+- simplify input of modplot.velovect() for curved vectors
 - improve z,t-plots from hisfile:
 	- example in test_get_nc.test_gethismodeldata()
 	- WARNING: part of the z interfaces/center data in dflowfm hisfile is currently wrong, check your figures carefully
@@ -133,7 +134,7 @@ TODO wishlist
 	- to optimize intersect function when retrieving bed level and water level (do that with len(firstlinepart) optional keyword)
 	- to retrieve other mapdata data faster
 - add polygon ginput function (click in plot) (already partly exists in intersect/slice testscript)
-- existing dfm model setup functions (and other useful stuff):
+- merge existing dfm model setup functions (and other useful stuff):
 	 - https://github.com/openearth/delft3dfmpy (arthur van dam)	
 	 - https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/applications/delft3dfm (fiat, sobek etc)
 	 - https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/applications/delft3dfm/dflowfmpyplot/pyd3dfm/streamline_ug.py (streamline plotting for structured grids, but many settings)
@@ -152,10 +153,11 @@ TODO wishlist
 
 TODO non-content
 --------
-- request modplot (curved vectors) to be added to matplotlib
+- request modplot.velovect() (curved vectors) to be added to matplotlib
+- request shapely>=1.7.0 op main channel instead of only at conda-forge? cartopy also recommends conda-forge, so would not make a huge difference yet
 - add variable units to plots in test bench (``plt.title('%s (%s)'%(data_fromnc.var_varname, data_fromnc.var_object.units))``)
 - readme korter maken (developer info naar aparte file?)
-- update/delete cookiecutter text files
+- update/delete cookiecutter text files (HISTORY is not up to date, remove?)
 - add documentation in comments of functions
 - create overview of scripts and functions, including future location of missing features
 - put testdata on deltares shared location?
