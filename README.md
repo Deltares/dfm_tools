@@ -72,18 +72,19 @@ pc = plot_netmapdata(ugrid.verts, values=data_frommap_sal[0,:,-1], ax=axs[1], li
 
 How to install dfm_tools
 --------
-- download and install the newest anaconda 64 bit (including PATH checkbox), for instance: https://repo.anaconda.com/archive/Anaconda3-2019.10-Windows-x86_64.exe
+- download Anaconda 64 bit Python 3.7 from https://www.anaconda.com/distribution/#download-section 
+- install it with the recommended settings, but do tick the checkbox 'add Anaconda3 to my PATH enviroment variable'
 - install dfm_tools from github
 	- open command window (or anaconda prompt)
 	- ``conda create --name dfm_tools_env python=3.7 git`` (creating a venv is recommended, but at least do ``conda install git`` if you choose not to)
 	- ``conda activate dfm_tools_env``
-	- optional: ``conda install -c conda-forge shapely`` (for slicing 2D/3D data) (conda-forge channel is necessary since main channel does not have shapely>=1.7, lower is not sufficient)
-	- optional: ``conda install -c conda-forge cartopy`` (for satellite imagery on plots)
 	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this command installs all required packages and it also updates dfm_tools to the latest version if you already installed it before)
-	- test by printing dfm_tools version number: ``python -c "import dfm_tools; print(dfm_tools.__version__)"`` (also try this in Spyder, to check if you are working in the dfm_tools_env venv)
+	- optional: ``conda install -c conda-forge shapely`` (for slicing 2D/3D data) (conda-forge channel is necessary since main channel does not have shapely>=1.7, lower is not sufficient)
+	- optional: ``conda install -c conda-forge cartopy`` (for satellite imagery on plots) (conda-forge recommended by cartopy developers, and in this case necessary for correct shapely version)
 - launch Spyder:
-	- open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder', since dfm_tools was installed in dfm_tools_env)
-
+	- open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in dfm_tools_env)
+	- test by printing dfm_tools version number: ``import dfm_tools; print(dfm_tools.__version__)`` (to double check if you are working in the venv where dfm_tools_env was installed)
+	- check 'example usage' to get started
 
 TODO wishlist
 --------
@@ -151,26 +152,25 @@ TODO wishlist
 
 TODO non-content
 --------
-- if you ``conda install -c conda-forge cartopy`` after dfm_tools installation, numpy cannot be found by cartopy. First ``conda install numpy`` and maybe rest of requirements.txt?
+- request modplot (curved vectors) to be added to matplotlib
 - add variable units to plots in test bench (``plt.title('%s (%s)'%(data_fromnc.var_varname, data_fromnc.var_object.units))``)
-- readme korter maken (developer info naar aparte file)
+- readme korter maken (developer info naar aparte file?)
 - update/delete cookiecutter text files
 - add documentation in comments of functions
-- create overview of scripts and functions, including missing features
+- create overview of scripts and functions, including future location of missing features
 - put testdata on deltares shared location?
 - put testdata and testoutput on github and create jupyter notebook instead of pptx?
 - arrange auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
 - register on PyPI, for easier install via pip (easier for regular users):
 	- https://the-hitchhikers-guide-to-packaging.readthedocs.io/en/latest/quickstart.html#register-your-package-with-the-python-package-index-pypi
 	- https://packaging.python.org/tutorials/packaging-projects/
-	- how to automate this process?
+	- how to automate this process? (buildserver including testing?)
 	- also add changelog besides commit comments?
 - update license with Deltares terms
 - write documentation as comments and generate automatically?
-- create overview tree of all functions, also add missing functions here
 - paths to project folders in test scripts are ok?
 - style guide: https://www.python.org/dev/peps/pep-0008/
-- contributing method: environment.yml (README.md) or requirements_dev.txt (CONTRIBUTING.rst)?
+- contributing environment method: environment.yml or requirements_dev.txt?
 
 
 Developer information: how to contribute to this git repository
@@ -181,20 +181,21 @@ Developer information: how to contribute to this git repository
 	- Julien Groenenboom
 - Get a local checkout of the github repository:
 	- Download git from https://git-scm.com/download/win, install with default settings
-	- open command line in a folder where you want to clone the dfm_tools github repo, e.g. C:\\DATA
+	- open command window in a folder where you want to clone the dfm_tools github repo, e.g. C:\\DATA
 	- ``git clone https://github.com/openearth/dfm_tools.git`` (repos gets cloned to local drive, checkout of master branch)
 	- to update: navigate to dfm_tools folder in git bash window and ``git pull`` (combination of git fetch and git merge)
-- Create a separate python environment (contains pytest and bumpversion, necessary for developing):
-	- open command line and navigate to dfm_tools github folder, e.g. C:\\DATA\\dfm_tools
+- Set up the dfm_tools developer python virtual environment (contains e.g. pytest and bumpversion, necessary for developing/testing):
+	- open command window (or anaconda prompt) and navigate to dfm_tools folder, e.g. C:\\DATA\\dfm_tools
 	- ``conda env create -f environment.yml`` (sometimes you need to press enter if it hangs extremely long)
-	- ``conda info --envs`` (shows dfm_tools_env virtual environment)
-	- to remove: ``conda remove -n dfm_tools_env --all`` (to remove it again when necessary)
-- Install your local github clone via pip (developer mode):
-	- open command window, navigate to dfm_tools folder, e.g. C:\\DATA\\dfm_tools
+	- to list venvs:``conda info --envs``
+	- to remove venv when necessary: ``conda remove -n dfm_tools_env --all``
 	- ``conda activate dfm_tools_env``
+	- ``conda install spyder``
 	- ``python -m pip install -e .`` (pip developer mode, any updates to the local folder by github (with ``git pull``) are immediately available in your python. It also installs all required packages)
+	- ``conda install -c conda-forge shapely`` (for slicing 2D/3D data) (conda-forge channel is necessary since main channel does not have shapely>=1.7, lower is not sufficient)
+	- ``conda install -c conda-forge cartopy`` (for satellite imagery on plots) (conda-forge recommended by cartopy developers, and in this case necessary for correct shapely version)
 	- test if dfm_tools is properly installed by printing the version number: ``python -c "import dfm_tools; print(dfm_tools.__version__)"``
-	- do not forget to install shapely and cartopy in your venv (see normal installation manual)
+	- open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in dfm_tools_env)
 - Branching:
 	- open git bash window in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
 	- ``git config --global user.email [emailaddress]``
@@ -218,7 +219,7 @@ Developer information: how to contribute to this git repository
 	- ``git commit -m "message to be included with your commit"``
 	- ``git push`` (pushes changes to server, do not do this in while working in the master)
 - run test bank:
-	- open command line in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
+	- open command window (or anaconda prompt) in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
 	- ``conda activate dfm_tools_env``
 	- ``pytest -v --tb=short`` (runs all tests)
 	- ``pytest -v --tb=short -m unittest``
@@ -229,6 +230,6 @@ Developer information: how to contribute to this git repository
 	- open cmd window in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
 	- optional: ``conda activate dfm_tools_env``
 	- ``bumpversion major`` or ``bumpversion minor`` or ``bumpversion patch`` (changes version numbers in files and commits changes)
-	- push your changes with ``git push`` (from git bash window or cmd also ok?)
+	- push this change in version number with ``git push`` (from git bash window or cmd also ok?)
 - Request merging of your branch on https://github.com/openearth/dfm_tools/branches
 

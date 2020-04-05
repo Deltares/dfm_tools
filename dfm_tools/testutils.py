@@ -46,7 +46,7 @@ def getmakeoutputdir(script_dir, function_name):
 
 
 def try_importmodule(modulename=None):
-    command = '\t- open command window (or anaconda prompt)\n\t- conda activate dfm_tools_env\n\t- conda install %s'%(modulename)
+    command = '\t- open command window (or anaconda prompt)\n\t- conda activate dfm_tools_env\n\t- conda install -c conda-forge %s'%(modulename)
 
     try:
         exec('import %s'%(modulename))

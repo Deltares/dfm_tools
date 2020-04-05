@@ -499,12 +499,15 @@ def plot_netmapdata(verts, values=None, ax=None, **kwargs):
 
 
 def plot_cartopybasemap(ax=None, domain=None, add_features=None, format_degree=None, tickinterval=[5,5], alpha=1):
-    import cartopy.crs as ccrs
-    import cartopy.feature as cfeature 
     import numpy as np
-    import cartopy.mpl.ticker as cticker
     import matplotlib.pyplot as plt
     
+    from dfm_tools.testutils import try_importmodule
+    try_importmodule(modulename='cartopy')
+    import cartopy.crs as ccrs
+    import cartopy.feature as cfeature 
+    import cartopy.mpl.ticker as cticker
+
     if ax == None: #create new ax/figure
         ax = plt.axes(projection=ccrs.PlateCarree())
         proj = ccrs.PlateCarree()
