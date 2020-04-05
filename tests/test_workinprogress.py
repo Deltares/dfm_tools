@@ -815,8 +815,6 @@ def test_cartopy_satellite_coastlines():
     """
     dir_output = './test_output'
     """
-    #import matplotlib
-    #matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     plt.close('all')
     import numpy as np
@@ -854,7 +852,13 @@ def test_cartopy_satellite_coastlines():
     cbar.set_label('velocity magnitude (%s)'%(data_v.var_object.units))
     plt.savefig(os.path.join(dir_output,'cartopy_moreoptions'))
     
+    fig, ax = plt.subplots(figsize=(6,7),subplot_kw={'projection': ccrs.EuroPP()}) #provide axis projection on initialisation, cannot be edited later on
+    ax.coastlines(resolution='50m')
+    ax.gridlines()
+    pc = ax.pcolor(mesh2d_node_x[:200,:200],mesh2d_node_y[:200,:200],magn[:200,:200], transform=ccrs.PlateCarree())
+    plt.savefig(os.path.join(dir_output,'cartopy_curvedgridlines'))
     
+        
     #GREVELINGEN
     file_nc_map = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen\\computations\\run01\\DFM_OUTPUT_Grevelingen-FM\\Grevelingen-FM_0000_map.nc')
     ugrid = get_netdata(file_nc=file_nc_map)

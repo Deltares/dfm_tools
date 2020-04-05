@@ -114,7 +114,6 @@ TODO wishlist
 	- https://scitools.org.uk/cartopy/docs/v0.15/_modules/cartopy/mpl/geoaxes.html (stock_img() en background_img())
 	- https://github.com/SciTools/cartopy/blob/master/lib/cartopy/data/raster/natural_earth/images.json
 	- https://github.com/SciTools/cartopy/blob/master/lib/cartopy/data/raster/natural_earth/50-natural-earth-1-downsampled.png
-	- plotting ax.gridlines(draw_labels=True) with cartopy: https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/connectivity_example.ipynb
 - add more io-functions:
 	- convert data to kml (google earth) or shp?
 	- add tekal write functions
