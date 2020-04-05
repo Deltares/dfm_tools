@@ -4,7 +4,6 @@ dependencies:
   - pip>=19.2.3
   - pip:
     - pytest>=5.0.1
-    - spyder-kernels==0.*
     - bump2version>=0.5.11
     - wheel>=0.33.6
     - watchdog>=0.9.0

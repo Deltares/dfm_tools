@@ -818,6 +818,9 @@ def test_cartopy_satellite_coastlines():
     import matplotlib.pyplot as plt
     plt.close('all')
     import numpy as np
+
+    from dfm_tools.testutils import try_importmodule
+    try_importmodule(modulename='cartopy') #check if cartopy was installed since it is an optional module, also happens in plot_cartopybasemap()
     import cartopy.crs as ccrs
     
     from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata, plot_cartopybasemap
@@ -831,23 +834,25 @@ def test_cartopy_satellite_coastlines():
     timestep = 0
     mesh2d_node_x = get_ncmodeldata(file_nc=file_nc, varname='x')
     mesh2d_node_y = get_ncmodeldata(file_nc=file_nc, varname='y')
+    mesh2d_node_x_sel = mesh2d_node_x[::2,::2]
+    mesh2d_node_y_sel = mesh2d_node_y[::2,::2]
     data_v = get_ncmodeldata(file_nc=file_nc, varname='northward_wind',timestep=timestep)
     data_u = get_ncmodeldata(file_nc=file_nc, varname='eastward_wind',timestep=timestep)
     #airp = get_ncmodeldata(file_nc=file_nc, varname='air_pressure_fixed_height',timestep=0)[0,:,:]
-    magn = np.sqrt(data_u**2 + data_v**2)[0,:,:]
+    magn = np.sqrt(data_u**2 + data_v**2)[0,::2,::2]
     
     fig, ax = plt.subplots()
-    ax.pcolor(mesh2d_node_x[:200,:200],mesh2d_node_y[:200,:200],magn[:200,:200])
+    ax.pcolor(mesh2d_node_x_sel,mesh2d_node_y_sel,magn)
     plt.savefig(os.path.join(dir_output,'cartopy_transformno'))
     
     fig, ax = plt.subplots(subplot_kw={'projection': ccrs.PlateCarree()})
-    ax.pcolor(mesh2d_node_x[:200,:200],mesh2d_node_y[:200,:200],magn[:200,:200])#, transform=ccrs.PlateCarree())
+    ax.pcolor(mesh2d_node_x_sel,mesh2d_node_y_sel,magn)#, transform=ccrs.PlateCarree())
     plt.savefig(os.path.join(dir_output,'cartopy_transformyes'))
     
     fig, ax = plt.subplots(subplot_kw={'projection': ccrs.PlateCarree()}) #provide axis projection on initialisation, cannot be edited later on
-    domain = [np.min(mesh2d_node_x[:200,:200]),np.max(mesh2d_node_x[:200,:200]),np.min(mesh2d_node_y[:200,:200]),np.max(mesh2d_node_y[:200,:200])]
+    domain = [np.min(mesh2d_node_x_sel),np.max(mesh2d_node_x_sel),np.min(mesh2d_node_y_sel),np.max(mesh2d_node_y_sel)]
     ax = plot_cartopybasemap(ax=ax, domain=domain, add_features = ['background_image', 'line_coasts', 'line_countries'], format_degree=True)
-    pc = ax.pcolor(mesh2d_node_x[:200,:200],mesh2d_node_y[:200,:200],magn[:200,:200])#, transform=ccrs.PlateCarree())
+    pc = ax.pcolor(mesh2d_node_x_sel,mesh2d_node_y_sel,magn)#, transform=ccrs.PlateCarree())
     cbar = fig.colorbar(pc, ax=ax)
     cbar.set_label('velocity magnitude (%s)'%(data_v.var_object.units))
     plt.savefig(os.path.join(dir_output,'cartopy_moreoptions'))
@@ -855,7 +860,8 @@ def test_cartopy_satellite_coastlines():
     fig, ax = plt.subplots(figsize=(6,7),subplot_kw={'projection': ccrs.EuroPP()}) #provide axis projection on initialisation, cannot be edited later on
     ax.coastlines(resolution='50m')
     ax.gridlines()
-    pc = ax.pcolor(mesh2d_node_x[:200,:200],mesh2d_node_y[:200,:200],magn[:200,:200], transform=ccrs.PlateCarree())
+    #take subset of dataset to speed up coordinate transformation
+    pc = ax.pcolor(mesh2d_node_x_sel[:100,:100],mesh2d_node_y_sel[:100,:100],magn[:100,:100], transform=ccrs.PlateCarree())
     plt.savefig(os.path.join(dir_output,'cartopy_curvedgridlines'))
     
         
