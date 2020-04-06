@@ -208,7 +208,7 @@ def test_workinprogress():
     #file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\01_Implementation\14_restartfile\sfincs_his.nc'
     file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\03_Application\22_Tsunami_Japan_Sendai\sfincs_his.nc'
     
-    station_names = get_hisstationlist(file_nc=file_nc)
+    station_names = get_hisstationlist(file_nc=file_nc, varname='point_zs')
     data_fromnc_his = get_ncmodeldata(file_nc=file_nc, varname='point_zs', station='all', timestep='all')
 
     fig, ax = plt.subplots()
@@ -383,7 +383,7 @@ def test_delft3D_netcdf():
     file_nc = r'p:\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\063_netcdf\trih-thiery_002_coarse.nc'
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
     
-    data_nc_NAMST = get_hisstationlist(file_nc=file_nc, varname_stat='NAMST')
+    data_nc_NAMST = get_hisstationlist(file_nc=file_nc, varname='NAMST')
     data_nc_ZWL = get_ncmodeldata(file_nc=file_nc, varname='ZWL',timestep='all',station='all')
     #data_nc_ZCURU = get_ncmodeldata(file_nc=file_nc, varname='ZCURU',timestep='all',station='all',layer='all')
     #data_nc_ZCURV = get_ncmodeldata(file_nc=file_nc, varname='ZCURV',timestep='all',station='all',layer='all')
@@ -455,7 +455,7 @@ def test_delft3D_netcdf():
     file_nc = os.path.join(dir_testinput,'D3D_3D_sigma_curved_bend_nc\\trih-cb2-sal-added-3d.nc')
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
     
-    data_nc_NAMST = get_hisstationlist(file_nc=file_nc, varname_stat='NAMST')
+    data_nc_NAMST = get_hisstationlist(file_nc=file_nc, varname='NAMST')
     data_nc_ZWL = get_ncmodeldata(file_nc=file_nc, varname='ZWL',timestep='all',station='all')
     #data_nc_ZCURU = get_ncmodeldata(file_nc=file_nc, varname='ZCURU',timestep='all',station='all',layer='all')
     #data_nc_ZCURV = get_ncmodeldata(file_nc=file_nc, varname='ZCURV',timestep='all',station='all',layer='all')
@@ -586,7 +586,7 @@ def EXCLUDE_test_delft3D_netcdf_convertedwith_getdata():
     #stations are not yet taken care of properly (var 'his-const:NAMST' and dim 'Station' should be added to validvals list to avoid crash, but stations are incorrectly parsed so this will cause a crash
     #layers are not yet taken care of properly ('Layers' dimension is not yet added to translation table)
     #data_nc_NAMST = get_ncmodeldata(file_nc=file_nc, varname='his-const:NAMST') #this should not work
-    #data_nc_NAMST = get_hisstationlist(file_nc=file_nc, varname_stat='his-const:NAMST')
+    #data_nc_NAMST = get_hisstationlist(file_nc=file_nc, varname='his-const:NAMST')
     #data_nc_ZCURU = get_ncmodeldata(file_nc=file_nc, varname='his-series:ZCURU',timestep='all')#,layer='all',station='all')
     #data_nc_ZCURV = get_ncmodeldata(file_nc=file_nc, varname='his-series:ZCURV',timestep='all')#,layer='all',station='all')
 
@@ -670,8 +670,8 @@ def test_waqua_netcdf_convertedwith_getdata():
     #HIS ZUNO
     file_nc = r'p:\1204257-dcsmzuno\2019\DCSMv6\A01\SDS-A01_his.nc'
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
-    data_nc_NAMWL = get_hisstationlist(file_nc=file_nc, varname_stat='NAMWL')
-    #data_nc_NAMC = get_hisstationlist(file_nc=file_nc, varname_stat='NAMC')
+    data_nc_NAMWL = get_hisstationlist(file_nc=file_nc, varname='NAMWL')
+    #data_nc_NAMC = get_hisstationlist(file_nc=file_nc, varname='NAMC')
     data_nc_ZWL = get_ncmodeldata(file_nc=file_nc, varname='ZWL',timestep='all',station='all')
     #data_nc_ZCURU = get_ncmodeldata(file_nc=file_nc, varname='ZCURU',timestep='all',station='all')
     #data_nc_ZCURV = get_ncmodeldata(file_nc=file_nc, varname='ZCURV',timestep='all',station='all')
@@ -729,8 +729,8 @@ def test_waqua_netcdf_convertedwith_getdata():
     #HIS OSR
     file_nc = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\ZZ_Jelmer\SDS-nsctri_his.nc'
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
-    data_nc_NAMWL = get_hisstationlist(file_nc=file_nc, varname_stat='NAMWL')
-    #data_nc_NAMC = get_hisstationlist(file_nc=file_nc, varname_stat='NAMC')
+    data_nc_NAMWL = get_hisstationlist(file_nc=file_nc, varname='NAMWL')
+    #data_nc_NAMC = get_hisstationlist(file_nc=file_nc, varname='NAMC')
     data_nc_ZWL = get_ncmodeldata(file_nc=file_nc, varname='ZWL',timestep='all',station='all')
     #data_nc_ZCURU = get_ncmodeldata(file_nc=file_nc, varname='ZCURU',timestep='all',station='all',layer='all')
     #data_nc_ZCURV = get_ncmodeldata(file_nc=file_nc, varname='ZCURV',timestep='all',station='all',layer='all')
@@ -789,8 +789,8 @@ def test_waqua_netcdf_convertedwith_getdata():
     #HIS RMM
     file_nc = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\07_WAQUAresultaten\j15\SDS-riv_tba_his.nc'
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
-    data_nc_NAMWL = get_hisstationlist(file_nc=file_nc, varname_stat='NAMWL')
-    #data_nc_NAMC = get_hisstationlist(file_nc=file_nc, varname_stat='NAMC')
+    data_nc_NAMWL = get_hisstationlist(file_nc=file_nc, varname='NAMWL')
+    #data_nc_NAMC = get_hisstationlist(file_nc=file_nc, varname='NAMC')
     data_nc_ZWL = get_ncmodeldata(file_nc=file_nc, varname='ZWL',timestep='all',station='all')
     #data_nc_ZCURU = get_ncmodeldata(file_nc=file_nc, varname='ZCURU',timestep='all',station='all',layer='all')
     #data_nc_ZCURV = get_ncmodeldata(file_nc=file_nc, varname='ZCURV',timestep='all',station='all',layer='all')
@@ -822,11 +822,20 @@ def test_cartopy_satellite_coastlines():
     from dfm_tools.testutils import try_importmodule
     try_importmodule(modulename='cartopy') #check if cartopy was installed since it is an optional module, also happens in plot_cartopybasemap()
     import cartopy.crs as ccrs
-    
-    from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata, plot_cartopybasemap
+    import cartopy.feature as cfeature 
+    import cartopy.mpl.ticker as cticker
+
+    from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
     from dfm_tools.get_nc_helpers import get_ncvardimlist
     
-    
+    #cartopy features and tickers
+    feat_ocean = cfeature.NaturalEarthFeature('physical', 'ocean', '50m',edgecolor='face',facecolor=cfeature.COLORS['water'])
+    feat_land = cfeature.NaturalEarthFeature('physical', 'land', '10m',edgecolor='face',facecolor=cfeature.COLORS['land'])
+    feat_countries = cfeature.NaturalEarthFeature(category='cultural',name='admin_0_countries',scale='10m',facecolor='none')
+    lon_formatter = cticker.LongitudeFormatter()
+    lat_formatter = cticker.LatitudeFormatter()
+
+
     #HIRLAM
     file_nc = r'p:\1204257-dcsmzuno\2014\data\meteo\HIRLAM72_2018\h72_201803.nc'
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
@@ -851,7 +860,17 @@ def test_cartopy_satellite_coastlines():
     
     fig, ax = plt.subplots(subplot_kw={'projection': ccrs.PlateCarree()}) #provide axis projection on initialisation, cannot be edited later on
     domain = [np.min(mesh2d_node_x_sel),np.max(mesh2d_node_x_sel),np.min(mesh2d_node_y_sel),np.max(mesh2d_node_y_sel)]
-    ax = plot_cartopybasemap(ax=ax, domain=domain, add_features = ['background_image', 'line_coasts', 'line_countries'], format_degree=True)
+    ax.set_extent(domain, crs=ccrs.PlateCarree())
+    ax.background_img(name = 'ne_shaded', resolution='low') #ax.stock_img(name = 'ne_shaded')
+    #ax.add_feature(feat_land, alpha=alpha)     
+    #ax.add_feature(feat_ocean)     
+    ax.coastlines(resolution='10m',edgecolor='gray',linewidth=0.5,zorder=11)
+    ax.add_feature(feat_countries, edgecolor='gray',linewidth=0.5)
+    ax.set(xticks=np.arange(domain[0],domain[1],20))
+    ax.set(yticks=np.arange(domain[2],domain[3],10))
+    ax.xaxis.set_major_formatter(lon_formatter)
+    ax.yaxis.set_major_formatter(lat_formatter)
+    #ax.grid(linewidth=2, color='black', alpha=0.8, linestyle='--')    
     pc = ax.pcolor(mesh2d_node_x_sel,mesh2d_node_y_sel,magn)#, transform=ccrs.PlateCarree())
     cbar = fig.colorbar(pc, ax=ax)
     cbar.set_label('velocity magnitude (%s)'%(data_v.var_object.units))
@@ -872,7 +891,17 @@ def test_cartopy_satellite_coastlines():
     
     fig, ax = plt.subplots(1,1, subplot_kw={'projection': ccrs.epsg(28992)}) #provide axis projection on initialisation, cannot be edited later on
     domain = [np.nanmin(ugrid.verts[:,:,0]),np.nanmax(ugrid.verts[:,:,0]),np.nanmin(ugrid.verts[:,:,1]),np.nanmax(ugrid.verts[:,:,1])]
-    ax = plot_cartopybasemap(ax=ax, domain=domain, add_features = ['foreground_land', 'line_coasts'], tickinterval=[5000,5000], alpha=0.5)
+    ax.set_extent(domain, crs=ccrs.epsg(28992))
+    #ax.background_img(name = 'ne_shaded', resolution='low') #ax.stock_img(name = 'ne_shaded')
+    ax.add_feature(feat_land, alpha=0.5)     
+    #ax.add_feature(feat_ocean)     
+    ax.coastlines(resolution='10m',edgecolor='gray',linewidth=0.5,zorder=11)
+    #ax.add_feature(feat_countries, edgecolor='gray',linewidth=0.5)
+    ax.set(xticks=np.arange(domain[0],domain[1],5000))
+    ax.set(yticks=np.arange(domain[2],domain[3],5000))
+    #ax.xaxis.set_major_formatter(lon_formatter)
+    #ax.yaxis.set_major_formatter(lat_formatter)
+    #ax.grid(linewidth=2, color='black', alpha=0.8, linestyle='--')    
     pc = plot_netmapdata(ugrid.verts, values=data_frommap_bl, ax=ax, linewidth=0.5, cmap='jet')
     plt.savefig(os.path.join(dir_output,'cartopy_grevelingen_RD'))
 

@@ -173,8 +173,10 @@ def get_ncvardimlist(file_nc):
         if iV==0:
             vars_pd['shape'] = np.nan
             vars_pd['dimensions'] = np.nan
+            vars_pd['dtype'] = np.nan
         vars_pd.loc[iV,'shape'] = str(data_nc.variables[nc_var].shape)
         vars_pd.loc[iV,'dimensions'] = str(data_nc.variables[nc_var].dimensions)
+        vars_pd.loc[iV,'dtype'] = str(data_nc.variables[nc_var].dtype)
         #get attributes properties of netcdf variable
         for attr_name in var_attr_name_list:
             if iV==0:
@@ -303,52 +305,75 @@ def get_timeid_fromdatetime(data_nc_datetimes_pd, timestep):
 
 
 
-def get_vardimname_stat_validvals():
-    #variable/dim names for:   DFM stations,   DFM gs,                 DFM crs,              Sobek stations,    WAQUA_getdata_netcdf WL/CUR-stations,  Delft3D netCDF stations
-    varname_stat_validvals = ['station_name', 'general_structure_id', 'cross_section_name', 'observation_id',  'NAMWL',   'NAMC',                      'NAMST']
-    dimname_stat_validvals = ['stations',     'general_structures',   'cross_section',      'id',              'STATION', 'STATIONCUR',                'NOSTAT']
-    return varname_stat_validvals, dimname_stat_validvals
-
-
-
-
-def get_hisstationlist(file_nc,varname_stat='station_name'):
+def get_hisstationlist(file_nc,varname):
     from netCDF4 import Dataset, chartostring
     import pandas as pd
     import numpy as np
     
-    from dfm_tools.get_nc_helpers import get_vardimname_stat_validvals
-    
-    varname_stat_validvals, dimname_stat_validvals = get_vardimname_stat_validvals()
-    if varname_stat in varname_stat_validvals:
-        data_nc = Dataset(file_nc)
-        station_name_char = data_nc.variables[varname_stat][:]
-        station_name_list_raw = chartostring(station_name_char)
-        station_name_list = np.char.strip(station_name_list_raw) #necessary step for Sobek and maybe others
+    from dfm_tools.get_nc_helpers import get_ncvarobject, get_ncvardimlist
+
+    data_nc = Dataset(file_nc)
+    data_nc_varname = get_ncvarobject(file_nc, varname) #check if var exists and get var_object
+    varname_dims = data_nc_varname.dimensions
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    vars_pd_stats = vars_pd[vars_pd['dtype']=='|S1']
+    if varname in vars_pd_stats['nc_varkeys'].tolist(): 
+        vars_pd_stats = vars_pd[vars_pd['nc_varkeys']==varname]
         
-        station_name_list_pd = pd.Series(station_name_list)
+    #otherwise create lists of station variable names and dimensions, that correspond to dimensions of varname
+    varname_stationdimname_list = []
+    varname_stationvarname_list = []
+    for iR, vars_pd_statrow in vars_pd_stats.iterrows():
+        for iDV, varname_dim in enumerate(varname_dims):
+            if varname_dim in vars_pd_statrow['dimensions']:
+                varname_stationdimname_list.append(varname_dim)
+                varname_stationvarname_list.append(vars_pd_statrow['nc_varkeys'])
+    
+    #create dataframe of station names coupled to varname
+    if varname_stationdimname_list == []:
+        raise Exception('ERROR: no dimension in %s variable that corresponds to station-like variables (or none present):\n%s'%(varname, vars_pd_stats['nc_varkeys']))
+    #elif len(set(varname_stationdimname_list)) != 1: #check if all items in list are equal
+    #    raise Exception('ERROR: there seems to be more than one dimension in %s variable that corresponds to station-like variables:\n%s'%(varname, vars_pd_stats['nc_varkeys']))
     else:
-        raise Exception('ERROR: invalid value provided for varname_stat argument (%s), should be one of: %s'%(varname_stat, varname_stat_validvals))
-    return station_name_list_pd
+        var_station_names_pd = pd.DataFrame(columns = None)
+        for iSV, varname_stationvarname in enumerate(varname_stationvarname_list):
+            station_name = data_nc.variables[varname_stationvarname]
+            if varname_stationdimname_list[iSV] in station_name.dimensions:
+                station_name_char = station_name[:]
+                station_name_list_raw = chartostring(station_name_char)
+                station_name_list = np.char.strip(station_name_list_raw) #necessary step for Sobek and maybe others
+    
+                #station_name_list_pd = pd.Series(station_name_list)
+                var_station_names_pd[varname_stationvarname] = station_name_list
+            
+
+    return var_station_names_pd
 
 
 
 
-def get_stationid_fromstationlist(station_name_list_pd, station, varname_stat):
+def get_stationid_fromstationlist(station_name_list_pd, station, varname):
     import numpy as np
     import pandas as pd
     
     station_pd = pd.Series(station)
-
-    #check if all requested stations are in netcdf file
-    stations_bool_reqinfile = station_pd.isin(station_name_list_pd)
-    if not (stations_bool_reqinfile == True).all():
-        raise Exception('ERROR: not all requested stations are in netcdf file:\n%s\navailable in netcdf file are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist; station_name_list_pd = get_hisstationlist(file_nc=file_nc,varname_stat="%s")'%(station_pd[-stations_bool_reqinfile], station_name_list_pd, varname_stat))
+    bool_nrows_req = station_pd.shape[0]
+    bool_nrows_avai = station_name_list_pd.shape[0]
+    bool_ncols = station_name_list_pd.shape[1]
     
+    stations_bool_reqinfile_allcols = np.zeros((bool_nrows_req,bool_ncols),dtype=bool)
+    stations_bool_fileinreq_allcols = np.zeros((bool_nrows_avai,bool_ncols),dtype=bool)
+    for iCol in range(bool_ncols):
+        #check if all requested stations are in netcdf file
+        stations_bool_reqinfile_allcols[:,iCol] = station_pd.isin(station_name_list_pd.iloc[:,iCol])
+        stations_bool_fileinreq_allcols[:,iCol] = station_name_list_pd.iloc[:,iCol].isin(station_pd)
+    
+    stations_bool_reqinfile = stations_bool_reqinfile_allcols.any(axis=1)
+    if not stations_bool_reqinfile.all():
+        raise Exception('ERROR: not all requested stations are in netcdf file:\n%s\navailable in netcdf file are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist; station_name_list_pd = get_hisstationlist(file_nc=file_nc,varname="%s")'%(station_pd[~stations_bool_reqinfile], station_name_list_pd, varname))
     #get ids of requested stations in netcdf file
-    station_bool_fileinreq = station_name_list_pd.isin(station_pd)
+    station_bool_fileinreq = stations_bool_fileinreq_allcols.any(axis=1)
     station_ids = list(np.where(station_bool_fileinreq)[0])
-    #station_names = np.where(station_bool_fileinreq)[0]
 
     return station_ids
 

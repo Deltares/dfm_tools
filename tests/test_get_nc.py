@@ -226,11 +226,12 @@ def test_getnetdata_plotnet_regular(file_nc):
     
 @pytest.mark.acceptance
 def test_getsobekmodeldata():
+    dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
     """
     this test retrieves sobek observation data and plots it
+    
+    dir_output = './test_output'
     """
-    dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
-    #dir_output = './test_output'
 
     import matplotlib.pyplot as plt
     plt.close('all')
@@ -240,12 +241,13 @@ def test_getsobekmodeldata():
     
     file_nc = os.path.join(dir_testinput,'KenmerkendeWaarden','observations.nc')
     
-    #station_names = get_hisstationlist(file_nc=file_nc, varname_stat="observation_id")
+    #station_names = get_hisstationlist(file_nc=file_nc, varname='observation_id')
+    #station_names = get_hisstationlist(file_nc=file_nc, varname='water_level')
     data_fromsobek = get_ncmodeldata(file_nc=file_nc, varname='water_level', station=['Maasmond','HKVHLD','MO_1035.00'], timestep='all')
     
     fig, ax = plt.subplots()
     for iL in range(data_fromsobek.shape[1]):
-        ax.plot(data_fromsobek.var_times,data_fromsobek[:,iL],'-', label=data_fromsobek.var_stations.iloc[iL])
+        ax.plot(data_fromsobek.var_times,data_fromsobek[:,iL],'-', label=data_fromsobek.var_stations.iloc[iL,0])
     ax.legend()
     plt.savefig(os.path.join(dir_output,'%s_waterlevel'%(os.path.basename(file_nc).replace('.',''))))
     
@@ -291,7 +293,7 @@ def test_gethismodeldata(file_nc):
     print('plot bedlevel from his')
     data_fromhis = get_ncmodeldata(file_nc=file_nc, varname='bedlevel', station=station)#, multipart=False)
     fig, ax = plt.subplots()
-    ax.plot(data_fromhis.var_stations,data_fromhis,'-')
+    ax.plot(data_fromhis.var_stations.iloc[:,0],data_fromhis,'-')
     ax.tick_params('x',rotation=90)
     plt.savefig(os.path.join(dir_output,'%s_bedlevel'%(os.path.basename(file_nc).replace('.',''))))
 
@@ -314,7 +316,7 @@ def test_gethismodeldata(file_nc):
     data_fromhis = get_ncmodeldata(file_nc=file_nc, varname='salinity', timestep=4, layer='all', station=station)
     fig, ax = plt.subplots()
     ax.plot(data_fromhis[0,:,:].T, data_fromhis_depth[0,:,:].T,'-')
-    ax.legend(data_fromhis.var_stations)
+    ax.legend(data_fromhis.var_stations.iloc[:,0])
     plt.savefig(os.path.join(dir_output,'%s_salinityoverdepth'%(os.path.basename(file_nc).replace('.',''))))
 
     print('zt temperature plot')
@@ -832,8 +834,8 @@ def test_morphology():
     file_nc = r'p:\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\fm\DFM_OUTPUT_inlet\inlet_his.nc'
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
     vars_pd_sel = vars_pd[vars_pd['long_name'].str.contains('level')]
-    stat_list = get_hisstationlist(file_nc,varname_stat='station_name')
-    crs_list = get_hisstationlist(file_nc,varname_stat='cross_section_name')
+    stat_list = get_hisstationlist(file_nc,varname='station_name')
+    crs_list = get_hisstationlist(file_nc,varname='cross_section_name')
     
     var_names = ['waterlevel','bedlevel']#,'mesh2d_ssn']
     for iV, varname in enumerate(var_names):
@@ -842,7 +844,7 @@ def test_morphology():
     
         fig, ax = plt.subplots(1,1, figsize=(10,5))
         for iS, stat in enumerate(data_fromhis.var_stations):
-            ax.plot(data_fromhis.var_times, data_fromhis[:,iS], linewidth=1, label=data_fromhis.var_stations.iloc[iS])
+            ax.plot(data_fromhis.var_times, data_fromhis[:,iS], linewidth=1, label=data_fromhis.var_stations.iloc[iS,0])
         ax.legend()
         ax.set_ylabel('%s (%s)'%(data_fromhis.var_varname,data_fromhis.var_object.units))
         ax.set_xlim(data_fromhis.var_times[[0,3000]])
