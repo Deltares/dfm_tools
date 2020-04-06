@@ -84,6 +84,7 @@ How to install dfm_tools
 - launch Spyder:
 	- open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in dfm_tools_env)
 	- test by printing dfm_tools version number: ``import dfm_tools; print(dfm_tools.__version__)`` (to double check if you are working in the venv where dfm_tools_env was installed)
+	- go to Tools > IPython console > Graphics and change graphics backend to 'Automatic' and restart your kernel or Spyder to get figures in new window. Alternatively: write ``plt.show()`` after every figure code block
 	- check 'example usage' to get started
 
 TODO wishlist
@@ -116,6 +117,7 @@ TODO wishlist
 	- https://scitools.org.uk/cartopy/docs/v0.15/_modules/cartopy/mpl/geoaxes.html (stock_img() en background_img())
 	- https://github.com/SciTools/cartopy/blob/master/lib/cartopy/data/raster/natural_earth/images.json
 	- https://github.com/SciTools/cartopy/blob/master/lib/cartopy/data/raster/natural_earth/50-natural-earth-1-downsampled.png
+	- http://earthpy.org/cartopy_backgroung.html
 - add more io-functions:
 	- convert data to kml (google earth) or shp?
 	- add tekal write functions
@@ -128,7 +130,9 @@ TODO wishlist
 	- https://github.com/moflaher/ttide_py
 - dimn_time is now actually variable name which does not work if time dimname is not the same as time varname
 - make merc keyword always optional by testing for minmax all vertsx between -181 and 361 and minmax all vertsy (lat) between -91 and 91 (+range for overlap for e.g. gtsm model)
-- optimize get_ncmodeldata for layerdepths/bedlevel/waterlevel (second intersect function), only retrieve necessary information for crossection
+- optimize get_ncmodeldata for layerdepths/bedlevel/waterlevel (second intersect function):
+	- optimize with distance from line: get maximum cell area (and infer width) from lineblockbbound selection, then decide on distance from line for selection of cells for crossect calculation
+	- only retrieve necessary information for crossection
 - add inpolygon/inboundbox selection of data:
 	- optimize_dist keyword now draws inpolygon around line
 	- to optimize intersect function when retrieving bed level and water level (do that with len(firstlinepart) optional keyword)

@@ -49,22 +49,25 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     import pandas as pd
     from netCDF4 import Dataset
     
-    from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvarobject, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_fromnc, get_vardimname_stat_validvals
+    from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvarobject, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_fromnc
     
     #get variable info
     nc_varobject = get_ncvarobject(file_nc, varname)
     data_nc = Dataset(file_nc)
     
-    varname_stat_validvals, dimname_stat_validvals = get_vardimname_stat_validvals()
+    #variable/dim names for:   DFM stations,   DFM gs,                 DFM crs,              Sobek stations,    WAQUA_getdata_netcdf WL/CUR-stations,  Delft3D netCDF stations
+    #varname_stat_validvals = ['station_name', 'general_structure_id', 'cross_section_name', 'observation_id',  'NAMWL',   'NAMC',                      'NAMST']
+    dimname_stat_validvals = ['stations',     'general_structures',   'cross_section',      'id',              'STATION', 'STATIONCUR',                'NOSTAT']
+
     listtype_int = [int, np.int, np.int8, np.int16, np.int32, np.int64]
     listtype_str = [str]
     listtype_range = [list, range, np.ndarray]
     listtype_datetime = [dt.datetime, np.datetime64]
     listtype_daterange = [pd.DatetimeIndex]
     
-    #CHECK VARNAME, IS THERE A SEPARATE DEFINITION TO RETRIEVE DATA?
-    if varname in varname_stat_validvals:
-        raise Exception('ERROR: variable "%s" should be retrieved with separate function:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist; station_names = get_hisstationlist(file_nc=file_nc, varname_stat="%s")'%(varname,varname))
+    #CHECK IF VARNAME IS STATION NAMES (STRINGS), OFFER ALTERNATIVE RETRIEVAL METHOD
+    if nc_varobject.dtype == '|S1':
+        warnings.warn('variable "%s" should be retrieved with separate function:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist; station_names = get_hisstationlist(file_nc=file_nc, varname="%s") (or use any varname there to retrieve corresponding station list)'%(varname,varname))
     
     #TIMES CHECKS
     dimn_time = get_varname_fromnc(data_nc,'time')
@@ -140,9 +143,9 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     else: #stations are present
         #get appropriate station list
         dimname_stat_validvals_id = np.where(dimname_stat_validvals_boolpresent)[0][0]
-        station_name_list_pd = get_hisstationlist(file_nc,varname_stat=varname_stat_validvals[dimname_stat_validvals_id])
+        station_name_list_pd = get_hisstationlist(file_nc,varname=varname)
         if station is None:
-            raise Exception('ERROR: netcdf variable contains a station/general_structures dimension, but parameter station not provided (can be "all"), available stations/crs/generalstructures:\n%s\nretrieve entire station list:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist; get_hisstationlist(file_nc,varname_stat="%s")'%(station_name_list_pd, varname_stat_validvals[dimname_stat_validvals_id]))
+            raise Exception('ERROR: netcdf variable contains a station/general_structures dimension, but parameter station not provided (can be "all"), available stations/crs/generalstructures:\n%s\nretrieve entire station list:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist; get_hisstationlist(file_nc,varname="%s")'%(station_name_list_pd, varname))
         #convert station to list of int if it is not already
         if station is str('all'):
             station_ids = range(len(station_name_list_pd))
@@ -150,13 +153,13 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
             if type(station[0]) in listtype_int:
                 station_ids = station
             elif type(station[0]) in listtype_str:
-                station_ids = get_stationid_fromstationlist(station_name_list_pd, station, varname_stat_validvals[dimname_stat_validvals_id])
+                station_ids = get_stationid_fromstationlist(station_name_list_pd, station, varname)
             else:
                 raise Exception('ERROR1: station variable type not anticipated (%s), (list/range/ndarray of) strings or ints are accepted (or "all")'%(type(station)))
         elif type(station) in listtype_int:
             station_ids = [station]
         elif type(station) in listtype_str:
-            station_ids = get_stationid_fromstationlist(station_name_list_pd, [station], varname_stat_validvals[dimname_stat_validvals_id])
+            station_ids = get_stationid_fromstationlist(station_name_list_pd, [station], varname)
         else:
             raise Exception('ERROR2: station variable type not anticipated (%s), (list/range/ndarray of) strings or ints are accepted (or "all")'%(type(station)))
         #check if requested times are within range of netcdf
@@ -179,22 +182,22 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         if len(file_ncs) > 1:
             print('processing mapdata from domain %04d of %04d'%(iF, len(file_ncs)-1))
         
-        nc_varobject = get_ncvarobject(file_nc_sel, varname)
+        nc_varobject_sel = get_ncvarobject(file_nc_sel, varname)
 
         concat_axis = 0 #default value, overwritten by faces dimension
         values_selid = []
         values_dimlens = [] #list(nc_values.shape)
-        for iD, nc_values_dimsel in enumerate(nc_varobject.dimensions):
+        for iD, nc_values_dimsel in enumerate(nc_varobject_sel.dimensions):
             if nc_values_dimsel in [dimn_faces, dimn_nFlowElem]: # domain-like variable is present, so there are multiple domains
                 nonghost_ids = ghostcell_filter(file_nc_sel)
                 if nonghost_ids is None:
-                    values_selid.append(range(nc_varobject.shape[iD]))
+                    values_selid.append(range(nc_varobject_sel.shape[iD]))
                 else:
                     values_selid.append(nonghost_ids)
                 values_dimlens.append(0) #because concatenate axis
                 concat_axis = iD
             elif nc_values_dimsel in [dimn_nodes, dimn_edges, dimn_nFlowLink]: # domain-like variable is present, so there are multiple domains
-                values_selid.append(range(nc_varobject.shape[iD]))
+                values_selid.append(range(nc_varobject_sel.shape[iD]))
                 values_dimlens.append(0) #because concatenate axis
                 concat_axis = iD
             elif nc_values_dimsel in dimname_stat_validvals:
@@ -207,18 +210,18 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
                 values_selid.append(layer_ids)
                 values_dimlens.append(len(layer_ids))
             else:
-                warnings.warn('WARNING: not a predefined dimension name')
-                values_selid.append(range(nc_varobject.shape[iD]))
-                values_dimlens.append(nc_varobject.shape[iD])
+                warnings.warn('not a predefined dimension name')
+                values_selid.append(range(nc_varobject_sel.shape[iD]))
+                values_dimlens.append(nc_varobject_sel.shape[iD])
 
         if len(file_ncs) > 1:
             #initialize array
             if iF == 0:
                 values_all = np.ma.empty(values_dimlens)
             #concatenate array
-            values_all = np.ma.concatenate([values_all,nc_varobject[values_selid]],axis=concat_axis)
+            values_all = np.ma.concatenate([values_all,nc_varobject_sel[values_selid]],axis=concat_axis)
         else:
-            values_all = nc_varobject[values_selid]
+            values_all = nc_varobject_sel[values_selid]
             
     #add metadata
     values_all.var_varname = varname
@@ -495,69 +498,6 @@ def plot_netmapdata(verts, values=None, ax=None, **kwargs):
 
 
 
-
-
-
-def plot_cartopybasemap(ax=None, domain=None, add_features=None, format_degree=None, tickinterval=[5,5], alpha=1):
-    import numpy as np
-    import matplotlib.pyplot as plt
-    
-    from dfm_tools.testutils import try_importmodule
-    try_importmodule(modulename='cartopy')
-    import cartopy.crs as ccrs
-    import cartopy.feature as cfeature 
-    import cartopy.mpl.ticker as cticker
-
-    if ax == None: #create new ax/figure
-        ax = plt.axes(projection=ccrs.PlateCarree())
-        proj = ccrs.PlateCarree()
-    else:
-        try:
-            proj = ax.projection #retrieve projection from map
-        except:
-            raise Exception('ERROR: provided ax variable does not have a projection system, please add or provide no ax argument')
-        
-    if domain:
-        ax.set_extent(domain, crs=proj)
-    
-    possible_features = ['background_image', 'foreground_land', 'foreground_water', 'line_coasts', 'line_countries']
-    if add_features:
-        if type(add_features) != list:
-            raise Exception('ERROR: add_features argument should be None or list, options: %s'%(possible_features))
-        for add_feat in add_features:
-            if add_feat not in possible_features:
-                raise Exception('ERROR: add_features should contain list of features to add, options: %s'%(possible_features))
-        
-        if 'background_image' in add_features:
-            #ax.stock_img(name = 'ne_shaded')
-            ax.background_img(name = 'ne_shaded', resolution='low')
-        if 'foreground_land' in add_features:
-            ax.add_feature(cfeature.NaturalEarthFeature('physical', 'land', '10m',edgecolor='face',facecolor=cfeature.COLORS['land']), alpha=alpha)     
-        if 'foreground_water' in add_features:
-            ax.add_feature(cfeature.NaturalEarthFeature('physical', 'ocean', '50m',edgecolor='face',facecolor=cfeature.COLORS['water']))     
-        if 'line_coasts' in add_features:
-            ax.coastlines(resolution='10m',edgecolor='gray',linewidth=0.5,zorder=11)
-        if 'line_countries' in add_features:
-            countries = cfeature.NaturalEarthFeature(
-                category='cultural',
-                name='admin_0_countries',
-                scale='10m',
-                facecolor='none')
-            ax.add_feature(countries, edgecolor='gray',linewidth=0.5)
-    
-    if domain:
-        ax.set_xticks(np.arange(domain[0],domain[1],tickinterval[0]), crs=proj)
-        ax.set_yticks(np.arange(domain[2],domain[3],tickinterval[1]), crs=proj)
-    
-    if format_degree:
-        lon_formatter = cticker.LongitudeFormatter()
-        lat_formatter = cticker.LatitudeFormatter()
-        ax.xaxis.set_major_formatter(lon_formatter)
-        ax.yaxis.set_major_formatter(lat_formatter)
-    
-    #ax.grid(linewidth=2, color='black', alpha=0.8, linestyle='--')
-
-    return ax
 
 
 
