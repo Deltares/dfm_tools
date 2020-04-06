@@ -665,6 +665,7 @@ def test_getxzcoordsonintersection_plotcrossect(file_nc):
 def test_readme_example_usage():
     #import statements
     import matplotlib.pyplot as plt
+    plt.close('all')
     from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
     from dfm_tools.get_nc_helpers import get_ncvardimlist, get_timesfromnc, get_hisstationlist
     
