@@ -681,21 +681,35 @@ def test_readme_example_usage():
     statlist_pd = get_hisstationlist(file_nc=file_nc_his, varname='station_name')
     
     #retrieve his data
-    data_fromhis_bl = get_ncmodeldata(file_nc=file_nc_his, varname='bedlevel', station='all')
     data_fromhis_wl = get_ncmodeldata(file_nc=file_nc_his, varname='waterlevel', station='all', timestep= 'all')
-    fig, axs = plt.subplots(2,1,figsize=(10,8))
-    axs[0].plot(data_fromhis_bl.var_stations['station_name'],data_fromhis_bl,'-')
-    axs[1].plot(data_fromhis_wl.var_times,data_fromhis_wl,'-')
+    fig, ax = plt.subplots(1,1,figsize=(10,5))
+    for iP, station in enumerate(data_fromhis_wl.var_stations['station_name']):
+        ax.plot(data_fromhis_wl.var_times,data_fromhis_wl[:,iP],'-', label=station)
+    ax.legend()
+    ax.set_ylabel('%s (%s)'%(data_frommap_wl.var_varname, data_frommap_wl.var_object.units))
     
-    #retrieve net/map data, plot map data on grid
-    ugrid = get_netdata(file_nc=file_nc_map)#, multipart=False)
-    data_frommap_bl = get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_flowelem_bl')
-    data_frommap_sal = get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_sa1', timestep='all', layer='all')
-    fig, axs = plt.subplots(2,1,figsize=(6,8))
-    ax=axs[0]
-    pc = plot_netmapdata(ugrid.verts, values=data_frommap_bl, ax=ax, linewidth=0.5, cmap='jet')
-    ax=axs[1]
-    pc = plot_netmapdata(ugrid.verts, values=data_frommap_sal[4,:,-1], ax=ax, linewidth=0.5, cmap='jet')
+    #plot net/grid
+    ugrid_all = get_netdata(file_nc=file_nc_map)#,multipart=False)
+    fig, ax = plt.subplots()
+    pc = plot_netmapdata(ugrid_all.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
+    ax.set_aspect('equal')
+
+    #plot water level on map
+    data_frommap_wl = get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_s1', timestep=3)#, multipart=False)
+    fig, ax = plt.subplots()
+    pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_wl[0,:], ax=None, linewidth=0.5, cmap="jet")
+    pc.set_clim([-0.5,1])
+    fig.colorbar(pc, ax=ax)
+    ax.set_title('%s (%s)'%(data_frommap_wl.var_varname, data_frommap_wl.var_object.units))
+    ax.set_aspect('equal')
+
+    #plot salinity on map
+    data_frommap_sal = get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_sa1', timestep=2, layer=5)#, multipart=False)
+    fig, ax = plt.subplots()
+    pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_sal[0,:,0], ax=None, linewidth=0.5, cmap="jet")
+    fig.colorbar(pc, ax=ax)
+    ax.set_title('%s (%s)'%(data_frommap_sal.var_varname, data_frommap_sal.var_object.units))
+    ax.set_aspect('equal')
     
     #print contents of retrieved data withing data_frommap_sal variable
     print_var = data_frommap_sal
@@ -712,60 +726,9 @@ def test_readme_example_usage():
     print('\tthe long_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname, print_var.var_object.long_name))
     print('\tthe standard_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname, print_var.var_object.standard_name))
 
-
-
-
-    from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
-
-    timestep = 3
-    layer = 5
-    clim_bl = None
-    clim_wl = [-0.5,1]
-    clim_sal = None
-    clim_tem = None
-        
     
-    #PLOT GRID
-    print('plot only grid from mapdata')
-    ugrid_all = get_netdata(file_nc=file_nc)#,multipart=False)
-    fig, ax = plt.subplots()
-    pc = plot_netmapdata(ugrid_all.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
-    ax.set_aspect('equal')
-    plt.savefig(os.path.join(dir_output,'%s_grid'%(os.path.basename(file_nc).replace('.',''))))
 
 
-#PLOT water level on map
-    print('plot grid and values from mapdata (waterlevel, 2dim)')
-    data_frommap = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_s1', timestep=timestep)#, multipart=False)
-    data_frommap_flat = data_frommap.flatten()
-    fig, ax = plt.subplots()
-    pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
-    pc.set_clim(clim_wl)
-    fig.colorbar(pc, ax=ax)
-    ax.set_aspect('equal')
-    plt.savefig(os.path.join(dir_output,'%s_mesh2d_s1'%(os.path.basename(file_nc).replace('.',''))))
-
-    #PLOT var layer on map
-    if not 'RMM_dflowfm_0000_map' in file_nc:
-        print('plot grid and values from mapdata (salinity on layer, 3dim)')
-        data_frommap = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sa1', timestep=timestep, layer=layer)#, multipart=False)
-        data_frommap_flat = data_frommap.flatten()
-        fig, ax = plt.subplots()
-        pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
-        pc.set_clim(clim_sal)
-        fig.colorbar(pc, ax=ax)
-        ax.set_aspect('equal')
-        plt.savefig(os.path.join(dir_output,'%s_mesh2d_sa1'%(os.path.basename(file_nc).replace('.',''))))
-    
-        print('plot grid and values from mapdata (temperature on layer, 3dim)')
-        data_frommap = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_tem1', timestep=timestep, layer=layer)#, multipart=False)
-        data_frommap_flat = data_frommap.flatten()
-        fig, ax = plt.subplots()
-        pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
-        pc.set_clim(clim_tem)
-        fig.colorbar(pc, ax=ax)
-        ax.set_aspect('equal')
-        plt.savefig(os.path.join(dir_output,'%s_mesh2d_tem1'%(os.path.basename(file_nc).replace('.',''))))
 
 
 
