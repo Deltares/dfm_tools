@@ -73,7 +73,7 @@ pc = plot_netmapdata(ugrid.verts, values=data_frommap_sal[0,:,-1], ax=axs[1], li
 
 How to install dfm_tools
 --------
-- download Anaconda 64 bit Python 3.7 from https://www.anaconda.com/distribution/#download-section 
+- download Anaconda 64 bit Python 3.7 from https://www.anaconda.com/distribution/#download-section (miniconda is probably also sufficient, but this is not yet tested)
 - install it with the recommended settings, but check 'add Anaconda3 to my PATH enviroment variable' if you want to use conda from the windows command prompt instead of anaconda prompt
 - install dfm_tools from github
 	- open command window (or anaconda prompt)
