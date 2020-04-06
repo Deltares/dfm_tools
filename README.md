@@ -34,7 +34,7 @@ Features
 
 
 
-Example usage(#example-usage)
+Example usage
 --------
 ```python
 #import statements
