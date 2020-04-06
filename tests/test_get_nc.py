@@ -670,8 +670,8 @@ def test_readme_example_usage():
     from dfm_tools.get_nc_helpers import get_ncvardimlist, get_timesfromnc, get_hisstationlist
     
     #define files. you will probably get error messages with your own file, but these should be self-explanatory
-    #file_nc_map = 'path_to_file'
-    #file_nc_his = 'path_to_file'
+    #file_nc_map = r'path_to_file'
+    #file_nc_his = r'path_to_file'
     file_nc_map = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc')
     file_nc_his = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_his.nc')
     
