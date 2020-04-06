@@ -6,6 +6,18 @@ dfm_tools are Python post-processing tools for Delft3D FM model outputfiles and 
 - Free software: GNU General Public License v3
 
 
+Table of contents
+--------
+<!--ts-->
+   * [Features](#features)
+   * [Example usage](#example-usage)
+   * [Installation](#installation)
+   * [Feature wishlist](#feature-wishlist)
+   * [Todo non-content](#todo-non-content)
+   * [Developer information](#developer-information)
+<!--te-->
+
+
 Features
 --------
 - supported formats:
@@ -24,7 +36,7 @@ Features
 	- plot flexible mesh net/map variables as polycollections/patches
 	- plot regular grid variables with pcolor
 	- plot cartopy features (land, sea, landboundary, country borders, satellite background)
-	- plotting z,t-plots (see wishlist section for inaccuracies)
+	- plotting z,t-plots (see [Feature wishlist](#feature-wishlist) for known inaccuracies)
 	- plot anything you like and how you like it
 - other io functions:
 	- tekal (.tek, .pli, .pliz, .pol, .ldb) data
@@ -84,12 +96,12 @@ print('\tthe standard_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var
 ```
 - for more examples, check https://github.com/openearth/dfm_tools/tree/master/tests (this is also the pytest testbank)
 - examples of (mostly unformatted) figures created by this pytest testbank: n:\\Deltabox\\Bulletin\\veenstra\\info dfm_tools
-- please check the TODO sections for known inaccuracies or features that are not yet available
+- please check the [Feature wishlist](#feature-wishlist) for envisioned features
 - please report bugs and feature requests at the developers or at https://github.com/openearth/dfm_tools/issues (include OS, dfm_tools version, reproduction steps)
 - want to get updates about dfm_tools? Send an email to jelmer.veenstra@deltares.nl
 
 
-How to install dfm_tools
+Installation
 --------
 - download Anaconda 64 bit Python 3.7 from https://www.anaconda.com/distribution/#download-section (miniconda is probably also sufficient, but this is not yet tested)
 - install it with the recommended settings, but check 'add Anaconda3 to my PATH enviroment variable' if you want to use conda from the windows command prompt instead of anaconda prompt
@@ -104,10 +116,10 @@ How to install dfm_tools
 	- open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in dfm_tools_env)
 	- test by printing dfm_tools version number: ``import dfm_tools; print(dfm_tools.__version__)`` (to double check if you are working in the venv where dfm_tools_env was installed)
 	- to get figures in separate windows: go to Tools > Preferences > IPython console > Graphics > change graphics backend to 'Automatic' and restart Spyder (or the kernel).
-	- check 'example usage' to get started
+	- copy the code from [Example usage](#example-usage) to your own scripts to get starteds
 
 
-TODO wishlist
+Feature wishlist
 --------
 - retrieve station/crs/gs list corresponding to a variable with get_hisstationlist(), now already used in stations/gs/crs check of get_nc.get_ncmodeldata()
 - merge station/layer/times checks, these parts of get_nc.py have a lot of overlap
@@ -177,16 +189,14 @@ TODO wishlist
 - interactive data retrieval and plotting by calling get_ncmodeldata() without arguments
 
 
-TODO non-content
+Todo non-content
 --------
-- make links of header-references in README.md
 - request modplot.velovect() (curved vectors) to be added to matplotlib
 - request shapely>=1.7.0 op main channel instead of only at conda-forge? cartopy also recommends conda-forge, so would not make a huge difference yet
 - why does cartopy has to come from conda-forge?
 - add variable units to plots in test bench
-- readme korter maken (developer info naar aparte file?)
 - update/delete cookiecutter text files (HISTORY is not up to date, remove including links in other files?)
-- add documentation in comments of functions
+- write documentation as comments and generate automatically? (at least add documentation as comments to functions)
 - create overview of scripts and functions, including future location of missing features
 - put testdata on deltares shared location?
 - put testdata and testoutput on github and create jupyter notebook instead of pptx?
@@ -197,14 +207,13 @@ TODO non-content
 	- how to automate this process? (buildserver including testing?)
 	- also add changelog besides commit comments?
 - update license with Deltares terms
-- write documentation as comments and generate automatically?
-- paths to project folders in test scripts are ok?
 - style guide: https://www.python.org/dev/peps/pep-0008/
 - contributing environment method: environment.yml or requirements_dev.txt?
 
 
-Developer information: how to contribute to this git repository
+Developer information
 --------
+- How to contribute to this git repository?
 - First request github rights to contribute with the current developers
 	- Jelmer Veenstra <jelmer.veenstra@deltares.nl>
 	- Lora Buckman
