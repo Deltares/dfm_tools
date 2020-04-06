@@ -7,7 +7,7 @@ dfm_tools are Python post-processing tools for Delft3D FM model outputfiles and 
 
 
 Table of contents
-=================
+--------
 <!--ts-->
    * [Features](#features)
    * [Example usage](#example-usage)
