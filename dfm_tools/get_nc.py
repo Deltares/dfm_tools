@@ -56,9 +56,6 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     data_nc = Dataset(file_nc)
     
     #get list of station dimnames
-    #variable/dim names for:   DFM stations,   DFM gs,                 DFM crs,              Sobek stations,    WAQUA_getdata_netcdf WL/CUR-stations,  Delft3D netCDF stations
-    #varname_stat_validvals = ['station_name', 'general_structure_id', 'cross_section_name', 'observation_id',  'NAMWL',   'NAMC',                      'NAMST']
-    #dimname_stat_validvals = ['stations',     'general_structures',   'cross_section',      'id',              'STATION', 'STATIONCUR',                'NOSTAT']
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
     vars_pd_stats = vars_pd[vars_pd['dtype']=='|S1']
     dimname_stat_validvals = []

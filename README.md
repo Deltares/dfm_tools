@@ -47,13 +47,13 @@ file_nc_his = 'path_to_file'
 #get lists with vars/dims, times, station/crs/structures
 vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc_map)
 times_pd = get_timesfromnc(file_nc=file_nc_map)
-statlist_pd = get_hisstationlist(file_nc=file_nc_his, varname_stat='station_name')
+statlist_pd = get_hisstationlist(file_nc=file_nc_his, varname='station_name')
 
 #retrieve his data
 data_fromhis_bl = get_ncmodeldata(file_nc=file_nc_his, varname='bedlevel', station='all')
 data_fromhis_wl = get_ncmodeldata(file_nc=file_nc_his, varname='waterlevel', station='all', timestep= 'all')
-fig, axs = plt.subplots(2,1,figsize=(6,8))
-axs[0].plot(data_fromhis_bl.var_stations,data_fromhis_bl,'-')
+fig, axs = plt.subplots(2,1,figsize=(10,8))
+axs[0].plot(data_fromhis_bl.var_stations['station_name'],data_fromhis_bl,'-')
 axs[1].plot(data_fromhis_wl.var_times,data_fromhis_wl,'-')
 
 #retrieve net/map data, plot map data on grid
@@ -63,6 +63,7 @@ data_frommap_sal = get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_sa1', ti
 fig, axs = plt.subplots(2,1,figsize=(6,8))
 pc = plot_netmapdata(ugrid.verts, values=data_frommap_bl, ax=axs[0], linewidth=0.5, cmap='jet')
 pc = plot_netmapdata(ugrid.verts, values=data_frommap_sal[0,:,-1], ax=axs[1], linewidth=0.5, cmap='jet')
+
 ```
 - for more examples, check https://github.com/openearth/dfm_tools/tree/master/tests (this is also the pytest testbank)
 - examples of (mostly unformatted) figures created by this pytest testbank: n:\\Deltabox\\Bulletin\\veenstra\\info dfm_tools
