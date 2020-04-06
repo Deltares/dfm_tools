@@ -42,8 +42,8 @@ from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
 from dfm_tools.get_nc_helpers import get_ncvardimlist, get_timesfromnc, get_hisstationlist
 
 #define files. you will probably get error messages with your own file, but these should be self-explanatory
-file_nc_map = 'path_to_file'
-file_nc_his = 'path_to_file'
+file_nc_map = r'path_to_file'
+file_nc_his = r'path_to_file'
 
 #get lists with vars/dims, times, station/crs/structures
 vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc_map)
