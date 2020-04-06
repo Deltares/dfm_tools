@@ -165,18 +165,18 @@ def get_ncvardimlist(file_nc):
     
     nc_varkeys = list(data_nc.variables.keys())
     nc_dimkeys = list(data_nc.dimensions.keys())
-    vars_pd = pd.DataFrame({'nc_varkeys': nc_varkeys})
-    dims_pd = pd.DataFrame({'nc_dimkeys': nc_dimkeys})
+    vars_pd = pd.DataFrame({'nc_varkeys': nc_varkeys, 'shape': [['']]*len(nc_varkeys), 'dimensions': [['']]*len(nc_varkeys), 'dtype': [['']]*len(nc_varkeys)})
+    dims_pd = pd.DataFrame({'nc_dimkeys': nc_dimkeys, 'name': [['']]*len(nc_dimkeys), 'size': [['']]*len(nc_dimkeys)})
     var_attr_name_list = ['standard_name','long_name','coordinates','units','mesh','location']
     for iV, nc_var in enumerate(data_nc.variables):
         #get non-attribute properties of netcdf variable
-        if iV==0:
-            vars_pd['shape'] = np.nan
-            vars_pd['dimensions'] = np.nan
-            vars_pd['dtype'] = np.nan
-        vars_pd.loc[iV,'shape'] = str(data_nc.variables[nc_var].shape)
-        vars_pd.loc[iV,'dimensions'] = str(data_nc.variables[nc_var].dimensions)
-        vars_pd.loc[iV,'dtype'] = str(data_nc.variables[nc_var].dtype)
+        #if iV==0:
+        #    vars_pd['shape'] = list(np.nan)
+        #    vars_pd['dimensions'] = np.nan
+        #    vars_pd['dtype'] = np.nan
+        vars_pd.loc[iV,'shape'] = data_nc.variables[nc_var].shape
+        vars_pd.loc[iV,'dimensions'] = data_nc.variables[nc_var].dimensions
+        vars_pd.loc[iV,'dtype'] = data_nc.variables[nc_var].dtype
         #get attributes properties of netcdf variable
         for attr_name in var_attr_name_list:
             if iV==0:
@@ -187,9 +187,9 @@ def get_ncvardimlist(file_nc):
                 pass
     for iD, nc_dim in enumerate(data_nc.dimensions):
         #get non-attribute properties of netcdf variable
-        if iD==0:
-            dims_pd['name'] = np.nan
-            dims_pd['size'] = np.nan
+        #if iD==0:
+        #    dims_pd['name'] = np.nan
+        #    dims_pd['size'] = np.nan
         dims_pd.loc[iD,'name'] = data_nc.dimensions[nc_dim].name
         dims_pd.loc[iD,'size'] = data_nc.dimensions[nc_dim].size
     return vars_pd, dims_pd
@@ -311,7 +311,7 @@ def get_hisstationlist(file_nc,varname):
     import numpy as np
     
     from dfm_tools.get_nc_helpers import get_ncvarobject, get_ncvardimlist
-
+    
     data_nc = Dataset(file_nc)
     data_nc_varname = get_ncvarobject(file_nc, varname) #check if var exists and get var_object
     varname_dims = data_nc_varname.dimensions
@@ -332,8 +332,6 @@ def get_hisstationlist(file_nc,varname):
     #create dataframe of station names coupled to varname
     if varname_stationdimname_list == []:
         raise Exception('ERROR: no dimension in %s variable that corresponds to station-like variables (or none present):\n%s'%(varname, vars_pd_stats['nc_varkeys']))
-    #elif len(set(varname_stationdimname_list)) != 1: #check if all items in list are equal
-    #    raise Exception('ERROR: there seems to be more than one dimension in %s variable that corresponds to station-like variables:\n%s'%(varname, vars_pd_stats['nc_varkeys']))
     else:
         var_station_names_pd = pd.DataFrame(columns = None)
         for iSV, varname_stationvarname in enumerate(varname_stationvarname_list):
@@ -342,8 +340,6 @@ def get_hisstationlist(file_nc,varname):
                 station_name_char = station_name[:]
                 station_name_list_raw = chartostring(station_name_char)
                 station_name_list = np.char.strip(station_name_list_raw) #necessary step for Sobek and maybe others
-    
-                #station_name_list_pd = pd.Series(station_name_list)
                 var_station_names_pd[varname_stationvarname] = station_name_list
             
 

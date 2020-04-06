@@ -867,8 +867,8 @@ def test_morphology():
     timestep = 10
     data_frommap_facex = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_face_x')
     data_frommap_facey = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_face_y')
-    data_frommap_transx = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sxtot', timestep=timestep)
-    data_frommap_transy = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sytot', timestep=timestep)
+    data_frommap_transx = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sxtot', timestep=timestep, station='all')
+    data_frommap_transy = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sytot', timestep=timestep, station='all')
     magnitude = (data_frommap_transx ** 2 + data_frommap_transy ** 2) ** 0.5
     
     #plt.close('all')
