@@ -81,7 +81,7 @@ How to install dfm_tools
 	- ``conda activate dfm_tools_env``
 	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this command installs all required packages and it also updates dfm_tools to the latest version if you already installed it before)
 	- optional: ``conda install -c conda-forge "shapely>=1.7.0"`` (for slicing 2D/3D data) (conda-forge channel is necessary since main channel version is 1.6.4. The correct version is available via pip, but then geos dll is not properly linked, this will probably be solved in the future https://github.com/Toblerity/Shapely/issues/844)
-	- optional: ``conda install -c conda-forge cartopy`` (for satellite imagery on plots) (conda-forge recommended by cartopy developers, and currently also necessary for correct shapely version)
+	- optional: ``conda install -c conda-forge cartopy`` (for satellite imagery on plots) (conda-forge channel recommended by cartopy developers, and currently also necessary for correct shapely version)
 - launch Spyder:
 	- open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in dfm_tools_env)
 	- test by printing dfm_tools version number: ``import dfm_tools; print(dfm_tools.__version__)`` (to double check if you are working in the venv where dfm_tools_env was installed)
@@ -167,7 +167,7 @@ TODO non-content
 - why does cartopy has to come from conda-forge?
 - add variable units to plots in test bench
 - readme korter maken (developer info naar aparte file?)
-- update/delete cookiecutter text files (HISTORY is not up to date, remove?)
+- update/delete cookiecutter text files (HISTORY is not up to date, remove including links in other files?)
 - add documentation in comments of functions
 - create overview of scripts and functions, including future location of missing features
 - put testdata on deltares shared location?
@@ -210,7 +210,7 @@ Developer information: how to contribute to this git repository
 	- ``conda activate dfm_tools_env``
 	- ``conda install spyder``
 	- ``python -m pip install -e .`` (pip developer mode, any updates to the local folder by github (with ``git pull``) are immediately available in your python. It also installs all required packages)
-	- ``conda install -c conda-forge shapely cartopy``(conda-forge channel is necessary since main channel does not have shapely 1.7 and lower is not sufficient for dfm_tools. cartopy also recommends conda-forge)
+	- ``conda install -c conda-forge "shapely>=1.7.0" cartopy``(conda-forge channel is necessary since main channel version is 1.6.4. The correct version is available via pip, but then geos dll is not properly linked, this will probably be solved in the future https://github.com/Toblerity/Shapely/issues/844. cartopy also recommends conda-forge channel)
 	- test if dfm_tools is properly installed by printing the version number: ``python -c "import dfm_tools; print(dfm_tools.__version__)"``
 	- open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in dfm_tools_env)
 - Make your local changes to dfm_tools
