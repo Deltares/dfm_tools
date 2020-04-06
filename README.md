@@ -6,6 +6,18 @@ dfm_tools are Python post-processing tools for Delft3D FM model outputfiles and 
 - Free software: GNU General Public License v3
 
 
+Table of contents
+=================
+<!--ts-->
+   * [Features](#features)
+   * [Example usage](#example-usage)
+   * [Installation](#installation)
+   * [Feature wishlist](#feature-wishlist)
+   * [Todo non-content](#todo-non-content)
+   * [Developer information](#developer-information)
+<!--te-->
+
+
 Features
 --------
 - supported formats:
@@ -30,8 +42,6 @@ Features
 	- tekal (.tek, .pli, .pliz, .pol, .ldb) data
 	- read Delft3D files (.grd, .dep)
 	- read/write mdu file
-
-
 
 
 Example usage
@@ -91,7 +101,7 @@ print('\tthe standard_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var
 - want to get updates about dfm_tools? Send an email to jelmer.veenstra@deltares.nl
 
 
-How to install dfm_tools
+Installation
 --------
 - download Anaconda 64 bit Python 3.7 from https://www.anaconda.com/distribution/#download-section (miniconda is probably also sufficient, but this is not yet tested)
 - install it with the recommended settings, but check 'add Anaconda3 to my PATH enviroment variable' if you want to use conda from the windows command prompt instead of anaconda prompt
@@ -106,10 +116,10 @@ How to install dfm_tools
 	- open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in dfm_tools_env)
 	- test by printing dfm_tools version number: ``import dfm_tools; print(dfm_tools.__version__)`` (to double check if you are working in the venv where dfm_tools_env was installed)
 	- to get figures in separate windows: go to Tools > Preferences > IPython console > Graphics > change graphics backend to 'Automatic' and restart Spyder (or the kernel).
-	- check the section '[Example usage](#example-usage)' to get started
+	- check [Example usage](#example-usage) to get started
 
 
-TODO wishlist
+Feature wishlist
 --------
 - retrieve station/crs/gs list corresponding to a variable with get_hisstationlist(), now already used in stations/gs/crs check of get_nc.get_ncmodeldata()
 - merge station/layer/times checks, these parts of get_nc.py have a lot of overlap
@@ -179,14 +189,13 @@ TODO wishlist
 - interactive data retrieval and plotting by calling get_ncmodeldata() without arguments
 
 
-TODO non-content
+Todo non-content
 --------
 - make links of header-references in README.md
 - request modplot.velovect() (curved vectors) to be added to matplotlib
 - request shapely>=1.7.0 op main channel instead of only at conda-forge? cartopy also recommends conda-forge, so would not make a huge difference yet
 - why does cartopy has to come from conda-forge?
 - add variable units to plots in test bench
-- readme korter maken (developer info naar aparte file?)
 - update/delete cookiecutter text files (HISTORY is not up to date, remove including links in other files?)
 - add documentation in comments of functions
 - create overview of scripts and functions, including future location of missing features
@@ -205,8 +214,9 @@ TODO non-content
 - contributing environment method: environment.yml or requirements_dev.txt?
 
 
-Developer information: how to contribute to this git repository
+Developer information
 --------
+- How to contribute to this git repository?
 - First request github rights to contribute with the current developers
 	- Jelmer Veenstra <jelmer.veenstra@deltares.nl>
 	- Lora Buckman
