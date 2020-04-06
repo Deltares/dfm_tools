@@ -170,10 +170,6 @@ def get_ncvardimlist(file_nc):
     var_attr_name_list = ['standard_name','long_name','coordinates','units','mesh','location']
     for iV, nc_var in enumerate(data_nc.variables):
         #get non-attribute properties of netcdf variable
-        #if iV==0:
-        #    vars_pd['shape'] = list(np.nan)
-        #    vars_pd['dimensions'] = np.nan
-        #    vars_pd['dtype'] = np.nan
         vars_pd.loc[iV,'shape'] = data_nc.variables[nc_var].shape
         vars_pd.loc[iV,'dimensions'] = data_nc.variables[nc_var].dimensions
         vars_pd.loc[iV,'dtype'] = data_nc.variables[nc_var].dtype
@@ -187,9 +183,6 @@ def get_ncvardimlist(file_nc):
                 pass
     for iD, nc_dim in enumerate(data_nc.dimensions):
         #get non-attribute properties of netcdf variable
-        #if iD==0:
-        #    dims_pd['name'] = np.nan
-        #    dims_pd['size'] = np.nan
         dims_pd.loc[iD,'name'] = data_nc.dimensions[nc_dim].name
         dims_pd.loc[iD,'size'] = data_nc.dimensions[nc_dim].size
     return vars_pd, dims_pd
