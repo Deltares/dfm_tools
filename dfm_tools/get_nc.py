@@ -49,16 +49,23 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     import pandas as pd
     from netCDF4 import Dataset
     
-    from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvarobject, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_fromnc
+    from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvardimlist, get_ncvarobject, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_fromnc
     
     #get variable info
     nc_varobject = get_ncvarobject(file_nc, varname)
     data_nc = Dataset(file_nc)
     
+    #get list of station dimnames
     #variable/dim names for:   DFM stations,   DFM gs,                 DFM crs,              Sobek stations,    WAQUA_getdata_netcdf WL/CUR-stations,  Delft3D netCDF stations
     #varname_stat_validvals = ['station_name', 'general_structure_id', 'cross_section_name', 'observation_id',  'NAMWL',   'NAMC',                      'NAMST']
-    dimname_stat_validvals = ['stations',     'general_structures',   'cross_section',      'id',              'STATION', 'STATIONCUR',                'NOSTAT']
-
+    #dimname_stat_validvals = ['stations',     'general_structures',   'cross_section',      'id',              'STATION', 'STATIONCUR',                'NOSTAT']
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    vars_pd_stats = vars_pd[vars_pd['dtype']=='|S1']
+    dimname_stat_validvals = []
+    for iR, vars_pd_stat in vars_pd_stats.iterrows():
+        [dimname_stat_validvals.append(x) for x in vars_pd_stat['dimensions']]
+    
+    
     listtype_int = [int, np.int, np.int8, np.int16, np.int32, np.int64]
     listtype_str = [str]
     listtype_range = [list, range, np.ndarray]
