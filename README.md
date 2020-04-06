@@ -32,7 +32,9 @@ Features
 	- read/write mdu file
 
 
-Example usage
+
+
+[Example usage](#example-usage)
 --------
 ```python
 #import statements
@@ -104,7 +106,7 @@ How to install dfm_tools
 	- open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in dfm_tools_env)
 	- test by printing dfm_tools version number: ``import dfm_tools; print(dfm_tools.__version__)`` (to double check if you are working in the venv where dfm_tools_env was installed)
 	- to get figures in separate windows: go to Tools > Preferences > IPython console > Graphics > change graphics backend to 'Automatic' and restart Spyder (or the kernel).
-	- check 'example usage' to get started
+	- check '(#example-usage)' to get started
 
 
 TODO wishlist
