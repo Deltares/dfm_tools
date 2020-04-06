@@ -664,16 +664,16 @@ def test_getxzcoordsonintersection_plotcrossect(file_nc):
 @pytest.mark.acceptance
 def test_readme_example_usage():
     #import statements
+    import os
     import matplotlib.pyplot as plt
     plt.close('all')
     from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
     from dfm_tools.get_nc_helpers import get_ncvardimlist, get_timesfromnc, get_hisstationlist
     
-    #define files. you will probably get error messages with your own file, but these should be self-explanatory
-    #file_nc_map = r'path_to_file'
-    #file_nc_his = r'path_to_file'
-    file_nc_map = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc')
-    file_nc_his = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_his.nc')
+    #define files, uncomment the line below, copy data locally and change this path to increase performance
+    #dir_testinput = os.path.join(r'n:\Deltabox\Bulletin\veenstra\info dfm_tools\test_input')
+    file_nc_map = os.path.join(dir_testinput,'DFM_sigma_curved_bend','DFM_OUTPUT_cb_3d','cb_3d_map.nc')
+    file_nc_his = os.path.join(dir_testinput,'DFM_sigma_curved_bend','DFM_OUTPUT_cb_3d','cb_3d_his.nc')
     
     #get lists with vars/dims, times, station/crs/structures
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc_map)
@@ -690,10 +690,26 @@ def test_readme_example_usage():
     #retrieve net/map data, plot map data on grid
     ugrid = get_netdata(file_nc=file_nc_map)#, multipart=False)
     data_frommap_bl = get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_flowelem_bl')
-    data_frommap_sal = get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_sa1', timestep=2, layer='all')
+    data_frommap_sal = get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_sa1', timestep='all', layer='all')
     fig, axs = plt.subplots(2,1,figsize=(6,8))
     pc = plot_netmapdata(ugrid.verts, values=data_frommap_bl, ax=axs[0], linewidth=0.5, cmap='jet')
     pc = plot_netmapdata(ugrid.verts, values=data_frommap_sal[0,:,-1], ax=axs[1], linewidth=0.5, cmap='jet')
+    
+    #print contents of retrieved data withing data_frommap_sal variable
+    print_var = data_frommap_sal
+    print('++++++\nthe data in the variable %s is:\n%s\n'%(print_var.var_varname, print_var))
+    print('++++++\nthe time indices and times in the variable %s are:\n%s\n'%(print_var.var_varname, print_var.var_times))
+    print('++++++\nthe station indices and station names in the variable %s are:\n%s\n'%(print_var.var_varname, print_var.var_stations))
+    print('++++++\nthe layer indices in the variable %s are:\n%s\n'%(print_var.var_varname, print_var.var_layers))
+    print('++++++\nthe shape of the variable %s is:\n%s\n'%(print_var.var_varname, print_var.shape))
+    print('++++++\nthe netCDF variable where the data in variable %s comes from is:\n%s\n'%(print_var.var_varname, print_var.var_object))
+    print('++++++\nsome example contents of this netCDF variable:')
+    print('\tthe dimension names of the netCDF variable %s are:\n\t\t%s'%(print_var.var_varname, print_var.var_object.dimensions))
+    print('\tthe shape of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname, print_var.var_object.shape))
+    print('\tthe units of the netCDF variable %s are:\n\t\t%s'%(print_var.var_varname, print_var.var_object.units))
+    print('\tthe long_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname, print_var.var_object.long_name))
+    print('\tthe standard_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname, print_var.var_object.standard_name))
+
 
 
 
