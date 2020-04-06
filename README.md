@@ -73,15 +73,15 @@ pc = plot_netmapdata(ugrid.verts, values=data_frommap_sal[0,:,-1], ax=axs[1], li
 
 How to install dfm_tools
 --------
-- download Anaconda 64 bit Python 3.7 from https://www.anaconda.com/distribution/#download-section 
+- download Anaconda 64 bit Python 3.7 from https://www.anaconda.com/distribution/#download-section (miniconda is probably also sufficient, but this is not yet tested)
 - install it with the recommended settings, but check 'add Anaconda3 to my PATH enviroment variable' if you want to use conda from the windows command prompt instead of anaconda prompt
 - install dfm_tools from github
 	- open command window (or anaconda prompt)
-	- ``conda create --name dfm_tools_env python=3.7 git`` (creating a venv is recommended, but at least do ``conda install git`` if you choose not to)
+	- ``conda create --name dfm_tools_env python=3.7 git spyder`` (creating a venv is recommended, but at least do ``conda install git`` if you choose not to)
 	- ``conda activate dfm_tools_env``
 	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this command installs all required packages and it also updates dfm_tools to the latest version if you already installed it before)
-	- optional: ``conda install -c conda-forge shapely`` (for slicing 2D/3D data) (conda-forge channel is necessary since main channel does not have shapely 1.7 and lower is not sufficient for dfm_tools)
-	- optional: ``conda install -c conda-forge cartopy`` (for satellite imagery on plots) (conda-forge recommended by cartopy developers, and in this case necessary for correct shapely version)
+	- optional: ``conda install -c conda-forge "shapely>=1.7.0"`` (for slicing 2D/3D data) (conda-forge channel is necessary since main channel version is 1.6.4. The correct version is available via pip, but then geos dll is not properly linked, this will probably be solved in the future https://github.com/Toblerity/Shapely/issues/844)
+	- optional: ``conda install -c conda-forge cartopy`` (for satellite imagery on plots) (conda-forge recommended by cartopy developers, and currently also necessary for correct shapely version)
 - launch Spyder:
 	- open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in dfm_tools_env)
 	- test by printing dfm_tools version number: ``import dfm_tools; print(dfm_tools.__version__)`` (to double check if you are working in the venv where dfm_tools_env was installed)
