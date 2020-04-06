@@ -36,7 +36,7 @@ Features
 	- plot flexible mesh net/map variables as polycollections/patches
 	- plot regular grid variables with pcolor
 	- plot cartopy features (land, sea, landboundary, country borders, satellite background)
-	- plotting z,t-plots (see wishlist section for inaccuracies)
+	- plotting z,t-plots (see [Feature wishlist](#feature-wishlist) for known inaccuracies)
 	- plot anything you like and how you like it
 - other io functions:
 	- tekal (.tek, .pli, .pliz, .pol, .ldb) data
@@ -96,7 +96,7 @@ print('\tthe standard_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var
 ```
 - for more examples, check https://github.com/openearth/dfm_tools/tree/master/tests (this is also the pytest testbank)
 - examples of (mostly unformatted) figures created by this pytest testbank: n:\\Deltabox\\Bulletin\\veenstra\\info dfm_tools
-- please check the TODO sections for known inaccuracies or features that are not yet available
+- please check the [Feature wishlist](#feature-wishlist) for envisioned features
 - please report bugs and feature requests at the developers or at https://github.com/openearth/dfm_tools/issues (include OS, dfm_tools version, reproduction steps)
 - want to get updates about dfm_tools? Send an email to jelmer.veenstra@deltares.nl
 
@@ -191,13 +191,12 @@ Feature wishlist
 
 Todo non-content
 --------
-- make links of header-references in README.md
 - request modplot.velovect() (curved vectors) to be added to matplotlib
 - request shapely>=1.7.0 op main channel instead of only at conda-forge? cartopy also recommends conda-forge, so would not make a huge difference yet
 - why does cartopy has to come from conda-forge?
 - add variable units to plots in test bench
 - update/delete cookiecutter text files (HISTORY is not up to date, remove including links in other files?)
-- add documentation in comments of functions
+- write documentation as comments and generate automatically? (at least add documentation as comments to functions)
 - create overview of scripts and functions, including future location of missing features
 - put testdata on deltares shared location?
 - put testdata and testoutput on github and create jupyter notebook instead of pptx?
@@ -208,8 +207,6 @@ Todo non-content
 	- how to automate this process? (buildserver including testing?)
 	- also add changelog besides commit comments?
 - update license with Deltares terms
-- write documentation as comments and generate automatically?
-- paths to project folders in test scripts are ok?
 - style guide: https://www.python.org/dev/peps/pep-0008/
 - contributing environment method: environment.yml or requirements_dev.txt?
 
