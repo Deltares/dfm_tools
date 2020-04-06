@@ -1,7 +1,7 @@
 dfm_tools
 =========
 
-dfm_tools are Python post-processing tools for Delft3D FM model outputfiles (netCDF) and more
+dfm_tools are Python post-processing tools for Delft3D FM model outputfiles and other netCDF files
 
 - Free software: GNU General Public License v3
 
@@ -22,7 +22,7 @@ Features
 	- take over masks in original data
 - plotting:
 	- plot flexible mesh net/map variables as polycollections/patches
-	- plot regular grid variables with pcolor (work in progress)
+	- plot regular grid variables with pcolor
 	- plot cartopy features (land, sea, landboundary, country borders, satellite background)
 	- plotting z,t-plots (see wishlist section for inaccuracies)
 	- plot anything you like and how you like it
@@ -67,19 +67,20 @@ pc = plot_netmapdata(ugrid.verts, values=data_frommap_sal[0,:,-1], ax=axs[1], li
 - for more examples, check https://github.com/openearth/dfm_tools/tree/master/tests (this is also the pytest testbank)
 - examples of (mostly unformatted) figures created by this pytest testbank: n:\\Deltabox\\Bulletin\\veenstra\\info dfm_tools
 - please check the TODO sections for known inaccuracies or features that are not yet available
-- please report other bugs and feature requests at the developers or at https://github.com/openearth/dfm_tools/issues (include OS, dfm_tools version, reproduction steps)
+- please report bugs and feature requests at the developers or at https://github.com/openearth/dfm_tools/issues (include OS, dfm_tools version, reproduction steps)
+- want to get updates about dfm_tools? Send an email to jelmer.veenstra@deltares.nl
 
 
 How to install dfm_tools
 --------
 - download Anaconda 64 bit Python 3.7 from https://www.anaconda.com/distribution/#download-section 
-- install it with the recommended settings, but do tick the checkbox 'add Anaconda3 to my PATH enviroment variable'
+- install it with the recommended settings, but check 'add Anaconda3 to my PATH enviroment variable' if you want to use conda from the windows command prompt instead of anaconda prompt
 - install dfm_tools from github
 	- open command window (or anaconda prompt)
 	- ``conda create --name dfm_tools_env python=3.7 git`` (creating a venv is recommended, but at least do ``conda install git`` if you choose not to)
 	- ``conda activate dfm_tools_env``
 	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this command installs all required packages and it also updates dfm_tools to the latest version if you already installed it before)
-	- optional: ``conda install -c conda-forge shapely`` (for slicing 2D/3D data) (conda-forge channel is necessary since main channel does not have shapely>=1.7, lower is not sufficient)
+	- optional: ``conda install -c conda-forge shapely`` (for slicing 2D/3D data) (conda-forge channel is necessary since main channel does not have shapely 1.7 and lower is not sufficient for dfm_tools)
 	- optional: ``conda install -c conda-forge cartopy`` (for satellite imagery on plots) (conda-forge recommended by cartopy developers, and in this case necessary for correct shapely version)
 - launch Spyder:
 	- open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in dfm_tools_env)
@@ -87,14 +88,11 @@ How to install dfm_tools
 	- go to Tools > IPython console > Graphics and change graphics backend to 'Automatic' and restart your kernel or Spyder to get figures in new window. Alternatively: write ``plt.show()`` after every figure code block
 	- check 'example usage' to get started
 
+
 TODO wishlist
 --------
 - retrieve station/crs/gs list corresponding to a variable with get_hisstationlist(), now already used in stations/gs/crs check of get_nc.get_ncmodeldata()
 - merge station/layer/times checks, these parts of get_nc.py have a lot of overlap
-- select/check functions in dflowutil folder and merge with dfm_tools:
-	- including dflowutil_examples/test_dflowutil.py and other test scripts
-	- dflowutil contains e.g. read/write functions for general datafromats (tim, bc)
-	- same for MBay scripts
 - add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?):
 	- refer depth w.r.t. reference level, water level or bed level
 	- see test_workinprogress.py
@@ -105,6 +103,7 @@ TODO wishlist
 - simplify input of modplot.velovect() for curved vectors
 - improve z,t-plots from hisfile:
 	- example in test_get_nc.test_gethismodeldata()
+	- keep cen2cor(time_cen) definition?
 	- WARNING: part of the z interfaces/center data in dflowfm hisfile is currently wrong, check your figures carefully
 	- layer argument now has to be provided when retrieving zcoordinate_c (centers) from hisfile, but not when retrieving zcoordinate_w (interfaces), align this.
 	- check center/corner correctness, pcolormesh does not completely correspond with contours
@@ -128,38 +127,45 @@ TODO wishlist
 	- https://github.com/pwcazenave/tappy
 	- https://pypi.org/project/UTide/
 	- https://github.com/moflaher/ttide_py
-- dimn_time is now actually variable name which does not work if time dimname is not the same as time varname
+- dimn_time is now actually variable name which does not work if time dimname is not the same as time varname > define whether to retrieve dim or var, or make separate definitions
 - make merc keyword always optional by testing for minmax all vertsx between -181 and 361 and minmax all vertsy (lat) between -91 and 91 (+range for overlap for e.g. gtsm model)
-- optimize get_ncmodeldata for layerdepths/bedlevel/waterlevel (second intersect function):
+- improve get_ncmodeldata second intersect function
 	- optimize with distance from line: get maximum cell area (and infer width) from lineblockbbound selection, then decide on distance from line for selection of cells for crossect calculation
-	- only retrieve necessary information for crossection
+	- optimize by only retrieving necessary layerdepths/bed/waterlevel information for crossection
+	- remove hardcoded (layer/)bed/waterlevel varnames
 - add inpolygon/inboundbox selection of data:
 	- optimize_dist keyword now draws inpolygon around line
 	- to optimize intersect function when retrieving bed level and water level (do that with len(firstlinepart) optional keyword)
 	- to retrieve other mapdata data faster
 - add polygon ginput function (click in plot) (already partly exists in intersect/slice testscript)
 - merge existing dfm model setup functions (and other useful stuff):
-	 - https://github.com/openearth/delft3dfmpy (arthur van dam)	
-	 - https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/applications/delft3dfm (fiat, sobek etc)
-	 - https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/applications/delft3dfm/dflowfmpyplot/pyd3dfm/streamline_ug.py (streamline plotting for structured grids, but many settings)
+	- dflowutil: https://github.com/openearth/dfm_tools/tree/master/dflowutil (and test scripts, contains e.g. read/write functions for general datafromats (tim, bc))
+	- MBay scripts
+	- https://github.com/openearth/delft3dfmpy (arthur van dam)	
+	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/applications/delft3dfm (fiat, sobek etc)
+	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/applications/delft3dfm/dflowfmpyplot/pyd3dfm/streamline_ug.py (streamline plotting for structured grids, but many settings)
 - make grid reading more flexible:
 	- raise understandable error when no mesh2d_edge_x var in netcdf, instead of keyerror none (e.g. with get_netdata on hirlam files)
 	- if no ugrid in netfile, try to read provided xy variables and make meshgrid or convert cen2cor or cor2cen if necessary (how to test this?)
 	- improve plots for structured grid (CMEMS, ERA5, hirlam, grd etc)
 	- https://github.com/NOAA-ORR-ERD/gridded (https://github.com/pyugrid/pyugrid is merged into gridded) (ghostcells en mapmergen worden afgehandeld? meer dan 4 nodes per cel? support for stations?)
-	- tests.test_get_nc.test_gethirlam() is eerste opzet voor hirlam/ERA5 data, werkt heel anders dan D-flow FM
+	- tests.test_get_nc.test_getnetdata_plotnet_regular() is eerste opzet voor hirlam/ERA5 data, werkt heel anders dan D-flow FM
 	- how to plot properties on edges/nodes (scatter is slow), maybe create dual mesh and plot like faces. most relevant variables are also available on faces, so is this necessary?
-	- add support for rstfiles (different way of storing grid data, only face nodes present?)
+	- improve support for rstfiles (now only scatter, since only cell centers present?)
 	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/OpenEarthTools/openearthtools/io/dflowfm/patch2tri.py (equivalent van MIA)
 	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/OpenEarthTools/openearthtools/io/netcdf
 	- plotting edges/nodes/faces and legend: https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/connectivity_example.ipynb
+	- add retrieve_netdata argument to get_ncmodeldata() which causes griddata to be retrieved as the second return variable (do this based on coodtinates / cf-conventions)?
+- interactive data retrieval and plotting by calling get_ncmodeldata() without arguments
 
 
 TODO non-content
 --------
+- make links of header-references in README.md
 - request modplot.velovect() (curved vectors) to be added to matplotlib
 - request shapely>=1.7.0 op main channel instead of only at conda-forge? cartopy also recommends conda-forge, so would not make a huge difference yet
-- add variable units to plots in test bench (``plt.title('%s (%s)'%(data_fromnc.var_varname, data_fromnc.var_object.units))``)
+- why does cartopy has to come from conda-forge?
+- add variable units to plots in test bench
 - readme korter maken (developer info naar aparte file?)
 - update/delete cookiecutter text files (HISTORY is not up to date, remove?)
 - add documentation in comments of functions
@@ -188,9 +194,15 @@ Developer information: how to contribute to this git repository
 - Get a local checkout of the github repository:
 	- Download git from https://git-scm.com/download/win, install with default settings
 	- open command window in a folder where you want to clone the dfm_tools github repo, e.g. C:\\DATA
-	- ``git clone https://github.com/openearth/dfm_tools.git`` (repos gets cloned to local drive, checkout of master branch)
-	- to update: navigate to dfm_tools folder in git bash window and ``git pull`` (combination of git fetch and git merge)
-- Set up the dfm_tools developer python virtual environment (contains e.g. pytest and bumpversion, necessary for developing/testing):
+	- ``git clone https://github.com/openearth/dfm_tools.git`` (repos gets cloned in C:\\DATA\\dfm_tools, this is a checkout of the master branch)
+	- open git bash window in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
+	- ``git config --global user.email [emailaddress]``
+	- ``git config --global user.name [username]``
+	- create a branch called work_yourname on https://github.com/openearth/dfm_tools
+	- open git bash window in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
+	- ``git remote update origin --prune`` (update local branch list)
+	- ``git checkout work_yourname`` (checkout your branch, never do anything while the master is selected)
+- Set up the dfm_tools developer python virtual environment (necessary for developing/testing):
 	- open command window (or anaconda prompt) and navigate to dfm_tools folder, e.g. C:\\DATA\\dfm_tools
 	- ``conda env create -f environment.yml`` (sometimes you need to press enter if it hangs extremely long)
 	- to list venvs:``conda info --envs``
@@ -198,32 +210,19 @@ Developer information: how to contribute to this git repository
 	- ``conda activate dfm_tools_env``
 	- ``conda install spyder``
 	- ``python -m pip install -e .`` (pip developer mode, any updates to the local folder by github (with ``git pull``) are immediately available in your python. It also installs all required packages)
-	- ``conda install -c conda-forge shapely`` (for slicing 2D/3D data) (conda-forge channel is necessary since main channel does not have shapely>=1.7, lower is not sufficient)
-	- ``conda install -c conda-forge cartopy`` (for satellite imagery on plots) (conda-forge recommended by cartopy developers, and in this case necessary for correct shapely version)
+	- ``conda install -c conda-forge shapely cartopy``(conda-forge channel is necessary since main channel does not have shapely 1.7 and lower is not sufficient for dfm_tools. cartopy also recommends conda-forge)
 	- test if dfm_tools is properly installed by printing the version number: ``python -c "import dfm_tools; print(dfm_tools.__version__)"``
 	- open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in dfm_tools_env)
-- Branching:
+- Make your local changes to dfm_tools
+- Work with your branch:
 	- open git bash window in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
-	- ``git config --global user.email [emailaddress]``
-	- ``git config --global user.name [username]``
-	- Create your own branch option 1:
-		- manually create a branch on https://github.com/openearth/dfm_tools
-		- open git bash window in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
-		- ``git remote update origin --prune`` (update local branch list)
-		- ``git checkout branchname`` (checkout branch)
-	- Create your own branch option 2:
-		- open git bash window in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
-		- ``git checkout --branch branchname`` (create new branch and checkout, combination of git branch and git checkout commands)
+	- ``git checkout work_yourname`` (checkout your branch, never do anything while the master is selected)
+	- to update: ``git pull`` (combination of git fetch and git merge)
 	- get clean checkout again (overwrite local changes):
 		- ``git fetch --all`` (fetches changes)
 		- ``git reset --hard`` (resets local checkout of repos branch to server version)
 		- ``git pull`` (fetches and merges changes, local checkout of repos branch is now updated again)
-- Commit and push your changes to your online branch:
-	- open git bash window in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
-	- optional: ``git pull origin master`` (gets edits from master to current local branch, might induce conflicts. maybe better to just push to your branch and then handle pull request on github website)
-	- ``git add .``
-	- ``git commit -m "message to be included with your commit"``
-	- ``git push`` (pushes changes to server, do not do this in while working in the master)
+	- ``git pull origin master`` (gets edits from master to current local branch, might induce conflicts. maybe better to just push to your branch and then handle pull request on github website)
 - run test bank:
 	- open command window (or anaconda prompt) in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
 	- ``conda activate dfm_tools_env``
@@ -232,7 +231,13 @@ Developer information: how to contribute to this git repository
 	- ``pytest -v --tb=short -m systemtest``
 	- ``pytest -v --tb=short -m acceptance``
 	- ``pytest -v --tb=short tests\test_get_nc.py::test_getplotmapWAQOS``
-- increasing the version number (with bumpversion):
+- Commit and push your changes to your branch:
+	- open git bash window in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
+	- ``git checkout work_yourname`` (checkout your branch, never do anything while the master is selected)
+	- ``git add .``
+	- ``git commit -m "message to be included with your commit"``
+	- ``git push`` (pushes changes to server, do not do this in while working in the master)
+- increasing the version number after you committed all changes:
 	- open cmd window in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
 	- optional: ``conda activate dfm_tools_env``
 	- ``bumpversion major`` or ``bumpversion minor`` or ``bumpversion patch`` (changes version numbers in files and commits changes)
