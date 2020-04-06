@@ -212,7 +212,7 @@ def test_workinprogress():
     data_fromnc_his = get_ncmodeldata(file_nc=file_nc, varname='point_zs', station='all', timestep='all')
 
     fig, ax = plt.subplots()
-    for iS,stat_name in enumerate(station_names):
+    for iS,stat_name in enumerate(data_fromnc_his.var_stations['station_name']):
         ax.plot(data_fromnc_his.var_times, data_fromnc_his[:,iS], label=stat_name)
     ax.legend()
     plt.savefig(os.path.join(dir_output,'SFINCS_hiszs'))
@@ -390,7 +390,7 @@ def test_delft3D_netcdf():
 
     fig, ax = plt.subplots(figsize=(16,7))
     for iS in range(10):
-        ax.plot(data_nc_ZWL.var_times,data_nc_ZWL[:,iS],label=data_nc_NAMST.iloc[iS], linewidth=1)
+        ax.plot(data_nc_ZWL.var_times,data_nc_ZWL[:,iS],label=data_nc_NAMST['NAMST'].iloc[iS], linewidth=1)
     ax.legend()
     ax.set_ylabel('%s (%s)'%(data_nc_ZWL.var_varname, data_nc_ZWL.var_object.units))
     ax.set_xlim([data_nc_ZWL.var_times[0],data_nc_ZWL.var_times[0]+dt.timedelta(days=14)])
@@ -462,7 +462,7 @@ def test_delft3D_netcdf():
 
     fig, ax = plt.subplots(figsize=(16,7))
     for iS in range(5):
-        ax.plot(data_nc_ZWL.var_times,data_nc_ZWL[:,iS],label=data_nc_NAMST.iloc[iS], linewidth=1)
+        ax.plot(data_nc_ZWL.var_times,data_nc_ZWL[:,iS],label=data_nc_NAMST['NAMST'].iloc[iS], linewidth=1)
     ax.legend()
     ax.set_ylabel('%s (%s)'%(data_nc_ZWL.var_varname, data_nc_ZWL.var_object.units))
     ax.set_xlim([data_nc_ZWL.var_times[0],data_nc_ZWL.var_times[0]+dt.timedelta(days=2)])
@@ -678,7 +678,7 @@ def test_waqua_netcdf_convertedwith_getdata():
 
     fig, ax = plt.subplots(figsize=(16,7))
     for iS in range(10):
-        ax.plot(data_nc_ZWL.var_times,data_nc_ZWL[:,iS],label=data_nc_NAMWL.iloc[iS], linewidth=1)
+        ax.plot(data_nc_ZWL.var_times,data_nc_ZWL[:,iS],label=data_nc_NAMWL['NAMWL'].iloc[iS], linewidth=1)
     ax.legend()
     ax.set_ylabel('%s (%s)'%(data_nc_ZWL.var_varname, data_nc_ZWL.var_object.units))
     ax.set_xlim([data_nc_ZWL.var_times[0],data_nc_ZWL.var_times[0]+dt.timedelta(days=14)])
@@ -737,7 +737,7 @@ def test_waqua_netcdf_convertedwith_getdata():
 
     fig, ax = plt.subplots(figsize=(16,7))
     for iS in range(10):
-        ax.plot(data_nc_ZWL.var_times,data_nc_ZWL[:,iS],label=data_nc_NAMWL.iloc[iS], linewidth=1)
+        ax.plot(data_nc_ZWL.var_times,data_nc_ZWL[:,iS],label=data_nc_NAMWL['NAMWL'].iloc[iS], linewidth=1)
     ax.legend()
     ax.set_ylabel('%s (%s)'%(data_nc_ZWL.var_varname, data_nc_ZWL.var_object.units))
     ax.set_xlim([data_nc_ZWL.var_times[0],data_nc_ZWL.var_times[0]+dt.timedelta(days=14)])
@@ -797,7 +797,7 @@ def test_waqua_netcdf_convertedwith_getdata():
 
     fig, ax = plt.subplots(figsize=(16,7))
     for iS in range(10):
-        ax.plot(data_nc_ZWL.var_times,data_nc_ZWL[:,iS],label=data_nc_NAMWL.iloc[iS], linewidth=1)
+        ax.plot(data_nc_ZWL.var_times,data_nc_ZWL[:,iS],label=data_nc_NAMWL['NAMWL'].iloc[iS], linewidth=1)
     ax.legend()
     ax.set_ylabel('%s (%s)'%(data_nc_ZWL.var_varname, data_nc_ZWL.var_object.units))
     ax.set_xlim([data_nc_ZWL.var_times[0],data_nc_ZWL.var_times[0]+dt.timedelta(days=14)])
@@ -1095,8 +1095,8 @@ def test_morphology():
         var_longname = vars_pd['long_name'][vars_pd['nc_varkeys']==varname].iloc[0]
     
         fig, ax = plt.subplots(1,1, figsize=(10,5))
-        for iS, stat in enumerate(data_fromhis.var_stations):
-            ax.plot(data_fromhis.var_times, data_fromhis[:,iS], linewidth=1, label=data_fromhis.var_stations.iloc[iS,0])
+        for iS, stat in enumerate(data_fromhis.var_stations['station_name']):
+            ax.plot(data_fromhis.var_times, data_fromhis[:,iS], linewidth=1, label=stat)
         ax.legend()
         ax.set_ylabel('%s (%s)'%(data_fromhis.var_varname,data_fromhis.var_object.units))
         ax.set_xlim(data_fromhis.var_times[[0,3000]])
