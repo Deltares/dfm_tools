@@ -670,7 +670,7 @@ def test_readme_example_usage():
     from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
     from dfm_tools.get_nc_helpers import get_ncvardimlist, get_timesfromnc, get_hisstationlist
     
-    #define files, uncomment the line below, copy data locally and change this path to increase performance
+    #uncomment the line below, copy data locally and change this path to increase performance
     #dir_testinput = os.path.join(r'n:\Deltabox\Bulletin\veenstra\info dfm_tools\test_input')
     file_nc_map = os.path.join(dir_testinput,'DFM_sigma_curved_bend','DFM_OUTPUT_cb_3d','cb_3d_map.nc')
     file_nc_his = os.path.join(dir_testinput,'DFM_sigma_curved_bend','DFM_OUTPUT_cb_3d','cb_3d_his.nc')
@@ -686,7 +686,7 @@ def test_readme_example_usage():
     for iP, station in enumerate(data_fromhis_wl.var_stations['station_name']):
         ax.plot(data_fromhis_wl.var_times,data_fromhis_wl[:,iP],'-', label=station)
     ax.legend()
-    ax.set_ylabel('%s (%s)'%(data_frommap_wl.var_varname, data_frommap_wl.var_object.units))
+    ax.set_ylabel('%s (%s)'%(data_fromhis_wl.var_varname, data_fromhis_wl.var_object.units))
     
     #plot net/grid
     ugrid_all = get_netdata(file_nc=file_nc_map)#,multipart=False)
@@ -726,7 +726,7 @@ def test_readme_example_usage():
     print('\tthe long_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname, print_var.var_object.long_name))
     print('\tthe standard_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname, print_var.var_object.standard_name))
 
-    
+
 
 
 
