@@ -10,8 +10,8 @@ Table of contents
 --------
 <!--ts-->
    * [Features](#features)
-   * [Example usage](#example-usage)
    * [Installation](#installation)
+   * [Example usage](#example-usage)
    * [Feature wishlist](#feature-wishlist)
    * [Todo non-content](#todo-non-content)
    * [Developer information](#developer-information)
@@ -126,7 +126,7 @@ Installation
 	- ``conda create --name dfm_tools_env python=3.7 git spyder -y`` (creating a venv is recommended, but at least do ``conda install git`` if you choose not to)
 	- ``conda activate dfm_tools_env``
 	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this command installs all required packages and it also updates dfm_tools to the latest version if you already installed it before)
-	- optional: ``conda install -c conda-forge "shapely>=1.7.0" -y`` (for slicing 2D/3D data) (conda-forge channel is necessary since main channel version is 1.6.4. The correct version is available via pip, but then geos dll is not properly linked, this will probably be solved in the future https://github.com/Toblerity/Shapely/issues/844)
+	- ``conda install -c conda-forge "shapely>=1.7.0" -y`` (for slicing 2D/3D data) (conda-forge channel is necessary since main channel version is 1.6.4. The correct version is available via pip, but then geos dll is not properly linked, this will probably be solved in the future https://github.com/Toblerity/Shapely/issues/844)
 	- optional: ``conda install -c conda-forge cartopy -y`` (for satellite imagery on plots) (conda-forge channel recommended by cartopy developers, and currently also necessary for correct shapely version)
 - launch Spyder:
 	- open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in dfm_tools_env)
