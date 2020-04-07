@@ -181,6 +181,7 @@ def get_ncvardimlist(file_nc):
                 vars_pd.loc[iV, attr_name] = data_nc.variables[nc_var].getncattr(attr_name)
             except:
                 pass
+    vars_pd['ndims'] = [len(x) for x in vars_pd['dimensions']]
     for iD, nc_dim in enumerate(data_nc.dimensions):
         #get non-attribute properties of netcdf variable
         dims_pd.loc[iD,'name'] = data_nc.dimensions[nc_dim].name
@@ -310,10 +311,12 @@ def get_hisstationlist(file_nc,varname):
     varname_dims = data_nc_varname.dimensions
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
     vars_pd_stats = vars_pd[vars_pd['dtype']=='|S1']
+    
+    
     if varname in vars_pd_stats['nc_varkeys'].tolist(): 
         vars_pd_stats = vars_pd[vars_pd['nc_varkeys']==varname]
         
-    #otherwise create lists of station variable names and dimensions, that correspond to dimensions of varname
+    #create lists of station variable names and dimensions, that correspond to dimensions of varname
     varname_stationdimname_list = []
     varname_stationvarname_list = []
     for iR, vars_pd_statrow in vars_pd_stats.iterrows():
@@ -334,7 +337,13 @@ def get_hisstationlist(file_nc,varname):
                 station_name_list_raw = chartostring(station_name_char)
                 station_name_list = np.char.strip(station_name_list_raw) #necessary step for Sobek and maybe others
                 var_station_names_pd[varname_stationvarname] = station_name_list
-            
+                
+        #get coordinates of stations (only works for stations, not for crs/gs since these variables have more than 1 dimension)
+        vars_pd_statlocs = vars_pd[(vars_pd['ndims']==1) & (vars_pd['dimensions'].astype(str).str.contains(varname_stationdimname_list[iSV]))]
+        coord_varnames = vars_pd_statlocs['nc_varkeys'].tolist()
+        for iC, coord_varname in enumerate(coord_varnames):
+            station_coordn = data_nc.variables[coord_varname]
+            var_station_names_pd[coord_varname] = station_coordn[:]
 
     return var_station_names_pd
 
