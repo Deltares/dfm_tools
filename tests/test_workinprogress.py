@@ -300,7 +300,7 @@ def test_delft3D_netcdf():
     from dfm_tools.get_nc_helpers import get_ncvardimlist, get_hisstationlist#, get_varname_fromnc
     from dfm_tools.regulargrid import uva2xymagdeg
 
-    file_nc = r'p:\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\063_netcdf\trim-thiery_002_coarse.nc'
+    file_nc = r'p:\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\063_netcdf\shorterperiod\trim-thiery_002_coarse.nc'
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
     
     data_nc_XZ = get_ncmodeldata(file_nc=file_nc, varname='XZ')
@@ -380,7 +380,7 @@ def test_delft3D_netcdf():
 
 
     #FROM HIS data
-    file_nc = r'p:\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\063_netcdf\trih-thiery_002_coarse.nc'
+    file_nc = r'p:\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\063_netcdf\shorterperiod\trih-thiery_002_coarse.nc'
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
     
     data_nc_NAMST = get_hisstationlist(file_nc=file_nc, varname='NAMST')
@@ -473,7 +473,7 @@ def test_delft3D_netcdf():
     
  
 
-#WARNING: this is excluded from the testbench, since Delft3D models that were converted with getdata.pl sometimes give corrupt variables (see comments in code for details). NEFIS conversion is not fully up to date in getdata.pl, whereas WAQUA conversion is
+#WARNING: this is excluded from the testbench, since Delft3D models that were converted with getdata.pl sometimes give corrupt variables (see comments in code for details). NEFIS conversion is not fully up to date in getdata.pl, whereas WAQUA conversion is. it is recommended to rerun your Delft3D model with netCDF output instead.
 def EXCLUDE_test_delft3D_netcdf_convertedwith_getdata():
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
     """
