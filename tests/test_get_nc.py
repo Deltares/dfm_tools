@@ -658,9 +658,12 @@ def test_getxzcoordsonintersection_plotcrossect(file_nc):
 
  
     
-    
-    
-    
+
+
+
+
+
+
 @pytest.mark.acceptance
 def test_readme_example_usage():
     #import statements

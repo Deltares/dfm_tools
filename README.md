@@ -69,7 +69,7 @@ statlist_pd = get_hisstationlist(file_nc=file_nc_his, varname='station_name')
 data_fromhis_wl = get_ncmodeldata(file_nc=file_nc_his, varname='waterlevel', station='all', timestep= 'all')
 fig, ax = plt.subplots(1,1,figsize=(10,5))
 for iP, station in enumerate(data_fromhis_wl.var_stations['station_name']):
-ax.plot(data_fromhis_wl.var_times,data_fromhis_wl[:,iP],'-', label=station)
+    ax.plot(data_fromhis_wl.var_times,data_fromhis_wl[:,iP],'-', label=station)
 ax.legend()
 ax.set_ylabel('%s (%s)'%(data_fromhis_wl.var_varname, data_fromhis_wl.var_object.units))
 
@@ -111,6 +111,8 @@ print('\tthe shape of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname
 print('\tthe units of the netCDF variable %s are:\n\t\t%s'%(print_var.var_varname, print_var.var_object.units))
 print('\tthe long_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname, print_var.var_object.long_name))
 print('\tthe standard_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname, print_var.var_object.standard_name))
+
+
 ```
 - for more examples, check https://github.com/openearth/dfm_tools/tree/master/tests (this is also the pytest testbank)
 - examples of (mostly unformatted) figures created by this pytest testbank: n:\\Deltabox\\Bulletin\\veenstra\\info dfm_tools
