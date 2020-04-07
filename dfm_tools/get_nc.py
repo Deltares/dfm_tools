@@ -192,7 +192,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         values_selid = []
         values_dimlens = [] #list(nc_values.shape)
         for iD, nc_values_dimsel in enumerate(nc_varobject_sel.dimensions):
-            if nc_values_dimsel in [dimn_faces, dimn_nFlowElem]: # domain-like variable is present, so there are multiple domains
+            if nc_values_dimsel in [dimn_faces, dimn_nFlowElem]: # domain-like variable is present, so there are multiple domains (with ghost cells)
                 nonghost_ids = ghostcell_filter(file_nc_sel)
                 if nonghost_ids is None:
                     values_selid.append(range(nc_varobject_sel.shape[iD]))
@@ -200,7 +200,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
                     values_selid.append(nonghost_ids)
                 values_dimlens.append(0) #because concatenate axis
                 concat_axis = iD
-            elif nc_values_dimsel in [dimn_nodes, dimn_edges, dimn_nFlowLink]: # domain-like variable is present, so there are multiple domains
+            elif nc_values_dimsel in [dimn_nodes, dimn_edges, dimn_nFlowLink]: # domain-like variable is present, so there are multiple domains (no ghost cells)
                 values_selid.append(range(nc_varobject_sel.shape[iD]))
                 values_dimlens.append(0) #because concatenate axis
                 concat_axis = iD
@@ -229,6 +229,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
             
     #add metadata
     values_all.var_varname = varname
+    values_all.var_dimensions = nc_varobject.dimensions
     values_all.var_object = nc_varobject #this is the netcdf variable, so contains properties like shape/units/dimensions
     if dimn_time in nc_varobject.dimensions:
         values_all.var_times = data_nc_datetimes_pd.iloc[time_ids]
