@@ -152,7 +152,7 @@ Feature wishlist
 	- layerzfrombedlevel keyword in mdu changes how zlayering is set up. Catch this exception with a keyword if necessary
 - plotting:
 	- simplify input of modplot.velovect() for curved vectors
-	- contour plot of polycollection possible? (e.g. cotidal chart)
+	- contour plot of surfaces (e.g. cotidal chart), with polycollection (FM grid) or regular grid, exclude 'land'
 - improve z,t-plots from hisfile:
 	- example in test_get_nc.test_gethismodeldata()
 	- keep cen2cor(time_cen) definition?
