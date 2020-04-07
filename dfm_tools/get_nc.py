@@ -214,7 +214,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
                 values_selid.append(layer_ids)
                 values_dimlens.append(len(layer_ids))
             else:
-                warnings.warn('not a predefined dimension name')
+                #warnings.warn('not a predefined dimension name')
                 values_selid.append(range(nc_varobject_sel.shape[iD]))
                 values_dimlens.append(nc_varobject_sel.shape[iD])
 

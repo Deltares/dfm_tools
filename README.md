@@ -26,6 +26,8 @@ Features
 	- Delft3D netCDF output files (you can get netcdf output with keywords in your mdf)
 	- converted Delft3D and waqua data (converted to netCDF with getdata.pl) (Delft3D conversion with getdata.pl is not flawless, preferably rerun with netCDF as outputformat instead)
 - data handling:
+	- support for net/map/fou/rst partitions
+	- support for flexible meshes (containing triangles, squares, pentagons, hexagons or any other shape)
 	- select all data based on variable, timestep/datetime, layer, station (not yet on depth)
 	- get feedback about available variables, timesteps/datetimes, layers, stations when you retrieve the wrong ones
 	- retrieve lists of variables, timesteps/datetimes, stations, cross sections, general structures
