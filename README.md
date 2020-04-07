@@ -41,8 +41,7 @@ Features
 	- plotting z,t-plots (see [Feature wishlist](#feature-wishlist) for known inaccuracies)
 	- plot anything you like and how you like it
 - other io functions:
-	- tekal (.tek, .pli, .pliz, .pol, .ldb) data
-	- read Delft3D files (.grd, .dep)
+	- read tekal data (.tek, .pli, .pliz, .pol, .ldb)
 	- read/write mdu file
 
 
@@ -122,7 +121,7 @@ print('\tthe standard_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var
 Installation
 --------
 - download Anaconda 64 bit Python 3.7 from https://www.anaconda.com/distribution/#download-section (miniconda is probably also sufficient, but this is not yet tested)
-- install it with the recommended settings, but check 'add Anaconda3 to my PATH enviroment variable' if you want to use conda from the windows command prompt instead of anaconda prompt
+- install it with the recommended settings, but check 'add Anaconda3 to my PATH enviroment variable' if you want to use conda from the windows command prompt instead of anaconda prompt (CAUTION: anaconda prompt seems not to handle the ``pip install git`` properly, reinstall anaconda if you get an error with that step and use command prompt instead)
 - install dfm_tools from github
 	- open command window (or anaconda prompt)
 	- ``conda create --name dfm_tools_env python=3.7 git spyder -y`` (creating a venv is recommended, but at least do ``conda install git`` if you choose not to)
@@ -148,7 +147,9 @@ Feature wishlist
 	- add depth array (interfaces/centers) to his and map variables (z/sigma layer calculation is already in get_modeldata_onintersection function)
 	- depths can be retrieved from mesh2d_layer_z/mesh2d_layer_sigma, but has no time dimension so untrue for sigma and maybe for z? (wrong in dflowfm?)
 	- layerzfrombedlevel keyword in mdu changes how zlayering is set up. Catch this exception with a keyword if necessary
-- simplify input of modplot.velovect() for curved vectors
+- plotting:
+	- simplify input of modplot.velovect() for curved vectors
+	- contour plot of polycollection possible? (e.g. cotidal chart)
 - improve z,t-plots from hisfile:
 	- example in test_get_nc.test_gethismodeldata()
 	- keep cen2cor(time_cen) definition?
@@ -213,7 +214,8 @@ Todo non-content
 - request shapely>=1.7.0 op main channel instead of only at conda-forge? cartopy also recommends conda-forge, so would not make a huge difference yet
 - why does cartopy has to come from conda-forge?
 - add variable units to plots in test bench
-- update/delete cookiecutter text files (HISTORY is not up to date, remove including links in other files?)
+- install without PATH fails on pip/git in anaconda prompt?
+- update/delete cookiecutter text files (HISTORY is not up to date, remove including links in other files?), how about dfm_tools.cli?
 - write documentation as comments and generate automatically? (at least add documentation as comments to functions)
 - create overview of scripts and functions, including future location of missing features
 - put testdata on deltares shared location?
