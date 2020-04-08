@@ -258,15 +258,15 @@ Developer information
 	- ``git checkout work_yourname`` (checkout your branch, never do anything while the master is selected)
 - Set up the dfm_tools developer python virtual environment (necessary for developing/testing):
 	- open command window (or anaconda prompt) and navigate to dfm_tools folder, e.g. C:\\DATA\\dfm_tools
-	- ``conda env create -f environment.yml`` (sometimes you need to press enter if it hangs extremely long)
+	- ``conda env create -f environment.yml`` (creates an environment called dfm_tools_devenv)
 	- to list venvs:``conda info --envs``
-	- to remove venv when necessary: ``conda remove -n dfm_tools_env --all``
-	- ``conda activate dfm_tools_env``
+	- to remove venv when necessary: ``conda remove -n dfm_tools_devenv --all``
+	- ``conda activate dfm_tools_devenv``
 	- ``conda install spyder``
 	- ``python -m pip install -e .`` (pip developer mode, any updates to the local folder by github (with ``git pull``) are immediately available in your python. It also installs all required packages)
 	- ``conda install -c conda-forge "shapely>=1.7.0" cartopy``(conda-forge channel is necessary since main channel version is 1.6.4. The correct version is available via pip, but then geos dll is not properly linked, this will probably be solved in the future https://github.com/Toblerity/Shapely/issues/844. cartopy also recommends conda-forge channel)
 	- test if dfm_tools is properly installed by printing the version number: ``python -c "import dfm_tools; print(dfm_tools.__version__)"``
-	- open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in dfm_tools_env)
+	- open 'Spyder(dfm_tools_devenv)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in dfm_tools_devenv)
 - Make your local changes to dfm_tools
 - Work with your branch:
 	- open git bash window in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
@@ -279,7 +279,7 @@ Developer information
 	- ``git pull origin master`` (gets edits from master to current local branch, might induce conflicts. maybe better to just push to your branch and then handle pull request on github website)
 - run test bank:
 	- open command window (or anaconda prompt) in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
-	- ``conda activate dfm_tools_env``
+	- ``conda activate dfm_tools_devenv``
 	- ``pytest -v --tb=short`` (runs all tests)
 	- ``pytest -v --tb=short -m unittest``
 	- ``pytest -v --tb=short -m systemtest``
@@ -293,7 +293,7 @@ Developer information
 	- ``git push`` (pushes changes to server, do not do this in while working in the master)
 - increasing the version number after you committed all changes:
 	- open cmd window in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
-	- optional: ``conda activate dfm_tools_env``
+	- optional: ``conda activate dfm_tools_devenv``
 	- ``bumpversion major`` or ``bumpversion minor`` or ``bumpversion patch`` (changes version numbers in files and commits changes)
 	- push this change in version number with ``git push`` (from git bash window or cmd also ok?)
 - Request merging of your branch on https://github.com/openearth/dfm_tools/branches
