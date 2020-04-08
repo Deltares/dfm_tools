@@ -124,7 +124,7 @@ print('\tthe standard_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var
 Installation
 --------
 - download Anaconda 64 bit Python 3.7 from https://www.anaconda.com/distribution/#download-section (miniconda is probably also sufficient, but this is not yet tested)
-- install it with the recommended settings, but check 'add Anaconda3 to my PATH enviroment variable' if you want to use conda from the windows command prompt instead of anaconda prompt (CAUTION: anaconda prompt seems not to handle the ``pip install git`` properly, reinstall anaconda if you get an error with that step and use command prompt instead)
+- install it with the recommended settings, but check 'add Anaconda3 to my PATH enviroment variable' if you want to use conda from the windows command prompt instead of anaconda prompt
 - install dfm_tools from github:
 	- open command window (or anaconda prompt)
 	- ``conda create --name dfm_tools_env python=3.7 git spyder -y`` (creating a venv is recommended, but at least do ``conda install git`` if you choose not to)
@@ -145,7 +145,6 @@ Installation
 
 Feature wishlist
 --------
-- retrieve station/crs/gs list corresponding to a variable with get_hisstationlist(), now already used in stations/gs/crs check of get_nc.get_ncmodeldata()
 - merge station/layer/times checks, these parts of get_nc.py have a lot of overlap
 - add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?):
 	- refer depth w.r.t. reference level, water level or bed level
@@ -221,7 +220,7 @@ Todo non-content
 - request shapely>=1.7.0 op main channel instead of only at conda-forge? cartopy also recommends conda-forge, so would not make a huge difference yet
 - why does cartopy has to come from conda-forge?
 - add variable units to plots in test bench
-- install without PATH fails on pip/git in anaconda prompt?
+- install without PATH fails on pip/git in anaconda prompt? (test installation with anaconda prompt, and with command prompt combined with ``set PATH=%PATH%;<your_path_to_anaconda_installation>\Scripts``)
 - write documentation as comments and generate automatically? (at least add documentation as comments to functions)
 - create overview of scripts and functions, including future location of missing features
 - put testdata on deltares shared location?
