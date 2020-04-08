@@ -261,7 +261,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
             
             #get info about grid variables related to varname
             if get_linkedgridinfo and (nc_values_dimsel not in [dimn_time,dimn_layer]+dimname_stat_validvals):
-                vars_pd_relevant = vars_pd[(vars_pd['ndims']<=2) & (vars_pd['dimensions'].astype(str).str.contains(nc_values_dimsel)) & -(vars_pd['dimensions'].astype(str).str.contains(dimn_time))]
+                vars_pd_relevant = vars_pd[(vars_pd['ndims']<=2) & (vars_pd['dimensions'].apply(lambda x: nc_values_dimsel in x)) & -(vars_pd['dimensions'].apply(lambda x: dimn_time in x))]
                 values_dimlinkedgrid.append(vars_pd_relevant)
                 
                 print('\tlinkedvars for dimension "%s":'%(nc_values_dimsel))
