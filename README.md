@@ -153,6 +153,7 @@ Feature wishlist
 	- add depth array (interfaces/centers) to his and map variables (z/sigma layer calculation is already in get_modeldata_onintersection function)
 	- depths can be retrieved from mesh2d_layer_z/mesh2d_layer_sigma, but has no time dimension so untrue for sigma and maybe for z? (wrong in dflowfm?)
 	- layerzfrombedlevel keyword in mdu changes how zlayering is set up. Catch this exception with a keyword if necessary
+	- support for mixed sigma/z layers?
 - plotting:
 	- simplify input of modplot.velovect() for curved vectors
 	- contour plot of surfaces (e.g. cotidal chart), with polycollection (FM grid) or regular grid, exclude 'land'
@@ -211,6 +212,7 @@ Feature wishlist
 	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/OpenEarthTools/openearthtools/io/netcdf
 	- plotting edges/nodes/faces and legend: https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/connectivity_example.ipynb
 	- add retrieve_netdata argument to get_ncmodeldata() which causes griddata to be retrieved as the second return variable (do this based on coodtinates / cf-conventions)?
+	- pcolor resulteert ook in een polycollection, net zoals handmatig wordt gedaan met plot_mapdata()
 - interactive data retrieval and plotting by calling get_ncmodeldata() without arguments
 
 
@@ -221,6 +223,7 @@ Todo non-content
 - why does cartopy has to come from conda-forge?
 - add variable units to plots in test bench
 - install without PATH fails on pip/git in anaconda prompt? (test installation with anaconda prompt, and with command prompt combined with ``set PATH=%PATH%;<your_path_to_anaconda_installation>\Scripts``)
+- installation also possible with miniconda only?
 - write documentation as comments and generate automatically? (at least add documentation as comments to functions)
 - create overview of scripts and functions, including future location of missing features
 - put testdata on deltares shared location?

@@ -14,213 +14,6 @@ from dfm_tools.testutils import getmakeoutputdir
 
 
 
-@pytest.mark.acceptance
-def test_workinprogress():
-    ## WARNING: THIS TEST IS NOT YET FINISHED, WILL BE IMPROVED AND LINKED TO INTERNAL FUNCTIONS ASAP
-    dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
-    """
-    dir_output = './test_output'
-    """
-    
-    import os
-    import matplotlib.pyplot as plt
-    import numpy as np
-    plt.close('all')
-    
-    from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
-    from dfm_tools.get_nc_helpers import get_ncvardimlist, get_hisstationlist#, get_varname_fromnc
-    from dfm_tools.io.polygon import Polygon
-
-    # test Grevelingen (integrated example, where all below should move towards)
-    file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc')
-    ugrid = get_netdata(file_nc=file_nc)
-    fig, ax = plt.subplots()
-    plot_netmapdata(ugrid.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
-    ax.set_aspect('equal')
-    
-    #hirlam
-    file_nc = r'p:\1204257-dcsmzuno\2014\data\meteo\HIRLAM72_2018\h72_201803.nc'
-    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
-    
-    mesh2d_node_x = get_ncmodeldata(file_nc=file_nc, varname='x')
-    mesh2d_node_y = get_ncmodeldata(file_nc=file_nc, varname='y')
-    data_v = get_ncmodeldata(file_nc=file_nc, varname='northward_wind',timestep=0)[0,:,:]
-    data_u = get_ncmodeldata(file_nc=file_nc, varname='eastward_wind',timestep=0)[0,:,:]
-    #airp = get_ncmodeldata(file_nc=file_nc, varname='air_pressure_fixed_height',timestep=0)[0,:,:]
-    magn = np.sqrt(data_u**2 + data_v**2)
-    
-    fig, ax = plt.subplots()
-    ax.plot(mesh2d_node_x,mesh2d_node_y,'-b',linewidth=0.2)
-    ax.plot(mesh2d_node_x.T,mesh2d_node_y.T,'-b',linewidth=0.2)
-    plt.savefig(os.path.join(dir_output,'hirlam_mesh'))
-
-    
-    fig, ax = plt.subplots()
-    ax.pcolor(mesh2d_node_x,mesh2d_node_y,magn)
-    #plt.pcolor(mesh2d_node_x,mesh2d_node_y,airp,linewidth=0.5)
-    plt.savefig(os.path.join(dir_output,'hirlam_magn_pcolor'))
-    
-    
-    
-    #COSMO
-    file_nc = r'p:\1220688-lake-kivu\2_data\COSMO\COSMOCLM_2012_out02_merged_4Wouter.nc'
-    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
-    
-    xcen = get_ncmodeldata(file_nc=file_nc, varname='lon')
-    ycen = get_ncmodeldata(file_nc=file_nc, varname='lat')
-    data_U10M = get_ncmodeldata(file_nc=file_nc, varname='U_10M', timestep=range(20))
-    data_V10M = get_ncmodeldata(file_nc=file_nc, varname='V_10M', timestep=range(20))
-    #xcen, ycen = np.meshgrid(data_lon, data_lat)
-    magn = np.sqrt(data_U10M**2 + data_V10M**2)
-
-    fig, ax = plt.subplots()
-    ax.plot(xcen, ycen, '-b', linewidth=0.2)
-    ax.plot(xcen.T, ycen.T, '-b', linewidth=0.2)
-    plt.savefig(os.path.join(dir_output,'COSMO_mesh'))
-
-    file_ldb = r'p:\1220688-lake-kivu\3_modelling\1_FLOW\4_CH4_CO2_included\008\lake_kivu_geo.ldb'
-    data_ldb = Polygon.fromfile(file_ldb, pd_output=True)
-    
-    fig, axs = plt.subplots(1,3, figsize=(16,6))
-    for iT, timestep in enumerate([0,1,10]):
-        ax=axs[iT]
-        pc = ax.pcolor(xcen, ycen, magn[timestep,:,:], cmap='jet')
-        pc.set_clim([0,5])
-        cbar = fig.colorbar(pc, ax=ax)
-        cbar.set_label('velocity magnitude (%s)'%(data_V10M.var_object.units))
-        ax.set_title('t=%d (%s)'%(timestep, data_V10M.var_times.loc[timestep]))
-        ax.set_aspect('equal')
-        ax.plot(data_ldb[0].loc[:,0], data_ldb[0].loc[:,1], 'k', linewidth=0.5)
-        thinning = 2
-        ax.quiver(xcen[::thinning,::thinning], ycen[::thinning,::thinning], data_U10M[timestep,::thinning,::thinning], data_V10M[timestep,::thinning,::thinning], 
-                  color='w',scale=50,width=0.008)#, edgecolor='face', cmap='jet')
-    fig.tight_layout()
-    plt.savefig(os.path.join(dir_output,'COSMO_magn_pcolorquiver'))
-
-
-
-    dist = 0.1
-    reg_x_vec = np.linspace(np.min(xcen),np.max(xcen),int(np.ceil((np.max(xcen)-np.min(xcen))/dist)))
-    reg_y_vec = np.linspace(np.min(ycen),np.max(ycen),int(np.ceil((np.max(ycen)-np.min(ycen))/dist)))
-    reg_grid = np.meshgrid(reg_x_vec,reg_y_vec)
-    X = reg_grid[0]
-    Y = reg_grid[1]
-    from scipy.interpolate import griddata
-    from dfm_tools.modplot import velovect
-    
-    fig, axs = plt.subplots(1,3, figsize=(16,6))
-    for iT, timestep in enumerate([0,1,10]):
-        ax=axs[iT]
-        #pc = ax.pcolor(xcen, ycen, magn[timestep,:,:], cmap='jet')
-        #pc.set_clim([0,5])
-        U = griddata((xcen.flatten(),ycen.flatten()),data_U10M[timestep,:,:].flatten(),tuple(reg_grid),method='nearest')
-        V = griddata((xcen.flatten(),ycen.flatten()),data_V10M[timestep,:,:].flatten(),tuple(reg_grid),method='nearest')
-        speed = np.sqrt(U*U + V*V)
-        quiv_curved = velovect(ax,X,Y,U,V, arrowstyle='fancy', scale = 5, grains = 25, color=speed)#, cmap='jet')
-        ax.set_aspect('equal')
-        cbar = fig.colorbar(quiv_curved.lines, ax=ax)
-        cbar.set_label('velocity magnitude (%s)'%(data_V10M.var_object.units))
-        ax.set_title('t=%d (%s)'%(timestep, data_V10M.var_times.loc[timestep]))
-        ax.set_aspect('equal')
-        ax.plot(data_ldb[0].loc[:,0], data_ldb[0].loc[:,1], 'k', linewidth=0.5)
-        thinning = 2
-        ax.quiver(xcen[::thinning,::thinning], ycen[::thinning,::thinning], data_U10M[timestep,::thinning,::thinning], data_V10M[timestep,::thinning,::thinning], 
-                  color='w',scale=50,width=0.008)#, edgecolor='face', cmap='jet')
-    fig.tight_layout()
-    plt.savefig(os.path.join(dir_output,'COSMO_magn_curvedquiver'))
-
-
-
-    #ERA5
-    file_nc = r'p:\11200665-c3s-codec\2_Hydro\ECWMF_meteo\meteo\ERA-5\2000\ERA5_metOcean_atm_19991201_19991231.nc'
-    
-    data_lon = get_ncmodeldata(file_nc=file_nc, varname='longitude', multipart=False)
-    data_lat = get_ncmodeldata(file_nc=file_nc, varname='latitude')
-    data_psl = get_ncmodeldata(file_nc=file_nc, varname='msl',timestep=10, multipart=False)
-    lons,lats = np.meshgrid(data_lon,data_lat)
-    
-    fig, ax = plt.subplots()
-    ax.plot(lons, lats,'-b',linewidth=0.2)
-    ax.plot(lons.T, lats.T,'-b',linewidth=0.2)
-    plt.savefig(os.path.join(dir_output,'ERA5_mesh'))
-
-    fig, ax = plt.subplots()
-    ax.pcolor(lons, lats, data_psl[0,:,:])
-    #plt.pcolor(mesh2d_node_x,mesh2d_node_y,airp,linewidth=0.5)
-    plt.savefig(os.path.join(dir_output,'ERA5_msl_pcolor'))
-
-
-    #SFINCS
-    file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\01_Implementation\14_restartfile\sfincs_map.nc'
-    #file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\03_Application\22_Tsunami_Japan_Sendai\sfincs_map.nc'
-    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
-    
-    data_fromnc_x = get_ncmodeldata(file_nc=file_nc, varname='x')
-    data_fromnc_y = get_ncmodeldata(file_nc=file_nc, varname='y')
-    data_fromnc_zs = get_ncmodeldata(file_nc=file_nc, varname='zs', timestep='all')
-
-    fig, ax = plt.subplots()
-    ax.plot(data_fromnc_x, data_fromnc_y,'-b',linewidth=0.2)
-    ax.plot(data_fromnc_x.T, data_fromnc_y.T,'-b',linewidth=0.2)
-    plt.savefig(os.path.join(dir_output,'SFINCS_mesh'))    
-
-    fig, axs = plt.subplots(3,1, figsize=(14,9))
-    for iT, timestep in enumerate([0,1,10]):
-        ax=axs[iT]
-        pc = ax.pcolor(data_fromnc_x, data_fromnc_y, data_fromnc_zs[timestep,:,:],cmap='jet')
-        pc.set_clim([0,0.15])
-        cbar = fig.colorbar(pc, ax=ax)
-        cbar.set_label('%s (%s)'%(data_fromnc_zs.var_varname, data_fromnc_zs.var_object.units))
-        ax.set_title('t=%d (%s)'%(timestep, data_fromnc_zs.var_times.loc[timestep]))
-        ax.set_aspect('equal')
-    fig.tight_layout()
-    plt.savefig(os.path.join(dir_output,'SFINCS_zs_pcolor'))
-
-
-    data_fromnc_edgex = get_ncmodeldata(file_nc=file_nc, varname='edge_x')
-    data_fromnc_edgey = get_ncmodeldata(file_nc=file_nc, varname='edge_y')
-    data_fromnc_u = get_ncmodeldata(file_nc=file_nc, varname='u', timestep='all')
-    data_fromnc_v = get_ncmodeldata(file_nc=file_nc, varname='v', timestep='all')    
-    vel_magn = np.sqrt(data_fromnc_u**2 + data_fromnc_v**2)
-
-    fig, ax = plt.subplots()
-    ax.plot(data_fromnc_edgex, data_fromnc_edgey,'-b',linewidth=0.2)
-    ax.plot(data_fromnc_edgex.T, data_fromnc_edgey.T,'-b',linewidth=0.2)
-    plt.savefig(os.path.join(dir_output,'SFINCS_meshedge'))    
-
-    fig, axs = plt.subplots(3,1, figsize=(14,9))
-    for iT, timestep in enumerate([0,1,10]):
-        ax=axs[iT]
-        pc = ax.pcolor(data_fromnc_edgex, data_fromnc_edgey,vel_magn[timestep,:,:],cmap='jet')
-        pc.set_clim([0,0.6])
-        cbar = fig.colorbar(pc, ax=ax)
-        cbar.set_label('velocity magnitude (%s)'%(data_fromnc_u.var_object.units))
-        ax.set_title('t=%d (%s)'%(timestep, data_fromnc_u.var_times.loc[timestep]))
-        ax.set_aspect('equal')
-        thinning = 5
-        ax.quiver(data_fromnc_edgex[::thinning,::thinning], data_fromnc_edgey[::thinning,::thinning], data_fromnc_u[timestep,::thinning,::thinning], data_fromnc_v[timestep,::thinning,::thinning], 
-                  color='w')#,scale=3,width=0.005)#, edgecolor='face', cmap='jet')
-    fig.tight_layout()
-    plt.savefig(os.path.join(dir_output,'SFINCS_velocity_pcolorquiver'))
-
-
-    #SFINCS HIS
-    #file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\01_Implementation\14_restartfile\sfincs_his.nc'
-    file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\03_Application\22_Tsunami_Japan_Sendai\sfincs_his.nc'
-    
-    station_names = get_hisstationlist(file_nc=file_nc, varname='point_zs')
-    data_fromnc_his = get_ncmodeldata(file_nc=file_nc, varname='point_zs', station='all', timestep='all')
-
-    fig, ax = plt.subplots()
-    for iS,stat_name in enumerate(data_fromnc_his.var_stations['station_name']):
-        ax.plot(data_fromnc_his.var_times, data_fromnc_his[:,iS], label=stat_name)
-    ax.legend()
-    plt.savefig(os.path.join(dir_output,'SFINCS_hiszs'))
-    
-
-
-
-
 
 def test_trygetondepth():
     import numpy as np
@@ -839,7 +632,7 @@ def test_cartopy_satellite_coastlines():
     from dfm_tools.get_nc_helpers import get_ncvardimlist
     
     #cartopy features and tickers
-    feat_ocean = cfeature.NaturalEarthFeature('physical', 'ocean', '50m',edgecolor='face',facecolor=cfeature.COLORS['water'])
+    #feat_ocean = cfeature.NaturalEarthFeature('physical', 'ocean', '50m',edgecolor='face',facecolor=cfeature.COLORS['water'])
     feat_land = cfeature.NaturalEarthFeature('physical', 'land', '10m',edgecolor='face',facecolor=cfeature.COLORS['land'])
     feat_countries = cfeature.NaturalEarthFeature(category='cultural',name='admin_0_countries',scale='10m',facecolor='none')
     lon_formatter = cticker.LongitudeFormatter()
@@ -921,6 +714,59 @@ def test_cartopy_satellite_coastlines():
 
 
 @pytest.mark.acceptance
+def test_contour_over_polycollection():
+    dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
+    """
+    dir_output = './test_output'
+    file_nc = os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_cb_3d\\cb_3d_map.nc')
+    file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc')
+    file_nc = 'p:\\1204257-dcsmzuno\\2013-2017\\3D-DCSM-FM\\A17b\\DFM_OUTPUT_DCSM-FM_0_5nm\\DCSM-FM_0_5nm_0000_map.nc'
+    file_nc = 'p:\\11205258-006-kpp2020_rmm-g6\\C_Work\\08_RMM_FMmodel\\computations\\run_156\\DFM_OUTPUT_RMM_dflowfm\\RMM_dflowfm_0000_map.nc'
+    """
+    
+    import matplotlib.pyplot as plt
+    plt.close('all')
+    
+    from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
+    from dfm_tools.get_nc_helpers import get_ncvardimlist
+    from dfm_tools.regulargrid import scatter_to_regulargrid
+    
+    file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc')
+    
+    clim_bl = [-40,10]
+
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    ugrid = get_netdata(file_nc=file_nc)
+    #get bed layer
+    data_frommap_x = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_face_x')
+    data_frommap_y = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_face_y')
+    data_frommap_bl = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_flowelem_bl')
+    
+    #interpolate to regular grid
+    x_grid, y_grid, val_grid = scatter_to_regulargrid(xcoords=data_frommap_x, ycoords=data_frommap_y, ncellx=100, ncelly=80, values=data_frommap_bl, method='linear')
+
+    #create plot with ugrid and cross section line
+    fig, axs = plt.subplots(3,1,figsize=(6,9))
+    ax=axs[0]
+    pc = plot_netmapdata(ugrid.verts, values=data_frommap_bl, ax=ax, linewidth=0.5, edgecolors='face', cmap='jet')#, color='crimson', facecolor="None")
+    pc.set_clim(clim_bl)
+    fig.colorbar(pc, ax=ax)
+    ax=axs[1]
+    pc = ax.contourf(x_grid, y_grid, val_grid)
+    pc.set_clim(clim_bl)
+    fig.colorbar(pc, ax=ax)
+    ax=axs[2]
+    ax.contour(x_grid, y_grid, val_grid)
+    fig.colorbar(pc, ax=ax)
+    plt.savefig(os.path.join(dir_output,'%s_gridbedcontour'%(os.path.basename(file_nc).replace('.',''))))
+
+
+
+
+
+
+
+@pytest.mark.acceptance
 def test_morphology():
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
     """
@@ -934,7 +780,7 @@ def test_morphology():
 
     from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata#, get_xzcoords_onintersection
     from dfm_tools.get_nc_helpers import get_ncvardimlist, get_hisstationlist
-    from dfm_tools.regulargrid import meshgridxy2verts, center2corner, scatter_to_regulargrid
+    from dfm_tools.regulargrid import scatter_to_regulargrid#, meshgridxy2verts, center2corner
     
     #MAPFILE
     file_nc = r'p:\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\fm\DFM_OUTPUT_inlet\inlet_map.nc'
@@ -952,7 +798,7 @@ def test_morphology():
     fig.suptitle('%s (%s)'%(varname, var_longname))
     
     ax = axs[0]
-    data_frommap_0 = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=0)
+    data_frommap_0 = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=0, get_linkedgridinfo=True)
     pc = plot_netmapdata(ugrid.verts, values=data_frommap_0.flatten(), ax=ax, linewidth=0.5, cmap='jet', clim=var_clims)
     cbar = fig.colorbar(pc, ax=ax)
     cbar.set_label('%s (%s)'%(data_frommap_0.var_varname, data_frommap_0.var_object.units))
@@ -1053,7 +899,7 @@ def test_morphology():
         fig.suptitle('%s (%s)'%(varname, var_longname))
 
         timestep = 10
-        data_frommap = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep)
+        data_frommap = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep, get_linkedgridinfo=True)
         ax = axs[0]
         pc = ax.pcolor(data_fromnc_x, data_fromnc_y, data_frommap[0,:,:], cmap='jet')
         pc.set_clim(var_clim[iV])
@@ -1147,7 +993,6 @@ def test_morphology():
     ylim_get = ax.get_ylim()
     
     #interpolate to regular grid
-    from dfm_tools.regulargrid import scatter_to_regulargrid
     X,Y,U = scatter_to_regulargrid(xcoords=data_frommap_facex, ycoords=data_frommap_facey, ncellx=29, ncelly=20, values=data_frommap_transx[0,0,:])
     X,Y,V = scatter_to_regulargrid(xcoords=data_frommap_facex, ycoords=data_frommap_facey, ncellx=29, ncelly=20, values=data_frommap_transy[0,0,:])
     speed = np.sqrt(U*U + V*V)
@@ -1200,57 +1045,234 @@ def test_morphology():
 
 
 
+
 @pytest.mark.acceptance
-def test_contour_over_polycollection():
+def test_workinprogress():
+    ## WARNING: THIS TEST IS NOT YET FINISHED, WILL BE IMPROVED AND LINKED TO INTERNAL FUNCTIONS ASAP
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
     """
     dir_output = './test_output'
-    file_nc = os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_cb_3d\\cb_3d_map.nc')
-    file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc')
-    file_nc = 'p:\\1204257-dcsmzuno\\2013-2017\\3D-DCSM-FM\\A17b\\DFM_OUTPUT_DCSM-FM_0_5nm\\DCSM-FM_0_5nm_0000_map.nc'
-    file_nc = 'p:\\11205258-006-kpp2020_rmm-g6\\C_Work\\08_RMM_FMmodel\\computations\\run_156\\DFM_OUTPUT_RMM_dflowfm\\RMM_dflowfm_0000_map.nc'
     """
     
+    import os
     import matplotlib.pyplot as plt
-    plt.close('all')
     import numpy as np
-    import datetime as dt
+    plt.close('all')
     
-    from dfm_tools.get_nc import get_netdata, get_ncmodeldata, get_xzcoords_onintersection, plot_netmapdata
-    from dfm_tools.get_nc_helpers import get_ncvardimlist
-    from dfm_tools.io.polygon import LineBuilder
-    from dfm_tools.regulargrid import scatter_to_regulargrid
+    from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
+    from dfm_tools.get_nc_helpers import get_ncvardimlist, get_hisstationlist#, get_varname_fromnc
+    from dfm_tools.io.polygon import Polygon
     
-    file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc')
+    #print gridinfo of several files to compare
+    file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc')
+    print('file: %s'%(file_nc))
+    data_dummy = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_s1',timestep=0, multipart=False, get_linkedgridinfo=True)
+    file_nc = r'p:\1204257-dcsmzuno\2014\data\meteo\HIRLAM72_2018\h72_201803.nc'
+    print('file: %s'%(file_nc))
+    data_dummy = get_ncmodeldata(file_nc=file_nc, varname='northward_wind',timestep=0, get_linkedgridinfo=True)
+    file_nc = r'p:\1220688-lake-kivu\2_data\COSMO\COSMOCLM_2012_out02_merged_4Wouter.nc'
+    print('file: %s'%(file_nc))
+    data_dummy = get_ncmodeldata(file_nc=file_nc, varname='U_10M', timestep=0, get_linkedgridinfo=True)
+    file_nc = r'p:\11200665-c3s-codec\2_Hydro\ECWMF_meteo\meteo\ERA-5\2000\ERA5_metOcean_atm_19991201_19991231.nc'
+    print('file: %s'%(file_nc))
+    data_dummy = get_ncmodeldata(file_nc=file_nc, varname='msl',timestep=0, get_linkedgridinfo=True)
+    file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\01_Implementation\14_restartfile\sfincs_map.nc'
+    print('file: %s'%(file_nc))
+    data_dummy = get_ncmodeldata(file_nc=file_nc, varname='zs', timestep=0, get_linkedgridinfo=True)
+    print('file: %s'%(file_nc))
+    data_dummy = get_ncmodeldata(file_nc=file_nc, varname='u', timestep=0, get_linkedgridinfo=True)
     
-    timestep = 3
-    layno = 35
-    clim_bl = [-40,10]
-
+    
+    # test Grevelingen (integrated example, where all below should move towards)
+    file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc')
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
     ugrid = get_netdata(file_nc=file_nc)
-    #get bed layer
-    data_frommap_x = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_face_x')
-    data_frommap_y = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_face_y')
-    data_frommap_bl = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_flowelem_bl')
+    fig, ax = plt.subplots()
+    plot_netmapdata(ugrid.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
+    ax.set_aspect('equal')
     
-    #interpolate to regular grid
-    x_grid, y_grid, val_grid = scatter_to_regulargrid(xcoords=data_frommap_x, ycoords=data_frommap_y, ncellx=100, ncelly=80, values=data_frommap_bl, method='linear')
+    #hirlam
+    file_nc = r'p:\1204257-dcsmzuno\2014\data\meteo\HIRLAM72_2018\h72_201803.nc'
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    
+    mesh2d_node_x = get_ncmodeldata(file_nc=file_nc, varname='x')
+    mesh2d_node_y = get_ncmodeldata(file_nc=file_nc, varname='y')
+    data_v = get_ncmodeldata(file_nc=file_nc, varname='northward_wind',timestep=0, get_linkedgridinfo=True)
+    data_u = get_ncmodeldata(file_nc=file_nc, varname='eastward_wind',timestep=0, get_linkedgridinfo=True)
+    #airp = get_ncmodeldata(file_nc=file_nc, varname='air_pressure_fixed_height',timestep=0)[0,:,:]
+    magn = np.sqrt(data_u[0,:,:]**2 + data_v[0,:,:]**2)
+    
+    fig, ax = plt.subplots()
+    ax.plot(mesh2d_node_x,mesh2d_node_y,'-b',linewidth=0.2)
+    ax.plot(mesh2d_node_x.T,mesh2d_node_y.T,'-b',linewidth=0.2)
+    plt.savefig(os.path.join(dir_output,'hirlam_mesh'))
 
-    #create plot with ugrid and cross section line
-    fig, axs = plt.subplots(3,1,figsize=(6,9))
-    ax=axs[0]
-    pc = plot_netmapdata(ugrid.verts, values=data_frommap_bl, ax=ax, linewidth=0.5, edgecolors='face', cmap='jet')#, color='crimson', facecolor="None")
-    pc.set_clim(clim_bl)
-    fig.colorbar(pc, ax=ax)
-    ax=axs[1]
-    pc = ax.contourf(x_grid, y_grid, val_grid)
-    pc.set_clim(clim_bl)
-    fig.colorbar(pc, ax=ax)
-    ax=axs[2]
-    ax.contour(x_grid, y_grid, val_grid)
-    fig.colorbar(pc, ax=ax)
-    plt.savefig(os.path.join(dir_output,'%s_gridbedcontour'%(os.path.basename(file_nc).replace('.',''))))
+    
+    fig, ax = plt.subplots()
+    ax.pcolor(mesh2d_node_x,mesh2d_node_y,magn)
+    #plt.pcolor(mesh2d_node_x,mesh2d_node_y,airp,linewidth=0.5)
+    plt.savefig(os.path.join(dir_output,'hirlam_magn_pcolor'))
+    
+    
+    
+    #COSMO
+    file_nc = r'p:\1220688-lake-kivu\2_data\COSMO\COSMOCLM_2012_out02_merged_4Wouter.nc'
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    
+    xcen = get_ncmodeldata(file_nc=file_nc, varname='lon')
+    ycen = get_ncmodeldata(file_nc=file_nc, varname='lat')
+    data_U10M = get_ncmodeldata(file_nc=file_nc, varname='U_10M', timestep=range(20), get_linkedgridinfo=True)
+    data_V10M = get_ncmodeldata(file_nc=file_nc, varname='V_10M', timestep=range(20), get_linkedgridinfo=True)
+    #xcen, ycen = np.meshgrid(data_lon, data_lat)
+    magn = np.sqrt(data_U10M**2 + data_V10M**2)
+
+    fig, ax = plt.subplots()
+    ax.plot(xcen, ycen, '-b', linewidth=0.2)
+    ax.plot(xcen.T, ycen.T, '-b', linewidth=0.2)
+    plt.savefig(os.path.join(dir_output,'COSMO_mesh'))
+
+    file_ldb = r'p:\1220688-lake-kivu\3_modelling\1_FLOW\4_CH4_CO2_included\008\lake_kivu_geo.ldb'
+    data_ldb = Polygon.fromfile(file_ldb, pd_output=True)
+    
+    fig, axs = plt.subplots(1,3, figsize=(16,6))
+    for iT, timestep in enumerate([0,1,10]):
+        ax=axs[iT]
+        pc = ax.pcolor(xcen, ycen, magn[timestep,:,:], cmap='jet')
+        pc.set_clim([0,5])
+        cbar = fig.colorbar(pc, ax=ax)
+        cbar.set_label('velocity magnitude (%s)'%(data_V10M.var_object.units))
+        ax.set_title('t=%d (%s)'%(timestep, data_V10M.var_times.loc[timestep]))
+        ax.set_aspect('equal')
+        ax.plot(data_ldb[0].loc[:,0], data_ldb[0].loc[:,1], 'k', linewidth=0.5)
+        thinning = 2
+        ax.quiver(xcen[::thinning,::thinning], ycen[::thinning,::thinning], data_U10M[timestep,::thinning,::thinning], data_V10M[timestep,::thinning,::thinning], 
+                  color='w',scale=50,width=0.008)#, edgecolor='face', cmap='jet')
+    fig.tight_layout()
+    plt.savefig(os.path.join(dir_output,'COSMO_magn_pcolorquiver'))
+
+
+
+    dist = 0.1
+    reg_x_vec = np.linspace(np.min(xcen),np.max(xcen),int(np.ceil((np.max(xcen)-np.min(xcen))/dist)))
+    reg_y_vec = np.linspace(np.min(ycen),np.max(ycen),int(np.ceil((np.max(ycen)-np.min(ycen))/dist)))
+    reg_grid = np.meshgrid(reg_x_vec,reg_y_vec)
+    X = reg_grid[0]
+    Y = reg_grid[1]
+    from scipy.interpolate import griddata
+    from dfm_tools.modplot import velovect
+    
+    fig, axs = plt.subplots(1,3, figsize=(16,6))
+    for iT, timestep in enumerate([0,1,10]):
+        ax=axs[iT]
+        #pc = ax.pcolor(xcen, ycen, magn[timestep,:,:], cmap='jet')
+        #pc.set_clim([0,5])
+        U = griddata((xcen.flatten(),ycen.flatten()),data_U10M[timestep,:,:].flatten(),tuple(reg_grid),method='nearest')
+        V = griddata((xcen.flatten(),ycen.flatten()),data_V10M[timestep,:,:].flatten(),tuple(reg_grid),method='nearest')
+        speed = np.sqrt(U*U + V*V)
+        quiv_curved = velovect(ax,X,Y,U,V, arrowstyle='fancy', scale = 5, grains = 25, color=speed)#, cmap='jet')
+        ax.set_aspect('equal')
+        cbar = fig.colorbar(quiv_curved.lines, ax=ax)
+        cbar.set_label('velocity magnitude (%s)'%(data_V10M.var_object.units))
+        ax.set_title('t=%d (%s)'%(timestep, data_V10M.var_times.loc[timestep]))
+        ax.set_aspect('equal')
+        ax.plot(data_ldb[0].loc[:,0], data_ldb[0].loc[:,1], 'k', linewidth=0.5)
+        thinning = 2
+        ax.quiver(xcen[::thinning,::thinning], ycen[::thinning,::thinning], data_U10M[timestep,::thinning,::thinning], data_V10M[timestep,::thinning,::thinning], 
+                  color='w',scale=50,width=0.008)#, edgecolor='face', cmap='jet')
+    fig.tight_layout()
+    plt.savefig(os.path.join(dir_output,'COSMO_magn_curvedquiver'))
+
+
+
+    #ERA5
+    file_nc = r'p:\11200665-c3s-codec\2_Hydro\ECWMF_meteo\meteo\ERA-5\2000\ERA5_metOcean_atm_19991201_19991231.nc'
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    data_lon = get_ncmodeldata(file_nc=file_nc, varname='longitude')
+    data_lat = get_ncmodeldata(file_nc=file_nc, varname='latitude')
+    data_psl = get_ncmodeldata(file_nc=file_nc, varname='msl',timestep=10, get_linkedgridinfo=True)
+    
+    lons,lats = np.meshgrid(data_lon,data_lat)
+    fig, ax = plt.subplots()
+    ax.plot(lons, lons,'-b',linewidth=0.2)
+    ax.plot(lons.T, lats.T,'-b',linewidth=0.2)
+    plt.savefig(os.path.join(dir_output,'ERA5_mesh'))
+
+    fig, ax = plt.subplots()
+    ax.pcolor(lons, lons, data_psl[0,:,:])
+    ax.pcolor(data_lon, data_lat, data_psl[0,:,:])
+    #plt.pcolor(mesh2d_node_x,mesh2d_node_y,airp,linewidth=0.5)
+    plt.savefig(os.path.join(dir_output,'ERA5_msl_pcolor'))
+
+
+    #SFINCS
+    file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\01_Implementation\14_restartfile\sfincs_map.nc'
+    #file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\03_Application\22_Tsunami_Japan_Sendai\sfincs_map.nc'
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    
+    data_fromnc_x = get_ncmodeldata(file_nc=file_nc, varname='x')
+    data_fromnc_y = get_ncmodeldata(file_nc=file_nc, varname='y')
+    data_fromnc_zs = get_ncmodeldata(file_nc=file_nc, varname='zs', timestep='all')
+
+    fig, ax = plt.subplots()
+    ax.plot(data_fromnc_x, data_fromnc_y,'-b',linewidth=0.2)
+    ax.plot(data_fromnc_x.T, data_fromnc_y.T,'-b',linewidth=0.2)
+    plt.savefig(os.path.join(dir_output,'SFINCS_mesh'))    
+
+    fig, axs = plt.subplots(3,1, figsize=(14,9))
+    for iT, timestep in enumerate([0,1,10]):
+        ax=axs[iT]
+        pc = ax.pcolor(data_fromnc_x, data_fromnc_y, data_fromnc_zs[timestep,:,:],cmap='jet')
+        pc.set_clim([0,0.15])
+        cbar = fig.colorbar(pc, ax=ax)
+        cbar.set_label('%s (%s)'%(data_fromnc_zs.var_varname, data_fromnc_zs.var_object.units))
+        ax.set_title('t=%d (%s)'%(timestep, data_fromnc_zs.var_times.loc[timestep]))
+        ax.set_aspect('equal')
+    fig.tight_layout()
+    plt.savefig(os.path.join(dir_output,'SFINCS_zs_pcolor'))
+
+
+    data_fromnc_edgex = get_ncmodeldata(file_nc=file_nc, varname='edge_x')
+    data_fromnc_edgey = get_ncmodeldata(file_nc=file_nc, varname='edge_y')
+    data_fromnc_u = get_ncmodeldata(file_nc=file_nc, varname='u', timestep='all')
+    data_fromnc_v = get_ncmodeldata(file_nc=file_nc, varname='v', timestep='all')    
+    vel_magn = np.sqrt(data_fromnc_u**2 + data_fromnc_v**2)
+
+    fig, ax = plt.subplots()
+    ax.plot(data_fromnc_edgex, data_fromnc_edgey,'-b',linewidth=0.2)
+    ax.plot(data_fromnc_edgex.T, data_fromnc_edgey.T,'-b',linewidth=0.2)
+    plt.savefig(os.path.join(dir_output,'SFINCS_meshedge'))    
+
+    fig, axs = plt.subplots(3,1, figsize=(14,9))
+    for iT, timestep in enumerate([0,1,10]):
+        ax=axs[iT]
+        pc = ax.pcolor(data_fromnc_edgex, data_fromnc_edgey,vel_magn[timestep,:,:],cmap='jet')
+        pc.set_clim([0,0.6])
+        cbar = fig.colorbar(pc, ax=ax)
+        cbar.set_label('velocity magnitude (%s)'%(data_fromnc_u.var_object.units))
+        ax.set_title('t=%d (%s)'%(timestep, data_fromnc_u.var_times.loc[timestep]))
+        ax.set_aspect('equal')
+        thinning = 5
+        ax.quiver(data_fromnc_edgex[::thinning,::thinning], data_fromnc_edgey[::thinning,::thinning], data_fromnc_u[timestep,::thinning,::thinning], data_fromnc_v[timestep,::thinning,::thinning], 
+                  color='w')#,scale=3,width=0.005)#, edgecolor='face', cmap='jet')
+    fig.tight_layout()
+    plt.savefig(os.path.join(dir_output,'SFINCS_velocity_pcolorquiver'))
+
+
+    #SFINCS HIS
+    #file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\01_Implementation\14_restartfile\sfincs_his.nc'
+    file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\03_Application\22_Tsunami_Japan_Sendai\sfincs_his.nc'
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    
+    station_names = get_hisstationlist(file_nc=file_nc, varname='point_zs')
+    data_fromnc_his = get_ncmodeldata(file_nc=file_nc, varname='point_zs', station='all', timestep='all')
+
+    fig, ax = plt.subplots()
+    for iS,stat_name in enumerate(data_fromnc_his.var_stations['station_name']):
+        ax.plot(data_fromnc_his.var_times, data_fromnc_his[:,iS], label=stat_name)
+    ax.legend()
+    plt.savefig(os.path.join(dir_output,'SFINCS_hiszs'))
+    
+
 
 
 

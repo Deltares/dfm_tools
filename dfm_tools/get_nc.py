@@ -32,15 +32,36 @@ Created on Fri Feb 14 12:45:11 2020
 """
 
 
-def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, station=None, multipart=None):
+def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, station=None, multipart=None, get_linkedgridinfo=False):
     """
-    file_nc: path to netcdf file
-    varname: string of netcdf variable name (standard_name?)
-    timestep: (list/range/ndarray of) 0-based int or datetime. Can be used to select one or more specific timesteps, or 'all'
-    layer: (list/range/ndarray of) 0-based int
-    depth
-    station
-    multipart: set to False if you want only one of the map domains, can be left out otherwise
+
+    Parameters
+    ----------
+    file_nc : str
+        path to netcdf file.
+    varname : str
+        string of netcdf variable name (standard_name?).
+    timestep : TYPE, optional
+        (list/range/ndarray of) 0-based int or datetime. Can be used to select one or more specific timesteps, or 'all'. The default is None.
+    layer : TYPE, optional
+        (list/range/ndarray of) 0-based int. The default is None.
+    depth : TYPE, optional
+        DESCRIPTION. The default is None.
+    station : TYPE, optional
+        DESCRIPTION. The default is None.
+    multipart : TYPE, optional
+        set to False if you want only one of the map domains, can be left out otherwise. The default is None.
+
+    Raises
+    ------
+    Exception
+        DESCRIPTION.
+
+    Returns
+    -------
+    values_all : TYPE
+        DESCRIPTION.
+
     """
     
     import warnings
@@ -162,7 +183,6 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
             raise Exception('ERROR: netcdf file variable (%s) does not contain stations/general_structures, but parameter station is provided'%(varname))
     else: #stations are present
         #get appropriate station list
-        dimname_stat_validvals_id = np.where(dimname_stat_validvals_boolpresent)[0][0]
         station_name_list_pd = get_hisstationlist(file_nc,varname=varname)
         if station is None:
             raise Exception('ERROR: netcdf variable contains a station/general_structures dimension, but parameter station not provided (can be "all"), available stations/crs/generalstructures:\n%s\nretrieve entire station list:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist; get_hisstationlist(file_nc,varname="%s")'%(station_name_list_pd, varname))
@@ -207,6 +227,11 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         concat_axis = 0 #default value, overwritten by faces dimension
         values_selid = []
         values_dimlens = [] #list(nc_values.shape)
+        values_dimlinkedgrid = [] #list(nc_values.shape)
+        try:
+            print('varname: %s  %s  %s, coordinates=(%s)'%(varname, nc_varobject_sel.shape, nc_varobject_sel.dimensions, nc_varobject_sel.coordinates))
+        except:
+            print('varname: %s  %s  %s, coordinates=(%s)'%(varname, nc_varobject_sel.shape, nc_varobject_sel.dimensions, 'None'))
         for iD, nc_values_dimsel in enumerate(nc_varobject_sel.dimensions):
             if nc_values_dimsel in [dimn_faces, dimn_nFlowElem]: # domain-like variable is present, so there are multiple domains (with ghost cells)
                 nonghost_ids = ghostcell_filter(file_nc_sel)
@@ -233,6 +258,20 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
                 #warnings.warn('not a predefined dimension name')
                 values_selid.append(range(nc_varobject_sel.shape[iD]))
                 values_dimlens.append(nc_varobject_sel.shape[iD])
+            
+            #get info about grid variables related to varname
+            if get_linkedgridinfo and (nc_values_dimsel not in [dimn_time,dimn_layer]+dimname_stat_validvals):
+                vars_pd_relevant = vars_pd[(vars_pd['ndims']<=2) & (vars_pd['dimensions'].apply(lambda x: nc_values_dimsel in x)) & -(vars_pd['dimensions'].apply(lambda x: dimn_time in x))]
+                values_dimlinkedgrid.append(vars_pd_relevant)
+                
+                print('\tlinkedvars for dimension "%s":'%(nc_values_dimsel))
+                #print('nc_varobject_sel.dimensions: %s'%([nc_varobject_sel.dimensions]))
+                for iLV, linkedvar in vars_pd_relevant.iterrows():
+                    print('\t\t%s  %s  %s'%(linkedvar['nc_varkeys'], linkedvar['shape'], linkedvar['dimensions']))
+                #print('nc_values_dimsel: %s'%(nc_values_dimsel))
+                #print('vars_pd_relevant:\n%s'%(vars_pd_relevant))
+            else:
+                values_dimlinkedgrid.append(None)
 
         if len(file_ncs) > 1:
             #initialize array
@@ -246,6 +285,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     #add metadata
     values_all.var_varname = varname
     values_all.var_dimensions = nc_varobject.dimensions
+    values_all.var_linkedgridinfo = values_dimlinkedgrid
     values_all.var_object = nc_varobject #this is the netcdf variable, so contains properties like shape/units/dimensions
     if dimn_time in nc_varobject.dimensions:
         if retrieve_ids is False:
