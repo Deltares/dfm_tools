@@ -227,14 +227,14 @@ def ghostcell_filter(file_nc):
 
 
 
-def get_timesfromnc(file_nc, force_noreconstruct=False, retrieve_ids=False):
+def get_timesfromnc(file_nc, force_getalltimes=False, retrieve_ids=False):
     """
     retrieves time array from netcdf file.
     Since long time arrays take a long time to retrieve at once, reconstruction is tried
     in dflowfm an array can start with 0 (initial), followed by a tstart and increading with intervals to tend
     therefore, the interval at the start and end of the time array is not always equal to the 'real' time interval
     reconstruction takes care of this.
-    if you still feel like the resulting timeseries is incorrect, use the keyword force_noreconstruct
+    if you still feel like the resulting timeseries is incorrect, use the keyword force_getalltimes
     """
     
     from netCDF4 import Dataset,num2date#,date2num
@@ -253,9 +253,9 @@ def get_timesfromnc(file_nc, force_noreconstruct=False, retrieve_ids=False):
         if type(retrieve_ids) not in listtype_range:
             raise Exception('ERROR: argument retrieve_ids should be a list')
         data_nc_times = data_nc_timevar[retrieve_ids]
-    elif len(data_nc_timevar)<3 or force_noreconstruct==True: #check if time dimension is shorter than 3 items
+    elif len(data_nc_timevar)<3 or force_getalltimes is True: #check if time dimension is shorter than 3 items
         data_nc_times = data_nc_timevar[:]
-        print('reading time dimension: read entire array (len < 3 or force_noreconstruct==True)')
+        print('reading time dimension: read entire array (len < 3 or force_getalltimes==True)')
     else:
         time0 = data_nc_timevar[0] 
         time1 = data_nc_timevar[1] 
@@ -273,7 +273,10 @@ def get_timesfromnc(file_nc, force_noreconstruct=False, retrieve_ids=False):
         else:
             print('reading time dimension: read entire array')
             data_nc_times = data_nc_timevar[:]
-            
+        #test if len of reconstructed timeseries is same as len of timevar in netCDF
+        if data_nc_timevar.shape[0] != len(data_nc_times):
+            raise Exception('ERROR: length of reconstructed timeseries is not equal to length of netCDF time variable, use keyword force_getalltimes=True')
+    
     data_nc_datetimes = num2date(data_nc_times, units = data_nc_timevar.units)
     nptimes = data_nc_datetimes.astype('datetime64[ns]') #convert to numpy first, pandas does not take all cftime datasets
     
@@ -319,8 +322,10 @@ def get_hisstationlist(file_nc,varname):
     data_nc = Dataset(file_nc)
     data_nc_varname = get_ncvarobject(file_nc, varname) #check if var exists and get var_object
     varname_dims = data_nc_varname.dimensions
+    dimn_time = get_varname_fromnc(data_nc,'time')
+    
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
-    vars_pd_stats = vars_pd[vars_pd['dtype']=='|S1']
+    vars_pd_stats = vars_pd[(vars_pd['dtype']=='|S1') & (vars_pd['dimensions'].apply(lambda x: dimn_time not in x))]
     
     
     if varname in vars_pd_stats['nc_varkeys'].tolist(): 
