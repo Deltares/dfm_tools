@@ -137,17 +137,18 @@ def test_workinprogress():
     data_lon = get_ncmodeldata(file_nc=file_nc, varname='longitude', multipart=False)
     data_lat = get_ncmodeldata(file_nc=file_nc, varname='latitude')
     data_psl = get_ncmodeldata(file_nc=file_nc, varname='msl',timestep=10, multipart=False)
-    lons,lats = np.meshgrid(data_lon,data_lat)
     
+    lons,lats = np.meshgrid(data_lon,data_lat)
     fig, ax = plt.subplots()
     ax.plot(lons, lats,'-b',linewidth=0.2)
     ax.plot(lons.T, lats.T,'-b',linewidth=0.2)
     plt.savefig(os.path.join(dir_output,'ERA5_mesh'))
 
     fig, ax = plt.subplots()
-    ax.pcolor(lons, lats, data_psl[0,:,:])
+    ax.pcolor(data_lon, data_lat, data_psl[0,:,:])
     #plt.pcolor(mesh2d_node_x,mesh2d_node_y,airp,linewidth=0.5)
     plt.savefig(os.path.join(dir_output,'ERA5_msl_pcolor'))
+    fig, ax = plt.subplots()
 
 
     #SFINCS
