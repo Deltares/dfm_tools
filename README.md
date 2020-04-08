@@ -221,6 +221,7 @@ Todo non-content
 - why does cartopy has to come from conda-forge?
 - add variable units to plots in test bench
 - install without PATH fails on pip/git in anaconda prompt? (test installation with anaconda prompt, and with command prompt combined with ``set PATH=%PATH%;<your_path_to_anaconda_installation>\Scripts``)
+- installation also possible with miniconda only?
 - write documentation as comments and generate automatically? (at least add documentation as comments to functions)
 - create overview of scripts and functions, including future location of missing features
 - put testdata on deltares shared location?

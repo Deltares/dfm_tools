@@ -34,13 +34,34 @@ Created on Fri Feb 14 12:45:11 2020
 
 def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, station=None, multipart=None):
     """
-    file_nc: path to netcdf file
-    varname: string of netcdf variable name (standard_name?)
-    timestep: (list/range/ndarray of) 0-based int or datetime. Can be used to select one or more specific timesteps, or 'all'
-    layer: (list/range/ndarray of) 0-based int
-    depth
-    station
-    multipart: set to False if you want only one of the map domains, can be left out otherwise
+
+    Parameters
+    ----------
+    file_nc : str
+        path to netcdf file.
+    varname : str
+        string of netcdf variable name (standard_name?).
+    timestep : TYPE, optional
+        (list/range/ndarray of) 0-based int or datetime. Can be used to select one or more specific timesteps, or 'all'. The default is None.
+    layer : TYPE, optional
+        (list/range/ndarray of) 0-based int. The default is None.
+    depth : TYPE, optional
+        DESCRIPTION. The default is None.
+    station : TYPE, optional
+        DESCRIPTION. The default is None.
+    multipart : TYPE, optional
+        set to False if you want only one of the map domains, can be left out otherwise. The default is None.
+
+    Raises
+    ------
+    Exception
+        DESCRIPTION.
+
+    Returns
+    -------
+    values_all : TYPE
+        DESCRIPTION.
+
     """
     
     import warnings
@@ -162,7 +183,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
             raise Exception('ERROR: netcdf file variable (%s) does not contain stations/general_structures, but parameter station is provided'%(varname))
     else: #stations are present
         #get appropriate station list
-        dimname_stat_validvals_id = np.where(dimname_stat_validvals_boolpresent)[0][0]
+        #dimname_stat_validvals_id = np.where(dimname_stat_validvals_boolpresent)[0][0]
         station_name_list_pd = get_hisstationlist(file_nc,varname=varname)
         if station is None:
             raise Exception('ERROR: netcdf variable contains a station/general_structures dimension, but parameter station not provided (can be "all"), available stations/crs/generalstructures:\n%s\nretrieve entire station list:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist; get_hisstationlist(file_nc,varname="%s")'%(station_name_list_pd, varname))
