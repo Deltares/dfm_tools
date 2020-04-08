@@ -1079,6 +1079,8 @@ def test_workinprogress():
     file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\01_Implementation\14_restartfile\sfincs_map.nc'
     print('file: %s'%(file_nc))
     data_dummy = get_ncmodeldata(file_nc=file_nc, varname='zs', timestep=0, get_linkedgridinfo=True)
+    print('file: %s'%(file_nc))
+    data_dummy = get_ncmodeldata(file_nc=file_nc, varname='u', timestep=0, get_linkedgridinfo=True)
     
     
     # test Grevelingen (integrated example, where all below should move towards)
