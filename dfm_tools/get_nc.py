@@ -82,30 +82,46 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         if timestep is None:
             raise Exception('ERROR: netcdf variable contains a time dimension, but parameter timestep not provided (can be "all")')
         #convert timestep to list of int if it is not already
-        #get times
-        data_nc_datetimes_pd = get_timesfromnc(file_nc)
+        data_nc_timevar = data_nc.variables[dimn_time]
+        time_length = data_nc_timevar.shape[0]
+        retrieve_ids = False
         if timestep is str('all'):
+            data_nc_datetimes_pd = get_timesfromnc(file_nc) #get all times
             time_ids = range(len(data_nc_datetimes_pd))
         elif type(timestep) in listtype_range:
-            if type(timestep[0]) in listtype_int:
+            if len(timestep) == 0:
+                raise Exception('ERROR: timestep variable type is list/range/ndarray (%s), but it has no length'%(type(timestep)))
+            elif type(timestep[0]) in listtype_int:
+                retrieve_ids = np.array(range(time_length))[timestep]
+                data_nc_datetimes_pd = get_timesfromnc(file_nc, retrieve_ids=retrieve_ids) #get selection of times
                 time_ids = timestep
             elif type(timestep[0]) in listtype_datetime:
+                data_nc_datetimes_pd = get_timesfromnc(file_nc) #get all times
                 time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, timestep)
             else:
                 raise Exception('ERROR: timestep variable type is list/range/ndarray (%s), but type of timestep[0] not anticipated (%s), options:\n - int\n - np.int64\n - datetime\n - np.datetime64'%(type(timestep),type(timestep[0])))
         elif type(timestep) in listtype_daterange:
+            data_nc_datetimes_pd = get_timesfromnc(file_nc) #get all times
             time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, timestep)
         elif type(timestep) in listtype_int:
+            retrieve_ids = np.array(range(time_length))[[timestep]]
+            data_nc_datetimes_pd = get_timesfromnc(file_nc, retrieve_ids=retrieve_ids) #get selection of times
             time_ids = [timestep]
         elif type(timestep) in listtype_datetime:
+            data_nc_datetimes_pd = get_timesfromnc(file_nc) #get all times
             time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, [timestep])
         else:
             raise Exception('ERROR: timestep variable type not anticipated (%s), options:\n - datetime/int\n - list/range/ndarray of datetime/int\n - pandas daterange\n - "all"'%(type(timestep)))
         #check if requested times are within range of netcdf
-        if np.max(time_ids) > len(data_nc_datetimes_pd)-1:
-            raise Exception('ERROR: requested maximum timestep (%d) is larger than available in netcdf file (%d)'%(np.max(time_ids),len(data_nc_datetimes_pd)-1))
-        if np.min(time_ids) < -len(data_nc_datetimes_pd):
-            raise Exception('ERROR: requested minimum timestep (%d) is smaller than available in netcdf file (%d)'%(np.min(time_ids),-len(data_nc_datetimes_pd)))
+        if np.max(time_ids) > time_length-1:
+            raise Exception('ERROR: requested maximum timestep (%d) is larger than available in netcdf file (%d)'%(np.max(time_ids),time_length-1))
+        if np.min(time_ids) < -time_length:
+            raise Exception('ERROR: requested minimum timestep (%d) is smaller than available in netcdf file (%d)'%(np.min(time_ids),-time_length))
+        #if np.max(time_ids) > np.max(data_nc_datetimes_pd.index):
+        #    raise Exception('ERROR: requested maximum timestep (%d) is larger than available in netcdf file (%d)'%(np.max(time_ids),np.max(data_nc_datetimes_pd.index)))
+        #if np.min(time_ids) < -(np.max(data_nc_datetimes_pd.index)+1):
+        #    raise Exception('ERROR: requested minimum timestep (%d) is smaller than available in netcdf file (%d)'%(np.min(time_ids),-(np.max(data_nc_datetimes_pd.index)+1)))
+
     
     #LAYER CHECKS
     dimn_layer = get_varname_fromnc(data_nc,'nmesh2d_layer')
@@ -232,7 +248,10 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     values_all.var_dimensions = nc_varobject.dimensions
     values_all.var_object = nc_varobject #this is the netcdf variable, so contains properties like shape/units/dimensions
     if dimn_time in nc_varobject.dimensions:
-        values_all.var_times = data_nc_datetimes_pd.iloc[time_ids]
+        if retrieve_ids is False:
+            values_all.var_times = data_nc_datetimes_pd.iloc[time_ids]
+        else:
+            values_all.var_times = data_nc_datetimes_pd
     else:
         values_all.var_times = None
     if dimn_layer in nc_varobject.dimensions:

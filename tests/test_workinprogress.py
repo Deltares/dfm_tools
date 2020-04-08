@@ -689,7 +689,7 @@ def test_waqua_netcdf_convertedwith_getdata():
     fig, ax = plt.subplots(figsize=(16,7))
     for iS in range(10):
         ax.plot(data_nc_ZWL.var_times,data_nc_ZWL[:,iS],label=data_nc_NAMWL['NAMWL'].iloc[iS], linewidth=1)
-    ax.legend()
+    ax.legend(loc=1)
     ax.set_ylabel('%s (%s)'%(data_nc_ZWL.var_varname, data_nc_ZWL.var_object.units))
     ax.set_xlim([data_nc_ZWL.var_times[0],data_nc_ZWL.var_times[0]+dt.timedelta(days=14)])
     plt.savefig(os.path.join(dir_output,'waqua_DSCM_his_ZWL'))
@@ -1147,8 +1147,9 @@ def test_morphology():
     ylim_get = ax.get_ylim()
     
     #interpolate to regular grid
-    X,Y,U = interp_toregulargrid(xcoords=data_frommap_facex, ycoords=data_frommap_facey, ncellx=29, ncelly=20, values=data_frommap_transx[0,0,:])
-    X,Y,V = interp_toregulargrid(xcoords=data_frommap_facex, ycoords=data_frommap_facey, ncellx=29, ncelly=20, values=data_frommap_transy[0,0,:])
+    from dfm_tools.regulargrid import scatter_to_regulargrid
+    X,Y,U = scatter_to_regulargrid(xcoords=data_frommap_facex, ycoords=data_frommap_facey, ncellx=29, ncelly=20, values=data_frommap_transx[0,0,:])
+    X,Y,V = scatter_to_regulargrid(xcoords=data_frommap_facex, ycoords=data_frommap_facey, ncellx=29, ncelly=20, values=data_frommap_transy[0,0,:])
     speed = np.sqrt(U*U + V*V)
     
     fig, ax = plt.subplots(1,1, figsize=(14,8))
@@ -1162,9 +1163,6 @@ def test_morphology():
     fig.tight_layout()
     plt.savefig(os.path.join(dir_output,'%s_%s_%s_t%d_regquiver'%(os.path.basename(file_nc).replace('.',''), data_frommap_transx.var_varname, data_frommap_transy.var_varname,timestep)))
 
-
-
-    
     #xs = X.flatten()
     #ys = Y.flatten()
     #seed_points = np.array([list(xs), list(ys)])
@@ -1183,9 +1181,6 @@ def test_morphology():
     ax.set_aspect('equal')
     fig.tight_layout()
     plt.savefig(os.path.join(dir_output,'%s_%s_%s_t%d_regstreamplot'%(os.path.basename(file_nc).replace('.',''), data_frommap_transx.var_varname, data_frommap_transy.var_varname,timestep)))
-    
-    
-    
     
     from dfm_tools.modplot import velovect
     fig, ax = plt.subplots(1,1, figsize=(14,8))
