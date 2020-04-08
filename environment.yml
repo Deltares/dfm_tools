@@ -1,4 +1,4 @@
-name: dfm_tools_env
+name: dfm_tools_devenv
 dependencies:
   - python=3.7
   - pip>=19.2.3
