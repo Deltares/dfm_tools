@@ -1193,12 +1193,12 @@ def test_workinprogress():
     
     lons,lats = np.meshgrid(data_lon,data_lat)
     fig, ax = plt.subplots()
-    ax.plot(lons, lons,'-b',linewidth=0.2)
+    ax.plot(lons, lats,'-b',linewidth=0.2)
     ax.plot(lons.T, lats.T,'-b',linewidth=0.2)
     plt.savefig(os.path.join(dir_output,'ERA5_mesh'))
 
     fig, ax = plt.subplots()
-    ax.pcolor(lons, lons, data_psl[0,:,:])
+    #ax.pcolor(lons, lats, data_psl[0,:,:])
     ax.pcolor(data_lon, data_lat, data_psl[0,:,:])
     #plt.pcolor(mesh2d_node_x,mesh2d_node_y,airp,linewidth=0.5)
     plt.savefig(os.path.join(dir_output,'ERA5_msl_pcolor'))
