@@ -125,7 +125,7 @@ Installation
 --------
 - download Anaconda 64 bit Python 3.7 from https://www.anaconda.com/distribution/#download-section (miniconda is probably also sufficient, but this is not yet tested)
 - install it with the recommended settings, but check 'add Anaconda3 to my PATH enviroment variable' if you want to use conda from the windows command prompt instead of anaconda prompt (CAUTION: anaconda prompt seems not to handle the ``pip install git`` properly, reinstall anaconda if you get an error with that step and use command prompt instead)
-- install dfm_tools from github
+- install dfm_tools from github:
 	- open command window (or anaconda prompt)
 	- ``conda create --name dfm_tools_env python=3.7 git spyder -y`` (creating a venv is recommended, but at least do ``conda install git`` if you choose not to)
 	- ``conda activate dfm_tools_env``
@@ -137,6 +137,10 @@ Installation
 	- test by printing dfm_tools version number: ``import dfm_tools; print(dfm_tools.__version__)`` (to double check if you are working in the venv where dfm_tools_env was installed)
 	- to get figures in separate windows: go to Tools > Preferences > IPython console > Graphics > change graphics backend to 'Automatic' and restart Spyder (or the kernel).
 	- copy the code from [Example usage](#example-usage) to your own scripts to get starteds
+- to update dfm_tools:
+	- open command window (or anaconda prompt)
+	- ``conda activate dfm_tools_env``
+	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git``
 
 
 Feature wishlist
