@@ -212,6 +212,7 @@ Feature wishlist
 	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/OpenEarthTools/openearthtools/io/netcdf
 	- plotting edges/nodes/faces and legend: https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/connectivity_example.ipynb
 	- add retrieve_netdata argument to get_ncmodeldata() which causes griddata to be retrieved as the second return variable (do this based on coodtinates / cf-conventions)?
+	- pcolor resulteert ook in een polycollection, net zoals handmatig wordt gedaan met plot_mapdata()
 - interactive data retrieval and plotting by calling get_ncmodeldata() without arguments
 
 
