@@ -1062,11 +1062,28 @@ def test_workinprogress():
     from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
     from dfm_tools.get_nc_helpers import get_ncvardimlist, get_hisstationlist#, get_varname_fromnc
     from dfm_tools.io.polygon import Polygon
-
+    
+    #print gridinfo of several files to compare
+    file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc')
+    print('file: %s'%(file_nc))
+    data_dummy = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_s1',timestep=0, multipart=False, get_linkedgridinfo=True)
+    file_nc = r'p:\1204257-dcsmzuno\2014\data\meteo\HIRLAM72_2018\h72_201803.nc'
+    print('file: %s'%(file_nc))
+    data_dummy = get_ncmodeldata(file_nc=file_nc, varname='northward_wind',timestep=0, get_linkedgridinfo=True)
+    file_nc = r'p:\1220688-lake-kivu\2_data\COSMO\COSMOCLM_2012_out02_merged_4Wouter.nc'
+    print('file: %s'%(file_nc))
+    data_dummy = get_ncmodeldata(file_nc=file_nc, varname='U_10M', timestep=0, get_linkedgridinfo=True)
+    file_nc = r'p:\11200665-c3s-codec\2_Hydro\ECWMF_meteo\meteo\ERA-5\2000\ERA5_metOcean_atm_19991201_19991231.nc'
+    print('file: %s'%(file_nc))
+    data_dummy = get_ncmodeldata(file_nc=file_nc, varname='msl',timestep=0, get_linkedgridinfo=True)
+    file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\01_Implementation\14_restartfile\sfincs_map.nc'
+    print('file: %s'%(file_nc))
+    data_dummy = get_ncmodeldata(file_nc=file_nc, varname='zs', timestep=0, get_linkedgridinfo=True)
+    
+    
     # test Grevelingen (integrated example, where all below should move towards)
     file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc')
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
-    #data_bl = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_s1',timestep=0, get_linkedgridinfo=True)
     ugrid = get_netdata(file_nc=file_nc)
     fig, ax = plt.subplots()
     plot_netmapdata(ugrid.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")

@@ -228,7 +228,10 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         values_selid = []
         values_dimlens = [] #list(nc_values.shape)
         values_dimlinkedgrid = [] #list(nc_values.shape)
-        print('varname: %s  %s  %s'%(varname, nc_varobject_sel.shape, nc_varobject_sel.dimensions))
+        try:
+            print('varname: %s  %s  %s, coordinates=(%s)'%(varname, nc_varobject_sel.shape, nc_varobject_sel.dimensions, nc_varobject_sel.coordinates))
+        except:
+            print('varname: %s  %s  %s, coordinates=(%s)'%(varname, nc_varobject_sel.shape, nc_varobject_sel.dimensions, 'None'))
         for iD, nc_values_dimsel in enumerate(nc_varobject_sel.dimensions):
             if nc_values_dimsel in [dimn_faces, dimn_nFlowElem]: # domain-like variable is present, so there are multiple domains (with ghost cells)
                 nonghost_ids = ghostcell_filter(file_nc_sel)
