@@ -57,15 +57,36 @@ class Polygon:
         #self.line_array = np.c_[self.x, self.y]
         
     def fromfile(file_pol, pd_output=False):
+        """
+        reads a pli boundary into an array
+        
+
+        Parameters
+        ----------
+        file_pol : TYPE
+            DESCRIPTION.
+        pd_output : TYPE, optional
+            pd_output==True: create pandas array of tekal file, including comments
+            pd_output==False (default): create list of numpy arrays and list of polygon names
+            DESCRIPTION. The default is False.
+        
+
+        Raises
+        ------
+        Exception
+            DESCRIPTION.
+
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+
+        """
         import warnings
         import numpy as np
         import pandas as pd
         warnings.warn('the function dfm_tools.polygon.Polygon.fromfile() will be improved, outputformat will change')
-        '''
-        reads a pli boundary into an array
-        tekal_output==True: create pandas array of tekal file, including comments
-        tekal_output==False (default): create list of numpy arrays and list of polygon names
-        '''
+        
 
         with open(file_pol) as plifile:
             lines = plifile.readlines()
@@ -85,8 +106,9 @@ class Polygon:
                     pass
                 iLine=iLine+1
                 if line_str[0].startswith('*'): #comments
-                    line_str_joined = ' '.join(line_str)
-                    pol_comment_temp.append(line_str_joined)
+                    if ('column' in lines[iLine-1].lower()) or ('kolom' in lines[iLine-1].lower()):
+                        line_str_joined = ' '.join(line_str)
+                        pol_comment_temp.append(line_str_joined)
                 else:
                     #the start of a new polygon
                     pol_name_list.append(line_str[0]) #get name from name line_str
@@ -112,8 +134,8 @@ class Polygon:
                             #pol_data_pd.iloc[:,1] = pol_data_pd.iloc[:,1].astype(int)
                             try:
                                 #add datetime column with parsed dates
-                                #pol_data_datetime = pd.to_datetime(pol_data_pd.iloc[:,0]*1000000+pol_data_pd.iloc[:,1],format='%Y%m%d%H%M%S') #this does not work anymore
-                                pol_data_datetime = (pol_data_pd.iloc[:,0]*1000000+pol_data_pd.iloc[:,1]).astype('datetime64[ns]').dt.round(freq='S')
+                                pol_data_datetime = pd.to_datetime(pol_data_pd.iloc[:,0]*1000000+pol_data_pd.iloc[:,1],format='%Y%m%d%H%M%S') #this does not work anymore
+                                #pol_data_datetime = (pol_data_pd.iloc[:,0]*1000000+pol_data_pd.iloc[:,1]).astype('datetime64[ns]').dt.round(freq='S')
                                 pol_data_pd.insert(0, 'datetime', pol_data_datetime)
                             except:
                                 warnings.warn('conversion from date/time column to datetime failed, incorrect format of first two columns?')
