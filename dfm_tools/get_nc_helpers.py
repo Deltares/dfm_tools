@@ -33,8 +33,8 @@ Created on Fri Feb 14 12:43:19 2020
 helper functions for functions in get_nc.py
 """
 
-    
-    
+
+
 
 def get_ncfilelist(file_nc, multipart=None):
     #get list of mapfiles
@@ -79,8 +79,8 @@ def get_varname_fromnc(data_nc,varname_requested):
     varnames_list['mesh2d_node_y'] = ['mesh2d_node_y','NetNode_y','mesh2d_agg_node_y','','',''] # y-coordinate of nodes
     varnames_list['mesh2d_node_z'] = ['mesh2d_node_z','NetNode_z','','','',''] # z-coordinate of nodes
     
-    varnames_list['mesh2d_face_x'] = ['mesh2d_face_x','FlowElem_xzw','mesh2d_agg_face_x','','',''] # x-coordinate of faces
-    varnames_list['mesh2d_face_y'] = ['mesh2d_face_y','FlowElem_yzw','mesh2d_agg_face_y','','',''] # y-coordinate of faces
+    varnames_list['mesh2d_face_x'] = ['mesh2d_face_x','FlowElem_xzw','mesh2d_agg_face_x','','',''] # x-coordinate of faces (center)
+    varnames_list['mesh2d_face_y'] = ['mesh2d_face_y','FlowElem_yzw','mesh2d_agg_face_y','','',''] # y-coordinate of faces (center)
     
     varnames_list['mesh2d_edge_x'] = ['mesh2d_edge_x','','','','',''] # x-coordinate of velocity-points
     varnames_list['mesh2d_edge_y'] = ['mesh2d_edge_y','','','','',''] # y-coordinate of velocity-points
@@ -227,7 +227,7 @@ def ghostcell_filter(file_nc):
 
 
 
-def get_timesfromnc(file_nc, force_noreconstruct=False):
+def get_timesfromnc(file_nc, force_noreconstruct=False, retrieve_ids=False):
     """
     retrieves time array from netcdf file.
     Since long time arrays take a long time to retrieve at once, reconstruction is tried
@@ -247,7 +247,13 @@ def get_timesfromnc(file_nc, force_noreconstruct=False):
     varname_time = get_varname_fromnc(data_nc,'time')
     data_nc_timevar = data_nc.variables[varname_time]
     
-    if len(data_nc_timevar)<3 or force_noreconstruct==True: #shorter than 3 rarely is the case, but just to be sure
+    if retrieve_ids is not False:
+        print('reading time dimension: only requested indices')
+        listtype_range = [list, range, np.ndarray]
+        if type(retrieve_ids) not in listtype_range:
+            raise Exception('ERROR: argument retrieve_ids should be a list')
+        data_nc_times = data_nc_timevar[retrieve_ids]
+    elif len(data_nc_timevar)<3 or force_noreconstruct==True: #check if time dimension is shorter than 3 items
         data_nc_times = data_nc_timevar[:]
         print('reading time dimension: read entire array (len < 3 or force_noreconstruct==True)')
     else:
@@ -270,7 +276,11 @@ def get_timesfromnc(file_nc, force_noreconstruct=False):
             
     data_nc_datetimes = num2date(data_nc_times, units = data_nc_timevar.units)
     nptimes = data_nc_datetimes.astype('datetime64[ns]') #convert to numpy first, pandas does not take all cftime datasets
-    data_nc_datetimes_pd = pd.Series(nptimes).dt.round(freq='S')
+    
+    if retrieve_ids is not False:
+        data_nc_datetimes_pd = pd.Series(nptimes,index=retrieve_ids).dt.round(freq='S')
+    else:
+        data_nc_datetimes_pd = pd.Series(nptimes).dt.round(freq='S')
     
     return data_nc_datetimes_pd
 

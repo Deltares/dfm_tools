@@ -64,6 +64,20 @@ def meshgridxy2verts(x_coords, y_coords):
 
 
 
+def scatter_to_regulargrid(xcoords=None, ycoords=None, ncellx=None, ncelly=None, values=None, method='nearest'):
+    """
+    interpolates scatter values (x,y,z) or meshgrids to regular grid
+    """
+    import numpy as np
+    from scipy.interpolate import griddata
+    
+    reg_x_vec = np.linspace(np.min(xcoords),np.max(xcoords),ncellx)
+    reg_y_vec = np.linspace(np.min(ycoords),np.max(ycoords),ncelly)
+    x_grid,y_grid = np.meshgrid(reg_x_vec,reg_y_vec)
+    
+    value_grid = griddata((xcoords,ycoords),values,(x_grid,y_grid),method=method)
+    return x_grid, y_grid, value_grid
+
 
 
 def center2corner(cen):

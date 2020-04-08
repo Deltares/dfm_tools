@@ -689,7 +689,7 @@ def test_waqua_netcdf_convertedwith_getdata():
     fig, ax = plt.subplots(figsize=(16,7))
     for iS in range(10):
         ax.plot(data_nc_ZWL.var_times,data_nc_ZWL[:,iS],label=data_nc_NAMWL['NAMWL'].iloc[iS], linewidth=1)
-    ax.legend()
+    ax.legend(loc=1)
     ax.set_ylabel('%s (%s)'%(data_nc_ZWL.var_varname, data_nc_ZWL.var_object.units))
     ax.set_xlim([data_nc_ZWL.var_times[0],data_nc_ZWL.var_times[0]+dt.timedelta(days=14)])
     plt.savefig(os.path.join(dir_output,'waqua_DSCM_his_ZWL'))
@@ -934,7 +934,7 @@ def test_morphology():
 
     from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata#, get_xzcoords_onintersection
     from dfm_tools.get_nc_helpers import get_ncvardimlist, get_hisstationlist
-    from dfm_tools.regulargrid import meshgridxy2verts, center2corner
+    from dfm_tools.regulargrid import meshgridxy2verts, center2corner, scatter_to_regulargrid
     
     #MAPFILE
     file_nc = r'p:\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\fm\DFM_OUTPUT_inlet\inlet_map.nc'
@@ -1146,20 +1146,10 @@ def test_morphology():
     xlim_get = ax.get_xlim()
     ylim_get = ax.get_ylim()
     
-    
-    
-    # interpolate to regular grid
-    
-    dist = 2000
-    reg_x_vec = np.linspace(np.min(data_frommap_facex),np.max(data_frommap_facex),int(np.ceil((np.max(data_frommap_facex)-np.min(data_frommap_facex))/dist)))
-    reg_y_vec = np.linspace(np.min(data_frommap_facey),np.max(data_frommap_facey),int(np.ceil((np.max(data_frommap_facey)-np.min(data_frommap_facey))/dist)))
-    reg_grid = np.meshgrid(reg_x_vec,reg_y_vec)
-    X = reg_grid[0]
-    Y = reg_grid[1]
-    from scipy.interpolate import griddata
-    
-    U = griddata((data_frommap_facex,data_frommap_facey),data_frommap_transx[0,0,:],tuple(reg_grid),method='nearest')
-    V = griddata((data_frommap_facex,data_frommap_facey),data_frommap_transy[0,0,:],tuple(reg_grid),method='nearest')
+    #interpolate to regular grid
+    from dfm_tools.regulargrid import scatter_to_regulargrid
+    X,Y,U = scatter_to_regulargrid(xcoords=data_frommap_facex, ycoords=data_frommap_facey, ncellx=29, ncelly=20, values=data_frommap_transx[0,0,:])
+    X,Y,V = scatter_to_regulargrid(xcoords=data_frommap_facex, ycoords=data_frommap_facey, ncellx=29, ncelly=20, values=data_frommap_transy[0,0,:])
     speed = np.sqrt(U*U + V*V)
     
     fig, ax = plt.subplots(1,1, figsize=(14,8))
@@ -1173,9 +1163,6 @@ def test_morphology():
     fig.tight_layout()
     plt.savefig(os.path.join(dir_output,'%s_%s_%s_t%d_regquiver'%(os.path.basename(file_nc).replace('.',''), data_frommap_transx.var_varname, data_frommap_transy.var_varname,timestep)))
 
-
-
-    
     #xs = X.flatten()
     #ys = Y.flatten()
     #seed_points = np.array([list(xs), list(ys)])
@@ -1195,9 +1182,6 @@ def test_morphology():
     fig.tight_layout()
     plt.savefig(os.path.join(dir_output,'%s_%s_%s_t%d_regstreamplot'%(os.path.basename(file_nc).replace('.',''), data_frommap_transx.var_varname, data_frommap_transy.var_varname,timestep)))
     
-    
-    
-    
     from dfm_tools.modplot import velovect
     fig, ax = plt.subplots(1,1, figsize=(14,8))
     quiv_curved = velovect(ax,X,Y,U,V, arrowstyle='fancy', scale = 5, grains = 25, color=speed)
@@ -1215,6 +1199,58 @@ def test_morphology():
 
 
 
+
+@pytest.mark.acceptance
+def test_contour_over_polycollection():
+    dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
+    """
+    dir_output = './test_output'
+    file_nc = os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_cb_3d\\cb_3d_map.nc')
+    file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc')
+    file_nc = 'p:\\1204257-dcsmzuno\\2013-2017\\3D-DCSM-FM\\A17b\\DFM_OUTPUT_DCSM-FM_0_5nm\\DCSM-FM_0_5nm_0000_map.nc'
+    file_nc = 'p:\\11205258-006-kpp2020_rmm-g6\\C_Work\\08_RMM_FMmodel\\computations\\run_156\\DFM_OUTPUT_RMM_dflowfm\\RMM_dflowfm_0000_map.nc'
+    """
+    
+    import matplotlib.pyplot as plt
+    plt.close('all')
+    import numpy as np
+    import datetime as dt
+    
+    from dfm_tools.get_nc import get_netdata, get_ncmodeldata, get_xzcoords_onintersection, plot_netmapdata
+    from dfm_tools.get_nc_helpers import get_ncvardimlist
+    from dfm_tools.io.polygon import LineBuilder
+    from dfm_tools.regulargrid import scatter_to_regulargrid
+    
+    file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc')
+    
+    timestep = 3
+    layno = 35
+    clim_bl = [-40,10]
+
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    ugrid = get_netdata(file_nc=file_nc)
+    #get bed layer
+    data_frommap_x = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_face_x')
+    data_frommap_y = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_face_y')
+    data_frommap_bl = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_flowelem_bl')
+    
+    #interpolate to regular grid
+    x_grid, y_grid, val_grid = scatter_to_regulargrid(xcoords=data_frommap_x, ycoords=data_frommap_y, ncellx=100, ncelly=80, values=data_frommap_bl, method='linear')
+
+    #create plot with ugrid and cross section line
+    fig, axs = plt.subplots(3,1,figsize=(6,9))
+    ax=axs[0]
+    pc = plot_netmapdata(ugrid.verts, values=data_frommap_bl, ax=ax, linewidth=0.5, edgecolors='face', cmap='jet')#, color='crimson', facecolor="None")
+    pc.set_clim(clim_bl)
+    fig.colorbar(pc, ax=ax)
+    ax=axs[1]
+    pc = ax.contourf(x_grid, y_grid, val_grid)
+    pc.set_clim(clim_bl)
+    fig.colorbar(pc, ax=ax)
+    ax=axs[2]
+    ax.contour(x_grid, y_grid, val_grid)
+    fig.colorbar(pc, ax=ax)
+    plt.savefig(os.path.join(dir_output,'%s_gridbedcontour'%(os.path.basename(file_nc).replace('.',''))))
 
 
 
