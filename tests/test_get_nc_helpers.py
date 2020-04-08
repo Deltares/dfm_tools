@@ -23,15 +23,15 @@ def test_gettimesfromnc():
     file_nc = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\computations\run_156\DFM_OUTPUT_RMM_dflowfm\RMM_dflowfm_0000_map.nc'
     
     times_default = get_timesfromnc(file_nc=file_nc)
-    times_noreconstruct = get_timesfromnc(file_nc=file_nc, force_noreconstruct=True)
+    times_getall = get_timesfromnc(file_nc=file_nc, force_getalltimes=True)
     
-    assert len(times_default) == len(times_noreconstruct)
-    assert times_default.iloc[0] == times_noreconstruct.iloc[0]
-    assert times_default.iloc[1] == times_noreconstruct.iloc[1]
-    assert times_default.iloc[2] == times_noreconstruct.iloc[2]
-    assert times_default.iloc[-3] == times_noreconstruct.iloc[-3]
-    assert times_default.iloc[-2] == times_noreconstruct.iloc[-2]
-    assert times_default.iloc[-1] == times_noreconstruct.iloc[-1]
+    assert len(times_default) == len(times_getall)
+    assert times_default.iloc[0] == times_getall.iloc[0]
+    assert times_default.iloc[1] == times_getall.iloc[1]
+    assert times_default.iloc[2] == times_getall.iloc[2]
+    assert times_default.iloc[-3] == times_getall.iloc[-3]
+    assert times_default.iloc[-2] == times_getall.iloc[-2]
+    assert times_default.iloc[-1] == times_getall.iloc[-1]
     
     
     
