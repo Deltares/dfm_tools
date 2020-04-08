@@ -44,7 +44,7 @@ setup(
     include_package_data=True,
     keywords='dfm_tools',
     name='dfm_tools',
-    packages=find_packages(include=['dfm_tools', 'dfm_tools.*','dfm_tools.io','dfm_tools.io.*']),
+    packages=find_packages(),
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
