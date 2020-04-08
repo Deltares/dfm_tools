@@ -222,7 +222,6 @@ Todo non-content
 - why does cartopy has to come from conda-forge?
 - add variable units to plots in test bench
 - install without PATH fails on pip/git in anaconda prompt?
-- update/delete cookiecutter text files (HISTORY is not up to date, remove including links in other files?), how about dfm_tools.cli?
 - write documentation as comments and generate automatically? (at least add documentation as comments to functions)
 - create overview of scripts and functions, including future location of missing features
 - put testdata on deltares shared location?
