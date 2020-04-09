@@ -35,7 +35,7 @@ def t_vuf(ltype, ctime, ju, lat=None):
 
     astro, ader = t_astron(ctime)
 
-    if ltype == 'full':
+    if 0:#ltype == 'full': #changed to if 0 to discable, this is not used in matlab
         const = t_get18consts(ctime)
         # Phase relative to Greenwich (in units of cycles).
         v = rem(np.dot(const.doodson, astro) + const.semi, 1)

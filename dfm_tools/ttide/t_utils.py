@@ -46,17 +46,17 @@ def constituents(minres, constit, shallow, infname, infref, centraltime):
         19/1/02 - typo fixed (thanks to  Zhigang Xu)
      Compute frequencies from astronomical considerations.
     """
-    if minres > 1 / (18.6 * 365.25 * 24):
+    if 1:#minres > 1 / (18.6 * 365.25 * 24): #changed to 1 since second loop is not in matlab anymore
         # Choose only resolveable pairs for short
         const, sat, cshallow = t_getconsts(centraltime)
         # Time series
         ju = np.flatnonzero(const['df'] >= minres)
     else:
         # Choose them all if > 18.6 years.
-        const, sat, cshallow = t_getconsts(centraltime) #EDIT: was t_get18consts
-
+        const, sat, cshallow = t_get18consts(centraltime)
+        
         ju = np.array([range(2,
-                             (max(const['freq'].shape)   ))]).reshape(1, -1).T #EDIT: removed +1
+                             (max(const['freq'].shape)+1))]).reshape(1, -1).T
         # Skip Z0
         for ff in range(1, 3):
             # loop twice to make sure of neightbouring pairs
@@ -523,8 +523,8 @@ def classic_style(out):
             else:
                 star = ' '
             outstr += fmt.format(star=star,
-                                 name=out['nameu'][k][0].decode(enc),  #EDIT: added [0]
-                                 fuk=fuk[0],                           #EDIT: added [0]
+                                 name=out['nameu'][k].decode(enc),  
+                                 fuk=fuk,                           
                                  c=out['tidecon'][k],    
                                  snr=out['snr'][k])
     return outstr

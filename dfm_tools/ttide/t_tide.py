@@ -449,14 +449,14 @@ def t_tide(xin, dt=1, stime=None, lat=None,
                             vu[(jref[(ii - 1)] - 1)] +
                             infph[(ii - 1), 0])) / 360
             pcfac = infamprat[(ii - 1), 0] * f[(mu + ii - 1)] / \
-                f[(jref[(ii - 1)] - 1)] * np.exp(np.dot(i, pearg))
+                f[(jref[(ii - 1)] - 1)] * np.exp(np.dot(1j, pearg))
             pcorr = 1 + pcfac * scarg
             mearg = np.dot(-2 * pi,
                            (vu[(mu + ii - 1)] -
                             vu[(jref[(ii - 1)] - 1)] +
                             infph[(ii - 1), 1])) / 360
             mcfac = infamprat[(ii - 1), 1] * f[(mu + ii - 1)] / \
-                f[(jref[(ii - 1)] - 1)] * np.exp(np.dot(i, mearg))
+                f[(jref[(ii - 1)] - 1)] * np.exp(np.dot(1j, mearg))
             mcorr = 1 + mcfac * scarg
         ap[(jref[(ii - 1)] - 1)] = ap[(jref[(ii - 1)] - 1)] / pcorr
         # Changes to existing constituents
