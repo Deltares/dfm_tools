@@ -32,14 +32,14 @@ Created on Fri Feb 14 12:45:11 2020
 """
 
 
-def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, station=None, multipart=None, get_linkedgridinfo=False, force_getalltimes=False):
+def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None, station=None, multipart=None, get_linkedgridinfo=False):
     """
 
     Parameters
     ----------
     file_nc : str
         path to netcdf file.
-    varname : str
+    varname : str, optional
         string of netcdf variable name (standard_name?).
     timestep : TYPE, optional
         (list/range/ndarray of) 0-based int or datetime. Can be used to select one or more specific timesteps, or 'all'. The default is None.
@@ -72,7 +72,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     
     from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvardimlist, get_ncvarobject, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_fromnc
     
-    #get variable info
+    #get variable info (also checks if varname exists)
     nc_varobject = get_ncvarobject(file_nc, varname)
     data_nc = Dataset(file_nc)
     
@@ -94,15 +94,16 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     if dimn_time not in nc_varobject.dimensions: #dimension time is not available in variable
         if timestep is not None:
             raise Exception('ERROR: netcdf file variable (%s) does not contain times, but parameter timestep is provided'%(varname))
-    else: #time is first dimension
-        if timestep is None:
-            raise Exception('ERROR: netcdf variable contains a time dimension, but parameter timestep not provided (can be "all")')
-        #convert timestep to list of int if it is not already
+    else: #time dimension is present
         data_nc_timevar = data_nc.variables[dimn_time]
         time_length = data_nc_timevar.shape[0]
+        data_nc_datetimes_pd = get_timesfromnc(file_nc, retrieve_ids=[0,-1]) #get selection of times
+        if timestep is None:
+            raise Exception('ERROR: netcdf variable contains a time dimension, but parameter timestep not provided (can be "all"), first and last timestep:\n%s\nretrieve entire times list:\nfrom dfm_tools.get_nc_helpers import get_timesfromnc; get_timesfromnc(file_nc=file_nc, retrieve_ids=False), where the argument retrieve_ids is optional and can be a list of time indices'%(pd.DataFrame(data_nc_datetimes_pd)))
+        #convert timestep to list of int if it is not already
         retrieve_ids = False
         if timestep is str('all'):
-            data_nc_datetimes_pd = get_timesfromnc(file_nc, force_getalltimes=force_getalltimes) #get all times
+            data_nc_datetimes_pd = get_timesfromnc(file_nc) #get all times
             time_ids = range(len(data_nc_datetimes_pd))
         elif type(timestep) in listtype_range:
             if len(timestep) == 0:
@@ -112,19 +113,19 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
                 data_nc_datetimes_pd = get_timesfromnc(file_nc, retrieve_ids=retrieve_ids) #get selection of times
                 time_ids = timestep
             elif type(timestep[0]) in listtype_datetime:
-                data_nc_datetimes_pd = get_timesfromnc(file_nc, force_getalltimes=force_getalltimes) #get all times
+                data_nc_datetimes_pd = get_timesfromnc(file_nc) #get all times
                 time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, timestep)
             else:
                 raise Exception('ERROR: timestep variable type is list/range/ndarray (%s), but type of timestep[0] not anticipated (%s), options:\n - int\n - np.int64\n - datetime\n - np.datetime64'%(type(timestep),type(timestep[0])))
         elif type(timestep) in listtype_daterange:
-            data_nc_datetimes_pd = get_timesfromnc(file_nc, force_getalltimes=force_getalltimes) #get all times
+            data_nc_datetimes_pd = get_timesfromnc(file_nc) #get all times
             time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, timestep)
         elif type(timestep) in listtype_int:
             retrieve_ids = np.array(range(time_length))[[timestep]]
             data_nc_datetimes_pd = get_timesfromnc(file_nc, retrieve_ids=retrieve_ids) #get selection of times
             time_ids = [timestep]
         elif type(timestep) in listtype_datetime:
-            data_nc_datetimes_pd = get_timesfromnc(file_nc, force_getalltimes=force_getalltimes) #get all times
+            data_nc_datetimes_pd = get_timesfromnc(file_nc) #get all times
             time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, [timestep])
         else:
             raise Exception('ERROR: timestep variable type not anticipated (%s), options:\n - datetime/int\n - list/range/ndarray of datetime/int\n - pandas daterange\n - "all"'%(type(timestep)))
@@ -133,10 +134,6 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
             raise Exception('ERROR: requested maximum timestep (%d) is larger than available in netcdf file (%d)'%(np.max(time_ids),time_length-1))
         if np.min(time_ids) < -time_length:
             raise Exception('ERROR: requested minimum timestep (%d) is smaller than available in netcdf file (%d)'%(np.min(time_ids),-time_length))
-        #if np.max(time_ids) > np.max(data_nc_datetimes_pd.index):
-        #    raise Exception('ERROR: requested maximum timestep (%d) is larger than available in netcdf file (%d)'%(np.max(time_ids),np.max(data_nc_datetimes_pd.index)))
-        #if np.min(time_ids) < -(np.max(data_nc_datetimes_pd.index)+1):
-        #    raise Exception('ERROR: requested minimum timestep (%d) is smaller than available in netcdf file (%d)'%(np.min(time_ids),-(np.max(data_nc_datetimes_pd.index)+1)))
 
     
     #LAYER CHECKS
@@ -148,7 +145,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
         dimn_layer_id = nc_varobject.dimensions.index(dimn_layer)
         nlayers = nc_varobject.shape[dimn_layer_id]
         if layer is None:
-            raise Exception('ERROR: netcdf variable contains a layer dimension, but parameter layer not provided (can be "all")')
+            raise Exception('ERROR: netcdf variable contains a layer dimension, but parameter layer not provided (can be "all")\nnumber of layers: %d (numbered 0 to %d)'%(nlayers, nlayers-1))
         #convert layer to list of int if it is not already
         if layer is str('all'):
             layer_ids = range(nlayers)
@@ -169,7 +166,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     
     #DEPTH CHECKS
     if depth is not None:
-        raise Exception('ERROR: depth argument is provided, but this is not implemented yet')
+        raise Exception('ERROR: depth argument is provided, but vertical slicing is not implemented yet, try layer argument instead')
     
     #STATION/GENERAL_STRUCTURES CHECKS
     vars_pd_stats = vars_pd[(vars_pd['dtype']=='|S1') & (vars_pd['dimensions'].apply(lambda x: dimn_time not in x))]

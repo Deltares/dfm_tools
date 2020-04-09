@@ -17,21 +17,12 @@ dir_testinput = os.path.join(r'c:/DATA','dfm_tools_testdata')
 @pytest.mark.unittest    
 def test_gettimesfromnc():
 
-    from dfm_tools.get_nc_helpers import get_timesfromnc
+    from dfm_tools.get_nc import get_ncmodeldata
+    
+    #this file seems to have a reconstructable array, but contains gaps, so the time reader falls back to reading all
+    file_nc = r'p:\1204257-dcsmzuno\data\waterbase2\sea_surface_height\id1-LICHTELGRE.nc'
+    data_fromhis_time = get_ncmodeldata(file_nc,varname='time',timestep='all')
 
-    #file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc')
-    file_nc = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\computations\run_156\DFM_OUTPUT_RMM_dflowfm\RMM_dflowfm_0000_map.nc'
-    
-    times_default = get_timesfromnc(file_nc=file_nc)
-    times_getall = get_timesfromnc(file_nc=file_nc, force_getalltimes=True)
-    
-    assert len(times_default) == len(times_getall)
-    assert times_default.iloc[0] == times_getall.iloc[0]
-    assert times_default.iloc[1] == times_getall.iloc[1]
-    assert times_default.iloc[2] == times_getall.iloc[2]
-    assert times_default.iloc[-3] == times_getall.iloc[-3]
-    assert times_default.iloc[-2] == times_getall.iloc[-2]
-    assert times_default.iloc[-1] == times_getall.iloc[-1]
     
     
     

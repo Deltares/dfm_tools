@@ -35,7 +35,7 @@ from dflowutil.SubFile import SubFile
 from dflowutil.DFMWAQModel import DFMWAQModel
 
 from dfm_tools.get_nc import plot_netmapdata, get_ncmodeldata, get_netdata
-from dfm_tools.polygon import Polygon
+from dfm_tools.io.polygon import Polygon
 
 
 #################################################################################
@@ -60,7 +60,7 @@ fig, ax = plt.subplots()
 pol = os.path.join(dir_testinput,'HK','world_hk_combined_EPSG-4326.pol')
 #XY = read_polygon(pol)
 #plt.plot(XY[:,0], XY[:,1], '-r', linewidth = 0.5)
-pol_data_list, pol_name_list = Polygon.fromfile(pol) #check wheter z-coordinate is -999, is NaN in HK
+pol_data_list, pol_name_list, pol_name_comments = Polygon.fromfile(pol) #check wheter z-coordinate is -999, is NaN in HK
 for iP, pol_data in enumerate(pol_data_list):
     nonan_bool = pol_data[:,2]!=-999
     plt.plot(pol_data[nonan_bool,0], pol_data[nonan_bool,1], '-k', linewidth = 0.5)
@@ -72,7 +72,7 @@ for iP, pol_data in enumerate(pol_data_list):
 file_subst = os.path.join(dir_testinput,'HK',r'03_baseCase\01_substances\HATS_PCA_v3ep.sub')
 substances = SubFile(file_subst).substances #access denied
 #out = 'p:\\11200975-hongkongwaq\\WAQ\\03_baseCase\\A07\\wrong_ref_date_DFM_OUTPUT_HK-FMWAQ\\rst\\' #access denied
-out = os.path.join(dir_testinput,'HK','03_baseCase\\A07\\wrong_ref_date_DFM_OUTPUT_HK-FMWAQ\\rst_JV') #access denied
+out = os.path.join(dir_testinput,'HK','03_baseCase\\A07\\wrong_ref_date_DFM_OUTPUT_HK-FMWAQ\\rst_JV')
 """
 rst_to_xyz(mapdir, file_subst, -1, out, rst = False)
 """
@@ -169,7 +169,7 @@ ext = [os.path.join(dir_testinput,'DFM_3D_z_Grevelingen\\computations\\run01\\Gr
 new_bnd_dir = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen\\computations\\run01_othersub')
 # sub file to use
 
-subfile = SubFile(os.path.join(dir_testinput,'DSD\\01_substances\\guayas_V11.sub'))
+subfile = SubFile(os.path.join(dir_testinput,'testsRudy_DSD\\01_substances\\guayas_V11.sub'))
 # initial conditions
 ini = {'OXY' : 7}
 # kernel version

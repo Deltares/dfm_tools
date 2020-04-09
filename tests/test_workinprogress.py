@@ -93,7 +93,7 @@ def test_delft3D_netcdf():
     from dfm_tools.get_nc_helpers import get_ncvardimlist, get_hisstationlist#, get_varname_fromnc
     from dfm_tools.regulargrid import uva2xymagdeg
 
-    file_nc = r'p:\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\063_netcdf\shorterperiod\trim-thiery_002_coarse.nc'
+    file_nc = r'p:\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\063_netcdf\trim-thiery_002_coarse.nc'
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
     
     data_nc_XZ = get_ncmodeldata(file_nc=file_nc, varname='XZ')
@@ -183,7 +183,7 @@ def test_delft3D_netcdf():
 
 
     #FROM HIS data
-    file_nc = r'p:\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\063_netcdf\shorterperiod\trih-thiery_002_coarse.nc'
+    file_nc = r'p:\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\063_netcdf\trih-thiery_002_coarse.nc'
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
     
     data_nc_NAMST = get_hisstationlist(file_nc=file_nc, varname='NAMST')
@@ -413,7 +413,7 @@ def test_waqua_netcdf_convertedwith_getdata():
     get the netcdf files via putty with:
         module load simona
         cd /p/1204257-dcsmzuno/2019/DCSMv6/A01
-        getdata.pl -f SDS-A01 -v SEP,VELU,VELV -o netcdf -d SDS-A01_map
+        getdata.pl -f SDS-A01 -v SEP,VELU,VELV,YZETA,XZETA -o netcdf -d SDS-A01_map
         getdata.pl -f SDS-A01 -v ZWL,ZCURU,ZCURV,NAMWL,NAMC -o netcdf -d SDS-A01_his
         http://simona.deltares.nl/release/doc/usedoc/getdata/getdata.pdf
         
@@ -423,11 +423,12 @@ def test_waqua_netcdf_convertedwith_getdata():
         getdata.pl -f SDS-nsctri -v SEP,VELU,VELV -o netcdf -d SDS-nsctri_map
         getdata.pl -f SDS-nsctri -v ZWL,ZCURU,ZCURV,NAMWL,NAMC -o netcdf -d SDS-nsctri_his
         http://simona.deltares.nl/release/doc/usedoc/getdata/getdata.pdf
+        #this file should be recreated with YZETA,XZETA added to map
 
     get the netcdf files via putty with:
         module load simona
         cd /p/11205258-006-kpp2020_rmm-g6/C_Work/07_WAQUAresultaten/j15
-        getdata.pl -f SDS-riv_tba -v SEP,VELU,VELV -o netcdf -d SDS-riv_tba_map
+        getdata.pl -f SDS-riv_tba -v SEP,VELU,VELV,YZETA,XZETA -o netcdf -d SDS-riv_tba_map
         getdata.pl -f SDS-riv_tba -v ZWL,ZCURU,ZCURV,NAMWL,NAMC -o netcdf -d SDS-riv_tba_his
         http://simona.deltares.nl/release/doc/usedoc/getdata/getdata.pdf
         
@@ -1064,23 +1065,40 @@ def test_workinprogress():
     from dfm_tools.io.polygon import Polygon
     
     #print gridinfo of several files to compare
-    file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc')
-    print('file: %s'%(file_nc))
-    data_dummy = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_s1',timestep=0, multipart=False, get_linkedgridinfo=True)
     file_nc = r'p:\1204257-dcsmzuno\2014\data\meteo\HIRLAM72_2018\h72_201803.nc'
-    print('file: %s'%(file_nc))
-    data_dummy = get_ncmodeldata(file_nc=file_nc, varname='northward_wind',timestep=0, get_linkedgridinfo=True)
+    print('\nfile = %s'%(file_nc))
+    data_dummy = get_ncmodeldata(file_nc=file_nc, varname='northward_wind', timestep=0, get_linkedgridinfo=True)
     file_nc = r'p:\1220688-lake-kivu\2_data\COSMO\COSMOCLM_2012_out02_merged_4Wouter.nc'
-    print('file: %s'%(file_nc))
+    print('\nfile = %s'%(file_nc))
     data_dummy = get_ncmodeldata(file_nc=file_nc, varname='U_10M', timestep=0, get_linkedgridinfo=True)
     file_nc = r'p:\11200665-c3s-codec\2_Hydro\ECWMF_meteo\meteo\ERA-5\2000\ERA5_metOcean_atm_19991201_19991231.nc'
-    print('file: %s'%(file_nc))
-    data_dummy = get_ncmodeldata(file_nc=file_nc, varname='msl',timestep=0, get_linkedgridinfo=True)
+    print('\nfile = %s'%(file_nc))
+    data_dummy = get_ncmodeldata(file_nc=file_nc, varname='msl', timestep=0, get_linkedgridinfo=True)
     file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\01_Implementation\14_restartfile\sfincs_map.nc'
-    print('file: %s'%(file_nc))
+    print('\nfile = %s'%(file_nc))
     data_dummy = get_ncmodeldata(file_nc=file_nc, varname='zs', timestep=0, get_linkedgridinfo=True)
-    print('file: %s'%(file_nc))
+    print('\nfile = %s'%(file_nc))
     data_dummy = get_ncmodeldata(file_nc=file_nc, varname='u', timestep=0, get_linkedgridinfo=True)
+    file_nc = r'p:\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\063_netcdf\trim-thiery_002_coarse.nc'
+    print('\nfile = %s'%(file_nc))
+    data_dummy = get_ncmodeldata(file_nc=file_nc, varname='S1', timestep=0, get_linkedgridinfo=True)
+    print('\nfile = %s'%(file_nc))
+    data_dummy = get_ncmodeldata(file_nc=file_nc, varname='U1', timestep=0, layer=0, get_linkedgridinfo=True)
+    print('\nfile = %s'%(file_nc))
+    data_dummy = get_ncmodeldata(file_nc=file_nc, varname='V1', timestep=0, layer=0, get_linkedgridinfo=True)
+    file_nc = r'p:\1204257-dcsmzuno\2019\DCSMv6\A01\SDS-A01_map.nc'
+    print('\nfile = %s'%(file_nc))
+    data_dummy = get_ncmodeldata(file_nc=file_nc, varname='SEP', timestep=0, get_linkedgridinfo=True)
+    print('\nfile = %s'%(file_nc))
+    data_dummy = get_ncmodeldata(file_nc=file_nc, varname='VELU', timestep=0, layer=0, get_linkedgridinfo=True)
+    file_nc = r'p:\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\wave\wavm-inlet.nc'
+    print('\nfile = %s'%(file_nc))
+    data_dummy = get_ncmodeldata(file_nc=file_nc, varname='veloc-x', timestep=0, get_linkedgridinfo=True)
+    file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc')
+    print('\nfile = %s'%(file_nc))
+    data_dummy = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_s1', timestep=0, multipart=False, get_linkedgridinfo=True)
+    data_dummy = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_u1', timestep=0, layer=0, multipart=False, get_linkedgridinfo=True)
+    data_dummy = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_flowelem_bl', multipart=False, get_linkedgridinfo=True)
     
     
     # test Grevelingen (integrated example, where all below should move towards)
@@ -1193,12 +1211,12 @@ def test_workinprogress():
     
     lons,lats = np.meshgrid(data_lon,data_lat)
     fig, ax = plt.subplots()
-    ax.plot(lons, lons,'-b',linewidth=0.2)
+    ax.plot(lons, lats,'-b',linewidth=0.2)
     ax.plot(lons.T, lats.T,'-b',linewidth=0.2)
     plt.savefig(os.path.join(dir_output,'ERA5_mesh'))
 
     fig, ax = plt.subplots()
-    ax.pcolor(lons, lons, data_psl[0,:,:])
+    #ax.pcolor(lons, lats, data_psl[0,:,:])
     ax.pcolor(data_lon, data_lat, data_psl[0,:,:])
     #plt.pcolor(mesh2d_node_x,mesh2d_node_y,airp,linewidth=0.5)
     plt.savefig(os.path.join(dir_output,'ERA5_msl_pcolor'))
