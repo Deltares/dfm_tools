@@ -47,7 +47,21 @@ Features
 
 Example usage
 --------
+- for more examples, check https://github.com/openearth/dfm_tools/tree/master/tests (this is also the pytest testbank)
+- examples of (mostly unformatted) figures created by this pytest testbank: n:\\Deltabox\\Bulletin\\veenstra\\info dfm_tools
+- please check the [Feature wishlist](#feature-wishlist) for envisioned features
+- please report bugs and feature requests at the developers or at https://github.com/openearth/dfm_tools/issues (include OS, dfm_tools version, reproduction steps)
+- want to get updates about dfm_tools? Send an email to jelmer.veenstra@deltares.nl
+
 ```python
+#data retrieval is easy, just use get_ncmodeldata() with file_nc argument
+#then use the feedback in the error messages to set other arguments like varname, timestep, station and layer
+from dfm_tools.get_nc import get_ncmodeldata
+data_fromnc = get_ncmodeldata(file_nc='yourfile.nc')
+```
+
+```python
+#the below example includes plotting and using the metadata of the retrieved data
 #import statements
 import os
 import matplotlib.pyplot as plt
@@ -111,14 +125,7 @@ print('\tthe shape of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname
 print('\tthe units of the netCDF variable %s are:\n\t\t%s'%(print_var.var_varname, print_var.var_object.units))
 print('\tthe long_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname, print_var.var_object.long_name))
 print('\tthe standard_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname, print_var.var_object.standard_name))
-
-
 ```
-- for more examples, check https://github.com/openearth/dfm_tools/tree/master/tests (this is also the pytest testbank)
-- examples of (mostly unformatted) figures created by this pytest testbank: n:\\Deltabox\\Bulletin\\veenstra\\info dfm_tools
-- please check the [Feature wishlist](#feature-wishlist) for envisioned features
-- please report bugs and feature requests at the developers or at https://github.com/openearth/dfm_tools/issues (include OS, dfm_tools version, reproduction steps)
-- want to get updates about dfm_tools? Send an email to jelmer.veenstra@deltares.nl
 
 
 Installation

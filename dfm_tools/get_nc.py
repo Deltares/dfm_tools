@@ -32,14 +32,14 @@ Created on Fri Feb 14 12:45:11 2020
 """
 
 
-def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, station=None, multipart=None, get_linkedgridinfo=False, force_getalltimes=False):
+def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None, station=None, multipart=None, get_linkedgridinfo=False, force_getalltimes=False):
     """
 
     Parameters
     ----------
     file_nc : str
         path to netcdf file.
-    varname : str
+    varname : str, optional
         string of netcdf variable name (standard_name?).
     timestep : TYPE, optional
         (list/range/ndarray of) 0-based int or datetime. Can be used to select one or more specific timesteps, or 'all'. The default is None.
@@ -72,7 +72,7 @@ def get_ncmodeldata(file_nc, varname, timestep=None, layer=None, depth=None, sta
     
     from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvardimlist, get_ncvarobject, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_fromnc
     
-    #get variable info
+    #get variable info (also checks if varname exists)
     nc_varobject = get_ncvarobject(file_nc, varname)
     data_nc = Dataset(file_nc)
     
