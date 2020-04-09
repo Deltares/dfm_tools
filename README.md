@@ -182,6 +182,7 @@ Feature wishlist
 	- http://earthpy.org/cartopy_backgroung.html
 - add more io-functions:
 	- convert data to kml (google earth) or shp?
+	- improve tekal map read
 	- add tekal write functions
 - add tidal analysis:
 	- https://github.com/sam-cox/pytides
@@ -227,7 +228,7 @@ Todo non-content
 --------
 - improve communication material:
 	- add variable units to plots in test bench
-	- improve his plots and tekal map plots
+	- improve his plots and tekal map plots, improve other plots
 	- put testdata and testoutput on github and create jupyter notebook instead of pptx?
 	- create overview of scripts and functions, including future location of missing features
 	- write documentation as comments and generate automatically? (at least add documentation as comments to functions so Spyder help window can display this)
