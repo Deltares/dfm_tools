@@ -141,6 +141,7 @@ Installation
 	- optional: ``conda install -c conda-forge cartopy -y`` (for satellite imagery on plots) (conda-forge channel recommended by cartopy developers, and currently also necessary for correct shapely version)
 - launch Spyder:
 	- open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in dfm_tools_env)
+	- if launching Spyder gives a Qt related error: remove the system/user environment variable 'qt_plugin_path' set by an old Delft3D4 installation procedure
 	- test by printing dfm_tools version number: ``import dfm_tools; print(dfm_tools.__version__)`` (to double check if you are working in the venv where dfm_tools_env was installed)
 	- to get figures in separate windows: go to Tools > Preferences > IPython console > Graphics > change graphics backend to 'Automatic' and restart Spyder (or the kernel).
 	- copy the code from [Example usage](#example-usage) to your own scripts to get starteds
@@ -152,7 +153,7 @@ Installation
 
 Feature wishlist
 --------
-- merge station/layer/times checks, these parts of get_nc.py have a lot of overlap
+- merge station/layer/times checks, these parts of get_nc.py have a lot of overlap. also convert (list-likes of) int-likes to np.arrays so less checking is needed
 - add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?):
 	- refer depth w.r.t. reference level, water level or bed level
 	- see test_workinprogress.py
@@ -182,6 +183,7 @@ Feature wishlist
 	- http://earthpy.org/cartopy_backgroung.html
 - add more io-functions:
 	- convert data to kml (google earth) or shp?
+	- improve tekal map read
 	- add tekal write functions
 - add tidal analysis:
 	- https://github.com/sam-cox/pytides
@@ -225,22 +227,27 @@ Feature wishlist
 
 Todo non-content
 --------
-- request modplot.velovect() (curved vectors) to be added to matplotlib
-- request shapely>=1.7.0 op main channel instead of only at conda-forge? cartopy also recommends conda-forge, so would not make a huge difference yet
-- why does cartopy has to come from conda-forge?
-- add variable units to plots in test bench
-- install without PATH fails on pip/git in anaconda prompt? (test installation with anaconda prompt, and with command prompt combined with ``set PATH=%PATH%;<your_path_to_anaconda_installation>\Scripts``)
-- installation also possible with miniconda only?
-- write documentation as comments and generate automatically? (at least add documentation as comments to functions)
-- create overview of scripts and functions, including future location of missing features
-- put testdata on deltares shared location?
-- put testdata and testoutput on github and create jupyter notebook instead of pptx?
-- arrange auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
+- improve communication material:
+	- add variable units to plots in test bench
+	- improve his plots and tekal map plots, improve other plots
+	- put testdata and testoutput on github and create jupyter notebook instead of pptx?
+	- create overview of scripts and functions, including future location of missing features
+	- write documentation as comments and generate automatically? (at least add documentation as comments to functions so Spyder help window can display this)
+	- improve feedback to user if no or wrong input arguments are given to functions
+- external improvements:
+	- fix small bugs in Delft3D4 netCDF output (related to coordinates, coordinates of velocity points and incorrect missing values)
+	- request modplot.velovect() (curved vectors) to be added to matplotlib
+	- request shapely>=1.7.0 op main channel instead of only at conda-forge? cartopy also recommends conda-forge, so would not make a huge difference yet
+	- why does cartopy has to come from conda-forge?
+	- install without PATH fails on pip/git in anaconda prompt? (test installation with anaconda prompt, and with command prompt combined with ``set PATH=%PATH%;<your_path_to_anaconda_installation>\Scripts``)
+	- installation also possible with miniconda only?
 - register on PyPI, for easier install via pip (easier for regular users):
 	- https://the-hitchhikers-guide-to-packaging.readthedocs.io/en/latest/quickstart.html#register-your-package-with-the-python-package-index-pypi
 	- https://packaging.python.org/tutorials/packaging-projects/
 	- how to automate this process? (buildserver including testing?)
 	- also add changelog besides commit comments?
+- put testdata on deltares shared location?
+- arrange auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
 - update license with Deltares terms
 - style guide: https://www.python.org/dev/peps/pep-0008/
 - contributing environment method: environment.yml or requirements_dev.txt?

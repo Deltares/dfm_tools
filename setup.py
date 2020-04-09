@@ -44,11 +44,11 @@ setup(
     include_package_data=True,
     keywords='dfm_tools',
     name='dfm_tools',
-    packages=find_packages(),
+    packages=find_packages(include=['dfm_tools', 'dfm_tools.io']),
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/openearth/dfm_tools',
-    version='0.7.12',
+    version='0.7.13',
     zip_safe=False,
 )
