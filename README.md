@@ -235,7 +235,7 @@ Todo non-content
 	- write documentation as comments and generate automatically? (at least add documentation as comments to functions so Spyder help window can display this)
 	- improve feedback to user if no or wrong input arguments are given to functions
 - external improvements:
-	- improve Delft3D4 netCDF output: https://issuetracker.deltares.nl/browse/DELFT3D-37440
+	- fix small bugs in Delft3D4 netCDF output (related to coordinates, coordinates of velocity points and incorrect missing values)
 	- request modplot.velovect() (curved vectors) to be added to matplotlib
 	- request shapely>=1.7.0 op main channel instead of only at conda-forge? cartopy also recommends conda-forge, so would not make a huge difference yet
 	- why does cartopy has to come from conda-forge?
