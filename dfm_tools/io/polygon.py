@@ -50,13 +50,14 @@ class LineBuilder:
 
 
 class Polygon:
-    def __init__(self, data, name):
+    def __init__(self, data, name, comments):
         #import numpy as np
         self.data = data
         self.name = name
+        self.comments = comments
         #self.line_array = np.c_[self.x, self.y]
         
-    def fromfile(file_pol, pd_output=False):
+    def fromfile(file_pol, pd_output=False, obj_output=True):
         """
         reads a pli boundary into an array
         
@@ -95,7 +96,7 @@ class Polygon:
             pol_comment_list = []
             pol_comment_temp = []
             pol_data_pd_list = []
-            #pol_object_list = []
+            pol_object_list = []
             iLine=0
             while iLine<=len(lines)-1:
                 line_str = lines[iLine].split()
@@ -144,12 +145,15 @@ class Polygon:
                         pol_data_pd = pd.DataFrame(data_pol)
                     pol_data_pd_list.append(pol_data_pd)
                     
+                    pol_object = Polygon(data=data_pol, name=line_str[0], comments=pol_comment_temp)
+                    pol_object_list.append(pol_object)
+                    
                     # reset comment list for next block
                     pol_comment_temp = []
-                    #pol_object = Polygon(data=data_pol, name=line_str[0])
-                    #pol_object_list.append(pol_object)
-        if pd_output==True:
+        if pd_output is True:
             return pol_data_pd_list
+        elif obj_output is True:
+            return pol_object_list
         else:
             return pol_data_list, pol_name_list, pol_comment_list
             

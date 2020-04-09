@@ -81,7 +81,8 @@ def test_readpolygon(file_pol):
         
     pol_data_list, pol_name_list, pol_comment_list = Polygon.fromfile(file_pol, pd_output=False)
     pol_data_pd_list = Polygon.fromfile(file_pol, pd_output=True)
-    
+    pol_object_list = Polygon.fromfile(file_pol, obj_output=True)
+
     fig, ax = plt.subplots()
     for iP, pol_data in enumerate(pol_data_list):
         pd_collist = pol_data_pd_list[iP].columns.tolist()
