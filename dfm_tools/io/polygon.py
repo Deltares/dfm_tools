@@ -57,7 +57,7 @@ class Polygon:
         self.comments = comments
         #self.line_array = np.c_[self.x, self.y]
         
-    def fromfile(file_pol, pd_output=False, obj_output=True):
+    def fromfile(file_pol, pd_output=False, obj_output=False):
         """
         reads a pli boundary into an array
         

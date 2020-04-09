@@ -95,10 +95,10 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
         if timestep is not None:
             raise Exception('ERROR: netcdf file variable (%s) does not contain times, but parameter timestep is provided'%(varname))
     else: #time is first dimension
-        if timestep is None:
-            raise Exception('ERROR: netcdf variable contains a time dimension, but parameter timestep not provided (can be "all")')
-        #convert timestep to list of int if it is not already
         data_nc_timevar = data_nc.variables[dimn_time]
+        if timestep is None:
+            raise Exception('ERROR: netcdf variable contains a time dimension, but parameter timestep not provided (can be "all"), contents of variable:')#\n%s'(data_nc_timevar))
+        #convert timestep to list of int if it is not already
         time_length = data_nc_timevar.shape[0]
         retrieve_ids = False
         if timestep is str('all'):
@@ -133,10 +133,6 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
             raise Exception('ERROR: requested maximum timestep (%d) is larger than available in netcdf file (%d)'%(np.max(time_ids),time_length-1))
         if np.min(time_ids) < -time_length:
             raise Exception('ERROR: requested minimum timestep (%d) is smaller than available in netcdf file (%d)'%(np.min(time_ids),-time_length))
-        #if np.max(time_ids) > np.max(data_nc_datetimes_pd.index):
-        #    raise Exception('ERROR: requested maximum timestep (%d) is larger than available in netcdf file (%d)'%(np.max(time_ids),np.max(data_nc_datetimes_pd.index)))
-        #if np.min(time_ids) < -(np.max(data_nc_datetimes_pd.index)+1):
-        #    raise Exception('ERROR: requested minimum timestep (%d) is smaller than available in netcdf file (%d)'%(np.min(time_ids),-(np.max(data_nc_datetimes_pd.index)+1)))
 
     
     #LAYER CHECKS
@@ -148,7 +144,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
         dimn_layer_id = nc_varobject.dimensions.index(dimn_layer)
         nlayers = nc_varobject.shape[dimn_layer_id]
         if layer is None:
-            raise Exception('ERROR: netcdf variable contains a layer dimension, but parameter layer not provided (can be "all")')
+            raise Exception('ERROR: netcdf variable contains a layer dimension, but parameter layer not provided (can be "all")\nnumber of layers: %d'%(nlayers))
         #convert layer to list of int if it is not already
         if layer is str('all'):
             layer_ids = range(nlayers)
@@ -169,7 +165,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     
     #DEPTH CHECKS
     if depth is not None:
-        raise Exception('ERROR: depth argument is provided, but this is not implemented yet')
+        raise Exception('ERROR: depth argument is provided, but vertical slicing is not implemented yet, try layer argument instead')
     
     #STATION/GENERAL_STRUCTURES CHECKS
     vars_pd_stats = vars_pd[(vars_pd['dtype']=='|S1') & (vars_pd['dimensions'].apply(lambda x: dimn_time not in x))]
