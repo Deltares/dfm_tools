@@ -152,7 +152,7 @@ Installation
 
 Feature wishlist
 --------
-- merge station/layer/times checks, these parts of get_nc.py have a lot of overlap
+- merge station/layer/times checks, these parts of get_nc.py have a lot of overlap. also convert (list-likes of) int-likes to np.arrays so less checking is needed
 - add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?):
 	- refer depth w.r.t. reference level, water level or bed level
 	- see test_workinprogress.py
@@ -225,16 +225,19 @@ Feature wishlist
 
 Todo non-content
 --------
+- improve communication material:
+	- add variable units to plots in test bench
+	- improve his plots and tekal map plots
+	- put testdata and testoutput on github and create jupyter notebook instead of pptx?
+	- create overview of scripts and functions, including future location of missing features
+	- write documentation as comments and generate automatically? (at least add documentation as comments to functions so Spyder help window can display this)
+	- improve feedback to user if no or wrong input arguments are given to functions
 - request modplot.velovect() (curved vectors) to be added to matplotlib
 - request shapely>=1.7.0 op main channel instead of only at conda-forge? cartopy also recommends conda-forge, so would not make a huge difference yet
 - why does cartopy has to come from conda-forge?
-- add variable units to plots in test bench
 - install without PATH fails on pip/git in anaconda prompt? (test installation with anaconda prompt, and with command prompt combined with ``set PATH=%PATH%;<your_path_to_anaconda_installation>\Scripts``)
 - installation also possible with miniconda only?
-- write documentation as comments and generate automatically? (at least add documentation as comments to functions)
-- create overview of scripts and functions, including future location of missing features
 - put testdata on deltares shared location?
-- put testdata and testoutput on github and create jupyter notebook instead of pptx?
 - arrange auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
 - register on PyPI, for easier install via pip (easier for regular users):
 	- https://the-hitchhikers-guide-to-packaging.readthedocs.io/en/latest/quickstart.html#register-your-package-with-the-python-package-index-pypi
