@@ -234,18 +234,20 @@ Todo non-content
 	- create overview of scripts and functions, including future location of missing features
 	- write documentation as comments and generate automatically? (at least add documentation as comments to functions so Spyder help window can display this)
 	- improve feedback to user if no or wrong input arguments are given to functions
-- request modplot.velovect() (curved vectors) to be added to matplotlib
-- request shapely>=1.7.0 op main channel instead of only at conda-forge? cartopy also recommends conda-forge, so would not make a huge difference yet
-- why does cartopy has to come from conda-forge?
-- install without PATH fails on pip/git in anaconda prompt? (test installation with anaconda prompt, and with command prompt combined with ``set PATH=%PATH%;<your_path_to_anaconda_installation>\Scripts``)
-- installation also possible with miniconda only?
-- put testdata on deltares shared location?
-- arrange auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
+- external improvements:
+	- improve Delft3D4 netCDF output: https://issuetracker.deltares.nl/browse/DELFT3D-37440
+	- request modplot.velovect() (curved vectors) to be added to matplotlib
+	- request shapely>=1.7.0 op main channel instead of only at conda-forge? cartopy also recommends conda-forge, so would not make a huge difference yet
+	- why does cartopy has to come from conda-forge?
+	- install without PATH fails on pip/git in anaconda prompt? (test installation with anaconda prompt, and with command prompt combined with ``set PATH=%PATH%;<your_path_to_anaconda_installation>\Scripts``)
+	- installation also possible with miniconda only?
 - register on PyPI, for easier install via pip (easier for regular users):
 	- https://the-hitchhikers-guide-to-packaging.readthedocs.io/en/latest/quickstart.html#register-your-package-with-the-python-package-index-pypi
 	- https://packaging.python.org/tutorials/packaging-projects/
 	- how to automate this process? (buildserver including testing?)
 	- also add changelog besides commit comments?
+- put testdata on deltares shared location?
+- arrange auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
 - update license with Deltares terms
 - style guide: https://www.python.org/dev/peps/pep-0008/
 - contributing environment method: environment.yml or requirements_dev.txt?
