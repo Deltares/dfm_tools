@@ -145,7 +145,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
         dimn_layer_id = nc_varobject.dimensions.index(dimn_layer)
         nlayers = nc_varobject.shape[dimn_layer_id]
         if layer is None:
-            raise Exception('ERROR: netcdf variable contains a layer dimension, but parameter layer not provided (can be "all")\nnumber of layers: %d'%(nlayers))
+            raise Exception('ERROR: netcdf variable contains a layer dimension, but parameter layer not provided (can be "all")\nnumber of layers: %d (numbered 0 to %d)'%(nlayers, nlayers-1))
         #convert layer to list of int if it is not already
         if layer is str('all'):
             layer_ids = range(nlayers)
