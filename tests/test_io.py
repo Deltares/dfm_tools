@@ -55,8 +55,8 @@ def test_mdu():
                                       pytest.param(os.path.join(dir_testinput,'DFM_3D_z_Grevelingen\\geometry\\structures\\Grevelingen-FM_BL_fxw.pli'), id='Grevelingen pli'),
                                       pytest.param(os.path.join(dir_testinput,'world.ldb'), id='world'),
                                       pytest.param(os.path.join(dir_testinput,'Maeslant.tek'), id='Maeslant'),
-                                      pytest.param(r'p:\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\063_netcdf\shorterperiod\ballenplot\0200a.tek', id='Kivu tek map sal'),
-                                      pytest.param(r'p:\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\063_netcdf\shorterperiod\ballenplot\SDS-zd003b5dec2-sal.tek', id='Kivu tek map more'),
+                                      pytest.param(os.path.join(dir_testinput,'ballenplot\\0200a.tek'), id='Kivu tek map sal'),
+                                      pytest.param(os.path.join(dir_testinput,'ballenplot\\SDS-zd003b5dec2-sal.tek'), id='Kivu tek map more'),
                                       pytest.param(os.path.join(dir_testinput,'test_new.tek'), id='ts_Theo')])
 @pytest.mark.unittest
 def test_readpolygon(file_pol):
@@ -71,8 +71,8 @@ def test_readpolygon(file_pol):
     file_pol = 'p:\\11205258-006-kpp2020_rmm-g6\\C_Work\\04_randvoorwaarden\\keringen\\Maeslantkering\\Maeslant.tek'
     file_pol = os.path.join(dir_testinput,'Maeslant.tek')
     file_pol = os.path.join(dir_testinput,'test_new.tek')
-    file_pol = r'p:\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\063_netcdf\shorterperiod\ballenplot\0200a.tek'
-    file_pol = r'p:\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\063_netcdf\shorterperiod\ballenplot\SDS-zd003b5dec2-sal.tek'
+    file_pol = os.path.join(dir_testinput,'ballenplot\\0200a.tek')
+    file_pol = os.path.join(dir_testinput,'ballenplot\\SDS-zd003b5dec2-sal.tek')
 
     dir_output = './test_output'
     """
