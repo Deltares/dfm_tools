@@ -32,7 +32,7 @@ Created on Fri Feb 14 12:45:11 2020
 """
 
 
-def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None, station=None, multipart=None, get_linkedgridinfo=False, force_getalltimes=False):
+def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None, station=None, multipart=None, get_linkedgridinfo=False):
     """
 
     Parameters
@@ -102,7 +102,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
         time_length = data_nc_timevar.shape[0]
         retrieve_ids = False
         if timestep is str('all'):
-            data_nc_datetimes_pd = get_timesfromnc(file_nc, force_getalltimes=force_getalltimes) #get all times
+            data_nc_datetimes_pd = get_timesfromnc(file_nc) #get all times
             time_ids = range(len(data_nc_datetimes_pd))
         elif type(timestep) in listtype_range:
             if len(timestep) == 0:
@@ -112,19 +112,19 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
                 data_nc_datetimes_pd = get_timesfromnc(file_nc, retrieve_ids=retrieve_ids) #get selection of times
                 time_ids = timestep
             elif type(timestep[0]) in listtype_datetime:
-                data_nc_datetimes_pd = get_timesfromnc(file_nc, force_getalltimes=force_getalltimes) #get all times
+                data_nc_datetimes_pd = get_timesfromnc(file_nc) #get all times
                 time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, timestep)
             else:
                 raise Exception('ERROR: timestep variable type is list/range/ndarray (%s), but type of timestep[0] not anticipated (%s), options:\n - int\n - np.int64\n - datetime\n - np.datetime64'%(type(timestep),type(timestep[0])))
         elif type(timestep) in listtype_daterange:
-            data_nc_datetimes_pd = get_timesfromnc(file_nc, force_getalltimes=force_getalltimes) #get all times
+            data_nc_datetimes_pd = get_timesfromnc(file_nc) #get all times
             time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, timestep)
         elif type(timestep) in listtype_int:
             retrieve_ids = np.array(range(time_length))[[timestep]]
             data_nc_datetimes_pd = get_timesfromnc(file_nc, retrieve_ids=retrieve_ids) #get selection of times
             time_ids = [timestep]
         elif type(timestep) in listtype_datetime:
-            data_nc_datetimes_pd = get_timesfromnc(file_nc, force_getalltimes=force_getalltimes) #get all times
+            data_nc_datetimes_pd = get_timesfromnc(file_nc) #get all times
             time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, [timestep])
         else:
             raise Exception('ERROR: timestep variable type not anticipated (%s), options:\n - datetime/int\n - list/range/ndarray of datetime/int\n - pandas daterange\n - "all"'%(type(timestep)))
