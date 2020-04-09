@@ -1,7 +1,7 @@
 from __future__ import division
 import numpy as np
 import copy
-from .t_astron import t_astron
+from dfm_tools.ttide.t_astron import t_astron
 import os.path as path
 from scipy.io.netcdf import netcdf_file as nopen
 

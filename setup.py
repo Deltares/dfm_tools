@@ -44,7 +44,7 @@ setup(
     include_package_data=True,
     keywords='dfm_tools',
     name='dfm_tools',
-    packages=find_packages(),
+    packages=find_packages([dfm_tools, dfm_tools.io]),
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,

@@ -1,11 +1,11 @@
 from __future__ import division, print_function
 import numpy as np
 import scipy.interpolate as spi
-from .t_vuf import t_vuf
-from . import t_utils as tu
-from .base import TTideCon, t_predic
+from dfm_tools.ttide.t_vuf import t_vuf
+from dfm_tools.ttide import t_utils as tu
+from dfm_tools.ttide.base import TTideCon, t_predic
 import datetime
-from . import time as tm
+from dfm_tools.ttide import time as tm
 
 
 pi = np.pi

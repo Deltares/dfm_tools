@@ -2,8 +2,8 @@ from __future__ import division, print_function
 import numpy as np
 import scipy.signal as sps
 import sys
-from .t_getconsts import t_getconsts
-from . import time
+from dfm_tools.ttide.t_getconsts import t_getconsts
+from dfm_tools.ttide import time
 
 try:
     import pandas as pd
@@ -53,10 +53,10 @@ def constituents(minres, constit, shallow, infname, infref, centraltime):
         ju = np.flatnonzero(const['df'] >= minres)
     else:
         # Choose them all if > 18.6 years.
-        const, sat, cshallow = t_get18consts(centraltime)
+        const, sat, cshallow = t_getconsts(centraltime) #EDIT: was t_get18consts
 
         ju = np.array([range(2,
-                             (max(const['freq'].shape) + 1))]).reshape(1, -1).T
+                             (max(const['freq'].shape)   ))]).reshape(1, -1).T #EDIT: removed +1
         # Skip Z0
         for ff in range(1, 3):
             # loop twice to make sure of neightbouring pairs
@@ -141,7 +141,7 @@ def constituents(minres, constit, shallow, infname, infref, centraltime):
                     jref[(k - 1)] = j1
                     print('   Inference of ' + namei[(k - 1), :] +
                           ' using ' + nameu[(j1 - 1), :] + '\\n')
-        jinf[(isnan(jref) - 1)] = np.NaN
+        jinf[(np.isnan(jref) - 1)] = np.NaN
     return nameu, fu, ju, namei, fi, jinf, jref
 
 
@@ -163,7 +163,9 @@ def fixgaps(x):
     
     #find nonnans index numbers
     gd = np.flatnonzero(~bd)
-
+    
+    if len(gd) == 0:
+        raise Exception('ERROR: array with only nans provided, cannot continue')
     #ignore leading and trailing nans
     bd[:gd.min()]=False
     bd[(gd.max()+1):]=False
@@ -512,18 +514,18 @@ def classic_style(out):
         outstr += '        tidal amplitude and phase with 95 % CI estimates\n'
         outstr += (' tide      freq        amp      amp_err' +
                    '   pha      pha_err    snr\n')
-        fmt = ('{star} {name}  {fuk:9.7f}  '
-               '{c[0]:9.4f}  {c[1]:8.3f}  {c[2]:8.2f}  {c[3]:8.2f}  '
-               '{snr:8.2g}\n')
+        fmt = ('{star} {name}  {fuk:9.7f}  '+
+               '{c[0]:9.4f}  {c[1]:8.3f}  {c[2]:8.2f}  {c[3]:8.2f}  '+ #EDIT: replaced comma by +
+               '{snr:8.2g}\n')                                         #EDIT: replaced comma by +
         for k, fuk in enumerate(out['fu']):
             if out['snr'][k] > out['synth']:
                 star = '*'
             else:
                 star = ' '
             outstr += fmt.format(star=star,
-                                 name=out['nameu'][k].decode(enc),
-                                 fuk=fuk,
-                                 c=out['tidecon'][k],
+                                 name=out['nameu'][k][0].decode(enc),  #EDIT: added [0]
+                                 fuk=fuk[0],                           #EDIT: added [0]
+                                 c=out['tidecon'][k],    
                                  snr=out['snr'][k])
     return outstr
 

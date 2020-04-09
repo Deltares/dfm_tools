@@ -1,5 +1,5 @@
-from . import t_utils as tu
-from .t_predic import t_predic
+from dfm_tools.ttide import t_utils as tu
+from dfm_tools.ttide.t_predic import t_predic
 
 
 class TTideCon(dict):

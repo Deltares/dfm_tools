@@ -1,6 +1,6 @@
 from __future__ import division
 import numpy as np
-from . import time
+from dfm_tools.ttide import time
 
 
 def t_astron(jd):

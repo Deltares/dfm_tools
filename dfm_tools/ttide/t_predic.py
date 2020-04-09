@@ -1,8 +1,8 @@
 from __future__ import division
 import numpy as np
-from .t_getconsts import t_getconsts
-from .t_vuf import t_vuf
-from . import time as tm
+from dfm_tools.ttide.t_getconsts import t_getconsts
+from dfm_tools.ttide.t_vuf import t_vuf
+from dfm_tools.ttide import time as tm
 
 
 def t_predic(t_time, names, freq, tidecon,
