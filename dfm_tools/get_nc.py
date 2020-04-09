@@ -94,12 +94,13 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     if dimn_time not in nc_varobject.dimensions: #dimension time is not available in variable
         if timestep is not None:
             raise Exception('ERROR: netcdf file variable (%s) does not contain times, but parameter timestep is provided'%(varname))
-    else: #time is first dimension
+    else: #time dimension is present
         data_nc_timevar = data_nc.variables[dimn_time]
-        if timestep is None:
-            raise Exception('ERROR: netcdf variable contains a time dimension, but parameter timestep not provided (can be "all"), contents of variable:')#\n%s'(data_nc_timevar))
-        #convert timestep to list of int if it is not already
         time_length = data_nc_timevar.shape[0]
+        data_nc_datetimes_pd = get_timesfromnc(file_nc, retrieve_ids=[0,-1]) #get selection of times
+        if timestep is None:
+            raise Exception('ERROR: netcdf variable contains a time dimension, but parameter timestep not provided (can be "all"), contents of variable:\n%s\nretrieve entire times list:\nfrom dfm_tools.get_nc_helpers import get_timesfromnc; get_timesfromnc(file_nc=file_nc, retrieve_ids=False), where the argument retrieve_ids is optional and can be a list of time indices'%(pd.DataFrame(data_nc_datetimes_pd)))
+        #convert timestep to list of int if it is not already
         retrieve_ids = False
         if timestep is str('all'):
             data_nc_datetimes_pd = get_timesfromnc(file_nc) #get all times

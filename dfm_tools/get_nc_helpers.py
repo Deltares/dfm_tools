@@ -246,12 +246,15 @@ def get_timesfromnc(file_nc, retrieve_ids=False):
     data_nc = Dataset(file_nc)
     varname_time = get_varname_fromnc(data_nc,'time')
     data_nc_timevar = data_nc.variables[varname_time]
-    
+    time_length = data_nc_timevar.shape[0]
+
     if retrieve_ids is not False:
         print('reading time dimension: only requested indices')
         listtype_range = [list, range, np.ndarray]
         if type(retrieve_ids) not in listtype_range:
             raise Exception('ERROR: argument retrieve_ids should be a list')
+        if np.min(retrieve_ids) < 0: #convert -1 etc to highest index
+            retrieve_ids = np.array(range(time_length))[retrieve_ids]
         data_nc_times = data_nc_timevar[retrieve_ids]
     elif len(data_nc_timevar)<3: #check if time dimension is shorter than 3 items
         data_nc_times = data_nc_timevar[:]
