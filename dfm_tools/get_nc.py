@@ -129,11 +129,13 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
             time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, [timestep])
         else:
             raise Exception('ERROR: timestep variable type not anticipated (%s), options:\n - datetime/int\n - list/range/ndarray of datetime/int\n - pandas daterange\n - "all"'%(type(timestep)))
+        #convert to positive index
+        time_ids = np.array(range(time_length))[time_ids]
         #check if requested times are within range of netcdf
         if np.max(time_ids) > time_length-1:
             raise Exception('ERROR: requested maximum timestep (%d) is larger than available in netcdf file (%d)'%(np.max(time_ids),time_length-1))
-        if np.min(time_ids) < -time_length:
-            raise Exception('ERROR: requested minimum timestep (%d) is smaller than available in netcdf file (%d)'%(np.min(time_ids),-time_length))
+        #if np.min(time_ids) < -time_length:
+        #    raise Exception('ERROR: requested minimum timestep (%d) is smaller than available in netcdf file (%d)'%(np.min(time_ids),-time_length))
 
     
     #LAYER CHECKS
@@ -158,11 +160,13 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
             layer_ids = [layer]
         else:
             raise Exception('ERROR: timestep lay type not anticipated (%s), (list/range/ndarray of) int are accepted (or "all")'%(type(layer)))
+        #convert to positive index
+        layer_ids = np.array(range(nlayers))[layer_ids]
         #check if requested layers are within range of netcdf
         if np.max(layer_ids) > nlayers-1:
             raise Exception('ERROR: requested max layer (%d) is larger than available in netcdf file (%d)'%(np.max(layer_ids),nlayers-1))
-        if np.min(layer_ids) < -nlayers:
-            raise Exception('ERROR: requested min layer (%d) is larger than available in netcdf file (%d)'%(np.min(layer_ids),-nlayers))
+        #if np.min(layer_ids) < -nlayers:
+        #    raise Exception('ERROR: requested min layer (%d) is larger than available in netcdf file (%d)'%(np.min(layer_ids),-nlayers))
     
     #DEPTH CHECKS
     if depth is not None:
@@ -198,11 +202,13 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
             station_ids = get_stationid_fromstationlist(station_name_list_pd, [station], varname)
         else:
             raise Exception('ERROR2: station variable type not anticipated (%s), (list/range/ndarray of) strings or ints are accepted (or "all")'%(type(station)))
+        #convert to positive index
+        station_ids = np.array(range(len(station_name_list_pd)))[station_ids]
         #check if requested times are within range of netcdf
         if np.max(station_ids) > len(station_name_list_pd)-1:
             raise Exception('ERROR: requested highest station id (%d) is larger than available in netcdf file (%d)'%(np.max(station_ids),len(station_name_list_pd)-1))
-        if np.min(station_ids) < -len(station_name_list_pd):
-            raise Exception('ERROR: requested lowest station id (%d) is smaller than available in netcdf file (%d)'%(np.min(station_ids),-len(station_name_list_pd)))
+        #if np.min(station_ids) < -len(station_name_list_pd):
+        #    raise Exception('ERROR: requested lowest station id (%d) is smaller than available in netcdf file (%d)'%(np.min(station_ids),-len(station_name_list_pd)))
     
     
     #check faces existence, variable could have ghost cells if partitioned
