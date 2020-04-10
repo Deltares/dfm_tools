@@ -222,6 +222,7 @@ Feature wishlist
 	- plotting edges/nodes/faces and legend: https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/connectivity_example.ipynb
 	- add retrieve_netdata argument to get_ncmodeldata() which causes griddata to be retrieved as the second return variable (do this based on coodtinates / cf-conventions)?
 	- pcolor resulteert ook in een polycollection, net zoals handmatig wordt gedaan met plot_mapdata()
+	- implement kivu paper figure in testbank, since it correctly combines m/n corners with mapdata (including dummy row)
 - interactive data retrieval and plotting by calling get_ncmodeldata() without arguments
 
 
