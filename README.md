@@ -36,7 +36,7 @@ Features
 	- take over masks in original data
 - plotting:
 	- plot flexible mesh net/map variables as polycollections/patches
-	- plot regular grid variables with pcolor
+	- plot regular grid variables with pcolor (precise plotting is still work in progress)
 	- plot cartopy features (land, sea, landboundary, country borders, satellite background)
 	- plotting z,t-plots (see [Feature wishlist](#feature-wishlist) for known inaccuracies)
 	- plot anything you like and how you like it
