@@ -40,7 +40,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     file_nc : str
         path to netcdf file.
     varname : str, optional
-        string of netcdf variable name (standard_name?).
+        string of netcdf variable name (key/standard_name only?).
     timestep : TYPE, optional
         (list/range/ndarray of) 0-based int or datetime. Can be used to select one or more specific timesteps, or 'all'. The default is None.
     layer : TYPE, optional
@@ -129,23 +129,25 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
             time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, [timestep])
         else:
             raise Exception('ERROR: timestep variable type not anticipated (%s), options:\n - datetime/int\n - list/range/ndarray of datetime/int\n - pandas daterange\n - "all"'%(type(timestep)))
+        #convert to positive index
+        time_ids = np.array(range(time_length))[time_ids]
         #check if requested times are within range of netcdf
         if np.max(time_ids) > time_length-1:
             raise Exception('ERROR: requested maximum timestep (%d) is larger than available in netcdf file (%d)'%(np.max(time_ids),time_length-1))
-        if np.min(time_ids) < -time_length:
-            raise Exception('ERROR: requested minimum timestep (%d) is smaller than available in netcdf file (%d)'%(np.min(time_ids),-time_length))
+        #if np.min(time_ids) < -time_length:
+        #    raise Exception('ERROR: requested minimum timestep (%d) is smaller than available in netcdf file (%d)'%(np.min(time_ids),-time_length))
 
     
     #LAYER CHECKS
     dimn_layer = get_varname_fromnc(data_nc,'nmesh2d_layer')
     if dimn_layer not in nc_varobject.dimensions: #no layer dimension in model and/or variable
         if layer is not None:
-            raise Exception('ERROR: netcdf variable (%s) does not contain layers, but parameter layer is provided'%(varname))
+            raise Exception('ERROR: netcdf variable (%s) does not contain layers, but argument layer is provided'%(varname))
     else: #layers are present in variable
         dimn_layer_id = nc_varobject.dimensions.index(dimn_layer)
         nlayers = nc_varobject.shape[dimn_layer_id]
         if layer is None:
-            raise Exception('ERROR: netcdf variable contains a layer dimension, but parameter layer not provided (can be "all")\nnumber of layers: %d (numbered 0 to %d)'%(nlayers, nlayers-1))
+            raise Exception('ERROR: netcdf variable contains a layer dimension, but argument layer not provided (can be "all")\nnumber of layers: %d (numbered 0 to %d)'%(nlayers, nlayers-1))
         #convert layer to list of int if it is not already
         if layer is str('all'):
             layer_ids = range(nlayers)
@@ -153,16 +155,18 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
             if type(layer[0]) in listtype_int:
                 layer_ids = np.unique(layer)
             else:
-                raise Exception('ERROR: timestep lay type not anticipated (%s), (list/range/ndarray of) int are accepted (or "all")'%(type(layer)))            
+                raise Exception('ERROR: layer variable type not anticipated (%s), (list/range/ndarray of) int are accepted (or "all")'%(type(layer)))            
         elif type(layer) in listtype_int:
             layer_ids = [layer]
         else:
-            raise Exception('ERROR: timestep lay type not anticipated (%s), (list/range/ndarray of) int are accepted (or "all")'%(type(layer)))
+            raise Exception('ERROR: layer variable  lay type not anticipated (%s), (list/range/ndarray of) int are accepted (or "all")'%(type(layer)))
+        #convert to positive index
+        layer_ids = np.array(range(nlayers))[layer_ids]
         #check if requested layers are within range of netcdf
         if np.max(layer_ids) > nlayers-1:
             raise Exception('ERROR: requested max layer (%d) is larger than available in netcdf file (%d)'%(np.max(layer_ids),nlayers-1))
-        if np.min(layer_ids) < -nlayers:
-            raise Exception('ERROR: requested min layer (%d) is larger than available in netcdf file (%d)'%(np.min(layer_ids),-nlayers))
+        #if np.min(layer_ids) < -nlayers:
+        #    raise Exception('ERROR: requested min layer (%d) is larger than available in netcdf file (%d)'%(np.min(layer_ids),-nlayers))
     
     #DEPTH CHECKS
     if depth is not None:
@@ -176,12 +180,12 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     dimname_stat_validvals_boolpresent = [x in nc_varobject.dimensions for x in dimname_stat_validvals]
     if not any(dimname_stat_validvals_boolpresent):
         if station is not None:
-            raise Exception('ERROR: netcdf file variable (%s) does not contain stations/general_structures, but parameter station is provided'%(varname))
+            raise Exception('ERROR: netcdf file variable (%s) does not contain stations/general_structures, but argument station is provided'%(varname))
     else: #stations are present
         #get appropriate station list
         station_name_list_pd = get_hisstationlist(file_nc,varname=varname)
         if station is None:
-            raise Exception('ERROR: netcdf variable contains a station/general_structures dimension, but parameter station not provided (can be "all"), available stations/crs/generalstructures:\n%s\nretrieve entire station list:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist; get_hisstationlist(file_nc,varname="%s")'%(station_name_list_pd, varname))
+            raise Exception('ERROR: netcdf variable contains a station/general_structures dimension, but argument station not provided (can be "all"), available stations/crs/generalstructures:\n%s\nretrieve entire station list:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist; get_hisstationlist(file_nc,varname="%s")'%(station_name_list_pd, varname))
         #convert station to list of int if it is not already
         if station is str('all'):
             station_ids = range(len(station_name_list_pd))
@@ -198,11 +202,13 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
             station_ids = get_stationid_fromstationlist(station_name_list_pd, [station], varname)
         else:
             raise Exception('ERROR2: station variable type not anticipated (%s), (list/range/ndarray of) strings or ints are accepted (or "all")'%(type(station)))
+        #convert to positive index
+        station_ids = np.array(range(len(station_name_list_pd)))[station_ids]
         #check if requested times are within range of netcdf
         if np.max(station_ids) > len(station_name_list_pd)-1:
             raise Exception('ERROR: requested highest station id (%d) is larger than available in netcdf file (%d)'%(np.max(station_ids),len(station_name_list_pd)-1))
-        if np.min(station_ids) < -len(station_name_list_pd):
-            raise Exception('ERROR: requested lowest station id (%d) is smaller than available in netcdf file (%d)'%(np.min(station_ids),-len(station_name_list_pd)))
+        #if np.min(station_ids) < -len(station_name_list_pd):
+        #    raise Exception('ERROR: requested lowest station id (%d) is smaller than available in netcdf file (%d)'%(np.min(station_ids),-len(station_name_list_pd)))
     
     
     #check faces existence, variable could have ghost cells if partitioned

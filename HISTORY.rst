@@ -5,6 +5,8 @@ History
 0.x.x (date)
 ------------------
 * improved time dimension reading (more efficient when retrieving only a time-subset of a variable from a netCDF with long time dimension)
+* conversion of negative indices to positive
+* NOT YET: sort+ make unique
 
 0.7.6 (2020-04-06)
 ------------------
