@@ -34,6 +34,7 @@ Features
 	- selection/plotting by polyline/crossection (slicing the ugrid data)
 	- merge partitions and delete ghostcells automatically
 	- take over masks in original data
+	- retrieve/select any data you like and how you like it, including metadata consisting of retrieved timeids/datetimes, stationids/stationnames and layerids
 - plotting:
 	- plot flexible mesh net/map variables as polycollections/patches
 	- plot regular grid variables with pcolor (precise plotting is still work in progress)
@@ -136,7 +137,7 @@ Installation
 	- open command window (or anaconda prompt)
 	- ``conda create --name dfm_tools_env python=3.7 git spyder -y`` (creating a venv is recommended, but at least do ``conda install git`` if you choose not to)
 	- ``conda activate dfm_tools_env``
-	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this command installs all required packages and it also updates dfm_tools to the latest version if you already installed it before)
+	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this command installs dfm_tools and all required packages)
 	- ``conda install -c conda-forge "shapely>=1.7.0" -y`` (for slicing 2D/3D data) (conda-forge channel is necessary since main channel version is 1.6.4. The correct version is available via pip, but then geos dll is not properly linked, this will probably be solved in the future https://github.com/Toblerity/Shapely/issues/844)
 	- optional: ``conda install -c conda-forge cartopy -y`` (for satellite imagery on plots) (conda-forge channel recommended by cartopy developers, and currently also necessary for correct shapely version)
 - launch Spyder:
@@ -148,12 +149,14 @@ Installation
 - to update dfm_tools:
 	- open command window (or anaconda prompt)
 	- ``conda activate dfm_tools_env``
-	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git``
+	- ``python -m pip install --upgrade git+https://github.com/openearth/dfm_tools.git``
 
 
 Feature wishlist
 --------
 - merge station/layer/times checks, these parts of get_nc.py have a lot of overlap. also convert (list-likes of) int-likes to np.arrays so less checking is needed
+- sort layer/time/station ids after made positive (sort+unique), also do this in timeretrievefunction if indices are provided (otherwise order/size of var_times does potentially not correspond with actual data)
+- add warning that time variable can more easily be retrieved with get_timesfromnc() or so, this is more efficient since the raw time data is only retrieved once (unless you need that data itself).
 - add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?):
 	- refer depth w.r.t. reference level, water level or bed level
 	- see test_workinprogress.py
@@ -164,7 +167,7 @@ Feature wishlist
 	- support for mixed sigma/z layers?
 - plotting:
 	- simplify input of modplot.velovect() for curved vectors
-	- contour plot of surfaces (e.g. cotidal chart), with polycollection (FM grid) or regular grid, exclude 'land'
+	- contour plot of surfaces (e.g. cotidal chart), with polycollection (FM grid) or regular grid, exclude 'land' (shapely overlap between cells of two grids? or create polygon around all edges of original grid (also islands) and use that to cut the resulting regular grid)
 - improve z,t-plots from hisfile:
 	- example in test_get_nc.test_gethismodeldata()
 	- keep cen2cor(time_cen) definition?
@@ -182,8 +185,10 @@ Feature wishlist
 	- https://github.com/SciTools/cartopy/blob/master/lib/cartopy/data/raster/natural_earth/50-natural-earth-1-downsampled.png
 	- http://earthpy.org/cartopy_backgroung.html
 - add more io-functions:
+	- read/write matroos data
 	- convert data to kml (google earth) or shp?
 	- improve tekal map read
+	- add tekal mergedatasets function to get e.g. one ldb dataset with the original parts separated with nans
 	- add tekal write functions
 - add tidal analysis:
 	- https://github.com/sam-cox/pytides
@@ -220,9 +225,10 @@ Feature wishlist
 	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/OpenEarthTools/openearthtools/io/dflowfm/patch2tri.py (equivalent van MIA)
 	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/OpenEarthTools/openearthtools/io/netcdf
 	- plotting edges/nodes/faces and legend: https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/connectivity_example.ipynb
-	- add retrieve_netdata argument to get_ncmodeldata() which causes griddata to be retrieved as the second return variable (do this based on coodtinates / cf-conventions)?
+	- add retrieve_netdata argument to get_ncmodeldata() which causes griddata to be retrieved as the second return variable (do this based on coordinates / cf-conventions)?
 	- pcolor resulteert ook in een polycollection, net zoals handmatig wordt gedaan met plot_mapdata()
 	- implement kivu paper figure in testbank, since it correctly combines m/n corners with mapdata (including dummy row)
+	- possible to add pyugrid from github as dependency? in setup.py: install_requires=['python_world@git+https://github.com/ceddlyburge/python_world#egg=python_world-0.0.1',]
 - interactive data retrieval and plotting by calling get_ncmodeldata() without arguments
 
 
