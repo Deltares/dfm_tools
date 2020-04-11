@@ -34,13 +34,13 @@ Features
 	- selection/plotting by polyline/crossection (slicing the ugrid data)
 	- merge partitions and delete ghostcells automatically
 	- take over masks in original data
-	- retrieve/select any data you like and how you like it, including metadata consisting of retrieved timeids/datetimes, stationids/stationnames and layerids
+	- retrieve/select any data you want, including metadata consisting of retrieved timeids/datetimes, stationids/stationnames and layerids
 - plotting:
 	- plot flexible mesh net/map variables as polycollections/patches
 	- plot regular grid variables with pcolor (precise plotting is still work in progress)
 	- plot cartopy features (land, sea, landboundary, country borders, satellite background)
 	- plotting z,t-plots (see [Feature wishlist](#feature-wishlist) for known inaccuracies)
-	- plot anything you like and how you like it
+	- plot any data you want and exactly how you want it
 - other io functions:
 	- read tekal data (.tek, .pli, .pliz, .pol, .ldb)
 	- read/write mdu file
