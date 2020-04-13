@@ -253,8 +253,8 @@ def get_timesfromnc(file_nc, retrieve_ids=False):
         listtype_range = [list, range, np.ndarray]
         if type(retrieve_ids) not in listtype_range:
             raise Exception('ERROR: argument retrieve_ids should be a list')
-        if np.min(retrieve_ids) < 0: #convert -1 etc to highest index
-            retrieve_ids = np.array(range(time_length))[retrieve_ids]
+        #convert to positive index, make unique(+sort), convert to list because of indexing with np.array of len 1 errors sometimes
+        retrieve_ids = list(np.unique(np.array(range(time_length))[retrieve_ids]))
         data_nc_times = data_nc_timevar[retrieve_ids]
     elif len(data_nc_timevar)<3: #check if time dimension is shorter than 3 items
         data_nc_times = data_nc_timevar[:]

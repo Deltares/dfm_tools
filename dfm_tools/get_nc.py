@@ -87,7 +87,9 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     
     #CHECK IF VARNAME IS STATION NAMES (STRINGS), OFFER ALTERNATIVE RETRIEVAL METHOD
     if nc_varobject.dtype == '|S1':
-        warnings.warn('variable "%s" should be retrieved with separate function:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist; station_names = get_hisstationlist(file_nc=file_nc, varname="%s") (or use any varname there to retrieve corresponding station list)'%(varname,varname))
+        warnings.warn('variable "%s" should probably be retrieved with separate function:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist; station_names = get_hisstationlist(file_nc=file_nc, varname="%s") (or use any varname there to retrieve corresponding station list)'%(varname,varname))
+    if 'time' in varname.lower():
+        warnings.warn('variable "%s" should probably be retrieved with separate function:\nfrom dfm_tools.get_nc_helpers import get_timesfromnc; times = get_timesfromnc(file_nc=file_nc)'%(varname))
     
     #TIMES CHECKS
     dimn_time = get_varname_fromnc(data_nc,'time')
@@ -101,7 +103,6 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
         if timestep is None:
             raise Exception('ERROR: netcdf variable contains a time dimension, but parameter timestep not provided (can be "all"), first and last timestep:\n%s\nretrieve entire times list:\nfrom dfm_tools.get_nc_helpers import get_timesfromnc; get_timesfromnc(file_nc=file_nc, retrieve_ids=False), where the argument retrieve_ids is optional and can be a list of time indices'%(pd.DataFrame(data_nc_datetimes_pd)))
         #convert timestep to list of int if it is not already
-        retrieve_ids = False
         if timestep is str('all'):
             data_nc_datetimes_pd = get_timesfromnc(file_nc) #get all times
             time_ids = range(len(data_nc_datetimes_pd))
@@ -109,8 +110,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
             if len(timestep) == 0:
                 raise Exception('ERROR: timestep variable type is list/range/ndarray (%s), but it has no length'%(type(timestep)))
             elif type(timestep[0]) in listtype_int:
-                retrieve_ids = np.unique(np.array(range(time_length))[timestep])
-                data_nc_datetimes_pd = get_timesfromnc(file_nc, retrieve_ids=retrieve_ids) #get selection of times
+                data_nc_datetimes_pd = get_timesfromnc(file_nc, retrieve_ids=timestep) #get selection of times
                 time_ids = timestep
             elif type(timestep[0]) in listtype_datetime:
                 data_nc_datetimes_pd = get_timesfromnc(file_nc) #get all times
@@ -121,8 +121,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
             data_nc_datetimes_pd = get_timesfromnc(file_nc) #get all times
             time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, timestep)
         elif type(timestep) in listtype_int:
-            retrieve_ids = np.unique(np.array(range(time_length))[[timestep]])
-            data_nc_datetimes_pd = get_timesfromnc(file_nc, retrieve_ids=retrieve_ids) #get selection of times
+            data_nc_datetimes_pd = get_timesfromnc(file_nc, retrieve_ids=[timestep]) #get selection of times
             time_ids = [timestep]
         elif type(timestep) in listtype_datetime:
             data_nc_datetimes_pd = get_timesfromnc(file_nc) #get all times
@@ -283,10 +282,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     values_all.var_linkedgridinfo = values_dimlinkedgrid
     values_all.var_object = nc_varobject #this is the netcdf variable, so contains properties like shape/units/dimensions
     if dimn_time in nc_varobject.dimensions:
-        if retrieve_ids is False:
-            values_all.var_times = data_nc_datetimes_pd.iloc[time_ids]
-        else:
-            values_all.var_times = data_nc_datetimes_pd
+        values_all.var_times = data_nc_datetimes_pd
     else:
         values_all.var_times = None
     if dimn_layer in nc_varobject.dimensions:
