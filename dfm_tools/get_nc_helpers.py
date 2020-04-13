@@ -358,7 +358,9 @@ def get_hisstationlist(file_nc,varname):
                 var_station_names_pd[varname_stationvarname] = station_name_list
                 
         #get coordinates of stations (only works for stations, not for crs/gs since these variables have more than 1 dimension)
-        vars_pd_statlocs = vars_pd[(vars_pd['ndims']==1) & (vars_pd['dimensions'].astype(str).str.contains(varname_stationdimname_list[iSV]))]
+        #vars_pd_statlocs = vars_pd[(vars_pd['ndims']==1) & (vars_pd['dimensions'].astype(str).str.contains(varname_stationdimname_list[iSV]))] 
+        vars_pd_statlocs = vars_pd[(vars_pd['ndims']==1) & (vars_pd['dimensions'].apply(lambda x: varname_stationdimname_list[iSV] in x))]
+        
         coord_varnames = vars_pd_statlocs['nc_varkeys'].tolist()
         for iC, coord_varname in enumerate(coord_varnames):
             station_coordn = data_nc.variables[coord_varname]
