@@ -155,7 +155,6 @@ Installation
 Feature wishlist
 --------
 - merge station/layer/times checks, these parts of get_nc.py have a lot of overlap. also convert (list-likes of) int-likes to np.arrays so less checking is needed
-- add warning that time variable can more easily be retrieved with get_timesfromnc() or so, this is more efficient since the raw time data is only retrieved once (unless you need that data itself).
 - add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?):
 	- refer depth w.r.t. reference level, water level or bed level
 	- see test_workinprogress.py
