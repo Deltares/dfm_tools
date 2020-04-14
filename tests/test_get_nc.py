@@ -67,13 +67,14 @@ def test_getncmodeldata_indexcountmetadata():
     assert len(data_fromhis.var_layers) == 1
     assert len(data_fromhis.var_stations) == 1
     
-    data_fromhis = get_ncmodeldata(file_nc=file_his, varname='x_velocity', timestep=[1,0,1,4,3,2,0,1], layer=[5,3,0,5], station=['Mid inner area','Innersouth boundary','Innersouth boundary'])
-    assert len(data_fromhis.var_times) == 5
-    assert data_fromhis.var_times.index.tolist() == [0,1,2,3,4]
-    assert len(data_fromhis.var_layers) == 3
-    assert data_fromhis.var_layers == [0,3,5]
-    assert len(data_fromhis.var_stations) == 2
-    assert data_fromhis.var_stations.index.tolist() == [0,4]
+    #data_fromhis_all = get_ncmodeldata(file_nc=file_his, varname='x_velocity', timestep='all', layer='all', station='all')
+    data_fromhis = get_ncmodeldata(file_nc=file_his, varname='x_velocity', timestep=[1,0,-5,1,4,3,2,0,1,-1], layer=[5,-2,3,0,5], station=[4,-1,0,0])
+    assert len(data_fromhis.var_times) == 7
+    assert data_fromhis.var_times.index.tolist() == [0,1,2,3,4,2156,2160]
+    assert len(data_fromhis.var_layers) == 4
+    assert data_fromhis.var_layers == [0,3,5,8]
+    assert len(data_fromhis.var_stations) == 3
+    assert data_fromhis.var_stations.index.tolist() == [0,4,5]
     
     
 
