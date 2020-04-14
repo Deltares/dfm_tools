@@ -53,6 +53,34 @@ def test_getncmodeldata_timeid():
 
 
 @pytest.mark.unittest
+def test_getncmodeldata_indexcountmetadata():
+    from dfm_tools.get_nc import get_ncmodeldata
+    
+    #check if retrieving 1 index of data from 1 dimensional variable works (does not work if indices are np.arrays, so conversion to list in get_nc.py)
+    file_his = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\computations\run_161\DFM_OUTPUT_RMM_dflowfm\RMM_dflowfm_0000_his.nc'
+    data_statcoord = get_ncmodeldata(file_nc=file_his, varname='station_x_coordinate',station='NM_1005.26_R_HBR-Cl_VCS-Nieuwe-Maas-85m')
+    assert len(data_statcoord.var_stations) == 1
+    
+    file_his = os.path.join(dir_testinput,r'DFM_sigma_curved_bend\DFM_OUTPUT_cb_3d\cb_3d_his.nc')
+    data_fromhis = get_ncmodeldata(file_nc=file_his, varname='x_velocity', timestep=1, layer=5, station='Innersouth boundary')#, multipart=False)
+    assert len(data_fromhis.var_times) == 1
+    assert len(data_fromhis.var_layers) == 1
+    assert len(data_fromhis.var_stations) == 1
+    
+    #data_fromhis_all = get_ncmodeldata(file_nc=file_his, varname='x_velocity', timestep='all', layer='all', station='all')
+    data_fromhis = get_ncmodeldata(file_nc=file_his, varname='x_velocity', timestep=[1,0,-5,1,4,3,2,0,1,-1], layer=[5,-2,3,0,5], station=[4,-1,0,0])
+    assert len(data_fromhis.var_times) == 7
+    assert data_fromhis.var_times.index.tolist() == [0,1,2,3,4,2156,2160]
+    assert len(data_fromhis.var_layers) == 4
+    assert data_fromhis.var_layers == [0,3,5,8]
+    assert len(data_fromhis.var_stations) == 3
+    assert data_fromhis.var_stations.index.tolist() == [0,4,5]
+    
+    
+
+
+
+@pytest.mark.unittest
 def test_getncmodeldata_datetime():
     import numpy as np
     import datetime as dt

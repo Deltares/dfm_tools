@@ -253,8 +253,8 @@ def get_timesfromnc(file_nc, retrieve_ids=False):
         listtype_range = [list, range, np.ndarray]
         if type(retrieve_ids) not in listtype_range:
             raise Exception('ERROR: argument retrieve_ids should be a list')
-        if np.min(retrieve_ids) < 0: #convert -1 etc to highest index
-            retrieve_ids = np.array(range(time_length))[retrieve_ids]
+        #convert to positive index, make unique(+sort), convert to list because of indexing with np.array of len 1 errors sometimes
+        retrieve_ids = list(np.unique(np.array(range(time_length))[retrieve_ids]))
         data_nc_times = data_nc_timevar[retrieve_ids]
     elif len(data_nc_timevar)<3: #check if time dimension is shorter than 3 items
         data_nc_times = data_nc_timevar[:]
@@ -358,7 +358,9 @@ def get_hisstationlist(file_nc,varname):
                 var_station_names_pd[varname_stationvarname] = station_name_list
                 
         #get coordinates of stations (only works for stations, not for crs/gs since these variables have more than 1 dimension)
-        vars_pd_statlocs = vars_pd[(vars_pd['ndims']==1) & (vars_pd['dimensions'].astype(str).str.contains(varname_stationdimname_list[iSV]))]
+        #vars_pd_statlocs = vars_pd[(vars_pd['ndims']==1) & (vars_pd['dimensions'].astype(str).str.contains(varname_stationdimname_list[iSV]))] 
+        vars_pd_statlocs = vars_pd[(vars_pd['ndims']==1) & (vars_pd['dimensions'].apply(lambda x: varname_stationdimname_list[iSV] in x))]
+        
         coord_varnames = vars_pd_statlocs['nc_varkeys'].tolist()
         for iC, coord_varname in enumerate(coord_varnames):
             station_coordn = data_nc.variables[coord_varname]
