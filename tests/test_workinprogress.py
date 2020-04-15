@@ -92,45 +92,58 @@ def test_delft3D_netcdf():
     from dfm_tools.get_nc import get_ncmodeldata#, get_netdata, plot_netmapdata
     from dfm_tools.get_nc_helpers import get_ncvardimlist, get_hisstationlist#, get_varname_fromnc
     from dfm_tools.regulargrid import uva2xymagdeg
+    from dfm_tools.io.polygon import Polygon
 
-    file_nc = r'p:\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\063_netcdf\trim-thiery_002_coarse.nc'
+    file_ldb = r'p:\1220688-lake-kivu\3_modelling\1_FLOW\4_CH4_CO2_included\008\lake_kivu_geo.ldb'
+    data_ldb = Polygon.fromfile(file_ldb, pd_output=True)
+
+    file_nc = r'p:\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\062_netcdf\trim-thiery_002_coarse.nc'
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
     
     data_nc_XZ = get_ncmodeldata(file_nc=file_nc, varname='XZ')
     data_nc_YZ = get_ncmodeldata(file_nc=file_nc, varname='YZ')
     data_nc_ALFAS = get_ncmodeldata(file_nc=file_nc, varname='ALFAS') #contains rotation of all cells wrt real world
-    data_nc_U1 = get_ncmodeldata(file_nc=file_nc, varname='U1',timestep='all',layer='all')
-    data_nc_V1 = get_ncmodeldata(file_nc=file_nc, varname='V1',timestep='all',layer='all')
     #data_nc_S1 = get_ncmodeldata(file_nc=file_nc, varname='S1',timestep='all')
     data_nc_QNET = get_ncmodeldata(file_nc=file_nc, varname='QNET',timestep='all')
     data_nc_DPV0 = get_ncmodeldata(file_nc=file_nc, varname='DPV0')
     #data_nc_QEVA = get_ncmodeldata(file_nc=file_nc, varname='QEVA',timestep='all')
     
     mask_XY = (data_nc_XZ==0) & (data_nc_YZ==0)
-    mask_U = data_nc_U1==-999.
-    mask_V = data_nc_V1==-999.
-    #mask_U = (get_ncmodeldata(file_nc=file_nc, varname='KCU')==0)
-    #mask_V = (get_ncmodeldata(file_nc=file_nc, varname='KCV')==0)
     data_nc_XZ[mask_XY] = np.nan
     data_nc_YZ[mask_XY] = np.nan
-    data_nc_U1[mask_U] = np.nan
-    data_nc_V1[mask_V] = np.nan
-    #masking should work but quiver does not read masks for X and Y, so use own
-    #data_nc_XZ.mask = mask_XY
-    #data_nc_YZ.mask = mask_XY
-    #data_nc_U1.mask = mask_U
-    #data_nc_V1.mask = mask_V
+    data_nc_XCOR = get_ncmodeldata(file_nc=file_nc, varname='XCOR')
+    data_nc_YCOR = get_ncmodeldata(file_nc=file_nc, varname='YCOR')
+    mask_XYCOR = (data_nc_XCOR<=-999.999) & (data_nc_YCOR<=-999.999)
+    data_nc_XCOR[mask_XYCOR] = np.nan
+    data_nc_YCOR[mask_XYCOR] = np.nan
+    
+    
+    layno=-2
+    data_nc_U1 = get_ncmodeldata(file_nc=file_nc, varname='U1',timestep='all',layer=layno)
+    data_nc_V1 = get_ncmodeldata(file_nc=file_nc, varname='V1',timestep='all',layer=layno)
+    #data_nc_KCU = get_ncmodeldata(file_nc=file_nc, varname='KCU')
+    #data_nc_KCV = get_ncmodeldata(file_nc=file_nc, varname='KCV')
+    #filter dry/inactive cells
+    mask_UV = (data_nc_U1==-999.) & (data_nc_V1==-999.)
+    data_nc_U1[mask_UV] = np.nan
+    data_nc_V1[mask_UV] = np.nan
+    #data_nc_U1[:,:,data_nc_KCU==0] = np.nan
+    #data_nc_V1[:,:,data_nc_KCV==0] = np.nan
+    #set remaining fill_values to 0 to make magnitude calculations possible if u OR v is nonan
+    data_nc_U1[(data_nc_U1==-999.)] = 0
+    data_nc_V1[(data_nc_V1==-999.)] = 0
+
     
     fig, ax = plt.subplots()
-    ax.plot(data_nc_XZ,data_nc_YZ,'-b',linewidth=0.2)
-    ax.plot(data_nc_XZ.T,data_nc_YZ.T,'-b',linewidth=0.2)
+    ax.plot(data_nc_XCOR,data_nc_YCOR,'-b',linewidth=0.2)
+    ax.plot(data_nc_XCOR.T,data_nc_YCOR.T,'-b',linewidth=0.2)
     ax.set_aspect('equal')
     plt.savefig(os.path.join(dir_output,'kivu_mesh'))
     
     fig, axs = plt.subplots(1,3, figsize=(16,7))
     for iT, timestep in enumerate([1,10,15]):
         ax=axs[iT]
-        vel_x, vel_y, vel_magn, direction_naut_deg = uva2xymagdeg(U1=data_nc_U1[timestep,90,:,:],V1=data_nc_V1[timestep,90,:,:],ALFAS=data_nc_ALFAS)
+        vel_x, vel_y, vel_magn, direction_naut_deg = uva2xymagdeg(U1=data_nc_U1[timestep,0,:,:],V1=data_nc_V1[timestep,0,:,:],ALFAS=data_nc_ALFAS)
         #pc = ax.pcolor(data_nc_XZ,data_nc_YZ,direction_naut_deg,cmap='jet')
         #pc.set_clim([0,360])
         pc = ax.pcolor(data_nc_XZ,data_nc_YZ,vel_magn,cmap='jet')
@@ -147,7 +160,7 @@ def test_delft3D_netcdf():
     fig, axs = plt.subplots(1,3, figsize=(16,7))
     for iT, timestep in enumerate([1,10,15]):
         ax=axs[iT]
-        vel_x, vel_y, vel_magn, direction_naut_deg = uva2xymagdeg(U1=data_nc_U1[timestep,90,:,:],V1=data_nc_V1[timestep,90,:,:],ALFAS=data_nc_ALFAS)
+        vel_x, vel_y, vel_magn, direction_naut_deg = uva2xymagdeg(U1=data_nc_U1[timestep,0,:,:],V1=data_nc_V1[timestep,0,:,:],ALFAS=data_nc_ALFAS)
         #pc = ax.pcolor(data_nc_XZ,data_nc_YZ,vel_magn,cmap='jet')
         ax.set_title('t=%d (%s)'%(timestep, data_nc_U1.var_times.iloc[timestep]))
         ax.set_aspect('equal')
@@ -180,6 +193,53 @@ def test_delft3D_netcdf():
     ax.set_aspect('equal')
     fig.tight_layout()
     plt.savefig(os.path.join(dir_output,'kivu_bedlevel'))
+    
+    
+    #MAP VELOCITIES QP TEST
+    ncols = 2
+    timestep = -1
+    fig, axs = plt.subplots(1,ncols, figsize=(10,6.4), sharey=True, sharex=True)#, subplot_kw={'projection': ccrs.PlateCarree()})
+    if data_nc_U1.var_layers[0]==90:
+        var_clim = [0,0.15]
+        scalefac = 1
+        vecwidth = 0.006
+    elif data_nc_U1.var_layers[0]==47:
+        var_clim = [0,0.015]
+        scalefac = 0.09
+        vecwidth = 0.006
+    else:
+        raise Exception('invalid layer')
+    for iP, method in enumerate(['old',None]):
+        id0 = int(np.floor(iP/ncols))
+        id1 = iP%ncols
+        #print('[%s,%s]'%(id0,id1))
+        ax=axs[id1]
+        vel_x, vel_y, vel_magn, direction_naut_deg = uva2xymagdeg(U1=data_nc_U1[timestep,0,:,:],
+                                                                  V1=data_nc_V1[timestep,0,:,:],ALFAS=data_nc_ALFAS,method=method)
+        pc = ax.pcolor(data_nc_XCOR,data_nc_YCOR,vel_magn[1:,1:],cmap='jet')
+        pc.set_clim(var_clim)
+        cbar = fig.colorbar(pc, ax=ax, ticks=np.linspace(var_clim[0],var_clim[1],6))
+        cbar.set_label('[%s]'%(data_nc_U1.var_object.units))
+        thin = 3
+        #ax.quiver(data_nc_XZ[::thin,::thin], data_nc_YZ[::thin,::thin], vel_x[::thin,::thin], vel_y[::thin,::thin], 
+        #          scale=scalefac,color='w',width=vecwidth, headwidth=5, headlength=7, minshaft=1.1, minlength=1.1)#, edgecolor='face', cmap='jet')
+        ax.plot(data_ldb[0].loc[:,0], data_ldb[0].loc[:,1], 'k', linewidth=0.7)
+        ax.grid(alpha=0.4)
+    
+        ax.set_ylabel('Latitude [\xb0]', labelpad=-0.5)
+        ax.set_aspect(1./np.cos(np.mean(ax.get_ylim())/180*np.pi),adjustable='box')
+        ax.set_xlabel('Longitude [\xb0]')
+        lim_x = [28.82,29.38]
+        lim_y = [-2.51,-1.58]
+        ax.set_xlim(lim_x)
+        ax.set_ylim(lim_y)
+        ax.plot(data_nc_XCOR,data_nc_YCOR,'-b',linewidth=0.2)
+        ax.plot(data_nc_XCOR.T,data_nc_YCOR.T,'-b',linewidth=0.2)
+    fig.tight_layout()
+    plt.savefig(os.path.join(dir_output,'kivu_velocity_pcolor_QPtest'))
+    
+    
+    
 
 
     #FROM HIS data
