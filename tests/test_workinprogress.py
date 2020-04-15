@@ -208,13 +208,14 @@ def test_delft3D_netcdf():
     
     data_nc_XZ = get_ncmodeldata(file_nc=file_nc, varname='XZ')
     data_nc_YZ = get_ncmodeldata(file_nc=file_nc, varname='YZ')
-    #data_nc_XCOR = get_ncmodeldata(file_nc=file_nc, varname='XCOR')
-    #data_nc_YCOR = get_ncmodeldata(file_nc=file_nc, varname='YCOR')
+    data_nc_XCOR = get_ncmodeldata(file_nc=file_nc, varname='XCOR')
+    data_nc_YCOR = get_ncmodeldata(file_nc=file_nc, varname='YCOR')
     data_nc_ALFAS = get_ncmodeldata(file_nc=file_nc, varname='ALFAS') #contains rotation of all cells wrt real world
     data_nc_U1 = get_ncmodeldata(file_nc=file_nc, varname='U1',timestep='all',layer='all')
     data_nc_V1 = get_ncmodeldata(file_nc=file_nc, varname='V1',timestep='all',layer='all')
     #data_nc_S1 = get_ncmodeldata(file_nc=file_nc, varname='S1',timestep='all')
     
+        
     mask_XY = (data_nc_XZ==0) & (data_nc_YZ==0)
     #mask_U = data_nc_U1==-999.
     #mask_V = data_nc_V1==-999.
@@ -230,10 +231,18 @@ def test_delft3D_netcdf():
     #data_nc_U1.mask = mask_U
     #data_nc_V1.mask = mask_V
     
+    mask_XYCOR = (data_nc_XCOR==0) & (data_nc_YCOR==0)
+    data_nc_XCOR[mask_XYCOR] = np.nan
+    data_nc_YCOR[mask_XYCOR] = np.nan
+
     fig, ax = plt.subplots()
     ax.plot(data_nc_XZ,data_nc_YZ,'-b',linewidth=0.2)
     ax.plot(data_nc_XZ.T,data_nc_YZ.T,'-b',linewidth=0.2)
     ax.set_aspect('equal')
+    lim_x = [0,4100]
+    lim_y = [0,4100]
+    ax.set_xlim(lim_x)
+    ax.set_ylim(lim_y)
     plt.savefig(os.path.join(dir_output,'curvedbend_mesh'))
     
     txt_abcd = 'abcdefgh'
@@ -246,13 +255,12 @@ def test_delft3D_netcdf():
         id1 = iT%ncols
         #print('[%s,%s]'%(id0,id1))
         ax=axs[id0,id1]
-        vel_x, vel_y, vel_magn, direction_naut_deg = uva2xymagdeg(u=data_nc_U1[timestep,9,:,:],v=data_nc_V1[timestep,9,:,:],alpha=data_nc_ALFAS)
+        vel_x, vel_y, vel_magn, direction_naut_deg = uva2xymagdeg(U1=data_nc_U1[timestep,9,:,:],V1=data_nc_V1[timestep,9,:,:],ALFAS=data_nc_ALFAS)
         pc = ax.pcolor(data_nc_XZ,data_nc_YZ,vel_magn,cmap='jet')
         pc.set_clim(var_clim)
         #cbar = fig.colorbar(pc, ax=ax)
         #cbar.set_label('velocity magnitude (%s)'%(data_nc_U1.var_object.units))
         #ax.set_title('t=%d (%s)'%(timestep, data_nc_U1.var_times.iloc[timestep]))
-        ax.text(lim_x[0]+0.02*np.diff(lim_x), lim_y[0]+0.95*np.diff(lim_y), '%s) t=%d (%s)'%(txt_abcd[iT],timestep, data_nc_U1.var_times.iloc[timestep]),fontweight='bold',fontsize=12)
         ax.set_aspect('equal')
         ax.quiver(data_nc_XZ[::2,::2], data_nc_YZ[::2,::2], vel_x[::2,::2], vel_y[::2,::2],
                   scale=8,color='w',width=0.005)#, edgecolor='face', cmap='jet')
@@ -272,6 +280,7 @@ def test_delft3D_netcdf():
         lim_y = [0,4100]
         ax.set_xlim(lim_x)
         ax.set_ylim(lim_y)
+        ax.text(lim_x[0]+0.02*np.diff(lim_x), lim_y[0]+0.95*np.diff(lim_y), '%s) t=%d (%s)'%(txt_abcd[iT],timestep, data_nc_U1.var_times.iloc[timestep]),fontweight='bold',fontsize=12)
     fig.tight_layout()
     #additional figure formatting to tweak the details
     plt.subplots_adjust(left=0.07, right=0.90, bottom=0.065, top=0.95, wspace=0.03, hspace=0.04)
@@ -280,6 +289,23 @@ def test_delft3D_netcdf():
     #cbar_ax.set_xlabel('[%s]'%(data_nc_U1.var_object.units))
     cbar_ax.set_ylabel('velocity magnitude [%s]'%(data_nc_U1.var_object.units))
     plt.savefig(os.path.join(dir_output,'curvedbend_velocity_pcolor'))
+
+
+    fig, ax = plt.subplots()
+    timestep = 4
+    vel_x, vel_y, vel_magn, direction_naut_deg = uva2xymagdeg(U1=data_nc_U1[timestep,9,:,:],V1=data_nc_V1[timestep,9,:,:],ALFAS=data_nc_ALFAS, method='Bert')
+    pc = ax.pcolor(data_nc_XCOR,data_nc_YCOR,vel_magn,cmap='jet')
+    pc.set_clim([0, 1.2])
+    cbar = fig.colorbar(pc, ax=ax)
+    ax.set_title('t=%d (%s)'%(timestep, data_nc_U1.var_times.iloc[timestep]))
+    ax.set_aspect('equal')
+    #ax.quiver(data_nc_XZ[::2,::2], data_nc_YZ[::2,::2], vel_x[::2,::2], vel_y[::2,::2],
+    #          scale=8,color='w',width=0.005)#, edgecolor='face', cmap='jet')
+    ax.set_xlim([0,4100])
+    ax.set_ylim([0,4100])
+    fig.tight_layout()
+    plt.savefig(os.path.join(dir_output,'curvedbend_velocity_pcolor_QPtest'))
+
 
 
     #FROM HIS data curvedbend
