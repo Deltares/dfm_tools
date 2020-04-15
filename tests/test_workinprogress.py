@@ -208,6 +208,8 @@ def test_delft3D_netcdf():
     
     data_nc_XZ = get_ncmodeldata(file_nc=file_nc, varname='XZ')
     data_nc_YZ = get_ncmodeldata(file_nc=file_nc, varname='YZ')
+    #data_nc_XCOR = get_ncmodeldata(file_nc=file_nc, varname='XCOR')
+    #data_nc_YCOR = get_ncmodeldata(file_nc=file_nc, varname='YCOR')
     data_nc_ALFAS = get_ncmodeldata(file_nc=file_nc, varname='ALFAS') #contains rotation of all cells wrt real world
     data_nc_U1 = get_ncmodeldata(file_nc=file_nc, varname='U1',timestep='all',layer='all')
     data_nc_V1 = get_ncmodeldata(file_nc=file_nc, varname='V1',timestep='all',layer='all')
@@ -234,23 +236,49 @@ def test_delft3D_netcdf():
     ax.set_aspect('equal')
     plt.savefig(os.path.join(dir_output,'curvedbend_mesh'))
     
-    ncol=2
-    fig, axs = plt.subplots(2,ncol, figsize=(10,8))
+    txt_abcd = 'abcdefgh'
+    var_clim = [0,1.2]
+    ncols=2
+    fig, axs = plt.subplots(2,ncols, figsize=(8.6,8))
+    fig.suptitle('velocity magnitude on four times')
     for iT, timestep in enumerate([0,1,2,4]):
-        id0 = int(np.floor(iT/ncol))
-        id1 = iT%ncol
+        id0 = int(np.floor(iT/ncols))
+        id1 = iT%ncols
         #print('[%s,%s]'%(id0,id1))
         ax=axs[id0,id1]
         vel_x, vel_y, vel_magn, direction_naut_deg = uva2xymagdeg(u=data_nc_U1[timestep,9,:,:],v=data_nc_V1[timestep,9,:,:],alpha=data_nc_ALFAS)
         pc = ax.pcolor(data_nc_XZ,data_nc_YZ,vel_magn,cmap='jet')
-        pc.set_clim([0,1.2])
-        cbar = fig.colorbar(pc, ax=ax)
-        cbar.set_label('velocity magnitude (%s)'%(data_nc_U1.var_object.units))
-        ax.set_title('t=%d (%s)'%(timestep, data_nc_U1.var_times.iloc[timestep]))
+        pc.set_clim(var_clim)
+        #cbar = fig.colorbar(pc, ax=ax)
+        #cbar.set_label('velocity magnitude (%s)'%(data_nc_U1.var_object.units))
+        #ax.set_title('t=%d (%s)'%(timestep, data_nc_U1.var_times.iloc[timestep]))
+        ax.text(lim_x[0]+0.02*np.diff(lim_x), lim_y[0]+0.95*np.diff(lim_y), '%s) t=%d (%s)'%(txt_abcd[iT],timestep, data_nc_U1.var_times.iloc[timestep]),fontweight='bold',fontsize=12)
         ax.set_aspect('equal')
         ax.quiver(data_nc_XZ[::2,::2], data_nc_YZ[::2,::2], vel_x[::2,::2], vel_y[::2,::2],
                   scale=8,color='w',width=0.005)#, edgecolor='face', cmap='jet')
+        #additional figure formatting to tweak the details
+        ax.grid(alpha=0.4)
+        if id1 != 0:
+            ax.get_yaxis().set_ticklabels([])
+        else:
+            ax.set_ylabel('y dist', labelpad=-0.5)
+        if id0 == 0:
+            ax.get_xaxis().set_ticklabels([])
+        else:
+            ax.set_xlabel('x dist')
+        ax.tick_params(axis='x', labelsize=9)
+        ax.tick_params(axis='y', labelsize=9)
+        lim_x = [0,4100]
+        lim_y = [0,4100]
+        ax.set_xlim(lim_x)
+        ax.set_ylim(lim_y)
     fig.tight_layout()
+    #additional figure formatting to tweak the details
+    plt.subplots_adjust(left=0.07, right=0.90, bottom=0.065, top=0.95, wspace=0.03, hspace=0.04)
+    cbar_ax = fig.add_axes([0.91, 0.065, 0.02, 0.885])
+    cbar = fig.colorbar(pc, cax=cbar_ax, ticks=np.linspace(var_clim[0],var_clim[1],7))
+    #cbar_ax.set_xlabel('[%s]'%(data_nc_U1.var_object.units))
+    cbar_ax.set_ylabel('velocity magnitude [%s]'%(data_nc_U1.var_object.units))
     plt.savefig(os.path.join(dir_output,'curvedbend_velocity_pcolor'))
 
 
@@ -273,7 +301,9 @@ def test_delft3D_netcdf():
 
 
 
-    
+
+
+
  
 
 #WARNING: this is excluded from the testbench, since Delft3D models that were converted with getdata.pl sometimes give corrupt variables (see comments in code for details). NEFIS conversion is not fully up to date in getdata.pl, whereas WAQUA conversion is. it is recommended to rerun your Delft3D model with netCDF output instead.

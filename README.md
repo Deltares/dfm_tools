@@ -184,7 +184,7 @@ Feature wishlist
 	- http://earthpy.org/cartopy_backgroung.html
 - add more io-functions:
 	- read/write matroos data
-	- convert data to kml (google earth) or shp?
+	- convert data to kml (google earth) or shp? (including RD to WGS84 conversion and maybe vice versa)
 	- improve tekal map read
 	- add tekal mergedatasets function to get e.g. one ldb dataset with the original parts separated with nans
 	- add tekal write functions
