@@ -130,7 +130,7 @@ def test_delft3D_netcdf():
     fig, axs = plt.subplots(1,3, figsize=(16,7))
     for iT, timestep in enumerate([1,10,15]):
         ax=axs[iT]
-        vel_x, vel_y, vel_magn, direction_naut_deg = uva2xymagdeg(u=data_nc_U1[timestep,90,:,:],v=data_nc_V1[timestep,90,:,:],alpha=data_nc_ALFAS)
+        vel_x, vel_y, vel_magn, direction_naut_deg = uva2xymagdeg(U1=data_nc_U1[timestep,90,:,:],V1=data_nc_V1[timestep,90,:,:],ALFAS=data_nc_ALFAS)
         #pc = ax.pcolor(data_nc_XZ,data_nc_YZ,direction_naut_deg,cmap='jet')
         #pc.set_clim([0,360])
         pc = ax.pcolor(data_nc_XZ,data_nc_YZ,vel_magn,cmap='jet')
@@ -147,7 +147,7 @@ def test_delft3D_netcdf():
     fig, axs = plt.subplots(1,3, figsize=(16,7))
     for iT, timestep in enumerate([1,10,15]):
         ax=axs[iT]
-        vel_x, vel_y, vel_magn, direction_naut_deg = uva2xymagdeg(u=data_nc_U1[timestep,90,:,:],v=data_nc_V1[timestep,90,:,:],alpha=data_nc_ALFAS)
+        vel_x, vel_y, vel_magn, direction_naut_deg = uva2xymagdeg(U1=data_nc_U1[timestep,90,:,:],V1=data_nc_V1[timestep,90,:,:],ALFAS=data_nc_ALFAS)
         #pc = ax.pcolor(data_nc_XZ,data_nc_YZ,vel_magn,cmap='jet')
         ax.set_title('t=%d (%s)'%(timestep, data_nc_U1.var_times.iloc[timestep]))
         ax.set_aspect('equal')
@@ -236,8 +236,8 @@ def test_delft3D_netcdf():
     data_nc_YCOR[mask_XYCOR] = np.nan
 
     fig, ax = plt.subplots()
-    ax.plot(data_nc_XZ,data_nc_YZ,'-b',linewidth=0.2)
-    ax.plot(data_nc_XZ.T,data_nc_YZ.T,'-b',linewidth=0.2)
+    ax.plot(data_nc_XCOR,data_nc_YCOR,'-b',linewidth=0.2)
+    ax.plot(data_nc_XCOR.T,data_nc_YCOR.T,'-b',linewidth=0.2)
     ax.set_aspect('equal')
     lim_x = [0,4100]
     lim_y = [0,4100]
@@ -256,14 +256,16 @@ def test_delft3D_netcdf():
         #print('[%s,%s]'%(id0,id1))
         ax=axs[id0,id1]
         vel_x, vel_y, vel_magn, direction_naut_deg = uva2xymagdeg(U1=data_nc_U1[timestep,9,:,:],V1=data_nc_V1[timestep,9,:,:],ALFAS=data_nc_ALFAS)
-        pc = ax.pcolor(data_nc_XZ,data_nc_YZ,vel_magn,cmap='jet')
+        pc = ax.pcolor(data_nc_XCOR,data_nc_YCOR,vel_magn[1:,1:],cmap='jet')
         pc.set_clim(var_clim)
         #cbar = fig.colorbar(pc, ax=ax)
         #cbar.set_label('velocity magnitude (%s)'%(data_nc_U1.var_object.units))
         #ax.set_title('t=%d (%s)'%(timestep, data_nc_U1.var_times.iloc[timestep]))
         ax.set_aspect('equal')
         ax.quiver(data_nc_XZ[::2,::2], data_nc_YZ[::2,::2], vel_x[::2,::2], vel_y[::2,::2],
-                  scale=8,color='w',width=0.005)#, edgecolor='face', cmap='jet')
+                  scale=15,color='w',width=0.005)#, edgecolor='face', cmap='jet')
+        ax.plot(data_nc_XCOR,data_nc_YCOR,'-b',linewidth=0.2)
+        ax.plot(data_nc_XCOR.T,data_nc_YCOR.T,'-b',linewidth=0.2)
         #additional figure formatting to tweak the details
         ax.grid(alpha=0.4)
         if id1 != 0:
@@ -293,14 +295,18 @@ def test_delft3D_netcdf():
 
     fig, ax = plt.subplots()
     timestep = 4
-    vel_x, vel_y, vel_magn, direction_naut_deg = uva2xymagdeg(U1=data_nc_U1[timestep,9,:,:],V1=data_nc_V1[timestep,9,:,:],ALFAS=data_nc_ALFAS, method='Bert')
-    pc = ax.pcolor(data_nc_XCOR,data_nc_YCOR,vel_magn,cmap='jet')
+    vel_x, vel_y, vel_magn, direction_naut_deg = uva2xymagdeg(U1=data_nc_U1[timestep,9,:,:],V1=data_nc_V1[timestep,9,:,:],ALFAS=data_nc_ALFAS)
+    pc = ax.pcolor(data_nc_XCOR,data_nc_YCOR,vel_magn[1:,1:],cmap='jet')
     pc.set_clim([0, 1.2])
     cbar = fig.colorbar(pc, ax=ax)
     ax.set_title('t=%d (%s)'%(timestep, data_nc_U1.var_times.iloc[timestep]))
     ax.set_aspect('equal')
     #ax.quiver(data_nc_XZ[::2,::2], data_nc_YZ[::2,::2], vel_x[::2,::2], vel_y[::2,::2],
-    #          scale=8,color='w',width=0.005)#, edgecolor='face', cmap='jet')
+    #          scale=15,color='w',width=0.005)#, edgecolor='face', cmap='jet')
+    #ax.quiver(data_nc_XZ, data_nc_YZ, vel_x, vel_y,
+    #          scale=25,color='w',width=0.003)#, edgecolor='face', cmap='jet')
+    ax.plot(data_nc_XCOR,data_nc_YCOR,'-b',linewidth=0.2)
+    ax.plot(data_nc_XCOR.T,data_nc_YCOR.T,'-b',linewidth=0.2)
     ax.set_xlim([0,4100])
     ax.set_ylim([0,4100])
     fig.tight_layout()
