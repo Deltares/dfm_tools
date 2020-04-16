@@ -156,7 +156,7 @@ def corner2center(cor):
 
 
 
-def uva2xymagdeg(U1,V1,ALFAS,method=None):
+def uva2xymagdeg(U1, V1, ALFAS, KCU=None, KCV=None, inactivewhen4x0=True):
     """
     this function converts velocities in m,n-direction (defined mathematically, so 0 on x-axis and increasing counter-clockwise)
     alpha is a matrix with orientations of cells, with respect to the north (varname='ALFAS') in D3D output
@@ -177,27 +177,60 @@ def uva2xymagdeg(U1,V1,ALFAS,method=None):
     Uc(2:end-1,: ) = (U1(1:end-1,: )) + U1(2:end,: ))/2 klopt wel, maar werkt alleen als je eerst Uc op de juiste afmeting hebt geïnitialiseerd.
     """
     import numpy as np
-    if method == 'old':
-        vel_magn = np.sqrt(U1**2 + V1**2)
-        direction_math_deg = np.rad2deg(np.arctan2(V1, U1))+ALFAS
-        direction_naut_deg = (90-direction_math_deg)%360
-        vel_x = vel_magn*np.cos(np.deg2rad(direction_math_deg))
-        vel_y = vel_magn*np.sin(np.deg2rad(direction_math_deg))
-    else:
-        Uc = np.empty(shape=U1.shape)
-        Uc[:] = np.nan
-        Vc = np.empty(shape=U1.shape)
-        Vc[:] = np.nan
-        Uc[1:,:] = (U1[:-1,:] + U1[1:,:])/2
-        Vc[:,1:] = (V1[:,:-1] + V1[:,1:])/2
-        
-        
-        vel_x = Uc*np.cos(np.deg2rad(ALFAS)) - Vc*np.sin(np.deg2rad(ALFAS))
-        vel_y = Uc*np.sin(np.deg2rad(ALFAS)) + Vc*np.cos(np.deg2rad(ALFAS))
-        #vel_x = vel_x[1:,1:]
-        #vel_y = vel_y[1:,1:]
-        vel_magn = np.sqrt(vel_x**2 + vel_y**2)
-        direction_naut_deg = np.rad2deg(np.arctan2(vel_y, vel_x))%360
+    """
+    vel_magn = np.sqrt(U1**2 + V1**2)
+    direction_math_deg = np.rad2deg(np.arctan2(V1, U1))+ALFAS
+    direction_naut_deg = (90-direction_math_deg)%360
+    vel_x = vel_magn*np.cos(np.deg2rad(direction_math_deg))
+    vel_y = vel_magn*np.sin(np.deg2rad(direction_math_deg))
+    """
+    #replace -999. by 0
+    U1[(U1==-999.)] = np.nan
+    V1[(V1==-999.)] = np.nan
+
+    #calculate UV velocities on centers
+    Uc = np.empty(shape=U1.shape)
+    Uc[:] = np.nan
+    Vc = np.empty(shape=U1.shape)
+    Vc[:] = np.nan
+    Uc[1:,:] = np.nansum([U1[:-1,:], U1[1:,:]], axis=0)/2
+    Vc[:,1:] = np.nansum([V1[:,:-1], V1[:,1:]], axis=0)/2
+    
+    #remove cells when all four velocity points (U1 and V1) were -999.
+    mask_u999 = np.zeros(shape=U1.shape)
+    mask_v999 = np.zeros(shape=U1.shape)
+    mask_u999[1:,:] = ~(np.isnan(U1[:-1,:]) & np.isnan(U1[1:,:]))
+    mask_v999[:,1:] = ~(np.isnan(V1[:,:-1]) & np.isnan(V1[:,1:]))
+    mask_UV999 = mask_u999 + mask_v999
+    Uc[mask_UV999==0] = np.nan
+    Vc[mask_UV999==0] = np.nan
+    
+    if inactivewhen4x0:
+        #mask cells when all four velocity points (U1 and V1) are 0.
+        mask_u999 = np.zeros(shape=U1.shape)
+        mask_v999 = np.zeros(shape=U1.shape)
+        mask_u999[1:,:] = ~((U1[:-1,:]==0) & (U1[1:,:]==0))
+        mask_v999[:,1:] = ~((V1[:,:-1]==0) & (V1[:,1:]==0))
+        mask_UV999 = mask_u999 + mask_v999
+        Uc[mask_UV999==0] = np.nan
+        Vc[mask_UV999==0] = np.nan
+    
+    #remove cell with uv mask (inactive when all four velocity points are masked, so sum is zero)
+    if KCU is not None and KCV is not None:
+        mask_u = np.zeros(shape=U1.shape)
+        mask_v = np.zeros(shape=U1.shape)
+        mask_u[1:,:] = KCU[:-1,:]+KCU[1:,:]
+        mask_v[:,1:] = KCV[:,:-1]+KCV[:,1:]
+        mask_UV = mask_u + mask_v
+        Uc[mask_UV==0] = np.nan
+        Vc[mask_UV==0] = np.nan
+    
+    vel_x = Uc*np.cos(np.deg2rad(ALFAS)) - Vc*np.sin(np.deg2rad(ALFAS))
+    vel_y = Uc*np.sin(np.deg2rad(ALFAS)) + Vc*np.cos(np.deg2rad(ALFAS))
+    #vel_x = vel_x[1:,1:]
+    #vel_y = vel_y[1:,1:]
+    vel_magn = np.sqrt(vel_x**2 + vel_y**2)
+    direction_naut_deg = np.rad2deg(np.arctan2(vel_y, vel_x))%360
    
     return vel_x, vel_y, vel_magn, direction_naut_deg
 
