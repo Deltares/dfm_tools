@@ -183,7 +183,9 @@ Feature wishlist
 	- https://github.com/SciTools/cartopy/blob/master/lib/cartopy/data/raster/natural_earth/50-natural-earth-1-downsampled.png
 	- http://earthpy.org/cartopy_backgroung.html
 - add more io-functions:
-	- read/write matroos data
+	- read/write matroos data (first setup in dfm_tools.io.toadd)
+	- coordinate conversion (first setup in dfm_tools.io.toadd)
+	- read/write bc files (first setups in dfm_tools.io.toadd and dflowutil)
 	- convert data to kml (google earth) or shp? (including RD to WGS84 conversion and maybe vice versa)
 	- improve tekal map read
 	- add tekal mergedatasets function to get e.g. one ldb dataset with the original parts separated with nans
