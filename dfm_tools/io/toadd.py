@@ -147,7 +147,7 @@ def write_bcfile(data_pd, dir_bcfile, pliname, refdate, tzone=0, mode='w', data_
         for iC, pd_colname in enumerate(pd_columns):
             if pd_colname in ['time']:
                 unit = times_unit
-            elif pd_colname in ['dischargebnd','discharge']:
+            elif pd_colname in ['dischargebnd','discharge','lateral_discharge']:
                 unit = 'm3/s'
             else:
                 unit = '-'
