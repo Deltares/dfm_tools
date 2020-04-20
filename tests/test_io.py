@@ -104,3 +104,34 @@ def test_readpolygon(file_pol):
 
 
 
+
+
+@pytest.mark.unittest
+def test_readnoosfile():
+    dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
+    """
+    this test tests if a netcdf varname can be retrieved from the 'dictionary' and if the variable can be retrieved from de netcdf
+
+    dir_output = './test_output'
+    """
+    
+    file_noos = os.path.join(dir_testinput,'KORNWDZBTN_waterlevel_20061201_20190101_diffnanvals.noos')
+    import matplotlib.pyplot as plt
+    
+    from dfm_tools.io.noos import read_noosfile, write_noosfile
+    
+    
+    noosdata_pd, noosheader_dict = read_noosfile(file_noos=file_noos,get_header=True,na_values=['N/A',-999])
+    """
+    fig, ax = plt.subplots()
+    ax.plot(noosdata_pd['datetime'], noosdata_pd['values'])
+    """
+    #write noosfile
+    header_dict = {'Source': 'from noosfile', 'Analysis time': 200201012300, 'Time zone': 'GMT', 'Coordinate system': 'WGS84',
+                   'x-coordinate': 200, 'y-coordinate': 300, 'Variable': 'waterlevel', 'Unit': 'm', 'teststring': ''}
+    
+    write_noosfile(os.path.join(dir_output,'noos_out.noos'), noosdata_pd, metadata=noosheader_dict, na_values=-999.999)
+
+
+
+
