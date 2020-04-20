@@ -9,7 +9,7 @@ Created on Mon Apr 20 20:34:30 2020
 
 def read_noosfile(file_noos, datetime_format='%Y%m%d%H%M', get_header=False, na_values=None):
     #import datetime as dt
-    import numpy as np
+    #import numpy as np
     import pandas as pd
     
     noosheader = []

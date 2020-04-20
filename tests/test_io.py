@@ -116,7 +116,7 @@ def test_readnoosfile():
     """
     
     file_noos = os.path.join(dir_testinput,'KORNWDZBTN_waterlevel_20061201_20190101_diffnanvals.noos')
-    import matplotlib.pyplot as plt
+    #import matplotlib.pyplot as plt
     
     from dfm_tools.io.noos import read_noosfile, write_noosfile
     
@@ -131,6 +131,7 @@ def test_readnoosfile():
                    'x-coordinate': 200, 'y-coordinate': 300, 'Variable': 'waterlevel', 'Unit': 'm', 'teststring': ''}
     
     write_noosfile(os.path.join(dir_output,'noos_out.noos'), noosdata_pd, metadata=noosheader_dict, na_values=-999.999)
+    write_noosfile(os.path.join(dir_output,'noos_out2.noos'), noosdata_pd, metadata=header_dict, na_values=-999.999)
 
 
 
