@@ -197,6 +197,7 @@ Feature wishlist
 	- https://github.com/pwcazenave/tappy
 	- https://pypi.org/project/UTide/
 	- https://github.com/moflaher/ttide_py
+	- hatyan
 - dimn_time is now actually variable name which does not work if time dimname is not the same as time varname > define whether to retrieve dim or var, or make separate definitions
 - make merc keyword always optional by testing for minmax all vertsx between -181 and 361 and minmax all vertsy (lat) between -91 and 91 (+range for overlap for e.g. gtsm model)
 - improve get_ncmodeldata second intersect function
@@ -241,6 +242,7 @@ Todo non-content
 	- create overview of scripts and functions, including future location of missing features
 	- write documentation as comments and generate automatically? (at least add documentation as comments to functions so Spyder help window can display this)
 	- improve feedback to user if no or wrong input arguments are given to functions
+	- add license to new scripts
 - external improvements:
 	- fix small bugs in Delft3D4 netCDF output (related to coordinates, coordinates of velocity points and incorrect missing values)
 	- request modplot.velovect() (curved vectors) to be added to matplotlib
