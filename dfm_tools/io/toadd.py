@@ -88,6 +88,9 @@ def read_noosfile(Variables, dir_filename):
 
 def write_noosfile(filename, data_fromhis):
     #copied from arup, not finished yet
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    
     with open('%s.txt'%filename,'w') as file_noos:
         pass
     
