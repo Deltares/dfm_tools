@@ -182,9 +182,15 @@ Feature wishlist
 	- https://github.com/SciTools/cartopy/blob/master/lib/cartopy/data/raster/natural_earth/images.json
 	- https://github.com/SciTools/cartopy/blob/master/lib/cartopy/data/raster/natural_earth/50-natural-earth-1-downsampled.png
 	- http://earthpy.org/cartopy_backgroung.html
+- coordinate conversion:
+	```python
+	from pyproj import Proj, transform
+	inProj = Proj(init='epsg:%i'%(epsg_in))
+	outProj = Proj(init='epsg:%i'%(epsg_out))
+	x_out,y_out = transform(inProj,outProj,x_in,y_in)
+	```
 - add more io-functions:
 	- read/write matroos data (first setup in dfm_tools.io.noos)
-	- coordinate conversion (first setup in dfm_tools.io.toadd, move to dfm_tools.convert folder?)
 	- read/write bc files (first setups in dfm_tools.io.bc and dflowutil, include testcase)
 	- convert data to kml (google earth) or shp? (including RD to WGS84 conversion and maybe vice versa)
 	- improve tekal map read
