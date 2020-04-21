@@ -5,8 +5,9 @@ History
 0.x.x (date)
 ------------------
 * improved time dimension reading (more efficient when retrieving only a time-subset of a variable from a netCDF with long time dimension)
-* conversion of negative indices to positive
-* NOT YET: sort+ make unique
+* conversion of negative indices to positive, sorting them and make unique
+* read/write noos (matroos) data
+* write bc file for D-Flow FM
 
 0.7.6 (2020-04-06)
 ------------------

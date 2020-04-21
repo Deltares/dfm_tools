@@ -68,7 +68,7 @@ def get_ncfilelist(file_nc, multipart=None):
 
 
 
-def get_varname_fromnc(data_nc,varname_requested):
+def get_varname_fromnc(data_nc,varname_requested,vardim):
     import pandas as pd
     
     #VARIABLE names used within different versions of Delft3D-Flexible Mesh
@@ -127,8 +127,12 @@ def get_varname_fromnc(data_nc,varname_requested):
     else:
         varname_pdcol = varname_pdcol[0]
     
-    data_nc_varnames_list = list(data_nc.variables.keys())
-    data_nc_dimnames_list = list(data_nc.dimensions.keys())
+    if vardim == 'var':
+        data_nc_vardimnames_list = list(data_nc.variables.keys())
+    elif vardim == 'dim':
+        data_nc_vardimnames_list = list(data_nc.dimensions.keys())
+    else:
+        raise Exception('parameter vardim can be "var" or "dim"')
     
     def get_vardimname(data_nc_names_list):
         #check what is in netcdf file
@@ -145,9 +149,9 @@ def get_varname_fromnc(data_nc,varname_requested):
                 varname = varname[0]
         return varname
     
-    varname = get_vardimname(data_nc_varnames_list)
-    if varname is None:
-        varname = get_vardimname(data_nc_dimnames_list)
+    varname = get_vardimname(data_nc_vardimnames_list)
+    #if varname is None:
+    #    varname = get_vardimname(data_nc_dimnames_list)
     
     return varname
 
@@ -216,7 +220,7 @@ def ghostcell_filter(file_nc):
     
     data_nc = Dataset(file_nc)
     
-    varn_domain = get_varname_fromnc(data_nc,'mesh2d_flowelem_domain')
+    varn_domain = get_varname_fromnc(data_nc,'mesh2d_flowelem_domain',vardim='var')
     if varn_domain is not None: # domain variable is present, so there are multiple domains
         domain = data_nc.variables[varn_domain][:]
         domain_no = np.bincount(domain).argmax() #meest voorkomende domeinnummer
@@ -245,7 +249,7 @@ def get_timesfromnc(file_nc, retrieve_ids=False):
     #from dfm_tools.get_nc_helpers import get_varname_fromnc
 
     data_nc = Dataset(file_nc)
-    varname_time = get_varname_fromnc(data_nc,'time')
+    varname_time = get_varname_fromnc(data_nc,'time',vardim='var')
     data_nc_timevar = data_nc.variables[varname_time]
     time_length = data_nc_timevar.shape[0]
 
@@ -331,7 +335,7 @@ def get_hisstationlist(file_nc,varname):
     data_nc = Dataset(file_nc)
     data_nc_varname = get_ncvarobject(file_nc, varname) #check if var exists and get var_object
     varname_dims = data_nc_varname.dimensions
-    dimn_time = get_varname_fromnc(data_nc,'time')
+    dimn_time = get_varname_fromnc(data_nc,'time',vardim='dim')
     
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
     vars_pd_stats = vars_pd[(vars_pd['dtype']=='|S1') & (vars_pd['dimensions'].apply(lambda x: dimn_time not in x))]

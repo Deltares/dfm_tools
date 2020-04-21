@@ -92,9 +92,9 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
         warnings.warn('variable "%s" should probably be retrieved with separate function:\nfrom dfm_tools.get_nc_helpers import get_timesfromnc; times = get_timesfromnc(file_nc=file_nc)'%(varname))
     
     #TIMES CHECKS
-    dimn_time = get_varname_fromnc(data_nc,'time')
-    varn_time = get_varname_fromnc(data_nc,'time')
-    if dimn_time not in nc_varobject.dimensions: #dimension with a name close to 'time' is not available in variable, try to get time dimension from 'time' variable
+    dimn_time = get_varname_fromnc(data_nc,'time',vardim='dim')
+    varn_time = get_varname_fromnc(data_nc,'time',vardim='var')
+    if dimn_time is None: #dimension with a name close to 'time' is not available in variable, try to get time dimension from 'time' variable
         try:
             dimn_time = data_nc.variables[varn_time].dimensions[0]
         except:
@@ -141,7 +141,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
             raise Exception('ERROR: requested maximum timestep (%d) is larger than available in netcdf file (%d)'%(np.max(time_ids),time_length-1))
     
     #LAYER CHECKS
-    dimn_layer = get_varname_fromnc(data_nc,'nmesh2d_layer')
+    dimn_layer = get_varname_fromnc(data_nc,'nmesh2d_layer',vardim='dim')
     if dimn_layer not in nc_varobject.dimensions: #no layer dimension in model and/or variable
         if layer is not None:
             raise Exception('ERROR: netcdf variable (%s) does not contain layers, but argument layer is provided'%(varname))
@@ -210,11 +210,11 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     
     
     #check faces existence, variable could have ghost cells if partitioned
-    dimn_faces = get_varname_fromnc(data_nc,'mesh2d_nFaces')
-    dimn_nodes = get_varname_fromnc(data_nc,'mesh2d_nNodes')
-    dimn_edges = get_varname_fromnc(data_nc,'nmesh2d_edge')
-    dimn_nFlowElem = get_varname_fromnc(data_nc,'nFlowElem')
-    dimn_nFlowLink = get_varname_fromnc(data_nc,'nFlowLink')
+    dimn_faces = get_varname_fromnc(data_nc,'mesh2d_nFaces',vardim='dim')
+    dimn_nodes = get_varname_fromnc(data_nc,'mesh2d_nNodes',vardim='dim')
+    dimn_edges = get_varname_fromnc(data_nc,'nmesh2d_edge',vardim='dim')
+    dimn_nFlowElem = get_varname_fromnc(data_nc,'nFlowElem',vardim='dim')
+    dimn_nFlowLink = get_varname_fromnc(data_nc,'nFlowLink',vardim='dim')
     
     file_ncs = get_ncfilelist(file_nc, multipart)
     
@@ -377,22 +377,22 @@ def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None
     
     data_nc = Dataset(file_nc)
     
-    varn_mesh2d_s1 = get_varname_fromnc(data_nc,'mesh2d_s1')
+    varn_mesh2d_s1 = get_varname_fromnc(data_nc,'mesh2d_s1',vardim='var')
     data_frommap_wl3 = get_ncmodeldata(file_nc, varname=varn_mesh2d_s1, timestep=timestep, multipart=multipart)
     data_frommap_wl3_sel = data_frommap_wl3[0,intersect_gridnos]
-    varn_mesh2d_flowelem_bl = get_varname_fromnc(data_nc,'mesh2d_flowelem_bl')
+    varn_mesh2d_flowelem_bl = get_varname_fromnc(data_nc,'mesh2d_flowelem_bl',vardim='var')
     data_frommap_bl = get_ncmodeldata(file_nc, varname=varn_mesh2d_flowelem_bl, multipart=multipart)
     data_frommap_bl_sel = data_frommap_bl[intersect_gridnos]
     
     #nlay = data_frommap.shape[2]
     #nlay = data_nc.variables[varname].shape[2]
-    dimn_layer = get_varname_fromnc(data_nc,'nmesh2d_layer')
+    dimn_layer = get_varname_fromnc(data_nc,'nmesh2d_layer',vardim='dim')
     if dimn_layer is None: #no layers, 2D model
         nlay = 1
     else:
         nlay = data_nc.dimensions[dimn_layer].size
     
-    varn_layer_z = get_varname_fromnc(data_nc,'mesh2d_layer_z')
+    varn_layer_z = get_varname_fromnc(data_nc,'mesh2d_layer_z',vardim='var')
     if varn_layer_z is None:
         laytyp = 'sigmalayer'
         #zvals_cen = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay)
