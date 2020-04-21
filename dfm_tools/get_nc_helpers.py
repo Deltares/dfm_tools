@@ -240,6 +240,7 @@ def get_timesfromnc(file_nc, retrieve_ids=False):
     from netCDF4 import Dataset,num2date#,date2num
     import numpy as np
     import pandas as pd
+    import warnings
     
     #from dfm_tools.get_nc_helpers import get_varname_fromnc
 
@@ -283,6 +284,10 @@ def get_timesfromnc(file_nc, retrieve_ids=False):
     
     data_nc_datetimes = num2date(data_nc_times, units = data_nc_timevar.units)
     nptimes = data_nc_datetimes.astype('datetime64[ns]') #convert to numpy first, pandas does not take all cftime datasets
+    
+    if len(nptimes.shape) > 1:
+        warnings.warn('This should not happen, this exception is built in for corrupt netCDF files with a time variable with more than one dimension')
+        nptimes = nptimes.flatten()
     
     if retrieve_ids is not False:
         data_nc_datetimes_pd = pd.Series(nptimes,index=retrieve_ids).dt.round(freq='S')
