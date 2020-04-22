@@ -231,7 +231,31 @@ def ghostcell_filter(file_nc):
 
 
 
-def get_timesfromnc(file_nc, retrieve_ids=False, keeptimezone=True):
+
+
+def get_variable_timevardim(file_nc, varname):
+    #get corresponding time variable name
+    from netCDF4 import Dataset
+    
+    #from dfm_tools.get_nc_helpers import get_ncvarobject
+    
+    data_nc = Dataset(file_nc)
+    nc_varobject = get_ncvarobject(file_nc, varname)
+    
+    varn_time = None
+    dimn_time = None
+    varlist_wunits = data_nc.get_variables_by_attributes(units=lambda v: v is not None)
+    for var_lookup in varlist_wunits:
+        if 'since' in var_lookup.units and var_lookup.dimensions[0] in nc_varobject.dimensions:
+            dimn_time = var_lookup.dimensions[0]
+            varn_time = var_lookup.name
+            break
+    return varn_time, dimn_time
+
+
+
+    
+def get_timesfromnc(file_nc, varname='time', retrieve_ids=False, keeptimezone=True):
     """
     retrieves time array from netcdf file.
     Since long time arrays take a long time to retrieve at once, reconstruction is tried
@@ -239,21 +263,43 @@ def get_timesfromnc(file_nc, retrieve_ids=False, keeptimezone=True):
     therefore, the interval at the start and end of the time array is not always equal to the 'real' time interval
     reconstruction takes care of this.
     if reconstruction fails (the length of the netCDF variable is not equal of the length of the reconstructed array), all times are read
+
+    Parameters
+    ----------
+    file_nc : STR
+        DESCRIPTION.
+    varname : STR, optional
+        DESCRIPTION. The default is 'time'.
+    retrieve_ids : LIST of int, optional
+        DESCRIPTION. The default is False.
+    keeptimezone : BOOL, optional
+        DESCRIPTION. The default is True.
+
+    Raises
+    ------
+    Exception
+        DESCRIPTION.
+
+    Returns
+    -------
+    data_nc_datetimes_pd : TYPE
+        DESCRIPTION.
+
     """
     
     from netCDF4 import Dataset, num2date#,date2num
     #from cftime import num2pydate, num2date
-    from cftime import num2date as cf_num2date
+    #from cftime import num2date as cf_num2date
     import numpy as np
     import pandas as pd
     import warnings
     import datetime as dt
     
-    #from dfm_tools.get_nc_helpers import get_varname_fromnc
+    #from dfm_tools.get_nc_helpers import get_variable_timevardim
 
     data_nc = Dataset(file_nc)
-    varname_time = get_varname_fromnc(data_nc,'time',vardim='var')
-    data_nc_timevar = data_nc.variables[varname_time]
+    varn_time, dimn_time = get_variable_timevardim(file_nc=file_nc, varname=varname)
+    data_nc_timevar = data_nc.variables[varn_time]
     time_length = data_nc_timevar.shape[0]
 
     if retrieve_ids is not False:
@@ -288,12 +334,14 @@ def get_timesfromnc(file_nc, retrieve_ids=False, keeptimezone=True):
             print('reading time dimension: read entire array')
             data_nc_times = data_nc_timevar[:]
         
-    #convert to datetime (automatically converted to UTC based on timezone in units)
-    data_nc_datetimes = num2date(data_nc_times, units=data_nc_timevar.units, only_use_cftime_datetimes=False, only_use_python_datetimes=True)
-    #nptimes = data_nc_datetimes.astype('datetime64[ns]') #convert to numpy first, pandas does not take all cftime datasets
+    if len(data_nc_times.shape) > 1:
+        warnings.warn('This should not happen, this exception is built in for corrupt netCDF files with a time variable with more than one dimension')
+        data_nc_times = data_nc_times.flatten()
     
     #convert back to original timezone (e.g. MET)
     if keeptimezone:
+        """
+        #with timezone info
         #tz_str_startplus = data_nc_timevar.units.rfind('+')
         #tz_str_startmin = data_nc_timevar.units.rfind('-')
         #tz_str_start = np.max([tz_str_startplus, tz_str_startmin])
@@ -305,19 +353,26 @@ def get_timesfromnc(file_nc, retrieve_ids=False, keeptimezone=True):
         except:
             #print('retrieving original timezone failed, time is now probably UTC')
             nptimes = data_nc_datetimes
-
+        """
+        #manual conversion which deliberately ignores timezone
+        time_units_list = data_nc_timevar.units.split(' ')
+        if time_units_list[1] != 'since':
+            raise Exception('invalid time units string (%s)'%(data_nc_timevar.units))
+        refdate_str = '%s %s'%(time_units_list[2], time_units_list[3].replace('.0','')) #remove .0 to avoid conversion issue
+        refdate = dt.datetime.strptime(refdate_str,'%Y-%m-%d %H:%M:%S')
+        data_nc_times_pdtd = pd.to_timedelta(data_nc_times, unit=time_units_list[0])
+        data_nc_datetimes = (refdate + data_nc_times_pdtd)#.to_pydatetime()
     else:
-        nptimes = data_nc_datetimes
+        #convert to datetime (automatically converted to UTC based on timezone in units)
+        data_nc_datetimes = num2date(data_nc_times, units=data_nc_timevar.units, only_use_cftime_datetimes=False, only_use_python_datetimes=True)
+        #nptimes = data_nc_datetimes.astype('datetime64[ns]') #convert to numpy first, pandas does not take all cftime datasets
         
     
-    if len(nptimes.shape) > 1:
-        warnings.warn('This should not happen, this exception is built in for corrupt netCDF files with a time variable with more than one dimension')
-        nptimes = nptimes.flatten()
     
     if retrieve_ids is not False:
-        data_nc_datetimes_pd = pd.Series(nptimes,index=retrieve_ids).dt.round(freq='S')
+        data_nc_datetimes_pd = pd.Series(data_nc_datetimes,index=retrieve_ids).dt.round(freq='S')
     else:
-        data_nc_datetimes_pd = pd.Series(nptimes).dt.round(freq='S')
+        data_nc_datetimes_pd = pd.Series(data_nc_datetimes).dt.round(freq='S')
     
     return data_nc_datetimes_pd
 
@@ -351,12 +406,12 @@ def get_hisstationlist(file_nc,varname):
     import pandas as pd
     import numpy as np
     
-    from dfm_tools.get_nc_helpers import get_ncvarobject, get_ncvardimlist
+    #from dfm_tools.get_nc_helpers import get_ncvarobject, get_ncvardimlist, get_variable_timevardim
     
     data_nc = Dataset(file_nc)
     data_nc_varname = get_ncvarobject(file_nc, varname) #check if var exists and get var_object
     varname_dims = data_nc_varname.dimensions
-    dimn_time = get_varname_fromnc(data_nc,'time',vardim='dim')
+    varn_time, dimn_time = get_variable_timevardim(file_nc=file_nc, varname=varname)
     
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
     vars_pd_stats = vars_pd[(vars_pd['dtype']=='|S1') & (vars_pd['dimensions'].apply(lambda x: dimn_time not in x))]

@@ -70,7 +70,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     import pandas as pd
     from netCDF4 import Dataset
     
-    from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvardimlist, get_ncvarobject, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_fromnc
+    from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvardimlist, get_ncvarobject, get_variable_timevardim, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_fromnc
     
     #get variable info (also checks if varname exists)
     nc_varobject = get_ncvarobject(file_nc, varname)
@@ -89,9 +89,11 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     if nc_varobject.dtype == '|S1':
         warnings.warn('variable "%s" should probably be retrieved with separate function:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist; station_names = get_hisstationlist(file_nc=file_nc, varname="%s") (or use any varname there to retrieve corresponding station list)'%(varname,varname))
     if 'time' in varname.lower():
-        warnings.warn('variable "%s" should probably be retrieved with separate function:\nfrom dfm_tools.get_nc_helpers import get_timesfromnc; times = get_timesfromnc(file_nc=file_nc)'%(varname))
+        warnings.warn('variable "%s" should probably be retrieved with separate function:\nfrom dfm_tools.get_nc_helpers import get_timesfromnc; times = get_timesfromnc(file_nc=file_nc, varname="%s")'%(varname, varname))
     
+
     #TIMES CHECKS
+    """
     dimn_time = get_varname_fromnc(data_nc,'time',vardim='dim')
     varn_time = get_varname_fromnc(data_nc,'time',vardim='var')
     if dimn_time is None: #dimension with a name close to 'time' is not available in variable, try to get time dimension from 'time' variable
@@ -99,38 +101,40 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
             dimn_time = data_nc.variables[varn_time].dimensions[0]
         except:
             print('using dimn_time as variable to get dimn_time failed')
+    """
+    varn_time, dimn_time = get_variable_timevardim(file_nc=file_nc, varname=varname)
     if dimn_time not in nc_varobject.dimensions: #dimension time is not available in variable
         if timestep is not None:
             raise Exception('ERROR: netcdf file variable (%s) does not contain times, but parameter timestep is provided'%(varname))
     else: #time dimension is present
         data_nc_timevar = data_nc.variables[varn_time]
         time_length = data_nc_timevar.shape[0]
-        data_nc_datetimes_pd = get_timesfromnc(file_nc, retrieve_ids=[0,-1]) #get selection of times
+        data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname, retrieve_ids=[0,-1]) #get selection of times
         if timestep is None:
-            raise Exception('ERROR: netcdf variable contains a time dimension, but parameter timestep not provided (can be "all"), first and last timestep:\n%s\nretrieve entire times list:\nfrom dfm_tools.get_nc_helpers import get_timesfromnc; times_pd = get_timesfromnc(file_nc=file_nc, retrieve_ids=False), where the argument retrieve_ids is optional and can be a list of time indices'%(pd.DataFrame(data_nc_datetimes_pd)))
+            raise Exception('ERROR: netcdf variable contains a time dimension, but parameter timestep not provided (can be "all"), first and last timestep:\n%s\nretrieve entire times list:\nfrom dfm_tools.get_nc_helpers import get_timesfromnc; times_pd = get_timesfromnc(file_nc=file_nc, varname=%s, retrieve_ids=False), where the argument retrieve_ids is optional and can be a list of time indices'%(pd.DataFrame(data_nc_datetimes_pd),varname))
         #convert timestep to list of int if it is not already
         if timestep is str('all'):
-            data_nc_datetimes_pd = get_timesfromnc(file_nc) #get all times
+            data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname) #get all times
             time_ids = range(len(data_nc_datetimes_pd))
         elif type(timestep) in listtype_range:
             if len(timestep) == 0:
                 raise Exception('ERROR: timestep variable type is list/range/ndarray (%s), but it has no length'%(type(timestep)))
             elif type(timestep[0]) in listtype_int:
-                data_nc_datetimes_pd = get_timesfromnc(file_nc, retrieve_ids=timestep) #get selection of times
+                data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname, retrieve_ids=timestep) #get selection of times
                 time_ids = timestep
             elif type(timestep[0]) in listtype_datetime:
-                data_nc_datetimes_pd = get_timesfromnc(file_nc) #get all times
+                data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname) #get all times
                 time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, timestep)
             else:
                 raise Exception('ERROR: timestep variable type is list/range/ndarray (%s), but type of timestep[0] not anticipated (%s), options:\n - int\n - np.int64\n - datetime\n - np.datetime64'%(type(timestep),type(timestep[0])))
         elif type(timestep) in listtype_daterange:
-            data_nc_datetimes_pd = get_timesfromnc(file_nc) #get all times
+            data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname) #get all times
             time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, timestep)
         elif type(timestep) in listtype_int:
-            data_nc_datetimes_pd = get_timesfromnc(file_nc, retrieve_ids=[timestep]) #get selection of times
+            data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname, retrieve_ids=[timestep]) #get selection of times
             time_ids = [timestep]
         elif type(timestep) in listtype_datetime:
-            data_nc_datetimes_pd = get_timesfromnc(file_nc) #get all times
+            data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname) #get all times
             time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, [timestep])
         else:
             raise Exception('ERROR: timestep variable type not anticipated (%s), options:\n - datetime/int\n - list/range/ndarray of datetime/int\n - pandas daterange\n - "all"'%(type(timestep)))
