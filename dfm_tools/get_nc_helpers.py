@@ -231,7 +231,7 @@ def ghostcell_filter(file_nc):
 
 
 
-def get_timesfromnc(file_nc, retrieve_ids=False):
+def get_timesfromnc(file_nc, retrieve_ids=False, keeptimezone=True):
     """
     retrieves time array from netcdf file.
     Since long time arrays take a long time to retrieve at once, reconstruction is tried
@@ -241,10 +241,13 @@ def get_timesfromnc(file_nc, retrieve_ids=False):
     if reconstruction fails (the length of the netCDF variable is not equal of the length of the reconstructed array), all times are read
     """
     
-    from netCDF4 import Dataset,num2date#,date2num
+    from netCDF4 import Dataset, num2date#,date2num
+    #from cftime import num2pydate, num2date
+    from cftime import num2date as cf_num2date
     import numpy as np
     import pandas as pd
     import warnings
+    import datetime as dt
     
     #from dfm_tools.get_nc_helpers import get_varname_fromnc
 
@@ -285,9 +288,27 @@ def get_timesfromnc(file_nc, retrieve_ids=False):
             print('reading time dimension: read entire array')
             data_nc_times = data_nc_timevar[:]
         
+    #convert to datetime (automatically converted to UTC based on timezone in units)
+    data_nc_datetimes = num2date(data_nc_times, units=data_nc_timevar.units, only_use_cftime_datetimes=False, only_use_python_datetimes=True)
+    #nptimes = data_nc_datetimes.astype('datetime64[ns]') #convert to numpy first, pandas does not take all cftime datasets
     
-    data_nc_datetimes = num2date(data_nc_times, units = data_nc_timevar.units)
-    nptimes = data_nc_datetimes.astype('datetime64[ns]') #convert to numpy first, pandas does not take all cftime datasets
+    #convert back to original timezone (e.g. MET)
+    if keeptimezone:
+        #tz_str_startplus = data_nc_timevar.units.rfind('+')
+        #tz_str_startmin = data_nc_timevar.units.rfind('-')
+        #tz_str_start = np.max([tz_str_startplus, tz_str_startmin])
+        tz_str = data_nc_timevar.units.split(' ')[-1]
+        try:
+            tzoffset = dt.datetime.strptime(tz_str,'%z').utcoffset()
+            nptimes = data_nc_datetimes + tzoffset
+            print('times converted to original timezone (%s)'%(tzoffset))
+        except:
+            #print('retrieving original timezone failed, time is now probably UTC')
+            nptimes = data_nc_datetimes
+
+    else:
+        nptimes = data_nc_datetimes
+        
     
     if len(nptimes.shape) > 1:
         warnings.warn('This should not happen, this exception is built in for corrupt netCDF files with a time variable with more than one dimension')
