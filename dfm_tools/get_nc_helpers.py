@@ -61,7 +61,7 @@ def get_ncfilelist(file_nc, multipart=None):
             file_ncs = glob.glob('%s*_%s'%(filename_start,nctype))
             filename_merged = '%s_merged_%s'%(filename_start,nctype)
             if filename_merged in file_ncs:
-                file_ncs.remove()
+                file_ncs.remove(filename_merged)
             
         else:
             file_ncs = [file_nc]

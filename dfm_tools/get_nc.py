@@ -87,9 +87,9 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     
     #CHECK IF VARNAME IS STATION NAMES (STRINGS), OFFER ALTERNATIVE RETRIEVAL METHOD
     if nc_varobject.dtype == '|S1':
-        warnings.warn('variable "%s" should probably be retrieved with separate function:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist; station_names = get_hisstationlist(file_nc=file_nc, varname="%s") (or use any varname there to retrieve corresponding station list)'%(varname,varname))
+        print('variable "%s" should probably be retrieved with separate function:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist; station_names = get_hisstationlist(file_nc=file_nc, varname="%s") (or use any varname there to retrieve corresponding station list)'%(varname,varname))
     if 'time' in varname.lower():
-        warnings.warn('variable "%s" should probably be retrieved with separate function:\nfrom dfm_tools.get_nc_helpers import get_timesfromnc; times = get_timesfromnc(file_nc=file_nc, varname="%s")'%(varname, varname))
+        print('variable "%s" should probably be retrieved with separate function:\nfrom dfm_tools.get_nc_helpers import get_timesfromnc; times = get_timesfromnc(file_nc=file_nc, varname="%s")'%(varname, varname))
     
 
     #TIMES CHECKS
