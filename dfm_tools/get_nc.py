@@ -180,7 +180,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     vars_pd_stats = vars_pd[(vars_pd['dtype']=='|S1') & (vars_pd['dimensions'].apply(lambda x: dimn_time not in x))]
     dimname_stat_validvals = []
     for iR, vars_pd_stat in vars_pd_stats.iterrows():
-        [dimname_stat_validvals.append(x) for x in vars_pd_stat['dimensions']]
+        dimname_stat_validvals.append(vars_pd_stat['dimensions'][0]) #only append first dimension, the other one is often 'name_len'
     dimname_stat_validvals_boolpresent = [x in nc_varobject.dimensions for x in dimname_stat_validvals]
     if not any(dimname_stat_validvals_boolpresent):
         if station is not None:
@@ -293,6 +293,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     values_all.var_varname = varname
     values_all.var_dimensions = nc_varobject.dimensions
     values_all.var_linkedgridinfo = values_dimlinkedgrid
+    values_all.var_ncobject = data_nc #this is the netcdf object retrieved with netCDF4.Dataset()
     values_all.var_object = nc_varobject #this is the netcdf variable, so contains properties like shape/units/dimensions
     if dimn_time in nc_varobject.dimensions:
         values_all.var_times = data_nc_datetimes_pd

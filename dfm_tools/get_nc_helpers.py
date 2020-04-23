@@ -79,47 +79,50 @@ def get_varname_fromnc(data_nc,varname_requested,vardim):
     varnames_list = pd.DataFrame()
     #varnames_list['time'] = ['time','nmesh2d_dlwq_time','TIME','','',''] # time, not necessary anymore
     
-    varnames_list['mesh2d_node_x'] = ['mesh2d_node_x','NetNode_x','mesh2d_agg_node_x','','',''] # x-coordinate of nodes
-    varnames_list['mesh2d_node_y'] = ['mesh2d_node_y','NetNode_y','mesh2d_agg_node_y','','',''] # y-coordinate of nodes
-    varnames_list['mesh2d_node_z'] = ['mesh2d_node_z','NetNode_z','','','',''] # z-coordinate of nodes
+    if vardim == 'var':
+        varnames_list['mesh2d_node_x'] = ['mesh2d_node_x','NetNode_x','mesh2d_agg_node_x','','',''] # x-coordinate of nodes
+        varnames_list['mesh2d_node_y'] = ['mesh2d_node_y','NetNode_y','mesh2d_agg_node_y','','',''] # y-coordinate of nodes
+        varnames_list['mesh2d_node_z'] = ['mesh2d_node_z','NetNode_z','','','',''] # z-coordinate of nodes
+        
+        varnames_list['mesh2d_face_x'] = ['mesh2d_face_x','FlowElem_xzw','mesh2d_agg_face_x','','',''] # x-coordinate of faces (center)
+        varnames_list['mesh2d_face_y'] = ['mesh2d_face_y','FlowElem_yzw','mesh2d_agg_face_y','','',''] # y-coordinate of faces (center)
+        
+        varnames_list['mesh2d_edge_x'] = ['mesh2d_edge_x','','','','',''] # x-coordinate of velocity-points
+        varnames_list['mesh2d_edge_y'] = ['mesh2d_edge_y','','','','',''] # y-coordinate of velocity-points
+        
+        varnames_list['mesh2d_edge_nodes'] = ['mesh2d_edge_nodes','NetLink','','','',''] # 'link between two netnodes' / 'Mapping from every edge to the two nodes that it connects'
+        varnames_list['mesh2d_face_nodes'] = ['mesh2d_face_nodes','NetElemNode','mesh2d_agg_face_nodes','','',''] # 
+        
+        varnames_list['mesh2d_face_x_bnd'] = ['mesh2d_face_x_bnd','FlowElemContour_x','mesh2d_agg_face_x_bnd','','',''] # x-coordinates of flow element contours
+        varnames_list['mesh2d_face_y_bnd'] = ['mesh2d_face_y_bnd','FlowElemContour_y','mesh2d_agg_face_y_bnd','','',''] # y-coordinates of flow element contours
+        
+        varnames_list['mesh2d_flowelem_domain'] = ['mesh2d_flowelem_domain','FlowElemDomain','','','',''] # flow element domain
+        varnames_list['mesh2d_flowelem_bl'] = ['mesh2d_flowelem_bl','FlowElem_bl','','','',''] # bed level
+        varnames_list['mesh2d_flowelem_ba'] = ['mesh2d_flowelem_ba','FlowElem_bac','','','',''] # area (m2) of cell faces
+        
+        varnames_list['mesh2d_layer_z'] = ['mesh2d_layer_z','LayCoord_cc','','','',''] # 
+        
+        #non-grid variables necessary for layer calculation for intersection/cross section) funtion
+        varnames_list['mesh2d_s1'] = ['mesh2d_s1','','','','',''] # water level
+        varnames_list['mesh2d_flowelem_bl'] = ['mesh2d_flowelem_bl','','','','',''] # bed level
     
-    varnames_list['mesh2d_face_x'] = ['mesh2d_face_x','FlowElem_xzw','mesh2d_agg_face_x','','',''] # x-coordinate of faces (center)
-    varnames_list['mesh2d_face_y'] = ['mesh2d_face_y','FlowElem_yzw','mesh2d_agg_face_y','','',''] # y-coordinate of faces (center)
+        #varnames_list['mesh2d_ucx'] = ['mesh2d_ucx','ucx','',''] # 
+        #varnames_list['mesh2d_ucy'] = ['mesh2d_ucy','ucy','',''] # 
+        #varnames_list['mesh2d_sa1'] = ['mesh2d_sa1','sa1','',''] # 
+        #varnames_list['mesh2d_tem1'] = ['mesh2d_tem1','tem1','',''] # 
     
-    varnames_list['mesh2d_edge_x'] = ['mesh2d_edge_x','','','','',''] # x-coordinate of velocity-points
-    varnames_list['mesh2d_edge_y'] = ['mesh2d_edge_y','','','','',''] # y-coordinate of velocity-points
-    
-    varnames_list['mesh2d_edge_nodes'] = ['mesh2d_edge_nodes','NetLink','','','',''] # 'link between two netnodes' / 'Mapping from every edge to the two nodes that it connects'
-    varnames_list['mesh2d_face_nodes'] = ['mesh2d_face_nodes','NetElemNode','mesh2d_agg_face_nodes','','',''] # 
-    
-    varnames_list['mesh2d_face_x_bnd'] = ['mesh2d_face_x_bnd','FlowElemContour_x','mesh2d_agg_face_x_bnd','','',''] # x-coordinates of flow element contours
-    varnames_list['mesh2d_face_y_bnd'] = ['mesh2d_face_y_bnd','FlowElemContour_y','mesh2d_agg_face_y_bnd','','',''] # y-coordinates of flow element contours
-    
-    varnames_list['mesh2d_flowelem_domain'] = ['mesh2d_flowelem_domain','FlowElemDomain','','','',''] # flow element domain
-    varnames_list['mesh2d_flowelem_bl'] = ['mesh2d_flowelem_bl','FlowElem_bl','','','',''] # bed level
-    varnames_list['mesh2d_flowelem_ba'] = ['mesh2d_flowelem_ba','FlowElem_bac','','','',''] # area (m2) of cell faces
-    
-    varnames_list['mesh2d_layer_z'] = ['mesh2d_layer_z','LayCoord_cc','','','',''] # 
-    
-    #non-grid variables necessary for layer calculation for intersection/cross section) funtion
-    varnames_list['mesh2d_s1'] = ['mesh2d_s1','','','','',''] # water level
-    varnames_list['mesh2d_flowelem_bl'] = ['mesh2d_flowelem_bl','','','','',''] # bed level
-
-    #varnames_list['mesh2d_ucx'] = ['mesh2d_ucx','ucx','',''] # 
-    #varnames_list['mesh2d_ucy'] = ['mesh2d_ucy','ucy','',''] # 
-    #varnames_list['mesh2d_sa1'] = ['mesh2d_sa1','sa1','',''] # 
-    #varnames_list['mesh2d_tem1'] = ['mesh2d_tem1','tem1','',''] # 
-    
-    
-    ### DIMENSION names used within different versions of Delft3D-Flexible Mesh
-    #dimnames_list = pd.DataFrame()
-    varnames_list['nmesh2d_node'] = ['nmesh2d_node','mesh2d_nNodes','nNetNode','','',''] # number of nodes
-    varnames_list['nmesh2d_face'] = ['nmesh2d_face','mesh2d_nFaces','nNetElem','','',''] # number of faces
-    varnames_list['nmesh2d_edge'] = ['nmesh2d_edge','nNetLink','','','',''] # number of velocity-points
-    varnames_list['nFlowElem'] = ['nFlowElem','','','','',''] # number of flow elements
-    varnames_list['nFlowLink'] = ['nFlowLink','','','','',''] # number of flow elements
-    
-    varnames_list['nmesh2d_layer'] = ['nmesh2d_layer','mesh2d_nLayers','laydim','nmesh2d_layer_dlwq','LAYER','KMAXOUT_RESTR'] # layer
+    elif vardim == 'dim':
+        ### DIMENSION names used within different versions of Delft3D-Flexible Mesh
+        #dimnames_list = pd.DataFrame()
+        varnames_list['nmesh2d_node'] = ['nmesh2d_node','mesh2d_nNodes','nNetNode','','','',''] # number of nodes
+        varnames_list['nmesh2d_face'] = ['nmesh2d_face','mesh2d_nFaces','nNetElem','','','',''] # number of faces
+        varnames_list['nmesh2d_edge'] = ['nmesh2d_edge','nNetLink','','','','',''] # number of velocity-points
+        varnames_list['nFlowElem'] = ['nFlowElem','','','','','',''] # number of flow elements
+        varnames_list['nFlowLink'] = ['nFlowLink','','','','','',''] # number of flow elements
+        
+        varnames_list['nmesh2d_layer'] = ['nmesh2d_layer','mesh2d_nLayers','laydim','nmesh2d_layer_dlwq','LAYER','KMAXOUT_RESTR','depth'] # layer
+    else:
+        raise Exception('parameter vardim can be "var" or "dim"')
     
     #look for correct pd column
     pdcol_bool = varnames_list.eq(varname_requested).any()
@@ -362,10 +365,14 @@ def get_timesfromnc(file_nc, varname='time', retrieve_ids=False, keeptimezone=Tr
         time_units_list = data_nc_timevar.units.split(' ')
         if time_units_list[1] != 'since':
             raise Exception('invalid time units string (%s)'%(data_nc_timevar.units))
-        refdate_str = '%s %s'%(time_units_list[2], time_units_list[3].replace('.0','')) #remove .0 to avoid conversion issue
-        refdate = dt.datetime.strptime(refdate_str,'%Y-%m-%d %H:%M:%S')
-        data_nc_times_pdtd = pd.to_timedelta(data_nc_times, unit=time_units_list[0])
-        data_nc_datetimes = (refdate + data_nc_times_pdtd)#.to_pydatetime()
+        try:
+            refdate_str = '%s %s'%(time_units_list[2], time_units_list[3].replace('.0','')) #remove .0 to avoid conversion issue
+            refdate = dt.datetime.strptime(refdate_str,'%Y-%m-%d %H:%M:%S')
+            data_nc_times_pdtd = pd.to_timedelta(data_nc_times, unit=time_units_list[0])
+            data_nc_datetimes = (refdate + data_nc_times_pdtd)#.to_pydatetime()
+        except:
+            print('retrieving original timezone failed, using num2date output instead')
+            data_nc_datetimes = num2date(data_nc_times, units=data_nc_timevar.units, only_use_cftime_datetimes=False, only_use_python_datetimes=True)
     else:
         #convert to datetime (automatically converted to UTC based on timezone in units)
         data_nc_datetimes = num2date(data_nc_times, units=data_nc_timevar.units, only_use_cftime_datetimes=False, only_use_python_datetimes=True)
