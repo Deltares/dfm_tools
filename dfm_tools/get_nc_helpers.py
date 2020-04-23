@@ -59,6 +59,10 @@ def get_ncfilelist(file_nc, multipart=None):
             #filename_number = re.compile('(.*)_([0-9]+)_map.nc').search(file_nc).group(2)
             #file_ncs = [file_nc.replace('_%s_map.nc','_%04d_map.nc'%(filename_number, domain_id)) for domain_id in range(ndomains)]
             file_ncs = glob.glob('%s*_%s'%(filename_start,nctype))
+            filename_merged = '%s_merged_%s'%(filename_start,nctype)
+            if filename_merged in file_ncs:
+                file_ncs.remove()
+            
         else:
             file_ncs = [file_nc]
     else:
@@ -73,7 +77,7 @@ def get_varname_fromnc(data_nc,varname_requested,vardim):
     
     #VARIABLE names used within different versions of Delft3D-Flexible Mesh
     varnames_list = pd.DataFrame()
-    varnames_list['time'] = ['time','nmesh2d_dlwq_time','TIME','','',''] # time
+    #varnames_list['time'] = ['time','nmesh2d_dlwq_time','TIME','','',''] # time, not necessary anymore
     
     varnames_list['mesh2d_node_x'] = ['mesh2d_node_x','NetNode_x','mesh2d_agg_node_x','','',''] # x-coordinate of nodes
     varnames_list['mesh2d_node_y'] = ['mesh2d_node_y','NetNode_y','mesh2d_agg_node_y','','',''] # y-coordinate of nodes
