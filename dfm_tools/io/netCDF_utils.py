@@ -6,7 +6,7 @@ Created on Fri Apr 24 09:50:42 2020
 """
 
 def merge_netCDF_time(tstart, tstop, tstep_sec, dir_data, nc_prefix, fn_match_pattern, fn_dateformat, subfolders=[''], dir_out=None, 
-                      varn_time='time', dimn_time='time', renamevars=None, dfmattr=True):
+                      varn_time='time', dimn_time='time', renamevars=None, dfmtoolsattr=True):
     """
     this script works well for daily HYCOM data but should be made more generic for other types of (meteo) data.
     """
@@ -55,8 +55,8 @@ def merge_netCDF_time(tstart, tstop, tstep_sec, dir_data, nc_prefix, fn_match_pa
             for ncattrname in data_src_attrlist:
                 if ncattrname not in ['variables','dimensions']:
                     data_to.setncattr(ncattrname, data_src.getncattr(ncattrname))
-            if dfmattr:
-                data_to.setncattr('mergedwith', 'dfm_tools.io.netCDF_utils.merge_netCDF_time() from https://github.com/openearth/dfm_tools')
+            if dfmtoolsattr:
+                data_to.setncattr('comment', 'merged with dfm_tools.io.netCDF_utils.merge_netCDF_time() from https://github.com/openearth/dfm_tools')
             #copy dimensions (make dimn_time unlimited)
             data_src_dimlist = list(data_src.dimensions.keys())
             for dimname in data_src_dimlist:

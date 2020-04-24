@@ -8,6 +8,8 @@ History
 * conversion of negative indices to positive, sorting them and make unique
 * read/write noos (matroos) data
 * write bc file for D-Flow FM
+* added export to shapefile example
+* retrieving varname was possible from variable keys, now also possible from long_name or standard_name
 
 0.7.6 (2020-04-06)
 ------------------
