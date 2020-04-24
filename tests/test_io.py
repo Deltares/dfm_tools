@@ -148,9 +148,8 @@ def test_mergenetCDFtime():
     dir_output = './test_output'
     """
 
-
     import datetime as dt
-
+    
     from dfm_tools.io.netCDF_utils import merge_netCDF_time
     """
     if mode == 'meteo':
@@ -181,23 +180,22 @@ def test_mergenetCDFtime():
     fn_dateformat = '%Y%m%d'
     #subfolders = ''
     dir_out = r'n:\Deltabox\Postbox\Veenstra, Jelmer\vanReimer\merged_new'
+    renamevars = {'salinity':'so', 'water_temp':'thetao'}
     ###############
-    data_to = merge_netCDF_time(tstart=tstart, tstop=tstop, tstep_sec=tstep_sec, dir_data=dir_data, nc_prefix=nc_prefix, 
-                                fn_match_pattern=fn_match_pattern, fn_dateformat=fn_dateformat, dir_out=dir_out)
-    
-    varlist = data_to.variables.keys()
-    #data_to.variables['salinity'].setncattr('standard_name','sea_water_salinity')
-    #data_to.variables['water_temp'].setncattr('standard_name','sea_water_potential_temperature')
-    data_to.renameVariable('salinity','so')
-    data_to.renameVariable('water_temp','thetao')
-    
-    """
-    from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
-    from dfm_tools.get_nc_helpers import get_ncvardimlist#, get_ncfilelist
+    file_to = merge_netCDF_time(tstart=tstart, tstop=tstop, tstep_sec=tstep_sec, dir_data=dir_data, nc_prefix=nc_prefix, 
+                                fn_match_pattern=fn_match_pattern, fn_dateformat=fn_dateformat, dir_out=dir_out, renamevars=renamevars)
     
     file_nc = file_to
+
+    from dfm_tools.get_nc import get_ncmodeldata#, get_netdata, get_ncmodeldata, plot_netmapdata
+    from dfm_tools.get_nc_helpers import get_ncvardimlist#, get_ncfilelist
+    
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
     
-    data_fromnc = get_ncmodeldata(file_nc=file_nc, varname='salinity', timestep='all', layer='all')
-
-    """
+    data_fromnc = get_ncmodeldata(file_nc=file_nc, varname=renamevars['salinity'], timestep='all', layer='all')
+    data_to = data_fromnc.var_ncobject
+    
+    varlist = data_to.variables.keys()
+    print(varlist)
+    #data_to.variables['salinity'].setncattr('standard_name','sea_water_salinity')
+    #data_to.variables['water_temp'].setncattr('standard_name','sea_water_potential_temperature')

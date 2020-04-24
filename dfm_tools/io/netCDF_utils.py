@@ -5,7 +5,8 @@ Created on Fri Apr 24 09:50:42 2020
 @author: veenstra
 """
 
-def merge_netCDF_time(tstart, tstop, tstep_sec, dir_data, nc_prefix, fn_match_pattern, fn_dateformat, subfolders=[''], dir_out=None, varn_time='time', dimn_time='time'):
+def merge_netCDF_time(tstart, tstop, tstep_sec, dir_data, nc_prefix, fn_match_pattern, fn_dateformat, subfolders=[''], dir_out=None, 
+                      varn_time='time', dimn_time='time', renamevars=None, dfmattr=True):
     """
     this script works well for daily HYCOM data but should be made more generic for other types of (meteo) data.
     """
@@ -54,7 +55,8 @@ def merge_netCDF_time(tstart, tstop, tstep_sec, dir_data, nc_prefix, fn_match_pa
             for ncattrname in data_src_attrlist:
                 if ncattrname not in ['variables','dimensions']:
                     data_to.setncattr(ncattrname, data_src.getncattr(ncattrname))
-            
+            if dfmattr:
+                data_to.setncattr('mergedwith', 'dfm_tools.io.netCDF_utils.merge_netCDF_time(https://github.com/openearth/dfm_tools)')
             #copy dimensions (make dimn_time unlimited)
             data_src_dimlist = list(data_src.dimensions.keys())
             for dimname in data_src_dimlist:
@@ -66,11 +68,11 @@ def merge_netCDF_time(tstart, tstop, tstep_sec, dir_data, nc_prefix, fn_match_pa
             
             #copy variables (fill three already)
             data_src_varlist = list(data_src.variables.keys())
+            timedep_varlist = []
             for varname in data_src_varlist:
                 data_src_var=data_src.variables[varname]
                 data_src_dims=data_src_var.dimensions
                 data_src_type=data_src_var.dtype.str
-                timedep_varlist = []
                 if dimn_time in data_src_dims:
                     data_src_var_timedep = True
                     timedep_varlist.append(varname)
@@ -100,12 +102,13 @@ def merge_netCDF_time(tstart, tstop, tstep_sec, dir_data, nc_prefix, fn_match_pa
         for varname in timedep_varlist:
             data_to.variables[varname][data_to_ntimes:data_to_ntimes+data_src_ntimes,...] = data_src.variables[varname][:]
         data_src.close()
-    #data_to.close()
-    return data_to
-
-
-
-
+    
+    if renamevars is not None:
+        for varn_old in list(renamevars.keys()):
+            varn_new = renamevars[varn_old]
+            data_to.renameVariable(varn_old,varn_new)
+    data_to.close()
+    return file_to
 
 
 
