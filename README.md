@@ -44,6 +44,7 @@ Features
 - other io functions:
 	- read tekal data (.tek, .pli, .pliz, .pol, .ldb)
 	- read/write mdu file
+	- write model results to shapefile
 
 
 Example usage
