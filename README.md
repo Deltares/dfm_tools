@@ -132,7 +132,7 @@ print('\tthe standard_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var
 Installation
 --------
 - download Anaconda 64 bit Python 3.7 from https://www.anaconda.com/distribution/#download-section (miniconda is probably also sufficient, but this is not yet tested)
-- install it with the recommended settings, but check 'add Anaconda3 to my PATH enviroment variable' if you want to use conda from the windows command prompt instead of anaconda prompt
+- install it with the recommended settings, but check 'add Anaconda3 to my PATH environment variable' if you want to use conda from the windows command prompt instead of anaconda prompt
 - install dfm_tools from github:
 	- open command window (or anaconda prompt)
 	- ``conda create --name dfm_tools_env python=3.7 git spyder -y`` (creating a venv is recommended, but at least do ``conda install git`` if you choose not to)
@@ -140,6 +140,7 @@ Installation
 	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this command installs dfm_tools and all required packages)
 	- ``conda install -c conda-forge "shapely>=1.7.0" -y`` (for slicing 2D/3D data) (conda-forge channel is necessary since main channel version is 1.6.4. The correct version is available via pip, but then geos dll is not properly linked, this will probably be solved in the future https://github.com/Toblerity/Shapely/issues/844)
 	- optional: ``conda install -c conda-forge cartopy -y`` (for satellite imagery on plots) (conda-forge channel recommended by cartopy developers, and currently also necessary for correct shapely version)
+	- optional: ``conda install -c conda-forge geopandas -y`` (for shapefile related operations)
 - launch Spyder:
 	- open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in dfm_tools_env)
 	- if launching Spyder gives a Qt related error: remove the system/user environment variable 'qt_plugin_path' set by an old Delft3D4 installation procedure
