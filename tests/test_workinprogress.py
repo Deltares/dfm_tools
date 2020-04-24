@@ -1341,4 +1341,76 @@ def test_workinprogress():
 
 
 
+    
+@pytest.mark.acceptance
+def test_exporttoshapefile():
+    ## WARNING: THIS TEST IS NOT YET FINISHED, WILL BE IMPROVED AND LINKED TO INTERNAL FUNCTIONS ASAP
+    dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
+    """
+    dir_output = './test_output'
+    """
 
+    import os
+    import geopandas as gpd #conda install --channel conda-forge geopandas (breaks dfm_tools environment because of Qt issue)
+    import pandas as pd
+    from shapely.geometry import Point, Polygon
+    import fiona
+    from fiona.crs import from_epsg
+    
+    import numpy as np
+    import matplotlib.pyplot as plt
+    plt.close('all')
+    
+    from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
+    from dfm_tools.get_nc_helpers import get_ncvardimlist#, get_ncfilelist
+    
+    
+    dir_modeloutput = r'p:\11203850-coastserv\06-Model\waq_model\simulations\run0_20200319\DFM_OUTPUT_kzn_waq'
+    dir_shp = dir_output#os.path.join(dir_modeloutput, 'shapefiles')
+    if not os.path.exists(dir_shp):
+        os.makedirs(dir_shp)
+    
+    file_nc = os.path.join(dir_modeloutput, 'kzn_waq_0000_map.nc')
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    vars_pd_matching = vars_pd[vars_pd.loc[:,'long_name'].str.match('.*Chl.*')]
+    #vars_pd_matching = vars_pd[vars_pd.loc[:,'long_name'].str.startswith('') & vars_pd.loc[:,'long_name'].str.endswith('Chlo')]
+    varns_Chl = vars_pd_matching['nc_varkeys'].tolist()
+    varns_Chl_long = vars_pd_matching['long_name'].tolist()
+    
+    newdata = gpd.GeoDataFrame()
+    
+    ugrid = get_netdata(file_nc=file_nc)#, multipart=False)
+    
+    print('creating geodataframe with cells (takes a while)')
+    newdata.crs = from_epsg(4326)
+    #partly from dfm_tools.ugrid.polygon_intersect()
+    for iP, pol_data in enumerate(ugrid.verts): #[range(5000),:,:]
+        pol_data_nonan = pol_data[~np.isnan(pol_data).all(axis=1)]
+        pol_shp = Polygon(pol_data_nonan)
+        #pol_shp_list.append(pol_shp)
+        newdata.loc[iP,'geometry'] = pol_shp
+        
+    varlist = ['Chlfa']#,'mesh2d_s1']
+    for iV, varname in enumerate(varlist):
+        newdata[varname] = None
+    
+    for timestep in [10]:#[0,10,20,30]:
+        for iV, varname in enumerate(varlist):
+            try:
+                data_fromnc = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep, layer=-2)
+            except:
+                data_fromnc = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep)
+    
+            data_fromnc_nonan = data_fromnc.flatten()
+            data_fromnc_nonan[data_fromnc_nonan<-900] = np.nan
+            newdata[varname] = data_fromnc_nonan
+        file_shp = os.path.join(dir_shp,'shp_%s_%s'%(varname,data_fromnc.var_times.iloc[0].strftime('%Y%m%d')))
+        newdata.to_file(file_shp)
+        """
+        fig, ax = plt.subplots(figsize=(6,7))
+        pc = plot_netmapdata(ugrid.verts, values=data_fromnc[0,:,0], ax=None, linewidth=0.5, cmap='jet')
+        pc.set_clim([-1,0])
+        fig.colorbar(pc)
+        ax.set_aspect(1./np.cos(np.mean(ax.get_ylim())/180*np.pi),adjustable='box')
+        fig.tight_layout()
+        """
