@@ -223,7 +223,7 @@ def get_ncvarobject(file_nc, varname):
         varname = vars_pd.loc[varid,'nc_varkeys']
         print('varname found in standard_name attribute')
     else:
-        raise Exception('ERROR: requested variable %s not in netcdf, available are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_ncvardimlist; vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)'%(varname, vars_pd))
+        raise Exception('ERROR: requested variable %s not in netcdf, available are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_ncvardimlist; vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)\nnote that you can retrieve variables by keys, standard_name or long_name attributes'%(varname, vars_pd))
     
     data_nc = Dataset(file_nc)
     nc_varobject = data_nc.variables[varname]
