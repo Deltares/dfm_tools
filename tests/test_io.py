@@ -174,12 +174,12 @@ def test_mergenetCDFtime():
     tstart = dt.datetime(2016,4,28)
     tstop = dt.datetime(2016,5,3)
     tstep_sec = 3600*24
-    dir_data = r'n:\Deltabox\Postbox\Veenstra, Jelmer\vanReimer\GLBu0.08_expt_91.2'
+    dir_data = os.path.join(dir_testinput,'GLBu0.08_expt_91.2')
     nc_prefix = 'HYCOM_ST_GoO_'
     fn_match_pattern = '%s(.*).nc'%(nc_prefix)
     fn_dateformat = '%Y%m%d'
     #subfolders = ''
-    dir_out = r'n:\Deltabox\Postbox\Veenstra, Jelmer\vanReimer\merged_new'
+    dir_out = dir_output #os.path.join(dir_data,'merged_new')
     renamevars = {'salinity':'so', 'water_temp':'thetao'}
     ###############
     file_to = merge_netCDF_time(tstart=tstart, tstop=tstop, tstep_sec=tstep_sec, dir_data=dir_data, nc_prefix=nc_prefix, 

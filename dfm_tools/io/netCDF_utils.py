@@ -56,7 +56,7 @@ def merge_netCDF_time(tstart, tstop, tstep_sec, dir_data, nc_prefix, fn_match_pa
                 if ncattrname not in ['variables','dimensions']:
                     data_to.setncattr(ncattrname, data_src.getncattr(ncattrname))
             if dfmattr:
-                data_to.setncattr('mergedwith', 'dfm_tools.io.netCDF_utils.merge_netCDF_time(https://github.com/openearth/dfm_tools)')
+                data_to.setncattr('mergedwith', 'dfm_tools.io.netCDF_utils.merge_netCDF_time() from https://github.com/openearth/dfm_tools')
             #copy dimensions (make dimn_time unlimited)
             data_src_dimlist = list(data_src.dimensions.keys())
             for dimname in data_src_dimlist:
