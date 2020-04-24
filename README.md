@@ -211,7 +211,6 @@ Feature wishlist
 	- https://pypi.org/project/UTide/
 	- https://github.com/moflaher/ttide_py
 	- hatyan
-- dimn_time is now actually variable name which does not work if time dimname is not the same as time varname > define whether to retrieve dim or var, or make separate definitions
 - make merc keyword always optional by testing for minmax all vertsx between -181 and 361 and minmax all vertsy (lat) between -91 and 91 (+range for overlap for e.g. gtsm model)
 - improve get_ncmodeldata second intersect function
 	- optimize with distance from line: get maximum cell area (and infer width) from lineblockbbound selection, then decide on distance from line for selection of cells for crossect calculation
