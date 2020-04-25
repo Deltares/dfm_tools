@@ -1377,18 +1377,18 @@ def test_exporttoshapefile():
     varns_Chl = vars_pd_matching['nc_varkeys'].tolist()
     varns_Chl_long = vars_pd_matching['long_name'].tolist()
     
-    newdata = gpd.GeoDataFrame()
-    
     ugrid = get_netdata(file_nc=file_nc)#, multipart=False)
     
     print('creating geodataframe with cells (takes a while)')
+    newdata = gpd.GeoDataFrame()
     newdata.crs = from_epsg(4326)
+    pol_shp_list = []
     #partly from dfm_tools.ugrid.polygon_intersect()
     for iP, pol_data in enumerate(ugrid.verts): #[range(5000),:,:]
         pol_data_nonan = pol_data[~np.isnan(pol_data).all(axis=1)]
         pol_shp = Polygon(pol_data_nonan)
-        #pol_shp_list.append(pol_shp)
-        newdata.loc[iP,'geometry'] = pol_shp
+        pol_shp_list.append(pol_shp)
+    newdata['geometry'] = pol_shp_list #way more time efficient than doing it the loop
         
     varlist = ['Chlfa']#,'mesh2d_s1']
     for iV, varname in enumerate(varlist):
