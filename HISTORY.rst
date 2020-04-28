@@ -2,11 +2,16 @@
 History
 =======
 
-0.x.x (date)
+0.7.17 (2020-04-28)
 ------------------
-* improved time dimension reading (more efficient when retrieving only a time-subset of a variable from a netCDF with long time dimension)
-* conversion of negative indices to positive
-* NOT YET: sort+ make unique
+* improved time variable reading (more efficient when retrieving only a time-subset of a variable from a netCDF with long time dimension)
+* improved time variable/dimensions reading (arbitrary time variable/dimension names are suported, as well as multiple time variables/dimensions)
+* times were previously recalculated to UTC/GMT, this is now fixed
+* conversion of negative indices to positive, sorting them and make unique
+* read/write noos (matroos) data
+* write bc file for D-Flow FM
+* added example code to export D-Flow FM results to shapefile
+* retrieving varname was possible from variable keys, now also possible from long_name or standard_name
 
 0.7.6 (2020-04-06)
 ------------------

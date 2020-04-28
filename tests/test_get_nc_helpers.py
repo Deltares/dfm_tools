@@ -45,7 +45,7 @@ def test_getvarnamemapnc():
     data_nc = Dataset(file_nc)
     varname_requested = 'NetNode_y' #is actually in file, so this is not a good test
     
-    varname = get_varname_fromnc(data_nc,varname_requested)
+    varname = get_varname_fromnc(data_nc,varname_requested, vardim='var')
     data_nc_var = data_nc.variables[varname]
     dimname = data_nc_var.dimensions[0]
     

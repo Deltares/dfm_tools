@@ -44,6 +44,31 @@ Features
 - other io functions:
 	- read tekal data (.tek, .pli, .pliz, .pol, .ldb)
 	- read/write mdu file
+	- write model results to shapefile
+
+
+Installation
+--------
+- download Anaconda 64 bit Python 3.7 from https://www.anaconda.com/distribution/#download-section (miniconda is probably also sufficient, but this is not yet tested)
+- install it with the recommended settings, but check 'add Anaconda3 to my PATH environment variable' if you want to use conda from the windows command prompt instead of anaconda prompt
+- install dfm_tools from github:
+	- open command window (or anaconda prompt)
+	- ``conda create --name dfm_tools_env python=3.7 git spyder -y`` (creating a venv is recommended, but at least do ``conda install git`` if you choose not to)
+	- ``conda activate dfm_tools_env``
+	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this command installs dfm_tools and all required packages)
+	- optional: ``conda install -c conda-forge "shapely>=1.7.0" -y`` (for slicing 2D/3D data) (conda-forge channel is necessary since main channel version is 1.6.4)
+	- optional: ``conda install -c conda-forge cartopy -y`` (for satellite imagery on plots) (conda-forge channel recommended by cartopy developers, and currently also necessary for correct shapely version)
+	- optional: ``conda install -c conda-forge geopandas -y`` (for shapefile related operations)
+- launch Spyder:
+	- open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in dfm_tools_env)
+	- if launching Spyder gives a Qt related error: remove the system/user environment variable 'qt_plugin_path' set by an old Delft3D4 installation procedure
+	- test by printing dfm_tools version number: ``import dfm_tools; print(dfm_tools.__version__)`` (to double check if you are working in the venv where dfm_tools_env was installed)
+	- to get figures in separate windows: go to Tools > Preferences > IPython console > Graphics > change graphics backend to 'Automatic' and restart Spyder (or the kernel).
+	- copy the code from [Example usage](#example-usage) to your own scripts to get starteds
+- to update dfm_tools:
+	- open command window (or anaconda prompt)
+	- ``conda activate dfm_tools_env``
+	- ``python -m pip install --upgrade git+https://github.com/openearth/dfm_tools.git``
 
 
 Example usage
@@ -86,7 +111,7 @@ fig, ax = plt.subplots(1,1,figsize=(10,5))
 for iP, station in enumerate(data_fromhis_wl.var_stations['station_name']):
     ax.plot(data_fromhis_wl.var_times,data_fromhis_wl[:,iP],'-', label=station)
 ax.legend()
-ax.set_ylabel('%s (%s)'%(data_fromhis_wl.var_varname, data_fromhis_wl.var_object.units))
+ax.set_ylabel('%s (%s)'%(data_fromhis_wl.var_varname, data_fromhis_wl.var_ncvarobject.units))
 
 #plot net/grid
 ugrid_all = get_netdata(file_nc=file_nc_map)#,multipart=False)
@@ -100,7 +125,7 @@ fig, ax = plt.subplots()
 pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_wl[0,:], ax=None, linewidth=0.5, cmap="jet")
 pc.set_clim([-0.5,1])
 fig.colorbar(pc, ax=ax)
-ax.set_title('%s (%s)'%(data_frommap_wl.var_varname, data_frommap_wl.var_object.units))
+ax.set_title('%s (%s)'%(data_frommap_wl.var_varname, data_frommap_wl.var_ncvarobject.units))
 ax.set_aspect('equal')
 
 #plot salinity on map
@@ -108,7 +133,7 @@ data_frommap_sal = get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_sa1', ti
 fig, ax = plt.subplots()
 pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_sal[0,:,0], ax=None, linewidth=0.5, cmap="jet")
 fig.colorbar(pc, ax=ax)
-ax.set_title('%s (%s)'%(data_frommap_sal.var_varname, data_frommap_sal.var_object.units))
+ax.set_title('%s (%s)'%(data_frommap_sal.var_varname, data_frommap_sal.var_ncvarobject.units))
 ax.set_aspect('equal')
 
 #print contents of retrieved data withing data_frommap_sal variable
@@ -119,45 +144,26 @@ print('++++++\nthe station indices and station names in the variable %s are:\n%s
 print('++++++\nthe layer indices in the variable %s are:\n%s\n'%(print_var.var_varname, print_var.var_layers))
 print('++++++\nthe shape of the variable %s is:\n%s\n'%(print_var.var_varname, print_var.shape))
 print('++++++\nthe dimensions of the variable %s are (copied from netCDF variable):\n%s\n'%(print_var.var_varname, print_var.var_dimensions))
-print('++++++\nthe netCDF variable where the data in variable %s comes from is:\n%s\n'%(print_var.var_varname, print_var.var_object))
+print('++++++\nthe netCDF variable where the data in variable %s comes from is:\n%s\n'%(print_var.var_varname, print_var.var_ncvarobject))
 print('++++++\nsome example contents of this netCDF variable:')
-print('\tthe dimension names of the netCDF variable %s are:\n\t\t%s'%(print_var.var_varname, print_var.var_object.dimensions))
-print('\tthe shape of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname, print_var.var_object.shape))
-print('\tthe units of the netCDF variable %s are:\n\t\t%s'%(print_var.var_varname, print_var.var_object.units))
-print('\tthe long_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname, print_var.var_object.long_name))
-print('\tthe standard_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname, print_var.var_object.standard_name))
+print('\tthe dimension names of the netCDF variable %s are:\n\t\t%s'%(print_var.var_varname, print_var.var_ncvarobject.dimensions))
+print('\tthe shape of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname, print_var.var_ncvarobject.shape))
+print('\tthe units of the netCDF variable %s are:\n\t\t%s'%(print_var.var_varname, print_var.var_ncvarobject.units))
+print('\tthe long_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname, print_var.var_ncvarobject.long_name))
+print('\tthe standard_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname, print_var.var_ncvarobject.standard_name))
 ```
-
-
-Installation
---------
-- download Anaconda 64 bit Python 3.7 from https://www.anaconda.com/distribution/#download-section (miniconda is probably also sufficient, but this is not yet tested)
-- install it with the recommended settings, but check 'add Anaconda3 to my PATH enviroment variable' if you want to use conda from the windows command prompt instead of anaconda prompt
-- install dfm_tools from github:
-	- open command window (or anaconda prompt)
-	- ``conda create --name dfm_tools_env python=3.7 git spyder -y`` (creating a venv is recommended, but at least do ``conda install git`` if you choose not to)
-	- ``conda activate dfm_tools_env``
-	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this command installs dfm_tools and all required packages)
-	- ``conda install -c conda-forge "shapely>=1.7.0" -y`` (for slicing 2D/3D data) (conda-forge channel is necessary since main channel version is 1.6.4. The correct version is available via pip, but then geos dll is not properly linked, this will probably be solved in the future https://github.com/Toblerity/Shapely/issues/844)
-	- optional: ``conda install -c conda-forge cartopy -y`` (for satellite imagery on plots) (conda-forge channel recommended by cartopy developers, and currently also necessary for correct shapely version)
-- launch Spyder:
-	- open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in dfm_tools_env)
-	- if launching Spyder gives a Qt related error: remove the system/user environment variable 'qt_plugin_path' set by an old Delft3D4 installation procedure
-	- test by printing dfm_tools version number: ``import dfm_tools; print(dfm_tools.__version__)`` (to double check if you are working in the venv where dfm_tools_env was installed)
-	- to get figures in separate windows: go to Tools > Preferences > IPython console > Graphics > change graphics backend to 'Automatic' and restart Spyder (or the kernel).
-	- copy the code from [Example usage](#example-usage) to your own scripts to get starteds
-- to update dfm_tools:
-	- open command window (or anaconda prompt)
-	- ``conda activate dfm_tools_env``
-	- ``python -m pip install --upgrade git+https://github.com/openearth/dfm_tools.git``
 
 
 Feature wishlist
 --------
+- improve time reading:
+	- add support for 360_day and noleap calendars (cannot be converted to dt.datetime)
+	- time array is now converted to UTC by num2date automatically and if possible converted back to original timezone, simplify by writing own num2date that excludes timezone from units strin?
 - merge station/layer/times checks, these parts of get_nc.py have a lot of overlap. also convert (list-likes of) int-likes to np.arrays so less checking is needed
 - add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?):
 	- refer depth w.r.t. reference level, water level or bed level
 	- see test_workinprogress.py
+	- see general grid improvement options
 - retrieve correct depths:
 	- add depth array (interfaces/centers) to his and map variables (z/sigma layer calculation is already in get_modeldata_onintersection function)
 	- depths can be retrieved from mesh2d_layer_z/mesh2d_layer_sigma, but has no time dimension so untrue for sigma and maybe for z? (wrong in dflowfm?)
@@ -182,9 +188,19 @@ Feature wishlist
 	- https://github.com/SciTools/cartopy/blob/master/lib/cartopy/data/raster/natural_earth/images.json
 	- https://github.com/SciTools/cartopy/blob/master/lib/cartopy/data/raster/natural_earth/50-natural-earth-1-downsampled.png
 	- http://earthpy.org/cartopy_backgroung.html
+- export to shapefile:
+	- testbank example added for a specific feature to shapefile, make more generic
+- coordinate conversion:
+	```python
+	from pyproj import Proj, transform
+	inProj = Proj(init='epsg:%i'%(epsg_in))
+	outProj = Proj(init='epsg:%i'%(epsg_out))
+	x_out,y_out = transform(inProj,outProj,x_in,y_in)
+	```
 - add more io-functions:
-	- read/write matroos data
-	- convert data to kml (google earth) or shp?
+	- read/write matroos data (first setup in dfm_tools.io.noos)
+	- read/write bc files (first setups in dfm_tools.io.bc and dflowutil, include testcase)
+	- convert data to kml (google earth) or shp? (including RD to WGS84 conversion and maybe vice versa)
 	- improve tekal map read
 	- add tekal mergedatasets function to get e.g. one ldb dataset with the original parts separated with nans
 	- add tekal write functions
@@ -195,7 +211,7 @@ Feature wishlist
 	- https://github.com/pwcazenave/tappy
 	- https://pypi.org/project/UTide/
 	- https://github.com/moflaher/ttide_py
-- dimn_time is now actually variable name which does not work if time dimname is not the same as time varname > define whether to retrieve dim or var, or make separate definitions
+	- hatyan
 - make merc keyword always optional by testing for minmax all vertsx between -181 and 361 and minmax all vertsy (lat) between -91 and 91 (+range for overlap for e.g. gtsm model)
 - improve get_ncmodeldata second intersect function
 	- optimize with distance from line: get maximum cell area (and infer width) from lineblockbbound selection, then decide on distance from line for selection of cells for crossect calculation
@@ -227,6 +243,9 @@ Feature wishlist
 	- pcolor resulteert ook in een polycollection, net zoals handmatig wordt gedaan met plot_mapdata()
 	- implement kivu paper figure in testbank, since it correctly combines m/n corners with mapdata (including dummy row)
 	- possible to add pyugrid from github as dependency? in setup.py: install_requires=['python_world@git+https://github.com/ceddlyburge/python_world#egg=python_world-0.0.1',]
+	- sigma method in get_xzcoords_onintersection() is assumes equidistant layers, add exception
+	- zlayer method in get_xzcoords_onintersection() retrieves from hardcoded interface variable name, centers are not used.
+	- how is depth stored in sigma/z/sigma-z models, generic vertical slice method possible?
 - interactive data retrieval and plotting by calling get_ncmodeldata() without arguments
 
 
@@ -239,6 +258,7 @@ Todo non-content
 	- create overview of scripts and functions, including future location of missing features
 	- write documentation as comments and generate automatically? (at least add documentation as comments to functions so Spyder help window can display this)
 	- improve feedback to user if no or wrong input arguments are given to functions
+	- add license to new scripts
 - external improvements:
 	- fix small bugs in Delft3D4 netCDF output (related to coordinates, coordinates of velocity points and incorrect missing values)
 	- request modplot.velovect() (curved vectors) to be added to matplotlib
@@ -284,7 +304,7 @@ Developer information
 	- ``conda activate dfm_tools_devenv``
 	- ``conda install spyder``
 	- ``python -m pip install -e .`` (pip developer mode, any updates to the local folder by github (with ``git pull``) are immediately available in your python. It also installs all required packages)
-	- ``conda install -c conda-forge "shapely>=1.7.0" cartopy``(conda-forge channel is necessary since main channel version is 1.6.4. The correct version is available via pip, but then geos dll is not properly linked, this will probably be solved in the future https://github.com/Toblerity/Shapely/issues/844. cartopy also recommends conda-forge channel)
+	- ``conda install -c conda-forge "shapely>=1.7.0" cartopy geopandas``(conda-forge channel is necessary since main channel shapely version is 1.6.4. The correct version is available via pip, but then geos dll is not properly linked, this will probably be solved in the future https://github.com/Toblerity/Shapely/issues/844. cartopy also recommends conda-forge channel)
 	- test if dfm_tools is properly installed by printing the version number: ``python -c "import dfm_tools; print(dfm_tools.__version__)"``
 	- open 'Spyder(dfm_tools_devenv)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in dfm_tools_devenv)
 - Make your local changes to dfm_tools

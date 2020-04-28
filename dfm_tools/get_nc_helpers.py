@@ -59,6 +59,10 @@ def get_ncfilelist(file_nc, multipart=None):
             #filename_number = re.compile('(.*)_([0-9]+)_map.nc').search(file_nc).group(2)
             #file_ncs = [file_nc.replace('_%s_map.nc','_%04d_map.nc'%(filename_number, domain_id)) for domain_id in range(ndomains)]
             file_ncs = glob.glob('%s*_%s'%(filename_start,nctype))
+            filename_merged = '%s_merged_%s'%(filename_start,nctype)
+            if filename_merged in file_ncs:
+                file_ncs.remove(filename_merged)
+            
         else:
             file_ncs = [file_nc]
     else:
@@ -68,54 +72,57 @@ def get_ncfilelist(file_nc, multipart=None):
 
 
 
-def get_varname_fromnc(data_nc,varname_requested):
+def get_varname_fromnc(data_nc,varname_requested,vardim):
     import pandas as pd
     
     #VARIABLE names used within different versions of Delft3D-Flexible Mesh
     varnames_list = pd.DataFrame()
-    varnames_list['time'] = ['time','nmesh2d_dlwq_time','TIME','','',''] # time
+    #varnames_list['time'] = ['time','nmesh2d_dlwq_time','TIME','','',''] # time, not necessary anymore
     
-    varnames_list['mesh2d_node_x'] = ['mesh2d_node_x','NetNode_x','mesh2d_agg_node_x','','',''] # x-coordinate of nodes
-    varnames_list['mesh2d_node_y'] = ['mesh2d_node_y','NetNode_y','mesh2d_agg_node_y','','',''] # y-coordinate of nodes
-    varnames_list['mesh2d_node_z'] = ['mesh2d_node_z','NetNode_z','','','',''] # z-coordinate of nodes
+    if vardim == 'var':
+        varnames_list['mesh2d_node_x'] = ['mesh2d_node_x','NetNode_x','mesh2d_agg_node_x','','',''] # x-coordinate of nodes
+        varnames_list['mesh2d_node_y'] = ['mesh2d_node_y','NetNode_y','mesh2d_agg_node_y','','',''] # y-coordinate of nodes
+        varnames_list['mesh2d_node_z'] = ['mesh2d_node_z','NetNode_z','','','',''] # z-coordinate of nodes
+        
+        varnames_list['mesh2d_face_x'] = ['mesh2d_face_x','FlowElem_xzw','mesh2d_agg_face_x','','',''] # x-coordinate of faces (center)
+        varnames_list['mesh2d_face_y'] = ['mesh2d_face_y','FlowElem_yzw','mesh2d_agg_face_y','','',''] # y-coordinate of faces (center)
+        
+        varnames_list['mesh2d_edge_x'] = ['mesh2d_edge_x','','','','',''] # x-coordinate of velocity-points
+        varnames_list['mesh2d_edge_y'] = ['mesh2d_edge_y','','','','',''] # y-coordinate of velocity-points
+        
+        varnames_list['mesh2d_edge_nodes'] = ['mesh2d_edge_nodes','NetLink','','','',''] # 'link between two netnodes' / 'Mapping from every edge to the two nodes that it connects'
+        varnames_list['mesh2d_face_nodes'] = ['mesh2d_face_nodes','NetElemNode','mesh2d_agg_face_nodes','','',''] # 
+        
+        varnames_list['mesh2d_face_x_bnd'] = ['mesh2d_face_x_bnd','FlowElemContour_x','mesh2d_agg_face_x_bnd','','',''] # x-coordinates of flow element contours
+        varnames_list['mesh2d_face_y_bnd'] = ['mesh2d_face_y_bnd','FlowElemContour_y','mesh2d_agg_face_y_bnd','','',''] # y-coordinates of flow element contours
+        
+        varnames_list['mesh2d_flowelem_domain'] = ['mesh2d_flowelem_domain','FlowElemDomain','','','',''] # flow element domain
+        varnames_list['mesh2d_flowelem_bl'] = ['mesh2d_flowelem_bl','FlowElem_bl','','','',''] # bed level
+        varnames_list['mesh2d_flowelem_ba'] = ['mesh2d_flowelem_ba','FlowElem_bac','','','',''] # area (m2) of cell faces
+        
+        varnames_list['mesh2d_layer_z'] = ['mesh2d_layer_z','LayCoord_cc','','','',''] # 
+        
+        #non-grid variables necessary for layer calculation for intersection/cross section) funtion
+        varnames_list['mesh2d_s1'] = ['mesh2d_s1','','','','',''] # water level
+        varnames_list['mesh2d_flowelem_bl'] = ['mesh2d_flowelem_bl','','','','',''] # bed level
     
-    varnames_list['mesh2d_face_x'] = ['mesh2d_face_x','FlowElem_xzw','mesh2d_agg_face_x','','',''] # x-coordinate of faces (center)
-    varnames_list['mesh2d_face_y'] = ['mesh2d_face_y','FlowElem_yzw','mesh2d_agg_face_y','','',''] # y-coordinate of faces (center)
+        #varnames_list['mesh2d_ucx'] = ['mesh2d_ucx','ucx','',''] # 
+        #varnames_list['mesh2d_ucy'] = ['mesh2d_ucy','ucy','',''] # 
+        #varnames_list['mesh2d_sa1'] = ['mesh2d_sa1','sa1','',''] # 
+        #varnames_list['mesh2d_tem1'] = ['mesh2d_tem1','tem1','',''] # 
     
-    varnames_list['mesh2d_edge_x'] = ['mesh2d_edge_x','','','','',''] # x-coordinate of velocity-points
-    varnames_list['mesh2d_edge_y'] = ['mesh2d_edge_y','','','','',''] # y-coordinate of velocity-points
-    
-    varnames_list['mesh2d_edge_nodes'] = ['mesh2d_edge_nodes','NetLink','','','',''] # 'link between two netnodes' / 'Mapping from every edge to the two nodes that it connects'
-    varnames_list['mesh2d_face_nodes'] = ['mesh2d_face_nodes','NetElemNode','mesh2d_agg_face_nodes','','',''] # 
-    
-    varnames_list['mesh2d_face_x_bnd'] = ['mesh2d_face_x_bnd','FlowElemContour_x','mesh2d_agg_face_x_bnd','','',''] # x-coordinates of flow element contours
-    varnames_list['mesh2d_face_y_bnd'] = ['mesh2d_face_y_bnd','FlowElemContour_y','mesh2d_agg_face_y_bnd','','',''] # y-coordinates of flow element contours
-    
-    varnames_list['mesh2d_flowelem_domain'] = ['mesh2d_flowelem_domain','FlowElemDomain','','','',''] # flow element domain
-    varnames_list['mesh2d_flowelem_bl'] = ['mesh2d_flowelem_bl','FlowElem_bl','','','',''] # bed level
-    varnames_list['mesh2d_flowelem_ba'] = ['mesh2d_flowelem_ba','FlowElem_bac','','','',''] # area (m2) of cell faces
-    
-    varnames_list['mesh2d_layer_z'] = ['mesh2d_layer_z','LayCoord_cc','','','',''] # 
-    
-    #non-grid variables necessary for layer calculation for intersection/cross section) funtion
-    varnames_list['mesh2d_s1'] = ['mesh2d_s1','','','','',''] # water level
-    varnames_list['mesh2d_flowelem_bl'] = ['mesh2d_flowelem_bl','','','','',''] # bed level
-
-    #varnames_list['mesh2d_ucx'] = ['mesh2d_ucx','ucx','',''] # 
-    #varnames_list['mesh2d_ucy'] = ['mesh2d_ucy','ucy','',''] # 
-    #varnames_list['mesh2d_sa1'] = ['mesh2d_sa1','sa1','',''] # 
-    #varnames_list['mesh2d_tem1'] = ['mesh2d_tem1','tem1','',''] # 
-    
-    
-    ### DIMENSION names used within different versions of Delft3D-Flexible Mesh
-    #dimnames_list = pd.DataFrame()
-    varnames_list['nmesh2d_node'] = ['nmesh2d_node','mesh2d_nNodes','nNetNode','','',''] # number of nodes
-    varnames_list['nmesh2d_face'] = ['nmesh2d_face','mesh2d_nFaces','nNetElem','','',''] # number of faces
-    varnames_list['nmesh2d_edge'] = ['nmesh2d_edge','nNetLink','','','',''] # number of velocity-points
-    varnames_list['nFlowElem'] = ['nFlowElem','','','','',''] # number of flow elements
-    varnames_list['nFlowLink'] = ['nFlowLink','','','','',''] # number of flow elements
-    
-    varnames_list['nmesh2d_layer'] = ['nmesh2d_layer','mesh2d_nLayers','laydim','nmesh2d_layer_dlwq','LAYER','KMAXOUT_RESTR'] # layer
+    elif vardim == 'dim':
+        ### DIMENSION names used within different versions of Delft3D-Flexible Mesh
+        #dimnames_list = pd.DataFrame()
+        varnames_list['nmesh2d_node'] = ['nmesh2d_node','mesh2d_nNodes','nNetNode','','','',''] # number of nodes
+        varnames_list['nmesh2d_face'] = ['nmesh2d_face','mesh2d_nFaces','nNetElem','','','',''] # number of faces
+        varnames_list['nmesh2d_edge'] = ['nmesh2d_edge','nNetLink','','','','',''] # number of velocity-points
+        varnames_list['nFlowElem'] = ['nFlowElem','','','','','',''] # number of flow elements
+        varnames_list['nFlowLink'] = ['nFlowLink','','','','','',''] # number of flow elements
+        
+        varnames_list['nmesh2d_layer'] = ['nmesh2d_layer','mesh2d_nLayers','laydim','nmesh2d_layer_dlwq','LAYER','KMAXOUT_RESTR','depth'] # layer
+    else:
+        raise Exception('parameter vardim can be "var" or "dim"')
     
     #look for correct pd column
     pdcol_bool = varnames_list.eq(varname_requested).any()
@@ -127,8 +134,12 @@ def get_varname_fromnc(data_nc,varname_requested):
     else:
         varname_pdcol = varname_pdcol[0]
     
-    data_nc_varnames_list = list(data_nc.variables.keys())
-    data_nc_dimnames_list = list(data_nc.dimensions.keys())
+    if vardim == 'var':
+        data_nc_vardimnames_list = list(data_nc.variables.keys())
+    elif vardim == 'dim':
+        data_nc_vardimnames_list = list(data_nc.dimensions.keys())
+    else:
+        raise Exception('parameter vardim can be "var" or "dim"')
     
     def get_vardimname(data_nc_names_list):
         #check what is in netcdf file
@@ -145,9 +156,9 @@ def get_varname_fromnc(data_nc,varname_requested):
                 varname = varname[0]
         return varname
     
-    varname = get_vardimname(data_nc_varnames_list)
-    if varname is None:
-        varname = get_vardimname(data_nc_dimnames_list)
+    varname = get_vardimname(data_nc_vardimnames_list)
+    #if varname is None:
+    #    varname = get_vardimname(data_nc_dimnames_list)
     
     return varname
 
@@ -195,11 +206,24 @@ def get_ncvarobject(file_nc, varname):
     from netCDF4 import Dataset
     
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    
     nc_varkeys = list(vars_pd['nc_varkeys'])
+    nc_varlongnames = list(vars_pd['long_name'])
+    nc_varstandardnames = list(vars_pd['standard_name'])
     
     # check if requested variable is in netcdf
-    if varname not in nc_varkeys:
-        raise Exception('ERROR: requested variable %s not in netcdf, available are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_ncvardimlist; vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)'%(varname, vars_pd))
+    if varname in nc_varkeys:
+        pass
+    elif varname in nc_varlongnames:
+        varid = nc_varlongnames.index(varname)
+        varname = vars_pd.loc[varid,'nc_varkeys']
+        print('varname found in long_name attribute')
+    elif varname in nc_varstandardnames:
+        varid = nc_varstandardnames.index(varname)
+        varname = vars_pd.loc[varid,'nc_varkeys']
+        print('varname found in standard_name attribute')
+    else:
+        raise Exception('ERROR: requested variable %s not in netcdf, available are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_ncvardimlist; vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)\nnote that you can retrieve variables by keys, standard_name or long_name attributes'%(varname, vars_pd))
     
     data_nc = Dataset(file_nc)
     nc_varobject = data_nc.variables[varname]
@@ -216,7 +240,7 @@ def ghostcell_filter(file_nc):
     
     data_nc = Dataset(file_nc)
     
-    varn_domain = get_varname_fromnc(data_nc,'mesh2d_flowelem_domain')
+    varn_domain = get_varname_fromnc(data_nc,'mesh2d_flowelem_domain',vardim='var')
     if varn_domain is not None: # domain variable is present, so there are multiple domains
         domain = data_nc.variables[varn_domain][:]
         domain_no = np.bincount(domain).argmax() #meest voorkomende domeinnummer
@@ -227,7 +251,31 @@ def ghostcell_filter(file_nc):
 
 
 
-def get_timesfromnc(file_nc, retrieve_ids=False):
+
+
+def get_variable_timevardim(file_nc, varname):
+    #get corresponding time variable name
+    from netCDF4 import Dataset
+    
+    #from dfm_tools.get_nc_helpers import get_ncvarobject
+    
+    data_nc = Dataset(file_nc)
+    nc_varobject = get_ncvarobject(file_nc, varname)
+    
+    varn_time = None
+    dimn_time = None
+    varlist_wunits = data_nc.get_variables_by_attributes(units=lambda v: v is not None)
+    for var_lookup in varlist_wunits:
+        if 'since' in var_lookup.units and var_lookup.dimensions[0] in nc_varobject.dimensions:
+            dimn_time = var_lookup.dimensions[0]
+            varn_time = var_lookup.name
+            break
+    return varn_time, dimn_time
+
+
+
+    
+def get_timesfromnc(file_nc, varname='time', retrieve_ids=False, keeptimezone=True):
     """
     retrieves time array from netcdf file.
     Since long time arrays take a long time to retrieve at once, reconstruction is tried
@@ -235,17 +283,43 @@ def get_timesfromnc(file_nc, retrieve_ids=False):
     therefore, the interval at the start and end of the time array is not always equal to the 'real' time interval
     reconstruction takes care of this.
     if reconstruction fails (the length of the netCDF variable is not equal of the length of the reconstructed array), all times are read
+
+    Parameters
+    ----------
+    file_nc : STR
+        DESCRIPTION.
+    varname : STR, optional
+        DESCRIPTION. The default is 'time'.
+    retrieve_ids : LIST of int, optional
+        DESCRIPTION. The default is False.
+    keeptimezone : BOOL, optional
+        DESCRIPTION. The default is True.
+
+    Raises
+    ------
+    Exception
+        DESCRIPTION.
+
+    Returns
+    -------
+    data_nc_datetimes_pd : TYPE
+        DESCRIPTION.
+
     """
     
-    from netCDF4 import Dataset,num2date#,date2num
+    from netCDF4 import Dataset, num2date#,date2num
+    #from cftime import num2pydate, num2date
+    #from cftime import num2date as cf_num2date
     import numpy as np
     import pandas as pd
+    import warnings
+    import datetime as dt
     
-    #from dfm_tools.get_nc_helpers import get_varname_fromnc
+    #from dfm_tools.get_nc_helpers import get_variable_timevardim
 
     data_nc = Dataset(file_nc)
-    varname_time = get_varname_fromnc(data_nc,'time')
-    data_nc_timevar = data_nc.variables[varname_time]
+    varn_time, dimn_time = get_variable_timevardim(file_nc=file_nc, varname=varname)
+    data_nc_timevar = data_nc.variables[varn_time]
     time_length = data_nc_timevar.shape[0]
 
     if retrieve_ids is not False:
@@ -280,14 +354,49 @@ def get_timesfromnc(file_nc, retrieve_ids=False):
             print('reading time dimension: read entire array')
             data_nc_times = data_nc_timevar[:]
         
+    if len(data_nc_times.shape) > 1:
+        warnings.warn('This should not happen, this exception is built in for corrupt netCDF files with a time variable with more than one dimension')
+        data_nc_times = data_nc_times.flatten()
     
-    data_nc_datetimes = num2date(data_nc_times, units = data_nc_timevar.units)
-    nptimes = data_nc_datetimes.astype('datetime64[ns]') #convert to numpy first, pandas does not take all cftime datasets
+    #convert back to original timezone (e.g. MET)
+    if keeptimezone:
+        """
+        #with timezone info
+        #tz_str_startplus = data_nc_timevar.units.rfind('+')
+        #tz_str_startmin = data_nc_timevar.units.rfind('-')
+        #tz_str_start = np.max([tz_str_startplus, tz_str_startmin])
+        tz_str = data_nc_timevar.units.split(' ')[-1]
+        try:
+            tzoffset = dt.datetime.strptime(tz_str,'%z').utcoffset()
+            nptimes = data_nc_datetimes + tzoffset
+            print('times converted to original timezone (%s)'%(tzoffset))
+        except:
+            #print('retrieving original timezone failed, time is now probably UTC')
+            nptimes = data_nc_datetimes
+        """
+        #manual conversion which deliberately ignores timezone
+        time_units_list = data_nc_timevar.units.split(' ')
+        if time_units_list[1] != 'since':
+            raise Exception('invalid time units string (%s)'%(data_nc_timevar.units))
+        try:
+            refdate_str = '%s %s'%(time_units_list[2], time_units_list[3].replace('.0','')) #remove .0 to avoid conversion issue
+            refdate = dt.datetime.strptime(refdate_str,'%Y-%m-%d %H:%M:%S')
+            data_nc_times_pdtd = pd.to_timedelta(data_nc_times, unit=time_units_list[0])
+            data_nc_datetimes = (refdate + data_nc_times_pdtd)#.to_pydatetime()
+        except:
+            print('retrieving original timezone failed, using num2date output instead')
+            data_nc_datetimes = num2date(data_nc_times, units=data_nc_timevar.units, only_use_cftime_datetimes=False, only_use_python_datetimes=True)
+    else:
+        #convert to datetime (automatically converted to UTC based on timezone in units)
+        data_nc_datetimes = num2date(data_nc_times, units=data_nc_timevar.units, only_use_cftime_datetimes=False, only_use_python_datetimes=True)
+        #nptimes = data_nc_datetimes.astype('datetime64[ns]') #convert to numpy first, pandas does not take all cftime datasets
+        
+    
     
     if retrieve_ids is not False:
-        data_nc_datetimes_pd = pd.Series(nptimes,index=retrieve_ids).dt.round(freq='S')
+        data_nc_datetimes_pd = pd.Series(data_nc_datetimes,index=retrieve_ids).dt.round(freq='S')
     else:
-        data_nc_datetimes_pd = pd.Series(nptimes).dt.round(freq='S')
+        data_nc_datetimes_pd = pd.Series(data_nc_datetimes).dt.round(freq='S')
     
     return data_nc_datetimes_pd
 
@@ -321,12 +430,12 @@ def get_hisstationlist(file_nc,varname):
     import pandas as pd
     import numpy as np
     
-    from dfm_tools.get_nc_helpers import get_ncvarobject, get_ncvardimlist
+    #from dfm_tools.get_nc_helpers import get_ncvarobject, get_ncvardimlist, get_variable_timevardim
     
     data_nc = Dataset(file_nc)
     data_nc_varname = get_ncvarobject(file_nc, varname) #check if var exists and get var_object
     varname_dims = data_nc_varname.dimensions
-    dimn_time = get_varname_fromnc(data_nc,'time')
+    varn_time, dimn_time = get_variable_timevardim(file_nc=file_nc, varname=varname)
     
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
     vars_pd_stats = vars_pd[(vars_pd['dtype']=='|S1') & (vars_pd['dimensions'].apply(lambda x: dimn_time not in x))]
