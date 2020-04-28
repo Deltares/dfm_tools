@@ -1389,7 +1389,7 @@ def test_exporttoshapefile():
         pol_shp = Polygon(pol_data_nonan)
         pol_shp_list.append(pol_shp)
     newdata['geometry'] = pol_shp_list #way more time efficient than doing it the loop
-        
+    
     varlist = ['Chlfa']#,'mesh2d_s1']
     for iV, varname in enumerate(varlist):
         newdata[varname] = None
