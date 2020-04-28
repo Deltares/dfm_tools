@@ -2,7 +2,7 @@
 History
 =======
 
-0.7.17 (2020-04-28)
+0.7.19 (2020-04-28)
 ------------------
 * improved time variable reading (more efficient when retrieving only a time-subset of a variable from a netCDF with long time dimension)
 * improved time variable/dimensions reading (arbitrary time variable/dimension names are suported, as well as multiple time variables/dimensions)
