@@ -1401,8 +1401,8 @@ def test_exporttoshapefile():
             except:
                 data_fromnc = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep)
     
-        data_fromnc_nonan = data_fromnc[:]
-        data_fromnc_nonan[data_fromnc_nonan.mask] = np.nan
+            data_fromnc_nonan = data_fromnc[:]
+            data_fromnc_nonan[data_fromnc_nonan.mask] = np.nan
             newdata[varname] = data_fromnc_nonan.data.flatten()
         file_shp = os.path.join(dir_shp,'shp_%s_%s'%(varname,data_fromnc.var_times.iloc[0].strftime('%Y%m%d')))
         newdata.to_file(file_shp)
