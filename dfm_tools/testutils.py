@@ -64,7 +64,7 @@ def try_importmodule(modulename=None):
                 correctversion = True
         elif shpvers[0] > 2:
             correctversion = True
-        if correctversion == False:
+        if correctversion is False:
             raise Exception('ERROR: incorrect shapely version (%s), should be 1.7.0 or higher, do the following:\n%s'%(shapely.__version__, command))
 
 
