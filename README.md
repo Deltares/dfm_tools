@@ -163,6 +163,7 @@ Feature wishlist
 - add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?):
 	- refer depth w.r.t. reference level, water level or bed level
 	- see test_workinprogress.py
+	- see general grid improvement options
 - retrieve correct depths:
 	- add depth array (interfaces/centers) to his and map variables (z/sigma layer calculation is already in get_modeldata_onintersection function)
 	- depths can be retrieved from mesh2d_layer_z/mesh2d_layer_sigma, but has no time dimension so untrue for sigma and maybe for z? (wrong in dflowfm?)
@@ -242,6 +243,9 @@ Feature wishlist
 	- pcolor resulteert ook in een polycollection, net zoals handmatig wordt gedaan met plot_mapdata()
 	- implement kivu paper figure in testbank, since it correctly combines m/n corners with mapdata (including dummy row)
 	- possible to add pyugrid from github as dependency? in setup.py: install_requires=['python_world@git+https://github.com/ceddlyburge/python_world#egg=python_world-0.0.1',]
+	- sigma method in get_xzcoords_onintersection() is assumes equidistant layers, add exception
+	- zlayer method in get_xzcoords_onintersection() retrieves from hardcoded interface variable name, centers are not used.
+	- how is depth stored in sigma/z/sigma-z models, generic vertical slice method possible?
 - interactive data retrieval and plotting by calling get_ncmodeldata() without arguments
 
 
