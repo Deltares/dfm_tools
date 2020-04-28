@@ -48,7 +48,9 @@ def merge_netCDF_time(tstart, tstop, tstep_sec, dir_data, nc_prefix, fn_match_pa
         print('processing: %s'%(file_src))
         data_src = Dataset(file_src)
         if iF == 0: #initiate empty file
-            data_to = Dataset(file_to, 'w', format="NETCDF3_CLASSIC")
+            ncformat = data_src.file_format #eg "NETCDF3_CLASSIC"
+            print('creating file in format: %s'%(ncformat))
+            data_to = Dataset(file_to, 'w', format=ncformat)
             
             #copy nc attributes other than dimensions and variables 
             data_src_attrlist = data_src.ncattrs()
