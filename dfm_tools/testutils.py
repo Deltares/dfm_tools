@@ -57,3 +57,16 @@ def try_importmodule(modulename=None):
             import shapely.geometry
         except:
             raise Exception('ERROR: cannot execute "import shapely.geometry", do the following:\n%s'%(command))
+        shpvers = [int(x) for x in shapely.__version__.split('.')]
+        correctversion = False
+        if shpvers[0] == 1:
+            if shpvers[1] <=7:
+                correctversion = True
+        elif shpvers[0] > 2:
+            correctversion = True
+        if correctversion == False:
+            raise Exception('ERROR: incorrect shapely version (%s), should be 1.7.0 or higher, do the following:\n%s'%(shapely.__version__, command))
+
+
+
+            
