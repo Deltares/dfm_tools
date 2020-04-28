@@ -141,7 +141,7 @@ def test_delft3D_netcdf():
         pc = ax.pcolor(data_nc_XCOR,data_nc_YCOR,vel_magn[1:,1:],cmap='jet')
         pc.set_clim([0,0.15])
         cbar = fig.colorbar(pc, ax=ax)
-        cbar.set_label('velocity magnitude (%s)'%(data_nc_U1.var_object.units))
+        cbar.set_label('velocity magnitude (%s)'%(data_nc_U1.var_ncvarobject.units))
         ax.set_title('t=%d (%s)'%(timestep, data_nc_U1.var_times.iloc[timestep]))
         ax.set_aspect('equal')
         ax.quiver(data_nc_XZ[::2,::2], data_nc_YZ[::2,::2], vel_x[::2,::2], vel_y[::2,::2], 
@@ -161,7 +161,7 @@ def test_delft3D_netcdf():
                   scale=3,color='w',width=0.005, edgecolor='face', cmap='jet')
         pc.set_clim([0,0.15])
         cbar = fig.colorbar(pc, ax=ax)
-        cbar.set_label('velocity magnitude (%s)'%(data_nc_U1.var_object.units))
+        cbar.set_label('velocity magnitude (%s)'%(data_nc_U1.var_ncvarobject.units))
     fig.tight_layout()
     plt.savefig(os.path.join(dir_output,'kivu_velocity'))
     
@@ -172,7 +172,7 @@ def test_delft3D_netcdf():
         pc = ax.pcolor(data_nc_XZ,data_nc_YZ,data_nc_QNET[iT,:,:],cmap='jet')
         pc.set_clim([-60,60])
         cbar = fig.colorbar(pc, ax=ax)
-        cbar.set_label('%s (%s)'%(data_nc_QNET.var_varname, data_nc_QNET.var_object.units))
+        cbar.set_label('%s (%s)'%(data_nc_QNET.var_varname, data_nc_QNET.var_ncvarobject.units))
         ax.set_title('t=%d (%s)'%(timestep, data_nc_QNET.var_times.iloc[timestep]))
         ax.set_aspect('equal')
     fig.tight_layout()
@@ -182,7 +182,7 @@ def test_delft3D_netcdf():
     fig, ax = plt.subplots(figsize=(6,8))
     pc = ax.pcolor(data_nc_XZ,data_nc_YZ,data_nc_DPV0,cmap='jet')
     cbar = fig.colorbar(pc, ax=ax)
-    cbar.set_label('%s (%s)'%(data_nc_DPV0.var_varname, data_nc_DPV0.var_object.units))
+    cbar.set_label('%s (%s)'%(data_nc_DPV0.var_varname, data_nc_DPV0.var_ncvarobject.units))
     ax.set_aspect('equal')
     fig.tight_layout()
     plt.savefig(os.path.join(dir_output,'kivu_bedlevel'))
@@ -205,7 +205,7 @@ def test_delft3D_netcdf():
     for iS in range(10):
         ax.plot(data_nc_ZWL.var_times,data_nc_ZWL[:,iS],label=data_nc_NAMST['NAMST'].iloc[iS], linewidth=1)
     ax.legend()
-    ax.set_ylabel('%s (%s)'%(data_nc_ZWL.var_varname, data_nc_ZWL.var_object.units))
+    ax.set_ylabel('%s (%s)'%(data_nc_ZWL.var_varname, data_nc_ZWL.var_ncvarobject.units))
     ax.set_xlim([data_nc_ZWL.var_times[0],data_nc_ZWL.var_times[0]+dt.timedelta(days=14)])
     plt.savefig(os.path.join(dir_output,'kivu_his_ZWL'))
 
@@ -262,7 +262,7 @@ def test_delft3D_netcdf():
         pc = ax.pcolor(data_nc_XCOR,data_nc_YCOR,vel_magn[1:,1:],cmap='jet')
         pc.set_clim(var_clim)
         #cbar = fig.colorbar(pc, ax=ax)
-        #cbar.set_label('velocity magnitude (%s)'%(data_nc_U1.var_object.units))
+        #cbar.set_label('velocity magnitude (%s)'%(data_nc_U1.var_ncvarobject.units))
         #ax.set_title('t=%d (%s)'%(timestep, data_nc_U1.var_times.iloc[timestep]))
         ax.set_aspect('equal')
         #ax.quiver(data_nc_XZ[::2,::2], data_nc_YZ[::2,::2], vel_x[::2,::2], vel_y[::2,::2],
@@ -294,8 +294,8 @@ def test_delft3D_netcdf():
     plt.subplots_adjust(left=0.07, right=0.90, bottom=0.065, top=0.95, wspace=0.03, hspace=0.04)
     cbar_ax = fig.add_axes([0.91, 0.065, 0.02, 0.885])
     cbar = fig.colorbar(pc, cax=cbar_ax, ticks=np.linspace(var_clim[0],var_clim[1],7))
-    #cbar_ax.set_xlabel('[%s]'%(data_nc_U1.var_object.units))
-    cbar_ax.set_ylabel('velocity magnitude [%s]'%(data_nc_U1.var_object.units))
+    #cbar_ax.set_xlabel('[%s]'%(data_nc_U1.var_ncvarobject.units))
+    cbar_ax.set_ylabel('velocity magnitude [%s]'%(data_nc_U1.var_ncvarobject.units))
     plt.savefig(os.path.join(dir_output,'curvedbend_velocity_pcolor'))
 
 
@@ -313,7 +313,7 @@ def test_delft3D_netcdf():
     for iS in range(5):
         ax.plot(data_nc_ZWL.var_times,data_nc_ZWL[:,iS],label=data_nc_NAMST['NAMST'].iloc[iS], linewidth=1)
     ax.legend()
-    ax.set_ylabel('%s (%s)'%(data_nc_ZWL.var_varname, data_nc_ZWL.var_object.units))
+    ax.set_ylabel('%s (%s)'%(data_nc_ZWL.var_varname, data_nc_ZWL.var_ncvarobject.units))
     ax.set_xlim([data_nc_ZWL.var_times[0],data_nc_ZWL.var_times[0]+dt.timedelta(days=2)])
     plt.savefig(os.path.join(dir_output,'curvedbend_his_ZWL'))
 
@@ -405,7 +405,7 @@ def EXCLUDE_test_delft3D_netcdf_convertedwith_getdata():
         pc = ax.pcolor(data_nc_XZ,data_nc_YZ,vel_magn,cmap='jet')
         pc.set_clim([0,1.2])
         cbar = fig.colorbar(pc, ax=ax)
-        cbar.set_label('velocity magnitude (%s)'%(data_nc_U1.var_object.units))
+        cbar.set_label('velocity magnitude (%s)'%(data_nc_U1.var_ncvarobject.units))
         ax.set_title('t=%d (%s)'%(timestep, data_nc_U1.var_times.iloc[timestep]))
         ax.set_aspect('equal')
         ax.quiver(data_nc_XZ[::2,::2], data_nc_YZ[::2,::2], vel_x[::2,::2], vel_y[::2,::2], 
@@ -424,7 +424,7 @@ def EXCLUDE_test_delft3D_netcdf_convertedwith_getdata():
                   scale=8,color='w',width=0.005, edgecolor='face', cmap='jet')
         pc.set_clim([0,1.2])
         cbar = fig.colorbar(pc, ax=ax)
-        cbar.set_label('velocity magnitude (%s)'%(data_nc_U1.var_object.units))
+        cbar.set_label('velocity magnitude (%s)'%(data_nc_U1.var_ncvarobject.units))
     fig.tight_layout()
     plt.savefig(os.path.join(dir_output,'curvedbend_velocity'))
     
@@ -445,7 +445,7 @@ def EXCLUDE_test_delft3D_netcdf_convertedwith_getdata():
     for iS in range(6):
         ax.plot(data_nc_ZWL.var_times,data_nc_ZWL[:,iS], linewidth=1,label='unknown, broken NAMST variable')#,label=data_nc_NAMST.iloc[iS])
     ax.legend()
-    ax.set_ylabel('%s (%s)'%(data_nc_ZWL.var_varname, data_nc_ZWL.var_object.units))
+    ax.set_ylabel('%s (%s)'%(data_nc_ZWL.var_varname, data_nc_ZWL.var_ncvarobject.units))
     ax.set_xlim([data_nc_ZWL.var_times[0],data_nc_ZWL.var_times[0]+dt.timedelta(days=2)])
     plt.savefig(os.path.join(dir_output,'curvedbend_his_ZWL'))
 
@@ -510,7 +510,7 @@ def test_waqua_netcdf_convertedwith_getdata():
     pc = ax.pcolor(data_nc_xcen,data_nc_ycen,data_nc_SEP[timestep,:,:],cmap='jet')
     pc.set_clim([-0.1,0.1])
     cbar = fig.colorbar(pc, ax=ax)
-    cbar.set_label('%s (%s)'%(data_nc_SEP.var_varname, data_nc_SEP.var_object.units))
+    cbar.set_label('%s (%s)'%(data_nc_SEP.var_varname, data_nc_SEP.var_ncvarobject.units))
     ax.set_title('t=%d (%s)'%(timestep, data_nc_SEP.var_times.iloc[timestep]))
     ax.set_aspect('equal')
     #ax.quiver(data_nc_XZ[::2,::2], data_nc_YZ[::2,::2], vel_x[::2,::2], vel_y[::2,::2], 
@@ -532,7 +532,7 @@ def test_waqua_netcdf_convertedwith_getdata():
     for iS in range(10):
         ax.plot(data_nc_ZWL.var_times,data_nc_ZWL[:,iS],label=data_nc_NAMWL['NAMWL'].iloc[iS], linewidth=1)
     ax.legend(loc=1)
-    ax.set_ylabel('%s (%s)'%(data_nc_ZWL.var_varname, data_nc_ZWL.var_object.units))
+    ax.set_ylabel('%s (%s)'%(data_nc_ZWL.var_varname, data_nc_ZWL.var_ncvarobject.units))
     ax.set_xlim([data_nc_ZWL.var_times[0],data_nc_ZWL.var_times[0]+dt.timedelta(days=14)])
     plt.savefig(os.path.join(dir_output,'waqua_DSCM_his_ZWL'))
     
@@ -556,7 +556,7 @@ def test_waqua_netcdf_convertedwith_getdata():
     pc = ax.pcolor(data_nc_xcen,data_nc_ycen,data_nc_SEP[0,:,:],cmap='jet')
     pc.set_clim([0,2])
     cbar = fig.colorbar(pc, ax=ax)
-    cbar.set_label('%s (%s)'%(data_nc_SEP.var_varname, data_nc_SEP.var_object.units))
+    cbar.set_label('%s (%s)'%(data_nc_SEP.var_varname, data_nc_SEP.var_ncvarobject.units))
     ax.set_title('t=%d (%s)'%(timestep, data_nc_SEP.var_times.loc[timestep]))
     ax.set_aspect('equal')
     fig.tight_layout()
@@ -567,7 +567,7 @@ def test_waqua_netcdf_convertedwith_getdata():
     pc = ax.pcolor(data_nc_xcen,data_nc_ycen,vel_magn[0,:,:,0],cmap='jet')
     pc.set_clim([0,1])
     cbar = fig.colorbar(pc, ax=ax)
-    cbar.set_label('velocity magnitude (%s)'%(data_nc_VELU.var_object.units))
+    cbar.set_label('velocity magnitude (%s)'%(data_nc_VELU.var_ncvarobject.units))
     ax.set_title('t=%d (%s)'%(timestep, data_nc_VELU.var_times.loc[timestep]))
     ax.set_aspect('equal')
     thinning = 10
@@ -591,7 +591,7 @@ def test_waqua_netcdf_convertedwith_getdata():
     for iS in range(10):
         ax.plot(data_nc_ZWL.var_times,data_nc_ZWL[:,iS],label=data_nc_NAMWL['NAMWL'].iloc[iS], linewidth=1)
     ax.legend()
-    ax.set_ylabel('%s (%s)'%(data_nc_ZWL.var_varname, data_nc_ZWL.var_object.units))
+    ax.set_ylabel('%s (%s)'%(data_nc_ZWL.var_varname, data_nc_ZWL.var_ncvarobject.units))
     ax.set_xlim([data_nc_ZWL.var_times[0],data_nc_ZWL.var_times[0]+dt.timedelta(days=14)])
     plt.savefig(os.path.join(dir_output,'waqua_OSR_his_ZWL'))
     
@@ -615,7 +615,7 @@ def test_waqua_netcdf_convertedwith_getdata():
     pc = ax.pcolor(data_nc_xcen,data_nc_ycen,data_nc_SEP[0,:,:],cmap='jet')
     pc.set_clim([0,3])
     cbar = fig.colorbar(pc, ax=ax)
-    cbar.set_label('%s (%s)'%(data_nc_SEP.var_varname, data_nc_SEP.var_object.units))
+    cbar.set_label('%s (%s)'%(data_nc_SEP.var_varname, data_nc_SEP.var_ncvarobject.units))
     ax.set_title('t=%d (%s)'%(timestep, data_nc_SEP.var_times.loc[timestep]))
     ax.set_aspect('equal')
     fig.tight_layout()
@@ -626,7 +626,7 @@ def test_waqua_netcdf_convertedwith_getdata():
     pc = ax.pcolor(data_nc_xcen,data_nc_ycen,vel_magn[0,:,:,0],cmap='jet')
     pc.set_clim([0,1])
     cbar = fig.colorbar(pc, ax=ax)
-    cbar.set_label('velocity magnitude (%s)'%(data_nc_VELU.var_object.units))
+    cbar.set_label('velocity magnitude (%s)'%(data_nc_VELU.var_ncvarobject.units))
     ax.set_title('t=%d (%s)'%(timestep, data_nc_VELU.var_times.loc[timestep]))
     ax.set_aspect('equal')
     thinning = 10
@@ -651,7 +651,7 @@ def test_waqua_netcdf_convertedwith_getdata():
     for iS in range(10):
         ax.plot(data_nc_ZWL.var_times,data_nc_ZWL[:,iS],label=data_nc_NAMWL['NAMWL'].iloc[iS], linewidth=1)
     ax.legend()
-    ax.set_ylabel('%s (%s)'%(data_nc_ZWL.var_varname, data_nc_ZWL.var_object.units))
+    ax.set_ylabel('%s (%s)'%(data_nc_ZWL.var_varname, data_nc_ZWL.var_ncvarobject.units))
     ax.set_xlim([data_nc_ZWL.var_times[0],data_nc_ZWL.var_times[0]+dt.timedelta(days=14)])
     plt.savefig(os.path.join(dir_output,'waqua_RMM_his_ZWL'))
 
@@ -725,7 +725,7 @@ def test_cartopy_satellite_coastlines():
     #ax.grid(linewidth=2, color='black', alpha=0.8, linestyle='--')    
     pc = ax.pcolor(mesh2d_node_x_sel,mesh2d_node_y_sel,magn)#, transform=ccrs.PlateCarree())
     cbar = fig.colorbar(pc, ax=ax)
-    cbar.set_label('velocity magnitude (%s)'%(data_v.var_object.units))
+    cbar.set_label('velocity magnitude (%s)'%(data_v.var_ncvarobject.units))
     plt.savefig(os.path.join(dir_output,'cartopy_moreoptions'))
     
     fig, ax = plt.subplots(figsize=(6,7),subplot_kw={'projection': ccrs.EuroPP()}) #provide axis projection on initialisation, cannot be edited later on
@@ -850,20 +850,20 @@ def test_morphology():
     data_frommap_0 = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=0, get_linkedgridinfo=True)
     pc = plot_netmapdata(ugrid.verts, values=data_frommap_0.flatten(), ax=ax, linewidth=0.5, cmap='jet', clim=var_clims)
     cbar = fig.colorbar(pc, ax=ax)
-    cbar.set_label('%s (%s)'%(data_frommap_0.var_varname, data_frommap_0.var_object.units))
+    cbar.set_label('%s (%s)'%(data_frommap_0.var_varname, data_frommap_0.var_ncvarobject.units))
     ax.set_title('t=0 (%s)'%(data_frommap_0.var_times.iloc[0]))
     
     ax = axs[1]
     data_frommap_end = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=-1)
     pc = plot_netmapdata(ugrid.verts, values=data_frommap_end.flatten(), ax=ax, linewidth=0.5, cmap='jet', clim=var_clims)
     cbar = fig.colorbar(pc, ax=ax)
-    cbar.set_label('%s (%s)'%(data_frommap_end.var_varname, data_frommap_end.var_object.units))
+    cbar.set_label('%s (%s)'%(data_frommap_end.var_varname, data_frommap_end.var_ncvarobject.units))
     ax.set_title('t=end (%s)'%(data_frommap_end.var_times.iloc[0]))
     
     ax = axs[2]
     pc = plot_netmapdata(ugrid.verts, values=(data_frommap_end-data_frommap_0).flatten(), ax=ax, linewidth=0.5, cmap='jet', clim=[-3,3])
     cbar = fig.colorbar(pc, ax=ax)
-    cbar.set_label('%s (%s)'%(data_frommap_0.var_varname, data_frommap_0.var_object.units))
+    cbar.set_label('%s (%s)'%(data_frommap_0.var_varname, data_frommap_0.var_ncvarobject.units))
     ax.set_title('t=end-0 (difference)')
 
     for ax in axs:
@@ -882,7 +882,7 @@ def test_morphology():
     data_frommap = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=-1)
     pc = plot_netmapdata(ugrid.verts, values=data_frommap.flatten(), ax=ax, linewidth=0.5, cmap='jet')
     cbar = fig.colorbar(pc, ax=ax)
-    cbar.set_label('%s (%s)'%(data_frommap.var_varname, data_frommap.var_object.units))
+    cbar.set_label('%s (%s)'%(data_frommap.var_varname, data_frommap.var_ncvarobject.units))
     ax.set_title('t=end (%s)'%(data_frommap.var_times.iloc[0]))
     ax.set_aspect('equal')
 
@@ -916,7 +916,7 @@ def test_morphology():
         data_frommap = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep)
         pc = plot_netmapdata(data_fromnc_FlowElemContour_xy, values=data_frommap.flatten(), ax=ax, linewidth=0.5, cmap='jet')
         cbar = fig.colorbar(pc, ax=ax)
-        cbar.set_label('%s (%s)'%(data_frommap.var_varname, data_frommap.var_object.units))
+        cbar.set_label('%s (%s)'%(data_frommap.var_varname, data_frommap.var_ncvarobject.units))
         ax.set_title('t=%d (%s)'%(timestep, data_frommap.var_times.iloc[0]))
         ax.set_aspect('equal')
         
@@ -953,7 +953,7 @@ def test_morphology():
         pc = ax.pcolor(data_fromnc_x, data_fromnc_y, data_frommap[0,:,:], cmap='jet')
         pc.set_clim(var_clim[iV])
         cbar = fig.colorbar(pc, ax=ax)
-        cbar.set_label('%s (%s)'%(data_frommap.var_varname, data_frommap.var_object.units))
+        cbar.set_label('%s (%s)'%(data_frommap.var_varname, data_frommap.var_ncvarobject.units))
         ax.set_title('t=%d (%s)'%(timestep, data_frommap.var_times.iloc[0]))
         ax.set_aspect('equal')
         
@@ -963,7 +963,7 @@ def test_morphology():
         pc = ax.pcolor(data_fromnc_x, data_fromnc_y, data_frommap[0,:,:], cmap='jet')
         pc.set_clim(var_clim[iV])
         cbar = fig.colorbar(pc, ax=ax)
-        cbar.set_label('%s (%s)'%(data_frommap.var_varname, data_frommap.var_object.units))
+        cbar.set_label('%s (%s)'%(data_frommap.var_varname, data_frommap.var_ncvarobject.units))
         ax.set_title('t=%d (%s)'%(timestep, data_frommap.var_times.iloc[0]))
         ax.set_aspect('equal')
         
@@ -1003,7 +1003,7 @@ def test_morphology():
         for iS, stat in enumerate(data_fromhis.var_stations['station_name']):
             ax.plot(data_fromhis.var_times, data_fromhis[:,iS], linewidth=1, label=stat)
         ax.legend()
-        ax.set_ylabel('%s (%s)'%(data_fromhis.var_varname,data_fromhis.var_object.units))
+        ax.set_ylabel('%s (%s)'%(data_fromhis.var_varname,data_fromhis.var_ncvarobject.units))
         ax.set_xlim(data_fromhis.var_times[[0,3000]])
         fig.tight_layout()
         plt.savefig(os.path.join(dir_output,'%s_%s'%(os.path.basename(file_nc).replace('.',''), varname)))
@@ -1033,7 +1033,7 @@ def test_morphology():
     quiv = ax.quiver(data_frommap_facex, data_frommap_facey, data_frommap_transx[0,0,:], data_frommap_transy[0,0,:],
                      magnitude[0,0,:])#, scale=0.015)
     cbar = fig.colorbar(quiv, ax=ax)
-    cbar.set_label('%s and %s (%s)'%(data_frommap_transx.var_varname, data_frommap_transy.var_varname, data_frommap_transy.var_object.units))
+    cbar.set_label('%s and %s (%s)'%(data_frommap_transx.var_varname, data_frommap_transy.var_varname, data_frommap_transy.var_ncvarobject.units))
     ax.set_title('t=%d (%s)'%(timestep, data_frommap_transx.var_times.iloc[0]))
     ax.set_aspect('equal')
     fig.tight_layout()
@@ -1049,7 +1049,7 @@ def test_morphology():
     fig, ax = plt.subplots(1,1, figsize=(14,8))
     quiv = ax.quiver(X, Y, U, V, speed)
     cbar = fig.colorbar(quiv, ax=ax)
-    cbar.set_label('%s and %s (%s)'%(data_frommap_transx.var_varname, data_frommap_transy.var_varname, data_frommap_transy.var_object.units))
+    cbar.set_label('%s and %s (%s)'%(data_frommap_transx.var_varname, data_frommap_transy.var_varname, data_frommap_transy.var_ncvarobject.units))
     ax.set_title('t=%d (%s)'%(timestep, data_frommap_transx.var_times.iloc[0]))
     ax.set_xlim(xlim_get)
     ax.set_ylim(ylim_get)
@@ -1068,7 +1068,7 @@ def test_morphology():
     #                     minlength=0.0001, maxlength = 0.07, arrowstyle='fancy',
     #                     integration_direction='forward', start_points = seed_points.T)
     cbar = fig.colorbar(strm.lines)
-    cbar.set_label('%s and %s (%s)'%(data_frommap_transx.var_varname, data_frommap_transy.var_varname, data_frommap_transy.var_object.units))
+    cbar.set_label('%s and %s (%s)'%(data_frommap_transx.var_varname, data_frommap_transy.var_varname, data_frommap_transy.var_ncvarobject.units))
     ax.set_title('t=%d (%s)'%(timestep, data_frommap_transx.var_times.iloc[0]))
     ax.set_xlim(xlim_get)
     ax.set_ylim(ylim_get)
@@ -1080,7 +1080,7 @@ def test_morphology():
     fig, ax = plt.subplots(1,1, figsize=(14,8))
     quiv_curved = velovect(ax,X,Y,U,V, arrowstyle='fancy', scale = 5, grains = 25, color=speed)
     cbar = fig.colorbar(quiv_curved.lines)
-    cbar.set_label('%s and %s (%s)'%(data_frommap_transx.var_varname, data_frommap_transy.var_varname, data_frommap_transy.var_object.units))
+    cbar.set_label('%s and %s (%s)'%(data_frommap_transx.var_varname, data_frommap_transy.var_varname, data_frommap_transy.var_ncvarobject.units))
     ax.set_title('t=%d (%s)'%(timestep, data_frommap_transx.var_times.iloc[0]))
     ax.set_xlim(xlim_get)
     ax.set_ylim(ylim_get)
@@ -1206,7 +1206,7 @@ def test_workinprogress():
         pc = ax.pcolor(xcen, ycen, magn[timestep,:,:], cmap='jet')
         pc.set_clim([0,5])
         cbar = fig.colorbar(pc, ax=ax)
-        cbar.set_label('velocity magnitude (%s)'%(data_V10M.var_object.units))
+        cbar.set_label('velocity magnitude (%s)'%(data_V10M.var_ncvarobject.units))
         ax.set_title('t=%d (%s)'%(timestep, data_V10M.var_times.loc[timestep]))
         ax.set_aspect('equal')
         ax.plot(data_ldb[0].loc[:,0], data_ldb[0].loc[:,1], 'k', linewidth=0.5)
@@ -1238,7 +1238,7 @@ def test_workinprogress():
         quiv_curved = velovect(ax,X,Y,U,V, arrowstyle='fancy', scale = 5, grains = 25, color=speed)#, cmap='jet')
         ax.set_aspect('equal')
         cbar = fig.colorbar(quiv_curved.lines, ax=ax)
-        cbar.set_label('velocity magnitude (%s)'%(data_V10M.var_object.units))
+        cbar.set_label('velocity magnitude (%s)'%(data_V10M.var_ncvarobject.units))
         ax.set_title('t=%d (%s)'%(timestep, data_V10M.var_times.loc[timestep]))
         ax.set_aspect('equal')
         ax.plot(data_ldb[0].loc[:,0], data_ldb[0].loc[:,1], 'k', linewidth=0.5)
@@ -1290,7 +1290,7 @@ def test_workinprogress():
         pc = ax.pcolor(data_fromnc_x, data_fromnc_y, data_fromnc_zs[timestep,:,:],cmap='jet')
         pc.set_clim([0,0.15])
         cbar = fig.colorbar(pc, ax=ax)
-        cbar.set_label('%s (%s)'%(data_fromnc_zs.var_varname, data_fromnc_zs.var_object.units))
+        cbar.set_label('%s (%s)'%(data_fromnc_zs.var_varname, data_fromnc_zs.var_ncvarobject.units))
         ax.set_title('t=%d (%s)'%(timestep, data_fromnc_zs.var_times.loc[timestep]))
         ax.set_aspect('equal')
     fig.tight_layout()
@@ -1314,7 +1314,7 @@ def test_workinprogress():
         pc = ax.pcolor(data_fromnc_edgex, data_fromnc_edgey,vel_magn[timestep,:,:],cmap='jet')
         pc.set_clim([0,0.6])
         cbar = fig.colorbar(pc, ax=ax)
-        cbar.set_label('velocity magnitude (%s)'%(data_fromnc_u.var_object.units))
+        cbar.set_label('velocity magnitude (%s)'%(data_fromnc_u.var_ncvarobject.units))
         ax.set_title('t=%d (%s)'%(timestep, data_fromnc_u.var_times.loc[timestep]))
         ax.set_aspect('equal')
         thinning = 5
