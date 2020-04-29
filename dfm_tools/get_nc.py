@@ -165,7 +165,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
         elif type(layer) in listtype_int:
             layer_ids = [layer]
         else:
-            raise Exception('ERROR: layer variable  lay type not anticipated (%s), (list/range/ndarray of) int are accepted (or "all")'%(type(layer)))
+            raise Exception('ERROR: layer variable type not anticipated (%s), (list/range/ndarray of) int are accepted (or "all", "top" or "bottom")'%(type(layer)))
         #convert to positive index, make unique(+sort), convert to list because of indexing with np.array of len 1 errors sometimes
         layer_ids = list(np.unique(np.array(range(nlayers))[layer_ids]))
         #check if requested layers are within range of netcdf
@@ -304,7 +304,8 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
             elif iD == concat_axis:
                 values_selid_topbot.append(np.array(range(dimlen)))      
             else:
-                values_selid_topbot.append(np.repeat(np.array([range(dimlen)]),values_all.shape[concat_axis],axis=0).T)
+                #values_selid_topbot.append(np.repeat(np.array([range(dimlen)]).T,values_all.shape[concat_axis],axis=1))
+                values_selid_topbot.append(np.array([range(dimlen)]).T)
         values_all_topbot = values_all[values_selid_topbot] #layer dimension is removed due to advanced indexing instead of slicing
         values_all_topbot = np.expand_dims(values_all_topbot, axis=layerdim_id) #re-add layer dimension to dataset on original location
         values_all = values_all_topbot
