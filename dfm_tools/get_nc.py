@@ -315,7 +315,11 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
 
 
 def get_bottomtoplayerfromarray(data_fromnc):
-    #assumes that data_fromnc has 3 dimensions and that last axis is layer axis
+    """
+    retrieves top and bottom layer values from array.
+    This is convenient for z-layer models since top and/or bottom layers are often masked for part of the cells
+    Definition assumes that data_fromnc has 3 dimensions and that last axis is the layer axis
+    """
     botlay = (~data_fromnc.mask).argmax(axis=-1) #get index of first False value from the original array
     toplay = data_fromnc.shape[2]-1-(~data_fromnc[...,::-1].mask).argmax(axis=-1) #get index of first False value from the flipped array ([::-1]) and correct with size of that dimension, so that is the top layer in case of D-Flow FM
     data_fromnc_bot = data_fromnc[range(data_fromnc.shape[0]),range(data_fromnc.shape[1]),botlay]
