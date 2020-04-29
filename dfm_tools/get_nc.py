@@ -155,7 +155,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
         if layer is None:
             raise Exception('ERROR: netcdf variable contains a layer dimension, but argument layer not provided (can be "all")\nnumber of layers: %d (numbered 0 to %d)'%(nlayers, nlayers-1))
         #convert layer to list of int if it is not already
-        if layer is str('all'):
+        if layer is str('all') or layer is str('top') or layer is str('bottom'):
             layer_ids = range(nlayers)
         elif type(layer) in listtype_range:
             if type(layer[0]) in listtype_int:
@@ -288,7 +288,36 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
             values_all = np.ma.concatenate([values_all,nc_varobject_sel[values_selid]],axis=concat_axis)
         else:
             values_all = nc_varobject_sel[values_selid]
-            
+    
+    #optional extraction of top/bottom layer, convenient for z-layer models since top and/or bottom layers are often masked for part of the cells
+    if layer is str('top') or layer is str('bottom'):
+        warnings.warn('you are retrieving data from the %s valid layer of each cell. it is assumed that the last axis of the variable is the layer axis')
+        layerdim_id = nc_varobject_sel.dimensions.index(dimn_layer)
+        if layer is str('top'):
+            bottomtoplay = values_all.shape[layerdim_id]-1-(~np.flip(values_all.mask,axis=layerdim_id)).argmax(axis=layerdim_id) #get index of first False value from the flipped array (over layer axis) and correct with size of that dimension. this corresponds to the top layer of each cell in case of D-Flow FM
+        if layer is str('bottom'):
+            bottomtoplay = (~values_all.mask).argmax(axis=layerdim_id) #get index of first False value from the original array
+        values_selid_topbot = []
+        #values_dimlens_topbot = []
+        #values_origshapeid_topbot = []
+        for iD, dimlen in enumerate(values_all.shape):
+            if iD == layerdim_id:
+                values_selid_topbot.append(bottomtoplay)
+                #values_dimlens_topbot.append(1)
+                #values_origshapeid_topbot.append(0)
+            elif iD == concat_axis:
+                values_selid_topbot.append(np.array(range(dimlen)))      
+                #values_dimlens_topbot.append(dimlen)
+                #values_origshapeid_topbot.append(dimlen)
+            else:
+                values_selid_topbot.append(np.repeat(np.array([range(dimlen)]),values_all.shape[concat_axis],axis=0).T)
+                #values_dimlens_topbot.append(dimlen)
+                #values_origshapeid_topbot.append(dimlen)
+        values_all_topbot = values_all[values_selid_topbot] #layer dimension is removed due to advanced indexing instead of slicing
+        values_all_topbot = np.expand_dims(values_all_topbot, axis=layerdim_id) #re-add layer dimension to dataset on original location
+        values_all = values_all_topbot
+        
+    
     #add metadata
     values_all.var_varname = varname
     values_all.var_dimensions = nc_varobject.dimensions
@@ -309,22 +338,6 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
         values_all.var_stations = None
     return values_all
 
-
-
-
-
-
-def get_bottomtoplayerfromarray(data_fromnc):
-    """
-    retrieves top and bottom layer values from array.
-    This is convenient for z-layer models since top and/or bottom layers are often masked for part of the cells
-    Definition assumes that data_fromnc has 3 dimensions and that last axis is the layer axis
-    """
-    botlay = (~data_fromnc.mask).argmax(axis=-1) #get index of first False value from the original array
-    toplay = data_fromnc.shape[2]-1-(~data_fromnc[...,::-1].mask).argmax(axis=-1) #get index of first False value from the flipped array ([::-1]) and correct with size of that dimension, so that is the top layer in case of D-Flow FM
-    data_fromnc_bot = data_fromnc[range(data_fromnc.shape[0]),range(data_fromnc.shape[1]),botlay]
-    data_fromnc_top = data_fromnc[range(data_fromnc.shape[0]),range(data_fromnc.shape[1]),toplay]
-    return data_fromnc_bot, data_fromnc_top
 
 
 

@@ -1361,7 +1361,7 @@ def test_exporttoshapefile():
     import matplotlib.pyplot as plt
     plt.close('all')
     
-    from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata, get_bottomtoplayerfromarray
+    from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
     from dfm_tools.get_nc_helpers import get_ncvardimlist#, get_ncfilelist
     
     
@@ -1397,13 +1397,15 @@ def test_exporttoshapefile():
     for timestep in [6]:#[0,10,20,30]:
         for iV, varname in enumerate(varlist):
             try:
-                data_fromnc = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep, layer=[-1,-2,-3,-4])
+                data_fromnc_all = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep, layer='all')
+                data_fromnc_last = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep, layer=-1)
+                data_fromnc = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep, layer='top')
             except:
                 data_fromnc = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep)
     
-            data_fromnc_bot, data_fromnc_top = get_bottomtoplayerfromarray(data_fromnc) #get most top layer with valid values for each cell, from four top layers
-            data_fromnc_top[data_fromnc_top.mask] = np.nan
-            newdata[varname] = data_fromnc_top.data.flatten()
+            data_fromnc_nonan = data_fromnc[:]
+            data_fromnc_nonan[data_fromnc_nonan.mask] = np.nan
+            newdata[varname] = data_fromnc_nonan.data.flatten()
         file_shp = os.path.join(dir_shp,'shp_%s_%s'%(varname,data_fromnc.var_times.iloc[0].strftime('%Y%m%d')))
         newdata.to_file(file_shp)
         """
