@@ -2,6 +2,10 @@
 History
 =======
 
+0.x.xx (xxxx-xx-xx)
+------------------
+* added option to retrieve data from top/bottom layers of z-layer D-Flow FM model
+
 0.7.19 (2020-04-28)
 ------------------
 * improved time variable reading (more efficient when retrieving only a time-subset of a variable from a netCDF with long time dimension)

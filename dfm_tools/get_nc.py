@@ -314,6 +314,19 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
 
 
 
+def get_bottomtoplayerfromarray(data_fromnc):
+    #assumes that data_fromnc has 3 dimensions and that last axis is layer axis
+    botlay = (~data_fromnc.mask).argmax(axis=-1) #get index of first False value from the original array
+    toplay = data_fromnc.shape[2]-1-(~data_fromnc[...,::-1].mask).argmax(axis=-1) #get index of first False value from the flipped array ([::-1]) and correct with size of that dimension, so that is the top layer in case of D-Flow FM
+    data_fromnc_bot = data_fromnc[range(data_fromnc.shape[0]),range(data_fromnc.shape[1]),botlay]
+    data_fromnc_top = data_fromnc[range(data_fromnc.shape[0]),range(data_fromnc.shape[1]),toplay]
+    return data_fromnc_bot, data_fromnc_top
+
+
+
+
+
+
 def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None, intersect_coords=None, timestep=None, multipart=None, calcdist_fromlatlon=None):
     import warnings
     import numpy as np

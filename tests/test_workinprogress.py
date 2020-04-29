@@ -1361,7 +1361,7 @@ def test_exporttoshapefile():
     import matplotlib.pyplot as plt
     plt.close('all')
     
-    from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
+    from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata, get_bottomtoplayerfromarray
     from dfm_tools.get_nc_helpers import get_ncvardimlist#, get_ncfilelist
     
     
@@ -1394,22 +1394,22 @@ def test_exporttoshapefile():
     for iV, varname in enumerate(varlist):
         newdata[varname] = None
     
-    for timestep in [10]:#[0,10,20,30]:
+    for timestep in [6]:#[0,10,20,30]:
         for iV, varname in enumerate(varlist):
             try:
-                data_fromnc = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep, layer=-2)
+                data_fromnc = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep, layer=[-1,-2,-3,-4])
             except:
                 data_fromnc = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep)
     
-            data_fromnc_nonan = data_fromnc[:]
-            data_fromnc_nonan[data_fromnc_nonan.mask] = np.nan
-            newdata[varname] = data_fromnc_nonan.data.flatten()
+            data_fromnc_bot, data_fromnc_top = get_bottomtoplayerfromarray(data_fromnc) #get most top layer with valid values for each cell, from four top layers
+            data_fromnc_top[data_fromnc_top.mask] = np.nan
+            newdata[varname] = data_fromnc_top.data.flatten()
         file_shp = os.path.join(dir_shp,'shp_%s_%s'%(varname,data_fromnc.var_times.iloc[0].strftime('%Y%m%d')))
         newdata.to_file(file_shp)
         """
         fig, ax = plt.subplots(figsize=(6,7))
-        pc = plot_netmapdata(ugrid.verts, values=data_fromnc[0,:,0], ax=None, linewidth=0.5, cmap='jet')
-        pc.set_clim([-1,0])
+        pc = plot_netmapdata(ugrid.verts, values=data_fromnc_top.data.flatten(), ax=None, linewidth=0.5, cmap='jet')
+        #pc.set_clim([-1,0])
         fig.colorbar(pc)
         ax.set_aspect(1./np.cos(np.mean(ax.get_ylim())/180*np.pi),adjustable='box')
         fig.tight_layout()

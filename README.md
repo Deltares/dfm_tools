@@ -156,6 +156,7 @@ print('\tthe standard_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var
 
 Feature wishlist
 --------
+- integrate get_bottoplayerfromarray() into get_nc() with layer='top' or layer='bottom'
 - improve time reading:
 	- add support for 360_day and noleap calendars (cannot be converted to dt.datetime)
 	- time array is now converted to UTC by num2date automatically and if possible converted back to original timezone, simplify by writing own num2date that excludes timezone from units strin?
