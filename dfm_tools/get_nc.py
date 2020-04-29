@@ -298,21 +298,13 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
         if layer is str('bottom'):
             bottomtoplay = (~values_all.mask).argmax(axis=layerdim_id) #get index of first False value from the original array
         values_selid_topbot = []
-        #values_dimlens_topbot = []
-        #values_origshapeid_topbot = []
         for iD, dimlen in enumerate(values_all.shape):
             if iD == layerdim_id:
                 values_selid_topbot.append(bottomtoplay)
-                #values_dimlens_topbot.append(1)
-                #values_origshapeid_topbot.append(0)
             elif iD == concat_axis:
                 values_selid_topbot.append(np.array(range(dimlen)))      
-                #values_dimlens_topbot.append(dimlen)
-                #values_origshapeid_topbot.append(dimlen)
             else:
                 values_selid_topbot.append(np.repeat(np.array([range(dimlen)]),values_all.shape[concat_axis],axis=0).T)
-                #values_dimlens_topbot.append(dimlen)
-                #values_origshapeid_topbot.append(dimlen)
         values_all_topbot = values_all[values_selid_topbot] #layer dimension is removed due to advanced indexing instead of slicing
         values_all_topbot = np.expand_dims(values_all_topbot, axis=layerdim_id) #re-add layer dimension to dataset on original location
         values_all = values_all_topbot
