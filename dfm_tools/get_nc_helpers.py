@@ -383,6 +383,7 @@ def get_timesfromnc(file_nc, varname='time', retrieve_ids=False, keeptimezone=Tr
             refdate = dt.datetime.strptime(refdate_str,'%Y-%m-%d %H:%M:%S')
             data_nc_times_pdtd = pd.to_timedelta(data_nc_times, unit=time_units_list[0])
             data_nc_datetimes = (refdate + data_nc_times_pdtd)#.to_pydatetime()
+            print('retrieving original timezone succeeded, no conversion to UTC/GMT applied')
         except:
             print('retrieving original timezone failed, using num2date output instead')
             data_nc_datetimes = num2date(data_nc_times, units=data_nc_timevar.units, only_use_cftime_datetimes=False, only_use_python_datetimes=True)

@@ -156,6 +156,7 @@ print('\tthe standard_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var
 
 Feature wishlist
 --------
+- correct timezone in netCDF to UTC or not, keyword?
 - integrate values_all and values_all_topbot in get_nc(), avoid concatenating to empty (size 0) array of values_all is a first step
 - improve time reading:
 	- add support for 360_day and noleap calendars (cannot be converted to dt.datetime)
