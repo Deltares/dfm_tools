@@ -283,7 +283,7 @@ Todo non-content
 Developer information
 --------
 - How to contribute to this git repository?
-- First request github rights to contribute with the current developers
+- First request github rights to contribute with the current developers:
 	- Jelmer Veenstra <jelmer.veenstra@deltares.nl>
 	- Lora Buckman
 	- Julien Groenenboom
