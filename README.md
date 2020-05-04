@@ -304,6 +304,7 @@ Developer information
 	- to list venvs:``conda info --envs``
 	- to remove venv when necessary: ``conda remove -n dfm_tools_devenv --all``
 	- ``conda activate dfm_tools_devenv``
+	- ``conda install spyder`` (or from conda-forge two lines below)
 	- ``python -m pip install -e .`` (pip developer mode, any updates to the local folder by github (with ``git pull``) are immediately available in your python. It also installs all required packages)
 	- ``conda install -c conda-forge spyder "shapely>=1.7.0" cartopy geopandas``(conda-forge channel is necessary since main channel shapely version is 1.6.4. The correct version is available via pip, but then geos dll is not properly linked, this will probably be solved in the future https://github.com/Toblerity/Shapely/issues/844. cartopy also recommends conda-forge channel)
 	- test if dfm_tools is properly installed by printing the version number: ``python -c "import dfm_tools; print(dfm_tools.__version__)"``
