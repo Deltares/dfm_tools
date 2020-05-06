@@ -2,9 +2,11 @@
 History
 =======
 
-0.x.xx (xxxx-xx-xx)
+0.7.20 (2020-05-06)
 ------------------
 * added option to retrieve data from top/bottom layers of z-layer D-Flow FM model
+* fixed bug with empty string as varname
+* added merge netcdf time function
 
 0.7.19 (2020-04-28)
 ------------------
