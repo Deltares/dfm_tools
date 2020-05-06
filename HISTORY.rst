@@ -2,7 +2,13 @@
 History
 =======
 
-0.7.17 (2020-04-28)
+0.7.20 (2020-05-06)
+------------------
+* added option to retrieve data from top/bottom layers of z-layer D-Flow FM model
+* fixed bug with empty string as varname
+* added merge netcdf time function
+
+0.7.19 (2020-04-28)
 ------------------
 * improved time variable reading (more efficient when retrieving only a time-subset of a variable from a netCDF with long time dimension)
 * improved time variable/dimensions reading (arbitrary time variable/dimension names are suported, as well as multiple time variables/dimensions)

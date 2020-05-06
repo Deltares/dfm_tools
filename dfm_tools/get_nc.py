@@ -111,7 +111,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
         time_length = data_nc_timevar.shape[0]
         data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname, retrieve_ids=[0,-1]) #get selection of times
         if timestep is None:
-            raise Exception('ERROR: netcdf variable contains a time dimension, but parameter timestep not provided (can be "all"), first and last timestep:\n%s\nretrieve entire times list:\nfrom dfm_tools.get_nc_helpers import get_timesfromnc; times_pd = get_timesfromnc(file_nc=file_nc, varname=%s, retrieve_ids=False), where the argument retrieve_ids is optional and can be a list of time indices'%(pd.DataFrame(data_nc_datetimes_pd),varname))
+            raise Exception('ERROR: netcdf variable contains a time dimension, but parameter timestep not provided (can be "all"), first and last timestep:\n%s\nretrieve entire times list:\nfrom dfm_tools.get_nc_helpers import get_timesfromnc; times_pd = get_timesfromnc(file_nc=file_nc, varname="%s")'%(pd.DataFrame(data_nc_datetimes_pd),varname))
         #convert timestep to list of int if it is not already
         if timestep is str('all'):
             data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname) #get all times
@@ -155,7 +155,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
         if layer is None:
             raise Exception('ERROR: netcdf variable contains a layer dimension, but argument layer not provided (can be "all")\nnumber of layers: %d (numbered 0 to %d)'%(nlayers, nlayers-1))
         #convert layer to list of int if it is not already
-        if layer is str('all'):
+        if layer is str('all') or layer is str('top') or layer is str('bottom'):
             layer_ids = range(nlayers)
         elif type(layer) in listtype_range:
             if type(layer[0]) in listtype_int:
@@ -165,7 +165,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
         elif type(layer) in listtype_int:
             layer_ids = [layer]
         else:
-            raise Exception('ERROR: layer variable  lay type not anticipated (%s), (list/range/ndarray of) int are accepted (or "all")'%(type(layer)))
+            raise Exception('ERROR: layer variable type not anticipated (%s), (list/range/ndarray of) int are accepted (or "all", "top" or "bottom")'%(type(layer)))
         #convert to positive index, make unique(+sort), convert to list because of indexing with np.array of len 1 errors sometimes
         layer_ids = list(np.unique(np.array(range(nlayers))[layer_ids]))
         #check if requested layers are within range of netcdf
@@ -288,7 +288,29 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
             values_all = np.ma.concatenate([values_all,nc_varobject_sel[values_selid]],axis=concat_axis)
         else:
             values_all = nc_varobject_sel[values_selid]
-            
+    
+    #optional extraction of top/bottom layer, convenient for z-layer models since top and/or bottom layers are often masked for part of the cells
+    if layer is str('top') or layer is str('bottom'):
+        warnings.warn('you are retrieving data from the %s valid layer of each cell. it is assumed that the last axis of the variable is the layer axis')
+        layerdim_id = nc_varobject_sel.dimensions.index(dimn_layer)
+        if layer is str('top'):
+            bottomtoplay = values_all.shape[layerdim_id]-1-(~np.flip(values_all.mask,axis=layerdim_id)).argmax(axis=layerdim_id) #get index of first False value from the flipped array (over layer axis) and correct with size of that dimension. this corresponds to the top layer of each cell in case of D-Flow FM
+        if layer is str('bottom'):
+            bottomtoplay = (~values_all.mask).argmax(axis=layerdim_id) #get index of first False value from the original array
+        values_selid_topbot = []
+        for iD, dimlen in enumerate(values_all.shape):
+            if iD == layerdim_id:
+                values_selid_topbot.append(bottomtoplay)
+            elif iD == concat_axis:
+                values_selid_topbot.append(np.array(range(dimlen)))      
+            else:
+                #values_selid_topbot.append(np.repeat(np.array([range(dimlen)]).T,values_all.shape[concat_axis],axis=1))
+                values_selid_topbot.append(np.array([range(dimlen)]).T)
+        values_all_topbot = values_all[values_selid_topbot] #layer dimension is removed due to advanced indexing instead of slicing
+        values_all_topbot = np.expand_dims(values_all_topbot, axis=layerdim_id) #re-add layer dimension to dataset on original location
+        values_all = values_all_topbot
+        
+    
     #add metadata
     values_all.var_varname = varname
     values_all.var_dimensions = nc_varobject.dimensions
@@ -308,6 +330,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     else:
         values_all.var_stations = None
     return values_all
+
 
 
 

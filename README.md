@@ -156,6 +156,9 @@ print('\tthe standard_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var
 
 Feature wishlist
 --------
+- use isinstance for dtype testing in get_nc()
+- correct timezone in netCDF to UTC or not, keyword?
+- integrate values_all and values_all_topbot in get_nc(), avoid concatenating to empty (size 0) array of values_all is a first step
 - improve time reading:
 	- add support for 360_day and noleap calendars (cannot be converted to dt.datetime)
 	- time array is now converted to UTC by num2date automatically and if possible converted back to original timezone, simplify by writing own num2date that excludes timezone from units strin?
@@ -207,7 +210,6 @@ Feature wishlist
 - add tidal analysis:
 	- https://github.com/sam-cox/pytides
 	- https://pypi.org/project/pytides/
-	- https://pypi.org/project/tidepy/
 	- https://github.com/pwcazenave/tappy
 	- https://pypi.org/project/UTide/
 	- https://github.com/moflaher/ttide_py
@@ -281,7 +283,7 @@ Todo non-content
 Developer information
 --------
 - How to contribute to this git repository?
-- First request github rights to contribute with the current developers
+- First request github rights to contribute with the current developers:
 	- Jelmer Veenstra <jelmer.veenstra@deltares.nl>
 	- Lora Buckman
 	- Julien Groenenboom
@@ -302,9 +304,9 @@ Developer information
 	- to list venvs:``conda info --envs``
 	- to remove venv when necessary: ``conda remove -n dfm_tools_devenv --all``
 	- ``conda activate dfm_tools_devenv``
-	- ``conda install spyder``
+	- ``conda install spyder`` (or from conda-forge two lines below)
 	- ``python -m pip install -e .`` (pip developer mode, any updates to the local folder by github (with ``git pull``) are immediately available in your python. It also installs all required packages)
-	- ``conda install -c conda-forge "shapely>=1.7.0" cartopy geopandas``(conda-forge channel is necessary since main channel shapely version is 1.6.4. The correct version is available via pip, but then geos dll is not properly linked, this will probably be solved in the future https://github.com/Toblerity/Shapely/issues/844. cartopy also recommends conda-forge channel)
+	- ``conda install -c conda-forge spyder "shapely>=1.7.0" cartopy geopandas``(conda-forge channel is necessary since main channel shapely version is 1.6.4. The correct version is available via pip, but then geos dll is not properly linked, this will probably be solved in the future https://github.com/Toblerity/Shapely/issues/844. cartopy also recommends conda-forge channel)
 	- test if dfm_tools is properly installed by printing the version number: ``python -c "import dfm_tools; print(dfm_tools.__version__)"``
 	- open 'Spyder(dfm_tools_devenv)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in dfm_tools_devenv)
 - Make your local changes to dfm_tools
