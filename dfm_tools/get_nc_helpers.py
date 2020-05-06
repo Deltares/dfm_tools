@@ -212,6 +212,9 @@ def get_ncvarobject(file_nc, varname):
     nc_varstandardnames = list(vars_pd['standard_name'])
     
     # check if requested variable is in netcdf
+    if varname == '':
+        varname = None
+    
     if varname in nc_varkeys:
         pass
     elif varname in nc_varlongnames:
