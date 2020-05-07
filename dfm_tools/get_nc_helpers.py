@@ -433,6 +433,7 @@ def get_hisstationlist(file_nc,varname):
     from netCDF4 import Dataset, chartostring
     import pandas as pd
     import numpy as np
+    import warnings
     
     #from dfm_tools.get_nc_helpers import get_ncvarobject, get_ncvardimlist, get_variable_timevardim
     
@@ -469,8 +470,9 @@ def get_hisstationlist(file_nc,varname):
                 try:
                     station_name_list_raw = chartostring(station_name_char)
                 except: #for glossis netCDF file with probably invalidly stored station names
-                    station_name_list_raw_bytes = chartostring(station_name_char,encoding='bytes')
+                    warnings.warn('station list could not be decoded with utf-8, now done with latin1 but the netCDF file might be corrupt and the station names sometimes unreadable')
                     """
+                    station_name_list_raw_bytes = chartostring(station_name_char,encoding='bytes')
                     for iS,stat in enumerate(station_name_list_raw_bytes):
                         try:
                             stat.decode('utf-8')
