@@ -466,7 +466,19 @@ def get_hisstationlist(file_nc,varname):
             station_name = data_nc.variables[varname_stationvarname]
             if varname_stationdimname_list[iSV] in station_name.dimensions:
                 station_name_char = station_name[:]
-                station_name_list_raw = chartostring(station_name_char)
+                try:
+                    station_name_list_raw = chartostring(station_name_char)
+                except: #for glossis netCDF file with probably invalidly stored station names
+                    station_name_list_raw_bytes = chartostring(station_name_char,encoding='bytes')
+                    """
+                    for iS,stat in enumerate(station_name_list_raw_bytes):
+                        try:
+                            stat.decode('utf-8')
+                        except:
+                            print('stat %d is not utf-8:\n\tbytes decoding: %s\n\tlatin-1 decoding: %s'%(iS, stat, stat.decode('latin-1')))
+                    """
+                    station_name_list_raw = chartostring(station_name_char,encoding='latin1')
+                    
                 station_name_list = np.char.strip(station_name_list_raw) #necessary step for Sobek and maybe others
                 var_station_names_pd[varname_stationvarname] = station_name_list
                 
