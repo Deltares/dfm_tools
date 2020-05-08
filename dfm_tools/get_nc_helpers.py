@@ -479,8 +479,7 @@ def get_hisstationlist(file_nc,varname):
                         except:
                             print('stat %d is not utf-8:\n\tbytes decoding: %s\n\tlatin-1 decoding: %s'%(iS, stat, stat.decode('latin-1')))
                     """
-                    station_name_list_raw = chartostring(station_name_char,encoding='latin1')
-                    
+                    station_name_list_raw = chartostring(station_name_char,encoding='latin-1')
                 station_name_list = np.char.strip(station_name_list_raw) #necessary step for Sobek and maybe others
                 var_station_names_pd[varname_stationvarname] = station_name_list
                 
