@@ -7,6 +7,7 @@ History
 * added option to retrieve data from top/bottom layers of z-layer D-Flow FM model
 * fixed bug with empty string as varname
 * added merge netcdf time function
+* fixed dependencies (now all conda packages come from conda-forge channel)
 
 0.7.19 (2020-04-28)
 ------------------

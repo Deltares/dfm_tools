@@ -292,14 +292,13 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     #optional extraction of top/bottom layer, convenient for z-layer models since top and/or bottom layers are often masked for part of the cells
     if layer is str('top') or layer is str('bottom'):
         warnings.warn('you are retrieving data from the %s valid layer of each cell. it is assumed that the last axis of the variable is the layer axis')
+        if not values_all.mask.any(): #if (all values in) the mask are False
+            raise Exception('there is no mask present in this dataset (or all its values are False), use layer=[0,-1] to get the bottom and top layerss')
         layerdim_id = nc_varobject_sel.dimensions.index(dimn_layer)
-        if values_all.mask is not False:
-            if layer is str('top'):
-                bottomtoplay = values_all.shape[layerdim_id]-1-(~np.flip(values_all.mask,axis=layerdim_id)).argmax(axis=layerdim_id) #get index of first False value from the flipped array (over layer axis) and correct with size of that dimension. this corresponds to the top layer of each cell in case of D-Flow FM
-            if layer is str('bottom'):
-                bottomtoplay = (~values_all.mask).argmax(axis=layerdim_id) #get index of first False value from the original array
-        else:
-            raise Exception('there is no mask present in this dataset, use layer=[0,-1] to get the bottom and top layerss')
+        if layer is str('top'):
+            bottomtoplay = values_all.shape[layerdim_id]-1-(~np.flip(values_all.mask,axis=layerdim_id)).argmax(axis=layerdim_id) #get index of first False value from the flipped array (over layer axis) and correct with size of that dimension. this corresponds to the top layer of each cell in case of D-Flow FM
+        if layer is str('bottom'):
+            bottomtoplay = (~values_all.mask).argmax(axis=layerdim_id) #get index of first False value from the original array
         values_selid_topbot = []
         for iD, dimlen in enumerate(values_all.shape):
             if iD == layerdim_id:
