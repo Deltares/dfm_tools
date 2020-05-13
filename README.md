@@ -271,6 +271,7 @@ Todo non-content
 	- https://packaging.python.org/tutorials/packaging-projects/
 	- how to automate this process? (buildserver including testing?)
 	- also add changelog besides commit comments?
+	- alternatively, register on conda-forge: https://github.com/conda-forge/staged-recipes/
 - put testdata on deltares shared location?
 - arrange auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
 - update license with Deltares terms
