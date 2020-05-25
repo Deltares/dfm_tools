@@ -59,6 +59,7 @@ Installation
 	- optional: ``conda install -c conda-forge "shapely>=1.7.0" -y`` (for slicing 2D/3D data) (conda-forge channel is necessary since main channel version is 1.6.4)
 	- optional: ``conda install -c conda-forge cartopy -y`` (for satellite imagery on plots) (conda-forge channel recommended by cartopy developers, and currently also necessary for correct shapely version)
 	- optional: ``conda install -c conda-forge geopandas -y`` (for shapefile related operations)
+	- to remove venv when necessary: ``conda remove -n dfm_tools_env --all``
 - launch Spyder:
 	- open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in dfm_tools_env)
 	- if launching Spyder gives a Qt related error: remove the system/user environment variable 'qt_plugin_path' set by an old Delft3D4 installation procedure
@@ -264,8 +265,6 @@ Todo non-content
 - external improvements:
 	- fix small bugs in Delft3D4 netCDF output (related to coordinates, coordinates of velocity points and incorrect missing values)
 	- request modplot.velovect() (curved vectors) to be added to matplotlib
-	- request shapely>=1.7.0 op main channel instead of only at conda-forge? cartopy also recommends conda-forge, so would not make a huge difference yet
-	- why does cartopy has to come from conda-forge?
 	- install without PATH fails on pip/git in anaconda prompt? (test installation with anaconda prompt, and with command prompt combined with ``set PATH=%PATH%;<your_path_to_anaconda_installation>\Scripts``)
 	- installation also possible with miniconda only?
 - register on PyPI, for easier install via pip (easier for regular users):
@@ -273,6 +272,7 @@ Todo non-content
 	- https://packaging.python.org/tutorials/packaging-projects/
 	- how to automate this process? (buildserver including testing?)
 	- also add changelog besides commit comments?
+	- alternatively, register on conda-forge: https://github.com/conda-forge/staged-recipes/
 - put testdata on deltares shared location?
 - arrange auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
 - update license with Deltares terms
