@@ -1122,7 +1122,7 @@ def test_workinprogress():
     file_nc = r'p:\11200665-c3s-codec\2_Hydro\ECWMF_meteo\meteo\ERA-5\2000\ERA5_metOcean_atm_19991201_19991231.nc'
     print('\nfile = %s'%(file_nc))
     data_dummy = get_ncmodeldata(file_nc=file_nc, varname='msl', timestep=0, get_linkedgridinfo=True)
-    file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\01_Implementation\14_restartfile\sfincs_map.nc'
+    file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\01_Implementation\08_restartfile\sfincs_map.nc'
     print('\nfile = %s'%(file_nc))
     data_dummy = get_ncmodeldata(file_nc=file_nc, varname='zs', timestep=0, get_linkedgridinfo=True)
     print('\nfile = %s'%(file_nc))
@@ -1271,7 +1271,7 @@ def test_workinprogress():
 
 
     #SFINCS
-    file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\01_Implementation\14_restartfile\sfincs_map.nc'
+    file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\01_Implementation\08_restartfile\sfincs_map.nc'
     #file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\03_Application\22_Tsunami_Japan_Sendai\sfincs_map.nc'
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
     
@@ -1326,7 +1326,7 @@ def test_workinprogress():
 
     #SFINCS HIS
     #file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\01_Implementation\14_restartfile\sfincs_his.nc'
-    file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\03_Application\22_Tsunami_Japan_Sendai\sfincs_his.nc'
+    file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\03_Application\04_Tsunami_Japan_Sendai\sfincs_his.nc'
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
     
     station_names = get_hisstationlist(file_nc=file_nc, varname='point_zs')

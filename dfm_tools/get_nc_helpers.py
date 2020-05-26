@@ -58,7 +58,7 @@ def get_ncfilelist(file_nc, multipart=None):
                 filename_start = re.compile('(.*)_([0-9]+)_%s'%(nctype)).search(file_nc).group(1)
             #filename_number = re.compile('(.*)_([0-9]+)_map.nc').search(file_nc).group(2)
             #file_ncs = [file_nc.replace('_%s_map.nc','_%04d_map.nc'%(filename_number, domain_id)) for domain_id in range(ndomains)]
-            file_ncs = glob.glob('%s*_%s'%(filename_start,nctype))
+            file_ncs = glob.glob('%s_*_%s'%(filename_start,nctype))
             filename_merged = '%s_merged_%s'%(filename_start,nctype)
             if filename_merged in file_ncs:
                 file_ncs.remove(filename_merged)
