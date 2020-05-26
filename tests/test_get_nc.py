@@ -196,7 +196,7 @@ def test_getnetdata_plotnet(file_nc):
 @pytest.mark.parametrize("file_nc", [pytest.param(r'p:\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\wave\wavm-inlet.nc', id='Tidal_inlet_wavm'),
                                      #pytest.param(r'p:\11200665-c3s-codec\2_Hydro\ECWMF_meteo\meteo\ERA-5\2000\ERA5_metOcean_atm_19991201_19991231.nc', id='ERA5_meteo'),
                                      pytest.param(r'p:\1204257-dcsmzuno\2014\data\meteo\HIRLAM72_2018\h72_201803.nc', id='hirlam_meteo'),
-                                     pytest.param(r'p:\11202255-sfincs\Testbed\Original_runs\01_Implementation\14_restartfile\sfincs_map.nc', id='sfincs_map')])
+                                     pytest.param(r'p:\11202255-sfincs\Testbed\Original_runs\01_Implementation\08_restartfile\sfincs_map.nc', id='sfincs_map')])
 @pytest.mark.acceptance
 def test_getnetdata_plotnet_regular(file_nc):
 
@@ -204,9 +204,9 @@ def test_getnetdata_plotnet_regular(file_nc):
     """
     dir_output = './test_output'
     file_nc = 'p:\\11203869-morwaqeco3d\\05-Tidal_inlet\\02_FM_201910\\FM_MF10_Max_30s\\wave\\wavm-inlet.nc'
-    file_nc = r'p:\\11200665-c3s-codec\\2_Hydro\\ECWMF_meteo\\meteo\\ERA-5\\2000\\ERA5_metOcean_atm_19991201_19991231.nc'
-    file_nc = r'p:\\1204257-dcsmzuno\\2014\\data\\meteo\\HIRLAM72_2018\\h72_201803.nc'
-    file_nc = r'p:\\11202255-sfincs\\Testbed\\Original_runs\\01_Implementation\\14_restartfile\\sfincs_map.nc'
+    file_nc = 'p:\\11200665-c3s-codec\\2_Hydro\\ECWMF_meteo\\meteo\\ERA-5\\2000\\ERA5_metOcean_atm_19991201_19991231.nc'
+    file_nc = 'p:\\1204257-dcsmzuno\\2014\\data\\meteo\\HIRLAM72_2018\\h72_201803.nc'
+    file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\01_Implementation\08_restartfile\sfincs_map.nc'
     """
     
     import numpy as np
@@ -374,7 +374,7 @@ def test_gethismodeldata(file_nc):
 
 @pytest.mark.parametrize("file_nc", [pytest.param(os.path.join(dir_testinput,r'DFM_sigma_curved_bend\DFM_OUTPUT_cb_3d\cb_3d_map.nc'), id='curvibend'),
                                      pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'), id='Grevelingen'),
-                                     pytest.param(r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\computations\run_156\DFM_OUTPUT_RMM_dflowfm\RMM_dflowfm_0000_map.nc', id='RMM')])
+                                     pytest.param(r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\computations\run_166\DFM_OUTPUT_RMM_dflowfm\RMM_dflowfm_0000_map.nc', id='RMM')])
 @pytest.mark.acceptance
 def test_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
@@ -521,7 +521,7 @@ def test_getplotmapWAQOS(file_nc):
                                      pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'), id='Grevelingen-FM_0000_map'),
                                      #pytest.param(r'p:\11203379-mwra-new-bem-model\waq_model\simulations\A31_1year_20191219\DFM_OUTPUT_MB_02_waq\MB_02_waq_0000_map.nc', id='MB_02_waq_0000_map'),
                                      pytest.param(r'p:\1204257-dcsmzuno\2013-2017\3D-DCSM-FM\A19\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0000_map.nc', id='DCSM-FM_0_5nm_0000_map'),
-                                     pytest.param(r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\computations\run_156\DFM_OUTPUT_RMM_dflowfm\RMM_dflowfm_0000_map.nc', id='RMM_dflowfm_0000_map')])
+                                     pytest.param(r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\computations\run_166\DFM_OUTPUT_RMM_dflowfm\RMM_dflowfm_0000_map.nc', id='RMM_dflowfm_0000_map')])
 @pytest.mark.acceptance
 def test_getxzcoordsonintersection_plotcrossect(file_nc):
 
