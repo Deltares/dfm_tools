@@ -192,6 +192,11 @@ Feature wishlist
 	- https://github.com/SciTools/cartopy/blob/master/lib/cartopy/data/raster/natural_earth/images.json
 	- https://github.com/SciTools/cartopy/blob/master/lib/cartopy/data/raster/natural_earth/50-natural-earth-1-downsampled.png
 	- http://earthpy.org/cartopy_backgroung.html
+	- alternative satellite background:
+		```python
+		import contextily as ctx
+		ctx.add_basemap(ax, source=ctx.providers.Esri.WorldImagery, crs="EPSG:4326")
+		```
 - export to shapefile:
 	- testbank example added for a specific feature to shapefile, make more generic
 - coordinate conversion:
