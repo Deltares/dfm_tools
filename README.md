@@ -44,8 +44,10 @@ Features
 - other io functions:
 	- read tekal data (.tek, .pli, .pliz, .pol, .ldb)
 	- read/write mdu file
+	- read/write bc file
 	- write model results to shapefile
-
+- html documentation:
+	- https://htmlpreview.github.io/?https://github.com/openearth/dfm_tools/blob/master/doc/dfm_tools/index.html
 
 Installation
 --------
@@ -208,7 +210,6 @@ Feature wishlist
 	```
 - add more io-functions:
 	- read/write matroos data (first setup in dfm_tools.io.noos)
-	- read/write bc files (first setups in dfm_tools.io.bc and dflowutil, include testcase)
 	- convert data to kml (google earth) or shp? (including RD to WGS84 conversion and maybe vice versa)
 	- improve tekal map read
 	- add tekal mergedatasets function to get e.g. one ldb dataset with the original parts separated with nans
@@ -231,7 +232,7 @@ Feature wishlist
 	- to retrieve other mapdata data faster
 - add polygon ginput function (click in plot) (already partly exists in intersect/slice testscript)
 - merge existing dfm model setup functions (and other useful stuff):
-	- dflowutil: https://github.com/openearth/dfm_tools/tree/master/dflowutil (and test scripts, contains e.g. read/write functions for general datafromats (tim, bc))
+	- dflowutil: https://github.com/openearth/dfm_tools/tree/master/dflowutil (and test scripts, contains e.g. read/write functions for general datafromats (like tim))
 	- MBay scripts
 	- https://github.com/openearth/delft3dfmpy (arthur van dam)	
 	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/applications/delft3dfm (fiat, sobek etc)
@@ -264,7 +265,7 @@ Todo non-content
 	- improve his plots and tekal map plots, improve other plots
 	- put testdata and testoutput on github and create jupyter notebook instead of pptx?
 	- create overview of scripts and functions, including future location of missing features
-	- write documentation as comments and generate automatically? (at least add documentation as comments to functions so Spyder help window can display this)
+	- write documentation as comments (docstrings) and generate html documentation automatically with pdoc
 	- improve feedback to user if no or wrong input arguments are given to functions
 	- add license to new scripts
 - external improvements:
@@ -331,6 +332,10 @@ Developer information
 	- ``pytest -v --tb=short -m systemtest``
 	- ``pytest -v --tb=short -m acceptance``
 	- ``pytest -v --tb=short tests\test_get_nc.py::test_getplotmapWAQOS``
+- Regenerate html documentation:
+	- open command window (or anaconda prompt) in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
+	- ``conda activate dfm_tools_devenv``
+	- ``pdoc --html dfm_tools -o doc --force``
 - Commit and push your changes to your branch:
 	- open git bash window in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
 	- ``git checkout work_yourname`` (checkout your branch, never do anything while the master is selected)
