@@ -46,7 +46,8 @@ Features
 	- read/write mdu file
 	- read/write bc file
 	- write model results to shapefile
-
+- html documentation:
+	- https://htmlpreview.github.io/?https://github.com/openearth/dfm_tools/blob/master/doc/dfm_tools/index.html
 
 Installation
 --------
