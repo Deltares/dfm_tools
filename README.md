@@ -265,7 +265,7 @@ Todo non-content
 	- improve his plots and tekal map plots, improve other plots
 	- put testdata and testoutput on github and create jupyter notebook instead of pptx?
 	- create overview of scripts and functions, including future location of missing features
-	- write documentation as comments (docstrings) and generate html documentation automatically with pdoc
+	- write documentation as comments (docstrings) and generate html documentation automatically with pdoc (or maybe sphinx?)
 	- improve feedback to user if no or wrong input arguments are given to functions
 	- add license to new scripts
 - external improvements:
