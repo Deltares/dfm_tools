@@ -331,6 +331,10 @@ Developer information
 	- ``pytest -v --tb=short -m systemtest``
 	- ``pytest -v --tb=short -m acceptance``
 	- ``pytest -v --tb=short tests\test_get_nc.py::test_getplotmapWAQOS``
+- Regenerate html documentation:
+	- open command window (or anaconda prompt) in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
+	- ``conda activate dfm_tools_devenv``
+	- ``pdoc --html dfm_tools -o doc --force``
 - Commit and push your changes to your branch:
 	- open git bash window in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
 	- ``git checkout work_yourname`` (checkout your branch, never do anything while the master is selected)

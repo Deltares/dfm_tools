@@ -1,0 +1,1204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.8.1" />
+<title>dfm_tools.get_nc_helpers API documentation</title>
+<meta name="description" content="GNU GENERAL PUBLIC LICENSE
+Version 3, 29 June 2007 …" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>dfm_tools.get_nc_helpers</code></h1>
+</header>
+<section id="section-intro">
+<p>GNU GENERAL PUBLIC LICENSE
+Version 3, 29 June 2007</p>
+<p>dfm_tools are post-processing tools for Delft3D FM
+Copyright (C) 2020 Deltares</p>
+<p>This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.</p>
+<p>This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the
+GNU General Public License for more details.</p>
+<p>You should have received a copy of the GNU General Public License
+along with this program.
+If not, see <a href="http://www.gnu.org/licenses/">http://www.gnu.org/licenses/</a>.</p>
+<p>INFORMATION
+This script is part of dfm_tools: <a href="https://github.com/openearth/dfm_tools">https://github.com/openearth/dfm_tools</a>
+Check the README.rst on github for other available functions
+Check the tests folder on github for example scripts (this is the dfm_tools pytest testbank)
+Check the pptx and example figures in (created by the testbank): N:/Deltabox/Bulletin/veenstra/info dfm_tools</p>
+<p>Created on Fri Feb 14 12:43:19 2020</p>
+<p>@author: veenstra</p>
+<p>helper functions for functions in get_nc.py</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python"># -*- coding: utf-8 -*-
+&#34;&#34;&#34;
+GNU GENERAL PUBLIC LICENSE
+              Version 3, 29 June 2007
+
+dfm_tools are post-processing tools for Delft3D FM
+Copyright (C) 2020 Deltares
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+
+
+INFORMATION
+This script is part of dfm_tools: https://github.com/openearth/dfm_tools
+Check the README.rst on github for other available functions
+Check the tests folder on github for example scripts (this is the dfm_tools pytest testbank)
+Check the pptx and example figures in (created by the testbank): N:/Deltabox/Bulletin/veenstra/info dfm_tools
+
+Created on Fri Feb 14 12:43:19 2020
+
+@author: veenstra
+
+helper functions for functions in get_nc.py
+&#34;&#34;&#34;
+
+
+
+
+def get_ncfilelist(file_nc, multipart=None):
+    #get list of mapfiles
+    import re
+    import glob
+    import os
+    
+    if not os.path.exists(file_nc):
+        raise Exception(&#39;ERROR: file does not exist: %s&#39;%(file_nc))
+    
+    if &#39;_&#39; in file_nc:
+        nctype = file_nc.split(&#39;_&#39;)[-1]
+        if nctype == &#39;rst.nc&#39; and len(file_nc.split(&#39;_&#39;)) &gt;= 4:
+            lastpart = file_nc.split(&#39;_&#39;)[-4]
+        else:
+            lastpart = file_nc.split(&#39;_&#39;)[-2]
+        if file_nc.endswith(&#39;_%s&#39;%(nctype)) and multipart != False and len(lastpart) == 4 and lastpart.isdigit(): #if part before &#39;_map.nc&#39; is eg &#39;0000&#39;
+            if nctype == &#39;rst.nc&#39; and len(file_nc.split(&#39;_&#39;)) &gt;= 4:
+                filename_start = re.compile(&#39;(.*)_([0-9]+)_(.*)_(.*)_%s&#39;%(nctype)).search(file_nc).group(1)
+            else:
+                filename_start = re.compile(&#39;(.*)_([0-9]+)_%s&#39;%(nctype)).search(file_nc).group(1)
+            #filename_number = re.compile(&#39;(.*)_([0-9]+)_map.nc&#39;).search(file_nc).group(2)
+            #file_ncs = [file_nc.replace(&#39;_%s_map.nc&#39;,&#39;_%04d_map.nc&#39;%(filename_number, domain_id)) for domain_id in range(ndomains)]
+            file_ncs = glob.glob(&#39;%s_*_%s&#39;%(filename_start,nctype))
+            filename_merged = &#39;%s_merged_%s&#39;%(filename_start,nctype)
+            if filename_merged in file_ncs:
+                file_ncs.remove(filename_merged)
+            
+        else:
+            file_ncs = [file_nc]
+    else:
+        file_ncs = [file_nc]
+    return file_ncs
+
+
+
+
+def get_varname_fromnc(data_nc,varname_requested,vardim):
+    import pandas as pd
+    
+    #VARIABLE names used within different versions of Delft3D-Flexible Mesh
+    varnames_list = pd.DataFrame()
+    #varnames_list[&#39;time&#39;] = [&#39;time&#39;,&#39;nmesh2d_dlwq_time&#39;,&#39;TIME&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # time, not necessary anymore
+    
+    if vardim == &#39;var&#39;:
+        varnames_list[&#39;mesh2d_node_x&#39;] = [&#39;mesh2d_node_x&#39;,&#39;NetNode_x&#39;,&#39;mesh2d_agg_node_x&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # x-coordinate of nodes
+        varnames_list[&#39;mesh2d_node_y&#39;] = [&#39;mesh2d_node_y&#39;,&#39;NetNode_y&#39;,&#39;mesh2d_agg_node_y&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # y-coordinate of nodes
+        varnames_list[&#39;mesh2d_node_z&#39;] = [&#39;mesh2d_node_z&#39;,&#39;NetNode_z&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # z-coordinate of nodes
+        
+        varnames_list[&#39;mesh2d_face_x&#39;] = [&#39;mesh2d_face_x&#39;,&#39;FlowElem_xzw&#39;,&#39;mesh2d_agg_face_x&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # x-coordinate of faces (center)
+        varnames_list[&#39;mesh2d_face_y&#39;] = [&#39;mesh2d_face_y&#39;,&#39;FlowElem_yzw&#39;,&#39;mesh2d_agg_face_y&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # y-coordinate of faces (center)
+        
+        varnames_list[&#39;mesh2d_edge_x&#39;] = [&#39;mesh2d_edge_x&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # x-coordinate of velocity-points
+        varnames_list[&#39;mesh2d_edge_y&#39;] = [&#39;mesh2d_edge_y&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # y-coordinate of velocity-points
+        
+        varnames_list[&#39;mesh2d_edge_nodes&#39;] = [&#39;mesh2d_edge_nodes&#39;,&#39;NetLink&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # &#39;link between two netnodes&#39; / &#39;Mapping from every edge to the two nodes that it connects&#39;
+        varnames_list[&#39;mesh2d_face_nodes&#39;] = [&#39;mesh2d_face_nodes&#39;,&#39;NetElemNode&#39;,&#39;mesh2d_agg_face_nodes&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # 
+        
+        varnames_list[&#39;mesh2d_face_x_bnd&#39;] = [&#39;mesh2d_face_x_bnd&#39;,&#39;FlowElemContour_x&#39;,&#39;mesh2d_agg_face_x_bnd&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # x-coordinates of flow element contours
+        varnames_list[&#39;mesh2d_face_y_bnd&#39;] = [&#39;mesh2d_face_y_bnd&#39;,&#39;FlowElemContour_y&#39;,&#39;mesh2d_agg_face_y_bnd&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # y-coordinates of flow element contours
+        
+        varnames_list[&#39;mesh2d_flowelem_domain&#39;] = [&#39;mesh2d_flowelem_domain&#39;,&#39;FlowElemDomain&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # flow element domain
+        varnames_list[&#39;mesh2d_flowelem_bl&#39;] = [&#39;mesh2d_flowelem_bl&#39;,&#39;FlowElem_bl&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # bed level
+        varnames_list[&#39;mesh2d_flowelem_ba&#39;] = [&#39;mesh2d_flowelem_ba&#39;,&#39;FlowElem_bac&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # area (m2) of cell faces
+        
+        varnames_list[&#39;mesh2d_layer_z&#39;] = [&#39;mesh2d_layer_z&#39;,&#39;LayCoord_cc&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # 
+        
+        #non-grid variables necessary for layer calculation for intersection/cross section) funtion
+        varnames_list[&#39;mesh2d_s1&#39;] = [&#39;mesh2d_s1&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # water level
+        varnames_list[&#39;mesh2d_flowelem_bl&#39;] = [&#39;mesh2d_flowelem_bl&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # bed level
+    
+        #varnames_list[&#39;mesh2d_ucx&#39;] = [&#39;mesh2d_ucx&#39;,&#39;ucx&#39;,&#39;&#39;,&#39;&#39;] # 
+        #varnames_list[&#39;mesh2d_ucy&#39;] = [&#39;mesh2d_ucy&#39;,&#39;ucy&#39;,&#39;&#39;,&#39;&#39;] # 
+        #varnames_list[&#39;mesh2d_sa1&#39;] = [&#39;mesh2d_sa1&#39;,&#39;sa1&#39;,&#39;&#39;,&#39;&#39;] # 
+        #varnames_list[&#39;mesh2d_tem1&#39;] = [&#39;mesh2d_tem1&#39;,&#39;tem1&#39;,&#39;&#39;,&#39;&#39;] # 
+    
+    elif vardim == &#39;dim&#39;:
+        ### DIMENSION names used within different versions of Delft3D-Flexible Mesh
+        #dimnames_list = pd.DataFrame()
+        varnames_list[&#39;nmesh2d_node&#39;] = [&#39;nmesh2d_node&#39;,&#39;mesh2d_nNodes&#39;,&#39;nNetNode&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # number of nodes
+        varnames_list[&#39;nmesh2d_face&#39;] = [&#39;nmesh2d_face&#39;,&#39;mesh2d_nFaces&#39;,&#39;nNetElem&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # number of faces
+        varnames_list[&#39;nmesh2d_edge&#39;] = [&#39;nmesh2d_edge&#39;,&#39;nNetLink&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # number of velocity-points
+        varnames_list[&#39;nFlowElem&#39;] = [&#39;nFlowElem&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # number of flow elements
+        varnames_list[&#39;nFlowLink&#39;] = [&#39;nFlowLink&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # number of flow elements
+        
+        varnames_list[&#39;nmesh2d_layer&#39;] = [&#39;nmesh2d_layer&#39;,&#39;mesh2d_nLayers&#39;,&#39;laydim&#39;,&#39;nmesh2d_layer_dlwq&#39;,&#39;LAYER&#39;,&#39;KMAXOUT_RESTR&#39;,&#39;depth&#39;] # layer
+    else:
+        raise Exception(&#39;parameter vardim can be &#34;var&#34; or &#34;dim&#34;&#39;)
+    
+    #look for correct pd column
+    pdcol_bool = varnames_list.eq(varname_requested).any()
+    varname_pdcol = pdcol_bool.index[pdcol_bool].tolist()
+    if len(varname_pdcol) == 0:
+        raise Exception(&#39;varname %s not found in internal database&#39;%(varname_requested))
+    elif len(varname_pdcol)&gt;1:
+        raise Exception(&#39;varname %s not found but multiple equivalents found in internal database: %s&#39;%(varname_requested,varname_pdcol))
+    else:
+        varname_pdcol = varname_pdcol[0]
+    
+    if vardim == &#39;var&#39;:
+        data_nc_vardimnames_list = list(data_nc.variables.keys())
+    elif vardim == &#39;dim&#39;:
+        data_nc_vardimnames_list = list(data_nc.dimensions.keys())
+    else:
+        raise Exception(&#39;parameter vardim can be &#34;var&#34; or &#34;dim&#34;&#39;)
+    
+    def get_vardimname(data_nc_names_list):
+        #check what is in netcdf file
+        if varname_requested in data_nc_names_list:
+            varname = varname_requested
+        elif varname_pdcol in data_nc_names_list:
+            varname = varname_pdcol
+        else:
+            var_options = list(varnames_list[varname_pdcol])
+            varname = [var for var in var_options if var in data_nc_names_list]
+            if varname == []:
+                varname = None
+            else:
+                varname = varname[0]
+        return varname
+    
+    varname = get_vardimname(data_nc_vardimnames_list)
+    #if varname is None:
+    #    varname = get_vardimname(data_nc_dimnames_list)
+    
+    return varname
+
+
+
+
+
+
+def get_ncvardimlist(file_nc):
+    from netCDF4 import Dataset
+    import pandas as pd
+    #import numpy as np
+    
+    data_nc = Dataset(file_nc)
+    
+    nc_varkeys = list(data_nc.variables.keys())
+    nc_dimkeys = list(data_nc.dimensions.keys())
+    vars_pd = pd.DataFrame({&#39;nc_varkeys&#39;: nc_varkeys, &#39;shape&#39;: [[&#39;&#39;]]*len(nc_varkeys), &#39;dimensions&#39;: [[&#39;&#39;]]*len(nc_varkeys), &#39;dtype&#39;: [[&#39;&#39;]]*len(nc_varkeys)})
+    dims_pd = pd.DataFrame({&#39;nc_dimkeys&#39;: nc_dimkeys, &#39;name&#39;: [[&#39;&#39;]]*len(nc_dimkeys), &#39;size&#39;: [[&#39;&#39;]]*len(nc_dimkeys)})
+    var_attr_name_list = [&#39;standard_name&#39;,&#39;long_name&#39;,&#39;coordinates&#39;,&#39;units&#39;,&#39;mesh&#39;,&#39;location&#39;]
+    for iV, nc_var in enumerate(data_nc.variables):
+        #get non-attribute properties of netcdf variable
+        vars_pd.loc[iV,&#39;shape&#39;] = data_nc.variables[nc_var].shape
+        vars_pd.loc[iV,&#39;dimensions&#39;] = data_nc.variables[nc_var].dimensions
+        vars_pd.loc[iV,&#39;dtype&#39;] = data_nc.variables[nc_var].dtype
+        #get attributes properties of netcdf variable
+        for attr_name in var_attr_name_list:
+            if iV==0:
+                vars_pd[attr_name] = &#39;&#39;
+            try:
+                vars_pd.loc[iV, attr_name] = data_nc.variables[nc_var].getncattr(attr_name)
+            except:
+                pass
+    vars_pd[&#39;ndims&#39;] = [len(x) for x in vars_pd[&#39;dimensions&#39;]]
+    for iD, nc_dim in enumerate(data_nc.dimensions):
+        #get non-attribute properties of netcdf variable
+        dims_pd.loc[iD,&#39;name&#39;] = data_nc.dimensions[nc_dim].name
+        dims_pd.loc[iD,&#39;size&#39;] = data_nc.dimensions[nc_dim].size
+    return vars_pd, dims_pd
+
+    
+
+
+def get_ncvarobject(file_nc, varname):
+    from netCDF4 import Dataset
+    
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    
+    nc_varkeys = list(vars_pd[&#39;nc_varkeys&#39;])
+    nc_varlongnames = list(vars_pd[&#39;long_name&#39;])
+    nc_varstandardnames = list(vars_pd[&#39;standard_name&#39;])
+    
+    # check if requested variable is in netcdf
+    if varname == &#39;&#39;:
+        varname = None
+    
+    if varname in nc_varkeys:
+        pass
+    elif varname in nc_varlongnames:
+        varid = nc_varlongnames.index(varname)
+        varname = vars_pd.loc[varid,&#39;nc_varkeys&#39;]
+        print(&#39;varname found in long_name attribute&#39;)
+    elif varname in nc_varstandardnames:
+        varid = nc_varstandardnames.index(varname)
+        varname = vars_pd.loc[varid,&#39;nc_varkeys&#39;]
+        print(&#39;varname found in standard_name attribute&#39;)
+    else:
+        raise Exception(&#39;ERROR: requested variable %s not in netcdf, available are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_ncvardimlist; vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)\nnote that you can retrieve variables by keys, standard_name or long_name attributes&#39;%(varname, vars_pd))
+    
+    data_nc = Dataset(file_nc)
+    nc_varobject = data_nc.variables[varname]
+    
+    return nc_varobject
+
+
+
+def ghostcell_filter(file_nc):
+    import numpy as np
+    from netCDF4 import Dataset
+    
+    #from dfm_tools.get_nc_helpers import get_varname_fromnc
+    
+    data_nc = Dataset(file_nc)
+    
+    varn_domain = get_varname_fromnc(data_nc,&#39;mesh2d_flowelem_domain&#39;,vardim=&#39;var&#39;)
+    if varn_domain is not None: # domain variable is present, so there are multiple domains
+        domain = data_nc.variables[varn_domain][:]
+        domain_no = np.bincount(domain).argmax() #meest voorkomende domeinnummer
+        nonghost_ids = domain==domain_no
+    else:
+        nonghost_ids = None
+    return nonghost_ids
+
+
+
+
+
+def get_variable_timevardim(file_nc, varname):
+    #get corresponding time variable name
+    from netCDF4 import Dataset
+    
+    #from dfm_tools.get_nc_helpers import get_ncvarobject
+    
+    data_nc = Dataset(file_nc)
+    nc_varobject = get_ncvarobject(file_nc, varname)
+    
+    varn_time = None
+    dimn_time = None
+    varlist_wunits = data_nc.get_variables_by_attributes(units=lambda v: v is not None)
+    for var_lookup in varlist_wunits:
+        if &#39;since&#39; in var_lookup.units and var_lookup.dimensions[0] in nc_varobject.dimensions:
+            dimn_time = var_lookup.dimensions[0]
+            varn_time = var_lookup.name
+            break
+    return varn_time, dimn_time
+
+
+
+    
+def get_timesfromnc(file_nc, varname=&#39;time&#39;, retrieve_ids=False, keeptimezone=True):
+    &#34;&#34;&#34;
+    retrieves time array from netcdf file.
+    Since long time arrays take a long time to retrieve at once, reconstruction is tried
+    in dflowfm an array can start with 0 (initial), followed by a tstart and increading with intervals to tend
+    therefore, the interval at the start and end of the time array is not always equal to the &#39;real&#39; time interval
+    reconstruction takes care of this.
+    if reconstruction fails (the length of the netCDF variable is not equal of the length of the reconstructed array), all times are read
+
+    Parameters
+    ----------
+    file_nc : STR
+        DESCRIPTION.
+    varname : STR, optional
+        DESCRIPTION. The default is &#39;time&#39;.
+    retrieve_ids : LIST of int, optional
+        DESCRIPTION. The default is False.
+    keeptimezone : BOOL, optional
+        DESCRIPTION. The default is True.
+
+    Raises
+    ------
+    Exception
+        DESCRIPTION.
+
+    Returns
+    -------
+    data_nc_datetimes_pd : TYPE
+        DESCRIPTION.
+
+    &#34;&#34;&#34;
+    
+    from netCDF4 import Dataset, num2date#,date2num
+    #from cftime import num2pydate, num2date
+    #from cftime import num2date as cf_num2date
+    import numpy as np
+    import pandas as pd
+    import warnings
+    import datetime as dt
+    
+    #from dfm_tools.get_nc_helpers import get_variable_timevardim
+
+    data_nc = Dataset(file_nc)
+    varn_time, dimn_time = get_variable_timevardim(file_nc=file_nc, varname=varname)
+    data_nc_timevar = data_nc.variables[varn_time]
+    time_length = data_nc_timevar.shape[0]
+
+    if retrieve_ids is not False:
+        print(&#39;reading time dimension: only requested indices&#39;)
+        listtype_range = [list, range, np.ndarray]
+        if type(retrieve_ids) not in listtype_range:
+            raise Exception(&#39;ERROR: argument retrieve_ids should be a list&#39;)
+        #convert to positive index, make unique(+sort), convert to list because of indexing with np.array of len 1 errors sometimes
+        retrieve_ids = list(np.unique(np.array(range(time_length))[retrieve_ids]))
+        data_nc_times = data_nc_timevar[retrieve_ids]
+    elif len(data_nc_timevar)&lt;3: #check if time dimension is shorter than 3 items
+        data_nc_times = data_nc_timevar[:]
+        print(&#39;reading time dimension: read entire array (because length &lt; 3)&#39;)
+    else:
+        time0 = data_nc_timevar[0] 
+        time1 = data_nc_timevar[1] 
+        time2 = data_nc_timevar[2]
+        timemin3 = data_nc_timevar[-3]
+        timemin2 = data_nc_timevar[-2]
+        timemin1 = data_nc_timevar[-1]
+        timeinc_poststart = time2-time1 # the interval between 0 and 1 is not per definition representative, so take 1 and 2
+        timeinc_preend = timemin2-timemin3
+        #timeinc_end = timemin1-timemin2
+        if timeinc_poststart == timeinc_preend: #reconstruct time array to save time
+            print(&#39;reading time dimension: reconstruct array&#39;)
+            data_nc_times_from1 = np.arange(time1,timemin1,timeinc_poststart)
+            data_nc_times = np.concatenate([[time0],data_nc_times_from1,[timemin1]])
+            if data_nc_timevar.shape[0] != len(data_nc_times):#test if len of reconstructed timeseries is same as len of timevar in netCDF, retrieve entire array
+                print(&#39;reading time dimension: reconstruction failed, read entire array&#39;)
+                data_nc_times = data_nc_timevar[:]
+        else:
+            print(&#39;reading time dimension: read entire array&#39;)
+            data_nc_times = data_nc_timevar[:]
+        
+    if len(data_nc_times.shape) &gt; 1:
+        warnings.warn(&#39;This should not happen, this exception is built in for corrupt netCDF files with a time variable with more than one dimension&#39;)
+        data_nc_times = data_nc_times.flatten()
+    
+    #convert back to original timezone (e.g. MET)
+    if keeptimezone:
+        &#34;&#34;&#34;
+        #with timezone info
+        #tz_str_startplus = data_nc_timevar.units.rfind(&#39;+&#39;)
+        #tz_str_startmin = data_nc_timevar.units.rfind(&#39;-&#39;)
+        #tz_str_start = np.max([tz_str_startplus, tz_str_startmin])
+        tz_str = data_nc_timevar.units.split(&#39; &#39;)[-1]
+        try:
+            tzoffset = dt.datetime.strptime(tz_str,&#39;%z&#39;).utcoffset()
+            nptimes = data_nc_datetimes + tzoffset
+            print(&#39;times converted to original timezone (%s)&#39;%(tzoffset))
+        except:
+            #print(&#39;retrieving original timezone failed, time is now probably UTC&#39;)
+            nptimes = data_nc_datetimes
+        &#34;&#34;&#34;
+        #manual conversion which deliberately ignores timezone
+        time_units_list = data_nc_timevar.units.split(&#39; &#39;)
+        if time_units_list[1] != &#39;since&#39;:
+            raise Exception(&#39;invalid time units string (%s)&#39;%(data_nc_timevar.units))
+        try:
+            refdate_str = &#39;%s %s&#39;%(time_units_list[2], time_units_list[3].replace(&#39;.0&#39;,&#39;&#39;)) #remove .0 to avoid conversion issue
+            refdate = dt.datetime.strptime(refdate_str,&#39;%Y-%m-%d %H:%M:%S&#39;)
+            data_nc_times_pdtd = pd.to_timedelta(data_nc_times, unit=time_units_list[0])
+            data_nc_datetimes = (refdate + data_nc_times_pdtd)#.to_pydatetime()
+            print(&#39;retrieving original timezone succeeded, no conversion to UTC/GMT applied&#39;)
+        except:
+            print(&#39;retrieving original timezone failed, using num2date output instead&#39;)
+            data_nc_datetimes = num2date(data_nc_times, units=data_nc_timevar.units, only_use_cftime_datetimes=False, only_use_python_datetimes=True)
+    else:
+        #convert to datetime (automatically converted to UTC based on timezone in units)
+        data_nc_datetimes = num2date(data_nc_times, units=data_nc_timevar.units, only_use_cftime_datetimes=False, only_use_python_datetimes=True)
+        #nptimes = data_nc_datetimes.astype(&#39;datetime64[ns]&#39;) #convert to numpy first, pandas does not take all cftime datasets
+        
+    
+    
+    if retrieve_ids is not False:
+        data_nc_datetimes_pd = pd.Series(data_nc_datetimes,index=retrieve_ids).dt.round(freq=&#39;S&#39;)
+    else:
+        data_nc_datetimes_pd = pd.Series(data_nc_datetimes).dt.round(freq=&#39;S&#39;)
+    
+    return data_nc_datetimes_pd
+
+
+
+
+def get_timeid_fromdatetime(data_nc_datetimes_pd, timestep):
+    import numpy as np
+    import pandas as pd
+    
+    timestep_pd = pd.Series(timestep)#.dt.round(freq=&#39;S&#39;)
+
+    #check if all requested times (timestep) are in netcdf file
+    times_bool_reqinfile = timestep_pd.isin(data_nc_datetimes_pd)
+    if not (times_bool_reqinfile == True).all():
+        raise Exception(&#39;ERROR: not all requested times are in netcdf file:\n%s\navailable in netcdf file are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_timesfromnc; data_nc_datetimes_pd = get_timesfromnc(file_nc=file_nc)&#39;%(timestep_pd[-times_bool_reqinfile], data_nc_datetimes_pd))
+        
+    #get ids of requested times in netcdf file
+    times_bool_fileinreq = data_nc_datetimes_pd.isin(timestep_pd)
+    time_ids = np.where(times_bool_fileinreq)[0]
+    
+    return time_ids
+
+
+
+
+
+
+def get_hisstationlist(file_nc,varname):
+    from netCDF4 import Dataset, chartostring
+    import pandas as pd
+    import numpy as np
+    import warnings
+    
+    #from dfm_tools.get_nc_helpers import get_ncvarobject, get_ncvardimlist, get_variable_timevardim
+    
+    data_nc = Dataset(file_nc)
+    data_nc_varname = get_ncvarobject(file_nc, varname) #check if var exists and get var_object
+    varname_dims = data_nc_varname.dimensions
+    varn_time, dimn_time = get_variable_timevardim(file_nc=file_nc, varname=varname)
+    
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    vars_pd_stats = vars_pd[(vars_pd[&#39;dtype&#39;]==&#39;|S1&#39;) &amp; (vars_pd[&#39;dimensions&#39;].apply(lambda x: dimn_time not in x))]
+    
+    
+    if varname in vars_pd_stats[&#39;nc_varkeys&#39;].tolist(): 
+        vars_pd_stats = vars_pd[vars_pd[&#39;nc_varkeys&#39;]==varname]
+        
+    #create lists of station variable names and dimensions, that correspond to dimensions of varname
+    varname_stationdimname_list = []
+    varname_stationvarname_list = []
+    for iR, vars_pd_statrow in vars_pd_stats.iterrows():
+        for iDV, varname_dim in enumerate(varname_dims):
+            if varname_dim in vars_pd_statrow[&#39;dimensions&#39;]:
+                varname_stationdimname_list.append(varname_dim)
+                varname_stationvarname_list.append(vars_pd_statrow[&#39;nc_varkeys&#39;])
+    
+    #create dataframe of station names coupled to varname
+    if varname_stationdimname_list == []:
+        raise Exception(&#39;ERROR: no dimension in %s variable that corresponds to station-like variables (or none present):\n%s&#39;%(varname, vars_pd_stats[&#39;nc_varkeys&#39;]))
+    else:
+        var_station_names_pd = pd.DataFrame(columns = None)
+        for iSV, varname_stationvarname in enumerate(varname_stationvarname_list):
+            station_name = data_nc.variables[varname_stationvarname]
+            if varname_stationdimname_list[iSV] in station_name.dimensions:
+                station_name_char = station_name[:]
+                try:
+                    station_name_list_raw = chartostring(station_name_char)
+                except: #for glossis netCDF file with probably invalidly stored station names
+                    warnings.warn(&#39;station list could not be decoded with utf-8, now done with latin1 but the netCDF file might be corrupt and the station names sometimes unreadable&#39;)
+                    &#34;&#34;&#34;
+                    station_name_list_raw_bytes = chartostring(station_name_char,encoding=&#39;bytes&#39;)
+                    for iS,stat in enumerate(station_name_list_raw_bytes):
+                        try:
+                            stat.decode(&#39;utf-8&#39;)
+                        except:
+                            print(&#39;stat %d is not utf-8:\n\tbytes decoding: %s\n\tlatin-1 decoding: %s&#39;%(iS, stat, stat.decode(&#39;latin-1&#39;)))
+                    &#34;&#34;&#34;
+                    station_name_list_raw = chartostring(station_name_char,encoding=&#39;latin-1&#39;)
+                station_name_list = np.char.strip(station_name_list_raw) #necessary step for Sobek and maybe others
+                var_station_names_pd[varname_stationvarname] = station_name_list
+                
+        #get coordinates of stations (only works for stations, not for crs/gs since these variables have more than 1 dimension)
+        #vars_pd_statlocs = vars_pd[(vars_pd[&#39;ndims&#39;]==1) &amp; (vars_pd[&#39;dimensions&#39;].astype(str).str.contains(varname_stationdimname_list[iSV]))] 
+        vars_pd_statlocs = vars_pd[(vars_pd[&#39;ndims&#39;]==1) &amp; (vars_pd[&#39;dimensions&#39;].apply(lambda x: varname_stationdimname_list[iSV] in x))]
+        
+        coord_varnames = vars_pd_statlocs[&#39;nc_varkeys&#39;].tolist()
+        for iC, coord_varname in enumerate(coord_varnames):
+            station_coordn = data_nc.variables[coord_varname]
+            var_station_names_pd[coord_varname] = station_coordn[:]
+
+    return var_station_names_pd
+
+
+
+
+def get_stationid_fromstationlist(station_name_list_pd, station, varname):
+    import numpy as np
+    import pandas as pd
+    
+    station_pd = pd.Series(station)
+    bool_nrows_req = station_pd.shape[0]
+    bool_nrows_avai = station_name_list_pd.shape[0]
+    bool_ncols = station_name_list_pd.shape[1]
+    
+    stations_bool_reqinfile_allcols = np.zeros((bool_nrows_req,bool_ncols),dtype=bool)
+    stations_bool_fileinreq_allcols = np.zeros((bool_nrows_avai,bool_ncols),dtype=bool)
+    for iCol in range(bool_ncols):
+        #check if all requested stations are in netcdf file
+        stations_bool_reqinfile_allcols[:,iCol] = station_pd.isin(station_name_list_pd.iloc[:,iCol])
+        stations_bool_fileinreq_allcols[:,iCol] = station_name_list_pd.iloc[:,iCol].isin(station_pd)
+    
+    stations_bool_reqinfile = stations_bool_reqinfile_allcols.any(axis=1)
+    if not stations_bool_reqinfile.all():
+        raise Exception(&#39;ERROR: not all requested stations are in netcdf file:\n%s\navailable in netcdf file are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist; station_name_list_pd = get_hisstationlist(file_nc=file_nc,varname=&#34;%s&#34;)&#39;%(station_pd[~stations_bool_reqinfile], station_name_list_pd, varname))
+    #get ids of requested stations in netcdf file
+    station_bool_fileinreq = stations_bool_fileinreq_allcols.any(axis=1)
+    station_ids = list(np.where(station_bool_fileinreq)[0])
+
+    return station_ids</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="dfm_tools.get_nc_helpers.get_hisstationlist"><code class="name flex">
+<span>def <span class="ident">get_hisstationlist</span></span>(<span>file_nc, varname)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_hisstationlist(file_nc,varname):
+    from netCDF4 import Dataset, chartostring
+    import pandas as pd
+    import numpy as np
+    import warnings
+    
+    #from dfm_tools.get_nc_helpers import get_ncvarobject, get_ncvardimlist, get_variable_timevardim
+    
+    data_nc = Dataset(file_nc)
+    data_nc_varname = get_ncvarobject(file_nc, varname) #check if var exists and get var_object
+    varname_dims = data_nc_varname.dimensions
+    varn_time, dimn_time = get_variable_timevardim(file_nc=file_nc, varname=varname)
+    
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    vars_pd_stats = vars_pd[(vars_pd[&#39;dtype&#39;]==&#39;|S1&#39;) &amp; (vars_pd[&#39;dimensions&#39;].apply(lambda x: dimn_time not in x))]
+    
+    
+    if varname in vars_pd_stats[&#39;nc_varkeys&#39;].tolist(): 
+        vars_pd_stats = vars_pd[vars_pd[&#39;nc_varkeys&#39;]==varname]
+        
+    #create lists of station variable names and dimensions, that correspond to dimensions of varname
+    varname_stationdimname_list = []
+    varname_stationvarname_list = []
+    for iR, vars_pd_statrow in vars_pd_stats.iterrows():
+        for iDV, varname_dim in enumerate(varname_dims):
+            if varname_dim in vars_pd_statrow[&#39;dimensions&#39;]:
+                varname_stationdimname_list.append(varname_dim)
+                varname_stationvarname_list.append(vars_pd_statrow[&#39;nc_varkeys&#39;])
+    
+    #create dataframe of station names coupled to varname
+    if varname_stationdimname_list == []:
+        raise Exception(&#39;ERROR: no dimension in %s variable that corresponds to station-like variables (or none present):\n%s&#39;%(varname, vars_pd_stats[&#39;nc_varkeys&#39;]))
+    else:
+        var_station_names_pd = pd.DataFrame(columns = None)
+        for iSV, varname_stationvarname in enumerate(varname_stationvarname_list):
+            station_name = data_nc.variables[varname_stationvarname]
+            if varname_stationdimname_list[iSV] in station_name.dimensions:
+                station_name_char = station_name[:]
+                try:
+                    station_name_list_raw = chartostring(station_name_char)
+                except: #for glossis netCDF file with probably invalidly stored station names
+                    warnings.warn(&#39;station list could not be decoded with utf-8, now done with latin1 but the netCDF file might be corrupt and the station names sometimes unreadable&#39;)
+                    &#34;&#34;&#34;
+                    station_name_list_raw_bytes = chartostring(station_name_char,encoding=&#39;bytes&#39;)
+                    for iS,stat in enumerate(station_name_list_raw_bytes):
+                        try:
+                            stat.decode(&#39;utf-8&#39;)
+                        except:
+                            print(&#39;stat %d is not utf-8:\n\tbytes decoding: %s\n\tlatin-1 decoding: %s&#39;%(iS, stat, stat.decode(&#39;latin-1&#39;)))
+                    &#34;&#34;&#34;
+                    station_name_list_raw = chartostring(station_name_char,encoding=&#39;latin-1&#39;)
+                station_name_list = np.char.strip(station_name_list_raw) #necessary step for Sobek and maybe others
+                var_station_names_pd[varname_stationvarname] = station_name_list
+                
+        #get coordinates of stations (only works for stations, not for crs/gs since these variables have more than 1 dimension)
+        #vars_pd_statlocs = vars_pd[(vars_pd[&#39;ndims&#39;]==1) &amp; (vars_pd[&#39;dimensions&#39;].astype(str).str.contains(varname_stationdimname_list[iSV]))] 
+        vars_pd_statlocs = vars_pd[(vars_pd[&#39;ndims&#39;]==1) &amp; (vars_pd[&#39;dimensions&#39;].apply(lambda x: varname_stationdimname_list[iSV] in x))]
+        
+        coord_varnames = vars_pd_statlocs[&#39;nc_varkeys&#39;].tolist()
+        for iC, coord_varname in enumerate(coord_varnames):
+            station_coordn = data_nc.variables[coord_varname]
+            var_station_names_pd[coord_varname] = station_coordn[:]
+
+    return var_station_names_pd</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.get_nc_helpers.get_ncfilelist"><code class="name flex">
+<span>def <span class="ident">get_ncfilelist</span></span>(<span>file_nc, multipart=None)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_ncfilelist(file_nc, multipart=None):
+    #get list of mapfiles
+    import re
+    import glob
+    import os
+    
+    if not os.path.exists(file_nc):
+        raise Exception(&#39;ERROR: file does not exist: %s&#39;%(file_nc))
+    
+    if &#39;_&#39; in file_nc:
+        nctype = file_nc.split(&#39;_&#39;)[-1]
+        if nctype == &#39;rst.nc&#39; and len(file_nc.split(&#39;_&#39;)) &gt;= 4:
+            lastpart = file_nc.split(&#39;_&#39;)[-4]
+        else:
+            lastpart = file_nc.split(&#39;_&#39;)[-2]
+        if file_nc.endswith(&#39;_%s&#39;%(nctype)) and multipart != False and len(lastpart) == 4 and lastpart.isdigit(): #if part before &#39;_map.nc&#39; is eg &#39;0000&#39;
+            if nctype == &#39;rst.nc&#39; and len(file_nc.split(&#39;_&#39;)) &gt;= 4:
+                filename_start = re.compile(&#39;(.*)_([0-9]+)_(.*)_(.*)_%s&#39;%(nctype)).search(file_nc).group(1)
+            else:
+                filename_start = re.compile(&#39;(.*)_([0-9]+)_%s&#39;%(nctype)).search(file_nc).group(1)
+            #filename_number = re.compile(&#39;(.*)_([0-9]+)_map.nc&#39;).search(file_nc).group(2)
+            #file_ncs = [file_nc.replace(&#39;_%s_map.nc&#39;,&#39;_%04d_map.nc&#39;%(filename_number, domain_id)) for domain_id in range(ndomains)]
+            file_ncs = glob.glob(&#39;%s_*_%s&#39;%(filename_start,nctype))
+            filename_merged = &#39;%s_merged_%s&#39;%(filename_start,nctype)
+            if filename_merged in file_ncs:
+                file_ncs.remove(filename_merged)
+            
+        else:
+            file_ncs = [file_nc]
+    else:
+        file_ncs = [file_nc]
+    return file_ncs</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.get_nc_helpers.get_ncvardimlist"><code class="name flex">
+<span>def <span class="ident">get_ncvardimlist</span></span>(<span>file_nc)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_ncvardimlist(file_nc):
+    from netCDF4 import Dataset
+    import pandas as pd
+    #import numpy as np
+    
+    data_nc = Dataset(file_nc)
+    
+    nc_varkeys = list(data_nc.variables.keys())
+    nc_dimkeys = list(data_nc.dimensions.keys())
+    vars_pd = pd.DataFrame({&#39;nc_varkeys&#39;: nc_varkeys, &#39;shape&#39;: [[&#39;&#39;]]*len(nc_varkeys), &#39;dimensions&#39;: [[&#39;&#39;]]*len(nc_varkeys), &#39;dtype&#39;: [[&#39;&#39;]]*len(nc_varkeys)})
+    dims_pd = pd.DataFrame({&#39;nc_dimkeys&#39;: nc_dimkeys, &#39;name&#39;: [[&#39;&#39;]]*len(nc_dimkeys), &#39;size&#39;: [[&#39;&#39;]]*len(nc_dimkeys)})
+    var_attr_name_list = [&#39;standard_name&#39;,&#39;long_name&#39;,&#39;coordinates&#39;,&#39;units&#39;,&#39;mesh&#39;,&#39;location&#39;]
+    for iV, nc_var in enumerate(data_nc.variables):
+        #get non-attribute properties of netcdf variable
+        vars_pd.loc[iV,&#39;shape&#39;] = data_nc.variables[nc_var].shape
+        vars_pd.loc[iV,&#39;dimensions&#39;] = data_nc.variables[nc_var].dimensions
+        vars_pd.loc[iV,&#39;dtype&#39;] = data_nc.variables[nc_var].dtype
+        #get attributes properties of netcdf variable
+        for attr_name in var_attr_name_list:
+            if iV==0:
+                vars_pd[attr_name] = &#39;&#39;
+            try:
+                vars_pd.loc[iV, attr_name] = data_nc.variables[nc_var].getncattr(attr_name)
+            except:
+                pass
+    vars_pd[&#39;ndims&#39;] = [len(x) for x in vars_pd[&#39;dimensions&#39;]]
+    for iD, nc_dim in enumerate(data_nc.dimensions):
+        #get non-attribute properties of netcdf variable
+        dims_pd.loc[iD,&#39;name&#39;] = data_nc.dimensions[nc_dim].name
+        dims_pd.loc[iD,&#39;size&#39;] = data_nc.dimensions[nc_dim].size
+    return vars_pd, dims_pd</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.get_nc_helpers.get_ncvarobject"><code class="name flex">
+<span>def <span class="ident">get_ncvarobject</span></span>(<span>file_nc, varname)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_ncvarobject(file_nc, varname):
+    from netCDF4 import Dataset
+    
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    
+    nc_varkeys = list(vars_pd[&#39;nc_varkeys&#39;])
+    nc_varlongnames = list(vars_pd[&#39;long_name&#39;])
+    nc_varstandardnames = list(vars_pd[&#39;standard_name&#39;])
+    
+    # check if requested variable is in netcdf
+    if varname == &#39;&#39;:
+        varname = None
+    
+    if varname in nc_varkeys:
+        pass
+    elif varname in nc_varlongnames:
+        varid = nc_varlongnames.index(varname)
+        varname = vars_pd.loc[varid,&#39;nc_varkeys&#39;]
+        print(&#39;varname found in long_name attribute&#39;)
+    elif varname in nc_varstandardnames:
+        varid = nc_varstandardnames.index(varname)
+        varname = vars_pd.loc[varid,&#39;nc_varkeys&#39;]
+        print(&#39;varname found in standard_name attribute&#39;)
+    else:
+        raise Exception(&#39;ERROR: requested variable %s not in netcdf, available are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_ncvardimlist; vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)\nnote that you can retrieve variables by keys, standard_name or long_name attributes&#39;%(varname, vars_pd))
+    
+    data_nc = Dataset(file_nc)
+    nc_varobject = data_nc.variables[varname]
+    
+    return nc_varobject</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.get_nc_helpers.get_stationid_fromstationlist"><code class="name flex">
+<span>def <span class="ident">get_stationid_fromstationlist</span></span>(<span>station_name_list_pd, station, varname)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_stationid_fromstationlist(station_name_list_pd, station, varname):
+    import numpy as np
+    import pandas as pd
+    
+    station_pd = pd.Series(station)
+    bool_nrows_req = station_pd.shape[0]
+    bool_nrows_avai = station_name_list_pd.shape[0]
+    bool_ncols = station_name_list_pd.shape[1]
+    
+    stations_bool_reqinfile_allcols = np.zeros((bool_nrows_req,bool_ncols),dtype=bool)
+    stations_bool_fileinreq_allcols = np.zeros((bool_nrows_avai,bool_ncols),dtype=bool)
+    for iCol in range(bool_ncols):
+        #check if all requested stations are in netcdf file
+        stations_bool_reqinfile_allcols[:,iCol] = station_pd.isin(station_name_list_pd.iloc[:,iCol])
+        stations_bool_fileinreq_allcols[:,iCol] = station_name_list_pd.iloc[:,iCol].isin(station_pd)
+    
+    stations_bool_reqinfile = stations_bool_reqinfile_allcols.any(axis=1)
+    if not stations_bool_reqinfile.all():
+        raise Exception(&#39;ERROR: not all requested stations are in netcdf file:\n%s\navailable in netcdf file are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist; station_name_list_pd = get_hisstationlist(file_nc=file_nc,varname=&#34;%s&#34;)&#39;%(station_pd[~stations_bool_reqinfile], station_name_list_pd, varname))
+    #get ids of requested stations in netcdf file
+    station_bool_fileinreq = stations_bool_fileinreq_allcols.any(axis=1)
+    station_ids = list(np.where(station_bool_fileinreq)[0])
+
+    return station_ids</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.get_nc_helpers.get_timeid_fromdatetime"><code class="name flex">
+<span>def <span class="ident">get_timeid_fromdatetime</span></span>(<span>data_nc_datetimes_pd, timestep)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_timeid_fromdatetime(data_nc_datetimes_pd, timestep):
+    import numpy as np
+    import pandas as pd
+    
+    timestep_pd = pd.Series(timestep)#.dt.round(freq=&#39;S&#39;)
+
+    #check if all requested times (timestep) are in netcdf file
+    times_bool_reqinfile = timestep_pd.isin(data_nc_datetimes_pd)
+    if not (times_bool_reqinfile == True).all():
+        raise Exception(&#39;ERROR: not all requested times are in netcdf file:\n%s\navailable in netcdf file are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_timesfromnc; data_nc_datetimes_pd = get_timesfromnc(file_nc=file_nc)&#39;%(timestep_pd[-times_bool_reqinfile], data_nc_datetimes_pd))
+        
+    #get ids of requested times in netcdf file
+    times_bool_fileinreq = data_nc_datetimes_pd.isin(timestep_pd)
+    time_ids = np.where(times_bool_fileinreq)[0]
+    
+    return time_ids</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.get_nc_helpers.get_timesfromnc"><code class="name flex">
+<span>def <span class="ident">get_timesfromnc</span></span>(<span>file_nc, varname='time', retrieve_ids=False, keeptimezone=True)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>retrieves time array from netcdf file.
+Since long time arrays take a long time to retrieve at once, reconstruction is tried
+in dflowfm an array can start with 0 (initial), followed by a tstart and increading with intervals to tend
+therefore, the interval at the start and end of the time array is not always equal to the 'real' time interval
+reconstruction takes care of this.
+if reconstruction fails (the length of the netCDF variable is not equal of the length of the reconstructed array), all times are read</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>file_nc</code></strong> :&ensp;<code>STR</code></dt>
+<dd>DESCRIPTION.</dd>
+<dt><strong><code>varname</code></strong> :&ensp;<code>STR</code>, optional</dt>
+<dd>DESCRIPTION. The default is 'time'.</dd>
+<dt><strong><code>retrieve_ids</code></strong> :&ensp;<code>LIST</code> of <code>int</code>, optional</dt>
+<dd>DESCRIPTION. The default is False.</dd>
+<dt><strong><code>keeptimezone</code></strong> :&ensp;<code>BOOL</code>, optional</dt>
+<dd>DESCRIPTION. The default is True.</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>Exception</code></dt>
+<dd>DESCRIPTION.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>data_nc_datetimes_pd</code></strong> :&ensp;<code>TYPE</code></dt>
+<dd>DESCRIPTION.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_timesfromnc(file_nc, varname=&#39;time&#39;, retrieve_ids=False, keeptimezone=True):
+    &#34;&#34;&#34;
+    retrieves time array from netcdf file.
+    Since long time arrays take a long time to retrieve at once, reconstruction is tried
+    in dflowfm an array can start with 0 (initial), followed by a tstart and increading with intervals to tend
+    therefore, the interval at the start and end of the time array is not always equal to the &#39;real&#39; time interval
+    reconstruction takes care of this.
+    if reconstruction fails (the length of the netCDF variable is not equal of the length of the reconstructed array), all times are read
+
+    Parameters
+    ----------
+    file_nc : STR
+        DESCRIPTION.
+    varname : STR, optional
+        DESCRIPTION. The default is &#39;time&#39;.
+    retrieve_ids : LIST of int, optional
+        DESCRIPTION. The default is False.
+    keeptimezone : BOOL, optional
+        DESCRIPTION. The default is True.
+
+    Raises
+    ------
+    Exception
+        DESCRIPTION.
+
+    Returns
+    -------
+    data_nc_datetimes_pd : TYPE
+        DESCRIPTION.
+
+    &#34;&#34;&#34;
+    
+    from netCDF4 import Dataset, num2date#,date2num
+    #from cftime import num2pydate, num2date
+    #from cftime import num2date as cf_num2date
+    import numpy as np
+    import pandas as pd
+    import warnings
+    import datetime as dt
+    
+    #from dfm_tools.get_nc_helpers import get_variable_timevardim
+
+    data_nc = Dataset(file_nc)
+    varn_time, dimn_time = get_variable_timevardim(file_nc=file_nc, varname=varname)
+    data_nc_timevar = data_nc.variables[varn_time]
+    time_length = data_nc_timevar.shape[0]
+
+    if retrieve_ids is not False:
+        print(&#39;reading time dimension: only requested indices&#39;)
+        listtype_range = [list, range, np.ndarray]
+        if type(retrieve_ids) not in listtype_range:
+            raise Exception(&#39;ERROR: argument retrieve_ids should be a list&#39;)
+        #convert to positive index, make unique(+sort), convert to list because of indexing with np.array of len 1 errors sometimes
+        retrieve_ids = list(np.unique(np.array(range(time_length))[retrieve_ids]))
+        data_nc_times = data_nc_timevar[retrieve_ids]
+    elif len(data_nc_timevar)&lt;3: #check if time dimension is shorter than 3 items
+        data_nc_times = data_nc_timevar[:]
+        print(&#39;reading time dimension: read entire array (because length &lt; 3)&#39;)
+    else:
+        time0 = data_nc_timevar[0] 
+        time1 = data_nc_timevar[1] 
+        time2 = data_nc_timevar[2]
+        timemin3 = data_nc_timevar[-3]
+        timemin2 = data_nc_timevar[-2]
+        timemin1 = data_nc_timevar[-1]
+        timeinc_poststart = time2-time1 # the interval between 0 and 1 is not per definition representative, so take 1 and 2
+        timeinc_preend = timemin2-timemin3
+        #timeinc_end = timemin1-timemin2
+        if timeinc_poststart == timeinc_preend: #reconstruct time array to save time
+            print(&#39;reading time dimension: reconstruct array&#39;)
+            data_nc_times_from1 = np.arange(time1,timemin1,timeinc_poststart)
+            data_nc_times = np.concatenate([[time0],data_nc_times_from1,[timemin1]])
+            if data_nc_timevar.shape[0] != len(data_nc_times):#test if len of reconstructed timeseries is same as len of timevar in netCDF, retrieve entire array
+                print(&#39;reading time dimension: reconstruction failed, read entire array&#39;)
+                data_nc_times = data_nc_timevar[:]
+        else:
+            print(&#39;reading time dimension: read entire array&#39;)
+            data_nc_times = data_nc_timevar[:]
+        
+    if len(data_nc_times.shape) &gt; 1:
+        warnings.warn(&#39;This should not happen, this exception is built in for corrupt netCDF files with a time variable with more than one dimension&#39;)
+        data_nc_times = data_nc_times.flatten()
+    
+    #convert back to original timezone (e.g. MET)
+    if keeptimezone:
+        &#34;&#34;&#34;
+        #with timezone info
+        #tz_str_startplus = data_nc_timevar.units.rfind(&#39;+&#39;)
+        #tz_str_startmin = data_nc_timevar.units.rfind(&#39;-&#39;)
+        #tz_str_start = np.max([tz_str_startplus, tz_str_startmin])
+        tz_str = data_nc_timevar.units.split(&#39; &#39;)[-1]
+        try:
+            tzoffset = dt.datetime.strptime(tz_str,&#39;%z&#39;).utcoffset()
+            nptimes = data_nc_datetimes + tzoffset
+            print(&#39;times converted to original timezone (%s)&#39;%(tzoffset))
+        except:
+            #print(&#39;retrieving original timezone failed, time is now probably UTC&#39;)
+            nptimes = data_nc_datetimes
+        &#34;&#34;&#34;
+        #manual conversion which deliberately ignores timezone
+        time_units_list = data_nc_timevar.units.split(&#39; &#39;)
+        if time_units_list[1] != &#39;since&#39;:
+            raise Exception(&#39;invalid time units string (%s)&#39;%(data_nc_timevar.units))
+        try:
+            refdate_str = &#39;%s %s&#39;%(time_units_list[2], time_units_list[3].replace(&#39;.0&#39;,&#39;&#39;)) #remove .0 to avoid conversion issue
+            refdate = dt.datetime.strptime(refdate_str,&#39;%Y-%m-%d %H:%M:%S&#39;)
+            data_nc_times_pdtd = pd.to_timedelta(data_nc_times, unit=time_units_list[0])
+            data_nc_datetimes = (refdate + data_nc_times_pdtd)#.to_pydatetime()
+            print(&#39;retrieving original timezone succeeded, no conversion to UTC/GMT applied&#39;)
+        except:
+            print(&#39;retrieving original timezone failed, using num2date output instead&#39;)
+            data_nc_datetimes = num2date(data_nc_times, units=data_nc_timevar.units, only_use_cftime_datetimes=False, only_use_python_datetimes=True)
+    else:
+        #convert to datetime (automatically converted to UTC based on timezone in units)
+        data_nc_datetimes = num2date(data_nc_times, units=data_nc_timevar.units, only_use_cftime_datetimes=False, only_use_python_datetimes=True)
+        #nptimes = data_nc_datetimes.astype(&#39;datetime64[ns]&#39;) #convert to numpy first, pandas does not take all cftime datasets
+        
+    
+    
+    if retrieve_ids is not False:
+        data_nc_datetimes_pd = pd.Series(data_nc_datetimes,index=retrieve_ids).dt.round(freq=&#39;S&#39;)
+    else:
+        data_nc_datetimes_pd = pd.Series(data_nc_datetimes).dt.round(freq=&#39;S&#39;)
+    
+    return data_nc_datetimes_pd</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.get_nc_helpers.get_variable_timevardim"><code class="name flex">
+<span>def <span class="ident">get_variable_timevardim</span></span>(<span>file_nc, varname)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_variable_timevardim(file_nc, varname):
+    #get corresponding time variable name
+    from netCDF4 import Dataset
+    
+    #from dfm_tools.get_nc_helpers import get_ncvarobject
+    
+    data_nc = Dataset(file_nc)
+    nc_varobject = get_ncvarobject(file_nc, varname)
+    
+    varn_time = None
+    dimn_time = None
+    varlist_wunits = data_nc.get_variables_by_attributes(units=lambda v: v is not None)
+    for var_lookup in varlist_wunits:
+        if &#39;since&#39; in var_lookup.units and var_lookup.dimensions[0] in nc_varobject.dimensions:
+            dimn_time = var_lookup.dimensions[0]
+            varn_time = var_lookup.name
+            break
+    return varn_time, dimn_time</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.get_nc_helpers.get_varname_fromnc"><code class="name flex">
+<span>def <span class="ident">get_varname_fromnc</span></span>(<span>data_nc, varname_requested, vardim)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_varname_fromnc(data_nc,varname_requested,vardim):
+    import pandas as pd
+    
+    #VARIABLE names used within different versions of Delft3D-Flexible Mesh
+    varnames_list = pd.DataFrame()
+    #varnames_list[&#39;time&#39;] = [&#39;time&#39;,&#39;nmesh2d_dlwq_time&#39;,&#39;TIME&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # time, not necessary anymore
+    
+    if vardim == &#39;var&#39;:
+        varnames_list[&#39;mesh2d_node_x&#39;] = [&#39;mesh2d_node_x&#39;,&#39;NetNode_x&#39;,&#39;mesh2d_agg_node_x&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # x-coordinate of nodes
+        varnames_list[&#39;mesh2d_node_y&#39;] = [&#39;mesh2d_node_y&#39;,&#39;NetNode_y&#39;,&#39;mesh2d_agg_node_y&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # y-coordinate of nodes
+        varnames_list[&#39;mesh2d_node_z&#39;] = [&#39;mesh2d_node_z&#39;,&#39;NetNode_z&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # z-coordinate of nodes
+        
+        varnames_list[&#39;mesh2d_face_x&#39;] = [&#39;mesh2d_face_x&#39;,&#39;FlowElem_xzw&#39;,&#39;mesh2d_agg_face_x&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # x-coordinate of faces (center)
+        varnames_list[&#39;mesh2d_face_y&#39;] = [&#39;mesh2d_face_y&#39;,&#39;FlowElem_yzw&#39;,&#39;mesh2d_agg_face_y&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # y-coordinate of faces (center)
+        
+        varnames_list[&#39;mesh2d_edge_x&#39;] = [&#39;mesh2d_edge_x&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # x-coordinate of velocity-points
+        varnames_list[&#39;mesh2d_edge_y&#39;] = [&#39;mesh2d_edge_y&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # y-coordinate of velocity-points
+        
+        varnames_list[&#39;mesh2d_edge_nodes&#39;] = [&#39;mesh2d_edge_nodes&#39;,&#39;NetLink&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # &#39;link between two netnodes&#39; / &#39;Mapping from every edge to the two nodes that it connects&#39;
+        varnames_list[&#39;mesh2d_face_nodes&#39;] = [&#39;mesh2d_face_nodes&#39;,&#39;NetElemNode&#39;,&#39;mesh2d_agg_face_nodes&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # 
+        
+        varnames_list[&#39;mesh2d_face_x_bnd&#39;] = [&#39;mesh2d_face_x_bnd&#39;,&#39;FlowElemContour_x&#39;,&#39;mesh2d_agg_face_x_bnd&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # x-coordinates of flow element contours
+        varnames_list[&#39;mesh2d_face_y_bnd&#39;] = [&#39;mesh2d_face_y_bnd&#39;,&#39;FlowElemContour_y&#39;,&#39;mesh2d_agg_face_y_bnd&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # y-coordinates of flow element contours
+        
+        varnames_list[&#39;mesh2d_flowelem_domain&#39;] = [&#39;mesh2d_flowelem_domain&#39;,&#39;FlowElemDomain&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # flow element domain
+        varnames_list[&#39;mesh2d_flowelem_bl&#39;] = [&#39;mesh2d_flowelem_bl&#39;,&#39;FlowElem_bl&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # bed level
+        varnames_list[&#39;mesh2d_flowelem_ba&#39;] = [&#39;mesh2d_flowelem_ba&#39;,&#39;FlowElem_bac&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # area (m2) of cell faces
+        
+        varnames_list[&#39;mesh2d_layer_z&#39;] = [&#39;mesh2d_layer_z&#39;,&#39;LayCoord_cc&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # 
+        
+        #non-grid variables necessary for layer calculation for intersection/cross section) funtion
+        varnames_list[&#39;mesh2d_s1&#39;] = [&#39;mesh2d_s1&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # water level
+        varnames_list[&#39;mesh2d_flowelem_bl&#39;] = [&#39;mesh2d_flowelem_bl&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # bed level
+    
+        #varnames_list[&#39;mesh2d_ucx&#39;] = [&#39;mesh2d_ucx&#39;,&#39;ucx&#39;,&#39;&#39;,&#39;&#39;] # 
+        #varnames_list[&#39;mesh2d_ucy&#39;] = [&#39;mesh2d_ucy&#39;,&#39;ucy&#39;,&#39;&#39;,&#39;&#39;] # 
+        #varnames_list[&#39;mesh2d_sa1&#39;] = [&#39;mesh2d_sa1&#39;,&#39;sa1&#39;,&#39;&#39;,&#39;&#39;] # 
+        #varnames_list[&#39;mesh2d_tem1&#39;] = [&#39;mesh2d_tem1&#39;,&#39;tem1&#39;,&#39;&#39;,&#39;&#39;] # 
+    
+    elif vardim == &#39;dim&#39;:
+        ### DIMENSION names used within different versions of Delft3D-Flexible Mesh
+        #dimnames_list = pd.DataFrame()
+        varnames_list[&#39;nmesh2d_node&#39;] = [&#39;nmesh2d_node&#39;,&#39;mesh2d_nNodes&#39;,&#39;nNetNode&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # number of nodes
+        varnames_list[&#39;nmesh2d_face&#39;] = [&#39;nmesh2d_face&#39;,&#39;mesh2d_nFaces&#39;,&#39;nNetElem&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # number of faces
+        varnames_list[&#39;nmesh2d_edge&#39;] = [&#39;nmesh2d_edge&#39;,&#39;nNetLink&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # number of velocity-points
+        varnames_list[&#39;nFlowElem&#39;] = [&#39;nFlowElem&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # number of flow elements
+        varnames_list[&#39;nFlowLink&#39;] = [&#39;nFlowLink&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # number of flow elements
+        
+        varnames_list[&#39;nmesh2d_layer&#39;] = [&#39;nmesh2d_layer&#39;,&#39;mesh2d_nLayers&#39;,&#39;laydim&#39;,&#39;nmesh2d_layer_dlwq&#39;,&#39;LAYER&#39;,&#39;KMAXOUT_RESTR&#39;,&#39;depth&#39;] # layer
+    else:
+        raise Exception(&#39;parameter vardim can be &#34;var&#34; or &#34;dim&#34;&#39;)
+    
+    #look for correct pd column
+    pdcol_bool = varnames_list.eq(varname_requested).any()
+    varname_pdcol = pdcol_bool.index[pdcol_bool].tolist()
+    if len(varname_pdcol) == 0:
+        raise Exception(&#39;varname %s not found in internal database&#39;%(varname_requested))
+    elif len(varname_pdcol)&gt;1:
+        raise Exception(&#39;varname %s not found but multiple equivalents found in internal database: %s&#39;%(varname_requested,varname_pdcol))
+    else:
+        varname_pdcol = varname_pdcol[0]
+    
+    if vardim == &#39;var&#39;:
+        data_nc_vardimnames_list = list(data_nc.variables.keys())
+    elif vardim == &#39;dim&#39;:
+        data_nc_vardimnames_list = list(data_nc.dimensions.keys())
+    else:
+        raise Exception(&#39;parameter vardim can be &#34;var&#34; or &#34;dim&#34;&#39;)
+    
+    def get_vardimname(data_nc_names_list):
+        #check what is in netcdf file
+        if varname_requested in data_nc_names_list:
+            varname = varname_requested
+        elif varname_pdcol in data_nc_names_list:
+            varname = varname_pdcol
+        else:
+            var_options = list(varnames_list[varname_pdcol])
+            varname = [var for var in var_options if var in data_nc_names_list]
+            if varname == []:
+                varname = None
+            else:
+                varname = varname[0]
+        return varname
+    
+    varname = get_vardimname(data_nc_vardimnames_list)
+    #if varname is None:
+    #    varname = get_vardimname(data_nc_dimnames_list)
+    
+    return varname</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.get_nc_helpers.ghostcell_filter"><code class="name flex">
+<span>def <span class="ident">ghostcell_filter</span></span>(<span>file_nc)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def ghostcell_filter(file_nc):
+    import numpy as np
+    from netCDF4 import Dataset
+    
+    #from dfm_tools.get_nc_helpers import get_varname_fromnc
+    
+    data_nc = Dataset(file_nc)
+    
+    varn_domain = get_varname_fromnc(data_nc,&#39;mesh2d_flowelem_domain&#39;,vardim=&#39;var&#39;)
+    if varn_domain is not None: # domain variable is present, so there are multiple domains
+        domain = data_nc.variables[varn_domain][:]
+        domain_no = np.bincount(domain).argmax() #meest voorkomende domeinnummer
+        nonghost_ids = domain==domain_no
+    else:
+        nonghost_ids = None
+    return nonghost_ids</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="dfm_tools" href="index.html">dfm_tools</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="dfm_tools.get_nc_helpers.get_hisstationlist" href="#dfm_tools.get_nc_helpers.get_hisstationlist">get_hisstationlist</a></code></li>
+<li><code><a title="dfm_tools.get_nc_helpers.get_ncfilelist" href="#dfm_tools.get_nc_helpers.get_ncfilelist">get_ncfilelist</a></code></li>
+<li><code><a title="dfm_tools.get_nc_helpers.get_ncvardimlist" href="#dfm_tools.get_nc_helpers.get_ncvardimlist">get_ncvardimlist</a></code></li>
+<li><code><a title="dfm_tools.get_nc_helpers.get_ncvarobject" href="#dfm_tools.get_nc_helpers.get_ncvarobject">get_ncvarobject</a></code></li>
+<li><code><a title="dfm_tools.get_nc_helpers.get_stationid_fromstationlist" href="#dfm_tools.get_nc_helpers.get_stationid_fromstationlist">get_stationid_fromstationlist</a></code></li>
+<li><code><a title="dfm_tools.get_nc_helpers.get_timeid_fromdatetime" href="#dfm_tools.get_nc_helpers.get_timeid_fromdatetime">get_timeid_fromdatetime</a></code></li>
+<li><code><a title="dfm_tools.get_nc_helpers.get_timesfromnc" href="#dfm_tools.get_nc_helpers.get_timesfromnc">get_timesfromnc</a></code></li>
+<li><code><a title="dfm_tools.get_nc_helpers.get_variable_timevardim" href="#dfm_tools.get_nc_helpers.get_variable_timevardim">get_variable_timevardim</a></code></li>
+<li><code><a title="dfm_tools.get_nc_helpers.get_varname_fromnc" href="#dfm_tools.get_nc_helpers.get_varname_fromnc">get_varname_fromnc</a></code></li>
+<li><code><a title="dfm_tools.get_nc_helpers.ghostcell_filter" href="#dfm_tools.get_nc_helpers.ghostcell_filter">ghostcell_filter</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.8.1</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>
