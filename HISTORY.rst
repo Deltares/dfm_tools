@@ -2,8 +2,9 @@
 History
 =======
 
-0.7.22 (2020-06-??)
+0.7.22 (2020-06-12)
 ------------------
+* fixed bug with retrieving non-partitioned variables from all partitions
 * added ncdump function
 * fixed bug with map merging file search
 * added html documentation from docstrings (not all filled in yet)
