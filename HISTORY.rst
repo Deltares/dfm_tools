@@ -4,6 +4,7 @@ History
 
 0.7.22 (2020-06-??)
 ------------------
+* added ncdump function
 * fixed bug with map merging file search
 * added html documentation from docstrings (not all filled in yet)
 * added read/write functions for bc-files
