@@ -36,6 +36,53 @@ helper functions for functions in get_nc.py
 
 
 
+def ncdump(file_nc):
+    """
+    ncdump outputs dimensions, variables and their attribute information.
+    The information is similar to that of NCAR's ncdump utility.
+    ncdump requires a valid instance of Dataset.
+    
+    Parameters
+    ----------
+    file_nc : netCDF4.Dataset
+        A netCDF4 dateset object
+    
+    """
+    from netCDF4 import Dataset
+    import pandas as pd
+    #import numpy as np
+    
+    data_nc = Dataset(file_nc)
+    
+    # NetCDF global attributes
+    nc_attrs = data_nc.ncattrs()
+    print("NetCDF Global Attributes:")
+    for nc_attr in nc_attrs:
+        print('\t%s: %s'%(nc_attr, data_nc.getncattr(nc_attr)))
+    
+    # Dimension shape information.
+    nc_dims = list(data_nc.dimensions.keys())  # list of nc dimensions
+    print("NetCDF dimension information:")
+    for dim in nc_dims:
+        if 'unlimited' in str(data_nc.dimensions[dim]):
+            print("\t%s = UNLIMITED (currently %i)"%(dim, data_nc.dimensions[dim].size))
+        else:    
+            print("\t%s = %i"%(dim, data_nc.dimensions[dim].size))
+    
+    # Variable information.
+    nc_vars = list(data_nc.variables.keys())  # list of nc variables
+    print("NetCDF variable information:")
+    for var in nc_vars:
+        #if var not in nc_dims:
+        print('\t%s %s %s'%(data_nc.variables[var].dtype, var, str(data_nc.variables[var].dimensions)))
+        print("\t\tshape: %s"%(str(data_nc.variables[var].shape)))
+        for ncattr in data_nc.variables[var].ncattrs():
+            print('\t\t%s: %s'%(ncattr,data_nc.variables[var].getncattr(ncattr)))
+    #return nc_attrs, nc_dims, nc_vars
+
+
+
+
 def get_ncfilelist(file_nc, multipart=None):
     #get list of mapfiles
     import re

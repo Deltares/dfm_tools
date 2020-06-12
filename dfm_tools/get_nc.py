@@ -220,6 +220,12 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     dimn_nFlowElem = get_varname_fromnc(data_nc,'nFlowElem',vardim='dim')
     dimn_nFlowLink = get_varname_fromnc(data_nc,'nFlowLink',vardim='dim')
     
+    #revert back to single partition if non-partitioned variable is requested
+    bool_varpartitioned = any([True for x in nc_varobject.dimensions if x in [dimn_faces, dimn_nodes, dimn_edges, dimn_nFlowElem, dimn_nFlowLink]])
+    if not bool_varpartitioned:
+        multipart = False
+        
+    #get list of partitioned files
     file_ncs = get_ncfilelist(file_nc, multipart)
     
     for iF, file_nc_sel in enumerate(file_ncs):
@@ -284,8 +290,9 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
             #initialize array
             if iF == 0:
                 values_all = np.ma.empty(values_dimlens)
+                values_all[:] = np.nan
             #concatenate array
-            values_all = np.ma.concatenate([values_all,nc_varobject_sel[values_selid]],axis=concat_axis)
+            values_all = np.ma.concatenate([values_all, nc_varobject_sel[values_selid]], axis=concat_axis)
         else:
             values_all = nc_varobject_sel[values_selid]
     
