@@ -14,4 +14,5 @@ dependencies:
     - twine>=1.14.0
     - Click>=7.0
     - pytest-runner>=5.1
+    - pdoc3
     

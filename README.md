@@ -46,7 +46,8 @@ Features
 	- read/write mdu file
 	- read/write bc file
 	- write model results to shapefile
-
+- html documentation:
+	- https://htmlpreview.github.io/?https://github.com/openearth/dfm_tools/blob/master/doc/dfm_tools/index.html
 
 Installation
 --------
@@ -264,7 +265,7 @@ Todo non-content
 	- improve his plots and tekal map plots, improve other plots
 	- put testdata and testoutput on github and create jupyter notebook instead of pptx?
 	- create overview of scripts and functions, including future location of missing features
-	- write documentation as comments (docstrings) and generate html documentation automatically with pdoc
+	- write documentation as comments (docstrings) and generate html documentation automatically with pdoc (or maybe sphinx?)
 	- improve feedback to user if no or wrong input arguments are given to functions
 	- add license to new scripts
 - external improvements:
@@ -331,6 +332,10 @@ Developer information
 	- ``pytest -v --tb=short -m systemtest``
 	- ``pytest -v --tb=short -m acceptance``
 	- ``pytest -v --tb=short tests\test_get_nc.py::test_getplotmapWAQOS``
+- Regenerate html documentation:
+	- open command window (or anaconda prompt) in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
+	- ``conda activate dfm_tools_devenv``
+	- ``pdoc --html dfm_tools -o doc --force``
 - Commit and push your changes to your branch:
 	- open git bash window in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
 	- ``git checkout work_yourname`` (checkout your branch, never do anything while the master is selected)

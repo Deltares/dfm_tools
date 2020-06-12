@@ -2,6 +2,12 @@
 History
 =======
 
+0.7.22 (2020-06-??)
+------------------
+* fixed bug with map merging file search
+* added html documentation from docstrings (not all filled in yet)
+* added read/write functions for bc-files
+
 0.7.20 (2020-05-06)
 ------------------
 * added option to retrieve data from top/bottom layers of z-layer D-Flow FM model

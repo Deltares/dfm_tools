@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.8.1" />
+<title>dfm_tools.ugrid API documentation</title>
+<meta name="description" content="GNU GENERAL PUBLIC LICENSE
+Version 3, 29 June 2007 …" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>dfm_tools.ugrid</code></h1>
+</header>
+<section id="section-intro">
+<p>GNU GENERAL PUBLIC LICENSE
+Version 3, 29 June 2007</p>
+<p>dfm_tools are post-processing tools for Delft3D FM
+Copyright (C) 2020 Deltares</p>
+<p>This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.</p>
+<p>This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the
+GNU General Public License for more details.</p>
+<p>You should have received a copy of the GNU General Public License
+along with this program.
+If not, see <a href="http://www.gnu.org/licenses/">http://www.gnu.org/licenses/</a>.</p>
+<p>INFORMATION
+This script is part of dfm_tools: <a href="https://github.com/openearth/dfm_tools">https://github.com/openearth/dfm_tools</a>
+Check the README.rst on github for other available functions
+Check the tests folder on github for example scripts (this is the dfm_tools pytest testbank)
+Check the pptx and example figures in (created by the testbank): N:/Deltabox/Bulletin/veenstra/info dfm_tools</p>
+<p>Created on Fri Feb 14 11:23:12 2020</p>
+<p>@author: veenstra</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python"># -*- coding: utf-8 -*-
+&#34;&#34;&#34;
+GNU GENERAL PUBLIC LICENSE
+              Version 3, 29 June 2007
+
+dfm_tools are post-processing tools for Delft3D FM
+Copyright (C) 2020 Deltares
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+
+
+INFORMATION
+This script is part of dfm_tools: https://github.com/openearth/dfm_tools
+Check the README.rst on github for other available functions
+Check the tests folder on github for example scripts (this is the dfm_tools pytest testbank)
+Check the pptx and example figures in (created by the testbank): N:/Deltabox/Bulletin/veenstra/info dfm_tools
+
+Created on Fri Feb 14 11:23:12 2020
+
+@author: veenstra
+&#34;&#34;&#34;
+
+class UGrid:
+    &#34;&#34;&#34;Unstructured grid&#34;&#34;&#34;
+    def __init__(self, mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes, verts, mesh2d_node_z=None, edge_verts=None):
+        self.mesh2d_node_x = mesh2d_node_x
+        self.mesh2d_node_y = mesh2d_node_y
+        self.mesh2d_face_nodes = mesh2d_face_nodes
+        self.verts = verts
+        self.mesh2d_node_z = mesh2d_node_z
+        #if mesh2d_node_z is not None:
+        #    self.mesh2d_node_z = mesh2d_node_z
+        #else:
+        #    self.mesh2d_node_z = np.zeros(self.mesh2d_node_x.shape)
+        self.edge_verts=edge_verts #can be none?
+    @staticmethod
+    def fromfile(file_nc):
+        import numpy as np
+        from netCDF4 import Dataset
+        from dfm_tools.get_nc_helpers import get_varname_fromnc, ghostcell_filter
+        
+        def nodexyfaces2verts(node_x,node_y, faces):
+            quatrangles = faces-1 #convert 1-based indexing of cell numbering in ugrid to 0-based indexing
+            #https://stackoverflow.com/questions/49640311/matplotlib-unstructered-quadrilaterals-instead-of-triangles
+            #https://stackoverflow.com/questions/52202014/how-can-i-plot-2d-fem-results-using-matplotlib
+            yz = np.c_[node_x,node_y]
+            verts= yz[quatrangles]
+            verts[quatrangles.mask==True,:] = np.nan #remove all masked values by making them nan
+            return verts
+        
+        data_nc = Dataset(file_nc)
+        
+        varn_mesh2d_node_x = get_varname_fromnc(data_nc,&#39;mesh2d_node_x&#39;,vardim=&#39;var&#39;)
+        varn_mesh2d_node_y = get_varname_fromnc(data_nc,&#39;mesh2d_node_y&#39;,vardim=&#39;var&#39;)
+        if varn_mesh2d_node_x is None or varn_mesh2d_node_y is None:
+            raise Exception(&#39;file does not contain variables &#34;mesh2d_node_x&#34; and &#34;mesh2d_node_y&#34; or similar, are you sure this is an unstructured grid?&#39;)
+        mesh2d_node_x = data_nc.variables[varn_mesh2d_node_x][:]
+        mesh2d_node_y = data_nc.variables[varn_mesh2d_node_y][:]
+        
+        varn_mesh2d_node_z = get_varname_fromnc(data_nc,&#39;mesh2d_node_z&#39;,vardim=&#39;var&#39;)
+        if varn_mesh2d_node_z is not None: # node_z variable is present
+            mesh2d_node_z = data_nc.variables[varn_mesh2d_node_z][:]
+        else:
+            mesh2d_node_z = None
+
+        varn_mesh2d_face_nodes = get_varname_fromnc(data_nc,&#39;mesh2d_face_nodes&#39;,vardim=&#39;var&#39;)
+        if varn_mesh2d_face_nodes is not None: # node_z variable is present
+            mesh2d_face_nodes = data_nc.variables[varn_mesh2d_face_nodes][:, :]
+        else:
+            raise Exception(&#39;ERROR: provided file does not contain a variable mesh2d_face_nodes or similar:\n%s\nPlease do one of the following:\n- plot grid from *_map.nc file\n- import and export the grid with RGFGRID\n- import and save the gridd &#34;with cellfinfo&#34; from interacter&#39;%(file_nc))
+        verts = nodexyfaces2verts(mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes) #xy coordinates of face nodes
+        
+        varn_mesh2d_edge_x = get_varname_fromnc(data_nc,&#39;mesh2d_edge_x&#39;,vardim=&#39;var&#39;)
+        if varn_mesh2d_edge_x is not None: # mesh2d_edge_x (and mesh2d_edge_y) variable is present
+            mesh2d_edge_x = data_nc.variables[varn_mesh2d_edge_x][:]
+            mesh2d_edge_y = data_nc.variables[get_varname_fromnc(data_nc,&#39;mesh2d_edge_y&#39;,vardim=&#39;var&#39;)][:]
+            mesh2d_edge_nodes = data_nc.variables[get_varname_fromnc(data_nc,&#39;mesh2d_edge_nodes&#39;,vardim=&#39;var&#39;)][:]
+            edge_verts = nodexyfaces2verts(mesh2d_edge_x, mesh2d_edge_y, mesh2d_edge_nodes) #xy coordinates of face nodes
+        else:
+            edge_verts = None
+            
+        #remove ghost cells from faces and verts
+        nonghost_ids = ghostcell_filter(file_nc)
+        if nonghost_ids is not None:
+            mesh2d_face_nodes = mesh2d_face_nodes[nonghost_ids]
+            verts = verts[nonghost_ids]
+        
+        data_nc.close()
+        ugrid = UGrid(mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes, verts, mesh2d_node_z=mesh2d_node_z, edge_verts=edge_verts)
+        return ugrid
+
+    def polygon_intersect(self, line_array, optimize_dist=None):
+        import numpy as np
+        from matplotlib.path import Path
+        
+        from dfm_tools.testutils import try_importmodule
+        try_importmodule(modulename=&#39;shapely&#39;)
+        from shapely.geometry import LineString, Polygon
+            
+        print(&#39;finding crossing flow links (can take a while if linebox over xy covers a lot of cells)&#39;)
+        #allpol = []
+        intersect_gridnos = np.empty((0),dtype=int)
+        intersect_coords1 = np.empty((0,2))
+        intersect_coords2 = np.empty((0,2))
+        line_section = LineString(line_array)
+        
+        verts_xmax = np.nanmax(self.verts[:,:,0].data,axis=1)
+        verts_xmin = np.nanmin(self.verts[:,:,0].data,axis=1)
+        verts_ymax = np.nanmax(self.verts[:,:,1].data,axis=1)
+        verts_ymin = np.nanmin(self.verts[:,:,1].data,axis=1)
+        
+        if optimize_dist is None:
+            cellinlinebox_all_bool = (((np.min(line_array[:,0]) &lt; verts_xmax) &amp;
+                                       (np.max(line_array[:,0]) &gt; verts_xmin)) &amp;
+                                      ((np.min(line_array[:,1]) &lt; verts_ymax) &amp; 
+                                       (np.max(line_array[:,1]) &gt; verts_ymin))
+                                      )
+        elif type(optimize_dist) is int or type(optimize_dist) is float:
+            #calculate angles wrt x axis
+            angles_wrtx = []
+            nlinecoords = line_array.shape[0]
+            for iL in range(nlinecoords-1):
+                dx = line_array[iL+1,0] - line_array[iL,0]
+                dy = line_array[iL+1,1] - line_array[iL,1]
+                angles_wrtx.append(np.rad2deg(np.arctan2(dy,dx)))
+            angles_toprev = np.concatenate([[90],np.diff(angles_wrtx),[90]])
+            angles_wrtx_ext = np.concatenate([[angles_wrtx[0]-90],np.array(angles_wrtx),[angles_wrtx[-1]+90]])
+            angtot_wrtx = angles_wrtx_ext[:-1] + 0.5*(180+angles_toprev)
+            #distance over xy-axis from original points
+            dxynewpoints = optimize_dist * np.array([np.cos(np.deg2rad(angtot_wrtx)),np.sin(np.deg2rad(angtot_wrtx))]).T
+            newpoints1 = line_array+dxynewpoints
+            newpoints2 = line_array-dxynewpoints
+            pol_inpol = np.concatenate([newpoints1, np.flip(newpoints2,axis=0)])
+            pol_inpol_path = Path(pol_inpol)
+            bool_all = []
+            for iC in range(self.verts.shape[1]):
+                test = pol_inpol_path.contains_points(self.verts[:,iC,:])
+                bool_all.append(test)
+            test_all = np.array(bool_all)
+            cellinlinebox_all_bool = (test_all==True).any(axis=0)
+        else:
+            raise Exception(&#39;ERROR: invalid type for optimize_dist argument&#39;)
+        
+        
+        verts_inlinebox = self.verts[cellinlinebox_all_bool,:,:]
+        verts_inlinebox_nos = np.where(cellinlinebox_all_bool)[0]
+        
+        for iP, pol_data in enumerate(verts_inlinebox):
+            pol_data_nonan = pol_data[~np.isnan(pol_data).all(axis=1)]
+            pol_shp = Polygon(pol_data_nonan)
+            try:
+                intersection_line = pol_shp.intersection(line_section).coords
+            except: #in the rare case that a cell (pol_shp) is crossed by multiple parts of the line
+                intersection_line = pol_shp.intersection(line_section)[0].coords
+            
+            if intersection_line != []:
+                intersect_gridnos = np.concatenate([intersect_gridnos,[verts_inlinebox_nos[iP]]])
+                intersect_coords1=np.concatenate([intersect_coords1,np.array([list(intersection_line)[0]])])
+                intersect_coords2=np.concatenate([intersect_coords2,np.array([list(intersection_line)[1]])])
+                #all_intersect.append(list(intersection_line))
+            #print(iP)
+
+        intersect_coords = np.stack([intersect_coords1,intersect_coords2], axis=2)
+        #dimensions (gridnos, xy, firstsecond)
+        #allpol_multi = MultiPolygon(allpol)
+        #intersection_line = allpol_multi.intersection(line_section).coords #does not work
+        print(&#39;done finding crossing flow links&#39;)
+        return intersect_gridnos, intersect_coords
+    </code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="dfm_tools.ugrid.UGrid"><code class="flex name class">
+<span>class <span class="ident">UGrid</span></span>
+<span>(</span><span>mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes, verts, mesh2d_node_z=None, edge_verts=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Unstructured grid</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class UGrid:
+    &#34;&#34;&#34;Unstructured grid&#34;&#34;&#34;
+    def __init__(self, mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes, verts, mesh2d_node_z=None, edge_verts=None):
+        self.mesh2d_node_x = mesh2d_node_x
+        self.mesh2d_node_y = mesh2d_node_y
+        self.mesh2d_face_nodes = mesh2d_face_nodes
+        self.verts = verts
+        self.mesh2d_node_z = mesh2d_node_z
+        #if mesh2d_node_z is not None:
+        #    self.mesh2d_node_z = mesh2d_node_z
+        #else:
+        #    self.mesh2d_node_z = np.zeros(self.mesh2d_node_x.shape)
+        self.edge_verts=edge_verts #can be none?
+    @staticmethod
+    def fromfile(file_nc):
+        import numpy as np
+        from netCDF4 import Dataset
+        from dfm_tools.get_nc_helpers import get_varname_fromnc, ghostcell_filter
+        
+        def nodexyfaces2verts(node_x,node_y, faces):
+            quatrangles = faces-1 #convert 1-based indexing of cell numbering in ugrid to 0-based indexing
+            #https://stackoverflow.com/questions/49640311/matplotlib-unstructered-quadrilaterals-instead-of-triangles
+            #https://stackoverflow.com/questions/52202014/how-can-i-plot-2d-fem-results-using-matplotlib
+            yz = np.c_[node_x,node_y]
+            verts= yz[quatrangles]
+            verts[quatrangles.mask==True,:] = np.nan #remove all masked values by making them nan
+            return verts
+        
+        data_nc = Dataset(file_nc)
+        
+        varn_mesh2d_node_x = get_varname_fromnc(data_nc,&#39;mesh2d_node_x&#39;,vardim=&#39;var&#39;)
+        varn_mesh2d_node_y = get_varname_fromnc(data_nc,&#39;mesh2d_node_y&#39;,vardim=&#39;var&#39;)
+        if varn_mesh2d_node_x is None or varn_mesh2d_node_y is None:
+            raise Exception(&#39;file does not contain variables &#34;mesh2d_node_x&#34; and &#34;mesh2d_node_y&#34; or similar, are you sure this is an unstructured grid?&#39;)
+        mesh2d_node_x = data_nc.variables[varn_mesh2d_node_x][:]
+        mesh2d_node_y = data_nc.variables[varn_mesh2d_node_y][:]
+        
+        varn_mesh2d_node_z = get_varname_fromnc(data_nc,&#39;mesh2d_node_z&#39;,vardim=&#39;var&#39;)
+        if varn_mesh2d_node_z is not None: # node_z variable is present
+            mesh2d_node_z = data_nc.variables[varn_mesh2d_node_z][:]
+        else:
+            mesh2d_node_z = None
+
+        varn_mesh2d_face_nodes = get_varname_fromnc(data_nc,&#39;mesh2d_face_nodes&#39;,vardim=&#39;var&#39;)
+        if varn_mesh2d_face_nodes is not None: # node_z variable is present
+            mesh2d_face_nodes = data_nc.variables[varn_mesh2d_face_nodes][:, :]
+        else:
+            raise Exception(&#39;ERROR: provided file does not contain a variable mesh2d_face_nodes or similar:\n%s\nPlease do one of the following:\n- plot grid from *_map.nc file\n- import and export the grid with RGFGRID\n- import and save the gridd &#34;with cellfinfo&#34; from interacter&#39;%(file_nc))
+        verts = nodexyfaces2verts(mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes) #xy coordinates of face nodes
+        
+        varn_mesh2d_edge_x = get_varname_fromnc(data_nc,&#39;mesh2d_edge_x&#39;,vardim=&#39;var&#39;)
+        if varn_mesh2d_edge_x is not None: # mesh2d_edge_x (and mesh2d_edge_y) variable is present
+            mesh2d_edge_x = data_nc.variables[varn_mesh2d_edge_x][:]
+            mesh2d_edge_y = data_nc.variables[get_varname_fromnc(data_nc,&#39;mesh2d_edge_y&#39;,vardim=&#39;var&#39;)][:]
+            mesh2d_edge_nodes = data_nc.variables[get_varname_fromnc(data_nc,&#39;mesh2d_edge_nodes&#39;,vardim=&#39;var&#39;)][:]
+            edge_verts = nodexyfaces2verts(mesh2d_edge_x, mesh2d_edge_y, mesh2d_edge_nodes) #xy coordinates of face nodes
+        else:
+            edge_verts = None
+            
+        #remove ghost cells from faces and verts
+        nonghost_ids = ghostcell_filter(file_nc)
+        if nonghost_ids is not None:
+            mesh2d_face_nodes = mesh2d_face_nodes[nonghost_ids]
+            verts = verts[nonghost_ids]
+        
+        data_nc.close()
+        ugrid = UGrid(mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes, verts, mesh2d_node_z=mesh2d_node_z, edge_verts=edge_verts)
+        return ugrid
+
+    def polygon_intersect(self, line_array, optimize_dist=None):
+        import numpy as np
+        from matplotlib.path import Path
+        
+        from dfm_tools.testutils import try_importmodule
+        try_importmodule(modulename=&#39;shapely&#39;)
+        from shapely.geometry import LineString, Polygon
+            
+        print(&#39;finding crossing flow links (can take a while if linebox over xy covers a lot of cells)&#39;)
+        #allpol = []
+        intersect_gridnos = np.empty((0),dtype=int)
+        intersect_coords1 = np.empty((0,2))
+        intersect_coords2 = np.empty((0,2))
+        line_section = LineString(line_array)
+        
+        verts_xmax = np.nanmax(self.verts[:,:,0].data,axis=1)
+        verts_xmin = np.nanmin(self.verts[:,:,0].data,axis=1)
+        verts_ymax = np.nanmax(self.verts[:,:,1].data,axis=1)
+        verts_ymin = np.nanmin(self.verts[:,:,1].data,axis=1)
+        
+        if optimize_dist is None:
+            cellinlinebox_all_bool = (((np.min(line_array[:,0]) &lt; verts_xmax) &amp;
+                                       (np.max(line_array[:,0]) &gt; verts_xmin)) &amp;
+                                      ((np.min(line_array[:,1]) &lt; verts_ymax) &amp; 
+                                       (np.max(line_array[:,1]) &gt; verts_ymin))
+                                      )
+        elif type(optimize_dist) is int or type(optimize_dist) is float:
+            #calculate angles wrt x axis
+            angles_wrtx = []
+            nlinecoords = line_array.shape[0]
+            for iL in range(nlinecoords-1):
+                dx = line_array[iL+1,0] - line_array[iL,0]
+                dy = line_array[iL+1,1] - line_array[iL,1]
+                angles_wrtx.append(np.rad2deg(np.arctan2(dy,dx)))
+            angles_toprev = np.concatenate([[90],np.diff(angles_wrtx),[90]])
+            angles_wrtx_ext = np.concatenate([[angles_wrtx[0]-90],np.array(angles_wrtx),[angles_wrtx[-1]+90]])
+            angtot_wrtx = angles_wrtx_ext[:-1] + 0.5*(180+angles_toprev)
+            #distance over xy-axis from original points
+            dxynewpoints = optimize_dist * np.array([np.cos(np.deg2rad(angtot_wrtx)),np.sin(np.deg2rad(angtot_wrtx))]).T
+            newpoints1 = line_array+dxynewpoints
+            newpoints2 = line_array-dxynewpoints
+            pol_inpol = np.concatenate([newpoints1, np.flip(newpoints2,axis=0)])
+            pol_inpol_path = Path(pol_inpol)
+            bool_all = []
+            for iC in range(self.verts.shape[1]):
+                test = pol_inpol_path.contains_points(self.verts[:,iC,:])
+                bool_all.append(test)
+            test_all = np.array(bool_all)
+            cellinlinebox_all_bool = (test_all==True).any(axis=0)
+        else:
+            raise Exception(&#39;ERROR: invalid type for optimize_dist argument&#39;)
+        
+        
+        verts_inlinebox = self.verts[cellinlinebox_all_bool,:,:]
+        verts_inlinebox_nos = np.where(cellinlinebox_all_bool)[0]
+        
+        for iP, pol_data in enumerate(verts_inlinebox):
+            pol_data_nonan = pol_data[~np.isnan(pol_data).all(axis=1)]
+            pol_shp = Polygon(pol_data_nonan)
+            try:
+                intersection_line = pol_shp.intersection(line_section).coords
+            except: #in the rare case that a cell (pol_shp) is crossed by multiple parts of the line
+                intersection_line = pol_shp.intersection(line_section)[0].coords
+            
+            if intersection_line != []:
+                intersect_gridnos = np.concatenate([intersect_gridnos,[verts_inlinebox_nos[iP]]])
+                intersect_coords1=np.concatenate([intersect_coords1,np.array([list(intersection_line)[0]])])
+                intersect_coords2=np.concatenate([intersect_coords2,np.array([list(intersection_line)[1]])])
+                #all_intersect.append(list(intersection_line))
+            #print(iP)
+
+        intersect_coords = np.stack([intersect_coords1,intersect_coords2], axis=2)
+        #dimensions (gridnos, xy, firstsecond)
+        #allpol_multi = MultiPolygon(allpol)
+        #intersection_line = allpol_multi.intersection(line_section).coords #does not work
+        print(&#39;done finding crossing flow links&#39;)
+        return intersect_gridnos, intersect_coords</code></pre>
+</details>
+<h3>Static methods</h3>
+<dl>
+<dt id="dfm_tools.ugrid.UGrid.fromfile"><code class="name flex">
+<span>def <span class="ident">fromfile</span></span>(<span>file_nc)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def fromfile(file_nc):
+    import numpy as np
+    from netCDF4 import Dataset
+    from dfm_tools.get_nc_helpers import get_varname_fromnc, ghostcell_filter
+    
+    def nodexyfaces2verts(node_x,node_y, faces):
+        quatrangles = faces-1 #convert 1-based indexing of cell numbering in ugrid to 0-based indexing
+        #https://stackoverflow.com/questions/49640311/matplotlib-unstructered-quadrilaterals-instead-of-triangles
+        #https://stackoverflow.com/questions/52202014/how-can-i-plot-2d-fem-results-using-matplotlib
+        yz = np.c_[node_x,node_y]
+        verts= yz[quatrangles]
+        verts[quatrangles.mask==True,:] = np.nan #remove all masked values by making them nan
+        return verts
+    
+    data_nc = Dataset(file_nc)
+    
+    varn_mesh2d_node_x = get_varname_fromnc(data_nc,&#39;mesh2d_node_x&#39;,vardim=&#39;var&#39;)
+    varn_mesh2d_node_y = get_varname_fromnc(data_nc,&#39;mesh2d_node_y&#39;,vardim=&#39;var&#39;)
+    if varn_mesh2d_node_x is None or varn_mesh2d_node_y is None:
+        raise Exception(&#39;file does not contain variables &#34;mesh2d_node_x&#34; and &#34;mesh2d_node_y&#34; or similar, are you sure this is an unstructured grid?&#39;)
+    mesh2d_node_x = data_nc.variables[varn_mesh2d_node_x][:]
+    mesh2d_node_y = data_nc.variables[varn_mesh2d_node_y][:]
+    
+    varn_mesh2d_node_z = get_varname_fromnc(data_nc,&#39;mesh2d_node_z&#39;,vardim=&#39;var&#39;)
+    if varn_mesh2d_node_z is not None: # node_z variable is present
+        mesh2d_node_z = data_nc.variables[varn_mesh2d_node_z][:]
+    else:
+        mesh2d_node_z = None
+
+    varn_mesh2d_face_nodes = get_varname_fromnc(data_nc,&#39;mesh2d_face_nodes&#39;,vardim=&#39;var&#39;)
+    if varn_mesh2d_face_nodes is not None: # node_z variable is present
+        mesh2d_face_nodes = data_nc.variables[varn_mesh2d_face_nodes][:, :]
+    else:
+        raise Exception(&#39;ERROR: provided file does not contain a variable mesh2d_face_nodes or similar:\n%s\nPlease do one of the following:\n- plot grid from *_map.nc file\n- import and export the grid with RGFGRID\n- import and save the gridd &#34;with cellfinfo&#34; from interacter&#39;%(file_nc))
+    verts = nodexyfaces2verts(mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes) #xy coordinates of face nodes
+    
+    varn_mesh2d_edge_x = get_varname_fromnc(data_nc,&#39;mesh2d_edge_x&#39;,vardim=&#39;var&#39;)
+    if varn_mesh2d_edge_x is not None: # mesh2d_edge_x (and mesh2d_edge_y) variable is present
+        mesh2d_edge_x = data_nc.variables[varn_mesh2d_edge_x][:]
+        mesh2d_edge_y = data_nc.variables[get_varname_fromnc(data_nc,&#39;mesh2d_edge_y&#39;,vardim=&#39;var&#39;)][:]
+        mesh2d_edge_nodes = data_nc.variables[get_varname_fromnc(data_nc,&#39;mesh2d_edge_nodes&#39;,vardim=&#39;var&#39;)][:]
+        edge_verts = nodexyfaces2verts(mesh2d_edge_x, mesh2d_edge_y, mesh2d_edge_nodes) #xy coordinates of face nodes
+    else:
+        edge_verts = None
+        
+    #remove ghost cells from faces and verts
+    nonghost_ids = ghostcell_filter(file_nc)
+    if nonghost_ids is not None:
+        mesh2d_face_nodes = mesh2d_face_nodes[nonghost_ids]
+        verts = verts[nonghost_ids]
+    
+    data_nc.close()
+    ugrid = UGrid(mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes, verts, mesh2d_node_z=mesh2d_node_z, edge_verts=edge_verts)
+    return ugrid</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="dfm_tools.ugrid.UGrid.polygon_intersect"><code class="name flex">
+<span>def <span class="ident">polygon_intersect</span></span>(<span>self, line_array, optimize_dist=None)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def polygon_intersect(self, line_array, optimize_dist=None):
+    import numpy as np
+    from matplotlib.path import Path
+    
+    from dfm_tools.testutils import try_importmodule
+    try_importmodule(modulename=&#39;shapely&#39;)
+    from shapely.geometry import LineString, Polygon
+        
+    print(&#39;finding crossing flow links (can take a while if linebox over xy covers a lot of cells)&#39;)
+    #allpol = []
+    intersect_gridnos = np.empty((0),dtype=int)
+    intersect_coords1 = np.empty((0,2))
+    intersect_coords2 = np.empty((0,2))
+    line_section = LineString(line_array)
+    
+    verts_xmax = np.nanmax(self.verts[:,:,0].data,axis=1)
+    verts_xmin = np.nanmin(self.verts[:,:,0].data,axis=1)
+    verts_ymax = np.nanmax(self.verts[:,:,1].data,axis=1)
+    verts_ymin = np.nanmin(self.verts[:,:,1].data,axis=1)
+    
+    if optimize_dist is None:
+        cellinlinebox_all_bool = (((np.min(line_array[:,0]) &lt; verts_xmax) &amp;
+                                   (np.max(line_array[:,0]) &gt; verts_xmin)) &amp;
+                                  ((np.min(line_array[:,1]) &lt; verts_ymax) &amp; 
+                                   (np.max(line_array[:,1]) &gt; verts_ymin))
+                                  )
+    elif type(optimize_dist) is int or type(optimize_dist) is float:
+        #calculate angles wrt x axis
+        angles_wrtx = []
+        nlinecoords = line_array.shape[0]
+        for iL in range(nlinecoords-1):
+            dx = line_array[iL+1,0] - line_array[iL,0]
+            dy = line_array[iL+1,1] - line_array[iL,1]
+            angles_wrtx.append(np.rad2deg(np.arctan2(dy,dx)))
+        angles_toprev = np.concatenate([[90],np.diff(angles_wrtx),[90]])
+        angles_wrtx_ext = np.concatenate([[angles_wrtx[0]-90],np.array(angles_wrtx),[angles_wrtx[-1]+90]])
+        angtot_wrtx = angles_wrtx_ext[:-1] + 0.5*(180+angles_toprev)
+        #distance over xy-axis from original points
+        dxynewpoints = optimize_dist * np.array([np.cos(np.deg2rad(angtot_wrtx)),np.sin(np.deg2rad(angtot_wrtx))]).T
+        newpoints1 = line_array+dxynewpoints
+        newpoints2 = line_array-dxynewpoints
+        pol_inpol = np.concatenate([newpoints1, np.flip(newpoints2,axis=0)])
+        pol_inpol_path = Path(pol_inpol)
+        bool_all = []
+        for iC in range(self.verts.shape[1]):
+            test = pol_inpol_path.contains_points(self.verts[:,iC,:])
+            bool_all.append(test)
+        test_all = np.array(bool_all)
+        cellinlinebox_all_bool = (test_all==True).any(axis=0)
+    else:
+        raise Exception(&#39;ERROR: invalid type for optimize_dist argument&#39;)
+    
+    
+    verts_inlinebox = self.verts[cellinlinebox_all_bool,:,:]
+    verts_inlinebox_nos = np.where(cellinlinebox_all_bool)[0]
+    
+    for iP, pol_data in enumerate(verts_inlinebox):
+        pol_data_nonan = pol_data[~np.isnan(pol_data).all(axis=1)]
+        pol_shp = Polygon(pol_data_nonan)
+        try:
+            intersection_line = pol_shp.intersection(line_section).coords
+        except: #in the rare case that a cell (pol_shp) is crossed by multiple parts of the line
+            intersection_line = pol_shp.intersection(line_section)[0].coords
+        
+        if intersection_line != []:
+            intersect_gridnos = np.concatenate([intersect_gridnos,[verts_inlinebox_nos[iP]]])
+            intersect_coords1=np.concatenate([intersect_coords1,np.array([list(intersection_line)[0]])])
+            intersect_coords2=np.concatenate([intersect_coords2,np.array([list(intersection_line)[1]])])
+            #all_intersect.append(list(intersection_line))
+        #print(iP)
+
+    intersect_coords = np.stack([intersect_coords1,intersect_coords2], axis=2)
+    #dimensions (gridnos, xy, firstsecond)
+    #allpol_multi = MultiPolygon(allpol)
+    #intersection_line = allpol_multi.intersection(line_section).coords #does not work
+    print(&#39;done finding crossing flow links&#39;)
+    return intersect_gridnos, intersect_coords</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="dfm_tools" href="index.html">dfm_tools</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="dfm_tools.ugrid.UGrid" href="#dfm_tools.ugrid.UGrid">UGrid</a></code></h4>
+<ul class="">
+<li><code><a title="dfm_tools.ugrid.UGrid.fromfile" href="#dfm_tools.ugrid.UGrid.fromfile">fromfile</a></code></li>
+<li><code><a title="dfm_tools.ugrid.UGrid.polygon_intersect" href="#dfm_tools.ugrid.UGrid.polygon_intersect">polygon_intersect</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.8.1</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>
