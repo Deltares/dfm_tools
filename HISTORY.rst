@@ -2,7 +2,7 @@
 History
 =======
 
-0.7.22 (2020-06-12)
+0.7.23 (2020-06-12)
 ------------------
 * fixed bug with retrieving non-partitioned variables from all partitions
 * added ncdump function
