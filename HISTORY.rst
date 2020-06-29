@@ -4,7 +4,8 @@ History
 
 0.7.24 (2020-06-??)
 ------------------
-* ??
+* bugfix in var_times property of retrieved data, when retrieving as daterange
+* bugfix in scatter_to_regulargrid(), masked values were not replaced by nans
 
 0.7.23 (2020-06-12)
 ------------------
