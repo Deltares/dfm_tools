@@ -84,13 +84,26 @@ def test_getncmodeldata_indexcountmetadata():
 def test_getncmodeldata_datetime():
     import numpy as np
     import datetime as dt
+    import pandas as pd
     
     from dfm_tools.get_nc import get_ncmodeldata
 
+    #retrieve all
     file_nc = os.path.join(dir_testinput,r'DFM_sigma_curved_bend\DFM_OUTPUT_cb_3d\cb_3d_map.nc')
-    data_frommap = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sa1', timestep=np.arange(dt.datetime(2001,1,1),dt.datetime(2001,1,2),dt.timedelta(hours=1)), layer=5)#, multipart=False)
+    data_frommap = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sa1', timestep='all', layer=5)#, multipart=False)
+    assert data_frommap.shape[0] == len(data_frommap.var_times)
     
+    #retrieve with numpy datetime array
+    data_frommap = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sa1', 
+                                   timestep=np.arange(dt.datetime(2001,1,1),dt.datetime(2001,1,2),dt.timedelta(hours=1)), layer=5)#, multipart=False)
     assert (data_frommap.data[0,0,0] - 31. ) < 1E-9
+    assert data_frommap.shape[0] == len(data_frommap.var_times)
+    
+    #retrieve with pandas date_range
+    data_frommap = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sa1', 
+                                   timestep=pd.date_range(dt.datetime(2001,1,1),dt.datetime(2001,1,2),freq='30min'), layer=5)#, multipart=False)
+    assert (data_frommap.data[0,0,0] - 31. ) < 1E-9
+    assert data_frommap.shape[0] == len(data_frommap.var_times)
     
 
 

@@ -61,7 +61,7 @@ Installation
 	- optional: ``conda install -c conda-forge "shapely>=1.7.0" -y`` (for slicing 2D/3D data) (conda-forge channel is necessary since main channel version is 1.6.4)
 	- optional: ``conda install -c conda-forge cartopy -y`` (for satellite imagery on plots) (conda-forge channel recommended by cartopy developers, and currently also necessary for correct shapely version)
 	- optional: ``conda install -c conda-forge geopandas -y`` (for shapefile related operations)
-	- to remove venv when necessary: ``conda remove -n dfm_tools_env --all``
+	- to remove venv when necessary: ``conda remove -n dfm_tools_env --all``
 - launch Spyder:
 	- open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in dfm_tools_env)
 	- if launching Spyder gives a Qt related error: remove the system/user environment variable 'qt_plugin_path' set by an old Delft3D4 installation procedure
@@ -242,6 +242,7 @@ Feature wishlist
 	- if no ugrid in netfile, try to read provided xy variables and make meshgrid or convert cen2cor or cor2cen if necessary (how to test this?)
 	- improve plots for structured grid (CMEMS, ERA5, hirlam, grd etc)
 	- https://github.com/NOAA-ORR-ERD/gridded (https://github.com/pyugrid/pyugrid is merged into gridded) (ghostcells en mapmergen worden afgehandeld? meer dan 4 nodes per cel? support for stations?)
+	- gridded presentatie: https://ams.confex.com/ams/97Annual/webprogram/Handout/Paper312839/Barker_AMS-2017.pdf
 	- tests.test_get_nc.test_getnetdata_plotnet_regular() is eerste opzet voor hirlam/ERA5 data, werkt heel anders dan D-flow FM
 	- how to plot properties on edges/nodes (scatter is slow), maybe create dual mesh and plot like faces. most relevant variables are also available on faces, so is this necessary?
 	- improve support for rstfiles (now only scatter, since only cell centers present?)

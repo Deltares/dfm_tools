@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-GNU GENERAL PUBLIC LICENSE
-	      Version 3, 29 June 2007
-
 dfm_tools are post-processing tools for Delft3D FM
-Copyright (C) 2020 Deltares
+Copyright (C) 2020 Deltares. All rights reserved.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -13,11 +10,15 @@ the Free Software Foundation, either version 3 of the License, or
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+All names, logos, and references to "Deltares" are registered trademarks of
+Stichting Deltares and remain full property of Stichting Deltares at all times.
+All rights reserved.
 
 
 INFORMATION
@@ -125,17 +126,20 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
             elif type(timestep[0]) in listtype_datetime:
                 data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname) #get all times
                 time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, timestep)
+                data_nc_datetimes_pd = data_nc_datetimes_pd.loc[time_ids] #get selection of times
             else:
                 raise Exception('ERROR: timestep variable type is list/range/ndarray (%s), but type of timestep[0] not anticipated (%s), options:\n - int\n - np.int64\n - datetime\n - np.datetime64'%(type(timestep),type(timestep[0])))
         elif type(timestep) in listtype_daterange:
             data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname) #get all times
             time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, timestep)
+            data_nc_datetimes_pd = data_nc_datetimes_pd.loc[time_ids] #get selection of times
         elif type(timestep) in listtype_int:
             data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname, retrieve_ids=[timestep]) #get selection of times
             time_ids = [timestep]
         elif type(timestep) in listtype_datetime:
             data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname) #get all times
             time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, [timestep])
+            data_nc_datetimes_pd = data_nc_datetimes_pd.loc[time_ids] #get selection of times
         else:
             raise Exception('ERROR: timestep variable type not anticipated (%s), options:\n - datetime/int\n - list/range/ndarray of datetime/int\n - pandas daterange\n - "all"'%(type(timestep)))
         #convert to positive index, make unique(+sort), convert to list because of indexing with np.array of len 1 errors sometimes
