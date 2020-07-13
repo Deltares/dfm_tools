@@ -432,8 +432,11 @@ def test_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
     ugrid_all = get_netdata(file_nc=file_nc)#,multipart=False)
     fig, ax = plt.subplots()
     pc = plot_netmapdata(ugrid_all.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
+    ax.set_xlabel('x-direction')
+    ax.set_ylabel('y-direction')
     ax.set_aspect('equal')
-    plt.savefig(os.path.join(dir_output,'%s_grid'%(os.path.basename(file_nc).replace('.',''))))
+    fig.tight_layout()
+    fig.savefig(os.path.join(dir_output,'%s_grid'%(os.path.basename(file_nc).replace('.',''))))
 
 
     #PLOT bedlevel
@@ -446,9 +449,15 @@ def test_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
         fig, ax = plt.subplots()
         pc = plot_netmapdata(ugrid.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
         pc.set_clim(clim_bl)
-        fig.colorbar(pc, ax=ax)
+        cbar = fig.colorbar(pc, ax=ax)
+        cbar.set_label('%s [%s]'%(data_frommap.var_ncvarobject.long_name, data_frommap.var_ncvarobject.units))
+        varcoords_x = data_frommap.var_ncobject.variables.get(data_frommap.var_ncvarobject.coordinates.split()[0])
+        varcoords_y = data_frommap.var_ncobject.variables.get(data_frommap.var_ncvarobject.coordinates.split()[1])
+        ax.set_xlabel('%s [%s]'%(varcoords_x.long_name,varcoords_x.units))
+        ax.set_ylabel('%s [%s]'%(varcoords_y.long_name,varcoords_y.units))
         ax.set_aspect('equal')
-        plt.savefig(os.path.join(dir_output,'%s_mesh2d_flowelem_bl'%(os.path.basename(file_nc).replace('.',''))))
+        fig.tight_layout()
+        fig.savefig(os.path.join(dir_output,'%s_mesh2d_flowelem_bl'%(os.path.basename(file_nc).replace('.',''))))
         
     
     #PLOT water level on map
@@ -458,9 +467,15 @@ def test_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
     fig, ax = plt.subplots()
     pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
     pc.set_clim(clim_wl)
-    fig.colorbar(pc, ax=ax)
+    cbar = fig.colorbar(pc, ax=ax)
+    cbar.set_label('%s [%s]'%(data_frommap.var_ncvarobject.long_name, data_frommap.var_ncvarobject.units))
+    varcoords_x = data_frommap.var_ncobject.variables.get(data_frommap.var_ncvarobject.coordinates.split()[0])
+    varcoords_y = data_frommap.var_ncobject.variables.get(data_frommap.var_ncvarobject.coordinates.split()[1])
+    ax.set_xlabel('%s [%s]'%(varcoords_x.long_name,varcoords_x.units))
+    ax.set_ylabel('%s [%s]'%(varcoords_y.long_name,varcoords_y.units))
     ax.set_aspect('equal')
-    plt.savefig(os.path.join(dir_output,'%s_mesh2d_s1'%(os.path.basename(file_nc).replace('.',''))))
+    fig.tight_layout()
+    fig.savefig(os.path.join(dir_output,'%s_mesh2d_s1'%(os.path.basename(file_nc).replace('.',''))))
 
     #PLOT var layer on map
     if not 'RMM_dflowfm_0000_map' in file_nc:
@@ -470,9 +485,15 @@ def test_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
         fig, ax = plt.subplots()
         pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
         pc.set_clim(clim_sal)
-        fig.colorbar(pc, ax=ax)
+        cbar = fig.colorbar(pc, ax=ax)
+        cbar.set_label('%s [%s]'%(data_frommap.var_ncvarobject.long_name, data_frommap.var_ncvarobject.units))
+        varcoords_x = data_frommap.var_ncobject.variables.get(data_frommap.var_ncvarobject.coordinates.split()[0])
+        varcoords_y = data_frommap.var_ncobject.variables.get(data_frommap.var_ncvarobject.coordinates.split()[1])
+        ax.set_xlabel('%s [%s]'%(varcoords_x.long_name,varcoords_x.units))
+        ax.set_ylabel('%s [%s]'%(varcoords_y.long_name,varcoords_y.units))
         ax.set_aspect('equal')
-        plt.savefig(os.path.join(dir_output,'%s_mesh2d_sa1'%(os.path.basename(file_nc).replace('.',''))))
+        fig.tight_layout()
+        fig.savefig(os.path.join(dir_output,'%s_mesh2d_sa1'%(os.path.basename(file_nc).replace('.',''))))
     
         print('plot grid and values from mapdata (temperature on layer, 3dim)')
         data_frommap = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_tem1', timestep=timestep, layer=layer)#, multipart=False)
@@ -480,10 +501,15 @@ def test_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
         fig, ax = plt.subplots()
         pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_flat, ax=None, linewidth=0.5, cmap="jet")
         pc.set_clim(clim_tem)
-        fig.colorbar(pc, ax=ax)
+        cbar = fig.colorbar(pc, ax=ax)
+        cbar.set_label('%s [%s]'%(data_frommap.var_ncvarobject.long_name, data_frommap.var_ncvarobject.units))
+        varcoords_x = data_frommap.var_ncobject.variables.get(data_frommap.var_ncvarobject.coordinates.split()[0])
+        varcoords_y = data_frommap.var_ncobject.variables.get(data_frommap.var_ncvarobject.coordinates.split()[1])
+        ax.set_xlabel('%s [%s]'%(varcoords_x.long_name,varcoords_x.units))
+        ax.set_ylabel('%s [%s]'%(varcoords_y.long_name,varcoords_y.units))
         ax.set_aspect('equal')
-        plt.savefig(os.path.join(dir_output,'%s_mesh2d_tem1'%(os.path.basename(file_nc).replace('.',''))))
-
+        fig.tight_layout()
+        fig.savefig(os.path.join(dir_output,'%s_mesh2d_tem1'%(os.path.basename(file_nc).replace('.',''))))
 
 
 
