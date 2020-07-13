@@ -2,10 +2,11 @@
 History
 =======
 
-0.7.24 (2020-06-??)
+0.7.24 (2020-07-13)
 ------------------
 * bugfix in var_times property of retrieved data, when retrieving as daterange
 * bugfix in scatter_to_regulargrid(), masked values were not replaced by nans
+* removed some non-unicode characters
 
 0.7.23 (2020-06-12)
 ------------------
@@ -49,7 +50,7 @@ History
 
 0.6.4 (2020-03-19)
 ------------------
-* Slightly different syntax which is better understandable (updated a while ago, so you probably won’t notice, but it might be that you have to update your script)
+* Slightly different syntax which is better understandable (updated a while ago, so you probably will not notice, but it might be that you have to update your script)
 * A first version of zt-plots (for instance the development over time of salinity of a station over the entire waterdepth)
 * Matching function for WAQ statistics variables
 * More flexible dimension reading (so more variables can be read)
