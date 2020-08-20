@@ -126,10 +126,12 @@ def write_bcfile(filename, datablocks, metadatas, refdate=None, tzone=0, float_f
 
 
 
-def read_bcfile(filename):
+def read_bcfile(filename, converttime=False):
 
     import pandas as pd
     import numpy as np
+    import datetime as dt
+    from netCDF4 import num2date
     
     with open(filename, 'r') as bc:
         page = bc.readlines()
@@ -181,6 +183,25 @@ def read_bcfile(filename):
         
         #read data block
         data_block_pd = pd.read_csv(filepath_or_buffer=filename, names=colnames, skiprows=line_datastart, delim_whitespace=True, skipfooter=lines_n-line_blockend, engine='python')
+        if converttime:
+            time_id = np.where(data_block_pd.columns.get_level_values(0)=='time')[0]
+            if len(time_id)==1:
+                time_minutes = data_block_pd.iloc[:,time_id].values[:,0]
+                units_str = data_block_pd.columns.get_level_values(1)[time_id][0]
+                
+                time_units_list = units_str.split(' ')
+                if time_units_list[1] != 'since':
+                    raise Exception('invalid time units string (%s)'%(units_str))
+                try:
+                    refdate_str = '%s %s'%(time_units_list[2], time_units_list[3].replace('.0','')) #remove .0 to avoid conversion issue
+                    refdate = dt.datetime.strptime(refdate_str,'%Y-%m-%d %H:%M:%S')
+                    data_nc_times_pdtd = pd.to_timedelta(time_minutes, unit=time_units_list[0])
+                    data_nc_datetimes = (refdate + data_nc_times_pdtd)#.to_pydatetime()
+                    print('retrieving original timezone succeeded, no conversion to UTC/GMT applied')
+                except:
+                    print('retrieving original timezone failed, using num2date output instead')
+                    data_nc_datetimes = num2date(times=time_minutes, units=units_str, only_use_cftime_datetimes=False, only_use_python_datetimes=True)
+                data_block_pd['datetime'] = data_nc_datetimes
         datablock_list.append(data_block_pd)
 
                     
