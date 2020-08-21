@@ -306,6 +306,7 @@ def test_gethismodeldata(file_nc):
     this test retrieves his data and plots it
     file_nc = os.path.join(dir_testinput,'vanNithin','tttz_0000_his.nc')
     file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen\\computations\\run01\\DFM_OUTPUT_Grevelingen-FM\\Grevelingen-FM_0000_his.nc')
+    file_nc = r'p:\11202512-h2020_impaqt\Mediterranean_model\MedSea_impaqt_model\computations\r003_test\DFM_OUTPUT_MedSea_impaqt_FM\MedSea_impaqt_FM_0000_his.nc'
     dir_output = './test_output'
     """
 
@@ -331,7 +332,9 @@ def test_gethismodeldata(file_nc):
         #file_nc = os.path.join(dir_testinput,'vanNithin','tttz_0000_his.nc')
         station = ['Peiraias', 'Ovrios_2','Ovrios','Ovrios','Ortholithi']
         station_zt = 'Ortholithi'
-    
+    elif 'impaqt' in file_nc:
+        station_zt = 'IOC_thes' #['IOC_thes','farm_impaqt']
+
     print('plot bedlevel from his')
     data_fromhis = get_ncmodeldata(file_nc=file_nc, varname='bedlevel', station=station)#, multipart=False)
     fig, ax = plt.subplots()
@@ -369,11 +372,11 @@ def test_gethismodeldata(file_nc):
     axwl.plot(data_fromhis_wl.var_times.iloc[[0,-1]],[0,0],'k-',linewidth=0.5)
     ax1.plot(data_fromhis_wl.var_times.iloc[[0,-1]],[0,0],'k-',linewidth=0.5)
     axwl.plot(data_fromhis_wl.var_times,data_fromhis_wl[:,statid_subset],'-',label='wl %s'%(station_zt))
-    c = plot_ztdata(dfmtools_hisvar=data_fromhis_temp, ax=ax1, statid_subset=0, cmap='jet')
+    c = plot_ztdata(dfmtools_hisvar=data_fromhis_temp, ax=ax1, statid_subset=statid_subset, cmap='jet')
     fig.colorbar(c,ax=axwl)
     fig.colorbar(c,ax=ax1)
     #contour
-    CS = plot_ztdata(dfmtools_hisvar=data_fromhis_temp, ax=ax1, statid_subset=0, only_contour=True, levels=6, colors='k', linewidths=0.8, linestyles='solid')
+    CS = plot_ztdata(dfmtools_hisvar=data_fromhis_temp, ax=ax1, statid_subset=statid_subset, only_contour=True, levels=6, colors='k', linewidths=0.8, linestyles='solid')
     ax1.clabel(CS, fontsize=10)
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,'%s_zt_temp'%(os.path.basename(file_nc).replace('.',''))))
