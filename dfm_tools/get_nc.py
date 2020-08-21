@@ -618,6 +618,10 @@ def plot_ztdata(dfmtools_hisvar, statid_subset=0, ax=None, mask_data=True, only_
         the station id for the dfmtools_hisvar, so 0-based since it retrieves from a numpy array. beware that get_ncmodeldata sorts the stations you request, so use an index like dfmtools_hisvar.var_stations['station_id'].tolist().index(stat). Avoid this issue by only retrieving data for one station. The default is 0.
     ax : matplotlib.axes._subplots.AxesSubplot, optional
         the figure axis. The default is None.
+    mask_data : bool, optional
+        whether to repair z_interface coordinates and mask data in inactive layers. The default is True.
+    only_contour : bool, optional
+        Wheter to plot contour lines of the dataset. The default is False.
     **kwargs : TYPE
         properties to give on to the pcolormesh function.
     
@@ -669,26 +673,6 @@ def plot_ztdata(dfmtools_hisvar, statid_subset=0, ax=None, mask_data=True, only_
             data_fromhis_zcor_flat[:,id_zcentop+1] = data_fromhis_wl_flat
             data_fromhis_zcor_flat[:,id_zcentop] = (data_fromhis_zcen_flat[:,id_zcentop-1]+data_fromhis_zcen_flat[:,id_zcentop])/2
         bool_zcen_equaltop[id_zcentop] = False
-        
-        """
-        bool_zcor_avgcen = ((data_fromhis_zcor_flat[:,1:]  > data_fromhis_zcen_flat) &
-                            (data_fromhis_zcor_flat[:,:-1] < data_fromhis_zcen_flat))
-        
-        
-        bool_zcor01 = (data_fromhis_zcor_flat==data_fromhis_zcor_flat[:,-1:]).all(axis=0)
-        mask_array1 = np.tile(bool_zcor01,(data_fromhis_zcor_flat.shape[0],1,1))
-        np.argmax(mask_array1,axis=)
-        mask_array1 & 
-        #temporary correct last interface layer, since the D-Flow FM hisfiles have this wrong
-        id_incorrectlayer = ((data_fromhis_zcor_flat[:,:,:-2] > data_fromhis_zcen_flat[:,:,:-1]) & 
-                             (data_fromhis_zcen_flat[:,:,1:] != data_fromhis_zcen_flat[:,:,:-1]))
-        id_incorrectlayercor = (data_fromhis_zcor_flat[:,:,:-1]==0)
-        #data_fromhis_zcor_flat[id_incorrectlayercor] = 
-        #id_incorrectlayer_3D = np.tile(id_incorrectlayer.T,(data_fromhis_zcor_flat.shape[2],1,1)).T
-        #data_fromhis_zcor_flat[id_incorrectlayer_3D]
-        #temporary mask function since the D-Flow FM hisvariables to not (yet) contain masks, based on 0 values in the zcor variable
-        #bool_zcor0 = (data_fromhis_zcor_flat[:,:,:-1]==0).all(axis=0)
-        """
         #bool_zcor_equaltop = (data_fromhis_zcor_flat[:,1:]==data_fromhis_zcor_flat[:,-1:]).all(axis=0)
         mask_array = np.tile(bool_zcen_equaltop,(data_fromhis_zcor_flat.shape[0],1))
         dfmtools_hisvar_flat.mask = mask_array
