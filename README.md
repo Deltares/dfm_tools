@@ -180,10 +180,8 @@ Feature wishlist
 	- contour plot of surfaces (e.g. cotidal chart), with polycollection (FM grid) or regular grid, exclude 'land' (shapely overlap between cells of two grids? or create polygon around all edges of original grid (also islands) and use that to cut the resulting regular grid)
 - improve z,t-plots from hisfile:
 	- example in test_get_nc.test_gethismodeldata()
-	- keep cen2cor(time_cen) definition?
-	- WARNING: part of the z interfaces/center data in dflowfm hisfile is currently wrong, check your figures carefully
+	- WARNING: part of the z interfaces/center data in dflowfm hisfile is currently wrong, check your figures carefully. Most of it is handled correctly
 	- layer argument now has to be provided when retrieving zcoordinate_c (centers) from hisfile, but not when retrieving zcoordinate_w (interfaces), align this.
-	- check center/corner correctness, pcolormesh does not completely correspond with contours
 - improve cartopy satellite/basemap background:
 	- add test if cartopy is installed before importing it, since these are optional modules (also cartopy import in user script, so does not work)
 	- add more settings for linewidth/facecolor/alpha/linecolor
