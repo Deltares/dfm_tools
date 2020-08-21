@@ -94,15 +94,13 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     
 
     #TIMES CHECKS
-    """
-    dimn_time = get_varname_fromnc(data_nc,'time',vardim='dim')
-    varn_time = get_varname_fromnc(data_nc,'time',vardim='var')
-    if dimn_time is None: #dimension with a name close to 'time' is not available in variable, try to get time dimension from 'time' variable
-        try:
-            dimn_time = data_nc.variables[varn_time].dimensions[0]
-        except:
-            print('using dimn_time as variable to get dimn_time failed')
-    """
+    #dimn_time = get_varname_fromnc(data_nc,'time',vardim='dim')
+    #varn_time = get_varname_fromnc(data_nc,'time',vardim='var')
+    #if dimn_time is None: #dimension with a name close to 'time' is not available in variable, try to get time dimension from 'time' variable
+    #    try:
+    #        dimn_time = data_nc.variables[varn_time].dimensions[0]
+    #    except:
+    #        print('using dimn_time as variable to get dimn_time failed')
     varn_time, dimn_time = get_variable_timevardim(file_nc=file_nc, varname=varname)
     if dimn_time not in nc_varobject.dimensions: #dimension time is not available in variable
         if timestep is not None:
