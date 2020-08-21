@@ -304,6 +304,7 @@ def test_gethismodeldata(file_nc):
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
     """
     this test retrieves his data and plots it
+    file_nc = os.path.join(dir_testinput,'vanNithin','tttz_0000_his.nc')
     file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen\\computations\\run01\\DFM_OUTPUT_Grevelingen-FM\\Grevelingen-FM_0000_his.nc')
     dir_output = './test_output'
     """
@@ -312,7 +313,7 @@ def test_gethismodeldata(file_nc):
     import matplotlib.pyplot as plt
     plt.close('all')
     
-    from dfm_tools.get_nc import get_ncmodeldata
+    from dfm_tools.get_nc import get_ncmodeldata, plot_ztdata
     
     def cen2cor(time_cen):
         #convert time centers2corners (more accurate representation in zt-plot, but can also be skipped)
@@ -328,7 +329,7 @@ def test_gethismodeldata(file_nc):
         station_zt = 'GTSO-02'
     elif 'tttz' in file_nc: #NITHIN
         #file_nc = os.path.join(dir_testinput,'vanNithin','tttz_0000_his.nc')
-        station = ['Peiraias', 'Ovrios_2','Ovrios','Ovrios']
+        station = ['Peiraias', 'Ovrios_2','Ovrios','Ovrios','Ortholithi']
         station_zt = 'Ortholithi'
     
     print('plot bedlevel from his')
@@ -336,20 +337,20 @@ def test_gethismodeldata(file_nc):
     fig, ax = plt.subplots()
     ax.plot(data_fromhis.var_stations.iloc[:,0],data_fromhis,'-')
     ax.tick_params('x',rotation=90)
-    plt.savefig(os.path.join(dir_output,'%s_bedlevel'%(os.path.basename(file_nc).replace('.',''))))
+    fig.savefig(os.path.join(dir_output,'%s_bedlevel'%(os.path.basename(file_nc).replace('.',''))))
 
     print('plot waterlevel from his')
     data_fromhis = get_ncmodeldata(file_nc=file_nc, varname='waterlevel', timestep='all', station=station)#, multipart=False)
     fig, ax = plt.subplots()
     ax.plot(data_fromhis.var_times,data_fromhis,'-')
-    plt.savefig(os.path.join(dir_output,'%s_waterlevel'%(os.path.basename(file_nc).replace('.',''))))
+    fig.savefig(os.path.join(dir_output,'%s_waterlevel'%(os.path.basename(file_nc).replace('.',''))))
     
     print('plot salinity from his')
     data_fromhis = get_ncmodeldata(file_nc=file_nc, varname='salinity', timestep='all', layer=5, station=station)#, multipart=False)
     data_fromhis_flat = data_fromhis[:,:,0]
     fig, ax = plt.subplots()
     ax.plot(data_fromhis.var_times,data_fromhis_flat,'-')
-    plt.savefig(os.path.join(dir_output,'%s_salinity'%(os.path.basename(file_nc).replace('.',''))))
+    fig.savefig(os.path.join(dir_output,'%s_salinity'%(os.path.basename(file_nc).replace('.',''))))
 
     print('plot salinity over depth')
     #depth retrieval is probably wrong
@@ -358,29 +359,26 @@ def test_gethismodeldata(file_nc):
     fig, ax = plt.subplots()
     ax.plot(data_fromhis[0,:,:].T, data_fromhis_depth[0,:,:].T,'-')
     ax.legend(data_fromhis.var_stations.iloc[:,0])
-    plt.savefig(os.path.join(dir_output,'%s_salinityoverdepth'%(os.path.basename(file_nc).replace('.',''))))
+    fig.savefig(os.path.join(dir_output,'%s_salinityoverdepth'%(os.path.basename(file_nc).replace('.',''))))
 
-    print('zt temperature plot')
-    #WARNING: layers in dfowfm hisfile are currently incorrect, check your figures carefully
-    data_fromhis_zcen = get_ncmodeldata(file_nc=file_nc, varname='zcoordinate_c', timestep=range(40,100), layer= 'all', station=station_zt)
-    data_fromhis_zcor = get_ncmodeldata(file_nc=file_nc, varname='zcoordinate_w', timestep=range(40,100), station=station_zt)
+    print('zt temperature plot and wl')
     data_fromhis_temp = get_ncmodeldata(file_nc=file_nc, varname='temperature', timestep=range(40,100), layer= 'all', station=station_zt)
-    #time_cor = cen2cor(data_fromhis_temp.var_times)
-    time_cen = data_fromhis_temp.var_times
-    time_int = (time_cen.iloc[2]-time_cen.iloc[1])
-    time_cor = data_fromhis_temp.var_times-time_int/2
-    # generate 2 2d grids for the x & y bounds (you can also give one 2D array as input in case of eg time varying z coordinates)
-    time_mesh_cor = np.tile(time_cor,(data_fromhis_zcor.shape[-1],1)).T
-    time_mesh_cen = np.tile(data_fromhis_temp.var_times,(data_fromhis_zcen.shape[-1],1)).T
-    fig, ax = plt.subplots(figsize=(12,5))
-    c = ax.pcolormesh(time_mesh_cor, data_fromhis_zcor[:,0,:], data_fromhis_temp[:,0,:],cmap='jet')
-    fig.colorbar(c)
+    data_fromhis_wl = get_ncmodeldata(file_nc=file_nc, varname='waterlevel', timestep=range(40,100), station=station_zt)#, multipart=False)
+    fig, (axwl,ax1) = plt.subplots(2,1,figsize=(12,7),gridspec_kw={'height_ratios':[1,2]},sharex=True,sharey=True)
+    statid_subset = data_fromhis_wl.var_stations['station_id'].tolist().index(station_zt)
+    axwl.plot(data_fromhis_wl.var_times.iloc[[0,-1]],[0,0],'k-',linewidth=0.5)
+    ax1.plot(data_fromhis_wl.var_times.iloc[[0,-1]],[0,0],'k-',linewidth=0.5)
+    axwl.plot(data_fromhis_wl.var_times,data_fromhis_wl[:,statid_subset],'-',label='wl %s'%(station_zt))
+    c = plot_ztdata(dfmtools_hisvar=data_fromhis_temp, ax=ax1, statid_subset=0, cmap='jet')
+    fig.colorbar(c,ax=axwl)
+    fig.colorbar(c,ax=ax1)
     #contour
-    CS = ax.contour(time_mesh_cen,data_fromhis_zcen[:,0,:],data_fromhis_temp[:,0,:],6, colors='k', linewidths=0.8, linestyles='solid')
-    ax.clabel(CS, fontsize=10)
-    plt.savefig(os.path.join(dir_output,'%s_zt_temp'%(os.path.basename(file_nc).replace('.',''))))
-
-    
+    CS = plot_ztdata(dfmtools_hisvar=data_fromhis_temp, ax=ax1, statid_subset=0, only_contour=True, levels=6, colors='k', linewidths=0.8, linestyles='solid')
+    ax1.clabel(CS, fontsize=10)
+    fig.tight_layout()
+    fig.savefig(os.path.join(dir_output,'%s_zt_temp'%(os.path.basename(file_nc).replace('.',''))))
+    axwl.set_ylim(-2,0.5)
+    fig.savefig(os.path.join(dir_output,'%s_zt_temp_zoomwl'%(os.path.basename(file_nc).replace('.',''))))
 
     
     
