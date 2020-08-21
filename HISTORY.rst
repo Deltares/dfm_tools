@@ -1,6 +1,9 @@
 =======
 History
 =======
+0.7.26 (2020-08-20)
+------------------
+* implemented first version of a zt-plot function for data from D-Flow FM hisfile
 
 0.7.24 (2020-07-13)
 ------------------
