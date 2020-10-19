@@ -63,18 +63,17 @@ class UGrid:
         def nodexyfaces2edgeverts(node_x,node_y,edge_nodes, face_x,face_y,edge_faces):
             quatranglese = edge_nodes-1 #convert 1-based indexing of cell numbering in ugrid to 0-based indexing
             quatranglesf = edge_faces-1 #convert 1-based indexing of cell numbering in ugrid to 0-based indexing
-            #quatranglesf[quatranglesf==-1] = np.nan
             #https://stackoverflow.com/questions/49640311/matplotlib-unstructered-quadrilaterals-instead-of-triangles
             #https://stackoverflow.com/questions/52202014/how-can-i-plot-2d-fem-results-using-matplotlib
             yze = np.c_[node_x,node_y]
             yzf = np.c_[face_x,face_y]
-            yzf = np.concatenate([yzf,[[np.nan,np.nan]]]) #add dummy row
+            yzf = np.concatenate([yzf,[[np.nan,np.nan]]]) #add dummy row to index -1, since edge_faces has one 0-value when it is a model border edge. This gets turned into -1 towards quatranglesf (last index), which must be nan eventually
             vertse= yze[quatranglese]
             vertsf= yzf[quatranglesf]
             vertse[quatranglese.mask==True,:] = np.nan #remove all masked values by making them nan
             vertsf[quatranglesf.mask==True,:] = np.nan #remove all masked values by making them nan
             verts_raw = np.concatenate([vertse,vertsf],axis=1)
-            edge_verts = verts_raw[:,[0,2,1,3],:]
+            edge_verts = verts_raw[:,[0,2,1,3],:] #set ordering in (counter)clockwise direction instead of updown-leftright. second column will sometimes contain nans, then the face is not plotted.
             return edge_verts
         
         data_nc = Dataset(file_nc)
