@@ -139,6 +139,7 @@ def get_varname_fromnc(data_nc,varname_requested,vardim):
         varnames_list['mesh2d_edge_y'] = ['mesh2d_edge_y','','','','',''] # y-coordinate of velocity-points
         
         varnames_list['mesh2d_edge_nodes'] = ['mesh2d_edge_nodes','NetLink','','','',''] # 'link between two netnodes' / 'Mapping from every edge to the two nodes that it connects'
+        varnames_list['mesh2d_edge_faces'] = ['mesh2d_edge_faces','','','','',''] # 'Neighboring faces of mesh edges'
         varnames_list['mesh2d_face_nodes'] = ['mesh2d_face_nodes','NetElemNode','mesh2d_agg_face_nodes','','',''] # 
         
         varnames_list['mesh2d_face_x_bnd'] = ['mesh2d_face_x_bnd','FlowElemContour_x','mesh2d_agg_face_x_bnd','','',''] # x-coordinates of flow element contours
@@ -164,7 +165,7 @@ def get_varname_fromnc(data_nc,varname_requested,vardim):
         #dimnames_list = pd.DataFrame()
         varnames_list['nmesh2d_node'] = ['nmesh2d_node','mesh2d_nNodes','nNetNode','','','',''] # number of nodes
         varnames_list['nmesh2d_face'] = ['nmesh2d_face','mesh2d_nFaces','nNetElem','','','',''] # number of faces
-        varnames_list['nmesh2d_edge'] = ['nmesh2d_edge','nNetLink','','','','',''] # number of velocity-points
+        varnames_list['nmesh2d_edge'] = ['nmesh2d_edge','mesh2d_nEdges','nNetLink','','','',''] # number of velocity-points
         varnames_list['nFlowElem'] = ['nFlowElem','','','','','',''] # number of flow elements
         varnames_list['nFlowLink'] = ['nFlowLink','','','','','',''] # number of flow elements
         

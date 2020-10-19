@@ -523,7 +523,7 @@ def get_netdata(file_nc, multipart=None):
             #mesh2d_edge_x_all = np.ma.empty((0,))
             #mesh2d_edge_y_all = np.ma.empty((0,))
             if edge_verts is not None:
-                edge_verts_all = np.ma.empty((0,2,edge_verts.shape[2]))
+                edge_verts_all = np.ma.empty((0,4,edge_verts.shape[2])) #create edge verts, which will contain the two edge node coordinates, as well as the two center coordinates from neighbouring faces
             else:
                 edge_verts_all = None
             
