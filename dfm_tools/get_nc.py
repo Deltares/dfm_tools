@@ -604,6 +604,118 @@ def plot_netmapdata(verts, values=None, ax=None, **kwargs):
 
 
 
+def plot_background(ax=None, resolution=1, projection=None, google_style='satellite', gridlines=False, nticks=6, features=None, alpha=1, latlon_format=False):
+    """
+    
+
+    Parameters
+    ----------
+    ax : cartopy.mpl.geoaxes.GeoAxesSubplot, optional
+        DESCRIPTION. The default is None.
+    resolution : int, optional
+        DESCRIPTION. The default is 1.
+    projection : TYPE, optional
+        DESCRIPTION. The default is None.
+    google_style : Nonetype or string, optional
+       The style for the Google Maps tiles. One of None, ‘street’, ‘satellite’, ‘terrain’, and ‘only_streets’. The default is 'satellite'.
+    nticks : TYPE, optional
+        DESCRIPTION. The default is 6.
+    add_features : string, optional
+        One of None,'tiles','ocean','water','land','countries','coastlines'. The default is None.
+    latlon_format : bool, optional
+        DESCRIPTION. The default is False.
+
+    Raises
+    ------
+    Exception
+        DESCRIPTION.
+
+    Returns
+    -------
+    ax : TYPE
+        DESCRIPTION.
+
+    """
+    
+    import matplotlib.pyplot as plt
+    import numpy as np
+    
+    from dfm_tools.testutils import try_importmodule
+    try_importmodule(modulename='cartopy') #check if cartopy was installed since it is an optional module, also happens in plot_cartopybasemap()
+
+    import cartopy
+    import cartopy.crs as ccrs
+    import cartopy.io.img_tiles as cimgt
+    import cartopy.feature as cfeature 
+    import cartopy.mpl.ticker as cticker
+    
+    
+    if ax is None: #provide axis projection on initialisation, cannot be edited later on
+        if projection is None:
+            projection=ccrs.Mercator() #projection of cimgt.GoogleTiles, useful default
+        elif type(projection) is cartopy._epsg._EPSGProjection: #this is not all, there are more valid cartopy projections
+            pass
+        elif type(projection) is int:
+            projection = ccrs.epsg(projection)
+        else:
+            raise Exception('argument projection should be of type integer or cartopy._epsg._EPSGProjection')
+        fig, ax = plt.subplots(subplot_kw={'projection': projection})
+        #ax = plt.axes(projection=projection)
+    elif type(ax) is cartopy.mpl.geoaxes.GeoAxesSubplot:
+        if projection is not None:
+            raise Exception('arguments ax and projection should not be provided at the same time')
+    else:
+        raise Exception('argument ax should be of type cartopy.mpl.geoaxes.GeoAxesSubplot, leave argument empty or create correct instance with:\nimport cartopy.crs as ccrs\nfig, (ax1,ax2) = plt.subplots(1,2,figsize=(10,5), subplot_kw={"projection": ccrs.epsg(28992)})')
+    
+    
+    
+    if gridlines:
+        ax.gridlines(draw_labels=True)
+    elif nticks is not None: #only look at nticks if gridlines are not used
+        extent = ax.get_extent()
+        ax.set_xticks(np.linspace(extent[0],extent[1],nticks))
+        ax.set_yticks(np.linspace(extent[2],extent[3],nticks))
+    
+    
+    if google_style is not None:
+        request = cimgt.GoogleTiles(style=google_style)
+        ax.add_image(request,resolution)
+
+
+    if features is not None:
+        if type(features) is str:
+            features = [features]
+        elif type(features) is not list:
+            raise Exception('argument features should be of type list of str')
+        
+        if 'ocean' in features or 'water' in features:
+            feat = cfeature.NaturalEarthFeature(category='physical', name='ocean', facecolor=cfeature.COLORS['water'], scale='10m', edgecolor='face', alpha=alpha)
+            ax.add_feature(feat)
+        if 'land' in features:
+            feat = cfeature.NaturalEarthFeature(category='physical', name='land', facecolor=cfeature.COLORS['land'], scale='10m', edgecolor='face', alpha=alpha)
+            ax.add_feature(feat)
+        if 'countries' in features:
+            feat = cfeature.NaturalEarthFeature(category='cultural', name='admin_0_countries', scale='10m', facecolor='none', alpha=alpha)
+            ax.add_feature(feat, edgecolor='gray',linewidth=0.5)
+        if 'coastlines' in features:
+            ax.coastlines(resolution='10m',edgecolor='gray',linewidth=0.5, alpha=alpha)
+    
+    if latlon_format:
+        lon_formatter = cticker.LongitudeFormatter()
+        lat_formatter = cticker.LatitudeFormatter()
+        ax.xaxis.set_major_formatter(lon_formatter)
+        ax.yaxis.set_major_formatter(lat_formatter)
+
+    
+    return ax
+    
+
+
+
+
+
+
+
 def plot_ztdata(dfmtools_hisvar, statid_subset=0, ax=None, mask_data=True, only_contour=False, **kwargs):
     """
     
