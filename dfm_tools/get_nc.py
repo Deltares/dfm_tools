@@ -604,7 +604,7 @@ def plot_netmapdata(verts, values=None, ax=None, **kwargs):
 
 
 
-def plot_background(ax=None, resolution=1, projection=None, google_style='satellite', gridlines=False, nticks=6, features=None, alpha=1, latlon_format=False):
+def plot_background(ax=None, resolution=1, projection=None, google_style='satellite', nticks=6, features=None, latlon_format=False, gridlines=False, alpha=1):
     """
     
 
@@ -620,10 +620,14 @@ def plot_background(ax=None, resolution=1, projection=None, google_style='satell
        The style for the Google Maps tiles. One of None, ‘street’, ‘satellite’, ‘terrain’, and ‘only_streets’. The default is 'satellite'.
     nticks : TYPE, optional
         DESCRIPTION. The default is 6.
-    add_features : string, optional
+    features : string, optional
         One of None,'tiles','ocean','water','land','countries','coastlines'. The default is None.
     latlon_format : bool, optional
         DESCRIPTION. The default is False.
+    gridlines : TYPE, optional
+        DESCRIPTION. The default is False.
+    alpha : TYPE, optional
+        DESCRIPTION. The default is 1.
 
     Raises
     ------
