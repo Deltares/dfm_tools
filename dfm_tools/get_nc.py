@@ -710,7 +710,7 @@ def plot_background(ax=None, resolution=1, projection=None, google_style='satell
         if 'countries' in features:
             #feat = cfeature.NaturalEarthFeature(category='cultural', name='admin_0_countries', scale='10m', facecolor='none', alpha=alpha) #more detail than line below
             #ax.add_feature(feat, edgecolor='gray',linewidth=0.5)
-            ax.add_feature(cfeature.BORDERS, facecolor='none', edgecolor='gray', linewidth=0.5, alpha=alpha)
+            ax.add_feature(cfeature.BORDERS, facecolor='none', edgecolor='gray', linewidth=0.5, alpha=alpha) #, linestyle=':'
         if 'coastlines' in features:
             ax.coastlines(resolution='10m',edgecolor='gray',linewidth=0.5, alpha=alpha) #more detail than line below
             #ax.add_feature(cfeature.COASTLINE, facecolor='none', edgecolor='k',linewidth=0.5, alpha=alpha)
