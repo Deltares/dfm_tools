@@ -656,13 +656,13 @@ def plot_background(ax=None, resolution=1, projection=None, google_style='satell
     
     if ax is None: #provide axis projection on initialisation, cannot be edited later on
         if projection is None:
-            projection=ccrs.Mercator() #projection of cimgt.GoogleTiles, useful default
-        elif type(projection) is cartopy._epsg._EPSGProjection: #this is not all, there are more valid cartopy projections
+            projection=ccrs.PlateCarree() #projection of cimgt.GoogleTiles, useful default
+        elif isinstance(projection, (cartopy._epsg._EPSGProjection, cartopy._crs.CRS)): #checks if argument is an EPSG projection or CRS projection (like PlateCarree, Mercator etc)
             pass
         elif type(projection) is int:
             projection = ccrs.epsg(projection)
         else:
-            raise Exception('argument projection should be of type integer or cartopy._epsg._EPSGProjection')
+            raise Exception('argument projection should be of type integer, cartopy._crs.CRS or cartopy._epsg._EPSGProjection')
         fig, ax = plt.subplots(subplot_kw={'projection': projection})
         #ax = plt.axes(projection=projection)
     elif type(ax) is cartopy.mpl.geoaxes.GeoAxesSubplot:
