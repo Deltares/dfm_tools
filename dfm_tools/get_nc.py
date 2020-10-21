@@ -621,7 +621,7 @@ def plot_background(ax=None, resolution=1, projection=None, google_style='satell
     nticks : TYPE, optional
         DESCRIPTION. The default is 6.
     features : string, optional
-        One of None,'tiles','ocean','water','land','countries','coastlines'. The default is None.
+        One of None,'ocean','land','countries','coastlines'. The default is None.
     latlon_format : bool, optional
         DESCRIPTION. The default is False.
     gridlines : TYPE, optional
@@ -692,18 +692,29 @@ def plot_background(ax=None, resolution=1, projection=None, google_style='satell
         elif type(features) is not list:
             raise Exception('argument features should be of type list of str')
         
-        if 'ocean' in features or 'water' in features:
-            feat = cfeature.NaturalEarthFeature(category='physical', name='ocean', facecolor=cfeature.COLORS['water'], scale='10m', edgecolor='face', alpha=alpha)
-            ax.add_feature(feat)
+        valid_featurelist = ['ocean','rivers','land','countries','coastlines']
+        invalid_featurelist = [x for x in features if x not in valid_featurelist]
+        if invalid_featurelist != []:
+            raise Exception('invalid features %s requested, possible are: %s'%(invalid_featurelist, valid_featurelist))
+        
+        if 'ocean' in features:
+            #feat = cfeature.NaturalEarthFeature(category='physical', name='ocean', facecolor=cfeature.COLORS['water'], scale='10m', edgecolor='face', alpha=alpha)
+            #ax.add_feature(feat)
+            ax.add_feature(cfeature.OCEAN, facecolor=cfeature.COLORS['water'], edgecolor='face', alpha=alpha)
+        if 'rivers' in features:
+            ax.add_feature(cfeature.RIVERS, facecolor=cfeature.COLORS['water'], edgecolor='face', alpha=alpha)
         if 'land' in features:
-            feat = cfeature.NaturalEarthFeature(category='physical', name='land', facecolor=cfeature.COLORS['land'], scale='10m', edgecolor='face', alpha=alpha)
-            ax.add_feature(feat)
+            #feat = cfeature.NaturalEarthFeature(category='physical', name='land', facecolor=cfeature.COLORS['land'], scale='10m', edgecolor='face', alpha=alpha)
+            #ax.add_feature(feat)
+            ax.add_feature(cfeature.LAND, facecolor=cfeature.COLORS['land'], edgecolor='face', alpha=alpha)
         if 'countries' in features:
-            feat = cfeature.NaturalEarthFeature(category='cultural', name='admin_0_countries', scale='10m', facecolor='none', alpha=alpha)
-            ax.add_feature(feat, edgecolor='gray',linewidth=0.5)
+            #feat = cfeature.NaturalEarthFeature(category='cultural', name='admin_0_countries', scale='10m', facecolor='none', alpha=alpha) #more detail than line below
+            #ax.add_feature(feat, edgecolor='gray',linewidth=0.5)
+            ax.add_feature(cfeature.BORDERS, facecolor='none', edgecolor='gray', linewidth=0.5, alpha=alpha)
         if 'coastlines' in features:
-            ax.coastlines(resolution='10m',edgecolor='gray',linewidth=0.5, alpha=alpha)
-    
+            ax.coastlines(resolution='10m',edgecolor='gray',linewidth=0.5, alpha=alpha) #more detail than line below
+            #ax.add_feature(cfeature.COASTLINE, facecolor='none', edgecolor='k',linewidth=0.5, alpha=alpha)
+            
     if latlon_format:
         lon_formatter = cticker.LongitudeFormatter()
         lat_formatter = cticker.LatitudeFormatter()
