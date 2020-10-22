@@ -88,9 +88,9 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     
     #CHECK IF VARNAME IS STATION NAMES (STRINGS), OFFER ALTERNATIVE RETRIEVAL METHOD
     if nc_varobject.dtype == '|S1':
-        print('variable "%s" should probably be retrieved with separate function:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist; station_names = get_hisstationlist(file_nc=file_nc, varname="%s") (or use any varname there to retrieve corresponding station list)'%(varname,varname))
+        print('variable "%s" should probably be retrieved with separate function:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist\nstation_names = get_hisstationlist(file_nc=file_nc, varname="%s") (or use any varname there to retrieve corresponding station list)'%(varname,varname))
     if 'time' in varname.lower():
-        print('variable "%s" should probably be retrieved with separate function:\nfrom dfm_tools.get_nc_helpers import get_timesfromnc; times = get_timesfromnc(file_nc=file_nc, varname="%s")'%(varname, varname))
+        print('variable "%s" should probably be retrieved with separate function:\nfrom dfm_tools.get_nc_helpers import get_timesfromnc\ntimes = get_timesfromnc(file_nc=file_nc, varname="%s")'%(varname, varname))
     
 
     #TIMES CHECKS
@@ -110,7 +110,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
         time_length = data_nc_timevar.shape[0]
         data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname, retrieve_ids=[0,-1]) #get selection of times
         if timestep is None:
-            raise Exception('ERROR: netcdf variable contains a time dimension, but parameter timestep not provided (can be "all"), first and last timestep:\n%s\nretrieve entire times list:\nfrom dfm_tools.get_nc_helpers import get_timesfromnc; times_pd = get_timesfromnc(file_nc=file_nc, varname="%s")'%(pd.DataFrame(data_nc_datetimes_pd),varname))
+            raise Exception('ERROR: netcdf variable contains a time dimension, but parameter timestep not provided (can be "all"), first and last timestep:\n%s\nretrieve entire times list:\nfrom dfm_tools.get_nc_helpers import get_timesfromnc\ntimes_pd = get_timesfromnc(file_nc=file_nc, varname="%s")'%(pd.DataFrame(data_nc_datetimes_pd),varname))
         #convert timestep to list of int if it is not already
         if timestep is str('all'):
             data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname) #get all times
@@ -191,7 +191,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
         #get appropriate station list
         station_name_list_pd = get_hisstationlist(file_nc,varname=varname)
         if station is None:
-            raise Exception('ERROR: netcdf variable contains a station/general_structures dimension, but argument station not provided (can be "all"), available stations/crs/generalstructures:\n%s\nretrieve entire station list:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist; stations_pd = get_hisstationlist(file_nc,varname="%s")'%(station_name_list_pd, varname))
+            raise Exception('ERROR: netcdf variable contains a station/general_structures dimension, but argument station not provided (can be "all"), available stations/crs/generalstructures:\n%s\nretrieve entire station list:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist\nstations_pd = get_hisstationlist(file_nc,varname="%s")'%(station_name_list_pd, varname))
         #convert station to list of int if it is not already
         if station is str('all'):
             station_ids = range(len(station_name_list_pd))
