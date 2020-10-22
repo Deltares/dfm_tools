@@ -1082,13 +1082,16 @@ def test_workinprogress():
     plt.savefig(os.path.join(dir_output,'hirlam_magn_pcolor'))
     
     
-    
+    #plt.close('all')
+    from dfm_tools.regulargrid import center2corner
     #COSMO
     file_nc = r'p:\1220688-lake-kivu\2_data\COSMO\COSMOCLM_2012_out02_merged_4Wouter.nc'
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
     
     xcen = get_ncmodeldata(file_nc=file_nc, varname='lon')
     ycen = get_ncmodeldata(file_nc=file_nc, varname='lat')
+    xcor = center2corner(xcen)
+    ycor = center2corner(ycen)
     data_U10M = get_ncmodeldata(file_nc=file_nc, varname='U_10M', timestep=range(20), get_linkedgridinfo=True)
     data_V10M = get_ncmodeldata(file_nc=file_nc, varname='V_10M', timestep=range(20), get_linkedgridinfo=True)
     #xcen, ycen = np.meshgrid(data_lon, data_lat)
@@ -1105,7 +1108,8 @@ def test_workinprogress():
     fig, axs = plt.subplots(1,3, figsize=(16,6))
     for iT, timestep in enumerate([0,1,10]):
         ax=axs[iT]
-        pc = ax.pcolor(xcen, ycen, magn[timestep,:,:], cmap='jet')
+        #pc = ax.pcolor(xcen, ycen, magn[timestep,:,:], cmap='jet')
+        pc = ax.pcolor(xcor, ycor, magn[timestep,:,:], cmap='jet')
         pc.set_clim([0,5])
         cbar = fig.colorbar(pc, ax=ax)
         cbar.set_label('velocity magnitude (%s)'%(data_V10M.var_ncvarobject.units))
@@ -1172,6 +1176,10 @@ def test_workinprogress():
     plt.savefig(os.path.join(dir_output,'ERA5_msl_pcolor'))
 
 
+
+
+
+
     #SFINCS
     file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\01_Implementation\08_restartfile\sfincs_map.nc'
     #file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\03_Application\22_Tsunami_Japan_Sendai\sfincs_map.nc'
@@ -1179,7 +1187,7 @@ def test_workinprogress():
     
     data_fromnc_x = get_ncmodeldata(file_nc=file_nc, varname='x')
     data_fromnc_y = get_ncmodeldata(file_nc=file_nc, varname='y')
-    data_fromnc_zs = get_ncmodeldata(file_nc=file_nc, varname='zs', timestep='all')
+    data_fromnc_zs = get_ncmodeldata(file_nc=file_nc, varname='zs', timestep='all', get_linkedgridinfo=True)
 
     fig, ax = plt.subplots()
     ax.plot(data_fromnc_x, data_fromnc_y,'-b',linewidth=0.2)

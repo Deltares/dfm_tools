@@ -58,7 +58,7 @@ class Polygon:
         self.comments = comments
         #self.line_array = np.c_[self.x, self.y]
         
-    def fromfile(file_pol, pd_output=False, obj_output=False):
+    def fromfile(file_pol, pd_output=False, tekmap_output=False):#, obj_output=False):
         """
         reads a pli boundary into an array
         
@@ -97,7 +97,7 @@ class Polygon:
             pol_comment_list = []
             pol_comment_temp = []
             pol_data_pd_list = []
-            pol_object_list = []
+            #pol_object_list = []
             iLine=0
             while iLine<=len(lines)-1:
                 line_str = lines[iLine].split()
@@ -117,7 +117,7 @@ class Polygon:
                     pol_comment_list.append(pol_comment_temp)
                     
                     #convert shape numbers to int
-                    line_shp = [int(x) for x in lines[iLine].split()]
+                    line_shp = [int(x) for x in lines[iLine].split()] #eg [1150, 10, 10] if it is a tekal mapfile
                     iLine=iLine+1
                     len_pol=int(line_shp[0])
                     
@@ -130,31 +130,42 @@ class Polygon:
                     pol_data_list.append(data_pol)
                     if len(pol_comment_temp)==data_pol.shape[1]: #expected format
                         pol_data_pd = pd.DataFrame(data_pol,columns=pol_comment_temp)
-                        if 'date' in pol_comment_temp[0].lower() and 'time' in pol_comment_temp[1].lower():
-                            #first convert columns to integers, since they were before
-                            #pol_data_pd.iloc[:,0] = pol_data_pd.iloc[:,0].astype(int)
-                            #pol_data_pd.iloc[:,1] = pol_data_pd.iloc[:,1].astype(int)
-                            try:
-                                #add datetime column with parsed dates
-                                pol_data_datetime = pd.to_datetime(pol_data_pd.iloc[:,0]*1000000+pol_data_pd.iloc[:,1],format='%Y%m%d%H%M%S') #this does not work anymore
-                                #pol_data_datetime = (pol_data_pd.iloc[:,0]*1000000+pol_data_pd.iloc[:,1]).astype('datetime64[ns]').dt.round(freq='S')
-                                pol_data_pd.insert(0, 'datetime', pol_data_datetime)
-                            except:
-                                warnings.warn('conversion from date/time column to datetime failed, incorrect format of first two columns?')
-                                print('conversion from date/time column to datetime failed, incorrect format of first two columns?')
+                        if len(line_shp) == 2:
+                            if 'date' in pol_comment_temp[0].lower() and 'time' in pol_comment_temp[1].lower():
+                                #first convert columns to integers, since they were before
+                                #pol_data_pd.iloc[:,0] = pol_data_pd.iloc[:,0].astype(int)
+                                #pol_data_pd.iloc[:,1] = pol_data_pd.iloc[:,1].astype(int)
+                                try:
+                                    #add datetime column with parsed dates
+                                    pol_data_datetime = pd.to_datetime(pol_data_pd.iloc[:,0]*1000000+pol_data_pd.iloc[:,1],format='%Y%m%d%H%M%S') #this does not work anymore
+                                    #pol_data_datetime = (pol_data_pd.iloc[:,0]*1000000+pol_data_pd.iloc[:,1]).astype('datetime64[ns]').dt.round(freq='S')
+                                    pol_data_pd.insert(0, 'datetime', pol_data_datetime)
+                                except:
+                                    warnings.warn('conversion from date/time column to datetime failed, incorrect format of first two columns?')
+                                    print('conversion from date/time column to datetime failed, incorrect format of first two columns?')
+                        elif len(line_shp) == 3: #tekal 2D map files
+                            data_pol_map = data_pol.reshape([line_shp[0]//line_shp[2],line_shp[2],line_shp[1]])
+                        elif len(line_shp) == 4: #tekal 3D map files. should not be the same but it is for the one example file
+                            data_pol_map = data_pol.reshape([line_shp[0]//line_shp[2],line_shp[2],line_shp[1]])
+                        else:
+                            raise Exception('tekal file reading of 1 or more than 4 dimensions is not possible, it has this shape: %s'%(line_shp))
                     else:
                         pol_data_pd = pd.DataFrame(data_pol)
                     pol_data_pd_list.append(pol_data_pd)
                     
-                    pol_object = Polygon(data=data_pol, name=line_str[0], comments=pol_comment_temp)
-                    pol_object_list.append(pol_object)
+                    #pol_object = Polygon(data=data_pol, name=line_str[0], comments=pol_comment_temp)
+                    #pol_object_list.append(pol_object)
                     
                     # reset comment list for next block
                     pol_comment_temp = []
         if pd_output is True:
             return pol_data_pd_list
-        elif obj_output is True:
-            return pol_object_list
+        elif tekmap_output:
+            if len(pol_comment_list) > 1:
+                raise Exception('multiple tekal maps not anticipated yet')
+            return data_pol_map, pol_comment_list[0]
+        #elif obj_output is True:
+        #    return pol_object_list
         else:
             return pol_data_list, pol_name_list, pol_comment_list
             
@@ -164,6 +175,6 @@ class Polygon:
 
         
         #line_array = linebuilder.line_array
-        pol_frominput = Polygon(linebuilder.xs, linebuilder.ys)
+        pol_frominput = Polygon(LineBuilder.xs, LineBuilder.ys)
         
         return pol_frominput

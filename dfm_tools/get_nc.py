@@ -88,9 +88,9 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     
     #CHECK IF VARNAME IS STATION NAMES (STRINGS), OFFER ALTERNATIVE RETRIEVAL METHOD
     if nc_varobject.dtype == '|S1':
-        print('variable "%s" should probably be retrieved with separate function:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist; station_names = get_hisstationlist(file_nc=file_nc, varname="%s") (or use any varname there to retrieve corresponding station list)'%(varname,varname))
+        print('variable "%s" should probably be retrieved with separate function:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist\nstation_names = get_hisstationlist(file_nc=file_nc, varname="%s") (or use any varname there to retrieve corresponding station list)'%(varname,varname))
     if 'time' in varname.lower():
-        print('variable "%s" should probably be retrieved with separate function:\nfrom dfm_tools.get_nc_helpers import get_timesfromnc; times = get_timesfromnc(file_nc=file_nc, varname="%s")'%(varname, varname))
+        print('variable "%s" should probably be retrieved with separate function:\nfrom dfm_tools.get_nc_helpers import get_timesfromnc\ntimes = get_timesfromnc(file_nc=file_nc, varname="%s")'%(varname, varname))
     
 
     #TIMES CHECKS
@@ -110,7 +110,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
         time_length = data_nc_timevar.shape[0]
         data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname, retrieve_ids=[0,-1]) #get selection of times
         if timestep is None:
-            raise Exception('ERROR: netcdf variable contains a time dimension, but parameter timestep not provided (can be "all"), first and last timestep:\n%s\nretrieve entire times list:\nfrom dfm_tools.get_nc_helpers import get_timesfromnc; times_pd = get_timesfromnc(file_nc=file_nc, varname="%s")'%(pd.DataFrame(data_nc_datetimes_pd),varname))
+            raise Exception('ERROR: netcdf variable contains a time dimension, but parameter timestep not provided (can be "all"), first and last timestep:\n%s\nretrieve entire times list:\nfrom dfm_tools.get_nc_helpers import get_timesfromnc\ntimes_pd = get_timesfromnc(file_nc=file_nc, varname="%s")'%(pd.DataFrame(data_nc_datetimes_pd),varname))
         #convert timestep to list of int if it is not already
         if timestep is str('all'):
             data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname) #get all times
@@ -191,7 +191,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
         #get appropriate station list
         station_name_list_pd = get_hisstationlist(file_nc,varname=varname)
         if station is None:
-            raise Exception('ERROR: netcdf variable contains a station/general_structures dimension, but argument station not provided (can be "all"), available stations/crs/generalstructures:\n%s\nretrieve entire station list:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist; stations_pd = get_hisstationlist(file_nc,varname="%s")'%(station_name_list_pd, varname))
+            raise Exception('ERROR: netcdf variable contains a station/general_structures dimension, but argument station not provided (can be "all"), available stations/crs/generalstructures:\n%s\nretrieve entire station list:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist\nstations_pd = get_hisstationlist(file_nc,varname="%s")'%(station_name_list_pd, varname))
         #convert station to list of int if it is not already
         if station is str('all'):
             station_ids = range(len(station_name_list_pd))
@@ -490,7 +490,7 @@ def get_netdata(file_nc, multipart=None):
     num_nodes = [0]
     verts_shape2_all = []
     for iF, file_nc_sel in enumerate(file_ncs):
-        print('analyzing netdata from domain %04d of %04d'%(iF, len(file_ncs)-1))
+        print('analyzing netdata from domain %04d of %04d (counting max number of facenodes)'%(iF, len(file_ncs)-1))
         ugrid = UGrid.fromfile(file_nc_sel)
         verts_shape2_all.append(ugrid.verts.shape[1])
     verts_shape2_max = np.max(verts_shape2_all)
@@ -604,7 +604,7 @@ def plot_netmapdata(verts, values=None, ax=None, **kwargs):
 
 
 
-def plot_background(ax=None, resolution=1, projection=None, google_style='satellite', nticks=6, features=None, latlon_format=False, gridlines=False, alpha=1):
+def plot_background(ax=None, projection=None, google_style='satellite', resolution=1, features=None, nticks=6, latlon_format=False, gridlines=False, **kwargs):
     """
     
 
@@ -612,22 +612,22 @@ def plot_background(ax=None, resolution=1, projection=None, google_style='satell
     ----------
     ax : cartopy.mpl.geoaxes.GeoAxesSubplot, optional
         DESCRIPTION. The default is None.
-    resolution : int, optional
-        DESCRIPTION. The default is 1.
-    projection : TYPE, optional
+    projection : integer, cartopy._crs.CRS or cartopy._epsg._EPSGProjection, optional
         DESCRIPTION. The default is None.
     google_style : Nonetype or string, optional
-       The style for the Google Maps tiles. One of None, ‘street’, ‘satellite’, ‘terrain’, and ‘only_streets’. The default is 'satellite'.
+       The style of the Google Maps tiles. One of None, ‘street’, ‘satellite’, ‘terrain’, and ‘only_streets’. The default is 'satellite'.
+    resolution : int, optional
+        resolution for the Google Maps tiles. 1 works wel for global images, 12 works well for a scale of Grevelingen lake, using 12 on global scale will give you a server timeout. The default is 1.
+    features : string, optional
+        Features to plot, options: None, 'ocean', 'rivers', 'land', 'countries', 'countries_highres', 'coastlines', 'coastlines_highres'. The default is None.
     nticks : TYPE, optional
         DESCRIPTION. The default is 6.
-    features : string, optional
-        One of None,'tiles','ocean','water','land','countries','coastlines'. The default is None.
     latlon_format : bool, optional
         DESCRIPTION. The default is False.
     gridlines : TYPE, optional
         DESCRIPTION. The default is False.
-    alpha : TYPE, optional
-        DESCRIPTION. The default is 1.
+    **kwargs : TYPE
+        additional arguments for ax.add_feature or ax.coastlines(). examples arguments and values are: alpha=0.5, facecolor='none', edgecolor='gray', linewidth=0.5, linestyle=':'
 
     Raises
     ------
@@ -656,18 +656,18 @@ def plot_background(ax=None, resolution=1, projection=None, google_style='satell
     
     if ax is None: #provide axis projection on initialisation, cannot be edited later on
         if projection is None:
-            projection=ccrs.Mercator() #projection of cimgt.GoogleTiles, useful default
-        elif type(projection) is cartopy._epsg._EPSGProjection: #this is not all, there are more valid cartopy projections
+            projection=ccrs.PlateCarree() #projection of cimgt.GoogleTiles, useful default
+        elif isinstance(projection, (cartopy._epsg._EPSGProjection, cartopy._crs.CRS)): #checks if argument is an EPSG projection or CRS projection (like PlateCarree, Mercator etc)
             pass
         elif type(projection) is int:
             projection = ccrs.epsg(projection)
         else:
-            raise Exception('argument projection should be of type integer or cartopy._epsg._EPSGProjection')
+            raise Exception('argument projection should be of type integer, cartopy._crs.CRS or cartopy._epsg._EPSGProjection')
         fig, ax = plt.subplots(subplot_kw={'projection': projection})
         #ax = plt.axes(projection=projection)
     elif type(ax) is cartopy.mpl.geoaxes.GeoAxesSubplot:
         if projection is not None:
-            raise Exception('arguments ax and projection should not be provided at the same time')
+            print('arguments ax and projection are both provided, the projection from the ax is used so the projection argument is ignored')
     else:
         raise Exception('argument ax should be of type cartopy.mpl.geoaxes.GeoAxesSubplot, leave argument empty or create correct instance with:\nimport cartopy.crs as ccrs\nfig, (ax1,ax2) = plt.subplots(1,2,figsize=(10,5), subplot_kw={"projection": ccrs.epsg(28992)})')
     
@@ -692,18 +692,31 @@ def plot_background(ax=None, resolution=1, projection=None, google_style='satell
         elif type(features) is not list:
             raise Exception('argument features should be of type list of str')
         
-        if 'ocean' in features or 'water' in features:
-            feat = cfeature.NaturalEarthFeature(category='physical', name='ocean', facecolor=cfeature.COLORS['water'], scale='10m', edgecolor='face', alpha=alpha)
-            ax.add_feature(feat)
+        valid_featurelist = ['ocean','rivers','land','countries','countries_highres','coastlines','coastlines_highres']
+        invalid_featurelist = [x for x in features if x not in valid_featurelist]
+        if invalid_featurelist != []:
+            raise Exception('invalid features %s requested, possible are: %s'%(invalid_featurelist, valid_featurelist))
+        
+        if 'ocean' in features:
+            #feat = cfeature.NaturalEarthFeature(category='physical', name='ocean', facecolor=cfeature.COLORS['water'], scale='10m', edgecolor='face', alpha=alpha)
+            #ax.add_feature(feat)
+            ax.add_feature(cfeature.OCEAN, **kwargs)
+        if 'rivers' in features:
+            ax.add_feature(cfeature.RIVERS, **kwargs)
         if 'land' in features:
-            feat = cfeature.NaturalEarthFeature(category='physical', name='land', facecolor=cfeature.COLORS['land'], scale='10m', edgecolor='face', alpha=alpha)
-            ax.add_feature(feat)
+            #feat = cfeature.NaturalEarthFeature(category='physical', name='land', facecolor=cfeature.COLORS['land'], scale='10m', edgecolor='face', alpha=alpha)
+            #ax.add_feature(feat)
+            ax.add_feature(cfeature.LAND, **kwargs)
         if 'countries' in features:
-            feat = cfeature.NaturalEarthFeature(category='cultural', name='admin_0_countries', scale='10m', facecolor='none', alpha=alpha)
-            ax.add_feature(feat, edgecolor='gray',linewidth=0.5)
+            ax.add_feature(cfeature.BORDERS, **kwargs)
+        if 'countries_highres' in features:
+            feat = cfeature.NaturalEarthFeature(category='cultural', name='admin_0_countries', scale='10m')
+            ax.add_feature(feat, **kwargs)
         if 'coastlines' in features:
-            ax.coastlines(resolution='10m',edgecolor='gray',linewidth=0.5, alpha=alpha)
-    
+            ax.add_feature(cfeature.COASTLINE, **kwargs)
+        if 'coastlines_highres' in features:
+            ax.coastlines(resolution='10m', **kwargs)
+            
     if latlon_format:
         lon_formatter = cticker.LongitudeFormatter()
         lat_formatter = cticker.LatitudeFormatter()

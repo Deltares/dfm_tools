@@ -275,7 +275,7 @@ def get_ncvarobject(file_nc, varname):
         varname = vars_pd.loc[varid,'nc_varkeys']
         print('varname found in standard_name attribute')
     else:
-        raise Exception('ERROR: requested variable %s not in netcdf, available are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_ncvardimlist; vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)\nnote that you can retrieve variables by keys, standard_name or long_name attributes'%(varname, vars_pd))
+        raise Exception('ERROR: requested variable %s not in netcdf, available are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_ncvardimlist\nvars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)\nnote that you can retrieve variables by keys, standard_name or long_name attributes'%(varname, vars_pd))
     
     data_nc = Dataset(file_nc)
     nc_varobject = data_nc.variables[varname]
@@ -465,7 +465,7 @@ def get_timeid_fromdatetime(data_nc_datetimes_pd, timestep):
     #check if all requested times (timestep) are in netcdf file
     times_bool_reqinfile = timestep_pd.isin(data_nc_datetimes_pd)
     if not (times_bool_reqinfile == True).all():
-        raise Exception('ERROR: not all requested times are in netcdf file:\n%s\navailable in netcdf file are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_timesfromnc; data_nc_datetimes_pd = get_timesfromnc(file_nc=file_nc)'%(timestep_pd[-times_bool_reqinfile], data_nc_datetimes_pd))
+        raise Exception('ERROR: not all requested times are in netcdf file:\n%s\navailable in netcdf file are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_timesfromnc\ndata_nc_datetimes_pd = get_timesfromnc(file_nc=file_nc)'%(timestep_pd[-times_bool_reqinfile], data_nc_datetimes_pd))
         
     #get ids of requested times in netcdf file
     times_bool_fileinreq = data_nc_datetimes_pd.isin(timestep_pd)
@@ -564,7 +564,7 @@ def get_stationid_fromstationlist(station_name_list_pd, station, varname):
     
     stations_bool_reqinfile = stations_bool_reqinfile_allcols.any(axis=1)
     if not stations_bool_reqinfile.all():
-        raise Exception('ERROR: not all requested stations are in netcdf file:\n%s\navailable in netcdf file are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist; station_name_list_pd = get_hisstationlist(file_nc=file_nc,varname="%s")'%(station_pd[~stations_bool_reqinfile], station_name_list_pd, varname))
+        raise Exception('ERROR: not all requested stations are in netcdf file:\n%s\navailable in netcdf file are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist\nstation_name_list_pd = get_hisstationlist(file_nc=file_nc,varname="%s")'%(station_pd[~stations_bool_reqinfile], station_name_list_pd, varname))
     #get ids of requested stations in netcdf file
     station_bool_fileinreq = stations_bool_fileinreq_allcols.any(axis=1)
     station_ids = list(np.where(station_bool_fileinreq)[0])

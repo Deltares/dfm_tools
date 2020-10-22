@@ -388,14 +388,14 @@ def test_gethismodeldata(file_nc):
 
 @pytest.mark.parametrize("file_nc", [pytest.param(os.path.join(dir_testinput,r'DFM_sigma_curved_bend\DFM_OUTPUT_cb_3d\cb_3d_map.nc'), id='curvibend'),
                                      pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'), id='Grevelingen'),
-                                     pytest.param(r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\computations\run_166\DFM_OUTPUT_RMM_dflowfm\RMM_dflowfm_0000_map.nc', id='RMM')])
+                                     pytest.param(r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\computations\run_180\DFM_OUTPUT_RMM_dflowfm\RMM_dflowfm_0000_map.nc', id='RMM')])
 @pytest.mark.acceptance
 def test_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
     """
     this test retrieves grid data, retrieves map data, and plots it
     file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc')
-    file_nc = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\computations\run_166\DFM_OUTPUT_RMM_dflowfm\RMM_dflowfm_0000_map.nc'
+    file_nc = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\computations\run_180\DFM_OUTPUT_RMM_dflowfm\RMM_dflowfm_0000_map.nc'
     dir_output = './test_output'
     """
 
@@ -582,12 +582,13 @@ def test_cartopy_satellite_coastlines():
     pc = ax.pcolor(mesh2d_node_x_sel,mesh2d_node_y_sel,magn)#, transform=ccrs.PlateCarree())
     cbar = fig.colorbar(pc, ax=ax)
     cbar.set_label('velocity magnitude (%s)'%(data_v.var_ncvarobject.units))
-    plot_background(ax=ax, resolution=1, google_style='street', features=['countries','coastlines'], latlon_format=True)
+    plot_background(ax=ax, resolution=1, google_style='street', features=['countries_highres'], linewidth=0.5, edgecolor='gray', facecolor='none', latlon_format=True)
+    plot_background(ax=ax, google_style=None, features=['coastlines_highres'], linewidth=0.5, latlon_format=True)
     plt.savefig(os.path.join(dir_output,'cartopy_hirlam_moreoptions'))
     
     fig, ax = plt.subplots(figsize=(6,7),subplot_kw={'projection': ccrs.EuroPP()}) #provide axis projection on initialisation, cannot be edited later on
     pc = ax.pcolor(mesh2d_node_x_sel[:100,:100],mesh2d_node_y_sel[:100,:100],magn[:100,:100], transform=ccrs.PlateCarree()) #take subset of dataset to speed up coordinate transformation
-    plot_background(ax=ax, google_style=None, features=['coastlines'], latlon_format=True, gridlines=True)
+    plot_background(ax=ax, google_style=None, features=['coastlines_highres'], latlon_format=True, gridlines=True)
     plt.savefig(os.path.join(dir_output,'cartopy_hirlam_curvedgridlines'))
     
         
@@ -598,7 +599,7 @@ def test_cartopy_satellite_coastlines():
     
     fig, ax = plt.subplots(1,1, subplot_kw={'projection': ccrs.epsg(28992)}) #provide axis projection on initialisation, cannot be edited later on
     pc = plot_netmapdata(ugrid.verts, values=data_frommap_bl, ax=ax, linewidth=0.5, cmap='jet')
-    plot_background(ax=ax, resolution=12, features=['coastlines'])
+    plot_background(ax=ax, resolution=12, features=['coastlines_highres'], linewidth=0.5)
     plt.savefig(os.path.join(dir_output,'cartopy_grevelingen_RD'))
 
     
@@ -655,7 +656,7 @@ def test_getplotmapWAQOS(file_nc):
                                      pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'), id='Grevelingen-FM_0000_map'),
                                      #pytest.param(r'p:\11203379-mwra-new-bem-model\waq_model\simulations\A31_1year_20191219\DFM_OUTPUT_MB_02_waq\MB_02_waq_0000_map.nc', id='MB_02_waq_0000_map'),
                                      pytest.param(r'p:\1204257-dcsmzuno\2013-2017\3D-DCSM-FM\A19\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0000_map.nc', id='DCSM-FM_0_5nm_0000_map'),
-                                     pytest.param(r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\computations\run_166\DFM_OUTPUT_RMM_dflowfm\RMM_dflowfm_0000_map.nc', id='RMM_dflowfm_0000_map')])
+                                     pytest.param(r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\computations\run_180\DFM_OUTPUT_RMM_dflowfm\RMM_dflowfm_0000_map.nc', id='RMM_dflowfm_0000_map')])
 @pytest.mark.acceptance
 def test_getxzcoordsonintersection_plotcrossect(file_nc):
 
@@ -666,7 +667,7 @@ def test_getxzcoordsonintersection_plotcrossect(file_nc):
     file_nc = os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_cb_3d\\cb_3d_map.nc')
     file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc')
     file_nc = 'p:\\1204257-dcsmzuno\\2013-2017\\3D-DCSM-FM\\A19\\DFM_OUTPUT_DCSM-FM_0_5nm\\DCSM-FM_0_5nm_0000_map.nc'
-    file_nc = 'p:\\11205258-006-kpp2020_rmm-g6\\C_Work\\08_RMM_FMmodel\\computations\\run_156\\DFM_OUTPUT_RMM_dflowfm\\RMM_dflowfm_0000_map.nc'
+    file_nc = 'p:\\11205258-006-kpp2020_rmm-g6\\C_Work\\08_RMM_FMmodel\\computations\\run_180\\DFM_OUTPUT_RMM_dflowfm\\RMM_dflowfm_0000_map.nc'
     """
     
     import matplotlib.pyplot as plt
