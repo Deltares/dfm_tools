@@ -582,12 +582,13 @@ def test_cartopy_satellite_coastlines():
     pc = ax.pcolor(mesh2d_node_x_sel,mesh2d_node_y_sel,magn)#, transform=ccrs.PlateCarree())
     cbar = fig.colorbar(pc, ax=ax)
     cbar.set_label('velocity magnitude (%s)'%(data_v.var_ncvarobject.units))
-    plot_background(ax=ax, resolution=1, google_style='street', features=['countries','coastlines'], latlon_format=True)
+    plot_background(ax=ax, resolution=1, google_style='street', features=['countries_highres'], linewidth=0.5, edgecolor='gray', facecolor='none', latlon_format=True)
+    plot_background(ax=ax, google_style=None, features=['coastlines_highres'], linewidth=0.5, latlon_format=True)
     plt.savefig(os.path.join(dir_output,'cartopy_hirlam_moreoptions'))
     
     fig, ax = plt.subplots(figsize=(6,7),subplot_kw={'projection': ccrs.EuroPP()}) #provide axis projection on initialisation, cannot be edited later on
     pc = ax.pcolor(mesh2d_node_x_sel[:100,:100],mesh2d_node_y_sel[:100,:100],magn[:100,:100], transform=ccrs.PlateCarree()) #take subset of dataset to speed up coordinate transformation
-    plot_background(ax=ax, google_style=None, features=['coastlines'], latlon_format=True, gridlines=True)
+    plot_background(ax=ax, google_style=None, features=['coastlines_highres'], latlon_format=True, gridlines=True)
     plt.savefig(os.path.join(dir_output,'cartopy_hirlam_curvedgridlines'))
     
         
@@ -598,7 +599,7 @@ def test_cartopy_satellite_coastlines():
     
     fig, ax = plt.subplots(1,1, subplot_kw={'projection': ccrs.epsg(28992)}) #provide axis projection on initialisation, cannot be edited later on
     pc = plot_netmapdata(ugrid.verts, values=data_frommap_bl, ax=ax, linewidth=0.5, cmap='jet')
-    plot_background(ax=ax, resolution=12, features=['coastlines'])
+    plot_background(ax=ax, resolution=12, features=['coastlines_highres'], linewidth=0.5)
     plt.savefig(os.path.join(dir_output,'cartopy_grevelingen_RD'))
 
     

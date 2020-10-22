@@ -490,7 +490,7 @@ def get_netdata(file_nc, multipart=None):
     num_nodes = [0]
     verts_shape2_all = []
     for iF, file_nc_sel in enumerate(file_ncs):
-        print('analyzing netdata from domain %04d of %04d'%(iF, len(file_ncs)-1))
+        print('analyzing netdata from domain %04d of %04d (counting max number of facenodes)'%(iF, len(file_ncs)-1))
         ugrid = UGrid.fromfile(file_nc_sel)
         verts_shape2_all.append(ugrid.verts.shape[1])
     verts_shape2_max = np.max(verts_shape2_all)
@@ -604,7 +604,7 @@ def plot_netmapdata(verts, values=None, ax=None, **kwargs):
 
 
 
-def plot_background(ax=None, resolution=1, projection=None, google_style='satellite', nticks=6, features=None, latlon_format=False, gridlines=False, alpha=1):
+def plot_background(ax=None, projection=None, google_style='satellite', resolution=1, features=None, nticks=6, latlon_format=False, gridlines=False, **kwargs):
     """
     
 
@@ -612,22 +612,22 @@ def plot_background(ax=None, resolution=1, projection=None, google_style='satell
     ----------
     ax : cartopy.mpl.geoaxes.GeoAxesSubplot, optional
         DESCRIPTION. The default is None.
-    resolution : int, optional
-        DESCRIPTION. The default is 1.
-    projection : TYPE, optional
+    projection : integer, cartopy._crs.CRS or cartopy._epsg._EPSGProjection, optional
         DESCRIPTION. The default is None.
     google_style : Nonetype or string, optional
-       The style for the Google Maps tiles. One of None, ‘street’, ‘satellite’, ‘terrain’, and ‘only_streets’. The default is 'satellite'.
+       The style of the Google Maps tiles. One of None, ‘street’, ‘satellite’, ‘terrain’, and ‘only_streets’. The default is 'satellite'.
+    resolution : int, optional
+        resolution for the Google Maps tiles. 1 works wel for global images, 12 works well for a scale of Grevelingen lake, using 12 on global scale will give you a server timeout. The default is 1.
+    features : string, optional
+        Features to plot, options: None, 'ocean', 'rivers', 'land', 'countries', 'countries_highres', 'coastlines', 'coastlines_highres'. The default is None.
     nticks : TYPE, optional
         DESCRIPTION. The default is 6.
-    features : string, optional
-        One of None,'ocean','land','countries','coastlines'. The default is None.
     latlon_format : bool, optional
         DESCRIPTION. The default is False.
     gridlines : TYPE, optional
         DESCRIPTION. The default is False.
-    alpha : TYPE, optional
-        DESCRIPTION. The default is 1.
+    **kwargs : TYPE
+        additional arguments for ax.add_feature or ax.coastlines(). examples arguments and values are: alpha=0.5, facecolor='none', edgecolor='gray', linewidth=0.5, linestyle=':'
 
     Raises
     ------
@@ -667,7 +667,7 @@ def plot_background(ax=None, resolution=1, projection=None, google_style='satell
         #ax = plt.axes(projection=projection)
     elif type(ax) is cartopy.mpl.geoaxes.GeoAxesSubplot:
         if projection is not None:
-            raise Exception('arguments ax and projection should not be provided at the same time')
+            print('arguments ax and projection are both provided, the projection from the ax is used so the projection argument is ignored')
     else:
         raise Exception('argument ax should be of type cartopy.mpl.geoaxes.GeoAxesSubplot, leave argument empty or create correct instance with:\nimport cartopy.crs as ccrs\nfig, (ax1,ax2) = plt.subplots(1,2,figsize=(10,5), subplot_kw={"projection": ccrs.epsg(28992)})')
     
@@ -692,7 +692,7 @@ def plot_background(ax=None, resolution=1, projection=None, google_style='satell
         elif type(features) is not list:
             raise Exception('argument features should be of type list of str')
         
-        valid_featurelist = ['ocean','rivers','land','countries','coastlines']
+        valid_featurelist = ['ocean','rivers','land','countries','countries_highres','coastlines','coastlines_highres']
         invalid_featurelist = [x for x in features if x not in valid_featurelist]
         if invalid_featurelist != []:
             raise Exception('invalid features %s requested, possible are: %s'%(invalid_featurelist, valid_featurelist))
@@ -700,20 +700,22 @@ def plot_background(ax=None, resolution=1, projection=None, google_style='satell
         if 'ocean' in features:
             #feat = cfeature.NaturalEarthFeature(category='physical', name='ocean', facecolor=cfeature.COLORS['water'], scale='10m', edgecolor='face', alpha=alpha)
             #ax.add_feature(feat)
-            ax.add_feature(cfeature.OCEAN, facecolor=cfeature.COLORS['water'], edgecolor='face', alpha=alpha)
+            ax.add_feature(cfeature.OCEAN, **kwargs)
         if 'rivers' in features:
-            ax.add_feature(cfeature.RIVERS, facecolor=cfeature.COLORS['water'], edgecolor='face', alpha=alpha)
+            ax.add_feature(cfeature.RIVERS, **kwargs)
         if 'land' in features:
             #feat = cfeature.NaturalEarthFeature(category='physical', name='land', facecolor=cfeature.COLORS['land'], scale='10m', edgecolor='face', alpha=alpha)
             #ax.add_feature(feat)
-            ax.add_feature(cfeature.LAND, facecolor=cfeature.COLORS['land'], edgecolor='face', alpha=alpha)
+            ax.add_feature(cfeature.LAND, **kwargs)
         if 'countries' in features:
-            #feat = cfeature.NaturalEarthFeature(category='cultural', name='admin_0_countries', scale='10m', facecolor='none', alpha=alpha) #more detail than line below
-            #ax.add_feature(feat, edgecolor='gray',linewidth=0.5)
-            ax.add_feature(cfeature.BORDERS, facecolor='none', edgecolor='gray', linewidth=0.5, alpha=alpha) #, linestyle=':'
+            ax.add_feature(cfeature.BORDERS, **kwargs)
+        if 'countries_highres' in features:
+            feat = cfeature.NaturalEarthFeature(category='cultural', name='admin_0_countries', scale='10m')
+            ax.add_feature(feat, **kwargs)
         if 'coastlines' in features:
-            ax.coastlines(resolution='10m',edgecolor='gray',linewidth=0.5, alpha=alpha) #more detail than line below
-            #ax.add_feature(cfeature.COASTLINE, facecolor='none', edgecolor='k',linewidth=0.5, alpha=alpha)
+            ax.add_feature(cfeature.COASTLINE, **kwargs)
+        if 'coastlines_highres' in features:
+            ax.coastlines(resolution='10m', **kwargs)
             
     if latlon_format:
         lon_formatter = cticker.LongitudeFormatter()
