@@ -145,10 +145,8 @@ class Polygon:
                                     print('conversion from date/time column to datetime failed, incorrect format of first two columns?')
                         elif len(line_shp) == 3: #tekal 2D map files
                             data_pol_map = data_pol.reshape([line_shp[0]//line_shp[2],line_shp[2],line_shp[1]])
-                        elif len(line_shp) == 4: #tekal 3D map files. should not be the same but it is for the one example file
-                            data_pol_map = data_pol.reshape([line_shp[0]//line_shp[2],line_shp[2],line_shp[1]])
                         else:
-                            raise Exception('tekal file reading of 1 or more than 4 dimensions is not possible, it has this shape: %s'%(line_shp))
+                            raise Exception('tekal file should have 2 or 3 dimensions, but it has this shape: %s'%(line_shp))
                     else:
                         pol_data_pd = pd.DataFrame(data_pol)
                     pol_data_pd_list.append(pol_data_pd)
