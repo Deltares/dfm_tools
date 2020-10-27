@@ -4,13 +4,12 @@
 
 from setuptools import setup, find_packages
 
-with open('README.rst') as readme_file:
+with open('README.md') as readme_file:
     readme = readme_file.read()
 
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-#requirements = ['Click>=7.0', ]
 with open('requirements.txt') as f:
     requirements = f.read().splitlines()
 
@@ -45,11 +44,11 @@ setup(
     include_package_data=True,
     keywords='dfm_tools',
     name='dfm_tools',
-    packages=find_packages(include=['dfm_tools', 'dfm_tools.*']),
+    packages=find_packages(include=['dfm_tools', 'dfm_tools.io']),
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/openearth/dfm_tools',
-    version='0.2.0',
+    version='0.7.28',
     zip_safe=False,
 )

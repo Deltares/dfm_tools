@@ -1,10 +1,71 @@
 =======
 History
 =======
+0.7.26 (2020-08-20)
+------------------
+* implemented first version of a zt-plot function for data from D-Flow FM hisfile
+
+0.7.24 (2020-07-13)
+------------------
+* bugfix in var_times property of retrieved data, when retrieving as daterange
+* bugfix in scatter_to_regulargrid(), masked values were not replaced by nans
+* removed some non-unicode characters
+
+0.7.23 (2020-06-12)
+------------------
+* fixed bug with retrieving non-partitioned variables from all partitions
+* added ncdump function
+* fixed bug with map merging file search
+* added html documentation from docstrings (not all filled in yet)
+* added read/write functions for bc-files
+
+0.7.20 (2020-05-06)
+------------------
+* added option to retrieve data from top/bottom layers of z-layer D-Flow FM model
+* fixed bug with empty string as varname
+* added merge netcdf time function
+* fixed dependencies (now all conda packages come from conda-forge channel)
+
+0.7.19 (2020-04-28)
+------------------
+* improved time variable reading (more efficient when retrieving only a time-subset of a variable from a netCDF with long time dimension)
+* improved time variable/dimensions reading (arbitrary time variable/dimension names are suported, as well as multiple time variables/dimensions)
+* times were previously recalculated to UTC/GMT, this is now fixed
+* conversion of negative indices to positive, sorting them and make unique
+* read/write noos (matroos) data
+* write bc file for D-Flow FM
+* added example code to export D-Flow FM results to shapefile
+* retrieving varname was possible from variable keys, now also possible from long_name or standard_name
+
+0.7.6 (2020-04-06)
+------------------
+* Simplified installation method (check readme on github, link below)
+* Improved retrieval on index (eg first and last timestep with [0,-1])
+* Improved insights in variable contents/dimensions/shapes, to make it easier to know how to plot what with what
+* Added regular grid features (reading eg wave grids and meteo data grids, meshgrid from xy vectors, corner2center, center2corner, corner2bounds, some plotting)
+* Convert regular grid data to polycollection (same as ugrid.verts), so slicing (side view through 3D data) of regular grid is almost possible (this is still under construction)
+* Read SFINCS map and his files
+* Read virtually any NetCDF (ERA5, hirlam or other meteo files)
+* Read Delft3D output (if this is in NetCDF output, you can get this by adding two keywords the .mdf)
+* Read converted WAQUA/TRIWAQ output (converted to NetCDF with getdata.pl on h6, which works really well, let me know if you need help with this)
+* Testbank now contains some new plot features like quivers, curved quivers and streamlines
+* Plotting basemaps with cartopy land/ocean/landboundary/countryborders and a basic backgroundmap (proper satellite images still to be added)
+
+0.6.4 (2020-03-19)
+------------------
+* Slightly different syntax which is better understandable (updated a while ago, so you probably will not notice, but it might be that you have to update your script)
+* A first version of zt-plots (for instance the development over time of salinity of a station over the entire waterdepth)
+* Matching function for WAQ statistics variables
+* More flexible dimension reading (so more variables can be read)
+* More robust
+* Added sobek observation reading functionality (also netcdf)
+* Added Delft3D grid and dep reading functionality (copied from OET)
+* Added tekal reading functionality (for tek, pli, pliz, pol and ldb files)
 
 0.2.0 (2020-02-14)
 ------------------
-* First release on PyPI.
+* restructured scripts and functions
+* added safeguard for shapely import bug
 
 0.1.16 (2020-02-14)
 ------------------
