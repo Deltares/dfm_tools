@@ -464,6 +464,8 @@ def test_waqua_netcdf_convertedwith_getdata():
         	OUTPUTNAME = 'nc_map.nc'
           HISTORIES
         	OUTPUTNAME = 'nc_his.nc'
+        waqpro.pl uses netcdfoutput.pm to write map-variables 'xzeta,yzeta,xdep,ydep,sep,velu,velv,h'
+        waqpro.pl uses netcdfoutput.pm to write his-variables 'zwl,namwl,mwl,nwl,xzeta,yzeta,itdate'
     
     DCSM: convert existing waqua output to netcdf files via putty with:
         module load simona
