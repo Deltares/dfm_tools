@@ -458,14 +458,21 @@ def test_waqua_netcdf_convertedwith_getdata():
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
     
     """
-    get the netcdf files via putty with:
+    RMM testmodel: convert all waqua output to netcdf after completion of the run by adding this to siminp file:
+        NETCDFOUTPUT
+          MAPS
+        	OUTPUTNAME = 'nc_map.nc'
+          HISTORIES
+        	OUTPUTNAME = 'nc_his.nc'
+    
+    DCSM: convert existing waqua output to netcdf files via putty with:
         module load simona
         cd /p/1204257-dcsmzuno/2019/DCSMv6/A01
         getdata.pl -f SDS-A01 -v SEP,VELU,VELV,YZETA,XZETA -o netcdf -d SDS-A01_map
         getdata.pl -f SDS-A01 -v ZWL,ZCURU,ZCURV,NAMWL,NAMC -o netcdf -d SDS-A01_his
         http://simona.deltares.nl/release/doc/usedoc/getdata/getdata.pdf
         
-    get the netcdf files via putty with:
+    OSR: convert existing waqua output to netcdf files via putty with:
         module load simona
         cd /p/archivedprojects/1230049-zoutlastbeperking/Gaten_langsdam/Simulaties/OSR-model_GatenLangsdam/berekeningen/run7
         getdata.pl -f SDS-nsctri -v SEP,VELU,VELV -o netcdf -d SDS-nsctri_map
@@ -473,7 +480,7 @@ def test_waqua_netcdf_convertedwith_getdata():
         http://simona.deltares.nl/release/doc/usedoc/getdata/getdata.pdf
         #this file should be recreated with YZETA,XZETA added to map
 
-    get the netcdf files via putty with:
+    RMM: convert existing waqua output to netcdf files via putty with:
         module load simona
         cd /p/11205258-006-kpp2020_rmm-g6/C_Work/07_WAQUAresultaten/j15
         getdata.pl -f SDS-riv_tba -v SEP,VELU,VELV,YZETA,XZETA -o netcdf -d SDS-riv_tba_map
@@ -489,6 +496,7 @@ def test_waqua_netcdf_convertedwith_getdata():
     
     from dfm_tools.get_nc import get_ncmodeldata#, get_netdata, plot_netmapdata
     from dfm_tools.get_nc_helpers import get_ncvardimlist, get_hisstationlist#, get_varname_fromnc
+    
     
     #MAP ZUNO
     file_nc = r'p:\1204257-dcsmzuno\2019\DCSMv6\A01\SDS-A01_map.nc'
@@ -598,62 +606,79 @@ def test_waqua_netcdf_convertedwith_getdata():
     
     
     #MAP RMM
-    file_nc = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\07_WAQUAresultaten\j15\SDS-riv_tba_map.nc'
-    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    RMM_names = ['RMM','RMMtestmodel']
+    for RMM_name in RMM_names:
+        if RMM_name=='RMM':
+            file_nc_map = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\07_WAQUAresultaten\j15\SDS-riv_tba_map.nc'
+            file_nc_his = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\07_WAQUAresultaten\j15\SDS-riv_tba_his.nc'
+            timestep = 1
+        elif RMM_name == 'RMMtestmodel':
+            file_nc_map = r'c:\DATA\dfm_tools_testdata\waqua_netcdf\nc_map.nc'
+            file_nc_his = r'c:\DATA\dfm_tools_testdata\waqua_netcdf\nc_his.nc'
+            timestep = 10
     
-    data_nc_x = get_ncmodeldata(file_nc=file_nc, varname='grid_x')
-    data_nc_y = get_ncmodeldata(file_nc=file_nc, varname='grid_y')
-    data_nc_xcen = np.mean(data_nc_x, axis=2)
-    data_nc_ycen = np.mean(data_nc_y, axis=2)
+        file_nc = file_nc_map
+        vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+        
+        data_nc_x = get_ncmodeldata(file_nc=file_nc, varname='grid_x')
+        data_nc_y = get_ncmodeldata(file_nc=file_nc, varname='grid_y')
+        data_nc_xcen = np.mean(data_nc_x, axis=2)
+        data_nc_ycen = np.mean(data_nc_y, axis=2)
+        
+        data_nc_SEP = get_ncmodeldata(file_nc=file_nc, varname='SEP',timestep=timestep)
+        data_nc_VELU = get_ncmodeldata(file_nc=file_nc, varname='VELU',timestep=timestep, layer=0)
+        data_nc_VELV = get_ncmodeldata(file_nc=file_nc, varname='VELV',timestep=timestep, layer=0)
+        
+        fig, ax = plt.subplots(figsize=(16,7))
+        pc = ax.pcolor(data_nc_xcen,data_nc_ycen,data_nc_SEP[0,:,:],cmap='jet')
+        pc.set_clim([0,3])
+        cbar = fig.colorbar(pc, ax=ax)
+        cbar.set_label('%s (%s)'%(data_nc_SEP.var_varname, data_nc_SEP.var_ncvarobject.units))
+        ax.set_title('t=%d (%s)'%(timestep, data_nc_SEP.var_times.loc[timestep]))
+        ax.set_aspect('equal')
+        fig.tight_layout()
+        plt.savefig(os.path.join(dir_output,'waqua_%s_map_wl'%(RMM_name)))
     
-    timestep = 1
-    data_nc_SEP = get_ncmodeldata(file_nc=file_nc, varname='SEP',timestep=timestep)
-    data_nc_VELU = get_ncmodeldata(file_nc=file_nc, varname='VELU',timestep=timestep, layer=0)
-    data_nc_VELV = get_ncmodeldata(file_nc=file_nc, varname='VELV',timestep=timestep, layer=0)
+        if RMM_name=='RMM':
+            fig, ax = plt.subplots()
+        else:
+            fig, ax = plt.subplots(figsize=(16,7))
+        vel_magn = np.sqrt(data_nc_VELU**2 + data_nc_VELV**2)
+        pc = ax.pcolor(data_nc_xcen,data_nc_ycen,vel_magn[0,:,:,0],cmap='jet')
+        pc.set_clim([0,1])
+        cbar = fig.colorbar(pc, ax=ax)
+        cbar.set_label('velocity magnitude (%s)'%(data_nc_VELU.var_ncvarobject.units))
+        ax.set_title('t=%d (%s)'%(timestep, data_nc_VELU.var_times.loc[timestep]))
+        ax.set_aspect('equal')
+        if RMM_name=='RMM':
+            thinning = 10
+        else:
+            thinning = 1
+        ax.quiver(data_nc_xcen[::thinning,::thinning], data_nc_ycen[::thinning,::thinning], data_nc_VELU[0,::thinning,::thinning,0], data_nc_VELV[0,::thinning,::thinning,0], 
+                  color='w',scale=10)#,width=0.005)#, edgecolor='face', cmap='jet')
+        if RMM_name=='RMM':
+            ax.set_xlim([61000, 72000])
+            ax.set_ylim([438000, 446000])
+        fig.tight_layout()
+        plt.savefig(os.path.join(dir_output,'waqua_%s_map_vel'%(RMM_name)))
+        
+        #HIS RMM
+        file_nc = file_nc_his
+        vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+        data_nc_NAMWL = get_hisstationlist(file_nc=file_nc, varname='NAMWL')
+        #data_nc_NAMC = get_hisstationlist(file_nc=file_nc, varname='NAMC')
+        data_nc_ZWL = get_ncmodeldata(file_nc=file_nc, varname='ZWL',timestep='all',station='all')
+        #data_nc_ZCURU = get_ncmodeldata(file_nc=file_nc, varname='ZCURU',timestep='all',station='all',layer='all')
+        #data_nc_ZCURV = get_ncmodeldata(file_nc=file_nc, varname='ZCURV',timestep='all',station='all',layer='all')
     
-    fig, ax = plt.subplots(figsize=(16,7))
-    pc = ax.pcolor(data_nc_xcen,data_nc_ycen,data_nc_SEP[0,:,:],cmap='jet')
-    pc.set_clim([0,3])
-    cbar = fig.colorbar(pc, ax=ax)
-    cbar.set_label('%s (%s)'%(data_nc_SEP.var_varname, data_nc_SEP.var_ncvarobject.units))
-    ax.set_title('t=%d (%s)'%(timestep, data_nc_SEP.var_times.loc[timestep]))
-    ax.set_aspect('equal')
-    fig.tight_layout()
-    plt.savefig(os.path.join(dir_output,'waqua_RMM_map_wl'))
-
-    fig, ax = plt.subplots()
-    vel_magn = np.sqrt(data_nc_VELU**2 + data_nc_VELV**2)
-    pc = ax.pcolor(data_nc_xcen,data_nc_ycen,vel_magn[0,:,:,0],cmap='jet')
-    pc.set_clim([0,1])
-    cbar = fig.colorbar(pc, ax=ax)
-    cbar.set_label('velocity magnitude (%s)'%(data_nc_VELU.var_ncvarobject.units))
-    ax.set_title('t=%d (%s)'%(timestep, data_nc_VELU.var_times.loc[timestep]))
-    ax.set_aspect('equal')
-    thinning = 10
-    ax.quiver(data_nc_xcen[::thinning,::thinning], data_nc_ycen[::thinning,::thinning], data_nc_VELU[0,::thinning,::thinning,0], data_nc_VELV[0,::thinning,::thinning,0], 
-              color='w',scale=10)#,width=0.005)#, edgecolor='face', cmap='jet')
-    ax.set_xlim([61000, 72000])
-    ax.set_ylim([438000, 446000])
-    fig.tight_layout()
-    plt.savefig(os.path.join(dir_output,'waqua_RMM_map_vel'))
-    
-    
-    #HIS RMM
-    file_nc = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\07_WAQUAresultaten\j15\SDS-riv_tba_his.nc'
-    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
-    data_nc_NAMWL = get_hisstationlist(file_nc=file_nc, varname='NAMWL')
-    #data_nc_NAMC = get_hisstationlist(file_nc=file_nc, varname='NAMC')
-    data_nc_ZWL = get_ncmodeldata(file_nc=file_nc, varname='ZWL',timestep='all',station='all')
-    #data_nc_ZCURU = get_ncmodeldata(file_nc=file_nc, varname='ZCURU',timestep='all',station='all',layer='all')
-    #data_nc_ZCURV = get_ncmodeldata(file_nc=file_nc, varname='ZCURV',timestep='all',station='all',layer='all')
-
-    fig, ax = plt.subplots(figsize=(16,7))
-    for iS in range(10):
-        ax.plot(data_nc_ZWL.var_times,data_nc_ZWL[:,iS],label=data_nc_NAMWL['NAMWL'].iloc[iS], linewidth=1)
-    ax.legend()
-    ax.set_ylabel('%s (%s)'%(data_nc_ZWL.var_varname, data_nc_ZWL.var_ncvarobject.units))
-    ax.set_xlim([data_nc_ZWL.var_times[0],data_nc_ZWL.var_times[0]+dt.timedelta(days=14)])
-    plt.savefig(os.path.join(dir_output,'waqua_RMM_his_ZWL'))
+        fig, ax = plt.subplots(figsize=(16,7))
+        for iS in range(10):
+            ax.plot(data_nc_ZWL.var_times,data_nc_ZWL[:,iS],label=data_nc_NAMWL['NAMWL'].iloc[iS], linewidth=1)
+        ax.legend()
+        ax.set_ylabel('%s (%s)'%(data_nc_ZWL.var_varname, data_nc_ZWL.var_ncvarobject.units))
+        if RMM_name=='RMM':
+            ax.set_xlim([data_nc_ZWL.var_times[0],data_nc_ZWL.var_times[0]+dt.timedelta(days=14)])
+        plt.savefig(os.path.join(dir_output,'waqua_%s_his_ZWL'%(RMM_name)))
 
 
 
