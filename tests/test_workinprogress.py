@@ -364,6 +364,13 @@ def test_waqua_netcdf_convertedwith_getdata():
         get a list of all available variables in the SDS file:
             getdata.pl -f SDS-haven -v l
     
+    convert entire SDS file with getdata.pl (this gives you a list of variables but does not work yet):
+        module load simona
+        mapvars_raw=$(getdata.pl -f SDS-haven -v l | grep 'TIME DEP' | grep MNMAXK | sed 's/\tREAL.*//' | sed 's/\tINT.*//' | tr '\n' ',')
+        hisvars_raw=$(getdata.pl -f SDS-haven -v l | grep 'TIME DEP' | grep -v MNMAXK | sed 's/\tREAL.*//' | sed 's/\tINT.*//' | tr '\n' ',')
+        getdata.pl -f SDS-haven -o netcdf -d nc_map.nc -v ${mapvars_raw%?}
+        getdata.pl -f SDS-haven -o netcdf -d nc_his.nc -v ${hisvars_raw%?}
+
     DCSM: convert existing waqua output to netcdf files via putty with:
         module load simona
         cd /p/1204257-dcsmzuno/2019/DCSMv6/A01
