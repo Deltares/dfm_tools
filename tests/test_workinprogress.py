@@ -366,8 +366,10 @@ def test_waqua_netcdf_convertedwith_getdata():
     
     convert entire SDS file with getdata.pl (this gives you a list of variables but does not work yet):
         module load simona
-        mapvars_raw=$(getdata.pl -f SDS-haven -v l | grep 'TIME DEP' | grep MNMAXK | sed 's/\tREAL.*//' | sed 's/\tINT.*//' | tr '\n' ',')
-        hisvars_raw=$(getdata.pl -f SDS-haven -v l | grep 'TIME DEP' | grep -v MNMAXK | sed 's/\tREAL.*//' | sed 's/\tINT.*//' | tr '\n' ',')
+        #mapvars_raw=$(getdata.pl -f SDS-haven -v l | grep 'TIME DEP' | grep MNMAXK | sed 's/\tREAL.*//' | sed 's/\tINT.*//' | tr '\n' ',')
+        #hisvars_raw=$(getdata.pl -f SDS-haven -v l | grep 'TIME DEP' | grep -v MNMAXK | sed 's/\tREAL.*//' | sed 's/\tINT.*//' | tr '\n' ',')
+        mapvars_raw=$(getdata.pl -f SDS-haven -v l | grep 'TIME DEP' | grep MNMAXK | grep -v "V\S*INT" | sed 's/\tREAL.*//' | sed 's/\tINT.*//' | tr '\n' ',')
+        hisvars_raw=$(getdata.pl -f SDS-haven -v l | grep 'TIME DEP' | grep NO | sed 's/\tREAL.*//' | sed 's/\tINT.*//' | tr '\n' ',')
         getdata.pl -f SDS-haven -o netcdf -d nc_map.nc -v ${mapvars_raw%?}
         getdata.pl -f SDS-haven -o netcdf -d nc_his.nc -v ${hisvars_raw%?}
 
