@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.8.1" />
 <title>dfm_tools.io.bc API documentation</title>
-<meta name="description" content="Created on Mon Apr 20 21:01:08 2020 …" />
+<meta name="description" content="dfm_tools are post-processing tools for Delft3D FM
+Copyright (C) 2020 Deltares. All rights reserved …" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
@@ -20,6 +21,27 @@
 <h1 class="title">Module <code>dfm_tools.io.bc</code></h1>
 </header>
 <section id="section-intro">
+<p>dfm_tools are post-processing tools for Delft3D FM
+Copyright (C) 2020 Deltares. All rights reserved.</p>
+<p>This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.</p>
+<p>This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.</p>
+<p>You should have received a copy of the GNU General Public License
+along with this program.
+If not, see <a href="http://www.gnu.org/licenses/">http://www.gnu.org/licenses/</a>.</p>
+<p>All names, logos, and references to "Deltares" are registered trademarks of
+Stichting Deltares and remain full property of Stichting Deltares at all times.
+All rights reserved.</p>
+<p>INFORMATION
+This script is part of dfm_tools: <a href="https://github.com/openearth/dfm_tools">https://github.com/openearth/dfm_tools</a>
+Check the README.rst on github for other available functions
+Check the tests folder on github for example scripts (this is the dfm_tools pytest testbank)
+Check the pptx and example figures in (created by the testbank): N:/Deltabox/Bulletin/veenstra/info dfm_tools</p>
 <p>Created on Mon Apr 20 21:01:08 2020</p>
 <p>@author: veenstra</p>
 <details class="source">
@@ -28,6 +50,33 @@
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 &#34;&#34;&#34;
+dfm_tools are post-processing tools for Delft3D FM
+Copyright (C) 2020 Deltares. All rights reserved.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+
+All names, logos, and references to &#34;Deltares&#34; are registered trademarks of
+Stichting Deltares and remain full property of Stichting Deltares at all times.
+All rights reserved.
+
+
+INFORMATION
+This script is part of dfm_tools: https://github.com/openearth/dfm_tools
+Check the README.rst on github for other available functions
+Check the tests folder on github for example scripts (this is the dfm_tools pytest testbank)
+Check the pptx and example figures in (created by the testbank): N:/Deltabox/Bulletin/veenstra/info dfm_tools
+
 Created on Mon Apr 20 21:01:08 2020
 
 @author: veenstra
@@ -127,10 +176,12 @@ def write_bcfile(filename, datablocks, metadatas, refdate=None, tzone=0, float_f
 
 
 
-def read_bcfile(filename):
+def read_bcfile(filename, converttime=False):
 
     import pandas as pd
     import numpy as np
+    import datetime as dt
+    from netCDF4 import num2date
     
     with open(filename, &#39;r&#39;) as bc:
         page = bc.readlines()
@@ -182,6 +233,25 @@ def read_bcfile(filename):
         
         #read data block
         data_block_pd = pd.read_csv(filepath_or_buffer=filename, names=colnames, skiprows=line_datastart, delim_whitespace=True, skipfooter=lines_n-line_blockend, engine=&#39;python&#39;)
+        if converttime:
+            time_id = np.where(data_block_pd.columns.get_level_values(0)==&#39;time&#39;)[0]
+            if len(time_id)==1:
+                time_minutes = data_block_pd.iloc[:,time_id].values[:,0]
+                units_str = data_block_pd.columns.get_level_values(1)[time_id][0]
+                
+                time_units_list = units_str.split(&#39; &#39;)
+                if time_units_list[1] != &#39;since&#39;:
+                    raise Exception(&#39;invalid time units string (%s)&#39;%(units_str))
+                try:
+                    refdate_str = &#39;%s %s&#39;%(time_units_list[2], time_units_list[3].replace(&#39;.0&#39;,&#39;&#39;)) #remove .0 to avoid conversion issue
+                    refdate = dt.datetime.strptime(refdate_str,&#39;%Y-%m-%d %H:%M:%S&#39;)
+                    data_nc_times_pdtd = pd.to_timedelta(time_minutes, unit=time_units_list[0])
+                    data_nc_datetimes = (refdate + data_nc_times_pdtd)#.to_pydatetime()
+                    print(&#39;retrieving original timezone succeeded, no conversion to UTC/GMT applied&#39;)
+                except:
+                    print(&#39;retrieving original timezone failed, using num2date output instead&#39;)
+                    data_nc_datetimes = num2date(times=time_minutes, units=units_str, only_use_cftime_datetimes=False, only_use_python_datetimes=True)
+                data_block_pd[&#39;datetime&#39;] = data_nc_datetimes
         datablock_list.append(data_block_pd)
 
                     
@@ -197,7 +267,7 @@ def read_bcfile(filename):
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="dfm_tools.io.bc.read_bcfile"><code class="name flex">
-<span>def <span class="ident">read_bcfile</span></span>(<span>filename)</span>
+<span>def <span class="ident">read_bcfile</span></span>(<span>filename, converttime=False)</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -205,10 +275,12 @@ def read_bcfile(filename):
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def read_bcfile(filename):
+<pre><code class="python">def read_bcfile(filename, converttime=False):
 
     import pandas as pd
     import numpy as np
+    import datetime as dt
+    from netCDF4 import num2date
     
     with open(filename, &#39;r&#39;) as bc:
         page = bc.readlines()
@@ -260,6 +332,25 @@ def read_bcfile(filename):
         
         #read data block
         data_block_pd = pd.read_csv(filepath_or_buffer=filename, names=colnames, skiprows=line_datastart, delim_whitespace=True, skipfooter=lines_n-line_blockend, engine=&#39;python&#39;)
+        if converttime:
+            time_id = np.where(data_block_pd.columns.get_level_values(0)==&#39;time&#39;)[0]
+            if len(time_id)==1:
+                time_minutes = data_block_pd.iloc[:,time_id].values[:,0]
+                units_str = data_block_pd.columns.get_level_values(1)[time_id][0]
+                
+                time_units_list = units_str.split(&#39; &#39;)
+                if time_units_list[1] != &#39;since&#39;:
+                    raise Exception(&#39;invalid time units string (%s)&#39;%(units_str))
+                try:
+                    refdate_str = &#39;%s %s&#39;%(time_units_list[2], time_units_list[3].replace(&#39;.0&#39;,&#39;&#39;)) #remove .0 to avoid conversion issue
+                    refdate = dt.datetime.strptime(refdate_str,&#39;%Y-%m-%d %H:%M:%S&#39;)
+                    data_nc_times_pdtd = pd.to_timedelta(time_minutes, unit=time_units_list[0])
+                    data_nc_datetimes = (refdate + data_nc_times_pdtd)#.to_pydatetime()
+                    print(&#39;retrieving original timezone succeeded, no conversion to UTC/GMT applied&#39;)
+                except:
+                    print(&#39;retrieving original timezone failed, using num2date output instead&#39;)
+                    data_nc_datetimes = num2date(times=time_minutes, units=units_str, only_use_cftime_datetimes=False, only_use_python_datetimes=True)
+                data_block_pd[&#39;datetime&#39;] = data_nc_datetimes
         datablock_list.append(data_block_pd)
 
                     

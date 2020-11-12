@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.8.1" />
 <title>dfm_tools.get_nc_helpers API documentation</title>
-<meta name="description" content="GNU GENERAL PUBLIC LICENSE
-Version 3, 29 June 2007 …" />
+<meta name="description" content="dfm_tools are post-processing tools for Delft3D FM
+Copyright (C) 2020 Deltares. All rights reserved …" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
@@ -21,22 +21,22 @@ Version 3, 29 June 2007 …" />
 <h1 class="title">Module <code>dfm_tools.get_nc_helpers</code></h1>
 </header>
 <section id="section-intro">
-<p>GNU GENERAL PUBLIC LICENSE
-Version 3, 29 June 2007</p>
 <p>dfm_tools are post-processing tools for Delft3D FM
-Copyright (C) 2020 Deltares</p>
+Copyright (C) 2020 Deltares. All rights reserved.</p>
 <p>This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.</p>
 <p>This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-See the
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.</p>
 <p>You should have received a copy of the GNU General Public License
 along with this program.
 If not, see <a href="http://www.gnu.org/licenses/">http://www.gnu.org/licenses/</a>.</p>
+<p>All names, logos, and references to "Deltares" are registered trademarks of
+Stichting Deltares and remain full property of Stichting Deltares at all times.
+All rights reserved.</p>
 <p>INFORMATION
 This script is part of dfm_tools: <a href="https://github.com/openearth/dfm_tools">https://github.com/openearth/dfm_tools</a>
 Check the README.rst on github for other available functions
@@ -51,11 +51,8 @@ Check the pptx and example figures in (created by the testbank): N:/Deltabox/Bul
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 &#34;&#34;&#34;
-GNU GENERAL PUBLIC LICENSE
-              Version 3, 29 June 2007
-
 dfm_tools are post-processing tools for Delft3D FM
-Copyright (C) 2020 Deltares
+Copyright (C) 2020 Deltares. All rights reserved.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -64,11 +61,15 @@ the Free Software Foundation, either version 3 of the License, or
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+
+All names, logos, and references to &#34;Deltares&#34; are registered trademarks of
+Stichting Deltares and remain full property of Stichting Deltares at all times.
+All rights reserved.
 
 
 INFORMATION
@@ -83,6 +84,53 @@ Created on Fri Feb 14 12:43:19 2020
 
 helper functions for functions in get_nc.py
 &#34;&#34;&#34;
+
+
+
+
+def ncdump(file_nc):
+    &#34;&#34;&#34;
+    ncdump outputs dimensions, variables and their attribute information.
+    The information is similar to that of NCAR&#39;s ncdump utility.
+    ncdump requires a valid instance of Dataset.
+    
+    Parameters
+    ----------
+    file_nc : netCDF4.Dataset
+        A netCDF4 dateset object
+    
+    &#34;&#34;&#34;
+    from netCDF4 import Dataset
+    import pandas as pd
+    #import numpy as np
+    
+    data_nc = Dataset(file_nc)
+    
+    # NetCDF global attributes
+    nc_attrs = data_nc.ncattrs()
+    print(&#34;NetCDF Global Attributes:&#34;)
+    for nc_attr in nc_attrs:
+        print(&#39;\t%s: %s&#39;%(nc_attr, data_nc.getncattr(nc_attr)))
+    
+    # Dimension shape information.
+    nc_dims = list(data_nc.dimensions.keys())  # list of nc dimensions
+    print(&#34;NetCDF dimension information:&#34;)
+    for dim in nc_dims:
+        if &#39;unlimited&#39; in str(data_nc.dimensions[dim]):
+            print(&#34;\t%s = UNLIMITED (currently %i)&#34;%(dim, data_nc.dimensions[dim].size))
+        else:    
+            print(&#34;\t%s = %i&#34;%(dim, data_nc.dimensions[dim].size))
+    
+    # Variable information.
+    nc_vars = list(data_nc.variables.keys())  # list of nc variables
+    print(&#34;NetCDF variable information:&#34;)
+    for var in nc_vars:
+        #if var not in nc_dims:
+        print(&#39;\t%s %s %s&#39;%(data_nc.variables[var].dtype, var, str(data_nc.variables[var].dimensions)))
+        print(&#34;\t\tshape: %s&#34;%(str(data_nc.variables[var].shape)))
+        for ncattr in data_nc.variables[var].ncattrs():
+            print(&#39;\t\t%s: %s&#39;%(ncattr,data_nc.variables[var].getncattr(ncattr)))
+    #return nc_attrs, nc_dims, nc_vars
 
 
 
@@ -142,6 +190,7 @@ def get_varname_fromnc(data_nc,varname_requested,vardim):
         varnames_list[&#39;mesh2d_edge_y&#39;] = [&#39;mesh2d_edge_y&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # y-coordinate of velocity-points
         
         varnames_list[&#39;mesh2d_edge_nodes&#39;] = [&#39;mesh2d_edge_nodes&#39;,&#39;NetLink&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # &#39;link between two netnodes&#39; / &#39;Mapping from every edge to the two nodes that it connects&#39;
+        varnames_list[&#39;mesh2d_edge_faces&#39;] = [&#39;mesh2d_edge_faces&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # &#39;Neighboring faces of mesh edges&#39;
         varnames_list[&#39;mesh2d_face_nodes&#39;] = [&#39;mesh2d_face_nodes&#39;,&#39;NetElemNode&#39;,&#39;mesh2d_agg_face_nodes&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # 
         
         varnames_list[&#39;mesh2d_face_x_bnd&#39;] = [&#39;mesh2d_face_x_bnd&#39;,&#39;FlowElemContour_x&#39;,&#39;mesh2d_agg_face_x_bnd&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # x-coordinates of flow element contours
@@ -167,7 +216,7 @@ def get_varname_fromnc(data_nc,varname_requested,vardim):
         #dimnames_list = pd.DataFrame()
         varnames_list[&#39;nmesh2d_node&#39;] = [&#39;nmesh2d_node&#39;,&#39;mesh2d_nNodes&#39;,&#39;nNetNode&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # number of nodes
         varnames_list[&#39;nmesh2d_face&#39;] = [&#39;nmesh2d_face&#39;,&#39;mesh2d_nFaces&#39;,&#39;nNetElem&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # number of faces
-        varnames_list[&#39;nmesh2d_edge&#39;] = [&#39;nmesh2d_edge&#39;,&#39;nNetLink&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # number of velocity-points
+        varnames_list[&#39;nmesh2d_edge&#39;] = [&#39;nmesh2d_edge&#39;,&#39;mesh2d_nEdges&#39;,&#39;nNetLink&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # number of velocity-points
         varnames_list[&#39;nFlowElem&#39;] = [&#39;nFlowElem&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # number of flow elements
         varnames_list[&#39;nFlowLink&#39;] = [&#39;nFlowLink&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # number of flow elements
         
@@ -277,7 +326,7 @@ def get_ncvarobject(file_nc, varname):
         varname = vars_pd.loc[varid,&#39;nc_varkeys&#39;]
         print(&#39;varname found in standard_name attribute&#39;)
     else:
-        raise Exception(&#39;ERROR: requested variable %s not in netcdf, available are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_ncvardimlist; vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)\nnote that you can retrieve variables by keys, standard_name or long_name attributes&#39;%(varname, vars_pd))
+        raise Exception(&#39;ERROR: requested variable %s not in netcdf, available are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_ncvardimlist\nvars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)\nnote that you can retrieve variables by keys, standard_name or long_name attributes&#39;%(varname, vars_pd))
     
     data_nc = Dataset(file_nc)
     nc_varobject = data_nc.variables[varname]
@@ -467,7 +516,7 @@ def get_timeid_fromdatetime(data_nc_datetimes_pd, timestep):
     #check if all requested times (timestep) are in netcdf file
     times_bool_reqinfile = timestep_pd.isin(data_nc_datetimes_pd)
     if not (times_bool_reqinfile == True).all():
-        raise Exception(&#39;ERROR: not all requested times are in netcdf file:\n%s\navailable in netcdf file are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_timesfromnc; data_nc_datetimes_pd = get_timesfromnc(file_nc=file_nc)&#39;%(timestep_pd[-times_bool_reqinfile], data_nc_datetimes_pd))
+        raise Exception(&#39;ERROR: not all requested times are in netcdf file:\n%s\navailable in netcdf file are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_timesfromnc\ndata_nc_datetimes_pd = get_timesfromnc(file_nc=file_nc)&#39;%(timestep_pd[-times_bool_reqinfile], data_nc_datetimes_pd))
         
     #get ids of requested times in netcdf file
     times_bool_fileinreq = data_nc_datetimes_pd.isin(timestep_pd)
@@ -566,7 +615,7 @@ def get_stationid_fromstationlist(station_name_list_pd, station, varname):
     
     stations_bool_reqinfile = stations_bool_reqinfile_allcols.any(axis=1)
     if not stations_bool_reqinfile.all():
-        raise Exception(&#39;ERROR: not all requested stations are in netcdf file:\n%s\navailable in netcdf file are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist; station_name_list_pd = get_hisstationlist(file_nc=file_nc,varname=&#34;%s&#34;)&#39;%(station_pd[~stations_bool_reqinfile], station_name_list_pd, varname))
+        raise Exception(&#39;ERROR: not all requested stations are in netcdf file:\n%s\navailable in netcdf file are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist\nstation_name_list_pd = get_hisstationlist(file_nc=file_nc,varname=&#34;%s&#34;)&#39;%(station_pd[~stations_bool_reqinfile], station_name_list_pd, varname))
     #get ids of requested stations in netcdf file
     station_bool_fileinreq = stations_bool_fileinreq_allcols.any(axis=1)
     station_ids = list(np.where(station_bool_fileinreq)[0])
@@ -774,7 +823,7 @@ def get_stationid_fromstationlist(station_name_list_pd, station, varname):
         varname = vars_pd.loc[varid,&#39;nc_varkeys&#39;]
         print(&#39;varname found in standard_name attribute&#39;)
     else:
-        raise Exception(&#39;ERROR: requested variable %s not in netcdf, available are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_ncvardimlist; vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)\nnote that you can retrieve variables by keys, standard_name or long_name attributes&#39;%(varname, vars_pd))
+        raise Exception(&#39;ERROR: requested variable %s not in netcdf, available are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_ncvardimlist\nvars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)\nnote that you can retrieve variables by keys, standard_name or long_name attributes&#39;%(varname, vars_pd))
     
     data_nc = Dataset(file_nc)
     nc_varobject = data_nc.variables[varname]
@@ -809,7 +858,7 @@ def get_stationid_fromstationlist(station_name_list_pd, station, varname):
     
     stations_bool_reqinfile = stations_bool_reqinfile_allcols.any(axis=1)
     if not stations_bool_reqinfile.all():
-        raise Exception(&#39;ERROR: not all requested stations are in netcdf file:\n%s\navailable in netcdf file are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist; station_name_list_pd = get_hisstationlist(file_nc=file_nc,varname=&#34;%s&#34;)&#39;%(station_pd[~stations_bool_reqinfile], station_name_list_pd, varname))
+        raise Exception(&#39;ERROR: not all requested stations are in netcdf file:\n%s\navailable in netcdf file are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist\nstation_name_list_pd = get_hisstationlist(file_nc=file_nc,varname=&#34;%s&#34;)&#39;%(station_pd[~stations_bool_reqinfile], station_name_list_pd, varname))
     #get ids of requested stations in netcdf file
     station_bool_fileinreq = stations_bool_fileinreq_allcols.any(axis=1)
     station_ids = list(np.where(station_bool_fileinreq)[0])
@@ -835,7 +884,7 @@ def get_stationid_fromstationlist(station_name_list_pd, station, varname):
     #check if all requested times (timestep) are in netcdf file
     times_bool_reqinfile = timestep_pd.isin(data_nc_datetimes_pd)
     if not (times_bool_reqinfile == True).all():
-        raise Exception(&#39;ERROR: not all requested times are in netcdf file:\n%s\navailable in netcdf file are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_timesfromnc; data_nc_datetimes_pd = get_timesfromnc(file_nc=file_nc)&#39;%(timestep_pd[-times_bool_reqinfile], data_nc_datetimes_pd))
+        raise Exception(&#39;ERROR: not all requested times are in netcdf file:\n%s\navailable in netcdf file are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_timesfromnc\ndata_nc_datetimes_pd = get_timesfromnc(file_nc=file_nc)&#39;%(timestep_pd[-times_bool_reqinfile], data_nc_datetimes_pd))
         
     #get ids of requested times in netcdf file
     times_bool_fileinreq = data_nc_datetimes_pd.isin(timestep_pd)
@@ -1063,6 +1112,7 @@ if reconstruction fails (the length of the netCDF variable is not equal of the l
         varnames_list[&#39;mesh2d_edge_y&#39;] = [&#39;mesh2d_edge_y&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # y-coordinate of velocity-points
         
         varnames_list[&#39;mesh2d_edge_nodes&#39;] = [&#39;mesh2d_edge_nodes&#39;,&#39;NetLink&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # &#39;link between two netnodes&#39; / &#39;Mapping from every edge to the two nodes that it connects&#39;
+        varnames_list[&#39;mesh2d_edge_faces&#39;] = [&#39;mesh2d_edge_faces&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # &#39;Neighboring faces of mesh edges&#39;
         varnames_list[&#39;mesh2d_face_nodes&#39;] = [&#39;mesh2d_face_nodes&#39;,&#39;NetElemNode&#39;,&#39;mesh2d_agg_face_nodes&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # 
         
         varnames_list[&#39;mesh2d_face_x_bnd&#39;] = [&#39;mesh2d_face_x_bnd&#39;,&#39;FlowElemContour_x&#39;,&#39;mesh2d_agg_face_x_bnd&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # x-coordinates of flow element contours
@@ -1088,7 +1138,7 @@ if reconstruction fails (the length of the netCDF variable is not equal of the l
         #dimnames_list = pd.DataFrame()
         varnames_list[&#39;nmesh2d_node&#39;] = [&#39;nmesh2d_node&#39;,&#39;mesh2d_nNodes&#39;,&#39;nNetNode&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # number of nodes
         varnames_list[&#39;nmesh2d_face&#39;] = [&#39;nmesh2d_face&#39;,&#39;mesh2d_nFaces&#39;,&#39;nNetElem&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # number of faces
-        varnames_list[&#39;nmesh2d_edge&#39;] = [&#39;nmesh2d_edge&#39;,&#39;nNetLink&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # number of velocity-points
+        varnames_list[&#39;nmesh2d_edge&#39;] = [&#39;nmesh2d_edge&#39;,&#39;mesh2d_nEdges&#39;,&#39;nNetLink&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # number of velocity-points
         varnames_list[&#39;nFlowElem&#39;] = [&#39;nFlowElem&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # number of flow elements
         varnames_list[&#39;nFlowLink&#39;] = [&#39;nFlowLink&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;&#39;] # number of flow elements
         
@@ -1162,6 +1212,66 @@ if reconstruction fails (the length of the netCDF variable is not equal of the l
     return nonghost_ids</code></pre>
 </details>
 </dd>
+<dt id="dfm_tools.get_nc_helpers.ncdump"><code class="name flex">
+<span>def <span class="ident">ncdump</span></span>(<span>file_nc)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>ncdump outputs dimensions, variables and their attribute information.
+The information is similar to that of NCAR's ncdump utility.
+ncdump requires a valid instance of Dataset.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>file_nc</code></strong> :&ensp;<code>netCDF4.Dataset</code></dt>
+<dd>A netCDF4 dateset object</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def ncdump(file_nc):
+    &#34;&#34;&#34;
+    ncdump outputs dimensions, variables and their attribute information.
+    The information is similar to that of NCAR&#39;s ncdump utility.
+    ncdump requires a valid instance of Dataset.
+    
+    Parameters
+    ----------
+    file_nc : netCDF4.Dataset
+        A netCDF4 dateset object
+    
+    &#34;&#34;&#34;
+    from netCDF4 import Dataset
+    import pandas as pd
+    #import numpy as np
+    
+    data_nc = Dataset(file_nc)
+    
+    # NetCDF global attributes
+    nc_attrs = data_nc.ncattrs()
+    print(&#34;NetCDF Global Attributes:&#34;)
+    for nc_attr in nc_attrs:
+        print(&#39;\t%s: %s&#39;%(nc_attr, data_nc.getncattr(nc_attr)))
+    
+    # Dimension shape information.
+    nc_dims = list(data_nc.dimensions.keys())  # list of nc dimensions
+    print(&#34;NetCDF dimension information:&#34;)
+    for dim in nc_dims:
+        if &#39;unlimited&#39; in str(data_nc.dimensions[dim]):
+            print(&#34;\t%s = UNLIMITED (currently %i)&#34;%(dim, data_nc.dimensions[dim].size))
+        else:    
+            print(&#34;\t%s = %i&#34;%(dim, data_nc.dimensions[dim].size))
+    
+    # Variable information.
+    nc_vars = list(data_nc.variables.keys())  # list of nc variables
+    print(&#34;NetCDF variable information:&#34;)
+    for var in nc_vars:
+        #if var not in nc_dims:
+        print(&#39;\t%s %s %s&#39;%(data_nc.variables[var].dtype, var, str(data_nc.variables[var].dimensions)))
+        print(&#34;\t\tshape: %s&#34;%(str(data_nc.variables[var].shape)))
+        for ncattr in data_nc.variables[var].ncattrs():
+            print(&#39;\t\t%s: %s&#39;%(ncattr,data_nc.variables[var].getncattr(ncattr)))</code></pre>
+</details>
+</dd>
 </dl>
 </section>
 <section>
@@ -1190,6 +1300,7 @@ if reconstruction fails (the length of the netCDF variable is not equal of the l
 <li><code><a title="dfm_tools.get_nc_helpers.get_variable_timevardim" href="#dfm_tools.get_nc_helpers.get_variable_timevardim">get_variable_timevardim</a></code></li>
 <li><code><a title="dfm_tools.get_nc_helpers.get_varname_fromnc" href="#dfm_tools.get_nc_helpers.get_varname_fromnc">get_varname_fromnc</a></code></li>
 <li><code><a title="dfm_tools.get_nc_helpers.ghostcell_filter" href="#dfm_tools.get_nc_helpers.ghostcell_filter">ghostcell_filter</a></code></li>
+<li><code><a title="dfm_tools.get_nc_helpers.ncdump" href="#dfm_tools.get_nc_helpers.ncdump">ncdump</a></code></li>
 </ul>
 </li>
 </ul>
