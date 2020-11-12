@@ -1,0 +1,73 @@
+,nc_varkeys,shape,dimensions,dtype,standard_name,long_name,coordinates,units,mesh,location,ndims
+0,projected_coordinate_system,(),(),int32,,,,,,,0
+1,mesh2d,(),(),int32,,Topology data of 2D mesh,,,,,0
+2,mesh2d_node_x,"(15972,)","('mesh2d_nNodes',)",float64,projection_x_coordinate,x-coordinate of mesh nodes,,m,,,1
+3,mesh2d_node_y,"(15972,)","('mesh2d_nNodes',)",float64,projection_y_coordinate,y-coordinate of mesh nodes,,m,,,1
+4,mesh2d_node_z,"(15972,)","('mesh2d_nNodes',)",float64,,z-coordinate of mesh nodes,mesh2d_node_x mesh2d_node_y,m,mesh2d,node,1
+5,mesh2d_edge_x,"(31691,)","('mesh2d_nEdges',)",float64,projection_x_coordinate,characteristic x-coordinate of the mesh edge (e.g. midpoint),,m,,,1
+6,mesh2d_edge_y,"(31691,)","('mesh2d_nEdges',)",float64,projection_y_coordinate,characteristic y-coordinate of the mesh edge (e.g. midpoint),,m,,,1
+7,mesh2d_edge_nodes,"(31691, 2)","('mesh2d_nEdges', 'Two')",int32,,Start and end nodes of mesh edges,,,,,2
+8,mesh2d_face_nodes,"(15720, 4)","('mesh2d_nFaces', 'mesh2d_nMax_face_nodes')",int32,,Vertex nodes of mesh faces (counterclockwise),,,,,2
+9,mesh2d_edge_faces,"(31691, 2)","('mesh2d_nEdges', 'Two')",int32,,Neighboring faces of mesh edges,,,,,2
+10,mesh2d_face_x,"(15720,)","('mesh2d_nFaces',)",float64,projection_x_coordinate,Characteristic x-coordinate of mesh face,,m,,,1
+11,mesh2d_face_y,"(15720,)","('mesh2d_nFaces',)",float64,projection_y_coordinate,Characteristic y-coordinate of mesh face,,m,,,1
+12,mesh2d_face_x_bnd,"(15720, 4)","('mesh2d_nFaces', 'mesh2d_nMax_face_nodes')",float64,projection_x_coordinate,x-coordinate bounds of mesh faces (i.e. corner coordinates),,m,,,2
+13,mesh2d_face_y_bnd,"(15720, 4)","('mesh2d_nFaces', 'mesh2d_nMax_face_nodes')",float64,projection_y_coordinate,y-coordinate bounds of mesh faces (i.e. corner coordinates),,m,,,2
+14,mesh2d_edge_type,"(31691,)","('mesh2d_nEdges',)",int32,,edge type (relation between edge and flow geometry),mesh2d_edge_x mesh2d_edge_y,,mesh2d,edge,1
+15,mesh2d_flowelem_ba,"(15720,)","('mesh2d_nFaces',)",float64,cell_area,,mesh2d_face_x mesh2d_face_y,m2,mesh2d,face,1
+16,mesh2d_flowelem_bl,"(15720,)","('mesh2d_nFaces',)",float64,altitude,flow element center bedlevel (bl),mesh2d_face_x mesh2d_face_y,m,mesh2d,face,1
+17,time,"(883,)","('time',)",float64,time,,,seconds since 2016-09-19 00:00:00,,,1
+18,timestep,"(883,)","('time',)",float64,,Latest computational timestep size in each output interval,,s,,,1
+19,mesh2d_Numlimdt,"(883, 15720)","('time', 'mesh2d_nFaces')",float64,,Number of times flow element was Courant limiting,mesh2d_face_x mesh2d_face_y,1,mesh2d,face,2
+20,mesh2d_waterdepth,"(883, 15720)","('time', 'mesh2d_nFaces')",float64,sea_floor_depth_below_sea_surface,Water depth at pressure points,mesh2d_face_x mesh2d_face_y,m,mesh2d,face,2
+21,mesh2d_s1,"(883, 15720)","('time', 'mesh2d_nFaces')",float64,sea_surface_height,Water level,mesh2d_face_x mesh2d_face_y,m,mesh2d,face,2
+22,mesh2d_s0,"(883, 15720)","('time', 'mesh2d_nFaces')",float64,sea_surface_height,Water level on previous timestep,mesh2d_face_x mesh2d_face_y,m,mesh2d,face,2
+23,mesh2d_u1,"(883, 31691)","('time', 'mesh2d_nEdges')",float64,,"Velocity at velocity point, n-component",mesh2d_edge_x mesh2d_edge_y,m s-1,mesh2d,edge,2
+24,mesh2d_u0,"(883, 31691)","('time', 'mesh2d_nEdges')",float64,,"Velocity at velocity point at previous time step, n-component",mesh2d_edge_x mesh2d_edge_y,m s-1,mesh2d,edge,2
+25,mesh2d_ucx,"(883, 15720)","('time', 'mesh2d_nFaces')",float64,sea_water_x_eulerian_velocity,"Flow element center eulerian velocity vector, x-component",mesh2d_face_x mesh2d_face_y,m s-1,mesh2d,face,2
+26,mesh2d_ucy,"(883, 15720)","('time', 'mesh2d_nFaces')",float64,sea_water_y_eulerian_velocity,"Flow element center eulerian velocity vector, y-component",mesh2d_face_x mesh2d_face_y,m s-1,mesh2d,face,2
+27,mesh2d_ucmag,"(883, 15720)","('time', 'mesh2d_nFaces')",float64,sea_water_eulerian_speed,Flow element center eulerian velocity magnitude,mesh2d_face_x mesh2d_face_y,m s-1,mesh2d,face,2
+28,mesh2d_q1,"(883, 31691)","('time', 'mesh2d_nEdges')",float64,discharge,Discharge through flow link at current time,mesh2d_edge_x mesh2d_edge_y,m3 s-1,mesh2d,edge,2
+29,mesh2d_viu,"(883, 31691)","('time', 'mesh2d_nEdges')",float64,,Horizontal eddy viscosity,mesh2d_edge_x mesh2d_edge_y,m2 s-1,mesh2d,edge,2
+30,mesh2d_diu,"(883, 31691)","('time', 'mesh2d_nEdges')",float64,,Horizontal eddy diffusivity,mesh2d_edge_x mesh2d_edge_y,m2 s-1,mesh2d,edge,2
+31,mesh2d_taus,"(883, 15720)","('time', 'mesh2d_nFaces')",float64,,Total bed shear stress,mesh2d_face_x mesh2d_face_y,N m-2,mesh2d,face,2
+32,mesh2d_czs,"(883, 15720)","('time', 'mesh2d_nFaces')",float64,,Chezy roughness,mesh2d_face_x mesh2d_face_y,m0.5s-1,mesh2d,face,2
+33,sedAvgTim,"(2,)","('Two',)",float64,,Time interval over which cumulative transports are calculated,,s,,,1
+34,morfac,"(883,)","('time',)",float64,,Average morphological factor over elapsed morphological time,,-,,,1
+35,morft,"(883,)","('time',)",float64,,Current morphological time,,s,,,1
+36,sedfrac_name,"(1, 100)","('nSedTot', 'nStringlen')",|S1,,Sediment fraction name,,-,,,2
+37,mesh2d_ws,"(883, 1, 15720)","('time', 'nSedSus', 'mesh2d_nFaces')",float64,,Sediment settling velocity,mesh2d_face_x mesh2d_face_y,m s-1,mesh2d,face,3
+38,mesh2d_rsedeq,"(883, 1, 15720)","('time', 'nSedSus', 'mesh2d_nFaces')",float64,,Equilibrium sediment concentration,mesh2d_face_x mesh2d_face_y,kg m-3,mesh2d,face,3
+39,mesh2d_sedfrac_concentration,"(883, 1, 15720)","('time', 'nSedSus', 'mesh2d_nFaces')",float64,,Sediment concentration in flow cell,mesh2d_face_x mesh2d_face_y,kg m-3,mesh2d,face,3
+40,mesh2d_z0ucur,"(883, 31691)","('time', 'mesh2d_nEdges')",float64,,Current related roughness,mesh2d_edge_x mesh2d_edge_y,m,mesh2d,edge,2
+41,mesh2d_z0urou,"(883, 31691)","('time', 'mesh2d_nEdges')",float64,,Current-wave related roughness,mesh2d_edge_x mesh2d_edge_y,m,mesh2d,edge,2
+42,mesh2d_ssn,"(883, 1, 31691)","('time', 'nSedSus', 'mesh2d_nEdges')",float64,,"Suspended load transport, n-component",mesh2d_edge_x mesh2d_edge_y,m3 s-1 m-1,mesh2d,edge,3
+43,mesh2d_sst,"(883, 1, 31691)","('time', 'nSedSus', 'mesh2d_nEdges')",float64,,"Suspended load transport, t-component",mesh2d_edge_x mesh2d_edge_y,m3 s-1 m-1,mesh2d,edge,3
+44,mesh2d_sbn,"(883, 1, 31691)","('time', 'nSedTot', 'mesh2d_nEdges')",float64,,"Bed load transport, n-component",mesh2d_edge_x mesh2d_edge_y,m3 s-1 m-1,mesh2d,edge,3
+45,mesh2d_sbt,"(883, 1, 31691)","('time', 'nSedTot', 'mesh2d_nEdges')",float64,,"Bed load transport, t-component",mesh2d_edge_x mesh2d_edge_y,m3 s-1 m-1,mesh2d,edge,3
+46,mesh2d_uuu,"(883, 15720)","('time', 'mesh2d_nFaces')",float64,,"Characteristic velocity in cell centre, x-component",mesh2d_face_x mesh2d_face_y,m s-1,mesh2d,face,2
+47,mesh2d_vvv,"(883, 15720)","('time', 'mesh2d_nFaces')",float64,,"Characteristic velocity in cell centre, y-component",mesh2d_face_x mesh2d_face_y,m s-1,mesh2d,face,2
+48,mesh2d_sxtot,"(883, 1, 15720)","('time', 'nSedTot', 'mesh2d_nFaces')",float64,,"Total sediment transport in flow cell center (reconstructed), x-component",mesh2d_face_x mesh2d_face_y,m3 s-1 m-1,mesh2d,face,3
+49,mesh2d_sytot,"(883, 1, 15720)","('time', 'nSedTot', 'mesh2d_nFaces')",float64,,"Total sediment transport in flow cell center (reconstructed), y-component",mesh2d_face_x mesh2d_face_y,m3 s-1 m-1,mesh2d,face,3
+50,mesh2d_sbxcum,"(1, 15720)","('nSedTot', 'mesh2d_nFaces')",float64,,"Time-averaged bed load transport, x-component",mesh2d_face_x mesh2d_face_y,m3 s-1 m-1,mesh2d,face,2
+51,mesh2d_sbycum,"(1, 15720)","('nSedTot', 'mesh2d_nFaces')",float64,,"Time-averaged bed load transport, y-component",mesh2d_face_x mesh2d_face_y,m3 s-1 m-1,mesh2d,face,2
+52,mesh2d_ssxcum,"(1, 15720)","('nSedTot', 'mesh2d_nFaces')",float64,,"Time-averaged suspended load transport, x-component",mesh2d_face_x mesh2d_face_y,m3 s-1 m-1,mesh2d,face,2
+53,mesh2d_ssycum,"(1, 15720)","('nSedTot', 'mesh2d_nFaces')",float64,,"Time-averaged suspended load transport, y-component",mesh2d_face_x mesh2d_face_y,m3 s-1 m-1,mesh2d,face,2
+54,mesh2d_mor_bl,"(883, 15720)","('time', 'mesh2d_nFaces')",float64,,Time-varying bottom level in flow cell center,mesh2d_face_x mesh2d_face_y,m,mesh2d,face,2
+55,mesh2d_bodsed,"(883, 15720, 1)","('time', 'mesh2d_nFaces', 'nSedTot')",float64,,Available sediment mass in the bed in flow cell center,mesh2d_face_x mesh2d_face_y,kg m-2,mesh2d,face,3
+56,mesh2d_dpsed,"(883, 15720)","('time', 'mesh2d_nFaces')",float64,,Sediment thickness in the bed in flow cell center,mesh2d_face_x mesh2d_face_y,m,mesh2d,face,2
+57,mesh2d_sxwav,"(883, 15720)","('time', 'mesh2d_nFaces')",float64,sea_surface_x_wave_force_surface,"Surface layer wave forcing term, x-component",mesh2d_face_x mesh2d_face_y,N m-2,mesh2d,face,2
+58,mesh2d_sywav,"(883, 15720)","('time', 'mesh2d_nFaces')",float64,sea_surface_y_wave_force_surface,"Surface layer wave forcing term, y-component",mesh2d_face_x mesh2d_face_y,N m-2,mesh2d,face,2
+59,mesh2d_sxbwav,"(883, 15720)","('time', 'mesh2d_nFaces')",float64,sea_surface_x_wave_force_bottom,"Bottom layer wave forcing term, x-component",mesh2d_face_x mesh2d_face_y,N m-2,mesh2d,face,2
+60,mesh2d_sybwav,"(883, 15720)","('time', 'mesh2d_nFaces')",float64,sea_surface_y_wave_force_bottom,"Bottom layer wave forcing term, y-component",mesh2d_face_x mesh2d_face_y,N m-2,mesh2d,face,2
+61,mesh2d_hwav,"(883, 15720)","('time', 'mesh2d_nFaces')",float64,sea_surface_wave_rms_height,RMS wave height,mesh2d_face_x mesh2d_face_y,m,mesh2d,face,2
+62,mesh2d_uorb,"(883, 15720)","('time', 'mesh2d_nFaces')",float64,sea_surface_wave_orbital_velocity,Wave orbital velocity,mesh2d_face_x mesh2d_face_y,m s-1,mesh2d,face,2
+63,mesh2d_ust_cc,"(883, 15720)","('time', 'mesh2d_nFaces')",float64,sea_surface_x_stokes_drift,"Stokes drift, x-component",mesh2d_face_x mesh2d_face_y,m s-1,mesh2d,face,2
+64,mesh2d_vst_cc,"(883, 15720)","('time', 'mesh2d_nFaces')",float64,sea_surface_y_stokes_drift,"Stokes drift, y-component",mesh2d_face_x mesh2d_face_y,m s-1,mesh2d,face,2
+65,mesh2d_Fx,"(883, 15720)","('time', 'mesh2d_nFaces')",float64,sea_surface_x_wave_force,"Wave force, x-component",mesh2d_face_x mesh2d_face_y,N,mesh2d,face,2
+66,mesh2d_Fy,"(883, 15720)","('time', 'mesh2d_nFaces')",float64,sea_surface_y_wave_force,"Wave force, y-component",mesh2d_face_x mesh2d_face_y,N,mesh2d,face,2
+67,mesh2d_wavfu,"(883, 31691)","('time', 'mesh2d_nEdges')",float64,,"Wave force at velocity point, n-component",mesh2d_edge_x mesh2d_edge_y,N,mesh2d,edge,2
+68,mesh2d_wavfv,"(883, 31691)","('time', 'mesh2d_nEdges')",float64,,"Wave force at velocity point, t-component",mesh2d_edge_x mesh2d_edge_y,N,mesh2d,edge,2
+69,mesh2d_ustokes,"(883, 31691)","('time', 'mesh2d_nEdges')",float64,,"Stokes drift, n-component",mesh2d_edge_x mesh2d_edge_y,m s-1,mesh2d,edge,2
+70,mesh2d_vstokes,"(883, 31691)","('time', 'mesh2d_nEdges')",float64,,"Stokes drift, t-component",mesh2d_edge_x mesh2d_edge_y,m s-1,mesh2d,edge,2
+71,mesh2d_thetamean,"(883, 15720)","('time', 'mesh2d_nFaces')",float64,sea_surface_wave_from_direction,Wave from direction,mesh2d_face_x mesh2d_face_y,deg from N,mesh2d,face,2

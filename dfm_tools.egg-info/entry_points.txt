@@ -1,0 +1,3 @@
+[console_scripts]
+dfm_tools = dfm_tools.cli:main
+
