@@ -537,6 +537,21 @@ def test_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
     
 
 
+@pytest.mark.unittest
+def test_cartopy_epsg():
+    
+    from dfm_tools.testutils import try_importmodule
+    try_importmodule(modulename='cartopy') #check if cartopy was installed since it is an optional module, also happens in plot_cartopybasemap()
+    
+    from dfm_tools.get_nc import plot_background
+    
+    #this one crashes if the dummy in plot_background() is not created >> move to unit tests
+    plot_background(ax=None, projection=28992, google_style='satellite', resolution=5, features='land', nticks=6, latlon_format=False, gridlines=False)
+
+
+
+    
+    
 @pytest.mark.acceptance
 def test_cartopy_satellite_coastlines():
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
@@ -555,6 +570,9 @@ def test_cartopy_satellite_coastlines():
     from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata, plot_background
     from dfm_tools.get_nc_helpers import get_ncvardimlist
     
+    
+    #this one crashes if the dummy in plot_background() is not created >> move to unit tests
+    plot_background(ax=None, projection=28992, google_style='satellite', resolution=5, features='land', nticks=6, latlon_format=False, gridlines=False)
 
     #HIRLAM
     file_nc = r'p:\1204257-dcsmzuno\2014\data\meteo\HIRLAM72_2018\h72_201803.nc'

@@ -653,7 +653,7 @@ def plot_background(ax=None, projection=None, google_style='satellite', resoluti
     import cartopy.feature as cfeature 
     import cartopy.mpl.ticker as cticker
     
-    
+    dummy = ccrs.epsg(28992) #to make cartopy realize it has a cartopy._epsg._EPSGProjection class (maybe gets fixed with cartopy updates, see unittest test_cartopy_epsg)
     if ax is None: #provide axis projection on initialisation, cannot be edited later on
         if projection is None:
             projection=ccrs.PlateCarree() #projection of cimgt.GoogleTiles, useful default
