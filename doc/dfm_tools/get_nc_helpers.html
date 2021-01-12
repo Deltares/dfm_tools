@@ -276,7 +276,11 @@ def get_ncvardimlist(file_nc):
     
     nc_varkeys = list(data_nc.variables.keys())
     nc_dimkeys = list(data_nc.dimensions.keys())
-    vars_pd = pd.DataFrame({&#39;nc_varkeys&#39;: nc_varkeys, &#39;shape&#39;: [[&#39;&#39;]]*len(nc_varkeys), &#39;dimensions&#39;: [[&#39;&#39;]]*len(nc_varkeys), &#39;dtype&#39;: [[&#39;&#39;]]*len(nc_varkeys)})
+    #vars_pd = pd.DataFrame({&#39;nc_varkeys&#39;: nc_varkeys, &#39;shape&#39;: [[&#39;&#39;]]*len(nc_varkeys), &#39;dimensions&#39;: [[&#39;&#39;]]*len(nc_varkeys), &#39;dtype&#39;: [[&#39;&#39;]]*len(nc_varkeys)})
+    emptycol = [[&#39;&#39;]]*len(nc_varkeys)
+    emptycol_str = [&#39;&#39;]*len(nc_varkeys)
+    vars_pd = pd.DataFrame({&#39;nc_varkeys&#39;:nc_varkeys, &#39;shape&#39;:emptycol, &#39;dimensions&#39;:emptycol, &#39;dtype&#39;:emptycol,
+                            &#39;standard_name&#39;:emptycol_str,&#39;long_name&#39;:emptycol_str,&#39;coordinates&#39;:emptycol_str,&#39;units&#39;:emptycol_str,&#39;mesh&#39;:emptycol_str,&#39;location&#39;:emptycol_str})
     dims_pd = pd.DataFrame({&#39;nc_dimkeys&#39;: nc_dimkeys, &#39;name&#39;: [[&#39;&#39;]]*len(nc_dimkeys), &#39;size&#39;: [[&#39;&#39;]]*len(nc_dimkeys)})
     var_attr_name_list = [&#39;standard_name&#39;,&#39;long_name&#39;,&#39;coordinates&#39;,&#39;units&#39;,&#39;mesh&#39;,&#39;location&#39;]
     for iV, nc_var in enumerate(data_nc.variables):
@@ -286,8 +290,8 @@ def get_ncvardimlist(file_nc):
         vars_pd.loc[iV,&#39;dtype&#39;] = data_nc.variables[nc_var].dtype
         #get attributes properties of netcdf variable
         for attr_name in var_attr_name_list:
-            if iV==0:
-                vars_pd[attr_name] = &#39;&#39;
+            #if iV==0:
+            #    vars_pd[attr_name] = &#39;&#39;
             try:
                 vars_pd.loc[iV, attr_name] = data_nc.variables[nc_var].getncattr(attr_name)
             except:
@@ -766,7 +770,11 @@ def get_stationid_fromstationlist(station_name_list_pd, station, varname):
     
     nc_varkeys = list(data_nc.variables.keys())
     nc_dimkeys = list(data_nc.dimensions.keys())
-    vars_pd = pd.DataFrame({&#39;nc_varkeys&#39;: nc_varkeys, &#39;shape&#39;: [[&#39;&#39;]]*len(nc_varkeys), &#39;dimensions&#39;: [[&#39;&#39;]]*len(nc_varkeys), &#39;dtype&#39;: [[&#39;&#39;]]*len(nc_varkeys)})
+    #vars_pd = pd.DataFrame({&#39;nc_varkeys&#39;: nc_varkeys, &#39;shape&#39;: [[&#39;&#39;]]*len(nc_varkeys), &#39;dimensions&#39;: [[&#39;&#39;]]*len(nc_varkeys), &#39;dtype&#39;: [[&#39;&#39;]]*len(nc_varkeys)})
+    emptycol = [[&#39;&#39;]]*len(nc_varkeys)
+    emptycol_str = [&#39;&#39;]*len(nc_varkeys)
+    vars_pd = pd.DataFrame({&#39;nc_varkeys&#39;:nc_varkeys, &#39;shape&#39;:emptycol, &#39;dimensions&#39;:emptycol, &#39;dtype&#39;:emptycol,
+                            &#39;standard_name&#39;:emptycol_str,&#39;long_name&#39;:emptycol_str,&#39;coordinates&#39;:emptycol_str,&#39;units&#39;:emptycol_str,&#39;mesh&#39;:emptycol_str,&#39;location&#39;:emptycol_str})
     dims_pd = pd.DataFrame({&#39;nc_dimkeys&#39;: nc_dimkeys, &#39;name&#39;: [[&#39;&#39;]]*len(nc_dimkeys), &#39;size&#39;: [[&#39;&#39;]]*len(nc_dimkeys)})
     var_attr_name_list = [&#39;standard_name&#39;,&#39;long_name&#39;,&#39;coordinates&#39;,&#39;units&#39;,&#39;mesh&#39;,&#39;location&#39;]
     for iV, nc_var in enumerate(data_nc.variables):
@@ -776,8 +784,8 @@ def get_stationid_fromstationlist(station_name_list_pd, station, varname):
         vars_pd.loc[iV,&#39;dtype&#39;] = data_nc.variables[nc_var].dtype
         #get attributes properties of netcdf variable
         for attr_name in var_attr_name_list:
-            if iV==0:
-                vars_pd[attr_name] = &#39;&#39;
+            #if iV==0:
+            #    vars_pd[attr_name] = &#39;&#39;
             try:
                 vars_pd.loc[iV, attr_name] = data_nc.variables[nc_var].getncattr(attr_name)
             except:
