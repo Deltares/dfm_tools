@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.8.1" />
 <title>dfm_tools.io.polygon API documentation</title>
-<meta name="description" content="GNU GENERAL PUBLIC LICENSE
-Version 3, 29 June 2007 …" />
+<meta name="description" content="dfm_tools are post-processing tools for Delft3D FM
+Copyright (C) 2020 Deltares. All rights reserved …" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
@@ -21,22 +21,22 @@ Version 3, 29 June 2007 …" />
 <h1 class="title">Module <code>dfm_tools.io.polygon</code></h1>
 </header>
 <section id="section-intro">
-<p>GNU GENERAL PUBLIC LICENSE
-Version 3, 29 June 2007</p>
 <p>dfm_tools are post-processing tools for Delft3D FM
-Copyright (C) 2020 Deltares</p>
+Copyright (C) 2020 Deltares. All rights reserved.</p>
 <p>This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.</p>
 <p>This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-See the
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.</p>
 <p>You should have received a copy of the GNU General Public License
 along with this program.
 If not, see <a href="http://www.gnu.org/licenses/">http://www.gnu.org/licenses/</a>.</p>
+<p>All names, logos, and references to "Deltares" are registered trademarks of
+Stichting Deltares and remain full property of Stichting Deltares at all times.
+All rights reserved.</p>
 <p>INFORMATION
 This script is part of dfm_tools: <a href="https://github.com/openearth/dfm_tools">https://github.com/openearth/dfm_tools</a>
 Check the README.rst on github for other available functions
@@ -50,11 +50,8 @@ Check the pptx and example figures in (created by the testbank): N:/Deltabox/Bul
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 &#34;&#34;&#34;
-GNU GENERAL PUBLIC LICENSE
-              Version 3, 29 June 2007
-
 dfm_tools are post-processing tools for Delft3D FM
-Copyright (C) 2020 Deltares
+Copyright (C) 2020 Deltares. All rights reserved.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -63,11 +60,15 @@ the Free Software Foundation, either version 3 of the License, or
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+
+All names, logos, and references to &#34;Deltares&#34; are registered trademarks of
+Stichting Deltares and remain full property of Stichting Deltares at all times.
+All rights reserved.
 
 
 INFORMATION
@@ -107,7 +108,7 @@ class Polygon:
         self.comments = comments
         #self.line_array = np.c_[self.x, self.y]
         
-    def fromfile(file_pol, pd_output=False, obj_output=False):
+    def fromfile(file_pol, pd_output=False, tekmap_output=False):#, obj_output=False):
         &#34;&#34;&#34;
         reads a pli boundary into an array
         
@@ -146,7 +147,7 @@ class Polygon:
             pol_comment_list = []
             pol_comment_temp = []
             pol_data_pd_list = []
-            pol_object_list = []
+            #pol_object_list = []
             iLine=0
             while iLine&lt;=len(lines)-1:
                 line_str = lines[iLine].split()
@@ -166,7 +167,7 @@ class Polygon:
                     pol_comment_list.append(pol_comment_temp)
                     
                     #convert shape numbers to int
-                    line_shp = [int(x) for x in lines[iLine].split()]
+                    line_shp = [int(x) for x in lines[iLine].split()] #eg [1150, 10, 10] if it is a tekal mapfile
                     iLine=iLine+1
                     len_pol=int(line_shp[0])
                     
@@ -179,31 +180,40 @@ class Polygon:
                     pol_data_list.append(data_pol)
                     if len(pol_comment_temp)==data_pol.shape[1]: #expected format
                         pol_data_pd = pd.DataFrame(data_pol,columns=pol_comment_temp)
-                        if &#39;date&#39; in pol_comment_temp[0].lower() and &#39;time&#39; in pol_comment_temp[1].lower():
-                            #first convert columns to integers, since they were before
-                            #pol_data_pd.iloc[:,0] = pol_data_pd.iloc[:,0].astype(int)
-                            #pol_data_pd.iloc[:,1] = pol_data_pd.iloc[:,1].astype(int)
-                            try:
-                                #add datetime column with parsed dates
-                                pol_data_datetime = pd.to_datetime(pol_data_pd.iloc[:,0]*1000000+pol_data_pd.iloc[:,1],format=&#39;%Y%m%d%H%M%S&#39;) #this does not work anymore
-                                #pol_data_datetime = (pol_data_pd.iloc[:,0]*1000000+pol_data_pd.iloc[:,1]).astype(&#39;datetime64[ns]&#39;).dt.round(freq=&#39;S&#39;)
-                                pol_data_pd.insert(0, &#39;datetime&#39;, pol_data_datetime)
-                            except:
-                                warnings.warn(&#39;conversion from date/time column to datetime failed, incorrect format of first two columns?&#39;)
-                                print(&#39;conversion from date/time column to datetime failed, incorrect format of first two columns?&#39;)
+                        if len(line_shp) == 2:
+                            if &#39;date&#39; in pol_comment_temp[0].lower() and &#39;time&#39; in pol_comment_temp[1].lower():
+                                #first convert columns to integers, since they were before
+                                #pol_data_pd.iloc[:,0] = pol_data_pd.iloc[:,0].astype(int)
+                                #pol_data_pd.iloc[:,1] = pol_data_pd.iloc[:,1].astype(int)
+                                try:
+                                    #add datetime column with parsed dates
+                                    pol_data_datetime = pd.to_datetime(pol_data_pd.iloc[:,0]*1000000+pol_data_pd.iloc[:,1],format=&#39;%Y%m%d%H%M%S&#39;) #this does not work anymore
+                                    #pol_data_datetime = (pol_data_pd.iloc[:,0]*1000000+pol_data_pd.iloc[:,1]).astype(&#39;datetime64[ns]&#39;).dt.round(freq=&#39;S&#39;)
+                                    pol_data_pd.insert(0, &#39;datetime&#39;, pol_data_datetime)
+                                except:
+                                    warnings.warn(&#39;conversion from date/time column to datetime failed, incorrect format of first two columns?&#39;)
+                                    print(&#39;conversion from date/time column to datetime failed, incorrect format of first two columns?&#39;)
+                        elif len(line_shp) == 3: #tekal 2D map files
+                            data_pol_map = data_pol.reshape([line_shp[0]//line_shp[2],line_shp[2],line_shp[1]])
+                        else:
+                            raise Exception(&#39;tekal file should have 2 or 3 dimensions, but it has this shape: %s&#39;%(line_shp))
                     else:
                         pol_data_pd = pd.DataFrame(data_pol)
                     pol_data_pd_list.append(pol_data_pd)
                     
-                    pol_object = Polygon(data=data_pol, name=line_str[0], comments=pol_comment_temp)
-                    pol_object_list.append(pol_object)
+                    #pol_object = Polygon(data=data_pol, name=line_str[0], comments=pol_comment_temp)
+                    #pol_object_list.append(pol_object)
                     
                     # reset comment list for next block
                     pol_comment_temp = []
         if pd_output is True:
             return pol_data_pd_list
-        elif obj_output is True:
-            return pol_object_list
+        elif tekmap_output:
+            if len(pol_comment_list) &gt; 1:
+                raise Exception(&#39;multiple tekal maps not anticipated yet&#39;)
+            return data_pol_map, pol_comment_list[0]
+        #elif obj_output is True:
+        #    return pol_object_list
         else:
             return pol_data_list, pol_name_list, pol_comment_list
             
@@ -213,7 +223,7 @@ class Polygon:
 
         
         #line_array = linebuilder.line_array
-        pol_frominput = Polygon(linebuilder.xs, linebuilder.ys)
+        pol_frominput = Polygon(LineBuilder.xs, LineBuilder.ys)
         
         return pol_frominput</code></pre>
 </details>
@@ -273,7 +283,7 @@ class Polygon:
         self.comments = comments
         #self.line_array = np.c_[self.x, self.y]
         
-    def fromfile(file_pol, pd_output=False, obj_output=False):
+    def fromfile(file_pol, pd_output=False, tekmap_output=False):#, obj_output=False):
         &#34;&#34;&#34;
         reads a pli boundary into an array
         
@@ -312,7 +322,7 @@ class Polygon:
             pol_comment_list = []
             pol_comment_temp = []
             pol_data_pd_list = []
-            pol_object_list = []
+            #pol_object_list = []
             iLine=0
             while iLine&lt;=len(lines)-1:
                 line_str = lines[iLine].split()
@@ -332,7 +342,7 @@ class Polygon:
                     pol_comment_list.append(pol_comment_temp)
                     
                     #convert shape numbers to int
-                    line_shp = [int(x) for x in lines[iLine].split()]
+                    line_shp = [int(x) for x in lines[iLine].split()] #eg [1150, 10, 10] if it is a tekal mapfile
                     iLine=iLine+1
                     len_pol=int(line_shp[0])
                     
@@ -345,31 +355,40 @@ class Polygon:
                     pol_data_list.append(data_pol)
                     if len(pol_comment_temp)==data_pol.shape[1]: #expected format
                         pol_data_pd = pd.DataFrame(data_pol,columns=pol_comment_temp)
-                        if &#39;date&#39; in pol_comment_temp[0].lower() and &#39;time&#39; in pol_comment_temp[1].lower():
-                            #first convert columns to integers, since they were before
-                            #pol_data_pd.iloc[:,0] = pol_data_pd.iloc[:,0].astype(int)
-                            #pol_data_pd.iloc[:,1] = pol_data_pd.iloc[:,1].astype(int)
-                            try:
-                                #add datetime column with parsed dates
-                                pol_data_datetime = pd.to_datetime(pol_data_pd.iloc[:,0]*1000000+pol_data_pd.iloc[:,1],format=&#39;%Y%m%d%H%M%S&#39;) #this does not work anymore
-                                #pol_data_datetime = (pol_data_pd.iloc[:,0]*1000000+pol_data_pd.iloc[:,1]).astype(&#39;datetime64[ns]&#39;).dt.round(freq=&#39;S&#39;)
-                                pol_data_pd.insert(0, &#39;datetime&#39;, pol_data_datetime)
-                            except:
-                                warnings.warn(&#39;conversion from date/time column to datetime failed, incorrect format of first two columns?&#39;)
-                                print(&#39;conversion from date/time column to datetime failed, incorrect format of first two columns?&#39;)
+                        if len(line_shp) == 2:
+                            if &#39;date&#39; in pol_comment_temp[0].lower() and &#39;time&#39; in pol_comment_temp[1].lower():
+                                #first convert columns to integers, since they were before
+                                #pol_data_pd.iloc[:,0] = pol_data_pd.iloc[:,0].astype(int)
+                                #pol_data_pd.iloc[:,1] = pol_data_pd.iloc[:,1].astype(int)
+                                try:
+                                    #add datetime column with parsed dates
+                                    pol_data_datetime = pd.to_datetime(pol_data_pd.iloc[:,0]*1000000+pol_data_pd.iloc[:,1],format=&#39;%Y%m%d%H%M%S&#39;) #this does not work anymore
+                                    #pol_data_datetime = (pol_data_pd.iloc[:,0]*1000000+pol_data_pd.iloc[:,1]).astype(&#39;datetime64[ns]&#39;).dt.round(freq=&#39;S&#39;)
+                                    pol_data_pd.insert(0, &#39;datetime&#39;, pol_data_datetime)
+                                except:
+                                    warnings.warn(&#39;conversion from date/time column to datetime failed, incorrect format of first two columns?&#39;)
+                                    print(&#39;conversion from date/time column to datetime failed, incorrect format of first two columns?&#39;)
+                        elif len(line_shp) == 3: #tekal 2D map files
+                            data_pol_map = data_pol.reshape([line_shp[0]//line_shp[2],line_shp[2],line_shp[1]])
+                        else:
+                            raise Exception(&#39;tekal file should have 2 or 3 dimensions, but it has this shape: %s&#39;%(line_shp))
                     else:
                         pol_data_pd = pd.DataFrame(data_pol)
                     pol_data_pd_list.append(pol_data_pd)
                     
-                    pol_object = Polygon(data=data_pol, name=line_str[0], comments=pol_comment_temp)
-                    pol_object_list.append(pol_object)
+                    #pol_object = Polygon(data=data_pol, name=line_str[0], comments=pol_comment_temp)
+                    #pol_object_list.append(pol_object)
                     
                     # reset comment list for next block
                     pol_comment_temp = []
         if pd_output is True:
             return pol_data_pd_list
-        elif obj_output is True:
-            return pol_object_list
+        elif tekmap_output:
+            if len(pol_comment_list) &gt; 1:
+                raise Exception(&#39;multiple tekal maps not anticipated yet&#39;)
+            return data_pol_map, pol_comment_list[0]
+        #elif obj_output is True:
+        #    return pol_object_list
         else:
             return pol_data_list, pol_name_list, pol_comment_list
             
@@ -379,14 +398,14 @@ class Polygon:
 
         
         #line_array = linebuilder.line_array
-        pol_frominput = Polygon(linebuilder.xs, linebuilder.ys)
+        pol_frominput = Polygon(LineBuilder.xs, LineBuilder.ys)
         
         return pol_frominput</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
 <dt id="dfm_tools.io.polygon.Polygon.fromfile"><code class="name flex">
-<span>def <span class="ident">fromfile</span></span>(<span>file_pol, pd_output=False, obj_output=False)</span>
+<span>def <span class="ident">fromfile</span></span>(<span>file_pol, pd_output=False, tekmap_output=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>reads a pli boundary into an array</p>
@@ -413,7 +432,7 @@ DESCRIPTION. The default is False.</dd>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def fromfile(file_pol, pd_output=False, obj_output=False):
+<pre><code class="python">def fromfile(file_pol, pd_output=False, tekmap_output=False):#, obj_output=False):
     &#34;&#34;&#34;
     reads a pli boundary into an array
     
@@ -452,7 +471,7 @@ DESCRIPTION. The default is False.</dd>
         pol_comment_list = []
         pol_comment_temp = []
         pol_data_pd_list = []
-        pol_object_list = []
+        #pol_object_list = []
         iLine=0
         while iLine&lt;=len(lines)-1:
             line_str = lines[iLine].split()
@@ -472,7 +491,7 @@ DESCRIPTION. The default is False.</dd>
                 pol_comment_list.append(pol_comment_temp)
                 
                 #convert shape numbers to int
-                line_shp = [int(x) for x in lines[iLine].split()]
+                line_shp = [int(x) for x in lines[iLine].split()] #eg [1150, 10, 10] if it is a tekal mapfile
                 iLine=iLine+1
                 len_pol=int(line_shp[0])
                 
@@ -485,31 +504,40 @@ DESCRIPTION. The default is False.</dd>
                 pol_data_list.append(data_pol)
                 if len(pol_comment_temp)==data_pol.shape[1]: #expected format
                     pol_data_pd = pd.DataFrame(data_pol,columns=pol_comment_temp)
-                    if &#39;date&#39; in pol_comment_temp[0].lower() and &#39;time&#39; in pol_comment_temp[1].lower():
-                        #first convert columns to integers, since they were before
-                        #pol_data_pd.iloc[:,0] = pol_data_pd.iloc[:,0].astype(int)
-                        #pol_data_pd.iloc[:,1] = pol_data_pd.iloc[:,1].astype(int)
-                        try:
-                            #add datetime column with parsed dates
-                            pol_data_datetime = pd.to_datetime(pol_data_pd.iloc[:,0]*1000000+pol_data_pd.iloc[:,1],format=&#39;%Y%m%d%H%M%S&#39;) #this does not work anymore
-                            #pol_data_datetime = (pol_data_pd.iloc[:,0]*1000000+pol_data_pd.iloc[:,1]).astype(&#39;datetime64[ns]&#39;).dt.round(freq=&#39;S&#39;)
-                            pol_data_pd.insert(0, &#39;datetime&#39;, pol_data_datetime)
-                        except:
-                            warnings.warn(&#39;conversion from date/time column to datetime failed, incorrect format of first two columns?&#39;)
-                            print(&#39;conversion from date/time column to datetime failed, incorrect format of first two columns?&#39;)
+                    if len(line_shp) == 2:
+                        if &#39;date&#39; in pol_comment_temp[0].lower() and &#39;time&#39; in pol_comment_temp[1].lower():
+                            #first convert columns to integers, since they were before
+                            #pol_data_pd.iloc[:,0] = pol_data_pd.iloc[:,0].astype(int)
+                            #pol_data_pd.iloc[:,1] = pol_data_pd.iloc[:,1].astype(int)
+                            try:
+                                #add datetime column with parsed dates
+                                pol_data_datetime = pd.to_datetime(pol_data_pd.iloc[:,0]*1000000+pol_data_pd.iloc[:,1],format=&#39;%Y%m%d%H%M%S&#39;) #this does not work anymore
+                                #pol_data_datetime = (pol_data_pd.iloc[:,0]*1000000+pol_data_pd.iloc[:,1]).astype(&#39;datetime64[ns]&#39;).dt.round(freq=&#39;S&#39;)
+                                pol_data_pd.insert(0, &#39;datetime&#39;, pol_data_datetime)
+                            except:
+                                warnings.warn(&#39;conversion from date/time column to datetime failed, incorrect format of first two columns?&#39;)
+                                print(&#39;conversion from date/time column to datetime failed, incorrect format of first two columns?&#39;)
+                    elif len(line_shp) == 3: #tekal 2D map files
+                        data_pol_map = data_pol.reshape([line_shp[0]//line_shp[2],line_shp[2],line_shp[1]])
+                    else:
+                        raise Exception(&#39;tekal file should have 2 or 3 dimensions, but it has this shape: %s&#39;%(line_shp))
                 else:
                     pol_data_pd = pd.DataFrame(data_pol)
                 pol_data_pd_list.append(pol_data_pd)
                 
-                pol_object = Polygon(data=data_pol, name=line_str[0], comments=pol_comment_temp)
-                pol_object_list.append(pol_object)
+                #pol_object = Polygon(data=data_pol, name=line_str[0], comments=pol_comment_temp)
+                #pol_object_list.append(pol_object)
                 
                 # reset comment list for next block
                 pol_comment_temp = []
     if pd_output is True:
         return pol_data_pd_list
-    elif obj_output is True:
-        return pol_object_list
+    elif tekmap_output:
+        if len(pol_comment_list) &gt; 1:
+            raise Exception(&#39;multiple tekal maps not anticipated yet&#39;)
+        return data_pol_map, pol_comment_list[0]
+    #elif obj_output is True:
+    #    return pol_object_list
     else:
         return pol_data_list, pol_name_list, pol_comment_list</code></pre>
 </details>
@@ -528,7 +556,7 @@ DESCRIPTION. The default is False.</dd>
 
     
     #line_array = linebuilder.line_array
-    pol_frominput = Polygon(linebuilder.xs, linebuilder.ys)
+    pol_frominput = Polygon(LineBuilder.xs, LineBuilder.ys)
     
     return pol_frominput</code></pre>
 </details>
