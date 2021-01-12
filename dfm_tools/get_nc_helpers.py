@@ -225,7 +225,10 @@ def get_ncvardimlist(file_nc):
     
     nc_varkeys = list(data_nc.variables.keys())
     nc_dimkeys = list(data_nc.dimensions.keys())
-    vars_pd = pd.DataFrame({'nc_varkeys': nc_varkeys, 'shape': [['']]*len(nc_varkeys), 'dimensions': [['']]*len(nc_varkeys), 'dtype': [['']]*len(nc_varkeys)})
+    #vars_pd = pd.DataFrame({'nc_varkeys': nc_varkeys, 'shape': [['']]*len(nc_varkeys), 'dimensions': [['']]*len(nc_varkeys), 'dtype': [['']]*len(nc_varkeys)})
+    emptycol = [['']]*len(nc_varkeys)
+    vars_pd = pd.DataFrame({'nc_varkeys':nc_varkeys, 'shape':emptycol, 'dimensions':emptycol, 'dtype':emptycol,
+                            'standard_name':emptycol,'long_name':emptycol,'coordinates':emptycol,'units':emptycol,'mesh':emptycol,'location':emptycol})
     dims_pd = pd.DataFrame({'nc_dimkeys': nc_dimkeys, 'name': [['']]*len(nc_dimkeys), 'size': [['']]*len(nc_dimkeys)})
     var_attr_name_list = ['standard_name','long_name','coordinates','units','mesh','location']
     for iV, nc_var in enumerate(data_nc.variables):
@@ -235,8 +238,8 @@ def get_ncvardimlist(file_nc):
         vars_pd.loc[iV,'dtype'] = data_nc.variables[nc_var].dtype
         #get attributes properties of netcdf variable
         for attr_name in var_attr_name_list:
-            if iV==0:
-                vars_pd[attr_name] = ''
+            #if iV==0:
+            #    vars_pd[attr_name] = ''
             try:
                 vars_pd.loc[iV, attr_name] = data_nc.variables[nc_var].getncattr(attr_name)
             except:
