@@ -227,8 +227,9 @@ def get_ncvardimlist(file_nc):
     nc_dimkeys = list(data_nc.dimensions.keys())
     #vars_pd = pd.DataFrame({'nc_varkeys': nc_varkeys, 'shape': [['']]*len(nc_varkeys), 'dimensions': [['']]*len(nc_varkeys), 'dtype': [['']]*len(nc_varkeys)})
     emptycol = [['']]*len(nc_varkeys)
+    emptycol_str = ['']*len(nc_varkeys)
     vars_pd = pd.DataFrame({'nc_varkeys':nc_varkeys, 'shape':emptycol, 'dimensions':emptycol, 'dtype':emptycol,
-                            'standard_name':emptycol,'long_name':emptycol,'coordinates':emptycol,'units':emptycol,'mesh':emptycol,'location':emptycol})
+                            'standard_name':emptycol_str,'long_name':emptycol_str,'coordinates':emptycol_str,'units':emptycol_str,'mesh':emptycol_str,'location':emptycol_str})
     dims_pd = pd.DataFrame({'nc_dimkeys': nc_dimkeys, 'name': [['']]*len(nc_dimkeys), 'size': [['']]*len(nc_dimkeys)})
     var_attr_name_list = ['standard_name','long_name','coordinates','units','mesh','location']
     for iV, nc_var in enumerate(data_nc.variables):
