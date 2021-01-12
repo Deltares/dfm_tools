@@ -1,6 +1,10 @@
 =======
 History
 =======
+0.7.30 (2021-01-2021)
+------------------
+* added fix to avoid crash with cartopy bug
+
 0.7.29 (2021-01-2021)
 ------------------
 * fixed pandas empty columns issue in get_ncvardimlist occurring since 1.2.0 (Dec 26)
