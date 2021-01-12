@@ -524,8 +524,8 @@ def test_waqua_netcdf_convertedwith_getdata():
             file_nc_his = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\07_WAQUAresultaten\j15\SDS-riv_tba_his.nc'
             timestep = 1
         elif RMM_name == 'RMMtestmodel':
-            file_nc_map = r'c:\DATA\dfm_tools_testdata\waqua_netcdf\nc_map.nc'
-            file_nc_his = r'c:\DATA\dfm_tools_testdata\waqua_netcdf\nc_his.nc'
+            file_nc_map = r'c:\DATA\dfm_tools_testdata\waqua_netcdf\SDS-haven_map.nc'
+            file_nc_his = r'c:\DATA\dfm_tools_testdata\waqua_netcdf\SDS-haven_his.nc'
             timestep = 10
     
         file_nc = file_nc_map
