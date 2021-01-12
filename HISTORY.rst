@@ -1,6 +1,13 @@
 =======
 History
 =======
+0.7.29 (2021-01-2021)
+------------------
+* fixed pandas empty columns issue in get_ncvardimlist occurring since 1.2.0 (Dec 26)
+* several cleanup actions in tekal, waqua netcdf, github files
+* updated html documentation
+* added some getdata waqua commands to comments.
+
 0.7.26 (2020-08-20)
 ------------------
 * implemented first version of a zt-plot function for data from D-Flow FM hisfile
