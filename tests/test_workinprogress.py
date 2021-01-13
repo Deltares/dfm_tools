@@ -1233,8 +1233,7 @@ def test_exporttoshapefile():
         pol_shp_list.append(pol_shp)
     
     print('creating geodataframe with cells')
-    newdata = gpd.GeoDataFrame()
-    newdata.crs = from_epsg(4326)
+    newdata = gpd.GeoDataFrame(crs="EPSG:4326")
     newdata['geometry'] = pol_shp_list #way more time efficient than doing it the loop
     
     for iV, varname in enumerate(varlist):

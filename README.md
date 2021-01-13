@@ -276,8 +276,6 @@ Developer information
 - How to contribute to this git repository?
 - First request github rights to contribute with the current developers:
 	- Jelmer Veenstra <jelmer.veenstra@deltares.nl>
-	- Lora Buckman
-	- Julien Groenenboom
 - Get a local checkout of the github repository:
 	- Download git from https://git-scm.com/download/win, install with default settings
 	- open command window in a folder where you want to clone the dfm_tools github repo, e.g. C:\\DATA
