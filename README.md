@@ -310,10 +310,11 @@ Developer information
 - run test bank:
 	- open command window (or anaconda prompt) in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
 	- ``conda activate dfm_tools_devenv``
-	- ``pytest -v --tb=short`` (runs all tests)
-	- ``pytest -v --tb=short -m unittest``
-	- ``pytest -v --tb=short -m systemtest``
-	- ``pytest -v --tb=short -m acceptance``
+	- ``pytest -v --tb=short --cov=dfm_tools`` (runs all tests)
+	- ``pytest -v --tb=short --cov=dfm_tools -m unittest``
+	- ``pytest -v --tb=short --cov=dfm_tools -m systemtest``
+	- ``pytest -v --tb=short --cov=dfm_tools -m acceptance``
+	- ``pytest -v --tb=short --cov=dfm_tools -m "not slow"``
 	- ``pytest -v --tb=short tests\test_get_nc.py::test_getplotmapWAQOS``
 - Regenerate html documentation:
 	- open command window (or anaconda prompt) in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
