@@ -535,6 +535,54 @@ def test_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
     
   
     
+  
+  
+    
+@pytest.mark.acceptance
+def test_contextily_addbasemap():
+    dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
+    
+    """
+    https://contextily.readthedocs.io/en/latest/reference.html
+    https://contextily.readthedocs.io/en/latest/intro_guide.html
+    ctx.add_basemap() defaults:
+        source: None defaults to ctx.providers.Stamen.Terrain
+        crs: coordinate reference system (CRS). If None (default), no warping is performed and the original Spherical Mercator (EPSG:3857) is used.
+    
+    dir_output = './test_output'
+    """
+    
+    import matplotlib.pyplot as plt
+    plt.close('all')
+
+    from dfm_tools.testutils import try_importmodule
+    try_importmodule(modulename='contextily') #check if contextily was installed since it is an optional module, also happens in plot_cartopybasemap()
+    import contextily as ctx
+
+    from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
+
+    file_nc_map = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen\\computations\\run01\\DFM_OUTPUT_Grevelingen-FM\\Grevelingen-FM_0000_map.nc')
+    ugrid = get_netdata(file_nc=file_nc_map)
+    data_frommap_bl = get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_flowelem_bl')
+    
+    source_list = [ctx.providers.Stamen.Terrain, #default source
+                   ctx.providers.Esri.WorldImagery,
+                   ctx.providers.CartoDB.Voyager,
+                   #ctx.providers.NASAGIBS.ViirsEarthAtNight2012,
+                   ctx.providers.Stamen.Watercolor]
+    
+    for source_ctx in source_list:
+        source_name = source_ctx['name'].replace('.','_')
+        fig, ax = plt.subplots(1,1,figsize=(10,6))
+        pc = plot_netmapdata(ugrid.verts, values=data_frommap_bl, ax=ax, linewidth=0.5, cmap='jet')
+        fig.colorbar(pc, ax=ax)
+        fig.tight_layout()
+        ctx.add_basemap(ax, source=source_ctx, crs="EPSG:28992", attribution_size=5)
+        fig.savefig(os.path.join(dir_output,'contextily_grevelingen_RD_%s'%(source_name)))
+    
+
+
+
 
 
 @pytest.mark.unittest
@@ -545,8 +593,10 @@ def test_cartopy_epsg():
     
     from dfm_tools.get_nc import plot_background
     
-    #this one crashes if the dummy in plot_background() is not created >> move to unit tests
+    #this one crashes if the dummy in plot_background() is not created
     plot_background(ax=None, projection=28992, google_style='satellite', resolution=5, features='land', nticks=6, latlon_format=False, gridlines=False)
+
+
 
 
 
@@ -570,10 +620,6 @@ def test_cartopy_satellite_coastlines():
     from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata, plot_background
     from dfm_tools.get_nc_helpers import get_ncvardimlist
     
-    
-    #this one crashes if the dummy in plot_background() is not created >> move to unit tests
-    plot_background(ax=None, projection=28992, google_style='satellite', resolution=5, features='land', nticks=6, latlon_format=False, gridlines=False)
-
     #HIRLAM
     file_nc = r'p:\1204257-dcsmzuno\2014\data\meteo\HIRLAM72_2018\h72_201803.nc'
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)

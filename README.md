@@ -59,8 +59,9 @@ Installation
 	- ``conda activate dfm_tools_env``
 	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this command installs dfm_tools and all required packages)
 	- optional: ``conda install -c conda-forge "shapely>=1.7.0" -y`` (for slicing 2D/3D data) (conda-forge channel is necessary since main channel version is 1.6.4)
-	- optional: ``conda install -c conda-forge cartopy -y`` (for satellite imagery on plots) (conda-forge channel recommended by cartopy developers, and currently also necessary for correct shapely version)
+	- optional: ``conda install -c conda-forge cartopy -y`` (for satellite imagery, coastlines etc on plots) (conda-forge channel recommended by cartopy developers, and currently also necessary for correct shapely version)
 	- optional: ``conda install -c conda-forge geopandas -y`` (for shapefile related operations)
+	- optional: ``conda install -c conda-forge contextily -y`` (for satellite imagery on plots, seems faster than cartopy)
 	- to remove venv when necessary: ``conda remove -n dfm_tools_env --all``
 - launch Spyder:
 	- open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in dfm_tools_env)
@@ -182,21 +183,6 @@ Feature wishlist
 	- example in test_get_nc.test_gethismodeldata()
 	- WARNING: part of the z interfaces/center data in dflowfm hisfile is currently wrong, check your figures carefully. Most of it is handled correctly
 	- layer argument now has to be provided when retrieving zcoordinate_c (centers) from hisfile, but not when retrieving zcoordinate_w (interfaces), align this.
-- improve cartopy satellite/basemap background:
-	- add test if cartopy is installed before importing it, since these are optional modules (also cartopy import in user script, so does not work)
-	- add more settings for linewidth/facecolor/alpha/linecolor
-	- load geotiffs with satellite imagery (or png's where limits are provided by user) (files provided by user or automatically downloaded from predifined or provided source)
-	- load World Imagery data from arcgis mapserver (e.g. https://www.arcgis.com/home/item.html?id=10df2279f9684e4a9f6a7f08febac2a9)
-	- https://stackoverflow.com/questions/12116050/how-to-plot-remote-image-from-http-url
-	- https://scitools.org.uk/cartopy/docs/v0.15/_modules/cartopy/mpl/geoaxes.html (stock_img() en background_img())
-	- https://github.com/SciTools/cartopy/blob/master/lib/cartopy/data/raster/natural_earth/images.json
-	- https://github.com/SciTools/cartopy/blob/master/lib/cartopy/data/raster/natural_earth/50-natural-earth-1-downsampled.png
-	- http://earthpy.org/cartopy_backgroung.html
-	- alternative satellite background:
-		```python
-		import contextily as ctx
-		ctx.add_basemap(ax, source=ctx.providers.Esri.WorldImagery, crs="EPSG:4326")
-		```
 - export to shapefile:
 	- testbank example added for a specific feature to shapefile, make more generic
 - coordinate conversion:
@@ -310,7 +296,7 @@ Developer information
 	- to remove venv when necessary: ``conda remove -n dfm_tools_devenv --all``
 	- ``conda activate dfm_tools_devenv``
 	- ``python -m pip install -e .`` (pip developer mode, any updates to the local folder by github (with ``git pull``) are immediately available in your python. It also installs all required packages)
-	- ``conda install -c conda-forge spyder "shapely>=1.7.0" cartopy geopandas``(conda-forge channel is necessary since main channel shapely version is 1.6.4. The correct version is available via pip, but then geos dll is not properly linked, this will probably be solved in the future https://github.com/Toblerity/Shapely/issues/844. cartopy also recommends conda-forge channel)
+	- ``conda install -c conda-forge spyder "shapely>=1.7.0" cartopy geopandas contextily``(conda-forge channel is necessary since main channel shapely version is 1.6.4. The correct version is available via pip, but then geos dll is not properly linked, this will probably be solved in the future https://github.com/Toblerity/Shapely/issues/844. cartopy also recommends conda-forge channel)
 	- test if dfm_tools is properly installed by printing the version number: ``python -c "import dfm_tools; print(dfm_tools.__version__)"``
 	- open 'Spyder(dfm_tools_devenv)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in dfm_tools_devenv)
 - Make your local changes to dfm_tools
