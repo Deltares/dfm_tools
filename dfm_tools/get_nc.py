@@ -606,7 +606,11 @@ def plot_netmapdata(verts, values=None, ax=None, **kwargs):
 
 def plot_background(ax=None, projection=None, google_style='satellite', resolution=1, features=None, nticks=6, latlon_format=False, gridlines=False, **kwargs):
     """
-    
+    this definition uses cartopy to plot a geoaxis and a satellite basemap and coastlines. A faster alternative for a basemap is contextily:
+    import contextily as ctx
+    fig, ax = plt.subplots(1,1)
+    ctx.add_basemap(ax, source=ctx.providers.Esri.WorldImagery, crs="EPSG:28992")
+    More info at: https://contextily.readthedocs.io/en/latest/reference.html
 
     Parameters
     ----------
