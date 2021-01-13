@@ -1,11 +1,15 @@
 =======
 History
 =======
-0.7.30 (2021-01-2021)
+0.7.31 (2021-01-13)
+------------------
+* added contextily basemap installation procedure and to testbank, more efficient than cartopy basemap
+
+0.7.30 (2021-01-12)
 ------------------
 * added fix to avoid crash with cartopy bug
 
-0.7.29 (2021-01-2021)
+0.7.29 (2021-01-12)
 ------------------
 * fixed pandas empty columns issue in get_ncvardimlist occurring since 1.2.0 (Dec 26)
 * several cleanup actions in tekal, waqua netcdf, github files
