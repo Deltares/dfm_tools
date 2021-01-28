@@ -6,7 +6,10 @@ import pytest
 #import inspect
 import os
 
-dir_testinput = os.path.join(r'c:/DATA','dfm_tools_testdata')
+if 'TEAMCITY_VERSION' in os.environ.keys(): #teamcity path
+    dir_testinput = r'/opt/testdata/dfm_tools'
+else: #default to this path
+    dir_testinput = os.path.join(r'c:/DATA','dfm_tools_testdata')
 #from dfm_tools.testutils import getmakeoutputdir
 
 
