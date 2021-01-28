@@ -9,16 +9,12 @@ import pytest
 import inspect
 import os
 
-if 'TEAMCITY_VERSION' in os.environ.keys(): #teamcity path
-    dir_testinput = r'\\dfs-trusted.directory.intra\dfs\Teamcity\Testdata\dfm_tools'
-else: #default to this path
-    dir_testinput = os.path.join(r'c:/DATA','dfm_tools_testdata')
-
-from dfm_tools.testutils import getmakeoutputdir
+from dfm_tools.testutils import getmakeoutputdir, gettestinputdir
+dir_testinput = gettestinputdir()
 
 
 
-
+@pytest.mark.acceptance
 def test_trygetondepth():
     import numpy as np
     from netCDF4 import Dataset
@@ -79,6 +75,9 @@ def test_trygetondepth():
     
 
 
+
+
+@pytest.mark.acceptance
 def test_delft3D_netcdf():
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
     """
@@ -345,8 +344,7 @@ def test_delft3D_netcdf():
 
 
 
-
-
+@pytest.mark.acceptance
 def test_waqua_netcdf_convertedwith_getdata():
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
     
@@ -596,8 +594,6 @@ def test_waqua_netcdf_convertedwith_getdata():
         plt.savefig(os.path.join(dir_output,'waqua_%s_his_ZWL'%(RMM_name)))
 
 
-
-    
 
 
 

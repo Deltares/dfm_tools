@@ -9,12 +9,9 @@ import pytest
 import inspect
 import os
 
-if 'TEAMCITY_VERSION' in os.environ.keys(): #teamcity path
-    dir_testinput = r'\\dfs-trusted.directory.intra\dfs\Teamcity\Testdata\dfm_tools'
-else: #default to this path
-    dir_testinput = os.path.join(r'c:/DATA','dfm_tools_testdata')
+from dfm_tools.testutils import getmakeoutputdir, gettestinputdir
+dir_testinput = gettestinputdir()
 
-from dfm_tools.testutils import getmakeoutputdir
 
 
 @pytest.mark.parametrize("file_nc, expected_size", [pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'), 5599, id='from 1 map partion Grevelingen'),
