@@ -1211,11 +1211,10 @@ def test_exporttoshapefile():
     from dfm_tools.get_nc_helpers import get_ncvardimlist#, get_ncfilelist
     
     varlist = ['Chlfa']#,'mesh2d_s1']
-    dir_modeloutput = r'p:\11203850-coastserv\06-Model\waq_model\simulations\run0_20200319\DFM_OUTPUT_kzn_waq'
-    dir_shp = dir_output#os.path.join(dir_modeloutput, 'shapefiles')
+    dir_shp = dir_output
     if not os.path.exists(dir_shp):
         os.makedirs(dir_shp)
-    file_nc = os.path.join(dir_modeloutput, 'kzn_waq_0000_map.nc')
+    file_nc = os.path.join(r'p:\11203850-coastserv\06-Model\waq_model\simulations\run0_20200319\DFM_OUTPUT_kzn_waq', 'kzn_waq_0000_map.nc')
     
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
     vars_pd_matching = vars_pd[vars_pd.loc[:,'long_name'].str.match('.*Chl.*')]

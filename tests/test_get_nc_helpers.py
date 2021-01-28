@@ -20,7 +20,7 @@ def test_gettimesfromnc():
     from dfm_tools.get_nc import get_ncmodeldata
     
     #this file seems to have a reconstructable array, but contains gaps, so the time reader falls back to reading all
-    file_nc = r'p:\1204257-dcsmzuno\data\waterbase2\sea_surface_height\id1-LICHTELGRE.nc'
+    file_nc = os.path.join(dir_testinput,'id1-LICHTELGRE.nc')
     data_fromhis_time = get_ncmodeldata(file_nc,varname='time',timestep='all')
 
     
