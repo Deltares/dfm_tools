@@ -608,7 +608,7 @@ def test_contextily_addbasemap():
 
 
 
-@pytest.mark.unittest
+@pytest.mark.systemtest
 def test_cartopy_epsg():
     
     from dfm_tools.testutils import try_importmodule
