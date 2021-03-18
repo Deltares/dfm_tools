@@ -33,11 +33,32 @@ def test_UGrid(file_nc, expected_size):
                                                     pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\Grevelingen_FM_grid_20190603_net.nc'), 44804, id='fromnet Grevelingen')])
 @pytest.mark.unittest
 def test_getnetdata(file_nc, expected_size):
+    """
+    file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc')
+    expected_size = 44796
+    """
     from dfm_tools.get_nc import get_netdata
     
     ugrid = get_netdata(file_nc)
     
     assert ugrid.verts.shape[0] == expected_size
+
+
+
+@pytest.mark.parametrize("file_nc, expected_size", [pytest.param(os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc'), (1,44796), id='from partitioned map Grevelingen')])
+@pytest.mark.unittest
+def test_getmapdata(file_nc, expected_size):
+    """
+    Checks whether ghost cells are properly taken care of.
+    
+    file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc')
+    expected_size = (1, 44796)
+    """
+    from dfm_tools.get_nc import get_ncmodeldata
+    
+    data_nc = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_s1',timestep=2)
+    
+    assert data_nc.shape == expected_size
 
 
 
@@ -239,7 +260,7 @@ def test_getnetdata_plotnet_regular(file_nc):
     file_nc = 'p:\\11203869-morwaqeco3d\\05-Tidal_inlet\\02_FM_201910\\FM_MF10_Max_30s\\wave\\wavm-inlet.nc'
     file_nc = 'p:\\11200665-c3s-codec\\2_Hydro\\ECWMF_meteo\\meteo\\ERA-5\\2000\\ERA5_metOcean_atm_19991201_19991231.nc'
     file_nc = 'p:\\1204257-dcsmzuno\\2014\\data\\meteo\\HIRLAM72_2018\\h72_201803.nc'
-    file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\01_Implementation\08_restartfile\sfincs_map.nc'
+    file_nc = 'p:\\11202255-sfincs\\Testbed\\Original_runs\\01_Implementation\\08_restartfile\\sfincs_map.nc'
     """
     
     import numpy as np
@@ -326,7 +347,7 @@ def test_gethismodeldata(file_nc):
     this test retrieves his data and plots it
     file_nc = os.path.join(dir_testinput,'vanNithin','tttz_0000_his.nc')
     file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen\\computations\\run01\\DFM_OUTPUT_Grevelingen-FM\\Grevelingen-FM_0000_his.nc')
-    file_nc = r'p:\11202512-h2020_impaqt\Mediterranean_model\MedSea_impaqt_model\computations\r003_test\DFM_OUTPUT_MedSea_impaqt_FM\MedSea_impaqt_FM_0000_his.nc'
+    file_nc = 'p:\\11202512-h2020_impaqt\\Mediterranean_model\\MedSea_impaqt_model\\computations\\r003_test\\DFM_OUTPUT_MedSea_impaqt_FM\\MedSea_impaqt_FM_0000_his.nc'
     dir_output = './test_output'
     """
 
@@ -415,7 +436,7 @@ def test_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
     """
     this test retrieves grid data, retrieves map data, and plots it
     file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc')
-    #file_nc = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\computations\run_180\DFM_OUTPUT_RMM_dflowfm\RMM_dflowfm_0000_map.nc'
+    #file_nc = 'p:\\11205258-006-kpp2020_rmm-g6\\C_Work\\08_RMM_FMmodel\\computations\\run_180\\DFM_OUTPUT_RMM_dflowfm\\RMM_dflowfm_0000_map.nc'
     dir_output = './test_output'
     """
 
