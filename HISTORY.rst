@@ -1,6 +1,26 @@
 =======
 History
 =======
+0.7.33 (2021-03-19)
+------------------
+* made ghostid removal more efficient, partitioned map retrieval is now significantly faster
+* including repair in mask of data, this is now repaired and a unittest is added to catch this in the future
+
+0.7.31 (2021-01-13)
+------------------
+* added contextily basemap installation procedure and to testbank, more efficient than cartopy basemap
+
+0.7.30 (2021-01-12)
+------------------
+* added fix to avoid crash with cartopy bug
+
+0.7.29 (2021-01-12)
+------------------
+* fixed pandas empty columns issue in get_ncvardimlist occurring since 1.2.0 (Dec 26)
+* several cleanup actions in tekal, waqua netcdf, github files
+* updated html documentation
+* added some getdata waqua commands to comments.
+
 0.7.26 (2020-08-20)
 ------------------
 * implemented first version of a zt-plot function for data from D-Flow FM hisfile

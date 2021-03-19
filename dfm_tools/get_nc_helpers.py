@@ -225,7 +225,11 @@ def get_ncvardimlist(file_nc):
     
     nc_varkeys = list(data_nc.variables.keys())
     nc_dimkeys = list(data_nc.dimensions.keys())
-    vars_pd = pd.DataFrame({'nc_varkeys': nc_varkeys, 'shape': [['']]*len(nc_varkeys), 'dimensions': [['']]*len(nc_varkeys), 'dtype': [['']]*len(nc_varkeys)})
+    #vars_pd = pd.DataFrame({'nc_varkeys': nc_varkeys, 'shape': [['']]*len(nc_varkeys), 'dimensions': [['']]*len(nc_varkeys), 'dtype': [['']]*len(nc_varkeys)})
+    emptycol = [['']]*len(nc_varkeys)
+    emptycol_str = ['']*len(nc_varkeys)
+    vars_pd = pd.DataFrame({'nc_varkeys':nc_varkeys, 'shape':emptycol, 'dimensions':emptycol, 'dtype':emptycol,
+                            'standard_name':emptycol_str,'long_name':emptycol_str,'coordinates':emptycol_str,'units':emptycol_str,'mesh':emptycol_str,'location':emptycol_str})
     dims_pd = pd.DataFrame({'nc_dimkeys': nc_dimkeys, 'name': [['']]*len(nc_dimkeys), 'size': [['']]*len(nc_dimkeys)})
     var_attr_name_list = ['standard_name','long_name','coordinates','units','mesh','location']
     for iV, nc_var in enumerate(data_nc.variables):
@@ -235,8 +239,8 @@ def get_ncvardimlist(file_nc):
         vars_pd.loc[iV,'dtype'] = data_nc.variables[nc_var].dtype
         #get attributes properties of netcdf variable
         for attr_name in var_attr_name_list:
-            if iV==0:
-                vars_pd[attr_name] = ''
+            #if iV==0:
+            #    vars_pd[attr_name] = ''
             try:
                 vars_pd.loc[iV, attr_name] = data_nc.variables[nc_var].getncattr(attr_name)
             except:
@@ -327,7 +331,7 @@ def get_variable_timevardim(file_nc, varname):
 
 
     
-def get_timesfromnc(file_nc, varname='time', retrieve_ids=False, keeptimezone=True):
+def get_timesfromnc(file_nc, varname='time', retrieve_ids=False, keeptimezone=True, silent=False):
     """
     retrieves time array from netcdf file.
     Since long time arrays take a long time to retrieve at once, reconstruction is tried
@@ -375,7 +379,8 @@ def get_timesfromnc(file_nc, varname='time', retrieve_ids=False, keeptimezone=Tr
     time_length = data_nc_timevar.shape[0]
 
     if retrieve_ids is not False:
-        print('reading time dimension: only requested indices')
+        if not silent:
+            print('reading time dimension: only requested indices')
         listtype_range = [list, range, np.ndarray]
         if type(retrieve_ids) not in listtype_range:
             raise Exception('ERROR: argument retrieve_ids should be a list')
@@ -384,7 +389,8 @@ def get_timesfromnc(file_nc, varname='time', retrieve_ids=False, keeptimezone=Tr
         data_nc_times = data_nc_timevar[retrieve_ids]
     elif len(data_nc_timevar)<3: #check if time dimension is shorter than 3 items
         data_nc_times = data_nc_timevar[:]
-        print('reading time dimension: read entire array (because length < 3)')
+        if not silent:
+            print('reading time dimension: read entire array (because length < 3)')
     else:
         time0 = data_nc_timevar[0] 
         time1 = data_nc_timevar[1] 
@@ -396,14 +402,17 @@ def get_timesfromnc(file_nc, varname='time', retrieve_ids=False, keeptimezone=Tr
         timeinc_preend = timemin2-timemin3
         #timeinc_end = timemin1-timemin2
         if timeinc_poststart == timeinc_preend: #reconstruct time array to save time
-            print('reading time dimension: reconstruct array')
+            if not silent:
+                print('reading time dimension: reconstruct array')
             data_nc_times_from1 = np.arange(time1,timemin1,timeinc_poststart)
             data_nc_times = np.concatenate([[time0],data_nc_times_from1,[timemin1]])
             if data_nc_timevar.shape[0] != len(data_nc_times):#test if len of reconstructed timeseries is same as len of timevar in netCDF, retrieve entire array
-                print('reading time dimension: reconstruction failed, read entire array')
+                if not silent:
+                    print('reading time dimension: reconstruction failed, read entire array')
                 data_nc_times = data_nc_timevar[:]
         else:
-            print('reading time dimension: read entire array')
+            if not silent:
+                print('reading time dimension: read entire array')
             data_nc_times = data_nc_timevar[:]
         
     if len(data_nc_times.shape) > 1:
@@ -435,9 +444,11 @@ def get_timesfromnc(file_nc, varname='time', retrieve_ids=False, keeptimezone=Tr
             refdate = dt.datetime.strptime(refdate_str,'%Y-%m-%d %H:%M:%S')
             data_nc_times_pdtd = pd.to_timedelta(data_nc_times, unit=time_units_list[0])
             data_nc_datetimes = (refdate + data_nc_times_pdtd)#.to_pydatetime()
-            print('retrieving original timezone succeeded, no conversion to UTC/GMT applied')
+            if not silent:
+                print('retrieving original timezone succeeded, no conversion to UTC/GMT applied')
         except:
-            print('retrieving original timezone failed, using num2date output instead')
+            if not silent:
+                print('retrieving original timezone failed, using num2date output instead')
             data_nc_datetimes = num2date(data_nc_times, units=data_nc_timevar.units, only_use_cftime_datetimes=False, only_use_python_datetimes=True)
     else:
         #convert to datetime (automatically converted to UTC based on timezone in units)

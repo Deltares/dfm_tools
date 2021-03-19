@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.8.1" />
-<title>dfm_tools.cli API documentation</title>
-<meta name="description" content="Console script for dfm_tools." />
+<title>dfm_tools.ttide API documentation</title>
+<meta name="description" content="This package now holds the ttide_py API …" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
@@ -17,33 +17,113 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>dfm_tools.cli</code></h1>
+<h1 class="title">Module <code>dfm_tools.ttide</code></h1>
 </header>
 <section id="section-intro">
-<p>Console script for dfm_tools.</p>
+<p>This package now holds the ttide_py API.</p>
+<p>The included functions are:</p>
+<p>t_tide : The t_tide harmonic analysis function.</p>
+<p>t_predic : The t_tide harmonic fit function.</p>
+<p>TTideCon : The t_tide constituents class (returned by t_tide).</p>
+<p>A direct conversion of T_Tide to Python.</p>
+<p>This is a work in progress. It is not done.</p>
+<p>It is now mostly functional.
+Any help with finishing the conversion is welcome.</p>
+<p>Credit for T_Tide goes to Rich Pawlowicz, the original creator of T_Tide.
+It is available at <a href="http://www2.ocgy.ubc.ca/~rich/.">http://www2.ocgy.ubc.ca/~rich/.</a></p>
+<p>A description of the theoretical basis of the analysis and some
+implementation details of the Matlab version can be found in:</p>
+<blockquote>
+<p>Pawlowicz, R., B. Beardsley, and S. Lentz, "Classical Tidal
+"Harmonic Analysis Including Error Estimates in MATLAB
+using T_TIDE", Computers and Geosciences, 28, 929-937 (2002).</p>
+</blockquote>
+<p>Citation of this article would be appreciated if you find the toolbox
+useful (either the Matlab version, or this Python one).</p>
+<p>source: <a href="https://github.com/moflaher/ttide_py">https://github.com/moflaher/ttide_py</a></p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">&#34;&#34;&#34;Console script for dfm_tools.&#34;&#34;&#34;
-import sys
-import click
+<pre><code class="python">&#34;&#34;&#34;
+This package now holds the ttide_py API.
+
+The included functions are:
+
+t_tide : The t_tide harmonic analysis function.
+
+t_predic : The t_tide harmonic fit function.
+
+TTideCon : The t_tide constituents class (returned by t_tide).
 
 
-@click.command()
-def main(args=None):
-    &#34;&#34;&#34;Console script for dfm_tools.&#34;&#34;&#34;
-    click.echo(&#34;Replace this message by putting your code into &#34;
-               &#34;dfm_tools.cli.main&#34;)
-    click.echo(&#34;See click documentation at https://click.palletsprojects.com/&#34;)
-    return 0
 
 
-if __name__ == &#34;__main__&#34;:
-    sys.exit(main())  # pragma: no cover</code></pre>
+
+A direct conversion of T_Tide to Python.
+
+This is a work in progress. It is not done.
+
+It is now mostly functional.
+Any help with finishing the conversion is welcome.
+
+Credit for T\_Tide goes to Rich Pawlowicz, the original creator of T\_Tide. 
+It is available at http://www2.ocgy.ubc.ca/~rich/.
+
+A description of the theoretical basis of the analysis and some
+implementation details of the Matlab version can be found in:
+
+&gt; Pawlowicz, R., B. Beardsley, and S. Lentz, &#34;Classical Tidal
+    &#34;Harmonic Analysis Including Error Estimates in MATLAB
+    using T_TIDE&#34;, Computers and Geosciences, 28, 929-937 (2002).
+
+Citation of this article would be appreciated if you find the toolbox
+useful (either the Matlab version, or this Python one).
+
+
+
+source: https://github.com/moflaher/ttide_py
+
+&#34;&#34;&#34;</code></pre>
 </details>
 </section>
 <section>
+<h2 class="section-title" id="header-submodules">Sub-modules</h2>
+<dl>
+<dt><code class="name"><a title="dfm_tools.ttide.base" href="base.html">dfm_tools.ttide.base</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="dfm_tools.ttide.t_astron" href="t_astron.html">dfm_tools.ttide.t_astron</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="dfm_tools.ttide.t_getconsts" href="t_getconsts.html">dfm_tools.ttide.t_getconsts</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="dfm_tools.ttide.t_predic" href="t_predic.html">dfm_tools.ttide.t_predic</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="dfm_tools.ttide.t_tide" href="t_tide.html">dfm_tools.ttide.t_tide</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="dfm_tools.ttide.t_utils" href="t_utils.html">dfm_tools.ttide.t_utils</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="dfm_tools.ttide.t_vuf" href="t_vuf.html">dfm_tools.ttide.t_vuf</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="dfm_tools.ttide.time" href="time.html">dfm_tools.ttide.time</a></code></dt>
+<dd>
+<div class="desc"><p>This modules is a reimplemntation of the MatPlotLib 'mpltime' format
+(ordinal + fractional time) …</p></div>
+</dd>
+</dl>
 </section>
 <section>
 </section>
@@ -60,7 +140,19 @@ if __name__ == &#34;__main__&#34;:
 <ul id="index">
 <li><h3>Super-module</h3>
 <ul>
-<li><code><a title="dfm_tools" href="index.html">dfm_tools</a></code></li>
+<li><code><a title="dfm_tools" href="../index.html">dfm_tools</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-submodules">Sub-modules</a></h3>
+<ul>
+<li><code><a title="dfm_tools.ttide.base" href="base.html">dfm_tools.ttide.base</a></code></li>
+<li><code><a title="dfm_tools.ttide.t_astron" href="t_astron.html">dfm_tools.ttide.t_astron</a></code></li>
+<li><code><a title="dfm_tools.ttide.t_getconsts" href="t_getconsts.html">dfm_tools.ttide.t_getconsts</a></code></li>
+<li><code><a title="dfm_tools.ttide.t_predic" href="t_predic.html">dfm_tools.ttide.t_predic</a></code></li>
+<li><code><a title="dfm_tools.ttide.t_tide" href="t_tide.html">dfm_tools.ttide.t_tide</a></code></li>
+<li><code><a title="dfm_tools.ttide.t_utils" href="t_utils.html">dfm_tools.ttide.t_utils</a></code></li>
+<li><code><a title="dfm_tools.ttide.t_vuf" href="t_vuf.html">dfm_tools.ttide.t_vuf</a></code></li>
+<li><code><a title="dfm_tools.ttide.time" href="time.html">dfm_tools.ttide.time</a></code></li>
 </ul>
 </li>
 </ul>

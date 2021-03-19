@@ -9,8 +9,9 @@ import pytest
 import inspect
 import os
 
-dir_testinput = os.path.join(r'c:/DATA','dfm_tools_testdata')
-from dfm_tools.testutils import getmakeoutputdir
+from dfm_tools.testutils import getmakeoutputdir, gettestinputdir
+dir_testinput = gettestinputdir()
+
 
 
 @pytest.mark.parametrize("file_nc, expected_size", [pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'), 5599, id='from 1 map partion Grevelingen'),
@@ -32,11 +33,62 @@ def test_UGrid(file_nc, expected_size):
                                                     pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\Grevelingen_FM_grid_20190603_net.nc'), 44804, id='fromnet Grevelingen')])
 @pytest.mark.unittest
 def test_getnetdata(file_nc, expected_size):
+    """
+    file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc')
+    expected_size = 44796
+    """
     from dfm_tools.get_nc import get_netdata
     
     ugrid = get_netdata(file_nc)
     
     assert ugrid.verts.shape[0] == expected_size
+
+
+
+@pytest.mark.parametrize("file_nc, expected_size", [pytest.param(os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc'), (1,44796), id='from partitioned map Grevelingen')])
+@pytest.mark.unittest
+def test_getmapdata(file_nc, expected_size):
+    """
+    Checks whether ghost cells are properly taken care of.
+    
+    file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc')
+    expected_size = (1, 44796)
+    """
+    from dfm_tools.get_nc import get_ncmodeldata
+    
+    data_nc = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_s1',timestep=2)
+    
+    assert data_nc.shape == expected_size
+
+
+
+
+
+@pytest.mark.parametrize("file_nc, varname, expected_size", [pytest.param(os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc'), 'mesh2d_sa1', (1, 44796, 1), id='from partitioned map Grevelingen'),
+                                                             pytest.param(os.path.join(r'p:\11203850-coastserv\06-Model\waq_model\simulations\run0_20200319\DFM_OUTPUT_kzn_waq', 'kzn_waq_0000_map.nc'), 'Chlfa', (1, 17385, 1), id='from partitioned waq map coastserv')])
+@pytest.mark.unittest
+def test_getmapbottomdata(file_nc, varname, expected_size):
+    """
+    Checks whether ghost cells are properly taken care and if the mask comes trough (needed for selecting the bottom layer).
+    It will fail on get_ncmodeldata, the assertions are just extras
+    
+    file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc')
+    varname = 'mesh2d_sa1'
+    expected_size = (1, 44796, 1)
+    
+    
+    file_nc = os.path.join('p:\\11203850-coastserv\\06-Model\\waq_model\\simulations\\run0_20200319\\DFM_OUTPUT_kzn_waq', 'kzn_waq_0000_map.nc')
+    varname = 'Chlfa'
+    expected_size = (1, 17385, 1)
+    """
+    from dfm_tools.get_nc import get_ncmodeldata
+    
+    data_fromnc_bot = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=3, layer='bottom')
+    
+    assert data_fromnc_bot.shape == expected_size
+    assert data_fromnc_bot.mask.shape == expected_size
+    
+
 
 
 
@@ -57,7 +109,7 @@ def test_getncmodeldata_indexcountmetadata():
     from dfm_tools.get_nc import get_ncmodeldata
     
     #check if retrieving 1 index of data from 1 dimensional variable works (does not work if indices are np.arrays, so conversion to list in get_nc.py)
-    file_his = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\computations\run_161\DFM_OUTPUT_RMM_dflowfm\RMM_dflowfm_0000_his.nc'
+    file_his = os.path.join(dir_testinput,r'DFM_fou_RMM\RMM_dflowfm_0000_his.nc')
     data_statcoord = get_ncmodeldata(file_nc=file_his, varname='station_x_coordinate',station='NM_1005.26_R_HBR-Cl_VCS-Nieuwe-Maas-85m')
     assert len(data_statcoord.var_stations) == 1
     
@@ -113,29 +165,48 @@ def test_getplotfourstdata():
     """
     dir_output = './test_output'
     """
-    
+    import numpy as np
     import matplotlib.pyplot as plt
     plt.close('all')
     
     from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
     from dfm_tools.get_nc_helpers import get_ncvardimlist
+    from dfm_tools.regulargrid import scatter_to_regulargrid
     
-    
+    #RMM foufile met quivers
     file_nc = os.path.join(dir_testinput,r'DFM_fou_RMM\RMM_dflowfm_0000_fou.nc')
-
-    ugrid = get_netdata(file_nc=file_nc)
-    data_fromfou = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_fourier003_mean')#, multipart=False)
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    #stations_pd = get_hisstationlist(file_nc,varname='waterlevel')
     
-    fig, ax = plt.subplots()
-    pc = plot_netmapdata(ugrid.verts, values=data_fromfou, ax=None, linewidth=0.5, color="crimson", facecolor="None")
-    pc.set_clim([0,10])
-    fig.colorbar(pc)
-    ax.set_aspect('equal')
-    plt.savefig(os.path.join(dir_output,os.path.basename(file_nc).replace('.','')))
+    ugrid_all = get_netdata(file_nc=file_nc)
+    ux_mean = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_fourier001_mean')
+    uy_mean = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_fourier002_mean')
+    magn_mean = np.sqrt(ux_mean**2+uy_mean**2)
+    #uc_mean = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_fourier003_mean')
+    #uc_max = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_fourier004_max')
+    facex = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_face_x')
+    facey = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_face_y')
     
-    assert ugrid.verts.shape[0] == data_fromfou.shape[0]
+    X,Y,U = scatter_to_regulargrid(xcoords=facex, ycoords=facey, ncellx=60, ncelly=35, values=ux_mean)
+    X,Y,V = scatter_to_regulargrid(xcoords=facex, ycoords=facey, ncellx=60, ncelly=35, values=uy_mean)
+    
+    #thinning = 3
+    fig1,ax1 = plt.subplots(figsize=(9,5))
+    pc1 = plot_netmapdata(ugrid_all.verts, magn_mean, edgecolor='face')
+    #ax1.quiver(facex[::thinning], facey[::thinning], ux_mean[::thinning], uy_mean[::thinning], color='w',scale=20)#,width=0.005)#, edgecolor='face', cmap='jet')
+    ax1.quiver(X,Y,U,V, color='w',scale=5)#,width=0.005)#, edgecolor='face', cmap='jet')
+    pc1.set_clim([0,0.10])
+    #ax1.set_title('sqrt(x^2+y^2)\nx=%s\ny=%s'%(ux_mean.var_ncvarobject.long_name,uy_mean.var_ncvarobject.long_name))
+    ax1.set_aspect('equal')
+    ax1.set_xlabel('RD x [m]')
+    ax1.set_ylabel('RD y [m]')
+    cbar = fig1.colorbar(pc1)
+    cbar.set_label('residuele stroming [m/s]')
+    fig1.tight_layout()
+    fig1.savefig(os.path.join(dir_output,os.path.basename(file_nc).replace('.','')))
     
     
+    #RMM rst file
     file_nc = os.path.join(dir_testinput,r'DFM_fou_RMM\RMM_dflowfm_0006_20131127_000000_rst.nc')
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
     #ugrid = get_netdata(file_nc=file_nc) #does not work, so scatter has to be used
@@ -173,10 +244,10 @@ def test_getplotfourstdata():
 
 
 
-    
+
 @pytest.mark.parametrize("file_nc", [pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\Grevelingen_FM_grid_20190603_net.nc'), id='Grevelingen'),
                                      pytest.param(os.path.join(dir_testinput,'vanNithin','myortho3_RGFGRID_net.nc'), id='Nithin'),
-                                     pytest.param(r'p:\11205258-006-kpp2020_rmm-g6\C_Work\01_Rooster\final_totaalmodel\rooster_rmm_v1p5_net.nc', id='RMM')])
+                                     pytest.param(os.path.join(dir_testinput,'DFM_fou_RMM','rooster_rmm_v1p5_net.nc'), id='RMM')])
 @pytest.mark.acceptance
 def test_getnetdata_plotnet(file_nc):
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
@@ -184,7 +255,7 @@ def test_getnetdata_plotnet(file_nc):
     this test retrieves grid data and plots it
     
     file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','Grevelingen_FM_grid_20190603_net.nc')
-    file_nc = 'p:\\11205258-006-kpp2020_rmm-g6\\C_Work\\01_Rooster\\final_totaalmodel\\rooster_rmm_v1p5_net.nc'
+    file_nc = os.path.join(dir_testinput,'DFM_fou_RMM','rooster_rmm_v1p5_net.nc')
     dir_output = './test_output'
     """
     
@@ -219,7 +290,7 @@ def test_getnetdata_plotnet_regular(file_nc):
     file_nc = 'p:\\11203869-morwaqeco3d\\05-Tidal_inlet\\02_FM_201910\\FM_MF10_Max_30s\\wave\\wavm-inlet.nc'
     file_nc = 'p:\\11200665-c3s-codec\\2_Hydro\\ECWMF_meteo\\meteo\\ERA-5\\2000\\ERA5_metOcean_atm_19991201_19991231.nc'
     file_nc = 'p:\\1204257-dcsmzuno\\2014\\data\\meteo\\HIRLAM72_2018\\h72_201803.nc'
-    file_nc = r'p:\11202255-sfincs\Testbed\Original_runs\01_Implementation\08_restartfile\sfincs_map.nc'
+    file_nc = 'p:\\11202255-sfincs\\Testbed\\Original_runs\\01_Implementation\\08_restartfile\\sfincs_map.nc'
     """
     
     import numpy as np
@@ -306,7 +377,7 @@ def test_gethismodeldata(file_nc):
     this test retrieves his data and plots it
     file_nc = os.path.join(dir_testinput,'vanNithin','tttz_0000_his.nc')
     file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen\\computations\\run01\\DFM_OUTPUT_Grevelingen-FM\\Grevelingen-FM_0000_his.nc')
-    file_nc = r'p:\11202512-h2020_impaqt\Mediterranean_model\MedSea_impaqt_model\computations\r003_test\DFM_OUTPUT_MedSea_impaqt_FM\MedSea_impaqt_FM_0000_his.nc'
+    file_nc = 'p:\\11202512-h2020_impaqt\\Mediterranean_model\\MedSea_impaqt_model\\computations\\r003_test\\DFM_OUTPUT_MedSea_impaqt_FM\\MedSea_impaqt_FM_0000_his.nc'
     dir_output = './test_output'
     """
 
@@ -387,15 +458,15 @@ def test_gethismodeldata(file_nc):
     
 
 @pytest.mark.parametrize("file_nc", [pytest.param(os.path.join(dir_testinput,r'DFM_sigma_curved_bend\DFM_OUTPUT_cb_3d\cb_3d_map.nc'), id='curvibend'),
-                                     pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'), id='Grevelingen'),
-                                     pytest.param(r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\computations\run_180\DFM_OUTPUT_RMM_dflowfm\RMM_dflowfm_0000_map.nc', id='RMM')])
+                                     #pytest.param(r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\computations\run_180\DFM_OUTPUT_RMM_dflowfm\RMM_dflowfm_0000_map.nc', id='RMM')
+                                     pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'), id='Grevelingen')])
 @pytest.mark.acceptance
 def test_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
     """
     this test retrieves grid data, retrieves map data, and plots it
     file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc')
-    file_nc = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\computations\run_180\DFM_OUTPUT_RMM_dflowfm\RMM_dflowfm_0000_map.nc'
+    #file_nc = 'p:\\11205258-006-kpp2020_rmm-g6\\C_Work\\08_RMM_FMmodel\\computations\\run_180\\DFM_OUTPUT_RMM_dflowfm\\RMM_dflowfm_0000_map.nc'
     dir_output = './test_output'
     """
 
@@ -535,8 +606,73 @@ def test_getnetdata_getmapmodeldata_plotnetmapdata(file_nc):
     
   
     
+  
+  
+    
+@pytest.mark.acceptance
+def test_contextily_addbasemap():
+    dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
+    
+    """
+    https://contextily.readthedocs.io/en/latest/reference.html
+    https://contextily.readthedocs.io/en/latest/intro_guide.html
+    ctx.add_basemap() defaults:
+        source: None defaults to ctx.providers.Stamen.Terrain
+        crs: coordinate reference system (CRS). If None (default), no warping is performed and the original Spherical Mercator (EPSG:3857) is used.
+    
+    dir_output = './test_output'
+    """
+    
+    import matplotlib.pyplot as plt
+    plt.close('all')
+
+    from dfm_tools.testutils import try_importmodule
+    try_importmodule(modulename='contextily') #check if contextily was installed since it is an optional module, also happens in plot_cartopybasemap()
+    import contextily as ctx
+
+    from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
+
+    file_nc_map = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen\\computations\\run01\\DFM_OUTPUT_Grevelingen-FM\\Grevelingen-FM_0000_map.nc')
+    ugrid = get_netdata(file_nc=file_nc_map)
+    data_frommap_bl = get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_flowelem_bl')
+    
+    source_list = [ctx.providers.Stamen.Terrain, #default source
+                   ctx.providers.Esri.WorldImagery,
+                   ctx.providers.CartoDB.Voyager,
+                   #ctx.providers.NASAGIBS.ViirsEarthAtNight2012,
+                   ctx.providers.Stamen.Watercolor]
+    
+    for source_ctx in source_list:
+        source_name = source_ctx['name'].replace('.','_')
+        fig, ax = plt.subplots(1,1,figsize=(10,6))
+        pc = plot_netmapdata(ugrid.verts, values=data_frommap_bl, ax=ax, linewidth=0.5, cmap='jet')
+        fig.colorbar(pc, ax=ax)
+        fig.tight_layout()
+        ctx.add_basemap(ax, source=source_ctx, crs="EPSG:28992", attribution_size=5)
+        fig.savefig(os.path.join(dir_output,'contextily_grevelingen_RD_%s'%(source_name)))
+    
 
 
+
+
+
+@pytest.mark.systemtest
+def test_cartopy_epsg():
+    
+    from dfm_tools.testutils import try_importmodule
+    try_importmodule(modulename='cartopy') #check if cartopy was installed since it is an optional module, also happens in plot_cartopybasemap()
+    
+    from dfm_tools.get_nc import plot_background
+    
+    #this one crashes if the dummy in plot_background() is not created
+    plot_background(ax=None, projection=28992, google_style='satellite', resolution=5, features='land', nticks=6, latlon_format=False, gridlines=False)
+
+
+
+
+
+    
+    
 @pytest.mark.acceptance
 def test_cartopy_satellite_coastlines():
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
@@ -555,7 +691,6 @@ def test_cartopy_satellite_coastlines():
     from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata, plot_background
     from dfm_tools.get_nc_helpers import get_ncvardimlist
     
-
     #HIRLAM
     file_nc = r'p:\1204257-dcsmzuno\2014\data\meteo\HIRLAM72_2018\h72_201803.nc'
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
@@ -610,13 +745,12 @@ def test_cartopy_satellite_coastlines():
 
 
 
-@pytest.mark.parametrize("file_nc", [pytest.param('p:\\11201806-sophie\\Oosterschelde\\WAQ\\r02\\postprocessing\\oost_tracer_2_map.nc', id='oost_tracer_2_map')])
+@pytest.mark.parametrize("file_nc", [pytest.param(os.path.join(dir_testinput,'oost_tracer_2_map.nc'), id='oost_tracer_2_map')])
 @pytest.mark.acceptance
 def test_getplotmapWAQOS(file_nc):
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
     """
-    file_nc = 'p:\\11201806-sophie\\Oosterschelde\\WAQ\\r03\\postprocessing\\oost_tracer_map.nc' #constantly changes name and dimensions, removed from testbank
-    file_nc = 'p:\\11201806-sophie\\Oosterschelde\\WAQ\\r02\\postprocessing\\oost_tracer_2_map.nc'
+    file_nc = os.path.join(dir_testinput,'oost_tracer_2_map.nc')
     dir_output = './test_output'
     """
 
@@ -655,8 +789,8 @@ def test_getplotmapWAQOS(file_nc):
 @pytest.mark.parametrize("file_nc", [pytest.param(os.path.join(dir_testinput,r'DFM_sigma_curved_bend\DFM_OUTPUT_cb_3d\cb_3d_map.nc'), id='cb_3d_map'),
                                      pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'), id='Grevelingen-FM_0000_map'),
                                      #pytest.param(r'p:\11203379-mwra-new-bem-model\waq_model\simulations\A31_1year_20191219\DFM_OUTPUT_MB_02_waq\MB_02_waq_0000_map.nc', id='MB_02_waq_0000_map'),
-                                     pytest.param(r'p:\1204257-dcsmzuno\2013-2017\3D-DCSM-FM\A19\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0000_map.nc', id='DCSM-FM_0_5nm_0000_map'),
-                                     pytest.param(r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\computations\run_180\DFM_OUTPUT_RMM_dflowfm\RMM_dflowfm_0000_map.nc', id='RMM_dflowfm_0000_map')])
+                                     #pytest.param(r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\computations\run_180\DFM_OUTPUT_RMM_dflowfm\RMM_dflowfm_0000_map.nc', id='RMM_dflowfm_0000_map'),
+                                     pytest.param(r'p:\1204257-dcsmzuno\2013-2017\3D-DCSM-FM\A19\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0000_map.nc', id='DCSM-FM_0_5nm_0000_map')])
 @pytest.mark.acceptance
 def test_getxzcoordsonintersection_plotcrossect(file_nc):
 
@@ -667,7 +801,7 @@ def test_getxzcoordsonintersection_plotcrossect(file_nc):
     file_nc = os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_cb_3d\\cb_3d_map.nc')
     file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc')
     file_nc = 'p:\\1204257-dcsmzuno\\2013-2017\\3D-DCSM-FM\\A19\\DFM_OUTPUT_DCSM-FM_0_5nm\\DCSM-FM_0_5nm_0000_map.nc'
-    file_nc = 'p:\\11205258-006-kpp2020_rmm-g6\\C_Work\\08_RMM_FMmodel\\computations\\run_180\\DFM_OUTPUT_RMM_dflowfm\\RMM_dflowfm_0000_map.nc'
+    #file_nc = 'p:\\11205258-006-kpp2020_rmm-g6\\C_Work\\08_RMM_FMmodel\\computations\\run_180\\DFM_OUTPUT_RMM_dflowfm\\RMM_dflowfm_0000_map.nc'
     """
     
     import matplotlib.pyplot as plt

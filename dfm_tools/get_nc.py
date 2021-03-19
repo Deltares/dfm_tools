@@ -33,7 +33,7 @@ Created on Fri Feb 14 12:45:11 2020
 """
 
 
-def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None, station=None, multipart=None, get_linkedgridinfo=False):
+def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None, station=None, multipart=None, get_linkedgridinfo=False, silent=False):
     """
 
     Parameters
@@ -108,34 +108,34 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     else: #time dimension is present
         data_nc_timevar = data_nc.variables[varn_time]
         time_length = data_nc_timevar.shape[0]
-        data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname, retrieve_ids=[0,-1]) #get selection of times
+        data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname, retrieve_ids=[0,-1], silent=silent) #get selection of times
         if timestep is None:
             raise Exception('ERROR: netcdf variable contains a time dimension, but parameter timestep not provided (can be "all"), first and last timestep:\n%s\nretrieve entire times list:\nfrom dfm_tools.get_nc_helpers import get_timesfromnc\ntimes_pd = get_timesfromnc(file_nc=file_nc, varname="%s")'%(pd.DataFrame(data_nc_datetimes_pd),varname))
         #convert timestep to list of int if it is not already
         if timestep is str('all'):
-            data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname) #get all times
+            data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname, silent=silent) #get all times
             time_ids = range(len(data_nc_datetimes_pd))
         elif type(timestep) in listtype_range:
             if len(timestep) == 0:
                 raise Exception('ERROR: timestep variable type is list/range/ndarray (%s), but it has no length'%(type(timestep)))
             elif type(timestep[0]) in listtype_int:
-                data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname, retrieve_ids=timestep) #get selection of times
+                data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname, retrieve_ids=timestep, silent=silent) #get selection of times
                 time_ids = timestep
             elif type(timestep[0]) in listtype_datetime:
-                data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname) #get all times
+                data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname, silent=silent) #get all times
                 time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, timestep)
                 data_nc_datetimes_pd = data_nc_datetimes_pd.loc[time_ids] #get selection of times
             else:
                 raise Exception('ERROR: timestep variable type is list/range/ndarray (%s), but type of timestep[0] not anticipated (%s), options:\n - int\n - np.int64\n - datetime\n - np.datetime64'%(type(timestep),type(timestep[0])))
         elif type(timestep) in listtype_daterange:
-            data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname) #get all times
+            data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname, silent=silent) #get all times
             time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, timestep)
             data_nc_datetimes_pd = data_nc_datetimes_pd.loc[time_ids] #get selection of times
         elif type(timestep) in listtype_int:
-            data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname, retrieve_ids=[timestep]) #get selection of times
+            data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname, retrieve_ids=[timestep], silent=silent) #get selection of times
             time_ids = [timestep]
         elif type(timestep) in listtype_datetime:
-            data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname) #get all times
+            data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname, silent=silent) #get all times
             time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, [timestep])
             data_nc_datetimes_pd = data_nc_datetimes_pd.loc[time_ids] #get selection of times
         else:
@@ -237,23 +237,27 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
         nc_varobject_sel = get_ncvarobject(file_nc_sel, varname)
 
         concat_axis = 0 #default value, overwritten by faces dimension
+        ghost_removeids = [] #default value, overwritten by faces dimension
+        
         values_selid = []
         values_dimlens = [] #list(nc_values.shape)
         values_dimlinkedgrid = [] #list(nc_values.shape)
         try:
-            print('varname: %s  %s  %s, coordinates=(%s)'%(varname, nc_varobject_sel.shape, nc_varobject_sel.dimensions, nc_varobject_sel.coordinates))
+            nc_varobject_sel_coords = nc_varobject_sel.coordinates
         except:
-            print('varname: %s  %s  %s, coordinates=(%s)'%(varname, nc_varobject_sel.shape, nc_varobject_sel.dimensions, 'None'))
+            nc_varobject_sel_coords = None
+        if not silent:
+            print('varname: %s  %s  %s, coordinates=(%s)'%(varname, nc_varobject_sel.shape, nc_varobject_sel.dimensions, nc_varobject_sel_coords))
+        
         if len(nc_varobject_sel.dimensions) == 0:
             raise Exception('variable contains no dimensions, cannot retrieve values')
         
         for iD, nc_values_dimsel in enumerate(nc_varobject_sel.dimensions):
             if nc_values_dimsel in [dimn_faces, dimn_nFlowElem]: # domain-like variable is present, so there are multiple domains (with ghost cells)
                 nonghost_ids = ghostcell_filter(file_nc_sel)
-                if nonghost_ids is None:
-                    values_selid.append(range(nc_varobject_sel.shape[iD]))
-                else:
-                    values_selid.append(nonghost_ids)
+                if nonghost_ids is not None:
+                    ghost_removeids = np.where(~nonghost_ids)[0] #remove after retrieval, since that is faster than retrieving nonghost ids
+                values_selid.append(range(nc_varobject_sel.shape[iD]))
                 values_dimlens.append(0) #because concatenate axis
                 concat_axis = iD
             elif nc_values_dimsel in [dimn_nodes, dimn_edges, dimn_nFlowLink]: # domain-like variable is present, so there are multiple domains (no ghost cells)
@@ -287,16 +291,27 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
                 #print('vars_pd_relevant:\n%s'%(vars_pd_relevant))
             else:
                 values_dimlinkedgrid.append(None)
-
+        
+        #get selected data (including ghostcells because that is faster)
+        nc_varobject_sel_selids_raw = nc_varobject_sel[values_selid]
+        
+        #remove ghost cells (cannot delete from masked array, so delete from array and mask and then couple again)
+        if ghost_removeids is not []:
+            nc_varobject_sel_selids = np.delete(nc_varobject_sel_selids_raw,ghost_removeids,axis=concat_axis)
+            if nc_varobject_sel_selids_raw.mask is not False:
+                nc_varobject_sel_selids_mask = np.delete(nc_varobject_sel_selids_raw.mask,ghost_removeids,axis=concat_axis)
+                nc_varobject_sel_selids.mask = nc_varobject_sel_selids_mask
+        
+        #concatenate to other partitions
         if len(file_ncs) > 1:
             #initialize array
             if iF == 0:
                 values_all = np.ma.empty(values_dimlens)
                 values_all[:] = np.nan
             #concatenate array
-            values_all = np.ma.concatenate([values_all, nc_varobject_sel[values_selid]], axis=concat_axis)
+            values_all = np.ma.concatenate([values_all, nc_varobject_sel_selids], axis=concat_axis)
         else:
-            values_all = nc_varobject_sel[values_selid]
+            values_all = nc_varobject_sel_selids
     
     #optional extraction of top/bottom layer, convenient for z-layer models since top and/or bottom layers are often masked for part of the cells
     if layer is str('top') or layer is str('bottom'):
@@ -606,7 +621,11 @@ def plot_netmapdata(verts, values=None, ax=None, **kwargs):
 
 def plot_background(ax=None, projection=None, google_style='satellite', resolution=1, features=None, nticks=6, latlon_format=False, gridlines=False, **kwargs):
     """
-    
+    this definition uses cartopy to plot a geoaxis and a satellite basemap and coastlines. A faster alternative for a basemap is contextily:
+    import contextily as ctx
+    fig, ax = plt.subplots(1,1)
+    ctx.add_basemap(ax, source=ctx.providers.Esri.WorldImagery, crs="EPSG:28992")
+    More info at: https://contextily.readthedocs.io/en/latest/reference.html
 
     Parameters
     ----------
@@ -653,7 +672,7 @@ def plot_background(ax=None, projection=None, google_style='satellite', resoluti
     import cartopy.feature as cfeature 
     import cartopy.mpl.ticker as cticker
     
-    
+    dummy = ccrs.epsg(28992) #to make cartopy realize it has a cartopy._epsg._EPSGProjection class (maybe gets fixed with cartopy updates, see unittest test_cartopy_epsg)
     if ax is None: #provide axis projection on initialisation, cannot be edited later on
         if projection is None:
             projection=ccrs.PlateCarree() #projection of cimgt.GoogleTiles, useful default

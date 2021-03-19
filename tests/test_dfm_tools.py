@@ -6,11 +6,12 @@ import pytest
 #import inspect
 import os
 
-dir_testinput = os.path.join(r'c:/DATA','dfm_tools_testdata')
-#from dfm_tools.testutils import getmakeoutputdir
+from dfm_tools.testutils import getmakeoutputdir, gettestinputdir
+dir_testinput = gettestinputdir()
 
 
-modulename_list = ['os','sys','glob','shutil','scipy','numpy','datetime','pandas','matplotlib','netCDF4','click','shapely','shapely.geometry','cartopy']
+
+modulename_list = ['os','sys','glob','shutil','scipy','numpy','datetime','pandas','matplotlib','netCDF4','click','shapely','shapely.geometry','cartopy','pyepsg']
 @pytest.mark.parametrize("modulename", [pytest.param('%s'%(stat), id='%s'%(stat)) for stat in modulename_list])
 @pytest.mark.unittest
 def test_import_libraries(modulename):
