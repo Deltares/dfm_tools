@@ -1,6 +1,11 @@
 =======
 History
 =======
+0.7.33 (2021-03-19)
+------------------
+* made ghostid removal more efficient, partitioned map retrieval is now significantly faster
+* including repair in mask of data, this is now repaired and a unittest is added to catch this in the future
+
 0.7.31 (2021-01-13)
 ------------------
 * added contextily basemap installation procedure and to testbank, more efficient than cartopy basemap

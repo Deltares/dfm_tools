@@ -9,12 +9,12 @@ import pytest
 import inspect
 import os
 
-dir_testinput = os.path.join(r'c:/DATA','dfm_tools_testdata')
-from dfm_tools.testutils import getmakeoutputdir
+from dfm_tools.testutils import getmakeoutputdir, gettestinputdir
+dir_testinput = gettestinputdir()
 
 
 
-
+@pytest.mark.acceptance
 def test_trygetondepth():
     import numpy as np
     from netCDF4 import Dataset
@@ -75,6 +75,9 @@ def test_trygetondepth():
     
 
 
+
+
+@pytest.mark.acceptance
 def test_delft3D_netcdf():
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
     """
@@ -341,8 +344,7 @@ def test_delft3D_netcdf():
 
 
 
-
-
+@pytest.mark.acceptance
 def test_waqua_netcdf_convertedwith_getdata():
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
     
@@ -592,8 +594,6 @@ def test_waqua_netcdf_convertedwith_getdata():
         plt.savefig(os.path.join(dir_output,'waqua_%s_his_ZWL'%(RMM_name)))
 
 
-
-    
 
 
 
@@ -1211,11 +1211,10 @@ def test_exporttoshapefile():
     from dfm_tools.get_nc_helpers import get_ncvardimlist#, get_ncfilelist
     
     varlist = ['Chlfa']#,'mesh2d_s1']
-    dir_modeloutput = r'p:\11203850-coastserv\06-Model\waq_model\simulations\run0_20200319\DFM_OUTPUT_kzn_waq'
-    dir_shp = dir_output#os.path.join(dir_modeloutput, 'shapefiles')
+    dir_shp = dir_output
     if not os.path.exists(dir_shp):
         os.makedirs(dir_shp)
-    file_nc = os.path.join(dir_modeloutput, 'kzn_waq_0000_map.nc')
+    file_nc = os.path.join(r'p:\11203850-coastserv\06-Model\waq_model\simulations\run0_20200319\DFM_OUTPUT_kzn_waq', 'kzn_waq_0000_map.nc')
     
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
     vars_pd_matching = vars_pd[vars_pd.loc[:,'long_name'].str.match('.*Chl.*')]
@@ -1233,8 +1232,7 @@ def test_exporttoshapefile():
         pol_shp_list.append(pol_shp)
     
     print('creating geodataframe with cells')
-    newdata = gpd.GeoDataFrame()
-    newdata.crs = from_epsg(4326)
+    newdata = gpd.GeoDataFrame(crs="EPSG:4326")
     newdata['geometry'] = pol_shp_list #way more time efficient than doing it the loop
     
     for iV, varname in enumerate(varlist):

@@ -9,9 +9,8 @@ import pytest
 import inspect
 import os
 
-dir_testinput = os.path.join(r'c:/DATA','dfm_tools_testdata')
-from dfm_tools.testutils import getmakeoutputdir
-
+from dfm_tools.testutils import getmakeoutputdir, gettestinputdir
+dir_testinput = gettestinputdir()
 
 
 
@@ -66,9 +65,8 @@ def test_readpolygon(file_pol):
     file_pol = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen\\geometry\\structures\\Grevelingen-FM_BL_fxw.pliz')
     file_pol = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen\\geometry\\structures\\Grevelingen-FM_BL_fxw.pli')
     file_pol = os.path.join(dir_testinput,'world.ldb')
-    file_pol = 'p:\\11205258-006-kpp2020_rmm-g6\\C_Work\\08_RMM_FMmodel\\geometry_j13_6-w3\\rmm_v1p3_fixed_weirs.pliz'
-    file_pol = 'p:\\11205258-006-kpp2020_rmm-g6\\C_Work\\08_RMM_FMmodel\\geometry_j13_6-w3\\structures\\rmm_v1p3_structures.pli'
-    file_pol = 'p:\\11205258-006-kpp2020_rmm-g6\\C_Work\\04_randvoorwaarden\\keringen\\Maeslantkering\\Maeslant.tek'
+    #file_pol = 'p:\\11205258-006-kpp2020_rmm-g6\\C_Work\\08_RMM_FMmodel\\geometry_j13_6-w3\\rmm_v1p3_fixed_weirs.pliz'
+    #file_pol = 'p:\\11205258-006-kpp2020_rmm-g6\\C_Work\\08_RMM_FMmodel\\geometry_j13_6-w3\\structures\\rmm_v1p3_structures.pli'
     file_pol = os.path.join(dir_testinput,'Maeslant.tek')
     file_pol = os.path.join(dir_testinput,'test_new.tek')
     file_pol = os.path.join(dir_testinput,'ballenplot\\0200a.tek')

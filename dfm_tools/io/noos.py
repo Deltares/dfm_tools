@@ -57,7 +57,7 @@ def read_noosfile(file_noos, datetime_format='%Y%m%d%H%M', get_header=False, na_
                 break
 
     
-    content_pd = pd.read_csv(file_noos,header=startdata-1,sep='\s+',names=['times_str','values'], na_values=na_values)
+    content_pd = pd.read_csv(file_noos, header=startdata-1, delim_whitespace=True, names=['times_str','values'], na_values=na_values)
     noos_datetime = pd.to_datetime(content_pd['times_str'],format=datetime_format)
     noosdata_pd = pd.DataFrame({'datetime':noos_datetime, 'values':content_pd['values']})
     

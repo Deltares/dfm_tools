@@ -32,6 +32,17 @@ Created on Thu Mar 19 15:27:12 2020
 @author: veenstra
 """
 
+def gettestinputdir():
+    import os
+    
+    if 'TEAMCITY_VERSION' in os.environ.keys(): #teamcity path
+        dir_testinput = r'\\dfs-trusted.directory.intra\dfs\Teamcity\Testdata\dfm_tools'
+    else: #default to this path
+        dir_testinput = os.path.join(r'c:\DATA','dfm_tools_testdata')
+    
+    return dir_testinput
+
+
 
 def getmakeoutputdir(script_dir, function_name):
     import os
