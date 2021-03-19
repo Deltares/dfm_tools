@@ -62,6 +62,36 @@ def test_getmapdata(file_nc, expected_size):
 
 
 
+
+
+@pytest.mark.parametrize("file_nc, varname, expected_size", [pytest.param(os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc'), 'mesh2d_sa1', (1, 44796, 1), id='from partitioned map Grevelingen'),
+                                                             pytest.param(os.path.join(r'p:\11203850-coastserv\06-Model\waq_model\simulations\run0_20200319\DFM_OUTPUT_kzn_waq', 'kzn_waq_0000_map.nc'), 'Chlfa', (1, 17385, 1), id='from partitioned waq map coastserv')])
+@pytest.mark.unittest
+def test_getmapbottomdata(file_nc, varname, expected_size):
+    """
+    Checks whether ghost cells are properly taken care and if the mask comes trough (needed for selecting the bottom layer).
+    It will fail on get_ncmodeldata, the assertions are just extras
+    
+    file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc')
+    varname = 'mesh2d_sa1'
+    expected_size = (1, 44796, 1)
+    
+    
+    file_nc = os.path.join('p:\\11203850-coastserv\\06-Model\\waq_model\\simulations\\run0_20200319\\DFM_OUTPUT_kzn_waq', 'kzn_waq_0000_map.nc')
+    varname = 'Chlfa'
+    expected_size = (1, 17385, 1)
+    """
+    from dfm_tools.get_nc import get_ncmodeldata
+    
+    data_fromnc_bot = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=3, layer='bottom')
+    
+    assert data_fromnc_bot.shape == expected_size
+    assert data_fromnc_bot.mask.shape == expected_size
+    
+
+
+
+
 @pytest.mark.unittest
 def test_getncmodeldata_timeid():
     from dfm_tools.get_nc import get_ncmodeldata

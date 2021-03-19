@@ -295,9 +295,12 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
         #get selected data (including ghostcells because that is faster)
         nc_varobject_sel_selids_raw = nc_varobject_sel[values_selid]
         
-        #remove ghost cells
+        #remove ghost cells (cannot delete from masked array, so delete from array and mask and then couple again)
         if ghost_removeids is not []:
             nc_varobject_sel_selids = np.delete(nc_varobject_sel_selids_raw,ghost_removeids,axis=concat_axis)
+            if nc_varobject_sel_selids_raw.mask is not False:
+                nc_varobject_sel_selids_mask = np.delete(nc_varobject_sel_selids_raw.mask,ghost_removeids,axis=concat_axis)
+                nc_varobject_sel_selids.mask = nc_varobject_sel_selids_mask
         
         #concatenate to other partitions
         if len(file_ncs) > 1:
