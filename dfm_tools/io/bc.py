@@ -138,6 +138,7 @@ def read_bcfile(filename, converttime=False):
     lines_blockstarts = np.array([],dtype=int)
     lines_quantity = np.array([],dtype=int)
     lines_unit = np.array([],dtype=int)
+    lines_data = np.array([],dtype=int)
     lines_n = len(page)
     for iL, line in enumerate(page):
         if '[forcing]' in line.lower():
@@ -146,6 +147,8 @@ def read_bcfile(filename, converttime=False):
             lines_quantity = np.append(lines_quantity,iL)
         if 'unit' in line.lower():
             lines_unit = np.append(lines_unit,iL)
+        if line.lower()[0].isnumeric():
+            lines_data= np.append(lines_data,iL)
     if len(lines_quantity) != len(lines_unit):
         raise Exception('something wrong with bc-file, amount of quantity lines is not the same as amount of unit lines')
     
@@ -160,13 +163,13 @@ def read_bcfile(filename, converttime=False):
         
         line_blockquantities = lines_quantity[(lines_quantity>line_blockstart) & (lines_quantity<line_blockend)]
         line_blockunits = lines_unit[(lines_unit>line_blockstart) & (lines_unit<line_blockend)]
-        line_datastart = line_blockunits[-1]+1
+        line_datastart = np.amin(lines_data[(lines_data>line_blockstart) & (lines_data<line_blockend)])
         
         #get metadata (without quantities and units)
-        metadata_str = page[line_blockstart:line_blockquantities[0]]
+        metadata_str = page[line_blockstart:line_datastart]
         metadata = {}
         for metadata_line in metadata_str:
-            if metadata_line.startswith('['):
+            if metadata_line.startswith('[') or metadata_line.startswith('Quantity') or metadata_line.startswith('Unit'):
                 pass#metadata[metadata_line.strip()] = ''
             else:
                 meta_name = metadata_line.split('=')[0].strip()
