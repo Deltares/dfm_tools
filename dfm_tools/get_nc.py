@@ -231,7 +231,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     file_ncs = get_ncfilelist(file_nc, multipart)
     
     for iF, file_nc_sel in enumerate(file_ncs):
-        if len(file_ncs) > 1:
+        if (len(file_ncs) > 1) and not silent:
             print('processing mapdata from domain %04d of %04d'%(iF, len(file_ncs)-1))
         
         nc_varobject_sel = get_ncvarobject(file_nc_sel, varname)
