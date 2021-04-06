@@ -298,7 +298,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
         #remove ghost cells (cannot delete from masked array, so delete from array and mask and then couple again)
         if ghost_removeids is not []:
             nc_varobject_sel_selids = np.delete(nc_varobject_sel_selids_raw,ghost_removeids,axis=concat_axis)
-            if nc_varobject_sel_selids_raw.mask != False:
+            if nc_varobject_sel_selids_raw.mask.any() != False:
                 nc_varobject_sel_selids_mask = np.delete(nc_varobject_sel_selids_raw.mask,ghost_removeids,axis=concat_axis)
                 nc_varobject_sel_selids.mask = nc_varobject_sel_selids_mask
 
