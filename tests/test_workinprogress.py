@@ -458,7 +458,6 @@ def test_waqua_netcdf_convertedwith_getdata():
     plt.savefig(os.path.join(dir_output,'waqua_DSCM_his_ZWL'))
     
     
-    
     #MAP OSR
     file_nc = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\ZZ_Jelmer\SDS-nsctri_map.nc'
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)

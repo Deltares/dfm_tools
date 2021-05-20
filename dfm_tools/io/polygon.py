@@ -87,7 +87,7 @@ class Polygon:
         import warnings
         import numpy as np
         import pandas as pd
-        warnings.warn('the function dfm_tools.polygon.Polygon.fromfile() will be improved, outputformat will change')
+        #warnings.warn('the function dfm_tools.polygon.Polygon.fromfile() will be improved, outputformat will change')
         
 
         with open(file_pol) as plifile:
