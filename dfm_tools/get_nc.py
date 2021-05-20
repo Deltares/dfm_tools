@@ -583,11 +583,14 @@ def plot_netmapdata(verts, values=None, ax=None, **kwargs):
     #https://stackoverflow.com/questions/49640311/matplotlib-unstructered-quadrilaterals-instead-of-triangles
     import matplotlib.pyplot as plt
     import matplotlib.collections
-
-    #check if data size is equal
+    import numpy as np
+    
     if not values is None:
+        #squeeze values (remove dimensions with length 1)
+        values = np.squeeze(values)
+        #check if data shape is equal
         if verts.shape[:-2] != values.shape:
-            raise Exception('size of first dimensions of verts (%s) and dimensions of values (%s) is not equal, cannot plot. Flatten your values array or if the values are on cell edges, try providing ugrid_all.edge_verts instead'%(verts.shape[:-2],values.shape))
+            raise Exception('size of first dimensions of verts (%s) and dimensions of squeezed values (%s) is not equal, cannot plot. Flatten your values array or if the values are on cell edges, try providing ugrid_all.edge_verts instead'%(verts.shape[:-2],values.shape))
 
     #convert to 3D
     if len(verts.shape) == 4 and verts.shape[-2] == 4 and verts.shape[-1] == 2: #from regular grid
