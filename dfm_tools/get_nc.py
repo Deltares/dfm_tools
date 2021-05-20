@@ -587,7 +587,7 @@ def plot_netmapdata(verts, values=None, ax=None, **kwargs):
     #check if data size is equal
     if not values is None:
         if verts.shape[:-2] != values.shape:
-            raise Exception('size of first two dimensions of verts and dimensions of values is not equal, cannot plot')
+            raise Exception('size of first dimensions of verts (%s) and dimensions of values (%s) is not equal, cannot plot. Flatten your values array or if the values are on cell edges, try providing ugrid_all.edge_verts instead'%(verts.shape[:-2],values.shape))
 
     #convert to 3D
     if len(verts.shape) == 4 and verts.shape[-2] == 4 and verts.shape[-1] == 2: #from regular grid
