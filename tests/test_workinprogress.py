@@ -628,23 +628,24 @@ def test_contour_over_polycollection():
     data_frommap_y = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_face_y')
     data_frommap_bl = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_flowelem_bl')
     
-    #interpolate to regular grid
-    x_grid, y_grid, val_grid = scatter_to_regulargrid(xcoords=data_frommap_x, ycoords=data_frommap_y, ncellx=100, ncelly=80, values=data_frommap_bl, method='linear')
-
-    #create plot with ugrid and cross section line
-    fig, axs = plt.subplots(3,1,figsize=(6,9))
-    ax=axs[0]
-    pc = plot_netmapdata(ugrid.verts, values=data_frommap_bl, ax=ax, linewidth=0.5, edgecolors='face', cmap='jet')#, color='crimson', facecolor="None")
-    pc.set_clim(clim_bl)
-    fig.colorbar(pc, ax=ax)
-    ax=axs[1]
-    pc = ax.contourf(x_grid, y_grid, val_grid)
-    pc.set_clim(clim_bl)
-    fig.colorbar(pc, ax=ax)
-    ax=axs[2]
-    ax.contour(x_grid, y_grid, val_grid)
-    fig.colorbar(pc, ax=ax)
-    plt.savefig(os.path.join(dir_output,'%s_gridbedcontour'%(os.path.basename(file_nc).replace('.',''))))
+    for maskland_dist in [None,100]:
+        #interpolate to regular grid
+        x_grid, y_grid, val_grid = scatter_to_regulargrid(xcoords=data_frommap_x, ycoords=data_frommap_y, ncellx=100, ncelly=80, values=data_frommap_bl, method='linear', maskland_dist=maskland_dist)
+    
+        #create plot with ugrid and cross section line
+        fig, axs = plt.subplots(3,1,figsize=(6,9))
+        ax=axs[0]
+        pc = plot_netmapdata(ugrid.verts, values=data_frommap_bl, ax=ax, linewidth=0.5, edgecolors='face', cmap='jet')#, color='crimson', facecolor="None")
+        pc.set_clim(clim_bl)
+        fig.colorbar(pc, ax=ax)
+        ax=axs[1]
+        pc = ax.contourf(x_grid, y_grid, val_grid)
+        pc.set_clim(clim_bl)
+        fig.colorbar(pc, ax=ax)
+        ax=axs[2]
+        ax.contour(x_grid, y_grid, val_grid)
+        fig.colorbar(pc, ax=ax)
+        plt.savefig(os.path.join(dir_output,'%s_gridbedcontour_masklanddist%s'%(os.path.basename(file_nc).replace('.',''),maskland_dist)))
 
 
 

@@ -65,22 +65,60 @@ def meshgridxy2verts(x_coords, y_coords):
 
 
 
-def scatter_to_regulargrid(xcoords=None, ycoords=None, ncellx=None, ncelly=None, values=None, method='nearest'):
+def scatter_to_regulargrid(xcoords=None, ycoords=None, ncellx=None, ncelly=None, values=None, method='nearest', maskland_dist=None):
     """
     interpolates scatter values (x,y,z) or meshgrids to regular grid
+
+    Parameters
+    ----------
+    xcoords : TYPE, optional
+        DESCRIPTION. The default is None.
+    ycoords : TYPE, optional
+        DESCRIPTION. The default is None.
+    ncellx : TYPE, optional
+        DESCRIPTION. The default is None.
+    ncelly : TYPE, optional
+        DESCRIPTION. The default is None.
+    values : TYPE, optional
+        DESCRIPTION. The default is None.
+    method : TYPE, optional
+        DESCRIPTION. The default is 'nearest'.
+    maskland_dist : TYPE, optional
+        Distance used to mask out land cells. Value differs per model resolution. For sperical use maskland_dist of eg 0.01, for cartesian use maskland_dist of eg 100. The default is None.
+
+    Returns
+    -------
+    x_grid : TYPE
+        DESCRIPTION.
+    y_grid : TYPE
+        DESCRIPTION.
+    value_grid : TYPE
+        DESCRIPTION.
+
     """
     import numpy as np
     from scipy.interpolate import griddata
+    from scipy.spatial import KDTree
     
     reg_x_vec = np.linspace(np.min(xcoords),np.max(xcoords),ncellx)
     reg_y_vec = np.linspace(np.min(ycoords),np.max(ycoords),ncelly)
     x_grid,y_grid = np.meshgrid(reg_x_vec,reg_y_vec)
     
+    #first replace masked value with nan (mask is not used in griddata)
     try:
         values[values.mask] = np.nan
     except:
         pass
     value_grid = griddata((xcoords,ycoords),values,(x_grid,y_grid),method=method)
+    
+    if maskland_dist is not None:
+        #Mask out land values with maskland_dist
+        #https://stackoverflow.com/questions/10456143/get-only-valid-points-in-2d-interpolation-of-cloud-point-using-scipy-numpy
+        tree = KDTree(np.c_[xcoords, ycoords])
+        dist, _ = tree.query(np.c_[x_grid.ravel(), y_grid.ravel()], k=1)
+        dist = dist.reshape(x_grid.shape)
+        value_grid[dist > maskland_dist] = np.nan
+
     return x_grid, y_grid, value_grid
 
 
