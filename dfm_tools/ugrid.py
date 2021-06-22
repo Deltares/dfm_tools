@@ -53,10 +53,11 @@ class UGrid:
         
         def nodexyfaces2verts(node_x,node_y, faces):
             quatrangles = faces-1 #convert 1-based indexing of cell numbering in ugrid to 0-based indexing
+            quatrangles_filled = quatrangles.filled(int(-999)) #necessary since fill value was changed from -999 to -2147483647 and this cannot be handled for some reason
             #https://stackoverflow.com/questions/49640311/matplotlib-unstructered-quadrilaterals-instead-of-triangles
             #https://stackoverflow.com/questions/52202014/how-can-i-plot-2d-fem-results-using-matplotlib
             yz = np.c_[node_x,node_y]
-            verts= yz[quatrangles]
+            verts= yz[quatrangles_filled]
             verts[quatrangles.mask==True,:] = np.nan #remove all masked values by making them nan
             return verts
         
