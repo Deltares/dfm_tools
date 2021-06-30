@@ -315,9 +315,9 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
 
     #optional extraction of top/bottom layer, convenient for z-layer models since top and/or bottom layers are often masked for part of the cells
     if layer is str('top') or layer is str('bottom'):
-        warnings.warn('you are retrieving data from the %s valid layer of each cell. it is assumed that the last axis of the variable is the layer axis')
+        warnings.warn('you are retrieving data from the %s valid layer of each cell. it is assumed that the last axis of the variable is the layer axis'%(layer))
         if not values_all.mask.any(): #if (all values in) the mask are False
-            raise Exception('there is no mask present in this dataset (or all its values are False), use layer=[0,-1] to get the bottom and top layerss')
+            raise Exception('there is no mask present in this dataset (or all its values are False), use layer=[0,-1] to get the bottom and top layers')
         layerdim_id = nc_varobject_sel.dimensions.index(dimn_layer)
         if layer is str('top'):
             bottomtoplay = values_all.shape[layerdim_id]-1-(~np.flip(values_all.mask,axis=layerdim_id)).argmax(axis=layerdim_id) #get index of first False value from the flipped array (over layer axis) and correct with size of that dimension. this corresponds to the top layer of each cell in case of D-Flow FM
@@ -327,12 +327,11 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
         for iD, dimlen in enumerate(values_all.shape):
             if iD == layerdim_id:
                 values_selid_topbot.append(bottomtoplay)
-            elif iD == concat_axis:
+            elif iD == concat_axis and not '_his' in file_nc: #his files have no partitions and thus no concat_axis, this forces to 'else' and to transpose (no testcase available)
                 values_selid_topbot.append(np.array(range(dimlen)))
             else:
-                #values_selid_topbot.append(np.repeat(np.array([range(dimlen)]).T,values_all.shape[concat_axis],axis=1))
                 values_selid_topbot.append(np.array([range(dimlen)]).T)
-        values_all_topbot = values_all[values_selid_topbot] #layer dimension is removed due to advanced indexing instead of slicing
+        values_all_topbot = values_all[tuple(values_selid_topbot)] #layer dimension is removed due to advanced indexing instead of slicing
         values_all_topbot = np.expand_dims(values_all_topbot, axis=layerdim_id) #re-add layer dimension to dataset on original location
         values_all = values_all_topbot
 
