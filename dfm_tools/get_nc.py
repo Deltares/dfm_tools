@@ -327,7 +327,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
         for iD, dimlen in enumerate(values_all.shape):
             if iD == layerdim_id:
                 values_selid_topbot.append(bottomtoplay)
-            elif iD == concat_axis and not '_his' in file_nc: #his files have no partitions and thus no concat_axis, this forces to 'else' and to transpose (no testcase available)
+            elif iD == concat_axis and not '_his.nc' in file_nc: #his files have no partitions and thus no concat_axis, this forces to 'else' and to transpose (no testcase available)
                 values_selid_topbot.append(np.array(range(dimlen)))
             else:
                 values_selid_topbot.append(np.array([range(dimlen)]).T)
