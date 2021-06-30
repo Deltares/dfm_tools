@@ -90,6 +90,18 @@ def test_getmapbottomdata(file_nc, varname, expected_size):
     
 
 
+def test_gethisbottomdata():
+    """
+    checks whether time dimension is indexed once, resulted in shape of (10,10,1)
+    """
+    from dfm_tools.get_nc import get_ncmodeldata
+    file_nc_his = os.path.join(dir_testinput,'MWRA','MB_02_0000_his.nc')
+    
+    moddata_dfm = get_ncmodeldata(file_nc_his,varname='salinity',station='MWRA_F22',timestep=range(10),layer='bottom')
+    
+    assert moddata_dfm.shape == (10, 1, 1)
+
+
 
 
 @pytest.mark.unittest
