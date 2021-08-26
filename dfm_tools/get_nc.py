@@ -327,7 +327,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
         for iD, dimlen in enumerate(values_all.shape):
             if iD == layerdim_id:
                 values_selid_topbot.append(bottomtoplay)
-            elif iD == concat_axis and not '_his' in file_nc: #his files have no partitions and thus no concat_axis, this forces to 'else' and to transpose (no testcase available)
+            elif iD == concat_axis and not '_his.nc' in file_nc: #his files have no partitions and thus no concat_axis, this forces to 'else' and to transpose (no testcase available)
                 values_selid_topbot.append(np.array(range(dimlen)))
             else:
                 values_selid_topbot.append(np.array([range(dimlen)]).T)
@@ -833,6 +833,7 @@ def plot_ztdata(dfmtools_hisvar, statid_subset=0, ax=None, mask_data=True, only_
     if only_contour:
         pc = ax.contour(time_mesh_cen,data_fromhis_zcen_flat,dfmtools_hisvar_flat, **kwargs)
     else:
-        pc = ax.pcolormesh(time_mesh_cor, data_fromhis_zcor_flat, dfmtools_hisvar_flat, **kwargs)
+        #pc = ax.pcolormesh(time_mesh_cor, data_fromhis_zcor_flat, dfmtools_hisvar_flat, **kwargs)
+        pc = ax.pcolor(time_mesh_cor, data_fromhis_zcor_flat, dfmtools_hisvar_flat, **kwargs) #pcolor also supports missing/masked xy data, but is slower
 
     return pc
