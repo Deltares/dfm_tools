@@ -833,6 +833,7 @@ def plot_ztdata(dfmtools_hisvar, statid_subset=0, ax=None, mask_data=True, only_
     if only_contour:
         pc = ax.contour(time_mesh_cen,data_fromhis_zcen_flat,dfmtools_hisvar_flat, **kwargs)
     else:
-        pc = ax.pcolormesh(time_mesh_cor, data_fromhis_zcor_flat, dfmtools_hisvar_flat, **kwargs)
+        #pc = ax.pcolormesh(time_mesh_cor, data_fromhis_zcor_flat, dfmtools_hisvar_flat, **kwargs)
+        pc = ax.pcolor(time_mesh_cor, data_fromhis_zcor_flat, dfmtools_hisvar_flat, **kwargs) #pcolor also supports missing/masked xy data, but is slower
 
     return pc
