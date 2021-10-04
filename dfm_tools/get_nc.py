@@ -82,7 +82,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
 
     listtype_int = [int, np.int, np.int8, np.int16, np.int32, np.int64]
     listtype_str = [str]
-    listtype_range = [list, range, np.ndarray]
+    listtype_range = [list, range, np.ndarray, pd.RangeIndex]
     listtype_datetime = [dt.datetime, np.datetime64]
     listtype_daterange = [pd.DatetimeIndex]
 
