@@ -84,6 +84,10 @@ Example usage
 - want to get updates about dfm_tools? Send an email to jelmer.veenstra@deltares.nl
 
 ```python
+.. include:: tests/examples/readme_example_usage.py
+```
+
+```python
 #data retrieval is easy, just use get_ncmodeldata() with file_nc argument
 #then use the feedback in the error messages to set other arguments like varname, timestep, station and layer
 from dfm_tools.get_nc import get_ncmodeldata

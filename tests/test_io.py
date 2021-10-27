@@ -14,7 +14,7 @@ dir_testinput = gettestinputdir()
 
 
 
-@pytest.mark.acceptance
+@pytest.mark.systemtest
 def test_mdu():
     """
     tests whether mdu file can be imported and exported
@@ -57,7 +57,7 @@ def test_mdu():
                                       pytest.param(os.path.join(dir_testinput,'ballenplot\\0200a.tek'), id='Kivu tek map sal'),
                                       pytest.param(os.path.join(dir_testinput,'ballenplot\\SDS-zd003b5dec2-sal.tek'), id='Kivu tek map more'),
                                       pytest.param(os.path.join(dir_testinput,'test_new.tek'), id='ts_Theo')])
-@pytest.mark.unittest
+@pytest.mark.acceptance
 def test_readpolygon(file_pol):
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
     """
@@ -128,7 +128,7 @@ def test_readpolygon(file_pol):
 
 
 
-@pytest.mark.unittest
+@pytest.mark.acceptance
 def test_readnoosfile():
     dir_output = getmakeoutputdir(__file__,inspect.currentframe().f_code.co_name)
     """
