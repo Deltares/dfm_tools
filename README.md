@@ -198,13 +198,7 @@ Feature wishlist
 	- improve tekal map read
 	- add tekal mergedatasets function to get e.g. one ldb dataset with the original parts separated with nans
 	- add tekal write functions
-- add tidal analysis:
-	- https://github.com/sam-cox/pytides
-	- https://pypi.org/project/pytides/
-	- https://github.com/pwcazenave/tappy
-	- https://pypi.org/project/UTide/
-	- https://github.com/moflaher/ttide_py
-	- hatyan
+- add tidal analysis (https://github.com/Deltares/hatyan)
 - make merc keyword always optional by testing for minmax all vertsx between -181 and 361 and minmax all vertsy (lat) between -91 and 91 (+range for overlap for e.g. gtsm model)
 - improve get_ncmodeldata second intersect function
 	- optimize with distance from line: get maximum cell area (and infer width) from lineblockbbound selection, then decide on distance from line for selection of cells for crossect calculation
