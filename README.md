@@ -77,7 +77,7 @@ Installation
 
 Example usage
 --------
-- for more examples, check https://github.com/openearth/dfm_tools/tree/master/tests (this is also the pytest testbank)
+- for more examples, check https://github.com/openearth/dfm_tools/tree/master/tests/examples (these scripts are also part of the pytest testbank)
 - examples of (mostly unformatted) figures created by this pytest testbank: n:\\Deltabox\\Bulletin\\veenstra\\info dfm_tools
 - please check the [Feature wishlist](#feature-wishlist) for envisioned features
 - please report bugs and feature requests at the developers or at https://github.com/openearth/dfm_tools/issues (include OS, dfm_tools version, reproduction steps)
