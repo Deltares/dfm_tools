@@ -1,5 +1,7 @@
-"""Top-level package for dfm_tools."""
+"""
+.. include:: ../README.md
+"""
 
 __author__ = """Jelmer Veenstra"""
 __email__ = 'jelmer.veenstra@deltares.nl'
-__version__ = '0.7.40'
+__version__ = '0.7.42'
