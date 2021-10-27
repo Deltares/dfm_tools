@@ -447,15 +447,20 @@ def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None
         nlay = data_nc.dimensions[dimn_layer].size
 
     varn_layer_z = get_varname_fromnc(data_nc,'mesh2d_layer_z',vardim='var')
-    if varn_layer_z is None:
-        laytyp = 'sigmalayer'
-        #zvals_cen = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay)
-        zvals_interface = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay+1)
-    else:
+    varn_layer_fullgrid = get_varname_fromnc(data_nc,'mesh2d_flowelem_zw',vardim='var')
+    if varn_layer_fullgrid is not None:
+        laytyp = 'fullgrid'
+        zvals_interface_allfaces = get_ncmodeldata(file_nc, varname=varn_layer_fullgrid, timestep=timestep, multipart=multipart)
+        zvals_interface = zvals_interface_allfaces[0,intersect_gridnos,:].T #transpose to make in line with 2D sigma dataset
+    elif varn_layer_z is not None:
         laytyp = 'zlayer'
         #zvals_cen = get_ncmodeldata(file_nc=file_map, varname='mesh2d_layer_z', lay='all')#, multipart=False)
         #zvals_interface = get_ncmodeldata(file_nc=file_map, varname='mesh2d_interface_z')#, multipart=False)
         zvals_interface = data_nc.variables['mesh2d_interface_z'][:]
+    else:
+        laytyp = 'sigmalayer'
+        #zvals_cen = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay)
+        zvals_interface = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay+1)
 
     #calculate distance from points to 'previous' linepoint, add lenght of previous lineparts to it
     if not calcdist_fromlatlon:
@@ -472,7 +477,7 @@ def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None
         zval_lay_bot = zvals_interface[iL]
         zval_lay_top = zvals_interface[iL+1]
         crs_verts_x = np.array([[crs_dist_starts,crs_dist_stops,crs_dist_stops,crs_dist_starts]]).T
-        if laytyp == 'sigmalayer':
+        if laytyp in ['sigmalayer','fullgrid']:
             crs_verts_z = np.array([[zval_lay_bot,zval_lay_bot,zval_lay_top,zval_lay_top]]).T
         elif laytyp == 'zlayer':
             crs_verts_z = np.repeat(np.array([[zval_lay_bot,zval_lay_bot,zval_lay_top,zval_lay_top]]).T[np.newaxis],repeats=crs_verts_x.shape[0],axis=0)
