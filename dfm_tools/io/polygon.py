@@ -145,6 +145,10 @@ class Polygon:
                                     print('conversion from date/time column to datetime failed, incorrect format of first two columns?')
                         elif len(line_shp) == 3: #tekal 2D map files
                             data_pol_map = data_pol.reshape([line_shp[0]//line_shp[2],line_shp[2],line_shp[1]])
+                        elif len(line_shp) == 4: #tekal 2D map files, with fourth dummy in shape array
+                            if line_shp[0]//line_shp[2]-line_shp[3]>=1e-9:
+                                raise Exception('tekal map file shape header is not consistent with itself')
+                            data_pol_map = data_pol.reshape([line_shp[0]//line_shp[2],line_shp[2],line_shp[1]])
                         else:
                             raise Exception('tekal file should have 2 or 3 dimensions, but it has this shape: %s'%(line_shp))
                     else:
