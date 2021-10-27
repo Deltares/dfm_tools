@@ -80,7 +80,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     #get list of station dimnames
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
 
-    listtype_int = [int, np.int, np.int8, np.int16, np.int32, np.int64]
+    listtype_int = [int, np.int8, np.int16, np.int32, np.int64]
     listtype_str = [str]
     listtype_range = [list, range, np.ndarray, pd.RangeIndex]
     listtype_datetime = [dt.datetime, np.datetime64]
@@ -400,7 +400,7 @@ def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None
     print('calculating distance for all crossed cells, from first point of line (should not take long, but if it does, optimisation is needed)')
     nlinecoords = line_array.shape[0]
     nlinedims = len(line_array.shape)
-    ncrosscells = intersect_coords.shape[0]
+    ncrosscellparts = intersect_coords.shape[0]
     if nlinecoords<2 or nlinedims != 2:
         raise Exception('ERROR: line_array should at least contain two xy points [[x,y],[x,y]]')
 
@@ -410,8 +410,8 @@ def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None
     crs_ystop = intersect_coords[:,1,1]
 
     #calculate distance between celledge-linepart crossing (is zero when line iL crosses cell)
-    distperline_tostart = np.empty((ncrosscells,nlinecoords-1))
-    #distperline_tostop = np.empty((ncrosscells,nlinecoords-1))
+    distperline_tostart = np.zeros((ncrosscellparts,nlinecoords-1))
+    distperline_tostop = np.zeros((ncrosscellparts,nlinecoords-1))
     linepart_length = np.zeros((nlinecoords))
     for iL in range(nlinecoords-1):
         #calculate length of lineparts
@@ -422,10 +422,11 @@ def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None
             linepart_length[iL+1] = calc_dist_latlon(line_array[iL,0],line_array[iL+1,0],line_array[iL,1],line_array[iL+1,1])
 
         #get distance between all lineparts and point (later used to calculate distance from beginpoint of closest linepart)
-        for iP in range(ncrosscells):
+        for iP in range(ncrosscellparts):
             distperline_tostart[iP,iL] = line_section_part.distance(Point(crs_xstart[iP],crs_ystart[iP]))
+            distperline_tostop[iP,iL] = line_section_part.distance(Point(crs_xstop[iP],crs_ystop[iP]))
     linepart_lengthcum = np.cumsum(linepart_length)
-    cross_points_closestlineid = np.argmin(distperline_tostart,axis=1)
+    cross_points_closestlineid = np.argmin(np.maximum(distperline_tostart,distperline_tostop),axis=1)
     print('finished calculating distance for all crossed cells, from first point of line')
 
     data_nc = Dataset(file_nc)
