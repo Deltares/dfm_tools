@@ -46,8 +46,7 @@ coverage.xml
 *.cover
 .hypothesis/
 .pytest_cache/
-tests/test_output
-tests/test_output_reference
+tests/examples_output
 
 # Translations
 *.mo
