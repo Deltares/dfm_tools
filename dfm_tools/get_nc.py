@@ -321,7 +321,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
         warnings.warn('you are retrieving data from the %s valid layer of each cell. it is assumed that the last axis of the variable is the layer axis'%(layer))
         if not values_all.mask.any(): #if (all values in) the mask are False
             raise Exception('there is no mask present in this dataset (or all its values are False), use layer=[0,-1] to get the bottom and top layers')
-        layerdim_id = nc_varobject_sel.dimensions.index(dimn_layer)
+        layerdim_id = nc_varobject.dimensions.index(dimn_layer)
         if layer is str('top'):
             bottomtoplay = values_all.shape[layerdim_id]-1-(~np.flip(values_all.mask,axis=layerdim_id)).argmax(axis=layerdim_id) #get index of first False value from the flipped array (over layer axis) and correct with size of that dimension. this corresponds to the top layer of each cell in case of D-Flow FM
         if layer is str('bottom'):
@@ -457,22 +457,25 @@ def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None
         laytyp = 'fullgrid'
         zvals_interface_allfaces = get_ncmodeldata(file_nc, varname=varn_layer_fullgrid, timestep=timestep, multipart=multipart)
         zvals_interface = zvals_interface_allfaces[0,intersect_gridnos,:].T #transpose to make in line with 2D sigma dataset
-    elif varn_layer_z is not None:
-        laytyp = 'zlayer'
-        #zvals_cen = get_ncmodeldata(file_nc=file_map, varname='mesh2d_layer_z', lay='all')#, multipart=False)
-        #zvals_interface = get_ncmodeldata(file_nc=file_map, varname='mesh2d_interface_z')#, multipart=False)
-        zvals_interface = data_nc.variables['mesh2d_interface_z'][:]
-    else: #sigma or 2D model
-        laytyp = 'sigmalayer'
+    else:
         varn_mesh2d_s1 = get_varname_fromnc(data_nc,'mesh2d_s1',vardim='var')
         data_frommap_wl3 = get_ncmodeldata(file_nc, varname=varn_mesh2d_s1, timestep=timestep, multipart=multipart)
         data_frommap_wl3_sel = data_frommap_wl3[0,intersect_gridnos]
         varn_mesh2d_flowelem_bl = get_varname_fromnc(data_nc,'mesh2d_flowelem_bl',vardim='var')
         data_frommap_bl = get_ncmodeldata(file_nc, varname=varn_mesh2d_flowelem_bl, multipart=multipart)
         data_frommap_bl_sel = data_frommap_bl[intersect_gridnos]
-        #zvals_cen = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay)
-        zvals_interface = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay+1)
+        
+        if varn_layer_z is not None:
+            laytyp = 'zlayer'
+            #zvals_cen = get_ncmodeldata(file_nc=file_map, varname='mesh2d_layer_z', lay='all')#, multipart=False)
+            #zvals_interface = get_ncmodeldata(file_nc=file_map, varname='mesh2d_interface_z')#, multipart=False)
+            zvals_interface = data_nc.variables['mesh2d_interface_z'][:]
+        else: #sigma or 2D model
+            laytyp = 'sigmalayer'
+            #zvals_cen = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay)
+            zvals_interface = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay+1)
 
+        
     #calculate distance from points to 'previous' linepoint, add lenght of previous lineparts to it
     if not calcdist_fromlatlon:
         crs_dist_starts = calc_dist(line_array[cross_points_closestlineid,0], crs_xstart, line_array[cross_points_closestlineid,1], crs_ystart) + linepart_lengthcum[cross_points_closestlineid]
