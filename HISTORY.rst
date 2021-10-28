@@ -1,6 +1,13 @@
 =======
 History
 =======
+0.7.44 (2121-10-28)
+------------------
+* implemented netcdf file closure in dfm_tools and updated example scripts
+* improved cross section retrieval plotting: bugfix for linebreaks, bugfix for segment snapping to wrong linepart, bugfix for cell that is crossed twice by the line. Also added systemtest testcase.
+* moved all acceptance tests to example scripts for easier viewing and debugging
+* bugfix for s-zigmalayers with full grid output
+
 0.7.33 (2021-03-19)
 ------------------
 * made ghostid removal more efficient, partitioned map retrieval is now significantly faster

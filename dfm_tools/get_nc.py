@@ -456,11 +456,11 @@ def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None
     if varn_layer_fullgrid is not None:
         laytyp = 'fullgrid'
         zvals_interface_allfaces = get_ncmodeldata(file_nc, varname=varn_layer_fullgrid, timestep=timestep, multipart=multipart)
-        zvals_interface = zvals_interface_allfaces[0,intersect_gridnos,:].T #transpose to make in line with 2D sigma dataset
+        zvals_interface = zvals_interface_allfaces[0,intersect_gridnos,:].T #timestep=0 since correct timestep was already retrieved with get_ncmodeldata. Transpose to make in line with 2D sigma dataset
     else:
         varn_mesh2d_s1 = get_varname_fromnc(data_nc,'mesh2d_s1',vardim='var')
         data_frommap_wl3 = get_ncmodeldata(file_nc, varname=varn_mesh2d_s1, timestep=timestep, multipart=multipart)
-        data_frommap_wl3_sel = data_frommap_wl3[0,intersect_gridnos]
+        data_frommap_wl3_sel = data_frommap_wl3[0,intersect_gridnos] #timestep=0 since correct timestep was already retrieved with get_ncmodeldata
         varn_mesh2d_flowelem_bl = get_varname_fromnc(data_nc,'mesh2d_flowelem_bl',vardim='var')
         data_frommap_bl = get_ncmodeldata(file_nc, varname=varn_mesh2d_flowelem_bl, multipart=multipart)
         data_frommap_bl_sel = data_frommap_bl[intersect_gridnos]
@@ -483,16 +483,16 @@ def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None
     else:
         crs_dist_starts = calc_dist_latlon(line_array[cross_points_closestlineid,0], crs_xstart, line_array[cross_points_closestlineid,1], crs_ystart) + linepart_lengthcum[cross_points_closestlineid]
         crs_dist_stops = calc_dist_latlon(line_array[cross_points_closestlineid,0], crs_xstop, line_array[cross_points_closestlineid,1], crs_ystop) + linepart_lengthcum[cross_points_closestlineid]
-
+    
     crs_verts_x_all = np.empty((0,4,1))
     crs_verts_z_all = np.empty((0,4,1))
     #data_frommap_sel_flat = np.empty((0))
     for iL in range(nlay):
-        zval_lay_bot = zvals_interface[iL]
-        zval_lay_top = zvals_interface[iL+1]
+        zval_lay_bot = zvals_interface[iL] #(nlay, ncells)
+        zval_lay_top = zvals_interface[iL+1] #(nlay, ncells)
         crs_verts_x = np.array([[crs_dist_starts,crs_dist_stops,crs_dist_stops,crs_dist_starts]]).T
         if laytyp in ['sigmalayer','fullgrid']:
-            crs_verts_z = np.array([[zval_lay_bot,zval_lay_bot,zval_lay_top,zval_lay_top]]).T
+            crs_verts_z = np.ma.array([[zval_lay_bot,zval_lay_bot,zval_lay_top,zval_lay_top]],mask=[[zval_lay_bot.mask,zval_lay_bot.mask,zval_lay_top.mask,zval_lay_top.mask]]).T
         elif laytyp == 'zlayer':
             crs_verts_z = np.repeat(np.array([[zval_lay_bot,zval_lay_bot,zval_lay_top,zval_lay_top]]).T[np.newaxis],repeats=crs_verts_x.shape[0],axis=0)
             #top z-layer is extended to water level, if wl is higher than zval_lay_top
@@ -503,10 +503,10 @@ def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None
             zvalbot_belowbl_bool = crs_verts_z[:,0,0]<data_frommap_bl_sel
             crs_verts_z[zvalbot_belowbl_bool,0,0] = data_frommap_bl_sel[zvalbot_belowbl_bool]
             crs_verts_z[zvalbot_belowbl_bool,1,0] = data_frommap_bl_sel[zvalbot_belowbl_bool]
-        crs_verts_x_all = np.concatenate([crs_verts_x_all, crs_verts_x])
-        crs_verts_z_all = np.concatenate([crs_verts_z_all, crs_verts_z])
+        crs_verts_x_all = np.ma.concatenate([crs_verts_x_all, crs_verts_x])
+        crs_verts_z_all = np.ma.concatenate([crs_verts_z_all, crs_verts_z])
         #data_frommap_sel_flat = np.concatenate([data_frommap_sel_flat,data_frommap_sel[:,iL]])
-    crs_verts = np.concatenate([crs_verts_x_all, crs_verts_z_all], axis=2)
+    crs_verts = np.ma.concatenate([crs_verts_x_all, crs_verts_z_all], axis=2)
     data_nc.close()
     return crs_verts
 
