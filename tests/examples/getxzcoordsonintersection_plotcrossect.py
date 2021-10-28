@@ -93,22 +93,9 @@ for file_nc in file_nc_list:
         #provide xy order, so lonlat
         line_array = np.array([[ 65655.72699961, 444092.54776465],
                                [ 78880.42720631, 435019.78832052]])
-        #line_array = np.array([[ 88851.05823362, 413359.68286755], #dummy for partition 0000
-        #                       [ 96948.34387646, 412331.45611925]])
-        line_array = np.array([[129830.71514789, 425739.69372125], #waal
-                               [131025.04347471, 425478.43439976],
-                               [132126.06490098, 425758.35510136],
-                               [133227.08632726, 426299.53512444],
-                               [133824.25049067, 426504.81030561],
-                               [134981.25605726, 426355.51926476],
-                               [136810.07130769, 425329.14335891],
-                               [137668.49479259, 425049.22265731],
-                               [139534.63280323, 425403.78887934],
-                               [140281.08800748, 425403.78887934],
-                               [142464.46947993, 424620.01091487],
-                               [143434.86124547, 424694.65643529],
-                               [146271.39102164, 425534.41854008],
-                               [148566.74077473, 426094.25994327]])
+        line_array = np.array([[ 52444.56849912, 434039.27970214], #HVSL
+                               [ 61304.25484967, 430703.86837017],
+                               [ 62164.16558369, 428619.23628769]])
         line_array = np.array([[ 61013.8966525 , 446291.69129373], #NWW
                                [ 67151.68543524, 444096.96681991],
                                [ 69011.62143001, 442981.00522304],
@@ -165,7 +152,7 @@ for file_nc in file_nc_list:
         data_frommap = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sa1', timestep=timestep, layer='all', multipart=multipart)
     
     #plot crossed cells (gridnos) in first plot
-    print(layno)#data_frommap_flat = data_frommap[0,intersect_gridnos,layno]
+    #print(layno)#data_frommap_flat = data_frommap[0,intersect_gridnos,layno]
     #pc = plot_netmapdata(ugrid.verts[intersect_gridnos,:,:], values=data_frommap_flat, ax=ax_input, linewidth=0.5, cmap="jet")
     plt.savefig(os.path.join(dir_output,'%s_gridbed'%(os.path.basename(file_nc).replace('.',''))))
 

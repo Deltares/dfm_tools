@@ -39,6 +39,7 @@ Features
 	- plot flexible mesh net/map variables as polycollections/patches
 	- plot regular grid variables with pcolor (precise plotting is still work in progress)
 	- plot cartopy features (land, sea, landboundary, country borders, satellite background)
+	- plotting cross sections trough map data
 	- plotting z,t-plots (see [Feature wishlist](#feature-wishlist) for known inaccuracies)
 	- plot any data you want and exactly how you want it
 - other io functions:
@@ -67,7 +68,6 @@ Installation
 	- open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in dfm_tools_env)
 	- if launching Spyder gives a Qt related error: remove the system/user environment variable 'qt_plugin_path' set by an old Delft3D4 installation procedure.
 	- test by printing dfm_tools version number: ``import dfm_tools; print(dfm_tools.__version__)`` (to double check if you are working in the venv where dfm_tools_env was installed)
-	- to get figures in separate windows: go to Tools > Preferences > IPython console > Graphics > change graphics backend to 'Automatic' and restart Spyder (or the kernel).
 	- copy the code from [Example usage](#example-usage) to your own scripts to get starteds
 - to update dfm_tools:
 	- open command window (or anaconda prompt)
@@ -162,21 +162,17 @@ print('\tthe standard_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var
 Feature wishlist
 --------
 - use isinstance for dtype testing in get_nc()
-- correct timezone in netCDF to UTC or not, keyword?
 - integrate values_all and values_all_topbot in get_nc(), avoid concatenating to empty (size 0) array of values_all is a first step
 - improve time reading:
 	- add support for 360_day and noleap calendars (cannot be converted to dt.datetime)
-	- time array is now converted to UTC by num2date automatically and if possible converted back to original timezone, simplify by writing own num2date that excludes timezone from units strin?
+	- time array is now converted to UTC by num2date automatically and if possible converted back to original timezone, simplify by writing own num2date that excludes timezone from units string?
 - merge station/layer/times checks, these parts of get_nc.py have a lot of overlap. also convert (list-likes of) int-likes to np.arrays so less checking is needed
 - add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?):
 	- refer depth w.r.t. reference level, water level or bed level
-	- see test_workinprogress.py
+	- see tests/examples/WIP_trygetondepth.py
 	- see general grid improvement options
 - retrieve correct depths:
-	- add depth array (interfaces/centers) to his and map variables (z/sigma layer calculation is already in get_modeldata_onintersection function)
-	- depths can be retrieved from mesh2d_layer_z/mesh2d_layer_sigma, but has no time dimension so untrue for sigma and maybe for z? (wrong in dflowfm?)
-	- layerzfrombedlevel keyword in mdu changes how zlayering is set up. Catch this exception with a keyword if necessary
-	- support for mixed sigma/z layers?
+	- add depth array (interfaces/centers) to his and map variables (z/sigma layer retrieval is already in get_modeldata_onintersection function)
 - plotting:
 	- simplify input of modplot.velovect() for curved vectors
 	- contour plot of surfaces (e.g. cotidal chart), with polycollection (FM grid) or regular grid, exclude 'land' (shapely overlap between cells of two grids? or create polygon around all edges of original grid (also islands) and use that to cut the resulting regular grid)
@@ -194,7 +190,7 @@ Feature wishlist
 	x_out,y_out = transform(inProj,outProj,x_in,y_in)
 	```
 - add more io-functions:
-	- read/write matroos data (first setup in dfm_tools.io.noos)
+	- read/write matroos data (first setup in dfm_tools.io.noos, better function in hatyan?)
 	- convert data to kml (google earth) or shp? (including RD to WGS84 conversion and maybe vice versa)
 	- improve tekal map read
 	- add tekal mergedatasets function to get e.g. one ldb dataset with the original parts separated with nans
@@ -212,7 +208,6 @@ Feature wishlist
 - add polygon ginput function (click in plot) (already partly exists in intersect/slice testscript)
 - merge existing dfm model setup functions (and other useful stuff):
 	- dflowutil: https://github.com/openearth/dfm_tools/tree/master/dflowutil (and test scripts, contains e.g. read/write functions for general datafromats (like tim))
-	- MBay scripts
 	- https://github.com/openearth/delft3dfmpy (arthur van dam)	
 	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/applications/delft3dfm (fiat, sobek etc)
 	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/applications/delft3dfm/dflowfmpyplot/pyd3dfm/streamline_ug.py (streamline plotting for structured grids, but many settings)
@@ -232,7 +227,7 @@ Feature wishlist
 	- pcolor resulteert ook in een polycollection, net zoals handmatig wordt gedaan met plot_mapdata()
 	- implement kivu paper figure in testbank, since it correctly combines m/n corners with mapdata (including dummy row)
 	- possible to add pyugrid from github as dependency? in setup.py: install_requires=['python_world@git+https://github.com/ceddlyburge/python_world#egg=python_world-0.0.1',]
-	- sigma method in get_xzcoords_onintersection() is assumes equidistant layers, add exception
+	- sigma method in get_xzcoords_onintersection() assumes equidistant layers, add exception
 	- zlayer method in get_xzcoords_onintersection() retrieves from hardcoded interface variable name, centers are not used.
 	- how is depth stored in sigma/z/sigma-z models, generic vertical slice method possible?
 - interactive data retrieval and plotting by calling get_ncmodeldata() without arguments
