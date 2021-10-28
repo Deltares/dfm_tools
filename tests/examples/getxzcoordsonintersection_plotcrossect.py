@@ -21,6 +21,7 @@ file_nc_list = [os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_cb
             os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc'),
             r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0000_map.nc',
             r'p:\11203379-005-mwra-updated-bem\03_model\03_runs\A86_erik\DFM_OUTPUT_MB_02\MB_02_0000_map.nc',
+            r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\computations\run_183\DFM_OUTPUT_RMM_dflowfm\RMM_dflowfm_0000_map.nc',
             ]
 
 for file_nc in file_nc_list:    
@@ -108,6 +109,20 @@ for file_nc in file_nc_list:
                                [143434.86124547, 424694.65643529],
                                [146271.39102164, 425534.41854008],
                                [148566.74077473, 426094.25994327]])
+        line_array = np.array([[ 61013.8966525 , 446291.69129373], #NWW
+                               [ 67151.68543524, 444096.96681991],
+                               [ 69011.62143001, 442981.00522304],
+                               [ 72210.71134101, 440302.69739058],
+                               [ 74405.43581484, 438889.14603455],
+                               [ 75632.99357138, 437401.19723874],
+                               [ 79018.07708186, 435169.27404501],
+                               [ 81324.39771538, 434536.89580679],
+                               [ 82923.94267088, 434611.29324658],
+                               [ 84449.09018659, 435132.07532512],
+                               [ 86606.61594052, 434685.69068637],
+                               [ 88689.74425466, 435355.26764449],
+                               [ 90772.8725688 , 434983.28044554],
+                               [ 91926.03288556, 435132.07532512]])
         val_ylim = None
         clim_bl = [-10,10]
         #optimize_dist = 150

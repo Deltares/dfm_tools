@@ -45,7 +45,7 @@ plt.savefig(os.path.join(dir_output,'cartopy_hirlam_aspect'))
 fig, ax = plt.subplots(figsize=(9,5),subplot_kw={'projection': ccrs.PlateCarree()}) #provide axis projection on initialisation, cannot be edited later on
 pc = ax.pcolor(mesh2d_node_x_sel,mesh2d_node_y_sel,magn)#, transform=ccrs.PlateCarree())
 cbar = fig.colorbar(pc, ax=ax)
-cbar.set_label('velocity magnitude (%s)'%(data_v.var_ncvarobject.units))
+cbar.set_label('velocity magnitude (%s)'%(data_v.var_ncattrs['units']))
 plot_background(ax=ax, resolution=1, google_style='street', features=['countries_highres'], linewidth=0.5, edgecolor='gray', facecolor='none', latlon_format=True)
 plot_background(ax=ax, google_style=None, features=['coastlines_highres'], linewidth=0.5, latlon_format=True)
 plt.savefig(os.path.join(dir_output,'cartopy_hirlam_moreoptions'))
