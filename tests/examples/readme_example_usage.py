@@ -5,13 +5,13 @@ Created on Wed Oct 27 14:55:27 2021
 @author: veenstra
 """
 
+#this example includes plotting and using the metadata of the retrieved data
 #import statements
 import os
 import matplotlib.pyplot as plt
 plt.close('all')
 from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
 from dfm_tools.get_nc_helpers import get_ncvardimlist, get_timesfromnc, get_hisstationlist
-
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 
 #uncomment the line below, copy data locally and change this path to increase performance
@@ -30,7 +30,7 @@ fig, ax = plt.subplots(1,1,figsize=(10,5))
 for iP, station in enumerate(data_fromhis_wl.var_stations['station_name']):
     ax.plot(data_fromhis_wl.var_times,data_fromhis_wl[:,iP],'-', label=station)
 ax.legend()
-ax.set_ylabel('%s (%s)'%(data_fromhis_wl.var_varname, data_fromhis_wl.var_ncvarobject.units))
+ax.set_ylabel('%s (%s)'%(data_fromhis_wl.var_varname, data_fromhis_wl.var_ncattrs['units']))
 
 #plot net/grid
 ugrid_all = get_netdata(file_nc=file_nc_map)#,multipart=False)
@@ -44,7 +44,7 @@ fig, ax = plt.subplots()
 pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_wl[0,:], ax=None, linewidth=0.5, cmap="jet")
 pc.set_clim([-0.5,1])
 fig.colorbar(pc, ax=ax)
-ax.set_title('%s (%s)'%(data_frommap_wl.var_varname, data_frommap_wl.var_ncvarobject.units))
+ax.set_title('%s (%s)'%(data_frommap_wl.var_varname, data_frommap_wl.var_ncattrs['units']))
 ax.set_aspect('equal')
 
 #plot salinity on map
@@ -52,7 +52,7 @@ data_frommap_sal = get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_sa1', ti
 fig, ax = plt.subplots()
 pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_sal[0,:,0], ax=None, linewidth=0.5, cmap="jet")
 fig.colorbar(pc, ax=ax)
-ax.set_title('%s (%s)'%(data_frommap_sal.var_varname, data_frommap_sal.var_ncvarobject.units))
+ax.set_title('%s (%s)'%(data_frommap_sal.var_varname, data_frommap_sal.var_ncattrs['units']))
 ax.set_aspect('equal')
 
 #print contents of retrieved data withing data_frommap_sal variable
@@ -65,9 +65,9 @@ print('++++++\nthe shape of the variable %s is:\n%s\n'%(print_var.var_varname, p
 print('++++++\nthe dimensions of the variable %s are (copied from netCDF variable):\n%s\n'%(print_var.var_varname, print_var.var_dimensions))
 print('++++++\nthe netCDF variable where the data in variable %s comes from is:\n%s\n'%(print_var.var_varname, print_var.var_ncvarobject))
 print('++++++\nsome example contents of this netCDF variable:')
-print('\tthe dimension names of the netCDF variable %s are:\n\t\t%s'%(print_var.var_varname, print_var.var_ncvarobject.dimensions))
-print('\tthe shape of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname, print_var.var_ncvarobject.shape))
-print('\tthe units of the netCDF variable %s are:\n\t\t%s'%(print_var.var_varname, print_var.var_ncvarobject.units))
-print('\tthe long_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname, print_var.var_ncvarobject.long_name))
-print('\tthe standard_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname, print_var.var_ncvarobject.standard_name))
+print('\tthe dimension names of the netCDF variable %s are:\n\t\t%s'%(print_var.var_varname, print_var.var_dimensions))
+print('\tthe shape of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname, print_var.var_shape))
+print('\tthe units of the netCDF variable %s are:\n\t\t%s'%(print_var.var_varname, print_var.var_ncattrs['units']))
+print('\tthe long_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname, print_var.var_ncattrs['long_name']))
+print('\tthe standard_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname, print_var.var_ncattrs['standard_name']))
 

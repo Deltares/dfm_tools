@@ -50,7 +50,7 @@ def ncdump(file_nc):
     
     """
     from netCDF4 import Dataset
-    import pandas as pd
+    #import pandas as pd
     #import numpy as np
     
     data_nc = Dataset(file_nc)
@@ -79,6 +79,7 @@ def ncdump(file_nc):
         print("\t\tshape: %s"%(str(data_nc.variables[var].shape)))
         for ncattr in data_nc.variables[var].ncattrs():
             print('\t\t%s: %s'%(ncattr,data_nc.variables[var].getncattr(ncattr)))
+    data_nc.close()
     #return nc_attrs, nc_dims, nc_vars
 
 
@@ -250,14 +251,12 @@ def get_ncvardimlist(file_nc):
         #get non-attribute properties of netcdf variable
         dims_pd.loc[iD,'name'] = data_nc.dimensions[nc_dim].name
         dims_pd.loc[iD,'size'] = data_nc.dimensions[nc_dim].size
+    data_nc.close()
     return vars_pd, dims_pd
 
     
 
-
-def get_ncvarobject(file_nc, varname):
-    from netCDF4 import Dataset
-    
+def get_varnamefrom_keyslongstandardname(file_nc, varname):
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
     
     nc_varkeys = list(vars_pd['nc_varkeys'])
@@ -281,10 +280,10 @@ def get_ncvarobject(file_nc, varname):
     else:
         raise Exception('ERROR: requested variable %s not in netcdf, available are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_ncvardimlist\nvars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)\nnote that you can retrieve variables by keys, standard_name or long_name attributes'%(varname, vars_pd))
     
-    data_nc = Dataset(file_nc)
-    nc_varobject = data_nc.variables[varname]
-    
-    return nc_varobject
+    return varname
+
+
+
 
 
 
@@ -303,6 +302,8 @@ def ghostcell_filter(file_nc):
         nonghost_ids = domain==domain_no
     else:
         nonghost_ids = None
+        
+    data_nc.close()
     return nonghost_ids
 
 
@@ -316,7 +317,8 @@ def get_variable_timevardim(file_nc, varname):
     #from dfm_tools.get_nc_helpers import get_ncvarobject
     
     data_nc = Dataset(file_nc)
-    nc_varobject = get_ncvarobject(file_nc, varname)
+    varname = get_varnamefrom_keyslongstandardname(file_nc, varname) #get varname from varkeys/standardname/longname if exists
+    nc_varobject = data_nc.variables[varname]
     
     varn_time = None
     dimn_time = None
@@ -326,6 +328,8 @@ def get_variable_timevardim(file_nc, varname):
             dimn_time = var_lookup.dimensions[0]
             varn_time = var_lookup.name
             break
+    
+    data_nc.close()
     return varn_time, dimn_time
 
 
@@ -462,6 +466,7 @@ def get_timesfromnc(file_nc, varname='time', retrieve_ids=False, keeptimezone=Tr
     else:
         data_nc_datetimes_pd = pd.Series(data_nc_datetimes).dt.round(freq='S')
     
+    data_nc.close()
     return data_nc_datetimes_pd
 
 
@@ -498,8 +503,9 @@ def get_hisstationlist(file_nc,varname):
     #from dfm_tools.get_nc_helpers import get_ncvarobject, get_ncvardimlist, get_variable_timevardim
     
     data_nc = Dataset(file_nc)
-    data_nc_varname = get_ncvarobject(file_nc, varname) #check if var exists and get var_object
-    varname_dims = data_nc_varname.dimensions
+    varname = get_varnamefrom_keyslongstandardname(file_nc, varname) #get varname from varkeys/standardname/longname if exists
+    nc_varobject = data_nc.variables[varname]
+    varname_dims = nc_varobject.dimensions
     varn_time, dimn_time = get_variable_timevardim(file_nc=file_nc, varname=varname)
     
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
@@ -551,7 +557,8 @@ def get_hisstationlist(file_nc,varname):
         for iC, coord_varname in enumerate(coord_varnames):
             station_coordn = data_nc.variables[coord_varname]
             var_station_names_pd[coord_varname] = station_coordn[:]
-
+    
+    data_nc.close()
     return var_station_names_pd
 
 

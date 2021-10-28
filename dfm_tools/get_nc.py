@@ -71,11 +71,12 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     import pandas as pd
     from netCDF4 import Dataset
 
-    from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvardimlist, get_ncvarobject, get_variable_timevardim, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_fromnc
+    from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvardimlist, get_varnamefrom_keyslongstandardname, get_variable_timevardim, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_fromnc
 
-    #get variable info (also checks if varname exists)
-    nc_varobject = get_ncvarobject(file_nc, varname)
+    #get variable info (also checks if varname exists in keys, standard name, long name)
     data_nc = Dataset(file_nc)
+    varname = get_varnamefrom_keyslongstandardname(file_nc, varname) #get varname from varkeys/standardname/longname if exists
+    nc_varobject = data_nc.variables[varname]
 
     #get list of station dimnames
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
@@ -234,8 +235,9 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
         if (len(file_ncs) > 1) and not silent:
             print('processing mapdata from domain %04d of %04d'%(iF, len(file_ncs)-1))
 
-        nc_varobject_sel = get_ncvarobject(file_nc_sel, varname)
-
+        data_nc_sel = Dataset(file_nc_sel)
+        nc_varobject_sel = data_nc_sel.variables[varname]
+        
         concat_axis = 0 #default value, overwritten by faces dimension
         ghost_removeids = [] #default value, overwritten by faces dimension
 
@@ -312,13 +314,14 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
             values_all = np.ma.concatenate([values_all, nc_varobject_sel_selids], axis=concat_axis)
         else:
             values_all = nc_varobject_sel_selids
+        data_nc_sel.close()
 
     #optional extraction of top/bottom layer, convenient for z-layer models since top and/or bottom layers are often masked for part of the cells
     if layer is str('top') or layer is str('bottom'):
         warnings.warn('you are retrieving data from the %s valid layer of each cell. it is assumed that the last axis of the variable is the layer axis'%(layer))
         if not values_all.mask.any(): #if (all values in) the mask are False
             raise Exception('there is no mask present in this dataset (or all its values are False), use layer=[0,-1] to get the bottom and top layers')
-        layerdim_id = nc_varobject_sel.dimensions.index(dimn_layer)
+        layerdim_id = nc_varobject.dimensions.index(dimn_layer)
         if layer is str('top'):
             bottomtoplay = values_all.shape[layerdim_id]-1-(~np.flip(values_all.mask,axis=layerdim_id)).argmax(axis=layerdim_id) #get index of first False value from the flipped array (over layer axis) and correct with size of that dimension. this corresponds to the top layer of each cell in case of D-Flow FM
         if layer is str('bottom'):
@@ -337,23 +340,32 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
 
 
     #add metadata
+    values_all.var_filename = file_nc
     values_all.var_varname = varname
     values_all.var_dimensions = nc_varobject.dimensions
+    values_all.var_shape = nc_varobject.shape
+    values_all.var_dtype = nc_varobject.dtype
     values_all.var_linkedgridinfo = values_dimlinkedgrid
-    values_all.var_ncobject = data_nc #this is the netcdf object retrieved with netCDF4.Dataset()
-    values_all.var_ncvarobject = nc_varobject #this is the netcdf variable, contains properties like shape/units/dimensions
+    #values_all.var_ncobject = data_nc #this is the netcdf object retrieved with netCDF4.Dataset() #disabled, since it becomes invalid after closing the dataset
+    values_all.var_ncvarobject = f"from netCDF4 import Dataset;data_nc = Dataset('{file_nc}');nc_varobject = data_nc.variables['{varname}'];print(nc_varobject)" # nc_varobject #this is the netcdf variable, contains properties like shape/units/dimensions #disabled, since it becomes invalid after closing the dataset
+    values_all.var_ncattrs = nc_varobject.__dict__ #values in nc_varobject.ncattrs() or hasattr(nc_varobject,'attributename')
+
     if dimn_time in nc_varobject.dimensions:
         values_all.var_times = data_nc_datetimes_pd
     else:
         values_all.var_times = None
+    
     if dimn_layer in nc_varobject.dimensions:
         values_all.var_layers = layer_ids
     else:
         values_all.var_layers = None
+    
     if any(dimname_stat_validvals_boolpresent):
         values_all.var_stations = station_name_list_pd.iloc[station_ids]
     else:
         values_all.var_stations = None
+        
+    data_nc.close()
     return values_all
 
 
@@ -395,7 +407,7 @@ def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None
     if intersect_coords is None:
         raise Exception('ERROR: argument intersect_coords not provided')
     if timestep is None:
-        raise Exception('ERROR: argument timestep not provided, this is necessary to retrieve correct water level')
+        raise Exception('ERROR: argument timestep not provided, this is necessary to retrieve correct waterlevel or fullgrid output')
 
     print('calculating distance for all crossed cells, from first point of line (should not take long, but if it does, optimisation is needed)')
     nlinecoords = line_array.shape[0]
@@ -431,13 +443,6 @@ def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None
 
     data_nc = Dataset(file_nc)
 
-    varn_mesh2d_s1 = get_varname_fromnc(data_nc,'mesh2d_s1',vardim='var')
-    data_frommap_wl3 = get_ncmodeldata(file_nc, varname=varn_mesh2d_s1, timestep=timestep, multipart=multipart)
-    data_frommap_wl3_sel = data_frommap_wl3[0,intersect_gridnos]
-    varn_mesh2d_flowelem_bl = get_varname_fromnc(data_nc,'mesh2d_flowelem_bl',vardim='var')
-    data_frommap_bl = get_ncmodeldata(file_nc, varname=varn_mesh2d_flowelem_bl, multipart=multipart)
-    data_frommap_bl_sel = data_frommap_bl[intersect_gridnos]
-
     #nlay = data_frommap.shape[2]
     #nlay = data_nc.variables[varname].shape[2]
     dimn_layer = get_varname_fromnc(data_nc,'nmesh2d_layer',vardim='dim')
@@ -452,16 +457,25 @@ def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None
         laytyp = 'fullgrid'
         zvals_interface_allfaces = get_ncmodeldata(file_nc, varname=varn_layer_fullgrid, timestep=timestep, multipart=multipart)
         zvals_interface = zvals_interface_allfaces[0,intersect_gridnos,:].T #transpose to make in line with 2D sigma dataset
-    elif varn_layer_z is not None:
-        laytyp = 'zlayer'
-        #zvals_cen = get_ncmodeldata(file_nc=file_map, varname='mesh2d_layer_z', lay='all')#, multipart=False)
-        #zvals_interface = get_ncmodeldata(file_nc=file_map, varname='mesh2d_interface_z')#, multipart=False)
-        zvals_interface = data_nc.variables['mesh2d_interface_z'][:]
     else:
-        laytyp = 'sigmalayer'
-        #zvals_cen = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay)
-        zvals_interface = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay+1)
+        varn_mesh2d_s1 = get_varname_fromnc(data_nc,'mesh2d_s1',vardim='var')
+        data_frommap_wl3 = get_ncmodeldata(file_nc, varname=varn_mesh2d_s1, timestep=timestep, multipart=multipart)
+        data_frommap_wl3_sel = data_frommap_wl3[0,intersect_gridnos]
+        varn_mesh2d_flowelem_bl = get_varname_fromnc(data_nc,'mesh2d_flowelem_bl',vardim='var')
+        data_frommap_bl = get_ncmodeldata(file_nc, varname=varn_mesh2d_flowelem_bl, multipart=multipart)
+        data_frommap_bl_sel = data_frommap_bl[intersect_gridnos]
+        
+        if varn_layer_z is not None:
+            laytyp = 'zlayer'
+            #zvals_cen = get_ncmodeldata(file_nc=file_map, varname='mesh2d_layer_z', lay='all')#, multipart=False)
+            #zvals_interface = get_ncmodeldata(file_nc=file_map, varname='mesh2d_interface_z')#, multipart=False)
+            zvals_interface = data_nc.variables['mesh2d_interface_z'][:]
+        else: #sigma or 2D model
+            laytyp = 'sigmalayer'
+            #zvals_cen = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay)
+            zvals_interface = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay+1)
 
+        
     #calculate distance from points to 'previous' linepoint, add lenght of previous lineparts to it
     if not calcdist_fromlatlon:
         crs_dist_starts = calc_dist(line_array[cross_points_closestlineid,0], crs_xstart, line_array[cross_points_closestlineid,1], crs_ystart) + linepart_lengthcum[cross_points_closestlineid]
@@ -493,6 +507,7 @@ def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None
         crs_verts_z_all = np.concatenate([crs_verts_z_all, crs_verts_z])
         #data_frommap_sel_flat = np.concatenate([data_frommap_sel_flat,data_frommap_sel[:,iL]])
     crs_verts = np.concatenate([crs_verts_x_all, crs_verts_z_all], axis=2)
+    data_nc.close()
     return crs_verts
 
 
@@ -760,7 +775,7 @@ def plot_background(ax=None, projection=None, google_style='satellite', resoluti
 
 
 
-def plot_ztdata(dfmtools_hisvar, statid_subset=0, ax=None, mask_data=True, only_contour=False, **kwargs):
+def plot_ztdata(file_nc, dfmtools_hisvar, statid_subset=0, ax=None, mask_data=True, only_contour=False, **kwargs):
     """
 
 
@@ -791,14 +806,16 @@ def plot_ztdata(dfmtools_hisvar, statid_subset=0, ax=None, mask_data=True, only_
 
     warnings.warn('WARNING: layers in dfowfm hisfile are currently incorrect, check your figures carefully')
     #get the original ncobject and the retrieved indices from dfmtools_hisvar, used to retrieve a corresponding z array.
-    nc_obj = dfmtools_hisvar.var_ncobject
     time_ids = dfmtools_hisvar.var_times.index.tolist()
     stat_ids = dfmtools_hisvar.var_stations.index.tolist()
     layer_ids = dfmtools_hisvar.var_layers
     layer_ids_interf = layer_ids+[layer_ids[-1]+1]
-    data_fromhis_zcen = nc_obj.variables['zcoordinate_c'][time_ids,stat_ids,layer_ids] #get_ncmodeldata(file_nc=file_nc, varname='zcoordinate_c', timestep=timestep, layer= 'all', station=stat_list)
-    data_fromhis_zcor = nc_obj.variables['zcoordinate_w'][time_ids,stat_ids,layer_ids_interf] #get_ncmodeldata(file_nc=file_nc, varname='zcoordinate_w', timestep=timestep, station=stat_list)
-    data_fromhis_wl = nc_obj.variables['waterlevel'][time_ids,stat_ids] #get_ncmodeldata(file_nc=file_nc, varname='zcoordinate_w', timestep=timestep, station=stat_list)
+    #data_fromhis_zcen = nc_obj.variables['zcoordinate_c'][time_ids,stat_ids,layer_ids]
+    #data_fromhis_zcor = nc_obj.variables['zcoordinate_w'][time_ids,stat_ids,layer_ids_interf]
+    #data_fromhis_wl = nc_obj.variables['waterlevel'][time_ids,stat_ids]
+    data_fromhis_zcen = get_ncmodeldata(file_nc=file_nc, varname='zcoordinate_c', timestep=time_ids, station=stat_ids, layer=layer_ids)
+    data_fromhis_zcor = get_ncmodeldata(file_nc=file_nc, varname='zcoordinate_w', timestep=time_ids, station=stat_ids)[:,:,layer_ids_interf] #dfmtools cannot find layers in this variable
+    data_fromhis_wl = get_ncmodeldata(file_nc=file_nc, varname='waterlevel', timestep=time_ids, station=stat_ids)
 
     #remove station dimension
     if len(data_fromhis_zcor.shape) == 3:

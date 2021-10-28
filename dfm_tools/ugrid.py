@@ -126,6 +126,7 @@ class UGrid:
         ugrid = UGrid(mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes, verts, mesh2d_node_z=mesh2d_node_z, edge_verts=edge_verts)
         return ugrid
 
+
     def polygon_intersect(self, line_array, optimize_dist=False):
         import numpy as np
         from matplotlib.path import Path
@@ -135,7 +136,6 @@ class UGrid:
         import shapely
         from shapely.geometry import LineString, Polygon, MultiLineString
             
-        print('finding crossing flow links (can take a while if linebox over xy covers a lot of cells)')
         intersect_gridnos = np.empty((0),dtype=int)
         intersect_coords = np.empty((0,2,2))
         line_section = LineString(line_array)
@@ -180,6 +180,7 @@ class UGrid:
         
         verts_inlinebox = self.verts[cellinlinebox_all_bool,:,:]
         verts_inlinebox_nos = np.where(cellinlinebox_all_bool)[0]
+        print('finding crossing flow links (can take a while if linebox over xy covers a lot of cells, %i of %i cells are being processed)'%(cellinlinebox_all_bool.sum(),len(cellinlinebox_all_bool)))
         
         for iP, pol_data in enumerate(verts_inlinebox):
             pol_shp = Polygon(pol_data[~np.isnan(pol_data).all(axis=1)])

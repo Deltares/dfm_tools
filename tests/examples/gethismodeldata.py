@@ -76,11 +76,11 @@ for file_nc in file_nc_list:
     axwl.plot(data_fromhis_wl.var_times.iloc[[0,-1]],[0,0],'k-',linewidth=0.5)
     ax1.plot(data_fromhis_wl.var_times.iloc[[0,-1]],[0,0],'k-',linewidth=0.5)
     axwl.plot(data_fromhis_wl.var_times,data_fromhis_wl[:,statid_subset],'-',label='wl %s'%(station_zt))
-    c = plot_ztdata(dfmtools_hisvar=data_fromhis_temp, ax=ax1, statid_subset=statid_subset, cmap='jet')
+    c = plot_ztdata(file_nc=file_nc, dfmtools_hisvar=data_fromhis_temp, ax=ax1, statid_subset=statid_subset, cmap='jet')
     fig.colorbar(c,ax=axwl)
     fig.colorbar(c,ax=ax1)
     #contour
-    CS = plot_ztdata(dfmtools_hisvar=data_fromhis_temp, ax=ax1, statid_subset=statid_subset, only_contour=True, levels=6, colors='k', linewidths=0.8, linestyles='solid')
+    CS = plot_ztdata(file_nc=file_nc, dfmtools_hisvar=data_fromhis_temp, ax=ax1, statid_subset=statid_subset, only_contour=True, levels=6, colors='k', linewidths=0.8, linestyles='solid')
     ax1.clabel(CS, fontsize=10)
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,'%s_zt_temp'%(os.path.basename(file_nc).replace('.',''))))
