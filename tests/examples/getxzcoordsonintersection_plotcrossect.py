@@ -140,32 +140,18 @@ for file_nc in file_nc_list:
     #intersect function, find crossed cell numbers (gridnos) and coordinates of intersection (2 per crossed cell)
     intersect_gridnos, intersect_coords = ugrid.polygon_intersect(line_array, optimize_dist=False)
     #derive vertices from cross section (distance from first point)
-    crs_verts = get_xzcoords_onintersection(file_nc=file_nc, line_array=line_array, intersect_gridnos=intersect_gridnos, intersect_coords=intersect_coords, timestep=timestep, calcdist_fromlatlon=calcdist_fromlatlon, multipart=multipart)
+    crs_verts, crs_plotdata = get_xzcoords_onintersection(file_nc=file_nc, varname='mesh2d_sa1', line_array=line_array, intersect_gridnos=intersect_gridnos, intersect_coords=intersect_coords, timestep=timestep, calcdist_fromlatlon=calcdist_fromlatlon, multipart=multipart)
     #for iIC, int_coord in enumerate(intersect_coords):
     #    #print(int_coord)
     #    ax_input.plot(int_coord[0,:],int_coord[1,:],'ro-')
-    
-    #get data to plot
-    if 'DFM_OUTPUT_RMM_dflowfm' in file_nc:
-        data_frommap = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sa1', timestep=timestep, multipart=multipart)
-    else:
-        data_frommap = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sa1', timestep=timestep, layer='all', multipart=multipart)
     
     #plot crossed cells (gridnos) in first plot
     #print(layno)#data_frommap_flat = data_frommap[0,intersect_gridnos,layno]
     #pc = plot_netmapdata(ugrid.verts[intersect_gridnos,:,:], values=data_frommap_flat, ax=ax_input, linewidth=0.5, cmap="jet")
     plt.savefig(os.path.join(dir_output,'%s_gridbed'%(os.path.basename(file_nc).replace('.',''))))
 
-    #plot cross section
-    if len(data_frommap.shape) == 3:
-        data_frommap_sel = data_frommap[0,intersect_gridnos,:]
-        data_frommap_sel_flat = data_frommap_sel.T.flatten()
-    elif len(data_frommap.shape) == 2: #for 2D models, no layers 
-        data_frommap_sel = data_frommap[0,intersect_gridnos]
-        data_frommap_sel_flat = data_frommap_sel
-
     fig, ax = plt.subplots()
-    pc = plot_netmapdata(crs_verts, values=data_frommap_sel_flat, ax=ax, linewidth=0.5, cmap='jet')#, edgecolor='k')
+    pc = plot_netmapdata(crs_verts, values=crs_plotdata, ax=ax, linewidth=0.5, cmap='jet')#, edgecolor='k')
     fig.colorbar(pc, ax=ax)
     ax.set_ylim(val_ylim)
     plt.savefig(os.path.join(dir_output,'%s_crossect'%(os.path.basename(file_nc).replace('.',''))))

@@ -258,7 +258,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
             if nc_values_dimsel in [dimn_faces, dimn_nFlowElem]: # domain-like variable is present, so there are multiple domains (with ghost cells)
                 nonghost_ids = ghostcell_filter(file_nc_sel)
                 if nonghost_ids is not None:
-                    ghost_removeids = np.where(~nonghost_ids)[0] #remove after retrieval, since that is faster than retrieving nonghost ids
+                    ghost_removeids = np.where(~nonghost_ids)[0] #remove after retrieval, since that is faster than retrieving nonghost ids or using a boolean
                 values_selid.append(range(nc_varobject_sel.shape[iD]))
                 values_dimlens.append(0) #because concatenate axis
                 concat_axis = iD
@@ -370,7 +370,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
 
 
 
-def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None, intersect_coords=None, timestep=None, multipart=None, calcdist_fromlatlon=False):
+def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None, intersect_coords=None, calcdist_fromlatlon=False, timestep=None, multipart=None, varname=None):
     import warnings
     import numpy as np
     from netCDF4 import Dataset
@@ -479,7 +479,7 @@ def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None
             #zvals_cen = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay)
             zvals_interface = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay+1)
     data_nc.close()
-        
+    
     #calculate distance from points to 'previous' linepoint, add lenght of previous lineparts to it
     if not calcdist_fromlatlon:
         crs_dist_starts = calc_dist(line_array[cross_points_closestlineid,0], crs_xstart, line_array[cross_points_closestlineid,1], crs_ystart) + linepart_lengthcum[cross_points_closestlineid]
@@ -494,7 +494,21 @@ def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None
     crs_verts_x_all = np.array([[crs_dist_starts_matrix.ravel(),crs_dist_stops_matrix.ravel(),crs_dist_stops_matrix.ravel(),crs_dist_starts_matrix.ravel()]]).T
     crs_verts_z_all = np.ma.array([zvals_interface[1:,:].ravel(),zvals_interface[1:,:].ravel(),zvals_interface[:-1,:].ravel(),zvals_interface[:-1,:].ravel()]).T[:,:,np.newaxis]
     crs_verts = np.ma.concatenate([crs_verts_x_all, crs_verts_z_all], axis=2)
-    return crs_verts
+    
+    if varname is not None: #retrieve data for varname and return
+        if dimn_layer is None: #no layers, 2D model
+            data_frommap = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sa1', timestep=timestep, multipart=multipart)
+        else:
+            data_frommap = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sa1', timestep=timestep, layer='all', multipart=multipart)
+        if len(data_frommap.shape) == 3:
+            data_frommap_sel = data_frommap[0,intersect_gridnos,:]
+            crs_plotdata = data_frommap_sel.T.flatten()
+        elif len(data_frommap.shape) == 2: #for 2D models, no layers 
+            data_frommap_sel = data_frommap[0,intersect_gridnos]
+            crs_plotdata = data_frommap_sel
+        return crs_verts, crs_plotdata
+    else:
+        return crs_verts
     
 
 
@@ -503,20 +517,27 @@ def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None
 
 def get_netdata(file_nc, multipart=None):
     import numpy as np
-
+    from netCDF4 import Dataset
+    
     from dfm_tools.ugrid import UGrid
-    from dfm_tools.get_nc_helpers import get_ncfilelist
+    from dfm_tools.get_nc_helpers import get_ncfilelist, get_varname_fromnc
 
     file_ncs = get_ncfilelist(file_nc, multipart)
     #get all data
     num_nodes = [0]
     verts_shape2_all = []
+    print('processing %d partitions (first getting max number of facenodes)'%(len(file_ncs)))
     for iF, file_nc_sel in enumerate(file_ncs):
-        print('analyzing netdata from domain %04d of %04d (counting max number of facenodes)'%(iF, len(file_ncs)-1))
-        ugrid = UGrid.fromfile(file_nc_sel)
-        verts_shape2_all.append(ugrid.verts.shape[1])
+        data_nc = Dataset(file_nc_sel)
+        varn_mesh2d_face_nodes = get_varname_fromnc(data_nc,'mesh2d_face_nodes',vardim='var')
+        if varn_mesh2d_face_nodes is not None: # node_z variable is present
+            mesh2d_face_nodes = data_nc.variables[varn_mesh2d_face_nodes]
+        else:
+            raise Exception('ERROR: provided file does not contain a variable mesh2d_face_nodes or similar:\n%s\nPlease do one of the following:\n- plot grid from *_map.nc file\n- import and export the grid with RGFGRID\n- import and save the gridd "with cellfinfo" from interacter'%(file_nc))
+        verts_shape2_all.append(mesh2d_face_nodes.shape[1])
+        data_nc.close()
     verts_shape2_max = np.max(verts_shape2_all)
-
+    
     for iF, file_nc_sel in enumerate(file_ncs):
         print('processing netdata from domain %04d of %04d'%(iF, len(file_ncs)-1))
         #data_nc = Dataset(file_nc_sel)
