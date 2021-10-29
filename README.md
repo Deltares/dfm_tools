@@ -181,9 +181,10 @@ Feature wishlist
 	- WARNING: part of the z interfaces/center data in dflowfm hisfile is currently wrong, check your figures carefully. Most of it is handled correctly
 	- layer argument now has to be provided when retrieving zcoordinate_c (centers) from hisfile, but not when retrieving zcoordinate_w (interfaces), align this.
 - increase speed:
+	- retrieve station_ids, time_ids and layer_ids via boolean instead of indices (not faster for ghost_ids, so check if it makes sense). Then no duplicates are possible and the order cannot be changed but this seems no problem.
 	- make it possible to retrieve via globalnumber in ncfile (or boolean), could save a lot of time (does not work for intersections, since the ordering is important there and there)
 	- Possibly order cells by globalnumber if possible/fast.
-	- Also increase retrieval speed of all functions by first checking crossing of domains instead of loading all.
+	- Also increase retrieval speed of functions like get_nc.get_xzcoords_onintersection() by first checking crossing of domains instead of loading all.
 - export to shapefile:
 	- testbank example added for a specific feature to shapefile, make more generic
 - coordinate conversion:
