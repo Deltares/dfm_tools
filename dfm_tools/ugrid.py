@@ -135,9 +135,9 @@ class UGrid:
         try_importmodule(modulename='shapely')
         import shapely
         from shapely.geometry import LineString, Polygon, MultiLineString
-            
-        intersect_gridnos = np.empty((0),dtype=int)
-        intersect_coords = np.empty((0,2,2))
+        
+        print('defining celinlinebox')
+        
         line_section = LineString(line_array)
         
         verts_xmax = np.nanmax(self.verts[:,:,0].data,axis=1)
@@ -177,7 +177,8 @@ class UGrid:
         else:
             raise Exception('ERROR: invalid type for optimize_dist argument')
         
-        
+        intersect_coords = np.empty((0,2,2))
+        intersect_gridnos = np.empty((0),dtype=int) #has to be numbers, since a boolean is differently ordered
         verts_inlinebox = self.verts[cellinlinebox_all_bool,:,:]
         verts_inlinebox_nos = np.where(cellinlinebox_all_bool)[0]
         print('finding crossing flow links (can take a while if linebox over xy covers a lot of cells, %i of %i cells are being processed)'%(cellinlinebox_all_bool.sum(),len(cellinlinebox_all_bool)))
@@ -191,18 +192,20 @@ class UGrid:
                 if intersect_result.coords == []: #when the line does not cross this cell, intersect_results.coords is an empty linestring and this cell can be skipped (continue makes forloop continue with next in line without finishing the rest of the steps for this instance)
                     continue
                 intersect_result_multi = MultiLineString([intersect_result])
-            
+                
             for iLL, intesect_result_one in enumerate(intersect_result_multi): #loop over multilinestrings, will mostly only contain one linestring. Will be two if the line crosses a cell more than once.
                 intersection_line = intesect_result_one.coords
                 intline_xyshape = np.array(intersection_line.xy).shape
                 #print('len(intersection_line.xy): %s'%([intline_xyshape]))
-                for numlinepart_incell in range(1,intline_xyshape[1]): #is mostly 1, but more if there is a linepoint in this cell (then there are two or more lineparts)
+                for numlinepart_incell in range(1,intline_xyshape[1]): #is mostly 1, but more if there is a linebreakpoint in this cell (then there are two or more lineparts)
                     intersect_gridnos = np.concatenate([intersect_gridnos,[verts_inlinebox_nos[iP]]])
                     intersect_coords = np.concatenate([intersect_coords,np.array(intersection_line.xy)[np.newaxis,:,numlinepart_incell-1:numlinepart_incell+1]],axis=0)
                 #print('')#'iP: %i'%iP)
-
+        
+        if intersect_coords.shape[0] != len(intersect_gridnos):
+            raise Exception('something went wrong, intersect_coords.shape[0] and len(intersect_gridnos) are not equal')
         #dimensions (gridnos, xy, firstsecond)
-        print('done finding crossing flow links')
+        print('done finding crossing flow links: %i of %i'%(len(intersect_gridnos),len(cellinlinebox_all_bool)))
         return intersect_gridnos, intersect_coords
     
 

@@ -1,6 +1,11 @@
 =======
 History
 =======
+0.7.46 (2121-10-29)
+------------------
+* increased speed of get_nc.get_netdata() function
+* bugfix for sigma layers cross section and cleaned up cross section definition
+
 0.7.44 (2121-10-28)
 ------------------
 * implemented netcdf file closure in dfm_tools and updated example scripts

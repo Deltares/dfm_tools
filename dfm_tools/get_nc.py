@@ -503,18 +503,25 @@ def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None
 
 def get_netdata(file_nc, multipart=None):
     import numpy as np
-
+    from netCDF4 import Dataset
+    
     from dfm_tools.ugrid import UGrid
-    from dfm_tools.get_nc_helpers import get_ncfilelist
+    from dfm_tools.get_nc_helpers import get_ncfilelist, get_varname_fromnc
 
     file_ncs = get_ncfilelist(file_nc, multipart)
     #get all data
     num_nodes = [0]
     verts_shape2_all = []
+    print('processing %d partitions (first getting max number of facenodes)'%(len(file_ncs)))
     for iF, file_nc_sel in enumerate(file_ncs):
-        print('analyzing netdata from domain %04d of %04d (counting max number of facenodes)'%(iF, len(file_ncs)-1))
-        ugrid = UGrid.fromfile(file_nc_sel)
-        verts_shape2_all.append(ugrid.verts.shape[1])
+        data_nc = Dataset(file_nc)
+        varn_mesh2d_face_nodes = get_varname_fromnc(data_nc,'mesh2d_face_nodes',vardim='var')
+        if varn_mesh2d_face_nodes is not None: # node_z variable is present
+            mesh2d_face_nodes = data_nc.variables[varn_mesh2d_face_nodes]
+        else:
+            raise Exception('ERROR: provided file does not contain a variable mesh2d_face_nodes or similar:\n%s\nPlease do one of the following:\n- plot grid from *_map.nc file\n- import and export the grid with RGFGRID\n- import and save the gridd "with cellfinfo" from interacter'%(file_nc))
+        verts_shape2_all.append(mesh2d_face_nodes.shape[1])
+        data_nc.close()
     verts_shape2_max = np.max(verts_shape2_all)
 
     for iF, file_nc_sel in enumerate(file_ncs):
