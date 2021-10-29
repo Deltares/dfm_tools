@@ -167,7 +167,7 @@ Feature wishlist
 	- add support for 360_day and noleap calendars (cannot be converted to dt.datetime)
 	- time array is now converted to UTC by num2date automatically and if possible converted back to original timezone, simplify by writing own num2date that excludes timezone from units string?
 - merge station/layer/times checks, these parts of get_nc.py have a lot of overlap. also convert (list-likes of) int-likes to np.arrays so less checking is needed
-- add retrieval via depth instead of layer number, so vertical slicing (then dflowutil.mesh can be removed?):
+- add retrieval via depth instead of layer number, so horizontal slicing (then dflowutil.mesh can be removed?):
 	- refer depth w.r.t. reference level, water level or bed level
 	- see tests/examples/WIP_trygetondepth.py
 	- see general grid improvement options
