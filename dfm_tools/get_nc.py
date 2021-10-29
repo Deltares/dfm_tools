@@ -514,7 +514,7 @@ def get_netdata(file_nc, multipart=None):
     verts_shape2_all = []
     print('processing %d partitions (first getting max number of facenodes)'%(len(file_ncs)))
     for iF, file_nc_sel in enumerate(file_ncs):
-        data_nc = Dataset(file_nc)
+        data_nc = Dataset(file_nc_sel)
         varn_mesh2d_face_nodes = get_varname_fromnc(data_nc,'mesh2d_face_nodes',vardim='var')
         if varn_mesh2d_face_nodes is not None: # node_z variable is present
             mesh2d_face_nodes = data_nc.variables[varn_mesh2d_face_nodes]
@@ -523,7 +523,7 @@ def get_netdata(file_nc, multipart=None):
         verts_shape2_all.append(mesh2d_face_nodes.shape[1])
         data_nc.close()
     verts_shape2_max = np.max(verts_shape2_all)
-
+    
     for iF, file_nc_sel in enumerate(file_ncs):
         print('processing netdata from domain %04d of %04d'%(iF, len(file_ncs)-1))
         #data_nc = Dataset(file_nc_sel)
