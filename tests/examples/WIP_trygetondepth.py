@@ -17,7 +17,6 @@ from dfm_tools.get_nc_helpers import get_varname_fromnc
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
-
 #code from test_get_nc test d
 file_nc = os.path.join(dir_testinput,r'DFM_sigma_curved_bend\DFM_OUTPUT_cb_3d\cb_3d_map.nc')
 
@@ -32,7 +31,6 @@ multipart = None
 #optimize_dist = None
 #ugrid = get_netdata(file_nc=file_nc, multipart=multipart)
 #intersect_gridnos, intersect_coords = ugrid.polygon_intersect(line_array, optimize_dist=None)
-
 
 #code from get_xzcoords_onintersection
 data_nc = Dataset(file_nc)
@@ -51,17 +49,17 @@ if dimn_layer is None: #no layers, 2D model
 else:
     nlay = data_nc.dimensions[dimn_layer].size
 
-varn_layer_z = get_varname_fromnc(data_nc,'mesh2d_layer_z', vardim='var')
-if varn_layer_z is None:
-    laytyp = 'sigmalayer'
-    #zvals_cen = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay)
-    #zvals_interface = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay+1)
-    zvals_interface = np.linspace(data_frommap_bl,data_frommap_wl3,nlay+1)
-else:
+if 'mesh2d_layer_z' in data_nc.variables.keys(): #TODO: check get_nc.get_xzcoords_onintersection() for extra checks for layertypes (incl fullgrid output)
     laytyp = 'zlayer'
     #zvals_cen = get_ncmodeldata(file_nc=file_map, varname='mesh2d_layer_z', lay='all')#, multipart=False)
     #zvals_interface = get_ncmodeldata(file_nc=file_map, varname='mesh2d_interface_z')#, multipart=False)
     zvals_interface = data_nc.variables['mesh2d_interface_z'][:]
+else:
+    laytyp = 'sigmalayer'
+    #zvals_cen = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay)
+    #zvals_interface = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay+1)
+    zvals_interface = np.linspace(data_frommap_bl,data_frommap_wl3,nlay+1)
+
 
 print(laytyp)
 depth = -1

@@ -370,11 +370,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
 
 
 
-
-
-
-
-def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None, intersect_coords=None, timestep=None, multipart=None, calcdist_fromlatlon=None):
+def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None, intersect_coords=None, timestep=None, multipart=None, calcdist_fromlatlon=False):
     import warnings
     import numpy as np
     from netCDF4 import Dataset
@@ -382,11 +378,8 @@ def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None
     from dfm_tools.testutils import try_importmodule
     try_importmodule(modulename='shapely')
     from shapely.geometry import LineString, Point
-
     from dfm_tools.get_nc_helpers import get_varname_fromnc
-
-    warnings.warn('WARNING: the function dfm_tools.get_nc.get_xzcoords_onintersection() will be improved, input variables and outputformat might change in the future')
-
+    
     def calc_dist(x1,x2,y1,y2):
         distance = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
         return distance
@@ -408,7 +401,10 @@ def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None
         raise Exception('ERROR: argument intersect_coords not provided')
     if timestep is None:
         raise Exception('ERROR: argument timestep not provided, this is necessary to retrieve correct waterlevel or fullgrid output')
-
+    if not isinstance(timestep,int):
+        if len(timestep)>1:
+            warnings.warn('WARNING: argument timestep should have length of 1, only first value is used')
+        
     print('calculating distance for all crossed cells, from first point of line (should not take long, but if it does, optimisation is needed)')
     nlinecoords = line_array.shape[0]
     nlinedims = len(line_array.shape)
@@ -428,10 +424,10 @@ def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None
     for iL in range(nlinecoords-1):
         #calculate length of lineparts
         line_section_part = LineString(line_array[iL:iL+2,:])
-        if not calcdist_fromlatlon:
-            linepart_length[iL+1] = line_section_part.length
-        else:
+        if calcdist_fromlatlon:
             linepart_length[iL+1] = calc_dist_latlon(line_array[iL,0],line_array[iL+1,0],line_array[iL,1],line_array[iL+1,1])
+        else:
+            linepart_length[iL+1] = line_section_part.length
 
         #get distance between all lineparts and point (later used to calculate distance from beginpoint of closest linepart)
         for iP in range(ncrosscellparts):
@@ -442,39 +438,47 @@ def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None
     print('finished calculating distance for all crossed cells, from first point of line')
 
     data_nc = Dataset(file_nc)
-
-    #nlay = data_frommap.shape[2]
-    #nlay = data_nc.variables[varname].shape[2]
+    varkeys_list = data_nc.variables.keys()
     dimn_layer = get_varname_fromnc(data_nc,'nmesh2d_layer',vardim='dim')
     if dimn_layer is None: #no layers, 2D model
         nlay = 1
     else:
         nlay = data_nc.dimensions[dimn_layer].size
-
-    varn_layer_z = get_varname_fromnc(data_nc,'mesh2d_layer_z',vardim='var')
-    varn_layer_fullgrid = get_varname_fromnc(data_nc,'mesh2d_flowelem_zw',vardim='var')
-    if varn_layer_fullgrid is not None:
-        laytyp = 'fullgrid'
-        zvals_interface_allfaces = get_ncmodeldata(file_nc, varname=varn_layer_fullgrid, timestep=timestep, multipart=multipart)
+        
+    #vars_pd, dims_pd = get_ncvardimlist(file_nc)
+    if 'mesh2d_flowelem_zw' in varkeys_list:
+        print('layertype: fullgrid output')
+        zvals_interface_allfaces = get_ncmodeldata(file_nc, varname='mesh2d_flowelem_zw', timestep=timestep, multipart=multipart)
         zvals_interface = zvals_interface_allfaces[0,intersect_gridnos,:].T #timestep=0 since correct timestep was already retrieved with get_ncmodeldata. Transpose to make in line with 2D sigma dataset
-    else:
+    else: #no full grid output, so reconstruct
         varn_mesh2d_s1 = get_varname_fromnc(data_nc,'mesh2d_s1',vardim='var')
         data_frommap_wl3 = get_ncmodeldata(file_nc, varname=varn_mesh2d_s1, timestep=timestep, multipart=multipart)
         data_frommap_wl3_sel = data_frommap_wl3[0,intersect_gridnos] #timestep=0 since correct timestep was already retrieved with get_ncmodeldata
         varn_mesh2d_flowelem_bl = get_varname_fromnc(data_nc,'mesh2d_flowelem_bl',vardim='var')
         data_frommap_bl = get_ncmodeldata(file_nc, varname=varn_mesh2d_flowelem_bl, multipart=multipart)
         data_frommap_bl_sel = data_frommap_bl[intersect_gridnos]
-        
-        if varn_layer_z is not None:
-            laytyp = 'zlayer'
-            #zvals_cen = get_ncmodeldata(file_nc=file_map, varname='mesh2d_layer_z', lay='all')#, multipart=False)
-            #zvals_interface = get_ncmodeldata(file_nc=file_map, varname='mesh2d_interface_z')#, multipart=False)
-            zvals_interface = data_nc.variables['mesh2d_interface_z'][:]
-        else: #sigma or 2D model
-            laytyp = 'sigmalayer'
+        if 'mesh2d_layer_z' in varkeys_list or 'LayCoord_cc' in varkeys_list:
+            print('layertype: zlayer')
+            warnings.warn('WARNING: your model seems to contain only z-layers. If the modeloutput is generated with an older version of dflowfm, the coordinates can be incorrect. If your model contains z-sigma-layers, use the fulloutput option in the mdu and rerun (happens automatically in newer dflowfm versions).')
+            zvals_interface_vec = data_nc.variables['mesh2d_interface_z'][:][:,np.newaxis]
+            zvals_interface = np.repeat(zvals_interface_vec,len(data_frommap_wl3_sel),axis=1)
+            # zvalues lower than bedlevel should be overwritten with bedlevel
+            for iL in range(nlay):
+                zvalbot_belowbl_bool = zvals_interface[iL,:]<data_frommap_bl_sel
+                zvals_interface[iL,zvalbot_belowbl_bool] = data_frommap_bl_sel[zvalbot_belowbl_bool]
+            #top z-layer is extended to water level, if wl is higher than zval_lay_top
+            zvals_interface[-1,:] = np.maximum(zvals_interface[-1,:],data_frommap_wl3_sel)
+        elif 'mesh2d_layer_sigma' in varkeys_list:
+            print('layertype: sigmalayer')
+            zvals_interface_percentage = data_nc.variables['mesh2d_interface_sigma'][:][:,np.newaxis]
+            zvals_interface = data_frommap_wl3_sel+(data_frommap_wl3_sel-data_frommap_bl_sel)[np.newaxis]*zvals_interface_percentage
+        else: # 2D model
+            print('layertype: 2D model')
+            if nlay!=1:
+                raise Exception('recheck this')
             #zvals_cen = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay)
             zvals_interface = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay+1)
-
+    data_nc.close()
         
     #calculate distance from points to 'previous' linepoint, add lenght of previous lineparts to it
     if not calcdist_fromlatlon:
@@ -483,32 +487,15 @@ def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None
     else:
         crs_dist_starts = calc_dist_latlon(line_array[cross_points_closestlineid,0], crs_xstart, line_array[cross_points_closestlineid,1], crs_ystart) + linepart_lengthcum[cross_points_closestlineid]
         crs_dist_stops = calc_dist_latlon(line_array[cross_points_closestlineid,0], crs_xstop, line_array[cross_points_closestlineid,1], crs_ystop) + linepart_lengthcum[cross_points_closestlineid]
-    
-    crs_verts_x_all = np.empty((0,4,1))
-    crs_verts_z_all = np.empty((0,4,1))
-    #data_frommap_sel_flat = np.empty((0))
-    for iL in range(nlay):
-        zval_lay_bot = zvals_interface[iL] #(nlay, ncells)
-        zval_lay_top = zvals_interface[iL+1] #(nlay, ncells)
-        crs_verts_x = np.array([[crs_dist_starts,crs_dist_stops,crs_dist_stops,crs_dist_starts]]).T
-        if laytyp in ['sigmalayer','fullgrid']:
-            crs_verts_z = np.ma.array([[zval_lay_bot,zval_lay_bot,zval_lay_top,zval_lay_top]],mask=[[zval_lay_bot.mask,zval_lay_bot.mask,zval_lay_top.mask,zval_lay_top.mask]]).T
-        elif laytyp == 'zlayer':
-            crs_verts_z = np.repeat(np.array([[zval_lay_bot,zval_lay_bot,zval_lay_top,zval_lay_top]]).T[np.newaxis],repeats=crs_verts_x.shape[0],axis=0)
-            #top z-layer is extended to water level, if wl is higher than zval_lay_top
-            if iL == nlay-1:
-                crs_verts_z[:,2,0] = np.maximum(zval_lay_top,data_frommap_wl3_sel.data)
-                crs_verts_z[:,3,0] = np.maximum(zval_lay_top,data_frommap_wl3_sel.data)
-            # zval_lay_bot lower than bedlevel should be overwritten with bedlevel
-            zvalbot_belowbl_bool = crs_verts_z[:,0,0]<data_frommap_bl_sel
-            crs_verts_z[zvalbot_belowbl_bool,0,0] = data_frommap_bl_sel[zvalbot_belowbl_bool]
-            crs_verts_z[zvalbot_belowbl_bool,1,0] = data_frommap_bl_sel[zvalbot_belowbl_bool]
-        crs_verts_x_all = np.ma.concatenate([crs_verts_x_all, crs_verts_x])
-        crs_verts_z_all = np.ma.concatenate([crs_verts_z_all, crs_verts_z])
-        #data_frommap_sel_flat = np.concatenate([data_frommap_sel_flat,data_frommap_sel[:,iL]])
+
+    #convert to output for plot_netmapdata
+    crs_dist_starts_matrix = np.repeat(crs_dist_starts[np.newaxis],nlay,axis=0)
+    crs_dist_stops_matrix = np.repeat(crs_dist_stops[np.newaxis],nlay,axis=0)
+    crs_verts_x_all = np.array([[crs_dist_starts_matrix.ravel(),crs_dist_stops_matrix.ravel(),crs_dist_stops_matrix.ravel(),crs_dist_starts_matrix.ravel()]]).T
+    crs_verts_z_all = np.ma.array([zvals_interface[1:,:].ravel(),zvals_interface[1:,:].ravel(),zvals_interface[:-1,:].ravel(),zvals_interface[:-1,:].ravel()]).T[:,:,np.newaxis]
     crs_verts = np.ma.concatenate([crs_verts_x_all, crs_verts_z_all], axis=2)
-    data_nc.close()
     return crs_verts
+    
 
 
 

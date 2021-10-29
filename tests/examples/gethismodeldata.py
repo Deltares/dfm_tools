@@ -16,7 +16,7 @@ dir_output = '.'
 
 file_nc_list = [os.path.join(dir_testinput,'vanNithin','tttz_0000_his.nc'),
                 os.path.join(dir_testinput,'DFM_3D_z_Grevelingen\\computations\\run01\\DFM_OUTPUT_Grevelingen-FM\\Grevelingen-FM_0000_his.nc'),
-                #'p:\\11202512-h2020_impaqt\\Mediterranean_model\\MedSea_impaqt_model\\computations\\r003_test\\DFM_OUTPUT_MedSea_impaqt_FM\\MedSea_impaqt_FM_0000_his.nc',
+                r'p:\11202512-h2020_impaqt\07_Mediterranean_model\MedSea_impaqt_model\computations_final\r013_waq\DFM_OUTPUT_MedSea_impaqt_FM\MedSea_impaqt_FM_0000_his.nc',
                 ]
 
 for file_nc in file_nc_list:
@@ -37,7 +37,8 @@ for file_nc in file_nc_list:
         station = ['Peiraias', 'Ovrios_2','Ovrios','Ovrios','Ortholithi']
         station_zt = 'Ortholithi'
     elif 'impaqt' in file_nc:
-        station_zt = 'IOC_thes' #['IOC_thes','farm_impaqt']
+        station = ['MO_TS_MO_ATHOS','MO_TS_MO_LESVO','MO_TS_MO_SKYRO','IOC_thes','farm_impaqt']
+        station_zt = 'MO_TS_MO_ATHOS'
 
     print('plot bedlevel from his')
     data_fromhis = get_ncmodeldata(file_nc=file_nc, varname='bedlevel', station=station)#, multipart=False)

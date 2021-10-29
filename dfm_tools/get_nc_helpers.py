@@ -149,12 +149,7 @@ def get_varname_fromnc(data_nc,varname_requested,vardim):
         varnames_list['mesh2d_flowelem_domain'] = ['mesh2d_flowelem_domain','FlowElemDomain','','','',''] # flow element domain
         varnames_list['mesh2d_flowelem_bl'] = ['mesh2d_flowelem_bl','FlowElem_bl','','','',''] # bed level
         varnames_list['mesh2d_flowelem_ba'] = ['mesh2d_flowelem_ba','FlowElem_bac','','','',''] # area (m2) of cell faces
-        
-        varnames_list['mesh2d_layer_z'] = ['mesh2d_layer_z','LayCoord_cc','','','',''] # 
-        varnames_list['mesh2d_flowelem_zw'] = ['mesh2d_flowelem_zw','','','','',''] # 
-        #non-grid variables necessary for layer calculation for intersection/cross section) funtion
         varnames_list['mesh2d_s1'] = ['mesh2d_s1','','','','',''] # water level
-        varnames_list['mesh2d_flowelem_bl'] = ['mesh2d_flowelem_bl','','','','',''] # bed level
     
         #varnames_list['mesh2d_ucx'] = ['mesh2d_ucx','ucx','',''] # 
         #varnames_list['mesh2d_ucy'] = ['mesh2d_ucy','ucy','',''] # 

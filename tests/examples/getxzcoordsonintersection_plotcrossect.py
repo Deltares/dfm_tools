@@ -17,11 +17,11 @@ from dfm_tools.io.polygon import LineBuilder#, Polygon
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
-file_nc_list = [os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_cb_3d\\cb_3d_map.nc'),
-            os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc'),
-            r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0000_map.nc',
-            r'p:\11203379-005-mwra-updated-bem\03_model\03_runs\A86_erik\DFM_OUTPUT_MB_02\MB_02_0000_map.nc',
-            r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\computations\run_183\DFM_OUTPUT_RMM_dflowfm\RMM_dflowfm_0000_map.nc',
+file_nc_list = [os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_cb_3d\\cb_3d_map.nc'), #sigmalayer
+            os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc'), #zlayer
+            r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0000_map.nc', #fullgrid
+            r'p:\11203379-005-mwra-updated-bem\03_model\03_runs\A86_erik\DFM_OUTPUT_MB_02\MB_02_0000_map.nc', #fullgrid
+            r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\computations\run_183\DFM_OUTPUT_RMM_dflowfm\RMM_dflowfm_0000_map.nc', #2D model
             ]
 
 for file_nc in file_nc_list:    
