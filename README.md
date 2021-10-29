@@ -167,7 +167,7 @@ Feature wishlist
 	- add support for 360_day and noleap calendars (cannot be converted to dt.datetime)
 	- time array is now converted to UTC by num2date automatically and if possible converted back to original timezone, simplify by writing own num2date that excludes timezone from units string?
 - merge station/layer/times checks, these parts of get_nc.py have a lot of overlap. also convert (list-likes of) int-likes to np.arrays so less checking is needed
-- add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?):
+- add retrieval via depth instead of layer number, so vertical slicing (then dflowutil.mesh can be removed?):
 	- refer depth w.r.t. reference level, water level or bed level
 	- see tests/examples/WIP_trygetondepth.py
 	- see general grid improvement options
@@ -180,6 +180,11 @@ Feature wishlist
 	- example in test_get_nc.test_gethismodeldata()
 	- WARNING: part of the z interfaces/center data in dflowfm hisfile is currently wrong, check your figures carefully. Most of it is handled correctly
 	- layer argument now has to be provided when retrieving zcoordinate_c (centers) from hisfile, but not when retrieving zcoordinate_w (interfaces), align this.
+- increase speed:
+	- make it possible to retrieve via globalnumber in ncfile (or boolean), could save a lot of time
+	- Possibly order cells by globalnumber if possible/fast.
+	- Also increase retrieval speed of all functions by first checking crossing of domains instead of loading all.
+	- intersect script: use boolean array instead of intersect_gridnos. More clear and probably faster
 - export to shapefile:
 	- testbank example added for a specific feature to shapefile, make more generic
 - coordinate conversion:
@@ -200,7 +205,6 @@ Feature wishlist
 - improve get_ncmodeldata second intersect function
 	- optimize with distance from line: get maximum cell area (and infer width) from lineblockbbound selection, then decide on distance from line for selection of cells for crossect calculation
 	- optimize by only retrieving necessary layerdepths/bed/waterlevel information for crossection
-	- remove hardcoded (layer/)bed/waterlevel varnames
 - add inpolygon/inboundbox selection of data:
 	- optimize_dist keyword now draws inpolygon around line
 	- to optimize intersect function when retrieving bed level and water level (do that with len(firstlinepart) optional keyword)
@@ -227,9 +231,6 @@ Feature wishlist
 	- pcolor resulteert ook in een polycollection, net zoals handmatig wordt gedaan met plot_mapdata()
 	- implement kivu paper figure in testbank, since it correctly combines m/n corners with mapdata (including dummy row)
 	- possible to add pyugrid from github as dependency? in setup.py: install_requires=['python_world@git+https://github.com/ceddlyburge/python_world#egg=python_world-0.0.1',]
-	- sigma method in get_xzcoords_onintersection() assumes equidistant layers, add exception
-	- zlayer method in get_xzcoords_onintersection() retrieves from hardcoded interface variable name, centers are not used.
-	- how is depth stored in sigma/z/sigma-z models, generic vertical slice method possible?
 - interactive data retrieval and plotting by calling get_ncmodeldata() without arguments
 
 
