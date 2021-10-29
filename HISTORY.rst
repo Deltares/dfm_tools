@@ -1,10 +1,11 @@
 =======
 History
 =======
-0.7.46 (2121-10-29)
+0.7.47 (2121-10-29)
 ------------------
 * increased speed of get_nc.get_netdata() function
 * bugfix for sigma layers cross section and cleaned up cross section definition
+* now possible to retrieve crs_plotdata with get_xzcoords_onintersection()
 
 0.7.44 (2121-10-28)
 ------------------
