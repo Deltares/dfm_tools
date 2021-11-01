@@ -497,9 +497,9 @@ def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None
     
     if varname is not None: #retrieve data for varname and return
         if dimn_layer is None: #no layers, 2D model
-            data_frommap = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sa1', timestep=timestep, multipart=multipart)
+            data_frommap = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep, multipart=multipart)
         else:
-            data_frommap = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sa1', timestep=timestep, layer='all', multipart=multipart)
+            data_frommap = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep, layer='all', multipart=multipart)
         if len(data_frommap.shape) == 3:
             data_frommap_sel = data_frommap[0,intersect_gridnos,:]
             crs_plotdata = data_frommap_sel.T.flatten()
