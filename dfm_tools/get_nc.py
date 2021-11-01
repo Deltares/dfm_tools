@@ -388,6 +388,9 @@ def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None
         #https://gis.stackexchange.com/questions/80881/what-is-unit-of-shapely-length-attribute
         #calculate distance in meters between latlon coordinates
         distance = np.arccos(np.sin(np.radians(y1))*np.sin(np.radians(y2))+np.cos(np.radians(y1))*np.cos(np.radians(y2))*np.cos(np.radians(x2)-np.radians(x1)))*6371000
+        if np.isnan(distance).any():
+            distance[np.isnan(distance)] = 0
+            warnings.warn('nan encountered in calc_dist_latlon distance, replaced by 0')
         return distance
 
     #check if all necessary arguments are provided
@@ -413,7 +416,7 @@ def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None
     crs_xstop = intersect_coords[:,0,1]
     crs_ystart = intersect_coords[:,1,0]
     crs_ystop = intersect_coords[:,1,1]
-
+    
     #calculate distance between celledge-linepart crossing (is zero when line iL crosses cell)
     distperline_tostart = np.zeros((ncrosscellparts,nlinecoords-1))
     distperline_tostop = np.zeros((ncrosscellparts,nlinecoords-1))
