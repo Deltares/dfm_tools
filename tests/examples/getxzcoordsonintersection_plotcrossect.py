@@ -116,12 +116,10 @@ for file_nc in file_nc_list:
     else:
         raise Exception('ERROR: no settings provided for this mapfile')
     
-    data_frommap_bl = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_flowelem_bl', multipart=multipart)
-   
     ugrid = get_netdata(file_nc=file_nc, multipart=multipart)
-    #get bed layer
     
-    #create plot with ugrid and cross section line
+    #get bedlevel and create plot with ugrid and cross section line
+    data_frommap_bl = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_flowelem_bl', multipart=multipart)
     fig, ax_input = plt.subplots()
     pc = plot_netmapdata(ugrid.verts, values=data_frommap_bl, ax=ax_input, linewidth=0.5, edgecolors='face', cmap='jet')#, color='crimson', facecolor="None")
     pc.set_clim(clim_bl)
@@ -134,7 +132,6 @@ for file_nc in file_nc_list:
         line_array = linebuilder.line_array
     ax_input.plot(line_array[0,0],line_array[0,1],'bx',linewidth=3,markersize=10)
     ax_input.plot(line_array[:,0],line_array[:,1],'b',linewidth=3)
-    
     
     runtime_tstart = dt.datetime.now() #start timer
     #intersect function, find crossed cell numbers (gridnos) and coordinates of intersection (2 per crossed cell)
@@ -151,7 +148,7 @@ for file_nc in file_nc_list:
     plt.savefig(os.path.join(dir_output,'%s_gridbed'%(os.path.basename(file_nc).replace('.',''))))
 
     fig, ax = plt.subplots()
-    pc = plot_netmapdata(crs_verts, values=crs_plotdata, ax=ax, linewidth=0.5, cmap='jet')#, edgecolor='k')
+    pc = plot_netmapdata(crs_verts, values=crs_plotdata, ax=ax, cmap='jet')#, linewidth=0.5, edgecolor='k')
     fig.colorbar(pc, ax=ax)
     ax.set_ylim(val_ylim)
     plt.savefig(os.path.join(dir_output,'%s_crossect'%(os.path.basename(file_nc).replace('.',''))))
