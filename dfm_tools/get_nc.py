@@ -380,7 +380,7 @@ def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None
     from shapely.geometry import LineString, Point
     from dfm_tools.get_nc_helpers import get_varname_fromnc
     
-    def calc_dist(x1,x2,y1,y2):
+    def calc_dist_pythagoras(x1,x2,y1,y2):
         distance = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
         return distance
 
@@ -495,8 +495,8 @@ def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None
     
     #calculate distance from points to 'previous' linepoint, add lenght of previous lineparts to it
     if not calcdist_fromlatlon:
-        crs_dist_starts = calc_dist(line_array[cross_points_closestlineid,0], crs_xstart, line_array[cross_points_closestlineid,1], crs_ystart) + linepart_lengthcum[cross_points_closestlineid]
-        crs_dist_stops = calc_dist(line_array[cross_points_closestlineid,0], crs_xstop, line_array[cross_points_closestlineid,1], crs_ystop) + linepart_lengthcum[cross_points_closestlineid]
+        crs_dist_starts = calc_dist_pythagoras(line_array[cross_points_closestlineid,0], crs_xstart, line_array[cross_points_closestlineid,1], crs_ystart) + linepart_lengthcum[cross_points_closestlineid]
+        crs_dist_stops = calc_dist_pythagoras(line_array[cross_points_closestlineid,0], crs_xstop, line_array[cross_points_closestlineid,1], crs_ystop) + linepart_lengthcum[cross_points_closestlineid]
     else:
         crs_dist_starts = calc_dist_haversine(line_array[cross_points_closestlineid,0], crs_xstart, line_array[cross_points_closestlineid,1], crs_ystart) + linepart_lengthcum[cross_points_closestlineid]
         crs_dist_stops = calc_dist_haversine(line_array[cross_points_closestlineid,0], crs_xstop, line_array[cross_points_closestlineid,1], crs_ystop) + linepart_lengthcum[cross_points_closestlineid]
