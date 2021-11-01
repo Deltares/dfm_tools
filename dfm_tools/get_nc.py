@@ -401,9 +401,6 @@ def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None
         raise Exception('ERROR: argument intersect_coords not provided')
     if timestep is None:
         raise Exception('ERROR: argument timestep not provided, this is necessary to retrieve correct waterlevel or fullgrid output')
-    if not isinstance(timestep,int):
-        if len(timestep)>1:
-            warnings.warn('WARNING: argument timestep should have length of 1, only first value is used')
         
     print('calculating distance for all crossed cells, from first point of line (should not take long, but if it does, optimisation is needed)')
     nlinecoords = line_array.shape[0]
