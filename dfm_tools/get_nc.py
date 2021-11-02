@@ -323,9 +323,9 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
             raise Exception('there is no mask present in this dataset (or all its values are False), use layer=[0,-1] to get the bottom and top layers')
         layerdim_id = nc_varobject.dimensions.index(dimn_layer)
         if layer is str('top'):
-            bottomtoplay = values_all.shape[layerdim_id]-1-(~np.flip(values_all.mask,axis=layerdim_id)).argmax(axis=layerdim_id) #get index of first False value from the flipped array (over layer axis) and correct with size of that dimension. this corresponds to the top layer of each cell in case of D-Flow FM
+            bottomtoplay = values_all.shape[layerdim_id]-1-(~np.flip(values_all.mask,axis=layerdim_id)).argmax(axis=layerdim_id) #get index of first False value from the flipped array (over layer axis) and correct with size of that dimension. This corresponds to the top layer of each cell in case of D-Flow FM
         if layer is str('bottom'):
-            bottomtoplay = (~values_all.mask).argmax(axis=layerdim_id) #get index of first False value from the original array
+            bottomtoplay = (~values_all.mask).argmax(axis=layerdim_id) #get index of first False value from the original array. This corresponds to the top layer of each cell in case of D-Flow FM
         values_selid_topbot = []
         for iD, dimlen in enumerate(values_all.shape):
             if iD == layerdim_id:

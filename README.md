@@ -70,6 +70,7 @@ Installation
 	- test by printing dfm_tools version number: ``import dfm_tools; print(dfm_tools.__version__)`` (to double check if you are working in the venv where dfm_tools_env was installed)
 	- copy the code from [Example usage](#example-usage) to your own scripts to get starteds
 - to update dfm_tools:
+	- inactivate all Python instances that use dfm_tools (close Spyder or restart kernel)
 	- open command window (or anaconda prompt)
 	- ``conda activate dfm_tools_env``
 	- ``python -m pip install --upgrade git+https://github.com/openearth/dfm_tools.git``
