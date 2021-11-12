@@ -239,7 +239,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
         nc_varobject_sel = data_nc_sel.variables[varname]
         
         concat_axis = 0 #default value, overwritten by faces dimension
-        ghost_removeids = [] #default value, overwritten by faces dimension
+        ghost_removeids = [] #default value, overwritten by faces/edges dimension
 
         values_selid = []
         values_dimlens = [] #list(nc_values.shape)
@@ -256,13 +256,22 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
 
         for iD, nc_values_dimsel in enumerate(nc_varobject_sel.dimensions):
             if nc_values_dimsel in [dimn_faces, dimn_nFlowElem]: # domain-like variable is present, so there are multiple domains (with ghost cells)
-                nonghost_ids = ghostcell_filter(file_nc_sel)
-                if nonghost_ids is not None:
-                    ghost_removeids = np.where(~nonghost_ids)[0] #remove after retrieval, since that is faster than retrieving nonghost ids or using a boolean
+                nonghost_bool = ghostcell_filter(file_nc_sel)
+                if nonghost_bool is not None:
+                    ghost_removeids = np.where(~nonghost_bool)[0] #remove after retrieval, since that is faster than retrieving nonghost ids or using a boolean
                 values_selid.append(range(nc_varobject_sel.shape[iD]))
                 values_dimlens.append(0) #because concatenate axis
                 concat_axis = iD
-            elif nc_values_dimsel in [dimn_nodes, dimn_edges, dimn_nFlowLink]: # domain-like variable is present, so there are multiple domains (no ghost cells)
+            elif nc_values_dimsel in [dimn_edges]: # domain-like variable is present, so there are multiple domains (edges from partition boundaries are removed)
+                if 0:#bool_varpartitioned:
+                    mesh2d_edge_faces = data_nc_sel.variables[get_varname_fromnc(data_nc_sel,'mesh2d_edge_faces',vardim='var')][:]
+                    part_edges_removebool = (mesh2d_edge_faces==0).any(axis=1) #array is 1 based indexed, 0 means missing # & (np.in1d(mesh2d_edge_faces[:,0],ghost_removeids-1) | np.in1d(mesh2d_edge_faces[:,1],ghost_removeids-1))
+                    part_edges_removeids = np.where(part_edges_removebool)[0]
+                    ghost_removeids = part_edges_removeids #to make equal to faces varname
+                values_selid.append(range(nc_varobject_sel.shape[iD]))
+                values_dimlens.append(0) #because concatenate axis
+                concat_axis = iD
+            elif nc_values_dimsel in [dimn_nodes, dimn_nFlowLink]: # domain-like variable is present, so there are multiple domains (no ghost cells)
                 values_selid.append(range(nc_varobject_sel.shape[iD]))
                 values_dimlens.append(0) #because concatenate axis
                 concat_axis = iD
@@ -303,7 +312,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
             if nc_varobject_sel_selids_raw.mask.any() != False:
                 nc_varobject_sel_selids_mask = np.delete(nc_varobject_sel_selids_raw.mask,ghost_removeids,axis=concat_axis)
                 nc_varobject_sel_selids.mask = nc_varobject_sel_selids_mask
-
+                
         #concatenate to other partitions
         if len(file_ncs) > 1:
             #initialize array

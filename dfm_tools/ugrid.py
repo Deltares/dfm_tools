@@ -117,11 +117,14 @@ class UGrid:
             edge_verts = None
             
         #remove ghost cells from faces and verts
-        nonghost_ids = ghostcell_filter(file_nc)
-        if nonghost_ids is not None:
-            mesh2d_face_nodes = mesh2d_face_nodes[nonghost_ids]
-            verts = verts[nonghost_ids]
-        
+        nonghost_bool = ghostcell_filter(file_nc)
+        if nonghost_bool is not None:
+            mesh2d_face_nodes = mesh2d_face_nodes[nonghost_bool]
+            verts = verts[nonghost_bool]
+            if 0: # remove edges from partition boundaries if there are partitions
+                part_edges_removebool = (mesh2d_edge_faces==0).any(axis=1) # Array is 1 based indexed, 0 means missing # & (np.in1d(mesh2d_edge_faces[:,0],ghost_removeids-1) | np.in1d(mesh2d_edge_faces[:,1],ghost_removeids-1))
+                edge_verts = edge_verts[~part_edges_removebool]
+
         data_nc.close()
         ugrid = UGrid(mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes, verts, mesh2d_node_z=mesh2d_node_z, edge_verts=edge_verts)
         return ugrid

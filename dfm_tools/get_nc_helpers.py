@@ -294,12 +294,12 @@ def ghostcell_filter(file_nc):
     if varn_domain is not None: # domain variable is present, so there are multiple domains
         domain = data_nc.variables[varn_domain][:]
         domain_no = np.bincount(domain).argmax() #meest voorkomende domeinnummer
-        nonghost_ids = domain==domain_no
+        nonghost_bool = domain==domain_no
     else:
-        nonghost_ids = None
+        nonghost_bool = None
         
     data_nc.close()
-    return nonghost_ids
+    return nonghost_bool
 
 
 
