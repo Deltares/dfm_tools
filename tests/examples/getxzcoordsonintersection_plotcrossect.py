@@ -20,8 +20,8 @@ dir_output = '.'
 file_nc_list = [os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_cb_3d\\cb_3d_map.nc'), #sigmalayer
             os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc'), #zlayer
             r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0000_map.nc', #fullgrid
-            r'p:\11203379-005-mwra-updated-bem\03_model\03_runs\A86_erik\DFM_OUTPUT_MB_02\MB_02_0000_map.nc', #fullgrid
-            r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\computations\run_183\DFM_OUTPUT_RMM_dflowfm\RMM_dflowfm_0000_map.nc', #2D model
+            r'p:\11203379-005-mwra-updated-bem\03_model\02_final\A72_ntsu0_kzlb2_run2014_2016_FINAL\DFM_OUTPUT_MB_02_waq\March2016_MB_02_waq_0000_map.nc', #fullgrid
+            r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_207\results\RMM_dflowfm_0000_map.nc', #2D model
             ]
 
 for file_nc in file_nc_list:    
@@ -34,6 +34,7 @@ for file_nc in file_nc_list:
                                [2934.63837418, 1134.16019127]])
         line_array = np.array([[ 104.15421399, 2042.7077107 ],
                                [2913.47878063, 2102.48057382]])
+        
         #line_array = np.array([[2084.67741935, 3353.02419355], #with linebend in cell en with line crossing same cell twice
         #   [2255.79637097, 3307.15725806],
         #   [2222.27822581, 3206.60282258],
@@ -51,14 +52,14 @@ for file_nc in file_nc_list:
                                [ 64053.73427496, 419407.58239502]])
         line_array = np.array([[ 53181.96942503, 424270.83361629],
                                [ 55160.15232593, 416913.77136685]])
-        #line_array = np.array([[ 52787.21854294, 424392.10414528],
-        #                       [ 55017.72655174, 416403.77313703],
-        #                       [ 65288.43784807, 419360.49305567]])
+        #line_array = np.array([[ 53181.96942503, 424270.83361629],
+        #                       [ 55160.15232593, 416913.77136685],
+        #                       [ 65288.15232593, 419360.77136685]])
         val_ylim = [-25,5]
         clim_bl = None
         #optimize_dist = 150
     elif '-mwra-' in file_nc:
-        timestep = 30
+        timestep = 3
         layno = 5
         calcdist_fromlatlon = True
         multipart = None
@@ -85,7 +86,7 @@ for file_nc in file_nc_list:
         val_ylim = [-600,1]
         clim_bl = [-500,0]
         #optimize_dist = 0.1
-    elif 'DFM_OUTPUT_RMM_dflowfm' in file_nc:
+    elif 'RMM_dflowfm' in file_nc:
         timestep = 365
         layno = None
         calcdist_fromlatlon = None
@@ -135,9 +136,10 @@ for file_nc in file_nc_list:
     
     runtime_tstart = dt.datetime.now() #start timer
     #intersect function, find crossed cell numbers (gridnos) and coordinates of intersection (2 per crossed cell)
-    intersect_gridnos, intersect_coords = ugrid.polygon_intersect(line_array, optimize_dist=False)
+    intersect_pd = ugrid.polygon_intersect(line_array, optimize_dist=False, calcdist_fromlatlon=calcdist_fromlatlon)
+    
     #derive vertices from cross section (distance from first point)
-    crs_verts, crs_plotdata = get_xzcoords_onintersection(file_nc=file_nc, varname='mesh2d_sa1', line_array=line_array, intersect_gridnos=intersect_gridnos, intersect_coords=intersect_coords, timestep=timestep, calcdist_fromlatlon=calcdist_fromlatlon, multipart=multipart)
+    crs_verts, crs_plotdata = get_xzcoords_onintersection(file_nc=file_nc, varname='mesh2d_sa1', intersect_pd=intersect_pd, timestep=timestep, multipart=multipart)
     #for iIC, int_coord in enumerate(intersect_coords):
     #    #print(int_coord)
     #    ax_input.plot(int_coord[0,:],int_coord[1,:],'ro-')

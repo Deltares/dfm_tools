@@ -22,7 +22,7 @@ dir_output = '.'
 
 file_nc_list = [os.path.join(dir_testinput,r'DFM_sigma_curved_bend\DFM_OUTPUT_cb_3d\cb_3d_map.nc'),
                 os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'),
-                r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\computations\run_180\DFM_OUTPUT_RMM_dflowfm\RMM_dflowfm_0000_map.nc',
+                r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_207\results\RMM_dflowfm_0000_map.nc',
                 ]
 
 for file_nc in file_nc_list:
@@ -57,7 +57,7 @@ for file_nc in file_nc_list:
         clim_tem = None
         crs = "EPSG:28992"
         file_nc_fou = os.path.join(dir_testinput,r'DFM_fou_RMM\RMM_dflowfm_0000_fou.nc')
-        file_nc_rst = os.path.join(dir_testinput,r'DFM_fou_RMM\RMM_dflowfm_0006_20131127_000000_rst.nc')
+        file_nc_rst = None # os.path.join(dir_testinput,r'DFM_fou_RMM\RMM_dflowfm_0006_20131127_000000_rst.nc') #not corresponding to current modelrun/grid anymore
     else:
         raise Exception('ERROR: no settings provided for this mapfile')
     

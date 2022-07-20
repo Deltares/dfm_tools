@@ -31,6 +31,7 @@ Created on Fri Feb 14 12:45:11 2020
 
 @author: veenstra
 """
+import numpy as np
 
 
 def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None, station=None, multipart=None, get_linkedgridinfo=False, silent=False):
@@ -378,87 +379,42 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     return values_all
 
 
+def calc_dist_pythagoras(x1,x2,y1,y2):
+    distance = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+    return distance
 
-def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None, intersect_coords=None, calcdist_fromlatlon=False, timestep=None, multipart=None, varname=None):
+
+def calc_dist_haversine(lon1,lon2,lat1,lat2):
+    """
+    calculates distance between lat/lon coordinates in meters
+    https://community.esri.com/t5/coordinate-reference-systems-blog/distance-on-a-sphere-the-haversine-formula/ba-p/902128
+    """
+    # convert to radians
+    lon1_rad = np.deg2rad(lon1)
+    lon2_rad = np.deg2rad(lon2)
+    lat1_rad = np.deg2rad(lat1)
+    lat2_rad = np.deg2rad(lat2)
+    
+    # apply formulae
+    a = np.sin((lat2_rad-lat1_rad)/2)**2 + np.cos(lat1_rad) * np.cos(lat2_rad) * np.sin((lon2_rad-lon1_rad)/2)**2
+    c = 2 * np.arctan2( np.sqrt(a), np.sqrt(1-a) )
+    R = 6371000
+    distance = R * c
+    if np.isnan(distance).any():
+        raise Exception('nan encountered in calc_dist_latlon distance, replaced by 0') #warnings.warn
+        #distance[np.isnan(distance)] = 0
+    return distance
+
+
+def get_xzcoords_onintersection(file_nc, intersect_pd, timestep=None, multipart=None, varname=None):
     import warnings
-    import numpy as np
     from netCDF4 import Dataset
-
-    from dfm_tools.testutils import try_importmodule
-    try_importmodule(modulename='shapely')
-    from shapely.geometry import LineString, Point
     from dfm_tools.get_nc_helpers import get_varname_fromnc
     
-    def calc_dist_pythagoras(x1,x2,y1,y2):
-        distance = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
-        return distance
-
-
-    def calc_dist_haversine(lon1,lon2,lat1,lat2):
-        """
-        calculates distance between lat/lon coordinates in meters
-        https://community.esri.com/t5/coordinate-reference-systems-blog/distance-on-a-sphere-the-haversine-formula/ba-p/902128
-        """
-        # convert to radians
-        lon1_rad = np.deg2rad(lon1)
-        lon2_rad = np.deg2rad(lon2)
-        lat1_rad = np.deg2rad(lat1)
-        lat2_rad = np.deg2rad(lat2)
-        
-        # apply formulae
-        a = np.sin((lat2_rad-lat1_rad)/2)**2 + np.cos(lat1_rad) * np.cos(lat2_rad) * np.sin((lon2_rad-lon1_rad)/2)**2
-        c = 2 * np.arctan2( np.sqrt(a), np.sqrt(1-a) )
-        R = 6371000
-        distance = R * c
-        if np.isnan(distance).any():
-            raise Exception('nan encountered in calc_dist_latlon distance, replaced by 0') #warnings.warn
-            #distance[np.isnan(distance)] = 0
-        return distance
-
     #check if all necessary arguments are provided
-    if file_nc is None:
-        raise Exception('ERROR: argument file_nc not provided')
-    if line_array is None:
-        raise Exception('ERROR: argument line_array not provided')
-    if intersect_gridnos is None:
-        raise Exception('ERROR: argument intersect_gridnos not provided')
-    if intersect_coords is None:
-        raise Exception('ERROR: argument intersect_coords not provided')
     if timestep is None:
         raise Exception('ERROR: argument timestep not provided, this is necessary to retrieve correct waterlevel or fullgrid output')
-        
-    print('calculating distance for all crossed cells, from first point of line (should not take long, but if it does, optimisation is needed)')
-    nlinecoords = line_array.shape[0]
-    nlinedims = len(line_array.shape)
-    ncrosscellparts = intersect_coords.shape[0]
-    if nlinecoords<2 or nlinedims != 2:
-        raise Exception('ERROR: line_array should at least contain two xy points [[x,y],[x,y]]')
-
-    crs_xstart = intersect_coords[:,0,0]
-    crs_xstop = intersect_coords[:,0,1]
-    crs_ystart = intersect_coords[:,1,0]
-    crs_ystop = intersect_coords[:,1,1]
     
-    #calculate distance between celledge-linepart crossing (is zero when line iL crosses cell)
-    distperline_tostart = np.zeros((ncrosscellparts,nlinecoords-1))
-    distperline_tostop = np.zeros((ncrosscellparts,nlinecoords-1))
-    linepart_length = np.zeros((nlinecoords))
-    for iL in range(nlinecoords-1):
-        #calculate length of lineparts
-        line_section_part = LineString(line_array[iL:iL+2,:])
-        if calcdist_fromlatlon:
-            linepart_length[iL+1] = calc_dist_haversine(line_array[iL,0],line_array[iL+1,0],line_array[iL,1],line_array[iL+1,1])
-        else:
-            linepart_length[iL+1] = line_section_part.length
-
-        #get distance between all lineparts and point (later used to calculate distance from beginpoint of closest linepart)
-        for iP in range(ncrosscellparts):
-            distperline_tostart[iP,iL] = line_section_part.distance(Point(crs_xstart[iP],crs_ystart[iP]))
-            distperline_tostop[iP,iL] = line_section_part.distance(Point(crs_xstop[iP],crs_ystop[iP]))
-    linepart_lengthcum = np.cumsum(linepart_length)
-    cross_points_closestlineid = np.argmin(np.maximum(distperline_tostart,distperline_tostop),axis=1)
-    print('finished calculating distance for all crossed cells, from first point of line')
-
     data_nc = Dataset(file_nc)
     varkeys_list = data_nc.variables.keys()
     dimn_layer = get_varname_fromnc(data_nc,'nmesh2d_layer',vardim='dim')
@@ -467,6 +423,7 @@ def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None
     else:
         nlay = data_nc.dimensions[dimn_layer].size
         
+    intersect_gridnos = intersect_pd.index
     #vars_pd, dims_pd = get_ncvardimlist(file_nc)
     if 'mesh2d_flowelem_zw' in varkeys_list:
         print('layertype: fullgrid output')
@@ -502,17 +459,9 @@ def get_xzcoords_onintersection(file_nc, line_array=None, intersect_gridnos=None
             zvals_interface = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay+1)
     data_nc.close()
     
-    #calculate distance from points to 'previous' linepoint, add lenght of previous lineparts to it
-    if not calcdist_fromlatlon:
-        crs_dist_starts = calc_dist_pythagoras(line_array[cross_points_closestlineid,0], crs_xstart, line_array[cross_points_closestlineid,1], crs_ystart) + linepart_lengthcum[cross_points_closestlineid]
-        crs_dist_stops = calc_dist_pythagoras(line_array[cross_points_closestlineid,0], crs_xstop, line_array[cross_points_closestlineid,1], crs_ystop) + linepart_lengthcum[cross_points_closestlineid]
-    else:
-        crs_dist_starts = calc_dist_haversine(line_array[cross_points_closestlineid,0], crs_xstart, line_array[cross_points_closestlineid,1], crs_ystart) + linepart_lengthcum[cross_points_closestlineid]
-        crs_dist_stops = calc_dist_haversine(line_array[cross_points_closestlineid,0], crs_xstop, line_array[cross_points_closestlineid,1], crs_ystop) + linepart_lengthcum[cross_points_closestlineid]
-    
     #convert to output for plot_netmapdata
-    crs_dist_starts_matrix = np.repeat(crs_dist_starts[np.newaxis],nlay,axis=0)
-    crs_dist_stops_matrix = np.repeat(crs_dist_stops[np.newaxis],nlay,axis=0)
+    crs_dist_starts_matrix = np.repeat(intersect_pd['crs_dist_starts'].values[np.newaxis],nlay,axis=0)
+    crs_dist_stops_matrix = np.repeat(intersect_pd['crs_dist_stops'].values[np.newaxis],nlay,axis=0)
     crs_verts_x_all = np.array([[crs_dist_starts_matrix.ravel(),crs_dist_stops_matrix.ravel(),crs_dist_stops_matrix.ravel(),crs_dist_starts_matrix.ravel()]]).T
     crs_verts_z_all = np.ma.array([zvals_interface[1:,:].ravel(),zvals_interface[1:,:].ravel(),zvals_interface[:-1,:].ravel(),zvals_interface[:-1,:].ravel()]).T[:,:,np.newaxis]
     crs_verts = np.ma.concatenate([crs_verts_x_all, crs_verts_z_all], axis=2)

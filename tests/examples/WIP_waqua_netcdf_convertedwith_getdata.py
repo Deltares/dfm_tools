@@ -118,7 +118,7 @@ ax.set_ylabel('%s (%s)'%(data_nc_ZWL.var_varname, data_nc_ZWL.var_ncattrs['units
 ax.set_xlim([data_nc_ZWL.var_times[0],data_nc_ZWL.var_times[0]+dt.timedelta(days=14)])
 plt.savefig(os.path.join(dir_output,'waqua_DSCM_his_ZWL'))
 
-
+"""
 #MAP OSR
 file_nc = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\ZZ_Jelmer\SDS-nsctri_map.nc'
 vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
@@ -175,7 +175,7 @@ ax.legend()
 ax.set_ylabel('%s (%s)'%(data_nc_ZWL.var_varname, data_nc_ZWL.var_ncattrs['units']))
 ax.set_xlim([data_nc_ZWL.var_times[0],data_nc_ZWL.var_times[0]+dt.timedelta(days=14)])
 plt.savefig(os.path.join(dir_output,'waqua_OSR_his_ZWL'))
-
+"""
 
 
 #MAP RMM
