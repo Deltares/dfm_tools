@@ -59,7 +59,7 @@ Installation
 	- ``conda create --name dfm_tools_env -c conda-forge python=3.8 git spyder -y`` (you can also install a newer python version)
 	- ``conda activate dfm_tools_env``
 	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this command installs dfm_tools and all required packages)
-	- optional: ``conda install -c conda-forge "shapely>=1.7.0" cartopy pyepsg geopandas contextily -y``
+	- ``conda install -c conda-forge "shapely>=1.7.0" cartopy pyepsg geopandas contextily -y``
 	- shapely for slicing 2D/3D data (conda-forge channel is necessary since main channel version is 1.6.4)
 	- cartopy for satellite imagery, coastlines etc on plots (conda-forge channel recommended by cartopy developers, and currently also necessary for correct shapely version)
 	- pyepsg is necessary for cartopy and probably also for other libraries
