@@ -52,11 +52,11 @@ Features
 
 Installation
 --------
-- download Anaconda 64 bit (with Python 3.7 or later) from https://www.anaconda.com/distribution/#download-section (miniconda is probably also sufficient, but this is not yet tested)
+- download Anaconda 64 bit (with Python 3.8 or later) from https://www.anaconda.com/distribution/#download-section (miniconda is probably also sufficient, but this is not yet tested)
 - install it with the recommended settings, but check 'add Anaconda3 to my PATH environment variable' if you want to use conda from the windows command prompt instead of anaconda prompt
 - install dfm_tools from github:
 	- open command window (or anaconda prompt)
-	- ``conda create --name dfm_tools_env -c conda-forge python=3.7 git spyder -y`` (you can also install a later python version)
+	- ``conda create --name dfm_tools_env -c conda-forge python=3.8 git spyder -y`` (you can also install a newer python version)
 	- ``conda activate dfm_tools_env``
 	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this command installs dfm_tools and all required packages)
 	- optional: ``conda install -c conda-forge "shapely>=1.7.0" -y`` (for slicing 2D/3D data) (conda-forge channel is necessary since main channel version is 1.6.4)
