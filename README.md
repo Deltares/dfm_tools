@@ -52,17 +52,19 @@ Features
 
 Installation
 --------
-- download Anaconda 64 bit (with Python 3.7 or later) from https://www.anaconda.com/distribution/#download-section (miniconda is probably also sufficient, but this is not yet tested)
+- download Anaconda 64 bit (with Python 3.8 or later) from https://www.anaconda.com/distribution/#download-section (miniconda is probably also sufficient, but this is not yet tested)
 - install it with the recommended settings, but check 'add Anaconda3 to my PATH environment variable' if you want to use conda from the windows command prompt instead of anaconda prompt
 - install dfm_tools from github:
 	- open command window (or anaconda prompt)
-	- ``conda create --name dfm_tools_env -c conda-forge python=3.7 git spyder -y`` (you can also install a later python version)
+	- ``conda create --name dfm_tools_env -c conda-forge python=3.8 git spyder -y`` (you can also install a newer python version)
 	- ``conda activate dfm_tools_env``
 	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this command installs dfm_tools and all required packages)
-	- optional: ``conda install -c conda-forge "shapely>=1.7.0" -y`` (for slicing 2D/3D data) (conda-forge channel is necessary since main channel version is 1.6.4)
-	- optional: ``conda install -c conda-forge cartopy pyepsg -y`` (cartopy for satellite imagery, coastlines etc on plots. pyepsg is also necessary, maybe also for other libraries) (conda-forge channel recommended by cartopy developers, and currently also necessary for correct shapely version)
-	- optional: ``conda install -c conda-forge geopandas -y`` (for shapefile related operations)
-	- optional: ``conda install -c conda-forge contextily -y`` (for satellite imagery on plots, seems faster than cartopy)
+	- ``conda install -c conda-forge "shapely>=1.7.0" cartopy pyepsg geopandas contextily -y``
+	- shapely for slicing 2D/3D data (conda-forge channel is necessary since main channel version is 1.6.4)
+	- cartopy for satellite imagery, coastlines etc on plots (conda-forge channel recommended by cartopy developers, and currently also necessary for correct shapely version)
+	- pyepsg is necessary for cartopy and probably also for other libraries
+	- geopandas for shapefile related operations
+	- contextily for satellite imagery on plots, seems faster than cartopy
 	- to remove venv when necessary: ``conda remove -n dfm_tools_env --all``
 - launch Spyder:
 	- open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in dfm_tools_env)
