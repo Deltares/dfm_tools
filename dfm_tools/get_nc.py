@@ -678,7 +678,7 @@ def plot_background(ax=None, projection=None, google_style='satellite', resoluti
     if ax is None: #provide axis projection on initialisation, cannot be edited later on
         if projection is None:
             projection=ccrs.PlateCarree() #projection of cimgt.GoogleTiles, useful default
-        elif isinstance(projection, (cartopy._epsg._EPSGProjection, cartopy._crs.CRS)): #checks if argument is an EPSG projection or CRS projection (like PlateCarree, Mercator etc)
+        elif isinstance(projection, (cartopy._epsg._EPSGProjection, cartopy.crs.CRS)): #checks if argument is an EPSG projection or CRS projection (like PlateCarree, Mercator etc). Note: it was cartopy._crs.CRS before instead of cartopy.crs.CRS
             pass
         elif type(projection) is int:
             projection = ccrs.epsg(projection)
