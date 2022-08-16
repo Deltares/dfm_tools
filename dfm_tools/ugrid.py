@@ -196,9 +196,11 @@ class UGrid:
             elif isinstance(intersect_result,shapely.geometry.linestring.LineString): #if one linepart trough cell (ex/including node), make multilinestring anyway
                 if intersect_result.coords == []: #when the line does not cross this cell, intersect_results.coords is an empty linestring and this cell can be skipped (continue makes forloop continue with next in line without finishing the rest of the steps for this instance)
                     continue
+                elif len(intersect_result.coords.xy[0]) == 0: #for newer cartopy versions, when line does not cross this cell, intersect_result.coords.xy is (array('d'), array('d')), and both arrays in tuple have len 0.
+                    continue
                 intersect_result_multi = MultiLineString([intersect_result])
                 
-            for iLL, intesect_result_one in enumerate(intersect_result_multi): #loop over multilinestrings, will mostly only contain one linestring. Will be two if the line crosses a cell more than once.
+            for iLL, intesect_result_one in enumerate(intersect_result_multi.geoms): #loop over multilinestrings, will mostly only contain one linestring. Will be two if the line crosses a cell more than once.
                 intersection_line = intesect_result_one.coords
                 intline_xyshape = np.array(intersection_line.xy).shape
                 #print('len(intersection_line.xy): %s'%([intline_xyshape]))
