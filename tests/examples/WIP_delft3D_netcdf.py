@@ -70,7 +70,6 @@ mask_XYCOR = (data_nc_XCOR<=-999.999) & (data_nc_YCOR<=-999.999)
 data_nc_XCOR[mask_XYCOR] = np.nan
 data_nc_YCOR[mask_XYCOR] = np.nan
 
-"""
 
 fig, ax = plt.subplots()
 ax.plot(data_nc_XCOR,data_nc_YCOR,'-b',linewidth=0.2)
@@ -111,7 +110,7 @@ for iT, timestep in enumerate([1,10,15]):
     cbar.set_label('velocity magnitude (%s)'%(data_nc_U1.var_ncattrs['units']))
 fig.tight_layout()
 plt.savefig(os.path.join(dir_output,'kivu_velocity'))
-"""
+
 #QNET
 fig, axs = plt.subplots(1,3, figsize=(16,7))
 for iT, timestep in enumerate([1,10,15]):
