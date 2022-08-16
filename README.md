@@ -262,7 +262,7 @@ Todo non-content
 - arrange auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
 - update license with Deltares terms
 - style guide: https://www.python.org/dev/peps/pep-0008/
-- contributing environment method: environment.yml or requirements_dev.txt?
+- contributing environment method: environment.yml
 
 
 Developer information

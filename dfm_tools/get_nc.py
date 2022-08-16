@@ -678,7 +678,7 @@ def plot_background(ax=None, projection=None, google_style='satellite', resoluti
     if ax is None: #provide axis projection on initialisation, cannot be edited later on
         if projection is None:
             projection=ccrs.PlateCarree() #projection of cimgt.GoogleTiles, useful default
-        elif isinstance(projection, (cartopy._epsg._EPSGProjection, cartopy._crs.CRS)): #checks if argument is an EPSG projection or CRS projection (like PlateCarree, Mercator etc)
+        elif isinstance(projection, (cartopy._epsg._EPSGProjection, cartopy.crs.CRS)): #checks if argument is an EPSG projection or CRS projection (like PlateCarree, Mercator etc). Note: it was cartopy._crs.CRS before instead of cartopy.crs.CRS
             pass
         elif type(projection) is int:
             projection = ccrs.epsg(projection)
@@ -830,12 +830,12 @@ def plot_ztdata(file_nc, dfmtools_hisvar, statid_subset=0, ax=None, mask_data=Tr
     if not ax: ax=plt.gca()
 
     # generate 2 2d grids for the x & y bounds (you can also give one 2D array as input in case of eg time varying z coordinates)
-    time_mesh_cor = np.tile(dfmtools_hisvar.var_times,(data_fromhis_zcor_flat.shape[-1],1)).T
+    #time_mesh_cor = np.tile(dfmtools_hisvar.var_times,(data_fromhis_zcor_flat.shape[-1],1)).T
     time_mesh_cen = np.tile(dfmtools_hisvar.var_times,(data_fromhis_zcen_flat.shape[-1],1)).T
     if only_contour:
         pc = ax.contour(time_mesh_cen,data_fromhis_zcen_flat,dfmtools_hisvar_flat, **kwargs)
-    else:
-        #pc = ax.pcolormesh(time_mesh_cor, data_fromhis_zcor_flat, dfmtools_hisvar_flat, **kwargs)
-        pc = ax.pcolor(time_mesh_cor, data_fromhis_zcor_flat, dfmtools_hisvar_flat, **kwargs) #pcolor also supports missing/masked xy data, but is slower
+    else: #TODO: should actually supply cell edges instead of centers to pcolor/pcolormesh, but inconvenient for time dimension.
+        #pc = ax.pcolormesh(time_mesh_cen, data_fromhis_zcen_flat, dfmtools_hisvar_flat, **kwargs)
+        pc = ax.pcolor(time_mesh_cen, data_fromhis_zcen_flat, dfmtools_hisvar_flat, **kwargs) #pcolor also supports missing/masked xy data, but is slower
 
     return pc

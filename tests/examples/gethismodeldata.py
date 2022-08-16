@@ -39,7 +39,7 @@ for file_nc in file_nc_list:
     elif 'impaqt' in file_nc:
         station = ['MO_TS_MO_ATHOS','MO_TS_MO_LESVO','MO_TS_MO_SKYRO','IOC_thes','farm_impaqt']
         station_zt = 'MO_TS_MO_ATHOS'
-
+    
     print('plot bedlevel from his')
     data_fromhis = get_ncmodeldata(file_nc=file_nc, varname='bedlevel', station=station)#, multipart=False)
     fig, ax = plt.subplots()
@@ -68,7 +68,7 @@ for file_nc in file_nc_list:
     ax.plot(data_fromhis[0,:,:].T, data_fromhis_depth[0,:,:].T,'-')
     ax.legend(data_fromhis.var_stations.iloc[:,0])
     fig.savefig(os.path.join(dir_output,'%s_salinityoverdepth'%(os.path.basename(file_nc).replace('.',''))))
-
+    
     print('zt temperature plot and wl')
     data_fromhis_temp = get_ncmodeldata(file_nc=file_nc, varname='temperature', timestep=range(40,100), layer= 'all', station=station_zt)
     data_fromhis_wl = get_ncmodeldata(file_nc=file_nc, varname='waterlevel', timestep=range(40,100), station=station_zt)#, multipart=False)

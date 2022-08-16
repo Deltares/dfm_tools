@@ -43,8 +43,7 @@ for iP, pol_data in enumerate(ugrid.verts): #[range(5000),:,:]
     pol_shp_list.append(pol_shp)
 
 print('creating geodataframe with cells')
-newdata = gpd.GeoDataFrame(crs="EPSG:4326")
-newdata['geometry'] = pol_shp_list #way more time efficient than doing it the loop
+newdata = gpd.GeoDataFrame({'geometry': pol_shp_list},crs="EPSG:4326") #way more time efficient than doing it the loop
 
 for iV, varname in enumerate(varlist):
     newdata[varname] = None

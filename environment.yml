@@ -6,7 +6,6 @@ dependencies:
     - pytest>=5.0.1
     - bump2version>=0.5.11
     - pytest-cov
-    - teamcity-messages
     - pdoc3
     - pandoc
     
