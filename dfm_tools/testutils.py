@@ -32,9 +32,10 @@ Created on Thu Mar 19 15:27:12 2020
 @author: veenstra
 """
 
+import os
+from packaging import version
+
 def gettestinputdir():
-    import os
-    
     if 'TEAMCITY_VERSION' in os.environ.keys(): #teamcity path
         dir_testinput = r'\\dfs-trusted.directory.intra\dfs\Teamcity\Testdata\dfm_tools'
     else: #default to this path
@@ -45,7 +46,6 @@ def gettestinputdir():
 
 
 def getmakeoutputdir(script_dir, function_name):
-    import os
     dir_tests = os.path.join(os.path.realpath(script_dir), os.pardir)
     dir_testoutput = os.path.join(dir_tests,'test_output')
     if not os.path.exists(dir_testoutput):
@@ -69,16 +69,5 @@ def try_importmodule(modulename=None):
             import shapely.geometry
         except:
             raise Exception('ERROR: cannot execute "import shapely.geometry", do the following:\n%s'%(command))
-        shpvers = [int(x) for x in shapely.__version__.split('.')]
-        correctversion = False
-        if shpvers[0] == 1:
-            if shpvers[1] <=7:
-                correctversion = True
-        elif shpvers[0] > 2:
-            correctversion = True
-        if correctversion is False:
-            raise Exception('ERROR: incorrect shapely version (%s), should be 1.7.0 or higher, do the following:\n%s'%(shapely.__version__, command))
-
-
-
-            
+        if version.parse(shapely.__version__) < version.parse('1.7.0'):
+            raise Exception(f'ERROR: incorrect shapely version ({shapely.__version__}), should be 1.7.0 or higher, do the following:\n{command}')

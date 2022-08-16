@@ -224,35 +224,20 @@ def test_UGrid_polygon_intersect():
     ugrid = get_netdata(file_nc=file_nc, multipart=multipart)
 
     #intersect function, find crossed cell numbers (gridnos) and coordinates of intersection (2 per crossed cell)
-    intersect_gridnos, intersect_coords = ugrid.polygon_intersect(line_array, optimize_dist=False)
-    
+    intersect_pd = ugrid.polygon_intersect(line_array, optimize_dist=False)
+    intersect_pd = intersect_pd.sort_index()
     expected_intersectgridnos = np.array([ 91, 146, 146, 147, 147, 201, 201, 202], dtype=np.int64)
-    expected_intersectcoords = np.array([[[2084.67741935, 2144.15041424],
-                                            [3353.02419355, 3337.08297842]],
-                                    
-                                           [[2144.15041424, 2202.53662217],
-                                            [3337.08297842, 3321.43306702]],
-                                    
-                                           [[2173.05750857, 2128.78024194],
-                                            [3238.17837704, 3266.58266129]],
-                                    
-                                           [[2202.53662217, 2255.79637097],
-                                            [3321.43306702, 3307.15725806]],
-                                    
-                                           [[2255.79637097, 2246.9810802 ],
-                                            [3307.15725806, 3280.71138574]],
-                                    
-                                           [[2239.02015401, 2222.27822581],
-                                            [3256.82860719, 3206.60282258]],
-                                    
-                                           [[2222.27822581, 2173.05750857],
-                                            [3206.60282258, 3238.17837704]],
-                                    
-                                           [[2246.9810802 , 2239.02015401],
-                                            [3280.71138574, 3256.82860719]]])
+    expected_intersectcoords = np.array([[2084.67741935, 3353.02419355, 2144.15041424, 3337.08297842],
+                                        [2144.15041424, 3337.08297842, 2202.53662217, 3321.43306702],
+                                        [2173.05750857, 3238.17837704, 2128.78024194, 3266.58266129],
+                                        [2202.53662217, 3321.43306702, 2255.79637097, 3307.15725806],
+                                        [2255.79637097, 3307.15725806, 2246.9810802 , 3280.71138574],
+                                        [2239.02015401, 3256.82860719, 2222.27822581, 3206.60282258],
+                                        [2222.27822581, 3206.60282258, 2173.05750857, 3238.17837704],
+                                        [2246.9810802 , 3280.71138574, 2239.02015401, 3256.82860719]])
     
-    assert (intersect_gridnos-expected_intersectgridnos<1e-9).all()
-    assert (intersect_coords-expected_intersectcoords<1e-8).all()
+    assert (intersect_pd.index-expected_intersectgridnos<1e-9).all()
+    assert (intersect_pd.iloc[:,:4].values-expected_intersectcoords<1e-8).all()
 
 
 @pytest.mark.unittest

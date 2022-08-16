@@ -72,6 +72,7 @@ Installation
 	- test by printing dfm_tools version number: ``import dfm_tools; print(dfm_tools.__version__)`` (to double check if you are working in the venv where dfm_tools_env was installed)
 	- copy the code from [Example usage](#example-usage) to your own scripts to get starteds
 - to update dfm_tools:
+	- inactivate all Python instances that use dfm_tools (close Spyder or restart kernel)
 	- open command window (or anaconda prompt)
 	- ``conda activate dfm_tools_env``
 	- ``python -m pip install --upgrade git+https://github.com/openearth/dfm_tools.git``
@@ -287,7 +288,7 @@ Developer information
 	- to remove venv when necessary: ``conda remove -n dfm_tools_devenv --all``
 	- ``conda activate dfm_tools_devenv``
 	- ``python -m pip install -e .`` (pip developer mode, any updates to the local folder by github (with ``git pull``) are immediately available in your python. It also installs all required packages)
-	- ``conda install -c conda-forge spyder "shapely>=1.7.0" cartopy geopandas contextily pyepsg``(conda-forge channel is necessary since main channel shapely version is 1.6.4. The correct version is available via pip, but then geos dll is not properly linked, this will probably be solved in the future https://github.com/Toblerity/Shapely/issues/844. cartopy also recommends conda-forge channel)
+	- ``conda install -c conda-forge spyder "shapely>=1.7.0" cartopy pyepsg geopandas contextily``(conda-forge channel is necessary since main channel shapely version is 1.6.4. The correct version is available via pip, but then geos dll is not properly linked, this will probably be solved in the future https://github.com/Toblerity/Shapely/issues/844. cartopy also recommends conda-forge channel)
 	- test if dfm_tools is properly installed by printing the version number: ``python -c "import dfm_tools; print(dfm_tools.__version__)"``
 	- open 'Spyder(dfm_tools_devenv)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in dfm_tools_devenv)
 - Make your local changes to dfm_tools
