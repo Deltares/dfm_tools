@@ -1,6 +1,6 @@
 name: dfm_tools_devenv
 dependencies:
-  - python=3.7
+  - python=3.8
   - pip>=19.2.3
   - pip:
     - pytest>=5.0.1
