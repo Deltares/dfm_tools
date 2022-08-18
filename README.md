@@ -59,13 +59,13 @@ Installation
 	- ``conda create --name dfm_tools_env -c conda-forge python=3.8 git spyder -y`` (you can also install a newer python version)
 	- ``conda activate dfm_tools_env``
 	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this command installs dfm_tools and all required packages)
-	- ``conda install -c conda-forge "shapely>=1.7.0" cartopy pyepsg geopandas contextily xarray -y``
+	- ``conda install -c conda-forge "shapely>=1.7.0" cartopy pyepsg geopandas contextily xarray dask -y``
 	- shapely for slicing 2D/3D data (conda-forge channel is necessary since main channel version is 1.6.4)
 	- cartopy for satellite imagery, coastlines etc on plots (conda-forge channel recommended by cartopy developers, and currently also necessary for correct shapely version)
 	- pyepsg is necessary for cartopy and probably also for other libraries
 	- geopandas for shapefile related operations
 	- contextily for satellite imagery on plots, seems faster than cartopy
-	- xarray is currently not used but expected to move more towards that in the future
+	- xarray is currently not used but expected to move more towards that in the future. They advise to install dependecies like netCDF4 and bottleneck with conda-forge also: https://docs.xarray.dev/en/v0.8.0/installing.html
 	- to remove venv when necessary: ``conda remove -n dfm_tools_env --all``
 - launch Spyder:
 	- open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in dfm_tools_env)
@@ -289,7 +289,7 @@ Developer information
 	- to remove venv when necessary: ``conda remove -n dfm_tools_devenv --all``
 	- ``conda activate dfm_tools_devenv``
 	- ``python -m pip install -e .`` (pip developer mode, any updates to the local folder by github (with ``git pull``) are immediately available in your python. It also installs all required packages)
-	- ``conda install -c conda-forge spyder "shapely>=1.7.0" cartopy pyepsg geopandas contextily xarray``(conda-forge channel is necessary since main channel shapely version is 1.6.4. The correct version is available via pip, but then geos dll is not properly linked, this will probably be solved in the future https://github.com/Toblerity/Shapely/issues/844. cartopy also recommends conda-forge channel)
+	- ``conda install -c conda-forge spyder "shapely>=1.7.0" cartopy pyepsg geopandas contextily xarray dask``(conda-forge channel is necessary since main channel shapely version is 1.6.4. The correct version is available via pip, but then geos dll is not properly linked, this will probably be solved in the future https://github.com/Toblerity/Shapely/issues/844. cartopy also recommends conda-forge channel)
 	- test if dfm_tools is properly installed by printing the version number: ``python -c "import dfm_tools; print(dfm_tools.__version__)"``
 	- open 'Spyder(dfm_tools_devenv)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in dfm_tools_devenv)
 - Make your local changes to dfm_tools
