@@ -23,6 +23,13 @@ from hydrolib.core.io.bc.models import (
     TimeSeries,
     Astronomic,
 )
+from hydrolib.core.io.polyfile.models import (
+    Description,
+    Metadata,
+    Point,
+    PolyFile,
+    PolyObject,
+)
 from hydrolib.core.io.polyfile.parser import read_polyfile
 
 def get_varnames_dict(dictname='cmems'):
@@ -31,7 +38,7 @@ def get_varnames_dict(dictname='cmems'):
                        {#'':'bottomT', #TODO: update dict
                         'salinity':'so',
                         'temperature':'thetao',
-                        #'':'uo',
+                        'uxuy':'uo', #TODO: how to make combination of uxuy?
                         #'':'vo',
                         'steric':'zos',
                         }
@@ -53,9 +60,10 @@ def interpolate_FES(dir_pattern, file_pli, nPoints=None, debug=False):
     
     file_list_nc = glob.glob(str(dir_pattern))
     component_list = [os.path.basename(x).replace('.nc','') for x in file_list_nc] #TODO: add sorting, manually? Add A0? translate dict for component names or not necessary?
+    #TODO: resulting amplitudes are slightly different, also imaginary numbers in orig code, why? c:\DATA\hydro_tools\FES\PreProcessing_FES_TideModel_imaginary.m
     
     #load boundary file
-    polyfile_object = read_polyfile(file_pli,has_z_values=False) #TODO REPORT: this warning can be suppressed (or how to fix): "UserWarning: White space at the start of the line is ignored."
+    polyfile_object = read_polyfile(file_pli,has_z_values=False)
     
     pli_PolyObjects = polyfile_object['objects']
     for iPO, pli_PolyObject_sel in enumerate(pli_PolyObjects[:nPolyObjects]):
@@ -142,8 +150,9 @@ def interpolate_nc_to_bc(dir_pattern, file_pli,
     nPolyObjects = None
     
     #get bcvarname and varname
-    dict_modelvarname2bcvarname = {'salinity':'salinitybnd',
-                                   'steric':'waterlevelbnd'} #TODO: is waterlevel not also waterlevelbnd?
+    dict_modelvarname2bcvarname = {'waterlevel':'waterlevelbnd',
+                                   'salinity':'salinitybnd',
+                                   'steric':'waterlevelbnd'}
     if modelvarname in dict_modelvarname2bcvarname.keys():
         bcvarname = dict_modelvarname2bcvarname[modelvarname]
     else:
@@ -174,7 +183,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli,
     if 'depth' in data_xr_var.coords:
         #get variable depths
         vardepth = data_xr_var['depth']
-        depth_array = vardepth.to_numpy()[::-1] #fliplr because value array is also flipped #TODO: is this necessary for dflowfm?
+        depth_array = vardepth.to_numpy()[::-1] #fliplr because value array is also flipped #TODO QUESTION: is this necessary for dflowfm?
         if '_CoordinateZisPositive' in vardepth.attrs.keys(): #correct for positive down to up
             if vardepth.attrs['_CoordinateZisPositive'] == 'down':
                 depth_array = -depth_array
@@ -183,8 +192,8 @@ def interpolate_nc_to_bc(dir_pattern, file_pli,
     varunit = data_xr_var.attrs['units']
     
     #load boundary file
-    #polyfile_object = PolyFile(file_pli,has_z_values=False) #TODO REPORT: (or ask) this does not work, since has_z_values is not passed on or is it not meant to work? (default seems False, so should also work without)
-    polyfile_object = read_polyfile(file_pli,has_z_values=False) #TODO REPORT: this warning can be suppressed (or how to fix): "UserWarning: White space at the start of the line is ignored."
+    polyfile_object = PolyFile(file_pli,has_z_values=False) #TODO QUESTION: (or ask) this does not work, since has_z_values is not passed on or is it not meant to work? (default seems False, so should also work without)
+    #polyfile_object = read_polyfile(file_pli,has_z_values=False) #TODO REPORT: this warning can be suppressed (or how to fix): "UserWarning: White space at the start of the line is ignored."
     """
     print(len(polyfile_object['objects'])) #1 #gives amount of polyobjects
     print(type(polyfile_object['objects'][0])) # hydrolib.core.io.polyfile.models.PolyObject
@@ -203,9 +212,9 @@ def interpolate_nc_to_bc(dir_pattern, file_pli,
             print(f'processing Point {iP+1} of {len(pli_PolyObject_sel.points)}: ',end='')
     
             lonx, laty = pli_Point_sel.x, pli_Point_sel.y
-            print(f'(x={lonx}, y={laty})')
             #lonx,laty = 13.000000, 54.416667  #extra_rand_dcsm_0001 # is not in lat/lon bounds of selected CMEMS folder? >> probably on land
             #lonx,laty = -9.25, 43.00 #DCSM-FM_OB_all_20181108_0001
+            print(f'(x={lonx}, y={laty})')
             if (lonx <= lonvar_vals.min()) or (lonx >= lonvar_vals.max()):
                 raise Exception(f'requested lonx {lonx} outside or on lon bounds ({lonvar_vals.min(),lonvar_vals.max()})')
             if (laty <= latvar_vals.min()) or (laty >= latvar_vals.max()):
@@ -244,7 +253,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli,
             if 'depth' in data_xr_var.coords:
                 datablock = pd.DataFrame(datablock_raw).fillna(method='ffill',axis=1).values #fill nans forward, is this efficient?
                 #if debug: print(datablock_raw), print(datablock)
-                datablock = datablock[:,::-1]#.flip(axis=1) #flipping axis #TODO: this assumes depth as second dimension, might not be true (maybe avoidable anyway)
+                datablock = datablock[:,::-1]#.flip(axis=1) #flipping axis #TODO: this assumes depth as second dimension, might not be true (maybe avoidable anyway if not required by dflowfm code)
             else:
                 datablock = datablock_raw[:,np.newaxis]
                 
@@ -272,9 +281,9 @@ def interpolate_nc_to_bc(dir_pattern, file_pli,
                 """
                 list_QUP_perlayer = [QuantityUnitPair(quantity=bcvarname, unit=varunit) for iL in range(vardepth.size)] #TODO REPORT: verticalposition 1/2/3/n is not supported
                 ts_one = T3D(name=pli_PolyObject_name_num,
-                             verticalpositions=depth_array.tolist(), #TODO REPORT: should be "Vertical position specification = [..]" but is verticalPositions = [..]"
-                             verticalInterpolation='linear', #TODO REPORT: how about extrapolation? Also: this is not necessary in bc file since there is a default value specified in dflowfm so should not be required
-                             verticalPositionType=VerticalPositionType('ZBed'), #TODO REPORT: should be "Vertical position type = zdatum" but is "verticalPositionType = ZBed"
+                             verticalpositions=depth_array.tolist(), #TODO REPORT: should be "Vertical position specification = [..]" but is verticalPositions = [..]" (checkt prisca)
+                             verticalInterpolation='linear', #TODO REPORT: how about extrapolation? (Prisca:there is none) Also: this is not necessary in bc file since there is a default value specified in dflowfm so should not be required
+                             verticalPositionType=VerticalPositionType('ZBed'), #TODO REPORT: should be "Vertical position type = zdatum" but is "verticalPositionType = ZBed" (zdatum is niet beschikbaar)
                              quantityunitpair=[QuantityUnitPair(quantity="time", unit=refdate_str)]+list_QUP_perlayer,
                              timeinterpolation=TimeInterpolation.linear, #TODO REPORT: not passed on to bc file
                              datablock=datablock_list, 
@@ -290,7 +299,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli,
                 factor: float = Field(1.0, alias="factor")
                 """
                 ts_one = TimeSeries(name=pli_PolyObject_name_num,
-                                    verticalposition=VerticalPositionType('ZBed'), #TODO REPORT: is not passed on to bc file, so should raise error
+                                    verticalposition=VerticalPositionType('ZBed'), #TODO REPORT: is not passed on to bc file, so should raise error since it is not relevant for timeseries
                                     quantityunitpair=[QuantityUnitPair(quantity="time", unit=refdate_str),
                                                       QuantityUnitPair(quantity=bcvarname, unit=varunit)],
                                     timeinterpolation=TimeInterpolation.linear,
@@ -302,3 +311,6 @@ def interpolate_nc_to_bc(dir_pattern, file_pli,
             if debug: print(f'>>time passed: {time_passed:.2f} sec')
     
     return ForcingModel_object
+
+
+
