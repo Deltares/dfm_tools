@@ -63,14 +63,6 @@ for file_pli in list_plifiles:
         #print(f'>>time passed: {time_passed:.2f} sec')
         
         
-        """
-        quantity: str = Field(alias="quantity")
-        nodeid: Optional[str] = Field(alias="nodeId")
-        locationfile: Optional[Path] = Field(alias="locationFile")
-        forcingfile: ForcingModel = Field(alias="forcingFile")
-        bndwidth1d: Optional[float] = Field(alias="bndWidth1D")
-        bndbldepth: Optional[float] = Field(alias="bndBlDepth")
-        """
         boundary_object = Boundary(quantity=modelvarname, #TODO REPORT: nodeId / bndWidth1D / bndBlDepth are written as empty values, but they should not be written if not supplied
                                    locationfile=Path(dir_out,file_pli.name),
                                    forcingfile=ForcingModel_object,
