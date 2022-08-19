@@ -233,16 +233,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, modelvarname,
     #load boundary file
     #polyfile_object = PolyFile(file_pli,has_z_values=False) #TODO ISFIXED: should work with hydrolib-core>0.3.0. also without has_z_values argument
     polyfile_object = read_polyfile(file_pli,has_z_values=False) #TODO: this warning can be suppressed (or how to fix): "UserWarning: White space at the start of the line is ignored." https://github.com/Deltares/HYDROLIB-core/issues/320
-    """
-    print(len(polyfile_object['objects'])) #1 #gives amount of polyobjects
-    print(type(polyfile_object['objects'][0])) # hydrolib.core.io.polyfile.models.PolyObject
-    print(polyfile_object['objects'][0]) #gives first polyobject
-    print(polyfile_object['objects'][0].metadata) #Metadata(name='extra_rand_dcsm', n_rows=61, n_columns=2)
-    print(polyfile_object['objects'][0].points) #gives all points (type==list)
-    type(polyfile_object['objects'][0].points[0]) # hydrolib.core.io.polyfile.models.Point 
-    lonx_array = [point.x for point in polyfile_object['objects'][0].points]
-    lony_array = [point.y for point in polyfile_object['objects'][0].points]
-    """
+
     pli_PolyObjects = polyfile_object['objects']
     for iPO, pli_PolyObject_sel in enumerate(pli_PolyObjects[:nPolyObjects]):
         print(f'processing PolyObject {iPO+1} of {len(pli_PolyObjects)}: name={pli_PolyObject_sel.metadata.name}')
