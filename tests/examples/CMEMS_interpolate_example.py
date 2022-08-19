@@ -35,7 +35,6 @@ list_modelvarnames = ['tide','salinity','steric']#,['salinity','temperature','st
 
 ext_bnd = ExtModel()
 
-
 for file_pli in list_plifiles:
     for modelvarname in list_modelvarnames:
         print(f'processing modelvarname: {modelvarname}')
