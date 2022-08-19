@@ -26,7 +26,6 @@ bc_type = 'bc' #currently only 'bc' supported #TODO: add netcdf bc support (is t
 
 refdate_str = 'minutes since 2011-12-22 00:00:00 +00:00' # this is copied from the reference bc file, but can be changed by the user
 tstart = dt.datetime(1993, 1, 1, 12, 0) #CMEMS has daily values at 12:00 (not at midnight), so make sure to include a day extra if necessary
-#tstop = dt.datetime(2019, 12, 31, 12, 0)
 tstop = dt.datetime(1993, 2, 1, 12, 0)
 nPoints = 2 #amount of Points to process per PolyObject in the plifile (for testing, use None for all Points)
 
@@ -41,11 +40,8 @@ for file_pli in list_plifiles:
         if modelvarname == 'tide': #TODO: tide compares not too well, 2cm M2 difference. Why?
             dir_pattern = Path(r'p:\1230882-emodnet_hrsm\FES2014\fes2014_linux64_gnu\share\data\fes\2014\ocean_tide','*.nc') #TODO: or ocean_tide_extrapolated folder?
             ForcingModel_object = interpolate_FES(dir_pattern, file_pli, nPoints=nPoints, debug=True)
-            
         else:
-            file_pattern = f'{varnames_dict[modelvarname]}_1993*.nc' # later remove 1993 from string, but this is faster for testing
-            dir_pattern = Path(dir_sourcefiles,file_pattern)
-                    
+            dir_pattern = Path(dir_sourcefiles,f'{varnames_dict[modelvarname]}_1993*.nc') # later remove 1993 from string, but this is faster for testing
             ForcingModel_object = interpolate_nc_to_bc(dir_pattern=dir_pattern, file_pli=file_pli, 
                                                        modelvarname=modelvarname, varnames_dict=varnames_dict,
                                                        tstart=tstart, tstop=tstop, refdate_str=refdate_str,
@@ -61,7 +57,6 @@ for file_pli in list_plifiles:
             raise Exception(f'invalid bc_type: {bc_type}')
         time_passed = (dt.datetime.now()-dtstart).total_seconds()
         #print(f'>>time passed: {time_passed:.2f} sec')
-        
         
         boundary_object = Boundary(quantity=modelvarname, #TODO REPORT: nodeId / bndWidth1D / bndBlDepth are written as empty values, but they should not be written if not supplied
                                    locationfile=Path(dir_out,file_pli.name),
