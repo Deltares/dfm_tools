@@ -18,7 +18,7 @@ o	My theory is that writing with reduced precision (controlled by a fmt argument
 Also still missing compared to coastserv:
 -	downloading part is not included (@Björn: you improved that right, can you help me out?) 
 -	FES is included but I see some differences with the reference bc files for DCSM. I do not really get the code yet.
--	Waq variables incl unit conversion
+-	Waq variables incl unit conversion are there (CMEMS works), other models have non-gregorian calendars and no lat/lon in coords which might be both solvable
                                       
 """
 
@@ -83,7 +83,7 @@ def get_conversions_dicts():
     return usefor, constituent_boundary_type
 
 
-def interpolate_FES(dir_pattern, file_pli, nPoints=None, debug=False):
+def interpolate_FES(dir_pattern, file_pli, convert_180to360=False, nPoints=None, debug=False):
     """
     """
     
@@ -109,7 +109,8 @@ def interpolate_FES(dir_pattern, file_pli, nPoints=None, debug=False):
             lonx, laty = pli_Point_sel.x, pli_Point_sel.y
             #lonx,laty = 13.000000, 54.416667  #extra_rand_dcsm_0001 # is not in lat/lon bounds of selected CMEMS folder? >> probably on land
             #lonx,laty = -9.25, 43.00 #DCSM-FM_OB_all_20181108_0001
-            lonx = lonx%360 #for FES since it ranges from 0 to 360 instead of -180 to 180
+            if convert_180to360:
+                lonx = lonx%360 #for FES since it ranges from 0 to 360 instead of -180 to 180
             print(f'(x={lonx}, y={laty})')
             pli_PolyObject_name_num = f'{pli_PolyObject_sel.metadata.name}_{iP+1:04d}'
             
@@ -172,9 +173,9 @@ def interpolate_FES(dir_pattern, file_pli, nPoints=None, debug=False):
     return ForcingModel_object
 
     
-def interpolate_nc_to_bc(dir_pattern, file_pli, 
-                         modelvarname, #varnames_dict, 
+def interpolate_nc_to_bc(dir_pattern, file_pli, modelvarname, 
                          tstart, tstop, refdate_str, 
+                         convert_180to360=False, #TODO: maybe better to convert netcdf instead
                          nPoints=None, debug=False):
     
     """
@@ -207,10 +208,22 @@ def interpolate_nc_to_bc(dir_pattern, file_pli,
         latvar_vals = data_xr['lat'].to_numpy()
     else:
         print(data_xr)
-        breakit
-    #print(timevar[0])
-    nc_tstart = pd.to_datetime(timevar[0].to_numpy())
-    nc_tstop = pd.to_datetime(timevar[-1].to_numpy())
+        breakit #TODO: raise exception
+    
+    if np.issubdtype(timevar[0].to_numpy().dtype,np.datetime64):
+        nc_tstart = pd.to_datetime(timevar[0].to_numpy())
+        nc_tstop = pd.to_datetime(timevar[-1].to_numpy())
+    else:
+        print(f'type(timevar[0].to_numpy()): {type(timevar[0].to_numpy())}')
+        print(f'timevar[0].to_numpy(): {timevar[0].to_numpy()}')
+        print(f'timevar[0].to_numpy().dtype: {timevar[0].to_numpy().dtype}')
+        print(f'isinstance(timevar[0].to_numpy().dtype,np.datetime64): {isinstance(timevar[0].to_numpy().dtype,np.datetime64)}')
+        print(f'np.issubdtype(timevar[0].to_numpy().dtype,np.datetime64): {np.issubdtype(timevar[0].to_numpy().dtype,np.datetime64)}')
+        fmtstr = '%Y-%m-%d %H:%M:%S' #TODO: add support for noleap/days365 calendars?
+        print(f'WARNING: unsupported datetimes, trying conversion of {timevar[0].to_numpy()} with "{fmtstr}"')
+        nc_tstart = dt.datetime.strptime(str(timevar[0].to_numpy()),fmtstr)
+        nc_tstop = dt.datetime.strptime(str(timevar[-1].to_numpy()),fmtstr)
+        
     if tstart < nc_tstart:
         raise Exception(f'requested tstart {tstart} before nc_tstart {nc_tstart}')
     if tstop > nc_tstop:
@@ -248,6 +261,8 @@ def interpolate_nc_to_bc(dir_pattern, file_pli,
             lonx, laty = pli_Point_sel.x, pli_Point_sel.y
             #lonx,laty = 13.000000, 54.416667  #extra_rand_dcsm_0001 # is not in lat/lon bounds of selected CMEMS folder? >> probably on land
             #lonx,laty = -9.25, 43.00 #DCSM-FM_OB_all_20181108_0001
+            if convert_180to360:
+                lonx = lonx%360 #for FES since it ranges from 0 to 360 instead of -180 to 180
             print(f'(x={lonx}, y={laty})')
             if (lonx <= lonvar_vals.min()) or (lonx >= lonvar_vals.max()):
                 raise Exception(f'requested lonx {lonx} outside or on lon bounds ({lonvar_vals.min(),lonvar_vals.max()})')
@@ -263,6 +278,8 @@ def interpolate_nc_to_bc(dir_pattern, file_pli,
                                                           #kwargs={'bounds_error':True}, #TODO: bounds_error is ignored (catched by manual lonx/laty bounds check), but also nans are returned on land.
                                                           #assume_sorted=True, #TODO: assume_sorted increases performance?
                                                           )  
+            elif 'lat' in data_xr_var.coords:
+                data_interp_alltimes = data_xr_var.interp(lat=laty,lon=lonx)
             else: #TODO: lat/latitude (should be flexible instead of hardcoded) 
                 raise Exception(f'latitude/longitude are not in variable coords: {data_xr_var.coords}. Extend this part of the code for e.g. lat/lon coords')
             data_interp = data_interp_alltimes.sel(time=slice(tstart,tstop))
