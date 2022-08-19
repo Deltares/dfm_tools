@@ -15,11 +15,11 @@ from hydrolib.core.io.ext.models import Boundary, ExtModel
 #TODO: add other issues in other scripts
 #TODO: add uxuy support (merged arrays) >> or avoid by using separate blocks if accepted by dflowfm. https://github.com/Deltares/HYDROLIB-core/issues/316
 
-convert_180to360 = False
+convert_180to360 = False #TODO: define for hydro and waq separately
 
 dir_sourcefiles_hydro = r'p:\1204257-dcsmzuno\data\CMEMS\nc\DCSM_allAvailableTimes'
 dir_sourcefiles_waq = r'p:\11206304-futuremares\python_scripts\ocean_boundaryCMEMS\data_monthly' #CMEMS
-dir_sourcefiles_waq, convert_180to360 = r'p:\11206304-futuremares\data\CMIP6_BC\GFDL-ESM4', True #GFDL
+#dir_sourcefiles_waq, convert_180to360 = r'p:\11206304-futuremares\data\CMIP6_BC\GFDL-ESM4', True #GFDL
 #dir_sourcefiles_waq, convert_180to360 = r'p:\11206304-futuremares\data\CMIP6_BC\CMCC-ESM2', True #CMCC
 
 #copied plifile from DCSM folder: r'p:\1204257-dcsmzuno\data\CMEMS\bnd\NorthSeaAndBaltic_1993-2019_20210510'
@@ -31,7 +31,7 @@ bc_type = 'bc' #currently only 'bc' supported #TODO: add netcdf bc support. http
 
 refdate_str = 'minutes since 2011-12-22 00:00:00 +00:00' # this is copied from the reference bc file, but can be changed by the user
 tstart = dt.datetime(1993, 1, 1, 12, 0) #CMEMS phys has daily values at 12:00 (not at midnight), so make sure to include a day extra if necessary
-tstop = dt.datetime(1993, 5, 1, 12, 0)
+tstop = dt.datetime(1993, 2, 1, 12, 0)
 #tstart = dt.datetime(2011, 12, 16, 12, 0)
 #tstop = dt.datetime(2012, 12, 1, 12, 0)
 #tstart = dt.datetime(2015, 6, 16, 12, 0)
@@ -41,7 +41,7 @@ debug = False
 
 usefor, constituent_boundary_type = get_conversions_dicts()
 list_modelvarnames = ['NO3']
-#list_modelvarnames = ['steric','salinity','tide']#,'tide']#,['salinity','temperature','steric'] #should be in varnames_dict.keys()
+list_modelvarnames = ['steric','salinity','tide']#,'tide']#,['salinity','temperature','steric'] #should be in varnames_dict.keys()
 
 ext_bnd = ExtModel()
 
@@ -54,7 +54,7 @@ for file_pli in list_plifiles:
         elif modelvarname in ['NO3']:
             varname_file = usefor[modelvarname]['substance'][0] #TODO: [1] is also necessary for uxuy
             dir_pattern = Path(dir_sourcefiles_waq,f'cmems_mod_glo_bgc_my_0.25_P1M-m_{varname_file}_*.nc') # CMEMS waq
-            dir_pattern = Path(dir_sourcefiles_waq,f'{varname_file}_esm-hist.nc') # GFDL. crashes because of NoLeap calendar
+            #dir_pattern = Path(dir_sourcefiles_waq,f'{varname_file}_esm-hist.nc') # GFDL. crashes because of NoLeap calendar
             #dir_pattern = Path(dir_sourcefiles_waq,f'{varname_file}_Omon_CMCC-ESM2_ssp126_r1i1p1f1_gn_*.nc') #CMCC, crashes because of missing lat coords
             
             if 0:
