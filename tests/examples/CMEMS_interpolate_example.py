@@ -6,21 +6,16 @@ Created on Thu Aug 18 16:37:38 2022
 """
 
 import datetime as dt
-#import os
 from pathlib import Path
 import matplotlib.pyplot as plt
 plt.close('all')
-from dfm_tools.CMEMS_interpolate import get_conversions_dicts, interpolate_FES, interpolate_nc_to_bc
+from dfm_tools.CMEMS_interpolate import get_conversion_dict, interpolate_FES, interpolate_nc_to_bc
 from hydrolib.core.io.ext.models import Boundary, ExtModel
-#TODO: add other issues in other scripts
-#TODO: add uxuy support (merged arrays) >> or avoid by using separate blocks if accepted by dflowfm. https://github.com/Deltares/HYDROLIB-core/issues/316
-
-convert_180to360 = False #TODO: define for hydro and waq separately
 
 dir_sourcefiles_hydro = r'p:\1204257-dcsmzuno\data\CMEMS\nc\DCSM_allAvailableTimes'
 dir_sourcefiles_waq = r'p:\11206304-futuremares\python_scripts\ocean_boundaryCMEMS\data_monthly' #CMEMS
-#dir_sourcefiles_waq, convert_180to360 = r'p:\11206304-futuremares\data\CMIP6_BC\GFDL-ESM4', True #GFDL
-#dir_sourcefiles_waq, convert_180to360 = r'p:\11206304-futuremares\data\CMIP6_BC\CMCC-ESM2', True #CMCC
+#dir_sourcefiles_waq = r'p:\11206304-futuremares\data\CMIP6_BC\GFDL-ESM4' #GFDL
+#dir_sourcefiles_waq = r'p:\11206304-futuremares\data\CMIP6_BC\CMCC-ESM2' #CMCC
 
 #copied plifile from DCSM folder: r'p:\1204257-dcsmzuno\data\CMEMS\bnd\NorthSeaAndBaltic_1993-2019_20210510'
 #list_plifiles = [Path(r'n:\My Documents\werkmap\hydrolib_test\DCSM\DCSM-FM_OB_all_20181108.pli')] #TODO: reading this file results in empty Polyfile, should raise an error. https://github.com/Deltares/HYDROLIB-core/issues/320
@@ -39,7 +34,7 @@ tstop = dt.datetime(1993, 2, 1, 12, 0)
 nPoints = 2 #amount of Points to process per PolyObject in the plifile (for testing, use None for all Points)
 debug = False
 
-usefor, constituent_boundary_type = get_conversions_dicts()
+conversion_dict = get_conversion_dict()
 list_modelvarnames = ['NO3']
 list_modelvarnames = ['steric','salinity','tide']#,'tide']#,['salinity','temperature','steric'] #should be in varnames_dict.keys()
 
@@ -49,47 +44,32 @@ for file_pli in list_plifiles:
     for modelvarname in list_modelvarnames:
         print(f'processing modelvarname: {modelvarname}')
         if modelvarname in ['tide']: #TODO: tide compares not too well, 2cm M2 difference. Why?
-            dir_pattern = Path(r'p:\1230882-emodnet_hrsm\FES2014\fes2014_linux64_gnu\share\data\fes\2014\ocean_tide_extrapolated','*.nc') #TODO: or ocean_tide_extrapolated folder? (extrapolated to the coast)
-            ForcingModel_object = interpolate_FES(dir_pattern, file_pli, convert_180to360=True, nPoints=nPoints, debug=debug)
+            dir_pattern,convert_180to360 = Path(r'p:\1230882-emodnet_hrsm\FES2014\fes2014_linux64_gnu\share\data\fes\2014\ocean_tide_extrapolated','*.nc'),True #TODO: or ocean_tide_extrapolated folder? (extrapolated to the coast)
+            ForcingModel_object = interpolate_FES(dir_pattern, file_pli, convert_180to360=convert_180to360, nPoints=nPoints, debug=debug)
         elif modelvarname in ['NO3']:
-            varname_file = usefor[modelvarname]['substance'][0] #TODO: [1] is also necessary for uxuy
-            dir_pattern = Path(dir_sourcefiles_waq,f'cmems_mod_glo_bgc_my_0.25_P1M-m_{varname_file}_*.nc') # CMEMS waq
-            #dir_pattern = Path(dir_sourcefiles_waq,f'{varname_file}_esm-hist.nc') # GFDL. crashes because of NoLeap calendar
-            #dir_pattern = Path(dir_sourcefiles_waq,f'{varname_file}_Omon_CMCC-ESM2_ssp126_r1i1p1f1_gn_*.nc') #CMCC, crashes because of missing lat coords
+            varname_file = conversion_dict[modelvarname]['substance'][0] #TODO: [1] is also necessary for uxuy
+            dir_pattern,convert_180to360 = Path(dir_sourcefiles_waq,f'cmems_mod_glo_bgc_my_0.25_P1M-m_{varname_file}_*.nc'),False # CMEMS waq
+            #dir_pattern,convert_180to360 = Path(dir_sourcefiles_waq,f'{varname_file}_esm-hist.nc'),True # GFDL
+            #dir_pattern,convert_180to360 = Path(dir_sourcefiles_waq,f'{varname_file}_Omon_CMCC-ESM2_ssp126_r1i1p1f1_gn_*.nc'),True #CMCC, TODO: crashes because of missing lat coords
             
             if 0:
-                import pandas as pd
                 import glob
                 import xarray as xr
                 file_list_nc = glob.glob(str(dir_pattern))
                 data_xr = xr.open_mfdataset(file_list_nc)#,decode_times=False)#, combine='by_coords', decode_times=False)
-
-                timevar_orig = data_xr['time']
-                if not isinstance(timevar_orig.to_series().index[0],pd._libs.tslibs.timestamps.Timestamp): #this is the case in case of noleap or 365_days calendars
-                    print(timevar_orig)
-                    timevar = timevar_orig.convert_calendar('standard')
-                else:
-                    timevar = timevar_orig
-                nc_tstart = pd.to_datetime(timevar.to_series().index[0])
-                nc_tstop = pd.to_datetime(timevar.to_series().index[-1])
-                if tstart < nc_tstart:
-                    raise Exception(f'requested tstart {tstart} before nc_tstart {nc_tstart}')
-                if tstop > nc_tstop:
-                    raise Exception(f'requested tstop {tstop} after nc_tstop {nc_tstop}')
-                    
                 breakit
             ForcingModel_object = interpolate_nc_to_bc(dir_pattern=dir_pattern, file_pli=file_pli, modelvarname=modelvarname,
                                                        convert_180to360=convert_180to360,
                                                        tstart=tstart, tstop=tstop, refdate_str=refdate_str,
                                                        nPoints=nPoints, debug=debug)
         else: #['steric','salinity','temperature'] ['uxuy']
-            varname_file = usefor[modelvarname]['substance'][0] #TODO: [1] is also necessary for uxuy
-            dir_pattern = Path(dir_sourcefiles_hydro,f'{varname_file}_1993*.nc') # later remove 1993 from string, but this is faster for testing
+            varname_file = conversion_dict[modelvarname]['substance'][0] #TODO: [1] is also necessary for uxuy
+            dir_pattern,convert_180to360 = Path(dir_sourcefiles_hydro,f'{varname_file}_1993*.nc'),False # later remove 1993 from string, but this is faster for testing
             ForcingModel_object = interpolate_nc_to_bc(dir_pattern=dir_pattern, file_pli=file_pli, modelvarname=modelvarname, 
                                                        convert_180to360=convert_180to360,
                                                        tstart=tstart, tstop=tstop, refdate_str=refdate_str,
                                                        nPoints=nPoints, debug=debug)
-            #ForcingModel_object.filepath = Path(str(ForcingModel_object.filepath).replace(dir_out,'')) #TODO QUESTION: add relative paths in ext file (already possible?)
+            #ForcingModel_object.filepath = Path(str(ForcingModel_object.filepath).replace(dir_out,'')) #TODO: convert to relative paths in ext file possible?
         
         file_bc_basename = file_pli.name.replace('.pli','.bc')
         file_bc_out = Path(dir_out,f'{modelvarname}_{file_bc_basename}')

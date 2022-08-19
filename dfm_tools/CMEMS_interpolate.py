@@ -1,24 +1,24 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Aug 18 22:39:03 2022
+Created on Thu Aug 18 17:39:03 2022
 
 @author: veenstra
 
 Some blocking hydrolib issues before this tool can replace coastserv:
--	uxuy is not yet programmed, I would like to discuss if hydrolib can support this. Or maybe the variables can be supplied separately (makes more sense to me anyway)
-o	new bug issue: https://github.com/Deltares/HYDROLIB-core/issues/316
+-	uxuy is not yet programmed, add support for this merged array
+    o	new bug issue: https://github.com/Deltares/HYDROLIB-core/issues/316
 -	metadata header is not completely correct yet, but this seems like small fixes in hydrolib:
-o	new bug issue: https://github.com/Deltares/HYDROLIB-core/issues/317
--	Formatting of datablock can be improved:
-o	Existing issue: https://github.com/Deltares/HYDROLIB-core/issues/308
-o	Existing issue: https://github.com/Deltares/HYDROLIB-core/issues/313
-o	My theory is that writing with reduced precision (controlled by a fmt argument like np.savetxt()) increases the writing speed for hydrolib also.
+    o	new bug issue: https://github.com/Deltares/HYDROLIB-core/issues/317
+-	Formatting of datablock writing in bc file can be improved (probably also improves perfomance):
+    o	Existing issue: https://github.com/Deltares/HYDROLIB-core/issues/308
+    o	Existing issue: https://github.com/Deltares/HYDROLIB-core/issues/313
 -	some minor issues that do not seem blocking (my issues in the range of #305 to #322)
 
-Also still missing compared to coastserv:
--	downloading part is not included (@Björn: you improved that right, can you help me out?) 
--	FES is included but I see some differences with the reference bc files for DCSM. I do not really get the code yet.
--	Waq variables incl unit conversion are there (CMEMS works), other models have non-gregorian calendars and no lat/lon in coords which might be both solvable
+Non-hydrolib things to do (still missing compared to coastserv):
+-	downloading part is not included (Bjorn improved that part so add to dfm_tools?) 
+-	FES is included but there are differences with the reference bc files for DCSM >> due to complex numbers?
+-	Waq variables incl unit conversion work for e.g. CMEMS and GFDL (and probably most other models), but CMCC has no lat/lon coords so crashes currently
+-   other waq variables than NO3 (incl conversion) probably work, but were not checked yet
                                       
 """
 
@@ -50,37 +50,27 @@ from hydrolib.core.io.polyfile.models import (
 from hydrolib.core.io.polyfile.parser import read_polyfile
 
 
-def get_conversions_dicts():
+def get_conversion_dict():
     # usefor, contains substances as arrays because uxuy relies on 2 CMEMS variables
-    usefor = { #TODO: mg/l is the same as g/m3: conversion is phyc in mmol/l to newvar in g/m3
-            'OXY'        : {'substance' : ['o2']       , 'unit': 'g/m3', 'conversion' : 32.0 / 1000.0}, 
-            'NO3'        : {'substance' : ['no3']      , 'unit': 'g/m3', 'conversion' : 14.0 / 1000.0},
-            'PO4'        : {'substance' : ['po4']      , 'unit': 'g/m3', 'conversion' : 30.97 / 1000.0},
-            'Si'         : {'substance' : ['si']       , 'unit': 'g/m3', 'conversion' : 28.08 / 1000.0},
-            'PON1'       : {'substance' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 2. * 16. * 14. / (106. * 1000.0)},
-            'POP1'       : {'substance' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 2. * 30.97 / (106. * 1000.0)},
-            'POC1'       : {'substance' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 2. * 12. / 1000.0},
-            'DON'        : {'substance' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 3.24 * 2. * 16. * 14. / (106. * 1000.0)},
-            'DOP'        : {'substance' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 1.0 * 2. * 30.97 / (106. * 1000.0)},
-            'DOC'        : {'substance' : ['phyc']     , 'unit': 'g/m3', 'conversion' : (199. / 20.) * 3.24 * 2. * 16. * 12. / (106. * 1000.0)},
-            'Opal'       : {'substance' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 0.5 * 0.13 * 28.08 / (1000.0)},
-            'salinity'   : {'substance' : ['so']       , 'conversion' : 1.0},
-            'temperature': {'substance' : ['thetao']   , 'conversion' : 1.0},
-            'uxuy'       : {'substance' : ['uo', 'vo'] , 'conversion' : 1.0},
-            'steric'     : {'substance' : ['zos']      , 'conversion' : 1.0},
-    }
-
-    # constituent_boundary_type, contains substances as arrays because uxuy relies on 2 CMEMS variables
+    conversion_dict = { #TODO: mg/l is the same as g/m3: conversion is phyc in mmol/l to newvar in g/m3
+                        'OXY'        : {'substance' : ['o2']       , 'unit': 'g/m3', 'conversion' : 32.0 / 1000.0}, 
+                        'NO3'        : {'substance' : ['no3']      , 'unit': 'g/m3', 'conversion' : 14.0 / 1000.0},
+                        'PO4'        : {'substance' : ['po4']      , 'unit': 'g/m3', 'conversion' : 30.97 / 1000.0},
+                        'Si'         : {'substance' : ['si']       , 'unit': 'g/m3', 'conversion' : 28.08 / 1000.0},
+                        'PON1'       : {'substance' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 2. * 16. * 14. / (106. * 1000.0)},
+                        'POP1'       : {'substance' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 2. * 30.97 / (106. * 1000.0)},
+                        'POC1'       : {'substance' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 2. * 12. / 1000.0},
+                        'DON'        : {'substance' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 3.24 * 2. * 16. * 14. / (106. * 1000.0)},
+                        'DOP'        : {'substance' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 1.0 * 2. * 30.97 / (106. * 1000.0)},
+                        'DOC'        : {'substance' : ['phyc']     , 'unit': 'g/m3', 'conversion' : (199. / 20.) * 3.24 * 2. * 16. * 12. / (106. * 1000.0)},
+                        'Opal'       : {'substance' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 0.5 * 0.13 * 28.08 / (1000.0)},
+                        'salinity'   : {'substance' : ['so']       , 'type' : ['salinitybnd']},    #'1e-3'
+                        'temperature': {'substance' : ['thetao']   , 'type' : ['temperaturebnd']}, #'degC'
+                        'uxuy'       : {'substance' : ['uo', 'vo'] , 'type' : ['ux', 'uy'] },      #'m/s'
+                        'steric'     : {'substance' : ['zos']      , 'type' : ['waterlevelbnd']},  #'m'
+                        }
     
-    constituent_boundary_type = { #TODO: merge above array with this one? Units from below are read from netcdf file
-            'salinity'   : {'type' : ['salinitybnd']     , 'unit' : '1e-3'},
-            'temperature': {'type' : ['temperaturebnd']  , 'unit' : 'degC'},
-            # quantity in ext and bc file is inconsistent, exception added in Model().write_new_ext_file()
-            'uxuy'       : {'type' : ['ux', 'uy']        , 'unit' : 'm/s'},
-            'steric'     : {'type' : ['waterlevelbnd']   , 'unit' : 'm'}
-    }
-    
-    return usefor, constituent_boundary_type
+    return conversion_dict
 
 
 def interpolate_FES(dir_pattern, file_pli, convert_180to360=False, nPoints=None, debug=False):
@@ -95,6 +85,7 @@ def interpolate_FES(dir_pattern, file_pli, convert_180to360=False, nPoints=None,
     file_list_nc = glob.glob(str(dir_pattern))
     component_list = [os.path.basename(x).replace('.nc','') for x in file_list_nc] #TODO: add sorting, manually? Add A0? translate dict for component names?
     #TODO: resulting amplitudes are slightly different, also imaginary numbers in orig code, why? c:\DATA\hydro_tools\FES\PreProcessing_FES_TideModel_imaginary.m
+    #TODO: MV: "Cornelis gebruikt complexe getallen. Los van de interpolatie hoort dat hetzelfde te doen. Bij de interpolatie in de ruimte is het interpoleren van de complexe getallen hetzelfde als interpolatie van de coeffiecienten voor de cos en sin componenten. Die levert wel iets andere waarden dan wanneer je de amplitude en fase interpoleert."
     
     #load boundary file
     polyfile_object = read_polyfile(file_pli,has_z_values=False)
@@ -184,8 +175,8 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, modelvarname,
     """
     nPolyObjects = None
     
-    usefor, constituent_boundary_type = get_conversions_dicts()
-    varname_file = usefor[modelvarname]['substance'][0] #TODO: [1] is also necessary for uxuy
+    conversion_dict = get_conversion_dict()
+    varname_file = conversion_dict[modelvarname]['substance'][0] #TODO: [1] is also necessary for uxuy
     
     print('initialize ForcingModel()')
     ForcingModel_object = ForcingModel()
@@ -317,15 +308,15 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, modelvarname,
                 datablock = datablock_raw[:,np.newaxis]
             
             #conversion of units etc
-            datablock = datablock * usefor[modelvarname]['conversion']
-            #TODO: add units with get_units_dict()
-            if modelvarname in constituent_boundary_type.keys():
-                bcvarname = constituent_boundary_type[modelvarname]['type'][0] #TODO: [1] is necessary for uxuy
-            else: #TODO: only works for waq tracers, so add check
+            if 'conversion' in conversion_dict[modelvarname].keys():
+                datablock = datablock * conversion_dict[modelvarname]['conversion']
+            if 'type' in conversion_dict[modelvarname].keys():
+                bcvarname = conversion_dict[modelvarname]['type'][0] #TODO: [1] is necessary for uxuy
+            else: #TODO: only works for waq tracers, so add check or add to conversion_dict (latter also makes sense)
                 bcvarname = f'tracerbnd{modelvarname}'
                 #bcvarname = modelvarname
-            if 'unit' in usefor[modelvarname].keys():
-                varunit = usefor[modelvarname]['unit']
+            if 'unit' in conversion_dict[modelvarname].keys():
+                varunit = conversion_dict[modelvarname]['unit']
             else:
                 varunit = data_xr_var.attrs['units']
             
