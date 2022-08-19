@@ -12,18 +12,17 @@ import matplotlib.pyplot as plt
 plt.close('all')
 from dfm_tools.CMEMS_interpolate import get_varnames_dict, interpolate_FES, interpolate_nc_to_bc
 from hydrolib.core.io.ext.models import Boundary, ExtModel
-#TODO: improve formatting of bcfile (and other issues in other scripts)
-#TODO QUESTION: add uxuy functionality. How to write bc file with merged arrays?
-#TODO QUESTION: add relative paths in ext file (already possible?)
+#TODO: add other issues in other scripts
+#TODO: add uxuy support (merged arrays) >> or avoid by using separate blocks if accepted by dflowfm. https://github.com/Deltares/HYDROLIB-core/issues/316
 
 dir_sourcefiles = r'p:\1204257-dcsmzuno\data\CMEMS\nc\DCSM_allAvailableTimes'
 
 #copied plifile from DCSM folder: r'p:\1204257-dcsmzuno\data\CMEMS\bnd\NorthSeaAndBaltic_1993-2019_20210510'
-#list_plifiles = [Path(r'n:\My Documents\werkmap\hydrolib_test\DCSM\DCSM-FM_OB_all_20181108.pli')] #TODO REPORT: reading this file results in empty Polyfile, should raise an error
+#list_plifiles = [Path(r'n:\My Documents\werkmap\hydrolib_test\DCSM\DCSM-FM_OB_all_20181108.pli')] #TODO: reading this file results in empty Polyfile, should raise an error. https://github.com/Deltares/HYDROLIB-core/issues/320
 list_plifiles = [Path(r'n:\My Documents\werkmap\hydrolib_test\DCSM\DCSM-FM_OB_all_20181108_nocomments.pli')]
 
 dir_out = r'n:\My Documents\werkmap\hydrolib_test\DCSM'
-bc_type = 'bc' #currently only 'bc' supported #TODO QUESTION: add netcdf bc support (is this already in hydrolib?)
+bc_type = 'bc' #currently only 'bc' supported #TODO: add netcdf bc support. https://github.com/Deltares/HYDROLIB-core/issues/318
 
 refdate_str = 'minutes since 2011-12-22 00:00:00 +00:00' # this is copied from the reference bc file, but can be changed by the user
 tstart = dt.datetime(1993, 1, 1, 12, 0) #CMEMS has daily values at 12:00 (not at midnight), so make sure to include a day extra if necessary
@@ -48,6 +47,7 @@ for file_pli in list_plifiles:
                                                        modelvarname=modelvarname, varnames_dict=varnames_dict,
                                                        tstart=tstart, tstop=tstop, refdate_str=refdate_str,
                                                        nPoints=nPoints, debug=debug)
+            #ForcingModel_object.filepath = Path(str(ForcingModel_object.filepath).replace(dir_out,'')) #TODO QUESTION: add relative paths in ext file (already possible?)
         
         file_bc_basename = file_pli.name.replace('.pli','.bc')
         file_bc_out = Path(dir_out,f'{modelvarname}_{file_bc_basename}')
@@ -55,12 +55,14 @@ for file_pli in list_plifiles:
         dtstart = dt.datetime.now()
         if bc_type=='bc':
             ForcingModel_object.save(filepath=file_bc_out)
+            #TODO: improve performance of bc file writing with hydrolib (numpy.savetxt() is way faster because of formatting): https://github.com/Deltares/HYDROLIB-core/issues/313
+            #TODO: improve formatting of bc file to make nicer, save diskspace and maybe write faster: https://github.com/Deltares/HYDROLIB-core/issues/308
         else:
             raise Exception(f'invalid bc_type: {bc_type}')
         time_passed = (dt.datetime.now()-dtstart).total_seconds()
         #print(f'>>time passed: {time_passed:.2f} sec')
         
-        boundary_object = Boundary(quantity=modelvarname, #TODO REPORT: nodeId / bndWidth1D / bndBlDepth are written as empty values, but they should not be written if not supplied
+        boundary_object = Boundary(quantity=modelvarname, #TODO: nodeId / bndWidth1D / bndBlDepth are written as empty values, but they should not be written if not supplied. https://github.com/Deltares/HYDROLIB-core/issues/319
                                    locationfile=Path(dir_out,file_pli.name),
                                    forcingfile=ForcingModel_object,
                                    )

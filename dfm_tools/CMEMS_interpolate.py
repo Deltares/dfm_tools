@@ -3,6 +3,23 @@
 Created on Thu Aug 18 22:39:03 2022
 
 @author: veenstra
+
+Some blocking hydrolib issues before this tool can replace coastserv:
+-	uxuy is not yet programmed, I would like to discuss if hydrolib can support this. Or maybe the variables can be supplied separately (makes more sense to me anyway)
+o	new bug issue: https://github.com/Deltares/HYDROLIB-core/issues/316
+-	metadata header is not completely correct yet, but this seems like small fixes in hydrolib:
+o	new bug issue: https://github.com/Deltares/HYDROLIB-core/issues/317
+-	Formatting of datablock can be improved:
+o	Existing issue: https://github.com/Deltares/HYDROLIB-core/issues/308
+o	Existing issue: https://github.com/Deltares/HYDROLIB-core/issues/313
+o	My theory is that writing with reduced precision (controlled by a fmt argument like np.savetxt()) increases the writing speed for hydrolib also.
+-	some minor issues that do not seem blocking (my issues in the range of #305 to #322)
+
+Also still missing compared to coastserv:
+-	downloading part is not included (@Björn: you improved that right, can you help me out?) 
+-	FES is included but I see some differences with the reference bc files for DCSM. I do not really get the code yet.
+-	Waq variables?
+                                      
 """
 
 import os
@@ -24,21 +41,21 @@ from hydrolib.core.io.bc.models import (
     Astronomic,
 )
 from hydrolib.core.io.polyfile.models import (
-    Description,
-    Metadata,
-    Point,
+    #Description,
+    #Metadata,
+    #Point,
     PolyFile,
-    PolyObject,
+    #PolyObject,
 )
 from hydrolib.core.io.polyfile.parser import read_polyfile
 
 def get_varnames_dict(dictname='cmems'):
     
     varnameset_dict = {'cmems':
-                       {#'':'bottomT', #TODO: update dict
+                       {#'':'bottomT', #TODO: update dict with waq values
                         'salinity':'so',
                         'temperature':'thetao',
-                        'uxuy':'uo', #TODO: how to make combination of uxuy?
+                        'uxuy':'uo', #TODO: how to make combination of uxuy? https://github.com/Deltares/HYDROLIB-core/issues/316
                         #'':'vo',
                         'steric':'zos',
                         }
@@ -59,7 +76,7 @@ def interpolate_FES(dir_pattern, file_pli, nPoints=None, debug=False):
     ForcingModel_object = ForcingModel()
     
     file_list_nc = glob.glob(str(dir_pattern))
-    component_list = [os.path.basename(x).replace('.nc','') for x in file_list_nc] #TODO: add sorting, manually? Add A0? translate dict for component names or not necessary?
+    component_list = [os.path.basename(x).replace('.nc','') for x in file_list_nc] #TODO: add sorting, manually? Add A0? translate dict for component names?
     #TODO: resulting amplitudes are slightly different, also imaginary numbers in orig code, why? c:\DATA\hydro_tools\FES\PreProcessing_FES_TideModel_imaginary.m
     
     #load boundary file
@@ -183,7 +200,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli,
     if 'depth' in data_xr_var.coords:
         #get variable depths
         vardepth = data_xr_var['depth']
-        depth_array = vardepth.to_numpy()[::-1] #fliplr because value array is also flipped #TODO QUESTION: is this necessary for dflowfm?
+        depth_array = vardepth.to_numpy()[::-1] #TODO: flip array is not necessary, check datablock comment
         if '_CoordinateZisPositive' in vardepth.attrs.keys(): #correct for positive down to up
             if vardepth.attrs['_CoordinateZisPositive'] == 'down':
                 depth_array = -depth_array
@@ -192,8 +209,8 @@ def interpolate_nc_to_bc(dir_pattern, file_pli,
     varunit = data_xr_var.attrs['units']
     
     #load boundary file
-    polyfile_object = PolyFile(file_pli,has_z_values=False) #TODO QUESTION: (or ask) this does not work, since has_z_values is not passed on or is it not meant to work? (default seems False, so should also work without)
-    #polyfile_object = read_polyfile(file_pli,has_z_values=False) #TODO REPORT: this warning can be suppressed (or how to fix): "UserWarning: White space at the start of the line is ignored."
+    #polyfile_object = PolyFile(file_pli,has_z_values=False) #TODO ISFIXED: should work with hydrolib-core>0.3.0. also without has_z_values argument
+    polyfile_object = read_polyfile(file_pli,has_z_values=False) #TODO: this warning can be suppressed (or how to fix): "UserWarning: White space at the start of the line is ignored." https://github.com/Deltares/HYDROLIB-core/issues/320
     """
     print(len(polyfile_object['objects'])) #1 #gives amount of polyobjects
     print(type(polyfile_object['objects'][0])) # hydrolib.core.io.polyfile.models.PolyObject
@@ -224,7 +241,13 @@ def interpolate_nc_to_bc(dir_pattern, file_pli,
             
             print('> interp mfdataset with lat/lon coordinates')
             dtstart = dt.datetime.now()
-            data_interp_alltimes = data_xr_var.interp(latitude=laty,longitude=lonx) #TODO: lat/latitude (should be flexible instead of hardcoded) #, kwargs={'bounds_error':True})#, assume_sorted=True) #TODO: bounds_error is ignored, but also nans are returned on land
+            if 'latitude' in data_xr_var.coords:
+                data_interp_alltimes = data_xr_var.interp(latitude=laty,longitude=lonx,
+                                                          #kwargs={'bounds_error':True}, #TODO: bounds_error is ignored (catched by manual lonx/laty bounds check), but also nans are returned on land.
+                                                          #assume_sorted=True, #TODO: assume_sorted increases performance?
+                                                          )  
+            else: #TODO: lat/latitude (should be flexible instead of hardcoded) 
+                raise Exception(f'latitude/longitude are not in variable coords: {data_xr_var.coords}. Extend this part of the code for e.g. lat/lon coords')
             data_interp = data_interp_alltimes.sel(time=slice(tstart,tstop))
             time_passed = (dt.datetime.now()-dtstart).total_seconds()
             if debug: print(f'>>time passed: {time_passed:.2f} sec')
@@ -253,14 +276,13 @@ def interpolate_nc_to_bc(dir_pattern, file_pli,
             if 'depth' in data_xr_var.coords:
                 datablock = pd.DataFrame(datablock_raw).fillna(method='ffill',axis=1).values #fill nans forward, is this efficient?
                 #if debug: print(datablock_raw), print(datablock)
-                datablock = datablock[:,::-1]#.flip(axis=1) #flipping axis #TODO: this assumes depth as second dimension, might not be true (maybe avoidable anyway if not required by dflowfm code)
+                datablock = datablock[:,::-1] #flipping axis #TODO: this assumes depth as second dimension and that might not be true for other models. Flipping depth_vals and datablock is not required by kernel, so remove after validation is complete
             else:
                 datablock = datablock_raw[:,np.newaxis]
                 
             timevar_sel = data_interp.time
             timevar_sel_rel = date2num(pd.DatetimeIndex(timevar_sel.to_numpy()).to_pydatetime(),units=refdate_str,calendar='standard')
             datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock],axis=1)
-            datablock_list = datablock_incltime.tolist()
             time_passed = (dt.datetime.now()-dtstart).total_seconds()
             if debug: print(f'>>time passed: {time_passed:.2f} sec')
             
@@ -279,14 +301,14 @@ def interpolate_nc_to_bc(dir_pattern, file_pli,
                 verticalinterpolation: VerticalInterpolation = Field(alias="verticalInterpolation")
                 verticalpositiontype: VerticalPositionType = Field(alias="verticalPositionType")
                 """
-                list_QUP_perlayer = [QuantityUnitPair(quantity=bcvarname, unit=varunit) for iL in range(vardepth.size)] #TODO REPORT: verticalposition 1/2/3/n is not supported
+                list_QUP_perlayer = [QuantityUnitPair(quantity=bcvarname, unit=varunit) for iL in range(vardepth.size)] #TODO: verticalposition 1/2/3/n is not supported. https://github.com/Deltares/HYDROLIB-core/issues/317
                 ts_one = T3D(name=pli_PolyObject_name_num,
-                             verticalpositions=depth_array.tolist(), #TODO REPORT: should be "Vertical position specification = [..]" but is verticalPositions = [..]" (checkt prisca)
-                             verticalInterpolation='linear', #TODO REPORT: how about extrapolation? (Prisca:there is none) Also: this is not necessary in bc file since there is a default value specified in dflowfm so should not be required
-                             verticalPositionType=VerticalPositionType('ZBed'), #TODO REPORT: should be "Vertical position type = zdatum" but is "verticalPositionType = ZBed" (zdatum is niet beschikbaar)
+                             verticalpositions=depth_array.tolist(), #TODO: should be "Vertical position specification = [..]" but is verticalPositions = [..]" (both possible?). https://github.com/Deltares/HYDROLIB-core/issues/317
+                             verticalInterpolation='linear',
+                             verticalPositionType=VerticalPositionType('ZBed'), #TODO: should be "Vertical position type = zdatum" but is "verticalPositionType = ZBed" (zdatum is niet beschikbaar). https://github.com/Deltares/HYDROLIB-core/issues/317
                              quantityunitpair=[QuantityUnitPair(quantity="time", unit=refdate_str)]+list_QUP_perlayer,
-                             timeinterpolation=TimeInterpolation.linear, #TODO REPORT: not passed on to bc file
-                             datablock=datablock_list, 
+                             timeinterpolation=TimeInterpolation.linear, #TODO: not passed on to bc file. https://github.com/Deltares/HYDROLIB-core/issues/317
+                             datablock=datablock_incltime.tolist(), #TODO: numpy array is not supported by TimeSeries. https://github.com/Deltares/HYDROLIB-core/issues/322
                              )
             else:
                 """
@@ -299,7 +321,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli,
                 factor: float = Field(1.0, alias="factor")
                 """
                 ts_one = TimeSeries(name=pli_PolyObject_name_num,
-                                    verticalposition=VerticalPositionType('ZBed'), #TODO REPORT: is not passed on to bc file, so should raise error since it is not relevant for timeseries
+                                    verticalposition=VerticalPositionType('ZBed'), #TODO: is not passed on to bc file and that makes sense, but it should raise error since it is not relevant for timeseries. https://github.com/Deltares/HYDROLIB-core/issues/321
                                     quantityunitpair=[QuantityUnitPair(quantity="time", unit=refdate_str),
                                                       QuantityUnitPair(quantity=bcvarname, unit=varunit)],
                                     timeinterpolation=TimeInterpolation.linear,
