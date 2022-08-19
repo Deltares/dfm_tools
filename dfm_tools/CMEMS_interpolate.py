@@ -238,7 +238,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli,
                 time_passed = (dt.datetime.now()-dtstart).total_seconds()
                 if debug: print(f'>>time passed: {time_passed:.2f} sec')
             
-            print('> converting data to numpy array concatenating time column')
+            print('> converting data to numpy array, ffill nans and concatenating time column')
             dtstart = dt.datetime.now()
             datablock_raw = data_interp.to_numpy()
             if 'depth' in data_xr_var.coords:
