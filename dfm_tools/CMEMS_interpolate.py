@@ -52,7 +52,7 @@ def interpolate_FES(dir_pattern, file_pli, nPoints=None, debug=False):
     ForcingModel_object = ForcingModel()
     
     file_list_nc = glob.glob(str(dir_pattern))
-    component_list = [os.path.basename(x).replace('.nc','') for x in file_list_nc] #TODO: add sorting, manually? Add A0?
+    component_list = [os.path.basename(x).replace('.nc','') for x in file_list_nc] #TODO: add sorting, manually? Add A0? translate dict for component names or not necessary?
     
     #load boundary file
     polyfile_object = read_polyfile(file_pli,has_z_values=False) #TODO REPORT: this warning can be suppressed (or how to fix): "UserWarning: White space at the start of the line is ignored."

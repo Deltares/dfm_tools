@@ -38,7 +38,7 @@ ext_bnd = ExtModel()
 for file_pli in list_plifiles:
     for modelvarname in list_modelvarnames:
         print(f'processing modelvarname: {modelvarname}')
-        if modelvarname == 'tide':
+        if modelvarname == 'tide': #TODO: tide compares not too well, 2cm M2 difference. Why?
             dir_pattern = Path(r'p:\1230882-emodnet_hrsm\FES2014\fes2014_linux64_gnu\share\data\fes\2014\ocean_tide','*.nc') #TODO: or ocean_tide_extrapolated folder?
             ForcingModel_object = interpolate_FES(dir_pattern, file_pli, nPoints=nPoints, debug=True)
             
