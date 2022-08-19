@@ -194,11 +194,23 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, modelvarname,
     print(f'loading mfdataset ({len(file_list_nc)} files with pattern "{dir_pattern.name}")')
     dtstart = dt.datetime.now()
     data_xr = xr.open_mfdataset(file_list_nc)#, combine='by_coords', decode_times=False)
+    #get timevar and maybe convert_calendar, makes sure that nc_tstart/nc_tstop are of type pd._libs.tslibs.timestamps.Timestamp
+    if not isinstance(data_xr['time'].to_series().index[0],pd._libs.tslibs.timestamps.Timestamp): #this is the case in case of noleap or 365_days calendars
+        data_xr = data_xr.convert_calendar('standard')
     time_passed = (dt.datetime.now()-dtstart).total_seconds()
     if debug: print(f'>>time passed: {time_passed:.2f} sec')
+    
+    #get timevar and compare requested dates
     timevar = data_xr['time']
+    nc_tstart = pd.to_datetime(timevar.to_series().index[0])
+    nc_tstop = pd.to_datetime(timevar.to_series().index[-1])
+    if tstart < nc_tstart:
+        raise Exception(f'requested tstart {tstart} before nc_tstart {nc_tstart}')
+    if tstop > nc_tstop:
+        raise Exception(f'requested tstop {tstop} after nc_tstop {nc_tstop}')
 
     data_xr_var = data_xr[varname_file]
+        
     
     if 'latitude' in data_xr_var.coords:
         lonvar_vals = data_xr['longitude'].to_numpy()
@@ -208,31 +220,20 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, modelvarname,
         latvar_vals = data_xr['lat'].to_numpy()
     else:
         print(data_xr)
-        breakit #TODO: raise exception
+        raise Exception(f'no lat/lon coords available: {data_xr_var.coords}')
     
-    if np.issubdtype(timevar[0].to_numpy().dtype,np.datetime64):
-        nc_tstart = pd.to_datetime(timevar[0].to_numpy())
-        nc_tstop = pd.to_datetime(timevar[-1].to_numpy())
+    if 'depth' in data_xr_var.coords: #depth for CMEMS, lev for GFDL #TODO: make more generic
+        has_depth = True
+        depthvarname = 'depth'
+    elif 'lev' in data_xr_var.coords:
+        has_depth = True
+        depthvarname = 'lev'
     else:
-        print(f'type(timevar[0].to_numpy()): {type(timevar[0].to_numpy())}')
-        print(f'timevar[0].to_numpy(): {timevar[0].to_numpy()}')
-        print(f'timevar[0].to_numpy().dtype: {timevar[0].to_numpy().dtype}')
-        print(f'isinstance(timevar[0].to_numpy().dtype,np.datetime64): {isinstance(timevar[0].to_numpy().dtype,np.datetime64)}')
-        print(f'np.issubdtype(timevar[0].to_numpy().dtype,np.datetime64): {np.issubdtype(timevar[0].to_numpy().dtype,np.datetime64)}')
-        fmtstr = '%Y-%m-%d %H:%M:%S' #TODO: add support for noleap/days365 calendars?
-        print(f'WARNING: unsupported datetimes, trying conversion of {timevar[0].to_numpy()} with "{fmtstr}"')
-        nc_tstart = dt.datetime.strptime(str(timevar[0].to_numpy()),fmtstr)
-        nc_tstop = dt.datetime.strptime(str(timevar[-1].to_numpy()),fmtstr)
-        
-    if tstart < nc_tstart:
-        raise Exception(f'requested tstart {tstart} before nc_tstart {nc_tstart}')
-    if tstop > nc_tstop:
-        raise Exception(f'requested tstop {tstop} after nc_tstop {nc_tstop}')
+        has_depth = False
     
-    
-    if 'depth' in data_xr_var.coords:
+    if has_depth:
         #get variable depths
-        vardepth = data_xr_var['depth']
+        vardepth = data_xr_var[depthvarname]
         depth_array = vardepth.to_numpy()[::-1] #TODO: flip array is not necessary, check datablock comment
         if '_CoordinateZisPositive' in vardepth.attrs.keys(): #correct for positive down to up
             if vardepth.attrs['_CoordinateZisPositive'] == 'down':
@@ -287,9 +288,9 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, modelvarname,
             if debug: print(f'>>time passed: {time_passed:.2f} sec')
             
             # check if only nan (out of bounds or land):
-            data_time0 = data_interp_alltimes.sel(time=data_xr['time'][1]).to_numpy()
+            data_time0 = data_interp_alltimes.isel(time=0).to_numpy()
             if np.isnan(data_time0).all():
-                raise Exception('only nans on first time of this coordinate') #TODO: this can happen on land, raise exception or warning?
+                print('WARNING: only nans on first time of this coordinate') #TODO: this can happen on land, raise exception or warning?
             
             if debug:
                 print('> plotting')
@@ -307,7 +308,8 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, modelvarname,
             print('> converting data to numpy array, ffill nans and concatenating time column')
             dtstart = dt.datetime.now()
             datablock_raw = data_interp.to_numpy()
-            if 'depth' in data_xr_var.coords:
+            
+            if has_depth:
                 datablock = pd.DataFrame(datablock_raw).fillna(method='ffill',axis=1).values #fill nans forward, is this efficient?
                 #if debug: print(datablock_raw), print(datablock)
                 datablock = datablock[:,::-1] #flipping axis #TODO: this assumes depth as second dimension and that might not be true for other models. Flipping depth_vals and datablock is not required by kernel, so remove after validation is complete
@@ -336,7 +338,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, modelvarname,
             # Each .bc file can contain 1 or more timeseries, one for each support point:
             print('> constructing TimeSeries and appending to ForcingModel()')
             dtstart = dt.datetime.now()
-            if 'depth' in data_xr_var.coords:
+            if has_depth:
                 """
                 name: str = Field(alias="name")
                 function: str = Field(alias="function")
