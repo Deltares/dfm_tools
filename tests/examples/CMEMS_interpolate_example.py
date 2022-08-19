@@ -10,12 +10,14 @@ import datetime as dt
 from pathlib import Path
 import matplotlib.pyplot as plt
 plt.close('all')
-from dfm_tools.CMEMS_interpolate import get_varnames_dict, interpolate_FES, interpolate_nc_to_bc
+from dfm_tools.CMEMS_interpolate import get_conversions_dicts, interpolate_FES, interpolate_nc_to_bc
 from hydrolib.core.io.ext.models import Boundary, ExtModel
 #TODO: add other issues in other scripts
 #TODO: add uxuy support (merged arrays) >> or avoid by using separate blocks if accepted by dflowfm. https://github.com/Deltares/HYDROLIB-core/issues/316
 
-dir_sourcefiles = r'p:\1204257-dcsmzuno\data\CMEMS\nc\DCSM_allAvailableTimes'
+dir_sourcefiles_hydro = r'p:\1204257-dcsmzuno\data\CMEMS\nc\DCSM_allAvailableTimes'
+#dir_sourcefiles_waq = r'p:\11206304-futuremares\data\CMIP6_BC\GFDL-ESM4'
+dir_sourcefiles_waq = r'p:\11206304-futuremares\python_scripts\ocean_boundaryCMEMS\data_monthly'
 
 #copied plifile from DCSM folder: r'p:\1204257-dcsmzuno\data\CMEMS\bnd\NorthSeaAndBaltic_1993-2019_20210510'
 #list_plifiles = [Path(r'n:\My Documents\werkmap\hydrolib_test\DCSM\DCSM-FM_OB_all_20181108.pli')] #TODO: reading this file results in empty Polyfile, should raise an error. https://github.com/Deltares/HYDROLIB-core/issues/320
@@ -25,26 +27,38 @@ dir_out = r'n:\My Documents\werkmap\hydrolib_test\DCSM'
 bc_type = 'bc' #currently only 'bc' supported #TODO: add netcdf bc support. https://github.com/Deltares/HYDROLIB-core/issues/318
 
 refdate_str = 'minutes since 2011-12-22 00:00:00 +00:00' # this is copied from the reference bc file, but can be changed by the user
-tstart = dt.datetime(1993, 1, 1, 12, 0) #CMEMS has daily values at 12:00 (not at midnight), so make sure to include a day extra if necessary
+tstart = dt.datetime(1993, 1, 1, 12, 0) #CMEMS phys has daily values at 12:00 (not at midnight), so make sure to include a day extra if necessary
 tstop = dt.datetime(1993, 2, 1, 12, 0)
+#tstart = dt.datetime(2011, 12, 16, 12, 0)
+#tstop = dt.datetime(2012, 12, 1, 12, 0)
 nPoints = 2 #amount of Points to process per PolyObject in the plifile (for testing, use None for all Points)
 debug = False
 
-varnames_dict = get_varnames_dict('cmems')
-list_modelvarnames = ['steric']#['salinity','steric']#,'tide']#,['salinity','temperature','steric'] #should be in varnames_dict.keys()
+usefor, constituent_boundary_type = get_conversions_dicts()
+list_modelvarnames = ['NO3','steric','salinity','tide']#,'tide']#,['salinity','temperature','steric'] #should be in varnames_dict.keys()
+list_modelvarnames = ['steric','salinity','tide']#,'tide']#,['salinity','temperature','steric'] #should be in varnames_dict.keys()
 
 ext_bnd = ExtModel()
 
 for file_pli in list_plifiles:
     for modelvarname in list_modelvarnames:
         print(f'processing modelvarname: {modelvarname}')
-        if modelvarname == 'tide': #TODO: tide compares not too well, 2cm M2 difference. Why?
+        if modelvarname in ['tide']: #TODO: tide compares not too well, 2cm M2 difference. Why?
             dir_pattern = Path(r'p:\1230882-emodnet_hrsm\FES2014\fes2014_linux64_gnu\share\data\fes\2014\ocean_tide_extrapolated','*.nc') #TODO: or ocean_tide_extrapolated folder?
             ForcingModel_object = interpolate_FES(dir_pattern, file_pli, nPoints=nPoints, debug=debug)
-        else:
-            dir_pattern = Path(dir_sourcefiles,f'{varnames_dict[modelvarname]}_1993*.nc') # later remove 1993 from string, but this is faster for testing
+        elif modelvarname in ['NO3']:
+            varname_file = usefor[modelvarname]['substance'][0] #TODO: [1] is also necessary for uxuy
+            #dir_pattern = Path(dir_sourcefiles_waq,f'{varname_file}_esm-hist.nc') # dit is geen cmems
+            dir_pattern = Path(dir_sourcefiles_waq,f'cmems_mod_glo_bgc_my_0.25_P1M-m_{varname_file}_*.nc') # CMEMS waq
             ForcingModel_object = interpolate_nc_to_bc(dir_pattern=dir_pattern, file_pli=file_pli, 
-                                                       modelvarname=modelvarname, varnames_dict=varnames_dict,
+                                                       modelvarname=modelvarname, #varnames_dict=varnames_dict,
+                                                       tstart=tstart, tstop=tstop, refdate_str=refdate_str,
+                                                       nPoints=nPoints, debug=debug)
+        else: #['steric','salinity','temperature'] ['uxuy']
+            varname_file = usefor[modelvarname]['substance'][0] #TODO: [1] is also necessary for uxuy
+            dir_pattern = Path(dir_sourcefiles_hydro,f'{varname_file}_1993*.nc') # later remove 1993 from string, but this is faster for testing
+            ForcingModel_object = interpolate_nc_to_bc(dir_pattern=dir_pattern, file_pli=file_pli, 
+                                                       modelvarname=modelvarname, #varnames_dict=varnames_dict,
                                                        tstart=tstart, tstop=tstop, refdate_str=refdate_str,
                                                        nPoints=nPoints, debug=debug)
             #ForcingModel_object.filepath = Path(str(ForcingModel_object.filepath).replace(dir_out,'')) #TODO QUESTION: add relative paths in ext file (already possible?)

@@ -18,7 +18,7 @@ o	My theory is that writing with reduced precision (controlled by a fmt argument
 Also still missing compared to coastserv:
 -	downloading part is not included (@Björn: you improved that right, can you help me out?) 
 -	FES is included but I see some differences with the reference bc files for DCSM. I do not really get the code yet.
--	Waq variables?
+-	Waq variables incl unit conversion
                                       
 """
 
@@ -49,21 +49,38 @@ from hydrolib.core.io.polyfile.models import (
 )
 from hydrolib.core.io.polyfile.parser import read_polyfile
 
-def get_varnames_dict(dictname='cmems'):
+
+def get_conversions_dicts():
+    # usefor, contains substances as arrays because uxuy relies on 2 CMEMS variables
+    usefor = { #TODO: mg/l is the same as g/m3: conversion is phyc in mmol/l to newvar in g/m3
+            'OXY'        : {'substance' : ['o2']       , 'unit': 'g/m3', 'conversion' : 32.0 / 1000.0}, 
+            'NO3'        : {'substance' : ['no3']      , 'unit': 'g/m3', 'conversion' : 14.0 / 1000.0},
+            'PO4'        : {'substance' : ['po4']      , 'unit': 'g/m3', 'conversion' : 30.97 / 1000.0},
+            'Si'         : {'substance' : ['si']       , 'unit': 'g/m3', 'conversion' : 28.08 / 1000.0},
+            'PON1'       : {'substance' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 2. * 16. * 14. / (106. * 1000.0)},
+            'POP1'       : {'substance' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 2. * 30.97 / (106. * 1000.0)},
+            'POC1'       : {'substance' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 2. * 12. / 1000.0},
+            'DON'        : {'substance' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 3.24 * 2. * 16. * 14. / (106. * 1000.0)},
+            'DOP'        : {'substance' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 1.0 * 2. * 30.97 / (106. * 1000.0)},
+            'DOC'        : {'substance' : ['phyc']     , 'unit': 'g/m3', 'conversion' : (199. / 20.) * 3.24 * 2. * 16. * 12. / (106. * 1000.0)},
+            'Opal'       : {'substance' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 0.5 * 0.13 * 28.08 / (1000.0)},
+            'salinity'   : {'substance' : ['so']       , 'conversion' : 1.0},
+            'temperature': {'substance' : ['thetao']   , 'conversion' : 1.0},
+            'uxuy'       : {'substance' : ['uo', 'vo'] , 'conversion' : 1.0},
+            'steric'     : {'substance' : ['zos']      , 'conversion' : 1.0},
+    }
+
+    # constituent_boundary_type, contains substances as arrays because uxuy relies on 2 CMEMS variables
     
-    varnameset_dict = {'cmems':
-                       {#'':'bottomT', #TODO: update dict with waq values
-                        'salinity':'so',
-                        'temperature':'thetao',
-                        'uxuy':'uo', #TODO: how to make combination of uxuy? https://github.com/Deltares/HYDROLIB-core/issues/316
-                        #'':'vo',
-                        'steric':'zos',
-                        }
-                       }
-    varnames_dict = varnameset_dict[dictname]
+    constituent_boundary_type = { #TODO: merge above array with this one? Units from below are read from netcdf file
+            'salinity'   : {'type' : ['salinitybnd']     , 'unit' : '1e-3'},
+            'temperature': {'type' : ['temperaturebnd']  , 'unit' : 'degC'},
+            # quantity in ext and bc file is inconsistent, exception added in Model().write_new_ext_file()
+            'uxuy'       : {'type' : ['ux', 'uy']        , 'unit' : 'm/s'},
+            'steric'     : {'type' : ['waterlevelbnd']   , 'unit' : 'm'}
+    }
     
-    return varnames_dict
-    
+    return usefor, constituent_boundary_type
 
 
 def interpolate_FES(dir_pattern, file_pli, nPoints=None, debug=False):
@@ -156,7 +173,7 @@ def interpolate_FES(dir_pattern, file_pli, nPoints=None, debug=False):
 
     
 def interpolate_nc_to_bc(dir_pattern, file_pli, 
-                         modelvarname, varnames_dict, 
+                         modelvarname, #varnames_dict, 
                          tstart, tstop, refdate_str, 
                          nPoints=None, debug=False):
     
@@ -166,15 +183,8 @@ def interpolate_nc_to_bc(dir_pattern, file_pli,
     """
     nPolyObjects = None
     
-    #get bcvarname and varname
-    dict_modelvarname2bcvarname = {'waterlevel':'waterlevelbnd',
-                                   'salinity':'salinitybnd',
-                                   'steric':'waterlevelbnd'}
-    if modelvarname in dict_modelvarname2bcvarname.keys():
-        bcvarname = dict_modelvarname2bcvarname[modelvarname]
-    else:
-        bcvarname = modelvarname
-    varname = varnames_dict[modelvarname]
+    usefor, constituent_boundary_type = get_conversions_dicts()
+    varname_file = usefor[modelvarname]['substance'][0] #TODO: [1] is also necessary for uxuy
     
     print('initialize ForcingModel()')
     ForcingModel_object = ForcingModel()
@@ -186,8 +196,19 @@ def interpolate_nc_to_bc(dir_pattern, file_pli,
     time_passed = (dt.datetime.now()-dtstart).total_seconds()
     if debug: print(f'>>time passed: {time_passed:.2f} sec')
     timevar = data_xr['time']
-    lonvar_vals = data_xr['longitude'].to_numpy()
-    latvar_vals = data_xr['latitude'].to_numpy()
+
+    data_xr_var = data_xr[varname_file]
+    
+    if 'latitude' in data_xr_var.coords:
+        lonvar_vals = data_xr['longitude'].to_numpy()
+        latvar_vals = data_xr['latitude'].to_numpy()
+    elif 'lat' in data_xr_var.coords:
+        lonvar_vals = data_xr['lon'].to_numpy()
+        latvar_vals = data_xr['lat'].to_numpy()
+    else:
+        print(data_xr)
+        breakit
+    #print(timevar[0])
     nc_tstart = pd.to_datetime(timevar[0].to_numpy())
     nc_tstop = pd.to_datetime(timevar[-1].to_numpy())
     if tstart < nc_tstart:
@@ -195,7 +216,6 @@ def interpolate_nc_to_bc(dir_pattern, file_pli,
     if tstop > nc_tstop:
         raise Exception(f'requested tstop {tstop} after nc_tstop {nc_tstop}')
     
-    data_xr_var = data_xr[varname]
     
     if 'depth' in data_xr_var.coords:
         #get variable depths
@@ -204,10 +224,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli,
         if '_CoordinateZisPositive' in vardepth.attrs.keys(): #correct for positive down to up
             if vardepth.attrs['_CoordinateZisPositive'] == 'down':
                 depth_array = -depth_array
-    
-    #get variable units
-    varunit = data_xr_var.attrs['units']
-    
+        
     #load boundary file
     #polyfile_object = PolyFile(file_pli,has_z_values=False) #TODO ISFIXED: should work with hydrolib-core>0.3.0. also without has_z_values argument
     polyfile_object = read_polyfile(file_pli,has_z_values=False) #TODO: this warning can be suppressed (or how to fix): "UserWarning: White space at the start of the line is ignored." https://github.com/Deltares/HYDROLIB-core/issues/320
@@ -279,7 +296,20 @@ def interpolate_nc_to_bc(dir_pattern, file_pli,
                 datablock = datablock[:,::-1] #flipping axis #TODO: this assumes depth as second dimension and that might not be true for other models. Flipping depth_vals and datablock is not required by kernel, so remove after validation is complete
             else:
                 datablock = datablock_raw[:,np.newaxis]
-                
+            
+            #conversion of units etc
+            datablock = datablock * usefor[modelvarname]['conversion']
+            #TODO: add units with get_units_dict()
+            if modelvarname in constituent_boundary_type.keys():
+                bcvarname = constituent_boundary_type[modelvarname]['type'][0] #TODO: [1] is necessary for uxuy
+            else: #TODO: only works for waq tracers, so add check
+                bcvarname = f'tracerbnd{modelvarname}'
+                #bcvarname = modelvarname
+            if 'unit' in usefor[modelvarname].keys():
+                varunit = usefor[modelvarname]['unit']
+            else:
+                varunit = data_xr_var.attrs['units']
+            
             timevar_sel = data_interp.time
             timevar_sel_rel = date2num(pd.DatetimeIndex(timevar_sel.to_numpy()).to_pydatetime(),units=refdate_str,calendar='standard')
             datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock],axis=1)
@@ -320,12 +350,13 @@ def interpolate_nc_to_bc(dir_pattern, file_pli,
                 offset: float = Field(0.0, alias="offset")
                 factor: float = Field(1.0, alias="factor")
                 """
+                print(bcvarname)
                 ts_one = TimeSeries(name=pli_PolyObject_name_num,
                                     verticalposition=VerticalPositionType('ZBed'), #TODO: is not passed on to bc file and that makes sense, but it should raise error since it is not relevant for timeseries. https://github.com/Deltares/HYDROLIB-core/issues/321
                                     quantityunitpair=[QuantityUnitPair(quantity="time", unit=refdate_str),
                                                       QuantityUnitPair(quantity=bcvarname, unit=varunit)],
                                     timeinterpolation=TimeInterpolation.linear,
-                                    datablock=datablock_list, 
+                                    datablock=datablock.tolist(), 
                                     )
             
             ForcingModel_object.forcing.append(ts_one)
