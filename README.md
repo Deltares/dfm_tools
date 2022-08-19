@@ -65,7 +65,7 @@ Installation
 	- pyepsg is necessary for cartopy and probably also for other libraries
 	- geopandas for shapefile related operations
 	- contextily for satellite imagery on plots, seems faster than cartopy
-	- xarray is currently not used but expected to move more towards that in the future. They advise to install dependecies like netCDF4 and bottleneck with conda-forge also: https://docs.xarray.dev/en/v0.8.0/installing.html
+	- xarray developers advise to install dependecies dask/netCDF4/bottleneck with conda-forge also: https://docs.xarray.dev/en/v0.8.0/installing.html
 	- to remove venv when necessary: ``conda remove -n dfm_tools_env --all``
 - launch Spyder:
 	- open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in dfm_tools_env)

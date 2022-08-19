@@ -10,15 +10,14 @@ import datetime as dt
 from pathlib import Path
 import matplotlib.pyplot as plt
 plt.close('all')
-from dfm_tools.CMEMS_interpolate import get_varnames_dict, interpolate_nc_to_bc
+from dfm_tools.CMEMS_interpolate import get_varnames_dict, interpolate_FES, interpolate_nc_to_bc
 from hydrolib.core.io.ext.models import Boundary, ExtModel
-
 #TODO: improve formatting of bcfile (and other issues in other scripts)
+#TODO REPORT: add uxuy functionality. How to write bc file with merged arrays?
 
-#user settings
 dir_sourcefiles = r'p:\1204257-dcsmzuno\data\CMEMS\nc\DCSM_allAvailableTimes'
 
-#copied from DCSM folder: r'p:\1204257-dcsmzuno\data\CMEMS\bnd\NorthSeaAndBaltic_1993-2019_20210510'
+#copied plifile from DCSM folder: r'p:\1204257-dcsmzuno\data\CMEMS\bnd\NorthSeaAndBaltic_1993-2019_20210510'
 #list_plifiles = [Path(r'n:\My Documents\werkmap\hydrolib_test\DCSM\DCSM-FM_OB_all_20181108.pli')] #TODO: reading this file results in empty Polyfile, should raise an error (report issue)
 list_plifiles = [Path(r'n:\My Documents\werkmap\hydrolib_test\DCSM\DCSM-FM_OB_all_20181108_nocomments.pli')]
 
@@ -29,35 +28,29 @@ refdate_str = 'minutes since 2011-12-22 00:00:00 +00:00' # this is copied from t
 tstart = dt.datetime(1993, 1, 1, 12, 0) #CMEMS has daily values at 12:00 (not at midnight), so make sure to include a day extra if necessary
 #tstop = dt.datetime(2019, 12, 31, 12, 0)
 tstop = dt.datetime(1993, 2, 1, 12, 0)
-nPoints = 2 #None processes all Points in each PolyObject in the plifile
+nPoints = 2 #amount of Points to process per PolyObject in the plifile (for testing, use None for all Points)
 
 varnames_dict = get_varnames_dict('cmems')
-list_modelvarnames = ['salinity','steric']#,['salinity','temperature','steric'] #should be in varnames_dict.keys()
+list_modelvarnames = ['tide','salinity','steric']#,['salinity','temperature','steric'] #should be in varnames_dict.keys()
 
 ext_bnd = ExtModel()
+
 
 for file_pli in list_plifiles:
     for modelvarname in list_modelvarnames:
         print(f'processing modelvarname: {modelvarname}')
-        file_pattern = f'{varnames_dict[modelvarname]}_1993*.nc' # this is faster for testing, but later remove 1993 from string
-        dir_pattern = Path(dir_sourcefiles,file_pattern)
-        
-        if 0:
-            import xarray as xr
-            import pandas as pd
-            import glob
-            file_list_nc = glob.glob(str(dir_pattern))
-            print(f'loading mfdataset ({len(file_list_nc)} files with pattern "{dir_pattern.name}")')
-            dtstart = dt.datetime.now()
-            data_xr = xr.open_mfdataset(file_list_nc)#, combine='by_coords', decode_times=False)
-            vardepth = data_xr['depth']
-            vardepth.size
-            breakit
-        
-        ForcingModel_object = interpolate_nc_to_bc(dir_pattern=dir_pattern, file_pli=file_pli, 
-                                                   modelvarname=modelvarname, varnames_dict=varnames_dict,
-                                                   tstart=tstart, tstop=tstop, refdate_str=refdate_str,
-                                                   nPoints=nPoints, debug=True)#, ForcingModel_object=None)
+        if modelvarname == 'tide':
+            dir_pattern = Path(r'p:\1230882-emodnet_hrsm\FES2014\fes2014_linux64_gnu\share\data\fes\2014\ocean_tide','*.nc') #TODO: or ocean_tide_extrapolated folder?
+            ForcingModel_object = interpolate_FES(dir_pattern, file_pli, nPoints=nPoints, debug=True)
+            
+        else:
+            file_pattern = f'{varnames_dict[modelvarname]}_1993*.nc' # later remove 1993 from string, but this is faster for testing
+            dir_pattern = Path(dir_sourcefiles,file_pattern)
+                    
+            ForcingModel_object = interpolate_nc_to_bc(dir_pattern=dir_pattern, file_pli=file_pli, 
+                                                       modelvarname=modelvarname, varnames_dict=varnames_dict,
+                                                       tstart=tstart, tstop=tstop, refdate_str=refdate_str,
+                                                       nPoints=nPoints, debug=True)#, ForcingModel_object=None)
         
         file_bc_basename = file_pli.name.replace('.pli','.bc')
         file_bc_out = Path(dir_out,f'{modelvarname}_{file_bc_basename}')

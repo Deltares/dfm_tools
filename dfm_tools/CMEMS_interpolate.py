@@ -4,6 +4,8 @@ Created on Thu Aug 18 22:39:03 2022
 
 @author: veenstra
 """
+
+import os
 import glob
 import datetime as dt
 import numpy as np
@@ -37,11 +39,101 @@ def get_varnames_dict(dictname='cmems'):
     varnames_dict = varnameset_dict[dictname]
     
     return varnames_dict
+    
 
+
+def interpolate_FES(dir_pattern, file_pli, nPoints=None, debug=False):
+    """
+    """
+    
+    nPolyObjects = None
+    
+    print('initialize ForcingModel()')
+    ForcingModel_object = ForcingModel()
+    
+    file_list_nc = glob.glob(str(dir_pattern))
+    component_list = [os.path.basename(x).replace('.nc','') for x in file_list_nc] #TODO: add sorting, manually? Add A0?
+    
+    #load boundary file
+    polyfile_object = read_polyfile(file_pli,has_z_values=False) #TODO REPORT: this warning can be suppressed (or how to fix): "UserWarning: White space at the start of the line is ignored."
+    
+    pli_PolyObjects = polyfile_object['objects']
+    for iPO, pli_PolyObject_sel in enumerate(pli_PolyObjects[:nPolyObjects]):
+        print(f'processing PolyObject {iPO+1} of {len(pli_PolyObjects)}: name={pli_PolyObject_sel.metadata.name}')
+        
+        for iP, pli_Point_sel in enumerate(pli_PolyObject_sel.points[:nPoints]):
+            print(f'processing Point {iP+1} of {len(pli_PolyObject_sel.points)}: ',end='')
+            
+            lonx, laty = pli_Point_sel.x, pli_Point_sel.y
+            #lonx,laty = 13.000000, 54.416667  #extra_rand_dcsm_0001 # is not in lat/lon bounds of selected CMEMS folder? >> probably on land
+            #lonx,laty = -9.25, 43.00 #DCSM-FM_OB_all_20181108_0001
+            lonx = lonx%360 #for FES since it ranges from 0 to 360 instead of -180 to 180
+            print(f'(x={lonx}, y={laty})')
+            pli_PolyObject_name_num = f'{pli_PolyObject_sel.metadata.name}_{iP+1:04d}'
+            
+            datablock_list = []
+            for iC,component in enumerate(component_list):
+                file_nc = os.path.join(os.path.dirname(dir_pattern),f'{component}.nc')
+                data_xr = xr.open_dataset(file_nc)
+                lonvar_vals = data_xr['lon'].to_numpy()
+                latvar_vals = data_xr['lat'].to_numpy()
+                data_xr_amp = data_xr['amplitude']
+                data_xr_phs = data_xr['phase']
+            
+                if iC==0:
+                    if (lonx <= lonvar_vals.min()) or (lonx >= lonvar_vals.max()):
+                        raise Exception(f'requested lonx {lonx} outside or on lon bounds ({lonvar_vals.min(),lonvar_vals.max()})')
+                    if (laty <= latvar_vals.min()) or (laty >= latvar_vals.max()):
+                        raise Exception(f'requested laty {laty} outside or on lat bounds ({latvar_vals.min(),latvar_vals.max()})')
+            
+                data_interp_amp = data_xr_amp.interp(lat=laty,lon=lonx)/100 #convert from cm to m
+                data_interp_phs = data_xr_phs.interp(lat=laty,lon=lonx)
+                
+                # check if only nan (out of bounds or land):
+                if np.isnan(data_interp_amp.to_numpy()).all():
+                    if iC==0:
+                        print('WARNING: only nans for this coordinate') #TODO: this can happen on land, raise exception or warning?
+                
+                if 0:#debug and component=='m2':
+                    print('> plotting')
+                    dtstart = dt.datetime.now()
+                    fig,(ax1,ax2) = plt.subplots(2,1,figsize=(10,7))
+                    data_interp_amp.plot(ax=ax1)
+                    data_interp_phs.plot(ax=ax2)
+                    ax1.set_title(f'amplitude {component} {pli_PolyObject_name_num}')
+                    ax2.set_title(f'phase {component} {pli_PolyObject_name_num}')
+                    fig.tight_layout()
+                    time_passed = (dt.datetime.now()-dtstart).total_seconds()
+                    if debug: print(f'>>time passed: {time_passed:.2f} sec')
+                
+                datablock_list.append([component.upper(),data_interp_amp.to_numpy(),data_interp_phs.to_numpy()])
+            
+            # Each .bc file can contain 1 or more timeseries, one for each support point:
+            print('> constructing TimeSeries and appending to ForcingModel()')
+            """
+            name: str = Field(alias="name")
+            function: str = Field(alias="function")
+            quantityunitpair: List[QuantityUnitPair]
+
+            function: Literal["astronomic"] = "astronomic"
+            factor: float = Field(1.0, alias="factor")
+
+            """
+            ts_one = Astronomic(name=pli_PolyObject_name_num,
+                                quantityunitpair=[QuantityUnitPair(quantity="astronomic component", unit='-'),
+                                                  QuantityUnitPair(quantity='waterlevelbnd amplitude', unit='m'),#unit=data_xr_amp.attrs['units']),
+                                                  QuantityUnitPair(quantity='waterlevelbnd phase', unit=data_xr_phs.attrs['units'])],
+                                datablock=datablock_list, 
+                                )
+            
+            ForcingModel_object.forcing.append(ts_one)        
+    return ForcingModel_object
+
+    
 def interpolate_nc_to_bc(dir_pattern, file_pli, 
                          modelvarname, varnames_dict, 
                          tstart, tstop, refdate_str, 
-                         nPoints=None, debug=False, ForcingModel_object=None):
+                         nPoints=None, debug=False):
     
     """
     nPolyObjects = None #None gives all PolyObjects
@@ -59,8 +151,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli,
     varname = varnames_dict[modelvarname]
     
     print('initialize ForcingModel()')
-    if ForcingModel_object is None:
-       ForcingModel_object = ForcingModel()
+    ForcingModel_object = ForcingModel()
     
     file_list_nc = glob.glob(str(dir_pattern))
     print(f'loading mfdataset ({len(file_list_nc)} files with pattern "{dir_pattern.name}")')
@@ -124,12 +215,12 @@ def interpolate_nc_to_bc(dir_pattern, file_pli,
             
             print('> interp mfdataset with lat/lon coordinates')
             dtstart = dt.datetime.now()
-            data_interp_alltimes = data_xr_var.interp(latitude=laty,longitude=lonx)#, kwargs={'bounds_error':True})#, assume_sorted=True) #TODO: bounds_error is ignored, but also nans are returned on land
+            data_interp_alltimes = data_xr_var.interp(latitude=laty,longitude=lonx) #TODO: lat/latitude (should be flexible instead of hardcoded) #, kwargs={'bounds_error':True})#, assume_sorted=True) #TODO: bounds_error is ignored, but also nans are returned on land
             data_interp = data_interp_alltimes.sel(time=slice(tstart,tstop))
             time_passed = (dt.datetime.now()-dtstart).total_seconds()
             if debug: print(f'>>time passed: {time_passed:.2f} sec')
             
-            # check if only nan (out of bounds):
+            # check if only nan (out of bounds or land):
             data_time0 = data_interp_alltimes.sel(time=data_xr['time'][1]).to_numpy()
             if np.isnan(data_time0).all():
                 raise Exception('only nans on first time of this coordinate') #TODO: this can happen on land, raise exception or warning?
@@ -209,12 +300,5 @@ def interpolate_nc_to_bc(dir_pattern, file_pli,
             ForcingModel_object.forcing.append(ts_one)
             time_passed = (dt.datetime.now()-dtstart).total_seconds()
             if debug: print(f'>>time passed: {time_passed:.2f} sec')
-
-        if nPoints is not None:
-            print(f'WARNING: stopped process after nPoints={nPoints} (set to None do process all)')
-        #print(f'finished processing PolyObject {iPO+1} of {len(pli_PolyObjects)}: name={pli_PolyObject_sel.metadata.name}')
-    
-    if nPolyObjects is not None:
-        print(f'WARNING: stopped process after nPolyObjects={nPolyObjects} (set to None do process all)')    
     
     return ForcingModel_object
