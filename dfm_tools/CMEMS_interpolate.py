@@ -128,18 +128,6 @@ def interpolate_FES(dir_pattern, file_pli, convert_180to360=False, nPoints=None,
                     if iC==0:
                         print('WARNING: only nans for this coordinate') #TODO: this can happen on land, raise exception or warning?
                 
-                if 0:#debug and component=='m2':
-                    print('> plotting')
-                    dtstart = dt.datetime.now()
-                    fig,(ax1,ax2) = plt.subplots(2,1,figsize=(10,7))
-                    data_interp_amp.plot(ax=ax1)
-                    data_interp_phs.plot(ax=ax2)
-                    ax1.set_title(f'amplitude {component} {pli_PolyObject_name_num}')
-                    ax2.set_title(f'phase {component} {pli_PolyObject_name_num}')
-                    fig.tight_layout()
-                    time_passed = (dt.datetime.now()-dtstart).total_seconds()
-                    if debug: print(f'>>time passed: {time_passed:.2f} sec')
-                
                 datablock_list.append([component.upper(),data_interp_amp.to_numpy(),data_interp_phs.to_numpy()])
             
             # Each .bc file can contain 1 or more timeseries, one for each support point:
