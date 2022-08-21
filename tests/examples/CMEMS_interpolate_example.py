@@ -77,6 +77,7 @@ for file_pli in list_plifiles:
                             file_nc = os.path.join(os.path.dirname(dir_pattern),f'{component}.nc')
                             data_xr = xr.open_dataset(file_nc)
                             """
+                            #https://github.com/pydata/xarray/issues/1380
                             def extract_component(ds):
                                 comp_name = os.path.basename(x).replace('.nc','') #x here is the filename to extract the componentname from, but that is not available in the dataset
                                 ds.assign(component=comp_name)
