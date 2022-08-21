@@ -46,6 +46,49 @@ for file_pli in list_plifiles:
         print(f'processing modelvarname: {modelvarname}')
         if modelvarname in ['tide']: #TODO: tide compares not too well, 2cm M2 difference. Why?
             dir_pattern,convert_180to360 = Path(r'p:\1230882-emodnet_hrsm\FES2014\fes2014_linux64_gnu\share\data\fes\2014\ocean_tide_extrapolated','*.nc'),True #TODO: or ocean_tide_extrapolated folder? (extrapolated to the coast)
+            if 1:
+                from hydrolib.core.io.polyfile.parser import read_polyfile
+                import os
+                import glob
+                import xarray as xr
+                file_list_nc = glob.glob(str(dir_pattern))
+                component_list = [os.path.basename(x).replace('.nc','') for x in file_list_nc] #TODO: add sorting, manually? Add A0? translate dict for component names?
+                #TODO: resulting amplitudes are slightly different, also imaginary numbers in orig code, why? c:\DATA\hydro_tools\FES\PreProcessing_FES_TideModel_imaginary.m
+                #TODO: MV: "Cornelis gebruikt complexe getallen. Los van de interpolatie hoort dat hetzelfde te doen. Bij de interpolatie in de ruimte is het interpoleren van de complexe getallen hetzelfde als interpolatie van de coeffiecienten voor de cos en sin componenten. Die levert wel iets andere waarden dan wanneer je de amplitude en fase interpoleert."
+                
+                #load boundary file
+                polyfile_object = read_polyfile(file_pli,has_z_values=False)
+                
+                pli_PolyObjects = polyfile_object['objects']
+                for iPO, pli_PolyObject_sel in enumerate(pli_PolyObjects):
+                    print(f'processing PolyObject {iPO+1} of {len(pli_PolyObjects)}: name={pli_PolyObject_sel.metadata.name}')
+                    
+                    for iP, pli_Point_sel in enumerate(pli_PolyObject_sel.points[:nPoints]):
+                        print(f'processing Point {iP+1} of {len(pli_PolyObject_sel.points)}: ',end='')
+                        
+                        lonx, laty = pli_Point_sel.x, pli_Point_sel.y
+                        if convert_180to360:
+                            lonx = lonx%360 #for FES since it ranges from 0 to 360 instead of -180 to 180
+                        print(f'(x={lonx}, y={laty})')
+                        pli_PolyObject_name_num = f'{pli_PolyObject_sel.metadata.name}_{iP+1:04d}'
+                        
+                        datablock_list = []
+                        for iC,component in enumerate(component_list):
+                            file_nc = os.path.join(os.path.dirname(dir_pattern),f'{component}.nc')
+                            data_xr = xr.open_dataset(file_nc)
+                            """
+                            def extract_component(ds):
+                                comp_name = os.path.basename(x).replace('.nc','') #x here is the filename to extract the componentname from, but that is not available in the dataset
+                                ds.assign(component=comp_name)
+                                return ds
+                            data_xrall = xr.open_mfdataset(file_list_nc, concat_dim='component',preprocess=extract_component)
+                            """
+                            lonvar_vals = data_xr['lon'].to_numpy()
+                            latvar_vals = data_xr['lat'].to_numpy()
+                            data_xr_amp = data_xr['amplitude']
+                            data_xr_phs = data_xr['phase']
+                            breakit
+                
             ForcingModel_object = interpolate_FES(dir_pattern, file_pli, convert_180to360=convert_180to360, nPoints=nPoints, debug=debug)
         elif modelvarname in ['NO3']:
             varname_file = conversion_dict[modelvarname]['substance'][0] #TODO: [1] is also necessary for uxuy
