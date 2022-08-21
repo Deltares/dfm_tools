@@ -9,7 +9,7 @@ import datetime as dt
 from pathlib import Path
 import matplotlib.pyplot as plt
 plt.close('all')
-from dfm_tools.CMEMS_interpolate import get_conversion_dict, interpolate_FES, interpolate_nc_to_bc
+from dfm_tools.interpolate_grid2bnd import get_conversion_dict, interpolate_FES, interpolate_nc_to_bc
 from hydrolib.core.io.ext.models import Boundary, ExtModel
 
 dir_sourcefiles_hydro = r'p:\1204257-dcsmzuno\data\CMEMS\nc\DCSM_allAvailableTimes'
@@ -37,6 +37,7 @@ debug = False
 conversion_dict = get_conversion_dict()
 list_modelvarnames = ['NO3']
 list_modelvarnames = ['steric','salinity','tide']#,'tide']#,['salinity','temperature','steric'] #should be in varnames_dict.keys()
+list_modelvarnames = ['tide']
 
 ext_bnd = ExtModel()
 
@@ -84,6 +85,7 @@ for file_pli in list_plifiles:
         time_passed = (dt.datetime.now()-dtstart).total_seconds()
         #print(f'>>time passed: {time_passed:.2f} sec')
         
+        #generate boundary object for the ext file (quantity, pli-filename, bc-filename)
         boundary_object = Boundary(quantity=modelvarname, #TODO: nodeId / bndWidth1D / bndBlDepth are written as empty values, but they should not be written if not supplied. https://github.com/Deltares/HYDROLIB-core/issues/319
                                    locationfile=Path(dir_out,file_pli.name),
                                    forcingfile=ForcingModel_object,
