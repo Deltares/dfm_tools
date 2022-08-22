@@ -73,7 +73,7 @@ def get_conversion_dict():
     return conversion_dict
 
 
-def interpolate_FES(dir_pattern, file_pli, convert_360to180=False, nPoints=None, debug=False):
+def interpolate_FES(dir_pattern, file_pli, complex_numbers=False, convert_360to180=False, nPoints=None, debug=False):
     """
     """
     
@@ -122,13 +122,10 @@ def interpolate_FES(dir_pattern, file_pli, convert_360to180=False, nPoints=None,
                 data_xr_amp = data_xr['amplitude']
                 data_xr_phs = data_xr['phase']
                 
-                """
-                #complex numbers (does not work)
-                data_xr_phs_rad = np.deg2rad(data_xr_phs)
-                realC = 1*np.cos(data_xr_phs_rad)
-                imagC = 1*np.sin(data_xr_phs_rad)
-                data_xr_phs_complex = complex(realC,imagC)
-                """
+                if complex_numbers: #convert phase to complex numbers (this is what makes it slow since it has to read all data)
+                    data_xr_phs_rad = np.deg2rad(data_xr_phs)
+                    data_xr['complex_real'] = data_xr_amp/100 * np.cos(data_xr_phs_rad)
+                    data_xr['complex_imag'] = data_xr_amp/100 * np.sin(data_xr_phs_rad)
             
                 if iC==0:
                     if (lonx <= lonvar_vals.min()) or (lonx >= lonvar_vals.max()):
@@ -136,15 +133,23 @@ def interpolate_FES(dir_pattern, file_pli, convert_360to180=False, nPoints=None,
                     if (laty <= latvar_vals.min()) or (laty >= latvar_vals.max()):
                         raise Exception(f'requested laty {laty} outside or on lat bounds ({latvar_vals.min(),latvar_vals.max()})')
             
-                data_interp_amp = data_xr_amp.interp(lat=laty,lon=lonx)/100 #convert from cm to m
-                data_interp_phs = data_xr_phs.interp(lat=laty,lon=lonx)
-                
-                # check if only nan (out of bounds or land):
-                if np.isnan(data_interp_amp.to_numpy()).all():
-                    if iC==0:
+                if complex_numbers: #TODO: remove complex numbers agian (no significant change)
+                    data_interp_real = data_xr['complex_real'].interp(lat=laty,lon=lonx)
+                    data_interp_imag = data_xr['complex_imag'].interp(lat=laty,lon=lonx)
+                    data_interp_radC = complex(data_interp_real.to_numpy(),data_interp_imag.to_numpy())
+                    data_interp_amp = np.absolute(data_interp_radC)
+                    data_interp_phs = np.rad2deg(np.angle(data_interp_radC))
+                    datablock_list.append([component.upper(),data_interp_amp,data_interp_phs])
+                    # check if only nan (out of bounds or land):
+                    if np.isnan(data_interp_amp).all() and iC==0:
                         print('WARNING: only nans for this coordinate') #TODO: this can happen on land, raise exception or warning?
-                
-                datablock_list.append([component.upper(),data_interp_amp.to_numpy(),data_interp_phs.to_numpy()])
+                else:
+                    data_interp_amp = data_xr_amp.interp(lat=laty,lon=lonx)/100 #convert from cm to m
+                    data_interp_phs = data_xr_phs.interp(lat=laty,lon=lonx)
+                    datablock_list.append([component.upper(),data_interp_amp.to_numpy(),data_interp_phs.to_numpy()])
+                    # check if only nan (out of bounds or land):
+                    if np.isnan(data_interp_amp.to_numpy()).all() and iC==0:
+                        print('WARNING: only nans for this coordinate') #TODO: this can happen on land, raise exception or warning?
             
             """
             #use mfdataset (currently twice as slow as looping over separate datasets)
@@ -159,15 +164,6 @@ def interpolate_FES(dir_pattern, file_pli, convert_360to180=False, nPoints=None,
 
             # Each .bc file can contain 1 or more timeseries, one for each support point:
             print('> constructing TimeSeries and appending to ForcingModel()')
-            """
-            name: str = Field(alias="name")
-            function: str = Field(alias="function")
-            quantityunitpair: List[QuantityUnitPair]
-
-            function: Literal["astronomic"] = "astronomic"
-            factor: float = Field(1.0, alias="factor")
-
-            """
             ts_one = Astronomic(name=pli_PolyObject_name_num,
                                 quantityunitpair=[QuantityUnitPair(quantity="astronomic component", unit='-'),
                                                   QuantityUnitPair(quantity='waterlevelbnd amplitude', unit='m'),#unit=data_xr_amp.attrs['units']),
