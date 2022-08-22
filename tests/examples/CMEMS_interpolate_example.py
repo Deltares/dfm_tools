@@ -31,14 +31,15 @@ tstop = dt.datetime(1993, 3, 1, 12, 0)
 #tstop = dt.datetime(2012, 12, 1, 12, 0)
 #tstart = dt.datetime(2015, 6, 16, 12, 0)
 #tstop = dt.datetime(2015, 12, 1, 12, 0)
-nPoints = 2 #amount of Points to process per PolyObject in the plifile (for testing, use None for all Points)
+nPoints = 3 #amount of Points to process per PolyObject in the plifile (for testing, use None for all Points)
 debug = False
 
 conversion_dict = get_conversion_dict()
 list_quantities = ['NO3']
 #list_quantities = ['steric','salinity','tide']#,'tide']#,['salinity','temperature','steric'] #should be in varnames_dict.keys()
-list_quantities = ['salinity']
+list_quantities = ['tide']
 
+dtstart = dt.datetime.now()
 ext_bnd = ExtModel()
 
 for file_pli in list_plifiles:
@@ -66,15 +67,12 @@ for file_pli in list_plifiles:
         file_bc_basename = file_pli.name.replace('.pli','.bc')
         file_bc_out = Path(dir_out,f'{quantity}_{file_bc_basename}')
         print(f'writing ForcingModel to bc file with hydrolib ({file_bc_out.name})')
-        dtstart = dt.datetime.now()
         if bc_type=='bc':
             ForcingModel_object.save(filepath=file_bc_out)
             #TODO: improve performance of bc file writing with hydrolib (numpy.savetxt() is way faster because of formatting): https://github.com/Deltares/HYDROLIB-core/issues/313
             #TODO: improve formatting of bc file to make nicer, save diskspace and maybe write faster: https://github.com/Deltares/HYDROLIB-core/issues/308
         else:
             raise Exception(f'invalid bc_type: {bc_type}')
-        time_passed = (dt.datetime.now()-dtstart).total_seconds()
-        #print(f'>>time passed: {time_passed:.2f} sec')
         
         #make paths relative (sort of) (also necessary for locationfile) /../ should also be supported? 
         #ForcingModel_object.filepath = Path(str(ForcingModel_object.filepath).replace(dir_out,'')) #TODO: convert to relative paths in ext file possible? This path is the same as file_bc_out
@@ -89,6 +87,8 @@ for file_pli in list_plifiles:
 file_ext_out = Path(dir_out,'example_bnd.ext')
 ext_bnd.save(filepath=file_ext_out)
 
+time_passed = (dt.datetime.now()-dtstart).total_seconds()
+print(f'>>time passed: {time_passed:.2f} sec')
 
 
 

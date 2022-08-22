@@ -16,10 +16,10 @@ Some blocking hydrolib issues before this tool can replace coastserv:
 
 Non-hydrolib things to do (still missing compared to coastserv):
 -	downloading part is not included (Bjorn improved that part so add to dfm_tools?) 
--	FES is included but there are differences with the reference bc files for DCSM >> due to complex numbers?
--	Waq variables incl unit conversion work for e.g. CMEMS and GFDL (and probably most other models), but CMCC has no lat/lon coords so crashes currently
+-	FES is included but there are differences with the reference bc files for DCSM (uv or complex method is necessary for when phs crosses 0)
+-	Waq variables incl unit conversion work for e.g. CMEMS and GFDL (and probably most other models), but CMCC has no lat/lon coords so currently crashes
 -   other waq variables than NO3 (incl conversion) probably work, but were not checked yet
-                                      
+
 """
 
 import os
@@ -47,7 +47,7 @@ from hydrolib.core.io.polyfile.models import (
     PolyFile,
     #PolyObject,
 )
-from hydrolib.core.io.polyfile.parser import read_polyfile
+from hydrolib.core.io.polyfile.parser import read_polyfile #TODO: should be replaced with PolyFile above
 
 
 def get_conversion_dict():
@@ -73,28 +73,46 @@ def get_conversion_dict():
     return conversion_dict
 
 
-def interpolate_FES(dir_pattern, file_pli, complex_numbers=False, convert_360to180=False, nPoints=None, debug=False):
+def interpolate_FES(dir_pattern, file_pli, convert_360to180=False, nPoints=None, debug=False):
     """
     """
+    #TODO: resulting amplitudes are slightly different, but the original code might make an 1 indexing mistake? c:\DATA\hydro_tools\FES\PreProcessing_FES_TideModel_imaginary.m
+
+    # translate dict from .\hydro_tools\FES\PreProcessing_FES_TideModel_imaginary.m
+    translate_dict = {'LA2':'LABDA2',
+                      'MTM':'MFM', #Needs to be verified
+                      }
     
     print('initialize ForcingModel()')
     ForcingModel_object = ForcingModel()
     
     file_list_nc = glob.glob(str(dir_pattern))
     component_list = [os.path.basename(x).replace('.nc','') for x in file_list_nc] #TODO: add sorting, manually? Add A0? translate dict for component names?
-    #TODO: resulting amplitudes are slightly different, also imaginary numbers in orig code, why? c:\DATA\hydro_tools\FES\PreProcessing_FES_TideModel_imaginary.m
-    #TODO: MV: "Cornelis gebruikt complexe getallen. Los van de interpolatie hoort dat hetzelfde te doen. Bij de interpolatie in de ruimte is het interpoleren van de complexe getallen hetzelfde als interpolatie van de coeffiecienten voor de cos en sin componenten. Die levert wel iets andere waarden dan wanneer je de amplitude en fase interpoleert."
+    component_list_upper_pd = pd.Series([x.upper() for x in component_list]).replace(translate_dict, regex=True)
     
-    """
-    #use mfdataset (currently twice as slow as looping over separate datasets)
-    def extract_component(ds):
+    #use mfdataset (currently twice as slow as looping over separate datasets, apperantly interp is more difficult but this might be solvable. Also, it does not really matter since we need to compute u/v components of phase anyway, which makes it also slow)
+    def extract_component(ds): #TODO: there might be some performance improvement possible
         #https://github.com/pydata/xarray/issues/1380
         compnumber = [0]
         ds = ds.assign(compno=compnumber)
+        data_xr_phs_rad = np.deg2rad(ds['phase'])
+        #we need to compute u/v components for the phase to avoid zero-crossing interpolation issues
+        ds['phase_u'] = 1*np.cos(data_xr_phs_rad)
+        ds['phase_v'] = 1*np.sin(data_xr_phs_rad)
         return ds
+    
     data_xrall = xr.open_mfdataset(file_list_nc, combine='nested', concat_dim='compno', preprocess=extract_component)
-    #data_xrall['compname'] = component_list
-    """
+    if convert_360to180: #for FES since it ranges from 0 to 360 instead of -180 to 180
+        data_xrall.coords['lon'] = (data_xrall.coords['lon'] + 180) % 360 - 180
+        data_xrall = data_xrall.sortby(data_xrall['lon'])
+    
+    lonvar_vals = data_xrall['lon'].to_numpy()
+    latvar_vals = data_xrall['lat'].to_numpy()
+    
+    data_xr_amp = data_xrall['amplitude']
+    data_xr_phs = data_xrall['phase']
+    data_xr_phs_u = data_xrall['phase_u']
+    data_xr_phs_v = data_xrall['phase_v']
     
     #load boundary file
     polyfile_object = read_polyfile(file_pli,has_z_values=False)
@@ -103,65 +121,27 @@ def interpolate_FES(dir_pattern, file_pli, complex_numbers=False, convert_360to1
     for iPO, pli_PolyObject_sel in enumerate(pli_PolyObjects):
         print(f'processing PolyObject {iPO+1} of {len(pli_PolyObjects)}: name={pli_PolyObject_sel.metadata.name}')
         
-        for iP, pli_Point_sel in enumerate(pli_PolyObject_sel.points[:nPoints]):
+        for iP, pli_Point_sel in enumerate(pli_PolyObject_sel.points[:nPoints]): #looping over plipoints within component loop, append to datablock_pd_allcomp
             print(f'processing Point {iP+1} of {len(pli_PolyObject_sel.points)}: ',end='')
-            
             lonx, laty = pli_Point_sel.x, pli_Point_sel.y
             print(f'(x={lonx}, y={laty})')
             pli_PolyObject_name_num = f'{pli_PolyObject_sel.metadata.name}_{iP+1:04d}'
             
-            datablock_list = []
-            for iC,component in enumerate(component_list):
-                file_nc = os.path.join(os.path.dirname(dir_pattern),f'{component}.nc')
-                data_xr = xr.open_dataset(file_nc)
-                if convert_360to180: #for FES since it ranges from 0 to 360 instead of -180 to 180
-                    data_xr.coords['lon'] = (data_xr.coords['lon'] + 180) % 360 - 180
-                    data_xr = data_xr.sortby(data_xr['lon'])
-                lonvar_vals = data_xr['lon'].to_numpy()
-                latvar_vals = data_xr['lat'].to_numpy()
-                data_xr_amp = data_xr['amplitude']
-                data_xr_phs = data_xr['phase']
-                
-                if complex_numbers: #convert phase to complex numbers (this is what makes it slow since it has to read all data)
-                    data_xr_phs_rad = np.deg2rad(data_xr_phs)
-                    data_xr['complex_real'] = data_xr_amp/100 * np.cos(data_xr_phs_rad)
-                    data_xr['complex_imag'] = data_xr_amp/100 * np.sin(data_xr_phs_rad)
-            
-                if iC==0:
-                    if (lonx <= lonvar_vals.min()) or (lonx >= lonvar_vals.max()):
-                        raise Exception(f'requested lonx {lonx} outside or on lon bounds ({lonvar_vals.min(),lonvar_vals.max()})')
-                    if (laty <= latvar_vals.min()) or (laty >= latvar_vals.max()):
-                        raise Exception(f'requested laty {laty} outside or on lat bounds ({latvar_vals.min(),latvar_vals.max()})')
-            
-                if complex_numbers: #TODO: remove complex numbers agian (no significant change)
-                    data_interp_real = data_xr['complex_real'].interp(lat=laty,lon=lonx)
-                    data_interp_imag = data_xr['complex_imag'].interp(lat=laty,lon=lonx)
-                    data_interp_radC = complex(data_interp_real.to_numpy(),data_interp_imag.to_numpy())
-                    data_interp_amp = np.absolute(data_interp_radC)
-                    data_interp_phs = np.rad2deg(np.angle(data_interp_radC))
-                    datablock_list.append([component.upper(),data_interp_amp,data_interp_phs])
-                    # check if only nan (out of bounds or land):
-                    if np.isnan(data_interp_amp).all() and iC==0:
-                        print('WARNING: only nans for this coordinate') #TODO: this can happen on land, raise exception or warning?
-                else:
-                    data_interp_amp = data_xr_amp.interp(lat=laty,lon=lonx)/100 #convert from cm to m
-                    data_interp_phs = data_xr_phs.interp(lat=laty,lon=lonx)
-                    datablock_list.append([component.upper(),data_interp_amp.to_numpy(),data_interp_phs.to_numpy()])
-                    # check if only nan (out of bounds or land):
-                    if np.isnan(data_interp_amp.to_numpy()).all() and iC==0:
-                        print('WARNING: only nans for this coordinate') #TODO: this can happen on land, raise exception or warning?
-            
-            """
-            #use mfdataset (currently twice as slow as looping over separate datasets)
-            data_xr_amp = data_xrall['amplitude']
-            data_xr_phs = data_xrall['phase']
+            if (lonx <= lonvar_vals.min()) or (lonx >= lonvar_vals.max()):
+                raise Exception(f'requested lonx {lonx} outside or on lon bounds ({lonvar_vals.min(),lonvar_vals.max()})')
+            if (laty <= latvar_vals.min()) or (laty >= latvar_vals.max()):
+                raise Exception(f'requested laty {laty} outside or on lat bounds ({latvar_vals.min(),latvar_vals.max()})')
+                    
             data_interp_amp = data_xr_amp.interp(lat=laty,lon=lonx)/100 #convert from cm to m
-            data_interp_phs = data_xr_phs.interp(lat=laty,lon=lonx)
-            component_list_upper = [x.upper() for x in component_list]
-            datablock_pd = pd.DataFrame({'compname':component_list_upper,'amp':data_interp_amp.to_numpy(),'phs':data_interp_phs.to_numpy()})
-            datablock_list = datablock_pd.values.tolist()
-            """
-
+            data_interp_phs_u = data_xr_phs_u.interp(lat=laty,lon=lonx)
+            data_interp_phs_v = data_xr_phs_v.interp(lat=laty,lon=lonx)
+            
+            data_interp_phs = np.rad2deg(np.arctan2(data_interp_phs_v,data_interp_phs_u)) #np.arctan2(y,x)
+            datablock_pd_allcomp = pd.DataFrame({'component':component_list_upper_pd,'amp':data_interp_amp.to_numpy(),'phs':data_interp_phs.to_numpy()})
+            if datablock_pd_allcomp['amp'].isnull().any():
+                print('WARNING: only nans for this coordinate') #TODO: this can happen on land, raise exception or warning?
+            datablock_list = datablock_pd_allcomp.values.tolist()
+            
             # Each .bc file can contain 1 or more timeseries, one for each support point:
             print('> constructing TimeSeries and appending to ForcingModel()')
             ts_one = Astronomic(name=pli_PolyObject_name_num,
