@@ -53,21 +53,21 @@ from hydrolib.core.io.polyfile.parser import read_polyfile
 def get_conversion_dict():
     # usefor, contains substances as arrays because uxuy relies on 2 CMEMS variables
     conversion_dict = { #TODO: mg/l is the same as g/m3: conversion is phyc in mmol/l to newvar in g/m3
-                        'OXY'        : {'substance' : ['o2']       , 'unit': 'g/m3', 'conversion' : 32.0 / 1000.0}, 
-                        'NO3'        : {'substance' : ['no3']      , 'unit': 'g/m3', 'conversion' : 14.0 / 1000.0},
-                        'PO4'        : {'substance' : ['po4']      , 'unit': 'g/m3', 'conversion' : 30.97 / 1000.0},
-                        'Si'         : {'substance' : ['si']       , 'unit': 'g/m3', 'conversion' : 28.08 / 1000.0},
-                        'PON1'       : {'substance' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 2. * 16. * 14. / (106. * 1000.0)},
-                        'POP1'       : {'substance' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 2. * 30.97 / (106. * 1000.0)},
-                        'POC1'       : {'substance' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 2. * 12. / 1000.0},
-                        'DON'        : {'substance' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 3.24 * 2. * 16. * 14. / (106. * 1000.0)},
-                        'DOP'        : {'substance' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 1.0 * 2. * 30.97 / (106. * 1000.0)},
-                        'DOC'        : {'substance' : ['phyc']     , 'unit': 'g/m3', 'conversion' : (199. / 20.) * 3.24 * 2. * 16. * 12. / (106. * 1000.0)},
-                        'Opal'       : {'substance' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 0.5 * 0.13 * 28.08 / (1000.0)},
-                        'salinity'   : {'substance' : ['so']       , 'type' : ['salinitybnd']},    #'1e-3'
-                        'temperature': {'substance' : ['thetao']   , 'type' : ['temperaturebnd']}, #'degC'
-                        'uxuy'       : {'substance' : ['uo', 'vo'] , 'type' : ['ux', 'uy'] },      #'m/s'
-                        'steric'     : {'substance' : ['zos']      , 'type' : ['waterlevelbnd']},  #'m'
+                        'OXY'        : {'ncvarname' : ['o2']       , 'unit': 'g/m3', 'conversion' : 32.0 / 1000.0}, 
+                        'NO3'        : {'ncvarname' : ['no3']      , 'unit': 'g/m3', 'conversion' : 14.0 / 1000.0},
+                        'PO4'        : {'ncvarname' : ['po4']      , 'unit': 'g/m3', 'conversion' : 30.97 / 1000.0},
+                        'Si'         : {'ncvarname' : ['si']       , 'unit': 'g/m3', 'conversion' : 28.08 / 1000.0},
+                        'PON1'       : {'ncvarname' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 2. * 16. * 14. / (106. * 1000.0)},
+                        'POP1'       : {'ncvarname' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 2. * 30.97 / (106. * 1000.0)},
+                        'POC1'       : {'ncvarname' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 2. * 12. / 1000.0},
+                        'DON'        : {'ncvarname' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 3.24 * 2. * 16. * 14. / (106. * 1000.0)},
+                        'DOP'        : {'ncvarname' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 1.0 * 2. * 30.97 / (106. * 1000.0)},
+                        'DOC'        : {'ncvarname' : ['phyc']     , 'unit': 'g/m3', 'conversion' : (199. / 20.) * 3.24 * 2. * 16. * 12. / (106. * 1000.0)},
+                        'Opal'       : {'ncvarname' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 0.5 * 0.13 * 28.08 / (1000.0)},
+                        'salinity'   : {'ncvarname' : ['so']       , 'type' : ['salinitybnd']},    #'1e-3'
+                        'temperature': {'ncvarname' : ['thetao']   , 'type' : ['temperaturebnd']}, #'degC'
+                        'uxuy'       : {'ncvarname' : ['uo', 'vo'] , 'type' : ['ux', 'uy'] },      #'m/s'
+                        'steric'     : {'ncvarname' : ['zos']      , 'type' : ['waterlevelbnd']},  #'m'
                         }
     
     return conversion_dict
@@ -121,6 +121,14 @@ def interpolate_FES(dir_pattern, file_pli, convert_360to180=False, nPoints=None,
                 latvar_vals = data_xr['lat'].to_numpy()
                 data_xr_amp = data_xr['amplitude']
                 data_xr_phs = data_xr['phase']
+                
+                """
+                #complex numbers (does not work)
+                data_xr_phs_rad = np.deg2rad(data_xr_phs)
+                realC = 1*np.cos(data_xr_phs_rad)
+                imagC = 1*np.sin(data_xr_phs_rad)
+                data_xr_phs_complex = complex(realC,imagC)
+                """
             
                 if iC==0:
                     if (lonx <= lonvar_vals.min()) or (lonx >= lonvar_vals.max()):
@@ -171,7 +179,7 @@ def interpolate_FES(dir_pattern, file_pli, convert_360to180=False, nPoints=None,
     return ForcingModel_object
 
     
-def interpolate_nc_to_bc(dir_pattern, file_pli, modelvarname, 
+def interpolate_nc_to_bc(dir_pattern, file_pli, quantity, 
                          tstart, tstop, refdate_str, 
                          convert_360to180=False,
                          nPoints=None, debug=False):
@@ -183,7 +191,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, modelvarname,
     nPolyObjects = None
     
     conversion_dict = get_conversion_dict()
-    varname_file = conversion_dict[modelvarname]['substance'][0] #TODO: [1] is also necessary for uxuy
+    varname_file = conversion_dict[quantity]['ncvarname'][0] #TODO: [1] is also necessary for uxuy
     
     print('initialize ForcingModel()')
     ForcingModel_object = ForcingModel()
@@ -226,22 +234,22 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, modelvarname,
     #retrieve var (after potential longitude conversion)
     data_xr_var = data_xr[varname_file]
     
-    if 'depth' in data_xr_var.coords: #depth for CMEMS, lev for GFDL #TODO: make more generic (how has to be coord check in variable and not in entire file)
+    #check if depth coordinate is present in variable (not only in file)
+    if 'depth' in data_xr_var.coords: #depth for CMEMS and many others
         has_depth = True
         depthvarname = 'depth'
-    elif 'lev' in data_xr_var.coords:
+    elif 'lev' in data_xr_var.coords: #lev for GFDL
         has_depth = True
         depthvarname = 'lev'
     else:
         has_depth = False
     
-    if has_depth:
-        #get variable depths
+    if has_depth: #get depth variable and values
         vardepth = data_xr_var[depthvarname]
         depth_array = vardepth.to_numpy()[::-1] #TODO: flip array is not necessary, check datablock comment
-        if '_CoordinateZisPositive' in vardepth.attrs.keys(): #correct for positive down to up
-            if vardepth.attrs['_CoordinateZisPositive'] == 'down':
-                depth_array = -depth_array
+        if vardepth.attrs['positive'] == 'down': #attribute appears in CMEMS, GFDL and CMCC, save to assume presence?
+            depth_array = -depth_array
+
         
     #load boundary file
     #polyfile_object = PolyFile(file_pli,has_z_values=False) #TODO ISFIXED: should work with hydrolib-core>0.3.0. also without has_z_values argument
@@ -292,7 +300,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, modelvarname,
                 dtstart = dt.datetime.now()
                 fig,ax = plt.subplots(figsize=(10,7))
                 data_interp.T.plot()
-                ax.set_title(f'{modelvarname} {pli_PolyObject_name_num}')
+                ax.set_title(f'{quantity} {pli_PolyObject_name_num}')
                 if 'depth' in data_xr_var.coords:
                     ax.set_ylim(0,200)
                     ax.invert_yaxis()
@@ -312,15 +320,15 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, modelvarname,
                 datablock = datablock_raw[:,np.newaxis]
             
             #conversion of units etc
-            if 'conversion' in conversion_dict[modelvarname].keys():
-                datablock = datablock * conversion_dict[modelvarname]['conversion']
-            if 'type' in conversion_dict[modelvarname].keys():
-                bcvarname = conversion_dict[modelvarname]['type'][0] #TODO: [1] is necessary for uxuy
+            if 'conversion' in conversion_dict[quantity].keys():
+                datablock = datablock * conversion_dict[quantity]['conversion']
+            if 'type' in conversion_dict[quantity].keys():
+                bcvarname = conversion_dict[quantity]['type'][0] #TODO: [1] is necessary for uxuy
             else: #TODO: only works for waq tracers, so add check or add to conversion_dict (latter also makes sense)
-                bcvarname = f'tracerbnd{modelvarname}'
-                #bcvarname = modelvarname
-            if 'unit' in conversion_dict[modelvarname].keys():
-                varunit = conversion_dict[modelvarname]['unit']
+                bcvarname = f'tracerbnd{quantity}'
+                #bcvarname = quantity
+            if 'unit' in conversion_dict[quantity].keys():
+                varunit = conversion_dict[quantity]['unit']
             else:
                 varunit = data_xr_var.attrs['units']
             
