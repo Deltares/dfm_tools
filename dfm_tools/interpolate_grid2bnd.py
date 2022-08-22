@@ -211,17 +211,17 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, modelvarname,
         raise Exception(f'requested tstop {tstop} after nc_tstop {nc_tstop}')
     
     if 'latitude' in data_xr.coords:
-        loncoordname,latcoordname = ['longitude','latitude']
+        lonvarname,latvarname = ['longitude','latitude']
     elif 'lat' in data_xr.coords:
-        loncoordname,latcoordname = ['lon','lat']
+        lonvarname,latvarname = ['lon','lat']
     else:
         print(data_xr)
         raise Exception(f'no lat/lon coords available in file: {data_xr.coords}')
     if convert_360to180: #for FES since it ranges from 0 to 360 instead of -180 to 180 #TODO: make more flexible for models that eg pass -180/+180 crossing (add overlap at lon edges).
-        data_xr.coords[loncoordname] = (data_xr.coords[loncoordname] + 180) % 360 - 180
-        data_xr = data_xr.sortby(data_xr[loncoordname])
-    lonvar_vals = data_xr[loncoordname].to_numpy()
-    latvar_vals = data_xr[latcoordname].to_numpy()
+        data_xr.coords[lonvarname] = (data_xr.coords[lonvarname] + 180) % 360 - 180
+        data_xr = data_xr.sortby(data_xr[lonvarname])
+    lonvar_vals = data_xr[lonvarname].to_numpy()
+    latvar_vals = data_xr[latvarname].to_numpy()
     
     #retrieve var (after potential longitude conversion)
     data_xr_var = data_xr[varname_file]

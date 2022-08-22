@@ -57,33 +57,9 @@ for file_pli in list_plifiles:
                 import glob
                 import xarray as xr
                 file_list_nc = glob.glob(str(dir_pattern))
-                data_xr_raw = xr.open_mfdataset(file_list_nc)#,decode_times=False)#, combine='by_coords', decode_times=False)
-                #print(data_xr_raw)
-                data_xr = data_xr_raw.copy()
-
-                lonx,laty = -0.2,61
-
-                data_xr_var = data_xr[varname_file] #TODO: avoid this and check for lat/lon in entire file (for depth it is important to check coords in variable and not entire file)
-
-                if 'latitude' in data_xr_var.coords:
-                    loncoordname,latcoordname = ['longitude','latitude']
-                elif 'lat' in data_xr_var.coords:
-                    loncoordname,latcoordname = ['lon','lat']
-                else:
-                    #print(data_xr)
-                    raise Exception(f'no lat/lon coords available: {data_xr_var.coords}')
-                if 1:
-                    data_xr.coords[loncoordname] = (data_xr.coords[loncoordname] + 180) % 360 - 180
-                    data_xr = data_xr.sortby(data_xr[loncoordname])
-                    data_xr_var = data_xr[varname_file]
-                    #print(data_xr)
-                elif 0:
-                    lonx = lonx%360 #for FES since 
-                
-                data_interp_alltimes = data_xr_var.interp(lat=laty,lon=lonx).isel(time=0)
-                print(data_interp_alltimes.to_numpy())
+                data_xr = xr.open_mfdataset(file_list_nc)#,decode_times=False)#, combine='by_coords', decode_times=False)
                 breakit
-                
+            
             ForcingModel_object = interpolate_nc_to_bc(dir_pattern=dir_pattern, file_pli=file_pli, modelvarname=modelvarname,
                                                        convert_360to180=convert_360to180,
                                                        tstart=tstart, tstop=tstop, refdate_str=refdate_str,
