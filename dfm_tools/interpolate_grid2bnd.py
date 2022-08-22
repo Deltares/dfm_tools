@@ -210,23 +210,23 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, modelvarname,
     if tstop > nc_tstop:
         raise Exception(f'requested tstop {tstop} after nc_tstop {nc_tstop}')
     
-    data_xr_var = data_xr[varname_file]
-    
-    if 'latitude' in data_xr_var.coords:
+    if 'latitude' in data_xr.coords:
         loncoordname,latcoordname = ['longitude','latitude']
-    elif 'lat' in data_xr_var.coords:
+    elif 'lat' in data_xr.coords:
         loncoordname,latcoordname = ['lon','lat']
     else:
         print(data_xr)
-        raise Exception(f'no lat/lon coords available: {data_xr_var.coords}')
-    
-    if convert_360to180: #for FES since it ranges from 0 to 360 instead of -180 to 180
+        raise Exception(f'no lat/lon coords available in file: {data_xr.coords}')
+    if convert_360to180: #for FES since it ranges from 0 to 360 instead of -180 to 180 #TODO: make more flexible for models that eg pass -180/+180 crossing (add overlap at lon edges).
         data_xr.coords[loncoordname] = (data_xr.coords[loncoordname] + 180) % 360 - 180
         data_xr = data_xr.sortby(data_xr[loncoordname])
     lonvar_vals = data_xr[loncoordname].to_numpy()
     latvar_vals = data_xr[latcoordname].to_numpy()
     
-    if 'depth' in data_xr_var.coords: #depth for CMEMS, lev for GFDL #TODO: make more generic
+    #retrieve var (after potential longitude conversion)
+    data_xr_var = data_xr[varname_file]
+    
+    if 'depth' in data_xr_var.coords: #depth for CMEMS, lev for GFDL #TODO: make more generic (how has to be coord check in variable and not in entire file)
         has_depth = True
         depthvarname = 'depth'
     elif 'lev' in data_xr_var.coords:
