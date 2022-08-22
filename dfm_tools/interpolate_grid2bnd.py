@@ -51,7 +51,7 @@ from hydrolib.core.io.polyfile.parser import read_polyfile
 
 
 def get_conversion_dict():
-    # usefor, contains substances as arrays because uxuy relies on 2 CMEMS variables
+    # conversion_dict, contains ncvarname as array because uxuy relies on 2 CMEMS variables
     conversion_dict = { #TODO: mg/l is the same as g/m3: conversion is phyc in mmol/l to newvar in g/m3
                         'OXY'        : {'ncvarname' : ['o2']       , 'unit': 'g/m3', 'conversion' : 32.0 / 1000.0}, 
                         'NO3'        : {'ncvarname' : ['no3']      , 'unit': 'g/m3', 'conversion' : 14.0 / 1000.0},
@@ -64,10 +64,10 @@ def get_conversion_dict():
                         'DOP'        : {'ncvarname' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 1.0 * 2. * 30.97 / (106. * 1000.0)},
                         'DOC'        : {'ncvarname' : ['phyc']     , 'unit': 'g/m3', 'conversion' : (199. / 20.) * 3.24 * 2. * 16. * 12. / (106. * 1000.0)},
                         'Opal'       : {'ncvarname' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 0.5 * 0.13 * 28.08 / (1000.0)},
-                        'salinity'   : {'ncvarname' : ['so']       , 'type' : ['salinitybnd']},    #'1e-3'
-                        'temperature': {'ncvarname' : ['thetao']   , 'type' : ['temperaturebnd']}, #'degC'
-                        'uxuy'       : {'ncvarname' : ['uo', 'vo'] , 'type' : ['ux', 'uy'] },      #'m/s'
-                        'steric'     : {'ncvarname' : ['zos']      , 'type' : ['waterlevelbnd']},  #'m'
+                        'salinity'   : {'ncvarname' : ['so']       , 'bcvarname' : ['salinitybnd']},    #'1e-3'
+                        'temperature': {'ncvarname' : ['thetao']   , 'bcvarname' : ['temperaturebnd']}, #'degC'
+                        'uxuy'       : {'ncvarname' : ['uo', 'vo'] , 'bcvarname' : ['ux', 'uy'] },      #'m/s'
+                        'steric'     : {'ncvarname' : ['zos']      , 'bcvarname' : ['waterlevelbnd']},  #'m'
                         }
     
     return conversion_dict
@@ -245,12 +245,11 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
         depth_array = vardepth.to_numpy()[::-1] #TODO: flip array is not necessary, check datablock comment
         if vardepth.attrs['positive'] == 'down': #attribute appears in CMEMS, GFDL and CMCC, save to assume presence?
             depth_array = -depth_array
-
-        
+    
     #load boundary file
     #polyfile_object = PolyFile(file_pli,has_z_values=False) #TODO ISFIXED: should work with hydrolib-core>0.3.0. also without has_z_values argument
     polyfile_object = read_polyfile(file_pli,has_z_values=False) #TODO: this warning can be suppressed (or how to fix): "UserWarning: White space at the start of the line is ignored." https://github.com/Deltares/HYDROLIB-core/issues/320
-
+    
     pli_PolyObjects = polyfile_object['objects']
     for iPO, pli_PolyObject_sel in enumerate(pli_PolyObjects[:nPolyObjects]):
         print(f'processing PolyObject {iPO+1} of {len(pli_PolyObjects)}: name={pli_PolyObject_sel.metadata.name}')
@@ -259,10 +258,6 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             print(f'processing Point {iP+1} of {len(pli_PolyObject_sel.points)}: ',end='')
     
             lonx, laty = pli_Point_sel.x, pli_Point_sel.y
-            #lonx,laty = 13.000000, 54.416667  #extra_rand_dcsm_0001 # is not in lat/lon bounds of selected CMEMS folder? >> probably on land
-            #lonx,laty = -9.25, 43.00 #DCSM-FM_OB_all_20181108_0001
-            #if convert_180to360:
-            #    lonx = lonx%360 #for FES since it ranges from 0 to 360 instead of -180 to 180
             print(f'(x={lonx}, y={laty})')
             if (lonx <= lonvar_vals.min()) or (lonx >= lonvar_vals.max()):
                 raise Exception(f'requested lonx {lonx} outside or on lon bounds ({lonvar_vals.min(),lonvar_vals.max()})')
@@ -277,7 +272,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
                 data_interp_alltimes = data_xr_var.interp(latitude=laty,longitude=lonx,
                                                           #kwargs={'bounds_error':True}, #TODO: bounds_error is ignored (catched by manual lonx/laty bounds check), but also nans are returned on land.
                                                           #assume_sorted=True, #TODO: assume_sorted increases performance?
-                                                          )  
+                                                          )
             elif 'lat' in data_xr_var.coords:
                 data_interp_alltimes = data_xr_var.interp(lat=laty,lon=lonx)
             else: #TODO: lat/latitude (should be flexible instead of hardcoded) 
@@ -318,8 +313,8 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             #conversion of units etc
             if 'conversion' in conversion_dict[quantity].keys():
                 datablock = datablock * conversion_dict[quantity]['conversion']
-            if 'type' in conversion_dict[quantity].keys():
-                bcvarname = conversion_dict[quantity]['type'][0] #TODO: [1] is necessary for uxuy
+            if 'bcvarname' in conversion_dict[quantity].keys():
+                bcvarname = conversion_dict[quantity]['bcvarname'][0] #TODO: [1] is necessary for uxuy
             else: #TODO: only works for waq tracers, so add check or add to conversion_dict (latter also makes sense)
                 bcvarname = f'tracerbnd{quantity}'
                 #bcvarname = quantity
@@ -338,17 +333,6 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             print('> constructing TimeSeries and appending to ForcingModel()')
             dtstart = dt.datetime.now()
             if has_depth:
-                """
-                name: str = Field(alias="name")
-                function: str = Field(alias="function")
-                quantityunitpair: List[QuantityUnitPair]
-
-                offset: float = Field(0.0, alias="offset")
-                factor: float = Field(1.0, alias="factor")
-                verticalpositions: List[float] = Field(alias="verticalPositions")
-                verticalinterpolation: VerticalInterpolation = Field(alias="verticalInterpolation")
-                verticalpositiontype: VerticalPositionType = Field(alias="verticalPositionType")
-                """
                 list_QUP_perlayer = [QuantityUnitPair(quantity=bcvarname, unit=varunit) for iL in range(vardepth.size)] #TODO: verticalposition 1/2/3/n is not supported. https://github.com/Deltares/HYDROLIB-core/issues/317
                 ts_one = T3D(name=pli_PolyObject_name_num,
                              verticalpositions=depth_array.tolist(), #TODO: should be "Vertical position specification = [..]" but is verticalPositions = [..]" (both possible?). https://github.com/Deltares/HYDROLIB-core/issues/317
@@ -359,16 +343,6 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
                              datablock=datablock_incltime.tolist(), #TODO: numpy array is not supported by TimeSeries. https://github.com/Deltares/HYDROLIB-core/issues/322
                              )
             else:
-                """
-                name: str = Field(alias="name")
-                function: str = Field(alias="function")
-                quantityunitpair: List[QuantityUnitPair]
-
-                timeinterpolation: TimeInterpolation = Field(alias="timeInterpolation")
-                offset: float = Field(0.0, alias="offset")
-                factor: float = Field(1.0, alias="factor")
-                """
-                print(bcvarname)
                 ts_one = TimeSeries(name=pli_PolyObject_name_num,
                                     verticalposition=VerticalPositionType('ZBed'), #TODO: is not passed on to bc file and that makes sense, but it should raise error since it is not relevant for timeseries. https://github.com/Deltares/HYDROLIB-core/issues/321
                                     quantityunitpair=[QuantityUnitPair(quantity="time", unit=refdate_str),
