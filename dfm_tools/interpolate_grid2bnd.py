@@ -290,7 +290,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
                 print('> plotting')
                 dtstart = dt.datetime.now()
                 fig,ax = plt.subplots(figsize=(10,7))
-                data_interp.T.plot()
+                data_interp.T.plot() #uses plot.line() for 1D arrays and plot.pcolormesh() for 2D arrays: https://docs.xarray.dev/en/stable/generated/xarray.DataArray.plot.html
                 ax.set_title(f'{quantity} {pli_PolyObject_name_num}')
                 if 'depth' in data_xr_var.coords:
                     ax.set_ylim(0,200)
