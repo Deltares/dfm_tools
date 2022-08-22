@@ -77,7 +77,7 @@ def interpolate_FES(dir_pattern, file_pli, convert_360to180=False, nPoints=None,
     """
     """
     #TODO: resulting amplitudes are slightly different, but the original code might make an 1 indexing mistake? c:\DATA\hydro_tools\FES\PreProcessing_FES_TideModel_imaginary.m
-
+    #TODO: add component selection/ordering option
     # translate dict from .\hydro_tools\FES\PreProcessing_FES_TideModel_imaginary.m
     translate_dict = {'LA2':'LABDA2',
                       'MTM':'MFM', #Needs to be verified
