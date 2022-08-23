@@ -782,6 +782,7 @@ def plot_ztdata(file_nc, dfmtools_hisvar, statid_subset=0, ax=None, mask_data=Tr
     import warnings
     import numpy as np
     import matplotlib.pyplot as plt
+    import pandas as pd
 
     warnings.warn('WARNING: layers in dfowfm hisfile are currently incorrect, check your figures carefully')
     #get the original ncobject and the retrieved indices from dfmtools_hisvar, used to retrieve a corresponding z array.
@@ -797,13 +798,14 @@ def plot_ztdata(file_nc, dfmtools_hisvar, statid_subset=0, ax=None, mask_data=Tr
     data_fromhis_wl = get_ncmodeldata(file_nc=file_nc, varname='waterlevel', timestep=time_ids, station=stat_ids)
 
     #remove station dimension
-    if len(data_fromhis_zcor.shape) == 3:
+    if 0: #len(data_fromhis_zcor.shape) == 3:
         data_fromhis_zcen_flat = data_fromhis_zcen[:,statid_subset,:]
         data_fromhis_zcor_flat = data_fromhis_zcor[:,statid_subset,:]
         dfmtools_hisvar_flat = dfmtools_hisvar[:,statid_subset,:]
-    elif len(data_fromhis_zcor.shape) == 2:
+    elif (len(data_fromhis_zcor.shape) == 3) or (len(data_fromhis_zcor.shape) == 2):
         data_fromhis_zcen_flat = data_fromhis_zcen[:,statid_subset]
-        data_fromhis_zcor_flat = data_fromhis_zcor[:,statid_subset]
+        data_fromhis_zcor_flat = data_fromhis_zcor[:,statid_subset] #original, but should append extra row for time 'edges)
+        data_fromhis_zcor_flat = np.concatenate([data_fromhis_zcor[:,statid_subset],data_fromhis_zcor[[-1],statid_subset]],axis=0)
         dfmtools_hisvar_flat = dfmtools_hisvar[:,statid_subset]
     else:
         raise Exception('unexpected number of dimensions')
@@ -818,10 +820,10 @@ def plot_ztdata(file_nc, dfmtools_hisvar, statid_subset=0, ax=None, mask_data=Tr
     if mask_data:
         bool_zcen_equaltop = (data_fromhis_zcen_flat==data_fromhis_zcen_flat[:,-1:]).all(axis=0)
         id_zcentop = np.argmax(bool_zcen_equaltop) # id of first z_center that is equal to z_center of last layer
-        if (data_fromhis_zcor_flat[:,id_zcentop] > data_fromhis_zcen_flat[:,id_zcentop]).any():
+        if (data_fromhis_zcor_flat[:-1,id_zcentop] > data_fromhis_zcen_flat[:,id_zcentop]).any():
             print('correcting z interface values')
-            data_fromhis_zcor_flat[:,id_zcentop+1] = data_fromhis_wl_flat
-            data_fromhis_zcor_flat[:,id_zcentop] = (data_fromhis_zcen_flat[:,id_zcentop-1]+data_fromhis_zcen_flat[:,id_zcentop])/2
+            data_fromhis_zcor_flat[:-1,id_zcentop+1] = data_fromhis_wl_flat
+            data_fromhis_zcor_flat[:-1,id_zcentop] = (data_fromhis_zcen_flat[:,id_zcentop-1]+data_fromhis_zcen_flat[:,id_zcentop])/2
         bool_zcen_equaltop[id_zcentop] = False
         #bool_zcor_equaltop = (data_fromhis_zcor_flat[:,1:]==data_fromhis_zcor_flat[:,-1:]).all(axis=0)
         mask_array = np.tile(bool_zcen_equaltop,(data_fromhis_zcor_flat.shape[0],1))
@@ -830,12 +832,13 @@ def plot_ztdata(file_nc, dfmtools_hisvar, statid_subset=0, ax=None, mask_data=Tr
     if not ax: ax=plt.gca()
 
     # generate 2 2d grids for the x & y bounds (you can also give one 2D array as input in case of eg time varying z coordinates)
-    #time_mesh_cor = np.tile(dfmtools_hisvar.var_times,(data_fromhis_zcor_flat.shape[-1],1)).T
+    time_cor = pd.concat([dfmtools_hisvar.var_times,dfmtools_hisvar.var_times.iloc[[-1]]])
+    time_mesh_cor = np.tile(time_cor,(data_fromhis_zcor_flat.shape[-1],1)).T
     time_mesh_cen = np.tile(dfmtools_hisvar.var_times,(data_fromhis_zcen_flat.shape[-1],1)).T
     if only_contour:
         pc = ax.contour(time_mesh_cen,data_fromhis_zcen_flat,dfmtools_hisvar_flat, **kwargs)
     else: #TODO: should actually supply cell edges instead of centers to pcolor/pcolormesh, but inconvenient for time dimension.
         #pc = ax.pcolormesh(time_mesh_cen, data_fromhis_zcen_flat, dfmtools_hisvar_flat, **kwargs)
-        pc = ax.pcolor(time_mesh_cen, data_fromhis_zcen_flat, dfmtools_hisvar_flat, **kwargs) #pcolor also supports missing/masked xy data, but is slower
+        pc = ax.pcolor(time_mesh_cor, data_fromhis_zcor_flat, dfmtools_hisvar_flat, **kwargs) #pcolor also supports missing/masked xy data, but is slower
 
     return pc

@@ -71,7 +71,6 @@ data_nc_XCOR[mask_XYCOR] = np.nan
 data_nc_YCOR[mask_XYCOR] = np.nan
 
 
-
 fig, ax = plt.subplots()
 ax.plot(data_nc_XCOR,data_nc_YCOR,'-b',linewidth=0.2)
 ax.plot(data_nc_XCOR.T,data_nc_YCOR.T,'-b',linewidth=0.2)
@@ -116,7 +115,7 @@ plt.savefig(os.path.join(dir_output,'kivu_velocity'))
 fig, axs = plt.subplots(1,3, figsize=(16,7))
 for iT, timestep in enumerate([1,10,15]):
     ax=axs[iT]
-    pc = ax.pcolor(data_nc_XZ,data_nc_YZ,data_nc_QNET[iT,:,:],cmap='jet')
+    pc = ax.pcolor(data_nc_XCOR,data_nc_YCOR,data_nc_QNET[iT,1:,1:],cmap='jet') #TODO: part of data is removed, not desireable. also using cor instead of cen.
     pc.set_clim([-60,60])
     cbar = fig.colorbar(pc, ax=ax)
     cbar.set_label('%s (%s)'%(data_nc_QNET.var_varname, data_nc_QNET.var_ncattrs['units']))
@@ -127,14 +126,12 @@ plt.savefig(os.path.join(dir_output,'kivu_Qnet'))
 
 #BED
 fig, ax = plt.subplots(figsize=(6,8))
-pc = ax.pcolor(data_nc_XZ,data_nc_YZ,data_nc_DPV0,cmap='jet')
+pc = ax.pcolor(data_nc_XCOR,data_nc_YCOR,data_nc_DPV0[1:,1:],cmap='jet') #TODO: part of data is removed, not desireable. also using cor instead of cen.
 cbar = fig.colorbar(pc, ax=ax)
 cbar.set_label('%s (%s)'%(data_nc_DPV0.var_varname, data_nc_DPV0.var_ncattrs['units']))
 ax.set_aspect('equal')
 fig.tight_layout()
 plt.savefig(os.path.join(dir_output,'kivu_bedlevel'))
-
-
 
 
 
@@ -206,7 +203,7 @@ for iT, timestep in enumerate([0,1,2,4]):
     ax=axs[id0,id1]
     vel_x, vel_y, vel_magn, direction_naut_deg = uva2xymagdeg(U1=data_nc_U1[timestep,9,:,:],V1=data_nc_V1[timestep,9,:,:],ALFAS=data_nc_ALFAS)#,
     #                                                          KCU=data_nc_KCU, KCV=data_nc_KCV)
-    pc = ax.pcolor(data_nc_XCOR,data_nc_YCOR,vel_magn[1:,1:],cmap='jet')
+    pc = ax.pcolor(data_nc_XCOR,data_nc_YCOR,vel_magn[1:,1:],cmap='jet') #TODO: part of data is removed, not desireable
     pc.set_clim(var_clim)
     #cbar = fig.colorbar(pc, ax=ax)
     #cbar.set_label('velocity magnitude (%s)'%(data_nc_U1.var_ncattrs['units']))

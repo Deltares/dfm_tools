@@ -88,6 +88,3 @@ for file_nc in file_nc_list:
     axwl.set_ylim(-2,0.5)
     fig.savefig(os.path.join(dir_output,'%s_zt_temp_zoomwl'%(os.path.basename(file_nc).replace('.',''))))
 
-    
-    
-
