@@ -71,7 +71,7 @@ if 0: #read bc file with T3D blocks
     m = ForcingModel(file_bc_3D) #TODO: crashes on validation error since [verticalPositions,verticalInterpolation,verticalPositionType] are not accepted as missing (while dflowfm has default values for them) >> verticalPositions are in file as "Vertical position". Issue created: https://github.com/Deltares/HYDROLIB-core/issues/306
 
 
-if 1: #read bc file with harmonic blocks and compare
+if 0: #read bc file with harmonic blocks and compare
     
     file_bc_orig = Path(r'n:\My Documents\werkmap\hydrolib_test\DCSM\tide_OB_all_20181108.bc')
     file_bc_new = Path(r'n:\My Documents\werkmap\hydrolib_test\DCSM\tide_DCSM-FM_OB_all_20181108_nocomments.bc')
@@ -91,3 +91,34 @@ if 1: #read bc file with harmonic blocks and compare
         list_pd.append(df)
     
     print(list_pd[0]-list_pd[1])
+    
+    
+if 1:
+    from hydrolib.core.io.polyfile.models import (
+        #Description,
+        #Metadata,
+        #Point,
+        PolyFile,
+        #PolyObject,
+    )
+    from hydrolib.core.io.polyfile.parser import read_polyfile #TODO: should be replaced with PolyFile above
+    
+    file_pli = Path(r'c:\DATA\dfm_tools_testdata\ballenplot\SDS-zd003b5dec2-sal.tek') #TODO: should be possible to read these files I presume, but it is not (different reader available?)
+    file_pli = Path(r'c:\DATA\dfm_tools_testdata\world_nocomment.ldb')
+    
+    #load boundary file
+    polyfile_object = read_polyfile(file_pli,has_z_values=True)
+    
+    pli_PolyObjects = polyfile_object['objects']
+    
+    for iPO, pli_PolyObject_sel in enumerate(pli_PolyObjects):
+        print(f'processing PolyObject {iPO+1} of {len(pli_PolyObjects)}: name={pli_PolyObject_sel.metadata.name}')
+        
+        for iP, pli_Point_sel in enumerate(pli_PolyObject_sel.points): #looping over plipoints within component loop, append to datablock_pd_allcomp
+            print(f'processing Point {iP+1} of {len(pli_PolyObject_sel.points)}: ',end='')
+            lonx, laty = pli_Point_sel.x, pli_Point_sel.y
+            print(f'(x={lonx}, y={laty})')
+            pli_PolyObject_name_num = f'{pli_PolyObject_sel.metadata.name}_{iP+1:04d}'
+    
+    
+    

@@ -47,7 +47,10 @@ for file_pli in list_plifiles:
         print(f'processing quantity: {quantity}')
         if quantity in ['tide']: #TODO: tide compares not too well, 2cm M2 difference. Why? linear, complex and regulargridinterpolator all seems to result in approx the same numbers
             dir_pattern,convert_360to180 = Path(r'p:\1230882-emodnet_hrsm\FES2014\fes2014_linux64_gnu\share\data\fes\2014\ocean_tide','*.nc'),True #TODO: or ocean_tide_extrapolated folder? (extrapolated to the coast)
-            ForcingModel_object = interpolate_FES(dir_pattern, file_pli, convert_360to180=convert_360to180, nPoints=nPoints, debug=debug)
+            component_list = ['2n2','mf','p1','m2','mks2','mu2','q1','t2','j1','m3','mm','n2','r2','k1','m4','mn4','s1','k2','m6','ms4','nu2','s2','l2','m8','msf','o1','s4'] #None results in all FES components
+            ForcingModel_object = interpolate_FES(dir_pattern, file_pli, component_list=component_list, convert_360to180=convert_360to180, nPoints=nPoints, debug=debug)
+            for forcingobject in ForcingModel_object.forcing: #add A0 component
+                forcingobject.datablock.append(['A0',0.0,0.0])
         elif quantity in ['NO3']:
             varname_file = conversion_dict[quantity]['ncvarname'][0] #TODO: [1] is also necessary for uxuy
             dir_pattern,convert_360to180 = Path(dir_sourcefiles_waq,f'cmems_mod_glo_bgc_my_0.25_P1M-m_{varname_file}_*.nc'),False # CMEMS waq

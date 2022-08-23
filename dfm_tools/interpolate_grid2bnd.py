@@ -73,11 +73,11 @@ def get_conversion_dict():
     return conversion_dict
 
 
-def interpolate_FES(dir_pattern, file_pli, convert_360to180=False, nPoints=None, debug=False):
+def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180=False, nPoints=None, debug=False):
     """
     """
     #TODO: resulting amplitudes are slightly different, but the original code might make an 1 indexing mistake? c:\DATA\hydro_tools\FES\PreProcessing_FES_TideModel_imaginary.m
-    #TODO: add component selection/ordering option
+    #TODO: add A0?
     # translate dict from .\hydro_tools\FES\PreProcessing_FES_TideModel_imaginary.m
     translate_dict = {'LA2':'LABDA2',
                       'MTM':'MFM', #Needs to be verified
@@ -86,8 +86,11 @@ def interpolate_FES(dir_pattern, file_pli, convert_360to180=False, nPoints=None,
     print('initialize ForcingModel()')
     ForcingModel_object = ForcingModel()
     
-    file_list_nc = glob.glob(str(dir_pattern))
-    component_list = [os.path.basename(x).replace('.nc','') for x in file_list_nc] #TODO: add sorting, manually? Add A0? translate dict for component names?
+    if component_list is None:
+        file_list_nc = glob.glob(str(dir_pattern))
+        component_list = [os.path.basename(x).replace('.nc','') for x in file_list_nc] #TODO: add sorting, manually? Add A0? translate dict for component names?
+    else:
+        file_list_nc = [str(dir_pattern).replace('*',comp) for comp in component_list]
     component_list_upper_pd = pd.Series([x.upper() for x in component_list]).replace(translate_dict, regex=True)
     
     #use mfdataset (currently twice as slow as looping over separate datasets, apperantly interp is more difficult but this might be solvable. Also, it does not really matter since we need to compute u/v components of phase anyway, which makes it also slow)
