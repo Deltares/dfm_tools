@@ -5,6 +5,9 @@ Created on Tue Aug 23 13:36:44 2022
 @author: veenstra
 """
 
+import datetime as dt
+import pandas as pd
+import cftime
 
 def forcingobject_to_dataframe(forcingobj, convert_time=True):
     """
@@ -29,9 +32,6 @@ def forcingobject_to_dataframe(forcingobj, convert_time=True):
          df_data_list = [forcingobject_to_dataframe(forcingobj, convert_time=True) for forcingobj in m.forcing]
 
     """
-    import datetime as dt
-    import pandas as pd
-    import cftime
     
     QUP_list = [(QUP.quantity,QUP.unit) for QUP in forcingobj.__dict__['quantityunitpair']] #TODO: generating MultiIndex can probably be more elegant (e.g. getting names from QUP list), but I do not know how
     columns_MI = pd.MultiIndex.from_tuples(QUP_list,names=['quantity','unit'])
