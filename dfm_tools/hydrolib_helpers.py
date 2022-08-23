@@ -18,7 +18,7 @@ def forcingobject_to_dataframe(forcingobj, convert_time=True):
     forcingobj : hydrolib ForcingModel.forcing object (Timeseries/T3D etc)
         DESCRIPTION.
     convert_time : boolean, optional
-        Convert time column from unit (e.g. minutes since date) to datetime index and drop the time column. The default is True.
+        Convert time column from unit (e.g. minutes since date) to datetime index and drop the time column. Has no effect if there is no time column in the forcingobject. The default is True.
 
     Returns
     -------
@@ -36,11 +36,13 @@ def forcingobject_to_dataframe(forcingobj, convert_time=True):
     QUP_list = [(QUP.quantity,QUP.unit) for QUP in forcingobj.__dict__['quantityunitpair']] #TODO: generating MultiIndex can probably be more elegant (e.g. getting names from QUP list), but I do not know how
     columns_MI = pd.MultiIndex.from_tuples(QUP_list,names=['quantity','unit'])
     df_data = pd.DataFrame(forcingobj.__dict__['datablock'],columns=columns_MI)
-    if convert_time: #this converts time to a datetime index
-        time_colid = df_data.columns.get_level_values(level=0).get_loc('time')
+    df_data.index.name = forcingobj.__dict__['name']
+    colnames_quantity = df_data.columns.get_level_values(level=0)
+    if convert_time and ('time' in colnames_quantity): #this converts time to a datetime index
+        time_colid = colnames_quantity.get_loc('time')
         time_unit = df_data.columns.get_level_values(level=1)[time_colid]
         df_data.index = cftime.num2pydate(df_data.iloc[:,time_colid],units=time_unit)
-        df_data.index.name = forcingobj.__dict__['name']
+        df_data.index.name = forcingobj.__dict__['name'] #again with new index
         #timezone was converted to GMT, re-adjust timezone if needed
         timeunit_sincedatetimetz = time_unit.split('since ')[1]
         tzone_minutes = cftime._parse_date(timeunit_sincedatetimetz)[-1]
