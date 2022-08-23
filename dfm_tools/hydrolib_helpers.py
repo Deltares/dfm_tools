@@ -8,7 +8,7 @@ Created on Tue Aug 23 13:36:44 2022
 
 def forcingobject_to_dataframe(forcingobj, convert_time=True):
     """
-    
+    #TODO: would be convenient to have this as a method of ForcingModel objects (Timeseries/T3D/etc), or maybe as method of the ForcingModel (returning a list of DataFrames): https://github.com/Deltares/HYDROLIB-core/issues/307
 
     Parameters
     ----------
@@ -22,18 +22,17 @@ def forcingobject_to_dataframe(forcingobj, convert_time=True):
     df_data : pd.DataFrame
         DESCRIPTION
         
-    Example:
+    Example
+    -------
          file_bc = Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\2018\flow\rmm_discharge_laterals_20171220_20190101_MET.bc')
          m = ForcingModel(file_bc)
          df_data_list = [forcingobject_to_dataframe(forcingobj, convert_time=True) for forcingobj in m.forcing]
-         
 
     """
     import datetime as dt
     import pandas as pd
     import cftime
     
-    #TODO: would be convenient to have this as a method of ForcingModel objects (Timeseries/T3D/etc), or maybe as method of the ForcingModel (returning a list of DataFrames): https://github.com/Deltares/HYDROLIB-core/issues/307
     QUP_list = [(QUP.quantity,QUP.unit) for QUP in forcingobj.__dict__['quantityunitpair']] #TODO: generating MultiIndex can probably be more elegant (e.g. getting names from QUP list), but I do not know how
     columns_MI = pd.MultiIndex.from_tuples(QUP_list,names=['quantity','unit'])
     df_data = pd.DataFrame(forcingobj.__dict__['datablock'],columns=columns_MI)
