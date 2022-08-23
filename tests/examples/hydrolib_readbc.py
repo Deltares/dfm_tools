@@ -24,6 +24,8 @@ if 0: #read in bc file with Timeseries objects (waterlevels, discharges)
     
     #Load .bc-file using HydroLib object ForcingModel.
     m = ForcingModel(file_bc)
+    
+    """
     #print(m.forcing) #TODO: spyder crasht bij printen van m.forcing, 25% CPU en veel werkgeheugen, maar vooral een freeze. https://github.com/Deltares/HYDROLIB-core/issues/315
     type(m) #hydrolib.core.io.bc.models.ForcingModel
     type(m.forcing) #list of timeseries from bc file
@@ -36,6 +38,7 @@ if 0: #read in bc file with Timeseries objects (waterlevels, discharges)
     #TODO: reading improvement possible? (more intuitive coding) >> suggestion is below
     df = pd.DataFrame([f.__dict__ for f in m.forcing]) #this is a very heavy dataframe to interact with, but I guess it makes sense
     print(df[['datablock','quantityunitpair','name']])
+    """
     
     df_data_list = [forcingobject_to_dataframe(forcingobj, convert_time=True) for forcingobj in m.forcing]
     
@@ -47,7 +50,7 @@ if 0: #read in bc file with Timeseries objects (waterlevels, discharges)
 
     #calculate average waterlevel per point on boundary:
     df_data_all = pd.concat(df_data_list,axis=1)
-    list_names = [x.index.name for x in df_data_list]
+    #list_names = [x.index.name for x in df_data_list]
     #list_colnamestr = [f"{x[0]} [{x[1]}]" for x in df_data_all.columns]
     mean_bndvals = df_data_all.mean(axis=0)
     
