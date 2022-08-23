@@ -7,6 +7,28 @@ Created on Tue Aug 23 13:36:44 2022
 
 
 def forcingobject_to_dataframe(forcingobj, convert_time=True):
+    """
+    
+
+    Parameters
+    ----------
+    forcingobj : hydrolib ForcingModel.forcing object (Timeseries/T3D etc)
+        DESCRIPTION.
+    convert_time : boolean, optional
+        Convert time column from unit (e.g. minutes since date) to datetime index and drop the time column. The default is True.
+
+    Returns
+    -------
+    df_data : pd.DataFrame
+        DESCRIPTION
+        
+    Example:
+         file_bc = Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\2018\flow\rmm_discharge_laterals_20171220_20190101_MET.bc')
+         m = ForcingModel(file_bc)
+         df_data_list = [forcingobject_to_dataframe(forcingobj, convert_time=True) for forcingobj in m.forcing]
+         
+
+    """
     import datetime as dt
     import pandas as pd
     import cftime
