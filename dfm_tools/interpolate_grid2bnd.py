@@ -93,7 +93,8 @@ def interpolate_FES(dir_pattern, file_pli, convert_360to180=False, nPoints=None,
     #use mfdataset (currently twice as slow as looping over separate datasets, apperantly interp is more difficult but this might be solvable. Also, it does not really matter since we need to compute u/v components of phase anyway, which makes it also slow)
     def extract_component(ds): #TODO: there might be some performance improvement possible
         #https://github.com/pydata/xarray/issues/1380
-        compnumber = [0]
+        compname = os.path.basename(ds.encoding["source"]).replace('.nc','')
+        compnumber = [component_list.index(compname)]
         ds = ds.assign(compno=compnumber)
         data_xr_phs_rad = np.deg2rad(ds['phase'])
         #we need to compute u/v components for the phase to avoid zero-crossing interpolation issues

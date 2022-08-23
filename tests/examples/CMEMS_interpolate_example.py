@@ -29,8 +29,8 @@ tstart = dt.datetime(1993, 1, 1, 12, 0) #CMEMS phys has daily values at 12:00 (n
 tstop = dt.datetime(1993, 3, 1, 12, 0)
 #tstart = dt.datetime(2011, 12, 16, 12, 0)
 #tstop = dt.datetime(2012, 12, 1, 12, 0)
-#tstart = dt.datetime(2015, 6, 16, 12, 0)
-#tstop = dt.datetime(2015, 12, 1, 12, 0)
+tstart = dt.datetime(2015, 6, 16, 12, 0)
+tstop = dt.datetime(2015, 12, 1, 12, 0)
 nPoints = 3 #amount of Points to process per PolyObject in the plifile (for testing, use None for all Points)
 debug = False
 
