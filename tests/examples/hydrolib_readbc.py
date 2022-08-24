@@ -6,21 +6,24 @@ Created on Wed Aug 17 11:19:51 2022
 """
 
 
-import os
+#import os
+from pathlib import Path
 import datetime as dt
 import pandas as pd
-from netCDF4 import num2date
-import cftime
+#from netCDF4 import num2date
+#import cftime
 import matplotlib.pyplot as plt
-from pathlib import Path
 plt.close('all')
+import numpy as np
 from hydrolib.core.io.bc.models import ForcingModel
 from dfm_tools.hydrolib_helpers import forcingobject_to_dataframe
+
+#NOTE: for examples with writing bc files, check dfm_tools.interpolate_grid2bnd.*
 
 if 0: #read in bc file with Timeseries objects (waterlevels, discharges)
     #file_bc = Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\2020\flow\rmm_zeerand_v3_2020.bc') #>100 timeseries
     file_bc = Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\rmm_rivdis_meas_20171220_20210102_MET.bc') #TODO: why can it not be str? #three timeseries
-    file_bc = Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\2018\flow\rmm_discharge_laterals_20171220_20190101_MET.bc')
+    #file_bc = Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\2018\flow\rmm_discharge_laterals_20171220_20190101_MET.bc')
     
     #Load .bc-file using HydroLib object ForcingModel.
     m = ForcingModel(file_bc)
@@ -91,34 +94,4 @@ if 0: #read bc file with harmonic blocks and compare
         list_pd.append(df)
     
     print(list_pd[0]-list_pd[1])
-    
-    
-if 1:
-    from hydrolib.core.io.polyfile.models import (
-        #Description,
-        #Metadata,
-        #Point,
-        PolyFile,
-        #PolyObject,
-    )
-    from hydrolib.core.io.polyfile.parser import read_polyfile #TODO: should be replaced with PolyFile above
-    
-    file_pli = Path(r'c:\DATA\dfm_tools_testdata\ballenplot\SDS-zd003b5dec2-sal.tek') #TODO: should be possible to read these files I presume, but it is not (different reader available?)
-    file_pli = Path(r'c:\DATA\dfm_tools_testdata\world_nocomment.ldb')
-    
-    #load boundary file
-    polyfile_object = read_polyfile(file_pli,has_z_values=True)
-    
-    pli_PolyObjects = polyfile_object['objects']
-    
-    for iPO, pli_PolyObject_sel in enumerate(pli_PolyObjects):
-        print(f'processing PolyObject {iPO+1} of {len(pli_PolyObjects)}: name={pli_PolyObject_sel.metadata.name}')
-        
-        for iP, pli_Point_sel in enumerate(pli_PolyObject_sel.points): #looping over plipoints within component loop, append to datablock_pd_allcomp
-            print(f'processing Point {iP+1} of {len(pli_PolyObject_sel.points)}: ',end='')
-            lonx, laty = pli_Point_sel.x, pli_Point_sel.y
-            print(f'(x={lonx}, y={laty})')
-            pli_PolyObject_name_num = f'{pli_PolyObject_sel.metadata.name}_{iP+1:04d}'
-    
-    
     

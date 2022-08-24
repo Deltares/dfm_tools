@@ -87,7 +87,7 @@ class Polygon:
         import warnings
         import numpy as np
         import pandas as pd
-        #warnings.warn('the function dfm_tools.polygon.Polygon.fromfile() will be improved, outputformat will change')
+        warnings.warn('the function dfm_tools.polygon.Polygon.fromfile() is deprecated, please use the new hydrolib alternative')
         
 
         with open(file_pol) as plifile:
@@ -171,12 +171,3 @@ class Polygon:
         else:
             return pol_data_list, pol_name_list, pol_comment_list
             
-
-    def frominteractive(fig, ax):
-        raise Exception('ERROR: interactive polygon from file is not yet possible')
-
-        
-        #line_array = linebuilder.line_array
-        pol_frominput = Polygon(LineBuilder.xs, LineBuilder.ys)
-        
-        return pol_frominput
