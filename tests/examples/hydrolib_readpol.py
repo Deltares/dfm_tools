@@ -65,8 +65,8 @@ if 1: #read tek files with more than 2 columns
                      Path(dir_testinput,r'ballenplot\0200a_2D.tek'), #works but difficult to plot properly due to xyz-sal
                      #Path(dir_testinput,r'Gouda.tek'), #works (but slow since it is a large file)
                      Path(dir_testinput,r'Maeslant.tek'), #works
-                     #Path(dir_testinput,r'ballenplot\nima-1013-lo-wl.tek'), #TODO: UserWarning: Expected a valid name or description at line 3.
-                     Path(dir_testinput,r'ballenplot\nima-1013-lo-wl_validname.tek'), #removed spaces/brackets >> works
+                     #Path(dir_testinput,r'ballenplot\nima-1013-lo-wl.tek'), # UserWarning: Expected a valid name or description at line 3. (name contains spaces and brackets)
+                     Path(dir_testinput,r'ballenplot\nima-1013-lo-wl_validname.tek'), # works
                      Path(dir_testinput,r'test.tek'), # works
                      ]
     
