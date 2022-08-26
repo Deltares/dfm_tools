@@ -93,30 +93,45 @@ def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180
         file_list_nc = [str(dir_pattern).replace('*',comp) for comp in component_list]
     component_list_upper_pd = pd.Series([x.upper() for x in component_list]).replace(translate_dict, regex=True)
     
+    #load boundary file and derive extents for range selection for nc dataset (speeds up process significantly)
+    polyfile_object = read_polyfile(file_pli,has_z_values=False)
+    pli_PolyObjects = polyfile_object['objects']
+    xmin,xmax,ymin,ymax = None,None,None,None
+    for iPO, pli_PolyObject_sel in enumerate(pli_PolyObjects):
+        xPO = np.array([point.x for point in pli_PolyObject_sel.points])
+        yPO = np.array([point.y for point in pli_PolyObject_sel.points])
+        xmin = np.min(xPO.min(),xmax)
+        xmax = np.max(xPO.max(),xmax)
+        ymin = np.min(yPO.min(),ymax)
+        ymax = np.max(yPO.max(),ymax)
+
+    file_list_nc = [str(dir_pattern).replace('*',comp) for comp in component_list]
     #use mfdataset (currently twice as slow as looping over separate datasets, apperantly interp is more difficult but this might be solvable. Also, it does not really matter since we need to compute u/v components of phase anyway, which makes it also slow)
     def extract_component(ds): #TODO: there might be some performance improvement possible
         #https://github.com/pydata/xarray/issues/1380
+        if convert_360to180: #for FES since it ranges from 0 to 360 instead of -180 to 180
+            ds.coords['lon'] = (ds.coords['lon'] + 180) % 360 - 180
+            ds = ds.sortby(ds['lon'])
+        ds = ds.sel(lon=slice(xmin-1,xmax+1),lat=slice(ymin-1,ymax+1)) #selection based on pli file extent +-1degree (-180 to +180 degrees convention)
         compname = os.path.basename(ds.encoding["source"]).replace('.nc','')
         compnumber = [component_list.index(compname)]
         ds = ds.assign(compno=compnumber)
-        data_xr_phs_rad = np.deg2rad(ds['phase'])
-        #we need to compute u/v components for the phase to avoid zero-crossing interpolation issues
-        ds['phase_u'] = 1*np.cos(data_xr_phs_rad)
-        ds['phase_v'] = 1*np.sin(data_xr_phs_rad)
         return ds
     
-    data_xrall = xr.open_mfdataset(file_list_nc, combine='nested', concat_dim='compno', preprocess=extract_component)
-    if convert_360to180: #for FES since it ranges from 0 to 360 instead of -180 to 180
-        data_xrall.coords['lon'] = (data_xrall.coords['lon'] + 180) % 360 - 180
-        data_xrall = data_xrall.sortby(data_xrall['lon'])
+    data_xrsel = xr.open_mfdataset(file_list_nc, combine='nested', concat_dim='compno', preprocess=extract_component)
+    lonvar_vals = data_xrsel['lon'].to_numpy() #TODO for extent check (now only selected pli-extent of FES dataset), maybe move outside of point loop since all points are now available
+    latvar_vals = data_xrsel['lat'].to_numpy()
+
+    #derive uv phase components (using amplitude=1)
+    data_xrsel_phs_rad = np.deg2rad(data_xrsel['phase'])
+    #we need to compute u/v components for the phase to avoid zero-crossing interpolation issues
+    data_xrsel['phase_u'] = 1*np.cos(data_xrsel_phs_rad)
+    data_xrsel['phase_v'] = 1*np.sin(data_xrsel_phs_rad)
     
-    lonvar_vals = data_xrall['lon'].to_numpy()
-    latvar_vals = data_xrall['lat'].to_numpy()
-    
-    data_xr_amp = data_xrall['amplitude']
-    data_xr_phs = data_xrall['phase']
-    data_xr_phs_u = data_xrall['phase_u']
-    data_xr_phs_v = data_xrall['phase_v']
+    data_xr_amp = data_xrsel['amplitude']
+    data_xr_phs = data_xrsel['phase']
+    data_xr_phs_u = data_xrsel['phase_u']
+    data_xr_phs_v = data_xrsel['phase_v']
     
     #load boundary file
     polyfile_object = read_polyfile(file_pli,has_z_values=False)
@@ -185,7 +200,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
     data_xr_calendar = data_xr['time'].dt.calendar
     if data_xr_calendar != 'proleptic_gregorian': #this is for instance the case in case of noleap (or 365_days) calendars from GFDL and CMCC
         print('WARNING: calendar different than proleptic_gregorian found ({data_xr_calendar}), convert_calendar is called so check output carefully. It should be no issue for datasets with a monthly interval.')
-        data_xr = data_xr.convert_calendar('standard')
+        data_xr = data_xr.convert_calendar('standard') #TODO: does this not result in 29feb nan values in e.g. ☻GFDL model? 
     time_passed = (dt.datetime.now()-dtstart).total_seconds()
     if debug: print(f'>>time passed: {time_passed:.2f} sec')
     
