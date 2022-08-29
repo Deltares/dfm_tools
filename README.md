@@ -60,6 +60,7 @@ Installation
 	- ``conda activate dfm_tools_env``
 	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this command installs dfm_tools and all required packages)
 	- ``conda install -c conda-forge "shapely>=1.7.0" cartopy pyepsg geopandas contextily xarray dask -y``
+	- for some reason netcdf4 installed via conda results in a dll error in Spyder (not in cmd), using the above installation order results in netcdf4 installation via pip and that works. https://github.com/spyder-ide/spyder/issues/19220
 	- shapely for slicing 2D/3D data (conda-forge channel is necessary since main channel version is 1.6.4)
 	- cartopy for satellite imagery, coastlines etc on plots (conda-forge channel recommended by cartopy developers, and currently also necessary for correct shapely version)
 	- pyepsg is necessary for cartopy and probably also for other libraries
