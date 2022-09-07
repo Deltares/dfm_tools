@@ -50,18 +50,16 @@ Features
 - html documentation:
 	- https://htmlpreview.github.io/?https://github.com/openearth/dfm_tools/blob/master/docs/dfm_tools/index.html
 
+
 Installation
 --------
-- download Anaconda 64 bit (with Python 3.8 or later) from https://www.anaconda.com/distribution/#download-section (miniconda is probably also sufficient, but this is not yet tested)
-- install it with the recommended settings
+- download and install Anaconda 64 bit (with Python 3.8 or later) from https://www.anaconda.com/distribution/#download-section (miniconda is probably also sufficient, but this is not yet tested)
 - install dfm_tools from github:
 	- open anaconda prompt
 	- ``conda create --name dfm_tools_env -c conda-forge python=3.8 git spyder -y`` (you can also install a newer python version, in python 3.7 the dependency hydrolib seemed not installable)
 	- ``conda activate dfm_tools_env``
 	- ``conda install -c conda-forge shapely cartopy pyepsg geopandas contextily xarray dask netcdf4 bottleneck -y`` (installs conda-forge requirements)
 	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this command installs dfm_tools and all required non-conda packages)
-	- REMOVEDTHIS: for some reason netcdf4 installed via conda results in a dll error in Spyder (not in cmd), using the above installation order results in netcdf4 installation via pip and that works. https://github.com/spyder-ide/spyder/issues/19220
-	
 	- shapely for slicing 2D/3D data (conda-forge channel is necessary since main channel version is 1.6.4, minimal requirement is 1.7.0)
 	- cartopy for satellite imagery, coastlines etc on plots (conda-forge channel recommended by cartopy developers, and currently also necessary for correct shapely version)
 	- pyepsg is necessary for cartopy and probably also for other libraries
@@ -86,7 +84,6 @@ Example usage
 --------
 - for more examples, check https://github.com/openearth/dfm_tools/tree/master/tests/examples (these scripts are also part of the pytest testbank)
 - examples of (mostly unformatted) figures created by this pytest testbank: n:\\Deltabox\\Bulletin\\veenstra\\info dfm_tools
-- please check the [Feature wishlist](#feature-wishlist) for envisioned features
 - please report bugs and feature requests at the developers or at https://github.com/openearth/dfm_tools/issues (include OS, dfm_tools version, reproduction steps)
 - want to get updates about dfm_tools? Send an email to jelmer.veenstra@deltares.nl
 
@@ -204,7 +201,7 @@ Feature wishlist
 - add more io-functions:
 	- read/write matroos data (first setup in dfm_tools.io.noos, better function in hatyan?)
 	- convert data to kml (google earth) or shp? (including RD to WGS84 conversion and maybe vice versa)
-	- improve tekal map read
+	- improve tekal map read?
 	- add tekal mergedatasets function to get e.g. one ldb dataset with the original parts separated with nans
 	- add tekal write functions
 - add tidal analysis (https://github.com/Deltares/hatyan)
@@ -219,7 +216,8 @@ Feature wishlist
 - add polygon ginput function (click in plot) (already partly exists in intersect/slice testscript)
 - merge existing dfm model setup functions (and other useful stuff):
 	- dflowutil: https://github.com/openearth/dfm_tools/tree/master/dflowutil (and test scripts, contains e.g. read/write functions for general datafromats (like tim))
-	- https://github.com/openearth/delft3dfmpy (arthur van dam)	
+	- https://github.com/openearth/delft3dfmpy (arthur van dam)
+	- hydrolib
 	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/applications/delft3dfm (fiat, sobek etc)
 	- https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/applications/delft3dfm/dflowfmpyplot/pyd3dfm/streamline_ug.py (streamline plotting for structured grids, but many settings)
 - make grid reading more flexible:
@@ -245,23 +243,14 @@ Todo non-content
 --------
 - improve communication material:
 	- add variable units to plots in test bench
-	- improve his plots and tekal map plots, improve other plots
 	- put testdata and testoutput on github and create jupyter notebook instead of pptx?
 	- create overview of scripts and functions, including future location of missing features
 	- write documentation as comments (docstrings) and generate html documentation automatically with pdoc (or maybe sphinx?)
-	- improve feedback to user if no or wrong input arguments are given to functions
-	- add license to new scripts
+	- add license header to new scripts
 - external improvements:
 	- fix small bugs in Delft3D4 netCDF output (related to coordinates, coordinates of velocity points and incorrect missing values)
 	- request modplot.velovect() (curved vectors) to be added to matplotlib
-	- install without PATH fails on pip/git in anaconda prompt? (test installation with anaconda prompt, and with command prompt combined with ``set PATH=%PATH%;<your_path_to_anaconda_installation>\Scripts``)
-	- installation also possible with miniconda only?
-- register on PyPI, for easier install via pip (easier for regular users):
-	- https://the-hitchhikers-guide-to-packaging.readthedocs.io/en/latest/quickstart.html#register-your-package-with-the-python-package-index-pypi
-	- https://packaging.python.org/tutorials/packaging-projects/
-	- how to automate this process? (buildserver including testing?)
-	- also add changelog besides commit comments?
-	- alternatively, register on conda-forge: https://github.com/conda-forge/staged-recipes/
+- register on PyPI/conda-forge, for easier install via pip (easier for regular users):
+- also add changelog besides commit comments?
 - put testdata on deltares shared location?
-- arrange auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
 - style guide: https://www.python.org/dev/peps/pep-0008/
