@@ -53,15 +53,16 @@ Features
 Installation
 --------
 - download Anaconda 64 bit (with Python 3.8 or later) from https://www.anaconda.com/distribution/#download-section (miniconda is probably also sufficient, but this is not yet tested)
-- install it with the recommended settings, but check 'add Anaconda3 to my PATH environment variable' if you want to use conda from the windows command prompt instead of anaconda prompt
+- install it with the recommended settings
 - install dfm_tools from github:
-	- open command window (or anaconda prompt)
+	- open anaconda prompt
 	- ``conda create --name dfm_tools_env -c conda-forge python=3.8 git spyder -y`` (you can also install a newer python version, in python 3.7 the dependency hydrolib seemed not installable)
 	- ``conda activate dfm_tools_env``
-	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this command installs dfm_tools and all required packages)
-	- ``conda install -c conda-forge "shapely>=1.7.0" cartopy pyepsg geopandas contextily xarray dask -y``
-	- for some reason netcdf4 installed via conda results in a dll error in Spyder (not in cmd), using the above installation order results in netcdf4 installation via pip and that works. https://github.com/spyder-ide/spyder/issues/19220
-	- shapely for slicing 2D/3D data (conda-forge channel is necessary since main channel version is 1.6.4)
+	- ``conda install -c conda-forge shapely cartopy pyepsg geopandas contextily xarray dask netcdf4 bottleneck -y`` (installs conda-forge requirements)
+	- ``python -m pip install git+https://github.com/openearth/dfm_tools.git`` (this command installs dfm_tools and all required non-conda packages)
+	- REMOVEDTHIS: for some reason netcdf4 installed via conda results in a dll error in Spyder (not in cmd), using the above installation order results in netcdf4 installation via pip and that works. https://github.com/spyder-ide/spyder/issues/19220
+	
+	- shapely for slicing 2D/3D data (conda-forge channel is necessary since main channel version is 1.6.4, minimal requirement is 1.7.0)
 	- cartopy for satellite imagery, coastlines etc on plots (conda-forge channel recommended by cartopy developers, and currently also necessary for correct shapely version)
 	- pyepsg is necessary for cartopy and probably also for other libraries
 	- geopandas for shapefile related operations
@@ -69,13 +70,14 @@ Installation
 	- xarray developers advise to install dependecies dask/netCDF4/bottleneck with conda-forge also: https://docs.xarray.dev/en/v0.8.0/installing.html
 	- to remove venv when necessary: ``conda remove -n dfm_tools_env --all``
 - launch Spyder:
-	- open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in dfm_tools_env)
+	- open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in the dfm_tools_env environment only)
 	- if launching Spyder gives a Qt related error: remove the system/user environment variable 'qt_plugin_path' set by an old Delft3D4 installation procedure.
-	- test by printing dfm_tools version number: ``import dfm_tools; print(dfm_tools.__version__)`` (to double check if you are working in the venv where dfm_tools_env was installed)
-	- copy the code from [Example usage](#example-usage) to your own scripts to get starteds
+	- test by printing dfm_tools version number: ``import dfm_tools; print(dfm_tools.__version__); import netCDF4`` (to double check if you are working in the venv where dfm_tools_env was installed)
+	- netCDF4 DLL error upon import in Spyder? remove Anaconda paths from the Path user environment variable (https://github.com/spyder-ide/spyder/issues/19220)
+	- copy the code from [Example usage](#example-usage) to your own scripts to get started
 - to update dfm_tools:
 	- inactivate all Python instances that use dfm_tools (close Spyder or restart kernel)
-	- open command window (or anaconda prompt)
+	- open anaconda prompt
 	- ``conda activate dfm_tools_env``
 	- ``python -m pip install --upgrade git+https://github.com/openearth/dfm_tools.git``
 
@@ -262,70 +264,4 @@ Todo non-content
 	- alternatively, register on conda-forge: https://github.com/conda-forge/staged-recipes/
 - put testdata on deltares shared location?
 - arrange auto-testing online (jarvis?): https://docs.pytest.org/en/latest/getting-started.html
-- update license with Deltares terms
 - style guide: https://www.python.org/dev/peps/pep-0008/
-- contributing environment method: environment.yml
-
-
-Developer information
---------
-- How to contribute to this git repository?
-- First request github rights to contribute with the current developers:
-	- Jelmer Veenstra <jelmer.veenstra@deltares.nl>
-- Get a local checkout of the github repository:
-	- Download git from https://git-scm.com/download/win, install with default settings
-	- open command window in a folder where you want to clone the dfm_tools github repo, e.g. C:\\DATA
-	- ``git clone https://github.com/openearth/dfm_tools.git`` (repos gets cloned in C:\\DATA\\dfm_tools, this is a checkout of the master branch)
-	- open git bash window in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
-	- ``git config --global user.email [emailaddress]``
-	- ``git config --global user.name [username]``
-	- create a branch called work_yourname on https://github.com/openearth/dfm_tools
-	- open git bash window in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
-	- ``git remote update origin --prune`` (update local branch list)
-	- ``git checkout work_yourname`` (checkout your branch, never do anything while the master is selected)
-- Set up the dfm_tools developer python virtual environment (necessary for developing/testing):
-	- open command window (or anaconda prompt) and navigate to dfm_tools folder, e.g. C:\\DATA\\dfm_tools
-	- ``conda env create -f environment.yml`` (creates an environment called dfm_tools_devenv)
-	- to list venvs:``conda info --envs``
-	- to remove venv when necessary: ``conda remove -n dfm_tools_devenv --all``
-	- ``conda activate dfm_tools_devenv``
-	- ``python -m pip install -e .`` (pip developer mode, any updates to the local folder by github (with ``git pull``) are immediately available in your python. It also installs all required packages)
-	- ``conda install -c conda-forge spyder "shapely>=1.7.0" cartopy pyepsg geopandas contextily xarray dask``(conda-forge channel is necessary since main channel shapely version is 1.6.4. The correct version is available via pip, but then geos dll is not properly linked, this will probably be solved in the future https://github.com/Toblerity/Shapely/issues/844. cartopy also recommends conda-forge channel)
-	- test if dfm_tools is properly installed by printing the version number: ``python -c "import dfm_tools; print(dfm_tools.__version__)"``
-	- open 'Spyder(dfm_tools_devenv)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in dfm_tools_devenv)
-- Make your local changes to dfm_tools
-- Work with your branch:
-	- open git bash window in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
-	- ``git checkout work_yourname`` (checkout your branch, never do anything while the master is selected)
-	- to update: ``git pull`` (combination of git fetch and git merge)
-	- get clean checkout again (overwrite local changes):
-		- ``git fetch --all`` (fetches changes)
-		- ``git reset --hard`` (resets local checkout of repos branch to server version)
-		- ``git pull`` (fetches and merges changes, local checkout of repos branch is now updated again)
-	- ``git pull origin master`` (gets edits from master to current local branch, might induce conflicts. maybe better to just push to your branch and then handle pull request on github website)
-- run test bank:
-	- open command window (or anaconda prompt) in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
-	- ``conda activate dfm_tools_devenv``
-	- ``pytest -v --tb=short --cov=dfm_tools`` (runs all tests)
-	- ``pytest -v --tb=short --cov=dfm_tools -m unittest``
-	- ``pytest -v --tb=short --cov=dfm_tools -m systemtest``
-	- ``pytest -v --tb=short --cov=dfm_tools -m acceptance``
-	- ``pytest -v --tb=short --cov=dfm_tools -m "not slow"``
-	- ``pytest -v --tb=short tests\test_get_nc.py::test_getplotmapWAQOS``
-- Regenerate html documentation:
-	- open command window (or anaconda prompt) in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
-	- ``conda activate dfm_tools_devenv``
-	- ``pdoc --html dfm_tools -o docs --force``
-- Commit and push your changes to your branch:
-	- open git bash window in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
-	- ``git checkout work_yourname`` (checkout your branch, never do anything while the master is selected)
-	- ``git add .``
-	- ``git commit -m "message to be included with your commit"``
-	- ``git push`` (pushes changes to server, do not do this in while working in the master)
-- increasing the version number after you committed all changes:
-	- open cmd window in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
-	- optional: ``conda activate dfm_tools_devenv``
-	- ``bumpversion major`` or ``bumpversion minor`` or ``bumpversion patch`` (changes version numbers in files and commits changes)
-	- push this change in version number with ``git push`` (from git bash window or cmd also ok?)
-- Request merging of your branch on https://github.com/openearth/dfm_tools/branches
-
