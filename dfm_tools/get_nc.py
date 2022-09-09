@@ -181,7 +181,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
         raise Exception('ERROR: depth argument is provided, but vertical slicing is not implemented yet, try layer argument instead')
 
     #STATION/GENERAL_STRUCTURES CHECKS
-    vars_pd_stats = vars_pd[(vars_pd['dtype']=='|S1') & (vars_pd['dimensions'].apply(lambda x: dimn_time not in x))]
+    vars_pd_stats = vars_pd[(vars_pd['dtype'].astype(str).str.startswith('|S') | (vars_pd['dtype']=='object')) & (vars_pd['dimensions'].apply(lambda x: dimn_time not in x))] #TODO: better check for bytes string
     dimname_stat_validvals = []
     for iR, vars_pd_stat in vars_pd_stats.iterrows():
         dimname_stat_validvals.append(vars_pd_stat['dimensions'][0]) #only append first dimension, the other one is often 'name_len'

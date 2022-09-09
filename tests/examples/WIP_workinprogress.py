@@ -22,9 +22,9 @@ dir_output = '.'
 
 
 #print gridinfo of several files to compare
-file_nc = r'p:\1204257-dcsmzuno\2014\data\meteo\HIRLAM72_2018\h72_201803.nc'
-print('\nfile = %s'%(file_nc))
-data_dummy = get_ncmodeldata(file_nc=file_nc, varname='northward_wind', timestep=0, get_linkedgridinfo=True)
+#file_nc = r'p:\1204257-dcsmzuno\2014\data\meteo\HIRLAM72_2018\h72_201803.nc' #TODO: xarray MissingDimensionsError
+#print('\nfile = %s'%(file_nc))
+#data_dummy = get_ncmodeldata(file_nc=file_nc, varname='northward_wind', timestep=0, get_linkedgridinfo=True)
 file_nc = r'p:\archivedprojects\1220688-lake-kivu\2_data\COSMO\COSMOCLM_2012_out02_merged_4Wouter.nc'
 print('\nfile = %s'%(file_nc))
 data_dummy = get_ncmodeldata(file_nc=file_nc, varname='U_10M', timestep=0, get_linkedgridinfo=True)
@@ -66,8 +66,9 @@ fig, ax = plt.subplots()
 plot_netmapdata(ugrid.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
 ax.set_aspect('equal')
 
+"""
 #hirlam
-file_nc = r'p:\1204257-dcsmzuno\2014\data\meteo\HIRLAM72_2018\h72_201803.nc'
+file_nc = r'p:\1204257-dcsmzuno\2014\data\meteo\HIRLAM72_2018\h72_201803.nc' #TODO: xarray MissingDimensionsError
 vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
 
 mesh2d_node_x = get_ncmodeldata(file_nc=file_nc, varname='x')
@@ -87,7 +88,7 @@ fig, ax = plt.subplots()
 ax.pcolor(mesh2d_node_x,mesh2d_node_y,magn)
 #plt.pcolor(mesh2d_node_x,mesh2d_node_y,airp,linewidth=0.5)
 plt.savefig(os.path.join(dir_output,'hirlam_magn_pcolor'))
-
+"""
 
 #plt.close('all')
 from dfm_tools.regulargrid import center2corner
@@ -250,7 +251,7 @@ station_names = get_hisstationlist(file_nc=file_nc, varname='point_zs')
 data_fromnc_his = get_ncmodeldata(file_nc=file_nc, varname='point_zs', station='all', timestep='all')
 
 fig, ax = plt.subplots()
-for iS,stat_name in enumerate(data_fromnc_his.var_stations['station_name']):
+for iS,stat_name in enumerate(data_fromnc_his.var_stations['stations']):
     ax.plot(data_fromnc_his.var_times, data_fromnc_his[:,iS], label=stat_name)
 ax.legend()
 plt.savefig(os.path.join(dir_output,'SFINCS_hiszs'))

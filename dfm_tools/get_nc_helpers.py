@@ -215,6 +215,42 @@ def get_varname_fromnc(data_nc,varname_requested,vardim):
 
 
 def get_ncvardimlist(file_nc):
+    import pandas as pd
+    
+    data_xr = xr.open_dataset(file_nc)
+    nc_varkeys = data_xr.variables.mapping.keys()
+    nc_dimkeys = data_xr.dims.mapping.keys()
+    
+    emptycol = [['']]*len(nc_varkeys)
+    emptycol_str = ['']*len(nc_varkeys)
+    vars_pd = pd.DataFrame({'nc_varkeys':nc_varkeys, 'shape':emptycol, 'dimensions':emptycol, 'dtype':emptycol,
+                            'standard_name':emptycol_str,'long_name':emptycol_str,'coordinates':emptycol_str,'units':emptycol_str,'mesh':emptycol_str,'location':emptycol_str},
+                           index=nc_varkeys)
+    dims_pd = pd.DataFrame({'nc_dimkeys': nc_dimkeys, 'size': [['']]*len(nc_dimkeys)},
+                           index=nc_dimkeys)
+    var_attr_name_list = ['standard_name','long_name','coordinates','units','mesh','location']
+    for varkey in nc_varkeys:
+        #get non-attribute properties of netcdf variable
+        vars_pd.loc[varkey,'nc_varkeys'] = varkey #TODO: this one is not necessary anymore, use index instead
+        vars_pd.loc[varkey,'shape'] = data_xr.variables[varkey].shape
+        vars_pd.loc[varkey,'dimensions'] = data_xr.variables[varkey].dims
+        vars_pd.loc[varkey,'dtype'] = data_xr.variables[varkey].dtype
+        #get attributes properties of netcdf variable
+        for attr_name in var_attr_name_list:
+            try:
+                vars_pd.loc[varkey, attr_name] = data_xr.variables[varkey].attrs[attr_name]
+            except:
+                pass
+    vars_pd['ndims'] = vars_pd['dimensions'].apply(len)
+    for dimkey in nc_dimkeys:
+        #get non-attribute properties of netcdf variable
+        dims_pd.loc[dimkey,'nc_dimkeys'] = dimkey
+        dims_pd.loc[dimkey,'size'] = data_xr.dims[dimkey]
+    data_xr.close()
+    return vars_pd, dims_pd
+
+
+def get_ncvardimlist_OLD(file_nc):
     from netCDF4 import Dataset
     import pandas as pd
     #import numpy as np
@@ -250,7 +286,6 @@ def get_ncvardimlist(file_nc):
         dims_pd.loc[iD,'size'] = data_nc.dimensions[nc_dim].size
     data_nc.close()
     return vars_pd, dims_pd
-
     
 
 def get_varnamefrom_keyslongstandardname(file_nc, varname):
@@ -268,19 +303,16 @@ def get_varnamefrom_keyslongstandardname(file_nc, varname):
         pass
     elif varname in nc_varlongnames:
         varid = nc_varlongnames.index(varname)
-        varname = vars_pd.loc[varid,'nc_varkeys']
+        varname = vars_pd.index[varid]
         print('varname found in long_name attribute')
     elif varname in nc_varstandardnames:
         varid = nc_varstandardnames.index(varname)
-        varname = vars_pd.loc[varid,'nc_varkeys']
+        varname = vars_pd.index[varid]
         print('varname found in standard_name attribute')
     else:
         raise Exception('ERROR: requested variable %s not in netcdf, available are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_ncvardimlist\nvars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)\nnote that you can retrieve variables by keys, standard_name or long_name attributes'%(varname, vars_pd))
     
     return varname
-
-
-
 
 
 
@@ -490,30 +522,36 @@ def get_timeid_fromdatetime(data_nc_datetimes_pd, timestep):
 
 
 def get_hisstationlist(file_nc, varname='waterlevel'):
-    #encoding = {'station_lon': {'_FillValue': None}, lon/lat are now fillvalue if nan
+    #encoding = {'station_lon': {'_FillValue': None}, #TODO lon/lat are now fillvalue if nan
     #            }
-    data_xr = xr.open_dataset(file_nc)#,encoding=encoding)
+    data_xr = xr.open_dataset(file_nc)
     vardims = data_xr[varname].dims
-    #print(vardims)
-    #dtypes_pd = pd.DataFrame({'keys':dict(data_xr.dtypes).keys(),'values':dict(data_xr.dtypes).values()})
     
-    if 'stations' in vardims:
-        statlist_pd = data_xr['stations'].to_dataframe()
-        statlist_pd = statlist_pd.drop('stations',axis=1) #is already the index
-        statlist_pd['station_name'] = pd.Series(data_xr['station_name'].astype(str)).str.strip() #replace bytes by stripped strings
-    elif 'cross_section' in vardims:
-        statlist_pd = data_xr['cross_section'].to_dataframe()
-        statlist_pd = statlist_pd.drop('cross_section',axis=1) #is already the index
-        statlist_pd['cross_section_name'] = pd.Series(data_xr['cross_section_name'].astype(str)).str.strip() #replace bytes by stripped strings
-    elif 'general_structures' in vardims:
-        statlist_pd = data_xr['general_structures'].to_dataframe()
-        statlist_pd = statlist_pd.drop('general_structures',axis=1) #is already the index
-        statlist_pd['general_structure_id'] = pd.Series(data_xr['general_structure_id'].astype(str)).str.strip() #replace bytes by stripped strings
-    else:
-        raise Exception(f'unexpected dimensions: {vardims}')
+    #print(vardims)
+    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    bool_vars_dtypestr = vars_pd['dtype'].astype(str).str.startswith('|S') | (vars_pd['dtype']=='object')#& (vars_pd['ndims']==1) #TODO: better check for dtype string?
+    vars_pd_stats = vars_pd.loc[bool_vars_dtypestr]
+    
+    if len(vars_pd_stats) == 0:
+        raise Exception('ERROR: no dimension in %s variable that corresponds to station-like variables (or none present):\n%s'%(varname, vars_pd_stats['nc_varkeys']))
+        
+    dimkey_use = None
+    for dimtuple in vars_pd_stats['dimensions']:
+        dimkey = dimtuple[0]
+        if dimkey in vardims:
+            dimkey_use = dimkey
+
+    statlist_pd = data_xr[dimkey_use].to_dataframe()
+    #statlist_pd = statlist_pd.drop(dimkey_use,axis=1) #is already the index
+    
+    for colname in statlist_pd.columns:
+        if isinstance(statlist_pd[colname][0],bytes): #TODO: better check would be data_xr.variables[colname].dtype=='S256'
+            print(f'variable {colname}: converting bytes to str')
+            statlist_pd[colname] = pd.Series(data_xr[colname].astype(str)).str.strip() #replace bytes by stripped strings
     
     data_xr.close()
     return statlist_pd
+
 
 
 def get_hisstationlist_OLD(file_nc,varname):
@@ -548,7 +586,7 @@ def get_hisstationlist_OLD(file_nc,varname):
     
     #create dataframe of station names coupled to varname
     if varname_stationdimname_list == []:
-        raise Exception('ERROR: no dimension in %s variable that corresponds to station-like variables (or none present):\n%s'%(varname, vars_pd_stats['nc_varkeys']))
+        raise Exception('ERROR OLD: no dimension in %s variable that corresponds to station-like variables (or none present):\n%s'%(varname, vars_pd_stats['nc_varkeys']))
     else:
         var_station_names_pd = pd.DataFrame(columns = None)
         for iSV, varname_stationvarname in enumerate(varname_stationvarname_list):

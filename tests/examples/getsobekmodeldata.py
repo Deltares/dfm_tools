@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 plt.close('all')
 
 from dfm_tools.get_nc import get_ncmodeldata
-#from dfm_tools.get_nc_helpers import get_hisstationlist
+from dfm_tools.get_nc_helpers import get_hisstationlist
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
@@ -20,7 +20,7 @@ dir_output = '.'
 file_nc = os.path.join(dir_testinput,'KenmerkendeWaarden','observations.nc')
 
 #station_names = get_hisstationlist(file_nc=file_nc, varname='observation_id')
-#station_names = get_hisstationlist(file_nc=file_nc, varname='water_level')
+station_names = get_hisstationlist(file_nc=file_nc, varname='water_level')
 data_fromsobek = get_ncmodeldata(file_nc=file_nc, varname='water_level', station=['Maasmond','HKVHLD','MO_1035.00'], timestep='all')
 
 fig, ax = plt.subplots()

@@ -73,7 +73,7 @@ for file_nc in file_nc_list:
     data_fromhis_temp = get_ncmodeldata(file_nc=file_nc, varname='temperature', timestep=range(40,100), layer= 'all', station=station_zt)
     data_fromhis_wl = get_ncmodeldata(file_nc=file_nc, varname='waterlevel', timestep=range(40,100), station=station_zt)#, multipart=False)
     fig, (axwl,ax1) = plt.subplots(2,1,figsize=(12,7),gridspec_kw={'height_ratios':[1,2]},sharex=True,sharey=True)
-    statid_subset = data_fromhis_wl.var_stations['station_id'].tolist().index(station_zt)
+    statid_subset = data_fromhis_wl.var_stations['station_name'].tolist().index(station_zt)
     axwl.plot(data_fromhis_wl.var_times.iloc[[0,-1]],[0,0],'k-',linewidth=0.5)
     ax1.plot(data_fromhis_wl.var_times.iloc[[0,-1]],[0,0],'k-',linewidth=0.5)
     axwl.plot(data_fromhis_wl.var_times,data_fromhis_wl[:,statid_subset],'-',label='wl %s'%(station_zt))
