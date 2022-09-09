@@ -212,8 +212,6 @@ def get_varname_fromnc(data_nc,varname_requested,vardim):
 
 
 
-
-
 def get_ncvardimlist(file_nc):
     import pandas as pd
     
@@ -250,6 +248,7 @@ def get_ncvardimlist(file_nc):
     return vars_pd, dims_pd
 
 
+""" #TODO: remove this def
 def get_ncvardimlist_OLD(file_nc):
     from netCDF4 import Dataset
     import pandas as pd
@@ -286,7 +285,8 @@ def get_ncvardimlist_OLD(file_nc):
         dims_pd.loc[iD,'size'] = data_nc.dimensions[nc_dim].size
     data_nc.close()
     return vars_pd, dims_pd
-    
+"""
+
 
 def get_varnamefrom_keyslongstandardname(file_nc, varname):
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
@@ -551,7 +551,7 @@ def get_hisstationlist(file_nc, varname='waterlevel'):
     return statlist_pd
 
 
-
+""" #TODO: remove this def
 def get_hisstationlist_OLD(file_nc,varname):
     from netCDF4 import Dataset, chartostring
     import pandas as pd
@@ -595,14 +595,12 @@ def get_hisstationlist_OLD(file_nc,varname):
                     station_name_list_raw = chartostring(station_name_char)
                 except: #for glossis netCDF file with probably invalidly stored station names
                     warnings.warn('station list could not be decoded with utf-8, now done with latin1 but the netCDF file might be corrupt and the station names sometimes unreadable')
-                    """
-                    station_name_list_raw_bytes = chartostring(station_name_char,encoding='bytes')
-                    for iS,stat in enumerate(station_name_list_raw_bytes):
-                        try:
-                            stat.decode('utf-8')
-                        except:
-                            print('stat %d is not utf-8:\n\tbytes decoding: %s\n\tlatin-1 decoding: %s'%(iS, stat, stat.decode('latin-1')))
-                    """
+                    #station_name_list_raw_bytes = chartostring(station_name_char,encoding='bytes')
+                    #for iS,stat in enumerate(station_name_list_raw_bytes):
+                    #    try:
+                    #        stat.decode('utf-8')
+                    #    except:
+                    #        print('stat %d is not utf-8:\n\tbytes decoding: %s\n\tlatin-1 decoding: %s'%(iS, stat, stat.decode('latin-1')))
                     station_name_list_raw = chartostring(station_name_char,encoding='latin-1')
                 station_name_list = np.char.strip(station_name_list_raw) #necessary step for Sobek and maybe others
                 var_station_names_pd[varname_stationvarname] = station_name_list
@@ -618,7 +616,7 @@ def get_hisstationlist_OLD(file_nc,varname):
     
     data_nc.close()
     return var_station_names_pd
-
+"""
 
 
 
