@@ -527,7 +527,6 @@ def get_hisstationlist(file_nc, varname='waterlevel'):
     data_xr = xr.open_dataset(file_nc)
     vardims = data_xr[varname].dims
     
-    #print(vardims)
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
     bool_vars_dtypestr = vars_pd['dtype'].astype(str).str.startswith('|S') | (vars_pd['dtype']=='object')#& (vars_pd['ndims']==1) #TODO: better check for dtype string?
     vars_pd_stats = vars_pd.loc[bool_vars_dtypestr]
@@ -540,9 +539,8 @@ def get_hisstationlist(file_nc, varname='waterlevel'):
         dimkey = dimtuple[0]
         if dimkey in vardims:
             dimkey_use = dimkey
-
+    
     statlist_pd = data_xr[dimkey_use].to_dataframe()
-    #statlist_pd = statlist_pd.drop(dimkey_use,axis=1) #is already the index
     
     for colname in statlist_pd.columns:
         if isinstance(statlist_pd[colname][0],bytes): #TODO: better check would be data_xr.variables[colname].dtype=='S256'
