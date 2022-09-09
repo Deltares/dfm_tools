@@ -36,6 +36,7 @@ helper functions for functions in get_nc.py
 
 
 import xarray as xr
+import pandas as pd
 
 
 def ncdump(file_nc):
@@ -489,26 +490,27 @@ def get_timeid_fromdatetime(data_nc_datetimes_pd, timestep):
 
 
 def get_hisstationlist(file_nc, varname='waterlevel'):
-    import xarray as xr
-    import pandas as pd
-    
-    encoding = {'station_lon': {'_FillValue': None},
-                }
+    #encoding = {'station_lon': {'_FillValue': None}, lon/lat are now fillvalue if nan
+    #            }
     data_xr = xr.open_dataset(file_nc)#,encoding=encoding)
     vardims = data_xr[varname].dims
-    dtypes_pd = pd.DataFrame({'keys':dict(data_xr.dtypes).keys(),'values':dict(data_xr.dtypes).values()})
+    #print(vardims)
+    #dtypes_pd = pd.DataFrame({'keys':dict(data_xr.dtypes).keys(),'values':dict(data_xr.dtypes).values()})
     
     if 'stations' in vardims:
         statlist_pd = data_xr['stations'].to_dataframe()
         statlist_pd = statlist_pd.drop('stations',axis=1) #is already the index
         statlist_pd['station_name'] = pd.Series(data_xr['station_name'].astype(str)).str.strip() #replace bytes by stripped strings
-    elif 'cross_sections' in vardims:
-        statlist_pd = data_xr['cross_sections'].to_dataframe()
-        statlist_pd = statlist_pd.drop('cross_sections',axis=1) #is already the index
-        statlist_pd['cross_secion_name'] = pd.Series(data_xr['cross_secion_name'].astype(str)).str.strip() #replace bytes by stripped strings
+    elif 'cross_section' in vardims:
+        statlist_pd = data_xr['cross_section'].to_dataframe()
+        statlist_pd = statlist_pd.drop('cross_section',axis=1) #is already the index
+        statlist_pd['cross_section_name'] = pd.Series(data_xr['cross_section_name'].astype(str)).str.strip() #replace bytes by stripped strings
+    elif 'general_structures' in vardims:
+        statlist_pd = data_xr['general_structures'].to_dataframe()
+        statlist_pd = statlist_pd.drop('general_structures',axis=1) #is already the index
+        statlist_pd['general_structure_id'] = pd.Series(data_xr['general_structure_id'].astype(str)).str.strip() #replace bytes by stripped strings
     else:
         raise Exception(f'unexpected dimensions: {vardims}')
-    statlist_pd['station_name'].astype(str).str.strip()
     
     data_xr.close()
     return statlist_pd
