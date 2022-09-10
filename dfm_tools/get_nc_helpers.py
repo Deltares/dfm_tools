@@ -37,20 +37,14 @@ helper functions for functions in get_nc.py
 
 import xarray as xr
 import pandas as pd
+import re
+import glob
+import os
 
 
-def ncdump(file_nc):
-    """
-    ncdump outputs dimensions, variables and their attribute information.
-    The information is similar to that of NCAR's ncdump utility.
-    ncdump requires a valid instance of Dataset.
-    
-    Parameters
-    ----------
-    file_nc : netCDF4.Dataset
-        A netCDF4 dateset object
-    
-    """
+#TODO: remove this, easier with xarray
+"""
+def ncdump_OLD(file_nc):
     from netCDF4 import Dataset
     #import pandas as pd
     #import numpy as np
@@ -83,15 +77,12 @@ def ncdump(file_nc):
             print('\t\t%s: %s'%(ncattr,data_nc.variables[var].getncattr(ncattr)))
     data_nc.close()
     #return nc_attrs, nc_dims, nc_vars
-
+"""
 
 
 
 def get_ncfilelist(file_nc, multipart=None):
     #get list of mapfiles
-    import re
-    import glob
-    import os
     
     if not os.path.exists(file_nc):
         raise Exception('ERROR: file does not exist: %s'%(file_nc))
@@ -124,7 +115,6 @@ def get_ncfilelist(file_nc, multipart=None):
 
 
 def get_varname_fromnc(data_nc,varname_requested,vardim):
-    import pandas as pd
     
     #VARIABLE names used within different versions of Delft3D-Flexible Mesh
     varnames_list = pd.DataFrame()
@@ -213,7 +203,6 @@ def get_varname_fromnc(data_nc,varname_requested,vardim):
 
 
 def get_ncvardimlist(file_nc):
-    import pandas as pd
     
     data_xr = xr.open_dataset(file_nc)
     nc_varkeys = data_xr.variables.mapping.keys()
@@ -500,7 +489,7 @@ def get_timesfromnc(file_nc, varname='time', retrieve_ids=False, keeptimezone=Tr
 
 
 
-
+#TODO: remove after moving to xarray for time selection
 def get_timeid_fromdatetime(data_nc_datetimes_pd, timestep):
     import numpy as np
     import pandas as pd
@@ -525,6 +514,7 @@ def get_hisstationlist(file_nc, varname='waterlevel'):
     #encoding = {'station_lon': {'_FillValue': None}, #TODO lon/lat are now fillvalue if nan
     #            }
     data_xr = xr.open_dataset(file_nc)
+    varname = get_varnamefrom_keyslongstandardname(file_nc, varname) #get varname from varkeys/standardname/longname if exists
     vardims = data_xr[varname].dims
     
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
@@ -619,26 +609,29 @@ def get_hisstationlist_OLD(file_nc,varname):
 """
 
 
-
-def get_stationid_fromstationlist(station_name_list_pd, station, varname):
+#TODO: might not be necessary to have when using xarray
+#TODO: can this be simplyfied?
+def get_stationid_fromstationlist(stations_pd, stationlist):
     import numpy as np
     import pandas as pd
     
-    station_pd = pd.Series(station)
+    if not isinstance(stationlist,list):
+        stationlist = [stationlist]
+    station_pd = pd.Series(stationlist)
     bool_nrows_req = station_pd.shape[0]
-    bool_nrows_avai = station_name_list_pd.shape[0]
-    bool_ncols = station_name_list_pd.shape[1]
+    bool_nrows_avai = stations_pd.shape[0]
+    bool_ncols = stations_pd.shape[1]
     
     stations_bool_reqinfile_allcols = np.zeros((bool_nrows_req,bool_ncols),dtype=bool)
     stations_bool_fileinreq_allcols = np.zeros((bool_nrows_avai,bool_ncols),dtype=bool)
     for iCol in range(bool_ncols):
         #check if all requested stations are in netcdf file
-        stations_bool_reqinfile_allcols[:,iCol] = station_pd.isin(station_name_list_pd.iloc[:,iCol])
-        stations_bool_fileinreq_allcols[:,iCol] = station_name_list_pd.iloc[:,iCol].isin(station_pd)
+        stations_bool_reqinfile_allcols[:,iCol] = station_pd.isin(stations_pd.iloc[:,iCol])
+        stations_bool_fileinreq_allcols[:,iCol] = stations_pd.iloc[:,iCol].isin(station_pd)
     
     stations_bool_reqinfile = stations_bool_reqinfile_allcols.any(axis=1)
     if not stations_bool_reqinfile.all():
-        raise Exception('ERROR: not all requested stations are in netcdf file:\n%s\navailable in netcdf file are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist\nstation_name_list_pd = get_hisstationlist(file_nc=file_nc,varname="%s")'%(station_pd[~stations_bool_reqinfile], station_name_list_pd, varname))
+        raise Exception(f'ERROR: not all requested stations are in netcdf file:\n{station_pd[~stations_bool_reqinfile]}\navailable in netcdf file are:\n{stations_pd}')
     #get ids of requested stations in netcdf file
     station_bool_fileinreq = stations_bool_fileinreq_allcols.any(axis=1)
     station_ids = list(np.where(station_bool_fileinreq)[0])

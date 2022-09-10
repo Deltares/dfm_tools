@@ -201,13 +201,13 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
             if type(station[0]) in listtype_int:
                 station_ids = station
             elif type(station[0]) in listtype_str:
-                station_ids = get_stationid_fromstationlist(station_name_list_pd, station, varname)
+                station_ids = get_stationid_fromstationlist(station_name_list_pd, station)
             else:
                 raise Exception('ERROR1: station variable type not anticipated (%s), (list/range/ndarray of) strings or ints are accepted (or "all")'%(type(station)))
         elif type(station) in listtype_int:
             station_ids = [station]
         elif type(station) in listtype_str:
-            station_ids = get_stationid_fromstationlist(station_name_list_pd, [station], varname)
+            station_ids = get_stationid_fromstationlist(station_name_list_pd, [station])
         else:
             raise Exception('ERROR2: station variable type not anticipated (%s), (list/range/ndarray of) strings or ints are accepted (or "all")'%(type(station)))
         #convert to positive index, make unique(+sort), convert to list because of indexing with np.array of len 1 errors sometimes
@@ -750,11 +750,84 @@ def plot_background(ax=None, projection=None, google_style='satellite', resoluti
 
 
 
+def plot_ztdata(data_xr, varname, ax=None, mask_data=True, only_contour=False, **kwargs):
+    """
+    
+
+    Parameters
+    ----------
+    data_xr : TYPE
+        DESCRIPTION.
+    varname : TYPE
+        DESCRIPTION.
+    ax : matplotlib.axes._subplots.AxesSubplot, optional
+        the figure axis. The default is None.
+    mask_data : bool, optional
+        whether to repair z_interface coordinates and mask data in inactive layers. The default is True.
+    only_contour : bool, optional
+        Wheter to plot contour lines of the dataset. The default is False.
+    **kwargs : TYPE
+        properties to give on to the pcolormesh function.
+
+    Raises
+    ------
+    Exception
+        DESCRIPTION.
+
+    Returns
+    -------
+    pc : matplotlib.collections.QuadMesh
+        DESCRIPTION.
+
+    """
+
+    import warnings
+    import numpy as np
+    import matplotlib.pyplot as plt
+    
+    if len(data_xr.get('stations')) != 1:
+        raise Exception('ERROR: provided data_xr has multiple stations, first use data_xr.isel(stations=int) to select stations')
+    
+    data_xr_flat = data_xr.squeeze() #TODO: maybe move this outside of function
+    
+    warnings.warn('WARNING: layers in dfowfm hisfile are currently incorrect, check your figures carefully')
+    data_fromhis_var = data_xr_flat.get(varname).to_numpy()
+    data_fromhis_zcen = data_xr_flat.get('zcoordinate_c').to_numpy()
+    data_fromhis_zcor = data_xr_flat.get('zcoordinate_w').to_numpy()
+    data_fromhis_zcor = np.concatenate([data_fromhis_zcor,data_fromhis_zcor[[-1],:]],axis=0)
+    data_fromhis_wl = data_xr_flat.get('waterlevel').to_numpy()
+    
+    if mask_data:
+        data_fromhis_var = np.ma.array(data_fromhis_var)
+        bool_zcen_equaltop = (data_fromhis_zcen==data_fromhis_zcen[:,-1:]).all(axis=0)
+        id_zcentop = np.argmax(bool_zcen_equaltop) # id of first z_center that is equal to z_center of last layer
+        if (data_fromhis_zcor[:-1,id_zcentop] > data_fromhis_zcen[:,id_zcentop]).any():
+            print('correcting z interface values')
+            data_fromhis_zcor[:-1,id_zcentop+1] = data_fromhis_wl
+            data_fromhis_zcor[:-1,id_zcentop] = (data_fromhis_zcen[:,id_zcentop-1]+data_fromhis_zcen[:,id_zcentop])/2
+        bool_zcen_equaltop[id_zcentop] = False
+        #bool_zcor_equaltop = (data_fromhis_zcor_flat[:,1:]==data_fromhis_zcor_flat[:,-1:]).all(axis=0)
+        mask_array = np.tile(bool_zcen_equaltop,(data_fromhis_zcor.shape[0],1))
+        data_fromhis_var.mask = mask_array
+
+    if not ax: ax=plt.gca()
+
+    # generate 2 2d grids for the x & y bounds (you can also give one 2D array as input in case of eg time varying z coordinates)
+    time_np = data_xr_flat.time.to_numpy()
+    time_cor = np.concatenate([time_np,time_np[[-1]]])
+    time_mesh_cor = np.tile(time_cor,(data_fromhis_zcor.shape[-1],1)).T
+    time_mesh_cen = np.tile(time_np,(data_fromhis_zcen.shape[-1],1)).T
+    if only_contour:
+        pc = ax.contour(time_mesh_cen,data_fromhis_zcen,data_fromhis_var, **kwargs)
+    else: #TODO: should actually supply cell edges instead of centers to pcolor/pcolormesh, but inconvenient for time dimension.
+        #pc = ax.pcolormesh(time_mesh_cen, data_fromhis_zcen, data_fromhis_var, **kwargs)
+        pc = ax.pcolor(time_mesh_cor, data_fromhis_zcor, data_fromhis_var, **kwargs) #pcolor also supports missing/masked xy data, but is slower
+
+    return pc
 
 
-
-
-def plot_ztdata(file_nc, dfmtools_hisvar, statid_subset=0, ax=None, mask_data=True, only_contour=False, **kwargs):
+#TODO: remove this old definition
+def plot_ztdata_OLD(file_nc, dfmtools_hisvar, statid_subset=0, ax=None, mask_data=True, only_contour=False, **kwargs):
     """
 
 
@@ -778,6 +851,7 @@ def plot_ztdata(file_nc, dfmtools_hisvar, statid_subset=0, ax=None, mask_data=Tr
     pc : matplotlib.collections.QuadMesh
         DESCRIPTION.
 
+    """
     """
     import warnings
     import numpy as np
@@ -811,12 +885,6 @@ def plot_ztdata(file_nc, dfmtools_hisvar, statid_subset=0, ax=None, mask_data=Tr
         raise Exception('unexpected number of dimensions')
     data_fromhis_wl_flat = data_fromhis_wl[:,statid_subset]
 
-    """
-    fig,(ax1)=plt.subplots()
-    ax1.plot(np.arange(data_fromhis_zcen_flat.shape[1])+.5,data_fromhis_zcen_flat[5,:],'x',label='centers')
-    ax1.plot(range(data_fromhis_zcor_flat.shape[1]),data_fromhis_zcor_flat[5,:],'o',label='corners')
-    ax1.legend()
-    """
     if mask_data:
         bool_zcen_equaltop = (data_fromhis_zcen_flat==data_fromhis_zcen_flat[:,-1:]).all(axis=0)
         id_zcentop = np.argmax(bool_zcen_equaltop) # id of first z_center that is equal to z_center of last layer
@@ -840,5 +908,5 @@ def plot_ztdata(file_nc, dfmtools_hisvar, statid_subset=0, ax=None, mask_data=Tr
     else: #TODO: should actually supply cell edges instead of centers to pcolor/pcolormesh, but inconvenient for time dimension.
         #pc = ax.pcolormesh(time_mesh_cen, data_fromhis_zcen_flat, dfmtools_hisvar_flat, **kwargs)
         pc = ax.pcolor(time_mesh_cor, data_fromhis_zcor_flat, dfmtools_hisvar_flat, **kwargs) #pcolor also supports missing/masked xy data, but is slower
-
+    """
     return pc

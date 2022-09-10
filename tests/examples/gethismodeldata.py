@@ -6,10 +6,12 @@ Created on Wed Oct 27 14:45:30 2021
 """
 
 import os
+import xarray as xr
 import matplotlib.pyplot as plt
 plt.close('all')
 
-from dfm_tools.get_nc import get_ncmodeldata, plot_ztdata
+from dfm_tools.get_nc import plot_ztdata
+from dfm_tools.get_nc_helpers import get_hisstationlist, get_stationid_fromstationlist
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
@@ -20,13 +22,6 @@ file_nc_list = [os.path.join(dir_testinput,'vanNithin','tttz_0000_his.nc'),
                 ]
 
 for file_nc in file_nc_list:
-    def cen2cor(time_cen):
-        #convert time centers2corners (more accurate representation in zt-plot, but can also be skipped)
-        import pandas as pd
-        time_int = (time_cen.iloc[2]-time_cen.iloc[1])
-        time_cor = data_fromhis_temp.var_times-time_int/2
-        time_cor = time_cor.append(pd.Series([time_cor.iloc[-1]+time_int]))
-        return time_cor
 
     if 'Grevelingen-FM_0000' in file_nc:
         #file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_his.nc')
@@ -40,48 +35,64 @@ for file_nc in file_nc_list:
         station = ['MO_TS_MO_ATHOS','MO_TS_MO_LESVO','MO_TS_MO_SKYRO','IOC_thes','farm_impaqt']
         station_zt = 'MO_TS_MO_ATHOS'
     
+    data_xr = xr.open_dataset(file_nc)
+    stations_pd = get_hisstationlist(file_nc)
+    if station == 'all':
+        idx_stations = stations_pd.index
+    else:
+        idx_stations = get_stationid_fromstationlist(stations_pd, stationlist=station) #TODO: can this be simpler?
+    idx_stations_zt = get_stationid_fromstationlist(stations_pd, stationlist=station_zt) #TODO: can this be simpler?
+    
     print('plot bedlevel from his')
-    data_fromhis = get_ncmodeldata(file_nc=file_nc, varname='bedlevel', station=station)#, multipart=False)
+    #data_fromhis = get_ncmodeldata(file_nc=file_nc, varname='bedlevel', station=station)#, multipart=False)
+    data_fromhis_xr = data_xr.bedlevel.isel(stations=idx_stations)
     fig, ax = plt.subplots()
-    ax.plot(data_fromhis.var_stations.iloc[:,0],data_fromhis,'-')
+    #ax.plot(data_fromhis.var_stations.iloc[:,0],data_fromhis,'-')
+    ax.plot(data_fromhis_xr.station_name,data_fromhis_xr,'-')
     ax.tick_params('x',rotation=90)
     fig.savefig(os.path.join(dir_output,'%s_bedlevel'%(os.path.basename(file_nc).replace('.',''))))
 
     print('plot waterlevel from his')
-    data_fromhis = get_ncmodeldata(file_nc=file_nc, varname='waterlevel', timestep='all', station=station)#, multipart=False)
+    #data_fromhis = get_ncmodeldata(file_nc=file_nc, varname='waterlevel', timestep='all', station=station)#, multipart=False)
+    data_fromhis_xr = data_xr.waterlevel.isel(stations=idx_stations)
     fig, ax = plt.subplots()
-    ax.plot(data_fromhis.var_times,data_fromhis,'-')
+    #ax.plot(data_fromhis.var_times,data_fromhis,'-')
+    ax.plot(data_fromhis_xr.time,data_fromhis_xr.to_numpy(),'-')
     fig.savefig(os.path.join(dir_output,'%s_waterlevel'%(os.path.basename(file_nc).replace('.',''))))
     
     print('plot salinity from his')
-    data_fromhis = get_ncmodeldata(file_nc=file_nc, varname='salinity', timestep='all', layer=5, station=station)#, multipart=False)
-    data_fromhis_flat = data_fromhis[:,:,0]
+    #data_fromhis = get_ncmodeldata(file_nc=file_nc, varname='salinity', timestep='all', layer=5, station=station)#, multipart=False)
+    #data_fromhis_flat = data_fromhis[:,:,0]
+    data_fromhis_xr = data_xr.salinity.isel(stations=idx_stations,laydim=5)
     fig, ax = plt.subplots()
-    ax.plot(data_fromhis.var_times,data_fromhis_flat,'-')
+    #ax.plot(data_fromhis.var_times,data_fromhis_flat,'-')
+    ax.plot(data_fromhis_xr.time,data_fromhis_xr,'-')
     fig.savefig(os.path.join(dir_output,'%s_salinity'%(os.path.basename(file_nc).replace('.',''))))
-
+    
     print('plot salinity over depth')
     #depth retrieval is probably wrong
-    data_fromhis_depth = get_ncmodeldata(file_nc=file_nc, varname='zcoordinate_c', timestep=4, layer='all', station=station)
-    data_fromhis = get_ncmodeldata(file_nc=file_nc, varname='salinity', timestep=4, layer='all', station=station)
+    #data_fromhis_depth = get_ncmodeldata(file_nc=file_nc, varname='zcoordinate_c', timestep=4, layer='all', station=station)
+    #data_fromhis = get_ncmodeldata(file_nc=file_nc, varname='salinity', timestep=4, layer='all', station=station)
+    data_fromhis_depth_xr = data_xr.zcoordinate_c.isel(stations=idx_stations,time=4)
+    data_fromhis_xr = data_xr.salinity.isel(stations=idx_stations,time=4)
     fig, ax = plt.subplots()
-    ax.plot(data_fromhis[0,:,:].T, data_fromhis_depth[0,:,:].T,'-')
-    ax.legend(data_fromhis.var_stations.iloc[:,0])
+    #ax.plot(data_fromhis[0,:,:].T, data_fromhis_depth[0,:,:].T,'-')
+    ax.plot(data_fromhis_xr.T, data_fromhis_depth_xr.T,'-')
+    ax.legend(data_fromhis_xr.station_name.astype(str).to_numpy()) #TODO: maybe less complex via stations_pd? maybe decode upon open_dataset
     fig.savefig(os.path.join(dir_output,'%s_salinityoverdepth'%(os.path.basename(file_nc).replace('.',''))))
     
     print('zt temperature plot and wl')
-    data_fromhis_temp = get_ncmodeldata(file_nc=file_nc, varname='temperature', timestep=range(40,100), layer= 'all', station=station_zt)
-    data_fromhis_wl = get_ncmodeldata(file_nc=file_nc, varname='waterlevel', timestep=range(40,100), station=station_zt)#, multipart=False)
+    data_xr_selzt = data_xr.isel(stations=idx_stations_zt,time=slice(40,100))
+    data_fromhis_wl_xr = data_xr_selzt.get('waterlevel')
     fig, (axwl,ax1) = plt.subplots(2,1,figsize=(12,7),gridspec_kw={'height_ratios':[1,2]},sharex=True,sharey=True)
-    statid_subset = data_fromhis_wl.var_stations['station_name'].tolist().index(station_zt)
-    axwl.plot(data_fromhis_wl.var_times.iloc[[0,-1]],[0,0],'k-',linewidth=0.5)
-    ax1.plot(data_fromhis_wl.var_times.iloc[[0,-1]],[0,0],'k-',linewidth=0.5)
-    axwl.plot(data_fromhis_wl.var_times,data_fromhis_wl[:,statid_subset],'-',label='wl %s'%(station_zt))
-    c = plot_ztdata(file_nc=file_nc, dfmtools_hisvar=data_fromhis_temp, ax=ax1, statid_subset=statid_subset, cmap='jet')
+    axwl.plot(data_xr_selzt.time[[0,-1]],[0,0],'k-',linewidth=0.5)
+    ax1.plot(data_xr_selzt.time[[0,-1]],[0,0],'k-',linewidth=0.5)
+    axwl.plot(data_xr_selzt.time,data_fromhis_wl_xr[:,0],'-',label=f'wl {station_zt}')
+    c = plot_ztdata(data_xr=data_xr_selzt, varname='temperature', ax=ax1, cmap='jet')
     fig.colorbar(c,ax=axwl)
     fig.colorbar(c,ax=ax1)
     #contour
-    CS = plot_ztdata(file_nc=file_nc, dfmtools_hisvar=data_fromhis_temp, ax=ax1, statid_subset=statid_subset, only_contour=True, levels=6, colors='k', linewidths=0.8, linestyles='solid')
+    CS = plot_ztdata(data_xr=data_xr_selzt, varname='temperature', ax=ax1, only_contour=True, levels=6, colors='k', linewidths=0.8, linestyles='solid')
     ax1.clabel(CS, fontsize=10)
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,'%s_zt_temp'%(os.path.basename(file_nc).replace('.',''))))
