@@ -788,7 +788,7 @@ def plot_ztdata(data_xr, varname, ax=None, mask_data=True, only_contour=False, *
     if len(data_xr.get('stations')) != 1:
         raise Exception('ERROR: provided data_xr has multiple stations, first use data_xr.isel(stations=int) to select stations')
     
-    data_xr_flat = data_xr.squeeze() #TODO: maybe move this outside of function
+    data_xr_flat = data_xr.squeeze() #squeeze station dimension #TODO: maybe move this outside of function
     
     warnings.warn('WARNING: layers in dfowfm hisfile are currently incorrect, check your figures carefully')
     data_fromhis_var = data_xr_flat.get(varname).to_numpy()
