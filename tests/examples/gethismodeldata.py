@@ -16,9 +16,9 @@ from dfm_tools.get_nc_helpers import get_hisstationlist, get_stationid_fromstati
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
-file_nc_list = [os.path.join(dir_testinput,'vanNithin','tttz_0000_his.nc'),
+file_nc_list = [#os.path.join(dir_testinput,'vanNithin','tttz_0000_his.nc'),
                 os.path.join(dir_testinput,'DFM_3D_z_Grevelingen\\computations\\run01\\DFM_OUTPUT_Grevelingen-FM\\Grevelingen-FM_0000_his.nc'),
-                r'p:\11202512-h2020_impaqt\07_Mediterranean_model\MedSea_impaqt_model\computations_final\r013_waq\DFM_OUTPUT_MedSea_impaqt_FM\MedSea_impaqt_FM_0000_his.nc',
+                #r'p:\11202512-h2020_impaqt\07_Mediterranean_model\MedSea_impaqt_model\computations_final\r013_waq\DFM_OUTPUT_MedSea_impaqt_FM\MedSea_impaqt_FM_0000_his.nc',
                 ]
 
 for file_nc in file_nc_list:
@@ -41,7 +41,7 @@ for file_nc in file_nc_list:
         idx_stations = stations_pd.index
     else:
         idx_stations = get_stationid_fromstationlist(stations_pd, stationlist=station) #TODO: can this be simpler?
-    idx_stations_zt = get_stationid_fromstationlist(stations_pd, stationlist=station_zt) #TODO: can this be simpler?
+    idx_stations_zt = get_stationid_fromstationlist(stations_pd, stationlist=station_zt)[0] #if provide single station (string, no list), the shape of the resulting xarray is correct
     
     print('plot bedlevel from his')
     #data_fromhis = get_ncmodeldata(file_nc=file_nc, varname='bedlevel', station=station)#, multipart=False)
@@ -51,7 +51,7 @@ for file_nc in file_nc_list:
     ax.plot(data_fromhis_xr.station_name,data_fromhis_xr,'-')
     ax.tick_params('x',rotation=90)
     fig.savefig(os.path.join(dir_output,'%s_bedlevel'%(os.path.basename(file_nc).replace('.',''))))
-
+    
     print('plot waterlevel from his')
     #data_fromhis = get_ncmodeldata(file_nc=file_nc, varname='waterlevel', timestep='all', station=station)#, multipart=False)
     data_fromhis_xr = data_xr.waterlevel.isel(stations=idx_stations)
@@ -87,12 +87,12 @@ for file_nc in file_nc_list:
     fig, (axwl,ax1) = plt.subplots(2,1,figsize=(12,7),gridspec_kw={'height_ratios':[1,2]},sharex=True,sharey=True)
     axwl.plot(data_xr_selzt.time[[0,-1]],[0,0],'k-',linewidth=0.5)
     ax1.plot(data_xr_selzt.time[[0,-1]],[0,0],'k-',linewidth=0.5)
-    axwl.plot(data_xr_selzt.time,data_fromhis_wl_xr[:,0],'-',label=f'wl {station_zt}')
-    c = plot_ztdata(data_xr=data_xr_selzt, varname='temperature', ax=ax1, cmap='jet')
+    axwl.plot(data_xr_selzt.time,data_fromhis_wl_xr,'-',label=f'wl {station_zt}')
+    c = plot_ztdata(data_xr_sel=data_xr_selzt, varname='temperature', ax=ax1, cmap='jet')
     fig.colorbar(c,ax=axwl)
     fig.colorbar(c,ax=ax1)
     #contour
-    CS = plot_ztdata(data_xr=data_xr_selzt, varname='temperature', ax=ax1, only_contour=True, levels=6, colors='k', linewidths=0.8, linestyles='solid')
+    CS = plot_ztdata(data_xr_sel=data_xr_selzt, varname='temperature', ax=ax1, only_contour=True, levels=6, colors='k', linewidths=0.8, linestyles='solid')
     ax1.clabel(CS, fontsize=10)
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,'%s_zt_temp'%(os.path.basename(file_nc).replace('.',''))))

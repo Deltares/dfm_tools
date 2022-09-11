@@ -6,6 +6,7 @@ import pytest
 #import inspect
 import os
 import glob
+import xarray as xr
 
 from dfm_tools.testutils import gettestinputdir
 dir_testinput = gettestinputdir()

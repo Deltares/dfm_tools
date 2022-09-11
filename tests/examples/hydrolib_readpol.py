@@ -22,11 +22,12 @@ from hydrolib.core.io.polyfile.models import (
     #PolyObject,
 )
 from hydrolib.core.io.polyfile.parser import read_polyfile #TODO: should be replaced with PolyFile above
+from dfm_tools.hydrolib_helpers import polyobject_to_dataframe
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
-    
+#TODO: make generic polygon_to_dataframe conversion
 if 1: #read pli/pol/ldb files (tek files with 2/3 columns)
     file_pli_list = [Path(dir_testinput,'world.ldb'),
                      #Path(dir_testinput,r'GSHHS_f_L1_world_ldb_noaa_wvs.ldb'), #huge file, so takes a lot of time
@@ -43,17 +44,8 @@ if 1: #read pli/pol/ldb files (tek files with 2/3 columns)
         fig,ax = plt.subplots()
         for iPO, pli_PolyObject_sel in enumerate(pli_PolyObjects):
             print(f'processing PolyObject {iPO+1} of {len(pli_PolyObjects)}: name={pli_PolyObject_sel.metadata.name}')
-            xvals = np.array([p.x for p in pli_PolyObject_sel.points])
-            yvals = np.array([p.y for p in pli_PolyObject_sel.points])
-            if 'world.ldb' in str(file_pli):
-                xvals[xvals==999.999] = np.nan
-                yvals[yvals==999.999] = np.nan
-            ax.plot(xvals,yvals)
-            for iP, pli_Point_sel in []:#enumerate(pli_PolyObject_sel.points): #looping over plipoints within component loop, append to datablock_pd_allcomp
-                print(f'processing Point {iP+1} of {len(pli_PolyObject_sel.points)}: ',end='')
-                lonx, laty = pli_Point_sel.x, pli_Point_sel.y
-                print(f'(x={lonx}, y={laty})')
-                pli_PolyObject_name_num = f'{pli_PolyObject_sel.metadata.name}_{iP+1:04d}'
+            polyobject_pd = polyobject_to_dataframe(pli_PolyObject_sel,dummy=999.999) #dummy is for world.ldb
+            ax.plot(polyobject_pd['x'],polyobject_pd['y'])
         fig.savefig(os.path.join(dir_output,os.path.basename(file_pli).replace('.','')))
     
 
@@ -72,9 +64,9 @@ if 1: #read tek files with more than 2 columns
     
     for file_pli in file_pli_list:
         if ('SDS-zd003b5dec2-sal' in str(file_pli)) or ('0200a' in str(file_pli)):
-            convert_time = False
+            convert_xy_to_time = False
         else:
-            convert_time = True
+            convert_xy_to_time = True
 
         #load boundary file
         polyfile_object = read_polyfile(file_pli,has_z_values=False) #still false, since all then comes in data (not z)
@@ -83,14 +75,15 @@ if 1: #read tek files with more than 2 columns
         fig,ax = plt.subplots()
         for iPO, pli_PolyObject_sel in enumerate(pli_PolyObjects):
             print(f'processing PolyObject {iPO+1} of {len(pli_PolyObjects)}: name={pli_PolyObject_sel.metadata.name}')
-            datavals = np.array([p.data for p in pli_PolyObject_sel.points])
-            if convert_time:
-                datetimevals = np.array([dt.datetime.strptime(f'{int(p.x):08d} {int(p.y):06d}','%Y%m%d %H%M%S') for p in pli_PolyObject_sel.points])
-                ax.plot(datetimevals,datavals)
+            polyobject_pd = polyobject_to_dataframe(pli_PolyObject_sel)
+            polyobject_pd_data = polyobject_pd.drop(['x','y'],axis=1)
+            if convert_xy_to_time: #TODO: put in helper definition?
+                datatimevals_pdstr = (polyobject_pd['x'].astype(int).apply(lambda x:f'{x:08d}') +
+                                      polyobject_pd['y'].astype(int).apply(lambda x:f'{x:06d}'))
+                datetimevals = pd.to_datetime(datatimevals_pdstr)
+                ax.plot(datetimevals,polyobject_pd_data)
             else: #this is only for datasets that can currently not be plotted nicely. Not really the responsability of hydrolib I presume
-                xvals = np.array([p.x for p in pli_PolyObject_sel.points])
-                yvals = np.array([p.y for p in pli_PolyObject_sel.points])
-                ax.scatter(xvals,yvals,c=datavals[:,0]) #TODO: valuable to be able to plot this nicely again?
+                ax.scatter(polyobject_pd['x'],polyobject_pd['y'],c=polyobject_pd[0]) #TODO: valuable to be able to plot this nicely again?
         fig.savefig(os.path.join(dir_output,os.path.basename(file_pli).replace('.','')))
 
     

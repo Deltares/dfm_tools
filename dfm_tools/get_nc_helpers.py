@@ -610,7 +610,7 @@ def get_hisstationlist_OLD(file_nc,varname):
 
 
 #TODO: might not be necessary to have when using xarray
-#TODO: can this be simplyfied?
+#TODO: can this be simplyfied? maybe possible to replace bytes by stripped string in data_xr immediately, instead of in every subsequent step
 def get_stationid_fromstationlist(stations_pd, stationlist):
     import numpy as np
     import pandas as pd

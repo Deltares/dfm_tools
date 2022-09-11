@@ -185,6 +185,8 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     dimname_stat_validvals = []
     for iR, vars_pd_stat in vars_pd_stats.iterrows():
         dimname_stat_validvals.append(vars_pd_stat['dimensions'][0]) #only append first dimension, the other one is often 'name_len'
+    if station is not None:
+        warnings.warn('WARNING: station argument will be phased out, use xarray with dfm_tools.get_nc_helpers.get_stationid_fromstationlist() instead')
     dimname_stat_validvals_boolpresent = [x in nc_varobject.dimensions for x in dimname_stat_validvals]
     if not any(dimname_stat_validvals_boolpresent):
         if station is not None:
@@ -215,7 +217,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
         #check if requested times are within range of netcdf
         if np.max(station_ids) > len(station_name_list_pd)-1:
             raise Exception('ERROR: requested highest station id (%d) is larger than available in netcdf file (%d)'%(np.max(station_ids),len(station_name_list_pd)-1))
-
+    
 
     #check faces existence, variable could have ghost cells if partitioned
     dimn_faces = get_varname_fromnc(data_nc,'mesh2d_nFaces',vardim='dim')
@@ -750,7 +752,7 @@ def plot_background(ax=None, projection=None, google_style='satellite', resoluti
 
 
 
-def plot_ztdata(data_xr, varname, ax=None, mask_data=True, only_contour=False, **kwargs):
+def plot_ztdata(data_xr_sel, varname, ax=None, mask_data=True, only_contour=False, **kwargs):
     """
     
 
@@ -785,17 +787,15 @@ def plot_ztdata(data_xr, varname, ax=None, mask_data=True, only_contour=False, *
     import numpy as np
     import matplotlib.pyplot as plt
     
-    if len(data_xr.get('stations')) != 1:
-        raise Exception('ERROR: provided data_xr has multiple stations, first use data_xr.isel(stations=int) to select stations')
-    
-    data_xr_flat = data_xr.squeeze() #squeeze station dimension #TODO: maybe move this outside of function
-    
     warnings.warn('WARNING: layers in dfowfm hisfile are currently incorrect, check your figures carefully')
-    data_fromhis_var = data_xr_flat.get(varname).to_numpy()
-    data_fromhis_zcen = data_xr_flat.get('zcoordinate_c').to_numpy()
-    data_fromhis_zcor = data_xr_flat.get('zcoordinate_w').to_numpy()
+    
+    data_fromhis_var = data_xr_sel.get(varname).to_numpy()
+    if len(data_fromhis_var.shape) != 2:
+        raise Exception(f'ERROR: unexpected number of dimensions in requested squeezed variable ({data_fromhis_var.shape}), first use data_xr.isel(stations=int) to select a single station') #TODO: can also have a different cause, improve message/testing?
+    data_fromhis_zcen = data_xr_sel.get('zcoordinate_c').to_numpy()
+    data_fromhis_zcor = data_xr_sel.get('zcoordinate_w').to_numpy()
     data_fromhis_zcor = np.concatenate([data_fromhis_zcor,data_fromhis_zcor[[-1],:]],axis=0)
-    data_fromhis_wl = data_xr_flat.get('waterlevel').to_numpy()
+    data_fromhis_wl = data_xr_sel.get('waterlevel').to_numpy()
     
     if mask_data:
         data_fromhis_var = np.ma.array(data_fromhis_var)
@@ -813,7 +813,7 @@ def plot_ztdata(data_xr, varname, ax=None, mask_data=True, only_contour=False, *
     if not ax: ax=plt.gca()
 
     # generate 2 2d grids for the x & y bounds (you can also give one 2D array as input in case of eg time varying z coordinates)
-    time_np = data_xr_flat.time.to_numpy()
+    time_np = data_xr_sel.time.to_numpy()
     time_cor = np.concatenate([time_np,time_np[[-1]]])
     time_mesh_cor = np.tile(time_cor,(data_fromhis_zcor.shape[-1],1)).T
     time_mesh_cen = np.tile(time_np,(data_fromhis_zcen.shape[-1],1)).T
@@ -908,5 +908,5 @@ def plot_ztdata_OLD(file_nc, dfmtools_hisvar, statid_subset=0, ax=None, mask_dat
     else: #TODO: should actually supply cell edges instead of centers to pcolor/pcolormesh, but inconvenient for time dimension.
         #pc = ax.pcolormesh(time_mesh_cen, data_fromhis_zcen_flat, dfmtools_hisvar_flat, **kwargs)
         pc = ax.pcolor(time_mesh_cor, data_fromhis_zcor_flat, dfmtools_hisvar_flat, **kwargs) #pcolor also supports missing/masked xy data, but is slower
-    """
     return pc
+    """
