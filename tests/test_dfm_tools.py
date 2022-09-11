@@ -148,7 +148,7 @@ def test_getncmodeldata_timeid():
 
 
 @pytest.mark.unittest
-def test_getncmodeldata_indexcountmetadata():
+def test_getncmodeldata_indexcountmetadata(): #TODO: this is not valid nor necessary anymore when using xarray instead of dfm_tools for reading ncfils
     from dfm_tools.get_nc import get_ncmodeldata
     
     #check if retrieving 1 index of data from 1 dimensional variable works (does not work if indices are np.arrays, so conversion to list in get_nc.py)

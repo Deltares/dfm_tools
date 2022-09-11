@@ -115,7 +115,7 @@ def get_ncfilelist(file_nc, multipart=None):
 
 
 def get_varname_fromnc(data_nc,varname_requested,vardim):
-    
+    #TODO: put this translationtable in preprocess function, optionally give that to xarray. Raise exception when eg plotnetmapdata sees old variables, saying you should use the preprocess func in xr.open_dataset()
     #VARIABLE names used within different versions of Delft3D-Flexible Mesh
     varnames_list = pd.DataFrame()
     #varnames_list['time'] = ['time','nmesh2d_dlwq_time','TIME','','',''] # time, not necessary anymore
