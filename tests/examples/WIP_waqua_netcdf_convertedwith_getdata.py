@@ -123,6 +123,7 @@ ax.legend()
 ax.set_ylabel('%s (%s)'%(data_nc_ZWL.attrs['long_name'], data_nc_ZWL.attrs['units']))
 time_ext = data_nc_ZWL.TIME[[0,-1]].to_numpy()
 ax.set_xlim(time_ext)
+plt.savefig(os.path.join(dir_output,'waqua_DCSM_his_ZWL'))
 
 
 
