@@ -477,8 +477,6 @@ def get_timesfromnc(file_nc, varname='time', retrieve_ids=False, keeptimezone=Tr
         data_nc_datetimes = num2date(data_nc_times, units=data_nc_timevar.units, only_use_cftime_datetimes=False, only_use_python_datetimes=True)
         #nptimes = data_nc_datetimes.astype('datetime64[ns]') #convert to numpy first, pandas does not take all cftime datasets
         
-    
-    
     if retrieve_ids is not False:
         data_nc_datetimes_pd = pd.Series(data_nc_datetimes,index=retrieve_ids).dt.round(freq='S')
     else:
@@ -609,35 +607,27 @@ def get_hisstationlist_OLD(file_nc,varname):
 """
 
 
-#TODO: might not be necessary to have when using xarray
-#TODO: can this be simplyfied? maybe possible to replace bytes by stripped string in data_xr immediately, instead of in every subsequent step
-def get_stationid_fromstationlist(stations_pd, stationlist):
+def get_stationid_fromstationlist(data_xr, stationlist, station_varname='station_name'):
     import numpy as np
     import pandas as pd
     
     if not isinstance(stationlist,list):
-        stationlist = [stationlist]
-    station_pd = pd.Series(stationlist)
-    bool_nrows_req = station_pd.shape[0]
-    bool_nrows_avai = stations_pd.shape[0]
-    bool_ncols = stations_pd.shape[1]
+        raise Exception('ERROR: provide list of stations')
     
-    stations_bool_reqinfile_allcols = np.zeros((bool_nrows_req,bool_ncols),dtype=bool)
-    stations_bool_fileinreq_allcols = np.zeros((bool_nrows_avai,bool_ncols),dtype=bool)
-    for iCol in range(bool_ncols):
-        #check if all requested stations are in netcdf file
-        stations_bool_reqinfile_allcols[:,iCol] = station_pd.isin(stations_pd.iloc[:,iCol])
-        stations_bool_fileinreq_allcols[:,iCol] = stations_pd.iloc[:,iCol].isin(station_pd)
+    stationlist_pd = pd.Series(stationlist)
+    data_xr_stationlist_pd = data_xr.get(station_varname).astype(str).to_pandas().str.strip() #to_pandas is essential otherwise resulting bool might not be correct. .str.strip() to remove spaces left/right from station_name (necessary for sobek models)
     
-    stations_bool_reqinfile = stations_bool_reqinfile_allcols.any(axis=1)
-    if not stations_bool_reqinfile.all():
-        raise Exception(f'ERROR: not all requested stations are in netcdf file:\n{station_pd[~stations_bool_reqinfile]}\navailable in netcdf file are:\n{stations_pd}')
-    #get ids of requested stations in netcdf file
-    station_bool_fileinreq = stations_bool_fileinreq_allcols.any(axis=1)
-    station_ids = list(np.where(station_bool_fileinreq)[0])
-
-    return station_ids
-
+    #check if all requested stations are in xarray Dataset
+    bool_reqstations = stationlist_pd.isin(data_xr_stationlist_pd)
+    if not bool_reqstations.all():
+        print(data_xr_stationlist_pd)
+        raise Exception(f'ERROR: not all requested stations in netcdf:\n{stationlist_pd.loc[~bool_reqstations]}')
+    
+    #get boolean and then idx of requested stations
+    bool_stations = data_xr_stationlist_pd.isin(stationlist_pd)
+    idx_stations = np.where(bool_stations)[0]
+    
+    return idx_stations
 
 
 

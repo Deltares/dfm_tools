@@ -11,41 +11,40 @@ import matplotlib.pyplot as plt
 plt.close('all')
 
 from dfm_tools.get_nc import plot_ztdata
-from dfm_tools.get_nc_helpers import get_hisstationlist, get_stationid_fromstationlist
+from dfm_tools.get_nc_helpers import get_stationid_fromstationlist#, get_hisstationlist
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
-file_nc_list = [#os.path.join(dir_testinput,'vanNithin','tttz_0000_his.nc'),
+file_nc_list = [os.path.join(dir_testinput,'vanNithin','tttz_0000_his.nc'),
                 os.path.join(dir_testinput,'DFM_3D_z_Grevelingen\\computations\\run01\\DFM_OUTPUT_Grevelingen-FM\\Grevelingen-FM_0000_his.nc'),
-                #r'p:\11202512-h2020_impaqt\07_Mediterranean_model\MedSea_impaqt_model\computations_final\r013_waq\DFM_OUTPUT_MedSea_impaqt_FM\MedSea_impaqt_FM_0000_his.nc',
+                r'p:\11202512-h2020_impaqt\07_Mediterranean_model\MedSea_impaqt_model\computations_final\r013_waq\DFM_OUTPUT_MedSea_impaqt_FM\MedSea_impaqt_FM_0000_his.nc',
                 ]
 
 for file_nc in file_nc_list:
-
     if 'Grevelingen-FM_0000' in file_nc:
         #file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_his.nc')
-        station = 'all'
-        station_zt = 'GTSO-02'
+        station = ['GTSO-01','GTSO-02','GTSO-03','GTSO-04','GTSO-05','GTSO-06','GTSO-07',
+                   'GTSO-08','GTSO-09','GTSO-10','GTSO-11','GTSO-12','GTSO-13','GTSO-14',
+                   'GTSO-15','GTSO-16','GTSO-17','GTSO-18','GTSO-19','GTSO-20',
+                   'Bommenede','Grevelingen hevel West','Brouwerssluis binnen','Brouwerssluis binnen-hand']
+        station_zt = ['GTSO-02']
     elif 'tttz' in file_nc: #NITHIN
         #file_nc = os.path.join(dir_testinput,'vanNithin','tttz_0000_his.nc')
         station = ['Peiraias', 'Ovrios_2','Ovrios','Ovrios','Ortholithi']
-        station_zt = 'Ortholithi'
+        station_zt = ['Ortholithi']
     elif 'impaqt' in file_nc:
         station = ['MO_TS_MO_ATHOS','MO_TS_MO_LESVO','MO_TS_MO_SKYRO','IOC_thes','farm_impaqt']
-        station_zt = 'MO_TS_MO_ATHOS'
+        station_zt = ['MO_TS_MO_ATHOS']
     
     data_xr = xr.open_dataset(file_nc)
-    stations_pd = get_hisstationlist(file_nc)
-    if station == 'all':
-        idx_stations = stations_pd.index
-    else:
-        idx_stations = get_stationid_fromstationlist(stations_pd, stationlist=station) #TODO: can this be simpler?
-    idx_stations_zt = get_stationid_fromstationlist(stations_pd, stationlist=station_zt)[0] #if provide single station (string, no list), the shape of the resulting xarray is correct
+    #stations_pd = get_hisstationlist(file_nc)
+    idx_stations = get_stationid_fromstationlist(data_xr, stationlist=station)
+    idx_stations_zt = get_stationid_fromstationlist(data_xr, stationlist=station_zt)[0] #if provide single station (string, no list), the shape of the resulting xarray is correct
     
     print('plot bedlevel from his')
     #data_fromhis = get_ncmodeldata(file_nc=file_nc, varname='bedlevel', station=station)#, multipart=False)
-    data_fromhis_xr = data_xr.bedlevel.isel(stations=idx_stations)
+    data_fromhis_xr = data_xr.bedlevel.isel(stations=idx_stations) #TODO: also possible to index directly with station strings?
     fig, ax = plt.subplots()
     #ax.plot(data_fromhis.var_stations.iloc[:,0],data_fromhis,'-')
     ax.plot(data_fromhis_xr.station_name,data_fromhis_xr,'-')

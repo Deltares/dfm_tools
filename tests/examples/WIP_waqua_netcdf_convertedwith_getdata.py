@@ -67,6 +67,7 @@ plt.close('all')
 
 from dfm_tools.get_nc import get_ncmodeldata#, get_netdata, plot_netmapdata
 from dfm_tools.get_nc_helpers import get_ncvardimlist, get_hisstationlist#, get_varname_fromnc
+import xarray as xr
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
@@ -104,19 +105,26 @@ plt.savefig(os.path.join(dir_output,'waqua_DCSM_map_wl'))
 #HIS ZUNO
 file_nc = r'p:\1204257-dcsmzuno\2019\DCSMv6\A01\SDS-A01_his.nc'
 vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
-data_nc_NAMWL = get_hisstationlist(file_nc=file_nc, varname='NAMWL')
+data_xr = xr.open_dataset(file_nc)
+
+#data_nc_NAMWL = get_hisstationlist(file_nc=file_nc, varname='NAMWL')
 #data_nc_NAMC = get_hisstationlist(file_nc=file_nc, varname='NAMC')
-data_nc_ZWL = get_ncmodeldata(file_nc=file_nc, varname='ZWL',timestep='all',station='all')
+#data_nc_ZWL = get_ncmodeldata(file_nc=file_nc, varname='ZWL',timestep='all',station='all')
 #data_nc_ZCURU = get_ncmodeldata(file_nc=file_nc, varname='ZCURU',timestep='all',station='all')
 #data_nc_ZCURV = get_ncmodeldata(file_nc=file_nc, varname='ZCURV',timestep='all',station='all')
 
+stations_pd = data_xr.NAMWL.astype(str).to_pandas().str.strip()
+
 fig, ax = plt.subplots(figsize=(16,7))
 for iS in range(10):
-    ax.plot(data_nc_ZWL.var_times,data_nc_ZWL[:,iS],label=data_nc_NAMWL['NAMWL'].iloc[iS], linewidth=1)
-ax.legend(loc=1)
-ax.set_ylabel('%s (%s)'%(data_nc_ZWL.var_varname, data_nc_ZWL.var_ncattrs['units']))
-ax.set_xlim([data_nc_ZWL.var_times[0],data_nc_ZWL.var_times[0]+dt.timedelta(days=14)])
-plt.savefig(os.path.join(dir_output,'waqua_DSCM_his_ZWL'))
+    data_nc_ZWL = data_xr.ZWL.isel(STATION=iS).sel(TIME=slice('2018-12-22','2019-01-05'))
+    ax.plot(data_nc_ZWL.TIME,data_nc_ZWL,label=stations_pd.iloc[iS], linewidth=1)
+ax.legend()
+ax.set_ylabel('%s (%s)'%(data_nc_ZWL.attrs['long_name'], data_nc_ZWL.attrs['units']))
+time_ext = data_nc_ZWL.TIME[[0,-1]].to_numpy()
+ax.set_xlim(time_ext)
+
+
 
 """
 #MAP OSR
@@ -238,19 +246,25 @@ for RMM_name in RMM_names:
     #HIS RMM
     file_nc = file_nc_his
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
-    data_nc_NAMWL = get_hisstationlist(file_nc=file_nc, varname='NAMWL')
+    #data_nc_NAMWL = get_hisstationlist(file_nc=file_nc, varname='NAMWL')
     #data_nc_NAMC = get_hisstationlist(file_nc=file_nc, varname='NAMC')
-    data_nc_ZWL = get_ncmodeldata(file_nc=file_nc, varname='ZWL',timestep='all',station='all')
+    #data_nc_ZWL = get_ncmodeldata(file_nc=file_nc, varname='ZWL',timestep='all',station='all')
     #data_nc_ZCURU = get_ncmodeldata(file_nc=file_nc, varname='ZCURU',timestep='all',station='all',layer='all')
     #data_nc_ZCURV = get_ncmodeldata(file_nc=file_nc, varname='ZCURV',timestep='all',station='all',layer='all')
-
+    
+    data_xr = xr.open_dataset(file_nc)
+    stations_pd = data_xr.NAMWL.astype(str).to_pandas().str.strip()
+    
     fig, ax = plt.subplots(figsize=(16,7))
     for iS in range(10):
-        ax.plot(data_nc_ZWL.var_times,data_nc_ZWL[:,iS],label=data_nc_NAMWL['NAMWL'].iloc[iS], linewidth=1)
+        data_nc_ZWL = data_xr.ZWL.isel(STATION=iS)
+        if RMM_name=='RMM':
+            data_nc_ZWL = data_nc_ZWL.sel(TIME=slice('2014-01-15','2014-01-29'))
+        ax.plot(data_nc_ZWL.TIME,data_nc_ZWL,label=stations_pd.iloc[iS], linewidth=1)
     ax.legend()
-    ax.set_ylabel('%s (%s)'%(data_nc_ZWL.var_varname, data_nc_ZWL.var_ncattrs['units']))
-    if RMM_name=='RMM':
-        ax.set_xlim([data_nc_ZWL.var_times[0],data_nc_ZWL.var_times[0]+dt.timedelta(days=14)])
+    ax.set_ylabel('%s (%s)'%(data_nc_ZWL.attrs['long_name'], data_nc_ZWL.attrs['units']))
+    time_ext = data_nc_ZWL.TIME[[0,-1]].to_numpy()
+    ax.set_xlim(time_ext)
     plt.savefig(os.path.join(dir_output,'waqua_%s_his_ZWL'%(RMM_name)))
 
 

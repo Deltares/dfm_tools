@@ -13,9 +13,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 plt.close('all')
 from pathlib import Path
+import xarray as xr
 
 from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
-from dfm_tools.get_nc_helpers import get_ncvardimlist, get_hisstationlist#, get_varname_fromnc
+from dfm_tools.get_nc_helpers import get_ncvardimlist#, get_hisstationlist#, get_varname_fromnc
 #from dfm_tools.io.polygon import Polygon
 from dfm_tools.hydrolib_helpers import polyobject_to_dataframe
 
@@ -258,13 +259,15 @@ plt.savefig(os.path.join(dir_output,'SFINCS_velocity_pcolorquiver'))
 #file_nc = r'p:\11202255-sfincs\Testbed\Original_tests\01_Implementation\14_restartfile\sfincs_his.nc'
 file_nc = r'p:\11202255-sfincs\Testbed\Original_tests\03_Application\04_Tsunami_Japan_Sendai\sfincs_his.nc'
 vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
-
-station_names = get_hisstationlist(file_nc=file_nc, varname='point_zs')
-data_fromnc_his = get_ncmodeldata(file_nc=file_nc, varname='point_zs', station='all', timestep='all')
+data_xr = xr.open_dataset(file_nc)
+#station_names = get_hisstationlist(file_nc=file_nc, varname='point_zs')
+stations_pd = data_xr.station_name.astype(str).to_pandas()
+#data_fromnc_his = get_ncmodeldata(file_nc=file_nc, varname='point_zs', station='all', timestep='all')
 
 fig, ax = plt.subplots()
-for iS,stat_name in enumerate(data_fromnc_his.var_stations['stations']):
-    ax.plot(data_fromnc_his.var_times, data_fromnc_his[:,iS], label=stat_name)
+for iS,stat_name in enumerate(stations_pd):
+    data_sel = data_xr.point_zs.isel(stations=iS)
+    ax.plot(data_sel.time, data_sel, label=stat_name)
 ax.legend()
 plt.savefig(os.path.join(dir_output,'SFINCS_hiszs'))
 
