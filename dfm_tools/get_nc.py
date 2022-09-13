@@ -181,15 +181,12 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
         raise Exception('ERROR: depth argument is provided, but vertical slicing is not implemented yet, try layer argument instead')
 
     #STATION/GENERAL_STRUCTURES CHECKS
-    if station is not None:
-        raise Exception('station argument is deprecated, use xarray sel/isel instead, like in example script gethismodeldata.py')
-    """
     vars_pd_stats = vars_pd[(vars_pd['dtype'].astype(str).str.startswith('|S') | (vars_pd['dtype']=='object')) & (vars_pd['dimensions'].apply(lambda x: dimn_time not in x))] #TODO: better check for bytes string
     dimname_stat_validvals = []
     for iR, vars_pd_stat in vars_pd_stats.iterrows():
         dimname_stat_validvals.append(vars_pd_stat['dimensions'][0]) #only append first dimension, the other one is often 'name_len'
     if station is not None:
-        warnings.warn('WARNING: station argument will be phased out, use xarray with dfm_tools.get_nc_helpers.get_stationid_fromstationlist() instead')
+        warnings.warn('WARNING: station argument will be phased out, use xarray with dfm_tools.get_nc_helpers.get_stationid_fromstationlist() instead. Like in example script gethismodeldata.py')
     dimname_stat_validvals_boolpresent = [x in nc_varobject.dimensions for x in dimname_stat_validvals]
     if not any(dimname_stat_validvals_boolpresent):
         if station is not None:
@@ -220,7 +217,6 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
         #check if requested times are within range of netcdf
         if np.max(station_ids) > len(station_name_list_pd)-1:
             raise Exception('ERROR: requested highest station id (%d) is larger than available in netcdf file (%d)'%(np.max(station_ids),len(station_name_list_pd)-1))
-    """
 
     #check faces existence, variable could have ghost cells if partitioned
     dimn_faces = get_varname_fromnc(data_nc,'mesh2d_nFaces',vardim='dim')
@@ -281,9 +277,9 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
                 values_selid.append(range(nc_varobject_sel.shape[iD]))
                 values_dimlens.append(0) #because concatenate axis
                 concat_axis = iD
-            #elif nc_values_dimsel in dimname_stat_validvals:
-            #    values_selid.append(station_ids)
-            #    values_dimlens.append(len(station_ids))
+            elif nc_values_dimsel in dimname_stat_validvals:
+                values_selid.append(station_ids)
+                values_dimlens.append(len(station_ids))
             elif nc_values_dimsel == dimn_time:
                 values_selid.append(time_ids)
                 values_dimlens.append(len(time_ids))
@@ -296,7 +292,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
                 values_dimlens.append(nc_varobject_sel.shape[iD])
 
             #get info about grid variables related to varname
-            if get_linkedgridinfo and (nc_values_dimsel not in [dimn_time,dimn_layer]):#+dimname_stat_validvals):
+            if get_linkedgridinfo and (nc_values_dimsel not in [dimn_time,dimn_layer]+dimname_stat_validvals):
                 vars_pd_relevant = vars_pd[(vars_pd['ndims']<=2) & (vars_pd['dimensions'].apply(lambda x: nc_values_dimsel in x)) & -(vars_pd['dimensions'].apply(lambda x: dimn_time in x))]
                 values_dimlinkedgrid.append(vars_pd_relevant)
 
