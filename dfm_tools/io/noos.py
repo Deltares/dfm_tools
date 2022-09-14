@@ -74,10 +74,10 @@ def write_noosfile(filename, pd_data, metadata=None, na_values=None, float_forma
     import pandas as pd
     #import numpy as np
     
-    with open('%s.txt'%filename,'w') as file_noos:
+    with open('%s'%filename,'w') as file_noos:
         pass
     
-    with open('%s.txt'%filename,'a') as file_noos:
+    with open('%s'%filename,'a') as file_noos:
         file_noos.write('# ----------------------------------------------------------------\n')
         if metadata is not None:
             if type(metadata) == pd.DataFrame:
@@ -98,5 +98,5 @@ def write_noosfile(filename, pd_data, metadata=None, na_values=None, float_forma
             file_noos.write('# {:30} : {}\n'.format('missing values',na_values))
         file_noos.write('# ----------------------------------------------------------------\n')
         
-    pd_data.to_csv('%s.txt'%filename, header=None, index=None, sep='\t', mode='a', date_format='%Y%m%d%H%M', float_format=float_format, na_rep=na_values)
+    pd_data.to_csv('%s'%filename, header=None, index=None, sep='\t', mode='a', date_format='%Y%m%d%H%M', float_format=float_format, na_rep=na_values)
 
