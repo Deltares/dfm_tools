@@ -63,16 +63,6 @@ for file_pli in list_plifiles:
         else: #['steric','salinity','temperature'] ['uxuy']
             varname_file = conversion_dict[quantity]['ncvarname'][0] #TODO: [1] is also necessary for uxuy
             dir_pattern,convert_360to180 = Path(dir_sourcefiles_hydro,f'{varname_file}_1993*.nc'),False # later remove 1993 from string, but this is faster for testing
-            if 0:
-                import glob
-                import xarray as xr
-                import numpy as np
-                import pandas as pd
-                from hydrolib.core.io.polyfile.parser import read_polyfile #TODO: should be replaced with PolyFile above
-                
-                time_passed = (dt.datetime.now()-dtstart).total_seconds()
-                print(f'>>time passed: {time_passed:.2f} sec')
-                breakit
             ForcingModel_object = interpolate_nc_to_bc(dir_pattern=dir_pattern, file_pli=file_pli, quantity=quantity, 
                                                        convert_360to180=convert_360to180,
                                                        tstart=tstart, tstop=tstop, refdate_str=refdate_str,
