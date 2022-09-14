@@ -139,6 +139,31 @@ def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180
     pli_PolyObjects = polyfile_object['objects']
     for iPO, pli_PolyObject_sel in enumerate(pli_PolyObjects):
         print(f'processing PolyObject {iPO+1} of {len(pli_PolyObjects)}: name={pli_PolyObject_sel.metadata.name}')
+
+        #create DataArrays of lat/lon combinations
+        path_lons = np.array([point.x for point in pli_PolyObject_sel.points])[:nPoints]
+        path_lats = np.array([point.y for point in pli_PolyObject_sel.points])[:nPoints]
+        #make requestedlat/requestedlon DataArrays for proper interpolation in xarray (with new dimension name)
+        da_lons = xr.DataArray(path_lons, dims='latloncombi')
+        da_lats = xr.DataArray(path_lats, dims='latloncombi')
+        
+        bool_reqlon_outbounds = (path_lons <= lonvar_vals.min()) | (path_lons >= lonvar_vals.max())
+        bool_reqlat_outbounds = (path_lats <= latvar_vals.min()) | (path_lats >= latvar_vals.max())
+        if bool_reqlon_outbounds.any():
+            raise Exception(f'some of requested lonx outside or on lon bounds ({lonvar_vals.min(),lonvar_vals.max()}):\n{path_lons[bool_reqlon_outbounds]}')
+        if bool_reqlat_outbounds.any():
+            raise Exception(f'some of requested laty outside or on lat bounds ({latvar_vals.min(),latvar_vals.max()}):\n{path_lats[bool_reqlat_outbounds]}')
+        
+        #interpolation to lat/lon combinations
+        print('> interp mfdataset with all lat/lon coordinates. And actual extraction of data from netcdf with da.as_numpy() (for all PolyObject points at once, so this will take a while)')
+        dtstart = dt.datetime.now()
+        data_interp_amp_allcoords = data_xr_amp.interp(lat=da_lats,lon=da_lons).as_numpy()/100 #convert from cm to m
+        data_interp_phs_u_allcoords = data_xr_phs_u.interp(lat=da_lats,lon=da_lons).as_numpy()
+        data_interp_phs_v_allcoords = data_xr_phs_v.interp(lat=da_lats,lon=da_lons).as_numpy()
+        
+        time_passed = (dt.datetime.now()-dtstart).total_seconds()
+        if debug: print(f'>>time passed: {time_passed:.2f} sec')
+
         
         for iP, pli_Point_sel in enumerate(pli_PolyObject_sel.points[:nPoints]): #looping over plipoints within component loop, append to datablock_pd_allcomp
             print(f'processing Point {iP+1} of {len(pli_PolyObject_sel.points)}: ',end='')
@@ -146,14 +171,9 @@ def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180
             print(f'(x={lonx}, y={laty})')
             pli_PolyObject_name_num = f'{pli_PolyObject_sel.metadata.name}_{iP+1:04d}'
             
-            if (lonx <= lonvar_vals.min()) or (lonx >= lonvar_vals.max()):
-                raise Exception(f'requested lonx {lonx} outside or on lon bounds ({lonvar_vals.min(),lonvar_vals.max()})')
-            if (laty <= latvar_vals.min()) or (laty >= latvar_vals.max()):
-                raise Exception(f'requested laty {laty} outside or on lat bounds ({latvar_vals.min(),latvar_vals.max()})')
-                    
-            data_interp_amp = data_xr_amp.interp(lat=laty,lon=lonx)/100 #convert from cm to m
-            data_interp_phs_u = data_xr_phs_u.interp(lat=laty,lon=lonx) #TODO: also to interpolation to all coordinates at once like in interpolate_nc_to_bc()
-            data_interp_phs_v = data_xr_phs_v.interp(lat=laty,lon=lonx)
+            data_interp_amp = data_interp_amp_allcoords.sel(latloncombi=iP)
+            data_interp_phs_u = data_interp_phs_u_allcoords.sel(latloncombi=iP)
+            data_interp_phs_v = data_interp_phs_v_allcoords.sel(latloncombi=iP)
             
             data_interp_phs = np.rad2deg(np.arctan2(data_interp_phs_v,data_interp_phs_u)) #np.arctan2(y,x)
             datablock_pd_allcomp = pd.DataFrame({'component':component_list_upper_pd,'amp':data_interp_amp.to_numpy(),'phs':data_interp_phs.to_numpy()})

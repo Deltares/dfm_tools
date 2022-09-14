@@ -37,7 +37,7 @@ debug = False
 conversion_dict = get_conversion_dict()
 list_quantities = ['NO3']
 #list_quantities = ['steric','salinity','tide']#,['salinity','temperature','steric'] #should be in varnames_dict.keys()
-list_quantities = ['salinity']
+list_quantities = ['tide']
 
 dtstart = dt.datetime.now()
 ext_bnd = ExtModel()
