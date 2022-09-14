@@ -23,21 +23,22 @@ list_plifiles = [Path(r'n:\My Documents\werkmap\hydrolib_test\DCSM\DCSM-FM_OB_al
 
 dir_out = r'n:\My Documents\werkmap\hydrolib_test\DCSM'
 bc_type = 'bc' #currently only 'bc' supported #TODO: add netcdf bc support. https://github.com/Deltares/HYDROLIB-core/issues/318
+#TODO: first interpolate all pli-points and to_numpy(), instead of per point (should be faster)
 
 refdate_str = 'minutes since 2011-12-22 00:00:00 +00:00' # this is copied from the reference bc file, but can be changed by the user
 tstart = dt.datetime(1993, 1, 1, 12, 0) #CMEMS phys has daily values at 12:00 (not at midnight), so make sure to include a day extra if necessary
-tstop = dt.datetime(1993, 3, 1, 12, 0)
+tstop = dt.datetime(1993, 5, 1, 12, 0)
 #tstart = dt.datetime(2011, 12, 16, 12, 0)
 #tstop = dt.datetime(2012, 12, 1, 12, 0)
-tstart = dt.datetime(2015, 6, 16, 12, 0)
-tstop = dt.datetime(2015, 12, 1, 12, 0)
+#tstart = dt.datetime(2015, 6, 16, 12, 0)
+#tstop = dt.datetime(2015, 12, 1, 12, 0)
 nPoints = 3 #amount of Points to process per PolyObject in the plifile (for testing, use None for all Points)
 debug = False
 
 conversion_dict = get_conversion_dict()
 list_quantities = ['NO3']
 #list_quantities = ['steric','salinity','tide']#,'tide']#,['salinity','temperature','steric'] #should be in varnames_dict.keys()
-list_quantities = ['tide']
+list_quantities = ['salinity']
 
 dtstart = dt.datetime.now()
 ext_bnd = ExtModel()

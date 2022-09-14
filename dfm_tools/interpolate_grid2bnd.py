@@ -298,10 +298,15 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
                 time_passed = (dt.datetime.now()-dtstart).total_seconds()
                 if debug: print(f'>>time passed: {time_passed:.2f} sec')
             
-            print('> converting data to numpy array, ffill nans and concatenating time column')
+            print('> actual loading of data from netcdf and converting to numpy array')
             dtstart = dt.datetime.now()
-            datablock_raw = data_interp.to_numpy()
+            datablock_raw = data_interp.to_numpy() #TODO: this takes quite some time, might be valuable to do it for all points at once, although it might flood memory.
+            time_passed = (dt.datetime.now()-dtstart).total_seconds()
+            #if debug:
+            print(f'>>time passed: {time_passed:.2f} sec')
             
+            print('> ffill nans, converting units and concatenating time column')
+            dtstart = dt.datetime.now()
             if has_depth:
                 datablock = pd.DataFrame(datablock_raw).fillna(method='ffill',axis=1).values #fill nans forward, is this efficient?
                 #if debug: print(datablock_raw), print(datablock)
