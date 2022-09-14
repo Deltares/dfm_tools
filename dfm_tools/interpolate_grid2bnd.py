@@ -107,7 +107,7 @@ def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180
 
     file_list_nc = [str(dir_pattern).replace('*',comp) for comp in component_list]
     #use mfdataset (currently twice as slow as looping over separate datasets, apperantly interp is more difficult but this might be solvable. Also, it does not really matter since we need to compute u/v components of phase anyway, which makes it also slow)
-    def extract_component(ds): #TODO: there might be some performance improvement possible
+    def extract_component(ds): #TODO: there might be some performance improvement possible. eg by immediately selecting data on lat/lon range coords and then computing u/v
         #https://github.com/pydata/xarray/issues/1380
         if convert_360to180: #for FES since it ranges from 0 to 360 instead of -180 to 180
             ds.coords['lon'] = (ds.coords['lon'] + 180) % 360 - 180
@@ -152,7 +152,7 @@ def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180
                 raise Exception(f'requested laty {laty} outside or on lat bounds ({latvar_vals.min(),latvar_vals.max()})')
                     
             data_interp_amp = data_xr_amp.interp(lat=laty,lon=lonx)/100 #convert from cm to m
-            data_interp_phs_u = data_xr_phs_u.interp(lat=laty,lon=lonx)
+            data_interp_phs_u = data_xr_phs_u.interp(lat=laty,lon=lonx) #TODO: also to interpolation to all coordinates at once like in interpolate_nc_to_bc()
             data_interp_phs_v = data_xr_phs_v.interp(lat=laty,lon=lonx)
             
             data_interp_phs = np.rad2deg(np.arctan2(data_interp_phs_v,data_interp_phs_u)) #np.arctan2(y,x)
@@ -173,7 +173,7 @@ def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180
             ForcingModel_object.forcing.append(ts_one)        
     return ForcingModel_object
 
-    
+
 def interpolate_nc_to_bc(dir_pattern, file_pli, quantity, 
                          tstart, tstop, refdate_str, 
                          convert_360to180=False,
@@ -190,11 +190,11 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
     
     print('initialize ForcingModel()')
     ForcingModel_object = ForcingModel()
-    
+        
     file_list_nc = glob.glob(str(dir_pattern))
     print(f'loading mfdataset ({len(file_list_nc)} files with pattern "{dir_pattern.name}")')
     dtstart = dt.datetime.now()
-    data_xr = xr.open_mfdataset(file_list_nc)#, combine='by_coords', decode_times=False)
+    data_xr = xr.open_mfdataset(file_list_nc)# TODO: can also supply str(dir_pattern)
     
     #get calendar and maybe convert_calendar, makes sure that nc_tstart/nc_tstop are of type pd._libs.tslibs.timestamps.Timestamp
     data_xr_calendar = data_xr['time'].dt.calendar
@@ -205,9 +205,10 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
     if debug: print(f'>>time passed: {time_passed:.2f} sec')
     
     #get timevar and compare requested dates
-    timevar = data_xr['time']
-    nc_tstart = pd.to_datetime(timevar.to_series().index[0])
-    nc_tstop = pd.to_datetime(timevar.to_series().index[-1])
+    timevar = data_xr['time'] #TODO: mabye only request times on time selection (or first index times and then convert to series)
+    xr_tstartstop = pd.to_datetime(timevar.isel(time=[0,-1]).to_series())
+    nc_tstart = xr_tstartstop.index[0]
+    nc_tstop = xr_tstartstop.index[-1]
     if tstart < nc_tstart:
         raise Exception(f'requested tstart {tstart} before nc_tstart {nc_tstart}')
     if tstop > nc_tstop:
@@ -226,8 +227,8 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
     lonvar_vals = data_xr[lonvarname].to_numpy()
     latvar_vals = data_xr[latvarname].to_numpy()
     
-    #retrieve var (after potential longitude conversion)
-    data_xr_var = data_xr[varname_file]
+    #retrieve var (after potential longitude conversion) (also selecting relevant times)
+    data_xr_var = data_xr[varname_file].sel(time=slice(tstart,tstop))
     
     #check if depth coordinate is present in variable (not only in file)
     if 'depth' in data_xr_var.coords: #depth for CMEMS and many others
@@ -253,43 +254,65 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
     for iPO, pli_PolyObject_sel in enumerate(pli_PolyObjects[:nPolyObjects]):
         print(f'processing PolyObject {iPO+1} of {len(pli_PolyObjects)}: name={pli_PolyObject_sel.metadata.name}')
         
+        #create DataArrays of lat/lon combinations
+        path_lons = np.array([point.x for point in pli_PolyObject_sel.points])[:nPoints]
+        path_lats = np.array([point.y for point in pli_PolyObject_sel.points])[:nPoints]
+        #make requestedlat/requestedlon DataArrays for proper interpolation in xarray (with new dimension name)
+        da_lons = xr.DataArray(path_lons, dims='latloncombi')
+        da_lats = xr.DataArray(path_lats, dims='latloncombi')
+        
+        bool_reqlon_outbounds = (path_lons <= lonvar_vals.min()) | (path_lons >= lonvar_vals.max())
+        bool_reqlat_outbounds = (path_lats <= latvar_vals.min()) | (path_lats >= latvar_vals.max())
+        if bool_reqlon_outbounds.any():
+            raise Exception(f'some of requested lonx outside or on lon bounds ({lonvar_vals.min(),lonvar_vals.max()}):\n{path_lons[bool_reqlon_outbounds]}')
+        if bool_reqlat_outbounds.any():
+            raise Exception(f'some of requested laty outside or on lat bounds ({latvar_vals.min(),latvar_vals.max()}):\n{path_lats[bool_reqlat_outbounds]}')
+        
+        #interpolation to lat/lon combinations
+        print('> interp mfdataset with all lat/lon coordinates')
+        dtstart = dt.datetime.now()
+        if 'latitude' in data_xr_var.coords:
+            data_interp = data_xr_var.interp(latitude=da_lats,longitude=da_lons,
+                                             #kwargs={'bounds_error':True}, #TODO: bounds_error is ignored (catched by manual lonx/laty bounds check), but also nans are returned on land.
+                                             #assume_sorted=True, #TODO: assume_sorted increases performance?
+                                             )
+        elif 'lat' in data_xr_var.coords:
+            data_interp = data_xr_var.interp(lat=da_lats,lon=da_lons)
+        else: #TODO: lat/latitude (should be flexible instead of hardcoded) 
+            raise Exception(f'latitude/longitude are not in variable coords: {data_xr_var.coords}. Extend this part of the code for e.g. lat/lon coords')
+        time_passed = (dt.datetime.now()-dtstart).total_seconds()
+        if debug: print(f'>>time passed: {time_passed:.2f} sec')
+        
+        print('> actual extraction of data from netcdf with da.as_numpy() (for all PolyObject points at once, so this will take a while)')
+        dtstart = dt.datetime.now()
+        datablock_raw_allcoords = data_interp.as_numpy() #TODO: as_numpy() is maybe not the best method, but at least all data should be read now and we still want an object where sel works on
+        time_passed = (dt.datetime.now()-dtstart).total_seconds()
+        #if debug:
+        print(f'>>time passed: {time_passed:.2f} sec')
+        
         for iP, pli_Point_sel in enumerate(pli_PolyObject_sel.points[:nPoints]):
             print(f'processing Point {iP+1} of {len(pli_PolyObject_sel.points)}: ',end='')
-    
-            lonx, laty = pli_Point_sel.x, pli_Point_sel.y
-            print(f'(x={lonx}, y={laty})')
-            if (lonx <= lonvar_vals.min()) or (lonx >= lonvar_vals.max()):
-                raise Exception(f'requested lonx {lonx} outside or on lon bounds ({lonvar_vals.min(),lonvar_vals.max()})')
-            if (laty <= latvar_vals.min()) or (laty >= latvar_vals.max()):
-                raise Exception(f'requested laty {laty} outside or on lat bounds ({latvar_vals.min(),latvar_vals.max()})')
-            
+            lonx_print, laty_print = pli_Point_sel.x, pli_Point_sel.y
+            print(f'(x={lonx_print}, y={laty_print})')
             pli_PolyObject_name_num = f'{pli_PolyObject_sel.metadata.name}_{iP+1:04d}'
-            
-            print('> interp mfdataset with lat/lon coordinates')
+                        
+            print('> selecting data for current coord from numpy array')
             dtstart = dt.datetime.now()
-            if 'latitude' in data_xr_var.coords:
-                data_interp_alltimes = data_xr_var.interp(latitude=laty,longitude=lonx,
-                                                          #kwargs={'bounds_error':True}, #TODO: bounds_error is ignored (catched by manual lonx/laty bounds check), but also nans are returned on land.
-                                                          #assume_sorted=True, #TODO: assume_sorted increases performance?
-                                                          )
-            elif 'lat' in data_xr_var.coords:
-                data_interp_alltimes = data_xr_var.interp(lat=laty,lon=lonx)
-            else: #TODO: lat/latitude (should be flexible instead of hardcoded) 
-                raise Exception(f'latitude/longitude are not in variable coords: {data_xr_var.coords}. Extend this part of the code for e.g. lat/lon coords')
-            data_interp = data_interp_alltimes.sel(time=slice(tstart,tstop))
+            datablock_xr = datablock_raw_allcoords.isel(latloncombi=iP)
+            datablock_raw = datablock_xr.to_numpy()
             time_passed = (dt.datetime.now()-dtstart).total_seconds()
             if debug: print(f'>>time passed: {time_passed:.2f} sec')
             
             # check if only nan (out of bounds or land):
-            data_time0 = data_interp_alltimes.isel(time=0).to_numpy()
+            data_time0 = datablock_xr.isel(time=0).to_numpy()
             if np.isnan(data_time0).all():
                 print('WARNING: only nans on first time of this coordinate') #TODO: this can happen on land, raise exception or warning?
-            
+
             if debug:
                 print('> plotting')
                 dtstart = dt.datetime.now()
                 fig,ax = plt.subplots(figsize=(10,7))
-                data_interp.T.plot() #uses plot.line() for 1D arrays and plot.pcolormesh() for 2D arrays: https://docs.xarray.dev/en/stable/generated/xarray.DataArray.plot.html
+                datablock_xr.T.plot() #uses plot.line() for 1D arrays and plot.pcolormesh() for 2D arrays: https://docs.xarray.dev/en/stable/generated/xarray.DataArray.plot.html
                 ax.set_title(f'{quantity} {pli_PolyObject_name_num}')
                 if 'depth' in data_xr_var.coords:
                     ax.set_ylim(0,200)
@@ -297,13 +320,6 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
                 fig.tight_layout()
                 time_passed = (dt.datetime.now()-dtstart).total_seconds()
                 if debug: print(f'>>time passed: {time_passed:.2f} sec')
-            
-            print('> actual loading of data from netcdf and converting to numpy array')
-            dtstart = dt.datetime.now()
-            datablock_raw = data_interp.to_numpy() #TODO: this takes quite some time, might be valuable to do it for all points at once, although it might flood memory.
-            time_passed = (dt.datetime.now()-dtstart).total_seconds()
-            #if debug:
-            print(f'>>time passed: {time_passed:.2f} sec')
             
             print('> ffill nans, converting units and concatenating time column')
             dtstart = dt.datetime.now()
@@ -327,7 +343,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             else:
                 varunit = data_xr_var.attrs['units']
             
-            timevar_sel = data_interp.time
+            timevar_sel = datablock_xr.time
             timevar_sel_rel = date2num(pd.DatetimeIndex(timevar_sel.to_numpy()).to_pydatetime(),units=refdate_str,calendar='standard')
             datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock],axis=1)
             time_passed = (dt.datetime.now()-dtstart).total_seconds()
@@ -352,7 +368,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
                                     quantityunitpair=[QuantityUnitPair(quantity="time", unit=refdate_str),
                                                       QuantityUnitPair(quantity=bcvarname, unit=varunit)],
                                     timeinterpolation=TimeInterpolation.linear,
-                                    datablock=datablock.tolist(), 
+                                    datablock=datablock_incltime.tolist(), 
                                     )
             
             ForcingModel_object.forcing.append(ts_one)
@@ -360,6 +376,5 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             if debug: print(f'>>time passed: {time_passed:.2f} sec')
     
     return ForcingModel_object
-
 
 
