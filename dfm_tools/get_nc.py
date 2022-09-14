@@ -50,7 +50,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     depth : TYPE, optional
         DESCRIPTION. The default is None.
     station : TYPE, optional
-        DESCRIPTION. The default is None.
+        DESCRIPTION. The default is None. Deprecated, not possible anymore (use xarray.sel instead)
     multipart : TYPE, optional
         set to False if you want only one of the map domains, can be left out otherwise. The default is None.
 
@@ -181,10 +181,12 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
         raise Exception('ERROR: depth argument is provided, but vertical slicing is not implemented yet, try layer argument instead')
 
     #STATION/GENERAL_STRUCTURES CHECKS
-    vars_pd_stats = vars_pd[(vars_pd['dtype']=='|S1') & (vars_pd['dimensions'].apply(lambda x: dimn_time not in x))]
+    vars_pd_stats = vars_pd[(vars_pd['dtype'].astype(str).str.startswith('|S') | (vars_pd['dtype']=='object')) & (vars_pd['dimensions'].apply(lambda x: dimn_time not in x))] #TODO: better check for bytes string
     dimname_stat_validvals = []
     for iR, vars_pd_stat in vars_pd_stats.iterrows():
         dimname_stat_validvals.append(vars_pd_stat['dimensions'][0]) #only append first dimension, the other one is often 'name_len'
+    if station is not None:
+        warnings.warn('WARNING: station argument will be phased out, use xarray with dfm_tools.get_nc_helpers.get_stationid_fromstationlist() instead. Like in example script gethismodeldata.py')
     dimname_stat_validvals_boolpresent = [x in nc_varobject.dimensions for x in dimname_stat_validvals]
     if not any(dimname_stat_validvals_boolpresent):
         if station is not None:
@@ -201,13 +203,13 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
             if type(station[0]) in listtype_int:
                 station_ids = station
             elif type(station[0]) in listtype_str:
-                station_ids = get_stationid_fromstationlist(station_name_list_pd, station, varname)
+                station_ids = get_stationid_fromstationlist(station_name_list_pd, station)
             else:
                 raise Exception('ERROR1: station variable type not anticipated (%s), (list/range/ndarray of) strings or ints are accepted (or "all")'%(type(station)))
         elif type(station) in listtype_int:
             station_ids = [station]
         elif type(station) in listtype_str:
-            station_ids = get_stationid_fromstationlist(station_name_list_pd, [station], varname)
+            station_ids = get_stationid_fromstationlist(station_name_list_pd, [station])
         else:
             raise Exception('ERROR2: station variable type not anticipated (%s), (list/range/ndarray of) strings or ints are accepted (or "all")'%(type(station)))
         #convert to positive index, make unique(+sort), convert to list because of indexing with np.array of len 1 errors sometimes
@@ -215,7 +217,6 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
         #check if requested times are within range of netcdf
         if np.max(station_ids) > len(station_name_list_pd)-1:
             raise Exception('ERROR: requested highest station id (%d) is larger than available in netcdf file (%d)'%(np.max(station_ids),len(station_name_list_pd)-1))
-
 
     #check faces existence, variable could have ghost cells if partitioned
     dimn_faces = get_varname_fromnc(data_nc,'mesh2d_nFaces',vardim='dim')
@@ -370,10 +371,10 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     else:
         values_all.var_layers = None
     
-    if any(dimname_stat_validvals_boolpresent):
-        values_all.var_stations = station_name_list_pd.iloc[station_ids]
-    else:
-        values_all.var_stations = None
+    #if any(dimname_stat_validvals_boolpresent):
+    #    values_all.var_stations = station_name_list_pd.iloc[station_ids]
+    #else:
+    #    values_all.var_stations = None
         
     data_nc.close()
     return values_all
@@ -750,11 +751,82 @@ def plot_background(ax=None, projection=None, google_style='satellite', resoluti
 
 
 
+def plot_ztdata(data_xr_sel, varname, ax=None, mask_data=True, only_contour=False, **kwargs):
+    """
+    
+
+    Parameters
+    ----------
+    data_xr : TYPE
+        DESCRIPTION.
+    varname : TYPE
+        DESCRIPTION.
+    ax : matplotlib.axes._subplots.AxesSubplot, optional
+        the figure axis. The default is None.
+    mask_data : bool, optional
+        whether to repair z_interface coordinates and mask data in inactive layers. The default is True.
+    only_contour : bool, optional
+        Wheter to plot contour lines of the dataset. The default is False.
+    **kwargs : TYPE
+        properties to give on to the pcolormesh function.
+
+    Raises
+    ------
+    Exception
+        DESCRIPTION.
+
+    Returns
+    -------
+    pc : matplotlib.collections.QuadMesh
+        DESCRIPTION.
+
+    """
+
+    import warnings
+    import numpy as np
+    import matplotlib.pyplot as plt
+    
+    warnings.warn('WARNING: layers in dfowfm hisfile are currently incorrect, check your figures carefully')
+    
+    data_fromhis_var = data_xr_sel.get(varname).to_numpy()
+    if len(data_fromhis_var.shape) != 2:
+        raise Exception(f'ERROR: unexpected number of dimensions in requested squeezed variable ({data_fromhis_var.shape}), first use data_xr.isel(stations=int) to select a single station') #TODO: can also have a different cause, improve message/testing?
+    data_fromhis_zcen = data_xr_sel.get('zcoordinate_c').to_numpy()
+    data_fromhis_zcor = data_xr_sel.get('zcoordinate_w').to_numpy()
+    data_fromhis_zcor = np.concatenate([data_fromhis_zcor,data_fromhis_zcor[[-1],:]],axis=0)
+    data_fromhis_wl = data_xr_sel.get('waterlevel').to_numpy()
+    
+    if mask_data:
+        data_fromhis_var = np.ma.array(data_fromhis_var)
+        bool_zcen_equaltop = (data_fromhis_zcen==data_fromhis_zcen[:,-1:]).all(axis=0)
+        id_zcentop = np.argmax(bool_zcen_equaltop) # id of first z_center that is equal to z_center of last layer
+        if (data_fromhis_zcor[:-1,id_zcentop] > data_fromhis_zcen[:,id_zcentop]).any():
+            print('correcting z interface values')
+            data_fromhis_zcor[:-1,id_zcentop+1] = data_fromhis_wl
+            data_fromhis_zcor[:-1,id_zcentop] = (data_fromhis_zcen[:,id_zcentop-1]+data_fromhis_zcen[:,id_zcentop])/2
+        bool_zcen_equaltop[id_zcentop] = False
+        #bool_zcor_equaltop = (data_fromhis_zcor_flat[:,1:]==data_fromhis_zcor_flat[:,-1:]).all(axis=0)
+        mask_array = np.tile(bool_zcen_equaltop,(data_fromhis_zcor.shape[0],1))
+        data_fromhis_var.mask = mask_array
+
+    if not ax: ax=plt.gca()
+
+    # generate 2 2d grids for the x & y bounds (you can also give one 2D array as input in case of eg time varying z coordinates)
+    time_np = data_xr_sel.time.to_numpy()
+    time_cor = np.concatenate([time_np,time_np[[-1]]])
+    time_mesh_cor = np.tile(time_cor,(data_fromhis_zcor.shape[-1],1)).T
+    time_mesh_cen = np.tile(time_np,(data_fromhis_zcen.shape[-1],1)).T
+    if only_contour:
+        pc = ax.contour(time_mesh_cen,data_fromhis_zcen,data_fromhis_var, **kwargs)
+    else: #TODO: should actually supply cell edges instead of centers to pcolor/pcolormesh, but inconvenient for time dimension.
+        #pc = ax.pcolormesh(time_mesh_cen, data_fromhis_zcen, data_fromhis_var, **kwargs)
+        pc = ax.pcolor(time_mesh_cor, data_fromhis_zcor, data_fromhis_var, **kwargs) #pcolor also supports missing/masked xy data, but is slower
+
+    return pc
 
 
-
-
-def plot_ztdata(file_nc, dfmtools_hisvar, statid_subset=0, ax=None, mask_data=True, only_contour=False, **kwargs):
+#TODO: remove this old definition
+def plot_ztdata_OLD(file_nc, dfmtools_hisvar, statid_subset=0, ax=None, mask_data=True, only_contour=False, **kwargs):
     """
 
 
@@ -778,6 +850,7 @@ def plot_ztdata(file_nc, dfmtools_hisvar, statid_subset=0, ax=None, mask_data=Tr
     pc : matplotlib.collections.QuadMesh
         DESCRIPTION.
 
+    """
     """
     import warnings
     import numpy as np
@@ -811,12 +884,6 @@ def plot_ztdata(file_nc, dfmtools_hisvar, statid_subset=0, ax=None, mask_data=Tr
         raise Exception('unexpected number of dimensions')
     data_fromhis_wl_flat = data_fromhis_wl[:,statid_subset]
 
-    """
-    fig,(ax1)=plt.subplots()
-    ax1.plot(np.arange(data_fromhis_zcen_flat.shape[1])+.5,data_fromhis_zcen_flat[5,:],'x',label='centers')
-    ax1.plot(range(data_fromhis_zcor_flat.shape[1]),data_fromhis_zcor_flat[5,:],'o',label='corners')
-    ax1.legend()
-    """
     if mask_data:
         bool_zcen_equaltop = (data_fromhis_zcen_flat==data_fromhis_zcen_flat[:,-1:]).all(axis=0)
         id_zcentop = np.argmax(bool_zcen_equaltop) # id of first z_center that is equal to z_center of last layer
@@ -840,5 +907,5 @@ def plot_ztdata(file_nc, dfmtools_hisvar, statid_subset=0, ax=None, mask_data=Tr
     else: #TODO: should actually supply cell edges instead of centers to pcolor/pcolormesh, but inconvenient for time dimension.
         #pc = ax.pcolormesh(time_mesh_cen, data_fromhis_zcen_flat, dfmtools_hisvar_flat, **kwargs)
         pc = ax.pcolor(time_mesh_cor, data_fromhis_zcor_flat, dfmtools_hisvar_flat, **kwargs) #pcolor also supports missing/masked xy data, but is slower
-
     return pc
+    """

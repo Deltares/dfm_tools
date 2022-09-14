@@ -9,6 +9,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 plt.close('all')
+import xarray as xr
 
 from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata#, get_xzcoords_onintersection
 from dfm_tools.get_nc_helpers import get_ncvardimlist, get_hisstationlist
@@ -180,18 +181,21 @@ vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
 vars_pd_sel = vars_pd[vars_pd['long_name'].str.contains('level')]
 stat_list = get_hisstationlist(file_nc,varname='station_name')
 crs_list = get_hisstationlist(file_nc,varname='cross_section_name')
+data_xr = xr.open_dataset(file_nc)
+stations_pd = data_xr.station_name.astype(str).to_pandas()
 
 var_names = ['waterlevel','bedlevel']#,'mesh2d_ssn']
 for iV, varname in enumerate(var_names):
-    data_fromhis = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep='all', station='all')
-    var_longname = vars_pd['long_name'][vars_pd['nc_varkeys']==varname].iloc[0]
+    #data_fromhis = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep='all', station='all')
 
     fig, ax = plt.subplots(1,1, figsize=(10,5))
-    for iS, stat in enumerate(data_fromhis.var_stations['station_name']):
-        ax.plot(data_fromhis.var_times, data_fromhis[:,iS], linewidth=1, label=stat)
+    for iS, stat in enumerate(stations_pd):
+        data_fromhis = data_xr.get(varname).isel(stations=iS,time=slice(0,3000))
+        var_longname = data_fromhis.attrs['long_name'] #vars_pd['long_name'][vars_pd['nc_varkeys']==varname].iloc[0]
+        ax.plot(data_fromhis.time, data_fromhis, linewidth=1, label=stat)
     ax.legend()
-    ax.set_ylabel('%s (%s)'%(data_fromhis.var_varname,data_fromhis.var_ncattrs['units']))
-    ax.set_xlim(data_fromhis.var_times[[0,3000]])
+    ax.set_ylabel('%s (%s)'%(data_fromhis.name,data_fromhis.attrs['units']))
+    ax.set_xlim(data_fromhis.time[[0,-1]].to_numpy())
     fig.tight_layout()
     plt.savefig(os.path.join(dir_output,'%s_%s'%(os.path.basename(file_nc).replace('.',''), varname)))
 
@@ -204,15 +208,16 @@ for iV, varname in enumerate(var_names):
 file_nc = r'p:\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\fm\DFM_OUTPUT_inlet\inlet_map.nc'
 #file_nc = r'p:\11203869-morwaqeco3d\04-Breakwater\02_FM_201910\01_FM_MF25_Max_30s_User_1200s\fm\DFM_OUTPUT_straight_coast\straight_coast_map.nc'
 vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+data_xr = xr.open_dataset(file_nc)
 #vars_pd_sel = vars_pd[vars_pd['long_name'].str.contains('transport')]
 #vars_pd_sel = vars_pd[vars_pd['dimensions'].str.contains('mesh2d_nFaces') & vars_pd['long_name'].str.contains('wave')]
 
 ugrid = get_netdata(file_nc=file_nc)
 timestep = 10
-data_frommap_facex = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_face_x')
-data_frommap_facey = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_face_y')
-data_frommap_transx = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sxtot', timestep=timestep, station='all')
-data_frommap_transy = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sytot', timestep=timestep, station='all')
+data_frommap_facex = data_xr.mesh2d_face_x # get_ncmodeldata(file_nc=file_nc, varname='mesh2d_face_x')
+data_frommap_facey = data_xr.mesh2d_face_y # get_ncmodeldata(file_nc=file_nc, varname='mesh2d_face_y')
+data_frommap_transx = data_xr.mesh2d_sxtot.isel(time=[-1]) #get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sxtot', timestep=timestep, station='all')
+data_frommap_transy = data_xr.mesh2d_sytot.isel(time=[-1]) #get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sytot', timestep=timestep, station='all')
 magnitude = (data_frommap_transx ** 2 + data_frommap_transy ** 2) ** 0.5
 
 #plt.close('all')
@@ -220,11 +225,11 @@ fig, ax = plt.subplots(1,1, figsize=(14,8))
 quiv = ax.quiver(data_frommap_facex, data_frommap_facey, data_frommap_transx[0,0,:], data_frommap_transy[0,0,:],
                  magnitude[0,0,:])#, scale=0.015)
 cbar = fig.colorbar(quiv, ax=ax)
-cbar.set_label('%s and %s (%s)'%(data_frommap_transx.var_varname, data_frommap_transy.var_varname, data_frommap_transy.var_ncattrs['units']))
-ax.set_title('t=%d (%s)'%(timestep, data_frommap_transx.var_times.iloc[0]))
+cbar.set_label('%s and %s (%s)'%(data_frommap_transx.name, data_frommap_transy.name, data_frommap_transy.attrs['units']))
+ax.set_title('t=%d (%s)'%(timestep, data_frommap_transx.time.to_pandas().iloc[0]))
 ax.set_aspect('equal')
 fig.tight_layout()
-plt.savefig(os.path.join(dir_output,'%s_%s_%s_t%d'%(os.path.basename(file_nc).replace('.',''), data_frommap_transx.var_varname, data_frommap_transy.var_varname,timestep)))
+plt.savefig(os.path.join(dir_output,'%s_%s_%s_t%d'%(os.path.basename(file_nc).replace('.',''), data_frommap_transx.name, data_frommap_transy.name,timestep)))
 xlim_get = ax.get_xlim()
 ylim_get = ax.get_ylim()
 
@@ -236,13 +241,13 @@ speed = np.sqrt(U*U + V*V)
 fig, ax = plt.subplots(1,1, figsize=(14,8))
 quiv = ax.quiver(X, Y, U, V, speed)
 cbar = fig.colorbar(quiv, ax=ax)
-cbar.set_label('%s and %s (%s)'%(data_frommap_transx.var_varname, data_frommap_transy.var_varname, data_frommap_transy.var_ncattrs['units']))
-ax.set_title('t=%d (%s)'%(timestep, data_frommap_transx.var_times.iloc[0]))
+cbar.set_label('%s and %s (%s)'%(data_frommap_transx.name, data_frommap_transy.name, data_frommap_transy.attrs['units']))
+ax.set_title('t=%d (%s)'%(timestep, data_frommap_transx.time.to_pandas().iloc[0]))
 ax.set_xlim(xlim_get)
 ax.set_ylim(ylim_get)
 ax.set_aspect('equal')
 fig.tight_layout()
-plt.savefig(os.path.join(dir_output,'%s_%s_%s_t%d_regquiver'%(os.path.basename(file_nc).replace('.',''), data_frommap_transx.var_varname, data_frommap_transy.var_varname,timestep)))
+plt.savefig(os.path.join(dir_output,'%s_%s_%s_t%d_regquiver'%(os.path.basename(file_nc).replace('.',''), data_frommap_transx.name, data_frommap_transy.name,timestep)))
 
 #xs = X.flatten()
 #ys = Y.flatten()
@@ -255,24 +260,24 @@ strm = ax.streamplot(X, Y, U, V, color=speed, density=2, linewidth=1+2*speed/np.
 #                     minlength=0.0001, maxlength = 0.07, arrowstyle='fancy',
 #                     integration_direction='forward', start_points = seed_points.T)
 cbar = fig.colorbar(strm.lines)
-cbar.set_label('%s and %s (%s)'%(data_frommap_transx.var_varname, data_frommap_transy.var_varname, data_frommap_transy.var_ncattrs['units']))
-ax.set_title('t=%d (%s)'%(timestep, data_frommap_transx.var_times.iloc[0]))
+cbar.set_label('%s and %s (%s)'%(data_frommap_transx.name, data_frommap_transy.name, data_frommap_transy.attrs['units']))
+ax.set_title('t=%d (%s)'%(timestep, data_frommap_transx.time.to_pandas().iloc[0]))
 ax.set_xlim(xlim_get)
 ax.set_ylim(ylim_get)
 ax.set_aspect('equal')
 fig.tight_layout()
-plt.savefig(os.path.join(dir_output,'%s_%s_%s_t%d_regstreamplot'%(os.path.basename(file_nc).replace('.',''), data_frommap_transx.var_varname, data_frommap_transy.var_varname,timestep)))
+plt.savefig(os.path.join(dir_output,'%s_%s_%s_t%d_regstreamplot'%(os.path.basename(file_nc).replace('.',''), data_frommap_transx.name, data_frommap_transy.name,timestep)))
 
 from dfm_tools.modplot import velovect
 fig, ax = plt.subplots(1,1, figsize=(14,8))
 quiv_curved = velovect(ax,X,Y,U,V, arrowstyle='fancy', scale = 5, grains = 25, color=speed)
 cbar = fig.colorbar(quiv_curved.lines)
-cbar.set_label('%s and %s (%s)'%(data_frommap_transx.var_varname, data_frommap_transy.var_varname, data_frommap_transy.var_ncattrs['units']))
-ax.set_title('t=%d (%s)'%(timestep, data_frommap_transx.var_times.iloc[0]))
+cbar.set_label('%s and %s (%s)'%(data_frommap_transx.name, data_frommap_transy.name, data_frommap_transy.attrs['units']))
+ax.set_title('t=%d (%s)'%(timestep, data_frommap_transx.time.to_pandas().iloc[0]))
 ax.set_xlim(xlim_get)
 ax.set_ylim(ylim_get)
 ax.set_aspect('equal')
 fig.tight_layout()
-plt.savefig(os.path.join(dir_output,'%s_%s_%s_t%d_curvedquiver'%(os.path.basename(file_nc).replace('.',''), data_frommap_transx.var_varname, data_frommap_transy.var_varname,timestep)))
+plt.savefig(os.path.join(dir_output,'%s_%s_%s_t%d_curvedquiver'%(os.path.basename(file_nc).replace('.',''), data_frommap_transx.name, data_frommap_transy.name,timestep)))
 
 

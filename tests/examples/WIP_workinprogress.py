@@ -12,19 +12,30 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 plt.close('all')
+from pathlib import Path
+import xarray as xr
 
 from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
-from dfm_tools.get_nc_helpers import get_ncvardimlist, get_hisstationlist#, get_varname_fromnc
-from dfm_tools.io.polygon import Polygon
+from dfm_tools.get_nc_helpers import get_ncvardimlist#, get_hisstationlist#, get_varname_fromnc
+#from dfm_tools.io.polygon import Polygon
+from dfm_tools.hydrolib_helpers import polyobject_to_dataframe
+
+from hydrolib.core.io.polyfile.models import (
+    #Description,
+    #Metadata,
+    #Point,
+    PolyFile,
+    #PolyObject,
+)
+from hydrolib.core.io.polyfile.parser import read_polyfile #TODO: should be replaced with PolyFile above
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
-
 #print gridinfo of several files to compare
-file_nc = r'p:\1204257-dcsmzuno\2014\data\meteo\HIRLAM72_2018\h72_201803.nc'
-print('\nfile = %s'%(file_nc))
-data_dummy = get_ncmodeldata(file_nc=file_nc, varname='northward_wind', timestep=0, get_linkedgridinfo=True)
+#file_nc = r'p:\1204257-dcsmzuno\2014\data\meteo\HIRLAM72_2018\h72_201803.nc' #TODO: xarray MissingDimensionsError
+#print('\nfile = %s'%(file_nc))
+#data_dummy = get_ncmodeldata(file_nc=file_nc, varname='northward_wind', timestep=0, get_linkedgridinfo=True)
 file_nc = r'p:\archivedprojects\1220688-lake-kivu\2_data\COSMO\COSMOCLM_2012_out02_merged_4Wouter.nc'
 print('\nfile = %s'%(file_nc))
 data_dummy = get_ncmodeldata(file_nc=file_nc, varname='U_10M', timestep=0, get_linkedgridinfo=True)
@@ -66,8 +77,9 @@ fig, ax = plt.subplots()
 plot_netmapdata(ugrid.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
 ax.set_aspect('equal')
 
+"""
 #hirlam
-file_nc = r'p:\1204257-dcsmzuno\2014\data\meteo\HIRLAM72_2018\h72_201803.nc'
+file_nc = r'p:\1204257-dcsmzuno\2014\data\meteo\HIRLAM72_2018\h72_201803.nc' #TODO: xarray MissingDimensionsError
 vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
 
 mesh2d_node_x = get_ncmodeldata(file_nc=file_nc, varname='x')
@@ -87,7 +99,7 @@ fig, ax = plt.subplots()
 ax.pcolor(mesh2d_node_x,mesh2d_node_y,magn)
 #plt.pcolor(mesh2d_node_x,mesh2d_node_y,airp,linewidth=0.5)
 plt.savefig(os.path.join(dir_output,'hirlam_magn_pcolor'))
-
+"""
 
 #plt.close('all')
 from dfm_tools.regulargrid import center2corner
@@ -109,8 +121,10 @@ ax.plot(xcen, ycen, '-b', linewidth=0.2)
 ax.plot(xcen.T, ycen.T, '-b', linewidth=0.2)
 plt.savefig(os.path.join(dir_output,'COSMO_mesh'))
 
-file_ldb = r'p:\archivedprojects\1220688-lake-kivu\3_modelling\1_FLOW\4_CH4_CO2_included\008\lake_kivu_geo.ldb'
-data_ldb = Polygon.fromfile(file_ldb, pd_output=True)
+file_ldb = Path(r'p:\archivedprojects\1220688-lake-kivu\3_modelling\1_FLOW\4_CH4_CO2_included\008\lake_kivu_geo.ldb')
+polyfile_object = read_polyfile(file_ldb,has_z_values=False)
+data_ldb = polyobject_to_dataframe(polyfile_object['objects'][0])
+data_ldb[data_ldb==999.999] = np.nan
 
 fig, axs = plt.subplots(1,3, figsize=(16,6))
 for iT, timestep in enumerate([0,1,10]):
@@ -122,7 +136,7 @@ for iT, timestep in enumerate([0,1,10]):
     cbar.set_label('velocity magnitude (%s)'%(data_V10M.var_ncattrs['units']))
     ax.set_title('t=%d (%s)'%(timestep, data_V10M.var_times.loc[timestep]))
     ax.set_aspect('equal')
-    ax.plot(data_ldb[0].loc[:,0], data_ldb[0].loc[:,1], 'k', linewidth=0.5)
+    ax.plot(data_ldb['x'], data_ldb['y'], 'k', linewidth=0.5)
     thinning = 2
     ax.quiver(xcen[::thinning,::thinning], ycen[::thinning,::thinning], data_U10M[timestep,::thinning,::thinning], data_V10M[timestep,::thinning,::thinning], 
               color='w',scale=50,width=0.008)#, edgecolor='face', cmap='jet')
@@ -154,7 +168,7 @@ for iT, timestep in enumerate([0,1,10]):
     cbar.set_label('velocity magnitude (%s)'%(data_V10M.var_ncattrs['units']))
     ax.set_title('t=%d (%s)'%(timestep, data_V10M.var_times.loc[timestep]))
     ax.set_aspect('equal')
-    ax.plot(data_ldb[0].loc[:,0], data_ldb[0].loc[:,1], 'k', linewidth=0.5)
+    ax.plot(data_ldb['x'], data_ldb['y'], 'k', linewidth=0.5)
     thinning = 2
     ax.quiver(xcen[::thinning,::thinning], ycen[::thinning,::thinning], data_U10M[timestep,::thinning,::thinning], data_V10M[timestep,::thinning,::thinning], 
               color='w',scale=50,width=0.008)#, edgecolor='face', cmap='jet')
@@ -245,13 +259,15 @@ plt.savefig(os.path.join(dir_output,'SFINCS_velocity_pcolorquiver'))
 #file_nc = r'p:\11202255-sfincs\Testbed\Original_tests\01_Implementation\14_restartfile\sfincs_his.nc'
 file_nc = r'p:\11202255-sfincs\Testbed\Original_tests\03_Application\04_Tsunami_Japan_Sendai\sfincs_his.nc'
 vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
-
-station_names = get_hisstationlist(file_nc=file_nc, varname='point_zs')
-data_fromnc_his = get_ncmodeldata(file_nc=file_nc, varname='point_zs', station='all', timestep='all')
+data_xr = xr.open_dataset(file_nc)
+#station_names = get_hisstationlist(file_nc=file_nc, varname='point_zs')
+stations_pd = data_xr.station_name.astype(str).to_pandas()
+#data_fromnc_his = get_ncmodeldata(file_nc=file_nc, varname='point_zs', station='all', timestep='all')
 
 fig, ax = plt.subplots()
-for iS,stat_name in enumerate(data_fromnc_his.var_stations['station_name']):
-    ax.plot(data_fromnc_his.var_times, data_fromnc_his[:,iS], label=stat_name)
+for iS,stat_name in enumerate(stations_pd):
+    data_sel = data_xr.point_zs.isel(stations=iS)
+    ax.plot(data_sel.time, data_sel, label=stat_name)
 ax.legend()
 plt.savefig(os.path.join(dir_output,'SFINCS_hiszs'))
 

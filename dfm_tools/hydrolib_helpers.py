@@ -8,6 +8,7 @@ Created on Tue Aug 23 13:36:44 2022
 import datetime as dt
 import pandas as pd
 import cftime
+import numpy as np
 
 def forcingobject_to_dataframe(forcingobj, convert_time=True):
     """
@@ -51,3 +52,33 @@ def forcingobject_to_dataframe(forcingobj, convert_time=True):
         #drop original time column
         df_data = df_data.drop(labels='time',level=0,axis=1)
     return df_data
+
+
+def polyobject_to_dataframe(PolyObject, dummy=None):
+    """
+    
+
+    Parameters
+    ----------
+    PolyObject : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    poly_pd : TYPE
+        DESCRIPTION.
+        
+    Example:
+        polyfile_object = read_polyfile(file_ldb,has_z_values=False)
+        poly_pd_list = [polyobject_to_dataframe(PO) for PO in polyfile_object['objects']]
+
+    """
+    xvals_pd = pd.DataFrame({'x':[p.x for p in PolyObject.points]})
+    yvals_pd = pd.DataFrame({'y':[p.y for p in PolyObject.points]})
+    datavals_pd = pd.DataFrame([p.data for p in PolyObject.points])
+    poly_pd = pd.concat([xvals_pd,yvals_pd,datavals_pd],axis=1)
+    poly_pd[poly_pd==dummy] = np.nan
+
+    return poly_pd
+
+

@@ -29,20 +29,33 @@ get the netcdf files via putty with:
 
 import os
 import numpy as np
-import datetime as dt
+#import datetime as dt
 import matplotlib.pyplot as plt
 plt.close('all')
+from pathlib import Path
+import xarray as xr
 
 from dfm_tools.get_nc import get_ncmodeldata#, get_netdata, plot_netmapdata
-from dfm_tools.get_nc_helpers import get_ncvardimlist, get_hisstationlist#, get_varname_fromnc
+from dfm_tools.get_nc_helpers import get_ncvardimlist#, get_hisstationlist#, get_varname_fromnc
 from dfm_tools.regulargrid import uva2xymagdeg
-from dfm_tools.io.polygon import Polygon
+from dfm_tools.hydrolib_helpers import polyobject_to_dataframe
+#from dfm_tools.io.polygon import Polygon
+
+from hydrolib.core.io.polyfile.models import (
+    #Description,
+    #Metadata,
+    #Point,
+    PolyFile,
+    #PolyObject,
+)
+from hydrolib.core.io.polyfile.parser import read_polyfile #TODO: should be replaced with PolyFile above
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
-file_ldb = r'p:\archivedprojects\1220688-lake-kivu\3_modelling\1_FLOW\4_CH4_CO2_included\008\lake_kivu_geo.ldb'
-data_ldb = Polygon.fromfile(file_ldb, pd_output=True)
+file_ldb = Path(r'p:\archivedprojects\1220688-lake-kivu\3_modelling\1_FLOW\4_CH4_CO2_included\008\lake_kivu_geo.ldb')
+polyfile_object = read_polyfile(file_ldb,has_z_values=False)
+data_ldb = polyobject_to_dataframe(polyfile_object['objects'][0])
 
 file_nc = r'p:\archivedprojects\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\062_netcdf\trim-thiery_002_coarse.nc'
 vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
@@ -139,18 +152,22 @@ plt.savefig(os.path.join(dir_output,'kivu_bedlevel'))
 #FROM HIS data
 file_nc = r'p:\archivedprojects\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\063_netcdf\trih-thiery_002_coarse.nc'
 vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+data_xr = xr.open_dataset(file_nc)
 
-data_nc_NAMST = get_hisstationlist(file_nc=file_nc, varname='NAMST')
-data_nc_ZWL = get_ncmodeldata(file_nc=file_nc, varname='ZWL',timestep='all',station='all')
+#data_nc_NAMST = get_hisstationlist(file_nc=file_nc, varname='NAMST')
+#data_nc_ZWL = get_ncmodeldata(file_nc=file_nc, varname='ZWL',timestep='all',station='all')
 #data_nc_ZCURU = get_ncmodeldata(file_nc=file_nc, varname='ZCURU',timestep='all',station='all',layer='all')
 #data_nc_ZCURV = get_ncmodeldata(file_nc=file_nc, varname='ZCURV',timestep='all',station='all',layer='all')
+stations_pd = data_xr.NAMST.astype(str).to_pandas().str.strip()
 
 fig, ax = plt.subplots(figsize=(16,7))
 for iS in range(10):
-    ax.plot(data_nc_ZWL.var_times,data_nc_ZWL[:,iS],label=data_nc_NAMST['NAMST'].iloc[iS], linewidth=1)
+    data_nc_ZWL = data_xr.ZWL.isel(NOSTAT=iS).sel(time=slice('2013-07-24','2013-08-07'))
+    ax.plot(data_nc_ZWL.time,data_nc_ZWL,label=stations_pd.iloc[iS], linewidth=1)
 ax.legend()
-ax.set_ylabel('%s (%s)'%(data_nc_ZWL.var_varname, data_nc_ZWL.var_ncattrs['units']))
-ax.set_xlim([data_nc_ZWL.var_times[0],data_nc_ZWL.var_times[0]+dt.timedelta(days=14)])
+ax.set_ylabel('%s (%s)'%(data_nc_ZWL.attrs['long_name'], data_nc_ZWL.attrs['units']))
+time_ext = data_nc_ZWL.time[[0,-1]].to_numpy()
+ax.set_xlim(time_ext)
 plt.savefig(os.path.join(dir_output,'kivu_his_ZWL'))
 
 
@@ -248,16 +265,20 @@ plt.savefig(os.path.join(dir_output,'curvedbend_velocity_pcolor'))
 file_nc = os.path.join(dir_testinput,'D3D_3D_sigma_curved_bend_nc\\trih-cb2-sal-added-3d.nc')
 vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
 
-data_nc_NAMST = get_hisstationlist(file_nc=file_nc, varname='NAMST')
-data_nc_ZWL = get_ncmodeldata(file_nc=file_nc, varname='ZWL',timestep='all',station='all')
+data_xr = xr.open_dataset(file_nc)
+#data_nc_NAMST = get_hisstationlist(file_nc=file_nc, varname='NAMST')
+stations_pd = data_xr.NAMST.astype(str).to_pandas().str.strip()
+#data_nc_ZWL = get_ncmodeldata(file_nc=file_nc, varname='ZWL',timestep='all',station='all')
 #data_nc_ZCURU = get_ncmodeldata(file_nc=file_nc, varname='ZCURU',timestep='all',station='all',layer='all')
 #data_nc_ZCURV = get_ncmodeldata(file_nc=file_nc, varname='ZCURV',timestep='all',station='all',layer='all')
 
 fig, ax = plt.subplots(figsize=(16,7))
 for iS in range(5):
-    ax.plot(data_nc_ZWL.var_times,data_nc_ZWL[:,iS],label=data_nc_NAMST['NAMST'].iloc[iS], linewidth=1)
+    data_nc_ZWL = data_xr.ZWL.isel(NOSTAT=iS).sel(time=slice('2001-01-28','2001-01-29T12:00:00'))
+    ax.plot(data_nc_ZWL.time,data_nc_ZWL,label=stations_pd.iloc[iS], linewidth=1)
 ax.legend()
-ax.set_ylabel('%s (%s)'%(data_nc_ZWL.var_varname, data_nc_ZWL.var_ncattrs['units']))
-ax.set_xlim([data_nc_ZWL.var_times[0],data_nc_ZWL.var_times[0]+dt.timedelta(days=2)])
+ax.set_ylabel('%s (%s)'%(data_nc_ZWL.attrs['long_name'], data_nc_ZWL.attrs['units']))
+time_ext = data_nc_ZWL.time[[0,-1]].to_numpy()
+ax.set_xlim(time_ext)
 plt.savefig(os.path.join(dir_output,'curvedbend_his_ZWL'))
 

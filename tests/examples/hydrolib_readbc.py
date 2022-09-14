@@ -6,21 +6,24 @@ Created on Wed Aug 17 11:19:51 2022
 """
 
 
-import os
+#import os
+from pathlib import Path
 import datetime as dt
 import pandas as pd
-from netCDF4 import num2date
-import cftime
+#from netCDF4 import num2date
+#import cftime
 import matplotlib.pyplot as plt
-from pathlib import Path
 plt.close('all')
+import numpy as np
 from hydrolib.core.io.bc.models import ForcingModel
 from dfm_tools.hydrolib_helpers import forcingobject_to_dataframe
+
+#NOTE: for examples with writing bc files, check dfm_tools.interpolate_grid2bnd.*
 
 if 0: #read in bc file with Timeseries objects (waterlevels, discharges)
     #file_bc = Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\2020\flow\rmm_zeerand_v3_2020.bc') #>100 timeseries
     file_bc = Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\rmm_rivdis_meas_20171220_20210102_MET.bc') #TODO: why can it not be str? #three timeseries
-    file_bc = Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\2018\flow\rmm_discharge_laterals_20171220_20190101_MET.bc')
+    #file_bc = Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\2018\flow\rmm_discharge_laterals_20171220_20190101_MET.bc')
     
     #Load .bc-file using HydroLib object ForcingModel.
     m = ForcingModel(file_bc)
@@ -71,7 +74,7 @@ if 0: #read bc file with T3D blocks
     m = ForcingModel(file_bc_3D) #TODO: crashes on validation error since [verticalPositions,verticalInterpolation,verticalPositionType] are not accepted as missing (while dflowfm has default values for them) >> verticalPositions are in file as "Vertical position". Issue created: https://github.com/Deltares/HYDROLIB-core/issues/306
 
 
-if 1: #read bc file with harmonic blocks and compare
+if 0: #read bc file with harmonic blocks and compare
     
     file_bc_orig = Path(r'n:\My Documents\werkmap\hydrolib_test\DCSM\tide_OB_all_20181108.bc')
     file_bc_new = Path(r'n:\My Documents\werkmap\hydrolib_test\DCSM\tide_DCSM-FM_OB_all_20181108_nocomments.bc')
@@ -91,3 +94,4 @@ if 1: #read bc file with harmonic blocks and compare
         list_pd.append(df)
     
     print(list_pd[0]-list_pd[1])
+    

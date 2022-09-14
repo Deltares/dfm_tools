@@ -19,9 +19,9 @@ from dfm_tools.get_nc_helpers import get_ncvardimlist
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
-
+"""
 #HIRLAM
-file_nc = r'p:\1204257-dcsmzuno\2014\data\meteo\HIRLAM72_2018\h72_201803.nc'
+file_nc = r'p:\1204257-dcsmzuno\2014\data\meteo\HIRLAM72_2018\h72_201803.nc' #TODO: xarray MissingDimensionsError
 vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
 
 timestep = 0
@@ -54,7 +54,7 @@ fig, ax = plt.subplots(figsize=(6,7),subplot_kw={'projection': ccrs.EuroPP()}) #
 pc = ax.pcolor(mesh2d_node_x_sel[:100,:100],mesh2d_node_y_sel[:100,:100],magn[:100,:100], transform=ccrs.PlateCarree()) #take subset of dataset to speed up coordinate transformation
 plot_background(ax=ax, google_style=None, features=['coastlines_highres'], latlon_format=True, gridlines=True)
 plt.savefig(os.path.join(dir_output,'cartopy_hirlam_curvedgridlines'))
-
+"""
     
 #GREVELINGEN
 file_nc_map = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen\\computations\\run01\\DFM_OUTPUT_Grevelingen-FM\\Grevelingen-FM_0000_map.nc')
