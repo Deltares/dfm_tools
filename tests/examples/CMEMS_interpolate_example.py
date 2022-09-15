@@ -26,12 +26,12 @@ bc_type = 'bc' #currently only 'bc' supported #TODO: add netcdf bc support. http
 
 refdate_str = 'minutes since 2011-12-22 00:00:00 +00:00' # this is copied from the reference bc file, but can be changed by the user
 tstart = dt.datetime(1993, 1, 1, 12, 0) #CMEMS phys has daily values at 12:00 (not at midnight), so make sure to include a day extra if necessary. also NO3_GFDL
-tstop = dt.datetime(1993, 5, 1, 12, 0)  
+tstop = dt.datetime(1993, 5, 1, 12, 0)
 #tstart = dt.datetime(2011, 12, 16, 12, 0) #NO3_CMEMS?
 #tstop = dt.datetime(2012, 12, 1, 12, 0)
 #tstart = dt.datetime(2015, 6, 16, 12, 0)
 #tstop = dt.datetime(2015, 12, 1, 12, 0)
-nPoints = 3 #amount of Points to process per PolyObject in the plifile (for testing, use None for all Points)
+nPoints = 10 #amount of Points to process per PolyObject in the plifile (for testing, use None for all Points)
 debug = False
 
 conversion_dict = get_conversion_dict()
