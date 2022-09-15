@@ -31,13 +31,13 @@ tstop = dt.datetime(1993, 5, 1, 12, 0)
 #tstop = dt.datetime(2012, 12, 1, 12, 0)
 #tstart = dt.datetime(2015, 6, 16, 12, 0)
 #tstop = dt.datetime(2015, 12, 1, 12, 0)
-nPoints = 10 #amount of Points to process per PolyObject in the plifile (for testing, use None for all Points)
+nPoints = 3 #amount of Points to process per PolyObject in the plifile (for testing, use None for all Points)
 debug = False
 
 conversion_dict = get_conversion_dict()
 list_quantities = ['NO3']
 #list_quantities = ['steric','salinity','tide']#,['salinity','temperature','steric'] #should be in varnames_dict.keys()
-list_quantities = ['tide']
+list_quantities = ['salinity']
 
 dtstart = dt.datetime.now()
 ext_bnd = ExtModel()
@@ -54,6 +54,7 @@ for file_pli in list_plifiles:
         elif quantity in ['NO3']:
             varname_file = conversion_dict[quantity]['ncvarname'][0] #TODO: [1] is also necessary for uxuy
             dir_pattern,convert_360to180 = Path(dir_sourcefiles_waq,f'cmems_mod_glo_bgc_my_0.25_P1M-m_{varname_file}_*.nc'),False # CMEMS waq
+            dir_pattern,convert_360to180 = Path(dir_sourcefiles_waq,f'{varname_file}_*.nc'),False # CMEMS waq
             #dir_pattern,convert_360to180 = Path(dir_sourcefiles_waq,f'{varname_file}_esm-hist.nc'),True # GFDL
             #dir_pattern,convert_360to180 = Path(dir_sourcefiles_waq,f'{varname_file}_Omon_CMCC-ESM2_ssp126_r1i1p1f1_gn_*.nc'),True #CMCC, TODO: crashes because of missing lat coords
             ForcingModel_object = interpolate_nc_to_bc(dir_pattern=dir_pattern, file_pli=file_pli, quantity=quantity,

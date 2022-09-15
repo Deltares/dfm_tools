@@ -72,6 +72,7 @@ if 0: #read bc file with T3D blocks
     #TODO: files from p:\11208154-002-haixia\02-hydrodynamics\02_Model_set_up\02_Make_forcing\CMEMS\bc\V2\Southv2\, bc files for other boundaries are 4/5 times bigger
     
     m = ForcingModel(file_bc_3D) #TODO: crashes on validation error since [verticalPositions,verticalInterpolation,verticalPositionType] are not accepted as missing (while dflowfm has default values for them) >> verticalPositions are in file as "Vertical position". Issue created: https://github.com/Deltares/HYDROLIB-core/issues/306
+    #TODO: plot this dataset, if that is done, that part of dflowutil can be removed
 
 
 if 0: #read bc file with harmonic blocks and compare

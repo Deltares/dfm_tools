@@ -98,12 +98,12 @@ def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180
     pli_PolyObjects = polyfile_object['objects']
     xmin,xmax,ymin,ymax = None,None,None,None
     for iPO, pli_PolyObject_sel in enumerate(pli_PolyObjects):
-        xPO = np.array([point.x for point in pli_PolyObject_sel.points])
-        yPO = np.array([point.y for point in pli_PolyObject_sel.points])
-        xmin = np.min(xPO.min(),xmax)
-        xmax = np.max(xPO.max(),xmax)
-        ymin = np.min(yPO.min(),ymax)
-        ymax = np.max(yPO.max(),ymax)
+        path_lons = np.array([point.x for point in pli_PolyObject_sel.points])#[:nPoints]
+        path_lats = np.array([point.y for point in pli_PolyObject_sel.points])#[:nPoints]
+        xmin = np.min(path_lons.min(),xmax)
+        xmax = np.max(path_lons.max(),xmax)
+        ymin = np.min(path_lats.min(),ymax)
+        ymax = np.max(path_lats.max(),ymax)
 
     file_list_nc = [str(dir_pattern).replace('*',comp) for comp in component_list]
     #use mfdataset (currently twice as slow as looping over separate datasets, apperantly interp is more difficult but this might be solvable. Also, it does not really matter since we need to compute u/v components of phase anyway, which makes it also slow)
@@ -157,7 +157,7 @@ def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180
         #interpolation to lat/lon combinations
         print('> interp mfdataset with all lat/lon coordinates. And actual extraction of data from netcdf with da.as_numpy() (for all PolyObject points at once, so this will take a while)')
         dtstart = dt.datetime.now()
-        data_interp_amp_allcoords = data_xr_amp.interp(lat=da_lats,lon=da_lons).as_numpy()/100 #convert from cm to m
+        data_interp_amp_allcoords = data_xr_amp.interp(lat=da_lats,lon=da_lons).as_numpy()/100 #convert from cm to m #TODO: also add assume_sorted and bounds_error arguments
         data_interp_phs_u_allcoords = data_xr_phs_u.interp(lat=da_lats,lon=da_lons).as_numpy()
         data_interp_phs_v_allcoords = data_xr_phs_v.interp(lat=da_lats,lon=da_lons).as_numpy()
         
@@ -274,13 +274,13 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
     for iPO, pli_PolyObject_sel in enumerate(pli_PolyObjects[:nPolyObjects]):
         print(f'processing PolyObject {iPO+1} of {len(pli_PolyObjects)}: name={pli_PolyObject_sel.metadata.name}')
         
-        #create DataArrays of lat/lon combinations
+        #create requestedlat/requestedlon DataArrays for proper interpolation in xarray (with new dimension name)
         path_lons = np.array([point.x for point in pli_PolyObject_sel.points])[:nPoints]
         path_lats = np.array([point.y for point in pli_PolyObject_sel.points])[:nPoints]
-        #make requestedlat/requestedlon DataArrays for proper interpolation in xarray (with new dimension name)
         da_lons = xr.DataArray(path_lons, dims='latloncombi')
         da_lats = xr.DataArray(path_lats, dims='latloncombi')
         
+        #check whether coordinates are in bounds. This is also done with da.interp(kwargs={'bounds_error':True}), but this is to give proper feedback about which coordinates are out of bounds
         bool_reqlon_outbounds = (path_lons <= lonvar_vals.min()) | (path_lons >= lonvar_vals.max())
         bool_reqlat_outbounds = (path_lats <= latvar_vals.min()) | (path_lats >= latvar_vals.max())
         if bool_reqlon_outbounds.any():
@@ -289,23 +289,30 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             raise Exception(f'some of requested laty outside or on lat bounds ({latvar_vals.min(),latvar_vals.max()}):\n{path_lats[bool_reqlat_outbounds]}')
         
         #interpolation to lat/lon combinations
-        print('> interp mfdataset with all lat/lon coordinates')
+        print('> interp mfdataset to all PolyObject points (lat/lon coordinates)')
         dtstart = dt.datetime.now()
-        if 'latitude' in data_xr_var.coords:
-            data_interp = data_xr_var.interp(latitude=da_lats,longitude=da_lons,
-                                             #kwargs={'bounds_error':True}, #TODO: bounds_error is ignored (catched by manual lonx/laty bounds check), but also nans are returned on land.
-                                             #assume_sorted=True, #TODO: assume_sorted increases performance?
-                                             )
+        if 'latitude' in data_xr_var.coords: #for CMEMS etc
+            coordname_lat = 'latitude'
+            coordname_lon = 'longitude'
         elif 'lat' in data_xr_var.coords:
-            data_interp = data_xr_var.interp(lat=da_lats,lon=da_lons)
+            coordname_lat = 'lat'
+            coordname_lon = 'lon'
         else: #TODO: lat/latitude (should be flexible instead of hardcoded) 
             raise Exception(f'latitude/longitude are not in variable coords: {data_xr_var.coords}. Extend this part of the code for e.g. lat/lon coords')
+        data_interp = data_xr_var.interp({coordname_lat:da_lats, coordname_lon:da_lons}, #also possible without dict: (latitude=da_lats, longitude=da_lons), but this is more flexible
+                                         method='linear', 
+                                         kwargs={'bounds_error':True}, #error is only raised upon as_numpy() or to_numpy() (when the actual value retrieval happens)
+                                         assume_sorted=True, #TODO: assume_sorted increases performance?
+                                         )
         time_passed = (dt.datetime.now()-dtstart).total_seconds()
         if debug: print(f'>>time passed: {time_passed:.2f} sec')
         
         print('> actual extraction of data from netcdf with da.as_numpy() (for all PolyObject points at once, so this will take a while)')
         dtstart = dt.datetime.now()
+        #try:
         datablock_raw_allcoords = data_interp.as_numpy() #TODO: as_numpy() is maybe not the best method, but at least all data should be read now and we still want an object where sel works on
+        #except ValueError as e:
+        #    raise ValueError(f'{e}\nlons (valid range {lonvar_vals.min()},{lonvar_vals.max()}):\n{path_lons[bool_reqlon_outbounds]}\nlats (valid range {latvar_vals.min()},{latvar_vals.max()}):\n{path_lats[bool_reqlat_outbounds]}')
         time_passed = (dt.datetime.now()-dtstart).total_seconds()
         #if debug:
         print(f'>>time passed: {time_passed:.2f} sec')
@@ -324,9 +331,8 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             if debug: print(f'>>time passed: {time_passed:.2f} sec')
             
             # check if only nan (out of bounds or land):
-            data_time0 = datablock_xr.isel(time=0).to_numpy()
-            if np.isnan(data_time0).all():
-                print('WARNING: only nans on first time of this coordinate') #TODO: this can happen on land, raise exception or warning?
+            if np.isnan(datablock_raw).all():
+                print('WARNING: only nan values for this coordinate') #TODO: this can happen on land, raise exception or warning?
 
             if debug:
                 print('> plotting')
@@ -344,7 +350,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             print('> ffill nans, converting units and concatenating time column')
             dtstart = dt.datetime.now()
             if has_depth:
-                datablock = pd.DataFrame(datablock_raw).fillna(method='ffill',axis=1).values #fill nans forward, is this efficient?
+                datablock = pd.DataFrame(datablock_raw).fillna(method='ffill',axis=1).values #fill nans forward (corresponds to vertical extrapolation for CMEMS) #TODO: make depth axis flexible
                 #if debug: print(datablock_raw), print(datablock)
                 datablock = datablock[:,::-1] #flipping axis #TODO: this assumes depth as second dimension and that might not be true for other models. Flipping depth_vals and datablock is not required by kernel, so remove after validation is complete
             else:
