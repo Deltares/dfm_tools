@@ -96,14 +96,14 @@ def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180
     #load boundary file and derive extents for range selection for nc dataset (speeds up process significantly)
     polyfile_object = read_polyfile(file_pli,has_z_values=False)
     pli_PolyObjects = polyfile_object['objects']
-    xmin,xmax,ymin,ymax = None,None,None,None
+    xmin,xmax,ymin,ymax = np.nan,np.nan,np.nan,np.nan
     for iPO, pli_PolyObject_sel in enumerate(pli_PolyObjects):
         path_lons = np.array([point.x for point in pli_PolyObject_sel.points])#[:nPoints]
         path_lats = np.array([point.y for point in pli_PolyObject_sel.points])#[:nPoints]
-        xmin = np.min(path_lons.min(),xmax)
-        xmax = np.max(path_lons.max(),xmax)
-        ymin = np.min(path_lats.min(),ymax)
-        ymax = np.max(path_lats.max(),ymax)
+        xmin = min(path_lons.min(),xmin)
+        xmax = max(path_lons.max(),xmax)
+        ymin = min(path_lats.min(),ymin)
+        ymax = max(path_lats.max(),ymax)
 
     file_list_nc = [str(dir_pattern).replace('*',comp) for comp in component_list]
     #use mfdataset (currently twice as slow as looping over separate datasets, apperantly interp is more difficult but this might be solvable. Also, it does not really matter since we need to compute u/v components of phase anyway, which makes it also slow)
