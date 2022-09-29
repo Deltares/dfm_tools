@@ -97,6 +97,8 @@ def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180
     #load boundary file and derive extents for range selection for nc dataset (speeds up process significantly)
     polyfile_object = read_polyfile(file_pli,has_z_values=False)
     pli_PolyObjects = polyfile_object['objects']
+    
+    #get min/max extends of all polylines in polyfile to subset fes data and make operations faster.
     xmin,xmax,ymin,ymax = np.nan,np.nan,np.nan,np.nan
     for iPO, pli_PolyObject_sel in enumerate(pli_PolyObjects):
         path_lons = np.array([point.x for point in pli_PolyObject_sel.points])#[:nPoints]
@@ -314,7 +316,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
         print('> actual extraction of data from netcdf with da.load() (for all PolyObject points at once, so this will take a while)')
         dtstart = dt.datetime.now()
         #try:
-        datablock_raw_allcoords = data_interp.load()
+        datablock_raw_allcoords = data_interp.load() #loading data for all points at once is more efficient compared to loading data per point in loop 
         #except ValueError as e:
         #    raise ValueError(f'{e}\nlons (valid range {lonvar_vals.min()},{lonvar_vals.max()}):\n{path_lons[bool_reqlon_outbounds]}\nlats (valid range {latvar_vals.min()},{latvar_vals.max()}):\n{path_lats[bool_reqlat_outbounds]}')
         time_passed = (dt.datetime.now()-dtstart).total_seconds()
@@ -330,12 +332,21 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             print('> selecting data for current coord from numpy array')
             dtstart = dt.datetime.now()
             datablock_xr = datablock_raw_allcoords.isel(latloncombi=iP)
-            datablock_raw = datablock_xr.to_numpy()
             time_passed = (dt.datetime.now()-dtstart).total_seconds()
             if debug: print(f'>>time passed: {time_passed:.2f} sec')
             
+            print('converting units')
+            #conversion of units etc
+            bcvarname = conversion_dict[quantity]['bcvarname'][0] #TODO: [1] is necessary for uxuy
+            if 'conversion' in conversion_dict[quantity].keys():
+                datablock_xr = datablock_xr * conversion_dict[quantity]['conversion']
+            if 'unit' in conversion_dict[quantity].keys():
+                varunit = conversion_dict[quantity]['unit']
+            else:
+                varunit = data_xr_var.attrs['units']
+            
             # check if only nan (out of bounds or land):
-            if np.isnan(datablock_raw).all():
+            if np.isnan(datablock_xr.to_numpy()).all(): #TODO: is to_numpy() necessary here?
                 print('WARNING: only nan values for this coordinate') #TODO: this can happen on land, raise exception or warning?
 
             if debug:
@@ -351,30 +362,26 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
                 time_passed = (dt.datetime.now()-dtstart).total_seconds()
                 if debug: print(f'>>time passed: {time_passed:.2f} sec')
             
-            print('> ffill nans, converting units and concatenating time column')
+            
+            print('> ffill nans and concatenating time column')
             dtstart = dt.datetime.now()
             if has_depth:
-                datablock = pd.DataFrame(datablock_raw).fillna(method='ffill',axis=1).values #fill nans forward (corresponds to vertical extrapolation for CMEMS) #TODO: make depth axis flexible
-                #if debug: print(datablock_raw), print(datablock)
-                if flip_depth:
-                    datablock = datablock[:,::-1] #flipping axis #TODO: this assumes depth as second dimension and that might not be true for other models. Flipping depth_vals and datablock is not required by kernel, so remove after validation is complete
-            else:
-                datablock = datablock_raw[:,np.newaxis]
+                datablock_xr = datablock_xr.ffill(dim=depthvarname) #pd.DataFrame(datablock_raw).fillna(method='ffill',axis=1).values #fill nans forward (corresponds to vertical extrapolation for CMEMS) #TODO: make depth axis flexible
             
-            #conversion of units etc
-            bcvarname = conversion_dict[quantity]['bcvarname'][0] #TODO: [1] is necessary for uxuy
-            if 'conversion' in conversion_dict[quantity].keys():
-                datablock = datablock * conversion_dict[quantity]['conversion']
-            if 'unit' in conversion_dict[quantity].keys():
-                varunit = conversion_dict[quantity]['unit']
-            else:
-                varunit = data_xr_var.attrs['units']
+            datablock = datablock_xr.to_numpy()
             
             timevar_sel = datablock_xr.time
             timevar_sel_rel = date2num(pd.DatetimeIndex(timevar_sel.to_numpy()).to_pydatetime(),units=refdate_str,calendar='standard')
-            datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock],axis=1)
             time_passed = (dt.datetime.now()-dtstart).total_seconds()
+        
+            if has_depth: # TODO: this assumes depth as second dimension and that might not be true for other models
+                if flip_depth:
+                    datablock = datablock[:,::-1] #flipping axis #Flipping depth_vals and datablock is not required by kernel, so remove after validation is complete
+                datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock],axis=1)
+            else:
+                datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock[:,np.newaxis]],axis=1)
             if debug: print(f'>>time passed: {time_passed:.2f} sec')
+            
             
             # Each .bc file can contain 1 or more timeseries, one for each support point:
             print('> constructing TimeSeries and appending to ForcingModel()')
