@@ -197,7 +197,8 @@ def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180
 def interpolate_nc_to_bc(dir_pattern, file_pli, quantity, 
                          tstart, tstop, refdate_str, 
                          convert_360to180=False,
-                         nPoints=None, debug=False):
+                         nPoints=None, debug=False,
+                         flip_depth=False): #temporary argument to compare easier with old coastserv files
     
     """
     nPolyObjects = None #None gives all PolyObjects
@@ -262,7 +263,9 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
     
     if has_depth: #get depth variable and values
         vardepth = data_xr_var[depthvarname]
-        depth_array = vardepth.to_numpy()[::-1] #TODO: flip array is not necessary, check datablock comment
+        depth_array = vardepth.to_numpy()
+        if flip_depth:
+            depth_array = depth_array[::-1]
         if vardepth.attrs['positive'] == 'down': #attribute appears in CMEMS, GFDL and CMCC, save to assume presence?
             depth_array = -depth_array
     
@@ -352,7 +355,8 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             if has_depth:
                 datablock = pd.DataFrame(datablock_raw).fillna(method='ffill',axis=1).values #fill nans forward (corresponds to vertical extrapolation for CMEMS) #TODO: make depth axis flexible
                 #if debug: print(datablock_raw), print(datablock)
-                datablock = datablock[:,::-1] #flipping axis #TODO: this assumes depth as second dimension and that might not be true for other models. Flipping depth_vals and datablock is not required by kernel, so remove after validation is complete
+                if flip_depth:
+                    datablock = datablock[:,::-1] #flipping axis #TODO: this assumes depth as second dimension and that might not be true for other models. Flipping depth_vals and datablock is not required by kernel, so remove after validation is complete
             else:
                 datablock = datablock_raw[:,np.newaxis]
             

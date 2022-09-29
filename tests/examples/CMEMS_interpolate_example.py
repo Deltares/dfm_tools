@@ -61,12 +61,14 @@ for file_pli in list_plifiles:
             ForcingModel_object = interpolate_nc_to_bc(dir_pattern=dir_pattern, file_pli=file_pli, quantity=quantity,
                                                        convert_360to180=convert_360to180,
                                                        tstart=tstart, tstop=tstop, refdate_str=refdate_str,
+                                                       flip_depth=True, #to compare with coastserv files, this argument will be phased out
                                                        nPoints=nPoints, debug=debug)
         else: #['steric','salinity','temperature'] ['uxuy']
             dir_pattern,convert_360to180 = Path(dir_sourcefiles_hydro,f'{varname_file}_1993*.nc'),False # later remove 1993 from string, but this is faster for testing
             ForcingModel_object = interpolate_nc_to_bc(dir_pattern=dir_pattern, file_pli=file_pli, quantity=quantity, 
                                                        convert_360to180=convert_360to180,
                                                        tstart=tstart, tstop=tstop, refdate_str=refdate_str,
+                                                       flip_depth=True, #to compare with coastserv files, this argument will be phased out
                                                        nPoints=nPoints, debug=debug)
         file_bc_basename = file_pli.name.replace('.pli','.bc')
         file_bc_out = Path(dir_out,f'{quantity}_{file_bc_basename}')
