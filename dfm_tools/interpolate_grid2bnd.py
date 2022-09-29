@@ -53,17 +53,17 @@ from hydrolib.core.io.polyfile.parser import read_polyfile #TODO: should be repl
 def get_conversion_dict():
     # conversion_dict, contains ncvarname as array because uxuy relies on 2 CMEMS variables
     conversion_dict = { #TODO: mg/l is the same as g/m3: conversion is phyc in mmol/l to newvar in g/m3
-                        'OXY'        : {'ncvarname' : ['o2']       , 'unit': 'g/m3', 'conversion' : 32.0 / 1000.0}, 
-                        'NO3'        : {'ncvarname' : ['no3']      , 'unit': 'g/m3', 'conversion' : 14.0 / 1000.0},
-                        'PO4'        : {'ncvarname' : ['po4']      , 'unit': 'g/m3', 'conversion' : 30.97 / 1000.0},
-                        'Si'         : {'ncvarname' : ['si']       , 'unit': 'g/m3', 'conversion' : 28.08 / 1000.0},
-                        'PON1'       : {'ncvarname' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 2. * 16. * 14. / (106. * 1000.0)},
-                        'POP1'       : {'ncvarname' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 2. * 30.97 / (106. * 1000.0)},
-                        'POC1'       : {'ncvarname' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 2. * 12. / 1000.0},
-                        'DON'        : {'ncvarname' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 3.24 * 2. * 16. * 14. / (106. * 1000.0)},
-                        'DOP'        : {'ncvarname' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 1.0 * 2. * 30.97 / (106. * 1000.0)},
-                        'DOC'        : {'ncvarname' : ['phyc']     , 'unit': 'g/m3', 'conversion' : (199. / 20.) * 3.24 * 2. * 16. * 12. / (106. * 1000.0)},
-                        'Opal'       : {'ncvarname' : ['phyc']     , 'unit': 'g/m3', 'conversion' : 0.5 * 0.13 * 28.08 / (1000.0)},
+                        'OXY'        : {'ncvarname' : ['o2']       , 'bcvarname' : ['tracerbndOXY'], 'unit': 'g/m3', 'conversion' : 32.0 / 1000.0}, 
+                        'NO3'        : {'ncvarname' : ['no3']      , 'bcvarname' : ['tracerbndNO3'], 'unit': 'g/m3', 'conversion' : 14.0 / 1000.0},
+                        'PO4'        : {'ncvarname' : ['po4']      , 'bcvarname' : ['tracerbndPO4'], 'unit': 'g/m3', 'conversion' : 30.97 / 1000.0},
+                        'Si'         : {'ncvarname' : ['si']       , 'bcvarname' : ['tracerbndSi'], 'unit': 'g/m3', 'conversion' : 28.08 / 1000.0},
+                        'PON1'       : {'ncvarname' : ['phyc']     , 'bcvarname' : ['tracerbndPON1'], 'unit': 'g/m3', 'conversion' : 2. * 16. * 14. / (106. * 1000.0)},
+                        'POP1'       : {'ncvarname' : ['phyc']     , 'bcvarname' : ['tracerbndPOP1'], 'unit': 'g/m3', 'conversion' : 2. * 30.97 / (106. * 1000.0)},
+                        'POC1'       : {'ncvarname' : ['phyc']     , 'bcvarname' : ['tracerbndPOC1'], 'unit': 'g/m3', 'conversion' : 2. * 12. / 1000.0},
+                        'DON'        : {'ncvarname' : ['phyc']     , 'bcvarname' : ['tracerbndDON'], 'unit': 'g/m3', 'conversion' : 3.24 * 2. * 16. * 14. / (106. * 1000.0)},
+                        'DOP'        : {'ncvarname' : ['phyc']     , 'bcvarname' : ['tracerbndDOP'], 'unit': 'g/m3', 'conversion' : 1.0 * 2. * 30.97 / (106. * 1000.0)},
+                        'DOC'        : {'ncvarname' : ['phyc']     , 'bcvarname' : ['tracerbndDOC'], 'unit': 'g/m3', 'conversion' : (199. / 20.) * 3.24 * 2. * 16. * 12. / (106. * 1000.0)},
+                        'Opal'       : {'ncvarname' : ['phyc']     , 'bcvarname' : ['tracerbndOpal'], 'unit': 'g/m3', 'conversion' : 0.5 * 0.13 * 28.08 / (1000.0)},
                         'salinity'   : {'ncvarname' : ['so']       , 'bcvarname' : ['salinitybnd']},    #'1e-3'
                         'temperature': {'ncvarname' : ['thetao']   , 'bcvarname' : ['temperaturebnd']}, #'degC'
                         'uxuy'       : {'ncvarname' : ['uo', 'vo'] , 'bcvarname' : ['ux', 'uy'] },      #'m/s'
@@ -357,13 +357,9 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
                 datablock = datablock_raw[:,np.newaxis]
             
             #conversion of units etc
+            bcvarname = conversion_dict[quantity]['bcvarname'][0] #TODO: [1] is necessary for uxuy
             if 'conversion' in conversion_dict[quantity].keys():
                 datablock = datablock * conversion_dict[quantity]['conversion']
-            if 'bcvarname' in conversion_dict[quantity].keys():
-                bcvarname = conversion_dict[quantity]['bcvarname'][0] #TODO: [1] is necessary for uxuy
-            else: #TODO: only works for waq tracers, so add check or add to conversion_dict (latter also makes sense)
-                bcvarname = f'tracerbnd{quantity}'
-                #bcvarname = quantity
             if 'unit' in conversion_dict[quantity].keys():
                 varunit = conversion_dict[quantity]['unit']
             else:
