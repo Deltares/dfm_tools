@@ -218,13 +218,13 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
     file_list_nc = glob.glob(str(dir_pattern))
     print(f'loading mfdataset ({len(file_list_nc)} files with pattern "{dir_pattern.name}")')
     dtstart = dt.datetime.now()
-    data_xr = xr.open_mfdataset(file_list_nc)# TODO: can also supply str(dir_pattern)
+    data_xr = xr.open_mfdataset(file_list_nc) #TODO: can also supply str(dir_pattern)
     
     #get calendar and maybe convert_calendar, makes sure that nc_tstart/nc_tstop are of type pd._libs.tslibs.timestamps.Timestamp
     data_xr_calendar = data_xr['time'].dt.calendar
     if data_xr_calendar != 'proleptic_gregorian': #this is for instance the case in case of noleap (or 365_days) calendars from GFDL and CMCC
         print('WARNING: calendar different than proleptic_gregorian found ({data_xr_calendar}), convert_calendar is called so check output carefully. It should be no issue for datasets with a monthly interval.')
-        data_xr = data_xr.convert_calendar('standard') #TODO: does this not result in 29feb nan values in e.g. ☻GFDL model? 
+        data_xr = data_xr.convert_calendar('standard') #TODO: does this not result in 29feb nan values in e.g. GFDL model? 
     time_passed = (dt.datetime.now()-dtstart).total_seconds()
     if debug: print(f'>>time passed: {time_passed:.2f} sec')
     
@@ -345,10 +345,6 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             else:
                 varunit = data_xr_var.attrs['units']
             
-            # check if only nan (out of bounds or land):
-            if np.isnan(datablock_xr.to_numpy()).all(): #TODO: is to_numpy() necessary here?
-                print('WARNING: only nan values for this coordinate') #TODO: this can happen on land, raise exception or warning?
-
             if debug:
                 print('> plotting')
                 dtstart = dt.datetime.now()
@@ -363,20 +359,24 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
                 if debug: print(f'>>time passed: {time_passed:.2f} sec')
             
             
-            #TODO: steps from here to T3D/Timeseries could be bound method of those objects?
+            #TODO: steps from here to T3D/Timeseries could be bound method of those objects? (eg T3D.from_xarray_dataarray(datablock_xr))
             print('> ffill nans and concatenating time column')
             dtstart = dt.datetime.now()
             if has_depth:
-                datablock_xr = datablock_xr.ffill(dim=depthvarname) #pd.DataFrame(datablock_raw).fillna(method='ffill',axis=1).values #fill nans forward (corresponds to vertical extrapolation for CMEMS) #TODO: make depth axis flexible
+                datablock_xr = datablock_xr.ffill(dim=depthvarname) #fill nans forward (corresponds to vertical extrapolation for CMEMS)
             
             datablock_np = datablock_xr.to_numpy()
+            
+            # check if only nan (out of bounds or land):
+            if np.isnan(datablock_np).all():
+                print('WARNING: only nan values for this coordinate') #TODO: this can happen on land, raise exception or warning?
             
             timevar_sel = datablock_xr.time
             timevar_sel_rel = date2num(pd.DatetimeIndex(timevar_sel.to_numpy()).to_pydatetime(),units=refdate_str,calendar='standard')
             time_passed = (dt.datetime.now()-dtstart).total_seconds()
         
-            if has_depth: # TODO: this assumes depth as second dimension and that might not be true for other models
-                if flip_depth:
+            if has_depth:
+                if flip_depth: # TODO: this assumes depth as second dimension and that might not be true for other models
                     datablock_np = datablock_np[:,::-1] #flipping axis #Flipping depth_vals and datablock is not required by kernel, so remove after validation is complete
                 datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock_np],axis=1)
             else:
