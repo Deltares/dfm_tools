@@ -363,12 +363,13 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
                 if debug: print(f'>>time passed: {time_passed:.2f} sec')
             
             
+            #TODO: steps from here to T3D/Timeseries could be bound method of those objects?
             print('> ffill nans and concatenating time column')
             dtstart = dt.datetime.now()
             if has_depth:
                 datablock_xr = datablock_xr.ffill(dim=depthvarname) #pd.DataFrame(datablock_raw).fillna(method='ffill',axis=1).values #fill nans forward (corresponds to vertical extrapolation for CMEMS) #TODO: make depth axis flexible
             
-            datablock = datablock_xr.to_numpy()
+            datablock_np = datablock_xr.to_numpy()
             
             timevar_sel = datablock_xr.time
             timevar_sel_rel = date2num(pd.DatetimeIndex(timevar_sel.to_numpy()).to_pydatetime(),units=refdate_str,calendar='standard')
@@ -376,10 +377,10 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
         
             if has_depth: # TODO: this assumes depth as second dimension and that might not be true for other models
                 if flip_depth:
-                    datablock = datablock[:,::-1] #flipping axis #Flipping depth_vals and datablock is not required by kernel, so remove after validation is complete
-                datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock],axis=1)
+                    datablock_np = datablock_np[:,::-1] #flipping axis #Flipping depth_vals and datablock is not required by kernel, so remove after validation is complete
+                datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock_np],axis=1)
             else:
-                datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock[:,np.newaxis]],axis=1)
+                datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock_np[:,np.newaxis]],axis=1)
             if debug: print(f'>>time passed: {time_passed:.2f} sec')
             
             
