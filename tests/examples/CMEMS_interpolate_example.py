@@ -44,7 +44,9 @@ ext_bnd = ExtModel()
 
 for file_pli in list_plifiles:
     for quantity in list_quantities:
-        print(f'processing quantity: {quantity}')
+        varname_file = conversion_dict[quantity]['ncvarname'][0] #TODO: [1] is also necessary for uxuy
+        bcvarname = conversion_dict[quantity]['bcvarname'][0] #TODO: [1] is also necessary for uxuy
+        print(f'processing quantity: {quantity}/{varname_file}/{bcvarname}')
         if quantity in ['tide']: #TODO: tide compares not too well, 2cm M2 difference. Why? linear, complex and regulargridinterpolator all seems to result in approx the same numbers
             dir_pattern,convert_360to180 = Path(r'p:\1230882-emodnet_hrsm\FES2014\fes2014_linux64_gnu\share\data\fes\2014\ocean_tide','*.nc'),True #TODO: or ocean_tide_extrapolated folder? (extrapolated to the coast)
             component_list = ['2n2','mf','p1','m2','mks2','mu2','q1','t2','j1','m3','mm','n2','r2','k1','m4','mn4','s1','k2','m6','ms4','nu2','s2','l2','m8','msf','o1','s4'] #None results in all FES components
@@ -52,7 +54,6 @@ for file_pli in list_plifiles:
             for forcingobject in ForcingModel_object.forcing: #add A0 component
                 forcingobject.datablock.append(['A0',0.0,0.0])
         elif quantity in ['NO3']:
-            varname_file = conversion_dict[quantity]['ncvarname'][0] #TODO: [1] is also necessary for uxuy
             dir_pattern,convert_360to180 = Path(dir_sourcefiles_waq,f'cmems_mod_glo_bgc_my_0.25_P1M-m_{varname_file}_*.nc'),False # CMEMS waq
             dir_pattern,convert_360to180 = Path(dir_sourcefiles_waq,f'{varname_file}_*.nc'),False # CMEMS waq
             #dir_pattern,convert_360to180 = Path(dir_sourcefiles_waq,f'{varname_file}_esm-hist.nc'),True # GFDL
@@ -62,7 +63,6 @@ for file_pli in list_plifiles:
                                                        tstart=tstart, tstop=tstop, refdate_str=refdate_str,
                                                        nPoints=nPoints, debug=debug)
         else: #['steric','salinity','temperature'] ['uxuy']
-            varname_file = conversion_dict[quantity]['ncvarname'][0] #TODO: [1] is also necessary for uxuy
             dir_pattern,convert_360to180 = Path(dir_sourcefiles_hydro,f'{varname_file}_1993*.nc'),False # later remove 1993 from string, but this is faster for testing
             ForcingModel_object = interpolate_nc_to_bc(dir_pattern=dir_pattern, file_pli=file_pli, quantity=quantity, 
                                                        convert_360to180=convert_360to180,
@@ -82,7 +82,7 @@ for file_pli in list_plifiles:
         #ForcingModel_object.filepath = Path(str(ForcingModel_object.filepath).replace(dir_out,'')) #TODO: convert to relative paths in ext file possible? This path is the same as file_bc_out
         
         #generate boundary object for the ext file (quantity, pli-filename, bc-filename)
-        boundary_object = Boundary(quantity=quantity, #TODO: nodeId / bndWidth1D / bndBlDepth are written as empty values, but they should not be written if not supplied. https://github.com/Deltares/HYDROLIB-core/issues/319
+        boundary_object = Boundary(quantity=bcvarname, #TODO: nodeId / bndWidth1D / bndBlDepth are written as empty values, but they should not be written if not supplied. https://github.com/Deltares/HYDROLIB-core/issues/319
                                    locationfile=Path(dir_out,file_pli.name),
                                    forcingfile=ForcingModel_object,
                                    )

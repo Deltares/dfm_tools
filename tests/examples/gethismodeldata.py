@@ -37,7 +37,7 @@ for file_nc in file_nc_list:
         station = ['MO_TS_MO_ATHOS','MO_TS_MO_LESVO','MO_TS_MO_SKYRO','IOC_thes','farm_impaqt']
         station_zt = ['MO_TS_MO_ATHOS']
     
-    data_xr = xr.open_dataset(file_nc)
+    data_xr = xr.open_dataset(file_nc) #TODO: maybe adding chunking argument like chunks={'time':-1,'station':200}) (https://github.com/pydata/xarray/discussions/6458)
     #stations_pd = get_hisstationlist(file_nc)
     idx_stations = get_stationid_fromstationlist(data_xr, stationlist=station)
     idx_stations_zt = get_stationid_fromstationlist(data_xr, stationlist=station_zt)[0] #if provide single station (string, no list), the shape of the resulting xarray is correct
