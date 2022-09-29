@@ -68,6 +68,7 @@ def get_conversion_dict():
                         'temperature': {'ncvarname' : ['thetao']   , 'bcvarname' : ['temperaturebnd']}, #'degC'
                         'uxuy'       : {'ncvarname' : ['uo', 'vo'] , 'bcvarname' : ['ux', 'uy'] },      #'m/s'
                         'steric'     : {'ncvarname' : ['zos']      , 'bcvarname' : ['waterlevelbnd']},  #'m'
+                        'tide'       : {'ncvarname' : ['']         , 'bcvarname' : ['waterlevelbnd']},  #'m'
                         }
     
     return conversion_dict
@@ -155,11 +156,11 @@ def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180
             raise Exception(f'some of requested laty outside or on lat bounds ({latvar_vals.min(),latvar_vals.max()}):\n{path_lats[bool_reqlat_outbounds]}')
         
         #interpolation to lat/lon combinations
-        print('> interp mfdataset with all lat/lon coordinates. And actual extraction of data from netcdf with da.as_numpy() (for all PolyObject points at once, so this will take a while)')
+        print('> interp mfdataset with all lat/lon coordinates. And actual extraction of data from netcdf with da.load() (for all PolyObject points at once, so this will take a while)')
         dtstart = dt.datetime.now()
-        data_interp_amp_allcoords = data_xr_amp.interp(lat=da_lats,lon=da_lons).as_numpy()/100 #convert from cm to m #TODO: also add assume_sorted and bounds_error arguments
-        data_interp_phs_u_allcoords = data_xr_phs_u.interp(lat=da_lats,lon=da_lons).as_numpy()
-        data_interp_phs_v_allcoords = data_xr_phs_v.interp(lat=da_lats,lon=da_lons).as_numpy()
+        data_interp_amp_allcoords = data_xr_amp.interp(lat=da_lats,lon=da_lons).load()/100 #convert from cm to m #TODO: also add assume_sorted and bounds_error arguments
+        data_interp_phs_u_allcoords = data_xr_phs_u.interp(lat=da_lats,lon=da_lons).load()
+        data_interp_phs_v_allcoords = data_xr_phs_v.interp(lat=da_lats,lon=da_lons).load()
         
         time_passed = (dt.datetime.now()-dtstart).total_seconds()
         if debug: print(f'>>time passed: {time_passed:.2f} sec')
@@ -304,16 +305,16 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             raise Exception(f'latitude/longitude are not in variable coords: {data_xr_var.coords}. Extend this part of the code for e.g. lat/lon coords')
         data_interp = data_xr_var.interp({coordname_lat:da_lats, coordname_lon:da_lons}, #also possible without dict: (latitude=da_lats, longitude=da_lons), but this is more flexible
                                          method='linear', 
-                                         kwargs={'bounds_error':True}, #error is only raised upon as_numpy() or to_numpy() (when the actual value retrieval happens)
+                                         kwargs={'bounds_error':True}, #error is only raised upon (load(),) as_numpy() or to_numpy() (when the actual value retrieval happens)
                                          assume_sorted=True, #TODO: assume_sorted increases performance?
                                          )
         time_passed = (dt.datetime.now()-dtstart).total_seconds()
         if debug: print(f'>>time passed: {time_passed:.2f} sec')
         
-        print('> actual extraction of data from netcdf with da.as_numpy() (for all PolyObject points at once, so this will take a while)')
+        print('> actual extraction of data from netcdf with da.load() (for all PolyObject points at once, so this will take a while)')
         dtstart = dt.datetime.now()
         #try:
-        datablock_raw_allcoords = data_interp.as_numpy() #TODO: as_numpy() is maybe not the best method, but at least all data should be read now and we still want an object where sel works on
+        datablock_raw_allcoords = data_interp.load()
         #except ValueError as e:
         #    raise ValueError(f'{e}\nlons (valid range {lonvar_vals.min()},{lonvar_vals.max()}):\n{path_lons[bool_reqlon_outbounds]}\nlats (valid range {latvar_vals.min()},{latvar_vals.max()}):\n{path_lats[bool_reqlat_outbounds]}')
         time_passed = (dt.datetime.now()-dtstart).total_seconds()
