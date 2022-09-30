@@ -150,6 +150,7 @@ def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180
         dtstart = dt.datetime.now()
         #print(data_xrsel.variables.mapping.keys())
         try:
+            #TODO: add these arguments also? method='linear', assume_sorted=True,
             data_interp_amp_allcoords = data_xrsel['amplitude'].interp(lat=da_lats,lon=da_lons,kwargs={'bounds_error':True}).load()/100 #convert from cm to m #TODO: also add assume_sorted and bounds_error arguments
             data_interp_phs_u_allcoords = data_xrsel['phase_u'].interp(lat=da_lats,lon=da_lons,kwargs={'bounds_error':True}).load()
             data_interp_phs_v_allcoords = data_xrsel['phase_v'].interp(lat=da_lats,lon=da_lons,kwargs={'bounds_error':True}).load()
