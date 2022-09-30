@@ -52,7 +52,7 @@ from hydrolib.core.io.polyfile.parser import read_polyfile #TODO: should be repl
 
 def get_conversion_dict():
     # conversion_dict, contains ncvarname as array because uxuy relies on 2 CMEMS variables
-    conversion_dict = { #TODO: mg/l is the same as g/m3: conversion is phyc in mmol/l to newvar in g/m3
+    conversion_dict = { # mg/l is the same as g/m3: conversion is phyc in mmol/l to newvar in g/m3
                         'OXY'        : {'ncvarname' : ['o2']       , 'bcvarname' : ['tracerbndOXY'], 'unit': 'g/m3', 'conversion' : 32.0 / 1000.0}, 
                         'NO3'        : {'ncvarname' : ['no3']      , 'bcvarname' : ['tracerbndNO3'], 'unit': 'g/m3', 'conversion' : 14.0 / 1000.0},
                         'PO4'        : {'ncvarname' : ['po4']      , 'bcvarname' : ['tracerbndPO4'], 'unit': 'g/m3', 'conversion' : 30.97 / 1000.0},
@@ -141,28 +141,36 @@ def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180
         #create DataArrays of lat/lon combinations
         path_lons = np.array([point.x for point in pli_PolyObject_sel.points])[:nPoints]
         path_lats = np.array([point.y for point in pli_PolyObject_sel.points])[:nPoints]
+        
         #make requestedlat/requestedlon DataArrays for proper interpolation in xarray (with new dimension name)
         da_lons = xr.DataArray(path_lons, dims='latloncombi')
         da_lats = xr.DataArray(path_lats, dims='latloncombi')
         
         #interpolation to lat/lon combinations
-        print('> interp mfdataset with all lat/lon coordinates and actual extraction of data from netcdf with .load() (for all PolyObject points at once, so this will take a while)')
+        print('> interp mfdataset with all lat/lon coordinates')
         dtstart = dt.datetime.now()
-        #print(data_xrsel.variables.mapping.keys())
+        data_interp_allcoords = data_xrsel.interp(lat=da_lats,lon=da_lons,
+                                                  method='linear', 
+                                                  assume_sorted=True, #TODO: assume_sorted increases performance?
+                                                  kwargs={'bounds_error':True})
+        time_passed = (dt.datetime.now()-dtstart).total_seconds()
+        if debug: print(f'>>time passed: {time_passed:.2f} sec')
+        
+        print('> actual extraction of data from netcdf with .load() (for all PolyObject points at once, so this will take a while)')
+        dtstart = dt.datetime.now()
         try:
-            #TODO: add these arguments also? method='linear', assume_sorted=True,
-            data_interp_amp_allcoords = data_xrsel['amplitude'].interp(lat=da_lats,lon=da_lons,kwargs={'bounds_error':True}).load()/100 #convert from cm to m #TODO: also add assume_sorted and bounds_error arguments
-            data_interp_phs_u_allcoords = data_xrsel['phase_u'].interp(lat=da_lats,lon=da_lons,kwargs={'bounds_error':True}).load()
-            data_interp_phs_v_allcoords = data_xrsel['phase_v'].interp(lat=da_lats,lon=da_lons,kwargs={'bounds_error':True}).load()
-        except ValueError: #proper error with outofbounds requested coordinates
+            data_interp_amp_allcoords = data_interp_allcoords['amplitude'].load()/100 #convert from cm to m #TODO: also add assume_sorted and bounds_error arguments
+            data_interp_phs_u_allcoords = data_interp_allcoords['phase_u'].load()
+            data_interp_phs_v_allcoords = data_interp_allcoords['phase_v'].load()
+        except ValueError: #generate a proper error with outofbounds requested coordinates, default is "ValueError: One of the requested xi is out of bounds in dimension 0"
             bool_reqlon_outbounds = (path_lons <= lonvar_vals.min()) | (path_lons >= lonvar_vals.max())
             bool_reqlat_outbounds = (path_lats <= latvar_vals.min()) | (path_lats >= latvar_vals.max())
             reqlatlon_pd = pd.DataFrame({'longitude':path_lons,'latitude':path_lats,'lon outbounds':bool_reqlon_outbounds,'lat outbounds':bool_reqlat_outbounds})
             reqlatlon_pd_outbounds = reqlatlon_pd.loc[bool_reqlon_outbounds | bool_reqlat_outbounds]
             raise ValueError(f'{len(reqlatlon_pd_outbounds)} of requested pli points are out of bounds (valid longitude range {lonvar_vals.min()} to {lonvar_vals.max()}), valid latitude range {latvar_vals.min()} to {latvar_vals.max()}):\n{reqlatlon_pd_outbounds}')
-        
         time_passed = (dt.datetime.now()-dtstart).total_seconds()
-        if debug: print(f'>>time passed: {time_passed:.2f} sec')
+        #if debug:
+        print(f'>>time passed: {time_passed:.2f} sec')
 
         
         for iP, pli_Point_sel in enumerate(pli_PolyObject_sel.points[:nPoints]): #looping over plipoints within component loop, append to datablock_pd_allcomp
@@ -295,17 +303,17 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             raise Exception(f'latitude/longitude are not in variable coords: {data_xr_var.coords}. Extend this part of the code for e.g. lat/lon coords')
         data_interp = data_xr_var.interp({coordname_lat:da_lats, coordname_lon:da_lons}, #also possible without dict: (latitude=da_lats, longitude=da_lons), but this is more flexible
                                          method='linear', 
-                                         kwargs={'bounds_error':True}, #error is only raised upon load(), so when the actual value retrieval happens
                                          assume_sorted=True, #TODO: assume_sorted increases performance?
+                                         kwargs={'bounds_error':True}, #error is only raised upon load(), so when the actual value retrieval happens
                                          )
         time_passed = (dt.datetime.now()-dtstart).total_seconds()
         if debug: print(f'>>time passed: {time_passed:.2f} sec')
         
-        print('> actual extraction of data from netcdf with da.load() (for all PolyObject points at once, so this will take a while)')
+        print('> actual extraction of data from netcdf with .load() (for all PolyObject points at once, so this will take a while)')
         dtstart = dt.datetime.now()
         try:
             datablock_raw_allcoords = data_interp.load() #loading data for all points at once is more efficient compared to loading data per point in loop 
-        except ValueError: #proper error with outofbounds requested coordinates
+        except ValueError: #generate a proper error with outofbounds requested coordinates, default is "ValueError: One of the requested xi is out of bounds in dimension 0"
             bool_reqlon_outbounds = (path_lons <= lonvar_vals.min()) | (path_lons >= lonvar_vals.max())
             bool_reqlat_outbounds = (path_lats <= latvar_vals.min()) | (path_lats >= latvar_vals.max())
             reqlatlon_pd = pd.DataFrame({'longitude':path_lons,'latitude':path_lats,'lon outbounds':bool_reqlon_outbounds,'lat outbounds':bool_reqlat_outbounds})
