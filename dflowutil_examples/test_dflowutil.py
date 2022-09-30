@@ -121,7 +121,7 @@ with open(os.path.join(dir_testoutput,'prn_areas.pkl'), 'wb') as f:
 
 
 #################################################################################
-# Show WAQ segment on grid
+# Show WAQ segment on grid #TODO: check if still necessary
 #################################################################################
 
 #plt.close('all')
