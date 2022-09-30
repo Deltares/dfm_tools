@@ -117,7 +117,6 @@ def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180
     #use open_mfdataset() with preprocess argument to open all requested FES files into one Dataset
     file_list_nc = [str(dir_pattern).replace('*',comp) for comp in component_list]
     data_xrsel = xr.open_mfdataset(file_list_nc, combine='nested', concat_dim='compno', preprocess=extract_component)
-    #print(data_xrsel.coords['lon'])
     
     #derive uv phase components (using amplitude=1)
     data_xrsel_phs_rad = np.deg2rad(data_xrsel['phase'])

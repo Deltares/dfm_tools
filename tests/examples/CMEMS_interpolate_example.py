@@ -38,7 +38,7 @@ debug = False
 conversion_dict = get_conversion_dict()
 #list_quantities = ['NO3']
 list_quantities = ['steric','salinity','tide']#,['salinity','temperature','steric'] #should be in conversion_dict.keys()
-list_quantities = ['tide']
+#list_quantities = ['tide']
 
 dtstart = dt.datetime.now()
 ext_bnd = ExtModel()
@@ -50,9 +50,11 @@ for file_pli in list_plifiles:
         print(f'processing quantity: {quantity}/{ncvarname}/{bcvarname}')
         if quantity in ['tide']: #TODO: tide compares not too well, 2cm M2 difference. Why? linear, complex and regulargridinterpolator all seems to result in approx the same numbers
             dir_pattern,convert_360to180 = Path(r'P:\metocean-data\licensed\FES2014','*.nc'),True #source: p:\1230882-emodnet_hrsm\FES2014\fes2014_linux64_gnu\share\data\fes\2014\ocean_tide_extrapolated
-            dir_pattern,convert_360to180 = Path(r'P:\metocean-data\open\FES2012\data','*_FES2012_SLEV.nc'),True
+            #dir_pattern,convert_360to180 = Path(r'P:\metocean-data\open\FES2012\data','*_FES2012_SLEV.nc'),True #is eigenlijk ook licensed
             #dir_pattern,convert_360to180 = Path(r'P:\metocean-data\open\EOT20\ocean_tides','*_ocean_eot20.nc'),True
             component_list = ['2n2','mf','p1','m2','mks2','mu2','q1','t2','j1','m3','mm','n2','r2','k1','m4','mn4','s1','k2','m6','ms4','nu2','s2','l2','m8','msf','o1','s4'] #None results in all FES components
+            #component_list = ['2N2','LABDA2','MF','MFM','P1','SSA','EPSILON2','M2','MKS2','MU2','Q1','T2','J1','M3','MM','N2','R2','K1','M4','MN4','N4','S1','K2','M6','MS4','NU2','S2','L2','M8','MSF','O1','S4','MSQM','SA']
+            #component_list = ['2N2','MF','P1','SSA','M2','MKS2','MU2','Q1','T2','J1','M3','MM','N2','R2','K1','M4','MN4','N4','S1','K2','M6','MS4','NU2','S2','L2','M8','MSF','O1','S4','MSQM','SA'] #TODO: which component names does dfm recognize (translate to them). FES2012 contains Z0/A0
             ForcingModel_object = interpolate_FES(dir_pattern, file_pli, component_list=component_list, convert_360to180=convert_360to180, nPoints=nPoints, debug=debug)
             for forcingobject in ForcingModel_object.forcing: #add A0 component
                 forcingobject.datablock.append(['A0',0.0,0.0])
@@ -78,7 +80,10 @@ for file_pli in list_plifiles:
                     forcingobject_one = ForcingModel_object.forcing[iF]
                     forcingobject_one_df = forcingobject_to_dataframe(forcingobject_one)
                     fig,ax1 = plt.subplots()
-                    ax1.pcolormesh(forcingobject_one_df.index,forcingobject_one.verticalpositions,forcingobject_one_df.T)
+                    if hasattr(forcingobject_one,'verticalpositions'):
+                        ax1.pcolormesh(forcingobject_one_df.index,forcingobject_one.verticalpositions,forcingobject_one_df.T)
+                    else:
+                        forcingobject_one_df.plot(ax=ax1)
         file_bc_basename = file_pli.name.replace('.pli','.bc')
         file_bc_out = Path(dir_out,f'{quantity}_{file_bc_basename}')
         print(f'writing ForcingModel to bc file with hydrolib ({file_bc_out.name})')
