@@ -97,7 +97,7 @@ def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180
     
     def extract_component(ds):
         #https://github.com/pydata/xarray/issues/1380
-        if 'FES2012' in ds.encoding["source"]:
+        if 'FES2012' in ds.encoding["source"]: #TODO: make more generic with regex
             compname = os.path.basename(ds.encoding["source"]).replace('_FES2012_SLEV.nc','')
             ds = ds.sel(lon=ds.lon<360) #drop last instance, since 0 and 360 are both present
             ds = ds.rename({'Ha':'amplitude','Hg':'phase'})
