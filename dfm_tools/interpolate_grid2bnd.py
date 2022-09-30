@@ -80,7 +80,8 @@ def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180
     """
     """
     # translate dict from .\hydro_tools\FES\PreProcessing_FES_TideModel_imaginary.m
-    translate_dict = {'LA2':'LABDA2', #TODO: use value instead of key in bc file? Support using value instead of key in const_list also
+    #component_list = ['2N2','LABDA2','MF','MFM','P1','SSA','EPSILON2','M2','MKS2','MU2','Q1','T2','J1','M3','MM','N2','R2','K1','M4','MN4','N4','S1','K2','M6','MS4','NU2','S2','L2','M8','MSF','O1','S4','MSQM','SA']
+    translate_dict = {'LA2':'LABDA2', #TODO: use value instead of key in bc file? Support using value instead of key in const_list also (like line above)
                       'EPS2':'EPSILON2', 
                       'Z0':'A0',
                       'MTM':'MFM', #Needs to be verified

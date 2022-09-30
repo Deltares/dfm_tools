@@ -48,13 +48,11 @@ for file_pli in list_plifiles:
         ncvarname = conversion_dict[quantity]['ncvarname']
         bcvarname = conversion_dict[quantity]['bcvarname']
         print(f'processing quantity: {quantity}/{ncvarname}/{bcvarname}')
-        if quantity in ['tide']: #TODO: tide compares not too well, 2cm M2 difference. Why? linear, complex and regulargridinterpolator all seems to result in approx the same numbers
+        if quantity in ['tide']:
             dir_pattern,convert_360to180 = Path(r'P:\metocean-data\licensed\FES2014','*.nc'),True #source: p:\1230882-emodnet_hrsm\FES2014\fes2014_linux64_gnu\share\data\fes\2014\ocean_tide_extrapolated
             #dir_pattern,convert_360to180 = Path(r'P:\metocean-data\open\FES2012\data','*_FES2012_SLEV.nc'),True #is eigenlijk ook licensed
             #dir_pattern,convert_360to180 = Path(r'P:\metocean-data\open\EOT20\ocean_tides','*_ocean_eot20.nc'),True
             component_list = ['2n2','mf','p1','m2','mks2','mu2','q1','t2','j1','m3','mm','n2','r2','k1','m4','mn4','s1','k2','m6','ms4','nu2','s2','l2','m8','msf','o1','s4'] #None results in all FES components
-            #component_list = ['2N2','LABDA2','MF','MFM','P1','SSA','EPSILON2','M2','MKS2','MU2','Q1','T2','J1','M3','MM','N2','R2','K1','M4','MN4','N4','S1','K2','M6','MS4','NU2','S2','L2','M8','MSF','O1','S4','MSQM','SA']
-            #component_list = ['2N2','MF','P1','SSA','M2','MKS2','MU2','Q1','T2','J1','M3','MM','N2','R2','K1','M4','MN4','N4','S1','K2','M6','MS4','NU2','S2','L2','M8','MSF','O1','S4','MSQM','SA'] #TODO: which component names does dfm recognize (translate to them). FES2012 contains Z0/A0
             ForcingModel_object = interpolate_FES(dir_pattern, file_pli, component_list=component_list, convert_360to180=convert_360to180, nPoints=nPoints, debug=debug)
             for forcingobject in ForcingModel_object.forcing: #add A0 component
                 forcingobject.datablock.append(['A0',0.0,0.0])
@@ -89,8 +87,7 @@ for file_pli in list_plifiles:
         print(f'writing ForcingModel to bc file with hydrolib ({file_bc_out.name})')
         if bc_type=='bc':
             ForcingModel_object.save(filepath=file_bc_out)
-            #TODO: improve performance of bc file writing with hydrolib (numpy.savetxt() is way faster because of formatting): https://github.com/Deltares/HYDROLIB-core/issues/313
-            #TODO: improve formatting of bc file to make nicer, save diskspace and maybe write faster: https://github.com/Deltares/HYDROLIB-core/issues/308
+            #TODO: improve formatting of bc file to make nicer, save diskspace and maybe write faster: https://github.com/Deltares/HYDROLIB-core/issues/308 (and https://github.com/Deltares/HYDROLIB-core/issues/313)
         else:
             raise Exception(f'invalid bc_type: {bc_type}')
         
@@ -109,6 +106,4 @@ ext_bnd.save(filepath=file_ext_out)
 
 time_passed = (dt.datetime.now()-dtstart).total_seconds()
 print(f'>>time passed: {time_passed:.2f} sec')
-
-
 
