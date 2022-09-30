@@ -131,17 +131,18 @@ tstart_str = times_pd.index[0].strftime("%Y%m%d")
 tstop_str = times_pd.index[-1].strftime("%Y%m%d")
 
 
-print('optionally converting units')
 #do conversions: 'dew_point_temperature' (K to C) ,'air_temperature' (K to C),'cloud_area_fraction' (0-1 to %)
-if 'air_temperature' in varkeys:
-    data_xr_tsel['air_temperature'].attrs['units'] = 'C'
-    data_xr_tsel['air_temperature'] = data_xr_tsel['air_temperature'] - 273.15
-if 'dew_point_temperature' in varkeys:
-    data_xr_tsel['dew_point_temperature'].attrs['units'] = 'C'
-    data_xr_tsel['dew_point_temperature'] = data_xr_tsel['dew_point_temperature'] - 273.15
-if 'cloud_area_fraction' in varkeys:
-    #data_xr_tsel['cloud_area_fraction'].attrs['units'] = '%' #unit is al %
-    data_xr_tsel['cloud_area_fraction'] = data_xr_tsel['cloud_area_fraction'] * 100
+for var_temperature_KtoC in ['air_temperature','dew_point_temperature','d2m','t2m']:
+    if var_temperature_KtoC in varkeys:
+        print(f'converting temperature units (K to C) for {var_temperature_KtoC}')
+        data_xr_tsel[var_temperature_KtoC].attrs['units'] = 'C'
+        data_xr_tsel[var_temperature_KtoC] = data_xr_tsel[var_temperature_KtoC] - 273.15
+for var_fractoperc in ['cloud_area_fraction']:
+    if var_fractoperc in varkeys:
+        print(f'converting fraction to percentage for {var_fractoperc}')
+        #data_xr_tsel[var_fractoperc].attrs['units'] = '%' #unit is al %
+        data_xr_tsel[var_fractoperc] = data_xr_tsel[var_fractoperc] * 100
+    
 
 
 #write to netcdf file
