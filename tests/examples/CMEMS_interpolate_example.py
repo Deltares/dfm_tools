@@ -37,7 +37,7 @@ debug = False
 conversion_dict = get_conversion_dict()
 list_quantities = ['NO3']
 #list_quantities = ['steric','salinity','tide']#,['salinity','temperature','steric'] #should be in varnames_dict.keys()
-list_quantities = ['salinity']
+list_quantities = ['tide']
 
 dtstart = dt.datetime.now()
 ext_bnd = ExtModel()
@@ -55,7 +55,7 @@ for file_pli in list_plifiles:
                 forcingobject.datablock.append(['A0',0.0,0.0])
         elif quantity in ['NO3']:
             dir_pattern,convert_360to180 = Path(dir_sourcefiles_waq,f'cmems_mod_glo_bgc_my_0.25_P1M-m_{varname_file}_*.nc'),False # CMEMS waq
-            dir_pattern,convert_360to180 = Path(dir_sourcefiles_waq,f'{varname_file}_*.nc'),False # CMEMS waq
+            #dir_pattern,convert_360to180 = Path(dir_sourcefiles_waq,f'{varname_file}_*.nc'),False # CMEMS waq
             #dir_pattern,convert_360to180 = Path(dir_sourcefiles_waq,f'{varname_file}_esm-hist.nc'),True # GFDL
             #dir_pattern,convert_360to180 = Path(dir_sourcefiles_waq,f'{varname_file}_Omon_CMCC-ESM2_ssp126_r1i1p1f1_gn_*.nc'),True #CMCC, TODO: crashes because of missing lat coords
             ForcingModel_object = interpolate_nc_to_bc(dir_pattern=dir_pattern, file_pli=file_pli, quantity=quantity,

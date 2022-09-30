@@ -131,11 +131,6 @@ def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180
     data_xrsel['phase_u'] = 1*np.cos(data_xrsel_phs_rad)
     data_xrsel['phase_v'] = 1*np.sin(data_xrsel_phs_rad)
     
-    data_xr_amp = data_xrsel['amplitude']
-    data_xr_phs = data_xrsel['phase']
-    data_xr_phs_u = data_xrsel['phase_u']
-    data_xr_phs_v = data_xrsel['phase_v']
-    
     #load boundary file
     polyfile_object = read_polyfile(file_pli,has_z_values=False)
     
@@ -150,19 +145,20 @@ def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180
         da_lons = xr.DataArray(path_lons, dims='latloncombi')
         da_lats = xr.DataArray(path_lats, dims='latloncombi')
         
-        bool_reqlon_outbounds = (path_lons <= lonvar_vals.min()) | (path_lons >= lonvar_vals.max())
-        bool_reqlat_outbounds = (path_lats <= latvar_vals.min()) | (path_lats >= latvar_vals.max())
-        if bool_reqlon_outbounds.any():
-            raise Exception(f'some of requested lonx outside or on lon bounds ({lonvar_vals.min(),lonvar_vals.max()}):\n{path_lons[bool_reqlon_outbounds]}')
-        if bool_reqlat_outbounds.any():
-            raise Exception(f'some of requested laty outside or on lat bounds ({latvar_vals.min(),latvar_vals.max()}):\n{path_lats[bool_reqlat_outbounds]}')
-        
         #interpolation to lat/lon combinations
-        print('> interp mfdataset with all lat/lon coordinates. And actual extraction of data from netcdf with da.load() (for all PolyObject points at once, so this will take a while)')
+        print('> interp mfdataset with all lat/lon coordinates and actual extraction of data from netcdf with .load() (for all PolyObject points at once, so this will take a while)')
         dtstart = dt.datetime.now()
-        data_interp_amp_allcoords = data_xr_amp.interp(lat=da_lats,lon=da_lons).load()/100 #convert from cm to m #TODO: also add assume_sorted and bounds_error arguments
-        data_interp_phs_u_allcoords = data_xr_phs_u.interp(lat=da_lats,lon=da_lons).load()
-        data_interp_phs_v_allcoords = data_xr_phs_v.interp(lat=da_lats,lon=da_lons).load()
+        #print(data_xrsel.variables.mapping.keys())
+        try:
+            data_interp_amp_allcoords = data_xrsel['amplitude'].interp(lat=da_lats,lon=da_lons,kwargs={'bounds_error':True}).load()/100 #convert from cm to m #TODO: also add assume_sorted and bounds_error arguments
+            data_interp_phs_u_allcoords = data_xrsel['phase_u'].interp(lat=da_lats,lon=da_lons,kwargs={'bounds_error':True}).load()
+            data_interp_phs_v_allcoords = data_xrsel['phase_v'].interp(lat=da_lats,lon=da_lons,kwargs={'bounds_error':True}).load()
+        except ValueError: #proper error with outofbounds requested coordinates
+            bool_reqlon_outbounds = (path_lons <= lonvar_vals.min()) | (path_lons >= lonvar_vals.max())
+            bool_reqlat_outbounds = (path_lats <= latvar_vals.min()) | (path_lats >= latvar_vals.max())
+            reqlatlon_pd = pd.DataFrame({'longitude':path_lons,'latitude':path_lats,'lon outbounds':bool_reqlon_outbounds,'lat outbounds':bool_reqlat_outbounds})
+            reqlatlon_pd_outbounds = reqlatlon_pd.loc[bool_reqlon_outbounds | bool_reqlat_outbounds]
+            raise ValueError(f'{len(reqlatlon_pd_outbounds)} of requested pli points are out of bounds (valid longitude range {lonvar_vals.min()} to {lonvar_vals.max()}), valid latitude range {latvar_vals.min()} to {latvar_vals.max()}):\n{reqlatlon_pd_outbounds}')
         
         time_passed = (dt.datetime.now()-dtstart).total_seconds()
         if debug: print(f'>>time passed: {time_passed:.2f} sec')
@@ -189,7 +185,7 @@ def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180
             ts_one = Astronomic(name=pli_PolyObject_name_num,
                                 quantityunitpair=[QuantityUnitPair(quantity="astronomic component", unit='-'),
                                                   QuantityUnitPair(quantity='waterlevelbnd amplitude', unit='m'),#unit=data_xr_amp.attrs['units']),
-                                                  QuantityUnitPair(quantity='waterlevelbnd phase', unit=data_xr_phs.attrs['units'])],
+                                                  QuantityUnitPair(quantity='waterlevelbnd phase', unit=data_xrsel['phase'].attrs['units'])],
                                 datablock=datablock_list, 
                                 )
             
@@ -243,7 +239,6 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
     elif 'lat' in data_xr.coords:
         lonvarname,latvarname = ['lon','lat']
     else:
-        print(data_xr)
         raise Exception(f'no lat/lon coords available in file: {data_xr.coords}')
     if convert_360to180: #for FES since it ranges from 0 to 360 instead of -180 to 180 #TODO: make more flexible for models that eg pass -180/+180 crossing (add overlap at lon edges).
         data_xr.coords[lonvarname] = (data_xr.coords[lonvarname] + 180) % 360 - 180
@@ -286,14 +281,6 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
         da_lons = xr.DataArray(path_lons, dims='latloncombi')
         da_lats = xr.DataArray(path_lats, dims='latloncombi')
         
-        #check whether coordinates are in bounds. This is also done with da.interp(kwargs={'bounds_error':True}), but this is to give proper feedback about which coordinates are out of bounds
-        bool_reqlon_outbounds = (path_lons <= lonvar_vals.min()) | (path_lons >= lonvar_vals.max())
-        bool_reqlat_outbounds = (path_lats <= latvar_vals.min()) | (path_lats >= latvar_vals.max())
-        if bool_reqlon_outbounds.any():
-            raise Exception(f'some of requested lonx outside or on lon bounds ({lonvar_vals.min(),lonvar_vals.max()}):\n{path_lons[bool_reqlon_outbounds]}')
-        if bool_reqlat_outbounds.any():
-            raise Exception(f'some of requested laty outside or on lat bounds ({latvar_vals.min(),latvar_vals.max()}):\n{path_lats[bool_reqlat_outbounds]}')
-        
         #interpolation to lat/lon combinations
         print('> interp mfdataset to all PolyObject points (lat/lon coordinates)')
         dtstart = dt.datetime.now()
@@ -307,7 +294,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             raise Exception(f'latitude/longitude are not in variable coords: {data_xr_var.coords}. Extend this part of the code for e.g. lat/lon coords')
         data_interp = data_xr_var.interp({coordname_lat:da_lats, coordname_lon:da_lons}, #also possible without dict: (latitude=da_lats, longitude=da_lons), but this is more flexible
                                          method='linear', 
-                                         kwargs={'bounds_error':True}, #error is only raised upon (load(),) as_numpy() or to_numpy() (when the actual value retrieval happens)
+                                         kwargs={'bounds_error':True}, #error is only raised upon load(), so when the actual value retrieval happens
                                          assume_sorted=True, #TODO: assume_sorted increases performance?
                                          )
         time_passed = (dt.datetime.now()-dtstart).total_seconds()
@@ -315,10 +302,14 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
         
         print('> actual extraction of data from netcdf with da.load() (for all PolyObject points at once, so this will take a while)')
         dtstart = dt.datetime.now()
-        #try:
-        datablock_raw_allcoords = data_interp.load() #loading data for all points at once is more efficient compared to loading data per point in loop 
-        #except ValueError as e:
-        #    raise ValueError(f'{e}\nlons (valid range {lonvar_vals.min()},{lonvar_vals.max()}):\n{path_lons[bool_reqlon_outbounds]}\nlats (valid range {latvar_vals.min()},{latvar_vals.max()}):\n{path_lats[bool_reqlat_outbounds]}')
+        try:
+            datablock_raw_allcoords = data_interp.load() #loading data for all points at once is more efficient compared to loading data per point in loop 
+        except ValueError: #proper error with outofbounds requested coordinates
+            bool_reqlon_outbounds = (path_lons <= lonvar_vals.min()) | (path_lons >= lonvar_vals.max())
+            bool_reqlat_outbounds = (path_lats <= latvar_vals.min()) | (path_lats >= latvar_vals.max())
+            reqlatlon_pd = pd.DataFrame({'longitude':path_lons,'latitude':path_lats,'lon outbounds':bool_reqlon_outbounds,'lat outbounds':bool_reqlat_outbounds})
+            reqlatlon_pd_outbounds = reqlatlon_pd.loc[bool_reqlon_outbounds | bool_reqlat_outbounds]
+            raise ValueError(f'{len(reqlatlon_pd_outbounds)} of requested pli points are out of bounds (valid longitude range {lonvar_vals.min()} to {lonvar_vals.max()}), valid latitude range {latvar_vals.min()} to {latvar_vals.max()}):\n{reqlatlon_pd_outbounds}')
         time_passed = (dt.datetime.now()-dtstart).total_seconds()
         #if debug:
         print(f'>>time passed: {time_passed:.2f} sec')
@@ -338,12 +329,9 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             print('converting units')
             #conversion of units etc
             bcvarname = conversion_dict[quantity]['bcvarname'][0] #TODO: [1] is necessary for uxuy
-            if 'conversion' in conversion_dict[quantity].keys():
-                datablock_xr = datablock_xr * conversion_dict[quantity]['conversion']
-            if 'unit' in conversion_dict[quantity].keys():
-                varunit = conversion_dict[quantity]['unit']
-            else:
-                varunit = data_xr_var.attrs['units']
+            if 'conversion' in conversion_dict[quantity].keys(): #if conversion is present, unit key must also be in conversion_dict
+                datablock_xr = datablock_xr * conversion_dict[quantity]['conversion'] #conversion drops all attributes of which units (which are changed anyway)
+                datablock_xr.attrs['units'] = conversion_dict[quantity]['unit'] #add unit attribute with resulting unit
             
             if debug:
                 print('> plotting')
@@ -388,7 +376,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             print('> constructing TimeSeries and appending to ForcingModel()')
             dtstart = dt.datetime.now()
             if has_depth:
-                list_QUP_perlayer = [QuantityUnitPair(quantity=bcvarname, unit=varunit) for iL in range(vardepth.size)] #TODO: verticalposition 1/2/3/n is not supported. https://github.com/Deltares/HYDROLIB-core/issues/317
+                list_QUP_perlayer = [QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs['units']) for iL in range(vardepth.size)] #TODO: verticalposition 1/2/3/n is not supported. https://github.com/Deltares/HYDROLIB-core/issues/317
                 ts_one = T3D(name=pli_PolyObject_name_num,
                              verticalpositions=depth_array.tolist(), #TODO: should be "Vertical position specification = [..]" but is verticalPositions = [..]" (both possible?). https://github.com/Deltares/HYDROLIB-core/issues/317
                              verticalInterpolation='linear',
@@ -401,7 +389,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
                 ts_one = TimeSeries(name=pli_PolyObject_name_num,
                                     verticalposition=VerticalPositionType('ZBed'), #TODO: is not passed on to bc file and that makes sense, but it should raise error since it is not relevant for timeseries. https://github.com/Deltares/HYDROLIB-core/issues/321
                                     quantityunitpair=[QuantityUnitPair(quantity="time", unit=refdate_str),
-                                                      QuantityUnitPair(quantity=bcvarname, unit=varunit)],
+                                                      QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs['units'])],
                                     timeinterpolation=TimeInterpolation.linear,
                                     datablock=datablock_incltime.tolist(), 
                                     )
