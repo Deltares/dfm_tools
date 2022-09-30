@@ -54,7 +54,7 @@ elif 'ERA5' in mode:
     elif mode=='ERA5_rainfall':
         varkey_list = ['mer','mtpr'] # mean_evaporation_rate, mean_total_precipitation_rate
     dir_data = 'p:\\metocean-data\\open\\ERA5\\data\\Irish_North_Baltic_Sea\\*' #TODO: add other vars with * (support separate files)
-    fn_match_pattern = f'era5_.*({"|".join(varkey_list)})_.*\.nc' #to filter with re
+    fn_match_pattern = f'era5_.*({"|".join(varkey_list)})_.*\.nc'
     file_out_prefix = f'era5_{"_".join(varkey_list)}'
     drop_variables = None
     rename_variables = None
@@ -66,8 +66,8 @@ if not os.path.exists(dir_output):
     os.makedirs(dir_output)
 
 
-#generating file list #TODO: can be more efficient
-if '.*' in fn_match_pattern: #regex complex stuff
+#generating file list
+if '.*' in fn_match_pattern: #regex complex stuff #TODO: make cleaner, but watch v10/v10n matching
     file_pd_allnc = pd.Series(glob.glob(os.path.join(dir_data,'*.nc'))) #all nc files
     file_pd_allnc_varnames = file_pd_allnc.str.extract(fn_match_pattern)[0].str.replace('_','')
     file_pd_allnc_df = pd.DataFrame({'file':file_pd_allnc,'varname':file_pd_allnc_varnames})
