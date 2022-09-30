@@ -18,9 +18,6 @@ import xarray as xr
 import pandas as pd
 import matplotlib.pyplot as plt
 plt.close('all')
-#from dfm_tools.get_nc_helpers import get_ncvardimlist#, get_ncfilelist
-#from dfm_tools.io.netCDF_utils import merge_netCDF_time
-
 
 mode = 'ERA5_heat_model'# 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HYCOM' 'ERA5_wind_pressure' ERA5_heat_model ERA5_radiation ERA5_rainfall
 all_tstart = dt.datetime(2013,12,30) # HIRLAM and ERA5
@@ -46,6 +43,7 @@ elif mode == 'HYCOM':
     drop_variables = None
     rename_variables = {'salinity':'so', 'water_temp':'thetao'}
 elif 'ERA5' in mode: #TODO: generates "PerformanceWarning: Slicing is producing a large chunk.", probably because of lots of files but probably also solveable
+    # TODO: add features from c:\DATA\hydro_tools\ERA5\ERA52DFM.py (except for varRhoair_alt)
     if mode=='ERA5_wind_pressure':
         varkey_list = ['chnk','mslp','u10n','v10n'] #charnock, mean_sea_level_pressure, 10m_u_component_of_neutral_wind, 10m_v_component_of_neutral_wind
     elif mode=='ERA5_heat_model':
@@ -137,7 +135,7 @@ for var_temperature_KtoC in ['air_temperature','dew_point_temperature','d2m','t2
         print(f'converting temperature units (K to C) for {var_temperature_KtoC}')
         data_xr_tsel[var_temperature_KtoC].attrs['units'] = 'C'
         data_xr_tsel[var_temperature_KtoC] = data_xr_tsel[var_temperature_KtoC] - 273.15
-for var_fractoperc in ['cloud_area_fraction']:
+for var_fractoperc in ['cloud_area_fraction']: #TODO: add 'tcc'
     if var_fractoperc in varkeys:
         print(f'converting fraction to percentage for {var_fractoperc}')
         #data_xr_tsel[var_fractoperc].attrs['units'] = '%' #unit is al %
