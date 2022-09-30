@@ -65,7 +65,7 @@ for iP, pol_data in enumerate(pol_data_list):
     nonan_bool = pol_data[:,2]!=-999
     plt.plot(pol_data[nonan_bool,0], pol_data[nonan_bool,1], '-k', linewidth = 0.5)
 #################################################################################
-# create initial conditions
+# create initial conditions #TODO: check if still necessary
 #################################################################################
 
 #substances = SubFile(r'p:\11200975-hongkongwaq\WAQ\03_baseCase\01_substances\HATS_PCA_v3ep.sub').substances #access denied
@@ -93,7 +93,7 @@ plt.pcolormesh(meshX, meshY, C, cmap = ListedColormap(turbo_colormap_data))
 plt.ylim([-1000, 0])
 
 #################################################################################
-# LSP file
+# LSP file #TODO: check if still necessary
 #################################################################################
 
 #procfile = r'd:\projects\IMPAQT\MALG\code\tables\procesm.asc'
@@ -105,7 +105,7 @@ lsp.lsp_to_table(os.path.join(dir_testoutput,'test.csv'))
 lsp.lsp_to_latex(os.path.join(dir_testoutput,'test.txt'))
 
 #################################################################################
-# Balance file
+# Balance file #TODO: check if still necessary
 #################################################################################
 
 #file = r'd:\projects\dflowutil\tests\dflowutil_test_data\HK-FMWAQ_0000_wq_proc_bal.txt' #does not exist

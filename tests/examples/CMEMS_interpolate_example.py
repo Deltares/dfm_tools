@@ -10,6 +10,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 plt.close('all')
 from dfm_tools.interpolate_grid2bnd import get_conversion_dict, interpolate_FES, interpolate_nc_to_bc
+from dfm_tools.hydrolib_helpers import forcingobject_to_dataframe
 from hydrolib.core.io.ext.models import Boundary, ExtModel
 
 dir_sourcefiles_hydro = r'p:\1204257-dcsmzuno\data\CMEMS\nc\DCSM_allAvailableTimes'
@@ -26,7 +27,7 @@ bc_type = 'bc' #currently only 'bc' supported #TODO: add netcdf bc support. http
 
 refdate_str = 'minutes since 2011-12-22 00:00:00 +00:00' # this is copied from the reference bc file, but can be changed by the user
 tstart = dt.datetime(1993, 1, 1, 12, 0) #CMEMS phys has daily values at 12:00 (not at midnight), so make sure to include a day extra if necessary. also NO3_GFDL
-tstop = dt.datetime(1993, 2, 1, 12, 0)
+tstop = dt.datetime(1993, 5, 1, 12, 0)
 #tstart = dt.datetime(2011, 12, 16, 12, 0) #NO3_CMEMS
 #tstop = dt.datetime(2012, 12, 1, 12, 0)
 #tstart = dt.datetime(2015, 6, 16, 12, 0)
@@ -37,7 +38,7 @@ debug = False
 conversion_dict = get_conversion_dict()
 #list_quantities = ['NO3']
 list_quantities = ['steric','salinity','tide']#,['salinity','temperature','steric'] #should be in conversion_dict.keys()
-#list_quantities = ['salinity']
+list_quantities = ['salinity']
 
 dtstart = dt.datetime.now()
 ext_bnd = ExtModel()
@@ -70,6 +71,11 @@ for file_pli in list_plifiles:
                                                        tstart=tstart, tstop=tstop, refdate_str=refdate_str,
                                                        reverse_depth=True, #to compare with coastserv files, this argument will be phased out
                                                        nPoints=nPoints, debug=debug)
+            if 1:
+                forcingobject_one = ForcingModel_object.forcing[3]
+                forcingobject_one_df = forcingobject_to_dataframe(forcingobject_one)
+                fig,ax1 = plt.subplots()
+                ax1.pcolormesh(forcingobject_one_df.index,forcingobject_one.verticalpositions,forcingobject_one_df.T)
         file_bc_basename = file_pli.name.replace('.pli','.bc')
         file_bc_out = Path(dir_out,f'{quantity}_{file_bc_basename}')
         print(f'writing ForcingModel to bc file with hydrolib ({file_bc_out.name})')

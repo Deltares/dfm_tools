@@ -9,6 +9,7 @@ import datetime as dt
 import pandas as pd
 import cftime
 import numpy as np
+import hydrolib
 
 def forcingobject_to_dataframe(forcingobj, convert_time=True):
     """
@@ -33,7 +34,8 @@ def forcingobject_to_dataframe(forcingobj, convert_time=True):
          df_data_list = [forcingobject_to_dataframe(forcingobj, convert_time=True) for forcingobj in m.forcing]
 
     """
-    
+    if isinstance(forcingobj, hydrolib.core.io.bc.models.ForcingModel):
+        raise Exception('ERROR: instead of supplying a ForcingModel, provide a ForcingObject (Timeseries/T3D etc), by doing something like ForcingModel.forcing[0]')
     QUP_list = [(QUP.quantity,QUP.unit) for QUP in forcingobj.__dict__['quantityunitpair']] #TODO: generating MultiIndex can probably be more elegant (e.g. getting names from QUP list), but I do not know how
     columns_MI = pd.MultiIndex.from_tuples(QUP_list,names=['quantity','unit'])
     df_data = pd.DataFrame(forcingobj.__dict__['datablock'],columns=columns_MI)

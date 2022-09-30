@@ -188,7 +188,8 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
                          tstart, tstop, refdate_str, 
                          convert_360to180=False,
                          nPoints=None, debug=False,
-                         reverse_depth=False): #temporary argument to compare easier with old coastserv files
+                         reverse_depth=False, #temporary argument to compare easier with old coastserv files
+                         fill_na=True):
     
     conversion_dict = get_conversion_dict()
     ncvarname = conversion_dict[quantity]['ncvarname']
@@ -325,8 +326,8 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
                 depth_array = datablock_xr[depthvarname].to_numpy()
                 if datablock_xr[depthvarname].attrs['positive'] == 'down': #attribute appears in CMEMS, GFDL and CMCC, save to assume presence?
                     depth_array = -depth_array
-                #ffill data
-                datablock_xr = datablock_xr.bfill(dim=depthvarname).ffill(dim=depthvarname) #fill nans back and forward (corresponds to vertical extrapolation for CMEMS). Deep values are filled if order is shallow to deep
+                if fill_na: #ffill data
+                    datablock_xr = datablock_xr.bfill(dim=depthvarname).ffill(dim=depthvarname) #fill nans back and forward (corresponds to vertical extrapolation for CMEMS). Deep values are filled if order is shallow to deep
                 datablock_np = datablock_xr.to_numpy()
             else:
                 datablock_np = datablock_xr.to_numpy()[:,np.newaxis]
