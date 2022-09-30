@@ -103,7 +103,7 @@ varkeys = data_xr.variables.mapping.keys()
 #data_xr.attrs['comment'] = 'merged with dfm_tools from https://github.com/openearth/dfm_tools' #TODO: add something like this
 
 
-#select time and do checks
+#select time and do checks #TODO: check if calendar is standard/gregorian
 print('time slicing and drop duplicates')
 data_xr_tsel = data_xr.sel(time=slice(all_tstart,all_tstop))
 data_xr_tsel = data_xr_tsel.sel(time=~data_xr_tsel.get_index('time').duplicated()) #drop duplicate timesteps
