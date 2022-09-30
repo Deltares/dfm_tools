@@ -311,7 +311,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             
             
             #TODO: steps from here to T3D/Timeseries could be bound method of those objects? (eg T3D.from_xarray_dataarray(datablock_xr)). Required information:
-            # has_depth = 1 # can be avoided if separate for Timeseries and T3D, or inferred
+            # has_depth = 1 # can be avoided if separate for Timeseries and T3D, or inferred, or if depth varname is always 'depth'
             # depthvarname = 1 # can be avoided if overwritten with 'depth'
             # pli_PolyObject_name_num = 1
             # refdate_str = 1
@@ -335,8 +335,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             if np.isnan(datablock_np).all():
                 print('WARNING: only nans for this coordinate, this point might be on land')
             
-            timevar_sel = datablock_xr.time
-            timevar_sel_rel = date2num(pd.DatetimeIndex(timevar_sel.to_numpy()).to_pydatetime(),units=refdate_str,calendar='standard')
+            timevar_sel_rel = date2num(pd.DatetimeIndex(datablock_xr.time.to_numpy()).to_pydatetime(),units=refdate_str,calendar='standard')
             
             datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock_np],axis=1)
             time_passed = (dt.datetime.now()-dtstart).total_seconds()
