@@ -72,10 +72,11 @@ for file_pli in list_plifiles:
                                                        reverse_depth=True, #to compare with coastserv files, this argument will be phased out
                                                        nPoints=nPoints, debug=debug)
             if 1:
-                forcingobject_one = ForcingModel_object.forcing[3]
-                forcingobject_one_df = forcingobject_to_dataframe(forcingobject_one)
-                fig,ax1 = plt.subplots()
-                ax1.pcolormesh(forcingobject_one_df.index,forcingobject_one.verticalpositions,forcingobject_one_df.T)
+                for iF in range(nPoints):
+                    forcingobject_one = ForcingModel_object.forcing[iF]
+                    forcingobject_one_df = forcingobject_to_dataframe(forcingobject_one)
+                    fig,ax1 = plt.subplots()
+                    ax1.pcolormesh(forcingobject_one_df.index,forcingobject_one.verticalpositions,forcingobject_one_df.T)
         file_bc_basename = file_pli.name.replace('.pli','.bc')
         file_bc_out = Path(dir_out,f'{quantity}_{file_bc_basename}')
         print(f'writing ForcingModel to bc file with hydrolib ({file_bc_out.name})')
