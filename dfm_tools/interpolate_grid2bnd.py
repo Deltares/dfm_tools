@@ -90,16 +90,25 @@ def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180
     
     if component_list is None:
         file_list_nc = glob.glob(str(dir_pattern))
-        component_list = [os.path.basename(x).replace('.nc','') for x in file_list_nc]
+        component_list = [os.path.basename(x).replace('.nc','').replace('_FES2012_SLEV','').replace('_ocean_eot20','') for x in file_list_nc] #TODO: make this less hard-coded
     else:
         file_list_nc = [str(dir_pattern).replace('*',comp) for comp in component_list]
     component_list_upper_pd = pd.Series([x.upper() for x in component_list]).replace(translate_dict, regex=True)
     
     def extract_component(ds):
         #https://github.com/pydata/xarray/issues/1380
-        compname = os.path.basename(ds.encoding["source"]).replace('.nc','')
+        if 'FES2012' in ds.encoding["source"]:
+            compname = os.path.basename(ds.encoding["source"]).replace('_FES2012_SLEV.nc','')
+            ds = ds.sel(lon=ds.lon<360) #drop last instance, since 0 and 360 are both present
+            ds = ds.rename({'Ha':'amplitude','Hg':'phase'})
+        elif 'eot20' in ds.encoding["source"]:
+            compname = os.path.basename(ds.encoding["source"]).replace('_ocean_eot20.nc','')
+            ds = ds.sel(lon=ds.lon<360) #drop last instance, since 0 and 360 are both present
+        else:
+            compname = os.path.basename(ds.encoding["source"]).replace('.nc','')
         compnumber = [component_list.index(compname)]
         ds = ds.assign(compno=compnumber)
+        
         if convert_360to180: # results in large chunks if it is done after concatenation, so do for each file before concatenation
             ds.coords['lon'] = (ds.coords['lon'] + 180) % 360 - 180
             ds = ds.sortby('lon')
@@ -108,6 +117,7 @@ def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180
     #use open_mfdataset() with preprocess argument to open all requested FES files into one Dataset
     file_list_nc = [str(dir_pattern).replace('*',comp) for comp in component_list]
     data_xrsel = xr.open_mfdataset(file_list_nc, combine='nested', concat_dim='compno', preprocess=extract_component)
+    #print(data_xrsel.coords['lon'])
     
     #derive uv phase components (using amplitude=1)
     data_xrsel_phs_rad = np.deg2rad(data_xrsel['phase'])
@@ -121,7 +131,7 @@ def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180
     pli_PolyObjects = polyfile_object['objects']
     for iPO, pli_PolyObject_sel in enumerate(pli_PolyObjects):
         print(f'processing PolyObject {iPO+1} of {len(pli_PolyObjects)}: name={pli_PolyObject_sel.metadata.name}')
-
+        
         #create requestedlat/requestedlon DataArrays for proper interpolation in xarray (with new dimension name)
         path_lons = np.array([point.x for point in pli_PolyObject_sel.points])[:nPoints]
         path_lats = np.array([point.y for point in pli_PolyObject_sel.points])[:nPoints]

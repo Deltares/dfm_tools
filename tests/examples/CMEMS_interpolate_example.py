@@ -32,13 +32,13 @@ tstop = dt.datetime(1993, 5, 1, 12, 0)
 #tstop = dt.datetime(2012, 12, 1, 12, 0)
 #tstart = dt.datetime(2015, 6, 16, 12, 0)
 #tstop = dt.datetime(2015, 12, 1, 12, 0)
-nPoints = 10 #amount of Points to process per PolyObject in the plifile (for testing, use None for all Points)
+nPoints = None #amount of Points to process per PolyObject in the plifile (for testing, use None for all Points)
 debug = False
 
 conversion_dict = get_conversion_dict()
 #list_quantities = ['NO3']
 list_quantities = ['steric','salinity','tide']#,['salinity','temperature','steric'] #should be in conversion_dict.keys()
-list_quantities = ['salinity']
+list_quantities = ['tide']
 
 dtstart = dt.datetime.now()
 ext_bnd = ExtModel()
@@ -49,7 +49,9 @@ for file_pli in list_plifiles:
         bcvarname = conversion_dict[quantity]['bcvarname']
         print(f'processing quantity: {quantity}/{ncvarname}/{bcvarname}')
         if quantity in ['tide']: #TODO: tide compares not too well, 2cm M2 difference. Why? linear, complex and regulargridinterpolator all seems to result in approx the same numbers
-            dir_pattern,convert_360to180 = Path(r'p:\1230882-emodnet_hrsm\FES2014\fes2014_linux64_gnu\share\data\fes\2014\ocean_tide','*.nc'),True #TODO: or ocean_tide_extrapolated folder? (extrapolated to the coast)
+            dir_pattern,convert_360to180 = Path(r'P:\metocean-data\licensed\FES2014','*.nc'),True #source: p:\1230882-emodnet_hrsm\FES2014\fes2014_linux64_gnu\share\data\fes\2014\ocean_tide_extrapolated
+            dir_pattern,convert_360to180 = Path(r'P:\metocean-data\open\FES2012\data','*_FES2012_SLEV.nc'),True
+            #dir_pattern,convert_360to180 = Path(r'P:\metocean-data\open\EOT20\ocean_tides','*_ocean_eot20.nc'),True
             component_list = ['2n2','mf','p1','m2','mks2','mu2','q1','t2','j1','m3','mm','n2','r2','k1','m4','mn4','s1','k2','m6','ms4','nu2','s2','l2','m8','msf','o1','s4'] #None results in all FES components
             ForcingModel_object = interpolate_FES(dir_pattern, file_pli, component_list=component_list, convert_360to180=convert_360to180, nPoints=nPoints, debug=debug)
             for forcingobject in ForcingModel_object.forcing: #add A0 component
@@ -72,7 +74,7 @@ for file_pli in list_plifiles:
                                                        reverse_depth=True, #to compare with coastserv files, this argument will be phased out
                                                        nPoints=nPoints, debug=debug)
             if 1:
-                for iF in range(nPoints):
+                for iF in [3]:#range(nPoints):
                     forcingobject_one = ForcingModel_object.forcing[iF]
                     forcingobject_one_df = forcingobject_to_dataframe(forcingobject_one)
                     fig,ax1 = plt.subplots()
