@@ -19,7 +19,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 plt.close('all')
 
-mode = 'ERA5_heat_model'# 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HYCOM' 'ERA5_wind_pressure' ERA5_heat_model ERA5_radiation ERA5_rainfall
+mode = 'ERA5_wind_pressure'# 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HYCOM' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall'
 all_tstart = dt.datetime(2013,12,30) # HIRLAM and ERA5
 all_tstop = dt.datetime(2014,1,1)
 #all_tstart = dt.datetime(2016,4,28) # HYCOM
@@ -42,8 +42,9 @@ elif mode == 'HYCOM':
     file_out_prefix = fn_match_pattern.replace('*.nc','')
     drop_variables = None
     rename_variables = {'salinity':'so', 'water_temp':'thetao'}
-elif 'ERA5' in mode: #TODO: generates "PerformanceWarning: Slicing is producing a large chunk.", probably because of lots of files but probably also solveable
-    # TODO: add features from c:\DATA\hydro_tools\ERA5\ERA52DFM.py (except for varRhoair_alt)
+elif 'ERA5' in mode:
+    # TODO: generates "PerformanceWarning: Slicing is producing a large chunk.", probably because of lots of files but probably also solveable
+    # TODO: add conversions and features from c:\DATA\hydro_tools\ERA5\ERA52DFM.py (except for varRhoair_alt)
     if mode=='ERA5_wind_pressure':
         varkey_list = ['chnk','mslp','u10n','v10n'] #charnock, mean_sea_level_pressure, 10m_u_component_of_neutral_wind, 10m_v_component_of_neutral_wind
     elif mode=='ERA5_heat_model':
