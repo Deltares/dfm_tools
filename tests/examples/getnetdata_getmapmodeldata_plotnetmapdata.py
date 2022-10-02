@@ -12,7 +12,7 @@ import numpy as np
 
 from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
 from dfm_tools.regulargrid import scatter_to_regulargrid
-from dfm_tools.get_nc_helpers import get_ncvardimlist
+from dfm_tools.get_nc_helpers import get_ncvarproperties
 from dfm_tools.testutils import try_importmodule
 try_importmodule(modulename='contextily') #check if contextily was installed since it is an optional module, also happens in plot_cartopybasemap()
 import contextily as ctx
@@ -63,7 +63,7 @@ for file_nc in file_nc_list:
     
 
     #get ugrid data, vars informatin and grid units (latter from bedlevel coordinates)
-    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    vars_pd = get_ncvarproperties(file_nc=file_nc)
     ugrid_all = get_netdata(file_nc=file_nc)#,multipart=False)
     data_frommap_dummy = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_flowelem_bl', multipart=False)
     coordnames_xy = data_frommap_dummy.var_ncattrs['coordinates'].split()
@@ -142,7 +142,7 @@ for file_nc in file_nc_list:
         
     if file_nc_fou is not None:
         #RMM foufile met quivers
-        vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc_fou)
+        vars_pd = get_ncvarproperties(file_nc=file_nc_fou)
         #stations_pd = get_hisstationlist(file_nc,varname='waterlevel')
         
         ugrid_all_fou = get_netdata(file_nc=file_nc_fou)
@@ -175,7 +175,7 @@ for file_nc in file_nc_list:
         
     if file_nc_rst is not None:
         #RMM rst file
-        vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc_rst)
+        vars_pd = get_ncvarproperties(file_nc=file_nc_rst)
         #ugrid = get_netdata(file_nc=file_nc_rst)
         ugrid_0006 = get_netdata(file_nc=file_nc.replace('0000','0006'),multipart=False) #cannot be retrieved from rstfile ("mesh2d_node_x" and "mesh2d_node_y" missing), so get from partitioned mapfile or partitioned network file
         data_s1 = get_ncmodeldata(file_nc=file_nc_rst, varname='s1',timestep=0, multipart=False)

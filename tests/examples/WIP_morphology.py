@@ -12,7 +12,7 @@ plt.close('all')
 import xarray as xr
 
 from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata#, get_xzcoords_onintersection
-from dfm_tools.get_nc_helpers import get_ncvardimlist, get_hisstationlist
+from dfm_tools.get_nc_helpers import get_ncvarproperties, get_hisstationlist
 from dfm_tools.regulargrid import scatter_to_regulargrid#, meshgridxy2verts, center2corner
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
@@ -21,7 +21,7 @@ dir_output = '.'
 
 #MAPFILE
 file_nc = r'p:\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\fm\DFM_OUTPUT_inlet\inlet_map.nc'
-vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+vars_pd = get_ncvarproperties(file_nc=file_nc)
 vars_pd.to_csv(os.path.join(dir_output,'vars_pd.csv'))
 vars_pd_sel = vars_pd[vars_pd['long_name'].str.contains('transport')]
 #vars_pd_sel = vars_pd[vars_pd['dimensions'].str.contains('mesh2d_nFaces') & vars_pd['long_name'].str.contains('wave')]
@@ -83,7 +83,7 @@ plt.savefig(os.path.join(dir_output,'%s_%s'%(os.path.basename(file_nc).replace('
 #file_nc = r'p:\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\fm\DFM_OUTPUT_inlet\inlet_com.nc'
 """
 #COMFILE
-vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+vars_pd = get_ncvarproperties(file_nc=file_nc)
 vars_pd_sel = vars_pd[vars_pd['long_name'].str.contains('wave')]
 #vars_pd_sel = vars_pd[vars_pd['dimensions'].str.contains('mesh2d_nFaces') & vars_pd['long_name'].str.contains('wave')]
 
@@ -114,7 +114,7 @@ for varname in varname_list:
 
 #WAVM FILE
 file_nc = r'p:\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\wave\wavm-inlet.nc'
-vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+vars_pd = get_ncvarproperties(file_nc=file_nc)
 vars_pd_sel = vars_pd[vars_pd['long_name'].str.contains('dissi')]
 #vars_pd_sel = vars_pd[vars_pd['dimensions'].str.contains('mesh2d_nFaces') & vars_pd['long_name'].str.contains('wave')]
 
@@ -177,7 +177,7 @@ for iV, varname in enumerate(varname_list):
 
 #HISFILE
 file_nc = r'p:\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\fm\DFM_OUTPUT_inlet\inlet_his.nc'
-vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+vars_pd = get_ncvarproperties(file_nc=file_nc)
 vars_pd_sel = vars_pd[vars_pd['long_name'].str.contains('level')]
 stat_list = get_hisstationlist(file_nc,varname='station_name')
 crs_list = get_hisstationlist(file_nc,varname='cross_section_name')
@@ -207,7 +207,7 @@ for iV, varname in enumerate(var_names):
 #MAPFILE TRANSPORT
 file_nc = r'p:\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\fm\DFM_OUTPUT_inlet\inlet_map.nc'
 #file_nc = r'p:\11203869-morwaqeco3d\04-Breakwater\02_FM_201910\01_FM_MF25_Max_30s_User_1200s\fm\DFM_OUTPUT_straight_coast\straight_coast_map.nc'
-vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+vars_pd = get_ncvarproperties(file_nc=file_nc)
 data_xr = xr.open_dataset(file_nc)
 #vars_pd_sel = vars_pd[vars_pd['long_name'].str.contains('transport')]
 #vars_pd_sel = vars_pd[vars_pd['dimensions'].str.contains('mesh2d_nFaces') & vars_pd['long_name'].str.contains('wave')]

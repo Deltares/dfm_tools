@@ -281,10 +281,10 @@ def test_getncmatchingvarlist():
     """
     this test tests retrieves a pandas list of variable long names in a netcdf that match the pattern, useful for waq variables.
     """
-    from dfm_tools.get_nc_helpers import get_ncvardimlist
+    from dfm_tools.get_nc_helpers import get_ncvarproperties
     
     file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc')
-    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    vars_pd = get_ncvarproperties(file_nc=file_nc)
 
     pattern = 'Flow .*component'
     vars_pd_matching = vars_pd[vars_pd.loc[:,'long_name'].str.match(pattern)] #does not have to stop after pattern

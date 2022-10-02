@@ -14,7 +14,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+along with this program.  if not, see <http://www.gnu.org/licenses/>.
 
 All names, logos, and references to "Deltares" are registered trademarks of
 Stichting Deltares and remain full property of Stichting Deltares at all times.
@@ -72,7 +72,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     import pandas as pd
     from netCDF4 import Dataset
 
-    from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvardimlist, get_varnamefrom_keyslongstandardname, get_variable_timevardim, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_fromnc
+    from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvarproperties, get_varnamefrom_keyslongstandardname, get_variable_timevardim, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_fromnc
 
     #get variable info (also checks if varname exists in keys, standard name, long name)
     data_nc = Dataset(file_nc)
@@ -80,7 +80,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     nc_varobject = data_nc.variables[varname]
 
     #get list of station dimnames
-    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    vars_pd = get_ncvarproperties(file_nc=file_nc)
 
     listtype_int = [int, np.int8, np.int16, np.int32, np.int64]
     listtype_str = [str]
@@ -88,7 +88,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     listtype_datetime = [dt.datetime, np.datetime64]
     listtype_daterange = [pd.DatetimeIndex]
 
-    #CHECK IF VARNAME IS STATION NAMES (STRINGS), OFFER ALTERNATIVE RETRIEVAL METHOD
+    #CHECK if VARNAME IS STATION NAMES (STRINGS), OFFER ALTERNATIVE RETRIEVAL METHOD
     if nc_varobject.dtype == '|S1':
         print('variable "%s" should probably be retrieved with separate function:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist\nstation_names = get_hisstationlist(file_nc=file_nc, varname="%s") (or use any varname there to retrieve corresponding station list)'%(varname,varname))
     if 'time' in varname.lower():
@@ -425,7 +425,6 @@ def get_xzcoords_onintersection(file_nc, intersect_pd, timestep=None, multipart=
         nlay = data_nc.dimensions[dimn_layer].size
         
     intersect_gridnos = intersect_pd.index
-    #vars_pd, dims_pd = get_ncvardimlist(file_nc)
     if 'mesh2d_flowelem_zw' in varkeys_list:
         print('layertype: fullgrid output')
         zvals_interface_allfaces = get_ncmodeldata(file_nc, varname='mesh2d_flowelem_zw', timestep=timestep, multipart=multipart)
@@ -439,7 +438,7 @@ def get_xzcoords_onintersection(file_nc, intersect_pd, timestep=None, multipart=
         data_frommap_bl_sel = data_frommap_bl[intersect_gridnos]
         if 'mesh2d_layer_z' in varkeys_list or 'LayCoord_cc' in varkeys_list:
             print('layertype: zlayer')
-            warnings.warn('WARNING: your model seems to contain only z-layers. If the modeloutput is generated with an older version of dflowfm, the coordinates can be incorrect. If your model contains z-sigma-layers, use the fulloutput option in the mdu and rerun (happens automatically in newer dflowfm versions).')
+            warnings.warn('WARNING: your model seems to contain only z-layers. if the modeloutput is generated with an older version of dflowfm, the coordinates can be incorrect. if your model contains z-sigma-layers, use the fulloutput option in the mdu and rerun (happens automatically in newer dflowfm versions).')
             zvals_interface_vec = data_nc.variables['mesh2d_interface_z'][:][:,np.newaxis]
             zvals_interface = np.repeat(zvals_interface_vec,len(data_frommap_wl3_sel),axis=1)
             # zvalues lower than bedlevel should be overwritten with bedlevel

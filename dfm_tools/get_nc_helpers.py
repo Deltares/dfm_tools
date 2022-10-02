@@ -14,7 +14,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+along with this program.  if not, see <http://www.gnu.org/licenses/>.
 
 All names, logos, and references to "Deltares" are registered trademarks of
 Stichting Deltares and remain full property of Stichting Deltares at all times.
@@ -40,7 +40,7 @@ import pandas as pd
 import re
 import glob
 import os
-
+import warnings
 
 #TODO: remove this, easier with xarray
 """
@@ -200,10 +200,7 @@ def get_varname_fromnc(data_nc,varname_requested,vardim):
     return varname
 
 
-
-
-def get_ncvardimlist(file_nc):
-    
+def get_ncvarproperties(file_nc):
     data_xr = xr.open_dataset(file_nc)
     nc_varkeys = data_xr.variables.mapping.keys()
     
@@ -219,83 +216,20 @@ def get_ncvardimlist(file_nc):
     vars_pd = pd.concat(list_varattrs_pd,axis=0)
     vars_pd[vars_pd.isnull()] = '' #avoid nan values
     
-    """
-    emptycol = [['']]*len(nc_varkeys)
-    emptycol_str = ['']*len(nc_varkeys)
-    vars_pd = pd.DataFrame({'nc_varkeys':nc_varkeys, 'shape':emptycol, 'dimensions':emptycol, 'dtype':emptycol,
-                            'standard_name':emptycol_str,'long_name':emptycol_str,'coordinates':emptycol_str,'units':emptycol_str,'mesh':emptycol_str,'location':emptycol_str},
-                           index=nc_varkeys)
-    var_attr_name_list = ['standard_name','long_name','coordinates','units','mesh','location']
-    for varkey in nc_varkeys:
-        #get non-attribute properties of netcdf variable
-        vars_pd.loc[varkey,'nc_varkeys'] = varkey #TODO: this one is not necessary anymore, use index instead
-        vars_pd.loc[varkey,'shape'] = data_xr.variables[varkey].shape
-        vars_pd.loc[varkey,'dimensions'] = data_xr.variables[varkey].dims
-        vars_pd.loc[varkey,'dtype'] = data_xr.variables[varkey].dtype
-        #get attributes properties of netcdf variable
-        for attr_name in var_attr_name_list:
-            try:
-                vars_pd.loc[varkey, attr_name] = data_xr.variables[varkey].attrs[attr_name]
-            except:
-                pass
-    vars_pd['ndims'] = vars_pd['dimensions'].apply(len)
-    """
-    #nc_dimkeys = data_xr.dims.mapping.keys()
-    #dims_pd = pd.DataFrame({'nc_dimkeys': nc_dimkeys, 'size': [['']]*len(nc_dimkeys)},
-    #                       index=nc_dimkeys)
-    #for dimkey in nc_dimkeys:
-    #    #get non-attribute properties of netcdf variable
-    #    dims_pd.loc[dimkey,'nc_dimkeys'] = dimkey
-    #    dims_pd.loc[dimkey,'size'] = data_xr.dims[dimkey]
-    dims_pd = None #easier with xarray, so is phased out
-
     data_xr.close()
 
-    return vars_pd, dims_pd
+    return vars_pd
 
 
-""" #TODO: remove this def
-def get_ncvardimlist_OLD(file_nc):
-    from netCDF4 import Dataset
-    import pandas as pd
-    #import numpy as np
+def get_ncvardimlist(file_nc): #TODO: phase out this definition
+    warnings.warn(DeprecationWarning('use get_ncvarproperties() instead'))
+    vars_pd = get_ncvarproperties(file_nc)
     
-    data_nc = Dataset(file_nc)
-    
-    nc_varkeys = list(data_nc.variables.keys())
-    nc_dimkeys = list(data_nc.dimensions.keys())
-    #vars_pd = pd.DataFrame({'nc_varkeys': nc_varkeys, 'shape': [['']]*len(nc_varkeys), 'dimensions': [['']]*len(nc_varkeys), 'dtype': [['']]*len(nc_varkeys)})
-    emptycol = [['']]*len(nc_varkeys)
-    emptycol_str = ['']*len(nc_varkeys)
-    vars_pd = pd.DataFrame({'nc_varkeys':nc_varkeys, 'shape':emptycol, 'dimensions':emptycol, 'dtype':emptycol,
-                            'standard_name':emptycol_str,'long_name':emptycol_str,'coordinates':emptycol_str,'units':emptycol_str,'mesh':emptycol_str,'location':emptycol_str})
-    dims_pd = pd.DataFrame({'nc_dimkeys': nc_dimkeys, 'name': [['']]*len(nc_dimkeys), 'size': [['']]*len(nc_dimkeys)})
-    var_attr_name_list = ['standard_name','long_name','coordinates','units','mesh','location']
-    for iV, nc_var in enumerate(data_nc.variables):
-        #get non-attribute properties of netcdf variable
-        vars_pd.loc[iV,'shape'] = data_nc.variables[nc_var].shape
-        vars_pd.loc[iV,'dimensions'] = data_nc.variables[nc_var].dimensions
-        vars_pd.loc[iV,'dtype'] = data_nc.variables[nc_var].dtype
-        #get attributes properties of netcdf variable
-        for attr_name in var_attr_name_list:
-            #if iV==0:
-            #    vars_pd[attr_name] = ''
-            try:
-                vars_pd.loc[iV, attr_name] = data_nc.variables[nc_var].getncattr(attr_name)
-            except:
-                pass
-    vars_pd['ndims'] = [len(x) for x in vars_pd['dimensions']]
-    for iD, nc_dim in enumerate(data_nc.dimensions):
-        #get non-attribute properties of netcdf variable
-        dims_pd.loc[iD,'name'] = data_nc.dimensions[nc_dim].name
-        dims_pd.loc[iD,'size'] = data_nc.dimensions[nc_dim].size
-    data_nc.close()
-    return vars_pd, dims_pd
-"""
+    return vars_pd, None
 
 
 def get_varnamefrom_keyslongstandardname(file_nc, varname):
-    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    vars_pd = get_ncvarproperties(file_nc=file_nc)
     
     nc_varkeys = list(vars_pd.index)
     nc_varlongnames = list(vars_pd['long_name'])
@@ -316,7 +250,7 @@ def get_varnamefrom_keyslongstandardname(file_nc, varname):
         varname = vars_pd.index[varid]
         print('varname found in standard_name attribute')
     else:
-        raise Exception('ERROR: requested variable %s not in netcdf, available are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_ncvardimlist\nvars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)\nnote that you can retrieve variables by keys, standard_name or long_name attributes'%(varname, vars_pd))
+        raise Exception('ERROR: requested variable %s not in netcdf, available are:\n%s\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_ncvarproperties\nvars_pd = get_ncvarproperties(file_nc=file_nc)\nnote that you can retrieve variables by keys, standard_name or long_name attributes'%(varname, vars_pd))
     
     return varname
 
@@ -532,7 +466,7 @@ def get_hisstationlist(file_nc, varname='waterlevel'):
     varname = get_varnamefrom_keyslongstandardname(file_nc, varname) #get varname from varkeys/standardname/longname if exists
     vardims = data_xr[varname].dims
     
-    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    vars_pd = get_ncvarproperties(file_nc=file_nc)
     bool_vars_dtypestr = vars_pd['dtype'].astype(str).str.startswith('|S') | (vars_pd['dtype']=='object')#& (vars_pd['ndims']==1) #TODO: better check for dtype string?
     vars_pd_stats = vars_pd.loc[bool_vars_dtypestr]
     
@@ -563,7 +497,7 @@ def get_hisstationlist_OLD(file_nc,varname):
     import numpy as np
     import warnings
     
-    #from dfm_tools.get_nc_helpers import get_ncvarobject, get_ncvardimlist, get_variable_timevardim
+    #from dfm_tools.get_nc_helpers import get_ncvarobject, get_ncvarproperties, get_variable_timevardim
     
     data_nc = Dataset(file_nc)
     varname = get_varnamefrom_keyslongstandardname(file_nc, varname) #get varname from varkeys/standardname/longname if exists
@@ -571,7 +505,7 @@ def get_hisstationlist_OLD(file_nc,varname):
     varname_dims = nc_varobject.dimensions
     varn_time, dimn_time = get_variable_timevardim(file_nc=file_nc, varname=varname)
     
-    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    vars_pd = get_ncvarproperties(file_nc=file_nc)
     vars_pd_stats = vars_pd[(vars_pd['dtype']=='|S1') & (vars_pd['dimensions'].apply(lambda x: dimn_time not in x))]
     
     

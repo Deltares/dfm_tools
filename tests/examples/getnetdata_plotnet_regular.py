@@ -12,7 +12,7 @@ plt.close('all')
 
 from dfm_tools.get_nc import get_ncmodeldata, plot_netmapdata#, get_xzcoords_onintersection
 from dfm_tools.regulargrid import meshgridxy2verts, center2corner
-from dfm_tools.get_nc_helpers import get_ncvardimlist
+from dfm_tools.get_nc_helpers import get_ncvarproperties
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
@@ -34,7 +34,7 @@ for file_nc in file_nc_list:
         data_fromnc_x = get_ncmodeldata(file_nc=file_nc, varname='x')
         data_fromnc_y = get_ncmodeldata(file_nc=file_nc, varname='y')
     
-    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    vars_pd = get_ncvarproperties(file_nc=file_nc)
     x_cen_withbnd = center2corner(data_fromnc_x)
     y_cen_withbnd = center2corner(data_fromnc_y)
     grid_verts = meshgridxy2verts(x_cen_withbnd, y_cen_withbnd)

@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 plt.close('all')
 
 from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
-from dfm_tools.get_nc_helpers import get_ncvardimlist
+from dfm_tools.get_nc_helpers import get_ncvarproperties
 from dfm_tools.regulargrid import scatter_to_regulargrid
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
@@ -24,7 +24,7 @@ file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run0
 
 clim_bl = [-40,10]
 
-vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+vars_pd = get_ncvarproperties(file_nc=file_nc)
 ugrid = get_netdata(file_nc=file_nc)
 #get bed layer
 data_frommap_x = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_face_x')

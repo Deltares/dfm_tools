@@ -16,7 +16,7 @@ from pathlib import Path
 import xarray as xr
 
 from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
-from dfm_tools.get_nc_helpers import get_ncvardimlist#, get_hisstationlist#, get_varname_fromnc
+from dfm_tools.get_nc_helpers import get_ncvarproperties#, get_hisstationlist#, get_varname_fromnc
 #from dfm_tools.io.polygon import Polygon
 from dfm_tools.hydrolib_helpers import polyobject_to_dataframe
 
@@ -71,7 +71,7 @@ data_dummy = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_flowelem_bl', mult
 
 # test Grevelingen (integrated example, where all below should move towards)
 file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc')
-vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+vars_pd = get_ncvarproperties(file_nc=file_nc)
 ugrid = get_netdata(file_nc=file_nc)
 fig, ax = plt.subplots()
 plot_netmapdata(ugrid.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
@@ -80,7 +80,7 @@ ax.set_aspect('equal')
 """
 #hirlam
 file_nc = r'p:\1204257-dcsmzuno\2014\data\meteo\HIRLAM72_2018\h72_201803.nc' #TODO: xarray MissingDimensionsError
-vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+vars_pd = get_ncvarproperties(file_nc=file_nc)
 
 mesh2d_node_x = get_ncmodeldata(file_nc=file_nc, varname='x')
 mesh2d_node_y = get_ncmodeldata(file_nc=file_nc, varname='y')
@@ -105,7 +105,7 @@ plt.savefig(os.path.join(dir_output,'hirlam_magn_pcolor'))
 from dfm_tools.regulargrid import center2corner
 #COSMO
 file_nc = r'p:\archivedprojects\1220688-lake-kivu\2_data\COSMO\COSMOCLM_2012_out02_merged_4Wouter.nc'
-vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+vars_pd = get_ncvarproperties(file_nc=file_nc)
 
 xcen = get_ncmodeldata(file_nc=file_nc, varname='lon')
 ycen = get_ncmodeldata(file_nc=file_nc, varname='lat')
@@ -179,7 +179,7 @@ plt.savefig(os.path.join(dir_output,'COSMO_magn_curvedquiver'))
 
 #ERA5
 file_nc = r'p:\11200665-c3s-codec\2_Hydro\ECWMF_meteo\meteo\ERA-5\2000\ERA5_metOcean_atm_19991201_19991231.nc'
-vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+vars_pd = get_ncvarproperties(file_nc=file_nc)
 data_lon = get_ncmodeldata(file_nc=file_nc, varname='longitude')
 data_lat = get_ncmodeldata(file_nc=file_nc, varname='latitude')
 data_psl = get_ncmodeldata(file_nc=file_nc, varname='msl',timestep=10, get_linkedgridinfo=True)
@@ -204,7 +204,7 @@ plt.savefig(os.path.join(dir_output,'ERA5_msl_pcolor'))
 #SFINCS
 file_nc = r'p:\11202255-sfincs\Testbed\Original_tests\01_Implementation\08_restartfile\sfincs_map.nc'
 #file_nc = r'p:\11202255-sfincs\Testbed\Original_tests\03_Application\22_Tsunami_Japan_Sendai\sfincs_map.nc'
-vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+vars_pd = get_ncvarproperties(file_nc=file_nc)
 
 data_fromnc_x = get_ncmodeldata(file_nc=file_nc, varname='x')
 data_fromnc_y = get_ncmodeldata(file_nc=file_nc, varname='y')
@@ -258,7 +258,7 @@ plt.savefig(os.path.join(dir_output,'SFINCS_velocity_pcolorquiver'))
 #SFINCS HIS
 #file_nc = r'p:\11202255-sfincs\Testbed\Original_tests\01_Implementation\14_restartfile\sfincs_his.nc'
 file_nc = r'p:\11202255-sfincs\Testbed\Original_tests\03_Application\04_Tsunami_Japan_Sendai\sfincs_his.nc'
-vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+vars_pd = get_ncvarproperties(file_nc=file_nc)
 data_xr = xr.open_dataset(file_nc)
 #station_names = get_hisstationlist(file_nc=file_nc, varname='point_zs')
 stations_pd = data_xr.station_name.astype(str).to_pandas()
