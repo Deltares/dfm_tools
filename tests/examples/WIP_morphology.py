@@ -190,7 +190,7 @@ for iV, varname in enumerate(var_names):
 
     fig, ax = plt.subplots(1,1, figsize=(10,5))
     for iS, stat in enumerate(stations_pd):
-        data_fromhis = data_xr.get(varname).isel(stations=iS,time=slice(0,3000))
+        data_fromhis = data_xr[varname].isel(stations=iS,time=slice(0,3000))
         var_longname = data_fromhis.attrs['long_name'] #vars_pd['long_name'][vars_pd.index==varname].iloc[0]
         ax.plot(data_fromhis.time, data_fromhis, linewidth=1, label=stat)
     ax.legend()

@@ -18,8 +18,11 @@ import xarray as xr
 import pandas as pd
 import matplotlib.pyplot as plt
 plt.close('all')
+    
+#TODO: add HARMONIE (also originates from matroos), add CMCC etc from gtsmip repos
+#TODO: add .sel(lat/lon) or not relevant?
 
-mode = 'ERA5_wind_pressure'# 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HYCOM' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall'
+mode = 'ERA5_u10'# 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HYCOM' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall'
 all_tstart = dt.datetime(2013,12,30) # HIRLAM and ERA5
 all_tstop = dt.datetime(2014,1,1)
 #all_tstart = dt.datetime(2016,4,28) # HYCOM
@@ -43,8 +46,12 @@ elif mode == 'HYCOM':
     drop_variables = None
     rename_variables = {'salinity':'so', 'water_temp':'thetao'}
 elif 'ERA5' in mode:
-    # TODO: generates "PerformanceWarning: Slicing is producing a large chunk.", probably because of lots of files but probably also solveable
+    # TODO: generates "PerformanceWarning: Slicing is producing a large chunk.", probably because of lots of files but probably also solveable (maybe with extra arguments for open_mfdataset()). Does not occur anymore somehow.
     # TODO: add conversions and features from c:\DATA\hydro_tools\ERA5\ERA52DFM.py (except for varRhoair_alt)
+    #all_tstart = dt.datetime(2005,1,1) #for performance checking, was 12 minutes
+    #all_tstop = dt.datetime(2022,1,1)
+    if mode=='ERA5_u10':
+        varkey_list = ['u10'] #for testing
     if mode=='ERA5_wind_pressure':
         varkey_list = ['chnk','mslp','u10n','v10n'] #charnock, mean_sea_level_pressure, 10m_u_component_of_neutral_wind, 10m_v_component_of_neutral_wind
     elif mode=='ERA5_heat_model':
@@ -83,7 +90,7 @@ print(f'opening multifile dataset of {len(file_list)} files matching "{fn_match_
 data_xr = xr.open_mfdataset(file_nc,
                             drop_variables=drop_variables, #necessary since dims/vars with equal names are not allowed by xarray, add again later and requested matroos to adjust netcdf format.
                             parallel=True, #speeds up the process
-                            #concat_dim="time", combine="nested", data_vars='minimal', coords='minimal', compat='override', #optional vars to look into: https://docs.xarray.dev/en/stable/user-guide/io.html#reading-multi-file-datasets
+                            #concat_dim="time", combine="nested", data_vars='minimal', coords='minimal', compat='override', #TODO: optional vars to look into: https://docs.xarray.dev/en/stable/user-guide/io.html#reading-multi-file-datasets. might also resolve large chunks warning with ERA5 (which has dissapeared somehow)
                             )
 print('...done')
 
@@ -96,8 +103,11 @@ if 'HIRLAM' in mode:
     data_nc_y = data_nc['y']
     data_xr['longitude'] = xr.DataArray(data_nc_x,dims=data_nc_x.dimensions,attrs=data_nc_x.__dict__)
     data_xr['latitude'] = xr.DataArray(data_nc_y,dims=data_nc_y.dimensions,attrs=data_nc_y.__dict__)
-    data_xr = data_xr.set_coords(['longitude','latitude'])
-
+    data_xr = data_xr.set_coords(['latitude','longitude'])
+    for varkey in data_xr.data_vars:
+        del data_xr[varkey].encoding['coordinates'] #remove {'coordinates':'y x'} from encoding (otherwise set twice)
+    
+#breakit
 #rename variables
 data_xr = data_xr.rename(rename_variables)
 varkeys = data_xr.variables.mapping.keys()
@@ -141,8 +151,6 @@ for var_fractoperc in ['cloud_area_fraction']: #TODO: add 'tcc'
         print(f'converting fraction to percentage for {var_fractoperc}')
         #data_xr_tsel[var_fractoperc].attrs['units'] = '%' #unit is al %
         data_xr_tsel[var_fractoperc] = data_xr_tsel[var_fractoperc] * 100
-    
-
 
 #write to netcdf file
 print('writing file (can take a while)')
@@ -154,11 +162,7 @@ with xr.open_dataset(file_out) as data_xr_check:
     #data_xr_check.close()
     if 1: #optionally plot to check
         print('plotting')
-        for varkey in varkeys:
-            if 'time' not in data_xr_tsel[varkey].coords:
-                continue
-            if varkey=='time':
-                continue
+        for varkey in data_xr_check.data_vars:
             fig,ax1 = plt.subplots()
             if 'HIRLAM' in mode:
                 data_xr_check[varkey].isel(time=0).plot(ax=ax1,x='longitude',y='latitude') #x/y are necessary since coords are not 1D and dims

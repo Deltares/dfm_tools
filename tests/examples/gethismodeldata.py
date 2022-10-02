@@ -82,7 +82,7 @@ for file_nc in file_nc_list:
     
     print('zt temperature plot and wl')
     data_xr_selzt = data_xr.isel(stations=idx_stations_zt,time=slice(40,100))
-    data_fromhis_wl_xr = data_xr_selzt.get('waterlevel')
+    data_fromhis_wl_xr = data_xr_selzt['waterlevel']
     fig, (axwl,ax1) = plt.subplots(2,1,figsize=(12,7),gridspec_kw={'height_ratios':[1,2]},sharex=True,sharey=True)
     axwl.plot(data_xr_selzt.time[[0,-1]],[0,0],'k-',linewidth=0.5)
     ax1.plot(data_xr_selzt.time[[0,-1]],[0,0],'k-',linewidth=0.5)
