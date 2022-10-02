@@ -123,7 +123,7 @@ for file_nc in file_nc_list:
 
 
     print('plot grid and values from mapdata on net links (water/wind velocity on cell edges)')
-    if 'mesh2d_u1' in vars_pd['nc_varkeys'].tolist():
+    if 'mesh2d_u1' in vars_pd.index.tolist():
         varname_edge = 'mesh2d_u1'
     else: #RMM does not contain mesh2d_u1 variable, so alternative is used
         varname_edge = 'mesh2d_windxu'

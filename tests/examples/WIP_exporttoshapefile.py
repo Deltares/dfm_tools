@@ -30,7 +30,7 @@ file_nc = os.path.join(r'p:\11203850-coastserv\06-Model\waq_model\simulations\ru
 vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
 vars_pd_matching = vars_pd[vars_pd.loc[:,'long_name'].str.match('.*Chl.*')]
 #vars_pd_matching = vars_pd[vars_pd.loc[:,'long_name'].str.startswith('') & vars_pd.loc[:,'long_name'].str.endswith('Chlo')]
-varns_Chl = vars_pd_matching['nc_varkeys'].tolist()
+varns_Chl = vars_pd_matching.index.tolist()
 varns_Chl_long = vars_pd_matching['long_name'].tolist()
 
 ugrid = get_netdata(file_nc=file_nc)#, multipart=False)

@@ -30,7 +30,7 @@ ugrid = get_netdata(file_nc=file_nc)
 
 varname = 'mesh2d_mor_bl'
 var_clims = [-50,0]
-var_longname = vars_pd['long_name'][vars_pd['nc_varkeys']==varname].iloc[0]
+var_longname = vars_pd['long_name'][vars_pd.index==varname].iloc[0]
 fig, axs = plt.subplots(3,1, figsize=(6,9))
 fig.suptitle('%s (%s)'%(varname, var_longname))
 
@@ -63,7 +63,7 @@ plt.savefig(os.path.join(dir_output,'%s_%s'%(os.path.basename(file_nc).replace('
 
 
 varname = 'mesh2d_hwav'
-var_longname = vars_pd['long_name'][vars_pd['nc_varkeys']==varname].iloc[0]
+var_longname = vars_pd['long_name'][vars_pd.index==varname].iloc[0]
 fig, ax = plt.subplots(1,1)
 fig.suptitle('%s (%s)'%(varname, var_longname))
 
@@ -96,7 +96,7 @@ data_fromnc_FlowElemContour_xy = np.stack([data_fromnc_FlowElemContour_x,data_fr
 
 varname_list = ['hrms', 'tp', 'dir']#, 'distot', 'wlen']
 for varname in varname_list:
-    var_longname = vars_pd['long_name'][vars_pd['nc_varkeys']==varname].iloc[0]
+    var_longname = vars_pd['long_name'][vars_pd.index==varname].iloc[0]
     fig, ax = plt.subplots()#fig, axs = plt.subplots(2,1, figsize=(6,8))
     fig.suptitle('%s (%s)'%(varname, var_longname))
     
@@ -130,7 +130,7 @@ data_fromnc_y = get_ncmodeldata(file_nc=file_nc, varname='y')
 varname_list = ['hsign', 'dir', 'period', 'dspr', 'dissip']
 var_clim = [[0,2], [0,360], [0,7.5], [0,35], [0,20]]
 for iV, varname in enumerate(varname_list):
-    var_longname = vars_pd['long_name'][vars_pd['nc_varkeys']==varname].iloc[0]
+    var_longname = vars_pd['long_name'][vars_pd.index==varname].iloc[0]
     
     fig, axs = plt.subplots(2,1, figsize=(12,7))
     fig.suptitle('%s (%s)'%(varname, var_longname))
@@ -191,7 +191,7 @@ for iV, varname in enumerate(var_names):
     fig, ax = plt.subplots(1,1, figsize=(10,5))
     for iS, stat in enumerate(stations_pd):
         data_fromhis = data_xr.get(varname).isel(stations=iS,time=slice(0,3000))
-        var_longname = data_fromhis.attrs['long_name'] #vars_pd['long_name'][vars_pd['nc_varkeys']==varname].iloc[0]
+        var_longname = data_fromhis.attrs['long_name'] #vars_pd['long_name'][vars_pd.index==varname].iloc[0]
         ax.plot(data_fromhis.time, data_fromhis, linewidth=1, label=stat)
     ax.legend()
     ax.set_ylabel('%s (%s)'%(data_fromhis.name,data_fromhis.attrs['units']))
