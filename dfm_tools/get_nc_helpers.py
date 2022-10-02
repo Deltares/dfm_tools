@@ -206,15 +206,25 @@ def get_ncvardimlist(file_nc):
     
     data_xr = xr.open_dataset(file_nc)
     nc_varkeys = data_xr.variables.mapping.keys()
-    nc_dimkeys = data_xr.dims.mapping.keys()
     
+    list_varattrs_pd = []
+    for varkey in nc_varkeys:
+        varattrs_pd = pd.DataFrame({varkey:data_xr.variables.mapping[varkey].attrs}).T
+        varattrs_pd[['shape','dimensions']] = 2*[''] #set dtype as str (float will raise an error when putting tuple in there)
+        varattrs_pd.at[varkey,'shape'] = data_xr[varkey].shape
+        varattrs_pd.at[varkey,'dimensions'] = data_xr.variables[varkey].dims
+        varattrs_pd.loc[varkey,'dtype'] = data_xr.variables[varkey].dtype
+        list_varattrs_pd.append(varattrs_pd)
+    
+    vars_pd = pd.concat(list_varattrs_pd,axis=0)
+    vars_pd[vars_pd.isnull()] = '' #avoid nan values
+    
+    """
     emptycol = [['']]*len(nc_varkeys)
     emptycol_str = ['']*len(nc_varkeys)
     vars_pd = pd.DataFrame({'nc_varkeys':nc_varkeys, 'shape':emptycol, 'dimensions':emptycol, 'dtype':emptycol,
                             'standard_name':emptycol_str,'long_name':emptycol_str,'coordinates':emptycol_str,'units':emptycol_str,'mesh':emptycol_str,'location':emptycol_str},
                            index=nc_varkeys)
-    dims_pd = pd.DataFrame({'nc_dimkeys': nc_dimkeys, 'size': [['']]*len(nc_dimkeys)},
-                           index=nc_dimkeys)
     var_attr_name_list = ['standard_name','long_name','coordinates','units','mesh','location']
     for varkey in nc_varkeys:
         #get non-attribute properties of netcdf variable
@@ -229,11 +239,18 @@ def get_ncvardimlist(file_nc):
             except:
                 pass
     vars_pd['ndims'] = vars_pd['dimensions'].apply(len)
-    for dimkey in nc_dimkeys:
-        #get non-attribute properties of netcdf variable
-        dims_pd.loc[dimkey,'nc_dimkeys'] = dimkey
-        dims_pd.loc[dimkey,'size'] = data_xr.dims[dimkey]
+    """
+    #nc_dimkeys = data_xr.dims.mapping.keys()
+    #dims_pd = pd.DataFrame({'nc_dimkeys': nc_dimkeys, 'size': [['']]*len(nc_dimkeys)},
+    #                       index=nc_dimkeys)
+    #for dimkey in nc_dimkeys:
+    #    #get non-attribute properties of netcdf variable
+    #    dims_pd.loc[dimkey,'nc_dimkeys'] = dimkey
+    #    dims_pd.loc[dimkey,'size'] = data_xr.dims[dimkey]
+    dims_pd = None #easier with xarray, so is phased out
+
     data_xr.close()
+
     return vars_pd, dims_pd
 
 
@@ -280,7 +297,7 @@ def get_ncvardimlist_OLD(file_nc):
 def get_varnamefrom_keyslongstandardname(file_nc, varname):
     vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
     
-    nc_varkeys = list(vars_pd['nc_varkeys'])
+    nc_varkeys = list(vars_pd.index)
     nc_varlongnames = list(vars_pd['long_name'])
     nc_varstandardnames = list(vars_pd['standard_name'])
     
@@ -520,7 +537,7 @@ def get_hisstationlist(file_nc, varname='waterlevel'):
     vars_pd_stats = vars_pd.loc[bool_vars_dtypestr]
     
     if len(vars_pd_stats) == 0:
-        raise Exception('ERROR: no dimension in %s variable that corresponds to station-like variables (or none present):\n%s'%(varname, vars_pd_stats['nc_varkeys']))
+        raise Exception('ERROR: no dimension in %s variable that corresponds to station-like variables (or none present):\n%s'%(varname, vars_pd_stats.index))
         
     dimkey_use = None
     for dimtuple in vars_pd_stats['dimensions']:

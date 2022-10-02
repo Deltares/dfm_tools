@@ -299,7 +299,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
                 print('\tlinkedvars for dimension "%s":'%(nc_values_dimsel))
                 #print('nc_varobject_sel.dimensions: %s'%([nc_varobject_sel.dimensions]))
                 for iLV, linkedvar in vars_pd_relevant.iterrows():
-                    print('\t\t%s  %s  %s'%(linkedvar['nc_varkeys'], linkedvar['shape'], linkedvar['dimensions']))
+                    print('\t\t%s  %s  %s'%(linkedvar.index, linkedvar['shape'], linkedvar['dimensions']))
                 #print('nc_values_dimsel: %s'%(nc_values_dimsel))
                 #print('vars_pd_relevant:\n%s'%(vars_pd_relevant))
             else:

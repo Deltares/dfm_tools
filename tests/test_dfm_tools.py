@@ -100,7 +100,7 @@ def test_getmapdata(file_nc, expected_size):
 
 
 @pytest.mark.parametrize("file_nc, varname, expected_size", [pytest.param(os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc'), 'mesh2d_sa1', (1, 44796, 1), id='from partitioned map Grevelingen'),
-                                                             pytest.param(os.path.join(r'p:\11203850-coastserv\06-Model\waq_model\simulations\run0_20200319\DFM_OUTPUT_kzn_waq', 'kzn_waq_0000_map.nc'), 'Chlfa', (1, 17385, 1), id='from partitioned waq map coastserv')])
+                                                             pytest.param(os.path.join(r'p:\archivedprojects\11203850-coastserv\06-Model\waq_model\simulations\run0_20200319\DFM_OUTPUT_kzn_waq', 'kzn_waq_0000_map.nc'), 'Chlfa', (1, 17385, 1), id='from partitioned waq map coastserv')])
 @pytest.mark.unittest
 def test_getmapbottomdata(file_nc, varname, expected_size):
     """
@@ -289,7 +289,7 @@ def test_getncmatchingvarlist():
     pattern = 'Flow .*component'
     vars_pd_matching = vars_pd[vars_pd.loc[:,'long_name'].str.match(pattern)] #does not have to stop after pattern
     #vars_pd_matching = vars_pd[vars_pd.loc[:,'long_name'].str.startswith('Flow') & vars_pd.loc[:,'long_name'].str.endswith('component')]
-    varkeys_list_matching = list(vars_pd_matching['nc_varkeys'])
+    varkeys_list_matching = list(vars_pd_matching.index)
     
     assert varkeys_list_matching == ['mesh2d_ucx', 'mesh2d_ucy', 'mesh2d_ucz', 'mesh2d_ucxa', 'mesh2d_ucya']
 
