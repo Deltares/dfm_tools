@@ -32,12 +32,13 @@ Created on Mon Apr 20 21:01:08 2020
 @author: veenstra
 """
 
+import pandas as pd
+import numpy as np
+import datetime as dt
+from netCDF4 import num2date
 
 
-
-
-
-def write_bcfile(filename, datablocks, metadatas, refdate=None, tzone=0, float_format='%6.2f'):
+def write_bcfile(filename, datablocks, metadatas, refdate=None, tzone=0, float_format='%6.2f'): #TODO: remove this code, only raises an error
     """
     
 
@@ -66,7 +67,8 @@ def write_bcfile(filename, datablocks, metadatas, refdate=None, tzone=0, float_f
     None.
 
     """
-    #import numpy as np
+    
+    raise DeprecationWarning('the function dfm_tools.io.bc.write_bcfile() is deprecated, please use the new hydrolib alternative. Example script: dfm_tools/tests/examples/CMEMS_interpolate_example.py')
     
     if type(datablocks) is not list:
         datablocks = [datablocks]
@@ -125,13 +127,9 @@ def write_bcfile(filename, datablocks, metadatas, refdate=None, tzone=0, float_f
             file_bc.write('\n')
 
 
+def read_bcfile(filename, converttime=False): #TODO: remove this code, only raises an error
 
-def read_bcfile(filename, converttime=False):
-
-    import pandas as pd
-    import numpy as np
-    import datetime as dt
-    from netCDF4 import num2date
+    raise DeprecationWarning('the function dfm_tools.io.bc.read_bcfile() is deprecated, please use the new hydrolib alternative. Example script: dfm_tools/tests/examples/hydrolib_readbc.py')
     
     with open(filename, 'r') as bc:
         page = bc.readlines()
@@ -206,7 +204,5 @@ def read_bcfile(filename, converttime=False):
                     data_nc_datetimes = num2date(times=time_minutes, units=units_str, only_use_cftime_datetimes=False, only_use_python_datetimes=True)
                 data_block_pd['datetime'] = data_nc_datetimes
         datablock_list.append(data_block_pd)
-
-                    
-
     return datablock_list, metadata_list
+

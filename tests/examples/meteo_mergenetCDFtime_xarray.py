@@ -18,11 +18,11 @@ import xarray as xr
 import pandas as pd
 import matplotlib.pyplot as plt
 plt.close('all')
-    
+
 #TODO: add HARMONIE (also originates from matroos), add CMCC etc from gtsmip repos
 #TODO: add .sel(lat/lon) or not relevant?
 
-mode = 'ERA5_u10'# 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HYCOM' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall'
+mode = 'HIRLAM_meteo-heatflux'# 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HYCOM' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall'
 all_tstart = dt.datetime(2013,12,30) # HIRLAM and ERA5
 all_tstop = dt.datetime(2014,1,1)
 #all_tstart = dt.datetime(2016,4,28) # HYCOM

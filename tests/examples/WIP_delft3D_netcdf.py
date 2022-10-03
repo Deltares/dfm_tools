@@ -39,7 +39,6 @@ from dfm_tools.get_nc import get_ncmodeldata#, get_netdata, plot_netmapdata
 from dfm_tools.get_nc_helpers import get_ncvarproperties#, get_hisstationlist#, get_varname_fromnc
 from dfm_tools.regulargrid import uva2xymagdeg
 from dfm_tools.hydrolib_helpers import polyobject_to_dataframe
-#from dfm_tools.io.polygon import Polygon
 
 from hydrolib.core.io.polyfile.models import (
     #Description,

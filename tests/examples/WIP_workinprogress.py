@@ -17,7 +17,6 @@ import xarray as xr
 
 from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
 from dfm_tools.get_nc_helpers import get_ncvarproperties#, get_hisstationlist#, get_varname_fromnc
-#from dfm_tools.io.polygon import Polygon
 from dfm_tools.hydrolib_helpers import polyobject_to_dataframe
 
 from hydrolib.core.io.polyfile.models import (

@@ -31,23 +31,10 @@ Created on Wed Feb 12 01:55:57 2020
 
 @author: veenstra
 """
+import warnings
+import numpy as np
+import pandas as pd
 
-class LineBuilder:
-    def __init__(self, line):
-        self.line = line
-        self.xs = list(line.get_xdata())
-        self.ys = list(line.get_ydata())
-        self.cid = line.figure.canvas.mpl_connect('button_press_event', self)
-
-    def __call__(self, event):
-        import numpy as np
-        print('click', event)
-        if event.inaxes!=self.line.axes: return
-        self.xs.append(event.xdata)
-        self.ys.append(event.ydata)
-        self.line_array = np.c_[self.xs, self.ys]
-        self.line.set_data(self.xs, self.ys)
-        self.line.figure.canvas.draw()
 
 
 class Polygon:
@@ -56,6 +43,7 @@ class Polygon:
         self.data = data
         self.name = name
         self.comments = comments
+        warnings.warn(DeprecationWarning('the function dfm_tools.io.polygon.Polygon() is deprecated, please use the new hydrolib alternative.')) #TODO: raise this, later remove code
         #self.line_array = np.c_[self.x, self.y]
         
     def fromfile(file_pol, pd_output=False, tekmap_output=False):#, obj_output=False):
@@ -84,11 +72,7 @@ class Polygon:
             DESCRIPTION.
 
         """
-        import warnings
-        import numpy as np
-        import pandas as pd
-        warnings.warn('the function dfm_tools.polygon.Polygon.fromfile() is deprecated, please use the new hydrolib alternative')
-        
+        warnings.warn(DeprecationWarning('the function dfm_tools.polygon.Polygon.fromfile() is deprecated, please use the new hydrolib alternative. Example script: dfm_tools/tests/examples/hydrolib_readpol.py')) #TODO: raise this
 
         with open(file_pol) as plifile:
             lines = plifile.readlines()

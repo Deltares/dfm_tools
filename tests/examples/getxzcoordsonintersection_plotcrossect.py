@@ -12,7 +12,7 @@ import numpy as np
 import datetime as dt
 
 from dfm_tools.get_nc import get_netdata, get_ncmodeldata, get_xzcoords_onintersection, plot_netmapdata
-from dfm_tools.io.polygon import LineBuilder#, Polygon
+from dfm_tools.linebuilder import LineBuilder
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
@@ -126,10 +126,10 @@ for file_nc in file_nc_list:
     pc.set_clim(clim_bl)
     fig.colorbar(pc, ax=ax_input)
     ax_input.set_aspect('equal')
-    if 0: #click interactive polygon
-        #pol_frominput = Polygon.frominteractive(ax) #this is old, does not work, use code below
+    if 0: #click interactive polygon #TODO: this is useful but should work also without killing the code
         line, = ax_input.plot([], [],'o-')  # empty line
         linebuilder = LineBuilder(line) #after this click your line and then run the line below
+        #breakit
         line_array = linebuilder.line_array
     ax_input.plot(line_array[0,0],line_array[0,1],'bx',linewidth=3,markersize=10)
     ax_input.plot(line_array[:,0],line_array[:,1],'b',linewidth=3)
