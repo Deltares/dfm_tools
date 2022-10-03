@@ -293,13 +293,13 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
 
             #get info about grid variables related to varname
             if get_linkedgridinfo and (nc_values_dimsel not in [dimn_time,dimn_layer]+dimname_stat_validvals):
-                vars_pd_relevant = vars_pd[(vars_pd['ndims']<=2) & (vars_pd['dimensions'].apply(lambda x: nc_values_dimsel in x)) & -(vars_pd['dimensions'].apply(lambda x: dimn_time in x))]
+                vars_pd_relevant = vars_pd[(vars_pd['shape'].apply(len)<=2) & (vars_pd['dimensions'].apply(lambda x: nc_values_dimsel in x)) & -(vars_pd['dimensions'].apply(lambda x: dimn_time in x))]
                 values_dimlinkedgrid.append(vars_pd_relevant)
 
                 print('\tlinkedvars for dimension "%s":'%(nc_values_dimsel))
                 #print('nc_varobject_sel.dimensions: %s'%([nc_varobject_sel.dimensions]))
                 for iLV, linkedvar in vars_pd_relevant.iterrows():
-                    print('\t\t%s  %s  %s'%(linkedvar.index, linkedvar['shape'], linkedvar['dimensions']))
+                    print('\t\t%s  %s  %s'%(iLV, linkedvar['shape'], linkedvar['dimensions']))
                 #print('nc_values_dimsel: %s'%(nc_values_dimsel))
                 #print('vars_pd_relevant:\n%s'%(vars_pd_relevant))
             else:
