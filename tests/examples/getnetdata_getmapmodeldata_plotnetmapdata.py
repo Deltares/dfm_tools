@@ -80,11 +80,6 @@ for file_nc in file_nc_list:
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,'%s_grid'%(os.path.basename(file_nc).replace('.',''))))
 
-    if 0:
-        #TODO: xugrid alternative for plotting a grid (use random face property and use facecolor='none')
-        import xugrid
-        data_xru = xugrid.open_dataset(file_nc)
-        pc = data_xru.mesh2d_face_x.ugrid.plot(ax=ax, facecolor='none', edgecolor='grey', linewidth=0.5, alpha=0.5, add_colorbar=False)
 
     print('plot grid and bedlevel (constantvalue, 1 dim)')
     #iT = 3 #for iT in range(10):
