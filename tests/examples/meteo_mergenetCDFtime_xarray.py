@@ -22,7 +22,7 @@ plt.close('all')
 #TODO: add HARMONIE (also originates from matroos), add CMCC etc from gtsmip repos
 #TODO: add .sel(lat/lon) or not relevant?
 
-mode = 'HIRLAM_meteo-heatflux'# 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HYCOM' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall'
+mode = 'HIRLAM_meteo'# 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HYCOM' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall'
 all_tstart = dt.datetime(2013,12,30) # HIRLAM and ERA5
 all_tstop = dt.datetime(2014,1,1)
 #all_tstart = dt.datetime(2016,4,28) # HYCOM
@@ -94,7 +94,7 @@ data_xr = xr.open_mfdataset(file_nc,
                             )
 print('...done')
 
-if 'HIRLAM' in mode:
+if 'HIRLAM' in mode: #https://github.com/pydata/xarray/issues/7121
     print('adding x/y variables again as lon/lat')
     #add xy as variables again with help of NetCDF4 #TODO: this part is hopefully temporary, necessary since variables cannot have the same name as dimensions in xarray
     file_nc_one = glob.glob(os.path.join(dir_data,'h72_201312.nc'))[0]
