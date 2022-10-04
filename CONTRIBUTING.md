@@ -70,8 +70,3 @@ Increasing the dfm_tools version number:
 - ``bumpversion major`` or ``bumpversion minor`` or ``bumpversion patch`` (changes version numbers in files and commits changes)
 - push this change in version number with ``git push`` (from git bash window or cmd also ok?)
 - request merging of your branch on https://github.com/openearth/dfm_tools/branches
-
-Hydrolib contributing installation on WCF long paths issue:
-- hydrolib installation from main branch: ``python -m pip install git+https://github.com/Deltares/HYDROLIB-core``
-- HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem: set LongPathsEnabled=1
-- git config --system core.longpaths true
