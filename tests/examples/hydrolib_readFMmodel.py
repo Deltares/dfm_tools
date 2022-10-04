@@ -45,8 +45,4 @@ for iEB, extbnd in enumerate(ext_boundaries): #TODO: waterlevelbnd for rivers ar
     fig.tight_layout()
 
 
-
 #dimr = DIMR("dimr_config.xml")
-
-# issue maken voor structures pli
-#PR maken voor lateral xcoords/ycoords int >> float
