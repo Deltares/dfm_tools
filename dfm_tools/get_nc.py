@@ -787,13 +787,13 @@ def plot_ztdata(data_xr_sel, varname, ax=None, mask_data=True, only_contour=Fals
     
     warnings.warn('WARNING: layers in dfowfm hisfile are currently incorrect, check your figures carefully')
     
-    data_fromhis_var = data_xr_sel.get(varname).to_numpy()
+    data_fromhis_var = data_xr_sel[varname].to_numpy()
     if len(data_fromhis_var.shape) != 2:
         raise Exception(f'ERROR: unexpected number of dimensions in requested squeezed variable ({data_fromhis_var.shape}), first use data_xr.isel(stations=int) to select a single station') #TODO: can also have a different cause, improve message/testing?
-    data_fromhis_zcen = data_xr_sel.get('zcoordinate_c').to_numpy()
-    data_fromhis_zcor = data_xr_sel.get('zcoordinate_w').to_numpy()
+    data_fromhis_zcen = data_xr_sel['zcoordinate_c'].bfill(dim='laydim').to_numpy()
+    data_fromhis_zcor = data_xr_sel['zcoordinate_w'].bfill(dim='laydimw').to_numpy() #bfill replaces nan values with last valid value
     data_fromhis_zcor = np.concatenate([data_fromhis_zcor,data_fromhis_zcor[[-1],:]],axis=0)
-    data_fromhis_wl = data_xr_sel.get('waterlevel').to_numpy()
+    data_fromhis_wl = data_xr_sel['waterlevel'].to_numpy()
     
     if mask_data:
         data_fromhis_var = np.ma.array(data_fromhis_var)
@@ -818,8 +818,7 @@ def plot_ztdata(data_xr_sel, varname, ax=None, mask_data=True, only_contour=Fals
     if only_contour:
         pc = ax.contour(time_mesh_cen,data_fromhis_zcen,data_fromhis_var, **kwargs)
     else: #TODO: should actually supply cell edges instead of centers to pcolor/pcolormesh, but inconvenient for time dimension.
-        #pc = ax.pcolormesh(time_mesh_cen, data_fromhis_zcen, data_fromhis_var, **kwargs)
-        pc = ax.pcolor(time_mesh_cor, data_fromhis_zcor, data_fromhis_var, **kwargs) #pcolor also supports missing/masked xy data, but is slower
+        pc = ax.pcolormesh(time_mesh_cor, data_fromhis_zcor, data_fromhis_var, **kwargs)
 
     return pc
 
