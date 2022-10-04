@@ -791,7 +791,7 @@ def plot_ztdata(data_xr_sel, varname, ax=None, mask_data=True, only_contour=Fals
     if len(data_fromhis_var.shape) != 2:
         raise Exception(f'ERROR: unexpected number of dimensions in requested squeezed variable ({data_fromhis_var.shape}), first use data_xr.isel(stations=int) to select a single station') #TODO: can also have a different cause, improve message/testing?
     data_fromhis_zcen = data_xr_sel['zcoordinate_c'].bfill(dim='laydim').to_numpy()
-    data_fromhis_zcor = data_xr_sel['zcoordinate_w'].bfill(dim='laydimw').to_numpy() #bfill replaces nan values with last valid value
+    data_fromhis_zcor = data_xr_sel['zcoordinate_w'].bfill(dim='laydimw').to_numpy() #bfill replaces nan values with last valid value, this is necessary to enable pcolormesh to work
     data_fromhis_zcor = np.concatenate([data_fromhis_zcor,data_fromhis_zcor[[-1],:]],axis=0)
     data_fromhis_wl = data_xr_sel['waterlevel'].to_numpy()
     
