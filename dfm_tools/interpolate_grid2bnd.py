@@ -34,20 +34,12 @@ import matplotlib.pyplot as plt
 from hydrolib.core.io.bc.models import (
     ForcingModel,
     QuantityUnitPair,
-    VerticalPositionType,
-    TimeInterpolation,
     T3D,
     TimeSeries,
     Astronomic,
 )
-from hydrolib.core.io.polyfile.models import (
-    #Description,
-    #Metadata,
-    #Point,
-    PolyFile,
-    #PolyObject,
-)
-from hydrolib.core.io.polyfile.parser import read_polyfile #TODO: should be replaced with PolyFile above
+from hydrolib.core.io.polyfile.models import PolyFile
+#from hydrolib.core.io.polyfile.parser import read_polyfile #TODO SOLVED: should be replaced with PolyFile above
 
 
 def get_conversion_dict():
@@ -127,9 +119,11 @@ def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180
     data_xrsel['phase_v'] = 1*np.sin(data_xrsel_phs_rad)
     
     #load boundary file
-    polyfile_object = read_polyfile(file_pli,has_z_values=False)
-    
-    pli_PolyObjects = polyfile_object['objects']
+    #polyfile_object = read_polyfile(file_pli,has_z_values=False)
+    #pli_PolyObjects = polyfile_object['objects']
+    polyfile_object = PolyFile(file_pli) #TODO SOLVED: should work with hydrolib-core>0.3.0. also without has_z_values argument
+    pli_PolyObjects = polyfile_object.objects
+
     for iPO, pli_PolyObject_sel in enumerate(pli_PolyObjects):
         print(f'processing PolyObject {iPO+1} of {len(pli_PolyObjects)}: name={pli_PolyObject_sel.metadata.name}')
         
@@ -258,10 +252,11 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
         has_depth = False
     
     #load boundary file
-    #polyfile_object = PolyFile(file_pli,has_z_values=False) #TODO ISFIXED: should work with hydrolib-core>0.3.0. also without has_z_values argument
-    polyfile_object = read_polyfile(file_pli,has_z_values=False) #TODO: this warning can be suppressed (or how to fix): "UserWarning: White space at the start of the line is ignored." https://github.com/Deltares/HYDROLIB-core/issues/320
+    #polyfile_object = read_polyfile(file_pli,has_z_values=False) #TODO: this warning can be suppressed (or how to fix): "UserWarning: White space at the start of the line is ignored." https://github.com/Deltares/HYDROLIB-core/issues/320
+    #pli_PolyObjects = polyfile_object['objects']
+    polyfile_object = PolyFile(file_pli) #TODO SOLVED: should work with hydrolib-core>0.3.0. also without has_z_values argument
+    pli_PolyObjects = polyfile_object.objects
     
-    pli_PolyObjects = polyfile_object['objects']
     for iPO, pli_PolyObject_sel in enumerate(pli_PolyObjects):
         print(f'processing PolyObject {iPO+1} of {len(pli_PolyObjects)}: name={pli_PolyObject_sel.metadata.name}')
         
@@ -358,23 +353,23 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             print('> constructing TimeSeries and appending to ForcingModel()')
             dtstart = dt.datetime.now()
             if has_depth:
-                verticalpositions_id = np.arange(datablock_xr[depthvarname].size)+1
-                print(verticalpositions_id)
-                list_QUP_perlayer = [QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs['units']) for iL in verticalpositions_id] #TODO: verticalposition 1/2/3/n is not supported. https://github.com/Deltares/HYDROLIB-core/issues/317
+                verticalpositions_idx = np.arange(datablock_xr[depthvarname].size)+1
+                #list_QUP_perlayer = [QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs['units']) for iL in verticalpositions_id] #TODO REPORT: verwarrende foutmelding bij niet opgeven verticalpositionindex (should be missing error instead of not valid error)
+                list_QUP_perlayer = [QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs['units'], verticalpositionindex=iVP) for iVP in verticalpositions_idx] #TODO SOLVED: verticalposition 1/2/3/n is not supported. https://github.com/Deltares/HYDROLIB-core/issues/317
                 ts_one = T3D(name=pli_PolyObject_name_num,
                              verticalpositions=depth_array.tolist(), #TODO: should be "Vertical position specification = [..]" but is verticalPositions = [..]" (both possible?). https://github.com/Deltares/HYDROLIB-core/issues/317
-                             verticalInterpolation='linear',
-                             verticalPositionType=VerticalPositionType('ZBed'), #TODO: should be "Vertical position type = zdatum" but is "verticalPositionType = ZBed" (zdatum is niet beschikbaar). https://github.com/Deltares/HYDROLIB-core/issues/317
+                             verticalinterpolation='linear',
+                             verticalpositiontype='ZDatum', #TODO SOLVED: should be "Vertical position type = zdatum" but is "verticalPositionType = ZBed" (zdatum is niet beschikbaar). https://github.com/Deltares/HYDROLIB-core/issues/317
                              quantityunitpair=[QuantityUnitPair(quantity="time", unit=refdate_str)]+list_QUP_perlayer,
-                             timeinterpolation=TimeInterpolation.linear, #TODO: not passed on to bc file. https://github.com/Deltares/HYDROLIB-core/issues/317
+                             timeinterpolation='linear', #TODO SOLVED: not passed on to bc file. https://github.com/Deltares/HYDROLIB-core/issues/317
                              datablock=datablock_incltime.tolist(), #TODO: numpy array is not supported by TimeSeries. https://github.com/Deltares/HYDROLIB-core/issues/322
                              )
             else:
                 ts_one = TimeSeries(name=pli_PolyObject_name_num,
-                                    verticalposition=VerticalPositionType('ZBed'), #TODO: is not passed on to bc file and that makes sense, but it should raise error since it is not relevant for timeseries. https://github.com/Deltares/HYDROLIB-core/issues/321
-                                    quantityunitpair=[QuantityUnitPair(quantity="time", unit=refdate_str),
+                                    verticalposition='ZBed', #TODO: is not passed on to bc file and that makes sense, but it should raise error since it is not relevant for timeseries. https://github.com/Deltares/HYDROLIB-core/issues/321
+                                    quantityunitpair=[QuantityUnitPair(quantity="time", unit=refdate_str), #TODO: quantity is not validated: https://github.com/Deltares/HYDROLIB-core/issues/357
                                                       QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs['units'])],
-                                    timeinterpolation=TimeInterpolation.linear,
+                                    timeinterpolation='linear',
                                     datablock=datablock_incltime.tolist(), 
                                     )
             

@@ -32,13 +32,13 @@ tstop = dt.datetime(1993, 3, 1, 12, 0)
 #tstop = dt.datetime(2012, 12, 1, 12, 0)
 #tstart = dt.datetime(2015, 6, 16, 12, 0)
 #tstop = dt.datetime(2015, 12, 1, 12, 0)
-nPoints = 10 #amount of Points to process per PolyObject in the plifile (for testing, use None for all Points)
+nPoints = 3 #amount of Points to process per PolyObject in the plifile (for testing, use None for all Points)
 debug = False
 
 conversion_dict = get_conversion_dict()
 #list_quantities = ['NO3']
 list_quantities = ['steric','salinity','tide']#,['salinity','temperature','steric'] #should be in conversion_dict.keys()
-list_quantities = ['salinity']
+list_quantities = ['tide','salinity']
 
 dtstart = dt.datetime.now()
 ext_bnd = ExtModel()
@@ -75,7 +75,7 @@ for file_pli in list_plifiles:
                                                        nPoints=nPoints, debug=debug)
         
         if 1: #plotting example data point
-            for iF in [3]:#range(nPoints):
+            for iF in [2]:#range(nPoints):
                 forcingobject_one = ForcingModel_object.forcing[iF]
                 forcingobject_one_df = forcingobject_to_dataframe(forcingobject_one)
                 fig,ax1 = plt.subplots()
