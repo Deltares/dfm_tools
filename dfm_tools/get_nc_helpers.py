@@ -566,7 +566,7 @@ def get_stationid_fromstationlist(data_xr, stationlist, station_varname='station
         raise Exception('ERROR: provide list of stations')
     
     stationlist_pd = pd.Series(stationlist)
-    data_xr_stationlist_pd = data_xr.get(station_varname).astype(str).to_pandas().str.strip() #to_pandas is essential otherwise resulting bool might not be correct. .str.strip() to remove spaces left/right from station_name (necessary for sobek models)
+    data_xr_stationlist_pd = data_xr[station_varname].to_pandas().str.decode('utf-8',errors='ignore').str.strip() #to_pandas is essential otherwise resulting bool might not be correct. .str.strip() to remove spaces left/right from station_name (necessary for sobek models)
     
     #check if all requested stations are in xarray Dataset
     bool_reqstations = stationlist_pd.isin(data_xr_stationlist_pd)

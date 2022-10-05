@@ -94,7 +94,7 @@ data_xr = xr.open_mfdataset(file_nc,
                             )
 print('...done')
 
-if 'HIRLAM' in mode: #https://github.com/pydata/xarray/issues/7121
+if 'HIRLAM' in mode: # https://github.com/pydata/xarray/issues/6293
     print('adding x/y variables again as lon/lat')
     #add xy as variables again with help of NetCDF4 #TODO: this part is hopefully temporary, necessary since variables cannot have the same name as dimensions in xarray
     file_nc_one = glob.glob(os.path.join(dir_data,'h72_201312.nc'))[0]

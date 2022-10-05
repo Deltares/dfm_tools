@@ -20,7 +20,7 @@ file_struct = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\comput
 #TODO: pli in structures.ini is currently not supported: https://github.com/Deltares/HYDROLIB-core/issues/353 (use *_original file to test after fix)
 #TODO: single structure in structures.ini currently crashes because of missing make_list_validator: https://github.com/Deltares/HYDROLIB-core/pull/352 (use *_original file to test after fix)
 
-file_extnew = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_bnd_5bnds.ext')
+file_extnew = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_bnd.ext')
 #ext = ExtModel(fm.external_forcing.extforcefilenew) #TODO: also possible to read from FMmodel?
 ext = ExtModel(file_extnew)
 #TODO: laterals xycoordinates float is not yet supported (int is prescribed in ext model): https://github.com/Deltares/HYDROLIB-core/pull/351 (use *_original file to test after fix)

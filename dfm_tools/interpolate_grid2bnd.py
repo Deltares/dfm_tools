@@ -358,7 +358,9 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             print('> constructing TimeSeries and appending to ForcingModel()')
             dtstart = dt.datetime.now()
             if has_depth:
-                list_QUP_perlayer = [QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs['units']) for iL in range(datablock_xr[depthvarname].size)] #TODO: verticalposition 1/2/3/n is not supported. https://github.com/Deltares/HYDROLIB-core/issues/317
+                verticalpositions_id = np.arange(datablock_xr[depthvarname].size)+1
+                print(verticalpositions_id)
+                list_QUP_perlayer = [QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs['units']) for iL in verticalpositions_id] #TODO: verticalposition 1/2/3/n is not supported. https://github.com/Deltares/HYDROLIB-core/issues/317
                 ts_one = T3D(name=pli_PolyObject_name_num,
                              verticalpositions=depth_array.tolist(), #TODO: should be "Vertical position specification = [..]" but is verticalPositions = [..]" (both possible?). https://github.com/Deltares/HYDROLIB-core/issues/317
                              verticalInterpolation='linear',
