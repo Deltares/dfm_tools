@@ -38,7 +38,7 @@ for file_nc in file_nc_list:
         station_zt = ['MO_TS_MO_ATHOS']
     
     data_xr = xr.open_dataset(file_nc) #TODO: maybe adding chunking argument like chunks={'time':-1,'station':200}) (https://github.com/pydata/xarray/discussions/6458)
-    data_xr['station_name_str'] = data_xr['station_name'].astype(str) #TODO: this is currently necessary but might not
+    data_xr['station_name_str'] = data_xr['station_name'].str.decode('utf-8',errors='ignore').str.strip() #TODO: this is currently necessary but might not. Often, .astype(str) is enough, but .decode() and .strip() is necesary for this file: p:\\11208067-003-kpp-internationaal\\final_results_Snellius\\current_2006_25per\\DFM_OUTPUT_DCSM-FM_0_5nm_waq\\DCSM-FM_0_5nm_waq_0000_his.nc
     data_xr = data_xr.set_coords('station_name_str')
     
     #stations_pd = get_hisstationlist(file_nc)
