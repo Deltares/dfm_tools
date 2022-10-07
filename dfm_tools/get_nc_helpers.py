@@ -233,9 +233,6 @@ def ghostcell_filter(file_nc):
     return nonghost_bool
 
 
-
-
-
 def get_variable_timevar(file_nc, varname):
     #get corresponding time variable name
     from netCDF4 import Dataset
@@ -258,10 +255,8 @@ def get_variable_timevar(file_nc, varname):
     data_nc.close()
     return varn_time
 
-
-
     
-def get_timesfromnc(file_nc, varname='time', retrieve_ids=False, keeptimezone=True, silent=False):
+def get_timesfromnc(file_nc, varname='time', retrieve_ids=False, keeptimezone=True, silent=False): #TODO: convert to xarray
     """
     retrieves time array from netcdf file.
     Since long time arrays take a long time to retrieve at once, reconstruction is tried
@@ -350,20 +345,6 @@ def get_timesfromnc(file_nc, varname='time', retrieve_ids=False, keeptimezone=Tr
     
     #convert back to original timezone (e.g. MET)
     if keeptimezone:
-        """
-        #with timezone info
-        #tz_str_startplus = data_nc_timevar.units.rfind('+')
-        #tz_str_startmin = data_nc_timevar.units.rfind('-')
-        #tz_str_start = np.max([tz_str_startplus, tz_str_startmin])
-        tz_str = data_nc_timevar.units.split(' ')[-1]
-        try:
-            tzoffset = dt.datetime.strptime(tz_str,'%z').utcoffset()
-            nptimes = data_nc_datetimes + tzoffset
-            print('times converted to original timezone (%s)'%(tzoffset))
-        except:
-            #print('retrieving original timezone failed, time is now probably UTC')
-            nptimes = data_nc_datetimes
-        """
         #manual conversion which deliberately ignores timezone
         time_units_list = data_nc_timevar.units.split(' ')
         if time_units_list[1] != 'since':
@@ -393,7 +374,6 @@ def get_timesfromnc(file_nc, varname='time', retrieve_ids=False, keeptimezone=Tr
     return data_nc_datetimes_pd
 
 
-
 #TODO: remove after moving to xarray for time selection
 def get_timeid_fromdatetime(data_nc_datetimes_pd, timestep):
     import numpy as np
@@ -411,8 +391,6 @@ def get_timeid_fromdatetime(data_nc_datetimes_pd, timestep):
     time_ids = np.where(times_bool_fileinreq)[0]
     
     return time_ids
-
-
 
 
 def get_hisstationlist(file_nc, varname='waterlevel'):
