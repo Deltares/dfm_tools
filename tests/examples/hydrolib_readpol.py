@@ -9,26 +9,16 @@ import os
 from pathlib import Path
 import datetime as dt
 import pandas as pd
-#from netCDF4 import num2date
-#import cftime
 import matplotlib.pyplot as plt
 plt.close('all')
-import numpy as np
-from hydrolib.core.io.polyfile.models import (
-    #Description,
-    #Metadata,
-    #Point,
-    PolyFile,
-    #PolyObject,
-)
-from hydrolib.core.io.polyfile.parser import read_polyfile #TODO: should be replaced with PolyFile above
+from hydrolib.core.io.polyfile.models import PolyFile
 from dfm_tools.hydrolib_helpers import polyobject_to_dataframe
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
 #TODO: make generic polygon_to_dataframe conversion
-if 1: #read pli/pol/ldb files (tek files with 2/3 columns)
+if 0: #read pli/pol/ldb files (tek files with 2/3 columns)
     file_pli_list = [Path(dir_testinput,'world.ldb'),
                      #Path(dir_testinput,r'GSHHS_f_L1_world_ldb_noaa_wvs.ldb'), #huge file, so takes a lot of time
                      Path(dir_testinput,'GSHHS_high_min1000km2.ldb'), #works but slow
@@ -38,15 +28,22 @@ if 1: #read pli/pol/ldb files (tek files with 2/3 columns)
     
     for file_pli in file_pli_list:
         #load boundary file
-        polyfile_object = read_polyfile(file_pli,has_z_values=False)
-        pli_PolyObjects = polyfile_object['objects']
+        polyfile_object = PolyFile(file_pli)
         
         fig,ax = plt.subplots()
-        for iPO, pli_PolyObject_sel in enumerate(pli_PolyObjects):
-            print(f'processing PolyObject {iPO+1} of {len(pli_PolyObjects)}: name={pli_PolyObject_sel.metadata.name}')
+        for iPO, pli_PolyObject_sel in enumerate(polyfile_object.objects):
+            print(f'processing PolyObject {iPO+1} of {len(polyfile_object.objects)}: name={pli_PolyObject_sel.metadata.name}')
             polyobject_pd = polyobject_to_dataframe(pli_PolyObject_sel,dummy=999.999) #dummy is for world.ldb
             ax.plot(polyobject_pd['x'],polyobject_pd['y'])
         fig.savefig(os.path.join(dir_output,os.path.basename(file_pli).replace('.','')))
+        
+        #get extents of all objects in polyfile
+        data_pol_pd_list = [polyobject_to_dataframe(polyobj) for polyobj in polyfile_object.objects]
+        data_pol_pd_all = pd.concat(data_pol_pd_list)
+        xmin,ymin = data_pol_pd_all[['x','y']].min()
+        xmax,ymax = data_pol_pd_all[['x','y']].max()
+        print(xmin,xmax,ymin,ymax)
+
     
 
 if 1: #read tek files with more than 2 columns
@@ -67,14 +64,13 @@ if 1: #read tek files with more than 2 columns
             convert_xy_to_time = False
         else:
             convert_xy_to_time = True
-
+        
         #load boundary file
-        polyfile_object = read_polyfile(file_pli,has_z_values=False) #still false, since all then comes in data (not z)
-        pli_PolyObjects = polyfile_object['objects']
-    
+        polyfile_object = PolyFile(file_pli) #still false, since all then comes in data (not z)
+        
         fig,ax = plt.subplots()
-        for iPO, pli_PolyObject_sel in enumerate(pli_PolyObjects):
-            print(f'processing PolyObject {iPO+1} of {len(pli_PolyObjects)}: name={pli_PolyObject_sel.metadata.name}')
+        for iPO, pli_PolyObject_sel in enumerate(polyfile_object.objects):
+            print(f'processing PolyObject {iPO+1} of {len(polyfile_object.objects)}: name={pli_PolyObject_sel.metadata.name}')
             polyobject_pd = polyobject_to_dataframe(pli_PolyObject_sel)
             polyobject_pd_data = polyobject_pd.drop(['x','y'],axis=1)
             if convert_xy_to_time: #TODO: put in helper definition?

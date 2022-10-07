@@ -111,7 +111,7 @@ if 'HIRLAM' in mode: # https://github.com/pydata/xarray/issues/6293
 #rename variables
 data_xr = data_xr.rename(rename_variables)
 varkeys = data_xr.variables.mapping.keys()
-#data_xr.attrs['comment'] = 'merged with dfm_tools from https://github.com/openearth/dfm_tools' #TODO: add something like this
+#data_xr.attrs['comment'] = 'merged with dfm_tools from https://github.com/openearth/dfm_tools' #TODO: add something like this or other attributes? (some might also be dropped now)
 
 
 #select time and do checks #TODO: check if calendar is standard/gregorian
