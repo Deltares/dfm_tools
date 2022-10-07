@@ -71,7 +71,7 @@ if 0: #read bc file with T3D blocks
     #m.save('test2.bc')
     
     #plotting
-    df_data = forcingobject_to_dataframe(m.forcing[0], convert_time=False)
+    df_data = forcingobject_to_dataframe(m.forcing[0], convert_time=True)
     fig, ax = plt.subplots(figsize=(8, 4))
     ax.pcolormesh(df_data.index,m.forcing[0].verticalpositions,df_data.T)
     ax.set_ylim(-500,5)
