@@ -84,3 +84,21 @@ def polyobject_to_dataframe(PolyObject, dummy=None):
     return poly_pd
 
 
+def xyzmodel_to_dataframe(XYZModel):
+    """
+    
+    """
+    #TODO: more generic would be:
+    #for key in data_xyz.points[0].dict().keys():
+    #    data_pd_list.append(pd.DataFrame({key:[p[key] for p in data_xyz.points]}))
+    # but p[key] is not possible, only p.x etc
+    
+    xvals_pd = pd.DataFrame({'x':[p.x for p in XYZModel.points]})
+    yvals_pd = pd.DataFrame({'y':[p.y for p in XYZModel.points]})
+    zvals_pd = pd.DataFrame({'z':[p.z for p in XYZModel.points]})
+    comments_pd = pd.DataFrame({'comment':[p.comment for p in XYZModel.points]})
+    xyz_pd = pd.concat([xvals_pd,yvals_pd,zvals_pd,comments_pd],axis=1)
+
+    return xyz_pd
+
+
