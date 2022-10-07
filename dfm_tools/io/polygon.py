@@ -43,7 +43,7 @@ class Polygon:
         self.data = data
         self.name = name
         self.comments = comments
-        warnings.warn(DeprecationWarning('the function dfm_tools.io.polygon.Polygon() is deprecated, please use the new hydrolib alternative.')) #TODO: raise this, later remove code
+        raise DeprecationWarning('the function dfm_tools.io.polygon.Polygon() is deprecated, please use the new hydrolib alternative.') #TODO: remove this code
         #self.line_array = np.c_[self.x, self.y]
         
     def fromfile(file_pol, pd_output=False, tekmap_output=False):#, obj_output=False):
@@ -72,7 +72,7 @@ class Polygon:
             DESCRIPTION.
 
         """
-        warnings.warn(DeprecationWarning('the function dfm_tools.polygon.Polygon.fromfile() is deprecated, please use the new hydrolib alternative. Example script: dfm_tools/tests/examples/hydrolib_readpol.py')) #TODO: raise this
+        raise DeprecationWarning('the function dfm_tools.polygon.Polygon.fromfile() is deprecated, please use the new hydrolib alternative. Example script: dfm_tools/tests/examples/hydrolib_readpol.py') #TODO: remove this definition
 
         with open(file_pol) as plifile:
             lines = plifile.readlines()

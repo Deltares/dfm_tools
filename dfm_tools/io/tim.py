@@ -71,7 +71,7 @@ def write_timfile(filename, datablocks, metadatas, converttime=False, refdate=No
 
     """
     
-    warnings.warn(DeprecationWarning('the function dfm_tools.io.tim.write_timfile() is deprecated, please use the new hydrolib alternative (in development).')) #TODO: add example script, later raise this, later remove code
+    raise DeprecationWarning('the function dfm_tools.io.tim.write_timfile() is deprecated, please use the new hydrolib alternative (in development).') #TODO: remove code (there is no hydrolib-core alternative available yet)
     
     if type(datablocks) is not list:
         datablocks = [datablocks]
@@ -140,7 +140,7 @@ def read_timfile(filename, converttime=False):
         the metadata dictionary contains all metadata (file header)
 
     """
-    warnings.warn(DeprecationWarning('the function dfm_tools.io.tim.read_timfile() is deprecated, please use the new hydrolib alternative (in development).')) #TODO: add example script, later raise this, later remove code
+    raise DeprecationWarning('the function dfm_tools.io.tim.read_timfile() is deprecated, please use the new hydrolib alternative (in development).') #TODO: remove code (there is no hydrolib-core alternative available yet)
     
     with open(filename, 'r') as bc:
         page = bc.readlines()
