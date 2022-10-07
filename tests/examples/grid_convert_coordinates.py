@@ -5,6 +5,8 @@ Created on Thu Sep 29 15:13:45 2022
 @author: veenstra
 """
 
+#WARNING: the resulting grid might not be orthogonal
+
 import xarray as xr #pip install xarray
 import hatyan #pip install hatyan
 

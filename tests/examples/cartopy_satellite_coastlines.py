@@ -55,7 +55,7 @@ pc = ax.pcolor(mesh2d_node_x_sel[:100,:100],mesh2d_node_y_sel[:100,:100],magn[:1
 plot_background(ax=ax, google_style=None, features=['coastlines_highres'], latlon_format=True, gridlines=True)
 plt.savefig(os.path.join(dir_output,'cartopy_hirlam_curvedgridlines'))
 """
-    
+
 #GREVELINGEN
 file_nc_map = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen\\computations\\run01\\DFM_OUTPUT_Grevelingen-FM\\Grevelingen-FM_0000_map.nc')
 ugrid = get_netdata(file_nc=file_nc_map)

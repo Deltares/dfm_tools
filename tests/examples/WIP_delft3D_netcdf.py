@@ -40,24 +40,18 @@ from dfm_tools.get_nc_helpers import get_ncvarproperties#, get_hisstationlist#, 
 from dfm_tools.regulargrid import uva2xymagdeg
 from dfm_tools.hydrolib_helpers import polyobject_to_dataframe
 
-from hydrolib.core.io.polyfile.models import (
-    #Description,
-    #Metadata,
-    #Point,
-    PolyFile,
-    #PolyObject,
-)
-from hydrolib.core.io.polyfile.parser import read_polyfile #TODO: should be replaced with PolyFile above
+from hydrolib.core.io.polyfile.models import PolyFile
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
 file_ldb = Path(r'p:\archivedprojects\1220688-lake-kivu\3_modelling\1_FLOW\4_CH4_CO2_included\008\lake_kivu_geo.ldb')
-polyfile_object = read_polyfile(file_ldb,has_z_values=False)
-data_ldb = polyobject_to_dataframe(polyfile_object['objects'][0])
+polyfile_object = PolyFile(file_ldb)
+data_ldb = polyobject_to_dataframe(polyfile_object.objects[0])
 
 file_nc = r'p:\archivedprojects\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\062_netcdf\trim-thiery_002_coarse.nc'
 vars_pd = get_ncvarproperties(file_nc=file_nc)
+#data_xr = xr.open_dataset(file_nc)
 
 data_nc_XZ = get_ncmodeldata(file_nc=file_nc, varname='XZ')
 data_nc_YZ = get_ncmodeldata(file_nc=file_nc, varname='YZ')
