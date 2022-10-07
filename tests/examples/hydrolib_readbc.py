@@ -4,7 +4,7 @@ Created on Wed Aug 17 11:19:51 2022
 
 @author: veenstra
 """
-
+#TODO: merge this into hydrolib_readFMmodel.py after issues are resolved
 
 #import os
 from pathlib import Path

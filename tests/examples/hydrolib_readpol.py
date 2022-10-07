@@ -7,7 +7,6 @@ Created on Wed Aug 24 13:25:41 2022
 
 import os
 from pathlib import Path
-import datetime as dt
 import pandas as pd
 import matplotlib.pyplot as plt
 plt.close('all')
@@ -17,7 +16,6 @@ from dfm_tools.hydrolib_helpers import polyobject_to_dataframe
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
-#TODO: make generic polygon_to_dataframe conversion
 if 0: #read pli/pol/ldb files (tek files with 2/3 columns)
     file_pli_list = [Path(dir_testinput,'world.ldb'),
                      #Path(dir_testinput,r'GSHHS_f_L1_world_ldb_noaa_wvs.ldb'), #huge file, so takes a lot of time
@@ -47,11 +45,10 @@ if 0: #read pli/pol/ldb files (tek files with 2/3 columns)
     
 
 if 1: #read tek files with more than 2 columns
-    #TODO: read_polyfile does not read comments
-    file_pli_list = [#Path(dir_testinput,r'ballenplot\SDS-zd003b5dec2-sal.tek'), #TODO: UserWarning: Expected valid dimensions at line 14. (3D file)
+    file_pli_list = [Path(dir_testinput,r'ballenplot\SDS-zd003b5dec2-sal.tek'), #TODO: UserWarning: Expected valid dimensions at line 14. (3D file). Request support for 3D file?
                      Path(dir_testinput,r'ballenplot\SDS-zd003b5dec2-sal_2D.tek'), #solved by removing 3rd dim, but than layers are sort of lost
-                     #Path(dir_testinput,r'ballenplot\0200a.tek'), #TODO: no warning/error when reading file but result is empty
-                     Path(dir_testinput,r'ballenplot\0200a_2D.tek'), #works but difficult to plot properly due to xyz-sal
+                     #Path(dir_testinput,r'ballenplot\0200a.tek'), #TODO: UserWarning: Expected valid dimensions at line 6. (3D file). Request support for 3D file?
+                     Path(dir_testinput,r'ballenplot\0200a_2D.tek'), #solved by removing 3rd dim, but than layers are sort of lost
                      #Path(dir_testinput,r'Gouda.tek'), #works (but slow since it is a large file)
                      Path(dir_testinput,r'Maeslant.tek'), #works
                      #Path(dir_testinput,r'ballenplot\nima-1013-lo-wl.tek'), # UserWarning: Expected a valid name or description at line 3. (name contains spaces and brackets)
@@ -65,21 +62,21 @@ if 1: #read tek files with more than 2 columns
         else:
             convert_xy_to_time = True
         
-        #load boundary file
-        polyfile_object = PolyFile(file_pli) #still false, since all then comes in data (not z)
+        #load pol/tek/pli/ldb file
+        polyfile_object = PolyFile(file_pli)
         
         fig,ax = plt.subplots()
         for iPO, pli_PolyObject_sel in enumerate(polyfile_object.objects):
             print(f'processing PolyObject {iPO+1} of {len(polyfile_object.objects)}: name={pli_PolyObject_sel.metadata.name}')
-            polyobject_pd = polyobject_to_dataframe(pli_PolyObject_sel)
-            polyobject_pd_data = polyobject_pd.drop(['x','y'],axis=1)
-            if convert_xy_to_time: #TODO: put in helper definition?
-                datatimevals_pdstr = (polyobject_pd['x'].astype(int).apply(lambda x:f'{x:08d}') +
-                                      polyobject_pd['y'].astype(int).apply(lambda x:f'{x:06d}'))
-                datetimevals = pd.to_datetime(datatimevals_pdstr)
-                ax.plot(datetimevals,polyobject_pd_data)
+            polyobject_pd = polyobject_to_dataframe(pli_PolyObject_sel,convert_xy_to_time=convert_xy_to_time)
+            print(pli_PolyObject_sel.metadata)
+            print(pli_PolyObject_sel.description.content)
+            if convert_xy_to_time:
+                ax.plot(polyobject_pd)
+                ax.set_title(pli_PolyObject_sel.metadata.name)
             else: #this is only for datasets that can currently not be plotted nicely. Not really the responsability of hydrolib I presume
                 ax.scatter(polyobject_pd['x'],polyobject_pd['y'],c=polyobject_pd[0]) #TODO: valuable to be able to plot this nicely again?
+                ax.set_title(f'inconvenient plot of {pli_PolyObject_sel.metadata.name}')
         fig.savefig(os.path.join(dir_output,os.path.basename(file_pli).replace('.','')))
 
     

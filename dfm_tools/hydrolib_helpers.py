@@ -60,7 +60,7 @@ def forcingobject_to_dataframe(forcingobj, convert_time=True):
     return df_data
 
 
-def polyobject_to_dataframe(PolyObject, dummy=None):
+def polyobject_to_dataframe(PolyObject, dummy=None, convert_xy_to_time=False):
     """
     
 
@@ -82,10 +82,16 @@ def polyobject_to_dataframe(PolyObject, dummy=None):
     xvals_pd = pd.DataFrame({'x':[p.x for p in PolyObject.points]})
     yvals_pd = pd.DataFrame({'y':[p.y for p in PolyObject.points]})
     datavals_pd = pd.DataFrame([p.data for p in PolyObject.points])
-    poly_pd = pd.concat([xvals_pd,yvals_pd,datavals_pd],axis=1)
-    poly_pd[poly_pd==dummy] = np.nan
+    polyobject_pd = pd.concat([xvals_pd,yvals_pd,datavals_pd],axis=1)
+    polyobject_pd[polyobject_pd==dummy] = np.nan
+    
+    if convert_xy_to_time:
+        datatimevals_pdstr = (polyobject_pd['x'].astype(int).apply(lambda x:f'{x:08d}') +
+                              polyobject_pd['y'].astype(int).apply(lambda x:f'{x:06d}'))
+        polyobject_pd.index = pd.to_datetime(datatimevals_pdstr)
+        polyobject_pd = polyobject_pd.drop(['x','y'],axis=1)
 
-    return poly_pd
+    return polyobject_pd
 
 
 def xyzmodel_to_dataframe(XYZModel):
