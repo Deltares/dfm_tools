@@ -44,7 +44,6 @@ def gettestinputdir():
     return dir_testinput
 
 
-
 def getmakeoutputdir(script_dir, function_name):
     dir_tests = os.path.join(os.path.realpath(script_dir), os.pardir)
     dir_testoutput = os.path.join(dir_tests,'test_output')

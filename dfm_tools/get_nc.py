@@ -71,11 +71,13 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     import datetime as dt
     import pandas as pd
     from netCDF4 import Dataset
+    import xarray as xr
 
-    from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvarproperties, get_varnamefrom_keyslongstandardname, get_variable_timevardim, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_fromnc
+    from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvarproperties, get_varnamefrom_keyslongstandardname, get_variable_timevar, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_fromnc
 
     #get variable info (also checks if varname exists in keys, standard name, long name)
     data_nc = Dataset(file_nc)
+    data_xr = xr.open_dataset(file_nc)
     varname = get_varnamefrom_keyslongstandardname(file_nc, varname) #get varname from varkeys/standardname/longname if exists
     nc_varobject = data_nc.variables[varname]
 
@@ -103,7 +105,8 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     #        dimn_time = data_nc.variables[varn_time].dimensions[0]
     #    except:
     #        print('using dimn_time as variable to get dimn_time failed')
-    varn_time, dimn_time = get_variable_timevardim(file_nc=file_nc, varname=varname)
+    varn_time = get_variable_timevar(file_nc,varname=varname)
+    dimn_time = data_xr[varn_time].dims[0]
     if dimn_time not in nc_varobject.dimensions: #dimension time is not available in variable
         if timestep is not None:
             raise Exception('ERROR: netcdf file variable (%s) does not contain times, but parameter timestep is provided'%(varname))

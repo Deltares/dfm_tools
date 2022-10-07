@@ -13,7 +13,7 @@ import xarray as xr
 
 from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata#, get_xzcoords_onintersection
 from dfm_tools.get_nc_helpers import get_ncvarproperties, get_hisstationlist
-from dfm_tools.regulargrid import scatter_to_regulargrid#, meshgridxy2verts, center2corner
+from dfm_tools.regulargrid import scatter_to_regulargrid#, center2corner
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
@@ -124,7 +124,6 @@ data_fromnc_x = get_ncmodeldata(file_nc=file_nc, varname='x')
 data_fromnc_y = get_ncmodeldata(file_nc=file_nc, varname='y')
 #x_cen_withbnd = center2corner(data_fromnc_x)
 #y_cen_withbnd = center2corner(data_fromnc_y)
-#grid_verts = meshgridxy2verts(x_cen_withbnd, y_cen_withbnd)
 
 #plt.close('all')
 varname_list = ['hsign', 'dir', 'period', 'dspr', 'dissip']
