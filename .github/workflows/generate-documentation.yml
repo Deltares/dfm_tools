@@ -22,7 +22,7 @@ jobs:
         python -m pip install --upgrade pip setuptools
         python -m pip install pdoc3 pandoc
         conda install -c conda-forge shapely cartopy pyepsg geopandas contextily xarray dask netcdf4 bottleneck -y
-        pip install -r .
+        pip install -r requirements.txt
     - name: Generate documentation
       run: |
         pdoc --html dfm_tools -o docs --force --config sort_identifiers=False
