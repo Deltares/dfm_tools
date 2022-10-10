@@ -3,8 +3,6 @@ dfm_tools
 
 dfm_tools are Python pre- and post-processing tools for D-FlowFM model files
 
-- Free software: GNU General Public License v3
-
 Features
 --------
 - currently, we are updating dfm_tools to depend on [hydrolib-core](https://github.com/Deltares/HYDROLIB-core) for more robust and maintained core functionalities
