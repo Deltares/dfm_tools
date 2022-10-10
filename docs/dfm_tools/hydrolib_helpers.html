@@ -41,9 +41,8 @@ import cftime
 import numpy as np
 import hydrolib
 
-def forcingobject_to_dataframe(forcingobj, convert_time=True):
+def forcingobject_to_dataframe(forcingobj, convert_time=True): #TODO: would be convenient to have this as a method of ForcingModel objects (Timeseries/T3D/etc), or maybe as method of the ForcingModel (returning a list of DataFrames): https://github.com/Deltares/HYDROLIB-core/issues/307
     &#34;&#34;&#34;
-    #TODO: would be convenient to have this as a method of ForcingModel objects (Timeseries/T3D/etc), or maybe as method of the ForcingModel (returning a list of DataFrames): https://github.com/Deltares/HYDROLIB-core/issues/307
 
     Parameters
     ----------
@@ -59,7 +58,7 @@ def forcingobject_to_dataframe(forcingobj, convert_time=True):
         
     Example
     -------
-         file_bc = Path(r&#39;p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\2018\flow\rmm_discharge_laterals_20171220_20190101_MET.bc&#39;)
+         file_bc = Path(&#39;p:\\11208053-004-kpp2022-rmm1d2d\\C_Work\\09_Validatie2018_2020\\dflowfm2d-rmm_vzm-j19_6-v2d\\boundary_conditions\\2018\\flow\\rmm_discharge_laterals_20171220_20190101_MET.bc&#39;)
          m = ForcingModel(file_bc)
          df_data_list = [forcingobject_to_dataframe(forcingobj, convert_time=True) for forcingobj in m.forcing]
 
@@ -150,8 +149,7 @@ def xyzmodel_to_dataframe(XYZModel):
 <span>def <span class="ident">forcingobject_to_dataframe</span></span>(<span>forcingobj, convert_time=True)</span>
 </code></dt>
 <dd>
-<div class="desc"><h1 id="todo-would-be-convenient-to-have-this-as-a-method-of-forcingmodel-objects-timeseriest3detc-or-maybe-as-method-of-the-forcingmodel-returning-a-list-of-dataframes-httpsgithubcomdeltareshydrolib-coreissues307">TODO: would be convenient to have this as a method of ForcingModel objects (Timeseries/T3D/etc), or maybe as method of the ForcingModel (returning a list of DataFrames): <a href="https://github.com/Deltares/HYDROLIB-core/issues/307">https://github.com/Deltares/HYDROLIB-core/issues/307</a></h1>
-<h2 id="parameters">Parameters</h2>
+<div class="desc"><h2 id="parameters">Parameters</h2>
 <dl>
 <dt><strong><code>forcingobj</code></strong> :&ensp;<code>hydrolib ForcingModel.forcing object (Timeseries/T3D etc)</code></dt>
 <dd>DESCRIPTION.</dd>
@@ -164,18 +162,16 @@ def xyzmodel_to_dataframe(XYZModel):
 <dd>DESCRIPTION</dd>
 </dl>
 <h2 id="example">Example</h2>
-<pre><code> file_bc = Path(r'p:J08053-004-kpp2022-rmm1d2d\C_Work 9_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2doundary_conditions8low
-</code></pre>
-<p>mm_discharge_laterals_20171220_20190101_MET.bc')
-m = ForcingModel(file_bc)
-df_data_list = [forcingobject_to_dataframe(forcingobj, convert_time=True) for forcingobj in m.forcing]</p></div>
+<pre><code> file_bc = Path('p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\2018\flow\rmm_discharge_laterals_20171220_20190101_MET.bc')
+ m = ForcingModel(file_bc)
+ df_data_list = [forcingobject_to_dataframe(forcingobj, convert_time=True) for forcingobj in m.forcing]
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def forcingobject_to_dataframe(forcingobj, convert_time=True):
+<pre><code class="python">def forcingobject_to_dataframe(forcingobj, convert_time=True): #TODO: would be convenient to have this as a method of ForcingModel objects (Timeseries/T3D/etc), or maybe as method of the ForcingModel (returning a list of DataFrames): https://github.com/Deltares/HYDROLIB-core/issues/307
     &#34;&#34;&#34;
-    #TODO: would be convenient to have this as a method of ForcingModel objects (Timeseries/T3D/etc), or maybe as method of the ForcingModel (returning a list of DataFrames): https://github.com/Deltares/HYDROLIB-core/issues/307
 
     Parameters
     ----------
@@ -191,7 +187,7 @@ df_data_list = [forcingobject_to_dataframe(forcingobj, convert_time=True) for fo
         
     Example
     -------
-         file_bc = Path(r&#39;p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\2018\flow\rmm_discharge_laterals_20171220_20190101_MET.bc&#39;)
+         file_bc = Path(&#39;p:\\11208053-004-kpp2022-rmm1d2d\\C_Work\\09_Validatie2018_2020\\dflowfm2d-rmm_vzm-j19_6-v2d\\boundary_conditions\\2018\\flow\\rmm_discharge_laterals_20171220_20190101_MET.bc&#39;)
          m = ForcingModel(file_bc)
          df_data_list = [forcingobject_to_dataframe(forcingobj, convert_time=True) for forcingobj in m.forcing]
 
