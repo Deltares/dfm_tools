@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.9.2" />
+<meta name="generator" content="pdoc 0.10.0" />
 <title>dfm_tools.testutils API documentation</title>
 <meta name="description" content="dfm_tools are post-processing tools for Delft3D FM
 Copyright (C) 2020 Deltares. All rights reserved …" />
@@ -35,7 +35,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.</p>
 <p>You should have received a copy of the GNU General Public License
 along with this program.
-If not, see <a href="http://www.gnu.org/licenses/">http://www.gnu.org/licenses/</a>.</p>
+if not, see <a href="http://www.gnu.org/licenses/">http://www.gnu.org/licenses/</a>.</p>
 <p>All names, logos, and references to "Deltares" are registered trademarks of
 Stichting Deltares and remain full property of Stichting Deltares at all times.
 All rights reserved.</p>
@@ -66,7 +66,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+along with this program.  if not, see &lt;http://www.gnu.org/licenses/&gt;.
 
 All names, logos, and references to &#34;Deltares&#34; are registered trademarks of
 Stichting Deltares and remain full property of Stichting Deltares at all times.
@@ -84,9 +84,10 @@ Created on Thu Mar 19 15:27:12 2020
 @author: veenstra
 &#34;&#34;&#34;
 
+import os
+from packaging import version
+
 def gettestinputdir():
-    import os
-    
     if &#39;TEAMCITY_VERSION&#39; in os.environ.keys(): #teamcity path
         dir_testinput = r&#39;\\dfs-trusted.directory.intra\dfs\Teamcity\Testdata\dfm_tools&#39;
     else: #default to this path
@@ -95,9 +96,7 @@ def gettestinputdir():
     return dir_testinput
 
 
-
 def getmakeoutputdir(script_dir, function_name):
-    import os
     dir_tests = os.path.join(os.path.realpath(script_dir), os.pardir)
     dir_testoutput = os.path.join(dir_tests,&#39;test_output&#39;)
     if not os.path.exists(dir_testoutput):
@@ -121,19 +120,8 @@ def try_importmodule(modulename=None):
             import shapely.geometry
         except:
             raise Exception(&#39;ERROR: cannot execute &#34;import shapely.geometry&#34;, do the following:\n%s&#39;%(command))
-        shpvers = [int(x) for x in shapely.__version__.split(&#39;.&#39;)]
-        correctversion = False
-        if shpvers[0] == 1:
-            if shpvers[1] &lt;=7:
-                correctversion = True
-        elif shpvers[0] &gt; 2:
-            correctversion = True
-        if correctversion is False:
-            raise Exception(&#39;ERROR: incorrect shapely version (%s), should be 1.7.0 or higher, do the following:\n%s&#39;%(shapely.__version__, command))
-
-
-
-            </code></pre>
+        if version.parse(shapely.__version__) &lt; version.parse(&#39;1.7.0&#39;):
+            raise Exception(f&#39;ERROR: incorrect shapely version ({shapely.__version__}), should be 1.7.0 or higher, do the following:\n{command}&#39;)</code></pre>
 </details>
 </section>
 <section>
@@ -153,7 +141,6 @@ def try_importmodule(modulename=None):
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def getmakeoutputdir(script_dir, function_name):
-    import os
     dir_tests = os.path.join(os.path.realpath(script_dir), os.pardir)
     dir_testoutput = os.path.join(dir_tests,&#39;test_output&#39;)
     if not os.path.exists(dir_testoutput):
@@ -175,8 +162,6 @@ def try_importmodule(modulename=None):
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def gettestinputdir():
-    import os
-    
     if &#39;TEAMCITY_VERSION&#39; in os.environ.keys(): #teamcity path
         dir_testinput = r&#39;\\dfs-trusted.directory.intra\dfs\Teamcity\Testdata\dfm_tools&#39;
     else: #default to this path
@@ -206,15 +191,8 @@ def try_importmodule(modulename=None):
             import shapely.geometry
         except:
             raise Exception(&#39;ERROR: cannot execute &#34;import shapely.geometry&#34;, do the following:\n%s&#39;%(command))
-        shpvers = [int(x) for x in shapely.__version__.split(&#39;.&#39;)]
-        correctversion = False
-        if shpvers[0] == 1:
-            if shpvers[1] &lt;=7:
-                correctversion = True
-        elif shpvers[0] &gt; 2:
-            correctversion = True
-        if correctversion is False:
-            raise Exception(&#39;ERROR: incorrect shapely version (%s), should be 1.7.0 or higher, do the following:\n%s&#39;%(shapely.__version__, command))</code></pre>
+        if version.parse(shapely.__version__) &lt; version.parse(&#39;1.7.0&#39;):
+            raise Exception(f&#39;ERROR: incorrect shapely version ({shapely.__version__}), should be 1.7.0 or higher, do the following:\n{command}&#39;)</code></pre>
 </details>
 </dd>
 </dl>
@@ -244,7 +222,7 @@ def try_importmodule(modulename=None):
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
 </footer>
 </body>
 </html>

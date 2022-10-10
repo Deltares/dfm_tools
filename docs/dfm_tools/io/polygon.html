@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.9.2" />
+<meta name="generator" content="pdoc 0.10.0" />
 <title>dfm_tools.io.polygon API documentation</title>
 <meta name="description" content="dfm_tools are post-processing tools for Delft3D FM
 Copyright (C) 2020 Deltares. All rights reserved …" />
@@ -83,23 +83,10 @@ Created on Wed Feb 12 01:55:57 2020
 
 @author: veenstra
 &#34;&#34;&#34;
+import warnings
+import numpy as np
+import pandas as pd
 
-class LineBuilder:
-    def __init__(self, line):
-        self.line = line
-        self.xs = list(line.get_xdata())
-        self.ys = list(line.get_ydata())
-        self.cid = line.figure.canvas.mpl_connect(&#39;button_press_event&#39;, self)
-
-    def __call__(self, event):
-        import numpy as np
-        print(&#39;click&#39;, event)
-        if event.inaxes!=self.line.axes: return
-        self.xs.append(event.xdata)
-        self.ys.append(event.ydata)
-        self.line_array = np.c_[self.xs, self.ys]
-        self.line.set_data(self.xs, self.ys)
-        self.line.figure.canvas.draw()
 
 
 class Polygon:
@@ -108,6 +95,7 @@ class Polygon:
         self.data = data
         self.name = name
         self.comments = comments
+        raise DeprecationWarning(&#39;the function dfm_tools.io.polygon.Polygon() is deprecated, please use the new hydrolib alternative.&#39;) #TODO: remove this code
         #self.line_array = np.c_[self.x, self.y]
         
     def fromfile(file_pol, pd_output=False, tekmap_output=False):#, obj_output=False):
@@ -136,11 +124,7 @@ class Polygon:
             DESCRIPTION.
 
         &#34;&#34;&#34;
-        import warnings
-        import numpy as np
-        import pandas as pd
-        #warnings.warn(&#39;the function dfm_tools.polygon.Polygon.fromfile() will be improved, outputformat will change&#39;)
-        
+        raise DeprecationWarning(&#39;the function dfm_tools.polygon.Polygon.fromfile() is deprecated, please use the new hydrolib alternative. Example script: dfm_tools/tests/examples/hydrolib_readpol.py&#39;) #TODO: remove this definition
 
         with open(file_pol) as plifile:
             lines = plifile.readlines()
@@ -222,16 +206,7 @@ class Polygon:
         #    return pol_object_list
         else:
             return pol_data_list, pol_name_list, pol_comment_list
-            
-
-    def frominteractive(fig, ax):
-        raise Exception(&#39;ERROR: interactive polygon from file is not yet possible&#39;)
-
-        
-        #line_array = linebuilder.line_array
-        pol_frominput = Polygon(LineBuilder.xs, LineBuilder.ys)
-        
-        return pol_frominput</code></pre>
+            </code></pre>
 </details>
 </section>
 <section>
@@ -243,34 +218,6 @@ class Polygon:
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt id="dfm_tools.io.polygon.LineBuilder"><code class="flex name class">
-<span>class <span class="ident">LineBuilder</span></span>
-<span>(</span><span>line)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">class LineBuilder:
-    def __init__(self, line):
-        self.line = line
-        self.xs = list(line.get_xdata())
-        self.ys = list(line.get_ydata())
-        self.cid = line.figure.canvas.mpl_connect(&#39;button_press_event&#39;, self)
-
-    def __call__(self, event):
-        import numpy as np
-        print(&#39;click&#39;, event)
-        if event.inaxes!=self.line.axes: return
-        self.xs.append(event.xdata)
-        self.ys.append(event.ydata)
-        self.line_array = np.c_[self.xs, self.ys]
-        self.line.set_data(self.xs, self.ys)
-        self.line.figure.canvas.draw()</code></pre>
-</details>
-</dd>
 <dt id="dfm_tools.io.polygon.Polygon"><code class="flex name class">
 <span>class <span class="ident">Polygon</span></span>
 <span>(</span><span>data, name, comments)</span>
@@ -287,6 +234,7 @@ class Polygon:
         self.data = data
         self.name = name
         self.comments = comments
+        raise DeprecationWarning(&#39;the function dfm_tools.io.polygon.Polygon() is deprecated, please use the new hydrolib alternative.&#39;) #TODO: remove this code
         #self.line_array = np.c_[self.x, self.y]
         
     def fromfile(file_pol, pd_output=False, tekmap_output=False):#, obj_output=False):
@@ -315,11 +263,7 @@ class Polygon:
             DESCRIPTION.
 
         &#34;&#34;&#34;
-        import warnings
-        import numpy as np
-        import pandas as pd
-        #warnings.warn(&#39;the function dfm_tools.polygon.Polygon.fromfile() will be improved, outputformat will change&#39;)
-        
+        raise DeprecationWarning(&#39;the function dfm_tools.polygon.Polygon.fromfile() is deprecated, please use the new hydrolib alternative. Example script: dfm_tools/tests/examples/hydrolib_readpol.py&#39;) #TODO: remove this definition
 
         with open(file_pol) as plifile:
             lines = plifile.readlines()
@@ -400,17 +344,7 @@ class Polygon:
         #elif obj_output is True:
         #    return pol_object_list
         else:
-            return pol_data_list, pol_name_list, pol_comment_list
-            
-
-    def frominteractive(fig, ax):
-        raise Exception(&#39;ERROR: interactive polygon from file is not yet possible&#39;)
-
-        
-        #line_array = linebuilder.line_array
-        pol_frominput = Polygon(LineBuilder.xs, LineBuilder.ys)
-        
-        return pol_frominput</code></pre>
+            return pol_data_list, pol_name_list, pol_comment_list</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
@@ -468,11 +402,7 @@ DESCRIPTION. The default is False.</dd>
         DESCRIPTION.
 
     &#34;&#34;&#34;
-    import warnings
-    import numpy as np
-    import pandas as pd
-    #warnings.warn(&#39;the function dfm_tools.polygon.Polygon.fromfile() will be improved, outputformat will change&#39;)
-    
+    raise DeprecationWarning(&#39;the function dfm_tools.polygon.Polygon.fromfile() is deprecated, please use the new hydrolib alternative. Example script: dfm_tools/tests/examples/hydrolib_readpol.py&#39;) #TODO: remove this definition
 
     with open(file_pol) as plifile:
         lines = plifile.readlines()
@@ -556,25 +486,6 @@ DESCRIPTION. The default is False.</dd>
         return pol_data_list, pol_name_list, pol_comment_list</code></pre>
 </details>
 </dd>
-<dt id="dfm_tools.io.polygon.Polygon.frominteractive"><code class="name flex">
-<span>def <span class="ident">frominteractive</span></span>(<span>fig, ax)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def frominteractive(fig, ax):
-    raise Exception(&#39;ERROR: interactive polygon from file is not yet possible&#39;)
-
-    
-    #line_array = linebuilder.line_array
-    pol_frominput = Polygon(LineBuilder.xs, LineBuilder.ys)
-    
-    return pol_frominput</code></pre>
-</details>
-</dd>
 </dl>
 </dd>
 </dl>
@@ -594,13 +505,9 @@ DESCRIPTION. The default is False.</dd>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
-<h4><code><a title="dfm_tools.io.polygon.LineBuilder" href="#dfm_tools.io.polygon.LineBuilder">LineBuilder</a></code></h4>
-</li>
-<li>
 <h4><code><a title="dfm_tools.io.polygon.Polygon" href="#dfm_tools.io.polygon.Polygon">Polygon</a></code></h4>
 <ul class="">
 <li><code><a title="dfm_tools.io.polygon.Polygon.fromfile" href="#dfm_tools.io.polygon.Polygon.fromfile">fromfile</a></code></li>
-<li><code><a title="dfm_tools.io.polygon.Polygon.frominteractive" href="#dfm_tools.io.polygon.Polygon.frominteractive">frominteractive</a></code></li>
 </ul>
 </li>
 </ul>
@@ -609,7 +516,7 @@ DESCRIPTION. The default is False.</dd>
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
 </footer>
 </body>
 </html>

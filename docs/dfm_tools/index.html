@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.9.2" />
+<meta name="generator" content="pdoc 0.10.0" />
 <title>dfm_tools API documentation</title>
 <meta name="description" content="dfm_tools
 …" />
@@ -24,118 +24,89 @@
 </header>
 <section id="section-intro">
 <h1 id="dfm_tools">dfm_tools</h1>
-<p>dfm_tools are Python post-processing tools for Delft3D FM model outputfiles and other netCDF files</p>
-<ul>
-<li>Free software: GNU General Public License v3</li>
-</ul>
-<h2 id="table-of-contents">Table Of Contents</h2>
-<!--ts-->
-<ul>
-<li><a href="#features">Features</a></li>
-<li><a href="#installation">Installation</a></li>
-<li><a href="#example-usage">Example usage</a></li>
-<li><a href="#feature-wishlist">Feature wishlist</a></li>
-<li><a href="#todo-non-content">Todo non-content</a></li>
-<li><a href="#developer-information">Developer information</a></li>
-</ul>
-<!--te-->
+<p>dfm_tools are Python pre- and post-processing tools for D-FlowFM model files</p>
 <h2 id="features">Features</h2>
 <ul>
-<li>supported formats:<ul>
-<li>D-Flow FM output data (net, map, his, fou, rst files)</li>
-<li>almost any other netCDF (ERA5, hirlam, SFINCS map, SFINCS his, Sobek observation)</li>
-<li>Delft3D netCDF output files (you can get netcdf output with keywords in your mdf)</li>
-<li>converted Delft3D and waqua data (converted to netCDF with getdata.pl) (Delft3D conversion with getdata.pl is not flawless, preferably rerun with netCDF as outputformat instead)</li>
-</ul>
-</li>
-<li>data handling:<ul>
-<li>support for net/map/fou/rst partitions</li>
+<li>currently, we are updating dfm_tools to depend on <a href="https://github.com/Deltares/HYDROLIB-core">hydrolib-core</a> for more robust and maintained core functionalities</li>
+<li>also, we are moving towards xarray for better handling of netCDF files</li>
+<li>post-processing and plotting:<ul>
+<li>support for net/map/fou/rst partitions (merge partitions and delete ghostcells) (and many other netCDF files)</li>
 <li>support for flexible meshes (containing triangles, squares, pentagons, hexagons or any other shape)</li>
 <li>select all data based on variable, timestep/datetime, layer, station (not yet on depth)</li>
-<li>get feedback about available variables, timesteps/datetimes, layers, stations when you retrieve the wrong ones</li>
 <li>retrieve lists of variables, timesteps/datetimes, stations, cross sections, general structures</li>
-<li>selection/plotting by polyline/crossection (slicing the ugrid data)</li>
-<li>merge partitions and delete ghostcells automatically</li>
-<li>take over masks in original data</li>
-<li>retrieve/select any data you want, including metadata consisting of retrieved timeids/datetimes, stationids/stationnames and layerids</li>
+<li>data selection/plotting by polyline/crossection (slicing the ugrid mapdata)</li>
+<li>add satellite background to your plots</li>
+<li>plotting z,t-plots</li>
 </ul>
 </li>
-<li>plotting:<ul>
-<li>plot flexible mesh net/map variables as polycollections/patches</li>
-<li>plot regular grid variables with pcolor (precise plotting is still work in progress)</li>
-<li>plot cartopy features (land, sea, landboundary, country borders, satellite background)</li>
-<li>plotting z,t-plots (see <a href="#feature-wishlist">Feature wishlist</a> for known inaccuracies)</li>
-<li>plot any data you want and exactly how you want it</li>
+<li>pre-processing:<ul>
+<li>read and write almost all FM input data with <a href="https://github.com/Deltares/HYDROLIB-core">hydrolib-core</a></li>
+<li>converting and plotting this data with helper functions in dfm_tools</li>
+<li>e.g.: interpolating CMEMS data to model boundary and writing 2D/3D boundary condition files</li>
 </ul>
 </li>
-<li>other io functions:<ul>
-<li>read tekal data (.tek, .pli, .pliz, .pol, .ldb)</li>
-<li>read/write mdu file</li>
-<li>read/write bc file</li>
-<li>write model results to shapefile</li>
-</ul>
-</li>
-<li>html documentation:<ul>
-<li><a href="https://htmlpreview.github.io/?https://github.com/openearth/dfm_tools/blob/master/doc/dfm_tools/index.html">https://htmlpreview.github.io/?https://github.com/openearth/dfm_tools/blob/master/doc/dfm_tools/index.html</a></li>
+<li>to get started:<ul>
+<li>html documentation: <a href="https://htmlpreview.github.io/?https://github.com/openearth/dfm_tools/blob/master/docs/dfm_tools/index.html">https://htmlpreview.github.io/?https://github.com/openearth/dfm_tools/blob/master/docs/dfm_tools/index.html</a></li>
+<li>example scripts: <a href="https://github.com/openearth/dfm_tools/tree/master/tests/examples">https://github.com/openearth/dfm_tools/tree/master/tests/examples</a></li>
+<li>examples of (mostly unformatted) figures created by this pytest testbank: n:\Deltabox\Bulletin\veenstra\info dfm_tools</li>
+<li>want to get updates about dfm_tools? Send an email to jelmer.veenstra@deltares.nl</li>
 </ul>
 </li>
 </ul>
 <h2 id="installation">Installation</h2>
 <ul>
-<li>download Anaconda 64 bit (with Python 3.7 or later) from <a href="https://www.anaconda.com/distribution/#download-section">https://www.anaconda.com/distribution/#download-section</a> (miniconda is probably also sufficient, but this is not yet tested)</li>
-<li>install it with the recommended settings, but check 'add Anaconda3 to my PATH environment variable' if you want to use conda from the windows command prompt instead of anaconda prompt</li>
+<li>download and install Anaconda 64 bit (with Python 3.8 or later) from <a href="https://www.anaconda.com/distribution/#download-section">https://www.anaconda.com/distribution/#download-section</a></li>
 <li>install dfm_tools from github:<ul>
-<li>open command window (or anaconda prompt)</li>
-<li><code>conda create --name dfm_tools_env -c conda-forge python=3.7 git spyder -y</code> (you can also install a later python version)</li>
+<li>open anaconda prompt</li>
+<li><code>conda create --name dfm_tools_env -c conda-forge python=3.8 git spyder -y</code> (you can also install a newer python version, in python 3.7 the dependency hydrolib seemed not installable)</li>
 <li><code>conda activate dfm_tools_env</code></li>
-<li><code>python -m pip install git+https://github.com/openearth/dfm_tools.git</code> (this command installs dfm_tools and all required packages)</li>
-<li>optional: <code>conda install -c conda-forge "shapely&gt;=1.7.0" -y</code> (for slicing 2D/3D data) (conda-forge channel is necessary since main channel version is 1.6.4)</li>
-<li>optional: <code>conda install -c conda-forge cartopy pyepsg -y</code> (cartopy for satellite imagery, coastlines etc on plots. pyepsg is also necessary, maybe also for other libraries) (conda-forge channel recommended by cartopy developers, and currently also necessary for correct shapely version)</li>
-<li>optional: <code>conda install -c conda-forge geopandas -y</code> (for shapefile related operations)</li>
-<li>optional: <code>conda install -c conda-forge contextily -y</code> (for satellite imagery on plots, seems faster than cartopy)</li>
+<li><code>conda install -c conda-forge shapely cartopy pyepsg geopandas contextily xarray dask netcdf4 bottleneck -y</code> (installs conda-forge requirements)</li>
+<li><code>python -m pip install git+https://github.com/openearth/dfm_tools</code> (this command installs dfm_tools and all required non-conda packages)</li>
+<li>shapely for slicing 2D/3D data (conda-forge channel is necessary since main channel version is 1.6.4, minimal requirement is 1.7.0)</li>
+<li>cartopy for satellite imagery, coastlines etc on plots (conda-forge channel recommended by cartopy developers, and currently also necessary for correct shapely version)</li>
+<li>pyepsg is necessary for cartopy and probably also for other libraries</li>
+<li>geopandas for shapefile related operations</li>
+<li>contextily for satellite imagery on plots, seems faster than cartopy</li>
+<li>xarray developers advise to install dependecies dask/netCDF4/bottleneck with conda-forge also: <a href="https://docs.xarray.dev/en/v0.8.0/installing.html">https://docs.xarray.dev/en/v0.8.0/installing.html</a></li>
 <li>to remove venv when necessary: <code>conda remove -n dfm_tools_env --all</code></li>
 </ul>
 </li>
 <li>launch Spyder:<ul>
-<li>open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in dfm_tools_env)</li>
-<li>if launching Spyder gives a Qt related error: remove the system/user environment variable 'qt_plugin_path' set by an old Delft3D4 installation procedure.</li>
-<li>test by printing dfm_tools version number: <code>import dfm_tools; print(dfm_tools.__version__)</code> (to double check if you are working in the venv where dfm_tools_env was installed)</li>
-<li>to get figures in separate windows: go to Tools &gt; Preferences &gt; IPython console &gt; Graphics &gt; change graphics backend to 'Automatic' and restart Spyder (or the kernel).</li>
-<li>copy the code from <a href="#example-usage">Example usage</a> to your own scripts to get starteds</li>
+<li>open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in the dfm_tools_env environment only)</li>
+<li>copy the code from <a href="#example-usage">Example usage</a> to your own scripts to get started</li>
+<li>Qt error upon launching Spyder?: remove the system/user environment variable 'qt_plugin_path' set by an old Delft3D4 installation procedure.</li>
+<li>netCDF4 DLL error upon import in Spyder?: remove Anaconda paths from the Path user environment variable (<a href="https://github.com/spyder-ide/spyder/issues/19220">https://github.com/spyder-ide/spyder/issues/19220</a>)</li>
 </ul>
 </li>
 <li>to update dfm_tools:<ul>
-<li>open command window (or anaconda prompt)</li>
+<li>open anaconda prompt</li>
 <li><code>conda activate dfm_tools_env</code></li>
 <li><code>python -m pip install --upgrade git+https://github.com/openearth/dfm_tools.git</code></li>
 </ul>
 </li>
 </ul>
 <h2 id="example-usage">Example Usage</h2>
-<ul>
-<li>for more examples, check <a href="https://github.com/openearth/dfm_tools/tree/master/tests/examples">https://github.com/openearth/dfm_tools/tree/master/tests/examples</a> (these scripts are also part of the pytest testbank)</li>
-<li>examples of (mostly unformatted) figures created by this pytest testbank: n:\Deltabox\Bulletin\veenstra\info dfm_tools</li>
-<li>please check the <a href="#feature-wishlist">Feature wishlist</a> for envisioned features</li>
-<li>please report bugs and feature requests at the developers or at <a href="https://github.com/openearth/dfm_tools/issues">https://github.com/openearth/dfm_tools/issues</a> (include OS, dfm_tools version, reproduction steps)</li>
-<li>want to get updates about dfm_tools? Send an email to jelmer.veenstra@deltares.nl</li>
-</ul>
 <pre><code class="language-python">#data retrieval is easy, just use get_ncmodeldata() with file_nc argument
 #then use the feedback in the error messages to set other arguments like varname, timestep, station and layer
 from dfm_tools.get_nc import get_ncmodeldata
 data_fromnc = get_ncmodeldata(file_nc='yourfile.nc')
 </code></pre>
-<pre><code class="language-python">#the below example includes plotting and using the metadata of the retrieved data
+<pre><code class="language-python">#this example includes plotting and using the metadata of the retrieved data
 #import statements
 import os
+import xarray as xr
 import matplotlib.pyplot as plt
 plt.close('all')
 from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
 from dfm_tools.get_nc_helpers import get_ncvardimlist, get_timesfromnc, get_hisstationlist
+dir_testinput = r'c:\DATA\dfm_tools_testdata'
 
 #uncomment the line below, copy data locally and change this path to increase performance
 #dir_testinput = os.path.join(r'n:\Deltabox\Bulletin\veenstra\info dfm_tools\test_input')
 file_nc_map = os.path.join(dir_testinput,'DFM_sigma_curved_bend','DFM_OUTPUT_cb_3d','cb_3d_map.nc')
 file_nc_his = os.path.join(dir_testinput,'DFM_sigma_curved_bend','DFM_OUTPUT_cb_3d','cb_3d_his.nc')
+data_xr_his = xr.open_dataset(file_nc_his)
+stations_pd = data_xr_his.station_name.astype(str).to_pandas()
 
 #get lists with vars/dims, times, station/crs/structures
 vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc_map)
@@ -143,12 +114,13 @@ times_pd = get_timesfromnc(file_nc=file_nc_map)
 statlist_pd = get_hisstationlist(file_nc=file_nc_his, varname='station_name')
 
 #retrieve his data
-data_fromhis_wl = get_ncmodeldata(file_nc=file_nc_his, varname='waterlevel', station='all', timestep= 'all')
+#data_fromhis_wl = get_ncmodeldata(file_nc=file_nc_his, varname='waterlevel', station='all', timestep= 'all')
 fig, ax = plt.subplots(1,1,figsize=(10,5))
-for iP, station in enumerate(data_fromhis_wl.var_stations['station_name']):
-    ax.plot(data_fromhis_wl.var_times,data_fromhis_wl[:,iP],'-', label=station)
+for iS, station in enumerate(stations_pd):
+    data_fromhis_wl = data_xr_his.waterlevel.isel(stations=iS)
+    ax.plot(data_fromhis_wl.time,data_fromhis_wl,'-', label=station)
 ax.legend()
-ax.set_ylabel('%s (%s)'%(data_fromhis_wl.var_varname, data_fromhis_wl.var_ncvarobject.units))
+ax.set_ylabel('%s (%s)'%(data_fromhis_wl.attrs['long_name'], data_fromhis_wl.attrs['units']))
 
 #plot net/grid
 ugrid_all = get_netdata(file_nc=file_nc_map)#,multipart=False)
@@ -162,7 +134,7 @@ fig, ax = plt.subplots()
 pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_wl[0,:], ax=None, linewidth=0.5, cmap=&quot;jet&quot;)
 pc.set_clim([-0.5,1])
 fig.colorbar(pc, ax=ax)
-ax.set_title('%s (%s)'%(data_frommap_wl.var_varname, data_frommap_wl.var_ncvarobject.units))
+ax.set_title('%s (%s)'%(data_frommap_wl.var_varname, data_frommap_wl.var_ncattrs['units']))
 ax.set_aspect('equal')
 
 #plot salinity on map
@@ -170,238 +142,25 @@ data_frommap_sal = get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_sa1', ti
 fig, ax = plt.subplots()
 pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_sal[0,:,0], ax=None, linewidth=0.5, cmap=&quot;jet&quot;)
 fig.colorbar(pc, ax=ax)
-ax.set_title('%s (%s)'%(data_frommap_sal.var_varname, data_frommap_sal.var_ncvarobject.units))
+ax.set_title('%s (%s)'%(data_frommap_sal.var_varname, data_frommap_sal.var_ncattrs['units']))
 ax.set_aspect('equal')
 
 #print contents of retrieved data withing data_frommap_sal variable
 print_var = data_frommap_sal
 print('++++++\nthe data in the variable %s is:\n%s\n'%(print_var.var_varname, print_var))
 print('++++++\nthe time indices and times in the variable %s are:\n%s\n'%(print_var.var_varname, print_var.var_times))
-print('++++++\nthe station indices and station names in the variable %s are:\n%s\n'%(print_var.var_varname, print_var.var_stations))
+#print('++++++\nthe station indices and station names in the variable %s are:\n%s\n'%(print_var.var_varname, print_var.var_stations))
 print('++++++\nthe layer indices in the variable %s are:\n%s\n'%(print_var.var_varname, print_var.var_layers))
 print('++++++\nthe shape of the variable %s is:\n%s\n'%(print_var.var_varname, print_var.shape))
 print('++++++\nthe dimensions of the variable %s are (copied from netCDF variable):\n%s\n'%(print_var.var_varname, print_var.var_dimensions))
 print('++++++\nthe netCDF variable where the data in variable %s comes from is:\n%s\n'%(print_var.var_varname, print_var.var_ncvarobject))
 print('++++++\nsome example contents of this netCDF variable:')
-print('\tthe dimension names of the netCDF variable %s are:\n\t\t%s'%(print_var.var_varname, print_var.var_ncvarobject.dimensions))
-print('\tthe shape of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname, print_var.var_ncvarobject.shape))
-print('\tthe units of the netCDF variable %s are:\n\t\t%s'%(print_var.var_varname, print_var.var_ncvarobject.units))
-print('\tthe long_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname, print_var.var_ncvarobject.long_name))
-print('\tthe standard_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname, print_var.var_ncvarobject.standard_name))
+print('\tthe dimension names of the netCDF variable %s are:\n\t\t%s'%(print_var.var_varname, print_var.var_dimensions))
+print('\tthe shape of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname, print_var.var_shape))
+print('\tthe units of the netCDF variable %s are:\n\t\t%s'%(print_var.var_varname, print_var.var_ncattrs['units']))
+print('\tthe long_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname, print_var.var_ncattrs['long_name']))
+print('\tthe standard_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname, print_var.var_ncattrs['standard_name']))
 </code></pre>
-<h2 id="feature-wishlist">Feature Wishlist</h2>
-<ul>
-<li>use isinstance for dtype testing in get_nc()</li>
-<li>correct timezone in netCDF to UTC or not, keyword?</li>
-<li>integrate values_all and values_all_topbot in get_nc(), avoid concatenating to empty (size 0) array of values_all is a first step</li>
-<li>improve time reading:<ul>
-<li>add support for 360_day and noleap calendars (cannot be converted to dt.datetime)</li>
-<li>time array is now converted to UTC by num2date automatically and if possible converted back to original timezone, simplify by writing own num2date that excludes timezone from units strin?</li>
-</ul>
-</li>
-<li>merge station/layer/times checks, these parts of get_nc.py have a lot of overlap. also convert (list-likes of) int-likes to np.arrays so less checking is needed</li>
-<li>add retrieval via depth instead of layer number (then dflowutil.mesh can be removed?):<ul>
-<li>refer depth w.r.t. reference level, water level or bed level</li>
-<li>see test_workinprogress.py</li>
-<li>see general grid improvement options</li>
-</ul>
-</li>
-<li>retrieve correct depths:<ul>
-<li>add depth array (interfaces/centers) to his and map variables (z/sigma layer calculation is already in get_modeldata_onintersection function)</li>
-<li>depths can be retrieved from mesh2d_layer_z/mesh2d_layer_sigma, but has no time dimension so untrue for sigma and maybe for z? (wrong in dflowfm?)</li>
-<li>layerzfrombedlevel keyword in mdu changes how zlayering is set up. Catch this exception with a keyword if necessary</li>
-<li>support for mixed sigma/z layers?</li>
-</ul>
-</li>
-<li>plotting:<ul>
-<li>simplify input of modplot.velovect() for curved vectors</li>
-<li>contour plot of surfaces (e.g. cotidal chart), with polycollection (FM grid) or regular grid, exclude 'land' (shapely overlap between cells of two grids? or create polygon around all edges of original grid (also islands) and use that to cut the resulting regular grid)</li>
-</ul>
-</li>
-<li>improve z,t-plots from hisfile:<ul>
-<li>example in test_get_nc.test_gethismodeldata()</li>
-<li>WARNING: part of the z interfaces/center data in dflowfm hisfile is currently wrong, check your figures carefully. Most of it is handled correctly</li>
-<li>layer argument now has to be provided when retrieving zcoordinate_c (centers) from hisfile, but not when retrieving zcoordinate_w (interfaces), align this.</li>
-</ul>
-</li>
-<li>export to shapefile:<ul>
-<li>testbank example added for a specific feature to shapefile, make more generic</li>
-</ul>
-</li>
-<li>coordinate conversion:
-<code>python
-from pyproj import Proj, transform
-inProj = Proj(init='epsg:%i'%(epsg_in))
-outProj = Proj(init='epsg:%i'%(epsg_out))
-x_out,y_out = transform(inProj,outProj,x_in,y_in)</code></li>
-<li>add more io-functions:<ul>
-<li>read/write matroos data (first setup in dfm_tools.io.noos)</li>
-<li>convert data to kml (google earth) or shp? (including RD to WGS84 conversion and maybe vice versa)</li>
-<li>improve tekal map read</li>
-<li>add tekal mergedatasets function to get e.g. one ldb dataset with the original parts separated with nans</li>
-<li>add tekal write functions</li>
-</ul>
-</li>
-<li>add tidal analysis (<a href="https://github.com/Deltares/hatyan">https://github.com/Deltares/hatyan</a>)</li>
-<li>make merc keyword always optional by testing for minmax all vertsx between -181 and 361 and minmax all vertsy (lat) between -91 and 91 (+range for overlap for e.g. gtsm model)</li>
-<li>improve get_ncmodeldata second intersect function<ul>
-<li>optimize with distance from line: get maximum cell area (and infer width) from lineblockbbound selection, then decide on distance from line for selection of cells for crossect calculation</li>
-<li>optimize by only retrieving necessary layerdepths/bed/waterlevel information for crossection</li>
-<li>remove hardcoded (layer/)bed/waterlevel varnames</li>
-</ul>
-</li>
-<li>add inpolygon/inboundbox selection of data:<ul>
-<li>optimize_dist keyword now draws inpolygon around line</li>
-<li>to optimize intersect function when retrieving bed level and water level (do that with len(firstlinepart) optional keyword)</li>
-<li>to retrieve other mapdata data faster</li>
-</ul>
-</li>
-<li>add polygon ginput function (click in plot) (already partly exists in intersect/slice testscript)</li>
-<li>merge existing dfm model setup functions (and other useful stuff):<ul>
-<li>dflowutil: <a href="https://github.com/openearth/dfm_tools/tree/master/dflowutil">https://github.com/openearth/dfm_tools/tree/master/dflowutil</a> (and test scripts, contains e.g. read/write functions for general datafromats (like tim))</li>
-<li>MBay scripts</li>
-<li><a href="https://github.com/openearth/delft3dfmpy">https://github.com/openearth/delft3dfmpy</a> (arthur van dam)
-</li>
-<li><a href="https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/applications/delft3dfm">https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/applications/delft3dfm</a> (fiat, sobek etc)</li>
-<li><a href="https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/applications/delft3dfm/dflowfmpyplot/pyd3dfm/streamline_ug.py">https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/applications/delft3dfm/dflowfmpyplot/pyd3dfm/streamline_ug.py</a> (streamline plotting for structured grids, but many settings)</li>
-</ul>
-</li>
-<li>make grid reading more flexible:<ul>
-<li>raise understandable error when no mesh2d_edge_x var in netcdf, instead of keyerror none (e.g. with get_netdata on hirlam files)</li>
-<li>if no ugrid in netfile, try to read provided xy variables and make meshgrid or convert cen2cor or cor2cen if necessary (how to test this?)</li>
-<li>improve plots for structured grid (CMEMS, ERA5, hirlam, grd etc)</li>
-<li><a href="https://github.com/NOAA-ORR-ERD/gridded">https://github.com/NOAA-ORR-ERD/gridded</a> (<a href="https://github.com/pyugrid/pyugrid">https://github.com/pyugrid/pyugrid</a> is merged into gridded) (ghostcells en mapmergen worden afgehandeld? meer dan 4 nodes per cel? support for stations?)</li>
-<li>gridded presentatie: <a href="https://ams.confex.com/ams/97Annual/webprogram/Handout/Paper312839/Barker_AMS-2017.pdf">https://ams.confex.com/ams/97Annual/webprogram/Handout/Paper312839/Barker_AMS-2017.pdf</a></li>
-<li>tests.test_get_nc.test_getnetdata_plotnet_regular() is eerste opzet voor hirlam/ERA5 data, werkt heel anders dan D-flow FM</li>
-<li>how to plot properties on edges/nodes (scatter is slow), maybe create dual mesh and plot like faces. most relevant variables are also available on faces, so is this necessary?</li>
-<li>improve support for rstfiles (now only scatter, since only cell centers present?)</li>
-<li><a href="https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/OpenEarthTools/openearthtools/io/dflowfm/patch2tri.py">https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/OpenEarthTools/openearthtools/io/dflowfm/patch2tri.py</a> (equivalent van MIA)</li>
-<li><a href="https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/OpenEarthTools/openearthtools/io/netcdf">https://svn.oss.deltares.nl/repos/openearthtools/trunk/python/OpenEarthTools/openearthtools/io/netcdf</a></li>
-<li>plotting edges/nodes/faces and legend: <a href="https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/connectivity_example.ipynb">https://github.com/pyugrid/pyugrid/blob/master/notebook_examples/connectivity_example.ipynb</a></li>
-<li>add retrieve_netdata argument to get_ncmodeldata() which causes griddata to be retrieved as the second return variable (do this based on coordinates / cf-conventions)?</li>
-<li>pcolor resulteert ook in een polycollection, net zoals handmatig wordt gedaan met plot_mapdata()</li>
-<li>implement kivu paper figure in testbank, since it correctly combines m/n corners with mapdata (including dummy row)</li>
-<li>possible to add pyugrid from github as dependency? in setup.py: install_requires=['python_world@git+<a href="https://github.com/ceddlyburge/python_world#egg=python_world-0.0.1',]">https://github.com/ceddlyburge/python_world#egg=python_world-0.0.1',]</a></li>
-<li>sigma method in get_xzcoords_onintersection() is assumes equidistant layers, add exception</li>
-<li>zlayer method in get_xzcoords_onintersection() retrieves from hardcoded interface variable name, centers are not used.</li>
-<li>how is depth stored in sigma/z/sigma-z models, generic vertical slice method possible?</li>
-</ul>
-</li>
-<li>interactive data retrieval and plotting by calling get_ncmodeldata() without arguments</li>
-</ul>
-<h2 id="todo-non-content">Todo non-content</h2>
-<ul>
-<li>improve communication material:<ul>
-<li>add variable units to plots in test bench</li>
-<li>improve his plots and tekal map plots, improve other plots</li>
-<li>put testdata and testoutput on github and create jupyter notebook instead of pptx?</li>
-<li>create overview of scripts and functions, including future location of missing features</li>
-<li>write documentation as comments (docstrings) and generate html documentation automatically with pdoc (or maybe sphinx?)</li>
-<li>improve feedback to user if no or wrong input arguments are given to functions</li>
-<li>add license to new scripts</li>
-</ul>
-</li>
-<li>external improvements:<ul>
-<li>fix small bugs in Delft3D4 netCDF output (related to coordinates, coordinates of velocity points and incorrect missing values)</li>
-<li>request modplot.velovect() (curved vectors) to be added to matplotlib</li>
-<li>install without PATH fails on pip/git in anaconda prompt? (test installation with anaconda prompt, and with command prompt combined with <code>set PATH=%PATH%;&lt;your_path_to_anaconda_installation&gt;\Scripts</code>)</li>
-<li>installation also possible with miniconda only?</li>
-</ul>
-</li>
-<li>register on PyPI, for easier install via pip (easier for regular users):<ul>
-<li><a href="https://the-hitchhikers-guide-to-packaging.readthedocs.io/en/latest/quickstart.html#register-your-package-with-the-python-package-index-pypi">https://the-hitchhikers-guide-to-packaging.readthedocs.io/en/latest/quickstart.html#register-your-package-with-the-python-package-index-pypi</a></li>
-<li><a href="https://packaging.python.org/tutorials/packaging-projects/">https://packaging.python.org/tutorials/packaging-projects/</a></li>
-<li>how to automate this process? (buildserver including testing?)</li>
-<li>also add changelog besides commit comments?</li>
-<li>alternatively, register on conda-forge: <a href="https://github.com/conda-forge/staged-recipes/">https://github.com/conda-forge/staged-recipes/</a></li>
-</ul>
-</li>
-<li>put testdata on deltares shared location?</li>
-<li>arrange auto-testing online (jarvis?): <a href="https://docs.pytest.org/en/latest/getting-started.html">https://docs.pytest.org/en/latest/getting-started.html</a></li>
-<li>update license with Deltares terms</li>
-<li>style guide: <a href="https://www.python.org/dev/peps/pep-0008/">https://www.python.org/dev/peps/pep-0008/</a></li>
-<li>contributing environment method: environment.yml or requirements_dev.txt?</li>
-</ul>
-<h2 id="developer-information">Developer Information</h2>
-<ul>
-<li>How to contribute to this git repository?</li>
-<li>First request github rights to contribute with the current developers:<ul>
-<li>Jelmer Veenstra <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#106;&#101;&#108;&#109;&#101;&#114;&#46;&#118;&#101;&#101;&#110;&#115;&#116;&#114;&#97;&#64;&#100;&#101;&#108;&#116;&#97;&#114;&#101;&#115;&#46;&#110;&#108;">&#106;&#101;&#108;&#109;&#101;&#114;&#46;&#118;&#101;&#101;&#110;&#115;&#116;&#114;&#97;&#64;&#100;&#101;&#108;&#116;&#97;&#114;&#101;&#115;&#46;&#110;&#108;</a></li>
-</ul>
-</li>
-<li>Get a local checkout of the github repository:<ul>
-<li>Download git from <a href="https://git-scm.com/download/win,">https://git-scm.com/download/win,</a> install with default settings</li>
-<li>open command window in a folder where you want to clone the dfm_tools github repo, e.g. C:\DATA</li>
-<li><code>git clone https://github.com/openearth/dfm_tools.git</code> (repos gets cloned in C:\DATA\dfm_tools, this is a checkout of the master branch)</li>
-<li>open git bash window in local dfm_tools folder (e.g. C:\DATA\dfm_tools)</li>
-<li><code>git config --global user.email [emailaddress]</code></li>
-<li><code>git config --global user.name [username]</code></li>
-<li>create a branch called work_yourname on <a href="https://github.com/openearth/dfm_tools">https://github.com/openearth/dfm_tools</a></li>
-<li>open git bash window in local dfm_tools folder (e.g. C:\DATA\dfm_tools)</li>
-<li><code>git remote update origin --prune</code> (update local branch list)</li>
-<li><code>git checkout work_yourname</code> (checkout your branch, never do anything while the master is selected)</li>
-</ul>
-</li>
-<li>Set up the dfm_tools developer python virtual environment (necessary for developing/testing):<ul>
-<li>open command window (or anaconda prompt) and navigate to dfm_tools folder, e.g. C:\DATA\dfm_tools</li>
-<li><code>conda env create -f environment.yml</code> (creates an environment called dfm_tools_devenv)</li>
-<li>to list venvs:<code>conda info --envs</code></li>
-<li>to remove venv when necessary: <code>conda remove -n dfm_tools_devenv --all</code></li>
-<li><code>conda activate dfm_tools_devenv</code></li>
-<li><code>python -m pip install -e .</code> (pip developer mode, any updates to the local folder by github (with <code>git pull</code>) are immediately available in your python. It also installs all required packages)</li>
-<li><code>conda install -c conda-forge spyder "shapely&gt;=1.7.0" cartopy geopandas contextily pyepsg</code>(conda-forge channel is necessary since main channel shapely version is 1.6.4. The correct version is available via pip, but then geos dll is not properly linked, this will probably be solved in the future <a href="https://github.com/Toblerity/Shapely/issues/844.">https://github.com/Toblerity/Shapely/issues/844.</a> cartopy also recommends conda-forge channel)</li>
-<li>test if dfm_tools is properly installed by printing the version number: <code>python -c "import dfm_tools; print(dfm_tools.__version__)"</code></li>
-<li>open 'Spyder(dfm_tools_devenv)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in dfm_tools_devenv)</li>
-</ul>
-</li>
-<li>Make your local changes to dfm_tools</li>
-<li>Work with your branch:<ul>
-<li>open git bash window in local dfm_tools folder (e.g. C:\DATA\dfm_tools)</li>
-<li><code>git checkout work_yourname</code> (checkout your branch, never do anything while the master is selected)</li>
-<li>to update: <code>git pull</code> (combination of git fetch and git merge)</li>
-<li>get clean checkout again (overwrite local changes):<ul>
-<li><code>git fetch --all</code> (fetches changes)</li>
-<li><code>git reset --hard</code> (resets local checkout of repos branch to server version)</li>
-<li><code>git pull</code> (fetches and merges changes, local checkout of repos branch is now updated again)</li>
-</ul>
-</li>
-<li><code>git pull origin master</code> (gets edits from master to current local branch, might induce conflicts. maybe better to just push to your branch and then handle pull request on github website)</li>
-</ul>
-</li>
-<li>run test bank:<ul>
-<li>open command window (or anaconda prompt) in local dfm_tools folder (e.g. C:\DATA\dfm_tools)</li>
-<li><code>conda activate dfm_tools_devenv</code></li>
-<li><code>pytest -v --tb=short --cov=dfm_tools</code> (runs all tests)</li>
-<li><code>pytest -v --tb=short --cov=dfm_tools -m unittest</code></li>
-<li><code>pytest -v --tb=short --cov=dfm_tools -m systemtest</code></li>
-<li><code>pytest -v --tb=short --cov=dfm_tools -m acceptance</code></li>
-<li><code>pytest -v --tb=short --cov=dfm_tools -m "not slow"</code></li>
-<li><code>pytest -v --tb=short tests\test_get_nc.py::test_getplotmapWAQOS</code></li>
-</ul>
-</li>
-<li>Regenerate html documentation:<ul>
-<li>open command window (or anaconda prompt) in local dfm_tools folder (e.g. C:\DATA\dfm_tools)</li>
-<li><code>conda activate dfm_tools_devenv</code></li>
-<li><code>pdoc --html dfm_tools -o docs --force</code></li>
-</ul>
-</li>
-<li>Commit and push your changes to your branch:<ul>
-<li>open git bash window in local dfm_tools folder (e.g. C:\DATA\dfm_tools)</li>
-<li><code>git checkout work_yourname</code> (checkout your branch, never do anything while the master is selected)</li>
-<li><code>git add .</code></li>
-<li><code>git commit -m "message to be included with your commit"</code></li>
-<li><code>git push</code> (pushes changes to server, do not do this in while working in the master)</li>
-</ul>
-</li>
-<li>increasing the version number after you committed all changes:<ul>
-<li>open cmd window in local dfm_tools folder (e.g. C:\DATA\dfm_tools)</li>
-<li>optional: <code>conda activate dfm_tools_devenv</code></li>
-<li><code>bumpversion major</code> or <code>bumpversion minor</code> or <code>bumpversion patch</code> (changes version numbers in files and commits changes)</li>
-<li>push this change in version number with <code>git push</code> (from git bash window or cmd also ok?)</li>
-</ul>
-</li>
-<li>Request merging of your branch on <a href="https://github.com/openearth/dfm_tools/branches">https://github.com/openearth/dfm_tools/branches</a></li>
-</ul>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -412,7 +171,7 @@ x_out,y_out = transform(inProj,outProj,x_in,y_in)</code></li>
 
 __author__ = &#34;&#34;&#34;Jelmer Veenstra&#34;&#34;&#34;
 __email__ = &#39;jelmer.veenstra@deltares.nl&#39;
-__version__ = &#39;0.7.42&#39;</code></pre>
+__version__ = &#39;0.7.86&#39;</code></pre>
 </details>
 </section>
 <section>
@@ -428,9 +187,22 @@ Copyright (C) 2020 Deltares. All rights reserved …</p></div>
 <div class="desc"><p>dfm_tools are post-processing tools for Delft3D FM
 Copyright (C) 2020 Deltares. All rights reserved …</p></div>
 </dd>
+<dt><code class="name"><a title="dfm_tools.hydrolib_helpers" href="hydrolib_helpers.html">dfm_tools.hydrolib_helpers</a></code></dt>
+<dd>
+<div class="desc"><p>Created on Tue Aug 23 13:36:44 2022 …</p></div>
+</dd>
+<dt><code class="name"><a title="dfm_tools.interpolate_grid2bnd" href="interpolate_grid2bnd.html">dfm_tools.interpolate_grid2bnd</a></code></dt>
+<dd>
+<div class="desc"><p>Created on Thu Aug 18 17:39:03 2022 …</p></div>
+</dd>
 <dt><code class="name"><a title="dfm_tools.io" href="io/index.html">dfm_tools.io</a></code></dt>
 <dd>
 <div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="dfm_tools.linebuilder" href="linebuilder.html">dfm_tools.linebuilder</a></code></dt>
+<dd>
+<div class="desc"><p>Created on Mon Oct
+3 13:40:58 2022 …</p></div>
 </dd>
 <dt><code class="name"><a title="dfm_tools.modplot" href="modplot.html">dfm_tools.modplot</a></code></dt>
 <dd>
@@ -465,13 +237,9 @@ Copyright (C) 2020 Deltares. All rights reserved …</p></div>
 <div class="toc">
 <ul>
 <li><a href="#dfm_tools">dfm_tools</a><ul>
-<li><a href="#table-of-contents">Table of contents</a></li>
 <li><a href="#features">Features</a></li>
 <li><a href="#installation">Installation</a></li>
 <li><a href="#example-usage">Example usage</a></li>
-<li><a href="#feature-wishlist">Feature wishlist</a></li>
-<li><a href="#todo-non-content">Todo non-content</a></li>
-<li><a href="#developer-information">Developer information</a></li>
 </ul>
 </li>
 </ul>
@@ -481,7 +249,10 @@ Copyright (C) 2020 Deltares. All rights reserved …</p></div>
 <ul>
 <li><code><a title="dfm_tools.get_nc" href="get_nc.html">dfm_tools.get_nc</a></code></li>
 <li><code><a title="dfm_tools.get_nc_helpers" href="get_nc_helpers.html">dfm_tools.get_nc_helpers</a></code></li>
+<li><code><a title="dfm_tools.hydrolib_helpers" href="hydrolib_helpers.html">dfm_tools.hydrolib_helpers</a></code></li>
+<li><code><a title="dfm_tools.interpolate_grid2bnd" href="interpolate_grid2bnd.html">dfm_tools.interpolate_grid2bnd</a></code></li>
 <li><code><a title="dfm_tools.io" href="io/index.html">dfm_tools.io</a></code></li>
+<li><code><a title="dfm_tools.linebuilder" href="linebuilder.html">dfm_tools.linebuilder</a></code></li>
 <li><code><a title="dfm_tools.modplot" href="modplot.html">dfm_tools.modplot</a></code></li>
 <li><code><a title="dfm_tools.regulargrid" href="regulargrid.html">dfm_tools.regulargrid</a></code></li>
 <li><code><a title="dfm_tools.testutils" href="testutils.html">dfm_tools.testutils</a></code></li>
@@ -492,7 +263,7 @@ Copyright (C) 2020 Deltares. All rights reserved …</p></div>
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
 </footer>
 </body>
 </html>

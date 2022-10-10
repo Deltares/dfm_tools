@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.9.2" />
+<meta name="generator" content="pdoc 0.10.0" />
 <title>dfm_tools.ugrid API documentation</title>
 <meta name="description" content="dfm_tools are post-processing tools for Delft3D FM
 Copyright (C) 2020 Deltares. All rights reserved …" />
@@ -35,7 +35,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.</p>
 <p>You should have received a copy of the GNU General Public License
 along with this program.
-If not, see <a href="http://www.gnu.org/licenses/">http://www.gnu.org/licenses/</a>.</p>
+if not, see <a href="http://www.gnu.org/licenses/">http://www.gnu.org/licenses/</a>.</p>
 <p>All names, logos, and references to "Deltares" are registered trademarks of
 Stichting Deltares and remain full property of Stichting Deltares at all times.
 All rights reserved.</p>
@@ -66,7 +66,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+along with this program.  if not, see &lt;http://www.gnu.org/licenses/&gt;.
 
 All names, logos, and references to &#34;Deltares&#34; are registered trademarks of
 Stichting Deltares and remain full property of Stichting Deltares at all times.
@@ -169,27 +169,31 @@ class UGrid:
             edge_verts = None
             
         #remove ghost cells from faces and verts
-        nonghost_ids = ghostcell_filter(file_nc)
-        if nonghost_ids is not None:
-            mesh2d_face_nodes = mesh2d_face_nodes[nonghost_ids]
-            verts = verts[nonghost_ids]
-        
+        nonghost_bool = ghostcell_filter(file_nc)
+        if nonghost_bool is not None:
+            mesh2d_face_nodes = mesh2d_face_nodes[nonghost_bool]
+            verts = verts[nonghost_bool]
+            if 0: # remove edges from partition boundaries if there are partitions
+                part_edges_removebool = (mesh2d_edge_faces==0).any(axis=1) # Array is 1 based indexed, 0 means missing # &amp; (np.in1d(mesh2d_edge_faces[:,0],ghost_removeids-1) | np.in1d(mesh2d_edge_faces[:,1],ghost_removeids-1))
+                edge_verts = edge_verts[~part_edges_removebool]
+
         data_nc.close()
         ugrid = UGrid(mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes, verts, mesh2d_node_z=mesh2d_node_z, edge_verts=edge_verts)
         return ugrid
 
-    def polygon_intersect(self, line_array, optimize_dist=False):
+
+    def polygon_intersect(self, line_array, optimize_dist=False, calcdist_fromlatlon=False):
         import numpy as np
         from matplotlib.path import Path
         
         from dfm_tools.testutils import try_importmodule
         try_importmodule(modulename=&#39;shapely&#39;)
         import shapely
-        from shapely.geometry import LineString, Polygon, MultiLineString
-            
-        print(&#39;finding crossing flow links (can take a while if linebox over xy covers a lot of cells)&#39;)
-        intersect_gridnos = np.empty((0),dtype=int)
-        intersect_coords = np.empty((0,2,2))
+        from shapely.geometry import LineString, Polygon, MultiLineString, Point
+        from dfm_tools.get_nc import calc_dist_pythagoras, calc_dist_haversine
+
+        print(&#39;defining celinlinebox&#39;)
+        
         line_section = LineString(line_array)
         
         verts_xmax = np.nanmax(self.verts[:,:,0].data,axis=1)
@@ -229,9 +233,12 @@ class UGrid:
         else:
             raise Exception(&#39;ERROR: invalid type for optimize_dist argument&#39;)
         
-        
+        #intersect_coords = np.empty((0,2,2))
+        intersect_coords = np.empty((0,4))
+        intersect_gridnos = np.empty((0),dtype=int) #has to be numbers, since a boolean is differently ordered
         verts_inlinebox = self.verts[cellinlinebox_all_bool,:,:]
         verts_inlinebox_nos = np.where(cellinlinebox_all_bool)[0]
+        print(&#39;finding crossing flow links (can take a while if linebox over xy covers a lot of cells, %i of %i cells are being processed)&#39;%(cellinlinebox_all_bool.sum(),len(cellinlinebox_all_bool)))
         
         for iP, pol_data in enumerate(verts_inlinebox):
             pol_shp = Polygon(pol_data[~np.isnan(pol_data).all(axis=1)])
@@ -241,20 +248,70 @@ class UGrid:
             elif isinstance(intersect_result,shapely.geometry.linestring.LineString): #if one linepart trough cell (ex/including node), make multilinestring anyway
                 if intersect_result.coords == []: #when the line does not cross this cell, intersect_results.coords is an empty linestring and this cell can be skipped (continue makes forloop continue with next in line without finishing the rest of the steps for this instance)
                     continue
+                elif len(intersect_result.coords.xy[0]) == 0: #for newer cartopy versions, when line does not cross this cell, intersect_result.coords.xy is (array(&#39;d&#39;), array(&#39;d&#39;)), and both arrays in tuple have len 0.
+                    continue
                 intersect_result_multi = MultiLineString([intersect_result])
-            
-            for iLL, intesect_result_one in enumerate(intersect_result_multi): #loop over multilinestrings, will mostly only contain one linestring. Will be two if the line crosses a cell more than once.
+                
+            for iLL, intesect_result_one in enumerate(intersect_result_multi.geoms): #loop over multilinestrings, will mostly only contain one linestring. Will be two if the line crosses a cell more than once.
                 intersection_line = intesect_result_one.coords
                 intline_xyshape = np.array(intersection_line.xy).shape
                 #print(&#39;len(intersection_line.xy): %s&#39;%([intline_xyshape]))
-                for numlinepart_incell in range(1,intline_xyshape[1]): #is mostly 1, but more if there is a linepoint in this cell (then there are two or more lineparts)
-                    intersect_gridnos = np.concatenate([intersect_gridnos,[verts_inlinebox_nos[iP]]])
-                    intersect_coords = np.concatenate([intersect_coords,np.array(intersection_line.xy)[np.newaxis,:,numlinepart_incell-1:numlinepart_incell+1]],axis=0)
-                #print(&#39;&#39;)#&#39;iP: %i&#39;%iP)
-
+                for numlinepart_incell in range(1,intline_xyshape[1]): #is mostly 1, but more if there is a linebreakpoint in this cell (then there are two or more lineparts)
+                    intersect_gridnos = np.append(intersect_gridnos,verts_inlinebox_nos[iP])
+                    #intersect_coords = np.concatenate([intersect_coords,np.array(intersection_line.xy)[np.newaxis,:,numlinepart_incell-1:numlinepart_incell+1]],axis=0)
+                    intersect_coords = np.concatenate([intersect_coords,np.array(intersection_line.xy).T[numlinepart_incell-1:numlinepart_incell+1].flatten()[np.newaxis]])
+        
+        if intersect_coords.shape[0] != len(intersect_gridnos):
+            raise Exception(&#39;something went wrong, intersect_coords.shape[0] and len(intersect_gridnos) are not equal&#39;)
+        
+        import pandas as pd
+        intersect_pd = pd.DataFrame(intersect_coords,index=intersect_gridnos,columns=[&#39;x1&#39;,&#39;y1&#39;,&#39;x2&#39;,&#39;y2&#39;])
+        intersect_pd.index.name = &#39;gridnumber&#39;
+        
+        #TODO up to here could come from meshkernelpy
+        
+        print(&#39;calculating distance for all crossed cells, from first point of line (should not take long, but if it does, optimisation is needed)&#39;)
+        nlinecoords = line_array.shape[0]
+        nlinedims = len(line_array.shape)
+        ncrosscellparts = len(intersect_pd)
+        if nlinecoords&lt;2 or nlinedims != 2:
+            raise Exception(&#39;ERROR: line_array should at least contain two xy points [[x,y],[x,y]]&#39;)
+        
+        #calculate distance between celledge-linepart crossing (is zero when line iL crosses cell)
+        distperline_tostart = np.zeros((ncrosscellparts,nlinecoords-1))
+        distperline_tostop = np.zeros((ncrosscellparts,nlinecoords-1))
+        linepart_length = np.zeros((nlinecoords))
+        for iL in range(nlinecoords-1):
+            #calculate length of lineparts
+            line_section_part = LineString(line_array[iL:iL+2,:])
+            if calcdist_fromlatlon:
+                linepart_length[iL+1] = calc_dist_haversine(line_array[iL,0],line_array[iL+1,0],line_array[iL,1],line_array[iL+1,1])
+            else:
+                linepart_length[iL+1] = line_section_part.length
+        
+            #get distance between all lineparts and point (later used to calculate distance from beginpoint of closest linepart)
+            for iP in range(ncrosscellparts):
+                distperline_tostart[iP,iL] = line_section_part.distance(Point(intersect_coords[:,0][iP],intersect_coords[:,1][iP]))
+                distperline_tostop[iP,iL] = line_section_part.distance(Point(intersect_coords[:,2][iP],intersect_coords[:,3][iP]))
+        linepart_lengthcum = np.cumsum(linepart_length)
+        cross_points_closestlineid = np.argmin(np.maximum(distperline_tostart,distperline_tostop),axis=1)
+        intersect_pd[&#39;closestlineid&#39;] = cross_points_closestlineid
+        print(&#39;finished calculating distance for all crossed cells, from first point of line&#39;)
+        
+        if not calcdist_fromlatlon:
+            crs_dist_starts = calc_dist_pythagoras(line_array[cross_points_closestlineid,0], intersect_coords[:,0], line_array[cross_points_closestlineid,1], intersect_coords[:,1]) + linepart_lengthcum[cross_points_closestlineid]
+            crs_dist_stops = calc_dist_pythagoras(line_array[cross_points_closestlineid,0], intersect_coords[:,2], line_array[cross_points_closestlineid,1], intersect_coords[:,3]) + linepart_lengthcum[cross_points_closestlineid]
+        else:
+            crs_dist_starts = calc_dist_haversine(line_array[cross_points_closestlineid,0], intersect_coords[:,0], line_array[cross_points_closestlineid,1], intersect_coords[:,1]) + linepart_lengthcum[cross_points_closestlineid]
+            crs_dist_stops = calc_dist_haversine(line_array[cross_points_closestlineid,0], intersect_coords[:,2], line_array[cross_points_closestlineid,1], intersect_coords[:,3]) + linepart_lengthcum[cross_points_closestlineid]
+        intersect_pd[&#39;crs_dist_starts&#39;] = crs_dist_starts
+        intersect_pd[&#39;crs_dist_stops&#39;] = crs_dist_stops
+        intersect_pd[&#39;linepartlen&#39;] = crs_dist_stops-crs_dist_starts
+        intersect_pd = intersect_pd.sort_values(&#39;crs_dist_starts&#39;)
+        
         #dimensions (gridnos, xy, firstsecond)
-        print(&#39;done finding crossing flow links&#39;)
-        return intersect_gridnos, intersect_coords
+        print(&#39;done finding crossing flow links: %i of %i&#39;%(len(intersect_gridnos),len(cellinlinebox_all_bool)))
+        return intersect_pd
     </code></pre>
 </details>
 </section>
@@ -362,27 +419,31 @@ class UGrid:
             edge_verts = None
             
         #remove ghost cells from faces and verts
-        nonghost_ids = ghostcell_filter(file_nc)
-        if nonghost_ids is not None:
-            mesh2d_face_nodes = mesh2d_face_nodes[nonghost_ids]
-            verts = verts[nonghost_ids]
-        
+        nonghost_bool = ghostcell_filter(file_nc)
+        if nonghost_bool is not None:
+            mesh2d_face_nodes = mesh2d_face_nodes[nonghost_bool]
+            verts = verts[nonghost_bool]
+            if 0: # remove edges from partition boundaries if there are partitions
+                part_edges_removebool = (mesh2d_edge_faces==0).any(axis=1) # Array is 1 based indexed, 0 means missing # &amp; (np.in1d(mesh2d_edge_faces[:,0],ghost_removeids-1) | np.in1d(mesh2d_edge_faces[:,1],ghost_removeids-1))
+                edge_verts = edge_verts[~part_edges_removebool]
+
         data_nc.close()
         ugrid = UGrid(mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes, verts, mesh2d_node_z=mesh2d_node_z, edge_verts=edge_verts)
         return ugrid
 
-    def polygon_intersect(self, line_array, optimize_dist=False):
+
+    def polygon_intersect(self, line_array, optimize_dist=False, calcdist_fromlatlon=False):
         import numpy as np
         from matplotlib.path import Path
         
         from dfm_tools.testutils import try_importmodule
         try_importmodule(modulename=&#39;shapely&#39;)
         import shapely
-        from shapely.geometry import LineString, Polygon, MultiLineString
-            
-        print(&#39;finding crossing flow links (can take a while if linebox over xy covers a lot of cells)&#39;)
-        intersect_gridnos = np.empty((0),dtype=int)
-        intersect_coords = np.empty((0,2,2))
+        from shapely.geometry import LineString, Polygon, MultiLineString, Point
+        from dfm_tools.get_nc import calc_dist_pythagoras, calc_dist_haversine
+
+        print(&#39;defining celinlinebox&#39;)
+        
         line_section = LineString(line_array)
         
         verts_xmax = np.nanmax(self.verts[:,:,0].data,axis=1)
@@ -422,9 +483,12 @@ class UGrid:
         else:
             raise Exception(&#39;ERROR: invalid type for optimize_dist argument&#39;)
         
-        
+        #intersect_coords = np.empty((0,2,2))
+        intersect_coords = np.empty((0,4))
+        intersect_gridnos = np.empty((0),dtype=int) #has to be numbers, since a boolean is differently ordered
         verts_inlinebox = self.verts[cellinlinebox_all_bool,:,:]
         verts_inlinebox_nos = np.where(cellinlinebox_all_bool)[0]
+        print(&#39;finding crossing flow links (can take a while if linebox over xy covers a lot of cells, %i of %i cells are being processed)&#39;%(cellinlinebox_all_bool.sum(),len(cellinlinebox_all_bool)))
         
         for iP, pol_data in enumerate(verts_inlinebox):
             pol_shp = Polygon(pol_data[~np.isnan(pol_data).all(axis=1)])
@@ -434,20 +498,70 @@ class UGrid:
             elif isinstance(intersect_result,shapely.geometry.linestring.LineString): #if one linepart trough cell (ex/including node), make multilinestring anyway
                 if intersect_result.coords == []: #when the line does not cross this cell, intersect_results.coords is an empty linestring and this cell can be skipped (continue makes forloop continue with next in line without finishing the rest of the steps for this instance)
                     continue
+                elif len(intersect_result.coords.xy[0]) == 0: #for newer cartopy versions, when line does not cross this cell, intersect_result.coords.xy is (array(&#39;d&#39;), array(&#39;d&#39;)), and both arrays in tuple have len 0.
+                    continue
                 intersect_result_multi = MultiLineString([intersect_result])
-            
-            for iLL, intesect_result_one in enumerate(intersect_result_multi): #loop over multilinestrings, will mostly only contain one linestring. Will be two if the line crosses a cell more than once.
+                
+            for iLL, intesect_result_one in enumerate(intersect_result_multi.geoms): #loop over multilinestrings, will mostly only contain one linestring. Will be two if the line crosses a cell more than once.
                 intersection_line = intesect_result_one.coords
                 intline_xyshape = np.array(intersection_line.xy).shape
                 #print(&#39;len(intersection_line.xy): %s&#39;%([intline_xyshape]))
-                for numlinepart_incell in range(1,intline_xyshape[1]): #is mostly 1, but more if there is a linepoint in this cell (then there are two or more lineparts)
-                    intersect_gridnos = np.concatenate([intersect_gridnos,[verts_inlinebox_nos[iP]]])
-                    intersect_coords = np.concatenate([intersect_coords,np.array(intersection_line.xy)[np.newaxis,:,numlinepart_incell-1:numlinepart_incell+1]],axis=0)
-                #print(&#39;&#39;)#&#39;iP: %i&#39;%iP)
-
+                for numlinepart_incell in range(1,intline_xyshape[1]): #is mostly 1, but more if there is a linebreakpoint in this cell (then there are two or more lineparts)
+                    intersect_gridnos = np.append(intersect_gridnos,verts_inlinebox_nos[iP])
+                    #intersect_coords = np.concatenate([intersect_coords,np.array(intersection_line.xy)[np.newaxis,:,numlinepart_incell-1:numlinepart_incell+1]],axis=0)
+                    intersect_coords = np.concatenate([intersect_coords,np.array(intersection_line.xy).T[numlinepart_incell-1:numlinepart_incell+1].flatten()[np.newaxis]])
+        
+        if intersect_coords.shape[0] != len(intersect_gridnos):
+            raise Exception(&#39;something went wrong, intersect_coords.shape[0] and len(intersect_gridnos) are not equal&#39;)
+        
+        import pandas as pd
+        intersect_pd = pd.DataFrame(intersect_coords,index=intersect_gridnos,columns=[&#39;x1&#39;,&#39;y1&#39;,&#39;x2&#39;,&#39;y2&#39;])
+        intersect_pd.index.name = &#39;gridnumber&#39;
+        
+        #TODO up to here could come from meshkernelpy
+        
+        print(&#39;calculating distance for all crossed cells, from first point of line (should not take long, but if it does, optimisation is needed)&#39;)
+        nlinecoords = line_array.shape[0]
+        nlinedims = len(line_array.shape)
+        ncrosscellparts = len(intersect_pd)
+        if nlinecoords&lt;2 or nlinedims != 2:
+            raise Exception(&#39;ERROR: line_array should at least contain two xy points [[x,y],[x,y]]&#39;)
+        
+        #calculate distance between celledge-linepart crossing (is zero when line iL crosses cell)
+        distperline_tostart = np.zeros((ncrosscellparts,nlinecoords-1))
+        distperline_tostop = np.zeros((ncrosscellparts,nlinecoords-1))
+        linepart_length = np.zeros((nlinecoords))
+        for iL in range(nlinecoords-1):
+            #calculate length of lineparts
+            line_section_part = LineString(line_array[iL:iL+2,:])
+            if calcdist_fromlatlon:
+                linepart_length[iL+1] = calc_dist_haversine(line_array[iL,0],line_array[iL+1,0],line_array[iL,1],line_array[iL+1,1])
+            else:
+                linepart_length[iL+1] = line_section_part.length
+        
+            #get distance between all lineparts and point (later used to calculate distance from beginpoint of closest linepart)
+            for iP in range(ncrosscellparts):
+                distperline_tostart[iP,iL] = line_section_part.distance(Point(intersect_coords[:,0][iP],intersect_coords[:,1][iP]))
+                distperline_tostop[iP,iL] = line_section_part.distance(Point(intersect_coords[:,2][iP],intersect_coords[:,3][iP]))
+        linepart_lengthcum = np.cumsum(linepart_length)
+        cross_points_closestlineid = np.argmin(np.maximum(distperline_tostart,distperline_tostop),axis=1)
+        intersect_pd[&#39;closestlineid&#39;] = cross_points_closestlineid
+        print(&#39;finished calculating distance for all crossed cells, from first point of line&#39;)
+        
+        if not calcdist_fromlatlon:
+            crs_dist_starts = calc_dist_pythagoras(line_array[cross_points_closestlineid,0], intersect_coords[:,0], line_array[cross_points_closestlineid,1], intersect_coords[:,1]) + linepart_lengthcum[cross_points_closestlineid]
+            crs_dist_stops = calc_dist_pythagoras(line_array[cross_points_closestlineid,0], intersect_coords[:,2], line_array[cross_points_closestlineid,1], intersect_coords[:,3]) + linepart_lengthcum[cross_points_closestlineid]
+        else:
+            crs_dist_starts = calc_dist_haversine(line_array[cross_points_closestlineid,0], intersect_coords[:,0], line_array[cross_points_closestlineid,1], intersect_coords[:,1]) + linepart_lengthcum[cross_points_closestlineid]
+            crs_dist_stops = calc_dist_haversine(line_array[cross_points_closestlineid,0], intersect_coords[:,2], line_array[cross_points_closestlineid,1], intersect_coords[:,3]) + linepart_lengthcum[cross_points_closestlineid]
+        intersect_pd[&#39;crs_dist_starts&#39;] = crs_dist_starts
+        intersect_pd[&#39;crs_dist_stops&#39;] = crs_dist_stops
+        intersect_pd[&#39;linepartlen&#39;] = crs_dist_stops-crs_dist_starts
+        intersect_pd = intersect_pd.sort_values(&#39;crs_dist_starts&#39;)
+        
         #dimensions (gridnos, xy, firstsecond)
-        print(&#39;done finding crossing flow links&#39;)
-        return intersect_gridnos, intersect_coords</code></pre>
+        print(&#39;done finding crossing flow links: %i of %i&#39;%(len(intersect_gridnos),len(cellinlinebox_all_bool)))
+        return intersect_pd</code></pre>
 </details>
 <h3>Static methods</h3>
 <dl>
@@ -532,11 +646,14 @@ def fromfile(file_nc):
         edge_verts = None
         
     #remove ghost cells from faces and verts
-    nonghost_ids = ghostcell_filter(file_nc)
-    if nonghost_ids is not None:
-        mesh2d_face_nodes = mesh2d_face_nodes[nonghost_ids]
-        verts = verts[nonghost_ids]
-    
+    nonghost_bool = ghostcell_filter(file_nc)
+    if nonghost_bool is not None:
+        mesh2d_face_nodes = mesh2d_face_nodes[nonghost_bool]
+        verts = verts[nonghost_bool]
+        if 0: # remove edges from partition boundaries if there are partitions
+            part_edges_removebool = (mesh2d_edge_faces==0).any(axis=1) # Array is 1 based indexed, 0 means missing # &amp; (np.in1d(mesh2d_edge_faces[:,0],ghost_removeids-1) | np.in1d(mesh2d_edge_faces[:,1],ghost_removeids-1))
+            edge_verts = edge_verts[~part_edges_removebool]
+
     data_nc.close()
     ugrid = UGrid(mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes, verts, mesh2d_node_z=mesh2d_node_z, edge_verts=edge_verts)
     return ugrid</code></pre>
@@ -546,7 +663,7 @@ def fromfile(file_nc):
 <h3>Methods</h3>
 <dl>
 <dt id="dfm_tools.ugrid.UGrid.polygon_intersect"><code class="name flex">
-<span>def <span class="ident">polygon_intersect</span></span>(<span>self, line_array, optimize_dist=False)</span>
+<span>def <span class="ident">polygon_intersect</span></span>(<span>self, line_array, optimize_dist=False, calcdist_fromlatlon=False)</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -554,18 +671,18 @@ def fromfile(file_nc):
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def polygon_intersect(self, line_array, optimize_dist=False):
+<pre><code class="python">def polygon_intersect(self, line_array, optimize_dist=False, calcdist_fromlatlon=False):
     import numpy as np
     from matplotlib.path import Path
     
     from dfm_tools.testutils import try_importmodule
     try_importmodule(modulename=&#39;shapely&#39;)
     import shapely
-    from shapely.geometry import LineString, Polygon, MultiLineString
-        
-    print(&#39;finding crossing flow links (can take a while if linebox over xy covers a lot of cells)&#39;)
-    intersect_gridnos = np.empty((0),dtype=int)
-    intersect_coords = np.empty((0,2,2))
+    from shapely.geometry import LineString, Polygon, MultiLineString, Point
+    from dfm_tools.get_nc import calc_dist_pythagoras, calc_dist_haversine
+
+    print(&#39;defining celinlinebox&#39;)
+    
     line_section = LineString(line_array)
     
     verts_xmax = np.nanmax(self.verts[:,:,0].data,axis=1)
@@ -605,9 +722,12 @@ def fromfile(file_nc):
     else:
         raise Exception(&#39;ERROR: invalid type for optimize_dist argument&#39;)
     
-    
+    #intersect_coords = np.empty((0,2,2))
+    intersect_coords = np.empty((0,4))
+    intersect_gridnos = np.empty((0),dtype=int) #has to be numbers, since a boolean is differently ordered
     verts_inlinebox = self.verts[cellinlinebox_all_bool,:,:]
     verts_inlinebox_nos = np.where(cellinlinebox_all_bool)[0]
+    print(&#39;finding crossing flow links (can take a while if linebox over xy covers a lot of cells, %i of %i cells are being processed)&#39;%(cellinlinebox_all_bool.sum(),len(cellinlinebox_all_bool)))
     
     for iP, pol_data in enumerate(verts_inlinebox):
         pol_shp = Polygon(pol_data[~np.isnan(pol_data).all(axis=1)])
@@ -617,20 +737,70 @@ def fromfile(file_nc):
         elif isinstance(intersect_result,shapely.geometry.linestring.LineString): #if one linepart trough cell (ex/including node), make multilinestring anyway
             if intersect_result.coords == []: #when the line does not cross this cell, intersect_results.coords is an empty linestring and this cell can be skipped (continue makes forloop continue with next in line without finishing the rest of the steps for this instance)
                 continue
+            elif len(intersect_result.coords.xy[0]) == 0: #for newer cartopy versions, when line does not cross this cell, intersect_result.coords.xy is (array(&#39;d&#39;), array(&#39;d&#39;)), and both arrays in tuple have len 0.
+                continue
             intersect_result_multi = MultiLineString([intersect_result])
-        
-        for iLL, intesect_result_one in enumerate(intersect_result_multi): #loop over multilinestrings, will mostly only contain one linestring. Will be two if the line crosses a cell more than once.
+            
+        for iLL, intesect_result_one in enumerate(intersect_result_multi.geoms): #loop over multilinestrings, will mostly only contain one linestring. Will be two if the line crosses a cell more than once.
             intersection_line = intesect_result_one.coords
             intline_xyshape = np.array(intersection_line.xy).shape
             #print(&#39;len(intersection_line.xy): %s&#39;%([intline_xyshape]))
-            for numlinepart_incell in range(1,intline_xyshape[1]): #is mostly 1, but more if there is a linepoint in this cell (then there are two or more lineparts)
-                intersect_gridnos = np.concatenate([intersect_gridnos,[verts_inlinebox_nos[iP]]])
-                intersect_coords = np.concatenate([intersect_coords,np.array(intersection_line.xy)[np.newaxis,:,numlinepart_incell-1:numlinepart_incell+1]],axis=0)
-            #print(&#39;&#39;)#&#39;iP: %i&#39;%iP)
-
+            for numlinepart_incell in range(1,intline_xyshape[1]): #is mostly 1, but more if there is a linebreakpoint in this cell (then there are two or more lineparts)
+                intersect_gridnos = np.append(intersect_gridnos,verts_inlinebox_nos[iP])
+                #intersect_coords = np.concatenate([intersect_coords,np.array(intersection_line.xy)[np.newaxis,:,numlinepart_incell-1:numlinepart_incell+1]],axis=0)
+                intersect_coords = np.concatenate([intersect_coords,np.array(intersection_line.xy).T[numlinepart_incell-1:numlinepart_incell+1].flatten()[np.newaxis]])
+    
+    if intersect_coords.shape[0] != len(intersect_gridnos):
+        raise Exception(&#39;something went wrong, intersect_coords.shape[0] and len(intersect_gridnos) are not equal&#39;)
+    
+    import pandas as pd
+    intersect_pd = pd.DataFrame(intersect_coords,index=intersect_gridnos,columns=[&#39;x1&#39;,&#39;y1&#39;,&#39;x2&#39;,&#39;y2&#39;])
+    intersect_pd.index.name = &#39;gridnumber&#39;
+    
+    #TODO up to here could come from meshkernelpy
+    
+    print(&#39;calculating distance for all crossed cells, from first point of line (should not take long, but if it does, optimisation is needed)&#39;)
+    nlinecoords = line_array.shape[0]
+    nlinedims = len(line_array.shape)
+    ncrosscellparts = len(intersect_pd)
+    if nlinecoords&lt;2 or nlinedims != 2:
+        raise Exception(&#39;ERROR: line_array should at least contain two xy points [[x,y],[x,y]]&#39;)
+    
+    #calculate distance between celledge-linepart crossing (is zero when line iL crosses cell)
+    distperline_tostart = np.zeros((ncrosscellparts,nlinecoords-1))
+    distperline_tostop = np.zeros((ncrosscellparts,nlinecoords-1))
+    linepart_length = np.zeros((nlinecoords))
+    for iL in range(nlinecoords-1):
+        #calculate length of lineparts
+        line_section_part = LineString(line_array[iL:iL+2,:])
+        if calcdist_fromlatlon:
+            linepart_length[iL+1] = calc_dist_haversine(line_array[iL,0],line_array[iL+1,0],line_array[iL,1],line_array[iL+1,1])
+        else:
+            linepart_length[iL+1] = line_section_part.length
+    
+        #get distance between all lineparts and point (later used to calculate distance from beginpoint of closest linepart)
+        for iP in range(ncrosscellparts):
+            distperline_tostart[iP,iL] = line_section_part.distance(Point(intersect_coords[:,0][iP],intersect_coords[:,1][iP]))
+            distperline_tostop[iP,iL] = line_section_part.distance(Point(intersect_coords[:,2][iP],intersect_coords[:,3][iP]))
+    linepart_lengthcum = np.cumsum(linepart_length)
+    cross_points_closestlineid = np.argmin(np.maximum(distperline_tostart,distperline_tostop),axis=1)
+    intersect_pd[&#39;closestlineid&#39;] = cross_points_closestlineid
+    print(&#39;finished calculating distance for all crossed cells, from first point of line&#39;)
+    
+    if not calcdist_fromlatlon:
+        crs_dist_starts = calc_dist_pythagoras(line_array[cross_points_closestlineid,0], intersect_coords[:,0], line_array[cross_points_closestlineid,1], intersect_coords[:,1]) + linepart_lengthcum[cross_points_closestlineid]
+        crs_dist_stops = calc_dist_pythagoras(line_array[cross_points_closestlineid,0], intersect_coords[:,2], line_array[cross_points_closestlineid,1], intersect_coords[:,3]) + linepart_lengthcum[cross_points_closestlineid]
+    else:
+        crs_dist_starts = calc_dist_haversine(line_array[cross_points_closestlineid,0], intersect_coords[:,0], line_array[cross_points_closestlineid,1], intersect_coords[:,1]) + linepart_lengthcum[cross_points_closestlineid]
+        crs_dist_stops = calc_dist_haversine(line_array[cross_points_closestlineid,0], intersect_coords[:,2], line_array[cross_points_closestlineid,1], intersect_coords[:,3]) + linepart_lengthcum[cross_points_closestlineid]
+    intersect_pd[&#39;crs_dist_starts&#39;] = crs_dist_starts
+    intersect_pd[&#39;crs_dist_stops&#39;] = crs_dist_stops
+    intersect_pd[&#39;linepartlen&#39;] = crs_dist_stops-crs_dist_starts
+    intersect_pd = intersect_pd.sort_values(&#39;crs_dist_starts&#39;)
+    
     #dimensions (gridnos, xy, firstsecond)
-    print(&#39;done finding crossing flow links&#39;)
-    return intersect_gridnos, intersect_coords</code></pre>
+    print(&#39;done finding crossing flow links: %i of %i&#39;%(len(intersect_gridnos),len(cellinlinebox_all_bool)))
+    return intersect_pd</code></pre>
 </details>
 </dd>
 </dl>
@@ -664,7 +834,7 @@ def fromfile(file_nc):
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
 </footer>
 </body>
 </html>
