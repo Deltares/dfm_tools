@@ -70,4 +70,3 @@ Increasing the dfm_tools version number:
 - ``bumpversion major`` or ``bumpversion minor`` or ``bumpversion patch`` (changes version numbers in files and commits changes)
 - push this change in version number with ``git push`` (from git bash window or cmd also ok?)
 - request merging of your branch on https://github.com/openearth/dfm_tools/branches
-

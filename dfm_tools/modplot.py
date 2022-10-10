@@ -25,7 +25,7 @@ import matplotlib.patches as patches
 
 
 
-def velovect(axes, x, y, u, v, linewidth=None, color=None,
+def velovect(axes, x, y, u, v, linewidth=None, color=None, #TODO: simplify input
                cmap=None, norm=None, arrowsize=1, arrowstyle='-|>',
                transform=None, zorder=None, start_points=None,
                scale=1.0, grains=15):
@@ -49,7 +49,7 @@ def velovect(axes, x, y, u, v, linewidth=None, color=None,
         Colormap used to plot streamlines and arrows. Only necessary when using
         an array input for *color*.
     *norm* : :class:`~matplotlib.colors.Normalize`
-        Normalize object used to scale luminance data to 0, 1. If None, stretch
+        Normalize object used to scale luminance data to 0, 1. if None, stretch
         (min, max) to (0, 1). Only necessary when *color* is an array.
     *arrowsize* : float
         Factor scale arrow size.
@@ -100,7 +100,7 @@ def velovect(axes, x, y, u, v, linewidth=None, color=None,
     if use_multicolor_lines:
         if color.shape != grid.shape:
             raise ValueError(
-                "If 'color' is given, must have the shape of 'Grid(x,y)'")
+                "if 'color' is given, must have the shape of 'Grid(x,y)'")
         line_colors = []
         color = np.ma.masked_invalid(color)
     else:
@@ -110,7 +110,7 @@ def velovect(axes, x, y, u, v, linewidth=None, color=None,
     if isinstance(linewidth, np.ndarray):
         if linewidth.shape != grid.shape:
             raise ValueError(
-                "If 'linewidth' is given, must have the shape of 'Grid(x,y)'")
+                "if 'linewidth' is given, must have the shape of 'Grid(x,y)'")
         line_kw['linewidth'] = []
     else:
         line_kw['linewidth'] = linewidth
@@ -360,7 +360,7 @@ class StreamMask(object):
     def __init__(self, density):
         if np.isscalar(density):
             if density <= 0:
-                raise ValueError("If a scalar, 'density' must be positive")
+                raise ValueError("if a scalar, 'density' must be positive")
             self.nx = self.ny = int(30 * density)
         else:
             if len(density) != 2:
@@ -387,7 +387,7 @@ class StreamMask(object):
 
     def _update_trajectory(self, xm, ym):
         """Update current trajectory position in mask.
-        If the new position has already been filled, raise `InvalidIndexError`.
+        if the new position has already been filled, raise `InvalidIndexError`.
         """
         #if self._current_xy != (xm, ym):
         #    if self[ym, xm] == 0:

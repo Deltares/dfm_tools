@@ -15,7 +15,7 @@ import geopandas as gpd #conda install --channel conda-forge geopandas (breaks d
 from shapely.geometry import Polygon
 
 from dfm_tools.get_nc import get_netdata, get_ncmodeldata
-from dfm_tools.get_nc_helpers import get_ncvardimlist#, get_ncfilelist
+from dfm_tools.get_nc_helpers import get_ncvarproperties#, get_ncfilelist
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
@@ -25,12 +25,12 @@ varlist = ['Chlfa']#,'mesh2d_s1']
 dir_shp = dir_output
 if not os.path.exists(dir_shp):
     os.makedirs(dir_shp)
-file_nc = os.path.join(r'p:\11203850-coastserv\06-Model\waq_model\simulations\run0_20200319\DFM_OUTPUT_kzn_waq', 'kzn_waq_0000_map.nc')
+file_nc = os.path.join(r'p:\archivedprojects\11203850-coastserv\06-Model\waq_model\simulations\run0_20200319\DFM_OUTPUT_kzn_waq', 'kzn_waq_0000_map.nc')
 
-vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+vars_pd = get_ncvarproperties(file_nc=file_nc)
 vars_pd_matching = vars_pd[vars_pd.loc[:,'long_name'].str.match('.*Chl.*')]
 #vars_pd_matching = vars_pd[vars_pd.loc[:,'long_name'].str.startswith('') & vars_pd.loc[:,'long_name'].str.endswith('Chlo')]
-varns_Chl = vars_pd_matching['nc_varkeys'].tolist()
+varns_Chl = vars_pd_matching.index.tolist()
 varns_Chl_long = vars_pd_matching['long_name'].tolist()
 
 ugrid = get_netdata(file_nc=file_nc)#, multipart=False)

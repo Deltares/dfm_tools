@@ -14,7 +14,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+along with this program.  if not, see <http://www.gnu.org/licenses/>.
 
 All names, logos, and references to "Deltares" are registered trademarks of
 Stichting Deltares and remain full property of Stichting Deltares at all times.
@@ -31,38 +31,6 @@ Created on Sun Mar 22 08:41:00 2020
 
 @author: veenstra
 """
-
-
-
-
-def meshgridxy2verts(x_coords, y_coords):
-    import numpy as np
-    
-    if len(x_coords.shape) != len(y_coords.shape):
-        raise Exception('number of dimensions of input arrays should be equal')
-    
-    #from here equal amount of dimensions, so only one array is tested for n dimensions
-    if len(x_coords.shape) == 1:
-        x_mesh, y_mesh = np.meshgrid(x_coords, y_coords)
-    elif len(x_coords.shape) == 2:
-        x_mesh = x_coords
-        y_mesh = y_coords
-    else:
-        raise Exception('input arrays can only be 1D or 2D')
-    
-    regulargrid_verts = np.empty(shape=((x_coords.shape[0]-1),(y_coords.shape[1]-1),4,2))
-    regulargrid_verts[:] = np.nan
-    regulargrid_verts[:,:,0,0] = x_mesh[ :-1,1:  ]
-    regulargrid_verts[:,:,1,0] = x_mesh[ :-1, :-1]
-    regulargrid_verts[:,:,2,0] = x_mesh[1:  , :-1]
-    regulargrid_verts[:,:,3,0] = x_mesh[1:  ,1:  ]
-    regulargrid_verts[:,:,0,1] = y_mesh[ :-1,1:  ]
-    regulargrid_verts[:,:,1,1] = y_mesh[ :-1, :-1]
-    regulargrid_verts[:,:,2,1] = y_mesh[1:  , :-1]
-    regulargrid_verts[:,:,3,1] = y_mesh[1:  ,1:  ]
-    
-    return regulargrid_verts
-
 
 
 def scatter_to_regulargrid(xcoords=None, ycoords=None, ncellx=None, ncelly=None, values=None, method='nearest', maskland_dist=None):
@@ -122,7 +90,6 @@ def scatter_to_regulargrid(xcoords=None, ycoords=None, ncellx=None, ncelly=None,
     return x_grid, y_grid, value_grid
 
 
-
 def center2corner(cen):
     import numpy as np
     
@@ -141,9 +108,6 @@ def center2corner(cen):
     cor = cen_withbnd
         
     return cor
-
-
-
 
 
 def corner2center(cor):
@@ -169,6 +133,8 @@ def corner2center(cor):
     >>> corner2center([[1,3,5],[2,6,10]])
     array([[ 3.,  6.]])
     """
+    raise DeprecationWarning('this is not used in any dfm_tool code, to be removed') #TODO: remove code
+    
     import numpy as np
     cor = np.asarray(cor)
     shp = cor.shape
@@ -193,10 +159,6 @@ def corner2center(cor):
     elif len(shp)>3:
         raise NotImplementedError('only 1D and 2D arrays implemented, only intervals and pixels, no voxels')
     return cen
-      
-
-
-
 
 
 def uva2xymagdeg(U1, V1, ALFAS, KCU=None, KCV=None, inactivewhen4x0=True):

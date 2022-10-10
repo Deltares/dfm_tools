@@ -32,9 +32,11 @@ Created on Thu Apr  1 12:03:47 2021
 @author: buckman
 """
 
-
-
-
+import pandas as pd
+import numpy as np
+import datetime as dt
+from netCDF4 import num2date
+import warnings
 
 
 def write_timfile(filename, datablock, header, converttime=False, refdate=None, tzone=0, float_format='%6.2f'):
@@ -66,6 +68,12 @@ def write_timfile(filename, datablock, header, converttime=False, refdate=None, 
     None.
 
     """
+    
+    raise DeprecationWarning('the function dfm_tools.io.tim.write_timfile() is deprecated, please use the new hydrolib alternative (in development).') #TODO: remove code (there is no hydrolib-core alternative available yet)
+    
+    if type(datablocks) is not list:
+        datablocks = [datablocks]
+        metadatas = [metadatas]
     
     #clear file
     with open(filename, 'w') as file_tim:
@@ -118,8 +126,8 @@ Raises
         list of header lines from file
 
     """
-    import pandas as pd
-    import numpy as np
+    
+    raise DeprecationWarning('the function dfm_tools.io.tim.read_timfile() is deprecated, please use the new hydrolib alternative (in development).') #TODO: remove code (there is no hydrolib-core alternative available yet)
     
     with open(filename, 'r') as bc:
         page = bc.readlines()

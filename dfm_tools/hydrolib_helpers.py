@@ -9,6 +9,7 @@ import datetime as dt
 import pandas as pd
 import cftime
 import numpy as np
+import hydrolib
 
 def forcingobject_to_dataframe(forcingobj, convert_time=True):
     """
@@ -33,9 +34,11 @@ def forcingobject_to_dataframe(forcingobj, convert_time=True):
          df_data_list = [forcingobject_to_dataframe(forcingobj, convert_time=True) for forcingobj in m.forcing]
 
     """
-    
-    QUP_list = [(QUP.quantity,QUP.unit) for QUP in forcingobj.__dict__['quantityunitpair']] #TODO: generating MultiIndex can probably be more elegant (e.g. getting names from QUP list), but I do not know how
-    columns_MI = pd.MultiIndex.from_tuples(QUP_list,names=['quantity','unit'])
+    if isinstance(forcingobj, hydrolib.core.io.bc.models.ForcingModel):
+        raise Exception('ERROR: instead of supplying a ForcingModel, provide a ForcingObject (Timeseries/T3D etc), by doing something like ForcingModel.forcing[0]')
+    #if hasattr(forcingobj.quantityunitpair[0],'verticalpositionindex'): #TODO: might be there always
+    QUP_list = [(QUP.quantity,QUP.unit,QUP.verticalposition) for QUP in forcingobj.quantityunitpair] #TODO: generating MultiIndex can probably be more elegant (e.g. getting names from QUP list), but I do not know how
+    columns_MI = pd.MultiIndex.from_tuples(QUP_list,names=dict(forcingobj.quantityunitpair[0]).keys())
     df_data = pd.DataFrame(forcingobj.__dict__['datablock'],columns=columns_MI)
     df_data.index.name = forcingobj.__dict__['name']
     colnames_quantity = df_data.columns.get_level_values(level=0)
@@ -54,7 +57,7 @@ def forcingobject_to_dataframe(forcingobj, convert_time=True):
     return df_data
 
 
-def polyobject_to_dataframe(PolyObject, dummy=None):
+def polyobject_to_dataframe(PolyObject, dummy=None, convert_xy_to_time=False):
     """
     
 
@@ -76,9 +79,33 @@ def polyobject_to_dataframe(PolyObject, dummy=None):
     xvals_pd = pd.DataFrame({'x':[p.x for p in PolyObject.points]})
     yvals_pd = pd.DataFrame({'y':[p.y for p in PolyObject.points]})
     datavals_pd = pd.DataFrame([p.data for p in PolyObject.points])
-    poly_pd = pd.concat([xvals_pd,yvals_pd,datavals_pd],axis=1)
-    poly_pd[poly_pd==dummy] = np.nan
+    polyobject_pd = pd.concat([xvals_pd,yvals_pd,datavals_pd],axis=1)
+    polyobject_pd[polyobject_pd==dummy] = np.nan
+    
+    if convert_xy_to_time:
+        datatimevals_pdstr = (polyobject_pd['x'].astype(int).apply(lambda x:f'{x:08d}') +
+                              polyobject_pd['y'].astype(int).apply(lambda x:f'{x:06d}'))
+        polyobject_pd.index = pd.to_datetime(datatimevals_pdstr)
+        polyobject_pd = polyobject_pd.drop(['x','y'],axis=1)
 
-    return poly_pd
+    return polyobject_pd
+
+
+def xyzmodel_to_dataframe(XYZModel):
+    """
+    
+    """
+    #TODO: more generic would be:
+    #for key in data_xyz.points[0].dict().keys():
+    #    data_pd_list.append(pd.DataFrame({key:[p[key] for p in data_xyz.points]}))
+    # but p[key] is not possible, only p.x etc
+    
+    xvals_pd = pd.DataFrame({'x':[p.x for p in XYZModel.points]})
+    yvals_pd = pd.DataFrame({'y':[p.y for p in XYZModel.points]})
+    zvals_pd = pd.DataFrame({'z':[p.z for p in XYZModel.points]})
+    comments_pd = pd.DataFrame({'comment':[p.comment for p in XYZModel.points]})
+    xyz_pd = pd.concat([xvals_pd,yvals_pd,zvals_pd,comments_pd],axis=1)
+
+    return xyz_pd
 
 

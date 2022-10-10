@@ -12,7 +12,7 @@ import xarray as xr
 import matplotlib.pyplot as plt
 plt.close('all')
 from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
-from dfm_tools.get_nc_helpers import get_ncvardimlist, get_timesfromnc, get_hisstationlist
+from dfm_tools.get_nc_helpers import get_ncvarproperties, get_timesfromnc, get_hisstationlist
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 
 #uncomment the line below, copy data locally and change this path to increase performance
@@ -23,7 +23,7 @@ data_xr_his = xr.open_dataset(file_nc_his)
 stations_pd = data_xr_his.station_name.astype(str).to_pandas()
 
 #get lists with vars/dims, times, station/crs/structures
-vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc_map)
+vars_pd = get_ncvarproperties(file_nc=file_nc_map)
 times_pd = get_timesfromnc(file_nc=file_nc_map)
 statlist_pd = get_hisstationlist(file_nc=file_nc_his, varname='station_name')
 

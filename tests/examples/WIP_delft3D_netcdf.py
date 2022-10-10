@@ -36,29 +36,22 @@ from pathlib import Path
 import xarray as xr
 
 from dfm_tools.get_nc import get_ncmodeldata#, get_netdata, plot_netmapdata
-from dfm_tools.get_nc_helpers import get_ncvardimlist#, get_hisstationlist#, get_varname_fromnc
+from dfm_tools.get_nc_helpers import get_ncvarproperties#, get_hisstationlist#, get_varname_fromnc
 from dfm_tools.regulargrid import uva2xymagdeg
 from dfm_tools.hydrolib_helpers import polyobject_to_dataframe
-#from dfm_tools.io.polygon import Polygon
 
-from hydrolib.core.io.polyfile.models import (
-    #Description,
-    #Metadata,
-    #Point,
-    PolyFile,
-    #PolyObject,
-)
-from hydrolib.core.io.polyfile.parser import read_polyfile #TODO: should be replaced with PolyFile above
+from hydrolib.core.io.polyfile.models import PolyFile
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
 file_ldb = Path(r'p:\archivedprojects\1220688-lake-kivu\3_modelling\1_FLOW\4_CH4_CO2_included\008\lake_kivu_geo.ldb')
-polyfile_object = read_polyfile(file_ldb,has_z_values=False)
-data_ldb = polyobject_to_dataframe(polyfile_object['objects'][0])
+polyfile_object = PolyFile(file_ldb)
+data_ldb = polyobject_to_dataframe(polyfile_object.objects[0])
 
 file_nc = r'p:\archivedprojects\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\062_netcdf\trim-thiery_002_coarse.nc'
-vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+vars_pd = get_ncvarproperties(file_nc=file_nc)
+#data_xr = xr.open_dataset(file_nc)
 
 data_nc_XZ = get_ncmodeldata(file_nc=file_nc, varname='XZ')
 data_nc_YZ = get_ncmodeldata(file_nc=file_nc, varname='YZ')
@@ -151,7 +144,7 @@ plt.savefig(os.path.join(dir_output,'kivu_bedlevel'))
 
 #FROM HIS data
 file_nc = r'p:\archivedprojects\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\063_netcdf\trih-thiery_002_coarse.nc'
-vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+vars_pd = get_ncvarproperties(file_nc=file_nc)
 data_xr = xr.open_dataset(file_nc)
 
 #data_nc_NAMST = get_hisstationlist(file_nc=file_nc, varname='NAMST')
@@ -175,7 +168,7 @@ plt.savefig(os.path.join(dir_output,'kivu_his_ZWL'))
 
 #from MAP DATA CURVEDBEND
 file_nc = os.path.join(dir_testinput,'D3D_3D_sigma_curved_bend_nc\\trim-cb2-sal-added-3d.nc')
-vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+vars_pd = get_ncvarproperties(file_nc=file_nc)
 
 data_nc_XZ = get_ncmodeldata(file_nc=file_nc, varname='XZ')
 data_nc_YZ = get_ncmodeldata(file_nc=file_nc, varname='YZ')
@@ -263,7 +256,7 @@ plt.savefig(os.path.join(dir_output,'curvedbend_velocity_pcolor'))
 
 #FROM HIS data curvedbend
 file_nc = os.path.join(dir_testinput,'D3D_3D_sigma_curved_bend_nc\\trih-cb2-sal-added-3d.nc')
-vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+vars_pd = get_ncvarproperties(file_nc=file_nc)
 
 data_xr = xr.open_dataset(file_nc)
 #data_nc_NAMST = get_hisstationlist(file_nc=file_nc, varname='NAMST')

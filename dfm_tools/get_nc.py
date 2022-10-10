@@ -14,7 +14,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+along with this program.  if not, see <http://www.gnu.org/licenses/>.
 
 All names, logos, and references to "Deltares" are registered trademarks of
 Stichting Deltares and remain full property of Stichting Deltares at all times.
@@ -71,16 +71,18 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     import datetime as dt
     import pandas as pd
     from netCDF4 import Dataset
+    import xarray as xr
 
-    from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvardimlist, get_varnamefrom_keyslongstandardname, get_variable_timevardim, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_fromnc
+    from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvarproperties, get_varnamefrom_keyslongstandardname, get_variable_timevar, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_fromnc
 
     #get variable info (also checks if varname exists in keys, standard name, long name)
     data_nc = Dataset(file_nc)
+    data_xr = xr.open_dataset(file_nc)
     varname = get_varnamefrom_keyslongstandardname(file_nc, varname) #get varname from varkeys/standardname/longname if exists
     nc_varobject = data_nc.variables[varname]
 
     #get list of station dimnames
-    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    vars_pd = get_ncvarproperties(file_nc=file_nc)
 
     listtype_int = [int, np.int8, np.int16, np.int32, np.int64]
     listtype_str = [str]
@@ -88,7 +90,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     listtype_datetime = [dt.datetime, np.datetime64]
     listtype_daterange = [pd.DatetimeIndex]
 
-    #CHECK IF VARNAME IS STATION NAMES (STRINGS), OFFER ALTERNATIVE RETRIEVAL METHOD
+    #CHECK if VARNAME IS STATION NAMES (STRINGS), OFFER ALTERNATIVE RETRIEVAL METHOD
     if nc_varobject.dtype == '|S1':
         print('variable "%s" should probably be retrieved with separate function:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist\nstation_names = get_hisstationlist(file_nc=file_nc, varname="%s") (or use any varname there to retrieve corresponding station list)'%(varname,varname))
     if 'time' in varname.lower():
@@ -103,7 +105,8 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     #        dimn_time = data_nc.variables[varn_time].dimensions[0]
     #    except:
     #        print('using dimn_time as variable to get dimn_time failed')
-    varn_time, dimn_time = get_variable_timevardim(file_nc=file_nc, varname=varname)
+    varn_time = get_variable_timevar(file_nc,varname=varname)
+    dimn_time = data_xr[varn_time].dims[0]
     if dimn_time not in nc_varobject.dimensions: #dimension time is not available in variable
         if timestep is not None:
             raise Exception('ERROR: netcdf file variable (%s) does not contain times, but parameter timestep is provided'%(varname))
@@ -293,13 +296,13 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
 
             #get info about grid variables related to varname
             if get_linkedgridinfo and (nc_values_dimsel not in [dimn_time,dimn_layer]+dimname_stat_validvals):
-                vars_pd_relevant = vars_pd[(vars_pd['ndims']<=2) & (vars_pd['dimensions'].apply(lambda x: nc_values_dimsel in x)) & -(vars_pd['dimensions'].apply(lambda x: dimn_time in x))]
+                vars_pd_relevant = vars_pd[(vars_pd['shape'].apply(len)<=2) & (vars_pd['dimensions'].apply(lambda x: nc_values_dimsel in x)) & -(vars_pd['dimensions'].apply(lambda x: dimn_time in x))]
                 values_dimlinkedgrid.append(vars_pd_relevant)
 
                 print('\tlinkedvars for dimension "%s":'%(nc_values_dimsel))
                 #print('nc_varobject_sel.dimensions: %s'%([nc_varobject_sel.dimensions]))
                 for iLV, linkedvar in vars_pd_relevant.iterrows():
-                    print('\t\t%s  %s  %s'%(linkedvar['nc_varkeys'], linkedvar['shape'], linkedvar['dimensions']))
+                    print('\t\t%s  %s  %s'%(iLV, linkedvar['shape'], linkedvar['dimensions']))
                 #print('nc_values_dimsel: %s'%(nc_values_dimsel))
                 #print('vars_pd_relevant:\n%s'%(vars_pd_relevant))
             else:
@@ -425,7 +428,6 @@ def get_xzcoords_onintersection(file_nc, intersect_pd, timestep=None, multipart=
         nlay = data_nc.dimensions[dimn_layer].size
         
     intersect_gridnos = intersect_pd.index
-    #vars_pd, dims_pd = get_ncvardimlist(file_nc)
     if 'mesh2d_flowelem_zw' in varkeys_list:
         print('layertype: fullgrid output')
         zvals_interface_allfaces = get_ncmodeldata(file_nc, varname='mesh2d_flowelem_zw', timestep=timestep, multipart=multipart)
@@ -439,7 +441,7 @@ def get_xzcoords_onintersection(file_nc, intersect_pd, timestep=None, multipart=
         data_frommap_bl_sel = data_frommap_bl[intersect_gridnos]
         if 'mesh2d_layer_z' in varkeys_list or 'LayCoord_cc' in varkeys_list:
             print('layertype: zlayer')
-            warnings.warn('WARNING: your model seems to contain only z-layers. If the modeloutput is generated with an older version of dflowfm, the coordinates can be incorrect. If your model contains z-sigma-layers, use the fulloutput option in the mdu and rerun (happens automatically in newer dflowfm versions).')
+            warnings.warn('WARNING: your model seems to contain only z-layers. if the modeloutput is generated with an older version of dflowfm, the coordinates can be incorrect. if your model contains z-sigma-layers, use the fulloutput option in the mdu and rerun (happens automatically in newer dflowfm versions).')
             zvals_interface_vec = data_nc.variables['mesh2d_interface_z'][:][:,np.newaxis]
             zvals_interface = np.repeat(zvals_interface_vec,len(data_frommap_wl3_sel),axis=1)
             # zvalues lower than bedlevel should be overwritten with bedlevel
@@ -788,13 +790,13 @@ def plot_ztdata(data_xr_sel, varname, ax=None, mask_data=True, only_contour=Fals
     
     warnings.warn('WARNING: layers in dfowfm hisfile are currently incorrect, check your figures carefully')
     
-    data_fromhis_var = data_xr_sel.get(varname).to_numpy()
+    data_fromhis_var = data_xr_sel[varname].to_numpy()
     if len(data_fromhis_var.shape) != 2:
         raise Exception(f'ERROR: unexpected number of dimensions in requested squeezed variable ({data_fromhis_var.shape}), first use data_xr.isel(stations=int) to select a single station') #TODO: can also have a different cause, improve message/testing?
-    data_fromhis_zcen = data_xr_sel.get('zcoordinate_c').to_numpy()
-    data_fromhis_zcor = data_xr_sel.get('zcoordinate_w').to_numpy()
+    data_fromhis_zcen = data_xr_sel['zcoordinate_c'].bfill(dim='laydim').to_numpy()
+    data_fromhis_zcor = data_xr_sel['zcoordinate_w'].bfill(dim='laydimw').to_numpy() #bfill replaces nan values with last valid value, this is necessary to enable pcolormesh to work
     data_fromhis_zcor = np.concatenate([data_fromhis_zcor,data_fromhis_zcor[[-1],:]],axis=0)
-    data_fromhis_wl = data_xr_sel.get('waterlevel').to_numpy()
+    data_fromhis_wl = data_xr_sel['waterlevel'].to_numpy()
     
     if mask_data:
         data_fromhis_var = np.ma.array(data_fromhis_var)
@@ -819,8 +821,7 @@ def plot_ztdata(data_xr_sel, varname, ax=None, mask_data=True, only_contour=Fals
     if only_contour:
         pc = ax.contour(time_mesh_cen,data_fromhis_zcen,data_fromhis_var, **kwargs)
     else: #TODO: should actually supply cell edges instead of centers to pcolor/pcolormesh, but inconvenient for time dimension.
-        #pc = ax.pcolormesh(time_mesh_cen, data_fromhis_zcen, data_fromhis_var, **kwargs)
-        pc = ax.pcolor(time_mesh_cor, data_fromhis_zcor, data_fromhis_var, **kwargs) #pcolor also supports missing/masked xy data, but is slower
+        pc = ax.pcolormesh(time_mesh_cor, data_fromhis_zcor, data_fromhis_var, **kwargs)
 
     return pc
 

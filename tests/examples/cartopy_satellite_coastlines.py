@@ -15,14 +15,14 @@ try_importmodule(modulename='cartopy') #check if cartopy was installed since it 
 import cartopy.crs as ccrs
 
 from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata, plot_background
-from dfm_tools.get_nc_helpers import get_ncvardimlist
+from dfm_tools.get_nc_helpers import get_ncvarproperties
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 """
 #HIRLAM
 file_nc = r'p:\1204257-dcsmzuno\2014\data\meteo\HIRLAM72_2018\h72_201803.nc' #TODO: xarray MissingDimensionsError
-vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+vars_pd = get_ncvarproperties(file_nc=file_nc)
 
 timestep = 0
 mesh2d_node_x = get_ncmodeldata(file_nc=file_nc, varname='x')
@@ -55,7 +55,7 @@ pc = ax.pcolor(mesh2d_node_x_sel[:100,:100],mesh2d_node_y_sel[:100,:100],magn[:1
 plot_background(ax=ax, google_style=None, features=['coastlines_highres'], latlon_format=True, gridlines=True)
 plt.savefig(os.path.join(dir_output,'cartopy_hirlam_curvedgridlines'))
 """
-    
+
 #GREVELINGEN
 file_nc_map = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen\\computations\\run01\\DFM_OUTPUT_Grevelingen-FM\\Grevelingen-FM_0000_map.nc')
 ugrid = get_netdata(file_nc=file_nc_map)

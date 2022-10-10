@@ -66,7 +66,7 @@ import matplotlib.pyplot as plt
 plt.close('all')
 
 from dfm_tools.get_nc import get_ncmodeldata#, get_netdata, plot_netmapdata
-from dfm_tools.get_nc_helpers import get_ncvardimlist, get_hisstationlist#, get_varname_fromnc
+from dfm_tools.get_nc_helpers import get_ncvarproperties, get_hisstationlist#, get_varname_fromnc
 import xarray as xr
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
@@ -75,7 +75,7 @@ dir_output = '.'
 
 #MAP ZUNO
 file_nc = r'p:\1204257-dcsmzuno\2019\DCSMv6\A01\SDS-A01_map.nc'
-vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+vars_pd = get_ncvarproperties(file_nc=file_nc)
 
 data_nc_x = get_ncmodeldata(file_nc=file_nc, varname='grid_x')
 data_nc_y = get_ncmodeldata(file_nc=file_nc, varname='grid_y')
@@ -104,7 +104,7 @@ plt.savefig(os.path.join(dir_output,'waqua_DCSM_map_wl'))
 
 #HIS ZUNO
 file_nc = r'p:\1204257-dcsmzuno\2019\DCSMv6\A01\SDS-A01_his.nc'
-vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+vars_pd = get_ncvarproperties(file_nc=file_nc)
 data_xr = xr.open_dataset(file_nc)
 
 #data_nc_NAMWL = get_hisstationlist(file_nc=file_nc, varname='NAMWL')
@@ -130,7 +130,7 @@ plt.savefig(os.path.join(dir_output,'waqua_DCSM_his_ZWL'))
 """
 #MAP OSR
 file_nc = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\ZZ_Jelmer\SDS-nsctri_map.nc'
-vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+vars_pd = get_ncvarproperties(file_nc=file_nc)
 
 data_nc_x = get_ncmodeldata(file_nc=file_nc, varname='grid_x')
 data_nc_y = get_ncmodeldata(file_nc=file_nc, varname='grid_y')
@@ -170,7 +170,7 @@ plt.savefig(os.path.join(dir_output,'waqua_OSR_map_vel'))
 
 #HIS OSR
 file_nc = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\ZZ_Jelmer\SDS-nsctri_his.nc'
-vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+vars_pd = get_ncvarproperties(file_nc=file_nc)
 data_nc_NAMWL = get_hisstationlist(file_nc=file_nc, varname='NAMWL')
 #data_nc_NAMC = get_hisstationlist(file_nc=file_nc, varname='NAMC')
 data_nc_ZWL = get_ncmodeldata(file_nc=file_nc, varname='ZWL',timestep='all',station='all')
@@ -200,7 +200,7 @@ for RMM_name in RMM_names:
         timestep = 10
 
     file_nc = file_nc_map
-    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    vars_pd = get_ncvarproperties(file_nc=file_nc)
     
     data_nc_x = get_ncmodeldata(file_nc=file_nc, varname='grid_x')
     data_nc_y = get_ncmodeldata(file_nc=file_nc, varname='grid_y')
@@ -246,7 +246,7 @@ for RMM_name in RMM_names:
     
     #HIS RMM
     file_nc = file_nc_his
-    vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc)
+    vars_pd = get_ncvarproperties(file_nc=file_nc)
     #data_nc_NAMWL = get_hisstationlist(file_nc=file_nc, varname='NAMWL')
     #data_nc_NAMC = get_hisstationlist(file_nc=file_nc, varname='NAMC')
     #data_nc_ZWL = get_ncmodeldata(file_nc=file_nc, varname='ZWL',timestep='all',station='all')
