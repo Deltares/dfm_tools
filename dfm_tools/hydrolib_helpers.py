@@ -36,11 +36,8 @@ def forcingobject_to_dataframe(forcingobj, convert_time=True):
     """
     if isinstance(forcingobj, hydrolib.core.io.bc.models.ForcingModel):
         raise Exception('ERROR: instead of supplying a ForcingModel, provide a ForcingObject (Timeseries/T3D etc), by doing something like ForcingModel.forcing[0]')
-    if hasattr(forcingobj.quantityunitpair[0],'verticalpositionindex'): #TODO: might be there always
-        QUP_list = [(QUP.quantity,QUP.unit,QUP.verticalpositionindex) for QUP in forcingobj.quantityunitpair] #TODO: generating MultiIndex can probably be more elegant (e.g. getting names from QUP list), but I do not know how
-    else:
-        QUP_list = [(QUP.quantity,QUP.unit) for QUP in forcingobj.quantityunitpair] #TODO: generating MultiIndex can probably be more elegant (e.g. getting names from QUP list), but I do not know how
-    #QUP_list = [dict(QUP) for QUP in forcingobj.quantityunitpair] #TODO: generating MultiIndex can probably be more elegant (e.g. getting names from QUP list), but I do not know how
+    #if hasattr(forcingobj.quantityunitpair[0],'verticalpositionindex'): #TODO: might be there always
+    QUP_list = [(QUP.quantity,QUP.unit,QUP.verticalposition) for QUP in forcingobj.quantityunitpair] #TODO: generating MultiIndex can probably be more elegant (e.g. getting names from QUP list), but I do not know how
     columns_MI = pd.MultiIndex.from_tuples(QUP_list,names=dict(forcingobj.quantityunitpair[0]).keys())
     df_data = pd.DataFrame(forcingobj.__dict__['datablock'],columns=columns_MI)
     df_data.index.name = forcingobj.__dict__['name']

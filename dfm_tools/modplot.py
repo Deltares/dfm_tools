@@ -25,7 +25,7 @@ import matplotlib.patches as patches
 
 
 
-def velovect(axes, x, y, u, v, linewidth=None, color=None,
+def velovect(axes, x, y, u, v, linewidth=None, color=None, #TODO: simplify input
                cmap=None, norm=None, arrowsize=1, arrowstyle='-|>',
                transform=None, zorder=None, start_points=None,
                scale=1.0, grains=15):
