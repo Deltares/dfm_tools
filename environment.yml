@@ -4,6 +4,15 @@ channels:
 dependencies:
   - python=3.8
   - pip>=19.2.3
+  - shapely
+  - cartopy
+  - pyepsg
+  - geopandas
+  - contextily
+  - xarray
+  - dask
+  - netcdf4
+  - bottleneck
   - pip:
     - pytest>=5.0.1
     - bump2version>=0.5.11
@@ -15,13 +24,4 @@ dependencies:
     - matplotlib
     - pandas
     - hydrolib-core
-    - shapely
-    - cartopy
-    - pyepsg
-    - geopandas
-    - contextily
-    - xarray
-    - dask
-    - netcdf4
-    - bottleneck
     
