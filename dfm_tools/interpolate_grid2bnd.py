@@ -42,28 +42,34 @@ from hydrolib.core.io.polyfile.models import PolyFile
 #from hydrolib.core.io.polyfile.parser import read_polyfile #TODO SOLVED: should be replaced with PolyFile above
 
 
-def get_conversion_dict():
+def get_conversion_dict(model='CMEMS'):
+    conversion_dicts = {}
     # conversion_dict, contains ncvarname as array because uxuy relies on 2 CMEMS variables
-    conversion_dict = { # mg/l is the same as g/m3: conversion is phyc in mmol/l to newvar in g/m3
-                        'OXY'        : {'ncvarname': 'o2',      'bcvarname': 'tracerbndOXY',  'unit': 'g/m3', 'conversion' : 32.0 / 1000.0}, 
-                        'NO3'        : {'ncvarname': 'no3',     'bcvarname': 'tracerbndNO3',  'unit': 'g/m3', 'conversion' : 14.0 / 1000.0},
-                        'PO4'        : {'ncvarname': 'po4',     'bcvarname': 'tracerbndPO4',  'unit': 'g/m3', 'conversion' : 30.97 / 1000.0},
-                        'Si'         : {'ncvarname': 'si',      'bcvarname': 'tracerbndSi',   'unit': 'g/m3', 'conversion' : 28.08 / 1000.0},
-                        'PON1'       : {'ncvarname': 'phyc',    'bcvarname': 'tracerbndPON1', 'unit': 'g/m3', 'conversion' : 2. * 16. * 14. / (106. * 1000.0)},
-                        'POP1'       : {'ncvarname': 'phyc',    'bcvarname': 'tracerbndPOP1', 'unit': 'g/m3', 'conversion' : 2. * 30.97 / (106. * 1000.0)},
-                        'POC1'       : {'ncvarname': 'phyc',    'bcvarname': 'tracerbndPOC1', 'unit': 'g/m3', 'conversion' : 2. * 12. / 1000.0},
-                        'DON'        : {'ncvarname': 'phyc',    'bcvarname': 'tracerbndDON',  'unit': 'g/m3', 'conversion' : 3.24 * 2. * 16. * 14. / (106. * 1000.0)},
-                        'DOP'        : {'ncvarname': 'phyc',    'bcvarname': 'tracerbndDOP',  'unit': 'g/m3', 'conversion' : 1.0 * 2. * 30.97 / (106. * 1000.0)},
-                        'DOC'        : {'ncvarname': 'phyc',    'bcvarname': 'tracerbndDOC',  'unit': 'g/m3', 'conversion' : (199. / 20.) * 3.24 * 2. * 16. * 12. / (106. * 1000.0)},
-                        'Opal'       : {'ncvarname': 'phyc',    'bcvarname': 'tracerbndOpal', 'unit': 'g/m3', 'conversion' : 0.5 * 0.13 * 28.08 / (1000.0)},
-                        'salinity'   : {'ncvarname': 'so',      'bcvarname': 'salinitybnd'},    #'1e-3'
-                        'temperature': {'ncvarname': 'thetao',  'bcvarname': 'temperaturebnd'}, #'degC'
-                        'ux'         : {'ncvarname': 'uo',      'bcvarname': 'ux' },            #'m/s'
-                        'uy'         : {'ncvarname': 'vo',      'bcvarname': 'uy' },            #'m/s'
-                        'ux,uy'      : {'ncvarname': 'uo,vo',   'bcvarname': 'ux,uy' },         #'m/s'
-                        'steric'     : {'ncvarname': 'zos',     'bcvarname': 'waterlevelbnd'},  #'m'
-                        'tide'       : {'ncvarname': '',        'bcvarname': 'waterlevelbnd'},  #'m'
-                        }
+    conversion_dicts['CMEMS'] = { # mg/l is the same as g/m3: conversion is phyc in mmol/l to newvar in g/m3
+                                'OXY'        : {'ncvarname': 'o2',      'bcvarname': 'tracerbndOXY',  'unit': 'g/m3', 'conversion' : 32.0 / 1000.0}, 
+                                'NO3'        : {'ncvarname': 'no3',     'bcvarname': 'tracerbndNO3',  'unit': 'g/m3', 'conversion' : 14.0 / 1000.0},
+                                'PO4'        : {'ncvarname': 'po4',     'bcvarname': 'tracerbndPO4',  'unit': 'g/m3', 'conversion' : 30.97 / 1000.0},
+                                'Si'         : {'ncvarname': 'si',      'bcvarname': 'tracerbndSi',   'unit': 'g/m3', 'conversion' : 28.08 / 1000.0},
+                                'PON1'       : {'ncvarname': 'phyc',    'bcvarname': 'tracerbndPON1', 'unit': 'g/m3', 'conversion' : 2. * 16. * 14. / (106. * 1000.0)},
+                                'POP1'       : {'ncvarname': 'phyc',    'bcvarname': 'tracerbndPOP1', 'unit': 'g/m3', 'conversion' : 2. * 30.97 / (106. * 1000.0)},
+                                'POC1'       : {'ncvarname': 'phyc',    'bcvarname': 'tracerbndPOC1', 'unit': 'g/m3', 'conversion' : 2. * 12. / 1000.0},
+                                'DON'        : {'ncvarname': 'phyc',    'bcvarname': 'tracerbndDON',  'unit': 'g/m3', 'conversion' : 3.24 * 2. * 16. * 14. / (106. * 1000.0)},
+                                'DOP'        : {'ncvarname': 'phyc',    'bcvarname': 'tracerbndDOP',  'unit': 'g/m3', 'conversion' : 1.0 * 2. * 30.97 / (106. * 1000.0)},
+                                'DOC'        : {'ncvarname': 'phyc',    'bcvarname': 'tracerbndDOC',  'unit': 'g/m3', 'conversion' : (199. / 20.) * 3.24 * 2. * 16. * 12. / (106. * 1000.0)},
+                                'Opal'       : {'ncvarname': 'phyc',    'bcvarname': 'tracerbndOpal', 'unit': 'g/m3', 'conversion' : 0.5 * 0.13 * 28.08 / (1000.0)},
+                                'salinity'   : {'ncvarname': 'so',      'bcvarname': 'salinitybnd'},    #'1e-3'
+                                'temperature': {'ncvarname': 'thetao',  'bcvarname': 'temperaturebnd'}, #'degC'
+                                'ux'         : {'ncvarname': 'uo',      'bcvarname': 'ux' },            #'m/s'
+                                'uy'         : {'ncvarname': 'vo',      'bcvarname': 'uy' },            #'m/s'
+                                'ux,uy'      : {'ncvarname': 'uo,vo',   'bcvarname': 'ux,uy' },         #'m/s'
+                                'steric'     : {'ncvarname': 'zos',     'bcvarname': 'waterlevelbnd'},  #'m'
+                                'tide'       : {'ncvarname': '',        'bcvarname': 'waterlevelbnd'},  #'m'
+                                }
+    conversion_dicts['HYCOM'] = {'salinity'   : {'ncvarname': 'salinity',    'bcvarname': 'salinitybnd'},
+                                'temperature': {'ncvarname': 'water_temp',  'bcvarname': 'temperaturebnd'},
+                                }
+    
+    conversion_dict = conversion_dicts[model]
     
     return conversion_dict
 
@@ -192,11 +198,13 @@ def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180
 def interpolate_nc_to_bc(dir_pattern, file_pli, quantity, 
                          tstart, tstop, refdate_str, 
                          convert_360to180=False,
+                         conversion_dict=None, #TODO: alternatively use rename_vars dict and use conversion_dict only for unit conversion
                          nPoints=None, debug=False,
                          reverse_depth=False, #temporary argument to compare easier with old coastserv files
                          fill_na=True):
     
-    conversion_dict = get_conversion_dict()
+    if conversion_dict is None:
+        conversion_dict = get_conversion_dict()
     ncvarname = conversion_dict[quantity]['ncvarname']
     bcvarname = conversion_dict[quantity]['bcvarname']
     if ',' in ncvarname:
@@ -252,7 +260,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
         has_depth = False
     
     #load boundary file
-    #polyfile_object = read_polyfile(file_pli,has_z_values=False) #TODO: this warning can be suppressed (or how to fix): "UserWarning: White space at the start of the line is ignored." https://github.com/Deltares/HYDROLIB-core/issues/320
+    #polyfile_object = read_polyfile(file_pli,has_z_values=False) #TODO: this warning can be suppressed: "UserWarning: White space at the start of the line is ignored." https://github.com/Deltares/HYDROLIB-core/issues/370
     #pli_PolyObjects = polyfile_object['objects']
     polyfile_object = PolyFile(file_pli) #TODO SOLVED: should work with hydrolib-core>0.3.0. also without has_z_values argument
     pli_PolyObjects = polyfile_object.objects
@@ -355,9 +363,9 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             if has_depth:
                 verticalpositions_idx = np.arange(datablock_xr[depthvarname].size)+1
                 #list_QUP_perlayer = [QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs['units']) for iL in verticalpositions_id] #TODO REPORT: verwarrende foutmelding bij niet opgeven verticalpositionindex (should be missing error instead of not valid error)
-                list_QUP_perlayer = [QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs['units'], verticalpositionindex=iVP) for iVP in verticalpositions_idx] #TODO SOLVED: verticalposition 1/2/3/n is not supported. https://github.com/Deltares/HYDROLIB-core/issues/317
+                list_QUP_perlayer = [QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs['units'], verticalposition=iVP) for iVP in verticalpositions_idx] #TODO SOLVED: verticalposition 1/2/3/n is not supported. https://github.com/Deltares/HYDROLIB-core/issues/317
                 ts_one = T3D(name=pli_PolyObject_name_num,
-                             verticalpositions=depth_array.tolist(), #TODO: should be "Vertical position specification = [..]" but is verticalPositions = [..]" (both possible?). https://github.com/Deltares/HYDROLIB-core/issues/317
+                             verticalpositionspecification=depth_array.tolist(), #TODO: should be "Vertical position specification = [..]" but is verticalPositions = [..]" (both possible?). https://github.com/Deltares/HYDROLIB-core/issues/317
                              verticalinterpolation='linear',
                              verticalpositiontype='ZDatum', #TODO SOLVED: should be "Vertical position type = zdatum" but is "verticalPositionType = ZBed" (zdatum is niet beschikbaar). https://github.com/Deltares/HYDROLIB-core/issues/317
                              quantityunitpair=[QuantityUnitPair(quantity="time", unit=refdate_str)]+list_QUP_perlayer,

@@ -13,10 +13,7 @@ from dfm_tools.interpolate_grid2bnd import get_conversion_dict, interpolate_FES,
 from dfm_tools.hydrolib_helpers import forcingobject_to_dataframe
 from hydrolib.core.io.ext.models import Boundary, ExtModel
 
-dir_sourcefiles_hydro = r'p:\1204257-dcsmzuno\data\CMEMS\nc\DCSM_allAvailableTimes'
-dir_sourcefiles_waq = r'p:\11206304-futuremares\python_scripts\ocean_boundaryCMEMS\data_monthly' #CMEMS
-#dir_sourcefiles_waq = r'p:\11206304-futuremares\data\CMIP6_BC\GFDL-ESM4' #GFDL
-#dir_sourcefiles_waq = r'p:\11206304-futuremares\data\CMIP6_BC\CMCC-ESM2' #CMCC
+model = 'CMEMS' #CMEMS GFDL CMCC HYCOM
 
 #copied plifile from DCSM folder: r'p:\1204257-dcsmzuno\data\CMEMS\bnd\NorthSeaAndBaltic_1993-2019_20210510'
 #list_plifiles = [Path(r'n:\My Documents\werkmap\hydrolib_test\DCSM\DCSM-FM_OB_all_20181108.pli')] #TODO: reading this file results in empty Polyfile, should raise an error. https://github.com/Deltares/HYDROLIB-core/issues/320
@@ -32,18 +29,22 @@ tstop = dt.datetime(1993, 3, 1, 12, 0)
 #tstop = dt.datetime(2012, 12, 1, 12, 0)
 #tstart = dt.datetime(2015, 6, 16, 12, 0)
 #tstop = dt.datetime(2015, 12, 1, 12, 0)
+#tstart = dt.datetime(2016, 4, 20, 0, 0) #HYCOM
+#tstop = dt.datetime(2016, 5, 3, 0, 0)
+
 nPoints = 3 #amount of Points to process per PolyObject in the plifile (for testing, use None for all Points)
 debug = False
 
-conversion_dict = get_conversion_dict()
 #list_quantities = ['NO3']
 list_quantities = ['steric','salinity','tide']#,['salinity','temperature','steric'] #should be in conversion_dict.keys()
+#list_quantities = ['salinity','temperature']
 
 dtstart = dt.datetime.now()
 ext_bnd = ExtModel()
 
 for file_pli in list_plifiles:
     for quantity in list_quantities:
+        conversion_dict = get_conversion_dict()
         ncvarname = conversion_dict[quantity]['ncvarname']
         bcvarname = conversion_dict[quantity]['bcvarname']
         print(f'processing quantity: {quantity}/{ncvarname}/{bcvarname}')
@@ -56,19 +57,32 @@ for file_pli in list_plifiles:
             for forcingobject in ForcingModel_object.forcing: #add A0 component
                 forcingobject.datablock.append(['A0',0.0,0.0])
         elif quantity in ['NO3']:
-            dir_pattern,convert_360to180 = Path(dir_sourcefiles_waq,f'cmems_mod_glo_bgc_my_0.25_P1M-m_{ncvarname}_*.nc'),False # CMEMS waq
-            #dir_pattern,convert_360to180 = Path(dir_sourcefiles_waq,f'{varname_file}_*.nc'),False # CMEMS waq
-            #dir_pattern,convert_360to180 = Path(dir_sourcefiles_waq,f'{varname_file}_esm-hist.nc'),True # GFDL
-            #dir_pattern,convert_360to180 = Path(dir_sourcefiles_waq,f'{varname_file}_Omon_CMCC-ESM2_ssp126_r1i1p1f1_gn_*.nc'),True #CMCC, TODO: crashes because of missing lat coords
+            if model=='CMEMS':
+                dir_sourcefiles_waq = r'p:\11206304-futuremares\python_scripts\ocean_boundaryCMEMS\data_monthly' #CMEMS
+                dir_pattern,convert_360to180 = Path(dir_sourcefiles_waq,f'cmems_mod_glo_bgc_my_0.25_P1M-m_{ncvarname}_*.nc'),False # CMEMS waq
+                #dir_pattern,convert_360to180 = Path(dir_sourcefiles_waq,f'{ncvarname}_*.nc'),False # CMEMS waq
+            elif model=='GFDL':
+                dir_sourcefiles_waq = r'p:\11206304-futuremares\data\CMIP6_BC\GFDL-ESM4' #GFDL
+                dir_pattern,convert_360to180 = Path(dir_sourcefiles_waq,f'{ncvarname}_esm-hist.nc'),True # GFDL
+            elif model=='CMCC':
+                dir_sourcefiles_waq = r'p:\11206304-futuremares\data\CMIP6_BC\CMCC-ESM2' #CMCC
+                dir_pattern,convert_360to180 = Path(dir_sourcefiles_waq,f'{ncvarname}_Omon_CMCC-ESM2_ssp126_r1i1p1f1_gn_*.nc'),True #CMCC, TODO: crashes because of missing lat coords
             ForcingModel_object = interpolate_nc_to_bc(dir_pattern=dir_pattern, file_pli=file_pli, quantity=quantity,
                                                        convert_360to180=convert_360to180,
                                                        tstart=tstart, tstop=tstop, refdate_str=refdate_str,
                                                        reverse_depth=True, #to compare with coastserv files, this argument will be phased out
                                                        nPoints=nPoints, debug=debug)
         else: #['steric','salinity','temperature'] ['uxuy']
-            dir_pattern,convert_360to180 = Path(dir_sourcefiles_hydro,f'{ncvarname}_1993*.nc'),False # later remove 1993 from string, but this is faster for testing
+            if model=='CMEMS':
+                dir_sourcefiles_hydro = r'p:\1204257-dcsmzuno\data\CMEMS\nc\DCSM_allAvailableTimes' #CMEMS
+                dir_pattern,convert_360to180 = Path(dir_sourcefiles_hydro,f'{ncvarname}_1993*.nc'),False # CMEMS. later remove 1993 from string, but this is faster for testing
+            elif model=='HYCOM':
+                dir_sourcefiles_hydro = 'c:\\DATA\\dfm_tools_testdata\\GLBu0.08_expt_91.2' #HYCOM
+                dir_pattern,convert_360to180 = Path(dir_sourcefiles_hydro,'HYCOM_ST_GoO_*.nc'),False # HYCOM
+                file_pli = Path(r'c:\DATA\dfm_tools_testdata\GLBu0.08_expt_91.2\bcline.pli')
+                conversion_dict = get_conversion_dict('HYCOM') #rename_variables = {'salinity':'so', 'water_temp':'thetao'}
             ForcingModel_object = interpolate_nc_to_bc(dir_pattern=dir_pattern, file_pli=file_pli, quantity=quantity, 
-                                                       convert_360to180=convert_360to180,
+                                                       convert_360to180=convert_360to180, conversion_dict=conversion_dict,
                                                        tstart=tstart, tstop=tstop, refdate_str=refdate_str,
                                                        reverse_depth=True, #to compare with coastserv files, this argument will be phased out
                                                        nPoints=nPoints, debug=debug)
@@ -78,11 +92,12 @@ for file_pli in list_plifiles:
                 forcingobject_one = ForcingModel_object.forcing[iF]
                 forcingobject_one_df = forcingobject_to_dataframe(forcingobject_one)
                 fig,ax1 = plt.subplots()
-                if hasattr(forcingobject_one,'verticalpositions'):
-                    pc = ax1.pcolormesh(forcingobject_one_df.index,forcingobject_one.verticalpositions,forcingobject_one_df.T)
+                if hasattr(forcingobject_one,'verticalpositionspecification'):
+                    pc = ax1.pcolormesh(forcingobject_one_df.index,forcingobject_one.verticalpositionspecification,forcingobject_one_df.T)
                     fig.colorbar(pc,ax=ax1)
                 else:
                     forcingobject_one_df.plot(ax=ax1)
+                ax1.set_title(forcingobject_one.quantityunitpair[1].quantity)
         
         file_bc_basename = file_pli.name.replace('.pli','.bc')
         file_bc_out = Path(dir_out,f'{quantity}_{file_bc_basename}')

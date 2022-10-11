@@ -20,7 +20,7 @@ dir_testinput = r'c:\DATA\dfm_tools_testdata'
 
 file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc')
 
-source = ctx.providers.Esri.WorldImagery
+source = ctx.providers.Esri.WorldImagery # ctx.providers.Stamen.Terrain (default), ctx.providers.CartoDB.Voyager, ctx.providers.NASAGIBS.ViirsEarthAtNight2012, ctx.providers.Stamen.Watercolor
 line_array = np.array([[ 53181.96942503, 424270.83361629],
                        [ 55160.15232593, 416913.77136685]])
 #line_array = np.array([[ 49324.74390138, 423723.47046544],
@@ -103,7 +103,7 @@ idx_stations = get_stationid_fromstationlist(data_xr, stationlist=station)
 idx_stations_zt = get_stationid_fromstationlist(data_xr, stationlist=station_zt)[0] #if provide single station (string, no list), the shape of the resulting xarray is correct
 
 print('plot waterlevel from his')
-data_fromhis_xr = data_xr.waterlevel.isel(stations=idx_stations)
+data_fromhis_xr = data_xr.waterlevel.isel(stations=idx_stations)#.sel(time=slice('2007-11-01','2007-11-04'))
 fig, ax = plt.subplots()
 data_fromhis_xr.plot.line('-',ax=ax,x='time')
 ax.legend(data_fromhis_xr['station_name_str'].to_numpy())
