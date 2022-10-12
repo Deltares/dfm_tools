@@ -26,7 +26,7 @@ xyz_pd.plot.scatter(x='x',y='y',c='z',s=0.5,ax=ax,vmin=-1,vmax=1)
 fig.savefig(os.path.join(dir_output,os.path.basename(file_xyz).replace('.','')))
 
 
-#TODO: below does not work
+#TODO: below does not work, 'old' xyn/crs is not supported: https://github.com/Deltares/HYDROLIB-core/issues/364
 
 from hydrolib.core.io.obs.models import ObservationPointModel
 file_xyn = r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\geometry_j19_6-v2\output_locations\rmm_vzm-j19_6-v2b_3_measurement_obs.xyn'

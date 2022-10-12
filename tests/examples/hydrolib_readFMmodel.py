@@ -32,7 +32,6 @@ file_network = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\compu
 
 #file_extnew = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_bnd_5bnds.ext')
 file_extnew = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_bnd_course.ext')
-#ext = ExtModel(fm.external_forcing.extforcefilenew) #TODO: also possible to read from FMmodel?
 ext = ExtModel(file_extnew) #TODO: laterals xycoordinates float is not yet supported (int is prescribed in ext model): https://github.com/Deltares/HYDROLIB-core/pull/351 (use *_original file to test after fix)
 
 time_passed = (dt.datetime.now()-dtstart).total_seconds()

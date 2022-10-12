@@ -17,12 +17,14 @@ from dfm_tools.hydrolib_helpers import polyobject_to_dataframe, dataframe_to_pol
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
-if 0: #read pli/pol/ldb files (tek files with 2/3 columns)
+if 1: #read pli/pol/ldb files (tek files with 2/3 columns)
     file_pli_list = [Path(dir_testinput,'world.ldb'),
                      #Path(dir_testinput,r'GSHHS_f_L1_world_ldb_noaa_wvs.ldb'), #huge file, so takes a lot of time
                      Path(dir_testinput,'GSHHS_high_min1000km2.ldb'), #works but slow
                      #Path(dir_testinput,'DFM_3D_z_Grevelingen\\geometry\\structures\\Grevelingen-FM_BL_fxw.pli'),
                      Path(dir_testinput,'DFM_3D_z_Grevelingen\\geometry\\structures\\Grevelingen-FM_BL_fxw.pliz'), #results also in data property of Points (not only xy)
+                     ]
+    file_pli_list = [Path(dir_testinput,'DFM_3D_z_Grevelingen\\geometry\\structures\\Grevelingen-FM_BL_fxw_one.pliz'), #results also in data property of Points (not only xy)
                      ]
     
     for file_pli in file_pli_list:
