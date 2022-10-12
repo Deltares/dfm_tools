@@ -10,6 +10,7 @@ import pandas as pd
 import cftime
 import numpy as np
 import hydrolib
+from hydrolib.core.io.polyfile.models import PolyObject
 
 def forcingobject_to_dataframe(forcingobj, convert_time=True): #TODO: would be convenient to have this as a method of ForcingModel objects (Timeseries/T3D/etc), or maybe as method of the ForcingModel (returning a list of DataFrames): https://github.com/Deltares/HYDROLIB-core/issues/307
     """
@@ -56,7 +57,7 @@ def forcingobject_to_dataframe(forcingobj, convert_time=True): #TODO: would be c
     return df_data
 
 
-def polyobject_to_dataframe(PolyObject, dummy=None, convert_xy_to_time=False):
+def polyobject_to_dataframe(PolyObject, convert_xy_to_time=False):
     """
     
 
@@ -77,10 +78,13 @@ def polyobject_to_dataframe(PolyObject, dummy=None, convert_xy_to_time=False):
     """
     xvals_pd = pd.DataFrame({'x':[p.x for p in PolyObject.points]})
     yvals_pd = pd.DataFrame({'y':[p.y for p in PolyObject.points]})
+    zvals_pd = pd.DataFrame({'z':[p.z for p in PolyObject.points]})
     datavals_pd = pd.DataFrame([p.data for p in PolyObject.points])
-    polyobject_pd = pd.concat([xvals_pd,yvals_pd,datavals_pd],axis=1)
-    polyobject_pd[polyobject_pd==dummy] = np.nan
-    
+    if zvals_pd['z'].isnull().all(): #ignore column if all values are None
+        polyobject_pd = pd.concat([xvals_pd,yvals_pd,datavals_pd],axis=1)
+    else:
+        polyobject_pd = pd.concat([xvals_pd,yvals_pd,zvals_pd,datavals_pd],axis=1)
+        
     if convert_xy_to_time:
         datatimevals_pdstr = (polyobject_pd['x'].astype(int).apply(lambda x:f'{x:08d}') +
                               polyobject_pd['y'].astype(int).apply(lambda x:f'{x:06d}'))
@@ -88,6 +92,21 @@ def polyobject_to_dataframe(PolyObject, dummy=None, convert_xy_to_time=False):
         polyobject_pd = polyobject_pd.drop(['x','y'],axis=1)
 
     return polyobject_pd
+
+
+def dataframe_to_polyobject(poly_pd,name,content=None): #TODO: make this method bound?
+    if 'z' in poly_pd.columns:
+        nondata_cols = ['x','y','z']
+    else:
+        nondata_cols = ['x','y']
+    poly_pd_xy = poly_pd[nondata_cols] #TODO: actually z is also a thing, but that becomes part of data in this method
+    poly_pd_data = pd.DataFrame({'data':poly_pd.drop(nondata_cols,axis=1).values.tolist()})
+    poly_pd_polyobj = pd.concat([poly_pd_xy,poly_pd_data],axis=1)
+    pointsobj_list = poly_pd_polyobj.T.apply(dict).tolist()
+    polyobject = PolyObject(metadata={'name':name,'n_rows':poly_pd.shape[0],'n_columns':poly_pd.shape[1]}, points=pointsobj_list)
+    if content is not None:
+        polyobject.description = {'content':content}
+    return polyobject
 
 
 def xyzmodel_to_dataframe(XYZModel):

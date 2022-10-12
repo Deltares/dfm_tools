@@ -11,8 +11,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 plt.close('all')
-from hydrolib.core.io.polyfile.models import PolyFile,PolyObject
-from dfm_tools.hydrolib_helpers import polyobject_to_dataframe
+from hydrolib.core.io.polyfile.models import PolyFile
+from dfm_tools.hydrolib_helpers import polyobject_to_dataframe, dataframe_to_polyobject
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
@@ -29,12 +29,22 @@ if 0: #read pli/pol/ldb files (tek files with 2/3 columns)
         #load boundary file
         polyfile_object = PolyFile(file_pli)
         
+        #empty polyfile object to append polyobjects to for testing full read/write workflow
+        polyfile_object_out = PolyFile()
         fig,ax = plt.subplots()
         for iPO, pli_PolyObject_sel in enumerate(polyfile_object.objects):
             print(f'processing PolyObject {iPO+1} of {len(polyfile_object.objects)}: name={pli_PolyObject_sel.metadata.name}')
-            polyobject_pd = polyobject_to_dataframe(pli_PolyObject_sel,dummy=999.999) #dummy is for world.ldb
+            polyobject_pd = polyobject_to_dataframe(pli_PolyObject_sel)
+            polyobject_pd[polyobject_pd==999.999] = np.nan #for world.ldb
             ax.plot(polyobject_pd['x'],polyobject_pd['y'])
+            if pli_PolyObject_sel.description is None:
+                content = None
+            else:
+                content = pli_PolyObject_sel.description.content
+            polyobject_out = dataframe_to_polyobject(polyobject_pd, name=pli_PolyObject_sel.metadata.name, content=content)
+            polyfile_object_out.objects.append(polyobject_out)
         fig.savefig(os.path.join(dir_output,os.path.basename(file_pli).replace('.','')))
+        polyfile_object_out.save(os.path.basename(file_pli).replace('.','_out.')) #TODO: better formatting of plifile
         
         #get extents of all objects in polyfile
         data_pol_pd_list = [polyobject_to_dataframe(polyobj) for polyobj in polyfile_object.objects]
@@ -44,7 +54,7 @@ if 0: #read pli/pol/ldb files (tek files with 2/3 columns)
         print(xmin,xmax,ymin,ymax)
     
 
-if 1: #read tek files with more than 2 columns
+if 0: #read tek files with more than 2 columns
     file_pli_list = [#Path(dir_testinput,r'ballenplot\SDS-zd003b5dec2-sal.tek'), #TODO: UserWarning: Expected valid dimensions at line 14. (3D file). Request support for 3D file?
                      Path(dir_testinput,r'ballenplot\SDS-zd003b5dec2-sal_2D.tek'), #solved by removing 3rd dim, but than layers are sort of lost
                      #Path(dir_testinput,r'ballenplot\0200a.tek'), #TODO: UserWarning: Expected valid dimensions at line 6. (3D file). Request support for 3D file?
@@ -68,9 +78,10 @@ if 1: #read tek files with more than 2 columns
         fig,ax = plt.subplots()
         for iPO, pli_PolyObject_sel in enumerate(polyfile_object.objects):
             print(f'processing PolyObject {iPO+1} of {len(polyfile_object.objects)}: name={pli_PolyObject_sel.metadata.name}')
-            polyobject_pd = polyobject_to_dataframe(pli_PolyObject_sel,convert_xy_to_time=convert_xy_to_time)
+            polyobject_pd = polyobject_to_dataframe(pli_PolyObject_sel,convert_xy_to_time=convert_xy_to_time) #TODO: convert_xy_to_time is currently not supported by dataframe_to_polyobject()
             print(pli_PolyObject_sel.metadata)
             print(pli_PolyObject_sel.description.content)
+            
             if convert_xy_to_time:
                 ax.plot(polyobject_pd)
                 ax.legend(pli_PolyObject_sel.description.content.split('\n')[2:])
@@ -88,7 +99,7 @@ if 1: #read tek files with more than 2 columns
                 ax.set_ylabel('z')
                 ax.set_title(pli_PolyObject_sel.metadata.name)
             else: #this is not used with the current examples
-                ax.scatter(polyobject_pd['x'],polyobject_pd['y'],c=polyobject_pd[0]) #TODO: valuable to be able to plot this nicely again?
+                ax.scatter(polyobject_pd['x'],polyobject_pd['y'],c=polyobject_pd[0])
                 ax.set_title(f'inconvenient plot of {pli_PolyObject_sel.metadata.name}')
         fig.tight_layout()
         fig.savefig(os.path.join(dir_output,os.path.basename(file_pli).replace('.','')))
@@ -96,17 +107,22 @@ if 1: #read tek files with more than 2 columns
 
 
 if 0: #write pol/pli
-    line_array = np.array([[57.9730136 , 24.20954011],
-                            [57.49360017, 24.22389666],
-                            [57.12859221, 24.34592732],
-                            [57.01418674, 25.05657643],
-                            [57.29747649, 25.30063775],
-                            [57.864056  , 25.32217257]])
-    polyfile_object = PolyFile()
-    line_array_hydrolib = [{'x':point[0],'y':point[1],'data':[]} for point in line_array.tolist()]
-    polyobject = PolyObject(metadata={'name':'hycom_pol','n_rows':line_array.shape[0],'n_columns':line_array.shape[1]}, points=line_array_hydrolib)
-    polyfile_object.objects.append(polyobject)
-    polyfile_object.save('hycom.pli') #TODO: 
+    poly_pd = pd.DataFrame(np.array([[57.9730136 , 24.20954011,0],
+                                    [57.49360017, 24.22389666,1],
+                                    [57.12859221, 24.34592732,2],
+                                    [57.01418674, 25.05657643,3],
+                                    [57.29747649, 25.30063775,3],
+                                    [57.864056  , 25.32217257,4]]),columns=['x','y',0])
+    poly_pd = pd.DataFrame(np.array([[57.9730136 , 24.20954011],
+                                    [57.49360017, 24.22389666],
+                                    [57.12859221, 24.34592732],
+                                    [57.01418674, 25.05657643],
+                                    [57.29747649, 25.30063775],
+                                    [57.864056  , 25.32217257]]),columns=['x','y'])
+    polyfile_object_out = PolyFile()
+    polyobject = dataframe_to_polyobject(poly_pd,name='hycom_pol')
+    polyfile_object_out.objects.append(polyobject)
+    polyfile_object_out.save('hycom.pli') #TODO: better formatting of plifile (also more precision)
 
 
     
