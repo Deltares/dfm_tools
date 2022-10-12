@@ -59,7 +59,7 @@ def forcingobject_to_dataframe(forcingobj, convert_time=True): #TODO: would be c
     return df_data
 
 
-def polyobject_to_dataframe(PolyObject, convert_xy_to_time=False): #TODO: this also works now for XYZModel and possibly others, so rename it to objectwithpoints_to_dataframe or so
+def polyobject_to_dataframe(PolyObject, convert_xy_to_time=False): #TODO: this not only works for PolyObject, but now also for XYZModel and possibly others, so rename it to objectwithpoints_to_dataframe or so
     """
     
 
