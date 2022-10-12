@@ -44,7 +44,7 @@ if 0: #read pli/pol/ldb files (tek files with 2/3 columns)
         print(xmin,xmax,ymin,ymax)
     
 
-if 0: #read tek files with more than 2 columns
+if 1: #read tek files with more than 2 columns
     file_pli_list = [#Path(dir_testinput,r'ballenplot\SDS-zd003b5dec2-sal.tek'), #TODO: UserWarning: Expected valid dimensions at line 14. (3D file). Request support for 3D file?
                      Path(dir_testinput,r'ballenplot\SDS-zd003b5dec2-sal_2D.tek'), #solved by removing 3rd dim, but than layers are sort of lost
                      #Path(dir_testinput,r'ballenplot\0200a.tek'), #TODO: UserWarning: Expected valid dimensions at line 6. (3D file). Request support for 3D file?
@@ -97,16 +97,16 @@ if 0: #read tek files with more than 2 columns
 
 if 0: #write pol/pli
     line_array = np.array([[57.9730136 , 24.20954011],
-           [57.49360017, 24.22389666],
-           [57.12859221, 24.34592732],
-           [57.01418674, 25.05657643],
-           [57.29747649, 25.30063775],
-           [57.864056  , 25.32217257]])
+                            [57.49360017, 24.22389666],
+                            [57.12859221, 24.34592732],
+                            [57.01418674, 25.05657643],
+                            [57.29747649, 25.30063775],
+                            [57.864056  , 25.32217257]])
     polyfile_object = PolyFile()
     line_array_hydrolib = [{'x':point[0],'y':point[1],'data':[]} for point in line_array.tolist()]
-    polyobject = PolyObject(metadata={'name':'a','n_rows':line_array.shape[0],'n_columns':line_array.shape[1]}, points=line_array_hydrolib)
+    polyobject = PolyObject(metadata={'name':'hycom_pol','n_rows':line_array.shape[0],'n_columns':line_array.shape[1]}, points=line_array_hydrolib)
     polyfile_object.objects.append(polyobject)
-    polyfile_object.save('hycom.pli') #TODO: fails since "AttributeError: 'dict' object has no attribute 'description'" ojb.description is not available, but obj['description'] is since it is a dict key. https://github.com/Deltares/HYDROLIB-core/issues/368 
+    polyfile_object.save('hycom.pli') #TODO: 
 
 
     
