@@ -12,6 +12,8 @@ import numpy as np
 import hydrolib
 from hydrolib.core.io.polyfile.models import PolyObject
 
+#TODO: maybe add dataframe_to_forcingobject() and 
+
 def forcingobject_to_dataframe(forcingobj, convert_time=True): #TODO: would be convenient to have this as a method of ForcingModel objects (Timeseries/T3D/etc), or maybe as method of the ForcingModel (returning a list of DataFrames): https://github.com/Deltares/HYDROLIB-core/issues/307
     """
     
@@ -57,14 +59,14 @@ def forcingobject_to_dataframe(forcingobj, convert_time=True): #TODO: would be c
     return df_data
 
 
-def polyobject_to_dataframe(PolyObject, convert_xy_to_time=False):
+def polyobject_to_dataframe(PolyObject, convert_xy_to_time=False): #TODO: this also works now for XYZModel and possibly others, so rename it to objectwithpoints_to_dataframe or so
     """
     
 
     Parameters
     ----------
     PolyObject : TYPE
-        DESCRIPTION.
+        PolyObject, or actually any object.
 
     Returns
     -------
@@ -76,6 +78,8 @@ def polyobject_to_dataframe(PolyObject, convert_xy_to_time=False):
         poly_pd_list = [polyobject_to_dataframe(PO) for PO in polyfile_object['objects']]
 
     """
+    """
+    #x,y,z = PolyObject.xyz_coordinates #TODO: this might be possible in new hydrolib-core version: https://github.com/Deltares/HYDROLIB-core/issues/329
     xvals_pd = pd.DataFrame({'x':[p.x for p in PolyObject.points]})
     yvals_pd = pd.DataFrame({'y':[p.y for p in PolyObject.points]})
     zvals_pd = pd.DataFrame({'z':[p.z for p in PolyObject.points]})
@@ -84,17 +88,26 @@ def polyobject_to_dataframe(PolyObject, convert_xy_to_time=False):
         polyobject_pd = pd.concat([xvals_pd,yvals_pd,datavals_pd],axis=1)
     else:
         polyobject_pd = pd.concat([xvals_pd,yvals_pd,zvals_pd,datavals_pd],axis=1)
+    """
+    polyobject_pd = pd.DataFrame([dict(p) for p in PolyObject.points])
+    if 'data' in polyobject_pd.columns:
+        #datavals_pd = polyobject_pd['data'].apply(pd.Series) #this is quite slow, so use line below instead. maybe lambda or faster approach?
+        datavals_pd = pd.DataFrame([p.data for p in PolyObject.points])
+        polyobject_pd = pd.concat([polyobject_pd.drop(['data'],axis=1), datavals_pd],axis=1)
         
-    if convert_xy_to_time:
+    if convert_xy_to_time: #TODO: maybe put in a separate definition
         datatimevals_pdstr = (polyobject_pd['x'].astype(int).apply(lambda x:f'{x:08d}') +
                               polyobject_pd['y'].astype(int).apply(lambda x:f'{x:06d}'))
         polyobject_pd.index = pd.to_datetime(datatimevals_pdstr)
         polyobject_pd = polyobject_pd.drop(['x','y'],axis=1)
-
+    
     return polyobject_pd
 
 
-def dataframe_to_polyobject(poly_pd,name,content=None): #TODO: make this method bound?
+def dataframe_to_polyobject(poly_pd,name,content=None): #TODO: make this method bound? Better: make polyobject/extmodel accept dataframe?
+    """
+    
+    """
     if 'z' in poly_pd.columns:
         nondata_cols = ['x','y','z']
     else:
@@ -102,28 +115,11 @@ def dataframe_to_polyobject(poly_pd,name,content=None): #TODO: make this method 
     poly_pd_xy = poly_pd[nondata_cols] #TODO: actually z is also a thing, but that becomes part of data in this method
     poly_pd_data = pd.DataFrame({'data':poly_pd.drop(nondata_cols,axis=1).values.tolist()})
     poly_pd_polyobj = pd.concat([poly_pd_xy,poly_pd_data],axis=1)
-    pointsobj_list = poly_pd_polyobj.T.apply(dict).tolist()
+    pointsobj_list = poly_pd_polyobj.T.apply(dict).tolist() #TODO: maybe faster with list iteration
     polyobject = PolyObject(metadata={'name':name,'n_rows':poly_pd.shape[0],'n_columns':poly_pd.shape[1]}, points=pointsobj_list)
     if content is not None:
         polyobject.description = {'content':content}
     return polyobject
 
-
-def xyzmodel_to_dataframe(XYZModel):
-    """
-    
-    """
-    #TODO: more generic would be:
-    #for key in data_xyz.points[0].dict().keys():
-    #    data_pd_list.append(pd.DataFrame({key:[p[key] for p in data_xyz.points]}))
-    # but p[key] is not possible, only p.x etc
-    
-    xvals_pd = pd.DataFrame({'x':[p.x for p in XYZModel.points]})
-    yvals_pd = pd.DataFrame({'y':[p.y for p in XYZModel.points]})
-    zvals_pd = pd.DataFrame({'z':[p.z for p in XYZModel.points]})
-    comments_pd = pd.DataFrame({'comment':[p.comment for p in XYZModel.points]})
-    xyz_pd = pd.concat([xvals_pd,yvals_pd,zvals_pd,comments_pd],axis=1)
-
-    return xyz_pd
 
 

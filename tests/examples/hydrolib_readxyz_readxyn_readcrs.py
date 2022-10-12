@@ -11,15 +11,14 @@ import matplotlib.pyplot as plt
 plt.close('all')
 
 from hydrolib.core.io.xyz.models import XYZModel
-from dfm_tools.hydrolib_helpers import xyzmodel_to_dataframe
+from dfm_tools.hydrolib_helpers import xyzmodel_to_dataframe, polyobject_to_dataframe
 
 dir_output = '.'
 
 file_xyz = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\geometry_j19_NL_6-v2\rmm_vzm_v1p1_initial_water_level.xyz'
 
 data_xyz = XYZModel(Path(file_xyz))
-xyz_pd = xyzmodel_to_dataframe(data_xyz)
-
+xyz_pd = polyobject_to_dataframe(data_xyz) #TODO: rename this function since it is more generic
 
 fig,ax = plt.subplots()
 xyz_pd.plot.scatter(x='x',y='y',c='z',s=0.5,ax=ax,vmin=-1,vmax=1)

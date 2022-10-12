@@ -20,7 +20,7 @@ from dfm_tools.hydrolib_helpers import forcingobject_to_dataframe
 
 #NOTE: for examples with writing bc files, check dfm_tools.interpolate_grid2bnd.*
 
-if 0: #read in bc file with Timeseries objects (waterlevels, discharges)
+if 1: #read in bc file with Timeseries objects (waterlevels, discharges)
     #file_bc = Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\2020\flow\rmm_zeerand_v3_2020.bc') #>100 timeseries
     file_bc = Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\rmm_rivdis_meas_20171101_20210102_MET.bc') #TODO: why can it not be str? #three timeseries
     #file_bc = Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\2018\flow\rmm_discharge_laterals_20171220_20190101_MET.bc')
@@ -37,7 +37,7 @@ if 0: #read in bc file with Timeseries objects (waterlevels, discharges)
     m.forcing[0].__dict__.keys() # dict_keys(['comments', 'datablock', 'name', 'function', 'quantityunitpair', 'timeinterpolation', 'offset', 'factor'])
     type(m.forcing[0].datablock) #list
     """
-    
+        
     df_data_list = [forcingobject_to_dataframe(forcingobj, convert_time=True) for forcingobj in m.forcing]
     
     #plot

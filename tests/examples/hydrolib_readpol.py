@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import numpy as np
 import pandas as pd
+import datetime as dt
 import matplotlib.pyplot as plt
 plt.close('all')
 from hydrolib.core.io.polyfile.models import PolyFile
@@ -17,14 +18,15 @@ from dfm_tools.hydrolib_helpers import polyobject_to_dataframe, dataframe_to_pol
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
+dtstart = dt.datetime.now()
+
+
 if 1: #read pli/pol/ldb files (tek files with 2/3 columns)
     file_pli_list = [Path(dir_testinput,'world.ldb'),
                      #Path(dir_testinput,r'GSHHS_f_L1_world_ldb_noaa_wvs.ldb'), #huge file, so takes a lot of time
                      Path(dir_testinput,'GSHHS_high_min1000km2.ldb'), #works but slow
                      #Path(dir_testinput,'DFM_3D_z_Grevelingen\\geometry\\structures\\Grevelingen-FM_BL_fxw.pli'),
                      Path(dir_testinput,'DFM_3D_z_Grevelingen\\geometry\\structures\\Grevelingen-FM_BL_fxw.pliz'), #results also in data property of Points (not only xy)
-                     ]
-    file_pli_list = [Path(dir_testinput,'DFM_3D_z_Grevelingen\\geometry\\structures\\Grevelingen-FM_BL_fxw_one.pliz'), #results also in data property of Points (not only xy)
                      ]
     
     for file_pli in file_pli_list:
@@ -43,10 +45,10 @@ if 1: #read pli/pol/ldb files (tek files with 2/3 columns)
                 content = None
             else:
                 content = pli_PolyObject_sel.description.content
-            polyobject_out = dataframe_to_polyobject(polyobject_pd, name=pli_PolyObject_sel.metadata.name, content=content)
-            polyfile_object_out.objects.append(polyobject_out)
+            #polyobject_out = dataframe_to_polyobject(polyobject_pd, name=pli_PolyObject_sel.metadata.name, content=content)
+            #polyfile_object_out.objects.append(polyobject_out)
         fig.savefig(os.path.join(dir_output,os.path.basename(file_pli).replace('.','')))
-        polyfile_object_out.save(os.path.basename(file_pli).replace('.','_out.')) #TODO: better formatting of plifile
+        #polyfile_object_out.save(os.path.basename(file_pli).replace('.','_out.')) #TODO: better formatting of plifile
         
         #get extents of all objects in polyfile
         data_pol_pd_list = [polyobject_to_dataframe(polyobj) for polyobj in polyfile_object.objects]
@@ -127,4 +129,6 @@ if 0: #write pol/pli
     polyfile_object_out.save('hycom.pli') #TODO: better formatting of plifile (also more precision)
 
 
-    
+time_passed = (dt.datetime.now()-dtstart).total_seconds()
+print(f'>>time passed: {time_passed:.2f} sec')
+
