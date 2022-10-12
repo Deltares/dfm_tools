@@ -7,6 +7,7 @@ Created on Mon Oct  3 12:07:18 2022
 
 from pathlib import Path
 from hydrolib.core.io.mdu.models import FMModel, NetworkModel, ExtModel, StructureModel
+from hydrolib.core.io.bc.models import ForcingModel
 from dfm_tools.hydrolib_helpers import forcingobject_to_dataframe
 import datetime as dt
 import matplotlib.pyplot as plt
@@ -32,8 +33,7 @@ file_network = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\compu
 #file_extnew = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_bnd_5bnds.ext')
 file_extnew = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_bnd_course.ext')
 #ext = ExtModel(fm.external_forcing.extforcefilenew) #TODO: also possible to read from FMmodel?
-ext = ExtModel(file_extnew)
-#TODO: laterals xycoordinates float is not yet supported (int is prescribed in ext model): https://github.com/Deltares/HYDROLIB-core/pull/351 (use *_original file to test after fix)
+ext = ExtModel(file_extnew) #TODO: laterals xycoordinates float is not yet supported (int is prescribed in ext model): https://github.com/Deltares/HYDROLIB-core/pull/351 (use *_original file to test after fix)
 
 time_passed = (dt.datetime.now()-dtstart).total_seconds()
 print(f'>>time passed: {time_passed:.2f} sec')
@@ -41,10 +41,17 @@ print(f'>>time passed: {time_passed:.2f} sec')
 max_extforcings = 6 #None for all?
 
 ext_boundaries = ext.boundary
-for iEB, extbnd in enumerate(ext_boundaries): #TODO: waterlevelbnd for rivers are present three times: https://github.com/Deltares/HYDROLIB-core/issues/354
-    extbnd_filepath = extbnd.forcingfile.filepath
+ext_laterals = ext.lateral
+for iEB, extbnd in enumerate(ext_boundaries+ext_laterals): #TODO: waterlevelbnd for rivers are present three times: https://github.com/Deltares/HYDROLIB-core/issues/354
+    if hasattr(extbnd,'forcingfile'):
+        extbnd_filepath = extbnd.forcingfile.filepath
+        extbnd_forcings = extbnd.forcingfile.forcing
+    elif hasattr(extbnd,'discharge'):
+        extbnd_filepath = extbnd.discharge.filepath
+        extbnd_forcings = extbnd.discharge.forcing
+    else:
+        raise Exception('ERROR: not forcingfile/discharge present (boundary/lateral') #TODO: this is not intuitive, make issue?
     print(f'boundary {iEB+1} of {len(ext_boundaries)}: {extbnd_filepath}')
-    extbnd_forcings = extbnd.forcingfile.forcing
     fig,ax = plt.subplots(figsize=(12,6))
     leglabels_new = []
     for iEBF, forcing in enumerate(extbnd_forcings[:max_extforcings]):
@@ -54,7 +61,7 @@ for iEB, extbnd in enumerate(ext_boundaries): #TODO: waterlevelbnd for rivers ar
         pc = forcing_pd.plot(ax=ax) #TODO: see CMEMS_interpolate_example.py for pcolormesh in case of verticalpositions
         leglabels = pc.get_legend_handles_labels()[1]
         leglabels_new.append(f'{forcing.name} ({forcing.function}) {leglabels[-1]}')
-    ax.legend(leglabels_new)
+    ax.legend(leglabels_new,fontsize=8)
     fig.tight_layout()
 
 
