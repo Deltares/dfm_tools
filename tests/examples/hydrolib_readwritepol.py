@@ -53,9 +53,6 @@ for file_pli in file_pli_list:
         if 'world.ldb' in str(file_pli):
             polyobject_pd[polyobject_pd==999.999] = np.nan #for world.ldb
         
-        if polyobject_pd['z'].isnull().all(): #TODO: no z values in case of timeseries, why not?
-            polyobject_pd = polyobject_pd.drop(['z'],axis=1)
-            
         #get content
         if pli_PolyObject_sel.description is None:
             content_str, content = '', None #content none is necessary otherwise empty comment line added

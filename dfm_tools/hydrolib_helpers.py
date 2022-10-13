@@ -140,7 +140,7 @@ def forcinglike_to_DataFrame(forcingobj, convert_time=True): #TODO: would be con
     return df_data
 
 
-def pointlike_to_DataFrame(pointlike):
+def pointlike_to_DataFrame(pointlike,drop_emptycols=True):
     """
     convert a hydrolib object with points (like PolyObject, XYZModel and possibly others) to a pandas DataFrame.
 
@@ -175,6 +175,10 @@ def pointlike_to_DataFrame(pointlike):
         #datavals_pd = pointlike_pd['data'].apply(pd.Series) #this is quite slow, so use line below instead. maybe lambda or faster approach?
         datavals_pd = pd.DataFrame([p.data for p in pointlike.points])
         pointlike_pd = pd.concat([pointlike_pd.drop(['data'],axis=1), datavals_pd],axis=1)
+        
+    if drop_emptycols:
+        allempty_bool = pointlike_pd.isnull().all(axis=0)
+        pointlike_pd = pointlike_pd.loc[:,~allempty_bool]
         
     return pointlike_pd
 
