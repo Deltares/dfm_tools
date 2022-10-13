@@ -43,11 +43,13 @@ def DataArray_to_T3D(datablock_xr, name, refdate_str, bcvarname, fill_na=True, d
     # Each .bc file can contain 1 or more timeseries, in this case one for each support point
     verticalpositions_idx = np.arange(datablock_xr[depthvarname].size)+1
     #list_QUP_perlayer = [QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs['units']) for iVP in verticalpositions_idx] #TODO (SOLVED?): verwarrende foutmelding bij niet opgeven verticalpositionindex (should be missing error instead of not valid error)
-    list_QUP_perlayer = [QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs['units'], verticalposition=iVP) for iVP in verticalpositions_idx] #TODO SOLVED: verticalposition 1/2/3/n is not supported. https://github.com/Deltares/HYDROLIB-core/issues/317
+    list_QUP_perlayer = [QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs['units'], vertpositionindex=iVP) for iVP in verticalpositions_idx] #TODO SOLVED: verticalposition 1/2/3/n is not supported. https://github.com/Deltares/HYDROLIB-core/issues/317
+    #TODO: ipv 
     ts_one = T3D(name=name,
-                 verticalpositionspecification=depth_array.tolist(), #TODO SOLVED: should be "Vertical position specification = [..]" but is verticalPositions = [..]" (both possible?). https://github.com/Deltares/HYDROLIB-core/issues/317
-                 verticalinterpolation='linear',
-                 verticalpositiontype='ZDatum', #TODO SOLVED: should be "Vertical position type = zdatum" but is "verticalPositionType = ZBed" (zdatum is niet beschikbaar). https://github.com/Deltares/HYDROLIB-core/issues/317
+                 #verticalpositionspecification='aa', #TODO SOLVED: invalid keys should raise an error (mainly an issue when vertpositions is not supplied, "AttributeError: 'NoneType' object has no attribute 'split'"
+                 vertpositions=depth_array.tolist(), #TODO SOLVED: should be "Vertical position specification = [..]" but is verticalPositions = [..]" (both possible?). https://github.com/Deltares/HYDROLIB-core/issues/317
+                 vertinterpolation='linear', #TODO SOLVED? verticalinterpolation would result in VerticalInterpolation.linear
+                 vertPositionType='ZDatum', #TODO SOLVED: should be "Vertical position type = zdatum" but is "verticalPositionType = ZBed" (zdatum is niet beschikbaar). https://github.com/Deltares/HYDROLIB-core/issues/317
                  quantityunitpair=[QuantityUnitPair(quantity="time", unit=refdate_str)]+list_QUP_perlayer,
                  timeinterpolation='linear', #TODO SOLVED: not passed on to bc file. https://github.com/Deltares/HYDROLIB-core/issues/317
                  datablock=datablock_incltime.tolist(), #TODO: numpy array is not supported by TimeSeries. https://github.com/Deltares/HYDROLIB-core/issues/322
@@ -120,7 +122,7 @@ def forcinglike_to_DataFrame(forcingobj, convert_time=True): #TODO: would be con
     if isinstance(forcingobj, hydrolib.core.io.bc.models.ForcingModel): #TODO: check if it is Timeseries/T3D specifically or maybe others
         raise Exception('ERROR: instead of supplying a ForcingModel, provide a ForcingObject (Timeseries/T3D etc), by doing something like ForcingModel.forcing[0]')
     #if hasattr(forcingobj.quantityunitpair[0],'verticalpositionindex'): #TODO: might be there always
-    QUP_list = [(QUP.quantity,QUP.unit,QUP.verticalposition) for QUP in forcingobj.quantityunitpair] #TODO: generating MultiIndex can probably be more elegant (e.g. getting names from QUP list), but I do not know how
+    QUP_list = [(QUP.quantity,QUP.unit,QUP.vertpositionindex) for QUP in forcingobj.quantityunitpair] #TODO: generating MultiIndex can probably be more elegant (e.g. getting names from QUP list), but I do not know how
     columns_MI = pd.MultiIndex.from_tuples(QUP_list,names=dict(forcingobj.quantityunitpair[0]).keys())
     df_data = pd.DataFrame(forcingobj.__dict__['datablock'],columns=columns_MI)
     df_data.index.name = forcingobj.__dict__['name']
@@ -140,9 +142,9 @@ def forcinglike_to_DataFrame(forcingobj, convert_time=True): #TODO: would be con
     return df_data
 
 
-def pointlike_to_DataFrame(PolyObject, convert_xy_to_time=False): #TODO: this not only works for PolyObject, but now also for XYZModel and possibly others, so rename it to objectwithpoints_to_dataframe or so
+def pointlike_to_DataFrame(pointlike):
     """
-    convert a hydrolib object with points (like PolyObject or XYZModel) to a pandas DataFrame.
+    convert a hydrolib object with points (like PolyObject, XYZModel and possibly others) to a pandas DataFrame.
 
     Parameters
     ----------
@@ -170,20 +172,22 @@ def pointlike_to_DataFrame(PolyObject, convert_xy_to_time=False): #TODO: this no
     else:
         polyobject_pd = pd.concat([xvals_pd,yvals_pd,zvals_pd,datavals_pd],axis=1)
     """
-    polyobject_pd = pd.DataFrame([dict(p) for p in PolyObject.points])
-    if 'data' in polyobject_pd.columns:
-        #datavals_pd = polyobject_pd['data'].apply(pd.Series) #this is quite slow, so use line below instead. maybe lambda or faster approach?
-        datavals_pd = pd.DataFrame([p.data for p in PolyObject.points])
-        polyobject_pd = pd.concat([polyobject_pd.drop(['data'],axis=1), datavals_pd],axis=1)
+    pointlike_pd = pd.DataFrame([dict(p) for p in pointlike.points])
+    if 'data' in pointlike_pd.columns:
+        #datavals_pd = pointlike_pd['data'].apply(pd.Series) #this is quite slow, so use line below instead. maybe lambda or faster approach?
+        datavals_pd = pd.DataFrame([p.data for p in pointlike.points])
+        pointlike_pd = pd.concat([pointlike_pd.drop(['data'],axis=1), datavals_pd],axis=1)
         
-    if convert_xy_to_time: #TODO: maybe put in a separate definition
-        datatimevals_pdstr = (polyobject_pd['x'].astype(int).apply(lambda x:f'{x:08d}') +
-                              polyobject_pd['y'].astype(int).apply(lambda x:f'{x:06d}'))
-        polyobject_pd.index = pd.to_datetime(datatimevals_pdstr)
-        polyobject_pd = polyobject_pd.drop(['x','y'],axis=1)
-    
-    return polyobject_pd
+    return pointlike_pd
 
+
+def parse_xy_to_datetime(pointlike_pd):
+    datatimevals_pdstr = (pointlike_pd['x'].astype(int).apply(lambda x:f'{x:08d}') +
+                          pointlike_pd['y'].astype(int).apply(lambda x:f'{x:06d}'))
+    pointlike_pd.index = pd.to_datetime(datatimevals_pdstr)
+    pointlike_pd_timeidx = pointlike_pd.drop(['x','y'],axis=1)
+    
+    return pointlike_pd_timeidx
 
 
 

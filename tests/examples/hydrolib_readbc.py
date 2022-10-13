@@ -20,7 +20,7 @@ from dfm_tools.hydrolib_helpers import forcinglike_to_DataFrame
 
 #NOTE: for examples with writing bc files, check dfm_tools.interpolate_grid2bnd.*
 
-if 1: #read in bc file with Timeseries objects (waterlevels, discharges)
+if 0: #read in bc file with Timeseries objects (waterlevels, discharges)
     #file_bc = Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\2020\flow\rmm_zeerand_v3_2020.bc') #>100 timeseries
     file_bc = Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\rmm_rivdis_meas_20171101_20210102_MET.bc') #TODO: why can it not be str? #three timeseries
     #file_bc = Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\2018\flow\rmm_discharge_laterals_20171220_20190101_MET.bc')
@@ -59,9 +59,8 @@ if 1: #read in bc file with Timeseries objects (waterlevels, discharges)
     ax.set_ylabel(f"mean {mean_bndvals.index[0][0]} [{mean_bndvals.index[0][1]}]")
 
 
-if 0: #read bc file with T3D blocks
-    file_bc_3D = Path(r'n:\My Documents\werkmap\hydrolib_test\haixia\salinity_bc_South_v2_firstpoint.bc') #TODO: old keywords not supported yet
-    file_bc_3D = Path(r'n:\My Documents\werkmap\hydrolib_test\haixia\salinity_bc_South_v2_firstpoint_edited.bc') #this one works now
+if 1: #read bc file with T3D blocks
+    file_bc_3D = Path(r'n:\My Documents\werkmap\hydrolib_test\haixia\salinity_bc_South_v2_firstpoint.bc') #TODO SOLVED: old keywords not supported yet
     #file_bc_3D = Path(r'n:\My Documents\werkmap\hydrolib_test\haixia\uxuy_bc_South_v2_firstpoint.bc') #TODO: uxuy still crashes
     #file_bc_3D = Path(r'n:\My Documents\werkmap\hydrolib_test\haixia\salinity_bc_South_v2.bc')
     #file_bc_3D = Path(r'n:\My Documents\werkmap\hydrolib_test\haixia\uxuy_bc_South_v2.bc')
@@ -73,7 +72,7 @@ if 0: #read bc file with T3D blocks
     #plotting
     df_data = forcinglike_to_DataFrame(m.forcing[0], convert_time=True)
     fig, ax = plt.subplots(figsize=(8, 4))
-    ax.pcolormesh(df_data.index,m.forcing[0].verticalpositions,df_data.T)
+    ax.pcolormesh(df_data.index,m.forcing[0].vertpositions,df_data.T)
     ax.set_ylim(-500,5)
 
 
