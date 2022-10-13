@@ -61,8 +61,6 @@ for file_pli in file_pli_list:
             content_str, content = '', None #content none is necessary otherwise empty comment line added
         else:
             content_str = content = pli_PolyObject_sel.description.content
-        #print(content_str)
-        #print(pli_PolyObject_sel.metadata)
         
         #collect for writing outfile
         #polyobject_out = DataFrame_to_PolyObject(polyobject_pd, name=pli_PolyObject_sel.metadata.name, content=content) #TODO: better formatting of plifile (also more precision, maybe write xy/datetime as ints?)
