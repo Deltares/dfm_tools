@@ -10,7 +10,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 plt.close('all')
 from dfm_tools.interpolate_grid2bnd import get_conversion_dict, interpolate_FES, interpolate_nc_to_bc
-from dfm_tools.hydrolib_helpers import forcingobject_to_dataframe
+from dfm_tools.hydrolib_helpers import forcingobject_to_DataFrame
 from hydrolib.core.io.ext.models import Boundary, ExtModel
 
 model = 'CMEMS' #CMEMS GFDL CMCC HYCOM #TODO: make one timeperiod/pli/etc for all models to provide a simple example
@@ -37,10 +37,11 @@ debug = False
 
 #list_quantities = ['NO3']
 list_quantities = ['steric','salinity','tide']#,['salinity','temperature','steric'] #should be in conversion_dict.keys()
-#list_quantities = ['salinity','temperature']
+#list_quantities = ['salinity']#,'temperature']
 
 dtstart = dt.datetime.now()
 ext_bnd = ExtModel()
+
 
 for file_pli in list_plifiles:
     for quantity in list_quantities:
@@ -90,7 +91,7 @@ for file_pli in list_plifiles:
         if 1: #plotting example data point
             for iF in [2]:#range(nPoints):
                 forcingobject_one = ForcingModel_object.forcing[iF]
-                forcingobject_one_df = forcingobject_to_dataframe(forcingobject_one)
+                forcingobject_one_df = forcingobject_to_DataFrame(forcingobject_one)
                 fig,ax1 = plt.subplots()
                 if hasattr(forcingobject_one,'verticalpositionspecification'):
                     pc = ax1.pcolormesh(forcingobject_one_df.index,forcingobject_one.verticalpositionspecification,forcingobject_one_df.T)

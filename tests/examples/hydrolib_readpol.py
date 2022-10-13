@@ -13,7 +13,7 @@ import datetime as dt
 import matplotlib.pyplot as plt
 plt.close('all')
 from hydrolib.core.io.polyfile.models import PolyFile
-from dfm_tools.hydrolib_helpers import polyobject_to_dataframe, dataframe_to_polyobject
+from dfm_tools.hydrolib_helpers import polyobject_to_DataFrame, DataFrame_to_PolyObject
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
@@ -28,6 +28,8 @@ if 1: #read pli/pol/ldb files (tek files with 2/3 columns)
                      #Path(dir_testinput,'DFM_3D_z_Grevelingen\\geometry\\structures\\Grevelingen-FM_BL_fxw.pli'),
                      Path(dir_testinput,'DFM_3D_z_Grevelingen\\geometry\\structures\\Grevelingen-FM_BL_fxw.pliz'), #results also in data property of Points (not only xy)
                      ]
+    file_pli_list = [Path(dir_testinput,'DFM_3D_z_Grevelingen\\geometry\\structures\\Grevelingen-FM_BL_fxw_one.pliz'), #results also in data property of Points (not only xy)
+                     ]
     
     for file_pli in file_pli_list:
         #load boundary file
@@ -38,7 +40,7 @@ if 1: #read pli/pol/ldb files (tek files with 2/3 columns)
         fig,ax = plt.subplots()
         for iPO, pli_PolyObject_sel in enumerate(polyfile_object.objects):
             print(f'processing PolyObject {iPO+1} of {len(polyfile_object.objects)}: name={pli_PolyObject_sel.metadata.name}')
-            polyobject_pd = polyobject_to_dataframe(pli_PolyObject_sel)
+            polyobject_pd = polyobject_to_DataFrame(pli_PolyObject_sel)
             polyobject_pd[polyobject_pd==999.999] = np.nan #for world.ldb
             ax.plot(polyobject_pd['x'],polyobject_pd['y'])
             if pli_PolyObject_sel.description is None:
@@ -51,7 +53,7 @@ if 1: #read pli/pol/ldb files (tek files with 2/3 columns)
         #polyfile_object_out.save(os.path.basename(file_pli).replace('.','_out.')) #TODO: better formatting of plifile
         
         #get extents of all objects in polyfile
-        data_pol_pd_list = [polyobject_to_dataframe(polyobj) for polyobj in polyfile_object.objects]
+        data_pol_pd_list = [polyobject_to_DataFrame(polyobj) for polyobj in polyfile_object.objects]
         data_pol_pd_all = pd.concat(data_pol_pd_list)
         xmin,ymin = data_pol_pd_all[['x','y']].min()
         xmax,ymax = data_pol_pd_all[['x','y']].max()
@@ -82,7 +84,7 @@ if 0: #read tek files with more than 2 columns
         fig,ax = plt.subplots()
         for iPO, pli_PolyObject_sel in enumerate(polyfile_object.objects):
             print(f'processing PolyObject {iPO+1} of {len(polyfile_object.objects)}: name={pli_PolyObject_sel.metadata.name}')
-            polyobject_pd = polyobject_to_dataframe(pli_PolyObject_sel,convert_xy_to_time=convert_xy_to_time) #TODO: convert_xy_to_time is currently not supported by dataframe_to_polyobject()
+            polyobject_pd = polyobject_to_DataFrame(pli_PolyObject_sel,convert_xy_to_time=convert_xy_to_time) #TODO: convert_xy_to_time is currently not supported by dataframe_to_polyobject()
             print(pli_PolyObject_sel.metadata)
             print(pli_PolyObject_sel.description.content)
             
@@ -124,7 +126,7 @@ if 0: #write pol/pli
                                     [57.29747649, 25.30063775],
                                     [57.864056  , 25.32217257]]),columns=['x','y'])
     polyfile_object_out = PolyFile()
-    polyobject = dataframe_to_polyobject(poly_pd,name='hycom_pol')
+    polyobject = DataFrame_to_PolyObject(poly_pd,name='hycom_pol')
     polyfile_object_out.objects.append(polyobject)
     polyfile_object_out.save('hycom.pli') #TODO: better formatting of plifile (also more precision)
 

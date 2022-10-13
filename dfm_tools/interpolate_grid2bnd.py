@@ -41,6 +41,8 @@ from hydrolib.core.io.bc.models import (
 from hydrolib.core.io.polyfile.models import PolyFile
 #from hydrolib.core.io.polyfile.parser import read_polyfile #TODO SOLVED: should be replaced with PolyFile above
 
+from dfm_tools.hydrolib_helpers import DataArray_to_TimeSeries, DataArray_to_T3D
+
 
 def get_conversion_dict(model='CMEMS'):
     conversion_dicts = {}
@@ -324,67 +326,16 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             print(f'(x={lonx_print}, y={laty_print})')
             pli_PolyObject_name_num = f'{pli_PolyObject_sel.metadata.name}_{iP+1:04d}'
             
-            
-            #TODO: steps from here to T3D/Timeseries could be bound method of those objects? (eg T3D.from_xarray_dataarray(datablock_xr)). Required information:
-            # has_depth = 1 # can be avoided if separate for Timeseries and T3D, or inferred, or if depth varname is always 'depth'
-            # depthvarname = 1 # can be avoided if overwritten with 'depth'
-            # pli_PolyObject_name_num = 1
-            # refdate_str = 1
-            # bcvarname = 1
-            # datablock_xr = 1
-            print('> select data for point, ffill nans and concatenating time column')
+            print('> select data for point, ffill nans, concatenating time column, constructing T3D/TimeSeries and appending to ForcingModel()')
             dtstart = dt.datetime.now()
             datablock_xr = datablock_raw_allcoords.isel(latloncombi=iP)
             if has_depth:
-                #get depth variable and values
-                depth_array = datablock_xr[depthvarname].to_numpy()
-                if datablock_xr[depthvarname].attrs['positive'] == 'down': #attribute appears in CMEMS, GFDL and CMCC, save to assume presence?
-                    depth_array = -depth_array
-                if fill_na: #ffill data
-                    datablock_xr = datablock_xr.bfill(dim=depthvarname).ffill(dim=depthvarname) #fill nans back and forward (corresponds to vertical extrapolation for CMEMS). Deep values are filled if order is shallow to deep
-                datablock_np = datablock_xr.to_numpy()
+                ts_one = DataArray_to_T3D(datablock_xr,name=pli_PolyObject_name_num,refdate_str=refdate_str,bcvarname=bcvarname,depthvarname=depthvarname)
             else:
-                datablock_np = datablock_xr.to_numpy()[:,np.newaxis]
-                
-            # check if only nan (out of bounds or land):
-            if np.isnan(datablock_np).all():
-                print('WARNING: only nans for this coordinate, this point might be on land')
-            
-            timevar_sel_rel = date2num(pd.DatetimeIndex(datablock_xr.time.to_numpy()).to_pydatetime(),units=refdate_str,calendar='standard')
-            
-            datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock_np],axis=1)
-            time_passed = (dt.datetime.now()-dtstart).total_seconds()
-            if debug: print(f'>>time passed: {time_passed:.2f} sec')
-            
-            
-            # Each .bc file can contain 1 or more timeseries, in this case one for each support point
-            print('> constructing TimeSeries and appending to ForcingModel()')
-            dtstart = dt.datetime.now()
-            if has_depth:
-                verticalpositions_idx = np.arange(datablock_xr[depthvarname].size)+1
-                #list_QUP_perlayer = [QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs['units']) for iL in verticalpositions_id] #TODO REPORT: verwarrende foutmelding bij niet opgeven verticalpositionindex (should be missing error instead of not valid error)
-                list_QUP_perlayer = [QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs['units'], verticalposition=iVP) for iVP in verticalpositions_idx] #TODO SOLVED: verticalposition 1/2/3/n is not supported. https://github.com/Deltares/HYDROLIB-core/issues/317
-                ts_one = T3D(name=pli_PolyObject_name_num,
-                             verticalpositionspecification=depth_array.tolist(), #TODO: should be "Vertical position specification = [..]" but is verticalPositions = [..]" (both possible?). https://github.com/Deltares/HYDROLIB-core/issues/317
-                             verticalinterpolation='linear',
-                             verticalpositiontype='ZDatum', #TODO SOLVED: should be "Vertical position type = zdatum" but is "verticalPositionType = ZBed" (zdatum is niet beschikbaar). https://github.com/Deltares/HYDROLIB-core/issues/317
-                             quantityunitpair=[QuantityUnitPair(quantity="time", unit=refdate_str)]+list_QUP_perlayer,
-                             timeinterpolation='linear', #TODO SOLVED: not passed on to bc file. https://github.com/Deltares/HYDROLIB-core/issues/317
-                             datablock=datablock_incltime.tolist(), #TODO: numpy array is not supported by TimeSeries. https://github.com/Deltares/HYDROLIB-core/issues/322
-                             )
-            else:
-                ts_one = TimeSeries(name=pli_PolyObject_name_num,
-                                    verticalposition='ZBed', #TODO: is not passed on to bc file and that makes sense, but it should raise error since it is not relevant for timeseries. https://github.com/Deltares/HYDROLIB-core/issues/321
-                                    quantityunitpair=[QuantityUnitPair(quantity="time", unit=refdate_str), #TODO: quantity is not validated: https://github.com/Deltares/HYDROLIB-core/issues/357
-                                                      QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs['units'])],
-                                    timeinterpolation='linear',
-                                    datablock=datablock_incltime.tolist(), 
-                                    )
-            
+                ts_one = DataArray_to_TimeSeries(datablock_xr,name=pli_PolyObject_name_num,refdate_str=refdate_str,bcvarname=bcvarname)
             ForcingModel_object.forcing.append(ts_one)
             time_passed = (dt.datetime.now()-dtstart).total_seconds()
             if debug: print(f'>>time passed: {time_passed:.2f} sec')
-            
             
             if debug:
                 print('> plotting')

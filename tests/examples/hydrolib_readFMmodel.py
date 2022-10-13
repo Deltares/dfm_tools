@@ -8,7 +8,7 @@ Created on Mon Oct  3 12:07:18 2022
 from pathlib import Path
 from hydrolib.core.io.mdu.models import FMModel, NetworkModel, ExtModel, StructureModel
 from hydrolib.core.io.bc.models import ForcingModel
-from dfm_tools.hydrolib_helpers import forcingobject_to_dataframe
+from dfm_tools.hydrolib_helpers import forcingobject_to_DataFrame
 import datetime as dt
 import matplotlib.pyplot as plt
 plt.close('all')
@@ -18,7 +18,7 @@ dtstart = dt.datetime.now()
 file_mdu = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB_structbc\RMM_dflowfm_nostruct.mdu') #quite small model
 #file_mdu = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_dflowfm.mdu') #model with all but one structure and all but one lateral commented, reduces validation errors from >200 to 5. TODO: resolve validation errors
 #file_mdu = Path(r'c:\DATA\dfm_tools_testdata\DFM_3D_z_Grevelingen\computations\run01\Grevelingen-FM.mdu')
-fm = FMModel(file_mdu) #TODO: currently crashes on issues below, and is quite slow since all files are being read
+#fm = FMModel(file_mdu) #TODO: currently crashes on issues below, and is quite slow since all files are being read
 
 
 file_struct = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_structures.ini')
@@ -30,7 +30,6 @@ file_struct = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\comput
 file_network = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\rmm_v1p7_net.nc')
 #network = NetworkModel(file_network) #TODO: what is this used for?
 
-breakit
 #file_extnew = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_bnd_5bnds.ext')
 file_extnew = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_bnd_course.ext')
 ext = ExtModel(file_extnew) #TODO: laterals xycoordinates float is not yet supported (int is prescribed in ext model): https://github.com/Deltares/HYDROLIB-core/pull/351 (use *_original file to test after fix)
@@ -56,7 +55,7 @@ for iEB, extbnd in enumerate(ext_boundaries+ext_laterals): #TODO: waterlevelbnd 
     leglabels_new = []
     for iEBF, forcing in enumerate(extbnd_forcings[:max_extforcings]):
         print(f'forcing {iEBF+1} of {len(extbnd_forcings)}: {forcing.name} ({forcing.function}) ({forcing.quantityunitpair[1].quantity})')
-        forcing_pd = forcingobject_to_dataframe(forcing)
+        forcing_pd = forcingobject_to_DataFrame(forcing)
         ax.set_title(f'{extbnd_filepath}')
         pc = forcing_pd.plot(ax=ax) #TODO: see CMEMS_interpolate_example.py for pcolormesh in case of verticalpositions
         leglabels = pc.get_legend_handles_labels()[1]
