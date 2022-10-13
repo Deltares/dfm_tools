@@ -31,7 +31,6 @@ file_network = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\compu
 #network = NetworkModel(file_network) #TODO: what is this used for?
 
 #file_extnew = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_bnd.ext')
-#file_extnew = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_bnd_5bnds.ext')
 file_extnew = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_bnd_course.ext')
 ext = ExtModel(file_extnew) #TODO: laterals xycoordinates float is not yet supported (int is prescribed in ext model): https://github.com/Deltares/HYDROLIB-core/pull/351 (use *_original file to test after fix)
 
@@ -53,15 +52,12 @@ for iEB, extbnd in enumerate(ext_boundaries+ext_laterals): #TODO: waterlevelbnd 
         raise Exception('ERROR: not forcingfile/discharge present (boundary/lateral')
     print(f'boundary {iEB+1} of {len(ext_boundaries)}: {extbnd_filepath}')
     fig,ax = plt.subplots(figsize=(12,6))
-    leglabels_new = []
     for iEBF, forcing in enumerate(extbnd_forcings[:max_extforcings]):
         print(f'forcing {iEBF+1} of {len(extbnd_forcings)}: {forcing.name} ({forcing.function}) ({forcing.quantityunitpair[1].quantity})')
         forcing_pd = forcinglike_to_DataFrame(forcing)
         ax.set_title(f'{extbnd_filepath}')
-        pc = forcing_pd.plot(ax=ax) #TODO: see CMEMS_interpolate_example.py for pcolormesh in case of verticalpositions
-        leglabels = pc.get_legend_handles_labels()[1]
-        leglabels_new.append(f'{forcing.name} ({forcing.function}) {leglabels[-1]}')
-    ax.legend(leglabels_new,fontsize=8)
+        pc = forcing_pd.plot(ax=ax, label=f'{forcing.name} ({forcing.function}) ({forcing.quantityunitpair[1].quantity})') # TODO: see CMEMS_interpolate_example.py for pcolormesh in case of verticalpositions
+    ax.legend(fontsize=8)
     fig.tight_layout()
 
 

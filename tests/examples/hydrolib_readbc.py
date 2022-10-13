@@ -8,15 +8,10 @@ Created on Wed Aug 17 11:19:51 2022
 
 #import os
 from pathlib import Path
-import datetime as dt
-import pandas as pd
-#from netCDF4 import num2date
-#import cftime
 import matplotlib.pyplot as plt
 plt.close('all')
-import numpy as np
 from hydrolib.core.io.bc.models import ForcingModel
-from dfm_tools.hydrolib_helpers import forcinglike_to_DataArray
+from dfm_tools.hydrolib_helpers import forcinglike_to_DataArray, forcinglike_to_DataFrame
 
 
 #NOTE: for examples with writing bc files, check dfm_tools.interpolate_grid2bnd.* and dfm_tools.hydrolib_helpers.
@@ -26,12 +21,13 @@ nPoints = 5 #None for all points
 file_bc_list = [Path(r'n:\My Documents\werkmap\hydrolib_test\DCSM\tide_OB_all_20181108.bc'), #TODO: make better DataArray format for astronomic components
                 #Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\2020\flow\rmm_zeerand_v3_2020.bc'), #>100 timeseries
                 #Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\rmm_rivdis_meas_20171101_20210102_MET.bc'), #TODO: why can it not be str? #three timeseries
-                #Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\2018\flow\rmm_discharge_laterals_20171201_20190101_MET.bc'),
-                #Path(r'n:\My Documents\werkmap\hydrolib_test\haixia\salinity_bc_South_v2_firstpoint.bc'), #TODO SOLVED: old keywords not supported yet
+                Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\2018\flow\rmm_discharge_laterals_20171201_20190101_MET.bc'),
+                Path(r'n:\My Documents\werkmap\hydrolib_test\haixia\salinity_bc_South_v2_firstpoint.bc'), #TODO SOLVED: old keywords not supported yet
                 #Path(r'n:\My Documents\werkmap\hydrolib_test\haixia\uxuy_bc_South_v2_firstpoint.bc') ,#TODO: uxuy still crashes
                 #Path(r'n:\My Documents\werkmap\hydrolib_test\haixia\salinity_bc_South_v2.bc'), #large file, takes time
                 #Path(r'n:\My Documents\werkmap\hydrolib_test\haixia\uxuy_bc_South_v2.bc'),
                 ]
+
 
 for file_bc in file_bc_list:
     #Load .bc-file using HydroLib object ForcingModel.
@@ -61,20 +57,27 @@ for file_bc in file_bc_list:
             #ax.set_ylim(-500,5)
         elif forcingobj.function=='astronomic':
             if iFO==0:
+                ax2 = ax.twinx()
                 continue #skip first (invalid) point
-            forcing_xr.isel(quantity=0).plot(ax=ax, label=forcing_xr.attrs['name'], linewidth=0.7) #quantity=0 is only amplitude
+            forcing_xr.isel(quantity=0).plot(ax=ax, label='amplitude', linewidth=0.7)
+            forcing_xr.isel(quantity=1).plot(ax=ax2, label='phase', linewidth=0.7)
             ax.legend(loc=1)
+            # forcing_pd = forcinglike_to_DataFrame(forcingobj) #only relevant for Astronomic, for TimeSeries/T3D it is equal to xr.to_pandas()
+            # forcing_pd[forcing_pd.columns[0]].plot(ax=ax, linewidth=0.7)
+            # forcing_pd[forcing_pd.columns[1]].plot(ax=ax, linewidth=0.7, secondary_y=True)
+            # ax.legend(forcing_pd.columns,loc=1)
         else:
             forcing_xr.plot(ax=ax, label=forcing_xr.attrs['name'], linewidth=0.7)
             ax.legend(loc=1)
-    
-    #Plot mean waterlevel in BC-file over the complete period for each point on the boundary
+        
+    """
+    #Plot mean value in BC-file over the complete period for each point on the boundary
     mean_list = [forcinglike_to_DataArray(forcingobj).mean().mean() for forcingobj in m.forcing[:nPoints]]
     fig, ax = plt.subplots(figsize=(8, 4))
     ax.plot(mean_list,'-o')
     ax.set_xlabel('Point on boundary')
     ax.set_ylabel(f"mean {pli_quan} [{pli_unit}]")
-
+    """
 
 
 

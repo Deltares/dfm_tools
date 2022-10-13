@@ -26,7 +26,7 @@ from hydrolib.core.io.bc.models import (
 
 
 def DataArray_to_T3D(datablock_xr, 
-                     name, #TODO: add name to DataArray attrs? (also add refdate?)
+                     name, #TODO: add name to DataArray attrs? (also add refdate_str to attrs and maybe others?)
                      refdate_str, bcvarname, fill_na=True, 
                      depthvarname='depth'): #TODO depthvarname argument can be avoided if rename_variables with 'depth'
     """
@@ -99,60 +99,6 @@ def DataFrame_to_PolyObject(poly_pd,name,content=None): #TODO: make this method 
     return polyobject
 
 
-def forcinglike_to_DataFrame(forcingobj, convert_time=True): #TODO: remove this method?
-    """
-    convert a hydrolib forcing like object (like Timeseries, T3D, Harmonic, etc) to a pandas DataFrame. #TODO: astronomic is also supported, what more?
-    
-    Parameters
-    ----------
-    forcingobj : hydrolib ForcingModel.forcing object (Timeseries/T3D etc)
-        DESCRIPTION.
-    convert_time : boolean, optional
-        Convert time column from unit (e.g. minutes since date) to datetime index and drop the time column. Has no effect if there is no time column in the forcingobject. The default is True.
-
-    Returns
-    -------
-    df_data : pd.DataFrame
-        DESCRIPTION
-        
-    Example
-    -------
-         file_bc = Path('p:\\11208053-004-kpp2022-rmm1d2d\\C_Work\\09_Validatie2018_2020\\dflowfm2d-rmm_vzm-j19_6-v2d\\boundary_conditions\\2018\\flow\\rmm_discharge_laterals_20171220_20190101_MET.bc')
-         m = ForcingModel(file_bc)
-         df_data_list = [forcingobject_to_dataframe(forcingobj, convert_time=True) for forcingobj in m.forcing]
-
-    """
-    raise Exception('do not use this method')
-    
-    #check if forcingmodel instead of T3D/TimeSeries is provided
-    if isinstance(forcingobj, ForcingModel):
-        raise Exception('ERROR: instead of supplying a ForcingModel, provide a ForcingObject (Timeseries/T3D etc), by doing something like ForcingModel.forcing[0]')
-    
-    allowed_instances = (T3D, TimeSeries, Astronomic)
-    if not isinstance(forcingobj, allowed_instances):
-        raise Exception(f'ERROR: supplied input is not one of: {allowed_instances}')
-    
-    #if hasattr(forcingobj.quantityunitpair[0],'verticalpositionindex'): #TODO: might be there always
-    QUP_list = [(QUP.quantity,QUP.unit,QUP.vertpositionindex) for QUP in forcingobj.quantityunitpair] #TODO: generating MultiIndex can probably be more elegant (e.g. getting names from QUP list), but I do not know how
-    columns_MI = pd.MultiIndex.from_tuples(QUP_list,names=dict(forcingobj.quantityunitpair[0]).keys())
-    df_data = pd.DataFrame(forcingobj.datablock,columns=columns_MI)
-    df_data.index.name = forcingobj.name
-    colnames_quantity = df_data.columns.get_level_values(level=0)
-    if convert_time and ('time' in colnames_quantity): #this converts time to a datetime index #TODO: do automatically if TimeSeries/T3D? (save 'encoding'/refdate somewhere)
-        time_colid = colnames_quantity.get_loc('time')
-        time_unit = df_data.columns.get_level_values(level=1)[time_colid]
-        df_data.index = cftime.num2pydate(df_data.iloc[:,time_colid],units=time_unit)
-        df_data.index.name = forcingobj.name #again with new index
-        #timezone was converted to GMT, re-adjust timezone if needed
-        timeunit_sincedatetimetz = time_unit.split('since ')[1]
-        tzone_minutes = cftime._parse_date(timeunit_sincedatetimetz)[-1]
-        df_data.index = df_data.index.tz_localize('GMT')
-        df_data.index = df_data.index.tz_convert(dt.timezone(dt.timedelta(minutes=tzone_minutes)))
-        #drop original time column
-        df_data = df_data.drop(labels='time',level=0,axis=1)
-    return df_data
-
-
 def forcinglike_to_DataArray(forcingobj): #TODO: would be convenient to have this as a method of ForcingModel objects (Timeseries/T3D/etc), or maybe as method of the ForcingModel (returning a list of DataFrames): https://github.com/Deltares/HYDROLIB-core/issues/307
     """
     convert a hydrolib forcing like object (like Timeseries, T3D, Harmonic, etc) to a xarray DataArray.
@@ -208,6 +154,68 @@ def forcinglike_to_DataArray(forcingobj): #TODO: would be convenient to have thi
         data_xr_var.attrs[key] = forcingobj.__dict__[key]
     
     return data_xr_var
+
+
+def forcinglike_to_DataFrame(forcingobj):
+    """
+    convert a hydrolib forcing like object (like Timeseries, T3D, Astronomic, etc) to a pandas DataFrame. Mostly via the forcinglike_to_DataArray() method. #TODO: Astronomic is also supported, what more?
+    
+    Parameters
+    ----------
+    forcingobj : hydrolib ForcingModel.forcing object (Timeseries/T3D etc)
+        DESCRIPTION.
+
+    Returns
+    -------
+    df_data : pd.DataFrame
+        DESCRIPTION
+        
+    Example
+    -------
+         file_bc = Path('p:\\11208053-004-kpp2022-rmm1d2d\\C_Work\\09_Validatie2018_2020\\dflowfm2d-rmm_vzm-j19_6-v2d\\boundary_conditions\\2018\\flow\\rmm_discharge_laterals_20171220_20190101_MET.bc')
+         m = ForcingModel(file_bc)
+         df_data_list = [forcingobject_to_dataframe(forcingobj, convert_time=True) for forcingobj in m.forcing]
+
+    """
+    
+    #check if forcingmodel instead of T3D/TimeSeries is provided
+    if isinstance(forcingobj, ForcingModel):
+        raise Exception('ERROR: instead of supplying a ForcingModel, provide a ForcingObject (Timeseries/T3D etc), by doing something like ForcingModel.forcing[0]')
+    
+    allowed_instances = (T3D, TimeSeries, Astronomic)
+    if not isinstance(forcingobj, allowed_instances):
+        raise Exception(f'ERROR: supplied input is not one of: {allowed_instances}')
+    
+    """ #TODO: old complex code, remove this 
+    #convert_time : boolean, optional
+    #    Convert time column from unit (e.g. minutes since date) to datetime index and drop the time column. Has no effect if there is no time column in the forcingobject. The default is True.
+    QUP_list = [(QUP.quantity,QUP.unit,QUP.vertpositionindex) for QUP in forcingobj.quantityunitpair]
+    columns_MI = pd.MultiIndex.from_tuples(QUP_list,names=dict(forcingobj.quantityunitpair[0]).keys())
+    df_data = pd.DataFrame(forcingobj.datablock,columns=columns_MI)
+    df_data.index.name = forcingobj.name
+    colnames_quantity = df_data.columns.get_level_values(level=0)
+    if convert_time and ('time' in colnames_quantity): #this converts time to a datetime index #TODO: do automatically if TimeSeries/T3D? (save 'encoding'/refdate somewhere). also check tz conversion
+        time_colid = colnames_quantity.get_loc('time')
+        time_unit = df_data.columns.get_level_values(level=1)[time_colid]
+        df_data.index = cftime.num2pydate(df_data.iloc[:,time_colid],units=time_unit)
+        df_data.index.name = forcingobj.name #again with new index
+        #timezone was converted to GMT, re-adjust timezone if needed
+        timeunit_sincedatetimetz = time_unit.split('since ')[1]
+        tzone_minutes = cftime._parse_date(timeunit_sincedatetimetz)[-1]
+        df_data.index = df_data.index.tz_localize('GMT')
+        df_data.index = df_data.index.tz_convert(dt.timezone(dt.timedelta(minutes=tzone_minutes)))
+        #drop original time column
+        df_data = df_data.drop(labels='time',level=0,axis=1)
+    """
+    if isinstance(forcingobj, (T3D, TimeSeries)):
+        data_xr_var = forcinglike_to_DataArray(forcingobj)
+        df_data = data_xr_var.to_pandas()
+    else: #for Astronomic, but might also work well for other objects without time dimension
+        columns = [f'{QUP.quantity} [{QUP.unit}]' for QUP in forcingobj.quantityunitpair]
+        df_data = pd.DataFrame(forcingobj.datablock,columns=columns)
+        df_data = df_data.set_index(columns[0])
+       
+    return df_data
 
 
 def pointlike_to_DataFrame(pointlike,drop_emptycols=True):
