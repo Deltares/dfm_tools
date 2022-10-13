@@ -42,13 +42,12 @@ def DataArray_to_T3D(datablock_xr, name, refdate_str, bcvarname, fill_na=True, d
     
     # Each .bc file can contain 1 or more timeseries, in this case one for each support point
     verticalpositions_idx = np.arange(datablock_xr[depthvarname].size)+1
-    #list_QUP_perlayer = [QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs['units']) for iVP in verticalpositions_idx] #TODO (SOLVED?): verwarrende foutmelding bij niet opgeven verticalpositionindex (should be missing error instead of not valid error)
+    #list_QUP_perlayer = [QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs['units']) for iVP in verticalpositions_idx] #TODO SOLVED: verwarrende foutmelding bij niet opgeven verticalpositionindex (should be missing error instead of not valid error)
     list_QUP_perlayer = [QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs['units'], vertpositionindex=iVP) for iVP in verticalpositions_idx] #TODO SOLVED: verticalposition 1/2/3/n is not supported. https://github.com/Deltares/HYDROLIB-core/issues/317
-    #TODO: ipv 
+    #TODO: instead of supplying list of QuantityUnitPairs, it is also possible to supply the three quanties as list separately
     ts_one = T3D(name=name,
-                 #verticalpositionspecification='aa', #TODO SOLVED: invalid keys should raise an error (mainly an issue when vertpositions is not supplied, "AttributeError: 'NoneType' object has no attribute 'split'"
                  vertpositions=depth_array.tolist(), #TODO SOLVED: should be "Vertical position specification = [..]" but is verticalPositions = [..]" (both possible?). https://github.com/Deltares/HYDROLIB-core/issues/317
-                 vertinterpolation='linear', #TODO SOLVED? verticalinterpolation would result in VerticalInterpolation.linear
+                 vertinterpolation='linear', #TODO SOLVED: not providing this results in VerticalInterpolation.linear
                  vertPositionType='ZDatum', #TODO SOLVED: should be "Vertical position type = zdatum" but is "verticalPositionType = ZBed" (zdatum is niet beschikbaar). https://github.com/Deltares/HYDROLIB-core/issues/317
                  quantityunitpair=[QuantityUnitPair(quantity="time", unit=refdate_str)]+list_QUP_perlayer,
                  timeinterpolation='linear', #TODO SOLVED: not passed on to bc file. https://github.com/Deltares/HYDROLIB-core/issues/317
@@ -69,7 +68,6 @@ def DataArray_to_TimeSeries(datablock_xr, name, refdate_str, bcvarname):
     
     # Each .bc file can contain 1 or more timeseries, in this case one for each support point
     ts_one = TimeSeries(name=name,
-                        verticalposition='ZBed', #TODO: is not passed on to bc file and that makes sense, but it should raise error since it is not relevant for timeseries. https://github.com/Deltares/HYDROLIB-core/issues/321
                         quantityunitpair=[QuantityUnitPair(quantity="time", unit=refdate_str), #TODO: quantity is not validated: https://github.com/Deltares/HYDROLIB-core/issues/357
                                           QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs['units'])],
                         timeinterpolation='linear',

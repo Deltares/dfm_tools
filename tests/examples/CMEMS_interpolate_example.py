@@ -13,7 +13,7 @@ from dfm_tools.interpolate_grid2bnd import get_conversion_dict, interpolate_FES,
 from dfm_tools.hydrolib_helpers import forcinglike_to_DataFrame
 from hydrolib.core.io.ext.models import Boundary, ExtModel
 
-model = 'CMEMS' #CMEMS GFDL CMCC HYCOM #TODO: make one timeperiod/pli/etc for all models to provide a simple example
+model = 'GFDL' #CMEMS GFDL CMCC HYCOM #TODO: make one timeperiod/pli/etc for all models to provide a simple example
 
 #copied plifile from DCSM folder: r'p:\1204257-dcsmzuno\data\CMEMS\bnd\NorthSeaAndBaltic_1993-2019_20210510'
 #list_plifiles = [Path(r'n:\My Documents\werkmap\hydrolib_test\DCSM\DCSM-FM_OB_all_20181108.pli')] #TODO: reading this file results in empty Polyfile, should raise an error. https://github.com/Deltares/HYDROLIB-core/issues/320
@@ -35,8 +35,8 @@ tstop = dt.datetime(1993, 3, 1, 12, 0)
 nPoints = 3 #amount of Points to process per PolyObject in the plifile (for testing, use None for all Points)
 
 list_quantities = ['NO3']
-list_quantities = ['steric','salinity','tide']#,['salinity','temperature','steric'] #should be in conversion_dict.keys()
-list_quantities = ['salinity']#,'temperature']
+#list_quantities = ['steric','salinity','tide']#,['salinity','temperature','steric'] #should be in conversion_dict.keys()
+#list_quantities = ['salinity']#,'temperature']
 
 dtstart = dt.datetime.now()
 ext_bnd = ExtModel()
