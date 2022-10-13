@@ -30,6 +30,7 @@ file_struct = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\comput
 file_network = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\rmm_v1p7_net.nc')
 #network = NetworkModel(file_network) #TODO: what is this used for?
 
+#file_extnew = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_bnd.ext')
 #file_extnew = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_bnd_5bnds.ext')
 file_extnew = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_bnd_course.ext')
 ext = ExtModel(file_extnew) #TODO: laterals xycoordinates float is not yet supported (int is prescribed in ext model): https://github.com/Deltares/HYDROLIB-core/pull/351 (use *_original file to test after fix)
@@ -37,7 +38,7 @@ ext = ExtModel(file_extnew) #TODO: laterals xycoordinates float is not yet suppo
 time_passed = (dt.datetime.now()-dtstart).total_seconds()
 print(f'>>time passed: {time_passed:.2f} sec')
 
-max_extforcings = 6 #None for all?
+max_extforcings = 6 #None for all
 
 ext_boundaries = ext.boundary
 ext_laterals = ext.lateral
@@ -49,7 +50,7 @@ for iEB, extbnd in enumerate(ext_boundaries+ext_laterals): #TODO: waterlevelbnd 
         extbnd_filepath = extbnd.discharge.filepath
         extbnd_forcings = extbnd.discharge.forcing
     else:
-        raise Exception('ERROR: not forcingfile/discharge present (boundary/lateral') #TODO: this is not intuitive, make issue?
+        raise Exception('ERROR: not forcingfile/discharge present (boundary/lateral')
     print(f'boundary {iEB+1} of {len(ext_boundaries)}: {extbnd_filepath}')
     fig,ax = plt.subplots(figsize=(12,6))
     leglabels_new = []
