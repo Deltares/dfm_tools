@@ -43,40 +43,42 @@ from hydrolib.core.io.polyfile.models import PolyFile
 
 from dfm_tools.hydrolib_helpers import DataArray_to_TimeSeries, DataArray_to_T3D
 
+debug = False #TODO: remove this keyword
+
 
 def get_conversion_dict(model='CMEMS'):
     conversion_dicts = {}
     # conversion_dict, contains ncvarname as array because uxuy relies on 2 CMEMS variables
     conversion_dicts['CMEMS'] = { # mg/l is the same as g/m3: conversion is phyc in mmol/l to newvar in g/m3
-                                'OXY'        : {'ncvarname': 'o2',      'bcvarname': 'tracerbndOXY',  'unit': 'g/m3', 'conversion' : 32.0 / 1000.0}, 
-                                'NO3'        : {'ncvarname': 'no3',     'bcvarname': 'tracerbndNO3',  'unit': 'g/m3', 'conversion' : 14.0 / 1000.0},
-                                'PO4'        : {'ncvarname': 'po4',     'bcvarname': 'tracerbndPO4',  'unit': 'g/m3', 'conversion' : 30.97 / 1000.0},
-                                'Si'         : {'ncvarname': 'si',      'bcvarname': 'tracerbndSi',   'unit': 'g/m3', 'conversion' : 28.08 / 1000.0},
-                                'PON1'       : {'ncvarname': 'phyc',    'bcvarname': 'tracerbndPON1', 'unit': 'g/m3', 'conversion' : 2. * 16. * 14. / (106. * 1000.0)},
-                                'POP1'       : {'ncvarname': 'phyc',    'bcvarname': 'tracerbndPOP1', 'unit': 'g/m3', 'conversion' : 2. * 30.97 / (106. * 1000.0)},
-                                'POC1'       : {'ncvarname': 'phyc',    'bcvarname': 'tracerbndPOC1', 'unit': 'g/m3', 'conversion' : 2. * 12. / 1000.0},
-                                'DON'        : {'ncvarname': 'phyc',    'bcvarname': 'tracerbndDON',  'unit': 'g/m3', 'conversion' : 3.24 * 2. * 16. * 14. / (106. * 1000.0)},
-                                'DOP'        : {'ncvarname': 'phyc',    'bcvarname': 'tracerbndDOP',  'unit': 'g/m3', 'conversion' : 1.0 * 2. * 30.97 / (106. * 1000.0)},
-                                'DOC'        : {'ncvarname': 'phyc',    'bcvarname': 'tracerbndDOC',  'unit': 'g/m3', 'conversion' : (199. / 20.) * 3.24 * 2. * 16. * 12. / (106. * 1000.0)},
-                                'Opal'       : {'ncvarname': 'phyc',    'bcvarname': 'tracerbndOpal', 'unit': 'g/m3', 'conversion' : 0.5 * 0.13 * 28.08 / (1000.0)},
-                                'salinity'   : {'ncvarname': 'so',      'bcvarname': 'salinitybnd'},    #'1e-3'
-                                'temperature': {'ncvarname': 'thetao',  'bcvarname': 'temperaturebnd'}, #'degC'
-                                'ux'         : {'ncvarname': 'uo',      'bcvarname': 'ux' },            #'m/s'
-                                'uy'         : {'ncvarname': 'vo',      'bcvarname': 'uy' },            #'m/s'
-                                'ux,uy'      : {'ncvarname': 'uo,vo',   'bcvarname': 'ux,uy' },         #'m/s'
-                                'steric'     : {'ncvarname': 'zos',     'bcvarname': 'waterlevelbnd'},  #'m'
-                                'tide'       : {'ncvarname': '',        'bcvarname': 'waterlevelbnd'},  #'m'
+                                'OXY'        : {'ncvarname': 'o2',         'bcvarname': 'tracerbndOXY',  'unit': 'g/m3', 'conversion' : 32.0 / 1000.0}, 
+                                'NO3'        : {'ncvarname': 'no3',        'bcvarname': 'tracerbndNO3',  'unit': 'g/m3', 'conversion' : 14.0 / 1000.0},
+                                'PO4'        : {'ncvarname': 'po4',        'bcvarname': 'tracerbndPO4',  'unit': 'g/m3', 'conversion' : 30.97 / 1000.0},
+                                'Si'         : {'ncvarname': 'si',         'bcvarname': 'tracerbndSi',   'unit': 'g/m3', 'conversion' : 28.08 / 1000.0},
+                                'PON1'       : {'ncvarname': 'phyc',       'bcvarname': 'tracerbndPON1', 'unit': 'g/m3', 'conversion' : 2. * 16. * 14. / (106. * 1000.0)},
+                                'POP1'       : {'ncvarname': 'phyc',       'bcvarname': 'tracerbndPOP1', 'unit': 'g/m3', 'conversion' : 2. * 30.97 / (106. * 1000.0)},
+                                'POC1'       : {'ncvarname': 'phyc',       'bcvarname': 'tracerbndPOC1', 'unit': 'g/m3', 'conversion' : 2. * 12. / 1000.0},
+                                'DON'        : {'ncvarname': 'phyc',       'bcvarname': 'tracerbndDON',  'unit': 'g/m3', 'conversion' : 3.24 * 2. * 16. * 14. / (106. * 1000.0)},
+                                'DOP'        : {'ncvarname': 'phyc',       'bcvarname': 'tracerbndDOP',  'unit': 'g/m3', 'conversion' : 1.0 * 2. * 30.97 / (106. * 1000.0)},
+                                'DOC'        : {'ncvarname': 'phyc',       'bcvarname': 'tracerbndDOC',  'unit': 'g/m3', 'conversion' : (199. / 20.) * 3.24 * 2. * 16. * 12. / (106. * 1000.0)},
+                                'Opal'       : {'ncvarname': 'phyc',       'bcvarname': 'tracerbndOpal', 'unit': 'g/m3', 'conversion' : 0.5 * 0.13 * 28.08 / (1000.0)},
+                                'salinity'   : {'ncvarname': 'so',         'bcvarname': 'salinitybnd'},    #'1e-3'
+                                'temperature': {'ncvarname': 'thetao',     'bcvarname': 'temperaturebnd'}, #'degC'
+                                'ux'         : {'ncvarname': 'uo',         'bcvarname': 'ux' },            #'m/s'
+                                'uy'         : {'ncvarname': 'vo',         'bcvarname': 'uy' },            #'m/s'
+                                'ux,uy'      : {'ncvarname': 'uo,vo',      'bcvarname': 'ux,uy' },         #'m/s'
+                                'steric'     : {'ncvarname': 'zos',        'bcvarname': 'waterlevelbnd'},  #'m'
+                                'tide'       : {'ncvarname': '',           'bcvarname': 'waterlevelbnd'},  #'m'
                                 }
-    conversion_dicts['HYCOM'] = {'salinity'   : {'ncvarname': 'salinity',    'bcvarname': 'salinitybnd'},
-                                'temperature': {'ncvarname': 'water_temp',  'bcvarname': 'temperaturebnd'},
+    conversion_dicts['HYCOM'] = {'salinity'  : {'ncvarname': 'salinity',   'bcvarname': 'salinitybnd'},
+                                'temperature': {'ncvarname': 'water_temp', 'bcvarname': 'temperaturebnd'},
                                 }
     
-    conversion_dict = conversion_dicts[model]
+    conversion_dict_model = conversion_dicts[model]
     
-    return conversion_dict
+    return conversion_dict_model
 
 
-def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180=False, nPoints=None, debug=False):
+def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180=False, nPoints=None):
     """
     """
     # translate dict from .\hydro_tools\FES\PreProcessing_FES_TideModel_imaginary.m
@@ -99,7 +101,7 @@ def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180
     
     def extract_component(ds):
         #https://github.com/pydata/xarray/issues/1380
-        if 'FES2012' in ds.encoding["source"]: #TODO: make more generic with regex
+        if 'FES2012' in ds.encoding["source"]: #TODO: make more generic with regex, or just add tidemodel argument since they are quite specific
             compname = os.path.basename(ds.encoding["source"]).replace('_FES2012_SLEV.nc','')
             ds = ds.sel(lon=ds.lon<360) #drop last instance, since 0 and 360 are both present
             ds = ds.rename({'Ha':'amplitude','Hg':'phase'})
@@ -200,15 +202,16 @@ def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180
 def interpolate_nc_to_bc(dir_pattern, file_pli, quantity, 
                          tstart, tstop, refdate_str, 
                          convert_360to180=False,
-                         conversion_dict=None, #TODO: alternatively use rename_vars dict and use conversion_dict only for unit conversion
-                         nPoints=None, debug=False,
+                         conversion_dict=None, #TODO: alternatively use rename_vars dict and use conversion_dict only for unit conversion. dict containing keys: ncvarname, bcvarname and optionally conversion and unit
+                         nPoints=None, #argument for testing
                          reverse_depth=False, #temporary argument to compare easier with old coastserv files
-                         fill_na=True):
+                         ):
     
     if conversion_dict is None:
-        conversion_dict = get_conversion_dict()
-    ncvarname = conversion_dict[quantity]['ncvarname']
-    bcvarname = conversion_dict[quantity]['bcvarname']
+        conversion_dict_model = get_conversion_dict()
+        conversion_dict = conversion_dict_model[quantity]
+    ncvarname = conversion_dict['ncvarname']
+    bcvarname = conversion_dict['bcvarname']
     if ',' in ncvarname:
         raise Exception('ERROR: combined variables not yet supported by hydrolib-core bc writer: https://github.com/Deltares/HYDROLIB-core/issues/316')
     
@@ -248,23 +251,24 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
         data_xr.coords[lonvarname] = (data_xr.coords[lonvarname] + 180) % 360 - 180
         data_xr = data_xr.sortby(data_xr[lonvarname])
     
+    if 'lev' in data_xr[ncvarname].coords: #lev for GFDL, convert to depth #TODO: provide rename_dict as argument to this function or leave as is?
+        data_xr = data_xr.rename({'lev':'depth'})
+        print('variable/coordinate lev renamed to depth')
+    
     #retrieve var (after potential longitude conversion) (also selecting relevant times)
     data_xr_var = data_xr[ncvarname].sel(time=slice(tstart,tstop))
     
-    #check if depth coordinate is present in variable (not only in file)
+    #check if depth coordinate is present in requested variable (not only in file)
     if 'depth' in data_xr_var.coords: #depth for CMEMS and many others
         has_depth = True
-        depthvarname = 'depth'
-    elif 'lev' in data_xr_var.coords: #lev for GFDL
-        has_depth = True
-        depthvarname = 'lev'
+        depthvarname = 'depth' #TODO: can be phased out and hardcoded, since the var/coord is renamed above
     else:
         has_depth = False
     
     #load boundary file
     #polyfile_object = read_polyfile(file_pli,has_z_values=False) #TODO: this warning can be suppressed: "UserWarning: White space at the start of the line is ignored." https://github.com/Deltares/HYDROLIB-core/issues/370
     #pli_PolyObjects = polyfile_object['objects']
-    polyfile_object = PolyFile(file_pli) #TODO SOLVED: should work with hydrolib-core>0.3.0. also without has_z_values argument
+    polyfile_object = PolyFile(file_pli) #TODO SOLVED: should work with hydrolib-core>=0.3.1
     pli_PolyObjects = polyfile_object.objects
     
     for iPO, pli_PolyObject_sel in enumerate(pli_PolyObjects):
@@ -297,7 +301,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
         print('> actual extraction of data from netcdf with .load() (for all PolyObject points at once, so this will take a while)')
         dtstart = dt.datetime.now()
         try:
-            datablock_raw_allcoords = data_interp.load() #loading data for all points at once is more efficient compared to loading data per point in loop 
+            datablock_xr_allpoints = data_interp.load() #loading data for all points at once is more efficient compared to loading data per point in loop 
         except ValueError: #generate a proper error with outofbounds requested coordinates, default is "ValueError: One of the requested xi is out of bounds in dimension 0"
             lonvar_vals = data_xr[lonvarname].to_numpy()
             latvar_vals = data_xr[latvarname].to_numpy()
@@ -310,15 +314,15 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
         #if debug:
         print(f'>>time passed: {time_passed:.2f} sec')
         
-        print('> optional conversion of units and reversing of depth dimension')
         #optional conversion of units and reversing depth dimension
-        if 'conversion' in conversion_dict[quantity].keys(): #if conversion is present, unit key must also be in conversion_dict
-            print('converting units')
-            datablock_raw_allcoords = datablock_raw_allcoords * conversion_dict[quantity]['conversion'] #conversion drops all attributes of which units (which are changed anyway)
-            datablock_raw_allcoords.attrs['units'] = conversion_dict[quantity]['unit'] #add unit attribute with resulting unit
+        if 'conversion' in conversion_dict.keys(): #if conversion is present, unit key must also be in conversion_dict
+            print(f'> converting units from [{datablock_xr_allpoints.attrs["units"]}] to [{conversion_dict["unit"]}]')
+            datablock_xr_allpoints = datablock_xr_allpoints * conversion_dict['conversion'] #conversion drops all attributes of which units (which are changed anyway)
+            datablock_xr_allpoints.attrs['units'] = conversion_dict['unit'] #add unit attribute with resulting unit
         
         if has_depth & reverse_depth:
-            datablock_raw_allcoords = datablock_raw_allcoords.reindex({depthvarname:list(reversed(datablock_raw_allcoords[depthvarname]))})
+            print('> reversing depth dimension')
+            datablock_xr_allpoints = datablock_xr_allpoints.reindex({depthvarname:list(reversed(datablock_xr_allpoints[depthvarname]))})
             
         for iP, pli_Point_sel in enumerate(pli_PolyObject_sel.points[:nPoints]):
             print(f'processing Point {iP+1} of {len(pli_PolyObject_sel.points)}: ',end='')
@@ -326,30 +330,18 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             print(f'(x={lonx_print}, y={laty_print})')
             pli_PolyObject_name_num = f'{pli_PolyObject_sel.metadata.name}_{iP+1:04d}'
             
-            print('> select data for point, ffill nans, concatenating time column, constructing T3D/TimeSeries and appending to ForcingModel()')
+            print('> select data for this point, ffill nans, concatenating time column, constructing T3D/TimeSeries and appending to ForcingModel()')
             dtstart = dt.datetime.now()
-            datablock_xr = datablock_raw_allcoords.isel(latloncombi=iP)
+            datablock_xr_onepoint = datablock_xr_allpoints.isel(latloncombi=iP)
+            if np.isnan(datablock_xr_onepoint.to_numpy()).all(): # check if only nan (out of bounds or land) # we can do .to_numpy() without performance loss, since data is already loaded in datablock_xr_allpoints
+                print('WARNING: only nans for this coordinate, this point might be on land')
             if has_depth:
-                ts_one = DataArray_to_T3D(datablock_xr,name=pli_PolyObject_name_num,refdate_str=refdate_str,bcvarname=bcvarname,depthvarname=depthvarname)
+                ts_one = DataArray_to_T3D(datablock_xr_onepoint,name=pli_PolyObject_name_num,refdate_str=refdate_str,bcvarname=bcvarname,depthvarname=depthvarname)
             else:
-                ts_one = DataArray_to_TimeSeries(datablock_xr,name=pli_PolyObject_name_num,refdate_str=refdate_str,bcvarname=bcvarname)
+                ts_one = DataArray_to_TimeSeries(datablock_xr_onepoint,name=pli_PolyObject_name_num,refdate_str=refdate_str,bcvarname=bcvarname)
             ForcingModel_object.forcing.append(ts_one)
             time_passed = (dt.datetime.now()-dtstart).total_seconds()
             if debug: print(f'>>time passed: {time_passed:.2f} sec')
-            
-            if debug:
-                print('> plotting')
-                dtstart = dt.datetime.now()
-                fig,ax = plt.subplots(figsize=(10,7))
-                datablock_xr.T.plot() #uses plot.line() for 1D arrays and plot.pcolormesh() for 2D arrays: https://docs.xarray.dev/en/stable/generated/xarray.DataArray.plot.html
-                ax.set_title(f'{quantity} {pli_PolyObject_name_num}')
-                if 'depth' in data_xr_var.coords:
-                    ax.set_ylim(0,200)
-                    ax.invert_yaxis()
-                fig.tight_layout()
-                time_passed = (dt.datetime.now()-dtstart).total_seconds()
-                if debug: print(f'>>time passed: {time_passed:.2f} sec')
-            
     
     return ForcingModel_object
 

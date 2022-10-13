@@ -11,7 +11,8 @@ import cftime
 import numpy as np
 import hydrolib
 from hydrolib.core.io.polyfile.models import PolyObject
-from netCDF4 import date2num #TODO: take from cftime?
+#from netCDF4 import date2num #TODO: take from cftime?
+from cftime import date2num
 
 from hydrolib.core.io.bc.models import (
     QuantityUnitPair,
@@ -19,14 +20,13 @@ from hydrolib.core.io.bc.models import (
     TimeSeries,
 )
 
-#TODO: maybe add dataframe_to_forcingobject() and 
+#TODO: maybe add DataFrame_to_forcingobject() and others
 
 
-def DataArray_to_T3D(datablock_xr,name,refdate_str,bcvarname,depthvarname='depth'): #TODO depthvarname argument can be avoided if overwritten with 'depth'
+def DataArray_to_T3D(datablock_xr, name, refdate_str, bcvarname, fill_na=True, depthvarname='depth'): #TODO depthvarname argument can be avoided if rename_variables with 'depth'
     """
     convert an xarray.DataArray with depth dimension to a hydrolib T3D object
     """
-    fill_na = True
     
     #get depth variable and values
     depth_array = datablock_xr[depthvarname].to_numpy()
@@ -34,22 +34,18 @@ def DataArray_to_T3D(datablock_xr,name,refdate_str,bcvarname,depthvarname='depth
         depth_array = -depth_array
     if fill_na: #ffill data
         datablock_xr = datablock_xr.bfill(dim=depthvarname).ffill(dim=depthvarname) #fill nans back and forward (corresponds to vertical extrapolation for CMEMS). Deep values are filled if order is shallow to deep
+    
+    #get datablock and concatenate with relative time data
     datablock_np = datablock_xr.to_numpy()
-    
-    # check if only nan (out of bounds or land):
-    if np.isnan(datablock_np).all(): #TODO: this can be moved outside of def, since data is already loaded
-        print('WARNING: only nans for this coordinate, this point might be on land')
-    
     timevar_sel_rel = date2num(pd.DatetimeIndex(datablock_xr.time.to_numpy()).to_pydatetime(),units=refdate_str,calendar='standard')
-    
     datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock_np],axis=1)
-
+    
     # Each .bc file can contain 1 or more timeseries, in this case one for each support point
     verticalpositions_idx = np.arange(datablock_xr[depthvarname].size)+1
-    #list_QUP_perlayer = [QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs['units']) for iL in verticalpositions_id] #TODO REPORT: verwarrende foutmelding bij niet opgeven verticalpositionindex (should be missing error instead of not valid error)
+    #list_QUP_perlayer = [QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs['units']) for iVP in verticalpositions_idx] #TODO (SOLVED?): verwarrende foutmelding bij niet opgeven verticalpositionindex (should be missing error instead of not valid error)
     list_QUP_perlayer = [QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs['units'], verticalposition=iVP) for iVP in verticalpositions_idx] #TODO SOLVED: verticalposition 1/2/3/n is not supported. https://github.com/Deltares/HYDROLIB-core/issues/317
     ts_one = T3D(name=name,
-                 verticalpositionspecification=depth_array.tolist(), #TODO: should be "Vertical position specification = [..]" but is verticalPositions = [..]" (both possible?). https://github.com/Deltares/HYDROLIB-core/issues/317
+                 verticalpositionspecification=depth_array.tolist(), #TODO SOLVED: should be "Vertical position specification = [..]" but is verticalPositions = [..]" (both possible?). https://github.com/Deltares/HYDROLIB-core/issues/317
                  verticalinterpolation='linear',
                  verticalpositiontype='ZDatum', #TODO SOLVED: should be "Vertical position type = zdatum" but is "verticalPositionType = ZBed" (zdatum is niet beschikbaar). https://github.com/Deltares/HYDROLIB-core/issues/317
                  quantityunitpair=[QuantityUnitPair(quantity="time", unit=refdate_str)]+list_QUP_perlayer,
@@ -59,19 +55,14 @@ def DataArray_to_T3D(datablock_xr,name,refdate_str,bcvarname,depthvarname='depth
     return ts_one
 
 
-def DataArray_to_TimeSeries(datablock_xr,name,refdate_str,bcvarname):
+def DataArray_to_TimeSeries(datablock_xr, name, refdate_str, bcvarname):
     """
     convert an xarray.DataArray without depth dimension to a hydrolib TimeSeries object
     """
     
+    #get datablock and concatenate with relative time data
     datablock_np = datablock_xr.to_numpy()[:,np.newaxis]
-        
-    # check if only nan (out of bounds or land):
-    if np.isnan(datablock_np).all():
-        print('WARNING: only nans for this coordinate, this point might be on land')
-    
     timevar_sel_rel = date2num(pd.DatetimeIndex(datablock_xr.time.to_numpy()).to_pydatetime(),units=refdate_str,calendar='standard')
-    
     datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock_np],axis=1)
     
     # Each .bc file can contain 1 or more timeseries, in this case one for each support point
@@ -103,8 +94,9 @@ def DataFrame_to_PolyObject(poly_pd,name,content=None): #TODO: make this method 
     return polyobject
 
 
-def forcingobject_to_DataFrame(forcingobj, convert_time=True): #TODO: would be convenient to have this as a method of ForcingModel objects (Timeseries/T3D/etc), or maybe as method of the ForcingModel (returning a list of DataFrames): https://github.com/Deltares/HYDROLIB-core/issues/307
+def forcinglike_to_DataFrame(forcingobj, convert_time=True): #TODO: would be convenient to have this as a method of ForcingModel objects (Timeseries/T3D/etc), or maybe as method of the ForcingModel (returning a list of DataFrames): https://github.com/Deltares/HYDROLIB-core/issues/307
     """
+    convert a hydrolib forcing like object (like Timeseries, T3D, Harmonic, etc) to a pandas DataFrame. #TODO: astronomic is also supported, what more?
     
     Parameters
     ----------
@@ -148,9 +140,9 @@ def forcingobject_to_DataFrame(forcingobj, convert_time=True): #TODO: would be c
     return df_data
 
 
-def polyobject_to_DataFrame(PolyObject, convert_xy_to_time=False): #TODO: this not only works for PolyObject, but now also for XYZModel and possibly others, so rename it to objectwithpoints_to_dataframe or so
+def pointlike_to_DataFrame(PolyObject, convert_xy_to_time=False): #TODO: this not only works for PolyObject, but now also for XYZModel and possibly others, so rename it to objectwithpoints_to_dataframe or so
     """
-    
+    convert a hydrolib object with points (like PolyObject or XYZModel) to a pandas DataFrame.
 
     Parameters
     ----------

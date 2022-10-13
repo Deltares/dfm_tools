@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 plt.close('all')
 import numpy as np
 from hydrolib.core.io.bc.models import ForcingModel
-from dfm_tools.hydrolib_helpers import forcingobject_to_dataframe
+from dfm_tools.hydrolib_helpers import forcinglike_to_DataFrame
 
 #NOTE: for examples with writing bc files, check dfm_tools.interpolate_grid2bnd.*
 
@@ -38,7 +38,7 @@ if 1: #read in bc file with Timeseries objects (waterlevels, discharges)
     type(m.forcing[0].datablock) #list
     """
         
-    df_data_list = [forcingobject_to_dataframe(forcingobj, convert_time=True) for forcingobj in m.forcing]
+    df_data_list = [forcinglike_to_DataFrame(forcingobj, convert_time=True) for forcingobj in m.forcing]
     
     #plot
     fig, ax = plt.subplots(figsize=(12, 6))
@@ -71,7 +71,7 @@ if 0: #read bc file with T3D blocks
     #m.save('test.bc')
     
     #plotting
-    df_data = forcingobject_to_dataframe(m.forcing[0], convert_time=True)
+    df_data = forcinglike_to_DataFrame(m.forcing[0], convert_time=True)
     fig, ax = plt.subplots(figsize=(8, 4))
     ax.pcolormesh(df_data.index,m.forcing[0].verticalpositions,df_data.T)
     ax.set_ylim(-500,5)

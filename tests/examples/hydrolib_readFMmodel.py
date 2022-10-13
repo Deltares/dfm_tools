@@ -8,7 +8,7 @@ Created on Mon Oct  3 12:07:18 2022
 from pathlib import Path
 from hydrolib.core.io.mdu.models import FMModel, NetworkModel, ExtModel, StructureModel
 from hydrolib.core.io.bc.models import ForcingModel
-from dfm_tools.hydrolib_helpers import forcingobject_to_DataFrame
+from dfm_tools.hydrolib_helpers import forcinglike_to_DataFrame
 import datetime as dt
 import matplotlib.pyplot as plt
 plt.close('all')
@@ -55,7 +55,7 @@ for iEB, extbnd in enumerate(ext_boundaries+ext_laterals): #TODO: waterlevelbnd 
     leglabels_new = []
     for iEBF, forcing in enumerate(extbnd_forcings[:max_extforcings]):
         print(f'forcing {iEBF+1} of {len(extbnd_forcings)}: {forcing.name} ({forcing.function}) ({forcing.quantityunitpair[1].quantity})')
-        forcing_pd = forcingobject_to_DataFrame(forcing)
+        forcing_pd = forcinglike_to_DataFrame(forcing)
         ax.set_title(f'{extbnd_filepath}')
         pc = forcing_pd.plot(ax=ax) #TODO: see CMEMS_interpolate_example.py for pcolormesh in case of verticalpositions
         leglabels = pc.get_legend_handles_labels()[1]
