@@ -15,11 +15,11 @@ plt.close('all')
 from hydrolib.core.io.polyfile.models import PolyFile
 from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame, parse_xy_to_datetime, DataFrame_to_PolyObject
 
+
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
 dtstart = dt.datetime.now()
-
 
 file_pli_list = [Path(dir_testinput,'world.ldb'),
                  #Path(dir_testinput,r'GSHHS_f_L1_world_ldb_noaa_wvs.ldb'), #huge file, so takes a lot of time
@@ -43,7 +43,7 @@ for file_pli in file_pli_list:
     
     #empty polyfile object to append polyobjects to for testing full read/write workflow
     polyfile_object_out = PolyFile()
-
+    
     fig,ax = plt.subplots()
     for iPO, pli_PolyObject_sel in enumerate(polyfile_object.objects):
         print(f'processing PolyObject {iPO+1} of {len(polyfile_object.objects)}: name={pli_PolyObject_sel.metadata.name}')
@@ -63,13 +63,13 @@ for file_pli in file_pli_list:
             content_str = content = pli_PolyObject_sel.description.content
         
         #collect for writing outfile
-        #polyobject_out = DataFrame_to_PolyObject(polyobject_pd, name=pli_PolyObject_sel.metadata.name, content=content) #TODO: better formatting of plifile (also more precision, maybe write xy/datetime as ints?)
+        #polyobject_out = DataFrame_to_PolyObject(polyobject_pd, name=pli_PolyObject_sel.metadata.name, content=content)
         #polyfile_object_out.objects.append(polyobject_out)
 
         ax.set_title(f'{len(polyfile_object.objects)} PolyObjects, name of first is {pli_PolyObject_sel.metadata.name}')
         #plotting
         if 'Date' in content_str: #conversion of xy to datetime
-            polyobject_pd_timeidx = parse_xy_to_datetime(polyobject_pd) #TODO: not suported the other way round, necessary?
+            polyobject_pd_timeidx = parse_xy_to_datetime(polyobject_pd) #TODO: not suported the other way round, necessary to add?
             ax.plot(polyobject_pd_timeidx)
             ax.legend(content_str.split('\n')[2:])
         elif 'SDS-zd003b5dec2-sal' in str(file_pli): #this is a 3D tekfile, depends on the contents how to handle it so it is hardcoded
@@ -89,7 +89,7 @@ for file_pli in file_pli_list:
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,os.path.basename(file_pli).replace('.','')))
     
-    polyfile_object_out.save(os.path.basename(file_pli).replace('.','_out.')) #TODO: better formatting of plifile
+    polyfile_object_out.save(os.path.basename(file_pli).replace('.','_out.')) #TODO: better formatting of plifile (also more precision, maybe write xy/datetime as ints?)
     
     #get extents of all objects in polyfile
     data_pol_pd_list = [pointlike_to_DataFrame(polyobj) for polyobj in polyfile_object.objects]
