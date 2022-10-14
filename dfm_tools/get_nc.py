@@ -34,7 +34,7 @@ Created on Fri Feb 14 12:45:11 2020
 import numpy as np
 
 
-def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None, station=None, multipart=None, get_linkedgridinfo=False, silent=False):
+def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None, station=None, multipart=None, silent=False): #, get_linkedgridinfo=False
     """
 
     Parameters
@@ -253,7 +253,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
 
         values_selid = []
         values_dimlens = [] #list(nc_values.shape)
-        values_dimlinkedgrid = [] #list(nc_values.shape)
+        #values_dimlinkedgrid = [] #list(nc_values.shape)
         try:
             nc_varobject_sel_coords = nc_varobject_sel.coordinates
         except:
@@ -299,19 +299,19 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
                 values_selid.append(range(nc_varobject_sel.shape[iD]))
                 values_dimlens.append(nc_varobject_sel.shape[iD])
 
-            #get info about grid variables related to varname
-            if get_linkedgridinfo and (nc_values_dimsel not in [dimn_time,dimn_layer]+dimname_stat_validvals):
-                vars_pd_relevant = vars_pd[(vars_pd['shape'].apply(len)<=2) & (vars_pd['dimensions'].apply(lambda x: nc_values_dimsel in x)) & -(vars_pd['dimensions'].apply(lambda x: dimn_time in x))]
-                values_dimlinkedgrid.append(vars_pd_relevant)
+            #get info about grid variables related to varname #TODO: remove this commented code (and related linkedgrid parts)
+            # if get_linkedgridinfo and (nc_values_dimsel not in [dimn_time,dimn_layer]+dimname_stat_validvals):
+            #     vars_pd_relevant = vars_pd[(vars_pd['shape'].apply(len)<=2) & (vars_pd['dimensions'].apply(lambda x: nc_values_dimsel in x)) & -(vars_pd['dimensions'].apply(lambda x: dimn_time in x))]
+            #     values_dimlinkedgrid.append(vars_pd_relevant)
 
-                print('\tlinkedvars for dimension "%s":'%(nc_values_dimsel))
-                #print('nc_varobject_sel.dimensions: %s'%([nc_varobject_sel.dimensions]))
-                for iLV, linkedvar in vars_pd_relevant.iterrows():
-                    print('\t\t%s  %s  %s'%(iLV, linkedvar['shape'], linkedvar['dimensions']))
-                #print('nc_values_dimsel: %s'%(nc_values_dimsel))
-                #print('vars_pd_relevant:\n%s'%(vars_pd_relevant))
-            else:
-                values_dimlinkedgrid.append(None)
+            #     print('\tlinkedvars for dimension "%s":'%(nc_values_dimsel))
+            #     #print('nc_varobject_sel.dimensions: %s'%([nc_varobject_sel.dimensions]))
+            #     for iLV, linkedvar in vars_pd_relevant.iterrows():
+            #         print('\t\t%s  %s  %s'%(iLV, linkedvar['shape'], linkedvar['dimensions']))
+            #     #print('nc_values_dimsel: %s'%(nc_values_dimsel))
+            #     #print('vars_pd_relevant:\n%s'%(vars_pd_relevant))
+            # else:
+            #     values_dimlinkedgrid.append(None)
 
         #get selected data (including ghostcells because that is faster)
         nc_varobject_sel_selids_raw = nc_varobject_sel[values_selid]
@@ -364,7 +364,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     values_all.var_dimensions = nc_varobject.dimensions
     values_all.var_shape = nc_varobject.shape
     values_all.var_dtype = nc_varobject.dtype
-    values_all.var_linkedgridinfo = values_dimlinkedgrid
+    #values_all.var_linkedgridinfo = values_dimlinkedgrid
     #values_all.var_ncobject = data_nc #this is the netcdf object retrieved with netCDF4.Dataset() #disabled, since it becomes invalid after closing the dataset
     values_all.var_ncvarobject = f"from netCDF4 import Dataset;data_nc = Dataset('{file_nc}');nc_varobject = data_nc.variables['{varname}'];print(nc_varobject)" # nc_varobject #this is the netcdf variable, contains properties like shape/units/dimensions #disabled, since it becomes invalid after closing the dataset
     values_all.var_ncattrs = nc_varobject.__dict__ #values in nc_varobject.ncattrs() or hasattr(nc_varobject,'attributename')

@@ -35,7 +35,7 @@ fig, axs = plt.subplots(3,1, figsize=(6,9))
 fig.suptitle('%s (%s)'%(varname, var_longname))
 
 ax = axs[0]
-data_frommap_0 = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=0, get_linkedgridinfo=True)
+data_frommap_0 = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=0)
 pc = plot_netmapdata(ugrid.verts, values=data_frommap_0.flatten(), ax=ax, linewidth=0.5, cmap='jet', clim=var_clims)
 cbar = fig.colorbar(pc, ax=ax)
 cbar.set_label('%s (%s)'%(data_frommap_0.var_varname, data_frommap_0.var_ncattrs['units']))
@@ -135,7 +135,7 @@ for iV, varname in enumerate(varname_list):
     fig.suptitle('%s (%s)'%(varname, var_longname))
 
     timestep = 10
-    data_frommap = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep, get_linkedgridinfo=True)
+    data_frommap = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep)
     ax = axs[0]
     pc = ax.pcolor(data_fromnc_x, data_fromnc_y, data_frommap[0,:,:], cmap='jet')
     pc.set_clim(var_clim[iV])
