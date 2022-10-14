@@ -11,22 +11,21 @@ import matplotlib.pyplot as plt
 plt.close('all')
 
 from hydrolib.core.io.xyz.models import XYZModel
-from dfm_tools.hydrolib_helpers import xyzmodel_to_dataframe
+from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame
 
 dir_output = '.'
 
 file_xyz = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\geometry_j19_NL_6-v2\rmm_vzm_v1p1_initial_water_level.xyz'
 
 data_xyz = XYZModel(Path(file_xyz))
-xyz_pd = xyzmodel_to_dataframe(data_xyz)
-
+xyz_pd = pointlike_to_DataFrame(data_xyz)
 
 fig,ax = plt.subplots()
 xyz_pd.plot.scatter(x='x',y='y',c='z',s=0.5,ax=ax,vmin=-1,vmax=1)
 fig.savefig(os.path.join(dir_output,os.path.basename(file_xyz).replace('.','')))
 
 
-#TODO: below does not work
+#TODO: below does not work, 'old' xyn/crs is not supported: https://github.com/Deltares/HYDROLIB-core/issues/364
 
 from hydrolib.core.io.obs.models import ObservationPointModel
 file_xyn = r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\geometry_j19_6-v2\output_locations\rmm_vzm-j19_6-v2b_3_measurement_obs.xyn'

@@ -105,7 +105,8 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     #        dimn_time = data_nc.variables[varn_time].dimensions[0]
     #    except:
     #        print('using dimn_time as variable to get dimn_time failed')
-    varn_time = get_variable_timevar(file_nc,varname=varname)
+    varn_time = get_variable_timevar(file_nc,varname='time')
+    print('varn_time',varname,varn_time)
     dimn_time = data_xr[varn_time].dims[0]
     if dimn_time not in nc_varobject.dimensions: #dimension time is not available in variable
         if timestep is not None:

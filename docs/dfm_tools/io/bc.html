@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.9.2" />
+<meta name="generator" content="pdoc 0.10.0" />
 <title>dfm_tools.io.bc API documentation</title>
 <meta name="description" content="dfm_tools are post-processing tools for Delft3D FM
 Copyright (C) 2020 Deltares. All rights reserved …" />
@@ -84,12 +84,13 @@ Created on Mon Apr 20 21:01:08 2020
 @author: veenstra
 &#34;&#34;&#34;
 
+import pandas as pd
+import numpy as np
+import datetime as dt
+from netCDF4 import num2date
 
 
-
-
-
-def write_bcfile(filename, datablocks, metadatas, refdate=None, tzone=0, float_format=&#39;%6.2f&#39;):
+def write_bcfile(filename, datablocks, metadatas, refdate=None, tzone=0, float_format=&#39;%6.2f&#39;): #TODO: remove this code, only raises an error
     &#34;&#34;&#34;
     
 
@@ -118,7 +119,8 @@ def write_bcfile(filename, datablocks, metadatas, refdate=None, tzone=0, float_f
     None.
 
     &#34;&#34;&#34;
-    #import numpy as np
+    
+    raise DeprecationWarning(&#39;the function dfm_tools.io.bc.write_bcfile() is deprecated, please use the new hydrolib alternative. Example script: dfm_tools/tests/examples/CMEMS_interpolate_example.py&#39;)
     
     if type(datablocks) is not list:
         datablocks = [datablocks]
@@ -177,19 +179,16 @@ def write_bcfile(filename, datablocks, metadatas, refdate=None, tzone=0, float_f
             file_bc.write(&#39;\n&#39;)
 
 
+def read_bcfile(filename, converttime=False): #TODO: remove this code, only raises an error
 
-def read_bcfile(filename, converttime=False):
-
-    import pandas as pd
-    import numpy as np
-    import datetime as dt
-    from netCDF4 import num2date
+    raise DeprecationWarning(&#39;the function dfm_tools.io.bc.read_bcfile() is deprecated, please use the new hydrolib alternative. Example script: dfm_tools/tests/examples/hydrolib_readbc.py&#39;)
     
     with open(filename, &#39;r&#39;) as bc:
         page = bc.readlines()
     lines_blockstarts = np.array([],dtype=int)
     lines_quantity = np.array([],dtype=int)
     lines_unit = np.array([],dtype=int)
+    lines_data = np.array([],dtype=int)
     lines_n = len(page)
     for iL, line in enumerate(page):
         if &#39;[forcing]&#39; in line.lower():
@@ -198,6 +197,8 @@ def read_bcfile(filename, converttime=False):
             lines_quantity = np.append(lines_quantity,iL)
         if &#39;unit&#39; in line.lower():
             lines_unit = np.append(lines_unit,iL)
+        if line.lower()[0].isnumeric():
+            lines_data= np.append(lines_data,iL)
     if len(lines_quantity) != len(lines_unit):
         raise Exception(&#39;something wrong with bc-file, amount of quantity lines is not the same as amount of unit lines&#39;)
     
@@ -212,13 +213,13 @@ def read_bcfile(filename, converttime=False):
         
         line_blockquantities = lines_quantity[(lines_quantity&gt;line_blockstart) &amp; (lines_quantity&lt;line_blockend)]
         line_blockunits = lines_unit[(lines_unit&gt;line_blockstart) &amp; (lines_unit&lt;line_blockend)]
-        line_datastart = line_blockunits[-1]+1
+        line_datastart = np.amin(lines_data[(lines_data&gt;line_blockstart) &amp; (lines_data&lt;line_blockend)])
         
         #get metadata (without quantities and units)
-        metadata_str = page[line_blockstart:line_blockquantities[0]]
+        metadata_str = page[line_blockstart:line_datastart]
         metadata = {}
         for metadata_line in metadata_str:
-            if metadata_line.startswith(&#39;[&#39;):
+            if metadata_line.startswith(&#39;[&#39;) or metadata_line.startswith(&#39;Quantity&#39;) or metadata_line.startswith(&#39;Unit&#39;):
                 pass#metadata[metadata_line.strip()] = &#39;&#39;
             else:
                 meta_name = metadata_line.split(&#39;=&#39;)[0].strip()
@@ -255,9 +256,6 @@ def read_bcfile(filename, converttime=False):
                     data_nc_datetimes = num2date(times=time_minutes, units=units_str, only_use_cftime_datetimes=False, only_use_python_datetimes=True)
                 data_block_pd[&#39;datetime&#39;] = data_nc_datetimes
         datablock_list.append(data_block_pd)
-
-                    
-
     return datablock_list, metadata_list</code></pre>
 </details>
 </section>
@@ -277,18 +275,16 @@ def read_bcfile(filename, converttime=False):
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def read_bcfile(filename, converttime=False):
+<pre><code class="python">def read_bcfile(filename, converttime=False): #TODO: remove this code, only raises an error
 
-    import pandas as pd
-    import numpy as np
-    import datetime as dt
-    from netCDF4 import num2date
+    raise DeprecationWarning(&#39;the function dfm_tools.io.bc.read_bcfile() is deprecated, please use the new hydrolib alternative. Example script: dfm_tools/tests/examples/hydrolib_readbc.py&#39;)
     
     with open(filename, &#39;r&#39;) as bc:
         page = bc.readlines()
     lines_blockstarts = np.array([],dtype=int)
     lines_quantity = np.array([],dtype=int)
     lines_unit = np.array([],dtype=int)
+    lines_data = np.array([],dtype=int)
     lines_n = len(page)
     for iL, line in enumerate(page):
         if &#39;[forcing]&#39; in line.lower():
@@ -297,6 +293,8 @@ def read_bcfile(filename, converttime=False):
             lines_quantity = np.append(lines_quantity,iL)
         if &#39;unit&#39; in line.lower():
             lines_unit = np.append(lines_unit,iL)
+        if line.lower()[0].isnumeric():
+            lines_data= np.append(lines_data,iL)
     if len(lines_quantity) != len(lines_unit):
         raise Exception(&#39;something wrong with bc-file, amount of quantity lines is not the same as amount of unit lines&#39;)
     
@@ -311,13 +309,13 @@ def read_bcfile(filename, converttime=False):
         
         line_blockquantities = lines_quantity[(lines_quantity&gt;line_blockstart) &amp; (lines_quantity&lt;line_blockend)]
         line_blockunits = lines_unit[(lines_unit&gt;line_blockstart) &amp; (lines_unit&lt;line_blockend)]
-        line_datastart = line_blockunits[-1]+1
+        line_datastart = np.amin(lines_data[(lines_data&gt;line_blockstart) &amp; (lines_data&lt;line_blockend)])
         
         #get metadata (without quantities and units)
-        metadata_str = page[line_blockstart:line_blockquantities[0]]
+        metadata_str = page[line_blockstart:line_datastart]
         metadata = {}
         for metadata_line in metadata_str:
-            if metadata_line.startswith(&#39;[&#39;):
+            if metadata_line.startswith(&#39;[&#39;) or metadata_line.startswith(&#39;Quantity&#39;) or metadata_line.startswith(&#39;Unit&#39;):
                 pass#metadata[metadata_line.strip()] = &#39;&#39;
             else:
                 meta_name = metadata_line.split(&#39;=&#39;)[0].strip()
@@ -354,9 +352,6 @@ def read_bcfile(filename, converttime=False):
                     data_nc_datetimes = num2date(times=time_minutes, units=units_str, only_use_cftime_datetimes=False, only_use_python_datetimes=True)
                 data_block_pd[&#39;datetime&#39;] = data_nc_datetimes
         datablock_list.append(data_block_pd)
-
-                    
-
     return datablock_list, metadata_list</code></pre>
 </details>
 </dd>
@@ -390,7 +385,7 @@ def read_bcfile(filename, converttime=False):
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def write_bcfile(filename, datablocks, metadatas, refdate=None, tzone=0, float_format=&#39;%6.2f&#39;):
+<pre><code class="python">def write_bcfile(filename, datablocks, metadatas, refdate=None, tzone=0, float_format=&#39;%6.2f&#39;): #TODO: remove this code, only raises an error
     &#34;&#34;&#34;
     
 
@@ -419,7 +414,8 @@ def read_bcfile(filename, converttime=False):
     None.
 
     &#34;&#34;&#34;
-    #import numpy as np
+    
+    raise DeprecationWarning(&#39;the function dfm_tools.io.bc.write_bcfile() is deprecated, please use the new hydrolib alternative. Example script: dfm_tools/tests/examples/CMEMS_interpolate_example.py&#39;)
     
     if type(datablocks) is not list:
         datablocks = [datablocks]
@@ -504,7 +500,7 @@ def read_bcfile(filename, converttime=False):
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
 </footer>
 </body>
 </html>
