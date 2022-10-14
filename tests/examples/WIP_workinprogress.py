@@ -17,16 +17,9 @@ import xarray as xr
 
 from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
 from dfm_tools.get_nc_helpers import get_ncvarproperties#, get_hisstationlist#, get_varname_fromnc
-from dfm_tools.hydrolib_helpers import polyobject_to_dataframe
+from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame
 
-from hydrolib.core.io.polyfile.models import (
-    #Description,
-    #Metadata,
-    #Point,
-    PolyFile,
-    #PolyObject,
-)
-from hydrolib.core.io.polyfile.parser import read_polyfile #TODO: should be replaced with PolyFile above
+from hydrolib.core.io.polyfile.models import PolyFile
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
@@ -121,8 +114,8 @@ ax.plot(xcen.T, ycen.T, '-b', linewidth=0.2)
 plt.savefig(os.path.join(dir_output,'COSMO_mesh'))
 
 file_ldb = Path(r'p:\archivedprojects\1220688-lake-kivu\3_modelling\1_FLOW\4_CH4_CO2_included\008\lake_kivu_geo.ldb')
-polyfile_object = read_polyfile(file_ldb,has_z_values=False)
-data_ldb = polyobject_to_dataframe(polyfile_object['objects'][0])
+polyfile_object = PolyFile(file_ldb)
+data_ldb = pointlike_to_DataFrame(polyfile_object.objects[0])
 data_ldb[data_ldb==999.999] = np.nan
 
 fig, axs = plt.subplots(1,3, figsize=(16,6))

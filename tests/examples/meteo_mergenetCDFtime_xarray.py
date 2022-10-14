@@ -106,6 +106,7 @@ if 'HIRLAM' in mode: # https://github.com/pydata/xarray/issues/6293
     data_xr = data_xr.set_coords(['latitude','longitude'])
     for varkey in data_xr.data_vars:
         del data_xr[varkey].encoding['coordinates'] #remove {'coordinates':'y x'} from encoding (otherwise set twice)
+    data_nc.close()
     
 #breakit
 #rename variables
@@ -170,6 +171,7 @@ with xr.open_dataset(file_out) as data_xr_check:
                 data_xr_check[varkey].isel(time=0).sel(depth=0).plot(ax=ax1)
             else:
                 data_xr_check[varkey].isel(time=0).plot(ax=ax1)
+            fig.savefig(file_out.replace('.nc',f'_{varkey}'))
 
 script_telapsed = (dt.datetime.now()-script_tstart)
 print(f'elapsed time: {script_telapsed}')
