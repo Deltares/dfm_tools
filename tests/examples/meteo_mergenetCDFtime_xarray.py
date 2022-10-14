@@ -22,7 +22,7 @@ plt.close('all')
 #TODO: add HARMONIE (also originates from matroos), add CMCC etc from gtsmip repos
 #TODO: add .sel(lat/lon) or not relevant?
 
-mode = 'HIRLAM_meteo-heatflux'# 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HYCOM' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall'
+mode = 'HIRLAM_meteo'# 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HYCOM' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall'
 all_tstart = dt.datetime(2013,12,30) # HIRLAM and ERA5
 all_tstop = dt.datetime(2014,1,1)
 #all_tstart = dt.datetime(2016,4,28) # HYCOM
@@ -106,6 +106,7 @@ if 'HIRLAM' in mode: # https://github.com/pydata/xarray/issues/6293
     data_xr = data_xr.set_coords(['latitude','longitude'])
     for varkey in data_xr.data_vars:
         del data_xr[varkey].encoding['coordinates'] #remove {'coordinates':'y x'} from encoding (otherwise set twice)
+    data_nc.close()
     
 #breakit
 #rename variables
