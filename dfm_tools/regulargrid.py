@@ -133,7 +133,6 @@ def corner2center(cor):
     >>> corner2center([[1,3,5],[2,6,10]])
     array([[ 3.,  6.]])
     """
-    raise DeprecationWarning('this is not used in any dfm_tool code, to be removed') #TODO: remove code
     
     import numpy as np
     cor = np.asarray(cor)
