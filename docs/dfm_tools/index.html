@@ -62,6 +62,11 @@
 <li><code>conda activate dfm_tools_env</code></li>
 <li><code>conda install -c conda-forge shapely cartopy pyepsg geopandas contextily xarray dask netcdf4 bottleneck -y</code> (installs conda-forge requirements)</li>
 <li><code>python -m pip install git+https://github.com/openearth/dfm_tools</code> (this command installs dfm_tools and all required non-conda packages)</li>
+<li><code>python -m pip uninstall hydrolib-core -y</code> (temporarily necessary to install the correct version of hydrolib-core)</li>
+<li><code>python -m pip install git+https://github.com/deltares/hydrolib-core</code> (temporarily necessary to install the correct version of hydrolib-core)</li>
+</ul>
+</li>
+<li>what are all these packages for?:<ul>
 <li>shapely for slicing 2D/3D data (conda-forge channel is necessary since main channel version is 1.6.4, minimal requirement is 1.7.0)</li>
 <li>cartopy for satellite imagery, coastlines etc on plots (conda-forge channel recommended by cartopy developers, and currently also necessary for correct shapely version)</li>
 <li>pyepsg is necessary for cartopy and probably also for other libraries</li>
@@ -171,7 +176,7 @@ print('\tthe standard_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var
 
 __author__ = &#34;&#34;&#34;Jelmer Veenstra&#34;&#34;&#34;
 __email__ = &#39;jelmer.veenstra@deltares.nl&#39;
-__version__ = &#39;0.7.88&#39;</code></pre>
+__version__ = &#39;0.7.90&#39;</code></pre>
 </details>
 </section>
 <section>
