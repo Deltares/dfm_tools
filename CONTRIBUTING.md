@@ -13,7 +13,7 @@ Create python environment dfm_tools_devenv and install dfm_tools in developer mo
 - ``git clone -b work_yourname https://github.com/openearth/dfm_tools dfm_tools`` (repo gets cloned in C:\\DATA\\dfm_tools_devenv, this is a checkout of the work_yourname branch)
 - update your branch if main has been updated: add+commit+push everything in branch first, ``git checkout main``, ``git pull``, ``git checkout development``, ``git merge main -m ''``, ``git push``
 - open anaconda prompt and navigate to dfm_tools local folder, e.g. ``C:\\DATA\\dfm_tools``
-- ``conda env create -f environment.yml`` (creates an environment called dfm_tools_devenv)
+- ``conda env create -f environment.yml`` (creates an environment called dfm_tools_devenv) TODO: yml now contains almost the same as requirements.txt, with additionally pdoc3/pytest/bump2version. Update this manual according to this
 - ``conda info --envs`` (should show dfm_tools_devenv virtual environment in the list)
 - ``conda activate dfm_tools_devenv``
 - ``conda install -c conda-forge spyder shapely cartopy pyepsg geopandas contextily xarray dask netcdf4 bottleneck -y``
