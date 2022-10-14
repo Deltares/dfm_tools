@@ -21,6 +21,7 @@ from dfm_tools.xarray_helpers import preprocess_hirlam
 
 #TODO: add HARMONIE (also originates from matroos), add CMCC etc from gtsmip repos: p2_preprocess_ERA5_decode_times.py
 #TODO: add .sel(lat/lon) or not relevant?
+#TODO: crashes in pytest for some reason, check this
 
 mode = 'ERA5_wind_pressure'# 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HYCOM' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall'
 all_tstart = dt.datetime(2013,12,30) # HIRLAM and ERA5

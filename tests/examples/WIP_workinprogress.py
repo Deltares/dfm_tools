@@ -15,83 +15,17 @@ plt.close('all')
 from pathlib import Path
 import xarray as xr
 
-from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
+from dfm_tools.get_nc import get_ncmodeldata
 from dfm_tools.get_nc_helpers import get_ncvarproperties#, get_hisstationlist#, get_varname_fromnc
 from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame
-from dfm_tools.xarray_helpers import preprocess_hirlam
 
 from hydrolib.core.io.polyfile.models import PolyFile
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
-#print gridinfo of several files to compare
-#file_nc = r'p:\1204257-dcsmzuno\2014\data\meteo\HIRLAM72_2018\h72_201803.nc' #TODO: xarray MissingDimensionsError
-#print('\nfile = %s'%(file_nc))
-#data_dummy = get_ncmodeldata(file_nc=file_nc, varname='northward_wind', timestep=0, get_linkedgridinfo=True)
-file_nc = r'p:\archivedprojects\1220688-lake-kivu\2_data\COSMO\COSMOCLM_2012_out02_merged_4Wouter.nc'
-print('\nfile = %s'%(file_nc))
-data_dummy = get_ncmodeldata(file_nc=file_nc, varname='U_10M', timestep=0, get_linkedgridinfo=True)
-file_nc = r'p:\11200665-c3s-codec\2_Hydro\ECWMF_meteo\meteo\ERA-5\2000\ERA5_metOcean_atm_19991201_19991231.nc'
-print('\nfile = %s'%(file_nc))
-data_dummy = get_ncmodeldata(file_nc=file_nc, varname='msl', timestep=0, get_linkedgridinfo=True)
-file_nc = r'p:\11202255-sfincs\Testbed\Original_tests\01_Implementation\08_restartfile\sfincs_map.nc'
-print('\nfile = %s'%(file_nc))
-data_dummy = get_ncmodeldata(file_nc=file_nc, varname='zs', timestep=0, get_linkedgridinfo=True)
-print('\nfile = %s'%(file_nc))
-data_dummy = get_ncmodeldata(file_nc=file_nc, varname='u', timestep=0, get_linkedgridinfo=True)
-file_nc = r'p:\archivedprojects\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\063_netcdf\trim-thiery_002_coarse.nc'
-print('\nfile = %s'%(file_nc))
-data_dummy = get_ncmodeldata(file_nc=file_nc, varname='S1', timestep=0, get_linkedgridinfo=True)
-print('\nfile = %s'%(file_nc))
-data_dummy = get_ncmodeldata(file_nc=file_nc, varname='U1', timestep=0, layer=0, get_linkedgridinfo=True)
-print('\nfile = %s'%(file_nc))
-data_dummy = get_ncmodeldata(file_nc=file_nc, varname='V1', timestep=0, layer=0, get_linkedgridinfo=True)
-file_nc = r'p:\1204257-dcsmzuno\2019\DCSMv6\A01\SDS-A01_map.nc'
-print('\nfile = %s'%(file_nc))
-data_dummy = get_ncmodeldata(file_nc=file_nc, varname='SEP', timestep=0, get_linkedgridinfo=True)
-print('\nfile = %s'%(file_nc))
-data_dummy = get_ncmodeldata(file_nc=file_nc, varname='VELU', timestep=0, layer=0, get_linkedgridinfo=True)
-file_nc = r'p:\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\wave\wavm-inlet.nc'
-print('\nfile = %s'%(file_nc))
-data_dummy = get_ncmodeldata(file_nc=file_nc, varname='veloc-x', timestep=0, get_linkedgridinfo=True)
-file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc')
-print('\nfile = %s'%(file_nc))
-data_dummy = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_s1', timestep=0, multipart=False, get_linkedgridinfo=True)
-data_dummy = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_u1', timestep=0, layer=0, multipart=False, get_linkedgridinfo=True)
-data_dummy = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_flowelem_bl', multipart=False, get_linkedgridinfo=True)
 
-
-# test Grevelingen (integrated example, where all below should move towards)
-file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc')
-vars_pd = get_ncvarproperties(file_nc=file_nc)
-ugrid = get_netdata(file_nc=file_nc)
-fig, ax = plt.subplots()
-plot_netmapdata(ugrid.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
-ax.set_aspect('equal')
-
-
-
-#HIRLAM
-file_nc = r'p:\1204257-dcsmzuno\2014\data\meteo\HIRLAM72_2018\h72_201803.nc'
-data_xr = xr.open_mfdataset(file_nc,drop_variables=['x','y'],preprocess=preprocess_hirlam)
-timestep = 0
-coarsefac = 2 #coarsen dataset for more performance, but not necessary
-
-data_u = data_xr['eastward_wind'].isel(time=timestep)
-data_v = data_xr['northward_wind'].isel(time=timestep)
-magn = np.sqrt(data_u**2 + data_v**2)
-
-fig, ax = plt.subplots()
-ax.plot(magn.longitude,magn.latitude,'-b',linewidth=0.2)
-ax.plot(magn.longitude.T,magn.latitude.T,'-b',linewidth=0.2)
-plt.savefig(os.path.join(dir_output,'hirlam_mesh'))
-
-fig, ax = plt.subplots()
-ax.pcolormesh(magn.longitude,magn.latitude,magn)
-plt.savefig(os.path.join(dir_output,'hirlam_magn_pcolor'))
-
-
+#TODO: move to xarray and see if functions like center2corner are still used
 
 #plt.close('all')
 from dfm_tools.regulargrid import center2corner
@@ -103,15 +37,11 @@ xcen = get_ncmodeldata(file_nc=file_nc, varname='lon')
 ycen = get_ncmodeldata(file_nc=file_nc, varname='lat')
 xcor = center2corner(xcen)
 ycor = center2corner(ycen)
-data_U10M = get_ncmodeldata(file_nc=file_nc, varname='U_10M', timestep=range(20), get_linkedgridinfo=True)
-data_V10M = get_ncmodeldata(file_nc=file_nc, varname='V_10M', timestep=range(20), get_linkedgridinfo=True)
+data_U10M = get_ncmodeldata(file_nc=file_nc, varname='U_10M', timestep=range(20))
+data_V10M = get_ncmodeldata(file_nc=file_nc, varname='V_10M', timestep=range(20))
 #xcen, ycen = np.meshgrid(data_lon, data_lat)
 magn = np.sqrt(data_U10M**2 + data_V10M**2)
 
-fig, ax = plt.subplots()
-ax.plot(xcen, ycen, '-b', linewidth=0.2)
-ax.plot(xcen.T, ycen.T, '-b', linewidth=0.2)
-plt.savefig(os.path.join(dir_output,'COSMO_mesh'))
 
 file_ldb = Path(r'p:\archivedprojects\1220688-lake-kivu\3_modelling\1_FLOW\4_CH4_CO2_included\008\lake_kivu_geo.ldb')
 polyfile_object = PolyFile(file_ldb)
@@ -169,28 +99,6 @@ plt.savefig(os.path.join(dir_output,'COSMO_magn_curvedquiver'))
 
 
 
-#ERA5
-file_nc = r'p:\11200665-c3s-codec\2_Hydro\ECWMF_meteo\meteo\ERA-5\2000\ERA5_metOcean_atm_19991201_19991231.nc'
-vars_pd = get_ncvarproperties(file_nc=file_nc)
-data_lon = get_ncmodeldata(file_nc=file_nc, varname='longitude')
-data_lat = get_ncmodeldata(file_nc=file_nc, varname='latitude')
-data_psl = get_ncmodeldata(file_nc=file_nc, varname='msl',timestep=10, get_linkedgridinfo=True)
-
-lons,lats = np.meshgrid(data_lon,data_lat)
-fig, ax = plt.subplots()
-ax.plot(lons, lats,'-b',linewidth=0.2)
-ax.plot(lons.T, lats.T,'-b',linewidth=0.2)
-plt.savefig(os.path.join(dir_output,'ERA5_mesh'))
-
-fig, ax = plt.subplots()
-#ax.pcolor(lons, lats, data_psl[0,:,:])
-ax.pcolor(data_lon, data_lat, data_psl[0,:,:])
-#plt.pcolor(mesh2d_node_x,mesh2d_node_y,airp,linewidth=0.5)
-plt.savefig(os.path.join(dir_output,'ERA5_msl_pcolor'))
-
-
-
-
 
 
 #SFINCS
@@ -200,12 +108,7 @@ vars_pd = get_ncvarproperties(file_nc=file_nc)
 
 data_fromnc_x = get_ncmodeldata(file_nc=file_nc, varname='x')
 data_fromnc_y = get_ncmodeldata(file_nc=file_nc, varname='y')
-data_fromnc_zs = get_ncmodeldata(file_nc=file_nc, varname='zs', timestep='all', get_linkedgridinfo=True)
-
-fig, ax = plt.subplots()
-ax.plot(data_fromnc_x, data_fromnc_y,'-b',linewidth=0.2)
-ax.plot(data_fromnc_x.T, data_fromnc_y.T,'-b',linewidth=0.2)
-plt.savefig(os.path.join(dir_output,'SFINCS_mesh'))    
+data_fromnc_zs = get_ncmodeldata(file_nc=file_nc, varname='zs', timestep='all')
 
 fig, axs = plt.subplots(3,1, figsize=(14,9))
 for iT, timestep in enumerate([0,1,10]):
@@ -224,12 +127,7 @@ data_fromnc_edgex = get_ncmodeldata(file_nc=file_nc, varname='edge_x')
 data_fromnc_edgey = get_ncmodeldata(file_nc=file_nc, varname='edge_y')
 data_fromnc_u = get_ncmodeldata(file_nc=file_nc, varname='u', timestep='all')
 data_fromnc_v = get_ncmodeldata(file_nc=file_nc, varname='v', timestep='all')    
-vel_magn = np.sqrt(data_fromnc_u**2 + data_fromnc_v**2)
-
-fig, ax = plt.subplots()
-ax.plot(data_fromnc_edgex, data_fromnc_edgey,'-b',linewidth=0.2)
-ax.plot(data_fromnc_edgex.T, data_fromnc_edgey.T,'-b',linewidth=0.2)
-plt.savefig(os.path.join(dir_output,'SFINCS_meshedge'))    
+vel_magn = np.sqrt(data_fromnc_u**2 + data_fromnc_v**2) 
 
 fig, axs = plt.subplots(3,1, figsize=(14,9))
 for iT, timestep in enumerate([0,1,10]):
@@ -254,7 +152,6 @@ vars_pd = get_ncvarproperties(file_nc=file_nc)
 data_xr = xr.open_dataset(file_nc)
 #station_names = get_hisstationlist(file_nc=file_nc, varname='point_zs')
 stations_pd = data_xr.station_name.astype(str).to_pandas()
-#data_fromnc_his = get_ncmodeldata(file_nc=file_nc, varname='point_zs', station='all', timestep='all')
 
 fig, ax = plt.subplots()
 for iS,stat_name in enumerate(stations_pd):
