@@ -37,10 +37,6 @@ for file_bc in file_bc_list:
     # m.general.comments = {'a':'aa'} #TODO: adding comments to top of file is not possible, only if using filetype or fileversion: https://github.com/Deltares/HYDROLIB-core/issues/130. Top file comment newfeature: https://github.com/Deltares/HYDROLIB-core/issues/362
     # m.save('test.bc')
     
-    # print('printing')
-    # print(m.forcing) #TODO SOLVED: spyder freeze bij printen van m.forcing: https://github.com/Deltares/HYDROLIB-core/issues/315
-    # continue
-    
     """
     type(m) #hydrolib.core.io.bc.models.ForcingModel
     type(m.forcing) #list of timeseries from bc file
