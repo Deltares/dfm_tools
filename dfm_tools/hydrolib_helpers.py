@@ -5,13 +5,11 @@ Created on Tue Aug 23 13:36:44 2022
 @author: veenstra
 """
 
-import datetime as dt
 import pandas as pd
 import cftime
 import numpy as np
 import xarray as xr
 from hydrolib.core.io.polyfile.models import PolyObject
-#from netCDF4 import date2num #TODO: take from cftime?
 from cftime import date2num
 
 from hydrolib.core.io.bc.models import (
@@ -22,23 +20,27 @@ from hydrolib.core.io.bc.models import (
     Astronomic,
 )
 
-#TODO: maybe add DataFrame_to_forcingobject() and others
 
-
-def DataArray_to_T3D(datablock_xr, 
-                     name, #TODO: add name to DataArray attrs? (also add refdate_str to attrs and maybe others?)
-                     refdate_str, bcvarname, fill_na=True, 
-                     depthvarname='depth'): #TODO depthvarname argument can be avoided if rename_variables with 'depth'
+def DataArray_to_T3D(datablock_xr):   
     """
-    convert an xarray.DataArray with depth dimension to a hydrolib T3D object
+    convert an xarray.DataArray with time and depth dimension to a hydrolib T3D object
     """
+    #TODO: clean up these first lines of code and add description to docstring?
+    locationname = datablock_xr.attrs['locationname']
+    bcvarname = datablock_xr.name
+    refdate_str = datablock_xr.time.encoding['units']
+    
+    if datablock_xr.dims != ('time','depth'): #check if both time and depth dimensions are present #TODO: add support for flipped dimensions (datablock_xr.T or something is needed)
+        raise Exception(f"ERROR: datablock_xr provided to DataArray_to_T3D has dimensions {datablock_xr.dims} while ('time','depth') is expected")
     
     #get depth variable and values
-    depth_array = datablock_xr[depthvarname].to_numpy()
-    if datablock_xr[depthvarname].attrs['positive'] == 'down': #attribute appears in CMEMS, GFDL and CMCC, save to assume presence?
-        depth_array = -depth_array
-    if fill_na: #ffill data
-        datablock_xr = datablock_xr.bfill(dim=depthvarname).ffill(dim=depthvarname) #fill nans back and forward (corresponds to vertical extrapolation for CMEMS). Deep values are filled if order is shallow to deep
+    depth_array = datablock_xr['depth'].to_numpy()
+    if 'positive' in datablock_xr['depth'].attrs.keys():
+        if datablock_xr['depth'].attrs['positive'] == 'down': #attribute appears in CMEMS, GFDL and CMCC, save to assume presence?
+            depth_array = -depth_array
+    
+    #ffill/bfill nan data along over depth dimension (corresponds to vertical extrapolation)
+    datablock_xr = datablock_xr.bfill(dim='depth').ffill(dim='depth')
     
     #get datablock and concatenate with relative time data
     datablock_np = datablock_xr.to_numpy()
@@ -46,25 +48,30 @@ def DataArray_to_T3D(datablock_xr,
     datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock_np],axis=1)
     
     # Each .bc file can contain 1 or more timeseries, in this case one for each support point
-    verticalpositions_idx = np.arange(datablock_xr[depthvarname].size)+1
-    #list_QUP_perlayer = [QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs['units']) for iVP in verticalpositions_idx] #TODO SOLVED: verwarrende foutmelding bij niet opgeven verticalpositionindex (should be missing error instead of not valid error)
-    list_QUP_perlayer = [QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs['units'], vertpositionindex=iVP) for iVP in verticalpositions_idx] #TODO SOLVED: verticalposition 1/2/3/n is not supported. https://github.com/Deltares/HYDROLIB-core/issues/317
-    #TODO: instead of supplying list of QuantityUnitPairs, it is also possible to supply the three quanties as list separately
-    ts_one = T3D(name=name,
-                 vertpositions=depth_array.tolist(), #TODO SOLVED: should be "Vertical position specification = [..]" but is verticalPositions = [..]" (both possible?). https://github.com/Deltares/HYDROLIB-core/issues/317
-                 vertinterpolation='linear', #TODO SOLVED: not providing this results in VerticalInterpolation.linear
-                 vertPositionType='ZDatum', #TODO SOLVED: should be "Vertical position type = zdatum" but is "verticalPositionType = ZBed" (zdatum is niet beschikbaar). https://github.com/Deltares/HYDROLIB-core/issues/317
+    verticalpositions_idx = np.arange(datablock_xr['depth'].size)+1
+    list_QUP_perlayer = [QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs['units'], vertpositionindex=iVP) for iVP in verticalpositions_idx]
+    ts_one = T3D(name=locationname,
+                 vertpositions=np.round(depth_array.tolist(),decimals=4).tolist(), # make decimals userdefined? .tolist() is necessary for np.round to work for some reason
+                 vertinterpolation='linear',
+                 vertPositionType='ZDatum',
                  quantityunitpair=[QuantityUnitPair(quantity="time", unit=refdate_str)]+list_QUP_perlayer,
-                 timeinterpolation='linear', #TODO SOLVED: not passed on to bc file. https://github.com/Deltares/HYDROLIB-core/issues/317
+                 timeinterpolation='linear',
                  datablock=datablock_incltime.tolist(), #TODO: numpy array is not supported by TimeSeries. https://github.com/Deltares/HYDROLIB-core/issues/322
                  )
     return ts_one
 
 
-def DataArray_to_TimeSeries(datablock_xr, name, refdate_str, bcvarname):
+def DataArray_to_TimeSeries(datablock_xr):
     """
-    convert an xarray.DataArray without depth dimension to a hydrolib TimeSeries object
+    convert an xarray.DataArray with time dimension to a hydrolib TimeSeries object
     """
+    #TODO: clean up these first lines of code and add description to docstring?
+    locationname = datablock_xr.attrs['locationname']
+    bcvarname = datablock_xr.name
+    refdate_str = datablock_xr.time.encoding['units']
+    
+    if datablock_xr.dims != ('time',):
+        raise Exception(f"ERROR: datablock_xr provided to DataArray_to_TimeSeries has dimensions {datablock_xr.dims} while ('time') is expected")
     
     #get datablock and concatenate with relative time data
     datablock_np = datablock_xr.to_numpy()[:,np.newaxis]
@@ -72,8 +79,8 @@ def DataArray_to_TimeSeries(datablock_xr, name, refdate_str, bcvarname):
     datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock_np],axis=1)
     
     # Each .bc file can contain 1 or more timeseries, in this case one for each support point
-    ts_one = TimeSeries(name=name,
-                        quantityunitpair=[QuantityUnitPair(quantity="time", unit=refdate_str), #TODO: quantity is not validated: https://github.com/Deltares/HYDROLIB-core/issues/357
+    ts_one = TimeSeries(name=locationname,
+                        quantityunitpair=[QuantityUnitPair(quantity="time", unit=refdate_str),
                                           QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs['units'])],
                         timeinterpolation='linear',
                         datablock=datablock_incltime.tolist(), 
@@ -89,7 +96,7 @@ def DataFrame_to_PolyObject(poly_pd,name,content=None): #TODO: make this method 
         nondata_cols = ['x','y','z']
     else:
         nondata_cols = ['x','y']
-    poly_pd_xy = poly_pd[nondata_cols] #TODO: actually z is also a thing, but that becomes part of data in this method
+    poly_pd_xy = poly_pd[nondata_cols]
     poly_pd_data = pd.DataFrame({'data':poly_pd.drop(nondata_cols,axis=1).values.tolist()})
     poly_pd_polyobj = pd.concat([poly_pd_xy,poly_pd_data],axis=1)
     pointsobj_list = poly_pd_polyobj.T.apply(dict).tolist() #TODO: maybe faster with list iteration
@@ -99,10 +106,10 @@ def DataFrame_to_PolyObject(poly_pd,name,content=None): #TODO: make this method 
     return polyobject
 
 
-def forcinglike_to_DataArray(forcingobj): #TODO: would be convenient to have this as a method of ForcingModel objects (Timeseries/T3D/etc), or maybe as method of the ForcingModel (returning a list of DataFrames): https://github.com/Deltares/HYDROLIB-core/issues/307
+def forcinglike_to_DataArray(forcingobj): #TODO: would be convenient to have this as a method of ForcingModel objects (Timeseries/T3D/etc): https://github.com/Deltares/HYDROLIB-core/issues/307
     """
     convert a hydrolib forcing like object (like Timeseries, T3D, Harmonic, etc) to a xarray DataArray.
-    #TODO: add doc
+    #TODO: clean up code (maybe split for T3D/Timeseries/Astronomic/etc objects separately) and add doc
     """
     
     #check if forcingmodel instead of T3D/TimeSeries is provided
@@ -132,12 +139,17 @@ def forcinglike_to_DataArray(forcingobj): #TODO: would be convenient to have thi
         datablock_data = datablock_all
     
     #add dimension values
-    data_xr_var = xr.DataArray(datablock_data,name=var_quantity,dims=dims)#,coords=coords)
+    data_xr_var = xr.DataArray(datablock_data, name=var_quantity, dims=dims)
+    data_xr_var.attrs['locationname'] = forcingobj.name
+    data_xr_var.attrs['units'] = var_unit
     if 'depth' in dims:
         data_xr_var['depth'] = forcingobj.vertpositions
+        #data_xr_var['depth'].attrs['positive'] == 'up' #TODO: maybe add this attribute
     if 'time' in dims:
-        time_unit = forcingobj.quantityunitpair[0].unit.lower() #TODO: save this as encoding/variable attribute (align with DataArray_to_*)
+        time_unit = forcingobj.quantityunitpair[0].unit.lower()
         data_xr_var['time'] = cftime.num2pydate(datablock_all[:,0], units=time_unit)
+        data_xr_var['time'].encoding['units'] = time_unit #check tz conversion if eg '+01:00' is present in time_unit
+        data_xr_var['time'].encoding['calendar'] = 'standard'
     if 'astronomic_component' in dims:
         data_xr_var['astronomic_component'] = datablock_all[:,0]
     
@@ -151,7 +163,7 @@ def forcinglike_to_DataArray(forcingobj): #TODO: would be convenient to have thi
     for key in forcingobj_keys: #['comments','name','function','offset','factor','vertinterpolation','vertpositiontype','timeinterpolation']: 
         if key in ['datablock','quantityunitpair','vertpositions']: #skipping these since they are in the DataArray already
             continue
-        data_xr_var.attrs[key] = forcingobj.__dict__[key]
+        data_xr_var.attrs[key] = str(forcingobj.__dict__[key])
     
     return data_xr_var
 
@@ -186,7 +198,7 @@ def forcinglike_to_DataFrame(forcingobj):
     if not isinstance(forcingobj, allowed_instances):
         raise Exception(f'ERROR: supplied input is not one of: {allowed_instances}')
     
-    """ #TODO: old complex code, remove this 
+    """ #TODO: old complex code, remove this once timezone is properly supported in forcinglike_to_DataArray()
     #convert_time : boolean, optional
     #    Convert time column from unit (e.g. minutes since date) to datetime index and drop the time column. Has no effect if there is no time column in the forcingobject. The default is True.
     QUP_list = [(QUP.quantity,QUP.unit,QUP.vertpositionindex) for QUP in forcingobj.quantityunitpair]
@@ -194,7 +206,7 @@ def forcinglike_to_DataFrame(forcingobj):
     df_data = pd.DataFrame(forcingobj.datablock,columns=columns_MI)
     df_data.index.name = forcingobj.name
     colnames_quantity = df_data.columns.get_level_values(level=0)
-    if convert_time and ('time' in colnames_quantity): #this converts time to a datetime index #TODO: do automatically if TimeSeries/T3D? (save 'encoding'/refdate somewhere). also check tz conversion
+    if convert_time and ('time' in colnames_quantity): #this converts time to a datetime index
         time_colid = colnames_quantity.get_loc('time')
         time_unit = df_data.columns.get_level_values(level=1)[time_colid]
         df_data.index = cftime.num2pydate(df_data.iloc[:,time_colid],units=time_unit)
@@ -224,30 +236,20 @@ def pointlike_to_DataFrame(pointlike,drop_emptycols=True):
 
     Parameters
     ----------
-    PolyObject : TYPE
-        PolyObject, or actually any object.
+    pointlike : TYPE
+        Hydrolib-core object with point objects.
 
     Returns
     -------
-    poly_pd : TYPE
+    pointlike_pd : TYPE
         DESCRIPTION.
         
     Example:
-        polyfile_object = read_polyfile(file_ldb,has_z_values=False)
-        poly_pd_list = [polyobject_to_dataframe(PO) for PO in polyfile_object['objects']]
+        polyfile_object = PolyFile(file_pli)
+        data_pol_pd_list = [pointlike_to_DataFrame(polyobj) for polyobj in polyfile_object.objects]
 
     """
-    """
-    #x,y,z = PolyObject.xyz_coordinates #TODO: this might be possible in new hydrolib-core version: https://github.com/Deltares/HYDROLIB-core/issues/329
-    xvals_pd = pd.DataFrame({'x':[p.x for p in PolyObject.points]})
-    yvals_pd = pd.DataFrame({'y':[p.y for p in PolyObject.points]})
-    zvals_pd = pd.DataFrame({'z':[p.z for p in PolyObject.points]})
-    datavals_pd = pd.DataFrame([p.data for p in PolyObject.points])
-    if zvals_pd['z'].isnull().all(): #ignore column if all values are None
-        polyobject_pd = pd.concat([xvals_pd,yvals_pd,datavals_pd],axis=1)
-    else:
-        polyobject_pd = pd.concat([xvals_pd,yvals_pd,zvals_pd,datavals_pd],axis=1)
-    """
+    
     pointlike_pd = pd.DataFrame([dict(p) for p in pointlike.points])
     if 'data' in pointlike_pd.columns:
         #datavals_pd = pointlike_pd['data'].apply(pd.Series) #this is quite slow, so use line below instead. maybe lambda or faster approach?

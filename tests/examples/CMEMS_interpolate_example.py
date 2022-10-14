@@ -23,6 +23,7 @@ dir_out = r'n:\My Documents\werkmap\hydrolib_test\DCSM'
 bc_type = 'bc' #currently only 'bc' supported #TODO: add netcdf bc support. https://github.com/Deltares/HYDROLIB-core/issues/318
 
 refdate_str = 'minutes since 2011-12-22 00:00:00 +00:00' # this is copied from the reference bc file, but can be changed by the user
+#refdate_str = 'days since 1993-1-1 00:00:00 +00:00' # this is copied from the reference bc file, but can be changed by the user
 tstart = dt.datetime(1993, 1, 1, 12, 0) #CMEMS phys has daily values at 12:00 (not at midnight), so make sure to include a day extra if necessary. also NO3_GFDL
 tstop = dt.datetime(1993, 3, 1, 12, 0)
 #tstart = dt.datetime(2011, 12, 16, 12, 0) #NO3_CMEMS
@@ -36,7 +37,7 @@ nPoints = 3 #amount of Points to process per PolyObject in the plifile (for test
 
 list_quantities = ['NO3']
 list_quantities = ['steric','salinity','tide']#,['salinity','temperature','steric'] #should be in conversion_dict.keys()
-list_quantities = ['salinity']#,'temperature']
+#list_quantities = ['salinity']#,'temperature']
 
 dtstart = dt.datetime.now()
 ext_bnd = ExtModel()
@@ -89,7 +90,7 @@ for file_pli in list_plifiles:
         if 1: #plotting example data point
             for iF in [2]:#range(nPoints):
                 forcingobject_one = ForcingModel_object.forcing[iF]
-                forcingobject_one_df = forcinglike_to_DataFrame(forcingobject_one)
+                forcingobject_one_df = forcinglike_to_DataFrame(forcingobject_one) #TODO: or use forcinglike_to_DataArray()
                 fig,ax1 = plt.subplots()
                 if hasattr(forcingobject_one,'vertpositions'):
                     pc = ax1.pcolormesh(forcingobject_one_df.index,forcingobject_one.vertpositions,forcingobject_one_df.T)
@@ -112,7 +113,7 @@ for file_pli in list_plifiles:
         #ForcingModel_object.filepath = Path(str(ForcingModel_object.filepath).replace(dir_out,'')) #TODO: convert to relative paths in ext file possible? This path is the same as file_bc_out
         
         #generate boundary object for the ext file (quantity, pli-filename, bc-filename)
-        boundary_object = Boundary(quantity=bcvarname, #TODO: nodeId / bndWidth1D / bndBlDepth are written as empty values, but they should not be written if not supplied. https://github.com/Deltares/HYDROLIB-core/issues/319
+        boundary_object = Boundary(quantity=bcvarname,
                                    locationfile=Path(dir_out,file_pli.name),
                                    forcingfile=ForcingModel_object,
                                    )
