@@ -84,47 +84,54 @@ import datetime as dt
 import numpy as np
 import pandas as pd
 import xarray as xr
-from netCDF4 import date2num
-import matplotlib.pyplot as plt
 
 from hydrolib.core.io.bc.models import (
     ForcingModel,
     QuantityUnitPair,
-    T3D,
-    TimeSeries,
     Astronomic,
 )
 from hydrolib.core.io.polyfile.models import PolyFile
-#from hydrolib.core.io.polyfile.parser import read_polyfile #TODO SOLVED: should be replaced with PolyFile above
+
+from dfm_tools.hydrolib_helpers import DataArray_to_TimeSeries, DataArray_to_T3D
 
 
-def get_conversion_dict():
+def get_conversion_dict(model=&#39;CMEMS&#39;):
+    &#34;&#34;&#34;
+    interpolate_nc_to_bc() renames netcdf variable like this:
+    data_xr = data_xr.rename({ncvarname:bcvarname})
+    &#34;&#34;&#34;
+    conversion_dicts = {}
     # conversion_dict, contains ncvarname as array because uxuy relies on 2 CMEMS variables
-    conversion_dict = { # mg/l is the same as g/m3: conversion is phyc in mmol/l to newvar in g/m3
-                        &#39;OXY&#39;        : {&#39;ncvarname&#39;: &#39;o2&#39;,      &#39;bcvarname&#39;: &#39;tracerbndOXY&#39;,  &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 32.0 / 1000.0}, 
-                        &#39;NO3&#39;        : {&#39;ncvarname&#39;: &#39;no3&#39;,     &#39;bcvarname&#39;: &#39;tracerbndNO3&#39;,  &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 14.0 / 1000.0},
-                        &#39;PO4&#39;        : {&#39;ncvarname&#39;: &#39;po4&#39;,     &#39;bcvarname&#39;: &#39;tracerbndPO4&#39;,  &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 30.97 / 1000.0},
-                        &#39;Si&#39;         : {&#39;ncvarname&#39;: &#39;si&#39;,      &#39;bcvarname&#39;: &#39;tracerbndSi&#39;,   &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 28.08 / 1000.0},
-                        &#39;PON1&#39;       : {&#39;ncvarname&#39;: &#39;phyc&#39;,    &#39;bcvarname&#39;: &#39;tracerbndPON1&#39;, &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 2. * 16. * 14. / (106. * 1000.0)},
-                        &#39;POP1&#39;       : {&#39;ncvarname&#39;: &#39;phyc&#39;,    &#39;bcvarname&#39;: &#39;tracerbndPOP1&#39;, &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 2. * 30.97 / (106. * 1000.0)},
-                        &#39;POC1&#39;       : {&#39;ncvarname&#39;: &#39;phyc&#39;,    &#39;bcvarname&#39;: &#39;tracerbndPOC1&#39;, &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 2. * 12. / 1000.0},
-                        &#39;DON&#39;        : {&#39;ncvarname&#39;: &#39;phyc&#39;,    &#39;bcvarname&#39;: &#39;tracerbndDON&#39;,  &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 3.24 * 2. * 16. * 14. / (106. * 1000.0)},
-                        &#39;DOP&#39;        : {&#39;ncvarname&#39;: &#39;phyc&#39;,    &#39;bcvarname&#39;: &#39;tracerbndDOP&#39;,  &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 1.0 * 2. * 30.97 / (106. * 1000.0)},
-                        &#39;DOC&#39;        : {&#39;ncvarname&#39;: &#39;phyc&#39;,    &#39;bcvarname&#39;: &#39;tracerbndDOC&#39;,  &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : (199. / 20.) * 3.24 * 2. * 16. * 12. / (106. * 1000.0)},
-                        &#39;Opal&#39;       : {&#39;ncvarname&#39;: &#39;phyc&#39;,    &#39;bcvarname&#39;: &#39;tracerbndOpal&#39;, &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 0.5 * 0.13 * 28.08 / (1000.0)},
-                        &#39;salinity&#39;   : {&#39;ncvarname&#39;: &#39;so&#39;,      &#39;bcvarname&#39;: &#39;salinitybnd&#39;},    #&#39;1e-3&#39;
-                        &#39;temperature&#39;: {&#39;ncvarname&#39;: &#39;thetao&#39;,  &#39;bcvarname&#39;: &#39;temperaturebnd&#39;}, #&#39;degC&#39;
-                        &#39;ux&#39;         : {&#39;ncvarname&#39;: &#39;uo&#39;,      &#39;bcvarname&#39;: &#39;ux&#39; },            #&#39;m/s&#39;
-                        &#39;uy&#39;         : {&#39;ncvarname&#39;: &#39;vo&#39;,      &#39;bcvarname&#39;: &#39;uy&#39; },            #&#39;m/s&#39;
-                        &#39;ux,uy&#39;      : {&#39;ncvarname&#39;: &#39;uo,vo&#39;,   &#39;bcvarname&#39;: &#39;ux,uy&#39; },         #&#39;m/s&#39;
-                        &#39;steric&#39;     : {&#39;ncvarname&#39;: &#39;zos&#39;,     &#39;bcvarname&#39;: &#39;waterlevelbnd&#39;},  #&#39;m&#39;
-                        &#39;tide&#39;       : {&#39;ncvarname&#39;: &#39;&#39;,        &#39;bcvarname&#39;: &#39;waterlevelbnd&#39;},  #&#39;m&#39;
-                        }
+    conversion_dicts[&#39;CMEMS&#39;] = { # mg/l is the same as g/m3: conversion is phyc in mmol/l to newvar in g/m3
+                                &#39;OXY&#39;        : {&#39;ncvarname&#39;: &#39;o2&#39;,         &#39;bcvarname&#39;: &#39;tracerbndOXY&#39;,  &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 32.0 / 1000.0}, 
+                                &#39;NO3&#39;        : {&#39;ncvarname&#39;: &#39;no3&#39;,        &#39;bcvarname&#39;: &#39;tracerbndNO3&#39;,  &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 14.0 / 1000.0},
+                                &#39;PO4&#39;        : {&#39;ncvarname&#39;: &#39;po4&#39;,        &#39;bcvarname&#39;: &#39;tracerbndPO4&#39;,  &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 30.97 / 1000.0},
+                                &#39;Si&#39;         : {&#39;ncvarname&#39;: &#39;si&#39;,         &#39;bcvarname&#39;: &#39;tracerbndSi&#39;,   &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 28.08 / 1000.0},
+                                &#39;PON1&#39;       : {&#39;ncvarname&#39;: &#39;phyc&#39;,       &#39;bcvarname&#39;: &#39;tracerbndPON1&#39;, &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 2. * 16. * 14. / (106. * 1000.0)},
+                                &#39;POP1&#39;       : {&#39;ncvarname&#39;: &#39;phyc&#39;,       &#39;bcvarname&#39;: &#39;tracerbndPOP1&#39;, &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 2. * 30.97 / (106. * 1000.0)},
+                                &#39;POC1&#39;       : {&#39;ncvarname&#39;: &#39;phyc&#39;,       &#39;bcvarname&#39;: &#39;tracerbndPOC1&#39;, &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 2. * 12. / 1000.0},
+                                &#39;DON&#39;        : {&#39;ncvarname&#39;: &#39;phyc&#39;,       &#39;bcvarname&#39;: &#39;tracerbndDON&#39;,  &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 3.24 * 2. * 16. * 14. / (106. * 1000.0)},
+                                &#39;DOP&#39;        : {&#39;ncvarname&#39;: &#39;phyc&#39;,       &#39;bcvarname&#39;: &#39;tracerbndDOP&#39;,  &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 1.0 * 2. * 30.97 / (106. * 1000.0)},
+                                &#39;DOC&#39;        : {&#39;ncvarname&#39;: &#39;phyc&#39;,       &#39;bcvarname&#39;: &#39;tracerbndDOC&#39;,  &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : (199. / 20.) * 3.24 * 2. * 16. * 12. / (106. * 1000.0)},
+                                &#39;Opal&#39;       : {&#39;ncvarname&#39;: &#39;phyc&#39;,       &#39;bcvarname&#39;: &#39;tracerbndOpal&#39;, &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 0.5 * 0.13 * 28.08 / (1000.0)},
+                                &#39;salinity&#39;   : {&#39;ncvarname&#39;: &#39;so&#39;,         &#39;bcvarname&#39;: &#39;salinitybnd&#39;},    #&#39;1e-3&#39;
+                                &#39;temperature&#39;: {&#39;ncvarname&#39;: &#39;thetao&#39;,     &#39;bcvarname&#39;: &#39;temperaturebnd&#39;}, #&#39;degC&#39;
+                                &#39;ux&#39;         : {&#39;ncvarname&#39;: &#39;uo&#39;,         &#39;bcvarname&#39;: &#39;ux&#39; },            #&#39;m/s&#39;
+                                &#39;uy&#39;         : {&#39;ncvarname&#39;: &#39;vo&#39;,         &#39;bcvarname&#39;: &#39;uy&#39; },            #&#39;m/s&#39;
+                                &#39;ux,uy&#39;      : {&#39;ncvarname&#39;: &#39;uo,vo&#39;,      &#39;bcvarname&#39;: &#39;ux,uy&#39; },         #&#39;m/s&#39;
+                                &#39;steric&#39;     : {&#39;ncvarname&#39;: &#39;zos&#39;,        &#39;bcvarname&#39;: &#39;waterlevelbnd&#39;},  #&#39;m&#39;
+                                &#39;tide&#39;       : {&#39;ncvarname&#39;: &#39;&#39;,           &#39;bcvarname&#39;: &#39;waterlevelbnd&#39;},  #&#39;m&#39;
+                                }
+    conversion_dicts[&#39;HYCOM&#39;] = {&#39;salinity&#39;  : {&#39;ncvarname&#39;: &#39;salinity&#39;,   &#39;bcvarname&#39;: &#39;salinitybnd&#39;},
+                                &#39;temperature&#39;: {&#39;ncvarname&#39;: &#39;water_temp&#39;, &#39;bcvarname&#39;: &#39;temperaturebnd&#39;},
+                                }
     
-    return conversion_dict
+    conversion_dict_model = conversion_dicts[model]
+    
+    return conversion_dict_model
 
 
-def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180=False, nPoints=None, debug=False):
+def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180=False, nPoints=None):
     &#34;&#34;&#34;
     &#34;&#34;&#34;
     # translate dict from .\hydro_tools\FES\PreProcessing_FES_TideModel_imaginary.m
@@ -147,7 +154,7 @@ def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180
     
     def extract_component(ds):
         #https://github.com/pydata/xarray/issues/1380
-        if &#39;FES2012&#39; in ds.encoding[&#34;source&#34;]: #TODO: make more generic with regex
+        if &#39;FES2012&#39; in ds.encoding[&#34;source&#34;]: #TODO: make more generic with regex, or just add tidemodel argument since they are quite specific
             compname = os.path.basename(ds.encoding[&#34;source&#34;]).replace(&#39;_FES2012_SLEV.nc&#39;,&#39;&#39;)
             ds = ds.sel(lon=ds.lon&lt;360) #drop last instance, since 0 and 360 are both present
             ds = ds.rename({&#39;Ha&#39;:&#39;amplitude&#39;,&#39;Hg&#39;:&#39;phase&#39;})
@@ -175,9 +182,7 @@ def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180
     data_xrsel[&#39;phase_v&#39;] = 1*np.sin(data_xrsel_phs_rad)
     
     #load boundary file
-    #polyfile_object = read_polyfile(file_pli,has_z_values=False)
-    #pli_PolyObjects = polyfile_object[&#39;objects&#39;]
-    polyfile_object = PolyFile(file_pli) #TODO SOLVED: should work with hydrolib-core&gt;0.3.0. also without has_z_values argument
+    polyfile_object = PolyFile(file_pli)
     pli_PolyObjects = polyfile_object.objects
 
     for iPO, pli_PolyObject_sel in enumerate(pli_PolyObjects):
@@ -197,13 +202,13 @@ def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180
                                                   kwargs={&#39;bounds_error&#39;:True})
         data_interp_allcoords[&#39;phase_new&#39;] = np.rad2deg(np.arctan2(data_interp_allcoords[&#39;phase_v&#39;],data_interp_allcoords[&#39;phase_u&#39;]))
         time_passed = (dt.datetime.now()-dtstart).total_seconds()
-        if debug: print(f&#39;&gt;&gt;time passed: {time_passed:.2f} sec&#39;)
+        # print(f&#39;&gt;&gt;time passed: {time_passed:.2f} sec&#39;)
         
         
         print(&#39;&gt; actual extraction of data from netcdf with .load() (for all PolyObject points at once, so this will take a while)&#39;)
         dtstart = dt.datetime.now()
         try:
-            data_interp_amp_allcoords = data_interp_allcoords[&#39;amplitude&#39;].load()/100 #convert from cm to m
+            data_interp_amp_allcoords = data_interp_allcoords[&#39;amplitude&#39;].load() #convert from cm to m
             data_interp_phs_allcoords = data_interp_allcoords[&#39;phase_new&#39;].load()
         except ValueError: #generate a proper error with outofbounds requested coordinates, default is &#34;ValueError: One of the requested xi is out of bounds in dimension 0&#34;
             lonvar_vals = data_xrsel[&#39;lon&#39;].to_numpy()
@@ -214,9 +219,13 @@ def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180
             reqlatlon_pd_outbounds = reqlatlon_pd.loc[bool_reqlon_outbounds | bool_reqlat_outbounds]
             raise ValueError(f&#39;{len(reqlatlon_pd_outbounds)} of {len(reqlatlon_pd)} requested pli points are out of bounds (valid longitude range {lonvar_vals.min()} to {lonvar_vals.max()}, valid latitude range {latvar_vals.min()} to {latvar_vals.max()}):\n{reqlatlon_pd_outbounds}&#39;)
         time_passed = (dt.datetime.now()-dtstart).total_seconds()
-        #if debug:
         print(f&#39;&gt;&gt;time passed: {time_passed:.2f} sec&#39;)
-
+        
+        #convert cm to m
+        if data_xrsel[&#39;amplitude&#39;].attrs[&#39;units&#39;] == &#39;cm&#39;:
+            data_interp_amp_allcoords = data_interp_amp_allcoords/100
+            data_xrsel[&#39;amplitude&#39;].attrs[&#39;units&#39;] = &#39;m&#39;
+        
         
         for iP, pli_Point_sel in enumerate(pli_PolyObject_sel.points[:nPoints]): #looping over plipoints within component loop, append to datablock_pd_allcomp
             print(f&#39;processing Point {iP+1} of {len(pli_PolyObject_sel.points)}: &#39;,end=&#39;&#39;)
@@ -236,7 +245,7 @@ def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180
             print(&#39;&gt; constructing TimeSeries and appending to ForcingModel()&#39;)
             ts_one = Astronomic(name=pli_PolyObject_name_num,
                                 quantityunitpair=[QuantityUnitPair(quantity=&#34;astronomic component&#34;, unit=&#39;-&#39;),
-                                                  QuantityUnitPair(quantity=&#39;waterlevelbnd amplitude&#39;, unit=&#39;m&#39;),#unit=data_xr_amp.attrs[&#39;units&#39;]),
+                                                  QuantityUnitPair(quantity=&#39;waterlevelbnd amplitude&#39;, unit=data_xrsel[&#39;amplitude&#39;].attrs[&#39;units&#39;]),
                                                   QuantityUnitPair(quantity=&#39;waterlevelbnd phase&#39;, unit=data_xrsel[&#39;phase&#39;].attrs[&#39;units&#39;])],
                                 datablock=datablock_list, 
                                 )
@@ -246,17 +255,20 @@ def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180
 
 
 def interpolate_nc_to_bc(dir_pattern, file_pli, quantity, 
-                         tstart, tstop, refdate_str, 
+                         tstart, tstop, refdate_str=None, 
                          convert_360to180=False,
-                         nPoints=None, debug=False,
+                         conversion_dict=None, #TODO: alternatively use rename_vars dict and use conversion_dict only for unit conversion. dict containing keys: ncvarname, bcvarname and optionally conversion and unit
+                         nPoints=None, #argument for testing
                          reverse_depth=False, #temporary argument to compare easier with old coastserv files
-                         fill_na=True):
+                         ):
     
-    conversion_dict = get_conversion_dict()
-    ncvarname = conversion_dict[quantity][&#39;ncvarname&#39;]
-    bcvarname = conversion_dict[quantity][&#39;bcvarname&#39;]
+    if conversion_dict is None:
+        conversion_dict_model = get_conversion_dict()
+        conversion_dict = conversion_dict_model[quantity]
+    ncvarname = conversion_dict[&#39;ncvarname&#39;] #rename with origvarname/newvarname
+    bcvarname = conversion_dict[&#39;bcvarname&#39;]
     if &#39;,&#39; in ncvarname:
-        raise Exception(&#39;ERROR: combined variables not yet supported by hydrolib-core bc writer: https://github.com/Deltares/HYDROLIB-core/issues/316&#39;)
+        raise Exception(&#39;ERROR: combined variables not yet supported by hydrolib-core bc writer: https://github.com/Deltares/HYDROLIB-core/issues/316&#39;)    
     
     print(&#39;initialize ForcingModel()&#39;)
     ForcingModel_object = ForcingModel()
@@ -264,7 +276,12 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
     file_list_nc = glob.glob(str(dir_pattern))
     print(f&#39;loading mfdataset ({len(file_list_nc)} files with pattern &#34;{dir_pattern.name}&#34;)&#39;)
     dtstart = dt.datetime.now()
-    data_xr = xr.open_mfdataset(file_list_nc) # can also supply str(dir_pattern)
+    data_xr = xr.open_mfdataset(file_list_nc,chunks={&#39;time&#39;:1}) # can also supply str(dir_pattern) #TODO: does chunks argument solve &#34;PerformanceWarning: Slicing is producing a large chunk.&#34;?
+    
+    #change attributes
+    data_xr = data_xr.rename({ncvarname:bcvarname}) #TODO: is this not a bit tricky?
+    if refdate_str is not None:
+        data_xr.time.encoding[&#39;units&#39;] = refdate_str
     
     #get calendar and maybe convert_calendar, makes sure that nc_tstart/nc_tstop are of type pd._libs.tslibs.timestamps.Timestamp
     data_xr_calendar = data_xr[&#39;time&#39;].dt.calendar
@@ -272,7 +289,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
         print(&#39;WARNING: calendar different than proleptic_gregorian found ({data_xr_calendar}), convert_calendar is called so check output carefully. It should be no issue for datasets with a monthly interval.&#39;)
         data_xr = data_xr.convert_calendar(&#39;standard&#39;) #TODO: does this not result in 29feb nan values in e.g. GFDL model? 
     time_passed = (dt.datetime.now()-dtstart).total_seconds()
-    if debug: print(f&#39;&gt;&gt;time passed: {time_passed:.2f} sec&#39;)
+    # print(f&#39;&gt;&gt;time passed: {time_passed:.2f} sec&#39;)
     
     #get timevar and compare requested dates
     timevar = data_xr[&#39;time&#39;]
@@ -294,23 +311,24 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
         data_xr.coords[lonvarname] = (data_xr.coords[lonvarname] + 180) % 360 - 180
         data_xr = data_xr.sortby(data_xr[lonvarname])
     
-    #retrieve var (after potential longitude conversion) (also selecting relevant times)
-    data_xr_var = data_xr[ncvarname].sel(time=slice(tstart,tstop))
+    if &#39;lev&#39; in data_xr[bcvarname].coords: #depth for CMEMS and many others, but lev for GFDL, convert to depth #TODO: provide rename_dict as argument to this function or leave as is?
+        data_xr = data_xr.rename({&#39;lev&#39;:&#39;depth&#39;}) #TODO: can also do this for data_xr_var only?
+        print(&#39;variable/coordinate lev renamed to depth&#39;)
     
-    #check if depth coordinate is present in variable (not only in file)
-    if &#39;depth&#39; in data_xr_var.coords: #depth for CMEMS and many others
-        has_depth = True
-        depthvarname = &#39;depth&#39;
-    elif &#39;lev&#39; in data_xr_var.coords: #lev for GFDL
-        has_depth = True
-        depthvarname = &#39;lev&#39;
+    #retrieve var (after potential longitude conversion) (also selecting relevant times)
+    data_xr_var = data_xr[bcvarname].sel(time=slice(tstart,tstop))
+    
+    if &#39;latitude&#39; in data_xr_var.coords: #for CMEMS etc #TODO: do rename instead?
+        coordname_lat = &#39;latitude&#39;
+        coordname_lon = &#39;longitude&#39;
+    elif &#39;lat&#39; in data_xr_var.coords:
+        coordname_lat = &#39;lat&#39;
+        coordname_lon = &#39;lon&#39;
     else:
-        has_depth = False
+        raise Exception(f&#39;latitude/longitude are not in variable coords: {data_xr_var.coords}. Extend this part of the code for e.g. lat/lon coords&#39;)
     
     #load boundary file
-    #polyfile_object = read_polyfile(file_pli,has_z_values=False) #TODO: this warning can be suppressed (or how to fix): &#34;UserWarning: White space at the start of the line is ignored.&#34; https://github.com/Deltares/HYDROLIB-core/issues/320
-    #pli_PolyObjects = polyfile_object[&#39;objects&#39;]
-    polyfile_object = PolyFile(file_pli) #TODO SOLVED: should work with hydrolib-core&gt;0.3.0. also without has_z_values argument
+    polyfile_object = PolyFile(file_pli)
     pli_PolyObjects = polyfile_object.objects
     
     for iPO, pli_PolyObject_sel in enumerate(pli_PolyObjects):
@@ -325,25 +343,17 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
         #interpolation to lat/lon combinations
         print(&#39;&gt; interp mfdataset to all PolyObject points (lat/lon coordinates)&#39;)
         dtstart = dt.datetime.now()
-        if &#39;latitude&#39; in data_xr_var.coords: #for CMEMS etc
-            coordname_lat = &#39;latitude&#39;
-            coordname_lon = &#39;longitude&#39;
-        elif &#39;lat&#39; in data_xr_var.coords:
-            coordname_lat = &#39;lat&#39;
-            coordname_lon = &#39;lon&#39;
-        else:
-            raise Exception(f&#39;latitude/longitude are not in variable coords: {data_xr_var.coords}. Extend this part of the code for e.g. lat/lon coords&#39;)
         data_interp = data_xr_var.interp({coordname_lat:da_lats, coordname_lon:da_lons}, #also possible without dict: (latitude=da_lats, longitude=da_lons), but this is more flexible
                                          method=&#39;linear&#39;, 
                                          kwargs={&#39;bounds_error&#39;:True}, #error is only raised upon load(), so when the actual value retrieval happens
                                          )
         time_passed = (dt.datetime.now()-dtstart).total_seconds()
-        if debug: print(f&#39;&gt;&gt;time passed: {time_passed:.2f} sec&#39;)
+        # print(f&#39;&gt;&gt;time passed: {time_passed:.2f} sec&#39;)
         
         print(&#39;&gt; actual extraction of data from netcdf with .load() (for all PolyObject points at once, so this will take a while)&#39;)
         dtstart = dt.datetime.now()
         try:
-            datablock_raw_allcoords = data_interp.load() #loading data for all points at once is more efficient compared to loading data per point in loop 
+            datablock_xr_allpoints = data_interp.load() #loading data for all points at once is more efficient compared to loading data per point in loop 
         except ValueError: #generate a proper error with outofbounds requested coordinates, default is &#34;ValueError: One of the requested xi is out of bounds in dimension 0&#34;
             lonvar_vals = data_xr[lonvarname].to_numpy()
             latvar_vals = data_xr[latvarname].to_numpy()
@@ -353,100 +363,38 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             reqlatlon_pd_outbounds = reqlatlon_pd.loc[bool_reqlon_outbounds | bool_reqlat_outbounds]
             raise ValueError(f&#39;{len(reqlatlon_pd_outbounds)} of requested pli points are out of bounds (valid longitude range {lonvar_vals.min()} to {lonvar_vals.max()}), valid latitude range {latvar_vals.min()} to {latvar_vals.max()}):\n{reqlatlon_pd_outbounds}&#39;)
         time_passed = (dt.datetime.now()-dtstart).total_seconds()
-        #if debug:
         print(f&#39;&gt;&gt;time passed: {time_passed:.2f} sec&#39;)
         
-        print(&#39;&gt; optional conversion of units and reversing of depth dimension&#39;)
         #optional conversion of units and reversing depth dimension
-        if &#39;conversion&#39; in conversion_dict[quantity].keys(): #if conversion is present, unit key must also be in conversion_dict
-            print(&#39;converting units&#39;)
-            datablock_raw_allcoords = datablock_raw_allcoords * conversion_dict[quantity][&#39;conversion&#39;] #conversion drops all attributes of which units (which are changed anyway)
-            datablock_raw_allcoords.attrs[&#39;units&#39;] = conversion_dict[quantity][&#39;unit&#39;] #add unit attribute with resulting unit
+        if &#39;conversion&#39; in conversion_dict.keys(): #if conversion is present, unit key must also be in conversion_dict
+            print(f&#39;&gt; converting units from [{datablock_xr_allpoints.attrs[&#34;units&#34;]}] to [{conversion_dict[&#34;unit&#34;]}]&#39;)
+            datablock_xr_allpoints = datablock_xr_allpoints * conversion_dict[&#39;conversion&#39;] #conversion drops all attributes of which units (which are changed anyway)
+            datablock_xr_allpoints.attrs[&#39;units&#39;] = conversion_dict[&#39;unit&#39;] #add unit attribute with resulting unit
         
-        if has_depth &amp; reverse_depth:
-            datablock_raw_allcoords = datablock_raw_allcoords.reindex({depthvarname:list(reversed(datablock_raw_allcoords[depthvarname]))})
-            
+        if (&#39;depth&#39; in data_xr_var.coords) &amp; reverse_depth:
+            print(&#39;&gt; reversing depth dimension&#39;)
+            datablock_xr_allpoints = datablock_xr_allpoints.reindex({&#39;depth&#39;:list(reversed(datablock_xr_allpoints[&#39;depth&#39;]))})
+        
         for iP, pli_Point_sel in enumerate(pli_PolyObject_sel.points[:nPoints]):
             print(f&#39;processing Point {iP+1} of {len(pli_PolyObject_sel.points)}: &#39;,end=&#39;&#39;)
             lonx_print, laty_print = pli_Point_sel.x, pli_Point_sel.y
             print(f&#39;(x={lonx_print}, y={laty_print})&#39;)
             pli_PolyObject_name_num = f&#39;{pli_PolyObject_sel.metadata.name}_{iP+1:04d}&#39;
             
-            
-            #TODO: steps from here to T3D/Timeseries could be bound method of those objects? (eg T3D.from_xarray_dataarray(datablock_xr)). Required information:
-            # has_depth = 1 # can be avoided if separate for Timeseries and T3D, or inferred, or if depth varname is always &#39;depth&#39;
-            # depthvarname = 1 # can be avoided if overwritten with &#39;depth&#39;
-            # pli_PolyObject_name_num = 1
-            # refdate_str = 1
-            # bcvarname = 1
-            # datablock_xr = 1
-            print(&#39;&gt; select data for point, ffill nans and concatenating time column&#39;)
+            print(&#39;&gt; select data for this point, ffill nans, concatenating time column, constructing T3D/TimeSeries and appending to ForcingModel()&#39;)
             dtstart = dt.datetime.now()
-            datablock_xr = datablock_raw_allcoords.isel(latloncombi=iP)
-            if has_depth:
-                #get depth variable and values
-                depth_array = datablock_xr[depthvarname].to_numpy()
-                if datablock_xr[depthvarname].attrs[&#39;positive&#39;] == &#39;down&#39;: #attribute appears in CMEMS, GFDL and CMCC, save to assume presence?
-                    depth_array = -depth_array
-                if fill_na: #ffill data
-                    datablock_xr = datablock_xr.bfill(dim=depthvarname).ffill(dim=depthvarname) #fill nans back and forward (corresponds to vertical extrapolation for CMEMS). Deep values are filled if order is shallow to deep
-                datablock_np = datablock_xr.to_numpy()
-            else:
-                datablock_np = datablock_xr.to_numpy()[:,np.newaxis]
-                
-            # check if only nan (out of bounds or land):
-            if np.isnan(datablock_np).all():
+            datablock_xr_onepoint = datablock_xr_allpoints.isel(latloncombi=iP)
+            datablock_xr_onepoint.attrs[&#39;locationname&#39;] = pli_PolyObject_name_num #TODO: is there a nicer way of passing this data?
+            
+            if np.isnan(datablock_xr_onepoint.to_numpy()).all(): # check if only nan (out of bounds or land) # we can do .to_numpy() without performance loss, since data is already loaded in datablock_xr_allpoints
                 print(&#39;WARNING: only nans for this coordinate, this point might be on land&#39;)
-            
-            timevar_sel_rel = date2num(pd.DatetimeIndex(datablock_xr.time.to_numpy()).to_pydatetime(),units=refdate_str,calendar=&#39;standard&#39;)
-            
-            datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock_np],axis=1)
-            time_passed = (dt.datetime.now()-dtstart).total_seconds()
-            if debug: print(f&#39;&gt;&gt;time passed: {time_passed:.2f} sec&#39;)
-            
-            
-            # Each .bc file can contain 1 or more timeseries, in this case one for each support point
-            print(&#39;&gt; constructing TimeSeries and appending to ForcingModel()&#39;)
-            dtstart = dt.datetime.now()
-            if has_depth:
-                verticalpositions_idx = np.arange(datablock_xr[depthvarname].size)+1
-                #list_QUP_perlayer = [QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs[&#39;units&#39;]) for iL in verticalpositions_id] #TODO REPORT: verwarrende foutmelding bij niet opgeven verticalpositionindex (should be missing error instead of not valid error)
-                list_QUP_perlayer = [QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs[&#39;units&#39;], verticalpositionindex=iVP) for iVP in verticalpositions_idx] #TODO SOLVED: verticalposition 1/2/3/n is not supported. https://github.com/Deltares/HYDROLIB-core/issues/317
-                ts_one = T3D(name=pli_PolyObject_name_num,
-                             verticalpositions=depth_array.tolist(), #TODO: should be &#34;Vertical position specification = [..]&#34; but is verticalPositions = [..]&#34; (both possible?). https://github.com/Deltares/HYDROLIB-core/issues/317
-                             verticalinterpolation=&#39;linear&#39;,
-                             verticalpositiontype=&#39;ZDatum&#39;, #TODO SOLVED: should be &#34;Vertical position type = zdatum&#34; but is &#34;verticalPositionType = ZBed&#34; (zdatum is niet beschikbaar). https://github.com/Deltares/HYDROLIB-core/issues/317
-                             quantityunitpair=[QuantityUnitPair(quantity=&#34;time&#34;, unit=refdate_str)]+list_QUP_perlayer,
-                             timeinterpolation=&#39;linear&#39;, #TODO SOLVED: not passed on to bc file. https://github.com/Deltares/HYDROLIB-core/issues/317
-                             datablock=datablock_incltime.tolist(), #TODO: numpy array is not supported by TimeSeries. https://github.com/Deltares/HYDROLIB-core/issues/322
-                             )
+            if &#39;depth&#39; in data_xr_var.coords:
+                ts_one = DataArray_to_T3D(datablock_xr_onepoint)#,locationname=pli_PolyObject_name_num,refdate_str=refdate_str,bcvarname=bcvarname)
             else:
-                ts_one = TimeSeries(name=pli_PolyObject_name_num,
-                                    verticalposition=&#39;ZBed&#39;, #TODO: is not passed on to bc file and that makes sense, but it should raise error since it is not relevant for timeseries. https://github.com/Deltares/HYDROLIB-core/issues/321
-                                    quantityunitpair=[QuantityUnitPair(quantity=&#34;time&#34;, unit=refdate_str), #TODO: quantity is not validated: https://github.com/Deltares/HYDROLIB-core/issues/357
-                                                      QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs[&#39;units&#39;])],
-                                    timeinterpolation=&#39;linear&#39;,
-                                    datablock=datablock_incltime.tolist(), 
-                                    )
-            
+                ts_one = DataArray_to_TimeSeries(datablock_xr_onepoint)#,locationname=pli_PolyObject_name_num,refdate_str=refdate_str,bcvarname=bcvarname)
             ForcingModel_object.forcing.append(ts_one)
             time_passed = (dt.datetime.now()-dtstart).total_seconds()
-            if debug: print(f&#39;&gt;&gt;time passed: {time_passed:.2f} sec&#39;)
-            
-            
-            if debug:
-                print(&#39;&gt; plotting&#39;)
-                dtstart = dt.datetime.now()
-                fig,ax = plt.subplots(figsize=(10,7))
-                datablock_xr.T.plot() #uses plot.line() for 1D arrays and plot.pcolormesh() for 2D arrays: https://docs.xarray.dev/en/stable/generated/xarray.DataArray.plot.html
-                ax.set_title(f&#39;{quantity} {pli_PolyObject_name_num}&#39;)
-                if &#39;depth&#39; in data_xr_var.coords:
-                    ax.set_ylim(0,200)
-                    ax.invert_yaxis()
-                fig.tight_layout()
-                time_passed = (dt.datetime.now()-dtstart).total_seconds()
-                if debug: print(f&#39;&gt;&gt;time passed: {time_passed:.2f} sec&#39;)
-            
+            # print(f&#39;&gt;&gt;time passed: {time_passed:.2f} sec&#39;)
     
     return ForcingModel_object</code></pre>
 </details>
@@ -459,42 +407,53 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="dfm_tools.interpolate_grid2bnd.get_conversion_dict"><code class="name flex">
-<span>def <span class="ident">get_conversion_dict</span></span>(<span>)</span>
+<span>def <span class="ident">get_conversion_dict</span></span>(<span>model='CMEMS')</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>interpolate_nc_to_bc() renames netcdf variable like this:
+data_xr = data_xr.rename({ncvarname:bcvarname})</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_conversion_dict():
+<pre><code class="python">def get_conversion_dict(model=&#39;CMEMS&#39;):
+    &#34;&#34;&#34;
+    interpolate_nc_to_bc() renames netcdf variable like this:
+    data_xr = data_xr.rename({ncvarname:bcvarname})
+    &#34;&#34;&#34;
+    conversion_dicts = {}
     # conversion_dict, contains ncvarname as array because uxuy relies on 2 CMEMS variables
-    conversion_dict = { # mg/l is the same as g/m3: conversion is phyc in mmol/l to newvar in g/m3
-                        &#39;OXY&#39;        : {&#39;ncvarname&#39;: &#39;o2&#39;,      &#39;bcvarname&#39;: &#39;tracerbndOXY&#39;,  &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 32.0 / 1000.0}, 
-                        &#39;NO3&#39;        : {&#39;ncvarname&#39;: &#39;no3&#39;,     &#39;bcvarname&#39;: &#39;tracerbndNO3&#39;,  &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 14.0 / 1000.0},
-                        &#39;PO4&#39;        : {&#39;ncvarname&#39;: &#39;po4&#39;,     &#39;bcvarname&#39;: &#39;tracerbndPO4&#39;,  &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 30.97 / 1000.0},
-                        &#39;Si&#39;         : {&#39;ncvarname&#39;: &#39;si&#39;,      &#39;bcvarname&#39;: &#39;tracerbndSi&#39;,   &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 28.08 / 1000.0},
-                        &#39;PON1&#39;       : {&#39;ncvarname&#39;: &#39;phyc&#39;,    &#39;bcvarname&#39;: &#39;tracerbndPON1&#39;, &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 2. * 16. * 14. / (106. * 1000.0)},
-                        &#39;POP1&#39;       : {&#39;ncvarname&#39;: &#39;phyc&#39;,    &#39;bcvarname&#39;: &#39;tracerbndPOP1&#39;, &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 2. * 30.97 / (106. * 1000.0)},
-                        &#39;POC1&#39;       : {&#39;ncvarname&#39;: &#39;phyc&#39;,    &#39;bcvarname&#39;: &#39;tracerbndPOC1&#39;, &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 2. * 12. / 1000.0},
-                        &#39;DON&#39;        : {&#39;ncvarname&#39;: &#39;phyc&#39;,    &#39;bcvarname&#39;: &#39;tracerbndDON&#39;,  &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 3.24 * 2. * 16. * 14. / (106. * 1000.0)},
-                        &#39;DOP&#39;        : {&#39;ncvarname&#39;: &#39;phyc&#39;,    &#39;bcvarname&#39;: &#39;tracerbndDOP&#39;,  &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 1.0 * 2. * 30.97 / (106. * 1000.0)},
-                        &#39;DOC&#39;        : {&#39;ncvarname&#39;: &#39;phyc&#39;,    &#39;bcvarname&#39;: &#39;tracerbndDOC&#39;,  &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : (199. / 20.) * 3.24 * 2. * 16. * 12. / (106. * 1000.0)},
-                        &#39;Opal&#39;       : {&#39;ncvarname&#39;: &#39;phyc&#39;,    &#39;bcvarname&#39;: &#39;tracerbndOpal&#39;, &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 0.5 * 0.13 * 28.08 / (1000.0)},
-                        &#39;salinity&#39;   : {&#39;ncvarname&#39;: &#39;so&#39;,      &#39;bcvarname&#39;: &#39;salinitybnd&#39;},    #&#39;1e-3&#39;
-                        &#39;temperature&#39;: {&#39;ncvarname&#39;: &#39;thetao&#39;,  &#39;bcvarname&#39;: &#39;temperaturebnd&#39;}, #&#39;degC&#39;
-                        &#39;ux&#39;         : {&#39;ncvarname&#39;: &#39;uo&#39;,      &#39;bcvarname&#39;: &#39;ux&#39; },            #&#39;m/s&#39;
-                        &#39;uy&#39;         : {&#39;ncvarname&#39;: &#39;vo&#39;,      &#39;bcvarname&#39;: &#39;uy&#39; },            #&#39;m/s&#39;
-                        &#39;ux,uy&#39;      : {&#39;ncvarname&#39;: &#39;uo,vo&#39;,   &#39;bcvarname&#39;: &#39;ux,uy&#39; },         #&#39;m/s&#39;
-                        &#39;steric&#39;     : {&#39;ncvarname&#39;: &#39;zos&#39;,     &#39;bcvarname&#39;: &#39;waterlevelbnd&#39;},  #&#39;m&#39;
-                        &#39;tide&#39;       : {&#39;ncvarname&#39;: &#39;&#39;,        &#39;bcvarname&#39;: &#39;waterlevelbnd&#39;},  #&#39;m&#39;
-                        }
+    conversion_dicts[&#39;CMEMS&#39;] = { # mg/l is the same as g/m3: conversion is phyc in mmol/l to newvar in g/m3
+                                &#39;OXY&#39;        : {&#39;ncvarname&#39;: &#39;o2&#39;,         &#39;bcvarname&#39;: &#39;tracerbndOXY&#39;,  &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 32.0 / 1000.0}, 
+                                &#39;NO3&#39;        : {&#39;ncvarname&#39;: &#39;no3&#39;,        &#39;bcvarname&#39;: &#39;tracerbndNO3&#39;,  &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 14.0 / 1000.0},
+                                &#39;PO4&#39;        : {&#39;ncvarname&#39;: &#39;po4&#39;,        &#39;bcvarname&#39;: &#39;tracerbndPO4&#39;,  &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 30.97 / 1000.0},
+                                &#39;Si&#39;         : {&#39;ncvarname&#39;: &#39;si&#39;,         &#39;bcvarname&#39;: &#39;tracerbndSi&#39;,   &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 28.08 / 1000.0},
+                                &#39;PON1&#39;       : {&#39;ncvarname&#39;: &#39;phyc&#39;,       &#39;bcvarname&#39;: &#39;tracerbndPON1&#39;, &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 2. * 16. * 14. / (106. * 1000.0)},
+                                &#39;POP1&#39;       : {&#39;ncvarname&#39;: &#39;phyc&#39;,       &#39;bcvarname&#39;: &#39;tracerbndPOP1&#39;, &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 2. * 30.97 / (106. * 1000.0)},
+                                &#39;POC1&#39;       : {&#39;ncvarname&#39;: &#39;phyc&#39;,       &#39;bcvarname&#39;: &#39;tracerbndPOC1&#39;, &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 2. * 12. / 1000.0},
+                                &#39;DON&#39;        : {&#39;ncvarname&#39;: &#39;phyc&#39;,       &#39;bcvarname&#39;: &#39;tracerbndDON&#39;,  &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 3.24 * 2. * 16. * 14. / (106. * 1000.0)},
+                                &#39;DOP&#39;        : {&#39;ncvarname&#39;: &#39;phyc&#39;,       &#39;bcvarname&#39;: &#39;tracerbndDOP&#39;,  &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 1.0 * 2. * 30.97 / (106. * 1000.0)},
+                                &#39;DOC&#39;        : {&#39;ncvarname&#39;: &#39;phyc&#39;,       &#39;bcvarname&#39;: &#39;tracerbndDOC&#39;,  &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : (199. / 20.) * 3.24 * 2. * 16. * 12. / (106. * 1000.0)},
+                                &#39;Opal&#39;       : {&#39;ncvarname&#39;: &#39;phyc&#39;,       &#39;bcvarname&#39;: &#39;tracerbndOpal&#39;, &#39;unit&#39;: &#39;g/m3&#39;, &#39;conversion&#39; : 0.5 * 0.13 * 28.08 / (1000.0)},
+                                &#39;salinity&#39;   : {&#39;ncvarname&#39;: &#39;so&#39;,         &#39;bcvarname&#39;: &#39;salinitybnd&#39;},    #&#39;1e-3&#39;
+                                &#39;temperature&#39;: {&#39;ncvarname&#39;: &#39;thetao&#39;,     &#39;bcvarname&#39;: &#39;temperaturebnd&#39;}, #&#39;degC&#39;
+                                &#39;ux&#39;         : {&#39;ncvarname&#39;: &#39;uo&#39;,         &#39;bcvarname&#39;: &#39;ux&#39; },            #&#39;m/s&#39;
+                                &#39;uy&#39;         : {&#39;ncvarname&#39;: &#39;vo&#39;,         &#39;bcvarname&#39;: &#39;uy&#39; },            #&#39;m/s&#39;
+                                &#39;ux,uy&#39;      : {&#39;ncvarname&#39;: &#39;uo,vo&#39;,      &#39;bcvarname&#39;: &#39;ux,uy&#39; },         #&#39;m/s&#39;
+                                &#39;steric&#39;     : {&#39;ncvarname&#39;: &#39;zos&#39;,        &#39;bcvarname&#39;: &#39;waterlevelbnd&#39;},  #&#39;m&#39;
+                                &#39;tide&#39;       : {&#39;ncvarname&#39;: &#39;&#39;,           &#39;bcvarname&#39;: &#39;waterlevelbnd&#39;},  #&#39;m&#39;
+                                }
+    conversion_dicts[&#39;HYCOM&#39;] = {&#39;salinity&#39;  : {&#39;ncvarname&#39;: &#39;salinity&#39;,   &#39;bcvarname&#39;: &#39;salinitybnd&#39;},
+                                &#39;temperature&#39;: {&#39;ncvarname&#39;: &#39;water_temp&#39;, &#39;bcvarname&#39;: &#39;temperaturebnd&#39;},
+                                }
     
-    return conversion_dict</code></pre>
+    conversion_dict_model = conversion_dicts[model]
+    
+    return conversion_dict_model</code></pre>
 </details>
 </dd>
 <dt id="dfm_tools.interpolate_grid2bnd.interpolate_FES"><code class="name flex">
-<span>def <span class="ident">interpolate_FES</span></span>(<span>dir_pattern, file_pli, component_list=None, convert_360to180=False, nPoints=None, debug=False)</span>
+<span>def <span class="ident">interpolate_FES</span></span>(<span>dir_pattern, file_pli, component_list=None, convert_360to180=False, nPoints=None)</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -502,7 +461,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180=False, nPoints=None, debug=False):
+<pre><code class="python">def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180=False, nPoints=None):
     &#34;&#34;&#34;
     &#34;&#34;&#34;
     # translate dict from .\hydro_tools\FES\PreProcessing_FES_TideModel_imaginary.m
@@ -525,7 +484,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
     
     def extract_component(ds):
         #https://github.com/pydata/xarray/issues/1380
-        if &#39;FES2012&#39; in ds.encoding[&#34;source&#34;]: #TODO: make more generic with regex
+        if &#39;FES2012&#39; in ds.encoding[&#34;source&#34;]: #TODO: make more generic with regex, or just add tidemodel argument since they are quite specific
             compname = os.path.basename(ds.encoding[&#34;source&#34;]).replace(&#39;_FES2012_SLEV.nc&#39;,&#39;&#39;)
             ds = ds.sel(lon=ds.lon&lt;360) #drop last instance, since 0 and 360 are both present
             ds = ds.rename({&#39;Ha&#39;:&#39;amplitude&#39;,&#39;Hg&#39;:&#39;phase&#39;})
@@ -553,9 +512,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
     data_xrsel[&#39;phase_v&#39;] = 1*np.sin(data_xrsel_phs_rad)
     
     #load boundary file
-    #polyfile_object = read_polyfile(file_pli,has_z_values=False)
-    #pli_PolyObjects = polyfile_object[&#39;objects&#39;]
-    polyfile_object = PolyFile(file_pli) #TODO SOLVED: should work with hydrolib-core&gt;0.3.0. also without has_z_values argument
+    polyfile_object = PolyFile(file_pli)
     pli_PolyObjects = polyfile_object.objects
 
     for iPO, pli_PolyObject_sel in enumerate(pli_PolyObjects):
@@ -575,13 +532,13 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
                                                   kwargs={&#39;bounds_error&#39;:True})
         data_interp_allcoords[&#39;phase_new&#39;] = np.rad2deg(np.arctan2(data_interp_allcoords[&#39;phase_v&#39;],data_interp_allcoords[&#39;phase_u&#39;]))
         time_passed = (dt.datetime.now()-dtstart).total_seconds()
-        if debug: print(f&#39;&gt;&gt;time passed: {time_passed:.2f} sec&#39;)
+        # print(f&#39;&gt;&gt;time passed: {time_passed:.2f} sec&#39;)
         
         
         print(&#39;&gt; actual extraction of data from netcdf with .load() (for all PolyObject points at once, so this will take a while)&#39;)
         dtstart = dt.datetime.now()
         try:
-            data_interp_amp_allcoords = data_interp_allcoords[&#39;amplitude&#39;].load()/100 #convert from cm to m
+            data_interp_amp_allcoords = data_interp_allcoords[&#39;amplitude&#39;].load() #convert from cm to m
             data_interp_phs_allcoords = data_interp_allcoords[&#39;phase_new&#39;].load()
         except ValueError: #generate a proper error with outofbounds requested coordinates, default is &#34;ValueError: One of the requested xi is out of bounds in dimension 0&#34;
             lonvar_vals = data_xrsel[&#39;lon&#39;].to_numpy()
@@ -592,9 +549,13 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             reqlatlon_pd_outbounds = reqlatlon_pd.loc[bool_reqlon_outbounds | bool_reqlat_outbounds]
             raise ValueError(f&#39;{len(reqlatlon_pd_outbounds)} of {len(reqlatlon_pd)} requested pli points are out of bounds (valid longitude range {lonvar_vals.min()} to {lonvar_vals.max()}, valid latitude range {latvar_vals.min()} to {latvar_vals.max()}):\n{reqlatlon_pd_outbounds}&#39;)
         time_passed = (dt.datetime.now()-dtstart).total_seconds()
-        #if debug:
         print(f&#39;&gt;&gt;time passed: {time_passed:.2f} sec&#39;)
-
+        
+        #convert cm to m
+        if data_xrsel[&#39;amplitude&#39;].attrs[&#39;units&#39;] == &#39;cm&#39;:
+            data_interp_amp_allcoords = data_interp_amp_allcoords/100
+            data_xrsel[&#39;amplitude&#39;].attrs[&#39;units&#39;] = &#39;m&#39;
+        
         
         for iP, pli_Point_sel in enumerate(pli_PolyObject_sel.points[:nPoints]): #looping over plipoints within component loop, append to datablock_pd_allcomp
             print(f&#39;processing Point {iP+1} of {len(pli_PolyObject_sel.points)}: &#39;,end=&#39;&#39;)
@@ -614,7 +575,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             print(&#39;&gt; constructing TimeSeries and appending to ForcingModel()&#39;)
             ts_one = Astronomic(name=pli_PolyObject_name_num,
                                 quantityunitpair=[QuantityUnitPair(quantity=&#34;astronomic component&#34;, unit=&#39;-&#39;),
-                                                  QuantityUnitPair(quantity=&#39;waterlevelbnd amplitude&#39;, unit=&#39;m&#39;),#unit=data_xr_amp.attrs[&#39;units&#39;]),
+                                                  QuantityUnitPair(quantity=&#39;waterlevelbnd amplitude&#39;, unit=data_xrsel[&#39;amplitude&#39;].attrs[&#39;units&#39;]),
                                                   QuantityUnitPair(quantity=&#39;waterlevelbnd phase&#39;, unit=data_xrsel[&#39;phase&#39;].attrs[&#39;units&#39;])],
                                 datablock=datablock_list, 
                                 )
@@ -624,7 +585,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
 </details>
 </dd>
 <dt id="dfm_tools.interpolate_grid2bnd.interpolate_nc_to_bc"><code class="name flex">
-<span>def <span class="ident">interpolate_nc_to_bc</span></span>(<span>dir_pattern, file_pli, quantity, tstart, tstop, refdate_str, convert_360to180=False, nPoints=None, debug=False, reverse_depth=False, fill_na=True)</span>
+<span>def <span class="ident">interpolate_nc_to_bc</span></span>(<span>dir_pattern, file_pli, quantity, tstart, tstop, refdate_str=None, convert_360to180=False, conversion_dict=None, nPoints=None, reverse_depth=False)</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -633,17 +594,20 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def interpolate_nc_to_bc(dir_pattern, file_pli, quantity, 
-                         tstart, tstop, refdate_str, 
+                         tstart, tstop, refdate_str=None, 
                          convert_360to180=False,
-                         nPoints=None, debug=False,
+                         conversion_dict=None, #TODO: alternatively use rename_vars dict and use conversion_dict only for unit conversion. dict containing keys: ncvarname, bcvarname and optionally conversion and unit
+                         nPoints=None, #argument for testing
                          reverse_depth=False, #temporary argument to compare easier with old coastserv files
-                         fill_na=True):
+                         ):
     
-    conversion_dict = get_conversion_dict()
-    ncvarname = conversion_dict[quantity][&#39;ncvarname&#39;]
-    bcvarname = conversion_dict[quantity][&#39;bcvarname&#39;]
+    if conversion_dict is None:
+        conversion_dict_model = get_conversion_dict()
+        conversion_dict = conversion_dict_model[quantity]
+    ncvarname = conversion_dict[&#39;ncvarname&#39;] #rename with origvarname/newvarname
+    bcvarname = conversion_dict[&#39;bcvarname&#39;]
     if &#39;,&#39; in ncvarname:
-        raise Exception(&#39;ERROR: combined variables not yet supported by hydrolib-core bc writer: https://github.com/Deltares/HYDROLIB-core/issues/316&#39;)
+        raise Exception(&#39;ERROR: combined variables not yet supported by hydrolib-core bc writer: https://github.com/Deltares/HYDROLIB-core/issues/316&#39;)    
     
     print(&#39;initialize ForcingModel()&#39;)
     ForcingModel_object = ForcingModel()
@@ -651,7 +615,12 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
     file_list_nc = glob.glob(str(dir_pattern))
     print(f&#39;loading mfdataset ({len(file_list_nc)} files with pattern &#34;{dir_pattern.name}&#34;)&#39;)
     dtstart = dt.datetime.now()
-    data_xr = xr.open_mfdataset(file_list_nc) # can also supply str(dir_pattern)
+    data_xr = xr.open_mfdataset(file_list_nc,chunks={&#39;time&#39;:1}) # can also supply str(dir_pattern) #TODO: does chunks argument solve &#34;PerformanceWarning: Slicing is producing a large chunk.&#34;?
+    
+    #change attributes
+    data_xr = data_xr.rename({ncvarname:bcvarname}) #TODO: is this not a bit tricky?
+    if refdate_str is not None:
+        data_xr.time.encoding[&#39;units&#39;] = refdate_str
     
     #get calendar and maybe convert_calendar, makes sure that nc_tstart/nc_tstop are of type pd._libs.tslibs.timestamps.Timestamp
     data_xr_calendar = data_xr[&#39;time&#39;].dt.calendar
@@ -659,7 +628,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
         print(&#39;WARNING: calendar different than proleptic_gregorian found ({data_xr_calendar}), convert_calendar is called so check output carefully. It should be no issue for datasets with a monthly interval.&#39;)
         data_xr = data_xr.convert_calendar(&#39;standard&#39;) #TODO: does this not result in 29feb nan values in e.g. GFDL model? 
     time_passed = (dt.datetime.now()-dtstart).total_seconds()
-    if debug: print(f&#39;&gt;&gt;time passed: {time_passed:.2f} sec&#39;)
+    # print(f&#39;&gt;&gt;time passed: {time_passed:.2f} sec&#39;)
     
     #get timevar and compare requested dates
     timevar = data_xr[&#39;time&#39;]
@@ -681,23 +650,24 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
         data_xr.coords[lonvarname] = (data_xr.coords[lonvarname] + 180) % 360 - 180
         data_xr = data_xr.sortby(data_xr[lonvarname])
     
-    #retrieve var (after potential longitude conversion) (also selecting relevant times)
-    data_xr_var = data_xr[ncvarname].sel(time=slice(tstart,tstop))
+    if &#39;lev&#39; in data_xr[bcvarname].coords: #depth for CMEMS and many others, but lev for GFDL, convert to depth #TODO: provide rename_dict as argument to this function or leave as is?
+        data_xr = data_xr.rename({&#39;lev&#39;:&#39;depth&#39;}) #TODO: can also do this for data_xr_var only?
+        print(&#39;variable/coordinate lev renamed to depth&#39;)
     
-    #check if depth coordinate is present in variable (not only in file)
-    if &#39;depth&#39; in data_xr_var.coords: #depth for CMEMS and many others
-        has_depth = True
-        depthvarname = &#39;depth&#39;
-    elif &#39;lev&#39; in data_xr_var.coords: #lev for GFDL
-        has_depth = True
-        depthvarname = &#39;lev&#39;
+    #retrieve var (after potential longitude conversion) (also selecting relevant times)
+    data_xr_var = data_xr[bcvarname].sel(time=slice(tstart,tstop))
+    
+    if &#39;latitude&#39; in data_xr_var.coords: #for CMEMS etc #TODO: do rename instead?
+        coordname_lat = &#39;latitude&#39;
+        coordname_lon = &#39;longitude&#39;
+    elif &#39;lat&#39; in data_xr_var.coords:
+        coordname_lat = &#39;lat&#39;
+        coordname_lon = &#39;lon&#39;
     else:
-        has_depth = False
+        raise Exception(f&#39;latitude/longitude are not in variable coords: {data_xr_var.coords}. Extend this part of the code for e.g. lat/lon coords&#39;)
     
     #load boundary file
-    #polyfile_object = read_polyfile(file_pli,has_z_values=False) #TODO: this warning can be suppressed (or how to fix): &#34;UserWarning: White space at the start of the line is ignored.&#34; https://github.com/Deltares/HYDROLIB-core/issues/320
-    #pli_PolyObjects = polyfile_object[&#39;objects&#39;]
-    polyfile_object = PolyFile(file_pli) #TODO SOLVED: should work with hydrolib-core&gt;0.3.0. also without has_z_values argument
+    polyfile_object = PolyFile(file_pli)
     pli_PolyObjects = polyfile_object.objects
     
     for iPO, pli_PolyObject_sel in enumerate(pli_PolyObjects):
@@ -712,25 +682,17 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
         #interpolation to lat/lon combinations
         print(&#39;&gt; interp mfdataset to all PolyObject points (lat/lon coordinates)&#39;)
         dtstart = dt.datetime.now()
-        if &#39;latitude&#39; in data_xr_var.coords: #for CMEMS etc
-            coordname_lat = &#39;latitude&#39;
-            coordname_lon = &#39;longitude&#39;
-        elif &#39;lat&#39; in data_xr_var.coords:
-            coordname_lat = &#39;lat&#39;
-            coordname_lon = &#39;lon&#39;
-        else:
-            raise Exception(f&#39;latitude/longitude are not in variable coords: {data_xr_var.coords}. Extend this part of the code for e.g. lat/lon coords&#39;)
         data_interp = data_xr_var.interp({coordname_lat:da_lats, coordname_lon:da_lons}, #also possible without dict: (latitude=da_lats, longitude=da_lons), but this is more flexible
                                          method=&#39;linear&#39;, 
                                          kwargs={&#39;bounds_error&#39;:True}, #error is only raised upon load(), so when the actual value retrieval happens
                                          )
         time_passed = (dt.datetime.now()-dtstart).total_seconds()
-        if debug: print(f&#39;&gt;&gt;time passed: {time_passed:.2f} sec&#39;)
+        # print(f&#39;&gt;&gt;time passed: {time_passed:.2f} sec&#39;)
         
         print(&#39;&gt; actual extraction of data from netcdf with .load() (for all PolyObject points at once, so this will take a while)&#39;)
         dtstart = dt.datetime.now()
         try:
-            datablock_raw_allcoords = data_interp.load() #loading data for all points at once is more efficient compared to loading data per point in loop 
+            datablock_xr_allpoints = data_interp.load() #loading data for all points at once is more efficient compared to loading data per point in loop 
         except ValueError: #generate a proper error with outofbounds requested coordinates, default is &#34;ValueError: One of the requested xi is out of bounds in dimension 0&#34;
             lonvar_vals = data_xr[lonvarname].to_numpy()
             latvar_vals = data_xr[latvarname].to_numpy()
@@ -740,100 +702,38 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             reqlatlon_pd_outbounds = reqlatlon_pd.loc[bool_reqlon_outbounds | bool_reqlat_outbounds]
             raise ValueError(f&#39;{len(reqlatlon_pd_outbounds)} of requested pli points are out of bounds (valid longitude range {lonvar_vals.min()} to {lonvar_vals.max()}), valid latitude range {latvar_vals.min()} to {latvar_vals.max()}):\n{reqlatlon_pd_outbounds}&#39;)
         time_passed = (dt.datetime.now()-dtstart).total_seconds()
-        #if debug:
         print(f&#39;&gt;&gt;time passed: {time_passed:.2f} sec&#39;)
         
-        print(&#39;&gt; optional conversion of units and reversing of depth dimension&#39;)
         #optional conversion of units and reversing depth dimension
-        if &#39;conversion&#39; in conversion_dict[quantity].keys(): #if conversion is present, unit key must also be in conversion_dict
-            print(&#39;converting units&#39;)
-            datablock_raw_allcoords = datablock_raw_allcoords * conversion_dict[quantity][&#39;conversion&#39;] #conversion drops all attributes of which units (which are changed anyway)
-            datablock_raw_allcoords.attrs[&#39;units&#39;] = conversion_dict[quantity][&#39;unit&#39;] #add unit attribute with resulting unit
+        if &#39;conversion&#39; in conversion_dict.keys(): #if conversion is present, unit key must also be in conversion_dict
+            print(f&#39;&gt; converting units from [{datablock_xr_allpoints.attrs[&#34;units&#34;]}] to [{conversion_dict[&#34;unit&#34;]}]&#39;)
+            datablock_xr_allpoints = datablock_xr_allpoints * conversion_dict[&#39;conversion&#39;] #conversion drops all attributes of which units (which are changed anyway)
+            datablock_xr_allpoints.attrs[&#39;units&#39;] = conversion_dict[&#39;unit&#39;] #add unit attribute with resulting unit
         
-        if has_depth &amp; reverse_depth:
-            datablock_raw_allcoords = datablock_raw_allcoords.reindex({depthvarname:list(reversed(datablock_raw_allcoords[depthvarname]))})
-            
+        if (&#39;depth&#39; in data_xr_var.coords) &amp; reverse_depth:
+            print(&#39;&gt; reversing depth dimension&#39;)
+            datablock_xr_allpoints = datablock_xr_allpoints.reindex({&#39;depth&#39;:list(reversed(datablock_xr_allpoints[&#39;depth&#39;]))})
+        
         for iP, pli_Point_sel in enumerate(pli_PolyObject_sel.points[:nPoints]):
             print(f&#39;processing Point {iP+1} of {len(pli_PolyObject_sel.points)}: &#39;,end=&#39;&#39;)
             lonx_print, laty_print = pli_Point_sel.x, pli_Point_sel.y
             print(f&#39;(x={lonx_print}, y={laty_print})&#39;)
             pli_PolyObject_name_num = f&#39;{pli_PolyObject_sel.metadata.name}_{iP+1:04d}&#39;
             
-            
-            #TODO: steps from here to T3D/Timeseries could be bound method of those objects? (eg T3D.from_xarray_dataarray(datablock_xr)). Required information:
-            # has_depth = 1 # can be avoided if separate for Timeseries and T3D, or inferred, or if depth varname is always &#39;depth&#39;
-            # depthvarname = 1 # can be avoided if overwritten with &#39;depth&#39;
-            # pli_PolyObject_name_num = 1
-            # refdate_str = 1
-            # bcvarname = 1
-            # datablock_xr = 1
-            print(&#39;&gt; select data for point, ffill nans and concatenating time column&#39;)
+            print(&#39;&gt; select data for this point, ffill nans, concatenating time column, constructing T3D/TimeSeries and appending to ForcingModel()&#39;)
             dtstart = dt.datetime.now()
-            datablock_xr = datablock_raw_allcoords.isel(latloncombi=iP)
-            if has_depth:
-                #get depth variable and values
-                depth_array = datablock_xr[depthvarname].to_numpy()
-                if datablock_xr[depthvarname].attrs[&#39;positive&#39;] == &#39;down&#39;: #attribute appears in CMEMS, GFDL and CMCC, save to assume presence?
-                    depth_array = -depth_array
-                if fill_na: #ffill data
-                    datablock_xr = datablock_xr.bfill(dim=depthvarname).ffill(dim=depthvarname) #fill nans back and forward (corresponds to vertical extrapolation for CMEMS). Deep values are filled if order is shallow to deep
-                datablock_np = datablock_xr.to_numpy()
-            else:
-                datablock_np = datablock_xr.to_numpy()[:,np.newaxis]
-                
-            # check if only nan (out of bounds or land):
-            if np.isnan(datablock_np).all():
+            datablock_xr_onepoint = datablock_xr_allpoints.isel(latloncombi=iP)
+            datablock_xr_onepoint.attrs[&#39;locationname&#39;] = pli_PolyObject_name_num #TODO: is there a nicer way of passing this data?
+            
+            if np.isnan(datablock_xr_onepoint.to_numpy()).all(): # check if only nan (out of bounds or land) # we can do .to_numpy() without performance loss, since data is already loaded in datablock_xr_allpoints
                 print(&#39;WARNING: only nans for this coordinate, this point might be on land&#39;)
-            
-            timevar_sel_rel = date2num(pd.DatetimeIndex(datablock_xr.time.to_numpy()).to_pydatetime(),units=refdate_str,calendar=&#39;standard&#39;)
-            
-            datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock_np],axis=1)
-            time_passed = (dt.datetime.now()-dtstart).total_seconds()
-            if debug: print(f&#39;&gt;&gt;time passed: {time_passed:.2f} sec&#39;)
-            
-            
-            # Each .bc file can contain 1 or more timeseries, in this case one for each support point
-            print(&#39;&gt; constructing TimeSeries and appending to ForcingModel()&#39;)
-            dtstart = dt.datetime.now()
-            if has_depth:
-                verticalpositions_idx = np.arange(datablock_xr[depthvarname].size)+1
-                #list_QUP_perlayer = [QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs[&#39;units&#39;]) for iL in verticalpositions_id] #TODO REPORT: verwarrende foutmelding bij niet opgeven verticalpositionindex (should be missing error instead of not valid error)
-                list_QUP_perlayer = [QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs[&#39;units&#39;], verticalpositionindex=iVP) for iVP in verticalpositions_idx] #TODO SOLVED: verticalposition 1/2/3/n is not supported. https://github.com/Deltares/HYDROLIB-core/issues/317
-                ts_one = T3D(name=pli_PolyObject_name_num,
-                             verticalpositions=depth_array.tolist(), #TODO: should be &#34;Vertical position specification = [..]&#34; but is verticalPositions = [..]&#34; (both possible?). https://github.com/Deltares/HYDROLIB-core/issues/317
-                             verticalinterpolation=&#39;linear&#39;,
-                             verticalpositiontype=&#39;ZDatum&#39;, #TODO SOLVED: should be &#34;Vertical position type = zdatum&#34; but is &#34;verticalPositionType = ZBed&#34; (zdatum is niet beschikbaar). https://github.com/Deltares/HYDROLIB-core/issues/317
-                             quantityunitpair=[QuantityUnitPair(quantity=&#34;time&#34;, unit=refdate_str)]+list_QUP_perlayer,
-                             timeinterpolation=&#39;linear&#39;, #TODO SOLVED: not passed on to bc file. https://github.com/Deltares/HYDROLIB-core/issues/317
-                             datablock=datablock_incltime.tolist(), #TODO: numpy array is not supported by TimeSeries. https://github.com/Deltares/HYDROLIB-core/issues/322
-                             )
+            if &#39;depth&#39; in data_xr_var.coords:
+                ts_one = DataArray_to_T3D(datablock_xr_onepoint)#,locationname=pli_PolyObject_name_num,refdate_str=refdate_str,bcvarname=bcvarname)
             else:
-                ts_one = TimeSeries(name=pli_PolyObject_name_num,
-                                    verticalposition=&#39;ZBed&#39;, #TODO: is not passed on to bc file and that makes sense, but it should raise error since it is not relevant for timeseries. https://github.com/Deltares/HYDROLIB-core/issues/321
-                                    quantityunitpair=[QuantityUnitPair(quantity=&#34;time&#34;, unit=refdate_str), #TODO: quantity is not validated: https://github.com/Deltares/HYDROLIB-core/issues/357
-                                                      QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs[&#39;units&#39;])],
-                                    timeinterpolation=&#39;linear&#39;,
-                                    datablock=datablock_incltime.tolist(), 
-                                    )
-            
+                ts_one = DataArray_to_TimeSeries(datablock_xr_onepoint)#,locationname=pli_PolyObject_name_num,refdate_str=refdate_str,bcvarname=bcvarname)
             ForcingModel_object.forcing.append(ts_one)
             time_passed = (dt.datetime.now()-dtstart).total_seconds()
-            if debug: print(f&#39;&gt;&gt;time passed: {time_passed:.2f} sec&#39;)
-            
-            
-            if debug:
-                print(&#39;&gt; plotting&#39;)
-                dtstart = dt.datetime.now()
-                fig,ax = plt.subplots(figsize=(10,7))
-                datablock_xr.T.plot() #uses plot.line() for 1D arrays and plot.pcolormesh() for 2D arrays: https://docs.xarray.dev/en/stable/generated/xarray.DataArray.plot.html
-                ax.set_title(f&#39;{quantity} {pli_PolyObject_name_num}&#39;)
-                if &#39;depth&#39; in data_xr_var.coords:
-                    ax.set_ylim(0,200)
-                    ax.invert_yaxis()
-                fig.tight_layout()
-                time_passed = (dt.datetime.now()-dtstart).total_seconds()
-                if debug: print(f&#39;&gt;&gt;time passed: {time_passed:.2f} sec&#39;)
-            
+            # print(f&#39;&gt;&gt;time passed: {time_passed:.2f} sec&#39;)
     
     return ForcingModel_object</code></pre>
 </details>
