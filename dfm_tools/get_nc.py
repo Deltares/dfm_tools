@@ -105,9 +105,13 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     #        dimn_time = data_nc.variables[varn_time].dimensions[0]
     #    except:
     #        print('using dimn_time as variable to get dimn_time failed')
-    varn_time = get_variable_timevar(file_nc,varname='time')
-    print('varn_time',varname,varn_time)
-    dimn_time = data_xr[varn_time].dims[0]
+    #varn_time, dimn_time = get_variable_timevardim(file_nc=file_nc, varname=varname)
+    varn_time = get_variable_timevar(file_nc,varname=varname)
+    #print('varn_time',varname,varn_time)
+    if varn_time is None:
+        dimn_time = None
+    else:
+        dimn_time = data_xr[varn_time].dims[0]
     if dimn_time not in nc_varobject.dimensions: #dimension time is not available in variable
         if timestep is not None:
             raise Exception('ERROR: netcdf file variable (%s) does not contain times, but parameter timestep is provided'%(varname))
