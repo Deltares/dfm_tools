@@ -18,6 +18,7 @@ import xarray as xr
 from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
 from dfm_tools.get_nc_helpers import get_ncvarproperties#, get_hisstationlist#, get_varname_fromnc
 from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame
+from dfm_tools.xarray_helpers import preprocess_hirlam
 
 from hydrolib.core.io.polyfile.models import PolyFile
 
@@ -69,29 +70,28 @@ fig, ax = plt.subplots()
 plot_netmapdata(ugrid.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
 ax.set_aspect('equal')
 
-"""
-#hirlam
-file_nc = r'p:\1204257-dcsmzuno\2014\data\meteo\HIRLAM72_2018\h72_201803.nc' #TODO: xarray MissingDimensionsError
-vars_pd = get_ncvarproperties(file_nc=file_nc)
 
-mesh2d_node_x = get_ncmodeldata(file_nc=file_nc, varname='x')
-mesh2d_node_y = get_ncmodeldata(file_nc=file_nc, varname='y')
-data_v = get_ncmodeldata(file_nc=file_nc, varname='northward_wind',timestep=0, get_linkedgridinfo=True)
-data_u = get_ncmodeldata(file_nc=file_nc, varname='eastward_wind',timestep=0, get_linkedgridinfo=True)
-#airp = get_ncmodeldata(file_nc=file_nc, varname='air_pressure_fixed_height',timestep=0)[0,:,:]
-magn = np.sqrt(data_u[0,:,:]**2 + data_v[0,:,:]**2)
+
+#HIRLAM
+file_nc = r'p:\1204257-dcsmzuno\2014\data\meteo\HIRLAM72_2018\h72_201803.nc'
+data_xr = xr.open_mfdataset(file_nc,drop_variables=['x','y'],preprocess=preprocess_hirlam)
+timestep = 0
+coarsefac = 2 #coarsen dataset for more performance, but not necessary
+
+data_u = data_xr['eastward_wind'].isel(time=timestep)
+data_v = data_xr['northward_wind'].isel(time=timestep)
+magn = np.sqrt(data_u**2 + data_v**2)
 
 fig, ax = plt.subplots()
-ax.plot(mesh2d_node_x,mesh2d_node_y,'-b',linewidth=0.2)
-ax.plot(mesh2d_node_x.T,mesh2d_node_y.T,'-b',linewidth=0.2)
+ax.plot(magn.longitude,magn.latitude,'-b',linewidth=0.2)
+ax.plot(magn.longitude.T,magn.latitude.T,'-b',linewidth=0.2)
 plt.savefig(os.path.join(dir_output,'hirlam_mesh'))
 
-
 fig, ax = plt.subplots()
-ax.pcolor(mesh2d_node_x,mesh2d_node_y,magn)
-#plt.pcolor(mesh2d_node_x,mesh2d_node_y,airp,linewidth=0.5)
+ax.pcolormesh(magn.longitude,magn.latitude,magn)
 plt.savefig(os.path.join(dir_output,'hirlam_magn_pcolor'))
-"""
+
+
 
 #plt.close('all')
 from dfm_tools.regulargrid import center2corner

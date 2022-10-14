@@ -13,48 +13,46 @@ import numpy as np
 from dfm_tools.testutils import try_importmodule
 try_importmodule(modulename='cartopy') #check if cartopy was installed since it is an optional module, also happens in plot_cartopybasemap()
 import cartopy.crs as ccrs
+import xarray as xr
 
 from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata, plot_background
-from dfm_tools.get_nc_helpers import get_ncvarproperties
+from dfm_tools.xarray_helpers import preprocess_hirlam
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
-"""
+
 #HIRLAM
 file_nc = r'p:\1204257-dcsmzuno\2014\data\meteo\HIRLAM72_2018\h72_201803.nc' #TODO: xarray MissingDimensionsError
-vars_pd = get_ncvarproperties(file_nc=file_nc)
-
+data_xr = xr.open_mfdataset(file_nc,drop_variables=['x','y'],preprocess=preprocess_hirlam)
 timestep = 0
-mesh2d_node_x = get_ncmodeldata(file_nc=file_nc, varname='x')
-mesh2d_node_y = get_ncmodeldata(file_nc=file_nc, varname='y')
-mesh2d_node_x_sel = mesh2d_node_x[::2,::2]
-mesh2d_node_y_sel = mesh2d_node_y[::2,::2]
-data_v = get_ncmodeldata(file_nc=file_nc, varname='northward_wind',timestep=timestep)
-data_u = get_ncmodeldata(file_nc=file_nc, varname='eastward_wind',timestep=timestep)
-#airp = get_ncmodeldata(file_nc=file_nc, varname='air_pressure_fixed_height',timestep=0)[0,:,:]
-magn = np.sqrt(data_u**2 + data_v**2)[0,::2,::2]
+coarsefac = 2 #coarsen dataset for more performance, but not necessary
+
+data_u = data_xr['eastward_wind'].isel(time=timestep)
+data_v = data_xr['northward_wind'].isel(time=timestep)
+magn = np.sqrt(data_u**2 + data_v**2)
+magn = magn[::coarsefac,::coarsefac] #coarsening makes coordinate conversion faster
 
 fig, ax = plt.subplots()
-ax.pcolor(mesh2d_node_x_sel,mesh2d_node_y_sel,magn)
+ax.pcolormesh(magn)
 plt.savefig(os.path.join(dir_output,'cartopy_hirlam_raw'))
 
 fig, ax = plt.subplots(subplot_kw={'projection': ccrs.PlateCarree()})
-ax.pcolor(mesh2d_node_x_sel,mesh2d_node_y_sel,magn)#, transform=ccrs.PlateCarree())
+ax.pcolormesh(magn.longitude,magn.latitude,magn)#, transform=ccrs.PlateCarree())
 plt.savefig(os.path.join(dir_output,'cartopy_hirlam_aspect'))
 
 fig, ax = plt.subplots(figsize=(9,5),subplot_kw={'projection': ccrs.PlateCarree()}) #provide axis projection on initialisation, cannot be edited later on
-pc = ax.pcolor(mesh2d_node_x_sel,mesh2d_node_y_sel,magn)#, transform=ccrs.PlateCarree())
+pc = ax.pcolormesh(magn.longitude,magn.latitude,magn)#, transform=ccrs.PlateCarree())
 cbar = fig.colorbar(pc, ax=ax)
-cbar.set_label('velocity magnitude (%s)'%(data_v.var_ncattrs['units']))
+cbar.set_label('velocity magnitude (%s)'%(data_u.attrs['units']))
 plot_background(ax=ax, resolution=1, google_style='street', features=['countries_highres'], linewidth=0.5, edgecolor='gray', facecolor='none', latlon_format=True)
 plot_background(ax=ax, google_style=None, features=['coastlines_highres'], linewidth=0.5, latlon_format=True)
 plt.savefig(os.path.join(dir_output,'cartopy_hirlam_moreoptions'))
 
 fig, ax = plt.subplots(figsize=(6,7),subplot_kw={'projection': ccrs.EuroPP()}) #provide axis projection on initialisation, cannot be edited later on
-pc = ax.pcolor(mesh2d_node_x_sel[:100,:100],mesh2d_node_y_sel[:100,:100],magn[:100,:100], transform=ccrs.PlateCarree()) #take subset of dataset to speed up coordinate transformation
+pc = ax.pcolormesh(magn.longitude, magn.latitude, magn, transform=ccrs.PlateCarree())
 plot_background(ax=ax, google_style=None, features=['coastlines_highres'], latlon_format=True, gridlines=True)
 plt.savefig(os.path.join(dir_output,'cartopy_hirlam_curvedgridlines'))
-"""
+
 
 #GREVELINGEN
 file_nc_map = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen\\computations\\run01\\DFM_OUTPUT_Grevelingen-FM\\Grevelingen-FM_0000_map.nc')
