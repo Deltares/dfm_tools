@@ -22,7 +22,7 @@ plt.close('all')
 #TODO: add HARMONIE (also originates from matroos), add CMCC etc from gtsmip repos
 #TODO: add .sel(lat/lon) or not relevant?
 
-mode = 'HIRLAM_meteo'# 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HYCOM' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall'
+mode = 'HIRLAM_meteo-heatflux'# 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HYCOM' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall'
 all_tstart = dt.datetime(2013,12,30) # HIRLAM and ERA5
 all_tstop = dt.datetime(2014,1,1)
 #all_tstart = dt.datetime(2016,4,28) # HYCOM
@@ -170,6 +170,7 @@ with xr.open_dataset(file_out) as data_xr_check:
                 data_xr_check[varkey].isel(time=0).sel(depth=0).plot(ax=ax1)
             else:
                 data_xr_check[varkey].isel(time=0).plot(ax=ax1)
+            fig.savefig(file_out.replace('.nc',f'_{varkey}'))
 
 script_telapsed = (dt.datetime.now()-script_tstart)
 print(f'elapsed time: {script_telapsed}')

@@ -38,7 +38,7 @@ import xarray as xr
 from dfm_tools.get_nc import get_ncmodeldata#, get_netdata, plot_netmapdata
 from dfm_tools.get_nc_helpers import get_ncvarproperties#, get_hisstationlist#, get_varname_fromnc
 from dfm_tools.regulargrid import uva2xymagdeg
-from dfm_tools.hydrolib_helpers import polyobject_to_dataframe
+from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame
 
 from hydrolib.core.io.polyfile.models import PolyFile
 
@@ -47,7 +47,7 @@ dir_output = '.'
 
 file_ldb = Path(r'p:\archivedprojects\1220688-lake-kivu\3_modelling\1_FLOW\4_CH4_CO2_included\008\lake_kivu_geo.ldb')
 polyfile_object = PolyFile(file_ldb)
-data_ldb = polyobject_to_dataframe(polyfile_object.objects[0])
+data_ldb = pointlike_to_DataFrame(polyfile_object.objects[0])
 
 file_nc = r'p:\archivedprojects\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\062_netcdf\trim-thiery_002_coarse.nc'
 vars_pd = get_ncvarproperties(file_nc=file_nc)
