@@ -40,7 +40,9 @@ import pandas as pd
 import re
 import glob
 import os
-import warnings
+#import warnings
+import numpy as np
+from netCDF4 import Dataset
 
 
 def get_ncfilelist(file_nc, multipart=None):
@@ -187,7 +189,7 @@ def get_ncvardimlist(file_nc):
 
 
 def get_varnamefrom_keyslongstandardname(file_nc, varname):
-    vars_pd = get_ncvarproperties(file_nc=file_nc)
+    vars_pd = get_ncvarproperties(file_nc=file_nc) #TODO: supply vars_pd instead of file_nc as argument to this function
     vars_pd_sel = vars_pd[['standard_name','long_name']]
     
     # check if requested variable is in netcdf
@@ -214,8 +216,6 @@ def get_varnamefrom_keyslongstandardname(file_nc, varname):
 
 
 def ghostcell_filter(file_nc):
-    import numpy as np
-    from netCDF4 import Dataset
     
     #from dfm_tools.get_nc_helpers import get_varname_fromnc
     
@@ -235,35 +235,27 @@ def ghostcell_filter(file_nc):
 
 def get_variable_timevar(file_nc, varname):
     #get corresponding time variable name
-    from netCDF4 import Dataset
     
-    #from dfm_tools.get_nc_helpers import get_ncvarobject
-    
-    data_nc = Dataset(file_nc)
     varname = get_varnamefrom_keyslongstandardname(file_nc, varname) #get varname from varkeys/standardname/longname if exists
-    nc_varobject = data_nc.variables[varname]
+
+    data_xr = xr.open_dataset(file_nc)
+    varcoords = list(data_xr[varname].coords.keys())
     
     varn_time = None
-    #dimn_time = None
-    varlist_wunits = data_nc.get_variables_by_attributes(units=lambda v: v is not None)
-    for var_lookup in varlist_wunits:
-        if 'since' in var_lookup.units and var_lookup.dimensions[0] in nc_varobject.dimensions:
-            #dimn_time = var_lookup.dimensions[0]
-            varn_time = var_lookup.name
+    for varcoord in varcoords:
+        data_xr_varcoord = data_xr[varcoord]
+        if 'units' not in data_xr_varcoord.encoding:
+            continue
+        if 'since' in data_xr_varcoord.encoding['units']:
+            varn_time = varcoord
             break
-    
-    data_nc.close()
+    data_xr.close()
     return varn_time
 
 
 def get_timesfromnc(file_nc, varname='time', retrieve_ids=False, keeptimezone=True):
     """
-    retrieves time array from netcdf file.
-    Since long time arrays take a long time to retrieve at once, reconstruction is tried
-    in dflowfm an array can start with 0 (initial), followed by a tstart and increading with intervals to tend
-    therefore, the interval at the start and end of the time array is not always equal to the 'real' time interval
-    reconstruction takes care of this.
-    if reconstruction fails (the length of the netCDF variable is not equal of the length of the reconstructed array), all times are read
+    Retrieves time array from netcdf file. Time is converted to UTC by default, but times can optionally be returned in the original timezone.
 
     Parameters
     ----------
@@ -288,9 +280,6 @@ def get_timesfromnc(file_nc, varname='time', retrieve_ids=False, keeptimezone=Tr
 
     """
     
-    import pandas as pd
-    
-
     with xr.open_dataset(file_nc) as data_xr:
         varn_time = get_variable_timevar(file_nc,varname=varname)
         times_xr = data_xr[varn_time]
@@ -312,12 +301,9 @@ def get_timesfromnc(file_nc, varname='time', retrieve_ids=False, keeptimezone=Tr
     return times_pd
 
 
-#TODO: remove after moving to xarray for time selection
 def get_timeid_fromdatetime(data_nc_datetimes_pd, timestep):
-    import numpy as np
-    import pandas as pd
     
-    timestep_pd = pd.Series(timestep)#.dt.round(freq='S')
+    timestep_pd = pd.Series(timestep)
 
     #check if all requested times (timestep) are in netcdf file
     times_bool_reqinfile = timestep_pd.isin(data_nc_datetimes_pd)
@@ -363,8 +349,6 @@ def get_hisstationlist(file_nc, varname='waterlevel'):
 
 
 def get_stationid_fromstationlist(data_xr, stationlist, station_varname='station_name'):
-    import numpy as np
-    import pandas as pd
     
     if not isinstance(stationlist,list):
         raise Exception('ERROR: provide list of stations')
