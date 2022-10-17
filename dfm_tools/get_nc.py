@@ -44,7 +44,7 @@ import matplotlib.collections
 from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvarproperties, get_varnamefrom_keyslongstandardname, get_variable_timevar, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_fromnc
 from dfm_tools.ugrid import UGrid
  
-def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None, station=None, multipart=None, silent=False): #, get_linkedgridinfo=False
+def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None, station=None, multipart=None, silent=False):
     """
 
     Parameters
