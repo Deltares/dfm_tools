@@ -794,7 +794,7 @@ def plot_ztdata(data_xr_sel, varname, ax=None, mask_data=True, only_contour=Fals
     import numpy as np
     import matplotlib.pyplot as plt
     
-    warnings.warn('WARNING: layers in dfowfm hisfile are currently incorrect, check your figures carefully')
+    warnings.warn('WARNING: layers in dflowfm hisfile are currently incorrect, check your figures carefully')
     
     data_fromhis_var = data_xr_sel[varname].to_numpy()
     if len(data_fromhis_var.shape) != 2:
