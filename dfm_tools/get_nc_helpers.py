@@ -216,9 +216,7 @@ def get_varnamefrom_keyslongstandardname(file_nc, varname):
 
 
 def ghostcell_filter(file_nc):
-    
-    #from dfm_tools.get_nc_helpers import get_varname_fromnc
-    
+        
     data_nc = Dataset(file_nc)
     
     varn_domain = get_varname_fromnc(data_nc,'mesh2d_flowelem_domain',vardim='var')
