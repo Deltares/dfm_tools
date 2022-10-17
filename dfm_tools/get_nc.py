@@ -32,9 +32,18 @@ Created on Fri Feb 14 12:45:11 2020
 @author: veenstra
 """
 
+import warnings
 import numpy as np
+import datetime as dt
+import pandas as pd
+from netCDF4 import Dataset
+import xarray as xr
+import matplotlib.pyplot as plt
+import matplotlib.collections
 
-
+from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvarproperties, get_varnamefrom_keyslongstandardname, get_variable_timevar, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_fromnc
+from dfm_tools.ugrid import UGrid
+ 
 def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None, station=None, multipart=None, silent=False): #, get_linkedgridinfo=False
     """
 
@@ -67,14 +76,6 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
 
     """
 
-    import warnings
-    import numpy as np
-    import datetime as dt
-    import pandas as pd
-    from netCDF4 import Dataset
-    import xarray as xr
-
-    from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvarproperties, get_varnamefrom_keyslongstandardname, get_variable_timevar, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_fromnc
 
     #get variable info (also checks if varname exists in keys, standard name, long name)
     data_nc = Dataset(file_nc)
@@ -405,9 +406,6 @@ def calc_dist_haversine(lon1,lon2,lat1,lat2):
 
 
 def get_xzcoords_onintersection(file_nc, intersect_pd, timestep=None, multipart=None, varname=None):
-    import warnings
-    from netCDF4 import Dataset
-    from dfm_tools.get_nc_helpers import get_varname_fromnc
     
     #check if all necessary arguments are provided
     if timestep is None:
@@ -484,11 +482,6 @@ def get_xzcoords_onintersection(file_nc, intersect_pd, timestep=None, multipart=
 
 
 def get_netdata(file_nc, multipart=None):
-    import numpy as np
-    from netCDF4 import Dataset
-    
-    from dfm_tools.ugrid import UGrid
-    from dfm_tools.get_nc_helpers import get_ncfilelist, get_varname_fromnc
 
     file_ncs = get_ncfilelist(file_nc, multipart)
     #get all data
@@ -577,9 +570,6 @@ def get_netdata(file_nc, multipart=None):
 def plot_netmapdata(verts, values=None, ax=None, **kwargs):
     #https://stackoverflow.com/questions/52202014/how-can-i-plot-2d-fem-results-using-matplotlib
     #https://stackoverflow.com/questions/49640311/matplotlib-unstructered-quadrilaterals-instead-of-triangles
-    import matplotlib.pyplot as plt
-    import matplotlib.collections
-    import numpy as np
     
     if not values is None:
         #squeeze values (remove dimensions with length 1)
@@ -659,12 +649,8 @@ def plot_background(ax=None, projection=None, google_style='satellite', resoluti
 
     """
 
-    import matplotlib.pyplot as plt
-    import numpy as np
-
     from dfm_tools.testutils import try_importmodule
     try_importmodule(modulename='cartopy') #check if cartopy was installed since it is an optional module, also happens in plot_cartopybasemap()
-
     import cartopy
     import cartopy.crs as ccrs
     import cartopy.io.img_tiles as cimgt
@@ -778,10 +764,7 @@ def plot_ztdata(data_xr_sel, varname, ax=None, mask_data=True, only_contour=Fals
 
     """
 
-    import warnings
-    import numpy as np
-    import matplotlib.pyplot as plt
-    
+   
     warnings.warn('WARNING: layers in dflowfm hisfile are currently incorrect, check your figures carefully')
     
     data_fromhis_var = data_xr_sel[varname].to_numpy()
