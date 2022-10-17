@@ -31,6 +31,7 @@ Created on Fri Feb 14 12:45:11 2020
 
 @author: veenstra
 """
+
 import numpy as np
 
 
@@ -830,88 +831,3 @@ def plot_ztdata(data_xr_sel, varname, ax=None, mask_data=True, only_contour=Fals
 
     return pc
 
-
-#TODO: remove this old definition
-def plot_ztdata_OLD(file_nc, dfmtools_hisvar, statid_subset=0, ax=None, mask_data=True, only_contour=False, **kwargs):
-    """
-
-
-    Parameters
-    ----------
-    dfmtools_hisvar : numpy.ma.core.MaskedArray
-        dfm_tools.get_nc.get_ncmodeldata output structure, which is of type numpy.ma.core.MaskedArray and has several extra properties attached which which it is possible to retrieve the correct z interface data.
-    statid_subset : int, optional
-        the station id for the dfmtools_hisvar, so 0-based since it retrieves from a numpy array. beware that get_ncmodeldata sorts the stations you request, so use an index like dfmtools_hisvar.var_stations['station_id'].tolist().index(stat). Avoid this issue by only retrieving data for one station. The default is 0.
-    ax : matplotlib.axes._subplots.AxesSubplot, optional
-        the figure axis. The default is None.
-    mask_data : bool, optional
-        whether to repair z_interface coordinates and mask data in inactive layers. The default is True.
-    only_contour : bool, optional
-        Wheter to plot contour lines of the dataset. The default is False.
-    **kwargs : TYPE
-        properties to give on to the pcolormesh function.
-
-    Returns
-    -------
-    pc : matplotlib.collections.QuadMesh
-        DESCRIPTION.
-
-    """
-    """
-    import warnings
-    import numpy as np
-    import matplotlib.pyplot as plt
-    import pandas as pd
-
-    warnings.warn('WARNING: layers in dfowfm hisfile are currently incorrect, check your figures carefully')
-    #get the original ncobject and the retrieved indices from dfmtools_hisvar, used to retrieve a corresponding z array.
-    time_ids = dfmtools_hisvar.var_times.index.tolist()
-    stat_ids = dfmtools_hisvar.var_stations.index.tolist()
-    layer_ids = dfmtools_hisvar.var_layers
-    layer_ids_interf = layer_ids+[layer_ids[-1]+1]
-    #data_fromhis_zcen = nc_obj.variables['zcoordinate_c'][time_ids,stat_ids,layer_ids]
-    #data_fromhis_zcor = nc_obj.variables['zcoordinate_w'][time_ids,stat_ids,layer_ids_interf]
-    #data_fromhis_wl = nc_obj.variables['waterlevel'][time_ids,stat_ids]
-    data_fromhis_zcen = get_ncmodeldata(file_nc=file_nc, varname='zcoordinate_c', timestep=time_ids, station=stat_ids, layer=layer_ids)
-    data_fromhis_zcor = get_ncmodeldata(file_nc=file_nc, varname='zcoordinate_w', timestep=time_ids, station=stat_ids)[:,:,layer_ids_interf] #dfmtools cannot find layers in this variable
-    data_fromhis_wl = get_ncmodeldata(file_nc=file_nc, varname='waterlevel', timestep=time_ids, station=stat_ids)
-
-    #remove station dimension
-    if 0: #len(data_fromhis_zcor.shape) == 3:
-        data_fromhis_zcen_flat = data_fromhis_zcen[:,statid_subset,:]
-        data_fromhis_zcor_flat = data_fromhis_zcor[:,statid_subset,:]
-        dfmtools_hisvar_flat = dfmtools_hisvar[:,statid_subset,:]
-    elif (len(data_fromhis_zcor.shape) == 3) or (len(data_fromhis_zcor.shape) == 2):
-        data_fromhis_zcen_flat = data_fromhis_zcen[:,statid_subset]
-        data_fromhis_zcor_flat = data_fromhis_zcor[:,statid_subset] #original, but should append extra row for time 'edges)
-        data_fromhis_zcor_flat = np.concatenate([data_fromhis_zcor[:,statid_subset],data_fromhis_zcor[[-1],statid_subset]],axis=0)
-        dfmtools_hisvar_flat = dfmtools_hisvar[:,statid_subset]
-    else:
-        raise Exception('unexpected number of dimensions')
-    data_fromhis_wl_flat = data_fromhis_wl[:,statid_subset]
-
-    if mask_data:
-        bool_zcen_equaltop = (data_fromhis_zcen_flat==data_fromhis_zcen_flat[:,-1:]).all(axis=0)
-        id_zcentop = np.argmax(bool_zcen_equaltop) # id of first z_center that is equal to z_center of last layer
-        if (data_fromhis_zcor_flat[:-1,id_zcentop] > data_fromhis_zcen_flat[:,id_zcentop]).any():
-            print('correcting z interface values')
-            data_fromhis_zcor_flat[:-1,id_zcentop+1] = data_fromhis_wl_flat
-            data_fromhis_zcor_flat[:-1,id_zcentop] = (data_fromhis_zcen_flat[:,id_zcentop-1]+data_fromhis_zcen_flat[:,id_zcentop])/2
-        bool_zcen_equaltop[id_zcentop] = False
-        #bool_zcor_equaltop = (data_fromhis_zcor_flat[:,1:]==data_fromhis_zcor_flat[:,-1:]).all(axis=0)
-        mask_array = np.tile(bool_zcen_equaltop,(data_fromhis_zcor_flat.shape[0],1))
-        dfmtools_hisvar_flat.mask = mask_array
-
-    if not ax: ax=plt.gca()
-
-    # generate 2 2d grids for the x & y bounds (you can also give one 2D array as input in case of eg time varying z coordinates)
-    time_cor = pd.concat([dfmtools_hisvar.var_times,dfmtools_hisvar.var_times.iloc[[-1]]])
-    time_mesh_cor = np.tile(time_cor,(data_fromhis_zcor_flat.shape[-1],1)).T
-    time_mesh_cen = np.tile(dfmtools_hisvar.var_times,(data_fromhis_zcen_flat.shape[-1],1)).T
-    if only_contour:
-        pc = ax.contour(time_mesh_cen,data_fromhis_zcen_flat,dfmtools_hisvar_flat, **kwargs)
-    else: #TODO: should actually supply cell edges instead of centers to pcolor/pcolormesh, but inconvenient for time dimension.
-        #pc = ax.pcolormesh(time_mesh_cen, data_fromhis_zcen_flat, dfmtools_hisvar_flat, **kwargs)
-        pc = ax.pcolor(time_mesh_cor, data_fromhis_zcor_flat, dfmtools_hisvar_flat, **kwargs) #pcolor also supports missing/masked xy data, but is slower
-    return pc
-    """
