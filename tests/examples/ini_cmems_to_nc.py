@@ -20,7 +20,9 @@ file_nc_list_thetao = glob.glob(f'{dir_data}\\thetao_*.nc')
 file_nc_list = file_nc_list_so + file_nc_list_thetao
 
 data_xr = xr.open_mfdataset(file_nc_list)
-data_xr_ontime = data_xr.interp(time=tSimStart)
+data_xr_times_pd = data_xr.time.to_series()
+
+data_xr_ontime = data_xr.interp(time=tSimStart,kwargs=dict(bounds_error=True)) #bounds_error makes sure, outofbounds time results in "ValueError: A value in x_new is below the interpolation range."
 
 outFile = os.path.join(dir_out,f'InitialField_{tSimStart.strftime("%Y-%m-%d_%H-%M-%S")}.nc')
 
