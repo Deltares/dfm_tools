@@ -255,8 +255,8 @@ def get_variable_timevar(file_nc, varname):
     data_nc.close()
     return varn_time
 
-    
-def get_timesfromnc(file_nc, varname='time', retrieve_ids=False, keeptimezone=True, silent=False): #TODO: convert to xarray
+
+def get_timesfromnc(file_nc, varname='time', retrieve_ids=False, keeptimezone=True):
     """
     retrieves time array from netcdf file.
     Since long time arrays take a long time to retrieve at once, reconstruction is tried
@@ -288,90 +288,28 @@ def get_timesfromnc(file_nc, varname='time', retrieve_ids=False, keeptimezone=Tr
 
     """
     
-    from netCDF4 import Dataset, num2date#,date2num
-    #from cftime import num2pydate, num2date
-    #from cftime import num2date as cf_num2date
-    import numpy as np
     import pandas as pd
-    #import warnings
-    import datetime as dt
-
-    data_nc = Dataset(file_nc)
     
-    varn_time = get_variable_timevar(file_nc,varname=varname)
-    data_nc_timevar = data_nc.variables[varn_time]
-    time_length = data_nc_timevar.shape[0]
 
-    if retrieve_ids is not False:
-        if not silent:
-            print('reading time dimension: only requested indices')
-        listtype_range = [list, range, np.ndarray]
-        if type(retrieve_ids) not in listtype_range:
-            raise Exception('ERROR: argument retrieve_ids should be a list')
-        #convert to positive index, make unique(+sort), convert to list because of indexing with np.array of len 1 errors sometimes
-        retrieve_ids = list(np.unique(np.array(range(time_length))[retrieve_ids]))
-        data_nc_times = data_nc_timevar[retrieve_ids]
-    elif len(data_nc_timevar)<3: #check if time dimension is shorter than 3 items
-        data_nc_times = data_nc_timevar[:]
-        if not silent:
-            print('reading time dimension: read entire array (because length < 3)')
-    else:
-        time0 = data_nc_timevar[0] 
-        time1 = data_nc_timevar[1] 
-        time2 = data_nc_timevar[2]
-        timemin3 = data_nc_timevar[-3]
-        timemin2 = data_nc_timevar[-2]
-        timemin1 = data_nc_timevar[-1]
-        timeinc_poststart = time2-time1 # the interval between 0 and 1 is not per definition representative, so take 1 and 2
-        timeinc_preend = timemin2-timemin3
-        #timeinc_end = timemin1-timemin2
-        if timeinc_poststart == timeinc_preend: #reconstruct time array to save time
-            if not silent:
-                print('reading time dimension: reconstruct array')
-            data_nc_times_from1 = np.arange(time1,timemin1,timeinc_poststart)
-            data_nc_times = np.concatenate([[time0],data_nc_times_from1,[timemin1]])
-            if data_nc_timevar.shape[0] != len(data_nc_times):#test if len of reconstructed timeseries is same as len of timevar in netCDF, retrieve entire array
-                if not silent:
-                    print('reading time dimension: reconstruction failed, read entire array')
-                data_nc_times = data_nc_timevar[:]
-        else:
-            if not silent:
-                print('reading time dimension: read entire array')
-            data_nc_times = data_nc_timevar[:]
-        
-    if len(data_nc_times.shape) > 1:
-        warnings.warn('This should not happen, this exception is built in for corrupt netCDF files with a time variable with more than one dimension')
-        data_nc_times = data_nc_times.flatten()
+    with xr.open_dataset(file_nc) as data_xr:
+        varn_time = get_variable_timevar(file_nc,varname=varname)
+        times_xr = data_xr[varn_time]
+        times_pd = times_xr.to_series().dt.round(freq='S')
+    
+    if len(times_xr.shape) > 1:
+        raise Exception('Corrupt netCDF files with a time variable with more than one dimension')
     
     #convert back to original timezone (e.g. MET)
     if keeptimezone:
-        #manual conversion which deliberately ignores timezone
-        time_units_list = data_nc_timevar.units.split(' ')
-        if time_units_list[1] != 'since':
-            raise Exception('invalid time units string (%s)'%(data_nc_timevar.units))
-        try:
-            refdate_str = '%s %s'%(time_units_list[2], time_units_list[3].replace('.0','')) #remove .0 to avoid conversion issue
-            refdate = dt.datetime.strptime(refdate_str,'%Y-%m-%d %H:%M:%S')
-            data_nc_times_pdtd = pd.to_timedelta(data_nc_times, unit=time_units_list[0])
-            data_nc_datetimes = (refdate + data_nc_times_pdtd)#.to_pydatetime()
-            if not silent:
-                print('retrieving original timezone succeeded, no conversion to UTC/GMT applied')
-        except:
-            if not silent:
-                print('retrieving original timezone failed, using num2date output instead')
-            data_nc_datetimes = num2date(data_nc_times, units=data_nc_timevar.units, only_use_cftime_datetimes=False, only_use_python_datetimes=True)
-    else:
-        #convert to datetime (automatically converted to UTC based on timezone in units)
-        data_nc_datetimes = num2date(data_nc_times, units=data_nc_timevar.units, only_use_cftime_datetimes=False, only_use_python_datetimes=True)
-        #nptimes = data_nc_datetimes.astype('datetime64[ns]') #convert to numpy first, pandas does not take all cftime datasets
+        time_units = data_xr.time.encoding['units']
+        time_units_tz = pd.DatetimeIndex([time_units.split('since ')[1]]).tz
+        times_pd_local = times_pd.tz_localize('UTC').tz_convert(time_units_tz)
+        times_pd = pd.Series(times_pd_local.index,index=times_pd_local.index)
         
-    if retrieve_ids is not False:
-        data_nc_datetimes_pd = pd.Series(data_nc_datetimes,index=retrieve_ids).dt.round(freq='S')
-    else:
-        data_nc_datetimes_pd = pd.Series(data_nc_datetimes).dt.round(freq='S')
+    if retrieve_ids:
+        times_pd = times_pd.iloc[retrieve_ids]
     
-    data_nc.close()
-    return data_nc_datetimes_pd
+    return times_pd
 
 
 #TODO: remove after moving to xarray for time selection

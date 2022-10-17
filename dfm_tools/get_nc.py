@@ -99,16 +99,8 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
 
 
     #TIMES CHECKS
-    #dimn_time = get_varname_fromnc(data_nc,'time',vardim='dim')
-    #varn_time = get_varname_fromnc(data_nc,'time',vardim='var')
-    #if dimn_time is None: #dimension with a name close to 'time' is not available in variable, try to get time dimension from 'time' variable
-    #    try:
-    #        dimn_time = data_nc.variables[varn_time].dimensions[0]
-    #    except:
-    #        print('using dimn_time as variable to get dimn_time failed')
     #varn_time, dimn_time = get_variable_timevardim(file_nc=file_nc, varname=varname)
     varn_time = get_variable_timevar(file_nc,varname=varname)
-    #print('varn_time',varname,varn_time)
     if varn_time is None:
         dimn_time = None
     else:
@@ -119,36 +111,32 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     else: #time dimension is present
         data_nc_timevar = data_nc.variables[varn_time]
         time_length = data_nc_timevar.shape[0]
-        data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname, retrieve_ids=[0,-1], silent=silent) #get selection of times
+        data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname) #get all times
         if timestep is None:
             raise Exception('ERROR: netcdf variable contains a time dimension, but parameter timestep not provided (can be "all"), first and last timestep:\n%s\nretrieve entire times list:\nfrom dfm_tools.get_nc_helpers import get_timesfromnc\ntimes_pd = get_timesfromnc(file_nc=file_nc, varname="%s")'%(pd.DataFrame(data_nc_datetimes_pd),varname))
         #convert timestep to list of int if it is not already
         if timestep is str('all'):
-            data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname, silent=silent) #get all times
             time_ids = range(len(data_nc_datetimes_pd))
         elif type(timestep) in listtype_range:
             if len(timestep) == 0:
                 raise Exception('ERROR: timestep variable type is list/range/ndarray (%s), but it has no length'%(type(timestep)))
             elif type(timestep[0]) in listtype_int:
-                data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname, retrieve_ids=timestep, silent=silent) #get selection of times
+                data_nc_datetimes_pd = data_nc_datetimes_pd.iloc[timestep] #get selection of times
                 time_ids = timestep
             elif type(timestep[0]) in listtype_datetime:
-                data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname, silent=silent) #get all times
                 time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, timestep)
-                data_nc_datetimes_pd = data_nc_datetimes_pd.loc[time_ids] #get selection of times
+                data_nc_datetimes_pd = data_nc_datetimes_pd.iloc[time_ids] #get selection of times
             else:
                 raise Exception('ERROR: timestep variable type is list/range/ndarray (%s), but type of timestep[0] not anticipated (%s), options:\n - int\n - np.int64\n - datetime\n - np.datetime64'%(type(timestep),type(timestep[0])))
         elif type(timestep) in listtype_daterange:
-            data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname, silent=silent) #get all times
             time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, timestep)
-            data_nc_datetimes_pd = data_nc_datetimes_pd.loc[time_ids] #get selection of times
+            data_nc_datetimes_pd = data_nc_datetimes_pd.iloc[time_ids] #get selection of times
         elif type(timestep) in listtype_int:
-            data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname, retrieve_ids=[timestep], silent=silent) #get selection of times
             time_ids = [timestep]
+            data_nc_datetimes_pd = data_nc_datetimes_pd.iloc[time_ids] #get selection of times
         elif type(timestep) in listtype_datetime:
-            data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname, silent=silent) #get all times
             time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, [timestep])
-            data_nc_datetimes_pd = data_nc_datetimes_pd.loc[time_ids] #get selection of times
+            data_nc_datetimes_pd = data_nc_datetimes_pd.iloc[time_ids] #get selection of times
         else:
             raise Exception('ERROR: timestep variable type not anticipated (%s), options:\n - datetime/int\n - list/range/ndarray of datetime/int\n - pandas daterange\n - "all"'%(type(timestep)))
         #convert to positive index, make unique(+sort), convert to list because of indexing with np.array of len 1 errors sometimes
