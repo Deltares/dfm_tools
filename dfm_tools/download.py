@@ -10,6 +10,60 @@ import pandas as pd
 import datetime as dt
 from pathlib import Path
 
+
+def download_ERA5(varkey,
+                  tstart, tstop,
+                  longitude_min, longitude_max, latitude_min, latitude_max, 
+                  dir_out='.'):
+    
+    import cdsapi # Import cdsapi and create a Client instance # https://cds.climate.copernicus.eu/api-how-to #TODO: move to top of script (then make dependency of dfm_tools)
+    c = cdsapi.Client()
+    
+    #dictionary with ERA5 variables
+    variables_dict = {'ssr':'surface_net_solar_radiation',
+                      'sst':'sea_surface_temperature',
+                      'strd':'surface_thermal_radiation_downwards',
+                      'slhf':'surface_latent_heat_flux',
+                      'sshf':'surface_sensible_heat_flux',
+                      'str':'surface_net_thermal_radiation',
+                      'chnk':'charnock',
+                      'd2m':'2m_dewpoint_temperature',
+                      't2m':'2m_temperature',
+                      'tcc':'total_cloud_cover',
+                      'mslp':'mean_sea_level_pressure',
+                      'u10':'10m_u_component_of_wind',
+                      'u10n':'10m_u_component_of_neutral_wind',
+                      'v10':'10m_v_component_of_wind',
+                      'v10n':'10m_v_component_of_neutral_wind',
+                      'mer':'mean_evaporation_rate',
+                      'mtpr':'mean_total_precipitation_rate',
+                      }
+    if varkey not in variables_dict.keys():
+        raise Exception(f'"{varkey}" not available, choose from: {list(variables_dict.keys())}')
+    
+    date_range = pd.date_range(tstart,tstop,freq='MS') #frequency: month start
+    print(f'retrieving data for months in: {date_range}')
+    
+    for date in date_range:
+        print (f'retrieving ERA5 data for variable "{varkey}" and month {date.strftime("%Y-%m")} (YYYY-MM)')
+
+        file_out = Path(dir_out,f'era5_{varkey}_{date.strftime("%Y%m")}.nc')
+        
+        request_dict = {'product_type':'reanalysis',
+                        'variable':variables_dict[varkey],
+                        'year': date.strftime('%Y'),
+                        'month':date.strftime('%m'),
+                        #'month':[f'{x:02d}' for x in range(1,12+1)], #all months, but instead retrieving per month
+                        'day':[f'{x:02d}' for x in range(1,31+1)], #all days
+                        'time':[f'{x:02d}:00' for x in range(0,23+1)], #all times/hours
+                        'area':'%3.1f/%3.1f/%3.1f/%3.1f' %(latitude_max,longitude_min,latitude_min,longitude_max), # north, west, south, east. default: global - option not available through the Climate Data Store (CDS) web interface
+                        #'grid': [1.0, 1.0], # latitude/longitude grid: east-west (longitude) and north-south resolution (latitude). default: 0.25 x 0.25 - option not available through the Climate Data Store (CDS) web interface
+                        'format':'netcdf'}
+        
+        c.retrieve(name='reanalysis-era5-single-levels', request=request_dict, target=file_out)
+    return
+    
+
 def download_CMEMS(username, password, #register at: https://resources.marine.copernicus.eu/registration-form' 
                    dir_output='.', #default to pwd
                    longitude_min=-180, longitude_max=180, latitude_min=-90, latitude_max=90,

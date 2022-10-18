@@ -9,9 +9,10 @@ import os
 from pathlib import Path
 import xarray as xr
 from dfm_tools.download import download_CMEMS
+import pandas as pd
 
-username = 'slaan' #TODO: remove credentials
-password = '"D3lt4r3S!"'# keep double quotation marks for passwords with special characters
+credentials = pd.read_csv(f'{os.path.expanduser("~")}/.motucredentials')
+username,password = credentials.loc[0,['username','password']]
 
 #make the /data/tmp directory if it does not exist
 dir_output = './cmems_temp'
