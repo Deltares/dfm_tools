@@ -13,6 +13,8 @@ dependencies:
   - dask
   - netcdf4
   - bottleneck
+  - cdsapi
+  - motuclient
   - pip:
     - pytest>=5.0.1
     - bump2version>=0.5.11
