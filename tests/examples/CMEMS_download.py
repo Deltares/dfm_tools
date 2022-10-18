@@ -18,7 +18,7 @@ username,password = credentials.loc[0,['username','password']]
 dir_output = './cmems_temp'
 Path(dir_output).mkdir(parents=True, exist_ok=True)
 
-
+#download CMEMS data to dir_output
 download_CMEMS(username=username, password=password, #register at: https://resources.marine.copernicus.eu/registration-form'
                dir_output=dir_output,
                longitude_min=2, longitude_max=4, latitude_min=50, latitude_max=52,

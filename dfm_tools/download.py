@@ -11,7 +11,7 @@ import datetime as dt
 from pathlib import Path
 
 
-def download_ERA5(varkey,
+def download_ERA5(varkey, #TODO: maybe replace by varlist if desired
                   tstart, tstop,
                   longitude_min, longitude_max, latitude_min, latitude_max, 
                   dir_out='.'):
@@ -65,7 +65,7 @@ def download_ERA5(varkey,
     
 
 def download_CMEMS(username, password, #register at: https://resources.marine.copernicus.eu/registration-form' 
-                   dir_output='.', #default to pwd
+                   dir_output='.', #default to cwd
                    longitude_min=-180, longitude_max=180, latitude_min=-90, latitude_max=90,
                    date_min='2010-01-01', date_max='2010-01-03', #'%Y-%m-%d'
                    varlist=['bottomT'], #['thetao','so','zos','bottomT','uo','vo'], ['o2','no3','po4','si','nppv','chl'],
@@ -113,16 +113,13 @@ def download_CMEMS(username, password, #register at: https://resources.marine.co
                 motu_command = ' '.join(['motuclient', '--motu', motu_url, '--service-id', service, '--product-id', product,
                                          '--longitude-min', str(longitude_min), '--longitude-max', str(longitude_max),
                                          '--latitude-min', str(latitude_min), '--latitude-max', str(latitude_max),
-                                         '--date-min', date_str, '--date-max', date_str,#+' 12:00:00',
+                                         '--date-min', date_str, '--date-max', date_str, #+' 12:00:00',
                                          '--depth-min', '0', '--depth-max', '2e31',
                                          '--variable', str(var),
                                          '--out-dir', dir_output, '--out-name', name_output,
                                          '--user', username, '--pwd', password])
                 try:
                     out = subprocess.run(f'python -m {motu_command}', capture_output=True, check=True, universal_newlines=True, timeout=timeout)
-                    #stdin=None, input=None, stdout=None, stderr=None, 
-                    #capture_output=False, shell=False, cwd=None, 
-                    #encoding=None, errors=None, text=None, env=None, universal_newlines=None
                 except subprocess.TimeoutExpired as e:
                     out = e
                     print(f'TimeoutExpired: {e} Check above logging.')
