@@ -23,7 +23,6 @@ vars_pd = get_ncvarproperties(file_nc=file_nc)
 subs = ['DetCS1','DetNS1','DetPS1','DetSiS1']
 x_coords = get_ncmodeldata(file_nc=file_nc, varname='FlowElem_xzw', multipart=True)
 y_coords = get_ncmodeldata(file_nc=file_nc, varname='FlowElem_yzw', multipart=True)
-                    
 
 for sub in subs:    
     #get data to plot

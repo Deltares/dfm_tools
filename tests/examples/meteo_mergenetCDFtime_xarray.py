@@ -21,8 +21,10 @@ from dfm_tools.xarray_helpers import preprocess_hirlam
 
 #TODO: add HARMONIE (also originates from matroos), add CMCC etc from gtsmip repos: p2_preprocess_ERA5_decode_times.py
 #TODO: add .sel(lat/lon) or not relevant?
+#TODO: crashes in pytest for some reason, check this
+#TODO: add coordinate conversion (maybe only for non-regular gridded models like HARMONIE and HIRLAM)
 
-mode = 'ERA5_wind_pressure'# 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HYCOM' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall'
+mode = 'ERA5_wind_pressure' # 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HYCOM' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall'
 all_tstart = dt.datetime(2013,12,30) # HIRLAM and ERA5
 all_tstop = dt.datetime(2014,1,1)
 #all_tstart = dt.datetime(2016,4,28) # HYCOM
@@ -68,6 +70,16 @@ elif 'ERA5' in mode:
     drop_variables = None
     preprocess = None
     rename_variables = None
+elif mode == 'WOA': #TODO: does not work since time units is 'months since 0000-01-01 00:00:00' and calendar is not set (360_day is the only one that supports that unit)
+    def preprocess_woa(ds):
+        ds.time.attrs['calendar'] = '360_day'
+        return ds
+    dir_data = r'p:\1204257-dcsmzuno\data\WOA13'
+    fn_match_pattern = 'woa13_decav_s*.nc'
+    file_out_prefix = fn_match_pattern.replace('*.nc','')
+    drop_variables = None
+    preprocess = preprocess_woa
+    rename_variables = None
 else:
     raise Exception('ERROR: wrong mode %s'%(mode))
 
@@ -97,6 +109,7 @@ data_xr = xr.open_mfdataset(file_nc,
                             #concat_dim="time", combine="nested", data_vars='minimal', coords='minimal', compat='override', #TODO: optional vars to look into: https://docs.xarray.dev/en/stable/user-guide/io.html#reading-multi-file-datasets. might also resolve large chunks warning with ERA5 (which has dissapeared somehow)
                             )
 print('...done')
+
 
 #rename variables
 data_xr = data_xr.rename(rename_variables)

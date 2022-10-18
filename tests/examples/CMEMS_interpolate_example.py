@@ -3,6 +3,8 @@
 Created on Thu Aug 18 16:37:38 2022
 
 @author: veenstra
+
+This script can be used to interpolate pre-downloaded CMEMS data (or other netcdf files) to a boundary locations in a pli-file
 """
 
 import datetime as dt

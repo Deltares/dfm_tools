@@ -31,10 +31,20 @@ Created on Fri Feb 14 12:45:11 2020
 
 @author: veenstra
 """
+
+import warnings
 import numpy as np
+import datetime as dt
+import pandas as pd
+from netCDF4 import Dataset
+import xarray as xr
+import matplotlib.pyplot as plt
+import matplotlib.collections
 
-
-def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None, station=None, multipart=None, get_linkedgridinfo=False, silent=False):
+from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvarproperties, get_varnamefrom_keyslongstandardname, get_variable_timevar, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_fromnc
+from dfm_tools.ugrid import UGrid
+ 
+def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None, station=None, multipart=None, silent=False):
     """
 
     Parameters
@@ -66,14 +76,6 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
 
     """
 
-    import warnings
-    import numpy as np
-    import datetime as dt
-    import pandas as pd
-    from netCDF4 import Dataset
-    import xarray as xr
-
-    from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvarproperties, get_varnamefrom_keyslongstandardname, get_variable_timevar, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_fromnc
 
     #get variable info (also checks if varname exists in keys, standard name, long name)
     data_nc = Dataset(file_nc)
@@ -98,16 +100,8 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
 
 
     #TIMES CHECKS
-    #dimn_time = get_varname_fromnc(data_nc,'time',vardim='dim')
-    #varn_time = get_varname_fromnc(data_nc,'time',vardim='var')
-    #if dimn_time is None: #dimension with a name close to 'time' is not available in variable, try to get time dimension from 'time' variable
-    #    try:
-    #        dimn_time = data_nc.variables[varn_time].dimensions[0]
-    #    except:
-    #        print('using dimn_time as variable to get dimn_time failed')
     #varn_time, dimn_time = get_variable_timevardim(file_nc=file_nc, varname=varname)
     varn_time = get_variable_timevar(file_nc,varname=varname)
-    #print('varn_time',varname,varn_time)
     if varn_time is None:
         dimn_time = None
     else:
@@ -118,36 +112,32 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     else: #time dimension is present
         data_nc_timevar = data_nc.variables[varn_time]
         time_length = data_nc_timevar.shape[0]
-        data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname, retrieve_ids=[0,-1], silent=silent) #get selection of times
+        data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname) #get all times
         if timestep is None:
             raise Exception('ERROR: netcdf variable contains a time dimension, but parameter timestep not provided (can be "all"), first and last timestep:\n%s\nretrieve entire times list:\nfrom dfm_tools.get_nc_helpers import get_timesfromnc\ntimes_pd = get_timesfromnc(file_nc=file_nc, varname="%s")'%(pd.DataFrame(data_nc_datetimes_pd),varname))
         #convert timestep to list of int if it is not already
         if timestep is str('all'):
-            data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname, silent=silent) #get all times
             time_ids = range(len(data_nc_datetimes_pd))
         elif type(timestep) in listtype_range:
             if len(timestep) == 0:
                 raise Exception('ERROR: timestep variable type is list/range/ndarray (%s), but it has no length'%(type(timestep)))
             elif type(timestep[0]) in listtype_int:
-                data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname, retrieve_ids=timestep, silent=silent) #get selection of times
+                data_nc_datetimes_pd = data_nc_datetimes_pd.iloc[timestep] #get selection of times
                 time_ids = timestep
             elif type(timestep[0]) in listtype_datetime:
-                data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname, silent=silent) #get all times
                 time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, timestep)
-                data_nc_datetimes_pd = data_nc_datetimes_pd.loc[time_ids] #get selection of times
+                data_nc_datetimes_pd = data_nc_datetimes_pd.iloc[time_ids] #get selection of times
             else:
                 raise Exception('ERROR: timestep variable type is list/range/ndarray (%s), but type of timestep[0] not anticipated (%s), options:\n - int\n - np.int64\n - datetime\n - np.datetime64'%(type(timestep),type(timestep[0])))
         elif type(timestep) in listtype_daterange:
-            data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname, silent=silent) #get all times
             time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, timestep)
-            data_nc_datetimes_pd = data_nc_datetimes_pd.loc[time_ids] #get selection of times
+            data_nc_datetimes_pd = data_nc_datetimes_pd.iloc[time_ids] #get selection of times
         elif type(timestep) in listtype_int:
-            data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname, retrieve_ids=[timestep], silent=silent) #get selection of times
             time_ids = [timestep]
+            data_nc_datetimes_pd = data_nc_datetimes_pd.iloc[time_ids] #get selection of times
         elif type(timestep) in listtype_datetime:
-            data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname, silent=silent) #get all times
             time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, [timestep])
-            data_nc_datetimes_pd = data_nc_datetimes_pd.loc[time_ids] #get selection of times
+            data_nc_datetimes_pd = data_nc_datetimes_pd.iloc[time_ids] #get selection of times
         else:
             raise Exception('ERROR: timestep variable type not anticipated (%s), options:\n - datetime/int\n - list/range/ndarray of datetime/int\n - pandas daterange\n - "all"'%(type(timestep)))
         #convert to positive index, make unique(+sort), convert to list because of indexing with np.array of len 1 errors sometimes
@@ -253,7 +243,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
 
         values_selid = []
         values_dimlens = [] #list(nc_values.shape)
-        values_dimlinkedgrid = [] #list(nc_values.shape)
+        #values_dimlinkedgrid = [] #list(nc_values.shape)
         try:
             nc_varobject_sel_coords = nc_varobject_sel.coordinates
         except:
@@ -299,19 +289,19 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
                 values_selid.append(range(nc_varobject_sel.shape[iD]))
                 values_dimlens.append(nc_varobject_sel.shape[iD])
 
-            #get info about grid variables related to varname
-            if get_linkedgridinfo and (nc_values_dimsel not in [dimn_time,dimn_layer]+dimname_stat_validvals):
-                vars_pd_relevant = vars_pd[(vars_pd['shape'].apply(len)<=2) & (vars_pd['dimensions'].apply(lambda x: nc_values_dimsel in x)) & -(vars_pd['dimensions'].apply(lambda x: dimn_time in x))]
-                values_dimlinkedgrid.append(vars_pd_relevant)
+            #get info about grid variables related to varname #TODO: remove this commented code (and related linkedgrid parts)
+            # if get_linkedgridinfo and (nc_values_dimsel not in [dimn_time,dimn_layer]+dimname_stat_validvals):
+            #     vars_pd_relevant = vars_pd[(vars_pd['shape'].apply(len)<=2) & (vars_pd['dimensions'].apply(lambda x: nc_values_dimsel in x)) & -(vars_pd['dimensions'].apply(lambda x: dimn_time in x))]
+            #     values_dimlinkedgrid.append(vars_pd_relevant)
 
-                print('\tlinkedvars for dimension "%s":'%(nc_values_dimsel))
-                #print('nc_varobject_sel.dimensions: %s'%([nc_varobject_sel.dimensions]))
-                for iLV, linkedvar in vars_pd_relevant.iterrows():
-                    print('\t\t%s  %s  %s'%(iLV, linkedvar['shape'], linkedvar['dimensions']))
-                #print('nc_values_dimsel: %s'%(nc_values_dimsel))
-                #print('vars_pd_relevant:\n%s'%(vars_pd_relevant))
-            else:
-                values_dimlinkedgrid.append(None)
+            #     print('\tlinkedvars for dimension "%s":'%(nc_values_dimsel))
+            #     #print('nc_varobject_sel.dimensions: %s'%([nc_varobject_sel.dimensions]))
+            #     for iLV, linkedvar in vars_pd_relevant.iterrows():
+            #         print('\t\t%s  %s  %s'%(iLV, linkedvar['shape'], linkedvar['dimensions']))
+            #     #print('nc_values_dimsel: %s'%(nc_values_dimsel))
+            #     #print('vars_pd_relevant:\n%s'%(vars_pd_relevant))
+            # else:
+            #     values_dimlinkedgrid.append(None)
 
         #get selected data (including ghostcells because that is faster)
         nc_varobject_sel_selids_raw = nc_varobject_sel[values_selid]
@@ -364,7 +354,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     values_all.var_dimensions = nc_varobject.dimensions
     values_all.var_shape = nc_varobject.shape
     values_all.var_dtype = nc_varobject.dtype
-    values_all.var_linkedgridinfo = values_dimlinkedgrid
+    #values_all.var_linkedgridinfo = values_dimlinkedgrid
     #values_all.var_ncobject = data_nc #this is the netcdf object retrieved with netCDF4.Dataset() #disabled, since it becomes invalid after closing the dataset
     values_all.var_ncvarobject = f"from netCDF4 import Dataset;data_nc = Dataset('{file_nc}');nc_varobject = data_nc.variables['{varname}'];print(nc_varobject)" # nc_varobject #this is the netcdf variable, contains properties like shape/units/dimensions #disabled, since it becomes invalid after closing the dataset
     values_all.var_ncattrs = nc_varobject.__dict__ #values in nc_varobject.ncattrs() or hasattr(nc_varobject,'attributename')
@@ -416,9 +406,6 @@ def calc_dist_haversine(lon1,lon2,lat1,lat2):
 
 
 def get_xzcoords_onintersection(file_nc, intersect_pd, timestep=None, multipart=None, varname=None):
-    import warnings
-    from netCDF4 import Dataset
-    from dfm_tools.get_nc_helpers import get_varname_fromnc
     
     #check if all necessary arguments are provided
     if timestep is None:
@@ -495,11 +482,6 @@ def get_xzcoords_onintersection(file_nc, intersect_pd, timestep=None, multipart=
 
 
 def get_netdata(file_nc, multipart=None):
-    import numpy as np
-    from netCDF4 import Dataset
-    
-    from dfm_tools.ugrid import UGrid
-    from dfm_tools.get_nc_helpers import get_ncfilelist, get_varname_fromnc
 
     file_ncs = get_ncfilelist(file_nc, multipart)
     #get all data
@@ -588,9 +570,6 @@ def get_netdata(file_nc, multipart=None):
 def plot_netmapdata(verts, values=None, ax=None, **kwargs):
     #https://stackoverflow.com/questions/52202014/how-can-i-plot-2d-fem-results-using-matplotlib
     #https://stackoverflow.com/questions/49640311/matplotlib-unstructered-quadrilaterals-instead-of-triangles
-    import matplotlib.pyplot as plt
-    import matplotlib.collections
-    import numpy as np
     
     if not values is None:
         #squeeze values (remove dimensions with length 1)
@@ -670,12 +649,8 @@ def plot_background(ax=None, projection=None, google_style='satellite', resoluti
 
     """
 
-    import matplotlib.pyplot as plt
-    import numpy as np
-
     from dfm_tools.testutils import try_importmodule
     try_importmodule(modulename='cartopy') #check if cartopy was installed since it is an optional module, also happens in plot_cartopybasemap()
-
     import cartopy
     import cartopy.crs as ccrs
     import cartopy.io.img_tiles as cimgt
@@ -789,11 +764,8 @@ def plot_ztdata(data_xr_sel, varname, ax=None, mask_data=True, only_contour=Fals
 
     """
 
-    import warnings
-    import numpy as np
-    import matplotlib.pyplot as plt
-    
-    warnings.warn('WARNING: layers in dfowfm hisfile are currently incorrect, check your figures carefully')
+   
+    warnings.warn('WARNING: layers in dflowfm hisfile are currently incorrect, check your figures carefully')
     
     data_fromhis_var = data_xr_sel[varname].to_numpy()
     if len(data_fromhis_var.shape) != 2:
@@ -830,88 +802,3 @@ def plot_ztdata(data_xr_sel, varname, ax=None, mask_data=True, only_contour=Fals
 
     return pc
 
-
-#TODO: remove this old definition
-def plot_ztdata_OLD(file_nc, dfmtools_hisvar, statid_subset=0, ax=None, mask_data=True, only_contour=False, **kwargs):
-    """
-
-
-    Parameters
-    ----------
-    dfmtools_hisvar : numpy.ma.core.MaskedArray
-        dfm_tools.get_nc.get_ncmodeldata output structure, which is of type numpy.ma.core.MaskedArray and has several extra properties attached which which it is possible to retrieve the correct z interface data.
-    statid_subset : int, optional
-        the station id for the dfmtools_hisvar, so 0-based since it retrieves from a numpy array. beware that get_ncmodeldata sorts the stations you request, so use an index like dfmtools_hisvar.var_stations['station_id'].tolist().index(stat). Avoid this issue by only retrieving data for one station. The default is 0.
-    ax : matplotlib.axes._subplots.AxesSubplot, optional
-        the figure axis. The default is None.
-    mask_data : bool, optional
-        whether to repair z_interface coordinates and mask data in inactive layers. The default is True.
-    only_contour : bool, optional
-        Wheter to plot contour lines of the dataset. The default is False.
-    **kwargs : TYPE
-        properties to give on to the pcolormesh function.
-
-    Returns
-    -------
-    pc : matplotlib.collections.QuadMesh
-        DESCRIPTION.
-
-    """
-    """
-    import warnings
-    import numpy as np
-    import matplotlib.pyplot as plt
-    import pandas as pd
-
-    warnings.warn('WARNING: layers in dfowfm hisfile are currently incorrect, check your figures carefully')
-    #get the original ncobject and the retrieved indices from dfmtools_hisvar, used to retrieve a corresponding z array.
-    time_ids = dfmtools_hisvar.var_times.index.tolist()
-    stat_ids = dfmtools_hisvar.var_stations.index.tolist()
-    layer_ids = dfmtools_hisvar.var_layers
-    layer_ids_interf = layer_ids+[layer_ids[-1]+1]
-    #data_fromhis_zcen = nc_obj.variables['zcoordinate_c'][time_ids,stat_ids,layer_ids]
-    #data_fromhis_zcor = nc_obj.variables['zcoordinate_w'][time_ids,stat_ids,layer_ids_interf]
-    #data_fromhis_wl = nc_obj.variables['waterlevel'][time_ids,stat_ids]
-    data_fromhis_zcen = get_ncmodeldata(file_nc=file_nc, varname='zcoordinate_c', timestep=time_ids, station=stat_ids, layer=layer_ids)
-    data_fromhis_zcor = get_ncmodeldata(file_nc=file_nc, varname='zcoordinate_w', timestep=time_ids, station=stat_ids)[:,:,layer_ids_interf] #dfmtools cannot find layers in this variable
-    data_fromhis_wl = get_ncmodeldata(file_nc=file_nc, varname='waterlevel', timestep=time_ids, station=stat_ids)
-
-    #remove station dimension
-    if 0: #len(data_fromhis_zcor.shape) == 3:
-        data_fromhis_zcen_flat = data_fromhis_zcen[:,statid_subset,:]
-        data_fromhis_zcor_flat = data_fromhis_zcor[:,statid_subset,:]
-        dfmtools_hisvar_flat = dfmtools_hisvar[:,statid_subset,:]
-    elif (len(data_fromhis_zcor.shape) == 3) or (len(data_fromhis_zcor.shape) == 2):
-        data_fromhis_zcen_flat = data_fromhis_zcen[:,statid_subset]
-        data_fromhis_zcor_flat = data_fromhis_zcor[:,statid_subset] #original, but should append extra row for time 'edges)
-        data_fromhis_zcor_flat = np.concatenate([data_fromhis_zcor[:,statid_subset],data_fromhis_zcor[[-1],statid_subset]],axis=0)
-        dfmtools_hisvar_flat = dfmtools_hisvar[:,statid_subset]
-    else:
-        raise Exception('unexpected number of dimensions')
-    data_fromhis_wl_flat = data_fromhis_wl[:,statid_subset]
-
-    if mask_data:
-        bool_zcen_equaltop = (data_fromhis_zcen_flat==data_fromhis_zcen_flat[:,-1:]).all(axis=0)
-        id_zcentop = np.argmax(bool_zcen_equaltop) # id of first z_center that is equal to z_center of last layer
-        if (data_fromhis_zcor_flat[:-1,id_zcentop] > data_fromhis_zcen_flat[:,id_zcentop]).any():
-            print('correcting z interface values')
-            data_fromhis_zcor_flat[:-1,id_zcentop+1] = data_fromhis_wl_flat
-            data_fromhis_zcor_flat[:-1,id_zcentop] = (data_fromhis_zcen_flat[:,id_zcentop-1]+data_fromhis_zcen_flat[:,id_zcentop])/2
-        bool_zcen_equaltop[id_zcentop] = False
-        #bool_zcor_equaltop = (data_fromhis_zcor_flat[:,1:]==data_fromhis_zcor_flat[:,-1:]).all(axis=0)
-        mask_array = np.tile(bool_zcen_equaltop,(data_fromhis_zcor_flat.shape[0],1))
-        dfmtools_hisvar_flat.mask = mask_array
-
-    if not ax: ax=plt.gca()
-
-    # generate 2 2d grids for the x & y bounds (you can also give one 2D array as input in case of eg time varying z coordinates)
-    time_cor = pd.concat([dfmtools_hisvar.var_times,dfmtools_hisvar.var_times.iloc[[-1]]])
-    time_mesh_cor = np.tile(time_cor,(data_fromhis_zcor_flat.shape[-1],1)).T
-    time_mesh_cen = np.tile(dfmtools_hisvar.var_times,(data_fromhis_zcen_flat.shape[-1],1)).T
-    if only_contour:
-        pc = ax.contour(time_mesh_cen,data_fromhis_zcen_flat,dfmtools_hisvar_flat, **kwargs)
-    else: #TODO: should actually supply cell edges instead of centers to pcolor/pcolormesh, but inconvenient for time dimension.
-        #pc = ax.pcolormesh(time_mesh_cen, data_fromhis_zcen_flat, dfmtools_hisvar_flat, **kwargs)
-        pc = ax.pcolor(time_mesh_cor, data_fromhis_zcor_flat, dfmtools_hisvar_flat, **kwargs) #pcolor also supports missing/masked xy data, but is slower
-    return pc
-    """

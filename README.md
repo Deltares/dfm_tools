@@ -32,10 +32,11 @@ Installation
 	- open anaconda prompt
 	- ``conda create --name dfm_tools_env -c conda-forge python=3.8 git spyder -y`` (you can also install a newer python version, in python 3.7 the dependency hydrolib seemed not installable)
 	- ``conda activate dfm_tools_env``
-	- ``conda install -c conda-forge shapely cartopy pyepsg geopandas contextily xarray dask netcdf4 bottleneck -y`` (installs conda-forge requirements)
+	- ``conda install -c conda-forge shapely cartopy pyepsg geopandas contextily xarray dask netcdf4 bottleneck cdsapi motuclient -y`` (installs conda-forge requirements)
 	- ``python -m pip install git+https://github.com/openearth/dfm_tools`` (this command installs dfm_tools and all required non-conda packages)
 	- ``python -m pip uninstall hydrolib-core -y`` (temporarily necessary to install the correct version of hydrolib-core)
 	- ``python -m pip install git+https://github.com/deltares/hydrolib-core`` (temporarily necessary to install the correct version of hydrolib-core)
+	- to remove venv when necessary: ``conda remove -n dfm_tools_env --all``
 - what are all these packages for?:
 	- shapely for slicing 2D/3D data (conda-forge channel is necessary since main channel version is 1.6.4, minimal requirement is 1.7.0)
 	- cartopy for satellite imagery, coastlines etc on plots (conda-forge channel recommended by cartopy developers, and currently also necessary for correct shapely version)
@@ -43,7 +44,7 @@ Installation
 	- geopandas for shapefile related operations
 	- contextily for satellite imagery on plots, seems faster than cartopy
 	- xarray developers advise to install dependecies dask/netCDF4/bottleneck with conda-forge also: https://docs.xarray.dev/en/v0.8.0/installing.html
-	- to remove venv when necessary: ``conda remove -n dfm_tools_env --all``
+	- cdsapi/motuclient: to download ERA5 and CMEMS data
 - launch Spyder:
 	- open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in the dfm_tools_env environment only)
 	- copy the code from [Example usage](#example-usage) to your own scripts to get started
