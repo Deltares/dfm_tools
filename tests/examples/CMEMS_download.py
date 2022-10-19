@@ -24,8 +24,8 @@ download_CMEMS(username=username, password=password, #register at: https://resou
                longitude_min=2, longitude_max=4, latitude_min=50, latitude_max=52,
                date_min='2010-01-01', date_max='2010-01-02', #'%Y-%m-%d', data will be retrieved per day
                varlist=['bottomT'], #['thetao','so','zos','bottomT','uo','vo'], #['o2','no3','po4','si','nppv','chl'], #data will be retrieved per variable
-               #source_combination='multiyear_physchem2', #or provide motu_url/service/product arguments
-               motu_url='http://my.cmems-du.eu/motu-web/Motu2', service='GLOBAL_MULTIYEAR_PHY_001_030-TDS', product='cmems_mod_glo_phy_my_0.083_P1D-m',
+               #source_combination='multiyear_physchem', #or provide motu_url/service/product arguments
+               motu_url='http://my.cmems-du.eu', service='GLOBAL_MULTIYEAR_PHY_001_030-TDS', product='cmems_mod_glo_phy_my_0.083_P1D-m',
                )
 
 #open mfdataset to check folder contents

@@ -9,6 +9,8 @@ import subprocess
 import pandas as pd
 import datetime as dt
 from pathlib import Path
+import requests
+import numpy as np
 
 
 def download_ERA5(varkey, #TODO: maybe replace by varlist if desired
@@ -79,41 +81,38 @@ def download_CMEMS(username, password, #register at: https://resources.marine.co
         - find your service+product on https://resources.marine.copernicus.eu/products
         - go to the data access tab, e.g.: https://resources.marine.copernicus.eu/product-detail/GLOBAL_MULTIYEAR_PHY_001_030/DATA-ACCESS
         - click on the API button in the SUBS column, e.g.: https://my.cmems-du.eu/motu-web/Motu?action=describeproduct&service=GLOBAL_MULTIYEAR_PHY_001_030-TDS&product=cmems_mod_glo_phy_my_0.083_P1D-m
-        - from this url you see the motu_url (https://my.cmems-du.eu/motu-web/Motu), the service (GLOBAL_MULTIYEAR_PHY_001_030-TDS) and the product (cmems_mod_glo_phy_my_0.083_P1D-m)
+        - from this url you see the motu_url (https://my.cmems-du.eu), the service (GLOBAL_MULTIYEAR_PHY_001_030-TDS) and the product (cmems_mod_glo_phy_my_0.083_P1D-m)
         - some example combinations are available in source_dict
-    Some examples:
+    Some examples can be found in source_dict
     """
     
     import motuclient #used in motu_commands, so has to be importable. conda install -c conda-forge motuclient #TODO: move to top of script (then make dependency of dfm_tools)
-    
-    known_motu_urls = ['http://my.cmems-du.eu/motu-web/Motu','http://nrt.cmems-du.eu/motu-web/Motu']
-    
-    if motu_url not in known_motu_urls:
-        print(f'WARNING: motu_url not known, consider using: {known_motu_urls}') #TODO: do this also for others?
-
-    #http://my.cmems-du.eu2/motu-web/Motu # invalid url, TimeoutExpired + othererror OUT: [WARNING] Warning: CAS connection failed
-    #http://my.cmems-du.eu/motu-web/Motu2 # invalid url, CalledProcessError + othererror OUT: [ERROR] Execution failed: HTTP Error 404
-    #http://nrt.cmems-du.eu/motu-web/Motu # nrt instead of my, othererror OUT: [ERROR] 010-30 : The requested service is unknown: 'GLOBAL_MULTIYEAR_PHY_001_030-TDS'
-    source_dict =   {'multiyear_physchem':{'motu_url':'http://my.cmems-du.eu/motu-web/Motu', # multiyear reanalysis data (01-01-1993 12:00 till 31-05-2020 12:00)
+       
+    source_dict =   {'multiyear_physchem':{'motu_url':'http://my.cmems-du.eu', # multiyear reanalysis data (01-01-1993 12:00 till 31-05-2020 12:00)
                                            'service': 'GLOBAL_MULTIYEAR_PHY_001_030-TDS',
                                            'product': 'cmems_mod_glo_phy_my_0.083_P1D-m'},
-                     'multiyear_bio':     {'motu_url':'http://my.cmems-du.eu/motu-web/Motu',
+                     'multiyear_bio':     {'motu_url':'http://my.cmems-du.eu',
                                            'service': 'GLOBAL_MULTIYEAR_BGC_001_029-TDS',
                                            'product': 'cmems_mod_glo_bgc_my_0.25_P1D-m'},
-                     'forecast_physchem': {'motu_url':'http://nrt.cmems-du.eu/motu-web/Motu', # operational forecast data (01-01-2019 12:00 till now + several days)
+                     'forecast_physchem': {'motu_url':'http://nrt.cmems-du.eu', # operational forecast data (01-01-2019 12:00 till now + several days)
                                            'service': 'GLOBAL_ANALYSIS_FORECAST_PHY_001_024-TDS',
                                            'product': 'global-analysis-forecast-phy-001-024'},
-                     'forecast_bio':      {'motu_url':'http://nrt.cmems-du.eu/motu-web/Motu',
+                     'forecast_bio':      {'motu_url':'http://nrt.cmems-du.eu',
                                            'service': 'GLOBAL_ANALYSIS_FORECAST_BIO_001_028-TDS',
                                            'product': 'global-analysis-forecast-bio-001-028-daily'},
                      }
     
     if source_combination is not None:
+        if (motu_url is not None) or (service is not None) or (product is not None):
+            raise Exception('motu_url, service and/or product arguments provided while source_combination is also provided.')
         if not source_combination in source_dict.keys():
-            raise Exception(f'not a valid source_combination, options are {list(source_dict.keys())}. Alternatively provide motu_url/service/product.')
+            raise Exception(f'provided source_combination argument is not valid, options are {list(source_dict.keys())}. Alternatively provide motu_url/service/product arguments.')
         motu_url = source_dict[source_combination]['motu_url']
         service = source_dict[source_combination]['service']
         product = source_dict[source_combination]['product']
+    
+    #test if supplied motu_url is valid
+    requests.get(motu_url)
     
     date_range = pd.date_range(dt.datetime.strptime(date_min, '%Y-%m-%d'),dt.datetime.strptime(date_max, '%Y-%m-%d'), freq='D')
     
@@ -127,7 +126,7 @@ def download_CMEMS(username, password, #register at: https://resources.marine.co
                 tryno += 1
                 print(f'retrieving variable {var} for {date_str}: try {tryno}')
                 
-                motu_command = ' '.join(['motuclient', '--motu', motu_url, '--service-id', service, '--product-id', product,
+                motu_command = ' '.join(['motuclient', '--motu', f'{motu_url}/motu-web/Motu', '--service-id', service, '--product-id', product,
                                          '--longitude-min', str(longitude_min), '--longitude-max', str(longitude_max),
                                          '--latitude-min', str(latitude_min), '--latitude-max', str(latitude_max),
                                          '--date-min', date_str, '--date-max', date_str, #+' 12:00:00',
