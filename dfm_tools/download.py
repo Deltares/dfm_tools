@@ -119,7 +119,7 @@ def download_CMEMS(username, password, #register at: https://resources.marine.co
     for var in varlist:
         for date in date_range: #retrieve data per day
             date_str = date.strftime('%Y-%m-%d')
-            name_output = f'cmems_{var}_{date_str}.nc' #TODO: add 12h to filename
+            name_output = f'cmems_{var}_{date_str}.nc' #TODO: add 12h to filename?
             check_file = Path(dir_output,name_output)
             tryno = 0
             while not check_file.is_file():
