@@ -72,7 +72,7 @@ def download_CMEMS(username, password, #register at: https://resources.marine.co
                    date_min='2010-01-01', date_max='2010-01-03', #'%Y-%m-%d'
                    varlist=['bottomT'], #['thetao','so','zos','bottomT','uo','vo'], ['o2','no3','po4','si','nppv','chl'],
                    source_combination=None,
-                   motu_url=None, service=None, product=None, #optionally provided with motu_url_dict and source_dict
+                   motu_url=None, service=None, product=None, #optionally provided via source_combination
                    timeout=30, #in seconds #TODO: set timeout back to 300?
                    max_tries=2):
     
@@ -113,7 +113,7 @@ def download_CMEMS(username, password, #register at: https://resources.marine.co
     
     #test if supplied motu_url is valid
     requests.get(motu_url)
-    
+        
     date_range = pd.date_range(dt.datetime.strptime(date_min, '%Y-%m-%d'),dt.datetime.strptime(date_max, '%Y-%m-%d'), freq='D')
     
     for var in varlist:
@@ -146,7 +146,10 @@ def download_CMEMS(username, password, #register at: https://resources.marine.co
                     raise Exception(f'CalledProcessError: {e} Check above logging.')
                 finally:
                     if ('ERROR' in out.stdout) or ('WARNING' in out.stdout): #catch all other errors, and the relevant information in TimeoutExpired and CalledProcessError
-                        raise Exception(f'othererror:\nOUT: {out.stdout}\nERR: {out.stderr}')
+                        if 'variable not found' in out.stdout:
+                            raise Exception(f'othererror:\nOUT: {out.stdout}\nERR: {out.stderr}\nCheck available variables at: "{motu_url}/motu-web/Motu?action=describeproduct&service={service}&product={product}"')
+                        else:
+                            raise Exception(f'othererror:\nOUT: {out.stdout}\nERR: {out.stderr}')
                     #else:
                     #    print(f'OUT: {out.stdout}\nERR: {out.stderr}')
                 

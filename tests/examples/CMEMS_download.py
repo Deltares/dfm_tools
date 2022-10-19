@@ -25,11 +25,11 @@ download_CMEMS(username=username, password=password, #register at: https://resou
                date_min='2010-01-01', date_max='2010-01-02', #'%Y-%m-%d', data will be retrieved per day
                varlist=['bottomT'], #['thetao','so','zos','bottomT','uo','vo'], #['o2','no3','po4','si','nppv','chl'], #data will be retrieved per variable
                #source_combination='multiyear_physchem', #or provide motu_url/service/product arguments
-               motu_url='http://my.cmems-du.eu', service='GLOBAL_MULTIYEAR_PHY_001_030-TDS', product='cmems_mod_glo_phy_my_0.083_P1D-m',
+               motu_url='http://my.cmems-du.eu', service='GLOBAL_MULTIYEAR_PHY_001_030-TDS', product='cmems_mod_glo_phy_my_0.083_P1D-m', #or provide source_combination argument
                )
 
 #open mfdataset to check folder contents
-ds = xr.open_mfdataset(os.path.join(dir_output,f'cmems_*.nc'))#, combine='by_coords', decode_times=False)
+ds = xr.open_mfdataset(os.path.join(dir_output,'cmems_*.nc'))
 ds.close()
 
 
