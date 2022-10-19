@@ -62,7 +62,7 @@ def download_ERA5(varkey, #TODO: maybe replace by varlist if desired
                         #'grid': [1.0, 1.0], # latitude/longitude grid: east-west (longitude) and north-south resolution (latitude). default: 0.25 x 0.25 - option not available through the Climate Data Store (CDS) web interface
                         'format':'netcdf'}
         
-        c.retrieve(name='reanalysis-era5-single-levels', request=request_dict, tar=file_out)
+        c.retrieve(name='reanalysis-era5-single-levels', request=request_dict, target=file_out)
     return
     
 
