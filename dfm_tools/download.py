@@ -9,6 +9,8 @@ import subprocess
 import pandas as pd
 import datetime as dt
 from pathlib import Path
+import requests
+import numpy as np
 
 
 def download_ERA5(varkey, #TODO: maybe replace by varlist if desired
@@ -60,7 +62,7 @@ def download_ERA5(varkey, #TODO: maybe replace by varlist if desired
                         #'grid': [1.0, 1.0], # latitude/longitude grid: east-west (longitude) and north-south resolution (latitude). default: 0.25 x 0.25 - option not available through the Climate Data Store (CDS) web interface
                         'format':'netcdf'}
         
-        c.retrieve(name='reanalysis-era5-single-levels', request=request_dict, target=file_out)
+        c.retrieve(name='reanalysis-era5-single-levels', request=request_dict, tar=file_out)
     return
     
 
@@ -69,34 +71,48 @@ def download_CMEMS(username, password, #register at: https://resources.marine.co
                    longitude_min=-180, longitude_max=180, latitude_min=-90, latitude_max=90,
                    date_min='2010-01-01', date_max='2010-01-03', #'%Y-%m-%d'
                    varlist=['bottomT'], #['thetao','so','zos','bottomT','uo','vo'], ['o2','no3','po4','si','nppv','chl'],
-                   reanalysis_forecast=None, quantitygroup=None,
+                   source_combination=None,
                    motu_url=None, service=None, product=None, #optionally provided with motu_url_dict and source_dict
                    timeout=30, #in seconds #TODO: set timeout back to 300?
                    max_tries=2):
     
-    import motuclient #used in motu_commands, so has to be importable. conda install -c conda-forge motuclient #TODO: move to top of script (then make dependency of dfm_tools)
+    """
+    How to get motu_url/service/product:
+        - find your service+product on https://resources.marine.copernicus.eu/products
+        - go to the data access tab, e.g.: https://resources.marine.copernicus.eu/product-detail/GLOBAL_MULTIYEAR_PHY_001_030/DATA-ACCESS
+        - click on the API button in the SUBS column, e.g.: https://my.cmems-du.eu/motu-web/Motu?action=describeproduct&service=GLOBAL_MULTIYEAR_PHY_001_030-TDS&product=cmems_mod_glo_phy_my_0.083_P1D-m
+        - from this url you see the motu_url (https://my.cmems-du.eu), the service (GLOBAL_MULTIYEAR_PHY_001_030-TDS) and the product (cmems_mod_glo_phy_my_0.083_P1D-m)
+        - some example combinations are available in source_dict
+    Some examples can be found in source_dict
+    """
     
-    motu_url_dict = {'reanalysis':'http://my.cmems-du.eu/motu-web/Motu',# multiyear reanalysis data (01-01-1993 12:00 till 31-05-2020 12:00)
-                     'forecast':'http://nrt.cmems-du.eu/motu-web/Motu'} # operational forecast data (01-01-2019 12:00 till now + several days)
-                    #http://my.cmems-du.eu2/motu-web/Motu # invalid url, TimeoutExpired + othererror OUT: [WARNING] Warning: CAS connection failed
-                    #http://my.cmems-du.eu/motu-web/Motu2 # invalid url, CalledProcessError + othererror OUT: [ERROR] Execution failed: HTTP Error 404
-                    #http://nrt.cmems-du.eu/motu-web/Motu # nrt instead of my, othererror OUT: [ERROR] 010-30 : The requested service is unknown: 'GLOBAL_MULTIYEAR_PHY_001_030-TDS'
-    source_dict =   {'reanalysis':{'physchem':{'service': 'GLOBAL_MULTIYEAR_PHY_001_030-TDS',
-                                               'product': 'cmems_mod_glo_phy_my_0.083_P1D-m'},
-                                   'bio':     {'service': 'GLOBAL_MULTIYEAR_BGC_001_029-TDS',
-                                               'product': 'cmems_mod_glo_bgc_my_0.25_P1D-m'}},
-                     'forecast':  {'physchem':{'service': 'GLOBAL_ANALYSIS_FORECAST_PHY_001_024-TDS',
-                                               'product': 'global-analysis-forecast-phy-001-024'},
-                                   'bio':     {'service': 'GLOBAL_ANALYSIS_FORECAST_BIO_001_028-TDS',
-                                               'product': 'global-analysis-forecast-bio-001-028-daily'}}
+    import motuclient #used in motu_commands, so has to be importable. conda install -c conda-forge motuclient #TODO: move to top of script (then make dependency of dfm_tools)
+       
+    source_dict =   {'multiyear_physchem':{'motu_url':'http://my.cmems-du.eu', # multiyear reanalysis data (01-01-1993 12:00 till 31-05-2020 12:00)
+                                           'service': 'GLOBAL_MULTIYEAR_PHY_001_030-TDS',
+                                           'product': 'cmems_mod_glo_phy_my_0.083_P1D-m'},
+                     'multiyear_bio':     {'motu_url':'http://my.cmems-du.eu',
+                                           'service': 'GLOBAL_MULTIYEAR_BGC_001_029-TDS',
+                                           'product': 'cmems_mod_glo_bgc_my_0.25_P1D-m'},
+                     'forecast_physchem': {'motu_url':'http://nrt.cmems-du.eu', # operational forecast data (01-01-2019 12:00 till now + several days)
+                                           'service': 'GLOBAL_ANALYSIS_FORECAST_PHY_001_024-TDS',
+                                           'product': 'global-analysis-forecast-phy-001-024'},
+                     'forecast_bio':      {'motu_url':'http://nrt.cmems-du.eu',
+                                           'service': 'GLOBAL_ANALYSIS_FORECAST_BIO_001_028-TDS',
+                                           'product': 'global-analysis-forecast-bio-001-028-daily'},
                      }
     
-    if motu_url is None:
-        motu_url = motu_url_dict[reanalysis_forecast]
-    if service is None:
-        service = source_dict[reanalysis_forecast][quantitygroup]['service']
-    if product is None:
-        product = source_dict[reanalysis_forecast][quantitygroup]['product']
+    if source_combination is not None:
+        if (motu_url is not None) or (service is not None) or (product is not None):
+            raise Exception('motu_url, service and/or product arguments provided while source_combination is also provided.')
+        if not source_combination in source_dict.keys():
+            raise Exception(f'provided source_combination argument is not valid, options are {list(source_dict.keys())}. Alternatively provide motu_url/service/product arguments.')
+        motu_url = source_dict[source_combination]['motu_url']
+        service = source_dict[source_combination]['service']
+        product = source_dict[source_combination]['product']
+    
+    #test if supplied motu_url is valid
+    requests.get(motu_url)
     
     date_range = pd.date_range(dt.datetime.strptime(date_min, '%Y-%m-%d'),dt.datetime.strptime(date_max, '%Y-%m-%d'), freq='D')
     
@@ -110,7 +126,7 @@ def download_CMEMS(username, password, #register at: https://resources.marine.co
                 tryno += 1
                 print(f'retrieving variable {var} for {date_str}: try {tryno}')
                 
-                motu_command = ' '.join(['motuclient', '--motu', motu_url, '--service-id', service, '--product-id', product,
+                motu_command = ' '.join(['motuclient', '--motu', f'{motu_url}/motu-web/Motu', '--service-id', service, '--product-id', product,
                                          '--longitude-min', str(longitude_min), '--longitude-max', str(longitude_max),
                                          '--latitude-min', str(latitude_min), '--latitude-max', str(latitude_max),
                                          '--date-min', date_str, '--date-max', date_str, #+' 12:00:00',
@@ -130,9 +146,9 @@ def download_CMEMS(username, password, #register at: https://resources.marine.co
                     raise Exception(f'CalledProcessError: {e} Check above logging.')
                 finally:
                     if ('ERROR' in out.stdout) or ('WARNING' in out.stdout): #catch all other errors, and the relevant information in TimeoutExpired and CalledProcessError
-                        raise Exception(f'othererror:\nOUT:{out.stdout}\nERR:{out.stderr}')
+                        raise Exception(f'othererror:\nOUT: {out.stdout}\nERR: {out.stderr}')
                     #else:
-                    #    print(f'OUT:{out.stdout}\nERR:{out.stderr}')
+                    #    print(f'OUT: {out.stdout}\nERR: {out.stderr}')
                 
                 if tryno >= max_tries:
                     raise Exception(f'max tries ({max_tries}) reached, this should not happen since it is already catched at timeout and errors are raised at others')
