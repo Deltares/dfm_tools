@@ -62,7 +62,7 @@ def download_ERA5(varkey, #TODO: maybe replace by varlist if desired
                         #'grid': [1.0, 1.0], # latitude/longitude grid: east-west (longitude) and north-south resolution (latitude). default: 0.25 x 0.25 - option not available through the Climate Data Store (CDS) web interface
                         'format':'netcdf'}
         
-        c.retrieve(name='reanalysis-era5-single-levels', request=request_dict, tar=file_out)
+        c.retrieve(name='reanalysis-era5-single-levels', request=request_dict, target=file_out)
     return
     
 
@@ -72,7 +72,7 @@ def download_CMEMS(username, password, #register at: https://resources.marine.co
                    date_min='2010-01-01', date_max='2010-01-03', #'%Y-%m-%d'
                    varlist=['bottomT'], #['thetao','so','zos','bottomT','uo','vo'], ['o2','no3','po4','si','nppv','chl'],
                    source_combination=None,
-                   motu_url=None, service=None, product=None, #optionally provided with motu_url_dict and source_dict
+                   motu_url=None, service=None, product=None, #optionally provided via source_combination
                    timeout=30, #in seconds #TODO: set timeout back to 300?
                    max_tries=2):
     
@@ -113,13 +113,13 @@ def download_CMEMS(username, password, #register at: https://resources.marine.co
     
     #test if supplied motu_url is valid
     requests.get(motu_url)
-    
+        
     date_range = pd.date_range(dt.datetime.strptime(date_min, '%Y-%m-%d'),dt.datetime.strptime(date_max, '%Y-%m-%d'), freq='D')
     
     for var in varlist:
         for date in date_range: #retrieve data per day
             date_str = date.strftime('%Y-%m-%d')
-            name_output = f'cmems_{var}_{date_str}.nc' #TODO: add 12h to filename
+            name_output = f'cmems_{var}_{date_str}.nc' #TODO: add 12h to filename?
             check_file = Path(dir_output,name_output)
             tryno = 0
             while not check_file.is_file():
@@ -146,7 +146,10 @@ def download_CMEMS(username, password, #register at: https://resources.marine.co
                     raise Exception(f'CalledProcessError: {e} Check above logging.')
                 finally:
                     if ('ERROR' in out.stdout) or ('WARNING' in out.stdout): #catch all other errors, and the relevant information in TimeoutExpired and CalledProcessError
-                        raise Exception(f'othererror:\nOUT: {out.stdout}\nERR: {out.stderr}')
+                        if 'variable not found' in out.stdout:
+                            raise Exception(f'othererror:\nOUT: {out.stdout}\nERR: {out.stderr}\nCheck available variables at: "{motu_url}/motu-web/Motu?action=describeproduct&service={service}&product={product}"')
+                        else:
+                            raise Exception(f'othererror:\nOUT: {out.stdout}\nERR: {out.stderr}')
                     #else:
                     #    print(f'OUT: {out.stdout}\nERR: {out.stderr}')
                 
