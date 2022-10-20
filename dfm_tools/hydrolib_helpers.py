@@ -25,9 +25,11 @@ def DataArray_to_T3D(datablock_xr):
     """
     convert an xarray.DataArray with time and depth dimension to a hydrolib T3D object
     """
-    if isinstance(datablock_xr,(tuple,list)):
-        raise Exception('tuple/vector (for eg uxuy) is not yet supported by DataArray_to_T3D()')
-
+    if isinstance(datablock_xr,(tuple,list)): #if multiple arguments, call itself multiple time and return ruple of results
+        print('WARNING: part of the code is not valid yet') #TODO: needed: a T3Dvector to (T3D,T3D) converter and a (T3D,T3D) to T3Dvector converter
+        ts_one_tuple = tuple([DataArray_to_T3D(x) for x in datablock_xr])
+        return ts_one_tuple
+    
     #TODO: clean up these first lines of code and add description to docstring?
     locationname = datablock_xr.attrs['locationname']
     bcvarname = datablock_xr.name
@@ -123,12 +125,11 @@ def forcinglike_to_DataArray(forcingobj): #TODO: would be convenient to have thi
     if not isinstance(forcingobj, allowed_instances):
         raise Exception(f'ERROR: supplied input is not one of: {allowed_instances}')
     
-    import hydrolib
-    if isinstance(forcingobj.quantityunitpair[1],hydrolib.core.io.bc.models.VectorQuantityUnitPairs): #TODO UXUY: this is not desireable
+    if hasattr(forcingobj.quantityunitpair[1],'elementname'): #vector with elementname
         var_quantity_list = forcingobj.quantityunitpair[1].elementname
         var_unit = forcingobj.quantityunitpair[1].quantityunitpair[0].unit
     else:
-        var_quantity_list = [forcingobj.quantityunitpair[1].quantity]
+        var_quantity_list = [forcingobj.quantityunitpair[1].quantity] #make list of single quantity
         var_unit = forcingobj.quantityunitpair[1].unit
     nquan = len(var_quantity_list)
     
@@ -141,20 +142,15 @@ def forcinglike_to_DataArray(forcingobj): #TODO: would be convenient to have thi
         print('WARNING: format of DataArray is not final in case of astronomic component')
     
     datablock_all = np.array(forcingobj.datablock)
-    if forcingobj.quantityunitpair[0].quantity in ['time','astronomic component']: #first column in bcfile is time
-        datablock_data = datablock_all[:,1:] #TODO: convert repeating values to nan? (reverse of ffill/bfill)
-        datablock_data = datablock_data.squeeze() #drop dimensions of len 1 in case of eg "waterlevelbnd"
+    datablock_data = datablock_all[:,1:] #select all columns except first one. TODO: convert repeating values to nan? (reverse of ffill/bfill)
+    if forcingobj.quantityunitpair[0].quantity == 'astronomic component': #first column in bcfile is astronomic component
         datablock_data = datablock_data.astype(float) #convert str to float in case of "astronomic component"
-    else:
-        datablock_data = datablock_all
     
     data_xr_var_list = []
     for iQ, var_quantity in enumerate(var_quantity_list):
-        #add dimension values
-        if isinstance(forcingobj, T3D):
-            datablock_data_onequan = datablock_data[:,iQ::nquan] #subset every nquan column, starting at iQ (gives all columns in case of nquan=1)
-        else:
-            datablock_data_onequan = datablock_data #TODO: multiple columns now not supported since datablock is squeezed and therefore only 1dim is left
+        datablock_data_onequan = datablock_data[:,iQ::nquan] #subset every nquan column, starting at iQ (gives all columns in case of nquan=1 or in case of one column)
+        datablock_data_onequan = datablock_data_onequan.squeeze() #drop dimensions of len 1 in case of 1 dimension, eg "waterlevelbnd" (first subsetting over depth dimension)
+        
         data_xr_var = xr.DataArray(datablock_data_onequan, name=var_quantity, dims=dims)
         data_xr_var.attrs['locationname'] = forcingobj.name
         data_xr_var.attrs['units'] = var_unit

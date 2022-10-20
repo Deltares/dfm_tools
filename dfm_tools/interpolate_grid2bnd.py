@@ -332,6 +332,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             
             if np.isnan(datablock_xr_onepoint.to_numpy()).all(): # check if only nan (out of bounds or land) # we can do .to_numpy() without performance loss, since data is already loaded in datablock_xr_allpoints
                 print('WARNING: only nans for this coordinate, this point might be on land')
+            
             if 'depth' in data_xr_var.coords:
                 ts_one = DataArray_to_T3D(datablock_xr_onepoint)#,locationname=pli_PolyObject_name_num,refdate_str=refdate_str,bcvarname=bcvarname)
             else:

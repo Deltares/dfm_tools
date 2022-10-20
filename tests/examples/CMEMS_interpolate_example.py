@@ -39,7 +39,7 @@ nPoints = 3 #amount of Points to process per PolyObject in the plifile (for test
 
 list_quantities = ['NO3']
 list_quantities = ['steric','salinity','tide']#,['salinity','temperature','steric'] #should be in conversion_dict.keys()
-#list_quantities = ['salinity']#,'temperature']
+list_quantities = ['salinity']#,'temperature']
 
 dtstart = dt.datetime.now()
 ext_bnd = ExtModel()

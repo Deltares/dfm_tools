@@ -56,7 +56,7 @@ for iT, timestep in enumerate([0,1,10]):
     pc.set_clim([0,5])
     cbar = fig.colorbar(pc, ax=ax)
     cbar.set_label('velocity magnitude (%s)'%(data_V10M.var_ncattrs['units']))
-    ax.set_title('t=%d (%s)'%(timestep, data_V10M.var_times.loc[timestep]))
+    ax.set_title('t=%d (%s)'%(timestep, data_V10M.var_times.iloc[timestep]))
     ax.set_aspect('equal')
     ax.plot(data_ldb['x'], data_ldb['y'], 'k', linewidth=0.5)
     thinning = 2
@@ -88,7 +88,7 @@ for iT, timestep in enumerate([0,1,10]):
     ax.set_aspect('equal')
     cbar = fig.colorbar(quiv_curved.lines, ax=ax)
     cbar.set_label('velocity magnitude (%s)'%(data_V10M.var_ncattrs['units']))
-    ax.set_title('t=%d (%s)'%(timestep, data_V10M.var_times.loc[timestep]))
+    ax.set_title('t=%d (%s)'%(timestep, data_V10M.var_times.iloc[timestep]))
     ax.set_aspect('equal')
     ax.plot(data_ldb['x'], data_ldb['y'], 'k', linewidth=0.5)
     thinning = 2
@@ -117,7 +117,7 @@ for iT, timestep in enumerate([0,1,10]):
     pc.set_clim([0,0.15])
     cbar = fig.colorbar(pc, ax=ax)
     cbar.set_label('%s (%s)'%(data_fromnc_zs.var_varname, data_fromnc_zs.var_ncattrs['units']))
-    ax.set_title('t=%d (%s)'%(timestep, data_fromnc_zs.var_times.loc[timestep]))
+    ax.set_title('t=%d (%s)'%(timestep, data_fromnc_zs.var_times.iloc[timestep]))
     ax.set_aspect('equal')
 fig.tight_layout()
 plt.savefig(os.path.join(dir_output,'SFINCS_zs_pcolor'))
@@ -136,7 +136,7 @@ for iT, timestep in enumerate([0,1,10]):
     pc.set_clim([0,0.6])
     cbar = fig.colorbar(pc, ax=ax)
     cbar.set_label('velocity magnitude (%s)'%(data_fromnc_u.var_ncattrs['units']))
-    ax.set_title('t=%d (%s)'%(timestep, data_fromnc_u.var_times.loc[timestep]))
+    ax.set_title('t=%d (%s)'%(timestep, data_fromnc_u.var_times.iloc[timestep]))
     ax.set_aspect('equal')
     thinning = 5
     ax.quiver(data_fromnc_edgex[::thinning,::thinning], data_fromnc_edgey[::thinning,::thinning], data_fromnc_u[timestep,::thinning,::thinning], data_fromnc_v[timestep,::thinning,::thinning], 
