@@ -20,7 +20,7 @@ def convert2FM_yearly_runs(tstart,idir):
     # tstart=dt.datetime.strptime('01-01-2021', '%d-%m-%Y') 
     # idir="/gpfs/work1/0/einf3499/meteo_ERA5"
     # create variables 'dictionary' for filename pattern, variable name in ncin, variable name in ncout    
-    var_dict = {
+    var_dict = { #TODO: why hardcoding of var attrs? Also tested without scale factor/offset?
         "u10" : {
             "standard_name" : "eastward_wind",
             "long_name" : "10 metre U wind component",
@@ -57,7 +57,7 @@ def convert2FM_yearly_runs(tstart,idir):
             "longd_name" : "longitude",
             "units" : "degrees_east"}}
     time_unit = "hours since 1900-01-01 00:00:00" # hard coded
-    # define ref/start/stop times 
+    # define ref/start/stop times #TODO: done, but instead only replace first field by 0 (gives 1hr spinup) or something else that is easier?
     spinup_period = [1,1,15,0] # imposed 1 day zero, 1 day transition, 15 days spinup
     date_start_zero = dt.datetime(tstart.year,1,1)-dt.timedelta(days=int(np.sum(spinup_period[0:3]))) #eg 15 dec
     date_start_transition = date_start_zero+dt.timedelta(days=spinup_period[0]) #eg 16 dec
@@ -71,7 +71,7 @@ def convert2FM_yearly_runs(tstart,idir):
     lons = ds['longitude'][:]
     part1 = (ds.longitude>178) #move 180:360 part to -180:0 so field now runs from longitute -180 to 180
     part2 = (ds.longitude<182) #take a bit of overlap to avoid interpolation issues at edge
-    lons_new=np.hstack((lons[part1]-360,lons[part2]))
+    lons_new=np.hstack((lons[part1]-360,lons[part2])) #TODO: why is this done, ERA5 can be retrieved in -180 t0 180 deg. also, why not "ds.coords['lon'] = (ds.coords['lon'] + 180) % 360 - 180; ds = ds.sortby('lon')"
     # load data 
     for varname in var_dict.keys():
         print(varname)
@@ -99,7 +99,7 @@ def convert2FM_yearly_runs(tstart,idir):
             ds_var_merged[coor].attrs['units'] = coor_dict[coor]['units']
             ds_var_merged[coor].attrs['long_name'] = coor_dict[coor]['long_time']
         comp = dict(scale_factor=var_dict[varname]['scale_factor'], add_offset=var_dict[varname]['offset'])    
-        encoding = {varname: comp, 'time':{'units': time_unit}} 
+        encoding = {varname: comp, 'time':{'units': time_unit}}
         ofile=os.path.join(idir.replace('meteo_ERA5','meteo_ERA5_fm'),"ERA5_CDS_atm_%s_%s_%s.nc" %(varname, dt.datetime.strftime(tstart, "%Y-%m-%d"),dt.datetime.strftime(date_end, "%Y-%m-%d")))
         print("Saving file as:",ofile)
         ds_var_merged.to_netcdf(ofile, encoding=encoding, format='NETCDF4', engine='netcdf4'); ds_var_merged.close()
