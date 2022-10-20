@@ -154,7 +154,7 @@ def forcinglike_to_DataArray(forcingobj): #TODO: would be convenient to have thi
         if isinstance(forcingobj, T3D):
             datablock_data_onequan = datablock_data[:,iQ::nquan] #subset every nquan column, starting at iQ (gives all columns in case of nquan=1)
         else:
-            datablock_data_onequan = datablock_data #TODO: multiple columns now not supported since datablock is squeezed
+            datablock_data_onequan = datablock_data #TODO: multiple columns now not supported since datablock is squeezed and therefore only 1dim is left
         data_xr_var = xr.DataArray(datablock_data_onequan, name=var_quantity, dims=dims)
         data_xr_var.attrs['locationname'] = forcingobj.name
         data_xr_var.attrs['units'] = var_unit
