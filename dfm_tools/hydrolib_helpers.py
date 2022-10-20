@@ -25,6 +25,9 @@ def DataArray_to_T3D(datablock_xr):
     """
     convert an xarray.DataArray with time and depth dimension to a hydrolib T3D object
     """
+    if isinstance(datablock_xr,(tuple,list)):
+        raise Exception('tuple/vector (for eg uxuy) is not yet supported by DataArray_to_T3D()')
+
     #TODO: clean up these first lines of code and add description to docstring?
     locationname = datablock_xr.attrs['locationname']
     bcvarname = datablock_xr.name
@@ -120,8 +123,15 @@ def forcinglike_to_DataArray(forcingobj): #TODO: would be convenient to have thi
     if not isinstance(forcingobj, allowed_instances):
         raise Exception(f'ERROR: supplied input is not one of: {allowed_instances}')
     
-    var_quantity = forcingobj.quantityunitpair[1].quantity
-    var_unit = forcingobj.quantityunitpair[1].unit
+    import hydrolib
+    if isinstance(forcingobj.quantityunitpair[1],hydrolib.core.io.bc.models.VectorQuantityUnitPairs): #TODO UXUY: this is not desireable
+        var_quantity_list = forcingobj.quantityunitpair[1].elementname
+        var_unit = forcingobj.quantityunitpair[1].quantityunitpair[0].unit
+    else:
+        var_quantity_list = [forcingobj.quantityunitpair[1].quantity]
+        var_unit = forcingobj.quantityunitpair[1].unit
+    nquan = len(var_quantity_list)
+    
     if isinstance(forcingobj, T3D):
         dims = ('time','depth')
     elif isinstance(forcingobj, TimeSeries):
@@ -138,34 +148,41 @@ def forcinglike_to_DataArray(forcingobj): #TODO: would be convenient to have thi
     else:
         datablock_data = datablock_all
     
-    #add dimension values
-    data_xr_var = xr.DataArray(datablock_data, name=var_quantity, dims=dims)
-    data_xr_var.attrs['locationname'] = forcingobj.name
-    data_xr_var.attrs['units'] = var_unit
-    if 'depth' in dims:
-        data_xr_var['depth'] = forcingobj.vertpositions
-        #data_xr_var['depth'].attrs['positive'] == 'up' #TODO: maybe add this attribute
-    if 'time' in dims:
-        time_unit = forcingobj.quantityunitpair[0].unit.lower()
-        data_xr_var['time'] = cftime.num2pydate(datablock_all[:,0], units=time_unit)
-        data_xr_var['time'].encoding['units'] = time_unit #check tz conversion if eg '+01:00' is present in time_unit
-        data_xr_var['time'].encoding['calendar'] = 'standard'
-    if 'astronomic_component' in dims:
-        data_xr_var['astronomic_component'] = datablock_all[:,0]
+    data_xr_var_list = []
+    for iQ, var_quantity in enumerate(var_quantity_list):
+        #add dimension values
+        datablock_data_onequan = datablock_data[:,iQ::nquan] #subset every nquan column, starting at iQ (gives all columns in case of nquan=1)
+        data_xr_var = xr.DataArray(datablock_data_onequan, name=var_quantity, dims=dims)
+        data_xr_var.attrs['locationname'] = forcingobj.name
+        data_xr_var.attrs['units'] = var_unit
+        if 'depth' in dims:
+            data_xr_var['depth'] = forcingobj.vertpositions
+            #data_xr_var['depth'].attrs['positive'] == 'up' #TODO: maybe add this attribute
+        if 'time' in dims:
+            time_unit = forcingobj.quantityunitpair[0].unit.lower()
+            data_xr_var['time'] = cftime.num2pydate(datablock_all[:,0], units=time_unit)
+            data_xr_var['time'].encoding['units'] = time_unit #check tz conversion if eg '+01:00' is present in time_unit
+            data_xr_var['time'].encoding['calendar'] = 'standard'
+        if 'astronomic_component' in dims:
+            data_xr_var['astronomic_component'] = datablock_all[:,0]
+        
+        #add attributes
+        attr_dict = {'source':'hydrolib-core object converted to xarray.DataArray with dfm_tools',
+                     'unit':var_unit,
+                     }
+        for key in attr_dict.keys():
+            data_xr_var.attrs[key] = attr_dict[key]
+        forcingobj_keys = forcingobj.__dict__.keys()
+        for key in forcingobj_keys: #['comments','name','function','offset','factor','vertinterpolation','vertpositiontype','timeinterpolation']: 
+            if key in ['datablock','quantityunitpair','vertpositions']: #skipping these since they are in the DataArray already
+                continue
+            data_xr_var.attrs[key] = str(forcingobj.__dict__[key])
+        data_xr_var_list.append(data_xr_var)
     
-    #add attributes
-    attr_dict = {'source':'hydrolib-core object converted to xarray.DataArray with dfm_tools',
-                 'unit':var_unit,
-                 }
-    for key in attr_dict.keys():
-        data_xr_var.attrs[key] = attr_dict[key]
-    forcingobj_keys = forcingobj.__dict__.keys()
-    for key in forcingobj_keys: #['comments','name','function','offset','factor','vertinterpolation','vertpositiontype','timeinterpolation']: 
-        if key in ['datablock','quantityunitpair','vertpositions']: #skipping these since they are in the DataArray already
-            continue
-        data_xr_var.attrs[key] = str(forcingobj.__dict__[key])
-    
-    return data_xr_var
+    if nquan==1:
+        return data_xr_var_list[0] #non vector quantities, return one DataArray
+    else:
+        return tuple(data_xr_var_list) #uxuy vector, return tuple of DataArrays
 
 
 def forcinglike_to_DataFrame(forcingobj):

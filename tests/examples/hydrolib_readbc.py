@@ -28,6 +28,9 @@ file_bc_list = [Path(r'n:\My Documents\werkmap\hydrolib_test\DCSM\tide_OB_all_20
                 #Path(r'n:\My Documents\werkmap\hydrolib_test\haixia\salinity_bc_South_v2.bc'), #large file, takes time
                 #Path(r'n:\My Documents\werkmap\hydrolib_test\haixia\uxuy_bc_South_v2.bc'),
                 ]
+file_bc_list = [#Path(r'n:\My Documents\werkmap\hydrolib_test\haixia\salinity_bc_South_v2_firstpoint.bc'),
+                Path(r'n:\My Documents\werkmap\hydrolib_test\haixia\uxuy_bc_South_v2_firstpoint.bc') ,#TODO: uxuy still crashes
+                ]
 
 
 for file_bc in file_bc_list:
@@ -45,16 +48,25 @@ for file_bc in file_bc_list:
     m.forcing[0].__dict__.keys() # dict_keys(['comments', 'datablock', 'name', 'function', 'quantityunitpair', 'timeinterpolation', 'offset', 'factor'])
     type(m.forcing[0].datablock) #list
     """
+    import hydrolib
+    if isinstance(m.forcing[0].quantityunitpair[1],hydrolib.core.io.bc.models.VectorQuantityUnitPairs): #TODO UXUY: this is not desireable
+        pli_quan, pli_unit = m.forcing[0].quantityunitpair[1].elementname, m.forcing[0].quantityunitpair[1].quantityunitpair[0].unit
+    else:
+        pli_quan, pli_unit = m.forcing[0].quantityunitpair[1].quantity, m.forcing[0].quantityunitpair[1].unit
     
-    pli_quan, pli_unit = m.forcing[0].quantityunitpair[1].quantity, m.forcing[0].quantityunitpair[1].unit
-
     #plot
     fig, ax = plt.subplots(figsize=(12, 6))
     for iFO, forcingobj in enumerate(m.forcing[:nPoints]):
         forcing_xr = forcinglike_to_DataArray(forcingobj)
         if forcingobj.function=='t3d':
-            forcing_ts = DataArray_to_T3D(forcing_xr)
-            forcing_xr.T.plot() #TODO: this overwites previous plot, so does not make sense
+            forcing_ts = DataArray_to_T3D(forcing_xr) #TODO: implement this also for uxuy
+            if isinstance(forcing_xr,(tuple,list)): #TODO UXUY: this is not desireable
+                forcing_xr_ux,forcing_xr_uy = forcing_xr
+                forcing_xr_ux.T.plot()
+                fig, ax = plt.subplots(figsize=(12, 6))
+                forcing_xr_uy.T.plot()
+            else:
+                forcing_xr.T.plot() #TODO: this overwites previous plot, so does not make sense
             #forcing_xr_masked = forcing_xr.where(forcing_xr != forcing_xr.isel(depth=0)) #TODO: better way to mask data?
             #fig, ax = plt.subplots(figsize=(12, 6))
             #forcing_xr_masked.T.plot()
