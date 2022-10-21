@@ -308,6 +308,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
                                              kwargs={'bounds_error':True}, #error is only raised upon load(), so when the actual value retrieval happens
                                              )
         except ValueError as e: #Dimensions {'latitude', 'longitude'} do not exist. Expected one or more of Frozen({'time': 17, 'depth': 50, 'i': 292, 'j': 362}).
+            #this is for eg CMCC model with multidimensional lat/lon variable
             #TODO: make nicer, without try except    
             print(f'ValueError: {e}. Reverting to KDTree instead (nearest neigbour)')
             from scipy.spatial import KDTree #TODO: move up
