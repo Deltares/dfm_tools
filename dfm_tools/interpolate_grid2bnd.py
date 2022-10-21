@@ -36,7 +36,7 @@ from hydrolib.core.io.bc.models import (
 )
 from hydrolib.core.io.polyfile.models import PolyFile
 
-from dfm_tools.hydrolib_helpers import DataArray_to_TimeSeries, DataArray_to_T3D
+from dfm_tools.hydrolib_helpers import DataArray_to_TimeSeries, DataArray_to_T3D, T3Dtuple_to_T3Dvector
 
 
 def get_conversion_dict(model='CMEMS'):
@@ -70,9 +70,9 @@ def get_conversion_dict(model='CMEMS'):
                                 'temperature': {'ncvarname': 'water_temp', 'bcvarname': 'temperaturebnd'},
                                 }
     
-    conversion_dict_model = conversion_dicts[model]
+    conversion_dict = conversion_dicts[model]
     
-    return conversion_dict_model
+    return conversion_dict
 
 
 def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180=False, nPoints=None):
@@ -206,18 +206,24 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
                          reverse_depth=False, #temporary argument to compare easier with old coastserv files
                          ):
     
-    if ',' in quantity:
+
+    if conversion_dict is None:
+        conversion_dict = get_conversion_dict()
+    ncvarname = conversion_dict[quantity]['ncvarname'] #rename with origvarname/newvarname
+    bcvarname = conversion_dict[quantity]['bcvarname']
+    
+    if ',' in quantity: #T3Dvector #TODO: make this less ugly
         print(f'ERROR: combined variables ({quantity}) not yet supported by dfm_tools')    
         quantity_list = quantity.split(',')
-        ForcingModel_object_list = [interpolate_nc_to_bc(dir_pattern=dir_pattern, file_pli=file_pli, quantity=quantity_one, tstart=tstart, tstop=tstop, refdate_str=refdate_str, convert_360to180=convert_360to180, conversion_dict=conversion_dict, nPoints=nPoints, reverse_depth=reverse_depth) for quantity_one in quantity_list]
-        return ForcingModel_object_list
-    
-    if conversion_dict is None:
-        conversion_dict_model = get_conversion_dict()
-        conversion_dict = conversion_dict_model[quantity]
-    ncvarname = conversion_dict['ncvarname'] #rename with origvarname/newvarname
-    bcvarname = conversion_dict['bcvarname']
-    
+        ncvarname_list = ncvarname.split(',')
+        from pathlib import Path
+        ForcingModel_object_list = [interpolate_nc_to_bc(dir_pattern=Path(str(dir_pattern).replace(ncvarname,ncvarname_one)), file_pli=file_pli, quantity=quantity_one, tstart=tstart, tstop=tstop, refdate_str=refdate_str, convert_360to180=convert_360to180, conversion_dict=conversion_dict, nPoints=nPoints, reverse_depth=reverse_depth) for quantity_one, ncvarname_one in zip(quantity_list,ncvarname_list)]
+        ForcingModel_object_comb = ForcingModel()
+        for iF in range(len(ForcingModel_object_list[0].forcing)):
+            T3Dvec_onepoint = T3Dtuple_to_T3Dvector(ForcingModel_object_list[0].forcing[iF],ForcingModel_object_list[1].forcing[iF]) #TODO: make flexible for more than one quantity
+            ForcingModel_object_comb.forcing.append(T3Dvec_onepoint)
+        return ForcingModel_object_comb
+        
     print('initialize ForcingModel()')
     ForcingModel_object = ForcingModel()
     
