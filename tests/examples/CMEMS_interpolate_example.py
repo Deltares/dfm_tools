@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 plt.close('all')
 from dfm_tools.interpolate_grid2bnd import get_conversion_dict, interpolate_FES, interpolate_nc_to_bc
 from dfm_tools.hydrolib_helpers import forcinglike_to_DataFrame
-from hydrolib.core.io.ext.models import Boundary, ExtModel
+#from hydrolib.core.io.ext.models import Boundary, ExtModel
 
 model = 'CMEMS' #CMEMS GFDL CMCC HYCOM #TODO: make one timeperiod/pli/etc for all models to provide a simple example
 
@@ -39,10 +39,10 @@ nPoints = 3 #amount of Points to process per PolyObject in the plifile (for test
 
 list_quantities = ['NO3']
 list_quantities = ['steric','salinity','tide']#,['salinity','temperature','steric'] #should be in conversion_dict.keys()
-list_quantities = ['salinity']#,'temperature']
+list_quantities = ['ux,uy']#,'temperature']
 
 dtstart = dt.datetime.now()
-ext_bnd = ExtModel()
+#ext_bnd = ExtModel()
 
 for file_pli in list_plifiles:
     for quantity in list_quantities:

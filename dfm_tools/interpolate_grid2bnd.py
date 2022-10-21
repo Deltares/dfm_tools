@@ -206,13 +206,17 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
                          reverse_depth=False, #temporary argument to compare easier with old coastserv files
                          ):
     
+    if ',' in quantity:
+        print(f'ERROR: combined variables ({quantity}) not yet supported by dfm_tools')    
+        quantity_list = quantity.split(',')
+        ForcingModel_object_list = [interpolate_nc_to_bc(dir_pattern=dir_pattern, file_pli=file_pli, quantity=quantity_one, tstart=tstart, tstop=tstop, refdate_str=refdate_str, convert_360to180=convert_360to180, conversion_dict=conversion_dict, nPoints=nPoints, reverse_depth=reverse_depth) for quantity_one in quantity_list]
+        return ForcingModel_object_list
+    
     if conversion_dict is None:
         conversion_dict_model = get_conversion_dict()
         conversion_dict = conversion_dict_model[quantity]
     ncvarname = conversion_dict['ncvarname'] #rename with origvarname/newvarname
     bcvarname = conversion_dict['bcvarname']
-    if ',' in ncvarname:
-        raise Exception('ERROR: combined variables not yet supported by hydrolib-core bc writer: https://github.com/Deltares/HYDROLIB-core/issues/316')    
     
     print('initialize ForcingModel()')
     ForcingModel_object = ForcingModel()
