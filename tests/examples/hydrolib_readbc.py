@@ -92,14 +92,5 @@ for file_bc in file_bc_list:
         #ForcingModel_object_out.forcing.append(forcing_ts)
         #ForcingModel_object_out.save(Path(str(file_bc).replace('.bc','_reproduced.bc')))
        
-    """
-    #Plot mean value in BC-file over the complete period for each point on the boundary
-    mean_list = [forcinglike_to_DataArray(forcingobj).mean().mean() for forcingobj in m.forcing[:nPoints]]
-    fig, ax = plt.subplots(figsize=(8, 4))
-    ax.plot(mean_list,'-o')
-    ax.set_xlabel('Point on boundary')
-    ax.set_ylabel(f"mean {pli_quan} [{pli_unit}]")
-    """
-
 
 
