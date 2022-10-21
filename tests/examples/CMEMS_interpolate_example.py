@@ -12,7 +12,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 plt.close('all')
 from dfm_tools.interpolate_grid2bnd import get_conversion_dict, interpolate_FES, interpolate_nc_to_bc
-from dfm_tools.hydrolib_helpers import forcinglike_to_DataFrame
+from dfm_tools.hydrolib_helpers import forcinglike_to_DataFrame, T3Dvector_to_T3Dtuple
 from hydrolib.core.io.ext.models import Boundary, ExtModel
 
 model = 'CMEMS' #CMEMS GFDL CMCC HYCOM #TODO: make one timeperiod/pli/etc for all models to provide a simple example
@@ -27,28 +27,30 @@ bc_type = 'bc' #currently only 'bc' supported #TODO: add netcdf bc support. http
 refdate_str = 'minutes since 2011-12-22 00:00:00 +00:00' # this is copied from the reference bc file, but can be changed by the user
 #refdate_str = 'days since 1993-1-1 00:00:00 +00:00' # this is copied from the reference bc file, but can be changed by the user
 tstart = dt.datetime(1993, 1, 1, 12, 0) #CMEMS phys has daily values at 12:00 (not at midnight), so make sure to include a day extra if necessary. also NO3_GFDL
-tstop = dt.datetime(1993, 3, 1, 12, 0)
+tstop = dt.datetime(1993, 2, 1, 12, 0)
 #tstart = dt.datetime(2011, 12, 16, 12, 0) #NO3_CMEMS
 #tstop = dt.datetime(2012, 12, 1, 12, 0)
 #tstart = dt.datetime(2015, 6, 16, 12, 0)
-#tstop = dt.datetime(2015, 12, 1, 12, 0)
+#tstop = dt.datetime(2016, 12, 1, 12, 0)
 #tstart = dt.datetime(2016, 4, 20, 0, 0) #HYCOM
 #tstop = dt.datetime(2016, 5, 3, 0, 0)
 
 nPoints = 3 #amount of Points to process per PolyObject in the plifile (for testing, use None for all Points)
 
 list_quantities = ['NO3']
-list_quantities = ['steric','salinity','tide']#,['salinity','temperature','steric'] #should be in conversion_dict.keys()
-#list_quantities = ['salinity']#,'temperature']
+#list_quantities = ['steric','salinity','tide']#,['salinity','temperature','steric'] #should be in conversion_dict.keys()
+list_quantities = ['steric','salinity','tide','ux,uy']#,'temperature']
+list_quantities = ['salinity']#,'temperature']
 
 dtstart = dt.datetime.now()
 ext_bnd = ExtModel()
 
+
 for file_pli in list_plifiles:
     for quantity in list_quantities:
-        conversion_dict = get_conversion_dict()[quantity]
-        ncvarname = conversion_dict['ncvarname']
-        bcvarname = conversion_dict['bcvarname']
+        conversion_dict = get_conversion_dict()
+        ncvarname = conversion_dict[quantity]['ncvarname']
+        bcvarname = conversion_dict[quantity]['bcvarname']
         print(f'processing quantity: {quantity}/{ncvarname}/{bcvarname}')
         if quantity in ['tide']: #TODO: add tidemodel argument and put differences in interpolate_FES (maybe rename to interpolate_tide_to_bc()), choose flexible/generic component notation
             dir_pattern,convert_360to180 = Path(r'P:\metocean-data\licensed\FES2014','*.nc'),True #source: p:\1230882-emodnet_hrsm\FES2014\fes2014_linux64_gnu\share\data\fes\2014\ocean_tide_extrapolated
@@ -68,7 +70,7 @@ for file_pli in list_plifiles:
                 dir_pattern,convert_360to180 = Path(dir_sourcefiles_waq,f'{ncvarname}_esm-hist.nc'),True # GFDL
             elif model=='CMCC':
                 dir_sourcefiles_waq = r'p:\11206304-futuremares\data\CMIP6_BC\CMCC-ESM2' #CMCC
-                dir_pattern,convert_360to180 = Path(dir_sourcefiles_waq,f'{ncvarname}_Omon_CMCC-ESM2_ssp126_r1i1p1f1_gn_*.nc'),True #CMCC, TODO: crashes because of missing lat coords
+                dir_pattern,convert_360to180 = Path(dir_sourcefiles_waq,f'{ncvarname}_Omon_CMCC-ESM2_ssp126_r1i1p1f1_gn_*.nc'),True #CMCC, TODO: check method, now finding nearest points (so always has values)
             ForcingModel_object = interpolate_nc_to_bc(dir_pattern=dir_pattern, file_pli=file_pli, quantity=quantity,
                                                        convert_360to180=convert_360to180,
                                                        tstart=tstart, tstop=tstop, refdate_str=refdate_str,
@@ -92,6 +94,8 @@ for file_pli in list_plifiles:
         if 1: #plotting example data point
             for iF in [2]:#range(nPoints):
                 forcingobject_one = ForcingModel_object.forcing[iF]
+                if hasattr(forcingobject_one.quantityunitpair[1],'elementname'): #T3Dvector, take only first one
+                    forcingobject_one, dummy = T3Dvector_to_T3Dtuple(forcingobject_one)
                 forcingobject_one_df = forcinglike_to_DataFrame(forcingobject_one) #TODO: or use forcinglike_to_DataArray()
                 fig,ax1 = plt.subplots()
                 if hasattr(forcingobject_one,'vertpositions'):

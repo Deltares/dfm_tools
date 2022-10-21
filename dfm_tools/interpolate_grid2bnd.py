@@ -36,7 +36,7 @@ from hydrolib.core.io.bc.models import (
 )
 from hydrolib.core.io.polyfile.models import PolyFile
 
-from dfm_tools.hydrolib_helpers import DataArray_to_TimeSeries, DataArray_to_T3D
+from dfm_tools.hydrolib_helpers import DataArray_to_TimeSeries, DataArray_to_T3D, T3Dtuple_to_T3Dvector
 
 
 def get_conversion_dict(model='CMEMS'):
@@ -70,9 +70,9 @@ def get_conversion_dict(model='CMEMS'):
                                 'temperature': {'ncvarname': 'water_temp', 'bcvarname': 'temperaturebnd'},
                                 }
     
-    conversion_dict_model = conversion_dicts[model]
+    conversion_dict = conversion_dicts[model]
     
-    return conversion_dict_model
+    return conversion_dict
 
 
 def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180=False, nPoints=None):
@@ -206,17 +206,27 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
                          reverse_depth=False, #temporary argument to compare easier with old coastserv files
                          ):
     
+
     if conversion_dict is None:
-        conversion_dict_model = get_conversion_dict()
-        conversion_dict = conversion_dict_model[quantity]
-    ncvarname = conversion_dict['ncvarname'] #rename with origvarname/newvarname
-    bcvarname = conversion_dict['bcvarname']
-    if ',' in ncvarname:
-        raise Exception('ERROR: combined variables not yet supported by hydrolib-core bc writer: https://github.com/Deltares/HYDROLIB-core/issues/316')    
+        conversion_dict = get_conversion_dict()
+    ncvarname = conversion_dict[quantity]['ncvarname'] #rename with origvarname/newvarname
+    bcvarname = conversion_dict[quantity]['bcvarname']
     
+    if ',' in quantity: #T3Dvector #TODO: make this less ugly
+        print(f'ERROR: combined variables ({quantity}) not yet supported by dfm_tools')    
+        quantity_list = quantity.split(',')
+        ncvarname_list = ncvarname.split(',')
+        from pathlib import Path
+        ForcingModel_object_list = [interpolate_nc_to_bc(dir_pattern=Path(str(dir_pattern).replace(ncvarname,ncvarname_one)), file_pli=file_pli, quantity=quantity_one, tstart=tstart, tstop=tstop, refdate_str=refdate_str, convert_360to180=convert_360to180, conversion_dict=conversion_dict, nPoints=nPoints, reverse_depth=reverse_depth) for quantity_one, ncvarname_one in zip(quantity_list,ncvarname_list)]
+        ForcingModel_object_comb = ForcingModel()
+        for iF in range(len(ForcingModel_object_list[0].forcing)):
+            T3Dvec_onepoint = T3Dtuple_to_T3Dvector(ForcingModel_object_list[0].forcing[iF],ForcingModel_object_list[1].forcing[iF]) #TODO: make flexible for more than one quantity
+            ForcingModel_object_comb.forcing.append(T3Dvec_onepoint)
+        return ForcingModel_object_comb
+        
     print('initialize ForcingModel()')
     ForcingModel_object = ForcingModel()
-        
+    
     file_list_nc = glob.glob(str(dir_pattern))
     print(f'loading mfdataset ({len(file_list_nc)} files with pattern "{dir_pattern.name}")')
     dtstart = dt.datetime.now()
@@ -230,8 +240,10 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
     #get calendar and maybe convert_calendar, makes sure that nc_tstart/nc_tstop are of type pd._libs.tslibs.timestamps.Timestamp
     data_xr_calendar = data_xr['time'].dt.calendar
     if data_xr_calendar != 'proleptic_gregorian': #this is for instance the case in case of noleap (or 365_days) calendars from GFDL and CMCC
+        units_copy = data_xr['time'].encoding['units']
         print('WARNING: calendar different than proleptic_gregorian found ({data_xr_calendar}), convert_calendar is called so check output carefully. It should be no issue for datasets with a monthly interval.')
-        data_xr = data_xr.convert_calendar('standard') #TODO: does this not result in 29feb nan values in e.g. GFDL model? 
+        data_xr = data_xr.convert_calendar('standard') #TODO: does this not result in 29feb nan values in e.g. GFDL model? Check missing argument at https://docs.xarray.dev/en/stable/generated/xarray.Dataset.convert_calendar.html
+        data_xr['time'].encoding['units'] = units_copy #put back dropped units
     time_passed = (dt.datetime.now()-dtstart).total_seconds()
     # print(f'>>time passed: {time_passed:.2f} sec')
     
@@ -253,7 +265,10 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
         raise Exception(f'no lat/lon coords available in file: {data_xr.coords}')
     if convert_360to180: #for FES since it ranges from 0 to 360 instead of -180 to 180 #TODO: make more flexible for models that eg pass -180/+180 crossing (add overlap at lon edges).
         data_xr.coords[lonvarname] = (data_xr.coords[lonvarname] + 180) % 360 - 180
-        data_xr = data_xr.sortby(data_xr[lonvarname])
+        try:
+            data_xr = data_xr.sortby(data_xr[lonvarname])
+        except ValueError as e: #ValueError: Input DataArray is not 1-D.
+            print(f'ValueError: {e} in convert_360to180, continuing without sorting converted longitude.')
     
     if 'lev' in data_xr[bcvarname].coords: #depth for CMEMS and many others, but lev for GFDL, convert to depth #TODO: provide rename_dict as argument to this function or leave as is?
         data_xr = data_xr.rename({'lev':'depth'}) #TODO: can also do this for data_xr_var only?
@@ -262,7 +277,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
     #retrieve var (after potential longitude conversion) (also selecting relevant times)
     data_xr_var = data_xr[bcvarname].sel(time=slice(tstart,tstop))
     
-    if 'latitude' in data_xr_var.coords: #for CMEMS etc #TODO: do rename instead?
+    if 'latitude' in data_xr_var.coords: #for CMEMS etc #TODO: do rename instead? #TODO: this is also done above, only once is enough
         coordname_lat = 'latitude'
         coordname_lon = 'longitude'
     elif 'lat' in data_xr_var.coords:
@@ -287,10 +302,32 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
         #interpolation to lat/lon combinations
         print('> interp mfdataset to all PolyObject points (lat/lon coordinates)')
         dtstart = dt.datetime.now()
-        data_interp = data_xr_var.interp({coordname_lat:da_lats, coordname_lon:da_lons}, #also possible without dict: (latitude=da_lats, longitude=da_lons), but this is more flexible
-                                         method='linear', 
-                                         kwargs={'bounds_error':True}, #error is only raised upon load(), so when the actual value retrieval happens
-                                         )
+        try:
+            data_interp = data_xr_var.interp({coordname_lat:da_lats, coordname_lon:da_lons}, #also possible without dict: (latitude=da_lats, longitude=da_lons), but this is more flexible
+                                             method='linear', 
+                                             kwargs={'bounds_error':True}, #error is only raised upon load(), so when the actual value retrieval happens
+                                             )
+        except ValueError as e: #Dimensions {'latitude', 'longitude'} do not exist. Expected one or more of Frozen({'time': 17, 'depth': 50, 'i': 292, 'j': 362}).
+            #this is for eg CMCC model with multidimensional lat/lon variable
+            #TODO: make nicer, without try except    
+            print(f'ValueError: {e}. Reverting to KDTree instead (nearest neigbour)')
+            from scipy.spatial import KDTree #TODO: move up
+            data_lon_flat = data_xr_var[coordname_lon].to_numpy().ravel()
+            data_lat_flat = data_xr_var[coordname_lat].to_numpy().ravel()
+            data_lonlat_pd = pd.DataFrame({'lon':data_lon_flat,'lat':data_lat_flat})
+            path_lonlat_pd = pd.DataFrame({'lon':da_lons,'lat':da_lats})
+            tree = KDTree(data_lonlat_pd)
+            distance, data_lonlat_idx = tree.query(path_lonlat_pd, k=1) #TODO: maybe add outofbounds treshold
+            #data_lonlat_pd.iloc[data_lonlat_idx]
+            idx_i,idx_j = np.divmod(data_lonlat_idx, data_xr_var['longitude'].shape[1])
+            # fig,ax = plt.subplots()
+            # data_xr_var_tsel_dsel = data_xr_var.isel(time=0,depth=0)
+            # data_xr_var_tsel_dsel.plot(ax=ax)#,x='longitude',y='latitude')
+            # ax.plot(idx_j,idx_i,'xr')
+            da_idxi = xr.DataArray(idx_i, dims='latloncombi')
+            da_idxj = xr.DataArray(idx_j, dims='latloncombi')
+            data_interp = data_xr_var.isel(i=da_idxi,j=da_idxj)
+
         time_passed = (dt.datetime.now()-dtstart).total_seconds()
         # print(f'>>time passed: {time_passed:.2f} sec')
         
@@ -332,6 +369,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             
             if np.isnan(datablock_xr_onepoint.to_numpy()).all(): # check if only nan (out of bounds or land) # we can do .to_numpy() without performance loss, since data is already loaded in datablock_xr_allpoints
                 print('WARNING: only nans for this coordinate, this point might be on land')
+            
             if 'depth' in data_xr_var.coords:
                 ts_one = DataArray_to_T3D(datablock_xr_onepoint)#,locationname=pli_PolyObject_name_num,refdate_str=refdate_str,bcvarname=bcvarname)
             else:

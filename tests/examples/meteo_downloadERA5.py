@@ -12,14 +12,14 @@ from dfm_tools.download import download_ERA5
 basedir = '.'
 
 # domain
-longitude_min = -5
-longitude_max = 4
-latitude_min = 41.5
-latitude_max = 42
+longitude_min = -5 #-180
+longitude_max = 6 #180
+latitude_min = 45 #-90
+latitude_max = 50 #90
 
 #tstart and tstop as understood by pd.date_range with freq='MS' (month start)
 tstart = '2021-01'
-tstop = '2021-03'
+tstop = '2022-01'
 
 # variables, supply arbitrary string to get error with available variable names
 variables = ['v10n']
@@ -37,4 +37,4 @@ for varkey in variables:
     ds = xr.open_mfdataset(os.path.join(dir_output,f'era5_{varkey}_*.nc'))
     ds.close()
 
-
+ds.v10n.isel(time=0).plot()

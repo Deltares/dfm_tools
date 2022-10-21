@@ -231,26 +231,6 @@ def ghostcell_filter(file_nc):
     return nonghost_bool
 
 
-def get_variable_timevar(file_nc, varname):
-    #get corresponding time variable name
-    
-    varname = get_varnamefrom_keyslongstandardname(file_nc, varname) #get varname from varkeys/standardname/longname if exists
-
-    data_xr = xr.open_dataset(file_nc)
-    varcoords = list(data_xr[varname].coords.keys())
-    
-    varn_time = None
-    for varcoord in varcoords:
-        data_xr_varcoord = data_xr[varcoord]
-        if 'units' not in data_xr_varcoord.encoding:
-            continue
-        if 'since' in data_xr_varcoord.encoding['units']:
-            varn_time = varcoord
-            break
-    data_xr.close()
-    return varn_time
-
-
 def get_timesfromnc(file_nc, varname='time', retrieve_ids=False, keeptimezone=True):
     """
     Retrieves time array from netcdf file. Time is converted to UTC by default, but times can optionally be returned in the original timezone.
@@ -279,8 +259,9 @@ def get_timesfromnc(file_nc, varname='time', retrieve_ids=False, keeptimezone=Tr
     """
     
     with xr.open_dataset(file_nc) as data_xr:
-        varn_time = get_variable_timevar(file_nc,varname=varname)
-        times_xr = data_xr[varn_time]
+        #varn_time = get_variable_timevar(file_nc,varname=varname)
+        #times_xr = data_xr[varn_time]
+        times_xr = data_xr[varname].time
         times_pd = times_xr.to_series().dt.round(freq='S')
     
     if len(times_xr.shape) > 1:
