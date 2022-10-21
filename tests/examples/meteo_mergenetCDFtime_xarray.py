@@ -38,10 +38,10 @@ from dfm_tools.xarray_helpers import preprocess_hirlam
 #TODO: add convert_360to180 with "ds.coords['lon'] = (ds.coords['lon'] + 180) % 360 - 180; ds = ds.sortby('lon')" (without hardcoded longitude/lon names)
 
 
-add_global_overlap = False #GTSM specific: extend data beyond -180 to 180 longitude
-zerostart = False #GTSM specific: extend data with 0 fields 1 and 2 days before all_tstart
+add_global_overlap = True #GTSM specific: extend data beyond -180 to 180 longitude
+zerostart = False #GTSM specific: extend data with 0-value fields 1 and 2 days before all_tstart
 
-mode = 'ERA5_wind_pressure' # 'HARMONIE' 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HYCOM' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall'
+mode = 'ERA5_v10n' # 'HARMONIE' 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HYCOM' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall'
 all_tstart = dt.datetime(2013,12,30) # HIRLAM and ERA5
 all_tstop = dt.datetime(2014,1,1)
 #all_tstart = dt.datetime(2016,4,28) # HYCOM
@@ -90,7 +90,7 @@ elif 'ERA5' in mode:
         varkey_list = ['ssr','strd'] # surface_net_solar_radiation, surface_thermal_radiation_downwards
     elif mode=='ERA5_rainfall':
         varkey_list = ['mer','mtpr'] # mean_evaporation_rate, mean_total_precipitation_rate
-    if 1:
+    if 0:
         dir_data = 'p:\\metocean-data\\open\\ERA5\\data\\Irish_North_Baltic_Sea\\*' #TODO: add other vars with * (support separate files)
         fn_match_pattern = f'era5_.*({"|".join(varkey_list)})_.*\.nc'
         file_out_prefix = f'era5_{"_".join(varkey_list)}'
@@ -220,22 +220,22 @@ for varkey_sel in ['ssr','strd']: #solar influx (surface_net_solar_radiation) / 
 if 'ssr' in varkeys:
     print('ssr (solar influx) increase for beta=6%')
     data_xr_tsel['ssr'] = data_xr_tsel['ssr'] *.94
-    
+
 
 #GTSM specific addition for longitude overlap
 if add_global_overlap: # assumes -180 to ~+179.75 (full global extent, but no overlap). Does not seem to mess up results for local models.
     if len(data_xr_tsel.longitude.values) != len(np.unique(data_xr_tsel.longitude.values%360)):
         raise Exception(f'add_global_overlap=True, but there are already overlapping longitude values: {data_xr_tsel.longitude}')
-    overlap_ltor = data_xr_tsel.sel(longitude=data_xr_tsel.longitude<=-178) #TODO SANNE: 179 is enough?
+    overlap_ltor = data_xr_tsel.sel(longitude=data_xr_tsel.longitude<=-179)
     overlap_ltor['longitude'] = overlap_ltor['longitude'] + 360
-    overlap_rtol = data_xr_tsel.sel(longitude=data_xr_tsel.longitude>=178)
+    overlap_rtol = data_xr_tsel.sel(longitude=data_xr_tsel.longitude>=179)
     overlap_rtol['longitude'] = overlap_rtol['longitude'] - 360
     data_xr_tsel = xr.concat([data_xr_tsel,overlap_ltor,overlap_rtol],dim='longitude').sortby('longitude')
 
 #GTSM specific addition for zerovalues during spinup
 if zerostart:
     field_zerostart = data_xr_tsel.isel(time=[0,0])*0 #two times first field, set values to 0
-    field_zerostart['time'] = [times_pd.index[0]-dt.timedelta(days=2),times_pd.index[0]-dt.timedelta(days=1)] #TODO SANNE: is one zero field not enough? (is replacing first field not also ok? (results in 1hr transition period)
+    field_zerostart['time'] = [times_pd.index[0]-dt.timedelta(days=2),times_pd.index[0]-dt.timedelta(days=1)] #TODO: is one zero field not enough? (is replacing first field not also ok? (results in 1hr transition period)
     data_xr_tsel = xr.concat([field_zerostart,data_xr_tsel],dim='time')#.sortby('time')
 
 encoding = {}

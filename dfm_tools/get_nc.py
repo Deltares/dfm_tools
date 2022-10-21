@@ -41,7 +41,7 @@ import xarray as xr
 import matplotlib.pyplot as plt
 import matplotlib.collections
 
-from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvarproperties, get_varnamefrom_keyslongstandardname, get_variable_timevar, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_fromnc
+from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvarproperties, get_varnamefrom_keyslongstandardname, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_fromnc
 from dfm_tools.ugrid import UGrid
  
 def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None, station=None, multipart=None, silent=False):
@@ -82,7 +82,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     data_xr = xr.open_dataset(file_nc)
     varname = get_varnamefrom_keyslongstandardname(file_nc, varname) #get varname from varkeys/standardname/longname if exists
     nc_varobject = data_nc.variables[varname]
-
+    
     #get list of station dimnames
     vars_pd = get_ncvarproperties(file_nc=file_nc)
 
@@ -100,17 +100,12 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
 
 
     #TIMES CHECKS
-    #varn_time, dimn_time = get_variable_timevardim(file_nc=file_nc, varname=varname)
-    varn_time = get_variable_timevar(file_nc,varname=varname)
-    if varn_time is None:
-        dimn_time = None
-    else:
-        dimn_time = data_xr[varn_time].dims[0]
+    dimn_time = 'time' #hard coded, since easy to change
     if dimn_time not in nc_varobject.dimensions: #dimension time is not available in variable
         if timestep is not None:
             raise Exception('ERROR: netcdf file variable (%s) does not contain times, but parameter timestep is provided'%(varname))
     else: #time dimension is present
-        data_nc_timevar = data_nc.variables[varn_time]
+        data_nc_timevar = data_nc.variables['time']
         time_length = data_nc_timevar.shape[0]
         data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname) #get all times
         if timestep is None:
