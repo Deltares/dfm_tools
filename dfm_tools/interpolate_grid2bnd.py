@@ -216,7 +216,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
     
     print('initialize ForcingModel()')
     ForcingModel_object = ForcingModel()
-        
+    
     file_list_nc = glob.glob(str(dir_pattern))
     print(f'loading mfdataset ({len(file_list_nc)} files with pattern "{dir_pattern.name}")')
     dtstart = dt.datetime.now()

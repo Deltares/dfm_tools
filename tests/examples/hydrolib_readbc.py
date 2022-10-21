@@ -11,7 +11,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 plt.close('all')
 from hydrolib.core.io.bc.models import ForcingModel
-from dfm_tools.hydrolib_helpers import forcinglike_to_DataArray, forcinglike_to_DataFrame, DataArray_to_TimeSeries, DataArray_to_T3D
+from dfm_tools.hydrolib_helpers import forcinglike_to_DataArray, forcinglike_to_DataFrame, DataArray_to_TimeSeries, DataArray_to_T3D, T3Dvector_to_T3Dtuple, T3Dtuple_to_T3Dvector
 
 #TODO: merge this into hydrolib_readFMmodel.py after issues are resolved?
 #NOTE: for examples with writing bc files, check dfm_tools.interpolate_grid2bnd.* and dfm_tools.hydrolib_helpers.
@@ -24,16 +24,16 @@ file_bc_list = [Path(r'n:\My Documents\werkmap\hydrolib_test\DCSM\tide_OB_all_20
                 Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\rmm_rivdis_meas_20171101_20210102_MET.bc'), #TODO: why can it not be str? #three timeseries
                 #Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\2018\flow\rmm_discharge_laterals_20171201_20190101_MET.bc'),
                 Path(r'n:\My Documents\werkmap\hydrolib_test\haixia\salinity_bc_South_v2_firstpoint.bc'),
-                Path(r'n:\My Documents\werkmap\hydrolib_test\haixia\uxuy_bc_South_v2_firstpoint.bc'),
+                Path(r'n:\My Documents\werkmap\hydrolib_test\haixia\uxuy_bc_South_v2_firstpoint.bc'), #TODO SOLVED: not possible to read uxuy yet: https://github.com/Deltares/HYDROLIB-core/issues/316
                 #Path(r'n:\My Documents\werkmap\hydrolib_test\haixia\salinity_bc_South_v2.bc'), #large file, takes time
                 #Path(r'n:\My Documents\werkmap\hydrolib_test\haixia\uxuy_bc_South_v2.bc'),
                 ]
 
 
-
 for file_bc in file_bc_list:
     #Load .bc-file using HydroLib object ForcingModel.
     m = ForcingModel(file_bc)
+    ForcingModel_object_out = ForcingModel()
     
     # m.general.comments = {'a':'aa'} #TODO: adding comments to top of file is not possible, only if using filetype or fileversion: https://github.com/Deltares/HYDROLIB-core/issues/130. Top file comment newfeature: https://github.com/Deltares/HYDROLIB-core/issues/362
     # m.save('test.bc')
@@ -46,33 +46,34 @@ for file_bc in file_bc_list:
     m.forcing[0].__dict__.keys() # dict_keys(['comments', 'datablock', 'name', 'function', 'quantityunitpair', 'timeinterpolation', 'offset', 'factor'])
     type(m.forcing[0].datablock) #list
     """
-    import hydrolib
-    if isinstance(m.forcing[0].quantityunitpair[1],hydrolib.core.io.bc.models.VectorQuantityUnitPairs): #TODO UXUY: this is not desireable
-        pli_quan, pli_unit = m.forcing[0].quantityunitpair[1].elementname, m.forcing[0].quantityunitpair[1].quantityunitpair[0].unit
-    else:
-        pli_quan, pli_unit = m.forcing[0].quantityunitpair[1].quantity, m.forcing[0].quantityunitpair[1].unit
     
     #plot
     fig, ax = plt.subplots(figsize=(12, 6))
     for iFO, forcingobj in enumerate(m.forcing[:nPoints]):
-        forcing_xr = forcinglike_to_DataArray(forcingobj)
         if forcingobj.function=='t3d':
-            forcing_ts = DataArray_to_T3D(forcing_xr) #TODO: implement this also for uxuy
-            if isinstance(forcing_xr,(tuple,list)): #TODO UXUY: this is not desireable
-                forcing_xr_ux,forcing_xr_uy = forcing_xr
-                forcing_xr_ux.T.plot()
-                fig, ax = plt.subplots(figsize=(12, 6))
-                forcing_xr_uy.T.plot()
+            if hasattr(m.forcing[0].quantityunitpair[1],'elementname'): #T3Dvector of for instance uxuy
+                forcingobj_ux,forcingobj_uy = T3Dvector_to_T3Dtuple(forcingobj)
+                forcing_xr_ux,forcing_xr_uy = forcinglike_to_DataArray(forcingobj_ux), forcinglike_to_DataArray(forcingobj_uy)
+                forcing_ts_ux,forcing_ts_uy = DataArray_to_T3D(forcing_xr_ux), DataArray_to_T3D(forcing_xr_uy)
+                forcing_ts = T3Dtuple_to_T3Dvector(forcing_ts_ux,forcing_ts_uy)
+                plt.close(fig)
+                fig, (ax1,ax2) = plt.subplots(2,1,figsize=(12, 7))
+                forcing_xr_ux.T.plot(ax=ax1)
+                forcing_xr_uy.T.plot(ax=ax2)
             else:
+                forcing_xr = forcinglike_to_DataArray(forcingobj)
+                forcing_ts = DataArray_to_T3D(forcing_xr) #TODO: implement this also for uxuy
                 forcing_xr.T.plot() #TODO: this overwites previous plot, so does not make sense
             #forcing_xr_masked = forcing_xr.where(forcing_xr != forcing_xr.isel(depth=0)) #TODO: better way to mask data?
             #fig, ax = plt.subplots(figsize=(12, 6))
             #forcing_xr_masked.T.plot()
         elif forcingobj.function=='timeseries':
+            forcing_xr = forcinglike_to_DataArray(forcingobj)
             forcing_ts = DataArray_to_TimeSeries(forcing_xr)
             forcing_xr.plot(ax=ax, label=forcing_xr.attrs['name'], linewidth=0.7)
             ax.legend(loc=1)
         elif forcingobj.function=='astronomic':
+            forcing_xr = forcinglike_to_DataArray(forcingobj)
             #TODO: consolidate Astronomic to DataArray method and support back/forth conversion
             if iFO==0:
                 ax2 = ax.twinx()
@@ -88,7 +89,9 @@ for file_bc in file_bc_list:
             forcing_xr.plot(ax=ax, label=forcing_xr.attrs['name'], linewidth=0.7)
             ax.legend(loc=1)
             raise Exception(f'non-defined function: {forcingobj.function}')
-        
+        #ForcingModel_object_out.forcing.append(forcing_ts)
+        #ForcingModel_object_out.save(Path(str(file_bc).replace('.bc','_reproduced.bc')))
+       
     """
     #Plot mean value in BC-file over the complete period for each point on the boundary
     mean_list = [forcinglike_to_DataArray(forcingobj).mean().mean() for forcingobj in m.forcing[:nPoints]]
