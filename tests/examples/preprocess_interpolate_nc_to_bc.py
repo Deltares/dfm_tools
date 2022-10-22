@@ -28,7 +28,7 @@ else:
 dir_out = r'n:\My Documents\werkmap\hydrolib_test\DCSM'
 bc_type = 'bc' #currently only 'bc' supported #TODO: add netcdf bc support. https://github.com/Deltares/HYDROLIB-core/issues/318
 
-refdate_str = 'minutes since 2011-12-22 00:00:00 +00:00' # this is copied from the reference bc file, but can be changed by the user
+refdate_str = 'minutes since 2011-12-22 00:00:00 +00:00' # if None, xarray uses ds.time.encoding['units'] as refdate_str
 
 nPoints = 3 #amount of Points to process per PolyObject in the plifile (for testing, use None for all Points)
 
@@ -82,7 +82,7 @@ for file_pli in list_plifiles:
             raise Exception(f'invalid model: {model}')
         
         print(f'processing quantity: {quantity}/{conversion_dict[quantity]["ncvarname"]}')
-        if quantity in ['tide']: #TODO: choose flexible/generic component notation
+        if quantity in ['tide']: #tide #TODO: choose flexible/generic component notation
             tidemodel = 'FES2014' #FES2014, FES2012, EOT20
             component_list = ['2n2','mf','p1','m2','mks2','mu2','q1','t2','j1','m3','mm','n2','r2','k1','m4','mn4','s1','k2','m6','ms4','nu2','s2','l2','m8','msf','o1','s4'] #None results in all FES components
             ForcingModel_object = interpolate_tide_to_bc(tidemodel=tidemodel, file_pli=file_pli, component_list=component_list, nPoints=nPoints)
@@ -91,16 +91,16 @@ for file_pli in list_plifiles:
         elif quantity in ['waterlevelbnd','salinitybnd','temperaturebnd','ux,uy']: #hydro
             if dir_sourcefiles_hydro is None:
                 continue
-            ForcingModel_object = interpolate_nc_to_bc(dir_pattern=dir_pattern_hydro, file_pli=file_pli, quantity=quantity, 
-                                                       conversion_dict=conversion_dict, #rename_vars=rename_vars,
+            ForcingModel_object = interpolate_nc_to_bc(dir_pattern=dir_pattern_hydro, file_pli=file_pli,
+                                                       quantity=quantity, conversion_dict=conversion_dict,
                                                        tstart=tstart, tstop=tstop, refdate_str=refdate_str,
                                                        #reverse_depth=True, #to compare with coastserv files, this argument will be phased out
                                                        nPoints=nPoints)
         else: #waq
             if dir_pattern_waq is None:
                 continue
-            ForcingModel_object = interpolate_nc_to_bc(dir_pattern=dir_pattern_waq, file_pli=file_pli, quantity=quantity,
-                                                       conversion_dict=conversion_dict, #rename_vars=rename_vars,
+            ForcingModel_object = interpolate_nc_to_bc(dir_pattern=dir_pattern_waq, file_pli=file_pli,
+                                                       quantity=quantity, conversion_dict=conversion_dict,
                                                        tstart=tstart, tstop=tstop, refdate_str=refdate_str,
                                                        #reverse_depth=True, #to compare with coastserv files, this argument will be phased out
                                                        nPoints=nPoints)
@@ -121,7 +121,7 @@ for file_pli in list_plifiles:
                 ax1.set_title(f'{fo_quan} [{fo_unit}]')
                 
         file_bc_basename = file_pli.name.replace('.pli','.bc')
-        file_bc_out = Path(dir_out,f'{quantity}_{file_bc_basename}')
+        file_bc_out = Path(dir_out,f'{quantity}_{file_bc_basename}_{model}')
         print(f'writing ForcingModel to bc file with hydrolib ({file_bc_out.name})')
         if bc_type=='bc':
             ForcingModel_object.save(filepath=file_bc_out)
