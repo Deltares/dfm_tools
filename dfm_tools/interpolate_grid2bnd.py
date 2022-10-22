@@ -40,41 +40,12 @@ from hydrolib.core.io.polyfile.models import PolyFile
 from dfm_tools.hydrolib_helpers import DataArray_to_TimeSeries, DataArray_to_T3D, T3Dtuple_to_T3Dvector
 
 
-def get_conversion_dict():
-    """
-    interpolate_nc_to_bc() renames netcdf variable like this:
-    data_xr = data_xr.rename({ncvarname:bcvarname})
-    """
-    # conversion_dict, contains ncvarname as array because uxuy relies on 2 CMEMS variables
-    conversion_dict = { # mg/l is the same as g/m3: conversion is phyc in mmol/l to newvar in g/m3
-                        'OXY'        : {'ncvarname': 'o2',         'bcvarname': 'tracerbndOXY',  'unit': 'g/m3', 'conversion' : 32.0 / 1000.0}, 
-                        'NO3'        : {'ncvarname': 'no3',        'bcvarname': 'tracerbndNO3',  'unit': 'g/m3', 'conversion' : 14.0 / 1000.0},
-                        'PO4'        : {'ncvarname': 'po4',        'bcvarname': 'tracerbndPO4',  'unit': 'g/m3', 'conversion' : 30.97 / 1000.0},
-                        'Si'         : {'ncvarname': 'si',         'bcvarname': 'tracerbndSi',   'unit': 'g/m3', 'conversion' : 28.08 / 1000.0},
-                        'PON1'       : {'ncvarname': 'phyc',       'bcvarname': 'tracerbndPON1', 'unit': 'g/m3', 'conversion' : 2. * 16. * 14. / (106. * 1000.0)},
-                        'POP1'       : {'ncvarname': 'phyc',       'bcvarname': 'tracerbndPOP1', 'unit': 'g/m3', 'conversion' : 2. * 30.97 / (106. * 1000.0)},
-                        'POC1'       : {'ncvarname': 'phyc',       'bcvarname': 'tracerbndPOC1', 'unit': 'g/m3', 'conversion' : 2. * 12. / 1000.0},
-                        'DON'        : {'ncvarname': 'phyc',       'bcvarname': 'tracerbndDON',  'unit': 'g/m3', 'conversion' : 3.24 * 2. * 16. * 14. / (106. * 1000.0)},
-                        'DOP'        : {'ncvarname': 'phyc',       'bcvarname': 'tracerbndDOP',  'unit': 'g/m3', 'conversion' : 1.0 * 2. * 30.97 / (106. * 1000.0)},
-                        'DOC'        : {'ncvarname': 'phyc',       'bcvarname': 'tracerbndDOC',  'unit': 'g/m3', 'conversion' : (199. / 20.) * 3.24 * 2. * 16. * 12. / (106. * 1000.0)},
-                        'Opal'       : {'ncvarname': 'phyc',       'bcvarname': 'tracerbndOpal', 'unit': 'g/m3', 'conversion' : 0.5 * 0.13 * 28.08 / (1000.0)},
-                        'salinity'   : {'ncvarname': 'so',         'bcvarname': 'salinitybnd'},    #'1e-3'
-                        'temperature': {'ncvarname': 'thetao',     'bcvarname': 'temperaturebnd'}, #'degC'
-                        'ux'         : {'ncvarname': 'uo',         'bcvarname': 'ux'},             #'m/s'
-                        'uy'         : {'ncvarname': 'vo',         'bcvarname': 'uy'},             #'m/s'
-                        'ux,uy'      : {'ncvarname': 'uo,vo',      'bcvarname': 'ux,uy'},          #'m/s'
-                        'steric'     : {'ncvarname': 'zos',        'bcvarname': 'waterlevelbnd'},  #'m'
-                        'tide'       : {'ncvarname': '',           'bcvarname': ''},  #'m'
-                        }
-    
-    return conversion_dict
-
-
 def get_conversion_dict(ncvarname_updates={}):
     
     """
     interpolate_nc_to_bc() renames netcdf variable like this:
-    data_xr = data_xr.rename({ncvarname:bcvarname})
+    data_xr = data_xr.rename({ncvarname:quantity})
+    alternative ncvarnames can be supplied via ncvarname_updates, e.g. ncvarname_updates={'temperaturebnd':'tos'}
     """
     # conversion_dict, contains ncvarname as array because uxuy relies on 2 CMEMS variables
     conversion_dict = { # mg/l is the same as g/m3: conversion is phyc in mmol/l to newvar in g/m3
