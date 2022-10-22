@@ -49,6 +49,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/openearth/dfm_tools',
-    version='0.7.99',
+    version='0.7.101',
     zip_safe=False,
 )

@@ -20,9 +20,7 @@ import matplotlib.pyplot as plt
 plt.close('all')
 from dfm_tools.xarray_helpers import preprocess_hirlam
 
-#TODO: meteo_p2_preprocess_ERA5_decode_times.py (after questions from Sanne)
-
-#TODO: crashes in pytest for some reason, check this
+#TODO: crashes in pytest for some reason: "OSError: [Errno -51] NetCDF: Unknown file format"
 #TODO: add ERA5 conversions and features from hydro_tools\ERA5\ERA52DFM.py (except for varRhoair_alt)
 #TODO: add standard_name to all variables? eg v10n does not have one >> is not relevant for dflowfm?
 #TODO: add renamevars of add attrs['standard_name'] with ncvarnames/ncstdnames conversion table in https://svn.oss.deltares.nl/repos/delft3d/trunk/src/utils_lgpl/ec_module/packages/ec_module/src/ec_provider.f90 (line 2479) (alternatively set varname in extfile)
@@ -37,11 +35,10 @@ from dfm_tools.xarray_helpers import preprocess_hirlam
 #TODO: add CMCC etc from gtsmip repos (including calendar conversion)
 #TODO: add convert_360to180 with "ds.coords['lon'] = (ds.coords['lon'] + 180) % 360 - 180; ds = ds.sortby('lon')" (without hardcoded longitude/lon names)
 
-
-add_global_overlap = True #GTSM specific: extend data beyond -180 to 180 longitude
+add_global_overlap = False #GTSM specific: extend data beyond -180 to 180 longitude
 zerostart = False #GTSM specific: extend data with 0-value fields 1 and 2 days before all_tstart
 
-mode = 'ERA5_v10n' # 'HARMONIE' 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HYCOM' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall'
+mode = 'ERA5_wind_pressure' # 'HARMONIE' 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HYCOM' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall'
 all_tstart = dt.datetime(2013,12,30) # HIRLAM and ERA5
 all_tstop = dt.datetime(2014,1,1)
 #all_tstart = dt.datetime(2016,4,28) # HYCOM
@@ -90,11 +87,11 @@ elif 'ERA5' in mode:
         varkey_list = ['ssr','strd'] # surface_net_solar_radiation, surface_thermal_radiation_downwards
     elif mode=='ERA5_rainfall':
         varkey_list = ['mer','mtpr'] # mean_evaporation_rate, mean_total_precipitation_rate
-    if 0:
+    if 1:
         dir_data = 'p:\\metocean-data\\open\\ERA5\\data\\Irish_North_Baltic_Sea\\*' #TODO: add other vars with * (support separate files)
         fn_match_pattern = f'era5_.*({"|".join(varkey_list)})_.*\.nc'
         file_out_prefix = f'era5_{"_".join(varkey_list)}'
-    else: #global test
+    else: #global test (first use download_ERA5.py)
         dir_data = r'c:\DATA\dfm_tools\tests\examples\v10n'
         fn_match_pattern = 'era5_*.nc'
         file_out_prefix = fn_match_pattern.replace('*.nc','')
@@ -133,7 +130,7 @@ else:
     file_nc = os.path.join(dir_data,fn_match_pattern)
     file_list = glob.glob(file_nc)
 
-print(f'opening multifile dataset of {len(file_list)} files matching "{fn_match_pattern}" (can take a while with lots of files)',end='')
+print(f'opening multifile dataset of {len(file_list)} files matching "{fn_match_pattern}" (can take a while with lots of files)')
 #open_mfdataset when dropping x/y since both varname as dimname, which is not possible in xarray
 data_xr = xr.open_mfdataset(file_nc,
                             drop_variables=drop_variables, #necessary since dims/vars with equal names are not allowed by xarray, add again later and requested matroos to adjust netcdf format.
