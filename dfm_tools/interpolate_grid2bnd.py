@@ -4,22 +4,6 @@ Created on Thu Aug 18 17:39:03 2022
 
 @author: veenstra
 
-Some blocking hydrolib issues before this tool can replace coastserv:
--	uxuy is not yet programmed, add support for this merged array
-    o	new bug issue: https://github.com/Deltares/HYDROLIB-core/issues/316
--	metadata header is not completely correct yet, but this seems like small fixes in hydrolib:
-    o	new bug issue: https://github.com/Deltares/HYDROLIB-core/issues/317
--	Formatting of datablock writing in bc file can be improved (probably also improves perfomance):
-    o	Existing issue: https://github.com/Deltares/HYDROLIB-core/issues/308
-    o	Existing issue: https://github.com/Deltares/HYDROLIB-core/issues/313
--	some minor issues that do not seem blocking (my issues in the range of #305 to #322)
-
-Non-hydrolib things to do (still missing compared to coastserv):
--	downloading part is not included (Bjorn improved that part so add to dfm_tools?) >> https://github.com/c-scale-community/use-case-hisea/blob/main/scripts/download/download_cmems_biogeochemistry.py and download_cmems_physics.py
--	FES is included but there are differences with the reference bc files for DCSM (uv or complex method is necessary for when phs crosses 0)
--	Waq variables incl unit conversion work for e.g. CMEMS and GFDL (and probably most other models), but CMCC has no lat/lon coords so currently crashes
--   other waq variables than NO3 (incl conversion) probably work, but were not checked yet
-
 """
 
 import os
