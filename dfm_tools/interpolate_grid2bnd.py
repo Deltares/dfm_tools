@@ -28,6 +28,7 @@ import datetime as dt
 import numpy as np
 import pandas as pd
 import xarray as xr
+from pathlib import Path
 
 from hydrolib.core.io.bc.models import (
     ForcingModel,
@@ -39,43 +40,70 @@ from hydrolib.core.io.polyfile.models import PolyFile
 from dfm_tools.hydrolib_helpers import DataArray_to_TimeSeries, DataArray_to_T3D, T3Dtuple_to_T3Dvector
 
 
-def get_conversion_dict(model='CMEMS'):
+def get_conversion_dict():
     """
     interpolate_nc_to_bc() renames netcdf variable like this:
     data_xr = data_xr.rename({ncvarname:bcvarname})
     """
-    conversion_dicts = {}
     # conversion_dict, contains ncvarname as array because uxuy relies on 2 CMEMS variables
-    conversion_dicts['CMEMS'] = { # mg/l is the same as g/m3: conversion is phyc in mmol/l to newvar in g/m3
-                                'OXY'        : {'ncvarname': 'o2',         'bcvarname': 'tracerbndOXY',  'unit': 'g/m3', 'conversion' : 32.0 / 1000.0}, 
-                                'NO3'        : {'ncvarname': 'no3',        'bcvarname': 'tracerbndNO3',  'unit': 'g/m3', 'conversion' : 14.0 / 1000.0},
-                                'PO4'        : {'ncvarname': 'po4',        'bcvarname': 'tracerbndPO4',  'unit': 'g/m3', 'conversion' : 30.97 / 1000.0},
-                                'Si'         : {'ncvarname': 'si',         'bcvarname': 'tracerbndSi',   'unit': 'g/m3', 'conversion' : 28.08 / 1000.0},
-                                'PON1'       : {'ncvarname': 'phyc',       'bcvarname': 'tracerbndPON1', 'unit': 'g/m3', 'conversion' : 2. * 16. * 14. / (106. * 1000.0)},
-                                'POP1'       : {'ncvarname': 'phyc',       'bcvarname': 'tracerbndPOP1', 'unit': 'g/m3', 'conversion' : 2. * 30.97 / (106. * 1000.0)},
-                                'POC1'       : {'ncvarname': 'phyc',       'bcvarname': 'tracerbndPOC1', 'unit': 'g/m3', 'conversion' : 2. * 12. / 1000.0},
-                                'DON'        : {'ncvarname': 'phyc',       'bcvarname': 'tracerbndDON',  'unit': 'g/m3', 'conversion' : 3.24 * 2. * 16. * 14. / (106. * 1000.0)},
-                                'DOP'        : {'ncvarname': 'phyc',       'bcvarname': 'tracerbndDOP',  'unit': 'g/m3', 'conversion' : 1.0 * 2. * 30.97 / (106. * 1000.0)},
-                                'DOC'        : {'ncvarname': 'phyc',       'bcvarname': 'tracerbndDOC',  'unit': 'g/m3', 'conversion' : (199. / 20.) * 3.24 * 2. * 16. * 12. / (106. * 1000.0)},
-                                'Opal'       : {'ncvarname': 'phyc',       'bcvarname': 'tracerbndOpal', 'unit': 'g/m3', 'conversion' : 0.5 * 0.13 * 28.08 / (1000.0)},
-                                'salinity'   : {'ncvarname': 'so',         'bcvarname': 'salinitybnd'},    #'1e-3'
-                                'temperature': {'ncvarname': 'thetao',     'bcvarname': 'temperaturebnd'}, #'degC'
-                                'ux'         : {'ncvarname': 'uo',         'bcvarname': 'ux' },            #'m/s'
-                                'uy'         : {'ncvarname': 'vo',         'bcvarname': 'uy' },            #'m/s'
-                                'ux,uy'      : {'ncvarname': 'uo,vo',      'bcvarname': 'ux,uy' },         #'m/s'
-                                'steric'     : {'ncvarname': 'zos',        'bcvarname': 'waterlevelbnd'},  #'m'
-                                'tide'       : {'ncvarname': '',           'bcvarname': 'waterlevelbnd'},  #'m'
-                                }
-    conversion_dicts['HYCOM'] = {'salinity'  : {'ncvarname': 'salinity',   'bcvarname': 'salinitybnd'},
-                                'temperature': {'ncvarname': 'water_temp', 'bcvarname': 'temperaturebnd'},
-                                }
-    
-    conversion_dict = conversion_dicts[model]
+    conversion_dict = { # mg/l is the same as g/m3: conversion is phyc in mmol/l to newvar in g/m3
+                        'OXY'        : {'ncvarname': 'o2',         'bcvarname': 'tracerbndOXY',  'unit': 'g/m3', 'conversion' : 32.0 / 1000.0}, 
+                        'NO3'        : {'ncvarname': 'no3',        'bcvarname': 'tracerbndNO3',  'unit': 'g/m3', 'conversion' : 14.0 / 1000.0},
+                        'PO4'        : {'ncvarname': 'po4',        'bcvarname': 'tracerbndPO4',  'unit': 'g/m3', 'conversion' : 30.97 / 1000.0},
+                        'Si'         : {'ncvarname': 'si',         'bcvarname': 'tracerbndSi',   'unit': 'g/m3', 'conversion' : 28.08 / 1000.0},
+                        'PON1'       : {'ncvarname': 'phyc',       'bcvarname': 'tracerbndPON1', 'unit': 'g/m3', 'conversion' : 2. * 16. * 14. / (106. * 1000.0)},
+                        'POP1'       : {'ncvarname': 'phyc',       'bcvarname': 'tracerbndPOP1', 'unit': 'g/m3', 'conversion' : 2. * 30.97 / (106. * 1000.0)},
+                        'POC1'       : {'ncvarname': 'phyc',       'bcvarname': 'tracerbndPOC1', 'unit': 'g/m3', 'conversion' : 2. * 12. / 1000.0},
+                        'DON'        : {'ncvarname': 'phyc',       'bcvarname': 'tracerbndDON',  'unit': 'g/m3', 'conversion' : 3.24 * 2. * 16. * 14. / (106. * 1000.0)},
+                        'DOP'        : {'ncvarname': 'phyc',       'bcvarname': 'tracerbndDOP',  'unit': 'g/m3', 'conversion' : 1.0 * 2. * 30.97 / (106. * 1000.0)},
+                        'DOC'        : {'ncvarname': 'phyc',       'bcvarname': 'tracerbndDOC',  'unit': 'g/m3', 'conversion' : (199. / 20.) * 3.24 * 2. * 16. * 12. / (106. * 1000.0)},
+                        'Opal'       : {'ncvarname': 'phyc',       'bcvarname': 'tracerbndOpal', 'unit': 'g/m3', 'conversion' : 0.5 * 0.13 * 28.08 / (1000.0)},
+                        'salinity'   : {'ncvarname': 'so',         'bcvarname': 'salinitybnd'},    #'1e-3'
+                        'temperature': {'ncvarname': 'thetao',     'bcvarname': 'temperaturebnd'}, #'degC'
+                        'ux'         : {'ncvarname': 'uo',         'bcvarname': 'ux'},             #'m/s'
+                        'uy'         : {'ncvarname': 'vo',         'bcvarname': 'uy'},             #'m/s'
+                        'ux,uy'      : {'ncvarname': 'uo,vo',      'bcvarname': 'ux,uy'},          #'m/s'
+                        'steric'     : {'ncvarname': 'zos',        'bcvarname': 'waterlevelbnd'},  #'m'
+                        'tide'       : {'ncvarname': '',           'bcvarname': ''},  #'m'
+                        }
     
     return conversion_dict
 
 
-def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180=False, nPoints=None):
+def get_conversion_dict(ncvarname_updates={}):
+    
+    """
+    interpolate_nc_to_bc() renames netcdf variable like this:
+    data_xr = data_xr.rename({ncvarname:bcvarname})
+    """
+    # conversion_dict, contains ncvarname as array because uxuy relies on 2 CMEMS variables
+    conversion_dict = { # mg/l is the same as g/m3: conversion is phyc in mmol/l to newvar in g/m3
+                        'tracerbndOXY'        : {'ncvarname': 'o2',          'unit': 'g/m3', 'conversion': 32.0 / 1000.0}, 
+                        'tracerbndNO3'        : {'ncvarname': 'no3',         'unit': 'g/m3', 'conversion': 14.0 / 1000.0},
+                        'tracerbndPO4'        : {'ncvarname': 'po4',         'unit': 'g/m3', 'conversion': 30.97 / 1000.0},
+                        'tracerbndSi'         : {'ncvarname': 'si',          'unit': 'g/m3', 'conversion': 28.08 / 1000.0},
+                        'tracerbndPON1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 2. * 16. * 14. / (106. * 1000.0)},
+                        'tracerbndPOP1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 2. * 30.97 / (106. * 1000.0)},
+                        'tracerbndPOC1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 2. * 12. / 1000.0},
+                        'tracerbndDON'        : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 3.24 * 2. * 16. * 14. / (106. * 1000.0)},
+                        'tracerbndDOP'        : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 1.0 * 2. * 30.97 / (106. * 1000.0)},
+                        'tracerbndDOC'        : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': (199. / 20.) * 3.24 * 2. * 16. * 12. / (106. * 1000.0)},
+                        'tracerbndOpal'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 0.5 * 0.13 * 28.08 / (1000.0)},
+                        'salinitybnd'         : {'ncvarname': 'so'},          #'1e-3'
+                        'temperaturebnd'      : {'ncvarname': 'thetao'},      #'degC'
+                        'ux'                  : {'ncvarname': 'uo'},          #'m/s'
+                        'uy'                  : {'ncvarname': 'vo'},          #'m/s'
+                        'ux,uy'               : {'ncvarname': 'uo,vo'},       #'m/s'
+                        'waterlevelbnd'       : {'ncvarname': 'zos'},         #'m' #steric
+                        'tide'                : {'ncvarname': ''},            #'m' #tide (dummy entry)
+                        }
+    #do updates
+    for k,v in ncvarname_updates.items():
+        conversion_dict[k]['ncvarname'] = v
+    return conversion_dict
+
+
+def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=None):
     """
     """
     # translate dict from .\hydro_tools\FES\PreProcessing_FES_TideModel_imaginary.m
@@ -88,6 +116,14 @@ def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180
     
     print('initialize ForcingModel()')
     ForcingModel_object = ForcingModel()
+    
+    dir_pattern_dict = {'FES2014': Path(r'P:\metocean-data\licensed\FES2014','*.nc'), #ocean_tide_extrapolated
+                        'FES2012': Path(r'P:\metocean-data\open\FES2012\data','*_FES2012_SLEV.nc'), #is eigenlijk ook licensed
+                        'EOT20': Path(r'P:\metocean-data\open\EOT20\ocean_tides','*_ocean_eot20.nc'),
+                        }
+    if tidemodel not in dir_pattern_dict.keys():
+        raise Exception(f'invalid tidemodel "{tidemodel}", options are: {list(dir_pattern_dict.keys())}')
+    dir_pattern = dir_pattern_dict[tidemodel]
     
     if component_list is None:
         file_list_nc = glob.glob(str(dir_pattern))
@@ -110,6 +146,7 @@ def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180
         compnumber = [component_list.index(compname)]
         ds = ds.assign(compno=compnumber)
         
+        convert_360to180 = (ds['lon'].to_numpy()>180).any()
         if convert_360to180: # results in large chunks if it is done after concatenation, so do for each file before concatenation
             ds.coords['lon'] = (ds.coords['lon'] + 180) % 360 - 180
             ds = ds.sortby('lon')
@@ -200,24 +237,20 @@ def interpolate_FES(dir_pattern, file_pli, component_list=None, convert_360to180
 
 def interpolate_nc_to_bc(dir_pattern, file_pli, quantity, 
                          tstart, tstop, refdate_str=None, 
-                         convert_360to180=False,
-                         conversion_dict=None, #TODO: alternatively use rename_vars dict and use conversion_dict only for unit conversion. dict containing keys: ncvarname, bcvarname and optionally conversion and unit
+                         conversion_dict=None, #rename_vars={}, #TODO: alternatively use rename_vars dict and use conversion_dict only for unit conversion. dict containing keys: ncvarname, bcvarname and optionally conversion and unit
                          nPoints=None, #argument for testing
                          reverse_depth=False, #temporary argument to compare easier with old coastserv files
                          ):
     
-
     if conversion_dict is None:
         conversion_dict = get_conversion_dict()
-    ncvarname = conversion_dict[quantity]['ncvarname'] #rename with origvarname/newvarname
-    bcvarname = conversion_dict[quantity]['bcvarname']
     
     if ',' in quantity: #T3Dvector #TODO: make this less ugly
         print(f'ERROR: combined variables ({quantity}) not yet supported by dfm_tools')    
         quantity_list = quantity.split(',')
-        ncvarname_list = ncvarname.split(',')
-        from pathlib import Path
-        ForcingModel_object_list = [interpolate_nc_to_bc(dir_pattern=Path(str(dir_pattern).replace(ncvarname,ncvarname_one)), file_pli=file_pli, quantity=quantity_one, tstart=tstart, tstop=tstop, refdate_str=refdate_str, convert_360to180=convert_360to180, conversion_dict=conversion_dict, nPoints=nPoints, reverse_depth=reverse_depth) for quantity_one, ncvarname_one in zip(quantity_list,ncvarname_list)]
+        ncvarname_joined = conversion_dict[quantity]['ncvarname']
+        ncvarname_list = ncvarname_joined.split(',')
+        ForcingModel_object_list = [interpolate_nc_to_bc(dir_pattern=Path(str(dir_pattern).replace(ncvarname_joined,ncvarname_one)), file_pli=file_pli, quantity=quantity_one, tstart=tstart, tstop=tstop, refdate_str=refdate_str, conversion_dict=conversion_dict, nPoints=nPoints, reverse_depth=reverse_depth) for quantity_one, ncvarname_one in zip(quantity_list,ncvarname_list)]
         ForcingModel_object_comb = ForcingModel()
         for iF in range(len(ForcingModel_object_list[0].forcing)):
             T3Dvec_onepoint = T3Dtuple_to_T3Dvector(ForcingModel_object_list[0].forcing[iF],ForcingModel_object_list[1].forcing[iF]) #TODO: make flexible for more than one quantity
@@ -232,8 +265,13 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
     dtstart = dt.datetime.now()
     data_xr = xr.open_mfdataset(file_list_nc,chunks={'time':1}) # can also supply str(dir_pattern) #TODO: does chunks argument solve "PerformanceWarning: Slicing is producing a large chunk."?
     
-    #change attributes
-    data_xr = data_xr.rename({ncvarname:bcvarname}) #TODO: is this not a bit tricky?
+    #rename variables with rename_dict derived from conversion_dict
+    rename_dict = {v['ncvarname']:k for k,v in conversion_dict.items()}
+    for ncvarn in data_xr.variables.mapping.keys():
+        if ncvarn in rename_dict.keys():
+            data_xr = data_xr.rename({ncvarn:rename_dict[ncvarn]})
+    
+    #change refdate
     if refdate_str is not None:
         data_xr.time.encoding['units'] = refdate_str
     
@@ -253,38 +291,37 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
     nc_tstart = xr_tstartstop.index[0]
     nc_tstop = xr_tstartstop.index[-1]
     if tstart < nc_tstart:
-        raise Exception(f'requested tstart {tstart} before nc_tstart {nc_tstart}')
+        raise Exception(f'requested tstart {tstart} outside of available range {nc_tstart} to {nc_tstop}')
     if tstop > nc_tstop:
-        raise Exception(f'requested tstop {tstop} after nc_tstop {nc_tstop}')
+        raise Exception(f'requested tstop {tstop} outside of available range {nc_tstart} to {nc_tstop}')
     
-    if 'latitude' in data_xr.coords:
-        lonvarname,latvarname = ['longitude','latitude']
-    elif 'lat' in data_xr.coords:
-        lonvarname,latvarname = ['lon','lat']
-    else:
-        raise Exception(f'no lat/lon coords available in file: {data_xr.coords}')
-    if convert_360to180: #for FES since it ranges from 0 to 360 instead of -180 to 180 #TODO: make more flexible for models that eg pass -180/+180 crossing (add overlap at lon edges).
-        data_xr.coords[lonvarname] = (data_xr.coords[lonvarname] + 180) % 360 - 180
-        try:
-            data_xr = data_xr.sortby(data_xr[lonvarname])
-        except ValueError as e: #ValueError: Input DataArray is not 1-D.
-            print(f'ValueError: {e} in convert_360to180, continuing without sorting converted longitude.')
+    #rename coordinates
+    if 'depth' not in data_xr.coords:
+        if 'lev' in data_xr.coords: #depth for CMEMS and many others, but lev for GFDL, convert to depth #TODO: provide rename_dict as argument to this function or leave as is?
+            data_xr = data_xr.rename({'lev':'depth'}) #TODO: can also do this for data_xr_var only?
+            print('variable/coordinate lev renamed to depth')
+    coordname_lon,coordname_lat = ['longitude','latitude'] #hardcode this
+    if coordname_lon not in data_xr.coords:
+        if 'lon' in data_xr.coords:
+            data_xr = data_xr.rename({'lon':'longitude','lat':'latitude'})
+        else:
+            raise Exception(f'no lat/lon coords available in file: {data_xr.coords}')
     
-    if 'lev' in data_xr[bcvarname].coords: #depth for CMEMS and many others, but lev for GFDL, convert to depth #TODO: provide rename_dict as argument to this function or leave as is?
-        data_xr = data_xr.rename({'lev':'depth'}) #TODO: can also do this for data_xr_var only?
-        print('variable/coordinate lev renamed to depth')
+    #360 to 180 conversion
+    convert_360to180 = (data_xr[coordname_lon].to_numpy()>180).any()
+    latlon_ndims = len(data_xr[coordname_lon].shape)
+    if convert_360to180: #TODO: make more flexible for models that eg pass -180/+180 crossing (add overlap at lon edges).
+        data_xr.coords[coordname_lon] = (data_xr.coords[coordname_lon] + 180) % 360 - 180
+        if latlon_ndims==1: #lon/lat has 1 dimension, .sortby() not possible if there are 2 dimensions
+            data_xr = data_xr.sortby(data_xr[coordname_lon])
+        else: #lon/lat is 2D #TODO: this can be removed
+            print('WARNING: 2D latitude/longitude has more than one dim, continue without .sortby(). This is expected for e.g. CMCC')
     
     #retrieve var (after potential longitude conversion) (also selecting relevant times)
-    data_xr_var = data_xr[bcvarname].sel(time=slice(tstart,tstop))
+    data_xr_var = data_xr[quantity].sel(time=slice(tstart,tstop))
     
-    if 'latitude' in data_xr_var.coords: #for CMEMS etc #TODO: do rename instead? #TODO: this is also done above, only once is enough
-        coordname_lat = 'latitude'
-        coordname_lon = 'longitude'
-    elif 'lat' in data_xr_var.coords:
-        coordname_lat = 'lat'
-        coordname_lon = 'lon'
-    else:
-        raise Exception(f'latitude/longitude are not in variable coords: {data_xr_var.coords}. Extend this part of the code for e.g. lat/lon coords')
+    if coordname_lon not in data_xr_var.coords:
+        raise Exception(f'{coordname_lon} not in variable coords: {data_xr_var.coords}.')
     
     #load boundary file
     polyfile_object = PolyFile(file_pli)
@@ -309,7 +346,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
                                              )
         except ValueError as e: #Dimensions {'latitude', 'longitude'} do not exist. Expected one or more of Frozen({'time': 17, 'depth': 50, 'i': 292, 'j': 362}).
             #this is for eg CMCC model with multidimensional lat/lon variable
-            #TODO: make nicer, without try except    
+            #TODO: make nicer, without try except? eg latlon_ndims==1, but not sure if that is always valid
             print(f'ValueError: {e}. Reverting to KDTree instead (nearest neigbour)')
             from scipy.spatial import KDTree #TODO: move up
             data_lon_flat = data_xr_var[coordname_lon].to_numpy().ravel()
@@ -319,7 +356,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             tree = KDTree(data_lonlat_pd)
             distance, data_lonlat_idx = tree.query(path_lonlat_pd, k=1) #TODO: maybe add outofbounds treshold
             #data_lonlat_pd.iloc[data_lonlat_idx]
-            idx_i,idx_j = np.divmod(data_lonlat_idx, data_xr_var['longitude'].shape[1])
+            idx_i,idx_j = np.divmod(data_lonlat_idx, data_xr_var['longitude'].shape[1]) #get idx i and j by sort of counting over 2D array
             # fig,ax = plt.subplots()
             # data_xr_var_tsel_dsel = data_xr_var.isel(time=0,depth=0)
             # data_xr_var_tsel_dsel.plot(ax=ax)#,x='longitude',y='latitude')
@@ -336,13 +373,13 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
         try:
             datablock_xr_allpoints = data_interp.load() #loading data for all points at once is more efficient compared to loading data per point in loop 
         except ValueError: #generate a proper error with outofbounds requested coordinates, default is "ValueError: One of the requested xi is out of bounds in dimension 0"
-            lonvar_vals = data_xr[lonvarname].to_numpy()
-            latvar_vals = data_xr[latvarname].to_numpy()
+            lonvar_vals = data_xr[coordname_lon].to_numpy()
+            latvar_vals = data_xr[coordname_lat].to_numpy()
             bool_reqlon_outbounds = (path_lons <= lonvar_vals.min()) | (path_lons >= lonvar_vals.max())
             bool_reqlat_outbounds = (path_lats <= latvar_vals.min()) | (path_lats >= latvar_vals.max())
             reqlatlon_pd = pd.DataFrame({'longitude':path_lons,'latitude':path_lats,'lon outbounds':bool_reqlon_outbounds,'lat outbounds':bool_reqlat_outbounds})
             reqlatlon_pd_outbounds = reqlatlon_pd.loc[bool_reqlon_outbounds | bool_reqlat_outbounds]
-            raise ValueError(f'{len(reqlatlon_pd_outbounds)} of requested pli points are out of bounds (valid longitude range {lonvar_vals.min()} to {lonvar_vals.max()}), valid latitude range {latvar_vals.min()} to {latvar_vals.max()}):\n{reqlatlon_pd_outbounds}')
+            raise ValueError(f'{len(reqlatlon_pd_outbounds)} of requested pli points are out of bounds (valid longitude range {lonvar_vals.min()} to {lonvar_vals.max()}, valid latitude range {latvar_vals.min()} to {latvar_vals.max()}):\n{reqlatlon_pd_outbounds}')
         time_passed = (dt.datetime.now()-dtstart).total_seconds()
         print(f'>>time passed: {time_passed:.2f} sec')
         
