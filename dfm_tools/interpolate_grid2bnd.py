@@ -43,11 +43,14 @@ from dfm_tools.hydrolib_helpers import DataArray_to_TimeSeries, DataArray_to_T3D
 def get_conversion_dict(ncvarname_updates={}):
     
     """
+    get the conversion_dict, optionally with updated ncvarnames
+    conversion_dict.keys() are the dflowfm quantities and the ncvarname the corresponding netcdf variable name/key
+    alternative ncvarnames can be supplied via ncvarname_updates, e.g. get_conversion_dict(ncvarname_updates={'temperaturebnd':'tos'})
+    
     interpolate_nc_to_bc() renames netcdf variable like this:
     data_xr = data_xr.rename({ncvarname:quantity})
-    alternative ncvarnames can be supplied via ncvarname_updates, e.g. ncvarname_updates={'temperaturebnd':'tos'}
     """
-    # conversion_dict, contains ncvarname as array because uxuy relies on 2 CMEMS variables
+    # conversion_dict, 
     conversion_dict = { # mg/l is the same as g/m3: conversion is phyc in mmol/l to newvar in g/m3
                         'tracerbndOXY'        : {'ncvarname': 'o2',          'unit': 'g/m3', 'conversion': 32.0 / 1000.0}, 
                         'tracerbndNO3'        : {'ncvarname': 'no3',         'unit': 'g/m3', 'conversion': 14.0 / 1000.0},
@@ -289,6 +292,8 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             print('WARNING: 2D latitude/longitude has more than one dim, continue without .sortby(). This is expected for e.g. CMCC')
     
     #retrieve var (after potential longitude conversion) (also selecting relevant times)
+    if not quantity in data_xr.data_vars:
+        raise Exception(f'quantity \'{quantity}\' not found (try updating conversion_dict), available are:\n{data_xr.data_vars}')
     data_xr_var = data_xr[quantity].sel(time=slice(tstart,tstop))
     
     if coordname_lon not in data_xr_var.coords:

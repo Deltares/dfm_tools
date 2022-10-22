@@ -32,11 +32,9 @@ refdate_str = 'minutes since 2011-12-22 00:00:00 +00:00' # this is copied from t
 
 nPoints = 3 #amount of Points to process per PolyObject in the plifile (for testing, use None for all Points)
 
-#waterlevelbnd is steric/zos, tide is tidal components from FES/EOT
-list_quantities = ['tracerbndNO3']
-#list_quantities = ['waterlevelbnd','salinitybnd','tide']#,['salinitybnd','temperaturebnd','waterlevelbnd'] #should be in conversion_dict.keys()
-list_quantities = ['waterlevelbnd','salinitybnd','tide','ux,uy']#,'temperaturebnd']
-list_quantities = ['ux,uy','salinitybnd','tracerbndNO3']
+#quantities should be in conversion_dict.keys(). waterlevelbnd is steric/zos, tide is tidal components from FES/EOT
+list_quantities = ['waterlevelbnd','salinitybnd','tide','ux,uy','temperaturebnd','tracerbndNO3']
+list_quantities = ['salinitybnd','tracerbndNO3']
 
 dtstart = dt.datetime.now()
 ext_bnd = ExtModel()
