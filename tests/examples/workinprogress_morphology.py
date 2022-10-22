@@ -22,7 +22,6 @@ dir_output = '.'
 #MAPFILE
 file_nc = r'p:\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\fm\DFM_OUTPUT_inlet\inlet_map.nc'
 vars_pd = get_ncvarproperties(file_nc=file_nc)
-vars_pd.to_csv(os.path.join(dir_output,'vars_pd.csv'))
 vars_pd_sel = vars_pd[vars_pd['long_name'].str.contains('transport')]
 #vars_pd_sel = vars_pd[vars_pd['dimensions'].str.contains('mesh2d_nFaces') & vars_pd['long_name'].str.contains('wave')]
 
