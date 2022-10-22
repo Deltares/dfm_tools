@@ -19,7 +19,7 @@ latitude_max = 50 #90
 
 #tstart and tstop as understood by pd.date_range with freq='MS' (month start)
 tstart = '2021-01'
-tstop = '2022-01'
+tstop = '2021-02'
 
 # variables, supply arbitrary string to get error with available variable names
 variables = ['v10n']
