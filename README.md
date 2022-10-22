@@ -61,13 +61,6 @@ Example usage
 --------
 
 ```python
-#data retrieval is easy, just use get_ncmodeldata() with file_nc argument
-#then use the feedback in the error messages to set other arguments like varname, timestep, station and layer
-from dfm_tools.get_nc import get_ncmodeldata
-data_fromnc = get_ncmodeldata(file_nc='yourfile.nc')
-```
-
-```python
 #this example includes plotting and using the metadata of the retrieved data
 #import statements
 import os
