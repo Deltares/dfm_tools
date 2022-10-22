@@ -320,11 +320,12 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             #TODO: make nicer, without try except? eg latlon_ndims==1, but not sure if that is always valid
             print(f'ValueError: {e}. Reverting to KDTree instead (nearest neigbour)')
             from scipy.spatial import KDTree #TODO: move up
+            path_lonlat_pd = pd.DataFrame({'lon':da_lons,'lat':da_lats})
             data_lon_flat = data_xr_var[coordname_lon].to_numpy().ravel()
             data_lat_flat = data_xr_var[coordname_lat].to_numpy().ravel()
             data_lonlat_pd = pd.DataFrame({'lon':data_lon_flat,'lat':data_lat_flat})
-            path_lonlat_pd = pd.DataFrame({'lon':da_lons,'lat':da_lats})
-            tree = KDTree(data_lonlat_pd)
+            #KDTree, finds minimal eucledian distance between points (maybe haversine would be better)
+            tree = KDTree(data_lonlat_pd) #alternatively sklearn.neighbors.BallTree: tree = BallTree(data_lonlat_pd)
             distance, data_lonlat_idx = tree.query(path_lonlat_pd, k=1) #TODO: maybe add outofbounds treshold
             #data_lonlat_pd.iloc[data_lonlat_idx]
             idx_i,idx_j = np.divmod(data_lonlat_idx, data_xr_var['longitude'].shape[1]) #get idx i and j by sort of counting over 2D array
