@@ -307,6 +307,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
         except ValueError as e: #Dimensions {'latitude', 'longitude'} do not exist. Expected one or more of Frozen({'time': 17, 'depth': 50, 'i': 292, 'j': 362}).
             #this is for eg CMCC model with multidimensional lat/lon variable
             #TODO: make nicer, without try except? eg latlon_ndims==1, but not sure if that is always valid
+            #TODO: kdtree k=3 and invdist weighing? Then also spherical coordinate distance calculation instead of cartesian/eucledian
             print(f'ValueError: {e}. Reverting to KDTree instead (nearest neigbour)')
             from scipy.spatial import KDTree #TODO: move up
             path_lonlat_pd = pd.DataFrame({'lon':da_lons,'lat':da_lats})
