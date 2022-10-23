@@ -9,13 +9,11 @@ import os
 import matplotlib.pyplot as plt
 plt.close('all')
 import numpy as np
+import contextily as ctx
 
 from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
 from dfm_tools.regulargrid import scatter_to_regulargrid
 from dfm_tools.get_nc_helpers import get_ncvarproperties
-from dfm_tools.testutils import try_importmodule
-try_importmodule(modulename='contextily') #check if contextily was installed since it is an optional module, also happens in plot_cartopybasemap()
-import contextily as ctx
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'

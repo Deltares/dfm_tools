@@ -133,10 +133,7 @@ class UGrid:
     def polygon_intersect(self, line_array, optimize_dist=False, calcdist_fromlatlon=False):
         import numpy as np
         from matplotlib.path import Path
-        
-        from dfm_tools.testutils import try_importmodule
-        try_importmodule(modulename='shapely')
-        import shapely
+        import shapely #separate import, since sometimes this works, while import shapely.geometry fails
         from shapely.geometry import LineString, Polygon, MultiLineString, Point
         from dfm_tools.get_nc import calc_dist_pythagoras, calc_dist_haversine
 

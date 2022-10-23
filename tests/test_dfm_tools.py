@@ -6,10 +6,10 @@ import pytest
 #import inspect
 import os
 import glob
-import xarray as xr
+#import xarray as xr
+from packaging import version
 
-from dfm_tools.testutils import gettestinputdir
-dir_testinput = gettestinputdir()
+dir_testinput = os.path.join(r'c:\DATA','dfm_tools_testdata')
 dir_tests = os.path.dirname(__file__) #F9 doesnt work, only F5 (F5 also only method to reload external definition scripts)
 
 # ACCEPTANCE TESTS VIA EXAMPLE SCRIPTS, these are the ones who are only meant to generate output files
@@ -42,7 +42,7 @@ def test_run_examples(file_config):
 
 ##### UNITTESTS AND SYSTEMTESTS
 
-modulename_list = ['os','sys','glob','shutil','scipy','numpy','datetime','pandas','matplotlib','netCDF4','click','shapely','shapely.geometry','cartopy','pyepsg']
+modulename_list = ['os','sys','glob','shutil','scipy','numpy','datetime','pandas','matplotlib','netCDF4','click','shapely','shapely.geometry','cartopy','pyepsg'] #TODO: add xarray etc
 @pytest.mark.parametrize("modulename", [pytest.param('%s'%(stat), id='%s'%(stat)) for stat in modulename_list])
 @pytest.mark.unittest
 def test_import_libraries(modulename):
@@ -50,7 +50,20 @@ def test_import_libraries(modulename):
     tests whether shapely can be imported successfully, this is a problem in some environments
     in that case 'import shapely' works, but import 'shapely.geometry' fails
     """
-    from dfm_tools.testutils import try_importmodule
+    def try_importmodule(modulename=None):
+        command = '\t- open command window (or anaconda prompt)\n\t- conda activate dfm_tools_env\n\t- conda install -c conda-forge %s'%(modulename)
+    
+        try:
+            exec('import %s'%(modulename))
+        except:
+            raise Exception('ERROR: module %s not found, do the following:\n%s'%(modulename, command))
+        if modulename == 'shapely':
+            try:
+                import shapely.geometry
+            except:
+                raise Exception('ERROR: cannot execute "import shapely.geometry", do the following:\n%s'%(command))
+            if version.parse(shapely.__version__) < version.parse('1.7.0'):
+                raise Exception(f'ERROR: incorrect shapely version ({shapely.__version__}), should be 1.7.0 or higher, do the following:\n{command}')
     
     try_importmodule(modulename=modulename)
 
@@ -199,11 +212,7 @@ def test_getncmodeldata_datetime():
 
 
 @pytest.mark.systemtest
-def test_cartopy_epsg():
-    
-    from dfm_tools.testutils import try_importmodule
-    try_importmodule(modulename='cartopy') #check if cartopy was installed since it is an optional module, also happens in plot_cartopybasemap()
-    
+def test_cartopy_epsg():    
     from dfm_tools.get_nc import plot_background
     
     #this one crashes if the dummy in plot_background() is not created

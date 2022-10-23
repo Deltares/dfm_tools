@@ -44,7 +44,7 @@ import matplotlib.collections
 from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvarproperties, get_varnamefrom_keyslongstandardname, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_fromnc
 from dfm_tools.ugrid import UGrid
  
-def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None, station=None, multipart=None, silent=False):
+def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=None, multipart=None, silent=False):
     """
 
     Parameters
@@ -57,8 +57,6 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
         (list/range/ndarray of) 0-based int or datetime. Can be used to select one or more specific timesteps, or 'all'. The default is None.
     layer : TYPE, optional
         (list/range/ndarray of) 0-based int. The default is None.
-    depth : TYPE, optional
-        DESCRIPTION. The default is None.
     station : TYPE, optional
         DESCRIPTION. The default is None. Deprecated, not possible anymore (use xarray.sel instead)
     multipart : TYPE, optional
@@ -75,8 +73,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
         DESCRIPTION.
 
     """
-
-
+    
     #get variable info (also checks if varname exists in keys, standard name, long name)
     data_nc = Dataset(file_nc)
     data_xr = xr.open_dataset(file_nc)
@@ -85,7 +82,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     
     #get list of station dimnames
     vars_pd = get_ncvarproperties(file_nc=file_nc)
-
+    
     listtype_int = [int, np.int8, np.int16, np.int32, np.int64]
     listtype_str = [str]
     listtype_range = [list, range, np.ndarray, pd.RangeIndex]
@@ -97,10 +94,9 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
         print('variable "%s" should probably be retrieved with separate function:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist\nstation_names = get_hisstationlist(file_nc=file_nc, varname="%s") (or use any varname there to retrieve corresponding station list)'%(varname,varname))
     if 'time' in varname.lower():
         print('variable "%s" should probably be retrieved with separate function:\nfrom dfm_tools.get_nc_helpers import get_timesfromnc\ntimes = get_timesfromnc(file_nc=file_nc, varname="%s")'%(varname, varname))
-
-
+    
     #TIMES CHECKS
-    dimn_time = 'time' #hard coded, since easy to change
+    dimn_time = 'time' #hard coded, since easy to change with xarray
     if dimn_time not in nc_varobject.dimensions: #dimension time is not available in variable
         if timestep is not None:
             raise Exception('ERROR: netcdf file variable (%s) does not contain times, but parameter timestep is provided'%(varname))
@@ -168,11 +164,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
         #check if requested layers are within range of netcdf
         if np.max(layer_ids) > nlayers-1:
             raise Exception('ERROR: requested max layer (%d) is larger than available in netcdf file (%d)'%(np.max(layer_ids),nlayers-1))
-
-    #DEPTH CHECKS
-    if depth is not None:
-        raise Exception('ERROR: depth argument is provided, but vertical slicing is not implemented yet, try layer argument instead')
-
+    
     #STATION/GENERAL_STRUCTURES CHECKS
     vars_pd_stats = vars_pd[(vars_pd['dtype'].astype(str).str.startswith('|S') | (vars_pd['dtype']=='object')) & (vars_pd['dimensions'].apply(lambda x: dimn_time not in x))] #TODO: better check for bytes string
     dimname_stat_validvals = []
@@ -238,7 +230,6 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
 
         values_selid = []
         values_dimlens = [] #list(nc_values.shape)
-        #values_dimlinkedgrid = [] #list(nc_values.shape)
         try:
             nc_varobject_sel_coords = nc_varobject_sel.coordinates
         except:
@@ -283,20 +274,6 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
                 #warnings.warn('not a predefined dimension name')
                 values_selid.append(range(nc_varobject_sel.shape[iD]))
                 values_dimlens.append(nc_varobject_sel.shape[iD])
-
-            #get info about grid variables related to varname #TODO: remove this commented code (and related linkedgrid parts)
-            # if get_linkedgridinfo and (nc_values_dimsel not in [dimn_time,dimn_layer]+dimname_stat_validvals):
-            #     vars_pd_relevant = vars_pd[(vars_pd['shape'].apply(len)<=2) & (vars_pd['dimensions'].apply(lambda x: nc_values_dimsel in x)) & -(vars_pd['dimensions'].apply(lambda x: dimn_time in x))]
-            #     values_dimlinkedgrid.append(vars_pd_relevant)
-
-            #     print('\tlinkedvars for dimension "%s":'%(nc_values_dimsel))
-            #     #print('nc_varobject_sel.dimensions: %s'%([nc_varobject_sel.dimensions]))
-            #     for iLV, linkedvar in vars_pd_relevant.iterrows():
-            #         print('\t\t%s  %s  %s'%(iLV, linkedvar['shape'], linkedvar['dimensions']))
-            #     #print('nc_values_dimsel: %s'%(nc_values_dimsel))
-            #     #print('vars_pd_relevant:\n%s'%(vars_pd_relevant))
-            # else:
-            #     values_dimlinkedgrid.append(None)
 
         #get selected data (including ghostcells because that is faster)
         nc_varobject_sel_selids_raw = nc_varobject_sel[values_selid]
@@ -349,8 +326,6 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     values_all.var_dimensions = nc_varobject.dimensions
     values_all.var_shape = nc_varobject.shape
     values_all.var_dtype = nc_varobject.dtype
-    #values_all.var_linkedgridinfo = values_dimlinkedgrid
-    #values_all.var_ncobject = data_nc #this is the netcdf object retrieved with netCDF4.Dataset() #disabled, since it becomes invalid after closing the dataset
     values_all.var_ncvarobject = f"from netCDF4 import Dataset;data_nc = Dataset('{file_nc}');nc_varobject = data_nc.variables['{varname}'];print(nc_varobject)" # nc_varobject #this is the netcdf variable, contains properties like shape/units/dimensions #disabled, since it becomes invalid after closing the dataset
     values_all.var_ncattrs = nc_varobject.__dict__ #values in nc_varobject.ncattrs() or hasattr(nc_varobject,'attributename')
 
@@ -364,21 +339,16 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None
     else:
         values_all.var_layers = None
     
-    #if any(dimname_stat_validvals_boolpresent):
-    #    values_all.var_stations = station_name_list_pd.iloc[station_ids]
-    #else:
-    #    values_all.var_stations = None
-        
     data_nc.close()
     return values_all
 
 
-def calc_dist_pythagoras(x1,x2,y1,y2):
+def calc_dist_pythagoras(x1,x2,y1,y2): # only used in dfm_tools.ugrid
     distance = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
     return distance
 
 
-def calc_dist_haversine(lon1,lon2,lat1,lat2):
+def calc_dist_haversine(lon1,lon2,lat1,lat2): # only used in dfm_tools.ugrid
     """
     calculates distance between lat/lon coordinates in meters
     https://community.esri.com/t5/coordinate-reference-systems-blog/distance-on-a-sphere-the-haversine-formula/ba-p/902128
@@ -644,8 +614,6 @@ def plot_background(ax=None, projection=None, google_style='satellite', resoluti
 
     """
 
-    from dfm_tools.testutils import try_importmodule
-    try_importmodule(modulename='cartopy') #check if cartopy was installed since it is an optional module, also happens in plot_cartopybasemap()
     import cartopy
     import cartopy.crs as ccrs
     import cartopy.io.img_tiles as cimgt

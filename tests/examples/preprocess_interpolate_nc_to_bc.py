@@ -15,6 +15,7 @@ from dfm_tools.interpolate_grid2bnd import get_conversion_dict, interpolate_tide
 from dfm_tools.hydrolib_helpers import forcinglike_to_DataFrame, forcinglike_to_DataArray, T3Dvector_to_T3Dtuple
 from hydrolib.core.io.ext.models import Boundary, ExtModel
 
+#TODO: add coordinate conversion of pli-coordinates (for nesting RD models)
 
 model = 'CMCC' #CMEMS GFDL CMCC HYCOM
 
