@@ -123,7 +123,10 @@ for file_pli in list_plifiles:
                     forcingobject_one_xr.plot(ax=ax1)
         
         file_bc_basename = file_pli.name.replace('.pli','')
-        file_bc_out = Path(dir_out,f'{quantity}_{file_bc_basename}_{model}.bc')
+        if quantity=='tide':
+            file_bc_out = Path(dir_out,f'{quantity}_{file_bc_basename}_{tidemodel}.bc')
+        else:
+            file_bc_out = Path(dir_out,f'{quantity}_{file_bc_basename}_{model}.bc')
         print(f'writing ForcingModel to bc file with hydrolib ({file_bc_out.name})')
         if bc_type=='bc':
             ForcingModel_object.save(filepath=file_bc_out)
