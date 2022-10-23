@@ -16,7 +16,7 @@ from dfm_tools.download import download_ERA5, download_CMEMS
 #download ERA5/CMEMS data for given domain, time extent and variable lists
 #TODO: add CMCC, GFDL, HYCOM
 
-overwrite = True # always set to True when changing the domain
+overwrite = False # always set to True when changing the domain
 
 # domain
 longitude_min, longitude_max, latitude_min, latitude_max =    2,   4,  50, 52 #test domain
@@ -24,7 +24,7 @@ longitude_min, longitude_max, latitude_min, latitude_max =    2,   4,  50, 52 #t
 
 #dates as understood by pandas.date_range(). ERA5 has freq='M' (month) and CMEMS has freq='D' (day)
 date_min = '2010-01-01'
-date_max = '2010-01-03'
+date_max = '2010-01-02'
 
 #variables per model will be written to separate netcdf files. Set to [] to skip model.
 variables_era5 = ['v10n'] # variables, supply arbitrary string to get error with available variable names
@@ -68,7 +68,7 @@ for varkey in varlist_cmems:
                    credentials=None, #credentials=['username','password'], or create "%USER%/motucredentials.txt" with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form'
                    timeout=200) #default is 30, but this might be not always be enough to avoid TimeoutExpired error.
     
-    #open mfdataset to check folder contents
+    #open mfdataset to check folder contents and plot first field of each variable
     ds = xr.open_mfdataset(os.path.join(dir_output,f'cmems_{varkey}_*.nc'))
     ds.close()
     fig,ax = plt.subplots()
