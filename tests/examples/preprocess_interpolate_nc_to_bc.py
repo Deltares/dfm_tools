@@ -12,12 +12,12 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 plt.close('all')
 from dfm_tools.interpolate_grid2bnd import get_conversion_dict, interpolate_tide_to_bc, interpolate_nc_to_bc
-from dfm_tools.hydrolib_helpers import forcinglike_to_DataFrame, forcinglike_to_DataArray, T3Dvector_to_T3Dtuple
+from dfm_tools.hydrolib_helpers import forcinglike_to_DataFrame, forcinglike_to_Dataset
 from hydrolib.core.io.ext.models import Boundary, ExtModel
 
 #TODO: add coordinate conversion of pli-coordinates (for nesting RD models)
 
-model = 'CMCC' #CMEMS GFDL CMCC HYCOM
+model = 'CMEMS' #CMEMS GFDL CMCC HYCOM
 
 if model == 'HYCOM': #not available in dcsm area
     list_plifiles = [Path(r'c:\DATA\dfm_tools_testdata\GLBu0.08_expt_91.2\bcline.pli')]
@@ -35,7 +35,8 @@ nPoints = 3 #amount of Points to process per PolyObject in the plifile (for test
 
 #quantities should be in conversion_dict.keys(). waterlevelbnd is steric/zos, tide is tidal components from FES/EOT
 list_quantities = ['waterlevelbnd','salinitybnd','tide','ux,uy','temperaturebnd','tracerbndNO3']
-#list_quantities = ['salinitybnd','tracerbndNO3']
+list_quantities = ['ux,uy','temperaturebnd','waterlevelbnd','tide']
+list_quantities = ['tide']
 
 dtstart = dt.datetime.now()
 ext_bnd = ExtModel()
@@ -109,18 +110,17 @@ for file_pli in list_plifiles:
         if 1: #plotting example data point
             for iF in [2]:#range(nPoints):
                 forcingobject_one = ForcingModel_object.forcing[iF]
-                if hasattr(forcingobject_one.quantityunitpair[1],'elementname'): #T3Dvector, take only first one
-                    forcingobject_one, dummy = T3Dvector_to_T3Dtuple(forcingobject_one) #TODO: maybe make DataSet with two DataArrays instead
-                forcingobject_one_xr = forcinglike_to_DataArray(forcingobject_one)
+                forcingobject_one_xr = forcinglike_to_Dataset(forcingobject_one)
+                data_vars = list(forcingobject_one_xr.data_vars)
                 fig,ax1 = plt.subplots()
                 if hasattr(forcingobject_one,'vertpositions'):
-                    pc = forcingobject_one_xr.T.plot.pcolormesh(ax=ax1)
-                elif quantity=='tide': #TODO: improve tide/astronomic DataArray so this exception is not necessary anymore (e.g. DataSet with two DataArrays)
-                    forcingobject_one_xr.isel(quantity=0).plot(ax=ax1, label='amplitude')
-                    forcingobject_one_xr.isel(quantity=1).plot(ax=ax1, label='phase')
+                    pc = forcingobject_one_xr[data_vars[0]].T.plot.pcolormesh(ax=ax1)
+                elif quantity=='tide':
+                    forcingobject_one_xr[data_vars[0]].plot(ax=ax1, label='amplitude')
+                    forcingobject_one_xr[data_vars[1]].plot(ax=ax1, label='phase')
                     ax1.legend(loc=1)
                 else:
-                    forcingobject_one_xr.plot(ax=ax1)
+                    forcingobject_one_xr[data_vars[0]].plot(ax=ax1)
         
         file_bc_basename = file_pli.name.replace('.pli','')
         if quantity=='tide':
