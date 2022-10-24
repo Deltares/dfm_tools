@@ -51,7 +51,6 @@ def get_conversion_dict(ncvarname_updates={}):
                         'temperaturebnd'      : {'ncvarname': 'thetao'},      #'degC'
                         'ux'                  : {'ncvarname': 'uo'},          #'m/s'
                         'uy'                  : {'ncvarname': 'vo'},          #'m/s'
-                        #'uxuy'                : {'ncvarname': 'uo,vo'},       #'m/s'
                         'waterlevelbnd'       : {'ncvarname': 'zos'},         #'m' #steric
                         'tide'                : {'ncvarname': ''},            #'m' #tide (dummy entry)
                         }
@@ -197,31 +196,30 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
                          tstart, tstop, refdate_str=None, 
                          conversion_dict=None, #rename_vars={}, #TODO: alternatively use rename_vars dict and use conversion_dict only for unit conversion. dict containing keys: ncvarname, bcvarname and optionally conversion and unit
                          nPoints=None, #argument for testing
-                         reverse_depth=False, #temporary argument to compare easier with old coastserv files
-                         ):
+                         reverse_depth=False): #temporary argument to compare easier with old coastserv files
     
     if conversion_dict is None:
         conversion_dict = get_conversion_dict()
     
-    if quantity=='uxuy': #T3Dvector #TODO: make this less ugly
-        print(f'combined variables ({quantity})')    
+    if quantity=='uxuy': #T3Dvector
         quantity_list = ['ux','uy']
-        ncvarname_joined = conversion_dict[quantity]['ncvarname']
-        ncvarname_list = ncvarname_joined.split(',')
-        ForcingModel_object_list = [interpolate_nc_to_bc(dir_pattern=Path(str(dir_pattern).replace(ncvarname_joined,ncvarname_one)), file_pli=file_pli, quantity=quantity_one, tstart=tstart, tstop=tstop, refdate_str=refdate_str, conversion_dict=conversion_dict, nPoints=nPoints, reverse_depth=reverse_depth) for quantity_one, ncvarname_one in zip(quantity_list,ncvarname_list)]
-        ForcingModel_object_comb = ForcingModel()
-        for iF in range(len(ForcingModel_object_list[0].forcing)):
-            T3Dvec_onepoint = _T3Dtuple_to_T3Dvector(ForcingModel_object_list[0].forcing[iF],ForcingModel_object_list[1].forcing[iF]) #TODO: make flexible for more than one quantity
-            ForcingModel_object_comb.forcing.append(T3Dvec_onepoint)
-        return ForcingModel_object_comb
-        
+        ncvarname_list = [conversion_dict[quan]['ncvarname'] for quan in quantity_list]
+    else:
+        quantity_list = [quantity]
+        ncvarname_list = [conversion_dict[quan]['ncvarname'] for quan in quantity_list]
+    
     print('initialize ForcingModel()')
     ForcingModel_object = ForcingModel()
     
-    file_list_nc = glob.glob(str(dir_pattern))
-    print(f'loading mfdataset ({len(file_list_nc)} files with pattern "{dir_pattern.name}")')
+    dir_pattern = [Path(str(dir_pattern).format(ncvarname=ncvarname)) for ncvarname in ncvarname_list]
+    file_list_nc = []
+    for dir_pattern_one in dir_pattern:
+        file_list_nc = file_list_nc + glob.glob(str(dir_pattern_one))
+    list_pattern_names = [x.name for x in dir_pattern]
+    print(f'loading mfdataset of {len(file_list_nc)} files with pattern(s) {list_pattern_names}')
+    
     dtstart = dt.datetime.now()
-    data_xr = xr.open_mfdataset(file_list_nc,chunks={'time':1}) # can also supply str(dir_pattern) #TODO: does chunks argument solve "PerformanceWarning: Slicing is producing a large chunk."?
+    data_xr = xr.open_mfdataset(file_list_nc,chunks={'time':1}) #TODO: does chunks argument solve "PerformanceWarning: Slicing is producing a large chunk."?
     
     #rename variables with rename_dict derived from conversion_dict
     rename_dict = {v['ncvarname']:k for k,v in conversion_dict.items()}
@@ -275,10 +273,13 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
         else: #lon/lat is 2D #TODO: this can be removed
             print('WARNING: 2D latitude/longitude has more than one dim, continue without .sortby(). This is expected for e.g. CMCC')
     
-    #retrieve var (after potential longitude conversion) (also selecting relevant times)
-    if not quantity in data_xr.data_vars:
-        raise Exception(f'quantity \'{quantity}\' not found (try updating conversion_dict), available are:\n{data_xr.data_vars}')
-    data_xr_var = data_xr[quantity].sel(time=slice(tstart,tstop))
+    #retrieve var(s) (after potential longitude conversion) (also selecting relevant times)
+    data_vars = list(data_xr.data_vars)
+    bool_quanavailable = pd.Series(quantity_list).isin(data_vars)
+    if not bool_quanavailable.all():
+        quantity_list_notavailable = pd.Series(quantity_list).loc[~bool_quanavailable].tolist()
+        raise Exception(f'quantity {quantity_list_notavailable} not found, available are: {data_vars}. Try updating conversion_dict to rename these variables.')
+    data_xr_var = data_xr[quantity_list].sel(time=slice(tstart,tstop))
     
     if coordname_lon not in data_xr_var.coords:
         raise Exception(f'{coordname_lon} not in variable coords: {data_xr_var.coords}.')
@@ -347,9 +348,10 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
         
         #optional conversion of units and reversing depth dimension
         if 'conversion' in conversion_dict.keys(): #if conversion is present, unit key must also be in conversion_dict
-            print(f'> converting units from [{datablock_xr_allpoints.attrs["units"]}] to [{conversion_dict["unit"]}]')
-            datablock_xr_allpoints = datablock_xr_allpoints * conversion_dict['conversion'] #conversion drops all attributes of which units (which are changed anyway)
-            datablock_xr_allpoints.attrs['units'] = conversion_dict['unit'] #add unit attribute with resulting unit
+            for quan in quantity_list:
+                print(f'> converting units from [{datablock_xr_allpoints[quan].attrs["units"]}] to [{conversion_dict["unit"]}]')
+                datablock_xr_allpoints[quan] = datablock_xr_allpoints[quan] * conversion_dict['conversion'] #conversion drops all attributes of which units (which are changed anyway)
+                datablock_xr_allpoints[quan].attrs['units'] = conversion_dict['unit'] #add unit attribute with resulting unit
         
         if ('depth' in data_xr_var.coords) & reverse_depth:
             print('> reversing depth dimension')
@@ -364,10 +366,12 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             print('> select data for this point, ffill nans, concatenating time column, constructing T3D/TimeSeries and appending to ForcingModel()')
             dtstart = dt.datetime.now()
             datablock_xr_onepoint = datablock_xr_allpoints.isel(latloncombi=iP)
-            datablock_xr_onepoint.attrs['locationname'] = pli_PolyObject_name_num #TODO: is there a nicer way of passing this data?
             
-            if np.isnan(datablock_xr_onepoint.to_numpy()).all(): # check if only nan (out of bounds or land) # we can do .to_numpy() without performance loss, since data is already loaded in datablock_xr_allpoints
-                print('WARNING: only nans for this coordinate, this point might be on land')
+            for quan in quantity_list:
+                datablock_xr_onepoint[quan].attrs['locationname'] = pli_PolyObject_name_num #TODO: is there a nicer way of passing this data?
+                
+                if np.isnan(datablock_xr_onepoint[quan].to_numpy()).all(): # check if only nan (out of bounds or land) # we can do .to_numpy() without performance loss, since data is already loaded in datablock_xr_allpoints
+                    print('WARNING: only nans for this coordinate, this point might be on land')
             
             if 'depth' in data_xr_var.coords:
                 ts_one = Dataset_to_T3D(datablock_xr_onepoint)
