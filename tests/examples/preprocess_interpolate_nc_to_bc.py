@@ -109,14 +109,21 @@ for file_pli in list_plifiles:
         if 1: #plotting example data point
             for iF in [2]:#range(nPoints):
                 forcingobject_one = ForcingModel_object.forcing[iF]
-                forcingobject_one_xr = forcinglike_to_Dataset(forcingobject_one)
+                forcingobject_one_xr = forcinglike_to_Dataset(forcingobject_one,convertnan=True)
                 data_vars = list(forcingobject_one_xr.data_vars)
-                fig,ax1 = plt.subplots()
-                if hasattr(forcingobject_one,'vertpositions'):
-                    pc = forcingobject_one_xr[data_vars[0]].T.plot.pcolormesh(ax=ax1)
+                fig,ax1 = plt.subplots(figsize=(10, 6))
+                if hasattr(forcingobject_one,'vertpositions'): #3D quantity (time/depth dimensions)
+                    if hasattr(forcingobject_one.quantityunitpair[1],'elementname'): #uxuy vector
+                        plt.close()
+                        fig, axes = plt.subplots(2,1,figsize=(10, 7),sharex=True,sharey=True)
+                        forcingobject_one_xr[data_vars[0]].T.plot(ax=axes[0])
+                        forcingobject_one_xr[data_vars[1]].T.plot(ax=axes[1])
+                    else:
+                        forcingobject_one_xr[data_vars[0]].T.plot(ax=ax1)
                 elif quantity=='tide':
-                    forcingobject_one_xr[data_vars[0]].plot(ax=ax1, label='amplitude')
-                    forcingobject_one_xr[data_vars[1]].plot(ax=ax1, label='phase')
+                    ax2 = ax1.twinx()
+                    forcingobject_one_xr[data_vars[0]].plot(ax=ax1)
+                    forcingobject_one_xr[data_vars[1]].plot(ax=ax2)
                 else:
                     forcingobject_one_xr[data_vars[0]].plot(ax=ax1)
         

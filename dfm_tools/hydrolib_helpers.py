@@ -22,7 +22,7 @@ from hydrolib.core.io.bc.models import (
 )
 
 
-def Dataset_to_T3Dvector(data_xr, vectorname='uxuyadvectionvelocitybnd'): #TODO: name of DataSet or Global attr?   
+def Dataset_to_T3Dvector(data_xr, vectorname='uxuyadvectionvelocitybnd'): #TODO: vectorname from global attr?   
     """
     convert an xarray.Dataset with two (or more?) data_vars with time and depth dimension to a hydrolib vector T3D object
     """
@@ -92,7 +92,7 @@ def Dataset_to_T3D(datablock_xr):
     if isinstance(datablock_xr,xr.Dataset):
         data_vars = list(datablock_xr.data_vars)
         if len(data_vars)!=1:
-            raise Exception('more than one variable supplied in Dataset, use Dataset_to_T3Dvector() instead') #TODO: add support for multiple quantities and for vectors
+            raise Exception('more than one variable supplied in Dataset, use Dataset_to_T3Dvector() instead') #TODO: add support for multiple quantities and for vectors (maybe merge with Dataset_to_T3Dvector?)
         datablock_xr = datablock_xr[data_vars[0]]
     
     #TODO: clean up these first lines of code and add description to docstring?
@@ -160,13 +160,13 @@ def Dataset_to_TimeSeries(datablock_xr):
     TimeSeries_object = TimeSeries(name=locationname,
                                    quantityunitpair=[QuantityUnitPair(quantity="time", unit=refdate_str),
                                                      QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs['units'])],
-                                   timeinterpolation='linear',
+                                   timeinterpolation='linear', #TODO: make userdefined via attrs?
                                    datablock=datablock_incltime.tolist(), 
                                    )
     return TimeSeries_object
 
 
-def DataFrame_to_PolyObject(poly_pd,name,content=None): #TODO: make this method bound? Better: make polyobject/extmodel accept dataframe?
+def DataFrame_to_PolyObject(poly_pd,name,content=None):
     """
     convert a pandas dataframe with x/y columns (and optional others like z/data/comment) to a hydrolib PolyObject
     """
@@ -184,7 +184,7 @@ def DataFrame_to_PolyObject(poly_pd,name,content=None): #TODO: make this method 
     return polyobject
 
 
-def _T3Dtuple_to_T3Dvector(*forcingobjects,vectorname='uxuyadvectionvelocitybnd'):  #TODO: discontinue? used in dfm_tools.interpolate_grid2bnd.py
+def _T3Dtuple_to_T3Dvector(*forcingobjects,vectorname='uxuyadvectionvelocitybnd'): #TODO: discontinue? used in dfm_tools.interpolate_grid2bnd.py
     """
     converts a tuple of T3D objects (one for each vector element) to a T3D with vector element quantities (like a ux/uy combination)
     """
@@ -258,7 +258,7 @@ def _T3Dtuple_to_T3Dvector(*forcingobjects,vectorname='uxuyadvectionvelocitybnd'
 def forcinglike_to_Dataset(forcingobj, convertnan=False): #TODO: would be convenient to have this as a method of ForcingModel objects (Timeseries/T3D/etc): https://github.com/Deltares/HYDROLIB-core/issues/307
     """
     convert a hydrolib forcing like object (like Timeseries, T3D, Harmonic, etc) to an xarray Dataset with one or more variables.
-    #TODO: clean up code and add doc
+    
     convertnan: convert depths with the same values over time as the deepest layer to nan (these were created with .bfill().ffill()).
     """
     
@@ -274,11 +274,10 @@ def forcinglike_to_Dataset(forcingobj, convertnan=False): #TODO: would be conven
         var_quantity_list = [x.quantity for x in forcingobj.quantityunitpair[1:]]
         var_unit = [x.unit for x in forcingobj.quantityunitpair[1:]]
     elif hasattr(forcingobj.quantityunitpair[1],'elementname'): #vector with elementname
-        print('vector quantity supplied to forcinglike_to_DataArray()')
         var_quantity_list = forcingobj.quantityunitpair[1].elementname
         var_unit = forcingobj.quantityunitpair[1].quantityunitpair[0].unit
     else:
-        var_quantity_list = [forcingobj.quantityunitpair[1].quantity] #TODO: now making list for looping, resulting in DataSet also or preferrably DataArray?
+        var_quantity_list = [forcingobj.quantityunitpair[1].quantity]
         var_unit = forcingobj.quantityunitpair[1].unit
     nquan = len(var_quantity_list)
     
@@ -290,7 +289,7 @@ def forcinglike_to_Dataset(forcingobj, convertnan=False): #TODO: would be conven
         dims = ('astronomic_component')
     
     datablock_all = np.array(forcingobj.datablock)
-    datablock_data = datablock_all[:,1:] #select all columns except first one. TODO: convert repeating values to nan? (reverse of ffill/bfill)
+    datablock_data = datablock_all[:,1:] #select all columns except first one (which is the time column)
     if isinstance(forcingobj, Astronomic):
         datablock_data = datablock_data.astype(float) #convert str to float in case of "astronomic component"
     
@@ -325,7 +324,7 @@ def forcinglike_to_Dataset(forcingobj, convertnan=False): #TODO: would be conven
         
         #add attributes
         attr_dict = {'source':'hydrolib-core object converted to xarray.DataArray with dfm_tools',
-                     'unit':var_unit, #TODO: units
+                     'unit':var_unit, #TODO: units or unit?
                      }
         for key in attr_dict.keys():
             data_xr_var.attrs[key] = attr_dict[key]

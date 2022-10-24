@@ -7,7 +7,6 @@ Created on Wed Aug 17 11:19:51 2022
 
 #import os
 from pathlib import Path
-#import datetime as dt
 import matplotlib.pyplot as plt
 plt.close('all')
 from hydrolib.core.io.bc.models import ForcingModel
@@ -56,9 +55,9 @@ for file_bc in file_bc_list:
             if hasattr(forcingobj.quantityunitpair[1],'elementname'): #uxuy vector
                 forcing_ts = Dataset_to_T3Dvector(forcing_xr)
                 plt.close()
-                fig, ax = plt.subplots(2,1,figsize=(12, 8),sharex=True,sharey=True)
-                forcing_xr[data_vars[0]].T.plot(ax=ax[0])
-                forcing_xr[data_vars[1]].T.plot(ax=ax[1])
+                fig, axes = plt.subplots(2,1,figsize=(12, 8),sharex=True,sharey=True)
+                forcing_xr[data_vars[0]].T.plot(ax=axes[0])
+                forcing_xr[data_vars[1]].T.plot(ax=axes[1])
             else: #salinitybnd/temperaturebnd
                 forcing_ts = Dataset_to_T3D(forcing_xr)
                 forcing_xr[data_vars[0]].T.plot(ax=ax)
