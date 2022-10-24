@@ -160,7 +160,7 @@ def corner2center(cor):
     return cen
 
 
-def uva2xymagdeg(U1, V1, ALFAS, KCU=None, KCV=None, inactivewhen4x0=True):
+def uva2xymagdeg(U1, V1, ALFAS, KCU=None, KCV=None, inactivewhen4x0=True): #only used in workinprogress_delft3D_netcdf.py
     """
     this function converts velocities in m,n-direction (defined mathematically, so 0 on x-axis and increasing counter-clockwise)
     alpha is a matrix with orientations of cells, with respect to the north (varname='ALFAS') in D3D output

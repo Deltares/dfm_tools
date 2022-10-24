@@ -5,20 +5,20 @@ Created on Tue Oct 18 15:09:26 2022
 @author: veenstra
 """
 
+import os
 import subprocess
 import pandas as pd
-import datetime as dt
 from pathlib import Path
 import requests
-import numpy as np
 
 
-def download_ERA5(varkey, #TODO: maybe replace by varlist if desired
-                  tstart, tstop,
+def download_ERA5(varkey,
+                  date_min, date_max,
                   longitude_min, longitude_max, latitude_min, latitude_max, 
-                  dir_out='.'):
+                  dir_output='.', overwrite=False):
     
-    import cdsapi # Import cdsapi and create a Client instance # https://cds.climate.copernicus.eu/api-how-to #TODO: move to top of script (then make dependency of dfm_tools)
+    #TODO: describe something about the .cdsapirc file
+    import cdsapi # Import cdsapi and create a Client instance # https://cds.climate.copernicus.eu/api-how-to #TODO: move to top of script? (then make dependency of dfm_tools)
     c = cdsapi.Client()
     
     #dictionary with ERA5 variables
@@ -43,13 +43,17 @@ def download_ERA5(varkey, #TODO: maybe replace by varlist if desired
     if varkey not in variables_dict.keys():
         raise Exception(f'"{varkey}" not available, choose from: {list(variables_dict.keys())}')
     
-    date_range = pd.date_range(tstart,tstop,freq='MS') #frequency: month start
-    print(f'retrieving data for months in: {date_range}')
+    period_range = pd.period_range(date_min,date_max,freq='M')
+    print(f'retrieving data from {period_range[0]} to {period_range[-1]} (freq={period_range.freq})')
     
-    for date in date_range:
+    for date in period_range:
+        name_output = f'era5_{varkey}_{date.strftime("%Y-%m")}.nc'
+        file_out = Path(dir_output,name_output)
+        if file_out.is_file() and not overwrite:
+            print(f'"{name_output}" found and overwrite=False, continuing.')
+            continue
         print (f'retrieving ERA5 data for variable "{varkey}" and month {date.strftime("%Y-%m")} (YYYY-MM)')
 
-        file_out = Path(dir_out,f'era5_{varkey}_{date.strftime("%Y%m")}.nc')
         
         request_dict = {'product_type':'reanalysis',
                         'variable':variables_dict[varkey],
@@ -64,17 +68,16 @@ def download_ERA5(varkey, #TODO: maybe replace by varlist if desired
         
         c.retrieve(name='reanalysis-era5-single-levels', request=request_dict, target=file_out)
     return
-    
 
-def download_CMEMS(username, password, #register at: https://resources.marine.copernicus.eu/registration-form' 
-                   dir_output='.', #default to cwd
-                   longitude_min=-180, longitude_max=180, latitude_min=-90, latitude_max=90,
-                   date_min='2010-01-01', date_max='2010-01-03', #'%Y-%m-%d'
-                   varlist=['bottomT'], #['thetao','so','zos','bottomT','uo','vo'], ['o2','no3','po4','si','nppv','chl'],
-                   source_combination=None,
-                   motu_url=None, service=None, product=None, #optionally provided via source_combination
-                   timeout=30, #in seconds #TODO: set timeout back to 300?
-                   max_tries=2):
+
+def download_CMEMS(varkey,
+                   date_min, date_max,
+                   longitude_min, longitude_max, latitude_min, latitude_max, 
+                   dir_output='.', overwrite=False,
+                   source_combination=None, #str from source_dict.keys(). Or provide motu_url/service/product arguments
+                   motu_url=None, service=None, product=None, #or provide source_combination argument
+                   credentials=None, #credentials=['username','password'], or create "%USER%/motucredentials.txt" with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form'
+                   timeout=30): #in seconds #TODO: set timeout back to 300?
     
     """
     How to get motu_url/service/product:
@@ -87,17 +90,29 @@ def download_CMEMS(username, password, #register at: https://resources.marine.co
     """
     
     import motuclient #used in motu_commands, so has to be importable. conda install -c conda-forge motuclient #TODO: move to top of script (then make dependency of dfm_tools)
+    #TODO: consider opendap instead?
+    
+    #get credentials
+    if credentials is None:
+        file_credentials = f'{os.path.expanduser("~")}/motucredentials.txt'
+        if not os.path.exists(file_credentials):
+            raise Exception(f'credentials argument not supplied and file_credentials not available ({file_credentials})')
+        with open(file_credentials) as fc:
+            username = fc.readline().strip()
+            password = fc.readline().strip()
+    else:
+        username,password = credentials
        
-    source_dict =   {'multiyear_physchem':{'motu_url':'http://my.cmems-du.eu', # multiyear reanalysis data (01-01-1993 12:00 till 31-05-2020 12:00)
+    source_dict =   {'multiyear_physchem':{'motu_url':'https://my.cmems-du.eu', # multiyear reanalysis data (01-01-1993 12:00 till 31-05-2020 12:00)
                                            'service': 'GLOBAL_MULTIYEAR_PHY_001_030-TDS',
                                            'product': 'cmems_mod_glo_phy_my_0.083_P1D-m'},
-                     'multiyear_bio':     {'motu_url':'http://my.cmems-du.eu',
+                     'multiyear_bio':     {'motu_url':'https://my.cmems-du.eu',
                                            'service': 'GLOBAL_MULTIYEAR_BGC_001_029-TDS',
                                            'product': 'cmems_mod_glo_bgc_my_0.25_P1D-m'},
-                     'forecast_physchem': {'motu_url':'http://nrt.cmems-du.eu', # operational forecast data (01-01-2019 12:00 till now + several days)
+                     'forecast_physchem': {'motu_url':'https://nrt.cmems-du.eu', # operational forecast data (01-01-2019 12:00 till now + several days)
                                            'service': 'GLOBAL_ANALYSIS_FORECAST_PHY_001_024-TDS',
                                            'product': 'global-analysis-forecast-phy-001-024'},
-                     'forecast_bio':      {'motu_url':'http://nrt.cmems-du.eu',
+                     'forecast_bio':      {'motu_url':'https://nrt.cmems-du.eu',
                                            'service': 'GLOBAL_ANALYSIS_FORECAST_BIO_001_028-TDS',
                                            'product': 'global-analysis-forecast-bio-001-028-daily'},
                      }
@@ -106,56 +121,48 @@ def download_CMEMS(username, password, #register at: https://resources.marine.co
         if (motu_url is not None) or (service is not None) or (product is not None):
             raise Exception('motu_url, service and/or product arguments provided while source_combination is also provided.')
         if not source_combination in source_dict.keys():
-            raise Exception(f'provided source_combination argument is not valid, options are {list(source_dict.keys())}. Alternatively provide motu_url/service/product arguments.')
+            raise Exception(f'provided source_combination={source_combination} argument is not valid, options are {list(source_dict.keys())}. Alternatively provide motu_url/service/product arguments.')
         motu_url = source_dict[source_combination]['motu_url']
         service = source_dict[source_combination]['service']
         product = source_dict[source_combination]['product']
     
     #test if supplied motu_url is valid
     requests.get(motu_url)
-        
-    date_range = pd.date_range(dt.datetime.strptime(date_min, '%Y-%m-%d'),dt.datetime.strptime(date_max, '%Y-%m-%d'), freq='D')
     
-    for var in varlist:
-        for date in date_range: #retrieve data per day
-            date_str = date.strftime('%Y-%m-%d')
-            name_output = f'cmems_{var}_{date_str}.nc' #TODO: add 12h to filename?
-            check_file = Path(dir_output,name_output)
-            tryno = 0
-            while not check_file.is_file():
-                tryno += 1
-                print(f'retrieving variable {var} for {date_str}: try {tryno}')
-                
-                motu_command = ' '.join(['motuclient', '--motu', f'{motu_url}/motu-web/Motu', '--service-id', service, '--product-id', product,
-                                         '--longitude-min', str(longitude_min), '--longitude-max', str(longitude_max),
-                                         '--latitude-min', str(latitude_min), '--latitude-max', str(latitude_max),
-                                         '--date-min', date_str, '--date-max', date_str, #+' 12:00:00',
-                                         '--depth-min', '0', '--depth-max', '2e31',
-                                         '--variable', str(var),
-                                         '--out-dir', dir_output, '--out-name', name_output,
-                                         '--user', username, '--pwd', password])
-                try:
-                    out = subprocess.run(f'python -m {motu_command}', capture_output=True, check=True, universal_newlines=True, timeout=timeout)
-                except subprocess.TimeoutExpired as e:
-                    out = e
-                    print(f'TimeoutExpired: {e} Check above logging.')
-                    if tryno >= max_tries:
-                        raise Exception(f'TimeoutExpired {max_tries} times: maybe increase max_tries ({max_tries}) or timeout ({timeout} seconds)')
-                except subprocess.CalledProcessError as e:
-                    out = e
-                    raise Exception(f'CalledProcessError: {e} Check above logging.')
-                finally:
-                    if ('ERROR' in out.stdout) or ('WARNING' in out.stdout): #catch all other errors, and the relevant information in TimeoutExpired and CalledProcessError
-                        if 'variable not found' in out.stdout:
-                            raise Exception(f'othererror:\nOUT: {out.stdout}\nERR: {out.stderr}\nCheck available variables at: "{motu_url}/motu-web/Motu?action=describeproduct&service={service}&product={product}"')
-                        else:
-                            raise Exception(f'othererror:\nOUT: {out.stdout}\nERR: {out.stderr}')
-                    #else:
-                    #    print(f'OUT: {out.stdout}\nERR: {out.stderr}')
-                
-                if tryno >= max_tries:
-                    raise Exception(f'max tries ({max_tries}) reached, this should not happen since it is already catched at timeout and errors are raised at others')
-            if check_file.is_file():
-                print(f'file available after {tryno} tries, continuing to next var/time')
+    period_range = pd.period_range(date_min,date_max,freq='D')
+    print(f'retrieving data from {period_range[0]} to {period_range[-1]} (freq={period_range.freq})')
+    
+    for date in period_range:
+        date_str = date.strftime('%Y-%m-%d')
+        name_output = f'cmems_{varkey}_{date_str}.nc'
+        file_out = Path(dir_output,name_output)
+        if file_out.is_file() and not overwrite:
+            print(f'"{name_output}" found and overwrite=False, continuing.')
+            continue
+        print(f'retrieving variable {varkey} for {date_str}: {name_output}')
+        
+        motu_command = ' '.join(['motuclient', '--motu', f'{motu_url}/motu-web/Motu', '--service-id', service, '--product-id', product,
+                                 '--longitude-min', str(longitude_min), '--longitude-max', str(longitude_max),
+                                 '--latitude-min', str(latitude_min), '--latitude-max', str(latitude_max),
+                                 '--date-min', date_str, '--date-max', date_str, #+' 12:00:00',
+                                 '--depth-min', '0', '--depth-max', '2e31',
+                                 '--variable', str(varkey),
+                                 '--out-dir', dir_output, '--out-name', name_output,
+                                 '--user', username, '--pwd', password])
+        
+        try: #this try/except is necessary to capture/raise the motuclient logging in the 'finally' of the loop. Otherwise user only gets unclear error message: "CalledProcessError: Command [] returned non-zero exit status 1." 
+            out = subprocess.run(f'python -m {motu_command}', capture_output=True, check=True, universal_newlines=True, timeout=timeout)
+        except Exception as e: # capture error and save as out for the finally loop
+            out = e 
+            raise Exception(e)
+        finally: #to capture also ERRORS/WARNINGS in logging that are not raised by motuclient
+            if ('ERROR' in out.stdout) or ('WARNING' in out.stdout): #catch all other errors, and the relevant information in TimeoutExpired and CalledProcessError
+                if 'variable not found' in out.stdout:
+                    raise Exception(f'ERROR/WARNING found in motuclient logging:\nOUT: {out.stdout}\nERR: {out.stderr}\n\nNetCDF variable {varkey} not found: check available variables at: {motu_url}/motu-web/Motu?action=describeproduct&service={service}&product={product}')
+                else:
+                    raise Exception(f'ERROR/WARNING found in motuclient logging:\nOUT: {out.stdout}\nERR: {out.stderr}')
+            #else:
+            #    print(f'OUT: {out.stdout}\nERR: {out.stderr}')
+
     print('done')
     return

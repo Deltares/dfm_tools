@@ -9,9 +9,6 @@ import os
 import matplotlib.pyplot as plt
 plt.close('all')
 import numpy as np
-
-from dfm_tools.testutils import try_importmodule
-try_importmodule(modulename='cartopy') #check if cartopy was installed since it is an optional module, also happens in plot_cartopybasemap()
 import cartopy.crs as ccrs
 import xarray as xr
 

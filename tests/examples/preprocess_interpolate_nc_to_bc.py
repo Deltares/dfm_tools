@@ -12,9 +12,10 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 plt.close('all')
 from dfm_tools.interpolate_grid2bnd import get_conversion_dict, interpolate_tide_to_bc, interpolate_nc_to_bc
-from dfm_tools.hydrolib_helpers import forcinglike_to_DataFrame, T3Dvector_to_T3Dtuple
+from dfm_tools.hydrolib_helpers import forcinglike_to_DataFrame, forcinglike_to_DataArray, T3Dvector_to_T3Dtuple
 from hydrolib.core.io.ext.models import Boundary, ExtModel
 
+#TODO: add coordinate conversion of pli-coordinates (for nesting RD models)
 
 model = 'CMCC' #CMEMS GFDL CMCC HYCOM
 
@@ -28,13 +29,13 @@ else:
 dir_out = r'n:\My Documents\werkmap\hydrolib_test\DCSM'
 bc_type = 'bc' #currently only 'bc' supported #TODO: add netcdf bc support. https://github.com/Deltares/HYDROLIB-core/issues/318
 
-refdate_str = 'minutes since 2011-12-22 00:00:00 +00:00' # this is copied from the reference bc file, but can be changed by the user
+refdate_str = 'minutes since 2011-12-22 00:00:00 +00:00' # if None, xarray uses ds.time.encoding['units'] as refdate_str
 
 nPoints = 3 #amount of Points to process per PolyObject in the plifile (for testing, use None for all Points)
 
 #quantities should be in conversion_dict.keys(). waterlevelbnd is steric/zos, tide is tidal components from FES/EOT
 list_quantities = ['waterlevelbnd','salinitybnd','tide','ux,uy','temperaturebnd','tracerbndNO3']
-list_quantities = ['salinitybnd','tracerbndNO3']
+#list_quantities = ['salinitybnd','tracerbndNO3']
 
 dtstart = dt.datetime.now()
 ext_bnd = ExtModel()
@@ -82,7 +83,7 @@ for file_pli in list_plifiles:
             raise Exception(f'invalid model: {model}')
         
         print(f'processing quantity: {quantity}/{conversion_dict[quantity]["ncvarname"]}')
-        if quantity in ['tide']: #TODO: choose flexible/generic component notation
+        if quantity in ['tide']: #tide #TODO: choose flexible/generic component notation
             tidemodel = 'FES2014' #FES2014, FES2012, EOT20
             component_list = ['2n2','mf','p1','m2','mks2','mu2','q1','t2','j1','m3','mm','n2','r2','k1','m4','mn4','s1','k2','m6','ms4','nu2','s2','l2','m8','msf','o1','s4'] #None results in all FES components
             ForcingModel_object = interpolate_tide_to_bc(tidemodel=tidemodel, file_pli=file_pli, component_list=component_list, nPoints=nPoints)
@@ -91,16 +92,16 @@ for file_pli in list_plifiles:
         elif quantity in ['waterlevelbnd','salinitybnd','temperaturebnd','ux,uy']: #hydro
             if dir_sourcefiles_hydro is None:
                 continue
-            ForcingModel_object = interpolate_nc_to_bc(dir_pattern=dir_pattern_hydro, file_pli=file_pli, quantity=quantity, 
-                                                       conversion_dict=conversion_dict, #rename_vars=rename_vars,
+            ForcingModel_object = interpolate_nc_to_bc(dir_pattern=dir_pattern_hydro, file_pli=file_pli,
+                                                       quantity=quantity, conversion_dict=conversion_dict,
                                                        tstart=tstart, tstop=tstop, refdate_str=refdate_str,
                                                        #reverse_depth=True, #to compare with coastserv files, this argument will be phased out
                                                        nPoints=nPoints)
         else: #waq
             if dir_pattern_waq is None:
                 continue
-            ForcingModel_object = interpolate_nc_to_bc(dir_pattern=dir_pattern_waq, file_pli=file_pli, quantity=quantity,
-                                                       conversion_dict=conversion_dict, #rename_vars=rename_vars,
+            ForcingModel_object = interpolate_nc_to_bc(dir_pattern=dir_pattern_waq, file_pli=file_pli,
+                                                       quantity=quantity, conversion_dict=conversion_dict,
                                                        tstart=tstart, tstop=tstop, refdate_str=refdate_str,
                                                        #reverse_depth=True, #to compare with coastserv files, this argument will be phased out
                                                        nPoints=nPoints)
@@ -109,19 +110,23 @@ for file_pli in list_plifiles:
             for iF in [2]:#range(nPoints):
                 forcingobject_one = ForcingModel_object.forcing[iF]
                 if hasattr(forcingobject_one.quantityunitpair[1],'elementname'): #T3Dvector, take only first one
-                    forcingobject_one, dummy = T3Dvector_to_T3Dtuple(forcingobject_one)
-                forcingobject_one_df = forcinglike_to_DataFrame(forcingobject_one) #TODO: or use forcinglike_to_DataArray()
+                    forcingobject_one, dummy = T3Dvector_to_T3Dtuple(forcingobject_one) #TODO: maybe make DataSet with two DataArrays instead
+                forcingobject_one_xr = forcinglike_to_DataArray(forcingobject_one)
                 fig,ax1 = plt.subplots()
                 if hasattr(forcingobject_one,'vertpositions'):
-                    pc = ax1.pcolormesh(forcingobject_one_df.index,forcingobject_one.vertpositions,forcingobject_one_df.T)
-                    fig.colorbar(pc,ax=ax1)
+                    pc = forcingobject_one_xr.T.plot.pcolormesh(ax=ax1)
+                elif quantity=='tide': #TODO: improve tide/astronomic DataArray so this exception is not necessary anymore (e.g. DataSet with two DataArrays)
+                    forcingobject_one_xr.isel(quantity=0).plot(ax=ax1, label='amplitude')
+                    forcingobject_one_xr.isel(quantity=1).plot(ax=ax1, label='phase')
+                    ax1.legend(loc=1)
                 else:
-                    forcingobject_one_df.plot(ax=ax1)
-                fo_quan, fo_unit = forcingobject_one.quantityunitpair[1].quantity, forcingobject_one.quantityunitpair[1].unit
-                ax1.set_title(f'{fo_quan} [{fo_unit}]')
-                
-        file_bc_basename = file_pli.name.replace('.pli','.bc')
-        file_bc_out = Path(dir_out,f'{quantity}_{file_bc_basename}')
+                    forcingobject_one_xr.plot(ax=ax1)
+        
+        file_bc_basename = file_pli.name.replace('.pli','')
+        if quantity=='tide':
+            file_bc_out = Path(dir_out,f'{quantity}_{file_bc_basename}_{tidemodel}.bc')
+        else:
+            file_bc_out = Path(dir_out,f'{quantity}_{file_bc_basename}_{model}.bc')
         print(f'writing ForcingModel to bc file with hydrolib ({file_bc_out.name})')
         if bc_type=='bc':
             ForcingModel_object.save(filepath=file_bc_out)

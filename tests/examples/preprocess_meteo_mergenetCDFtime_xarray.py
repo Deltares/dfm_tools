@@ -22,7 +22,7 @@ from dfm_tools.xarray_helpers import preprocess_hirlam
 
 #TODO: crashes in pytest for some reason: "OSError: [Errno -51] NetCDF: Unknown file format"
 #TODO: add ERA5 conversions and features from hydro_tools\ERA5\ERA52DFM.py (except for varRhoair_alt)
-#TODO: add standard_name to all variables? eg v10n does not have one >> is not relevant for dflowfm?
+#TODO: add standard_name to all variables? >> better to rename varname itself to dfm quantity (not possible yet) or alternative dfm varname (or generate ext file with quantity/varname translation)
 #TODO: add renamevars of add attrs['standard_name'] with ncvarnames/ncstdnames conversion table in https://svn.oss.deltares.nl/repos/delft3d/trunk/src/utils_lgpl/ec_module/packages/ec_module/src/ec_provider.f90 (line 2479) (alternatively set varname in extfile)
 #varname_dict = {'u10': '',
 #                'v10': '',
@@ -30,8 +30,7 @@ from dfm_tools.xarray_helpers import preprocess_hirlam
 #stdname_dict = {'u10': 'eastward_wind',
 #                'v10': 'northward_wind',
 #                'msl': 'air_pressure'}
-#TODO: add .sel(lat/lon) or not relevant?
-#TODO: add coordinate conversion (maybe only for non-regular gridded models like HARMONIE and HIRLAM)
+#TODO: add coordinate conversion (maybe only for models with multidimensional lat/lon variables like HARMONIE and HIRLAM)
 #TODO: add CMCC etc from gtsmip repos (including calendar conversion)
 #TODO: add convert_360to180 with "ds.coords['lon'] = (ds.coords['lon'] + 180) % 360 - 180; ds = ds.sortby('lon')" (without hardcoded longitude/lon names)
 

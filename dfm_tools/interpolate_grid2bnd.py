@@ -4,22 +4,6 @@ Created on Thu Aug 18 17:39:03 2022
 
 @author: veenstra
 
-Some blocking hydrolib issues before this tool can replace coastserv:
--	uxuy is not yet programmed, add support for this merged array
-    o	new bug issue: https://github.com/Deltares/HYDROLIB-core/issues/316
--	metadata header is not completely correct yet, but this seems like small fixes in hydrolib:
-    o	new bug issue: https://github.com/Deltares/HYDROLIB-core/issues/317
--	Formatting of datablock writing in bc file can be improved (probably also improves perfomance):
-    o	Existing issue: https://github.com/Deltares/HYDROLIB-core/issues/308
-    o	Existing issue: https://github.com/Deltares/HYDROLIB-core/issues/313
--	some minor issues that do not seem blocking (my issues in the range of #305 to #322)
-
-Non-hydrolib things to do (still missing compared to coastserv):
--	downloading part is not included (Bjorn improved that part so add to dfm_tools?) >> https://github.com/c-scale-community/use-case-hisea/blob/main/scripts/download/download_cmems_biogeochemistry.py and download_cmems_physics.py
--	FES is included but there are differences with the reference bc files for DCSM (uv or complex method is necessary for when phs crosses 0)
--	Waq variables incl unit conversion work for e.g. CMEMS and GFDL (and probably most other models), but CMCC has no lat/lon coords so currently crashes
--   other waq variables than NO3 (incl conversion) probably work, but were not checked yet
-
 """
 
 import os
@@ -323,6 +307,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
         except ValueError as e: #Dimensions {'latitude', 'longitude'} do not exist. Expected one or more of Frozen({'time': 17, 'depth': 50, 'i': 292, 'j': 362}).
             #this is for eg CMCC model with multidimensional lat/lon variable
             #TODO: make nicer, without try except? eg latlon_ndims==1, but not sure if that is always valid
+            #TODO: kdtree k=3 and invdist weighing? Then also spherical coordinate distance calculation instead of cartesian/eucledian
             print(f'ValueError: {e}. Reverting to KDTree instead (nearest neigbour)')
             from scipy.spatial import KDTree #TODO: move up
             path_lonlat_pd = pd.DataFrame({'lon':da_lons,'lat':da_lats})
@@ -331,7 +316,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             data_lonlat_pd = pd.DataFrame({'lon':data_lon_flat,'lat':data_lat_flat})
             #KDTree, finds minimal eucledian distance between points (maybe haversine would be better)
             tree = KDTree(data_lonlat_pd) #alternatively sklearn.neighbors.BallTree: tree = BallTree(data_lonlat_pd)
-            distance, data_lonlat_idx = tree.query(path_lonlat_pd, k=1) #TODO: maybe add outofbounds treshold
+            distance, data_lonlat_idx = tree.query(path_lonlat_pd, k=1) #TODO: maybe add outofbounds treshold for distance
             #data_lonlat_pd.iloc[data_lonlat_idx]
             idx_i,idx_j = np.divmod(data_lonlat_idx, data_xr_var['longitude'].shape[1]) #get idx i and j by sort of counting over 2D array
             # fig,ax = plt.subplots()
