@@ -24,7 +24,7 @@ from hydrolib.core.io.bc.models import (
 
 def Dataset_to_T3D(datablock_xr):  
     """
-    convert an xarray.DataArray or an xarray.Dataset with two data_vars with time and depth dimension to a hydrolib T3D object
+    convert an xarray.DataArray (is one data_var) or an xarray.Dataset (with one or two data_vars) with time and depth dimension to a hydrolib T3D object
     """
     
     if isinstance(datablock_xr,xr.DataArray):
@@ -32,12 +32,12 @@ def Dataset_to_T3D(datablock_xr):
         data_xr_var0 = datablock_xr
     elif isinstance(datablock_xr,xr.Dataset):
         data_vars = list(datablock_xr.data_vars)
-        if len(data_vars)==1: #normal T3D object
+        if len(data_vars)==1: 
             vector = False
             data_xr_var0 = datablock_xr[data_vars[0]]
-        elif len(data_vars)==2: #vector T3D object (uxuy)
-            if not pd.Series(['ux','uy']).isin(data_vars):
-                raise Exception(f'Dataset with 2 data_vars should contain ux/uy data_vars, but contains {data_vars}')
+        elif len(data_vars)==2:
+            if not pd.Series(data_vars).isin(['ux','uy']).all():
+                raise Exception(f'Dataset with 2 data_vars should contain only ux/uy data_vars, but contains {data_vars}')
             vector = True
             data_xr_var0 = datablock_xr[data_vars[0]]
             data_xr_var1 = datablock_xr[data_vars[1]]
@@ -78,7 +78,7 @@ def Dataset_to_T3D(datablock_xr):
     
     # Each .bc file can contain 1 or more timeseries, in this case one for each support point
     verticalpositions_idx = np.arange(data_xr_var0['depth'].size)+1
-    if vector:
+    if vector: #vector T3D object
         QUP_quan = [QuantityUnitPair(quantity=quan, unit=data_xr_var0.attrs['units'], vertpositionindex=iVP) for iVP in verticalpositions_idx for quan in data_vars]
         QUP_quan_vector = VectorQuantityUnitPairs(vectorname='uxuyadvectionvelocitybnd', #TODO: vectorname from global attr? (then also support other vectors which is not necessary)
                                                   elementname=data_vars,
@@ -93,7 +93,7 @@ def Dataset_to_T3D(datablock_xr):
                          timeinterpolation='linear',
                          datablock=datablock_incltime.tolist(),
                          )
-    else:
+    else: #normal T3D object
         list_QUP_perlayer = [QuantityUnitPair(quantity=data_xr_var0.name, unit=data_xr_var0.attrs['units'], vertpositionindex=iVP) for iVP in verticalpositions_idx]
         T3D_object = T3D(name=locationname,
                          vertpositions=np.round(depth_array.tolist(),decimals=4).tolist(), # make decimals userdefined? .tolist() is necessary for np.round to work for some reason
@@ -104,54 +104,6 @@ def Dataset_to_T3D(datablock_xr):
                          datablock=datablock_incltime.tolist(), #TODO: numpy array is not supported by TimeSeries. https://github.com/Deltares/HYDROLIB-core/issues/322
                          )
     
-    return T3D_object
-
-
-def NOT_Dataset_to_T3D(datablock_xr):   
-    """
-    convert an xarray.DataArray with time and depth dimension to a hydrolib T3D object
-    """
-    if isinstance(datablock_xr,xr.DataArray):
-        pass
-    if isinstance(datablock_xr,xr.Dataset):
-        data_vars = list(datablock_xr.data_vars)
-        if len(data_vars)!=1:
-            raise Exception('more than one variable supplied in Dataset, use Dataset_to_T3Dvector() instead') #TODO: add support for multiple quantities and for vectors (maybe merge with Dataset_to_T3Dvector?)
-        datablock_xr = datablock_xr[data_vars[0]]
-    
-    #TODO: clean up these first lines of code and add description to docstring?
-    locationname = datablock_xr.attrs['locationname']
-    bcvarname = datablock_xr.name
-    refdate_str = datablock_xr.time.encoding['units']
-    
-    if datablock_xr.dims != ('time','depth'): #check if both time and depth dimensions are present #TODO: add support for flipped dimensions (datablock_xr.T or something is needed)
-        raise Exception(f"ERROR: datablock_xr provided to DataArray_to_T3D has dimensions {datablock_xr.dims} while ('time','depth') is expected")
-    
-    #get depth variable and values
-    depth_array = datablock_xr['depth'].to_numpy()
-    if 'positive' in datablock_xr['depth'].attrs.keys():
-        if datablock_xr['depth'].attrs['positive'] == 'down': #attribute appears in CMEMS, GFDL and CMCC, save to assume presence?
-            depth_array = -depth_array
-    
-    #ffill/bfill nan data along over depth dimension (corresponds to vertical extrapolation)
-    datablock_xr = datablock_xr.bfill(dim='depth').ffill(dim='depth')
-    
-    #get datablock and concatenate with relative time data
-    datablock_np = datablock_xr.to_numpy()
-    timevar_sel_rel = date2num(pd.DatetimeIndex(datablock_xr.time.to_numpy()).to_pydatetime(),units=refdate_str,calendar='standard')
-    datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock_np],axis=1)
-    
-    # Each .bc file can contain 1 or more timeseries, in this case one for each support point
-    verticalpositions_idx = np.arange(datablock_xr['depth'].size)+1
-    list_QUP_perlayer = [QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs['units'], vertpositionindex=iVP) for iVP in verticalpositions_idx]
-    T3D_object = T3D(name=locationname,
-                     vertpositions=np.round(depth_array.tolist(),decimals=4).tolist(), # make decimals userdefined? .tolist() is necessary for np.round to work for some reason
-                     vertinterpolation='linear', #TODO: make these parameters user defined (via attrs)
-                     vertPositionType='ZDatum',
-                     quantityunitpair=[QuantityUnitPair(quantity="time", unit=refdate_str)]+list_QUP_perlayer,
-                     timeinterpolation='linear',
-                     datablock=datablock_incltime.tolist(), #TODO: numpy array is not supported by TimeSeries. https://github.com/Deltares/HYDROLIB-core/issues/322
-                     )
     return T3D_object
 
 
