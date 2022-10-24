@@ -219,8 +219,12 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
     print(f'loading mfdataset of {len(file_list_nc)} files with pattern(s) {list_pattern_names}')
     
     dtstart = dt.datetime.now()
+    #try:
     data_xr = xr.open_mfdataset(file_list_nc,chunks={'time':1}) #TODO: does chunks argument solve "PerformanceWarning: Slicing is producing a large chunk."?
-    
+    #except xr.MergeError as e:
+    #    print(f'{e} Continuing with compat="override" which is not beneficial.') #TODO: this is necessary for CMCC, but gives invalid results
+    #    data_xr = xr.open_mfdataset(file_list_nc,chunks={'time':1},coords='minimal',compat='override')
+        
     #rename variables with rename_dict derived from conversion_dict
     rename_dict = {v['ncvarname']:k for k,v in conversion_dict.items()}
     for ncvarn in data_xr.variables.mapping.keys():

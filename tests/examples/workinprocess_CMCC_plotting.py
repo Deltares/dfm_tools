@@ -15,9 +15,6 @@ import cartopy.feature as cf
 file_list_nc = ['p:\\11206304-futuremares\\data\\CMIP6_BC\\CMCC-ESM2\\uo_Omon_CMCC-ESM2_ssp126_r1i1p1f1_gn_201501-203412.nc',
                 'p:\\11206304-futuremares\\data\\CMIP6_BC\\CMCC-ESM2\\vo_Omon_CMCC-ESM2_ssp126_r1i1p1f1_gn_201501-203412.nc',
                 ]
-file_list_nc = ['p:\\11206304-futuremares\\data\\CMIP6_BC\\CMCC-ESM2\\uo_Omon_CMCC-ESM2_historical_r1i1p1f1_gn_201001-201412.nc',
-                'p:\\11206304-futuremares\\data\\CMIP6_BC\\CMCC-ESM2\\vo_Omon_CMCC-ESM2_historical_r1i1p1f1_gn_201001-201412.nc',
-                ]
 
 def change_axes(ax1,ax2):
     for ax in (ax1,ax2):
@@ -40,8 +37,8 @@ data_xr_vo["vo"].isel(time=0,lev=0).plot.pcolormesh(ax=ax2, transform=crs, x='lo
 fig.tight_layout()
 change_axes(ax1,ax2)
 
-#using lat/lon of uo for vo
-data_xr = xr.open_mfdataset(file_list_nc,chunks={'time':1},compat='override')
+#using lat/lon of uo for vo #TODO: this is invalid
+data_xr = xr.open_mfdataset(file_list_nc,chunks={'time':1},coords='minimal',compat='override')
 fig, (ax1,ax2) = plt.subplots(1,2,figsize=(18,6),sharex=True,sharey=True,subplot_kw=dict(projection=projection))
 data_xr["uo"].isel(time=0,lev=0).plot.pcolormesh(ax=ax1, transform=crs, x='longitude', y='latitude', vmin=vmin, vmax=vmax, cmap='jet')
 data_xr["vo"].isel(time=0,lev=0).plot.pcolormesh(ax=ax2, transform=crs, x='longitude', y='latitude', vmin=vmin, vmax=vmax, cmap='jet')
