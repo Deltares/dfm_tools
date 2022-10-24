@@ -10,7 +10,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 plt.close('all')
 from hydrolib.core.io.bc.models import ForcingModel
-from dfm_tools.hydrolib_helpers import forcinglike_to_Dataset, Dataset_to_TimeSeries, Dataset_to_T3D, Dataset_to_T3Dvector#, Dataset_to_Astronomic
+from dfm_tools.hydrolib_helpers import forcinglike_to_Dataset, Dataset_to_TimeSeries, Dataset_to_T3D#, Dataset_to_Astronomic
 
 #TODO: merge this into hydrolib_readFMmodel.py after issues are resolved?
 #NOTE: for examples with writing bc files, check dfm_tools.interpolate_grid2bnd.* and dfm_tools.hydrolib_helpers.
@@ -52,14 +52,13 @@ for file_bc in file_bc_list:
         forcing_xr = forcinglike_to_Dataset(forcingobj, convertnan=True)
         data_vars = list(forcing_xr.data_vars)
         if forcingobj.function=='t3d':
+            forcing_ts = Dataset_to_T3D(forcing_xr)
             if hasattr(forcingobj.quantityunitpair[1],'elementname'): #uxuy vector
-                forcing_ts = Dataset_to_T3Dvector(forcing_xr)
                 plt.close()
                 fig, axes = plt.subplots(2,1,figsize=(12, 8),sharex=True,sharey=True)
                 forcing_xr[data_vars[0]].T.plot(ax=axes[0])
                 forcing_xr[data_vars[1]].T.plot(ax=axes[1])
             else: #salinitybnd/temperaturebnd
-                forcing_ts = Dataset_to_T3D(forcing_xr)
                 forcing_xr[data_vars[0]].T.plot(ax=ax)
         elif forcingobj.function=='timeseries': #waterlevelbnd
             forcing_ts = Dataset_to_TimeSeries(forcing_xr)

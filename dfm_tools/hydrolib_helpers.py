@@ -22,20 +22,34 @@ from hydrolib.core.io.bc.models import (
 )
 
 
-def Dataset_to_T3Dvector(data_xr, vectorname='uxuyadvectionvelocitybnd'): #TODO: vectorname from global attr?   
+def Dataset_to_T3D(datablock_xr):  
     """
-    convert an xarray.Dataset with two (or more?) data_vars with time and depth dimension to a hydrolib vector T3D object
+    convert an xarray.DataArray or an xarray.Dataset with two data_vars with time and depth dimension to a hydrolib T3D object
     """
     
-    if not isinstance(data_xr,xr.Dataset):
-        raise Exception('only xarray Datasets are supported (not xarray DataArray)')
-
-    data_vars = list(data_xr.data_vars)
-    if len(data_vars)!=2:
-        raise Exception('Dataset should contain 2 variables, otherwise use Dataset_to_T3D')
+    if isinstance(datablock_xr,xr.DataArray):
+        vector = False
+        data_xr_var0 = datablock_xr
+    elif isinstance(datablock_xr,xr.Dataset):
+        data_vars = list(datablock_xr.data_vars)
+        if len(data_vars)==1: #normal T3D object
+            vector = False
+            data_xr_var0 = datablock_xr[data_vars[0]]
+        elif len(data_vars)==2: #vector T3D object (uxuy)
+            if not pd.Series(['ux','uy']).isin(data_vars):
+                raise Exception(f'Dataset with 2 data_vars should contain ux/uy data_vars, but contains {data_vars}')
+            vector = True
+            data_xr_var0 = datablock_xr[data_vars[0]]
+            data_xr_var1 = datablock_xr[data_vars[1]]
+        else:
+            raise Exception(f'Dataset should contain 1 or 2 data_vars, but contains {len(data_vars)} variables')
+    else:
+        raise Exception(f'expected xarray.DataArray or xarray.Dataset, not {type(datablock_xr)}')
     
-    data_xr_var0 = data_xr[data_vars[0]]
-    data_xr_var1 = data_xr[data_vars[1]]
+    #ffill/bfill nan data along over depth dimension (corresponds to vertical extrapolation)
+    data_xr_var0 = data_xr_var0.bfill(dim='depth').ffill(dim='depth')
+    if vector:
+        data_xr_var1 = data_xr_var1.bfill(dim='depth').ffill(dim='depth')
     
     #TODO: clean up these first lines of code and add description to docstring?
     locationname = data_xr_var0.attrs['locationname']
@@ -50,40 +64,50 @@ def Dataset_to_T3Dvector(data_xr, vectorname='uxuyadvectionvelocitybnd'): #TODO:
         if data_xr_var0['depth'].attrs['positive'] == 'down': #attribute appears in CMEMS, GFDL and CMCC, save to assume presence?
             depth_array = -depth_array
     
-    #ffill/bfill nan data along over depth dimension (corresponds to vertical extrapolation)
-    data_xr_var0 = data_xr_var0.bfill(dim='depth').ffill(dim='depth')
-    data_xr_var1 = data_xr_var1.bfill(dim='depth').ffill(dim='depth')
-    
     #get datablock and concatenate with relative time data
     data_xr_var0_np = data_xr_var0.to_numpy()
-    data_xr_var1_np = data_xr_var1.to_numpy()
-    new_shape = (data_xr_var0_np.shape[0],2*data_xr_var0_np.shape[1])
-    datablock_np = np.ravel([data_xr_var0_np,data_xr_var1_np],order="F").reshape(new_shape) #merge data with alternating rows
+    if vector:
+        data_xr_var1_np = data_xr_var1.to_numpy()
+        new_shape = (data_xr_var0_np.shape[0],2*data_xr_var0_np.shape[1])
+        datablock_np = np.ravel([data_xr_var0_np,data_xr_var1_np],order="F").reshape(new_shape) #merge data with alternating rows
+    else:
+        datablock_np = data_xr_var0_np
     
     timevar_sel_rel = date2num(pd.DatetimeIndex(data_xr_var0.time.to_numpy()).to_pydatetime(),units=refdate_str,calendar='standard')
     datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock_np],axis=1)
     
     # Each .bc file can contain 1 or more timeseries, in this case one for each support point
     verticalpositions_idx = np.arange(data_xr_var0['depth'].size)+1
-    QUP_quan = [QuantityUnitPair(quantity=quan, unit=data_xr_var0.attrs['units'], vertpositionindex=iVP) for iVP in verticalpositions_idx for quan in data_vars]
-    QUP_quan_vector = VectorQuantityUnitPairs(vectorname=vectorname,
-                                              elementname=data_vars,
-                                              quantityunitpair=QUP_quan)
-    T3Dvector_object = T3D(name=locationname,
-                           #offset=0,
-                           #factor=1,
-                           vertpositions=np.round(depth_array.tolist(),decimals=4).tolist(), # make decimals userdefined? .tolist() is necessary for np.round to work for some reason
-                           vertinterpolation='linear', #TODO: make these parameters user defined (via attrs)
-                           vertPositionType='ZDatum',
-                           quantityunitpair=[QuantityUnitPair(quantity="time", unit=refdate_str)]+[QUP_quan_vector],
-                           timeinterpolation='linear',
-                           datablock=datablock_incltime.tolist(),
-                           )
+    if vector:
+        QUP_quan = [QuantityUnitPair(quantity=quan, unit=data_xr_var0.attrs['units'], vertpositionindex=iVP) for iVP in verticalpositions_idx for quan in data_vars]
+        QUP_quan_vector = VectorQuantityUnitPairs(vectorname='uxuyadvectionvelocitybnd', #TODO: vectorname from global attr? (then also support other vectors which is not necessary)
+                                                  elementname=data_vars,
+                                                  quantityunitpair=QUP_quan)
+        T3D_object = T3D(name=locationname,
+                         #offset=0,
+                         #factor=1,
+                         vertpositions=np.round(depth_array.tolist(),decimals=4).tolist(), # make decimals userdefined? .tolist() is necessary for np.round to work for some reason
+                         vertinterpolation='linear', #TODO: make these parameters user defined (via attrs)
+                         vertPositionType='ZDatum',
+                         quantityunitpair=[QuantityUnitPair(quantity="time", unit=refdate_str)]+[QUP_quan_vector],
+                         timeinterpolation='linear',
+                         datablock=datablock_incltime.tolist(),
+                         )
+    else:
+        list_QUP_perlayer = [QuantityUnitPair(quantity=data_xr_var0.name, unit=data_xr_var0.attrs['units'], vertpositionindex=iVP) for iVP in verticalpositions_idx]
+        T3D_object = T3D(name=locationname,
+                         vertpositions=np.round(depth_array.tolist(),decimals=4).tolist(), # make decimals userdefined? .tolist() is necessary for np.round to work for some reason
+                         vertinterpolation='linear', #TODO: make these parameters user defined (via attrs)
+                         vertPositionType='ZDatum',
+                         quantityunitpair=[QuantityUnitPair(quantity="time", unit=refdate_str)]+list_QUP_perlayer,
+                         timeinterpolation='linear',
+                         datablock=datablock_incltime.tolist(), #TODO: numpy array is not supported by TimeSeries. https://github.com/Deltares/HYDROLIB-core/issues/322
+                         )
     
-    return T3Dvector_object
+    return T3D_object
 
 
-def Dataset_to_T3D(datablock_xr):   
+def NOT_Dataset_to_T3D(datablock_xr):   
     """
     convert an xarray.DataArray with time and depth dimension to a hydrolib T3D object
     """
@@ -273,12 +297,13 @@ def forcinglike_to_Dataset(forcingobj, convertnan=False): #TODO: would be conven
     if isinstance(forcingobj, Astronomic):
         var_quantity_list = [x.quantity for x in forcingobj.quantityunitpair[1:]]
         var_unit = [x.unit for x in forcingobj.quantityunitpair[1:]]
-    elif hasattr(forcingobj.quantityunitpair[1],'elementname'): #vector with elementname
+    elif hasattr(forcingobj.quantityunitpair[1],'elementname'): #T3D with vector quantity
         var_quantity_list = forcingobj.quantityunitpair[1].elementname
-        var_unit = forcingobj.quantityunitpair[1].quantityunitpair[0].unit
-    else:
+        var_unit_one = forcingobj.quantityunitpair[1].quantityunitpair[0].unit
+        var_unit = [var_unit_one,var_unit_one]
+    else: #non-vector TimeSeries or T3D
         var_quantity_list = [forcingobj.quantityunitpair[1].quantity]
-        var_unit = forcingobj.quantityunitpair[1].unit
+        var_unit = [forcingobj.quantityunitpair[1].unit]
     nquan = len(var_quantity_list)
     
     if isinstance(forcingobj, T3D):
@@ -299,11 +324,6 @@ def forcinglike_to_Dataset(forcingobj, convertnan=False): #TODO: would be conven
         datablock_data_onequan = datablock_data_onequan.squeeze() #drop dimensions of len 1 in case of 1 dimension, eg "waterlevelbnd" (first subsetting over depth dimension)
         
         data_xr_var = xr.DataArray(datablock_data_onequan, name=var_quantity, dims=dims)
-        data_xr_var.attrs['locationname'] = forcingobj.name
-        if isinstance(forcingobj, Astronomic):
-            data_xr_var.attrs['units'] = var_unit[iQ]
-        else:
-            data_xr_var.attrs['units'] = var_unit
         if 'depth' in dims:
             data_xr_var['depth'] = forcingobj.vertpositions
             #data_xr_var['depth'].attrs['positive'] == 'up' #TODO: maybe add this attribute
@@ -323,16 +343,16 @@ def forcinglike_to_Dataset(forcingobj, convertnan=False): #TODO: would be conven
             data_xr_var['astronomic_component'] = datablock_all[:,0]
         
         #add attributes
-        attr_dict = {'source':'hydrolib-core object converted to xarray.DataArray with dfm_tools',
-                     'unit':var_unit, #TODO: units or unit?
-                     }
-        for key in attr_dict.keys():
-            data_xr_var.attrs[key] = attr_dict[key]
+        data_xr_var.attrs['source'] = 'hydrolib-core object converted to xarray.Dataset with dfm_tools.xarray_helpers.forcinglike_to_Dataset()'
+        data_xr_var.attrs['locationname'] = forcingobj.name
+        data_xr_var.attrs['units'] = var_unit[iQ]
         forcingobj_keys = forcingobj.__dict__.keys()
         for key in forcingobj_keys: #['comments','name','function','offset','factor','vertinterpolation','vertpositiontype','timeinterpolation']: 
             if key in ['datablock','quantityunitpair','vertpositions']: #skipping these since they are in the DataArray already
                 continue
             data_xr_var.attrs[key] = str(forcingobj.__dict__[key])
+        
+        #add DataArray to Dataset
         data_xr[var_quantity] = data_xr_var
     
     return data_xr
