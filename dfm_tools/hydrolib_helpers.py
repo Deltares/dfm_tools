@@ -65,13 +65,12 @@ def Dataset_to_T3D(datablock_xr):
             depth_array = -depth_array
     
     #get datablock and concatenate with relative time data
-    data_xr_var0_np = data_xr_var0.to_numpy()
     if vector:
+        data_xr_var0_np = data_xr_var0.to_numpy()
         data_xr_var1_np = data_xr_var1.to_numpy()
-        new_shape = (data_xr_var0_np.shape[0],2*data_xr_var0_np.shape[1])
-        datablock_np = np.ravel([data_xr_var0_np,data_xr_var1_np],order="F").reshape(new_shape) #merge data with alternating rows
+        datablock_np = np.stack((data_xr_var0_np,data_xr_var1_np),2).reshape(data_xr_var0_np.shape[0],-1) #merge data with alternating rows
     else:
-        datablock_np = data_xr_var0_np
+        datablock_np = data_xr_var0.to_numpy()
     
     timevar_sel_rel = date2num(pd.DatetimeIndex(data_xr_var0.time.to_numpy()).to_pydatetime(),units=refdate_str,calendar='standard')
     datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock_np],axis=1)
@@ -79,10 +78,10 @@ def Dataset_to_T3D(datablock_xr):
     # Each .bc file can contain 1 or more timeseries, in this case one for each support point
     verticalpositions_idx = np.arange(data_xr_var0['depth'].size)+1
     if vector: #vector T3D object
-        QUP_quan = [QuantityUnitPair(quantity=quan, unit=data_xr_var0.attrs['units'], vertpositionindex=iVP) for iVP in verticalpositions_idx for quan in data_vars]
+        QUP_quan_list = [QuantityUnitPair(quantity=quan, unit=data_xr_var0.attrs['units'], vertpositionindex=iVP) for iVP in verticalpositions_idx for quan in data_vars]
         QUP_quan_vector = VectorQuantityUnitPairs(vectorname='uxuyadvectionvelocitybnd', #TODO: vectorname from global attr? (then also support other vectors which is not necessary)
                                                   elementname=data_vars,
-                                                  quantityunitpair=QUP_quan)
+                                                  quantityunitpair=QUP_quan_list)
         T3D_object = T3D(name=locationname,
                          #offset=0,
                          #factor=1,
@@ -94,12 +93,12 @@ def Dataset_to_T3D(datablock_xr):
                          datablock=datablock_incltime.tolist(),
                          )
     else: #normal T3D object
-        list_QUP_perlayer = [QuantityUnitPair(quantity=data_xr_var0.name, unit=data_xr_var0.attrs['units'], vertpositionindex=iVP) for iVP in verticalpositions_idx]
+        QUP_quan_list = [QuantityUnitPair(quantity=data_xr_var0.name, unit=data_xr_var0.attrs['units'], vertpositionindex=iVP) for iVP in verticalpositions_idx]
         T3D_object = T3D(name=locationname,
                          vertpositions=np.round(depth_array.tolist(),decimals=4).tolist(), # make decimals userdefined? .tolist() is necessary for np.round to work for some reason
                          vertinterpolation='linear', #TODO: make these parameters user defined (via attrs)
                          vertPositionType='ZDatum',
-                         quantityunitpair=[QuantityUnitPair(quantity="time", unit=refdate_str)]+list_QUP_perlayer,
+                         quantityunitpair=[QuantityUnitPair(quantity="time", unit=refdate_str)]+QUP_quan_list,
                          timeinterpolation='linear',
                          datablock=datablock_incltime.tolist(), #TODO: numpy array is not supported by TimeSeries. https://github.com/Deltares/HYDROLIB-core/issues/322
                          )
@@ -160,7 +159,7 @@ def DataFrame_to_PolyObject(poly_pd,name,content=None):
     return polyobject
 
 
-def _T3Dtuple_to_T3Dvector(*forcingobjects,vectorname='uxuyadvectionvelocitybnd'): #TODO: discontinue? used in dfm_tools.interpolate_grid2bnd.py
+def NOT_T3Dtuple_to_T3Dvector(*forcingobjects,vectorname='uxuyadvectionvelocitybnd'): #TODO: discontinue? used in dfm_tools.interpolate_grid2bnd.py
     """
     converts a tuple of T3D objects (one for each vector element) to a T3D with vector element quantities (like a ux/uy combination)
     """

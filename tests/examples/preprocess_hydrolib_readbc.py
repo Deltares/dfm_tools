@@ -12,7 +12,7 @@ plt.close('all')
 from hydrolib.core.io.bc.models import ForcingModel
 from dfm_tools.hydrolib_helpers import forcinglike_to_Dataset, Dataset_to_TimeSeries, Dataset_to_T3D#, Dataset_to_Astronomic
 
-#TODO: merge this into hydrolib_readFMmodel.py after issues are resolved?
+#TODO: merge this into preprocess_hydrolib_readFMmodel.py after issues are resolved?
 #NOTE: for examples with writing bc files, check dfm_tools.interpolate_grid2bnd.* and dfm_tools.hydrolib_helpers.
 
 nPoints = 5 #None for all points

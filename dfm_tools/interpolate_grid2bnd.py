@@ -21,7 +21,7 @@ from hydrolib.core.io.bc.models import (
 )
 from hydrolib.core.io.polyfile.models import PolyFile
 
-from dfm_tools.hydrolib_helpers import Dataset_to_TimeSeries, Dataset_to_T3D, Dataset_to_T3Dvector, _T3Dtuple_to_T3Dvector
+from dfm_tools.hydrolib_helpers import Dataset_to_TimeSeries, Dataset_to_T3D
 
 
 def get_conversion_dict(ncvarname_updates={}):
@@ -51,7 +51,7 @@ def get_conversion_dict(ncvarname_updates={}):
                         'temperaturebnd'      : {'ncvarname': 'thetao'},      #'degC'
                         'ux'                  : {'ncvarname': 'uo'},          #'m/s'
                         'uy'                  : {'ncvarname': 'vo'},          #'m/s'
-                        'ux,uy'               : {'ncvarname': 'uo,vo'},       #'m/s'
+                        #'uxuy'                : {'ncvarname': 'uo,vo'},       #'m/s'
                         'waterlevelbnd'       : {'ncvarname': 'zos'},         #'m' #steric
                         'tide'                : {'ncvarname': ''},            #'m' #tide (dummy entry)
                         }
@@ -203,9 +203,9 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
     if conversion_dict is None:
         conversion_dict = get_conversion_dict()
     
-    if ',' in quantity: #T3Dvector #TODO: make this less ugly
+    if quantity=='uxuy': #T3Dvector #TODO: make this less ugly
         print(f'combined variables ({quantity})')    
-        quantity_list = quantity.split(',')
+        quantity_list = ['ux','uy']
         ncvarname_joined = conversion_dict[quantity]['ncvarname']
         ncvarname_list = ncvarname_joined.split(',')
         ForcingModel_object_list = [interpolate_nc_to_bc(dir_pattern=Path(str(dir_pattern).replace(ncvarname_joined,ncvarname_one)), file_pli=file_pli, quantity=quantity_one, tstart=tstart, tstop=tstop, refdate_str=refdate_str, conversion_dict=conversion_dict, nPoints=nPoints, reverse_depth=reverse_depth) for quantity_one, ncvarname_one in zip(quantity_list,ncvarname_list)]
@@ -370,10 +370,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
                 print('WARNING: only nans for this coordinate, this point might be on land')
             
             if 'depth' in data_xr_var.coords:
-                if 0:#hasattr(forcingobj.quantityunitpair[1],'elementname'): #uxuy vector
-                    ts_one = Dataset_to_T3Dvector(datablock_xr_onepoint)
-                else:
-                    ts_one = Dataset_to_T3D(datablock_xr_onepoint)
+                ts_one = Dataset_to_T3D(datablock_xr_onepoint)
             else:
                 ts_one = Dataset_to_TimeSeries(datablock_xr_onepoint)
             ForcingModel_object.forcing.append(ts_one)
