@@ -36,6 +36,7 @@ list_quantities = ['uxuy']
 model = 'CMCC' #CMEMS GFDL CMCC HYCOM
 
 #The {ncvarname} wildcard can be used in dir_pattern_hydro/dir_patern_waq to replace it with conversion_dict[quantity]['ncvarname']. This method uses str(dir_output).format(ncvarname)
+KDTree_invdistweigth = False
 if model=='CMEMS': #2012-01-06 12:00:00 to 2013-01-03 12:00:00
     conversion_dict = get_conversion_dict()
     tstart = dt.datetime(2012, 1, 16, 12, 0)
@@ -53,6 +54,7 @@ elif model=='GFDL':
     dir_sourcefiles_waq = r'p:\11206304-futuremares\data\CMIP6_BC\GFDL-ESM4' #GFDL waq: no3 (1850-01-16 12:00:00 to 2014-12-16 12:00:00)
     dir_pattern_waq = Path(dir_sourcefiles_waq,'{ncvarname}_esm-hist.nc')
 elif model=='CMCC': #TODO: check method, now finding nearest points (so always has values)
+    #TODO: time_bnds/lev_bnds are available, take into account in bc file?
     conversion_dict = get_conversion_dict(ncvarname_updates={'salinitybnd':'sos', 'temperaturebnd':'tos'})
     tstart = dt.datetime(2015, 6, 16, 12, 0)
     tstop = dt.datetime(2016, 12, 1, 12, 0)
@@ -60,6 +62,7 @@ elif model=='CMCC': #TODO: check method, now finding nearest points (so always h
     dir_pattern_hydro = Path(dir_sourcefiles_hydro,'{ncvarname}_Omon_CMCC-ESM2_ssp126_r1i1p1f1_gn_*.nc')
     dir_sourcefiles_waq = dir_sourcefiles_hydro #CMCC waq: (2015-01-16 12:00:00 to 2100-12-16 12:00:00)
     dir_pattern_waq = dir_pattern_hydro
+    KDTree_invdistweigth = True #only relevant for CMCC
 elif model=='HYCOM':
     conversion_dict = get_conversion_dict(ncvarname_updates={'salinitybnd':'salinity', 'temperaturebnd':'water_temp'})
     tstart = dt.datetime(2016, 4, 20, 0, 0) #HYCOM
@@ -73,13 +76,12 @@ else:
     raise Exception(f'invalid model: {model}')
 
 
+
 # start of interpolation process
-
-if not os.path.isdir(dir_output):
-    os.mkdir(dir_output)
-
 dtstart = dt.datetime.now()
 ext_bnd = ExtModel()
+if not os.path.isdir(dir_output):
+    os.mkdir(dir_output)
 
 for file_pli in list_plifiles:
     for quantity in list_quantities:
@@ -99,6 +101,7 @@ for file_pli in list_plifiles:
                                                        quantity=quantity, conversion_dict=conversion_dict,
                                                        tstart=tstart, tstop=tstop, refdate_str=refdate_str,
                                                        #reverse_depth=True, #to compare with coastserv files, this argument will be phased out
+                                                       KDTree_invdistweigth=KDTree_invdistweigth,
                                                        nPoints=nPoints)
         else: #waq
             if dir_pattern_waq is None:
@@ -107,17 +110,18 @@ for file_pli in list_plifiles:
                                                        quantity=quantity, conversion_dict=conversion_dict,
                                                        tstart=tstart, tstop=tstop, refdate_str=refdate_str,
                                                        #reverse_depth=True, #to compare with coastserv files, this argument will be phased out
+                                                       KDTree_invdistweigth=KDTree_invdistweigth,
                                                        nPoints=nPoints)
         
         if 1: #plotting example data point
-            for iF in [2]:#range(nPoints):
+            for iF in range(nPoints): #[2]:#
                 forcingobject_one = ForcingModel_object.forcing[iF]
                 forcingobject_one_xr = forcinglike_to_Dataset(forcingobject_one,convertnan=True)
                 data_vars = list(forcingobject_one_xr.data_vars)
                 fig,ax1 = plt.subplots(figsize=(10, 6))
                 if hasattr(forcingobject_one,'vertpositions'): #3D quantity (time/depth dimensions)
                     if hasattr(forcingobject_one.quantityunitpair[1],'elementname'): #uxuy vector
-                        plt.close()
+                        plt.close(fig)
                         fig, axes = plt.subplots(2,1,figsize=(10, 6),sharex=True,sharey=True)
                         forcingobject_one_xr[data_vars[0]].T.plot(ax=axes[0])
                         forcingobject_one_xr[data_vars[1]].T.plot(ax=axes[1])
