@@ -12,7 +12,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 plt.close('all')
 from dfm_tools.interpolate_grid2bnd import get_conversion_dict, interpolate_tide_to_bc, interpolate_nc_to_bc
-from dfm_tools.hydrolib_helpers import forcinglike_to_DataFrame, forcinglike_to_Dataset
+from dfm_tools.hydrolib_helpers import forcinglike_to_Dataset
 from hydrolib.core.io.ext.models import Boundary, ExtModel
 
 #TODO: add coordinate conversion of pli-coordinates (for nesting RD models)
@@ -36,7 +36,6 @@ nPoints = 3 #amount of Points to process per PolyObject in the plifile (for test
 #quantities should be in conversion_dict.keys(). waterlevelbnd is steric/zos, tide is tidal components from FES/EOT
 list_quantities = ['waterlevelbnd','salinitybnd','tide','ux,uy','temperaturebnd','tracerbndNO3']
 list_quantities = ['ux,uy','temperaturebnd','waterlevelbnd','tide']
-list_quantities = ['tide']
 
 dtstart = dt.datetime.now()
 ext_bnd = ExtModel()
@@ -118,7 +117,6 @@ for file_pli in list_plifiles:
                 elif quantity=='tide':
                     forcingobject_one_xr[data_vars[0]].plot(ax=ax1, label='amplitude')
                     forcingobject_one_xr[data_vars[1]].plot(ax=ax1, label='phase')
-                    ax1.legend(loc=1)
                 else:
                     forcingobject_one_xr[data_vars[0]].plot(ax=ax1)
         
