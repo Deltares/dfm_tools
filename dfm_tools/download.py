@@ -11,8 +11,6 @@ import pandas as pd
 from pathlib import Path
 import requests
 
-#TODO: download_ERA5() always overwrites files, download_CMEMS() skips downloading if expected file is present, let user steer with overwrite argument? (and remove try from CMEMS)
-#TODO: consider opendap for CMEMS?
 
 def download_ERA5(varkey,
                   date_min, date_max,
@@ -45,14 +43,14 @@ def download_ERA5(varkey,
     if varkey not in variables_dict.keys():
         raise Exception(f'"{varkey}" not available, choose from: {list(variables_dict.keys())}')
     
-    date_range = pd.date_range(date_min,date_max,freq='MS') #frequency: month start
-    print(f'retrieving data for months in: {date_range}')
+    period_range = pd.period_range(date_min,date_max,freq='M')
+    print(f'retrieving data from {period_range[0]} to {period_range[-1]} (freq={period_range.freq})')
     
-    for date in date_range:
+    for date in period_range:
         name_output = f'era5_{varkey}_{date.strftime("%Y-%m")}.nc'
         file_out = Path(dir_output,name_output)
         if file_out.is_file() and not overwrite:
-            print(f'"{name_output}" found and overwrite=False, continuing with next file')
+            print(f'"{name_output}" found and overwrite=False, continuing.')
             continue
         print (f'retrieving ERA5 data for variable "{varkey}" and month {date.strftime("%Y-%m")} (YYYY-MM)')
 
@@ -92,6 +90,7 @@ def download_CMEMS(varkey,
     """
     
     import motuclient #used in motu_commands, so has to be importable. conda install -c conda-forge motuclient #TODO: move to top of script (then make dependency of dfm_tools)
+    #TODO: consider opendap instead?
     
     #get credentials
     if credentials is None:
@@ -104,16 +103,16 @@ def download_CMEMS(varkey,
     else:
         username,password = credentials
        
-    source_dict =   {'multiyear_physchem':{'motu_url':'http://my.cmems-du.eu', # multiyear reanalysis data (01-01-1993 12:00 till 31-05-2020 12:00)
+    source_dict =   {'multiyear_physchem':{'motu_url':'https://my.cmems-du.eu', # multiyear reanalysis data (01-01-1993 12:00 till 31-05-2020 12:00)
                                            'service': 'GLOBAL_MULTIYEAR_PHY_001_030-TDS',
                                            'product': 'cmems_mod_glo_phy_my_0.083_P1D-m'},
-                     'multiyear_bio':     {'motu_url':'http://my.cmems-du.eu',
+                     'multiyear_bio':     {'motu_url':'https://my.cmems-du.eu',
                                            'service': 'GLOBAL_MULTIYEAR_BGC_001_029-TDS',
                                            'product': 'cmems_mod_glo_bgc_my_0.25_P1D-m'},
-                     'forecast_physchem': {'motu_url':'http://nrt.cmems-du.eu', # operational forecast data (01-01-2019 12:00 till now + several days)
+                     'forecast_physchem': {'motu_url':'https://nrt.cmems-du.eu', # operational forecast data (01-01-2019 12:00 till now + several days)
                                            'service': 'GLOBAL_ANALYSIS_FORECAST_PHY_001_024-TDS',
                                            'product': 'global-analysis-forecast-phy-001-024'},
-                     'forecast_bio':      {'motu_url':'http://nrt.cmems-du.eu',
+                     'forecast_bio':      {'motu_url':'https://nrt.cmems-du.eu',
                                            'service': 'GLOBAL_ANALYSIS_FORECAST_BIO_001_028-TDS',
                                            'product': 'global-analysis-forecast-bio-001-028-daily'},
                      }
@@ -122,7 +121,7 @@ def download_CMEMS(varkey,
         if (motu_url is not None) or (service is not None) or (product is not None):
             raise Exception('motu_url, service and/or product arguments provided while source_combination is also provided.')
         if not source_combination in source_dict.keys():
-            raise Exception(f'provided source_combination argument is not valid, options are {list(source_dict.keys())}. Alternatively provide motu_url/service/product arguments.')
+            raise Exception(f'provided source_combination={source_combination} argument is not valid, options are {list(source_dict.keys())}. Alternatively provide motu_url/service/product arguments.')
         motu_url = source_dict[source_combination]['motu_url']
         service = source_dict[source_combination]['service']
         product = source_dict[source_combination]['product']
@@ -130,14 +129,15 @@ def download_CMEMS(varkey,
     #test if supplied motu_url is valid
     requests.get(motu_url)
     
-    date_range = pd.date_range(date_min,date_max,freq='D')
+    period_range = pd.period_range(date_min,date_max,freq='D')
+    print(f'retrieving data from {period_range[0]} to {period_range[-1]} (freq={period_range.freq})')
     
-    for date in date_range: #retrieve data per day
+    for date in period_range:
         date_str = date.strftime('%Y-%m-%d')
         name_output = f'cmems_{varkey}_{date_str}.nc'
         file_out = Path(dir_output,name_output)
         if file_out.is_file() and not overwrite:
-            print(f'"{name_output}" found and overwrite=False, continuing with next file')
+            print(f'"{name_output}" found and overwrite=False, continuing.')
             continue
         print(f'retrieving variable {varkey} for {date_str}: {name_output}')
         
@@ -158,7 +158,7 @@ def download_CMEMS(varkey,
         finally: #to capture also ERRORS/WARNINGS in logging that are not raised by motuclient
             if ('ERROR' in out.stdout) or ('WARNING' in out.stdout): #catch all other errors, and the relevant information in TimeoutExpired and CalledProcessError
                 if 'variable not found' in out.stdout:
-                    raise Exception(f'ERROR/WARNING found in motuclient logging:\nOUT: {out.stdout}\nERR: {out.stderr}\n\nNetCdf variable not found: check available variables at: "{motu_url}/motu-web/Motu?action=describeproduct&service={service}&product={product}"')
+                    raise Exception(f'ERROR/WARNING found in motuclient logging:\nOUT: {out.stdout}\nERR: {out.stderr}\n\nNetCDF variable {varkey} not found: check available variables at: {motu_url}/motu-web/Motu?action=describeproduct&service={service}&product={product}')
                 else:
                     raise Exception(f'ERROR/WARNING found in motuclient logging:\nOUT: {out.stdout}\nERR: {out.stderr}')
             #else:

@@ -316,7 +316,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             data_lonlat_pd = pd.DataFrame({'lon':data_lon_flat,'lat':data_lat_flat})
             #KDTree, finds minimal eucledian distance between points (maybe haversine would be better)
             tree = KDTree(data_lonlat_pd) #alternatively sklearn.neighbors.BallTree: tree = BallTree(data_lonlat_pd)
-            distance, data_lonlat_idx = tree.query(path_lonlat_pd, k=1) #TODO: maybe add outofbounds treshold
+            distance, data_lonlat_idx = tree.query(path_lonlat_pd, k=1) #TODO: maybe add outofbounds treshold for distance
             #data_lonlat_pd.iloc[data_lonlat_idx]
             idx_i,idx_j = np.divmod(data_lonlat_idx, data_xr_var['longitude'].shape[1]) #get idx i and j by sort of counting over 2D array
             # fig,ax = plt.subplots()
