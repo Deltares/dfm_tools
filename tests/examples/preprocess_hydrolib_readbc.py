@@ -7,18 +7,17 @@ Created on Wed Aug 17 11:19:51 2022
 
 #import os
 from pathlib import Path
-#import datetime as dt
 import matplotlib.pyplot as plt
 plt.close('all')
 from hydrolib.core.io.bc.models import ForcingModel
-from dfm_tools.hydrolib_helpers import forcinglike_to_DataArray, forcinglike_to_DataFrame, DataArray_to_TimeSeries, DataArray_to_T3D, T3Dvector_to_T3Dtuple, T3Dtuple_to_T3Dvector
+from dfm_tools.hydrolib_helpers import forcinglike_to_Dataset, Dataset_to_TimeSeries, Dataset_to_T3D#, Dataset_to_Astronomic
 
-#TODO: merge this into hydrolib_readFMmodel.py after issues are resolved?
+#TODO: merge this into preprocess_hydrolib_readFMmodel.py after issues are resolved?
 #NOTE: for examples with writing bc files, check dfm_tools.interpolate_grid2bnd.* and dfm_tools.hydrolib_helpers.
 
 nPoints = 5 #None for all points
 
-file_bc_list = [Path(r'n:\My Documents\werkmap\hydrolib_test\DCSM\tide_OB_all_20181108.bc'), #TODO: make better DataArray format for astronomic components
+file_bc_list = [Path(r'n:\My Documents\werkmap\hydrolib_test\DCSM\tide_OB_all_20181108.bc'),
                 #Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\2020\flow\rmm_zeerand_v3_2020.bc'), #>100 timeseries
                 Path(r'n:\My Documents\werkmap\hydrolib_test\rmm_zeerand_v3_2020_short3.bc'),
                 Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\rmm_rivdis_meas_20171101_20210102_MET.bc'), #TODO: why can it not be str? #three timeseries
@@ -50,43 +49,30 @@ for file_bc in file_bc_list:
     #plot
     fig, ax = plt.subplots(figsize=(12, 6))
     for iFO, forcingobj in enumerate(m.forcing[:nPoints]):
+        forcing_xr = forcinglike_to_Dataset(forcingobj, convertnan=True)
+        data_vars = list(forcing_xr.data_vars)
         if forcingobj.function=='t3d':
-            if hasattr(m.forcing[0].quantityunitpair[1],'elementname'): #T3Dvector of for instance uxuy
-                forcingobj_ux,forcingobj_uy = T3Dvector_to_T3Dtuple(forcingobj)
-                forcing_xr_ux,forcing_xr_uy = forcinglike_to_DataArray(forcingobj_ux), forcinglike_to_DataArray(forcingobj_uy)
-                forcing_ts_ux,forcing_ts_uy = DataArray_to_T3D(forcing_xr_ux), DataArray_to_T3D(forcing_xr_uy)
-                forcing_ts = T3Dtuple_to_T3Dvector(forcing_ts_ux,forcing_ts_uy)
-                plt.close(fig)
-                fig, (ax1,ax2) = plt.subplots(2,1,figsize=(12, 7))
-                forcing_xr_ux.T.plot(ax=ax1)
-                forcing_xr_uy.T.plot(ax=ax2)
-            else:
-                forcing_xr = forcinglike_to_DataArray(forcingobj)
-                forcing_ts = DataArray_to_T3D(forcing_xr) #TODO: implement this also for uxuy
-                forcing_xr.T.plot() #TODO: this overwites previous plot, so does not make sense
-            #forcing_xr_masked = forcing_xr.where(forcing_xr != forcing_xr.isel(depth=0)) #TODO: better way to mask data?
-            #fig, ax = plt.subplots(figsize=(12, 6))
-            #forcing_xr_masked.T.plot()
-        elif forcingobj.function=='timeseries':
-            forcing_xr = forcinglike_to_DataArray(forcingobj)
-            forcing_ts = DataArray_to_TimeSeries(forcing_xr)
-            forcing_xr.plot(ax=ax, label=forcing_xr.attrs['name'], linewidth=0.7)
+            forcing_ts = Dataset_to_T3D(forcing_xr)
+            if hasattr(forcingobj.quantityunitpair[1],'elementname'): #uxuy vector
+                plt.close()
+                fig, axes = plt.subplots(2,1,figsize=(12, 8),sharex=True,sharey=True)
+                forcing_xr[data_vars[0]].T.plot(ax=axes[0])
+                forcing_xr[data_vars[1]].T.plot(ax=axes[1])
+            else: #salinitybnd/temperaturebnd
+                forcing_xr[data_vars[0]].T.plot(ax=ax)
+        elif forcingobj.function=='timeseries': #waterlevelbnd
+            forcing_ts = Dataset_to_TimeSeries(forcing_xr)
+            forcing_xr[data_vars[0]].plot(ax=ax, label=forcing_xr[data_vars[0]].attrs['name'], linewidth=0.8)
             ax.legend(loc=1)
-        elif forcingobj.function=='astronomic':
-            forcing_xr = forcinglike_to_DataArray(forcingobj)
-            #TODO: consolidate Astronomic to DataArray method and support back/forth conversion
+        elif forcingobj.function=='astronomic': #eg tidal components
+            #forcing_ts = Dataset_to_Astronomic(forcing_xr) #TODO: implement Dataset_to_Astronomic() function
             if iFO==0:
                 ax2 = ax.twinx()
                 continue #skip first (invalid) point
-            forcing_xr.isel(quantity=0).plot(ax=ax, label='amplitude', linewidth=0.7)
-            forcing_xr.isel(quantity=1).plot(ax=ax2, label='phase', linewidth=0.7)
-            ax.legend(loc=1)
-            # forcing_pd = forcinglike_to_DataFrame(forcingobj) #only relevant for Astronomic, for TimeSeries/T3D it is equal to xr.to_pandas()
-            # forcing_pd[forcing_pd.columns[0]].plot(ax=ax, linewidth=0.7)
-            # forcing_pd[forcing_pd.columns[1]].plot(ax=ax, linewidth=0.7, secondary_y=True)
-            # ax.legend(forcing_pd.columns,loc=1)
+            forcing_xr[data_vars[0]].plot(ax=ax, linewidth=0.8)
+            forcing_xr[data_vars[1]].plot(ax=ax2, linewidth=0.8)
         else:
-            forcing_xr.plot(ax=ax, label=forcing_xr.attrs['name'], linewidth=0.7)
+            forcing_xr.plot(ax=ax, label=forcing_xr.attrs['name'], linewidth=0.8)
             ax.legend(loc=1)
             raise Exception(f'non-defined function: {forcingobj.function}')
         #ForcingModel_object_out.forcing.append(forcing_ts)

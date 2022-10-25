@@ -21,7 +21,7 @@ from hydrolib.core.io.bc.models import (
 )
 from hydrolib.core.io.polyfile.models import PolyFile
 
-from dfm_tools.hydrolib_helpers import DataArray_to_TimeSeries, DataArray_to_T3D, T3Dtuple_to_T3Dvector
+from dfm_tools.hydrolib_helpers import Dataset_to_TimeSeries, Dataset_to_T3D
 
 
 def get_conversion_dict(ncvarname_updates={}):
@@ -51,7 +51,6 @@ def get_conversion_dict(ncvarname_updates={}):
                         'temperaturebnd'      : {'ncvarname': 'thetao'},      #'degC'
                         'ux'                  : {'ncvarname': 'uo'},          #'m/s'
                         'uy'                  : {'ncvarname': 'vo'},          #'m/s'
-                        'ux,uy'               : {'ncvarname': 'uo,vo'},       #'m/s'
                         'waterlevelbnd'       : {'ncvarname': 'zos'},         #'m' #steric
                         'tide'                : {'ncvarname': ''},            #'m' #tide (dummy entry)
                         }
@@ -198,31 +197,41 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
                          conversion_dict=None, #rename_vars={}, #TODO: alternatively use rename_vars dict and use conversion_dict only for unit conversion. dict containing keys: ncvarname, bcvarname and optionally conversion and unit
                          nPoints=None, #argument for testing
                          reverse_depth=False, #temporary argument to compare easier with old coastserv files
-                         ):
+                         KDTree_invdistweigth=False):
     
     if conversion_dict is None:
         conversion_dict = get_conversion_dict()
     
-    if ',' in quantity: #T3Dvector #TODO: make this less ugly
-        print(f'ERROR: combined variables ({quantity}) not yet supported by dfm_tools')    
-        quantity_list = quantity.split(',')
-        ncvarname_joined = conversion_dict[quantity]['ncvarname']
-        ncvarname_list = ncvarname_joined.split(',')
-        ForcingModel_object_list = [interpolate_nc_to_bc(dir_pattern=Path(str(dir_pattern).replace(ncvarname_joined,ncvarname_one)), file_pli=file_pli, quantity=quantity_one, tstart=tstart, tstop=tstop, refdate_str=refdate_str, conversion_dict=conversion_dict, nPoints=nPoints, reverse_depth=reverse_depth) for quantity_one, ncvarname_one in zip(quantity_list,ncvarname_list)]
-        ForcingModel_object_comb = ForcingModel()
-        for iF in range(len(ForcingModel_object_list[0].forcing)):
-            T3Dvec_onepoint = T3Dtuple_to_T3Dvector(ForcingModel_object_list[0].forcing[iF],ForcingModel_object_list[1].forcing[iF]) #TODO: make flexible for more than one quantity
-            ForcingModel_object_comb.forcing.append(T3Dvec_onepoint)
-        return ForcingModel_object_comb
-        
+    if quantity=='uxuy': #T3Dvector
+        quantity_list = ['ux','uy']
+        ncvarname_list = [conversion_dict[quan]['ncvarname'] for quan in quantity_list]
+    else:
+        quantity_list = [quantity]
+        ncvarname_list = [conversion_dict[quan]['ncvarname'] for quan in quantity_list]
+    
     print('initialize ForcingModel()')
     ForcingModel_object = ForcingModel()
     
-    file_list_nc = glob.glob(str(dir_pattern))
-    print(f'loading mfdataset ({len(file_list_nc)} files with pattern "{dir_pattern.name}")')
-    dtstart = dt.datetime.now()
-    data_xr = xr.open_mfdataset(file_list_nc,chunks={'time':1}) # can also supply str(dir_pattern) #TODO: does chunks argument solve "PerformanceWarning: Slicing is producing a large chunk."?
+    dir_pattern = [Path(str(dir_pattern).format(ncvarname=ncvarname)) for ncvarname in ncvarname_list]
+    file_list_nc = []
+    for dir_pattern_one in dir_pattern:
+        file_list_nc = file_list_nc + glob.glob(str(dir_pattern_one))
+    list_pattern_names = [x.name for x in dir_pattern]
+    print(f'loading mfdataset of {len(file_list_nc)} files with pattern(s) {list_pattern_names}')
     
+    dtstart = dt.datetime.now()
+    try:
+        data_xr = xr.open_mfdataset(file_list_nc,chunks={'time':1}) #TODO: does chunks argument solve "PerformanceWarning: Slicing is producing a large chunk."?
+    except xr.MergeError as e: #TODO: this except is necessary for CMCC, ux and uy have different lat/lon values, so renaming those of uy to avoid merging conflict
+        def preprocess_CMCC_uovo(ds):
+            if 'vo_' in os.path.basename(ds.encoding['source']):
+                ds.coords['longitude'] = (ds.coords['longitude'] + 180) % 360 - 180 #normally this is done at convert_360to180, but inconvenient after renaming longitude variable
+                ds = ds.rename({'longitude':'longitude_uy','latitude':'latitude_uy'})
+                ds = ds.drop_vars(['vertices_longitude','vertices_latitude'])
+            return ds
+        print(f'catching "MergeError: {e}" >> WARNING: ux/uy have different latitude/longitude values, making two coordinates sets in Dataset.')
+        data_xr = xr.open_mfdataset(file_list_nc,chunks={'time':1},preprocess=preprocess_CMCC_uovo)
+        
     #rename variables with rename_dict derived from conversion_dict
     rename_dict = {v['ncvarname']:k for k,v in conversion_dict.items()}
     for ncvarn in data_xr.variables.mapping.keys():
@@ -261,7 +270,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
     coordname_lon,coordname_lat = ['longitude','latitude'] #hardcode this
     if coordname_lon not in data_xr.coords:
         if 'lon' in data_xr.coords:
-            data_xr = data_xr.rename({'lon':'longitude','lat':'latitude'})
+            data_xr = data_xr.rename({'lon':coordname_lon,'lat':coordname_lat})
         else:
             raise Exception(f'no lat/lon coords available in file: {data_xr.coords}')
     
@@ -275,10 +284,13 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
         else: #lon/lat is 2D #TODO: this can be removed
             print('WARNING: 2D latitude/longitude has more than one dim, continue without .sortby(). This is expected for e.g. CMCC')
     
-    #retrieve var (after potential longitude conversion) (also selecting relevant times)
-    if not quantity in data_xr.data_vars:
-        raise Exception(f'quantity \'{quantity}\' not found (try updating conversion_dict), available are:\n{data_xr.data_vars}')
-    data_xr_var = data_xr[quantity].sel(time=slice(tstart,tstop))
+    #retrieve var(s) (after potential longitude conversion) (also selecting relevant times)
+    data_vars = list(data_xr.data_vars)
+    bool_quanavailable = pd.Series(quantity_list).isin(data_vars)
+    if not bool_quanavailable.all():
+        quantity_list_notavailable = pd.Series(quantity_list).loc[~bool_quanavailable].tolist()
+        raise Exception(f'quantity {quantity_list_notavailable} not found, available are: {data_vars}. Try updating conversion_dict to rename these variables.')
+    data_xr_var = data_xr[quantity_list].sel(time=slice(tstart,tstop))
     
     if coordname_lon not in data_xr_var.coords:
         raise Exception(f'{coordname_lon} not in variable coords: {data_xr_var.coords}.')
@@ -307,25 +319,38 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
         except ValueError as e: #Dimensions {'latitude', 'longitude'} do not exist. Expected one or more of Frozen({'time': 17, 'depth': 50, 'i': 292, 'j': 362}).
             #this is for eg CMCC model with multidimensional lat/lon variable
             #TODO: make nicer, without try except? eg latlon_ndims==1, but not sure if that is always valid
-            #TODO: kdtree k=3 and invdist weighing? Then also spherical coordinate distance calculation instead of cartesian/eucledian
+            #TODO: maybe also spherical coordinate distance calculation instead of cartesian/eucledian
             print(f'ValueError: {e}. Reverting to KDTree instead (nearest neigbour)')
             from scipy.spatial import KDTree #TODO: move up
-            path_lonlat_pd = pd.DataFrame({'lon':da_lons,'lat':da_lats})
-            data_lon_flat = data_xr_var[coordname_lon].to_numpy().ravel()
-            data_lat_flat = data_xr_var[coordname_lat].to_numpy().ravel()
-            data_lonlat_pd = pd.DataFrame({'lon':data_lon_flat,'lat':data_lat_flat})
-            #KDTree, finds minimal eucledian distance between points (maybe haversine would be better)
-            tree = KDTree(data_lonlat_pd) #alternatively sklearn.neighbors.BallTree: tree = BallTree(data_lonlat_pd)
-            distance, data_lonlat_idx = tree.query(path_lonlat_pd, k=1) #TODO: maybe add outofbounds treshold for distance
-            #data_lonlat_pd.iloc[data_lonlat_idx]
-            idx_i,idx_j = np.divmod(data_lonlat_idx, data_xr_var['longitude'].shape[1]) #get idx i and j by sort of counting over 2D array
-            # fig,ax = plt.subplots()
-            # data_xr_var_tsel_dsel = data_xr_var.isel(time=0,depth=0)
-            # data_xr_var_tsel_dsel.plot(ax=ax)#,x='longitude',y='latitude')
-            # ax.plot(idx_j,idx_i,'xr')
-            da_idxi = xr.DataArray(idx_i, dims='latloncombi')
-            da_idxj = xr.DataArray(idx_j, dims='latloncombi')
-            data_interp = data_xr_var.isel(i=da_idxi,j=da_idxj)
+            data_interp = xr.Dataset()
+            for varone in list(data_xr_var.data_vars):
+                path_lonlat_pd = pd.DataFrame({'lon':da_lons,'lat':da_lats})
+                if (varone=='uy') & (len(data_xr_var.data_vars)>1):
+                    data_lon_flat = data_xr_var['longitude_uy'].to_numpy().ravel()
+                    data_lat_flat = data_xr_var['latitude_uy'].to_numpy().ravel()
+                else:
+                    data_lon_flat = data_xr_var[coordname_lon].to_numpy().ravel()
+                    data_lat_flat = data_xr_var[coordname_lat].to_numpy().ravel()
+                data_lonlat_pd = pd.DataFrame({'lon':data_lon_flat,'lat':data_lat_flat})
+                #KDTree, finds minimal eucledian distance between points (maybe haversine would be better)
+                tree = KDTree(data_lonlat_pd) #alternatively sklearn.neighbors.BallTree: tree = BallTree(data_lonlat_pd)
+                distance, data_lonlat_idx = tree.query(path_lonlat_pd, k=3) #TODO: maybe add outofbounds treshold for distance
+                #data_lonlat_pd.iloc[data_lonlat_idx]
+                idx_i,idx_j = np.divmod(data_lonlat_idx, data_xr_var['longitude'].shape[1]) #get idx i and j by sort of counting over 2D array
+                # import matplotlib.pyplot as plt
+                # fig,ax = plt.subplots()
+                # data_xr_var[varone].isel(time=0,depth=0).plot(ax=ax)
+                # ax.plot(idx_j,idx_i,'xr')
+                da_idxi = xr.DataArray(idx_i, dims=('latloncombi','point3k'))
+                da_idxj = xr.DataArray(idx_j, dims=('latloncombi','point3k'))
+                if KDTree_invdistweigth:
+                    da_dist = xr.DataArray(distance, dims=('latloncombi','point3k'))
+                    da_invdistweight = (1/da_dist)/(1/da_dist).sum(dim='point3k')
+                    da_varone_3k = data_xr_var[varone].isel(i=da_idxi,j=da_idxj)
+                    data_interp[varone] = (da_varone_3k * da_invdistweight).sum(dim='point3k')
+                    data_interp[varone].attrs = data_xr_var[varone].attrs #copy units and other attributes
+                else:
+                    data_interp[varone] = data_xr_var[varone].isel(i=da_idxi,j=da_idxj).isel(point3k=0) #take first of 3 closest points
 
         time_passed = (dt.datetime.now()-dtstart).total_seconds()
         # print(f'>>time passed: {time_passed:.2f} sec')
@@ -347,9 +372,10 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
         
         #optional conversion of units and reversing depth dimension
         if 'conversion' in conversion_dict.keys(): #if conversion is present, unit key must also be in conversion_dict
-            print(f'> converting units from [{datablock_xr_allpoints.attrs["units"]}] to [{conversion_dict["unit"]}]')
-            datablock_xr_allpoints = datablock_xr_allpoints * conversion_dict['conversion'] #conversion drops all attributes of which units (which are changed anyway)
-            datablock_xr_allpoints.attrs['units'] = conversion_dict['unit'] #add unit attribute with resulting unit
+            for quan in quantity_list:
+                print(f'> converting units from [{datablock_xr_allpoints[quan].attrs["units"]}] to [{conversion_dict["unit"]}]')
+                datablock_xr_allpoints[quan] = datablock_xr_allpoints[quan] * conversion_dict['conversion'] #conversion drops all attributes of which units (which are changed anyway)
+                datablock_xr_allpoints[quan].attrs['units'] = conversion_dict['unit'] #add unit attribute with resulting unit
         
         if ('depth' in data_xr_var.coords) & reverse_depth:
             print('> reversing depth dimension')
@@ -364,15 +390,17 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             print('> select data for this point, ffill nans, concatenating time column, constructing T3D/TimeSeries and appending to ForcingModel()')
             dtstart = dt.datetime.now()
             datablock_xr_onepoint = datablock_xr_allpoints.isel(latloncombi=iP)
-            datablock_xr_onepoint.attrs['locationname'] = pli_PolyObject_name_num #TODO: is there a nicer way of passing this data?
             
-            if np.isnan(datablock_xr_onepoint.to_numpy()).all(): # check if only nan (out of bounds or land) # we can do .to_numpy() without performance loss, since data is already loaded in datablock_xr_allpoints
-                print('WARNING: only nans for this coordinate, this point might be on land')
+            for quan in quantity_list:
+                datablock_xr_onepoint[quan].attrs['locationname'] = pli_PolyObject_name_num #TODO: is there a nicer way of passing this data?
+                
+                if np.isnan(datablock_xr_onepoint[quan].to_numpy()).all(): # check if only nan (out of bounds or land) # we can do .to_numpy() without performance loss, since data is already loaded in datablock_xr_allpoints
+                    print('WARNING: only nans for this coordinate, this point might be on land')
             
             if 'depth' in data_xr_var.coords:
-                ts_one = DataArray_to_T3D(datablock_xr_onepoint)#,locationname=pli_PolyObject_name_num,refdate_str=refdate_str,bcvarname=bcvarname)
+                ts_one = Dataset_to_T3D(datablock_xr_onepoint)
             else:
-                ts_one = DataArray_to_TimeSeries(datablock_xr_onepoint)#,locationname=pli_PolyObject_name_num,refdate_str=refdate_str,bcvarname=bcvarname)
+                ts_one = Dataset_to_TimeSeries(datablock_xr_onepoint)
             ForcingModel_object.forcing.append(ts_one)
             time_passed = (dt.datetime.now()-dtstart).total_seconds()
             # print(f'>>time passed: {time_passed:.2f} sec')

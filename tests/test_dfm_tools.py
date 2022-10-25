@@ -13,8 +13,7 @@ dir_testinput = os.path.join(r'c:\DATA','dfm_tools_testdata')
 dir_tests = os.path.dirname(__file__) #F9 doesnt work, only F5 (F5 also only method to reload external definition scripts)
 
 # ACCEPTANCE TESTS VIA EXAMPLE SCRIPTS, these are the ones who are only meant to generate output files
-list_configfiles = glob.glob(os.path.join(dir_tests,'examples','*.py'))
-#list_configfiles = ['predictie_2019_b02ex2_19Ycomp4Ydia_CUXHVN_test.py']
+list_configfiles = glob.glob(os.path.join(dir_tests,'examples','*.py')) + glob.glob(os.path.join(dir_tests,'examples_workinprogress','*.py'))
 dir_output_general = os.path.join(dir_tests,'examples_output')
 if not os.path.exists(dir_output_general):
     os.mkdir(dir_output_general)
