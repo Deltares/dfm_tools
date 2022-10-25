@@ -33,7 +33,7 @@ list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tracer
 list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','tracerbndNO3']
 list_quantities = ['uxuy']
 
-model = 'CMCC' #CMEMS GFDL CMCC HYCOM
+model = 'CMEMS' #CMEMS GFDL CMCC HYCOM
 
 #The {ncvarname} wildcard can be used in dir_pattern_hydro/dir_patern_waq to replace it with conversion_dict[quantity]['ncvarname']. This method uses str(dir_output).format(ncvarname)
 KDTree_invdistweigth = False
