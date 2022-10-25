@@ -289,7 +289,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
     bool_quanavailable = pd.Series(quantity_list).isin(data_vars)
     if not bool_quanavailable.all():
         quantity_list_notavailable = pd.Series(quantity_list).loc[~bool_quanavailable].tolist()
-        raise Exception(f'quantity {quantity_list_notavailable} not found, available are: {data_vars}. Try updating conversion_dict to rename these variables.')
+        raise Exception(f'quantity {quantity_list_notavailable} not found in netcdf, available are: {data_vars}. Try updating conversion_dict to rename these variables.')
     data_xr_var = data_xr[quantity_list].sel(time=slice(tstart,tstop))
     
     if coordname_lon not in data_xr_var.coords:

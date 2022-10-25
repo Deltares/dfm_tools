@@ -31,7 +31,7 @@ refdate_str = 'minutes since 2011-12-22 00:00:00 +00:00' # if None, xarray uses 
 #quantities should be in conversion_dict.keys(). waterlevelbnd is steric/zos, tide is tidal components from FES/EOT
 list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tracerbndNO3','tide']
 #list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','tracerbndNO3']
-#list_quantities = ['uxuy']
+#list_quantities = ['tracerbndPON1']
 
 model = 'CMEMS' #CMEMS GFDL CMCC HYCOM
 
