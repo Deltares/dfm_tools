@@ -16,7 +16,7 @@ from dfm_tools.interpolate_grid2bnd import get_conversion_dict, interpolate_tide
 from dfm_tools.hydrolib_helpers import forcinglike_to_Dataset
 from hydrolib.core.io.ext.models import Boundary, ExtModel
 
-
+#TODO: make interpolate function accept tstart/tstop as datestrings
 #TODO: add coordinate conversion of pli-coordinates (for nesting RD models)
 #copied plifile from DCSM folder: r'p:\1204257-dcsmzuno\data\CMEMS\bnd\NorthSeaAndBaltic_1993-2019_20210510'
 #list_plifiles = [Path(r'n:\My Documents\werkmap\hydrolib_test\DCSM\DCSM-FM_OB_all_20181108.pli')] #TODO: reading this file results in empty Polyfile, should raise an error. https://github.com/Deltares/HYDROLIB-core/issues/320
@@ -30,12 +30,13 @@ refdate_str = 'minutes since 2011-12-22 00:00:00 +00:00' # if None, xarray uses 
 
 #quantities should be in conversion_dict.keys(). waterlevelbnd is steric/zos, tide is tidal components from FES/EOT
 list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tracerbndNO3','tide']
-list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','tracerbndNO3']
-list_quantities = ['uxuy']
+#list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','tracerbndNO3']
+#list_quantities = ['uxuy']
 
 model = 'CMEMS' #CMEMS GFDL CMCC HYCOM
 
-#The {ncvarname} wildcard can be used in dir_pattern_hydro/dir_patern_waq to replace it with conversion_dict[quantity]['ncvarname']. This method uses str(dir_output).format(ncvarname)
+#The {ncvarname} wildcard in dir_pattern_hydro/dir_patern_waq is used to replace it with conversion_dict[quantity]['ncvarname'] by using str(dir_pattern).format(ncvarname)
+reverse_depth = False #to compare with coastserv files, this argument will be phased out
 KDTree_invdistweigth = False
 if model=='CMEMS': #2012-01-06 12:00:00 to 2013-01-03 12:00:00
     conversion_dict = get_conversion_dict()
@@ -45,6 +46,10 @@ if model=='CMEMS': #2012-01-06 12:00:00 to 2013-01-03 12:00:00
     dir_pattern_hydro = Path(dir_sourcefiles_hydro,'{ncvarname}_2012*.nc') # later remove 2012 from string, but this is faster for testing #TODO: it is quite slow, maybe speed up possible?
     dir_sourcefiles_waq = r'p:\11206304-futuremares\python_scripts\ocean_boundaryCMEMS\data_monthly' #CMEMS waq: no3, o2, phyc, so4, si (2011-12-16 12:00:00 to 2019-01-16 12:00:00)
     dir_pattern_waq = Path(dir_sourcefiles_waq,'cmems_mod_glo_bgc_my_0.25_P1M-m_{ncvarname}_*.nc') 
+    #to reproduce old CMEMS data (icw reverse_depth=True)
+    #tstart = dt.datetime(1993,1,1,12,0)
+    #tstop = tstart + dt.timedelta(days=5)
+    #dir_pattern_hydro = Path(dir_sourcefiles_hydro,'{ncvarname}_1993*.nc') # later remove 2012 from string, but this is faster for testing #TODO: it is quite slow, maybe speed up possible?
 elif model=='GFDL':
     conversion_dict = get_conversion_dict()
     tstart = dt.datetime(2012, 1, 16, 12, 0)
@@ -76,7 +81,6 @@ else:
     raise Exception(f'invalid model: {model}')
 
 
-
 # start of interpolation process
 dtstart = dt.datetime.now()
 ext_bnd = ExtModel()
@@ -100,7 +104,7 @@ for file_pli in list_plifiles:
             ForcingModel_object = interpolate_nc_to_bc(dir_pattern=dir_pattern_hydro, file_pli=file_pli,
                                                        quantity=quantity, conversion_dict=conversion_dict,
                                                        tstart=tstart, tstop=tstop, refdate_str=refdate_str,
-                                                       #reverse_depth=True, #to compare with coastserv files, this argument will be phased out
+                                                       reverse_depth=reverse_depth,
                                                        KDTree_invdistweigth=KDTree_invdistweigth,
                                                        nPoints=nPoints)
         else: #waq
@@ -109,12 +113,12 @@ for file_pli in list_plifiles:
             ForcingModel_object = interpolate_nc_to_bc(dir_pattern=dir_pattern_waq, file_pli=file_pli,
                                                        quantity=quantity, conversion_dict=conversion_dict,
                                                        tstart=tstart, tstop=tstop, refdate_str=refdate_str,
-                                                       #reverse_depth=True, #to compare with coastserv files, this argument will be phased out
+                                                       reverse_depth=reverse_depth,
                                                        KDTree_invdistweigth=KDTree_invdistweigth,
                                                        nPoints=nPoints)
         
         if 1: #plotting example data point
-            for iF in range(nPoints): #[2]:#
+            for iF in [2]:#range(nPoints): #
                 forcingobject_one = ForcingModel_object.forcing[iF]
                 forcingobject_one_xr = forcinglike_to_Dataset(forcingobject_one,convertnan=True)
                 data_vars = list(forcingobject_one_xr.data_vars)
