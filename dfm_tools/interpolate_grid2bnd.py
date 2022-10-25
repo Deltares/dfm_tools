@@ -194,7 +194,7 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
 
 def interpolate_nc_to_bc(dir_pattern, file_pli, quantity, 
                          tstart, tstop, refdate_str=None, 
-                         conversion_dict=None, #rename_vars={}, #TODO: alternatively use rename_vars dict and use conversion_dict only for unit conversion. dict containing keys: ncvarname, bcvarname and optionally conversion and unit
+                         conversion_dict=None,
                          nPoints=None, #argument for testing
                          reverse_depth=False, #temporary argument to compare easier with old coastserv files
                          KDTree_invdistweigth=False):
@@ -289,7 +289,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
     bool_quanavailable = pd.Series(quantity_list).isin(data_vars)
     if not bool_quanavailable.all():
         quantity_list_notavailable = pd.Series(quantity_list).loc[~bool_quanavailable].tolist()
-        raise Exception(f'quantity {quantity_list_notavailable} not found, available are: {data_vars}. Try updating conversion_dict to rename these variables.')
+        raise Exception(f'quantity {quantity_list_notavailable} not found in netcdf, available are: {data_vars}. Try updating conversion_dict to rename these variables.')
     data_xr_var = data_xr[quantity_list].sel(time=slice(tstart,tstop))
     
     if coordname_lon not in data_xr_var.coords:

@@ -4,4 +4,4 @@
 
 __author__ = """Jelmer Veenstra"""
 __email__ = 'jelmer.veenstra@deltares.nl'
-__version__ = '0.7.108'
+__version__ = '0.7.109'
