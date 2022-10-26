@@ -17,15 +17,16 @@ from dfm_tools.hydrolib_helpers import forcinglike_to_Dataset, Dataset_to_TimeSe
 
 nPoints = 5 #None for all points
 
-file_bc_list = [Path(r'n:\My Documents\werkmap\hydrolib_test\DCSM\tide_OB_all_20181108.bc'),
+file_bc_list = [Path(r'c:\DATA\dfm_tools_testdata\hydrolib_bc\DCSM\tide_OB_all_20181108.bc'),
                 #Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\2020\flow\rmm_zeerand_v3_2020.bc'), #>100 timeseries
-                Path(r'n:\My Documents\werkmap\hydrolib_test\rmm_zeerand_v3_2020_short3.bc'),
+                Path(r'c:\DATA\dfm_tools_testdata\hydrolib_bc\rmm_zeerand_v3_2020_short.bc'),
                 Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\rmm_rivdis_meas_20171101_20210102_MET.bc'), #TODO: why can it not be str? #three timeseries
                 #Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\2018\flow\rmm_discharge_laterals_20171201_20190101_MET.bc'),
-                Path(r'n:\My Documents\werkmap\hydrolib_test\haixia\salinity_bc_South_v2_firstpoint.bc'),
-                Path(r'n:\My Documents\werkmap\hydrolib_test\haixia\uxuy_bc_South_v2_firstpoint.bc'),
-                #Path(r'n:\My Documents\werkmap\hydrolib_test\haixia\salinity_bc_South_v2.bc'), #large file, takes time
-                #Path(r'n:\My Documents\werkmap\hydrolib_test\haixia\uxuy_bc_South_v2.bc'),
+                Path(r'c:\DATA\dfm_tools_testdata\hydrolib_bc\haixia\salinity_bc_South_v2_firstpoint.bc'),
+                Path(r'c:\DATA\dfm_tools_testdata\hydrolib_bc\haixia\uxuy_bc_South_v2_firstpoint.bc'),
+                Path(r'c:\DATA\dfm_tools_testdata\hydrolib_bc\haixia\salinity_bc_simple.bc'),
+                #Path(r'c:\DATA\dfm_tools_testdata\hydrolib_bc\haixia\salinity_bc_South_v2.bc'), #large file, takes time
+                #Path(r'c:\DATA\dfm_tools_testdata\hydrolib_bc\haixia\uxuy_bc_South_v2.bc'),
                 ]
 
 

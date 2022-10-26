@@ -341,12 +341,10 @@ def get_stationid_fromstationlist(data_xr, stationlist, station_varname='station
         print(data_xr_stationlist_pd)
         raise Exception(f'ERROR: not all requested stations in netcdf:\n{stationlist_pd.loc[~bool_reqstations]}')
     
-    #get boolean and then idx of requested stations
-    bool_stations = data_xr_stationlist_pd.isin(stationlist_pd)
-    idx_stations = np.where(bool_stations)[0]
+    #get idx of requested stations, in original order
+    idx_stations = [data_xr_stationlist_pd.loc[data_xr_stationlist_pd.str.match(stat_req)].index[0] for stat_req in stationlist]
     
     return idx_stations
-
 
 
 
