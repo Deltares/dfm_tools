@@ -371,11 +371,11 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
         print(f'>>time passed: {time_passed:.2f} sec')
         
         #optional conversion of units and reversing depth dimension
-        if 'conversion' in conversion_dict.keys(): #if conversion is present, unit key must also be in conversion_dict
-            for quan in quantity_list:
-                print(f'> converting units from [{datablock_xr_allpoints[quan].attrs["units"]}] to [{conversion_dict["unit"]}]')
-                datablock_xr_allpoints[quan] = datablock_xr_allpoints[quan] * conversion_dict['conversion'] #conversion drops all attributes of which units (which are changed anyway)
-                datablock_xr_allpoints[quan].attrs['units'] = conversion_dict['unit'] #add unit attribute with resulting unit
+        for quan in quantity_list:
+            if 'conversion' in conversion_dict[quan].keys(): #if conversion is present, unit key must also be in conversion_dict
+                print(f'> converting units from [{datablock_xr_allpoints[quan].attrs["units"]}] to [{conversion_dict[quan]["unit"]}]')
+                datablock_xr_allpoints[quan] = datablock_xr_allpoints[quan] * conversion_dict[quan]['conversion'] #conversion drops all attributes of which units (which are changed anyway)
+                datablock_xr_allpoints[quan].attrs['units'] = conversion_dict[quan]['unit'] #add unit attribute with resulting unit
         
         if ('depth' in data_xr_var.coords) & reverse_depth:
             print('> reversing depth dimension')
