@@ -185,6 +185,22 @@ def SKIP_test_getncmodeldata_indexcountmetadata(): #TODO: this is not valid nor 
 
 
 @pytest.mark.unittest
+def test_get_stationid_fromstationlist():
+    import xarray as xr
+    from dfm_tools.get_nc_helpers import get_stationid_fromstationlist#, get_hisstationlist
+    file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen\\computations\\run01\\DFM_OUTPUT_Grevelingen-FM\\Grevelingen-FM_0000_his.nc')
+    
+    station = ['GTSO-02','GTSO-01','GTSO-03']
+    
+    data_xr = xr.open_dataset(file_nc) #TODO: maybe adding chunking argument like chunks={'time':-1,'station':200}) (https://github.com/pydata/xarray/discussions/6458)
+    
+    #stations_pd = get_hisstationlist(file_nc)
+    idx_stations = get_stationid_fromstationlist(data_xr, stationlist=station)
+    
+    assert idx_stations==list([1,0,2])
+
+
+@pytest.mark.unittest
 def test_getncmodeldata_datetime():
     import numpy as np
     import datetime as dt
