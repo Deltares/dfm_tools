@@ -343,8 +343,13 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=No
         data_xr = xr.Dataset()
         var_xr = xr.DataArray(values_all,dims=nc_varobject.dimensions,attrs=nc_varobject.__dict__,name=varname)
         data_xr[varname] = var_xr
+        for vardim in nc_varobject.dimensions:
+            if vardim=='time':
+                data_xr['time'] = xr.DataArray(data_nc_datetimes_pd, dims=('time'), attrs=data_nc_timevar.__dict__, name='time')
+            if vardim=='mesh2d_nLayers':
+                data_xr['mesh2d_nLayers'] = xr.DataArray(layer_ids, dims=('mesh2d_nLayers'), name='mesh2d_nLayers')
         data_nc.close()
-        return var_xr
+        return data_xr[varname]
     else:
         data_nc.close()
         return values_all
