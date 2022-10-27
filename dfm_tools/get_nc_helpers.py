@@ -321,7 +321,7 @@ def get_hisstationlist(file_nc, varname='waterlevel'):
     for colname in statlist_pd.columns:
         if isinstance(statlist_pd[colname][0],bytes): #TODO: better check would be data_xr.variables[colname].dtype=='S256'
             print(f'variable {colname}: converting bytes to str')
-            statlist_pd[colname] = pd.Series(data_xr[colname].astype(str)).str.strip() #replace bytes by stripped strings
+            statlist_pd[colname] = data_xr[colname].to_pandas().str.decode('utf-8',errors='ignore').str.strip() #to_pandas is essential otherwise resulting bool might not be correct. .str.strip() to remove spaces left/right from station_name (necessary for sobek models)
     
     data_xr.close()
     return statlist_pd

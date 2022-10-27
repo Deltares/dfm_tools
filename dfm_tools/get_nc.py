@@ -44,7 +44,7 @@ import matplotlib.collections
 from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvarproperties, get_varnamefrom_keyslongstandardname, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_fromnc
 from dfm_tools.ugrid import UGrid
  
-def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=None, multipart=None, silent=False):
+def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=None, multipart=None, silent=False, return_xarray=False):
     """
 
     Parameters
@@ -339,8 +339,15 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=No
     else:
         values_all.var_layers = None
     
-    data_nc.close()
-    return values_all
+    if return_xarray:
+        data_xr = xr.Dataset()
+        var_xr = xr.DataArray(values_all,dims=nc_varobject.dimensions,attrs=nc_varobject.__dict__,name=varname)
+        data_xr[varname] = var_xr
+        data_nc.close()
+        return var_xr
+    else:
+        data_nc.close()
+        return values_all
 
 
 def calc_dist_pythagoras(x1,x2,y1,y2): # only used in dfm_tools.ugrid
