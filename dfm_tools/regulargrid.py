@@ -33,21 +33,21 @@ Created on Sun Mar 22 08:41:00 2020
 """
 
 
-def scatter_to_regulargrid(xcoords=None, ycoords=None, ncellx=None, ncelly=None, values=None, method='nearest', maskland_dist=None):
+def scatter_to_regulargrid(xcoords, ycoords, values, ncellx=None, ncelly=None, reg_x_vec=None, reg_y_vec=None, method='nearest', maskland_dist=None):
     """
     interpolates scatter values (x,y,z) or meshgrids to regular grid
 
     Parameters
     ----------
-    xcoords : TYPE, optional
+    xcoords : TYPE
         DESCRIPTION. The default is None.
-    ycoords : TYPE, optional
+    ycoords : TYPE
+        DESCRIPTION. The default is None.
+    values : TYPE
         DESCRIPTION. The default is None.
     ncellx : TYPE, optional
         DESCRIPTION. The default is None.
     ncelly : TYPE, optional
-        DESCRIPTION. The default is None.
-    values : TYPE, optional
         DESCRIPTION. The default is None.
     method : TYPE, optional
         DESCRIPTION. The default is 'nearest'.
@@ -68,8 +68,12 @@ def scatter_to_regulargrid(xcoords=None, ycoords=None, ncellx=None, ncelly=None,
     from scipy.interpolate import griddata
     from scipy.spatial import KDTree
     
-    reg_x_vec = np.linspace(np.min(xcoords),np.max(xcoords),ncellx)
-    reg_y_vec = np.linspace(np.min(ycoords),np.max(ycoords),ncelly)
+    if (reg_x_vec is None) or (reg_y_vec is None):
+        if (ncellx is None) or (ncelly is None):
+            raise Exception('if reg_x_vec/reg_y_vec are not supplied, ncellx and ncelly should be supplied')
+        print('reg_x_vec or reg_y_vec not supplied, so computing from ncellx and ncelly')
+        reg_x_vec = np.linspace(np.min(xcoords),np.max(xcoords),ncellx)
+        reg_y_vec = np.linspace(np.min(ycoords),np.max(ycoords),ncelly)
     x_grid,y_grid = np.meshgrid(reg_x_vec,reg_y_vec)
     
     #first replace masked value with nan (mask is not used in griddata)
