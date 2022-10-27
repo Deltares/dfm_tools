@@ -50,8 +50,6 @@ times_idx : numpy array or 'all', an array of times you want to do the interpola
 layers_idx : numpy array, 'all', or integer. The number of layers you wish to include. The script detect if there are layers or not. 
 """
 
-#get_varnamefrom_keyslongstandardname(file_nc,'meshd2_layer_z')
-
 if not os.path.exists(dir_output):
     os.makedirs(dir_output)
 file_nc_out = os.path.join(dir_output, outname)
@@ -63,11 +61,12 @@ vars_pd = get_ncvarproperties(file_nc=file_nc)
 
 data_frommap_x = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_face_x', multipart=multipart)
 data_frommap_y = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_face_y', multipart=multipart)
-data_frommap_z = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_layer_z', layer=layers_idx, multipart=multipart) #TODO: depth is now not used
+#get_varnamefrom_keyslongstandardname(file_nc,'meshd2_layer_z')
+data_frommap_z = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_layer_z', layer=layers_idx, multipart=multipart) #TODO: depth is now not really used
 if len(data_frommap_z.shape)>1:
     raise Exception('converting to regulargrid is currently only possible for sigmalayers')
-#data_frommap_sigma = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_layer_sigma', layer=layers_idx, multipart=multipart) #TODO: depth is now not used
-#data_frommap_sigma_z = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_layer_sigma_z', layer=layers_idx, multipart=multipart) #TODO: depth is now not used
+#data_frommap_sigma = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_layer_sigma', layer=layers_idx, multipart=multipart)
+#data_frommap_sigma_z = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_layer_sigma_z', layer=layers_idx, multipart=multipart)
 
 data_xr_source = xr.open_dataset(file_nc)
 data_vars_list = list(data_xr_source.data_vars)
@@ -80,7 +79,7 @@ if times_idx != 'all':
     timevar = timevar.isel(time=times_idx)
 data_xr_out['time'] = timevar
 
-lonvar_attrs = {'axis':'X', #TODO: get these from the original dataset after moving to xarray
+lonvar_attrs = {'axis':'X',
                 'reference':'geographical coordinates, WGS84 projection',
                 'units':'degrees_east',
                 '_CoordinateAxisType':'Lon',
@@ -91,7 +90,7 @@ lonvar = xr.DataArray(reg_x_vec, dims=('lon'), attrs=lonvar_attrs)
 data_xr_out['longitude'] = lonvar
 data_xr_out = data_xr_out.set_coords('longitude')
 
-latvar_attrs = {'axis':'Y', #TODO: get these from the original dataset after moving to xarray
+latvar_attrs = {'axis':'Y',
                 'reference':'geographical coordinates, WGS84 projection',
                 'units':'degrees_north',
                 '_CoordinateAxisType':'Lat',
@@ -102,7 +101,7 @@ latvar = xr.DataArray(reg_y_vec, dims=('lat'), attrs=latvar_attrs)
 data_xr_out['latitude'] = latvar
 data_xr_out = data_xr_out.set_coords('latitude')
 
-layervar_attrs = {'axis':'Z', #TODO: get these from the original dataset after moving to xarray
+layervar_attrs = {'axis':'Z',
                   'long_name':'layer'}
 layervar = xr.DataArray(layers_idx, dims=('layer'), attrs=layervar_attrs)
 data_xr_out['layerno'] = layervar
@@ -139,7 +138,7 @@ for varname in data_vars_list:
                 field_array[:,:,t,l] = scatter_to_regulargrid(xcoords=data_frommap_x, ycoords=data_frommap_y, reg_x_vec=reg_x_vec, reg_y_vec=reg_y_vec,
                                                               values=data_frommap_var.isel(time=t,mesh2d_nLayers=l), method=method, maskland_dist=maskland_dist)[2]
         fieldvar_attrs = data_xr_source[varname].attrs
-        fieldvar = xr.DataArray(field_array, dims=('lat', 'lon', 'time', 'layer'), attrs=fieldvar_attrs, name=varname) #, fill_value=-999. #TODO: why this fillvalue?
+        fieldvar = xr.DataArray(field_array, dims=('lat', 'lon', 'time', 'layer'), attrs=fieldvar_attrs, name=varname)
         data_xr_out[varname] = fieldvar
     else:
         data_frommap_var = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=times_idx, return_xarray=True, multipart=multipart)
@@ -150,14 +149,14 @@ for varname in data_vars_list:
                                                         values=data_frommap_var.isel(time=t), method=method, maskland_dist=maskland_dist)[2]
         
         fieldvar_attrs = data_xr_source[varname].attrs
-        fieldvar = xr.DataArray(field_array, dims=('lat', 'lon', 'time'), attrs=fieldvar_attrs, name=varname) #, fill_value=-999. #TODO: why this fillvalue?
+        fieldvar = xr.DataArray(field_array, dims=('lat', 'lon', 'time'), attrs=fieldvar_attrs, name=varname)
         data_xr_out[varname] = fieldvar
 
     print('done with variable %s' % varname)
     
 
 time_elapsed = tm.time() - time_start
-print('Duration: %f s' %time_elapsed) #check how much time the script needs to run.
+print('Duration: %f s' %time_elapsed)
 
 for varname in varname_list:
     fig, ax = plt.subplots()#figsize=(12, 6))
