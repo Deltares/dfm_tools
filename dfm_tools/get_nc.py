@@ -43,7 +43,8 @@ import matplotlib.collections
 
 from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvarproperties, get_varnamefrom_keyslongstandardname, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_fromnc
 from dfm_tools.ugrid import UGrid
- 
+
+
 def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=None, multipart=None, silent=False, return_xarray=False):
     """
 
@@ -202,14 +203,14 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=No
         #check if requested times are within range of netcdf
         if np.max(station_ids) > len(station_name_list_pd)-1:
             raise Exception('ERROR: requested highest station id (%d) is larger than available in netcdf file (%d)'%(np.max(station_ids),len(station_name_list_pd)-1))
-
+    
     #check faces existence, variable could have ghost cells if partitioned
     dimn_faces = get_varname_fromnc(data_nc,'mesh2d_nFaces',vardim='dim')
     dimn_nodes = get_varname_fromnc(data_nc,'mesh2d_nNodes',vardim='dim')
     dimn_edges = get_varname_fromnc(data_nc,'nmesh2d_edge',vardim='dim')
     dimn_nFlowElem = get_varname_fromnc(data_nc,'nFlowElem',vardim='dim')
     dimn_nFlowLink = get_varname_fromnc(data_nc,'nFlowLink',vardim='dim')
-
+    
     #revert back to single partition if non-partitioned variable is requested
     bool_varpartitioned = any([True for x in nc_varobject.dimensions if x in [dimn_faces, dimn_nodes, dimn_edges, dimn_nFlowElem, dimn_nFlowLink]])
     if not bool_varpartitioned:

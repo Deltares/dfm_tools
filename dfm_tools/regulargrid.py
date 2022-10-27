@@ -33,21 +33,21 @@ Created on Sun Mar 22 08:41:00 2020
 """
 
 
-def scatter_to_regulargrid(xcoords=None, ycoords=None, ncellx=None, ncelly=None, reg_x_vec=None, reg_y_vec=None, values=None, method='nearest', maskland_dist=None):
+def scatter_to_regulargrid(xcoords, ycoords, values, ncellx=None, ncelly=None, reg_x_vec=None, reg_y_vec=None, method='nearest', maskland_dist=None):
     """
     interpolates scatter values (x,y,z) or meshgrids to regular grid
 
     Parameters
     ----------
-    xcoords : TYPE, optional
+    xcoords : TYPE
         DESCRIPTION. The default is None.
-    ycoords : TYPE, optional
+    ycoords : TYPE
+        DESCRIPTION. The default is None.
+    values : TYPE
         DESCRIPTION. The default is None.
     ncellx : TYPE, optional
         DESCRIPTION. The default is None.
     ncelly : TYPE, optional
-        DESCRIPTION. The default is None.
-    values : TYPE, optional
         DESCRIPTION. The default is None.
     method : TYPE, optional
         DESCRIPTION. The default is 'nearest'.
