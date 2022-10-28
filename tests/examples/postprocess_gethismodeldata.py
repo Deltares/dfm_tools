@@ -48,9 +48,9 @@ for file_nc in file_nc_list:
     
     print('plot waterlevel from his')
     data_fromhis_xr = data_xr.waterlevel.sel(stations=stations_requested)
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(10,6))
     data_fromhis_xr.plot.line('-',ax=ax,x='time')
-    ax.legend(data_fromhis_xr.stations.to_series(),fontsize=8) #optional, to reduce legend font size
+    ax.legend(data_fromhis_xr.stations.to_series(),fontsize=9) #optional, to reduce legend font size
     data_fromhis_xr_dailymean = data_fromhis_xr.resample(time='D').mean(dim='time') #add daily mean values in the back
     data_fromhis_xr_dailymean.plot.line('-',ax=ax,x='time',add_legend=False,zorder=0,linewidth=.8,color='grey')
     fig.tight_layout()
@@ -60,7 +60,7 @@ for file_nc in file_nc_list:
 
     print('plot bedlevel from his')
     data_fromhis_xr = data_xr.bedlevel.sel(stations=stations_requested)
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(10,6))
     data_fromhis_xr.plot.line('-',ax=ax)
     ax.set_xticklabels(data_fromhis_xr.stations.to_series(),rotation=45,ha='right') #optional, to rotate x-labels
     fig.tight_layout()
@@ -68,18 +68,18 @@ for file_nc in file_nc_list:
     
     print('plot salinity from his')
     data_fromhis_xr = data_xr.salinity.sel(stations=stations_requested).isel(laydim=20)
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(10,6))
     data_fromhis_xr.plot.line('-',ax=ax,x='time')
-    ax.legend(data_fromhis_xr.stations.to_series(),fontsize=8) #optional, to reduce legend font size
+    ax.legend(data_fromhis_xr.stations.to_series(),fontsize=9) #optional, to reduce legend font size
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,'%s_salinity'%(os.path.basename(file_nc).replace('.',''))))
     
     print('plot salinity over depth')
     #depth retrieval is probably wrong
     data_fromhis_xr = data_xr.salinity.sel(stations=stations_requested).isel(time=4)
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(10,6))
     data_fromhis_xr.T.plot.line('-',ax=ax,y='zcoordinate_c')
-    ax.legend(data_fromhis_xr.stations.to_series(),fontsize=8) #optional, to reduce legend font size
+    ax.legend(data_fromhis_xr.stations.to_series(),fontsize=9) #optional, to reduce legend font size
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,'%s_salinityoverdepth'%(os.path.basename(file_nc).replace('.',''))))
     
