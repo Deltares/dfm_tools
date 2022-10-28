@@ -172,7 +172,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=No
     for iR, vars_pd_stat in vars_pd_stats.iterrows():
         dimname_stat_validvals.append(vars_pd_stat['dimensions'][0]) #only append first dimension, the other one is often 'name_len'
     if station is not None:
-        warnings.warn('WARNING: station argument will be phased out, use xarray with dfm_tools.get_nc_helpers.get_stationid_fromstationlist() instead. Like in example script gethismodeldata.py')
+        warnings.warn(DeprecationWarning('station argument will be phased out, use xarray with dfm_tools.get_nc_helpers.get_stationid_fromstationlist() instead. Like in example script gethismodeldata.py'))
     dimname_stat_validvals_boolpresent = [x in nc_varobject.dimensions for x in dimname_stat_validvals]
     if not any(dimname_stat_validvals_boolpresent):
         if station is not None:
@@ -741,7 +741,7 @@ def plot_ztdata(data_xr_sel, varname, ax=None, mask_data=True, only_contour=Fals
     """
 
    
-    warnings.warn('WARNING: layers in dflowfm hisfile are currently incorrect, check your figures carefully')
+    print('WARNING: layers in dflowfm hisfile might be incorrect, check your figures carefully')
     
     data_fromhis_var = data_xr_sel[varname].to_numpy()
     if len(data_fromhis_var.shape) != 2:

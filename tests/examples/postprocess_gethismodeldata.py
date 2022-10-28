@@ -12,7 +12,7 @@ plt.close('all')
 
 from dfm_tools.get_nc import plot_ztdata
 from dfm_tools.get_nc_helpers import get_hisstationlist, get_stationid_fromstationlist
-from dfm_tools.xarray_helpers import preprocess_hisnc
+from dfm_tools.xarray_helpers import preprocess_hisnc, Dataset_varswithdim
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
@@ -42,22 +42,26 @@ for file_nc in file_nc_list:
         stations_requested = ['WAQ_Vuren','NW_1030.19_R_LMW-H_Hoek-van-Holland','WAQ_TielWaal_waq']
     
     data_xr = xr.open_mfdataset(file_nc, preprocess=preprocess_hisnc) #TODO: maybe adding chunking argument like chunks={'time':-1,'station':200}) (https://github.com/pydata/xarray/discussions/6458)
+    data_xr_perdim = {dimname: Dataset_varswithdim(data_xr,dimname=dimname) for dimname in data_xr.dims}
     
     statlist_pd = get_hisstationlist(file_nc) #alternatively: data_xr['stations'].to_series().reset_index(drop=True) or data_xr.indexes['stations'].to_series()
     idx_stations = get_stationid_fromstationlist(data_xr, stationlist=stations_requested)
     
     print('plot waterlevel from his')
     data_fromhis_xr = data_xr.waterlevel.sel(stations=stations_requested)
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(10,6))
     data_fromhis_xr.plot.line('-',ax=ax,x='time')
-    ax.legend(data_fromhis_xr.stations.to_series(),fontsize=8) #optional, to reduce legend font size
+    ax.legend(data_fromhis_xr.stations.to_series(),fontsize=9) #optional, to reduce legend font size
+    data_fromhis_xr_dailymean = data_fromhis_xr.resample(time='D').mean(dim='time') #add daily mean values in the back
+    data_fromhis_xr_dailymean.plot.line('-',ax=ax,x='time',add_legend=False,zorder=0,linewidth=.8,color='grey')
+    fig.tight_layout()
     fig.savefig(os.path.join(dir_output,'%s_waterlevel'%(os.path.basename(file_nc).replace('.',''))))
     if 'RMM_dflowfm' in file_nc:
         continue
 
     print('plot bedlevel from his')
     data_fromhis_xr = data_xr.bedlevel.sel(stations=stations_requested)
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(10,6))
     data_fromhis_xr.plot.line('-',ax=ax)
     ax.set_xticklabels(data_fromhis_xr.stations.to_series(),rotation=45,ha='right') #optional, to rotate x-labels
     fig.tight_layout()
@@ -65,17 +69,19 @@ for file_nc in file_nc_list:
     
     print('plot salinity from his')
     data_fromhis_xr = data_xr.salinity.sel(stations=stations_requested).isel(laydim=20)
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(10,6))
     data_fromhis_xr.plot.line('-',ax=ax,x='time')
-    ax.legend(data_fromhis_xr.stations.to_series(),fontsize=8) #optional, to reduce legend font size
+    ax.legend(data_fromhis_xr.stations.to_series(),fontsize=9) #optional, to reduce legend font size
+    fig.tight_layout()
     fig.savefig(os.path.join(dir_output,'%s_salinity'%(os.path.basename(file_nc).replace('.',''))))
     
     print('plot salinity over depth')
     #depth retrieval is probably wrong
     data_fromhis_xr = data_xr.salinity.sel(stations=stations_requested).isel(time=4)
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(10,6))
     data_fromhis_xr.T.plot.line('-',ax=ax,y='zcoordinate_c')
-    ax.legend(data_fromhis_xr.stations.to_series(),fontsize=8) #optional, to reduce legend font size
+    ax.legend(data_fromhis_xr.stations.to_series(),fontsize=9) #optional, to reduce legend font size
+    fig.tight_layout()
     fig.savefig(os.path.join(dir_output,'%s_salinityoverdepth'%(os.path.basename(file_nc).replace('.',''))))
     
     print('zt temperature plot and wl')
