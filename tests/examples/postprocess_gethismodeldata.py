@@ -11,7 +11,8 @@ import matplotlib.pyplot as plt
 plt.close('all')
 
 from dfm_tools.get_nc import plot_ztdata
-from dfm_tools.get_nc_helpers import get_stationid_fromstationlist#, get_hisstationlist
+from dfm_tools.get_nc_helpers import get_hisstationlist, get_stationid_fromstationlist
+from dfm_tools.xarray_helpers import preprocess_hisnc
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
@@ -19,75 +20,67 @@ dir_output = '.'
 file_nc_list = [os.path.join(dir_testinput,'vanNithin','tttz_0000_his.nc'),
                 os.path.join(dir_testinput,'DFM_3D_z_Grevelingen\\computations\\run01\\DFM_OUTPUT_Grevelingen-FM\\Grevelingen-FM_0000_his.nc'),
                 r'p:\11202512-h2020_impaqt\07_Mediterranean_model\MedSea_impaqt_model\computations_final\r013_waq\DFM_OUTPUT_MedSea_impaqt_FM\MedSea_impaqt_FM_0000_his.nc',
+                r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206\results\RMM_dflowfm_0000_his.nc', #added since there are duplicate stations which are dropped
                 ]
 
 for file_nc in file_nc_list:
     if 'Grevelingen-FM_0000' in file_nc:
         #file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_his.nc')
-        station = ['GTSO-01','GTSO-02','GTSO-03','GTSO-04','GTSO-05','GTSO-06','GTSO-07',
-                   'GTSO-08','GTSO-09','GTSO-10','GTSO-11','GTSO-12','GTSO-13','GTSO-14',
-                   'GTSO-15','GTSO-16','GTSO-17','GTSO-18','GTSO-19','GTSO-20',
-                   'Bommenede','Grevelingen hevel West','Brouwerssluis binnen','Brouwerssluis binnen-hand']
-        station_zt = ['GTSO-02']
+        stations_requested = ['GTSO-01','GTSO-02','GTSO-03','GTSO-04','GTSO-05','GTSO-06','GTSO-07',
+                              'GTSO-08','GTSO-09','GTSO-10','GTSO-11','GTSO-12','GTSO-13','GTSO-14',
+                              'GTSO-15','GTSO-16','GTSO-17','GTSO-18','GTSO-19','GTSO-20',
+                              'Bommenede','Grevelingen hevel West','Brouwerssluis binnen','Brouwerssluis binnen-hand']
+        stations_requested_zt = ['GTSO-02']
     elif 'tttz' in file_nc: #NITHIN
         #file_nc = os.path.join(dir_testinput,'vanNithin','tttz_0000_his.nc')
-        station = ['Peiraias', 'Ovrios_2','Ovrios','Ovrios','Ortholithi']
-        station_zt = ['Ortholithi']
+        stations_requested = ['Peiraias', 'Ovrios_2','Ovrios','Ovrios','Ortholithi']
+        stations_requested_zt = ['Ortholithi']
     elif 'impaqt' in file_nc:
-        station = ['MO_TS_MO_ATHOS','MO_TS_MO_LESVO','MO_TS_MO_SKYRO','IOC_thes','farm_impaqt']
-        station_zt = ['MO_TS_MO_ATHOS']
+        stations_requested = ['MO_TS_MO_ATHOS','MO_TS_MO_LESVO','MO_TS_MO_SKYRO','IOC_thes','farm_impaqt']
+        stations_requested_zt = ['MO_TS_MO_ATHOS']
+    elif 'RMM_dflowfm' in file_nc:
+        stations_requested = ['WAQ_Vuren','NW_1030.19_R_LMW-H_Hoek-van-Holland','WAQ_TielWaal_waq']
     
-    data_xr = xr.open_dataset(file_nc) #TODO: maybe adding chunking argument like chunks={'time':-1,'station':200}) (https://github.com/pydata/xarray/discussions/6458)
-    data_xr['station_name_str'] = data_xr['station_name'].str.decode('utf-8',errors='ignore').str.strip() #TODO: this is currently necessary but might not. Often, .astype(str) is enough, but .decode() and .strip() is necesary for this file: p:\\11208067-003-kpp-internationaal\\final_results_Snellius\\current_2006_25per\\DFM_OUTPUT_DCSM-FM_0_5nm_waq\\DCSM-FM_0_5nm_waq_0000_his.nc
-    data_xr = data_xr.set_coords('station_name_str')
+    data_xr = xr.open_mfdataset(file_nc, preprocess=preprocess_hisnc) #TODO: maybe adding chunking argument like chunks={'time':-1,'station':200}) (https://github.com/pydata/xarray/discussions/6458)
     
-    #stations_pd = get_hisstationlist(file_nc)
-    idx_stations = get_stationid_fromstationlist(data_xr, stationlist=station)
-    idx_stations_zt = get_stationid_fromstationlist(data_xr, stationlist=station_zt)[0] #if provide single station (string, no list), the shape of the resulting xarray is correct
-    
-    print('plot bedlevel from his')
-    #data_fromhis = get_ncmodeldata(file_nc=file_nc, varname='bedlevel', station=station)#, multipart=False)
-    data_fromhis_xr = data_xr.bedlevel.isel(stations=idx_stations) #TODO: also possible to index directly with station strings?
-    fig, ax = plt.subplots()
-    #ax.plot(data_fromhis.var_stations.iloc[:,0],data_fromhis,'-')
-    #ax.plot(data_fromhis_xr.station_name,data_fromhis_xr,'-')
-    #ax.tick_params('x',rotation=20)
-    data_fromhis_xr.plot.line('-',ax=ax,x='station_name_str')
-    fig.savefig(os.path.join(dir_output,'%s_bedlevel'%(os.path.basename(file_nc).replace('.',''))))
+    statlist_pd = get_hisstationlist(file_nc) #alternatively: data_xr['stations'].to_series().reset_index(drop=True) or data_xr.indexes['stations'].to_series()
+    idx_stations = get_stationid_fromstationlist(data_xr, stationlist=stations_requested)
     
     print('plot waterlevel from his')
-    #data_fromhis = get_ncmodeldata(file_nc=file_nc, varname='waterlevel', timestep='all', station=station)#, multipart=False)
-    data_fromhis_xr = data_xr.waterlevel.isel(stations=idx_stations)
+    data_fromhis_xr = data_xr.waterlevel.sel(stations=stations_requested)
     fig, ax = plt.subplots()
-    #ax.plot(data_fromhis.var_times,data_fromhis,'-')
-    #ax.plot(data_fromhis_xr.time,data_fromhis_xr.to_numpy(),'-')
     data_fromhis_xr.plot.line('-',ax=ax,x='time')
-    ax.legend(data_fromhis_xr['station_name_str'].to_numpy()) #TODO: maybe less complex via stations_pd? maybe decode upon open_dataset
+    ax.legend(data_fromhis_xr.stations.to_series(),fontsize=8) #optional, to reduce legend font size
     fig.savefig(os.path.join(dir_output,'%s_waterlevel'%(os.path.basename(file_nc).replace('.',''))))
+    if 'RMM_dflowfm' in file_nc:
+        continue
+
+    print('plot bedlevel from his')
+    data_fromhis_xr = data_xr.bedlevel.sel(stations=stations_requested)
+    fig, ax = plt.subplots()
+    data_fromhis_xr.plot.line('-',ax=ax)
+    ax.set_xticklabels(data_fromhis_xr.stations.to_series(),rotation=45,ha='right') #optional, to rotate x-labels
+    fig.tight_layout()
+    fig.savefig(os.path.join(dir_output,'%s_bedlevel'%(os.path.basename(file_nc).replace('.',''))))
     
     print('plot salinity from his')
-    #data_fromhis = get_ncmodeldata(file_nc=file_nc, varname='salinity', timestep='all', layer=5, station=station)#, multipart=False)
-    #data_fromhis_flat = data_fromhis[:,:,0]
-    #ax.plot(data_fromhis.var_times,data_fromhis_flat,'-')
-    data_fromhis_xr = data_xr.salinity.isel(stations=idx_stations,laydim=20)
+    data_fromhis_xr = data_xr.salinity.sel(stations=stations_requested).isel(laydim=20)
     fig, ax = plt.subplots()
     data_fromhis_xr.plot.line('-',ax=ax,x='time')
-    ax.legend(data_fromhis_xr['station_name_str'].to_numpy()) #TODO: maybe less complex via stations_pd? maybe decode upon open_dataset
+    ax.legend(data_fromhis_xr.stations.to_series(),fontsize=8) #optional, to reduce legend font size
     fig.savefig(os.path.join(dir_output,'%s_salinity'%(os.path.basename(file_nc).replace('.',''))))
     
     print('plot salinity over depth')
     #depth retrieval is probably wrong
-    #data_fromhis_depth = get_ncmodeldata(file_nc=file_nc, varname='zcoordinate_c', timestep=4, layer='all', station=station)
-    #data_fromhis = get_ncmodeldata(file_nc=file_nc, varname='salinity', timestep=4, layer='all', station=station)
-    #ax.plot(data_fromhis[0,:,:].T, data_fromhis_depth[0,:,:].T,'-')
-    data_fromhis_xr = data_xr.salinity.isel(stations=idx_stations,time=4)
+    data_fromhis_xr = data_xr.salinity.sel(stations=stations_requested).isel(time=4)
     fig, ax = plt.subplots()
     data_fromhis_xr.T.plot.line('-',ax=ax,y='zcoordinate_c')
-    ax.legend(data_fromhis_xr['station_name_str'].to_numpy()) #TODO: maybe less complex via stations_pd? maybe decode upon open_dataset
+    ax.legend(data_fromhis_xr.stations.to_series(),fontsize=8) #optional, to reduce legend font size
     fig.savefig(os.path.join(dir_output,'%s_salinityoverdepth'%(os.path.basename(file_nc).replace('.',''))))
     
     print('zt temperature plot and wl')
-    data_xr_selzt = data_xr.isel(stations=idx_stations_zt,time=slice(40,100))
+    station_zt = stations_requested_zt[0]
+    data_xr_selzt = data_xr.sel(stations=station_zt).isel(time=slice(40,100))
     data_fromhis_wl_xr = data_xr_selzt['waterlevel']
     fig, (axwl,ax1) = plt.subplots(2,1,figsize=(12,7),gridspec_kw={'height_ratios':[1,2]},sharex=True,sharey=True)
     axwl.plot(data_xr_selzt.time[[0,-1]],[0,0],'k-',linewidth=0.5)
