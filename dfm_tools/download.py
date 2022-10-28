@@ -140,7 +140,7 @@ def download_CMEMS(varkey,
             print(f'"{name_output}" found and overwrite=False, continuing.')
             continue
         print(f'retrieving variable {varkey} for {date_str}: {name_output}')
-        
+        #TODO: alternatively use opendap, like half way this webpage: https://help.marine.copernicus.eu/en/articles/5182598-how-to-consume-the-opendap-api-and-cas-sso-using-python
         motu_command = ' '.join(['motuclient', '--motu', f'{motu_url}/motu-web/Motu', '--service-id', service, '--product-id', product,
                                  '--longitude-min', str(longitude_min), '--longitude-max', str(longitude_max),
                                  '--latitude-min', str(latitude_min), '--latitude-max', str(latitude_max),
