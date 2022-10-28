@@ -51,8 +51,8 @@ for file_nc in file_nc_list:
     fig, ax = plt.subplots()
     data_fromhis_xr.plot.line('-',ax=ax,x='time')
     ax.legend(data_fromhis_xr.stations.to_series(),fontsize=8) #optional, to reduce legend font size
-    data_fromhis_xr_dailymean = data_fromhis_xr.resample(time='D').mean(dim='time') #add daily mean values
-    data_fromhis_xr_dailymean.plot.line('-',ax=ax,x='time',add_legend=False,linewidth=.8,color='grey')
+    data_fromhis_xr_dailymean = data_fromhis_xr.resample(time='D').mean(dim='time') #add daily mean values in the back
+    data_fromhis_xr_dailymean.plot.line('-',ax=ax,x='time',add_legend=False,zorder=0,linewidth=.8,color='grey')
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,'%s_waterlevel'%(os.path.basename(file_nc).replace('.',''))))
     if 'RMM_dflowfm' in file_nc:
