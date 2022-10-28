@@ -9,6 +9,43 @@ from netCDF4 import Dataset
 import xarray as xr
 
 
+def preprocess_hisnc(ds, drop_duplicate_stations=True):
+    """
+    Loop over keys of dict (potential dimensions) and set as Dataset index if present, to enable label based indexing. If duplicate labels are found (like duplicate stations), these are dropped to avoid indexing issues.
+    
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        DESCRIPTION.
+    drop_duplicate_stations : TYPE, optional
+        DESCRIPTION. The default is True.
+
+    Returns
+    -------
+    ds : TYPE
+        DESCRIPTION.
+
+    """
+    dim_name_dict = {'stations':'station_name',
+                     'cross_section':'cross_section_name',
+                     'general_structures':'general_structure_id'}
+    
+    for dim in dim_name_dict.keys():
+        if not dim in ds.dims:
+            continue
+        name = dim_name_dict[dim]
+        name_str = f'{name}_str'
+        ds[name_str] = ds[name].load().str.decode('utf-8',errors='ignore').str.strip() #.load() is essential to convert not only first letter of string.
+        ds = ds.set_index({dim:name_str})
+        
+        #drop duplicate indices (stations/crs/gs), this avoids issues later on
+        duplicated_keepfirst = ds[dim].to_series().duplicated(keep='first')
+        if duplicated_keepfirst.sum()>0 and drop_duplicate_stations:
+            print(f'dropping {duplicated_keepfirst.sum()} duplicates in "{name}" to avoid indexing issues. Prevent this with preprocess_hisnc(drop_duplicate_stations=False).')
+            ds = ds[{dim:~duplicated_keepfirst}]
+    return ds
+
+
 def preprocess_hirlam(ds):
     """
     add xy variables as longitude/latitude to avoid duplicate var/dim names

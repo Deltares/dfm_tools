@@ -43,6 +43,7 @@ import os
 #import warnings
 import numpy as np
 from netCDF4 import Dataset
+from dfm_tools.xarray_helpers import preprocess_hisnc
 
 
 def get_ncfilelist(file_nc, multipart=None):
@@ -299,7 +300,15 @@ def get_timeid_fromdatetime(data_nc_datetimes_pd, timestep):
 def get_hisstationlist(file_nc, varname='waterlevel'):
     #encoding = {'station_lon': {'_FillValue': None}, #TODO lon/lat are now fillvalue if nan
     #            }
-    data_xr = xr.open_dataset(file_nc)
+    if 0:#isinstance(file_nc, xr.Dataset): #TODO: setup for new implementation, this is possible with station/crs/gs indexes because of preprocess_hisnc 
+        from dfm_tools.xarray_helpers import preprocess_hisnc
+        data_xr = file_nc
+        data_xr = preprocess_hisnc(data_xr)
+        indexes_list = list(data_xr.indexes.keys())
+        data_xr.get_index('time')
+    else:
+        data_xr = xr.open_mfdataset(file_nc)#, preprocess=preprocess_hisnc)
+        
     varname = get_varnamefrom_keyslongstandardname(file_nc, varname) #get varname from varkeys/standardname/longname if exists
     vardims = data_xr[varname].dims
     
@@ -334,6 +343,7 @@ def get_stationid_fromstationlist(data_xr, stationlist, station_varname='station
     
     stationlist_pd = pd.Series(stationlist)
     data_xr_stationlist_pd = data_xr[station_varname].to_pandas().str.decode('utf-8',errors='ignore').str.strip() #to_pandas is essential otherwise resulting bool might not be correct. .str.strip() to remove spaces left/right from station_name (necessary for sobek models)
+    data_xr_stationlist_pd = data_xr_stationlist_pd.reset_index(drop=True) #in case the index contains stationnames instead of numbers
     
     #check if all requested stations are in xarray Dataset
     bool_reqstations = stationlist_pd.isin(data_xr_stationlist_pd)
