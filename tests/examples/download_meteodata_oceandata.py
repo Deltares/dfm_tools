@@ -15,6 +15,8 @@ from dfm_tools.download import download_ERA5, download_CMEMS
 
 #download ERA5/CMEMS data for given domain, time extent and variable lists
 #TODO: add CMCC, GFDL, HYCOM
+#TODO: add GFS (but opendap is not an archive: https://stackoverflow.com/questions/65031973/how-to-select-specific-data-variables-from-xarray-dataset)
+#TODO: add click?
 
 overwrite = False # always set to True when changing the domain
 
