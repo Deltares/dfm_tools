@@ -1,3 +1,5 @@
+[![generate-documentation](https://github.com/openearth/dfm_tools/actions/workflows/generate-documentation.yml/badge.svg)](https://github.com/openearth/dfm_tools/actions/workflows/generate-documentation.yml)
+
 dfm_tools
 =========
 
