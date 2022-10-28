@@ -25,5 +25,5 @@ dependencies:
     - numpy
     - matplotlib
     - pandas
-    - hydrolib-core
+    - hydrolib-core>=0.3.1
     
