@@ -25,7 +25,6 @@ station_wl = ['BE_976.00', 'HD_983.41_R_LMW-Cl_Moerdijkbrug']
 bc_wl = ['Beneden-Merwede_0001','Nieuwe-Merwede_0001']
 map_wl = dict(zip(station_wl, bc_wl))
 dir_input = r'p:\11206813-006-kpp2021_rmm-2d\C_Work\07_Baseline\baseline-rmm_vzm-beno19_6-v1\models\dflowfm\dflowfm2d-rmm_vzm-beno19_6-v1b\computations\test'
-#dir_input = '.'
 dir_output = '.'
 
 sims = ['tba','tbb','tbc','tbd','tbe','tbf']
@@ -33,13 +32,13 @@ sims = ['tba','tbb','tbc','tbd','tbe','tbf']
 for sim in sims: 
     file_bc_output = [os.path.join(dir_output,f'{sim}_bnd.bc')]
     file_nc = os.path.join(dir_input,sim, 'results','RMM_VZM_0000_his.nc')
-    data_xr = xr.open_mfdataset(file_nc,preprocess=preprocess_hisnc) #TODO: maybe adding chunking argument like chunks={'time':-1,'station':200}) (https://github.com/pydata/xarray/discussions/6458)
+    data_xr = xr.open_mfdataset(file_nc,preprocess=preprocess_hisnc)
     
     if plotting:
         print('plot waterlevel from his')
         fig, ax = plt.subplots()
         data_fromhis_xr = data_xr.waterlevel.sel(stations=station_wl)
-        data_fromhis_xr.plot.line('-',ax=ax,x='time')#,label=map_wl[str(data_fromhis_xr.station_name_str.values)])
+        data_fromhis_xr.plot.line('-',ax=ax,x='time')
         ax.grid(True)
         #ax.tick_params('x',rotation=20)
         fig.tight_layout()

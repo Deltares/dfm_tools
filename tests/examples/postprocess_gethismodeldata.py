@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 plt.close('all')
 
 from dfm_tools.get_nc import plot_ztdata
-from dfm_tools.get_nc_helpers import get_hisstationlist, get_stationid_fromstationlist
+from dfm_tools.get_nc_helpers import get_hisstationlist
 from dfm_tools.xarray_helpers import preprocess_hisnc, Dataset_varswithdim
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
@@ -42,11 +42,10 @@ for file_nc in file_nc_list:
         stations_requested = ['WAQ_Vuren','NW_1030.19_R_LMW-H_Hoek-van-Holland','WAQ_TielWaal_waq']
     
     data_xr = xr.open_mfdataset(file_nc, preprocess=preprocess_hisnc) #TODO: maybe adding chunking argument like chunks={'time':-1,'station':200}) (https://github.com/pydata/xarray/discussions/6458)
-    data_xr_perdim = {dimname: Dataset_varswithdim(data_xr,dimname=dimname) for dimname in data_xr.dims}
     
-    statlist_pd = get_hisstationlist(file_nc) #alternatively: data_xr['stations'].to_series().reset_index(drop=True) or data_xr.indexes['stations'].to_series()
-    idx_stations = get_stationid_fromstationlist(data_xr, stationlist=stations_requested)
-    
+    #data_xr_perdim = {dimname: Dataset_varswithdim(data_xr,dimname=dimname) for dimname in data_xr.dims}
+    statlist_pd = data_xr['stations'].to_dataframe() #alternatively use .to_series() for labels only, also possible for other indexed dimensions like cross_section and general_structures (list(data_xr.indexes.keys()))
+
     print('plot waterlevel from his')
     data_fromhis_xr = data_xr.waterlevel.sel(stations=stations_requested)
     fig, ax = plt.subplots(figsize=(10,6))

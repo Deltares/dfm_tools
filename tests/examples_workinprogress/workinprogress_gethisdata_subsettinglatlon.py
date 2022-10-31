@@ -42,7 +42,6 @@ data_xr_relvars_port['velocity_magnitude'] = np.sqrt(data_xr_relvars_port['y_vel
 data_xr_relvars_port['velocity_magnitude'].attrs['units'] = 'm/s'
 #stations_pd = get_hisstationlist(file_nc)
 #stat_port_list = data_xr_relvars_port.station_name_str.data
-#idx_stations = get_stationid_fromstationlist(data_xr, stationlist=stat_port_list.tolist())
 
 fig,(ax1,ax2) = plt.subplots(2,1,figsize=(10,7),sharex=True)
 data_xr_relvars_port['velocity_magnitude'].plot.line(x='time',ax=ax1,linewidth=0.8)
