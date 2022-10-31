@@ -52,7 +52,7 @@ for sim in sims:
         #ax.tick_params('x',rotation=20)
         fig.tight_layout()
         fig.savefig(os.path.join(dir_output,'%s_discharge'%(os.path.basename(file_nc).replace('.',''))))
-
+        
     ForcingModel_object = ForcingModel()
     for stat_wl in station_wl: 
         data_fromhis_xr = data_xr.waterlevel.sel(stations=stat_wl)
