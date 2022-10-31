@@ -9,9 +9,9 @@ from netCDF4 import Dataset
 import xarray as xr
 
 
-def preprocess_hisnc(ds, drop_duplicate_stations=True, silent=False): #TODO: these arguments cannot be changed by user somehow
+def preprocess_hisnc(ds):
     """
-    Loop over keys of dict (potential dimensions) and set as Dataset index if present, to enable label based indexing. If duplicate labels are found (like duplicate stations), these are dropped to avoid indexing issues.
+    Look for dim/coord combination and use this for Dataset.set_index(), to enable station/gs/crs/laterals label based indexing. If duplicate labels are found (like duplicate stations), these are dropped to avoid indexing issues.
     
     Parameters
     ----------
@@ -26,34 +26,28 @@ def preprocess_hisnc(ds, drop_duplicate_stations=True, silent=False): #TODO: the
         DESCRIPTION.
 
     """
-    dim_coord_dict = {'stations':'station_name',
-                      'cross_section':'cross_section_name',
-                      'general_structures':'general_structure_id',
-                      'source_sink':'source_sink_name',
-                      'lateral':'lateral_id',
-                      }
     
+    #generate dim_coord_dict to set indexes, this will be something like {'stations':'station_name','cross_section':'cross_section_name'} after loop
     #loop over variables with cf_role=timeseries_id as attribute, these can be potentially used as index
     ds_cfrole_timeseriesid = ds.filter_by_attrs(cf_role='timeseries_id')
+    dim_coord_dict = {}
     for ds_coord in ds_cfrole_timeseriesid.coords.keys():
-        if ds_coord in ['station_x_coordinate','station_y_coordinate','station_lon','station_lat']: #chosen index for dimension stations is variable station_name
-            continue
-        if not ds_coord in dim_coord_dict.values():
-            print(f'WARNING: variable  {ds_coord} {ds_cfrole_timeseriesid[ds_coord].dims}  could be used as index, you could extend the dimcoord_name_dict')
+        ds_coord_dtype = ds[ds_coord].dtype
+        ds_coord_dim = ds[ds_coord].dims[0] #these vars always have only one dim
+        if ds_coord_dtype.str.startswith('|S'): #these are station/crs/laterals/gs names/ids
+            dim_coord_dict[ds_coord_dim] = ds_coord
     
     #loop over dimensions and set corresponding coordinates/variables from dim_coord_dict as their index
     for dim in dim_coord_dict.keys():
-        if not dim in ds.dims:
-            continue
-        name = dim_coord_dict[dim]
-        name_str = f'{name}_str' #avoid losing the original variable by creating a new name
-        ds[name_str] = ds[name].load().str.decode('utf-8',errors='ignore').str.strip() #.load() is essential to convert not only first letter of string.
-        ds = ds.set_index({dim:name_str})
+        coord = dim_coord_dict[dim]
+        coord_str = f'{coord}_str' #avoid losing the original variable by creating a new name
+        ds[coord_str] = ds[coord].load().str.decode('utf-8',errors='ignore').str.strip() #.load() is essential to convert not only first letter of string.
+        ds = ds.set_index({dim:coord_str})
         
-        #drop duplicate indices (stations/crs/gs), this avoids issues later on
+        #drop duplicate indices (stations/crs/gs), this avoids "InvalidIndexError: Reindexing only valid with uniquely valued Index objects"
         duplicated_keepfirst = ds[dim].to_series().duplicated(keep='first')
-        if duplicated_keepfirst.sum()>0 and drop_duplicate_stations:
-            print(f'dropping {duplicated_keepfirst.sum()} duplicate labels in "{name}" to avoid indexing issues.')
+        if duplicated_keepfirst.sum()>0:
+            print(f'dropping {duplicated_keepfirst.sum()} duplicate "{coord}" labels to avoid InvalidIndexError')
             ds = ds[{dim:~duplicated_keepfirst}]
     return ds
 

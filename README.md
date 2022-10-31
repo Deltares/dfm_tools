@@ -36,6 +36,7 @@ Installation
 	- ``conda activate dfm_tools_env``
 	- ``conda install -c conda-forge shapely cartopy pyepsg geopandas contextily xarray dask netcdf4 bottleneck cdsapi motuclient -y`` (installs conda-forge requirements)
 	- ``python -m pip install git+https://github.com/openearth/dfm_tools`` (this command installs dfm_tools and all required non-conda packages)
+	- long paths error? Check last comment in https://github.com/Deltares/HYDROLIB-core/issues/327
 	- to remove venv when necessary: ``conda remove -n dfm_tools_env --all``
 - what are all these packages for?:
 	- shapely for slicing 2D/3D data (conda-forge channel is necessary since main channel version is 1.6.4, minimal requirement is 1.7.0)

@@ -40,7 +40,7 @@ import pandas as pd
 import re
 import glob
 import os
-#import warnings
+import warnings
 import numpy as np
 from netCDF4 import Dataset
 from dfm_tools.xarray_helpers import preprocess_hisnc
@@ -190,29 +190,41 @@ def get_ncvardimlist(file_nc):
 
 
 def get_varnamefrom_keyslongstandardname(file_nc, varname):
-    vars_pd = get_ncvarproperties(file_nc=file_nc) #TODO: supply vars_pd instead of file_nc as argument to this function
-    vars_pd_sel = vars_pd[['standard_name','long_name']]
+    DeprecationWarning('use dfm_tools.get_nc_helpers.get_varnamefromattrs() instead') #TODO: raise this warning, later remove this code
+    varname_matched = get_varnamefromattrs(file_nc, varname)
+    return varname_matched
+
+
+def get_varnamefromattrs(file_nc, varname):
+    data_xr = xr.open_dataset(file_nc)
     
     # check if requested variable is in netcdf
-    if varname in vars_pd.index:
+    varlist = list(data_xr.variables.keys())
+    if varname in varlist:
         return varname
     
-    varnameinstdname_bool = vars_pd_sel['standard_name'].str.match(varname,case=False)
-    varnameinlongname_bool = vars_pd_sel['long_name'].str.match(varname,case=False)
-    
-    matched_varnames = vars_pd_sel.loc[varnameinstdname_bool | varnameinlongname_bool].index.tolist()
-    if len(matched_varnames)==0:
-        raise Exception(f'ERROR: requested variable {varname} not in netcdf, available are:\n{vars_pd_sel}\nUse this command to obtain full list as variable:\nfrom dfm_tools.get_nc_helpers import get_ncvarproperties\nvars_pd = get_ncvarproperties(file_nc=file_nc)\nnote that you can retrieve variables by keys, standard_name or long_name attributes')
-    elif len(matched_varnames)>1:
-        raise Exception(f'ERROR: requested variable {varname} is in netcdf not 1 but {len(matched_varnames)} times:\n{vars_pd_sel.loc[matched_varnames]}')
-    else:
-        varname_matched = matched_varnames[0]
-    
-    if varnameinstdname_bool.any():
+    #check if requested varname is in standard_name attrs of ncvars
+    ds_stdname = data_xr.filter_by_attrs(standard_name=varname)
+    varlist_stdname = list(ds_stdname.data_vars.keys())
+    if len(varlist_stdname)==1:
+        varname_matched = varlist_stdname[0]
         print(f'requested varname "{varname}" found in standard_name attribute of variable {varname_matched}')
-    elif varnameinlongname_bool.any():
-        print(f'requested varname "{varname}" found in long_name attribute of variable {varname_matched}')
+        return varname_matched
+    elif len(varlist_stdname)>1:
+        raise Exception(f'ERROR: requested variable {varname} is in netcdf not 1 but {len(varlist_stdname)} times: {varlist_stdname}')
     
+    #check if requested varname is in long_name attrs of ncvars
+    ds_longname = data_xr.filter_by_attrs(long_name=varname)
+    varlist_longname = list(ds_longname.data_vars.keys())
+    if len(varlist_longname)==1:
+        varname_matched = varlist_longname[0]
+        print(f'requested varname "{varname}" found in long_name attribute of variable {varname_matched}')
+        return varname_matched
+    elif len(varlist_longname)>1:
+        raise Exception(f'ERROR: requested variable {varname} is in netcdf not 1 but {len(varlist_longname)} times: {varlist_longname}')
+    
+    #if not returned above, the varname was not found so raise exception
+    raise Exception(f'ERROR: requested variable {varname} not in netcdf, available are: {varlist} and the standard_name and long_name attrs in dfm_tools.get_nc_helpers.get_ncvarproperties(file_nc=file_nc)')    
     return varname_matched
 
 
@@ -298,17 +310,9 @@ def get_timeid_fromdatetime(data_nc_datetimes_pd, timestep):
 
 
 def get_hisstationlist(file_nc, varname='waterlevel'):
-    #encoding = {'station_lon': {'_FillValue': None}, #TODO lon/lat are now fillvalue if nan
-    #            }
-    if 0:#isinstance(file_nc, xr.Dataset): #TODO: setup for new implementation, this is possible with station/crs/gs indexes because of preprocess_hisnc 
-        from dfm_tools.xarray_helpers import preprocess_hisnc
-        data_xr = file_nc
-        data_xr = preprocess_hisnc(data_xr)
-        indexes_list = list(data_xr.indexes.keys())
-        data_xr.get_index('time')
-    else:
-        data_xr = xr.open_mfdataset(file_nc)#, preprocess=preprocess_hisnc)
-        
+    warnings.warn(DeprecationWarning('use data_xr[\'stations\'].to_dataframe() instead, do read in your hisfile with preprocess=preprocess_hisnc as argument, like in the postprocess_gethismodeldata.py example script'))
+    data_xr = xr.open_mfdataset(file_nc)#, preprocess=preprocess_hisnc)
+    
     varname = get_varnamefrom_keyslongstandardname(file_nc, varname) #get varname from varkeys/standardname/longname if exists
     vardims = data_xr[varname].dims
     
@@ -336,8 +340,8 @@ def get_hisstationlist(file_nc, varname='waterlevel'):
     return statlist_pd
 
 
-def get_stationid_fromstationlist(data_xr, stationlist, station_varname='station_name'):
-    
+def get_stationid_fromstationlist(data_xr, stationlist, station_varname='station_name'): #TODO: this can be removed soon since it is only used in get_nc
+    warnings.warn(DeprecationWarning('Do not use dfm_tools.get_nc_helpers.get_stationid_fromstationlist() in your script, it is only used internally and will be phased out asap. use xarray ds.sel() instead, but read in your hisfile with preprocess=preprocess_hisnc like in the examplescript postprocess_gethismodeldata.py'))
     if not isinstance(stationlist,list):
         raise Exception('ERROR: provide list of stations')
     
