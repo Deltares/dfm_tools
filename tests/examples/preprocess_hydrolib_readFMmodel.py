@@ -8,7 +8,7 @@ Created on Mon Oct  3 12:07:18 2022
 from pathlib import Path
 from hydrolib.core.io.mdu.models import FMModel, NetworkModel, ExtModel, StructureModel
 from hydrolib.core.io.bc.models import ForcingModel
-from dfm_tools.hydrolib_helpers import forcinglike_to_DataFrame
+from dfm_tools.hydrolib_helpers import forcinglike_to_Dataset
 import datetime as dt
 import matplotlib.pyplot as plt
 plt.close('all')
@@ -36,9 +36,9 @@ file_network = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\compu
 #network = NetworkModel(file_network) #TODO: what is this used for? plotting network/map is easier with dfm_tools or xugrid?
 
 
-#file_extnew = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_bnd.ext')
+#file_extnew = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_bnd.ext') #TODO: waterlevelbnd for rivers are present three times: https://github.com/Deltares/HYDROLIB-core/issues/354
 file_extnew = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_bnd_course.ext')
-file_extnew = Path(r'p:\1230882-emodnet_hrsm\GTSMv5.0\SO_NHrivGTSM\computations\BD013_4par_mildslope_wflowdis_JV\gtsm_forcing_bc.ext')
+#file_extnew = Path(r'p:\1230882-emodnet_hrsm\GTSMv5.0\SO_NHrivGTSM\computations\BD013_4par_mildslope_wflowdis_JV\gtsm_forcing_bc.ext')
 ext = ExtModel(file_extnew)
 
 time_passed = (dt.datetime.now()-dtstart).total_seconds()
@@ -48,7 +48,7 @@ max_extforcings = 6 #None for all
 
 ext_boundaries = ext.boundary
 ext_laterals = ext.lateral
-for iEB, extbnd in enumerate(ext_boundaries+ext_laterals): #TODO: waterlevelbnd for rivers are present three times: https://github.com/Deltares/HYDROLIB-core/issues/354
+for iEB, extbnd in enumerate(ext_boundaries+ext_laterals): 
     if hasattr(extbnd,'forcingfile'):
         extbnd_filepath = extbnd.forcingfile.filepath
         extbnd_forcings = extbnd.forcingfile.forcing
@@ -61,9 +61,10 @@ for iEB, extbnd in enumerate(ext_boundaries+ext_laterals): #TODO: waterlevelbnd 
     fig,ax = plt.subplots(figsize=(12,6))
     for iEBF, forcing in enumerate(extbnd_forcings[:max_extforcings]):
         print(f'forcing {iEBF+1} of {len(extbnd_forcings)}: {forcing.name} ({forcing.function}) ({forcing.quantityunitpair[1].quantity})')
-        forcing_pd = forcinglike_to_DataFrame(forcing)
+        forcing_xr = forcinglike_to_Dataset(forcing)
+        data_vars = list(forcing_xr.data_vars.keys()) #mostly one variable, except for astronomic/uxuy bnd
         ax.set_title(f'{extbnd_filepath}')
-        pc = forcing_pd.plot(ax=ax, label=f'{forcing.name} ({forcing.function}) ({forcing.quantityunitpair[1].quantity})') # see CMEMS_interpolate_example.py for pcolormesh in case of verticalpositions
+        pc = forcing_xr[data_vars[0]].plot(ax=ax, label=f'{forcing.name} ({forcing.function}) ({forcing.quantityunitpair[1].quantity})') # see CMEMS_interpolate_example.py for pcolormesh in case of verticalpositions
     ax.legend(fontsize=8)
     fig.tight_layout()
 

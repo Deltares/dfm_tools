@@ -130,7 +130,7 @@ plt.savefig(os.path.join(dir_output,'SFINCS_velocity_pcolorquiver'))
 #file_nc = r'p:\11202255-sfincs\Testbed\Original_tests\01_Implementation\14_restartfile\sfincs_his.nc'
 file_nc = r'p:\11202255-sfincs\Testbed\Original_tests\03_Application\04_Tsunami_Japan_Sendai\sfincs_his.nc'
 #vars_pd = get_ncvarproperties(file_nc=file_nc)
-data_xr = xr.open_dataset(file_nc)
+data_xr = xr.open_dataset(file_nc) #TODO: add preprocess_hisnc (but cf_role=timeseries_id is not present so it fails)
 #station_names = get_hisstationlist(file_nc=file_nc, varname='point_zs')
 stations_pd = data_xr.station_name.astype(str).to_pandas()
 
