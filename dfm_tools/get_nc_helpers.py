@@ -189,7 +189,7 @@ def get_ncvardimlist(file_nc):
     return vars_pd, None
 
 
-def get_varnamefrom_keyslongstandardname(file_nc, varname): #TODO: maybe replace with get_varnamefromattrs()? (print of vars_pd would be convenient)
+def get_varnamefrom_keyslongstandardname(file_nc, varname): #TODO: maybe replace with get_varnamefromattrs()? (xarray implementation that is independent of vars_pd)
     vars_pd = get_ncvarproperties(file_nc=file_nc)
     vars_pd_sel = vars_pd[['standard_name','long_name']]
     
@@ -245,8 +245,7 @@ def get_varnamefromattrs(file_nc, varname):
         raise Exception(f'ERROR: requested variable {varname} is in netcdf not 1 but {len(varlist_longname)} times: {varlist_longname}')
     
     #if not returned above, the varname was not found so raise exception
-    raise Exception(f'ERROR: requested variable {varname} not in netcdf, available are: {varlist}')
-    
+    raise Exception(f'ERROR: requested variable {varname} not in netcdf, available are: {varlist} and the standard_name and long_name attrs in dfm_tools.get_nc_helpers.get_ncvarproperties(file_nc=file_nc)')    
     return varname_matched
 
 
