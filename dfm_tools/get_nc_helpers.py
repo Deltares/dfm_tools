@@ -189,8 +189,8 @@ def get_ncvardimlist(file_nc):
     return vars_pd, None
 
 
-def get_varnamefrom_keyslongstandardname(file_nc, varname):
-    vars_pd = get_ncvarproperties(file_nc=file_nc) #TODO: supply vars_pd instead of file_nc as argument to this function
+def get_varnamefrom_keyslongstandardname(file_nc, varname): #TODO: maybe replace with get_varnamefromattrs()? (print of vars_pd would be convenient)
+    vars_pd = get_ncvarproperties(file_nc=file_nc)
     vars_pd_sel = vars_pd[['standard_name','long_name']]
     
     # check if requested variable is in netcdf
@@ -212,6 +212,40 @@ def get_varnamefrom_keyslongstandardname(file_nc, varname):
         print(f'requested varname "{varname}" found in standard_name attribute of variable {varname_matched}')
     elif varnameinlongname_bool.any():
         print(f'requested varname "{varname}" found in long_name attribute of variable {varname_matched}')
+    
+    return varname_matched
+
+
+def get_varnamefromattrs(file_nc, varname):
+    data_xr = xr.open_dataset(file_nc)
+    
+    # check if requested variable is in netcdf
+    varlist = list(data_xr.variables.keys())
+    if varname in varlist:
+        return varname
+    
+    #check if requested varname is in standard_name attrs of ncvars
+    ds_stdname = data_xr.filter_by_attrs(standard_name=varname)
+    varlist_stdname = list(ds_stdname.data_vars.keys())
+    if len(varlist_stdname)==1:
+        varname_matched = varlist_stdname[0]
+        print(f'requested varname "{varname}" found in standard_name attribute of variable {varname_matched}')
+        return varname_matched
+    elif len(varlist_stdname)>1:
+        raise Exception(f'ERROR: requested variable {varname} is in netcdf not 1 but {len(varlist_stdname)} times: {varlist_stdname}')
+    
+    #check if requested varname is in long_name attrs of ncvars
+    ds_longname = data_xr.filter_by_attrs(long_name=varname)
+    varlist_longname = list(ds_longname.data_vars.keys())
+    if len(varlist_longname)==1:
+        varname_matched = varlist_longname[0]
+        print(f'requested varname "{varname}" found in long_name attribute of variable {varname_matched}')
+        return varname_matched
+    elif len(varlist_longname)>1:
+        raise Exception(f'ERROR: requested variable {varname} is in netcdf not 1 but {len(varlist_longname)} times: {varlist_longname}')
+    
+    #if not returned above, the varname was not found so raise exception
+    raise Exception(f'ERROR: requested variable {varname} not in netcdf, available are: {varlist}')
     
     return varname_matched
 
