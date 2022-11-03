@@ -30,7 +30,7 @@ dir_output = '.'
 sims = ['tba','tbb','tbc','tbd','tbe','tbf']
 
 for sim in sims: 
-    file_bc_output = [os.path.join(dir_output,f'{sim}_bnd.bc')]
+    file_bc_output = os.path.join(dir_output,f'{sim}_bnd.bc')
     file_nc = os.path.join(dir_input,sim, 'results','RMM_VZM_0000_his.nc')
     data_xr = xr.open_mfdataset(file_nc,preprocess=preprocess_hisnc)
     
@@ -42,7 +42,7 @@ for sim in sims:
         ax.grid(True)
         #ax.tick_params('x',rotation=20)
         fig.tight_layout()
-        fig.savefig(os.path.join(dir_output,'%s_waterlevel'%(os.path.basename(file_nc).replace('.',''))))
+        fig.savefig(os.path.join(dir_output,f'{sim}_waterlevel.png'))
         
         print('plot discharge from his')
         fig, ax = plt.subplots()
@@ -51,7 +51,7 @@ for sim in sims:
         ax.grid(True)
         #ax.tick_params('x',rotation=20)
         fig.tight_layout()
-        fig.savefig(os.path.join(dir_output,'%s_discharge'%(os.path.basename(file_nc).replace('.',''))))
+        fig.savefig(os.path.join(dir_output,f'{sim}_discharge.png'))
         
     ForcingModel_object = ForcingModel()
     for stat_wl in station_wl: 
@@ -71,7 +71,7 @@ for sim in sims:
         forcingobject_one_xr = forcinglike_to_Dataset(t,convertnan=True)
         ForcingModel_object.forcing.append(t)
 
-    ForcingModel_object.save('test.bc')
+    ForcingModel_object.save(file_bc_output)
     
 # ext_bnd = ExtModel()
 # #generate boundary object for the ext file (quantity, pli-filename, bc-filename)
