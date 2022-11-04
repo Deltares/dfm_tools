@@ -8,7 +8,7 @@ dfm_tools are Python pre- and post-processing tools for D-FlowFM model files
 Features
 --------
 - currently, we are updating dfm_tools to depend on [hydrolib-core](https://github.com/Deltares/HYDROLIB-core) for more robust and maintained core functionalities
-- also, we are moving towards xarray for better handling of netCDF files
+- also, we are moving towards xarray for better handling of netCDF files, significant improvements in map file reading are therefore expected in the near future
 - post-processing and plotting:
 	- support for net/map/fou/rst partitions (merge partitions and delete ghostcells) (and many other netCDF files)
 	- support for flexible meshes (containing triangles, squares, pentagons, hexagons or any other shape)
@@ -22,22 +22,22 @@ Features
 	- converting and plotting this data with helper functions in dfm_tools
 	- e.g.: interpolating CMEMS data to model boundary and writing 2D/3D boundary condition files
 - to get started:
-	- html documentation: https://htmlpreview.github.io/?https://github.com/openearth/dfm_tools/blob/master/docs/dfm_tools/index.html
-	- example scripts: https://github.com/openearth/dfm_tools/tree/master/tests/examples
+	- [html documentation](https://htmlpreview.github.io/?https://github.com/openearth/dfm_tools/blob/master/docs/dfm_tools/index.html)
+	- [example scripts](https://github.com/openearth/dfm_tools/tree/master/tests/examples)
 	- examples of (mostly unformatted) figures created by this pytest testbank: n:\\Deltabox\\Bulletin\\veenstra\\info dfm_tools
 	- want to get updates about dfm_tools? Send an email to jelmer.veenstra@deltares.nl
 	
 Installation
 --------
 - download and install Anaconda 64 bit (with Python 3.8 or later) from https://www.anaconda.com/distribution/#download-section
-- install dfm_tools from github:
+- create Python environment and install dfm_tools:
 	- open anaconda prompt
 	- ``conda create --name dfm_tools_env -c conda-forge python=3.8 git spyder -y`` (you can also install a newer python version, in python 3.7 the dependency hydrolib seemed not installable)
 	- ``conda activate dfm_tools_env``
 	- ``conda install -c conda-forge shapely cartopy pyepsg geopandas contextily xarray dask netcdf4 bottleneck cdsapi motuclient -y`` (installs conda-forge requirements)
 	- ``python -m pip install git+https://github.com/openearth/dfm_tools`` (this command installs dfm_tools and all required non-conda packages)
 	- long paths error? Check last comment in https://github.com/Deltares/HYDROLIB-core/issues/327
-	- to remove venv when necessary: ``conda remove -n dfm_tools_env --all``
+	- to remove environment when necessary: ``conda remove -n dfm_tools_env --all``
 - what are all these packages for?:
 	- shapely for slicing 2D/3D data (conda-forge channel is necessary since main channel version is 1.6.4, minimal requirement is 1.7.0)
 	- cartopy for satellite imagery, coastlines etc on plots (conda-forge channel recommended by cartopy developers, and currently also necessary for correct shapely version)
@@ -59,38 +59,27 @@ Installation
 
 Example usage
 --------
-
+More example scripts available at: https://github.com/openearth/dfm_tools/tree/master/tests/examples
 ```python
-#this example includes plotting and using the metadata of the retrieved data
-#import statements
 import os
 import xarray as xr
 import matplotlib.pyplot as plt
 plt.close('all')
 from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
-from dfm_tools.get_nc_helpers import get_ncvarproperties, get_timesfromnc, get_hisstationlist
-dir_testinput = r'c:\DATA\dfm_tools_testdata'
+from dfm_tools.xarray_helpers import preprocess_hisnc
 
-#uncomment the line below, copy data locally and change this path to increase performance
-#dir_testinput = os.path.join(r'n:\Deltabox\Bulletin\veenstra\info dfm_tools\test_input')
+dir_testinput = os.path.join(r'n:\Deltabox\Bulletin\veenstra\info dfm_tools\test_input')
 file_nc_map = os.path.join(dir_testinput,'DFM_sigma_curved_bend','DFM_OUTPUT_cb_3d','cb_3d_map.nc')
 file_nc_his = os.path.join(dir_testinput,'DFM_sigma_curved_bend','DFM_OUTPUT_cb_3d','cb_3d_his.nc')
-data_xr_his = xr.open_dataset(file_nc_his)
-stations_pd = data_xr_his.station_name.astype(str).to_pandas()
 
-#get lists with vars/dims, times, station/crs/structures
-vars_pd = get_ncvarproperties(file_nc=file_nc_map)
-times_pd = get_timesfromnc(file_nc=file_nc_map)
-statlist_pd = get_hisstationlist(file_nc=file_nc_his, varname='station_name')
+data_xr_his = xr.open_mfdataset(file_nc_his, preprocess=preprocess_hisnc)
+stations_pd = data_xr_his['stations'].to_dataframe()
 
-#retrieve his data
-#data_fromhis_wl = get_ncmodeldata(file_nc=file_nc_his, varname='waterlevel', station='all', timestep= 'all')
+#retrieve his data and plot
 fig, ax = plt.subplots(1,1,figsize=(10,5))
-for iS, station in enumerate(stations_pd):
-    data_fromhis_wl = data_xr_his.waterlevel.isel(stations=iS)
-    ax.plot(data_fromhis_wl.time,data_fromhis_wl,'-', label=station)
-ax.legend()
-ax.set_ylabel('%s (%s)'%(data_fromhis_wl.attrs['long_name'], data_fromhis_wl.attrs['units']))
+data_xr_his.waterlevel.plot.line(ax=ax, x='time')
+ax.legend(data_xr_his.stations.to_series(),loc=1) #optional, to change legend location
+fig.tight_layout()
 
 #plot net/grid
 ugrid_all = get_netdata(file_nc=file_nc_map)#,multipart=False)
@@ -119,7 +108,6 @@ ax.set_aspect('equal')
 print_var = data_frommap_sal
 print('++++++\nthe data in the variable %s is:\n%s\n'%(print_var.var_varname, print_var))
 print('++++++\nthe time indices and times in the variable %s are:\n%s\n'%(print_var.var_varname, print_var.var_times))
-#print('++++++\nthe station indices and station names in the variable %s are:\n%s\n'%(print_var.var_varname, print_var.var_stations))
 print('++++++\nthe layer indices in the variable %s are:\n%s\n'%(print_var.var_varname, print_var.var_layers))
 print('++++++\nthe shape of the variable %s is:\n%s\n'%(print_var.var_varname, print_var.shape))
 print('++++++\nthe dimensions of the variable %s are (copied from netCDF variable):\n%s\n'%(print_var.var_varname, print_var.var_dimensions))
