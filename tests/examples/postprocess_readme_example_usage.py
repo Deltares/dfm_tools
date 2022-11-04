@@ -5,36 +5,25 @@ Created on Wed Oct 27 14:55:27 2021
 @author: veenstra
 """
 
-#this example includes plotting and using the metadata of the retrieved data
-#import statements
 import os
 import xarray as xr
 import matplotlib.pyplot as plt
 plt.close('all')
 from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
-from dfm_tools.get_nc_helpers import get_ncvarproperties, get_timesfromnc, get_hisstationlist
-dir_testinput = r'c:\DATA\dfm_tools_testdata'
+from dfm_tools.xarray_helpers import preprocess_hisnc
 
-#uncomment the line below, copy data locally and change this path to increase performance
-#dir_testinput = os.path.join(r'n:\Deltabox\Bulletin\veenstra\info dfm_tools\test_input')
+dir_testinput = os.path.join(r'n:\Deltabox\Bulletin\veenstra\info dfm_tools\test_input')
 file_nc_map = os.path.join(dir_testinput,'DFM_sigma_curved_bend','DFM_OUTPUT_cb_3d','cb_3d_map.nc')
 file_nc_his = os.path.join(dir_testinput,'DFM_sigma_curved_bend','DFM_OUTPUT_cb_3d','cb_3d_his.nc')
-data_xr_his = xr.open_dataset(file_nc_his)
-stations_pd = data_xr_his.station_name.astype(str).to_pandas()
 
-#get lists with vars/dims, times, station/crs/structures
-vars_pd = get_ncvarproperties(file_nc=file_nc_map)
-times_pd = get_timesfromnc(file_nc=file_nc_map)
-statlist_pd = get_hisstationlist(file_nc=file_nc_his, varname='station_name')
+data_xr_his = xr.open_mfdataset(file_nc_his, preprocess=preprocess_hisnc)
+stations_pd = data_xr_his['stations'].to_dataframe()
 
-#retrieve his data
-#data_fromhis_wl = get_ncmodeldata(file_nc=file_nc_his, varname='waterlevel', station='all', timestep= 'all')
+#retrieve his data and plot
 fig, ax = plt.subplots(1,1,figsize=(10,5))
-for iS, station in enumerate(stations_pd):
-    data_fromhis_wl = data_xr_his.waterlevel.isel(stations=iS)
-    ax.plot(data_fromhis_wl.time,data_fromhis_wl,'-', label=station)
-ax.legend()
-ax.set_ylabel('%s (%s)'%(data_fromhis_wl.attrs['long_name'], data_fromhis_wl.attrs['units']))
+data_xr_his.waterlevel.plot.line(ax=ax, x='time')
+ax.legend(data_xr_his.stations.to_series(),loc=1) #optional, to change legend location
+fig.tight_layout()
 
 #plot net/grid
 ugrid_all = get_netdata(file_nc=file_nc_map)#,multipart=False)
@@ -63,7 +52,6 @@ ax.set_aspect('equal')
 print_var = data_frommap_sal
 print('++++++\nthe data in the variable %s is:\n%s\n'%(print_var.var_varname, print_var))
 print('++++++\nthe time indices and times in the variable %s are:\n%s\n'%(print_var.var_varname, print_var.var_times))
-#print('++++++\nthe station indices and station names in the variable %s are:\n%s\n'%(print_var.var_varname, print_var.var_stations))
 print('++++++\nthe layer indices in the variable %s are:\n%s\n'%(print_var.var_varname, print_var.var_layers))
 print('++++++\nthe shape of the variable %s is:\n%s\n'%(print_var.var_varname, print_var.shape))
 print('++++++\nthe dimensions of the variable %s are (copied from netCDF variable):\n%s\n'%(print_var.var_varname, print_var.var_dimensions))

@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 plt.close('all')
 
 from dfm_tools.get_nc import plot_ztdata
-from dfm_tools.get_nc_helpers import get_hisstationlist
 from dfm_tools.xarray_helpers import preprocess_hisnc, Dataset_varswithdim
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
@@ -58,7 +57,7 @@ for file_nc in file_nc_list:
     fig.savefig(os.path.join(dir_output,'%s_waterlevel'%(os.path.basename(file_nc).replace('.',''))))
     if 'RMM_dflowfm' in file_nc:
         continue
-
+    
     print('plot bedlevel from his')
     data_fromhis_xr = data_xr.bedlevel.sel(stations=stations_requested)
     fig, ax = plt.subplots(figsize=(10,6))
