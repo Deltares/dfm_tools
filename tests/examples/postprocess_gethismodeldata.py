@@ -20,8 +20,9 @@ file_nc_list = [os.path.join(dir_testinput,'vanNithin','tttz_0000_his.nc'),
                 os.path.join(dir_testinput,'DFM_3D_z_Grevelingen\\computations\\run01\\DFM_OUTPUT_Grevelingen-FM\\Grevelingen-FM_0000_his.nc'),
                 r'p:\11202512-h2020_impaqt\07_Mediterranean_model\MedSea_impaqt_model\computations_final\r013_waq\DFM_OUTPUT_MedSea_impaqt_FM\MedSea_impaqt_FM_0000_his.nc',
                 r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206\results\RMM_dflowfm_0000_his.nc', #added since there are duplicate stations which are dropped
-                #os.path.join(dir_testinput,'hydrolib_nc\\moergestels_broek_his.nc'), #TODO: contains stations/orifices/bridges/culverts/etc, useful testfile
+                os.path.join(dir_testinput,'hydrolib_nc\\moergestels_broek_his.nc'), #TODO: contains stations/orifices/bridges/culverts/etc, useful testfile
                 ]
+
 
 for file_nc in file_nc_list:
     if 'Grevelingen-FM_0000' in file_nc:
@@ -40,6 +41,8 @@ for file_nc in file_nc_list:
         stations_requested_zt = ['MO_TS_MO_ATHOS']
     elif 'RMM_dflowfm' in file_nc:
         stations_requested = ['WAQ_Vuren','NW_1030.19_R_LMW-H_Hoek-van-Holland','WAQ_TielWaal_waq']
+    elif 'moergestels_broek' in file_nc:
+        stations_requested = ['ObsPt1', 'ObsPt2', 'ObsPt2D1', 'ObsPt2D2']
     
     data_xr = xr.open_mfdataset(file_nc, preprocess=preprocess_hisnc) #TODO: maybe adding chunking argument like chunks={'time':-1,'station':200}) (https://github.com/pydata/xarray/discussions/6458)
     #data_xr_indexlist = list(data_xr.indexes.keys()) #TODO: also add waterbalance as index?
@@ -55,7 +58,7 @@ for file_nc in file_nc_list:
     data_fromhis_xr_dailymean.plot.line('-',ax=ax,x='time',add_legend=False,zorder=0,linewidth=.8,color='grey')
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,'%s_waterlevel'%(os.path.basename(file_nc).replace('.',''))))
-    if 'RMM_dflowfm' in file_nc:
+    if 'RMM_dflowfm' in file_nc or 'moergestels_broek' in file_nc:
         continue
     
     print('plot bedlevel from his')
