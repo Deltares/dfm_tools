@@ -24,8 +24,6 @@ file_nc_list = [os.path.join(dir_testinput,'vanNithin','tttz_0000_his.nc'),
                 os.path.join(dir_testinput,'hydrolib_hisnc\\sfincs_stat_crs_his.nc'), #coordinates not correctly set
                 r'p:\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\fm\DFM_OUTPUT_inlet\inlet_his.nc', #morphology
                 ]
-file_nc_list = [r'p:\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\fm\DFM_OUTPUT_inlet\inlet_his.nc',
-                ]
 
 
 for file_nc in file_nc_list:
