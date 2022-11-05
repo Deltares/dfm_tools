@@ -36,7 +36,7 @@ from pathlib import Path
 import xarray as xr
 
 from dfm_tools.get_nc import get_ncmodeldata#, get_netdata, plot_netmapdata
-from dfm_tools.get_nc_helpers import get_ncvarproperties#, get_hisstationlist#, get_varname_fromnc
+from dfm_tools.get_nc_helpers import get_ncvarproperties
 from dfm_tools.regulargrid import uva2xymagdeg
 from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame
 
@@ -147,7 +147,6 @@ file_nc = r'p:\archivedprojects\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxi
 vars_pd = get_ncvarproperties(file_nc=file_nc)
 data_xr = xr.open_dataset(file_nc)
 
-#data_nc_NAMST = get_hisstationlist(file_nc=file_nc, varname='NAMST')
 #data_nc_ZWL = get_ncmodeldata(file_nc=file_nc, varname='ZWL',timestep='all',station='all')
 #data_nc_ZCURU = get_ncmodeldata(file_nc=file_nc, varname='ZCURU',timestep='all',station='all',layer='all')
 #data_nc_ZCURV = get_ncmodeldata(file_nc=file_nc, varname='ZCURV',timestep='all',station='all',layer='all')
@@ -259,7 +258,6 @@ file_nc = os.path.join(dir_testinput,'D3D_3D_sigma_curved_bend_nc\\trih-cb2-sal-
 vars_pd = get_ncvarproperties(file_nc=file_nc)
 
 data_xr = xr.open_dataset(file_nc)
-#data_nc_NAMST = get_hisstationlist(file_nc=file_nc, varname='NAMST')
 stations_pd = data_xr.NAMST.astype(str).to_pandas().str.strip()
 #data_nc_ZWL = get_ncmodeldata(file_nc=file_nc, varname='ZWL',timestep='all',station='all')
 #data_nc_ZCURU = get_ncmodeldata(file_nc=file_nc, varname='ZCURU',timestep='all',station='all',layer='all')

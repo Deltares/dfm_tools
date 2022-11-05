@@ -11,7 +11,6 @@ import xarray as xr
 import matplotlib.pyplot as plt
 plt.close('all')
 from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame #install dfm_tools via https://github.com/openearth/dfm_tools
-#from dfm_tools.get_nc_helpers import get_hisstationlist, get_stationid_fromstationlist
 from hydrolib.core.io.polyfile.models import PolyFile #automatically installed with dfm_tools
 
 file_pli = r'p:\1230882-emodnet_hrsm\GTSMv5.0\runs\reference_GTSMv4.1_wiCA\world.ldb'
@@ -40,7 +39,6 @@ data_xr_relvars_port['velocity_direction'].attrs['long_name'] = 'velocity_direct
 data_xr_relvars_port['velocity_direction'].attrs['units'] = 'degrees'
 data_xr_relvars_port['velocity_magnitude'] = np.sqrt(data_xr_relvars_port['y_velocity']**2+data_xr_relvars_port['x_velocity']**2)
 data_xr_relvars_port['velocity_magnitude'].attrs['units'] = 'm/s'
-#stations_pd = get_hisstationlist(file_nc)
 #stat_port_list = data_xr_relvars_port.station_name_str.data
 
 fig,(ax1,ax2) = plt.subplots(2,1,figsize=(10,7),sharex=True)

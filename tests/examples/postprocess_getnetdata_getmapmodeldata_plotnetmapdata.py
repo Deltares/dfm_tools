@@ -141,7 +141,6 @@ for file_nc in file_nc_list:
     if file_nc_fou is not None:
         #RMM foufile met quivers
         vars_pd = get_ncvarproperties(file_nc=file_nc_fou)
-        #stations_pd = get_hisstationlist(file_nc,varname='waterlevel')
         
         ugrid_all_fou = get_netdata(file_nc=file_nc_fou)
         ux_mean = get_ncmodeldata(file_nc=file_nc_fou, varname='mesh2d_fourier001_mean')

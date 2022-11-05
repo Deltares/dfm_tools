@@ -13,8 +13,6 @@ plt.close('all')
 from pathlib import Path
 import xarray as xr
 
-#from dfm_tools.get_nc import get_ncmodeldata
-#from dfm_tools.get_nc_helpers import get_ncvarproperties#, get_hisstationlist#, get_varname_fromnc
 from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame
 from hydrolib.core.io.polyfile.models import PolyFile
 
@@ -24,7 +22,6 @@ dir_output = '.'
 
 #COSMO
 file_nc = r'p:\archivedprojects\1220688-lake-kivu\2_data\COSMO\COSMOCLM_2012_out02_merged_4Wouter.nc'
-#vars_pd = get_ncvarproperties(file_nc=file_nc)
 data_xr = xr.open_dataset(file_nc)
 data_xr = data_xr.drop(['height_10m','height_2m']) #gives cleaner figure title
 data_U10M = data_xr['U_10M']
@@ -89,7 +86,6 @@ plt.savefig(os.path.join(dir_output,'COSMO_magn_curvedquiver'))
 #SFINCS
 file_nc = r'p:\11202255-sfincs\Testbed\Original_tests\01_Implementation\08_restartfile\sfincs_map.nc'
 #file_nc = r'p:\11202255-sfincs\Testbed\Original_tests\03_Application\22_Tsunami_Japan_Sendai\sfincs_map.nc'
-#vars_pd = get_ncvarproperties(file_nc=file_nc)
 
 data_xr = xr.open_dataset(file_nc)
 data_xr = data_xr.set_coords(['x','y','edge_x','edge_y'])
@@ -125,19 +121,4 @@ for iT, timestep in enumerate([0,1,10]):
 fig.tight_layout()
 plt.savefig(os.path.join(dir_output,'SFINCS_velocity_pcolorquiver'))
 
-
-#SFINCS HIS
-#file_nc = r'p:\11202255-sfincs\Testbed\Original_tests\01_Implementation\14_restartfile\sfincs_his.nc'
-file_nc = r'p:\11202255-sfincs\Testbed\Original_tests\03_Application\04_Tsunami_Japan_Sendai\sfincs_his.nc'
-#vars_pd = get_ncvarproperties(file_nc=file_nc)
-data_xr = xr.open_dataset(file_nc) #TODO: add preprocess_hisnc (but cf_role=timeseries_id is not present so it fails)
-#station_names = get_hisstationlist(file_nc=file_nc, varname='point_zs')
-stations_pd = data_xr.station_name.astype(str).to_pandas()
-
-fig, ax = plt.subplots()
-for iS,stat_name in enumerate(stations_pd):
-    data_sel = data_xr.point_zs.isel(stations=iS)
-    ax.plot(data_sel.time, data_sel, label=stat_name)
-ax.legend()
-plt.savefig(os.path.join(dir_output,'SFINCS_hiszs'))
 
