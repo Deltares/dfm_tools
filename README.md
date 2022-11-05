@@ -91,7 +91,7 @@ fig, ax = plt.subplots()
 pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_wl[0,:], ax=None, linewidth=0.5, cmap="jet")
 pc.set_clim([-0.5,1])
 fig.colorbar(pc, ax=ax)
-ax.set_title('%s (%s)'%(data_frommap_wl.var_varname, data_frommap_wl.var_ncattrs['units']))
+ax.set_title(data_frommap_wl.var_varname)
 ax.set_aspect('equal')
 
 #plot salinity on map
@@ -99,21 +99,6 @@ data_frommap_sal = get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_sa1', ti
 fig, ax = plt.subplots()
 pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_sal[0,:,0], ax=None, linewidth=0.5, cmap="jet")
 fig.colorbar(pc, ax=ax)
-ax.set_title('%s (%s)'%(data_frommap_sal.var_varname, data_frommap_sal.var_ncattrs['units']))
+ax.set_title(data_frommap_sal.var_varname)
 ax.set_aspect('equal')
-
-#print contents of retrieved data withing data_frommap_sal variable
-print_var = data_frommap_sal
-print('++++++\nthe data in the variable %s is:\n%s\n'%(print_var.var_varname, print_var))
-print('++++++\nthe time indices and times in the variable %s are:\n%s\n'%(print_var.var_varname, print_var.var_times))
-print('++++++\nthe layer indices in the variable %s are:\n%s\n'%(print_var.var_varname, print_var.var_layers))
-print('++++++\nthe shape of the variable %s is:\n%s\n'%(print_var.var_varname, print_var.shape))
-print('++++++\nthe dimensions of the variable %s are (copied from netCDF variable):\n%s\n'%(print_var.var_varname, print_var.var_dimensions))
-print('++++++\nthe netCDF variable where the data in variable %s comes from is:\n%s\n'%(print_var.var_varname, print_var.var_ncvarobject))
-print('++++++\nsome example contents of this netCDF variable:')
-print('\tthe dimension names of the netCDF variable %s are:\n\t\t%s'%(print_var.var_varname, print_var.var_dimensions))
-print('\tthe shape of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname, print_var.var_shape))
-print('\tthe units of the netCDF variable %s are:\n\t\t%s'%(print_var.var_varname, print_var.var_ncattrs['units']))
-print('\tthe long_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname, print_var.var_ncattrs['long_name']))
-print('\tthe standard_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname, print_var.var_ncattrs['standard_name']))
 ```
