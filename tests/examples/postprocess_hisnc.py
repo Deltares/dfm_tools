@@ -34,9 +34,6 @@ for file_nc in file_nc_list:
     vars_pd = get_ncvarproperties(file_nc)
     
     data_xr = xr.open_mfdataset(file_nc, preprocess=preprocess_hisnc) #TODO: maybe adding chunking argument like chunks={'time':-1,'station':200}) (https://github.com/pydata/xarray/discussions/6458)
-    #data_xr_indexlist = list(data_xr.indexes.keys()) #TODO: also add waterbalance as index?
-    #data_xr_perdim = {dimname: Dataset_varswithdim(data_xr,dimname=dimname) for dimname in data_xr.dims}
-    statlist_pd = data_xr['stations'].to_dataframe() #alternatively use .to_series() for labels only, also possible for other indexed dimensions like cross_section and general_structures (list(data_xr.indexes.keys()))
     
     if 'Grevelingen-FM_0000' in file_nc:
         #file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_his.nc')
@@ -72,6 +69,9 @@ for file_nc in file_nc_list:
         stations_requested = ['ADCP1_final','ADCP2_final','KP1_016']
         data_xr = data_xr.rename({'NOSTAT':'stations','ZWL':'waterlevel','DPS':'bedlevel'}) # for convenience
     
+    #data_xr_indexlist = list(data_xr.indexes.keys()) #TODO: also add waterbalance as index?
+    #data_xr_perdim = {dimname: Dataset_varswithdim(data_xr,dimname=dimname) for dimname in data_xr.dims}
+    statlist_pd = data_xr['stations'].to_dataframe() #alternatively use .to_series() for labels only, also possible for other indexed dimensions like cross_section and general_structures (list(data_xr.indexes.keys()))
     
     print('plot waterlevel from his')
     data_fromhis_xr = data_xr.waterlevel.sel(stations=stations_requested)
