@@ -12,7 +12,7 @@ plt.close('all')
 import xarray as xr
 
 from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata#, get_xzcoords_onintersection
-from dfm_tools.get_nc_helpers import get_ncvarproperties, get_hisstationlist
+from dfm_tools.get_nc_helpers import get_ncvarproperties
 from dfm_tools.regulargrid import scatter_to_regulargrid#, center2corner
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
@@ -170,33 +170,6 @@ for iV, varname in enumerate(varname_list):
             ax.set_xlim([25000,65000])
             ax.set_ylim([2500,15000])
         plt.savefig(os.path.join(dir_output,'%s_%s_veczoom'%(os.path.basename(file_nc).replace('.',''), varname)))
-
-
-
-#HISFILE
-file_nc = r'p:\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\fm\DFM_OUTPUT_inlet\inlet_his.nc'
-vars_pd = get_ncvarproperties(file_nc=file_nc)
-vars_pd_sel = vars_pd[vars_pd['long_name'].str.contains('level')]
-stat_list = get_hisstationlist(file_nc,varname='station_name')
-crs_list = get_hisstationlist(file_nc,varname='cross_section_name')
-data_xr = xr.open_dataset(file_nc)
-stations_pd = data_xr.station_name.astype(str).to_pandas()
-
-var_names = ['waterlevel','bedlevel']#,'mesh2d_ssn']
-for iV, varname in enumerate(var_names):
-    #data_fromhis = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep='all', station='all')
-
-    fig, ax = plt.subplots(1,1, figsize=(10,5))
-    for iS, stat in enumerate(stations_pd):
-        data_fromhis = data_xr[varname].isel(stations=iS,time=slice(0,3000))
-        var_longname = data_fromhis.attrs['long_name'] #vars_pd['long_name'][vars_pd.index==varname].iloc[0]
-        ax.plot(data_fromhis.time, data_fromhis, linewidth=1, label=stat)
-    ax.legend()
-    ax.set_ylabel('%s (%s)'%(data_fromhis.name,data_fromhis.attrs['units']))
-    ax.set_xlim(data_fromhis.time[[0,-1]].to_numpy())
-    fig.tight_layout()
-    plt.savefig(os.path.join(dir_output,'%s_%s'%(os.path.basename(file_nc).replace('.',''), varname)))
-
 
 
 

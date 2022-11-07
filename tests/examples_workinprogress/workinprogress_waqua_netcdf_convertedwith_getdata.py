@@ -56,9 +56,6 @@ import xarray as xr
 import matplotlib.pyplot as plt
 plt.close('all')
 
-#from dfm_tools.get_nc import get_ncmodeldata, get_netdata, plot_netmapdata
-#from dfm_tools.get_nc_helpers import get_ncvarproperties#, get_hisstationlist#, get_varname_fromnc
-
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 

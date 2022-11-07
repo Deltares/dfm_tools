@@ -12,7 +12,6 @@ plt.close('all')
 from scipy.spatial import KDTree
 import pandas as pd
 import numpy as np
-from dfm_tools.get_nc_helpers import get_stationid_fromstationlist#, get_hisstationlist
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'

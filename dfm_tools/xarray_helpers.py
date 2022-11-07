@@ -28,10 +28,8 @@ def preprocess_hisnc(ds):
     """
     
     #generate dim_coord_dict to set indexes, this will be something like {'stations':'station_name','cross_section':'cross_section_name'} after loop
-    #loop over variables with cf_role=timeseries_id as attribute, these can be potentially used as index
-    ds_cfrole_timeseriesid = ds.filter_by_attrs(cf_role='timeseries_id')
     dim_coord_dict = {}
-    for ds_coord in ds_cfrole_timeseriesid.coords.keys():
+    for ds_coord in ds.coords.keys():
         ds_coord_dtype = ds[ds_coord].dtype
         ds_coord_dim = ds[ds_coord].dims[0] #these vars always have only one dim
         if ds_coord_dtype.str.startswith('|S'): #these are station/crs/laterals/gs names/ids
@@ -40,7 +38,7 @@ def preprocess_hisnc(ds):
     #loop over dimensions and set corresponding coordinates/variables from dim_coord_dict as their index
     for dim in dim_coord_dict.keys():
         coord = dim_coord_dict[dim]
-        coord_str = f'{coord}_str' #avoid losing the original variable by creating a new name
+        coord_str = f'{coord}'#_str' #avoid losing the original variable by creating a new name
         ds[coord_str] = ds[coord].load().str.decode('utf-8',errors='ignore').str.strip() #.load() is essential to convert not only first letter of string.
         ds = ds.set_index({dim:coord_str})
         
