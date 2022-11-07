@@ -27,9 +27,6 @@ file_nc_list = [os.path.join(dir_testinput,'vanNithin','tttz_0000_his.nc'),
                 os.path.join(dir_testinput,'D3D_3D_sigma_curved_bend_nc\\trih-cb2-sal-added-3d.nc'), #DELFT3D4 netcdf
                 r'p:\archivedprojects\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\063_netcdf\trih-thiery_002_coarse.nc', #DELFT3D4 netcdf
                 ]
-file_nc_list = [os.path.join(dir_testinput,'D3D_3D_sigma_curved_bend_nc\\trih-cb2-sal-added-3d.nc'), #DELFT3D4 netcdf
-                r'p:\archivedprojects\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\063_netcdf\trih-thiery_002_coarse.nc', #DELFT3D4 netcdf
-                ]
 
 
 for file_nc in file_nc_list:
