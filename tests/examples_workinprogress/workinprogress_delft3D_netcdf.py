@@ -9,22 +9,6 @@ to get delft3D to write netCDF output instead of .dat files, add these lines to 
     FlNcdf= #maphis#
     ncFormat=4
 
-NO: it is also possible to convert existing Delft3D4 output with getdata.pl, but Delft3D models that were converted with getdata.pl often give corrupt variables (see comments in code for details) since NEFIS conversion is not fully up to date in getdata.pl.
-YES: it is recommended to rerun your Delft3D model with netCDF output instead with above lines
-get the netcdf files via putty with:
-    module load simona
-    cd /p/1220688-lake-kivu/3_modelling/1_FLOW/7_heatfluxinhis/063
-    getdata.pl -f trim-thiery_002_coarse.dat -v S1,U1,V1,ALFAS,QEVA -o netcdf
-    http://simona.deltares.nl/release/doc/usedoc/getdata/getdata.pdf
-    #double precision in trimfile causes this conversion to fail, use netCDF output in Delft3D instead
-    
-get the netcdf files via putty with:
-    module load simona
-    cd ./D3D_3D_sigma_curved_bend
-    getdata.pl -f trim-cb2-sal-added-3d.dat -v S1,U1,V1,ALFAS -o netcdf
-    getdata.pl -f trih-cb2-sal-added-3d.dat -v ZWL,ZCURU,ZCURV,ALFAS,NAMST -o netcdf
-    http://simona.deltares.nl/release/doc/usedoc/getdata/getdata.pdf
-    #faulty data in NAMST variable, station names are not available
 """
 
 import os
@@ -141,30 +125,6 @@ plt.savefig(os.path.join(dir_output,'kivu_bedlevel'))
 
 
 
-
-#FROM HIS data
-file_nc = r'p:\archivedprojects\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\063_netcdf\trih-thiery_002_coarse.nc'
-vars_pd = get_ncvarproperties(file_nc=file_nc)
-data_xr = xr.open_dataset(file_nc)
-
-#data_nc_ZWL = get_ncmodeldata(file_nc=file_nc, varname='ZWL',timestep='all',station='all')
-#data_nc_ZCURU = get_ncmodeldata(file_nc=file_nc, varname='ZCURU',timestep='all',station='all',layer='all')
-#data_nc_ZCURV = get_ncmodeldata(file_nc=file_nc, varname='ZCURV',timestep='all',station='all',layer='all')
-stations_pd = data_xr.NAMST.astype(str).to_pandas().str.strip()
-
-fig, ax = plt.subplots(figsize=(16,7))
-for iS in range(10):
-    data_nc_ZWL = data_xr.ZWL.isel(NOSTAT=iS).sel(time=slice('2013-07-24','2013-08-07'))
-    ax.plot(data_nc_ZWL.time,data_nc_ZWL,label=stations_pd.iloc[iS], linewidth=1)
-ax.legend()
-ax.set_ylabel('%s (%s)'%(data_nc_ZWL.attrs['long_name'], data_nc_ZWL.attrs['units']))
-time_ext = data_nc_ZWL.time[[0,-1]].to_numpy()
-ax.set_xlim(time_ext)
-plt.savefig(os.path.join(dir_output,'kivu_his_ZWL'))
-
-
-
-
 #from MAP DATA CURVEDBEND
 file_nc = os.path.join(dir_testinput,'D3D_3D_sigma_curved_bend_nc\\trim-cb2-sal-added-3d.nc')
 vars_pd = get_ncvarproperties(file_nc=file_nc)
@@ -251,25 +211,4 @@ cbar = fig.colorbar(pc, cax=cbar_ax, ticks=np.linspace(var_clim[0],var_clim[1],7
 cbar_ax.set_ylabel('velocity magnitude [%s]'%(data_nc_U1.var_ncattrs['units']))
 plt.savefig(os.path.join(dir_output,'curvedbend_velocity_pcolor'))
 
-
-
-#FROM HIS data curvedbend
-file_nc = os.path.join(dir_testinput,'D3D_3D_sigma_curved_bend_nc\\trih-cb2-sal-added-3d.nc')
-vars_pd = get_ncvarproperties(file_nc=file_nc)
-
-data_xr = xr.open_dataset(file_nc)
-stations_pd = data_xr.NAMST.astype(str).to_pandas().str.strip()
-#data_nc_ZWL = get_ncmodeldata(file_nc=file_nc, varname='ZWL',timestep='all',station='all')
-#data_nc_ZCURU = get_ncmodeldata(file_nc=file_nc, varname='ZCURU',timestep='all',station='all',layer='all')
-#data_nc_ZCURV = get_ncmodeldata(file_nc=file_nc, varname='ZCURV',timestep='all',station='all',layer='all')
-
-fig, ax = plt.subplots(figsize=(16,7))
-for iS in range(5):
-    data_nc_ZWL = data_xr.ZWL.isel(NOSTAT=iS).sel(time=slice('2001-01-28','2001-01-29T12:00:00'))
-    ax.plot(data_nc_ZWL.time,data_nc_ZWL,label=stations_pd.iloc[iS], linewidth=1)
-ax.legend()
-ax.set_ylabel('%s (%s)'%(data_nc_ZWL.attrs['long_name'], data_nc_ZWL.attrs['units']))
-time_ext = data_nc_ZWL.time[[0,-1]].to_numpy()
-ax.set_xlim(time_ext)
-plt.savefig(os.path.join(dir_output,'curvedbend_his_ZWL'))
 
