@@ -59,7 +59,7 @@ for file_nc in file_nc_list:
     elif 'sfincs' in file_nc:
         stations_requested = ['H540504', 'H540180', 'H540062', 'H540150', 'H540199', 'H040831',
                               'H040812', 'H041472', 'H540198', 'H540274', 'H540805']
-        data_xr = data_xr.set_coords('station_name').set_coords('crosssection_name') #TODO: request station_name/crosssection_name/etv as coords in sfincs hisfile
+        data_xr = data_xr.set_coords('station_name').set_coords('crosssection_name') #TODO: request station_name/crosssection_name/etv as coords in sfincs hisfile https://github.com/Deltares/SFINCS/issues/10
         data_xr = preprocess_hisnc(data_xr)
         data_xr = data_xr.rename({'point_zs':'waterlevel','point_zb':'bedlevel'}) # for convenience
     elif 'trih-cb2' in file_nc:

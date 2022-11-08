@@ -35,7 +35,8 @@ data_ldb = pointlike_to_DataFrame(polyfile_object.objects[0])
 
 file_nc = r'p:\archivedprojects\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\062_netcdf\trim-thiery_002_coarse.nc'
 vars_pd = get_ncvarproperties(file_nc=file_nc)
-#data_xr = xr.open_dataset(file_nc)
+data_xr = xr.open_dataset(file_nc)
+#data_xr = data_xr.set_coords(['x','y','edge_x','edge_y'])
 
 data_nc_XZ = get_ncmodeldata(file_nc=file_nc, varname='XZ')
 data_nc_YZ = get_ncmodeldata(file_nc=file_nc, varname='YZ')
@@ -50,6 +51,8 @@ data_nc_KCU = get_ncmodeldata(file_nc=file_nc, varname='KCU')
 data_nc_KCV = get_ncmodeldata(file_nc=file_nc, varname='KCV')
 
 layno=-2
+
+
 data_nc_U1 = get_ncmodeldata(file_nc=file_nc, varname='U1',timestep='all',layer=layno)
 data_nc_V1 = get_ncmodeldata(file_nc=file_nc, varname='V1',timestep='all',layer=layno)
 
