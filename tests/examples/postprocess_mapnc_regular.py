@@ -76,7 +76,7 @@ for file_nc in file_nc_list:
         coordlist.remove('time')
         data_u_tsel = data_u.isel(time=timestep)
         data_v_tsel = data_v.isel(time=timestep)
-        #data_uv_tsel = data_uv.isel(time=timestep)#TODO: also possible to quiver a uv dataset directly
+        #data_uv_tsel = data_uv.isel(time=timestep) #TODO: also possible to quiver a uv dataset directly
         data_magn = np.sqrt(data_u_tsel**2 + data_v_tsel**2)
         pc = data_magn.plot.pcolormesh(x=name_uv_x,y=name_uv_y, cmap='jet',ax=ax)
         #pc = data_uv_tsel.plot.quiver(x='lon',y='lat',u='U_10M',v='V_10M', cmap='jet',ax=ax)
