@@ -32,19 +32,21 @@ for file_nc in file_nc_list:
         name_uv_x,name_uv_y,name_u,name_v = 'lon','lat','U_10M','V_10M'
         thinning = 2
         data_xr = data_xr.drop(['height_10m','height_2m']) #gives cleaner figure title
+        clim_wl = [0,0.15]
         clim_uv = [0,5]
         
         file_ldb = Path(r'p:\archivedprojects\1220688-lake-kivu\3_modelling\1_FLOW\4_CH4_CO2_included\008\lake_kivu_geo.ldb')
         fig_args = dict(nrows=1,ncols=3,figsize=(14,6))
-    elif 'sfincs' in file_nc: #set coordinates for sfincs
+    elif 'sfincs' in file_nc:
         name_wl_x,name_wl_y,name_wl = 'x','y','zs'
-        name_uv_x,name_uv_y,name_u,name_v = 'edge_x','edge_y','u','v'
+        name_uv_x,name_uv_y,name_u,name_v = 'edge_x','edge_y','u','v' #TODO: uv is now on centers, so use new mapfile (and simplify/lessen xyvarnames)
         thinning = 5
-        data_xr = data_xr.set_coords(['x','y','edge_x','edge_y'])
+        data_xr = data_xr.set_coords(['x','y','edge_x','edge_y']) #set coordinates for sfincs. TODO: request x/y/etc as coords in sfincs mapfile https://github.com/Deltares/SFINCS/issues/10
+        clim_wl = [0,0.15]
         clim_uv = [0,0.6]
         file_ldb = None
         fig_args = dict(nrows=3,ncols=1,figsize=(10,8))
-        
+    
     if file_ldb is not None:
         polyfile_object = PolyFile(file_ldb)
         data_ldb = pointlike_to_DataFrame(polyfile_object.objects[0])
@@ -57,7 +59,7 @@ for file_nc in file_nc_list:
         for iT, timestep in enumerate([0,1,10]):
             ax=axs[iT]
             pc = data_fromnc_zs.isel(time=timestep).plot.pcolormesh(x=name_wl_x,y=name_wl_y,cmap='jet', ax=ax)
-            pc.set_clim([0,0.15])
+            pc.set_clim(clim_wl)
             ax.set_aspect('equal')
         fig.tight_layout()
         plt.savefig(os.path.join(dir_output,f'{basename}_waterlevel'))
@@ -74,7 +76,7 @@ for file_nc in file_nc_list:
         coordlist.remove('time')
         data_u_tsel = data_u.isel(time=timestep)
         data_v_tsel = data_v.isel(time=timestep)
-        #data_uv_tsel = data_uv.isel(time=timestep)
+        #data_uv_tsel = data_uv.isel(time=timestep)#TODO: also possible to quiver a uv dataset directly
         data_magn = np.sqrt(data_u_tsel**2 + data_v_tsel**2)
         pc = data_magn.plot.pcolormesh(x=name_uv_x,y=name_uv_y, cmap='jet',ax=ax)
         #pc = data_uv_tsel.plot.quiver(x='lon',y='lat',u='U_10M',v='V_10M', cmap='jet',ax=ax)
@@ -90,36 +92,34 @@ for file_nc in file_nc_list:
     plt.savefig(os.path.join(dir_output,f'{basename}_magn_pcolorquiver'))
 
 
+    #curved vector plot #TODO: workinprogress
+    dist = 0.106
+    reg_x_vec = np.arange(data_xr[name_uv_x].min(),data_xr[name_uv_x].max()+dist,dist)
+    reg_y_vec = np.arange(data_xr[name_uv_y].min(),data_xr[name_uv_y].max()+dist,dist)
+    reg_grid_X,reg_grid_Y = np.meshgrid(reg_x_vec,reg_y_vec)
+    from scipy.interpolate import griddata
+    #from dfm_tools.modplot import velovect
     
-    
-    
-    if 'COSMOCLM' in file_nc:
-        dist = 0.106
-        reg_x_vec = np.arange(data_xr.lon.min(),data_xr.lon.max()+dist,dist)
-        reg_y_vec = np.arange(data_xr.lat.min(),data_xr.lat.max()+dist,dist)
-        reg_grid_X,reg_grid_Y = np.meshgrid(reg_x_vec,reg_y_vec)
-        from scipy.interpolate import griddata
-        #from dfm_tools.modplot import velovect
-        
-        fig, axs = plt.subplots(1,3, figsize=(16,6),sharex=True,sharey=True)
-        for iT, timestep in enumerate([0,1,10]):
-            ax=axs[iT]
-            data_u_tsel = data_u.isel(time=timestep)
-            data_v_tsel = data_v.isel(time=timestep)
-            lonvals_flat = data_u_tsel.lon.to_numpy().flatten()
-            latvals_flat = data_u_tsel.lat.to_numpy().flatten()
-            U = griddata((lonvals_flat,latvals_flat),data_u_tsel.to_numpy().flatten(),(reg_grid_X,reg_grid_Y),method='nearest') #TODO: this is probably easier with xarray
-            V = griddata((lonvals_flat,latvals_flat),data_v_tsel.to_numpy().flatten(),(reg_grid_X,reg_grid_Y),method='nearest')
-            speed = np.sqrt(U*U + V*V)
-            #quiv_curved = velovect(ax,reg_grid_X,reg_grid_Y,U,V, arrowstyle='fancy', scale = 5, grains = 25, color=speed)#, cmap='jet')
-            #quiv_curved.lines.set_clim(0,5)
-            quiv_curved = ax.streamplot(reg_x_vec,reg_y_vec,U,V, arrowstyle='-|>', integration_direction='forward',broken_streamlines=False, color=speed, density=1)
-            cbar = fig.colorbar(quiv_curved.lines, ax=ax)
-            cbar.set_label('velocity magnitude (%s)'%(data_v.attrs['units']))
-            ax.set_title(data_v_tsel.time.to_pandas())
-            #ax.set_aspect('equal')
+    fig, axs = plt.subplots(**fig_args,sharex=True,sharey=True)
+    for iT, timestep in enumerate([0,1,10]):
+        ax=axs[iT]
+        data_u_tsel = data_u.isel(time=timestep)
+        data_v_tsel = data_v.isel(time=timestep)
+        lonvals_flat = data_u_tsel[name_uv_x].to_numpy().flatten()
+        latvals_flat = data_u_tsel[name_uv_y].to_numpy().flatten()
+        U = griddata((lonvals_flat,latvals_flat),data_u_tsel.to_numpy().flatten(),(reg_grid_X,reg_grid_Y),method='nearest') #TODO: this is probably easier with xarray
+        V = griddata((lonvals_flat,latvals_flat),data_v_tsel.to_numpy().flatten(),(reg_grid_X,reg_grid_Y),method='nearest')
+        speed = np.sqrt(U*U + V*V)
+        #quiv_curved = velovect(ax,reg_grid_X,reg_grid_Y,U,V, arrowstyle='fancy', scale = 5, grains = 25, color=speed)#, cmap='jet')
+        #quiv_curved.lines.set_clim(0,5)
+        quiv_curved = ax.streamplot(reg_x_vec,reg_y_vec,U,V, arrowstyle='-|>', integration_direction='forward',broken_streamlines=False, color=speed, density=1)
+        cbar = fig.colorbar(quiv_curved.lines, ax=ax)
+        cbar.set_label('velocity magnitude (%s)'%(data_v.attrs['units']))
+        ax.set_title(data_v_tsel.time.to_pandas())
+        #ax.set_aspect('equal')
+        if file_ldb is not None:
             ax.plot(data_ldb['x'], data_ldb['y'], 'k', linewidth=0.5)
-        fig.tight_layout()
-        plt.savefig(os.path.join(dir_output,f'{basename}_magn_curvedquiver'))
+    fig.tight_layout()
+    plt.savefig(os.path.join(dir_output,f'{basename}_magn_curvedquiver'))
 
 

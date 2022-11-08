@@ -38,6 +38,23 @@ vars_pd = get_ncvarproperties(file_nc=file_nc)
 data_xr = xr.open_dataset(file_nc)
 #data_xr = data_xr.set_coords(['x','y','edge_x','edge_y'])
 
+"""
+#mask variables correctly, then bfill
+mask_XY = (data_xr.KCS==0).drop(['XZ','YZ']) #TODO: have to drop coords somehow, otherwise they are removed from variable with where
+#mask_XY = (data_xr.XZ==0) & (data_xr.YZ==0)
+data_xr['XZ'] = data_xr.XZ.where(~mask_XY)
+data_xr['YZ'] = data_xr.YZ.where(~mask_XY)
+#data_xr['XZ'] = data_xr.XZ.ffill(dim='M').ffill(dim='N').bfill('M').bfill('N')
+#data_xr['YZ'] = data_xr.YZ.ffill(dim='M').ffill(dim='N').bfill('M').bfill('N')
+
+mask_XYCOR = (data_xr.XCOR==-999.999) & (data_xr.YCOR==-999.999)
+mask_XYCOR = (data_xr.XCOR==0) & (data_xr.YCOR==0)
+data_xr['XCOR'] = data_xr.XCOR.where(~mask_XYCOR)
+data_xr['YCOR'] = data_xr.YCOR.where(~mask_XYCOR)
+#data_xr['XCOR'] = data_xr.XZ.ffill(dim='M').ffill(dim='N').bfill('M').bfill('N')
+#data_xr['YCOR'] = data_xr.YZ.ffill(dim='M').ffill(dim='N').bfill('M').bfill('N')
+"""
+
 data_nc_XZ = get_ncmodeldata(file_nc=file_nc, varname='XZ')
 data_nc_YZ = get_ncmodeldata(file_nc=file_nc, varname='YZ')
 data_nc_XCOR = get_ncmodeldata(file_nc=file_nc, varname='XCOR')
