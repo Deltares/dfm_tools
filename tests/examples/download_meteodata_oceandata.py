@@ -85,3 +85,17 @@ for varkey in varlist_cmems:
         ds[varkey].isel(time=0).plot(ax=ax)
 
 
+
+"""
+Download CMCC data:
+userguide: https://esgf.github.io/esgf-user-support/user_guide.html
+server: https://esgf-data.dkrz.de/search/cmip6-dkrz/
+
+Example selection:
+source-id: CMCC-ESM2
+experiment-id: historical
+table-id: Omon (=monthly)
+Variable: no3/o2
+
+> Search
+"""

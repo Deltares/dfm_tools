@@ -59,15 +59,15 @@ for file_nc in file_nc_list:
     elif 'sfincs' in file_nc:
         stations_requested = ['H540504', 'H540180', 'H540062', 'H540150', 'H540199', 'H040831',
                               'H040812', 'H041472', 'H540198', 'H540274', 'H540805']
-        data_xr = data_xr.set_coords('station_name').set_coords('crosssection_name') #TODO: request station_name/crosssection_name/etc as coords in sfincs hisfile https://github.com/Deltares/SFINCS/issues/10
-        data_xr = preprocess_hisnc(data_xr)
-        data_xr = data_xr.rename({'point_zs':'waterlevel','point_zb':'bedlevel'}) # for convenience
+        data_xr = data_xr.set_coords(['station_name','station_id','station_x','station_y','point_x','point_y','crosssection_name']) #TODO: request station_name/crosssection_name/etc as coords in sfincs hisfile https://github.com/Deltares/SFINCS/issues/10
+        data_xr = preprocess_hisnc(data_xr) #TODO: this would not be necessary if coords are correctly set in the first place
+        data_xr = data_xr.rename({'point_zs':'waterlevel','point_zb':'bedlevel'}) # for convenience in this script
     elif 'trih-cb2' in file_nc:
         stations_requested = ['Outer-south', 'inner-south', 'inner-middle']
-        data_xr = data_xr.rename({'NOSTAT':'stations','ZWL':'waterlevel','DPS':'bedlevel'}) # for convenience
+        data_xr = data_xr.rename({'NOSTAT':'stations','ZWL':'waterlevel','DPS':'bedlevel'}) # for convenience in this script
     elif 'trih-thiery_002_coarse' in file_nc:
         stations_requested = ['ADCP1_final','ADCP2_final','KP1_016']
-        data_xr = data_xr.rename({'NOSTAT':'stations','ZWL':'waterlevel','DPS':'bedlevel'}) # for convenience
+        data_xr = data_xr.rename({'NOSTAT':'stations','ZWL':'waterlevel','DPS':'bedlevel'}) # for convenience in this script
     
     #data_xr_indexlist = list(data_xr.indexes.keys()) #TODO: also add waterbalance as index?
     #data_xr_perdim = {dimname: Dataset_varswithdim(data_xr,dimname=dimname) for dimname in data_xr.dims}
