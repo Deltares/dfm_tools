@@ -14,8 +14,11 @@ import matplotlib.pyplot as plt
 plt.close('all')
 from dfm_tools.interpolate_grid2bnd import get_conversion_dict, interpolate_tide_to_bc, interpolate_nc_to_bc
 from dfm_tools.hydrolib_helpers import forcinglike_to_Dataset
-from hydrolib.core.io.ext.models import Boundary, ExtModel
-
+try: #0.3.1 release
+    from hydrolib.core.io.ext.models import Boundary, ExtModel
+except: #main branch and next release #TODO: move to easy imports after https://github.com/Deltares/HYDROLIB-core/issues/410
+    from hydrolib.core.io.dflowfm.ext.models import Boundary, ExtModel
+    
 #TODO: make interpolate function accept tstart/tstop as datestrings
 #TODO: add coordinate conversion of pli-coordinates (for nesting RD models)
 #TODO: return interpolated nc instead of a forcingmodel an do pointloop and forcingmodel in separate function
@@ -30,11 +33,11 @@ bc_type = 'bc' #currently only 'bc' supported #TODO: add netcdf bc support. http
 refdate_str = 'minutes since 2011-12-22 00:00:00 +00:00' # if None, xarray uses ds.time.encoding['units'] as refdate_str
 
 #quantities should be in conversion_dict.keys(). waterlevelbnd is steric/zos, tide is tidal components from FES/EOT
-list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tracerbndNO3','tide']
+list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tracerbndNO3']#,'tide']
 #list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','tracerbndNO3']
-#list_quantities = ['tracerbndNO3']
+list_quantities = ['salinitybnd']
 
-model = 'CMCC' #CMEMS GFDL CMCC HYCOM
+model = 'CMEMS' #CMEMS GFDL CMCC HYCOM
 
 #The {ncvarname} wildcard in dir_pattern_hydro/dir_patern_waq is used to replace it with conversion_dict[quantity]['ncvarname'] by using str(dir_pattern).format(ncvarname)
 reverse_depth = False #to compare with coastserv files, this argument will be phased out
@@ -43,6 +46,7 @@ if model=='CMEMS': #2012-01-06 12:00:00 to 2013-01-03 12:00:00
     conversion_dict = get_conversion_dict()
     tstart = dt.datetime(2012, 1, 16, 12, 0)
     tstop = dt.datetime(2012, 4, 1, 12, 0)
+    #tstop = dt.datetime(2013, 1, 1, 12, 0)
     dir_sourcefiles_hydro = r'p:\1204257-dcsmzuno\data\CMEMS\nc\DCSM_allAvailableTimes' #CMEMS hydro: bottomT, so, thetao, uo, vo, zos (2012-01-06 12:00:00 to 2013-01-03 12:00:00) (daily values at noon, not at midnight)
     dir_pattern_hydro = Path(dir_sourcefiles_hydro,'{ncvarname}_2012*.nc') # later remove 2012 from string, but this is faster for testing #TODO: it is quite slow, maybe speed up possible?
     dir_sourcefiles_waq = r'p:\11206304-futuremares\python_scripts\ocean_boundaryCMEMS\data_monthly' #CMEMS waq: no3, o2, phyc, so4, si (2011-12-16 12:00:00 to 2019-01-16 12:00:00)
@@ -62,6 +66,7 @@ elif model=='GFDL':
 elif model=='CMCC': #TODO: check method, now finding nearest points (so always has values)
     #TODO: time_bnds/lev_bnds are available, take into account in bc file?
     conversion_dict = get_conversion_dict(ncvarname_updates={'salinitybnd':'sos', 'temperaturebnd':'tos'})
+    conversion_dict['tracerbndNO3'] = {'ncvarname':'no3', 'unit':'g/m3', 'conversion':14.0} #other vars also have different conversion than cmems
     tstart = dt.datetime(2015, 6, 16, 12, 0)
     tstop = dt.datetime(2016, 12, 1, 12, 0)
     dir_sourcefiles_hydro = r'p:\11206304-futuremares\data\CMIP6_BC\CMCC-ESM2'
@@ -118,6 +123,30 @@ for file_pli in list_plifiles:
                                                        KDTree_invdistweigth=KDTree_invdistweigth,
                                                        nPoints=nPoints)
         
+        file_bc_basename = file_pli.name.replace('.pli','')
+        if quantity=='tide':
+            file_bc_out = Path(dir_output,f'{quantity}_{file_bc_basename}_{tidemodel}.bc')
+        else:
+            file_bc_out = Path(dir_output,f'{quantity}_{file_bc_basename}_{model}.bc')
+        print(f'writing ForcingModel to bc file with hydrolib ({file_bc_out.name})')
+        if bc_type=='bc':
+            #ForcingModel_object.serializer_config.number_of_decimals = 4
+            #ForcingModel_object.serializer_config.number_of_decimals_datablock = 5
+            ForcingModel_object.save(filepath=file_bc_out)
+            #TODO: improve formatting of bc file to make nicer, save diskspace and maybe write faster: https://github.com/Deltares/HYDROLIB-core/issues/308 (and https://github.com/Deltares/HYDROLIB-core/issues/313)
+        else:
+            raise Exception(f'invalid bc_type: {bc_type}')
+        
+        #make paths relative (sort of) (also necessary for locationfile) /../ should also be supported? 
+        #ForcingModel_object.filepath = Path(str(ForcingModel_object.filepath).replace(dir_out,'')) #TODO: convert to relative paths in ext file possible? This path is the same as file_bc_out
+        
+        #generate boundary object for the ext file (quantity, pli-filename, bc-filename)
+        boundary_object = Boundary(quantity=quantity,
+                                   locationfile=Path(dir_output,file_pli.name),
+                                   forcingfile=ForcingModel_object,
+                                   )
+        ext_bnd.boundary.append(boundary_object)
+
         if 1: #plotting example data point
             for iF in [2]:#range(nPoints): #
                 forcingobject_one = ForcingModel_object.forcing[iF]
@@ -138,28 +167,8 @@ for file_pli in list_plifiles:
                     forcingobject_one_xr[data_vars[1]].plot(ax=ax2)
                 else:
                     forcingobject_one_xr[data_vars[0]].plot(ax=ax1)
-        
-        file_bc_basename = file_pli.name.replace('.pli','')
-        if quantity=='tide':
-            file_bc_out = Path(dir_output,f'{quantity}_{file_bc_basename}_{tidemodel}.bc')
-        else:
-            file_bc_out = Path(dir_output,f'{quantity}_{file_bc_basename}_{model}.bc')
-        print(f'writing ForcingModel to bc file with hydrolib ({file_bc_out.name})')
-        if bc_type=='bc':
-            ForcingModel_object.save(filepath=file_bc_out)
-            #TODO: improve formatting of bc file to make nicer, save diskspace and maybe write faster: https://github.com/Deltares/HYDROLIB-core/issues/308 (and https://github.com/Deltares/HYDROLIB-core/issues/313)
-        else:
-            raise Exception(f'invalid bc_type: {bc_type}')
-        
-        #make paths relative (sort of) (also necessary for locationfile) /../ should also be supported? 
-        #ForcingModel_object.filepath = Path(str(ForcingModel_object.filepath).replace(dir_out,'')) #TODO: convert to relative paths in ext file possible? This path is the same as file_bc_out
-        
-        #generate boundary object for the ext file (quantity, pli-filename, bc-filename)
-        boundary_object = Boundary(quantity=quantity,
-                                   locationfile=Path(dir_output,file_pli.name),
-                                   forcingfile=ForcingModel_object,
-                                   )
-        ext_bnd.boundary.append(boundary_object)
+                fig.savefig(str(file_bc_out).replace('.bc',''))
+
 
 file_ext_out = Path(dir_output,'example_bnd.ext')
 ext_bnd.save(filepath=file_ext_out)

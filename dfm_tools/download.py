@@ -10,6 +10,7 @@ import subprocess
 import pandas as pd
 from pathlib import Path
 import requests
+import xarray as xr
 
 
 def download_ERA5(varkey,
@@ -77,8 +78,8 @@ def download_CMEMS(varkey,
                    source_combination=None, #str from source_dict.keys(). Or provide motu_url/service/product arguments
                    motu_url=None, service=None, product=None, #or provide source_combination argument
                    credentials=None, #credentials=['username','password'], or create "%USER%/motucredentials.txt" with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form'
-                   timeout=30): #in seconds #TODO: set timeout back to 300?
-    
+                   timeout=30, #in seconds #TODO: set timeout back to 300?
+                   opendap=True):
     """
     How to get motu_url/service/product:
         - find your service+product on https://resources.marine.copernicus.eu/products
@@ -88,9 +89,6 @@ def download_CMEMS(varkey,
         - some example combinations are available in source_dict
     Some examples can be found in source_dict
     """
-    
-    import motuclient #used in motu_commands, so has to be importable. conda install -c conda-forge motuclient #TODO: move to top of script (then make dependency of dfm_tools)
-    #TODO: consider opendap instead?
     
     #get credentials
     if credentials is None:
@@ -102,7 +100,7 @@ def download_CMEMS(varkey,
             password = fc.readline().strip()
     else:
         username,password = credentials
-       
+    
     source_dict =   {'multiyear_physchem':{'motu_url':'https://my.cmems-du.eu', # multiyear reanalysis data (01-01-1993 12:00 till 31-05-2020 12:00)
                                            'service': 'GLOBAL_MULTIYEAR_PHY_001_030-TDS',
                                            'product': 'cmems_mod_glo_phy_my_0.083_P1D-m'},
@@ -126,8 +124,44 @@ def download_CMEMS(varkey,
         service = source_dict[source_combination]['service']
         product = source_dict[source_combination]['product']
     
-    #test if supplied motu_url is valid
-    requests.get(motu_url)
+    if opendap:
+        #https://help.marine.copernicus.eu/en/articles/5182598-how-to-consume-the-opendap-api-and-cas-sso-using-python
+        def copernicusmarine_datastore(dataset, username, password, motu_url):
+            from pydap.client import open_url #TODO: add pydap as dependency (pip or conda?)
+            from pydap.cas.get_cookies import setup_session
+            cas_url = 'https://cmems-cas.cls.fr/cas/login'
+            session = setup_session(cas_url, username, password)
+            cookies_dict = session.cookies.get_dict()
+            if not 'CASTGC' in cookies_dict.keys():
+                raise Exception('CASTGC key missing from session cookies_dict, probably authentication failure')
+            session.cookies.set("CASTGC", cookies_dict['CASTGC'])
+            database = ['my', 'nrt']
+            url = f'https://{database[0]}.cmems-du.eu/thredds/dodsC/{dataset}'
+            try: #TODO: add check for wrong dataset_id
+                DAP_dataset = open_url(url, session=session)#, user_charset='utf-8') # TODO: user_charset needs PyDAP >= v3.3.0 see https://github.com/pydap/pydap/pull/223/commits 
+            except:
+                url = f'https://{database[1]}.cmems-du.eu/thredds/dodsC/{dataset}'
+                DAP_dataset = open_url(url, session=session)#, user_charset='utf-8') # TODO: user_charset needs PyDAP >= v3.3.0 see https://github.com/pydap/pydap/pull/223/commits 
+            data_store = xr.backends.PydapDataStore(DAP_dataset)
+            return data_store
+
+        dataset_id = product #service/product
+        #opendap_url = f'{motu_url}/thredds/dodsC/{dataset_id}'
+        print('opening connection to opendap general dataset and opening with xarray') #TODO: do this only once (outside of loop)
+        data_store = copernicusmarine_datastore(dataset=dataset_id, username=username, password=password, motu_url=motu_url)
+        data_xr = xr.open_dataset(data_store)
+        
+        print('subsetting data (lon/lat extents) with xarray')
+        if varkey not in data_xr.data_vars:
+            raise Exception(f'{varkey} not found in dataset, available are: list(data_xr.data_vars)\n{data_xr.data_vars}')
+        data_xr_var = data_xr[[varkey]]
+        data_xr_var = data_xr_var.sel(longitude=slice(longitude_min,longitude_max), #TODO: add depth selection?
+                                      latitude=slice(latitude_min,latitude_max))
+        print(data_xr_var.time.to_series()) #TODO: add check if all times are available
+    else:
+        import motuclient #used in motu_commands, so has to be importable. conda install -c conda-forge motuclient #TODO: move to top of script (then make dependency of dfm_tools)
+        #test if supplied motu_url is valid
+        requests.get(motu_url)
     
     period_range = pd.period_range(date_min,date_max,freq='D')
     print(f'retrieving data from {period_range[0]} to {period_range[-1]} (freq={period_range.freq})')
@@ -140,30 +174,35 @@ def download_CMEMS(varkey,
             print(f'"{name_output}" found and overwrite=False, continuing.')
             continue
         print(f'retrieving variable {varkey} for {date_str}: {name_output}')
-        #TODO: alternatively use opendap, like half way this webpage: https://help.marine.copernicus.eu/en/articles/5182598-how-to-consume-the-opendap-api-and-cas-sso-using-python
-        #TODO: implement retry after a brief timeout in case of server failure?
-        motu_command = ' '.join(['motuclient', '--motu', f'{motu_url}/motu-web/Motu', '--service-id', service, '--product-id', product,
-                                 '--longitude-min', str(longitude_min), '--longitude-max', str(longitude_max),
-                                 '--latitude-min', str(latitude_min), '--latitude-max', str(latitude_max),
-                                 '--date-min', date_str, '--date-max', date_str, #+' 12:00:00',
-                                 '--depth-min', '0', '--depth-max', '2e31',
-                                 '--variable', str(varkey),
-                                 '--out-dir', dir_output, '--out-name', name_output,
-                                 '--user', username, '--pwd', password])
-        
-        try: #this try/except is necessary to capture/raise the motuclient logging in the 'finally' of the loop. Otherwise user only gets unclear error message: "CalledProcessError: Command [] returned non-zero exit status 1." 
-            out = subprocess.run(f'python -m {motu_command}', capture_output=True, check=True, universal_newlines=True, timeout=timeout)
-        except Exception as e: # capture error and save as out for the finally loop
-            out = e 
-            raise Exception(e)
-        finally: #to capture also ERRORS/WARNINGS in logging that are not raised by motuclient
-            if ('ERROR' in out.stdout) or ('WARNING' in out.stdout): #catch all other errors, and the relevant information in TimeoutExpired and CalledProcessError
-                if 'variable not found' in out.stdout:
-                    raise Exception(f'ERROR/WARNING found in motuclient logging:\nOUT: {out.stdout}\nERR: {out.stderr}\n\nNetCDF variable {varkey} not found: check available variables at: {motu_url}/motu-web/Motu?action=describeproduct&service={service}&product={product}')
-                else:
-                    raise Exception(f'ERROR/WARNING found in motuclient logging:\nOUT: {out.stdout}\nERR: {out.stderr}')
-            #else:
-            #    print(f'OUT: {out.stdout}\nERR: {out.stderr}')
+        if opendap:
+            print('subsetting data (time extent) with xarray')
+            data_xr_var_seltime = data_xr_var.sel(time=slice(date_str,date_str)) #+' 12:00:00', 
+            print('writing netcdf file with xarray')
+            data_xr_var_seltime.to_netcdf(os.path.join(dir_output,name_output))
+        else: #TODO: remove motuclient
+            #TODO: implement retry after a brief timeout in case of server failure?
+            motu_command = ' '.join(['motuclient', '--motu', f'{motu_url}/motu-web/Motu', '--service-id', service, '--product-id', product,
+                                     '--longitude-min', str(longitude_min), '--longitude-max', str(longitude_max),
+                                     '--latitude-min', str(latitude_min), '--latitude-max', str(latitude_max),
+                                     '--date-min', date_str, '--date-max', date_str, #+' 12:00:00',
+                                     '--depth-min', '0', '--depth-max', '2e31',
+                                     '--variable', str(varkey),
+                                     '--out-dir', dir_output, '--out-name', name_output,
+                                     '--user', username, '--pwd', password])
+            
+            try: #this try/except is necessary to capture/raise the motuclient logging in the 'finally' of the loop. Otherwise user only gets unclear error message: "CalledProcessError: Command [] returned non-zero exit status 1." 
+                out = subprocess.run(f'python -m {motu_command}', capture_output=True, check=True, universal_newlines=True, timeout=timeout)
+            except Exception as e: # capture error and save as out for the finally loop
+                out = e 
+                raise Exception(e)
+            finally: #to capture also ERRORS/WARNINGS in logging that are not raised by motuclient
+                if ('ERROR' in out.stdout) or ('WARNING' in out.stdout): #catch all other errors, and the relevant information in TimeoutExpired and CalledProcessError
+                    if 'variable not found' in out.stdout:
+                        raise Exception(f'ERROR/WARNING found in motuclient logging:\nOUT: {out.stdout}\nERR: {out.stderr}\n\nNetCDF variable {varkey} not found: check available variables at: {motu_url}/motu-web/Motu?action=describeproduct&service={service}&product={product}')
+                    else:
+                        raise Exception(f'ERROR/WARNING found in motuclient logging:\nOUT: {out.stdout}\nERR: {out.stderr}')
+                #else:
+                #    print(f'OUT: {out.stdout}\nERR: {out.stderr}')
 
     print('done')
     return

@@ -12,7 +12,8 @@ plt.close('all')
 
 from dfm_tools.xarray_helpers import preprocess_hisnc
 from dfm_tools.hydrolib_helpers import forcinglike_to_Dataset, Dataset_to_TimeSeries
-from hydrolib.core.io.ext.models import ForcingModel#, Boundary, ExtModel
+from hydrolib.core.io.bc.models import ForcingModel
+#from hydrolib.core.io.ext.models import Boundary, ExtModel
 
 plotting = True
 

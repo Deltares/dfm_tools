@@ -61,7 +61,7 @@ date_min_cmems = pd.Timestamp(date_min)-pd.Timedelta(days=1) #CMEMS has daily no
 for varkey in varlist_cmems:
     Path(dir_output).mkdir(parents=True, exist_ok=True)
     
-    if varkey in ['bottomT','mlotst','siconc','sithick','so','theta','uo','usi','vo','vsi','zos']: #for multiyear_physchem and forecast_physchem
+    if varkey in ['bottomT','mlotst','siconc','sithick','so','thetao','uo','usi','vo','vsi','zos']: #for multiyear_physchem and forecast_physchem
         source_combination='multiyear_physchem'
     else: # ['chl','no3','nppv','o2','po4','si'] for multiyear_bio and ['chl','fe','no3','nppv','o2','ph','phyc','po4','si','spco2'] for forecast_bio
         source_combination='multiyear_bio'
