@@ -20,7 +20,7 @@ dir_output = '.'
 file_nc_list = [os.path.join(dir_testinput,'vanNithin','tttz_0000_his.nc'),
                 os.path.join(dir_testinput,'DFM_3D_z_Grevelingen\\computations\\run01\\DFM_OUTPUT_Grevelingen-FM\\Grevelingen-FM_0000_his.nc'),
                 r'p:\11202512-h2020_impaqt\07_Mediterranean_model\MedSea_impaqt_model\computations_final\r013_waq\DFM_OUTPUT_MedSea_impaqt_FM\MedSea_impaqt_FM_0000_his.nc',
-                r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206\results\RMM_dflowfm_0000_his.nc', #added since there are duplicate stations which are dropped
+                r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206\results\RMM_dflowfm_0000_his.nc', #contains duplicate station_names which are dropped
                 os.path.join(dir_testinput,'hydrolib_hisnc\\moergestels_broek_his.nc'), #contains stations/orifices/bridges/culverts/etc, useful testfile
                 r'p:\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\fm\DFM_OUTPUT_inlet\inlet_his.nc', #morphology
                 os.path.join(dir_testinput,'hydrolib_hisnc\\sfincs_stat_crs_his.nc'), #SFINCS coordinates not correctly set
