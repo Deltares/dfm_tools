@@ -19,7 +19,7 @@ from dfm_tools.download import download_ERA5, download_OPENDAP
 #TODO: add GFS (but opendap is not an archive: https://stackoverflow.com/questions/65031973/how-to-select-specific-data-variables-from-xarray-dataset)
 #TODO: add click?
 
-overwrite = True # always set to True when changing the domain
+overwrite = False # always set to True when changing the domain
 
 # domain
 longitude_min, longitude_max, latitude_min, latitude_max =    2,   4,  50, 52 #test domain
@@ -56,7 +56,7 @@ for varkey in variables_era5:
     ds.close()
     fig,ax = plt.subplots()
     ds[varkey].isel(time=0).plot(ax=ax)
-    ctx.add_basemap(ax=ax,crs="EPSG:4326")
+    ctx.add_basemap(ax=ax,crs="EPSG:4326",attribution=False)
 
 
 #CMEMS
@@ -88,7 +88,7 @@ for varkey in varlist_cmems:
     else:
         ds[varkey].isel(time=0).plot(ax=ax)
     ds.close()
-    ctx.add_basemap(ax=ax,crs="EPSG:4326")
+    ctx.add_basemap(ax=ax,crs="EPSG:4326",attribution=False)
     
 
 #HYCOM
@@ -114,7 +114,7 @@ for varkey in varlist_hycom:
     else:
         ds[varkey].isel(time=0).plot(ax=ax)
     ds.close()
-    ctx.add_basemap(ax=ax,crs="EPSG:4326")
+    ctx.add_basemap(ax=ax,crs="EPSG:4326",attribution=False)
 
 
 
