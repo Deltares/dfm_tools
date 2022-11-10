@@ -14,8 +14,8 @@ import xarray as xr
 
 
 def download_ERA5(varkey,
-                  date_min, date_max,
                   longitude_min, longitude_max, latitude_min, latitude_max, 
+                  date_min, date_max,
                   dir_output='.', overwrite=False):
     
     #TODO: describe something about the .cdsapirc file
@@ -72,8 +72,8 @@ def download_ERA5(varkey,
 
 
 def download_CMEMS(varkey,
-                   date_min, date_max,
                    longitude_min, longitude_max, latitude_min, latitude_max, 
+                   date_min, date_max, freq='D',
                    dir_output='.', overwrite=False,
                    dataset_id=None,
                    credentials=None): #credentials=['username','password'], or create "%USER%/motucredentials.txt" with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form'
@@ -84,15 +84,16 @@ def download_CMEMS(varkey,
         - go to the data access tab of a product, e.g.: https://data.marine.copernicus.eu/product-detail/GLOBAL_MULTIYEAR_PHY_001_030/DATA-ACCESS
         - click the opendap link of the dataset of your choice
         - the dataset_id is the last part of the url (excl .html), e.g.: cmems_mod_glo_phy_my_0.083_P1D-m
+        - the rest of the url will automatically be constructed. my is multiyear reanalysis data, nrt is operational forecast data
         
         Some examples:
-            'multiyear_physchem':{'motu_url':'https://my.cmems-du.eu', # multiyear reanalysis data (time extent was once 01-01-1993 12:00 till 31-05-2020 12:00)
+            'multiyear_physchem':{'motu_url':'https://my.cmems-du.eu',
                                   'product': 'GLOBAL_MULTIYEAR_PHY_001_030',
                                   'dataset_id': 'cmems_mod_glo_phy_my_0.083_P1D-m'},
             'multiyear_bio':     {'motu_url':'https://my.cmems-du.eu',
                                   'product': 'GLOBAL_MULTIYEAR_BGC_001_029',
                                   'dataset_id': 'cmems_mod_glo_bgc_my_0.25_P1D-m'},
-            'forecast_physchem': {'motu_url':'https://nrt.cmems-du.eu', # operational forecast data (time extent was once 01-01-2019 12:00 till now + several days)
+            'forecast_physchem': {'motu_url':'https://nrt.cmems-du.eu',
                                   'product': 'GLOBAL_ANALYSIS_FORECAST_PHY_001_024',
                                   'dataset_id': 'global-analysis-forecast-phy-001-024'},
             'forecast_bio':      {'motu_url':'https://nrt.cmems-du.eu',
@@ -122,22 +123,23 @@ def download_CMEMS(varkey,
         if not 'CASTGC' in cookies_dict.keys():
             raise Exception('CASTGC key missing from session cookies_dict, probably authentication failure')
         session.cookies.set("CASTGC", cookies_dict['CASTGC'])
-        try: #TODO: add check for wrong dataset_id
+        try: #TODO: add check for wrong dataset_id (now always "AttributeError: You cannot set the charset when no content-type is defined")
             url = f'https://my.cmems-du.eu/thredds/dodsC/{dataset}'
             DAP_dataset = open_url(url, session=session)#, user_charset='utf-8') # TODO: user_charset needs PyDAP >= v3.3.0 see https://github.com/pydap/pydap/pull/223/commits 
         except:
             url = f'https://nrt.cmems-du.eu/thredds/dodsC/{dataset}'
             DAP_dataset = open_url(url, session=session)#, user_charset='utf-8') # TODO: user_charset needs PyDAP >= v3.3.0 see https://github.com/pydap/pydap/pull/223/commits 
         finally:
-            print(f'opendap dataset found at {url}.html')
+            print(f', found at {url}.html')
         data_store = xr.backends.PydapDataStore(DAP_dataset)
         return data_store
     
-    print('opening connection to opendap dataset and opening dataset with xarray')
+    print('opening connection to opendap dataset',end='') #"found at .." will be printed on same line
     data_store = copernicusmarine_datastore(dataset=dataset_id, username=username, password=password)
+    print('opening dataset with xarray')
     data_xr = xr.open_dataset(data_store)
     
-    print('xarray subsetting data (lon/lat extents)')
+    print(f'xarray subsetting data (variable \'{varkey}\' and lon/lat extents)')
     if varkey not in data_xr.data_vars:
         raise Exception(f'{varkey} not found in dataset, available are: list(data_xr.data_vars)\n{data_xr.data_vars}')
     data_xr_var = data_xr[[varkey]]
@@ -145,7 +147,7 @@ def download_CMEMS(varkey,
                                   latitude=slice(latitude_min,latitude_max))
     data_xr_times = data_xr_var.time.to_series()
     print(f'available time range in dataset from {data_xr_times.index[0]} to {data_xr_times.index[-1]}')
-    period_range = pd.period_range(date_min,date_max,freq='D')
+    period_range = pd.period_range(date_min,date_max,freq=freq)
     
     #check if date_min/date_max are available in dataset
     if not (data_xr_times.index[0] < period_range[0].to_timestamp() < data_xr_times.index[-1]):
@@ -154,7 +156,7 @@ def download_CMEMS(varkey,
         raise Exception(f'date_max ({period_range[-1]}) is outside available time range in dataset: {data_xr_times.index[0]} to {data_xr_times.index[-1]}')
     
     for date in period_range:
-        date_str = date.strftime('%Y-%m-%d')
+        date_str = str(date)
         name_output = f'cmems_{varkey}_{date_str}.nc'
         file_out = Path(dir_output,name_output)
         if file_out.is_file() and not overwrite:
@@ -163,8 +165,8 @@ def download_CMEMS(varkey,
         
         print(f'xarray subsetting data per {period_range.freq}: {date_str}')
         data_xr_var_seltime = data_xr_var.sel(time=slice(date_str,date_str)) #+' 12:00:00', 
-            
-        print(f'writing netcdf file with xarray: {name_output}')
+        
+        print(f'xarray writing netcdf file: {name_output}')
         data_xr_var_seltime.to_netcdf(os.path.join(dir_output,name_output)) #TODO: add chunks={'time':1} or only possible with opening?
         data_xr_var_seltime.close()
     
