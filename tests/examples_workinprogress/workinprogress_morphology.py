@@ -239,6 +239,7 @@ ax.set_aspect('equal')
 fig.tight_layout()
 plt.savefig(os.path.join(dir_output,'%s_%s_%s_t%d_regstreamplot'%(os.path.basename(file_nc).replace('.',''), data_frommap_transx.name, data_frommap_transy.name,timestep)))
 
+"""
 from dfm_tools.modplot import velovect
 fig, ax = plt.subplots(1,1, figsize=(14,8))
 quiv_curved = velovect(ax,X,Y,U,V, arrowstyle='fancy', scale = 5, grains = 25, color=speed)
@@ -250,5 +251,5 @@ ax.set_ylim(ylim_get)
 ax.set_aspect('equal')
 fig.tight_layout()
 plt.savefig(os.path.join(dir_output,'%s_%s_%s_t%d_curvedquiver'%(os.path.basename(file_nc).replace('.',''), data_frommap_transx.name, data_frommap_transy.name,timestep)))
-
+"""
 

@@ -14,12 +14,12 @@ import pandas as pd
 import xarray as xr
 from pathlib import Path
 
-from hydrolib.core.io.bc.models import (
-    ForcingModel,
-    QuantityUnitPair,
-    Astronomic,
-)
-from hydrolib.core.io.polyfile.models import PolyFile
+try: #0.3.1 release
+    from hydrolib.core.io.bc.models import ForcingModel, QuantityUnitPair, Astronomic
+    from hydrolib.core.io.polyfile.models import PolyFile
+except: #main branch and next release
+    from hydrolib.core.io.dflowfm.bc.models import ForcingModel, QuantityUnitPair, Astronomic
+    from hydrolib.core.io.dflowfm.polyfile.models import PolyFile
 
 from dfm_tools.hydrolib_helpers import Dataset_to_TimeSeries, Dataset_to_T3D
 
@@ -33,6 +33,23 @@ def get_conversion_dict(ncvarname_updates={}):
     
     interpolate_nc_to_bc() renames netcdf variable like this:
     data_xr = data_xr.rename({ncvarname:quantity})
+    
+    for CMCC:
+    conversion_dict = { # mg/l is the same as g/m3: conversion is phyc in mol/m3 to newvar in g/m3
+                       'tracerbndOXY'        : {'ncvarname': 'o2',          'unit': 'g/m3', 'conversion': 32.0 },
+                       'tracerbndNO3'        : {'ncvarname': 'no3',         'unit': 'g/m3', 'conversion': 14.0 },
+                       'tracerbndPO4'        : {'ncvarname': 'po4',         'unit': 'g/m3', 'conversion': 30.97 },
+                       'tracerbndSi'         : {'ncvarname': 'si',          'unit': 'g/m3', 'conversion': 28.08},
+                       'tracerbndPON1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 14.0},
+                       'tracerbndPOP1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 30.97},
+                       'tracerbndPOC1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 14.0 * (106 / 16)},
+                       'salinitybnd'         : {'ncvarname': 'sos'},         #'1e-3'
+                       'temperaturebnd'      : {'ncvarname': 'tos'},         #'degC'
+                       'ux'                  : {'ncvarname': 'uo'},          #'m/s'
+                       'uy'                  : {'ncvarname': 'vo'},          #'m/s'
+                       'waterlevelbnd'       : {'ncvarname': 'zos'},         #'m' #steric
+                       'tide'                : {'ncvarname': ''},            #'m' #tide (dummy entry)
+                       }
     """
     # conversion_dict, 
     conversion_dict = { # mg/l is the same as g/m3: conversion is phyc in mmol/l to newvar in g/m3
@@ -221,7 +238,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
     
     dtstart = dt.datetime.now()
     try:
-        data_xr = xr.open_mfdataset(file_list_nc,chunks={'time':1}) #TODO: does chunks argument solve "PerformanceWarning: Slicing is producing a large chunk."?
+        data_xr = xr.open_mfdataset(file_list_nc)#,chunks={'time':1}) #TODO: does chunks argument solve "PerformanceWarning: Slicing is producing a large chunk."? {'time':1} is not a convenient chunking to use for timeseries extraction
     except xr.MergeError as e: #TODO: this except is necessary for CMCC, ux and uy have different lat/lon values, so renaming those of uy to avoid merging conflict
         def preprocess_CMCC_uovo(ds):
             if 'vo_' in os.path.basename(ds.encoding['source']):

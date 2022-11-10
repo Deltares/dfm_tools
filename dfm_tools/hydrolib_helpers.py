@@ -9,17 +9,14 @@ import pandas as pd
 import cftime
 import numpy as np
 import xarray as xr
-from hydrolib.core.io.polyfile.models import PolyObject
 from cftime import date2num
 
-from hydrolib.core.io.bc.models import (
-    ForcingModel,
-    QuantityUnitPair,
-    VectorQuantityUnitPairs,
-    T3D,
-    TimeSeries,
-    Astronomic,
-)
+try: #0.3.1 release
+    from hydrolib.core.io.polyfile.models import PolyObject
+    from hydrolib.core.io.bc.models import ForcingModel, QuantityUnitPair, VectorQuantityUnitPairs, T3D, TimeSeries, Astronomic
+except: #main branch and next release
+    from hydrolib.core.io.dflowfm.polyfile.models import PolyObject
+    from hydrolib.core.io.dflowfm.bc.models import ForcingModel, QuantityUnitPair, VectorQuantityUnitPairs, T3D, TimeSeries, Astronomic
 
 
 def Dataset_to_T3D(datablock_xr):  
@@ -85,7 +82,7 @@ def Dataset_to_T3D(datablock_xr):
         T3D_object = T3D(name=locationname,
                          #offset=0,
                          #factor=1,
-                         vertpositions=np.round(depth_array.tolist(),decimals=4).tolist(), # make decimals userdefined? .tolist() is necessary for np.round to work for some reason
+                         vertpositions=depth_array.tolist(),#np.round(depth_array.tolist(),decimals=4).tolist(), # make decimals userdefined? .tolist() is necessary for np.round to work for some reason
                          vertinterpolation='linear', #TODO: make these parameters user defined (via attrs)
                          vertPositionType='ZDatum',
                          quantityunitpair=[QuantityUnitPair(quantity="time", unit=refdate_str)]+[QUP_quan_vector],
@@ -95,7 +92,7 @@ def Dataset_to_T3D(datablock_xr):
     else: #normal T3D object
         QUP_quan_list = [QuantityUnitPair(quantity=data_xr_var0.name, unit=data_xr_var0.attrs['units'], vertpositionindex=iVP) for iVP in verticalpositions_idx]
         T3D_object = T3D(name=locationname,
-                         vertpositions=np.round(depth_array.tolist(),decimals=4).tolist(), # make decimals userdefined? .tolist() is necessary for np.round to work for some reason
+                         vertpositions=depth_array.tolist(),#np.round(depth_array.tolist(),decimals=4).tolist(), # make decimals userdefined? .tolist() is necessary for np.round to work for some reason
                          vertinterpolation='linear', #TODO: make these parameters user defined (via attrs)
                          vertPositionType='ZDatum',
                          quantityunitpair=[QuantityUnitPair(quantity="time", unit=refdate_str)]+QUP_quan_list,

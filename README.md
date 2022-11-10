@@ -34,7 +34,7 @@ Installation
 	- open anaconda prompt
 	- ``conda create --name dfm_tools_env -c conda-forge python=3.8 git spyder -y`` (you can also install a newer python version, in python 3.7 the dependency hydrolib seemed not installable)
 	- ``conda activate dfm_tools_env``
-	- ``conda install -c conda-forge shapely cartopy pyepsg geopandas contextily xarray dask netcdf4 bottleneck cdsapi motuclient -y`` (installs conda-forge requirements)
+	- ``conda install -c conda-forge shapely cartopy pyepsg geopandas contextily xarray dask netcdf4 bottleneck cdsapi pydap" -y`` (installs conda-forge requirements)
 	- ``python -m pip install git+https://github.com/openearth/dfm_tools`` (this command installs dfm_tools and all required non-conda packages)
 	- long paths error? Check last comment in https://github.com/Deltares/HYDROLIB-core/issues/327
 	- to remove environment when necessary: ``conda remove -n dfm_tools_env --all``
@@ -45,7 +45,7 @@ Installation
 	- geopandas for shapefile related operations
 	- contextily for satellite imagery on plots, seems faster than cartopy
 	- xarray developers advise to install dependecies dask/netCDF4/bottleneck with conda-forge also: https://docs.xarray.dev/en/v0.8.0/installing.html
-	- cdsapi/motuclient: to download ERA5 and CMEMS data
+	- cdsapi/pydap: to download ERA5 and CMEMS data. Minimal pydap version is 3.3.0 (only available via conda-force on 10-11-2022)
 - launch Spyder:
 	- open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in the dfm_tools_env environment only)
 	- copy the code from [Example usage](#example-usage) to your own scripts to get started
