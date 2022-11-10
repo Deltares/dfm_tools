@@ -18,10 +18,10 @@ try: #0.3.1 release
     from hydrolib.core.io.ext.models import Boundary, ExtModel
 except: #main branch and next release #TODO: move to easy imports after https://github.com/Deltares/HYDROLIB-core/issues/410
     from hydrolib.core.io.dflowfm.ext.models import Boundary, ExtModel
-    
+
 #TODO: make interpolate function accept tstart/tstop as datestrings
 #TODO: add coordinate conversion of pli-coordinates (for nesting RD models)
-#TODO: return interpolated nc instead of a forcingmodel an do pointloop and forcingmodel in separate function
+#TODO: return interpolated nc instead of a forcingmodel an do pointloop and forcingmodel in separate function?
 #copied plifile from DCSM folder: r'p:\1204257-dcsmzuno\data\CMEMS\bnd\NorthSeaAndBaltic_1993-2019_20210510'
 #list_plifiles = [Path(r'c:\DATA\dfm_tools_testdata\hydrolib_bc\DCSM\DCSM-FM_OB_all_20181108.pli')] #TODO: reading this file results in empty Polyfile, should raise an error. https://github.com/Deltares/HYDROLIB-core/issues/320
 list_plifiles = [Path(r'c:\DATA\dfm_tools_testdata\hydrolib_bc\DCSM\DCSM-FM_OB_all_20181108_nocomments.pli')]
@@ -37,7 +37,7 @@ list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tracer
 #list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','tracerbndNO3']
 list_quantities = ['salinitybnd']
 
-model = 'CMEMS' #CMEMS GFDL CMCC HYCOM
+model = 'HYCOM' #CMEMS GFDL CMCC HYCOM
 
 #The {ncvarname} wildcard in dir_pattern_hydro/dir_patern_waq is used to replace it with conversion_dict[quantity]['ncvarname'] by using str(dir_pattern).format(ncvarname)
 reverse_depth = False #to compare with coastserv files, this argument will be phased out
