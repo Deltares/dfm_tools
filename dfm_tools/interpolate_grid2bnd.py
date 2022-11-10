@@ -309,6 +309,13 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
         raise Exception(f'quantity {quantity_list_notavailable} not found in netcdf, available are: {data_vars}. Try updating conversion_dict to rename these variables.')
     data_xr_var = data_xr[quantity_list].sel(time=slice(tstart,tstop))
     
+    if 0: #TODO: maybe split this def, so easy to plot all data before interpolation
+        import matplotlib.pyplot as plt
+        import contextily as ctx
+        fig,ax = plt.subplots()
+        data_xr_var[quantity_list[0]].isel(time=0,depth=0).plot(ax=ax)
+        ctx.add_basemap(ax=ax,crs="EPSG:4326")
+    
     if coordname_lon not in data_xr_var.coords:
         raise Exception(f'{coordname_lon} not in variable coords: {data_xr_var.coords}.')
     

@@ -6,11 +6,12 @@ Created on Tue Oct 18 15:09:26 2022
 """
 
 import os
-import subprocess
 import pandas as pd
 from pathlib import Path
-import requests
+#import requests
 import xarray as xr
+from pydap.client import open_url
+from pydap.cas.get_cookies import setup_session
 
 
 def download_ERA5(varkey,
@@ -71,13 +72,9 @@ def download_ERA5(varkey,
     return
 
 
-def download_CMEMS(varkey,
-                   longitude_min, longitude_max, latitude_min, latitude_max, 
-                   date_min, date_max, freq='D',
-                   dir_output='.', overwrite=False,
-                   dataset_id=None,
-                   credentials=None): #credentials=['username','password'], or create "%USER%/motucredentials.txt" with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form'
-
+def open_opendap_xr(dataset_url,
+                    credentials=None): #for CMEMS. credentials=['username','password'], or create "%USER%/CMEMS_credentials.txt" with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form'
+    
     """
     How to get the opendap dataset_id:
         - https://data.marine.copernicus.eu/products
@@ -102,42 +99,69 @@ def download_CMEMS(varkey,
     
     """
     
-    #get credentials
-    if credentials is None:
-        file_credentials = f'{os.path.expanduser("~")}/motucredentials.txt'
-        if not os.path.exists(file_credentials):
-            raise Exception(f'credentials argument not supplied and file_credentials not available ({file_credentials})')
-        with open(file_credentials) as fc:
-            username = fc.readline().strip()
-            password = fc.readline().strip()
-    else:
-        username,password = credentials
-    
-    def copernicusmarine_datastore(dataset, username, password):
+    def copernicusmarine_datastore(dataset_url, username, password):
         #https://help.marine.copernicus.eu/en/articles/5182598-how-to-consume-the-opendap-api-and-cas-sso-using-python
-        from pydap.client import open_url #TODO: add pydap as dependency (pip or conda?)
-        from pydap.cas.get_cookies import setup_session
         cas_url = 'https://cmems-cas.cls.fr/cas/login'
         session = setup_session(cas_url, username, password)
         cookies_dict = session.cookies.get_dict()
         if not 'CASTGC' in cookies_dict.keys():
             raise Exception('CASTGC key missing from session cookies_dict, probably authentication failure')
         session.cookies.set("CASTGC", cookies_dict['CASTGC'])
-        try: #TODO: add check for wrong dataset_id (now always "AttributeError: You cannot set the charset when no content-type is defined")
-            url = f'https://my.cmems-du.eu/thredds/dodsC/{dataset}'
-            DAP_dataset = open_url(url, session=session)#, user_charset='utf-8') # TODO: user_charset needs PyDAP >= v3.3.0 see https://github.com/pydap/pydap/pull/223/commits 
-        except:
-            url = f'https://nrt.cmems-du.eu/thredds/dodsC/{dataset}'
-            DAP_dataset = open_url(url, session=session)#, user_charset='utf-8') # TODO: user_charset needs PyDAP >= v3.3.0 see https://github.com/pydap/pydap/pull/223/commits 
-        finally:
-            print(f', found at {url}.html')
+        #TODO: add check for wrong dataset_id (now always "AttributeError: You cannot set the charset when no content-type is defined")
+        DAP_dataset = open_url(dataset_url, session=session)#, user_charset='utf-8') # TODO: user_charset needs PyDAP >= v3.3.0 see https://github.com/pydap/pydap/pull/223/commits 
         data_store = xr.backends.PydapDataStore(DAP_dataset)
         return data_store
     
-    print('opening connection to opendap dataset',end='') #"found at .." will be printed on same line
-    data_store = copernicusmarine_datastore(dataset=dataset_id, username=username, password=password)
-    print('opening dataset with xarray')
-    data_xr = xr.open_dataset(data_store)
+    if isinstance(dataset_url,list):
+        dataset_url_one = dataset_url[0]
+    else:
+        dataset_url_one = dataset_url
+    
+    if 'cmems-du.eu' in dataset_url_one:
+        if isinstance(dataset_url,list):
+            raise Exception('no list supported by opendap method used for cmems')
+        
+        #parce credentials to username/password #TODO: now CMEMS specific, make more generic
+        if credentials is None:
+            file_credentials = f'{os.path.expanduser("~")}/CMEMS_credentials.txt'
+            if not os.path.exists(file_credentials):
+                raise Exception(f'credentials argument not supplied and file_credentials not available ({file_credentials})')
+            with open(file_credentials) as fc:
+                username = fc.readline().strip()
+                password = fc.readline().strip()
+        else:
+            username,password = credentials
+
+        print(f'opening pydap connection to opendap dataset: {dataset_url}.html')
+        data_store = copernicusmarine_datastore(dataset_url=dataset_url, username=username, password=password)
+        print('xarray opening opendap dataset')
+        data_xr = xr.open_dataset(data_store)
+    elif 'hycom.org' in dataset_url_one:
+        if isinstance(dataset_url,list):
+            print(f'xarray opening opendap dataset like: {dataset_url[0]}.html ({len(dataset_url)} urls/years)')
+            data_xr = xr.open_mfdataset(dataset_url,decode_times=False) #TODO: for some reason decode_times does not work: "ValueError: unable to decode time units 'hours since analysis' with 'the default calendar'."
+        else:
+            print(f'xarray opening opendap dataset: {dataset_url}.html')
+            data_xr = xr.open_dataset(dataset_url,decode_times=False) #TODO: for some reason decode_times does not work: "ValueError: unable to decode time units 'hours since analysis' with 'the default calendar'."
+        import cftime
+        data_xr['time'] = cftime.num2date(data_xr.time,units=data_xr.time.units,calendar=data_xr.time.calendar)
+        data_xr = data_xr.rename({'lon':'longitude','lat':'latitude'})
+    else:
+        raise Exception(f'unspecified dataset_url, supported are cmems and hycom: {dataset_url}')
+    
+    return data_xr
+
+
+def download_OPENDAP(dataset_url,
+                     varkey,
+                     longitude_min, longitude_max, latitude_min, latitude_max, 
+                     date_min, date_max, freq='D',
+                     data_xr=None,
+                     dir_output='.', file_prefix='', overwrite=False,
+                     credentials=None):
+    
+    if data_xr is None:
+        data_xr = open_opendap_xr(dataset_url=dataset_url, credentials=credentials)
     
     print(f'xarray subsetting data (variable \'{varkey}\' and lon/lat extents)')
     if varkey not in data_xr.data_vars:
@@ -150,14 +174,14 @@ def download_CMEMS(varkey,
     period_range = pd.period_range(date_min,date_max,freq=freq)
     
     #check if date_min/date_max are available in dataset
-    if not (data_xr_times.index[0] < period_range[0].to_timestamp() < data_xr_times.index[-1]):
+    if not (data_xr_times.index[0] <= period_range[0].to_timestamp() <= data_xr_times.index[-1]):
         raise Exception(f'date_min ({period_range[0]}) is outside available time range in dataset: {data_xr_times.index[0]} to {data_xr_times.index[-1]}')
-    if not (data_xr_times.index[0] < period_range[-1].to_timestamp() < data_xr_times.index[-1]):
+    if not (data_xr_times.index[0] <= period_range[-1].to_timestamp() <= data_xr_times.index[-1]):
         raise Exception(f'date_max ({period_range[-1]}) is outside available time range in dataset: {data_xr_times.index[0]} to {data_xr_times.index[-1]}')
     
     for date in period_range:
         date_str = str(date)
-        name_output = f'cmems_{varkey}_{date_str}.nc'
+        name_output = f'{file_prefix}{varkey}_{date_str}.nc'
         file_out = Path(dir_output,name_output)
         if file_out.is_file() and not overwrite:
             print(f'"{name_output}" found and overwrite=False, continuing.')
