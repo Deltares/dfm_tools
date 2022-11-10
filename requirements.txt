@@ -13,4 +13,4 @@ dask
 netcdf4>=1.5.3
 bottleneck
 cdsapi
-motuclient
+pydap
