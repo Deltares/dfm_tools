@@ -30,10 +30,11 @@ if '[model]' in mdu_contents[0]:
 
 
 file_struct = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_structures.ini')
-#structs = StructureModel(file_struct)
+#structs = StructureModel(file_struct) #TODO SOLVED: pli in structures.ini is currently not supported: https://github.com/Deltares/HYDROLIB-core/issues/353
+#for struct in structs.structure: 
+#    print(struct.id)
 #structs.save('tst.ini')
 #structs.structure[0].__dict__ #TODO: structs.structure[0].comment is really extensive, necesary? It would be more valuable if 'official' comments are written here instead of what is in file, possible?
-#TODO: pli in structures.ini is currently not supported: https://github.com/Deltares/HYDROLIB-core/issues/353 (use *_original file to test after fix)
 
 file_network = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\rmm_v1p7_net.nc')
 #network = NetworkModel(file_network) #TODO: what is this used for? plotting network/map is easier with dfm_tools or xugrid?
