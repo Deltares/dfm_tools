@@ -79,26 +79,21 @@ def Dataset_to_T3D(datablock_xr):
         QUP_quan_vector = VectorQuantityUnitPairs(vectorname='uxuyadvectionvelocitybnd', #TODO: vectorname from global attr? (then also support other vectors which is not necessary)
                                                   elementname=data_vars,
                                                   quantityunitpair=QUP_quan_list)
-        T3D_object = T3D(name=locationname,
-                         #offset=0,
-                         #factor=1,
-                         vertpositions=depth_array.tolist(),#np.round(depth_array.tolist(),decimals=4).tolist(), # make decimals userdefined? .tolist() is necessary for np.round to work for some reason
-                         vertinterpolation='linear', #TODO: make these parameters user defined (via attrs)
-                         vertPositionType='ZDatum',
-                         quantityunitpair=[QuantityUnitPair(quantity="time", unit=refdate_str)]+[QUP_quan_vector],
-                         timeinterpolation='linear',
-                         datablock=datablock_incltime.tolist(),
-                         )
+        quantityunitpair = [QuantityUnitPair(quantity="time", unit=refdate_str)]+[QUP_quan_vector]
     else: #normal T3D object
         QUP_quan_list = [QuantityUnitPair(quantity=data_xr_var0.name, unit=data_xr_var0.attrs['units'], vertpositionindex=iVP) for iVP in verticalpositions_idx]
-        T3D_object = T3D(name=locationname,
-                         vertpositions=depth_array.tolist(),#np.round(depth_array.tolist(),decimals=4).tolist(), # make decimals userdefined? .tolist() is necessary for np.round to work for some reason
-                         vertinterpolation='linear', #TODO: make these parameters user defined (via attrs)
-                         vertPositionType='ZDatum',
-                         quantityunitpair=[QuantityUnitPair(quantity="time", unit=refdate_str)]+QUP_quan_list,
-                         timeinterpolation='linear',
-                         datablock=datablock_incltime.tolist(), #TODO: numpy array is not supported by TimeSeries. https://github.com/Deltares/HYDROLIB-core/issues/322
-                         )
+        quantityunitpair=[QuantityUnitPair(quantity="time", unit=refdate_str)]+QUP_quan_list
+    
+    T3D_object = T3D(name=locationname,
+                     #offset=0,
+                     #factor=1,
+                     vertpositions=depth_array.tolist(),
+                     vertinterpolation='linear', #TODO: make these parameters user defined (via attrs)
+                     vertPositionType='ZDatum',
+                     quantityunitpair=quantityunitpair,
+                     timeinterpolation='linear',
+                     datablock=datablock_incltime.tolist(), #TODO: numpy array is not supported by TimeSeries. https://github.com/Deltares/HYDROLIB-core/issues/322
+                     )
     
     return T3D_object
 

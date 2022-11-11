@@ -35,7 +35,7 @@ refdate_str = 'minutes since 2011-12-22 00:00:00 +00:00' # if None, xarray uses 
 #quantities should be in conversion_dict.keys(). waterlevelbnd is steric/zos, tide is tidal components from FES/EOT
 list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tracerbndNO3']#,'tide']
 #list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','tracerbndNO3']
-#list_quantities = ['salinitybnd']
+list_quantities = ['salinitybnd']
 
 model = 'HYCOM' #CMEMS GFDL CMCC HYCOM
 
@@ -132,10 +132,10 @@ for file_pli in list_plifiles:
             file_bc_out = Path(dir_output,f'{quantity}_{file_bc_basename}_{model}.bc')
         print(f'writing ForcingModel to bc file with hydrolib ({file_bc_out.name})')
         if bc_type=='bc':
-            #ForcingModel_object.serializer_config.number_of_decimals = 4
-            #ForcingModel_object.serializer_config.number_of_decimals_datablock = 5
+            #ForcingModel_object.serializer_config.float_format = '.3f'
+            #ForcingModel_object.serializer_config.float_format_datablock = '.5f'
             ForcingModel_object.save(filepath=file_bc_out)
-            #TODO: improve formatting of bc file to make nicer, save diskspace and maybe write faster: https://github.com/Deltares/HYDROLIB-core/issues/308 (and https://github.com/Deltares/HYDROLIB-core/issues/313)
+            #TODO SOLVED: improve formatting of bc file: https://github.com/Deltares/HYDROLIB-core/issues/308
         else:
             raise Exception(f'invalid bc_type: {bc_type}')
         

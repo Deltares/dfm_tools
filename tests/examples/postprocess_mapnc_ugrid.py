@@ -158,7 +158,7 @@ for file_nc in file_nc_list:
         More complex basemaps/coastlines are available in dfm_tools.net_nc.plot_background()
         """
         source = ctx.providers.Esri.WorldImagery # ctx.providers.Stamen.Terrain (default), ctx.providers.CartoDB.Voyager, ctx.providers.NASAGIBS.ViirsEarthAtNight2012, ctx.providers.Stamen.Watercolor
-        ctx.add_basemap(ax, source=source, crs=crs, attribution=False)
+        ctx.add_basemap(ax=ax_input, source=source, crs=crs, attribution=False)
         fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_flowelem_bl_withbasemap'))
 
     
