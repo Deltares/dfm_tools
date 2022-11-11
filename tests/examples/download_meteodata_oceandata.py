@@ -98,7 +98,6 @@ for varkey in varlist_hycom:
     
     period_range_years = pd.period_range(date_min,date_max,freq='Y')
     dataset_url = [f'https://tds.hycom.org/thredds/dodsC/GLBu0.08/expt_19.1/{year}' for year in period_range_years] #list is possible with hycom, since it uses xr.open_mfdataset()
-    dataset_url = 'https://tds.hycom.org/thredds/dodsC/GLBy0.08/expt_93.0'
     file_prefix = 'hycom_'
     
     download_OPeNDAP(dataset_url=dataset_url,
