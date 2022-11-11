@@ -158,8 +158,16 @@ def open_OPeNDAP_xr(dataset_url,
         data_xr['time'] = cftime.num2date(data_xr.time,units=data_xr.time.units,calendar=data_xr.time.calendar)
         data_xr = data_xr.rename({'lon':'longitude','lat':'latitude'})
     else:
-        raise Exception(f'unspecified dataset_url, supported are cmems and hycom: {dataset_url}')
-    
+        print(f'unspecified dataset_url, might fail: {dataset_url}')
+        if isinstance(dataset_url,list):
+            print(f'xarray opening opendap dataset like: {dataset_url[0]}.html ({len(dataset_url)} urls/years)')
+            data_xr = xr.open_mfdataset(dataset_url)
+        else:
+            print(f'xarray opening opendap dataset: {dataset_url}.html')
+            data_xr = xr.open_dataset(dataset_url)
+        if 'lon' in data_xr.dims:
+            data_xr = data_xr.rename({'lon':'longitude','lat':'latitude'})
+        
     return data_xr
 
 
@@ -174,7 +182,7 @@ def download_OPeNDAP(dataset_url,
     
     print(f'xarray subsetting data (variable \'{varkey}\' and lon/lat extents)')
     if varkey not in data_xr.data_vars:
-        raise Exception(f'{varkey} not found in dataset, available are: list(data_xr.data_vars)\n{data_xr.data_vars}')
+        raise Exception(f'{varkey} not found in dataset, available are: {list(data_xr.data_vars)}')
     data_xr_var = data_xr[[varkey]]
     data_xr_var = data_xr_var.sel(longitude=slice(longitude_min,longitude_max), #TODO: add depth selection?
                                   latitude=slice(latitude_min,latitude_max))

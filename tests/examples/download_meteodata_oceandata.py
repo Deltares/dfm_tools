@@ -16,7 +16,7 @@ from dfm_tools.download import download_ERA5, download_OPeNDAP
 
 #download ERA5/CMEMS/HYCOM data for given domain, time extent and variables
 #TODO: add CMCC, GFD
-#TODO: add GFS (but opendap is not an archive: https://stackoverflow.com/questions/65031973/how-to-select-specific-data-variables-from-xarray-dataset)
+#TODO: add GFS and other NOAA models (https://www.ncei.noaa.gov/products/weather-climate-models/global-forecast > NCEI > TDS)
 #TODO: add click?
 
 overwrite = False # always set to True when changing the domain
@@ -26,12 +26,12 @@ longitude_min, longitude_max, latitude_min, latitude_max =    2,   4,  50, 52 #t
 #longitude_min, longitude_max, latitude_min, latitude_max = -180, 180, -90, 90 #global
 
 #dates as understood by pandas.period_range(). ERA5 has freq='M' (month) and CMEMS has freq='D' (day)
-date_min = '2019-01-01'
-date_max = '2019-01-02'
+date_min = '2010-01-01'
+date_max = '2010-01-02'
 
 #variables per model will be written to separate netcdf files. Set to [] to skip model.
-variables_era5 = []#'v10n'] # supply arbitrary string to get error with available variable names
-varlist_cmems = []#'bottomT']#['bottomT','thetao','no3'] # avaliable variables differ per source_combination, check cmems loop for some options
+variables_era5 = ['v10n'] # supply arbitrary string to get error with available variable names
+varlist_cmems = ['bottomT']#['bottomT','thetao','no3'] # avaliable variables differ per source_combination, check cmems loop for some options
 varlist_hycom = ['water_temp'] #['tau','water_u','water_v','water_temp','salinity','surf_el']
 
 #output directories per model
@@ -115,7 +115,6 @@ for varkey in varlist_hycom:
         ds[varkey].isel(time=0).plot(ax=ax)
     ds.close()
     ctx.add_basemap(ax=ax,crs="EPSG:4326",attribution=False)
-
 
 
 """
