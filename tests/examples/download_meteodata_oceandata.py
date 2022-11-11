@@ -12,7 +12,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 plt.close('all')
 import contextily as ctx
-from dfm_tools.download import download_ERA5, download_OPENDAP
+from dfm_tools.download import download_ERA5, download_OPeNDAP
 
 #download ERA5/CMEMS/HYCOM data for given domain, time extent and variables
 #TODO: add CMCC, GFD
@@ -26,12 +26,12 @@ longitude_min, longitude_max, latitude_min, latitude_max =    2,   4,  50, 52 #t
 #longitude_min, longitude_max, latitude_min, latitude_max = -180, 180, -90, 90 #global
 
 #dates as understood by pandas.period_range(). ERA5 has freq='M' (month) and CMEMS has freq='D' (day)
-date_min = '2010-01-01'
-date_max = '2010-01-02'
+date_min = '2019-01-01'
+date_max = '2019-01-02'
 
 #variables per model will be written to separate netcdf files. Set to [] to skip model.
-variables_era5 = ['v10n'] # supply arbitrary string to get error with available variable names
-varlist_cmems = ['bottomT']#['bottomT','thetao','no3'] # avaliable variables differ per source_combination, check cmems loop for some options
+variables_era5 = []#'v10n'] # supply arbitrary string to get error with available variable names
+varlist_cmems = []#'bottomT']#['bottomT','thetao','no3'] # avaliable variables differ per source_combination, check cmems loop for some options
 varlist_hycom = ['water_temp'] #['tau','water_u','water_v','water_temp','salinity','surf_el']
 
 #output directories per model
@@ -73,7 +73,7 @@ for varkey in varlist_cmems:
         #dataset_url = 'https://nrt.cmems-du.eu/thredds/dodsC/global-analysis-forecast-bio-001-028-daily' #contains ['chl','fe','no3','nppv','o2','ph','phyc','po4','si','spco2']
     file_prefix = 'cmems_'
     
-    download_OPENDAP(dataset_url=dataset_url,
+    download_OPeNDAP(dataset_url=dataset_url,
                      credentials=None, #credentials=['username','password'], or create "%USER%/motucredentials.txt" with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form'
                      varkey=varkey,
                      longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
@@ -98,9 +98,10 @@ for varkey in varlist_hycom:
     
     period_range_years = pd.period_range(date_min,date_max,freq='Y')
     dataset_url = [f'https://tds.hycom.org/thredds/dodsC/GLBu0.08/expt_19.1/{year}' for year in period_range_years] #list is possible with hycom, since it uses xr.open_mfdataset()
+    dataset_url = 'https://tds.hycom.org/thredds/dodsC/GLBy0.08/expt_93.0'
     file_prefix = 'hycom_'
     
-    download_OPENDAP(dataset_url=dataset_url,
+    download_OPeNDAP(dataset_url=dataset_url,
                      varkey=varkey,
                      longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
                      date_min=date_min, date_max=date_max,
