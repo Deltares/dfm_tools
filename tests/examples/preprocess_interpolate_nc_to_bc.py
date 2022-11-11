@@ -87,6 +87,7 @@ else:
     raise Exception(f'invalid model: {model}')
 
 
+
 # start of interpolation process
 dtstart = dt.datetime.now()
 ext_bnd = ExtModel()
@@ -94,6 +95,7 @@ if not os.path.isdir(dir_output):
     os.mkdir(dir_output)
 
 for file_pli in list_plifiles:
+    file_bc_basename = file_pli.name.replace('.pli','')
     for quantity in list_quantities:
         print(f'processing quantity: {quantity}')
         if quantity in ['tide']: #tide #TODO: choose flexible/generic component notation
@@ -169,6 +171,34 @@ for file_pli in list_plifiles:
                     forcingobject_one_xr[data_vars[0]].plot(ax=ax1)
                 fig.tight_layout()
                 fig.savefig(str(file_bc_out).replace('.bc',''))
+    
+    """ #plotting polyline on spatial field
+    import xarray as xr
+    import glob
+    from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame
+    try: #0.3.1 release
+        from hydrolib.core.io.polyfile.models import PolyFile
+    except: #main branch and next release #TODO: move to easy imports after https://github.com/Deltares/HYDROLIB-core/issues/410
+        from hydrolib.core.io.dflowfm.polyfile.models import PolyFile
+    if dir_sourcefiles_hydro is None:
+        continue
+    file_example = glob.glob(os.path.join(dir_sourcefiles_hydro,'*.nc'))[0] #TODO: make quantity specific (first retrieve data_xr separately, so before interpolation to points)
+    
+    data_xr = xr.open_dataset(file_example)
+
+    polyfile_object = PolyFile(file_pli)
+    pli_pd = pointlike_to_DataFrame(polyfile_object.objects[0])
+    
+    varname0 = list(data_xr.data_vars)[0] 
+    fig,ax = plt.subplots()
+    if 'depth' in data_xr[varname0].dims:
+        data_xr[varname0].isel(time=0,depth=0).plot(ax=ax)
+    else:
+        data_xr[varname0].isel(time=0).plot(ax=ax)
+    ax.plot(pli_pd['x'],pli_pd['y'],'r-')
+    fig.tight_layout()
+    fig.savefig(os.path.join(dir_output,f'polyline_{file_bc_basename}_{model}'))
+    """
 
 
 file_ext_out = Path(dir_output,'example_bnd.ext')
@@ -176,4 +206,5 @@ ext_bnd.save(filepath=file_ext_out)
 
 time_passed = (dt.datetime.now()-dtstart).total_seconds()
 print(f'>>time passed: {time_passed:.2f} sec')
+
 
