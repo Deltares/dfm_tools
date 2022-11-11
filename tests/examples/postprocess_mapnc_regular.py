@@ -14,7 +14,10 @@ from pathlib import Path
 import xarray as xr
 
 from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame
-from hydrolib.core.io.polyfile.models import PolyFile
+try: #0.3.1 release
+    from hydrolib.core.io.polyfile.models import PolyFile
+except: #main branch and next release
+    from hydrolib.core.io.dflowfm.polyfile.models import PolyFile
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
