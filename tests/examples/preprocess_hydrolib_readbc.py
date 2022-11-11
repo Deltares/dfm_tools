@@ -5,34 +5,38 @@ Created on Wed Aug 17 11:19:51 2022
 @author: veenstra
 """
 
-#import os
+import os
 from pathlib import Path
 import matplotlib.pyplot as plt
 plt.close('all')
-from hydrolib.core.io.bc.models import ForcingModel
 from dfm_tools.hydrolib_helpers import forcinglike_to_Dataset, Dataset_to_TimeSeries, Dataset_to_T3D#, Dataset_to_Astronomic
+try: #0.3.1 release
+    from hydrolib.core.io.bc.models import ForcingModel
+except: #main branch and next release #TODO: move to easy imports after https://github.com/Deltares/HYDROLIB-core/issues/410
+    from hydrolib.core.io.dflowfm.bc.models import ForcingModel
 
 #TODO: merge this into preprocess_hydrolib_readFMmodel.py after issues are resolved?
 #NOTE: for examples with writing bc files, check dfm_tools.interpolate_grid2bnd.* and dfm_tools.hydrolib_helpers.
 
 nPoints = 5 #None for all points
 
-file_bc_list = [Path(r'c:\DATA\dfm_tools_testdata\hydrolib_bc\DCSM\tide_OB_all_20181108.bc'),
-                #Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\2020\flow\rmm_zeerand_v3_2020.bc'), #>100 timeseries
-                Path(r'c:\DATA\dfm_tools_testdata\hydrolib_bc\rmm_zeerand_v3_2020_short.bc'),
-                Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\rmm_rivdis_meas_20171101_20210102_MET.bc'), #TODO: why can it not be str? #three timeseries
-                #Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\2018\flow\rmm_discharge_laterals_20171201_20190101_MET.bc'),
-                Path(r'c:\DATA\dfm_tools_testdata\hydrolib_bc\haixia\salinity_bc_South_v2_firstpoint.bc'),
-                Path(r'c:\DATA\dfm_tools_testdata\hydrolib_bc\haixia\uxuy_bc_South_v2_firstpoint.bc'),
-                Path(r'c:\DATA\dfm_tools_testdata\hydrolib_bc\haixia\salinity_bc_simple.bc'),
-                #Path(r'c:\DATA\dfm_tools_testdata\hydrolib_bc\haixia\salinity_bc_South_v2.bc'), #large file, takes time
-                #Path(r'c:\DATA\dfm_tools_testdata\hydrolib_bc\haixia\uxuy_bc_South_v2.bc'),
+file_bc_list = [r'c:\DATA\dfm_tools_testdata\hydrolib_bc\DCSM\tide_OB_all_20181108.bc',
+                #r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\2020\flow\rmm_zeerand_v3_2020.bc', #>100 timeseries
+                r'c:\DATA\dfm_tools_testdata\hydrolib_bc\rmm_zeerand_v3_2020_short.bc',
+                r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\rmm_rivdis_meas_20171101_20210102_MET.bc', #TODO: why can it not be str? #three timeseries
+                #r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\2018\flow\rmm_discharge_laterals_20171201_20190101_MET.bc',
+                r'c:\DATA\dfm_tools_testdata\hydrolib_bc\haixia\salinity_bc_South_v2_firstpoint.bc',
+                r'c:\DATA\dfm_tools_testdata\hydrolib_bc\haixia\uxuy_bc_South_v2_firstpoint.bc',
+                r'c:\DATA\dfm_tools_testdata\hydrolib_bc\haixia\salinity_bc_simple.bc',
+                #r'c:\DATA\dfm_tools_testdata\hydrolib_bc\haixia\salinity_bc_South_v2.bc', #large file, takes time
+                #r'c:\DATA\dfm_tools_testdata\hydrolib_bc\haixia\uxuy_bc_South_v2.bc',
                 ]
 
+dir_output = '.'
 
 for file_bc in file_bc_list:
     #Load .bc-file using HydroLib object ForcingModel.
-    m = ForcingModel(file_bc)
+    m = ForcingModel(Path(file_bc))
     ForcingModel_object_out = ForcingModel()
     
     # m.general.comments = {'a':'aa'} #TODO: adding comments to top of file is not possible, only if using filetype or fileversion: https://github.com/Deltares/HYDROLIB-core/issues/130. Top file comment newfeature: https://github.com/Deltares/HYDROLIB-core/issues/362
@@ -77,7 +81,8 @@ for file_bc in file_bc_list:
             ax.legend(loc=1)
             raise Exception(f'non-defined function: {forcingobj.function}')
         #ForcingModel_object_out.forcing.append(forcing_ts)
-        #ForcingModel_object_out.save(Path(str(file_bc).replace('.bc','_reproduced.bc')))
-       
+        #ForcingModel_object_out.save(Path(file_bc.replace('.bc','_reproduced.bc')))
+    fig.tight_layout()
+    fig.savefig(os.path.join(dir_output,os.path.basename(file_bc.replace('.',''))))
 
 

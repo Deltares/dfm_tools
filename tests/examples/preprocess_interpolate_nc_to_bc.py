@@ -35,7 +35,7 @@ refdate_str = 'minutes since 2011-12-22 00:00:00 +00:00' # if None, xarray uses 
 #quantities should be in conversion_dict.keys(). waterlevelbnd is steric/zos, tide is tidal components from FES/EOT
 list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tracerbndNO3']#,'tide']
 #list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','tracerbndNO3']
-list_quantities = ['salinitybnd']
+#list_quantities = ['salinitybnd']
 
 model = 'HYCOM' #CMEMS GFDL CMCC HYCOM
 
@@ -167,6 +167,7 @@ for file_pli in list_plifiles:
                     forcingobject_one_xr[data_vars[1]].plot(ax=ax2)
                 else:
                     forcingobject_one_xr[data_vars[0]].plot(ax=ax1)
+                fig.tight_layout()
                 fig.savefig(str(file_bc_out).replace('.bc',''))
 
 
