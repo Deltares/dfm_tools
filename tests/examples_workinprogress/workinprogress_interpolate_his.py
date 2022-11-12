@@ -38,8 +38,7 @@ data_lon_flat = data_xr_var['station_x_coordinate'].to_numpy()
 data_lat_flat = data_xr_var['station_y_coordinate'].to_numpy()
 data_lonlat_pd = pd.DataFrame({'lon':data_lon_flat,'lat':data_lat_flat})
 
-#KDTree, finds minimal eucledian distance between points (maybe haversine would be better)
-tree = KDTree(data_lonlat_pd) #alternatively sklearn.neighbors.BallTree: tree = BallTree(data_lonlat_pd)
+tree = KDTree(data_lonlat_pd)
 distance, data_lonlat_idx = tree.query(path_lonlat_pd, k=3) #TODO: maybe add outofbounds treshold for distance
 #data_lonlat_pd.iloc[data_lonlat_idx]
 

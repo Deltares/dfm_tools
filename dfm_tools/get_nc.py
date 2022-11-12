@@ -472,7 +472,7 @@ def get_netdata(file_nc, multipart=None):
         if varn_mesh2d_face_nodes is not None: # node_z variable is present
             mesh2d_face_nodes = data_nc.variables[varn_mesh2d_face_nodes]
         else:
-            raise Exception('ERROR: provided file does not contain a variable mesh2d_face_nodes or similar:\n%s\nPlease do one of the following:\n- plot grid from *_map.nc file\n- import and export the grid with RGFGRID\n- import and save the gridd "with cellfinfo" from interacter'%(file_nc))
+            raise Exception('ERROR: provided file does not contain a variable mesh2d_face_nodes or similar:\n%s\nPlease do one of the following:\n- plot grid from *_map.nc file\n- import and export the grid with RGFGRID\n- import and save the grid "with cellfinfo" from interacter'%(file_nc))
         verts_shape2_all.append(mesh2d_face_nodes.shape[1])
         data_nc.close()
     verts_shape2_max = np.max(verts_shape2_all)
