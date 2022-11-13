@@ -44,9 +44,9 @@ for nrows in [100,1000,10000,100000]:
         bc_east.serializer_config.float_format_datablock = '.2f'
         bc_east.save(filepath=Path(basedir,"steric_east2.bc"))
         time_hydrolib = (dt.datetime.now()-dtstart).total_seconds()
-        print(f'{nrows} rows with hydrolib (formatted single):     {time_hydrolib:.2f} sec')
+        print(f'{nrows} rows with hydrolib (formatted single): {time_hydrolib:.2f} sec')
     except AttributeError:
-        print(f'{nrows} rows with hydrolib (formatted single):     FAILED (TOO OLD HYDROLIB VERSION)')
+        print(f'{nrows} rows with hydrolib (formatted single): FAILED (TOO OLD HYDROLIB VERSION)')
     
     metadata_block = """[forcing]
 quantity          = time
@@ -63,7 +63,7 @@ unit              = m\n"""
     with open(file_out,'a') as f_bc:
         np.savetxt(f_bc,datablock)
     time_npsavetxt = (dt.datetime.now()-dtstart).total_seconds()
-    print(f'{nrows} rows with savetxt (unformatted):      {time_npsavetxt:.2f} sec')
+    print(f'{nrows} rows with savetxt (unformatted):       {time_npsavetxt:.2f} sec')
 
     dtstart = dt.datetime.now()
     file_out = Path(basedir,"steric_east2_npformattedsingle.bc")
@@ -72,7 +72,7 @@ unit              = m\n"""
     with open(file_out,'a') as f_bc:
         np.savetxt(f_bc,datablock,fmt='%9.3f')
     time_npsavetxt = (dt.datetime.now()-dtstart).total_seconds()
-    print(f'{nrows} rows with savetxt (formatted single): {time_npsavetxt:.2f} sec')
+    print(f'{nrows} rows with savetxt (formatted single):  {time_npsavetxt:.2f} sec')
     
     dtstart = dt.datetime.now()
     file_out = Path(basedir,"steric_east2_npformattedpercol.bc")
@@ -81,5 +81,5 @@ unit              = m\n"""
     with open(file_out,'a') as f_bc:
         np.savetxt(f_bc,datablock,fmt='%9.1f'+'%9.3f'*49)
     time_npsavetxt = (dt.datetime.now()-dtstart).total_seconds()
-    print(f'{nrows} rows with savetxt (formatted percol): {time_npsavetxt:.2f} sec')
+    print(f'{nrows} rows with savetxt (formatted percol):  {time_npsavetxt:.2f} sec')
     print('')
