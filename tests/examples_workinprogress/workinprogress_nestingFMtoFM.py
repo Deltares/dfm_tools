@@ -24,7 +24,7 @@ except: #main branch and next release
 from dfm_tools.get_nc import get_netdata
 from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame
 from dfm_tools.xarray_helpers import preprocess_hisnc
-from dfm_tools.interpolate_grid2bnd import interp_hisnc_to_plipoints
+from dfm_tools.interpolate_grid2bnd import interp_hisnc_to_plipoints, plipointsDataset_to_ForcingModel
 
 #TODO: add coordinate conversion of pli coordinates
 #TODO: add max distance for nestpoints (eg sqrt of max cell size of large grid? How to determine to use 3/4/more points)
@@ -54,8 +54,6 @@ for file_pli in file_pli_list:
     data_pol_pd_list = [pointlike_to_DataFrame(polyobj) for polyobj in polyfile_object.objects]
     data_pol_pd = pd.concat(data_pol_pd_list)
     
-    ax.plot(data_pol_pd['x'],data_pol_pd['y'],label=file_pli.name)
-    
     #get and plot unique cell center coordinates
     plicoords_distance1, plicoords_cellidx = tree_nest1.query(data_pol_pd,k=4) #TODO: do on spherical globe (like gtsm obs snapping procedure)
     cellidx_uniq = np.unique(plicoords_cellidx)
@@ -66,25 +64,35 @@ for file_pli in file_pli_list:
     cellcoords['name'] = pd.Series(cellcoords.index).apply(lambda x: f'nestpoint_{x+1:0{maxnumlen}d}')
     
     #write nesting obspoints to file
-    file_obs = os.path.join(dir_output,'{file_pli.name}_obs.xyn')
+    file_obs = os.path.join(dir_output,f'{file_pli.name}_obs.xyn')
     cellcoords.to_csv(file_obs,sep='\t',index=False,header=False, float_format='%11.6f') #TODO: add hydrolib function once it exists
+
+    ax.plot(data_pol_pd['x'],data_pol_pd['y'],label=file_pli.name)
+
 ax.legend()
 ctx.add_basemap(ax=ax,attribution=False,crs=crs_net)
     
     
 #NESTING PART 2
-    
+
 for file_pli in file_pli_list:
     kdtree_k = 4
     file_his = r'p:\1230882-emodnet_hrsm\GTSMv5.0\runs\reference_GTSMv4.1_wiCA\output\gtsm_model_0000_his.nc'
     data_xr_his = xr.open_mfdataset(file_his,preprocess=preprocess_hisnc)
-    data_xr_his_selvars = data_xr_his[['waterlevel','velocity_magnitude']]
+    data_xr_his_selvars = data_xr_his[['waterlevel']]#,'velocity_magnitude']]
     
     data_interp = interp_hisnc_to_plipoints(data_xr_his=data_xr_his_selvars,file_pli=file_pli,kdtree_k=kdtree_k)
     
-
-
-
+    conversion_dict = {'waterlevelbnd': {'ncvarname': 'waterlevel'},
+                       #'velocitybnd': {'ncvarname': 'velocity_magnitude'}
+                       }
+    data_interp = data_interp.rename({v['ncvarname']:k for k,v in conversion_dict.items()})
+    
+    ForcingModel_object = plipointsDataset_to_ForcingModel(plipointsDataset=data_interp, conversion_dict=conversion_dict, refdate_str=None, reverse_depth=False, data_xr_lonlat_pd=None)
+    file_bc_out = file_pli.name.replace('.pli','.bc')
+    print('saving bc file')
+    ForcingModel_object.save(filepath=file_bc_out) #TODO: writing is fast, but takes quite a while to start writing (probably because of conversion)
+    print('done')
 
 
 

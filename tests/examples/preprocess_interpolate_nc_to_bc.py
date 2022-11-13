@@ -41,7 +41,7 @@ model = 'HYCOM' #CMEMS GFDL CMCC HYCOM
 
 #The {ncvarname} wildcard in dir_pattern_hydro/dir_patern_waq is used to replace it with conversion_dict[quantity]['ncvarname'] by using str(dir_pattern).format(ncvarname)
 reverse_depth = False #to compare with coastserv files, this argument will be phased out
-KDTree_invdistweigth = False
+kdtree_k = 3
 if model=='CMEMS': #2012-01-06 12:00:00 to 2013-01-03 12:00:00
     conversion_dict = get_conversion_dict()
     tstart = dt.datetime(2012, 1, 16, 12, 0)
@@ -113,7 +113,7 @@ for file_pli in list_plifiles:
                                                        quantity=quantity, conversion_dict=conversion_dict,
                                                        tstart=tstart, tstop=tstop, refdate_str=refdate_str,
                                                        reverse_depth=reverse_depth,
-                                                       KDTree_invdistweigth=KDTree_invdistweigth,
+                                                       kdtree_k=kdtree_k,
                                                        nPoints=nPoints)
         else: #waq
             if dir_pattern_waq is None:
@@ -122,14 +122,14 @@ for file_pli in list_plifiles:
                                                        quantity=quantity, conversion_dict=conversion_dict,
                                                        tstart=tstart, tstop=tstop, refdate_str=refdate_str,
                                                        reverse_depth=reverse_depth,
-                                                       KDTree_invdistweigth=KDTree_invdistweigth,
+                                                       kdtree_k=kdtree_k,
                                                        nPoints=nPoints)
         
         file_bc_basename = file_pli.name.replace('.pli','')
         if quantity=='tide':
             file_bc_out = Path(dir_output,f'{quantity}_{file_bc_basename}_{tidemodel}.bc')
         else:
-            file_bc_out = Path(dir_output,f'{quantity}_{file_bc_basename}_{model}.bc')
+            file_bc_out = Path(dir_output,f'{quantity}_{file_bc_basename}_{model}_test.bc')
         print(f'writing ForcingModel to bc file with hydrolib ({file_bc_out.name})')
         if bc_type=='bc':
             #ForcingModel_object.serializer_config.float_format = '.3f'
