@@ -64,7 +64,8 @@ for file_pli in file_pli_list:
     cellcoords['name'] = pd.Series(cellcoords.index).apply(lambda x: f'nestpoint_{x+1:0{maxnumlen}d}')
     
     #write nesting obspoints to file
-    file_obs = os.path.join(dir_output,f'{file_pli.name}_obs.xyn')
+    basename = file_pli.name.replace('.pli','')
+    file_obs = os.path.join(dir_output,f'{basename}_obs.xyn')
     cellcoords.to_csv(file_obs,sep='\t',index=False,header=False, float_format='%11.6f') #TODO: add hydrolib function once it exists
 
     ax.plot(data_pol_pd['x'],data_pol_pd['y'],label=file_pli.name)
@@ -74,7 +75,6 @@ ctx.add_basemap(ax=ax,attribution=False,crs=crs_net)
     
     
 #NESTING PART 2
-
 for file_pli in file_pli_list:
     kdtree_k = 4
     file_his = r'p:\1230882-emodnet_hrsm\GTSMv5.0\runs\reference_GTSMv4.1_wiCA\output\gtsm_model_0000_his.nc'
@@ -82,16 +82,19 @@ for file_pli in file_pli_list:
     data_xr_his_selvars = data_xr_his[['waterlevel']]#,'velocity_magnitude']]
     
     data_interp = interp_hisnc_to_plipoints(data_xr_his=data_xr_his_selvars,file_pli=file_pli,kdtree_k=kdtree_k)
+    #fig,ax = plt.subplots()
+    #data_interp.waterlevel.plot(ax=ax) #TODO: this does not work properly "TypeError: Dimensions of C (5473, 294) are incompatible with X (294) and/or Y (5474); see help(pcolormesh)"
     
     conversion_dict = {'waterlevelbnd': {'ncvarname': 'waterlevel'},
                        #'velocitybnd': {'ncvarname': 'velocity_magnitude'}
                        }
     data_interp = data_interp.rename({v['ncvarname']:k for k,v in conversion_dict.items()})
     
-    ForcingModel_object = plipointsDataset_to_ForcingModel(plipointsDataset=data_interp, conversion_dict=conversion_dict, refdate_str=None, reverse_depth=False, data_xr_lonlat_pd=None)
+    ForcingModel_object = plipointsDataset_to_ForcingModel(plipointsDataset=data_interp, conversion_dict=conversion_dict, refdate_str=None, reverse_depth=False)
     file_bc_out = file_pli.name.replace('.pli','.bc')
+    
     print('saving bc file')
-    ForcingModel_object.save(filepath=file_bc_out) #TODO: writing is fast, but takes quite a while to start writing (probably because of conversion)
+    ForcingModel_object.save(filepath=file_bc_out) #TODO REPORT: writing itself is fast, but takes quite a while to start writing (probably because of conversion)
     print('done')
 
 

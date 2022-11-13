@@ -9,19 +9,20 @@ This script can be used to interpolate pre-downloaded CMEMS data (or other netcd
 
 import os
 import datetime as dt
+import contextily as ctx
 from pathlib import Path
 import matplotlib.pyplot as plt
 plt.close('all')
-from dfm_tools.interpolate_grid2bnd import get_conversion_dict, interpolate_tide_to_bc, interpolate_nc_to_bc
+from dfm_tools.interpolate_grid2bnd import get_conversion_dict, interpolate_tide_to_bc, open_sel_rename_Dataset, interp_regularnc_to_plipoints, plipointsDataset_to_ForcingModel
 from dfm_tools.hydrolib_helpers import forcinglike_to_Dataset
 try: #0.3.1 release
     from hydrolib.core.io.ext.models import Boundary, ExtModel
 except: #main branch and next release #TODO: move to easy imports after https://github.com/Deltares/HYDROLIB-core/issues/410
     from hydrolib.core.io.dflowfm.ext.models import Boundary, ExtModel
 
-#TODO: make interpolate function accept tstart/tstop as datestrings
+#TODO: discuss structure with arthur/stendert (also conversion_dict)
+#TODO: make both interpolate functions accept tstart/tstop as datestrings
 #TODO: add coordinate conversion of pli-coordinates (for nesting RD models)
-#TODO: return interpolated nc instead of a forcingmodel an do pointloop and forcingmodel in separate function?
 #copied plifile from DCSM folder: r'p:\1204257-dcsmzuno\data\CMEMS\bnd\NorthSeaAndBaltic_1993-2019_20210510'
 #list_plifiles = [Path(r'c:\DATA\dfm_tools_testdata\hydrolib_bc\DCSM\DCSM-FM_OB_all_20181108.pli')] #TODO: reading this file results in empty Polyfile, should raise an error. https://github.com/Deltares/HYDROLIB-core/issues/320
 list_plifiles = [Path(r'c:\DATA\dfm_tools_testdata\hydrolib_bc\DCSM\DCSM-FM_OB_all_20181108_nocomments.pli')]
@@ -33,11 +34,11 @@ bc_type = 'bc' #currently only 'bc' supported #TODO: add netcdf bc support. http
 refdate_str = 'minutes since 2011-12-22 00:00:00 +00:00' # if None, xarray uses ds.time.encoding['units'] as refdate_str
 
 #quantities should be in conversion_dict.keys(). waterlevelbnd is steric/zos, tide is tidal components from FES/EOT
-list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tracerbndNO3']#,'tide']
+list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tracerbndNO3','tide']
 #list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','tracerbndNO3']
 list_quantities = ['salinitybnd']
 
-model = 'HYCOM' #CMEMS GFDL CMCC HYCOM
+model = 'CMEMS' #CMEMS GFDL CMCC HYCOM
 
 #The {ncvarname} wildcard in dir_pattern_hydro/dir_patern_waq is used to replace it with conversion_dict[quantity]['ncvarname'] by using str(dir_pattern).format(ncvarname)
 reverse_depth = False #to compare with coastserv files, this argument will be phased out
@@ -104,32 +105,35 @@ for file_pli in list_plifiles:
             ForcingModel_object = interpolate_tide_to_bc(tidemodel=tidemodel, file_pli=file_pli, component_list=component_list, nPoints=nPoints)
             for forcingobject in ForcingModel_object.forcing: #add A0 component
                 forcingobject.datablock.append(['A0',0.0,0.0])
-        elif quantity in ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy']: #hydro
-            if dir_sourcefiles_hydro is None:
-                continue
-            if (model=='HYCOM') & (quantity not in ['salinitybnd','temperaturebnd']): #only contains quantities salinity and water_temp, so crashes on others
-                continue
-            ForcingModel_object = interpolate_nc_to_bc(dir_pattern=dir_pattern_hydro, file_pli=file_pli,
-                                                       quantity=quantity, conversion_dict=conversion_dict,
-                                                       tstart=tstart, tstop=tstop, refdate_str=refdate_str,
-                                                       reverse_depth=reverse_depth,
-                                                       kdtree_k=kdtree_k,
-                                                       nPoints=nPoints)
-        else: #waq
-            if dir_pattern_waq is None:
-                continue
-            ForcingModel_object = interpolate_nc_to_bc(dir_pattern=dir_pattern_waq, file_pli=file_pli,
-                                                       quantity=quantity, conversion_dict=conversion_dict,
-                                                       tstart=tstart, tstop=tstop, refdate_str=refdate_str,
-                                                       reverse_depth=reverse_depth,
-                                                       kdtree_k=kdtree_k,
-                                                       nPoints=nPoints)
+        else:
+            if quantity in ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy']: #hydro
+                if dir_sourcefiles_hydro is None:
+                    continue
+                if (model=='HYCOM') & (quantity not in ['salinitybnd','temperaturebnd']): #only contains quantities salinity and water_temp, so crashes on others
+                    continue
+                data_xr_vars = open_sel_rename_Dataset(dir_pattern=dir_pattern_hydro, quantity=quantity,
+                                                       tstart=tstart, tstop=tstop,
+                                                       conversion_dict=conversion_dict)
+            else: #waq
+                if dir_pattern_waq is None:
+                    continue
+                data_xr_vars = open_sel_rename_Dataset(dir_pattern=dir_pattern_waq, quantity=quantity,
+                                                       tstart=tstart, tstop=tstop,
+                                                       conversion_dict=conversion_dict)
+            
+            data_interp = interp_regularnc_to_plipoints(data_xr_reg=data_xr_vars, file_pli=file_pli, nPoints=nPoints, #argument for testing
+                                                      kdtree_k=kdtree_k)    
+            
+            ForcingModel_object = plipointsDataset_to_ForcingModel(plipointsDataset=data_interp, 
+                                                                   conversion_dict=conversion_dict, #TODO: conversion dict is used twice, which is confusing. Split dict in rename_dict and conversion_dict?
+                                                                   refdate_str=refdate_str, 
+                                                                   reverse_depth=reverse_depth) #temporary argument to compare easier with old coastserv files
         
         file_bc_basename = file_pli.name.replace('.pli','')
         if quantity=='tide':
             file_bc_out = Path(dir_output,f'{quantity}_{file_bc_basename}_{tidemodel}.bc')
         else:
-            file_bc_out = Path(dir_output,f'{quantity}_{file_bc_basename}_{model}_test.bc')
+            file_bc_out = Path(dir_output,f'{quantity}_{file_bc_basename}_{model}.bc')
         print(f'writing ForcingModel to bc file with hydrolib ({file_bc_out.name})')
         if bc_type=='bc':
             #ForcingModel_object.serializer_config.float_format = '.3f'
@@ -149,8 +153,24 @@ for file_pli in list_plifiles:
                                    )
         ext_bnd.boundary.append(boundary_object)
 
+        if 1 and quantity!='tide': #plotting dataset and polyline (is wrong for CMCC)
+            varname0 = list(data_xr_vars.data_vars)[0] 
+            fig,ax = plt.subplots()
+            if 'depth' in data_xr_vars[varname0].dims:
+                data_xr_vars[varname0].isel(time=0,depth=0).plot(ax=ax)
+            else:
+                data_xr_vars[varname0].isel(time=0).plot(ax=ax)
+            plipoint_coords = data_interp.plipoints.to_dataframe()
+            ax.plot(plipoint_coords['plipoint_x'],plipoint_coords['plipoint_y'],'r-')
+            ctx.add_basemap(ax=ax,crs="EPSG:4326",attribution=False)
+            fig.tight_layout()
+            fig.savefig(str(file_bc_out).replace('.bc','_polyline'))
+            
         if 1: #plotting example data point
-            for iF in [2]:#range(nPoints): #
+            # for iF in [2]:#range(nPoints): #from data_interp TODO: this is slightly easier, but negative depth is not done yet (is in Dataset_to_T3D/Dataset_to_TimeSeries functions)
+            #     fig,ax1 = plt.subplots(figsize=(10, 6))
+            #     data_interp.salinitybnd.isel(plipoints=iF).T.plot()
+            for iF in [2]:#range(nPoints): #from ForcingModel_object
                 forcingobject_one = ForcingModel_object.forcing[iF]
                 forcingobject_one_xr = forcinglike_to_Dataset(forcingobject_one,convertnan=True)
                 data_vars = list(forcingobject_one_xr.data_vars)
@@ -171,34 +191,6 @@ for file_pli in list_plifiles:
                     forcingobject_one_xr[data_vars[0]].plot(ax=ax1)
                 fig.tight_layout()
                 fig.savefig(str(file_bc_out).replace('.bc',''))
-    
-    """ #plotting polyline on spatial field
-    import xarray as xr
-    import glob
-    from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame
-    try: #0.3.1 release
-        from hydrolib.core.io.polyfile.models import PolyFile
-    except: #main branch and next release #TODO: move to easy imports after https://github.com/Deltares/HYDROLIB-core/issues/410
-        from hydrolib.core.io.dflowfm.polyfile.models import PolyFile
-    if dir_sourcefiles_hydro is None:
-        continue
-    file_example = glob.glob(os.path.join(dir_sourcefiles_hydro,'*.nc'))[0] #TODO: make quantity specific (first retrieve data_xr separately, so before interpolation to points)
-    
-    data_xr = xr.open_dataset(file_example)
-
-    polyfile_object = PolyFile(file_pli)
-    pli_pd = pointlike_to_DataFrame(polyfile_object.objects[0])
-    
-    varname0 = list(data_xr.data_vars)[0] 
-    fig,ax = plt.subplots()
-    if 'depth' in data_xr[varname0].dims:
-        data_xr[varname0].isel(time=0,depth=0).plot(ax=ax)
-    else:
-        data_xr[varname0].isel(time=0).plot(ax=ax)
-    ax.plot(pli_pd['x'],pli_pd['y'],'r-')
-    fig.tight_layout()
-    fig.savefig(os.path.join(dir_output,f'polyline_{file_bc_basename}_{model}'))
-    """
 
 
 file_ext_out = Path(dir_output,'example_bnd.ext')

@@ -211,38 +211,6 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
     return ForcingModel_object
 
 
-def interpolate_nc_to_bc(dir_pattern, file_pli, quantity, 
-                         tstart, tstop, refdate_str=None, 
-                         conversion_dict=None,
-                         nPoints=None, #argument for testing
-                         reverse_depth=False, #temporary argument to compare easier with old coastserv files
-                         kdtree_k=3):
-    """
-    merely a wrapper around three functions #TODO: remove this wrapper after coversion dict is sorted out (discuss with Stendert/Lisa)
-    """
-    
-    data_xr_var = open_sel_rename_Dataset(dir_pattern=dir_pattern, quantity=quantity,
-                                          tstart=tstart, tstop=tstop,
-                                          conversion_dict=conversion_dict)
-    
-    if 0: #TODO: maybe split this def, so easy to plot all data before interpolation
-        import matplotlib.pyplot as plt
-        import contextily as ctx
-        fig,ax = plt.subplots()
-        data_xr_var[list(data_xr_var.data_vars)[0]].isel(time=0,depth=0).plot(ax=ax)
-        ctx.add_basemap(ax=ax,crs="EPSG:4326")
-    
-    data_interp = interp_regulargridnc_to_plipointsDataset(data_xr_reg=data_xr_var, file_pli=file_pli, nPoints=nPoints, kdtree_k=kdtree_k)    
-        
-    ForcingModel_object = plipointsDataset_to_ForcingModel(plipointsDataset=data_interp, 
-                                                           conversion_dict=conversion_dict, #TODO: conversion dict is used twice, which is confusing. Split dict in rename_dict and conversion_dict?
-                                                           refdate_str=refdate_str, 
-                                                           reverse_depth=reverse_depth,
-                                                           data_xr_lonlat_pd=pd.DataFrame({'lon':data_xr_var['longitude'].to_numpy(),'lat':data_xr_var['latitude'].to_numpy()}), #TODO: temporary for proper outbounds error message
-                                                           )
-    return ForcingModel_object
-
-
 def open_sel_rename_Dataset(dir_pattern, quantity, tstart,tstop, conversion_dict=None):
     
     if conversion_dict is None:
@@ -327,12 +295,15 @@ def open_sel_rename_Dataset(dir_pattern, quantity, tstart,tstop, conversion_dict
     if not bool_quanavailable.all():
         quantity_list_notavailable = pd.Series(quantity_list).loc[~bool_quanavailable].tolist()
         raise Exception(f'quantity {quantity_list_notavailable} not found in netcdf, available are: {data_vars}. Try updating conversion_dict to rename these variables.')
-    data_xr_var = data_xr[quantity_list].sel(time=slice(tstart,tstop))
+    data_xr_vars = data_xr[quantity_list].sel(time=slice(tstart,tstop))
     
-    return data_xr_var
+    return data_xr_vars
 
 
-def interp_regulargridnc_to_plipointsDataset(data_xr_reg, file_pli, nPoints=None, kdtree_k=3):
+def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, kdtree_k=3, load=True):
+    """
+    load: interpolation errors are only raised upon loading, so do this per default
+    """
     data_xr_var = data_xr_reg #TODO: rename in script
     
     #load boundary file
@@ -350,7 +321,7 @@ def interp_regulargridnc_to_plipointsDataset(data_xr_reg, file_pli, nPoints=None
     da_plipoints = xr.Dataset()
     da_plipoints['plipoint_x'] = xr.DataArray(data_pol_pd['x'], dims='plipoints')
     da_plipoints['plipoint_y'] = xr.DataArray(data_pol_pd['y'], dims='plipoints')
-    da_plipoints['plipoint_name'] = xr.DataArray(data_pol_pd['name'], dims='plipoints')
+    da_plipoints['plipoint_name'] = xr.DataArray(data_pol_pd['name'].astype('S64'), dims='plipoints').str.decode('utf-8',errors='ignore').str.strip() #TODO: must be possible to do this less complex
     da_plipoints = da_plipoints.set_coords(['plipoint_x','plipoint_y','plipoint_name'])
     da_plipoints = da_plipoints.set_index({'plipoints':'plipoint_name'})
     
@@ -388,21 +359,40 @@ def interp_regulargridnc_to_plipointsDataset(data_xr_reg, file_pli, nPoints=None
             # fig,ax = plt.subplots()
             # data_xr_var[varone].isel(time=0,depth=0).plot(ax=ax)
             # ax.plot(idx_j,idx_i,'xr')
-            da_idxi = xr.DataArray(idx_i, dims=('plipoints','nearestkpoints'))
-            da_idxj = xr.DataArray(idx_j, dims=('plipoints','nearestkpoints'))
+            da_plipoints['da_idxi'] = xr.DataArray(idx_i, dims=('plipoints','nearestkpoints'))
+            da_plipoints['da_idxj'] = xr.DataArray(idx_j, dims=('plipoints','nearestkpoints'))
             da_dist = xr.DataArray(distance, dims=('plipoints','nearestkpoints'))
             da_invdistweight = (1/da_dist)/(1/da_dist).sum(dim='nearestkpoints')
-            da_varone_3k = data_xr_var[varone].isel(i=da_idxi,j=da_idxj)
+            da_varone_3k = data_xr_var[varone].isel(i=da_plipoints['da_idxi'],j=da_plipoints['da_idxj'])
             data_interp[varone] = (da_varone_3k * da_invdistweight).sum(dim='nearestkpoints')
             data_interp[varone].attrs = data_xr_var[varone].attrs #copy units and other attributes
     
     time_passed = (dt.datetime.now()-dtstart).total_seconds()
     # print(f'>>time passed: {time_passed:.2f} sec')
+    
+    if not load:
+        return data_interp
+    
+    print('> actual extraction of data from netcdf with .load() (for all PolyObject points at once, so this will take a while)')
+    dtstart = dt.datetime.now()
+    try:
+        data_interp_loaded = data_interp.load() #loading data for all points at once is more efficient compared to loading data per point in loop 
+    except ValueError as e: #generate a proper error with outofbounds requested coordinates, default is "ValueError: One of the requested xi is out of bounds in dimension 0" #TODO: improve error in xarray
+        lonvar_vals=data_xr_var['longitude'].to_numpy(),
+        latvar_vals=data_xr_var['latitude'].to_numpy(),
+        data_pol_pd = data_interp[['plipoint_x','plipoint_y']].to_dataframe()
+        bool_reqlon_outbounds = (data_pol_pd['plipoint_x'] <= lonvar_vals.min()) | (data_pol_pd['plipoint_x'] >= lonvar_vals.max())
+        bool_reqlat_outbounds = (data_pol_pd['plipoint_y'] <= latvar_vals.min()) | (data_pol_pd['plipoint_y'] >= latvar_vals.max())
+        reqlatlon_pd = pd.DataFrame({'longitude':data_pol_pd['plipoint_x'],'latitude':data_pol_pd['plipoint_y'],'lon outbounds':bool_reqlon_outbounds,'lat outbounds':bool_reqlat_outbounds})
+        reqlatlon_pd_outbounds = reqlatlon_pd.loc[bool_reqlon_outbounds | bool_reqlat_outbounds]
+        raise ValueError(f'{len(reqlatlon_pd_outbounds)} of requested pli points are out of bounds (valid longitude range {lonvar_vals.min()} to {lonvar_vals.max()}, valid latitude range {latvar_vals.min()} to {latvar_vals.max()}):\n{reqlatlon_pd_outbounds}')
+    time_passed = (dt.datetime.now()-dtstart).total_seconds()
+    print(f'>>time passed: {time_passed:.2f} sec')
 
-    return data_interp
+    return data_interp_loaded
 
 
-def interp_hisnc_to_plipoints(data_xr_his, file_pli, kdtree_k=3):
+def interp_hisnc_to_plipoints(data_xr_his, file_pli, kdtree_k=3, load=True):
     """
     interpolate stations in hisfile to points of polyfile
     """
@@ -430,7 +420,7 @@ def interp_hisnc_to_plipoints(data_xr_his, file_pli, kdtree_k=3):
     data_interp = xr.Dataset()
     data_interp['plipoint_x'] = xr.DataArray(data_pol_pd['x'],dims=('plipoints'))
     data_interp['plipoint_y'] = xr.DataArray(data_pol_pd['y'],dims=('plipoints'))
-    data_interp['plipoint_name'] = xr.DataArray(data_pol_pd['name'],dims=('plipoints'))
+    data_interp['plipoint_name'] = xr.DataArray(data_pol_pd['name'].astype('S64'), dims='plipoints').str.decode('utf-8',errors='ignore').str.strip() #TODO: must be possible to do this less complex
     data_interp = data_interp.set_coords(['plipoint_x','plipoint_y','plipoint_name'])
     data_interp = data_interp.set_index({'plipoints':'plipoint_name'})
     
@@ -440,33 +430,25 @@ def interp_hisnc_to_plipoints(data_xr_his, file_pli, kdtree_k=3):
         data_xr_his_pli_knearest = data_xr_his[varone].sel(stations=da_plicoords_nestpointnames)
         data_interp[varone] = (data_xr_his_pli_knearest * da_invdistweight).sum(dim='nearestkpoints')
         data_interp[varone].attrs = data_xr_his[varone].attrs #copy units and other attributes
+        
+    if not load:
+        return data_interp
+    
+    print('loading dataset (might take a while, but increases performance of point loop significantly)')
+    data_interp = data_interp.load()
+    print('done')
+
     return data_interp
     
 
-def plipointsDataset_to_ForcingModel(plipointsDataset, conversion_dict=None, refdate_str=None, reverse_depth=False, data_xr_lonlat_pd=None):
+def plipointsDataset_to_ForcingModel(plipointsDataset, conversion_dict=None, refdate_str=None, reverse_depth=False):
+    
+    datablock_xr_allpoints = plipointsDataset #TODO: rename in script
     
     if conversion_dict is None:
         conversion_dict = get_conversion_dict()
 
     quantity_list = list(plipointsDataset.data_vars)
-
-    print('> actual extraction of data from netcdf with .load() (for all PolyObject points at once, so this will take a while)')
-    dtstart = dt.datetime.now()
-    try:
-        datablock_xr_allpoints = plipointsDataset.load() #loading data for all points at once is more efficient compared to loading data per point in loop 
-    except ValueError as e: #generate a proper error with outofbounds requested coordinates, default is "ValueError: One of the requested xi is out of bounds in dimension 0" #TODO: improve error in xarray
-        if data_xr_lonlat_pd is None: #if no data_xr_lonlat_pd, raise exception anyway
-            raise ValueError(e)
-        lonvar_vals = data_xr_lonlat_pd['lon'].values
-        latvar_vals = data_xr_lonlat_pd['lat'].values
-        data_pol_pd = plipointsDataset[['plipoint_x','plipoint_y']].to_dataframe()
-        bool_reqlon_outbounds = (data_pol_pd['plipoint_x'] <= lonvar_vals.min()) | (data_pol_pd['plipoint_x'] >= lonvar_vals.max())
-        bool_reqlat_outbounds = (data_pol_pd['plipoint_y'] <= latvar_vals.min()) | (data_pol_pd['plipoint_y'] >= latvar_vals.max())
-        reqlatlon_pd = pd.DataFrame({'longitude':data_pol_pd['plipoint_x'],'latitude':data_pol_pd['plipoint_y'],'lon outbounds':bool_reqlon_outbounds,'lat outbounds':bool_reqlat_outbounds})
-        reqlatlon_pd_outbounds = reqlatlon_pd.loc[bool_reqlon_outbounds | bool_reqlat_outbounds]
-        raise ValueError(f'{len(reqlatlon_pd_outbounds)} of requested pli points are out of bounds (valid longitude range {lonvar_vals.min()} to {lonvar_vals.max()}, valid latitude range {latvar_vals.min()} to {latvar_vals.max()}):\n{reqlatlon_pd_outbounds}')
-    time_passed = (dt.datetime.now()-dtstart).total_seconds()
-    print(f'>>time passed: {time_passed:.2f} sec')
     
     #optional conversion of units
     for quan in quantity_list: #TODO: maybe do unit conversion before interp or is that computationally heavy?
