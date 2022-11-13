@@ -57,9 +57,6 @@ def Dataset_to_T3D(datablock_xr):
     
     #get depth variable and values
     depth_array = data_xr_var0['depth'].to_numpy()
-    if 'positive' in data_xr_var0['depth'].attrs.keys():
-        if data_xr_var0['depth'].attrs['positive'] == 'down': #attribute appears in CMEMS, GFDL and CMCC, save to assume presence?
-            depth_array = -depth_array
     
     #get datablock and concatenate with relative time data
     if vector:

@@ -35,14 +35,14 @@ for nrows in [100,1000,10000,100000]:
     bc_east.forcing.append(steric)
 
     dtstart = dt.datetime.now()
-    bc_east.save(filepath=Path(dir_output,"steric_east2.bc"))
+    bc_east.save(filepath=Path(dir_output,"steric_east2_hydrolib.bc"))
     time_hydrolib = (dt.datetime.now()-dtstart).total_seconds()
     print(f'{nrows} rows with hydrolib (unformatted):     {time_hydrolib:.2f} sec')
     
     try:
         dtstart = dt.datetime.now()
         bc_east.serializer_config.float_format_datablock = '.2f'
-        bc_east.save(filepath=Path(dir_output,"steric_east2.bc"))
+        bc_east.save(filepath=Path(dir_output,"steric_east2_hydrolibformattedsingle.bc"))
         time_hydrolib = (dt.datetime.now()-dtstart).total_seconds()
         print(f'{nrows} rows with hydrolib (formatted single): {time_hydrolib:.2f} sec')
     except AttributeError:

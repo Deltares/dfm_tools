@@ -13,7 +13,7 @@ import contextily as ctx
 from pathlib import Path
 import matplotlib.pyplot as plt
 plt.close('all')
-from dfm_tools.interpolate_grid2bnd import get_conversion_dict, interpolate_tide_to_bc, open_sel_rename_Dataset, interp_regularnc_to_plipoints, plipointsDataset_to_ForcingModel
+from dfm_tools.interpolate_grid2bnd import get_conversion_dict, interpolate_tide_to_bc, open_dataset_extra, interp_regularnc_to_plipoints, plipointsDataset_to_ForcingModel
 from dfm_tools.hydrolib_helpers import forcinglike_to_Dataset
 try: #0.3.1 release
     from hydrolib.core.io.ext.models import Boundary, ExtModel
@@ -21,7 +21,7 @@ except: #main branch and next release #TODO: move to easy imports after https://
     from hydrolib.core.io.dflowfm.ext.models import Boundary, ExtModel
 
 #TODO: put all functions under dfm_tools init for more convenience
-#TODO: discuss structure with arthur/stendert (modularity, naming of functions, conversion_dict)
+#TODO: discuss structure with arthur/stendert (new modularity, naming of functions)
 #TODO: make both interpolate functions accept tstart/tstop as datestrings
 #TODO: add coordinate conversion of pli-coordinates (for nesting RD models)
 #copied plifile from DCSM folder: r'p:\1204257-dcsmzuno\data\CMEMS\bnd\NorthSeaAndBaltic_1993-2019_20210510'
@@ -35,7 +35,7 @@ bc_type = 'bc' #currently only 'bc' supported #TODO: add netcdf bc support. http
 refdate_str = 'minutes since 2011-12-22 00:00:00 +00:00' # if None, xarray uses ds.time.encoding['units'] as refdate_str
 
 #quantities should be in conversion_dict.keys(). waterlevelbnd is steric/zos, tide is tidal components from FES/EOT
-list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tracerbndNO3','tide']
+list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tracerbndNO3']#,'tide']
 #list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','tracerbndNO3']
 list_quantities = ['salinitybnd']
 
@@ -56,7 +56,7 @@ if model=='CMEMS': #2012-01-06 12:00:00 to 2013-01-03 12:00:00
     #to reproduce old CMEMS data (icw reverse_depth=True)
     #tstart = dt.datetime(1993,1,1,12,0)
     #tstop = tstart + dt.timedelta(days=5)
-    #dir_pattern_hydro = Path(dir_sourcefiles_hydro,'{ncvarname}_1993*.nc') # later remove 2012 from string, but this is faster for testing #TODO: it is quite slow, maybe speed up possible?
+    #dir_pattern_hydro = Path(dir_sourcefiles_hydro,'{ncvarname}_1993*.nc')
 elif model=='GFDL':
     conversion_dict = get_conversion_dict()
     tstart = dt.datetime(2012, 1, 16, 12, 0)
@@ -117,31 +117,30 @@ for file_pli in list_plifiles:
                     continue
                 dir_pattern = dir_pattern_waq
             
-            #open regulargridDataset and do some basic stuff
-            data_xr_vars = open_sel_rename_Dataset(dir_pattern=dir_pattern, quantity=quantity, #TODO: maybe replace renaming part with package CMCC/Lisa?
-                                                   tstart=tstart, tstop=tstop,
-                                                   conversion_dict=conversion_dict)
-            breakit
+            #open regulargridDataset and do some basic stuff (time selection, renaming depth/lat/lon/varname, converting units, etc)
+            data_xr_vars = open_dataset_extra(dir_pattern=dir_pattern, quantity=quantity, #TODO: maybe replace renaming part with package CMCC/Lisa?
+                                              tstart=tstart, tstop=tstop,
+                                              conversion_dict=conversion_dict,
+                                              refdate_str=refdate_str, 
+                                              reverse_depth=reverse_depth) #temporary argument to compare easier with old coastserv files            
             #interpolate regulargridDataset to plipointsDataset
-            data_interp = interp_regularnc_to_plipoints(data_xr_reg=data_xr_vars, file_pli=file_pli, nPoints=nPoints, #argument for testing
-                                                        kdtree_k=kdtree_k)    
+            data_interp = interp_regularnc_to_plipoints(data_xr_reg=data_xr_vars, file_pli=file_pli,
+                                                        nPoints=nPoints, #argument for testing
+                                                        kdtree_k=kdtree_k) #argument for curvi grids like CMCC
             #convert plipointsDataset to hydrolib ForcingModel
-            ForcingModel_object = plipointsDataset_to_ForcingModel(plipointsDataset=data_interp, 
-                                                                   conversion_dict=conversion_dict, #TODO: conversion dict is used twice, which is confusing. Split dict in rename_dict and conversion_dict?
-                                                                   refdate_str=refdate_str, 
-                                                                   reverse_depth=reverse_depth) #temporary argument to compare easier with old coastserv files
-        
+            ForcingModel_object = plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
+                    
         file_bc_basename = file_pli.name.replace('.pli','')
         if quantity=='tide':
             file_bc_out = Path(dir_output,f'{quantity}_{file_bc_basename}_{tidemodel}.bc')
         else:
-            file_bc_out = Path(dir_output,f'{quantity}_{file_bc_basename}_{model}.bc')
+            file_bc_out = Path(dir_output,f'{quantity}_{file_bc_basename}_{model}_NEW.bc')
         print(f'writing ForcingModel to bc file with hydrolib ({file_bc_out.name})')
         if bc_type=='bc':
             #ForcingModel_object.serializer_config.float_format = '.3f'
             #ForcingModel_object.serializer_config.float_format_datablock = '.5f'
             ForcingModel_object.save(filepath=file_bc_out)
-            #TODO SOLVED: improve formatting of bc file: https://github.com/Deltares/HYDROLIB-core/issues/308
+            #TODO SOLVED: improve formatting of bc file: https://github.com/Deltares/HYDROLIB-core/issues/308 (became quite slow: https://github.com/Deltares/HYDROLIB-core/issues/313)
         else:
             raise Exception(f'invalid bc_type: {bc_type}')
         
@@ -170,8 +169,10 @@ for file_pli in list_plifiles:
             
         if 1: #plotting example data point
             # for iF in [2]:#range(nPoints): #from data_interp TODO: this is slightly easier, but negative depth is not done yet (is in Dataset_to_T3D/Dataset_to_TimeSeries functions)
+            #     data_vars = list(data_interp.data_vars)
             #     fig,ax1 = plt.subplots(figsize=(10, 6))
-            #     data_interp.salinitybnd.isel(plipoints=iF).T.plot()
+            #     data_interp[data_vars[0]].isel(plipoints=iF).T.plot()
+            #     fig.tight_layout()
             for iF in [2]:#range(nPoints): #from ForcingModel_object
                 forcingobject_one = ForcingModel_object.forcing[iF]
                 forcingobject_one_xr = forcinglike_to_Dataset(forcingobject_one,convertnan=True)

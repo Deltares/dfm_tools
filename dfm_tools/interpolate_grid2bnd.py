@@ -211,7 +211,7 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
     return ForcingModel_object
 
 
-def open_sel_rename_Dataset(dir_pattern, quantity, tstart,tstop, conversion_dict=None):
+def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=None, refdate_str=None, reverse_depth=False):
     
     if conversion_dict is None:
         conversion_dict = get_conversion_dict()
@@ -297,6 +297,28 @@ def open_sel_rename_Dataset(dir_pattern, quantity, tstart,tstop, conversion_dict
         raise Exception(f'quantity {quantity_list_notavailable} not found in netcdf, available are: {data_vars}. Try updating conversion_dict to rename these variables.')
     data_xr_vars = data_xr[quantity_list].sel(time=slice(tstart,tstop))
     
+    #optional conversion of units. Multiplications or other simple operatiors do not affect performance (dask.array(getitem) becomes dask.array(mul). With more complex operation it is better do do it on the interpolated array.
+    for quan in quantity_list: #TODO: maybe do unit conversion before interp or is that computationally heavy?
+        if 'conversion' in conversion_dict[quan].keys(): #if conversion is present, unit key must also be in conversion_dict
+            print(f'> converting units from [{data_xr_vars[quan].attrs["units"]}] to [{conversion_dict[quan]["unit"]}]')
+            #print(f'attrs are discarded:\n{data_xr_vars[quan].attrs}')
+            data_xr_vars[quan] = data_xr_vars[quan] * conversion_dict[quan]['conversion'] #conversion drops all attributes of which units (which are changed anyway)
+            data_xr_vars[quan].attrs['units'] = conversion_dict[quan]['unit'] #add unit attribute with resulting unit
+    
+    #optional refdate changing
+    if refdate_str is not None:
+        data_xr_vars.time.encoding['units'] = refdate_str
+    
+    if 'depth' in data_xr_vars.coords:
+        #make negative down
+        if 'positive' in data_xr_vars['depth'].attrs.keys():
+            if data_xr_vars['depth'].attrs['positive'] == 'down': #attribute appears in CMEMS, GFDL and CMCC, save to assume presence?
+                data_xr_vars['depth'] = -data_xr_vars['depth']
+        #optional reversing depth dimension for comparison to coastserv
+        if reverse_depth:
+            print('> reversing depth dimension')
+            data_xr_vars = data_xr_vars.reindex({'depth':list(reversed(data_xr_vars['depth']))})
+    
     return data_xr_vars
 
 
@@ -309,6 +331,11 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, kdtree_k=
     #load boundary file
     polyfile_object = PolyFile(file_pli)
     
+    #check if polyobj names in plifile are unique
+    polynames_pd = pd.Series([polyobj.metadata.name for polyobj in polyfile_object.objects])
+    if polynames_pd.duplicated().any():
+        raise Exception(f'Duplicate polyobject names in polyfile {file_pli.name}, this is not allowed:\n{polynames_pd}')
+    
     #create df of x/y/name of all plipoints in plifile
     data_pol_pd = pd.DataFrame()
     for polyobj in polyfile_object.objects:
@@ -317,7 +344,6 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, kdtree_k=
         data_pol_pd_one['name'] = pd.Series(data_pol_pd_one.index).apply(lambda x: f'{polyobj.metadata.name}_{x+1:04d}')
         data_pol_pd = pd.concat([data_pol_pd,data_pol_pd_one])
     
-    #print(f'processing PolyObject {iPO+1} of {len(pli_PolyObjects)}: name={pli_PolyObject_sel.metadata.name}') #TODO: maybe print something again, but now not looping anymore
     da_plipoints = xr.Dataset()
     da_plipoints['plipoint_x'] = xr.DataArray(data_pol_pd['x'], dims='plipoints')
     da_plipoints['plipoint_y'] = xr.DataArray(data_pol_pd['y'], dims='plipoints')
@@ -372,7 +398,7 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, kdtree_k=
     if not load:
         return data_interp
     
-    print('> actual extraction of data from netcdf with .load() (for all PolyObject points at once, so this will take a while)')
+    print('> actual extraction of data from netcdf with .load() (for all plipoints at once, so this will take a while)')
     dtstart = dt.datetime.now()
     try:
         data_interp_loaded = data_interp.load() #loading data for all points at once is more efficient compared to loading data per point in loop 
@@ -440,29 +466,9 @@ def interp_hisnc_to_plipoints(data_xr_his, file_pli, kdtree_k=3, load=True):
     return data_interp
     
 
-def plipointsDataset_to_ForcingModel(plipointsDataset, conversion_dict=None, refdate_str=None, reverse_depth=False):
+def plipointsDataset_to_ForcingModel(plipointsDataset):
     
     datablock_xr_allpoints = plipointsDataset #TODO: rename in script
-    
-    if conversion_dict is None:
-        conversion_dict = get_conversion_dict()
-
-    quantity_list = list(plipointsDataset.data_vars)
-    
-    #optional conversion of units
-    for quan in quantity_list: #TODO: maybe do unit conversion before interp or is that computationally heavy?
-        if 'conversion' in conversion_dict[quan].keys(): #if conversion is present, unit key must also be in conversion_dict
-            print(f'> converting units from [{datablock_xr_allpoints[quan].attrs["units"]}] to [{conversion_dict[quan]["unit"]}]')
-            datablock_xr_allpoints[quan] = datablock_xr_allpoints[quan] * conversion_dict[quan]['conversion'] #conversion drops all attributes of which units (which are changed anyway)
-            datablock_xr_allpoints[quan].attrs['units'] = conversion_dict[quan]['unit'] #add unit attribute with resulting unit
-    
-    #optional refdate changing and reversing depth dimension (very bc file specific)
-    if refdate_str is not None:
-        datablock_xr_allpoints.time.encoding['units'] = refdate_str
-    
-    if ('depth' in datablock_xr_allpoints.coords) & reverse_depth:
-        print('> reversing depth dimension')
-        datablock_xr_allpoints = datablock_xr_allpoints.reindex({'depth':list(reversed(datablock_xr_allpoints['depth']))})
     
     print('initialize ForcingModel()')
     ForcingModel_object = ForcingModel()
@@ -478,6 +484,7 @@ def plipointsDataset_to_ForcingModel(plipointsDataset, conversion_dict=None, ref
         dtstart = dt.datetime.now()
         datablock_xr_onepoint = datablock_xr_allpoints.isel(plipoints=iP)
         
+        quantity_list = list(plipointsDataset.data_vars)
         for quan in quantity_list:
             datablock_xr_onepoint[quan].attrs['locationname'] = plipoint_name #TODO: is there a nicer way of passing this data?
             if np.isnan(datablock_xr_onepoint[quan].to_numpy()).all(): # check if only nan (out of bounds or land) # we can do .to_numpy() without performance loss, since data is already loaded in datablock_xr_allpoints
