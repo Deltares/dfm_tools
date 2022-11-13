@@ -338,7 +338,6 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, kdtree_k=
         #this is for eg CMCC model with multidimensional lat/lon variable
         #TODO: make nicer, without try except? eg latlon_ndims==1, but not sure if that is always valid
         #TODO: maybe also spherical coordinate distance calculation instead of cartesian/eucledian
-        #TODO: align with interp_hisnc_to_plipoints()
         print(f'ValueError: {e}. Reverting to KDTree instead (nearest neigbour)')
         data_interp = xr.Dataset()
         for varone in list(data_xr_var.data_vars):

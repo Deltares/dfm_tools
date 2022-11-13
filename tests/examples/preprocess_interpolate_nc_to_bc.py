@@ -111,7 +111,7 @@ for file_pli in list_plifiles:
                     continue
                 if (model=='HYCOM') & (quantity not in ['salinitybnd','temperaturebnd']): #only contains quantities salinity and water_temp, so crashes on others
                     continue
-                data_xr_vars = open_sel_rename_Dataset(dir_pattern=dir_pattern_hydro, quantity=quantity,
+                data_xr_vars = open_sel_rename_Dataset(dir_pattern=dir_pattern_hydro, quantity=quantity, #TODO: maybe replace renaming part with package CMCC/Lisa?
                                                        tstart=tstart, tstop=tstop,
                                                        conversion_dict=conversion_dict)
             else: #waq
