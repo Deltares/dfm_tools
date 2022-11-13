@@ -20,7 +20,8 @@ try: #0.3.1 release
 except: #main branch and next release #TODO: move to easy imports after https://github.com/Deltares/HYDROLIB-core/issues/410
     from hydrolib.core.io.dflowfm.ext.models import Boundary, ExtModel
 
-#TODO: discuss structure with arthur/stendert (also conversion_dict)
+#TODO: put all functions under dfm_tools init for more convenience
+#TODO: discuss structure with arthur/stendert (modularity, naming of functions, conversion_dict)
 #TODO: make both interpolate functions accept tstart/tstop as datestrings
 #TODO: add coordinate conversion of pli-coordinates (for nesting RD models)
 #copied plifile from DCSM folder: r'p:\1204257-dcsmzuno\data\CMEMS\bnd\NorthSeaAndBaltic_1993-2019_20210510'
@@ -88,7 +89,6 @@ else:
     raise Exception(f'invalid model: {model}')
 
 
-
 # start of interpolation process
 dtstart = dt.datetime.now()
 ext_bnd = ExtModel()
@@ -99,7 +99,7 @@ for file_pli in list_plifiles:
     file_bc_basename = file_pli.name.replace('.pli','')
     for quantity in list_quantities:
         print(f'processing quantity: {quantity}')
-        if quantity in ['tide']: #tide #TODO: choose flexible/generic component notation
+        if quantity=='tide': #TODO: choose flexible/generic component notation
             tidemodel = 'FES2014' #FES2014, FES2012, EOT20
             component_list = ['2n2','mf','p1','m2','mks2','mu2','q1','t2','j1','m3','mm','n2','r2','k1','m4','mn4','s1','k2','m6','ms4','nu2','s2','l2','m8','msf','o1','s4'] #None results in all FES components
             ForcingModel_object = interpolate_tide_to_bc(tidemodel=tidemodel, file_pli=file_pli, component_list=component_list, nPoints=nPoints)
@@ -111,19 +111,20 @@ for file_pli in list_plifiles:
                     continue
                 if (model=='HYCOM') & (quantity not in ['salinitybnd','temperaturebnd']): #only contains quantities salinity and water_temp, so crashes on others
                     continue
-                data_xr_vars = open_sel_rename_Dataset(dir_pattern=dir_pattern_hydro, quantity=quantity, #TODO: maybe replace renaming part with package CMCC/Lisa?
-                                                       tstart=tstart, tstop=tstop,
-                                                       conversion_dict=conversion_dict)
+                dir_pattern = dir_pattern_hydro
             else: #waq
                 if dir_pattern_waq is None:
                     continue
-                data_xr_vars = open_sel_rename_Dataset(dir_pattern=dir_pattern_waq, quantity=quantity,
-                                                       tstart=tstart, tstop=tstop,
-                                                       conversion_dict=conversion_dict)
+                dir_pattern = dir_pattern_waq
             
+            #open regulargridDataset and do some basic stuff
+            data_xr_vars = open_sel_rename_Dataset(dir_pattern=dir_pattern, quantity=quantity, #TODO: maybe replace renaming part with package CMCC/Lisa?
+                                                   tstart=tstart, tstop=tstop,
+                                                   conversion_dict=conversion_dict)
+            #interpolate regulargridDataset to plipointsDataset
             data_interp = interp_regularnc_to_plipoints(data_xr_reg=data_xr_vars, file_pli=file_pli, nPoints=nPoints, #argument for testing
                                                         kdtree_k=kdtree_k)    
-            
+            #convert plipointsDataset to hydrolib ForcingModel
             ForcingModel_object = plipointsDataset_to_ForcingModel(plipointsDataset=data_interp, 
                                                                    conversion_dict=conversion_dict, #TODO: conversion dict is used twice, which is confusing. Split dict in rename_dict and conversion_dict?
                                                                    refdate_str=refdate_str, 
