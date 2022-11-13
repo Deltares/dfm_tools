@@ -121,6 +121,7 @@ for file_pli in list_plifiles:
             data_xr_vars = open_sel_rename_Dataset(dir_pattern=dir_pattern, quantity=quantity, #TODO: maybe replace renaming part with package CMCC/Lisa?
                                                    tstart=tstart, tstop=tstop,
                                                    conversion_dict=conversion_dict)
+            breakit
             #interpolate regulargridDataset to plipointsDataset
             data_interp = interp_regularnc_to_plipoints(data_xr_reg=data_xr_vars, file_pli=file_pli, nPoints=nPoints, #argument for testing
                                                         kdtree_k=kdtree_k)    

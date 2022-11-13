@@ -14,7 +14,7 @@ try: #0.3.1 release
 except: #main branch and next release
     from hydrolib.core.io.dflowfm.bc.models import ForcingModel, QuantityUnitPair, TimeInterpolation, TimeSeries
 
-basedir = r'n:\My Documents\werkmap\hydrolib_test'
+dir_output = './bc_writeperfomance'
 
 # Chosen approach: separate .bc file for each boundary (east and south)
 bc_east = ForcingModel()
@@ -35,14 +35,14 @@ for nrows in [100,1000,10000,100000]:
     bc_east.forcing.append(steric)
 
     dtstart = dt.datetime.now()
-    bc_east.save(filepath=Path(basedir,"steric_east2.bc"))
+    bc_east.save(filepath=Path(dir_output,"steric_east2.bc"))
     time_hydrolib = (dt.datetime.now()-dtstart).total_seconds()
     print(f'{nrows} rows with hydrolib (unformatted):     {time_hydrolib:.2f} sec')
     
     try:
         dtstart = dt.datetime.now()
         bc_east.serializer_config.float_format_datablock = '.2f'
-        bc_east.save(filepath=Path(basedir,"steric_east2.bc"))
+        bc_east.save(filepath=Path(dir_output,"steric_east2.bc"))
         time_hydrolib = (dt.datetime.now()-dtstart).total_seconds()
         print(f'{nrows} rows with hydrolib (formatted single): {time_hydrolib:.2f} sec')
     except AttributeError:
@@ -57,7 +57,7 @@ unit              = m\n"""
     #normal and most efficient would be np.savetxt(file_out,datablock), but we want to append and also write metadata, so first open file
 
     dtstart = dt.datetime.now()
-    file_out = Path(basedir,"steric_east2_np.bc")
+    file_out = Path(dir_output,"steric_east2_np.bc")
     with open(file_out,'w') as f_bc:
         f_bc.write(metadata_block)
     with open(file_out,'a') as f_bc:
@@ -66,7 +66,7 @@ unit              = m\n"""
     print(f'{nrows} rows with savetxt (unformatted):       {time_npsavetxt:.2f} sec')
 
     dtstart = dt.datetime.now()
-    file_out = Path(basedir,"steric_east2_npformattedsingle.bc")
+    file_out = Path(dir_output,"steric_east2_npformattedsingle.bc")
     with open(file_out,'w') as f_bc:
         f_bc.write(metadata_block)
     with open(file_out,'a') as f_bc:
@@ -75,7 +75,7 @@ unit              = m\n"""
     print(f'{nrows} rows with savetxt (formatted single):  {time_npsavetxt:.2f} sec')
     
     dtstart = dt.datetime.now()
-    file_out = Path(basedir,"steric_east2_npformattedpercol.bc")
+    file_out = Path(dir_output,"steric_east2_npformattedpercol.bc")
     with open(file_out,'w') as f_bc:
         f_bc.write(metadata_block)
     with open(file_out,'a') as f_bc:
