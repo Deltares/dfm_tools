@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 from pathlib import Path
+from scipy.spatial import KDTree
 
 try: #0.3.1 release
     from hydrolib.core.io.bc.models import ForcingModel, QuantityUnitPair, Astronomic
@@ -22,6 +23,7 @@ except: #main branch and next release
     from hydrolib.core.io.dflowfm.polyfile.models import PolyFile
 
 from dfm_tools.hydrolib_helpers import Dataset_to_TimeSeries, Dataset_to_T3D
+from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame
 
 
 def get_conversion_dict(ncvarname_updates={}):
@@ -146,8 +148,8 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
         #create requestedlat/requestedlon DataArrays for proper interpolation in xarray (with new dimension name)
         path_lons = np.array([point.x for point in pli_PolyObject_sel.points])[:nPoints]
         path_lats = np.array([point.y for point in pli_PolyObject_sel.points])[:nPoints]
-        da_lons = xr.DataArray(path_lons, dims='latloncombi')
-        da_lats = xr.DataArray(path_lats, dims='latloncombi')
+        da_lons = xr.DataArray(path_lons, dims='plipoints')
+        da_lats = xr.DataArray(path_lats, dims='plipoints')
         
         #interpolation to lat/lon combinations
         print('> interp mfdataset with all lat/lon coordinates and compute phase_new')
@@ -188,8 +190,8 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
             print(f'(x={lonx}, y={laty})')
             pli_PolyObject_name_num = f'{pli_PolyObject_sel.metadata.name}_{iP+1:04d}'
             
-            data_interp_amp = data_interp_amp_allcoords.sel(latloncombi=iP)
-            data_interp_phs = data_interp_phs_allcoords.sel(latloncombi=iP)
+            data_interp_amp = data_interp_amp_allcoords.sel(plipoints=iP)
+            data_interp_phs = data_interp_phs_allcoords.sel(plipoints=iP)
             
             datablock_pd_allcomp = pd.DataFrame({'component':component_list_upper_pd,'amp':data_interp_amp.to_numpy(),'phs':data_interp_phs.to_numpy()})
             if datablock_pd_allcomp['amp'].isnull().any():
@@ -214,7 +216,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
                          conversion_dict=None,
                          nPoints=None, #argument for testing
                          reverse_depth=False, #temporary argument to compare easier with old coastserv files
-                         KDTree_invdistweigth=False):
+                         kdtree_k=3):
     
     if conversion_dict is None:
         conversion_dict = get_conversion_dict()
@@ -248,16 +250,12 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             return ds
         print(f'catching "MergeError: {e}" >> WARNING: ux/uy have different latitude/longitude values, making two coordinates sets in Dataset.')
         data_xr = xr.open_mfdataset(file_list_nc,chunks={'time':1},preprocess=preprocess_CMCC_uovo)
-        
+    
     #rename variables with rename_dict derived from conversion_dict
     rename_dict = {v['ncvarname']:k for k,v in conversion_dict.items()}
     for ncvarn in data_xr.variables.mapping.keys():
         if ncvarn in rename_dict.keys():
             data_xr = data_xr.rename({ncvarn:rename_dict[ncvarn]})
-    
-    #change refdate
-    if refdate_str is not None:
-        data_xr.time.encoding['units'] = refdate_str
     
     #get calendar and maybe convert_calendar, makes sure that nc_tstart/nc_tstop are of type pd._libs.tslibs.timestamps.Timestamp
     data_xr_calendar = data_xr['time'].dt.calendar
@@ -309,15 +307,23 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
         raise Exception(f'quantity {quantity_list_notavailable} not found in netcdf, available are: {data_vars}. Try updating conversion_dict to rename these variables.')
     data_xr_var = data_xr[quantity_list].sel(time=slice(tstart,tstop))
     
+    
+    if coordname_lon not in data_xr_var.coords:
+        raise Exception(f'{coordname_lon} not in variable coords: {data_xr_var.coords}.')
+
+    #change refdate
+    if refdate_str is not None: #TODO: move this to bc writer
+        data_xr.time.encoding['units'] = refdate_str
+
     if 0: #TODO: maybe split this def, so easy to plot all data before interpolation
         import matplotlib.pyplot as plt
         import contextily as ctx
         fig,ax = plt.subplots()
         data_xr_var[quantity_list[0]].isel(time=0,depth=0).plot(ax=ax)
         ctx.add_basemap(ax=ax,crs="EPSG:4326")
-    
-    if coordname_lon not in data_xr_var.coords:
-        raise Exception(f'{coordname_lon} not in variable coords: {data_xr_var.coords}.')
+
+    #data_interp = interp_regulargridnc_to_plipoints(data_xr_reg=data_xr, pli_file)    
+
     
     #load boundary file
     polyfile_object = PolyFile(file_pli)
@@ -329,8 +335,8 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
         #create requestedlat/requestedlon DataArrays for proper interpolation in xarray (with new dimension name)
         path_lons = np.array([point.x for point in pli_PolyObject_sel.points])[:nPoints]
         path_lats = np.array([point.y for point in pli_PolyObject_sel.points])[:nPoints]
-        da_lons = xr.DataArray(path_lons, dims='latloncombi')
-        da_lats = xr.DataArray(path_lats, dims='latloncombi')
+        da_lons = xr.DataArray(path_lons, dims='plipoints')
+        da_lats = xr.DataArray(path_lats, dims='plipoints')
         
         #interpolation to lat/lon combinations
         print('> interp mfdataset to all PolyObject points (lat/lon coordinates)')
@@ -344,8 +350,8 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             #this is for eg CMCC model with multidimensional lat/lon variable
             #TODO: make nicer, without try except? eg latlon_ndims==1, but not sure if that is always valid
             #TODO: maybe also spherical coordinate distance calculation instead of cartesian/eucledian
+            #TODO: align with interp_hisnc_to_plipoints()
             print(f'ValueError: {e}. Reverting to KDTree instead (nearest neigbour)')
-            from scipy.spatial import KDTree #TODO: move up
             data_interp = xr.Dataset()
             for varone in list(data_xr_var.data_vars):
                 path_lonlat_pd = pd.DataFrame({'lon':da_lons,'lat':da_lats})
@@ -358,23 +364,20 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
                 data_lonlat_pd = pd.DataFrame({'lon':data_lon_flat,'lat':data_lat_flat})
                 #KDTree, finds minimal eucledian distance between points (maybe haversine would be better)
                 tree = KDTree(data_lonlat_pd) #alternatively sklearn.neighbors.BallTree: tree = BallTree(data_lonlat_pd)
-                distance, data_lonlat_idx = tree.query(path_lonlat_pd, k=3) #TODO: maybe add outofbounds treshold for distance
+                distance, data_lonlat_idx = tree.query(path_lonlat_pd, k=kdtree_k) #TODO: maybe add outofbounds treshold for distance
                 #data_lonlat_pd.iloc[data_lonlat_idx]
                 idx_i,idx_j = np.divmod(data_lonlat_idx, data_xr_var['longitude'].shape[1]) #get idx i and j by sort of counting over 2D array
                 # import matplotlib.pyplot as plt
                 # fig,ax = plt.subplots()
                 # data_xr_var[varone].isel(time=0,depth=0).plot(ax=ax)
                 # ax.plot(idx_j,idx_i,'xr')
-                da_idxi = xr.DataArray(idx_i, dims=('latloncombi','point3k'))
-                da_idxj = xr.DataArray(idx_j, dims=('latloncombi','point3k'))
-                if KDTree_invdistweigth:
-                    da_dist = xr.DataArray(distance, dims=('latloncombi','point3k'))
-                    da_invdistweight = (1/da_dist)/(1/da_dist).sum(dim='point3k')
-                    da_varone_3k = data_xr_var[varone].isel(i=da_idxi,j=da_idxj)
-                    data_interp[varone] = (da_varone_3k * da_invdistweight).sum(dim='point3k')
-                    data_interp[varone].attrs = data_xr_var[varone].attrs #copy units and other attributes
-                else:
-                    data_interp[varone] = data_xr_var[varone].isel(i=da_idxi,j=da_idxj).isel(point3k=0) #take first of 3 closest points
+                da_idxi = xr.DataArray(idx_i, dims=('plipoints','nearestkpoints'))
+                da_idxj = xr.DataArray(idx_j, dims=('plipoints','nearestkpoints'))
+                da_dist = xr.DataArray(distance, dims=('plipoints','nearestkpoints'))
+                da_invdistweight = (1/da_dist)/(1/da_dist).sum(dim='nearestkpoints')
+                da_varone_3k = data_xr_var[varone].isel(i=da_idxi,j=da_idxj)
+                data_interp[varone] = (da_varone_3k * da_invdistweight).sum(dim='nearestkpoints')
+                data_interp[varone].attrs = data_xr_var[varone].attrs #copy units and other attributes
 
         time_passed = (dt.datetime.now()-dtstart).total_seconds()
         # print(f'>>time passed: {time_passed:.2f} sec')
@@ -413,7 +416,7 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             
             print('> select data for this point, ffill nans, concatenating time column, constructing T3D/TimeSeries and appending to ForcingModel()')
             dtstart = dt.datetime.now()
-            datablock_xr_onepoint = datablock_xr_allpoints.isel(latloncombi=iP)
+            datablock_xr_onepoint = datablock_xr_allpoints.isel(plipoints=iP)
             
             for quan in quantity_list:
                 datablock_xr_onepoint[quan].attrs['locationname'] = pli_PolyObject_name_num #TODO: is there a nicer way of passing this data?
@@ -431,4 +434,50 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
     
     return ForcingModel_object
 
+
+def interp_regulargridnc_to_plipoints(data_xr_reg, file_pli):
+    
+    return
+
+
+def interp_hisnc_to_plipoints(data_xr_his, file_pli, kdtree_k=3):
+    """
+    interpolate stations in hisfile to points of polyfile
+    """
+    #KDTree, finds minimal eucledian distance between points (haversine would be better). Alternatively sklearn.neighbors.BallTree: tree = BallTree(data_lonlat_pd)
+    
+    datavars_list = list(data_xr_his.data_vars)
+    if len(datavars_list)>5:
+        print('WARNING: more than 5 data_vars, you might want to subset your data_xr_his')
+    #read hisfile and make KDTree of xy of hisstations
+    hisstations_pd = data_xr_his.stations.to_dataframe() #TODO: add check if stations are strings? (whether preprocess_hisnc was used)
+    tree_nest2 = KDTree(hisstations_pd[['station_x_coordinate','station_y_coordinate']])
+    
+    #read polyfile and query k nearest hisstations (names)
+    polyfile_object = PolyFile(file_pli)
+    data_pol_pd = pd.DataFrame()
+    for polyobj in polyfile_object.objects:
+        data_pol_pd_one = pointlike_to_DataFrame(polyobj)
+        data_pol_pd_one['name'] = pd.Series(data_pol_pd_one.index).apply(lambda x: f'{polyobj.metadata.name}_{x+1:04d}')
+        data_pol_pd = pd.concat([data_pol_pd,data_pol_pd_one])
+    plicoords_distance2, plicoords_nestpointidx = tree_nest2.query(data_pol_pd[['x','y']], k=kdtree_k)
+    da_plicoords_nestpointidx = xr.DataArray(plicoords_nestpointidx, dims=('plipoints','nearestkpoints'))
+    da_plicoords_nestpointnames = data_xr_his.stations.isel(stations=da_plicoords_nestpointidx)
+    
+    #interpolate hisfile variables to plipoints
+    data_interp = xr.Dataset()
+    data_interp['point_x'] = xr.DataArray(data_pol_pd['x'],dims=('plipoints'))
+    data_interp['point_y'] = xr.DataArray(data_pol_pd['y'],dims=('plipoints'))
+    data_interp['point_name'] = xr.DataArray(data_pol_pd['name'],dims=('plipoints'))
+    data_interp = data_interp.set_coords(['point_x','point_y','point_name'])
+    data_interp = data_interp.set_index({'plipoints':'point_name'})
+    
+    for varone in datavars_list:
+        da_dist = xr.DataArray(plicoords_distance2, dims=('plipoints','nearestkpoints'))
+        da_invdistweight = (1/da_dist)/(1/da_dist).sum(dim='nearestkpoints') #TODO: set weigths for invalid points to 0 (and increase others weights so sum remains 1)
+        data_xr_his_pli_knearest = data_xr_his[varone].sel(stations=da_plicoords_nestpointnames)
+        data_interp[varone] = (data_xr_his_pli_knearest * da_invdistweight).sum(dim='nearestkpoints')
+        data_interp[varone].attrs = data_xr_his[varone].attrs #copy units and other attributes
+    return data_interp
+    
 
