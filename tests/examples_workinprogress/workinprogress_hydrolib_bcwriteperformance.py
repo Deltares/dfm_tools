@@ -21,6 +21,8 @@ bc_east = ForcingModel()
 
 print('writing timing for bc files with 50 columns')
 for nrows in [1000,10000,100000]:
+    dtstart = dt.datetime.now()
+    print(f'{nrows} rows datablock generation:             ',end='')
     datablock = np.random.uniform(low=-40, high=130.3, size=(nrows,50))
     datablock_list = datablock.tolist()
     
@@ -33,20 +35,24 @@ for nrows in [1000,10000,100000]:
         datablock=datablock_list, 
     )
     bc_east.forcing.append(steric)
+    time_hydrolib = (dt.datetime.now()-dtstart).total_seconds()
+    print(f'{time_hydrolib:.2f} sec')
 
+    print(f'{nrows} rows with hydrolib (unformatted):      ',end='')
     dtstart = dt.datetime.now()
     bc_east.save(filepath=Path(dir_output,"steric_east2_hydrolib.bc"))
     time_hydrolib = (dt.datetime.now()-dtstart).total_seconds()
-    print(f'{nrows} rows with hydrolib (unformatted):      {time_hydrolib:.2f} sec')
+    print(f'{time_hydrolib:.2f} sec')
     
     try:
+        print(f'{nrows} rows with hydrolib (formatted single): ',end='')
         dtstart = dt.datetime.now()
         bc_east.serializer_config.float_format_datablock = '.2f'
         bc_east.save(filepath=Path(dir_output,"steric_east2_hydrolibformattedsingle.bc"))
         time_hydrolib = (dt.datetime.now()-dtstart).total_seconds()
-        print(f'{nrows} rows with hydrolib (formatted single): {time_hydrolib:.2f} sec')
+        print(f'{time_hydrolib:.2f} sec')
     except AttributeError:
-        print(f'{nrows} rows with hydrolib (formatted single): FAILED (TOO OLD HYDROLIB VERSION)')
+        print('FAILED (TOO OLD HYDROLIB VERSION)')
     
     metadata_block = """[forcing]
 quantity          = time
@@ -56,6 +62,7 @@ unit              = m\n"""
     
     #normal and most efficient would be np.savetxt(file_out,datablock), but we want to append and also write metadata, so first open file
 
+    print(f'{nrows} rows with savetxt (unformatted):       ',end='')
     dtstart = dt.datetime.now()
     file_out = Path(dir_output,"steric_east2_np.bc")
     with open(file_out,'w') as f_bc:
@@ -63,8 +70,9 @@ unit              = m\n"""
     with open(file_out,'a') as f_bc:
         np.savetxt(f_bc,datablock)
     time_npsavetxt = (dt.datetime.now()-dtstart).total_seconds()
-    print(f'{nrows} rows with savetxt (unformatted):       {time_npsavetxt:.2f} sec')
+    print(f'{time_npsavetxt:.2f} sec')
 
+    print(f'{nrows} rows with savetxt (formatted single):  ',end='')
     dtstart = dt.datetime.now()
     file_out = Path(dir_output,"steric_east2_npformattedsingle.bc")
     with open(file_out,'w') as f_bc:
@@ -72,8 +80,9 @@ unit              = m\n"""
     with open(file_out,'a') as f_bc:
         np.savetxt(f_bc,datablock,fmt='%9.3f')
     time_npsavetxt = (dt.datetime.now()-dtstart).total_seconds()
-    print(f'{nrows} rows with savetxt (formatted single):  {time_npsavetxt:.2f} sec')
+    print(f'{time_npsavetxt:.2f} sec')
     
+    print(f'{nrows} rows with savetxt (formatted percol):  ',end='')
     dtstart = dt.datetime.now()
     file_out = Path(dir_output,"steric_east2_npformattedpercol.bc")
     with open(file_out,'w') as f_bc:
@@ -81,7 +90,7 @@ unit              = m\n"""
     with open(file_out,'a') as f_bc:
         np.savetxt(f_bc,datablock,fmt='%9.1f'+'%9.3f'*49)
     time_npsavetxt = (dt.datetime.now()-dtstart).total_seconds()
-    print(f'{nrows} rows with savetxt (formatted percol):  {time_npsavetxt:.2f} sec')
+    print(f'{time_npsavetxt:.2f} sec')
     print('')
     
     
