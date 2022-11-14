@@ -19,8 +19,8 @@ dir_output = './bc_writeperfomance'
 # Chosen approach: separate .bc file for each boundary (east and south)
 bc_east = ForcingModel()
 
-print('writing timing for bc files with 50 rows') 
-for nrows in [100,1000,10000,100000]:
+print('writing timing for bc files with 50 columns')
+for nrows in [1000,10000,100000]:
     datablock = np.random.uniform(low=-40, high=130.3, size=(nrows,50))
     datablock_list = datablock.tolist()
     
@@ -37,7 +37,7 @@ for nrows in [100,1000,10000,100000]:
     dtstart = dt.datetime.now()
     bc_east.save(filepath=Path(dir_output,"steric_east2_hydrolib.bc"))
     time_hydrolib = (dt.datetime.now()-dtstart).total_seconds()
-    print(f'{nrows} rows with hydrolib (unformatted):     {time_hydrolib:.2f} sec')
+    print(f'{nrows} rows with hydrolib (unformatted):      {time_hydrolib:.2f} sec')
     
     try:
         dtstart = dt.datetime.now()
@@ -83,3 +83,5 @@ unit              = m\n"""
     time_npsavetxt = (dt.datetime.now()-dtstart).total_seconds()
     print(f'{nrows} rows with savetxt (formatted percol):  {time_npsavetxt:.2f} sec')
     print('')
+    
+    
