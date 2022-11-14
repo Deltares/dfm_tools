@@ -20,7 +20,7 @@ Features
 	- converting and plotting this data with helper functions in dfm_tools
 	- e.g.: interpolating CMEMS data to model boundary and writing 2D/3D boundary condition files
 - to get started:
-	- [pdf with dfm_tools features and examples](https://nbviewer.org/github/openearth/dfm_tools/raw/master/docs/dfm_tools.pdf)
+	- [pdf with dfm_tools features and examples](https://nbviewer.org/github/openearth/dfm_tools/raw/master/docs/dfm_tools.pdf){:target="_blank"}
 	- [html documentation](https://htmlpreview.github.io/?https://github.com/openearth/dfm_tools/blob/master/docs/dfm_tools/index.html)
 	- [example scripts](https://github.com/openearth/dfm_tools/tree/master/tests/examples)
 	- examples of (mostly unformatted) figures created by this pytest testbank: n:\\Deltabox\\Bulletin\\veenstra\\info dfm_tools
