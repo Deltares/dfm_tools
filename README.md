@@ -23,7 +23,6 @@ Features
 	- [pdf with dfm_tools features and examples](https://nbviewer.org/github/openearth/dfm_tools/raw/master/docs/dfm_tools.pdf)
 	- [html documentation](https://htmlpreview.github.io/?https://github.com/openearth/dfm_tools/blob/master/docs/dfm_tools/index.html)
 	- [example scripts](https://github.com/openearth/dfm_tools/tree/master/tests/examples)
-	- examples of (mostly unformatted) figures created by this pytest testbank: n:\\Deltabox\\Bulletin\\veenstra\\info dfm_tools
 	- want to get updates about dfm_tools? Send an email to jelmer.veenstra@deltares.nl
 	
 Installation
