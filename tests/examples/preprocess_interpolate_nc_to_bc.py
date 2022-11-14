@@ -134,7 +134,7 @@ for file_pli in list_plifiles:
         if quantity=='tide':
             file_bc_out = Path(dir_output,f'{quantity}_{file_bc_basename}_{tidemodel}.bc')
         else:
-            file_bc_out = Path(dir_output,f'{quantity}_{file_bc_basename}_{model}_NEW.bc')
+            file_bc_out = Path(dir_output,f'{quantity}_{file_bc_basename}_{model}.bc')
         print(f'writing ForcingModel to bc file with hydrolib ({file_bc_out.name})')
         if bc_type=='bc':
             #ForcingModel_object.serializer_config.float_format = '.3f'
