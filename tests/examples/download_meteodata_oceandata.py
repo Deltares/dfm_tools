@@ -16,6 +16,7 @@ import dfm_tools as dfmt
 
 #download ERA5/CMEMS/HYCOM data for given domain, time extent and variables
 #TODO: add CMCC, GFD
+#TODO: add climatedata cmip6
 #TODO: add GFS and other NOAA models (https://www.ncei.noaa.gov/products/weather-climate-models/global-forecast > NCEI > TDS)
 #TODO: add click?
 
@@ -120,7 +121,7 @@ for varkey in varlist_hycom:
 """
 Download CMCC data (possible with opendap? urls seem really specific)
 userguide: https://esgf.github.io/esgf-user-support/user_guide.html
-server: https://esgf-data.dkrz.de/search/cmip6-dkrz/
+server: https://esgf-data.dkrz.de/search/cmip6-dkrz/ (Sanne: exacte kopie op https://esgf-node.llnl.gov/search/cmip6/)
 
 Example selection:
 source-id: CMCC-ESM2
@@ -129,4 +130,26 @@ table-id: Omon (=monthly)
 Variable: no3/o2
 
 > Search
+"""
+
+"""
+CMIP6
+https://esgf-node.llnl.gov/search/cmip6/
+there is also a esgf python client: https://esgf-pyclient.readthedocs.io/en/latest/
+notebook: https://esgf-pyclient.readthedocs.io/en/latest/notebooks/examples/download.html
+
+example cdsapi request
+request_dict = {
+                'format': 'zip',
+                'experiment': 'historical',
+                'variable': 'storm_surge_residual',
+                'model': 'CMCC-CM2-VHR4',
+                'year': '1982',
+                'month': '04',
+                'temporal_aggregation': '10_min',
+                }
+
+file_out = 'download.zip'
+c.retrieve(name='sis-water-level-change-timeseries-cmip6', request=request_dict, target=file_out)
+
 """
