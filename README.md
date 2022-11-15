@@ -43,7 +43,7 @@ Installation
 	- geopandas for shapefile related operations
 	- contextily for satellite imagery on plots, seems faster than cartopy
 	- xarray developers advise to install dependecies dask/netCDF4/bottleneck with conda-forge also: https://docs.xarray.dev/en/v0.8.0/installing.html
-	- cdsapi/pydap: to download ERA5 and CMEMS data. Minimal pydap version is 3.3.0 (only available via conda-force on 10-11-2022)
+	- cdsapi/pydap: to download ERA5 and CMEMS data. Minimal pydap version is 3.3.0 (only available via conda-forge on 10-11-2022)
 - launch Spyder:
 	- open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in the dfm_tools_env environment only)
 	- copy the code from [Example usage](#example-usage) to your own scripts to get started
