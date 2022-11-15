@@ -7,10 +7,9 @@ Created on Sat Nov 12 19:58:42 2022
 #TODO: this fails, where to do network stuff?
 import xarray as xr
 from pathlib import Path
-from dfm_tools.get_nc import get_netdata
+import dfm_tools as dfmt #dfmt.get_netdata
 import meshkernel
 from hydrolib.core.io.dflowfm.net.models import NetworkModel, Network
-
 
 file_net = r'p:\1230882-emodnet_hrsm\global_tide_surge_model\trunk\gtsm4.1\step11_global_1p25eu_net.nc'
 data_xr_net = NetworkModel(Path(file_net))

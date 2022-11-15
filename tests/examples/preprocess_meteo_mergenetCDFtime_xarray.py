@@ -18,7 +18,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 plt.close('all')
-from dfm_tools.xarray_helpers import preprocess_hirlam
+import dfm_tools as dfmt
 
 #TODO: crashes in pytest for some reason: "OSError: [Errno -51] NetCDF: Unknown file format"
 #TODO: add ERA5 conversions and features from hydro_tools\ERA5\ERA52DFM.py (except for varRhoair_alt)
@@ -53,7 +53,7 @@ if 'HIRLAM' in mode:
     fn_match_pattern = 'h72_20131*.nc'
     file_out_prefix = 'h72_'
     drop_variables = ['x','y'] #will be added again as longitude/latitude, this is a workaround
-    preprocess = preprocess_hirlam
+    preprocess = dfmt.preprocess_hirlam
     rename_variables = None
 elif mode == 'HARMONIE':
     dir_data = 'p:\\1204257-dcsmzuno\\data\\meteo\\HARMONIE\\nc\\air_*' #many invalid files, so subsetting here

@@ -12,7 +12,7 @@ try: #0.3.1 release
 except: #main branch and next release #TODO: move to easy imports after https://github.com/Deltares/HYDROLIB-core/issues/410
     from hydrolib.core.io.dflowfm.mdu.models import FMModel, NetworkModel, ExtModel, StructureModel
     from hydrolib.core.io.dflowfm.bc.models import ForcingModel
-from dfm_tools.hydrolib_helpers import forcinglike_to_Dataset
+import dfm_tools as dfmt
 import datetime as dt
 import matplotlib.pyplot as plt
 plt.close('all')
@@ -65,7 +65,7 @@ for iEB, extbnd in enumerate(ext_boundaries+ext_laterals):
     fig,ax = plt.subplots(figsize=(12,6))
     for iEBF, forcing in enumerate(extbnd_forcings[:max_extforcings]):
         print(f'forcing {iEBF+1} of {len(extbnd_forcings)}: {forcing.name} ({forcing.function}) ({forcing.quantityunitpair[1].quantity})')
-        forcing_xr = forcinglike_to_Dataset(forcing)
+        forcing_xr = dfmt.forcinglike_to_Dataset(forcing)
         data_vars = list(forcing_xr.data_vars.keys()) #mostly one variable, except for astronomic/uxuy bnd
         ax.set_title(f'{extbnd_filepath}')
         pc = forcing_xr[data_vars[0]].plot(ax=ax, label=f'{forcing.name} ({forcing.function}) ({forcing.quantityunitpair[1].quantity})') # see CMEMS_interpolate_example.py for pcolormesh in case of verticalpositions

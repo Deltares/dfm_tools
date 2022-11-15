@@ -9,8 +9,7 @@ import os
 from pathlib import Path
 import matplotlib.pyplot as plt
 plt.close('all')
-
-from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame
+import dfm_tools as dfmt
 try: #0.3.1 release
     from hydrolib.core.io.xyz.models import XYZModel
     from hydrolib.core.io.obs.models import ObservationPointModel
@@ -26,7 +25,7 @@ file_xyz = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\geometry_j19_N
 #file_xyz = r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\general\diffusivity_rivzee_v6.xyz' #TODO: xyz file with initial whitespaces is not read properly: https://github.com/Deltares/HYDROLIB-core/issues/415
 
 data_xyz = XYZModel(Path(file_xyz))
-xyz_pd = pointlike_to_DataFrame(data_xyz)
+xyz_pd = dfmt.pointlike_to_DataFrame(data_xyz)
 
 fig,ax = plt.subplots()
 xyz_pd.plot.scatter(x='x',y='y',c='z',s=0.5,ax=ax,vmin=-1,vmax=1)

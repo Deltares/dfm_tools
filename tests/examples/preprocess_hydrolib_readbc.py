@@ -9,7 +9,7 @@ import os
 from pathlib import Path
 import matplotlib.pyplot as plt
 plt.close('all')
-from dfm_tools.hydrolib_helpers import forcinglike_to_Dataset, Dataset_to_TimeSeries, Dataset_to_T3D#, Dataset_to_Astronomic
+import dfm_tools as dfmt
 try: #0.3.1 release
     from hydrolib.core.io.bc.models import ForcingModel
 except: #main branch and next release #TODO: move to easy imports after https://github.com/Deltares/HYDROLIB-core/issues/410
@@ -54,10 +54,10 @@ for file_bc in file_bc_list:
     #plot
     fig, ax = plt.subplots(figsize=(12, 6))
     for iFO, forcingobj in enumerate(m.forcing[:nPoints]):
-        forcing_xr = forcinglike_to_Dataset(forcingobj, convertnan=True)
+        forcing_xr = dfmt.forcinglike_to_Dataset(forcingobj, convertnan=True)
         data_vars = list(forcing_xr.data_vars)
         if forcingobj.function=='t3d':
-            forcing_ts = Dataset_to_T3D(forcing_xr)
+            forcing_ts = dfmt.Dataset_to_T3D(forcing_xr)
             if hasattr(forcingobj.quantityunitpair[1],'elementname'): #uxuy vector
                 plt.close()
                 fig, axes = plt.subplots(2,1,figsize=(12, 8),sharex=True,sharey=True)
@@ -66,7 +66,7 @@ for file_bc in file_bc_list:
             else: #salinitybnd/temperaturebnd
                 forcing_xr[data_vars[0]].T.plot(ax=ax)
         elif forcingobj.function=='timeseries': #waterlevelbnd
-            forcing_ts = Dataset_to_TimeSeries(forcing_xr)
+            forcing_ts = dfmt.Dataset_to_TimeSeries(forcing_xr)
             forcing_xr[data_vars[0]].plot(ax=ax, label=forcing_xr[data_vars[0]].attrs['name'], linewidth=0.8)
             ax.legend(loc=1)
         elif forcingobj.function=='astronomic': #eg tidal components
