@@ -12,11 +12,7 @@ import numpy as np
 import contextily as ctx
 import datetime as dt
 import xarray as xr
-
-from dfm_tools.get_nc import get_netdata, get_ncmodeldata, get_xzcoords_onintersection, plot_netmapdata
-from dfm_tools.linebuilder import LineBuilder
-from dfm_tools.regulargrid import scatter_to_regulargrid
-from dfm_tools.get_nc_helpers import get_ncvarproperties
+import dfm_tools as dfmt
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
@@ -115,12 +111,12 @@ for file_nc in file_nc_list:
     data_xr = xr.open_dataset(file_nc) #currently not used, but still usefull to check netcdf structure
     
     #get ugrid data, vars informatin and grid units (latter from bedlevel coordinates)
-    vars_pd = get_ncvarproperties(file_nc=file_nc)
-    ugrid_all = get_netdata(file_nc=file_nc)
+    vars_pd = dfmt.get_ncvarproperties(file_nc=file_nc)
+    ugrid_all = dfmt.get_netdata(file_nc=file_nc)
     
     print('plot grid from mapdata')
     fig, ax = plt.subplots()
-    pc = plot_netmapdata(ugrid_all.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
+    pc = dfmt.plot_netmapdata(ugrid_all.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
     ax.set_xlabel('x')
     ax.set_ylabel('y')
     ax.set_aspect('equal')
@@ -130,9 +126,9 @@ for file_nc in file_nc_list:
 
     print('plot grid and bedlevel (constantvalue, 1 dim)')
     #get bedlevel and create plot with ugrid and cross section line
-    data_frommap_bl = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_flowelem_bl')
+    data_frommap_bl = dfmt.get_ncmodeldata(file_nc=file_nc, varname='mesh2d_flowelem_bl')
     fig, ax_input = plt.subplots()
-    pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_bl, ax=ax_input, linewidth=0.5, edgecolors='face', cmap='jet')#, color='crimson', facecolor="None")
+    pc = dfmt.plot_netmapdata(ugrid_all.verts, values=data_frommap_bl, ax=ax_input, linewidth=0.5, edgecolors='face', cmap='jet')#, color='crimson', facecolor="None")
     pc.set_clim(clim_bl)
     cbar = fig.colorbar(pc, ax=ax_input)
     cbar.set_label('%s [%s]'%(data_frommap_bl.var_ncattrs['long_name'], data_frommap_bl.var_ncattrs['units']))
@@ -141,9 +137,9 @@ for file_nc in file_nc_list:
     ax_input.set_aspect('equal')
     if 0: #click interactive polygon #TODO: this is useful but should work also without killing the code
         line, = ax_input.plot([], [],'o-')  # empty line
-        linebuilder = LineBuilder(line) #after this click your line and then run the line below
+        dfmt.LineBuilder = dfmt.LineBuilder(line) #after this click your line and then run the line below
         #breakit
-        line_array = linebuilder.line_array
+        line_array = dfmt.LineBuilder.line_array
     ax_input.plot(line_array[0,0],line_array[0,1],'bx',linewidth=3,markersize=10)
     ax_input.plot(line_array[:,0],line_array[:,1],'b',linewidth=3)
     fig.tight_layout()
@@ -167,9 +163,9 @@ for file_nc in file_nc_list:
     #intersect function, find crossed cell numbers (gridnos) and coordinates of intersection (2 per crossed cell)
     intersect_pd = ugrid_all.polygon_intersect(line_array, optimize_dist=False, calcdist_fromlatlon=calcdist_fromlatlon)
     #derive vertices from cross section (distance from first point)
-    crs_verts, crs_plotdata = get_xzcoords_onintersection(file_nc=file_nc, varname='mesh2d_sa1', intersect_pd=intersect_pd, timestep=timestep)
+    crs_verts, crs_plotdata = dfmt.get_xzcoords_onintersection(file_nc=file_nc, varname='mesh2d_sa1', intersect_pd=intersect_pd, timestep=timestep)
     fig, ax = plt.subplots()
-    pc = plot_netmapdata(crs_verts, values=crs_plotdata, ax=ax, cmap='jet')#, linewidth=0.5, edgecolor='k')
+    pc = dfmt.plot_netmapdata(crs_verts, values=crs_plotdata, ax=ax, cmap='jet')#, linewidth=0.5, edgecolor='k')
     fig.colorbar(pc, ax=ax)
     ax.set_ylim(val_ylim)
     plt.savefig(os.path.join(dir_output,f'{basename}_crossect'))
@@ -180,9 +176,9 @@ for file_nc in file_nc_list:
     
     
     print('plot grid and values from mapdata (salinity on layer, 3dim, on cell centers)')
-    data_frommap = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sa1', timestep=timestep, layer=layno)
+    data_frommap = dfmt.get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sa1', timestep=timestep, layer=layno)
     fig, ax = plt.subplots()
-    pc = plot_netmapdata(ugrid_all.verts, values=data_frommap, ax=None, linewidth=0.5, cmap="jet", edgecolor='face')
+    pc = dfmt.plot_netmapdata(ugrid_all.verts, values=data_frommap, ax=None, linewidth=0.5, cmap="jet", edgecolor='face')
     pc.set_clim(clim_sal)
     cbar = fig.colorbar(pc, ax=ax)
     cbar.set_label('%s [%s]'%(data_frommap.var_ncattrs['long_name'], data_frommap.var_ncattrs['units']))
@@ -200,9 +196,9 @@ for file_nc in file_nc_list:
         varname_edge = 'mesh2d_windxu'
     else: #DCSM has all relevant values on centers, skip to next file
         continue
-    data_frommap = get_ncmodeldata(file_nc=file_nc, varname=varname_edge, timestep=timestep, layer=layno)
+    data_frommap = dfmt.get_ncmodeldata(file_nc=file_nc, varname=varname_edge, timestep=timestep, layer=layno)
     fig, ax = plt.subplots()
-    pc = plot_netmapdata(ugrid_all.edge_verts, values=data_frommap, ax=None, linewidth=0.5, cmap="jet", edgecolor='face')
+    pc = dfmt.plot_netmapdata(ugrid_all.edge_verts, values=data_frommap, ax=None, linewidth=0.5, cmap="jet", edgecolor='face')
     cbar = fig.colorbar(pc, ax=ax)
     cbar.set_label('%s [%s]'%(data_frommap.var_ncattrs['long_name'], data_frommap.var_ncattrs['units']))
     ax.set_xlabel('x')
@@ -214,23 +210,23 @@ for file_nc in file_nc_list:
         
     if file_nc_fou is not None:
         #RMM foufile met quivers
-        vars_pd = get_ncvarproperties(file_nc=file_nc_fou)
+        vars_pd = dfmt.get_ncvarproperties(file_nc=file_nc_fou)
         
-        ugrid_all_fou = get_netdata(file_nc=file_nc_fou)
-        ux_mean = get_ncmodeldata(file_nc=file_nc_fou, varname='mesh2d_fourier001_mean')
-        uy_mean = get_ncmodeldata(file_nc=file_nc_fou, varname='mesh2d_fourier002_mean')
+        ugrid_all_fou = dfmt.get_netdata(file_nc=file_nc_fou)
+        ux_mean = dfmt.get_ncmodeldata(file_nc=file_nc_fou, varname='mesh2d_fourier001_mean')
+        uy_mean = dfmt.get_ncmodeldata(file_nc=file_nc_fou, varname='mesh2d_fourier002_mean')
         magn_mean = np.sqrt(ux_mean**2+uy_mean**2)
-        #uc_mean = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_fourier003_mean')
-        #uc_max = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_fourier004_max')
-        facex = get_ncmodeldata(file_nc=file_nc_fou, varname='mesh2d_face_x')
-        facey = get_ncmodeldata(file_nc=file_nc_fou, varname='mesh2d_face_y')
+        #uc_mean = dfmt.get_ncmodeldata(file_nc=file_nc, varname='mesh2d_fourier003_mean')
+        #uc_max = dfmt.get_ncmodeldata(file_nc=file_nc, varname='mesh2d_fourier004_max')
+        facex = dfmt.get_ncmodeldata(file_nc=file_nc_fou, varname='mesh2d_face_x')
+        facey = dfmt.get_ncmodeldata(file_nc=file_nc_fou, varname='mesh2d_face_y')
         
-        X,Y,U = scatter_to_regulargrid(xcoords=facex, ycoords=facey, ncellx=60, ncelly=35, values=ux_mean)
-        X,Y,V = scatter_to_regulargrid(xcoords=facex, ycoords=facey, ncellx=60, ncelly=35, values=uy_mean)
+        X,Y,U = dfmt.scatter_to_regulargrid(xcoords=facex, ycoords=facey, ncellx=60, ncelly=35, values=ux_mean)
+        X,Y,V = dfmt.scatter_to_regulargrid(xcoords=facex, ycoords=facey, ncellx=60, ncelly=35, values=uy_mean)
         
         #thinning = 3
         fig1,ax1 = plt.subplots(figsize=(9,5))
-        pc1 = plot_netmapdata(ugrid_all_fou.verts, magn_mean, edgecolor='face')
+        pc1 = dfmt.plot_netmapdata(ugrid_all_fou.verts, magn_mean, edgecolor='face')
         #ax1.quiver(facex[::thinning], facey[::thinning], ux_mean[::thinning], uy_mean[::thinning], color='w',scale=20)#,width=0.005)#, edgecolor='face', cmap='jet')
         ax1.quiver(X,Y,U,V, color='w',scale=5)#,width=0.005)#, edgecolor='face', cmap='jet')
         pc1.set_clim([0,0.10])

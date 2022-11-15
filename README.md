@@ -63,14 +63,13 @@ import os
 import xarray as xr
 import matplotlib.pyplot as plt
 plt.close('all')
-from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
-from dfm_tools.xarray_helpers import preprocess_hisnc
+import dfm_tools as dfmt
 
 dir_testinput = os.path.join(r'n:\Deltabox\Bulletin\veenstra\info dfm_tools\test_input')
 file_nc_map = os.path.join(dir_testinput,'DFM_sigma_curved_bend','DFM_OUTPUT_cb_3d','cb_3d_map.nc')
 file_nc_his = os.path.join(dir_testinput,'DFM_sigma_curved_bend','DFM_OUTPUT_cb_3d','cb_3d_his.nc')
 
-data_xr_his = xr.open_mfdataset(file_nc_his, preprocess=preprocess_hisnc)
+data_xr_his = xr.open_mfdataset(file_nc_his, preprocess=dfmt.preprocess_hisnc)
 stations_pd = data_xr_his['stations'].to_dataframe()
 
 #retrieve his data and plot
@@ -80,24 +79,24 @@ ax.legend(data_xr_his.stations.to_series(),loc=1) #optional, to change legend lo
 fig.tight_layout()
 
 #plot net/grid
-ugrid_all = get_netdata(file_nc=file_nc_map)#,multipart=False)
+ugrid_all = dfmt.get_netdata(file_nc=file_nc_map)#,multipart=False)
 fig, ax = plt.subplots()
-pc = plot_netmapdata(ugrid_all.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
+pc = dfmt.plot_netmapdata(ugrid_all.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
 ax.set_aspect('equal')
 
 #plot water level on map
-data_frommap_wl = get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_s1', timestep=3)#, multipart=False)
+data_frommap_wl = dfmt.get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_s1', timestep=3)#, multipart=False)
 fig, ax = plt.subplots()
-pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_wl[0,:], ax=None, linewidth=0.5, cmap="jet")
+pc = dfmt.plot_netmapdata(ugrid_all.verts, values=data_frommap_wl[0,:], ax=None, linewidth=0.5, cmap="jet")
 pc.set_clim([-0.5,1])
 fig.colorbar(pc, ax=ax)
 ax.set_title(data_frommap_wl.var_varname)
 ax.set_aspect('equal')
 
 #plot salinity on map
-data_frommap_sal = get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_sa1', timestep=2, layer=5)#, multipart=False)
+data_frommap_sal = dfmt.get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_sa1', timestep=2, layer=5)#, multipart=False)
 fig, ax = plt.subplots()
-pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_sal[0,:,0], ax=None, linewidth=0.5, cmap="jet")
+pc = dfmt.plot_netmapdata(ugrid_all.verts, values=data_frommap_sal[0,:,0], ax=None, linewidth=0.5, cmap="jet")
 fig.colorbar(pc, ax=ax)
 ax.set_title(data_frommap_sal.var_varname)
 ax.set_aspect('equal')

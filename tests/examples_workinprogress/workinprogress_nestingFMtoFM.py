@@ -14,17 +14,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 plt.close('all')
 import contextily as ctx
+import dfm_tools as dfmt
 try: #0.3.1 release
     #from hydrolib.core.io.net.models import NetworkModel, Network
     from hydrolib.core.io.polyfile.models import PolyFile
 except: #main branch and next release
     #from hydrolib.core.io.dflowfm.net.models import NetworkModel, Network
     from hydrolib.core.io.dflowfm.polyfile.models import PolyFile
-
-from dfm_tools.get_nc import get_netdata
-from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame
-from dfm_tools.xarray_helpers import preprocess_hisnc
-from dfm_tools.interpolate_grid2bnd import interp_hisnc_to_plipoints, plipointsDataset_to_ForcingModel
 
 #TODO: add coordinate conversion of pli coordinates
 #TODO: add max distance for nestpoints (eg sqrt of max cell size of large grid? How to determine to use 3/4/more points)
@@ -38,7 +34,7 @@ dir_output = '.'
 #file_net = r'p:\1230882-emodnet_hrsm\global_tide_surge_model\trunk\gtsm4.1\step11_global_1p25eu_net.nc' #TODO: cannot get netdata from this network, do in dfm_tools, hydrolib, xugrid, meshkernel?
 file_net = r'p:\1230882-emodnet_hrsm\GTSMv5.0\runs\reference_GTSMv4.1_wiCA\output\gtsm_model_0000_map.nc'
 crs_net = 'EPSG:4326'
-data_net = get_netdata(file_net)
+data_net = dfmt.get_netdata(file_net)
 face_coords_pd = pd.DataFrame(dict(x=data_net.mesh2d_node_x,y=data_net.mesh2d_node_y))
 tree_nest1 = KDTree(face_coords_pd)
 
@@ -51,7 +47,7 @@ file_pli_list = [Path(r'p:\i1000668-tcoms\03_newModel\01_input\02_bnd\pli\Indian
 fig,ax = plt.subplots()
 for file_pli in file_pli_list:
     polyfile_object = PolyFile(file_pli)
-    data_pol_pd_list = [pointlike_to_DataFrame(polyobj) for polyobj in polyfile_object.objects]
+    data_pol_pd_list = [dfmt.pointlike_to_DataFrame(polyobj) for polyobj in polyfile_object.objects]
     data_pol_pd = pd.concat(data_pol_pd_list)
     
     #get and plot unique cell center coordinates
@@ -78,19 +74,18 @@ ctx.add_basemap(ax=ax,attribution=False,crs=crs_net)
 for file_pli in file_pli_list:
     kdtree_k = 4
     file_his = r'p:\1230882-emodnet_hrsm\GTSMv5.0\runs\reference_GTSMv4.1_wiCA\output\gtsm_model_0000_his.nc'
-    data_xr_his = xr.open_mfdataset(file_his,preprocess=preprocess_hisnc)
+    data_xr_his = xr.open_mfdataset(file_his,preprocess=dfmt.preprocess_hisnc)
     data_xr_his_selvars = data_xr_his[['waterlevel']]#,'velocity_magnitude']]
     
-    data_interp = interp_hisnc_to_plipoints(data_xr_his=data_xr_his_selvars,file_pli=file_pli,kdtree_k=kdtree_k)
+    data_interp = dfmt.interp_hisnc_to_plipoints(data_xr_his=data_xr_his_selvars,file_pli=file_pli,kdtree_k=kdtree_k)
     #fig,ax = plt.subplots()
     #data_interp.waterlevel.plot(ax=ax) #TODO: this does not work properly "TypeError: Dimensions of C (5473, 294) are incompatible with X (294) and/or Y (5474); see help(pcolormesh)"
     
-    conversion_dict = {'waterlevelbnd': {'ncvarname': 'waterlevel'},
-                       #'velocitybnd': {'ncvarname': 'velocity_magnitude'}
-                       }
-    data_interp = data_interp.rename({v['ncvarname']:k for k,v in conversion_dict.items()})
+    # rename_dict = {'waterlevel':'waterlevelbnd',
+    #                 'velocity_magnitude':'velocitybnd'}
+    # data_interp = data_interp.rename(rename_dict)
     
-    ForcingModel_object = plipointsDataset_to_ForcingModel(plipointsDataset=data_interp, conversion_dict=conversion_dict, refdate_str=None, reverse_depth=False)
+    ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
     file_bc_out = file_pli.name.replace('.pli','.bc')
     
     print('saving bc file')
