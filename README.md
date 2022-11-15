@@ -64,10 +64,13 @@ import xarray as xr
 import matplotlib.pyplot as plt
 plt.close('all')
 import dfm_tools as dfmt
+import contextily as ctx
 
 dir_testinput = os.path.join(r'n:\Deltabox\Bulletin\veenstra\info dfm_tools\test_input')
-file_nc_map = os.path.join(dir_testinput,'DFM_sigma_curved_bend','DFM_OUTPUT_cb_3d','cb_3d_map.nc')
 file_nc_his = os.path.join(dir_testinput,'DFM_sigma_curved_bend','DFM_OUTPUT_cb_3d','cb_3d_his.nc')
+#file_nc_map = os.path.join(dir_testinput,'DFM_sigma_curved_bend','DFM_OUTPUT_cb_3d','cb_3d_map.nc')
+file_nc_map = 'http://opendap.deltares.nl/thredds/dodsC/opendap/deltares/Delft3D/netcdf_example_files/westernscheldt_sph_map.nc'
+#data_xr_map = xr.open_dataset(file_nc_map)
 
 data_xr_his = xr.open_mfdataset(file_nc_his, preprocess=dfmt.preprocess_hisnc)
 stations_pd = data_xr_his['stations'].to_dataframe()
@@ -80,24 +83,27 @@ fig.tight_layout()
 
 #plot net/grid
 ugrid_all = dfmt.get_netdata(file_nc=file_nc_map)#,multipart=False)
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(10,4))
 pc = dfmt.plot_netmapdata(ugrid_all.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
-ax.set_aspect('equal')
+ctx.add_basemap(ax=ax, source=ctx.providers.Esri.WorldImagery, crs="EPSG:4326", attribution=False)
+fig.tight_layout()
 
 #plot water level on map
-data_frommap_wl = dfmt.get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_s1', timestep=3)#, multipart=False)
-fig, ax = plt.subplots()
+data_frommap_wl = dfmt.get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_s1', timestep=10)#, multipart=False)
+fig, ax = plt.subplots(figsize=(10,4))
 pc = dfmt.plot_netmapdata(ugrid_all.verts, values=data_frommap_wl[0,:], ax=None, linewidth=0.5, cmap="jet")
-pc.set_clim([-0.5,1])
+pc.set_clim([-0.5,2])
 fig.colorbar(pc, ax=ax)
 ax.set_title(data_frommap_wl.var_varname)
-ax.set_aspect('equal')
+ctx.add_basemap(ax=ax, source=ctx.providers.Esri.WorldImagery, crs="EPSG:4326", attribution=False)
+fig.tight_layout()
 
 #plot salinity on map
-data_frommap_sal = dfmt.get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_sa1', timestep=2, layer=5)#, multipart=False)
-fig, ax = plt.subplots()
-pc = dfmt.plot_netmapdata(ugrid_all.verts, values=data_frommap_sal[0,:,0], ax=None, linewidth=0.5, cmap="jet")
+data_frommap_sal = dfmt.get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_ucx', timestep=10)#, layer=5)#, multipart=False) #was 3D mesh2d_sa1 variable for curvibend
+fig, ax = plt.subplots(figsize=(10,4))
+pc = dfmt.plot_netmapdata(ugrid_all.verts, values=data_frommap_sal[0,:], ax=None, linewidth=0.5, cmap="jet")
 fig.colorbar(pc, ax=ax)
 ax.set_title(data_frommap_sal.var_varname)
-ax.set_aspect('equal')
+ctx.add_basemap(ax=ax, source=ctx.providers.Esri.WorldImagery, crs="EPSG:4326", attribution=False)
+fig.tight_layout()
 ```
