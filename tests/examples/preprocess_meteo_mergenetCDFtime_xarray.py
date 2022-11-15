@@ -31,8 +31,9 @@ import dfm_tools as dfmt
 #                'v10': 'northward_wind',
 #                'msl': 'air_pressure'}
 #TODO: add coordinate conversion (maybe only for models with multidimensional lat/lon variables like HARMONIE and HIRLAM)
-#TODO: add CMCC etc from gtsmip repos (including calendar conversion)
+#TODO: add CMCC etc from gtsmip repos (mainly calendar conversion)
 #TODO: add convert_360to180 with "ds.coords['lon'] = (ds.coords['lon'] + 180) % 360 - 180; ds = ds.sortby('lon')" (without hardcoded longitude/lon names)
+#TODO: move to function
 
 add_global_overlap = False #GTSM specific: extend data beyond -180 to 180 longitude
 zerostart = False #GTSM specific: extend data with 0-value fields 1 and 2 days before all_tstart
