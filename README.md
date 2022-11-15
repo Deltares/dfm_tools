@@ -54,7 +54,6 @@ Installation
 Getting started
 --------
 - [pdf with dfm_tools features and examples](https://nbviewer.org/github/openearth/dfm_tools/raw/pptx/docs/dfm_tools.pdf?flush_cache=true)
-- [html documentation](https://htmlpreview.github.io/?https://github.com/openearth/dfm_tools/blob/master/docs/dfm_tools/index.html)
+- [html documentation of docstrings](https://htmlpreview.github.io/?https://github.com/openearth/dfm_tools/blob/master/docs/dfm_tools/index.html)
 - [jupyter notebook with example code](https://github.com/openearth/dfm_tools/blob/master/notebooks/postprocessing_readme_example.ipynb)
-- [example scripts](https://github.com/openearth/dfm_tools/tree/master/tests/examples)
-- want to get updates about dfm_tools? Send an email to jelmer.veenstra@deltares.nl
+- [more example scripts](https://github.com/openearth/dfm_tools/tree/master/tests/examples)
