@@ -20,6 +20,8 @@ def download_ERA5(varkey,
                   dir_output='.', overwrite=False):
     
     #TODO: describe something about the .cdsapirc file
+    #TODO: make this function cdsapi generic, instead of ERA5 hardcoded
+    
     import cdsapi # Import cdsapi and create a Client instance # https://cds.climate.copernicus.eu/api-how-to #TODO: move to top of script? (then make dependency of dfm_tools)
     c = cdsapi.Client()
     
@@ -72,31 +74,40 @@ def download_ERA5(varkey,
     return
 
 
-def open_opendap_xr(dataset_url,
+def open_OPeNDAP_xr(dataset_url,
                     credentials=None): #for CMEMS. credentials=['username','password'], or create "%USER%/CMEMS_credentials.txt" with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form'
     
     """
-    How to get the opendap dataset_id:
+    How to get the opendap dataset_url (CMEMS example):
         - https://data.marine.copernicus.eu/products
-        - go to the data access tab of a product, e.g.: https://data.marine.copernicus.eu/product-detail/GLOBAL_MULTIYEAR_PHY_001_030/DATA-ACCESS
+        - go to the data access tab of a product, e.g.: https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_PHY_001_030/services
         - click the opendap link of the dataset of your choice
-        - the dataset_id is the last part of the url (excl .html), e.g.: cmems_mod_glo_phy_my_0.083_P1D-m
-        - the rest of the url will automatically be constructed. my is multiyear reanalysis data, nrt is operational forecast data
+        - copy the dataset_url from the adress bar (excl .html), e.g.: https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_my_0.083_P1D-m
         
-        Some examples:
-            'multiyear_physchem':{'motu_url':'https://my.cmems-du.eu',
-                                  'product': 'GLOBAL_MULTIYEAR_PHY_001_030',
-                                  'dataset_id': 'cmems_mod_glo_phy_my_0.083_P1D-m'},
-            'multiyear_bio':     {'motu_url':'https://my.cmems-du.eu',
-                                  'product': 'GLOBAL_MULTIYEAR_BGC_001_029',
-                                  'dataset_id': 'cmems_mod_glo_bgc_my_0.25_P1D-m'},
-            'forecast_physchem': {'motu_url':'https://nrt.cmems-du.eu',
-                                  'product': 'GLOBAL_ANALYSIS_FORECAST_PHY_001_024',
-                                  'dataset_id': 'global-analysis-forecast-phy-001-024'},
-            'forecast_bio':      {'motu_url':'https://nrt.cmems-du.eu',
-                                  'product': 'GLOBAL_ANALYSIS_FORECAST_BIO_001_028',
-                                  'dataset_id': 'global-analysis-forecast-bio-001-028-daily'},
+        Example multiyear phys/chem:
+            https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_PHY_001_030/services
+            https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_my_0.083_P1D-m
+            ['bottomT','mlotst','siconc','sithick','so','thetao','uo','usi','vo','vsi','zos']
+        Example multiyear bio:
+            https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_BGC_001_029/services
+            https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_bgc_my_0.25_P1D-m
+            ['chl','no3','nppv','o2','po4','si']
+        Example forecast phys/chem:
+            https://data.marine.copernicus.eu/product/GLOBAL_ANALYSIS_FORECAST_PHY_001_024/services
+            https://nrt.cmems-du.eu/thredds/dodsC/global-analysis-forecast-phy-001-024
+            ['bottomT','mlotst','siconc','sithick','so','thetao','uo','usi','vo','vsi','zos']
+        Example forecast bio:
+            https://data.marine.copernicus.eu/product/GLOBAL_ANALYSIS_FORECAST_BIO_001_028/services
+            https://nrt.cmems-du.eu/thredds/dodsC/global-analysis-forecast-bio-001-028-daily
+            ['chl','fe','no3','nppv','o2','ph','phyc','po4','si','spco2']
     
+    How to get the opendap dataset_url (HYCOM example):
+        - https://www.hycom.org/dataserver
+        - Select a product and search for THREDDS, e.g.: https://www.hycom.org/dataserver/gofs-3pt1/analysis
+        - find an opendap dataset_url, it depends per product/run where to find it.
+        Some examples:
+            https://tds.hycom.org/thredds/dodsC/GLBu0.08/expt_19.1/2010
+            https://tds.hycom.org/thredds/dodsC/GLBy0.08/expt_93.0
     """
     
     def copernicusmarine_datastore(dataset_url, username, password):
@@ -147,25 +158,31 @@ def open_opendap_xr(dataset_url,
         data_xr['time'] = cftime.num2date(data_xr.time,units=data_xr.time.units,calendar=data_xr.time.calendar)
         data_xr = data_xr.rename({'lon':'longitude','lat':'latitude'})
     else:
-        raise Exception(f'unspecified dataset_url, supported are cmems and hycom: {dataset_url}')
-    
+        print(f'unspecified dataset_url, might fail: {dataset_url}')
+        if isinstance(dataset_url,list):
+            print(f'xarray opening opendap dataset like: {dataset_url[0]}.html ({len(dataset_url)} urls/years)')
+            data_xr = xr.open_mfdataset(dataset_url)
+        else:
+            print(f'xarray opening opendap dataset: {dataset_url}.html')
+            data_xr = xr.open_dataset(dataset_url)
+        if 'lon' in data_xr.dims:
+            data_xr = data_xr.rename({'lon':'longitude','lat':'latitude'})
+        
     return data_xr
 
 
-def download_OPENDAP(dataset_url,
+def download_OPeNDAP(dataset_url,
                      varkey,
                      longitude_min, longitude_max, latitude_min, latitude_max, 
                      date_min, date_max, freq='D',
-                     data_xr=None,
                      dir_output='.', file_prefix='', overwrite=False,
                      credentials=None):
     
-    if data_xr is None:
-        data_xr = open_opendap_xr(dataset_url=dataset_url, credentials=credentials)
+    data_xr = open_OPeNDAP_xr(dataset_url=dataset_url, credentials=credentials)
     
     print(f'xarray subsetting data (variable \'{varkey}\' and lon/lat extents)')
     if varkey not in data_xr.data_vars:
-        raise Exception(f'{varkey} not found in dataset, available are: list(data_xr.data_vars)\n{data_xr.data_vars}')
+        raise Exception(f'{varkey} not found in dataset, available are: {list(data_xr.data_vars)}')
     data_xr_var = data_xr[[varkey]]
     data_xr_var = data_xr_var.sel(longitude=slice(longitude_min,longitude_max), #TODO: add depth selection?
                                   latitude=slice(latitude_min,latitude_max))

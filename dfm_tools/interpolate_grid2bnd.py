@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 from pathlib import Path
+from scipy.spatial import KDTree
 
 try: #0.3.1 release
     from hydrolib.core.io.bc.models import ForcingModel, QuantityUnitPair, Astronomic
@@ -22,6 +23,7 @@ except: #main branch and next release
     from hydrolib.core.io.dflowfm.polyfile.models import PolyFile
 
 from dfm_tools.hydrolib_helpers import Dataset_to_TimeSeries, Dataset_to_T3D
+from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame
 
 
 def get_conversion_dict(ncvarname_updates={}):
@@ -140,14 +142,14 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
     polyfile_object = PolyFile(file_pli)
     pli_PolyObjects = polyfile_object.objects
 
-    for iPO, pli_PolyObject_sel in enumerate(pli_PolyObjects):
+    for iPO, pli_PolyObject_sel in enumerate(pli_PolyObjects): #TODO: also remove loop here
         print(f'processing PolyObject {iPO+1} of {len(pli_PolyObjects)}: name={pli_PolyObject_sel.metadata.name}')
         
         #create requestedlat/requestedlon DataArrays for proper interpolation in xarray (with new dimension name)
         path_lons = np.array([point.x for point in pli_PolyObject_sel.points])[:nPoints]
         path_lats = np.array([point.y for point in pli_PolyObject_sel.points])[:nPoints]
-        da_lons = xr.DataArray(path_lons, dims='latloncombi')
-        da_lats = xr.DataArray(path_lats, dims='latloncombi')
+        da_lons = xr.DataArray(path_lons, dims='plipoints')
+        da_lats = xr.DataArray(path_lats, dims='plipoints')
         
         #interpolation to lat/lon combinations
         print('> interp mfdataset with all lat/lon coordinates and compute phase_new')
@@ -188,8 +190,8 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
             print(f'(x={lonx}, y={laty})')
             pli_PolyObject_name_num = f'{pli_PolyObject_sel.metadata.name}_{iP+1:04d}'
             
-            data_interp_amp = data_interp_amp_allcoords.sel(latloncombi=iP)
-            data_interp_phs = data_interp_phs_allcoords.sel(latloncombi=iP)
+            data_interp_amp = data_interp_amp_allcoords.sel(plipoints=iP)
+            data_interp_phs = data_interp_phs_allcoords.sel(plipoints=iP)
             
             datablock_pd_allcomp = pd.DataFrame({'component':component_list_upper_pd,'amp':data_interp_amp.to_numpy(),'phs':data_interp_phs.to_numpy()})
             if datablock_pd_allcomp['amp'].isnull().any():
@@ -209,25 +211,16 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
     return ForcingModel_object
 
 
-def interpolate_nc_to_bc(dir_pattern, file_pli, quantity, 
-                         tstart, tstop, refdate_str=None, 
-                         conversion_dict=None,
-                         nPoints=None, #argument for testing
-                         reverse_depth=False, #temporary argument to compare easier with old coastserv files
-                         KDTree_invdistweigth=False):
+def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=None, refdate_str=None, reverse_depth=False):
     
     if conversion_dict is None:
         conversion_dict = get_conversion_dict()
     
     if quantity=='uxuy': #T3Dvector
         quantity_list = ['ux','uy']
-        ncvarname_list = [conversion_dict[quan]['ncvarname'] for quan in quantity_list]
     else:
         quantity_list = [quantity]
-        ncvarname_list = [conversion_dict[quan]['ncvarname'] for quan in quantity_list]
-    
-    print('initialize ForcingModel()')
-    ForcingModel_object = ForcingModel()
+    ncvarname_list = [conversion_dict[quan]['ncvarname'] for quan in quantity_list]
     
     dir_pattern = [Path(str(dir_pattern).format(ncvarname=ncvarname)) for ncvarname in ncvarname_list]
     file_list_nc = []
@@ -248,16 +241,12 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
             return ds
         print(f'catching "MergeError: {e}" >> WARNING: ux/uy have different latitude/longitude values, making two coordinates sets in Dataset.')
         data_xr = xr.open_mfdataset(file_list_nc,chunks={'time':1},preprocess=preprocess_CMCC_uovo)
-        
+    
     #rename variables with rename_dict derived from conversion_dict
     rename_dict = {v['ncvarname']:k for k,v in conversion_dict.items()}
     for ncvarn in data_xr.variables.mapping.keys():
         if ncvarn in rename_dict.keys():
             data_xr = data_xr.rename({ncvarn:rename_dict[ncvarn]})
-    
-    #change refdate
-    if refdate_str is not None:
-        data_xr.time.encoding['units'] = refdate_str
     
     #get calendar and maybe convert_calendar, makes sure that nc_tstart/nc_tstop are of type pd._libs.tslibs.timestamps.Timestamp
     data_xr_calendar = data_xr['time'].dt.calendar
@@ -279,25 +268,24 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
     if tstop > nc_tstop:
         raise Exception(f'requested tstop {tstop} outside of available range {nc_tstart} to {nc_tstop}')
     
-    #rename coordinates
+    #rename coordinates depth/lat/lon
     if 'depth' not in data_xr.coords:
         if 'lev' in data_xr.coords: #depth for CMEMS and many others, but lev for GFDL, convert to depth #TODO: provide rename_dict as argument to this function or leave as is?
             data_xr = data_xr.rename({'lev':'depth'}) #TODO: can also do this for data_xr_var only?
             print('variable/coordinate lev renamed to depth')
-    coordname_lon,coordname_lat = ['longitude','latitude'] #hardcode this
-    if coordname_lon not in data_xr.coords:
+    if 'longitude' not in data_xr.coords:
         if 'lon' in data_xr.coords:
-            data_xr = data_xr.rename({'lon':coordname_lon,'lat':coordname_lat})
+            data_xr = data_xr.rename({'lon':'longitude','lat':'latitude'})
         else:
             raise Exception(f'no lat/lon coords available in file: {data_xr.coords}')
     
     #360 to 180 conversion
-    convert_360to180 = (data_xr[coordname_lon].to_numpy()>180).any()
-    latlon_ndims = len(data_xr[coordname_lon].shape)
+    convert_360to180 = (data_xr['longitude'].to_numpy()>180).any()
+    latlon_ndims = len(data_xr['longitude'].shape)
     if convert_360to180: #TODO: make more flexible for models that eg pass -180/+180 crossing (add overlap at lon edges).
-        data_xr.coords[coordname_lon] = (data_xr.coords[coordname_lon] + 180) % 360 - 180
+        data_xr.coords['longitude'] = (data_xr.coords['longitude'] + 180) % 360 - 180
         if latlon_ndims==1: #lon/lat has 1 dimension, .sortby() not possible if there are 2 dimensions
-            data_xr = data_xr.sortby(data_xr[coordname_lon])
+            data_xr = data_xr.sortby(data_xr['longitude'])
         else: #lon/lat is 2D #TODO: this can be removed
             print('WARNING: 2D latitude/longitude has more than one dim, continue without .sortby(). This is expected for e.g. CMCC')
     
@@ -307,128 +295,208 @@ def interpolate_nc_to_bc(dir_pattern, file_pli, quantity,
     if not bool_quanavailable.all():
         quantity_list_notavailable = pd.Series(quantity_list).loc[~bool_quanavailable].tolist()
         raise Exception(f'quantity {quantity_list_notavailable} not found in netcdf, available are: {data_vars}. Try updating conversion_dict to rename these variables.')
-    data_xr_var = data_xr[quantity_list].sel(time=slice(tstart,tstop))
+    data_xr_vars = data_xr[quantity_list].sel(time=slice(tstart,tstop))
     
-    if 0: #TODO: maybe split this def, so easy to plot all data before interpolation
-        import matplotlib.pyplot as plt
-        import contextily as ctx
-        fig,ax = plt.subplots()
-        data_xr_var[quantity_list[0]].isel(time=0,depth=0).plot(ax=ax)
-        ctx.add_basemap(ax=ax,crs="EPSG:4326")
+    #optional conversion of units. Multiplications or other simple operatiors do not affect performance (dask.array(getitem) becomes dask.array(mul). With more complex operation it is better do do it on the interpolated array.
+    for quan in quantity_list: #TODO: maybe do unit conversion before interp or is that computationally heavy?
+        if 'conversion' in conversion_dict[quan].keys(): #if conversion is present, unit key must also be in conversion_dict
+            print(f'> converting units from [{data_xr_vars[quan].attrs["units"]}] to [{conversion_dict[quan]["unit"]}]')
+            #print(f'attrs are discarded:\n{data_xr_vars[quan].attrs}')
+            data_xr_vars[quan] = data_xr_vars[quan] * conversion_dict[quan]['conversion'] #conversion drops all attributes of which units (which are changed anyway)
+            data_xr_vars[quan].attrs['units'] = conversion_dict[quan]['unit'] #add unit attribute with resulting unit
     
-    if coordname_lon not in data_xr_var.coords:
-        raise Exception(f'{coordname_lon} not in variable coords: {data_xr_var.coords}.')
+    #optional refdate changing
+    if refdate_str is not None:
+        data_xr_vars.time.encoding['units'] = refdate_str
+    
+    if 'depth' in data_xr_vars.coords:
+        #make negative down
+        if 'positive' in data_xr_vars['depth'].attrs.keys():
+            if data_xr_vars['depth'].attrs['positive'] == 'down': #attribute appears in CMEMS, GFDL and CMCC, save to assume presence?
+                data_xr_vars['depth'] = -data_xr_vars['depth']
+        #optional reversing depth dimension for comparison to coastserv
+        if reverse_depth:
+            print('> reversing depth dimension')
+            data_xr_vars = data_xr_vars.reindex({'depth':list(reversed(data_xr_vars['depth']))})
+    
+    return data_xr_vars
+
+
+def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, kdtree_k=3, load=True):
+    """
+    load: interpolation errors are only raised upon loading, so do this per default
+    """
+    data_xr_var = data_xr_reg #TODO: rename in script
     
     #load boundary file
     polyfile_object = PolyFile(file_pli)
-    pli_PolyObjects = polyfile_object.objects
     
-    for iPO, pli_PolyObject_sel in enumerate(pli_PolyObjects):
-        print(f'processing PolyObject {iPO+1} of {len(pli_PolyObjects)}: name={pli_PolyObject_sel.metadata.name}')
-        
-        #create requestedlat/requestedlon DataArrays for proper interpolation in xarray (with new dimension name)
-        path_lons = np.array([point.x for point in pli_PolyObject_sel.points])[:nPoints]
-        path_lats = np.array([point.y for point in pli_PolyObject_sel.points])[:nPoints]
-        da_lons = xr.DataArray(path_lons, dims='latloncombi')
-        da_lats = xr.DataArray(path_lats, dims='latloncombi')
-        
-        #interpolation to lat/lon combinations
-        print('> interp mfdataset to all PolyObject points (lat/lon coordinates)')
-        dtstart = dt.datetime.now()
-        try:
-            data_interp = data_xr_var.interp({coordname_lat:da_lats, coordname_lon:da_lons}, #also possible without dict: (latitude=da_lats, longitude=da_lons), but this is more flexible
-                                             method='linear', 
-                                             kwargs={'bounds_error':True}, #error is only raised upon load(), so when the actual value retrieval happens
-                                             )
-        except ValueError as e: #Dimensions {'latitude', 'longitude'} do not exist. Expected one or more of Frozen({'time': 17, 'depth': 50, 'i': 292, 'j': 362}).
-            #this is for eg CMCC model with multidimensional lat/lon variable
-            #TODO: make nicer, without try except? eg latlon_ndims==1, but not sure if that is always valid
-            #TODO: maybe also spherical coordinate distance calculation instead of cartesian/eucledian
-            print(f'ValueError: {e}. Reverting to KDTree instead (nearest neigbour)')
-            from scipy.spatial import KDTree #TODO: move up
-            data_interp = xr.Dataset()
-            for varone in list(data_xr_var.data_vars):
-                path_lonlat_pd = pd.DataFrame({'lon':da_lons,'lat':da_lats})
-                if (varone=='uy') & (len(data_xr_var.data_vars)>1):
-                    data_lon_flat = data_xr_var['longitude_uy'].to_numpy().ravel()
-                    data_lat_flat = data_xr_var['latitude_uy'].to_numpy().ravel()
-                else:
-                    data_lon_flat = data_xr_var[coordname_lon].to_numpy().ravel()
-                    data_lat_flat = data_xr_var[coordname_lat].to_numpy().ravel()
-                data_lonlat_pd = pd.DataFrame({'lon':data_lon_flat,'lat':data_lat_flat})
-                #KDTree, finds minimal eucledian distance between points (maybe haversine would be better)
-                tree = KDTree(data_lonlat_pd) #alternatively sklearn.neighbors.BallTree: tree = BallTree(data_lonlat_pd)
-                distance, data_lonlat_idx = tree.query(path_lonlat_pd, k=3) #TODO: maybe add outofbounds treshold for distance
-                #data_lonlat_pd.iloc[data_lonlat_idx]
-                idx_i,idx_j = np.divmod(data_lonlat_idx, data_xr_var['longitude'].shape[1]) #get idx i and j by sort of counting over 2D array
-                # import matplotlib.pyplot as plt
-                # fig,ax = plt.subplots()
-                # data_xr_var[varone].isel(time=0,depth=0).plot(ax=ax)
-                # ax.plot(idx_j,idx_i,'xr')
-                da_idxi = xr.DataArray(idx_i, dims=('latloncombi','point3k'))
-                da_idxj = xr.DataArray(idx_j, dims=('latloncombi','point3k'))
-                if KDTree_invdistweigth:
-                    da_dist = xr.DataArray(distance, dims=('latloncombi','point3k'))
-                    da_invdistweight = (1/da_dist)/(1/da_dist).sum(dim='point3k')
-                    da_varone_3k = data_xr_var[varone].isel(i=da_idxi,j=da_idxj)
-                    data_interp[varone] = (da_varone_3k * da_invdistweight).sum(dim='point3k')
-                    data_interp[varone].attrs = data_xr_var[varone].attrs #copy units and other attributes
-                else:
-                    data_interp[varone] = data_xr_var[varone].isel(i=da_idxi,j=da_idxj).isel(point3k=0) #take first of 3 closest points
+    #check if polyobj names in plifile are unique
+    polynames_pd = pd.Series([polyobj.metadata.name for polyobj in polyfile_object.objects])
+    if polynames_pd.duplicated().any():
+        raise Exception(f'Duplicate polyobject names in polyfile {file_pli.name}, this is not allowed:\n{polynames_pd}')
+    
+    #create df of x/y/name of all plipoints in plifile
+    data_pol_pd = pd.DataFrame()
+    for polyobj in polyfile_object.objects:
+        data_pol_pd_one = pointlike_to_DataFrame(polyobj)
+        data_pol_pd_one = data_pol_pd_one.iloc[:nPoints] #only use testset of points per polyobj in polyfile
+        data_pol_pd_one['name'] = pd.Series(data_pol_pd_one.index).apply(lambda x: f'{polyobj.metadata.name}_{x+1:04d}')
+        data_pol_pd = pd.concat([data_pol_pd,data_pol_pd_one])
+    
+    da_plipoints = xr.Dataset()
+    da_plipoints['plipoint_x'] = xr.DataArray(data_pol_pd['x'], dims='plipoints')
+    da_plipoints['plipoint_y'] = xr.DataArray(data_pol_pd['y'], dims='plipoints')
+    da_plipoints['plipoint_name'] = xr.DataArray(data_pol_pd['name'].astype('S64'), dims='plipoints').str.decode('utf-8',errors='ignore').str.strip() #TODO: must be possible to do this less complex
+    da_plipoints = da_plipoints.set_coords(['plipoint_x','plipoint_y','plipoint_name'])
+    da_plipoints = da_plipoints.set_index({'plipoints':'plipoint_name'})
+    
+    #interpolation to lat/lon combinations
+    print('> interp mfdataset to all PolyFile points (lat/lon coordinates)')
+    dtstart = dt.datetime.now()
+    try:
+        data_interp = data_xr_var.interp(longitude=da_plipoints['plipoint_x'], latitude=da_plipoints['plipoint_y'],
+                                         method='linear', 
+                                         kwargs={'bounds_error':True}, #error is only raised upon load(), so when the actual value retrieval happens
+                                         )
 
+    except ValueError as e: #Dimensions {'latitude', 'longitude'} do not exist. Expected one or more of Frozen({'time': 17, 'depth': 50, 'i': 292, 'j': 362}).
+        #this is for eg CMCC model with multidimensional lat/lon variable
+        #TODO: make nicer, without try except? eg latlon_ndims==1, but not sure if that is always valid
+        #TODO: maybe also spherical coordinate distance calculation instead of cartesian/eucledian
+        print(f'ValueError: {e}. Reverting to KDTree instead (nearest neigbour)')
+        data_interp = xr.Dataset()
+        for varone in list(data_xr_var.data_vars):
+            path_lonlat_pd = data_pol_pd[['x','y']]
+            if (varone=='uy') & (len(data_xr_var.data_vars)>1):
+                data_lon_flat = data_xr_var['longitude_uy'].to_numpy().ravel()
+                data_lat_flat = data_xr_var['latitude_uy'].to_numpy().ravel()
+            else:
+                data_lon_flat = data_xr_var['longitude'].to_numpy().ravel()
+                data_lat_flat = data_xr_var['latitude'].to_numpy().ravel()
+            data_lonlat_pd = pd.DataFrame({'x':data_lon_flat,'y':data_lat_flat})
+            #KDTree, finds minimal eucledian distance between points (maybe haversine would be better)
+            tree = KDTree(data_lonlat_pd) #alternatively sklearn.neighbors.BallTree: tree = BallTree(data_lonlat_pd)
+            distance, data_lonlat_idx = tree.query(path_lonlat_pd, k=kdtree_k) #TODO: maybe add outofbounds treshold for distance
+            #data_lonlat_pd.iloc[data_lonlat_idx]
+            idx_i,idx_j = np.divmod(data_lonlat_idx, data_xr_var['longitude'].shape[1]) #get idx i and j by sort of counting over 2D array
+            # import matplotlib.pyplot as plt
+            # fig,ax = plt.subplots()
+            # data_xr_var[varone].isel(time=0,depth=0).plot(ax=ax)
+            # ax.plot(idx_j,idx_i,'xr')
+            da_plipoints['da_idxi'] = xr.DataArray(idx_i, dims=('plipoints','nearestkpoints'))
+            da_plipoints['da_idxj'] = xr.DataArray(idx_j, dims=('plipoints','nearestkpoints'))
+            da_dist = xr.DataArray(distance, dims=('plipoints','nearestkpoints'))
+            da_invdistweight = (1/da_dist)/(1/da_dist).sum(dim='nearestkpoints')
+            da_varone_3k = data_xr_var[varone].isel(i=da_plipoints['da_idxi'],j=da_plipoints['da_idxj'])
+            data_interp[varone] = (da_varone_3k * da_invdistweight).sum(dim='nearestkpoints')
+            data_interp[varone].attrs = data_xr_var[varone].attrs #copy units and other attributes
+    
+    time_passed = (dt.datetime.now()-dtstart).total_seconds()
+    # print(f'>>time passed: {time_passed:.2f} sec')
+    
+    if not load:
+        return data_interp
+    
+    print('> actual extraction of data from netcdf with .load() (for all plipoints at once, so this will take a while)')
+    dtstart = dt.datetime.now()
+    try:
+        data_interp_loaded = data_interp.load() #loading data for all points at once is more efficient compared to loading data per point in loop 
+    except ValueError as e: #generate a proper error with outofbounds requested coordinates, default is "ValueError: One of the requested xi is out of bounds in dimension 0" #TODO: improve error in xarray
+        lonvar_vals=data_xr_var['longitude'].to_numpy(),
+        latvar_vals=data_xr_var['latitude'].to_numpy(),
+        data_pol_pd = data_interp[['plipoint_x','plipoint_y']].to_dataframe()
+        bool_reqlon_outbounds = (data_pol_pd['plipoint_x'] <= lonvar_vals.min()) | (data_pol_pd['plipoint_x'] >= lonvar_vals.max())
+        bool_reqlat_outbounds = (data_pol_pd['plipoint_y'] <= latvar_vals.min()) | (data_pol_pd['plipoint_y'] >= latvar_vals.max())
+        reqlatlon_pd = pd.DataFrame({'longitude':data_pol_pd['plipoint_x'],'latitude':data_pol_pd['plipoint_y'],'lon outbounds':bool_reqlon_outbounds,'lat outbounds':bool_reqlat_outbounds})
+        reqlatlon_pd_outbounds = reqlatlon_pd.loc[bool_reqlon_outbounds | bool_reqlat_outbounds]
+        raise ValueError(f'{len(reqlatlon_pd_outbounds)} of requested pli points are out of bounds (valid longitude range {lonvar_vals.min()} to {lonvar_vals.max()}, valid latitude range {latvar_vals.min()} to {latvar_vals.max()}):\n{reqlatlon_pd_outbounds}')
+    time_passed = (dt.datetime.now()-dtstart).total_seconds()
+    print(f'>>time passed: {time_passed:.2f} sec')
+
+    return data_interp_loaded
+
+
+def interp_hisnc_to_plipoints(data_xr_his, file_pli, kdtree_k=3, load=True):
+    """
+    interpolate stations in hisfile to points of polyfile
+    """
+    #KDTree, finds minimal eucledian distance between points (haversine would be better). Alternatively sklearn.neighbors.BallTree: tree = BallTree(data_lonlat_pd)
+    
+    datavars_list = list(data_xr_his.data_vars)
+    if len(datavars_list)>5:
+        print('WARNING: more than 5 data_vars, you might want to subset your data_xr_his')
+    #read hisfile and make KDTree of xy of hisstations
+    hisstations_pd = data_xr_his.stations.to_dataframe() #TODO: add check if stations are strings? (whether preprocess_hisnc was used)
+    tree_nest2 = KDTree(hisstations_pd[['station_x_coordinate','station_y_coordinate']])
+    
+    #read polyfile and query k nearest hisstations (names)
+    polyfile_object = PolyFile(file_pli)
+    data_pol_pd = pd.DataFrame()
+    for polyobj in polyfile_object.objects:
+        data_pol_pd_one = pointlike_to_DataFrame(polyobj)
+        data_pol_pd_one['name'] = pd.Series(data_pol_pd_one.index).apply(lambda x: f'{polyobj.metadata.name}_{x+1:04d}')
+        data_pol_pd = pd.concat([data_pol_pd,data_pol_pd_one])
+    plicoords_distance2, plicoords_nestpointidx = tree_nest2.query(data_pol_pd[['x','y']], k=kdtree_k)
+    da_plicoords_nestpointidx = xr.DataArray(plicoords_nestpointidx, dims=('plipoints','nearestkpoints'))
+    da_plicoords_nestpointnames = data_xr_his.stations.isel(stations=da_plicoords_nestpointidx)
+    
+    #interpolate hisfile variables to plipoints
+    data_interp = xr.Dataset()
+    data_interp['plipoint_x'] = xr.DataArray(data_pol_pd['x'],dims=('plipoints'))
+    data_interp['plipoint_y'] = xr.DataArray(data_pol_pd['y'],dims=('plipoints'))
+    data_interp['plipoint_name'] = xr.DataArray(data_pol_pd['name'].astype('S64'), dims='plipoints').str.decode('utf-8',errors='ignore').str.strip() #TODO: must be possible to do this less complex
+    data_interp = data_interp.set_coords(['plipoint_x','plipoint_y','plipoint_name'])
+    data_interp = data_interp.set_index({'plipoints':'plipoint_name'})
+    
+    for varone in datavars_list:
+        da_dist = xr.DataArray(plicoords_distance2, dims=('plipoints','nearestkpoints'))
+        da_invdistweight = (1/da_dist)/(1/da_dist).sum(dim='nearestkpoints') #TODO: set weigths for invalid points to 0 (and increase others weights so sum remains 1)
+        data_xr_his_pli_knearest = data_xr_his[varone].sel(stations=da_plicoords_nestpointnames)
+        data_interp[varone] = (data_xr_his_pli_knearest * da_invdistweight).sum(dim='nearestkpoints')
+        data_interp[varone].attrs = data_xr_his[varone].attrs #copy units and other attributes
+        
+    if not load:
+        return data_interp
+    
+    print('loading dataset (might take a while, but increases performance of point loop significantly)')
+    data_interp = data_interp.load()
+    print('done')
+
+    return data_interp
+    
+
+def plipointsDataset_to_ForcingModel(plipointsDataset):
+    
+    datablock_xr_allpoints = plipointsDataset #TODO: rename in script
+    
+    print('initialize ForcingModel()')
+    ForcingModel_object = ForcingModel()
+    npoints = len(datablock_xr_allpoints.plipoints)
+    for iP in range(npoints):
+        datablock_xr_onepoint = datablock_xr_allpoints.isel(plipoints=iP)
+        plipoint_x = datablock_xr_onepoint['plipoint_x'].to_numpy()
+        plipoint_y = datablock_xr_onepoint['plipoint_y'].to_numpy()
+        plipoint_name = str(datablock_xr_onepoint['plipoints'].to_numpy())
+        print(f'processing plipoint {iP+1} of {npoints}: (x={plipoint_x}, y={plipoint_y}, name={plipoint_name})')
+        
+        #select data for this point, ffill nans, concatenating time column, constructing T3D/TimeSeries and append to ForcingModel()
+        dtstart = dt.datetime.now()
+        datablock_xr_onepoint = datablock_xr_allpoints.isel(plipoints=iP)
+        
+        quantity_list = list(plipointsDataset.data_vars)
+        for quan in quantity_list:
+            datablock_xr_onepoint[quan].attrs['locationname'] = plipoint_name #TODO: is there a nicer way of passing this data?
+            if np.isnan(datablock_xr_onepoint[quan].to_numpy()).all(): # check if only nan (out of bounds or land) # we can do .to_numpy() without performance loss, since data is already loaded in datablock_xr_allpoints
+                print('WARNING: only nans for this coordinate, this point might be on land')
+        
+        if 'depth' in datablock_xr_allpoints.coords:
+            ts_one = Dataset_to_T3D(datablock_xr_onepoint)
+        else:
+            ts_one = Dataset_to_TimeSeries(datablock_xr_onepoint)
+        ForcingModel_object.forcing.append(ts_one)
         time_passed = (dt.datetime.now()-dtstart).total_seconds()
         # print(f'>>time passed: {time_passed:.2f} sec')
-        
-        print('> actual extraction of data from netcdf with .load() (for all PolyObject points at once, so this will take a while)')
-        dtstart = dt.datetime.now()
-        try:
-            datablock_xr_allpoints = data_interp.load() #loading data for all points at once is more efficient compared to loading data per point in loop 
-        except ValueError: #generate a proper error with outofbounds requested coordinates, default is "ValueError: One of the requested xi is out of bounds in dimension 0"
-            lonvar_vals = data_xr[coordname_lon].to_numpy()
-            latvar_vals = data_xr[coordname_lat].to_numpy()
-            bool_reqlon_outbounds = (path_lons <= lonvar_vals.min()) | (path_lons >= lonvar_vals.max())
-            bool_reqlat_outbounds = (path_lats <= latvar_vals.min()) | (path_lats >= latvar_vals.max())
-            reqlatlon_pd = pd.DataFrame({'longitude':path_lons,'latitude':path_lats,'lon outbounds':bool_reqlon_outbounds,'lat outbounds':bool_reqlat_outbounds})
-            reqlatlon_pd_outbounds = reqlatlon_pd.loc[bool_reqlon_outbounds | bool_reqlat_outbounds]
-            raise ValueError(f'{len(reqlatlon_pd_outbounds)} of requested pli points are out of bounds (valid longitude range {lonvar_vals.min()} to {lonvar_vals.max()}, valid latitude range {latvar_vals.min()} to {latvar_vals.max()}):\n{reqlatlon_pd_outbounds}')
-        time_passed = (dt.datetime.now()-dtstart).total_seconds()
-        print(f'>>time passed: {time_passed:.2f} sec')
-        
-        #optional conversion of units and reversing depth dimension
-        for quan in quantity_list:
-            if 'conversion' in conversion_dict[quan].keys(): #if conversion is present, unit key must also be in conversion_dict
-                print(f'> converting units from [{datablock_xr_allpoints[quan].attrs["units"]}] to [{conversion_dict[quan]["unit"]}]')
-                datablock_xr_allpoints[quan] = datablock_xr_allpoints[quan] * conversion_dict[quan]['conversion'] #conversion drops all attributes of which units (which are changed anyway)
-                datablock_xr_allpoints[quan].attrs['units'] = conversion_dict[quan]['unit'] #add unit attribute with resulting unit
-        
-        if ('depth' in data_xr_var.coords) & reverse_depth:
-            print('> reversing depth dimension')
-            datablock_xr_allpoints = datablock_xr_allpoints.reindex({'depth':list(reversed(datablock_xr_allpoints['depth']))})
-        
-        for iP, pli_Point_sel in enumerate(pli_PolyObject_sel.points[:nPoints]):
-            print(f'processing Point {iP+1} of {len(pli_PolyObject_sel.points)}: ',end='')
-            lonx_print, laty_print = pli_Point_sel.x, pli_Point_sel.y
-            print(f'(x={lonx_print}, y={laty_print})')
-            pli_PolyObject_name_num = f'{pli_PolyObject_sel.metadata.name}_{iP+1:04d}'
-            
-            print('> select data for this point, ffill nans, concatenating time column, constructing T3D/TimeSeries and appending to ForcingModel()')
-            dtstart = dt.datetime.now()
-            datablock_xr_onepoint = datablock_xr_allpoints.isel(latloncombi=iP)
-            
-            for quan in quantity_list:
-                datablock_xr_onepoint[quan].attrs['locationname'] = pli_PolyObject_name_num #TODO: is there a nicer way of passing this data?
-                
-                if np.isnan(datablock_xr_onepoint[quan].to_numpy()).all(): # check if only nan (out of bounds or land) # we can do .to_numpy() without performance loss, since data is already loaded in datablock_xr_allpoints
-                    print('WARNING: only nans for this coordinate, this point might be on land')
-            
-            if 'depth' in data_xr_var.coords:
-                ts_one = Dataset_to_T3D(datablock_xr_onepoint)
-            else:
-                ts_one = Dataset_to_TimeSeries(datablock_xr_onepoint)
-            ForcingModel_object.forcing.append(ts_one)
-            time_passed = (dt.datetime.now()-dtstart).total_seconds()
-            # print(f'>>time passed: {time_passed:.2f} sec')
     
     return ForcingModel_object
-
 

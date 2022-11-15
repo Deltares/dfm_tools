@@ -12,7 +12,7 @@ try: #0.3.1 release
 except: #main branch and next release #TODO: move to easy imports after https://github.com/Deltares/HYDROLIB-core/issues/410
     from hydrolib.core.io.dflowfm.mdu.models import FMModel, NetworkModel, ExtModel, StructureModel
     from hydrolib.core.io.dflowfm.bc.models import ForcingModel
-from dfm_tools.hydrolib_helpers import forcinglike_to_Dataset
+import dfm_tools as dfmt
 import datetime as dt
 import matplotlib.pyplot as plt
 plt.close('all')
@@ -30,10 +30,11 @@ if '[model]' in mdu_contents[0]:
 
 
 file_struct = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_structures.ini')
-#structs = StructureModel(file_struct)
+#structs = StructureModel(file_struct) #TODO SOLVED: pli in structures.ini is currently not supported: https://github.com/Deltares/HYDROLIB-core/issues/353
+#for struct in structs.structure: 
+#    print(struct.id)
 #structs.save('tst.ini')
 #structs.structure[0].__dict__ #TODO: structs.structure[0].comment is really extensive, necesary? It would be more valuable if 'official' comments are written here instead of what is in file, possible?
-#TODO: pli in structures.ini is currently not supported: https://github.com/Deltares/HYDROLIB-core/issues/353 (use *_original file to test after fix)
 
 file_network = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\rmm_v1p7_net.nc')
 #network = NetworkModel(file_network) #TODO: what is this used for? plotting network/map is easier with dfm_tools or xugrid?
@@ -64,7 +65,7 @@ for iEB, extbnd in enumerate(ext_boundaries+ext_laterals):
     fig,ax = plt.subplots(figsize=(12,6))
     for iEBF, forcing in enumerate(extbnd_forcings[:max_extforcings]):
         print(f'forcing {iEBF+1} of {len(extbnd_forcings)}: {forcing.name} ({forcing.function}) ({forcing.quantityunitpair[1].quantity})')
-        forcing_xr = forcinglike_to_Dataset(forcing)
+        forcing_xr = dfmt.forcinglike_to_Dataset(forcing)
         data_vars = list(forcing_xr.data_vars.keys()) #mostly one variable, except for astronomic/uxuy bnd
         ax.set_title(f'{extbnd_filepath}')
         pc = forcing_xr[data_vars[0]].plot(ax=ax, label=f'{forcing.name} ({forcing.function}) ({forcing.quantityunitpair[1].quantity})') # see CMEMS_interpolate_example.py for pcolormesh in case of verticalpositions

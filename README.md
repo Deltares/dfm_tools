@@ -21,11 +21,7 @@ Features
 	- read and write almost all FM input data with [hydrolib-core](https://github.com/Deltares/HYDROLIB-core)
 	- converting and plotting this data with helper functions in dfm_tools
 	- e.g.: interpolating CMEMS data to model boundary and writing 2D/3D boundary condition files
-- to get started:
-	- [html documentation](https://htmlpreview.github.io/?https://github.com/openearth/dfm_tools/blob/master/docs/dfm_tools/index.html)
-	- [example scripts](https://github.com/openearth/dfm_tools/tree/master/tests/examples)
-	- examples of (mostly unformatted) figures created by this pytest testbank: n:\\Deltabox\\Bulletin\\veenstra\\info dfm_tools
-	- want to get updates about dfm_tools? Send an email to jelmer.veenstra@deltares.nl
+
 	
 Installation
 --------
@@ -45,7 +41,7 @@ Installation
 	- geopandas for shapefile related operations
 	- contextily for satellite imagery on plots, seems faster than cartopy
 	- xarray developers advise to install dependecies dask/netCDF4/bottleneck with conda-forge also: https://docs.xarray.dev/en/v0.8.0/installing.html
-	- cdsapi/pydap: to download ERA5 and CMEMS data. Minimal pydap version is 3.3.0 (only available via conda-force on 10-11-2022)
+	- cdsapi/pydap: to download ERA5 and CMEMS data. Minimal pydap version is 3.3.0 (only available via conda-forge on 10-11-2022)
 - launch Spyder:
 	- open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in the dfm_tools_env environment only)
 	- copy the code from [Example usage](#example-usage) to your own scripts to get started
@@ -57,50 +53,10 @@ Installation
 	- ``python -m pip install --upgrade git+https://github.com/openearth/dfm_tools.git``
 
 
-Example usage
+Getting started
 --------
-More example scripts available at: https://github.com/openearth/dfm_tools/tree/master/tests/examples
-```python
-import os
-import xarray as xr
-import matplotlib.pyplot as plt
-plt.close('all')
-from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
-from dfm_tools.xarray_helpers import preprocess_hisnc
-
-dir_testinput = os.path.join(r'n:\Deltabox\Bulletin\veenstra\info dfm_tools\test_input')
-file_nc_map = os.path.join(dir_testinput,'DFM_sigma_curved_bend','DFM_OUTPUT_cb_3d','cb_3d_map.nc')
-file_nc_his = os.path.join(dir_testinput,'DFM_sigma_curved_bend','DFM_OUTPUT_cb_3d','cb_3d_his.nc')
-
-data_xr_his = xr.open_mfdataset(file_nc_his, preprocess=preprocess_hisnc)
-stations_pd = data_xr_his['stations'].to_dataframe()
-
-#retrieve his data and plot
-fig, ax = plt.subplots(1,1,figsize=(10,5))
-data_xr_his.waterlevel.plot.line(ax=ax, x='time')
-ax.legend(data_xr_his.stations.to_series(),loc=1) #optional, to change legend location
-fig.tight_layout()
-
-#plot net/grid
-ugrid_all = get_netdata(file_nc=file_nc_map)#,multipart=False)
-fig, ax = plt.subplots()
-pc = plot_netmapdata(ugrid_all.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
-ax.set_aspect('equal')
-
-#plot water level on map
-data_frommap_wl = get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_s1', timestep=3)#, multipart=False)
-fig, ax = plt.subplots()
-pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_wl[0,:], ax=None, linewidth=0.5, cmap="jet")
-pc.set_clim([-0.5,1])
-fig.colorbar(pc, ax=ax)
-ax.set_title(data_frommap_wl.var_varname)
-ax.set_aspect('equal')
-
-#plot salinity on map
-data_frommap_sal = get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_sa1', timestep=2, layer=5)#, multipart=False)
-fig, ax = plt.subplots()
-pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_sal[0,:,0], ax=None, linewidth=0.5, cmap="jet")
-fig.colorbar(pc, ax=ax)
-ax.set_title(data_frommap_sal.var_varname)
-ax.set_aspect('equal')
-```
+- [pdf with dfm_tools features and examples](https://nbviewer.org/github/openearth/dfm_tools/raw/pptx/docs/dfm_tools.pdf?flush_cache=true)
+- [html documentation](https://htmlpreview.github.io/?https://github.com/openearth/dfm_tools/blob/master/docs/dfm_tools/index.html)
+- [jupyter notebook with example code](https://github.com/openearth/dfm_tools/blob/master/notebooks/postprocessing_readme_example.ipynb)
+- [example scripts](https://github.com/openearth/dfm_tools/tree/master/tests/examples)
+- want to get updates about dfm_tools? Send an email to jelmer.veenstra@deltares.nl

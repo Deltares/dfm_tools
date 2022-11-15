@@ -13,8 +13,11 @@ plt.close('all')
 from pathlib import Path
 import xarray as xr
 
-from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame
-from hydrolib.core.io.polyfile.models import PolyFile
+import dfm_tools as dfmt
+try: #0.3.1 release
+    from hydrolib.core.io.polyfile.models import PolyFile
+except: #main branch and next release
+    from hydrolib.core.io.dflowfm.polyfile.models import PolyFile
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
@@ -49,7 +52,7 @@ for file_nc in file_nc_list:
     
     if file_ldb is not None:
         polyfile_object = PolyFile(file_ldb)
-        data_ldb = pointlike_to_DataFrame(polyfile_object.objects[0])
+        data_ldb = dfmt.pointlike_to_DataFrame(polyfile_object.objects[0])
         data_ldb[data_ldb==999.999] = np.nan
 
     
@@ -98,7 +101,6 @@ for file_nc in file_nc_list:
     reg_y_vec = np.arange(data_xr[name_uv_y].min(),data_xr[name_uv_y].max()+dist,dist)
     reg_grid_X,reg_grid_Y = np.meshgrid(reg_x_vec,reg_y_vec)
     from scipy.interpolate import griddata
-    #from dfm_tools.modplot import velovect
     
     fig, axs = plt.subplots(**fig_args,sharex=True,sharey=True)
     for iT, timestep in enumerate([0,1,10]):
@@ -110,7 +112,7 @@ for file_nc in file_nc_list:
         U = griddata((lonvals_flat,latvals_flat),data_u_tsel.to_numpy().flatten(),(reg_grid_X,reg_grid_Y),method='nearest') #TODO: this is probably easier with xarray
         V = griddata((lonvals_flat,latvals_flat),data_v_tsel.to_numpy().flatten(),(reg_grid_X,reg_grid_Y),method='nearest')
         speed = np.sqrt(U*U + V*V)
-        #quiv_curved = velovect(ax,reg_grid_X,reg_grid_Y,U,V, arrowstyle='fancy', scale = 5, grains = 25, color=speed)#, cmap='jet')
+        #quiv_curved = dfmt.velovect(ax,reg_grid_X,reg_grid_Y,U,V, arrowstyle='fancy', scale = 5, grains = 25, color=speed)#, cmap='jet')
         #quiv_curved.lines.set_clim(0,5)
         quiv_curved = ax.streamplot(reg_x_vec,reg_y_vec,U,V, arrowstyle='-|>', integration_direction='forward',broken_streamlines=False, color=speed, density=1)
         cbar = fig.colorbar(quiv_curved.lines, ax=ax)

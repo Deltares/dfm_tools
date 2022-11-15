@@ -9,19 +9,20 @@ This script can be used to interpolate pre-downloaded CMEMS data (or other netcd
 
 import os
 import datetime as dt
+import contextily as ctx
 from pathlib import Path
 import matplotlib.pyplot as plt
 plt.close('all')
-from dfm_tools.interpolate_grid2bnd import get_conversion_dict, interpolate_tide_to_bc, interpolate_nc_to_bc
-from dfm_tools.hydrolib_helpers import forcinglike_to_Dataset
+import dfm_tools as dfmt
 try: #0.3.1 release
     from hydrolib.core.io.ext.models import Boundary, ExtModel
 except: #main branch and next release #TODO: move to easy imports after https://github.com/Deltares/HYDROLIB-core/issues/410
     from hydrolib.core.io.dflowfm.ext.models import Boundary, ExtModel
 
-#TODO: make interpolate function accept tstart/tstop as datestrings
+#TODO: put all functions under dfm_tools init for more convenience
+#TODO: discuss structure with arthur/stendert (new modularity, naming of functions)
+#TODO: make both interpolate functions accept tstart/tstop as datestrings
 #TODO: add coordinate conversion of pli-coordinates (for nesting RD models)
-#TODO: return interpolated nc instead of a forcingmodel an do pointloop and forcingmodel in separate function?
 #copied plifile from DCSM folder: r'p:\1204257-dcsmzuno\data\CMEMS\bnd\NorthSeaAndBaltic_1993-2019_20210510'
 #list_plifiles = [Path(r'c:\DATA\dfm_tools_testdata\hydrolib_bc\DCSM\DCSM-FM_OB_all_20181108.pli')] #TODO: reading this file results in empty Polyfile, should raise an error. https://github.com/Deltares/HYDROLIB-core/issues/320
 list_plifiles = [Path(r'c:\DATA\dfm_tools_testdata\hydrolib_bc\DCSM\DCSM-FM_OB_all_20181108_nocomments.pli')]
@@ -37,13 +38,13 @@ list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tracer
 #list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','tracerbndNO3']
 list_quantities = ['salinitybnd']
 
-model = 'HYCOM' #CMEMS GFDL CMCC HYCOM
+model = 'CMEMS' #CMEMS GFDL CMCC HYCOM
 
 #The {ncvarname} wildcard in dir_pattern_hydro/dir_patern_waq is used to replace it with conversion_dict[quantity]['ncvarname'] by using str(dir_pattern).format(ncvarname)
 reverse_depth = False #to compare with coastserv files, this argument will be phased out
-KDTree_invdistweigth = False
+kdtree_k = 3
 if model=='CMEMS': #2012-01-06 12:00:00 to 2013-01-03 12:00:00
-    conversion_dict = get_conversion_dict()
+    conversion_dict = dfmt.get_conversion_dict()
     tstart = dt.datetime(2012, 1, 16, 12, 0)
     tstop = dt.datetime(2012, 4, 1, 12, 0)
     #tstop = dt.datetime(2013, 1, 1, 12, 0)
@@ -54,9 +55,9 @@ if model=='CMEMS': #2012-01-06 12:00:00 to 2013-01-03 12:00:00
     #to reproduce old CMEMS data (icw reverse_depth=True)
     #tstart = dt.datetime(1993,1,1,12,0)
     #tstop = tstart + dt.timedelta(days=5)
-    #dir_pattern_hydro = Path(dir_sourcefiles_hydro,'{ncvarname}_1993*.nc') # later remove 2012 from string, but this is faster for testing #TODO: it is quite slow, maybe speed up possible?
+    #dir_pattern_hydro = Path(dir_sourcefiles_hydro,'{ncvarname}_1993*.nc')
 elif model=='GFDL':
-    conversion_dict = get_conversion_dict()
+    conversion_dict = dfmt.get_conversion_dict()
     tstart = dt.datetime(2012, 1, 16, 12, 0)
     tstop = dt.datetime(2012, 4, 1, 12, 0)
     dir_sourcefiles_hydro = None
@@ -65,7 +66,7 @@ elif model=='GFDL':
     dir_pattern_waq = Path(dir_sourcefiles_waq,'{ncvarname}_esm-hist.nc')
 elif model=='CMCC': #TODO: check method, now finding nearest points (so always has values)
     #TODO: time_bnds/lev_bnds are available, take into account in bc file?
-    conversion_dict = get_conversion_dict(ncvarname_updates={'salinitybnd':'sos', 'temperaturebnd':'tos'})
+    conversion_dict = dfmt.get_conversion_dict(ncvarname_updates={'salinitybnd':'sos', 'temperaturebnd':'tos'})
     conversion_dict['tracerbndNO3'] = {'ncvarname':'no3', 'unit':'g/m3', 'conversion':14.0} #other vars also have different conversion than cmems
     tstart = dt.datetime(2015, 6, 16, 12, 0)
     tstop = dt.datetime(2016, 12, 1, 12, 0)
@@ -75,7 +76,7 @@ elif model=='CMCC': #TODO: check method, now finding nearest points (so always h
     dir_pattern_waq = dir_pattern_hydro
     KDTree_invdistweigth = True #only relevant for CMCC
 elif model=='HYCOM':
-    conversion_dict = get_conversion_dict(ncvarname_updates={'salinitybnd':'salinity', 'temperaturebnd':'water_temp'})
+    conversion_dict = dfmt.get_conversion_dict(ncvarname_updates={'salinitybnd':'salinity', 'temperaturebnd':'water_temp'})
     tstart = dt.datetime(2016, 4, 20, 0, 0) #HYCOM
     tstop = dt.datetime(2016, 5, 3, 0, 0)
     dir_sourcefiles_hydro = 'c:\\DATA\\dfm_tools_testdata\\GLBu0.08_expt_91.2' #HYCOM hydro: salinity/so, water_temp/thetao (2016-04-19 00:00:00 to 2016-05-06 00:00:00)
@@ -94,35 +95,40 @@ if not os.path.isdir(dir_output):
     os.mkdir(dir_output)
 
 for file_pli in list_plifiles:
+    file_bc_basename = file_pli.name.replace('.pli','')
     for quantity in list_quantities:
         print(f'processing quantity: {quantity}')
-        if quantity in ['tide']: #tide #TODO: choose flexible/generic component notation
+        if quantity=='tide': #TODO: choose flexible/generic component notation
             tidemodel = 'FES2014' #FES2014, FES2012, EOT20
             component_list = ['2n2','mf','p1','m2','mks2','mu2','q1','t2','j1','m3','mm','n2','r2','k1','m4','mn4','s1','k2','m6','ms4','nu2','s2','l2','m8','msf','o1','s4'] #None results in all FES components
-            ForcingModel_object = interpolate_tide_to_bc(tidemodel=tidemodel, file_pli=file_pli, component_list=component_list, nPoints=nPoints)
+            ForcingModel_object = dfmt.interpolate_tide_to_bc(tidemodel=tidemodel, file_pli=file_pli, component_list=component_list, nPoints=nPoints)
             for forcingobject in ForcingModel_object.forcing: #add A0 component
                 forcingobject.datablock.append(['A0',0.0,0.0])
-        elif quantity in ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy']: #hydro
-            if dir_sourcefiles_hydro is None:
-                continue
-            if (model=='HYCOM') & (quantity not in ['salinitybnd','temperaturebnd']): #only contains quantities salinity and water_temp, so crashes on others
-                continue
-            ForcingModel_object = interpolate_nc_to_bc(dir_pattern=dir_pattern_hydro, file_pli=file_pli,
-                                                       quantity=quantity, conversion_dict=conversion_dict,
-                                                       tstart=tstart, tstop=tstop, refdate_str=refdate_str,
-                                                       reverse_depth=reverse_depth,
-                                                       KDTree_invdistweigth=KDTree_invdistweigth,
-                                                       nPoints=nPoints)
-        else: #waq
-            if dir_pattern_waq is None:
-                continue
-            ForcingModel_object = interpolate_nc_to_bc(dir_pattern=dir_pattern_waq, file_pli=file_pli,
-                                                       quantity=quantity, conversion_dict=conversion_dict,
-                                                       tstart=tstart, tstop=tstop, refdate_str=refdate_str,
-                                                       reverse_depth=reverse_depth,
-                                                       KDTree_invdistweigth=KDTree_invdistweigth,
-                                                       nPoints=nPoints)
-        
+        else:
+            if quantity in ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy']: #hydro
+                if dir_sourcefiles_hydro is None:
+                    continue
+                if (model=='HYCOM') & (quantity not in ['salinitybnd','temperaturebnd']): #only contains quantities salinity and water_temp, so crashes on others
+                    continue
+                dir_pattern = dir_pattern_hydro
+            else: #waq
+                if dir_pattern_waq is None:
+                    continue
+                dir_pattern = dir_pattern_waq
+            
+            #open regulargridDataset and do some basic stuff (time selection, renaming depth/lat/lon/varname, converting units, etc)
+            data_xr_vars = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity=quantity, #TODO: maybe replace renaming part with package CMCC/Lisa?
+                                              tstart=tstart, tstop=tstop,
+                                              conversion_dict=conversion_dict,
+                                              refdate_str=refdate_str, 
+                                              reverse_depth=reverse_depth) #temporary argument to compare easier with old coastserv files            
+            #interpolate regulargridDataset to plipointsDataset
+            data_interp = dfmt.interp_regularnc_to_plipoints(data_xr_reg=data_xr_vars, file_pli=file_pli,
+                                                        nPoints=nPoints, #argument for testing
+                                                        kdtree_k=kdtree_k) #argument for curvi grids like CMCC
+            #convert plipointsDataset to hydrolib ForcingModel
+            ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
+                    
         file_bc_basename = file_pli.name.replace('.pli','')
         if quantity=='tide':
             file_bc_out = Path(dir_output,f'{quantity}_{file_bc_basename}_{tidemodel}.bc')
@@ -130,10 +136,10 @@ for file_pli in list_plifiles:
             file_bc_out = Path(dir_output,f'{quantity}_{file_bc_basename}_{model}.bc')
         print(f'writing ForcingModel to bc file with hydrolib ({file_bc_out.name})')
         if bc_type=='bc':
-            #ForcingModel_object.serializer_config.number_of_decimals = 4
-            #ForcingModel_object.serializer_config.number_of_decimals_datablock = 5
+            #ForcingModel_object.serializer_config.float_format = '.3f'
+            #ForcingModel_object.serializer_config.float_format_datablock = '.5f'
             ForcingModel_object.save(filepath=file_bc_out)
-            #TODO: improve formatting of bc file to make nicer, save diskspace and maybe write faster: https://github.com/Deltares/HYDROLIB-core/issues/308 (and https://github.com/Deltares/HYDROLIB-core/issues/313)
+            #TODO SOLVED: improve formatting of bc file: https://github.com/Deltares/HYDROLIB-core/issues/308 (became quite slow: https://github.com/Deltares/HYDROLIB-core/issues/313)
         else:
             raise Exception(f'invalid bc_type: {bc_type}')
         
@@ -147,10 +153,28 @@ for file_pli in list_plifiles:
                                    )
         ext_bnd.boundary.append(boundary_object)
 
+        if 1 and quantity!='tide': #plotting dataset and polyline (is wrong for CMCC)
+            varname0 = list(data_xr_vars.data_vars)[0] 
+            fig,ax = plt.subplots()
+            if 'depth' in data_xr_vars[varname0].dims:
+                data_xr_vars[varname0].isel(time=0,depth=0).plot(ax=ax)
+            else:
+                data_xr_vars[varname0].isel(time=0).plot(ax=ax)
+            plipoint_coords = data_interp.plipoints.to_dataframe()
+            ax.plot(plipoint_coords['plipoint_x'],plipoint_coords['plipoint_y'],'r-')
+            ctx.add_basemap(ax=ax,crs="EPSG:4326",attribution=False)
+            fig.tight_layout()
+            fig.savefig(str(file_bc_out).replace('.bc','_polyline'))
+            
         if 1: #plotting example data point
-            for iF in [2]:#range(nPoints): #
+            # for iF in [2]:#range(nPoints): #from data_interp TODO: this is slightly easier, but negative depth is not done yet (is in Dataset_to_T3D/Dataset_to_TimeSeries functions)
+            #     data_vars = list(data_interp.data_vars)
+            #     fig,ax1 = plt.subplots(figsize=(10, 6))
+            #     data_interp[data_vars[0]].isel(plipoints=iF).T.plot()
+            #     fig.tight_layout()
+            for iF in [2]:#range(nPoints): #from ForcingModel_object
                 forcingobject_one = ForcingModel_object.forcing[iF]
-                forcingobject_one_xr = forcinglike_to_Dataset(forcingobject_one,convertnan=True)
+                forcingobject_one_xr = dfmt.forcinglike_to_Dataset(forcingobject_one,convertnan=True)
                 data_vars = list(forcingobject_one_xr.data_vars)
                 fig,ax1 = plt.subplots(figsize=(10, 6))
                 if hasattr(forcingobject_one,'vertpositions'): #3D quantity (time/depth dimensions)
@@ -167,6 +191,7 @@ for file_pli in list_plifiles:
                     forcingobject_one_xr[data_vars[1]].plot(ax=ax2)
                 else:
                     forcingobject_one_xr[data_vars[0]].plot(ax=ax1)
+                fig.tight_layout()
                 fig.savefig(str(file_bc_out).replace('.bc',''))
 
 
@@ -175,4 +200,5 @@ ext_bnd.save(filepath=file_ext_out)
 
 time_passed = (dt.datetime.now()-dtstart).total_seconds()
 print(f'>>time passed: {time_passed:.2f} sec')
+
 

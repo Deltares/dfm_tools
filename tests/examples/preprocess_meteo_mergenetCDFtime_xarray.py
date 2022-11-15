@@ -18,7 +18,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 plt.close('all')
-from dfm_tools.xarray_helpers import preprocess_hirlam
+import dfm_tools as dfmt
 
 #TODO: crashes in pytest for some reason: "OSError: [Errno -51] NetCDF: Unknown file format"
 #TODO: add ERA5 conversions and features from hydro_tools\ERA5\ERA52DFM.py (except for varRhoair_alt)
@@ -31,8 +31,9 @@ from dfm_tools.xarray_helpers import preprocess_hirlam
 #                'v10': 'northward_wind',
 #                'msl': 'air_pressure'}
 #TODO: add coordinate conversion (maybe only for models with multidimensional lat/lon variables like HARMONIE and HIRLAM)
-#TODO: add CMCC etc from gtsmip repos (including calendar conversion)
+#TODO: add CMCC etc from gtsmip repos (mainly calendar conversion)
 #TODO: add convert_360to180 with "ds.coords['lon'] = (ds.coords['lon'] + 180) % 360 - 180; ds = ds.sortby('lon')" (without hardcoded longitude/lon names)
+#TODO: move to function
 
 add_global_overlap = False #GTSM specific: extend data beyond -180 to 180 longitude
 zerostart = False #GTSM specific: extend data with 0-value fields 1 and 2 days before all_tstart
@@ -53,7 +54,7 @@ if 'HIRLAM' in mode:
     fn_match_pattern = 'h72_20131*.nc'
     file_out_prefix = 'h72_'
     drop_variables = ['x','y'] #will be added again as longitude/latitude, this is a workaround
-    preprocess = preprocess_hirlam
+    preprocess = dfmt.preprocess_hirlam
     rename_variables = None
 elif mode == 'HARMONIE':
     dir_data = 'p:\\1204257-dcsmzuno\\data\\meteo\\HARMONIE\\nc\\air_*' #many invalid files, so subsetting here
