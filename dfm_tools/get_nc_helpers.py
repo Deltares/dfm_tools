@@ -47,7 +47,7 @@ from dfm_tools.xarray_helpers import preprocess_hisnc
 
 
 def get_ncfilelist(file_nc, multipart=None):
-    if '' in file_nc:
+    if 'thredds/dodsC/opendap' in file_nc:
         file_ncs = [file_nc]
         return file_ncs
     #get list of mapfiles
