@@ -70,3 +70,23 @@ Increasing the dfm_tools version number:
 - ``bumpversion major`` or ``bumpversion minor`` or ``bumpversion patch`` (changes version numbers in files and commits changes)
 - push this change in version number with ``git push`` (from git bash window or cmd also ok?)
 - request merging of your branch on https://github.com/openearth/dfm_tools/branches
+
+More info (was in readme previously):
+
+- what are all these packages for?:
+	- shapely for slicing 2D/3D data (conda-forge channel is necessary since main channel version is 1.6.4, minimal requirement is 1.7.0)
+	- cartopy for satellite imagery, coastlines etc on plots (conda-forge channel recommended by cartopy developers, and currently also necessary for correct shapely version)
+	- pyepsg is necessary for cartopy and probably also for other libraries
+	- geopandas for shapefile related operations
+	- contextily for satellite imagery on plots, seems faster than cartopy
+	- xarray developers advise to install dependecies dask/netCDF4/bottleneck with conda-forge also: https://docs.xarray.dev/en/v0.8.0/installing.html
+	- cdsapi/pydap: to download ERA5 and CMEMS data. Minimal pydap version is 3.3.0 (only available via conda-forge on 10-11-2022)
+- launch Spyder:
+	- open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in the dfm_tools_env environment only)
+	- copy the code from [Example usage](#example-usage) to your own scripts to get started
+	- Qt error upon launching Spyder?: remove the system/user environment variable 'qt_plugin_path' set by an old Delft3D4 installation procedure.
+	- netCDF4 DLL error upon import in Spyder?: remove Anaconda paths from the Path user environment variable (https://github.com/spyder-ide/spyder/issues/19220)
+- to update dfm_tools:
+	- open anaconda prompt
+	- ``conda activate dfm_tools_env``
+	- ``python -m pip install --upgrade git+https://github.com/openearth/dfm_tools.git``
