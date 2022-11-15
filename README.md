@@ -19,11 +19,7 @@ Features
 	- read and write almost all FM input data with [hydrolib-core](https://github.com/Deltares/HYDROLIB-core)
 	- converting and plotting this data with helper functions in dfm_tools
 	- e.g.: interpolating CMEMS data to model boundary and writing 2D/3D boundary condition files
-- to get started:
-	- [pdf with dfm_tools features and examples](https://nbviewer.org/github/openearth/dfm_tools/raw/pptx/docs/dfm_tools.pdf?flush_cache=true)
-	- [html documentation](https://htmlpreview.github.io/?https://github.com/openearth/dfm_tools/blob/master/docs/dfm_tools/index.html)
-	- [example scripts](https://github.com/openearth/dfm_tools/tree/master/tests/examples)
-	- want to get updates about dfm_tools? Send an email to jelmer.veenstra@deltares.nl
+
 	
 Installation
 --------
@@ -55,55 +51,10 @@ Installation
 	- ``python -m pip install --upgrade git+https://github.com/openearth/dfm_tools.git``
 
 
-Example usage
+Getting started
 --------
-More example scripts available at: https://github.com/openearth/dfm_tools/tree/master/tests/examples
-```python
-import os
-import xarray as xr
-import matplotlib.pyplot as plt
-plt.close('all')
-import dfm_tools as dfmt
-import contextily as ctx
-
-dir_testinput = os.path.join(r'n:\Deltabox\Bulletin\veenstra\info dfm_tools\test_input')
-file_nc_his = os.path.join(dir_testinput,'DFM_sigma_curved_bend','DFM_OUTPUT_cb_3d','cb_3d_his.nc')
-#file_nc_map = os.path.join(dir_testinput,'DFM_sigma_curved_bend','DFM_OUTPUT_cb_3d','cb_3d_map.nc')
-file_nc_map = 'http://opendap.deltares.nl/thredds/dodsC/opendap/deltares/Delft3D/netcdf_example_files/westernscheldt_sph_map.nc'
-#data_xr_map = xr.open_dataset(file_nc_map)
-
-data_xr_his = xr.open_mfdataset(file_nc_his, preprocess=dfmt.preprocess_hisnc)
-stations_pd = data_xr_his['stations'].to_dataframe()
-
-#retrieve his data and plot
-fig, ax = plt.subplots(1,1,figsize=(10,5))
-data_xr_his.waterlevel.plot.line(ax=ax, x='time')
-ax.legend(data_xr_his.stations.to_series(),loc=1) #optional, to change legend location
-fig.tight_layout()
-
-#plot net/grid
-ugrid_all = dfmt.get_netdata(file_nc=file_nc_map)#,multipart=False)
-fig, ax = plt.subplots(figsize=(10,4))
-pc = dfmt.plot_netmapdata(ugrid_all.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
-ctx.add_basemap(ax=ax, source=ctx.providers.Esri.WorldImagery, crs="EPSG:4326", attribution=False)
-fig.tight_layout()
-
-#plot water level on map
-data_frommap_wl = dfmt.get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_s1', timestep=10)#, multipart=False)
-fig, ax = plt.subplots(figsize=(10,4))
-pc = dfmt.plot_netmapdata(ugrid_all.verts, values=data_frommap_wl[0,:], ax=None, linewidth=0.5, cmap="jet")
-pc.set_clim([-0.5,2])
-fig.colorbar(pc, ax=ax)
-ax.set_title(data_frommap_wl.var_varname)
-ctx.add_basemap(ax=ax, source=ctx.providers.Esri.WorldImagery, crs="EPSG:4326", attribution=False)
-fig.tight_layout()
-
-#plot salinity on map
-data_frommap_sal = dfmt.get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_ucx', timestep=10)#, layer=5)#, multipart=False) #was 3D mesh2d_sa1 variable for curvibend
-fig, ax = plt.subplots(figsize=(10,4))
-pc = dfmt.plot_netmapdata(ugrid_all.verts, values=data_frommap_sal[0,:], ax=None, linewidth=0.5, cmap="jet")
-fig.colorbar(pc, ax=ax)
-ax.set_title(data_frommap_sal.var_varname)
-ctx.add_basemap(ax=ax, source=ctx.providers.Esri.WorldImagery, crs="EPSG:4326", attribution=False)
-fig.tight_layout()
-```
+- [pdf with dfm_tools features and examples](https://nbviewer.org/github/openearth/dfm_tools/raw/pptx/docs/dfm_tools.pdf?flush_cache=true)
+- [html documentation](https://htmlpreview.github.io/?https://github.com/openearth/dfm_tools/blob/master/docs/dfm_tools/index.html)
+- [jupyter notebook with example code](https://github.com/openearth/dfm_tools/blob/master/notebooks/postprocessing_readme_example.ipynb)
+- [example scripts](https://github.com/openearth/dfm_tools/tree/master/tests/examples)
+- want to get updates about dfm_tools? Send an email to jelmer.veenstra@deltares.nl
