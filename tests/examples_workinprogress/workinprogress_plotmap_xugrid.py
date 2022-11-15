@@ -41,7 +41,7 @@ if 0: #REFERENCE DFM_TOOLS
     
 
 
-if 0: #only merging, goes wrong with numbering
+if 1: #only merging, goes wrong with global numbering
     
     files_map = [os.path.join(dir_model,'DFM_OUTPUT_Grevelingen-FM',f"Grevelingen-FM_{i:04d}_map.nc") for i in range(8)]
     data_xr1 = xr.open_dataset(files_map[0])
@@ -60,14 +60,16 @@ if 0: #only merging, goes wrong with numbering
     data_xr_merged_edge = xr.concat([data_xr1_edge,data_xr2_edge],dim=edgedim)
     
     data_xr_merged = xr.merge([data_xr_merged_face,data_xr_merged_node,data_xr_merged_edge])
-    data_xr_merged['mesh2d'] = data_xr1.mesh2d
+    
+    for add_var in ['mesh2d','projected_coordinate_system','timestep','mesh2d_interface_z','mesh2d_layer_z']: #add vars without dims or with other dims #TODO: make less hard coded
+        data_xr_merged[add_var] = data_xr1[add_var]
     
     data_xu_merged = xu.UgridDataset(data_xr_merged)
     
     data_xu_merged['mesh2d_sa1'].isel(time=2,nmesh2d_layer=35).ugrid.plot()
 
 
-if 1: #method huite, slow for multiple variables
+if 0: #method huite, slow for multiple variables (face_variables=None)
     mode = 'map' #'net' 'map'
     
     if mode=='net':
