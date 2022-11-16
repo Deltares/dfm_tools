@@ -23,7 +23,7 @@ nPoints = 5 #None for all points
 file_bc_list = [r'c:\DATA\dfm_tools_testdata\hydrolib_bc\DCSM\tide_OB_all_20181108.bc',
                 #r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\2020\flow\rmm_zeerand_v3_2020.bc', #>100 timeseries
                 r'c:\DATA\dfm_tools_testdata\hydrolib_bc\rmm_zeerand_v3_2020_short.bc',
-                r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\rmm_rivdis_meas_20171101_20210102_MET.bc', #TODO: why can it not be str? #three timeseries
+                r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\rmm_rivdis_meas_20171101_20210102_MET.bc', #three timeseries
                 #r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\2018\flow\rmm_discharge_laterals_20171201_20190101_MET.bc',
                 r'c:\DATA\dfm_tools_testdata\hydrolib_bc\haixia\salinity_bc_South_v2_firstpoint.bc',
                 r'c:\DATA\dfm_tools_testdata\hydrolib_bc\haixia\uxuy_bc_South_v2_firstpoint.bc',
@@ -36,7 +36,7 @@ dir_output = '.'
 
 for file_bc in file_bc_list:
     #Load .bc-file using HydroLib object ForcingModel.
-    m = ForcingModel(Path(file_bc))
+    m = ForcingModel(Path(file_bc)) #TODO: why can it not be str?
     ForcingModel_object_out = ForcingModel()
     
     # m.general.comments = {'a':'aa'} #TODO: adding comments to top of file is not possible, only if using filetype or fileversion: https://github.com/Deltares/HYDROLIB-core/issues/130. Top file comment newfeature: https://github.com/Deltares/HYDROLIB-core/issues/362
