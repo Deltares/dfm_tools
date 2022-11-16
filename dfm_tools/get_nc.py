@@ -76,13 +76,17 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=No
     """
     
     #get variable info (also checks if varname exists in keys, standard name, long name)
-    data_nc = Dataset(file_nc)
-    data_xr = xr.open_dataset(file_nc)
-    varname = get_varnamefrom_keyslongstandardname(file_nc, varname) #get varname from varkeys/standardname/longname if exists
+    if isinstance(file_nc,list):
+        file_nc_one = file_nc[0]
+    else:
+        file_nc_one = file_nc        
+    data_nc = Dataset(file_nc_one)
+    data_xr = xr.open_dataset(file_nc_one)
+    varname = get_varnamefrom_keyslongstandardname(file_nc_one, varname) #get varname from varkeys/standardname/longname if exists
     nc_varobject = data_nc.variables[varname]
     
     #get list of station dimnames
-    vars_pd = get_ncvarproperties(file_nc=file_nc)
+    vars_pd = get_ncvarproperties(file_nc=file_nc_one)
     
     listtype_int = [int, np.int8, np.int16, np.int32, np.int64]
     listtype_str = [str]
@@ -104,7 +108,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=No
     else: #time dimension is present
         data_nc_timevar = data_nc.variables['time']
         time_length = data_nc_timevar.shape[0]
-        data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname) #get all times
+        data_nc_datetimes_pd = get_timesfromnc(file_nc_one, varname=varname) #get all times
         if timestep is None:
             raise Exception('ERROR: netcdf variable contains a time dimension, but parameter timestep not provided (can be "all"), first and last timestep:\n%s\nretrieve entire times list:\nfrom dfm_tools.get_nc_helpers import get_timesfromnc\ntimes_pd = get_timesfromnc(file_nc=file_nc, varname="%s")'%(pd.DataFrame(data_nc_datetimes_pd),varname))
         #convert timestep to list of int if it is not already
@@ -179,7 +183,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=No
             raise Exception('ERROR: netcdf file variable (%s) does not contain stations/general_structures, but argument station is provided'%(varname))
     else: #stations are present
         #get appropriate station list
-        station_name_list_pd = get_hisstationlist(file_nc,varname=varname)
+        station_name_list_pd = get_hisstationlist(file_nc_one,varname=varname)
         if station is None:
             raise Exception('ERROR: netcdf variable contains a station/general_structures dimension, but argument station not provided (can be "all"), available stations/crs/generalstructures:\n%s\nretrieve entire station list:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist\nstations_pd = get_hisstationlist(file_nc,varname="%s")'%(station_name_list_pd, varname))
         #convert station to list of int if it is not already
@@ -217,7 +221,10 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=No
         multipart = False
 
     #get list of partitioned files
-    file_ncs = get_ncfilelist(file_nc, multipart)
+    if isinstance(file_nc,list):
+        file_ncs = file_nc
+    else:
+        file_ncs = get_ncfilelist(file_nc_one, multipart)
 
     for iF, file_nc_sel in enumerate(file_ncs):
         if (len(file_ncs) > 1) and not silent:
@@ -312,7 +319,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=No
         for iD, dimlen in enumerate(values_all.shape):
             if iD == layerdim_id:
                 values_selid_topbot.append(bottomtoplay)
-            elif iD == concat_axis and not '_his.nc' in file_nc: #his files have no partitions and thus no concat_axis, this forces to 'else' and to transpose (no testcase available)
+            elif iD == concat_axis and not '_his.nc' in file_nc_one: #his files have no partitions and thus no concat_axis, this forces to 'else' and to transpose (no testcase available)
                 values_selid_topbot.append(np.array(range(dimlen)))
             else:
                 values_selid_topbot.append(np.array([range(dimlen)]).T)
@@ -322,12 +329,12 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=No
 
 
     #add metadata
-    values_all.var_filename = file_nc
+    values_all.var_filename = file_nc_one
     values_all.var_varname = varname
     values_all.var_dimensions = nc_varobject.dimensions
     values_all.var_shape = nc_varobject.shape
     values_all.var_dtype = nc_varobject.dtype
-    values_all.var_ncvarobject = f"from netCDF4 import Dataset;data_nc = Dataset('{file_nc}');nc_varobject = data_nc.variables['{varname}'];print(nc_varobject)" # nc_varobject #this is the netcdf variable, contains properties like shape/units/dimensions #disabled, since it becomes invalid after closing the dataset
+    values_all.var_ncvarobject = f"from netCDF4 import Dataset;data_nc = Dataset('{file_nc_one}');nc_varobject = data_nc.variables['{varname}'];print(nc_varobject)" # nc_varobject #this is the netcdf variable, contains properties like shape/units/dimensions #disabled, since it becomes invalid after closing the dataset
     values_all.var_ncattrs = nc_varobject.__dict__ #values in nc_varobject.ncattrs() or hasattr(nc_varobject,'attributename')
 
     if dimn_time in nc_varobject.dimensions:

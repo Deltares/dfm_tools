@@ -32,8 +32,8 @@ date_max = '2010-01-02'
 
 #variables per model will be written to separate netcdf files. Set to [] to skip model.
 variables_era5 = []#'v10n'] # supply arbitrary string to get error with available variable names
-varlist_cmems = ['bottomT']#['bottomT','thetao','no3'] # avaliable variables differ per source_combination, check cmems loop for some options
-varlist_hycom = []#'water_temp'] #['tau','water_u','water_v','water_temp','salinity','surf_el']
+varlist_cmems = []#['bottomT','thetao','no3'] # avaliable variables differ per source_combination, check cmems loop for some options
+varlist_hycom = ['water_temp']#'water_temp'] #['tau','water_u','water_v','water_temp','salinity','surf_el']
 
 #output directories per model
 dir_output_era5 = './era5_temp'
