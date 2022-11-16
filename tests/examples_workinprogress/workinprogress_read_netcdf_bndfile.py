@@ -14,7 +14,7 @@ file_nc_bc = r'p:\1204257-dcsmzuno\data\CMEMS\bnd\NorthSeaAndBaltic_1993-2019_20
 
 data_xr = xr.open_dataset(file_nc_bc)
 data_xr = data_xr.set_coords(['station_id'])#,'station_names'])
-data_xr = preprocess_hisnc(dfmt.data_xr)
+data_xr = dfmt.preprocess_hisnc(data_xr)
 
 fig,ax = plt.subplots()
 data_xr.temperature.sel(node='extra_rand_dcsm_0001').T.plot()

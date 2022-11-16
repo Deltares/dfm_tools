@@ -14,7 +14,7 @@ dependencies:
   - netcdf4
   - bottleneck
   - cdsapi
-  - motuclient
+  - pydap
   - pip:
     - pytest>=5.0.1
     - bump2version>=0.5.11

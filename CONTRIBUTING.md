@@ -90,3 +90,22 @@ More info (was in readme previously):
 	- open anaconda prompt
 	- ``conda activate dfm_tools_env``
 	- ``python -m pip install --upgrade git+https://github.com/openearth/dfm_tools.git``
+
+
+Install on google colab:
+
+!wget -O mini.sh https://repo.anaconda.com/miniconda/Miniconda3-py38_4.8.2-Linux-x86_64.sh
+!chmod +x mini.sh
+!bash ./mini.sh -b -f -p /usr/local
+!conda install -q -y jupyter
+!conda install -q -y google-colab -c conda-forge
+!python -m ipykernel install --name "py38" --user
+
+# Reload the web page and execute this cell
+import sys
+print("User Current Version:-", sys.version)
+!conda install -c conda-forge git shapely cartopy pyepsg contextily xarray dask netcdf4 bottleneck cdsapi pydap -y
+#!conda install -c conda-forge geopandas -y
+!python -m pip install git+https://github.com/openearth/dfm_tools
+
+All works, except for dfm_tools, somehow not installed even tough it is installed
