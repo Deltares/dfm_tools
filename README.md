@@ -8,6 +8,7 @@ Information and examples
 - [pdf](https://nbviewer.org/github/openearth/dfm_tools/raw/pptx/docs/dfm_tools.pdf?flush_cache=true) with dfm_tools information, features and examples
 - [online documentation](https://htmlpreview.github.io/?https://github.com/openearth/dfm_tools/blob/master/docs/dfm_tools/index.html) generated from docstrings
 - [jupyter notebook](https://github.com/openearth/dfm_tools/blob/master/notebooks/postprocessing_readme_example.ipynb) with example code
+- [binder](https://mybinder.org/v2/gh/openearth/dfm_tools/HEAD) where you can access and run notebooks interactively (wait for quite a while for the loading to complete, notebooks are in the notebooks folder)
 - [github folder](https://github.com/openearth/dfm_tools/tree/master/tests/examples) with more example scripts
 
 
@@ -21,11 +22,3 @@ Installation
 - ``python -m pip install git+https://github.com/openearth/dfm_tools`` (this command installs dfm_tools and all required non-conda packages, also use to update)
 - long paths error? Check last comment in https://github.com/Deltares/HYDROLIB-core/issues/327
 - to remove environment when necessary: ``conda remove -n dfm_tools_env --all``
-
-
-Using dfm_tools notebooks in binder
---------
-- go to https://mybinder.org/v2/gh/openearth/dfm_tools/HEAD
-- wait for quite a while for the loading to complete (press 'keep waiting' if prompted)
-- browse to the notebooks folder, select the notebook of your preference and run it
-
