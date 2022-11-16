@@ -27,9 +27,7 @@ Installation
 
 Using dfm_tools notebooks in binder
 --------
-- go to https://mybinder.org/
-- paste the dfm_tools url: https://github.com/openearth/dfm_tools
-- press ``launch``
-- wait for quite a while for the building/launching process (environment is built from environment.yml)
-- browse to the notebooks folder and select the notebook of your preference
+- go to https://mybinder.org/v2/gh/openearth/dfm_tools/HEAD
+- wait for quite a while for the loading to complete (press 'keep waiting' if prompted)
+- browse to the notebooks folder, select the notebook of your preference and run it
 
