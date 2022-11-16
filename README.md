@@ -21,3 +21,13 @@ Installation
 - ``python -m pip install git+https://github.com/openearth/dfm_tools`` (this command installs dfm_tools and all required non-conda packages, also use to update)
 - long paths error? Check last comment in https://github.com/Deltares/HYDROLIB-core/issues/327
 - to remove environment when necessary: ``conda remove -n dfm_tools_env --all``
+
+
+Using dfm_tools notebooks in binder
+--------
+- go to https://mybinder.org/
+- paste the dfm_tools url: https://github.com/openearth/dfm_tools
+- press ``launch``
+- wait for quite a while for the building/launching process (environment is built from environment.yml)
+- browse to the notebooks folder and select the notebook of your preference
+
