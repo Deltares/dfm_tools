@@ -47,6 +47,9 @@ from dfm_tools.xarray_helpers import preprocess_hisnc
 
 
 def get_ncfilelist(file_nc, multipart=None):
+    if isinstance(file_nc,list):
+        file_ncs = [file_nc]
+        return file_ncs
     if 'thredds/dodsC/opendap' in file_nc:
         file_ncs = [file_nc]
         return file_ncs
