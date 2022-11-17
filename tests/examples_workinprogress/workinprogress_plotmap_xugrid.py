@@ -13,8 +13,10 @@ import matplotlib.pyplot as plt
 plt.close('all')
 import datetime as dt
 import dfm_tools as dfmt
+import glob
+import pandas as pd
 
-dtstart = dt.datetime.now()
+dtstart_all = dt.datetime.now()
 
 #dir_model = r"c:\tmp\xugrid\Grevelingen_run01"
 dir_model = r'c:\DATA\dfm_tools_testdata\DFM_3D_z_Grevelingen\computations\run01'
@@ -41,51 +43,21 @@ if 0: #REFERENCE DFM_TOOLS
     
 
 
-if 1: #only merging, goes wrong with global numbering
+if 1: #method huite, adjusted
     
-    files_map = [os.path.join(dir_model,'DFM_OUTPUT_Grevelingen-FM',f"Grevelingen-FM_{i:04d}_map.nc") for i in range(8)]
-    data_xr1 = xr.open_dataset(files_map[0])
-    data_xr2 = xr.open_dataset(files_map[1])
-    
-    facedim, nodedim, edgedim = 'nmesh2d_face', 'nmesh2d_node', 'nmesh2d_edge'
-    data_xr1_face = dfmt.Dataset_varswithdim(data_xr1,dimname=facedim)
-    data_xr2_face = dfmt.Dataset_varswithdim(data_xr2,dimname=facedim)
-    data_xr1_node = dfmt.Dataset_varswithdim(data_xr1,dimname=nodedim)
-    data_xr2_node = dfmt.Dataset_varswithdim(data_xr2,dimname=nodedim)
-    data_xr1_edge = dfmt.Dataset_varswithdim(data_xr1,dimname=edgedim)
-    data_xr2_edge = dfmt.Dataset_varswithdim(data_xr2,dimname=edgedim)
-    
-    data_xr_merged_face = xr.concat([data_xr1_face,data_xr2_face],dim=facedim)
-    data_xr_merged_node = xr.concat([data_xr1_node,data_xr2_node],dim=nodedim)
-    data_xr_merged_edge = xr.concat([data_xr1_edge,data_xr2_edge],dim=edgedim)
-    
-    data_xr_merged = xr.merge([data_xr_merged_face,data_xr_merged_node,data_xr_merged_edge])
-    
-    for add_var in ['mesh2d','projected_coordinate_system','timestep','mesh2d_interface_z','mesh2d_layer_z']: #add vars without dims or with other dims #TODO: make less hard coded
-        data_xr_merged[add_var] = data_xr1[add_var]
-    
-    data_xu_merged = xu.UgridDataset(data_xr_merged)
-    
-    data_xu_merged['mesh2d_sa1'].isel(time=2,nmesh2d_layer=35).ugrid.plot()
-
-
-if 0: #method huite, slow for multiple variables (face_variables=None)
-    mode = 'map' #'net' 'map'
-    
-    if mode=='net':
-        partitions = [xu.open_dataset(os.path.join(dir_model,f"Grevelingen_FM_grid_20190603_{i:04d}_net.nc")) for i in range(8)] #netfiles
-        varname_idomain = 'idomain'
-        varname_globalnr = 'iglobal_s'
-    else:
-        partitions = [xu.open_dataset(os.path.join(dir_model,'DFM_OUTPUT_Grevelingen-FM',f"Grevelingen-FM_{i:04d}_map.nc")) for i in range(8)] #mapfiles
-        varname_idomain = 'mesh2d_flowelem_domain'
-        varname_globalnr = 'mesh2d_flowelem_globalnr'
-    
-    idomains = [uds[varname_idomain] for uds in partitions]
-    globalids = [uds[varname_globalnr] for uds in partitions]
-    
-    # %%
-    def merge(partitions, face_variables=None):
+    def open_partitioned_dataset(file_nc, chunks={'time':1}): #chunks={'time':1} increases performance significantly
+        
+        if isinstance(file_nc,list):
+            file_nc_list = file_nc
+        else:
+            file_nc_list = glob.glob(file_nc)
+        
+        partitions = [xu.open_dataset(file_nc_one,chunks=chunks) for file_nc_one in file_nc_list]
+        if 'idomain' in partitions[0].data_vars: #if netfile, rename to mapfile varnames
+            rename_dict = {'idomain':'mesh2d_flowelem_domain',
+                           'iglobal_s':'mesh2d_flowelem_globalnr',
+                           'nNetElemMaxNode':'max_nmesh2d_face_nodes'} #TODO: extend with others
+            partitions = [part.rename(rename_dict) for part in partitions]
         
         all_indices = []
         all_faces = []
@@ -95,7 +67,7 @@ if 0: #method huite, slow for multiple variables (face_variables=None)
         for i, part in enumerate(partitions):
             # For ghost nodes, keep the values of the lower numbered partition.
             grid = part.ugrid.grid
-            idx = np.flatnonzero(part[varname_idomain] >= i)
+            idx = np.flatnonzero(part['mesh2d_flowelem_domain'] >= i)
             faces = grid.face_node_connectivity[idx]
             faces[faces != grid.fill_value] += accumulator
             accumulator += grid.n_node
@@ -127,79 +99,87 @@ if 0: #method huite, slow for multiple variables (face_variables=None)
             face_node_connectivity=merged_faces,
         )
         facedim = partitions[0].ugrid.grid.face_dimension
-        selection = []
+        nodedim = partitions[0].ugrid.grid.node_dimension
+        edgedim = partitions[0].ugrid.grid.edge_dimension
+        #define list of variables per dimension
+
+        ds_face_list = []
+        ds_node_list = []
+        ds_edge_list = []
+        ds_rest_list = []
+        dtstart = dt.datetime.now()
         for idx, uds in zip(all_indices, partitions):
-            if face_variables is None: #make list of all face_variables (will be concatenated)
-                face_variables = []
-                for varname in uds.variables.keys():
-                    if 'max_nmesh2d_face_nodes' in uds[varname].dims: #TODO: not possible to concatenate this dim yet (varies per partition)
-                        continue
-                    if facedim in uds[varname].dims:
-                        face_variables.append(varname)
-            ds = uds.ugrid.obj[face_variables]
-            selection.append(ds.isel({facedim: idx}))
-        merged_data = xr.concat(selection, dim=facedim)
-        merged_data = merged_data.rename({facedim: merged_grid.face_dimension})
-        return xu.UgridDataset(merged_data, grids=[merged_grid])
-    # %%
-    
-    face_variables = None#[varname_idomain, varname_globalnr, 'mesh2d_s1']
-    
-    merged = merge(partitions, face_variables=face_variables)
-    
-    # fig,ax = plt.subplots()
-    # merged[varname_idomain].ugrid.plot()
-    
-    # fig,ax = plt.subplots()
-    # merged[varname_globalnr].ugrid.plot()
+            
+            #TODO: commented part does not work yet since we need exceptions for eg 'max_nmesh2d_face_nodes'
+            # uds_face = dfmt.Dataset_varswithdim(uds,dimname=facedim)
+            # uds_node = dfmt.Dataset_varswithdim(uds,dimname=nodedim)
+            # uds_edge = dfmt.Dataset_varswithdim(uds,dimname=edgedim)
+            face_variables = []        
+            node_variables = []        
+            edge_variables = []        
+            for varname in uds.variables.keys(): #TODO: do this only for one partition
+                if 'max_nmesh2d_face_nodes' in uds[varname].dims: #TODO: not possible to concatenate this dim yet (size varies per partition) #therefore, vars mesh2d_face_x_bnd and mesh2d_face_y_bnd cannot be included currently
+                    continue
+                if facedim in uds[varname].dims:
+                    face_variables.append(varname)
+                if nodedim in uds[varname].dims:
+                    node_variables.append(varname)
+                if edgedim in uds[varname].dims:
+                    edge_variables.append(varname)
+            ds_face = uds.ugrid.obj[face_variables] #TODO: why/how does this work?
+            ds_node = uds.ugrid.obj[node_variables]
+            ds_edge = uds.ugrid.obj[edge_variables]
+            
+            ds_rest = uds.drop_dims([facedim,nodedim,edgedim]) #TODO: this is a ugrid dataset, cannot be concatenated (drop_dims is not available under uds.ugrid) #contains 4/6 dropped variables
+            
+            ds_face_list.append(ds_face.isel({facedim: idx}))
+            ds_node_list.append(ds_node)#.isel({nodedim: idx})) #TODO: add ghostcell removal for nodes and edges
+            ds_edge_list.append(ds_edge)#.isel({edgedim: idx}))
+            ds_rest_list.append(ds_rest)#.isel({edgedim: idx}))
+        print(f'>>time .sel/xr.append: {(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
+        dtstart = dt.datetime.now()
+        ds_face_concat = xr.concat(ds_face_list, dim=facedim)
+        ds_node_concat = xr.concat(ds_node_list, dim=nodedim)
+        ds_edge_concat = xr.concat(ds_edge_list, dim=edgedim)
+        #ds_rest_concat = xr.concat(ds_rest_list, dim=edgedim)
+        print(f'>>time xr.concat: {(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
+        
+        ds_merged = xr.merge([ds_face_concat,ds_node_concat,ds_edge_concat])#,ds_rest_concat])
+        
+        varlist_onepart = list(partitions[0].variables.keys())
+        varlist_merged = list(ds_merged.variables.keys())
+        varlist_dropped_bool = ~pd.Series(varlist_onepart).isin(varlist_merged)
+        varlist_dropped = pd.Series(varlist_onepart).loc[varlist_dropped_bool]
+        if varlist_dropped_bool.any():
+            print(f'WARNING: some variables dropped with merging of partitions:\n{varlist_dropped}')#\nOne partition with some of these:\n{ds_rest}')
+        
+        ds_merged = ds_merged.rename({facedim: merged_grid.face_dimension}) #TODO: why is this necessary?
+        return xu.UgridDataset(ds_merged, grids=[merged_grid])
+
+    mode = 'map' #'net' 'map'
+    if mode=='net':
+        file_nc = os.path.join(dir_model,'Grevelingen_FM_grid_20190603_*_net.nc')
+    else:
+        file_nc = os.path.join(dir_model,'DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_*_map.nc')
+        file_nc = [os.path.join(dir_model,'DFM_OUTPUT_Grevelingen-FM',f'Grevelingen-FM_{i:04d}_map.nc') for i in range(3)]
+    chunks = {'time':1}
+    merged = open_partitioned_dataset(file_nc,chunks=chunks)
     
     fig,ax = plt.subplots()
-    pc = merged['mesh2d_s1'].isel(time=3).ugrid.plot(vmin=-0.3,vmax=0.3,edgecolor='face') #TODO: geen sel op time geeft onduidelijke error
+    merged['mesh2d_flowelem_domain'].ugrid.plot()
+    
+    fig,ax = plt.subplots()
+    merged['mesh2d_flowelem_globalnr'].ugrid.plot()
+    
+    if mode!='net':
+        fig,ax = plt.subplots()
+        pc = merged['mesh2d_s1'].isel(time=3).ugrid.plot(vmin=-0.3,vmax=0.3,edgecolor='face') #TODO: geen sel op time geeft onduidelijke error
+        fig,ax = plt.subplots()
+        pc = merged['mesh2d_sa1'].isel(time=3,nmesh2d_layer=34).ugrid.plot(vmin=28.7,vmax=30,edgecolor='face') #TODO: have to sel nmesh2d_layer, otherwise error (with xarray you get a histogram, possible to give same behaviour?)
     
     
 
 
-time_passed = (dt.datetime.now()-dtstart).total_seconds()
-print(f'>>time passed: {time_passed:.2f} sec')
+time_passed_all = (dt.datetime.now()-dtstart_all).total_seconds()
+print(f'>>time passed: {time_passed_all:.2f} sec')
 
-
-""" DELETE: mainly looping over files and plotting separately, no merging
-# xugrid alternative for plotting a grid (use random face property and use facecolor='none')
-file_net = r'c:\DATA\dfm_tools_testdata\DFM_3D_z_Grevelingen\computations\run01\Grevelingen_FM_grid_20190603_net.nc'
-data_xru = xugrid.open_dataset(file_net)
-fig,(ax1) = plt.subplots()
-pc = data_xru.mesh2d_face_x.ugrid.plot(ax=ax1, facecolor='none', edgecolor='grey', linewidth=0.5, alpha=0.5, add_colorbar=False)
-
-
-file_nc = r'c:\DATA\dfm_tools_testdata\DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_00*_map.nc'
-file_list = glob.glob(file_nc)
-
-clim_min,clim_max = np.nan,np.nan
-list_pc = []
-
-fig,(ax1) = plt.subplots()
-for iF, file_nc in enumerate(file_list):#[:2]):
-    data_xr = xugrid.open_dataset(file_nc)
-    
-    data_dom = data_xr['mesh2d_flowelem_domain']
-    bool_nonghost = data_dom==iF
-    data_dom_nonghost = data_dom.sel(nmesh2d_face=bool_nonghost)
-    data_wl = data_xr['mesh2d_sa1'].isel(time=3,nmesh2d_layer=-1)#.sel(nmesh2d_face=bool_nonghost)
-    #data_wl = data_xr.get('mesh2d_s1').isel(time=0)
-    
-    pc = data_wl.ugrid.plot(ax=ax1,cmap='jet',add_colorbar=False)#,edgecolor='face')#,vmin=-1,vmax=1)
-    list_pc.append(pc)
-    clim_min = np.nanmin([clim_min,data_wl.min()])
-    clim_max = np.nanmin([clim_max,data_wl.max()])
-    
-    #data_dom_nonghost.ugrid.plot(ax=ax1,cmap='jet',vmin=0,vmax=len(file_list))
-
-for pc in list_pc:
-    pc.set_clim(clim_min,clim_max)
-    #pc.set_clim(27,29.1)
-    
-ax1.set_xlim(46500,71000)
-ax1.set_ylim(408000,426000)
-fig.colorbar(pc,ax=ax1)
-ax1.set_aspect('equal')
-"""
