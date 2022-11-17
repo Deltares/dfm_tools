@@ -161,7 +161,7 @@ if 1: #method huite, adjusted
         file_nc = os.path.join(dir_model,'Grevelingen_FM_grid_20190603_*_net.nc')
     else:
         file_nc = os.path.join(dir_model,'DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_*_map.nc')
-        file_nc = [os.path.join(dir_model,'DFM_OUTPUT_Grevelingen-FM',f'Grevelingen-FM_{i:04d}_map.nc') for i in range(3)]
+        #file_nc = [os.path.join(dir_model,'DFM_OUTPUT_Grevelingen-FM',f'Grevelingen-FM_{i:04d}_map.nc') for i in range(3)] #works also with one file or list of some of the partion files
     chunks = {'time':1}
     merged = open_partitioned_dataset(file_nc,chunks=chunks)
     
