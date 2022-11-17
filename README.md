@@ -9,8 +9,8 @@ Information and examples
 --------
 - [pdf](https://nbviewer.org/github/openearth/dfm_tools/raw/pptx/docs/dfm_tools.pdf?flush_cache=true) with dfm_tools information, features and examples
 - [online documentation](https://htmlpreview.github.io/?https://github.com/openearth/dfm_tools/blob/master/docs/dfm_tools/index.html) generated from docstrings
-- [jupyter notebook](https://github.com/openearth/dfm_tools/blob/master/notebooks/postprocessing_readme_example.ipynb) with example code
-- [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/openearth/dfm_tools/HEAD) to run interactively (loading takes a while, then navigate to the notebooks folder)
+- [jupyter notebooks](https://github.com/openearth/dfm_tools/blob/master/notebooks) with example code
+- [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/openearth/dfm_tools/HEAD) to run these notebooks interactively (loading takes a while)
 - [github folder](https://github.com/openearth/dfm_tools/tree/master/tests/examples) with more example scripts
 
 
