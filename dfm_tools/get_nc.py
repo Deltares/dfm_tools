@@ -76,7 +76,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=No
     """
     
     #get variable info (also checks if varname exists in keys, standard name, long name)
-    if isinstance(file_nc,list):
+    if isinstance(file_nc,list): #for opendap, has to support lists
         file_nc_one = file_nc[0]
     else:
         file_nc_one = file_nc        
@@ -392,11 +392,16 @@ def calc_dist_haversine(lon1,lon2,lat1,lat2): # only used in dfm_tools.ugrid
 
 def get_xzcoords_onintersection(file_nc, intersect_pd, timestep=None, multipart=None, varname=None):
     
+    if isinstance(file_nc,list): #for opendap, has to support lists
+        file_nc_one = file_nc[0]
+    else:
+        file_nc_one = file_nc
+    
     #check if all necessary arguments are provided
     if timestep is None:
         raise Exception('ERROR: argument timestep not provided, this is necessary to retrieve correct waterlevel or fullgrid output')
     
-    data_nc = Dataset(file_nc)
+    data_nc = Dataset(file_nc_one)
     varkeys_list = data_nc.variables.keys()
     dimn_layer = get_varname_fromnc(data_nc,'nmesh2d_layer',vardim='dim')
     if dimn_layer is None: #no layers, 2D model
