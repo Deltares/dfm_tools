@@ -74,6 +74,8 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=No
         DESCRIPTION.
 
     """
+    #TODO: this is not printed
+    warnings.warn(PendingDeprecationWarning('dfm_tools.get_nc.get_ncmodeldata() will be deprecated as soon as there is an xarray alternative for multidomain FM files, which is being worked on.'))
     
     #get variable info (also checks if varname exists in keys, standard name, long name)
     if isinstance(file_nc,list): #for opendap, has to support lists

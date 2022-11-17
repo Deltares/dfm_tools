@@ -20,7 +20,7 @@ import dfm_tools as dfmt
 #TODO: add GFS and other NOAA models (https://www.ncei.noaa.gov/products/weather-climate-models/global-forecast > NCEI > TDS)
 #TODO: add click?
 
-overwrite = False # always set to True when changing the domain
+overwrite = True # always set to True when changing the domain
 
 # domain
 longitude_min, longitude_max, latitude_min, latitude_max =    2,   4,  50, 52 #test domain
@@ -33,7 +33,7 @@ date_max = '2010-01-02'
 #variables per model will be written to separate netcdf files. Set to [] to skip model.
 variables_era5 = []#'v10n'] # supply arbitrary string to get error with available variable names
 varlist_cmems = []#['bottomT','thetao','no3'] # avaliable variables differ per source_combination, check cmems loop for some options
-varlist_hycom = ['water_temp']#'water_temp'] #['tau','water_u','water_v','water_temp','salinity','surf_el']
+varlist_hycom = ['surf_el']#'water_temp'] #['tau','water_u','water_v','water_temp','salinity','surf_el']
 
 #output directories per model
 dir_output_era5 = './era5_temp'
