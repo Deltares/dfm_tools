@@ -15,6 +15,7 @@ import datetime as dt
 import dfm_tools as dfmt
 import glob
 import pandas as pd
+import contextily as ctx
 
 dtstart_all = dt.datetime.now()
 
@@ -25,6 +26,7 @@ dir_testdata = r'c:\DATA\dfm_tools_testdata'
 if 0: #REFERENCE DFM_TOOLS
     
     file_nc = os.path.join(dir_testdata,r'DFM_3D_z_Grevelingen\computations\run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc')
+    crs = "EPSG:28992"
     
     timestep = 3
     layno = 33 #35 is top
@@ -46,6 +48,14 @@ if 0: #REFERENCE DFM_TOOLS
 if 1: #method huite, adjusted
     
     def open_partitioned_dataset(file_nc, only_faces=False, chunks={'time':1}): #chunks={'time':1} increases performance significantly
+        """
+        
+        Opmerkingen HB:
+            - Dit werkt nu alleen voor data op de faces (die je nu expliciet aangeeft in bovenstaande functie). Voor edge data zal het ook wel kunnen werken, is uiteraard meer werk, moet even nadenken hoe dat qua nummering samenhangt.
+            - Een nogwat suffe limitatie in xugrid: je kunt nog niet allerhande namen opgeven aan het grid. Dus ik genereer nu een nieuw grid (die gaat nu automatisch uit van een dimensie naam van "{naam_mesh}_nFaces". Beter zou zijn om alle nemen bij de initialisatie van het grid op te geven, dan kun je alle kanten uit. Ga ik even issue van maken.
+            - Voor data op de edges zou het ook werken, maar dan is nog een andere isel noodzakelijk, specifiek voor de edge data.
+            - Dit werkt nu ook alleen als je enkel grid in je dataset hebt. Bij meerdere grids zouden we een keyword moeten toevoegen dat je aangeeft welke je gemerged wilt zien.
+        """
         
         if isinstance(file_nc,list):
             file_nc_list = file_nc
@@ -57,9 +67,9 @@ if 1: #method huite, adjusted
         partitions = [xu.open_dataset(file_nc_one,chunks=chunks) for file_nc_one in file_nc_list]
         if 'idomain' in partitions[0].data_vars: #if netfile, rename to mapfile varnames
             rename_dict = {'idomain':'mesh2d_flowelem_domain',
-                           'iglobal_s':'mesh2d_flowelem_globalnr',
-                           'nNetElemMaxNode':'max_nmesh2d_face_nodes'} #TODO: extend with others
+                           'iglobal_s':'mesh2d_flowelem_globalnr'} #TODO: extend with others or fix differently >> maybe remove this?
             partitions = [part.rename(rename_dict) for part in partitions]
+        varlist_onepart = list(partitions[0].variables.keys())
         
         all_indices = []
         all_faces = []
@@ -69,7 +79,16 @@ if 1: #method huite, adjusted
         for i, part in enumerate(partitions):
             # For ghost nodes, keep the values of the lower numbered partition.
             grid = part.ugrid.grid
-            idx = np.flatnonzero(part['mesh2d_flowelem_domain'] >= i) #TODO: wonder if domains are now correct, since I see different domain numbers in the domain plot of 1 partition
+            if 'mesh2d_flowelem_domain' in varlist_onepart: #mapfiles/newfiles #TODO: add translation dict from dfm_tools? (varn_domain = get_varname_fromnc(data_nc,'mesh2d_flowelem_domain',vardim='var')) or add in xugrid
+                varn_domain = 'mesh2d_flowelem_domain'
+            elif 'idomain' in varlist_onepart: #netfiles/oldfiles
+                varn_domain = 'idomain'
+            else: #no partitions #TODO: this will crash
+                #idx = None
+                continue
+            da_domainno = part[varn_domain]
+            part_domainno = np.bincount(da_domainno).argmax() #derive partition number via domainno variable #TODO: maybe this needs performance optimizing (eg derive from filename)
+            idx = np.flatnonzero(da_domainno == part_domainno) #TODO: changed >=i to ==i, but >=i is applicable to edges/nodes
             faces = grid.face_node_connectivity[idx]
             faces[faces != grid.fill_value] += accumulator
             accumulator += grid.n_node
@@ -103,6 +122,7 @@ if 1: #method huite, adjusted
         facedim = partitions[0].ugrid.grid.face_dimension
         nodedim = partitions[0].ugrid.grid.node_dimension
         edgedim = partitions[0].ugrid.grid.edge_dimension
+        print(facedim,nodedim,edgedim)
         #define list of variables per dimension
 
         ds_face_list = []
@@ -120,8 +140,12 @@ if 1: #method huite, adjusted
             node_variables = []        
             edge_variables = []        
             for varname in uds.variables.keys(): #TODO: do this only for one partition (or is that unsafe?)
-                if 'max_nmesh2d_face_nodes' in uds[varname].dims: #TODO: not possible to concatenate this dim yet (size varies per partition) #therefore, vars mesh2d_face_x_bnd and mesh2d_face_y_bnd cannot be included currently
+                if 'max_nmesh2d_face_nodes' in uds[varname].dims: #for mapfile #TODO: not possible to concatenate this dim yet (size varies per partition) #therefore, vars mesh2d_face_x_bnd and mesh2d_face_y_bnd cannot be included currently
                     continue
+                if 'nNetElemMaxNode' in uds[varname].dims: #for netfile
+                    continue
+                #if 'nmesh2d_edge' in uds[varname].dims: #for mapfile
+                #    continue
                 if facedim in uds[varname].dims:
                     face_variables.append(varname)
                 if nodedim in uds[varname].dims:
@@ -132,7 +156,7 @@ if 1: #method huite, adjusted
             if not only_faces:
                 ds_node = uds.ugrid.obj[node_variables]
                 ds_edge = uds.ugrid.obj[edge_variables]
-                ds_rest = uds.drop_dims([facedim,nodedim,edgedim]) #TODO: this is a ugrid dataset, cannot be concatenated (drop_dims is not available under uds.ugrid) #contains 4/6 dropped variables
+                ds_rest = uds.ugrid.obj.drop_dims([facedim,nodedim,edgedim])#,'nmesh2d_EnclosurePoints','nmesh2d_EnclosureParts','nBndLink'])
             
             ds_face_list.append(ds_face.isel({facedim: idx}))
             if not only_faces:
@@ -153,7 +177,6 @@ if 1: #method huite, adjusted
         else:
             ds_merged = xr.merge([ds_face_concat,ds_node_concat,ds_edge_concat])#,ds_rest_concat])
             
-        varlist_onepart = list(partitions[0].variables.keys())
         varlist_merged = list(ds_merged.variables.keys())
         varlist_dropped_bool = ~pd.Series(varlist_onepart).isin(varlist_merged)
         varlist_dropped = pd.Series(varlist_onepart).loc[varlist_dropped_bool]
@@ -162,15 +185,19 @@ if 1: #method huite, adjusted
         
         ds_merged = ds_merged.rename({facedim: merged_grid.face_dimension}) #TODO: why is this necessary?
         return xu.UgridDataset(ds_merged, grids=[merged_grid])
-
-    mode = 'map_partitioned' #'net' 'map_single' 'map_partitioned'
+    
+    
+    mode = 'net' #'net' 'map_single' 'map_partitioned'
     if mode=='net':
         file_nc = os.path.join(dir_testdata,r'DFM_3D_z_Grevelingen\computations\run01','Grevelingen_FM_grid_20190603_*_net.nc')
+        crs = "EPSG:28992"
     elif mode=='map_partitioned':
         file_nc = os.path.join(dir_testdata,r'DFM_3D_z_Grevelingen\computations\run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_*_map.nc')
-        file_nc = [os.path.join(dir_testdata,r'DFM_3D_z_Grevelingen\computations\run01','DFM_OUTPUT_Grevelingen-FM',f'Grevelingen-FM_{i:04d}_map.nc') for i in range(3)] #works also with one file or list of some of the partion files
+        #file_nc = [os.path.join(dir_testdata,r'DFM_3D_z_Grevelingen\computations\run01','DFM_OUTPUT_Grevelingen-FM',f'Grevelingen-FM_{i:04d}_map.nc') for i in [1,2,3]]#range(3)] #works also with one file or list of some of the partion files
+        crs = "EPSG:28992"
     elif mode=='map_single': #TODO: make it work for non-partitioned files also (skip many steps)
         file_nc = os.path.join(dir_testdata,r'DFM_sigma_curved_bend\DFM_OUTPUT_cb_3d\cb_3d_map.nc')
+        crs = None
         
     chunks = {'time':1}
     merged = open_partitioned_dataset(file_nc,only_faces=False,chunks=chunks)
@@ -186,6 +213,9 @@ if 1: #method huite, adjusted
         pc = merged['mesh2d_s1'].isel(time=3).ugrid.plot(vmin=-0.3,vmax=0.3,edgecolor='face') #TODO: geen sel op time geeft onduidelijke error
         fig,ax = plt.subplots()
         pc = merged['mesh2d_sa1'].isel(time=3,nmesh2d_layer=34).ugrid.plot(vmin=28.7,vmax=30,edgecolor='face') #TODO: have to sel nmesh2d_layer, otherwise error (with xarray you get a histogram, possible to give same behaviour?)
+        # if crs is not None:
+        #     source = None #ctx.providers.Esri.WorldImagery # ctx.providers.Stamen.Terrain (default), ctx.providers.CartoDB.Voyager, ctx.providers.NASAGIBS.ViirsEarthAtNight2012, ctx.providers.Stamen.Watercolor
+        #     ctx.add_basemap(ax=ax, source=source, crs=crs, attribution=False)
     
     
 
