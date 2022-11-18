@@ -234,21 +234,21 @@ def test_cartopy_epsg():
 
 
 @pytest.mark.systemtest
-def test_UGrid_polygon_intersect():
+def test_polygon_intersect():
     import numpy as np
-    from dfm_tools.get_nc import get_netdata
-    
+    from dfm_tools.get_nc import get_netdata, polygon_intersect #TODO: update to new method
+    from dfm_tools.xarray_helpers import open_partitioned_dataset
+
     file_nc = os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_cb_3d\\cb_3d_map.nc')
-    multipart = None
+    data_merged = open_partitioned_dataset(file_nc)
+
     line_array = np.array([[2084.67741935, 3353.02419355], #with linebend in cell en with line crossing same cell twice
        [2255.79637097, 3307.15725806],
        [2222.27822581, 3206.60282258],
        [2128.78024194, 3266.58266129]])
-
-    ugrid = get_netdata(file_nc=file_nc, multipart=multipart)
-
+    
     #intersect function, find crossed cell numbers (gridnos) and coordinates of intersection (2 per crossed cell)
-    intersect_pd = ugrid.polygon_intersect(line_array, optimize_dist=False)
+    intersect_pd = polygon_intersect(data_merged, line_array, optimize_dist=False)
     intersect_pd = intersect_pd.sort_index()
     expected_intersectgridnos = np.array([ 91, 146, 146, 147, 147, 201, 201, 202], dtype=np.int64)
     expected_intersectcoords = np.array([[2084.67741935, 3353.02419355, 2144.15041424, 3337.08297842],

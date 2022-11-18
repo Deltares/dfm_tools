@@ -36,7 +36,7 @@ varns_Chl_long = vars_pd_matching['long_name'].tolist()
 ugrid = get_netdata(file_nc=file_nc)#, multipart=False)
 
 pol_shp_list = []
-#partly from dfm_tools.ugrid.polygon_intersect()
+#partly from dfm_tools.polygon_intersect()
 for iP, pol_data in enumerate(ugrid.verts): #[range(5000),:,:]
     pol_data_nonan = pol_data[~np.isnan(pol_data).all(axis=1)]
     pol_shp = Polygon(pol_data_nonan)
