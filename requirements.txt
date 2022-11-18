@@ -12,5 +12,6 @@ xarray
 dask
 netcdf4>=1.5.3
 bottleneck
+xugrid
 cdsapi
 pydap

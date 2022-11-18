@@ -74,8 +74,8 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=No
         DESCRIPTION.
 
     """
-    #TODO: this is not printed
-    warnings.warn(PendingDeprecationWarning('dfm_tools.get_nc.get_ncmodeldata() will be deprecated as soon as there is an xarray alternative for multidomain FM files, which is being worked on.'))
+    
+    warnings.warn(DeprecationWarning('dfm_tools.get_nc.get_ncmodeldata() will be deprecated, since there is an xarray alternative for multidomain FM files (xugrid). Check the example scripts for how to use it'))
     
     #get variable info (also checks if varname exists in keys, standard name, long name)
     if isinstance(file_nc,list): #for opendap, has to support lists
@@ -177,8 +177,6 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=No
     dimname_stat_validvals = []
     for iR, vars_pd_stat in vars_pd_stats.iterrows():
         dimname_stat_validvals.append(vars_pd_stat['dimensions'][0]) #only append first dimension, the other one is often 'name_len'
-    if station is not None:
-        warnings.warn(DeprecationWarning('station argument will be phased out, use xarray instead like in the example script gethismodeldata.py'))
     dimname_stat_validvals_boolpresent = [x in nc_varobject.dimensions for x in dimname_stat_validvals]
     if not any(dimname_stat_validvals_boolpresent):
         if station is not None:
@@ -600,6 +598,7 @@ def get_xzcoords_onintersection(data_frommap_merged, intersect_pd, timestep=None
 
 def get_netdata(file_nc, multipart=None):
 
+    warnings.warn(DeprecationWarning('dfm_tools.get_nc.get_netdata() will be deprecated, since there is an xarray alternative for multidomain FM files (xugrid). Check the example scripts for how to use it'))
     file_ncs = get_ncfilelist(file_nc, multipart)
     #get all data
     num_nodes = [0]
@@ -681,12 +680,10 @@ def get_netdata(file_nc, multipart=None):
     return ugrid_all
 
 
-
-
-
 def plot_netmapdata(verts, values=None, ax=None, **kwargs):
     #https://stackoverflow.com/questions/52202014/how-can-i-plot-2d-fem-results-using-matplotlib
     #https://stackoverflow.com/questions/49640311/matplotlib-unstructered-quadrilaterals-instead-of-triangles
+    warnings.warn(DeprecationWarning('dfm_tools.get_nc.plot_netmapdata() will be deprecated, since there is an xarray alternative for multidomain FM files (xugrid). Check the example scripts for how to use it'))
     
     if not values is None:
         #squeeze values (remove dimensions with length 1)
@@ -717,12 +714,6 @@ def plot_netmapdata(verts, values=None, ax=None, **kwargs):
     ax.autoscale()
 
     return pc
-
-
-
-
-
-
 
 
 def plot_background(ax=None, projection=None, google_style='satellite', resolution=1, features=None, nticks=6, latlon_format=False, gridlines=False, **kwargs):
@@ -844,8 +835,6 @@ def plot_background(ax=None, projection=None, google_style='satellite', resoluti
 
 
     return ax
-
-
 
 
 def plot_ztdata(data_xr_sel, varname, ax=None, mask_data=True, only_contour=False, **kwargs):

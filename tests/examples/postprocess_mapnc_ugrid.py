@@ -163,8 +163,6 @@ for file_nc in file_nc_list:
     plt.savefig(os.path.join(dir_output,f'{basename}_crossect'))
     runtime_timedelta = (dt.datetime.now()-runtime_tstart)
     print(f'calculating and plotting cross section finished in {runtime_timedelta}')
-
-
     
     
     print('plot grid and values from mapdata (salinity on layer, 3dim, on cell centers)')

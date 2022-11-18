@@ -4,10 +4,10 @@ Created on Sat Nov 12 19:58:42 2022
 
 @author: veenstra
 """
-#TODO: this fails, where to do network stuff?
+#TODO: this fails, where to do network stuff? >> xugrid
 import xarray as xr
 from pathlib import Path
-import dfm_tools as dfmt #dfmt.get_netdata
+import dfm_tools as dfmt
 import meshkernel
 from hydrolib.core.io.dflowfm.net.models import NetworkModel, Network
 

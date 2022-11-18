@@ -16,3 +16,6 @@ from dfm_tools.modplot import *
 from dfm_tools.regulargrid import *
 from dfm_tools.ugrid import *
 from dfm_tools.xarray_helpers import *
+
+import warnings
+warnings.filterwarnings('always',category=DeprecationWarning)
