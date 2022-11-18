@@ -17,7 +17,7 @@ import dfm_tools as dfmt
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
-file_nc_list = [#os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_cb_3d\\cb_3d_map.nc'), #sigmalayer
+file_nc_list = [os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_cb_3d\\cb_3d_map.nc'), #sigmalayer
                 os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc'), #zlayer
                 #r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0000_map.nc', #fullgrid
                 #r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_207\results\RMM_dflowfm_0000_map.nc', #2D model
@@ -115,9 +115,9 @@ for file_nc in file_nc_list:
     vars_pd = dfmt.get_ncvarproperties(file_nc=file_nc)
     ugrid_all = dfmt.get_netdata(file_nc=file_nc) 
     
-    print('plot grid from mapdata')
+    print('plot grid from mapdata') #use random variable and plot line to get grid (alternatively: xugrid.plot.line(grid))
     fig, ax = plt.subplots()
-    pc = (data_frommap_merged['mesh2d_flowelem_bl']*np.nan).ugrid.plot(edgecolor='crimson', linewidth=0.5,add_colorbar=False) #TODO: how to properly plot the grid from xugrid?
+    pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot.line(edgecolor='crimson', linewidth=0.5,add_colorbar=False)
     # pc = dfmt.plot_netmapdata(ugrid_all.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
     # ax.set_xlabel('x')
     # ax.set_ylabel('y')
@@ -208,7 +208,7 @@ for file_nc in file_nc_list:
         cbar.set_label('%s [%s]'%(data_frommap.var_ncattrs['long_name'], data_frommap.var_ncattrs['units']))
         ax.set_xlabel('x')
         ax.set_ylabel('y')
-    else: #TODO: move edge to xarray. Issue: data_frommap_merged[varname_edge] is not xugrid anymore
+    else: #TODO: move edge to xarray. Issue: data_frommap_merged[varname_edge] is not xugrid anymore (plot.line() kleurt op lijntjes?)
         pc = data_frommap_merged[varname_edge].isel(time=timestep,nmesh2d_layer=layno).ugrid.plot(edgecolor='face',cmap='jet')
     ax.set_aspect('equal')
     fig.tight_layout()

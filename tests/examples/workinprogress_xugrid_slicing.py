@@ -14,6 +14,7 @@ import contextily as ctx
 import datetime as dt
 import xarray as xr
 import dfm_tools as dfmt
+import warnings
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
@@ -110,6 +111,7 @@ for file_nc in file_nc_list:
         raise Exception('ERROR: no settings provided for this mapfile')
     
     file_nc_star = file_nc.replace('_0000_','_0*_') #TODO: make this the default
+    data_xr = xr.open_dataset(file_nc)
     data_frommap_merged = dfmt.open_partitioned_dataset(file_nc_star)
     
     #get ugrid data, vars informatin and grid units (latter from bedlevel coordinates)
@@ -134,7 +136,6 @@ for file_nc in file_nc_list:
         face_nos = data_frommap_merged.ugrid.grid.to_dataset().mesh2d_face_nodes
         bool_nonemptyfacenode = face_nos!=-1
         #face_nos = face_nos.where(face_nos!=-1) #replace nans
-        face_nos = face_nos-1 #1-based to 0-based indexing        
         face_nnodecoords_x = data_frommap_merged.ugrid.grid.to_dataset().mesh2d_node_x.isel(mesh2d_nNodes=face_nos).where(bool_nonemptyfacenode)
         face_nnodecoords_y = data_frommap_merged.ugrid.grid.to_dataset().mesh2d_node_y.isel(mesh2d_nNodes=face_nos).where(bool_nonemptyfacenode)
         if reproduce:
@@ -296,11 +297,11 @@ for file_nc in file_nc_list:
             #data_frommap_bl = get_ncmodeldata(file_nc, varname=varn_mesh2d_flowelem_bl, multipart=multipart)
             #data_frommap_bl_sel = data_frommap_bl[intersect_gridnos]
             data_frommap_wl3_sel = data_frommap_merged_sel['mesh2d_s1'].to_numpy() #TODO: no hardcoding?
-            data_frommap_bl_sel = data_frommap_merged_sel['mesh2d_flowelem_bl'].to_numpy
+            data_frommap_bl_sel = data_frommap_merged_sel['mesh2d_flowelem_bl'].to_numpy()
             if 'mesh2d_layer_z' in varkeys_list or 'LayCoord_cc' in varkeys_list:
                 print('layertype: zlayer')
                 warnings.warn('WARNING: your model seems to contain only z-layers. if the modeloutput is generated with an older version of dflowfm, the coordinates can be incorrect. if your model contains z-sigma-layers, use the fulloutput option in the mdu and rerun (happens automatically in newer dflowfm versions).')
-                zvals_interface_vec = data_nc.variables['mesh2d_interface_z'][:][:,np.newaxis]
+                zvals_interface_vec = data_frommap_merged_sel['mesh2d_interface_z'].to_numpy()[:,np.newaxis]
                 zvals_interface = np.repeat(zvals_interface_vec,len(data_frommap_wl3_sel),axis=1)
                 # zvalues lower than bedlevel should be overwritten with bedlevel
                 for iL in range(nlay):
@@ -310,7 +311,7 @@ for file_nc in file_nc_list:
                 zvals_interface[-1,:] = np.maximum(zvals_interface[-1,:],data_frommap_wl3_sel)
             elif 'mesh2d_layer_sigma' in varkeys_list:
                 print('layertype: sigmalayer')
-                zvals_interface_percentage = data_nc.variables['mesh2d_interface_sigma'][:][:,np.newaxis]
+                zvals_interface_percentage = data_frommap_merged_sel['mesh2d_interface_sigma'].to_numpy()[:,np.newaxis]
                 zvals_interface = data_frommap_wl3_sel+(data_frommap_wl3_sel-data_frommap_bl_sel)[np.newaxis]*zvals_interface_percentage
             else: # 2D model
                 print('layertype: 2D model')
@@ -318,7 +319,6 @@ for file_nc in file_nc_list:
                     raise Exception('recheck this')
                 #zvals_cen = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay)
                 zvals_interface = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay+1)
-        data_nc.close()
         
         #convert to output for plot_netmapdata
         crs_dist_starts_matrix = np.repeat(intersect_pd['crs_dist_starts'].values[np.newaxis],nlay,axis=0)
@@ -328,16 +328,11 @@ for file_nc in file_nc_list:
         crs_verts = np.ma.concatenate([crs_verts_x_all, crs_verts_z_all], axis=2)
         
         if varname is not None: #retrieve data for varname and return
-            if dimn_layer is None: #no layers, 2D model
-                data_frommap = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep, multipart=multipart)
-            else:
-                data_frommap = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep, layer='all', multipart=multipart)
-            if len(data_frommap.shape) == 3:
-                data_frommap_sel = data_frommap[0,intersect_gridnos,:]
-                crs_plotdata = data_frommap_sel.T.flatten()
-            elif len(data_frommap.shape) == 2: #for 2D models, no layers 
-                data_frommap_sel = data_frommap[0,intersect_gridnos]
-                crs_plotdata = data_frommap_sel
+            data_frommap_selvar = data_frommap_merged_sel[varname]
+            if 'nmesh2d_layer' in data_frommap_selvar.dims:
+                crs_plotdata = data_frommap_selvar.T.to_numpy().flatten() #TODO: flatten necessary?
+            else: #for 2D models, no layers
+                crs_plotdata = data_frommap_selvar
             return crs_verts, crs_plotdata
         else:
             return crs_verts

@@ -231,13 +231,12 @@ def open_partitioned_dataset(file_nc, only_faces=False, chunks={'time':1}): #chu
         if not only_faces:
             ds_node = uds.ugrid.obj[node_variables]
             ds_edge = uds.ugrid.obj[edge_variables]
-            ds_rest = uds.ugrid.obj.drop_dims([facedim,nodedim,edgedim])#,'nmesh2d_EnclosurePoints','nmesh2d_EnclosureParts','nBndLink'])
-        
+            ds_rest = uds.ugrid.obj.drop_dims([facedim,nodedim,edgedim])#,f'max_n{gridname}_face_nodes'])#,'nmesh2d_EnclosurePoints','nmesh2d_EnclosureParts','nBndLink'])
         ds_face_list.append(ds_face.isel({facedim: idx}))
         if not only_faces:
             ds_node_list.append(ds_node)#.isel({nodedim: idx})) #TODO: add ghostcell removal for nodes and edges?
             ds_edge_list.append(ds_edge)#.isel({edgedim: idx}))
-            ds_rest_list.append(ds_rest)
+            #ds_rest_list.append(ds_rest)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     dtstart = dt.datetime.now()
     print('>> xr.concat(): ',end='')
@@ -245,19 +244,19 @@ def open_partitioned_dataset(file_nc, only_faces=False, chunks={'time':1}): #chu
     if not only_faces:
         ds_node_concat = xr.concat(ds_node_list, dim=nodedim)
         ds_edge_concat = xr.concat(ds_edge_list, dim=edgedim)
-        #ds_rest_concat = xr.concat(ds_rest_list, dim=edgedim)
+        #ds_rest_concat = xr.concat(ds_rest_list, dim=None)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
     if only_faces:
         ds_merged = ds_face_concat
     else:
-        ds_merged = xr.merge([ds_face_concat,ds_node_concat,ds_edge_concat])#,ds_rest_concat])
+        ds_merged = xr.merge([ds_face_concat,ds_node_concat,ds_edge_concat,ds_rest])
         
     varlist_merged = list(ds_merged.variables.keys())
     varlist_dropped_bool = ~pd.Series(varlist_onepart).isin(varlist_merged)
     varlist_dropped = pd.Series(varlist_onepart).loc[varlist_dropped_bool]
     if varlist_dropped_bool.any():
-        print(f'WARNING: some variables dropped with merging of partitions:\n{varlist_dropped}')#\nOne partition with some of these:\n{ds_rest}')
+        print(f'WARNING: some variables dropped with merging of partitions:\n{varlist_dropped}')
     
     ds_merged = ds_merged.rename({facedim: merged_grid.face_dimension}) #TODO: why is this necessary? >> xugrid issue is created
     ds_merged_xu = xu.UgridDataset(ds_merged, grids=[merged_grid])
