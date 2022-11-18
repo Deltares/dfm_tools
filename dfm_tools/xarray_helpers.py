@@ -116,8 +116,12 @@ def open_partitioned_dataset(file_nc, only_faces=False, chunks={'time':1}): #chu
     
     #rename old dimension and some variable names
     gridname = 'mesh2d' #partitions[0].ugrid.grid.name #'mesh2d' #TODO: works if xugrid accepts arbitrary grid names
-    varn_domain = f'{gridname}_flowelem_domain' #TODO: replace mesh2d with grid.name
     rename_dict = {}
+    varn_maxfnodes = f'max_n{gridname}_face_nodes' #TODO: replace mesh2d with grid.name
+    maxfnodes_opts = [f'{gridname}_nMax_face_nodes','nNetElemMaxNode'] #options for old domain variable name
+    for opt in maxfnodes_opts:
+        if opt in partitions[0].dims:
+            rename_dict.update({opt:varn_maxfnodes})
     layer_opts = ['mesh2d_nLayers','laydim'] # options for old layer dimension name #TODO: others from get_varname_fromnc: ['nmesh2d_layer_dlwq']
     for opt in layer_opts:
         if opt in partitions[0].dims:
@@ -130,6 +134,7 @@ def open_partitioned_dataset(file_nc, only_faces=False, chunks={'time':1}): #chu
     #     rename_dict.update({layer_dimn:f'n{gridname}_layer'}) #old varnames for mesh2d_layer: 'mesh2d_nLayers','laydim','nmesh2d_layer_dlwq'
     # else:
     #     print(f'no layer dimension found in gridspecs ds.{gridname}')
+    varn_domain = f'{gridname}_flowelem_domain' #TODO: replace mesh2d with grid.name
     domain_opts = ['idomain','FlowElemDomain'] #options for old domain variable name
     for opt in domain_opts:
         if opt in partitions[0].data_vars:
@@ -209,7 +214,7 @@ def open_partitioned_dataset(file_nc, only_faces=False, chunks={'time':1}): #chu
     ds_face_list = []
     ds_node_list = []
     ds_edge_list = []
-    ds_rest_list = []
+    #ds_rest_list = []
     dtstart = dt.datetime.now()
     print('>> ds.isel()/xr.append(): ',end='')
     for idx, uds in zip(all_indices, partitions):
@@ -217,10 +222,10 @@ def open_partitioned_dataset(file_nc, only_faces=False, chunks={'time':1}): #chu
         node_variables = []        
         edge_variables = []        
         for varname in uds.variables.keys():
-            if f'max_n{gridname}_face_nodes' in uds[varname].dims: # not possible to concatenate this dim (size varies per partition) #therefore, vars mesh2d_face_x_bnd and mesh2d_face_y_bnd cannot be included currently. Maybe drop topology_dimension?: partitions[0].ugrid.grid.to_dataset().mesh2d.topology_dimension
+            if varn_maxfnodes in uds[varname].dims: # not possible to concatenate this dim (size varies per partition) #therefore, vars mesh2d_face_x_bnd and mesh2d_face_y_bnd cannot be included currently. Maybe drop topology_dimension?: partitions[0].ugrid.grid.to_dataset().mesh2d.topology_dimension
                 continue
-            if 'nNetElemMaxNode' in uds[varname].dims: #for netfile #TODO: add to rename_dict
-                continue
+            #if 'nNetElemMaxNode' in uds[varname].dims: #for netfile #TODO: add to rename_dict
+            #    continue
             if facedim in uds[varname].dims:
                 face_variables.append(varname)
             if nodedim in uds[varname].dims:
