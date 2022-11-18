@@ -394,7 +394,7 @@ def calc_dist_haversine(lon1,lon2,lat1,lat2): # only used in dfm_tools.ugrid
 
 def polygon_intersect(data_frommap_merged, line_array, optimize_dist=False, calcdist_fromlatlon=False): #TODO: copy of ugrid function, remove ugrid when xugrid works for all stuff
     #data_frommap_merged: xugrid dataset (contains ds and grid)
-    
+    #TODO: remove hardcoding
     import numpy as np
     from matplotlib.path import Path
     import shapely #separate import, since sometimes this works, while import shapely.geometry fails

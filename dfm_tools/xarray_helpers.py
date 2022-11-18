@@ -139,10 +139,11 @@ def open_partitioned_dataset(file_nc, only_faces=False, chunks={'time':1}): #chu
     for opt in domain_opts:
         if opt in partitions[0].data_vars:
             rename_dict.update({opt:varn_domain})
+    varn_globalnr = f'{gridname}_flowelem_globalnr'
     globalnr_opts = ['iglobal_s'] #options for old globalnr variable name
     for opt in globalnr_opts:
         if opt in partitions[0].data_vars:
-            rename_dict.update({opt:f'{gridname}_flowelem_globalnr'})
+            rename_dict.update({opt:varn_globalnr})
     partitions = [part.rename(rename_dict) for part in partitions]
     
     varlist_onepart = list(partitions[0].variables.keys())
@@ -224,8 +225,6 @@ def open_partitioned_dataset(file_nc, only_faces=False, chunks={'time':1}): #chu
         for varname in uds.variables.keys():
             if varn_maxfnodes in uds[varname].dims: # not possible to concatenate this dim (size varies per partition) #therefore, vars mesh2d_face_x_bnd and mesh2d_face_y_bnd cannot be included currently. Maybe drop topology_dimension?: partitions[0].ugrid.grid.to_dataset().mesh2d.topology_dimension
                 continue
-            #if 'nNetElemMaxNode' in uds[varname].dims: #for netfile #TODO: add to rename_dict
-            #    continue
             if facedim in uds[varname].dims:
                 face_variables.append(varname)
             if nodedim in uds[varname].dims:
@@ -236,7 +235,7 @@ def open_partitioned_dataset(file_nc, only_faces=False, chunks={'time':1}): #chu
         if not only_faces:
             ds_node = uds.ugrid.obj[node_variables]
             ds_edge = uds.ugrid.obj[edge_variables]
-            ds_rest = uds.ugrid.obj.drop_dims([facedim,nodedim,edgedim])#,f'max_n{gridname}_face_nodes'])#,'nmesh2d_EnclosurePoints','nmesh2d_EnclosureParts','nBndLink'])
+            ds_rest = uds.ugrid.obj.drop_dims([facedim,nodedim,edgedim])
         ds_face_list.append(ds_face.isel({facedim: idx}))
         if not only_faces:
             ds_node_list.append(ds_node)#.isel({nodedim: idx})) #TODO: add ghostcell removal for nodes and edges?
@@ -263,7 +262,9 @@ def open_partitioned_dataset(file_nc, only_faces=False, chunks={'time':1}): #chu
     if varlist_dropped_bool.any():
         print(f'WARNING: some variables dropped with merging of partitions:\n{varlist_dropped}')
     
-    ds_merged = ds_merged.rename({facedim: merged_grid.face_dimension}) #TODO: why is this necessary? >> xugrid issue is created
+    ds_merged = ds_merged.rename({facedim: merged_grid.face_dimension,
+                                  nodedim: merged_grid.node_dimension,
+                                  edgedim: merged_grid.edge_dimension}) #TODO: why is this necessary? >> xugrid issue is created (does not support other dimnames)
     ds_merged_xu = xu.UgridDataset(ds_merged, grids=[merged_grid])
     print(f'>> open_partitioned_dataset total: {(dt.datetime.now()-dtstart_all).total_seconds():.2f} sec')
     return ds_merged_xu
