@@ -65,7 +65,7 @@ if 1: #method huite, adjusted
             raise Exception('file(s) not found, empty file_nc_list')
         
         partitions = [xu.open_dataset(file_nc_one,chunks=chunks) for file_nc_one in file_nc_list]
-        if 'idomain' in partitions[0].data_vars: #if netfile, rename to mapfile varnames
+        if 'idomain' in partitions[0].data_vars: #if oldfile/netfile, rename to mapfile varnames
             rename_dict = {'idomain':'mesh2d_flowelem_domain',
                            'iglobal_s':'mesh2d_flowelem_globalnr'} #TODO: extend with others or fix differently >> maybe remove this?
             partitions = [part.rename(rename_dict) for part in partitions]
@@ -83,9 +83,11 @@ if 1: #method huite, adjusted
                 varn_domain = 'mesh2d_flowelem_domain'
             elif 'idomain' in varlist_onepart: #netfiles/oldfiles
                 varn_domain = 'idomain'
-            else: #no partitions #TODO: this will crash
-                #idx = None
-                continue
+            else: #no domain variable found (probably no partitions)
+                if len(partitions)==1:
+                    return partitions[0] #escape for non-partitioned files (domainno not found and one file provided). skipp rest of function
+                else:
+                    raise Exception('no domain variable found, while there are multiple partition files supplied, this is not expected')
             da_domainno = part[varn_domain]
             part_domainno = np.bincount(da_domainno).argmax() #derive partition number via domainno variable #TODO: maybe this needs performance optimizing (eg derive from filename)
             idx = np.flatnonzero(da_domainno == part_domainno) #TODO: changed >=i to ==i, but >=i is applicable to edges/nodes
@@ -130,6 +132,7 @@ if 1: #method huite, adjusted
         ds_edge_list = []
         ds_rest_list = []
         dtstart = dt.datetime.now()
+        print('>> ds.isel()/xr.append(): ',end='')
         for idx, uds in zip(all_indices, partitions):
             
             #TODO: commented part does not work yet since we need exceptions for eg 'max_nmesh2d_face_nodes'
@@ -139,13 +142,11 @@ if 1: #method huite, adjusted
             face_variables = []        
             node_variables = []        
             edge_variables = []        
-            for varname in uds.variables.keys(): #TODO: do this only for one partition (or is that unsafe?)
+            for varname in uds.variables.keys(): #TODO: maybe do this only for one partition (or is that unsafe?)
                 if 'max_nmesh2d_face_nodes' in uds[varname].dims: #for mapfile #TODO: not possible to concatenate this dim yet (size varies per partition) #therefore, vars mesh2d_face_x_bnd and mesh2d_face_y_bnd cannot be included currently
                     continue
                 if 'nNetElemMaxNode' in uds[varname].dims: #for netfile
                     continue
-                #if 'nmesh2d_edge' in uds[varname].dims: #for mapfile
-                #    continue
                 if facedim in uds[varname].dims:
                     face_variables.append(varname)
                 if nodedim in uds[varname].dims:
@@ -160,17 +161,18 @@ if 1: #method huite, adjusted
             
             ds_face_list.append(ds_face.isel({facedim: idx}))
             if not only_faces:
-                ds_node_list.append(ds_node)#.isel({nodedim: idx})) #TODO: add ghostcell removal for nodes and edges
+                ds_node_list.append(ds_node)#.isel({nodedim: idx})) #TODO: add ghostcell removal for nodes and edges?
                 ds_edge_list.append(ds_edge)#.isel({edgedim: idx}))
-                ds_rest_list.append(ds_rest)#.isel({edgedim: idx}))
-        print(f'>>time .sel/xr.append: {(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
+                ds_rest_list.append(ds_rest)
+        print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
         dtstart = dt.datetime.now()
+        print('>> xr.concat(): ',end='')
         ds_face_concat = xr.concat(ds_face_list, dim=facedim)
         if not only_faces:
             ds_node_concat = xr.concat(ds_node_list, dim=nodedim)
             ds_edge_concat = xr.concat(ds_edge_list, dim=edgedim)
             #ds_rest_concat = xr.concat(ds_rest_list, dim=edgedim)
-        print(f'>>time xr.concat: {(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
+        print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
         
         if only_faces:
             ds_merged = ds_face_concat
@@ -183,11 +185,14 @@ if 1: #method huite, adjusted
         if varlist_dropped_bool.any():
             print(f'WARNING: some variables dropped with merging of partitions:\n{varlist_dropped}')#\nOne partition with some of these:\n{ds_rest}')
         
-        ds_merged = ds_merged.rename({facedim: merged_grid.face_dimension}) #TODO: why is this necessary?
-        return xu.UgridDataset(ds_merged, grids=[merged_grid])
+        ds_merged = ds_merged.rename({facedim: merged_grid.face_dimension}) #TODO: why is this necessary? also add layerdim? (move up so also works for nonpartitioned?)
+        ds_merged_xu = xu.UgridDataset(ds_merged, grids=[merged_grid])
+        return ds_merged_xu
     
     
-    mode = 'net' #'net' 'map_single' 'map_partitioned'
+    
+    
+    mode = 'map_partitioned' #'net' 'map_single' 'map_partitioned'
     if mode=='net':
         file_nc = os.path.join(dir_testdata,r'DFM_3D_z_Grevelingen\computations\run01','Grevelingen_FM_grid_20190603_*_net.nc')
         crs = "EPSG:28992"
@@ -195,24 +200,30 @@ if 1: #method huite, adjusted
         file_nc = os.path.join(dir_testdata,r'DFM_3D_z_Grevelingen\computations\run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_*_map.nc')
         #file_nc = [os.path.join(dir_testdata,r'DFM_3D_z_Grevelingen\computations\run01','DFM_OUTPUT_Grevelingen-FM',f'Grevelingen-FM_{i:04d}_map.nc') for i in [1,2,3]]#range(3)] #works also with one file or list of some of the partion files
         crs = "EPSG:28992"
-    elif mode=='map_single': #TODO: make it work for non-partitioned files also (skip many steps)
+    elif mode=='map_single':
         file_nc = os.path.join(dir_testdata,r'DFM_sigma_curved_bend\DFM_OUTPUT_cb_3d\cb_3d_map.nc')
         crs = None
         
-    chunks = {'time':1}
+    chunks = None#{'time':1}
     merged = open_partitioned_dataset(file_nc,only_faces=False,chunks=chunks)
     
-    fig,ax = plt.subplots()
-    merged['mesh2d_flowelem_domain'].ugrid.plot()#edgecolor='face')
+    #merged = merged.where(merged.mesh2d_face_y<420000) #TODO: rest wordt nu nan, hoe echt weggooien?
     
-    fig,ax = plt.subplots()
-    merged['mesh2d_flowelem_globalnr'].ugrid.plot()
+    if mode!='map_single':
+        fig,ax = plt.subplots()
+        merged['mesh2d_flowelem_domain'].ugrid.plot()#edgecolor='face')
+        
+        fig,ax = plt.subplots()
+        merged['mesh2d_flowelem_globalnr'].ugrid.plot()
     
     if mode!='net':
         fig,ax = plt.subplots()
-        pc = merged['mesh2d_s1'].isel(time=3).ugrid.plot(vmin=-0.3,vmax=0.3,edgecolor='face') #TODO: geen sel op time geeft onduidelijke error
+        pc = merged['mesh2d_s1'].isel(time=3).ugrid.plot(vmin=-0.3,vmax=0.3,edgecolor='face')
         fig,ax = plt.subplots()
-        pc = merged['mesh2d_sa1'].isel(time=3,nmesh2d_layer=34).ugrid.plot(vmin=28.7,vmax=30,edgecolor='face') #TODO: have to sel nmesh2d_layer, otherwise error (with xarray you get a histogram, possible to give same behaviour?)
+        try: #TODO: rename layer dim?
+            pc = merged['mesh2d_sa1'].isel(time=3,nmesh2d_layer=34).ugrid.plot(vmin=28.7,vmax=30,edgecolor='face') #TODO: have to sel time and nmesh2d_layer, otherwise error (with xarray you get a histogram, possible to give same behaviour?)
+        except: #for curvedbend (different layer dimname and nlayers)
+            pc = merged['mesh2d_sa1'].isel(time=3,mesh2d_nLayers=5).ugrid.plot(edgecolor='face')
         # if crs is not None:
         #     source = None #ctx.providers.Esri.WorldImagery # ctx.providers.Stamen.Terrain (default), ctx.providers.CartoDB.Voyager, ctx.providers.NASAGIBS.ViirsEarthAtNight2012, ctx.providers.Stamen.Watercolor
         #     ctx.add_basemap(ax=ax, source=source, crs=crs, attribution=False)
