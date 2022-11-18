@@ -107,20 +107,18 @@ for file_nc in file_nc_list:
         file_nc_fou = os.path.join(dir_testinput,r'DFM_fou_RMM\RMM_dflowfm_0000_fou.nc')
     else:
         raise Exception('ERROR: no settings provided for this mapfile')
-    
-    file_nc_star = file_nc.replace('_0000_','_0*_') #TODO: make this the default
-    data_frommap_merged = dfmt.open_partitioned_dataset(file_nc_star)
+
+    data_xr = xr.open_dataset(file_nc) #currently not used, but still usefull to check netcdf structure
     
     #get ugrid data, vars informatin and grid units (latter from bedlevel coordinates)
     vars_pd = dfmt.get_ncvarproperties(file_nc=file_nc)
-    ugrid_all = dfmt.get_netdata(file_nc=file_nc) 
+    ugrid_all = dfmt.get_netdata(file_nc=file_nc)
     
     print('plot grid from mapdata')
     fig, ax = plt.subplots()
-    pc = (data_frommap_merged['mesh2d_flowelem_bl']*np.nan).ugrid.plot(edgecolor='crimson', linewidth=0.5,add_colorbar=False) #TODO: how to properly plot the grid from xugrid?
-    # pc = dfmt.plot_netmapdata(ugrid_all.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
-    # ax.set_xlabel('x')
-    # ax.set_ylabel('y')
+    pc = dfmt.plot_netmapdata(ugrid_all.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
     ax.set_aspect('equal')
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,f'{basename}_grid'))
@@ -128,15 +126,14 @@ for file_nc in file_nc_list:
 
     print('plot grid and bedlevel (constantvalue, 1 dim)')
     #get bedlevel and create plot with ugrid and cross section line
+    data_frommap_bl = dfmt.get_ncmodeldata(file_nc=file_nc, varname='mesh2d_flowelem_bl')
     fig, ax_input = plt.subplots()
-    pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot(edgecolor='face',cmap='jet')
-    # data_frommap_bl = dfmt.get_ncmodeldata(file_nc=file_nc, varname='mesh2d_flowelem_bl')
-    # pc = dfmt.plot_netmapdata(ugrid_all.verts, values=data_frommap_bl, ax=ax_input, linewidth=0.5, edgecolors='face', cmap='jet')#, color='crimson', facecolor="None")
-    # pc.set_clim(clim_bl)
-    # cbar = fig.colorbar(pc, ax=ax_input)
-    # cbar.set_label('%s [%s]'%(data_frommap_bl.var_ncattrs['long_name'], data_frommap_bl.var_ncattrs['units']))
-    # ax_input.set_xlabel('x')
-    # ax_input.set_ylabel('y')
+    pc = dfmt.plot_netmapdata(ugrid_all.verts, values=data_frommap_bl, ax=ax_input, linewidth=0.5, edgecolors='face', cmap='jet')#, color='crimson', facecolor="None")
+    pc.set_clim(clim_bl)
+    cbar = fig.colorbar(pc, ax=ax_input)
+    cbar.set_label('%s [%s]'%(data_frommap_bl.var_ncattrs['long_name'], data_frommap_bl.var_ncattrs['units']))
+    ax_input.set_xlabel('x')
+    ax_input.set_ylabel('y')
     ax_input.set_aspect('equal')
     if 0: #click interactive polygon #TODO: this is useful but should work also without killing the code
         line, = ax_input.plot([], [],'o-')  # empty line
@@ -164,9 +161,9 @@ for file_nc in file_nc_list:
     print('calculating and plotting cross section')
     runtime_tstart = dt.datetime.now() #start timer
     #intersect function, find crossed cell numbers (gridnos) and coordinates of intersection (2 per crossed cell)
-    intersect_pd = dfmt.polygon_intersect(ugrid_all, data_frommap_merged, line_array, optimize_dist=False, calcdist_fromlatlon=calcdist_fromlatlon) #TODO: move to xarray
+    intersect_pd = ugrid_all.polygon_intersect(line_array, optimize_dist=False, calcdist_fromlatlon=calcdist_fromlatlon)
     #derive vertices from cross section (distance from first point)
-    crs_verts, crs_plotdata = dfmt.get_xzcoords_onintersection(file_nc=file_nc, varname='mesh2d_sa1', intersect_pd=intersect_pd, timestep=timestep) #TODO: move to xarray
+    crs_verts, crs_plotdata = dfmt.get_xzcoords_onintersection(file_nc=file_nc, varname='mesh2d_sa1', intersect_pd=intersect_pd, timestep=timestep)
     fig, ax = plt.subplots()
     pc = dfmt.plot_netmapdata(crs_verts, values=crs_plotdata, ax=ax, cmap='jet')#, linewidth=0.5, edgecolor='k')
     fig.colorbar(pc, ax=ax)
@@ -179,15 +176,14 @@ for file_nc in file_nc_list:
     
     
     print('plot grid and values from mapdata (salinity on layer, 3dim, on cell centers)')
-    #data_frommap = dfmt.get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sa1', timestep=timestep, layer=layno)
+    data_frommap = dfmt.get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sa1', timestep=timestep, layer=layno)
     fig, ax = plt.subplots()
-    pc = data_frommap_merged['mesh2d_sa1'].isel(time=timestep,nmesh2d_layer=layno).ugrid.plot(edgecolor='face',cmap='jet')
-    #pc = dfmt.plot_netmapdata(ugrid_all.verts, values=data_frommap, ax=None, linewidth=0.5, cmap="jet", edgecolor='face')
+    pc = dfmt.plot_netmapdata(ugrid_all.verts, values=data_frommap, ax=None, linewidth=0.5, cmap="jet", edgecolor='face')
     pc.set_clim(clim_sal)
-    #cbar = fig.colorbar(pc, ax=ax)
-    #cbar.set_label('%s [%s]'%(data_frommap.var_ncattrs['long_name'], data_frommap.var_ncattrs['units']))
-    #ax.set_xlabel('x')
-    #ax.set_ylabel('y')
+    cbar = fig.colorbar(pc, ax=ax)
+    cbar.set_label('%s [%s]'%(data_frommap.var_ncattrs['long_name'], data_frommap.var_ncattrs['units']))
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
     ax.set_aspect('equal')
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_sa1'))
@@ -200,21 +196,18 @@ for file_nc in file_nc_list:
         varname_edge = 'mesh2d_windxu'
     else: #DCSM has all relevant values on centers, skip to next file
         continue
+    data_frommap = dfmt.get_ncmodeldata(file_nc=file_nc, varname=varname_edge, timestep=timestep, layer=layno)
     fig, ax = plt.subplots()
-    if 1:
-        data_frommap = dfmt.get_ncmodeldata(file_nc=file_nc, varname=varname_edge, timestep=timestep, layer=layno) 
-        pc = dfmt.plot_netmapdata(ugrid_all.edge_verts, values=data_frommap, ax=None, linewidth=0.5, cmap="jet", edgecolor='face')
-        cbar = fig.colorbar(pc, ax=ax)
-        cbar.set_label('%s [%s]'%(data_frommap.var_ncattrs['long_name'], data_frommap.var_ncattrs['units']))
-        ax.set_xlabel('x')
-        ax.set_ylabel('y')
-    else: #TODO: move edge to xarray. Issue: data_frommap_merged[varname_edge] is not xugrid anymore
-        pc = data_frommap_merged[varname_edge].isel(time=timestep,nmesh2d_layer=layno).ugrid.plot(edgecolor='face',cmap='jet')
+    pc = dfmt.plot_netmapdata(ugrid_all.edge_verts, values=data_frommap, ax=None, linewidth=0.5, cmap="jet", edgecolor='face')
+    cbar = fig.colorbar(pc, ax=ax)
+    cbar.set_label('%s [%s]'%(data_frommap.var_ncattrs['long_name'], data_frommap.var_ncattrs['units']))
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
     ax.set_aspect('equal')
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,f'{basename}_{varname_edge}_edges'))
     
-    
+        
     if file_nc_fou is not None:
         #RMM foufile met quivers
         vars_pd = dfmt.get_ncvarproperties(file_nc=file_nc_fou)

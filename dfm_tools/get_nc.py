@@ -470,9 +470,6 @@ def get_xzcoords_onintersection(file_nc, intersect_pd, timestep=None, multipart=
     
 
 
-
-
-
 def get_netdata(file_nc, multipart=None):
 
     file_ncs = get_ncfilelist(file_nc, multipart)
