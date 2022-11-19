@@ -186,8 +186,9 @@ for file_nc in file_nc_list:
         continue
     if 1:
         fig, ax = plt.subplots()
-        ugrid_all = dfmt.get_netdata(file_nc=file_nc, multipart=True)
-        data_frommap = dfmt.get_ncmodeldata(file_nc=file_nc, varname=varname_edge, timestep=timestep, layer=layno, multipart=False) 
+        multipart = True
+        ugrid_all = dfmt.get_netdata(file_nc=file_nc, multipart=multipart)
+        data_frommap = dfmt.get_ncmodeldata(file_nc=file_nc, varname=varname_edge, timestep=timestep, layer=layno, multipart=multipart) 
         pc = dfmt.plot_netmapdata(ugrid_all.edge_verts, values=data_frommap, ax=None, linewidth=0.5, cmap="jet", edgecolor='face')
         cbar = fig.colorbar(pc, ax=ax)
         cbar.set_label('%s [%s]'%(data_frommap.var_ncattrs['long_name'], data_frommap.var_ncattrs['units']))
