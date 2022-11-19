@@ -11,7 +11,7 @@ from netCDF4 import Dataset
 import matplotlib.pyplot as plt
 plt.close('all')
 
-from dfm_tools.get_nc import get_ncmodeldata#, get_netdata
+from dfm_tools.get_nc import get_ncmodeldata
 from dfm_tools.get_nc_helpers import get_varname_fromnc
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
