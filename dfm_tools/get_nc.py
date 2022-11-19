@@ -683,7 +683,7 @@ def get_netdata(file_nc, multipart=None):
 def plot_netmapdata(verts, values=None, ax=None, **kwargs):
     #https://stackoverflow.com/questions/52202014/how-can-i-plot-2d-fem-results-using-matplotlib
     #https://stackoverflow.com/questions/49640311/matplotlib-unstructered-quadrilaterals-instead-of-triangles
-    warnings.warn(DeprecationWarning('dfm_tools.get_nc.plot_netmapdata() will be deprecated, since there is an xarray alternative for multidomain FM files (xugrid). Check the example scripts for how to use it'))
+    warnings.warn(PendingDeprecationWarning('dfm_tools.get_nc.plot_netmapdata() will be deprecated, since there is an xarray alternative for multidomain FM files (xugrid). Check the example scripts for how to use it'))
     
     if not values is None:
         #squeeze values (remove dimensions with length 1)
