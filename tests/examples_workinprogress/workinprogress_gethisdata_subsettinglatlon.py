@@ -10,18 +10,22 @@ import numpy as np
 import xarray as xr
 import matplotlib.pyplot as plt
 plt.close('all')
-from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame #install dfm_tools via https://github.com/openearth/dfm_tools
-from dfm_tools.xarray_helpers import preprocess_hisnc
-from hydrolib.core.io.polyfile.models import PolyFile #automatically installed with dfm_tools
+import dfm_tools as dfmt #install dfm_tools via https://github.com/openearth/dfm_tools (includes hydrolib)
+
+try: #0.3.1 release
+    from hydrolib.core.io.polyfile.models import PolyFile
+except: #main branch and next release #TODO: move to easy imports after https://github.com/Deltares/HYDROLIB-core/issues/410
+    from hydrolib.core.io.dflowfm.polyfile.models import PolyFile
+
 
 file_pli = r'p:\1230882-emodnet_hrsm\GTSMv5.0\runs\reference_GTSMv4.1_wiCA\world.ldb'
 polyfile_object = PolyFile(Path(file_pli))
-polyobject_pd = pointlike_to_DataFrame(polyfile_object.objects[0])
+polyobject_pd = dfmt.pointlike_to_DataFrame(polyfile_object.objects[0])
 polyobject_pd[polyobject_pd==999.999] = np.nan
 
 file_nc = r'p:\1230882-emodnet_hrsm\GTSMv5.0\runs\reference_GTSMv4.1_wiCA\output\gtsm_model_0000_his.nc'
 #file_nc = r'p:\1230882-emodnet_hrsm\GTSMv5.0\runs\GM42_2000m_eu0900m_ITfac5p5_wx\output\gtsm_model_0000_his.nc'
-data_xr = xr.open_mfdataset(file_nc, preprocess=preprocess_hisnc, chunks={'time':-1})
+data_xr = xr.open_mfdataset(file_nc, preprocess=dfmt.preprocess_hisnc, chunks={'time':-1})
 
 data_xr_relvars = data_xr[['waterlevel','x_velocity','y_velocity']]
 
