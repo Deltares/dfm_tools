@@ -255,6 +255,8 @@ with xr.open_dataset(file_out) as data_xr_check:
             data_xr_check[varkey].isel(time=0).plot(ax=ax1,x='longitude',y='latitude') #x/y are necessary since coords are not 1D and dims
         elif 'depth' in data_xr_tsel[varkey].coords:
             data_xr_check[varkey].isel(time=0).sel(depth=0).plot(ax=ax1)
+        elif 'expver' in data_xr_tsel[varkey].coords:
+            data_xr_check[varkey].isel(time=0).isel(expver=0).plot(ax=ax1)
         else:
             data_xr_check[varkey].isel(time=0).plot(ax=ax1)
         fig.savefig(file_out.replace('.nc',f'_{varkey}'))
