@@ -10,9 +10,7 @@ import numpy as np
 from netCDF4 import Dataset
 import matplotlib.pyplot as plt
 plt.close('all')
-
-from dfm_tools.get_nc import get_ncmodeldata
-from dfm_tools.get_nc_helpers import get_varname_fromnc
+import dfm_tools as dfmt
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
@@ -28,15 +26,15 @@ multipart = None
 #code from get_xzcoords_onintersection
 data_nc = Dataset(file_nc)
 
-varn_mesh2d_s1 = get_varname_fromnc(data_nc,'mesh2d_s1', vardim='var')
-data_frommap_wl3 = get_ncmodeldata(file_nc, varname=varn_mesh2d_s1, timestep=timestep, multipart=multipart)
+varn_mesh2d_s1 = dfmt.get_varname_fromnc(data_nc,'mesh2d_s1', vardim='var')
+data_frommap_wl3 = dfmt.get_ncmodeldata(file_nc, varname=varn_mesh2d_s1, timestep=timestep, multipart=multipart)
 data_frommap_wl3 = data_frommap_wl3[0,:]
 #data_frommap_wl3_sel = data_frommap_wl3[0,intersect_gridnos]
-varn_mesh2d_flowelem_bl = get_varname_fromnc(data_nc,'mesh2d_flowelem_bl', vardim='var')
-data_frommap_bl = get_ncmodeldata(file_nc, varname=varn_mesh2d_flowelem_bl, multipart=multipart)
+varn_mesh2d_flowelem_bl = dfmt.get_varname_fromnc(data_nc,'mesh2d_flowelem_bl', vardim='var')
+data_frommap_bl = dfmt.get_ncmodeldata(file_nc, varname=varn_mesh2d_flowelem_bl, multipart=multipart)
 #data_frommap_bl_sel = data_frommap_bl[intersect_gridnos]
 
-dimn_layer = get_varname_fromnc(data_nc,'nmesh2d_layer', vardim='dim')
+dimn_layer = dfmt.get_varname_fromnc(data_nc,'nmesh2d_layer', vardim='dim')
 if dimn_layer is None: #no layers, 2D model
     nlay = 1
 else:
