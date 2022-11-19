@@ -193,15 +193,18 @@ for file_nc in file_nc_list:
         cbar.set_label('%s [%s]'%(data_frommap.var_ncattrs['long_name'], data_frommap.var_ncattrs['units']))
         ax.set_xlabel('x')
         ax.set_ylabel('y')
+        ax.set_aspect('equal')
+        fig.tight_layout()
+        fig.savefig(os.path.join(dir_output,f'{basename}_{varname_edge}_edges_oldmethod'))
     if 1: #TODO: move edge to xarray, but partitioned maps show incorrect data
         fig, ax = plt.subplots()
         if layno is None:
             pc = data_frommap_merged[varname_edge].isel(time=timestep).ugrid.plot(cmap='jet')
         else:
             pc = data_frommap_merged[varname_edge].isel(time=timestep,nmesh2d_layer=layno).ugrid.plot(cmap='jet')
-    ax.set_aspect('equal')
-    fig.tight_layout()
-    fig.savefig(os.path.join(dir_output,f'{basename}_{varname_edge}_edges'))
+        ax.set_aspect('equal')
+        fig.tight_layout()
+        fig.savefig(os.path.join(dir_output,f'{basename}_{varname_edge}_edges'))
     
     
     if file_nc_fou is not None:
