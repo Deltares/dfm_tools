@@ -19,7 +19,7 @@ plt.close('all')
 from pathlib import Path
 import xarray as xr #TODO: convert to xarray
 
-from dfm_tools.get_nc import get_ncmodeldata#, get_netdata, plot_netmapdata
+from dfm_tools.get_nc import get_ncmodeldata
 from dfm_tools.get_nc_helpers import get_ncvarproperties
 from dfm_tools.regulargrid import uva2xymagdeg
 from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame

@@ -8,10 +8,7 @@ Created on Wed Oct 27 21:59:05 2021
 import os
 import matplotlib.pyplot as plt
 plt.close('all')
-
-from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
-from dfm_tools.get_nc_helpers import get_ncvarproperties
-from dfm_tools.regulargrid import scatter_to_regulargrid
+import dfm_tools as dfmt
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
@@ -23,25 +20,25 @@ file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run0
 #file_nc = 'p:\\1204257-dcsmzuno\\2013-2017\\3D-DCSM-FM\\A17b\\DFM_OUTPUT_DCSM-FM_0_5nm\\DCSM-FM_0_5nm_0000_map.nc'
 #file_nc = 'p:\\11205258-006-kpp2020_rmm-g6\\C_Work\\08_RMM_FMmodel\\computations\\run_156\\DFM_OUTPUT_RMM_dflowfm\\RMM_dflowfm_0000_map.nc'
 
+data_frommap_merged = dfmt.open_partitioned_dataset(file_nc.replace('_0000_','_0*_')) #TODO: make starred default, but not supported by older code
+
 clim_bl = [-40,10]
 
-vars_pd = get_ncvarproperties(file_nc=file_nc)
-ugrid = get_netdata(file_nc=file_nc)
+vars_pd = dfmt.get_ncvarproperties(file_nc=file_nc)
 #get bed layer
-data_frommap_x = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_face_x')
-data_frommap_y = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_face_y')
-data_frommap_bl = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_flowelem_bl')
+data_frommap_bl = data_frommap_merged['mesh2d_flowelem_bl']
+data_frommap_x = data_frommap_bl.mesh2d_face_x.to_numpy()
+data_frommap_y = data_frommap_bl.mesh2d_face_y.to_numpy()
 
 for maskland_dist in [None,100]:
     #interpolate to regular grid
-    x_grid, y_grid, val_grid = scatter_to_regulargrid(xcoords=data_frommap_x, ycoords=data_frommap_y, ncellx=100, ncelly=80, values=data_frommap_bl, method='linear', maskland_dist=maskland_dist)
+    x_grid, y_grid, val_grid = dfmt.scatter_to_regulargrid(xcoords=data_frommap_x, ycoords=data_frommap_y, ncellx=100, ncelly=80, values=data_frommap_bl, method='linear', maskland_dist=maskland_dist)
 
     #create plot with ugrid and cross section line
     fig, axs = plt.subplots(3,1,figsize=(6,9))
     ax=axs[0]
-    pc = plot_netmapdata(ugrid.verts, values=data_frommap_bl, ax=ax, linewidth=0.5, edgecolors='face', cmap='jet')#, color='crimson', facecolor="None")
+    pc = data_frommap_bl.ugrid.plot(ax=ax, linewidth=0.5, edgecolors='face', cmap='jet')#, color='crimson', facecolor="None")
     pc.set_clim(clim_bl)
-    fig.colorbar(pc, ax=ax)
     ax=axs[1]
     pc = ax.contourf(x_grid, y_grid, val_grid)
     pc.set_clim(clim_bl)
