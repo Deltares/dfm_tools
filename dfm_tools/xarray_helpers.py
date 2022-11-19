@@ -110,7 +110,7 @@ def open_partitioned_dataset(file_nc, only_faces=False, chunks={'time':1}): #chu
         raise Exception('file(s) not found, empty file_nc_list')
     
     dtstart = dt.datetime.now()
-    print(f'>> xu.open_dataset() with {len(file_nc_list)} partitions: ',end='')
+    print(f'>> xu.open_dataset() with {len(file_nc_list)} partition(s): ',end='')
     partitions = [xu.open_dataset(file_nc_one,chunks=chunks) for file_nc_one in file_nc_list]
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
