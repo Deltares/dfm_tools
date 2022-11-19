@@ -34,8 +34,9 @@ dir_output = '.'
 #file_net = r'p:\1230882-emodnet_hrsm\global_tide_surge_model\trunk\gtsm4.1\step11_global_1p25eu_net.nc' #TODO: cannot get netdata from this network, do in dfm_tools, hydrolib, xugrid, meshkernel?
 file_net = r'p:\1230882-emodnet_hrsm\GTSMv5.0\runs\reference_GTSMv4.1_wiCA\output\gtsm_model_0000_map.nc'
 crs_net = 'EPSG:4326'
-data_net = dfmt.get_netdata(file_net)
-face_coords_pd = pd.DataFrame(dict(x=data_net.mesh2d_node_x,y=data_net.mesh2d_node_y))
+#data_xr_mapmerged = dfmt.open_partitioned_dataset(file_net)#.replace('_0000_','_0*_')) #TODO: ValueError: Dimensions {'nNetElem'} do not exist. Expected one or more of Frozen({}) (xugrid flexible gridnames support?)
+data_xr = xr.open_dataset(file_net)
+face_coords_pd = pd.DataFrame(dict(x=data_xr.FlowElemContour_x.mean(dim='nFlowElemContourPts'),y=data_xr.FlowElemContour_y.mean(dim='nFlowElemContourPts')))
 tree_nest1 = KDTree(face_coords_pd)
 
 #get and plot pli coordinates

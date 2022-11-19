@@ -107,7 +107,7 @@ for file_nc in file_nc_list:
     else:
         raise Exception('ERROR: no settings provided for this mapfile')
     
-    data_frommap_merged = dfmt.open_partitioned_dataset(file_nc)#.replace('_0000_','_0*_')) #TODO: make starred default, but not supported by older code
+    data_frommap_merged = dfmt.open_partitioned_dataset(file_nc.replace('_0000_','_0*_')) #TODO: make starred default, but not supported by older code
     
     #get ugrid data, vars informatin and grid units (latter from bedlevel coordinates)
     vars_pd = dfmt.get_ncvarproperties(file_nc=file_nc)
