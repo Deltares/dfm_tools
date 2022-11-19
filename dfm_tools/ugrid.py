@@ -258,6 +258,3 @@ class UGrid:
         print('done finding crossing flow links: %i of %i'%(len(intersect_gridnos),len(cellinlinebox_all_bool)))
         return intersect_pd
     
-
-
-

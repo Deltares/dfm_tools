@@ -11,16 +11,15 @@ plt.close('all')
 import numpy as np
 import contextily as ctx
 import datetime as dt
-import xarray as xr
 import dfm_tools as dfmt
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
-file_nc_list = [#os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_cb_3d\\cb_3d_map.nc'), #sigmalayer
+file_nc_list = [os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_cb_3d\\cb_3d_map.nc'), #sigmalayer
                 os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc'), #zlayer
-                #r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0000_map.nc', #fullgrid
-                #r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_207\results\RMM_dflowfm_0000_map.nc', #2D model
+                r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0000_map.nc', #fullgrid
+                r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_207\results\RMM_dflowfm_0000_map.nc', #2D model
                 ]
 
 for file_nc in file_nc_list:
@@ -107,33 +106,26 @@ for file_nc in file_nc_list:
         file_nc_fou = os.path.join(dir_testinput,r'DFM_fou_RMM\RMM_dflowfm_0000_fou.nc')
     else:
         raise Exception('ERROR: no settings provided for this mapfile')
-
-    data_xr = xr.open_dataset(file_nc) #currently not used, but still usefull to check netcdf structure
+    
+    data_frommap_merged = dfmt.open_partitioned_dataset(file_nc.replace('_0000_','_0*_')) #TODO: make starred default, but not supported by older code
     
     #get ugrid data, vars informatin and grid units (latter from bedlevel coordinates)
     vars_pd = dfmt.get_ncvarproperties(file_nc=file_nc)
-    ugrid_all = dfmt.get_netdata(file_nc=file_nc)
     
-    print('plot grid from mapdata')
+    print('plot grid from mapdata') #use random variable and plot line to get grid (alternatively: xr.plot.line(data_frommap_merged.ugrid.grid.to_dataset()), but that crashes)
     fig, ax = plt.subplots()
-    pc = dfmt.plot_netmapdata(ugrid_all.verts, values=None, ax=None, linewidth=0.5, color="crimson", facecolor="None")
+    pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot.line(edgecolor='crimson', linewidth=0.5,add_colorbar=False)
     ax.set_xlabel('x')
     ax.set_ylabel('y')
     ax.set_aspect('equal')
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,f'{basename}_grid'))
-
-
+    
     print('plot grid and bedlevel (constantvalue, 1 dim)')
     #get bedlevel and create plot with ugrid and cross section line
-    data_frommap_bl = dfmt.get_ncmodeldata(file_nc=file_nc, varname='mesh2d_flowelem_bl')
     fig, ax_input = plt.subplots()
-    pc = dfmt.plot_netmapdata(ugrid_all.verts, values=data_frommap_bl, ax=ax_input, linewidth=0.5, edgecolors='face', cmap='jet')#, color='crimson', facecolor="None")
+    pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot(edgecolor='face',cmap='jet')
     pc.set_clim(clim_bl)
-    cbar = fig.colorbar(pc, ax=ax_input)
-    cbar.set_label('%s [%s]'%(data_frommap_bl.var_ncattrs['long_name'], data_frommap_bl.var_ncattrs['units']))
-    ax_input.set_xlabel('x')
-    ax_input.set_ylabel('y')
     ax_input.set_aspect('equal')
     if 0: #click interactive polygon #TODO: this is useful but should work also without killing the code
         line, = ax_input.plot([], [],'o-')  # empty line
@@ -149,7 +141,7 @@ for file_nc in file_nc_list:
         https://contextily.readthedocs.io/en/latest/reference.html
         https://contextily.readthedocs.io/en/latest/intro_guide.html
         ctx.add_basemap() defaults:
-        source: None defaults to ctx.providers.Stamen.Terrain
+        source: None defaults to ctx.providers.Stamen.Terrain 
         crs: coordinate reference system (CRS). If None (default), no warping is performed and the original Spherical Mercator (EPSG:3857) is used.
         More complex basemaps/coastlines are available in dfm_tools.net_nc.plot_background()
         """
@@ -158,12 +150,12 @@ for file_nc in file_nc_list:
         fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_flowelem_bl_withbasemap'))
 
     
-    print('calculating and plotting cross section')
+    print('calculating and plotting cross section') #TODO: put crsdata in xarray ugrid or something more efficient?
     runtime_tstart = dt.datetime.now() #start timer
     #intersect function, find crossed cell numbers (gridnos) and coordinates of intersection (2 per crossed cell)
-    intersect_pd = ugrid_all.polygon_intersect(line_array, optimize_dist=False, calcdist_fromlatlon=calcdist_fromlatlon)
+    intersect_pd = dfmt.polygon_intersect(data_frommap_merged, line_array, optimize_dist=False, calcdist_fromlatlon=calcdist_fromlatlon)
     #derive vertices from cross section (distance from first point)
-    crs_verts, crs_plotdata = dfmt.get_xzcoords_onintersection(file_nc=file_nc, varname='mesh2d_sa1', intersect_pd=intersect_pd, timestep=timestep)
+    crs_verts, crs_plotdata = dfmt.get_xzcoords_onintersection(data_frommap_merged, varname='mesh2d_sa1', intersect_pd=intersect_pd, timestep=timestep)
     fig, ax = plt.subplots()
     pc = dfmt.plot_netmapdata(crs_verts, values=crs_plotdata, ax=ax, cmap='jet')#, linewidth=0.5, edgecolor='k')
     fig.colorbar(pc, ax=ax)
@@ -171,19 +163,15 @@ for file_nc in file_nc_list:
     plt.savefig(os.path.join(dir_output,f'{basename}_crossect'))
     runtime_timedelta = (dt.datetime.now()-runtime_tstart)
     print(f'calculating and plotting cross section finished in {runtime_timedelta}')
-
-
     
     
     print('plot grid and values from mapdata (salinity on layer, 3dim, on cell centers)')
-    data_frommap = dfmt.get_ncmodeldata(file_nc=file_nc, varname='mesh2d_sa1', timestep=timestep, layer=layno)
     fig, ax = plt.subplots()
-    pc = dfmt.plot_netmapdata(ugrid_all.verts, values=data_frommap, ax=None, linewidth=0.5, cmap="jet", edgecolor='face')
+    if 'nmesh2d_layer' in data_frommap_merged['mesh2d_sa1'].dims:
+        pc = data_frommap_merged['mesh2d_sa1'].isel(time=timestep,nmesh2d_layer=layno).ugrid.plot(edgecolor='face',cmap='jet')
+    else:
+        pc = data_frommap_merged['mesh2d_sa1'].isel(time=timestep).ugrid.plot(edgecolor='face',cmap='jet')
     pc.set_clim(clim_sal)
-    cbar = fig.colorbar(pc, ax=ax)
-    cbar.set_label('%s [%s]'%(data_frommap.var_ncattrs['long_name'], data_frommap.var_ncattrs['units']))
-    ax.set_xlabel('x')
-    ax.set_ylabel('y')
     ax.set_aspect('equal')
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_sa1'))
@@ -196,46 +184,47 @@ for file_nc in file_nc_list:
         varname_edge = 'mesh2d_windxu'
     else: #DCSM has all relevant values on centers, skip to next file
         continue
-    data_frommap = dfmt.get_ncmodeldata(file_nc=file_nc, varname=varname_edge, timestep=timestep, layer=layno)
-    fig, ax = plt.subplots()
-    pc = dfmt.plot_netmapdata(ugrid_all.edge_verts, values=data_frommap, ax=None, linewidth=0.5, cmap="jet", edgecolor='face')
-    cbar = fig.colorbar(pc, ax=ax)
-    cbar.set_label('%s [%s]'%(data_frommap.var_ncattrs['long_name'], data_frommap.var_ncattrs['units']))
-    ax.set_xlabel('x')
-    ax.set_ylabel('y')
+    if 1:
+        fig, ax = plt.subplots()
+        ugrid_all = dfmt.get_netdata(file_nc=file_nc, multipart=False) 
+        data_frommap = dfmt.get_ncmodeldata(file_nc=file_nc, varname=varname_edge, timestep=timestep, layer=layno, multipart=False) 
+        pc = dfmt.plot_netmapdata(ugrid_all.edge_verts, values=data_frommap, ax=None, linewidth=0.5, cmap="jet", edgecolor='face')
+        cbar = fig.colorbar(pc, ax=ax)
+        cbar.set_label('%s [%s]'%(data_frommap.var_ncattrs['long_name'], data_frommap.var_ncattrs['units']))
+        ax.set_xlabel('x')
+        ax.set_ylabel('y')
+    if 1: #TODO: move edge to xarray, but partitioned maps show incorrect data
+        fig, ax = plt.subplots()
+        if layno is None:
+            pc = data_frommap_merged[varname_edge].isel(time=timestep).ugrid.plot(cmap='jet')
+        else:
+            pc = data_frommap_merged[varname_edge].isel(time=timestep,nmesh2d_layer=layno).ugrid.plot(cmap='jet')
     ax.set_aspect('equal')
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,f'{basename}_{varname_edge}_edges'))
     
-        
+    
     if file_nc_fou is not None:
         #RMM foufile met quivers
         vars_pd = dfmt.get_ncvarproperties(file_nc=file_nc_fou)
         
-        ugrid_all_fou = dfmt.get_netdata(file_nc=file_nc_fou)
-        ux_mean = dfmt.get_ncmodeldata(file_nc=file_nc_fou, varname='mesh2d_fourier001_mean')
-        uy_mean = dfmt.get_ncmodeldata(file_nc=file_nc_fou, varname='mesh2d_fourier002_mean')
-        magn_mean = np.sqrt(ux_mean**2+uy_mean**2)
-        #uc_mean = dfmt.get_ncmodeldata(file_nc=file_nc, varname='mesh2d_fourier003_mean')
-        #uc_max = dfmt.get_ncmodeldata(file_nc=file_nc, varname='mesh2d_fourier004_max')
-        facex = dfmt.get_ncmodeldata(file_nc=file_nc_fou, varname='mesh2d_face_x')
-        facey = dfmt.get_ncmodeldata(file_nc=file_nc_fou, varname='mesh2d_face_y')
+        data_frommap_merged = dfmt.open_partitioned_dataset(file_nc_fou.replace('_0000_','_0*_'))
+        facex = data_frommap_merged['mesh2d_face_x'].to_numpy()
+        facey = data_frommap_merged['mesh2d_face_y'].to_numpy()
+        ux_mean = data_frommap_merged['mesh2d_fourier001_mean']
+        uy_mean = data_frommap_merged['mesh2d_fourier002_mean']
+        data_frommap_merged['magn_mean'] = np.sqrt(ux_mean**2+uy_mean**2)
+        data_frommap_merged['magn_mean'].attrs.update({'long_name':'residuele stroming',
+                                                       'units':'[m/s]'})
+        X,Y,U = dfmt.scatter_to_regulargrid(xcoords=facex, ycoords=facey, ncellx=60, ncelly=35, values=ux_mean.to_numpy())
+        X,Y,V = dfmt.scatter_to_regulargrid(xcoords=facex, ycoords=facey, ncellx=60, ncelly=35, values=uy_mean.to_numpy())
         
-        X,Y,U = dfmt.scatter_to_regulargrid(xcoords=facex, ycoords=facey, ncellx=60, ncelly=35, values=ux_mean)
-        X,Y,V = dfmt.scatter_to_regulargrid(xcoords=facex, ycoords=facey, ncellx=60, ncelly=35, values=uy_mean)
-        
-        #thinning = 3
         fig1,ax1 = plt.subplots(figsize=(9,5))
-        pc1 = dfmt.plot_netmapdata(ugrid_all_fou.verts, magn_mean, edgecolor='face')
-        #ax1.quiver(facex[::thinning], facey[::thinning], ux_mean[::thinning], uy_mean[::thinning], color='w',scale=20)#,width=0.005)#, edgecolor='face', cmap='jet')
+        pc1 = data_frommap_merged['magn_mean'].ugrid.plot(edgecolor='face')
         ax1.quiver(X,Y,U,V, color='w',scale=5)#,width=0.005)#, edgecolor='face', cmap='jet')
-        pc1.set_clim([0,0.10])
+        pc1.set_clim(0,0.10)
         ax1.set_aspect('equal')
-        ax.set_xlabel('x')
-        ax.set_ylabel('y')
-        cbar = fig1.colorbar(pc1)
-        cbar.set_label('residuele stroming [m/s]')
         fig1.tight_layout()
         fig1.savefig(os.path.join(dir_output,f'{basename}_fou'))
-        
+    
         

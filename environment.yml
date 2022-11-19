@@ -13,6 +13,7 @@ dependencies:
   - dask
   - netcdf4
   - bottleneck
+  - xugrid
   - cdsapi
   - pydap
   - pip:

@@ -13,9 +13,7 @@ import matplotlib.pyplot as plt
 plt.close('all')
 import geopandas as gpd #conda install --channel conda-forge geopandas (breaks dfm_tools environment because of Qt issue)
 from shapely.geometry import Polygon
-
-from dfm_tools.get_nc import get_netdata, get_ncmodeldata
-from dfm_tools.get_nc_helpers import get_ncvarproperties#, get_ncfilelist
+import dfm_tools as dfmt
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
@@ -27,16 +25,16 @@ if not os.path.exists(dir_shp):
     os.makedirs(dir_shp)
 file_nc = os.path.join(r'p:\archivedprojects\11203850-coastserv\06-Model\waq_model\simulations\run0_20200319\DFM_OUTPUT_kzn_waq', 'kzn_waq_0000_map.nc')
 
-vars_pd = get_ncvarproperties(file_nc=file_nc)
+vars_pd = dfmt.get_ncvarproperties(file_nc=file_nc)
 vars_pd_matching = vars_pd[vars_pd.loc[:,'long_name'].str.match('.*Chl.*')]
 #vars_pd_matching = vars_pd[vars_pd.loc[:,'long_name'].str.startswith('') & vars_pd.loc[:,'long_name'].str.endswith('Chlo')]
 varns_Chl = vars_pd_matching.index.tolist()
 varns_Chl_long = vars_pd_matching['long_name'].tolist()
 
-ugrid = get_netdata(file_nc=file_nc)#, multipart=False)
+ugrid = dfmt.get_netdata(file_nc=file_nc)#, multipart=False)
 
 pol_shp_list = []
-#partly from dfm_tools.ugrid.polygon_intersect()
+#partly from dfm_tools.polygon_intersect()
 for iP, pol_data in enumerate(ugrid.verts): #[range(5000),:,:]
     pol_data_nonan = pol_data[~np.isnan(pol_data).all(axis=1)]
     pol_shp = Polygon(pol_data_nonan)
@@ -51,11 +49,11 @@ for iV, varname in enumerate(varlist):
 for timestep in [6]:#[0,10,20,30]:
     for iV, varname in enumerate(varlist):
         try:
-            data_fromnc_all = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep, layer='all')
-            data_fromnc_bot = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep, layer='bottom')
-            data_fromnc_top = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep, layer='top')
+            data_fromnc_all = dfmt.get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep, layer='all')
+            data_fromnc_bot = dfmt.get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep, layer='bottom')
+            data_fromnc_top = dfmt.get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep, layer='top')
         except:
-            data_fromnc_top = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep)
+            data_fromnc_top = dfmt.get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep)
 
         data_fromnc_nonan = data_fromnc_top[:]
         data_fromnc_nonan[data_fromnc_nonan.mask] = np.nan

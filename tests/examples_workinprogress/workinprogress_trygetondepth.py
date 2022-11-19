@@ -11,7 +11,7 @@ from netCDF4 import Dataset
 import matplotlib.pyplot as plt
 plt.close('all')
 
-from dfm_tools.get_nc import get_ncmodeldata#, get_netdata
+from dfm_tools.get_nc import get_ncmodeldata
 from dfm_tools.get_nc_helpers import get_varname_fromnc
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
@@ -24,13 +24,6 @@ timestep = 72
 #layno = 5
 #calcdist_fromlatlon = None
 multipart = None
-#line_array = np.array([[ 104.15421399, 2042.7077107 ],
-#                       [2913.47878063, 2102.48057382]])
-#val_ylim = None
-#clim_bl = None
-#optimize_dist = None
-#ugrid = get_netdata(file_nc=file_nc, multipart=multipart)
-#intersect_gridnos, intersect_coords = ugrid.polygon_intersect(line_array, optimize_dist=None)
 
 #code from get_xzcoords_onintersection
 data_nc = Dataset(file_nc)
