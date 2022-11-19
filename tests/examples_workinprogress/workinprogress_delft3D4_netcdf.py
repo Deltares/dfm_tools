@@ -18,23 +18,22 @@ import matplotlib.pyplot as plt
 plt.close('all')
 from pathlib import Path
 import xarray as xr #TODO: convert to xarray
+import dfm_tools as dfmt
 
-from dfm_tools.get_nc import get_ncmodeldata
-from dfm_tools.get_nc_helpers import get_ncvarproperties
-from dfm_tools.regulargrid import uva2xymagdeg
-from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame
-
-from hydrolib.core.io.polyfile.models import PolyFile
+try: #0.3.1 release
+    from hydrolib.core.io.polyfile.models import PolyFile
+except: #main branch and next release #TODO: move to easy imports after https://github.com/Deltares/HYDROLIB-core/issues/410
+    from hydrolib.core.io.dflowfm.polyfile.models import PolyFile
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
 file_ldb = Path(r'p:\archivedprojects\1220688-lake-kivu\3_modelling\1_FLOW\4_CH4_CO2_included\008\lake_kivu_geo.ldb')
 polyfile_object = PolyFile(file_ldb)
-data_ldb = pointlike_to_DataFrame(polyfile_object.objects[0])
+data_ldb = dfmt.pointlike_to_DataFrame(polyfile_object.objects[0])
 
 file_nc = r'p:\archivedprojects\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\062_netcdf\trim-thiery_002_coarse.nc'
-vars_pd = get_ncvarproperties(file_nc=file_nc)
+vars_pd = dfmt.get_ncvarproperties(file_nc=file_nc)
 data_xr = xr.open_dataset(file_nc)
 #data_xr = data_xr.set_coords(['x','y','edge_x','edge_y'])
 
@@ -55,23 +54,23 @@ data_xr['YCOR'] = data_xr.YCOR.where(~mask_XYCOR)
 #data_xr['YCOR'] = data_xr.YZ.ffill(dim='M').ffill(dim='N').bfill('M').bfill('N')
 """
 
-data_nc_XZ = get_ncmodeldata(file_nc=file_nc, varname='XZ')
-data_nc_YZ = get_ncmodeldata(file_nc=file_nc, varname='YZ')
-data_nc_XCOR = get_ncmodeldata(file_nc=file_nc, varname='XCOR')
-data_nc_YCOR = get_ncmodeldata(file_nc=file_nc, varname='YCOR')
-data_nc_ALFAS = get_ncmodeldata(file_nc=file_nc, varname='ALFAS') #contains rotation of all cells wrt real world
-#data_nc_S1 = get_ncmodeldata(file_nc=file_nc, varname='S1',timestep='all')
-data_nc_QNET = get_ncmodeldata(file_nc=file_nc, varname='QNET',timestep='all')
-data_nc_DPV0 = get_ncmodeldata(file_nc=file_nc, varname='DPV0')
-#data_nc_QEVA = get_ncmodeldata(file_nc=file_nc, varname='QEVA',timestep='all')
-data_nc_KCU = get_ncmodeldata(file_nc=file_nc, varname='KCU')
-data_nc_KCV = get_ncmodeldata(file_nc=file_nc, varname='KCV')
+data_nc_XZ = dfmt.get_ncmodeldata(file_nc=file_nc, varname='XZ')
+data_nc_YZ = dfmt.get_ncmodeldata(file_nc=file_nc, varname='YZ')
+data_nc_XCOR = dfmt.get_ncmodeldata(file_nc=file_nc, varname='XCOR')
+data_nc_YCOR = dfmt.get_ncmodeldata(file_nc=file_nc, varname='YCOR')
+data_nc_ALFAS = dfmt.get_ncmodeldata(file_nc=file_nc, varname='ALFAS') #contains rotation of all cells wrt real world
+#data_nc_S1 = dfmt.get_ncmodeldata(file_nc=file_nc, varname='S1',timestep='all')
+data_nc_QNET = dfmt.get_ncmodeldata(file_nc=file_nc, varname='QNET',timestep='all')
+data_nc_DPV0 = dfmt.get_ncmodeldata(file_nc=file_nc, varname='DPV0')
+#data_nc_QEVA = dfmt.get_ncmodeldata(file_nc=file_nc, varname='QEVA',timestep='all')
+data_nc_KCU = dfmt.get_ncmodeldata(file_nc=file_nc, varname='KCU')
+data_nc_KCV = dfmt.get_ncmodeldata(file_nc=file_nc, varname='KCV')
 
 layno=-2
 
 
-data_nc_U1 = get_ncmodeldata(file_nc=file_nc, varname='U1',timestep='all',layer=layno)
-data_nc_V1 = get_ncmodeldata(file_nc=file_nc, varname='V1',timestep='all',layer=layno)
+data_nc_U1 = dfmt.get_ncmodeldata(file_nc=file_nc, varname='U1',timestep='all',layer=layno)
+data_nc_V1 = dfmt.get_ncmodeldata(file_nc=file_nc, varname='V1',timestep='all',layer=layno)
 
 mask_XY = (data_nc_XZ==0) & (data_nc_YZ==0)
 data_nc_XZ[mask_XY] = np.nan
@@ -90,8 +89,8 @@ plt.savefig(os.path.join(dir_output,'kivu_mesh'))
 fig, axs = plt.subplots(1,3, figsize=(16,7))
 for iT, timestep in enumerate([1,10,15]):
     ax=axs[iT]
-    vel_x, vel_y, vel_magn, direction_naut_deg = uva2xymagdeg(U1=data_nc_U1[timestep,0,:,:],V1=data_nc_V1[timestep,0,:,:],ALFAS=data_nc_ALFAS)#,
-    #                                                          KCU=data_nc_KCU, KCV=data_nc_KCV)
+    vel_x, vel_y, vel_magn, direction_naut_deg = dfmt.uva2xymagdeg(U1=data_nc_U1[timestep,0,:,:],V1=data_nc_V1[timestep,0,:,:],ALFAS=data_nc_ALFAS)#,
+    #                                                            KCU=data_nc_KCU, KCV=data_nc_KCV)
     #pc = ax.pcolor(data_nc_XCOR,data_nc_YCOR,direction_naut_deg[1:,1:],cmap='jet')
     #pc.set_clim([0,360])
     pc = ax.pcolor(data_nc_XCOR,data_nc_YCOR,vel_magn[1:,1:],cmap='jet')
@@ -108,8 +107,8 @@ plt.savefig(os.path.join(dir_output,'kivu_velocity_pcolor'))
 fig, axs = plt.subplots(1,3, figsize=(16,7))
 for iT, timestep in enumerate([1,10,15]):
     ax=axs[iT]
-    vel_x, vel_y, vel_magn, direction_naut_deg = uva2xymagdeg(U1=data_nc_U1[timestep,0,:,:],V1=data_nc_V1[timestep,0,:,:],ALFAS=data_nc_ALFAS)#,
-    #                                                          KCU=data_nc_KCU, KCV=data_nc_KCV)
+    vel_x, vel_y, vel_magn, direction_naut_deg = dfmt.uva2xymagdeg(U1=data_nc_U1[timestep,0,:,:],V1=data_nc_V1[timestep,0,:,:],ALFAS=data_nc_ALFAS)#,
+    #                                                             KCU=data_nc_KCU, KCV=data_nc_KCV)
     #pc = ax.pcolor(data_nc_XCOR,data_nc_YCOR,vel_magn[1:,1:],cmap='jet')
     ax.set_title('t=%d (%s)'%(timestep, data_nc_U1.var_times.iloc[timestep]))
     ax.set_aspect('equal')
@@ -147,18 +146,18 @@ plt.savefig(os.path.join(dir_output,'kivu_bedlevel'))
 
 #from MAP DATA CURVEDBEND
 file_nc = os.path.join(dir_testinput,'D3D_3D_sigma_curved_bend_nc\\trim-cb2-sal-added-3d.nc')
-vars_pd = get_ncvarproperties(file_nc=file_nc)
+vars_pd = dfmt.get_ncvarproperties(file_nc=file_nc)
 
-data_nc_XZ = get_ncmodeldata(file_nc=file_nc, varname='XZ')
-data_nc_YZ = get_ncmodeldata(file_nc=file_nc, varname='YZ')
-data_nc_XCOR = get_ncmodeldata(file_nc=file_nc, varname='XCOR')
-data_nc_YCOR = get_ncmodeldata(file_nc=file_nc, varname='YCOR')
-data_nc_ALFAS = get_ncmodeldata(file_nc=file_nc, varname='ALFAS') #contains rotation of all cells wrt real world
-data_nc_U1 = get_ncmodeldata(file_nc=file_nc, varname='U1',timestep='all',layer='all')
-data_nc_V1 = get_ncmodeldata(file_nc=file_nc, varname='V1',timestep='all',layer='all')
-#data_nc_S1 = get_ncmodeldata(file_nc=file_nc, varname='S1',timestep='all')
-data_nc_KCU = get_ncmodeldata(file_nc=file_nc, varname='KCU')
-data_nc_KCV = get_ncmodeldata(file_nc=file_nc, varname='KCV')
+data_nc_XZ = dfmt.get_ncmodeldata(file_nc=file_nc, varname='XZ')
+data_nc_YZ = dfmt.get_ncmodeldata(file_nc=file_nc, varname='YZ')
+data_nc_XCOR = dfmt.get_ncmodeldata(file_nc=file_nc, varname='XCOR')
+data_nc_YCOR = dfmt.get_ncmodeldata(file_nc=file_nc, varname='YCOR')
+data_nc_ALFAS = dfmt.get_ncmodeldata(file_nc=file_nc, varname='ALFAS') #contains rotation of all cells wrt real world
+data_nc_U1 = dfmt.get_ncmodeldata(file_nc=file_nc, varname='U1',timestep='all',layer='all')
+data_nc_V1 = dfmt.get_ncmodeldata(file_nc=file_nc, varname='V1',timestep='all',layer='all')
+#data_nc_S1 = dfmt.get_ncmodeldata(file_nc=file_nc, varname='S1',timestep='all')
+data_nc_KCU = dfmt.get_ncmodeldata(file_nc=file_nc, varname='KCU')
+data_nc_KCV = dfmt.get_ncmodeldata(file_nc=file_nc, varname='KCV')
 
 mask_XY = (data_nc_XZ==0) & (data_nc_YZ==0)
 data_nc_XZ[mask_XY] = np.nan
@@ -190,8 +189,8 @@ for iT, timestep in enumerate([0,1,2,4]):
     id1 = iT%ncols
     #print('[%s,%s]'%(id0,id1))
     ax=axs[id0,id1]
-    vel_x, vel_y, vel_magn, direction_naut_deg = uva2xymagdeg(U1=data_nc_U1[timestep,9,:,:],V1=data_nc_V1[timestep,9,:,:],ALFAS=data_nc_ALFAS)#,
-    #                                                          KCU=data_nc_KCU, KCV=data_nc_KCV)
+    vel_x, vel_y, vel_magn, direction_naut_deg = dfmt.uva2xymagdeg(U1=data_nc_U1[timestep,9,:,:],V1=data_nc_V1[timestep,9,:,:],ALFAS=data_nc_ALFAS)#,
+    #                                                                KCU=data_nc_KCU, KCV=data_nc_KCV)
     pc = ax.pcolor(data_nc_XCOR,data_nc_YCOR,vel_magn[1:,1:],cmap='jet') #TODO: part of data is removed, not desireable
     pc.set_clim(var_clim)
     #cbar = fig.colorbar(pc, ax=ax)

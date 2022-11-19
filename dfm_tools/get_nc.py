@@ -45,7 +45,7 @@ from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvarproperties, get_va
 from dfm_tools.ugrid import UGrid
 
 
-def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=None, multipart=None, silent=False, return_xarray=False):
+def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=None, multipart=None, silent=False):
     """
 
     Parameters
@@ -75,7 +75,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=No
 
     """
     
-    warnings.warn(DeprecationWarning('dfm_tools.get_nc.get_ncmodeldata() will be deprecated, since there is an xarray alternative for multidomain FM files (xugrid). Check the example scripts for how to use it'))
+    warnings.warn(DeprecationWarning('dfm_tools.get_nc.get_ncmodeldata() will be deprecated, since there is an xarray alternative for multidomain FM files (xugrid).Open your file like this and use xarray sel/isel (example in postprocessing notebook):\n    data_xr_mapmerged = dfmt.open_partitioned_dataset(file_nc_map)\nFor hisfiles, use xarray with dfmt.preprocess_hisnc:\n    data_xr_his = xr.open_mfdataset(file_nc_his, preprocess=dfmt.preprocess_hisnc)'))
     
     #get variable info (also checks if varname exists in keys, standard name, long name)
     if isinstance(file_nc,list): #for opendap, has to support lists
@@ -347,20 +347,8 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=No
     else:
         values_all.var_layers = None
     
-    if return_xarray:
-        data_xr = xr.Dataset()
-        var_xr = xr.DataArray(values_all,dims=nc_varobject.dimensions,attrs=nc_varobject.__dict__,name=varname)
-        data_xr[varname] = var_xr
-        for vardim in nc_varobject.dimensions:
-            if vardim=='time':
-                data_xr['time'] = xr.DataArray(data_nc_datetimes_pd, dims=('time'), attrs=data_nc_timevar.__dict__, name='time')
-            if vardim=='mesh2d_nLayers':
-                data_xr['mesh2d_nLayers'] = xr.DataArray(layer_ids, dims=('mesh2d_nLayers'), name='mesh2d_nLayers')
-        data_nc.close()
-        return data_xr[varname]
-    else:
-        data_nc.close()
-        return values_all
+    data_nc.close()
+    return values_all
 
 
 def calc_dist_pythagoras(x1,x2,y1,y2): # only used in dfm_tools.ugrid
@@ -390,7 +378,7 @@ def calc_dist_haversine(lon1,lon2,lat1,lat2): # only used in dfm_tools.ugrid
     return distance
 
 
-def polygon_intersect(data_frommap_merged, line_array, optimize_dist=False, calcdist_fromlatlon=False): #TODO: copy of ugrid function, remove ugrid when xugrid works for all stuff
+def polygon_intersect(data_frommap_merged, line_array, optimize_dist=False, calcdist_fromlatlon=False):
     #data_frommap_merged: xugrid dataset (contains ds and grid)
     #TODO: remove hardcoding
     import numpy as np
@@ -598,7 +586,7 @@ def get_xzcoords_onintersection(data_frommap_merged, intersect_pd, timestep=None
 
 def get_netdata(file_nc, multipart=None):
 
-    warnings.warn(DeprecationWarning('dfm_tools.get_nc.get_netdata() will be deprecated, since there is an xarray alternative for multidomain FM files (xugrid). Check the example scripts for how to use it'))
+    warnings.warn(DeprecationWarning('dfm_tools.get_nc.get_netdata() will be deprecated, since there is an xarray alternative for multidomain FM files (xugrid). Open it like this and use xarray  sel/isel (example in postprocessing notebook):\n    data_xr_mapmerged = dfmt.open_partitioned_dataset(file_nc_map)'))
     file_ncs = get_ncfilelist(file_nc, multipart)
     #get all data
     num_nodes = [0]
@@ -680,7 +668,7 @@ def get_netdata(file_nc, multipart=None):
     return ugrid_all
 
 
-def plot_netmapdata(verts, values=None, ax=None, **kwargs):
+def plot_netmapdata(verts, values=None, ax=None, **kwargs): #TODO: only used for intersect plot, deprecate?
     #https://stackoverflow.com/questions/52202014/how-can-i-plot-2d-fem-results-using-matplotlib
     #https://stackoverflow.com/questions/49640311/matplotlib-unstructered-quadrilaterals-instead-of-triangles
     warnings.warn(PendingDeprecationWarning('dfm_tools.get_nc.plot_netmapdata() will be deprecated, since there is an xarray alternative for multidomain FM files (xugrid). Check the example scripts for how to use it'))

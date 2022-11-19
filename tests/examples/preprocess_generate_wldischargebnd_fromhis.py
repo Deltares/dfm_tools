@@ -11,8 +11,13 @@ import matplotlib.pyplot as plt
 plt.close('all')
 import dfm_tools as dfmt
 
-from hydrolib.core.io.bc.models import ForcingModel
-#from hydrolib.core.io.ext.models import Boundary, ExtModel
+try: #0.3.1 release
+    from hydrolib.core.io.bc.models import ForcingModel
+    #from hydrolib.core.io.ext.models import Boundary, ExtModel
+except: #main branch and next release #TODO: move to easy imports after https://github.com/Deltares/HYDROLIB-core/issues/410
+    from hydrolib.core.io.dflowfm.bc.models import ForcingModel
+    #from hydrolib.core.io.dflowfm.ext.models import Boundary, ExtModel
+
 
 plotting = True
 
@@ -27,7 +32,7 @@ map_wl = dict(zip(station_wl, bc_wl))
 dir_input = r'p:\11206813-006-kpp2021_rmm-2d\C_Work\07_Baseline\baseline-rmm_vzm-beno19_6-v1\models\dflowfm\dflowfm2d-rmm_vzm-beno19_6-v1b\computations\test'
 dir_output = '.'
 
-sims = ['tba','tbb','tbc','tbd','tbe','tbf']
+sims = ['tba']#,'tbb','tbc','tbd','tbe','tbf']
 
 for sim in sims: 
     file_bc_output = os.path.join(dir_output,f'{sim}_bnd.bc')
