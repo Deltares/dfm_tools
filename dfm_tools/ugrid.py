@@ -131,6 +131,7 @@ class UGrid:
 
 
     def polygon_intersect(self, line_array, optimize_dist=False, calcdist_fromlatlon=False):
+        raise DeprecationWarning('ugrid.polygon_intersect() is deprecated. Cross sections are now computed with xugrid/xarray objects as input like this (example in postprocessing notebook):\n    data_xr_mapmerged = dfmt.open_partitioned_dataset(file_nc_map)\n    intersect_pd = dfmt.polygon_intersect(data_xr_mapmerged, line_array)\n    crs_verts, crs_plotdata = dfmt.get_xzcoords_onintersection(data_xr_mapmerged, varname="mesh2d_sa1", intersect_pd=intersect_pd, timestep=3)\n    fig, ax = plt.subplots()\n    pc = dfmt.plot_netmapdata(crs_verts, values=crs_plotdata, ax=ax)')
         import numpy as np
         from matplotlib.path import Path
         import shapely #separate import, since sometimes this works, while import shapely.geometry fails
