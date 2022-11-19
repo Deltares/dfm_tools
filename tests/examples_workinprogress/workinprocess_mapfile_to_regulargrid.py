@@ -43,8 +43,8 @@ outname = os.path.basename(file_nc).replace('.nc','_regular.nc')
 file_nc : string, is the path to the 0'th partition of the DFlowFM map file output (use star for xugrid)
 nx : integer, is the number of points in the x-direction (longitude) you wish to interpolate to. The points are evenly spaced.
 ny : integer, is the number of points in the y-direction (latitude) you wish to interpolate to. The points are evenly spaced.
-times_idx : numpy array or 'all', an array of times you want to do the interpolation for
-layers_idx : numpy array, 'all', or integer. The number of layers you wish to include. The script detect if there are layers or not. 
+times_idx : numpy array or None or an array of times you want to do the interpolation for
+layers_idx : numpy array, None or integer. The number of layers you wish to include. The script detect if there are layers or not. 
 """
 
 if not os.path.exists(dir_output):
@@ -161,7 +161,7 @@ for varname in varname_list:
         data_xr_out[varname].isel(time=0).plot(ax=ax,x='longitude',y='latitude',alpha=0.8,edgecolor='face')
     #source = ctx.providers.Esri.WorldImagery # ctx.providers.Stamen.Terrain (default), ctx.providers.CartoDB.Voyager, ctx.providers.NASAGIBS.ViirsEarthAtNight2012, ctx.providers.Stamen.Watercolor
     #ctx.add_basemap(ax, attribution=False, crs='epsg:4326', source=source)
-        
+    fig.savefig(os.path.join(dir_output, f'{model}_{varname}'))
 data_xr_out.to_netcdf(file_nc_out)
 #data_xr_out.close()
 
