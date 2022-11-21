@@ -7,7 +7,7 @@ dependencies:
   - shapely
   - cartopy
   - pyepsg
-  - geopandas
+  #- geopandas #makes installation super slow
   - contextily
   - xarray
   - dask
