@@ -1,5 +1,6 @@
 [![generate-documentation](https://github.com/Deltares/dfm_tools/actions/workflows/generate-documentation.yml/badge.svg)](https://github.com/Deltares/dfm_tools/actions/workflows/generate-documentation.yml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Deltares_dfm_tools&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Deltares_dfm_tools)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/Deltares/dfm_tools/HEAD)
 
 dfm_tools
 =========
@@ -11,7 +12,7 @@ Information and examples
 - [pdf](https://nbviewer.org/github/Deltares/dfm_tools/raw/pptx/docs/dfm_tools.pdf?flush_cache=true) with dfm_tools information, features and examples
 - [online documentation](https://htmlpreview.github.io/?https://github.com/Deltares/dfm_tools/blob/master/docs/dfm_tools/index.html) generated from docstrings
 - [jupyter notebooks](https://github.com/Deltares/dfm_tools/blob/master/notebooks) with example code
-- [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/Deltares/dfm_tools/HEAD) to run these notebooks interactively (loading takes a while)
+- [use binder](https://mybinder.org/v2/gh/Deltares/dfm_tools/HEAD) to run these notebooks interactively (loading takes a while)
 - [github folder](https://github.com/Deltares/dfm_tools/tree/master/tests/examples) with more example scripts
 
 
