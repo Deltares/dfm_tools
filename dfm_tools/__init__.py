@@ -19,3 +19,11 @@ from dfm_tools.xarray_helpers import *
 
 import warnings
 warnings.filterwarnings('always',category=DeprecationWarning)
+
+#add plotmethod to xugrid grid object
+import xugrid as xr
+def plot(self,**kwargs):
+    xr.plot.line(self,**kwargs) #uds.ugrid.grid
+    pass
+ug2d = xr.ugrid.ugrid2d.Ugrid2d
+ug2d.plot = plot

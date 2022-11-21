@@ -116,7 +116,7 @@ for file_nc in file_nc_list:
     
     print('plot grid from mapdata') #use random variable and plot line to get grid (alternatively: xr.plot.line(data_frommap_merged.ugrid.grid.to_dataset()), but that crashes)
     fig, ax = plt.subplots()
-    pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot.line(edgecolor='crimson', linewidth=0.5,add_colorbar=False)
+    pc = data_frommap_merged.ugrid.grid.plot(edgecolor='crimson', linewidth=0.5)
     ax.set_xlabel('x')
     ax.set_ylabel('y')
     ax.set_aspect('equal')
