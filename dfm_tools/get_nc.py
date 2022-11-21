@@ -570,14 +570,13 @@ def get_xzcoords_onintersection(data_frommap_merged, intersect_pd, timestep=None
         raise Exception('supplying no varname is not supported anymore') #TODO: support again?
         #return crs_verts
     """
-    #define dataset (flat)
-    #crs_plotdata_clean = xr.Dataset()
-    #crs_plotdata_clean[varname] = xr.DataArray(crs_plotdata, dims=('mesh2d_nFaces'))
-    if dimn_layer in data_frommap_merged_sel.dims: #TODO: creating large chunks for Grevelingen (and probably DCSM)
-        crs_plotdata_clean = data_frommap_merged_sel.ugrid.obj.rename({'mesh2d_nFaces':'mesh2d_nFaces_topview'}) #TODO: other dimname than mesh2d_nFaces should be supported (like mesh2d_nSides)
-        crs_plotdata_clean = crs_plotdata_clean.stack(mesh2d_nFaces=[dimn_layer,'mesh2d_nFaces_topview'])
-    else:
-        crs_plotdata_clean = data_frommap_merged_sel.ugrid.obj
+    #define dataset
+    crs_plotdata_clean = data_frommap_merged_sel.ugrid.obj #TODO: this dataset still contains way to many edges/nodes
+    if dimn_layer in crs_plotdata_clean.dims:
+        crs_plotdata_clean = crs_plotdata_clean.rename({'mesh2d_nFaces':'mesh2d_nFaces_topview'}) #TODO: other dimname than mesh2d_nFaces should be supported (like mesh2d_nSides)
+        import dask
+        with dask.config.set(**{'array.slicing.split_large_chunks': True}): #to avoid large chunks for Grevelingen
+            crs_plotdata_clean = crs_plotdata_clean.stack(mesh2d_nFaces=[dimn_layer,'mesh2d_nFaces_topview'])
     
     #define grid
     shape_crs_grid = crs_verts[:,:,0].shape
@@ -597,12 +596,12 @@ def polyline_mapslice(data_frommap_merged, line_array, timestep, calcdist_fromla
     intersect_pd = polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=calcdist_fromlatlon)
     #derive vertices from cross section (distance from first point)
     xr_crs_ugrid = get_xzcoords_onintersection(data_frommap_merged, intersect_pd=intersect_pd, timestep=timestep)
-    return xr_crs_ugrid
+    return xr_crs_ugrid 
 
 
 def get_netdata(file_nc, multipart=None):
 
-    warnings.warn(DeprecationWarning('dfm_tools.get_nc.get_netdata() will be deprecated, since there is an xarray alternative for multidomain FM files (xugrid). Open it like this and use xarray  sel/isel (example in postprocessing notebook):\n    data_xr_mapmerged = dfmt.open_partitioned_dataset(file_nc_map)'))
+    warnings.warn(DeprecationWarning('dfm_tools.get_nc.get_netdata() will be deprecated, since there is an xarray alternative for multidomain FM files (xugrid). Open it like this and use xarray sel/isel (example in postprocessing notebook):\n    data_xr_mapmerged = dfmt.open_partitioned_dataset(file_nc_map)'))
     file_ncs = get_ncfilelist(file_nc, multipart)
     #get all data
     num_nodes = [0]
@@ -684,11 +683,11 @@ def get_netdata(file_nc, multipart=None):
     return ugrid_all
 
 
-def plot_netmapdata(verts, values=None, ax=None, **kwargs): #TODO: only used for intersect plot, deprecate?
+def plot_netmapdata(verts, values=None, ax=None, **kwargs):
     #https://stackoverflow.com/questions/52202014/how-can-i-plot-2d-fem-results-using-matplotlib
     #https://stackoverflow.com/questions/49640311/matplotlib-unstructered-quadrilaterals-instead-of-triangles
-    warnings.warn(PendingDeprecationWarning('dfm_tools.get_nc.plot_netmapdata() will be deprecated, since there is an xarray alternative for multidomain FM files (xugrid). Check the example scripts for how to use it'))
-    
+    warnings.warn(DeprecationWarning('dfm_tools.get_nc.plot_netmapdata() will be deprecated, since there is an xarray alternative. Like this (example in postprocessing notebook):\n   xr_crs_ugrid = dfmt.polyline_mapslice(data_frommap_merged, line_array, timestep=timestep)\n    fig, ax = plt.subplots()\n    xr_crs_ugrid["mesh2d_sa1"].ugrid.plot.line()'))
+
     if not values is None:
         #squeeze values (remove dimensions with length 1)
         values = np.squeeze(values)
