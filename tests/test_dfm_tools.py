@@ -237,7 +237,7 @@ def test_polygon_intersect(): #TODO: update to new xarray method
        [2128.78024194, 3266.58266129]])
     
     #intersect function, find crossed cell numbers (gridnos) and coordinates of intersection (2 per crossed cell)
-    intersect_pd = dfmt.polygon_intersect(data_merged, line_array, optimize_dist=False)
+    intersect_pd = dfmt.polygon_intersect(data_merged, line_array)
     intersect_pd = intersect_pd.sort_index()
     expected_intersectgridnos = np.array([ 91, 146, 146, 147, 147, 201, 201, 202], dtype=np.int64)
     expected_intersectcoords = np.array([[2084.67741935, 3353.02419355, 2144.15041424, 3337.08297842],

@@ -107,6 +107,8 @@ for file_nc in file_nc_list:
     else:
         raise Exception('ERROR: no settings provided for this mapfile')
     
+    #TODO: add .where() (masking part of data) and .sel() example (deleting part of data, this currently fails but xugrid issue will be created)
+    
     data_frommap_merged = dfmt.open_partitioned_dataset(file_nc.replace('_0000_','_0*_')) #TODO: make starred default, but not supported by older code
     
     #get ugrid data, vars informatin and grid units (latter from bedlevel coordinates)
@@ -150,16 +152,11 @@ for file_nc in file_nc_list:
         fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_flowelem_bl_withbasemap'))
 
     
-    print('calculating and plotting cross section') #TODO: put crsdata in xarray ugrid or something more efficient?
+    print('calculating and plotting cross section')
     runtime_tstart = dt.datetime.now() #start timer
-    #intersect function, find crossed cell numbers (gridnos) and coordinates of intersection (2 per crossed cell)
-    intersect_pd = dfmt.polygon_intersect(data_frommap_merged, line_array, optimize_dist=False, calcdist_fromlatlon=calcdist_fromlatlon)
-    #derive vertices from cross section (distance from first point)
-    crs_verts, crs_plotdata = dfmt.get_xzcoords_onintersection(data_frommap_merged, varname='mesh2d_sa1', intersect_pd=intersect_pd, timestep=timestep)
+    xr_crs_ugrid = dfmt.polyline_mapslice(data_frommap_merged, line_array, timestep=timestep)
     fig, ax = plt.subplots()
-    pc = dfmt.plot_netmapdata(crs_verts, values=crs_plotdata, ax=ax, cmap='jet')#, linewidth=0.5, edgecolor='k')
-    fig.colorbar(pc, ax=ax)
-    ax.set_ylim(val_ylim)
+    xr_crs_ugrid['mesh2d_sa1'].ugrid.plot(cmap='jet')
     plt.savefig(os.path.join(dir_output,f'{basename}_crossect'))
     runtime_timedelta = (dt.datetime.now()-runtime_tstart)
     print(f'calculating and plotting cross section finished in {runtime_timedelta}')

@@ -38,6 +38,7 @@ import datetime as dt
 import pandas as pd
 from netCDF4 import Dataset
 import xarray as xr
+import xugrid as xu
 import matplotlib.pyplot as plt
 import matplotlib.collections
 
@@ -378,7 +379,7 @@ def calc_dist_haversine(lon1,lon2,lat1,lat2): # only used in dfm_tools.ugrid
     return distance
 
 
-def polygon_intersect(data_frommap_merged, line_array, optimize_dist=False, calcdist_fromlatlon=False):
+def polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=None):
     #data_frommap_merged: xugrid dataset (contains ds and grid)
     #TODO: remove hardcoding
     import numpy as np
@@ -386,6 +387,16 @@ def polygon_intersect(data_frommap_merged, line_array, optimize_dist=False, calc
     import shapely #separate import, since sometimes this works, while import shapely.geometry fails
     from shapely.geometry import LineString, Polygon, MultiLineString, Point
     from dfm_tools.get_nc import calc_dist_pythagoras, calc_dist_haversine
+
+    if calcdist_fromlatlon is None:
+        #auto determine if cartesian/sperical
+        if hasattr(data_frommap_merged.ugrid.obj,'projected_coordinate_system'):
+            calcdist_fromlatlon = False
+        elif hasattr(data_frommap_merged.ugrid.obj,'wgs84'):
+            calcdist_fromlatlon = True
+        else:
+            raise Exception('To auto determine calcdist_fromlatlon, a variable "projected_coordinate_system" or "wgs84" is required, please provide calcdist_fromlatlon=True/False yourself.')
+
 
     print('defining celinlinebox')
     
@@ -412,38 +423,12 @@ def polygon_intersect(data_frommap_merged, line_array, optimize_dist=False, calc
     verts_ymax = np.nanmax(face_nnodecoords_y.to_numpy(),axis=1)
     verts_ymin = np.nanmin(face_nnodecoords_y.to_numpy(),axis=1)
     
-    if not optimize_dist: #TODO: replace this with xr.sel() once it works for xugrid
-        cellinlinebox_all_bool = (((np.min(line_array[:,0]) <= verts_xmax) &
-                                   (np.max(line_array[:,0]) >= verts_xmin)) &
-                                  ((np.min(line_array[:,1]) <= verts_ymax) & 
-                                   (np.max(line_array[:,1]) >= verts_ymin))
-                                  )
-    elif type(optimize_dist) in [int,float]: #not properly tested and documented
-        #calculate angles wrt x axis
-        angles_wrtx = []
-        nlinecoords = line_array.shape[0]
-        for iL in range(nlinecoords-1):
-            dx = line_array[iL+1,0] - line_array[iL,0]
-            dy = line_array[iL+1,1] - line_array[iL,1]
-            angles_wrtx.append(np.rad2deg(np.arctan2(dy,dx)))
-        angles_toprev = np.concatenate([[90],np.diff(angles_wrtx),[90]])
-        angles_wrtx_ext = np.concatenate([[angles_wrtx[0]-90],np.array(angles_wrtx),[angles_wrtx[-1]+90]])
-        angtot_wrtx = angles_wrtx_ext[:-1] + 0.5*(180+angles_toprev)
-        #distance over xy-axis from original points
-        dxynewpoints = optimize_dist * np.array([np.cos(np.deg2rad(angtot_wrtx)),np.sin(np.deg2rad(angtot_wrtx))]).T
-        newpoints1 = line_array+dxynewpoints
-        newpoints2 = line_array-dxynewpoints
-        pol_inpol = np.concatenate([newpoints1, np.flip(newpoints2,axis=0)])
-        pol_inpol_path = Path(pol_inpol)
-        bool_all = []
-        for iC in range(ugrid_all_verts.shape[1]):
-            data_arr_ic = ugrid_all_verts[:,iC,:]
-            test = pol_inpol_path.contains_points(data_arr_ic)
-            bool_all.append(test)
-        test_all = np.array(bool_all)
-        cellinlinebox_all_bool = (test_all==True).any(axis=0)
-    else:
-        raise Exception('ERROR: invalid type for optimize_dist argument')
+    #TODO: replace this with xr.sel() once it works for xugrid
+    cellinlinebox_all_bool = (((np.min(line_array[:,0]) <= verts_xmax) &
+                               (np.max(line_array[:,0]) >= verts_xmin)) &
+                              ((np.min(line_array[:,1]) <= verts_ymax) & 
+                               (np.max(line_array[:,1]) >= verts_ymin))
+                              )
     
     intersect_coords = np.empty((0,4))
     intersect_gridnos = np.empty((0),dtype=int) #has to be numbers, since a boolean is differently ordered
@@ -523,10 +508,10 @@ def polygon_intersect(data_frommap_merged, line_array, optimize_dist=False, calc
     return intersect_pd
 
 
-def get_xzcoords_onintersection(data_frommap_merged, intersect_pd, timestep=None, varname=None):
+def get_xzcoords_onintersection(data_frommap_merged, intersect_pd, timestep=None):#, varname=None):
     #TODO: no hardcoding of variable names?
     #check if all necessary arguments are provided
-    if timestep is None:
+    if timestep is None: #TODO: maybe make time dependent grid?
         raise Exception('ERROR: argument timestep not provided, this is necessary to retrieve correct waterlevel or fullgrid output')
     
     varkeys_list = list(data_frommap_merged.variables.keys())
@@ -540,7 +525,8 @@ def get_xzcoords_onintersection(data_frommap_merged, intersect_pd, timestep=None
     data_frommap_merged_sel = data_frommap_merged.isel(time=timestep,mesh2d_nFaces=intersect_gridnos)
     if 'mesh2d_flowelem_zw' in varkeys_list:
         print('layertype: fullgrid output')
-        zvals_interface = data_frommap_merged_sel['mesh2d_flowelem_zw'].to_numpy().T # transpose to make in line with 2D sigma dataset
+        zvals_interface_filled = data_frommap_merged_sel['mesh2d_flowelem_zw'].bfill(dim='mesh2d_nInterfaces') #fill nan values (below bed) with equal values
+        zvals_interface = zvals_interface_filled.to_numpy().T # transpose to make in line with 2D sigma dataset
     else: #no full grid output, so reconstruct
         data_frommap_wl3_sel = data_frommap_merged_sel['mesh2d_s1'].to_numpy()
         data_frommap_bl_sel = data_frommap_merged_sel['mesh2d_flowelem_bl'].to_numpy()
@@ -573,20 +559,38 @@ def get_xzcoords_onintersection(data_frommap_merged, intersect_pd, timestep=None
     crs_verts_z_all = np.ma.array([zvals_interface[1:,:].ravel(),zvals_interface[1:,:].ravel(),zvals_interface[:-1,:].ravel(),zvals_interface[:-1,:].ravel()]).T[:,:,np.newaxis]
     crs_verts = np.ma.concatenate([crs_verts_x_all, crs_verts_z_all], axis=2)
     
-    if varname is not None: #retrieve data for varname and return
-        data_frommap_selvar = data_frommap_merged_sel[varname]
-        if dimn_layer in data_frommap_selvar.dims:
-            crs_plotdata = data_frommap_selvar.to_numpy().T.flatten()
-        else: #for 2D models, no layers
-            crs_plotdata = data_frommap_selvar.to_numpy()
-        return crs_verts, crs_plotdata
-    else:
-        return crs_verts
+    #define dataset
+    crs_plotdata_clean = data_frommap_merged_sel.ugrid.obj #TODO: this dataset still contains way to many edges/nodes (dropping dims raises error)
+    if dimn_layer in crs_plotdata_clean.dims:
+        crs_plotdata_clean = crs_plotdata_clean.rename({'mesh2d_nFaces':'mesh2d_nFaces_topview'}) #TODO: other dimname than mesh2d_nFaces should be supported (like mesh2d_nSides)
+        import dask
+        with dask.config.set(**{'array.slicing.split_large_chunks': True}): #to avoid large chunks for Grevelingen
+            crs_plotdata_clean = crs_plotdata_clean.stack(mesh2d_nFaces=[dimn_layer,'mesh2d_nFaces_topview'])
+    
+    #define grid
+    shape_crs_grid = crs_verts[:,:,0].shape
+    shape_crs_flat = crs_verts[:,:,0].ravel().shape
+    xr_crs_grid = xu.Ugrid2d(node_x=crs_verts[:,:,0].ravel(),
+                             node_y=crs_verts[:,:,1].ravel(),
+                             fill_value=-1,
+                             face_node_connectivity=np.arange(shape_crs_flat[0]).reshape(shape_crs_grid),
+                             )
+    #combine into xugrid
+    xr_crs_ugrid = xu.UgridDataset(crs_plotdata_clean, grids=[xr_crs_grid])
+    return xr_crs_ugrid
+
+
+def polyline_mapslice(data_frommap_merged, line_array, timestep, calcdist_fromlatlon=None): #TODO: merge this into one function
+    #intersect function, find crossed cell numbers (gridnos) and coordinates of intersection (2 per crossed cell)
+    intersect_pd = polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=calcdist_fromlatlon)
+    #derive vertices from cross section (distance from first point)
+    xr_crs_ugrid = get_xzcoords_onintersection(data_frommap_merged, intersect_pd=intersect_pd, timestep=timestep)
+    return xr_crs_ugrid 
 
 
 def get_netdata(file_nc, multipart=None):
 
-    warnings.warn(DeprecationWarning('dfm_tools.get_nc.get_netdata() will be deprecated, since there is an xarray alternative for multidomain FM files (xugrid). Open it like this and use xarray  sel/isel (example in postprocessing notebook):\n    data_xr_mapmerged = dfmt.open_partitioned_dataset(file_nc_map)'))
+    warnings.warn(DeprecationWarning('dfm_tools.get_nc.get_netdata() will be deprecated, since there is an xarray alternative for multidomain FM files (xugrid). Open it like this and use xarray sel/isel (example in postprocessing notebook):\n    data_xr_mapmerged = dfmt.open_partitioned_dataset(file_nc_map)'))
     file_ncs = get_ncfilelist(file_nc, multipart)
     #get all data
     num_nodes = [0]
@@ -668,11 +672,11 @@ def get_netdata(file_nc, multipart=None):
     return ugrid_all
 
 
-def plot_netmapdata(verts, values=None, ax=None, **kwargs): #TODO: only used for intersect plot, deprecate?
+def plot_netmapdata(verts, values=None, ax=None, **kwargs):
     #https://stackoverflow.com/questions/52202014/how-can-i-plot-2d-fem-results-using-matplotlib
     #https://stackoverflow.com/questions/49640311/matplotlib-unstructered-quadrilaterals-instead-of-triangles
-    warnings.warn(PendingDeprecationWarning('dfm_tools.get_nc.plot_netmapdata() will be deprecated, since there is an xarray alternative for multidomain FM files (xugrid). Check the example scripts for how to use it'))
-    
+    warnings.warn(DeprecationWarning('dfm_tools.get_nc.plot_netmapdata() will be deprecated, since there is an xarray alternative. Like this (example in postprocessing notebook):\n   xr_crs_ugrid = dfmt.polyline_mapslice(data_frommap_merged, line_array, timestep=timestep)\n    fig, ax = plt.subplots()\n    xr_crs_ugrid["mesh2d_sa1"].ugrid.plot.line()'))
+
     if not values is None:
         #squeeze values (remove dimensions with length 1)
         values = np.squeeze(values)
