@@ -22,7 +22,7 @@ warnings.filterwarnings('always',category=DeprecationWarning)
 
 #add plotmethod to xugrid grid object
 import xugrid as xr
-def plot(self,**kwargs):
+def plot(self,**kwargs): #TODO: maybe add to xugrid directly
     xr.plot.line(self,**kwargs) #uds.ugrid.grid
     pass
 ug2d = xr.ugrid.ugrid2d.Ugrid2d

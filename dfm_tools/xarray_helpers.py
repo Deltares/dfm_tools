@@ -165,7 +165,7 @@ def open_partitioned_dataset(file_nc, only_faces=False, chunks={'time':1}): #chu
             else:
                 raise Exception('no domain variable found, while there are multiple partition files supplied, this is not expected')
         da_domainno = part[varn_domain]
-        try: #derive domainno from filename #TODO: maybe domain no is available in netcdf file?
+        try: #derive domainno from filename #TODO: this fails for restarts since it is _0000_20200101_120000_rst.nc (still the case?)
             part_domainno = int(part.encoding['source'][-11:-7])
         except: #derive domainno via domainno variable
             print('getting domainno from filename failed, now trying with bincount (might be costly)')
@@ -264,7 +264,7 @@ def open_partitioned_dataset(file_nc, only_faces=False, chunks={'time':1}): #chu
     
     ds_merged = ds_merged.rename({facedim: merged_grid.face_dimension,
                                   nodedim: merged_grid.node_dimension,
-                                  edgedim: merged_grid.edge_dimension}) #TODO: why is this necessary? >> xugrid issue is created (does not support other dimnames)
+                                  edgedim: merged_grid.edge_dimension}) #TODO: xugrid does not support other dimnames, xugrid issue is created
     ds_merged_xu = xu.UgridDataset(ds_merged, grids=[merged_grid])
     print(f'>> open_partitioned_dataset total: {(dt.datetime.now()-dtstart_all).total_seconds():.2f} sec')
     return ds_merged_xu
