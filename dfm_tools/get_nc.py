@@ -559,19 +559,8 @@ def get_xzcoords_onintersection(data_frommap_merged, intersect_pd, timestep=None
     crs_verts_z_all = np.ma.array([zvals_interface[1:,:].ravel(),zvals_interface[1:,:].ravel(),zvals_interface[:-1,:].ravel(),zvals_interface[:-1,:].ravel()]).T[:,:,np.newaxis]
     crs_verts = np.ma.concatenate([crs_verts_x_all, crs_verts_z_all], axis=2)
     
-    """if varname is not None: #retrieve data for varname and return
-        data_frommap_selvar = data_frommap_merged_sel[varname]
-        if dimn_layer in data_frommap_selvar.dims:
-            crs_plotdata = data_frommap_selvar.to_numpy().T.flatten()
-        else: #for 2D models, no layers
-            crs_plotdata = data_frommap_selvar.to_numpy()
-        #return crs_verts, crs_plotdata
-    else:
-        raise Exception('supplying no varname is not supported anymore') #TODO: support again?
-        #return crs_verts
-    """
     #define dataset
-    crs_plotdata_clean = data_frommap_merged_sel.ugrid.obj #TODO: this dataset still contains way to many edges/nodes
+    crs_plotdata_clean = data_frommap_merged_sel.ugrid.obj #TODO: this dataset still contains way to many edges/nodes (dropping dims raises error)
     if dimn_layer in crs_plotdata_clean.dims:
         crs_plotdata_clean = crs_plotdata_clean.rename({'mesh2d_nFaces':'mesh2d_nFaces_topview'}) #TODO: other dimname than mesh2d_nFaces should be supported (like mesh2d_nSides)
         import dask
