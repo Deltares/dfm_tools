@@ -5,12 +5,12 @@ Create python environment dfm_tools_devenv and install dfm_tools in developer mo
 
 - download and install Anaconda 64 bit Python 3.7 (or higher) from https://www.anaconda.com/distribution/#download-section (miniconda should also be sufficient, but this is not yet tested). Install it with the recommended settings, but check 'add Anaconda3 to my PATH environment variable' if you want to use conda from the windows command prompt instead of anaconda prompt
 - download git from https://git-scm.com/download/win, install with default settings
-- create a branch called work_yourname on https://github.com/openearth/dfm_tools
+- create a branch called work_yourname on https://github.com/Deltares/dfm_tools
 - open git bash window where you want to clone the dfm_tools github repository (e.g. C:\\DATA\\)
 - optional: ``git config --global user.email [emailaddress]``
 - optional: ``git config --global user.name [username]``
 - optional: ``git remote update origin --prune`` (update local branch list)
-- ``git clone -b work_yourname https://github.com/openearth/dfm_tools dfm_tools`` (repo gets cloned in C:\\DATA\\dfm_tools, this is a checkout of the work_yourname branch)
+- ``git clone -b work_yourname https://github.com/Deltares/dfm_tools dfm_tools`` (repo gets cloned in C:\\DATA\\dfm_tools, this is a checkout of the work_yourname branch)
 - update your branch if main has been updated: add+commit+push everything in branch first, ``git checkout main``, ``git pull``, ``git checkout development``, ``git merge main -m ''``, ``git push``
 - open anaconda prompt and navigate to dfm_tools local folder, e.g. ``C:\\DATA\\dfm_tools``
 - ``conda env create -f environment.yml`` (creates an environment called dfm_tools_devenv) TODO: yml now contains almost the same as requirements.txt, with additionally pdoc3/pytest/bump2version. Update this manual according to this
@@ -43,7 +43,7 @@ Running the testbank:
 - ``pytest -m unittest``
 - ``pytest -m systemtest``
 - ``pytest -m "not acceptance"``
-- ``pytest -m acceptance``(runs the acceptance tests, which are the scripts in [the examples folder](https://github.com/openearth/dfm_tools/tree/master/tests/examples))
+- ``pytest -m acceptance``(runs the acceptance tests, which are the scripts in [the examples folder](https://github.com/Deltares/dfm_tools/tree/main/tests/examples))
 - ``pytest -m "not slow"``
 - ``pytest tests\test_get_nc.py::test_getplotmapWAQOS``
 - the following arguments are automatically provided via pytest.ini: ``-v --tb=short``, add ``--cov=dfm_tools`` for a coverage summary
@@ -69,7 +69,7 @@ Increasing the dfm_tools version number:
 - optional?: ``conda activate dfm_tools_devenv``
 - ``bumpversion major`` or ``bumpversion minor`` or ``bumpversion patch`` (changes version numbers in files and commits changes)
 - push this change in version number with ``git push`` (from git bash window or cmd also ok?)
-- request merging of your branch on https://github.com/openearth/dfm_tools/branches
+- request merging of your branch on https://github.com/Deltares/dfm_tools/branches
 
 More info (was in readme previously):
 
@@ -90,7 +90,7 @@ More info (was in readme previously):
 - to update dfm_tools:
 	- open anaconda prompt
 	- ``conda activate dfm_tools_env``
-	- ``python -m pip install --upgrade git+https://github.com/openearth/dfm_tools.git``
+	- ``python -m pip install --upgrade git+https://github.com/Deltares/dfm_tools.git``
 
 
 Install on google colab:
@@ -107,6 +107,6 @@ import sys
 print("User Current Version:-", sys.version)
 !conda install -c conda-forge git shapely cartopy pyepsg contextily xarray dask netcdf4 bottleneck cdsapi pydap -y
 #!conda install -c conda-forge geopandas -y
-!python -m pip install git+https://github.com/openearth/dfm_tools
+!python -m pip install git+https://github.com/Deltares/dfm_tools
 
 All works, except for dfm_tools, somehow not installed even tough it is installed
