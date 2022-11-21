@@ -108,6 +108,7 @@ for file_nc in file_nc_list:
         raise Exception('ERROR: no settings provided for this mapfile')
     
     #TODO: add .where() (masking part of data) and .sel() example (deleting part of data, this currently fails but xugrid issue will be created)
+    #TODO: add fancier plots: https://deltares.github.io/xugrid/examples/plotting.html
     
     data_frommap_merged = dfmt.open_partitioned_dataset(file_nc.replace('_0000_','_0*_')) #TODO: make starred default, but not supported by older code
     

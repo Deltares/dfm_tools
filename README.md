@@ -10,10 +10,10 @@ A Python package for pre- and postprocessing D-FlowFM model input and output fil
 Information and examples
 --------
 - [pdf](https://nbviewer.org/github/Deltares/dfm_tools/raw/pptx/docs/dfm_tools.pdf?flush_cache=true) with dfm_tools information, features and examples
-- [online documentation](https://htmlpreview.github.io/?https://github.com/Deltares/dfm_tools/blob/master/docs/dfm_tools/index.html) generated from docstrings
-- [jupyter notebooks](https://github.com/Deltares/dfm_tools/blob/master/notebooks) with example code
+- [online documentation](https://htmlpreview.github.io/?https://github.com/Deltares/dfm_tools/blob/main/docs/dfm_tools/index.html) generated from docstrings
+- [jupyter notebooks](https://github.com/Deltares/dfm_tools/blob/main/notebooks) with example code
 - [use binder](https://mybinder.org/v2/gh/Deltares/dfm_tools/HEAD) to run these notebooks interactively (loading takes a while)
-- [github folder](https://github.com/Deltares/dfm_tools/tree/master/tests/examples) with more example scripts
+- [github folder](https://github.com/Deltares/dfm_tools/tree/main/tests/examples) with more example scripts
 
 
 Installation

@@ -4,7 +4,7 @@
 
 __author__ = """Jelmer Veenstra"""
 __email__ = 'jelmer.veenstra@deltares.nl'
-__version__ = '0.8.7'
+__version__ = '0.8.8'
 
 from dfm_tools.download import *
 from dfm_tools.get_nc import *
@@ -22,7 +22,7 @@ warnings.filterwarnings('always',category=DeprecationWarning)
 
 #add plotmethod to xugrid grid object
 import xugrid as xr
-def plot(self,**kwargs):
+def plot(self,**kwargs): #TODO: maybe add to xugrid directly
     xr.plot.line(self,**kwargs) #uds.ugrid.grid
     pass
 ug2d = xr.ugrid.ugrid2d.Ugrid2d
