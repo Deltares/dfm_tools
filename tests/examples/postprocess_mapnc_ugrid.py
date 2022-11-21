@@ -157,6 +157,7 @@ for file_nc in file_nc_list:
     xr_crs_ugrid = dfmt.polyline_mapslice(data_frommap_merged, line_array, timestep=timestep)
     fig, ax = plt.subplots()
     xr_crs_ugrid['mesh2d_sa1'].ugrid.plot(cmap='jet')
+    fig.tight_layout()
     plt.savefig(os.path.join(dir_output,f'{basename}_crossect'))
     runtime_timedelta = (dt.datetime.now()-runtime_tstart)
     print(f'calculating and plotting cross section finished in {runtime_timedelta}')
