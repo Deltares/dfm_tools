@@ -107,6 +107,8 @@ for file_nc in file_nc_list:
     else:
         raise Exception('ERROR: no settings provided for this mapfile')
     
+    #TODO: add .where() (masking part of data) and .sel() example (deleting part of data, this currently fails but xugrid issue will be created)
+    
     data_frommap_merged = dfmt.open_partitioned_dataset(file_nc.replace('_0000_','_0*_')) #TODO: make starred default, but not supported by older code
     
     #get ugrid data, vars informatin and grid units (latter from bedlevel coordinates)
@@ -153,7 +155,7 @@ for file_nc in file_nc_list:
     print('calculating and plotting cross section') #TODO: put crsdata in xarray ugrid or something more efficient?
     runtime_tstart = dt.datetime.now() #start timer
     #intersect function, find crossed cell numbers (gridnos) and coordinates of intersection (2 per crossed cell)
-    intersect_pd = dfmt.polygon_intersect(data_frommap_merged, line_array, optimize_dist=False, calcdist_fromlatlon=calcdist_fromlatlon)
+    intersect_pd = dfmt.polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=calcdist_fromlatlon)
     #derive vertices from cross section (distance from first point)
     crs_verts, crs_plotdata = dfmt.get_xzcoords_onintersection(data_frommap_merged, varname='mesh2d_sa1', intersect_pd=intersect_pd, timestep=timestep)
     fig, ax = plt.subplots()
