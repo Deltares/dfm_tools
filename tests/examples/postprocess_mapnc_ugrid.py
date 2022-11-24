@@ -29,7 +29,6 @@ for file_nc in file_nc_list:
     if 'cb_3d_map' in file_nc:
         timestep = 72
         layno = 5
-        calcdist_fromlatlon = None
         line_array = np.array([[ 185.08667065, 2461.11775254],
                                [2934.63837418, 1134.16019127]])
         line_array = np.array([[ 104.15421399, 2042.7077107 ],
@@ -46,7 +45,6 @@ for file_nc in file_nc_list:
     elif 'Grevelingen' in file_nc:
         timestep = 3
         layno = 33 #35 is top
-        calcdist_fromlatlon = None
         line_array = np.array([[ 56267.59146475, 415644.67447155],
                                [ 64053.73427496, 419407.58239502]])
         line_array = np.array([[ 53181.96942503, 424270.83361629],
@@ -62,7 +60,6 @@ for file_nc in file_nc_list:
     elif 'DCSM-FM_0_5nm' in file_nc:
         timestep = 365
         layno = 45
-        calcdist_fromlatlon = True
         #provide xy order, so lonlat
         line_array = np.array([[ 0.97452229, 51.13407643],
                                [ 1.89808917, 50.75191083]])
@@ -78,7 +75,6 @@ for file_nc in file_nc_list:
     elif 'RMM_dflowfm' in file_nc:
         timestep = 365 #50
         layno = None
-        calcdist_fromlatlon = None
         #provide xy order, so lonlat
         line_array = np.array([[ 65655.72699961, 444092.54776465],
                                [ 78880.42720631, 435019.78832052]])
