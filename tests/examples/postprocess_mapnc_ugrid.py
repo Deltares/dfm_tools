@@ -151,6 +151,7 @@ for file_nc in file_nc_list:
     
     #filter for dry cells
     bool_drycells = data_frommap_merged['mesh2d_s1']==data_frommap_merged['mesh2d_flowelem_bl']
+    #bool_drycells = data_frommap_merged['mesh2d_s1'].std(dim='time')<0.01 #TODO: this might be better but is slow
     data_frommap_merged['mesh2d_s1_filt'] = data_frommap_merged['mesh2d_s1'].where(~bool_drycells) #TODO: would be better to apply it to mesh2d_s1 directly (but nan values not allowed for cross section plot) or even to entire dataset (but results in extra time/faces dimensions for eg mesh2d_interface_z)
     print('plot grid and values from mapdata (waterlevel on layer, 2dim, on cell centers)')
     fig, ax = plt.subplots()
