@@ -585,7 +585,7 @@ def polyline_mapslice(data_frommap_merged, line_array, timestep, calcdist_fromla
     intersect_pd = polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=calcdist_fromlatlon)
     #derive vertices from cross section (distance from first point)
     xr_crs_ugrid = get_xzcoords_onintersection(data_frommap_merged, intersect_pd=intersect_pd, timestep=timestep)
-    return xr_crs_ugrid 
+    return xr_crs_ugrid
 
 
 def get_netdata(file_nc, multipart=None):

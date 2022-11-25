@@ -147,7 +147,18 @@ for file_nc in file_nc_list:
         source = ctx.providers.Esri.WorldImagery # ctx.providers.Stamen.Terrain (default), ctx.providers.CartoDB.Voyager, ctx.providers.NASAGIBS.ViirsEarthAtNight2012, ctx.providers.Stamen.Watercolor
         ctx.add_basemap(ax=ax_input, source=source, crs=crs, attribution=False)
         fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_flowelem_bl_withbasemap'))
-
+    
+    
+    #filter for dry cells
+    bool_drycells = data_frommap_merged['mesh2d_s1']==data_frommap_merged['mesh2d_flowelem_bl']
+    data_frommap_merged['mesh2d_s1_filt'] = data_frommap_merged['mesh2d_s1'].where(~bool_drycells) #TODO: would be better to apply it to mesh2d_s1 directly (but nan values not allowed for cross section plot) or even to entire dataset (but results in extra time/faces dimensions for eg mesh2d_interface_z)
+    print('plot grid and values from mapdata (waterlevel on layer, 2dim, on cell centers)')
+    fig, ax = plt.subplots()
+    pc = data_frommap_merged['mesh2d_s1_filt'].isel(time=timestep).ugrid.plot(edgecolor='face',cmap='jet')
+    ax.set_aspect('equal')
+    fig.tight_layout()
+    fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_s1_filt'))
+    
     
     print('calculating and plotting cross section')
     runtime_tstart = dt.datetime.now() #start timer
