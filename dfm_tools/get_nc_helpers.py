@@ -316,7 +316,7 @@ def get_timeid_fromdatetime(data_nc_datetimes_pd, timestep):
 
 
 def get_hisstationlist(file_nc, varname='waterlevel'):
-    warnings.warn(DeprecationWarning('use data_xr[\'stations\'].to_dataframe() instead, do read in your hisfile with preprocess=preprocess_hisnc as argument, like in the postprocess_gethismodeldata.py example script'))
+    warnings.warn(DeprecationWarning("use data_xr['stations'].to_dataframe() instead, do read in your hisfile with preprocess=preprocess_hisnc as argument, like in the postprocess_gethismodeldata.py example script"))
     data_xr = xr.open_mfdataset(file_nc)#, preprocess=preprocess_hisnc)
     
     varname = get_varnamefrom_keyslongstandardname(file_nc, varname) #get varname from varkeys/standardname/longname if exists

@@ -91,7 +91,7 @@ def Dataset_varswithdim(ds,dimname):
     return ds
 
 
-def open_partitioned_dataset(file_nc, only_faces=False, chunks={'time':1}): #chunks={'time':1} increases performance significantly
+def open_partitioned_dataset(file_nc, chunks={'time':1}): #chunks={'time':1} increases performance significantly
     """
     
     Opmerkingen HB:
@@ -210,6 +210,7 @@ def open_partitioned_dataset(file_nc, only_faces=False, chunks={'time':1}): #chu
     nodedim = partitions[0].ugrid.grid.node_dimension
     edgedim = partitions[0].ugrid.grid.edge_dimension
     #print(facedim,nodedim,edgedim)
+    
     #define list of variables per dimension
 
     ds_face_list = []
@@ -219,9 +220,9 @@ def open_partitioned_dataset(file_nc, only_faces=False, chunks={'time':1}): #chu
     dtstart = dt.datetime.now()
     print('>> ds.isel()/xr.append(): ',end='')
     for idx, uds in zip(all_indices, partitions):
-        face_variables = []        
-        node_variables = []        
-        edge_variables = []        
+        face_variables = []
+        node_variables = []
+        edge_variables = []
         for varname in uds.variables.keys():
             if varn_maxfnodes in uds[varname].dims: # not possible to concatenate this dim (size varies per partition) #therefore, vars mesh2d_face_x_bnd and mesh2d_face_y_bnd cannot be included currently. Maybe drop topology_dimension?: partitions[0].ugrid.grid.to_dataset().mesh2d.topology_dimension
                 continue
@@ -232,29 +233,23 @@ def open_partitioned_dataset(file_nc, only_faces=False, chunks={'time':1}): #chu
             if edgedim in uds[varname].dims:
                 edge_variables.append(varname)
         ds_face = uds.ugrid.obj[face_variables]
-        if not only_faces:
-            ds_node = uds.ugrid.obj[node_variables]
-            ds_edge = uds.ugrid.obj[edge_variables]
-            ds_rest = uds.ugrid.obj.drop_dims([facedim,nodedim,edgedim])
+        ds_node = uds.ugrid.obj[node_variables]
+        ds_edge = uds.ugrid.obj[edge_variables]
+        ds_rest = uds.ugrid.obj.drop_dims([facedim,nodedim,edgedim])
         ds_face_list.append(ds_face.isel({facedim: idx}))
-        if not only_faces:
-            ds_node_list.append(ds_node)#.isel({nodedim: idx})) #TODO: add ghostcell removal for nodes and edges?
-            ds_edge_list.append(ds_edge)#.isel({edgedim: idx}))
-            #ds_rest_list.append(ds_rest)
+        ds_node_list.append(ds_node)#.isel({nodedim: idx})) #TODO: add ghostcell removal for nodes and edges?
+        ds_edge_list.append(ds_edge)#.isel({edgedim: idx}))
+        #ds_rest_list.append(ds_rest)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     dtstart = dt.datetime.now()
     print('>> xr.concat(): ',end='')
     ds_face_concat = xr.concat(ds_face_list, dim=facedim)
-    if not only_faces:
-        ds_node_concat = xr.concat(ds_node_list, dim=nodedim)
-        ds_edge_concat = xr.concat(ds_edge_list, dim=edgedim)
-        #ds_rest_concat = xr.concat(ds_rest_list, dim=None)
+    ds_node_concat = xr.concat(ds_node_list, dim=nodedim)
+    ds_edge_concat = xr.concat(ds_edge_list, dim=edgedim)
+    #ds_rest_concat = xr.concat(ds_rest_list, dim=None)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
-    if only_faces:
-        ds_merged = ds_face_concat
-    else:
-        ds_merged = xr.merge([ds_face_concat,ds_node_concat,ds_edge_concat,ds_rest])
+    ds_merged = xr.merge([ds_face_concat,ds_node_concat,ds_edge_concat,ds_rest])
         
     varlist_merged = list(ds_merged.variables.keys())
     varlist_dropped_bool = ~pd.Series(varlist_onepart).isin(varlist_merged)
