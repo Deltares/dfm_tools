@@ -243,9 +243,21 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}): #chunks={'time':1} inc
         #ds_rest_list.append(ds_rest)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     dtstart = dt.datetime.now()
+    
+    """
+    # get a subset of the data
+    da.isel(dim=[0, 1, 2])  # returns dimensions, etc. #isel is factor 10 langzamer dan rechtstreeks indexeren op dask/numpy array: https://github.com/pydata/xarray/issues/2227
+    # Do the work yourself
+    da.data[[0, 1, 2], ...]  # returns dask
+    # Concatenate the data
+    xr.concat([da1, da2, da3]) #is ook trager dan dask.array.stack()
+    # Do it yourself
+    dask.array.stack([da1.data, da2.data, da3.data])
+    """
+    
     print('>> xr.concat(): ',end='')
-    ds_face_concat = xr.concat(ds_face_list, dim=facedim)
-    ds_node_concat = xr.concat(ds_node_list, dim=nodedim)
+    ds_face_concat = xr.concat(ds_face_list, dim=facedim) #TODO: replace this with dask.stack() but that requires more book keeping?
+    ds_node_concat = xr.concat(ds_node_list, dim=nodedim) #TODO: evt compat="override" proberen
     ds_edge_concat = xr.concat(ds_edge_list, dim=edgedim)
     #ds_rest_concat = xr.concat(ds_rest_list, dim=None)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
