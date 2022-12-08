@@ -260,7 +260,7 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}): #chunks={'time':1} inc
     
     ds_merged = ds_merged.rename({facedim: merged_grid.face_dimension,
                                   nodedim: merged_grid.node_dimension,
-                                  edgedim: merged_grid.edge_dimension}) #TODO: xugrid does not support other dimnames, xugrid issue is created
+                                  edgedim: merged_grid.edge_dimension}) #TODO: xugrid does not support other dimnames, xugrid issue is created: https://github.com/Deltares/xugrid/issues/25
     ds_merged_xu = xu.UgridDataset(ds_merged, grids=[merged_grid])
     print(f'>> open_partitioned_dataset total: {(dt.datetime.now()-dtstart_all).total_seconds():.2f} sec')
     return ds_merged_xu

@@ -103,7 +103,7 @@ for file_nc in file_nc_list:
     else:
         raise Exception('ERROR: no settings provided for this mapfile')
     
-    #TODO: add .where() (masking part of data) and .sel() example (deleting part of data, this currently fails but xugrid issue will be created)
+    #TODO: add .where() (masking part of data) and .sel() example (deleting part of data, this currently fails but xugrid issue is created: https://github.com/Deltares/xugrid/issues/26)
     #TODO: add fancier plots: https://deltares.github.io/xugrid/examples/plotting.html
     
     data_frommap_merged = dfmt.open_partitioned_dataset(file_nc.replace('_0000_','_0*_')) #TODO: make starred default, but not supported by older code
@@ -155,7 +155,7 @@ for file_nc in file_nc_list:
     data_frommap_merged['mesh2d_s1_filt'] = data_frommap_merged['mesh2d_s1'].where(~bool_drycells) #TODO: would be better to apply it to mesh2d_s1 directly (but nan values not allowed for cross section plot) or even to entire dataset (but results in extra time/faces dimensions for eg mesh2d_interface_z)
     print('plot grid and values from mapdata (waterlevel on layer, 2dim, on cell centers)')
     fig, ax = plt.subplots()
-    pc = data_frommap_merged['mesh2d_s1_filt'].isel(time=timestep).ugrid.plot(edgecolor='face',cmap='jet')
+    pc = data_frommap_merged['mesh2d_s1_filt'].isel(time=timestep).ugrid.plot(edgecolor='face',cmap='jet') #TODO: should also support histogram plot when not supplying isel(time): https://github.com/Deltares/xugrid/issues/27
     ax.set_aspect('equal')
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_s1_filt'))
