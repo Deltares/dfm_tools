@@ -352,6 +352,22 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=No
     return values_all
 
 
+def get_ugrid_verts(data_xr_map):
+    data_xr_grid = data_xr_map.ugrid.grid.to_dataset()
+    face_nos = data_xr_grid.mesh2d_face_nodes.load()
+    bool_nonemptyfacenode = face_nos!=-1
+    facenos_nonan_min = face_nos.where(face_nos!=-1).min() #replace nans and get minval
+    if facenos_nonan_min==1: #for some reason, curvedbend is 1-based indexed, grevelingen is not
+        face_nos = face_nos-1
+    if face_nos.dtype!='int': #for some reason, curvedbend idx is float instead of int
+        face_nos = face_nos.astype(int)
+           
+    face_nnodecoords_x = data_xr_grid.mesh2d_node_x.isel(mesh2d_nNodes=face_nos).where(bool_nonemptyfacenode)
+    face_nnodecoords_y = data_xr_grid.mesh2d_node_y.isel(mesh2d_nNodes=face_nos).where(bool_nonemptyfacenode)
+    ugrid_all_verts = np.c_[face_nnodecoords_x.to_numpy()[...,np.newaxis],face_nnodecoords_y.to_numpy()[...,np.newaxis]]
+    return ugrid_all_verts
+
+
 def calc_dist_pythagoras(x1,x2,y1,y2): # only used in dfm_tools.ugrid
     distance = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
     return distance
@@ -402,26 +418,23 @@ def polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=None)
     
     line_section = LineString(line_array)
     
-    face_nos = data_frommap_merged.ugrid.grid.to_dataset().mesh2d_face_nodes.load()
-    bool_nonemptyfacenode = face_nos!=-1
-    facenos_nonan_min = face_nos.where(face_nos!=-1).min() #replace nans and get minval
-    if facenos_nonan_min==1: #for some reason, curvedbend is 1-based indexed, grevelingen is not
-        face_nos = face_nos-1
-    if face_nos.dtype!='int': #for some reason, curvedbend idx is float instead of int
-        face_nos = face_nos.astype(int)
+    # face_nos = data_frommap_merged.ugrid.grid.to_dataset().mesh2d_face_nodes.load()
+    # bool_nonemptyfacenode = face_nos!=-1
+    # facenos_nonan_min = face_nos.where(face_nos!=-1).min() #replace nans and get minval
+    # if facenos_nonan_min==1: #for some reason, curvedbend is 1-based indexed, grevelingen is not
+    #     face_nos = face_nos-1
+    # if face_nos.dtype!='int': #for some reason, curvedbend idx is float instead of int
+    #     face_nos = face_nos.astype(int)
            
-    face_nnodecoords_x = data_frommap_merged.ugrid.grid.to_dataset().mesh2d_node_x.isel(mesh2d_nNodes=face_nos).where(bool_nonemptyfacenode)
-    face_nnodecoords_y = data_frommap_merged.ugrid.grid.to_dataset().mesh2d_node_y.isel(mesh2d_nNodes=face_nos).where(bool_nonemptyfacenode)
-    ugrid_all_verts = np.c_[face_nnodecoords_x.to_numpy()[...,np.newaxis],face_nnodecoords_y.to_numpy()[...,np.newaxis]]
-    
-    # verts_xmax = np.nanmax(ugrid_all.verts[:,:,0].data,axis=1)
-    # verts_xmin = np.nanmin(ugrid_all.verts[:,:,0].data,axis=1)
-    # verts_ymax = np.nanmax(ugrid_all.verts[:,:,1].data,axis=1)
-    # verts_ymin = np.nanmin(ugrid_all.verts[:,:,1].data,axis=1)
-    verts_xmax = np.nanmax(face_nnodecoords_x.to_numpy(),axis=1)
-    verts_xmin = np.nanmin(face_nnodecoords_x.to_numpy(),axis=1)
-    verts_ymax = np.nanmax(face_nnodecoords_y.to_numpy(),axis=1)
-    verts_ymin = np.nanmin(face_nnodecoords_y.to_numpy(),axis=1)
+    # face_nnodecoords_x = data_frommap_merged.ugrid.grid.to_dataset().mesh2d_node_x.isel(mesh2d_nNodes=face_nos).where(bool_nonemptyfacenode)
+    # face_nnodecoords_y = data_frommap_merged.ugrid.grid.to_dataset().mesh2d_node_y.isel(mesh2d_nNodes=face_nos).where(bool_nonemptyfacenode)
+    # ugrid_all_verts = np.c_[face_nnodecoords_x.to_numpy()[...,np.newaxis],face_nnodecoords_y.to_numpy()[...,np.newaxis]]
+    ugrid_all_verts = get_ugrid_verts(data_frommap_merged)
+
+    verts_xmax = np.nanmax(ugrid_all_verts[:,:,0].data,axis=1)
+    verts_xmin = np.nanmin(ugrid_all_verts[:,:,0].data,axis=1)
+    verts_ymax = np.nanmax(ugrid_all_verts[:,:,1].data,axis=1)
+    verts_ymin = np.nanmin(ugrid_all_verts[:,:,1].data,axis=1)
     
     #TODO: replace this with xr.sel() once it works for xugrid
     cellinlinebox_all_bool = (((np.min(line_array[:,0]) <= verts_xmax) &
@@ -585,7 +598,7 @@ def polyline_mapslice(data_frommap_merged, line_array, timestep, calcdist_fromla
     intersect_pd = polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=calcdist_fromlatlon)
     #derive vertices from cross section (distance from first point)
     xr_crs_ugrid = get_xzcoords_onintersection(data_frommap_merged, intersect_pd=intersect_pd, timestep=timestep)
-    return xr_crs_ugrid 
+    return xr_crs_ugrid
 
 
 def get_netdata(file_nc, multipart=None):

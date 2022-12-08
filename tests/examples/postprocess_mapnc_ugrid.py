@@ -18,8 +18,8 @@ dir_output = '.'
 
 file_nc_list = [os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_cb_3d\\cb_3d_map.nc'), #sigmalayer
                 os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc'), #zlayer
-                r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0000_map.nc', #fullgrid
-                r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_207\results\RMM_dflowfm_0000_map.nc', #2D model
+                #r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0000_map.nc', #fullgrid
+                #r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_207\results\RMM_dflowfm_0000_map.nc', #2D model
                 ]
 
 for file_nc in file_nc_list:
@@ -29,7 +29,6 @@ for file_nc in file_nc_list:
     if 'cb_3d_map' in file_nc:
         timestep = 72
         layno = 5
-        calcdist_fromlatlon = None
         line_array = np.array([[ 185.08667065, 2461.11775254],
                                [2934.63837418, 1134.16019127]])
         line_array = np.array([[ 104.15421399, 2042.7077107 ],
@@ -46,7 +45,6 @@ for file_nc in file_nc_list:
     elif 'Grevelingen' in file_nc:
         timestep = 3
         layno = 33 #35 is top
-        calcdist_fromlatlon = None
         line_array = np.array([[ 56267.59146475, 415644.67447155],
                                [ 64053.73427496, 419407.58239502]])
         line_array = np.array([[ 53181.96942503, 424270.83361629],
@@ -62,7 +60,6 @@ for file_nc in file_nc_list:
     elif 'DCSM-FM_0_5nm' in file_nc:
         timestep = 365
         layno = 45
-        calcdist_fromlatlon = True
         #provide xy order, so lonlat
         line_array = np.array([[ 0.97452229, 51.13407643],
                                [ 1.89808917, 50.75191083]])
@@ -78,7 +75,6 @@ for file_nc in file_nc_list:
     elif 'RMM_dflowfm' in file_nc:
         timestep = 365 #50
         layno = None
-        calcdist_fromlatlon = None
         #provide xy order, so lonlat
         line_array = np.array([[ 65655.72699961, 444092.54776465],
                                [ 78880.42720631, 435019.78832052]])
@@ -151,7 +147,19 @@ for file_nc in file_nc_list:
         source = ctx.providers.Esri.WorldImagery # ctx.providers.Stamen.Terrain (default), ctx.providers.CartoDB.Voyager, ctx.providers.NASAGIBS.ViirsEarthAtNight2012, ctx.providers.Stamen.Watercolor
         ctx.add_basemap(ax=ax_input, source=source, crs=crs, attribution=False)
         fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_flowelem_bl_withbasemap'))
-
+    
+    
+    #filter for dry cells
+    bool_drycells = data_frommap_merged['mesh2d_s1']==data_frommap_merged['mesh2d_flowelem_bl']
+    #bool_drycells = data_frommap_merged['mesh2d_s1'].std(dim='time')<0.01 #TODO: this might be better but is slow
+    data_frommap_merged['mesh2d_s1_filt'] = data_frommap_merged['mesh2d_s1'].where(~bool_drycells) #TODO: would be better to apply it to mesh2d_s1 directly (but nan values not allowed for cross section plot) or even to entire dataset (but results in extra time/faces dimensions for eg mesh2d_interface_z)
+    print('plot grid and values from mapdata (waterlevel on layer, 2dim, on cell centers)')
+    fig, ax = plt.subplots()
+    pc = data_frommap_merged['mesh2d_s1_filt'].isel(time=timestep).ugrid.plot(edgecolor='face',cmap='jet')
+    ax.set_aspect('equal')
+    fig.tight_layout()
+    fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_s1_filt'))
+    
     
     print('calculating and plotting cross section')
     runtime_tstart = dt.datetime.now() #start timer
@@ -163,7 +171,7 @@ for file_nc in file_nc_list:
     runtime_timedelta = (dt.datetime.now()-runtime_tstart)
     print(f'calculating and plotting cross section finished in {runtime_timedelta}')
     
-    
+    continue
     print('plot grid and values from mapdata (salinity on layer, 3dim, on cell centers)')
     fig, ax = plt.subplots()
     if 'nmesh2d_layer' in data_frommap_merged['mesh2d_sa1'].dims:
