@@ -398,6 +398,12 @@ def calc_dist_haversine(lon1,lon2,lat1,lat2): # only used in dfm_tools.ugrid
 def polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=None):
     #data_frommap_merged: xugrid dataset (contains ds and grid)
     #TODO: remove hardcoding
+    """
+    #TODO: maybe move to meshkernel functionality?
+    Cross section functionality is implemented in MeshKernel (C++) but still needs to be exposed in MeshKernelPy (can be done in dec2022). Here is the function with documentation: 
+    https://github.com/Deltares/MeshKernel/blob/067f1493e7f972ba0cdb2a1f4deb48d1c74695d5/include/MeshKernelApi/MeshKernel.hpp#L356
+    """
+    
     import numpy as np
     from matplotlib.path import Path
     import shapely #separate import, since sometimes this works, while import shapely.geometry fails

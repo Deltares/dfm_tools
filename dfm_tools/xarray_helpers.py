@@ -237,7 +237,7 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}): #chunks={'time':1} inc
         ds_node = uds.ugrid.obj[node_variables]
         ds_edge = uds.ugrid.obj[edge_variables]
         ds_rest = uds.ugrid.obj.drop_dims([facedim,nodedim,edgedim])
-        ds_face_list.append(ds_face.isel({facedim: idx}))
+        ds_face_list.append(ds_face.isel({facedim: idx}))   
         ds_node_list.append(ds_node)#.isel({nodedim: idx})) #TODO: add ghostcell removal for nodes and edges?
         ds_edge_list.append(ds_edge)#.isel({edgedim: idx}))
         #ds_rest_list.append(ds_rest)
