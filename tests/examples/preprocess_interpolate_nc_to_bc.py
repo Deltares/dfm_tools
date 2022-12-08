@@ -36,7 +36,7 @@ refdate_str = 'minutes since 2011-12-22 00:00:00 +00:00' # if None, xarray uses 
 #quantities should be in conversion_dict.keys(). waterlevelbnd is steric/zos, tide is tidal components from FES/EOT
 list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tracerbndNO3']#,'tide']
 #list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','tracerbndNO3']
-list_quantities = ['salinitybnd']
+list_quantities = ['tide']
 
 model = 'CMEMS' #CMEMS GFDL CMCC HYCOM
 
@@ -147,7 +147,7 @@ for file_pli in list_plifiles:
         #ForcingModel_object.filepath = Path(str(ForcingModel_object.filepath).replace(dir_out,'')) #TODO: convert to relative paths in ext file possible? This path is the same as file_bc_out
         
         #generate boundary object for the ext file (quantity, pli-filename, bc-filename)
-        boundary_object = Boundary(quantity=quantity,
+        boundary_object = Boundary(quantity=quantity, #TODO: is currently tide for tide, but should be waterlevelbnd
                                    locationfile=Path(dir_output,file_pli.name),
                                    forcingfile=ForcingModel_object,
                                    )
