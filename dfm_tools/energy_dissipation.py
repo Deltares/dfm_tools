@@ -64,9 +64,10 @@ def compute_energy_dissipation(data_xr_map,file_ED_computed):
                                               'units':'W/m^2'})
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
-    print('>> select, compute and save data_xr_map_computed to netcdf: ')
     data_xr_map_computed = data_xr_map[['mesh2d_flowelem_ba','ED_areasum','ED_timemean','ED_pm2_timemean']] #has to contain some var with cells (not only ED_areasum), otherwise ugrid accessor is not valid
     #data_xr_map_computed.ED_timemean.data.visualize() #does not yet work >> visualizes tasks of dask array
+    
+    print('>> compute and save data_xr_map_computed to netcdf: ')
     with ProgressBar():
         data_xr_map_computed.ugrid.to_netcdf(file_ED_computed)
     
