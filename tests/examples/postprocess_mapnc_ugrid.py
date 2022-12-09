@@ -22,7 +22,8 @@ file_nc_list = [os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_cb
                 r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_207\results\RMM_dflowfm_0000_map.nc', #2D model
                 r'p:\archivedprojects\11203379-005-mwra-updated-bem\03_model\02_final\A72_ntsu0_kzlb2\DFM_OUTPUT_MB_02\MB_02_0000_map.nc',
                 ]
-file_nc_list = [r'p:\archivedprojects\11203379-005-mwra-updated-bem\03_model\02_final\A72_ntsu0_kzlb2\DFM_OUTPUT_MB_02\MB_02_0000_map.nc',
+file_nc_list = [r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0000_map.nc', #fullgrid
+                r'p:\archivedprojects\11203379-005-mwra-updated-bem\03_model\02_final\A72_ntsu0_kzlb2\DFM_OUTPUT_MB_02\MB_02_0000_map.nc',
                 ]
 
 for file_nc in file_nc_list:
@@ -107,8 +108,8 @@ for file_nc in file_nc_list:
         timestep = 10
         layno = 45
         #provide xy order, so lonlat
-        line_array = np.array([[ 0.97452229, 51.13407643],
-                               [ 1.89808917, 50.75191083]])
+        line_array = np.array([[-71.81578813,  42.68460697],
+                               [-65.2535983 ,  41.8699903 ]])
         val_ylim = [-600,1]
         clim_bl = [-500,0]
         clim_sal = [25,36]
@@ -141,11 +142,8 @@ for file_nc in file_nc_list:
     pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot(edgecolor='face',cmap='jet')
     pc.set_clim(clim_bl)
     ax_input.set_aspect('equal')
-    if 0: #click interactive polygon #TODO: this is useful but should work also without killing the code
-        line, = ax_input.plot([], [],'o-') # empty line
-        linebuilder = dfmt.LineBuilder(line) #after this click your line and then run the line below
-        #breakit
-        line_array = linebuilder.line_array
+    line, = ax_input.plot([], [],'o-') # empty line
+    linebuilder = dfmt.LineBuilder(line) #this makes it possible to interactively click a line in the bedlevel figure. Use linebuilder.line_array as alternative line_array
     ax_input.plot(line_array[0,0],line_array[0,1],'bx',linewidth=3,markersize=10)
     ax_input.plot(line_array[:,0],line_array[:,1],'b',linewidth=3)
     fig.tight_layout()
@@ -186,7 +184,7 @@ for file_nc in file_nc_list:
     runtime_timedelta = (dt.datetime.now()-runtime_tstart)
     print(f'calculating and plotting cross section finished in {runtime_timedelta}')
     
-    continue
+    
     print('plot grid and values from mapdata (salinity on layer, 3dim, on cell centers)')
     fig, ax = plt.subplots()
     if 'nmesh2d_layer' in data_frommap_merged['mesh2d_sa1'].dims:
@@ -198,15 +196,15 @@ for file_nc in file_nc_list:
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_sa1'))
 
-
+    
     print('plot grid and values from mapdata on net links (water/wind velocity on cell edges)')
     if 'mesh2d_u1' in vars_pd.index.tolist():
         varname_edge = 'mesh2d_u1'
     elif 'mesh2d_windxu' in vars_pd.index.tolist(): #RMM does not contain mesh2d_u1 variable, so alternative is used
         varname_edge = 'mesh2d_windxu'
-    else: #DCSM has all relevant values on centers, skip to next file
+    else: #DCSM/MWRA models have all time-varying variables on centers, continue to next file
         continue
-    if 1:
+    if varname_edge!='mesh2d_edge_x':
         fig, ax = plt.subplots()
         multipart = True
         ugrid_all = dfmt.get_netdata(file_nc=file_nc, multipart=multipart)
@@ -219,7 +217,7 @@ for file_nc in file_nc_list:
         ax.set_aspect('equal')
         fig.tight_layout()
         fig.savefig(os.path.join(dir_output,f'{basename}_{varname_edge}_edges_oldmethod'))
-    if 1: #TODO: move edge to xarray, but partitioned maps show incorrect data
+    if 1: #TODO: move edge to xarray, but partitioned maps show incorrect data (tests/examples_workinprogress/workinprogress_plot_edges.py)
         fig, ax = plt.subplots()
         if layno is None:
             pc = data_frommap_merged[varname_edge].isel(time=timestep).ugrid.plot(cmap='jet')
@@ -231,7 +229,7 @@ for file_nc in file_nc_list:
     
     
     if file_nc_fou is not None:
-        #RMM foufile met quivers
+        #RMM foufile met quivers #TODO: maybe fancy xugridplotting can help out here
         vars_pd = dfmt.get_ncvarproperties(file_nc=file_nc_fou)
         
         data_frommap_merged = dfmt.open_partitioned_dataset(file_nc_fou.replace('_0000_','_0*_'))
