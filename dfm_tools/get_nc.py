@@ -609,7 +609,7 @@ def polyline_mapslice(data_frommap_merged, line_array, timestep, calcdist_fromla
 
 def get_netdata(file_nc, multipart=None):
 
-    warnings.warn(DeprecationWarning('dfm_tools.get_nc.get_netdata() will be deprecated, since there is an xarray alternative for multidomain FM files (xugrid). Open it like this and use xarray sel/isel (example in postprocessing notebook):\n    data_xr_mapmerged = dfmt.open_partitioned_dataset(file_nc_map)'))
+    warnings.warn(DeprecationWarning('dfm_tools.get_nc.get_netdata() is deprecated, since there is an xarray alternative for multidomain FM files (xugrid). Open it like this and use xarray sel/isel (example in postprocessing notebook):\n    data_xr_mapmerged = dfmt.open_partitioned_dataset(file_nc_map)'))
     file_ncs = get_ncfilelist(file_nc, multipart)
     #get all data
     num_nodes = [0]
