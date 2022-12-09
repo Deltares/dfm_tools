@@ -43,10 +43,10 @@ import os
 import warnings
 import numpy as np
 from netCDF4 import Dataset
-from dfm_tools.xarray_helpers import preprocess_hisnc
 
 
 def get_ncfilelist(file_nc, multipart=None):
+    warnings.warn(DeprecationWarning('dfm_tools.get_nc_helpers.get_ncfilelist() will be deprecated'))
     if isinstance(file_nc,list):
         file_ncs = file_nc
         return file_ncs
@@ -84,6 +84,7 @@ def get_ncfilelist(file_nc, multipart=None):
 
 
 def get_varname_fromnc(data_nc,varname_requested,vardim): #TODO: this is probably not used anymore after xugrid implementation
+    warnings.warn(DeprecationWarning('dfm_tools.get_nc_helpers.get_varname_fromnc() will be deprecated'))
     #TODO: put this translationtable in preprocess function, optionally give that to xarray. Raise exception when eg plotnetmapdata sees old variables, saying you should use the preprocess func in xr.open_dataset()
     #VARIABLE names used within different versions of Delft3D-Flexible Mesh
     varnames_list = pd.DataFrame()
@@ -189,7 +190,7 @@ def get_ncvarproperties(file_nc):
 
 
 def get_ncvardimlist(file_nc):
-    raise DeprecationWarning('use dfm_tools.get_nc_helpers.get_ncvarproperties() instead') #TODO: remove this code
+    raise DeprecationWarning('use vars_pd=dfm_tools.get_nc_helpers.get_ncvarproperties() instead') #TODO: remove this code
     vars_pd = get_ncvarproperties(file_nc)
     
     return vars_pd, None
@@ -235,7 +236,8 @@ def get_varnamefromattrs(file_nc, varname):
 
 
 def ghostcell_filter(file_nc):
-        
+    warnings.warn(DeprecationWarning('dfm_tools.get_nc_helpers.ghostcell_filter() is deprecated'))
+    
     data_nc = Dataset(file_nc)
     
     varn_domain = get_varname_fromnc(data_nc,'mesh2d_flowelem_domain',vardim='var')
@@ -276,7 +278,7 @@ def get_timesfromnc(file_nc, varname='time', retrieve_ids=False, keeptimezone=Tr
         DESCRIPTION.
 
     """
-    
+    warnings.warn(DeprecationWarning("dfm_tools.get_nc_helpers.get_timesfromnc() is deprecated. Use data_xr.time.to_dataframe() instead"))
     with xr.open_dataset(file_nc) as data_xr:
         #varn_time = get_variable_timevar(file_nc,varname=varname)
         #times_xr = data_xr[varn_time]
@@ -300,6 +302,7 @@ def get_timesfromnc(file_nc, varname='time', retrieve_ids=False, keeptimezone=Tr
 
 
 def get_timeid_fromdatetime(data_nc_datetimes_pd, timestep):
+    warnings.warn(DeprecationWarning("dfm_tools.get_nc_helpers.get_timeid_fromdatetime() is deprecated."))
     
     timestep_pd = pd.Series(timestep)
 
@@ -316,8 +319,8 @@ def get_timeid_fromdatetime(data_nc_datetimes_pd, timestep):
 
 
 def get_hisstationlist(file_nc, varname='waterlevel'):
-    warnings.warn(DeprecationWarning("use data_xr['stations'].to_dataframe() instead, do read in your hisfile with preprocess=preprocess_hisnc as argument, like in the postprocess_gethismodeldata.py example script"))
-    data_xr = xr.open_mfdataset(file_nc)#, preprocess=preprocess_hisnc)
+    warnings.warn(DeprecationWarning("dfm_tools.get_nc_helpers.get_hisstationlist() is deprecated. Use data_xr['stations'].to_dataframe() instead, do read in your hisfile with preprocess=preprocess_hisnc as argument, like in the postprocess_gethismodeldata.py example script"))
+    data_xr = xr.open_mfdataset(file_nc)
     
     varname = get_varnamefrom_keyslongstandardname(file_nc, varname) #get varname from varkeys/standardname/longname if exists
     vardims = data_xr[varname].dims

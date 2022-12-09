@@ -20,6 +20,7 @@ file_nc_list = [os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_cb
                 os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc'), #zlayer
                 r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0000_map.nc', #fullgrid
                 r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_207\results\RMM_dflowfm_0000_map.nc', #2D model
+                r'p:\archivedprojects\11203379-005-mwra-updated-bem\03_model\02_final\A72_ntsu0_kzlb2\DFM_OUTPUT_MB_02\MB_02_0000_map.nc',
                 ]
 
 for file_nc in file_nc_list:
@@ -100,6 +101,17 @@ for file_nc in file_nc_list:
         clim_sal = None
         crs = "EPSG:28992"
         file_nc_fou = os.path.join(dir_testinput,r'DFM_fou_RMM\RMM_dflowfm_0000_fou.nc')
+    elif 'MB_02_0000_map' in file_nc:
+        timestep = 10
+        layno = 45
+        #provide xy order, so lonlat
+        line_array = np.array([[-71.81578813,  42.68460697],
+                               [-65.2535983 ,  41.8699903 ]])
+        val_ylim = [-600,1]
+        clim_bl = [-500,0]
+        clim_sal = [25,36]
+        crs = "EPSG:4326"
+        file_nc_fou = None
     else:
         raise Exception('ERROR: no settings provided for this mapfile')
     
@@ -127,11 +139,8 @@ for file_nc in file_nc_list:
     pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot(edgecolor='face',cmap='jet')
     pc.set_clim(clim_bl)
     ax_input.set_aspect('equal')
-    if 0: #click interactive polygon #TODO: this is useful but should work also without killing the code
-        line, = ax_input.plot([], [],'o-')  # empty line
-        dfmt.LineBuilder = dfmt.LineBuilder(line) #after this click your line and then run the line below
-        #breakit
-        line_array = dfmt.LineBuilder.line_array
+    line, = ax_input.plot([], [],'o-') # empty line
+    linebuilder = dfmt.LineBuilder(line) #this makes it possible to interactively click a line in the bedlevel figure. Use linebuilder.line_array as alternative line_array
     ax_input.plot(line_array[0,0],line_array[0,1],'bx',linewidth=3,markersize=10)
     ax_input.plot(line_array[:,0],line_array[:,1],'b',linewidth=3)
     fig.tight_layout()
@@ -149,7 +158,7 @@ for file_nc in file_nc_list:
         ctx.add_basemap(ax=ax_input, source=source, crs=crs, attribution=False)
         fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_flowelem_bl_withbasemap'))
     
-    
+       
     #filter for dry cells
     bool_drycells = data_frommap_merged['mesh2d_s1']==data_frommap_merged['mesh2d_flowelem_bl']
     #bool_drycells = data_frommap_merged['mesh2d_s1'].std(dim='time')<0.01 #TODO: this might be better but is slow
@@ -172,10 +181,10 @@ for file_nc in file_nc_list:
     runtime_timedelta = (dt.datetime.now()-runtime_tstart)
     print(f'calculating and plotting cross section finished in {runtime_timedelta}')
     
-    continue
-    print('plot grid and values from mapdata (salinity on layer, 3dim, on cell centers)')
+    
+    print('plot grid and values from mapdata (salinity on layer, 3dim, on cell centers)') #TODO: plotting top/bottom layer is possible with ffill/bfill, like https://github.com/Deltares/dfm_tools/blob/main/tests/examples_workinprogress/workinprogress_exporttoshapefile.py#L50
     fig, ax = plt.subplots()
-    if 'nmesh2d_layer' in data_frommap_merged['mesh2d_sa1'].dims:
+    if 'nmesh2d_layer' in data_frommap_merged['mesh2d_sa1'].dims: #use argument missing_dims='ignore' instead
         pc = data_frommap_merged['mesh2d_sa1'].isel(time=timestep,nmesh2d_layer=layno).ugrid.plot(edgecolor='face',cmap='jet')
     else:
         pc = data_frommap_merged['mesh2d_sa1'].isel(time=timestep).ugrid.plot(edgecolor='face',cmap='jet')
@@ -185,14 +194,25 @@ for file_nc in file_nc_list:
     fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_sa1'))
 
 
+    print('plot grid and values from mapdata (salinity on layer, 3dim, on cell centers) >> on fixed depth')
+    data_frommap_timesel = data_frommap_merged.isel(time=timestep) #select data for all layers
+    data_frommap_timesel_ondepth = dfmt.get_mapdata_atfixedepth(data_xr_map=data_frommap_timesel, z=-4)
+    fig, ax = plt.subplots()
+    pc = data_frommap_timesel_ondepth['mesh2d_sa1'].ugrid.plot(edgecolor='face',cmap='jet')
+    pc.set_clim(clim_sal)
+    ax.set_aspect('equal')
+    fig.tight_layout()
+    fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_sa1_onfixeddepth'))
+    
+    
     print('plot grid and values from mapdata on net links (water/wind velocity on cell edges)')
     if 'mesh2d_u1' in vars_pd.index.tolist():
         varname_edge = 'mesh2d_u1'
     elif 'mesh2d_windxu' in vars_pd.index.tolist(): #RMM does not contain mesh2d_u1 variable, so alternative is used
         varname_edge = 'mesh2d_windxu'
-    else: #DCSM has all relevant values on centers, skip to next file
+    else: #DCSM/MWRA models have all time-varying variables on centers, continue to next file
         continue
-    if 1:
+    if varname_edge!='mesh2d_edge_x':
         fig, ax = plt.subplots()
         multipart = True
         ugrid_all = dfmt.get_netdata(file_nc=file_nc, multipart=multipart)
@@ -205,7 +225,7 @@ for file_nc in file_nc_list:
         ax.set_aspect('equal')
         fig.tight_layout()
         fig.savefig(os.path.join(dir_output,f'{basename}_{varname_edge}_edges_oldmethod'))
-    if 1: #TODO: move edge to xarray, but partitioned maps show incorrect data
+    if 1: #TODO: move edge to xarray, but partitioned maps show incorrect data (tests/examples_workinprogress/workinprogress_plot_edges.py)
         fig, ax = plt.subplots()
         if layno is None:
             pc = data_frommap_merged[varname_edge].isel(time=timestep).ugrid.plot(cmap='jet')
@@ -217,7 +237,7 @@ for file_nc in file_nc_list:
     
     
     if file_nc_fou is not None:
-        #RMM foufile met quivers
+        #RMM foufile met quivers #TODO: maybe fancy xugridplotting can help out here
         vars_pd = dfmt.get_ncvarproperties(file_nc=file_nc_fou)
         
         data_frommap_merged = dfmt.open_partitioned_dataset(file_nc_fou.replace('_0000_','_0*_'))
