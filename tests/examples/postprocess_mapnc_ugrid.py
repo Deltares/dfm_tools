@@ -18,8 +18,8 @@ dir_output = '.'
 
 file_nc_list = [os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_cb_3d\\cb_3d_map.nc'), #sigmalayer
                 os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc'), #zlayer
-                #r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0000_map.nc', #fullgrid
-                #r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_207\results\RMM_dflowfm_0000_map.nc', #2D model
+                r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0000_map.nc', #fullgrid
+                r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_207\results\RMM_dflowfm_0000_map.nc', #2D model
                 ]
 
 for file_nc in file_nc_list:
@@ -104,7 +104,7 @@ for file_nc in file_nc_list:
         raise Exception('ERROR: no settings provided for this mapfile')
     
     #TODO: add .where() (masking part of data) and .sel() example (deleting part of data, this currently fails but xugrid issue is created: https://github.com/Deltares/xugrid/issues/26)
-    #TODO: add fancier plots: https://deltares.github.io/xugrid/examples/plotting.html
+    #TODO: add fancier plots: https://deltares.github.io/xugrid/examples/plotting.html (uda.ugrid.plot.imshow() already works)
     
     data_frommap_merged = dfmt.open_partitioned_dataset(file_nc.replace('_0000_','_0*_')) #TODO: make starred default, but not supported by older code
     

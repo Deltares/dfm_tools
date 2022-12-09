@@ -91,15 +91,42 @@ def Dataset_varswithdim(ds,dimname):
     return ds
 
 
-def open_partitioned_dataset(file_nc, chunks={'time':1}): #chunks={'time':1} increases performance significantly
+def open_partitioned_dataset(file_nc, chunks={'time':1}): 
     """
-    
     Opmerkingen HB:
         - Dit werkt nu alleen voor data op de faces (die je nu expliciet aangeeft in bovenstaande functie). Voor edge data zal het ook wel kunnen werken, is uiteraard meer werk, moet even nadenken hoe dat qua nummering samenhangt.
         - Een nogwat suffe limitatie in xugrid: je kunt nog niet allerhande namen opgeven aan het grid. Dus ik genereer nu een nieuw grid (die gaat nu automatisch uit van een dimensie naam van "{naam_mesh}_nFaces". Beter zou zijn om alle nemen bij de initialisatie van het grid op te geven, dan kun je alle kanten uit. Ga ik even issue van maken.
         - Voor data op de edges zou het ook werken, maar dan is nog een andere isel noodzakelijk, specifiek voor de edge data.
-        - Dit werkt nu ook alleen als je enkel grid in je dataset hebt. Bij meerdere grids zouden we een keyword moeten toevoegen dat je aangeeft welke je gemerged wilt zien.
-    #TODO: maybe optimize by parallellization?
+        - Dit werkt nu ook alleen als je enkel grid in je dataset hebt. Bij meerdere grids zouden we een keyword moeten toevoegen dat je aangeeft welke je gemerged wilt zien.    
+
+    Parameters
+    ----------
+    file_nc : TYPE
+        DESCRIPTION.
+    chunks : TYPE, optional
+        chunks={'time':1} increases performance significantly upon reading, but causes memory overloads when performing sum/mean/etc actions over time dimension (in that case 100/200 is better). The default is {'time':1}.
+
+    Raises
+    ------
+    Exception
+        DESCRIPTION.
+
+    Returns
+    -------
+    TYPE
+        DESCRIPTION.
+    
+    file_nc = 'p:\\1204257-dcsmzuno\\2006-2012\\3D-DCSM-FM\\A18b_ntsu1\\DFM_OUTPUT_DCSM-FM_0_5nm\\DCSM-FM_0_5nm_0000_map.nc' #3D DCSM
+    file_nc = 'p:\\11206813-006-kpp2021_rmm-2d\\C_Work\\31_RMM_FMmodel\\computations\\model_setup\\run_207\\results\\RMM_dflowfm_0000_map.nc' #RMM 2D
+    file_nc = 'p:\\1230882-emodnet_hrsm\\GTSMv5.0\\runs\\reference_GTSMv4.1_wiCA_2.20.06_mapformat4\\output\\gtsm_model_0*_map.nc' #GTSM 2D
+    file_nc = 'p:\\11208053-005-kpp2022-rmm3d\\C_Work\\01_saltiMarlein\\RMM_2019_computations_02\\computations\\theo_03\\DFM_OUTPUT_RMM_dflowfm_2019\\RMM_dflowfm_2019_0*_map.nc' #RMM 3D
+
+    Timings (open_dataset/isel/concat):
+        - DCSM 3D 20 partitions 367 timesteps: 120.0/1.7/0.2 sec (timings are guessed)
+        - RMM  2D  8 partitions 421 timesteps:  60.6/1.4/0.1 sec
+        - GTSM 2D  8 partitions 746 timesteps:  73.8/6.4/0.1 sec
+        - RMM  3D 40 partitions 146 timesteps: 166.0/3.6/0.5 sec
+
     """
     
     dtstart_all = dt.datetime.now()
@@ -110,11 +137,11 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}): #chunks={'time':1} inc
     if len(file_nc_list)==0:
         raise Exception('file(s) not found, empty file_nc_list')
     
-    dtstart = dt.datetime.now()
     print(f'>> xu.open_dataset() with {len(file_nc_list)} partition(s): ',end='')
+    dtstart = dt.datetime.now()
     partitions = [xu.open_dataset(file_nc_one,chunks=chunks) for file_nc_one in file_nc_list]
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
-    
+
     #rename old dimension and some variable names
     gridname = 'mesh2d' #partitions[0].ugrid.grid.name #'mesh2d' #TODO: works if xugrid accepts arbitrary grid names
     rename_dict = {}
@@ -218,8 +245,8 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}): #chunks={'time':1} inc
     ds_node_list = []
     ds_edge_list = []
     #ds_rest_list = []
-    dtstart = dt.datetime.now()
     print('>> ds.isel()/xr.append(): ',end='')
+    dtstart = dt.datetime.now()
     for idx, uds in zip(all_indices, partitions):
         face_variables = []
         node_variables = []
@@ -242,7 +269,6 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}): #chunks={'time':1} inc
         ds_edge_list.append(ds_edge)#.isel({edgedim: idx}))
         #ds_rest_list.append(ds_rest)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
-    dtstart = dt.datetime.now()
     
     """
     # get a subset of the data
@@ -256,6 +282,7 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}): #chunks={'time':1} inc
     """
     
     print('>> xr.concat(): ',end='')
+    dtstart = dt.datetime.now()
     ds_face_concat = xr.concat(ds_face_list, dim=facedim) #TODO: replace this with dask.stack() but that requires more book keeping?
     ds_node_concat = xr.concat(ds_node_list, dim=nodedim) #TODO: evt compat="override" proberen
     ds_edge_concat = xr.concat(ds_edge_list, dim=edgedim)
