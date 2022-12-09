@@ -602,6 +602,8 @@ def get_xzcoords_onintersection(data_frommap_merged, intersect_pd, timestep=None
 def polyline_mapslice(data_frommap_merged, line_array, timestep, calcdist_fromlatlon=None): #TODO: merge this into one function
     #intersect function, find crossed cell numbers (gridnos) and coordinates of intersection (2 per crossed cell)
     intersect_pd = polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=calcdist_fromlatlon)
+    if len(intersect_pd) == 0:
+        raise Exception('line_array does not cross mapdata') #TODO: move exception elsewhere?
     #derive vertices from cross section (distance from first point)
     xr_crs_ugrid = get_xzcoords_onintersection(data_frommap_merged, intersect_pd=intersect_pd, timestep=timestep)
     return xr_crs_ugrid

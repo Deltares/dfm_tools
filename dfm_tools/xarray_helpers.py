@@ -122,12 +122,11 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
     file_nc = 'p:\\11208053-005-kpp2022-rmm3d\\C_Work\\01_saltiMarlein\\RMM_2019_computations_02\\computations\\theo_03\\DFM_OUTPUT_RMM_dflowfm_2019\\RMM_dflowfm_2019_0*_map.nc' #RMM 3D
     file_nc = 'p:\\archivedprojects\\11203379-005-mwra-updated-bem\\03_model\\02_final\\A72_ntsu0_kzlb2\\DFM_OUTPUT_MB_02\\MB_02_0000_map.nc'
     Timings (open_dataset/isel/concat):
-        - DCSM 3D 20 partitions 367 timesteps: 120.0/1.7/0.2 sec (timings are guessed)
-        - RMM  2D  8 partitions 421 timesteps:  60.6/1.4/0.1 sec
-        - GTSM 2D  8 partitions 746 timesteps:  73.8/6.4/0.1 sec
-        - RMM  3D 40 partitions 146 timesteps: 166.0/3.6/0.5 sec
-        - MWRA 3D 20 partitions ??? timesteps: // sec
-
+        - DCSM 3D 20 partitions  367 timesteps: 120.0/1.7/0.2 sec (timings are guessed)
+        - RMM  2D  8 partitions  421 timesteps:  60.6/1.4/0.1 sec
+        - GTSM 2D  8 partitions  746 timesteps:  73.8/6.4/0.1 sec
+        - RMM  3D 40 partitions  146 timesteps: 166.0/3.6/0.5 sec
+        - MWRA 3D 20 partitions 2551 timesteps: 826.2/3.4/1.2 sec
     """
     
     dtstart_all = dt.datetime.now()

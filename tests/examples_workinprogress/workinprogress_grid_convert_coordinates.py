@@ -4,7 +4,18 @@ Created on Thu Sep 29 15:13:45 2022
 
 @author: veenstra
 """
+"""
+Mapfile coordinate conversion is simpler with ugrid:
+import xugrid as xu
+import dfm_tools as dfmt
+file_nc = r"c:\DATA\dfm_tools_testdata\DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0*_map.nc"
+uds = dfmt.open_partitioned_dataset(file_nc)
+uda = uds["mesh2d_waterdepth"].isel(time=0).compute()
+uda.ugrid.set_crs(28992)
+reprojected = uda.ugrid.to_crs(4326)
+reprojected.ugrid.plot()
 
+"""
 #WARNING: the resulting grid might not be orthogonal
 
 import xarray as xr #pip install xarray

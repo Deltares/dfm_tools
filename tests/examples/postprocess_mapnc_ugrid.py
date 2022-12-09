@@ -142,10 +142,10 @@ for file_nc in file_nc_list:
     pc.set_clim(clim_bl)
     ax_input.set_aspect('equal')
     if 0: #click interactive polygon #TODO: this is useful but should work also without killing the code
-        line, = ax_input.plot([], [],'o-')  # empty line
-        dfmt.LineBuilder = dfmt.LineBuilder(line) #after this click your line and then run the line below
+        line, = ax_input.plot([], [],'o-') # empty line
+        linebuilder = dfmt.LineBuilder(line) #after this click your line and then run the line below
         #breakit
-        line_array = dfmt.LineBuilder.line_array
+        line_array = linebuilder.line_array
     ax_input.plot(line_array[0,0],line_array[0,1],'bx',linewidth=3,markersize=10)
     ax_input.plot(line_array[:,0],line_array[:,1],'b',linewidth=3)
     fig.tight_layout()
@@ -163,7 +163,7 @@ for file_nc in file_nc_list:
         ctx.add_basemap(ax=ax_input, source=source, crs=crs, attribution=False)
         fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_flowelem_bl_withbasemap'))
     
-    
+       
     #filter for dry cells
     bool_drycells = data_frommap_merged['mesh2d_s1']==data_frommap_merged['mesh2d_flowelem_bl']
     #bool_drycells = data_frommap_merged['mesh2d_s1'].std(dim='time')<0.01 #TODO: this might be better but is slow
