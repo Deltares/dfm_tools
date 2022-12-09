@@ -110,11 +110,11 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}): #chunks={'time':1} inc
     if len(file_nc_list)==0:
         raise Exception('file(s) not found, empty file_nc_list')
     
-    dtstart = dt.datetime.now()
     print(f'>> xu.open_dataset() with {len(file_nc_list)} partition(s): ',end='')
+    dtstart = dt.datetime.now()
     partitions = [xu.open_dataset(file_nc_one,chunks=chunks) for file_nc_one in file_nc_list]
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
-    
+
     #rename old dimension and some variable names
     gridname = 'mesh2d' #partitions[0].ugrid.grid.name #'mesh2d' #TODO: works if xugrid accepts arbitrary grid names
     rename_dict = {}
@@ -218,8 +218,8 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}): #chunks={'time':1} inc
     ds_node_list = []
     ds_edge_list = []
     #ds_rest_list = []
-    dtstart = dt.datetime.now()
     print('>> ds.isel()/xr.append(): ',end='')
+    dtstart = dt.datetime.now()
     for idx, uds in zip(all_indices, partitions):
         face_variables = []
         node_variables = []
@@ -242,7 +242,6 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}): #chunks={'time':1} inc
         ds_edge_list.append(ds_edge)#.isel({edgedim: idx}))
         #ds_rest_list.append(ds_rest)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
-    dtstart = dt.datetime.now()
     
     """
     # get a subset of the data
@@ -256,6 +255,7 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}): #chunks={'time':1} inc
     """
     
     print('>> xr.concat(): ',end='')
+    dtstart = dt.datetime.now()
     ds_face_concat = xr.concat(ds_face_list, dim=facedim) #TODO: replace this with dask.stack() but that requires more book keeping?
     ds_node_concat = xr.concat(ds_node_list, dim=nodedim) #TODO: evt compat="override" proberen
     ds_edge_concat = xr.concat(ds_edge_list, dim=edgedim)
