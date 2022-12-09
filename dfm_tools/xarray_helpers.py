@@ -91,15 +91,42 @@ def Dataset_varswithdim(ds,dimname):
     return ds
 
 
-def open_partitioned_dataset(file_nc, chunks={'time':1}): #chunks={'time':1} increases performance significantly
+def open_partitioned_dataset(file_nc, chunks={'time':1}): 
     """
-    
     Opmerkingen HB:
         - Dit werkt nu alleen voor data op de faces (die je nu expliciet aangeeft in bovenstaande functie). Voor edge data zal het ook wel kunnen werken, is uiteraard meer werk, moet even nadenken hoe dat qua nummering samenhangt.
         - Een nogwat suffe limitatie in xugrid: je kunt nog niet allerhande namen opgeven aan het grid. Dus ik genereer nu een nieuw grid (die gaat nu automatisch uit van een dimensie naam van "{naam_mesh}_nFaces". Beter zou zijn om alle nemen bij de initialisatie van het grid op te geven, dan kun je alle kanten uit. Ga ik even issue van maken.
         - Voor data op de edges zou het ook werken, maar dan is nog een andere isel noodzakelijk, specifiek voor de edge data.
-        - Dit werkt nu ook alleen als je enkel grid in je dataset hebt. Bij meerdere grids zouden we een keyword moeten toevoegen dat je aangeeft welke je gemerged wilt zien.
-    #TODO: maybe optimize by parallellization?
+        - Dit werkt nu ook alleen als je enkel grid in je dataset hebt. Bij meerdere grids zouden we een keyword moeten toevoegen dat je aangeeft welke je gemerged wilt zien.    
+
+    Parameters
+    ----------
+    file_nc : TYPE
+        DESCRIPTION.
+    chunks : TYPE, optional
+        chunks={'time':1} increases performance significantly upon reading, but causes memory overloads when performing sum/mean/etc actions over time dimension (in that case 100/200 is better). The default is {'time':1}.
+
+    Raises
+    ------
+    Exception
+        DESCRIPTION.
+
+    Returns
+    -------
+    TYPE
+        DESCRIPTION.
+    
+    file_nc = 'p:\\1204257-dcsmzuno\\2006-2012\\3D-DCSM-FM\\A18b_ntsu1\\DFM_OUTPUT_DCSM-FM_0_5nm\\DCSM-FM_0_5nm_0000_map.nc' #3D DCSM
+    file_nc = 'p:\\11206813-006-kpp2021_rmm-2d\\C_Work\\31_RMM_FMmodel\\computations\\model_setup\\run_207\\results\\RMM_dflowfm_0000_map.nc' #RMM 2D
+    file_nc = 'p:\\1230882-emodnet_hrsm\\GTSMv5.0\\runs\\reference_GTSMv4.1_wiCA_2.20.06_mapformat4\\output\\gtsm_model_0*_map.nc' #GTSM 2D
+    file_nc = 'p:\\11208053-005-kpp2022-rmm3d\\C_Work\\01_saltiMarlein\\RMM_2019_computations_02\\computations\\theo_03\\DFM_OUTPUT_RMM_dflowfm_2019\\RMM_dflowfm_2019_0*_map.nc' #RMM 3D
+
+    Timings (open_dataset/isel/concat):
+        - DCSM 3D 20 partitions 367 timesteps: 120.0/1.7/0.2 sec (timings are guessed)
+        - RMM  2D  8 partitions 421 timesteps:  60.6/1.4/0.1 sec
+        - GTSM 2D  8 partitions 746 timesteps:  73.8/6.4/0.1 sec
+        - RMM  3D 40 partitions 146 timesteps: 166.0/3.6/0.5 sec
+
     """
     
     dtstart_all = dt.datetime.now()
