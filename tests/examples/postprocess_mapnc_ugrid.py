@@ -104,7 +104,7 @@ for file_nc in file_nc_list:
         raise Exception('ERROR: no settings provided for this mapfile')
     
     #TODO: add .where() (masking part of data) and .sel() example (deleting part of data, this currently fails but xugrid issue is created: https://github.com/Deltares/xugrid/issues/26)
-    #TODO: add fancier plots: https://deltares.github.io/xugrid/examples/plotting.html
+    #TODO: add fancier plots: https://deltares.github.io/xugrid/examples/plotting.html (uda.ugrid.plot.imshow() already works)
     
     data_frommap_merged = dfmt.open_partitioned_dataset(file_nc.replace('_0000_','_0*_')) #TODO: make starred default, but not supported by older code
     
