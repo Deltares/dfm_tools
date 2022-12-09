@@ -70,8 +70,6 @@ def get_mapdata_atdepth(data_xr_map, depth_z, reference='z0', varname=None, zlay
         
         print('z-layer model, converting to zsigma/fullgrid and treat as such from here')
         data_xr_map = reconstruct_zw_zcc_fromz(data_xr_map)
-        raise Exception('not properly implemented yet for zlayers, try zlayer_interp_z=True')
-        #TODO: results in "ValueError: 'mesh2d_nInterfaces' not found in array dimensions ('mesh2d_nFaces', 'nmesh2d_interface')"
     else:
         raise Exception('layers present, but unknown layertype')
     
@@ -82,10 +80,10 @@ def get_mapdata_atdepth(data_xr_map, depth_z, reference='z0', varname=None, zlay
     
     print('>> subsetting data on fixed depth in fullgrid z-data: ',end='')
     dtstart = dt.datetime.now()
-    
+        
     if 'time' in data_xr_map.dims:
         warnings.warn(UserWarning('get_mapdata_onfixedepth() can be very slow when supplying dataset with time dimension for zsigma/sigma models'))
-    bool_valid = data_xr_map.mesh2d_flowelem_zw.min(dim='mesh2d_nInterfaces') <= depth_z #TODO suppress warning: C:\Users\veenstra\Anaconda3\envs\dfm_tools_env\lib\site-packages\dask\array\reductions.py:640: RuntimeWarning: All-NaN slice encountered. return np.nanmax(x_chunk, axis=axis, keepdims=keepdims)
+    bool_valid = data_xr_map.mesh2d_flowelem_zw.min(dim='nmesh2d_interface') <= depth_z #TODO suppress warning: C:\Users\veenstra\Anaconda3\envs\dfm_tools_env\lib\site-packages\dask\array\reductions.py:640: RuntimeWarning: All-NaN slice encountered. return np.nanmax(x_chunk, axis=axis, keepdims=keepdims)
     bool_mindist = data_xr_map.nmesh2d_layer==abs(data_xr_map.mesh2d_flowelem_zcc - depth_z).argmin(dim='nmesh2d_layer').load()
     print('performing .where() on fixed depth for zsigma/fullgrid model')
     data_xr_map_ondepth = data_xr_map_var.where(bool_valid&bool_mindist).max(dim='nmesh2d_layer',keep_attrs=True) #set all layers but one to nan, followed by an arbitrary reduce (max in this case)
@@ -112,7 +110,7 @@ for file_nc in file_nc_list:
 
     print('plot grid and values from mapdata (salinity on layer, 3dim, on cell centers) >> on fixed depth')
     data_frommap_timesel = data_frommap_merged.isel(time=timestep) #select data for all layers
-    data_frommap_timesel_ondepth = get_mapdata_atdepth(data_xr_map=data_frommap_timesel, depth_z=depth_z, reference='z0', zlayer_z0_forcefullgrid=True)
+    data_frommap_timesel_ondepth = get_mapdata_atdepth(data_xr_map=data_frommap_timesel, depth_z=depth_z, reference='z0')#, zlayer_z0_forcefullgrid=True)
     fig, ax = plt.subplots()
     pc = data_frommap_timesel_ondepth['mesh2d_sa1'].ugrid.plot(edgecolor='face',cmap='jet')
     pc.set_clim(clim_sal)
