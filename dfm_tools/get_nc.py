@@ -580,8 +580,9 @@ def get_mapdata_atfixedepth(data_xr_map, z, varname=None):
         data_xr_map_ondepth = data_xr_map_ondepth.set_coords(['depth_z'])
     elif 'mesh2d_layer_z' in data_xr_map.coords: #TODO: might be better to take interfaces into account also (it currently interpolates between z-center values)
         print('[z model] ',end='')
+        depth_attrs = data_xr_map_var.mesh2d_layer_z.attrs
         data_xr_map_var = data_xr_map_var.set_index({'nmesh2d_layer':'mesh2d_layer_z'}).rename({'nmesh2d_layer':'depth_z'}) #set depth as index on layers, to be able to interp to depths instead of layernumbers
-        data_xr_map_var['mesh2d_layer_z'] = data_xr_map_var.depth_z.assign_attrs(data_xr_map_var.mesh2d_layer_z.attrs) #set attrs from depth to layer
+        data_xr_map_var['mesh2d_layer_z'] = data_xr_map_var.depth_z.assign_attrs(depth_attrs) #set attrs from depth to layer
         data_xr_map_ondepth = data_xr_map_var.interp(depth_z=z,kwargs=dict(bounds_error=True)) #interpolate to fixed z-depth
     else:
         raise Exception('layers present, but unknown layertype')

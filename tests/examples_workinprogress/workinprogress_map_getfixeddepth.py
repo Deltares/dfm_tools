@@ -42,12 +42,20 @@ for file_nc in file_nc_list:
     print('plot grid and values from mapdata (salinity on layer, 3dim, on cell centers) >> on fixed depth')
     data_frommap_timesel = data_frommap_merged.isel(time=timestep) #select data for all layers
     
-    data_frommap_timesel_ondepth = dfmt.get_mapdata_atfixedepth(data_xr_map=data_frommap_timesel, z=fixed_depth)
-    data_frommap_timesel_ondepth = data_frommap_timesel_ondepth[varname]
     
     
     fig, ax = plt.subplots()
-    pc = data_frommap_timesel_ondepth.ugrid.plot(edgecolor='face',cmap='jet')
+    pc = data_frommap_timesel[varname].isel(nmesh2d_layer=-4,missing_dims='ignore').ugrid.plot(edgecolor='face',cmap='jet')
+    pc.set_clim(clim_sal)
+    ax.set_aspect('equal')
+    fig.tight_layout()
+    #fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_sa1_onfixeddepth'))
+    print(f'script runtime (excl opening mapfile): {(dt.datetime.now()-dtstart_all).total_seconds():.2f} sec')
+    
+    
+    data_frommap_timesel_ondepth = dfmt.get_mapdata_atfixedepth(data_xr_map=data_frommap_timesel, z=fixed_depth)
+    fig, ax = plt.subplots()
+    pc = data_frommap_timesel_ondepth[varname].ugrid.plot(edgecolor='face',cmap='jet')
     pc.set_clim(clim_sal)
     ax.set_aspect('equal')
     fig.tight_layout()
