@@ -527,7 +527,7 @@ def polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=None)
     return intersect_pd
 
 
-def reconstruct_zw_zcc_fromsigma(data_xr_map): #TODO: add check if mesh2d_flowelem_zcc/mesh2d_flowelem_zw are not already there
+def reconstruct_zw_zcc_fromsigma(data_xr_map):
     """
     reconstruct full grid output (time/face-varying z-values) for sigma model, necessary for slicing sigmamodel on depth value
     """
@@ -541,6 +541,21 @@ def reconstruct_zw_zcc_fromsigma(data_xr_map): #TODO: add check if mesh2d_flowel
     return data_xr_map
 
 
+def reconstruct_zw_zcc_fromz(data_xr_map):
+    """
+    reconstruct full grid output (time/face-varying z-values) for zvalue model. Necessary when extracting values with zdepth w.r.t. waterlevel/bedlevel
+    """
+    data_frommap_wl_sel = data_xr_map['mesh2d_s1']
+    data_frommap_z0_sel = data_frommap_wl_sel*0
+    #data_frommap_bl_sel = data_xr_map['mesh2d_flowelem_bl']
+    zvals_cen_zval = data_xr_map['mesh2d_layer_z']
+    data_xr_map['mesh2d_flowelem_zcc'] = data_frommap_z0_sel*zvals_cen_zval
+    zvals_interface_zval = data_xr_map['mesh2d_interface_z']
+    data_xr_map['mesh2d_flowelem_zw'] = data_frommap_z0_sel*zvals_interface_zval
+    data_xr_map = data_xr_map.set_coords(['mesh2d_flowelem_zw','mesh2d_flowelem_zcc'])
+    return data_xr_map
+
+
 def get_mapdata_atdepth(data_xr_map, depth_z, reference='z', varname=None, zlayer_interp_z=False):
     """
     data_xr_map:
@@ -550,12 +565,15 @@ def get_mapdata_atdepth(data_xr_map, depth_z, reference='z', varname=None, zlaye
         compute depth w.r.t. z/waterlevel/bed
         default: reference='z'
     zlayer_interp_z:
-        Use xr.interp() to interpolate zlayer model to z-value. Only possible for reference='z' (not 'waterlevel' or 'bed'). Only used if "mesh2d_layer_z" is present (zlayer model)
+        Use xr.interp() to interpolate zlayer model to z-value. Only possible for reference='z' (not 'waterlevel' or 'bedlevel'). Only used if "mesh2d_layer_z" is present (zlayer model)
     
     #TODO: zmodel gets depth in figure title, because of .set_index() in open_partitioned_dataset(). Sigmamodel gets percentage/fraction in title
     #TODO: check if attributes should be passed/altered
     #TODO: what happens with variables without a depth dimension? Not checked yet
     """
+    
+    if reference!='z':
+        raise Exception('only implemented for reference="z"') #TODO: add for other references
     
     if not 'nmesh2d_layer' in data_xr_map.dims: #TODO: maybe raise exception instead?
         print('WARNING: depth dimension not found, probably 2D model, returning input Dataset')
@@ -574,14 +592,16 @@ def get_mapdata_atdepth(data_xr_map, depth_z, reference='z', varname=None, zlaye
             data_xr_map = data_xr_map.set_index({'nmesh2d_layer':'mesh2d_layer_z'}).rename({'nmesh2d_layer':'depth_z'}) #set depth as index on layers, to be able to interp to depths instead of layernumbers
             data_xr_map['depth_z'] = data_xr_map.depth_z.assign_attrs(depth_attrs) #set attrs from depth to layer
             data_xr_map_ondepth = data_xr_map.interp(depth_z=depth_z,kwargs=dict(bounds_error=True)) #interpolate to fixed z-depth
-            return data_xr_map_ondepth
-        else:
-            print('z-layer model, converting to zsigma/fullgrid and treat as such from here')
-            breakit
+            return data_xr_map_ondepth #early escape
+        
+        print('z-layer model, converting to zsigma/fullgrid and treat as such from here')
+        data_xr_map = reconstruct_zw_zcc_fromz(data_xr_map)
+        raise Exception('not properly implemented yet for zlayers, try zlayer_interp_z=True')
+        #TODO: results in "ValueError: 'mesh2d_nInterfaces' not found in array dimensions ('mesh2d_nFaces', 'nmesh2d_interface')"
     else:
         raise Exception('layers present, but unknown layertype')
     
-    if varname is not None: #TODO: maybe remove this, although with varname=None DCSM gives "PerformanceWarning: Increasing number of chunks by factor of 20"
+    if varname is not None: #TODO: maybe remove this, although with varname=None DCSM gives "PerformanceWarning: Increasing number of chunks by factor of 20" (maybe apply where only on vars with facedim solves it?)
         data_xr_map_var = data_xr_map[varname]
     else:
         data_xr_map_var = data_xr_map

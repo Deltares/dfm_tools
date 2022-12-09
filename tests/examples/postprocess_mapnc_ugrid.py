@@ -196,7 +196,7 @@ for file_nc in file_nc_list:
 
     print('plot grid and values from mapdata (salinity on layer, 3dim, on cell centers) >> on fixed depth')
     data_frommap_timesel = data_frommap_merged.isel(time=timestep) #select data for all layers
-    data_frommap_timesel_ondepth = dfmt.get_mapdata_atdepth(data_xr_map=data_frommap_timesel, z=-4)
+    data_frommap_timesel_ondepth = dfmt.get_mapdata_atdepth(data_xr_map=data_frommap_timesel, depth_z=-4)
     fig, ax = plt.subplots()
     pc = data_frommap_timesel_ondepth['mesh2d_sa1'].ugrid.plot(edgecolor='face',cmap='jet')
     pc.set_clim(clim_sal)
