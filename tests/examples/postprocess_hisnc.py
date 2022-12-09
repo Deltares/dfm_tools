@@ -91,7 +91,7 @@ for file_nc in file_nc_list:
     if 'sfincs' in file_nc or 'morwaqeco3d' in file_nc or 'trih-' in file_nc:
         continue
     
-    print('plot salinity from his')
+    print('plot salinity from his') #TODO: retreive variable on fixed depth (like dfmt.get_mapdata_atfixedepth())
     data_fromhis_xr = data_xr.salinity.sel(stations=stations_requested).isel(laydim=20)
     fig, ax = plt.subplots(figsize=(10,6))
     data_fromhis_xr.plot.line('-',ax=ax,x='time')
