@@ -38,7 +38,7 @@ import warnings
 class UGrid: #TODO: remove UGrid class, not needed anymore with xugrid
     """Unstructured grid"""
     def __init__(self, mesh2d_node_x, mesh2d_node_y, mesh2d_face_nodes, verts, mesh2d_node_z=None, edge_verts=None):
-        warnings.warn(DeprecationWarning('dfm_tools.ugrid.UGrid() will be deprecated, since there is an xarray alternative for multidomain FM files (xugrid). Open your file like this and use xarray sel/isel (example in postprocessing notebook):\n    data_xr_mapmerged = dfmt.open_partitioned_dataset(file_nc_map)'))
+        warnings.warn(DeprecationWarning('dfm_tools.ugrid.UGrid() will be deprecated, since there is an xarray alternative for multidomain FM files (xugrid). Open your file like this and use xarray sel/isel (example in postprocessing notebook):\n    data_xr_mapmerged = dfmt.open_partitioned_dataset(file_nc_map).\nIf you need the verts for some reason, use: ugrid_all_verts = dfmt.get_ugrid_verts(data_frommap_merged)'))
         self.mesh2d_node_x = mesh2d_node_x
         self.mesh2d_node_y = mesh2d_node_y
         self.mesh2d_face_nodes = mesh2d_face_nodes

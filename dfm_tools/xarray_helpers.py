@@ -237,15 +237,27 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}): #chunks={'time':1} inc
         ds_node = uds.ugrid.obj[node_variables]
         ds_edge = uds.ugrid.obj[edge_variables]
         ds_rest = uds.ugrid.obj.drop_dims([facedim,nodedim,edgedim])
-        ds_face_list.append(ds_face.isel({facedim: idx}))
+        ds_face_list.append(ds_face.isel({facedim: idx}))   
         ds_node_list.append(ds_node)#.isel({nodedim: idx})) #TODO: add ghostcell removal for nodes and edges?
         ds_edge_list.append(ds_edge)#.isel({edgedim: idx}))
         #ds_rest_list.append(ds_rest)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     dtstart = dt.datetime.now()
+    
+    """
+    # get a subset of the data
+    da.isel(dim=[0, 1, 2])  # returns dimensions, etc. #isel is factor 10 langzamer dan rechtstreeks indexeren op dask/numpy array: https://github.com/pydata/xarray/issues/2227
+    # Do the work yourself
+    da.data[[0, 1, 2], ...]  # returns dask
+    # Concatenate the data
+    xr.concat([da1, da2, da3]) #is ook trager dan dask.array.stack()
+    # Do it yourself
+    dask.array.stack([da1.data, da2.data, da3.data])
+    """
+    
     print('>> xr.concat(): ',end='')
-    ds_face_concat = xr.concat(ds_face_list, dim=facedim)
-    ds_node_concat = xr.concat(ds_node_list, dim=nodedim)
+    ds_face_concat = xr.concat(ds_face_list, dim=facedim) #TODO: replace this with dask.stack() but that requires more book keeping?
+    ds_node_concat = xr.concat(ds_node_list, dim=nodedim) #TODO: evt compat="override" proberen
     ds_edge_concat = xr.concat(ds_edge_list, dim=edgedim)
     #ds_rest_concat = xr.concat(ds_rest_list, dim=None)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
@@ -260,7 +272,7 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}): #chunks={'time':1} inc
     
     ds_merged = ds_merged.rename({facedim: merged_grid.face_dimension,
                                   nodedim: merged_grid.node_dimension,
-                                  edgedim: merged_grid.edge_dimension}) #TODO: xugrid does not support other dimnames, xugrid issue is created
+                                  edgedim: merged_grid.edge_dimension}) #TODO: xugrid does not support other dimnames, xugrid issue is created: https://github.com/Deltares/xugrid/issues/25
     ds_merged_xu = xu.UgridDataset(ds_merged, grids=[merged_grid])
     print(f'>> open_partitioned_dataset total: {(dt.datetime.now()-dtstart_all).total_seconds():.2f} sec')
     return ds_merged_xu
