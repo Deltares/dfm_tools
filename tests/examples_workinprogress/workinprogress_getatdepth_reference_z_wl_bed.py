@@ -27,7 +27,7 @@ file_nc_list = [#os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_c
 
 from dfm_tools import reconstruct_zw_zcc_fromsigma, reconstruct_zw_zcc_fromz
 import warnings
-def get_mapdata_atdepth(data_xr_map, depth_z, reference='z0', varname=None, zlayer_z0_forcefullgrid=False):
+def get_mapdata_atdepth(data_xr_map, depth_z, reference='z0', varname=None, zlayer_z0_interp=False):
     """
     data_xr_map:
         has to be Dataset (not a DataArray), otherwise mesh2d_flowelem_zw etc are not available (interface z values)
@@ -35,27 +35,29 @@ def get_mapdata_atdepth(data_xr_map, depth_z, reference='z0', varname=None, zlay
     reference:
         compute depth w.r.t. z0/waterlevel/bed
         default: reference='z0'
-    zlayer_interp_z:
+    zlayer_z0_interp:
         Use xr.interp() to interpolate zlayer model to z-value. Only possible for reference='z' (not 'waterlevel' or 'bedlevel'). Only used if "mesh2d_layer_z" is present (zlayer model)
+        This is faster but results in values interpolated between zcc (z cell centers), so it is different than slicing.
     
     #TODO: zmodel gets depth in figure title, because of .set_index() in open_partitioned_dataset(). Sigmamodel gets percentage/fraction in title
     #TODO: check if attributes should be passed/altered
     #TODO: what happens with variables without a depth dimension? Not checked yet
     """
     
-    if reference!='z0':
-        raise Exception('only implemented for reference="z0"') #TODO: add for other references
+    #if reference!='z0':
+    #    raise Exception('only implemented for reference="z0"') #TODO: add for other references
     
     if not 'nmesh2d_layer' in data_xr_map.dims: #TODO: maybe raise exception instead?
         print('WARNING: depth dimension not found, probably 2D model, returning input Dataset')
         return data_xr_map
     elif 'mesh2d_flowelem_zcc' in data_xr_map.coords: #fullgrid info available, so continuing
+        print('zw/zcc (fullgrid) values already present in Dataset')
         pass
     elif 'mesh2d_layer_sigma' in data_xr_map.coords: #reconstruct_zw_zcc_fromsigma and treat as zsigma/fullgrid mapfile from here
-        print('sigma-layer model, converting to zsigma/fullgrid and treat as such from here')
+        print('sigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
         data_xr_map = reconstruct_zw_zcc_fromsigma(data_xr_map)
     elif 'mesh2d_layer_z' in data_xr_map.coords:
-        if not zlayer_z0_forcefullgrid and reference=='z0': # interpolates between z-center values #TODO: check if this is faster than fullgrid, it probably is but otherwise maybe remove option (or do this option automatically in case of zlevel and reference=='z0')
+        if zlayer_z0_interp and reference=='z0': # interpolates between z-center values  (instead of slicing), should be faster #TODO: check if this is faster than fullgrid
             if varname is not None:
                 print('WARNING: varname!=None, but zlayer_interp_z=True so varname will be ignored')
             print('z-layer model, zlayer_interp_z=True and reference=="z0" so using xr.interp()]')
@@ -68,7 +70,7 @@ def get_mapdata_atdepth(data_xr_map, depth_z, reference='z0', varname=None, zlay
             data_xr_map_ondepth = data_xr_map_ondepth.where((depth_z>=bl) & (depth_z<=wl)) #filter above wl and below bl values
             return data_xr_map_ondepth #early return
         
-        print('z-layer model, converting to zsigma/fullgrid and treat as such from here')
+        print('z-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
         data_xr_map = reconstruct_zw_zcc_fromz(data_xr_map)
     else:
         raise Exception('layers present, but unknown layertype')
@@ -100,17 +102,17 @@ def get_mapdata_atdepth(data_xr_map, depth_z, reference='z0', varname=None, zlay
 for file_nc in file_nc_list:
     print('processing %s'%(os.path.basename(file_nc)))
     basename = os.path.basename(file_nc).replace('.','')
-    data_frommap_merged = dfmt.open_partitioned_dataset(file_nc.replace('_0000_','_0*_')) #TODO: make starred default, but not supported by older code
+    data_frommap_merged = dfmt.open_partitioned_dataset(file_nc.replace('_0000_','_0*_')) #TODO: make starred default, but not yet supported by older code
     
     #get ugrid data, vars informatin and grid units (latter from bedlevel coordinates)
     vars_pd = dfmt.get_ncvarproperties(file_nc=file_nc)
     timestep = 3
     clim_sal = [28, 36]
-    depth_z = -.2#-4
+    depth_z = -1#-4
 
     print('plot grid and values from mapdata (salinity on layer, 3dim, on cell centers) >> on fixed depth')
     data_frommap_timesel = data_frommap_merged.isel(time=timestep) #select data for all layers
-    data_frommap_timesel_ondepth = get_mapdata_atdepth(data_xr_map=data_frommap_timesel, depth_z=depth_z, reference='z0')#, zlayer_z0_forcefullgrid=True)
+    data_frommap_timesel_ondepth = get_mapdata_atdepth(data_xr_map=data_frommap_timesel, depth_z=depth_z, reference='bedlevel')#, zlayer_z0_interp=True)
     fig, ax = plt.subplots()
     pc = data_frommap_timesel_ondepth['mesh2d_sa1'].ugrid.plot(edgecolor='face',cmap='jet')
     pc.set_clim(clim_sal)

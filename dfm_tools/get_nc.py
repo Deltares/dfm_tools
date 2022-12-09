@@ -547,16 +547,16 @@ def reconstruct_zw_zcc_fromz(data_xr_map):
     """
     data_frommap_wl_sel = data_xr_map['mesh2d_s1']
     data_frommap_z0_sel = data_frommap_wl_sel*0
-    #data_frommap_bl_sel = data_xr_map['mesh2d_flowelem_bl']
+    data_frommap_bl_sel = data_xr_map['mesh2d_flowelem_bl']
     zvals_cen_zval = data_xr_map['mesh2d_layer_z']
-    data_xr_map['mesh2d_flowelem_zcc'] = data_frommap_z0_sel+zvals_cen_zval
+    data_xr_map['mesh2d_flowelem_zcc'] = (data_frommap_z0_sel+zvals_cen_zval).clip(min=data_frommap_bl_sel, max=data_frommap_wl_sel)
     zvals_interface_zval = data_xr_map['mesh2d_interface_z']
-    data_xr_map['mesh2d_flowelem_zw'] = data_frommap_z0_sel+zvals_interface_zval
+    data_xr_map['mesh2d_flowelem_zw'] = (data_frommap_z0_sel+zvals_interface_zval).clip(min=data_frommap_bl_sel, max=data_frommap_wl_sel)
     data_xr_map = data_xr_map.set_coords(['mesh2d_flowelem_zw','mesh2d_flowelem_zcc'])
     return data_xr_map
 
 
-def get_mapdata_atdepth(data_xr_map, depth_z, reference='z0', varname=None, zlayer_z0_forcefullgrid=False):
+def get_mapdata_atdepth(data_xr_map, depth_z, reference='z0', varname=None, zlayer_z0_interp=False):
     """
     data_xr_map:
         has to be Dataset (not a DataArray), otherwise mesh2d_flowelem_zw etc are not available (interface z values)
@@ -564,8 +564,9 @@ def get_mapdata_atdepth(data_xr_map, depth_z, reference='z0', varname=None, zlay
     reference:
         compute depth w.r.t. z0/waterlevel/bed
         default: reference='z0'
-    zlayer_interp_z:
+    zlayer_z0_interp:
         Use xr.interp() to interpolate zlayer model to z-value. Only possible for reference='z' (not 'waterlevel' or 'bedlevel'). Only used if "mesh2d_layer_z" is present (zlayer model)
+        This is faster but results in values interpolated between zcc (z cell centers), so it is different than slicing.
     
     #TODO: zmodel gets depth in figure title, because of .set_index() in open_partitioned_dataset(). Sigmamodel gets percentage/fraction in title
     #TODO: check if attributes should be passed/altered
@@ -584,7 +585,7 @@ def get_mapdata_atdepth(data_xr_map, depth_z, reference='z0', varname=None, zlay
         print('sigma-layer model, converting to zsigma/fullgrid and treat as such from here')
         data_xr_map = reconstruct_zw_zcc_fromsigma(data_xr_map)
     elif 'mesh2d_layer_z' in data_xr_map.coords:
-        if not zlayer_z0_forcefullgrid and reference=='z0': # interpolates between z-center values #TODO: check if this is faster than fullgrid, it probably is but otherwise maybe remove option (or do this option automatically in case of zlevel and reference=='z0')
+        if zlayer_z0_interp and reference=='z0': # interpolates between z-center values  (instead of slicing), should be faster #TODO: check if this is faster than fullgrid
             if varname is not None:
                 print('WARNING: varname!=None, but zlayer_interp_z=True so varname will be ignored')
             print('z-layer model, zlayer_interp_z=True and reference=="z0" so using xr.interp()]')
