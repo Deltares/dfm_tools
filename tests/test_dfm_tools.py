@@ -83,7 +83,7 @@ def test_getmapdata(file_nc, varname, expected_size):
     file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0*_map.nc')
     expected_size = (44796,)
     """
-    file_nc_nostar = file_nc.replace('0*','0000') #TODO: introduce support for * in dfm_tools definitions
+    file_nc_nostar = file_nc.replace('0*','0000') #TODO: introduce support for * in dfm_tools definitions?
     varname_found = dfmt.get_varnamefromattrs(file_nc_nostar,varname)
     
     data_xr_map = dfmt.open_partitioned_dataset(file_nc)
@@ -128,7 +128,7 @@ def test_polygon_intersect(): #TODO: update to new xarray method
 
 
 @pytest.mark.unittest
-def test_getvarnamemapnc():
+def test_getvarnamemapnc(): 
     """
     this test tests if a netcdf varname can be retrieved from the 'dictionary' and if the variable can be retrieved from de netcdf
     """

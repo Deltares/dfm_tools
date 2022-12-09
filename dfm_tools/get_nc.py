@@ -542,14 +542,14 @@ def get_xzcoords_onintersection(data_frommap_merged, intersect_pd, timestep=None
     
     intersect_gridnos = intersect_pd.index
     data_frommap_merged_sel = data_frommap_merged.isel(time=timestep,mesh2d_nFaces=intersect_gridnos)
-    if 'mesh2d_flowelem_zw' in varkeys_list:
+    if 'mesh2d_flowelem_zw' in varkeys_list: #TODO: or in data_frommap_merged. they are now all set as coordinates by dfmt.open_partitioned_map() so check coordinates instead
         print('layertype: fullgrid output')
         zvals_interface_filled = data_frommap_merged_sel['mesh2d_flowelem_zw'].bfill(dim='mesh2d_nInterfaces') #fill nan values (below bed) with equal values
         zvals_interface = zvals_interface_filled.to_numpy().T # transpose to make in line with 2D sigma dataset
-    else: #no full grid output, so reconstruct
+    else: #no full grid output, so reconstruct (or 2D model)
         data_frommap_wl3_sel = data_frommap_merged_sel['mesh2d_s1'].to_numpy()
         data_frommap_bl_sel = data_frommap_merged_sel['mesh2d_flowelem_bl'].to_numpy()
-        if 'mesh2d_layer_z' in varkeys_list or 'LayCoord_cc' in varkeys_list:
+        if 'mesh2d_layer_z' in varkeys_list or 'LayCoord_cc' in varkeys_list: #TODO: add translation table?
             print('layertype: zlayer')
             warnings.warn('WARNING: your model seems to contain only z-layers. if the modeloutput is generated with an older version of dflowfm, the coordinates can be incorrect. if your model contains z-sigma-layers, use the fulloutput option in the mdu and rerun (happens automatically in newer dflowfm versions).')
             zvals_interface_vec = data_frommap_merged_sel['mesh2d_interface_z'].to_numpy()[:,np.newaxis]
