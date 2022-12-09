@@ -47,7 +47,8 @@ for timestep in [6]:#[0,10,20,30]:
         varname_found = dfmt.get_varnamefromattrs(file_nc_nostar,varname)
         data_var = data_xr_map[varname_found].isel(time=timestep)
         if 'nmesh2d_layer' in data_var.dims: #TODO: dimname could also be layno
-            data_var_sel = data_var.isel(nmesh2d_layer=37) #TODO: implement top/bottom layer again (partly contains missings) #OLD METHOD: data_fromnc_top = dfmt.get_ncmodeldata(file_nc=file_nc, varname=varname_found, timestep=timestep, layer='top')
+            data_var = data_var.ffill(dim='nmesh2d_layer').bfill(dim='nmesh2d_layer') #replace nans in toplayer with first non-nan value in layers below (and for bottomlayer with first non-nan value in layers above)
+            data_var_sel = data_var.isel(nmesh2d_layer=-1) #since nans are now filled, this provides the toplayer of the model
         else:
             data_var_sel = data_var
         

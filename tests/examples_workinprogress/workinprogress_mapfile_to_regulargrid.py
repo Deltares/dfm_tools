@@ -68,7 +68,7 @@ else:
 if times_idx is not None:
     data_frommap_merged = data_frommap_merged.isel(time=times_idx)
 if layers_idx is not None and dimn_layer is not None:
-    data_frommap_merged = data_frommap_merged.isel({dimn_layer:layers_idx}) #TODO: selcting 2/47 layers still gives 48 mesh2d_nInterfaces, is incorrect?
+    data_frommap_merged = data_frommap_merged.isel({dimn_layer:layers_idx}) #TODO: selecting 2/47 layers still gives 48 mesh2d_nInterfaces, is incorrect?
 data_vars_list = list(data_frommap_merged.data_vars)
 
 #setup Dataset with constant variables
