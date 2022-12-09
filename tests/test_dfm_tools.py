@@ -163,7 +163,7 @@ def test_getvarnamemapnc():
                                                     #pytest.param(r'p:\11205258-006-kpp2020_rmm-g6\C_Work\01_Rooster\final_totaalmodel\rooster_rmm_v1p5_net.nc', 44804?, id='fromnet RMM'),
                                                     pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\Grevelingen_FM_grid_20190603_net.nc'), 44804, id='fromnet Grevelingen')])
 @pytest.mark.unittest
-def SKIP_test_UGrid(file_nc, expected_size):
+def SKIP_test_UGrid(file_nc, expected_size): #skipping test since it is deprecated, xugrid is now used
     
     ugrid = dfmt.UGrid.fromfile(file_nc)
     
