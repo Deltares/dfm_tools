@@ -547,6 +547,7 @@ def get_mapdata_atfixedepth(data_xr_map, z, varname=None):
         has to be Dataset (not a DataArray), otherwise mesh2d_flowelem_zw etc are not available (interface z values)
         in case of zsigma/sigma layers (or fullgrid), it is advisable to .sel()/.isel() the time dimension first, because that is less computationally heavy
     #TODO: zmodel gets depth in figure title, because of .set_index() in open_partitioned_dataset(). Sigmamodel gets percentage/fraction in title
+    #TODO: check if attributes should be passed/altered
     #TODO: what happens with variables without a depth dimension? Not checked yet
     """
     
@@ -573,12 +574,15 @@ def get_mapdata_atfixedepth(data_xr_map, z, varname=None):
         bool_valid = data_xr_map.mesh2d_flowelem_zw.min(dim='mesh2d_nInterfaces') <= z #TODO suppress warning: C:\Users\veenstra\Anaconda3\envs\dfm_tools_env\lib\site-packages\dask\array\reductions.py:640: RuntimeWarning: All-NaN slice encountered. return np.nanmax(x_chunk, axis=axis, keepdims=keepdims)
         bool_mindist = data_xr_map.nmesh2d_layer==abs(data_xr_map.mesh2d_flowelem_zcc - z).argmin(dim='nmesh2d_layer').load()
         print('performing .where() on fixed depth for zsigma/fullgrid model')
-        data_xr_map_ondepth = data_xr_map_var.where(bool_valid&bool_mindist).max(dim='nmesh2d_layer') #set all layers but one to nan, followed by an arbitrary reduce (max in this case)
+        data_xr_map_ondepth = data_xr_map_var.where(bool_valid&bool_mindist).max(dim='nmesh2d_layer',keep_attrs=True) #set all layers but one to nan, followed by an arbitrary reduce (max in this case)
+        #add zvalue as coordinate
+        data_xr_map_ondepth['depth_z'] = z
+        data_xr_map_ondepth = data_xr_map_ondepth.set_coords(['depth_z'])
     elif 'mesh2d_layer_z' in data_xr_map.coords: #TODO: might be better to take interfaces into account also (it currently interpolates between z-center values)
         print('[z model] ',end='')
-        dict_layer_num2z = {'nmesh2d_layer':'mesh2d_layer_z'} #TODO: also transfer attrs from z to lay
-        data_xr_map_var = data_xr_map_var.set_index(dict_layer_num2z).rename(dict_layer_num2z) #set depth as index on layers, to be able to interp to depths instead of layernumbers
-        data_xr_map_ondepth = data_xr_map_var.interp(mesh2d_layer_z=z,kwargs=dict(bounds_error=True)) #interpolate to fixed z-depth
+        data_xr_map_var = data_xr_map_var.set_index({'nmesh2d_layer':'mesh2d_layer_z'}).rename({'nmesh2d_layer':'depth_z'}) #set depth as index on layers, to be able to interp to depths instead of layernumbers
+        data_xr_map_var['mesh2d_layer_z'] = data_xr_map_var.depth_z.assign_attrs(data_xr_map_var.mesh2d_layer_z.attrs) #set attrs from depth to layer
+        data_xr_map_ondepth = data_xr_map_var.interp(depth_z=z,kwargs=dict(bounds_error=True)) #interpolate to fixed z-depth
     else:
         raise Exception('layers present, but unknown layertype')
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
