@@ -193,18 +193,17 @@ for file_nc in file_nc_list:
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_sa1'))
 
-    
-    if 'mesh2d_layer_z' in data_frommap_merged.data_vars: #TODO: retrieve on z-depth is not possible yet for fullgrid/zsigma (mesh2d_flowelem_zw) or sigma (mesh2d_layer_sigma)
-        print('plot grid and values from mapdata (salinity on layer, 3dim, on cell centers) >> on fixed depth (currently only for z-layer models)')
-        fig, ax = plt.subplots()
-        data_frommap_merged = data_frommap_merged.set_index({'nmesh2d_layer':'mesh2d_layer_z'}) #set depth as index on layers
-        data_frommap_sel = data_frommap_merged['mesh2d_sa1'].isel(time=timestep).interp(nmesh2d_layer=-5) #select data for all layers and interpolate to fixed z-depth
-        pc = data_frommap_sel.ugrid.plot(edgecolor='face',cmap='jet')
-        pc.set_clim(clim_sal)
-        ax.set_aspect('equal')
-        fig.tight_layout()
-        fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_sa1_onfixeddepth'))
 
+    print('plot grid and values from mapdata (salinity on layer, 3dim, on cell centers) >> on fixed depth')
+    data_frommap_timesel = data_frommap_merged.isel(time=timestep) #select data for all layers
+    data_frommap_timesel_ondepth = dfmt.get_mapdata_atfixedepth(data_xr_map=data_frommap_timesel, z=-4)
+    fig, ax = plt.subplots()
+    pc = data_frommap_timesel_ondepth['mesh2d_sa1'].ugrid.plot(edgecolor='face',cmap='jet')
+    pc.set_clim(clim_sal)
+    ax.set_aspect('equal')
+    fig.tight_layout()
+    fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_sa1_onfixeddepth'))
+    
     
     print('plot grid and values from mapdata on net links (water/wind velocity on cell edges)')
     if 'mesh2d_u1' in vars_pd.index.tolist():

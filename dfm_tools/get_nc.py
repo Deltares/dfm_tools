@@ -527,6 +527,63 @@ def polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=None)
     return intersect_pd
 
 
+def reconstruct_zw_zcc_fromsigma(data_xr_map): #TODO: add check if mesh2d_flowelem_zcc/mesh2d_flowelem_zw are not already there
+    """
+    reconstruct full grid output (time/face-varying z-values) for sigma model, necessary for slicing sigmamodel on depth value
+    """
+    data_frommap_wl_sel = data_xr_map['mesh2d_s1']
+    data_frommap_bl_sel = data_xr_map['mesh2d_flowelem_bl']
+    zvals_cen_percentage = data_xr_map['mesh2d_layer_sigma']
+    data_xr_map['mesh2d_flowelem_zcc'] = data_frommap_wl_sel+(data_frommap_wl_sel-data_frommap_bl_sel)*zvals_cen_percentage
+    zvals_interface_percentage = data_xr_map['mesh2d_interface_sigma']
+    data_xr_map['mesh2d_flowelem_zw'] = data_frommap_wl_sel+(data_frommap_wl_sel-data_frommap_bl_sel)*zvals_interface_percentage
+    data_xr_map = data_xr_map.set_coords(['mesh2d_flowelem_zw','mesh2d_flowelem_zcc'])
+    return data_xr_map
+
+
+def get_mapdata_atfixedepth(data_xr_map, z, varname=None):
+    """
+    data_xr_map:
+        has to be Dataset (not a DataArray), otherwise mesh2d_flowelem_zw etc are not available (interface z values)
+        in case of zsigma/sigma layers (or fullgrid), it is advisable to .sel()/.isel() the time dimension first, because that is less computationally heavy
+    """
+    
+    if not 'nmesh2d_layer' in data_xr_map.dims: #TODO: maybe raise exception instead?
+        print('WARNING: depth dimension not found, probably 2D model, returning input Dataset')
+        return data_xr_map
+    elif 'mesh2d_layer_sigma' in data_xr_map.coords: #reconstruct_zw_zcc_fromsigma and treat as zsigma/fullgrid mapfile from here
+        print('sigma model, converting to zsigma/fullgrid and treat as such from here')
+        data_xr_map = reconstruct_zw_zcc_fromsigma(data_xr_map)
+    
+    if varname is not None: #TODO: maybe remove this, although with varname=None DCSM gives "PerformanceWarning: Increasing number of chunks by factor of 20"
+        data_xr_map_var = data_xr_map[varname]
+    else:
+        data_xr_map_var = data_xr_map
+    
+    print('>> subsetting data on fixed depth: ',end='')
+    dtstart = dt.datetime.now()
+    #from dask.diagnostics import ProgressBar
+    #with ProgressBar():
+    if 'mesh2d_flowelem_zcc' in data_xr_map.coords:
+        print('[zsigma/fullgrid model] ',end='')
+        if 'time' in data_xr_map.dims:
+            warnings.warn(UserWarning('get_mapdata_onfixedepth() can be very slow when supplying dataset with time dimension for zsigma/sigma models'))
+        bool_valid = data_xr_map.mesh2d_flowelem_zw.min(dim='mesh2d_nInterfaces') <= z #TODO suppress warning: C:\Users\veenstra\Anaconda3\envs\dfm_tools_env\lib\site-packages\dask\array\reductions.py:640: RuntimeWarning: All-NaN slice encountered. return np.nanmax(x_chunk, axis=axis, keepdims=keepdims)
+        bool_mindist = data_xr_map.nmesh2d_layer==abs(data_xr_map.mesh2d_flowelem_zcc - z).argmin(dim='nmesh2d_layer').load()
+        print('performing .where() on fixed depth for zsigma/fullgrid model')
+        data_xr_map_ondepth = data_xr_map_var.where(bool_valid&bool_mindist).max(dim='nmesh2d_layer') #set all layers but one to nan, followed by an arbitrary reduce (max in this case)
+    elif 'mesh2d_layer_z' in data_xr_map.coords: #TODO: might be better to take interfaces into account also (it currently interpolates between z-center values)
+        print('[z model] ',end='')
+        dict_layer_num2z = {'nmesh2d_layer':'mesh2d_layer_z'} #TODO: also transfer attrs from z to lay
+        data_xr_map_var = data_xr_map_var.set_index(dict_layer_num2z).rename(dict_layer_num2z) #set depth as index on layers, to be able to interp to depths instead of layernumbers
+        data_xr_map_ondepth = data_xr_map_var.interp(mesh2d_layer_z=z,kwargs=dict(bounds_error=True)) #interpolate to fixed z-depth
+    else:
+        raise Exception('layers present, but unknown layertype')
+    print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
+    
+    return data_xr_map_ondepth
+
+
 def get_xzcoords_onintersection(data_frommap_merged, intersect_pd, timestep=None):#, varname=None):
     #TODO: no hardcoding of variable names?
     #check if all necessary arguments are provided
@@ -560,7 +617,7 @@ def get_xzcoords_onintersection(data_frommap_merged, intersect_pd, timestep=None
                 zvals_interface[iL,zvalbot_belowbl_bool] = data_frommap_bl_sel[zvalbot_belowbl_bool]
             #top z-layer is extended to water level, if wl is higher than zval_lay_top
             zvals_interface[-1,:] = np.maximum(zvals_interface[-1,:],data_frommap_wl3_sel)
-        elif 'mesh2d_layer_sigma' in varkeys_list:
+        elif 'mesh2d_layer_sigma' in varkeys_list: #TODO: maybe use dfmt.reconstruct_zw_zcc_fromsigma() instead
             print('layertype: sigmalayer')
             zvals_interface_percentage = data_frommap_merged_sel['mesh2d_interface_sigma'].to_numpy()[:,np.newaxis]
             zvals_interface = data_frommap_wl3_sel+(data_frommap_wl3_sel-data_frommap_bl_sel)[np.newaxis]*zvals_interface_percentage
