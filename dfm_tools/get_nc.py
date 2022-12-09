@@ -556,14 +556,14 @@ def reconstruct_zw_zcc_fromz(data_xr_map):
     return data_xr_map
 
 
-def get_mapdata_atdepth(data_xr_map, depth_z, reference='z', varname=None, zlayer_interp_z=False):
+def get_mapdata_atdepth(data_xr_map, depth_z, reference='z0', varname=None, zlayer_interp_z=False):
     """
     data_xr_map:
         has to be Dataset (not a DataArray), otherwise mesh2d_flowelem_zw etc are not available (interface z values)
         in case of zsigma/sigma layers (or fullgrid), it is advisable to .sel()/.isel() the time dimension first, because that is less computationally heavy
     reference:
-        compute depth w.r.t. z/waterlevel/bed
-        default: reference='z'
+        compute depth w.r.t. z0/waterlevel/bed
+        default: reference='z0'
     zlayer_interp_z:
         Use xr.interp() to interpolate zlayer model to z-value. Only possible for reference='z' (not 'waterlevel' or 'bedlevel'). Only used if "mesh2d_layer_z" is present (zlayer model)
     
@@ -572,8 +572,8 @@ def get_mapdata_atdepth(data_xr_map, depth_z, reference='z', varname=None, zlaye
     #TODO: what happens with variables without a depth dimension? Not checked yet
     """
     
-    if reference!='z':
-        raise Exception('only implemented for reference="z"') #TODO: add for other references
+    if reference!='z0':
+        raise Exception('only implemented for reference="z0"') #TODO: add for other references
     
     if not 'nmesh2d_layer' in data_xr_map.dims: #TODO: maybe raise exception instead?
         print('WARNING: depth dimension not found, probably 2D model, returning input Dataset')
@@ -584,15 +584,18 @@ def get_mapdata_atdepth(data_xr_map, depth_z, reference='z', varname=None, zlaye
         print('sigma-layer model, converting to zsigma/fullgrid and treat as such from here')
         data_xr_map = reconstruct_zw_zcc_fromsigma(data_xr_map)
     elif 'mesh2d_layer_z' in data_xr_map.coords:
-        if zlayer_interp_z: # interpolates between z-center values
+        if zlayer_interp_z: # interpolates between z-center values #TODO: check if this is faster than fullgrid, it probably is but otherwise maybe remove option
             if varname is not None:
                 print('WARNING: varname!=None, but zlayer_interp_z=True so varname will be ignored')
             print('z-layer model, zlayer_interp_z=True so using xr.interp()]')
             depth_attrs = data_xr_map.mesh2d_layer_z.attrs
             data_xr_map = data_xr_map.set_index({'nmesh2d_layer':'mesh2d_layer_z'}).rename({'nmesh2d_layer':'depth_z'}) #set depth as index on layers, to be able to interp to depths instead of layernumbers
             data_xr_map['depth_z'] = data_xr_map.depth_z.assign_attrs(depth_attrs) #set attrs from depth to layer
-            data_xr_map_ondepth = data_xr_map.interp(depth_z=depth_z,kwargs=dict(bounds_error=True)) #interpolate to fixed z-depth
-            return data_xr_map_ondepth #early escape
+            data_xr_map_ondepth = data_xr_map.interp(depth_z=depth_z,kwargs=dict(bounds_error=False,fill_value='extrapolate')) #interpolate to fixed z-depth
+            wl = data_xr_map['mesh2d_s1']
+            bl = data_xr_map['mesh2d_flowelem_bl']
+            data_xr_map_ondepth = data_xr_map_ondepth.where((depth_z>=bl) & (depth_z<=wl)) #filter above wl and below bl values
+            return data_xr_map_ondepth #early return
         
         print('z-layer model, converting to zsigma/fullgrid and treat as such from here')
         data_xr_map = reconstruct_zw_zcc_fromz(data_xr_map)
