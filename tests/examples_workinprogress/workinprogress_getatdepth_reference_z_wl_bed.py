@@ -27,7 +27,7 @@ file_nc_list = [#os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_c
 
 from dfm_tools import reconstruct_zw_zcc_fromsigma, reconstruct_zw_zcc_fromz
 import warnings
-def get_mapdata_atdepth(data_xr_map, depth_z, reference='z0', varname=None, zlayer_interp_z=False):
+def get_mapdata_atdepth(data_xr_map, depth_z, reference='z0', varname=None, zlayer_z0_forcefullgrid=False):
     """
     data_xr_map:
         has to be Dataset (not a DataArray), otherwise mesh2d_flowelem_zw etc are not available (interface z values)
@@ -55,10 +55,10 @@ def get_mapdata_atdepth(data_xr_map, depth_z, reference='z0', varname=None, zlay
         print('sigma-layer model, converting to zsigma/fullgrid and treat as such from here')
         data_xr_map = reconstruct_zw_zcc_fromsigma(data_xr_map)
     elif 'mesh2d_layer_z' in data_xr_map.coords:
-        if zlayer_interp_z: # interpolates between z-center values #TODO: check if this is faster than fullgrid, it probably is but otherwise maybe remove option
+        if not zlayer_z0_forcefullgrid and reference=='z0': # interpolates between z-center values #TODO: check if this is faster than fullgrid, it probably is but otherwise maybe remove option (or do this option automatically in case of zlevel and reference=='z0')
             if varname is not None:
                 print('WARNING: varname!=None, but zlayer_interp_z=True so varname will be ignored')
-            print('z-layer model, zlayer_interp_z=True so using xr.interp()]')
+            print('z-layer model, zlayer_interp_z=True and reference=="z0" so using xr.interp()]')
             depth_attrs = data_xr_map.mesh2d_layer_z.attrs
             data_xr_map = data_xr_map.set_index({'nmesh2d_layer':'mesh2d_layer_z'}).rename({'nmesh2d_layer':'depth_z'}) #set depth as index on layers, to be able to interp to depths instead of layernumbers
             data_xr_map['depth_z'] = data_xr_map.depth_z.assign_attrs(depth_attrs) #set attrs from depth to layer
@@ -98,6 +98,7 @@ def get_mapdata_atdepth(data_xr_map, depth_z, reference='z0', varname=None, zlay
     return data_xr_map_ondepth
 
 
+
 for file_nc in file_nc_list:
     print('processing %s'%(os.path.basename(file_nc)))
     basename = os.path.basename(file_nc).replace('.','')
@@ -107,11 +108,11 @@ for file_nc in file_nc_list:
     vars_pd = dfmt.get_ncvarproperties(file_nc=file_nc)
     timestep = 3
     clim_sal = [28, 36]
-    depth_z = -.5#-4
+    depth_z = -.2#-4
 
     print('plot grid and values from mapdata (salinity on layer, 3dim, on cell centers) >> on fixed depth')
     data_frommap_timesel = data_frommap_merged.isel(time=timestep) #select data for all layers
-    data_frommap_timesel_ondepth = get_mapdata_atdepth(data_xr_map=data_frommap_timesel, depth_z=depth_z, reference='z0', zlayer_interp_z=True)
+    data_frommap_timesel_ondepth = get_mapdata_atdepth(data_xr_map=data_frommap_timesel, depth_z=depth_z, reference='z0', zlayer_z0_forcefullgrid=True)
     fig, ax = plt.subplots()
     pc = data_frommap_timesel_ondepth['mesh2d_sa1'].ugrid.plot(edgecolor='face',cmap='jet')
     pc.set_clim(clim_sal)

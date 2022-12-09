@@ -556,7 +556,7 @@ def reconstruct_zw_zcc_fromz(data_xr_map):
     return data_xr_map
 
 
-def get_mapdata_atdepth(data_xr_map, depth_z, reference='z0', varname=None, zlayer_interp_z=False):
+def get_mapdata_atdepth(data_xr_map, depth_z, reference='z0', varname=None, zlayer_z0_forcefullgrid=False):
     """
     data_xr_map:
         has to be Dataset (not a DataArray), otherwise mesh2d_flowelem_zw etc are not available (interface z values)
@@ -584,10 +584,10 @@ def get_mapdata_atdepth(data_xr_map, depth_z, reference='z0', varname=None, zlay
         print('sigma-layer model, converting to zsigma/fullgrid and treat as such from here')
         data_xr_map = reconstruct_zw_zcc_fromsigma(data_xr_map)
     elif 'mesh2d_layer_z' in data_xr_map.coords:
-        if zlayer_interp_z: # interpolates between z-center values #TODO: check if this is faster than fullgrid, it probably is but otherwise maybe remove option
+        if not zlayer_z0_forcefullgrid and reference=='z0': # interpolates between z-center values #TODO: check if this is faster than fullgrid, it probably is but otherwise maybe remove option (or do this option automatically in case of zlevel and reference=='z0')
             if varname is not None:
                 print('WARNING: varname!=None, but zlayer_interp_z=True so varname will be ignored')
-            print('z-layer model, zlayer_interp_z=True so using xr.interp()]')
+            print('z-layer model, zlayer_interp_z=True and reference=="z0" so using xr.interp()]')
             depth_attrs = data_xr_map.mesh2d_layer_z.attrs
             data_xr_map = data_xr_map.set_index({'nmesh2d_layer':'mesh2d_layer_z'}).rename({'nmesh2d_layer':'depth_z'}) #set depth as index on layers, to be able to interp to depths instead of layernumbers
             data_xr_map['depth_z'] = data_xr_map.depth_z.assign_attrs(depth_attrs) #set attrs from depth to layer
