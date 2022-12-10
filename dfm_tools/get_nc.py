@@ -591,7 +591,7 @@ def get_mapdata_atdepth(data_xr_map, depth, reference='z0', varname=None, zlayer
     
     if not 'nmesh2d_layer' in data_xr_map.dims: #TODO: maybe raise exception instead?
         print('WARNING: depth dimension not found, probably 2D model, returning input Dataset')
-        return data_xr_map
+        return data_xr_map #early return
     
     data_wl = data_xr_map['mesh2d_s1']
     data_bl = data_xr_map['mesh2d_flowelem_bl']
