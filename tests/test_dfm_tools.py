@@ -149,6 +149,24 @@ def test_getvarnamemapnc():
     assert dimname == 'nmesh2d_node'
 
 
+def test_zlayermodel_correct_layers_THISFAILS(): #TODO: fix this testcase, could be useful
+    file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc'), #zlayer
+    data_frommap_merged = dfmt.open_partitioned_dataset(file_nc.replace('_0000_','_000*_')) #TODO: make starred default, but not yet supported by older code
+    
+    timestep = 3
+    depth = -0.05 #TODO: add retrieve on depth wrt z0/wl/bed
+    
+    data_frommap_timesel = data_frommap_merged.isel(time=timestep) #select data for all layers
+    data_frommap_merged_fullgrid = dfmt.reconstruct_zw_zcc_fromz(data_frommap_timesel)
+    
+    vals_zcc_top = data_frommap_merged_fullgrid['mesh2d_flowelem_zcc'].isel(nmesh2d_layer=-1).to_numpy()
+    vals_zcc_bot = data_frommap_merged_fullgrid['mesh2d_flowelem_zcc'].isel(nmesh2d_layer=0).to_numpy()
+    vals_wl = data_frommap_merged_fullgrid['mesh2d_s1'].to_numpy()
+    vals_bl = data_frommap_merged_fullgrid['mesh2d_flowelem_bl'].to_numpy()
+    assert (np.abs(vals_zcc_top-vals_wl)<1e-6).all() #this should pass
+    assert (np.abs(vals_zcc_top-vals_bl)<1e-6).all() #This should fail
+    assert (np.abs(vals_zcc_bot-vals_bl)<1e-6).all() #This should pass
+    
 #DEPRECATED TESTS
 #DEPRECATED TESTS
 #DEPRECATED TESTS

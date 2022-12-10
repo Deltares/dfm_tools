@@ -37,7 +37,6 @@ import numpy as np
 import datetime as dt
 import pandas as pd
 from netCDF4 import Dataset
-import xarray as xr
 import xugrid as xu
 import matplotlib.pyplot as plt
 import matplotlib.collections
@@ -76,7 +75,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=No
 
     """
     
-    warnings.warn(DeprecationWarning('dfm_tools.get_nc.get_ncmodeldata() will be deprecated, since there is an xarray alternative for multidomain FM files (xugrid).Open your file like this and use xarray sel/isel (example in postprocessing notebook):\n    data_xr_mapmerged = dfmt.open_partitioned_dataset(file_nc_map)\nFor hisfiles, use xarray with dfmt.preprocess_hisnc:\n    data_xr_his = xr.open_mfdataset(file_nc_his, preprocess=dfmt.preprocess_hisnc)'))
+    warnings.warn(DeprecationWarning('dfm_tools.get_nc.get_ncmodeldata() is deprecated, since there is an xarray alternative for multidomain FM files (xugrid).Open your file like this and use xarray sel/isel (example in postprocessing notebook):\n    data_xr_mapmerged = dfmt.open_partitioned_dataset(file_nc_map)\nFor hisfiles, use xarray with dfmt.preprocess_hisnc:\n    data_xr_his = xr.open_mfdataset(file_nc_his, preprocess=dfmt.preprocess_hisnc)'))
     
     #get variable info (also checks if varname exists in keys, standard name, long name)
     if isinstance(file_nc,list): #for opendap, has to support lists
@@ -84,7 +83,6 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=No
     else:
         file_nc_one = file_nc        
     data_nc = Dataset(file_nc_one)
-    data_xr = xr.open_dataset(file_nc_one)
     varname = get_varnamefrom_keyslongstandardname(file_nc_one, varname) #get varname from varkeys/standardname/longname if exists
     nc_varobject = data_nc.variables[varname]
     
@@ -353,6 +351,9 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=No
 
 
 def get_ugrid_verts(data_xr_map):
+    """
+    getting ugrid verts from xugrid mapfile. This might be phased out in the future.
+    """
     data_xr_grid = data_xr_map.ugrid.grid.to_dataset()
     face_nos = data_xr_grid.mesh2d_face_nodes.load()
     bool_nonemptyfacenode = face_nos!=-1
@@ -405,7 +406,7 @@ def polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=None)
     """
     
     import numpy as np
-    from matplotlib.path import Path
+    #from matplotlib.path import Path
     import shapely #separate import, since sometimes this works, while import shapely.geometry fails
     from shapely.geometry import LineString, Polygon, MultiLineString, Point
     from dfm_tools.get_nc import calc_dist_pythagoras, calc_dist_haversine
@@ -527,25 +528,62 @@ def polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=None)
     return intersect_pd
 
 
-def reconstruct_zw_zcc_fromsigma(data_xr_map): #TODO: add check if mesh2d_flowelem_zcc/mesh2d_flowelem_zw are not already there
+def reconstruct_zw_zcc_fromsigma(data_xr_map):
     """
     reconstruct full grid output (time/face-varying z-values) for sigma model, necessary for slicing sigmamodel on depth value
     """
     data_frommap_wl_sel = data_xr_map['mesh2d_s1']
     data_frommap_bl_sel = data_xr_map['mesh2d_flowelem_bl']
+    
     zvals_cen_percentage = data_xr_map['mesh2d_layer_sigma']
     data_xr_map['mesh2d_flowelem_zcc'] = data_frommap_wl_sel+(data_frommap_wl_sel-data_frommap_bl_sel)*zvals_cen_percentage
+    
     zvals_interface_percentage = data_xr_map['mesh2d_interface_sigma']
     data_xr_map['mesh2d_flowelem_zw'] = data_frommap_wl_sel+(data_frommap_wl_sel-data_frommap_bl_sel)*zvals_interface_percentage
+    
     data_xr_map = data_xr_map.set_coords(['mesh2d_flowelem_zw','mesh2d_flowelem_zcc'])
     return data_xr_map
 
 
-def get_mapdata_atfixedepth(data_xr_map, z, varname=None):
+def reconstruct_zw_zcc_fromz(data_xr_map):
+    """
+    reconstruct full grid output (time/face-varying z-values) for zvalue model. Necessary when extracting values with zdepth w.r.t. waterlevel/bedlevel
+    #TODO: gives spotty result for 0/0.1m w.r.t. bedlevel for Grevelingen zmodel
+    """
+    data_frommap_wl_sel = data_xr_map['mesh2d_s1']
+    data_frommap_z0_sel = data_frommap_wl_sel*0
+    data_frommap_bl_sel = data_xr_map['mesh2d_flowelem_bl']
+    
+    zvals_interface_zval = data_xr_map['mesh2d_interface_z']
+    data_xr_map['mesh2d_flowelem_zw'] = (data_frommap_z0_sel+zvals_interface_zval).clip(min=data_frommap_bl_sel, max=data_frommap_wl_sel)
+    bool_notoplayer_int = zvals_interface_zval<zvals_interface_zval.isel(nmesh2d_interface=-1)
+    bool_int_abovewl = zvals_interface_zval>data_frommap_wl_sel
+    data_xr_map['mesh2d_flowelem_zw'] = data_xr_map['mesh2d_flowelem_zw'].where(bool_notoplayer_int | bool_int_abovewl, other=data_frommap_wl_sel) #zvalues of top layer_interfaces that are lower than wl are replaced by wl
+    
+    zvals_cen_zval = data_xr_map['mesh2d_layer_z']
+    #data_xr_map['mesh2d_flowelem_zcc'] = (data_frommap_z0_sel+zvals_cen_zval).clip(min=data_frommap_bl_sel, max=data_frommap_wl_sel)
+    data_xr_map['mesh2d_flowelem_zcc'] = (data_frommap_z0_sel+zvals_cen_zval).clip(min=data_frommap_bl_sel, max=data_xr_map.mesh2d_flowelem_zw.isel(nmesh2d_interface=-1))
+    #data_xr_map['mesh2d_flowelem_zcc'] = (data_frommap_z0_sel+zvals_cen_zval).clip(min=data_xr_map.mesh2d_flowelem_zw.isel(nmesh2d_interface=0), max=data_xr_map.mesh2d_flowelem_zw.isel(nmesh2d_interface=-1))
+    
+    data_xr_map = data_xr_map.set_coords(['mesh2d_flowelem_zw','mesh2d_flowelem_zcc'])
+    return data_xr_map
+
+
+
+def get_mapdata_atdepth(data_xr_map, depth, reference='z0', varname=None, zlayer_z0_interp=False):
     """
     data_xr_map:
         has to be Dataset (not a DataArray), otherwise mesh2d_flowelem_zw etc are not available (interface z values)
         in case of zsigma/sigma layers (or fullgrid), it is advisable to .sel()/.isel() the time dimension first, because that is less computationally heavy
+    depth:
+        depth w.r.t. reference level. If reference=='waterlevel', depth>0 returns only nans. If reference=='bedlevel', depth<0 returns only nans. 
+    reference:
+        compute depth w.r.t. z0/waterlevel/bed
+        default: reference='z0'
+    zlayer_z0_interp:
+        Use xr.interp() to interpolate zlayer model to z-value. Only possible for reference='z' (not 'waterlevel' or 'bedlevel'). Only used if "mesh2d_layer_z" is present (zlayer model)
+        This is faster but results in values interpolated between zcc (z cell centers), so it is different than slicing.
+    
     #TODO: zmodel gets depth in figure title, because of .set_index() in open_partitioned_dataset(). Sigmamodel gets percentage/fraction in title
     #TODO: check if attributes should be passed/altered
     #TODO: what happens with variables without a depth dimension? Not checked yet
@@ -554,42 +592,68 @@ def get_mapdata_atfixedepth(data_xr_map, z, varname=None):
     if not 'nmesh2d_layer' in data_xr_map.dims: #TODO: maybe raise exception instead?
         print('WARNING: depth dimension not found, probably 2D model, returning input Dataset')
         return data_xr_map
-    elif 'mesh2d_layer_sigma' in data_xr_map.coords: #reconstruct_zw_zcc_fromsigma and treat as zsigma/fullgrid mapfile from here
-        print('sigma model, converting to zsigma/fullgrid and treat as such from here')
-        data_xr_map = reconstruct_zw_zcc_fromsigma(data_xr_map)
     
-    if varname is not None: #TODO: maybe remove this, although with varname=None DCSM gives "PerformanceWarning: Increasing number of chunks by factor of 20"
+    data_wl = data_xr_map['mesh2d_s1']
+    data_bl = data_xr_map['mesh2d_flowelem_bl']
+    depth_varname = f'depth_from_{reference}'
+    if 'mesh2d_flowelem_zcc' in data_xr_map.coords: #fullgrid info available, so continuing
+        print('zw/zcc (fullgrid) values already present in Dataset')
+        pass
+    elif 'mesh2d_layer_sigma' in data_xr_map.coords: #reconstruct_zw_zcc_fromsigma and treat as zsigma/fullgrid mapfile from here
+        print('sigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
+        data_xr_map = reconstruct_zw_zcc_fromsigma(data_xr_map)
+    elif 'mesh2d_layer_z' in data_xr_map.coords:
+        if zlayer_z0_interp and reference=='z0': # interpolates between z-center values  (instead of slicing), should be faster #TODO: check if this is faster than fullgrid
+            if varname is not None:
+                print('WARNING: varname!=None, but zlayer_interp_z=True so varname will be ignored')
+            print('z-layer model, zlayer_interp_z=True and reference=="z0" so using xr.interp()]')
+            depth_attrs = data_xr_map.mesh2d_layer_z.attrs
+            data_xr_map = data_xr_map.set_index({'nmesh2d_layer':'mesh2d_layer_z'}).rename({'nmesh2d_layer':depth_varname}) #set depth as index on layers, to be able to interp to depths instead of layernumbers
+            data_xr_map[depth_varname] = data_xr_map[depth_varname].assign_attrs(depth_attrs) #set attrs from depth to layer
+            data_xr_map_atdepth = data_xr_map.interp({depth_varname:depth},kwargs=dict(bounds_error=False,fill_value='extrapolate')) #interpolate to fixed z-depth
+            data_xr_map_atdepth = data_xr_map_atdepth.where((depth>=data_bl) & (depth<=data_wl)) #filter above wl and below bl values
+            return data_xr_map_atdepth #early return
+        
+        print('z-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
+        data_xr_map = reconstruct_zw_zcc_fromz(data_xr_map)
+    else:
+        raise Exception('layers present, but unknown layertype')
+    
+    #correct reference level
+    if reference=='z0': #TODO: check if all references work properly
+        zw_reference = data_xr_map.mesh2d_flowelem_zw
+        zcc_reference = data_xr_map.mesh2d_flowelem_zcc
+    elif reference=='waterlevel':
+        zw_reference = data_xr_map.mesh2d_flowelem_zw - data_wl
+        zcc_reference = data_xr_map.mesh2d_flowelem_zcc - data_wl
+    elif reference=='bedlevel':
+        zw_reference = data_xr_map.mesh2d_flowelem_zw - data_bl
+        zcc_reference = data_xr_map.mesh2d_flowelem_zcc - data_bl
+    else:
+        raise Exception(f'unknown reference "{reference}" (possible are z0, waterlevel and bedlevel')
+    
+    if varname is not None: #TODO: maybe remove this, although with varname=None DCSM gives "PerformanceWarning: Increasing number of chunks by factor of 20" (maybe apply where only on vars with facedim solves it?)
         data_xr_map_var = data_xr_map[varname]
     else:
         data_xr_map_var = data_xr_map
     
-    print('>> subsetting data on fixed depth: ',end='')
+    print('>> subsetting data on fixed depth in fullgrid z-data: ',end='')
     dtstart = dt.datetime.now()
-    #from dask.diagnostics import ProgressBar
-    #with ProgressBar():
-    if 'mesh2d_flowelem_zcc' in data_xr_map.coords:
-        print('[zsigma/fullgrid model] ',end='')
-        if 'time' in data_xr_map.dims:
-            warnings.warn(UserWarning('get_mapdata_onfixedepth() can be very slow when supplying dataset with time dimension for zsigma/sigma models'))
-        bool_valid = data_xr_map.mesh2d_flowelem_zw.min(dim='mesh2d_nInterfaces') <= z #TODO suppress warning: C:\Users\veenstra\Anaconda3\envs\dfm_tools_env\lib\site-packages\dask\array\reductions.py:640: RuntimeWarning: All-NaN slice encountered. return np.nanmax(x_chunk, axis=axis, keepdims=keepdims)
-        bool_mindist = data_xr_map.nmesh2d_layer==abs(data_xr_map.mesh2d_flowelem_zcc - z).argmin(dim='nmesh2d_layer').load()
-        print('performing .where() on fixed depth for zsigma/fullgrid model')
-        data_xr_map_ondepth = data_xr_map_var.where(bool_valid&bool_mindist).max(dim='nmesh2d_layer',keep_attrs=True) #set all layers but one to nan, followed by an arbitrary reduce (max in this case)
-        #add zvalue as coordinate
-        data_xr_map_ondepth['depth_z'] = z
-        data_xr_map_ondepth['depth_z'] = data_xr_map_ondepth.depth_z.assign_attrs({'units':'m'})
-        data_xr_map_ondepth = data_xr_map_ondepth.set_coords(['depth_z'])
-    elif 'mesh2d_layer_z' in data_xr_map.coords: #TODO: might be better to take interfaces into account also (it currently interpolates between z-center values)
-        print('[z model] ',end='')
-        depth_attrs = data_xr_map_var.mesh2d_layer_z.attrs
-        data_xr_map_var = data_xr_map_var.set_index({'nmesh2d_layer':'mesh2d_layer_z'}).rename({'nmesh2d_layer':'depth_z'}) #set depth as index on layers, to be able to interp to depths instead of layernumbers
-        data_xr_map_var['depth_z'] = data_xr_map_var.depth_z.assign_attrs(depth_attrs) #set attrs from depth to layer
-        data_xr_map_ondepth = data_xr_map_var.interp(depth_z=z,kwargs=dict(bounds_error=True)) #interpolate to fixed z-depth
-    else:
-        raise Exception('layers present, but unknown layertype')
+        
+    if 'time' in data_xr_map.dims:
+        warnings.warn(UserWarning('get_mapdata_onfixedepth() can be very slow when supplying dataset with time dimension for zsigma/sigma models'))
+    bool_valid_wl = zw_reference.max(dim='nmesh2d_interface') >= depth #TODO suppress warning: C:\Users\veenstra\Anaconda3\envs\dfm_tools_env\lib\site-packages\dask\array\reductions.py:640: RuntimeWarning: All-NaN slice encountered. return np.nanmax(x_chunk, axis=axis, keepdims=keepdims)
+    bool_valid_bl = zw_reference.min(dim='nmesh2d_interface') <= depth #TODO suppress warning: C:\Users\veenstra\Anaconda3\envs\dfm_tools_env\lib\site-packages\dask\array\reductions.py:640: RuntimeWarning: All-NaN slice encountered. return np.nanmax(x_chunk, axis=axis, keepdims=keepdims)
+    bool_mindist = data_xr_map.nmesh2d_layer==abs(zcc_reference - depth).argmin(dim='nmesh2d_layer').load()
+    print('performing .where() on fixed depth for zsigma/fullgrid model')
+    data_xr_map_atdepth = data_xr_map_var.where(bool_valid_wl&bool_valid_bl&bool_mindist).max(dim='nmesh2d_layer',keep_attrs=True) #set all layers but one to nan, followed by an arbitrary reduce (max in this case)
+    #add zvalue as coordinate
+    data_xr_map_atdepth[depth_varname] = depth
+    data_xr_map_atdepth[depth_varname] = data_xr_map_atdepth[depth_varname].assign_attrs({'units':'m'})
+    data_xr_map_atdepth = data_xr_map_atdepth.set_coords([depth_varname])
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
-    return data_xr_map_ondepth
+    return data_xr_map_atdepth
 
 
 def get_xzcoords_onintersection(data_frommap_merged, intersect_pd, timestep=None):#, varname=None):
