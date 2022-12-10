@@ -150,7 +150,7 @@ def test_getvarnamemapnc():
 
 
 def test_zlayermodel_correct_layers_THISFAILS(): #TODO: fix this testcase, could be useful
-    file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc'), #zlayer
+    file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc') #zlayer
     data_frommap_merged = dfmt.open_partitioned_dataset(file_nc.replace('_0000_','_000*_')) #TODO: make starred default, but not yet supported by older code
     
     timestep = 3
