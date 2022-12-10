@@ -562,6 +562,7 @@ def reconstruct_zw_zcc_fromz(data_xr_map):
     zvals_cen_zval = data_xr_map['mesh2d_layer_z']
     #data_xr_map['mesh2d_flowelem_zcc'] = (data_frommap_z0_sel+zvals_cen_zval).clip(min=data_frommap_bl_sel, max=data_frommap_wl_sel)
     data_xr_map['mesh2d_flowelem_zcc'] = (data_frommap_z0_sel+zvals_cen_zval).clip(min=data_frommap_bl_sel, max=data_xr_map.mesh2d_flowelem_zw.isel(nmesh2d_interface=-1))
+    #data_xr_map['mesh2d_flowelem_zcc'] = (data_frommap_z0_sel+zvals_cen_zval).clip(min=data_xr_map.mesh2d_flowelem_zw.isel(nmesh2d_interface=0), max=data_xr_map.mesh2d_flowelem_zw.isel(nmesh2d_interface=-1))
     
     data_xr_map = data_xr_map.set_coords(['mesh2d_flowelem_zw','mesh2d_flowelem_zcc'])
     return data_xr_map
@@ -587,13 +588,14 @@ def get_mapdata_atdepth(data_xr_map, depth, reference='z0', varname=None, zlayer
     #TODO: what happens with variables without a depth dimension? Not checked yet
     """
     
-    data_wl = data_xr_map['mesh2d_s1']
-    data_bl = data_xr_map['mesh2d_flowelem_bl']
-    depth_varname = f'depth_from_{reference}'
     if not 'nmesh2d_layer' in data_xr_map.dims: #TODO: maybe raise exception instead?
         print('WARNING: depth dimension not found, probably 2D model, returning input Dataset')
         return data_xr_map
-    elif 'mesh2d_flowelem_zcc' in data_xr_map.coords: #fullgrid info available, so continuing
+    
+    data_wl = data_xr_map['mesh2d_s1']
+    data_bl = data_xr_map['mesh2d_flowelem_bl']
+    depth_varname = f'depth_from_{reference}'
+    if 'mesh2d_flowelem_zcc' in data_xr_map.coords: #fullgrid info available, so continuing
         print('zw/zcc (fullgrid) values already present in Dataset')
         pass
     elif 'mesh2d_layer_sigma' in data_xr_map.coords: #reconstruct_zw_zcc_fromsigma and treat as zsigma/fullgrid mapfile from here
