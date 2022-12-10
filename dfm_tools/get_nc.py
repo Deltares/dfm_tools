@@ -673,7 +673,7 @@ def get_xzcoords_onintersection(data_frommap_merged, intersect_pd, timestep=None
     data_frommap_merged_sel = data_frommap_merged.isel(time=timestep,mesh2d_nFaces=intersect_gridnos)
     if 'mesh2d_flowelem_zw' in varkeys_list: #TODO: or in data_frommap_merged. they are now all set as coordinates by dfmt.open_partitioned_map() so check coordinates instead
         print('layertype: fullgrid output')
-        zvals_interface_filled = data_frommap_merged_sel['mesh2d_flowelem_zw'].bfill(dim='mesh2d_nInterfaces') #fill nan values (below bed) with equal values
+        zvals_interface_filled = data_frommap_merged_sel['mesh2d_flowelem_zw'].bfill(dim='nmesh2d_interface') #fill nan values (below bed) with equal values
         zvals_interface = zvals_interface_filled.to_numpy().T # transpose to make in line with 2D sigma dataset
     else: #no full grid output, so reconstruct (or 2D model)
         data_frommap_wl3_sel = data_frommap_merged_sel['mesh2d_s1'].to_numpy()
