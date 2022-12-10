@@ -604,7 +604,7 @@ def get_mapdata_atdepth(data_xr_map, depth, reference='z0', varname=None, zlayer
         data_xr_map = reconstruct_zw_zcc_fromsigma(data_xr_map)
     elif 'mesh2d_layer_z' in data_xr_map.coords:
         if zlayer_z0_interp and reference=='z0': # interpolates between z-center values  (instead of slicing), should be faster #TODO: check if this is faster than fullgrid
-            if varname is not None:
+            if varname is not None: #TODO: when using .sel({depth_varname:depth},kwargs=dict(method='nearest')), the result should be equal to fullgrid
                 print('WARNING: varname!=None, but zlayer_interp_z=True so varname will be ignored')
             print('z-layer model, zlayer_interp_z=True and reference=="z0" so using xr.interp()]')
             depth_attrs = data_xr_map.mesh2d_layer_z.attrs
