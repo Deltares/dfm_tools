@@ -103,8 +103,6 @@ data_xr_out['layer'] = layervar
 #data_frommap_z = data_frommap_merged['mesh2d_layer_z']
 #if len(data_frommap_z.shape)>1: #TODO: re-enable this again
 #    raise Exception('converting to regulargrid is currently only possible for sigmalayers')
-#data_frommap_sigma = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_layer_sigma', layer=layers_idx, multipart=multipart)
-#data_frommap_sigma_z = get_ncmodeldata(file_nc=file_nc, varname='mesh2d_layer_sigma_z', layer=layers_idx, multipart=multipart)
 depthvar = xr.DataArray(data_frommap_merged['mesh2d_layer_z'].to_numpy(), dims=('layer'), attrs=data_frommap_merged['mesh2d_layer_z'].attrs) #if not z layers, make exception
 data_xr_out['depth'] = depthvar
 data_xr_out = data_xr_out.set_coords('depth') #TODO: depth value klopt niet in top layers

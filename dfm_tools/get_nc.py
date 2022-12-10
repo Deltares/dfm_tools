@@ -37,7 +37,6 @@ import numpy as np
 import datetime as dt
 import pandas as pd
 from netCDF4 import Dataset
-import xarray as xr
 import xugrid as xu
 import matplotlib.pyplot as plt
 import matplotlib.collections
@@ -76,7 +75,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=No
 
     """
     
-    warnings.warn(DeprecationWarning('dfm_tools.get_nc.get_ncmodeldata() will be deprecated, since there is an xarray alternative for multidomain FM files (xugrid).Open your file like this and use xarray sel/isel (example in postprocessing notebook):\n    data_xr_mapmerged = dfmt.open_partitioned_dataset(file_nc_map)\nFor hisfiles, use xarray with dfmt.preprocess_hisnc:\n    data_xr_his = xr.open_mfdataset(file_nc_his, preprocess=dfmt.preprocess_hisnc)'))
+    warnings.warn(DeprecationWarning('dfm_tools.get_nc.get_ncmodeldata() is deprecated, since there is an xarray alternative for multidomain FM files (xugrid).Open your file like this and use xarray sel/isel (example in postprocessing notebook):\n    data_xr_mapmerged = dfmt.open_partitioned_dataset(file_nc_map)\nFor hisfiles, use xarray with dfmt.preprocess_hisnc:\n    data_xr_his = xr.open_mfdataset(file_nc_his, preprocess=dfmt.preprocess_hisnc)'))
     
     #get variable info (also checks if varname exists in keys, standard name, long name)
     if isinstance(file_nc,list): #for opendap, has to support lists
@@ -84,7 +83,6 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=No
     else:
         file_nc_one = file_nc        
     data_nc = Dataset(file_nc_one)
-    data_xr = xr.open_dataset(file_nc_one)
     varname = get_varnamefrom_keyslongstandardname(file_nc_one, varname) #get varname from varkeys/standardname/longname if exists
     nc_varobject = data_nc.variables[varname]
     
@@ -353,6 +351,9 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=No
 
 
 def get_ugrid_verts(data_xr_map):
+    """
+    getting ugrid verts from xugrid mapfile. This might be phased out in the future.
+    """
     data_xr_grid = data_xr_map.ugrid.grid.to_dataset()
     face_nos = data_xr_grid.mesh2d_face_nodes.load()
     bool_nonemptyfacenode = face_nos!=-1
@@ -405,7 +406,7 @@ def polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=None)
     """
     
     import numpy as np
-    from matplotlib.path import Path
+    #from matplotlib.path import Path
     import shapely #separate import, since sometimes this works, while import shapely.geometry fails
     from shapely.geometry import LineString, Polygon, MultiLineString, Point
     from dfm_tools.get_nc import calc_dist_pythagoras, calc_dist_haversine

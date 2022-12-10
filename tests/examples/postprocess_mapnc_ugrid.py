@@ -182,7 +182,7 @@ for file_nc in file_nc_list:
     print(f'calculating and plotting cross section finished in {runtime_timedelta}')
     
     
-    print('plot grid and values from mapdata (salinity on layer, 3dim, on cell centers)') #TODO: plotting top/bottom layer is possible with ffill/bfill, like https://github.com/Deltares/dfm_tools/blob/main/tests/examples_workinprogress/workinprogress_exporttoshapefile.py#L50
+    print('plot grid and values from mapdata (salinity on layer, 3dim, on cell centers)')
     fig, ax = plt.subplots()
     if 'nmesh2d_layer' in data_frommap_merged['mesh2d_sa1'].dims: #use argument missing_dims='ignore' instead
         pc = data_frommap_merged['mesh2d_sa1'].isel(time=timestep,nmesh2d_layer=layno).ugrid.plot(edgecolor='face',cmap='jet')
@@ -194,9 +194,9 @@ for file_nc in file_nc_list:
     fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_sa1'))
 
 
-    print('plot grid and values from mapdata (salinity on layer, 3dim, on cell centers) >> on fixed depth') #depth w.r.t. z0/waterlevel/bedlevel
+    print('plot grid and values from mapdata (salinity on layer, 3dim, on cell centers) >> on fixed depth')
     data_frommap_timesel = data_frommap_merged.isel(time=timestep) #select data for all layers
-    data_frommap_timesel_ondepth = dfmt.get_mapdata_atdepth(data_xr_map=data_frommap_timesel, depth=-4, reference='z0')#, zlayer_z0_interp=True)
+    data_frommap_timesel_ondepth = dfmt.get_mapdata_atdepth(data_xr_map=data_frommap_timesel, depth=-4, reference='z0') #depth w.r.t. z0/waterlevel/bedlevel
     fig, ax = plt.subplots()
     pc = data_frommap_timesel_ondepth['mesh2d_sa1'].ugrid.plot(edgecolor='face',cmap='jet')
     pc.set_clim(clim_sal)
