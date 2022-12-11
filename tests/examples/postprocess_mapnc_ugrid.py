@@ -199,7 +199,7 @@ for file_nc in file_nc_list:
     data_frommap_timesel_atdepths = dfmt.get_mapdata_atdepths(data_xr_map=data_frommap_timesel, depths=depths, reference='z0') #depth w.r.t. z0/waterlevel/bedlevel
     for dep in depths:
         fig, ax = plt.subplots()
-        if 'depth_fromref' in data_frommap_timesel_atdepths.dims:
+        if 'depth_fromref' in data_frommap_timesel_atdepths.dims: #TODO: use missingdims=ignore so if-statement is not necessary
             pc = data_frommap_timesel_atdepths['mesh2d_sa1'].sel(depth_fromref=dep).ugrid.plot(edgecolor='face',cmap='jet')
         else:
             pc = data_frommap_timesel_atdepths['mesh2d_sa1'].ugrid.plot(edgecolor='face',cmap='jet')
