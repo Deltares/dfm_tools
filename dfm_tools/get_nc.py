@@ -38,6 +38,7 @@ import datetime as dt
 import pandas as pd
 from netCDF4 import Dataset
 import xugrid as xu
+import xarray as xr
 import matplotlib.pyplot as plt
 import matplotlib.collections
 
@@ -567,7 +568,7 @@ def reconstruct_zw_zcc_fromz(data_xr_map):
     return data_xr_map
 
 
-def get_mapdata_atdepth(data_xr_map, depth, reference='z0', varname=None, zlayer_z0_selnearest=False):
+def get_mapdata_atdepth(data_xr_map, depth, reference='z0', zlayer_z0_selnearest=False):
     """
     data_xr_map:
         has to be Dataset (not a DataArray), otherwise mesh2d_flowelem_zw etc are not available (interface z values)
@@ -583,71 +584,59 @@ def get_mapdata_atdepth(data_xr_map, depth, reference='z0', varname=None, zlayer
     
     #TODO: zmodel gets depth in figure title, because of .set_index() in open_partitioned_dataset(). Sigmamodel gets percentage/fraction in title
     #TODO: check if attributes should be passed/altered
-    #TODO: what happens with variables without a depth dimension? Not checked yet
+    #TODO: make generic to also work with hisnc files?
     """
     
     if not 'nmesh2d_layer' in data_xr_map.dims: #TODO: maybe raise exception instead?
         print('WARNING: depth dimension not found, probably 2D model, returning input Dataset')
         return data_xr_map #early return
     
+    if not isinstance(data_xr_map,(xr.Dataset,xu.UgridDataset)):
+        raise Exception(f'data_xr_map should be of type xr.Dataset, but is {type(data_xr_map)}')
+    
     data_wl = data_xr_map['mesh2d_s1']
     data_bl = data_xr_map['mesh2d_flowelem_bl']
     depth_varname = f'depth_from_{reference}'
-    if 'mesh2d_flowelem_zcc' in data_xr_map.coords: #fullgrid info available, so continuing
+    
+    #simplified/faster method for zlayer icm z0 reference
+    if 'mesh2d_layer_z' in data_xr_map.coords and zlayer_z0_selnearest and reference=='z0': # selects nearest z-center values (instead of slicing), should be faster #TODO: check if this is faster than fullgrid
+        print('z-layer model, zlayer_interp_z=True and reference=="z0" so using xr.interp()]')
+        depth_attrs = data_xr_map.mesh2d_layer_z.attrs
+        data_xr_map = data_xr_map.set_index({'nmesh2d_layer':'mesh2d_layer_z'}).rename({'nmesh2d_layer':depth_varname}) #set depth as index on layers, to be able to interp to depths instead of layernumbers
+        data_xr_map[depth_varname] = data_xr_map[depth_varname].assign_attrs(depth_attrs) #set attrs from depth to layer
+        #data_xr_map_atdepth = data_xr_map.interp({depth_varname:depth},kwargs=dict(bounds_error=False,fill_value='extrapolate')) #interpolate to fixed z-depth
+        data_xr_map_atdepth = data_xr_map.sel({depth_varname:depth},method='nearest')
+        data_xr_map_atdepth = data_xr_map_atdepth.where((depth>=data_bl) & (depth<=data_wl)) #filter above wl and below bl values
+        return data_xr_map_atdepth #early return
+    
+    #potentially construct fullgrid info (zcc/zw) #TODO: maybe move to separate dim, like open_partitioned_dataset() (although bl/wl are needed anyway)
+    if 'mesh2d_flowelem_zw' in data_xr_map.coords: #fullgrid info already available, so continuing
         print('zw/zcc (fullgrid) values already present in Dataset')
         pass
     elif 'mesh2d_layer_sigma' in data_xr_map.coords: #reconstruct_zw_zcc_fromsigma and treat as zsigma/fullgrid mapfile from here
         print('sigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
         data_xr_map = reconstruct_zw_zcc_fromsigma(data_xr_map)
     elif 'mesh2d_layer_z' in data_xr_map.coords:
-        if zlayer_z0_selnearest and reference=='z0': # interpolates between z-center values  (instead of slicing), should be faster #TODO: check if this is faster than fullgrid
-            if varname is not None: #TODO: when using .sel({depth_varname:depth},kwargs=dict(method='nearest')), the result should be equal to fullgrid
-                print('WARNING: varname!=None, but zlayer_interp_z=True so varname will be ignored')
-            print('z-layer model, zlayer_interp_z=True and reference=="z0" so using xr.interp()]')
-            depth_attrs = data_xr_map.mesh2d_layer_z.attrs
-            data_xr_map = data_xr_map.set_index({'nmesh2d_layer':'mesh2d_layer_z'}).rename({'nmesh2d_layer':depth_varname}) #set depth as index on layers, to be able to interp to depths instead of layernumbers
-            data_xr_map[depth_varname] = data_xr_map[depth_varname].assign_attrs(depth_attrs) #set attrs from depth to layer
-            #data_xr_map_atdepth = data_xr_map.interp({depth_varname:depth},kwargs=dict(bounds_error=False,fill_value='extrapolate')) #interpolate to fixed z-depth
-            data_xr_map_atdepth = data_xr_map.sel({depth_varname:depth},method='nearest')
-            data_xr_map_atdepth = data_xr_map_atdepth.where((depth>=data_bl) & (depth<=data_wl)) #filter above wl and below bl values
-            return data_xr_map_atdepth #early return
-        
         print('z-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
         data_xr_map = reconstruct_zw_zcc_fromz(data_xr_map)
     else:
-        raise Exception('layers present, but unknown layertype')
+        raise Exception('layers present, but unknown layertype, expected one of variables: mesh2d_flowelem_zw, mesh2d_layer_sigma, mesh2d_layer_z')
     
     #correct reference level
-    if reference=='z0': #TODO: check if all references work properly
+    if reference=='z0':
         zw_reference = data_xr_map.mesh2d_flowelem_zw
-        #zcc_reference = data_xr_map.mesh2d_flowelem_zcc
     elif reference=='waterlevel':
         zw_reference = data_xr_map.mesh2d_flowelem_zw - data_wl
-        #zcc_reference = data_xr_map.mesh2d_flowelem_zcc - data_wl
     elif reference=='bedlevel':
         zw_reference = data_xr_map.mesh2d_flowelem_zw - data_bl
-        #zcc_reference = data_xr_map.mesh2d_flowelem_zcc - data_bl
     else:
         raise Exception(f'unknown reference "{reference}" (possible are z0, waterlevel and bedlevel')
-    
-    if varname is not None: #TODO: maybe remove this, although with varname=None DCSM gives "PerformanceWarning: Increasing number of chunks by factor of 20" (maybe apply where only on vars with facedim solves it?)
-        data_xr_map_var = data_xr_map[varname]
-    else:
-        data_xr_map_var = data_xr_map
     
     print('>> subsetting data on fixed depth in fullgrid z-data: ',end='')
     dtstart = dt.datetime.now()
         
     if 'time' in data_xr_map.dims:
-        warnings.warn(UserWarning('get_mapdata_onfixedepth() can be very slow when supplying dataset with time dimension for zsigma/sigma models'))
-    
-    """
-    #interp to z-center values (zcc) #TODO: remove this old code
-    bool_valid_wl = zw_reference.max(dim='nmesh2d_interface') >= depth #TODO suppress warning: dask reductions.py:640: RuntimeWarning: All-NaN slice encountered. return np.nanmax(x_chunk, axis=axis, keepdims=keepdims)
-    bool_valid_bl = zw_reference.min(dim='nmesh2d_interface') <= depth #TODO suppress warning: dask reductions.py:640: RuntimeWarning: All-NaN slice encountered. return np.nanmax(x_chunk, axis=axis, keepdims=keepdims)
-    bool_mindist = data_xr_map.nmesh2d_layer==abs(zcc_reference - depth).argmin(dim='nmesh2d_layer').load()
-    data_xr_map_atdepth = data_xr_map_var.where(bool_valid_wl&bool_valid_bl&bool_mindist).max(dim='nmesh2d_layer',keep_attrs=True) #set all layers but one to nan, followed by an arbitrary reduce (max in this case)
-    """
+        warnings.warn(UserWarning('get_mapdata_onfixedepth() can be very slow when supplying dataset with time dimension, you could supply ds.isel(time=timestep) instead'))
     
     #get layerno via z-interface value (zw), check which celltop-interfaces are above/on depth and which which cellbottom-interfaces are below/on depth
     bool_topinterface_abovedepth = zw_reference.isel(nmesh2d_interface=slice(1,None)) >= depth
@@ -655,7 +644,9 @@ def get_mapdata_atdepth(data_xr_map, depth, reference='z0', varname=None, zlayer
     bool_topbotinterface_arounddepth = bool_topinterface_abovedepth & bool_botinterface_belowdepth #this bool also automatically excludes all values below bed and above wl
     bool_topbotinterface_arounddepth = bool_topbotinterface_arounddepth.rename({'nmesh2d_interface':'nmesh2d_layer'}) #correct dimname for interfaces to centers
     #bool_topbotinterface_arounddepth.sum(dim='nmesh2d_layer').max(dim='time').load() #TODO: max is layno, should be 1 everywhere?
-    data_xr_map_atdepth = data_xr_map_var.where(bool_topbotinterface_arounddepth).max(dim='nmesh2d_layer',keep_attrs=True) #set all layers but one to nan, followed by an arbitrary reduce (max in this case)
+    data_xr_map_atdepth = data_xr_map.where(bool_topbotinterface_arounddepth).max(dim='nmesh2d_layer',keep_attrs=True) #set all layers but one to nan, followed by an arbitrary reduce (max in this case)
+    #TODO: suppress/solve warning for DCSM (does not happen when supplying data_xr_map[['mesh2d_sa1','mesh2d_s1','mesh2d_flowelem_bl','mesh2d_flowelem_zw']]): "C:\Users\veenstra\Anaconda3\envs\dfm_tools_env\lib\site-packages\dask\array\core.py:4806: PerformanceWarning: Increasing number of chunks by factor of 20"
+    #TODO: suppress warning (upon plotting/load/etc): "C:\Users\veenstra\Anaconda3\envs\dfm_tools_env\lib\site-packages\dask\array\reductions.py:640: RuntimeWarning: All-NaN slice encountered"
     
     #add zvalue as coordinate
     data_xr_map_atdepth[depth_varname] = depth
@@ -672,43 +663,38 @@ def get_xzcoords_onintersection(data_frommap_merged, intersect_pd, timestep=None
     if timestep is None: #TODO: maybe make time dependent grid?
         raise Exception('ERROR: argument timestep not provided, this is necessary to retrieve correct waterlevel or fullgrid output')
     
-    varkeys_list = list(data_frommap_merged.variables.keys())
     dimn_layer = 'nmesh2d_layer'#dfmt.get_varname_fromnc(data_frommap_merged,'nmesh2d_layer',vardim='dim') #TODO: hardcoding ok because of renaming? (no, since gridname is not fixed)
     if dimn_layer in data_frommap_merged.dims:
         nlay = data_frommap_merged.dims[dimn_layer]
     else: #no layers, 2D model
         nlay = 1
     
+    #potentially construct fullgrid info (zcc/zw) #TODO: this ifloop is copied from get_mapdata_atdepth(), prevent this duplicate code
+    if dimn_layer not in data_frommap_merged.dims: #2D model
+        pass
+    elif 'mesh2d_flowelem_zw' in data_frommap_merged.coords: #fullgrid info already available, so continuing
+        print('zw/zcc (fullgrid) values already present in Dataset')
+        pass
+    elif 'mesh2d_layer_sigma' in data_frommap_merged.coords: #reconstruct_zw_zcc_fromsigma and treat as zsigma/fullgrid mapfile from here
+        print('sigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
+        data_frommap_merged = reconstruct_zw_zcc_fromsigma(data_frommap_merged)
+    elif 'mesh2d_layer_z' in data_frommap_merged.coords:        
+        print('z-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
+        data_frommap_merged = reconstruct_zw_zcc_fromz(data_frommap_merged)
+    else:
+        raise Exception('layers present, but unknown layertype, expected one of variables: mesh2d_flowelem_zw, mesh2d_layer_sigma, mesh2d_layer_z')
+    
     intersect_gridnos = intersect_pd.index
     data_frommap_merged_sel = data_frommap_merged.isel(time=timestep,mesh2d_nFaces=intersect_gridnos)
-    if 'mesh2d_flowelem_zw' in varkeys_list: #TODO: or in data_frommap_merged. they are now all set as coordinates by dfmt.open_partitioned_map() so check coordinates instead
+    if 'nmesh2d_layer' not in data_frommap_merged.dims:
+        print('WARNING: depth dimension not found, probably 2D model')
+        data_frommap_wl3_sel = data_frommap_merged_sel['mesh2d_s1'].to_numpy()
+        data_frommap_bl_sel = data_frommap_merged_sel['mesh2d_flowelem_bl'].to_numpy()
+        zvals_interface = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay+1)
+    elif 'mesh2d_flowelem_zw' in data_frommap_merged.variables:
         print('layertype: fullgrid output')
         zvals_interface_filled = data_frommap_merged_sel['mesh2d_flowelem_zw'].bfill(dim='nmesh2d_interface') #fill nan values (below bed) with equal values
         zvals_interface = zvals_interface_filled.to_numpy().T # transpose to make in line with 2D sigma dataset
-    else: #no full grid output, so reconstruct (or 2D model)
-        data_frommap_wl3_sel = data_frommap_merged_sel['mesh2d_s1'].to_numpy()
-        data_frommap_bl_sel = data_frommap_merged_sel['mesh2d_flowelem_bl'].to_numpy()
-        if 'mesh2d_layer_z' in varkeys_list or 'LayCoord_cc' in varkeys_list: #TODO: add translation table?
-            print('layertype: zlayer')
-            warnings.warn('WARNING: your model seems to contain only z-layers. if the modeloutput is generated with an older version of dflowfm, the coordinates can be incorrect. if your model contains z-sigma-layers, use the fulloutput option in the mdu and rerun (happens automatically in newer dflowfm versions).')
-            zvals_interface_vec = data_frommap_merged_sel['mesh2d_interface_z'].to_numpy()[:,np.newaxis]
-            zvals_interface = np.repeat(zvals_interface_vec,len(data_frommap_wl3_sel),axis=1)
-            # zvalues lower than bedlevel should be overwritten with bedlevel
-            for iL in range(nlay):
-                zvalbot_belowbl_bool = zvals_interface[iL,:]<data_frommap_bl_sel
-                zvals_interface[iL,zvalbot_belowbl_bool] = data_frommap_bl_sel[zvalbot_belowbl_bool]
-            #top z-layer is extended to water level, if wl is higher than zval_lay_top
-            zvals_interface[-1,:] = np.maximum(zvals_interface[-1,:],data_frommap_wl3_sel)
-        elif 'mesh2d_layer_sigma' in varkeys_list: #TODO: maybe use dfmt.reconstruct_zw_zcc_fromsigma() instead
-            print('layertype: sigmalayer')
-            zvals_interface_percentage = data_frommap_merged_sel['mesh2d_interface_sigma'].to_numpy()[:,np.newaxis]
-            zvals_interface = data_frommap_wl3_sel+(data_frommap_wl3_sel-data_frommap_bl_sel)[np.newaxis]*zvals_interface_percentage
-        else: # 2D model
-            print('layertype: 2D model')
-            if nlay!=1:
-                raise Exception('recheck this')
-            #zvals_cen = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay)
-            zvals_interface = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay+1)
     
     #convert to output for plot_netmapdata
     crs_dist_starts_matrix = np.repeat(intersect_pd['crs_dist_starts'].values[np.newaxis],nlay,axis=0)
