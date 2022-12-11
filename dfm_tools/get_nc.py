@@ -554,16 +554,14 @@ def reconstruct_zw_zcc_fromz(data_xr_map):
     data_frommap_z0_sel = data_frommap_wl_sel*0
     data_frommap_bl_sel = data_xr_map['mesh2d_flowelem_bl']
     
-    zvals_interface_zval = data_xr_map['mesh2d_interface_z']
+    zvals_cen_zval = data_xr_map['mesh2d_layer_z'] #no clipping for zcenter values, since otherwise interp will fail
+    data_xr_map['mesh2d_flowelem_zcc'] = (data_frommap_z0_sel+zvals_cen_zval)
+
+    zvals_interface_zval = data_xr_map['mesh2d_interface_z'] #clipping for zinterface values, to make sure layer interfaces are also at water/bed level
     data_xr_map['mesh2d_flowelem_zw'] = (data_frommap_z0_sel+zvals_interface_zval).clip(min=data_frommap_bl_sel, max=data_frommap_wl_sel)
     bool_notoplayer_int = zvals_interface_zval<zvals_interface_zval.isel(nmesh2d_interface=-1)
     bool_int_abovewl = zvals_interface_zval>data_frommap_wl_sel
     data_xr_map['mesh2d_flowelem_zw'] = data_xr_map['mesh2d_flowelem_zw'].where(bool_notoplayer_int | bool_int_abovewl, other=data_frommap_wl_sel) #zvalues of top layer_interfaces that are lower than wl are replaced by wl
-    
-    zvals_cen_zval = data_xr_map['mesh2d_layer_z']
-    #data_xr_map['mesh2d_flowelem_zcc'] = (data_frommap_z0_sel+zvals_cen_zval).clip(min=data_frommap_bl_sel, max=data_frommap_wl_sel)
-    data_xr_map['mesh2d_flowelem_zcc'] = (data_frommap_z0_sel+zvals_cen_zval).clip(min=data_frommap_bl_sel, max=data_xr_map.mesh2d_flowelem_zw.isel(nmesh2d_interface=-1))
-    #data_xr_map['mesh2d_flowelem_zcc'] = (data_frommap_z0_sel+zvals_cen_zval).clip(min=data_xr_map.mesh2d_flowelem_zw.isel(nmesh2d_interface=0), max=data_xr_map.mesh2d_flowelem_zw.isel(nmesh2d_interface=-1))
     
     data_xr_map = data_xr_map.set_coords(['mesh2d_flowelem_zw','mesh2d_flowelem_zcc'])
     return data_xr_map
@@ -622,13 +620,13 @@ def get_mapdata_atdepth(data_xr_map, depth, reference='z0', varname=None, zlayer
     #correct reference level
     if reference=='z0': #TODO: check if all references work properly
         zw_reference = data_xr_map.mesh2d_flowelem_zw
-        zcc_reference = data_xr_map.mesh2d_flowelem_zcc
+        #zcc_reference = data_xr_map.mesh2d_flowelem_zcc
     elif reference=='waterlevel':
         zw_reference = data_xr_map.mesh2d_flowelem_zw - data_wl
-        zcc_reference = data_xr_map.mesh2d_flowelem_zcc - data_wl
+        #zcc_reference = data_xr_map.mesh2d_flowelem_zcc - data_wl
     elif reference=='bedlevel':
         zw_reference = data_xr_map.mesh2d_flowelem_zw - data_bl
-        zcc_reference = data_xr_map.mesh2d_flowelem_zcc - data_bl
+        #zcc_reference = data_xr_map.mesh2d_flowelem_zcc - data_bl
     else:
         raise Exception(f'unknown reference "{reference}" (possible are z0, waterlevel and bedlevel')
     
@@ -642,11 +640,23 @@ def get_mapdata_atdepth(data_xr_map, depth, reference='z0', varname=None, zlayer
         
     if 'time' in data_xr_map.dims:
         warnings.warn(UserWarning('get_mapdata_onfixedepth() can be very slow when supplying dataset with time dimension for zsigma/sigma models'))
-    bool_valid_wl = zw_reference.max(dim='nmesh2d_interface') >= depth #TODO suppress warning: C:\Users\veenstra\Anaconda3\envs\dfm_tools_env\lib\site-packages\dask\array\reductions.py:640: RuntimeWarning: All-NaN slice encountered. return np.nanmax(x_chunk, axis=axis, keepdims=keepdims)
-    bool_valid_bl = zw_reference.min(dim='nmesh2d_interface') <= depth #TODO suppress warning: C:\Users\veenstra\Anaconda3\envs\dfm_tools_env\lib\site-packages\dask\array\reductions.py:640: RuntimeWarning: All-NaN slice encountered. return np.nanmax(x_chunk, axis=axis, keepdims=keepdims)
+    
+    """
+    #interp to z-center values (zcc) #TODO: remove this old code
+    bool_valid_wl = zw_reference.max(dim='nmesh2d_interface') >= depth #TODO suppress warning: dask reductions.py:640: RuntimeWarning: All-NaN slice encountered. return np.nanmax(x_chunk, axis=axis, keepdims=keepdims)
+    bool_valid_bl = zw_reference.min(dim='nmesh2d_interface') <= depth #TODO suppress warning: dask reductions.py:640: RuntimeWarning: All-NaN slice encountered. return np.nanmax(x_chunk, axis=axis, keepdims=keepdims)
     bool_mindist = data_xr_map.nmesh2d_layer==abs(zcc_reference - depth).argmin(dim='nmesh2d_layer').load()
-    print('performing .where() on fixed depth for zsigma/fullgrid model')
     data_xr_map_atdepth = data_xr_map_var.where(bool_valid_wl&bool_valid_bl&bool_mindist).max(dim='nmesh2d_layer',keep_attrs=True) #set all layers but one to nan, followed by an arbitrary reduce (max in this case)
+    """
+    
+    #get layerno via z-interface value (zw), check which celltop-interfaces are above/on depth and which which cellbottom-interfaces are below/on depth
+    bool_topinterface_abovedepth = zw_reference.isel(nmesh2d_interface=slice(1,None)) >= depth
+    bool_botinterface_belowdepth = zw_reference.isel(nmesh2d_interface=slice(None,-1)) <= depth
+    bool_topbotinterface_arounddepth = bool_topinterface_abovedepth & bool_botinterface_belowdepth #this bool also automatically excludes all values below bed and above wl
+    bool_topbotinterface_arounddepth = bool_topbotinterface_arounddepth.rename({'nmesh2d_interface':'nmesh2d_layer'}) #correct dimname for interfaces to centers
+    #bool_topbotinterface_arounddepth.sum(dim='nmesh2d_layer').max(dim='time').load() #TODO: max is layno, should be 1 everywhere?
+    data_xr_map_atdepth = data_xr_map_var.where(bool_topbotinterface_arounddepth).max(dim='nmesh2d_layer',keep_attrs=True) #set all layers but one to nan, followed by an arbitrary reduce (max in this case)
+    
     #add zvalue as coordinate
     data_xr_map_atdepth[depth_varname] = depth
     data_xr_map_atdepth[depth_varname] = data_xr_map_atdepth[depth_varname].assign_attrs({'units':'m'})
