@@ -567,8 +567,7 @@ def reconstruct_zw_zcc_fromz(data_xr_map):
     return data_xr_map
 
 
-
-def get_mapdata_atdepth(data_xr_map, depth, reference='z0', varname=None, zlayer_z0_interp=False):
+def get_mapdata_atdepth(data_xr_map, depth, reference='z0', varname=None, zlayer_z0_selnearest=False):
     """
     data_xr_map:
         has to be Dataset (not a DataArray), otherwise mesh2d_flowelem_zw etc are not available (interface z values)
@@ -601,14 +600,15 @@ def get_mapdata_atdepth(data_xr_map, depth, reference='z0', varname=None, zlayer
         print('sigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
         data_xr_map = reconstruct_zw_zcc_fromsigma(data_xr_map)
     elif 'mesh2d_layer_z' in data_xr_map.coords:
-        if zlayer_z0_interp and reference=='z0': # interpolates between z-center values  (instead of slicing), should be faster #TODO: check if this is faster than fullgrid
+        if zlayer_z0_selnearest and reference=='z0': # interpolates between z-center values  (instead of slicing), should be faster #TODO: check if this is faster than fullgrid
             if varname is not None: #TODO: when using .sel({depth_varname:depth},kwargs=dict(method='nearest')), the result should be equal to fullgrid
                 print('WARNING: varname!=None, but zlayer_interp_z=True so varname will be ignored')
             print('z-layer model, zlayer_interp_z=True and reference=="z0" so using xr.interp()]')
             depth_attrs = data_xr_map.mesh2d_layer_z.attrs
             data_xr_map = data_xr_map.set_index({'nmesh2d_layer':'mesh2d_layer_z'}).rename({'nmesh2d_layer':depth_varname}) #set depth as index on layers, to be able to interp to depths instead of layernumbers
             data_xr_map[depth_varname] = data_xr_map[depth_varname].assign_attrs(depth_attrs) #set attrs from depth to layer
-            data_xr_map_atdepth = data_xr_map.interp({depth_varname:depth},kwargs=dict(bounds_error=False,fill_value='extrapolate')) #interpolate to fixed z-depth
+            #data_xr_map_atdepth = data_xr_map.interp({depth_varname:depth},kwargs=dict(bounds_error=False,fill_value='extrapolate')) #interpolate to fixed z-depth
+            data_xr_map_atdepth = data_xr_map.sel({depth_varname:depth},method='nearest')
             data_xr_map_atdepth = data_xr_map_atdepth.where((depth>=data_bl) & (depth<=data_wl)) #filter above wl and below bl values
             return data_xr_map_atdepth #early return
         
