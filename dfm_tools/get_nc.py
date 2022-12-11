@@ -671,6 +671,7 @@ def get_xzcoords_onintersection(data_frommap_merged, intersect_pd, timestep=None
     
     #potentially construct fullgrid info (zcc/zw) #TODO: this ifloop is copied from get_mapdata_atdepth(), prevent this duplicate code
     if dimn_layer not in data_frommap_merged.dims: #2D model
+        print('depth dimension not found, probably 2D model')
         pass
     elif 'mesh2d_flowelem_zw' in data_frommap_merged.coords: #fullgrid info already available, so continuing
         print('zw/zcc (fullgrid) values already present in Dataset')
@@ -687,12 +688,10 @@ def get_xzcoords_onintersection(data_frommap_merged, intersect_pd, timestep=None
     intersect_gridnos = intersect_pd.index
     data_frommap_merged_sel = data_frommap_merged.isel(time=timestep,mesh2d_nFaces=intersect_gridnos)
     if 'nmesh2d_layer' not in data_frommap_merged.dims:
-        print('WARNING: depth dimension not found, probably 2D model')
         data_frommap_wl3_sel = data_frommap_merged_sel['mesh2d_s1'].to_numpy()
         data_frommap_bl_sel = data_frommap_merged_sel['mesh2d_flowelem_bl'].to_numpy()
         zvals_interface = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay+1)
     elif 'mesh2d_flowelem_zw' in data_frommap_merged.variables:
-        print('layertype: fullgrid output')
         zvals_interface_filled = data_frommap_merged_sel['mesh2d_flowelem_zw'].bfill(dim='nmesh2d_interface') #fill nan values (below bed) with equal values
         zvals_interface = zvals_interface_filled.to_numpy().T # transpose to make in line with 2D sigma dataset
     
