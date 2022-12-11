@@ -121,7 +121,6 @@ for file_nc in file_nc_list:
     
     data_frommap_merged = dfmt.open_partitioned_dataset(file_nc.replace('_0000_','_0*_')) #TODO: make starred default, but not supported by older code
     
-    #get ugrid data, vars informatin and grid units (latter from bedlevel coordinates)
     vars_pd = dfmt.get_ncvarproperties(file_nc=file_nc)
     
     print('plot grid from mapdata') #use random variable and plot line to get grid (alternatively: xr.plot.line(data_frommap_merged.ugrid.grid.to_dataset()), but that crashes)
@@ -194,14 +193,19 @@ for file_nc in file_nc_list:
     fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_sa1'))
 
 
-    print('plot grid and values from mapdata (salinity on layer, 3dim, on cell centers), on fixed depth')
+    print('plot grid and values from mapdata (salinity on layer, 3dim, on cell centers), on fixed depth(s)')
+    depths = [-1,-4]
     data_frommap_timesel = data_frommap_merged.isel(time=timestep) #select data for all layers
-    data_frommap_timesel_ondepth = dfmt.get_mapdata_atdepth(data_xr_map=data_frommap_timesel, depth=-4, reference='z0') #depth w.r.t. z0/waterlevel/bedlevel
-    fig, ax = plt.subplots()
-    pc = data_frommap_timesel_ondepth['mesh2d_sa1'].ugrid.plot(edgecolor='face',cmap='jet')
-    pc.set_clim(clim_sal)
-    ax.set_aspect('equal')
-    fig.tight_layout()
+    data_frommap_timesel_atdepths = dfmt.get_mapdata_atdepths(data_xr_map=data_frommap_timesel, depths=depths, reference='z0') #depth w.r.t. z0/waterlevel/bedlevel
+    for dep in depths:
+        fig, ax = plt.subplots()
+        if 'depth_fromref' in data_frommap_timesel_atdepths.dims:
+            pc = data_frommap_timesel_atdepths['mesh2d_sa1'].sel(depth_fromref=dep).ugrid.plot(edgecolor='face',cmap='jet')
+        else:
+            pc = data_frommap_timesel_atdepths['mesh2d_sa1'].ugrid.plot(edgecolor='face',cmap='jet')
+        pc.set_clim(clim_sal)
+        ax.set_aspect('equal')
+        fig.tight_layout()
     fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_sa1_onfixeddepth'))
     
     

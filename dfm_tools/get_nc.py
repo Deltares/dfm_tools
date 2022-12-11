@@ -568,13 +568,13 @@ def reconstruct_zw_zcc_fromz(data_xr_map):
     return data_xr_map
 
 
-def get_mapdata_atdepth(data_xr_map, depth, reference='z0', zlayer_z0_selnearest=False):
+def get_mapdata_atdepths(data_xr_map, depths, reference='z0', zlayer_z0_selnearest=False):
     """
     data_xr_map:
         has to be Dataset (not a DataArray), otherwise mesh2d_flowelem_zw etc are not available (interface z values)
         in case of zsigma/sigma layers (or fullgrid), it is advisable to .sel()/.isel() the time dimension first, because that is less computationally heavy
-    depth:
-        depth w.r.t. reference level. If reference=='waterlevel', depth>0 returns only nans. If reference=='bedlevel', depth<0 returns only nans. 
+    depths:
+        int/float or list of int/float. Depths w.r.t. reference level. If reference=='waterlevel', depth>0 returns only nans. If reference=='bedlevel', depth<0 returns only nans. 
     reference:
         compute depth w.r.t. z0/waterlevel/bed
         default: reference='z0'
@@ -593,21 +593,26 @@ def get_mapdata_atdepth(data_xr_map, depth, reference='z0', zlayer_z0_selnearest
     
     if not isinstance(data_xr_map,(xr.Dataset,xu.UgridDataset)):
         raise Exception(f'data_xr_map should be of type xr.Dataset, but is {type(data_xr_map)}')
-    
+    if isinstance(depths,(float,int)):
+        depths = [depths]
+
     data_wl = data_xr_map['mesh2d_s1']
     data_bl = data_xr_map['mesh2d_flowelem_bl']
-    depth_varname = f'depth_from_{reference}'
+    depth_varname = 'depth_fromref'
+    
+    #create depth xr.DataArray
+    depths_xr = xr.DataArray(np.unique(depths),dims=(depth_varname),attrs={'units':'m',
+                                                                           'reference':f'model_{reference}',
+                                                                           'positive':'up'}) #TODO: make more in line with CMEMS etc
     
     #simplified/faster method for zlayer icm z0 reference
     if 'mesh2d_layer_z' in data_xr_map.coords and zlayer_z0_selnearest and reference=='z0': # selects nearest z-center values (instead of slicing), should be faster #TODO: check if this is faster than fullgrid
-        print('z-layer model, zlayer_interp_z=True and reference=="z0" so using xr.interp()]')
-        depth_attrs = data_xr_map.mesh2d_layer_z.attrs
-        data_xr_map = data_xr_map.set_index({'nmesh2d_layer':'mesh2d_layer_z'}).rename({'nmesh2d_layer':depth_varname}) #set depth as index on layers, to be able to interp to depths instead of layernumbers
-        data_xr_map[depth_varname] = data_xr_map[depth_varname].assign_attrs(depth_attrs) #set attrs from depth to layer
-        #data_xr_map_atdepth = data_xr_map.interp({depth_varname:depth},kwargs=dict(bounds_error=False,fill_value='extrapolate')) #interpolate to fixed z-depth
-        data_xr_map_atdepth = data_xr_map.sel({depth_varname:depth},method='nearest')
-        data_xr_map_atdepth = data_xr_map_atdepth.where((depth>=data_bl) & (depth<=data_wl)) #filter above wl and below bl values
-        return data_xr_map_atdepth #early return
+        print('z-layer model, zlayer_z0_selnearest=True and reference=="z0" so using xr.sel(method="nearest")]')
+        data_xr_map = data_xr_map.set_index({'nmesh2d_layer':'mesh2d_layer_z'})#.rename({'nmesh2d_layer':depth_varname}) #set depth as index on layers, to be able to interp to depths instead of layernumbers
+        data_xr_map[depth_varname] = depths_xr
+        data_xr_map_atdepths = data_xr_map.sel(nmesh2d_layer=depths_xr,method='nearest')
+        data_xr_map_atdepths = data_xr_map_atdepths.where((depths_xr>=data_bl) & (depths_xr<=data_wl)) #filter above wl and below bl values
+        return data_xr_map_atdepths #early return
     
     #potentially construct fullgrid info (zcc/zw) #TODO: maybe move to separate dim, like open_partitioned_dataset() (although bl/wl are needed anyway)
     if 'mesh2d_flowelem_zw' in data_xr_map.coords: #fullgrid info already available, so continuing
@@ -637,24 +642,24 @@ def get_mapdata_atdepth(data_xr_map, depth, reference='z0', zlayer_z0_selnearest
         
     if 'time' in data_xr_map.dims:
         warnings.warn(UserWarning('get_mapdata_onfixedepth() can be very slow when supplying dataset with time dimension, you could supply ds.isel(time=timestep) instead'))
-    
+        
     #get layerno via z-interface value (zw), check which celltop-interfaces are above/on depth and which which cellbottom-interfaces are below/on depth
-    bool_topinterface_abovedepth = zw_reference.isel(nmesh2d_interface=slice(1,None)) >= depth
-    bool_botinterface_belowdepth = zw_reference.isel(nmesh2d_interface=slice(None,-1)) <= depth
+    bool_topinterface_abovedepth = zw_reference.isel(nmesh2d_interface=slice(1,None)) >= depths_xr
+    bool_botinterface_belowdepth = zw_reference.isel(nmesh2d_interface=slice(None,-1)) <= depths_xr
     bool_topbotinterface_arounddepth = bool_topinterface_abovedepth & bool_botinterface_belowdepth #this bool also automatically excludes all values below bed and above wl
     bool_topbotinterface_arounddepth = bool_topbotinterface_arounddepth.rename({'nmesh2d_interface':'nmesh2d_layer'}) #correct dimname for interfaces to centers
     #bool_topbotinterface_arounddepth.sum(dim='nmesh2d_layer').max(dim='time').load() #TODO: max is layno, should be 1 everywhere?
-    data_xr_map_atdepth = data_xr_map.where(bool_topbotinterface_arounddepth).max(dim='nmesh2d_layer',keep_attrs=True) #set all layers but one to nan, followed by an arbitrary reduce (max in this case)
+    data_xr_map_atdepths = data_xr_map.where(bool_topbotinterface_arounddepth).max(dim='nmesh2d_layer',keep_attrs=True) #set all layers but one to nan, followed by an arbitrary reduce (max in this case)
     #TODO: suppress/solve warning for DCSM (does not happen when supplying data_xr_map[['mesh2d_sa1','mesh2d_s1','mesh2d_flowelem_bl','mesh2d_flowelem_zw']]): "C:\Users\veenstra\Anaconda3\envs\dfm_tools_env\lib\site-packages\dask\array\core.py:4806: PerformanceWarning: Increasing number of chunks by factor of 20"
     #TODO: suppress warning (upon plotting/load/etc): "C:\Users\veenstra\Anaconda3\envs\dfm_tools_env\lib\site-packages\dask\array\reductions.py:640: RuntimeWarning: All-NaN slice encountered"
     
-    #add zvalue as coordinate
-    data_xr_map_atdepth[depth_varname] = depth
-    data_xr_map_atdepth[depth_varname] = data_xr_map_atdepth[depth_varname].assign_attrs({'units':'m'})
-    data_xr_map_atdepth = data_xr_map_atdepth.set_coords([depth_varname])
+    #add depth as coordinate var
+    data_xr_map_atdepths[depth_varname] = depths_xr
+    data_xr_map_atdepths = data_xr_map_atdepths.set_coords([depth_varname])
+    
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
-    return data_xr_map_atdepth
+    return data_xr_map_atdepths
 
 
 def get_xzcoords_onintersection(data_frommap_merged, intersect_pd, timestep=None):#, varname=None):
