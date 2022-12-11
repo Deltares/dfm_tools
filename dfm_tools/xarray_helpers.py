@@ -159,16 +159,22 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
     for opt in maxfnodes_opts:
         if opt in partitions[0].dims:
             rename_dict.update({opt:varn_maxfnodes})
-    layer_cen_opts = ['mesh2d_nLayers','laydim'] # options for old layer dimension name #TODO: others from get_varname_fromnc: ['nmesh2d_layer_dlwq']
-    for opt in layer_cen_opts:
+    layer_nlayers_opts = ['mesh2d_nLayers','laydim'] # options for old layer dimension name #TODO: others from get_varname_fromnc: ['nmesh2d_layer_dlwq']
+    for opt in layer_nlayers_opts:
         if opt in partitions[0].dims:
             #print(f'hardcoded replacing {opt} with nmesh2d_layer. Auto would replace "{partitions[0].ugrid.grid.to_dataset().mesh2d.vertical_dimensions}"')
             rename_dict.update({opt:'nmesh2d_layer'})
-    layer_interface_opts = ['mesh2d_nInterfaces'] # options for old layer dimension name #TODO: others from get_varname_fromnc: ['nmesh2d_layer_dlwq']
-    for opt in layer_interface_opts:
+    layer_ninterfaces_opts = ['mesh2d_nInterfaces'] # options for old layer dimension name #TODO: others from get_varname_fromnc: ['nmesh2d_layer_dlwq']
+    for opt in layer_ninterfaces_opts:
         if opt in partitions[0].dims:
             rename_dict.update({opt:'nmesh2d_interface'})
-
+    
+    #rename vars
+    #layer_layerz_opts = ['LayCoord_cc'] #TODO: copied from get_xzcoords_onintersection, but might not be necessary anymore
+    #for opt in layer_layerz_opts:
+    #    if opt in partitions[0].data_vars:
+    #        rename_dict.update({opt:'mesh2d_layer_z'})
+    
     #TODO: below works if xugrid handles arbitrary grid names
     # gridspecs = partitions[0].ugrid.grid.to_dataset()[gridname]
     # if hasattr(gridspecs,'vertical_dimensions'):
