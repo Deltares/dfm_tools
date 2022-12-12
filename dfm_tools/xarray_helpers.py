@@ -150,8 +150,9 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
     dtstart = dt.datetime.now()
     partitions = [xu.open_dataset(file_nc_one,chunks=chunks) for file_nc_one in file_nc_list]
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
-
-    #rename old dimension and some variable names
+    
+    
+    #rename old dimension names and some variable names #TODO: move to separate definition
     gridname = 'mesh2d' #partitions[0].ugrid.grid.name #'mesh2d' #TODO: works if xugrid accepts arbitrary grid names
     rename_dict = {}
     varn_maxfnodes = f'max_n{gridname}_face_nodes' #TODO: replace mesh2d with grid.name
@@ -159,15 +160,15 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
     for opt in maxfnodes_opts:
         if opt in partitions[0].dims:
             rename_dict.update({opt:varn_maxfnodes})
-    layer_nlayers_opts = ['mesh2d_nLayers','laydim'] # options for old layer dimension name #TODO: others from get_varname_fromnc: ['nmesh2d_layer_dlwq']
+    layer_nlayers_opts = ['mesh2d_nLayers','laydim'] # options for old layer dimension name #TODO: others from get_varname_fromnc: ['nmesh2d_layer_dlwq','LAYER','KMAXOUT_RESTR','depth'
     for opt in layer_nlayers_opts:
         if opt in partitions[0].dims:
             #print(f'hardcoded replacing {opt} with nmesh2d_layer. Auto would replace "{partitions[0].ugrid.grid.to_dataset().mesh2d.vertical_dimensions}"')
-            rename_dict.update({opt:'nmesh2d_layer'})
-    layer_ninterfaces_opts = ['mesh2d_nInterfaces'] # options for old layer dimension name #TODO: others from get_varname_fromnc: ['nmesh2d_layer_dlwq']
+            rename_dict.update({opt:f'n{gridname}_layer'})
+    layer_ninterfaces_opts = ['mesh2d_nInterfaces']
     for opt in layer_ninterfaces_opts:
         if opt in partitions[0].dims:
-            rename_dict.update({opt:'nmesh2d_interface'})
+            rename_dict.update({opt:f'n{gridname}_interface'})
     
     #rename vars
     #layer_layerz_opts = ['LayCoord_cc'] #TODO: copied from get_xzcoords_onintersection, but might not be necessary anymore

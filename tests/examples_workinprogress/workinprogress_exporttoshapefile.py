@@ -31,7 +31,7 @@ if 'Grevelingen' in file_nc:
 else:
     crs = "EPSG:4326"
 
-varlist = ['mesh2d_sa1','mesh2d_s1','Chlfa']
+varlist = ['mesh2d_sa1','Chlfa']#,'mesh2d_s1']
 
 data_xr_map = dfmt.open_partitioned_dataset(file_nc)
 vars_pd = dfmt.get_ncvarproperties(data_xr_map)
