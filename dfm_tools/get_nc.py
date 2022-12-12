@@ -584,6 +584,7 @@ def get_mapdata_atdepths(data_xr_map, depths, reference='z0', zlayer_z0_selneare
     #TODO: zmodel gets depth in figure title, because of .set_index() in open_partitioned_dataset(). Sigmamodel gets percentage/fraction in title
     #TODO: check if attributes should be passed/altered
     #TODO: make generic to also work with hisnc files?
+    #TODO: also waterlevelvar in 3D model gets depth_fromref coordinate, would be nice to avoid.
     """
     
     depth_varname = 'depth_fromref'
