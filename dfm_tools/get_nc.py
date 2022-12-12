@@ -574,7 +574,7 @@ def get_mapdata_atdepths(data_xr_map, depths, reference='z0', zlayer_z0_selneare
         has to be Dataset (not a DataArray), otherwise mesh2d_flowelem_zw etc are not available (interface z values)
         in case of zsigma/sigma layers (or fullgrid), it is advisable to .sel()/.isel() the time dimension first, because that is less computationally heavy
     depths:
-        int/float or list of int/float. Depths w.r.t. reference level. If reference=='waterlevel', depth>0 returns only nans. If reference=='bedlevel', depth<0 returns only nans. 
+        int/float or list/array of int/float. Depths w.r.t. reference level. If reference=='waterlevel', depth>0 returns only nans. If reference=='bedlevel', depth<0 returns only nans. Depths are sorted and only uniques are kept.
     reference:
         compute depth w.r.t. z0/waterlevel/bed
         default: reference='z0'
@@ -587,6 +587,8 @@ def get_mapdata_atdepths(data_xr_map, depths, reference='z0', zlayer_z0_selneare
     #TODO: make generic to also work with hisnc files?
     """
     
+    depth_varname = 'depth_fromref'
+    
     if not 'nmesh2d_layer' in data_xr_map.dims: #TODO: maybe raise exception instead?
         print('WARNING: depth dimension not found, probably 2D model, returning input Dataset')
         return data_xr_map #early return
@@ -594,19 +596,19 @@ def get_mapdata_atdepths(data_xr_map, depths, reference='z0', zlayer_z0_selneare
     if not isinstance(data_xr_map,(xr.Dataset,xu.UgridDataset)):
         raise Exception(f'data_xr_map should be of type xr.Dataset, but is {type(data_xr_map)}')
     if isinstance(depths,(float,int)):
-        drop_depthdim = True
-        depths = [depths]
+        depths = depths #float/int
+        depth_dims = ()
     else:
-        drop_depthdim = False
+        depths = np.unique(depths) #array of unique+sorted floats/ints
+        depth_dims = (depth_varname)
 
     data_wl = data_xr_map['mesh2d_s1']
     data_bl = data_xr_map['mesh2d_flowelem_bl']
-    depth_varname = 'depth_fromref'
     
     #create depth xr.DataArray
-    depths_xr = xr.DataArray(np.unique(depths),dims=(depth_varname),attrs={'units':'m',
-                                                                           'reference':f'model_{reference}',
-                                                                           'positive':'up'}) #TODO: make more in line with CMEMS etc
+    depths_xr = xr.DataArray(depths,dims=depth_dims,attrs={'units':'m',
+                                                           'reference':f'model_{reference}',
+                                                           'positive':'up'}) #TODO: make more in line with CMEMS etc
     
     #simplified/faster method for zlayer icm z0 reference
     if 'mesh2d_layer_z' in data_xr_map.coords and zlayer_z0_selnearest and reference=='z0': # selects nearest z-center values (instead of slicing), should be faster #TODO: check if this is faster than fullgrid
@@ -661,9 +663,6 @@ def get_mapdata_atdepths(data_xr_map, depths, reference='z0', zlayer_z0_selneare
     data_xr_map_atdepths = data_xr_map_atdepths.set_coords([depth_varname])
     
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
-    
-    if drop_depthdim:
-        data_xr_map_atdepths = data_xr_map_atdepths.isel(depth_fromref=0)
     
     return data_xr_map_atdepths
 
