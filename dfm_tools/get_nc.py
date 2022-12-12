@@ -1018,8 +1018,9 @@ def plot_ztdata(data_xr_sel, varname, ax=None, only_contour=False, get_ds=False,
     -------
     pc : matplotlib.collections.QuadMesh
         DESCRIPTION.
-
+    
     """
+    
     if not ax: ax=plt.gca()
     
     if len(data_xr_sel[varname].shape) != 2:
