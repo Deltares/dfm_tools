@@ -30,21 +30,18 @@ for file_nc in file_nc_list:
     
     data_xr = xr.open_mfdataset(file_nc, preprocess=dfmt.preprocess_hisnc) #TODO: maybe adding chunking argument like chunks={'time':-1,'station':200}) (https://github.com/pydata/xarray/discussions/6458)
     vars_pd = dfmt.get_ncvarproperties(data_xr)
-        
+    
     if 'Grevelingen-FM_0000' in file_nc:
         #file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_his.nc')
         stations_requested = ['GTSO-01','GTSO-02','GTSO-03','GTSO-04','GTSO-05','GTSO-06','GTSO-07',
                               'GTSO-08','GTSO-09','GTSO-10','GTSO-11','GTSO-12','GTSO-13','GTSO-14',
                               'GTSO-15','GTSO-16','GTSO-17','GTSO-18','GTSO-19','GTSO-20',
                               'Bommenede','Grevelingen hevel West','Brouwerssluis binnen','Brouwerssluis binnen-hand']
-        stations_requested_zt = ['GTSO-02']
     elif 'tttz' in file_nc: #NITHIN
         #file_nc = os.path.join(dir_testinput,'vanNithin','tttz_0000_his.nc')
         stations_requested = ['Peiraias', 'Ovrios_2','Ovrios','Ovrios','Ortholithi']
-        stations_requested_zt = ['Ortholithi']
     elif 'impaqt' in file_nc:
         stations_requested = ['MO_TS_MO_ATHOS','MO_TS_MO_LESVO','MO_TS_MO_SKYRO','IOC_thes','farm_impaqt']
-        stations_requested_zt = ['MO_TS_MO_ATHOS']
     elif 'RMM_dflowfm' in file_nc:
         stations_requested = ['WAQ_Vuren','NW_1030.19_R_LMW-H_Hoek-van-Holland','WAQ_TielWaal_waq']
     elif 'moergestels_broek' in file_nc:
@@ -93,6 +90,8 @@ for file_nc in file_nc_list:
     if 'sfincs' in file_nc or 'morwaqeco3d' in file_nc or 'trih-' in file_nc:
         continue
     
+    #at this stage there are only three hisfiles left where continue was not called for
+    
     print('plot salinity from his') #TODO: retreive variable on fixed depth (like dfmt.get_mapdata_atfixedepth())
     data_fromhis_xr = data_xr.salinity.sel(stations=stations_requested).isel(laydim=20)
     fig, ax = plt.subplots(figsize=(10,6))
@@ -111,13 +110,13 @@ for file_nc in file_nc_list:
     fig.savefig(os.path.join(dir_output,f'{basename}_salinityoverdepth'))
     
     print('zt temperature plot and wl')
-    station_zt = stations_requested_zt[0]
+    station_zt = stations_requested[2]
     data_xr_selzt = data_xr.sel(stations=station_zt).isel(time=slice(40,100))
     data_fromhis_wl_xr = data_xr_selzt['waterlevel']
     fig, (axwl,ax1) = plt.subplots(2,1,figsize=(12,7),gridspec_kw={'height_ratios':[1,2]},sharex=True,sharey=True)
     axwl.plot(data_xr_selzt.time[[0,-1]],[0,0],'k-',linewidth=0.5)
     ax1.plot(data_xr_selzt.time[[0,-1]],[0,0],'k-',linewidth=0.5)
-    axwl.plot(data_xr_selzt.time,data_fromhis_wl_xr,'-',label=f'wl {station_zt}')
+    data_xr_selzt.waterlevel.plot.line(ax=axwl,label=f'wl {station_zt}')
     c = dfmt.plot_ztdata(data_xr_sel=data_xr_selzt, varname='temperature', ax=ax1, cmap='jet')
     fig.colorbar(c,ax=axwl)
     fig.colorbar(c,ax=ax1)

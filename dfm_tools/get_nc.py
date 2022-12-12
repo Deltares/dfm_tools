@@ -992,7 +992,7 @@ def plot_background(ax=None, projection=None, google_style='satellite', resoluti
     return ax
 
 
-def plot_ztdata(data_xr_sel, varname, ax=None, mask_data=True, only_contour=False, **kwargs):
+def plot_ztdata(data_xr_sel, varname, ax=None, only_contour=False, **kwargs):
     """
     
 
@@ -1024,31 +1024,17 @@ def plot_ztdata(data_xr_sel, varname, ax=None, mask_data=True, only_contour=Fals
     """
 
    
-    print('WARNING: layers in dflowfm hisfile might be incorrect, check your figures carefully')
+    #print('WARNING: layers in dflowfm hisfile might be incorrect, check your figures carefully')
     
     data_fromhis_var = data_xr_sel[varname].to_numpy()
     if len(data_fromhis_var.shape) != 2:
         raise Exception(f'ERROR: unexpected number of dimensions in requested squeezed variable ({data_fromhis_var.shape}), first use data_xr.isel(stations=int) to select a single station') #TODO: can also have a different cause, improve message/testing?
     data_fromhis_zcen = data_xr_sel['zcoordinate_c'].bfill(dim='laydim').to_numpy()
-    data_fromhis_zcor = data_xr_sel['zcoordinate_w'].bfill(dim='laydimw').to_numpy() #bfill replaces nan values with last valid value, this is necessary to enable pcolormesh to work
+    data_fromhis_zcor = data_xr_sel['zcoordinate_w'].bfill(dim='laydimw').clip(min=data_xr_sel.bedlevel,max=data_xr_sel.waterlevel).to_numpy() #bfill replaces nan values with last valid value, this is necessary to enable pcolormesh to work. clip forces data to be within bl/wl #TODO: put clip in preproces_hisnc to make plotting easier?
     data_fromhis_zcor = np.concatenate([data_fromhis_zcor,data_fromhis_zcor[[-1],:]],axis=0)
-    data_fromhis_wl = data_xr_sel['waterlevel'].to_numpy()
     
-    if mask_data:
-        data_fromhis_var = np.ma.array(data_fromhis_var)
-        bool_zcen_equaltop = (data_fromhis_zcen==data_fromhis_zcen[:,-1:]).all(axis=0)
-        id_zcentop = np.argmax(bool_zcen_equaltop) # id of first z_center that is equal to z_center of last layer
-        if (data_fromhis_zcor[:-1,id_zcentop] > data_fromhis_zcen[:,id_zcentop]).any():
-            print('correcting z interface values')
-            data_fromhis_zcor[:-1,id_zcentop+1] = data_fromhis_wl
-            data_fromhis_zcor[:-1,id_zcentop] = (data_fromhis_zcen[:,id_zcentop-1]+data_fromhis_zcen[:,id_zcentop])/2
-        bool_zcen_equaltop[id_zcentop] = False
-        #bool_zcor_equaltop = (data_fromhis_zcor_flat[:,1:]==data_fromhis_zcor_flat[:,-1:]).all(axis=0)
-        mask_array = np.tile(bool_zcen_equaltop,(data_fromhis_zcor.shape[0],1))
-        data_fromhis_var.mask = mask_array
-
     if not ax: ax=plt.gca()
-
+    
     # generate 2 2d grids for the x & y bounds (you can also give one 2D array as input in case of eg time varying z coordinates)
     time_np = data_xr_sel.time.to_numpy()
     time_cor = np.concatenate([time_np,time_np[[-1]]])
