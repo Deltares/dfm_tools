@@ -13,6 +13,9 @@ plt.close('all')
 import geopandas as gpd #conda install --channel conda-forge geopandas (breaks dfm_tools environment because of Qt issue)
 from shapely.geometry import Polygon
 import dfm_tools as dfmt
+import datetime as dt
+
+dtstart_script = dt.datetime.now()
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
@@ -29,28 +32,32 @@ file_nc_nostar = file_nc.replace('0*','0000') #TODO: introduce support for * in 
 data_xr_map = dfmt.open_partitioned_dataset(file_nc)
 vars_pd = dfmt.get_ncvarproperties(file_nc=file_nc_nostar)
 
-ugrid_all_verts = dfmt.get_ugrid_verts(data_xr_map)
-
-pol_shp_list = [] #TODO: maybe there is a more direct way to convert xugrid to shapefile?
-for pol_data in ugrid_all_verts: #[range(5000),:,:]
-    pol_data_nonan = pol_data[~np.isnan(pol_data).all(axis=1)]
-    pol_shp = Polygon(pol_data_nonan)
-    pol_shp_list.append(pol_shp)
-
-print('creating geodataframe with cells')
-newdata = gpd.GeoDataFrame({'geometry': pol_shp_list},crs="EPSG:28992") #way more time efficient than doing it the loop
-
-for iV, varname in enumerate(varlist):
-    newdata[varname] = None
-
 for timestep in [3]:#[0,10,20,30]:
+    data_map_timesel = data_xr_map.isel(time=timestep)
+    
     for iV, varname in enumerate(varlist):
-        varname_found = dfmt.get_varnamefromattrs(file_nc_nostar,varname)
-        data_map_timesel = data_xr_map.isel(time=timestep)
+        varname_found = dfmt.get_varnamefromattrs(data_map_timesel,varname)
+
+        ugrid_all_verts = dfmt.get_ugrid_verts(data_map_timesel)
+        
+        pol_shp_list = [] #TODO: maybe there is a more direct way to convert xugrid to shapefile?
+        for pol_data in ugrid_all_verts: #[range(5000),:,:]
+            pol_data_nonan = pol_data[~np.isnan(pol_data).all(axis=1)]
+            pol_shp = Polygon(pol_data_nonan)
+            pol_shp_list.append(pol_shp)
+        
+        #pol_shp_list = [Polygon(pol_data[~np.isnan(pol_data).all(axis=1)]) for pol_data in ugrid_all_verts]
+        
+        print('creating geodataframe with cells')
+        newdata = gpd.GeoDataFrame({'geometry': pol_shp_list},crs="EPSG:28992") #way more time efficient than doing it the loop
+        
+        #for iV, varname in enumerate(varlist):
+        #    newdata[varname] = None
+
         
         #data_sel = dfmt.get_mapdata_atdepths(data_xr_map=data_map_timesel, depths=0, reference='waterlevel') #top layer: 0m from waterlevel
-        #data_sel = dfmt.get_mapdata_atdepths(data_xr_map=data_map_timesel, depths=-5, reference='z0') #4m from model reference
-        data_sel = dfmt.get_mapdata_atdepths(data_xr_map=data_map_timesel, depths=0, reference='bedlevel') #bottomlayer: 0m from bedlevel
+        data_sel = dfmt.get_mapdata_atdepths(data_xr_map=data_map_timesel, depths=-5, reference='z0') #4m from model reference
+        #data_sel = dfmt.get_mapdata_atdepths(data_xr_map=data_map_timesel, depths=0, reference='bedlevel') #bottomlayer: 0m from bedlevel
         
         data_sel_var = data_sel[varname_found]
         
@@ -59,8 +66,9 @@ for timestep in [3]:#[0,10,20,30]:
         file_shp = os.path.join(dir_shp,f'shp_{varname}_{timestamp}')
         newdata.to_file(file_shp)
         
-        fig, ax = plt.subplots()
-        data_sel_var.ugrid.plot(cmap='viridis',edgecolor='face')
-        fig.tight_layout()
-        fig.savefig(os.path.join(file_shp,f'{varname}_{timestamp}'))
+        # fig, ax = plt.subplots()
+        # data_sel_var.ugrid.plot(cmap='viridis',edgecolor='face')
+        # fig.tight_layout()
+        # fig.savefig(os.path.join(file_shp,f'{varname}_{timestamp}'))
 
+print(f'script runtime: {(dt.datetime.now()-dtstart_script).total_seconds():.2f} sec')

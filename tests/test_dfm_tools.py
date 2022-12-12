@@ -84,9 +84,9 @@ def test_getmapdata(file_nc, varname, expected_size):
     expected_size = (44796,)
     """
     file_nc_nostar = file_nc.replace('0*','0000') #TODO: introduce support for * in dfm_tools definitions?
-    varname_found = dfmt.get_varnamefromattrs(file_nc_nostar,varname)
     
     data_xr_map = dfmt.open_partitioned_dataset(file_nc)
+    varname_found = dfmt.get_varnamefromattrs(data_xr_map,varname)
     data_varsel = data_xr_map[varname_found].isel(time=2)
     
     assert data_varsel.shape == expected_size
@@ -316,7 +316,7 @@ def SKIP_test_gettimesfromnc(): #skipping test since it is deprecated (time arra
 
 
 @pytest.mark.unittest
-def SKIP_test_getncmatchingvarlist(): #skipping test since it is deprecated (use dfmt.get_varnamefromattrs(file_nc_nostar,varname) instead)
+def SKIP_test_getncmatchingvarlist(): #skipping test since it is deprecated (use dfmt.get_varnamefromattrs(data_xr,varname) instead)
     """
     this test tests retrieves a pandas list of variable long names in a netcdf that match the pattern, useful for waq variables.
     """

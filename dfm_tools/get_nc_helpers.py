@@ -197,13 +197,10 @@ def get_ncvardimlist(file_nc):
 
 
 def get_varnamefrom_keyslongstandardname(file_nc, varname):
-    DeprecationWarning('use dfm_tools.get_nc_helpers.get_varnamefromattrs() instead') #TODO: raise this warning, later remove this code
-    varname_matched = get_varnamefromattrs(file_nc, varname)
-    return varname_matched
+    raise DeprecationWarning('use dfm_tools.get_nc_helpers.get_varnamefromattrs() instead') #TODO: raise this warning, later remove this code
+    return
 
-
-def get_varnamefromattrs(file_nc, varname):
-    data_xr = xr.open_dataset(file_nc)
+def get_varnamefromattrs(data_xr, varname):
     
     # check if requested variable is in netcdf
     varlist = list(data_xr.variables.keys())
