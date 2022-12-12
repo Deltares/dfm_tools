@@ -145,14 +145,14 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
         - MWRA 3D 20 partitions 2551 timesteps: 826.2/3.4/1.2 sec
     """
     
-    def set_map_coordinates(ds_merged_xu): #set coordinates #TODO: maybe avoid this, is not necessary per se
-        #in case of zsigma/fullgridoutput, mesh2d_flowelem_zcc andmesh2d_flowelem_zw are coordinates of the dataset
-        #mesh2d_layer_z/mesh2d_layer_sigma should be a coordinates in case of z or sigma model, but they are not #TODO: report issue to FM kernel
-        if 'mesh2d_layer_z' in ds_merged_xu:
-            ds_merged_xu = ds_merged_xu.set_coords(['mesh2d_layer_z','mesh2d_interface_z'])
-        if 'mesh2d_layer_sigma' in ds_merged_xu:
-            ds_merged_xu = ds_merged_xu.set_coords(['mesh2d_layer_sigma','mesh2d_interface_sigma'])
-        return ds_merged_xu
+    # def set_map_coordinates(ds_merged_xu): #set coordinates #TODO: maybe avoid this, is not necessary per se
+    #     #in case of zsigma/fullgridoutput, mesh2d_flowelem_zcc andmesh2d_flowelem_zw are coordinates of the dataset
+    #     #mesh2d_layer_z/mesh2d_layer_sigma should be a coordinates in case of z or sigma model, but they are not #TODO: report issue to FM kernel
+    #     if 'mesh2d_layer_z' in ds_merged_xu:
+    #         ds_merged_xu = ds_merged_xu.set_coords(['mesh2d_layer_z','mesh2d_interface_z'])
+    #     if 'mesh2d_layer_sigma' in ds_merged_xu:
+    #         ds_merged_xu = ds_merged_xu.set_coords(['mesh2d_layer_sigma','mesh2d_interface_sigma'])
+    #     return ds_merged_xu
     
     dtstart_all = dt.datetime.now()
     if isinstance(file_nc,list):
@@ -227,7 +227,7 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
         if varn_domain not in varlist_onepart:
             if len(partitions)==1:#escape for non-partitioned files (domainno not found and one file provided). skipp rest of function
                 xu_return = partitions[0]
-                xu_return = set_map_coordinates(xu_return)
+                #xu_return = set_map_coordinates(xu_return)
                 return xu_return
             else:
                 raise Exception('no domain variable found, while there are multiple partition files supplied, this is not expected')
@@ -342,6 +342,6 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
     ds_merged_xu = xu.UgridDataset(ds_merged, grids=[merged_grid])
     print(f'>> open_partitioned_dataset total: {(dt.datetime.now()-dtstart_all).total_seconds():.2f} sec')
     
-    ds_merged_xu = set_map_coordinates(ds_merged_xu)
+    #ds_merged_xu = set_map_coordinates(ds_merged_xu)
     
     return ds_merged_xu

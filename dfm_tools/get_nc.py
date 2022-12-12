@@ -589,7 +589,7 @@ def get_mapdata_atdepths(data_xr_map, depths, reference='z0', zlayer_z0_selneare
     
     depth_varname = 'depth_fromref'
     
-    if not 'nmesh2d_layer' in data_xr_map.dims: #TODO: maybe raise exception instead?
+    if not 'nmesh2d_layer' in data_xr_map.dims:# and not 'laydim' in data_xr_map.dims: #TODO: maybe raise exception instead? #laydim for hisfile
         print('WARNING: depth dimension not found, probably 2D model, returning input Dataset')
         return data_xr_map #early return
     
@@ -620,13 +620,13 @@ def get_mapdata_atdepths(data_xr_map, depths, reference='z0', zlayer_z0_selneare
         return data_xr_map_atdepths #early return
     
     #potentially construct fullgrid info (zcc/zw) #TODO: maybe move to separate dim, like open_partitioned_dataset() (although bl/wl are needed anyway)
-    if 'mesh2d_flowelem_zw' in data_xr_map.coords: #fullgrid info already available, so continuing
+    if 'mesh2d_flowelem_zw' in data_xr_map.variables:# or 'zcoordinate_w' in data_xr_map.variables: #fullgrid info already available, so continuing. "zcoordinate_w" is for hisfiles
         print('zw/zcc (fullgrid) values already present in Dataset')
         pass
-    elif 'mesh2d_layer_sigma' in data_xr_map.coords: #reconstruct_zw_zcc_fromsigma and treat as zsigma/fullgrid mapfile from here
+    elif 'mesh2d_layer_sigma' in data_xr_map.variables: #reconstruct_zw_zcc_fromsigma and treat as zsigma/fullgrid mapfile from here
         print('sigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
         data_xr_map = reconstruct_zw_zcc_fromsigma(data_xr_map)
-    elif 'mesh2d_layer_z' in data_xr_map.coords:
+    elif 'mesh2d_layer_z' in data_xr_map.variables:
         print('z-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
         data_xr_map = reconstruct_zw_zcc_fromz(data_xr_map)
     else:
@@ -683,13 +683,13 @@ def get_xzcoords_onintersection(data_frommap_merged, intersect_pd, timestep=None
     if dimn_layer not in data_frommap_merged.dims: #2D model
         print('depth dimension not found, probably 2D model')
         pass
-    elif 'mesh2d_flowelem_zw' in data_frommap_merged.coords: #fullgrid info already available, so continuing
+    elif 'mesh2d_flowelem_zw' in data_frommap_merged.variables: #fullgrid info already available, so continuing
         print('zw/zcc (fullgrid) values already present in Dataset')
         pass
-    elif 'mesh2d_layer_sigma' in data_frommap_merged.coords: #reconstruct_zw_zcc_fromsigma and treat as zsigma/fullgrid mapfile from here
+    elif 'mesh2d_layer_sigma' in data_frommap_merged.variables: #reconstruct_zw_zcc_fromsigma and treat as zsigma/fullgrid mapfile from here
         print('sigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
         data_frommap_merged = reconstruct_zw_zcc_fromsigma(data_frommap_merged)
-    elif 'mesh2d_layer_z' in data_frommap_merged.coords:        
+    elif 'mesh2d_layer_z' in data_frommap_merged.variables:        
         print('z-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
         data_frommap_merged = reconstruct_zw_zcc_fromz(data_frommap_merged)
     else:
