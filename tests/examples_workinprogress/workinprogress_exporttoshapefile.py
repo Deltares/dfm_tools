@@ -48,12 +48,9 @@ for timestep in [3]:#[0,10,20,30]:
         varname_found = dfmt.get_varnamefromattrs(file_nc_nostar,varname)
         data_map_timesel = data_xr_map.isel(time=timestep)
         
-        data_map_timesel = dfmt.reconstruct_zw_zcc_fromz(data_map_timesel)
-
-        
-        #data_sel = dfmt.get_mapdata_atdepth(data_xr_map=data_map_timesel, depth=0, reference='waterlevel') #top layer: 0m from waterlevel
-        data_sel = dfmt.get_mapdata_atdepth(data_xr_map=data_map_timesel, depth=-5, reference='z0') #4m from model reference
-        #data_sel = dfmt.get_mapdata_atdepth(data_xr_map=data_map_timesel, depth=0, reference='bedlevel') #bottomlayer: 0m from bedlevel
+        #data_sel = dfmt.get_mapdata_atdepths(data_xr_map=data_map_timesel, depths=0, reference='waterlevel') #top layer: 0m from waterlevel
+        #data_sel = dfmt.get_mapdata_atdepths(data_xr_map=data_map_timesel, depths=-5, reference='z0') #4m from model reference
+        data_sel = dfmt.get_mapdata_atdepths(data_xr_map=data_map_timesel, depths=0, reference='bedlevel') #bottomlayer: 0m from bedlevel
         
         data_sel_var = data_sel[varname_found]
         

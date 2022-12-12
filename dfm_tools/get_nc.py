@@ -594,7 +594,10 @@ def get_mapdata_atdepths(data_xr_map, depths, reference='z0', zlayer_z0_selneare
     if not isinstance(data_xr_map,(xr.Dataset,xu.UgridDataset)):
         raise Exception(f'data_xr_map should be of type xr.Dataset, but is {type(data_xr_map)}')
     if isinstance(depths,(float,int)):
+        drop_depthdim = True
         depths = [depths]
+    else:
+        drop_depthdim = False
 
     data_wl = data_xr_map['mesh2d_s1']
     data_bl = data_xr_map['mesh2d_flowelem_bl']
@@ -658,6 +661,9 @@ def get_mapdata_atdepths(data_xr_map, depths, reference='z0', zlayer_z0_selneare
     data_xr_map_atdepths = data_xr_map_atdepths.set_coords([depth_varname])
     
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
+    
+    if drop_depthdim:
+        data_xr_map_atdepths = data_xr_map_atdepths.isel(depth_fromref=0)
     
     return data_xr_map_atdepths
 

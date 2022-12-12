@@ -70,6 +70,7 @@ for file_nc in file_nc_list:
     #data_frommap_merged = xu.open_dataset(file_nc.replace('_0000_','_0002_'),chunks={'time':1})
     
     data_frommap_merged = data_frommap_merged.ugrid.sel(y=yslice) #TODO xugrid: if sel() results in empty, plotting crashes with "ImportError: Plotting of arrays of cftime.datetime objects or arrays indexed by cftime.datetime objects requires the optional `nc-time-axis` (v1.2.0 or later) package.". If using xugrid directly "AttributeError: 'DataArray' object has no attribute 'ugrid'"
+    #TODO: sel fails for some partitions: https://github.com/Deltares/xugrid/issues/30
     
     print('plot grid and bedlevel (constantvalue, 1 dim)')
     #get bedlevel and create plot with ugrid and cross section line
