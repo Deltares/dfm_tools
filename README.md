@@ -5,7 +5,7 @@
 dfm_tools
 =========
 
-A Python package for pre- and postprocessing D-FlowFM model input and output files. Contains convenience functions built on top of other packages like [xarray](https://github.com/pydata/xarray), [hydrolib-core](https://github.com/Deltares/HYDROLIB-core) and many more.
+A Python package for pre- and postprocessing D-FlowFM model input and output files. Contains convenience functions built on top of other packages like [xarray](https://github.com/pydata/xarray), [xugrid](https://github.com/Deltares/xugrid), [hydrolib-core](https://github.com/Deltares/HYDROLIB-core) and many more.
 
 Information and examples
 --------

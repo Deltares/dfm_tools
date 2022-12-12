@@ -14,6 +14,7 @@ plt.close('all')
 import datetime as dt
 import glob
 import pandas as pd
+import warnings
 
 
 def preprocess_hisnc(ds):
@@ -54,6 +55,21 @@ def preprocess_hisnc(ds):
         if duplicated_keepfirst.sum()>0:
             print(f'dropping {duplicated_keepfirst.sum()} duplicate "{coord}" labels to avoid InvalidIndexError')
             ds = ds[{dim:~duplicated_keepfirst}]
+
+    
+    if 'source' in ds.attrs.keys():
+        source_attr = ds.attrs["source"]
+    else:
+        source_attr = None
+    try:
+        source_attr_version = source_attr.split(', ')[1]
+        source_attr_date = source_attr.split(', ')[2]
+        if pd.Timestamp(source_attr_date) < dt.datetime(2020,11,28):
+            warnings.warn(UserWarning(f'Your model was run with a D-FlowFM version from before 28-10-2020 ({source_attr_version} from {source_attr_date}), the layers in the hisfile are incorrect. Check UNST-2920 and UNST-3024 for more information.'))
+    except:
+        #print('No source attribute present in hisfile, cannot check version')
+        pass
+
     return ds
 
 
@@ -129,14 +145,14 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
         - MWRA 3D 20 partitions 2551 timesteps: 826.2/3.4/1.2 sec
     """
     
-    def set_map_coordinates(ds_merged_xu): #set coordinates
-        #in case of zsigma/fullgridoutput, mesh2d_flowelem_zcc andmesh2d_flowelem_zw are coordinates of the dataset
-        #mesh2d_layer_z/mesh2d_layer_sigma should be a coordinates in case of z or sigma model, but they are not #TODO: report issue to FM kernel
-        if 'mesh2d_layer_z' in ds_merged_xu:
-            ds_merged_xu = ds_merged_xu.set_coords(['mesh2d_layer_z','mesh2d_interface_z'])
-        if 'mesh2d_layer_sigma' in ds_merged_xu:
-            ds_merged_xu = ds_merged_xu.set_coords(['mesh2d_layer_sigma','mesh2d_interface_sigma'])
-        return ds_merged_xu
+    # def set_map_coordinates(ds_merged_xu): #set coordinates #TODO: maybe avoid this, is not necessary per se
+    #     #in case of zsigma/fullgridoutput, mesh2d_flowelem_zcc andmesh2d_flowelem_zw are coordinates of the dataset
+    #     #mesh2d_layer_z/mesh2d_layer_sigma should be a coordinates in case of z or sigma model, but they are not #TODO: report issue to FM kernel
+    #     if 'mesh2d_layer_z' in ds_merged_xu:
+    #         ds_merged_xu = ds_merged_xu.set_coords(['mesh2d_layer_z','mesh2d_interface_z'])
+    #     if 'mesh2d_layer_sigma' in ds_merged_xu:
+    #         ds_merged_xu = ds_merged_xu.set_coords(['mesh2d_layer_sigma','mesh2d_interface_sigma'])
+    #     return ds_merged_xu
     
     dtstart_all = dt.datetime.now()
     if isinstance(file_nc,list):
@@ -150,8 +166,9 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
     dtstart = dt.datetime.now()
     partitions = [xu.open_dataset(file_nc_one,chunks=chunks) for file_nc_one in file_nc_list]
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
-
-    #rename old dimension and some variable names
+    
+    
+    #rename old dimension names and some variable names #TODO: move to separate definition
     gridname = 'mesh2d' #partitions[0].ugrid.grid.name #'mesh2d' #TODO: works if xugrid accepts arbitrary grid names
     rename_dict = {}
     varn_maxfnodes = f'max_n{gridname}_face_nodes' #TODO: replace mesh2d with grid.name
@@ -159,15 +176,15 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
     for opt in maxfnodes_opts:
         if opt in partitions[0].dims:
             rename_dict.update({opt:varn_maxfnodes})
-    layer_nlayers_opts = ['mesh2d_nLayers','laydim'] # options for old layer dimension name #TODO: others from get_varname_fromnc: ['nmesh2d_layer_dlwq']
+    layer_nlayers_opts = ['mesh2d_nLayers','laydim'] # options for old layer dimension name #TODO: others from get_varname_fromnc: ['nmesh2d_layer_dlwq','LAYER','KMAXOUT_RESTR','depth'
     for opt in layer_nlayers_opts:
         if opt in partitions[0].dims:
             #print(f'hardcoded replacing {opt} with nmesh2d_layer. Auto would replace "{partitions[0].ugrid.grid.to_dataset().mesh2d.vertical_dimensions}"')
-            rename_dict.update({opt:'nmesh2d_layer'})
-    layer_ninterfaces_opts = ['mesh2d_nInterfaces'] # options for old layer dimension name #TODO: others from get_varname_fromnc: ['nmesh2d_layer_dlwq']
+            rename_dict.update({opt:f'n{gridname}_layer'})
+    layer_ninterfaces_opts = ['mesh2d_nInterfaces']
     for opt in layer_ninterfaces_opts:
         if opt in partitions[0].dims:
-            rename_dict.update({opt:'nmesh2d_interface'})
+            rename_dict.update({opt:f'n{gridname}_interface'})
     
     #rename vars
     #layer_layerz_opts = ['LayCoord_cc'] #TODO: copied from get_xzcoords_onintersection, but might not be necessary anymore
@@ -210,7 +227,7 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
         if varn_domain not in varlist_onepart:
             if len(partitions)==1:#escape for non-partitioned files (domainno not found and one file provided). skipp rest of function
                 xu_return = partitions[0]
-                xu_return = set_map_coordinates(xu_return)
+                #xu_return = set_map_coordinates(xu_return)
                 return xu_return
             else:
                 raise Exception('no domain variable found, while there are multiple partition files supplied, this is not expected')
@@ -325,6 +342,6 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
     ds_merged_xu = xu.UgridDataset(ds_merged, grids=[merged_grid])
     print(f'>> open_partitioned_dataset total: {(dt.datetime.now()-dtstart_all).total_seconds():.2f} sec')
     
-    ds_merged_xu = set_map_coordinates(ds_merged_xu)
+    #ds_merged_xu = set_map_coordinates(ds_merged_xu)
     
     return ds_merged_xu

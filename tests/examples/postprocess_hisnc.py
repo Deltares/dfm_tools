@@ -26,10 +26,11 @@ file_nc_list = [os.path.join(dir_testinput,'vanNithin','tttz_0000_his.nc'),
 
 
 for file_nc in file_nc_list:
+    print('processing %s'%(os.path.basename(file_nc)))
     basename = os.path.basename(file_nc).replace('.','')
-    vars_pd = dfmt.get_ncvarproperties(file_nc)
     
     data_xr = xr.open_mfdataset(file_nc, preprocess=dfmt.preprocess_hisnc) #TODO: maybe adding chunking argument like chunks={'time':-1,'station':200}) (https://github.com/pydata/xarray/discussions/6458)
+    vars_pd = dfmt.get_ncvarproperties(data_xr)
     
     if 'Grevelingen-FM_0000' in file_nc:
         #file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_his.nc')
@@ -37,14 +38,11 @@ for file_nc in file_nc_list:
                               'GTSO-08','GTSO-09','GTSO-10','GTSO-11','GTSO-12','GTSO-13','GTSO-14',
                               'GTSO-15','GTSO-16','GTSO-17','GTSO-18','GTSO-19','GTSO-20',
                               'Bommenede','Grevelingen hevel West','Brouwerssluis binnen','Brouwerssluis binnen-hand']
-        stations_requested_zt = ['GTSO-02']
     elif 'tttz' in file_nc: #NITHIN
         #file_nc = os.path.join(dir_testinput,'vanNithin','tttz_0000_his.nc')
         stations_requested = ['Peiraias', 'Ovrios_2','Ovrios','Ovrios','Ortholithi']
-        stations_requested_zt = ['Ortholithi']
     elif 'impaqt' in file_nc:
         stations_requested = ['MO_TS_MO_ATHOS','MO_TS_MO_LESVO','MO_TS_MO_SKYRO','IOC_thes','farm_impaqt']
-        stations_requested_zt = ['MO_TS_MO_ATHOS']
     elif 'RMM_dflowfm' in file_nc:
         stations_requested = ['WAQ_Vuren','NW_1030.19_R_LMW-H_Hoek-van-Holland','WAQ_TielWaal_waq']
     elif 'moergestels_broek' in file_nc:
@@ -85,11 +83,15 @@ for file_nc in file_nc_list:
         data_fromhis_xr.plot.line('-',ax=ax,x='time')
     else:
         data_fromhis_xr.plot.line('-',ax=ax)
-        ax.set_xticklabels(data_fromhis_xr.stations.to_series(),rotation=45,ha='right') #optional, to rotate x-labels
+        stat_pd = data_fromhis_xr.stations.to_series()
+        ax.set_xticks(range(len(stat_pd)))
+        ax.set_xticklabels(stat_pd,rotation=45,ha='right') #optional, to rotate x-labels
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,f'{basename}_bedlevel'))
     if 'sfincs' in file_nc or 'morwaqeco3d' in file_nc or 'trih-' in file_nc:
         continue
+    
+    #at this stage there are only three hisfiles left where continue was not called for
     
     print('plot salinity from his') #TODO: retreive variable on fixed depth (like dfmt.get_mapdata_atfixedepth())
     data_fromhis_xr = data_xr.salinity.sel(stations=stations_requested).isel(laydim=20)
@@ -109,21 +111,15 @@ for file_nc in file_nc_list:
     fig.savefig(os.path.join(dir_output,f'{basename}_salinityoverdepth'))
     
     print('zt temperature plot and wl')
-    station_zt = stations_requested_zt[0]
-    data_xr_selzt = data_xr.sel(stations=station_zt).isel(time=slice(40,100))
-    data_fromhis_wl_xr = data_xr_selzt['waterlevel']
-    fig, (axwl,ax1) = plt.subplots(2,1,figsize=(12,7),gridspec_kw={'height_ratios':[1,2]},sharex=True,sharey=True)
-    axwl.plot(data_xr_selzt.time[[0,-1]],[0,0],'k-',linewidth=0.5)
-    ax1.plot(data_xr_selzt.time[[0,-1]],[0,0],'k-',linewidth=0.5)
-    axwl.plot(data_xr_selzt.time,data_fromhis_wl_xr,'-',label=f'wl {station_zt}')
-    c = dfmt.plot_ztdata(data_xr_sel=data_xr_selzt, varname='temperature', ax=ax1, cmap='jet')
-    fig.colorbar(c,ax=axwl)
-    fig.colorbar(c,ax=ax1)
-    #contour
-    CS = dfmt.plot_ztdata(data_xr_sel=data_xr_selzt, varname='temperature', ax=ax1, only_contour=True, levels=6, colors='k', linewidths=0.8, linestyles='solid')
-    ax1.clabel(CS, fontsize=10)
+    data_xr_selzt = data_xr.isel(stations=2).isel(time=slice(40,100))
+    fig, ax = plt.subplots(1,1,figsize=(12,7))
+    data_xr_selzt.waterlevel.plot.line(ax=ax,color='r') #waterlevel line
+    pc = dfmt.plot_ztdata(data_xr_sel=data_xr_selzt, varname='temperature', ax=ax, cmap='jet') #temperature pcolormesh
+    fig.colorbar(pc,ax=ax)
+    CS = dfmt.plot_ztdata(data_xr_sel=data_xr_selzt, varname='temperature', ax=ax, only_contour=True, levels=6, colors='k', linewidths=0.8, linestyles='solid') #temperature contour
+    ax.clabel(CS, fontsize=10)
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,f'{basename}_zt_temp'))
-    axwl.set_ylim(-2,0.5)
+    ax.set_ylim(-2,0.5)
     fig.savefig(os.path.join(dir_output,f'{basename}_zt_temp_zoomwl'))
-
+    

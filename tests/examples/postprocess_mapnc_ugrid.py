@@ -17,15 +17,15 @@ dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
 file_nc_list = [os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_cb_3d\\cb_3d_map.nc'), #sigmalayer
-                os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0000_map.nc'), #zlayer
-                r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0000_map.nc', #fullgrid
-                r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_207\results\RMM_dflowfm_0000_map.nc', #2D model
-                r'p:\archivedprojects\11203379-005-mwra-updated-bem\03_model\02_final\A72_ntsu0_kzlb2\DFM_OUTPUT_MB_02\MB_02_0000_map.nc',
+                os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0*_map.nc'), #zlayer
+                r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0*_map.nc', #fullgrid
+                r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_207\results\RMM_dflowfm_0*_map.nc', #2D model
+                r'p:\archivedprojects\11203379-005-mwra-updated-bem\03_model\02_final\A72_ntsu0_kzlb2\DFM_OUTPUT_MB_02\MB_02_0*_map.nc',
                 ]
 
 for file_nc in file_nc_list:
     print('processing %s'%(os.path.basename(file_nc)))
-    basename = os.path.basename(file_nc).replace('.','')
+    basename = os.path.basename(file_nc).replace('.','').replace('_0*_','_0000_')
     
     if 'cb_3d_map' in file_nc:
         timestep = 72
@@ -100,8 +100,8 @@ for file_nc in file_nc_list:
         clim_bl = [-10,10]
         clim_sal = None
         crs = "EPSG:28992"
-        file_nc_fou = os.path.join(dir_testinput,r'DFM_fou_RMM\RMM_dflowfm_0000_fou.nc')
-    elif 'MB_02_0000_map' in file_nc:
+        file_nc_fou = os.path.join(dir_testinput,r'DFM_fou_RMM\RMM_dflowfm_0*_fou.nc')
+    elif 'MB_02_' in file_nc:
         timestep = 10
         layno = 45
         #provide xy order, so lonlat
@@ -119,9 +119,9 @@ for file_nc in file_nc_list:
     #TODO: add fancier plots: https://deltares.github.io/xugrid/examples/plotting.html (uda.ugrid.plot.imshow() already works)
     #TODO: check improvements: https://github.com/Deltares/xugrid/blob/main/examples/connectivity.py
     
-    data_frommap_merged = dfmt.open_partitioned_dataset(file_nc.replace('_0000_','_0*_')) #TODO: make starred default, but not supported by older code
+    data_frommap_merged = dfmt.open_partitioned_dataset(file_nc)
     
-    vars_pd = dfmt.get_ncvarproperties(file_nc=file_nc)
+    vars_pd = dfmt.get_ncvarproperties(data_frommap_merged)
     
     print('plot grid from mapdata') #use random variable and plot line to get grid (alternatively: xr.plot.line(data_frommap_merged.ugrid.grid.to_dataset()), but that crashes)
     fig, ax = plt.subplots()
@@ -171,14 +171,13 @@ for file_nc in file_nc_list:
     
     
     print('calculating and plotting cross section')
-    runtime_tstart = dt.datetime.now() #start timer
+    crs_tstart = dt.datetime.now() #start timer
     xr_crs_ugrid = dfmt.polyline_mapslice(data_frommap_merged, line_array, timestep=timestep)
     fig, ax = plt.subplots()
     xr_crs_ugrid['mesh2d_sa1'].ugrid.plot(cmap='jet')
     fig.tight_layout()
     plt.savefig(os.path.join(dir_output,f'{basename}_crossect'))
-    runtime_timedelta = (dt.datetime.now()-runtime_tstart)
-    print(f'calculating and plotting cross section finished in {runtime_timedelta}')
+    print(f'calculating and plotting cross section finished in {dt.datetime.now()-crs_tstart}')
     
     
     print('plot grid and values from mapdata (salinity on layer, 3dim, on cell centers), on layer')
@@ -199,7 +198,7 @@ for file_nc in file_nc_list:
     data_frommap_timesel_atdepths = dfmt.get_mapdata_atdepths(data_xr_map=data_frommap_timesel, depths=depths, reference='z0') #depth w.r.t. z0/waterlevel/bedlevel
     for dep in depths:
         fig, ax = plt.subplots()
-        if 'depth_fromref' in data_frommap_timesel_atdepths.dims:
+        if 'depth_fromref' in data_frommap_timesel_atdepths.dims: #TODO: use missingdims=ignore so if-statement is not necessary
             pc = data_frommap_timesel_atdepths['mesh2d_sa1'].sel(depth_fromref=dep).ugrid.plot(edgecolor='face',cmap='jet')
         else:
             pc = data_frommap_timesel_atdepths['mesh2d_sa1'].ugrid.plot(edgecolor='face',cmap='jet')
@@ -242,9 +241,10 @@ for file_nc in file_nc_list:
     
     if file_nc_fou is not None:
         #RMM foufile met quivers #TODO: maybe fancy xugridplotting can help out here
-        vars_pd = dfmt.get_ncvarproperties(file_nc=file_nc_fou)
         
-        data_frommap_merged = dfmt.open_partitioned_dataset(file_nc_fou.replace('_0000_','_0*_'))
+        data_frommap_merged = dfmt.open_partitioned_dataset(file_nc_fou)
+        vars_pd = dfmt.get_ncvarproperties(data_frommap_merged)
+        
         facex = data_frommap_merged['mesh2d_face_x'].to_numpy()
         facey = data_frommap_merged['mesh2d_face_y'].to_numpy()
         ux_mean = data_frommap_merged['mesh2d_fourier001_mean']

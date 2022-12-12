@@ -41,8 +41,9 @@ import xugrid as xu
 import xarray as xr
 import matplotlib.pyplot as plt
 import matplotlib.collections
+import glob
 
-from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvarproperties, get_varnamefrom_keyslongstandardname, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_fromnc
+from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvarproperties, get_varnamefromattrs, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_fromnc
 from dfm_tools.ugrid import UGrid
 
 
@@ -78,13 +79,19 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=No
     
     warnings.warn(DeprecationWarning('dfm_tools.get_nc.get_ncmodeldata() is deprecated, since there is an xarray alternative for multidomain FM files (xugrid).Open your file like this and use xarray sel/isel (example in postprocessing notebook):\n    data_xr_mapmerged = dfmt.open_partitioned_dataset(file_nc_map)\nFor hisfiles, use xarray with dfmt.preprocess_hisnc:\n    data_xr_his = xr.open_mfdataset(file_nc_his, preprocess=dfmt.preprocess_hisnc)'))
     
-    #get variable info (also checks if varname exists in keys, standard name, long name)
+    if multipart is not None:
+        warnings.warn(UserWarning('argument multipart is deprecated and will be ignored'))
+    
     if isinstance(file_nc,list): #for opendap, has to support lists
-        file_nc_one = file_nc[0]
+        file_nc_list = file_nc
     else:
-        file_nc_one = file_nc        
+        file_nc_list = glob.glob(file_nc)
+    file_nc_one = file_nc_list[0]  
+    
+    #get variable info (also checks if varname exists in keys, standard name, long name)
     data_nc = Dataset(file_nc_one)
-    varname = get_varnamefrom_keyslongstandardname(file_nc_one, varname) #get varname from varkeys/standardname/longname if exists
+    data_xr = xr.open_dataset(file_nc_one)
+    varname = get_varnamefromattrs(data_xr, varname) #get varname from varkeys/standardname/longname if exists
     nc_varobject = data_nc.variables[varname]
     
     #get list of station dimnames
@@ -217,18 +224,10 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=No
     
     #revert back to single partition if non-partitioned variable is requested
     bool_varpartitioned = any([True for x in nc_varobject.dimensions if x in [dimn_faces, dimn_nodes, dimn_edges, dimn_nFlowElem, dimn_nFlowLink]])
-    if not bool_varpartitioned:
-        multipart = False
-
-    #get list of partitioned files
-    if isinstance(file_nc,list):
-        file_ncs = file_nc
-    else:
-        file_ncs = get_ncfilelist(file_nc_one, multipart)
-
-    for iF, file_nc_sel in enumerate(file_ncs):
-        if (len(file_ncs) > 1) and not silent:
-            print('processing mapdata from domain %04d of %04d'%(iF, len(file_ncs)-1))
+    
+    for iF, file_nc_sel in enumerate(file_nc_list):
+        if (len(file_nc_list) > 1) and not silent:
+            print('processing mapdata from domain %04d of %04d'%(iF, len(file_nc_list)-1))
 
         data_nc_sel = Dataset(file_nc_sel)
         nc_varobject_sel = data_nc_sel.variables[varname]
@@ -294,7 +293,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=No
                 nc_varobject_sel_selids.mask = nc_varobject_sel_selids_mask
                 
         #concatenate to other partitions
-        if len(file_ncs) > 1:
+        if len(file_nc_list) > 1:
             #initialize array
             if iF == 0:
                 values_all = np.ma.empty(values_dimlens)
@@ -574,7 +573,7 @@ def get_mapdata_atdepths(data_xr_map, depths, reference='z0', zlayer_z0_selneare
         has to be Dataset (not a DataArray), otherwise mesh2d_flowelem_zw etc are not available (interface z values)
         in case of zsigma/sigma layers (or fullgrid), it is advisable to .sel()/.isel() the time dimension first, because that is less computationally heavy
     depths:
-        int/float or list of int/float. Depths w.r.t. reference level. If reference=='waterlevel', depth>0 returns only nans. If reference=='bedlevel', depth<0 returns only nans. 
+        int/float or list/array of int/float. Depths w.r.t. reference level. If reference=='waterlevel', depth>0 returns only nans. If reference=='bedlevel', depth<0 returns only nans. Depths are sorted and only uniques are kept.
     reference:
         compute depth w.r.t. z0/waterlevel/bed
         default: reference='z0'
@@ -585,25 +584,31 @@ def get_mapdata_atdepths(data_xr_map, depths, reference='z0', zlayer_z0_selneare
     #TODO: zmodel gets depth in figure title, because of .set_index() in open_partitioned_dataset(). Sigmamodel gets percentage/fraction in title
     #TODO: check if attributes should be passed/altered
     #TODO: make generic to also work with hisnc files?
+    #TODO: also waterlevelvar in 3D model gets depth_fromref coordinate, would be nice to avoid.
     """
     
-    if not 'nmesh2d_layer' in data_xr_map.dims: #TODO: maybe raise exception instead?
+    depth_varname = 'depth_fromref'
+    
+    if not 'nmesh2d_layer' in data_xr_map.dims:# and not 'laydim' in data_xr_map.dims: #TODO: maybe raise exception instead? #laydim for hisfile
         print('WARNING: depth dimension not found, probably 2D model, returning input Dataset')
         return data_xr_map #early return
     
     if not isinstance(data_xr_map,(xr.Dataset,xu.UgridDataset)):
         raise Exception(f'data_xr_map should be of type xr.Dataset, but is {type(data_xr_map)}')
     if isinstance(depths,(float,int)):
-        depths = [depths]
+        depths = depths #float/int
+        depth_dims = ()
+    else:
+        depths = np.unique(depths) #array of unique+sorted floats/ints
+        depth_dims = (depth_varname)
 
     data_wl = data_xr_map['mesh2d_s1']
     data_bl = data_xr_map['mesh2d_flowelem_bl']
-    depth_varname = 'depth_fromref'
     
     #create depth xr.DataArray
-    depths_xr = xr.DataArray(np.unique(depths),dims=(depth_varname),attrs={'units':'m',
-                                                                           'reference':f'model_{reference}',
-                                                                           'positive':'up'}) #TODO: make more in line with CMEMS etc
+    depths_xr = xr.DataArray(depths,dims=depth_dims,attrs={'units':'m',
+                                                           'reference':f'model_{reference}',
+                                                           'positive':'up'}) #TODO: make more in line with CMEMS etc
     
     #simplified/faster method for zlayer icm z0 reference
     if 'mesh2d_layer_z' in data_xr_map.coords and zlayer_z0_selnearest and reference=='z0': # selects nearest z-center values (instead of slicing), should be faster #TODO: check if this is faster than fullgrid
@@ -615,13 +620,13 @@ def get_mapdata_atdepths(data_xr_map, depths, reference='z0', zlayer_z0_selneare
         return data_xr_map_atdepths #early return
     
     #potentially construct fullgrid info (zcc/zw) #TODO: maybe move to separate dim, like open_partitioned_dataset() (although bl/wl are needed anyway)
-    if 'mesh2d_flowelem_zw' in data_xr_map.coords: #fullgrid info already available, so continuing
+    if 'mesh2d_flowelem_zw' in data_xr_map.variables:# or 'zcoordinate_w' in data_xr_map.variables: #fullgrid info already available, so continuing. "zcoordinate_w" is for hisfiles
         print('zw/zcc (fullgrid) values already present in Dataset')
         pass
-    elif 'mesh2d_layer_sigma' in data_xr_map.coords: #reconstruct_zw_zcc_fromsigma and treat as zsigma/fullgrid mapfile from here
+    elif 'mesh2d_layer_sigma' in data_xr_map.variables: #reconstruct_zw_zcc_fromsigma and treat as zsigma/fullgrid mapfile from here
         print('sigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
         data_xr_map = reconstruct_zw_zcc_fromsigma(data_xr_map)
-    elif 'mesh2d_layer_z' in data_xr_map.coords:
+    elif 'mesh2d_layer_z' in data_xr_map.variables:
         print('z-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
         data_xr_map = reconstruct_zw_zcc_fromz(data_xr_map)
     else:
@@ -678,13 +683,13 @@ def get_xzcoords_onintersection(data_frommap_merged, intersect_pd, timestep=None
     if dimn_layer not in data_frommap_merged.dims: #2D model
         print('depth dimension not found, probably 2D model')
         pass
-    elif 'mesh2d_flowelem_zw' in data_frommap_merged.coords: #fullgrid info already available, so continuing
+    elif 'mesh2d_flowelem_zw' in data_frommap_merged.variables: #fullgrid info already available, so continuing
         print('zw/zcc (fullgrid) values already present in Dataset')
         pass
-    elif 'mesh2d_layer_sigma' in data_frommap_merged.coords: #reconstruct_zw_zcc_fromsigma and treat as zsigma/fullgrid mapfile from here
+    elif 'mesh2d_layer_sigma' in data_frommap_merged.variables: #reconstruct_zw_zcc_fromsigma and treat as zsigma/fullgrid mapfile from here
         print('sigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
         data_frommap_merged = reconstruct_zw_zcc_fromsigma(data_frommap_merged)
-    elif 'mesh2d_layer_z' in data_frommap_merged.coords:        
+    elif 'mesh2d_layer_z' in data_frommap_merged.variables:        
         print('z-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
         data_frommap_merged = reconstruct_zw_zcc_fromz(data_frommap_merged)
     else:
@@ -741,7 +746,15 @@ def polyline_mapslice(data_frommap_merged, line_array, timestep, calcdist_fromla
 def get_netdata(file_nc, multipart=None):
 
     warnings.warn(DeprecationWarning('dfm_tools.get_nc.get_netdata() is deprecated, since there is an xarray alternative for multidomain FM files (xugrid). Open it like this and use xarray sel/isel (example in postprocessing notebook):\n    data_xr_mapmerged = dfmt.open_partitioned_dataset(file_nc_map)'))
-    file_ncs = get_ncfilelist(file_nc, multipart)
+    #file_ncs = get_ncfilelist(file_nc, multipart)
+    if isinstance(file_nc,list): #for opendap, has to support lists
+        file_ncs = file_nc
+    else:
+        file_ncs = glob.glob(file_nc)
+    
+    if multipart is not None:
+        warnings.warn(UserWarning('argument multipart is deprecated and will be ignored'))
+        
     #get all data
     num_nodes = [0]
     verts_shape2_all = []
@@ -979,7 +992,7 @@ def plot_background(ax=None, projection=None, google_style='satellite', resoluti
     return ax
 
 
-def plot_ztdata(data_xr_sel, varname, ax=None, mask_data=True, only_contour=False, **kwargs):
+def plot_ztdata(data_xr_sel, varname, ax=None, only_contour=False, get_ds=False, **kwargs):
     """
     
 
@@ -991,8 +1004,6 @@ def plot_ztdata(data_xr_sel, varname, ax=None, mask_data=True, only_contour=Fals
         DESCRIPTION.
     ax : matplotlib.axes._subplots.AxesSubplot, optional
         the figure axis. The default is None.
-    mask_data : bool, optional
-        whether to repair z_interface coordinates and mask data in inactive layers. The default is True.
     only_contour : bool, optional
         Wheter to plot contour lines of the dataset. The default is False.
     **kwargs : TYPE
@@ -1007,44 +1018,30 @@ def plot_ztdata(data_xr_sel, varname, ax=None, mask_data=True, only_contour=Fals
     -------
     pc : matplotlib.collections.QuadMesh
         DESCRIPTION.
-
+    
     """
-
-   
-    print('WARNING: layers in dflowfm hisfile might be incorrect, check your figures carefully')
     
-    data_fromhis_var = data_xr_sel[varname].to_numpy()
-    if len(data_fromhis_var.shape) != 2:
-        raise Exception(f'ERROR: unexpected number of dimensions in requested squeezed variable ({data_fromhis_var.shape}), first use data_xr.isel(stations=int) to select a single station') #TODO: can also have a different cause, improve message/testing?
-    data_fromhis_zcen = data_xr_sel['zcoordinate_c'].bfill(dim='laydim').to_numpy()
-    data_fromhis_zcor = data_xr_sel['zcoordinate_w'].bfill(dim='laydimw').to_numpy() #bfill replaces nan values with last valid value, this is necessary to enable pcolormesh to work
-    data_fromhis_zcor = np.concatenate([data_fromhis_zcor,data_fromhis_zcor[[-1],:]],axis=0)
-    data_fromhis_wl = data_xr_sel['waterlevel'].to_numpy()
-    
-    if mask_data:
-        data_fromhis_var = np.ma.array(data_fromhis_var)
-        bool_zcen_equaltop = (data_fromhis_zcen==data_fromhis_zcen[:,-1:]).all(axis=0)
-        id_zcentop = np.argmax(bool_zcen_equaltop) # id of first z_center that is equal to z_center of last layer
-        if (data_fromhis_zcor[:-1,id_zcentop] > data_fromhis_zcen[:,id_zcentop]).any():
-            print('correcting z interface values')
-            data_fromhis_zcor[:-1,id_zcentop+1] = data_fromhis_wl
-            data_fromhis_zcor[:-1,id_zcentop] = (data_fromhis_zcen[:,id_zcentop-1]+data_fromhis_zcen[:,id_zcentop])/2
-        bool_zcen_equaltop[id_zcentop] = False
-        #bool_zcor_equaltop = (data_fromhis_zcor_flat[:,1:]==data_fromhis_zcor_flat[:,-1:]).all(axis=0)
-        mask_array = np.tile(bool_zcen_equaltop,(data_fromhis_zcor.shape[0],1))
-        data_fromhis_var.mask = mask_array
-
     if not ax: ax=plt.gca()
-
+    
+    if len(data_xr_sel[varname].shape) != 2:
+        raise Exception(f'ERROR: unexpected number of dimensions in requested squeezed variable ({data_xr_sel[varname].shape}), first use data_xr.isel(stations=int) to select a single station') #TODO: can also have a different cause, improve message/testing?
+    
+    #repair zvalues at wl/wl (filling nans and clipping to wl/bl). bfill replaces nan values with last valid value, this is necessary to enable pcolormesh to work. clip forces data to be within bl/wl
+    #TODO: put clip in preproces_hisnc to make plotting easier?
+    data_xr_sel['zcoordinate_c'] = data_xr_sel['zcoordinate_c'].bfill(dim='laydim').clip(min=data_xr_sel.bedlevel,max=data_xr_sel.waterlevel)
+    data_xr_sel['zcoordinate_w'] = data_xr_sel['zcoordinate_w'].bfill(dim='laydimw').clip(min=data_xr_sel.bedlevel,max=data_xr_sel.waterlevel)
+    
     # generate 2 2d grids for the x & y bounds (you can also give one 2D array as input in case of eg time varying z coordinates)
+    data_fromhis_zcor = data_xr_sel['zcoordinate_w'].to_numpy() 
+    data_fromhis_zcor = np.concatenate([data_fromhis_zcor,data_fromhis_zcor[[-1],:]],axis=0)
     time_np = data_xr_sel.time.to_numpy()
     time_cor = np.concatenate([time_np,time_np[[-1]]])
     time_mesh_cor = np.tile(time_cor,(data_fromhis_zcor.shape[-1],1)).T
-    time_mesh_cen = np.tile(time_np,(data_fromhis_zcen.shape[-1],1)).T
     if only_contour:
-        pc = ax.contour(time_mesh_cen,data_fromhis_zcen,data_fromhis_var, **kwargs)
-    else: #TODO: should actually supply cell edges instead of centers to pcolor/pcolormesh, but inconvenient for time dimension.
-        pc = ax.pcolormesh(time_mesh_cor, data_fromhis_zcor, data_fromhis_var, **kwargs)
-
+        pc = data_xr_sel[varname].plot.contour(ax=ax, x='time', y='zcoordinate_c', **kwargs)
+    else:
+        #pc = data_xr_sel[varname].plot.pcolormesh(ax=ax, x='time', y='zcoordinate_w', **kwargs) #is not possible to put center values on interfaces, som more difficult approach needed
+        pc = ax.pcolormesh(time_mesh_cor, data_fromhis_zcor, data_xr_sel[varname], **kwargs)
+   
     return pc
 
