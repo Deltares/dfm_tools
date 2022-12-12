@@ -992,7 +992,7 @@ def plot_background(ax=None, projection=None, google_style='satellite', resoluti
     return ax
 
 
-def plot_ztdata(data_xr_sel, varname, ax=None, only_contour=False, **kwargs):
+def plot_ztdata(data_xr_sel, varname, ax=None, only_contour=False, get_ds=False, **kwargs):
     """
     
 
@@ -1004,8 +1004,6 @@ def plot_ztdata(data_xr_sel, varname, ax=None, only_contour=False, **kwargs):
         DESCRIPTION.
     ax : matplotlib.axes._subplots.AxesSubplot, optional
         the figure axis. The default is None.
-    mask_data : bool, optional
-        whether to repair z_interface coordinates and mask data in inactive layers. The default is True.
     only_contour : bool, optional
         Wheter to plot contour lines of the dataset. The default is False.
     **kwargs : TYPE
@@ -1022,28 +1020,27 @@ def plot_ztdata(data_xr_sel, varname, ax=None, only_contour=False, **kwargs):
         DESCRIPTION.
 
     """
-
-   
-    #print('WARNING: layers in dflowfm hisfile might be incorrect, check your figures carefully')
-    
-    data_fromhis_var = data_xr_sel[varname].to_numpy()
-    if len(data_fromhis_var.shape) != 2:
-        raise Exception(f'ERROR: unexpected number of dimensions in requested squeezed variable ({data_fromhis_var.shape}), first use data_xr.isel(stations=int) to select a single station') #TODO: can also have a different cause, improve message/testing?
-    data_fromhis_zcen = data_xr_sel['zcoordinate_c'].bfill(dim='laydim').to_numpy()
-    data_fromhis_zcor = data_xr_sel['zcoordinate_w'].bfill(dim='laydimw').clip(min=data_xr_sel.bedlevel,max=data_xr_sel.waterlevel).to_numpy() #bfill replaces nan values with last valid value, this is necessary to enable pcolormesh to work. clip forces data to be within bl/wl #TODO: put clip in preproces_hisnc to make plotting easier?
-    data_fromhis_zcor = np.concatenate([data_fromhis_zcor,data_fromhis_zcor[[-1],:]],axis=0)
-    
     if not ax: ax=plt.gca()
     
+    if len(data_xr_sel[varname].shape) != 2:
+        raise Exception(f'ERROR: unexpected number of dimensions in requested squeezed variable ({data_xr_sel[varname].shape}), first use data_xr.isel(stations=int) to select a single station') #TODO: can also have a different cause, improve message/testing?
+    
+    #repair zvalues at wl/wl (filling nans and clipping to wl/bl). bfill replaces nan values with last valid value, this is necessary to enable pcolormesh to work. clip forces data to be within bl/wl
+    #TODO: put clip in preproces_hisnc to make plotting easier?
+    data_xr_sel['zcoordinate_c'] = data_xr_sel['zcoordinate_c'].bfill(dim='laydim').clip(min=data_xr_sel.bedlevel,max=data_xr_sel.waterlevel)
+    data_xr_sel['zcoordinate_w'] = data_xr_sel['zcoordinate_w'].bfill(dim='laydimw').clip(min=data_xr_sel.bedlevel,max=data_xr_sel.waterlevel)
+    
     # generate 2 2d grids for the x & y bounds (you can also give one 2D array as input in case of eg time varying z coordinates)
+    data_fromhis_zcor = data_xr_sel['zcoordinate_w'].to_numpy() 
+    data_fromhis_zcor = np.concatenate([data_fromhis_zcor,data_fromhis_zcor[[-1],:]],axis=0)
     time_np = data_xr_sel.time.to_numpy()
     time_cor = np.concatenate([time_np,time_np[[-1]]])
     time_mesh_cor = np.tile(time_cor,(data_fromhis_zcor.shape[-1],1)).T
-    time_mesh_cen = np.tile(time_np,(data_fromhis_zcen.shape[-1],1)).T
     if only_contour:
-        pc = ax.contour(time_mesh_cen,data_fromhis_zcen,data_fromhis_var, **kwargs)
-    else: #TODO: should actually supply cell edges instead of centers to pcolor/pcolormesh, but inconvenient for time dimension.
-        pc = ax.pcolormesh(time_mesh_cor, data_fromhis_zcor, data_fromhis_var, **kwargs)
-
+        pc = data_xr_sel[varname].plot.contour(ax=ax, x='time', y='zcoordinate_c', **kwargs)
+    else:
+        #pc = data_xr_sel[varname].plot.pcolormesh(ax=ax, x='time', y='zcoordinate_w', **kwargs) #is not possible to put center values on interfaces, som more difficult approach needed
+        pc = ax.pcolormesh(time_mesh_cor, data_fromhis_zcor, data_xr_sel[varname], **kwargs)
+   
     return pc
 
