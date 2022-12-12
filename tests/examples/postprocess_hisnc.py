@@ -110,8 +110,7 @@ for file_nc in file_nc_list:
     fig.savefig(os.path.join(dir_output,f'{basename}_salinityoverdepth'))
     
     print('zt temperature plot and wl')
-    station_zt = stations_requested[2]
-    data_xr_selzt = data_xr.sel(stations=station_zt).isel(time=slice(40,100))
+    data_xr_selzt = data_xr.isel(stations=2).isel(time=slice(40,100))
     fig, ax = plt.subplots(1,1,figsize=(12,7))
     data_xr_selzt.waterlevel.plot.line(ax=ax,color='r') #waterlevel line
     pc = dfmt.plot_ztdata(data_xr_sel=data_xr_selzt, varname='temperature', ax=ax, cmap='jet') #temperature pcolormesh
