@@ -46,7 +46,7 @@ from netCDF4 import Dataset
 
 
 def get_ncfilelist(file_nc, multipart=None):
-    warnings.warn(DeprecationWarning('dfm_tools.get_nc_helpers.get_ncfilelist() will be deprecated'))
+    raise DeprecationWarning('dfm_tools.get_nc_helpers.get_ncfilelist() is deprecated')
     if isinstance(file_nc,list):
         file_ncs = file_nc
         return file_ncs
@@ -168,8 +168,14 @@ def get_varname_fromnc(data_nc,varname_requested,vardim): #TODO: this is probabl
     return varname
 
 
-def get_ncvarproperties(file_nc):
-    data_xr = xr.open_dataset(file_nc)
+def get_ncvarproperties(data_xr=None, file_nc=None):
+    if file_nc is not None:
+        warnings.warn(DeprecationWarning('Supplying file_nc argument to get_ncvarproperties() will be deprecated, supply data_xr=xr.Dataset instead'))
+        if not isinstance(file_nc,str):
+            raise Exception('when supplying file_nc argument to get_ncvarproperties(), it has to be of type str')
+        data_xr = xr.open_dataset(file_nc)
+    if data_xr is None:
+        raise Exception('supply data_xr argument to get_ncvarproperties()')
     nc_varkeys = data_xr.variables.mapping.keys()
     
     list_varattrs_pd = []

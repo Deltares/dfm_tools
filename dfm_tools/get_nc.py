@@ -41,8 +41,9 @@ import xugrid as xu
 import xarray as xr
 import matplotlib.pyplot as plt
 import matplotlib.collections
+import glob
 
-from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvarproperties, get_varnamefrom_keyslongstandardname, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_fromnc
+from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvarproperties, get_varnamefromattrs, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_fromnc
 from dfm_tools.ugrid import UGrid
 
 
@@ -78,13 +79,19 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=No
     
     warnings.warn(DeprecationWarning('dfm_tools.get_nc.get_ncmodeldata() is deprecated, since there is an xarray alternative for multidomain FM files (xugrid).Open your file like this and use xarray sel/isel (example in postprocessing notebook):\n    data_xr_mapmerged = dfmt.open_partitioned_dataset(file_nc_map)\nFor hisfiles, use xarray with dfmt.preprocess_hisnc:\n    data_xr_his = xr.open_mfdataset(file_nc_his, preprocess=dfmt.preprocess_hisnc)'))
     
-    #get variable info (also checks if varname exists in keys, standard name, long name)
+    if multipart is not None:
+        warnings.warn(UserWarning('argument multipart is deprecated and will be ignored'))
+    
     if isinstance(file_nc,list): #for opendap, has to support lists
-        file_nc_one = file_nc[0]
+        file_nc_list = file_nc
     else:
-        file_nc_one = file_nc        
+        file_nc_list = glob.glob(file_nc)
+    file_nc_one = file_nc_list[0]  
+    
+    #get variable info (also checks if varname exists in keys, standard name, long name)
     data_nc = Dataset(file_nc_one)
-    varname = get_varnamefrom_keyslongstandardname(file_nc_one, varname) #get varname from varkeys/standardname/longname if exists
+    data_xr = xr.open_dataset(file_nc_one)
+    varname = get_varnamefromattrs(data_xr, varname) #get varname from varkeys/standardname/longname if exists
     nc_varobject = data_nc.variables[varname]
     
     #get list of station dimnames
@@ -217,18 +224,10 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=No
     
     #revert back to single partition if non-partitioned variable is requested
     bool_varpartitioned = any([True for x in nc_varobject.dimensions if x in [dimn_faces, dimn_nodes, dimn_edges, dimn_nFlowElem, dimn_nFlowLink]])
-    if not bool_varpartitioned:
-        multipart = False
-
-    #get list of partitioned files
-    if isinstance(file_nc,list):
-        file_ncs = file_nc
-    else:
-        file_ncs = get_ncfilelist(file_nc_one, multipart)
-
-    for iF, file_nc_sel in enumerate(file_ncs):
-        if (len(file_ncs) > 1) and not silent:
-            print('processing mapdata from domain %04d of %04d'%(iF, len(file_ncs)-1))
+    
+    for iF, file_nc_sel in enumerate(file_nc_list):
+        if (len(file_nc_list) > 1) and not silent:
+            print('processing mapdata from domain %04d of %04d'%(iF, len(file_nc_list)-1))
 
         data_nc_sel = Dataset(file_nc_sel)
         nc_varobject_sel = data_nc_sel.variables[varname]
@@ -294,7 +293,7 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=No
                 nc_varobject_sel_selids.mask = nc_varobject_sel_selids_mask
                 
         #concatenate to other partitions
-        if len(file_ncs) > 1:
+        if len(file_nc_list) > 1:
             #initialize array
             if iF == 0:
                 values_all = np.ma.empty(values_dimlens)
@@ -746,7 +745,15 @@ def polyline_mapslice(data_frommap_merged, line_array, timestep, calcdist_fromla
 def get_netdata(file_nc, multipart=None):
 
     warnings.warn(DeprecationWarning('dfm_tools.get_nc.get_netdata() is deprecated, since there is an xarray alternative for multidomain FM files (xugrid). Open it like this and use xarray sel/isel (example in postprocessing notebook):\n    data_xr_mapmerged = dfmt.open_partitioned_dataset(file_nc_map)'))
-    file_ncs = get_ncfilelist(file_nc, multipart)
+    #file_ncs = get_ncfilelist(file_nc, multipart)
+    if isinstance(file_nc,list): #for opendap, has to support lists
+        file_ncs = file_nc
+    else:
+        file_ncs = glob.glob(file_nc)
+    
+    if multipart is not None:
+        warnings.warn(UserWarning('argument multipart is deprecated and will be ignored'))
+        
     #get all data
     num_nodes = [0]
     verts_shape2_all = []

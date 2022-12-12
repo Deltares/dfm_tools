@@ -83,7 +83,6 @@ def test_getmapdata(file_nc, varname, expected_size):
     file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0*_map.nc')
     expected_size = (44796,)
     """
-    file_nc_nostar = file_nc.replace('0*','0000') #TODO: introduce support for * in dfm_tools definitions?
     
     data_xr_map = dfmt.open_partitioned_dataset(file_nc)
     varname_found = dfmt.get_varnamefromattrs(data_xr_map,varname)
@@ -140,7 +139,7 @@ def test_getvarnamemapnc():
     data_nc = Dataset(file_nc)
     varname_requested = 'NetNode_y' #is actually in file, so this is not a good test
     
-    varname = dfmt.get_varname_fromnc(data_nc,varname_requested, vardim='var')
+    varname = dfmt.get_varname_fromnc(data_nc, varname_requested, vardim='var')
     data_nc_var = data_nc.variables[varname]
     dimname = data_nc_var.dimensions[0]
     
@@ -322,7 +321,8 @@ def SKIP_test_getncmatchingvarlist(): #skipping test since it is deprecated (use
     """
     
     file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc')
-    vars_pd = dfmt.get_ncvarproperties(file_nc=file_nc)
+    data_xr = xr.open_dataset(file_nc)
+    vars_pd = dfmt.get_ncvarproperties(data_xr)
 
     pattern = 'Flow .*component'
     vars_pd_matching = vars_pd[vars_pd.loc[:,'long_name'].str.match(pattern)] #does not have to stop after pattern

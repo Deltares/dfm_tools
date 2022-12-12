@@ -27,10 +27,10 @@ file_nc_list = [os.path.join(dir_testinput,'vanNithin','tttz_0000_his.nc'),
 
 for file_nc in file_nc_list:
     basename = os.path.basename(file_nc).replace('.','')
-    vars_pd = dfmt.get_ncvarproperties(file_nc)
     
     data_xr = xr.open_mfdataset(file_nc, preprocess=dfmt.preprocess_hisnc) #TODO: maybe adding chunking argument like chunks={'time':-1,'station':200}) (https://github.com/pydata/xarray/discussions/6458)
-    
+    vars_pd = dfmt.get_ncvarproperties(data_xr)
+        
     if 'Grevelingen-FM_0000' in file_nc:
         #file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_his.nc')
         stations_requested = ['GTSO-01','GTSO-02','GTSO-03','GTSO-04','GTSO-05','GTSO-06','GTSO-07',
@@ -85,7 +85,9 @@ for file_nc in file_nc_list:
         data_fromhis_xr.plot.line('-',ax=ax,x='time')
     else:
         data_fromhis_xr.plot.line('-',ax=ax)
-        ax.set_xticklabels(data_fromhis_xr.stations.to_series(),rotation=45,ha='right') #optional, to rotate x-labels
+        stat_pd = data_fromhis_xr.stations.to_series()
+        ax.set_xticks(range(len(stat_pd)))
+        ax.set_xticklabels(stat_pd,rotation=45,ha='right') #optional, to rotate x-labels
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,f'{basename}_bedlevel'))
     if 'sfincs' in file_nc or 'morwaqeco3d' in file_nc or 'trih-' in file_nc:
