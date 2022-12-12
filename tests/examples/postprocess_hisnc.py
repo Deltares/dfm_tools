@@ -112,19 +112,14 @@ for file_nc in file_nc_list:
     print('zt temperature plot and wl')
     station_zt = stations_requested[2]
     data_xr_selzt = data_xr.sel(stations=station_zt).isel(time=slice(40,100))
-    data_fromhis_wl_xr = data_xr_selzt['waterlevel']
-    fig, (axwl,ax1) = plt.subplots(2,1,figsize=(12,7),gridspec_kw={'height_ratios':[1,2]},sharex=True,sharey=True)
-    axwl.plot(data_xr_selzt.time[[0,-1]],[0,0],'k-',linewidth=0.5)
-    ax1.plot(data_xr_selzt.time[[0,-1]],[0,0],'k-',linewidth=0.5)
-    data_xr_selzt.waterlevel.plot.line(ax=axwl,label=f'wl {station_zt}')
-    c = dfmt.plot_ztdata(data_xr_sel=data_xr_selzt, varname='temperature', ax=ax1, cmap='jet')
-    fig.colorbar(c,ax=axwl)
-    fig.colorbar(c,ax=ax1)
-    #contour
-    CS = dfmt.plot_ztdata(data_xr_sel=data_xr_selzt, varname='temperature', ax=ax1, only_contour=True, levels=6, colors='k', linewidths=0.8, linestyles='solid')
-    ax1.clabel(CS, fontsize=10)
+    fig, ax = plt.subplots(1,1,figsize=(12,7))
+    data_xr_selzt.waterlevel.plot.line(ax=ax,color='r') #waterlevel line
+    pc = dfmt.plot_ztdata(data_xr_sel=data_xr_selzt, varname='temperature', ax=ax, cmap='jet') #temperature pcolormesh
+    fig.colorbar(pc,ax=ax)
+    CS = dfmt.plot_ztdata(data_xr_sel=data_xr_selzt, varname='temperature', ax=ax, only_contour=True, levels=6, colors='k', linewidths=0.8, linestyles='solid') #temperature contour
+    ax.clabel(CS, fontsize=10)
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,f'{basename}_zt_temp'))
-    axwl.set_ylim(-2,0.5)
+    ax.set_ylim(-2,0.5)
     fig.savefig(os.path.join(dir_output,f'{basename}_zt_temp_zoomwl'))
 
