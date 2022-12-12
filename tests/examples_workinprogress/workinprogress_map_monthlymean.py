@@ -74,7 +74,7 @@ clim_sal = [28,30.2]
 clim_tem = [4,10]
 crs = "EPSG:28992"
 
-data_frommap = dfmt.open_partitioned_dataset(file_out) #TODO: file_out is not suitable for xugrid anymore, so how to read it? (probably corrupt)
+data_frommap = dfmt.open_partitioned_dataset(file_out) #TODO: file_out is not suitable for xugrid anymore, so how to read it? (probably corrupt) "AttributeError: Can only access grid topology via `.grid` if dataset contains exactly one grid. Dataset contains 0 grids. Use `.grids` instead."
 
 
 print('plot grid and values from mapdata (salinity on layer, 3dim, on cell centers)')
