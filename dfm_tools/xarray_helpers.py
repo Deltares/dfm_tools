@@ -129,7 +129,7 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
         - MWRA 3D 20 partitions 2551 timesteps: 826.2/3.4/1.2 sec
     """
     
-    def set_map_coordinates(ds_merged_xu): #set coordinates
+    def set_map_coordinates(ds_merged_xu): #set coordinates #TODO: maybe avoid this, is not necessary per se
         #in case of zsigma/fullgridoutput, mesh2d_flowelem_zcc andmesh2d_flowelem_zw are coordinates of the dataset
         #mesh2d_layer_z/mesh2d_layer_sigma should be a coordinates in case of z or sigma model, but they are not #TODO: report issue to FM kernel
         if 'mesh2d_layer_z' in ds_merged_xu:
