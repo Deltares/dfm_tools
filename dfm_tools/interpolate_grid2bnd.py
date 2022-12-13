@@ -230,7 +230,7 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
     list_pattern_names = [x.name for x in dir_pattern]
     print(f'loading mfdataset of {len(file_list_nc)} files with pattern(s) {list_pattern_names}')
     
-    dtstart = dt.datetime.now()
+    #dtstart = dt.datetime.now()
     try:
         data_xr = xr.open_mfdataset(file_list_nc)#,chunks={'time':1}) #TODO: does chunks argument solve "PerformanceWarning: Slicing is producing a large chunk."? {'time':1} is not a convenient chunking to use for timeseries extraction
     except xr.MergeError as e: #TODO: this except is necessary for CMCC, ux and uy have different lat/lon values, so renaming those of uy to avoid merging conflict
@@ -253,10 +253,10 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
     data_xr_calendar = data_xr['time'].dt.calendar
     if data_xr_calendar != 'proleptic_gregorian': #this is for instance the case in case of noleap (or 365_days) calendars from GFDL and CMCC
         units_copy = data_xr['time'].encoding['units']
-        print('WARNING: calendar different than proleptic_gregorian found ({data_xr_calendar}), convert_calendar is called so check output carefully. It should be no issue for datasets with a monthly interval.')
+        print(f'WARNING: calendar different than proleptic_gregorian found ({data_xr_calendar}), convert_calendar is called so check output carefully. It should be no issue for datasets with a monthly interval.')
         data_xr = data_xr.convert_calendar('standard') #TODO: does this not result in 29feb nan values in e.g. GFDL model? Check missing argument at https://docs.xarray.dev/en/stable/generated/xarray.Dataset.convert_calendar.html
         data_xr['time'].encoding['units'] = units_copy #put back dropped units
-    time_passed = (dt.datetime.now()-dtstart).total_seconds()
+    #time_passed = (dt.datetime.now()-dtstart).total_seconds()
     # print(f'>>time passed: {time_passed:.2f} sec')
     
     #get timevar and compare requested dates
@@ -468,27 +468,26 @@ def interp_hisnc_to_plipoints(data_xr_his, file_pli, kdtree_k=3, load=True):
     
 
 def plipointsDataset_to_ForcingModel(plipointsDataset):
-    
     quantity_list = list(plipointsDataset.data_vars)
-    ForcingModel_object = ForcingModel()
     npoints = len(plipointsDataset.plipoints)
     
-    #if plipointsDataset
+    #start conversion to Forcingmodel object
     print(f'Converting {npoints} plipoints to ForcingModel():',end='')
     dtstart = dt.datetime.now()
+    ForcingModel_object = ForcingModel()
     for iP in range(npoints):
         print(f' {iP+1}',end='')
         
         #select data for this point, ffill nans, concatenating time column, constructing T3D/TimeSeries and append to ForcingModel()
         datablock_xr_onepoint = plipointsDataset.isel(plipoints=iP)
-        plipoint_name = str(datablock_xr_onepoint['plipoints'].to_numpy())
+        plipoint_name = str(datablock_xr_onepoint.plipoints.to_numpy())
         
         for quan in quantity_list:
             datablock_xr_onepoint[quan].attrs['locationname'] = plipoint_name #TODO: is there a nicer way of passing this data?
-            if np.isnan(datablock_xr_onepoint[quan].to_numpy()).all(): # check if only nan (out of bounds or land) # we can do .to_numpy() without performance loss, since data is already loaded in datablock_xr_allpoints
-                warnings.warn(UserWarning(f'Only nans for plipoint {plipoint_name}, this point might be on land. You could consider using plipointsDataset.ffill(dim="plipoints").bfill(dim="plipoints")')) #TODO: would be better to check this before point loop
+            if datablock_xr_onepoint[quan].isnull().all(): # check if only nan (on land)
+                warnings.warn(UserWarning(f'Plipoint "{plipoint_name}" might be on land since it only contain nan values. Consider altering your plifile or using plipointsDataset.ffill(dim="plipoints").bfill(dim="plipoints")'))
         
-        if 'depth' in plipointsDataset.coords:
+        if 'depth' in plipointsDataset.dims:
             ts_one = Dataset_to_T3D(datablock_xr_onepoint)
         else:
             ts_one = Dataset_to_TimeSeries(datablock_xr_onepoint)

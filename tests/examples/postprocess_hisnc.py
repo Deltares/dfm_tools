@@ -91,7 +91,7 @@ for file_nc in file_nc_list:
     if 'sfincs' in file_nc or 'morwaqeco3d' in file_nc or 'trih-' in file_nc:
         continue
     
-    #at this stage there are only three hisfiles left where continue was not called for
+    #at this stage there are only three hisfiles left where "continue" was not called for
     
     print('plot salinity from his') #TODO: retreive variable on fixed depth (like dfmt.get_mapdata_atfixedepth())
     data_fromhis_xr = data_xr.salinity.sel(stations=stations_requested).isel(laydim=20)

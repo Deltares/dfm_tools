@@ -26,7 +26,7 @@ except: #main branch and next release #TODO: move to easy imports after https://
 #copied plifile from DCSM folder: r'p:\1204257-dcsmzuno\data\CMEMS\bnd\NorthSeaAndBaltic_1993-2019_20210510'
 #list_plifiles = [Path(r'c:\DATA\dfm_tools_testdata\hydrolib_bc\DCSM\DCSM-FM_OB_all_20181108.pli')] #TODO: reading this file results in empty Polyfile, should raise an error. https://github.com/Deltares/HYDROLIB-core/issues/320
 list_plifiles = [Path(r'c:\DATA\dfm_tools_testdata\hydrolib_bc\DCSM\DCSM-FM_OB_all_20181108_nocomments.pli')]
-nPoints = 3 #amount of Points to process per PolyObject in the plifile (for testing, use None for all Points)
+nPoints = None #amount of Points to process per PolyObject in the plifile (use int for testing, use None for all Points)
 
 dir_output = './test_interpolate_nc_to_bc'
 bc_type = 'bc' #currently only 'bc' supported #TODO: add netcdf bc support. https://github.com/Deltares/HYDROLIB-core/issues/318
@@ -201,6 +201,6 @@ file_ext_out = Path(dir_output,'example_bnd.ext')
 ext_bnd.save(filepath=file_ext_out)
 
 time_passed = (dt.datetime.now()-dtstart).total_seconds()
-print(f'>>time passed: {time_passed:.2f} sec')
+print(f'>>total script time passed: {time_passed:.2f} sec')
 
 
