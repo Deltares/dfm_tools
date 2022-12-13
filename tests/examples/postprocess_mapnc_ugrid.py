@@ -195,7 +195,7 @@ for file_nc in file_nc_list:
     print('plot grid and values from mapdata (salinity on layer, 3dim, on cell centers), on fixed depth(s)')
     depths = [-1,-4]
     data_frommap_timesel = data_frommap_merged.isel(time=timestep) #select data for all layers
-    data_frommap_timesel_atdepths = dfmt.get_mapdata_atdepths(data_xr_map=data_frommap_timesel, depths=depths, reference='z0') #depth w.r.t. z0/waterlevel/bedlevel
+    data_frommap_timesel_atdepths = dfmt.get_Dataset_atdepths(data_xr=data_frommap_timesel, depths=depths, reference='z0') #depth w.r.t. z0/waterlevel/bedlevel
     for dep in depths:
         fig, ax = plt.subplots()
         if 'depth_fromref' in data_frommap_timesel_atdepths.dims: #TODO: use missingdims=ignore so if-statement is not necessary
