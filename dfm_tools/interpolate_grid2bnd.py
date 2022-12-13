@@ -469,31 +469,26 @@ def interp_hisnc_to_plipoints(data_xr_his, file_pli, kdtree_k=3, load=True):
 
 def plipointsDataset_to_ForcingModel(plipointsDataset):
     
-    datablock_xr_allpoints = plipointsDataset #TODO: rename in script
-    
+    quantity_list = list(plipointsDataset.data_vars)
     ForcingModel_object = ForcingModel()
-    npoints = len(datablock_xr_allpoints.plipoints)
+    npoints = len(plipointsDataset.plipoints)
+    
+    #if plipointsDataset
     print(f'Converting {npoints} plipoints to ForcingModel():',end='')
     dtstart = dt.datetime.now()
     for iP in range(npoints):
         print(f' {iP+1}',end='')
         
-        datablock_xr_onepoint = datablock_xr_allpoints.isel(plipoints=iP)
-        plipoint_name = str(datablock_xr_onepoint['plipoints'].to_numpy())
-        #plipoint_x = datablock_xr_onepoint['plipoint_x'].to_numpy()
-        #plipoint_y = datablock_xr_onepoint['plipoint_y'].to_numpy()
-        #print(f'processing plipoint {iP+1} of {npoints}: (x={plipoint_x}, y={plipoint_y}, name={plipoint_name})')
-        
         #select data for this point, ffill nans, concatenating time column, constructing T3D/TimeSeries and append to ForcingModel()
-        datablock_xr_onepoint = datablock_xr_allpoints.isel(plipoints=iP)
+        datablock_xr_onepoint = plipointsDataset.isel(plipoints=iP)
+        plipoint_name = str(datablock_xr_onepoint['plipoints'].to_numpy())
         
-        quantity_list = list(plipointsDataset.data_vars)
         for quan in quantity_list:
             datablock_xr_onepoint[quan].attrs['locationname'] = plipoint_name #TODO: is there a nicer way of passing this data?
             if np.isnan(datablock_xr_onepoint[quan].to_numpy()).all(): # check if only nan (out of bounds or land) # we can do .to_numpy() without performance loss, since data is already loaded in datablock_xr_allpoints
-                warnings.warn(UserWarning(f'Only nans for plipoint {plipoint_name}, this point might be on land. You could consider using plipointsDataset.ffill(dim="plipoints").bfill(dim="plipoints")'))
+                warnings.warn(UserWarning(f'Only nans for plipoint {plipoint_name}, this point might be on land. You could consider using plipointsDataset.ffill(dim="plipoints").bfill(dim="plipoints")')) #TODO: would be better to check this before point loop
         
-        if 'depth' in datablock_xr_allpoints.coords:
+        if 'depth' in plipointsDataset.coords:
             ts_one = Dataset_to_T3D(datablock_xr_onepoint)
         else:
             ts_one = Dataset_to_TimeSeries(datablock_xr_onepoint)
