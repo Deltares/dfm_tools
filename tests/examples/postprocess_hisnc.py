@@ -124,5 +124,6 @@ for file_nc in file_nc_list:
     fig.savefig(os.path.join(dir_output,f'{basename}_zt_temp_zoomwl'))
     
 
+    depths = [-1,-4]
     data_fromhis_atdepths = dfmt.get_Dataset_atdepths(data_xr=data_xr, depths=depths, reference='z0') #depth w.r.t. z0/waterlevel/bedlevel
 
