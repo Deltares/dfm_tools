@@ -36,7 +36,7 @@ refdate_str = 'minutes since 2011-12-22 00:00:00 +00:00' # if None, xarray uses 
 #quantities should be in conversion_dict.keys(). waterlevelbnd is steric/zos, tide is tidal components from FES/EOT
 list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tracerbndNO3']#,'tide']
 #list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','tracerbndNO3']
-list_quantities = ['tide']
+list_quantities = ['salinitybnd']
 
 model = 'CMEMS' #CMEMS GFDL CMCC HYCOM
 
@@ -118,14 +118,16 @@ for file_pli in list_plifiles:
             
             #open regulargridDataset and do some basic stuff (time selection, renaming depth/lat/lon/varname, converting units, etc)
             data_xr_vars = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity=quantity, #TODO: maybe replace renaming part with package CMCC/Lisa?
-                                              tstart=tstart, tstop=tstop,
-                                              conversion_dict=conversion_dict,
-                                              refdate_str=refdate_str, 
-                                              reverse_depth=reverse_depth) #temporary argument to compare easier with old coastserv files            
+                                                   tstart=tstart, tstop=tstop,
+                                                   conversion_dict=conversion_dict,
+                                                   refdate_str=refdate_str, 
+                                                   reverse_depth=reverse_depth) #temporary argument to compare easier with old coastserv files            
             #interpolate regulargridDataset to plipointsDataset
             data_interp = dfmt.interp_regularnc_to_plipoints(data_xr_reg=data_xr_vars, file_pli=file_pli,
-                                                        nPoints=nPoints, #argument for testing
-                                                        kdtree_k=kdtree_k) #argument for curvi grids like CMCC
+                                                             nPoints=nPoints, #argument for testing
+                                                             kdtree_k=kdtree_k) #argument for curvi grids like CMCC
+            #data_interp = data_interp.ffill(dim="plipoints").bfill(dim="plipoints") #to fill allnan plipoints with values from the neighbour point
+            
             #convert plipointsDataset to hydrolib ForcingModel
             ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
                     
@@ -147,8 +149,8 @@ for file_pli in list_plifiles:
         #ForcingModel_object.filepath = Path(str(ForcingModel_object.filepath).replace(dir_out,'')) #TODO: convert to relative paths in ext file possible? This path is the same as file_bc_out
         
         #generate boundary object for the ext file (quantity, pli-filename, bc-filename)
-        boundary_object = Boundary(quantity=quantity, #TODO: is currently tide for tide, but should be waterlevelbnd
-                                   locationfile=Path(dir_output,file_pli.name),
+        boundary_object = Boundary(quantity=quantity.replace('tide','waterlevelbnd'), #the FM quantity for tide is also waterlevelbnd
+                                   locationfile=file_pli,
                                    forcingfile=ForcingModel_object,
                                    )
         ext_bnd.boundary.append(boundary_object)
