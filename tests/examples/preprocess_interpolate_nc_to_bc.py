@@ -26,7 +26,7 @@ except: #main branch and next release #TODO: move to easy imports after https://
 #copied plifile from DCSM folder: r'p:\1204257-dcsmzuno\data\CMEMS\bnd\NorthSeaAndBaltic_1993-2019_20210510'
 #list_plifiles = [Path(r'c:\DATA\dfm_tools_testdata\hydrolib_bc\DCSM\DCSM-FM_OB_all_20181108.pli')] #TODO: reading this file results in empty Polyfile, should raise an error. https://github.com/Deltares/HYDROLIB-core/issues/320
 list_plifiles = [Path(r'c:\DATA\dfm_tools_testdata\hydrolib_bc\DCSM\DCSM-FM_OB_all_20181108_nocomments.pli')]
-nPoints = None #amount of Points to process per PolyObject in the plifile (use int for testing, use None for all Points)
+nPoints = 3# None #amount of Points to process per PolyObject in the plifile (use int for testing, use None for all Points)
 
 dir_output = './test_interpolate_nc_to_bc'
 bc_type = 'bc' #currently only 'bc' supported #TODO: add netcdf bc support. https://github.com/Deltares/HYDROLIB-core/issues/318
@@ -69,7 +69,7 @@ elif model=='CMCC': #TODO: check method, now finding nearest points (so always h
     conversion_dict = dfmt.get_conversion_dict(ncvarname_updates={'salinitybnd':'sos', 'temperaturebnd':'tos'})
     conversion_dict['tracerbndNO3'] = {'ncvarname':'no3', 'unit':'g/m3', 'conversion':14.0} #other vars also have different conversion than cmems
     tstart = dt.datetime(2015, 6, 16, 12, 0)
-    tstop = dt.datetime(2016, 12, 1, 12, 0)
+    tstop = dt.datetime(2015, 12, 1, 12, 0)
     dir_sourcefiles_hydro = r'p:\11206304-futuremares\data\CMIP6_BC\CMCC-ESM2'
     dir_pattern_hydro = Path(dir_sourcefiles_hydro,'{ncvarname}_Omon_CMCC-ESM2_ssp126_r1i1p1f1_gn_*.nc')
     dir_sourcefiles_waq = dir_sourcefiles_hydro #CMCC waq: (2015-01-16 12:00:00 to 2100-12-16 12:00:00)

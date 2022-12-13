@@ -365,6 +365,8 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, kdtree_k=
         #this is for eg CMCC model with multidimensional lat/lon variable
         #TODO: make nicer, without try except? eg latlon_ndims==1, but not sure if that is always valid
         #TODO: maybe also spherical coordinate distance calculation instead of cartesian/eucledian
+        #TODO: maybe use .sel(method='nearest'), but "KeyError: "no index found for coordinate 'longitude'""
+        #TODO: interp for 2D also requested: https://github.com/pydata/xarray/issues/2281
         print(f'ValueError: {e}. Reverting to KDTree instead (nearest neigbour)')
         data_interp = xr.Dataset()
         for varone in list(data_xr_var.data_vars):
