@@ -326,6 +326,7 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
 def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, kdtree_k=3, load=True):
     """
     load: interpolation errors are only raised upon loading, so do this per default
+    #TODO: make format of this dataset more in line with existing bnd-nc format and hisfile: https://issuetracker.deltares.nl/browse/UNST-6549
     """
     data_xr_var = data_xr_reg #TODO: rename in script
     
