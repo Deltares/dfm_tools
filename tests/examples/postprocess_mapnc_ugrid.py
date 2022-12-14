@@ -263,7 +263,7 @@ for file_nc in file_nc_list:
         
         data_frommap_fou = dfmt.open_partitioned_dataset(file_nc_fou)
         vars_pd_fou = dfmt.get_ncvarproperties(data_frommap_fou)
-        if 'nmesh2d_layer' in data_frommap_fou.dims: #reduce layer dimension via isel/sel/interp. TODO: slicing over depth is not possible with dfmt.get_Dataset_atdepths(), since waterlevel is missing from file.
+        if 'nmesh2d_layer' in data_frommap_fou.dims: #reduce layer dimension via isel/sel/interp. TODO: slicing over depth is not possible with dfmt.get_Dataset_atdepths(), since waterlevel is missing from file. (does it work for rstfiles?)
             data_frommap_fou = data_frommap_fou.set_index({'nmesh2d_layer':'mesh2d_layer_z'}) #TODO: not supported for sigmalayers, zlayers is for some reason in foufile of this zsigma model (or not the case with a rerun?)
             if 1:
                 data_frommap_fou_atdepth = data_frommap_fou.isel(nmesh2d_layer=-2) #second to last layer
