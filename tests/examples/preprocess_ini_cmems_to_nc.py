@@ -10,6 +10,8 @@ import glob
 import datetime as dt
 import xarray as xr
 
+#TODO: merge with other ini script and make generic for getting an inifield out of CMEMS/etc regulargrid Dataset or a 2D/3D FM map/rst Dataset
+
 tSimStart = dt.datetime(1998,1,1)
 dir_data  = r'p:\i1000668-tcoms\03_newModel\01_input\02_bnd\data_opendap' #folder containing CMEMS so and thetao netcdf files
 
