@@ -357,12 +357,12 @@ def get_ugrid_verts(data_xr_map):
     data_xr_grid = data_xr_map.ugrid.grid.to_dataset()
     face_nos = data_xr_grid.mesh2d_face_nodes.load()
     bool_nonemptyfacenode = face_nos!=-1
-    facenos_nonan_min = face_nos.where(face_nos!=-1).min() #replace nans and get minval
+    facenos_nonan_min = face_nos.where(bool_nonemptyfacenode).min() #replace nans and get minval
     if facenos_nonan_min==1: #for some reason, curvedbend is 1-based indexed, grevelingen is not
         face_nos = face_nos-1
     if face_nos.dtype!='int': #for some reason, curvedbend idx is float instead of int
         face_nos = face_nos.astype(int)
-           
+    
     face_nnodecoords_x = data_xr_grid.mesh2d_node_x.isel(mesh2d_nNodes=face_nos).where(bool_nonemptyfacenode)
     face_nnodecoords_y = data_xr_grid.mesh2d_node_y.isel(mesh2d_nNodes=face_nos).where(bool_nonemptyfacenode)
     ugrid_all_verts = np.c_[face_nnodecoords_x.to_numpy()[...,np.newaxis],face_nnodecoords_y.to_numpy()[...,np.newaxis]]
@@ -425,17 +425,6 @@ def polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=None)
     
     line_section = LineString(line_array)
     
-    # face_nos = data_frommap_merged.ugrid.grid.to_dataset().mesh2d_face_nodes.load()
-    # bool_nonemptyfacenode = face_nos!=-1
-    # facenos_nonan_min = face_nos.where(face_nos!=-1).min() #replace nans and get minval
-    # if facenos_nonan_min==1: #for some reason, curvedbend is 1-based indexed, grevelingen is not
-    #     face_nos = face_nos-1
-    # if face_nos.dtype!='int': #for some reason, curvedbend idx is float instead of int
-    #     face_nos = face_nos.astype(int)
-           
-    # face_nnodecoords_x = data_frommap_merged.ugrid.grid.to_dataset().mesh2d_node_x.isel(mesh2d_nNodes=face_nos).where(bool_nonemptyfacenode)
-    # face_nnodecoords_y = data_frommap_merged.ugrid.grid.to_dataset().mesh2d_node_y.isel(mesh2d_nNodes=face_nos).where(bool_nonemptyfacenode)
-    # ugrid_all_verts = np.c_[face_nnodecoords_x.to_numpy()[...,np.newaxis],face_nnodecoords_y.to_numpy()[...,np.newaxis]]
     ugrid_all_verts = get_ugrid_verts(data_frommap_merged)
 
     verts_xmax = np.nanmax(ugrid_all_verts[:,:,0].data,axis=1)
