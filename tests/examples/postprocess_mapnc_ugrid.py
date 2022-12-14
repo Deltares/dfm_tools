@@ -160,7 +160,7 @@ for file_nc in file_nc_list:
         fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_flowelem_bl_withbasemap'))
     
 
-    print('plot bedlevel as polycollection, contourf, contour') #TODO: seems to fail for MBAY, more?
+    print('plot bedlevel as polycollection, contourf, contour') #TODO: contour/contourf fails for DCSM/MBAY/RMM, is fixed by edges fix? (https://github.com/Deltares/xugrid/issues/30)
     #create fancy plots, more options at https://deltares.github.io/xugrid/examples/plotting.html
     if clim_bl is None:
         vmin = vmax = None
@@ -259,7 +259,7 @@ for file_nc in file_nc_list:
     if file_nc_fou is not None:
         #RMM/MBAY foufile met quivers #TODO: maybe fancy xugridplotting can help out here? (imshow regrids to 500x500 dataset also)
         #pc = data_frommap_fou_atdepth[['mesh2d_ucx','mesh2d_ucy']].ugrid.plot.quiver(ax=ax,x='mesh2d_face_x',y='mesh2d_face_y',u='mesh2d_ucx',v='mesh2d_ucy') #TODO: quiver is now not possible: "AttributeError: 'UgridDatasetAccessor' object has no attribute 'plot'"
-        #xugrid issue: https://github.com/Deltares/xugrid/issues/31 (plotting quiver on regridded dataset)
+        #xugrid issue: https://github.com/Deltares/xugrid/issues/31 (plotting quiver on regridded dataset). If it works, also add to notebook (for mapfile)
         
         data_frommap_fou = dfmt.open_partitioned_dataset(file_nc_fou)
         vars_pd_fou = dfmt.get_ncvarproperties(data_frommap_fou)

@@ -711,7 +711,7 @@ def get_xzcoords_onintersection(data_frommap_merged, intersect_pd, timestep=None
         raise Exception('layers present, but unknown layertype, expected one of variables: mesh2d_flowelem_zw, mesh2d_layer_sigma, mesh2d_layer_z')
     
     intersect_gridnos = intersect_pd.index
-    data_frommap_merged_sel = data_frommap_merged.isel(time=timestep,mesh2d_nFaces=intersect_gridnos)
+    data_frommap_merged_sel = data_frommap_merged.isel(time=timestep,mesh2d_nFaces=intersect_gridnos) #TODO: only selects faces, but should also drop part of nodes/edges
     if 'nmesh2d_layer' not in data_frommap_merged.dims:
         data_frommap_wl3_sel = data_frommap_merged_sel['mesh2d_s1'].to_numpy()
         data_frommap_bl_sel = data_frommap_merged_sel['mesh2d_flowelem_bl'].to_numpy()
