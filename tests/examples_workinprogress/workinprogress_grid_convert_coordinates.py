@@ -6,14 +6,22 @@ Created on Thu Sep 29 15:13:45 2022
 """
 """
 Mapfile coordinate conversion is simpler with ugrid:
+
 import xugrid as xu
 import dfm_tools as dfmt
 file_nc = r"c:\DATA\dfm_tools_testdata\DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0*_map.nc"
+#file_nc = [r"c:\DATA\dfm_tools_testdata\DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0004_map.nc"]
 uds = dfmt.open_partitioned_dataset(file_nc)
 uda = uds["mesh2d_waterdepth"].isel(time=0).compute()
 uda.ugrid.set_crs(28992)
-reprojected = uda.ugrid.to_crs(4326)
-reprojected.ugrid.plot()
+reprojected_uda = uda.ugrid.to_crs(4326)
+reprojected_uda.ugrid.plot()
+
+#but does not work (yet) for entire dataset (but it does work if there is only one partition)
+uds.ugrid.set_crs(28992)
+reprojected_uds = uds.ugrid.to_crs(4326)
+
+# ValueError: conflicting sizes for dimension 'mesh2d_nNodes': length 26779 on 'mesh2d_node_z' and length 23108 on {'mesh2d_nFaces': 'mesh2d_face_x', 'time': 'mesh2d_Numlimdt', 'nmesh2d_layer': 'mesh2d_ucx', 'mesh2d_nNodes': 'mesh2d_node_x'}
 
 """
 #WARNING: the resulting grid might not be orthogonal
