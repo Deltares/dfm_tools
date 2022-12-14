@@ -258,6 +258,8 @@ for file_nc in file_nc_list:
     
     if file_nc_fou is not None:
         #RMM/MBAY foufile met quivers #TODO: maybe fancy xugridplotting can help out here? (imshow regrids to 500x500 dataset also)
+        #pc = data_frommap_fou_atdepth[['mesh2d_ucx','mesh2d_ucy']].ugrid.plot.quiver(ax=ax,x='mesh2d_face_x',y='mesh2d_face_y',u='mesh2d_ucx',v='mesh2d_ucy') #TODO: quiver is now not possible: "AttributeError: 'UgridDatasetAccessor' object has no attribute 'plot'"
+        #xugrid issue: https://github.com/Deltares/xugrid/issues/31 (plotting quiver on regridded dataset)
         
         data_frommap_fou = dfmt.open_partitioned_dataset(file_nc_fou)
         vars_pd_fou = dfmt.get_ncvarproperties(data_frommap_fou)
