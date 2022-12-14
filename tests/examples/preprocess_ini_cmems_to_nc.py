@@ -23,13 +23,12 @@ print(f'opening {len(file_nc_list)} datasets')
 data_xr = xr.open_mfdataset(file_nc_list)
 data_xr_times_pd = data_xr.time.to_series()
 
-if 1: #this would be the proper way to do it, but FM needs two timesteps for some reason
+if 0: #this would be the proper way to do it, but FM needs two timesteps for some reason
     print('ds.interp()')
-    data_xr_ontime2 = data_xr.interp(time=[tSimStart],kwargs=dict(bounds_error=True)) #bounds_error makes sure, outofbounds time results in "ValueError: A value in x_new is below the interpolation range."
+    data_xr_ontime = data_xr.interp(time=[tSimStart],kwargs=dict(bounds_error=True)) #bounds_error makes sure, outofbounds time results in "ValueError: A value in x_new is below the interpolation range."
 else:
     print('ds.sel()')
-    data_xr_ontime = data_xr.sel(time=slice(tSimStart-dt.timedelta(days=1),tSimStart+dt.timedelta(days=1))) #bounds_error makes sure, outofbounds time results in "ValueError: A value in x_new is below the interpolation range."
-
+    data_xr_ontime = data_xr.sel(time=slice(tSimStart-dt.timedelta(days=1),tSimStart+dt.timedelta(days=1)))
 
 print('writing file')
 outFile = os.path.join(dir_out,f'InitialField_{tSimStart.strftime("%Y-%m-%d_%H-%M-%S")}.nc')

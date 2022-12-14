@@ -54,7 +54,7 @@ for file_nc in file_nc_list:
         #                       [ 55160.15232593, 416913.77136685],
         #                       [ 65288.15232593, 419360.77136685]])
         val_ylim = [-25,5]
-        clim_bl = None
+        clim_bl = [-40,10]
         clim_sal = [28,30.2]
         crs = "EPSG:28992"
         file_nc_fou = None
@@ -101,6 +101,7 @@ for file_nc in file_nc_list:
         clim_sal = None
         crs = "EPSG:28992"
         file_nc_fou = os.path.join(dir_testinput,r'DFM_fou_RMM\RMM_dflowfm_0*_fou.nc')
+        fou_varname_u, fou_varname_v = 'mesh2d_fourier001_mean', 'mesh2d_fourier002_mean'
     elif 'MB_02_' in file_nc:
         timestep = 10
         layno = 45
@@ -111,7 +112,8 @@ for file_nc in file_nc_list:
         clim_bl = [-500,0]
         clim_sal = [25,36]
         crs = "EPSG:4326"
-        file_nc_fou = None
+        file_nc_fou = r'p:\archivedprojects\11203379-005-mwra-updated-bem\03_model\02_final\A72_ntsu0_kzlb2\DFM_OUTPUT_MB_02_fou\MB_02_0*_fou.nc'
+        fou_varname_u, fou_varname_v = 'mesh2d_fourier027_mean', 'mesh2d_fourier040_mean'
     else:
         raise Exception('ERROR: no settings provided for this mapfile')
     
@@ -157,7 +159,22 @@ for file_nc in file_nc_list:
         ctx.add_basemap(ax=ax_input, source=source, crs=crs, attribution=False)
         fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_flowelem_bl_withbasemap'))
     
-       
+
+    print('plot bedlevel as polycollection, contourf, contour') #TODO: contour/contourf fails for DCSM/MBAY/RMM, is fixed by edges fix? (https://github.com/Deltares/xugrid/issues/30)
+    #create fancy plots, more options at https://deltares.github.io/xugrid/examples/plotting.html
+    if clim_bl is None:
+        vmin = vmax = None
+    else:
+        vmin, vmax = clim_bl
+    fig, (ax1,ax2,ax3) = plt.subplots(3,1,figsize=(6,9))
+    pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot(ax=ax1, linewidth=0.5, edgecolors='face', cmap='jet', vmin=vmin, vmax=vmax)
+    pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot.contourf(ax=ax2, levels=11, cmap='jet', vmin=vmin, vmax=vmax)
+    if 'cb_3d_map' not in file_nc: #TODO: fails on contour with "UserWarning: No contour levels were found within the data range." (because all bedlevels are -5m)
+        pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot.contour(ax=ax3, levels=11, cmap='jet', vmin=vmin, vmax=vmax, add_colorbar=True)
+    fig.tight_layout()
+    fig.savefig(os.path.join(dir_output,f'{basename}_gridbedcontour'))
+    
+    
     #filter for dry cells
     bool_drycells = data_frommap_merged['mesh2d_s1']==data_frommap_merged['mesh2d_flowelem_bl']
     #bool_drycells = data_frommap_merged['mesh2d_s1'].std(dim='time')<0.01 #TODO: this might be better but is slow
@@ -240,27 +257,39 @@ for file_nc in file_nc_list:
     
     
     if file_nc_fou is not None:
-        #RMM foufile met quivers #TODO: maybe fancy xugridplotting can help out here
+        #RMM/MBAY foufile met quivers #TODO: maybe fancy xugridplotting can help out here? (imshow regrids to 500x500 dataset also)
+        #pc = data_frommap_fou_atdepth[['mesh2d_ucx','mesh2d_ucy']].ugrid.plot.quiver(ax=ax,x='mesh2d_face_x',y='mesh2d_face_y',u='mesh2d_ucx',v='mesh2d_ucy') #TODO: quiver is now not possible: "AttributeError: 'UgridDatasetAccessor' object has no attribute 'plot'"
+        #xugrid issue: https://github.com/Deltares/xugrid/issues/31 (plotting quiver on regridded dataset). If it works, also add to notebook (for mapfile)
         
-        data_frommap_merged = dfmt.open_partitioned_dataset(file_nc_fou)
-        vars_pd = dfmt.get_ncvarproperties(data_frommap_merged)
+        data_frommap_fou = dfmt.open_partitioned_dataset(file_nc_fou)
+        vars_pd_fou = dfmt.get_ncvarproperties(data_frommap_fou)
+        if 'nmesh2d_layer' in data_frommap_fou.dims: #reduce layer dimension via isel/sel/interp. TODO: slicing over depth is not possible with dfmt.get_Dataset_atdepths(), since waterlevel is missing from file.
+            data_frommap_fou = data_frommap_fou.set_index({'nmesh2d_layer':'mesh2d_layer_z'}) #TODO: not supported for sigmalayers, zlayers is for some reason in foufile of this zsigma model (or not the case with a rerun?)
+            if 1:
+                data_frommap_fou_atdepth = data_frommap_fou.isel(nmesh2d_layer=-2) #second to last layer
+            elif 0: #nearest
+                data_frommap_fou_atdepth = data_frommap_fou.sel(nmesh2d_layer=-4, method='nearest') #layer closest to z==-4m
+            else: #interp
+                data_frommap_fou_atdepth = data_frommap_fou.interp(nmesh2d_layer=-2) #interp to -4m depth
+        else:
+            data_frommap_fou_atdepth = data_frommap_fou
         
-        facex = data_frommap_merged['mesh2d_face_x'].to_numpy()
-        facey = data_frommap_merged['mesh2d_face_y'].to_numpy()
-        ux_mean = data_frommap_merged['mesh2d_fourier001_mean']
-        uy_mean = data_frommap_merged['mesh2d_fourier002_mean']
-        data_frommap_merged['magn_mean'] = np.sqrt(ux_mean**2+uy_mean**2)
-        data_frommap_merged['magn_mean'].attrs.update({'long_name':'residuele stroming',
-                                                       'units':'[m/s]'})
+        facex = data_frommap_fou_atdepth['mesh2d_face_x'].to_numpy()
+        facey = data_frommap_fou_atdepth['mesh2d_face_y'].to_numpy()
+        ux_mean = data_frommap_fou_atdepth[fou_varname_u]
+        uy_mean = data_frommap_fou_atdepth[fou_varname_v]
+        data_frommap_fou_atdepth['magn_mean'] = np.sqrt(ux_mean**2+uy_mean**2)
+        data_frommap_fou_atdepth['magn_mean'].attrs.update({'long_name':'residuele stroming',
+                                                            'units':'[m/s]'})
         X,Y,U = dfmt.scatter_to_regulargrid(xcoords=facex, ycoords=facey, ncellx=60, ncelly=35, values=ux_mean.to_numpy())
         X,Y,V = dfmt.scatter_to_regulargrid(xcoords=facex, ycoords=facey, ncellx=60, ncelly=35, values=uy_mean.to_numpy())
         
-        fig1,ax1 = plt.subplots(figsize=(9,5))
-        pc1 = data_frommap_merged['magn_mean'].ugrid.plot(edgecolor='face')
-        ax1.quiver(X,Y,U,V, color='w',scale=5)#,width=0.005)#, edgecolor='face', cmap='jet')
-        pc1.set_clim(0,0.10)
-        ax1.set_aspect('equal')
-        fig1.tight_layout()
-        fig1.savefig(os.path.join(dir_output,f'{basename}_fou'))
+        fig,ax = plt.subplots(figsize=(9,5))
+        pc = data_frommap_fou_atdepth['magn_mean'].ugrid.plot(edgecolor='face')
+        ax.quiver(X,Y,U,V, color='w',scale=5)#,width=0.005)#, edgecolor='face', cmap='jet')
+        pc.set_clim(0,0.10)
+        ax.set_aspect('equal')
+        fig.tight_layout()
+        fig.savefig(os.path.join(dir_output,f'{basename}_fou'))
     
         

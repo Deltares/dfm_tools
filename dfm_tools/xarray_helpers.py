@@ -167,7 +167,6 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
     partitions = [xu.open_dataset(file_nc_one,chunks=chunks) for file_nc_one in file_nc_list]
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
-    
     #rename old dimension names and some variable names #TODO: move to separate definition
     gridname = 'mesh2d' #partitions[0].ugrid.grid.name #'mesh2d' #TODO: works if xugrid accepts arbitrary grid names
     rename_dict = {}
@@ -219,30 +218,28 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
     all_nodes_y = []
     accumulator = 0
     domainno_all = []
+    
     #dtstart = dt.datetime.now()
     #print('>> process partitions facenumbers/ghostcells: ',end='')
     for i, part in enumerate(partitions):
         # For ghost nodes, keep the values of the domain number that occurs most.
         grid = part.ugrid.grid
         if varn_domain not in varlist_onepart:
-            if len(partitions)==1:#escape for non-partitioned files (domainno not found and one file provided). skipp rest of function
-                xu_return = partitions[0]
-                #xu_return = set_map_coordinates(xu_return)
-                return xu_return
-            else:
+            if len(partitions)!=1:#escape for non-partitioned files (domainno not found and one file provided). skip rest of function
                 raise Exception('no domain variable found, while there are multiple partition files supplied, this is not expected')
+            xu_return = partitions[0]
+            return xu_return
+        
+        #get domain number from partition
         da_domainno = part[varn_domain]
-        try: #derive domainno from filename #TODO: this fails for restarts since it is _0000_20200101_120000_rst.nc (still the case?)
-            part_domainno = int(part.encoding['source'][-11:-7])
-        except: #derive domainno via domainno variable
-            print('getting domainno from filename failed, now trying with bincount (might be costly)')
-            part_domainno = np.bincount(da_domainno).argmax() 
-        finally:
-            if part_domainno in domainno_all:
-                raise Exception(f'something went wrong, domainno {part_domainno} already occured: {domainno_all}')
-            domainno_all.append(part_domainno)
+        part_domainno = np.bincount(da_domainno).argmax() 
+        if part_domainno in domainno_all:
+            raise Exception(f'something went wrong, domainno {part_domainno} already occured: {domainno_all}') #this can happen if more ghostcells than actual cells (very small partitions). Alternative is: part_domainno = int(part.encoding['source'][-11:-7]) >> does not work on restartfiles, since it is _0000_20200101_120000_rst.nc
+        domainno_all.append(part_domainno)
+        
         idx = np.flatnonzero(da_domainno == part_domainno) #something like >=i is applicable to edges/nodes
-        faces = grid.face_node_connectivity[idx]
+        faces = grid.face_node_connectivity[idx] #is actually face_node_connectivity for non-ghostcells
+        #edges_allnos = np.unique(grid.face_edge_connectivity) #match with face_idx?
         faces[faces != grid.fill_value] += accumulator
         accumulator += grid.n_node
         all_indices.append(idx)
@@ -303,8 +300,8 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
         ds_node = uds.ugrid.obj[node_variables]
         ds_edge = uds.ugrid.obj[edge_variables]
         ds_rest = uds.ugrid.obj.drop_dims([facedim,nodedim,edgedim])
-        ds_face_list.append(ds_face.isel({facedim: idx}))   
-        ds_node_list.append(ds_node)#.isel({nodedim: idx})) #TODO: add ghostcell removal for nodes and edges?
+        ds_face_list.append(ds_face.isel({facedim: idx}))
+        ds_node_list.append(ds_node)#.isel({nodedim: idx})) #TODO: add ghostcell removal for nodes and edges? take renumbering into account
         ds_edge_list.append(ds_edge)#.isel({edgedim: idx}))
         #ds_rest_list.append(ds_rest)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')

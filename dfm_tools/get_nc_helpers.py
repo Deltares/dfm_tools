@@ -36,6 +36,7 @@ helper functions for functions in get_nc.py
 
 
 import xarray as xr
+import xugrid as xu
 import pandas as pd
 import re
 import glob
@@ -176,6 +177,8 @@ def get_ncvarproperties(data_xr=None, file_nc=None):
         data_xr = xr.open_dataset(file_nc)
     if data_xr is None:
         raise Exception('supply data_xr argument to get_ncvarproperties()')
+    if not isinstance(data_xr,(xr.Dataset,xu.UgridDataset)):
+        raise Exception('data_xr should be of type xr.Dataset or xu.UgridDataset')
     nc_varkeys = data_xr.variables.mapping.keys()
     
     list_varattrs_pd = []

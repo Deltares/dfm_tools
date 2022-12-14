@@ -14,6 +14,7 @@ import pandas as pd
 import xarray as xr
 from pathlib import Path
 from scipy.spatial import KDTree
+import warnings
 
 try: #0.3.1 release
     from hydrolib.core.io.bc.models import ForcingModel, QuantityUnitPair, Astronomic
@@ -42,9 +43,9 @@ def get_conversion_dict(ncvarname_updates={}):
                        'tracerbndNO3'        : {'ncvarname': 'no3',         'unit': 'g/m3', 'conversion': 14.0 },
                        'tracerbndPO4'        : {'ncvarname': 'po4',         'unit': 'g/m3', 'conversion': 30.97 },
                        'tracerbndSi'         : {'ncvarname': 'si',          'unit': 'g/m3', 'conversion': 28.08},
-                       'tracerbndPON1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 14.0},
-                       'tracerbndPOP1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 30.97},
-                       'tracerbndPOC1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 14.0 * (106 / 16)},
+                       'tracerbndPON1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 14.0}, # Caution: this empirical relation might not be applicable to your use case
+                       'tracerbndPOP1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 30.97}, # Caution: this empirical relation might not be applicable to your use case
+                       'tracerbndPOC1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 14.0 * (106 / 16)}, # Caution: this empirical relation might not be applicable to your use case
                        'salinitybnd'         : {'ncvarname': 'sos'},         #'1e-3'
                        'temperaturebnd'      : {'ncvarname': 'tos'},         #'degC'
                        'ux'                  : {'ncvarname': 'uo'},          #'m/s'
@@ -59,13 +60,13 @@ def get_conversion_dict(ncvarname_updates={}):
                         'tracerbndNO3'        : {'ncvarname': 'no3',         'unit': 'g/m3', 'conversion': 14.0 / 1000.0},
                         'tracerbndPO4'        : {'ncvarname': 'po4',         'unit': 'g/m3', 'conversion': 30.97 / 1000.0},
                         'tracerbndSi'         : {'ncvarname': 'si',          'unit': 'g/m3', 'conversion': 28.08 / 1000.0},
-                        'tracerbndPON1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 2. * 16. * 14. / (106. * 1000.0)},
-                        'tracerbndPOP1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 2. * 30.97 / (106. * 1000.0)},
-                        'tracerbndPOC1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 2. * 12. / 1000.0},
-                        'tracerbndDON'        : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 3.24 * 2. * 16. * 14. / (106. * 1000.0)},
-                        'tracerbndDOP'        : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 1.0 * 2. * 30.97 / (106. * 1000.0)},
-                        'tracerbndDOC'        : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': (199. / 20.) * 3.24 * 2. * 16. * 12. / (106. * 1000.0)},
-                        'tracerbndOpal'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 0.5 * 0.13 * 28.08 / (1000.0)},
+                        'tracerbndPON1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 2. * 16. * 14. / (106. * 1000.0)}, # Caution: this empirical relation might not be applicable to your use case
+                        'tracerbndPOP1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 2. * 30.97 / (106. * 1000.0)}, # Caution: this empirical relation might not be applicable to your use case
+                        'tracerbndPOC1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 2. * 12. / 1000.0}, # Caution: this empirical relation might not be applicable to your use case
+                        'tracerbndDON'        : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 3.24 * 2. * 16. * 14. / (106. * 1000.0)}, # Caution: this empirical relation might not be applicable to your use case
+                        'tracerbndDOP'        : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 1.0 * 2. * 30.97 / (106. * 1000.0)}, # Caution: this empirical relation might not be applicable to your use case
+                        'tracerbndDOC'        : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': (199. / 20.) * 3.24 * 2. * 16. * 12. / (106. * 1000.0)}, # Caution: this empirical relation might not be applicable to your use case
+                        'tracerbndOpal'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 0.5 * 0.13 * 28.08 / (1000.0)}, # Caution: this empirical relation might not be applicable to your use case
                         'salinitybnd'         : {'ncvarname': 'so'},          #'1e-3'
                         'temperaturebnd'      : {'ncvarname': 'thetao'},      #'degC'
                         'ux'                  : {'ncvarname': 'uo'},          #'m/s'
@@ -162,7 +163,7 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
         # print(f'>>time passed: {time_passed:.2f} sec')
         
         
-        print('> actual extraction of data from netcdf with .load() (for all PolyObject points at once, so this will take a while)')
+        print(f'> actual extraction of data from netcdf with .load() (for {len(path_lons)} PolyObject points at once, this might take a while)')
         dtstart = dt.datetime.now()
         try:
             data_interp_amp_allcoords = data_interp_allcoords['amplitude'].load() #convert from cm to m
@@ -229,7 +230,7 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
     list_pattern_names = [x.name for x in dir_pattern]
     print(f'loading mfdataset of {len(file_list_nc)} files with pattern(s) {list_pattern_names}')
     
-    dtstart = dt.datetime.now()
+    #dtstart = dt.datetime.now()
     try:
         data_xr = xr.open_mfdataset(file_list_nc)#,chunks={'time':1}) #TODO: does chunks argument solve "PerformanceWarning: Slicing is producing a large chunk."? {'time':1} is not a convenient chunking to use for timeseries extraction
     except xr.MergeError as e: #TODO: this except is necessary for CMCC, ux and uy have different lat/lon values, so renaming those of uy to avoid merging conflict
@@ -252,10 +253,10 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
     data_xr_calendar = data_xr['time'].dt.calendar
     if data_xr_calendar != 'proleptic_gregorian': #this is for instance the case in case of noleap (or 365_days) calendars from GFDL and CMCC
         units_copy = data_xr['time'].encoding['units']
-        print('WARNING: calendar different than proleptic_gregorian found ({data_xr_calendar}), convert_calendar is called so check output carefully. It should be no issue for datasets with a monthly interval.')
+        print(f'WARNING: calendar different than proleptic_gregorian found ({data_xr_calendar}), convert_calendar is called so check output carefully. It should be no issue for datasets with a monthly interval.')
         data_xr = data_xr.convert_calendar('standard') #TODO: does this not result in 29feb nan values in e.g. GFDL model? Check missing argument at https://docs.xarray.dev/en/stable/generated/xarray.Dataset.convert_calendar.html
         data_xr['time'].encoding['units'] = units_copy #put back dropped units
-    time_passed = (dt.datetime.now()-dtstart).total_seconds()
+    #time_passed = (dt.datetime.now()-dtstart).total_seconds()
     # print(f'>>time passed: {time_passed:.2f} sec')
     
     #get timevar and compare requested dates
@@ -325,6 +326,7 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
 def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, kdtree_k=3, load=True):
     """
     load: interpolation errors are only raised upon loading, so do this per default
+    #TODO: make format of this dataset more in line with existing bnd-nc format and hisfile: https://issuetracker.deltares.nl/browse/UNST-6549
     """
     data_xr_var = data_xr_reg #TODO: rename in script
     
@@ -364,6 +366,8 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, kdtree_k=
         #this is for eg CMCC model with multidimensional lat/lon variable
         #TODO: make nicer, without try except? eg latlon_ndims==1, but not sure if that is always valid
         #TODO: maybe also spherical coordinate distance calculation instead of cartesian/eucledian
+        #TODO: maybe use .sel(method='nearest'), but "KeyError: "no index found for coordinate 'longitude'""
+        #TODO: interp for 2D also requested: https://github.com/pydata/xarray/issues/2281
         print(f'ValueError: {e}. Reverting to KDTree instead (nearest neigbour)')
         data_interp = xr.Dataset()
         for varone in list(data_xr_var.data_vars):
@@ -398,13 +402,13 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, kdtree_k=
     if not load:
         return data_interp
     
-    print('> actual extraction of data from netcdf with .load() (for all plipoints at once, so this will take a while)')
+    print(f'> actual extraction of data from netcdf with .load() (for {len(data_pol_pd)} plipoints at once, this might take a while)')
     dtstart = dt.datetime.now()
     try:
         data_interp_loaded = data_interp.load() #loading data for all points at once is more efficient compared to loading data per point in loop 
     except ValueError as e: #generate a proper error with outofbounds requested coordinates, default is "ValueError: One of the requested xi is out of bounds in dimension 0" #TODO: improve error in xarray
-        lonvar_vals=data_xr_var['longitude'].to_numpy(),
-        latvar_vals=data_xr_var['latitude'].to_numpy(),
+        lonvar_vals = data_xr_var['longitude'].to_numpy()
+        latvar_vals = data_xr_var['latitude'].to_numpy()
         data_pol_pd = data_interp[['plipoint_x','plipoint_y']].to_dataframe()
         bool_reqlon_outbounds = (data_pol_pd['plipoint_x'] <= lonvar_vals.min()) | (data_pol_pd['plipoint_x'] >= lonvar_vals.max())
         bool_reqlat_outbounds = (data_pol_pd['plipoint_y'] <= latvar_vals.min()) | (data_pol_pd['plipoint_y'] >= latvar_vals.max())
@@ -467,36 +471,31 @@ def interp_hisnc_to_plipoints(data_xr_his, file_pli, kdtree_k=3, load=True):
     
 
 def plipointsDataset_to_ForcingModel(plipointsDataset):
+    quantity_list = list(plipointsDataset.data_vars)
+    npoints = len(plipointsDataset.plipoints)
     
-    datablock_xr_allpoints = plipointsDataset #TODO: rename in script
-    
-    print('initialize ForcingModel()')
+    #start conversion to Forcingmodel object
+    print(f'Converting {npoints} plipoints to ForcingModel():',end='')
+    dtstart = dt.datetime.now()
     ForcingModel_object = ForcingModel()
-    npoints = len(datablock_xr_allpoints.plipoints)
     for iP in range(npoints):
-        datablock_xr_onepoint = datablock_xr_allpoints.isel(plipoints=iP)
-        plipoint_x = datablock_xr_onepoint['plipoint_x'].to_numpy()
-        plipoint_y = datablock_xr_onepoint['plipoint_y'].to_numpy()
-        plipoint_name = str(datablock_xr_onepoint['plipoints'].to_numpy())
-        print(f'processing plipoint {iP+1} of {npoints}: (x={plipoint_x}, y={plipoint_y}, name={plipoint_name})')
+        print(f' {iP+1}',end='')
         
         #select data for this point, ffill nans, concatenating time column, constructing T3D/TimeSeries and append to ForcingModel()
-        dtstart = dt.datetime.now()
-        datablock_xr_onepoint = datablock_xr_allpoints.isel(plipoints=iP)
+        datablock_xr_onepoint = plipointsDataset.isel(plipoints=iP)
+        plipoint_name = str(datablock_xr_onepoint.plipoints.to_numpy())
         
-        quantity_list = list(plipointsDataset.data_vars)
         for quan in quantity_list:
             datablock_xr_onepoint[quan].attrs['locationname'] = plipoint_name #TODO: is there a nicer way of passing this data?
-            if np.isnan(datablock_xr_onepoint[quan].to_numpy()).all(): # check if only nan (out of bounds or land) # we can do .to_numpy() without performance loss, since data is already loaded in datablock_xr_allpoints
-                print('WARNING: only nans for this coordinate, this point might be on land')
+            if datablock_xr_onepoint[quan].isnull().all(): # check if only nan (on land)
+                warnings.warn(UserWarning(f'Plipoint "{plipoint_name}" might be on land since it only contain nan values. Consider altering your plifile or using plipointsDataset.ffill(dim="plipoints").bfill(dim="plipoints")'))
         
-        if 'depth' in datablock_xr_allpoints.coords:
+        if 'depth' in plipointsDataset.dims:
             ts_one = Dataset_to_T3D(datablock_xr_onepoint)
         else:
             ts_one = Dataset_to_TimeSeries(datablock_xr_onepoint)
         ForcingModel_object.forcing.append(ts_one)
-        time_passed = (dt.datetime.now()-dtstart).total_seconds()
-        # print(f'>>time passed: {time_passed:.2f} sec')
+    print(f'. >> done in {(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
     return ForcingModel_object
 

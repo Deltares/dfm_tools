@@ -357,12 +357,12 @@ def get_ugrid_verts(data_xr_map):
     data_xr_grid = data_xr_map.ugrid.grid.to_dataset()
     face_nos = data_xr_grid.mesh2d_face_nodes.load()
     bool_nonemptyfacenode = face_nos!=-1
-    facenos_nonan_min = face_nos.where(face_nos!=-1).min() #replace nans and get minval
+    facenos_nonan_min = face_nos.where(bool_nonemptyfacenode).min() #replace nans and get minval
     if facenos_nonan_min==1: #for some reason, curvedbend is 1-based indexed, grevelingen is not
         face_nos = face_nos-1
     if face_nos.dtype!='int': #for some reason, curvedbend idx is float instead of int
         face_nos = face_nos.astype(int)
-           
+    
     face_nnodecoords_x = data_xr_grid.mesh2d_node_x.isel(mesh2d_nNodes=face_nos).where(bool_nonemptyfacenode)
     face_nnodecoords_y = data_xr_grid.mesh2d_node_y.isel(mesh2d_nNodes=face_nos).where(bool_nonemptyfacenode)
     ugrid_all_verts = np.c_[face_nnodecoords_x.to_numpy()[...,np.newaxis],face_nnodecoords_y.to_numpy()[...,np.newaxis]]
@@ -425,17 +425,6 @@ def polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=None)
     
     line_section = LineString(line_array)
     
-    # face_nos = data_frommap_merged.ugrid.grid.to_dataset().mesh2d_face_nodes.load()
-    # bool_nonemptyfacenode = face_nos!=-1
-    # facenos_nonan_min = face_nos.where(face_nos!=-1).min() #replace nans and get minval
-    # if facenos_nonan_min==1: #for some reason, curvedbend is 1-based indexed, grevelingen is not
-    #     face_nos = face_nos-1
-    # if face_nos.dtype!='int': #for some reason, curvedbend idx is float instead of int
-    #     face_nos = face_nos.astype(int)
-           
-    # face_nnodecoords_x = data_frommap_merged.ugrid.grid.to_dataset().mesh2d_node_x.isel(mesh2d_nNodes=face_nos).where(bool_nonemptyfacenode)
-    # face_nnodecoords_y = data_frommap_merged.ugrid.grid.to_dataset().mesh2d_node_y.isel(mesh2d_nNodes=face_nos).where(bool_nonemptyfacenode)
-    # ugrid_all_verts = np.c_[face_nnodecoords_x.to_numpy()[...,np.newaxis],face_nnodecoords_y.to_numpy()[...,np.newaxis]]
     ugrid_all_verts = get_ugrid_verts(data_frommap_merged)
 
     verts_xmax = np.nanmax(ugrid_all_verts[:,:,0].data,axis=1)
@@ -594,14 +583,14 @@ def get_Dataset_atdepths(data_xr, depths, reference='z0', zlayer_z0_selnearest=F
         varname_zint = 'mesh2d_flowelem_zw'
         dimname_layc = 'nmesh2d_layer'
         dimname_layw = 'nmesh2d_interface'
-        data_wl = data_xr['mesh2d_s1']
-        data_bl = data_xr['mesh2d_flowelem_bl']
+        varname_wl = 'mesh2d_s1'
+        varname_bl = 'mesh2d_flowelem_bl'
     elif 'laydim' in data_xr.dims: #D-FlowFM hisfile
         varname_zint = 'zcoordinate_w'
         dimname_layc = 'laydim'
         dimname_layw = 'laydimw'
-        data_wl = data_xr['waterlevel']
-        data_bl = data_xr['bedlevel']
+        varname_wl = 'waterlevel'
+        varname_bl = 'bedlevel'
         warnings.warn(UserWarning('get_Dataset_atdepths() is not tested for hisfiles yet, please check your results.'))
     else:
         print('WARNING: depth dimension not found, probably 2D model, returning input Dataset')
@@ -609,18 +598,21 @@ def get_Dataset_atdepths(data_xr, depths, reference='z0', zlayer_z0_selnearest=F
     
     if not isinstance(data_xr,(xr.Dataset,xu.UgridDataset)):
         raise Exception(f'data_xr_map should be of type xr.Dataset, but is {type(data_xr)}')
+    
+    #create depth xr.DataArray
     if isinstance(depths,(float,int)):
         depths = depths #float/int
         depth_dims = ()
     else:
         depths = np.unique(depths) #array of unique+sorted floats/ints
         depth_dims = (depth_varname)
-
-    
-    #create depth xr.DataArray
     depths_xr = xr.DataArray(depths,dims=depth_dims,attrs={'units':'m',
                                                            'reference':f'model_{reference}',
                                                            'positive':'up'}) #TODO: make more in line with CMEMS etc
+    
+    #extract waterlevels and bedlevels from file, to correct layers with
+    data_wl = data_xr[varname_wl]
+    data_bl = data_xr[varname_bl]
     
     #simplified/faster method for zlayer icm z0 reference (mapfiles only)
     if 'mesh2d_layer_z' in data_xr.variables and zlayer_z0_selnearest and reference=='z0': # selects nearest z-center values (instead of slicing), should be faster #TODO: check if this is faster than fullgrid
@@ -708,7 +700,7 @@ def get_xzcoords_onintersection(data_frommap_merged, intersect_pd, timestep=None
         raise Exception('layers present, but unknown layertype, expected one of variables: mesh2d_flowelem_zw, mesh2d_layer_sigma, mesh2d_layer_z')
     
     intersect_gridnos = intersect_pd.index
-    data_frommap_merged_sel = data_frommap_merged.isel(time=timestep,mesh2d_nFaces=intersect_gridnos)
+    data_frommap_merged_sel = data_frommap_merged.isel(time=timestep,mesh2d_nFaces=intersect_gridnos) #TODO: only selects faces, but should also drop part of nodes/edges
     if 'nmesh2d_layer' not in data_frommap_merged.dims:
         data_frommap_wl3_sel = data_frommap_merged_sel['mesh2d_s1'].to_numpy()
         data_frommap_bl_sel = data_frommap_merged_sel['mesh2d_flowelem_bl'].to_numpy()

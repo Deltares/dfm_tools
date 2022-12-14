@@ -152,7 +152,7 @@ def forcinglike_to_Dataset(forcingobj, convertnan=False): #TODO: would be conven
     """
     convert a hydrolib forcing like object (like Timeseries, T3D, Harmonic, etc) to an xarray Dataset with one or more variables.
     
-    convertnan: convert depths with the same values over time as the deepest layer to nan (these were created with .bfill().ffill()).
+    convertnan: convert depths with the same values over time as the deepest layer to nan (these were created with .bfill() or .ffill()).
     """
     
     #check if forcingmodel instead of T3D/TimeSeries is provided

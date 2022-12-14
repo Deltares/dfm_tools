@@ -26,7 +26,7 @@ except: #main branch and next release #TODO: move to easy imports after https://
 #copied plifile from DCSM folder: r'p:\1204257-dcsmzuno\data\CMEMS\bnd\NorthSeaAndBaltic_1993-2019_20210510'
 #list_plifiles = [Path(r'c:\DATA\dfm_tools_testdata\hydrolib_bc\DCSM\DCSM-FM_OB_all_20181108.pli')] #TODO: reading this file results in empty Polyfile, should raise an error. https://github.com/Deltares/HYDROLIB-core/issues/320
 list_plifiles = [Path(r'c:\DATA\dfm_tools_testdata\hydrolib_bc\DCSM\DCSM-FM_OB_all_20181108_nocomments.pli')]
-nPoints = 3 #amount of Points to process per PolyObject in the plifile (for testing, use None for all Points)
+nPoints = 3# None #amount of Points to process per PolyObject in the plifile (use int for testing, use None for all Points)
 
 dir_output = './test_interpolate_nc_to_bc'
 bc_type = 'bc' #currently only 'bc' supported #TODO: add netcdf bc support. https://github.com/Deltares/HYDROLIB-core/issues/318
@@ -36,7 +36,7 @@ refdate_str = 'minutes since 2011-12-22 00:00:00 +00:00' # if None, xarray uses 
 #quantities should be in conversion_dict.keys(). waterlevelbnd is steric/zos, tide is tidal components from FES/EOT
 list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tracerbndNO3']#,'tide']
 #list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','tracerbndNO3']
-list_quantities = ['tide']
+list_quantities = ['tracerbndNO3']
 
 model = 'CMEMS' #CMEMS GFDL CMCC HYCOM
 
@@ -69,7 +69,7 @@ elif model=='CMCC': #TODO: check method, now finding nearest points (so always h
     conversion_dict = dfmt.get_conversion_dict(ncvarname_updates={'salinitybnd':'sos', 'temperaturebnd':'tos'})
     conversion_dict['tracerbndNO3'] = {'ncvarname':'no3', 'unit':'g/m3', 'conversion':14.0} #other vars also have different conversion than cmems
     tstart = dt.datetime(2015, 6, 16, 12, 0)
-    tstop = dt.datetime(2016, 12, 1, 12, 0)
+    tstop = dt.datetime(2015, 12, 1, 12, 0)
     dir_sourcefiles_hydro = r'p:\11206304-futuremares\data\CMIP6_BC\CMCC-ESM2'
     dir_pattern_hydro = Path(dir_sourcefiles_hydro,'{ncvarname}_Omon_CMCC-ESM2_ssp126_r1i1p1f1_gn_*.nc')
     dir_sourcefiles_waq = dir_sourcefiles_hydro #CMCC waq: (2015-01-16 12:00:00 to 2100-12-16 12:00:00)
@@ -118,14 +118,16 @@ for file_pli in list_plifiles:
             
             #open regulargridDataset and do some basic stuff (time selection, renaming depth/lat/lon/varname, converting units, etc)
             data_xr_vars = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity=quantity, #TODO: maybe replace renaming part with package CMCC/Lisa?
-                                              tstart=tstart, tstop=tstop,
-                                              conversion_dict=conversion_dict,
-                                              refdate_str=refdate_str, 
-                                              reverse_depth=reverse_depth) #temporary argument to compare easier with old coastserv files            
+                                                   tstart=tstart, tstop=tstop,
+                                                   conversion_dict=conversion_dict,
+                                                   refdate_str=refdate_str, 
+                                                   reverse_depth=reverse_depth) #temporary argument to compare easier with old coastserv files            
             #interpolate regulargridDataset to plipointsDataset
             data_interp = dfmt.interp_regularnc_to_plipoints(data_xr_reg=data_xr_vars, file_pli=file_pli,
-                                                        nPoints=nPoints, #argument for testing
-                                                        kdtree_k=kdtree_k) #argument for curvi grids like CMCC
+                                                             nPoints=nPoints, #argument for testing
+                                                             kdtree_k=kdtree_k) #argument for curvi grids like CMCC
+            #data_interp = data_interp.ffill(dim="plipoints").bfill(dim="plipoints") #to fill allnan plipoints with values from the neighbour point
+            
             #convert plipointsDataset to hydrolib ForcingModel
             ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
                     
@@ -147,8 +149,8 @@ for file_pli in list_plifiles:
         #ForcingModel_object.filepath = Path(str(ForcingModel_object.filepath).replace(dir_out,'')) #TODO: convert to relative paths in ext file possible? This path is the same as file_bc_out
         
         #generate boundary object for the ext file (quantity, pli-filename, bc-filename)
-        boundary_object = Boundary(quantity=quantity, #TODO: is currently tide for tide, but should be waterlevelbnd
-                                   locationfile=Path(dir_output,file_pli.name),
+        boundary_object = Boundary(quantity=quantity.replace('tide','waterlevelbnd'), #the FM quantity for tide is also waterlevelbnd
+                                   locationfile=file_pli,
                                    forcingfile=ForcingModel_object,
                                    )
         ext_bnd.boundary.append(boundary_object)
@@ -199,6 +201,6 @@ file_ext_out = Path(dir_output,'example_bnd.ext')
 ext_bnd.save(filepath=file_ext_out)
 
 time_passed = (dt.datetime.now()-dtstart).total_seconds()
-print(f'>>time passed: {time_passed:.2f} sec')
+print(f'>>total script time passed: {time_passed:.2f} sec')
 
 
