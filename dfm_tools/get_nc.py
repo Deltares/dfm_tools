@@ -570,9 +570,9 @@ def get_Dataset_atdepths(data_xr, depths, reference='z0', zlayer_z0_selnearest=F
         Use xr.interp() to interpolate zlayer model to z-value. Only possible for reference='z' (not 'waterlevel' or 'bedlevel'). Only used if "mesh2d_layer_z" is present (zlayer model)
         This is faster but results in values interpolated between zcc (z cell centers), so it is different than slicing.
     
-    #TODO: zmodel gets depth in figure title, because of .set_index() in open_partitioned_dataset(). Sigmamodel gets percentage/fraction in title
+    #TODO: zmodel gets depth in figure title, because of .set_index() in open_partitioned_dataset(). Sigmamodel gets percentage/fraction in title. >> set_index was removed there, so check again.
     #TODO: check if attributes should be passed/altered
-    #TODO: make generic to also work with hisnc files?
+    #TODO: build in check whether layers/interfaces are coherent (len(int)=len(lay)+1), since one could also supply a uds.isel(layer=range(10)) where there are still 51 interfaces.
     #TODO: also waterlevelvar in 3D model gets depth_fromref coordinate, would be nice to avoid.
     #TODO: clean up unneccesary variables (like pre-interp depth values and interface dim)
     """
