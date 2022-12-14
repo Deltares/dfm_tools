@@ -594,14 +594,14 @@ def get_Dataset_atdepths(data_xr, depths, reference='z0', zlayer_z0_selnearest=F
         varname_zint = 'mesh2d_flowelem_zw'
         dimname_layc = 'nmesh2d_layer'
         dimname_layw = 'nmesh2d_interface'
-        data_wl = data_xr['mesh2d_s1']
-        data_bl = data_xr['mesh2d_flowelem_bl']
+        varname_wl = 'mesh2d_s1'
+        varname_bl = 'mesh2d_flowelem_bl'
     elif 'laydim' in data_xr.dims: #D-FlowFM hisfile
         varname_zint = 'zcoordinate_w'
         dimname_layc = 'laydim'
         dimname_layw = 'laydimw'
-        data_wl = data_xr['waterlevel']
-        data_bl = data_xr['bedlevel']
+        varname_wl = 'waterlevel'
+        varname_bl = 'bedlevel'
         warnings.warn(UserWarning('get_Dataset_atdepths() is not tested for hisfiles yet, please check your results.'))
     else:
         print('WARNING: depth dimension not found, probably 2D model, returning input Dataset')
@@ -609,18 +609,21 @@ def get_Dataset_atdepths(data_xr, depths, reference='z0', zlayer_z0_selnearest=F
     
     if not isinstance(data_xr,(xr.Dataset,xu.UgridDataset)):
         raise Exception(f'data_xr_map should be of type xr.Dataset, but is {type(data_xr)}')
+    
+    #create depth xr.DataArray
     if isinstance(depths,(float,int)):
         depths = depths #float/int
         depth_dims = ()
     else:
         depths = np.unique(depths) #array of unique+sorted floats/ints
         depth_dims = (depth_varname)
-
-    
-    #create depth xr.DataArray
     depths_xr = xr.DataArray(depths,dims=depth_dims,attrs={'units':'m',
                                                            'reference':f'model_{reference}',
                                                            'positive':'up'}) #TODO: make more in line with CMEMS etc
+    
+    #extract waterlevels and bedlevels from file, to correct layers with
+    data_wl = data_xr[varname_wl]
+    data_bl = data_xr[varname_bl]
     
     #simplified/faster method for zlayer icm z0 reference (mapfiles only)
     if 'mesh2d_layer_z' in data_xr.variables and zlayer_z0_selnearest and reference=='z0': # selects nearest z-center values (instead of slicing), should be faster #TODO: check if this is faster than fullgrid

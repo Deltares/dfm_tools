@@ -37,6 +37,8 @@ file_struct = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\comput
 #structs.structure[0].__dict__ #TODO: structs.structure[0].comment is really extensive, necesary? It would be more valuable if 'official' comments are written here instead of what is in file, possible?
 
 file_network = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\rmm_v1p7_net.nc')
+#file_network = Path(r'p:\1230882-emodnet_hrsm\GTSMv5.0\runs\reference_GTSMv4.1_wiCA\step11_global_1p25eu_net.nc')
+#file_network = Path(r'p:\1230882-emodnet_hrsm\GTSMv5.0\runs\GM50_2000m_eu0900m_ITfac5p5_wx\gtsm_200s_2000m_eu0900m_ca2000m_v4_net.nc')
 #network = NetworkModel(file_network) #TODO: what is this used for? plotting network/map is easier with dfm_tools or xugrid?
 
 
