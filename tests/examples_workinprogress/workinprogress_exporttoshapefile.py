@@ -39,9 +39,9 @@ vars_pd = dfmt.get_ncvarproperties(data_xr_map)
 for timestep in [2,3]:#[0,10,20,30]:
     data_map_timesel = data_xr_map.isel(time=timestep)
     
-    #data_sel = dfmt.get_mapdata_atdepths(data_xr_map=data_map_timesel, depths=0, reference='waterlevel') #top layer: 0m from waterlevel
-    data_sel = dfmt.get_mapdata_atdepths(data_xr_map=data_map_timesel, depths=-4, reference='z0') #4m from model reference
-    #data_sel = dfmt.get_mapdata_atdepths(data_xr_map=data_map_timesel, depths=0, reference='bedlevel') #bottomlayer: 0m from bedlevel
+    #data_sel = dfmt.get_Dataset_atdepths(data_xr=data_map_timesel, depths=0, reference='waterlevel') #top layer: 0m from waterlevel
+    data_sel = dfmt.get_Dataset_atdepths(data_xr=data_map_timesel, depths=-4, reference='z0') #4m from model reference
+    #data_sel = dfmt.get_Dataset_atdepths(data_xr=data_map_timesel, depths=0, reference='bedlevel') #bottomlayer: 0m from bedlevel
     
     #creating geodataframe with cells from ugrid_verts
     ugrid_all_verts = dfmt.get_ugrid_verts(data_map_timesel)
