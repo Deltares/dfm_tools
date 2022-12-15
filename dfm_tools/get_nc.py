@@ -517,6 +517,82 @@ def polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=None)
     return intersect_pd
 
 
+def get_xzcoords_onintersection(data_frommap_merged, intersect_pd, timestep=None):#, varname=None):
+    #TODO: no hardcoding of variable names?
+    #check if all necessary arguments are provided
+    if timestep is None: #TODO: maybe make time dependent grid?
+        raise Exception('ERROR: argument timestep not provided, this is necessary to retrieve correct waterlevel or fullgrid output')
+    
+    dimn_layer = 'nmesh2d_layer'#dfmt.get_varname_fromnc(data_frommap_merged,'nmesh2d_layer',vardim='dim') #TODO: hardcoding ok because of renaming? (no, since gridname is not fixed)
+    if dimn_layer in data_frommap_merged.dims:
+        nlay = data_frommap_merged.dims[dimn_layer]
+    else: #no layers, 2D model
+        nlay = 1
+    
+    #potentially construct fullgrid info (zcc/zw) #TODO: this ifloop is copied from get_mapdata_atdepth(), prevent this duplicate code
+    if dimn_layer not in data_frommap_merged.dims: #2D model
+        print('depth dimension not found, probably 2D model')
+        pass
+    elif 'mesh2d_flowelem_zw' in data_frommap_merged.variables: #fullgrid info already available, so continuing
+        print('zw/zcc (fullgrid) values already present in Dataset')
+        pass
+    elif 'mesh2d_layer_sigma' in data_frommap_merged.variables: #reconstruct_zw_zcc_fromsigma and treat as zsigma/fullgrid mapfile from here
+        print('sigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
+        data_frommap_merged = reconstruct_zw_zcc_fromsigma(data_frommap_merged)
+    elif 'mesh2d_layer_z' in data_frommap_merged.variables:        
+        print('z-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
+        data_frommap_merged = reconstruct_zw_zcc_fromz(data_frommap_merged)
+    else:
+        raise Exception('layers present, but unknown layertype, expected one of variables: mesh2d_flowelem_zw, mesh2d_layer_sigma, mesh2d_layer_z')
+    
+    intersect_gridnos = intersect_pd.index
+    data_frommap_merged_sel = data_frommap_merged.isel(time=timestep,mesh2d_nFaces=intersect_gridnos) #TODO: only selects faces, but should also drop part of nodes/edges
+    if 'nmesh2d_layer' not in data_frommap_merged.dims:
+        data_frommap_wl3_sel = data_frommap_merged_sel['mesh2d_s1'].to_numpy()
+        data_frommap_bl_sel = data_frommap_merged_sel['mesh2d_flowelem_bl'].to_numpy()
+        zvals_interface = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay+1)
+    elif 'mesh2d_flowelem_zw' in data_frommap_merged.variables:
+        zvals_interface_filled = data_frommap_merged_sel['mesh2d_flowelem_zw'].bfill(dim='nmesh2d_interface') #fill nan values (below bed) with equal values
+        zvals_interface = zvals_interface_filled.to_numpy().T # transpose to make in line with 2D sigma dataset
+    
+    #convert to output for plot_netmapdata
+    crs_dist_starts_matrix = np.repeat(intersect_pd['crs_dist_starts'].values[np.newaxis],nlay,axis=0)
+    crs_dist_stops_matrix = np.repeat(intersect_pd['crs_dist_stops'].values[np.newaxis],nlay,axis=0)
+    crs_verts_x_all = np.array([[crs_dist_starts_matrix.ravel(),crs_dist_stops_matrix.ravel(),crs_dist_stops_matrix.ravel(),crs_dist_starts_matrix.ravel()]]).T
+    crs_verts_z_all = np.ma.array([zvals_interface[1:,:].ravel(),zvals_interface[1:,:].ravel(),zvals_interface[:-1,:].ravel(),zvals_interface[:-1,:].ravel()]).T[:,:,np.newaxis]
+    crs_verts = np.ma.concatenate([crs_verts_x_all, crs_verts_z_all], axis=2)
+    
+    #define dataset
+    crs_plotdata_clean = data_frommap_merged_sel.ugrid.obj #TODO: this dataset still contains way to many edges/nodes (dropping dims raises error)
+    if dimn_layer in crs_plotdata_clean.dims:
+        crs_plotdata_clean = crs_plotdata_clean.rename({'mesh2d_nFaces':'mesh2d_nFaces_topview'}) #TODO: other dimname than mesh2d_nFaces should be supported (like mesh2d_nSides), but silently fails in xugrid and then "AttributeError: 'DataArray' object has no attribute 'ugrid'"
+        import dask
+        with dask.config.set(**{'array.slicing.split_large_chunks': True}): #to avoid large chunks for Grevelingen
+            crs_plotdata_clean = crs_plotdata_clean.stack(mesh2d_nFaces=[dimn_layer,'mesh2d_nFaces_topview'])
+    
+    #define grid
+    shape_crs_grid = crs_verts[:,:,0].shape
+    shape_crs_flat = crs_verts[:,:,0].ravel().shape
+    xr_crs_grid = xu.Ugrid2d(node_x=crs_verts[:,:,0].ravel(),
+                             node_y=crs_verts[:,:,1].ravel(),
+                             fill_value=-1,
+                             face_node_connectivity=np.arange(shape_crs_flat[0]).reshape(shape_crs_grid),
+                             )
+    #combine into xugrid
+    xr_crs_ugrid = xu.UgridDataset(crs_plotdata_clean, grids=[xr_crs_grid])
+    return xr_crs_ugrid
+
+
+def polyline_mapslice(data_frommap_merged, line_array, timestep, calcdist_fromlatlon=None): #TODO: merge this into one function
+    #intersect function, find crossed cell numbers (gridnos) and coordinates of intersection (2 per crossed cell)
+    intersect_pd = polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=calcdist_fromlatlon)
+    if len(intersect_pd) == 0:
+        raise Exception('line_array does not cross mapdata') #TODO: move exception elsewhere?
+    #derive vertices from cross section (distance from first point)
+    xr_crs_ugrid = get_xzcoords_onintersection(data_frommap_merged, intersect_pd=intersect_pd, timestep=timestep)
+    return xr_crs_ugrid
+
+
 def reconstruct_zw_zcc_fromsigma(data_xr_map):
     """
     reconstruct full grid output (time/face-varying z-values) for sigma model, necessary for slicing sigmamodel on depth value
@@ -669,82 +745,6 @@ def get_Dataset_atdepths(data_xr, depths, reference='z0', zlayer_z0_selnearest=F
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
     return data_xr_atdepths
-
-
-def get_xzcoords_onintersection(data_frommap_merged, intersect_pd, timestep=None):#, varname=None):
-    #TODO: no hardcoding of variable names?
-    #check if all necessary arguments are provided
-    if timestep is None: #TODO: maybe make time dependent grid?
-        raise Exception('ERROR: argument timestep not provided, this is necessary to retrieve correct waterlevel or fullgrid output')
-    
-    dimn_layer = 'nmesh2d_layer'#dfmt.get_varname_fromnc(data_frommap_merged,'nmesh2d_layer',vardim='dim') #TODO: hardcoding ok because of renaming? (no, since gridname is not fixed)
-    if dimn_layer in data_frommap_merged.dims:
-        nlay = data_frommap_merged.dims[dimn_layer]
-    else: #no layers, 2D model
-        nlay = 1
-    
-    #potentially construct fullgrid info (zcc/zw) #TODO: this ifloop is copied from get_mapdata_atdepth(), prevent this duplicate code
-    if dimn_layer not in data_frommap_merged.dims: #2D model
-        print('depth dimension not found, probably 2D model')
-        pass
-    elif 'mesh2d_flowelem_zw' in data_frommap_merged.variables: #fullgrid info already available, so continuing
-        print('zw/zcc (fullgrid) values already present in Dataset')
-        pass
-    elif 'mesh2d_layer_sigma' in data_frommap_merged.variables: #reconstruct_zw_zcc_fromsigma and treat as zsigma/fullgrid mapfile from here
-        print('sigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
-        data_frommap_merged = reconstruct_zw_zcc_fromsigma(data_frommap_merged)
-    elif 'mesh2d_layer_z' in data_frommap_merged.variables:        
-        print('z-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
-        data_frommap_merged = reconstruct_zw_zcc_fromz(data_frommap_merged)
-    else:
-        raise Exception('layers present, but unknown layertype, expected one of variables: mesh2d_flowelem_zw, mesh2d_layer_sigma, mesh2d_layer_z')
-    
-    intersect_gridnos = intersect_pd.index
-    data_frommap_merged_sel = data_frommap_merged.isel(time=timestep,mesh2d_nFaces=intersect_gridnos) #TODO: only selects faces, but should also drop part of nodes/edges
-    if 'nmesh2d_layer' not in data_frommap_merged.dims:
-        data_frommap_wl3_sel = data_frommap_merged_sel['mesh2d_s1'].to_numpy()
-        data_frommap_bl_sel = data_frommap_merged_sel['mesh2d_flowelem_bl'].to_numpy()
-        zvals_interface = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay+1)
-    elif 'mesh2d_flowelem_zw' in data_frommap_merged.variables:
-        zvals_interface_filled = data_frommap_merged_sel['mesh2d_flowelem_zw'].bfill(dim='nmesh2d_interface') #fill nan values (below bed) with equal values
-        zvals_interface = zvals_interface_filled.to_numpy().T # transpose to make in line with 2D sigma dataset
-    
-    #convert to output for plot_netmapdata
-    crs_dist_starts_matrix = np.repeat(intersect_pd['crs_dist_starts'].values[np.newaxis],nlay,axis=0)
-    crs_dist_stops_matrix = np.repeat(intersect_pd['crs_dist_stops'].values[np.newaxis],nlay,axis=0)
-    crs_verts_x_all = np.array([[crs_dist_starts_matrix.ravel(),crs_dist_stops_matrix.ravel(),crs_dist_stops_matrix.ravel(),crs_dist_starts_matrix.ravel()]]).T
-    crs_verts_z_all = np.ma.array([zvals_interface[1:,:].ravel(),zvals_interface[1:,:].ravel(),zvals_interface[:-1,:].ravel(),zvals_interface[:-1,:].ravel()]).T[:,:,np.newaxis]
-    crs_verts = np.ma.concatenate([crs_verts_x_all, crs_verts_z_all], axis=2)
-    
-    #define dataset
-    crs_plotdata_clean = data_frommap_merged_sel.ugrid.obj #TODO: this dataset still contains way to many edges/nodes (dropping dims raises error)
-    if dimn_layer in crs_plotdata_clean.dims:
-        crs_plotdata_clean = crs_plotdata_clean.rename({'mesh2d_nFaces':'mesh2d_nFaces_topview'}) #TODO: other dimname than mesh2d_nFaces should be supported (like mesh2d_nSides), but silently fails in xugrid and then "AttributeError: 'DataArray' object has no attribute 'ugrid'"
-        import dask
-        with dask.config.set(**{'array.slicing.split_large_chunks': True}): #to avoid large chunks for Grevelingen
-            crs_plotdata_clean = crs_plotdata_clean.stack(mesh2d_nFaces=[dimn_layer,'mesh2d_nFaces_topview'])
-    
-    #define grid
-    shape_crs_grid = crs_verts[:,:,0].shape
-    shape_crs_flat = crs_verts[:,:,0].ravel().shape
-    xr_crs_grid = xu.Ugrid2d(node_x=crs_verts[:,:,0].ravel(),
-                             node_y=crs_verts[:,:,1].ravel(),
-                             fill_value=-1,
-                             face_node_connectivity=np.arange(shape_crs_flat[0]).reshape(shape_crs_grid),
-                             )
-    #combine into xugrid
-    xr_crs_ugrid = xu.UgridDataset(crs_plotdata_clean, grids=[xr_crs_grid])
-    return xr_crs_ugrid
-
-
-def polyline_mapslice(data_frommap_merged, line_array, timestep, calcdist_fromlatlon=None): #TODO: merge this into one function
-    #intersect function, find crossed cell numbers (gridnos) and coordinates of intersection (2 per crossed cell)
-    intersect_pd = polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=calcdist_fromlatlon)
-    if len(intersect_pd) == 0:
-        raise Exception('line_array does not cross mapdata') #TODO: move exception elsewhere?
-    #derive vertices from cross section (distance from first point)
-    xr_crs_ugrid = get_xzcoords_onintersection(data_frommap_merged, intersect_pd=intersect_pd, timestep=timestep)
-    return xr_crs_ugrid
 
 
 def get_netdata(file_nc, multipart=None):
