@@ -140,10 +140,9 @@ for file_pli in list_plifiles:
             file_bc_out = Path(dir_output,f'{quantity}_{file_bc_basename}_{model}.bc')
         print(f'writing ForcingModel to bc file with hydrolib ({file_bc_out.name})')
         if bc_type=='bc':
-            #ForcingModel_object.serializer_config.float_format = '.3f'
-            #ForcingModel_object.serializer_config.float_format_datablock = '.5f'
+            #ForcingModel_object.serializer_config.float_format = '.3f' #TODO SOLVED: improve formatting of bc file: https://github.com/Deltares/HYDROLIB-core/issues/308
+            #ForcingModel_object.serializer_config.float_format_datablock = '.5f' #maybe move this to interp_regularnc_to_plipoints/interpolate_tide_to_bc?
             ForcingModel_object.save(filepath=file_bc_out)
-            #TODO SOLVED: improve formatting of bc file: https://github.com/Deltares/HYDROLIB-core/issues/308 (became quite slow: https://github.com/Deltares/HYDROLIB-core/issues/313)
         else:
             raise Exception(f'invalid bc_type: {bc_type}')
         
