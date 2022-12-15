@@ -17,6 +17,7 @@ from dfm_tools.regulargrid import *
 from dfm_tools.ugrid import *
 from dfm_tools.xarray_helpers import *
 from dfm_tools.energy_dissipation import *
+from dfm_tools.bathymetry import *
 from dfm_tools.io.tim import * #TODO: remove this when moved to hydrolib
 
 import warnings
