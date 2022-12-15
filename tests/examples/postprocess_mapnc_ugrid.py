@@ -245,7 +245,7 @@ for file_nc in file_nc_list:
         ax.set_aspect('equal')
         fig.tight_layout()
         fig.savefig(os.path.join(dir_output,f'{basename}_{varname_edge}_edges_oldmethod'))
-    if 1: #TODO: move edge to xarray, but partitioned maps show incorrect data (tests/examples_workinprogress/workinprogress_plot_edges.py)
+    if 1: #TODO: move edge to xarray, but partitioned maps show incorrect data (https://github.com/Deltares/dfm_tools/blob/main/tests/examples_workinprogress/workinprogress_plot_edges.py)
         fig, ax = plt.subplots()
         if layno is None:
             pc = data_frommap_merged[varname_edge].isel(time=timestep).ugrid.plot(cmap='jet')
@@ -263,7 +263,7 @@ for file_nc in file_nc_list:
         
         data_frommap_fou = dfmt.open_partitioned_dataset(file_nc_fou)
         vars_pd_fou = dfmt.get_ncvarproperties(data_frommap_fou)
-        if 'nmesh2d_layer' in data_frommap_fou.dims: #reduce layer dimension via isel/sel/interp. TODO: slicing over depth is not possible with dfmt.get_Dataset_atdepths(), since waterlevel is missing from file.
+        if 'nmesh2d_layer' in data_frommap_fou.dims: #reduce layer dimension via isel/sel/interp. TODO: slicing over depth is not possible with dfmt.get_Dataset_atdepths(), since waterlevel is missing from file. (does it work for rstfiles?)
             data_frommap_fou = data_frommap_fou.set_index({'nmesh2d_layer':'mesh2d_layer_z'}) #TODO: not supported for sigmalayers, zlayers is for some reason in foufile of this zsigma model (or not the case with a rerun?)
             if 1:
                 data_frommap_fou_atdepth = data_frommap_fou.isel(nmesh2d_layer=-2) #second to last layer

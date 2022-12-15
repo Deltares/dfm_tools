@@ -14,6 +14,8 @@ plt.close('all')
 #import contextily as ctx
 import dfm_tools as dfmt
 
+#TODO: also make it work for https://github.com/c-scale-community/use-case-hisea/blob/main/scripts/postprocessing/nc2regularGrid_listComprehension.py
+
 model = 'DCSM'
 method = 'linear' #for scipy.interpolate.griddata: https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.griddata.html
 

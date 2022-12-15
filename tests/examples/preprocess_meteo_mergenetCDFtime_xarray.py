@@ -21,7 +21,8 @@ plt.close('all')
 import dfm_tools as dfmt
 
 #TODO: crashes in pytest for some reason: "OSError: [Errno -51] NetCDF: Unknown file format"
-#TODO: add ERA5 conversions and features from hydro_tools\ERA5\ERA52DFM.py (except for varRhoair_alt)
+#TODO: add ERA5 conversions and features from hydro_tools\ERA5\ERA52DFM.py (except for varRhoair_alt, request FM support of varying airpressure)
+#TODO: request FM support for charnock (etc) separate meteo forcing (now merged files are required)
 #TODO: add standard_name to all variables? >> better to rename varname itself to dfm quantity (not possible yet) or alternative dfm varname (or generate ext file with quantity/varname translation)
 #TODO: add renamevars of add attrs['standard_name'] with ncvarnames/ncstdnames conversion table in https://svn.oss.deltares.nl/repos/delft3d/trunk/src/utils_lgpl/ec_module/packages/ec_module/src/ec_provider.f90 (line 2479) (alternatively set varname in extfile)
 #varname_dict = {'u10': '',

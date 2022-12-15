@@ -12,6 +12,8 @@ plt.close('all')
 import datetime as dt
 import dfm_tools as dfmt
 
+#TODO: experiment with monthly/daily means or depth average of his/map fields (to show power of pandas/xarray), 
+
 overwrite = True
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
