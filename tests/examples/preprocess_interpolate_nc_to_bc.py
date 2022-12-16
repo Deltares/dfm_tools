@@ -29,7 +29,7 @@ dir_output = './test_interpolate_nc_to_bc'
 #quantities should be in conversion_dict.keys(). waterlevelbnd is steric/zos, tide is tidal components from FES/EOT
 list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tracerbndNO3','tide']
 #list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','tracerbndNO3']
-list_quantities = ['tracerbndNO3']
+list_quantities = ['salinitybnd','tracerbndNO3']
 
 model = 'CMEMS' #CMEMS GFDL CMCC HYCOM
 
