@@ -48,6 +48,7 @@ def preprocess_hisnc(ds):
         coord = dim_coord_dict[dim]
         coord_str = f'{coord}'#_str' #avoid losing the original variable by creating a new name
         ds[coord_str] = ds[coord].load().str.decode('utf-8',errors='ignore').str.strip() #.load() is essential to convert not only first letter of string.
+        #ds = ds.set_index({dim:[coord_str,'station_x_coordinate','station_y_coordinate']}) #nearest station: "ValueError: multi-index does not support ``method`` and ``tolerance``"  #slice x/y: "TypeError: float() argument must be a string or a number, not 'slice'"
         ds = ds.set_index({dim:coord_str})
         
         #drop duplicate indices (stations/crs/gs), this avoids "InvalidIndexError: Reindexing only valid with uniquely valued Index objects"

@@ -27,12 +27,10 @@ file_nc = r'p:\1230882-emodnet_hrsm\GTSMv5.0\runs\reference_GTSMv4.1_wiCA\output
 #file_nc = r'p:\1230882-emodnet_hrsm\GTSMv5.0\runs\GM42_2000m_eu0900m_ITfac5p5_wx\output\gtsm_model_0000_his.nc'
 data_xr = xr.open_mfdataset(file_nc, preprocess=dfmt.preprocess_hisnc, chunks={'time':-1})
 
-data_xr_relvars = data_xr[['waterlevel','x_velocity','y_velocity']]
-
-latlon_bool = ((data_xr['station_x_coordinate']>-10) & (data_xr['station_x_coordinate']<-8) & 
+latlon_bool = ((data_xr['station_x_coordinate']>-10) & (data_xr['station_x_coordinate']<-8) & #TODO: seems not to be an easier way than bool, also not with multiindex and .sel(x=slice(),y=slice)
                (data_xr['station_y_coordinate']>40) & (data_xr['station_y_coordinate']<43))
 
-
+data_xr_relvars = data_xr[['waterlevel','x_velocity','y_velocity']]
 data_xr_relvars_port = data_xr_relvars.sel(stations=latlon_bool).sel(time=slice('2014-01-01','2014-01-15')).load()
 
 data_xr_relvars_port['velocity_direction'] = np.arctan2(data_xr_relvars_port['y_velocity'],data_xr_relvars_port['x_velocity'])
