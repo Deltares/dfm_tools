@@ -12,6 +12,7 @@ from pathlib import Path
 import xarray as xr
 from pydap.client import open_url
 from pydap.cas.get_cookies import setup_session
+import warnings
 
 
 def download_ERA5(varkey,
@@ -20,12 +21,12 @@ def download_ERA5(varkey,
                   dir_output='.', overwrite=False):
     
     #TODO: describe something about the .cdsapirc file
-    #TODO: make this function cdsapi generic, instead of ERA5 hardcoded
+    #TODO: make this function cdsapi generic, instead of ERA5 hardcoded (make flexible for product_type/name/name_output) (variables_dict is not used actively anymore, so this is possible)
     
     import cdsapi # Import cdsapi and create a Client instance # https://cds.climate.copernicus.eu/api-how-to #TODO: move to top of script? (then make dependency of dfm_tools)
     c = cdsapi.Client()
     
-    #dictionary with ERA5 variables
+    #dictionary with ERA5 variables #this is not actively used
     variables_dict = {'ssr':'surface_net_solar_radiation',
                       'sst':'sea_surface_temperature',
                       'strd':'surface_thermal_radiation_downwards',
@@ -44,8 +45,8 @@ def download_ERA5(varkey,
                       'mer':'mean_evaporation_rate',
                       'mtpr':'mean_total_precipitation_rate',
                       }
-    if varkey not in variables_dict.keys():
-        raise Exception(f'"{varkey}" not available, choose from: {list(variables_dict.keys())}')
+    if varkey not in variables_dict.keys(): #TODO: how to get list of available vars? mean_sea_level_pressure and msl both return a dataset with msl varkey, but standard_name air_pressure_at_mean_sea_level returns an error
+        warnings.warn(UserWarning(f'"{varkey}" not available, choose from: {list(variables_dict.keys())}'))
     
     period_range = pd.period_range(date_min,date_max,freq='M')
     print(f'retrieving data from {period_range[0]} to {period_range[-1]} (freq={period_range.freq})')
@@ -60,8 +61,8 @@ def download_ERA5(varkey,
 
         
         request_dict = {'product_type':'reanalysis',
-                        'variable':variables_dict[varkey],
-                        'year': date.strftime('%Y'),
+                        'variable':varkey,
+                        'year':date.strftime('%Y'),
                         'month':date.strftime('%m'),
                         #'month':[f'{x:02d}' for x in range(1,12+1)], #all months, but instead retrieving per month
                         'day':[f'{x:02d}' for x in range(1,31+1)], #all days
