@@ -19,33 +19,33 @@ plt.close('all')
 
 dtstart = dt.datetime.now()
 
-#TODO: Add note or warning in mdu-read-examplescript about [general] instead of [model] block
-file_mdu = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB_structbc\RMM_dflowfm_nostruct.mdu') #quite small model
+
+file_mdu = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB_structbc\RMM_dflowfm_general.mdu')
 mdu_contents = open(str(file_mdu),'r').readlines()
 if '[model]' in mdu_contents[0]:
     print('WARNING: [model] found in mdufile, this should be [general]')
-#file_mdu = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_dflowfm.mdu') #model with all but one structure and all but one lateral commented, reduces validation errors from >200 to 5. TODO: resolve validation errors
-#file_mdu = Path(r'c:\DATA\dfm_tools_testdata\DFM_3D_z_Grevelingen\computations\run01\Grevelingen-FM.mdu')
-#fm = FMModel(file_mdu) #TODO: currently crashes on issues below, and is quite slow since all files are being read
+fm = FMModel(file_mdu) #TODO: works, but many mdu-lines are comented, so uncomment things one by one
 
 
 file_struct = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_structures.ini')
-#structs = StructureModel(file_struct) #TODO SOLVED: pli in structures.ini is currently not supported: https://github.com/Deltares/HYDROLIB-core/issues/353
-#for struct in structs.structure: 
-#    print(struct.id)
-#structs.save('tst.ini')
-#structs.structure[0].__dict__ #TODO: structs.structure[0].comment is really extensive, necesary? It would be more valuable if 'official' comments are written here instead of what is in file, possible?
+structs = StructureModel(file_struct) #TODO SOLVED with : pli in structures.ini is currently not supported: https://github.com/Deltares/HYDROLIB-core/issues/353
+for struct in structs.structure:
+    print(struct.id)
+#structs.save('tst.ini') #TODO: how to get xydata from plifile in structuremodel?
+#structs.structure[0].__dict__
+
 
 file_network = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\rmm_v1p7_net.nc')
 #file_network = Path(r'p:\1230882-emodnet_hrsm\GTSMv5.0\runs\reference_GTSMv4.1_wiCA\step11_global_1p25eu_net.nc')
 #file_network = Path(r'p:\1230882-emodnet_hrsm\GTSMv5.0\runs\GM50_2000m_eu0900m_ITfac5p5_wx\gtsm_200s_2000m_eu0900m_ca2000m_v4_net.nc')
-#network = NetworkModel(file_network) #TODO: what is this used for? plotting network/map is easier with dfm_tools or xugrid?
+#network = NetworkModel(file_network) #TODO: what is this used for? plotting network/map is easier with xugrid
 
 
 #file_extnew = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_bnd.ext') #TODO: waterlevelbnd for rivers are present three times: https://github.com/Deltares/HYDROLIB-core/issues/354
 file_extnew = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_bnd_course.ext')
 #file_extnew = Path(r'p:\1230882-emodnet_hrsm\GTSMv5.0\SO_NHrivGTSM\computations\BD013_4par_mildslope_wflowdis_JV\gtsm_forcing_bc.ext')
 ext = ExtModel(file_extnew)
+
 
 time_passed = (dt.datetime.now()-dtstart).total_seconds()
 print(f'>>time passed: {time_passed:.2f} sec')
