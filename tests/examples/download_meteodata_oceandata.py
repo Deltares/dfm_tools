@@ -15,7 +15,7 @@ import contextily as ctx
 import dfm_tools as dfmt
 
 #download ERA5/CMEMS/HYCOM data for given domain, time extent and variables
-#TODO: add CMCC, GFD
+#TODO: add CMCC, GFDL
 #TODO: add climatedata cmip6
 #TODO: add GFS and other NOAA models (https://www.ncei.noaa.gov/products/weather-climate-models/global-forecast > NCEI > TDS)
 #TODO: add click?
@@ -31,9 +31,9 @@ date_min = '2010-01-01'
 date_max = '2010-01-02'
 
 #variables per model will be written to separate netcdf files. Set to [] to skip model.
-variables_era5 = []#'v10n'] # supply arbitrary string to get error with available variable names
+variables_era5 = ['msl'] # supply arbitrary string to get error with available variable names
 varlist_cmems = []#['bottomT','thetao','no3'] # avaliable variables differ per source_combination, check cmems loop for some options
-varlist_hycom = ['surf_el']#'water_temp'] #['tau','water_u','water_v','water_temp','salinity','surf_el']
+varlist_hycom = []#'surf_el']#'water_temp'] #['tau','water_u','water_v','water_temp','salinity','surf_el']
 
 #output directories per model
 dir_output_era5 = './era5_temp'
