@@ -12,6 +12,7 @@ try: #0.3.1 release
 except: #main branch and next release #TODO: move to easy imports after https://github.com/Deltares/HYDROLIB-core/issues/410
     from hydrolib.core.io.dflowfm.mdu.models import FMModel, NetworkModel, ExtModel, StructureModel
     from hydrolib.core.io.dflowfm.bc.models import ForcingModel
+#TODO: #import hydrolib.core.dflowfm as  (and add hydrolib-core>=0.4.0 to dependencies)
 import dfm_tools as dfmt
 import datetime as dt
 import matplotlib.pyplot as plt
