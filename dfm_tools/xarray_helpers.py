@@ -48,6 +48,7 @@ def preprocess_hisnc(ds):
         coord = dim_coord_dict[dim]
         coord_str = f'{coord}'#_str' #avoid losing the original variable by creating a new name
         ds[coord_str] = ds[coord].load().str.decode('utf-8',errors='ignore').str.strip() #.load() is essential to convert not only first letter of string.
+        #ds = ds.set_index({dim:[coord_str,'station_x_coordinate','station_y_coordinate']}) #nearest station: "ValueError: multi-index does not support ``method`` and ``tolerance``"  #slice x/y: "TypeError: float() argument must be a string or a number, not 'slice'"
         ds = ds.set_index({dim:coord_str})
         
         #drop duplicate indices (stations/crs/gs), this avoids "InvalidIndexError: Reindexing only valid with uniquely valued Index objects"
@@ -144,15 +145,6 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
         - RMM  3D 40 partitions  146 timesteps: 166.0/3.6/0.5 sec
         - MWRA 3D 20 partitions 2551 timesteps: 826.2/3.4/1.2 sec
     """
-    
-    # def set_map_coordinates(ds_merged_xu): #set coordinates #TODO: maybe avoid this, is not necessary per se
-    #     #in case of zsigma/fullgridoutput, mesh2d_flowelem_zcc andmesh2d_flowelem_zw are coordinates of the dataset
-    #     #mesh2d_layer_z/mesh2d_layer_sigma should be a coordinates in case of z or sigma model, but they are not #TODO: report issue to FM kernel
-    #     if 'mesh2d_layer_z' in ds_merged_xu:
-    #         ds_merged_xu = ds_merged_xu.set_coords(['mesh2d_layer_z','mesh2d_interface_z'])
-    #     if 'mesh2d_layer_sigma' in ds_merged_xu:
-    #         ds_merged_xu = ds_merged_xu.set_coords(['mesh2d_layer_sigma','mesh2d_interface_sigma'])
-    #     return ds_merged_xu
     
     dtstart_all = dt.datetime.now()
     if isinstance(file_nc,list):
@@ -276,7 +268,6 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
     #print(facedim,nodedim,edgedim)
     
     #define list of variables per dimension
-
     ds_face_list = []
     ds_node_list = []
     ds_edge_list = []
@@ -306,20 +297,9 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
         #ds_rest_list.append(ds_rest)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
-    """
-    # get a subset of the data
-    da.isel(dim=[0, 1, 2])  # returns dimensions, etc. #isel is factor 10 langzamer dan rechtstreeks indexeren op dask/numpy array: https://github.com/pydata/xarray/issues/2227
-    # Do the work yourself
-    da.data[[0, 1, 2], ...]  # returns dask
-    # Concatenate the data
-    xr.concat([da1, da2, da3]) #is ook trager dan dask.array.stack()
-    # Do it yourself
-    dask.array.stack([da1.data, da2.data, da3.data])
-    """
-    
     print('>> xr.concat(): ',end='')
     dtstart = dt.datetime.now()
-    ds_face_concat = xr.concat(ds_face_list, dim=facedim) #TODO: replace this with dask.stack() but that requires more book keeping?
+    ds_face_concat = xr.concat(ds_face_list, dim=facedim)
     ds_node_concat = xr.concat(ds_node_list, dim=nodedim) #TODO: evt compat="override" proberen
     ds_edge_concat = xr.concat(ds_edge_list, dim=edgedim)
     #ds_rest_concat = xr.concat(ds_rest_list, dim=None)
@@ -338,7 +318,5 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
                                   edgedim: merged_grid.edge_dimension}) #TODO: xugrid does not support other dimnames, xugrid issue is created: https://github.com/Deltares/xugrid/issues/25
     ds_merged_xu = xu.UgridDataset(ds_merged, grids=[merged_grid])
     print(f'>> open_partitioned_dataset total: {(dt.datetime.now()-dtstart_all).total_seconds():.2f} sec')
-    
-    #ds_merged_xu = set_map_coordinates(ds_merged_xu)
     
     return ds_merged_xu

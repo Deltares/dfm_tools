@@ -223,6 +223,10 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
         quantity_list = [quantity]
     ncvarname_list = [conversion_dict[quan]['ncvarname'] for quan in quantity_list]
     
+    #convert tstart/tstop from str/dt.datetime/pd.Timestamp to pd.Timestamp. WARNING: when supplying '05-04-2016', monthfirst is assumed, so 2016-05-04 will be the result (may instead of april).
+    tstart = pd.Timestamp(tstart)
+    tstop = pd.Timestamp(tstop)
+    
     dir_pattern = [Path(str(dir_pattern).format(ncvarname=ncvarname)) for ncvarname in ncvarname_list]
     file_list_nc = []
     for dir_pattern_one in dir_pattern:
@@ -308,6 +312,8 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
     
     #optional refdate changing
     if refdate_str is not None:
+        if 'long_name' in data_xr_vars.time.attrs: #for CMEMS it is 'hours since 1950-01-01', which would be wrong now #TODO: consider also removing attrs for depth/varname, since we would like to have salinitybnd/waterlevel instead of Salinity/sea_surface_height in xr plots?
+            del data_xr_vars.time.attrs['long_name']
         data_xr_vars.time.encoding['units'] = refdate_str
     
     if 'depth' in data_xr_vars.coords:
