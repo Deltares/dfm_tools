@@ -17,7 +17,7 @@ Create python environment dfm_tools_devenv and install dfm_tools in developer mo
 - ``conda info --envs`` (should show dfm_tools_devenv virtual environment in the list)
 - ``conda activate dfm_tools_devenv``
 - ``conda install -c conda-forge spyder shapely cartopy pyepsg geopandas contextily xarray dask netcdf4 bottleneck -y``
-- ``python -m pip install -e .`` (pip developer mode, any updates to the local folder are immediately available in your python. It also installs all required non-conda packages)
+- ``python -m pip install -e .`` (pip developer mode, any updates to the local folder are immediately available in your python. It also installs all required non-conda packages) >> maybe add ``test`` to install also test requirements [like this](https://stackoverflow.com/questions/15422527/best-practices-how-do-you-list-required-dependencies-in-your-setup-py)
 - test if dfm_tools is properly installed by printing the version number: ``python -c "import dfm_tools; print(dfm_tools.__version__); import netCDF4"``
 - ``conda deactivate``
 - to remove dfm_tools_devenv when necessary: ``conda remove -n dfm_tools_devenv --all``
