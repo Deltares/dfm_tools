@@ -24,7 +24,9 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip setuptools
-        conda env update --file environment.yml --name base
+        # $CONDA is an environment variable pointing to the root of the miniconda directory
+        # $CONDA/bin/conda env update --file environment.yml --name base
+        #conda env update --file environment.yml --name base
         python -m pip install pdoc3 pandoc
         #conda update -n base -c defaults conda
         #conda install -c conda-forge shapely cartopy pyepsg geopandas contextily xarray dask netcdf4 bottleneck cdsapi motuclient "geos>=3.7.2" -y
