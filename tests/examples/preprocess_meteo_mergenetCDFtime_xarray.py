@@ -241,6 +241,10 @@ encoding = {}
 #for varkey in list(data_xr_tsel.data_vars.keys()):
 #    encoding[varkey] = {'scale_factor':0.01,'add_offset':0} #TODO: maybe add, but not necessary since xarray uses encoding from first file and that is already quite efficient.
 
+# ERA5 specific addition for combine validated and non-validated data
+if 'expver' in data_xr_tsel.dims:
+    data_xr_tsel = data_xr_tsel.mean(dim='expver')
+
 #write to netcdf file
 print('writing file (can take a while)')
 file_out = os.path.join(dir_output, f'{file_out_prefix}_{tstart_str}to{tstop_str}_{mode}.nc')
