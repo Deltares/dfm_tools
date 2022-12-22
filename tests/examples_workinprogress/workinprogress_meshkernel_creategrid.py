@@ -85,6 +85,30 @@ Mesh refinement in MeshKernelPy (where the samples parameter contains the sample
 
 #TODO: this does not seem to be related to bathymetry/courant refinement (instead int sample set to refine each cell n times)
 
+enum class RefinementType
+{
+    WaveCourant = 1, #>> this one we need
+    RefinementLevels = 2
+};
+
+class MeshRefinementParameters:
+    refine_intersected: bool
+    use_mass_center_when_refining: bool
+    min_face_size: float
+    refinement_type: RefinementType #>> set this to Wavecourant/1
+    connect_hanging_nodes: bool
+    account_for_samples_outside_face: bool
+    max_refinement_iterations: int = 10
+
+
+  def mesh2d_refine_based_on_samples(
+        self,
+        samples: GeometryList,
+        relative_search_radius: float,
+        minimum_num_samples: int,
+        mesh_refinement_params: MeshRefinementParameters, #>> set this to above
+    ) -> None:
+
 """
 mk.mesh2d_refine_based_on_samples() #'samples', 'relative_search_radius', 'minimum_num_samples', and 'mesh_refinement_params'
 
