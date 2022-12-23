@@ -33,11 +33,10 @@ import dfm_tools as dfmt
 #                'msl': 'air_pressure'}
 #TODO: add coordinate conversion (maybe only for models with multidimensional lat/lon variables like HARMONIE and HIRLAM). This should work: ds_reproj = ds.set_crs(4326).to_crs(28992)
 #TODO: add CMCC etc from gtsmip repos (mainly calendar conversion)
-#TODO: add convert_360to180 with "ds.coords['lon'] = (ds.coords['lon'] + 180) % 360 - 180; ds = ds.sortby('lon')" (without hardcoded longitude/lon names)
 #TODO: move to function
 
-add_global_overlap = False #GTSM specific: extend data beyond -180 to 180 longitude
-zerostart = False #GTSM specific: extend data with 0-value fields 1 and 2 days before all_tstart
+add_global_overlap = True #GTSM specific: extend data beyond -180 to 180 longitude
+zerostart = True #GTSM specific: extend data with 0-value fields 1 and 2 days before all_tstart
 
 mode = 'ERA5_wind_pressure' # 'HARMONIE' 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HYCOM' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall'
 all_tstart = dt.datetime(2013,12,30) # HIRLAM and ERA5
@@ -160,7 +159,7 @@ times_pd = data_xr_tsel['time'].to_series()
 if len(times_pd)==0:
     raise Exception('ERROR: no times selected, check tstart/tstop and file_nc')
 
-#check if there are no gaps (more than one timestep)
+#check if there are no gaps (more than one unique timestep)
 timesteps_uniq = times_pd.diff().iloc[1:].unique()
 if len(timesteps_uniq)>1:
     raise Exception(f'ERROR: gaps found in selected dataset (are there sourcefiles missing?), unique timesteps (hour): {timesteps_uniq/1e9/3600}')
@@ -219,6 +218,11 @@ if 'ssr' in varkeys:
     print('ssr (solar influx) increase for beta=6%')
     data_xr_tsel['ssr'] = data_xr_tsel['ssr'] *.94
 
+#convert 0to360 sourcedata to -180to+180
+convert_360to180 = (data_xr['longitude'].to_numpy()>180).any()
+if convert_360to180:
+    data_xr.coords['longitude'] = (data_xr.coords['longitude'] + 180) % 360 - 180
+    data_xr = data_xr.sortby(data_xr['longitude'])
 
 #GTSM specific addition for longitude overlap
 if add_global_overlap: # assumes -180 to ~+179.75 (full global extent, but no overlap). Does not seem to mess up results for local models.

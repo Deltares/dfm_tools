@@ -15,8 +15,8 @@ try: #0.3.1 release
     from hydrolib.core.io.polyfile.models import PolyObject
     from hydrolib.core.io.bc.models import ForcingModel, QuantityUnitPair, VectorQuantityUnitPairs, T3D, TimeSeries, Astronomic
 except: #main branch and next release
-    from hydrolib.core.io.dflowfm.polyfile.models import PolyObject
-    from hydrolib.core.io.dflowfm.bc.models import ForcingModel, QuantityUnitPair, VectorQuantityUnitPairs, T3D, TimeSeries, Astronomic
+    from hydrolib.core.dflowfm.polyfile.models import PolyObject
+    from hydrolib.core.dflowfm.bc.models import ForcingModel, QuantityUnitPair, VectorQuantityUnitPairs, T3D, TimeSeries, Astronomic
 
 
 def Dataset_to_T3D(datablock_xr):  
