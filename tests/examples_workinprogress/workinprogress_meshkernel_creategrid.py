@@ -137,12 +137,12 @@ else:
     delete_pol = np.concatenate([delete_pol,delete_pol[[0],:]],axis=0) #close polygon
     pol_ldb_list = [pd.DataFrame(delete_pol,columns=['x','y'])]
 
-for iP, pol_del in enumerate(pol_ldb_list): #TODO: also possible without loop?
+for iP, pol_del in enumerate(pol_ldb_list): #TODO: also possible without loop? >> geometry_separator=-999.9 so that value can be used to concat polygons
     delete_pol_geom = meshkernel.GeometryList(x_coordinates=pol_del['x'].to_numpy(), y_coordinates=pol_del['y'].to_numpy()) #TODO: .copy()/to_numpy() makes the array contiguous in memory, which is necessary for meshkernel.mesh2d_delete()
     mk2.mesh2d_delete(geometry_list=delete_pol_geom, 
                       delete_option=meshkernel.DeleteMeshOption(2), #ALL_COMPLETE_FACES/2: Delete all faces of which the complete face is inside the polygon
                       invert_deletion=False)
-    
+
 mesh2d_grid3 = mk2.mesh2d_get()
 fig, ax = plt.subplots(figsize=figsize)
 mesh2d_grid3.plot_edges(ax,linewidth=1.2)
