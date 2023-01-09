@@ -20,8 +20,8 @@ try: #0.3.1 release
     from hydrolib.core.io.bc.models import ForcingModel, QuantityUnitPair, Astronomic
     from hydrolib.core.io.polyfile.models import PolyFile
 except: #main branch and next release
-    from hydrolib.core.io.dflowfm.bc.models import ForcingModel, QuantityUnitPair, Astronomic
-    from hydrolib.core.io.dflowfm.polyfile.models import PolyFile
+    from hydrolib.core.dflowfm.bc.models import ForcingModel, QuantityUnitPair, Astronomic
+    from hydrolib.core.dflowfm.polyfile.models import PolyFile
 
 from dfm_tools.hydrolib_helpers import Dataset_to_TimeSeries, Dataset_to_T3D
 from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame
@@ -285,7 +285,7 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
             raise Exception(f'no lat/lon coords available in file: {data_xr.coords}')
     
     #360 to 180 conversion
-    convert_360to180 = (data_xr['longitude'].to_numpy()>180).any()
+    convert_360to180 = (data_xr['longitude'].to_numpy()>180).any() #TODO: replace to_numpy() with load()
     latlon_ndims = len(data_xr['longitude'].shape)
     if convert_360to180: #TODO: make more flexible for models that eg pass -180/+180 crossing (add overlap at lon edges).
         data_xr.coords['longitude'] = (data_xr.coords['longitude'] + 180) % 360 - 180
