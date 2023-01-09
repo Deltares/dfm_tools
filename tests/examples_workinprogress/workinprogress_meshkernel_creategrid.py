@@ -181,5 +181,5 @@ if 0: #TODO: disabled since it generates "AttributeError: 'Ugrid2d' object has n
 #write xugrid grid to netcdf
 xu_grid.to_dataset().to_netcdf('test_net.nc')
 
-#TODO: update https://github.com/Deltares/dfm_tools/issues/217
+#TODO: update https://github.com/Deltares/dfm_tools/issues/217 and https://github.com/Deltares/MeshKernelPy/issues/28
 
