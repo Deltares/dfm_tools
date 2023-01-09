@@ -119,7 +119,7 @@ ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 delete (landward) part of grid with polygon and plot result
 """
 delete_with_ldb = True
-if delete_with_ldb:
+if delete_with_ldb: #landboundary file has to contain closed polygons
     print('reading ldb')
     file_ldb = r'p:\1230882-emodnet_hrsm\global_tide_surge_model\trunk\gtsm5.0\GSHHS_intermediate.ldb'
     pol_ldb = PolyFile(Path(file_ldb))
