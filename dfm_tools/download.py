@@ -46,7 +46,7 @@ def download_ERA5(varkey,
                       'mtpr':'mean_total_precipitation_rate',
                       }
     if varkey not in variables_dict.keys(): #TODO: how to get list of available vars? mean_sea_level_pressure and msl both return a dataset with msl varkey, but standard_name air_pressure_at_mean_sea_level returns an error
-        warnings.warn(UserWarning(f'"{varkey}" not available, choose from: {list(variables_dict.keys())}'))
+        raise Exception(f'"{varkey}" not available, choose from: {list(variables_dict.keys())}')
     
     period_range = pd.period_range(date_min,date_max,freq='M')
     print(f'retrieving data from {period_range[0]} to {period_range[-1]} (freq={period_range.freq})')
@@ -61,7 +61,7 @@ def download_ERA5(varkey,
 
         
         request_dict = {'product_type':'reanalysis',
-                        'variable':varkey,
+                        'variable':variables_dict[varkey],
                         'year':date.strftime('%Y'),
                         'month':date.strftime('%m'),
                         #'month':[f'{x:02d}' for x in range(1,12+1)], #all months, but instead retrieving per month
