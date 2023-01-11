@@ -59,7 +59,6 @@ def download_ERA5(varkey,
             continue
         print (f'retrieving ERA5 data for variable "{varkey}" and month {date.strftime("%Y-%m")} (YYYY-MM)')
 
-        
         request_dict = {'product_type':'reanalysis',
                         'variable':variables_dict[varkey],
                         'year':date.strftime('%Y'),
@@ -67,7 +66,7 @@ def download_ERA5(varkey,
                         #'month':[f'{x:02d}' for x in range(1,12+1)], #all months, but instead retrieving per month
                         'day':[f'{x:02d}' for x in range(1,31+1)], #all days
                         'time':[f'{x:02d}:00' for x in range(0,23+1)], #all times/hours
-                        'area':[latitude_max,longitude_min,latitude_min,longitude_max], # north, west, south, east. default: global - option not available through the Climate Data Store (CDS) web interface
+                        'area':[latitude_max,longitude_min,latitude_min,longitude_max], # north, west, south, east. default: global - option not available through the Climate Data Store (CDS) web interface (for cmip data)
                         #'grid': [1.0, 1.0], # latitude/longitude grid: east-west (longitude) and north-south resolution (latitude). default: 0.25 x 0.25 - option not available through the Climate Data Store (CDS) web interface
                         'format':'netcdf'}
         

@@ -21,24 +21,17 @@ plt.close('all')
 import dfm_tools as dfmt
 
 #TODO: crashes in pytest for some reason: "OSError: [Errno -51] NetCDF: Unknown file format"
-#TODO: add ERA5 conversions and features from hydro_tools\ERA5\ERA52DFM.py (except for varRhoair_alt, request FM support of varying airpressure)
-#TODO: request FM support for charnock (etc) separate meteo forcing (now merged files are required)
-#TODO: add standard_name to all variables? >> better to rename varname itself to dfm quantity (not possible yet) or alternative dfm varname (or generate ext file with quantity/varname translation)
-#TODO: add renamevars of add attrs['standard_name'] with ncvarnames/ncstdnames conversion table in https://svn.oss.deltares.nl/repos/delft3d/trunk/src/utils_lgpl/ec_module/packages/ec_module/src/ec_provider.f90 (line 2479) (alternatively set varname in extfile)
-#varname_dict = {'u10': '',
-#                'v10': '',
-#                'msl': ''}
-#stdname_dict = {'u10': 'eastward_wind',
-#                'v10': 'northward_wind',
-#                'msl': 'air_pressure'}
+#TODO: add ERA5 conversions and features from hydro_tools\ERA5\ERA52DFM.py (except for varRhoair_alt, request FM support for varying airpressure: https://issuetracker.deltares.nl/browse/UNST-6593)
+#TODO: request FM support for charnock (etc) separate meteo forcing (currently airpressure_windx_windy_charnock merged file is required): https://issuetracker.deltares.nl/browse/UNST-6453
+#TODO: provide extfile example with fmquantity/ncvarname combinations and cleanup FM code: https://issuetracker.deltares.nl/browse/UNST-6453
 #TODO: add coordinate conversion (maybe only for models with multidimensional lat/lon variables like HARMONIE and HIRLAM). This should work: ds_reproj = ds.set_crs(4326).to_crs(28992)
 #TODO: add CMCC etc from gtsmip repos (mainly calendar conversion)
 #TODO: move to function
 
-add_global_overlap = True #GTSM specific: extend data beyond -180 to 180 longitude
-zerostart = True #GTSM specific: extend data with 0-value fields 1 and 2 days before all_tstart
+add_global_overlap = False #GTSM specific: extend data beyond -180 to 180 longitude
+zerostart = False #GTSM specific: extend data with 0-value fields 1 and 2 days before all_tstart
 
-mode = 'ERA5_wind_pressure' # 'HARMONIE' 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HYCOM' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall'
+mode = 'ERA5_wind_pressure' #'ERA5_wind_pressure' # 'HARMONIE' 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HYCOM' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall'
 all_tstart = dt.datetime(2013,12,30) # HIRLAM and ERA5
 all_tstop = dt.datetime(2014,1,1)
 #all_tstart = dt.datetime(2016,4,28) # HYCOM
@@ -89,7 +82,7 @@ elif 'ERA5' in mode:
         varkey_list = ['mer','mtpr'] # mean_evaporation_rate, mean_total_precipitation_rate
     if 1:
         dir_data = 'p:\\metocean-data\\open\\ERA5\\data\\Irish_North_Baltic_Sea\\*' #TODO: add other vars with * (support separate files)
-        fn_match_pattern = f'era5_.*({"|".join(varkey_list)})_.*\.nc'
+        fn_match_pattern = f'era5_.*({"|".join(varkey_list)})_.*\.nc' #TODO: DeprecationWarning: invalid escape sequence \.
         file_out_prefix = f'era5_{"_".join(varkey_list)}'
     else: #global test (first use download_ERA5.py)
         dir_data = r'c:\DATA\dfm_tools\tests\examples\v10n'
@@ -98,7 +91,7 @@ elif 'ERA5' in mode:
         all_tstart = dt.datetime(2021,1,1)
         all_tstop = dt.datetime(2021,2,28,23,0)
     drop_variables = None
-    preprocess = None
+    preprocess = dfmt.preprocess_ERA5 #reduce expver dimension if present
     rename_variables = None
 elif mode == 'WOA': #TODO: does not work since time units is 'months since 0000-01-01 00:00:00' and calendar is not set (360_day is the only one that supports that unit)
     def preprocess_woa(ds):
