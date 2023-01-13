@@ -95,7 +95,7 @@ mesh_refinement_parameters = meshkernel.MeshRefinementParameters(refine_intersec
                                                                  use_mass_center_when_refining=False, #TODO: what does this do?
                                                                  min_face_size=0.01, #TODO: size in meters would be more convenient
                                                                  refinement_type=meshkernel.RefinementType(1), #Wavecourant/1,
-                                                                 connect_hanging_nodes=False, #set to False to do multiple refinement steps (e.g. for multiple regions)
+                                                                 connect_hanging_nodes=True, #set to False to do multiple refinement steps (e.g. for multiple regions)
                                                                  account_for_samples_outside_face=False, #outsidecell argument for --refine?
                                                                  max_refinement_iterations=5,
                                                                  ) #TODO: missing the arguments dtmax (necessary?), hmin (min_face_size but then in meters instead of degrees), smoothiters (currently refinement is patchy along coastlines), spherical 1/0 (necessary?)
@@ -157,21 +157,8 @@ ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 """
 convert meshkernel grid to xugrid, plot and save to *_net.nc
 """
-#generate face_node_connectivity array to make conversion to xugrid possible #TODO: move this to meshkernelpy internal? >> is/willbe available in xugrid
-num_faces = len(mesh2d_grid3.nodes_per_face)
-num_face_nodes_max = np.max(mesh2d_grid3.nodes_per_face)
-face_node_connectivity = np.full(shape=(num_faces,num_face_nodes_max), dtype=np.int32, fill_value=-1)
-index_in_mesh2d = 0
-for face_index, num_face_nodes in enumerate(mesh2d_grid3.nodes_per_face):
-    range_face_node_index = index_in_mesh2d+num_face_nodes
-    face_node_connectivity[face_index,range(num_face_nodes)] = mesh2d_grid3.face_nodes[index_in_mesh2d:range_face_node_index]
-    index_in_mesh2d = index_in_mesh2d + num_face_nodes
 
-#convert to xugrid grid and plot
-xu_grid = xu.Ugrid2d(node_x=mesh2d_grid3.node_x,
-                     node_y=mesh2d_grid3.node_y,
-                     fill_value=-1,
-                     face_node_connectivity=face_node_connectivity)
+xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid3)
 
 fig, ax = plt.subplots(figsize=figsize)
 xu_grid.plot(ax=ax)
