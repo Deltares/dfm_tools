@@ -17,7 +17,7 @@ import dfm_tools as dfmt
 try: #0.3.1 release
     from hydrolib.core.io.ext.models import Boundary, ExtModel
 except: #main branch and next release #TODO: move to easy imports after https://github.com/Deltares/HYDROLIB-core/issues/410
-    from hydrolib.core.io.dflowfm.ext.models import Boundary, ExtModel
+    from hydrolib.core.dflowfm.ext.models import Boundary, ExtModel
 
 #TODO: add coordinate conversion of pli-coordinates? (for nesting RD models in oceanmodels)
 #TODO: additional models/sources for download/interpolate (evt xESMF for CMCC, climate forcing cmip6 procedure (=calendarconversion) and others)

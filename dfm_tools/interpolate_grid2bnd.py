@@ -23,7 +23,7 @@ except: #main branch and next release
     from hydrolib.core.dflowfm.bc.models import ForcingModel, QuantityUnitPair, Astronomic
     from hydrolib.core.dflowfm.polyfile.models import PolyFile
 
-from dfm_tools.hydrolib_helpers import Dataset_to_TimeSeries, Dataset_to_T3D
+from dfm_tools.hydrolib_helpers import Dataset_to_TimeSeries, Dataset_to_T3D, Dataset_to_Astronomic
 from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame
 
 
@@ -132,83 +132,25 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
     #use open_mfdataset() with preprocess argument to open all requested FES files into one Dataset
     file_list_nc = [str(dir_pattern).replace('*',comp) for comp in component_list]
     data_xrsel = xr.open_mfdataset(file_list_nc, combine='nested', concat_dim='compno', preprocess=extract_component)
+    data_xrsel = data_xrsel.rename({'lon':'longitude','lat':'latitude'})
     
     #derive uv phase components (using amplitude=1)
     data_xrsel_phs_rad = np.deg2rad(data_xrsel['phase'])
     #we need to compute u/v components for the phase to avoid zero-crossing interpolation issues
     data_xrsel['phase_u'] = 1*np.cos(data_xrsel_phs_rad)
     data_xrsel['phase_v'] = 1*np.sin(data_xrsel_phs_rad)
+    data_xrsel['compnames'] = xr.DataArray(component_list_upper_pd,dims=('compno')) #TODO: convert to proper string variable
     
-    #load boundary file
-    polyfile_object = PolyFile(file_pli)
-    pli_PolyObjects = polyfile_object.objects
+    #convert cm to m
+    if data_xrsel['amplitude'].attrs['units'] == 'cm':
+        data_xrsel['amplitude'] /= 100
+        data_xrsel['amplitude'].attrs['units'] = 'm'
+    
+    data_interp = interp_regularnc_to_plipoints(data_xr_reg=data_xrsel, file_pli=file_pli, nPoints=nPoints)
+    data_interp['phase_new'] = np.rad2deg(np.arctan2(data_interp['phase_v'],data_interp['phase_u']))
 
-    for iPO, pli_PolyObject_sel in enumerate(pli_PolyObjects): #TODO: also remove loop here
-        print(f'processing PolyObject {iPO+1} of {len(pli_PolyObjects)}: name={pli_PolyObject_sel.metadata.name}')
-        
-        #create requestedlat/requestedlon DataArrays for proper interpolation in xarray (with new dimension name)
-        path_lons = np.array([point.x for point in pli_PolyObject_sel.points])[:nPoints]
-        path_lats = np.array([point.y for point in pli_PolyObject_sel.points])[:nPoints]
-        da_lons = xr.DataArray(path_lons, dims='plipoints')
-        da_lats = xr.DataArray(path_lats, dims='plipoints')
-        
-        #interpolation to lat/lon combinations
-        print('> interp mfdataset with all lat/lon coordinates and compute phase_new')
-        dtstart = dt.datetime.now()
-        data_interp_allcoords = data_xrsel.interp(lat=da_lats,lon=da_lons,
-                                                  method='linear', 
-                                                  kwargs={'bounds_error':True})
-        data_interp_allcoords['phase_new'] = np.rad2deg(np.arctan2(data_interp_allcoords['phase_v'],data_interp_allcoords['phase_u']))
-        time_passed = (dt.datetime.now()-dtstart).total_seconds()
-        # print(f'>>time passed: {time_passed:.2f} sec')
-        
-        
-        print(f'> actual extraction of data from netcdf with .load() (for {len(path_lons)} PolyObject points at once, this might take a while)')
-        dtstart = dt.datetime.now()
-        try:
-            data_interp_amp_allcoords = data_interp_allcoords['amplitude'].load() #convert from cm to m
-            data_interp_phs_allcoords = data_interp_allcoords['phase_new'].load()
-        except ValueError: #generate a proper error with outofbounds requested coordinates, default is "ValueError: One of the requested xi is out of bounds in dimension 0"
-            lonvar_vals = data_xrsel['lon'].to_numpy()
-            latvar_vals = data_xrsel['lat'].to_numpy()
-            bool_reqlon_outbounds = (path_lons <= lonvar_vals.min()) | (path_lons >= lonvar_vals.max())
-            bool_reqlat_outbounds = (path_lats <= latvar_vals.min()) | (path_lats >= latvar_vals.max())
-            reqlatlon_pd = pd.DataFrame({'longitude':path_lons,'latitude':path_lats,'lon outbounds':bool_reqlon_outbounds,'lat outbounds':bool_reqlat_outbounds})
-            reqlatlon_pd_outbounds = reqlatlon_pd.loc[bool_reqlon_outbounds | bool_reqlat_outbounds]
-            raise ValueError(f'{len(reqlatlon_pd_outbounds)} of {len(reqlatlon_pd)} requested pli points are out of bounds (valid longitude range {lonvar_vals.min()} to {lonvar_vals.max()}, valid latitude range {latvar_vals.min()} to {latvar_vals.max()}):\n{reqlatlon_pd_outbounds}')
-        time_passed = (dt.datetime.now()-dtstart).total_seconds()
-        print(f'>>time passed: {time_passed:.2f} sec')
-        
-        #convert cm to m
-        if data_xrsel['amplitude'].attrs['units'] == 'cm':
-            data_interp_amp_allcoords = data_interp_amp_allcoords/100
-            data_xrsel['amplitude'].attrs['units'] = 'm'
-        
-        
-        for iP, pli_Point_sel in enumerate(pli_PolyObject_sel.points[:nPoints]): #looping over plipoints within component loop, append to datablock_pd_allcomp
-            print(f'processing Point {iP+1} of {len(pli_PolyObject_sel.points)}: ',end='')
-            lonx, laty = pli_Point_sel.x, pli_Point_sel.y
-            print(f'(x={lonx}, y={laty})')
-            pli_PolyObject_name_num = f'{pli_PolyObject_sel.metadata.name}_{iP+1:04d}'
-            
-            data_interp_amp = data_interp_amp_allcoords.sel(plipoints=iP)
-            data_interp_phs = data_interp_phs_allcoords.sel(plipoints=iP)
-            
-            datablock_pd_allcomp = pd.DataFrame({'component':component_list_upper_pd,'amp':data_interp_amp.to_numpy(),'phs':data_interp_phs.to_numpy()})
-            if datablock_pd_allcomp['amp'].isnull().any():
-                print('WARNING: only nans for this coordinate, this point might be on land')
-            datablock_list = datablock_pd_allcomp.values.tolist()
-            
-            # Each .bc file can contain 1 or more timeseries, one for each support point:
-            print('> constructing TimeSeries and appending to ForcingModel()')
-            ts_one = Astronomic(name=pli_PolyObject_name_num,
-                                quantityunitpair=[QuantityUnitPair(quantity="astronomic component", unit='-'),
-                                                  QuantityUnitPair(quantity='waterlevelbnd amplitude', unit=data_xrsel['amplitude'].attrs['units']),
-                                                  QuantityUnitPair(quantity='waterlevelbnd phase', unit=data_xrsel['phase'].attrs['units'])],
-                                datablock=datablock_list, 
-                                )
-            
-            ForcingModel_object.forcing.append(ts_one)        
+    ForcingModel_object = plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
+    
     return ForcingModel_object
 
 
@@ -498,6 +440,8 @@ def plipointsDataset_to_ForcingModel(plipointsDataset):
         
         if 'depth' in plipointsDataset.dims:
             ts_one = Dataset_to_T3D(datablock_xr_onepoint)
+        elif 'amplitude' in quantity_list:
+            ts_one = Dataset_to_Astronomic(datablock_xr_onepoint)
         else:
             ts_one = Dataset_to_TimeSeries(datablock_xr_onepoint)
         ForcingModel_object.forcing.append(ts_one)

@@ -130,6 +130,36 @@ def Dataset_to_TimeSeries(datablock_xr):
     return TimeSeries_object
 
 
+def Dataset_to_Astronomic(datablock_xr):
+    """
+    convert an xarray.Dataset (with amplitude and phase data_vars) to a hydrolib Astronomic object
+    
+    """
+    if not isinstance(datablock_xr,xr.Dataset):
+        raise Exception(f'Dataset_to_Astronomic expects xr.Dataset, not {type(datablock_xr)}')
+    
+    data_vars = list(datablock_xr.data_vars)
+    if 'amplitude' not in data_vars or 'phase_new' not in data_vars:
+        raise Exception('amplitude and/or phase_new not in input xr.Dataset')
+
+    #TODO: clean up these first lines of code and add description to docstring?
+    locationname = datablock_xr['amplitude'].attrs['locationname']
+        
+    #get datablock and concatenate with component names
+    datablock_np_cna = datablock_xr['compnames'].to_numpy()[:,np.newaxis]
+    datablock_np_amp = datablock_xr['amplitude'].to_numpy()[:,np.newaxis]
+    datablock_np_phs = datablock_xr['phase_new'].to_numpy()[:,np.newaxis]
+    datablock_inclcomp = np.concatenate([datablock_np_cna,datablock_np_amp,datablock_np_phs],axis=1)
+    
+    Astronomic_object = Astronomic(name=locationname,
+                                   quantityunitpair=[QuantityUnitPair(quantity="astronomic component", unit='-'),
+                                                     QuantityUnitPair(quantity='waterlevelbnd amplitude', unit=datablock_xr['amplitude'].attrs['units']),
+                                                     QuantityUnitPair(quantity='waterlevelbnd phase', unit=datablock_xr['phase'].attrs['units'])],
+                                   datablock=datablock_inclcomp.tolist(), 
+                                   )
+    return Astronomic_object
+
+
 def DataFrame_to_PolyObject(poly_pd,name,content=None):
     """
     convert a pandas dataframe with x/y columns (and optional others like z/data/comment) to a hydrolib PolyObject
