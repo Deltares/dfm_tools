@@ -180,5 +180,5 @@ ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 #write xugrid grid to netcdf
 xu_grid.to_dataset().to_netcdf('test_net.nc')
 
-#TODO: update https://github.com/Deltares/dfm_tools/issues/217 and https://github.com/Deltares/MeshKernelPy/issues/28
+#TODO: update https://github.com/Deltares/dfm_tools/issues/217
 
