@@ -153,6 +153,8 @@ ax.set_xlim(xlim)
 ax.set_ylim(ylim)
 ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 
+#TODO: cuts away link that is neccesary, so results in non-orthogonal grid
+#TODO: result does not have fine resolution all along coast, HK implemented coastline finder in kernel, expose that also?
 
 """
 convert meshkernel grid to xugrid, plot and save to *_net.nc
