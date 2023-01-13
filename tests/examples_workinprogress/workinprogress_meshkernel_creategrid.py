@@ -121,10 +121,10 @@ delete (landward) part of grid with polygon and plot result
 delete_with_ldb = True
 if delete_with_ldb: #landboundary file has to contain closed polygons
     print('reading ldb')
-    file_ldb = r'p:\1230882-emodnet_hrsm\global_tide_surge_model\trunk\gtsm5.0\GSHHS_intermediate.ldb'
+    file_ldb = r'p:\1230882-emodnet_hrsm\global_tide_surge_model\trunk\scripts_gtsm5\landboundary\GSHHS_intermediate_min1000km2.ldb'
     pol_ldb = PolyFile(Path(file_ldb))
     print('converting ldb')
-    pol_ldb_list = [dfmt.pointlike_to_DataFrame(x) for x in pol_ldb.objects] #TODO, this is really slow, speed up possible?
+    pol_ldb_list = [dfmt.pointlike_to_DataFrame(x) for x in pol_ldb.objects] #TODO, this is quite slow, speed up possible?
     pol_ldb_list = [x for x in pol_ldb_list if len(x)>1000] #filter only large polygons for performance
     print('done with ldb')
 else:
@@ -137,7 +137,7 @@ else:
     delete_pol = np.concatenate([delete_pol,delete_pol[[0],:]],axis=0) #close polygon
     pol_ldb_list = [pd.DataFrame(delete_pol,columns=['x','y'])]
 
-for iP, pol_del in enumerate(pol_ldb_list): #TODO: also possible without loop? >> geometry_separator=-999.9 so that value can be used to concat polygons
+for iP, pol_del in enumerate(pol_ldb_list): #TODO: also possible without loop? >> geometry_separator=-999.9 so that value can be used to concat polygons. >> use hydrolib poly as input?
     delete_pol_geom = meshkernel.GeometryList(x_coordinates=pol_del['x'].to_numpy(), y_coordinates=pol_del['y'].to_numpy()) #TODO: .copy()/to_numpy() makes the array contiguous in memory, which is necessary for meshkernel.mesh2d_delete()
     mk2.mesh2d_delete(geometry_list=delete_pol_geom, 
                       delete_option=meshkernel.DeleteMeshOption(2), #ALL_COMPLETE_FACES/2: Delete all faces of which the complete face is inside the polygon
@@ -158,25 +158,24 @@ ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 convert meshkernel grid to xugrid, plot and save to *_net.nc
 """
 #generate face_node_connectivity array to make conversion to xugrid possible #TODO: move this to meshkernelpy internal? >> is/willbe available in xugrid
-num_faces = len(mesh2d_grid2.nodes_per_face)
-num_face_nodes_max = np.max(mesh2d_grid2.nodes_per_face)
+num_faces = len(mesh2d_grid3.nodes_per_face)
+num_face_nodes_max = np.max(mesh2d_grid3.nodes_per_face)
 face_node_connectivity = np.full(shape=(num_faces,num_face_nodes_max), dtype=np.int32, fill_value=-1)
 index_in_mesh2d = 0
-for face_index, num_face_nodes in enumerate(mesh2d_grid2.nodes_per_face):
+for face_index, num_face_nodes in enumerate(mesh2d_grid3.nodes_per_face):
     range_face_node_index = index_in_mesh2d+num_face_nodes
-    face_node_connectivity[face_index,range(num_face_nodes)] = mesh2d_grid2.face_nodes[index_in_mesh2d:range_face_node_index]
+    face_node_connectivity[face_index,range(num_face_nodes)] = mesh2d_grid3.face_nodes[index_in_mesh2d:range_face_node_index]
     index_in_mesh2d = index_in_mesh2d + num_face_nodes
 
 #convert to xugrid grid and plot
-xu_grid = xu.Ugrid2d(node_x=mesh2d_grid2.node_x,
-                     node_y=mesh2d_grid2.node_y,
+xu_grid = xu.Ugrid2d(node_x=mesh2d_grid3.node_x,
+                     node_y=mesh2d_grid3.node_y,
                      fill_value=-1,
                      face_node_connectivity=face_node_connectivity)
 
 fig, ax = plt.subplots(figsize=figsize)
-if 0: #TODO: disabled since it generates "AttributeError: 'Ugrid2d' object has no attribute 'plot'" (was not the case before) https://github.com/Deltares/xugrid/issues/39
-    xu_grid.plot(ax=ax)
-    ctx.add_basemap(ax=ax, crs=crs, attribution=False)
+xu_grid.plot(ax=ax)
+ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 
 #write xugrid grid to netcdf
 xu_grid.to_dataset().to_netcdf('test_net.nc')
