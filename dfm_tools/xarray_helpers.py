@@ -120,8 +120,6 @@ def Dataset_varswithdim(ds,dimname):
 def open_partitioned_dataset(file_nc, chunks={'time':1}): 
     """
     Opmerkingen HB:
-        - Dit werkt nu alleen voor data op de faces (die je nu expliciet aangeeft in bovenstaande functie). Voor edge data zal het ook wel kunnen werken, is uiteraard meer werk, moet even nadenken hoe dat qua nummering samenhangt.
-        - Een nogwat suffe limitatie in xugrid: je kunt nog niet allerhande namen opgeven aan het grid. Dus ik genereer nu een nieuw grid (die gaat nu automatisch uit van een dimensie naam van "{naam_mesh}_nFaces". Beter zou zijn om alle nemen bij de initialisatie van het grid op te geven, dan kun je alle kanten uit. Ga ik even issue van maken.
         - Voor data op de edges zou het ook werken, maar dan is nog een andere isel noodzakelijk, specifiek voor de edge data.
         - Dit werkt nu ook alleen als je enkel grid in je dataset hebt. Bij meerdere grids zouden we een keyword moeten toevoegen dat je aangeeft welke je gemerged wilt zien.    
 
@@ -147,12 +145,12 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
     file_nc = 'p:\\1230882-emodnet_hrsm\\GTSMv5.0\\runs\\reference_GTSMv4.1_wiCA_2.20.06_mapformat4\\output\\gtsm_model_0*_map.nc' #GTSM 2D
     file_nc = 'p:\\11208053-005-kpp2022-rmm3d\\C_Work\\01_saltiMarlein\\RMM_2019_computations_02\\computations\\theo_03\\DFM_OUTPUT_RMM_dflowfm_2019\\RMM_dflowfm_2019_0*_map.nc' #RMM 3D
     file_nc = 'p:\\archivedprojects\\11203379-005-mwra-updated-bem\\03_model\\02_final\\A72_ntsu0_kzlb2\\DFM_OUTPUT_MB_02\\MB_02_0000_map.nc'
-    Timings (open_dataset/isel/concat):
-        - DCSM 3D 20 partitions  367 timesteps: 120.0/1.7/0.2 sec (timings are guessed)
-        - RMM  2D  8 partitions  421 timesteps:  60.6/1.4/0.1 sec
-        - GTSM 2D  8 partitions  746 timesteps:  73.8/6.4/0.1 sec
-        - RMM  3D 40 partitions  146 timesteps: 166.0/3.6/0.5 sec
-        - MWRA 3D 20 partitions 2551 timesteps: 826.2/3.4/1.2 sec
+    Timings (open_dataset/merge_partitions):
+        - DCSM 3D 20 partitions  367 timesteps: 219.0/4.68 sec
+        - RMM  2D  8 partitions  421 timesteps:  60.6/1.4+0.1 sec
+        - GTSM 2D  8 partitions  746 timesteps:  73.8/6.4+0.1 sec
+        - RMM  3D 40 partitions  146 timesteps: 166.0/3.6+0.5 sec
+        - MWRA 3D 20 partitions 2551 timesteps: 826.2/3.4+1.2 sec
     """
     
     dtstart_all = dt.datetime.now()
@@ -163,29 +161,42 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
     if len(file_nc_list)==0:
         raise Exception('file(s) not found, empty file_nc_list')
     
-    print(f'>> xu.open_dataset() with {len(file_nc_list)} partition(s): ',end='')
+    print(f'>> xu.open_dataset() for {len(file_nc_list)} partition(s): ',end='')
     dtstart = dt.datetime.now()
     partitions = [xu.open_dataset(file_nc_one,chunks=chunks) for file_nc_one in file_nc_list]
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
-    #rename old dimension names and some variable names #TODO: move to separate definition
-    gridname = 'mesh2d' #partitions[0].ugrid.grid.name #'mesh2d' #TODO: works if xugrid accepts arbitrary grid names
+    print(f'>> xu.merge_partitions() with {len(file_nc_list)} partition(s): ',end='')
+    dtstart = dt.datetime.now()
+    ds_merged_xu = xu.merge_partitions(partitions)
+    print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
+    
+    #add non face/node/edge variables back to merged dataset
+    #TODO: add this to xugrid? contains data_vars ['projected_coordinate_system', 'mesh2d_layer_z', 'mesh2d_interface_z', 'timestep']
+    facedim = ds_merged_xu.grid.face_dimension
+    nodedim = ds_merged_xu.grid.node_dimension
+    edgedim = ds_merged_xu.grid.edge_dimension
+    ds_rest = partitions[0].drop_dims([facedim,nodedim,edgedim])
+    for data_var in ds_rest.data_vars:
+        ds_merged_xu[data_var] = ds_rest[data_var]
+    
+    #update important variable names #TODO: add laydim/interfacedim to xugrid dataset? (like face_dimension property)
+    gridname = ds_merged_xu.grid.name
     rename_dict = {}
-    varn_maxfnodes = f'max_n{gridname}_face_nodes' #TODO: replace mesh2d with grid.name
-    maxfnodes_opts = [f'{gridname}_nMax_face_nodes','nNetElemMaxNode'] #options for old domain variable name
-    for opt in maxfnodes_opts:
-        if opt in partitions[0].dims:
-            rename_dict.update({opt:varn_maxfnodes})
-    layer_nlayers_opts = ['mesh2d_nLayers','laydim'] # options for old layer dimension name #TODO: others from get_varname_fromnc: ['nmesh2d_layer_dlwq','LAYER','KMAXOUT_RESTR','depth'
+    layer_nlayers_opts = [f'{gridname}_nLayers','laydim'] # options for old layer dimension name #TODO: others from get_varname_fromnc: ['nmesh2d_layer_dlwq','LAYER','KMAXOUT_RESTR','depth'
     for opt in layer_nlayers_opts:
-        if opt in partitions[0].dims:
+        if opt in ds_merged_xu.dims:
             #print(f'hardcoded replacing {opt} with nmesh2d_layer. Auto would replace "{partitions[0].ugrid.grid.to_dataset().mesh2d.vertical_dimensions}"')
             rename_dict.update({opt:f'n{gridname}_layer'})
-    layer_ninterfaces_opts = ['mesh2d_nInterfaces']
+    layer_ninterfaces_opts = [f'{gridname}_nInterfaces']
     for opt in layer_ninterfaces_opts:
-        if opt in partitions[0].dims:
+        if opt in ds_merged_xu.dims:
             rename_dict.update({opt:f'n{gridname}_interface'})
     
+    # maxfnodes_opts = [f'{gridname}_nMax_face_nodes','nNetElemMaxNode'] #options for old domain variable name. #TODO: If needed, use ds_merged_xu.grid.n_max_node_per_face
+    # for opt in maxfnodes_opts:
+    #     if opt in partitions[0].dims:
+    #         rename_dict.update({opt:f'max_n{gridname}_face_nodes'})
     #rename vars
     #layer_layerz_opts = ['LayCoord_cc'] #TODO: copied from get_xzcoords_onintersection, but might not be necessary anymore
     #for opt in layer_layerz_opts:
@@ -199,134 +210,26 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
     #     rename_dict.update({layer_dimn:f'n{gridname}_layer'}) #old varnames for mesh2d_layer: 'mesh2d_nLayers','laydim','nmesh2d_layer_dlwq'
     # else:
     #     print(f'no layer dimension found in gridspecs ds.{gridname}')
-    varn_domain = f'{gridname}_flowelem_domain' #TODO: replace mesh2d with grid.name
-    domain_opts = ['idomain','FlowElemDomain'] #options for old domain variable name
-    for opt in domain_opts:
-        if opt in partitions[0].data_vars:
-            rename_dict.update({opt:varn_domain})
-    varn_globalnr = f'{gridname}_flowelem_globalnr'
-    globalnr_opts = ['iglobal_s'] #options for old globalnr variable name
-    for opt in globalnr_opts:
-        if opt in partitions[0].data_vars:
-            rename_dict.update({opt:varn_globalnr})
-    partitions = [part.rename(rename_dict) for part in partitions]
+    # varn_domain = f'{gridname}_flowelem_domain' #TODO: replace mesh2d with grid.name
+    # domain_opts = ['idomain','FlowElemDomain'] #options for old domain variable name
+    # for opt in domain_opts:
+    #     if opt in partitions[0].data_vars:
+    #         rename_dict.update({opt:varn_domain})
+    # varn_globalnr = f'{gridname}_flowelem_globalnr'
+    # globalnr_opts = ['iglobal_s'] #options for old globalnr variable name
+    # for opt in globalnr_opts:
+    #     if opt in partitions[0].data_vars:
+    #         rename_dict.update({opt:varn_globalnr})
+    ds_merged_xu = ds_merged_xu.rename(rename_dict)
     
     varlist_onepart = list(partitions[0].variables.keys())
-    
-    all_indices = []
-    all_faces = []
-    all_nodes_x = []
-    all_nodes_y = []
-    accumulator = 0
-    domainno_all = []
-    
-    #dtstart = dt.datetime.now()
-    #print('>> process partitions facenumbers/ghostcells: ',end='')
-    for i, part in enumerate(partitions):
-        # For ghost nodes, keep the values of the domain number that occurs most.
-        grid = part.ugrid.grid
-        if varn_domain not in varlist_onepart:
-            if len(partitions)!=1:#escape for non-partitioned files (domainno not found and one file provided). skip rest of function
-                raise Exception('no domain variable found, while there are multiple partition files supplied, this is not expected')
-            xu_return = partitions[0]
-            return xu_return
-        
-        #get domain number from partition
-        da_domainno = part[varn_domain]
-        part_domainno = np.bincount(da_domainno).argmax() 
-        if part_domainno in domainno_all:
-            raise Exception(f'something went wrong, domainno {part_domainno} already occured: {domainno_all}') #this can happen if more ghostcells than actual cells (very small partitions). Alternative is: part_domainno = int(part.encoding['source'][-11:-7]) >> does not work on restartfiles, since it is _0000_20200101_120000_rst.nc
-        domainno_all.append(part_domainno)
-        
-        idx = np.flatnonzero(da_domainno == part_domainno) #something like >=i is applicable to edges/nodes
-        faces = grid.face_node_connectivity[idx] #is actually face_node_connectivity for non-ghostcells
-        #edges_allnos = np.unique(grid.face_edge_connectivity) #match with face_idx?
-        faces[faces != grid.fill_value] += accumulator
-        accumulator += grid.n_node
-        all_indices.append(idx)
-        all_faces.append(faces)
-        all_nodes_x.append(grid.node_x)
-        all_nodes_y.append(grid.node_y)
-    #print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
-    node_x = np.concatenate(all_nodes_x)
-    node_y = np.concatenate(all_nodes_y)
-    node_xy = np.column_stack([node_x, node_y])
-    merged_nodes, inverse = np.unique(node_xy, return_inverse=True, axis=0)
-    n_face_total = sum(len(faces) for faces in all_faces)
-    n_max_node = max(faces.shape[1] for faces in all_faces)
-    merged_faces = np.full((n_face_total, n_max_node), -1, dtype=np.intp)
-    start = 0
-    for faces in all_faces:
-        n_face, n_max_node = faces.shape
-        end = start + n_face
-        merged_faces[start:end, :n_max_node] = faces
-        start = end
-    isnode = merged_faces != -1
-    faces_flat = merged_faces[isnode]
-    renumbered = inverse[faces_flat]
-    merged_faces[isnode] = renumbered
-    merged_grid = xu.Ugrid2d(
-        node_x=merged_nodes[:, 0],
-        node_y=merged_nodes[:, 1],
-        fill_value=-1,
-        face_node_connectivity=merged_faces,
-    )
-    facedim = partitions[0].ugrid.grid.face_dimension
-    nodedim = partitions[0].ugrid.grid.node_dimension
-    edgedim = partitions[0].ugrid.grid.edge_dimension
-    #print(facedim,nodedim,edgedim)
-    
-    #define list of variables per dimension
-    ds_face_list = []
-    ds_node_list = []
-    ds_edge_list = []
-    #ds_rest_list = []
-    print('>> ds.isel()/xr.append(): ',end='')
-    dtstart = dt.datetime.now()
-    for idx, uds in zip(all_indices, partitions):
-        face_variables = []
-        node_variables = []
-        edge_variables = []
-        for varname in uds.variables.keys():
-            if varn_maxfnodes in uds[varname].dims: # not possible to concatenate this dim (size varies per partition) #therefore, vars mesh2d_face_x_bnd and mesh2d_face_y_bnd cannot be included currently. Maybe drop topology_dimension?: partitions[0].ugrid.grid.to_dataset().mesh2d.topology_dimension
-                continue
-            if facedim in uds[varname].dims:
-                face_variables.append(varname)
-            if nodedim in uds[varname].dims:
-                node_variables.append(varname)
-            if edgedim in uds[varname].dims:
-                edge_variables.append(varname)
-        ds_face = uds.ugrid.obj[face_variables]
-        ds_node = uds.ugrid.obj[node_variables]
-        ds_edge = uds.ugrid.obj[edge_variables]
-        ds_rest = uds.ugrid.obj.drop_dims([facedim,nodedim,edgedim])
-        ds_face_list.append(ds_face.isel({facedim: idx}))
-        ds_node_list.append(ds_node)#.isel({nodedim: idx})) #TODO: add ghostcell removal for nodes and edges? take renumbering into account
-        ds_edge_list.append(ds_edge)#.isel({edgedim: idx}))
-        #ds_rest_list.append(ds_rest)
-    print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
-    
-    print('>> xr.concat(): ',end='')
-    dtstart = dt.datetime.now()
-    ds_face_concat = xr.concat(ds_face_list, dim=facedim)
-    ds_node_concat = xr.concat(ds_node_list, dim=nodedim) #TODO: evt compat="override" proberen
-    ds_edge_concat = xr.concat(ds_edge_list, dim=edgedim)
-    #ds_rest_concat = xr.concat(ds_rest_list, dim=None)
-    print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
-    
-    ds_merged = xr.merge([ds_face_concat,ds_node_concat,ds_edge_concat,ds_rest])
-        
-    varlist_merged = list(ds_merged.variables.keys())
+    varlist_merged = list(ds_merged_xu.variables.keys())
     varlist_dropped_bool = ~pd.Series(varlist_onepart).isin(varlist_merged)
     varlist_dropped = pd.Series(varlist_onepart).loc[varlist_dropped_bool]
     if varlist_dropped_bool.any():
         print(f'WARNING: some variables dropped with merging of partitions:\n{varlist_dropped}')
+    #TODO: with DCSM the var mesh2d_flowelem_zw is dropped for unknown reason, fix this in xugrid
     
-    ds_merged = ds_merged.rename({facedim: merged_grid.face_dimension,
-                                  #nodedim: merged_grid.node_dimension, #TODO: temporarily commented to let merging succeed, but results in invalid merged file.
-                                  #edgedim: merged_grid.edge_dimension
-                                  }) #TODO: xugrid does not support other dimnames, xugrid issue is created: https://github.com/Deltares/xugrid/issues/25
-    ds_merged_xu = xu.UgridDataset(ds_merged, grids=[merged_grid])
     print(f'>> open_partitioned_dataset total: {(dt.datetime.now()-dtstart_all).total_seconds():.2f} sec')
-    
     return ds_merged_xu
+

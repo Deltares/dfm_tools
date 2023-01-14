@@ -363,8 +363,10 @@ def get_ugrid_verts(data_xr_map):
     if face_nos.dtype!='int': #for some reason, curvedbend idx is float instead of int
         face_nos = face_nos.astype(int)
     
-    face_nnodecoords_x = data_xr_grid.mesh2d_node_x.isel(mesh2d_nNodes=face_nos).where(bool_nonemptyfacenode)
-    face_nnodecoords_y = data_xr_grid.mesh2d_node_y.isel(mesh2d_nNodes=face_nos).where(bool_nonemptyfacenode)
+    xu_nodedim = data_xr_map.grid.node_dimension
+    
+    face_nnodecoords_x = data_xr_grid.mesh2d_node_x.isel({xu_nodedim:face_nos}).where(bool_nonemptyfacenode)
+    face_nnodecoords_y = data_xr_grid.mesh2d_node_y.isel({xu_nodedim:face_nos}).where(bool_nonemptyfacenode)
     ugrid_all_verts = np.c_[face_nnodecoords_x.to_numpy()[...,np.newaxis],face_nnodecoords_y.to_numpy()[...,np.newaxis]]
     return ugrid_all_verts
 
@@ -523,7 +525,7 @@ def get_xzcoords_onintersection(data_frommap_merged, intersect_pd, timestep=None
     if timestep is None: #TODO: maybe make time dependent grid?
         raise Exception('ERROR: argument timestep not provided, this is necessary to retrieve correct waterlevel or fullgrid output')
     
-    dimn_layer = 'nmesh2d_layer'#dfmt.get_varname_fromnc(data_frommap_merged,'nmesh2d_layer',vardim='dim') #TODO: hardcoding ok because of renaming? (no, since gridname is not fixed)
+    dimn_layer = 'nmesh2d_layer'#dfmt.get_varname_fromnc(data_frommap_merged,'nmesh2d_layer',vardim='dim') #TODO: remove gridname hardcoding
     if dimn_layer in data_frommap_merged.dims:
         nlay = data_frommap_merged.dims[dimn_layer]
     else: #no layers, 2D model
@@ -546,7 +548,9 @@ def get_xzcoords_onintersection(data_frommap_merged, intersect_pd, timestep=None
         raise Exception('layers present, but unknown layertype, expected one of variables: mesh2d_flowelem_zw, mesh2d_layer_sigma, mesh2d_layer_z')
     
     intersect_gridnos = intersect_pd.index
-    data_frommap_merged_sel = data_frommap_merged.isel(time=timestep,mesh2d_nFaces=intersect_gridnos) #TODO: only selects faces, but should also drop part of nodes/edges
+    xu_facedim = data_frommap_merged.grid.face_dimension
+    #data_frommap_merged_sel = data_frommap_merged.isel(time=timestep).isel({xu_facedim:intersect_gridnos}) #TODO: xugrid *** NotImplementedError: UGRID indexes must be sorted and unique.
+    data_frommap_merged_sel = data_frommap_merged.isel(time=timestep).isel({xu_facedim:np.sort(intersect_gridnos)}) #TODO: to avoid xugrid NotImplementedError, but ruins ordering
     if 'nmesh2d_layer' not in data_frommap_merged.dims:
         data_frommap_wl3_sel = data_frommap_merged_sel['mesh2d_s1'].to_numpy()
         data_frommap_bl_sel = data_frommap_merged_sel['mesh2d_flowelem_bl'].to_numpy()
@@ -562,14 +566,6 @@ def get_xzcoords_onintersection(data_frommap_merged, intersect_pd, timestep=None
     crs_verts_z_all = np.ma.array([zvals_interface[1:,:].ravel(),zvals_interface[1:,:].ravel(),zvals_interface[:-1,:].ravel(),zvals_interface[:-1,:].ravel()]).T[:,:,np.newaxis]
     crs_verts = np.ma.concatenate([crs_verts_x_all, crs_verts_z_all], axis=2)
     
-    #define dataset
-    crs_plotdata_clean = data_frommap_merged_sel.ugrid.obj #TODO: this dataset still contains way to many edges/nodes (dropping dims raises error)
-    if dimn_layer in crs_plotdata_clean.dims:
-        crs_plotdata_clean = crs_plotdata_clean.rename({'mesh2d_nFaces':'mesh2d_nFaces_topview'}) #TODO: other dimname than mesh2d_nFaces should be supported (like mesh2d_nSides), but silently fails in xugrid and then "AttributeError: 'DataArray' object has no attribute 'ugrid'"
-        import dask
-        with dask.config.set(**{'array.slicing.split_large_chunks': True}): #to avoid large chunks for Grevelingen
-            crs_plotdata_clean = crs_plotdata_clean.stack(mesh2d_nFaces=[dimn_layer,'mesh2d_nFaces_topview'])
-    
     #define grid
     shape_crs_grid = crs_verts[:,:,0].shape
     shape_crs_flat = crs_verts[:,:,0].ravel().shape
@@ -578,6 +574,18 @@ def get_xzcoords_onintersection(data_frommap_merged, intersect_pd, timestep=None
                              fill_value=-1,
                              face_node_connectivity=np.arange(shape_crs_flat[0]).reshape(shape_crs_grid),
                              )
+
+    #define dataset
+    crs_plotdata_clean = data_frommap_merged_sel.ugrid.obj #TODO: this dataset still contains way to many edges/nodes (dropping dims raises error) >> probably fine now
+    if dimn_layer in data_frommap_merged_sel.dims:
+        xu_facedim_new = f'{xu_facedim}_topview' #new name to avoid duplicate from-to dimension name in .stack()
+        crs_plotdata_clean = crs_plotdata_clean.rename({xu_facedim:xu_facedim_new}) #TODO: other dimname than mesh2d_nFaces should be supported (like mesh2d_nSides), but silently fails in xugrid and then "AttributeError: 'DataArray' object has no attribute 'ugrid'" (still the case?)
+        #import dask #TODO: re-enable this part or not necessary anymore?
+        #with dask.config.set(**{'array.slicing.split_large_chunks': True}): #to avoid large chunks for Grevelingen
+        crs_plotdata_clean = crs_plotdata_clean.stack({xr_crs_grid.face_dimension:[dimn_layer,xu_facedim_new]})
+        #TODO: FutureWarning: Updating MultiIndexed coordinate 'mesh2d_nFaces' would corrupt indices for other variables: ['nmesh2d_layer', 'nmesh2d_face_topview']. This will raise an error in the future. Use `.drop_vars({'mesh2d_nFaces', 'nmesh2d_face_topview', 'nmesh2d_layer'})` before assigning new coordinate values.
+        #TODO: results in multiindex dataset, edges/nodes are incorrect but come from grid. Might not be the most charming method.
+    
     #combine into xugrid
     xr_crs_ugrid = xu.UgridDataset(crs_plotdata_clean, grids=[xr_crs_grid])
     return xr_crs_ugrid
@@ -700,7 +708,7 @@ def get_Dataset_atdepths(data_xr, depths, reference='z0', zlayer_z0_selnearest=F
         return data_xr_atdepths #early return
     
     #potentially construct fullgrid info (zcc/zw) #TODO: maybe move to separate dim, like open_partitioned_dataset() (although bl/wl are needed anyway)
-    if varname_zint in data_xr.variables:# or 'zcoordinate_w' in data_xr_map.variables: #fullgrid info already available, so continuing. "zcoordinate_w" is for hisfiles
+    if varname_zint in data_xr.variables: #fullgrid info already available, so continuing
         print(f'zw/zcc (fullgrid) values already present in Dataset in variable {varname_zint}')
         pass
     elif 'mesh2d_layer_sigma' in data_xr.variables: #reconstruct_zw_zcc_fromsigma and treat as zsigma/fullgrid mapfile from here

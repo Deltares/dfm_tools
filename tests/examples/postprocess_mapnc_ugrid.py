@@ -13,14 +13,15 @@ import contextily as ctx
 import datetime as dt
 import dfm_tools as dfmt
 
+#TODO: new release for xugrid necessary to read in mapdata (or install from main) >> when that is available also update all other example scripts and notebook
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
-file_nc_list = [os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_cb_3d\\cb_3d_map.nc'), #sigmalayer
+file_nc_list = [#os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_cb_3d\\cb_3d_map.nc'), #sigmalayer
                 os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0*_map.nc'), #zlayer
-                r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0*_map.nc', #fullgrid
-                r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_207\results\RMM_dflowfm_0*_map.nc', #2D model
-                r'p:\archivedprojects\11203379-005-mwra-updated-bem\03_model\02_final\A72_ntsu0_kzlb2\DFM_OUTPUT_MB_02\MB_02_0*_map.nc',
+                #r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0*_map.nc', #fullgrid, #TODO: currently drops mesh2d_flowelem_zw variable
+                #r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_207\results\RMM_dflowfm_0*_map.nc', #2D model
+                #r'p:\archivedprojects\11203379-005-mwra-updated-bem\03_model\02_final\A72_ntsu0_kzlb2\DFM_OUTPUT_MB_02\MB_02_0*_map.nc',
                 ]
 
 for file_nc in file_nc_list:
@@ -30,6 +31,7 @@ for file_nc in file_nc_list:
     if 'cb_3d_map' in file_nc:
         timestep = 72
         layno = 5
+        sel_slice_x, sel_slice_y = slice(1500,3500), slice(1000,3500)
         line_array = np.array([[ 185.08667065, 2461.11775254],
                                [2934.63837418, 1134.16019127]])
         line_array = np.array([[ 104.15421399, 2042.7077107 ],
@@ -46,6 +48,7 @@ for file_nc in file_nc_list:
     elif 'Grevelingen' in file_nc:
         timestep = 3
         layno = 33 #35 is top
+        sel_slice_x, sel_slice_y = slice(50000,55000), slice(None,424000)
         line_array = np.array([[ 56267.59146475, 415644.67447155],
                                [ 64053.73427496, 419407.58239502]])
         line_array = np.array([[ 53181.96942503, 424270.83361629],
@@ -61,6 +64,7 @@ for file_nc in file_nc_list:
     elif 'DCSM-FM_0_5nm' in file_nc:
         timestep = 365
         layno = 45
+        sel_slice_x, sel_slice_y = slice(0,5), slice(50,55)
         #provide xy order, so lonlat
         line_array = np.array([[ 0.97452229, 51.13407643],
                                [ 1.89808917, 50.75191083]])
@@ -76,6 +80,7 @@ for file_nc in file_nc_list:
     elif 'RMM_dflowfm' in file_nc:
         timestep = 365 #50
         layno = None
+        sel_slice_x, sel_slice_y = slice(None,None), slice(None,None)
         #provide xy order, so lonlat
         line_array = np.array([[ 65655.72699961, 444092.54776465],
                                [ 78880.42720631, 435019.78832052]])
@@ -105,6 +110,7 @@ for file_nc in file_nc_list:
     elif 'MB_02_' in file_nc:
         timestep = 10
         layno = 45
+        sel_slice_x, sel_slice_y = slice(None,None), slice(None,None)
         #provide xy order, so lonlat
         line_array = np.array([[-71.81578813,  42.68460697],
                                [-65.2535983 ,  41.8699903 ]])
@@ -117,13 +123,11 @@ for file_nc in file_nc_list:
     else:
         raise Exception('ERROR: no settings provided for this mapfile')
     
-    #TODO: add .where() (masking part of data) and .sel() example (deleting part of data, this currently fails but xugrid issue is created: https://github.com/Deltares/xugrid/issues/26)
-    #TODO: add fancier plots: https://deltares.github.io/xugrid/examples/plotting.html (uda.ugrid.plot.imshow() already works)
-    #TODO: check improvements: https://github.com/Deltares/xugrid/blob/main/examples/connectivity.py
     
     data_frommap_merged = dfmt.open_partitioned_dataset(file_nc)
     
     vars_pd = dfmt.get_ncvarproperties(data_frommap_merged)
+    
     
     print('plot grid from mapdata') #use random variable and plot line to get grid (alternatively: xr.plot.line(data_frommap_merged.ugrid.grid.to_dataset()), but that crashes)
     fig, ax = plt.subplots()
@@ -133,6 +137,7 @@ for file_nc in file_nc_list:
     ax.set_aspect('equal')
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,f'{basename}_grid'))
+    
     
     print('plot grid and bedlevel (constantvalue, 1 dim)')
     #get bedlevel and create plot with ugrid and cross section line
@@ -158,9 +163,16 @@ for file_nc in file_nc_list:
         source = ctx.providers.Esri.WorldImagery # ctx.providers.Stamen.Terrain (default), ctx.providers.CartoDB.Voyager, ctx.providers.NASAGIBS.ViirsEarthAtNight2012, ctx.providers.Stamen.Watercolor
         ctx.add_basemap(ax=ax_input, source=source, crs=crs, attribution=False)
         fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_flowelem_bl_withbasemap'))
+
+
+    #ugrid sel via x/y #TODO: disabled since it messes up the edges plot for some reason. #TODO: copy or so is necessary, otherwise edge plot is ruined. Fix in xugrid
+    # data_frommap_merged_sel = data_frommap_merged.ugrid.sel(x=sel_slice_x,y=sel_slice_y)
+    # fig, ax = plt.subplots()
+    # pc = data_frommap_merged_sel['mesh2d_flowelem_bl'].ugrid.plot(ax=ax, linewidth=0.5, edgecolors='face', cmap='jet')
+    # pc.set_clim(clim_bl)
     
 
-    print('plot bedlevel as polycollection, contourf, contour') #TODO: contour/contourf fails for DCSM/MBAY/RMM, is fixed by edges fix? (https://github.com/Deltares/xugrid/issues/30)
+    print('plot bedlevel as polycollection, contourf, contour') #TODO: contour/contourf fails for DCSM/MBAY/RMM, is fixed by edges fix? (https://github.com/Deltares/xugrid/issues/30) >> partly, but not complete
     #create fancy plots, more options at https://deltares.github.io/xugrid/examples/plotting.html
     if clim_bl is None:
         vmin = vmax = None
@@ -187,6 +199,8 @@ for file_nc in file_nc_list:
     fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_s1_filt'))
     
     
+    #TODO: ordering is broken since intersect_gridnos has to be sorted
+    #TODO: enabling this part of the code ruins the edge plot later in the script (also happens with .sel())
     print('calculating and plotting cross section')
     crs_tstart = dt.datetime.now() #start timer
     xr_crs_ugrid = dfmt.polyline_mapslice(data_frommap_merged, line_array, timestep=timestep)
@@ -232,28 +246,25 @@ for file_nc in file_nc_list:
         varname_edge = 'mesh2d_windxu'
     else: #DCSM/MWRA models have all time-varying variables on centers, continue to next file
         continue
-    if varname_edge!='mesh2d_edge_x':
+    if 0:
+        #old dfm_tools #TODO: remove this after .sel() and crosssect do not mess up xugrid edges plot anymore
         fig, ax = plt.subplots()
         multipart = True
         ugrid_all = dfmt.get_netdata(file_nc=file_nc, multipart=multipart)
         data_frommap = dfmt.get_ncmodeldata(file_nc=file_nc, varname=varname_edge, timestep=timestep, layer=layno, multipart=multipart) 
         pc = dfmt.plot_netmapdata(ugrid_all.edge_verts, values=data_frommap, ax=None, linewidth=0.5, cmap="jet", edgecolor='face')
         cbar = fig.colorbar(pc, ax=ax)
-        cbar.set_label('%s [%s]'%(data_frommap.var_ncattrs['long_name'], data_frommap.var_ncattrs['units']))
-        ax.set_xlabel('x')
-        ax.set_ylabel('y')
         ax.set_aspect('equal')
         fig.tight_layout()
         fig.savefig(os.path.join(dir_output,f'{basename}_{varname_edge}_edges_oldmethod'))
-    if 1: #TODO: move edge to xarray, but partitioned maps show incorrect data (https://github.com/Deltares/dfm_tools/blob/main/tests/examples_workinprogress/workinprogress_plot_edges.py)
-        fig, ax = plt.subplots()
-        if layno is None:
-            pc = data_frommap_merged[varname_edge].isel(time=timestep).ugrid.plot(cmap='jet')
-        else:
-            pc = data_frommap_merged[varname_edge].isel(time=timestep,nmesh2d_layer=layno).ugrid.plot(cmap='jet')
-        ax.set_aspect('equal')
-        fig.tight_layout()
-        fig.savefig(os.path.join(dir_output,f'{basename}_{varname_edge}_edges'))
+    fig, ax = plt.subplots()
+    if layno is None:
+        pc = data_frommap_merged[varname_edge].isel(time=timestep).ugrid.plot(cmap='jet')
+    else:
+        pc = data_frommap_merged[varname_edge].isel(time=timestep,nmesh2d_layer=layno).ugrid.plot(cmap='jet')
+    ax.set_aspect('equal')
+    fig.tight_layout()
+    fig.savefig(os.path.join(dir_output,f'{basename}_{varname_edge}_edges'))
     
     
     if file_nc_fou is not None:
