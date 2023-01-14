@@ -17,12 +17,13 @@ import dfm_tools as dfmt
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
-file_nc_list = [#os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_cb_3d\\cb_3d_map.nc'), #sigmalayer
+file_nc_list = [os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_cb_3d\\cb_3d_map.nc'), #sigmalayer
                 os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0*_map.nc'), #zlayer
-                #r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0*_map.nc', #fullgrid, #TODO: currently drops mesh2d_flowelem_zw variable
-                #r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_207\results\RMM_dflowfm_0*_map.nc', #2D model
-                #r'p:\archivedprojects\11203379-005-mwra-updated-bem\03_model\02_final\A72_ntsu0_kzlb2\DFM_OUTPUT_MB_02\MB_02_0*_map.nc',
+                r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0*_map.nc', #fullgrid, #TODO: currently drops mesh2d_flowelem_zw variable
+                r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_207\results\RMM_dflowfm_0*_map.nc', #2D model
+                r'p:\archivedprojects\11203379-005-mwra-updated-bem\03_model\02_final\A72_ntsu0_kzlb2\DFM_OUTPUT_MB_02\MB_02_0*_map.nc',
                 ]
+
 
 for file_nc in file_nc_list:
     print('processing %s'%(os.path.basename(file_nc)))
@@ -123,13 +124,13 @@ for file_nc in file_nc_list:
     else:
         raise Exception('ERROR: no settings provided for this mapfile')
     
-    
+    #file_nc = file_nc.replace('_0*_','_0000_')
     data_frommap_merged = dfmt.open_partitioned_dataset(file_nc)
     
     vars_pd = dfmt.get_ncvarproperties(data_frommap_merged)
     
     
-    print('plot grid from mapdata') #use random variable and plot line to get grid (alternatively: xr.plot.line(data_frommap_merged.ugrid.grid.to_dataset()), but that crashes)
+    print('plot grid from mapdata')
     fig, ax = plt.subplots()
     pc = data_frommap_merged.ugrid.grid.plot(edgecolor='crimson', linewidth=0.5)
     ax.set_xlabel('x')
@@ -165,14 +166,14 @@ for file_nc in file_nc_list:
         fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_flowelem_bl_withbasemap'))
 
 
-    #ugrid sel via x/y #TODO: disabled since it messes up the edges plot for some reason. #TODO: copy or so is necessary, otherwise edge plot is ruined. Fix in xugrid
-    # data_frommap_merged_sel = data_frommap_merged.ugrid.sel(x=sel_slice_x,y=sel_slice_y)
-    # fig, ax = plt.subplots()
-    # pc = data_frommap_merged_sel['mesh2d_flowelem_bl'].ugrid.plot(ax=ax, linewidth=0.5, edgecolors='face', cmap='jet')
-    # pc.set_clim(clim_bl)
+    #ugrid sel via x/y
+    data_frommap_merged_sel = data_frommap_merged.ugrid.sel(x=sel_slice_x,y=sel_slice_y)
+    fig, ax = plt.subplots()
+    pc = data_frommap_merged_sel['mesh2d_flowelem_bl'].ugrid.plot(ax=ax, linewidth=0.5, edgecolors='face', cmap='jet')
+    pc.set_clim(clim_bl)
     
-
-    print('plot bedlevel as polycollection, contourf, contour') #TODO: contour/contourf fails for DCSM/MBAY/RMM, is fixed by edges fix? (https://github.com/Deltares/xugrid/issues/30) >> partly, but not complete
+    
+    print('plot bedlevel as polycollection, contourf, contour') #TODO: contour/contourf fails for DCSM/MBAY/RMM, is not (fully) fixed by edges fix (https://github.com/Deltares/xugrid/issues/30)
     #create fancy plots, more options at https://deltares.github.io/xugrid/examples/plotting.html
     if clim_bl is None:
         vmin = vmax = None
@@ -199,44 +200,47 @@ for file_nc in file_nc_list:
     fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_s1_filt'))
     
     
-    #TODO: ordering is broken since intersect_gridnos has to be sorted
-    #TODO: enabling this part of the code ruins the edge plot later in the script (also happens with .sel())
-    print('calculating and plotting cross section')
-    crs_tstart = dt.datetime.now() #start timer
-    xr_crs_ugrid = dfmt.polyline_mapslice(data_frommap_merged, line_array, timestep=timestep)
-    fig, ax = plt.subplots()
-    xr_crs_ugrid['mesh2d_sa1'].ugrid.plot(cmap='jet')
-    fig.tight_layout()
-    plt.savefig(os.path.join(dir_output,f'{basename}_crossect'))
-    print(f'calculating and plotting cross section finished in {dt.datetime.now()-crs_tstart}')
+    #TODO: solve "FutureWarning: Updating MultiIndexed coordinate 'mesh2d_nFaces' would corrupt indices for other variables: ['nmesh2d_layer', 'nmesh2d_face_topview']. This will raise an error in the future. Use `.drop_vars({'nmesh2d_face_topview', 'nmesh2d_layer', 'mesh2d_nFaces'})` before assigning new coordinate values."
+    if 'DCSM-FM_0_5nm' not in file_nc: #TODO: xr.merge_partitions() drops mesh2d_flowelem_zw variable in DCSM model so this is tempararily not possible
+        print('calculating and plotting cross section')
+        crs_tstart = dt.datetime.now() #start timer
+        xr_crs_ugrid = dfmt.polyline_mapslice(data_frommap_merged, line_array, timestep=timestep)
+        fig, ax = plt.subplots()
+        xr_crs_ugrid['mesh2d_sa1'].ugrid.plot(cmap='jet')
+        fig.tight_layout()
+        plt.savefig(os.path.join(dir_output,f'{basename}_crossect'))
+        print(f'calculating and plotting cross section finished in {dt.datetime.now()-crs_tstart}')
+
     
+    dimn_layer, dimn_interfaces = dfmt.get_vertical_dimensions(data_frommap_merged) #TODO: how to subset on dimn_layer easiest? rename in obj+grid+grid_info or .isel({dimn_layer:layno})?
     
     print('plot grid and values from mapdata (salinity on layer, 3dim, on cell centers), on layer')
     fig, ax = plt.subplots()
-    if 'nmesh2d_layer' in data_frommap_merged['mesh2d_sa1'].dims: #use argument missing_dims='ignore' instead
-        pc = data_frommap_merged['mesh2d_sa1'].isel(time=timestep,nmesh2d_layer=layno).ugrid.plot(edgecolor='face',cmap='jet')
+    if dimn_layer in data_frommap_merged['mesh2d_sa1'].dims: #use argument missing_dims='ignore' instead?
+        pc = data_frommap_merged['mesh2d_sa1'].isel(time=timestep).isel({dimn_layer:layno}).ugrid.plot(edgecolor='face',cmap='jet')
     else:
         pc = data_frommap_merged['mesh2d_sa1'].isel(time=timestep).ugrid.plot(edgecolor='face',cmap='jet')
     pc.set_clim(clim_sal)
     ax.set_aspect('equal')
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_sa1'))
-
-
-    print('plot grid and values from mapdata (salinity on layer, 3dim, on cell centers), on fixed depth(s)')
-    depths = [-1,-4]
-    data_frommap_timesel = data_frommap_merged.isel(time=timestep) #select data for all layers
-    data_frommap_timesel_atdepths = dfmt.get_Dataset_atdepths(data_xr=data_frommap_timesel, depths=depths, reference='z0') #depth w.r.t. z0/waterlevel/bedlevel
-    for dep in depths:
-        fig, ax = plt.subplots()
-        if 'depth_fromref' in data_frommap_timesel_atdepths.dims: #TODO: use missingdims=ignore so if-statement is not necessary
-            pc = data_frommap_timesel_atdepths['mesh2d_sa1'].sel(depth_fromref=dep).ugrid.plot(edgecolor='face',cmap='jet')
-        else:
-            pc = data_frommap_timesel_atdepths['mesh2d_sa1'].ugrid.plot(edgecolor='face',cmap='jet')
-        pc.set_clim(clim_sal)
-        ax.set_aspect('equal')
-        fig.tight_layout()
-    fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_sa1_onfixeddepth'))
+    
+    
+    if 'DCSM-FM_0_5nm' not in file_nc: #TODO: xr.merge_partitions() drops mesh2d_flowelem_zw variable in DCSM model so this is tempararily not possible
+        print('plot grid and values from mapdata (salinity on layer, 3dim, on cell centers), on fixed depth(s)')
+        depths = [-1,-4]
+        data_frommap_timesel = data_frommap_merged.isel(time=timestep) #select data for all layers
+        data_frommap_timesel_atdepths = dfmt.get_Dataset_atdepths(data_xr=data_frommap_timesel, depths=depths, reference='z0') #depth w.r.t. z0/waterlevel/bedlevel
+        for dep in depths:
+            fig, ax = plt.subplots()
+            if 'depth_fromref' in data_frommap_timesel_atdepths.dims:
+                pc = data_frommap_timesel_atdepths['mesh2d_sa1'].sel(depth_fromref=dep).ugrid.plot(edgecolor='face',cmap='jet') #TODO: dask\array\reductions.py:640: RuntimeWarning: All-NaN slice encountered
+            else:
+                pc = data_frommap_timesel_atdepths['mesh2d_sa1'].ugrid.plot(edgecolor='face',cmap='jet')
+            pc.set_clim(clim_sal)
+            ax.set_aspect('equal')
+            fig.tight_layout()
+        fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_sa1_onfixeddepth'))
     
     
     print('plot grid and values from mapdata on net links (water/wind velocity on cell edges)')
@@ -246,22 +250,22 @@ for file_nc in file_nc_list:
         varname_edge = 'mesh2d_windxu'
     else: #DCSM/MWRA models have all time-varying variables on centers, continue to next file
         continue
-    if 0:
-        #old dfm_tools #TODO: remove this after .sel() and crosssect do not mess up xugrid edges plot anymore
-        fig, ax = plt.subplots()
-        multipart = True
-        ugrid_all = dfmt.get_netdata(file_nc=file_nc, multipart=multipart)
-        data_frommap = dfmt.get_ncmodeldata(file_nc=file_nc, varname=varname_edge, timestep=timestep, layer=layno, multipart=multipart) 
-        pc = dfmt.plot_netmapdata(ugrid_all.edge_verts, values=data_frommap, ax=None, linewidth=0.5, cmap="jet", edgecolor='face')
-        cbar = fig.colorbar(pc, ax=ax)
-        ax.set_aspect('equal')
-        fig.tight_layout()
-        fig.savefig(os.path.join(dir_output,f'{basename}_{varname_edge}_edges_oldmethod'))
-    fig, ax = plt.subplots()
-    if layno is None:
-        pc = data_frommap_merged[varname_edge].isel(time=timestep).ugrid.plot(cmap='jet')
+    
+    data_frommap_merged = dfmt.open_partitioned_dataset(file_nc) #TODO: retrieving again solves issues caused by .sel() somewhere above
+    if 0: #TODO: using isel on xugridDataset causes edges to be messed up, but it should not change self
+        xu_facedim = data_frommap_merged.grid.face_dimension
+        random_gridnos = np.unique(np.random.randint(size=(50), low=0, high=1000, dtype=int))
+        dummymapsel = data_frommap_merged.isel({xu_facedim:random_gridnos})
+    elif 0: #TODO: using sel on xugridDataset causes edges to be messed up, but it should not change self
+        dummymapsel = data_frommap_merged.ugrid.sel(x=sel_slice_x,y=sel_slice_y)
     else:
-        pc = data_frommap_merged[varname_edge].isel(time=timestep,nmesh2d_layer=layno).ugrid.plot(cmap='jet')
+        pass
+    
+    fig, ax = plt.subplots()
+    if dimn_layer in data_frommap_merged[varname_edge].dims:
+        pc = data_frommap_merged[varname_edge].isel(time=timestep).isel({dimn_layer:layno}).ugrid.plot(cmap='jet')
+    else:
+        pc = data_frommap_merged[varname_edge].isel(time=timestep).ugrid.plot(cmap='jet')
     ax.set_aspect('equal')
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,f'{basename}_{varname_edge}_edges'))
