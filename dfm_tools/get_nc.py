@@ -523,7 +523,7 @@ def polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=None)
 
 
 def get_xzcoords_onintersection(data_frommap_merged, intersect_pd, timestep=None):
-    #TODO: no hardcoding of variable names?
+    #TODO: remove hardcoding of variable names
     if timestep is None: #TODO: maybe make time dependent grid?
         raise Exception('ERROR: argument timestep not provided, this is necessary to retrieve correct waterlevel or fullgrid output')
     
@@ -555,12 +555,12 @@ def get_xzcoords_onintersection(data_frommap_merged, intersect_pd, timestep=None
     
     intersect_gridnos = intersect_pd.index
     data_frommap_merged_sel = data_frommap_merged.ugrid.obj.drop_dims([xu_edgedim,xu_nodedim]).isel(time=timestep).isel({xu_facedim:intersect_gridnos}) #TODO: not possible to do isel with non-sorted gridnos on ugridDataset, but it is on xrDataset. Dropping edge/nodedims first for neatness, so there is not mismatch in face/node/edge after using .isel(faces)
-    if 'nmesh2d_layer' not in data_frommap_merged_sel.dims:
+    if dimn_layer not in data_frommap_merged_sel.dims:
         data_frommap_wl3_sel = data_frommap_merged_sel['mesh2d_s1'].to_numpy()
         data_frommap_bl_sel = data_frommap_merged_sel['mesh2d_flowelem_bl'].to_numpy()
         zvals_interface = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay+1)
     elif 'mesh2d_flowelem_zw' in data_frommap_merged_sel.variables:
-        zvals_interface_filled = data_frommap_merged_sel['mesh2d_flowelem_zw'].bfill(dim='nmesh2d_interface') #fill nan values (below bed) with equal values
+        zvals_interface_filled = data_frommap_merged_sel['mesh2d_flowelem_zw'].bfill(dim=dimn_interfaces) #fill nan values (below bed) with equal values
         zvals_interface = zvals_interface_filled.to_numpy().T # transpose to make in line with 2D sigma dataset
     
     #convert to output for plot_netmapdata
@@ -624,7 +624,11 @@ def reconstruct_zw_zcc_fromz(data_xr_map):
     """
     reconstruct full grid output (time/face-varying z-values) for zvalue model. Necessary when extracting values with zdepth w.r.t. waterlevel/bedlevel
     #TODO: gives spotty result for 0/0.1m w.r.t. bedlevel for Grevelingen zmodel
+    #TODO: remove hardcoding of varnames
     """
+    
+    dimn_layer, dimn_interfaces = get_vertical_dimensions(data_xr_map)
+    
     data_frommap_wl_sel = data_xr_map['mesh2d_s1']
     data_frommap_z0_sel = data_frommap_wl_sel*0
     data_frommap_bl_sel = data_xr_map['mesh2d_flowelem_bl']
@@ -634,7 +638,7 @@ def reconstruct_zw_zcc_fromz(data_xr_map):
 
     zvals_interface_zval = data_xr_map['mesh2d_interface_z'] #clipping for zinterface values, to make sure layer interfaces are also at water/bed level
     data_xr_map['mesh2d_flowelem_zw'] = (data_frommap_z0_sel+zvals_interface_zval).clip(min=data_frommap_bl_sel, max=data_frommap_wl_sel)
-    bool_notoplayer_int = zvals_interface_zval<zvals_interface_zval.isel(nmesh2d_interface=-1)
+    bool_notoplayer_int = zvals_interface_zval<zvals_interface_zval.isel({dimn_interfaces:-1})
     bool_int_abovewl = zvals_interface_zval>data_frommap_wl_sel
     data_xr_map['mesh2d_flowelem_zw'] = data_xr_map['mesh2d_flowelem_zw'].where(bool_notoplayer_int | bool_int_abovewl, other=data_frommap_wl_sel) #zvalues of top layer_interfaces that are lower than wl are replaced by wl
     
@@ -706,9 +710,9 @@ def get_Dataset_atdepths(data_xr, depths, reference='z0', zlayer_z0_selnearest=F
     #simplified/faster method for zlayer icm z0 reference (mapfiles only)
     if 'mesh2d_layer_z' in data_xr.variables and zlayer_z0_selnearest and reference=='z0': # selects nearest z-center values (instead of slicing), should be faster #TODO: check if this is faster than fullgrid
         print('z-layer model, zlayer_z0_selnearest=True and reference=="z0" so using xr.sel(method="nearest")]')
-        data_xr = data_xr.set_index({'nmesh2d_layer':'mesh2d_layer_z'})#.rename({'nmesh2d_layer':depth_varname}) #set depth as index on layers, to be able to interp to depths instead of layernumbers
+        data_xr = data_xr.set_index({dimn_layer:'mesh2d_layer_z'})#.rename({'nmesh2d_layer':depth_varname}) #set depth as index on layers, to be able to interp to depths instead of layernumbers
         data_xr[depth_varname] = depths_xr
-        data_xr_atdepths = data_xr.sel(nmesh2d_layer=depths_xr,method='nearest')
+        data_xr_atdepths = data_xr.sel({dimn_layer:depths_xr},method='nearest')
         data_xr_atdepths = data_xr_atdepths.where((depths_xr>=data_bl) & (depths_xr<=data_wl)) #filter above wl and below bl values
         return data_xr_atdepths #early return
     

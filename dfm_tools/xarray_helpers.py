@@ -180,7 +180,7 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
     partitions = []
     for iF, file_nc_one in enumerate(file_nc_list):
         print(iF,end=' ')
-        partitions.append(xu.open_dataset(file_nc_one, chunks=chunks)) #TODO: speed up, for instance by doing decode after merging?
+        partitions.append(xu.open_dataset(file_nc_one, chunks=chunks)) #TODO: speed up, for instance by doing decode after merging? (or is second-read than not faster anymore?)
     print(': ',end='')
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
@@ -199,8 +199,6 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
     for data_var in ds_rest.data_vars:
         ds_merged_xu[data_var] = ds_rest[data_var]
 
-    gridname = ds_merged_xu.grid.name
-    
     #update important variable names #TODO: add laydim/interfacedim to xugrid dataset? (like face_dimension property)
     rename_dict = {}
     # layer_nlayers_opts = [f'{gridname}_nLayers','laydim'] # options for old layer dimension name #TODO: others from get_varname_fromnc: ['nmesh2d_layer_dlwq','LAYER','KMAXOUT_RESTR','depth'
@@ -213,13 +211,13 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
     #     if opt in ds_merged_xu.dims:
     #         rename_dict.update({opt:f'n{gridname}_interface'})
     
-    #TODO: below works if xugrid handles arbitrary grid names
-    # gridspecs = partitions[0].ugrid.grid.to_dataset()[gridname]
-    # if hasattr(gridspecs,'vertical_dimensions'):
-    #     layer_dimn = gridspecs.layer_dimension
-    #     rename_dict.update({layer_dimn:f'n{gridname}_layer'}) #old varnames for mesh2d_layer: 'mesh2d_nLayers','laydim','nmesh2d_layer_dlwq'
-    # else:
-    #     print(f'no layer dimension found in gridspecs ds.{gridname}')
+    #TODO: below would work if renaming is done before dataset is converted to xugridDataset, since ojb+grid+grid_info all have to be in line
+    # gridname = ds_merged_xu.grid.name
+    # dimn_layer, dimn_interfaces = get_vertical_dimensions(ds_merged_xu)
+    # if dimn_layer is not None:
+    #     rename_dict.update({dimn_layer:f'n{gridname}_layer'})
+    # if dimn_interfaces is not None:
+    #     rename_dict.update({dimn_interfaces:f'n{gridname}_interface'})
     
     ds_merged_xu = ds_merged_xu.rename(rename_dict)
     

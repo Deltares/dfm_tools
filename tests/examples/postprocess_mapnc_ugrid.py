@@ -18,11 +18,11 @@ import dfm_tools as dfmt
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
-file_nc_list = [#os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_cb_3d\\cb_3d_map.nc'), #sigmalayer
-                #os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0*_map.nc'), #zlayer
+file_nc_list = [os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_cb_3d\\cb_3d_map.nc'), #sigmalayer
+                os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0*_map.nc'), #zlayer
                 #r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0*_map.nc', #fullgrid, #TODO: currently drops mesh2d_flowelem_zw variable
                 #r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_207\results\RMM_dflowfm_0*_map.nc', #2D model
-                r'p:\archivedprojects\11203379-005-mwra-updated-bem\03_model\02_final\A72_ntsu0_kzlb2\DFM_OUTPUT_MB_02\MB_02_0*_map.nc',
+                #r'p:\archivedprojects\11203379-005-mwra-updated-bem\03_model\02_final\A72_ntsu0_kzlb2\DFM_OUTPUT_MB_02\MB_02_0*_map.nc',
                 ]
 
 
@@ -279,14 +279,14 @@ for file_nc in file_nc_list:
         
         data_frommap_fou = dfmt.open_partitioned_dataset(file_nc_fou)
         vars_pd_fou = dfmt.get_ncvarproperties(data_frommap_fou)
-        if 'nmesh2d_layer' in data_frommap_fou.dims: #reduce layer dimension via isel/sel/interp. TODO: slicing over depth is not possible with dfmt.get_Dataset_atdepths(), since waterlevel is missing from file. (does it work for rstfiles?)
-            data_frommap_fou = data_frommap_fou.set_index({'nmesh2d_layer':'mesh2d_layer_z'}) #TODO: not supported for sigmalayers, zlayers is for some reason in foufile of this zsigma model (or not the case with a rerun?)
+        if dimn_layer in data_frommap_fou.dims: #reduce layer dimension via isel/sel/interp. TODO: slicing over depth is not possible with dfmt.get_Dataset_atdepths(), since waterlevel is missing from file. (does it work for rstfiles?)
+            data_frommap_fou = data_frommap_fou.set_index({dimn_layer:'mesh2d_layer_z'}) #TODO: not supported for sigmalayers, zlayers is for some reason in foufile of this zsigma model (or not the case with a rerun?)
             if 1:
-                data_frommap_fou_atdepth = data_frommap_fou.isel(nmesh2d_layer=-2) #second to last layer
+                data_frommap_fou_atdepth = data_frommap_fou.isel({dimn_layer:-2}) #second to last layer
             elif 0: #nearest
-                data_frommap_fou_atdepth = data_frommap_fou.sel(nmesh2d_layer=-4, method='nearest') #layer closest to z==-4m
+                data_frommap_fou_atdepth = data_frommap_fou.sel({dimn_layer:-4}, method='nearest') #layer closest to z==-4m
             else: #interp
-                data_frommap_fou_atdepth = data_frommap_fou.interp(nmesh2d_layer=-2) #interp to -4m depth
+                data_frommap_fou_atdepth = data_frommap_fou.interp({dimn_layer:-2}) #interp to -4m depth
         else:
             data_frommap_fou_atdepth = data_frommap_fou
         
@@ -295,7 +295,7 @@ for file_nc in file_nc_list:
         ux_mean = data_frommap_fou_atdepth[fou_varname_u]
         uy_mean = data_frommap_fou_atdepth[fou_varname_v]
         data_frommap_fou_atdepth['magn_mean'] = np.sqrt(ux_mean**2+uy_mean**2)
-        data_frommap_fou_atdepth['magn_mean'].attrs.update({'long_name':'residuele stroming',
+        data_frommap_fou_atdepth['magn_mean'].attrs.update({'long_name':'residuele stroming', #TODO: update does not work
                                                             'units':'[m/s]'})
         X,Y,U = dfmt.scatter_to_regulargrid(xcoords=facex, ycoords=facey, ncellx=60, ncelly=35, values=ux_mean.to_numpy())
         X,Y,V = dfmt.scatter_to_regulargrid(xcoords=facex, ycoords=facey, ncellx=60, ncelly=35, values=uy_mean.to_numpy())
