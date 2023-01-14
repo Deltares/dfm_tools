@@ -14,7 +14,6 @@ import datetime as dt
 import dfm_tools as dfmt
 
 #TODO: new release for xugrid necessary to read in mapdata (or install from main) >> when that is available also update all other example scripts and notebook
-#TODO: there is a mismatch/shift along partition boundaries, see eg bedlevel old/new plots of grevelingen. Ghostcells not removed, problem? >> c:\DATA\dfm_tools\tests\examples_workinprogress\workinprogress_xugrid_mergeparts_ghostcellspresent.py
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
@@ -126,6 +125,7 @@ for file_nc in file_nc_list:
         raise Exception('ERROR: no settings provided for this mapfile')
     
     
+    #TODO: there is a shift along partition boundaries, see eg bedlevel old/new plots of grevelingen. Ghostcells not removed, problem? >> c:\DATA\dfm_tools\tests\examples_workinprogress\workinprogress_xugrid_mergeparts_ghostcellspresent.py >> only the edged are sometimes colored differently, but should not matter too much. >> remove merge_xugrid argument for .open_partitioned_dataset() after decision about ghostcells is final
     data_frommap_merged = dfmt.open_partitioned_dataset(file_nc)#, merge_xugrid=False)
     
     vars_pd = dfmt.get_ncvarproperties(data_frommap_merged)
@@ -174,7 +174,7 @@ for file_nc in file_nc_list:
     pc.set_clim(clim_bl)
     
     
-    print('plot bedlevel as polycollection, contourf, contour') #TODO: contour/contourf fails for DCSM/MBAY/RMM, is not (fully) fixed by edges fix (https://github.com/Deltares/xugrid/issues/30)
+    print('plot bedlevel as polycollection, contourf, contour') #TODO: contour/contourf fails for DCSM/MBAY/RMM, is not fixed by edges fix (https://github.com/Deltares/xugrid/issues/30)
     #create fancy plots, more options at https://deltares.github.io/xugrid/examples/plotting.html
     if clim_bl is None:
         vmin = vmax = None
@@ -183,7 +183,7 @@ for file_nc in file_nc_list:
     fig, (ax1,ax2,ax3) = plt.subplots(3,1,figsize=(6,9))
     pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot(ax=ax1, linewidth=0.5, edgecolors='face', cmap='jet', vmin=vmin, vmax=vmax)
     pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot.contourf(ax=ax2, levels=11, cmap='jet', vmin=vmin, vmax=vmax)
-    if 'cb_3d_map' not in file_nc: #TODO: fails on contour with "UserWarning: No contour levels were found within the data range." (because all bedlevels are -5m)
+    if 'cb_3d_map' not in file_nc: #TODO: fails on contour with "UserWarning: No contour levels were found within the data range." (because all bedlevels are -5m) >> colorbar gives error
         pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot.contour(ax=ax3, levels=11, cmap='jet', vmin=vmin, vmax=vmax, add_colorbar=True)
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,f'{basename}_gridbedcontour'))
@@ -201,7 +201,6 @@ for file_nc in file_nc_list:
     fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_s1_filt'))
     
     
-    #TODO: solve "FutureWarning: Updating MultiIndexed coordinate 'mesh2d_nFaces' would corrupt indices for other variables: ['nmesh2d_layer', 'nmesh2d_face_topview']. This will raise an error in the future. Use `.drop_vars({'nmesh2d_face_topview', 'nmesh2d_layer', 'mesh2d_nFaces'})` before assigning new coordinate values."
     if 'DCSM-FM_0_5nm' not in file_nc: #TODO: xr.merge_partitions() drops mesh2d_flowelem_zw variable in DCSM model so this is tempararily not possible
         print('calculating and plotting cross section')
         crs_tstart = dt.datetime.now() #start timer
@@ -211,9 +210,9 @@ for file_nc in file_nc_list:
         fig.tight_layout()
         plt.savefig(os.path.join(dir_output,f'{basename}_crossect'))
         print(f'calculating and plotting cross section finished in {dt.datetime.now()-crs_tstart}')
-
     
-    dimn_layer, dimn_interfaces = dfmt.get_vertical_dimensions(data_frommap_merged) #TODO: how to subset on dimn_layer easiest? rename in obj+grid+grid_info or .isel({dimn_layer:layno})?
+    
+    dimn_layer, dimn_interfaces = dfmt.get_vertical_dimensions(data_frommap_merged) #TODO: how to subset on dimn_layer easiest? rename in obj+grid+grid_info or .isel({dimn_layer:layno})? >> maybe have layer_dimension and interface dimension properties on xugridDataset?
     
     print('plot grid and values from mapdata (salinity on layer, 3dim, on cell centers), on layer')
     fig, ax = plt.subplots()
