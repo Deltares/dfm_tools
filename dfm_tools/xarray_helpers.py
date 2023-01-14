@@ -173,6 +173,7 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
     
     #add non face/node/edge variables back to merged dataset
     #TODO: add this to xugrid? contains data_vars ['projected_coordinate_system', 'mesh2d_layer_z', 'mesh2d_interface_z', 'timestep']
+    #TODO: xugrid has .crs property, projected_coordinate_system/wgs should be updated to be crs so it will be automatically handled? >> make dflowfm issue
     facedim = ds_merged_xu.grid.face_dimension
     nodedim = ds_merged_xu.grid.node_dimension
     edgedim = ds_merged_xu.grid.edge_dimension
