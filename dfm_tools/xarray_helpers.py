@@ -118,6 +118,9 @@ def Dataset_varswithdim(ds,dimname):
 
 
 def get_vertical_dimensions(uds):
+    """
+    get vertical_dimensions from grid_info of ugrid mapfile (this will fail for hisfiles). The info is stored in the layer_dimension and interface_dimension attribute of the mesh2d variable of the dataset (stored in uds.grid after reading with xugrid)
+    """
     gridname = uds.grid.name
     grid_info = uds.grid.to_dataset()[gridname]
     if hasattr(grid_info,'layer_dimension'):
