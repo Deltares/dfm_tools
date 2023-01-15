@@ -117,9 +117,18 @@ def Dataset_varswithdim(ds,dimname):
     return ds
 
 
-def get_vertical_dimensions(uds):
+def get_vertical_dimensions(uds): #TODO: maybe add layer_dimension and interface_dimension properties to xugrid?
     """
     get vertical_dimensions from grid_info of ugrid mapfile (this will fail for hisfiles). The info is stored in the layer_dimension and interface_dimension attribute of the mesh2d variable of the dataset (stored in uds.grid after reading with xugrid)
+    
+    processing cb_3d_map.nc
+        >> found layer/interface dimensions in file: mesh2d_nLayers mesh2d_nInterfaces
+    processing Grevelingen-FM_0*_map.nc
+        >> found layer/interface dimensions in file: nmesh2d_layer nmesh2d_interface (these are updated in open_partitioned_dataset)
+    processing DCSM-FM_0_5nm_0*_map.nc
+        >> found layer/interface dimensions in file: mesh2d_nLayers mesh2d_nInterfaces
+    processing MB_02_0*_map.nc
+        >> found layer/interface dimensions in file: mesh2d_nLayers mesh2d_nInterfaces
     """
     gridname = uds.grid.name
     grid_info = uds.grid.to_dataset()[gridname]
@@ -175,16 +184,32 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}, merge_xugrid=True):
     if len(file_nc_list)==0:
         raise Exception('file(s) not found, empty file_nc_list')
     
-    print(f'>> xu.open_dataset() for {len(file_nc_list)} partition(s): ',end='')
+    print(f'>> xu.open_dataset() with {len(file_nc_list)} partition(s): ',end='')
     dtstart = dt.datetime.now()
     partitions = []
     for iF, file_nc_one in enumerate(file_nc_list):
-        print(iF,end=' ')
-        partitions.append(xu.open_dataset(file_nc_one, chunks=chunks)) #TODO: speed up, for instance by doing decode after merging? (or is second-read than not faster anymore?)
+        print(iF+1,end=' ')
+        ds = xr.open_dataset(file_nc_one, chunks=chunks)
+        #rename layers (also in mesh2d attributes)
+        if 'nmesh2d_layer' in ds.dims: #renaming old layerdim for Grevelingen model, easier to do before mesh2d var is parsed by xugrid. This is hardcoded, so model with old layerdim names and non-mesh2d gridname is not renamed
+            #TODO: add layer_dimension/interface_dimension as attributes to xugrid dataset? (like face_dimension property)
+            print('[renaming old layerdim] ',end='')
+            ds = ds.rename({'nmesh2d_layer':'mesh2d_nLayers','nmesh2d_interface':'mesh2d_nInterfaces'})
+            ds.mesh2d.attrs.update(layer_dimension='mesh2d_nLayers', interface_dimension='mesh2d_nInterfaces')
+        #convert zcc/zw from coords to data_vars
+        for var_coord in ['mesh2d_flowelem_zcc','mesh2d_flowelem_zw']: #TODO: xugrid.ugrid.partitioning.group_vars_by_ugrid_dim() loops over ds.data_vars, but these two are coords instead of data_vars so are skipped and therefore dropped (necessary for crosssect plots and depth-slices) >> related: mesh2d_layer_z/mesh2d_interface_z is dropped with merging since it has no face/node/edge dim
+            if var_coord in ds.coords:
+                ds = ds.reset_coords([var_coord])
+        #convert to xugrid dataset
+        from xugrid.core.wrap import UgridDataset
+        uds = UgridDataset(ds)
+        partitions.append(uds) #TODO: speed up, for instance by doing decode after merging? (or is second-read than not faster anymore?)
     print(': ',end='')
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
     if merge_xugrid:
+        if len(partitions) == 1:
+            return partitions[0]
         print(f'>> xu.merge_partitions() with {len(file_nc_list)} partition(s): ',end='')
         dtstart = dt.datetime.now()
         ds_merged_xu = xu.merge_partitions(partitions)
@@ -200,34 +225,14 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}, merge_xugrid=True):
         for data_var in ds_rest.data_vars:
             ds_merged_xu[data_var] = ds_rest[data_var]
         
-        #update important variable names #TODO: add laydim/interfacedim to xugrid dataset? (like face_dimension property)
-        rename_dict = {}
-        # layer_nlayers_opts = [f'{gridname}_nLayers','laydim'] # options for old layer dimension name #TODO: others from get_varname_fromnc: ['nmesh2d_layer_dlwq','LAYER','KMAXOUT_RESTR','depth'
-        # for opt in layer_nlayers_opts:
-        #     if opt in ds_merged_xu.dims:
-        #         #print(f'hardcoded replacing {opt} with nmesh2d_layer. Auto would replace "{partitions[0].ugrid.grid.to_dataset().mesh2d.vertical_dimensions}"')
-        #         rename_dict.update({opt:f'n{gridname}_layer'})
-        # layer_ninterfaces_opts = [f'{gridname}_nInterfaces']
-        # for opt in layer_ninterfaces_opts:
-        #     if opt in ds_merged_xu.dims:
-        #         rename_dict.update({opt:f'n{gridname}_interface'})
-        #TODO: below would work if renaming is done before dataset is converted to xugridDataset, since ojb+grid+grid_info all have to be in line
-        # gridname = ds_merged_xu.grid.name
-        # dimn_layer, dimn_interfaces = get_vertical_dimensions(ds_merged_xu)
-        # if dimn_layer is not None:
-        #     rename_dict.update({dimn_layer:f'n{gridname}_layer'})
-        # if dimn_interfaces is not None:
-        #     rename_dict.update({dimn_interfaces:f'n{gridname}_interface'})
-        ds_merged_xu = ds_merged_xu.rename(rename_dict)
-        
+        #print variables that are dropped in merging procedure
         varlist_onepart = list(partitions[0].variables.keys())
         varlist_merged = list(ds_merged_xu.variables.keys())
         varlist_dropped_bool = ~pd.Series(varlist_onepart).isin(varlist_merged)
         varlist_dropped = pd.Series(varlist_onepart).loc[varlist_dropped_bool]
         if varlist_dropped_bool.any():
             print(f'WARNING: some variables dropped with merging of partitions:\n{varlist_dropped}')
-        #TODO: with DCSM the var mesh2d_flowelem_zw is dropped for unknown reason, fix this in xugrid
-    else:
+    else: #TODO: remove this part after ghostcell decision (would also be solved if edges are really not plotted)
         #rename old dimension names and some variable names #TODO: move to separate definition
         gridname = 'mesh2d' #partitions[0].ugrid.grid.name #'mesh2d' #TODO: works if xugrid accepts arbitrary grid names
         rename_dict = {}
