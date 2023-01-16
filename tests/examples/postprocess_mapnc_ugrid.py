@@ -17,11 +17,11 @@ import dfm_tools as dfmt
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
-file_nc_list = [#os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_cb_3d\\cb_3d_map.nc'), #sigmalayer
-                #os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0*_map.nc'), #zlayer
-                r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0*_map.nc', #fullgrid, #TODO: mesh2d_flowelem_zw variable was dropped upon merging since it is a coordinate and not a data_vars, fix in xugrid?
-                #r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_207\results\RMM_dflowfm_0*_map.nc', #2D model
-                #r'p:\archivedprojects\11203379-005-mwra-updated-bem\03_model\02_final\A72_ntsu0_kzlb2\DFM_OUTPUT_MB_02\MB_02_0*_map.nc',
+file_nc_list = [os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_cb_3d\\cb_3d_map.nc'), #sigmalayer
+                os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0*_map.nc'), #zlayer
+                r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0*_map.nc', #fullgrid
+                r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_207\results\RMM_dflowfm_0*_map.nc', #2D model
+                r'p:\archivedprojects\11203379-005-mwra-updated-bem\03_model\02_final\A72_ntsu0_kzlb2\DFM_OUTPUT_MB_02\MB_02_0*_map.nc',
                 ]
 
 
@@ -125,7 +125,6 @@ for file_nc in file_nc_list:
         raise Exception('ERROR: no settings provided for this mapfile')
     
     
-    #TODO: there is a shift along partition boundaries, see eg bedlevel old/new plots of grevelingen. Ghostcells not removed right away, but only duplicate faces removed so edge-ordering and -drawing is different, problem? >> c:\DATA\dfm_tools\tests\examples_workinprogress\workinprogress_xugrid_mergeparts_ghostcellspresent.py >> only the edged are sometimes colored differently, but should not matter too much. >> remove merge_xugrid argument for .open_partitioned_dataset() after decision about ghostcells is final
     data_frommap_merged = dfmt.open_partitioned_dataset(file_nc)
     vars_pd = dfmt.get_ncvarproperties(data_frommap_merged)
     

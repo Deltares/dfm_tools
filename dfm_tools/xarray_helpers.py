@@ -251,15 +251,11 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
     processing cb_3d_map.nc
     None
     processing Grevelingen-FM_0*_map.nc
-    >> some variables dropped with merging of partitions:
-    10    mesh2d_face_x_bnd
-    11    mesh2d_face_y_bnd
+    >> some variables dropped with merging of partitions: ['mesh2d_face_x_bnd', 'mesh2d_face_y_bnd']
     processing DCSM-FM_0_5nm_0*_map.nc
     None
     processing RMM_dflowfm_0*_map.nc
-    >> some variables dropped with merging of partitions:
-    8    mesh2d_face_x_bnd
-    9    mesh2d_face_y_bnd
+    >> some variables dropped with merging of partitions: ['mesh2d_face_x_bnd', 'mesh2d_face_y_bnd']
     processing MB_02_0*_map.nc
     None
     """
