@@ -669,7 +669,10 @@ def get_Dataset_atdepths(data_xr, depths, reference='z0', zlayer_z0_selnearest=F
     
     depth_varname = 'depth_fromref'
     
-    dimn_layer, dimn_interfaces = get_vertical_dimensions(data_xr)
+    try:
+        dimn_layer, dimn_interfaces = get_vertical_dimensions(data_xr)
+    except: #TODO: catch nicely
+        dimn_layer = dimn_interfaces = None
     
     if dimn_layer is not None: #D-FlowFM mapfile
         gridname = data_xr.grid.name
