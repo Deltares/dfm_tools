@@ -7,7 +7,6 @@ Created on Fri Oct 14 19:58:36 2022
 
 from netCDF4 import Dataset
 import xarray as xr
-import numpy as np
 import xugrid as xu
 import matplotlib.pyplot as plt
 plt.close('all')
@@ -107,7 +106,6 @@ def preprocess_ERA5(ds):
 def preprocess_ugridoldlayerdim(ds):
     """
     renaming old layerdim in e.g. Grevelingen model (incl mesh2d attributes), easier to do before mesh2d var is parsed by xugrid. This is hardcoded, so model with old layerdim names and non-mesh2d gridname is not renamed
-    
     """
     if 'nmesh2d_layer' in ds.dims:
         #TODO: add layer_dimension/interface_dimension as attributes to xugrid dataset? (like face_dimension property)
@@ -117,7 +115,7 @@ def preprocess_ugridoldlayerdim(ds):
     return ds
 
 
-def Dataset_varswithdim(ds,dimname):
+def Dataset_varswithdim(ds,dimname): #TODO: dit zit ook in xugrid, wordt nu gebruikt in hisfile voorbeeldscript en kan handig zijn, maar misschien die uit xugrid gebruiken?
     if dimname not in ds.dims:
         raise Exception(f'dimension {dimname} not in dataset, available are: {list(ds.dims)}')
     
@@ -181,13 +179,14 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
     file_nc = 'p:\\1230882-emodnet_hrsm\\GTSMv5.0\\runs\\reference_GTSMv4.1_wiCA_2.20.06_mapformat4\\output\\gtsm_model_0*_map.nc' #GTSM 2D
     file_nc = 'p:\\11208053-005-kpp2022-rmm3d\\C_Work\\01_saltiMarlein\\RMM_2019_computations_02\\computations\\theo_03\\DFM_OUTPUT_RMM_dflowfm_2019\\RMM_dflowfm_2019_0*_map.nc' #RMM 3D
     file_nc = 'p:\\archivedprojects\\11203379-005-mwra-updated-bem\\03_model\\02_final\\A72_ntsu0_kzlb2\\DFM_OUTPUT_MB_02\\MB_02_0000_map.nc'
-    Timings (open_dataset/merge_partitions): (update timings after new xugrid code)
+    Timings (open_dataset/merge_partitions): (update timings after new xugrid code) >> #TODO: xugrid.merge_partitions() is now slower with proper edge/node ordering (3x isel)
         - DCSM 3D 20 partitions  367 timesteps: 219.0/4.68 sec
         - RMM  2D  8 partitions  421 timesteps:  60.6/1.4+0.1 sec
         - GTSM 2D  8 partitions  746 timesteps:  73.8/6.4+0.1 sec
         - RMM  3D 40 partitions  146 timesteps: 166.0/3.6+0.5 sec
         - MWRA 3D 20 partitions 2551 timesteps: 826.2/3.4+1.2 sec
     """
+    #TODO: FM-mapfiles contain wgs84/projected_coordinate_system variables. xugrid has .crs property, projected_coordinate_system/wgs84 should be updated to be crs so it will be automatically handled? >> make dflowfm issue (and https://github.com/Deltares/xugrid/issues/42)
     
     dtstart_all = dt.datetime.now()
     if isinstance(file_nc,list):
@@ -202,63 +201,29 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
     partitions = []
     for iF, file_nc_one in enumerate(file_nc_list):
         print(iF+1,end=' ')
-        uds = xu.open_mfdataset(file_nc_one, chunks=chunks, preprocess=preprocess_ugridoldlayerdim)
-        partitions.append(uds) #TODO: speed up, for instance by doing decode after merging? (or is second-read than not faster anymore?) >> https://github.com/Deltares/dfm_tools/issues/225
+        ds = xr.open_dataset(file_nc_one, chunks=chunks) #TODO: easier would be xu.open_mfdataset(preprocess=preprocess_ugridoldlayerdim), but that cannot be used for notebook_opendap: "ValueError: cannot do wild-card matching for paths that are remote URLs unless engine='zarr' is specified. Got paths: http://opendap.deltares.nl/thredds/dodsC/opendap/deltares/Delft3D/netcdf_example_files/DFM_grevelingen_3D/Grevelingen-FM_0000_map.nc. Instead, supply paths as an explicit list of strings."
+        ds = preprocess_ugridoldlayerdim(ds)
+        from xugrid.core.wrap import UgridDataset
+        uds = UgridDataset(ds)
+        partitions.append(uds) #TODO: speed up, for instance by doing decode after merging? (or is second-read than not faster anymore?) >> https://github.com/Deltares/dfm_tools/issues/225 >> c:\DATA\dfm_tools\tests\examples_workinprogress\xarray_largemapfile_profiler.py (copied MBAY partition to d-drive to check whether network causes it)
     print(': ',end='')
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
-    if len(partitions) == 1:
-        pass#return partitions[0]
+    if len(partitions) == 1: #do not merge in case of 1 partition
+        return partitions[0]
+    
     print(f'>> xu.merge_partitions() with {len(file_nc_list)} partition(s): ',end='')
     dtstart = dt.datetime.now()
     ds_merged_xu = xu.merge_partitions(partitions)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
-    
-    #add non face/node/edge variables back to merged dataset
-    #TODO: add this to xugrid >> https://github.com/Deltares/xugrid/issues/43
-    facedim = ds_merged_xu.grid.face_dimension
-    nodedim = ds_merged_xu.grid.node_dimension
-    edgedim = ds_merged_xu.grid.edge_dimension
-    ds_rest = partitions[0].drop_dims([facedim,nodedim,edgedim])
-    print('>> non-face/edge/node vars added: ',end='')
-    dtstart = dt.datetime.now()
-    for data_var in ds_rest.data_vars:
-        ds_merged_xu[data_var] = ds_rest[data_var]
-        print(f'{data_var}, ',end='')
-    print('')
-    """
-    processing cb_3d_map.nc (disabling early return)
-    >> non-face/edge/node vars added: projected_coordinate_system, mesh2d_layer_sigma, mesh2d_interface_sigma, timestep, 0.01 sec
-    processing Grevelingen-FM_0*_map.nc
-    >> non-face/edge/node vars added: projected_coordinate_system, mesh2d_layer_z, mesh2d_interface_z, timestep, 0.02 sec
-    processing DCSM-FM_0_5nm_0*_map.nc
-    >> non-face/edge/node vars added: wgs84, timestep, 0.01 sec
-    processing RMM_dflowfm_0*_map.nc
-    >> non-face/edge/node vars added: projected_coordinate_system, timestep, 0.01 sec
-    processing MB_02_0*_map.nc
-    >> non-face/edge/node vars added: wgs84, mesh2d_layer_z, mesh2d_interface_z, timestep, 0.01 sec
-    """
-    #TODO: one of these is wgs84/projected_coordinate_system. xugrid has .crs property, projected_coordinate_system/wgs84 should be updated to be crs so it will be automatically handled? >> make dflowfm issue
-    
-    #print variables that are dropped in merging procedure
+        
+    #print variables that are dropped in merging procedure. Often only ['mesh2d_face_x_bnd', 'mesh2d_face_y_bnd'], which can be derived by combining node_coordinates (mesh2d_node_x mesh2d_node_y) and face_node_connectivity (mesh2d_face_nodes). >> can be removed from FM-mapfiles (email of 16-1-2023)
     varlist_onepart = list(partitions[0].variables.keys())
     varlist_merged = list(ds_merged_xu.variables.keys())
     varlist_dropped_bool = ~pd.Series(varlist_onepart).isin(varlist_merged)
     varlist_dropped = pd.Series(varlist_onepart).loc[varlist_dropped_bool]
     if varlist_dropped_bool.any():
         print(f'>> some variables dropped with merging of partitions: {varlist_dropped.tolist()}')
-    """
-    processing cb_3d_map.nc
-    None
-    processing Grevelingen-FM_0*_map.nc
-    >> some variables dropped with merging of partitions: ['mesh2d_face_x_bnd', 'mesh2d_face_y_bnd']
-    processing DCSM-FM_0_5nm_0*_map.nc
-    None
-    processing RMM_dflowfm_0*_map.nc
-    >> some variables dropped with merging of partitions: ['mesh2d_face_x_bnd', 'mesh2d_face_y_bnd']
-    processing MB_02_0*_map.nc
-    None
-    """
     
     print(f'>> dfmt.open_partitioned_dataset() total: {(dt.datetime.now()-dtstart_all).total_seconds():.2f} sec')
     return ds_merged_xu
