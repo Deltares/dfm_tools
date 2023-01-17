@@ -16,7 +16,7 @@ import dfm_tools as dfmt
 try: #0.3.1 release
     from hydrolib.core.io.polyfile.models import PolyFile
 except: #main branch and next release #TODO: move to easy imports after https://github.com/Deltares/HYDROLIB-core/issues/410
-    from hydrolib.core.io.dflowfm.polyfile.models import PolyFile
+    from hydrolib.core.dflowfm.polyfile.models import PolyFile
 
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'

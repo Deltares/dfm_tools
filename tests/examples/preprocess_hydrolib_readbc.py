@@ -13,7 +13,7 @@ import dfm_tools as dfmt
 try: #0.3.1 release
     from hydrolib.core.io.bc.models import ForcingModel
 except: #main branch and next release #TODO: move to easy imports after https://github.com/Deltares/HYDROLIB-core/issues/410
-    from hydrolib.core.io.dflowfm.bc.models import ForcingModel
+    from hydrolib.core.dflowfm.bc.models import ForcingModel
 
 #TODO: merge this into preprocess_hydrolib_readFMmodel.py after issues are resolved?
 #NOTE: for examples with writing bc files, check dfm_tools.interpolate_grid2bnd.* and dfm_tools.hydrolib_helpers.

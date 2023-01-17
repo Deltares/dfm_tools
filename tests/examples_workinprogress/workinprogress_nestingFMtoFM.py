@@ -19,8 +19,8 @@ try: #0.3.1 release
     #from hydrolib.core.io.net.models import NetworkModel, Network
     from hydrolib.core.io.polyfile.models import PolyFile
 except: #main branch and next release
-    #from hydrolib.core.io.dflowfm.net.models import NetworkModel, Network
-    from hydrolib.core.io.dflowfm.polyfile.models import PolyFile
+    #from hydrolib.core.dflowfm.net.models import NetworkModel, Network
+    from hydrolib.core.dflowfm.polyfile.models import PolyFile
 
 #TODO: add coordinate conversion of pli coordinates
 #TODO: add max distance for nestpoints (eg sqrt of max cell size of large grid? How to determine to use 3/4/more points)

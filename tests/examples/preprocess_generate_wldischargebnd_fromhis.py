@@ -15,8 +15,8 @@ try: #0.3.1 release
     from hydrolib.core.io.bc.models import ForcingModel
     #from hydrolib.core.io.ext.models import Boundary, ExtModel
 except: #main branch and next release #TODO: move to easy imports after https://github.com/Deltares/HYDROLIB-core/issues/410
-    from hydrolib.core.io.dflowfm.bc.models import ForcingModel
-    #from hydrolib.core.io.dflowfm.ext.models import Boundary, ExtModel
+    from hydrolib.core.dflowfm.bc.models import ForcingModel
+    #from hydrolib.core.dflowfm.ext.models import Boundary, ExtModel
 
 
 plotting = True

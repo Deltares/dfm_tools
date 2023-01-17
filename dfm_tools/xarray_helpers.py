@@ -174,17 +174,17 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
     TYPE
         DESCRIPTION.
     
-    file_nc = 'p:\\1204257-dcsmzuno\\2006-2012\\3D-DCSM-FM\\A18b_ntsu1\\DFM_OUTPUT_DCSM-FM_0_5nm\\DCSM-FM_0_5nm_0000_map.nc' #3D DCSM
-    file_nc = 'p:\\11206813-006-kpp2021_rmm-2d\\C_Work\\31_RMM_FMmodel\\computations\\model_setup\\run_207\\results\\RMM_dflowfm_0000_map.nc' #RMM 2D
+    file_nc = 'p:\\1204257-dcsmzuno\\2006-2012\\3D-DCSM-FM\\A18b_ntsu1\\DFM_OUTPUT_DCSM-FM_0_5nm\\DCSM-FM_0_5nm_0*_map.nc' #3D DCSM
+    file_nc = 'p:\\11206813-006-kpp2021_rmm-2d\\C_Work\\31_RMM_FMmodel\\computations\\model_setup\\run_207\\results\\RMM_dflowfm_0*_map.nc' #RMM 2D
     file_nc = 'p:\\1230882-emodnet_hrsm\\GTSMv5.0\\runs\\reference_GTSMv4.1_wiCA_2.20.06_mapformat4\\output\\gtsm_model_0*_map.nc' #GTSM 2D
     file_nc = 'p:\\11208053-005-kpp2022-rmm3d\\C_Work\\01_saltiMarlein\\RMM_2019_computations_02\\computations\\theo_03\\DFM_OUTPUT_RMM_dflowfm_2019\\RMM_dflowfm_2019_0*_map.nc' #RMM 3D
-    file_nc = 'p:\\archivedprojects\\11203379-005-mwra-updated-bem\\03_model\\02_final\\A72_ntsu0_kzlb2\\DFM_OUTPUT_MB_02\\MB_02_0000_map.nc'
+    file_nc = 'p:\\archivedprojects\\11203379-005-mwra-updated-bem\\03_model\\02_final\\A72_ntsu0_kzlb2\\DFM_OUTPUT_MB_02\\MB_02_0*_map.nc'
     Timings (open_dataset/merge_partitions): (update timings after new xugrid code) >> #TODO: xugrid.merge_partitions() is now slower with proper edge/node ordering (3x isel)
-        - DCSM 3D 20 partitions  367 timesteps: 219.0/4.68 sec
-        - RMM  2D  8 partitions  421 timesteps:  60.6/1.4+0.1 sec
-        - GTSM 2D  8 partitions  746 timesteps:  73.8/6.4+0.1 sec
-        - RMM  3D 40 partitions  146 timesteps: 166.0/3.6+0.5 sec
-        - MWRA 3D 20 partitions 2551 timesteps: 826.2/3.4+1.2 sec
+        - DCSM 3D 20 partitions  367 timesteps: 219.0/4.68 sec    >> merge  14.2 sec
+        - RMM  2D  8 partitions  421 timesteps:  60.6/1.4+0.1 sec >> merge   7.8 sec
+        - GTSM 2D  8 partitions  746 timesteps:  73.8/6.4+0.1 sec >> merge  36.6 sec
+        - RMM  3D 40 partitions  146 timesteps: 166.0/3.6+0.5 sec >> merge 177.2 sec >> 15.49
+        - MWRA 3D 20 partitions 2551 timesteps: 826.2/3.4+1.2 sec >> merge  71.9 sec
     """
     #TODO: FM-mapfiles contain wgs84/projected_coordinate_system variables. xugrid has .crs property, projected_coordinate_system/wgs84 should be updated to be crs so it will be automatically handled? >> make dflowfm issue (and https://github.com/Deltares/xugrid/issues/42)
     
@@ -196,18 +196,27 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
     if len(file_nc_list)==0:
         raise Exception('file(s) not found, empty file_nc_list')
     
-    print(f'>> xu.open_dataset() with {len(file_nc_list)} partition(s): ',end='')
+    print(f'>> xr.open_dataset() with {len(file_nc_list)} partition(s): ',end='')
     dtstart = dt.datetime.now()
-    partitions = []
+    partitions_ds = []
     for iF, file_nc_one in enumerate(file_nc_list):
         print(iF+1,end=' ')
+        #TODO: speed up, for instance by doing decode after merging? (or is second-read than not faster anymore?) >> https://github.com/Deltares/dfm_tools/issues/225 >> c:\DATA\dfm_tools\tests\examples_workinprogress\xarray_largemapfile_profiler.py (copied MBAY partition to d-drive to check whether network causes it)
         ds = xr.open_dataset(file_nc_one, chunks=chunks) #TODO: easier would be xu.open_mfdataset(preprocess=preprocess_ugridoldlayerdim), but that cannot be used for notebook_opendap: "ValueError: cannot do wild-card matching for paths that are remote URLs unless engine='zarr' is specified. Got paths: http://opendap.deltares.nl/thredds/dodsC/opendap/deltares/Delft3D/netcdf_example_files/DFM_grevelingen_3D/Grevelingen-FM_0000_map.nc. Instead, supply paths as an explicit list of strings."
+        partitions_ds.append(ds)
+    print(': ',end='')
+    print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
+
+    print(f'>> other operations with {len(file_nc_list)} partition(s): ',end='')
+    dtstart = dt.datetime.now()
+    partitions = []
+    for ds in partitions_ds:
         ds = preprocess_ugridoldlayerdim(ds)
         from xugrid.core.wrap import UgridDataset
         uds = UgridDataset(ds)
-        partitions.append(uds) #TODO: speed up, for instance by doing decode after merging? (or is second-read than not faster anymore?) >> https://github.com/Deltares/dfm_tools/issues/225 >> c:\DATA\dfm_tools\tests\examples_workinprogress\xarray_largemapfile_profiler.py (copied MBAY partition to d-drive to check whether network causes it)
-    print(': ',end='')
+        partitions.append(uds)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
+
     
     if len(partitions) == 1: #do not merge in case of 1 partition
         return partitions[0]
