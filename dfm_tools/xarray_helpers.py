@@ -167,12 +167,12 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
     file_nc = 'p:\\1230882-emodnet_hrsm\\GTSMv5.0\\runs\\reference_GTSMv4.1_wiCA_2.20.06_mapformat4\\output\\gtsm_model_0*_map.nc' #GTSM 2D
     file_nc = 'p:\\11208053-005-kpp2022-rmm3d\\C_Work\\01_saltiMarlein\\RMM_2019_computations_02\\computations\\theo_03\\DFM_OUTPUT_RMM_dflowfm_2019\\RMM_dflowfm_2019_0*_map.nc' #RMM 3D
     file_nc = 'p:\\archivedprojects\\11203379-005-mwra-updated-bem\\03_model\\02_final\\A72_ntsu0_kzlb2\\DFM_OUTPUT_MB_02\\MB_02_0*_map.nc'
-    Timings (open_dataset/merge_partitions):
-        - DCSM 3D 20 partitions  367 timesteps: 219.0/ 4.8 sec >> merge 13.4 sec
-        - RMM  2D  8 partitions  421 timesteps:  60.6/ 5.3 sec >> merge  8.6 sec
-        - GTSM 2D  8 partitions  746 timesteps:  73.8/31.0 sec >> merge 37.0 sec
-        - RMM  3D 40 partitions  146 timesteps: 166.0/ 7.6 sec >> merge 15.2 sec
-        - MWRA 3D 20 partitions 2551 timesteps: 826.2/ 3.9 sec >> merge 73.2 sec
+    Timings (xu.open_dataset/xu.merge_partitions):
+        - DCSM 3D 20 partitions  367 timesteps: 231.5/ 4.5 sec
+        - RMM  2D  8 partitions  421 timesteps:  55.4/ 4.4 sec
+        - GTSM 2D  8 partitions  746 timesteps:  71.8/30.0 sec
+        - RMM  3D 40 partitions  146 timesteps: 168.8/ 6.3 sec
+        - MWRA 3D 20 partitions 2551 timesteps:  74.4/ 3.4 sec
     
     """
     #TODO: FM-mapfiles contain wgs84/projected_coordinate_system variables. xugrid has .crs property, projected_coordinate_system/wgs84 should be updated to be crs so it will be automatically handled? >> make dflowfm issue (and https://github.com/Deltares/xugrid/issues/42)
@@ -214,124 +214,4 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
     
     print(f'>> dfmt.open_partitioned_dataset() total: {(dt.datetime.now()-dtstart_all).total_seconds():.2f} sec')
     return ds_merged_xu
-
-
-#TODO: remove all code below this line if xugrid.merge_partitions is fast again
-
-from collections import defaultdict
-def group_grids_by_name(partitions):
-    grouped = defaultdict(list)
-    for partition in partitions:
-        for grid in partition.grids:
-            grouped[grid.name].append(grid)
-
-    validate_partition_topology(grouped, len(partitions))
-    return grouped
-
-def group_vars_by_ugrid_dim(data_objects, ugrid_dims):
-    validate_partition_objects(data_objects)
-
-    # Group variables by UGRID dimension.
-    ds = data_objects[0]
-    grouped = defaultdict(list)
-    for var, da in ds.data_vars.items():
-        intersection = ugrid_dims.intersection(da.dims)
-        if intersection:
-            if len(intersection) > 1:
-                raise ValueError(
-                    f"{var} contains more than one UGRID dimension: {intersection}"
-                )
-            dim = intersection.pop()
-            grouped[dim].append(var)
-
-    return grouped
-
-def validate_partition_topology(grouped, n_partition: int):
-    n = n_partition
-    if not all(len(v) == n for v in grouped.values()):
-        raise ValueError(
-            f"Expected {n} UGRID topologies for {n} partitions, received: " f"{grouped}"
-        )
-
-    for name, grids in grouped.items():
-        types = set(type(grid) for grid in grids)
-        if len(types) > 1:
-            raise TypeError(
-                f"All partition topologies with name {name} should be of the "
-                f"same type, received: {types}"
-            )
-
-        griddims = set(tuple(grid.dimensions) for grid in grids)
-        if len(griddims) > 1:
-            raise ValueError(
-                f"Dimension names on UGRID topology {name} do not match "
-                f"across partitions: {griddims[0]} versus {griddims[1]}"
-            )
-
-    return None
-
-def validate_partition_objects(data_objects):
-    # Check presence of variables.
-    allvars = set(tuple(sorted(ds.dims)) for ds in data_objects)
-    if len(allvars) > 1:
-        raise ValueError(
-            "These variables are present in some partitions, but not in "
-            f"others: {set(allvars[0]).symmetric_difference(allvars[1])}"
-        )
-    # Check dimensions
-    for var in allvars.pop():
-        vardims = set(ds[var].dims for ds in data_objects)
-        if len(vardims) > 1:
-            raise ValueError(
-                f"Dimensions for {var} do not match across partitions: "
-                f"{vardims[0]} versus {vardims[1]}"
-            )
-
-
-def merge_partitions_OLD(partitions):
-    types = set(type(obj) for obj in partitions)
-    msg = "Expected UgridDataArray or UgridDataset, received: {}"
-    if len(types) > 1:
-        type_names = [t.__name__ for t in types]
-        raise TypeError(msg.format(type_names))
-    obj_type = types.pop()
-    if obj_type not in (xu.UgridDataArray, xu.UgridDataset):
-        raise TypeError(msg.format(obj_type.__name__))
-
-    # Convert to dataset for convenience
-    data_objects = [partition.obj for partition in partitions]
-    data_objects = [
-        obj.to_dataset() if isinstance(obj, xr.DataArray) else obj
-        for obj in data_objects
-    ]
-    # Collect grids
-    grids = [grid for p in partitions for grid in p.grids]
-    ugrid_dims = set(dim for grid in grids for dim in grid.dimensions)
-    grids_by_name = group_grids_by_name(partitions)
-    vars_by_dim = group_vars_by_ugrid_dim(data_objects, ugrid_dims)
-
-    merged_grids = []
-    objects = data_objects
-    for grids in grids_by_name.values():
-        grid = grids[0]
-        merged_grid, indexes = grid.merge_partitions(grids)
-        merged_grids.append(merged_grid)
-        for dim, dim_indexes in indexes.items():
-            objects = [
-                obj.isel({dim: index}) for obj, index in zip(objects, dim_indexes)
-            ]
-
-    merged = xr.Dataset()
-    for dim, vars in vars_by_dim.items():
-        for var in vars:
-            try:
-                das = [obj[var] for obj in objects]
-                merged[var] = xr.concat(das, dim=dim)
-            # This should mean that another dimension doesn't align, e.g. a
-            # variable that depends on the n_max_node_per_face dimension,
-            # e.g. for triangles and quadrangles.
-            except ValueError:
-                pass
-
-    return xu.UgridDataset(merged, merged_grids)
 

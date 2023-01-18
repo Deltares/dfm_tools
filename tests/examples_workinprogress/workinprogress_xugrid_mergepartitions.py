@@ -9,13 +9,12 @@ import os
 import datetime as dt
 import glob
 import xugrid as xu
-import dfm_tools as dfmt
 
 file_nc_list = ['p:\\1204257-dcsmzuno\\2006-2012\\3D-DCSM-FM\\A18b_ntsu1\\DFM_OUTPUT_DCSM-FM_0_5nm\\DCSM-FM_0_5nm_0*_map.nc', #3D DCSM
-                'p:\\11206813-006-kpp2021_rmm-2d\\C_Work\\31_RMM_FMmodel\\computations\\model_setup\\run_207\\results\\RMM_dflowfm_0*_map.nc', #RMM 2D
-                'p:\\1230882-emodnet_hrsm\\GTSMv5.0\\runs\\reference_GTSMv4.1_wiCA_2.20.06_mapformat4\\output\\gtsm_model_0*_map.nc', #GTSM 2D
-                'p:\\11208053-005-kpp2022-rmm3d\\C_Work\\01_saltiMarlein\\RMM_2019_computations_02\\computations\\theo_03\\DFM_OUTPUT_RMM_dflowfm_2019\\RMM_dflowfm_2019_0*_map.nc', #RMM 3D
-                'p:\\archivedprojects\\11203379-005-mwra-updated-bem\\03_model\\02_final\\A72_ntsu0_kzlb2\\DFM_OUTPUT_MB_02\\MB_02_0*_map.nc',
+                #'p:\\11206813-006-kpp2021_rmm-2d\\C_Work\\31_RMM_FMmodel\\computations\\model_setup\\run_207\\results\\RMM_dflowfm_0*_map.nc', #RMM 2D
+                #'p:\\1230882-emodnet_hrsm\\GTSMv5.0\\runs\\reference_GTSMv4.1_wiCA_2.20.06_mapformat4\\output\\gtsm_model_0*_map.nc', #GTSM 2D
+                #'p:\\11208053-005-kpp2022-rmm3d\\C_Work\\01_saltiMarlein\\RMM_2019_computations_02\\computations\\theo_03\\DFM_OUTPUT_RMM_dflowfm_2019\\RMM_dflowfm_2019_0*_map.nc', #RMM 3D
+                #'p:\\archivedprojects\\11203379-005-mwra-updated-bem\\03_model\\02_final\\A72_ntsu0_kzlb2\\DFM_OUTPUT_MB_02\\MB_02_0*_map.nc',
                 ]
 
 for file_nc in file_nc_list:
@@ -31,20 +30,15 @@ for file_nc in file_nc_list:
     print(f'>> xr.open_dataset() with {len(file_nc_list)} partition(s): ',end='')
     dtstart = dt.datetime.now()
     partitions = []
-    for iF, file_nc_one in enumerate(file_nc_list):
+    for iF, file_nc_one in enumerate(file_nc_list[:2]):
         print(iF+1,end=' ')
-        uds = xu.open_dataset(file_nc_one, chunks={'time':1})
+        uds = xu.open_dataset(file_nc_one, chunks={'time':1}, cache=False)
         partitions.append(uds)
     print(': ',end='')
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
-    print(f'>> xu.merge_partitions() OLD with {len(file_nc_list)} partition(s): ',end='')
+    print(f'>> xu.merge_partitions() with {len(file_nc_list)} partition(s): ',end='')
     dtstart = dt.datetime.now()
-    ds_merged_xu2 = dfmt.merge_partitions_OLD(partitions)
-    print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
-
-    print(f'>> xu.merge_partitions() NEW with {len(file_nc_list)} partition(s): ',end='')
-    dtstart = dt.datetime.now()
-    ds_merged_xu3 = xu.merge_partitions(partitions)
+    ds_merged_xu = xu.merge_partitions(partitions)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
