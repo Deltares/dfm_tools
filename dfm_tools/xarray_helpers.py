@@ -103,7 +103,7 @@ def preprocess_ERA5(ds):
     return ds
 
 
-def preprocess_ugridoldlayerdim(ds):
+def preprocess_ugridoldlayerdim(ds): #TODO: remove since it is not used anymore
     """
     renaming old layerdim in e.g. Grevelingen model (incl mesh2d attributes), easier to do before mesh2d var is parsed by xugrid. This is hardcoded, so model with old layerdim names and non-mesh2d gridname is not renamed
     """
@@ -196,27 +196,16 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
     if len(file_nc_list)==0:
         raise Exception('file(s) not found, empty file_nc_list')
     
-    print(f'>> xr.open_dataset() with {len(file_nc_list)} partition(s): ',end='')
+    print(f'>> xu.open_dataset() with {len(file_nc_list)} partition(s): ',end='')
     dtstart = dt.datetime.now()
-    partitions_ds = []
+    partitions = []
     for iF, file_nc_one in enumerate(file_nc_list):
         print(iF+1,end=' ')
         #TODO: speed up, for instance by doing decode after merging? (or is second-read than not faster anymore?) >> https://github.com/Deltares/dfm_tools/issues/225 >> c:\DATA\dfm_tools\tests\examples_workinprogress\xarray_largemapfile_profiler.py (copied MBAY partition to d-drive to check whether network causes it)
-        ds = xr.open_dataset(file_nc_one, chunks=chunks) #TODO: easier would be xu.open_mfdataset(preprocess=preprocess_ugridoldlayerdim), but that cannot be used for notebook_opendap: "ValueError: cannot do wild-card matching for paths that are remote URLs unless engine='zarr' is specified. Got paths: http://opendap.deltares.nl/thredds/dodsC/opendap/deltares/Delft3D/netcdf_example_files/DFM_grevelingen_3D/Grevelingen-FM_0000_map.nc. Instead, supply paths as an explicit list of strings."
-        partitions_ds.append(ds)
+        ds = xu.open_dataset(file_nc_one, chunks=chunks)
+        partitions.append(ds)
     print(': ',end='')
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
-
-    print(f'>> other operations with {len(file_nc_list)} partition(s): ',end='')
-    dtstart = dt.datetime.now()
-    partitions = []
-    for ds in partitions_ds:
-        ds = preprocess_ugridoldlayerdim(ds)
-        from xugrid.core.wrap import UgridDataset
-        uds = UgridDataset(ds)
-        partitions.append(uds)
-    print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
-
     
     if len(partitions) == 1: #do not merge in case of 1 partition
         return partitions[0]

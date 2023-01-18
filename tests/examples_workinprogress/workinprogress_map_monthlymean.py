@@ -12,7 +12,7 @@ plt.close('all')
 import datetime as dt
 import dfm_tools as dfmt
 
-#TODO: experiment with monthly/daily means or depth average of his/map fields (to show power of pandas/xarray), 
+#TODO: experiment with monthly/daily means or depth average of his/map fields (to show power of pandas/xarray)
 
 overwrite = True
 
@@ -25,68 +25,43 @@ if not os.path.exists(dir_output):
 postfix = '_'.join(os.path.basename(file_nc).split('_')[-2:])
 file_out = os.path.join(dir_output,os.path.basename(file_nc).replace(postfix,f'monthlymean_{postfix}'))
 
-print('opening dataset')
-dtstart = dt.datetime.now()
 data_frommap_merged = dfmt.open_partitioned_dataset(file_nc.replace('_0000_','_0*_'))
 
-#for varname in data_frommap_merged.data_vars: #TODO: this should be avoided, can also be done with mask_and_scale argument, but is that desireable?
-#    if (data_frommap_merged[varname].encoding['dtype']==int) & (data_frommap_merged[varname].dtype!=int):
-#        breakit
-#        print(f'converting {varname} back to int dtype')
-#        data_frommap_merged[varname] = data_frommap_merged[varname].astype(int)
-data_xr_var = data_frommap_merged['mesh2d_sa1']
-time_passed = (dt.datetime.now()-dtstart).total_seconds()
-print(f'>>time passed: {time_passed:.2f} sec')
-
-print('computing monthly means')
+print('>> computing monthly means: ', end='')
 dtstart = dt.datetime.now()
-if True: #on unique month numbers
-    #data_xr_monthmean = data_xr_var.groupby('time.month').mean()
+if 0: #on unique month numbers
     data_xr_monthmean = data_frommap_merged.groupby('time.month').mean() 
     data_xr_monthmean.rename({'month':'time'})
-    #data_xr_monthmean['mesh2d'] = data_frommap_merged.mesh2d #TODO: mesh2d etc are dropped by xugrid, how to arrange this (and convert back to normal mapfile)
 else: # on unique year+month combinations
-    data_xr_monthmean = data_frommap_merged.copy()
-    #data_xr_monthmean = data_xr_var.copy()
-    data_xr_monthmean = data_xr_monthmean.resample(time='MS').mean(dim='time')
-#data_xr_monthmean.time.encoding = data_xr.time.encoding
-time_passed = (dt.datetime.now()-dtstart).total_seconds()
-print(f'>>time passed: {time_passed:.2f} sec')
+    data_xr_monthmean = data_frommap_merged.resample(time='MS').mean(dim='time')
+print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
 
-# for varname in data_frommap_merged.data_vars: #TODO: avoid adding time dimension to time-independent variables: https://github.com/pydata/xarray/issues/2145
-#     if data_frommap_merged[varname].dims != data_xr_monthmean[varname].dims:
-#         #print(f'{varname} dims changed from {data_xr[varname].dims} to {data_xr_monthmean[varname].dims}')
-#         data_xr_monthmean[varname] = data_xr_monthmean[varname].isel(time=0) #selecting first time of variables that did not have time dimension before
-#         if data_frommap_merged[varname].dims != data_xr_monthmean[varname].dims:
-#             print(f'{varname} dims changed from {data_frommap_merged[varname].dims} to {data_xr_monthmean[varname].dims}')
+for varname in data_frommap_merged.data_vars: #TODO: avoid adding time dimension to time-independent variables: https://github.com/pydata/xarray/issues/2145
+    if data_frommap_merged[varname].dims != data_xr_monthmean[varname].dims:
+        #print(f'{varname} dims changed from {data_xr[varname].dims} to {data_xr_monthmean[varname].dims}')
+        data_xr_monthmean[varname] = data_xr_monthmean[varname].isel(time=0) #selecting first time of variables that did not have time dimension before
+        if data_frommap_merged[varname].dims != data_xr_monthmean[varname].dims:
+            print(f'{varname} dims changed from {data_frommap_merged[varname].dims} to {data_xr_monthmean[varname].dims}')
+
+#reconnect data and grid #TODO: support resampling/groupby in xugrid?
+import xugrid as xu
+data_xr_monthmean = xu.UgridDataset(data_xr_monthmean, grids=[data_frommap_merged.grid])
 
 if overwrite:
-    print('writing file')
+    print('>> writing file: ', end='')
     dtstart = dt.datetime.now()
-    data_xr_monthmean.to_netcdf(file_out)
-    time_passed = (dt.datetime.now()-dtstart).total_seconds()
-    print(f'>>time passed: {time_passed:.2f} sec')
+    data_xr_monthmean.ugrid.to_netcdf(file_out)
+    print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
 
 
-timestep = 0
-layer = 33
-clim_bl = None
-clim_wl = [-0.5,1]
-clim_sal = [28,30.2]
-clim_tem = [4,10]
+
+data_frommap = dfmt.open_partitioned_dataset(file_out)
 crs = "EPSG:28992"
-
-data_frommap = dfmt.open_partitioned_dataset(file_out) #TODO: file_out is not suitable for xugrid anymore, so how to read it? (probably corrupt) "AttributeError: Can only access grid topology via `.grid` if dataset contains exactly one grid. Dataset contains 0 grids. Use `.grids` instead."
-
 
 print('plot grid and values from mapdata (salinity on layer, 3dim, on cell centers)')
 fig, ax = plt.subplots()
-pc = data_frommap.isel(time=timestep,layer=layer).ugrid.plot(linewidth=0.5, cmap="jet", edgecolor='face')
-pc.set_clim(clim_sal)
-# cbar = fig.colorbar(pc, ax=ax)
-# cbar.set_label('%s [%s]'%(data_frommap.var_ncattrs['long_name'], data_frommap.var_ncattrs['units']))
-# #ax.set_xlabel('x [%s]'%(gridunits))
-# #ax.set_ylabel('y [%s]'%(gridunits))
+pc = data_frommap['mesh2d_sa1'].isel(nmesh2d_layer=33,month=0,time=0,missing_dims='ignore').ugrid.plot(linewidth=0.5, cmap="jet", edgecolor='face')
+pc.set_clim([28,30.2])
 ax.set_aspect('equal')
 fig.tight_layout()
 #fig.savefig(os.path.join(dir_output,'%s_mesh2d_sa1'%(os.path.basename(file_nc).replace('.',''))))
