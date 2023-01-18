@@ -9,6 +9,7 @@ import os
 import datetime as dt
 import glob
 import xugrid as xu
+import dfm_tools as dfmt
 
 file_nc_list = ['p:\\1204257-dcsmzuno\\2006-2012\\3D-DCSM-FM\\A18b_ntsu1\\DFM_OUTPUT_DCSM-FM_0_5nm\\DCSM-FM_0_5nm_0*_map.nc', #3D DCSM
                 'p:\\11206813-006-kpp2021_rmm-2d\\C_Work\\31_RMM_FMmodel\\computations\\model_setup\\run_207\\results\\RMM_dflowfm_0*_map.nc', #RMM 2D
@@ -37,7 +38,13 @@ for file_nc in file_nc_list:
     print(': ',end='')
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
-    print(f'>> xu.merge_partitions() with {len(file_nc_list)} partition(s): ',end='')
+    print(f'>> xu.merge_partitions() OLD with {len(file_nc_list)} partition(s): ',end='')
     dtstart = dt.datetime.now()
-    ds_merged_xu = xu.merge_partitions(partitions)
+    ds_merged_xu2 = dfmt.merge_partitions_OLD(partitions)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
+
+    print(f'>> xu.merge_partitions() NEW with {len(file_nc_list)} partition(s): ',end='')
+    dtstart = dt.datetime.now()
+    ds_merged_xu3 = xu.merge_partitions(partitions)
+    print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
+    
