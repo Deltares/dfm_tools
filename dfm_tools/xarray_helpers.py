@@ -103,18 +103,6 @@ def preprocess_ERA5(ds):
     return ds
 
 
-def preprocess_ugridoldlayerdim(ds): #TODO: remove since it is not used anymore
-    """
-    renaming old layerdim in e.g. Grevelingen model (incl mesh2d attributes), easier to do before mesh2d var is parsed by xugrid. This is hardcoded, so model with old layerdim names and non-mesh2d gridname is not renamed
-    """
-    if 'nmesh2d_layer' in ds.dims:
-        #TODO: add layer_dimension/interface_dimension as attributes to xugrid dataset? (like face_dimension property)
-        print('[renaming old layerdim] ',end='')
-        ds = ds.rename({'nmesh2d_layer':'mesh2d_nLayers','nmesh2d_interface':'mesh2d_nInterfaces'})
-        ds.mesh2d.attrs.update(layer_dimension='mesh2d_nLayers', interface_dimension='mesh2d_nInterfaces') #TODO: also update vertical_dimensions attr
-    return ds
-
-
 def Dataset_varswithdim(ds,dimname): #TODO: dit zit ook in xugrid, wordt nu gebruikt in hisfile voorbeeldscript en kan handig zijn, maar misschien die uit xugrid gebruiken?
     if dimname not in ds.dims:
         raise Exception(f'dimension {dimname} not in dataset, available are: {list(ds.dims)}')
