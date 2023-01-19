@@ -6,8 +6,6 @@ Created on Tue Jan 17 09:27:12 2023
 """
 
 import os
-import datetime as dt
-import glob
 #import xugrid as xu
 #import xarray as xr
 #xr.set_options(file_cache_maxsize=1)
@@ -22,30 +20,9 @@ file_nc_list = ['p:\\1204257-dcsmzuno\\2006-2012\\3D-DCSM-FM\\A18b_ntsu1\\DFM_OU
 
 for file_nc in file_nc_list:
     print('processing %s'%(os.path.basename(file_nc)))
-    dtstart_all = dt.datetime.now()
-    if isinstance(file_nc,list):
-        file_nc_list = file_nc
-    else:
-        file_nc_list = glob.glob(file_nc)
-    if len(file_nc_list)==0:
-        raise Exception('file(s) not found, empty file_nc_list')
     
-    ds_merged_xu = dfmt.open_partitioned_dataset(file_nc_list)
+    ds_merged_xu = dfmt.open_partitioned_dataset(file_nc.replace('_0*_','_0000_'))
     
-    # print(f'>> xr.open_dataset() with {len(file_nc_list)} partition(s): ',end='')
-    # dtstart = dt.datetime.now()
-    # partitions = []
-    # for iF, file_nc_one in enumerate(file_nc_list[:4]):
-    #     print(iF+1,end=' ')
-    #     uds = xu.open_dataset(file_nc_one, chunks={'time':1},decode_times=False)#, cache=False)
-    #     partitions.append(uds)
-    # print(': ',end='')
-    # print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
-    
-    # print(f'>> xu.merge_partitions() with {len(file_nc_list)} partition(s): ',end='')
-    # dtstart = dt.datetime.now()
-    # ds_merged_xu = xu.merge_partitions(partitions)
-    # print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
     #ds_merged_xu.load()
     #ds_merged_xu.mesh2d_sa1.mean(dim='time').compute() #to flood memory
