@@ -139,7 +139,7 @@ def get_vertical_dimensions(uds): #TODO: maybe add layer_dimension and interface
         return None, None
 
 
-def open_partitioned_dataset(file_nc, chunks={'time':1}, decode_times_perfile=True): 
+def open_partitioned_dataset(file_nc, chunks={'time':1}): 
     """
     using xugrid to read and merge partitions, with some additional features (remaning old layerdim, timings, set zcc/zw as data_vars)
 
@@ -168,15 +168,16 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}, decode_times_perfile=Tr
     file_nc = 'p:\\11208053-005-kpp2022-rmm3d\\C_Work\\01_saltiMarlein\\RMM_2019_computations_02\\computations\\theo_03\\DFM_OUTPUT_RMM_dflowfm_2019\\RMM_dflowfm_2019_0*_map.nc' #RMM 3D
     file_nc = 'p:\\archivedprojects\\11203379-005-mwra-updated-bem\\03_model\\02_final\\A72_ntsu0_kzlb2\\DFM_OUTPUT_MB_02\\MB_02_0*_map.nc'
     Timings (xu.open_dataset/xu.merge_partitions):
-        - DCSM 3D 20 partitions  367 timesteps: 231.5/ 4.5 sec (decode_times_false: 18.3?sec)
-        - RMM  2D  8 partitions  421 timesteps:  55.4/ 4.4 sec (decode_times_false:  9.3?sec)
-        - GTSM 2D  8 partitions  746 timesteps:  71.8/30.0 sec (decode_times_false:  9.5?sec)
-        - RMM  3D 40 partitions  146 timesteps: 168.8/ 6.3 sec (decode_times_false: 17.4?sec)
-        - MWRA 3D 20 partitions 2551 timesteps:  74.4/ 3.4 sec (decode_times_false:  5.9?sec)
+        - DCSM 3D 20 partitions  367 timesteps: 231.5/ 4.5 sec (decode_times=False: 229.0 sec)
+        - RMM  2D  8 partitions  421 timesteps:  55.4/ 4.4 sec (decode_times=False:  56.6 sec)
+        - GTSM 2D  8 partitions  746 timesteps:  71.8/30.0 sec (decode_times=False: 204.8 sec)
+        - RMM  3D 40 partitions  146 timesteps: 168.8/ 6.3 sec (decode_times=False: 158.4 sec)
+        - MWRA 3D 20 partitions 2551 timesteps:  74.4/ 3.4 sec (decode_times=False:  79.0 sec)
     
     """
     #TODO: FM-mapfiles contain wgs84/projected_coordinate_system variables. xugrid has .crs property, projected_coordinate_system/wgs84 should be updated to be crs so it will be automatically handled? >> make dflowfm issue (and https://github.com/Deltares/xugrid/issues/42)
     #TODO: add support for multiple grids via keyword?
+    #TODO: speed up open_dataset https://github.com/Deltares/dfm_tools/issues/225 >> c:\DATA\dfm_tools\tests\examples_workinprogress\workinprogress_xugrid_mergepartitions.py
     
     dtstart_all = dt.datetime.now()
     if isinstance(file_nc,list):
@@ -191,26 +192,18 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}, decode_times_perfile=Tr
     partitions = []
     for iF, file_nc_one in enumerate(file_nc_list):
         print(iF+1,end=' ')
-        #TODO: speed up, for instance by doing decode after merging? (or is second-read than not faster anymore?) >> https://github.com/Deltares/dfm_tools/issues/225 >> c:\DATA\dfm_tools\tests\examples_workinprogress\xarray_largemapfile_profiler.py (copied MBAY partition to d-drive to check whether network causes it)
-        ds = xu.open_dataset(file_nc_one, chunks=chunks, decode_times=decode_times_perfile)
+        ds = xu.open_dataset(file_nc_one, chunks=chunks)
         partitions.append(ds)
     print(': ',end='')
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
-    #if len(partitions) == 1: #do not merge in case of 1 partition
-    #    return partitions[0]
+    if len(partitions) == 1: #do not merge in case of 1 partition
+        return partitions[0]
     
     print(f'>> xu.merge_partitions() with {len(file_nc_list)} partition(s): ',end='')
     dtstart = dt.datetime.now()
     ds_merged_xu = xu.merge_partitions(partitions)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
-
-    if not decode_times_perfile:
-        print('>> decode times for merged dataset: ',end='')
-        dtstart = dt.datetime.now()
-        units, reference_date = ds_merged_xu.time.attrs['units'].split('since')
-        ds_merged_xu['time'] = pd.Timestamp(reference_date) + ds_merged_xu.time * pd.Timedelta(1,unit=units.strip())
-        print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
     #print variables that are dropped in merging procedure. Often only ['mesh2d_face_x_bnd', 'mesh2d_face_y_bnd'], which can be derived by combining node_coordinates (mesh2d_node_x mesh2d_node_y) and face_node_connectivity (mesh2d_face_nodes). >> can be removed from FM-mapfiles (email of 16-1-2023)
     varlist_onepart = list(partitions[0].variables.keys())

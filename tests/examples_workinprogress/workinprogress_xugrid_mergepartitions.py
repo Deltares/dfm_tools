@@ -30,7 +30,7 @@ for file_nc in file_nc_list:
     if len(file_nc_list)==0:
         raise Exception('file(s) not found, empty file_nc_list')
     
-    ds_merged_xu = dfmt.open_partitioned_dataset(file_nc_list, decode_times_perfile=False)
+    ds_merged_xu = dfmt.open_partitioned_dataset(file_nc_list)
     
     # print(f'>> xr.open_dataset() with {len(file_nc_list)} partition(s): ',end='')
     # dtstart = dt.datetime.now()
