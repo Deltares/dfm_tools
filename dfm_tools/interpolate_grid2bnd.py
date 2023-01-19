@@ -17,10 +17,10 @@ from scipy.spatial import KDTree
 import warnings
 
 try: #0.3.1 release
-    from hydrolib.core.io.bc.models import ForcingModel, QuantityUnitPair, Astronomic
+    from hydrolib.core.io.bc.models import ForcingModel
     from hydrolib.core.io.polyfile.models import PolyFile
 except: #main branch and next release
-    from hydrolib.core.dflowfm.bc.models import ForcingModel, QuantityUnitPair, Astronomic
+    from hydrolib.core.dflowfm.bc.models import ForcingModel
     from hydrolib.core.dflowfm.polyfile.models import PolyFile
 
 from dfm_tools.hydrolib_helpers import Dataset_to_TimeSeries, Dataset_to_T3D, Dataset_to_Astronomic
@@ -97,6 +97,7 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
     dir_pattern_dict = {'FES2014': Path(r'P:\metocean-data\licensed\FES2014','*.nc'), #ocean_tide_extrapolated
                         'FES2012': Path(r'P:\metocean-data\open\FES2012\data','*_FES2012_SLEV.nc'), #is eigenlijk ook licensed
                         'EOT20': Path(r'P:\metocean-data\open\EOT20\ocean_tides','*_ocean_eot20.nc'),
+                        #TODO: add tpxo, catalog: https://opendap.deltares.nl/thredds/catalog/opendap/deltares/delftdashboard/tidemodels/tpxo80/catalog.html
                         }
     if tidemodel not in dir_pattern_dict.keys():
         raise Exception(f'invalid tidemodel "{tidemodel}", options are: {list(dir_pattern_dict.keys())}')
