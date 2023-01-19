@@ -14,6 +14,7 @@ import datetime as dt
 import glob
 import pandas as pd
 import warnings
+import numpy as np
 
 
 def preprocess_hisnc(ds):
@@ -139,6 +140,27 @@ def get_vertical_dimensions(uds): #TODO: maybe add layer_dimension and interface
         return None, None
 
 
+def remove_ghostcells(ds,gridname='mesh2d'): #TODO: create JIRA issue: add domainno attribute to partitioned mapfiles or remove ghostcells from output
+    
+    #check if dataset has ghostcells
+    varn_domain = f'{gridname}_flowelem_domain'
+    if varn_domain not in ds.data_vars:
+        print('[nodomainvar]')
+        return ds
+    
+    #derive domainno from domain var and filename
+    da_domainno = ds[varn_domain]
+    part_domainno = np.bincount(da_domainno).argmax()
+    part_domainno_fromfname = int(ds.encoding['source'][-11:-7]) #this is not valid for rstfiles but they cannot be read anyway
+    if part_domainno != part_domainno_fromfname:
+        warnings.warn(f'remove_ghostcells: different domainno found in filename ({part_domainno_fromfname}) and domain variable ({part_domainno})')
+    
+    #drop ghostcells
+    idx = np.flatnonzero(da_domainno == part_domainno)
+    ds = ds.isel({ds.grid.face_dimension:idx})
+    return ds
+
+
 def open_partitioned_dataset(file_nc, chunks={'time':1}): 
     """
     using xugrid to read and merge partitions, with some additional features (remaning old layerdim, timings, set zcc/zw as data_vars)
@@ -193,6 +215,7 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
     for iF, file_nc_one in enumerate(file_nc_list):
         print(iF+1,end=' ')
         ds = xu.open_dataset(file_nc_one, chunks=chunks)
+        ds = remove_ghostcells(ds)
         partitions.append(ds)
     print(': ',end='')
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
