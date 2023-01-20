@@ -85,21 +85,21 @@ Created on Sun Mar 22 08:41:00 2020
 &#34;&#34;&#34;
 
 
-def scatter_to_regulargrid(xcoords=None, ycoords=None, ncellx=None, ncelly=None, values=None, method=&#39;nearest&#39;, maskland_dist=None):
+def scatter_to_regulargrid(xcoords, ycoords, values, ncellx=None, ncelly=None, reg_x_vec=None, reg_y_vec=None, method=&#39;nearest&#39;, maskland_dist=None):
     &#34;&#34;&#34;
     interpolates scatter values (x,y,z) or meshgrids to regular grid
 
     Parameters
     ----------
-    xcoords : TYPE, optional
+    xcoords : TYPE
         DESCRIPTION. The default is None.
-    ycoords : TYPE, optional
+    ycoords : TYPE
+        DESCRIPTION. The default is None.
+    values : TYPE
         DESCRIPTION. The default is None.
     ncellx : TYPE, optional
         DESCRIPTION. The default is None.
     ncelly : TYPE, optional
-        DESCRIPTION. The default is None.
-    values : TYPE, optional
         DESCRIPTION. The default is None.
     method : TYPE, optional
         DESCRIPTION. The default is &#39;nearest&#39;.
@@ -120,8 +120,12 @@ def scatter_to_regulargrid(xcoords=None, ycoords=None, ncellx=None, ncelly=None,
     from scipy.interpolate import griddata
     from scipy.spatial import KDTree
     
-    reg_x_vec = np.linspace(np.min(xcoords),np.max(xcoords),ncellx)
-    reg_y_vec = np.linspace(np.min(ycoords),np.max(ycoords),ncelly)
+    if (reg_x_vec is None) or (reg_y_vec is None):
+        if (ncellx is None) or (ncelly is None):
+            raise Exception(&#39;if reg_x_vec/reg_y_vec are not supplied, ncellx and ncelly should be supplied&#39;)
+        print(&#39;reg_x_vec or reg_y_vec not supplied, so computing from ncellx and ncelly&#39;)
+        reg_x_vec = np.linspace(np.min(xcoords),np.max(xcoords),ncellx)
+        reg_y_vec = np.linspace(np.min(ycoords),np.max(ycoords),ncelly)
     x_grid,y_grid = np.meshgrid(reg_x_vec,reg_y_vec)
     
     #first replace masked value with nan (mask is not used in griddata)
@@ -212,7 +216,7 @@ def corner2center(cor):
     return cen
 
 
-def uva2xymagdeg(U1, V1, ALFAS, KCU=None, KCV=None, inactivewhen4x0=True):
+def uva2xymagdeg(U1, V1, ALFAS, KCU=None, KCV=None, inactivewhen4x0=True): #only used in workinprogress_delft3D_netcdf.py
     &#34;&#34;&#34;
     this function converts velocities in m,n-direction (defined mathematically, so 0 on x-axis and increasing counter-clockwise)
     alpha is a matrix with orientations of cells, with respect to the north (varname=&#39;ALFAS&#39;) in D3D output
@@ -405,21 +409,21 @@ array([[ 3.,  6.]])
 </details>
 </dd>
 <dt id="dfm_tools.regulargrid.scatter_to_regulargrid"><code class="name flex">
-<span>def <span class="ident">scatter_to_regulargrid</span></span>(<span>xcoords=None, ycoords=None, ncellx=None, ncelly=None, values=None, method='nearest', maskland_dist=None)</span>
+<span>def <span class="ident">scatter_to_regulargrid</span></span>(<span>xcoords, ycoords, values, ncellx=None, ncelly=None, reg_x_vec=None, reg_y_vec=None, method='nearest', maskland_dist=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>interpolates scatter values (x,y,z) or meshgrids to regular grid</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
-<dt><strong><code>xcoords</code></strong> :&ensp;<code>TYPE</code>, optional</dt>
+<dt><strong><code>xcoords</code></strong> :&ensp;<code>TYPE</code></dt>
 <dd>DESCRIPTION. The default is None.</dd>
-<dt><strong><code>ycoords</code></strong> :&ensp;<code>TYPE</code>, optional</dt>
+<dt><strong><code>ycoords</code></strong> :&ensp;<code>TYPE</code></dt>
+<dd>DESCRIPTION. The default is None.</dd>
+<dt><strong><code>values</code></strong> :&ensp;<code>TYPE</code></dt>
 <dd>DESCRIPTION. The default is None.</dd>
 <dt><strong><code>ncellx</code></strong> :&ensp;<code>TYPE</code>, optional</dt>
 <dd>DESCRIPTION. The default is None.</dd>
 <dt><strong><code>ncelly</code></strong> :&ensp;<code>TYPE</code>, optional</dt>
-<dd>DESCRIPTION. The default is None.</dd>
-<dt><strong><code>values</code></strong> :&ensp;<code>TYPE</code>, optional</dt>
 <dd>DESCRIPTION. The default is None.</dd>
 <dt><strong><code>method</code></strong> :&ensp;<code>TYPE</code>, optional</dt>
 <dd>DESCRIPTION. The default is 'nearest'.</dd>
@@ -439,21 +443,21 @@ array([[ 3.,  6.]])
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def scatter_to_regulargrid(xcoords=None, ycoords=None, ncellx=None, ncelly=None, values=None, method=&#39;nearest&#39;, maskland_dist=None):
+<pre><code class="python">def scatter_to_regulargrid(xcoords, ycoords, values, ncellx=None, ncelly=None, reg_x_vec=None, reg_y_vec=None, method=&#39;nearest&#39;, maskland_dist=None):
     &#34;&#34;&#34;
     interpolates scatter values (x,y,z) or meshgrids to regular grid
 
     Parameters
     ----------
-    xcoords : TYPE, optional
+    xcoords : TYPE
         DESCRIPTION. The default is None.
-    ycoords : TYPE, optional
+    ycoords : TYPE
+        DESCRIPTION. The default is None.
+    values : TYPE
         DESCRIPTION. The default is None.
     ncellx : TYPE, optional
         DESCRIPTION. The default is None.
     ncelly : TYPE, optional
-        DESCRIPTION. The default is None.
-    values : TYPE, optional
         DESCRIPTION. The default is None.
     method : TYPE, optional
         DESCRIPTION. The default is &#39;nearest&#39;.
@@ -474,8 +478,12 @@ array([[ 3.,  6.]])
     from scipy.interpolate import griddata
     from scipy.spatial import KDTree
     
-    reg_x_vec = np.linspace(np.min(xcoords),np.max(xcoords),ncellx)
-    reg_y_vec = np.linspace(np.min(ycoords),np.max(ycoords),ncelly)
+    if (reg_x_vec is None) or (reg_y_vec is None):
+        if (ncellx is None) or (ncelly is None):
+            raise Exception(&#39;if reg_x_vec/reg_y_vec are not supplied, ncellx and ncelly should be supplied&#39;)
+        print(&#39;reg_x_vec or reg_y_vec not supplied, so computing from ncellx and ncelly&#39;)
+        reg_x_vec = np.linspace(np.min(xcoords),np.max(xcoords),ncellx)
+        reg_y_vec = np.linspace(np.min(ycoords),np.max(ycoords),ncelly)
     x_grid,y_grid = np.meshgrid(reg_x_vec,reg_y_vec)
     
     #first replace masked value with nan (mask is not used in griddata)
@@ -520,7 +528,7 @@ Uc(2:end-1,: ) = (U1(1:end-1,: )) + U1(2:end,: ))/2 klopt wel, maar werkt alleen
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def uva2xymagdeg(U1, V1, ALFAS, KCU=None, KCV=None, inactivewhen4x0=True):
+<pre><code class="python">def uva2xymagdeg(U1, V1, ALFAS, KCU=None, KCV=None, inactivewhen4x0=True): #only used in workinprogress_delft3D_netcdf.py
     &#34;&#34;&#34;
     this function converts velocities in m,n-direction (defined mathematically, so 0 on x-axis and increasing counter-clockwise)
     alpha is a matrix with orientations of cells, with respect to the north (varname=&#39;ALFAS&#39;) in D3D output

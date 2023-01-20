@@ -91,7 +91,6 @@ import datetime as dt
 from netCDF4 import num2date
 import warnings
 
-
 def write_timfile(filename, datablock, header, converttime=False, refdate=None, tzone=0, float_format=&#39;%6.2f&#39;):
     &#34;&#34;&#34;
     
@@ -122,7 +121,7 @@ def write_timfile(filename, datablock, header, converttime=False, refdate=None, 
 
     &#34;&#34;&#34;
     
-    raise DeprecationWarning(&#39;the function dfm_tools.io.tim.write_timfile() is deprecated, please use the new hydrolib alternative (in development).&#39;) #TODO: remove code (there is no hydrolib-core alternative available yet)
+    warnings.warn(DeprecationWarning(&#39;the function dfm_tools.io.tim.write_timfile() is deprecated, please use the new hydrolib alternative (in development).&#39;)) #TODO: remove code (there is no hydrolib-core alternative available yet)
     
     if type(datablocks) is not list:
         datablocks = [datablocks]
@@ -180,7 +179,7 @@ Raises
 
     &#34;&#34;&#34;
     
-    raise DeprecationWarning(&#39;the function dfm_tools.io.tim.read_timfile() is deprecated, please use the new hydrolib alternative (in development).&#39;) #TODO: remove code (there is no hydrolib-core alternative available yet)
+    warnings.warn(DeprecationWarning(&#39;the function dfm_tools.io.tim.read_timfile() is deprecated, please use the new hydrolib alternative (in development).&#39;)) #TODO: remove code (there is no hydrolib-core alternative available yet)
     
     with open(filename, &#39;r&#39;) as bc:
         page = bc.readlines()
@@ -268,7 +267,7 @@ Raises
 
     &#34;&#34;&#34;
     
-    raise DeprecationWarning(&#39;the function dfm_tools.io.tim.read_timfile() is deprecated, please use the new hydrolib alternative (in development).&#39;) #TODO: remove code (there is no hydrolib-core alternative available yet)
+    warnings.warn(DeprecationWarning(&#39;the function dfm_tools.io.tim.read_timfile() is deprecated, please use the new hydrolib alternative (in development).&#39;)) #TODO: remove code (there is no hydrolib-core alternative available yet)
     
     with open(filename, &#39;r&#39;) as bc:
         page = bc.readlines()
@@ -357,7 +356,7 @@ Raises
 
     &#34;&#34;&#34;
     
-    raise DeprecationWarning(&#39;the function dfm_tools.io.tim.write_timfile() is deprecated, please use the new hydrolib alternative (in development).&#39;) #TODO: remove code (there is no hydrolib-core alternative available yet)
+    warnings.warn(DeprecationWarning(&#39;the function dfm_tools.io.tim.write_timfile() is deprecated, please use the new hydrolib alternative (in development).&#39;)) #TODO: remove code (there is no hydrolib-core alternative available yet)
     
     if type(datablocks) is not list:
         datablocks = [datablocks]

@@ -39,62 +39,104 @@ import pandas as pd
 import cftime
 import numpy as np
 import xarray as xr
-from hydrolib.core.io.polyfile.models import PolyObject
 from cftime import date2num
 
-from hydrolib.core.io.bc.models import (
-    ForcingModel,
-    QuantityUnitPair,
-    T3D,
-    TimeSeries,
-    Astronomic,
-)
+try: #0.3.1 release
+    from hydrolib.core.io.polyfile.models import PolyObject
+    from hydrolib.core.io.bc.models import ForcingModel, QuantityUnitPair, VectorQuantityUnitPairs, T3D, TimeSeries, Astronomic
+except: #main branch and next release
+    from hydrolib.core.dflowfm.polyfile.models import PolyObject
+    from hydrolib.core.dflowfm.bc.models import ForcingModel, QuantityUnitPair, VectorQuantityUnitPairs, T3D, TimeSeries, Astronomic
 
 
-def DataArray_to_T3D(datablock_xr):   
+def Dataset_to_T3D(datablock_xr):  
     &#34;&#34;&#34;
-    convert an xarray.DataArray with time and depth dimension to a hydrolib T3D object
+    convert an xarray.DataArray (is one data_var) or an xarray.Dataset (with one or two data_vars) with time and depth dimension to a hydrolib T3D object
     &#34;&#34;&#34;
-    #TODO: clean up these first lines of code and add description to docstring?
-    locationname = datablock_xr.attrs[&#39;locationname&#39;]
-    bcvarname = datablock_xr.name
-    refdate_str = datablock_xr.time.encoding[&#39;units&#39;]
     
-    if datablock_xr.dims != (&#39;time&#39;,&#39;depth&#39;): #check if both time and depth dimensions are present #TODO: add support for flipped dimensions (datablock_xr.T or something is needed)
-        raise Exception(f&#34;ERROR: datablock_xr provided to DataArray_to_T3D has dimensions {datablock_xr.dims} while (&#39;time&#39;,&#39;depth&#39;) is expected&#34;)
-    
-    #get depth variable and values
-    depth_array = datablock_xr[&#39;depth&#39;].to_numpy()
-    if &#39;positive&#39; in datablock_xr[&#39;depth&#39;].attrs.keys():
-        if datablock_xr[&#39;depth&#39;].attrs[&#39;positive&#39;] == &#39;down&#39;: #attribute appears in CMEMS, GFDL and CMCC, save to assume presence?
-            depth_array = -depth_array
+    if isinstance(datablock_xr,xr.DataArray):
+        vector = False
+        data_xr_var0 = datablock_xr
+    elif isinstance(datablock_xr,xr.Dataset):
+        data_vars = list(datablock_xr.data_vars)
+        if len(data_vars)==1: 
+            vector = False
+            data_xr_var0 = datablock_xr[data_vars[0]]
+        elif len(data_vars)==2:
+            if not pd.Series(data_vars).isin([&#39;ux&#39;,&#39;uy&#39;]).all():
+                raise Exception(f&#39;Dataset with 2 data_vars should contain only ux/uy data_vars, but contains {data_vars}&#39;)
+            vector = True
+            data_xr_var0 = datablock_xr[data_vars[0]]
+            data_xr_var1 = datablock_xr[data_vars[1]]
+        else:
+            raise Exception(f&#39;Dataset should contain 1 or 2 data_vars, but contains {len(data_vars)} variables&#39;)
+    else:
+        raise Exception(f&#39;expected xarray.DataArray or xarray.Dataset, not {type(datablock_xr)}&#39;)
     
     #ffill/bfill nan data along over depth dimension (corresponds to vertical extrapolation)
-    datablock_xr = datablock_xr.bfill(dim=&#39;depth&#39;).ffill(dim=&#39;depth&#39;)
+    data_xr_var0 = data_xr_var0.bfill(dim=&#39;depth&#39;).ffill(dim=&#39;depth&#39;)
+    if vector:
+        data_xr_var1 = data_xr_var1.bfill(dim=&#39;depth&#39;).ffill(dim=&#39;depth&#39;)
+    
+    #TODO: clean up these first lines of code and add description to docstring?
+    locationname = data_xr_var0.attrs[&#39;locationname&#39;]
+    refdate_str = data_xr_var0.time.encoding[&#39;units&#39;]
+    
+    if data_xr_var0.dims != (&#39;time&#39;,&#39;depth&#39;): #check if both time and depth dimensions are present #TODO: add support for flipped dimensions (datablock_xr.T or something is needed)
+        raise Exception(f&#34;ERROR: data_var in provided data_xr has dimensions {data_xr_var0.dims} while (&#39;time&#39;,&#39;depth&#39;) is expected&#34;)
+    
+    #get depth variable and values
+    depth_array = data_xr_var0[&#39;depth&#39;].to_numpy()
     
     #get datablock and concatenate with relative time data
-    datablock_np = datablock_xr.to_numpy()
-    timevar_sel_rel = date2num(pd.DatetimeIndex(datablock_xr.time.to_numpy()).to_pydatetime(),units=refdate_str,calendar=&#39;standard&#39;)
+    if vector:
+        data_xr_var0_np = data_xr_var0.to_numpy()
+        data_xr_var1_np = data_xr_var1.to_numpy()
+        datablock_np = np.stack((data_xr_var0_np,data_xr_var1_np),2).reshape(data_xr_var0_np.shape[0],-1) #merge data with alternating rows
+    else:
+        datablock_np = data_xr_var0.to_numpy()
+    
+    timevar_sel_rel = date2num(pd.DatetimeIndex(data_xr_var0.time.to_numpy()).to_pydatetime(),units=refdate_str,calendar=&#39;standard&#39;)
     datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock_np],axis=1)
     
     # Each .bc file can contain 1 or more timeseries, in this case one for each support point
-    verticalpositions_idx = np.arange(datablock_xr[&#39;depth&#39;].size)+1
-    list_QUP_perlayer = [QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs[&#39;units&#39;], vertpositionindex=iVP) for iVP in verticalpositions_idx]
-    ts_one = T3D(name=locationname,
-                 vertpositions=np.round(depth_array.tolist(),decimals=4).tolist(), # make decimals userdefined? .tolist() is necessary for np.round to work for some reason
-                 vertinterpolation=&#39;linear&#39;,
-                 vertPositionType=&#39;ZDatum&#39;,
-                 quantityunitpair=[QuantityUnitPair(quantity=&#34;time&#34;, unit=refdate_str)]+list_QUP_perlayer,
-                 timeinterpolation=&#39;linear&#39;,
-                 datablock=datablock_incltime.tolist(), #TODO: numpy array is not supported by TimeSeries. https://github.com/Deltares/HYDROLIB-core/issues/322
-                 )
-    return ts_one
+    verticalpositions_idx = np.arange(data_xr_var0[&#39;depth&#39;].size)+1
+    if vector: #vector T3D object
+        QUP_quan_list = [QuantityUnitPair(quantity=quan, unit=data_xr_var0.attrs[&#39;units&#39;], vertpositionindex=iVP) for iVP in verticalpositions_idx for quan in data_vars]
+        QUP_quan_vector = VectorQuantityUnitPairs(vectorname=&#39;uxuyadvectionvelocitybnd&#39;, #TODO: vectorname from global attr? (then also support other vectors which is not necessary)
+                                                  elementname=data_vars,
+                                                  quantityunitpair=QUP_quan_list)
+        quantityunitpair = [QuantityUnitPair(quantity=&#34;time&#34;, unit=refdate_str)]+[QUP_quan_vector]
+    else: #normal T3D object
+        QUP_quan_list = [QuantityUnitPair(quantity=data_xr_var0.name, unit=data_xr_var0.attrs[&#39;units&#39;], vertpositionindex=iVP) for iVP in verticalpositions_idx]
+        quantityunitpair=[QuantityUnitPair(quantity=&#34;time&#34;, unit=refdate_str)]+QUP_quan_list
+    
+    T3D_object = T3D(name=locationname,
+                     #offset=0,
+                     #factor=1,
+                     vertpositions=depth_array.tolist(),
+                     vertinterpolation=&#39;linear&#39;, #TODO: make these parameters user defined (via attrs)
+                     vertPositionType=&#39;ZDatum&#39;,
+                     quantityunitpair=quantityunitpair,
+                     timeinterpolation=&#39;linear&#39;,
+                     datablock=datablock_incltime.tolist(), #TODO: numpy array is not supported by TimeSeries. https://github.com/Deltares/HYDROLIB-core/issues/322
+                     )
+    
+    return T3D_object
 
 
-def DataArray_to_TimeSeries(datablock_xr):
+def Dataset_to_TimeSeries(datablock_xr):
     &#34;&#34;&#34;
-    convert an xarray.DataArray with time dimension to a hydrolib TimeSeries object
+    convert an xarray.DataArray or xarray.Dataset with time dimension to a hydrolib TimeSeries object
     &#34;&#34;&#34;
+    if isinstance(datablock_xr,xr.DataArray):
+        pass
+    if isinstance(datablock_xr,xr.Dataset):
+        data_vars = list(datablock_xr.data_vars)
+        if len(data_vars)!=1:
+            raise Exception(&#39;more than one variable supplied in Dataset, not yet possible&#39;) #TODO: add support for multiple quantities and for vectors
+        datablock_xr = datablock_xr[data_vars[0]]
+    
     #TODO: clean up these first lines of code and add description to docstring?
     locationname = datablock_xr.attrs[&#39;locationname&#39;]
     bcvarname = datablock_xr.name
@@ -109,16 +151,46 @@ def DataArray_to_TimeSeries(datablock_xr):
     datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock_np],axis=1)
     
     # Each .bc file can contain 1 or more timeseries, in this case one for each support point
-    ts_one = TimeSeries(name=locationname,
-                        quantityunitpair=[QuantityUnitPair(quantity=&#34;time&#34;, unit=refdate_str),
-                                          QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs[&#39;units&#39;])],
-                        timeinterpolation=&#39;linear&#39;,
-                        datablock=datablock_incltime.tolist(), 
-                        )
-    return ts_one
+    TimeSeries_object = TimeSeries(name=locationname,
+                                   quantityunitpair=[QuantityUnitPair(quantity=&#34;time&#34;, unit=refdate_str),
+                                                     QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs[&#39;units&#39;])],
+                                   timeinterpolation=&#39;linear&#39;, #TODO: make userdefined via attrs?
+                                   datablock=datablock_incltime.tolist(), 
+                                   )
+    return TimeSeries_object
 
 
-def DataFrame_to_PolyObject(poly_pd,name,content=None): #TODO: make this method bound? Better: make polyobject/extmodel accept dataframe?
+def Dataset_to_Astronomic(datablock_xr):
+    &#34;&#34;&#34;
+    convert an xarray.Dataset (with amplitude and phase data_vars) to a hydrolib Astronomic object
+    
+    &#34;&#34;&#34;
+    if not isinstance(datablock_xr,xr.Dataset):
+        raise Exception(f&#39;Dataset_to_Astronomic expects xr.Dataset, not {type(datablock_xr)}&#39;)
+    
+    data_vars = list(datablock_xr.data_vars)
+    if &#39;amplitude&#39; not in data_vars or &#39;phase_new&#39; not in data_vars:
+        raise Exception(&#39;amplitude and/or phase_new not in input xr.Dataset&#39;)
+
+    #TODO: clean up these first lines of code and add description to docstring?
+    locationname = datablock_xr[&#39;amplitude&#39;].attrs[&#39;locationname&#39;]
+        
+    #get datablock and concatenate with component names
+    datablock_np_cna = datablock_xr[&#39;compnames&#39;].to_numpy()[:,np.newaxis]
+    datablock_np_amp = datablock_xr[&#39;amplitude&#39;].to_numpy()[:,np.newaxis]
+    datablock_np_phs = datablock_xr[&#39;phase_new&#39;].to_numpy()[:,np.newaxis]
+    datablock_inclcomp = np.concatenate([datablock_np_cna,datablock_np_amp,datablock_np_phs],axis=1)
+    
+    Astronomic_object = Astronomic(name=locationname,
+                                   quantityunitpair=[QuantityUnitPair(quantity=&#34;astronomic component&#34;, unit=&#39;-&#39;),
+                                                     QuantityUnitPair(quantity=&#39;waterlevelbnd amplitude&#39;, unit=datablock_xr[&#39;amplitude&#39;].attrs[&#39;units&#39;]),
+                                                     QuantityUnitPair(quantity=&#39;waterlevelbnd phase&#39;, unit=datablock_xr[&#39;phase&#39;].attrs[&#39;units&#39;])],
+                                   datablock=datablock_inclcomp.tolist(), 
+                                   )
+    return Astronomic_object
+
+
+def DataFrame_to_PolyObject(poly_pd,name,content=None):
     &#34;&#34;&#34;
     convert a pandas dataframe with x/y columns (and optional others like z/data/comment) to a hydrolib PolyObject
     &#34;&#34;&#34;
@@ -136,10 +208,11 @@ def DataFrame_to_PolyObject(poly_pd,name,content=None): #TODO: make this method 
     return polyobject
 
 
-def forcinglike_to_DataArray(forcingobj): #TODO: would be convenient to have this as a method of ForcingModel objects (Timeseries/T3D/etc): https://github.com/Deltares/HYDROLIB-core/issues/307
+def forcinglike_to_Dataset(forcingobj, convertnan=False): #TODO: would be convenient to have this as a method of ForcingModel objects (Timeseries/T3D/etc): https://github.com/Deltares/HYDROLIB-core/issues/307
     &#34;&#34;&#34;
-    convert a hydrolib forcing like object (like Timeseries, T3D, Harmonic, etc) to a xarray DataArray.
-    #TODO: clean up code (maybe split for T3D/Timeseries/Astronomic/etc objects separately) and add doc
+    convert a hydrolib forcing like object (like Timeseries, T3D, Harmonic, etc) to an xarray Dataset with one or more variables.
+    
+    convertnan: convert depths with the same values over time as the deepest layer to nan (these were created with .bfill() or .ffill()).
     &#34;&#34;&#34;
     
     #check if forcingmodel instead of T3D/TimeSeries is provided
@@ -150,114 +223,68 @@ def forcinglike_to_DataArray(forcingobj): #TODO: would be convenient to have thi
     if not isinstance(forcingobj, allowed_instances):
         raise Exception(f&#39;ERROR: supplied input is not one of: {allowed_instances}&#39;)
     
-    var_quantity = forcingobj.quantityunitpair[1].quantity
-    var_unit = forcingobj.quantityunitpair[1].unit
+    if isinstance(forcingobj, Astronomic):
+        var_quantity_list = [x.quantity for x in forcingobj.quantityunitpair[1:]]
+        var_unit = [x.unit for x in forcingobj.quantityunitpair[1:]]
+    elif hasattr(forcingobj.quantityunitpair[1],&#39;elementname&#39;): #T3D with vector quantity
+        var_quantity_list = forcingobj.quantityunitpair[1].elementname
+        var_unit_one = forcingobj.quantityunitpair[1].quantityunitpair[0].unit
+        var_unit = [var_unit_one,var_unit_one]
+    else: #non-vector TimeSeries or T3D
+        var_quantity_list = [forcingobj.quantityunitpair[1].quantity]
+        var_unit = [forcingobj.quantityunitpair[1].unit]
+    nquan = len(var_quantity_list)
+    
     if isinstance(forcingobj, T3D):
         dims = (&#39;time&#39;,&#39;depth&#39;)
     elif isinstance(forcingobj, TimeSeries):
         dims = (&#39;time&#39;)
     elif isinstance(forcingobj, Astronomic):
-        dims = (&#39;astronomic_component&#39;,&#39;quantity&#39;) #TODO: what are dims in case of Astronomic? actually these are two variables
-        print(&#39;WARNING: format of DataArray is not final in case of astronomic component&#39;)
+        dims = (&#39;astronomic_component&#39;)
     
     datablock_all = np.array(forcingobj.datablock)
-    if forcingobj.quantityunitpair[0].quantity in [&#39;time&#39;,&#39;astronomic component&#39;]: #first column in bcfile is time
-        datablock_data = datablock_all[:,1:] #TODO: convert repeating values to nan? (reverse of ffill/bfill)
-        datablock_data = datablock_data.squeeze() #drop dimensions of len 1 in case of eg &#34;waterlevelbnd&#34;
+    datablock_data = datablock_all[:,1:] #select all columns except first one (which is the time column)
+    if isinstance(forcingobj, Astronomic):
         datablock_data = datablock_data.astype(float) #convert str to float in case of &#34;astronomic component&#34;
-    else:
-        datablock_data = datablock_all
     
-    #add dimension values
-    data_xr_var = xr.DataArray(datablock_data, name=var_quantity, dims=dims)
-    data_xr_var.attrs[&#39;locationname&#39;] = forcingobj.name
-    data_xr_var.attrs[&#39;units&#39;] = var_unit
-    if &#39;depth&#39; in dims:
-        data_xr_var[&#39;depth&#39;] = forcingobj.vertpositions
-        #data_xr_var[&#39;depth&#39;].attrs[&#39;positive&#39;] == &#39;up&#39; #TODO: maybe add this attribute
-    if &#39;time&#39; in dims:
-        time_unit = forcingobj.quantityunitpair[0].unit.lower()
-        data_xr_var[&#39;time&#39;] = cftime.num2pydate(datablock_all[:,0], units=time_unit)
-        data_xr_var[&#39;time&#39;].encoding[&#39;units&#39;] = time_unit #check tz conversion if eg &#39;+01:00&#39; is present in time_unit
-        data_xr_var[&#39;time&#39;].encoding[&#39;calendar&#39;] = &#39;standard&#39;
-    if &#39;astronomic_component&#39; in dims:
-        data_xr_var[&#39;astronomic_component&#39;] = datablock_all[:,0]
-    
-    #add attributes
-    attr_dict = {&#39;source&#39;:&#39;hydrolib-core object converted to xarray.DataArray with dfm_tools&#39;,
-                 &#39;unit&#39;:var_unit,
-                 }
-    for key in attr_dict.keys():
-        data_xr_var.attrs[key] = attr_dict[key]
-    forcingobj_keys = forcingobj.__dict__.keys()
-    for key in forcingobj_keys: #[&#39;comments&#39;,&#39;name&#39;,&#39;function&#39;,&#39;offset&#39;,&#39;factor&#39;,&#39;vertinterpolation&#39;,&#39;vertpositiontype&#39;,&#39;timeinterpolation&#39;]: 
-        if key in [&#39;datablock&#39;,&#39;quantityunitpair&#39;,&#39;vertpositions&#39;]: #skipping these since they are in the DataArray already
-            continue
-        data_xr_var.attrs[key] = str(forcingobj.__dict__[key])
-    
-    return data_xr_var
-
-
-def forcinglike_to_DataFrame(forcingobj):
-    &#34;&#34;&#34;
-    convert a hydrolib forcing like object (like Timeseries, T3D, Astronomic, etc) to a pandas DataFrame. Mostly via the forcinglike_to_DataArray() method. #TODO: Astronomic is also supported, what more?
-    
-    Parameters
-    ----------
-    forcingobj : hydrolib ForcingModel.forcing object (Timeseries/T3D etc)
-        DESCRIPTION.
-
-    Returns
-    -------
-    df_data : pd.DataFrame
-        DESCRIPTION
+    data_xr = xr.Dataset()
+    for iQ, var_quantity in enumerate(var_quantity_list):
+        datablock_data_onequan = datablock_data[:,iQ::nquan]
+        datablock_data_onequan = datablock_data_onequan.squeeze() #drop dimensions of len 1 in case of 1 dimension, eg &#34;waterlevelbnd&#34; (first subsetting over depth dimension)
         
-    Example
-    -------
-         file_bc = Path(&#39;p:\\11208053-004-kpp2022-rmm1d2d\\C_Work\\09_Validatie2018_2020\\dflowfm2d-rmm_vzm-j19_6-v2d\\boundary_conditions\\2018\\flow\\rmm_discharge_laterals_20171220_20190101_MET.bc&#39;)
-         m = ForcingModel(file_bc)
-         df_data_list = [forcingobject_to_dataframe(forcingobj, convert_time=True) for forcingobj in m.forcing]
-
-    &#34;&#34;&#34;
+        data_xr_var = xr.DataArray(datablock_data_onequan, name=var_quantity, dims=dims)
+        if &#39;depth&#39; in dims:
+            data_xr_var[&#39;depth&#39;] = forcingobj.vertpositions
+            #data_xr_var[&#39;depth&#39;].attrs[&#39;positive&#39;] == &#39;up&#39; #TODO: maybe add this attribute
+            if convertnan: #convert ffilled/bfilled values back to nan
+                deepestlayeridx = data_xr_var.depth.to_numpy().argmin()
+                if deepestlayeridx==0: #sorted from deep to shallow layers
+                    bool_nandepths = (data_xr_var==data_xr_var.shift(depth=-1)).all(dim=&#39;time&#39;)
+                else: #sorted from shallow to deep layers
+                    bool_nandepths = (data_xr_var==data_xr_var.shift(depth=1)).all(dim=&#39;time&#39;)
+                data_xr_var = data_xr_var.where(~bool_nandepths)
+        if &#39;time&#39; in dims:
+            time_unit = forcingobj.quantityunitpair[0].unit.lower()
+            data_xr_var[&#39;time&#39;] = cftime.num2pydate(datablock_all[:,0], units=time_unit)
+            data_xr_var[&#39;time&#39;].encoding[&#39;units&#39;] = time_unit #check tz conversion if eg &#39;+01:00&#39; is present in time_unit
+            data_xr_var[&#39;time&#39;].encoding[&#39;calendar&#39;] = &#39;standard&#39;
+        if &#39;astronomic_component&#39; in dims:
+            data_xr_var[&#39;astronomic_component&#39;] = datablock_all[:,0]
+        
+        #add attributes
+        data_xr_var.attrs[&#39;source&#39;] = &#39;hydrolib-core object converted to xarray.Dataset with dfm_tools.xarray_helpers.forcinglike_to_Dataset()&#39;
+        data_xr_var.attrs[&#39;locationname&#39;] = forcingobj.name
+        data_xr_var.attrs[&#39;units&#39;] = var_unit[iQ]
+        forcingobj_keys = forcingobj.__dict__.keys()
+        for key in forcingobj_keys: #[&#39;comments&#39;,&#39;name&#39;,&#39;function&#39;,&#39;offset&#39;,&#39;factor&#39;,&#39;vertinterpolation&#39;,&#39;vertpositiontype&#39;,&#39;timeinterpolation&#39;]: 
+            if key in [&#39;datablock&#39;,&#39;quantityunitpair&#39;,&#39;vertpositions&#39;]: #skipping these since they are in the DataArray already
+                continue
+            data_xr_var.attrs[key] = str(forcingobj.__dict__[key])
+        
+        #add DataArray to Dataset
+        data_xr[var_quantity] = data_xr_var
     
-    #check if forcingmodel instead of T3D/TimeSeries is provided
-    if isinstance(forcingobj, ForcingModel):
-        raise Exception(&#39;ERROR: instead of supplying a ForcingModel, provide a ForcingObject (Timeseries/T3D etc), by doing something like ForcingModel.forcing[0]&#39;)
-    
-    allowed_instances = (T3D, TimeSeries, Astronomic)
-    if not isinstance(forcingobj, allowed_instances):
-        raise Exception(f&#39;ERROR: supplied input is not one of: {allowed_instances}&#39;)
-    
-    &#34;&#34;&#34; #TODO: old complex code, remove this once timezone is properly supported in forcinglike_to_DataArray()
-    #convert_time : boolean, optional
-    #    Convert time column from unit (e.g. minutes since date) to datetime index and drop the time column. Has no effect if there is no time column in the forcingobject. The default is True.
-    QUP_list = [(QUP.quantity,QUP.unit,QUP.vertpositionindex) for QUP in forcingobj.quantityunitpair]
-    columns_MI = pd.MultiIndex.from_tuples(QUP_list,names=dict(forcingobj.quantityunitpair[0]).keys())
-    df_data = pd.DataFrame(forcingobj.datablock,columns=columns_MI)
-    df_data.index.name = forcingobj.name
-    colnames_quantity = df_data.columns.get_level_values(level=0)
-    if convert_time and (&#39;time&#39; in colnames_quantity): #this converts time to a datetime index
-        time_colid = colnames_quantity.get_loc(&#39;time&#39;)
-        time_unit = df_data.columns.get_level_values(level=1)[time_colid]
-        df_data.index = cftime.num2pydate(df_data.iloc[:,time_colid],units=time_unit)
-        df_data.index.name = forcingobj.name #again with new index
-        #timezone was converted to GMT, re-adjust timezone if needed
-        timeunit_sincedatetimetz = time_unit.split(&#39;since &#39;)[1]
-        tzone_minutes = cftime._parse_date(timeunit_sincedatetimetz)[-1]
-        df_data.index = df_data.index.tz_localize(&#39;GMT&#39;)
-        df_data.index = df_data.index.tz_convert(dt.timezone(dt.timedelta(minutes=tzone_minutes)))
-        #drop original time column
-        df_data = df_data.drop(labels=&#39;time&#39;,level=0,axis=1)
-    &#34;&#34;&#34;
-    if isinstance(forcingobj, (T3D, TimeSeries)):
-        data_xr_var = forcinglike_to_DataArray(forcingobj)
-        df_data = data_xr_var.to_pandas()
-    else: #for Astronomic, but might also work well for other objects without time dimension
-        columns = [f&#39;{QUP.quantity} [{QUP.unit}]&#39; for QUP in forcingobj.quantityunitpair]
-        df_data = pd.DataFrame(forcingobj.datablock,columns=columns)
-        df_data = df_data.set_index(columns[0])
-       
-    return df_data
+    return data_xr
 
 
 def pointlike_to_DataFrame(pointlike,drop_emptycols=True):
@@ -309,91 +336,6 @@ def parse_xy_to_datetime(pointlike_pd):
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt id="dfm_tools.hydrolib_helpers.DataArray_to_T3D"><code class="name flex">
-<span>def <span class="ident">DataArray_to_T3D</span></span>(<span>datablock_xr)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>convert an xarray.DataArray with time and depth dimension to a hydrolib T3D object</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def DataArray_to_T3D(datablock_xr):   
-    &#34;&#34;&#34;
-    convert an xarray.DataArray with time and depth dimension to a hydrolib T3D object
-    &#34;&#34;&#34;
-    #TODO: clean up these first lines of code and add description to docstring?
-    locationname = datablock_xr.attrs[&#39;locationname&#39;]
-    bcvarname = datablock_xr.name
-    refdate_str = datablock_xr.time.encoding[&#39;units&#39;]
-    
-    if datablock_xr.dims != (&#39;time&#39;,&#39;depth&#39;): #check if both time and depth dimensions are present #TODO: add support for flipped dimensions (datablock_xr.T or something is needed)
-        raise Exception(f&#34;ERROR: datablock_xr provided to DataArray_to_T3D has dimensions {datablock_xr.dims} while (&#39;time&#39;,&#39;depth&#39;) is expected&#34;)
-    
-    #get depth variable and values
-    depth_array = datablock_xr[&#39;depth&#39;].to_numpy()
-    if &#39;positive&#39; in datablock_xr[&#39;depth&#39;].attrs.keys():
-        if datablock_xr[&#39;depth&#39;].attrs[&#39;positive&#39;] == &#39;down&#39;: #attribute appears in CMEMS, GFDL and CMCC, save to assume presence?
-            depth_array = -depth_array
-    
-    #ffill/bfill nan data along over depth dimension (corresponds to vertical extrapolation)
-    datablock_xr = datablock_xr.bfill(dim=&#39;depth&#39;).ffill(dim=&#39;depth&#39;)
-    
-    #get datablock and concatenate with relative time data
-    datablock_np = datablock_xr.to_numpy()
-    timevar_sel_rel = date2num(pd.DatetimeIndex(datablock_xr.time.to_numpy()).to_pydatetime(),units=refdate_str,calendar=&#39;standard&#39;)
-    datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock_np],axis=1)
-    
-    # Each .bc file can contain 1 or more timeseries, in this case one for each support point
-    verticalpositions_idx = np.arange(datablock_xr[&#39;depth&#39;].size)+1
-    list_QUP_perlayer = [QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs[&#39;units&#39;], vertpositionindex=iVP) for iVP in verticalpositions_idx]
-    ts_one = T3D(name=locationname,
-                 vertpositions=np.round(depth_array.tolist(),decimals=4).tolist(), # make decimals userdefined? .tolist() is necessary for np.round to work for some reason
-                 vertinterpolation=&#39;linear&#39;,
-                 vertPositionType=&#39;ZDatum&#39;,
-                 quantityunitpair=[QuantityUnitPair(quantity=&#34;time&#34;, unit=refdate_str)]+list_QUP_perlayer,
-                 timeinterpolation=&#39;linear&#39;,
-                 datablock=datablock_incltime.tolist(), #TODO: numpy array is not supported by TimeSeries. https://github.com/Deltares/HYDROLIB-core/issues/322
-                 )
-    return ts_one</code></pre>
-</details>
-</dd>
-<dt id="dfm_tools.hydrolib_helpers.DataArray_to_TimeSeries"><code class="name flex">
-<span>def <span class="ident">DataArray_to_TimeSeries</span></span>(<span>datablock_xr)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>convert an xarray.DataArray with time dimension to a hydrolib TimeSeries object</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def DataArray_to_TimeSeries(datablock_xr):
-    &#34;&#34;&#34;
-    convert an xarray.DataArray with time dimension to a hydrolib TimeSeries object
-    &#34;&#34;&#34;
-    #TODO: clean up these first lines of code and add description to docstring?
-    locationname = datablock_xr.attrs[&#39;locationname&#39;]
-    bcvarname = datablock_xr.name
-    refdate_str = datablock_xr.time.encoding[&#39;units&#39;]
-    
-    if datablock_xr.dims != (&#39;time&#39;,):
-        raise Exception(f&#34;ERROR: datablock_xr provided to DataArray_to_TimeSeries has dimensions {datablock_xr.dims} while (&#39;time&#39;) is expected&#34;)
-    
-    #get datablock and concatenate with relative time data
-    datablock_np = datablock_xr.to_numpy()[:,np.newaxis]
-    timevar_sel_rel = date2num(pd.DatetimeIndex(datablock_xr.time.to_numpy()).to_pydatetime(),units=refdate_str,calendar=&#39;standard&#39;)
-    datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock_np],axis=1)
-    
-    # Each .bc file can contain 1 or more timeseries, in this case one for each support point
-    ts_one = TimeSeries(name=locationname,
-                        quantityunitpair=[QuantityUnitPair(quantity=&#34;time&#34;, unit=refdate_str),
-                                          QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs[&#39;units&#39;])],
-                        timeinterpolation=&#39;linear&#39;,
-                        datablock=datablock_incltime.tolist(), 
-                        )
-    return ts_one</code></pre>
-</details>
-</dd>
 <dt id="dfm_tools.hydrolib_helpers.DataFrame_to_PolyObject"><code class="name flex">
 <span>def <span class="ident">DataFrame_to_PolyObject</span></span>(<span>poly_pd, name, content=None)</span>
 </code></dt>
@@ -403,7 +345,7 @@ def parse_xy_to_datetime(pointlike_pd):
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def DataFrame_to_PolyObject(poly_pd,name,content=None): #TODO: make this method bound? Better: make polyobject/extmodel accept dataframe?
+<pre><code class="python">def DataFrame_to_PolyObject(poly_pd,name,content=None):
     &#34;&#34;&#34;
     convert a pandas dataframe with x/y columns (and optional others like z/data/comment) to a hydrolib PolyObject
     &#34;&#34;&#34;
@@ -421,20 +363,189 @@ def parse_xy_to_datetime(pointlike_pd):
     return polyobject</code></pre>
 </details>
 </dd>
-<dt id="dfm_tools.hydrolib_helpers.forcinglike_to_DataArray"><code class="name flex">
-<span>def <span class="ident">forcinglike_to_DataArray</span></span>(<span>forcingobj)</span>
+<dt id="dfm_tools.hydrolib_helpers.Dataset_to_Astronomic"><code class="name flex">
+<span>def <span class="ident">Dataset_to_Astronomic</span></span>(<span>datablock_xr)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>convert a hydrolib forcing like object (like Timeseries, T3D, Harmonic, etc) to a xarray DataArray.</p>
-<h1 id="todo-clean-up-code-maybe-split-for-t3dtimeseriesastronomicetc-objects-separately-and-add-doc">TODO: clean up code (maybe split for T3D/Timeseries/Astronomic/etc objects separately) and add doc</h1></div>
+<div class="desc"><p>convert an xarray.Dataset (with amplitude and phase data_vars) to a hydrolib Astronomic object</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def forcinglike_to_DataArray(forcingobj): #TODO: would be convenient to have this as a method of ForcingModel objects (Timeseries/T3D/etc): https://github.com/Deltares/HYDROLIB-core/issues/307
+<pre><code class="python">def Dataset_to_Astronomic(datablock_xr):
     &#34;&#34;&#34;
-    convert a hydrolib forcing like object (like Timeseries, T3D, Harmonic, etc) to a xarray DataArray.
-    #TODO: clean up code (maybe split for T3D/Timeseries/Astronomic/etc objects separately) and add doc
+    convert an xarray.Dataset (with amplitude and phase data_vars) to a hydrolib Astronomic object
+    
+    &#34;&#34;&#34;
+    if not isinstance(datablock_xr,xr.Dataset):
+        raise Exception(f&#39;Dataset_to_Astronomic expects xr.Dataset, not {type(datablock_xr)}&#39;)
+    
+    data_vars = list(datablock_xr.data_vars)
+    if &#39;amplitude&#39; not in data_vars or &#39;phase_new&#39; not in data_vars:
+        raise Exception(&#39;amplitude and/or phase_new not in input xr.Dataset&#39;)
+
+    #TODO: clean up these first lines of code and add description to docstring?
+    locationname = datablock_xr[&#39;amplitude&#39;].attrs[&#39;locationname&#39;]
+        
+    #get datablock and concatenate with component names
+    datablock_np_cna = datablock_xr[&#39;compnames&#39;].to_numpy()[:,np.newaxis]
+    datablock_np_amp = datablock_xr[&#39;amplitude&#39;].to_numpy()[:,np.newaxis]
+    datablock_np_phs = datablock_xr[&#39;phase_new&#39;].to_numpy()[:,np.newaxis]
+    datablock_inclcomp = np.concatenate([datablock_np_cna,datablock_np_amp,datablock_np_phs],axis=1)
+    
+    Astronomic_object = Astronomic(name=locationname,
+                                   quantityunitpair=[QuantityUnitPair(quantity=&#34;astronomic component&#34;, unit=&#39;-&#39;),
+                                                     QuantityUnitPair(quantity=&#39;waterlevelbnd amplitude&#39;, unit=datablock_xr[&#39;amplitude&#39;].attrs[&#39;units&#39;]),
+                                                     QuantityUnitPair(quantity=&#39;waterlevelbnd phase&#39;, unit=datablock_xr[&#39;phase&#39;].attrs[&#39;units&#39;])],
+                                   datablock=datablock_inclcomp.tolist(), 
+                                   )
+    return Astronomic_object</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.hydrolib_helpers.Dataset_to_T3D"><code class="name flex">
+<span>def <span class="ident">Dataset_to_T3D</span></span>(<span>datablock_xr)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>convert an xarray.DataArray (is one data_var) or an xarray.Dataset (with one or two data_vars) with time and depth dimension to a hydrolib T3D object</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def Dataset_to_T3D(datablock_xr):  
+    &#34;&#34;&#34;
+    convert an xarray.DataArray (is one data_var) or an xarray.Dataset (with one or two data_vars) with time and depth dimension to a hydrolib T3D object
+    &#34;&#34;&#34;
+    
+    if isinstance(datablock_xr,xr.DataArray):
+        vector = False
+        data_xr_var0 = datablock_xr
+    elif isinstance(datablock_xr,xr.Dataset):
+        data_vars = list(datablock_xr.data_vars)
+        if len(data_vars)==1: 
+            vector = False
+            data_xr_var0 = datablock_xr[data_vars[0]]
+        elif len(data_vars)==2:
+            if not pd.Series(data_vars).isin([&#39;ux&#39;,&#39;uy&#39;]).all():
+                raise Exception(f&#39;Dataset with 2 data_vars should contain only ux/uy data_vars, but contains {data_vars}&#39;)
+            vector = True
+            data_xr_var0 = datablock_xr[data_vars[0]]
+            data_xr_var1 = datablock_xr[data_vars[1]]
+        else:
+            raise Exception(f&#39;Dataset should contain 1 or 2 data_vars, but contains {len(data_vars)} variables&#39;)
+    else:
+        raise Exception(f&#39;expected xarray.DataArray or xarray.Dataset, not {type(datablock_xr)}&#39;)
+    
+    #ffill/bfill nan data along over depth dimension (corresponds to vertical extrapolation)
+    data_xr_var0 = data_xr_var0.bfill(dim=&#39;depth&#39;).ffill(dim=&#39;depth&#39;)
+    if vector:
+        data_xr_var1 = data_xr_var1.bfill(dim=&#39;depth&#39;).ffill(dim=&#39;depth&#39;)
+    
+    #TODO: clean up these first lines of code and add description to docstring?
+    locationname = data_xr_var0.attrs[&#39;locationname&#39;]
+    refdate_str = data_xr_var0.time.encoding[&#39;units&#39;]
+    
+    if data_xr_var0.dims != (&#39;time&#39;,&#39;depth&#39;): #check if both time and depth dimensions are present #TODO: add support for flipped dimensions (datablock_xr.T or something is needed)
+        raise Exception(f&#34;ERROR: data_var in provided data_xr has dimensions {data_xr_var0.dims} while (&#39;time&#39;,&#39;depth&#39;) is expected&#34;)
+    
+    #get depth variable and values
+    depth_array = data_xr_var0[&#39;depth&#39;].to_numpy()
+    
+    #get datablock and concatenate with relative time data
+    if vector:
+        data_xr_var0_np = data_xr_var0.to_numpy()
+        data_xr_var1_np = data_xr_var1.to_numpy()
+        datablock_np = np.stack((data_xr_var0_np,data_xr_var1_np),2).reshape(data_xr_var0_np.shape[0],-1) #merge data with alternating rows
+    else:
+        datablock_np = data_xr_var0.to_numpy()
+    
+    timevar_sel_rel = date2num(pd.DatetimeIndex(data_xr_var0.time.to_numpy()).to_pydatetime(),units=refdate_str,calendar=&#39;standard&#39;)
+    datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock_np],axis=1)
+    
+    # Each .bc file can contain 1 or more timeseries, in this case one for each support point
+    verticalpositions_idx = np.arange(data_xr_var0[&#39;depth&#39;].size)+1
+    if vector: #vector T3D object
+        QUP_quan_list = [QuantityUnitPair(quantity=quan, unit=data_xr_var0.attrs[&#39;units&#39;], vertpositionindex=iVP) for iVP in verticalpositions_idx for quan in data_vars]
+        QUP_quan_vector = VectorQuantityUnitPairs(vectorname=&#39;uxuyadvectionvelocitybnd&#39;, #TODO: vectorname from global attr? (then also support other vectors which is not necessary)
+                                                  elementname=data_vars,
+                                                  quantityunitpair=QUP_quan_list)
+        quantityunitpair = [QuantityUnitPair(quantity=&#34;time&#34;, unit=refdate_str)]+[QUP_quan_vector]
+    else: #normal T3D object
+        QUP_quan_list = [QuantityUnitPair(quantity=data_xr_var0.name, unit=data_xr_var0.attrs[&#39;units&#39;], vertpositionindex=iVP) for iVP in verticalpositions_idx]
+        quantityunitpair=[QuantityUnitPair(quantity=&#34;time&#34;, unit=refdate_str)]+QUP_quan_list
+    
+    T3D_object = T3D(name=locationname,
+                     #offset=0,
+                     #factor=1,
+                     vertpositions=depth_array.tolist(),
+                     vertinterpolation=&#39;linear&#39;, #TODO: make these parameters user defined (via attrs)
+                     vertPositionType=&#39;ZDatum&#39;,
+                     quantityunitpair=quantityunitpair,
+                     timeinterpolation=&#39;linear&#39;,
+                     datablock=datablock_incltime.tolist(), #TODO: numpy array is not supported by TimeSeries. https://github.com/Deltares/HYDROLIB-core/issues/322
+                     )
+    
+    return T3D_object</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.hydrolib_helpers.Dataset_to_TimeSeries"><code class="name flex">
+<span>def <span class="ident">Dataset_to_TimeSeries</span></span>(<span>datablock_xr)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>convert an xarray.DataArray or xarray.Dataset with time dimension to a hydrolib TimeSeries object</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def Dataset_to_TimeSeries(datablock_xr):
+    &#34;&#34;&#34;
+    convert an xarray.DataArray or xarray.Dataset with time dimension to a hydrolib TimeSeries object
+    &#34;&#34;&#34;
+    if isinstance(datablock_xr,xr.DataArray):
+        pass
+    if isinstance(datablock_xr,xr.Dataset):
+        data_vars = list(datablock_xr.data_vars)
+        if len(data_vars)!=1:
+            raise Exception(&#39;more than one variable supplied in Dataset, not yet possible&#39;) #TODO: add support for multiple quantities and for vectors
+        datablock_xr = datablock_xr[data_vars[0]]
+    
+    #TODO: clean up these first lines of code and add description to docstring?
+    locationname = datablock_xr.attrs[&#39;locationname&#39;]
+    bcvarname = datablock_xr.name
+    refdate_str = datablock_xr.time.encoding[&#39;units&#39;]
+    
+    if datablock_xr.dims != (&#39;time&#39;,):
+        raise Exception(f&#34;ERROR: datablock_xr provided to DataArray_to_TimeSeries has dimensions {datablock_xr.dims} while (&#39;time&#39;) is expected&#34;)
+    
+    #get datablock and concatenate with relative time data
+    datablock_np = datablock_xr.to_numpy()[:,np.newaxis]
+    timevar_sel_rel = date2num(pd.DatetimeIndex(datablock_xr.time.to_numpy()).to_pydatetime(),units=refdate_str,calendar=&#39;standard&#39;)
+    datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock_np],axis=1)
+    
+    # Each .bc file can contain 1 or more timeseries, in this case one for each support point
+    TimeSeries_object = TimeSeries(name=locationname,
+                                   quantityunitpair=[QuantityUnitPair(quantity=&#34;time&#34;, unit=refdate_str),
+                                                     QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs[&#39;units&#39;])],
+                                   timeinterpolation=&#39;linear&#39;, #TODO: make userdefined via attrs?
+                                   datablock=datablock_incltime.tolist(), 
+                                   )
+    return TimeSeries_object</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.hydrolib_helpers.forcinglike_to_Dataset"><code class="name flex">
+<span>def <span class="ident">forcinglike_to_Dataset</span></span>(<span>forcingobj, convertnan=False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>convert a hydrolib forcing like object (like Timeseries, T3D, Harmonic, etc) to an xarray Dataset with one or more variables.</p>
+<p>convertnan: convert depths with the same values over time as the deepest layer to nan (these were created with .bfill() or .ffill()).</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forcinglike_to_Dataset(forcingobj, convertnan=False): #TODO: would be convenient to have this as a method of ForcingModel objects (Timeseries/T3D/etc): https://github.com/Deltares/HYDROLIB-core/issues/307
+    &#34;&#34;&#34;
+    convert a hydrolib forcing like object (like Timeseries, T3D, Harmonic, etc) to an xarray Dataset with one or more variables.
+    
+    convertnan: convert depths with the same values over time as the deepest layer to nan (these were created with .bfill() or .ffill()).
     &#34;&#34;&#34;
     
     #check if forcingmodel instead of T3D/TimeSeries is provided
@@ -445,138 +556,68 @@ def parse_xy_to_datetime(pointlike_pd):
     if not isinstance(forcingobj, allowed_instances):
         raise Exception(f&#39;ERROR: supplied input is not one of: {allowed_instances}&#39;)
     
-    var_quantity = forcingobj.quantityunitpair[1].quantity
-    var_unit = forcingobj.quantityunitpair[1].unit
+    if isinstance(forcingobj, Astronomic):
+        var_quantity_list = [x.quantity for x in forcingobj.quantityunitpair[1:]]
+        var_unit = [x.unit for x in forcingobj.quantityunitpair[1:]]
+    elif hasattr(forcingobj.quantityunitpair[1],&#39;elementname&#39;): #T3D with vector quantity
+        var_quantity_list = forcingobj.quantityunitpair[1].elementname
+        var_unit_one = forcingobj.quantityunitpair[1].quantityunitpair[0].unit
+        var_unit = [var_unit_one,var_unit_one]
+    else: #non-vector TimeSeries or T3D
+        var_quantity_list = [forcingobj.quantityunitpair[1].quantity]
+        var_unit = [forcingobj.quantityunitpair[1].unit]
+    nquan = len(var_quantity_list)
+    
     if isinstance(forcingobj, T3D):
         dims = (&#39;time&#39;,&#39;depth&#39;)
     elif isinstance(forcingobj, TimeSeries):
         dims = (&#39;time&#39;)
     elif isinstance(forcingobj, Astronomic):
-        dims = (&#39;astronomic_component&#39;,&#39;quantity&#39;) #TODO: what are dims in case of Astronomic? actually these are two variables
-        print(&#39;WARNING: format of DataArray is not final in case of astronomic component&#39;)
+        dims = (&#39;astronomic_component&#39;)
     
     datablock_all = np.array(forcingobj.datablock)
-    if forcingobj.quantityunitpair[0].quantity in [&#39;time&#39;,&#39;astronomic component&#39;]: #first column in bcfile is time
-        datablock_data = datablock_all[:,1:] #TODO: convert repeating values to nan? (reverse of ffill/bfill)
-        datablock_data = datablock_data.squeeze() #drop dimensions of len 1 in case of eg &#34;waterlevelbnd&#34;
+    datablock_data = datablock_all[:,1:] #select all columns except first one (which is the time column)
+    if isinstance(forcingobj, Astronomic):
         datablock_data = datablock_data.astype(float) #convert str to float in case of &#34;astronomic component&#34;
-    else:
-        datablock_data = datablock_all
     
-    #add dimension values
-    data_xr_var = xr.DataArray(datablock_data, name=var_quantity, dims=dims)
-    data_xr_var.attrs[&#39;locationname&#39;] = forcingobj.name
-    data_xr_var.attrs[&#39;units&#39;] = var_unit
-    if &#39;depth&#39; in dims:
-        data_xr_var[&#39;depth&#39;] = forcingobj.vertpositions
-        #data_xr_var[&#39;depth&#39;].attrs[&#39;positive&#39;] == &#39;up&#39; #TODO: maybe add this attribute
-    if &#39;time&#39; in dims:
-        time_unit = forcingobj.quantityunitpair[0].unit.lower()
-        data_xr_var[&#39;time&#39;] = cftime.num2pydate(datablock_all[:,0], units=time_unit)
-        data_xr_var[&#39;time&#39;].encoding[&#39;units&#39;] = time_unit #check tz conversion if eg &#39;+01:00&#39; is present in time_unit
-        data_xr_var[&#39;time&#39;].encoding[&#39;calendar&#39;] = &#39;standard&#39;
-    if &#39;astronomic_component&#39; in dims:
-        data_xr_var[&#39;astronomic_component&#39;] = datablock_all[:,0]
-    
-    #add attributes
-    attr_dict = {&#39;source&#39;:&#39;hydrolib-core object converted to xarray.DataArray with dfm_tools&#39;,
-                 &#39;unit&#39;:var_unit,
-                 }
-    for key in attr_dict.keys():
-        data_xr_var.attrs[key] = attr_dict[key]
-    forcingobj_keys = forcingobj.__dict__.keys()
-    for key in forcingobj_keys: #[&#39;comments&#39;,&#39;name&#39;,&#39;function&#39;,&#39;offset&#39;,&#39;factor&#39;,&#39;vertinterpolation&#39;,&#39;vertpositiontype&#39;,&#39;timeinterpolation&#39;]: 
-        if key in [&#39;datablock&#39;,&#39;quantityunitpair&#39;,&#39;vertpositions&#39;]: #skipping these since they are in the DataArray already
-            continue
-        data_xr_var.attrs[key] = str(forcingobj.__dict__[key])
-    
-    return data_xr_var</code></pre>
-</details>
-</dd>
-<dt id="dfm_tools.hydrolib_helpers.forcinglike_to_DataFrame"><code class="name flex">
-<span>def <span class="ident">forcinglike_to_DataFrame</span></span>(<span>forcingobj)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>convert a hydrolib forcing like object (like Timeseries, T3D, Astronomic, etc) to a pandas DataFrame. Mostly via the forcinglike_to_DataArray() method. #TODO: Astronomic is also supported, what more?</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>forcingobj</code></strong> :&ensp;<code>hydrolib ForcingModel.forcing object (Timeseries/T3D etc)</code></dt>
-<dd>DESCRIPTION.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><strong><code>df_data</code></strong> :&ensp;<code>pd.DataFrame</code></dt>
-<dd>DESCRIPTION</dd>
-</dl>
-<h2 id="example">Example</h2>
-<pre><code> file_bc = Path('p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\2018\flow\rmm_discharge_laterals_20171220_20190101_MET.bc')
- m = ForcingModel(file_bc)
- df_data_list = [forcingobject_to_dataframe(forcingobj, convert_time=True) for forcingobj in m.forcing]
-</code></pre></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def forcinglike_to_DataFrame(forcingobj):
-    &#34;&#34;&#34;
-    convert a hydrolib forcing like object (like Timeseries, T3D, Astronomic, etc) to a pandas DataFrame. Mostly via the forcinglike_to_DataArray() method. #TODO: Astronomic is also supported, what more?
-    
-    Parameters
-    ----------
-    forcingobj : hydrolib ForcingModel.forcing object (Timeseries/T3D etc)
-        DESCRIPTION.
-
-    Returns
-    -------
-    df_data : pd.DataFrame
-        DESCRIPTION
+    data_xr = xr.Dataset()
+    for iQ, var_quantity in enumerate(var_quantity_list):
+        datablock_data_onequan = datablock_data[:,iQ::nquan]
+        datablock_data_onequan = datablock_data_onequan.squeeze() #drop dimensions of len 1 in case of 1 dimension, eg &#34;waterlevelbnd&#34; (first subsetting over depth dimension)
         
-    Example
-    -------
-         file_bc = Path(&#39;p:\\11208053-004-kpp2022-rmm1d2d\\C_Work\\09_Validatie2018_2020\\dflowfm2d-rmm_vzm-j19_6-v2d\\boundary_conditions\\2018\\flow\\rmm_discharge_laterals_20171220_20190101_MET.bc&#39;)
-         m = ForcingModel(file_bc)
-         df_data_list = [forcingobject_to_dataframe(forcingobj, convert_time=True) for forcingobj in m.forcing]
-
-    &#34;&#34;&#34;
+        data_xr_var = xr.DataArray(datablock_data_onequan, name=var_quantity, dims=dims)
+        if &#39;depth&#39; in dims:
+            data_xr_var[&#39;depth&#39;] = forcingobj.vertpositions
+            #data_xr_var[&#39;depth&#39;].attrs[&#39;positive&#39;] == &#39;up&#39; #TODO: maybe add this attribute
+            if convertnan: #convert ffilled/bfilled values back to nan
+                deepestlayeridx = data_xr_var.depth.to_numpy().argmin()
+                if deepestlayeridx==0: #sorted from deep to shallow layers
+                    bool_nandepths = (data_xr_var==data_xr_var.shift(depth=-1)).all(dim=&#39;time&#39;)
+                else: #sorted from shallow to deep layers
+                    bool_nandepths = (data_xr_var==data_xr_var.shift(depth=1)).all(dim=&#39;time&#39;)
+                data_xr_var = data_xr_var.where(~bool_nandepths)
+        if &#39;time&#39; in dims:
+            time_unit = forcingobj.quantityunitpair[0].unit.lower()
+            data_xr_var[&#39;time&#39;] = cftime.num2pydate(datablock_all[:,0], units=time_unit)
+            data_xr_var[&#39;time&#39;].encoding[&#39;units&#39;] = time_unit #check tz conversion if eg &#39;+01:00&#39; is present in time_unit
+            data_xr_var[&#39;time&#39;].encoding[&#39;calendar&#39;] = &#39;standard&#39;
+        if &#39;astronomic_component&#39; in dims:
+            data_xr_var[&#39;astronomic_component&#39;] = datablock_all[:,0]
+        
+        #add attributes
+        data_xr_var.attrs[&#39;source&#39;] = &#39;hydrolib-core object converted to xarray.Dataset with dfm_tools.xarray_helpers.forcinglike_to_Dataset()&#39;
+        data_xr_var.attrs[&#39;locationname&#39;] = forcingobj.name
+        data_xr_var.attrs[&#39;units&#39;] = var_unit[iQ]
+        forcingobj_keys = forcingobj.__dict__.keys()
+        for key in forcingobj_keys: #[&#39;comments&#39;,&#39;name&#39;,&#39;function&#39;,&#39;offset&#39;,&#39;factor&#39;,&#39;vertinterpolation&#39;,&#39;vertpositiontype&#39;,&#39;timeinterpolation&#39;]: 
+            if key in [&#39;datablock&#39;,&#39;quantityunitpair&#39;,&#39;vertpositions&#39;]: #skipping these since they are in the DataArray already
+                continue
+            data_xr_var.attrs[key] = str(forcingobj.__dict__[key])
+        
+        #add DataArray to Dataset
+        data_xr[var_quantity] = data_xr_var
     
-    #check if forcingmodel instead of T3D/TimeSeries is provided
-    if isinstance(forcingobj, ForcingModel):
-        raise Exception(&#39;ERROR: instead of supplying a ForcingModel, provide a ForcingObject (Timeseries/T3D etc), by doing something like ForcingModel.forcing[0]&#39;)
-    
-    allowed_instances = (T3D, TimeSeries, Astronomic)
-    if not isinstance(forcingobj, allowed_instances):
-        raise Exception(f&#39;ERROR: supplied input is not one of: {allowed_instances}&#39;)
-    
-    &#34;&#34;&#34; #TODO: old complex code, remove this once timezone is properly supported in forcinglike_to_DataArray()
-    #convert_time : boolean, optional
-    #    Convert time column from unit (e.g. minutes since date) to datetime index and drop the time column. Has no effect if there is no time column in the forcingobject. The default is True.
-    QUP_list = [(QUP.quantity,QUP.unit,QUP.vertpositionindex) for QUP in forcingobj.quantityunitpair]
-    columns_MI = pd.MultiIndex.from_tuples(QUP_list,names=dict(forcingobj.quantityunitpair[0]).keys())
-    df_data = pd.DataFrame(forcingobj.datablock,columns=columns_MI)
-    df_data.index.name = forcingobj.name
-    colnames_quantity = df_data.columns.get_level_values(level=0)
-    if convert_time and (&#39;time&#39; in colnames_quantity): #this converts time to a datetime index
-        time_colid = colnames_quantity.get_loc(&#39;time&#39;)
-        time_unit = df_data.columns.get_level_values(level=1)[time_colid]
-        df_data.index = cftime.num2pydate(df_data.iloc[:,time_colid],units=time_unit)
-        df_data.index.name = forcingobj.name #again with new index
-        #timezone was converted to GMT, re-adjust timezone if needed
-        timeunit_sincedatetimetz = time_unit.split(&#39;since &#39;)[1]
-        tzone_minutes = cftime._parse_date(timeunit_sincedatetimetz)[-1]
-        df_data.index = df_data.index.tz_localize(&#39;GMT&#39;)
-        df_data.index = df_data.index.tz_convert(dt.timezone(dt.timedelta(minutes=tzone_minutes)))
-        #drop original time column
-        df_data = df_data.drop(labels=&#39;time&#39;,level=0,axis=1)
-    &#34;&#34;&#34;
-    if isinstance(forcingobj, (T3D, TimeSeries)):
-        data_xr_var = forcinglike_to_DataArray(forcingobj)
-        df_data = data_xr_var.to_pandas()
-    else: #for Astronomic, but might also work well for other objects without time dimension
-        columns = [f&#39;{QUP.quantity} [{QUP.unit}]&#39; for QUP in forcingobj.quantityunitpair]
-        df_data = pd.DataFrame(forcingobj.datablock,columns=columns)
-        df_data = df_data.set_index(columns[0])
-       
-    return df_data</code></pre>
+    return data_xr</code></pre>
 </details>
 </dd>
 <dt id="dfm_tools.hydrolib_helpers.parse_xy_to_datetime"><code class="name flex">
@@ -670,11 +711,11 @@ data_pol_pd_list = [pointlike_to_DataFrame(polyobj) for polyobj in polyfile_obje
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
-<li><code><a title="dfm_tools.hydrolib_helpers.DataArray_to_T3D" href="#dfm_tools.hydrolib_helpers.DataArray_to_T3D">DataArray_to_T3D</a></code></li>
-<li><code><a title="dfm_tools.hydrolib_helpers.DataArray_to_TimeSeries" href="#dfm_tools.hydrolib_helpers.DataArray_to_TimeSeries">DataArray_to_TimeSeries</a></code></li>
 <li><code><a title="dfm_tools.hydrolib_helpers.DataFrame_to_PolyObject" href="#dfm_tools.hydrolib_helpers.DataFrame_to_PolyObject">DataFrame_to_PolyObject</a></code></li>
-<li><code><a title="dfm_tools.hydrolib_helpers.forcinglike_to_DataArray" href="#dfm_tools.hydrolib_helpers.forcinglike_to_DataArray">forcinglike_to_DataArray</a></code></li>
-<li><code><a title="dfm_tools.hydrolib_helpers.forcinglike_to_DataFrame" href="#dfm_tools.hydrolib_helpers.forcinglike_to_DataFrame">forcinglike_to_DataFrame</a></code></li>
+<li><code><a title="dfm_tools.hydrolib_helpers.Dataset_to_Astronomic" href="#dfm_tools.hydrolib_helpers.Dataset_to_Astronomic">Dataset_to_Astronomic</a></code></li>
+<li><code><a title="dfm_tools.hydrolib_helpers.Dataset_to_T3D" href="#dfm_tools.hydrolib_helpers.Dataset_to_T3D">Dataset_to_T3D</a></code></li>
+<li><code><a title="dfm_tools.hydrolib_helpers.Dataset_to_TimeSeries" href="#dfm_tools.hydrolib_helpers.Dataset_to_TimeSeries">Dataset_to_TimeSeries</a></code></li>
+<li><code><a title="dfm_tools.hydrolib_helpers.forcinglike_to_Dataset" href="#dfm_tools.hydrolib_helpers.forcinglike_to_Dataset">forcinglike_to_Dataset</a></code></li>
 <li><code><a title="dfm_tools.hydrolib_helpers.parse_xy_to_datetime" href="#dfm_tools.hydrolib_helpers.parse_xy_to_datetime">parse_xy_to_datetime</a></code></li>
 <li><code><a title="dfm_tools.hydrolib_helpers.pointlike_to_DataFrame" href="#dfm_tools.hydrolib_helpers.pointlike_to_DataFrame">pointlike_to_DataFrame</a></code></li>
 </ul>

@@ -5,8 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.10.0" />
 <title>dfm_tools API documentation</title>
-<meta name="description" content="dfm_tools
-…" />
+<meta name="description" content="…" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
 <link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
@@ -23,149 +22,30 @@
 <h1 class="title">Package <code>dfm_tools</code></h1>
 </header>
 <section id="section-intro">
+<p><a href="https://github.com/Deltares/dfm_tools/actions/workflows/generate-documentation.yml"><img alt="generate-documentation" src="https://github.com/Deltares/dfm_tools/actions/workflows/generate-documentation.yml/badge.svg"></a>
+<a href="https://sonarcloud.io/summary/new_code?id=Deltares_dfm_tools"><img alt="Quality Gate Status" src="https://sonarcloud.io/api/project_badges/measure?project=Deltares_dfm_tools&amp;metric=alert_status"></a>
+<a href="https://mybinder.org/v2/gh/Deltares/dfm_tools/HEAD"><img alt="Binder" src="https://mybinder.org/badge_logo.svg"></a></p>
 <h1 id="dfm_tools">dfm_tools</h1>
-<p>dfm_tools are Python pre- and post-processing tools for D-FlowFM model files</p>
-<h2 id="features">Features</h2>
+<p>A Python package for pre- and postprocessing D-FlowFM model input and output files. Contains convenience functions built on top of other packages like <a href="https://github.com/pydata/xarray">xarray</a>, <a href="https://github.com/Deltares/xugrid">xugrid</a>, <a href="https://github.com/Deltares/HYDROLIB-core">hydrolib-core</a> and many more.</p>
+<h2 id="information-and-examples">Information And Examples</h2>
 <ul>
-<li>currently, we are updating dfm_tools to depend on <a href="https://github.com/Deltares/HYDROLIB-core">hydrolib-core</a> for more robust and maintained core functionalities</li>
-<li>also, we are moving towards xarray for better handling of netCDF files</li>
-<li>post-processing and plotting:<ul>
-<li>support for net/map/fou/rst partitions (merge partitions and delete ghostcells) (and many other netCDF files)</li>
-<li>support for flexible meshes (containing triangles, squares, pentagons, hexagons or any other shape)</li>
-<li>select all data based on variable, timestep/datetime, layer, station (not yet on depth)</li>
-<li>retrieve lists of variables, timesteps/datetimes, stations, cross sections, general structures</li>
-<li>data selection/plotting by polyline/crossection (slicing the ugrid mapdata)</li>
-<li>add satellite background to your plots</li>
-<li>plotting z,t-plots</li>
-</ul>
-</li>
-<li>pre-processing:<ul>
-<li>read and write almost all FM input data with <a href="https://github.com/Deltares/HYDROLIB-core">hydrolib-core</a></li>
-<li>converting and plotting this data with helper functions in dfm_tools</li>
-<li>e.g.: interpolating CMEMS data to model boundary and writing 2D/3D boundary condition files</li>
-</ul>
-</li>
-<li>to get started:<ul>
-<li>html documentation: <a href="https://htmlpreview.github.io/?https://github.com/openearth/dfm_tools/blob/master/docs/dfm_tools/index.html">https://htmlpreview.github.io/?https://github.com/openearth/dfm_tools/blob/master/docs/dfm_tools/index.html</a></li>
-<li>example scripts: <a href="https://github.com/openearth/dfm_tools/tree/master/tests/examples">https://github.com/openearth/dfm_tools/tree/master/tests/examples</a></li>
-<li>examples of (mostly unformatted) figures created by this pytest testbank: n:\Deltabox\Bulletin\veenstra\info dfm_tools</li>
-<li>want to get updates about dfm_tools? Send an email to jelmer.veenstra@deltares.nl</li>
-</ul>
-</li>
+<li><a href="https://nbviewer.org/github/Deltares/dfm_tools/raw/pptx/docs/dfm_tools.pdf?flush_cache=true">pdf</a> with dfm_tools information, features and examples</li>
+<li><a href="https://htmlpreview.github.io/?https://github.com/Deltares/dfm_tools/blob/main/docs/dfm_tools/index.html">online documentation</a> generated from docstrings</li>
+<li><a href="https://github.com/Deltares/dfm_tools/blob/main/notebooks">jupyter notebooks</a> with example code</li>
+<li><a href="https://mybinder.org/v2/gh/Deltares/dfm_tools/HEAD">use binder</a> to run these notebooks interactively (loading takes a while)</li>
+<li><a href="https://github.com/Deltares/dfm_tools/tree/main/tests/examples">github folder</a> with more example scripts</li>
 </ul>
 <h2 id="installation">Installation</h2>
 <ul>
 <li>download and install Anaconda 64 bit (with Python 3.8 or later) from <a href="https://www.anaconda.com/distribution/#download-section">https://www.anaconda.com/distribution/#download-section</a></li>
-<li>install dfm_tools from github:<ul>
-<li>open anaconda prompt</li>
-<li><code>conda create --name dfm_tools_env -c conda-forge python=3.8 git spyder -y</code> (you can also install a newer python version, in python 3.7 the dependency hydrolib seemed not installable)</li>
+<li>open Anaconda prompt</li>
+<li><code>conda create --name dfm_tools_env -c conda-forge python=3.8 spyder -y</code> (you can also install a newer python version)</li>
 <li><code>conda activate dfm_tools_env</code></li>
-<li><code>conda install -c conda-forge shapely cartopy pyepsg geopandas contextily xarray dask netcdf4 bottleneck -y</code> (installs conda-forge requirements)</li>
-<li><code>python -m pip install git+https://github.com/openearth/dfm_tools</code> (this command installs dfm_tools and all required non-conda packages)</li>
-<li><code>python -m pip uninstall hydrolib-core -y</code> (temporarily necessary to install the correct version of hydrolib-core)</li>
-<li><code>python -m pip install git+https://github.com/deltares/hydrolib-core</code> (temporarily necessary to install the correct version of hydrolib-core)</li>
+<li><code>conda install -c conda-forge git shapely cartopy pyepsg geopandas contextily xarray dask netcdf4 bottleneck xugrid cdsapi pydap -y</code> (installs conda-forge requirements)</li>
+<li><code>python -m pip install git+https://github.com/Deltares/dfm_tools</code> (this command installs dfm_tools and all required non-conda packages, also use to update)</li>
+<li>long paths error? Check <a href="https://github.com/Deltares/HYDROLIB-core/issues/327#issuecomment-1266534032">this Github issue</a></li>
+<li>to remove environment when necessary: <code>conda remove -n dfm_tools_env --all</code></li>
 </ul>
-</li>
-<li>what are all these packages for?:<ul>
-<li>shapely for slicing 2D/3D data (conda-forge channel is necessary since main channel version is 1.6.4, minimal requirement is 1.7.0)</li>
-<li>cartopy for satellite imagery, coastlines etc on plots (conda-forge channel recommended by cartopy developers, and currently also necessary for correct shapely version)</li>
-<li>pyepsg is necessary for cartopy and probably also for other libraries</li>
-<li>geopandas for shapefile related operations</li>
-<li>contextily for satellite imagery on plots, seems faster than cartopy</li>
-<li>xarray developers advise to install dependecies dask/netCDF4/bottleneck with conda-forge also: <a href="https://docs.xarray.dev/en/v0.8.0/installing.html">https://docs.xarray.dev/en/v0.8.0/installing.html</a></li>
-<li>to remove venv when necessary: <code>conda remove -n dfm_tools_env --all</code></li>
-</ul>
-</li>
-<li>launch Spyder:<ul>
-<li>open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in the dfm_tools_env environment only)</li>
-<li>copy the code from <a href="#example-usage">Example usage</a> to your own scripts to get started</li>
-<li>Qt error upon launching Spyder?: remove the system/user environment variable 'qt_plugin_path' set by an old Delft3D4 installation procedure.</li>
-<li>netCDF4 DLL error upon import in Spyder?: remove Anaconda paths from the Path user environment variable (<a href="https://github.com/spyder-ide/spyder/issues/19220">https://github.com/spyder-ide/spyder/issues/19220</a>)</li>
-</ul>
-</li>
-<li>to update dfm_tools:<ul>
-<li>open anaconda prompt</li>
-<li><code>conda activate dfm_tools_env</code></li>
-<li><code>python -m pip install --upgrade git+https://github.com/openearth/dfm_tools.git</code></li>
-</ul>
-</li>
-</ul>
-<h2 id="example-usage">Example Usage</h2>
-<pre><code class="language-python">#data retrieval is easy, just use get_ncmodeldata() with file_nc argument
-#then use the feedback in the error messages to set other arguments like varname, timestep, station and layer
-from dfm_tools.get_nc import get_ncmodeldata
-data_fromnc = get_ncmodeldata(file_nc='yourfile.nc')
-</code></pre>
-<pre><code class="language-python">#this example includes plotting and using the metadata of the retrieved data
-#import statements
-import os
-import xarray as xr
-import matplotlib.pyplot as plt
-plt.close('all')
-from dfm_tools.get_nc import get_netdata, get_ncmodeldata, plot_netmapdata
-from dfm_tools.get_nc_helpers import get_ncvardimlist, get_timesfromnc, get_hisstationlist
-dir_testinput = r'c:\DATA\dfm_tools_testdata'
-
-#uncomment the line below, copy data locally and change this path to increase performance
-#dir_testinput = os.path.join(r'n:\Deltabox\Bulletin\veenstra\info dfm_tools\test_input')
-file_nc_map = os.path.join(dir_testinput,'DFM_sigma_curved_bend','DFM_OUTPUT_cb_3d','cb_3d_map.nc')
-file_nc_his = os.path.join(dir_testinput,'DFM_sigma_curved_bend','DFM_OUTPUT_cb_3d','cb_3d_his.nc')
-data_xr_his = xr.open_dataset(file_nc_his)
-stations_pd = data_xr_his.station_name.astype(str).to_pandas()
-
-#get lists with vars/dims, times, station/crs/structures
-vars_pd, dims_pd = get_ncvardimlist(file_nc=file_nc_map)
-times_pd = get_timesfromnc(file_nc=file_nc_map)
-statlist_pd = get_hisstationlist(file_nc=file_nc_his, varname='station_name')
-
-#retrieve his data
-#data_fromhis_wl = get_ncmodeldata(file_nc=file_nc_his, varname='waterlevel', station='all', timestep= 'all')
-fig, ax = plt.subplots(1,1,figsize=(10,5))
-for iS, station in enumerate(stations_pd):
-    data_fromhis_wl = data_xr_his.waterlevel.isel(stations=iS)
-    ax.plot(data_fromhis_wl.time,data_fromhis_wl,'-', label=station)
-ax.legend()
-ax.set_ylabel('%s (%s)'%(data_fromhis_wl.attrs['long_name'], data_fromhis_wl.attrs['units']))
-
-#plot net/grid
-ugrid_all = get_netdata(file_nc=file_nc_map)#,multipart=False)
-fig, ax = plt.subplots()
-pc = plot_netmapdata(ugrid_all.verts, values=None, ax=None, linewidth=0.5, color=&quot;crimson&quot;, facecolor=&quot;None&quot;)
-ax.set_aspect('equal')
-
-#plot water level on map
-data_frommap_wl = get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_s1', timestep=3)#, multipart=False)
-fig, ax = plt.subplots()
-pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_wl[0,:], ax=None, linewidth=0.5, cmap=&quot;jet&quot;)
-pc.set_clim([-0.5,1])
-fig.colorbar(pc, ax=ax)
-ax.set_title('%s (%s)'%(data_frommap_wl.var_varname, data_frommap_wl.var_ncattrs['units']))
-ax.set_aspect('equal')
-
-#plot salinity on map
-data_frommap_sal = get_ncmodeldata(file_nc=file_nc_map, varname='mesh2d_sa1', timestep=2, layer=5)#, multipart=False)
-fig, ax = plt.subplots()
-pc = plot_netmapdata(ugrid_all.verts, values=data_frommap_sal[0,:,0], ax=None, linewidth=0.5, cmap=&quot;jet&quot;)
-fig.colorbar(pc, ax=ax)
-ax.set_title('%s (%s)'%(data_frommap_sal.var_varname, data_frommap_sal.var_ncattrs['units']))
-ax.set_aspect('equal')
-
-#print contents of retrieved data withing data_frommap_sal variable
-print_var = data_frommap_sal
-print('++++++\nthe data in the variable %s is:\n%s\n'%(print_var.var_varname, print_var))
-print('++++++\nthe time indices and times in the variable %s are:\n%s\n'%(print_var.var_varname, print_var.var_times))
-#print('++++++\nthe station indices and station names in the variable %s are:\n%s\n'%(print_var.var_varname, print_var.var_stations))
-print('++++++\nthe layer indices in the variable %s are:\n%s\n'%(print_var.var_varname, print_var.var_layers))
-print('++++++\nthe shape of the variable %s is:\n%s\n'%(print_var.var_varname, print_var.shape))
-print('++++++\nthe dimensions of the variable %s are (copied from netCDF variable):\n%s\n'%(print_var.var_varname, print_var.var_dimensions))
-print('++++++\nthe netCDF variable where the data in variable %s comes from is:\n%s\n'%(print_var.var_varname, print_var.var_ncvarobject))
-print('++++++\nsome example contents of this netCDF variable:')
-print('\tthe dimension names of the netCDF variable %s are:\n\t\t%s'%(print_var.var_varname, print_var.var_dimensions))
-print('\tthe shape of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname, print_var.var_shape))
-print('\tthe units of the netCDF variable %s are:\n\t\t%s'%(print_var.var_varname, print_var.var_ncattrs['units']))
-print('\tthe long_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname, print_var.var_ncattrs['long_name']))
-print('\tthe standard_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var_varname, print_var.var_ncattrs['standard_name']))
-</code></pre>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -176,12 +56,50 @@ print('\tthe standard_name of the netCDF variable %s is:\n\t\t%s'%(print_var.var
 
 __author__ = &#34;&#34;&#34;Jelmer Veenstra&#34;&#34;&#34;
 __email__ = &#39;jelmer.veenstra@deltares.nl&#39;
-__version__ = &#39;0.7.91&#39;</code></pre>
+__version__ = &#39;0.9.1&#39;
+
+from dfm_tools.download import *
+from dfm_tools.get_nc import *
+from dfm_tools.get_nc_helpers import *
+from dfm_tools.hydrolib_helpers import *
+from dfm_tools.interpolate_grid2bnd import *
+from dfm_tools.linebuilder import *
+from dfm_tools.modplot import *
+from dfm_tools.regulargrid import *
+from dfm_tools.ugrid import *
+from dfm_tools.xarray_helpers import *
+from dfm_tools.energy_dissipation import *
+from dfm_tools.bathymetry import *
+from dfm_tools.io.tim import * #TODO: remove this when moved to hydrolib
+
+import warnings
+warnings.filterwarnings(&#39;always&#39;,category=DeprecationWarning)
+
+#add plotmethod to xugrid grid object
+import xugrid as xr
+def plot(self,**kwargs): #TODO: maybe add to xugrid directly
+    xr.plot.line(self,**kwargs) #uds.ugrid.grid
+    pass
+ug2d = xr.ugrid.ugrid2d.Ugrid2d
+ug2d.plot = plot</code></pre>
 </details>
 </section>
 <section>
 <h2 class="section-title" id="header-submodules">Sub-modules</h2>
 <dl>
+<dt><code class="name"><a title="dfm_tools.bathymetry" href="bathymetry.html">dfm_tools.bathymetry</a></code></dt>
+<dd>
+<div class="desc"><p>Created on Mon May 31 17:17:09 2021 …</p></div>
+</dd>
+<dt><code class="name"><a title="dfm_tools.download" href="download.html">dfm_tools.download</a></code></dt>
+<dd>
+<div class="desc"><p>Created on Tue Oct 18 15:09:26 2022 …</p></div>
+</dd>
+<dt><code class="name"><a title="dfm_tools.energy_dissipation" href="energy_dissipation.html">dfm_tools.energy_dissipation</a></code></dt>
+<dd>
+<div class="desc"><p>Created on Thu Dec
+8 22:07:22 2022 …</p></div>
+</dd>
 <dt><code class="name"><a title="dfm_tools.get_nc" href="get_nc.html">dfm_tools.get_nc</a></code></dt>
 <dd>
 <div class="desc"><p>dfm_tools are post-processing tools for Delft3D FM
@@ -218,11 +136,6 @@ Copyright (C) 2020 Deltares. All rights reserved …</p></div>
 <div class="desc"><p>dfm_tools are post-processing tools for Delft3D FM
 Copyright (C) 2020 Deltares. All rights reserved …</p></div>
 </dd>
-<dt><code class="name"><a title="dfm_tools.testutils" href="testutils.html">dfm_tools.testutils</a></code></dt>
-<dd>
-<div class="desc"><p>dfm_tools are post-processing tools for Delft3D FM
-Copyright (C) 2020 Deltares. All rights reserved …</p></div>
-</dd>
 <dt><code class="name"><a title="dfm_tools.ugrid" href="ugrid.html">dfm_tools.ugrid</a></code></dt>
 <dd>
 <div class="desc"><p>dfm_tools are post-processing tools for Delft3D FM
@@ -237,6 +150,23 @@ Copyright (C) 2020 Deltares. All rights reserved …</p></div>
 <section>
 </section>
 <section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="dfm_tools.plot"><code class="name flex">
+<span>def <span class="ident">plot</span></span>(<span>self, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot(self,**kwargs): #TODO: maybe add to xugrid directly
+    xr.plot.line(self,**kwargs) #uds.ugrid.grid
+    pass</code></pre>
+</details>
+</dd>
+</dl>
 </section>
 <section>
 </section>
@@ -246,9 +176,8 @@ Copyright (C) 2020 Deltares. All rights reserved …</p></div>
 <div class="toc">
 <ul>
 <li><a href="#dfm_tools">dfm_tools</a><ul>
-<li><a href="#features">Features</a></li>
+<li><a href="#information-and-examples">Information and examples</a></li>
 <li><a href="#installation">Installation</a></li>
-<li><a href="#example-usage">Example usage</a></li>
 </ul>
 </li>
 </ul>
@@ -256,6 +185,9 @@ Copyright (C) 2020 Deltares. All rights reserved …</p></div>
 <ul id="index">
 <li><h3><a href="#header-submodules">Sub-modules</a></h3>
 <ul>
+<li><code><a title="dfm_tools.bathymetry" href="bathymetry.html">dfm_tools.bathymetry</a></code></li>
+<li><code><a title="dfm_tools.download" href="download.html">dfm_tools.download</a></code></li>
+<li><code><a title="dfm_tools.energy_dissipation" href="energy_dissipation.html">dfm_tools.energy_dissipation</a></code></li>
 <li><code><a title="dfm_tools.get_nc" href="get_nc.html">dfm_tools.get_nc</a></code></li>
 <li><code><a title="dfm_tools.get_nc_helpers" href="get_nc_helpers.html">dfm_tools.get_nc_helpers</a></code></li>
 <li><code><a title="dfm_tools.hydrolib_helpers" href="hydrolib_helpers.html">dfm_tools.hydrolib_helpers</a></code></li>
@@ -264,9 +196,13 @@ Copyright (C) 2020 Deltares. All rights reserved …</p></div>
 <li><code><a title="dfm_tools.linebuilder" href="linebuilder.html">dfm_tools.linebuilder</a></code></li>
 <li><code><a title="dfm_tools.modplot" href="modplot.html">dfm_tools.modplot</a></code></li>
 <li><code><a title="dfm_tools.regulargrid" href="regulargrid.html">dfm_tools.regulargrid</a></code></li>
-<li><code><a title="dfm_tools.testutils" href="testutils.html">dfm_tools.testutils</a></code></li>
 <li><code><a title="dfm_tools.ugrid" href="ugrid.html">dfm_tools.ugrid</a></code></li>
 <li><code><a title="dfm_tools.xarray_helpers" href="xarray_helpers.html">dfm_tools.xarray_helpers</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="dfm_tools.plot" href="#dfm_tools.plot">plot</a></code></li>
 </ul>
 </li>
 </ul>
