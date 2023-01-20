@@ -1,7 +1,7 @@
 Information for developers
 --------
 
-Create python environment dfm_tools_devenv and install dfm_tools in developer mode:
+Create python environment dfm_tools_env and install dfm_tools in developer mode:
 
 - download and install Anaconda 64 bit Python 3.7 (or higher) from https://www.anaconda.com/distribution/#download-section (miniconda should also be sufficient, but this is not yet tested). Install it with the recommended settings, but check 'add Anaconda3 to my PATH environment variable' if you want to use conda from the windows command prompt instead of anaconda prompt
 - download git from https://git-scm.com/download/win, install with default settings
@@ -13,15 +13,15 @@ Create python environment dfm_tools_devenv and install dfm_tools in developer mo
 - ``git clone -b work_yourname https://github.com/Deltares/dfm_tools dfm_tools`` (repo gets cloned in C:\\DATA\\dfm_tools, this is a checkout of the work_yourname branch)
 - update your branch if main has been updated: add+commit+push everything in branch first, ``git checkout main``, ``git pull``, ``git checkout development``, ``git merge main -m ''``, ``git push``
 - open anaconda prompt and navigate to dfm_tools local folder, e.g. ``C:\\DATA\\dfm_tools``
-- ``conda env create -f environment.yml`` (creates an environment called dfm_tools_devenv) TODO: yml now contains almost the same as requirements.txt, with additionally pdoc3/pytest/bump2version. Update this manual according to this
-- ``conda info --envs`` (should show dfm_tools_devenv virtual environment in the list)
-- ``conda activate dfm_tools_devenv``
+- ``conda env create -f environment.yml`` (creates an environment called dfm_tools_env) TODO: yml now contains almost the same as requirements.txt, with additionally pdoc3/pytest/bump2version. Update this manual according to this
+- ``conda info --envs`` (should show dfm_tools_env virtual environment in the list)
+- ``conda activate dfm_tools_env``
 - ``conda install -c conda-forge spyder shapely cartopy pyepsg geopandas contextily xarray dask netcdf4 bottleneck -y``
 - ``python -m pip install -e .`` (pip developer mode, any updates to the local folder are immediately available in your python. It also installs all required non-conda packages) >> maybe add ``test`` to install also test requirements [like this](https://stackoverflow.com/questions/15422527/best-practices-how-do-you-list-required-dependencies-in-your-setup-py)
 - test if dfm_tools is properly installed by printing the version number: ``python -c "import dfm_tools; print(dfm_tools.__version__); import netCDF4"``
 - ``conda deactivate``
-- to remove dfm_tools_devenv when necessary: ``conda remove -n dfm_tools_devenv --all``
-- open 'Spyder(dfm_tools_devenv)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in dfm_tools_devenv)
+- to remove dfm_tools_env when necessary: ``conda remove -n dfm_tools_env --all``
+- open 'Spyder(dfm_tools_env)' via your windows start menu (not 'Spyder' or 'Spyder(Anaconda3)', since dfm_tools was installed in dfm_tools_env)
 - Make your local changes to dfm_tools scripts
 
 Work with your branch:
@@ -38,7 +38,7 @@ Work with your branch:
 Running the testbank:
 
 - open anaconda prompt in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
-- ``conda activate dfm_tools_devenv``
+- ``conda activate dfm_tools_env``
 - ``pytest`` (runs all tests)
 - ``pytest -m unittest``
 - ``pytest -m systemtest``
@@ -51,7 +51,7 @@ Running the testbank:
 Regenerate html documentation:
 
 - open anaconda prompt in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
-- ``conda activate dfm_tools_devenv``
+- ``conda activate dfm_tools_env``
 - ``pdoc --html dfm_tools -o docs --force``
 
 Commit and push your changes to your branch:
@@ -66,7 +66,7 @@ Increasing the dfm_tools version number:
 
 - commit all changes via git
 - open anaconda prompt in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
-- optional?: ``conda activate dfm_tools_devenv``
+- optional?: ``conda activate dfm_tools_env``
 - ``bumpversion major`` or ``bumpversion minor`` or ``bumpversion patch`` (changes version numbers in files and commits changes)
 - push this change in version number with ``git push`` (from git bash window or cmd also ok?)
 - request merging of your branch on https://github.com/Deltares/dfm_tools/branches

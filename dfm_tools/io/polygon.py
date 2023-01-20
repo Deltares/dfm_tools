@@ -72,7 +72,7 @@ class Polygon:
             DESCRIPTION.
 
         """
-        raise DeprecationWarning('the function dfm_tools.polygon.Polygon.fromfile() is deprecated, please use the new hydrolib alternative. Example script: dfm_tools/tests/examples/hydrolib_readpol.py') #TODO: remove this definition
+        raise DeprecationWarning('the function dfm_tools.polygon.Polygon.fromfile() is deprecated, please use the new hydrolib alternative. Example script: https://github.com/Deltares/dfm_tools/blob/main/tests/examples/preprocess_hydrolib_readwritepol.py') #TODO: remove this definition
 
         with open(file_pol) as plifile:
             lines = plifile.readlines()

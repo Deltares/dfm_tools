@@ -61,8 +61,8 @@ vars_pd = dfmt.get_ncvarproperties(file_nc=file_nc)
 data_frommap_merged = dfmt.open_partitioned_dataset(file_nc.replace('_0000_','_0*_'))
 if 'mesh2d_nLayers' in data_frommap_merged.dims: #TODO: make more generic
     dimn_layer = 'mesh2d_nLayers'
-elif 'nmesh2d_layer' in data_frommap_merged.dims:
-    dimn_layer = 'nmesh2d_layer'
+elif 'mesh2d_nLayers' in data_frommap_merged.dims:
+    dimn_layer = 'mesh2d_nLayers'
 else:
     dimn_layer = None
 

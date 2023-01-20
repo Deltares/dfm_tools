@@ -15,9 +15,9 @@ try: #0.3.1 release
     from hydrolib.core.io.obs.models import ObservationPointModel
     from hydrolib.core.io.crosssection.models import CrossLocModel, CrossDefModel
 except: #main branch and next release #TODO: move to easy imports after https://github.com/Deltares/HYDROLIB-core/issues/410
-    from hydrolib.core.io.dflowfm.xyz.models import XYZModel
-    from hydrolib.core.io.dflowfm.obs.models import ObservationPointModel
-    from hydrolib.core.io.dflowfm.crosssection.models import CrossLocModel, CrossDefModel
+    from hydrolib.core.dflowfm.xyz.models import XYZModel
+    from hydrolib.core.dflowfm.obs.models import ObservationPointModel
+    from hydrolib.core.dflowfm.crosssection.models import CrossLocModel, CrossDefModel
 
 dir_output = '.'
 

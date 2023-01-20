@@ -21,7 +21,7 @@ reprojected_uda.ugrid.plot()
 uds.ugrid.set_crs(28992)
 reprojected_uds = uds.ugrid.to_crs(4326)
 
-# ValueError: conflicting sizes for dimension 'mesh2d_nNodes': length 26779 on 'mesh2d_node_z' and length 23108 on {'mesh2d_nFaces': 'mesh2d_face_x', 'time': 'mesh2d_Numlimdt', 'nmesh2d_layer': 'mesh2d_ucx', 'mesh2d_nNodes': 'mesh2d_node_x'}
+# ValueError: conflicting sizes for dimension 'mesh2d_nNodes': length 26779 on 'mesh2d_node_z' and length 23108 on {'mesh2d_nFaces': 'mesh2d_face_x', 'time': 'mesh2d_Numlimdt', 'mesh2d_nLayers': 'mesh2d_ucx', 'mesh2d_nNodes': 'mesh2d_node_x'}
 
 """
 #WARNING: the resulting grid might not be orthogonal

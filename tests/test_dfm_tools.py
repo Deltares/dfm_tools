@@ -158,8 +158,8 @@ def test_zlayermodel_correct_layers_THISFAILS(): #TODO: fix this testcase, could
     data_frommap_timesel = data_frommap_merged.isel(time=timestep) #select data for all layers
     data_frommap_merged_fullgrid = dfmt.reconstruct_zw_zcc_fromz(data_frommap_timesel)
     
-    vals_zcc_top = data_frommap_merged_fullgrid['mesh2d_flowelem_zcc'].isel(nmesh2d_layer=-1).to_numpy()
-    vals_zcc_bot = data_frommap_merged_fullgrid['mesh2d_flowelem_zcc'].isel(nmesh2d_layer=0).to_numpy()
+    vals_zcc_top = data_frommap_merged_fullgrid['mesh2d_flowelem_zcc'].isel(mesh2d_nLayers=-1).to_numpy()
+    vals_zcc_bot = data_frommap_merged_fullgrid['mesh2d_flowelem_zcc'].isel(mesh2d_nLayers=0).to_numpy()
     vals_wl = data_frommap_merged_fullgrid['mesh2d_s1'].to_numpy()
     vals_bl = data_frommap_merged_fullgrid['mesh2d_flowelem_bl'].to_numpy()
     assert (np.abs(vals_zcc_top-vals_wl)<1e-6).all() #this should pass
