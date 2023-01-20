@@ -78,9 +78,8 @@ def preprocess_hirlam(ds):
     """
     add xy variables as longitude/latitude to avoid duplicate var/dim names
     add xy as variables again with help of NetCDF4 
-    #TODO: this part is hopefully temporary, necessary since variables cannot have the same name as dimensions in xarray
-    # background and future solution: https://github.com/pydata/xarray/issues/6293
     """
+    #TODO: this function is hopefully temporary, necessary since variables cannot have the same name as dimensions in xarray. Background and future solution: https://github.com/pydata/xarray/issues/6293
     
     print('adding x/y variables again as lon/lat')
     file_nc_one = ds.encoding['source']
