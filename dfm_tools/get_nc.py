@@ -353,22 +353,17 @@ def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=No
 
 def get_ugrid_verts(data_xr_map):
     """
-    getting ugrid verts from xugrid mapfile. This might be phased out in the future.
+    getting ugrid verts from xugrid mapfile. TODO: this will be replaced by xugrid: https://github.com/Deltares/xugrid/issues/48
     """
-    data_xr_grid = data_xr_map.ugrid.grid.to_dataset()
-    face_nos = data_xr_grid.mesh2d_face_nodes.load()
-    bool_nonemptyfacenode = face_nos!=-1
-    facenos_nonan_min = face_nos.where(bool_nonemptyfacenode).min() #replace nans and get minval
-    if facenos_nonan_min==1: #for some reason, curvedbend is 1-based indexed, grevelingen is not
-        face_nos = face_nos-1
-    if face_nos.dtype!='int': #for some reason, curvedbend idx is float instead of int
-        face_nos = face_nos.astype(int)
     
-    xu_nodedim = data_xr_map.grid.node_dimension
+    face_nos = data_xr_map.grid.face_node_connectivity
     
-    face_nnodecoords_x = data_xr_grid.mesh2d_node_x.isel({xu_nodedim:face_nos}).where(bool_nonemptyfacenode)
-    face_nnodecoords_y = data_xr_grid.mesh2d_node_y.isel({xu_nodedim:face_nos}).where(bool_nonemptyfacenode)
-    ugrid_all_verts = np.c_[face_nnodecoords_x.to_numpy()[...,np.newaxis],face_nnodecoords_y.to_numpy()[...,np.newaxis]]
+    face_nnodecoords_x = data_xr_map.grid.node_x[face_nos]
+    face_nnodecoords_x[face_nos==-1] = np.nan
+    face_nnodecoords_y = data_xr_map.grid.node_y[face_nos]
+    face_nnodecoords_y[face_nos==-1] = np.nan
+    
+    ugrid_all_verts = np.c_[face_nnodecoords_x[...,np.newaxis],face_nnodecoords_y[...,np.newaxis]]
     return ugrid_all_verts
 
 

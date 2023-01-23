@@ -170,6 +170,8 @@ for file_nc in file_nc_list:
     fig, ax = plt.subplots()
     pc = data_frommap_merged_sel['mesh2d_flowelem_bl'].ugrid.plot(ax=ax, linewidth=0.5, edgecolors='face', cmap='jet')
     pc.set_clim(clim_bl)
+    fig.tight_layout()
+    fig.savefig(os.path.join(dir_output,f'{basename}_selxyslice'))
     
     
     print('plot bedlevel as polycollection, contourf, contour')
