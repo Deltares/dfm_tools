@@ -245,7 +245,7 @@ for file_nc in file_nc_list:
     
     
     if file_nc_fou is not None:
-        #xugrid issue: https://github.com/Deltares/xugrid/issues/31 (plotting quiver on regridded dataset). If it works, also add to notebook (for mapfile)
+        #TODO: xugrid issue: https://github.com/Deltares/xugrid/issues/31 (plotting quiver on regridded dataset). If it works, also add to notebook (for mapfile)
         
         data_frommap_fou = dfmt.open_partitioned_dataset(file_nc_fou)
         vars_pd_fou = dfmt.get_ncvarproperties(data_frommap_fou)
