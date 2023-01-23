@@ -16,7 +16,7 @@ import contextily as ctx
 import dfm_tools as dfmt
 import pandas as pd
 from pathlib import Path
-import hydrolib.core.dfmlowfm as hcdfm
+import hydrolib.core.dflowfm as hcdfm
 
 
 #general settings

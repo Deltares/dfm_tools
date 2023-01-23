@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 plt.close('all')
 import contextily as ctx
 import dfm_tools as dfmt
-import hydrolib.core.dfmlowfm as hcdfm
+import hydrolib.core.dflowfm as hcdfm
 
 
 #TODO: add coordinate conversion of pli coordinates

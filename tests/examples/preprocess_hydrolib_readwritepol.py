@@ -13,7 +13,7 @@ import datetime as dt
 import matplotlib.pyplot as plt
 plt.close('all')
 import dfm_tools as dfmt
-import hydrolib.core.dfmlowfm as hcdfm
+import hydrolib.core.dflowfm as hcdfm
 
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'

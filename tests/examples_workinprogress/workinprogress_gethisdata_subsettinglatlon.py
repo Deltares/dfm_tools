@@ -11,7 +11,7 @@ import xarray as xr
 import matplotlib.pyplot as plt
 plt.close('all')
 import dfm_tools as dfmt #install dfm_tools via https://github.com/openearth/dfm_tools (includes hydrolib)
-import hydrolib.core.dfmlowfm as hcdfm
+import hydrolib.core.dflowfm as hcdfm
 
 
 file_pli = r'p:\1230882-emodnet_hrsm\GTSMv5.0\runs\reference_GTSMv4.1_wiCA\world.ldb'
