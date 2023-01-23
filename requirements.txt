@@ -3,6 +3,7 @@ numpy
 matplotlib
 pandas
 hydrolib-core>=0.4.0
+meshkernel>=0.2.0
 shapely
 cartopy
 pyepsg
