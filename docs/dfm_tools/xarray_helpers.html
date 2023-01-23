@@ -108,9 +108,8 @@ def preprocess_hirlam(ds):
     &#34;&#34;&#34;
     add xy variables as longitude/latitude to avoid duplicate var/dim names
     add xy as variables again with help of NetCDF4 
-    #TODO: this part is hopefully temporary, necessary since variables cannot have the same name as dimensions in xarray
-    # background and future solution: https://github.com/pydata/xarray/issues/6293
     &#34;&#34;&#34;
+    #TODO: this function is hopefully temporary, necessary since variables cannot have the same name as dimensions in xarray. Background and future solution: https://github.com/pydata/xarray/issues/6293
     
     print(&#39;adding x/y variables again as lon/lat&#39;)
     file_nc_one = ds.encoding[&#39;source&#39;]
@@ -175,7 +174,7 @@ def remove_ghostcells(ds,gridname=&#39;mesh2d&#39;): #TODO: create JIRA issue: a
     #check if dataset has ghostcells
     varn_domain = f&#39;{gridname}_flowelem_domain&#39;
     if varn_domain not in ds.data_vars:
-        print(&#39;[nodomainvar]&#39;)
+        print(&#39;[nodomainvar] &#39;,end=&#39;&#39;)
         return ds
     
     #derive domainno from domain var and filename
@@ -497,9 +496,7 @@ processing MB_02_0*_map.nc
 </code></dt>
 <dd>
 <div class="desc"><p>add xy variables as longitude/latitude to avoid duplicate var/dim names
-add xy as variables again with help of NetCDF4 </p>
-<h1 id="todo-this-part-is-hopefully-temporary-necessary-since-variables-cannot-have-the-same-name-as-dimensions-in-xarray">TODO: this part is hopefully temporary, necessary since variables cannot have the same name as dimensions in xarray</h1>
-<h1 id="background-and-future-solution-httpsgithubcompydataxarrayissues6293">background and future solution: <a href="https://github.com/pydata/xarray/issues/6293">https://github.com/pydata/xarray/issues/6293</a></h1></div>
+add xy as variables again with help of NetCDF4</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -508,9 +505,8 @@ add xy as variables again with help of NetCDF4 </p>
     &#34;&#34;&#34;
     add xy variables as longitude/latitude to avoid duplicate var/dim names
     add xy as variables again with help of NetCDF4 
-    #TODO: this part is hopefully temporary, necessary since variables cannot have the same name as dimensions in xarray
-    # background and future solution: https://github.com/pydata/xarray/issues/6293
     &#34;&#34;&#34;
+    #TODO: this function is hopefully temporary, necessary since variables cannot have the same name as dimensions in xarray. Background and future solution: https://github.com/pydata/xarray/issues/6293
     
     print(&#39;adding x/y variables again as lon/lat&#39;)
     file_nc_one = ds.encoding[&#39;source&#39;]
@@ -617,7 +613,7 @@ add xy as variables again with help of NetCDF4 </p>
     #check if dataset has ghostcells
     varn_domain = f&#39;{gridname}_flowelem_domain&#39;
     if varn_domain not in ds.data_vars:
-        print(&#39;[nodomainvar]&#39;)
+        print(&#39;[nodomainvar] &#39;,end=&#39;&#39;)
         return ds
     
     #derive domainno from domain var and filename

@@ -84,6 +84,62 @@ Created on Sun Mar 22 08:41:00 2020
 @author: veenstra
 &#34;&#34;&#34;
 
+import warnings
+import datetime as dt
+import xarray as xr
+from dfm_tools.xarray_helpers import Dataset_varswithdim
+
+
+def rasterize_ugrid(uds, ds_like=None, **kwargs):
+    &#34;&#34;&#34;
+    rasterizing ugrid dataset to regular dataset
+    inspired by xugrid.plot.imshow and xugrid.ugrid.ugrid2d.rasterize/rasterize_like
+    ds_like: dataset with ed x/y variables to interpolate uds to
+    &#34;&#34;&#34;
+    #TODO: clean up code/options and maybe put part of code in xugrid
+    
+    grid = uds.grid
+    xu_facedim = uds.grid.face_dimension
+    
+    uds_facevars = Dataset_varswithdim(uds,xu_facedim)
+    
+    if ds_like is None:
+        if &#34;extent&#34; not in kwargs:
+            xmin, ymin, xmax, ymax = grid.bounds
+            kwargs[&#34;extent&#34;] = xmin, xmax, ymin, ymax
+        else:
+            if kwargs.get(&#34;origin&#34;, None) == &#34;upper&#34;:
+                xmin, xmax, ymin, ymax = kwargs[&#34;extent&#34;]
+            else:
+                xmin, xmax, ymax, ymin = kwargs[&#34;extent&#34;]
+    
+        dx = xmax - xmin
+        dy = ymax - ymin
+        
+        # Check if a rasterization resolution is passed; Default to 500 raster
+        # cells otherwise for the smallest axis.
+        resolution = kwargs.pop(&#34;resolution&#34;, None)
+        if resolution is None:
+            resolution = min(dx, dy) / 500
+        
+        regx, regy, index = grid.rasterize(resolution) #index.shape = (regy.shape,regx.shape)
+    else:
+        regx = ds_like.x
+        regy = ds_like.y
+        regx, regy, index = grid.rasterize_like(x=regx,y=regy) #TODO: this can be used to steer rasterization, eg with xstart/ystart/xres/yres
+    
+    index_da = xr.DataArray(index,dims=(&#39;y&#39;,&#39;x&#39;))
+    
+    print(f&#39;&gt;&gt; rasterizing ugrid dataset with {len(uds_facevars.data_vars)} face variables to shape={index_da.shape}: &#39;,end=&#39;&#39;)
+    dtstart = dt.datetime.now()
+    ds = uds_facevars.isel({xu_facedim:index_da})#.astype(float)
+    ds = ds.where(index_da != grid.fill_value)
+    ds[&#39;x&#39;] = xr.DataArray(regx,dims=&#39;x&#39;)
+    ds[&#39;y&#39;] = xr.DataArray(regy,dims=&#39;y&#39;)
+    print(f&#39;{(dt.datetime.now()-dtstart).total_seconds():.2f} sec&#39;)
+    
+    return ds
+
 
 def scatter_to_regulargrid(xcoords, ycoords, values, ncellx=None, ncelly=None, reg_x_vec=None, reg_y_vec=None, method=&#39;nearest&#39;, maskland_dist=None):
     &#34;&#34;&#34;
@@ -119,6 +175,7 @@ def scatter_to_regulargrid(xcoords, ycoords, values, ncellx=None, ncelly=None, r
     import numpy as np
     from scipy.interpolate import griddata
     from scipy.spatial import KDTree
+    warnings.warn(DeprecationWarning(&#39;dfm_tools.regulargrid.scatter_to_regulargrid() is deprecated, use ds = dfmt.rasterize_ugrid(uds) instead&#39;))
     
     if (reg_x_vec is None) or (reg_y_vec is None):
         if (ncellx is None) or (ncelly is None):
@@ -408,6 +465,68 @@ array([[ 3.,  6.]])
     return cen</code></pre>
 </details>
 </dd>
+<dt id="dfm_tools.regulargrid.rasterize_ugrid"><code class="name flex">
+<span>def <span class="ident">rasterize_ugrid</span></span>(<span>uds, ds_like=None, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>rasterizing ugrid dataset to regular dataset
+inspired by xugrid.plot.imshow and xugrid.ugrid.ugrid2d.rasterize/rasterize_like
+ds_like: dataset with ed x/y variables to interpolate uds to</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def rasterize_ugrid(uds, ds_like=None, **kwargs):
+    &#34;&#34;&#34;
+    rasterizing ugrid dataset to regular dataset
+    inspired by xugrid.plot.imshow and xugrid.ugrid.ugrid2d.rasterize/rasterize_like
+    ds_like: dataset with ed x/y variables to interpolate uds to
+    &#34;&#34;&#34;
+    #TODO: clean up code/options and maybe put part of code in xugrid
+    
+    grid = uds.grid
+    xu_facedim = uds.grid.face_dimension
+    
+    uds_facevars = Dataset_varswithdim(uds,xu_facedim)
+    
+    if ds_like is None:
+        if &#34;extent&#34; not in kwargs:
+            xmin, ymin, xmax, ymax = grid.bounds
+            kwargs[&#34;extent&#34;] = xmin, xmax, ymin, ymax
+        else:
+            if kwargs.get(&#34;origin&#34;, None) == &#34;upper&#34;:
+                xmin, xmax, ymin, ymax = kwargs[&#34;extent&#34;]
+            else:
+                xmin, xmax, ymax, ymin = kwargs[&#34;extent&#34;]
+    
+        dx = xmax - xmin
+        dy = ymax - ymin
+        
+        # Check if a rasterization resolution is passed; Default to 500 raster
+        # cells otherwise for the smallest axis.
+        resolution = kwargs.pop(&#34;resolution&#34;, None)
+        if resolution is None:
+            resolution = min(dx, dy) / 500
+        
+        regx, regy, index = grid.rasterize(resolution) #index.shape = (regy.shape,regx.shape)
+    else:
+        regx = ds_like.x
+        regy = ds_like.y
+        regx, regy, index = grid.rasterize_like(x=regx,y=regy) #TODO: this can be used to steer rasterization, eg with xstart/ystart/xres/yres
+    
+    index_da = xr.DataArray(index,dims=(&#39;y&#39;,&#39;x&#39;))
+    
+    print(f&#39;&gt;&gt; rasterizing ugrid dataset with {len(uds_facevars.data_vars)} face variables to shape={index_da.shape}: &#39;,end=&#39;&#39;)
+    dtstart = dt.datetime.now()
+    ds = uds_facevars.isel({xu_facedim:index_da})#.astype(float)
+    ds = ds.where(index_da != grid.fill_value)
+    ds[&#39;x&#39;] = xr.DataArray(regx,dims=&#39;x&#39;)
+    ds[&#39;y&#39;] = xr.DataArray(regy,dims=&#39;y&#39;)
+    print(f&#39;{(dt.datetime.now()-dtstart).total_seconds():.2f} sec&#39;)
+    
+    return ds</code></pre>
+</details>
+</dd>
 <dt id="dfm_tools.regulargrid.scatter_to_regulargrid"><code class="name flex">
 <span>def <span class="ident">scatter_to_regulargrid</span></span>(<span>xcoords, ycoords, values, ncellx=None, ncelly=None, reg_x_vec=None, reg_y_vec=None, method='nearest', maskland_dist=None)</span>
 </code></dt>
@@ -477,6 +596,7 @@ array([[ 3.,  6.]])
     import numpy as np
     from scipy.interpolate import griddata
     from scipy.spatial import KDTree
+    warnings.warn(DeprecationWarning(&#39;dfm_tools.regulargrid.scatter_to_regulargrid() is deprecated, use ds = dfmt.rasterize_ugrid(uds) instead&#39;))
     
     if (reg_x_vec is None) or (reg_y_vec is None):
         if (ncellx is None) or (ncelly is None):
@@ -627,6 +747,7 @@ Uc(2:end-1,: ) = (U1(1:end-1,: )) + U1(2:end,: ))/2 klopt wel, maar werkt alleen
 <ul class="">
 <li><code><a title="dfm_tools.regulargrid.center2corner" href="#dfm_tools.regulargrid.center2corner">center2corner</a></code></li>
 <li><code><a title="dfm_tools.regulargrid.corner2center" href="#dfm_tools.regulargrid.corner2center">corner2center</a></code></li>
+<li><code><a title="dfm_tools.regulargrid.rasterize_ugrid" href="#dfm_tools.regulargrid.rasterize_ugrid">rasterize_ugrid</a></code></li>
 <li><code><a title="dfm_tools.regulargrid.scatter_to_regulargrid" href="#dfm_tools.regulargrid.scatter_to_regulargrid">scatter_to_regulargrid</a></code></li>
 <li><code><a title="dfm_tools.regulargrid.uva2xymagdeg" href="#dfm_tools.regulargrid.uva2xymagdeg">uva2xymagdeg</a></code></li>
 </ul>
