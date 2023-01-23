@@ -82,7 +82,7 @@ elif 'ERA5' in mode:
         varkey_list = ['mer','mtpr'] # mean_evaporation_rate, mean_total_precipitation_rate
     if 1:
         dir_data = 'p:\\metocean-data\\open\\ERA5\\data\\Irish_North_Baltic_Sea\\*' #TODO: add other vars with * (support separate files)
-        fn_match_pattern = f'era5_.*({"|".join(varkey_list)})_.*\.nc' #TODO: DeprecationWarning: invalid escape sequence \.
+        fn_match_pattern = f'era5_.*({"|".join(varkey_list)})_.*.nc'
         file_out_prefix = f'era5_{"_".join(varkey_list)}'
     else: #global test (first use download_ERA5.py)
         dir_data = r'c:\DATA\dfm_tools\tests\examples\v10n'
