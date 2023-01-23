@@ -21,7 +21,7 @@ file_nc_list = ['p:\\1204257-dcsmzuno\\2006-2012\\3D-DCSM-FM\\A18b_ntsu1\\DFM_OU
 for file_nc in file_nc_list:
     print('processing %s'%(os.path.basename(file_nc)))
     
-    ds_merged_xu = dfmt.open_partitioned_dataset(file_nc.replace('_0*_','_0000_'))
+    ds_merged_xu = dfmt.open_partitioned_dataset(file_nc)#.replace('_0*_','_0000_'))
     
     
     #ds_merged_xu.load()
