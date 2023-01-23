@@ -245,7 +245,6 @@ for file_nc in file_nc_list:
     
     
     if file_nc_fou is not None:
-        #TODO: xugrid issue: https://github.com/Deltares/xugrid/issues/31 (plotting quiver on regridded dataset). If it works, also add to notebook (for mapfile)
         
         data_frommap_fou = dfmt.open_partitioned_dataset(file_nc_fou)
         vars_pd_fou = dfmt.get_ncvarproperties(data_frommap_fou)
@@ -267,11 +266,11 @@ for file_nc in file_nc_list:
         
         fig,ax = plt.subplots(figsize=(9,5))
         pc = data_frommap_fou_atdepth['magn_mean'].ugrid.plot(edgecolor='face')
-        fou_raster = dfmt.rasterize_ugrid(data_frommap_fou_atdepth,resolution=quiv_res)
+        fou_raster = dfmt.rasterize_ugrid(data_frommap_fou_atdepth,resolution=quiv_res) #TODO: also add to example notebook (for mapfile)
         fou_raster.plot.quiver(x='mesh2d_face_x',y='mesh2d_face_y',u=fou_varname_u,v=fou_varname_v,color='w',scale=5,add_guide=False)
         pc.set_clim(0,0.10)
         ax.set_aspect('equal')
         fig.tight_layout()
         fig.savefig(os.path.join(dir_output,f'{basename}_fou'))
+
     
-        

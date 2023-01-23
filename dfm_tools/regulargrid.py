@@ -44,7 +44,7 @@ def rasterize_ugrid(uds, ds_like=None, **kwargs):
     inspired by xugrid.plot.imshow and xugrid.ugrid.ugrid2d.rasterize/rasterize_like
     ds_like: dataset with ed x/y variables to interpolate uds to
     """
-    #TODO: clean up code/options and maybe put part of code in xugrid
+    #TODO: clean up code/options and maybe put part of code in xugrid (https://github.com/Deltares/xugrid/issues/31)
     
     grid = uds.grid
     xu_facedim = uds.grid.face_dimension
