@@ -12,12 +12,9 @@ import matplotlib.pyplot as plt
 plt.close('all')
 from pathlib import Path
 import xarray as xr
-
 import dfm_tools as dfmt
-try: #0.3.1 release
-    from hydrolib.core.io.polyfile.models import PolyFile
-except: #main branch and next release
-    from hydrolib.core.dflowfm.polyfile.models import PolyFile
+import hydrolib.core.dfmlowfm as hcdfm
+
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
@@ -51,7 +48,7 @@ for file_nc in file_nc_list:
         fig_args = dict(nrows=3,ncols=1,figsize=(10,8))
     
     if file_ldb is not None:
-        polyfile_object = PolyFile(file_ldb)
+        polyfile_object = hcdfm.PolyFile(file_ldb)
         data_ldb = dfmt.pointlike_to_DataFrame(polyfile_object.objects[0])
         data_ldb[data_ldb==999.999] = np.nan
 

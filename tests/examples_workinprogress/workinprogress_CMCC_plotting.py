@@ -11,7 +11,7 @@ import xarray as xr
 import cartopy.crs as ccrs
 import numpy as np
 import cartopy.feature as cf
- 
+
 file_list_nc = ['p:\\11206304-futuremares\\data\\CMIP6_BC\\CMCC-ESM2\\uo_Omon_CMCC-ESM2_ssp126_r1i1p1f1_gn_201501-203412.nc',
                 'p:\\11206304-futuremares\\data\\CMIP6_BC\\CMCC-ESM2\\vo_Omon_CMCC-ESM2_ssp126_r1i1p1f1_gn_201501-203412.nc',
                 ]

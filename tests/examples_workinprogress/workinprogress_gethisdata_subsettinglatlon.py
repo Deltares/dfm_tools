@@ -11,15 +11,11 @@ import xarray as xr
 import matplotlib.pyplot as plt
 plt.close('all')
 import dfm_tools as dfmt #install dfm_tools via https://github.com/openearth/dfm_tools (includes hydrolib)
-
-try: #0.3.1 release
-    from hydrolib.core.io.polyfile.models import PolyFile
-except: #main branch and next release #TODO: move to easy imports after https://github.com/Deltares/HYDROLIB-core/issues/410
-    from hydrolib.core.dflowfm.polyfile.models import PolyFile
+import hydrolib.core.dfmlowfm as hcdfm
 
 
 file_pli = r'p:\1230882-emodnet_hrsm\GTSMv5.0\runs\reference_GTSMv4.1_wiCA\world.ldb'
-polyfile_object = PolyFile(Path(file_pli))
+polyfile_object = hcdfm.PolyFile(Path(file_pli))
 polyobject_pd = dfmt.pointlike_to_DataFrame(polyfile_object.objects[0])
 polyobject_pd[polyobject_pd==999.999] = np.nan
 

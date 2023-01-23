@@ -15,12 +15,8 @@ import matplotlib.pyplot as plt
 plt.close('all')
 import contextily as ctx
 import dfm_tools as dfmt
-try: #0.3.1 release
-    #from hydrolib.core.io.net.models import NetworkModel, Network
-    from hydrolib.core.io.polyfile.models import PolyFile
-except: #main branch and next release
-    #from hydrolib.core.dflowfm.net.models import NetworkModel, Network
-    from hydrolib.core.dflowfm.polyfile.models import PolyFile
+import hydrolib.core.dfmlowfm as hcdfm
+
 
 #TODO: add coordinate conversion of pli coordinates
 #TODO: add max distance for nestpoints (eg sqrt of max cell size of large grid? How to determine to use 3/4/more points)
@@ -47,7 +43,7 @@ file_pli_list = [Path(r'p:\i1000668-tcoms\03_newModel\01_input\02_bnd\pli\Indian
 
 fig,ax = plt.subplots()
 for file_pli in file_pli_list:
-    polyfile_object = PolyFile(file_pli)
+    polyfile_object = hcdfm.PolyFile(file_pli)
     data_pol_pd_list = [dfmt.pointlike_to_DataFrame(polyobj) for polyobj in polyfile_object.objects]
     data_pol_pd = pd.concat(data_pol_pd_list)
     
