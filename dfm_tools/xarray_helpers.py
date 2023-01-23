@@ -144,7 +144,7 @@ def remove_ghostcells(ds,gridname='mesh2d'): #TODO: create JIRA issue: add domai
     #check if dataset has ghostcells
     varn_domain = f'{gridname}_flowelem_domain'
     if varn_domain not in ds.data_vars:
-        print('[nodomainvar]')
+        print('[nodomainvar] ',end='')
         return ds
     
     #derive domainno from domain var and filename

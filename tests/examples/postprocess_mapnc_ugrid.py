@@ -13,7 +13,7 @@ import contextily as ctx
 import datetime as dt
 import dfm_tools as dfmt
 
-#TODO: new release for xugrid necessary to read in mapdata (or install from main) >> when that is available also update all other example scripts and notebook
+
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
