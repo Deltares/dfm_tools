@@ -33,7 +33,7 @@ jobs:
         auto-activate-base: false
         #use-mamba: true
     - name: test conda env
-    - run: |
+      run: |
         conda info
         conda list
     - name: install pdoc etc
