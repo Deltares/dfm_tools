@@ -274,3 +274,4 @@ for file_nc in file_nc_list:
         fig.tight_layout()
         fig.savefig(os.path.join(dir_output,f'{basename}_fou'))
 
+    
