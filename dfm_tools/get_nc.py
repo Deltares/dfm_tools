@@ -692,7 +692,7 @@ def get_Dataset_atdepths(data_xr, depths, reference='z0', zlayer_z0_selnearest=F
     
     #create depth xr.DataArray
     if isinstance(depths,(float,int)):
-        depths = depths #float/int
+        #depths = depths #float/int
         depth_dims = ()
     else:
         depths = np.unique(depths) #array of unique+sorted floats/ints
