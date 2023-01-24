@@ -32,7 +32,7 @@ jobs:
         python-version: 3.8
         auto-activate-base: false
         #use-mamba: true
-    #- name: test conda env
+    - name: test conda env
     - run: |
         conda info
         conda list
