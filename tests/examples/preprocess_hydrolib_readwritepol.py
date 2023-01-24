@@ -13,10 +13,7 @@ import datetime as dt
 import matplotlib.pyplot as plt
 plt.close('all')
 import dfm_tools as dfmt
-try: #0.3.1 release
-    from hydrolib.core.io.polyfile.models import PolyFile
-except: #main branch and next release #TODO: move to easy imports after https://github.com/Deltares/HYDROLIB-core/issues/410
-    from hydrolib.core.dflowfm.polyfile.models import PolyFile
+import hydrolib.core.dflowfm as hcdfm
 
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
@@ -44,11 +41,11 @@ file_pli_list = [Path(dir_testinput,'world.ldb'),
 
 for file_pli in file_pli_list:
     #load pol/tek/pli/ldb file
-    polyfile_object = PolyFile(file_pli)
+    polyfile_object = hcdfm.PolyFile(file_pli)
     
     #empty polyfile object to append polyobjects to for testing full read/write workflow
     if write_outfile:
-        polyfile_object_out = PolyFile()
+        polyfile_object_out = hcdfm.PolyFile()
     
     fig,ax = plt.subplots()
     for iPO, pli_PolyObject_sel in enumerate(polyfile_object.objects):

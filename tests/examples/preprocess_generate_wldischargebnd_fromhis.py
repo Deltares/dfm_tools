@@ -10,13 +10,7 @@ import xarray as xr
 import matplotlib.pyplot as plt
 plt.close('all')
 import dfm_tools as dfmt
-
-try: #0.3.1 release
-    from hydrolib.core.io.bc.models import ForcingModel
-    #from hydrolib.core.io.ext.models import Boundary, ExtModel
-except: #main branch and next release #TODO: move to easy imports after https://github.com/Deltares/HYDROLIB-core/issues/410
-    from hydrolib.core.dflowfm.bc.models import ForcingModel
-    #from hydrolib.core.dflowfm.ext.models import Boundary, ExtModel
+import hydrolib.core.dflowfm as hcdfm
 
 
 plotting = True
@@ -58,7 +52,7 @@ for sim in sims:
         fig.tight_layout()
         fig.savefig(os.path.join(dir_output,f'{sim}_discharge.png'))
         
-    ForcingModel_object = ForcingModel()
+    ForcingModel_object = hcdfm.ForcingModel()
     for stat_wl in station_wl: 
         data_fromhis_xr = data_xr.waterlevel.sel(stations=stat_wl)
         data_fromhis_xr.attrs['locationname'] = map_wl[stat_wl]

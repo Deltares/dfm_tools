@@ -15,13 +15,7 @@ import xarray as xr
 from pathlib import Path
 from scipy.spatial import KDTree
 import warnings
-
-try: #0.3.1 release
-    from hydrolib.core.io.bc.models import ForcingModel
-    from hydrolib.core.io.polyfile.models import PolyFile
-except: #main branch and next release
-    from hydrolib.core.dflowfm.bc.models import ForcingModel
-    from hydrolib.core.dflowfm.polyfile.models import PolyFile
+import hydrolib.core.dflowfm as hcdfm
 
 from dfm_tools.hydrolib_helpers import Dataset_to_TimeSeries, Dataset_to_T3D, Dataset_to_Astronomic
 from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame
@@ -91,8 +85,8 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
                       'MTM':'MFM', #Needs to be verified
                       }
     
-    print('initialize ForcingModel()')
-    ForcingModel_object = ForcingModel()
+    print('initialize hcdfm.ForcingModel()')
+    ForcingModel_object = hcdfm.ForcingModel()
     
     dir_pattern_dict = {'FES2014': Path(r'P:\metocean-data\licensed\FES2014','*.nc'), #ocean_tide_extrapolated
                         'FES2012': Path(r'P:\metocean-data\open\FES2012\data','*_FES2012_SLEV.nc'), #is eigenlijk ook licensed
@@ -280,7 +274,7 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, kdtree_k=
     data_xr_var = data_xr_reg #TODO: rename in script
     
     #load boundary file
-    polyfile_object = PolyFile(file_pli)
+    polyfile_object = hcdfm.PolyFile(file_pli)
     
     #check if polyobj names in plifile are unique
     polynames_pd = pd.Series([polyobj.metadata.name for polyobj in polyfile_object.objects])
@@ -384,7 +378,7 @@ def interp_hisnc_to_plipoints(data_xr_his, file_pli, kdtree_k=3, load=True):
     tree_nest2 = KDTree(hisstations_pd[['station_x_coordinate','station_y_coordinate']])
     
     #read polyfile and query k nearest hisstations (names)
-    polyfile_object = PolyFile(file_pli)
+    polyfile_object = hcdfm.PolyFile(file_pli)
     data_pol_pd = pd.DataFrame()
     for polyobj in polyfile_object.objects:
         data_pol_pd_one = pointlike_to_DataFrame(polyobj)
@@ -424,13 +418,13 @@ def plipointsDataset_to_ForcingModel(plipointsDataset):
     npoints = len(plipointsDataset.plipoints)
     
     #start conversion to Forcingmodel object
-    print(f'Converting {npoints} plipoints to ForcingModel():',end='')
+    print(f'Converting {npoints} plipoints to hcdfm.ForcingModel():',end='')
     dtstart = dt.datetime.now()
-    ForcingModel_object = ForcingModel()
+    ForcingModel_object = hcdfm.ForcingModel()
     for iP in range(npoints):
         print(f' {iP+1}',end='')
         
-        #select data for this point, ffill nans, concatenating time column, constructing T3D/TimeSeries and append to ForcingModel()
+        #select data for this point, ffill nans, concatenating time column, constructing T3D/TimeSeries and append to hcdfm.ForcingModel()
         datablock_xr_onepoint = plipointsDataset.isel(plipoints=iP)
         plipoint_name = str(datablock_xr_onepoint.plipoints.to_numpy())
         

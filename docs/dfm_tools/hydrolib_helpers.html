@@ -40,16 +40,9 @@ import cftime
 import numpy as np
 import xarray as xr
 from cftime import date2num
+import hydrolib.core.dflowfm as hcdfm
 
-try: #0.3.1 release
-    from hydrolib.core.io.polyfile.models import PolyObject
-    from hydrolib.core.io.bc.models import ForcingModel, QuantityUnitPair, VectorQuantityUnitPairs, T3D, TimeSeries, Astronomic
-except: #main branch and next release
-    from hydrolib.core.dflowfm.polyfile.models import PolyObject
-    from hydrolib.core.dflowfm.bc.models import ForcingModel, QuantityUnitPair, VectorQuantityUnitPairs, T3D, TimeSeries, Astronomic
-
-
-def Dataset_to_T3D(datablock_xr):  
+def Dataset_to_T3D(datablock_xr):
     &#34;&#34;&#34;
     convert an xarray.DataArray (is one data_var) or an xarray.Dataset (with one or two data_vars) with time and depth dimension to a hydrolib T3D object
     &#34;&#34;&#34;
@@ -102,25 +95,25 @@ def Dataset_to_T3D(datablock_xr):
     # Each .bc file can contain 1 or more timeseries, in this case one for each support point
     verticalpositions_idx = np.arange(data_xr_var0[&#39;depth&#39;].size)+1
     if vector: #vector T3D object
-        QUP_quan_list = [QuantityUnitPair(quantity=quan, unit=data_xr_var0.attrs[&#39;units&#39;], vertpositionindex=iVP) for iVP in verticalpositions_idx for quan in data_vars]
-        QUP_quan_vector = VectorQuantityUnitPairs(vectorname=&#39;uxuyadvectionvelocitybnd&#39;, #TODO: vectorname from global attr? (then also support other vectors which is not necessary)
+        QUP_quan_list = [hcdfm.QuantityUnitPair(quantity=quan, unit=data_xr_var0.attrs[&#39;units&#39;], vertpositionindex=iVP) for iVP in verticalpositions_idx for quan in data_vars]
+        QUP_quan_vector = hcdfm.VectorQuantityUnitPairs(vectorname=&#39;uxuyadvectionvelocitybnd&#39;, #TODO: vectorname from global attr? (then also support other vectors which is not necessary)
                                                   elementname=data_vars,
                                                   quantityunitpair=QUP_quan_list)
-        quantityunitpair = [QuantityUnitPair(quantity=&#34;time&#34;, unit=refdate_str)]+[QUP_quan_vector]
+        quantityunitpair = [hcdfm.QuantityUnitPair(quantity=&#34;time&#34;, unit=refdate_str)]+[QUP_quan_vector]
     else: #normal T3D object
-        QUP_quan_list = [QuantityUnitPair(quantity=data_xr_var0.name, unit=data_xr_var0.attrs[&#39;units&#39;], vertpositionindex=iVP) for iVP in verticalpositions_idx]
-        quantityunitpair=[QuantityUnitPair(quantity=&#34;time&#34;, unit=refdate_str)]+QUP_quan_list
+        QUP_quan_list = [hcdfm.QuantityUnitPair(quantity=data_xr_var0.name, unit=data_xr_var0.attrs[&#39;units&#39;], vertpositionindex=iVP) for iVP in verticalpositions_idx]
+        quantityunitpair=[hcdfm.QuantityUnitPair(quantity=&#34;time&#34;, unit=refdate_str)]+QUP_quan_list
     
-    T3D_object = T3D(name=locationname,
-                     #offset=0,
-                     #factor=1,
-                     vertpositions=depth_array.tolist(),
-                     vertinterpolation=&#39;linear&#39;, #TODO: make these parameters user defined (via attrs)
-                     vertPositionType=&#39;ZDatum&#39;,
-                     quantityunitpair=quantityunitpair,
-                     timeinterpolation=&#39;linear&#39;,
-                     datablock=datablock_incltime.tolist(), #TODO: numpy array is not supported by TimeSeries. https://github.com/Deltares/HYDROLIB-core/issues/322
-                     )
+    T3D_object = hcdfm.T3D(name=locationname,
+                           #offset=0,
+                           #factor=1,
+                           vertpositions=depth_array.tolist(),
+                           vertinterpolation=&#39;linear&#39;, #TODO: make these parameters user defined (via attrs)
+                           vertPositionType=&#39;ZDatum&#39;,
+                           quantityunitpair=quantityunitpair,
+                           timeinterpolation=&#39;linear&#39;,
+                           datablock=datablock_incltime.tolist(), #TODO: numpy array is not supported by TimeSeries. https://github.com/Deltares/HYDROLIB-core/issues/322
+                           )
     
     return T3D_object
 
@@ -151,12 +144,12 @@ def Dataset_to_TimeSeries(datablock_xr):
     datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock_np],axis=1)
     
     # Each .bc file can contain 1 or more timeseries, in this case one for each support point
-    TimeSeries_object = TimeSeries(name=locationname,
-                                   quantityunitpair=[QuantityUnitPair(quantity=&#34;time&#34;, unit=refdate_str),
-                                                     QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs[&#39;units&#39;])],
-                                   timeinterpolation=&#39;linear&#39;, #TODO: make userdefined via attrs?
-                                   datablock=datablock_incltime.tolist(), 
-                                   )
+    TimeSeries_object = hcdfm.TimeSeries(name=locationname,
+                                         quantityunitpair=[hcdfm.QuantityUnitPair(quantity=&#34;time&#34;, unit=refdate_str),
+                                                           hcdfm.QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs[&#39;units&#39;])],
+                                         timeinterpolation=&#39;linear&#39;, #TODO: make userdefined via attrs?
+                                         datablock=datablock_incltime.tolist(), 
+                                         )
     return TimeSeries_object
 
 
@@ -181,12 +174,12 @@ def Dataset_to_Astronomic(datablock_xr):
     datablock_np_phs = datablock_xr[&#39;phase_new&#39;].to_numpy()[:,np.newaxis]
     datablock_inclcomp = np.concatenate([datablock_np_cna,datablock_np_amp,datablock_np_phs],axis=1)
     
-    Astronomic_object = Astronomic(name=locationname,
-                                   quantityunitpair=[QuantityUnitPair(quantity=&#34;astronomic component&#34;, unit=&#39;-&#39;),
-                                                     QuantityUnitPair(quantity=&#39;waterlevelbnd amplitude&#39;, unit=datablock_xr[&#39;amplitude&#39;].attrs[&#39;units&#39;]),
-                                                     QuantityUnitPair(quantity=&#39;waterlevelbnd phase&#39;, unit=datablock_xr[&#39;phase&#39;].attrs[&#39;units&#39;])],
-                                   datablock=datablock_inclcomp.tolist(), 
-                                   )
+    Astronomic_object = hcdfm.Astronomic(name=locationname,
+                                         quantityunitpair=[hcdfm.QuantityUnitPair(quantity=&#34;astronomic component&#34;, unit=&#39;-&#39;),
+                                                           hcdfm.QuantityUnitPair(quantity=&#39;waterlevelbnd amplitude&#39;, unit=datablock_xr[&#39;amplitude&#39;].attrs[&#39;units&#39;]),
+                                                           hcdfm.QuantityUnitPair(quantity=&#39;waterlevelbnd phase&#39;, unit=datablock_xr[&#39;phase&#39;].attrs[&#39;units&#39;])],
+                                         datablock=datablock_inclcomp.tolist(), 
+                                         )
     return Astronomic_object
 
 
@@ -202,7 +195,7 @@ def DataFrame_to_PolyObject(poly_pd,name,content=None):
     poly_pd_data = pd.DataFrame({&#39;data&#39;:poly_pd.drop(nondata_cols,axis=1).values.tolist()})
     poly_pd_polyobj = pd.concat([poly_pd_xy,poly_pd_data],axis=1)
     pointsobj_list = poly_pd_polyobj.T.apply(dict).tolist() #TODO: maybe faster with list iteration
-    polyobject = PolyObject(metadata={&#39;name&#39;:name,&#39;n_rows&#39;:poly_pd.shape[0],&#39;n_columns&#39;:poly_pd.shape[1]}, points=pointsobj_list)
+    polyobject = hcdfm.PolyObject(metadata={&#39;name&#39;:name,&#39;n_rows&#39;:poly_pd.shape[0],&#39;n_columns&#39;:poly_pd.shape[1]}, points=pointsobj_list)
     if content is not None:
         polyobject.description = {&#39;content&#39;:content}
     return polyobject
@@ -216,14 +209,14 @@ def forcinglike_to_Dataset(forcingobj, convertnan=False): #TODO: would be conven
     &#34;&#34;&#34;
     
     #check if forcingmodel instead of T3D/TimeSeries is provided
-    if isinstance(forcingobj, ForcingModel):
+    if isinstance(forcingobj, hcdfm.ForcingModel):
         raise Exception(&#39;ERROR: instead of supplying a ForcingModel, provide a ForcingObject (Timeseries/T3D etc), by doing something like ForcingModel.forcing[0]&#39;)
     
-    allowed_instances = (T3D, TimeSeries, Astronomic)
+    allowed_instances = (hcdfm.T3D, hcdfm.TimeSeries, hcdfm.Astronomic)
     if not isinstance(forcingobj, allowed_instances):
         raise Exception(f&#39;ERROR: supplied input is not one of: {allowed_instances}&#39;)
     
-    if isinstance(forcingobj, Astronomic):
+    if isinstance(forcingobj, hcdfm.Astronomic):
         var_quantity_list = [x.quantity for x in forcingobj.quantityunitpair[1:]]
         var_unit = [x.unit for x in forcingobj.quantityunitpair[1:]]
     elif hasattr(forcingobj.quantityunitpair[1],&#39;elementname&#39;): #T3D with vector quantity
@@ -235,16 +228,16 @@ def forcinglike_to_Dataset(forcingobj, convertnan=False): #TODO: would be conven
         var_unit = [forcingobj.quantityunitpair[1].unit]
     nquan = len(var_quantity_list)
     
-    if isinstance(forcingobj, T3D):
+    if isinstance(forcingobj, hcdfm.T3D):
         dims = (&#39;time&#39;,&#39;depth&#39;)
-    elif isinstance(forcingobj, TimeSeries):
+    elif isinstance(forcingobj, hcdfm.TimeSeries):
         dims = (&#39;time&#39;)
-    elif isinstance(forcingobj, Astronomic):
+    elif isinstance(forcingobj, hcdfm.Astronomic):
         dims = (&#39;astronomic_component&#39;)
     
     datablock_all = np.array(forcingobj.datablock)
     datablock_data = datablock_all[:,1:] #select all columns except first one (which is the time column)
-    if isinstance(forcingobj, Astronomic):
+    if isinstance(forcingobj, hcdfm.Astronomic):
         datablock_data = datablock_data.astype(float) #convert str to float in case of &#34;astronomic component&#34;
     
     data_xr = xr.Dataset()
@@ -357,7 +350,7 @@ def parse_xy_to_datetime(pointlike_pd):
     poly_pd_data = pd.DataFrame({&#39;data&#39;:poly_pd.drop(nondata_cols,axis=1).values.tolist()})
     poly_pd_polyobj = pd.concat([poly_pd_xy,poly_pd_data],axis=1)
     pointsobj_list = poly_pd_polyobj.T.apply(dict).tolist() #TODO: maybe faster with list iteration
-    polyobject = PolyObject(metadata={&#39;name&#39;:name,&#39;n_rows&#39;:poly_pd.shape[0],&#39;n_columns&#39;:poly_pd.shape[1]}, points=pointsobj_list)
+    polyobject = hcdfm.PolyObject(metadata={&#39;name&#39;:name,&#39;n_rows&#39;:poly_pd.shape[0],&#39;n_columns&#39;:poly_pd.shape[1]}, points=pointsobj_list)
     if content is not None:
         polyobject.description = {&#39;content&#39;:content}
     return polyobject</code></pre>
@@ -393,12 +386,12 @@ def parse_xy_to_datetime(pointlike_pd):
     datablock_np_phs = datablock_xr[&#39;phase_new&#39;].to_numpy()[:,np.newaxis]
     datablock_inclcomp = np.concatenate([datablock_np_cna,datablock_np_amp,datablock_np_phs],axis=1)
     
-    Astronomic_object = Astronomic(name=locationname,
-                                   quantityunitpair=[QuantityUnitPair(quantity=&#34;astronomic component&#34;, unit=&#39;-&#39;),
-                                                     QuantityUnitPair(quantity=&#39;waterlevelbnd amplitude&#39;, unit=datablock_xr[&#39;amplitude&#39;].attrs[&#39;units&#39;]),
-                                                     QuantityUnitPair(quantity=&#39;waterlevelbnd phase&#39;, unit=datablock_xr[&#39;phase&#39;].attrs[&#39;units&#39;])],
-                                   datablock=datablock_inclcomp.tolist(), 
-                                   )
+    Astronomic_object = hcdfm.Astronomic(name=locationname,
+                                         quantityunitpair=[hcdfm.QuantityUnitPair(quantity=&#34;astronomic component&#34;, unit=&#39;-&#39;),
+                                                           hcdfm.QuantityUnitPair(quantity=&#39;waterlevelbnd amplitude&#39;, unit=datablock_xr[&#39;amplitude&#39;].attrs[&#39;units&#39;]),
+                                                           hcdfm.QuantityUnitPair(quantity=&#39;waterlevelbnd phase&#39;, unit=datablock_xr[&#39;phase&#39;].attrs[&#39;units&#39;])],
+                                         datablock=datablock_inclcomp.tolist(), 
+                                         )
     return Astronomic_object</code></pre>
 </details>
 </dd>
@@ -411,7 +404,7 @@ def parse_xy_to_datetime(pointlike_pd):
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def Dataset_to_T3D(datablock_xr):  
+<pre><code class="python">def Dataset_to_T3D(datablock_xr):
     &#34;&#34;&#34;
     convert an xarray.DataArray (is one data_var) or an xarray.Dataset (with one or two data_vars) with time and depth dimension to a hydrolib T3D object
     &#34;&#34;&#34;
@@ -464,25 +457,25 @@ def parse_xy_to_datetime(pointlike_pd):
     # Each .bc file can contain 1 or more timeseries, in this case one for each support point
     verticalpositions_idx = np.arange(data_xr_var0[&#39;depth&#39;].size)+1
     if vector: #vector T3D object
-        QUP_quan_list = [QuantityUnitPair(quantity=quan, unit=data_xr_var0.attrs[&#39;units&#39;], vertpositionindex=iVP) for iVP in verticalpositions_idx for quan in data_vars]
-        QUP_quan_vector = VectorQuantityUnitPairs(vectorname=&#39;uxuyadvectionvelocitybnd&#39;, #TODO: vectorname from global attr? (then also support other vectors which is not necessary)
+        QUP_quan_list = [hcdfm.QuantityUnitPair(quantity=quan, unit=data_xr_var0.attrs[&#39;units&#39;], vertpositionindex=iVP) for iVP in verticalpositions_idx for quan in data_vars]
+        QUP_quan_vector = hcdfm.VectorQuantityUnitPairs(vectorname=&#39;uxuyadvectionvelocitybnd&#39;, #TODO: vectorname from global attr? (then also support other vectors which is not necessary)
                                                   elementname=data_vars,
                                                   quantityunitpair=QUP_quan_list)
-        quantityunitpair = [QuantityUnitPair(quantity=&#34;time&#34;, unit=refdate_str)]+[QUP_quan_vector]
+        quantityunitpair = [hcdfm.QuantityUnitPair(quantity=&#34;time&#34;, unit=refdate_str)]+[QUP_quan_vector]
     else: #normal T3D object
-        QUP_quan_list = [QuantityUnitPair(quantity=data_xr_var0.name, unit=data_xr_var0.attrs[&#39;units&#39;], vertpositionindex=iVP) for iVP in verticalpositions_idx]
-        quantityunitpair=[QuantityUnitPair(quantity=&#34;time&#34;, unit=refdate_str)]+QUP_quan_list
+        QUP_quan_list = [hcdfm.QuantityUnitPair(quantity=data_xr_var0.name, unit=data_xr_var0.attrs[&#39;units&#39;], vertpositionindex=iVP) for iVP in verticalpositions_idx]
+        quantityunitpair=[hcdfm.QuantityUnitPair(quantity=&#34;time&#34;, unit=refdate_str)]+QUP_quan_list
     
-    T3D_object = T3D(name=locationname,
-                     #offset=0,
-                     #factor=1,
-                     vertpositions=depth_array.tolist(),
-                     vertinterpolation=&#39;linear&#39;, #TODO: make these parameters user defined (via attrs)
-                     vertPositionType=&#39;ZDatum&#39;,
-                     quantityunitpair=quantityunitpair,
-                     timeinterpolation=&#39;linear&#39;,
-                     datablock=datablock_incltime.tolist(), #TODO: numpy array is not supported by TimeSeries. https://github.com/Deltares/HYDROLIB-core/issues/322
-                     )
+    T3D_object = hcdfm.T3D(name=locationname,
+                           #offset=0,
+                           #factor=1,
+                           vertpositions=depth_array.tolist(),
+                           vertinterpolation=&#39;linear&#39;, #TODO: make these parameters user defined (via attrs)
+                           vertPositionType=&#39;ZDatum&#39;,
+                           quantityunitpair=quantityunitpair,
+                           timeinterpolation=&#39;linear&#39;,
+                           datablock=datablock_incltime.tolist(), #TODO: numpy array is not supported by TimeSeries. https://github.com/Deltares/HYDROLIB-core/issues/322
+                           )
     
     return T3D_object</code></pre>
 </details>
@@ -522,12 +515,12 @@ def parse_xy_to_datetime(pointlike_pd):
     datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock_np],axis=1)
     
     # Each .bc file can contain 1 or more timeseries, in this case one for each support point
-    TimeSeries_object = TimeSeries(name=locationname,
-                                   quantityunitpair=[QuantityUnitPair(quantity=&#34;time&#34;, unit=refdate_str),
-                                                     QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs[&#39;units&#39;])],
-                                   timeinterpolation=&#39;linear&#39;, #TODO: make userdefined via attrs?
-                                   datablock=datablock_incltime.tolist(), 
-                                   )
+    TimeSeries_object = hcdfm.TimeSeries(name=locationname,
+                                         quantityunitpair=[hcdfm.QuantityUnitPair(quantity=&#34;time&#34;, unit=refdate_str),
+                                                           hcdfm.QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs[&#39;units&#39;])],
+                                         timeinterpolation=&#39;linear&#39;, #TODO: make userdefined via attrs?
+                                         datablock=datablock_incltime.tolist(), 
+                                         )
     return TimeSeries_object</code></pre>
 </details>
 </dd>
@@ -549,14 +542,14 @@ def parse_xy_to_datetime(pointlike_pd):
     &#34;&#34;&#34;
     
     #check if forcingmodel instead of T3D/TimeSeries is provided
-    if isinstance(forcingobj, ForcingModel):
+    if isinstance(forcingobj, hcdfm.ForcingModel):
         raise Exception(&#39;ERROR: instead of supplying a ForcingModel, provide a ForcingObject (Timeseries/T3D etc), by doing something like ForcingModel.forcing[0]&#39;)
     
-    allowed_instances = (T3D, TimeSeries, Astronomic)
+    allowed_instances = (hcdfm.T3D, hcdfm.TimeSeries, hcdfm.Astronomic)
     if not isinstance(forcingobj, allowed_instances):
         raise Exception(f&#39;ERROR: supplied input is not one of: {allowed_instances}&#39;)
     
-    if isinstance(forcingobj, Astronomic):
+    if isinstance(forcingobj, hcdfm.Astronomic):
         var_quantity_list = [x.quantity for x in forcingobj.quantityunitpair[1:]]
         var_unit = [x.unit for x in forcingobj.quantityunitpair[1:]]
     elif hasattr(forcingobj.quantityunitpair[1],&#39;elementname&#39;): #T3D with vector quantity
@@ -568,16 +561,16 @@ def parse_xy_to_datetime(pointlike_pd):
         var_unit = [forcingobj.quantityunitpair[1].unit]
     nquan = len(var_quantity_list)
     
-    if isinstance(forcingobj, T3D):
+    if isinstance(forcingobj, hcdfm.T3D):
         dims = (&#39;time&#39;,&#39;depth&#39;)
-    elif isinstance(forcingobj, TimeSeries):
+    elif isinstance(forcingobj, hcdfm.TimeSeries):
         dims = (&#39;time&#39;)
-    elif isinstance(forcingobj, Astronomic):
+    elif isinstance(forcingobj, hcdfm.Astronomic):
         dims = (&#39;astronomic_component&#39;)
     
     datablock_all = np.array(forcingobj.datablock)
     datablock_data = datablock_all[:,1:] #select all columns except first one (which is the time column)
-    if isinstance(forcingobj, Astronomic):
+    if isinstance(forcingobj, hcdfm.Astronomic):
         datablock_data = datablock_data.astype(float) #convert str to float in case of &#34;astronomic component&#34;
     
     data_xr = xr.Dataset()

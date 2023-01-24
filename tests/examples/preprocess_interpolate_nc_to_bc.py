@@ -14,10 +14,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 plt.close('all')
 import dfm_tools as dfmt
-try: #0.3.1 release
-    from hydrolib.core.io.ext.models import Boundary, ExtModel
-except: #main branch and next release #TODO: move to easy imports after https://github.com/Deltares/HYDROLIB-core/issues/410
-    from hydrolib.core.dflowfm.ext.models import Boundary, ExtModel
+import hydrolib.core.dflowfm as hcdfm
 
 #TODO: add coordinate conversion of pli-coordinates? (for nesting RD models in oceanmodels)
 #TODO: additional models/sources for download/interpolate (evt xESMF for CMCC, climate forcing cmip6 procedure (=calendarconversion) and others)
@@ -83,7 +80,7 @@ else:
 
 # start of interpolation process
 dtstart = dt.datetime.now()
-ext_bnd = ExtModel()
+ext_bnd = hcdfm.ExtModel()
 if not os.path.isdir(dir_output):
     os.mkdir(dir_output)
 
@@ -137,9 +134,9 @@ for file_pli in list_plifiles:
         
         #TODO: support for relative paths?
         #generate boundary object for the ext file (quantity, pli-filename, bc-filename)
-        boundary_object = Boundary(quantity=quantity.replace('tide','waterlevelbnd'), #the FM quantity for tide is also waterlevelbnd
-                                   locationfile=file_pli,
-                                   forcingfile=ForcingModel_object)
+        boundary_object = hcdfm.Boundary(quantity=quantity.replace('tide','waterlevelbnd'), #the FM quantity for tide is also waterlevelbnd
+                                         locationfile=file_pli,
+                                         forcingfile=ForcingModel_object)
         ext_bnd.boundary.append(boundary_object)
 
         if 1 and quantity!='tide': #TODO: data_xr_vars/data_interp does not exist for tide yet

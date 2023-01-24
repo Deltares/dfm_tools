@@ -10,10 +10,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 plt.close('all')
 import dfm_tools as dfmt
-try: #0.3.1 release
-    from hydrolib.core.io.bc.models import ForcingModel
-except: #main branch and next release #TODO: move to easy imports after https://github.com/Deltares/HYDROLIB-core/issues/410
-    from hydrolib.core.dflowfm.bc.models import ForcingModel
+import hydrolib.core.dflowfm as hcdfm
+
 
 #TODO: merge this into preprocess_hydrolib_readFMmodel.py after issues are resolved?
 #NOTE: for examples with writing bc files, check dfm_tools.interpolate_grid2bnd.* and dfm_tools.hydrolib_helpers.
@@ -36,8 +34,8 @@ dir_output = '.'
 
 for file_bc in file_bc_list:
     #Load .bc-file using HydroLib object ForcingModel.
-    m = ForcingModel(Path(file_bc)) #TODO: why can it not be str?
-    ForcingModel_object_out = ForcingModel()
+    m = hcdfm.ForcingModel(Path(file_bc)) #TODO: why can it not be str?
+    ForcingModel_object_out = hcdfm.ForcingModel()
     
     # m.general.comments = {'a':'aa'} #TODO: adding comments to top of file is not possible, only if using filetype or fileversion: https://github.com/Deltares/HYDROLIB-core/issues/130. Top file comment newfeature: https://github.com/Deltares/HYDROLIB-core/issues/362
     # m.save('test.bc')

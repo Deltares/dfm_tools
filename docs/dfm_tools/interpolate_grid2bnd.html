@@ -45,13 +45,7 @@ import xarray as xr
 from pathlib import Path
 from scipy.spatial import KDTree
 import warnings
-
-try: #0.3.1 release
-    from hydrolib.core.io.bc.models import ForcingModel
-    from hydrolib.core.io.polyfile.models import PolyFile
-except: #main branch and next release
-    from hydrolib.core.dflowfm.bc.models import ForcingModel
-    from hydrolib.core.dflowfm.polyfile.models import PolyFile
+import hydrolib.core.dflowfm as hcdfm
 
 from dfm_tools.hydrolib_helpers import Dataset_to_TimeSeries, Dataset_to_T3D, Dataset_to_Astronomic
 from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame
@@ -121,8 +115,8 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
                       &#39;MTM&#39;:&#39;MFM&#39;, #Needs to be verified
                       }
     
-    print(&#39;initialize ForcingModel()&#39;)
-    ForcingModel_object = ForcingModel()
+    print(&#39;initialize hcdfm.ForcingModel()&#39;)
+    ForcingModel_object = hcdfm.ForcingModel()
     
     dir_pattern_dict = {&#39;FES2014&#39;: Path(r&#39;P:\metocean-data\licensed\FES2014&#39;,&#39;*.nc&#39;), #ocean_tide_extrapolated
                         &#39;FES2012&#39;: Path(r&#39;P:\metocean-data\open\FES2012\data&#39;,&#39;*_FES2012_SLEV.nc&#39;), #is eigenlijk ook licensed
@@ -310,7 +304,7 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, kdtree_k=
     data_xr_var = data_xr_reg #TODO: rename in script
     
     #load boundary file
-    polyfile_object = PolyFile(file_pli)
+    polyfile_object = hcdfm.PolyFile(file_pli)
     
     #check if polyobj names in plifile are unique
     polynames_pd = pd.Series([polyobj.metadata.name for polyobj in polyfile_object.objects])
@@ -414,7 +408,7 @@ def interp_hisnc_to_plipoints(data_xr_his, file_pli, kdtree_k=3, load=True):
     tree_nest2 = KDTree(hisstations_pd[[&#39;station_x_coordinate&#39;,&#39;station_y_coordinate&#39;]])
     
     #read polyfile and query k nearest hisstations (names)
-    polyfile_object = PolyFile(file_pli)
+    polyfile_object = hcdfm.PolyFile(file_pli)
     data_pol_pd = pd.DataFrame()
     for polyobj in polyfile_object.objects:
         data_pol_pd_one = pointlike_to_DataFrame(polyobj)
@@ -454,13 +448,13 @@ def plipointsDataset_to_ForcingModel(plipointsDataset):
     npoints = len(plipointsDataset.plipoints)
     
     #start conversion to Forcingmodel object
-    print(f&#39;Converting {npoints} plipoints to ForcingModel():&#39;,end=&#39;&#39;)
+    print(f&#39;Converting {npoints} plipoints to hcdfm.ForcingModel():&#39;,end=&#39;&#39;)
     dtstart = dt.datetime.now()
-    ForcingModel_object = ForcingModel()
+    ForcingModel_object = hcdfm.ForcingModel()
     for iP in range(npoints):
         print(f&#39; {iP+1}&#39;,end=&#39;&#39;)
         
-        #select data for this point, ffill nans, concatenating time column, constructing T3D/TimeSeries and append to ForcingModel()
+        #select data for this point, ffill nans, concatenating time column, constructing T3D/TimeSeries and append to hcdfm.ForcingModel()
         datablock_xr_onepoint = plipointsDataset.isel(plipoints=iP)
         plipoint_name = str(datablock_xr_onepoint.plipoints.to_numpy())
         
@@ -619,7 +613,7 @@ conversion_dict = { # mg/l is the same as g/m3: conversion is phyc in mol/m3 to 
     tree_nest2 = KDTree(hisstations_pd[[&#39;station_x_coordinate&#39;,&#39;station_y_coordinate&#39;]])
     
     #read polyfile and query k nearest hisstations (names)
-    polyfile_object = PolyFile(file_pli)
+    polyfile_object = hcdfm.PolyFile(file_pli)
     data_pol_pd = pd.DataFrame()
     for polyobj in polyfile_object.objects:
         data_pol_pd_one = pointlike_to_DataFrame(polyobj)
@@ -672,7 +666,7 @@ conversion_dict = { # mg/l is the same as g/m3: conversion is phyc in mol/m3 to 
     data_xr_var = data_xr_reg #TODO: rename in script
     
     #load boundary file
-    polyfile_object = PolyFile(file_pli)
+    polyfile_object = hcdfm.PolyFile(file_pli)
     
     #check if polyobj names in plifile are unique
     polynames_pd = pd.Series([polyobj.metadata.name for polyobj in polyfile_object.objects])
@@ -782,8 +776,8 @@ conversion_dict = { # mg/l is the same as g/m3: conversion is phyc in mol/m3 to 
                       &#39;MTM&#39;:&#39;MFM&#39;, #Needs to be verified
                       }
     
-    print(&#39;initialize ForcingModel()&#39;)
-    ForcingModel_object = ForcingModel()
+    print(&#39;initialize hcdfm.ForcingModel()&#39;)
+    ForcingModel_object = hcdfm.ForcingModel()
     
     dir_pattern_dict = {&#39;FES2014&#39;: Path(r&#39;P:\metocean-data\licensed\FES2014&#39;,&#39;*.nc&#39;), #ocean_tide_extrapolated
                         &#39;FES2012&#39;: Path(r&#39;P:\metocean-data\open\FES2012\data&#39;,&#39;*_FES2012_SLEV.nc&#39;), #is eigenlijk ook licensed
@@ -986,13 +980,13 @@ conversion_dict = { # mg/l is the same as g/m3: conversion is phyc in mol/m3 to 
     npoints = len(plipointsDataset.plipoints)
     
     #start conversion to Forcingmodel object
-    print(f&#39;Converting {npoints} plipoints to ForcingModel():&#39;,end=&#39;&#39;)
+    print(f&#39;Converting {npoints} plipoints to hcdfm.ForcingModel():&#39;,end=&#39;&#39;)
     dtstart = dt.datetime.now()
-    ForcingModel_object = ForcingModel()
+    ForcingModel_object = hcdfm.ForcingModel()
     for iP in range(npoints):
         print(f&#39; {iP+1}&#39;,end=&#39;&#39;)
         
-        #select data for this point, ffill nans, concatenating time column, constructing T3D/TimeSeries and append to ForcingModel()
+        #select data for this point, ffill nans, concatenating time column, constructing T3D/TimeSeries and append to hcdfm.ForcingModel()
         datablock_xr_onepoint = plipointsDataset.isel(plipoints=iP)
         plipoint_name = str(datablock_xr_onepoint.plipoints.to_numpy())
         

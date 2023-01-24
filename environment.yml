@@ -4,6 +4,12 @@ channels:
 dependencies:
   - python=3.8
   - pip>=19.2.3
+  - pip:
+    - scipy
+    - numpy
+    - matplotlib
+    - pandas
+    - hydrolib-core>=0.4.0
   - shapely
   - cartopy
   - pyepsg
@@ -16,10 +22,4 @@ dependencies:
   - xugrid>=0.2.0
   - cdsapi
   - pydap
-  - pip:
-    - scipy
-    - numpy
-    - matplotlib
-    - pandas
-    - hydrolib-core>=0.3.1
     

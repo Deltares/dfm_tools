@@ -6,7 +6,7 @@ Created on Thu Dec  8 20:54:39 2022
 
 """
 
-import meshkernel
+import meshkernel #meshkernel>=2.0.0 #TODO: hydrolib currently has meshkernel<2/.0.0 >=1.0.0, so this conflicts
 import xarray as xr
 import xugrid as xu
 import matplotlib.pyplot as plt
@@ -16,10 +16,8 @@ import contextily as ctx
 import dfm_tools as dfmt
 import pandas as pd
 from pathlib import Path
-try: #0.3.1 release
-    from hydrolib.core.io.polyfile.models import PolyFile
-except: #main branch and next release #TODO: move to easy imports after https://github.com/Deltares/HYDROLIB-core/issues/410
-    from hydrolib.core.dflowfm.polyfile.models import PolyFile
+import hydrolib.core.dflowfm as hcdfm
+
 
 #general settings
 lon_min,lon_max = -6,2
@@ -122,7 +120,7 @@ delete_with_ldb = True
 if delete_with_ldb: #landboundary file has to contain closed polygons
     print('reading ldb')
     file_ldb = r'p:\1230882-emodnet_hrsm\global_tide_surge_model\trunk\scripts_gtsm5\landboundary\GSHHS_intermediate_min1000km2.ldb'
-    pol_ldb = PolyFile(Path(file_ldb))
+    pol_ldb = hcdfm.PolyFile(Path(file_ldb))
     print('converting ldb')
     pol_ldb_list = [dfmt.pointlike_to_DataFrame(x) for x in pol_ldb.objects] #TODO, this is quite slow, speed up possible?
     pol_ldb_list = [x for x in pol_ldb_list if len(x)>1000] #filter only large polygons for performance
