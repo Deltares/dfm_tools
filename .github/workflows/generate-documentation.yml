@@ -30,12 +30,21 @@ jobs:
         #conda update -n base -c defaults conda
         #conda install -c conda-forge shapely cartopy pyepsg geopandas contextily xarray dask netcdf4 bottleneck cdsapi motuclient "geos>=3.7.2" -y
         
-        python -m pip install pdoc3 pandoc
+        #ImportError: Error importing 'dfm_tools': ModuleNotFoundError: No module named 'pandas'
+        #python -m pip install pdoc3 pandoc
+        
+        #ERROR: Could not build wheels for cartopy, which is required to install pyproject.toml-based projects
+        #python -m pip install pdoc3 pandoc
         #pip install -r requirements.txt
         
+        #freezes
         #conda update -n base -c defaults conda
         #conda env update --file environment.yml --name base
-      
+        
+        conda install -c conda-forge git shapely cartopy pyepsg geopandas contextily xarray dask netcdf4 bottleneck xugrid cdsapi pydap -y
+        python -m pip install -r requirements.txt
+        python -m pip install pdoc3 pandoc
+        
     - name: Generate documentation
       run: |
         pdoc --html dfm_tools -o docs --force --config sort_identifiers=False
