@@ -1026,7 +1026,7 @@ def plot_ztdata(data_xr_sel, varname, ax=None, only_contour=False, get_ds=False,
         Wheter to plot contour lines of the dataset. The default is False.
     **kwargs : TYPE
         properties to give on to the pcolormesh function.
-
+    
     Raises
     ------
     Exception
