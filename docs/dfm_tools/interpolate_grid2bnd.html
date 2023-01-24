@@ -590,172 +590,6 @@ conversion_dict = { # mg/l is the same as g/m3: conversion is phyc in mol/m3 to 
     return conversion_dict</code></pre>
 </details>
 </dd>
-<dt id="dfm_tools.interpolate_grid2bnd.interp_hisnc_to_plipoints"><code class="name flex">
-<span>def <span class="ident">interp_hisnc_to_plipoints</span></span>(<span>data_xr_his, file_pli, kdtree_k=3, load=True)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>interpolate stations in hisfile to points of polyfile</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def interp_hisnc_to_plipoints(data_xr_his, file_pli, kdtree_k=3, load=True):
-    &#34;&#34;&#34;
-    interpolate stations in hisfile to points of polyfile
-    &#34;&#34;&#34;
-    #KDTree, finds minimal eucledian distance between points (haversine would be better). Alternatively sklearn.neighbors.BallTree: tree = BallTree(data_lonlat_pd)
-    
-    datavars_list = list(data_xr_his.data_vars)
-    if len(datavars_list)&gt;5:
-        print(&#39;WARNING: more than 5 data_vars, you might want to subset your data_xr_his&#39;)
-    #read hisfile and make KDTree of xy of hisstations
-    hisstations_pd = data_xr_his.stations.to_dataframe() #TODO: add check if stations are strings? (whether preprocess_hisnc was used)
-    tree_nest2 = KDTree(hisstations_pd[[&#39;station_x_coordinate&#39;,&#39;station_y_coordinate&#39;]])
-    
-    #read polyfile and query k nearest hisstations (names)
-    polyfile_object = hcdfm.PolyFile(file_pli)
-    data_pol_pd = pd.DataFrame()
-    for polyobj in polyfile_object.objects:
-        data_pol_pd_one = pointlike_to_DataFrame(polyobj)
-        data_pol_pd_one[&#39;name&#39;] = pd.Series(data_pol_pd_one.index).apply(lambda x: f&#39;{polyobj.metadata.name}_{x+1:04d}&#39;)
-        data_pol_pd = pd.concat([data_pol_pd,data_pol_pd_one])
-    plicoords_distance2, plicoords_nestpointidx = tree_nest2.query(data_pol_pd[[&#39;x&#39;,&#39;y&#39;]], k=kdtree_k)
-    da_plicoords_nestpointidx = xr.DataArray(plicoords_nestpointidx, dims=(&#39;plipoints&#39;,&#39;nearestkpoints&#39;))
-    da_plicoords_nestpointnames = data_xr_his.stations.isel(stations=da_plicoords_nestpointidx)
-    
-    #interpolate hisfile variables to plipoints
-    data_interp = xr.Dataset()
-    data_interp[&#39;plipoint_x&#39;] = xr.DataArray(data_pol_pd[&#39;x&#39;],dims=(&#39;plipoints&#39;))
-    data_interp[&#39;plipoint_y&#39;] = xr.DataArray(data_pol_pd[&#39;y&#39;],dims=(&#39;plipoints&#39;))
-    data_interp[&#39;plipoint_name&#39;] = xr.DataArray(data_pol_pd[&#39;name&#39;].astype(&#39;S64&#39;), dims=&#39;plipoints&#39;).str.decode(&#39;utf-8&#39;,errors=&#39;ignore&#39;).str.strip() #TODO: must be possible to do this less complex
-    data_interp = data_interp.set_coords([&#39;plipoint_x&#39;,&#39;plipoint_y&#39;,&#39;plipoint_name&#39;])
-    data_interp = data_interp.set_index({&#39;plipoints&#39;:&#39;plipoint_name&#39;})
-    
-    for varone in datavars_list:
-        da_dist = xr.DataArray(plicoords_distance2, dims=(&#39;plipoints&#39;,&#39;nearestkpoints&#39;))
-        da_invdistweight = (1/da_dist)/(1/da_dist).sum(dim=&#39;nearestkpoints&#39;) #TODO: set weigths for invalid points to 0 (and increase others weights so sum remains 1)
-        data_xr_his_pli_knearest = data_xr_his[varone].sel(stations=da_plicoords_nestpointnames)
-        data_interp[varone] = (data_xr_his_pli_knearest * da_invdistweight).sum(dim=&#39;nearestkpoints&#39;)
-        data_interp[varone].attrs = data_xr_his[varone].attrs #copy units and other attributes
-        
-    if not load:
-        return data_interp
-    
-    print(&#39;loading dataset (might take a while, but increases performance of point loop significantly)&#39;)
-    data_interp = data_interp.load()
-    print(&#39;done&#39;)
-
-    return data_interp</code></pre>
-</details>
-</dd>
-<dt id="dfm_tools.interpolate_grid2bnd.interp_regularnc_to_plipoints"><code class="name flex">
-<span>def <span class="ident">interp_regularnc_to_plipoints</span></span>(<span>data_xr_reg, file_pli, nPoints=None, kdtree_k=3, load=True)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>load: interpolation errors are only raised upon loading, so do this per default</p>
-<h1 id="todo-make-format-of-this-dataset-more-in-line-with-existing-bnd-nc-format-and-hisfile-httpsissuetrackerdeltaresnlbrowseunst-6549">TODO: make format of this dataset more in line with existing bnd-nc format and hisfile: <a href="https://issuetracker.deltares.nl/browse/UNST-6549">https://issuetracker.deltares.nl/browse/UNST-6549</a></h1></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, kdtree_k=3, load=True):
-    &#34;&#34;&#34;
-    load: interpolation errors are only raised upon loading, so do this per default
-    #TODO: make format of this dataset more in line with existing bnd-nc format and hisfile: https://issuetracker.deltares.nl/browse/UNST-6549
-    &#34;&#34;&#34;
-    data_xr_var = data_xr_reg #TODO: rename in script
-    
-    #load boundary file
-    polyfile_object = hcdfm.PolyFile(file_pli)
-    
-    #check if polyobj names in plifile are unique
-    polynames_pd = pd.Series([polyobj.metadata.name for polyobj in polyfile_object.objects])
-    if polynames_pd.duplicated().any():
-        raise Exception(f&#39;Duplicate polyobject names in polyfile {file_pli.name}, this is not allowed:\n{polynames_pd}&#39;)
-    
-    #create df of x/y/name of all plipoints in plifile
-    data_pol_pd = pd.DataFrame()
-    for polyobj in polyfile_object.objects:
-        data_pol_pd_one = pointlike_to_DataFrame(polyobj)
-        data_pol_pd_one = data_pol_pd_one.iloc[:nPoints] #only use testset of points per polyobj in polyfile
-        data_pol_pd_one[&#39;name&#39;] = pd.Series(data_pol_pd_one.index).apply(lambda x: f&#39;{polyobj.metadata.name}_{x+1:04d}&#39;)
-        data_pol_pd = pd.concat([data_pol_pd,data_pol_pd_one])
-    
-    da_plipoints = xr.Dataset()
-    da_plipoints[&#39;plipoint_x&#39;] = xr.DataArray(data_pol_pd[&#39;x&#39;], dims=&#39;plipoints&#39;)
-    da_plipoints[&#39;plipoint_y&#39;] = xr.DataArray(data_pol_pd[&#39;y&#39;], dims=&#39;plipoints&#39;)
-    da_plipoints[&#39;plipoint_name&#39;] = xr.DataArray(data_pol_pd[&#39;name&#39;].astype(&#39;S64&#39;), dims=&#39;plipoints&#39;).str.decode(&#39;utf-8&#39;,errors=&#39;ignore&#39;).str.strip() #TODO: must be possible to do this less complex
-    da_plipoints = da_plipoints.set_coords([&#39;plipoint_x&#39;,&#39;plipoint_y&#39;,&#39;plipoint_name&#39;])
-    da_plipoints = da_plipoints.set_index({&#39;plipoints&#39;:&#39;plipoint_name&#39;})
-    
-    #interpolation to lat/lon combinations
-    print(&#39;&gt; interp mfdataset to all PolyFile points (lat/lon coordinates)&#39;)
-    dtstart = dt.datetime.now()
-    try:
-        data_interp = data_xr_var.interp(longitude=da_plipoints[&#39;plipoint_x&#39;], latitude=da_plipoints[&#39;plipoint_y&#39;],
-                                         method=&#39;linear&#39;, 
-                                         kwargs={&#39;bounds_error&#39;:True}, #error is only raised upon load(), so when the actual value retrieval happens
-                                         )
-
-    except ValueError as e: #Dimensions {&#39;latitude&#39;, &#39;longitude&#39;} do not exist. Expected one or more of Frozen({&#39;time&#39;: 17, &#39;depth&#39;: 50, &#39;i&#39;: 292, &#39;j&#39;: 362}).
-        #this is for eg CMCC model with multidimensional lat/lon variable
-        #TODO: make nicer, without try except? eg latlon_ndims==1, but not sure if that is always valid
-        #TODO: maybe also spherical coordinate distance calculation instead of cartesian/eucledian
-        #TODO: maybe use .sel(method=&#39;nearest&#39;), but &#34;KeyError: &#34;no index found for coordinate &#39;longitude&#39;&#34;&#34;
-        #TODO: interp for 2D also requested: https://github.com/pydata/xarray/issues/2281
-        print(f&#39;ValueError: {e}. Reverting to KDTree instead (nearest neigbour)&#39;)
-        data_interp = xr.Dataset()
-        for varone in list(data_xr_var.data_vars):
-            path_lonlat_pd = data_pol_pd[[&#39;x&#39;,&#39;y&#39;]]
-            if (varone==&#39;uy&#39;) &amp; (len(data_xr_var.data_vars)&gt;1):
-                data_lon_flat = data_xr_var[&#39;longitude_uy&#39;].to_numpy().ravel()
-                data_lat_flat = data_xr_var[&#39;latitude_uy&#39;].to_numpy().ravel()
-            else:
-                data_lon_flat = data_xr_var[&#39;longitude&#39;].to_numpy().ravel()
-                data_lat_flat = data_xr_var[&#39;latitude&#39;].to_numpy().ravel()
-            data_lonlat_pd = pd.DataFrame({&#39;x&#39;:data_lon_flat,&#39;y&#39;:data_lat_flat})
-            #KDTree, finds minimal eucledian distance between points (maybe haversine would be better)
-            tree = KDTree(data_lonlat_pd) #alternatively sklearn.neighbors.BallTree: tree = BallTree(data_lonlat_pd)
-            distance, data_lonlat_idx = tree.query(path_lonlat_pd, k=kdtree_k) #TODO: maybe add outofbounds treshold for distance
-            #data_lonlat_pd.iloc[data_lonlat_idx]
-            idx_i,idx_j = np.divmod(data_lonlat_idx, data_xr_var[&#39;longitude&#39;].shape[1]) #get idx i and j by sort of counting over 2D array
-            # import matplotlib.pyplot as plt
-            # fig,ax = plt.subplots()
-            # data_xr_var[varone].isel(time=0,depth=0).plot(ax=ax)
-            # ax.plot(idx_j,idx_i,&#39;xr&#39;)
-            da_plipoints[&#39;da_idxi&#39;] = xr.DataArray(idx_i, dims=(&#39;plipoints&#39;,&#39;nearestkpoints&#39;))
-            da_plipoints[&#39;da_idxj&#39;] = xr.DataArray(idx_j, dims=(&#39;plipoints&#39;,&#39;nearestkpoints&#39;))
-            da_dist = xr.DataArray(distance, dims=(&#39;plipoints&#39;,&#39;nearestkpoints&#39;))
-            da_invdistweight = (1/da_dist)/(1/da_dist).sum(dim=&#39;nearestkpoints&#39;)
-            da_varone_3k = data_xr_var[varone].isel(i=da_plipoints[&#39;da_idxi&#39;],j=da_plipoints[&#39;da_idxj&#39;])
-            data_interp[varone] = (da_varone_3k * da_invdistweight).sum(dim=&#39;nearestkpoints&#39;)
-            data_interp[varone].attrs = data_xr_var[varone].attrs #copy units and other attributes
-    
-    time_passed = (dt.datetime.now()-dtstart).total_seconds()
-    # print(f&#39;&gt;&gt;time passed: {time_passed:.2f} sec&#39;)
-    
-    if not load:
-        return data_interp
-    
-    print(f&#39;&gt; actual extraction of data from netcdf with .load() (for {len(data_pol_pd)} plipoints at once, this might take a while)&#39;)
-    dtstart = dt.datetime.now()
-    try:
-        data_interp_loaded = data_interp.load() #loading data for all points at once is more efficient compared to loading data per point in loop 
-    except ValueError as e: #generate a proper error with outofbounds requested coordinates, default is &#34;ValueError: One of the requested xi is out of bounds in dimension 0&#34; #TODO: improve error in xarray
-        lonvar_vals = data_xr_var[&#39;longitude&#39;].to_numpy()
-        latvar_vals = data_xr_var[&#39;latitude&#39;].to_numpy()
-        data_pol_pd = data_interp[[&#39;plipoint_x&#39;,&#39;plipoint_y&#39;]].to_dataframe()
-        bool_reqlon_outbounds = (data_pol_pd[&#39;plipoint_x&#39;] &lt;= lonvar_vals.min()) | (data_pol_pd[&#39;plipoint_x&#39;] &gt;= lonvar_vals.max())
-        bool_reqlat_outbounds = (data_pol_pd[&#39;plipoint_y&#39;] &lt;= latvar_vals.min()) | (data_pol_pd[&#39;plipoint_y&#39;] &gt;= latvar_vals.max())
-        reqlatlon_pd = pd.DataFrame({&#39;longitude&#39;:data_pol_pd[&#39;plipoint_x&#39;],&#39;latitude&#39;:data_pol_pd[&#39;plipoint_y&#39;],&#39;lon outbounds&#39;:bool_reqlon_outbounds,&#39;lat outbounds&#39;:bool_reqlat_outbounds})
-        reqlatlon_pd_outbounds = reqlatlon_pd.loc[bool_reqlon_outbounds | bool_reqlat_outbounds]
-        raise ValueError(f&#39;{len(reqlatlon_pd_outbounds)} of requested pli points are out of bounds (valid longitude range {lonvar_vals.min()} to {lonvar_vals.max()}, valid latitude range {latvar_vals.min()} to {latvar_vals.max()}):\n{reqlatlon_pd_outbounds}&#39;)
-    time_passed = (dt.datetime.now()-dtstart).total_seconds()
-    print(f&#39;&gt;&gt;time passed: {time_passed:.2f} sec&#39;)
-
-    return data_interp_loaded</code></pre>
-</details>
-</dd>
 <dt id="dfm_tools.interpolate_grid2bnd.interpolate_tide_to_bc"><code class="name flex">
 <span>def <span class="ident">interpolate_tide_to_bc</span></span>(<span>tidemodel, file_pli, component_list=None, nPoints=None)</span>
 </code></dt>
@@ -966,6 +800,172 @@ conversion_dict = { # mg/l is the same as g/m3: conversion is phyc in mol/m3 to 
     return data_xr_vars</code></pre>
 </details>
 </dd>
+<dt id="dfm_tools.interpolate_grid2bnd.interp_regularnc_to_plipoints"><code class="name flex">
+<span>def <span class="ident">interp_regularnc_to_plipoints</span></span>(<span>data_xr_reg, file_pli, nPoints=None, kdtree_k=3, load=True)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>load: interpolation errors are only raised upon loading, so do this per default</p>
+<h1 id="todo-make-format-of-this-dataset-more-in-line-with-existing-bnd-nc-format-and-hisfile-httpsissuetrackerdeltaresnlbrowseunst-6549">TODO: make format of this dataset more in line with existing bnd-nc format and hisfile: <a href="https://issuetracker.deltares.nl/browse/UNST-6549">https://issuetracker.deltares.nl/browse/UNST-6549</a></h1></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, kdtree_k=3, load=True):
+    &#34;&#34;&#34;
+    load: interpolation errors are only raised upon loading, so do this per default
+    #TODO: make format of this dataset more in line with existing bnd-nc format and hisfile: https://issuetracker.deltares.nl/browse/UNST-6549
+    &#34;&#34;&#34;
+    data_xr_var = data_xr_reg #TODO: rename in script
+    
+    #load boundary file
+    polyfile_object = hcdfm.PolyFile(file_pli)
+    
+    #check if polyobj names in plifile are unique
+    polynames_pd = pd.Series([polyobj.metadata.name for polyobj in polyfile_object.objects])
+    if polynames_pd.duplicated().any():
+        raise Exception(f&#39;Duplicate polyobject names in polyfile {file_pli.name}, this is not allowed:\n{polynames_pd}&#39;)
+    
+    #create df of x/y/name of all plipoints in plifile
+    data_pol_pd = pd.DataFrame()
+    for polyobj in polyfile_object.objects:
+        data_pol_pd_one = pointlike_to_DataFrame(polyobj)
+        data_pol_pd_one = data_pol_pd_one.iloc[:nPoints] #only use testset of points per polyobj in polyfile
+        data_pol_pd_one[&#39;name&#39;] = pd.Series(data_pol_pd_one.index).apply(lambda x: f&#39;{polyobj.metadata.name}_{x+1:04d}&#39;)
+        data_pol_pd = pd.concat([data_pol_pd,data_pol_pd_one])
+    
+    da_plipoints = xr.Dataset()
+    da_plipoints[&#39;plipoint_x&#39;] = xr.DataArray(data_pol_pd[&#39;x&#39;], dims=&#39;plipoints&#39;)
+    da_plipoints[&#39;plipoint_y&#39;] = xr.DataArray(data_pol_pd[&#39;y&#39;], dims=&#39;plipoints&#39;)
+    da_plipoints[&#39;plipoint_name&#39;] = xr.DataArray(data_pol_pd[&#39;name&#39;].astype(&#39;S64&#39;), dims=&#39;plipoints&#39;).str.decode(&#39;utf-8&#39;,errors=&#39;ignore&#39;).str.strip() #TODO: must be possible to do this less complex
+    da_plipoints = da_plipoints.set_coords([&#39;plipoint_x&#39;,&#39;plipoint_y&#39;,&#39;plipoint_name&#39;])
+    da_plipoints = da_plipoints.set_index({&#39;plipoints&#39;:&#39;plipoint_name&#39;})
+    
+    #interpolation to lat/lon combinations
+    print(&#39;&gt; interp mfdataset to all PolyFile points (lat/lon coordinates)&#39;)
+    dtstart = dt.datetime.now()
+    try:
+        data_interp = data_xr_var.interp(longitude=da_plipoints[&#39;plipoint_x&#39;], latitude=da_plipoints[&#39;plipoint_y&#39;],
+                                         method=&#39;linear&#39;, 
+                                         kwargs={&#39;bounds_error&#39;:True}, #error is only raised upon load(), so when the actual value retrieval happens
+                                         )
+
+    except ValueError as e: #Dimensions {&#39;latitude&#39;, &#39;longitude&#39;} do not exist. Expected one or more of Frozen({&#39;time&#39;: 17, &#39;depth&#39;: 50, &#39;i&#39;: 292, &#39;j&#39;: 362}).
+        #this is for eg CMCC model with multidimensional lat/lon variable
+        #TODO: make nicer, without try except? eg latlon_ndims==1, but not sure if that is always valid
+        #TODO: maybe also spherical coordinate distance calculation instead of cartesian/eucledian
+        #TODO: maybe use .sel(method=&#39;nearest&#39;), but &#34;KeyError: &#34;no index found for coordinate &#39;longitude&#39;&#34;&#34;
+        #TODO: interp for 2D also requested: https://github.com/pydata/xarray/issues/2281
+        print(f&#39;ValueError: {e}. Reverting to KDTree instead (nearest neigbour)&#39;)
+        data_interp = xr.Dataset()
+        for varone in list(data_xr_var.data_vars):
+            path_lonlat_pd = data_pol_pd[[&#39;x&#39;,&#39;y&#39;]]
+            if (varone==&#39;uy&#39;) &amp; (len(data_xr_var.data_vars)&gt;1):
+                data_lon_flat = data_xr_var[&#39;longitude_uy&#39;].to_numpy().ravel()
+                data_lat_flat = data_xr_var[&#39;latitude_uy&#39;].to_numpy().ravel()
+            else:
+                data_lon_flat = data_xr_var[&#39;longitude&#39;].to_numpy().ravel()
+                data_lat_flat = data_xr_var[&#39;latitude&#39;].to_numpy().ravel()
+            data_lonlat_pd = pd.DataFrame({&#39;x&#39;:data_lon_flat,&#39;y&#39;:data_lat_flat})
+            #KDTree, finds minimal eucledian distance between points (maybe haversine would be better)
+            tree = KDTree(data_lonlat_pd) #alternatively sklearn.neighbors.BallTree: tree = BallTree(data_lonlat_pd)
+            distance, data_lonlat_idx = tree.query(path_lonlat_pd, k=kdtree_k) #TODO: maybe add outofbounds treshold for distance
+            #data_lonlat_pd.iloc[data_lonlat_idx]
+            idx_i,idx_j = np.divmod(data_lonlat_idx, data_xr_var[&#39;longitude&#39;].shape[1]) #get idx i and j by sort of counting over 2D array
+            # import matplotlib.pyplot as plt
+            # fig,ax = plt.subplots()
+            # data_xr_var[varone].isel(time=0,depth=0).plot(ax=ax)
+            # ax.plot(idx_j,idx_i,&#39;xr&#39;)
+            da_plipoints[&#39;da_idxi&#39;] = xr.DataArray(idx_i, dims=(&#39;plipoints&#39;,&#39;nearestkpoints&#39;))
+            da_plipoints[&#39;da_idxj&#39;] = xr.DataArray(idx_j, dims=(&#39;plipoints&#39;,&#39;nearestkpoints&#39;))
+            da_dist = xr.DataArray(distance, dims=(&#39;plipoints&#39;,&#39;nearestkpoints&#39;))
+            da_invdistweight = (1/da_dist)/(1/da_dist).sum(dim=&#39;nearestkpoints&#39;)
+            da_varone_3k = data_xr_var[varone].isel(i=da_plipoints[&#39;da_idxi&#39;],j=da_plipoints[&#39;da_idxj&#39;])
+            data_interp[varone] = (da_varone_3k * da_invdistweight).sum(dim=&#39;nearestkpoints&#39;)
+            data_interp[varone].attrs = data_xr_var[varone].attrs #copy units and other attributes
+    
+    time_passed = (dt.datetime.now()-dtstart).total_seconds()
+    # print(f&#39;&gt;&gt;time passed: {time_passed:.2f} sec&#39;)
+    
+    if not load:
+        return data_interp
+    
+    print(f&#39;&gt; actual extraction of data from netcdf with .load() (for {len(data_pol_pd)} plipoints at once, this might take a while)&#39;)
+    dtstart = dt.datetime.now()
+    try:
+        data_interp_loaded = data_interp.load() #loading data for all points at once is more efficient compared to loading data per point in loop 
+    except ValueError as e: #generate a proper error with outofbounds requested coordinates, default is &#34;ValueError: One of the requested xi is out of bounds in dimension 0&#34; #TODO: improve error in xarray
+        lonvar_vals = data_xr_var[&#39;longitude&#39;].to_numpy()
+        latvar_vals = data_xr_var[&#39;latitude&#39;].to_numpy()
+        data_pol_pd = data_interp[[&#39;plipoint_x&#39;,&#39;plipoint_y&#39;]].to_dataframe()
+        bool_reqlon_outbounds = (data_pol_pd[&#39;plipoint_x&#39;] &lt;= lonvar_vals.min()) | (data_pol_pd[&#39;plipoint_x&#39;] &gt;= lonvar_vals.max())
+        bool_reqlat_outbounds = (data_pol_pd[&#39;plipoint_y&#39;] &lt;= latvar_vals.min()) | (data_pol_pd[&#39;plipoint_y&#39;] &gt;= latvar_vals.max())
+        reqlatlon_pd = pd.DataFrame({&#39;longitude&#39;:data_pol_pd[&#39;plipoint_x&#39;],&#39;latitude&#39;:data_pol_pd[&#39;plipoint_y&#39;],&#39;lon outbounds&#39;:bool_reqlon_outbounds,&#39;lat outbounds&#39;:bool_reqlat_outbounds})
+        reqlatlon_pd_outbounds = reqlatlon_pd.loc[bool_reqlon_outbounds | bool_reqlat_outbounds]
+        raise ValueError(f&#39;{len(reqlatlon_pd_outbounds)} of requested pli points are out of bounds (valid longitude range {lonvar_vals.min()} to {lonvar_vals.max()}, valid latitude range {latvar_vals.min()} to {latvar_vals.max()}):\n{reqlatlon_pd_outbounds}&#39;)
+    time_passed = (dt.datetime.now()-dtstart).total_seconds()
+    print(f&#39;&gt;&gt;time passed: {time_passed:.2f} sec&#39;)
+
+    return data_interp_loaded</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.interpolate_grid2bnd.interp_hisnc_to_plipoints"><code class="name flex">
+<span>def <span class="ident">interp_hisnc_to_plipoints</span></span>(<span>data_xr_his, file_pli, kdtree_k=3, load=True)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>interpolate stations in hisfile to points of polyfile</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def interp_hisnc_to_plipoints(data_xr_his, file_pli, kdtree_k=3, load=True):
+    &#34;&#34;&#34;
+    interpolate stations in hisfile to points of polyfile
+    &#34;&#34;&#34;
+    #KDTree, finds minimal eucledian distance between points (haversine would be better). Alternatively sklearn.neighbors.BallTree: tree = BallTree(data_lonlat_pd)
+    
+    datavars_list = list(data_xr_his.data_vars)
+    if len(datavars_list)&gt;5:
+        print(&#39;WARNING: more than 5 data_vars, you might want to subset your data_xr_his&#39;)
+    #read hisfile and make KDTree of xy of hisstations
+    hisstations_pd = data_xr_his.stations.to_dataframe() #TODO: add check if stations are strings? (whether preprocess_hisnc was used)
+    tree_nest2 = KDTree(hisstations_pd[[&#39;station_x_coordinate&#39;,&#39;station_y_coordinate&#39;]])
+    
+    #read polyfile and query k nearest hisstations (names)
+    polyfile_object = hcdfm.PolyFile(file_pli)
+    data_pol_pd = pd.DataFrame()
+    for polyobj in polyfile_object.objects:
+        data_pol_pd_one = pointlike_to_DataFrame(polyobj)
+        data_pol_pd_one[&#39;name&#39;] = pd.Series(data_pol_pd_one.index).apply(lambda x: f&#39;{polyobj.metadata.name}_{x+1:04d}&#39;)
+        data_pol_pd = pd.concat([data_pol_pd,data_pol_pd_one])
+    plicoords_distance2, plicoords_nestpointidx = tree_nest2.query(data_pol_pd[[&#39;x&#39;,&#39;y&#39;]], k=kdtree_k)
+    da_plicoords_nestpointidx = xr.DataArray(plicoords_nestpointidx, dims=(&#39;plipoints&#39;,&#39;nearestkpoints&#39;))
+    da_plicoords_nestpointnames = data_xr_his.stations.isel(stations=da_plicoords_nestpointidx)
+    
+    #interpolate hisfile variables to plipoints
+    data_interp = xr.Dataset()
+    data_interp[&#39;plipoint_x&#39;] = xr.DataArray(data_pol_pd[&#39;x&#39;],dims=(&#39;plipoints&#39;))
+    data_interp[&#39;plipoint_y&#39;] = xr.DataArray(data_pol_pd[&#39;y&#39;],dims=(&#39;plipoints&#39;))
+    data_interp[&#39;plipoint_name&#39;] = xr.DataArray(data_pol_pd[&#39;name&#39;].astype(&#39;S64&#39;), dims=&#39;plipoints&#39;).str.decode(&#39;utf-8&#39;,errors=&#39;ignore&#39;).str.strip() #TODO: must be possible to do this less complex
+    data_interp = data_interp.set_coords([&#39;plipoint_x&#39;,&#39;plipoint_y&#39;,&#39;plipoint_name&#39;])
+    data_interp = data_interp.set_index({&#39;plipoints&#39;:&#39;plipoint_name&#39;})
+    
+    for varone in datavars_list:
+        da_dist = xr.DataArray(plicoords_distance2, dims=(&#39;plipoints&#39;,&#39;nearestkpoints&#39;))
+        da_invdistweight = (1/da_dist)/(1/da_dist).sum(dim=&#39;nearestkpoints&#39;) #TODO: set weigths for invalid points to 0 (and increase others weights so sum remains 1)
+        data_xr_his_pli_knearest = data_xr_his[varone].sel(stations=da_plicoords_nestpointnames)
+        data_interp[varone] = (data_xr_his_pli_knearest * da_invdistweight).sum(dim=&#39;nearestkpoints&#39;)
+        data_interp[varone].attrs = data_xr_his[varone].attrs #copy units and other attributes
+        
+    if not load:
+        return data_interp
+    
+    print(&#39;loading dataset (might take a while, but increases performance of point loop significantly)&#39;)
+    data_interp = data_interp.load()
+    print(&#39;done&#39;)
+
+    return data_interp</code></pre>
+</details>
+</dd>
 <dt id="dfm_tools.interpolate_grid2bnd.plipointsDataset_to_ForcingModel"><code class="name flex">
 <span>def <span class="ident">plipointsDataset_to_ForcingModel</span></span>(<span>plipointsDataset)</span>
 </code></dt>
@@ -1026,10 +1026,10 @@ conversion_dict = { # mg/l is the same as g/m3: conversion is phyc in mol/m3 to 
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
 <li><code><a title="dfm_tools.interpolate_grid2bnd.get_conversion_dict" href="#dfm_tools.interpolate_grid2bnd.get_conversion_dict">get_conversion_dict</a></code></li>
-<li><code><a title="dfm_tools.interpolate_grid2bnd.interp_hisnc_to_plipoints" href="#dfm_tools.interpolate_grid2bnd.interp_hisnc_to_plipoints">interp_hisnc_to_plipoints</a></code></li>
-<li><code><a title="dfm_tools.interpolate_grid2bnd.interp_regularnc_to_plipoints" href="#dfm_tools.interpolate_grid2bnd.interp_regularnc_to_plipoints">interp_regularnc_to_plipoints</a></code></li>
 <li><code><a title="dfm_tools.interpolate_grid2bnd.interpolate_tide_to_bc" href="#dfm_tools.interpolate_grid2bnd.interpolate_tide_to_bc">interpolate_tide_to_bc</a></code></li>
 <li><code><a title="dfm_tools.interpolate_grid2bnd.open_dataset_extra" href="#dfm_tools.interpolate_grid2bnd.open_dataset_extra">open_dataset_extra</a></code></li>
+<li><code><a title="dfm_tools.interpolate_grid2bnd.interp_regularnc_to_plipoints" href="#dfm_tools.interpolate_grid2bnd.interp_regularnc_to_plipoints">interp_regularnc_to_plipoints</a></code></li>
+<li><code><a title="dfm_tools.interpolate_grid2bnd.interp_hisnc_to_plipoints" href="#dfm_tools.interpolate_grid2bnd.interp_hisnc_to_plipoints">interp_hisnc_to_plipoints</a></code></li>
 <li><code><a title="dfm_tools.interpolate_grid2bnd.plipointsDataset_to_ForcingModel" href="#dfm_tools.interpolate_grid2bnd.plipointsDataset_to_ForcingModel">plipointsDataset_to_ForcingModel</a></code></li>
 </ul>
 </li>

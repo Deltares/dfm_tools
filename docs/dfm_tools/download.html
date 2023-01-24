@@ -320,59 +320,6 @@ def download_OPeNDAP(dataset_url,
     return</code></pre>
 </details>
 </dd>
-<dt id="dfm_tools.download.download_OPeNDAP"><code class="name flex">
-<span>def <span class="ident">download_OPeNDAP</span></span>(<span>dataset_url, varkey, longitude_min, longitude_max, latitude_min, latitude_max, date_min, date_max, freq='D', dir_output='.', file_prefix='', overwrite=False, credentials=None)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def download_OPeNDAP(dataset_url,
-                     varkey,
-                     longitude_min, longitude_max, latitude_min, latitude_max, 
-                     date_min, date_max, freq=&#39;D&#39;,
-                     dir_output=&#39;.&#39;, file_prefix=&#39;&#39;, overwrite=False,
-                     credentials=None):
-    
-    data_xr = open_OPeNDAP_xr(dataset_url=dataset_url, credentials=credentials)
-    
-    print(f&#39;xarray subsetting data (variable \&#39;{varkey}\&#39; and lon/lat extents)&#39;)
-    if varkey not in data_xr.data_vars:
-        raise Exception(f&#39;{varkey} not found in dataset, available are: {list(data_xr.data_vars)}&#39;)
-    data_xr_var = data_xr[[varkey]]
-    data_xr_var = data_xr_var.sel(longitude=slice(longitude_min,longitude_max), #TODO: add depth selection?
-                                  latitude=slice(latitude_min,latitude_max))
-    data_xr_times = data_xr_var.time.to_series()
-    print(f&#39;available time range in dataset from {data_xr_times.index[0]} to {data_xr_times.index[-1]}&#39;)
-    period_range = pd.period_range(date_min,date_max,freq=freq)
-    
-    #check if date_min/date_max are available in dataset
-    if not (data_xr_times.index[0] &lt;= period_range[0].to_timestamp() &lt;= data_xr_times.index[-1]):
-        raise Exception(f&#39;date_min ({period_range[0]}) is outside available time range in dataset: {data_xr_times.index[0]} to {data_xr_times.index[-1]}&#39;)
-    if not (data_xr_times.index[0] &lt;= period_range[-1].to_timestamp() &lt;= data_xr_times.index[-1]):
-        raise Exception(f&#39;date_max ({period_range[-1]}) is outside available time range in dataset: {data_xr_times.index[0]} to {data_xr_times.index[-1]}&#39;)
-    
-    for date in period_range:
-        date_str = str(date)
-        name_output = f&#39;{file_prefix}{varkey}_{date_str}.nc&#39;
-        file_out = Path(dir_output,name_output)
-        if file_out.is_file() and not overwrite:
-            print(f&#39;&#34;{name_output}&#34; found and overwrite=False, continuing.&#39;)
-            continue
-        
-        print(f&#39;xarray subsetting data per {period_range.freq}: {date_str}&#39;)
-        data_xr_var_seltime = data_xr_var.sel(time=slice(date_str,date_str)) #+&#39; 12:00:00&#39;, 
-        
-        print(f&#39;xarray writing netcdf file: {name_output}&#39;)
-        data_xr_var_seltime.to_netcdf(os.path.join(dir_output,name_output)) #TODO: add chunks={&#39;time&#39;:1} or only possible with opening?
-        data_xr_var_seltime.close()
-    
-    print(&#39;done&#39;)
-    return</code></pre>
-</details>
-</dd>
 <dt id="dfm_tools.download.open_OPeNDAP_xr"><code class="name flex">
 <span>def <span class="ident">open_OPeNDAP_xr</span></span>(<span>dataset_url, credentials=None)</span>
 </code></dt>
@@ -507,6 +454,59 @@ Some examples:
     return data_xr</code></pre>
 </details>
 </dd>
+<dt id="dfm_tools.download.download_OPeNDAP"><code class="name flex">
+<span>def <span class="ident">download_OPeNDAP</span></span>(<span>dataset_url, varkey, longitude_min, longitude_max, latitude_min, latitude_max, date_min, date_max, freq='D', dir_output='.', file_prefix='', overwrite=False, credentials=None)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def download_OPeNDAP(dataset_url,
+                     varkey,
+                     longitude_min, longitude_max, latitude_min, latitude_max, 
+                     date_min, date_max, freq=&#39;D&#39;,
+                     dir_output=&#39;.&#39;, file_prefix=&#39;&#39;, overwrite=False,
+                     credentials=None):
+    
+    data_xr = open_OPeNDAP_xr(dataset_url=dataset_url, credentials=credentials)
+    
+    print(f&#39;xarray subsetting data (variable \&#39;{varkey}\&#39; and lon/lat extents)&#39;)
+    if varkey not in data_xr.data_vars:
+        raise Exception(f&#39;{varkey} not found in dataset, available are: {list(data_xr.data_vars)}&#39;)
+    data_xr_var = data_xr[[varkey]]
+    data_xr_var = data_xr_var.sel(longitude=slice(longitude_min,longitude_max), #TODO: add depth selection?
+                                  latitude=slice(latitude_min,latitude_max))
+    data_xr_times = data_xr_var.time.to_series()
+    print(f&#39;available time range in dataset from {data_xr_times.index[0]} to {data_xr_times.index[-1]}&#39;)
+    period_range = pd.period_range(date_min,date_max,freq=freq)
+    
+    #check if date_min/date_max are available in dataset
+    if not (data_xr_times.index[0] &lt;= period_range[0].to_timestamp() &lt;= data_xr_times.index[-1]):
+        raise Exception(f&#39;date_min ({period_range[0]}) is outside available time range in dataset: {data_xr_times.index[0]} to {data_xr_times.index[-1]}&#39;)
+    if not (data_xr_times.index[0] &lt;= period_range[-1].to_timestamp() &lt;= data_xr_times.index[-1]):
+        raise Exception(f&#39;date_max ({period_range[-1]}) is outside available time range in dataset: {data_xr_times.index[0]} to {data_xr_times.index[-1]}&#39;)
+    
+    for date in period_range:
+        date_str = str(date)
+        name_output = f&#39;{file_prefix}{varkey}_{date_str}.nc&#39;
+        file_out = Path(dir_output,name_output)
+        if file_out.is_file() and not overwrite:
+            print(f&#39;&#34;{name_output}&#34; found and overwrite=False, continuing.&#39;)
+            continue
+        
+        print(f&#39;xarray subsetting data per {period_range.freq}: {date_str}&#39;)
+        data_xr_var_seltime = data_xr_var.sel(time=slice(date_str,date_str)) #+&#39; 12:00:00&#39;, 
+        
+        print(f&#39;xarray writing netcdf file: {name_output}&#39;)
+        data_xr_var_seltime.to_netcdf(os.path.join(dir_output,name_output)) #TODO: add chunks={&#39;time&#39;:1} or only possible with opening?
+        data_xr_var_seltime.close()
+    
+    print(&#39;done&#39;)
+    return</code></pre>
+</details>
+</dd>
 </dl>
 </section>
 <section>
@@ -526,8 +526,8 @@ Some examples:
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
 <li><code><a title="dfm_tools.download.download_ERA5" href="#dfm_tools.download.download_ERA5">download_ERA5</a></code></li>
-<li><code><a title="dfm_tools.download.download_OPeNDAP" href="#dfm_tools.download.download_OPeNDAP">download_OPeNDAP</a></code></li>
 <li><code><a title="dfm_tools.download.open_OPeNDAP_xr" href="#dfm_tools.download.open_OPeNDAP_xr">open_OPeNDAP_xr</a></code></li>
+<li><code><a title="dfm_tools.download.download_OPeNDAP" href="#dfm_tools.download.download_OPeNDAP">download_OPeNDAP</a></code></li>
 </ul>
 </li>
 </ul>

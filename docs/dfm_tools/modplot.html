@@ -667,114 +667,6 @@ def _gen_starting_points(x,y,grains):
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt id="dfm_tools.modplot.get_integrator"><code class="name flex">
-<span>def <span class="ident">get_integrator</span></span>(<span>u, v, dmap, minlength, resolution, magnitude)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def get_integrator(u, v, dmap, minlength, resolution, magnitude):
-
-    import warnings
-    # rescale velocity onto grid-coordinates for integrations.
-    u, v = dmap.data2grid(u, v)
-
-    # speed (path length) will be in axes-coordinates
-    u_ax = u / dmap.grid.nx
-    v_ax = v / dmap.grid.ny
-    speed = np.ma.sqrt(u_ax ** 2 + v_ax ** 2)
-
-    def forward_time(xi, yi):
-        ds_dt = interpgrid(speed, xi, yi)
-        if ds_dt == 0:
-            dt_ds = 0
-            warnings.warn(&#39;TerminateTrajectory()&#39;)
-        else:
-            dt_ds = 1. / ds_dt
-        ui = interpgrid(u, xi, yi)
-        vi = interpgrid(v, xi, yi)
-        return ui * dt_ds, vi * dt_ds
-
-
-    def integrate(x0, y0):
-        &#34;&#34;&#34;Return x, y grid-coordinates of trajectory based on starting point.
-        Integrate both forward and backward in time from starting point in
-        grid coordinates.
-        Integration is terminated when a trajectory reaches a domain boundary
-        or when it crosses into an already occupied cell in the StreamMask. The
-        resulting trajectory is None if it is shorter than `minlength`.
-        &#34;&#34;&#34;
-
-        stotal, x_traj, y_traj = 0., [], []
-
-        
-        dmap.start_trajectory(x0, y0)
-
-        dmap.reset_start_point(x0, y0)
-        stotal, x_traj, y_traj, m_total, hit_edge = _integrate_rk12(x0, y0, dmap, forward_time, resolution, magnitude)
-
-        
-        if len(x_traj)&gt;1:
-            return (x_traj, y_traj), hit_edge
-        else:  # reject short trajectories
-            dmap.undo_trajectory()
-            return None
-
-    return integrate</code></pre>
-</details>
-</dd>
-<dt id="dfm_tools.modplot.interpgrid"><code class="name flex">
-<span>def <span class="ident">interpgrid</span></span>(<span>a, xi, yi)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Fast 2D, linear interpolation on an integer grid</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def interpgrid(a, xi, yi):
-    &#34;&#34;&#34;Fast 2D, linear interpolation on an integer grid&#34;&#34;&#34;
-
-    Ny, Nx = np.shape(a)
-    if isinstance(xi, np.ndarray):
-        x = xi.astype(int)
-        y = yi.astype(int)
-        # Check that xn, yn don&#39;t exceed max index
-        xn = np.clip(x + 1, 0, Nx - 1)
-        yn = np.clip(y + 1, 0, Ny - 1)
-    else:
-        x = int(xi)
-        y = int(yi)
-        # conditional is faster than clipping for integers
-        if x == (Nx - 2):
-            xn = x
-        else:
-            xn = x + 1
-        if y == (Ny - 2):
-            yn = y
-        else:
-            yn = y + 1
-
-    a00 = a[y, x]
-    a01 = a[y, xn]
-    a10 = a[yn, x]
-    a11 = a[yn, xn]
-    xt = xi - x
-    yt = yi - y
-    a0 = a00 * (1 - xt) + a01 * xt
-    a1 = a10 * (1 - xt) + a11 * xt
-    ai = a0 * (1 - yt) + a1 * yt
-
-    if not isinstance(xi, np.ndarray):
-        if np.ma.is_masked(ai):
-            raise Exception(&#39;TerminateTrajectory&#39;)
-
-    return ai</code></pre>
-</details>
-</dd>
 <dt id="dfm_tools.modplot.velovect"><code class="name flex">
 <span>def <span class="ident">velovect</span></span>(<span>axes, x, y, u, v, linewidth=None, color=None, cmap=None, norm=None, arrowsize=1, arrowstyle=&#x27;-|&gt;&#x27;, transform=None, zorder=None, start_points=None, scale=1.0, grains=15)</span>
 </code></dt>
@@ -1035,11 +927,136 @@ changes should be backward compatible.</p></div>
     return stream_container</code></pre>
 </details>
 </dd>
+<dt id="dfm_tools.modplot.get_integrator"><code class="name flex">
+<span>def <span class="ident">get_integrator</span></span>(<span>u, v, dmap, minlength, resolution, magnitude)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_integrator(u, v, dmap, minlength, resolution, magnitude):
+
+    import warnings
+    # rescale velocity onto grid-coordinates for integrations.
+    u, v = dmap.data2grid(u, v)
+
+    # speed (path length) will be in axes-coordinates
+    u_ax = u / dmap.grid.nx
+    v_ax = v / dmap.grid.ny
+    speed = np.ma.sqrt(u_ax ** 2 + v_ax ** 2)
+
+    def forward_time(xi, yi):
+        ds_dt = interpgrid(speed, xi, yi)
+        if ds_dt == 0:
+            dt_ds = 0
+            warnings.warn(&#39;TerminateTrajectory()&#39;)
+        else:
+            dt_ds = 1. / ds_dt
+        ui = interpgrid(u, xi, yi)
+        vi = interpgrid(v, xi, yi)
+        return ui * dt_ds, vi * dt_ds
+
+
+    def integrate(x0, y0):
+        &#34;&#34;&#34;Return x, y grid-coordinates of trajectory based on starting point.
+        Integrate both forward and backward in time from starting point in
+        grid coordinates.
+        Integration is terminated when a trajectory reaches a domain boundary
+        or when it crosses into an already occupied cell in the StreamMask. The
+        resulting trajectory is None if it is shorter than `minlength`.
+        &#34;&#34;&#34;
+
+        stotal, x_traj, y_traj = 0., [], []
+
+        
+        dmap.start_trajectory(x0, y0)
+
+        dmap.reset_start_point(x0, y0)
+        stotal, x_traj, y_traj, m_total, hit_edge = _integrate_rk12(x0, y0, dmap, forward_time, resolution, magnitude)
+
+        
+        if len(x_traj)&gt;1:
+            return (x_traj, y_traj), hit_edge
+        else:  # reject short trajectories
+            dmap.undo_trajectory()
+            return None
+
+    return integrate</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.modplot.interpgrid"><code class="name flex">
+<span>def <span class="ident">interpgrid</span></span>(<span>a, xi, yi)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Fast 2D, linear interpolation on an integer grid</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def interpgrid(a, xi, yi):
+    &#34;&#34;&#34;Fast 2D, linear interpolation on an integer grid&#34;&#34;&#34;
+
+    Ny, Nx = np.shape(a)
+    if isinstance(xi, np.ndarray):
+        x = xi.astype(int)
+        y = yi.astype(int)
+        # Check that xn, yn don&#39;t exceed max index
+        xn = np.clip(x + 1, 0, Nx - 1)
+        yn = np.clip(y + 1, 0, Ny - 1)
+    else:
+        x = int(xi)
+        y = int(yi)
+        # conditional is faster than clipping for integers
+        if x == (Nx - 2):
+            xn = x
+        else:
+            xn = x + 1
+        if y == (Ny - 2):
+            yn = y
+        else:
+            yn = y + 1
+
+    a00 = a[y, x]
+    a01 = a[y, xn]
+    a10 = a[yn, x]
+    a11 = a[yn, xn]
+    xt = xi - x
+    yt = yi - y
+    a0 = a00 * (1 - xt) + a01 * xt
+    a1 = a10 * (1 - xt) + a11 * xt
+    ai = a0 * (1 - yt) + a1 * yt
+
+    if not isinstance(xi, np.ndarray):
+        if np.ma.is_masked(ai):
+            raise Exception(&#39;TerminateTrajectory&#39;)
+
+    return ai</code></pre>
+</details>
+</dd>
 </dl>
 </section>
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
+<dt id="dfm_tools.modplot.StreamplotSet"><code class="flex name class">
+<span>class <span class="ident">StreamplotSet</span></span>
+<span>(</span><span>lines, arrows, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class StreamplotSet(object):
+
+    def __init__(self, lines, arrows, **kwargs):
+        self.lines = lines
+        self.arrows = arrows</code></pre>
+</details>
+</dd>
 <dt id="dfm_tools.modplot.DomainMap"><code class="flex name class">
 <span>class <span class="ident">DomainMap</span></span>
 <span>(</span><span>grid, mask)</span>
@@ -1121,32 +1138,6 @@ crossed by a given trajectory. Later, if you decide the trajectory is bad
 </details>
 <h3>Methods</h3>
 <dl>
-<dt id="dfm_tools.modplot.DomainMap.data2grid"><code class="name flex">
-<span>def <span class="ident">data2grid</span></span>(<span>self, xd, yd)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def data2grid(self, xd, yd):
-    return xd * self.x_data2grid, yd * self.y_data2grid</code></pre>
-</details>
-</dd>
-<dt id="dfm_tools.modplot.DomainMap.grid2data"><code class="name flex">
-<span>def <span class="ident">grid2data</span></span>(<span>self, xg, yg)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def grid2data(self, xg, yg):
-    return xg / self.x_data2grid, yg / self.y_data2grid</code></pre>
-</details>
-</dd>
 <dt id="dfm_tools.modplot.DomainMap.grid2mask"><code class="name flex">
 <span>def <span class="ident">grid2mask</span></span>(<span>self, xi, yi)</span>
 </code></dt>
@@ -1175,8 +1166,8 @@ crossed by a given trajectory. Later, if you decide the trajectory is bad
     return xm * self.x_mask2grid, ym * self.y_mask2grid</code></pre>
 </details>
 </dd>
-<dt id="dfm_tools.modplot.DomainMap.reset_start_point"><code class="name flex">
-<span>def <span class="ident">reset_start_point</span></span>(<span>self, xg, yg)</span>
+<dt id="dfm_tools.modplot.DomainMap.data2grid"><code class="name flex">
+<span>def <span class="ident">data2grid</span></span>(<span>self, xd, yd)</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1184,9 +1175,21 @@ crossed by a given trajectory. Later, if you decide the trajectory is bad
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def reset_start_point(self, xg, yg):
-    xm, ym = self.grid2mask(xg, yg)
-    self.mask._current_xy = (xm, ym)</code></pre>
+<pre><code class="python">def data2grid(self, xd, yd):
+    return xd * self.x_data2grid, yd * self.y_data2grid</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.modplot.DomainMap.grid2data"><code class="name flex">
+<span>def <span class="ident">grid2data</span></span>(<span>self, xg, yg)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def grid2data(self, xg, yg):
+    return xg / self.x_data2grid, yg / self.y_data2grid</code></pre>
 </details>
 </dd>
 <dt id="dfm_tools.modplot.DomainMap.start_trajectory"><code class="name flex">
@@ -1203,8 +1206,8 @@ crossed by a given trajectory. Later, if you decide the trajectory is bad
     self.mask._start_trajectory(xm, ym)</code></pre>
 </details>
 </dd>
-<dt id="dfm_tools.modplot.DomainMap.undo_trajectory"><code class="name flex">
-<span>def <span class="ident">undo_trajectory</span></span>(<span>self)</span>
+<dt id="dfm_tools.modplot.DomainMap.reset_start_point"><code class="name flex">
+<span>def <span class="ident">reset_start_point</span></span>(<span>self, xg, yg)</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1212,8 +1215,9 @@ crossed by a given trajectory. Later, if you decide the trajectory is bad
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def undo_trajectory(self):
-    self.mask._undo_trajectory()</code></pre>
+<pre><code class="python">def reset_start_point(self, xg, yg):
+    xm, ym = self.grid2mask(xg, yg)
+    self.mask._current_xy = (xm, ym)</code></pre>
 </details>
 </dd>
 <dt id="dfm_tools.modplot.DomainMap.update_trajectory"><code class="name flex">
@@ -1229,6 +1233,19 @@ crossed by a given trajectory. Later, if you decide the trajectory is bad
     
     xm, ym = self.grid2mask(xg, yg)
     #self.mask._update_trajectory(xm, ym)</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.modplot.DomainMap.undo_trajectory"><code class="name flex">
+<span>def <span class="ident">undo_trajectory</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def undo_trajectory(self):
+    self.mask._undo_trajectory()</code></pre>
 </details>
 </dd>
 </dl>
@@ -1387,23 +1404,6 @@ streamlines are allowed to enter.</p></div>
         #        raise InvalidIndexError</code></pre>
 </details>
 </dd>
-<dt id="dfm_tools.modplot.StreamplotSet"><code class="flex name class">
-<span>class <span class="ident">StreamplotSet</span></span>
-<span>(</span><span>lines, arrows, **kwargs)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">class StreamplotSet(object):
-
-    def __init__(self, lines, arrows, **kwargs):
-        self.lines = lines
-        self.arrows = arrows</code></pre>
-</details>
-</dd>
 </dl>
 </section>
 </article>
@@ -1420,38 +1420,38 @@ streamlines are allowed to enter.</p></div>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
+<li><code><a title="dfm_tools.modplot.velovect" href="#dfm_tools.modplot.velovect">velovect</a></code></li>
 <li><code><a title="dfm_tools.modplot.get_integrator" href="#dfm_tools.modplot.get_integrator">get_integrator</a></code></li>
 <li><code><a title="dfm_tools.modplot.interpgrid" href="#dfm_tools.modplot.interpgrid">interpgrid</a></code></li>
-<li><code><a title="dfm_tools.modplot.velovect" href="#dfm_tools.modplot.velovect">velovect</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
+<h4><code><a title="dfm_tools.modplot.StreamplotSet" href="#dfm_tools.modplot.StreamplotSet">StreamplotSet</a></code></h4>
+</li>
+<li>
 <h4><code><a title="dfm_tools.modplot.DomainMap" href="#dfm_tools.modplot.DomainMap">DomainMap</a></code></h4>
 <ul class="two-column">
-<li><code><a title="dfm_tools.modplot.DomainMap.data2grid" href="#dfm_tools.modplot.DomainMap.data2grid">data2grid</a></code></li>
-<li><code><a title="dfm_tools.modplot.DomainMap.grid2data" href="#dfm_tools.modplot.DomainMap.grid2data">grid2data</a></code></li>
 <li><code><a title="dfm_tools.modplot.DomainMap.grid2mask" href="#dfm_tools.modplot.DomainMap.grid2mask">grid2mask</a></code></li>
 <li><code><a title="dfm_tools.modplot.DomainMap.mask2grid" href="#dfm_tools.modplot.DomainMap.mask2grid">mask2grid</a></code></li>
-<li><code><a title="dfm_tools.modplot.DomainMap.reset_start_point" href="#dfm_tools.modplot.DomainMap.reset_start_point">reset_start_point</a></code></li>
+<li><code><a title="dfm_tools.modplot.DomainMap.data2grid" href="#dfm_tools.modplot.DomainMap.data2grid">data2grid</a></code></li>
+<li><code><a title="dfm_tools.modplot.DomainMap.grid2data" href="#dfm_tools.modplot.DomainMap.grid2data">grid2data</a></code></li>
 <li><code><a title="dfm_tools.modplot.DomainMap.start_trajectory" href="#dfm_tools.modplot.DomainMap.start_trajectory">start_trajectory</a></code></li>
-<li><code><a title="dfm_tools.modplot.DomainMap.undo_trajectory" href="#dfm_tools.modplot.DomainMap.undo_trajectory">undo_trajectory</a></code></li>
+<li><code><a title="dfm_tools.modplot.DomainMap.reset_start_point" href="#dfm_tools.modplot.DomainMap.reset_start_point">reset_start_point</a></code></li>
 <li><code><a title="dfm_tools.modplot.DomainMap.update_trajectory" href="#dfm_tools.modplot.DomainMap.update_trajectory">update_trajectory</a></code></li>
+<li><code><a title="dfm_tools.modplot.DomainMap.undo_trajectory" href="#dfm_tools.modplot.DomainMap.undo_trajectory">undo_trajectory</a></code></li>
 </ul>
 </li>
 <li>
 <h4><code><a title="dfm_tools.modplot.Grid" href="#dfm_tools.modplot.Grid">Grid</a></code></h4>
 <ul class="">
-<li><code><a title="dfm_tools.modplot.Grid.shape" href="#dfm_tools.modplot.Grid.shape">shape</a></code></li>
 <li><code><a title="dfm_tools.modplot.Grid.within_grid" href="#dfm_tools.modplot.Grid.within_grid">within_grid</a></code></li>
+<li><code><a title="dfm_tools.modplot.Grid.shape" href="#dfm_tools.modplot.Grid.shape">shape</a></code></li>
 </ul>
 </li>
 <li>
 <h4><code><a title="dfm_tools.modplot.StreamMask" href="#dfm_tools.modplot.StreamMask">StreamMask</a></code></h4>
-</li>
-<li>
-<h4><code><a title="dfm_tools.modplot.StreamplotSet" href="#dfm_tools.modplot.StreamplotSet">StreamplotSet</a></code></h4>
 </li>
 </ul>
 </li>

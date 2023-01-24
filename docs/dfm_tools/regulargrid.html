@@ -362,112 +362,6 @@ def uva2xymagdeg(U1, V1, ALFAS, KCU=None, KCV=None, inactivewhen4x0=True): #only
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt id="dfm_tools.regulargrid.center2corner"><code class="name flex">
-<span>def <span class="ident">center2corner</span></span>(<span>cen)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def center2corner(cen):
-    import numpy as np
-    
-    if len(cen.shape) != 2:
-        raise Exception(&#39;input array should have 2 dimensions&#39;)
-    
-    cen_nobnd = corner2center(cen)
-    cen_nobnd_diff_ax0 = np.diff(cen_nobnd, axis=0)
-    add_top = cen_nobnd[0,:] - cen_nobnd_diff_ax0[0,:]
-    add_bot = cen_nobnd[-1,:] + cen_nobnd_diff_ax0[-1,:]
-    cen_vertbnd = np.vstack([add_top, cen_nobnd, add_bot])
-    cen_nobnd_diff_ax1 = np.diff(cen_vertbnd, axis=1)
-    add_left = cen_vertbnd[:,0] - cen_nobnd_diff_ax1[:,0]
-    add_right = cen_vertbnd[:,-1] + cen_nobnd_diff_ax1[:,-1]
-    cen_withbnd = np.vstack([add_left.T, cen_vertbnd.T, add_right.T]).T
-    cor = cen_withbnd
-        
-    return cor</code></pre>
-</details>
-</dd>
-<dt id="dfm_tools.regulargrid.corner2center"><code class="name flex">
-<span>def <span class="ident">corner2center</span></span>(<span>cor)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>from OET but edited, original author is Gerben de Boer</p>
-<p>cen = corner2center(cor) calculates the value of the center
-of the pixels by avareging the surrounding 4 corner values
-for arrays, or the surrounding 2 corner for vectors or [1,n]
-or [n,1 2D arrays. corner2center works both for coordinate meshes
-as well as data values defined on those meshes.</p>
-<pre><code class="language-python-repl">&gt;&gt;&gt; corner2center([1,3,5])
-array([ 2.,  4.])
-</code></pre>
-<pre><code class="language-python-repl">&gt;&gt;&gt; corner2center([[1,3,5]])
-array([[ 2.,  4.]])
-</code></pre>
-<pre><code class="language-python-repl">&gt;&gt;&gt; corner2center([[1],[3],[5]])
-array([[ 2.],
-       [ 4.]])
-</code></pre>
-<pre><code class="language-python-repl">&gt;&gt;&gt; corner2center([[1,3,5],[2,6,10]])
-array([[ 3.,  6.]])
-</code></pre></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def corner2center(cor):
-    &#34;&#34;&#34;
-    from OET but edited, original author is Gerben de Boer
-
-    cen = corner2center(cor) calculates the value of the center
-    of the pixels by avareging the surrounding 4 corner values
-    for arrays, or the surrounding 2 corner for vectors or [1,n]
-    or [n,1 2D arrays. corner2center works both for coordinate meshes
-    as well as data values defined on those meshes.
-    
-    &gt;&gt;&gt; corner2center([1,3,5])
-    array([ 2.,  4.])
-    
-    &gt;&gt;&gt; corner2center([[1,3,5]])
-    array([[ 2.,  4.]])
-    
-    &gt;&gt;&gt; corner2center([[1],[3],[5]])
-    array([[ 2.],
-           [ 4.]])
-    
-    &gt;&gt;&gt; corner2center([[1,3,5],[2,6,10]])
-    array([[ 3.,  6.]])
-    &#34;&#34;&#34;
-    
-    import numpy as np
-    cor = np.asarray(cor)
-    shp = cor.shape
-    
-    if len(shp)==1 and len(cor)&lt;2:
-        raise ValueError(&#39;at least 2 elements required&#39;)
-    elif len(shp)==1:
-        cen = np.zeros(tuple([shp[0]-1,1]))
-        cen = (cor[ :-1] + cor[1:  ])/2
-    elif len(shp)==2 and shp[0]==1:
-        cen = np.zeros(tuple([1,shp[1]-1]))
-        cen[:,:] = (cor[:, :-1] + cor[:,1:  ])/2
-    elif len(shp)==2 and shp[1]==1:
-        cen = np.zeros(tuple([shp[0]-1,1]))
-        cen[:,:] = (cor[ :-1,:] + cor[1:  ,:])/2
-    elif len(shp)==2: 
-        cen = np.zeros(tuple(np.array(shp)-1))
-        cen[:,:] = (cor[ :-1, :-1] + 
-                    cor[ :-1,1:  ] + 
-                    cor[1:  ,1:  ] + 
-                    cor[1:  , :-1])/4
-    elif len(shp)&gt;3:
-        raise NotImplementedError(&#39;only 1D and 2D arrays implemented, only intervals and pixels, no voxels&#39;)
-    return cen</code></pre>
-</details>
-</dd>
 <dt id="dfm_tools.regulargrid.rasterize_ugrid"><code class="name flex">
 <span>def <span class="ident">rasterize_ugrid</span></span>(<span>uds, ds_like=None, **kwargs)</span>
 </code></dt>
@@ -629,6 +523,112 @@ ds_like: dataset with ed x/y variables to interpolate uds to</p></div>
     return x_grid, y_grid, value_grid</code></pre>
 </details>
 </dd>
+<dt id="dfm_tools.regulargrid.center2corner"><code class="name flex">
+<span>def <span class="ident">center2corner</span></span>(<span>cen)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def center2corner(cen):
+    import numpy as np
+    
+    if len(cen.shape) != 2:
+        raise Exception(&#39;input array should have 2 dimensions&#39;)
+    
+    cen_nobnd = corner2center(cen)
+    cen_nobnd_diff_ax0 = np.diff(cen_nobnd, axis=0)
+    add_top = cen_nobnd[0,:] - cen_nobnd_diff_ax0[0,:]
+    add_bot = cen_nobnd[-1,:] + cen_nobnd_diff_ax0[-1,:]
+    cen_vertbnd = np.vstack([add_top, cen_nobnd, add_bot])
+    cen_nobnd_diff_ax1 = np.diff(cen_vertbnd, axis=1)
+    add_left = cen_vertbnd[:,0] - cen_nobnd_diff_ax1[:,0]
+    add_right = cen_vertbnd[:,-1] + cen_nobnd_diff_ax1[:,-1]
+    cen_withbnd = np.vstack([add_left.T, cen_vertbnd.T, add_right.T]).T
+    cor = cen_withbnd
+        
+    return cor</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.regulargrid.corner2center"><code class="name flex">
+<span>def <span class="ident">corner2center</span></span>(<span>cor)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>from OET but edited, original author is Gerben de Boer</p>
+<p>cen = corner2center(cor) calculates the value of the center
+of the pixels by avareging the surrounding 4 corner values
+for arrays, or the surrounding 2 corner for vectors or [1,n]
+or [n,1 2D arrays. corner2center works both for coordinate meshes
+as well as data values defined on those meshes.</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; corner2center([1,3,5])
+array([ 2.,  4.])
+</code></pre>
+<pre><code class="language-python-repl">&gt;&gt;&gt; corner2center([[1,3,5]])
+array([[ 2.,  4.]])
+</code></pre>
+<pre><code class="language-python-repl">&gt;&gt;&gt; corner2center([[1],[3],[5]])
+array([[ 2.],
+       [ 4.]])
+</code></pre>
+<pre><code class="language-python-repl">&gt;&gt;&gt; corner2center([[1,3,5],[2,6,10]])
+array([[ 3.,  6.]])
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def corner2center(cor):
+    &#34;&#34;&#34;
+    from OET but edited, original author is Gerben de Boer
+
+    cen = corner2center(cor) calculates the value of the center
+    of the pixels by avareging the surrounding 4 corner values
+    for arrays, or the surrounding 2 corner for vectors or [1,n]
+    or [n,1 2D arrays. corner2center works both for coordinate meshes
+    as well as data values defined on those meshes.
+    
+    &gt;&gt;&gt; corner2center([1,3,5])
+    array([ 2.,  4.])
+    
+    &gt;&gt;&gt; corner2center([[1,3,5]])
+    array([[ 2.,  4.]])
+    
+    &gt;&gt;&gt; corner2center([[1],[3],[5]])
+    array([[ 2.],
+           [ 4.]])
+    
+    &gt;&gt;&gt; corner2center([[1,3,5],[2,6,10]])
+    array([[ 3.,  6.]])
+    &#34;&#34;&#34;
+    
+    import numpy as np
+    cor = np.asarray(cor)
+    shp = cor.shape
+    
+    if len(shp)==1 and len(cor)&lt;2:
+        raise ValueError(&#39;at least 2 elements required&#39;)
+    elif len(shp)==1:
+        cen = np.zeros(tuple([shp[0]-1,1]))
+        cen = (cor[ :-1] + cor[1:  ])/2
+    elif len(shp)==2 and shp[0]==1:
+        cen = np.zeros(tuple([1,shp[1]-1]))
+        cen[:,:] = (cor[:, :-1] + cor[:,1:  ])/2
+    elif len(shp)==2 and shp[1]==1:
+        cen = np.zeros(tuple([shp[0]-1,1]))
+        cen[:,:] = (cor[ :-1,:] + cor[1:  ,:])/2
+    elif len(shp)==2: 
+        cen = np.zeros(tuple(np.array(shp)-1))
+        cen[:,:] = (cor[ :-1, :-1] + 
+                    cor[ :-1,1:  ] + 
+                    cor[1:  ,1:  ] + 
+                    cor[1:  , :-1])/4
+    elif len(shp)&gt;3:
+        raise NotImplementedError(&#39;only 1D and 2D arrays implemented, only intervals and pixels, no voxels&#39;)
+    return cen</code></pre>
+</details>
+</dd>
 <dt id="dfm_tools.regulargrid.uva2xymagdeg"><code class="name flex">
 <span>def <span class="ident">uva2xymagdeg</span></span>(<span>U1, V1, ALFAS, KCU=None, KCV=None, inactivewhen4x0=True)</span>
 </code></dt>
@@ -750,10 +750,10 @@ Uc(2:end-1,: ) = (U1(1:end-1,: )) + U1(2:end,: ))/2 klopt wel, maar werkt alleen
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
-<li><code><a title="dfm_tools.regulargrid.center2corner" href="#dfm_tools.regulargrid.center2corner">center2corner</a></code></li>
-<li><code><a title="dfm_tools.regulargrid.corner2center" href="#dfm_tools.regulargrid.corner2center">corner2center</a></code></li>
 <li><code><a title="dfm_tools.regulargrid.rasterize_ugrid" href="#dfm_tools.regulargrid.rasterize_ugrid">rasterize_ugrid</a></code></li>
 <li><code><a title="dfm_tools.regulargrid.scatter_to_regulargrid" href="#dfm_tools.regulargrid.scatter_to_regulargrid">scatter_to_regulargrid</a></code></li>
+<li><code><a title="dfm_tools.regulargrid.center2corner" href="#dfm_tools.regulargrid.center2corner">center2corner</a></code></li>
+<li><code><a title="dfm_tools.regulargrid.corner2center" href="#dfm_tools.regulargrid.corner2center">corner2center</a></code></li>
 <li><code><a title="dfm_tools.regulargrid.uva2xymagdeg" href="#dfm_tools.regulargrid.uva2xymagdeg">uva2xymagdeg</a></code></li>
 </ul>
 </li>
