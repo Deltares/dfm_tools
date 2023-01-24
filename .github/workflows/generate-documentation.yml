@@ -45,6 +45,7 @@ jobs:
         #conda install -c conda-forge git shapely cartopy pyepsg geopandas contextily xarray dask netcdf4 bottleneck xugrid cdsapi pydap -y
         
         conda update -n base -c defaults conda
+        conda install -c conda-forge git shapely cartopy pyepsg geopandas contextily xarray dask netcdf4 bottleneck xugrid cdsapi pydap -y
         
         #python -m pip install -r requirements.txt
         #python -m pip install pdoc3 pandoc
