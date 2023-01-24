@@ -46,7 +46,7 @@ for file_nc in file_nc_list:
         clim_sal = None
         crs = None
         file_nc_fou = None
-        quiv_res = None
+        raster_res = 200
     elif 'Grevelingen' in file_nc:
         timestep = 3
         layno = 33 #35 is top
@@ -63,7 +63,7 @@ for file_nc in file_nc_list:
         clim_sal = [28,30.2]
         crs = "EPSG:28992"
         file_nc_fou = None
-        quiv_res = None #TODO: add quiver for normal mapfile also
+        raster_res = 1000
     elif 'DCSM-FM_0_5nm' in file_nc:
         timestep = 365
         layno = 45
@@ -80,7 +80,7 @@ for file_nc in file_nc_list:
         clim_sal = [25,36]
         crs = "EPSG:4326"
         file_nc_fou = None
-        quiv_res = None
+        raster_res = 0.3
     elif 'RMM_dflowfm' in file_nc:
         timestep = 365 #50
         layno = None
@@ -111,7 +111,7 @@ for file_nc in file_nc_list:
         crs = "EPSG:28992"
         file_nc_fou = os.path.join(dir_testinput,r'DFM_fou_RMM\RMM_dflowfm_0*_fou.nc')
         fou_varname_u, fou_varname_v = 'mesh2d_fourier001_mean', 'mesh2d_fourier002_mean'
-        quiv_res = 2500
+        raster_res = 2500
     elif 'MB_02_' in file_nc:
         timestep = 10
         layno = 45
@@ -125,7 +125,7 @@ for file_nc in file_nc_list:
         crs = "EPSG:4326"
         file_nc_fou = r'p:\archivedprojects\11203379-005-mwra-updated-bem\03_model\02_final\A72_ntsu0_kzlb2\DFM_OUTPUT_MB_02_fou\MB_02_0*_fou.nc'
         fou_varname_u, fou_varname_v = 'mesh2d_fourier027_mean', 'mesh2d_fourier040_mean'
-        quiv_res = 0.3
+        raster_res = 0.3
     else:
         raise Exception('ERROR: no settings provided for this mapfile')
     
@@ -179,17 +179,19 @@ for file_nc in file_nc_list:
     fig.savefig(os.path.join(dir_output,f'{basename}_selxyslice'))
     
     
-    print('plot bedlevel as polycollection, contourf, contour')
+    print('plot bedlevel as polycollection, contourf, contour, rasterized')
     #create fancy plots, more options at https://deltares.github.io/xugrid/examples/plotting.html
     if clim_bl is None:
         vmin = vmax = None
     else:
-        vmin, vmax = clim_bl #TODO: vmin/vmax are necessary upon plot initialization (instead of pc.set_clim(clim_bl)) for proper colorbar, this is also normal matplotlib behaviour, so not xugrid specific
-    fig, (ax1,ax2,ax3) = plt.subplots(3,1,figsize=(6,9))
+        vmin, vmax = clim_bl #TODO: vmin/vmax are necessary upon plot initialization (instead of pc.set_clim(clim_bl)) for proper colorbar, this is also matplotlib behaviour so not xugrid specific
+    fig, ((ax1,ax2),(ax3,ax4)) = plt.subplots(2,2,figsize=(12,7),sharex=True,sharey=True)
     pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot(ax=ax1, linewidth=0.5, edgecolors='face', cmap='jet', vmin=vmin, vmax=vmax)
     pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot.contourf(ax=ax2, levels=11, cmap='jet', vmin=vmin, vmax=vmax)
     if 'cb_3d_map' not in file_nc: #TODO: cb_3d_map fails on contour with "UserWarning: No contour levels were found within the data range." (because all bedlevels are -5m) >> colorbar gives error, is this an xugrid or matplotlib issue?
         pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot.contour(ax=ax3, levels=11, cmap='jet', vmin=vmin, vmax=vmax, add_colorbar=True)
+    bl_raster = dfmt.rasterize_ugrid(data_frommap_merged[['mesh2d_flowelem_bl']],resolution=raster_res) #rasterize ugrid
+    pc = bl_raster['mesh2d_flowelem_bl'].plot(ax=ax4, cmap='jet', vmin=vmin, vmax=vmax) #plot with non-ugrid method
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,f'{basename}_gridbedcontour'))
     
@@ -245,7 +247,6 @@ for file_nc in file_nc_list:
     
     
     if file_nc_fou is not None:
-        
         data_frommap_fou = dfmt.open_partitioned_dataset(file_nc_fou)
         vars_pd_fou = dfmt.get_ncvarproperties(data_frommap_fou)
         if 'mesh2d_nLayers' in data_frommap_fou.dims: #reduce layer dimension via isel/sel/interp. TODO: slicing over depth is not possible with dfmt.get_Dataset_atdepths(), since waterlevel is missing from file. (does it work for rstfiles?)
@@ -266,7 +267,7 @@ for file_nc in file_nc_list:
         
         fig,ax = plt.subplots(figsize=(9,5))
         pc = data_frommap_fou_atdepth['magn_mean'].ugrid.plot(edgecolor='face')
-        fou_raster = dfmt.rasterize_ugrid(data_frommap_fou_atdepth,resolution=quiv_res) #TODO: also add to example notebook (for mapfile)
+        fou_raster = dfmt.rasterize_ugrid(data_frommap_fou_atdepth,resolution=raster_res)
         fou_raster.plot.quiver(x='mesh2d_face_x',y='mesh2d_face_y',u=fou_varname_u,v=fou_varname_v,color='w',scale=5,add_guide=False)
         pc.set_clim(0,0.10)
         ax.set_aspect('equal')

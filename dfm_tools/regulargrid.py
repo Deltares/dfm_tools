@@ -35,6 +35,7 @@ Created on Sun Mar 22 08:41:00 2020
 import warnings
 import datetime as dt
 import xarray as xr
+import xugrid as xu
 from dfm_tools.xarray_helpers import Dataset_varswithdim
 
 
@@ -45,6 +46,8 @@ def rasterize_ugrid(uds, ds_like=None, **kwargs):
     ds_like: dataset with ed x/y variables to interpolate uds to
     """
     #TODO: clean up code/options and maybe put part of code in xugrid (https://github.com/Deltares/xugrid/issues/31)
+    if not isinstance(uds,xu.core.wrap.UgridDataset):
+        raise Exception(f'rasterize_ugrid expected xu.core.wrap.UgridDataset, got {type(uds)} instead')
     
     grid = uds.grid
     xu_facedim = uds.grid.face_dimension
