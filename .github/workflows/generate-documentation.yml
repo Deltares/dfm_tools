@@ -30,11 +30,11 @@ jobs:
         #conda update -n base -c defaults conda
         #conda install -c conda-forge shapely cartopy pyepsg geopandas contextily xarray dask netcdf4 bottleneck cdsapi motuclient "geos>=3.7.2" -y
         
-        #python -m pip install pdoc3 pandoc
+        python -m pip install pdoc3 pandoc
         #pip install -r requirements.txt
         
-        conda update -n base -c defaults conda
-        conda env update --file environment.yml --name base
+        #conda update -n base -c defaults conda
+        #conda env update --file environment.yml --name base
       
     - name: Generate documentation
       run: |
