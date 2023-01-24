@@ -150,10 +150,15 @@ def remove_ghostcells(ds,gridname='mesh2d'): #TODO: create JIRA issue: add domai
     #derive domainno from domain var and filename
     da_domainno = ds[varn_domain]
     part_domainno = np.bincount(da_domainno).argmax()
-    part_domainno_fromfname = int(ds.encoding['source'][-11:-7]) #this is not valid for rstfiles but they cannot be read anyway
-    if part_domainno != part_domainno_fromfname:
-        warnings.warn(f'remove_ghostcells: different domainno found in filename ({part_domainno_fromfname}) and domain variable ({part_domainno})')
-    
+    part_domainno_fromfname = ds.encoding['source'][-11:-7] #this is not valid for rstfiles but they cannot be read anyway since they are mapformat=1
+    if part_domainno_fromfname.isnumeric():
+        part_domainno_fromfname = int(part_domainno_fromfname)
+        if part_domainno != part_domainno_fromfname:
+            warnings.warn(f'remove_ghostcells: different domainno found in filename ({part_domainno_fromfname}) and domain variable ({part_domainno})')
+    else: #TODO: this is for instance the case for a dataset that was merged with xugrid and then written to netcdf agian. It does contain domain numbers (of all partitions), but nothing should be filtered. Maybe better to only use the domain number from the filename (easier to implement/understand and safer)
+        print('[nodomainfname] ',end='')
+        return ds
+        
     #drop ghostcells
     idx = np.flatnonzero(da_domainno == part_domainno)
     ds = ds.isel({ds.grid.face_dimension:idx})
@@ -170,8 +175,6 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
         DESCRIPTION.
     chunks : TYPE, optional
         chunks={'time':1} increases performance significantly upon reading, but causes memory overloads when performing sum/mean/etc actions over time dimension (in that case 100/200 is better). The default is {'time':1}.
-    decode_times_perfile : bool, optional #TODO: why does decode_times on merged dataset takes only 0.02 sec and on single dataset 4-5 sec (with profiler)
-        Whether to use decode_times in xr.open_dataset(). If False, this saves time and the times are decoded only once for the merged dataset. The default is True.
 
     Raises
     ------
@@ -197,8 +200,8 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
     
     """
     #TODO: FM-mapfiles contain wgs84/projected_coordinate_system variables. xugrid has .crs property, projected_coordinate_system/wgs84 should be updated to be crs so it will be automatically handled? >> make dflowfm issue (and https://github.com/Deltares/xugrid/issues/42)
-    #TODO: add support for multiple grids via keyword?
-    #TODO: speed up open_dataset https://github.com/Deltares/dfm_tools/issues/225 >> c:\DATA\dfm_tools\tests\examples_workinprogress\workinprogress_xugrid_mergepartitions.py
+    #TODO: add support for multiple grids via keyword? GTSM+riv grid also only contains only one grid, so no testcase available
+    #TODO: speed up open_dataset https://github.com/Deltares/dfm_tools/issues/225
     
     dtstart_all = dt.datetime.now()
     if isinstance(file_nc,list):

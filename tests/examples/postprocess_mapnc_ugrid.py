@@ -143,8 +143,8 @@ for file_nc in file_nc_list:
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,f'{basename}_grid'))
     
-    
-    print('plot grid and bedlevel (constantvalue, 1 dim)')
+        
+    print('plot bedlevel')
     #get bedlevel and create plot with ugrid and cross section line
     fig, ax_input = plt.subplots()
     pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot(edgecolor='face',cmap='jet') #TODO: should work even better with edgecolor='none', but that results in seethrough edges anyway, report to matplotlib?
@@ -168,6 +168,20 @@ for file_nc in file_nc_list:
         source = ctx.providers.Esri.WorldImagery # ctx.providers.Stamen.Terrain (default), ctx.providers.CartoDB.Voyager, ctx.providers.NASAGIBS.ViirsEarthAtNight2012, ctx.providers.Stamen.Watercolor
         ctx.add_basemap(ax=ax_input, source=source, crs=crs, attribution=False)
         fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_flowelem_bl_withbasemap'))
+    
+    
+    print('plot bedlevel in different coordinate systems')
+    if crs == 'EPSG:28992':
+        to_crs = 'EPSG:4326'
+        data_frommap_merged.ugrid.set_crs(crs)
+        data_frommap_merged_wgs84 = data_frommap_merged.ugrid.to_crs(to_crs)
+        fig, (ax1,ax2) = plt.subplots(2,1,figsize=(7,8))
+        data_frommap_merged["mesh2d_waterdepth"].isel(time=0).ugrid.plot(ax=ax1, edgecolor='face')
+        ctx.add_basemap(ax=ax1, source=None, crs=crs, attribution=False)
+        data_frommap_merged_wgs84["mesh2d_waterdepth"].isel(time=0).ugrid.plot(ax=ax2, edgecolor='face')
+        ctx.add_basemap(ax=ax2, source=None, crs=to_crs, attribution=False)
+        fig.tight_layout()
+        fig.savefig(os.path.join(dir_output,f'{basename}_convertedcoords'))
     
     
     #ugrid sel via x/y
