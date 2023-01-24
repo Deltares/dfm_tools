@@ -266,95 +266,6 @@ def read_bcfile(filename, converttime=False): #TODO: remove this code, only rais
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt id="dfm_tools.io.bc.read_bcfile"><code class="name flex">
-<span>def <span class="ident">read_bcfile</span></span>(<span>filename, converttime=False)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def read_bcfile(filename, converttime=False): #TODO: remove this code, only raises an error
-
-    raise DeprecationWarning(&#39;the function dfm_tools.io.bc.read_bcfile() is deprecated, please use the new hydrolib alternative. Example script: dfm_tools/tests/examples/hydrolib_readbc.py&#39;)
-    
-    with open(filename, &#39;r&#39;) as bc:
-        page = bc.readlines()
-    lines_blockstarts = np.array([],dtype=int)
-    lines_quantity = np.array([],dtype=int)
-    lines_unit = np.array([],dtype=int)
-    lines_data = np.array([],dtype=int)
-    lines_n = len(page)
-    for iL, line in enumerate(page):
-        if &#39;[forcing]&#39; in line.lower():
-            lines_blockstarts = np.append(lines_blockstarts,iL)
-        if &#39;quantity&#39; in line.lower():
-            lines_quantity = np.append(lines_quantity,iL)
-        if &#39;unit&#39; in line.lower():
-            lines_unit = np.append(lines_unit,iL)
-        if line.lower()[0].isnumeric():
-            lines_data= np.append(lines_data,iL)
-    if len(lines_quantity) != len(lines_unit):
-        raise Exception(&#39;something wrong with bc-file, amount of quantity lines is not the same as amount of unit lines&#39;)
-    
-    metadata_list = []
-    datablock_list = []
-    for iB in range(len(lines_blockstarts)):
-        line_blockstart = lines_blockstarts[iB]
-        if iB == len(lines_blockstarts)-1:
-            line_blockend = lines_n
-        else:
-            line_blockend = lines_blockstarts[iB+1]
-        
-        line_blockquantities = lines_quantity[(lines_quantity&gt;line_blockstart) &amp; (lines_quantity&lt;line_blockend)]
-        line_blockunits = lines_unit[(lines_unit&gt;line_blockstart) &amp; (lines_unit&lt;line_blockend)]
-        line_datastart = np.amin(lines_data[(lines_data&gt;line_blockstart) &amp; (lines_data&lt;line_blockend)])
-        
-        #get metadata (without quantities and units)
-        metadata_str = page[line_blockstart:line_datastart]
-        metadata = {}
-        for metadata_line in metadata_str:
-            if metadata_line.startswith(&#39;[&#39;) or metadata_line.startswith(&#39;Quantity&#39;) or metadata_line.startswith(&#39;Unit&#39;):
-                pass#metadata[metadata_line.strip()] = &#39;&#39;
-            else:
-                meta_name = metadata_line.split(&#39;=&#39;)[0].strip()
-                meta_val = metadata_line.split(&#39;=&#39;)[1].strip()
-                metadata[meta_name] = meta_val
-        metadata_list.append(metadata)
-        
-        #define column names of quantities and units
-        colnames = []
-        for line_quan,line_un in zip(line_blockquantities,line_blockunits):
-            quan_val = page[line_quan].split(&#39;=&#39;)[1].strip()
-            un_val = page[line_un].split(&#39;=&#39;)[1].strip()
-            colnames.append((quan_val,un_val))
-        
-        #read data block
-        data_block_pd = pd.read_csv(filepath_or_buffer=filename, names=colnames, skiprows=line_datastart, delim_whitespace=True, skipfooter=lines_n-line_blockend, engine=&#39;python&#39;)
-        if converttime:
-            time_id = np.where(data_block_pd.columns.get_level_values(0)==&#39;time&#39;)[0]
-            if len(time_id)==1:
-                time_minutes = data_block_pd.iloc[:,time_id].values[:,0]
-                units_str = data_block_pd.columns.get_level_values(1)[time_id][0]
-                
-                time_units_list = units_str.split(&#39; &#39;)
-                if time_units_list[1] != &#39;since&#39;:
-                    raise Exception(&#39;invalid time units string (%s)&#39;%(units_str))
-                try:
-                    refdate_str = &#39;%s %s&#39;%(time_units_list[2], time_units_list[3].replace(&#39;.0&#39;,&#39;&#39;)) #remove .0 to avoid conversion issue
-                    refdate = dt.datetime.strptime(refdate_str,&#39;%Y-%m-%d %H:%M:%S&#39;)
-                    data_nc_times_pdtd = pd.to_timedelta(time_minutes, unit=time_units_list[0])
-                    data_nc_datetimes = (refdate + data_nc_times_pdtd)#.to_pydatetime()
-                    print(&#39;retrieving original timezone succeeded, no conversion to UTC/GMT applied&#39;)
-                except:
-                    print(&#39;retrieving original timezone failed, using num2date output instead&#39;)
-                    data_nc_datetimes = num2date(times=time_minutes, units=units_str, only_use_cftime_datetimes=False, only_use_python_datetimes=True)
-                data_block_pd[&#39;datetime&#39;] = data_nc_datetimes
-        datablock_list.append(data_block_pd)
-    return datablock_list, metadata_list</code></pre>
-</details>
-</dd>
 <dt id="dfm_tools.io.bc.write_bcfile"><code class="name flex">
 <span>def <span class="ident">write_bcfile</span></span>(<span>filename, datablocks, metadatas, refdate=None, tzone=0, float_format='%6.2f')</span>
 </code></dt>
@@ -474,6 +385,95 @@ def read_bcfile(filename, converttime=False): #TODO: remove this code, only rais
             file_bc.write(&#39;\n&#39;)</code></pre>
 </details>
 </dd>
+<dt id="dfm_tools.io.bc.read_bcfile"><code class="name flex">
+<span>def <span class="ident">read_bcfile</span></span>(<span>filename, converttime=False)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def read_bcfile(filename, converttime=False): #TODO: remove this code, only raises an error
+
+    raise DeprecationWarning(&#39;the function dfm_tools.io.bc.read_bcfile() is deprecated, please use the new hydrolib alternative. Example script: dfm_tools/tests/examples/hydrolib_readbc.py&#39;)
+    
+    with open(filename, &#39;r&#39;) as bc:
+        page = bc.readlines()
+    lines_blockstarts = np.array([],dtype=int)
+    lines_quantity = np.array([],dtype=int)
+    lines_unit = np.array([],dtype=int)
+    lines_data = np.array([],dtype=int)
+    lines_n = len(page)
+    for iL, line in enumerate(page):
+        if &#39;[forcing]&#39; in line.lower():
+            lines_blockstarts = np.append(lines_blockstarts,iL)
+        if &#39;quantity&#39; in line.lower():
+            lines_quantity = np.append(lines_quantity,iL)
+        if &#39;unit&#39; in line.lower():
+            lines_unit = np.append(lines_unit,iL)
+        if line.lower()[0].isnumeric():
+            lines_data= np.append(lines_data,iL)
+    if len(lines_quantity) != len(lines_unit):
+        raise Exception(&#39;something wrong with bc-file, amount of quantity lines is not the same as amount of unit lines&#39;)
+    
+    metadata_list = []
+    datablock_list = []
+    for iB in range(len(lines_blockstarts)):
+        line_blockstart = lines_blockstarts[iB]
+        if iB == len(lines_blockstarts)-1:
+            line_blockend = lines_n
+        else:
+            line_blockend = lines_blockstarts[iB+1]
+        
+        line_blockquantities = lines_quantity[(lines_quantity&gt;line_blockstart) &amp; (lines_quantity&lt;line_blockend)]
+        line_blockunits = lines_unit[(lines_unit&gt;line_blockstart) &amp; (lines_unit&lt;line_blockend)]
+        line_datastart = np.amin(lines_data[(lines_data&gt;line_blockstart) &amp; (lines_data&lt;line_blockend)])
+        
+        #get metadata (without quantities and units)
+        metadata_str = page[line_blockstart:line_datastart]
+        metadata = {}
+        for metadata_line in metadata_str:
+            if metadata_line.startswith(&#39;[&#39;) or metadata_line.startswith(&#39;Quantity&#39;) or metadata_line.startswith(&#39;Unit&#39;):
+                pass#metadata[metadata_line.strip()] = &#39;&#39;
+            else:
+                meta_name = metadata_line.split(&#39;=&#39;)[0].strip()
+                meta_val = metadata_line.split(&#39;=&#39;)[1].strip()
+                metadata[meta_name] = meta_val
+        metadata_list.append(metadata)
+        
+        #define column names of quantities and units
+        colnames = []
+        for line_quan,line_un in zip(line_blockquantities,line_blockunits):
+            quan_val = page[line_quan].split(&#39;=&#39;)[1].strip()
+            un_val = page[line_un].split(&#39;=&#39;)[1].strip()
+            colnames.append((quan_val,un_val))
+        
+        #read data block
+        data_block_pd = pd.read_csv(filepath_or_buffer=filename, names=colnames, skiprows=line_datastart, delim_whitespace=True, skipfooter=lines_n-line_blockend, engine=&#39;python&#39;)
+        if converttime:
+            time_id = np.where(data_block_pd.columns.get_level_values(0)==&#39;time&#39;)[0]
+            if len(time_id)==1:
+                time_minutes = data_block_pd.iloc[:,time_id].values[:,0]
+                units_str = data_block_pd.columns.get_level_values(1)[time_id][0]
+                
+                time_units_list = units_str.split(&#39; &#39;)
+                if time_units_list[1] != &#39;since&#39;:
+                    raise Exception(&#39;invalid time units string (%s)&#39;%(units_str))
+                try:
+                    refdate_str = &#39;%s %s&#39;%(time_units_list[2], time_units_list[3].replace(&#39;.0&#39;,&#39;&#39;)) #remove .0 to avoid conversion issue
+                    refdate = dt.datetime.strptime(refdate_str,&#39;%Y-%m-%d %H:%M:%S&#39;)
+                    data_nc_times_pdtd = pd.to_timedelta(time_minutes, unit=time_units_list[0])
+                    data_nc_datetimes = (refdate + data_nc_times_pdtd)#.to_pydatetime()
+                    print(&#39;retrieving original timezone succeeded, no conversion to UTC/GMT applied&#39;)
+                except:
+                    print(&#39;retrieving original timezone failed, using num2date output instead&#39;)
+                    data_nc_datetimes = num2date(times=time_minutes, units=units_str, only_use_cftime_datetimes=False, only_use_python_datetimes=True)
+                data_block_pd[&#39;datetime&#39;] = data_nc_datetimes
+        datablock_list.append(data_block_pd)
+    return datablock_list, metadata_list</code></pre>
+</details>
+</dd>
 </dl>
 </section>
 <section>
@@ -492,8 +492,8 @@ def read_bcfile(filename, converttime=False): #TODO: remove this code, only rais
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
-<li><code><a title="dfm_tools.io.bc.read_bcfile" href="#dfm_tools.io.bc.read_bcfile">read_bcfile</a></code></li>
 <li><code><a title="dfm_tools.io.bc.write_bcfile" href="#dfm_tools.io.bc.write_bcfile">write_bcfile</a></code></li>
+<li><code><a title="dfm_tools.io.bc.read_bcfile" href="#dfm_tools.io.bc.read_bcfile">read_bcfile</a></code></li>
 </ul>
 </li>
 </ul>

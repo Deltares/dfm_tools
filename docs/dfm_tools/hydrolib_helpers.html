@@ -329,72 +329,6 @@ def parse_xy_to_datetime(pointlike_pd):
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt id="dfm_tools.hydrolib_helpers.DataFrame_to_PolyObject"><code class="name flex">
-<span>def <span class="ident">DataFrame_to_PolyObject</span></span>(<span>poly_pd, name, content=None)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>convert a pandas dataframe with x/y columns (and optional others like z/data/comment) to a hydrolib PolyObject</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def DataFrame_to_PolyObject(poly_pd,name,content=None):
-    &#34;&#34;&#34;
-    convert a pandas dataframe with x/y columns (and optional others like z/data/comment) to a hydrolib PolyObject
-    &#34;&#34;&#34;
-    if &#39;z&#39; in poly_pd.columns:
-        nondata_cols = [&#39;x&#39;,&#39;y&#39;,&#39;z&#39;]
-    else:
-        nondata_cols = [&#39;x&#39;,&#39;y&#39;]
-    poly_pd_xy = poly_pd[nondata_cols]
-    poly_pd_data = pd.DataFrame({&#39;data&#39;:poly_pd.drop(nondata_cols,axis=1).values.tolist()})
-    poly_pd_polyobj = pd.concat([poly_pd_xy,poly_pd_data],axis=1)
-    pointsobj_list = poly_pd_polyobj.T.apply(dict).tolist() #TODO: maybe faster with list iteration
-    polyobject = hcdfm.PolyObject(metadata={&#39;name&#39;:name,&#39;n_rows&#39;:poly_pd.shape[0],&#39;n_columns&#39;:poly_pd.shape[1]}, points=pointsobj_list)
-    if content is not None:
-        polyobject.description = {&#39;content&#39;:content}
-    return polyobject</code></pre>
-</details>
-</dd>
-<dt id="dfm_tools.hydrolib_helpers.Dataset_to_Astronomic"><code class="name flex">
-<span>def <span class="ident">Dataset_to_Astronomic</span></span>(<span>datablock_xr)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>convert an xarray.Dataset (with amplitude and phase data_vars) to a hydrolib Astronomic object</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def Dataset_to_Astronomic(datablock_xr):
-    &#34;&#34;&#34;
-    convert an xarray.Dataset (with amplitude and phase data_vars) to a hydrolib Astronomic object
-    
-    &#34;&#34;&#34;
-    if not isinstance(datablock_xr,xr.Dataset):
-        raise Exception(f&#39;Dataset_to_Astronomic expects xr.Dataset, not {type(datablock_xr)}&#39;)
-    
-    data_vars = list(datablock_xr.data_vars)
-    if &#39;amplitude&#39; not in data_vars or &#39;phase_new&#39; not in data_vars:
-        raise Exception(&#39;amplitude and/or phase_new not in input xr.Dataset&#39;)
-
-    #TODO: clean up these first lines of code and add description to docstring?
-    locationname = datablock_xr[&#39;amplitude&#39;].attrs[&#39;locationname&#39;]
-        
-    #get datablock and concatenate with component names
-    datablock_np_cna = datablock_xr[&#39;compnames&#39;].to_numpy()[:,np.newaxis]
-    datablock_np_amp = datablock_xr[&#39;amplitude&#39;].to_numpy()[:,np.newaxis]
-    datablock_np_phs = datablock_xr[&#39;phase_new&#39;].to_numpy()[:,np.newaxis]
-    datablock_inclcomp = np.concatenate([datablock_np_cna,datablock_np_amp,datablock_np_phs],axis=1)
-    
-    Astronomic_object = hcdfm.Astronomic(name=locationname,
-                                         quantityunitpair=[hcdfm.QuantityUnitPair(quantity=&#34;astronomic component&#34;, unit=&#39;-&#39;),
-                                                           hcdfm.QuantityUnitPair(quantity=&#39;waterlevelbnd amplitude&#39;, unit=datablock_xr[&#39;amplitude&#39;].attrs[&#39;units&#39;]),
-                                                           hcdfm.QuantityUnitPair(quantity=&#39;waterlevelbnd phase&#39;, unit=datablock_xr[&#39;phase&#39;].attrs[&#39;units&#39;])],
-                                         datablock=datablock_inclcomp.tolist(), 
-                                         )
-    return Astronomic_object</code></pre>
-</details>
-</dd>
 <dt id="dfm_tools.hydrolib_helpers.Dataset_to_T3D"><code class="name flex">
 <span>def <span class="ident">Dataset_to_T3D</span></span>(<span>datablock_xr)</span>
 </code></dt>
@@ -524,6 +458,72 @@ def parse_xy_to_datetime(pointlike_pd):
     return TimeSeries_object</code></pre>
 </details>
 </dd>
+<dt id="dfm_tools.hydrolib_helpers.Dataset_to_Astronomic"><code class="name flex">
+<span>def <span class="ident">Dataset_to_Astronomic</span></span>(<span>datablock_xr)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>convert an xarray.Dataset (with amplitude and phase data_vars) to a hydrolib Astronomic object</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def Dataset_to_Astronomic(datablock_xr):
+    &#34;&#34;&#34;
+    convert an xarray.Dataset (with amplitude and phase data_vars) to a hydrolib Astronomic object
+    
+    &#34;&#34;&#34;
+    if not isinstance(datablock_xr,xr.Dataset):
+        raise Exception(f&#39;Dataset_to_Astronomic expects xr.Dataset, not {type(datablock_xr)}&#39;)
+    
+    data_vars = list(datablock_xr.data_vars)
+    if &#39;amplitude&#39; not in data_vars or &#39;phase_new&#39; not in data_vars:
+        raise Exception(&#39;amplitude and/or phase_new not in input xr.Dataset&#39;)
+
+    #TODO: clean up these first lines of code and add description to docstring?
+    locationname = datablock_xr[&#39;amplitude&#39;].attrs[&#39;locationname&#39;]
+        
+    #get datablock and concatenate with component names
+    datablock_np_cna = datablock_xr[&#39;compnames&#39;].to_numpy()[:,np.newaxis]
+    datablock_np_amp = datablock_xr[&#39;amplitude&#39;].to_numpy()[:,np.newaxis]
+    datablock_np_phs = datablock_xr[&#39;phase_new&#39;].to_numpy()[:,np.newaxis]
+    datablock_inclcomp = np.concatenate([datablock_np_cna,datablock_np_amp,datablock_np_phs],axis=1)
+    
+    Astronomic_object = hcdfm.Astronomic(name=locationname,
+                                         quantityunitpair=[hcdfm.QuantityUnitPair(quantity=&#34;astronomic component&#34;, unit=&#39;-&#39;),
+                                                           hcdfm.QuantityUnitPair(quantity=&#39;waterlevelbnd amplitude&#39;, unit=datablock_xr[&#39;amplitude&#39;].attrs[&#39;units&#39;]),
+                                                           hcdfm.QuantityUnitPair(quantity=&#39;waterlevelbnd phase&#39;, unit=datablock_xr[&#39;phase&#39;].attrs[&#39;units&#39;])],
+                                         datablock=datablock_inclcomp.tolist(), 
+                                         )
+    return Astronomic_object</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.hydrolib_helpers.DataFrame_to_PolyObject"><code class="name flex">
+<span>def <span class="ident">DataFrame_to_PolyObject</span></span>(<span>poly_pd, name, content=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>convert a pandas dataframe with x/y columns (and optional others like z/data/comment) to a hydrolib PolyObject</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def DataFrame_to_PolyObject(poly_pd,name,content=None):
+    &#34;&#34;&#34;
+    convert a pandas dataframe with x/y columns (and optional others like z/data/comment) to a hydrolib PolyObject
+    &#34;&#34;&#34;
+    if &#39;z&#39; in poly_pd.columns:
+        nondata_cols = [&#39;x&#39;,&#39;y&#39;,&#39;z&#39;]
+    else:
+        nondata_cols = [&#39;x&#39;,&#39;y&#39;]
+    poly_pd_xy = poly_pd[nondata_cols]
+    poly_pd_data = pd.DataFrame({&#39;data&#39;:poly_pd.drop(nondata_cols,axis=1).values.tolist()})
+    poly_pd_polyobj = pd.concat([poly_pd_xy,poly_pd_data],axis=1)
+    pointsobj_list = poly_pd_polyobj.T.apply(dict).tolist() #TODO: maybe faster with list iteration
+    polyobject = hcdfm.PolyObject(metadata={&#39;name&#39;:name,&#39;n_rows&#39;:poly_pd.shape[0],&#39;n_columns&#39;:poly_pd.shape[1]}, points=pointsobj_list)
+    if content is not None:
+        polyobject.description = {&#39;content&#39;:content}
+    return polyobject</code></pre>
+</details>
+</dd>
 <dt id="dfm_tools.hydrolib_helpers.forcinglike_to_Dataset"><code class="name flex">
 <span>def <span class="ident">forcinglike_to_Dataset</span></span>(<span>forcingobj, convertnan=False)</span>
 </code></dt>
@@ -613,24 +613,6 @@ def parse_xy_to_datetime(pointlike_pd):
     return data_xr</code></pre>
 </details>
 </dd>
-<dt id="dfm_tools.hydrolib_helpers.parse_xy_to_datetime"><code class="name flex">
-<span>def <span class="ident">parse_xy_to_datetime</span></span>(<span>pointlike_pd)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def parse_xy_to_datetime(pointlike_pd):
-    datatimevals_pdstr = (pointlike_pd[&#39;x&#39;].astype(int).apply(lambda x:f&#39;{x:08d}&#39;) +
-                          pointlike_pd[&#39;y&#39;].astype(int).apply(lambda x:f&#39;{x:06d}&#39;))
-    pointlike_pd.index = pd.to_datetime(datatimevals_pdstr)
-    pointlike_pd_timeidx = pointlike_pd.drop([&#39;x&#39;,&#39;y&#39;],axis=1)
-    
-    return pointlike_pd_timeidx</code></pre>
-</details>
-</dd>
 <dt id="dfm_tools.hydrolib_helpers.pointlike_to_DataFrame"><code class="name flex">
 <span>def <span class="ident">pointlike_to_DataFrame</span></span>(<span>pointlike, drop_emptycols=True)</span>
 </code></dt>
@@ -686,6 +668,24 @@ data_pol_pd_list = [pointlike_to_DataFrame(polyobj) for polyobj in polyfile_obje
     return pointlike_pd</code></pre>
 </details>
 </dd>
+<dt id="dfm_tools.hydrolib_helpers.parse_xy_to_datetime"><code class="name flex">
+<span>def <span class="ident">parse_xy_to_datetime</span></span>(<span>pointlike_pd)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def parse_xy_to_datetime(pointlike_pd):
+    datatimevals_pdstr = (pointlike_pd[&#39;x&#39;].astype(int).apply(lambda x:f&#39;{x:08d}&#39;) +
+                          pointlike_pd[&#39;y&#39;].astype(int).apply(lambda x:f&#39;{x:06d}&#39;))
+    pointlike_pd.index = pd.to_datetime(datatimevals_pdstr)
+    pointlike_pd_timeidx = pointlike_pd.drop([&#39;x&#39;,&#39;y&#39;],axis=1)
+    
+    return pointlike_pd_timeidx</code></pre>
+</details>
+</dd>
 </dl>
 </section>
 <section>
@@ -704,13 +704,13 @@ data_pol_pd_list = [pointlike_to_DataFrame(polyobj) for polyobj in polyfile_obje
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
-<li><code><a title="dfm_tools.hydrolib_helpers.DataFrame_to_PolyObject" href="#dfm_tools.hydrolib_helpers.DataFrame_to_PolyObject">DataFrame_to_PolyObject</a></code></li>
-<li><code><a title="dfm_tools.hydrolib_helpers.Dataset_to_Astronomic" href="#dfm_tools.hydrolib_helpers.Dataset_to_Astronomic">Dataset_to_Astronomic</a></code></li>
 <li><code><a title="dfm_tools.hydrolib_helpers.Dataset_to_T3D" href="#dfm_tools.hydrolib_helpers.Dataset_to_T3D">Dataset_to_T3D</a></code></li>
 <li><code><a title="dfm_tools.hydrolib_helpers.Dataset_to_TimeSeries" href="#dfm_tools.hydrolib_helpers.Dataset_to_TimeSeries">Dataset_to_TimeSeries</a></code></li>
+<li><code><a title="dfm_tools.hydrolib_helpers.Dataset_to_Astronomic" href="#dfm_tools.hydrolib_helpers.Dataset_to_Astronomic">Dataset_to_Astronomic</a></code></li>
+<li><code><a title="dfm_tools.hydrolib_helpers.DataFrame_to_PolyObject" href="#dfm_tools.hydrolib_helpers.DataFrame_to_PolyObject">DataFrame_to_PolyObject</a></code></li>
 <li><code><a title="dfm_tools.hydrolib_helpers.forcinglike_to_Dataset" href="#dfm_tools.hydrolib_helpers.forcinglike_to_Dataset">forcinglike_to_Dataset</a></code></li>
-<li><code><a title="dfm_tools.hydrolib_helpers.parse_xy_to_datetime" href="#dfm_tools.hydrolib_helpers.parse_xy_to_datetime">parse_xy_to_datetime</a></code></li>
 <li><code><a title="dfm_tools.hydrolib_helpers.pointlike_to_DataFrame" href="#dfm_tools.hydrolib_helpers.pointlike_to_DataFrame">pointlike_to_DataFrame</a></code></li>
+<li><code><a title="dfm_tools.hydrolib_helpers.parse_xy_to_datetime" href="#dfm_tools.hydrolib_helpers.parse_xy_to_datetime">parse_xy_to_datetime</a></code></li>
 </ul>
 </li>
 </ul>

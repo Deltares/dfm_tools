@@ -276,6 +276,132 @@ def open_partitioned_dataset(file_nc, chunks={&#39;time&#39;:1}):
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
+<dt id="dfm_tools.xarray_helpers.preprocess_hisnc"><code class="name flex">
+<span>def <span class="ident">preprocess_hisnc</span></span>(<span>ds)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Look for dim/coord combination and use this for Dataset.set_index(), to enable station/gs/crs/laterals label based indexing. If duplicate labels are found (like duplicate stations), these are dropped to avoid indexing issues.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>ds</code></strong> :&ensp;<code>xarray.Dataset</code></dt>
+<dd>DESCRIPTION.</dd>
+<dt><strong><code>drop_duplicate_stations</code></strong> :&ensp;<code>TYPE</code>, optional</dt>
+<dd>DESCRIPTION. The default is True.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>ds</code></strong> :&ensp;<code>TYPE</code></dt>
+<dd>DESCRIPTION.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def preprocess_hisnc(ds):
+    &#34;&#34;&#34;
+    Look for dim/coord combination and use this for Dataset.set_index(), to enable station/gs/crs/laterals label based indexing. If duplicate labels are found (like duplicate stations), these are dropped to avoid indexing issues.
+    
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        DESCRIPTION.
+    drop_duplicate_stations : TYPE, optional
+        DESCRIPTION. The default is True.
+
+    Returns
+    -------
+    ds : TYPE
+        DESCRIPTION.
+
+    &#34;&#34;&#34;
+    
+    #generate dim_coord_dict to set indexes, this will be something like {&#39;stations&#39;:&#39;station_name&#39;,&#39;cross_section&#39;:&#39;cross_section_name&#39;} after loop
+    dim_coord_dict = {}
+    for ds_coord in ds.coords.keys():
+        ds_coord_dtype = ds[ds_coord].dtype
+        ds_coord_dim = ds[ds_coord].dims[0] #these vars always have only one dim
+        if ds_coord_dtype.str.startswith(&#39;|S&#39;): #these are station/crs/laterals/gs names/ids
+            dim_coord_dict[ds_coord_dim] = ds_coord
+    
+    #loop over dimensions and set corresponding coordinates/variables from dim_coord_dict as their index
+    for dim in dim_coord_dict.keys():
+        coord = dim_coord_dict[dim]
+        coord_str = f&#39;{coord}&#39;#_str&#39; #avoid losing the original variable by creating a new name
+        ds[coord_str] = ds[coord].load().str.decode(&#39;utf-8&#39;,errors=&#39;ignore&#39;).str.strip() #.load() is essential to convert not only first letter of string.
+        #ds = ds.set_index({dim:[coord_str,&#39;station_x_coordinate&#39;,&#39;station_y_coordinate&#39;]}) #nearest station: &#34;ValueError: multi-index does not support ``method`` and ``tolerance``&#34;  #slice x/y: &#34;TypeError: float() argument must be a string or a number, not &#39;slice&#39;&#34;
+        ds = ds.set_index({dim:coord_str})
+        
+        #drop duplicate indices (stations/crs/gs), this avoids &#34;InvalidIndexError: Reindexing only valid with uniquely valued Index objects&#34;
+        duplicated_keepfirst = ds[dim].to_series().duplicated(keep=&#39;first&#39;)
+        if duplicated_keepfirst.sum()&gt;0:
+            print(f&#39;dropping {duplicated_keepfirst.sum()} duplicate &#34;{coord}&#34; labels to avoid InvalidIndexError&#39;)
+            ds = ds[{dim:~duplicated_keepfirst}]
+
+    
+    if &#39;source&#39; in ds.attrs.keys():
+        source_attr = ds.attrs[&#34;source&#34;]
+    else:
+        source_attr = None
+    try:
+        source_attr_version = source_attr.split(&#39;, &#39;)[1]
+        source_attr_date = source_attr.split(&#39;, &#39;)[2]
+        if pd.Timestamp(source_attr_date) &lt; dt.datetime(2020,11,28):
+            warnings.warn(UserWarning(f&#39;Your model was run with a D-FlowFM version from before 28-10-2020 ({source_attr_version} from {source_attr_date}), the layers in the hisfile are incorrect. Check UNST-2920 and UNST-3024 for more information, it was fixed from OSS 67858.&#39;))
+    except:
+        #print(&#39;No source attribute present in hisfile, cannot check version&#39;)
+        pass
+
+    return ds</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.xarray_helpers.preprocess_hirlam"><code class="name flex">
+<span>def <span class="ident">preprocess_hirlam</span></span>(<span>ds)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>add xy variables as longitude/latitude to avoid duplicate var/dim names
+add xy as variables again with help of NetCDF4</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def preprocess_hirlam(ds):
+    &#34;&#34;&#34;
+    add xy variables as longitude/latitude to avoid duplicate var/dim names
+    add xy as variables again with help of NetCDF4 
+    &#34;&#34;&#34;
+    #TODO: this function is hopefully temporary, necessary since variables cannot have the same name as dimensions in xarray. Background and future solution: https://github.com/pydata/xarray/issues/6293
+    
+    print(&#39;adding x/y variables again as lon/lat&#39;)
+    file_nc_one = ds.encoding[&#39;source&#39;]
+    with Dataset(file_nc_one) as data_nc:
+        data_nc_x = data_nc[&#39;x&#39;]
+        data_nc_y = data_nc[&#39;y&#39;]
+        ds[&#39;longitude&#39;] = xr.DataArray(data_nc_x,dims=data_nc_x.dimensions,attrs=data_nc_x.__dict__)
+        ds[&#39;latitude&#39;] = xr.DataArray(data_nc_y,dims=data_nc_y.dimensions,attrs=data_nc_y.__dict__)
+    ds = ds.set_coords([&#39;latitude&#39;,&#39;longitude&#39;])
+    for varkey in ds.data_vars:
+        del ds[varkey].encoding[&#39;coordinates&#39;] #remove {&#39;coordinates&#39;:&#39;y x&#39;} from encoding (otherwise set twice)
+    return ds</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.xarray_helpers.preprocess_ERA5"><code class="name flex">
+<span>def <span class="ident">preprocess_ERA5</span></span>(<span>ds)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Reduces the expver dimension in some of the ERA5 data (mtpr and other variables), which occurs in files with very recent data. The dimension contains the unvalidated data from the latest month in the second index in the expver dimension. The reduction is done with mean, but this is arbitrary, since there is only one valid value per timestep and the other one is nan.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def preprocess_ERA5(ds):
+    &#34;&#34;&#34;
+    Reduces the expver dimension in some of the ERA5 data (mtpr and other variables), which occurs in files with very recent data. The dimension contains the unvalidated data from the latest month in the second index in the expver dimension. The reduction is done with mean, but this is arbitrary, since there is only one valid value per timestep and the other one is nan.
+    &#34;&#34;&#34;
+    if &#39;expver&#39; in ds.dims:
+        ds = ds.mean(dim=&#39;expver&#39;)
+    return ds</code></pre>
+</details>
+</dd>
 <dt id="dfm_tools.xarray_helpers.Dataset_varswithdim"><code class="name flex">
 <span>def <span class="ident">Dataset_varswithdim</span></span>(<span>ds, dimname)</span>
 </code></dt>
@@ -336,6 +462,36 @@ processing MB_02_0*_map.nc
         return grid_info.layer_dimension, grid_info.interface_dimension
     else:
         return None, None</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.xarray_helpers.remove_ghostcells"><code class="name flex">
+<span>def <span class="ident">remove_ghostcells</span></span>(<span>ds, gridname='mesh2d')</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def remove_ghostcells(ds,gridname=&#39;mesh2d&#39;): #TODO: create JIRA issue: add domainno attribute to partitioned mapfiles or remove ghostcells from output (or make values in ghostcells the same as not-ghostcells)
+    
+    #check if dataset has ghostcells
+    varn_domain = f&#39;{gridname}_flowelem_domain&#39;
+    if varn_domain not in ds.data_vars:
+        print(&#39;[nodomainvar] &#39;,end=&#39;&#39;)
+        return ds
+    
+    #derive domainno from domain var and filename
+    da_domainno = ds[varn_domain]
+    part_domainno = np.bincount(da_domainno).argmax()
+    part_domainno_fromfname = int(ds.encoding[&#39;source&#39;][-11:-7]) #this is not valid for rstfiles but they cannot be read anyway
+    if part_domainno != part_domainno_fromfname:
+        warnings.warn(f&#39;remove_ghostcells: different domainno found in filename ({part_domainno_fromfname}) and domain variable ({part_domainno})&#39;)
+    
+    #drop ghostcells
+    idx = np.flatnonzero(da_domainno == part_domainno)
+    ds = ds.isel({ds.grid.face_dimension:idx})
+    return ds</code></pre>
 </details>
 </dd>
 <dt id="dfm_tools.xarray_helpers.open_partitioned_dataset"><code class="name flex">
@@ -473,162 +629,6 @@ processing MB_02_0*_map.nc
     return ds_merged_xu</code></pre>
 </details>
 </dd>
-<dt id="dfm_tools.xarray_helpers.preprocess_ERA5"><code class="name flex">
-<span>def <span class="ident">preprocess_ERA5</span></span>(<span>ds)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Reduces the expver dimension in some of the ERA5 data (mtpr and other variables), which occurs in files with very recent data. The dimension contains the unvalidated data from the latest month in the second index in the expver dimension. The reduction is done with mean, but this is arbitrary, since there is only one valid value per timestep and the other one is nan.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def preprocess_ERA5(ds):
-    &#34;&#34;&#34;
-    Reduces the expver dimension in some of the ERA5 data (mtpr and other variables), which occurs in files with very recent data. The dimension contains the unvalidated data from the latest month in the second index in the expver dimension. The reduction is done with mean, but this is arbitrary, since there is only one valid value per timestep and the other one is nan.
-    &#34;&#34;&#34;
-    if &#39;expver&#39; in ds.dims:
-        ds = ds.mean(dim=&#39;expver&#39;)
-    return ds</code></pre>
-</details>
-</dd>
-<dt id="dfm_tools.xarray_helpers.preprocess_hirlam"><code class="name flex">
-<span>def <span class="ident">preprocess_hirlam</span></span>(<span>ds)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>add xy variables as longitude/latitude to avoid duplicate var/dim names
-add xy as variables again with help of NetCDF4</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def preprocess_hirlam(ds):
-    &#34;&#34;&#34;
-    add xy variables as longitude/latitude to avoid duplicate var/dim names
-    add xy as variables again with help of NetCDF4 
-    &#34;&#34;&#34;
-    #TODO: this function is hopefully temporary, necessary since variables cannot have the same name as dimensions in xarray. Background and future solution: https://github.com/pydata/xarray/issues/6293
-    
-    print(&#39;adding x/y variables again as lon/lat&#39;)
-    file_nc_one = ds.encoding[&#39;source&#39;]
-    with Dataset(file_nc_one) as data_nc:
-        data_nc_x = data_nc[&#39;x&#39;]
-        data_nc_y = data_nc[&#39;y&#39;]
-        ds[&#39;longitude&#39;] = xr.DataArray(data_nc_x,dims=data_nc_x.dimensions,attrs=data_nc_x.__dict__)
-        ds[&#39;latitude&#39;] = xr.DataArray(data_nc_y,dims=data_nc_y.dimensions,attrs=data_nc_y.__dict__)
-    ds = ds.set_coords([&#39;latitude&#39;,&#39;longitude&#39;])
-    for varkey in ds.data_vars:
-        del ds[varkey].encoding[&#39;coordinates&#39;] #remove {&#39;coordinates&#39;:&#39;y x&#39;} from encoding (otherwise set twice)
-    return ds</code></pre>
-</details>
-</dd>
-<dt id="dfm_tools.xarray_helpers.preprocess_hisnc"><code class="name flex">
-<span>def <span class="ident">preprocess_hisnc</span></span>(<span>ds)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Look for dim/coord combination and use this for Dataset.set_index(), to enable station/gs/crs/laterals label based indexing. If duplicate labels are found (like duplicate stations), these are dropped to avoid indexing issues.</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>ds</code></strong> :&ensp;<code>xarray.Dataset</code></dt>
-<dd>DESCRIPTION.</dd>
-<dt><strong><code>drop_duplicate_stations</code></strong> :&ensp;<code>TYPE</code>, optional</dt>
-<dd>DESCRIPTION. The default is True.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><strong><code>ds</code></strong> :&ensp;<code>TYPE</code></dt>
-<dd>DESCRIPTION.</dd>
-</dl></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def preprocess_hisnc(ds):
-    &#34;&#34;&#34;
-    Look for dim/coord combination and use this for Dataset.set_index(), to enable station/gs/crs/laterals label based indexing. If duplicate labels are found (like duplicate stations), these are dropped to avoid indexing issues.
-    
-    Parameters
-    ----------
-    ds : xarray.Dataset
-        DESCRIPTION.
-    drop_duplicate_stations : TYPE, optional
-        DESCRIPTION. The default is True.
-
-    Returns
-    -------
-    ds : TYPE
-        DESCRIPTION.
-
-    &#34;&#34;&#34;
-    
-    #generate dim_coord_dict to set indexes, this will be something like {&#39;stations&#39;:&#39;station_name&#39;,&#39;cross_section&#39;:&#39;cross_section_name&#39;} after loop
-    dim_coord_dict = {}
-    for ds_coord in ds.coords.keys():
-        ds_coord_dtype = ds[ds_coord].dtype
-        ds_coord_dim = ds[ds_coord].dims[0] #these vars always have only one dim
-        if ds_coord_dtype.str.startswith(&#39;|S&#39;): #these are station/crs/laterals/gs names/ids
-            dim_coord_dict[ds_coord_dim] = ds_coord
-    
-    #loop over dimensions and set corresponding coordinates/variables from dim_coord_dict as their index
-    for dim in dim_coord_dict.keys():
-        coord = dim_coord_dict[dim]
-        coord_str = f&#39;{coord}&#39;#_str&#39; #avoid losing the original variable by creating a new name
-        ds[coord_str] = ds[coord].load().str.decode(&#39;utf-8&#39;,errors=&#39;ignore&#39;).str.strip() #.load() is essential to convert not only first letter of string.
-        #ds = ds.set_index({dim:[coord_str,&#39;station_x_coordinate&#39;,&#39;station_y_coordinate&#39;]}) #nearest station: &#34;ValueError: multi-index does not support ``method`` and ``tolerance``&#34;  #slice x/y: &#34;TypeError: float() argument must be a string or a number, not &#39;slice&#39;&#34;
-        ds = ds.set_index({dim:coord_str})
-        
-        #drop duplicate indices (stations/crs/gs), this avoids &#34;InvalidIndexError: Reindexing only valid with uniquely valued Index objects&#34;
-        duplicated_keepfirst = ds[dim].to_series().duplicated(keep=&#39;first&#39;)
-        if duplicated_keepfirst.sum()&gt;0:
-            print(f&#39;dropping {duplicated_keepfirst.sum()} duplicate &#34;{coord}&#34; labels to avoid InvalidIndexError&#39;)
-            ds = ds[{dim:~duplicated_keepfirst}]
-
-    
-    if &#39;source&#39; in ds.attrs.keys():
-        source_attr = ds.attrs[&#34;source&#34;]
-    else:
-        source_attr = None
-    try:
-        source_attr_version = source_attr.split(&#39;, &#39;)[1]
-        source_attr_date = source_attr.split(&#39;, &#39;)[2]
-        if pd.Timestamp(source_attr_date) &lt; dt.datetime(2020,11,28):
-            warnings.warn(UserWarning(f&#39;Your model was run with a D-FlowFM version from before 28-10-2020 ({source_attr_version} from {source_attr_date}), the layers in the hisfile are incorrect. Check UNST-2920 and UNST-3024 for more information, it was fixed from OSS 67858.&#39;))
-    except:
-        #print(&#39;No source attribute present in hisfile, cannot check version&#39;)
-        pass
-
-    return ds</code></pre>
-</details>
-</dd>
-<dt id="dfm_tools.xarray_helpers.remove_ghostcells"><code class="name flex">
-<span>def <span class="ident">remove_ghostcells</span></span>(<span>ds, gridname='mesh2d')</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def remove_ghostcells(ds,gridname=&#39;mesh2d&#39;): #TODO: create JIRA issue: add domainno attribute to partitioned mapfiles or remove ghostcells from output (or make values in ghostcells the same as not-ghostcells)
-    
-    #check if dataset has ghostcells
-    varn_domain = f&#39;{gridname}_flowelem_domain&#39;
-    if varn_domain not in ds.data_vars:
-        print(&#39;[nodomainvar] &#39;,end=&#39;&#39;)
-        return ds
-    
-    #derive domainno from domain var and filename
-    da_domainno = ds[varn_domain]
-    part_domainno = np.bincount(da_domainno).argmax()
-    part_domainno_fromfname = int(ds.encoding[&#39;source&#39;][-11:-7]) #this is not valid for rstfiles but they cannot be read anyway
-    if part_domainno != part_domainno_fromfname:
-        warnings.warn(f&#39;remove_ghostcells: different domainno found in filename ({part_domainno_fromfname}) and domain variable ({part_domainno})&#39;)
-    
-    #drop ghostcells
-    idx = np.flatnonzero(da_domainno == part_domainno)
-    ds = ds.isel({ds.grid.face_dimension:idx})
-    return ds</code></pre>
-</details>
-</dd>
 </dl>
 </section>
 <section>
@@ -647,13 +647,13 @@ add xy as variables again with help of NetCDF4</p></div>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
+<li><code><a title="dfm_tools.xarray_helpers.preprocess_hisnc" href="#dfm_tools.xarray_helpers.preprocess_hisnc">preprocess_hisnc</a></code></li>
+<li><code><a title="dfm_tools.xarray_helpers.preprocess_hirlam" href="#dfm_tools.xarray_helpers.preprocess_hirlam">preprocess_hirlam</a></code></li>
+<li><code><a title="dfm_tools.xarray_helpers.preprocess_ERA5" href="#dfm_tools.xarray_helpers.preprocess_ERA5">preprocess_ERA5</a></code></li>
 <li><code><a title="dfm_tools.xarray_helpers.Dataset_varswithdim" href="#dfm_tools.xarray_helpers.Dataset_varswithdim">Dataset_varswithdim</a></code></li>
 <li><code><a title="dfm_tools.xarray_helpers.get_vertical_dimensions" href="#dfm_tools.xarray_helpers.get_vertical_dimensions">get_vertical_dimensions</a></code></li>
-<li><code><a title="dfm_tools.xarray_helpers.open_partitioned_dataset" href="#dfm_tools.xarray_helpers.open_partitioned_dataset">open_partitioned_dataset</a></code></li>
-<li><code><a title="dfm_tools.xarray_helpers.preprocess_ERA5" href="#dfm_tools.xarray_helpers.preprocess_ERA5">preprocess_ERA5</a></code></li>
-<li><code><a title="dfm_tools.xarray_helpers.preprocess_hirlam" href="#dfm_tools.xarray_helpers.preprocess_hirlam">preprocess_hirlam</a></code></li>
-<li><code><a title="dfm_tools.xarray_helpers.preprocess_hisnc" href="#dfm_tools.xarray_helpers.preprocess_hisnc">preprocess_hisnc</a></code></li>
 <li><code><a title="dfm_tools.xarray_helpers.remove_ghostcells" href="#dfm_tools.xarray_helpers.remove_ghostcells">remove_ghostcells</a></code></li>
+<li><code><a title="dfm_tools.xarray_helpers.open_partitioned_dataset" href="#dfm_tools.xarray_helpers.open_partitioned_dataset">open_partitioned_dataset</a></code></li>
 </ul>
 </li>
 </ul>

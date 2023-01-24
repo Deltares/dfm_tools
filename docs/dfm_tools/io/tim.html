@@ -215,87 +215,6 @@ Raises
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt id="dfm_tools.io.tim.read_timfile"><code class="name flex">
-<span>def <span class="ident">read_timfile</span></span>(<span>filename, converttime=False, refdate=None)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Parameters
-----------
-filename : *.tim file name.
-converttime : boolean True/False, optional
-DESCRIPTION. The default is False. First column must be time in minues since refdate.
-refdate : datetime object, optional
-DESCRIPTION. The default is None</p>
-<p>Raises
-------
-Exception
-DESCRIPTION.</p>
-<pre><code>Returns
--------
-datablock : Pandas dataframe
-    The DataFrame contains time variable in the first column. Column names are not parsed.
-header : list
-    list of header lines from file
-</code></pre></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def read_timfile(filename, converttime=False, refdate=None):
-    &#34;&#34;&#34;
-    
-
-    Parameters
-    ----------
-    filename : *.tim file name.
-    converttime : boolean True/False, optional
-        DESCRIPTION. The default is False. First column must be time in minues since refdate.
-    refdate : datetime object, optional
-        DESCRIPTION. The default is None
-    
-Raises
-    ------
-    Exception
-        DESCRIPTION.
-
-    Returns
-    -------
-    datablock : Pandas dataframe
-        The DataFrame contains time variable in the first column. Column names are not parsed.
-    header : list
-        list of header lines from file
-
-    &#34;&#34;&#34;
-    
-    warnings.warn(DeprecationWarning(&#39;the function dfm_tools.io.tim.read_timfile() is deprecated, please use the new hydrolib alternative (in development).&#39;)) #TODO: remove code (there is no hydrolib-core alternative available yet)
-    
-    with open(filename, &#39;r&#39;) as bc:
-        page = bc.readlines()
-
-    header = np.array([],dtype=str)
-    for iL, line in enumerate(page):    
-        if &#39;*&#39; not in line:#line.lower()[0].isnumeric():
-            line_datastart = iL
-            break
-        header = np.append(header,line.strip(&#39;\n&#39;))
-        
-            
-    #read data block
-    data_block_pd = pd.read_csv(filepath_or_buffer=filename, header=None, skiprows=line_datastart, delim_whitespace=True, engine=&#39;python&#39;)
-    if converttime:
-        time_minutes = data_block_pd.iloc[:,0]
-        data_nc_times_pdtd = pd.to_timedelta(time_minutes, unit=&#39;m&#39;)
-        try:
-            data_nc_datetimes = (refdate + data_nc_times_pdtd)#.to_pydatetime()
-        except:
-            raise Exception(&#39;Failure to convert time units. Please check that refdate is a valid datetime object and first column of dataset contains minutes since refdate.&#39;)
-        print(&#39;Converting times to datetime format...&#39;)
-        data_block_pd.iloc[:,0] = data_nc_datetimes
-                    
-
-    return data_block_pd, header</code></pre>
-</details>
-</dd>
 <dt id="dfm_tools.io.tim.write_timfile"><code class="name flex">
 <span>def <span class="ident">write_timfile</span></span>(<span>filename, datablock, header, converttime=False, refdate=None, tzone=0, float_format='%6.2f')</span>
 </code></dt>
@@ -387,6 +306,87 @@ Raises
         file_tim.write(&#39;\n&#39;)</code></pre>
 </details>
 </dd>
+<dt id="dfm_tools.io.tim.read_timfile"><code class="name flex">
+<span>def <span class="ident">read_timfile</span></span>(<span>filename, converttime=False, refdate=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Parameters
+----------
+filename : *.tim file name.
+converttime : boolean True/False, optional
+DESCRIPTION. The default is False. First column must be time in minues since refdate.
+refdate : datetime object, optional
+DESCRIPTION. The default is None</p>
+<p>Raises
+------
+Exception
+DESCRIPTION.</p>
+<pre><code>Returns
+-------
+datablock : Pandas dataframe
+    The DataFrame contains time variable in the first column. Column names are not parsed.
+header : list
+    list of header lines from file
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def read_timfile(filename, converttime=False, refdate=None):
+    &#34;&#34;&#34;
+    
+
+    Parameters
+    ----------
+    filename : *.tim file name.
+    converttime : boolean True/False, optional
+        DESCRIPTION. The default is False. First column must be time in minues since refdate.
+    refdate : datetime object, optional
+        DESCRIPTION. The default is None
+    
+Raises
+    ------
+    Exception
+        DESCRIPTION.
+
+    Returns
+    -------
+    datablock : Pandas dataframe
+        The DataFrame contains time variable in the first column. Column names are not parsed.
+    header : list
+        list of header lines from file
+
+    &#34;&#34;&#34;
+    
+    warnings.warn(DeprecationWarning(&#39;the function dfm_tools.io.tim.read_timfile() is deprecated, please use the new hydrolib alternative (in development).&#39;)) #TODO: remove code (there is no hydrolib-core alternative available yet)
+    
+    with open(filename, &#39;r&#39;) as bc:
+        page = bc.readlines()
+
+    header = np.array([],dtype=str)
+    for iL, line in enumerate(page):    
+        if &#39;*&#39; not in line:#line.lower()[0].isnumeric():
+            line_datastart = iL
+            break
+        header = np.append(header,line.strip(&#39;\n&#39;))
+        
+            
+    #read data block
+    data_block_pd = pd.read_csv(filepath_or_buffer=filename, header=None, skiprows=line_datastart, delim_whitespace=True, engine=&#39;python&#39;)
+    if converttime:
+        time_minutes = data_block_pd.iloc[:,0]
+        data_nc_times_pdtd = pd.to_timedelta(time_minutes, unit=&#39;m&#39;)
+        try:
+            data_nc_datetimes = (refdate + data_nc_times_pdtd)#.to_pydatetime()
+        except:
+            raise Exception(&#39;Failure to convert time units. Please check that refdate is a valid datetime object and first column of dataset contains minutes since refdate.&#39;)
+        print(&#39;Converting times to datetime format...&#39;)
+        data_block_pd.iloc[:,0] = data_nc_datetimes
+                    
+
+    return data_block_pd, header</code></pre>
+</details>
+</dd>
 </dl>
 </section>
 <section>
@@ -405,8 +405,8 @@ Raises
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
-<li><code><a title="dfm_tools.io.tim.read_timfile" href="#dfm_tools.io.tim.read_timfile">read_timfile</a></code></li>
 <li><code><a title="dfm_tools.io.tim.write_timfile" href="#dfm_tools.io.tim.write_timfile">write_timfile</a></code></li>
+<li><code><a title="dfm_tools.io.tim.read_timfile" href="#dfm_tools.io.tim.read_timfile">read_timfile</a></code></li>
 </ul>
 </li>
 </ul>
