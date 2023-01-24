@@ -16,14 +16,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - name: checkout repos
+      uses: actions/checkout@v2
     - name: Set up Python 3.8
       uses: actions/setup-python@v2
       with:
         python-version: 3.8
     - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip setuptools
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        activate-environment: dfm_tools_env
+        environment-file: environment.yml
+    #- name: oldstuff
+      #run: |
+        #python -m pip install --upgrade pip setuptools
         # $CONDA is an environment variable pointing to the root of the miniconda directory
         # $CONDA/bin/conda env update --file environment.yml --name base
         #conda env update --file environment.yml --name base
@@ -48,9 +54,9 @@ jobs:
         #retry without cartopy >> still fails solving (49)
         #conda install -c conda-forge git shapely pyepsg geopandas contextily xarray dask netcdf4 bottleneck xugrid cdsapi pydap -y
         
-        #using conda explicitly (50)
-        $CONDA/bin/conda install -c conda-forge git shapely cartopy pyepsg geopandas contextily xarray dask netcdf4 bottleneck xugrid cdsapi pydap -y
-                
+        #using conda explicitly (50) >> still fails solving
+        # $CONDA/bin/conda install -c conda-forge git shapely cartopy pyepsg geopandas contextily xarray dask netcdf4 bottleneck xugrid cdsapi pydap -y
+        
         #python -m pip install -r requirements.txt
         #python -m pip install pdoc3 pandoc
         
