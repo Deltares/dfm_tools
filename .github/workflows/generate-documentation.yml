@@ -37,17 +37,20 @@ jobs:
         #python -m pip install pdoc3 pandoc
         #pip install -r requirements.txt
         
-        #freezes
+        #fails solving (46?)
         #conda update -n base -c defaults conda
         #conda env update --file environment.yml --name base
         
-        #freezes (also without conda update)
+        #fails solving (also without conda update) (48?)
         #conda update -n base -c defaults conda
         #conda install -c conda-forge git shapely cartopy pyepsg geopandas contextily xarray dask netcdf4 bottleneck xugrid cdsapi pydap -y
         
-        #retry without cartopy
-        conda install -c conda-forge git shapely pyepsg geopandas contextily xarray dask netcdf4 bottleneck xugrid cdsapi pydap -y
+        #retry without cartopy >> still fails solving (49)
+        #conda install -c conda-forge git shapely pyepsg geopandas contextily xarray dask netcdf4 bottleneck xugrid cdsapi pydap -y
         
+        #using conda explicitly (50)
+        $CONDA/bin/conda install -c conda-forge git shapely cartopy pyepsg geopandas contextily xarray dask netcdf4 bottleneck xugrid cdsapi pydap -y
+                
         #python -m pip install -r requirements.txt
         #python -m pip install pdoc3 pandoc
         
