@@ -24,36 +24,34 @@ coarsefac = 2 #coarsen dataset for more performance, but not necessary
 
 data_u = data_xr['eastward_wind'].isel(time=timestep)
 data_v = data_xr['northward_wind'].isel(time=timestep)
-magn = np.sqrt(data_u**2 + data_v**2)
+magn_attrs = {'standard_name':'velocity magnitude','units':data_u.attrs['units']}
+magn = np.sqrt(data_u**2 + data_v**2).assign_attrs(magn_attrs)
 magn = magn[::coarsefac,::coarsefac] #coarsening makes coordinate conversion faster
 
 fig, ax = plt.subplots()
 ax.pcolormesh(magn)
-plt.savefig(os.path.join(dir_output,'cartopy_hirlam_raw'))
+fig.savefig(os.path.join(dir_output,'cartopy_hirlam_raw'))
 
 fig, ax = plt.subplots(subplot_kw={'projection': ccrs.PlateCarree()})
-ax.pcolormesh(magn.longitude,magn.latitude,magn)#, transform=ccrs.PlateCarree())
-plt.savefig(os.path.join(dir_output,'cartopy_hirlam_aspect'))
+pc = magn.plot(ax=ax,x='longitude',y='latitude',add_colorbar=False)
+fig.savefig(os.path.join(dir_output,'cartopy_hirlam_aspect'))
 
 fig, ax = plt.subplots(figsize=(9,5),subplot_kw={'projection': ccrs.PlateCarree()}) #provide axis projection on initialisation, cannot be edited later on
-pc = ax.pcolormesh(magn.longitude,magn.latitude,magn)#, transform=ccrs.PlateCarree())
-cbar = fig.colorbar(pc, ax=ax)
-cbar.set_label('velocity magnitude (%s)'%(data_u.attrs['units']))
+pc = magn.plot(ax=ax,x='longitude',y='latitude')
 dfmt.plot_background(ax=ax, resolution=1, google_style='street', features=['countries_highres'], linewidth=0.5, edgecolor='gray', facecolor='none', latlon_format=True)
 dfmt.plot_background(ax=ax, google_style=None, features=['coastlines_highres'], linewidth=0.5, latlon_format=True)
-plt.savefig(os.path.join(dir_output,'cartopy_hirlam_moreoptions'))
+fig.savefig(os.path.join(dir_output,'cartopy_hirlam_moreoptions'))
 
 fig, ax = plt.subplots(figsize=(6,7),subplot_kw={'projection': ccrs.EuroPP()}) #provide axis projection on initialisation, cannot be edited later on
-pc = ax.pcolormesh(magn.longitude, magn.latitude, magn, transform=ccrs.PlateCarree())
+pc = magn.plot(ax=ax,x='longitude',y='latitude', transform=ccrs.PlateCarree(),add_colorbar=False)
 dfmt.plot_background(ax=ax, google_style=None, features=['coastlines_highres'], latlon_format=True, gridlines=True)
-plt.savefig(os.path.join(dir_output,'cartopy_hirlam_curvedgridlines'))
+fig.savefig(os.path.join(dir_output,'cartopy_hirlam_curvedgridlines'))
 
 
 #GREVELINGEN
-file_nc_map = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen\\computations\\run01\\DFM_OUTPUT_Grevelingen-FM\\Grevelingen-FM_0000_map.nc')
-data_frommap_merged = dfmt.open_partitioned_dataset(file_nc_map.replace('_0000_','_0*_')) #TODO: make starred default, but not supported by older code
-data_frommap_bl = data_frommap_merged['mesh2d_flowelem_bl']
+file_nc_map = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen\\computations\\run01\\DFM_OUTPUT_Grevelingen-FM\\Grevelingen-FM_0*_map.nc')
+data_frommap_merged = dfmt.open_partitioned_dataset(file_nc_map) #TODO: make starred default, but not supported by older code
 fig, ax = plt.subplots(1,1, subplot_kw={'projection': ccrs.epsg(28992)}) #provide axis projection on initialisation, cannot be edited later on
-pc = data_frommap_bl.ugrid.plot(ax=ax, linewidth=0.5, cmap='jet', vmin=-40, vmax=10)
+pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot(ax=ax, linewidth=0.5, cmap='jet', vmin=-40, vmax=10)
 dfmt.plot_background(ax=ax, resolution=12, features=['coastlines_highres'], linewidth=0.5)
-plt.savefig(os.path.join(dir_output,'cartopy_grevelingen_RD'))
+fig.savefig(os.path.join(dir_output,'cartopy_grevelingen_RD'))

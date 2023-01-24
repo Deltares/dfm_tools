@@ -692,7 +692,7 @@ def get_Dataset_atdepths(data_xr, depths, reference='z0', zlayer_z0_selnearest=F
     
     #create depth xr.DataArray
     if isinstance(depths,(float,int)):
-        depths = depths #float/int
+        #depths = depths #float/int
         depth_dims = ()
     else:
         depths = np.unique(depths) #array of unique+sorted floats/ints
@@ -1026,7 +1026,7 @@ def plot_ztdata(data_xr_sel, varname, ax=None, only_contour=False, get_ds=False,
         Wheter to plot contour lines of the dataset. The default is False.
     **kwargs : TYPE
         properties to give on to the pcolormesh function.
-
+    
     Raises
     ------
     Exception
