@@ -6,7 +6,7 @@ Created on Thu Dec  8 20:54:39 2022
 
 """
 
-import meshkernel #meshkernel>=2.0.0 #TODO: hydrolib currently has meshkernel<2/.0.0 >=1.0.0, so this conflicts
+import meshkernel #meshkernel>=2.0.0 #TODO: hydrolib currently has meshkernel<2/.0.0 >=1.0.0, so this conflicts: https://github.com/Deltares/HYDROLIB-core/issues/441
 import xarray as xr
 import xugrid as xu
 import matplotlib.pyplot as plt
