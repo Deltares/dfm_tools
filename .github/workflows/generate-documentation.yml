@@ -19,10 +19,6 @@ jobs:
     steps:
     - name: checkout repos
       uses: actions/checkout@v2
-    #- name: Set up Python 3.8
-    #  uses: actions/setup-python@v2
-    #  with:
-    #    python-version: 3.8
     - name: Install dependencies
       uses: conda-incubator/setup-miniconda@v2
       with:
@@ -31,7 +27,6 @@ jobs:
         channels: conda-forge
         python-version: 3.8
         auto-activate-base: false
-        #use-mamba: true
     - name: test conda env
       run: |
         conda info
@@ -42,39 +37,6 @@ jobs:
     - name: install older numpy version #to avoid "SystemError: initialization of _internal failed without raising an exception" in #57 to #61. https://stackoverflow.com/questions/74947992/how-to-remove-the-error-systemerror-initialization-of-internal-failed-without
       run: |
         python -m pip install "numpy<1.24"
-    #- name: oldstuff
-      #run: |
-        #python -m pip install --upgrade pip setuptools
-        # $CONDA is an environment variable pointing to the root of the miniconda directory
-        # $CONDA/bin/conda env update --file environment.yml --name base
-        #conda env update --file environment.yml --name base
-        #conda update -n base -c defaults conda
-        #conda install -c conda-forge shapely cartopy pyepsg geopandas contextily xarray dask netcdf4 bottleneck cdsapi motuclient "geos>=3.7.2" -y
-        
-        #ImportError: Error importing 'dfm_tools': ModuleNotFoundError: No module named 'pandas'
-        #python -m pip install pdoc3 pandoc
-        
-        #ERROR: Could not build wheels for cartopy, which is required to install pyproject.toml-based projects
-        #python -m pip install pdoc3 pandoc
-        #pip install -r requirements.txt
-        
-        #fails solving (46?)
-        #conda update -n base -c defaults conda
-        #conda env update --file environment.yml --name base
-        
-        #fails solving (also without conda update) (48?)
-        #conda update -n base -c defaults conda
-        #conda install -c conda-forge git shapely cartopy pyepsg geopandas contextily xarray dask netcdf4 bottleneck xugrid cdsapi pydap -y
-        
-        #retry without cartopy >> still fails solving (49)
-        #conda install -c conda-forge git shapely pyepsg geopandas contextily xarray dask netcdf4 bottleneck xugrid cdsapi pydap -y
-        
-        #using conda explicitly (50) >> still fails solving
-        # $CONDA/bin/conda install -c conda-forge git shapely cartopy pyepsg geopandas contextily xarray dask netcdf4 bottleneck xugrid cdsapi pydap -y
-        
-        #python -m pip install -r requirements.txt
-        #python -m pip install pdoc3 pandoc
-        
     - name: Generate documentation
       run: |
         pdoc --html dfm_tools -o docs --force --config sort_identifiers=False
