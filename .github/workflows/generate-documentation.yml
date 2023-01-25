@@ -46,4 +46,4 @@ jobs:
         git config --global user.email "Jelmer.Veenstra@deltares.nl"
         git add docs/dfm_tools/*
         git commit -a -m "Updated documentation" --no-verify
-        git push -f
+        git push
