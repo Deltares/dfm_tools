@@ -7,7 +7,7 @@ dependencies:
   - pip:
     - hydrolib-core>=0.4.0
   - scipy
-  - numpy
+  - numpy<1.24
   - matplotlib
   - pandas
   - shapely
