@@ -34,9 +34,9 @@ jobs:
     - name: install pdoc etc
       run: |
         python -m pip install pdoc3 pandoc
-    - name: install older numpy version #to avoid "SystemError: initialization of _internal failed without raising an exception" in #57 to #61. https://stackoverflow.com/questions/74947992/how-to-remove-the-error-systemerror-initialization-of-internal-failed-without
-      run: |
-        python -m pip install "numpy<1.24"
+      #- name: install older numpy version #to avoid "SystemError: initialization of _internal failed without raising an exception" in #57 to #61. https://stackoverflow.com/questions/74947992/how-to-remove-the-error-systemerror-initialization-of-internal-failed-without
+      #run: |
+      #  python -m pip install "numpy<1.24"
     - name: Generate documentation
       run: |
         pdoc --html dfm_tools -o docs --force --config sort_identifiers=False
