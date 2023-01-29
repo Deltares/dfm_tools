@@ -4,12 +4,11 @@ channels:
 dependencies:
   - python=3.8
   - pip>=19.2.3
-  - pip:
-    - scipy
-    - numpy
-    - matplotlib
-    - pandas
-    - hydrolib-core>=0.4.0
+  - scipy
+  #install older numpy version #to avoid "SystemError: initialization of _internal failed without raising an exception" in #57 to #61. https://stackoverflow.com/questions/74947992/how-to-remove-the-error-systemerror-initialization-of-internal-failed-without
+  - numpy<1.24
+  - matplotlib
+  - pandas
   - shapely
   - cartopy
   - pyepsg
@@ -22,4 +21,6 @@ dependencies:
   - xugrid>=0.2.0
   - cdsapi
   - pydap
-    
+  - pip:
+    - hydrolib-core>=0.4.0
+

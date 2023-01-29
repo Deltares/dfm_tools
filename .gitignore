@@ -104,3 +104,6 @@ ENV/
 
 # IDE settings
 .vscode/
+
+# github action env
+setup-miniconda-patched-environment.yml
