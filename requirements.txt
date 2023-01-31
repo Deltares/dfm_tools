@@ -1,5 +1,5 @@
 scipy
-numpy
+numpy<1.24
 matplotlib
 pandas
 hydrolib-core>=0.4.0
