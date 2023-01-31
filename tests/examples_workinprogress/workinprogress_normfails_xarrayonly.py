@@ -19,7 +19,7 @@ cmap = mpl.cm.get_cmap("viridis")
 clim_air = [227,302]
 start,stop = clim_air
 boundaries = np.array([i for i in np.arange(start, stop, step=4)])
-norm = None #this works for both plots
+norm = None #this works for both plots, but does not result in normalized plots
 norm = mpl.colors.BoundaryNorm(boundaries, cmap.N) #this fails for da.plot(), but works for ax.pcolormesh()
 norm = mpl.colors.BoundaryNorm(boundaries, ncolors=len(boundaries)-1) #this works for da.plot(), but fails for ax.pcolormesh()
 norm = mpl.colors.BoundaryNorm(boundaries, ncolors=100) #ncolors value in between, both methods fail.
