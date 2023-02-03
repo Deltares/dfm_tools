@@ -25,5 +25,5 @@ Installation
 - ``conda install -c conda-forge git shapely cartopy pyepsg geopandas contextily xarray dask netcdf4 bottleneck xugrid cdsapi pydap -y`` (installs conda-forge requirements)
 - ``python -m pip install git+https://github.com/Deltares/dfm_tools`` (this command installs dfm_tools and all required non-conda packages, also use to update)
 - long paths error? Check [this Github issue](https://github.com/Deltares/HYDROLIB-core/issues/327#issuecomment-1266534032)
-- OpenSSL error? Fix your conda base env by doing [this](https://github.com/conda/conda/issues/11795#issuecomment-1335666474) or [this if you are desparate](https://github.com/conda/conda/issues/11982#issuecomment-1285538983). Still an issue? Let us know!
+- OpenSSL error? Fix your conda base env by doing [this](https://github.com/conda/conda/issues/11795#issuecomment-1335666474) or maybe [this](https://github.com/conda/conda/issues/11982#issuecomment-1285538983). Let us know if you encounter this issue.
 - to remove environment when necessary: ``conda remove -n dfm_tools_env --all``
