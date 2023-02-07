@@ -143,18 +143,20 @@ def remove_ghostcells(ds,gridname='mesh2d'): #TODO: create JIRA issue: add domai
     
     #derive domainno from domain var and filename
     da_domainno = ds[varn_domain]
-    part_domainno = np.bincount(da_domainno).argmax()
-    part_domainno_fromfname = ds.encoding['source'][-11:-7] #this is not valid for rstfiles but they cannot be read anyway since they are mapformat=1
-    if part_domainno_fromfname.isnumeric():
+    #part_domainno_fromvar = np.bincount(da_domainno).argmax()
+    fname = ds.encoding['source']
+    part_domainno_fromfname = fname[-11:-7] #this is not valid for rstfiles (date follows after partnumber, but they cannot be read anyway since they are mapformat=1
+    bool_underscores = fname[-12] == fname[-7] == '_'
+    if part_domainno_fromfname.isnumeric() and bool_underscores:
         part_domainno_fromfname = int(part_domainno_fromfname)
-        if part_domainno != part_domainno_fromfname:
-            warnings.warn(f'remove_ghostcells: different domainno found in filename ({part_domainno_fromfname}) and domain variable ({part_domainno})')
+        #if part_domainno_fromvar != part_domainno_fromfname:
+        #    warnings.warn(f'remove_ghostcells: different domainno found in filename ({part_domainno_fromfname}) and domain variable ({part_domainno_fromvar})')
     else: #TODO: this is for instance the case for a dataset that was merged with xugrid and then written to netcdf agian. It does contain domain numbers (of all partitions), but nothing should be filtered. Maybe better to only use the domain number from the filename (easier to implement/understand and safer)
         print('[nodomainfname] ',end='')
         return ds
-        
+    
     #drop ghostcells
-    idx = np.flatnonzero(da_domainno == part_domainno)
+    idx = np.flatnonzero(da_domainno == part_domainno_fromfname)
     ds = ds.isel({ds.grid.face_dimension:idx})
     return ds
 
