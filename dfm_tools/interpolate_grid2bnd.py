@@ -307,7 +307,7 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, kdtree_k=
 
     except ValueError as e: #Dimensions {'latitude', 'longitude'} do not exist. Expected one or more of Frozen({'time': 17, 'depth': 50, 'i': 292, 'j': 362}).
         #this is for eg CMCC model with multidimensional lat/lon variable
-        #TODO: make nicer, without try except? eg latlon_ndims==1, but not sure if that is always valid
+        #TODO: make nicer, without try except? eg latlon_ndims==1, but not sure if that is always valid >> add nonregular alternative for interp_regularnc_to_plipoints() and set kdtree to 1 (closest value) (uy stuff has to be dropped anyway)
         #TODO: maybe also spherical coordinate distance calculation instead of cartesian/eucledian
         #TODO: maybe use .sel(method='nearest'), but "KeyError: "no index found for coordinate 'longitude'""
         #TODO: interp for 2D also requested: https://github.com/pydata/xarray/issues/2281
