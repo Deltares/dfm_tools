@@ -46,10 +46,8 @@ def preprocess_hisnc(ds):
     #loop over dimensions and set corresponding coordinates/variables from dim_coord_dict as their index
     for dim in dim_coord_dict.keys():
         coord = dim_coord_dict[dim]
-        coord_str = f'{coord}'#_str' #avoid losing the original variable by creating a new name
-        ds[coord_str] = ds[coord].load().str.decode('utf-8',errors='ignore').str.strip() #.load() is essential to convert not only first letter of string.
-        #ds = ds.set_index({dim:[coord_str,'station_x_coordinate','station_y_coordinate']}) #nearest station: "ValueError: multi-index does not support ``method`` and ``tolerance``"  #slice x/y: "TypeError: float() argument must be a string or a number, not 'slice'"
-        ds = ds.set_index({dim:coord_str})
+        ds[coord] = ds[coord].load().str.decode('utf-8',errors='ignore').str.strip() #.load() is essential to convert not only first letter of string.
+        ds = ds.set_index({dim:coord})
         
         #drop duplicate indices (stations/crs/gs), this avoids "InvalidIndexError: Reindexing only valid with uniquely valued Index objects"
         duplicated_keepfirst = ds[dim].to_series().duplicated(keep='first')
@@ -57,18 +55,14 @@ def preprocess_hisnc(ds):
             print(f'dropping {duplicated_keepfirst.sum()} duplicate "{coord}" labels to avoid InvalidIndexError')
             ds = ds[{dim:~duplicated_keepfirst}]
 
-    
-    if 'source' in ds.attrs.keys():
-        source_attr = ds.attrs["source"]
-    else:
-        source_attr = None
+    #check dflowfm version/date and potentially raise warning about incorrect layers
     try:
+        source_attr = ds.attrs['source'] # fails if no source attr present in dataset
         source_attr_version = source_attr.split(', ')[1]
         source_attr_date = source_attr.split(', ')[2]
         if pd.Timestamp(source_attr_date) < dt.datetime(2020,11,28):
             warnings.warn(UserWarning(f'Your model was run with a D-FlowFM version from before 28-10-2020 ({source_attr_version} from {source_attr_date}), the layers in the hisfile are incorrect. Check UNST-2920 and UNST-3024 for more information, it was fixed from OSS 67858.'))
-    except:
-        #print('No source attribute present in hisfile, cannot check version')
+    except: #no source attr present in hisfile, cannot check version
         pass
 
     return ds
