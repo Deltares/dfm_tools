@@ -6,7 +6,7 @@ Created on Thu Dec  8 20:54:39 2022
 
 """
 
-import meshkernel #meshkernel>=2.0.0 #TODO: hydrolib currently has meshkernel<2/.0.0 >=1.0.0, so this conflicts: https://github.com/Deltares/HYDROLIB-core/issues/441
+import meshkernel #meshkernel>=2.0.0 #TODO: hydrolib currently has meshkernel<2/.0.0 >=1.0.0, so this conflicts: https://github.com/Deltares/HYDROLIB-core/issues/441. hydrolib-core 0.4.2 pre-release supports meshkernel 2.0.0, but that one has no linux support
 import xarray as xr
 import xugrid as xu
 import matplotlib.pyplot as plt
@@ -59,7 +59,7 @@ else:
 geometry_list = meshkernel.GeometryList(pol_x, pol_y)
 
 mk1 = meshkernel.MeshKernel()
-mk1.curvilinear_make_uniform(make_grid_parameters, geometry_list) #TODO: make geometry_list argument optional
+mk1.curvilinear_make_uniform(make_grid_parameters, geometry_list) #TODO: make geometry_list argument optional: https://github.com/Deltares/MeshKernelPy/issues/30
 mk1.curvilinear_convert_to_mesh2d() #convert to ugrid/mesh2d
 mesh2d_grid1 = mk1.mesh2d_get() #in case of curvi grid: mk.curvilinear_convert_to_mesh2d()
 fig, ax = plt.subplots(figsize=figsize)
@@ -82,27 +82,27 @@ ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 
 #convert bathy data to geomlist
 samp_x,samp_y = np.meshgrid(data_bathy_sel.lon.to_numpy(),data_bathy_sel.lat.to_numpy())
-samp_z = data_bathy_sel.elevation.to_numpy().astype(float) #TODO: without .astype(float), meshkernelpy generates "TypeError: incompatible types, c_short_Array_27120 instance instead of LP_c_double instance"
+samp_z = data_bathy_sel.elevation.to_numpy().astype(float) #TODO: without .astype(float), meshkernelpy generates "TypeError: incompatible types, c_short_Array_27120 instance instead of LP_c_double instance": https://github.com/Deltares/MeshKernelPy/issues/31
 samp_x = samp_x.ravel()
 samp_y = samp_y.ravel()
 samp_z = samp_z.ravel()
-geomlist = meshkernel.GeometryList(x_coordinates=samp_x, y_coordinates=samp_y, values=samp_z) #TODO: does not check if lenghts of input array is equal (samp_z[1:])
+geomlist = meshkernel.GeometryList(x_coordinates=samp_x, y_coordinates=samp_y, values=samp_z) #TODO: does not check if lenghts of input array is equal (samp_z[1:]) https://github.com/Deltares/MeshKernelPy/issues/32
 
 #refinement
 mesh_refinement_parameters = meshkernel.MeshRefinementParameters(refine_intersected=False, #TODO: provide defaults for several arguments, so less arguments are required
                                                                  use_mass_center_when_refining=False, #TODO: what does this do?
-                                                                 min_face_size=0.01, #TODO: size in meters would be more convenient
+                                                                 min_face_size=0.01, #TODO: size in meters would be more convenient: https://github.com/Deltares/MeshKernelPy/issues/33
                                                                  refinement_type=meshkernel.RefinementType(1), #Wavecourant/1,
                                                                  connect_hanging_nodes=True, #set to False to do multiple refinement steps (e.g. for multiple regions)
                                                                  account_for_samples_outside_face=False, #outsidecell argument for --refine?
                                                                  max_refinement_iterations=5,
-                                                                 ) #TODO: missing the arguments dtmax (necessary?), hmin (min_face_size but then in meters instead of degrees), smoothiters (currently refinement is patchy along coastlines), spherical 1/0 (necessary?)
+                                                                 ) #TODO: missing the arguments dtmax (necessary?), hmin (min_face_size but then in meters instead of degrees), smoothiters (currently refinement is patchy along coastlines, goes good in dflowfm exec after additional implementation of HK), spherical 1/0 (necessary?)
 
 mk2 = meshkernel.MeshKernel()
 mk2.curvilinear_make_uniform(make_grid_parameters, geometry_list)
 mk2.curvilinear_convert_to_mesh2d() #convert to ugrid/mesh2d
 mk2.mesh2d_refine_based_on_samples(samples=geomlist,
-                                   relative_search_radius=0.5, ##TODO: bilin interp is preferred, but this is currently not supported (samples have to be ravelled)
+                                   relative_search_radius=0.5, #TODO: bilin interp is preferred, but this is currently not supported (samples have to be ravelled): https://github.com/Deltares/MeshKernelPy/issues/34
                                    minimum_num_samples=3,
                                    mesh_refinement_params=mesh_refinement_parameters,
                                    )
@@ -110,6 +110,13 @@ mk2.mesh2d_refine_based_on_samples(samples=geomlist,
 mesh2d_grid2 = mk2.mesh2d_get()
 fig, ax = plt.subplots(figsize=figsize)
 mesh2d_grid2.plot_edges(ax,linewidth=1.2)
+ctx.add_basemap(ax=ax, crs=crs, attribution=False)
+
+#TODO: zoomed in plot to focus on patchy coastlines: https://github.com/Deltares/MeshKernelPy/issues/29
+fig, ax = plt.subplots(figsize=figsize)
+mesh2d_grid2.plot_edges(ax,linewidth=1)
+ax.set_xlim(-2.5,-0.5)
+ax.set_ylim(49,50)
 ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 
 
@@ -135,11 +142,11 @@ else:
     delete_pol = np.concatenate([delete_pol,delete_pol[[0],:]],axis=0) #close polygon
     pol_ldb_list = [pd.DataFrame(delete_pol,columns=['x','y'])]
 
-for iP, pol_del in enumerate(pol_ldb_list): #TODO: also possible without loop? >> geometry_separator=-999.9 so that value can be used to concat polygons. >> use hydrolib poly as input?
+for iP, pol_del in enumerate(pol_ldb_list): #TODO: also possible without loop? >> geometry_separator=-999.9 so that value can be used to concat polygons. >> use hydrolib poly as input? https://github.com/Deltares/MeshKernelPy/issues/35
     delete_pol_geom = meshkernel.GeometryList(x_coordinates=pol_del['x'].to_numpy(), y_coordinates=pol_del['y'].to_numpy()) #TODO: .copy()/to_numpy() makes the array contiguous in memory, which is necessary for meshkernel.mesh2d_delete()
     mk2.mesh2d_delete(geometry_list=delete_pol_geom, 
                       delete_option=meshkernel.DeleteMeshOption(2), #ALL_COMPLETE_FACES/2: Delete all faces of which the complete face is inside the polygon
-                      invert_deletion=False)
+                      invert_deletion=False) #TODO: cuts away link that is neccesary, so results in non-orthogonal grid
 
 mesh2d_grid3 = mk2.mesh2d_get()
 fig, ax = plt.subplots(figsize=figsize)
@@ -151,8 +158,6 @@ ax.set_xlim(xlim)
 ax.set_ylim(ylim)
 ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 
-#TODO: cuts away link that is neccesary, so results in non-orthogonal grid
-#TODO: result does not have fine resolution all along coast, HK implemented coastline finder in kernel, expose that also?
 
 """
 convert meshkernel grid to xugrid, plot and save to *_net.nc
