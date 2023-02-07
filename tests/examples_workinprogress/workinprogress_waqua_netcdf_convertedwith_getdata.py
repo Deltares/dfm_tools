@@ -99,8 +99,8 @@ plt.savefig(os.path.join(dir_output,'waqua_DCSM_his_ZWL'))
 
 for RMM_name in ['RMM','RMMtestmodel']:
     if RMM_name=='RMM':
-        file_nc_map = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\07_WAQUAresultaten\j15\SDS-riv_tba_map.nc'
-        file_nc_his = r'p:\11205258-006-kpp2020_rmm-g6\C_Work\07_WAQUAresultaten\j15\SDS-riv_tba_his.nc'
+        file_nc_map = r'p:\archivedprojects\11205258-006-kpp2020_rmm-g6\C_Work\07_WAQUAresultaten\j15\SDS-riv_tba_map.nc'
+        file_nc_his = r'p:\archivedprojects\11205258-006-kpp2020_rmm-g6\C_Work\07_WAQUAresultaten\j15\SDS-riv_tba_his.nc'
         timestep = 1
     elif RMM_name == 'RMMtestmodel':
         file_nc_map = r'c:\DATA\dfm_tools_testdata\waqua_netcdf\SDS-haven_map.nc'
