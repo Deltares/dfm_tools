@@ -84,9 +84,9 @@ def get_ncfilelist(file_nc, multipart=None):
     return file_ncs
 
 
-def get_varname_fromnc(data_nc,varname_requested,vardim): #TODO: this is probably not used anymore after xugrid implementation
+def get_varname_fromnc(data_nc,varname_requested,vardim): #TODO: this is not used anymore after xugrid implementation
     warnings.warn(DeprecationWarning('dfm_tools.get_nc_helpers.get_varname_fromnc() will be deprecated'))
-    #TODO: put this translationtable in preprocess function, optionally give that to xarray. Raise exception when eg plotnetmapdata sees old variables, saying you should use the preprocess func in xr.open_dataset()
+    
     #VARIABLE names used within different versions of Delft3D-Flexible Mesh
     varnames_list = pd.DataFrame()
     #varnames_list['time'] = ['time','nmesh2d_dlwq_time','TIME','','',''] # time, not necessary anymore
