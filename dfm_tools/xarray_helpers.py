@@ -133,29 +133,31 @@ def get_vertical_dimensions(uds): #TODO: maybe add layer_dimension and interface
         return None, None
 
 
-def remove_ghostcells(ds,gridname='mesh2d'): #TODO: create JIRA issue: add domainno attribute to partitioned mapfiles or remove ghostcells from output (or make values in ghostcells the same as not-ghostcells)
+def remove_ghostcells(ds): #TODO: create JIRA issue: add domainno attribute to partitioned mapfiles or remove ghostcells from output (or make values in ghostcells the same as not-ghostcells)
+    """
+    Dropping ghostcells if there is a domainno variable present and there is a domainno in the filename.
+    Not using most-occurring domainno in var, since this is not a valid assumption for merged datasets and might be invalid for a very small partition.
     
-    #check if dataset has ghostcells
+    """
+    gridname = ds.grid.name
     varn_domain = f'{gridname}_flowelem_domain'
+    
+    #check if dataset has domainno variable, return ds if not present
     if varn_domain not in ds.data_vars:
         print('[nodomainvar] ',end='')
         return ds
     
-    #derive domainno from domain var and filename
-    da_domainno = ds[varn_domain]
-    #part_domainno_fromvar = np.bincount(da_domainno).argmax()
+    #derive domainno from filename, return ds if not present
     fname = ds.encoding['source']
     part_domainno_fromfname = fname[-11:-7] #this is not valid for rstfiles (date follows after partnumber, but they cannot be read anyway since they are mapformat=1
     bool_underscores = fname[-12] == fname[-7] == '_'
-    if part_domainno_fromfname.isnumeric() and bool_underscores:
-        part_domainno_fromfname = int(part_domainno_fromfname)
-        #if part_domainno_fromvar != part_domainno_fromfname:
-        #    warnings.warn(f'remove_ghostcells: different domainno found in filename ({part_domainno_fromfname}) and domain variable ({part_domainno_fromvar})')
-    else: #TODO: this is for instance the case for a dataset that was merged with xugrid and then written to netcdf agian. It does contain domain numbers (of all partitions), but nothing should be filtered. Maybe better to only use the domain number from the filename (easier to implement/understand and safer)
+    if not (part_domainno_fromfname.isnumeric() and bool_underscores):
         print('[nodomainfname] ',end='')
         return ds
     
     #drop ghostcells
+    part_domainno_fromfname = int(part_domainno_fromfname)
+    da_domainno = ds[varn_domain]
     idx = np.flatnonzero(da_domainno == part_domainno_fromfname)
     ds = ds.isel({ds.grid.face_dimension:idx})
     return ds
