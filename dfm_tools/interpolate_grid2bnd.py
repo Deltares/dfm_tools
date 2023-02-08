@@ -149,7 +149,7 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
     return ForcingModel_object
 
 
-def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=None, refdate_str=None, reverse_depth=False):
+def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=None, refdate_str=None, reverse_depth=False, chunks=None):
     
     if conversion_dict is None:
         conversion_dict = get_conversion_dict()
@@ -173,7 +173,7 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
     
     #dtstart = dt.datetime.now()
     try:
-        data_xr = xr.open_mfdataset(file_list_nc)#,chunks={'time':1}) #TODO: does chunks argument solve "PerformanceWarning: Slicing is producing a large chunk."? {'time':1} is not a convenient chunking to use for timeseries extraction
+        data_xr = xr.open_mfdataset(file_list_nc, chunks=chunks)#,chunks={'time':1}) #TODO: does chunks argument solve "PerformanceWarning: Slicing is producing a large chunk."? {'time':1} is not a convenient chunking to use for timeseries extraction
     except xr.MergeError as e: #TODO: this except is necessary for CMCC, ux and uy have different lat/lon values, so renaming those of uy to avoid merging conflict
         def preprocess_CMCC_uovo(ds):
             if 'vo_' in os.path.basename(ds.encoding['source']):
@@ -182,7 +182,7 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
                 ds = ds.drop_vars(['vertices_longitude','vertices_latitude'])
             return ds
         print(f'catching "MergeError: {e}" >> WARNING: ux/uy have different latitude/longitude values, making two coordinates sets in Dataset.')
-        data_xr = xr.open_mfdataset(file_list_nc,chunks={'time':1},preprocess=preprocess_CMCC_uovo)
+        data_xr = xr.open_mfdataset(file_list_nc, chunks=chunks, preprocess=preprocess_CMCC_uovo)
     
     #rename variables with rename_dict derived from conversion_dict
     rename_dict = {v['ncvarname']:k for k,v in conversion_dict.items()}
