@@ -26,9 +26,11 @@ dir_output = './test_interpolate_nc_to_bc'
 #quantities should be in conversion_dict.keys(). waterlevelbnd is steric/zos, tide is tidal components from FES/EOT
 list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tracerbndNO3','tide']
 #list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','tracerbndNO3']
-list_quantities = ['salinitybnd','tracerbndNO3']
+list_quantities = ['salinitybnd','tracerbndNO3','tracerbndOpal','tracerbndDON']
+list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tracerbndNO3','tracerbndOpal','tracerbndDON','tide']
 
-model = 'CMEMS' #CMEMS GFDL CMCC HYCOM
+model = 'HYCOM' #CMEMS GFDL CMCC HYCOM
+
 
 #The {ncvarname} wildcard in dir_pattern_hydro/dir_patern_waq is used to replace it with conversion_dict[quantity]['ncvarname'] by using str(dir_pattern).format(ncvarname)
 if model=='CMEMS': #2012-01-06 12:00:00 to 2013-01-03 12:00:00
