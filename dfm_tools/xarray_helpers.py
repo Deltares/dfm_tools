@@ -133,30 +133,37 @@ def get_vertical_dimensions(uds): #TODO: maybe add layer_dimension and interface
         return None, None
 
 
-def remove_ghostcells(ds,gridname='mesh2d'): #TODO: create JIRA issue: add domainno attribute to partitioned mapfiles or remove ghostcells from output (or make values in ghostcells the same as not-ghostcells)
+def remove_ghostcells(uds): #TODO: create JIRA issue: add domainno attribute to partitioned mapfiles or remove ghostcells from output (or make values in ghostcells the same as not-ghostcells)
+    """
+    Dropping ghostcells if there is a domainno variable present and there is a domainno in the filename.
+    Not using most-occurring domainno in var, since this is not a valid assumption for merged datasets and might be invalid for a very small partition.
     
-    #check if dataset has ghostcells
+    """
+    gridname = uds.grid.name
     varn_domain = f'{gridname}_flowelem_domain'
-    if varn_domain not in ds.data_vars:
-        print('[nodomainvar] ',end='')
-        return ds
     
-    #derive domainno from domain var and filename
-    da_domainno = ds[varn_domain]
-    part_domainno = np.bincount(da_domainno).argmax()
-    part_domainno_fromfname = ds.encoding['source'][-11:-7] #this is not valid for rstfiles but they cannot be read anyway since they are mapformat=1
-    if part_domainno_fromfname.isnumeric():
-        part_domainno_fromfname = int(part_domainno_fromfname)
-        if part_domainno != part_domainno_fromfname:
-            warnings.warn(f'remove_ghostcells: different domainno found in filename ({part_domainno_fromfname}) and domain variable ({part_domainno})')
-    else: #TODO: this is for instance the case for a dataset that was merged with xugrid and then written to netcdf agian. It does contain domain numbers (of all partitions), but nothing should be filtered. Maybe better to only use the domain number from the filename (easier to implement/understand and safer)
+    #check if dataset has domainno variable, return uds if not present
+    if varn_domain not in uds.data_vars:
+        print('[nodomainvar] ',end='')
+        return uds
+    
+    #derive domainno from filename, return uds if not present
+    fname = uds.encoding['source']
+    if '_' not in fname: #safety escape in case there is no _ in the filename
         print('[nodomainfname] ',end='')
-        return ds
-        
+        return uds
+    fname_splitted = fname.split('_')
+    part_domainno_fromfname = fname_splitted[-2] #this is not valid for rstfiles (date follows after partnumber), but they cannot be read with xugrid anyway since they are mapformat=1
+    if not part_domainno_fromfname.isnumeric() or len(part_domainno_fromfname)!=4:
+        print('[nodomainfname] ',end='')
+        return uds
+    
     #drop ghostcells
-    idx = np.flatnonzero(da_domainno == part_domainno)
-    ds = ds.isel({ds.grid.face_dimension:idx})
-    return ds
+    part_domainno_fromfname = int(part_domainno_fromfname)
+    da_domainno = uds[varn_domain]
+    idx = np.flatnonzero(da_domainno == part_domainno_fromfname)
+    uds = uds.isel({uds.grid.face_dimension:idx})
+    return uds
 
 
 def open_partitioned_dataset(file_nc, chunks={'time':1}): 
@@ -210,9 +217,9 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
     partitions = []
     for iF, file_nc_one in enumerate(file_nc_list):
         print(iF+1,end=' ')
-        ds = xu.open_dataset(file_nc_one, chunks=chunks)
-        ds = remove_ghostcells(ds)
-        partitions.append(ds)
+        uds = xu.open_dataset(file_nc_one, chunks=chunks)
+        uds = remove_ghostcells(uds)
+        partitions.append(uds)
     print(': ',end='')
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
