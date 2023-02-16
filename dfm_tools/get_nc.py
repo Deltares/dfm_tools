@@ -701,16 +701,15 @@ def get_Dataset_atdepths(data_xr, depths, reference='z0', zlayer_z0_selnearest=F
                                                            'reference':f'model_{reference}',
                                                            'positive':'up'}) #TODO: make more in line with CMEMS etc
     
-    #extract waterlevels and bedlevels from file, to correct layers with
-    data_wl = data_xr[varname_wl]
-    data_bl = data_xr[varname_bl]
-    
-    #simplified/faster method for zlayer icm z0 reference (mapfiles only)
+    #simplified/faster method for zlayer icm z0 reference (mapfiles only) #TODO: maybe remove this part of the code to make it better maintainable.
     if 'mesh2d_layer_z' in data_xr.variables and zlayer_z0_selnearest and reference=='z0': # selects nearest z-center values (instead of slicing), should be faster #TODO: check if this is faster than fullgrid
         print('z-layer model, zlayer_z0_selnearest=True and reference=="z0" so using xr.sel(method="nearest")]')
+        warnings.warn(DeprecationWarning('The get_Dataset_atdepths() keyword zlayer_z0_selnearest might be phased out.'))
         data_xr = data_xr.set_index({dimn_layer:'mesh2d_layer_z'})#.rename({'nmesh2d_layer':depth_varname}) #set depth as index on layers, to be able to interp to depths instead of layernumbers
         data_xr[depth_varname] = depths_xr
         data_xr_atdepths = data_xr.sel({dimn_layer:depths_xr},method='nearest')
+        data_wl = data_xr[varname_wl]
+        data_bl = data_xr[varname_bl]
         data_xr_atdepths = data_xr_atdepths.where((depths_xr>=data_bl) & (depths_xr<=data_wl)) #filter above wl and below bl values
         return data_xr_atdepths #early return
     
@@ -731,8 +730,10 @@ def get_Dataset_atdepths(data_xr, depths, reference='z0', zlayer_z0_selnearest=F
     if reference=='z0':
         zw_reference = data_xr[varname_zint]
     elif reference=='waterlevel':
+        data_wl = data_xr[varname_wl]
         zw_reference = data_xr[varname_zint] - data_wl
     elif reference=='bedlevel':
+        data_bl = data_xr[varname_bl]
         zw_reference = data_xr[varname_zint] - data_bl
     else:
         raise Exception(f'unknown reference "{reference}" (possible are z0, waterlevel and bedlevel')
