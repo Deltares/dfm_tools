@@ -76,10 +76,8 @@ def preprocess_hisnc(ds):
     #loop over dimensions and set corresponding coordinates/variables from dim_coord_dict as their index
     for dim in dim_coord_dict.keys():
         coord = dim_coord_dict[dim]
-        coord_str = f&#39;{coord}&#39;#_str&#39; #avoid losing the original variable by creating a new name
-        ds[coord_str] = ds[coord].load().str.decode(&#39;utf-8&#39;,errors=&#39;ignore&#39;).str.strip() #.load() is essential to convert not only first letter of string.
-        #ds = ds.set_index({dim:[coord_str,&#39;station_x_coordinate&#39;,&#39;station_y_coordinate&#39;]}) #nearest station: &#34;ValueError: multi-index does not support ``method`` and ``tolerance``&#34;  #slice x/y: &#34;TypeError: float() argument must be a string or a number, not &#39;slice&#39;&#34;
-        ds = ds.set_index({dim:coord_str})
+        ds[coord] = ds[coord].load().str.decode(&#39;utf-8&#39;,errors=&#39;ignore&#39;).str.strip() #.load() is essential to convert not only first letter of string.
+        ds = ds.set_index({dim:coord})
         
         #drop duplicate indices (stations/crs/gs), this avoids &#34;InvalidIndexError: Reindexing only valid with uniquely valued Index objects&#34;
         duplicated_keepfirst = ds[dim].to_series().duplicated(keep=&#39;first&#39;)
@@ -87,18 +85,14 @@ def preprocess_hisnc(ds):
             print(f&#39;dropping {duplicated_keepfirst.sum()} duplicate &#34;{coord}&#34; labels to avoid InvalidIndexError&#39;)
             ds = ds[{dim:~duplicated_keepfirst}]
 
-    
-    if &#39;source&#39; in ds.attrs.keys():
-        source_attr = ds.attrs[&#34;source&#34;]
-    else:
-        source_attr = None
+    #check dflowfm version/date and potentially raise warning about incorrect layers
     try:
+        source_attr = ds.attrs[&#39;source&#39;] # fails if no source attr present in dataset
         source_attr_version = source_attr.split(&#39;, &#39;)[1]
         source_attr_date = source_attr.split(&#39;, &#39;)[2]
         if pd.Timestamp(source_attr_date) &lt; dt.datetime(2020,11,28):
             warnings.warn(UserWarning(f&#39;Your model was run with a D-FlowFM version from before 28-10-2020 ({source_attr_version} from {source_attr_date}), the layers in the hisfile are incorrect. Check UNST-2920 and UNST-3024 for more information, it was fixed from OSS 67858.&#39;))
-    except:
-        #print(&#39;No source attribute present in hisfile, cannot check version&#39;)
+    except: #no source attr present in hisfile, cannot check version
         pass
 
     return ds
@@ -169,30 +163,37 @@ def get_vertical_dimensions(uds): #TODO: maybe add layer_dimension and interface
         return None, None
 
 
-def remove_ghostcells(ds,gridname=&#39;mesh2d&#39;): #TODO: create JIRA issue: add domainno attribute to partitioned mapfiles or remove ghostcells from output (or make values in ghostcells the same as not-ghostcells)
+def remove_ghostcells(uds): #TODO: create JIRA issue: add domainno attribute to partitioned mapfiles or remove ghostcells from output (or make values in ghostcells the same as not-ghostcells)
+    &#34;&#34;&#34;
+    Dropping ghostcells if there is a domainno variable present and there is a domainno in the filename.
+    Not using most-occurring domainno in var, since this is not a valid assumption for merged datasets and might be invalid for a very small partition.
     
-    #check if dataset has ghostcells
+    &#34;&#34;&#34;
+    gridname = uds.grid.name
     varn_domain = f&#39;{gridname}_flowelem_domain&#39;
-    if varn_domain not in ds.data_vars:
-        print(&#39;[nodomainvar] &#39;,end=&#39;&#39;)
-        return ds
     
-    #derive domainno from domain var and filename
-    da_domainno = ds[varn_domain]
-    part_domainno = np.bincount(da_domainno).argmax()
-    part_domainno_fromfname = ds.encoding[&#39;source&#39;][-11:-7] #this is not valid for rstfiles but they cannot be read anyway since they are mapformat=1
-    if part_domainno_fromfname.isnumeric():
-        part_domainno_fromfname = int(part_domainno_fromfname)
-        if part_domainno != part_domainno_fromfname:
-            warnings.warn(f&#39;remove_ghostcells: different domainno found in filename ({part_domainno_fromfname}) and domain variable ({part_domainno})&#39;)
-    else: #TODO: this is for instance the case for a dataset that was merged with xugrid and then written to netcdf agian. It does contain domain numbers (of all partitions), but nothing should be filtered. Maybe better to only use the domain number from the filename (easier to implement/understand and safer)
+    #check if dataset has domainno variable, return uds if not present
+    if varn_domain not in uds.data_vars:
+        print(&#39;[nodomainvar] &#39;,end=&#39;&#39;)
+        return uds
+    
+    #derive domainno from filename, return uds if not present
+    fname = uds.encoding[&#39;source&#39;]
+    if &#39;_&#39; not in fname: #safety escape in case there is no _ in the filename
         print(&#39;[nodomainfname] &#39;,end=&#39;&#39;)
-        return ds
-        
+        return uds
+    fname_splitted = fname.split(&#39;_&#39;)
+    part_domainno_fromfname = fname_splitted[-2] #this is not valid for rstfiles (date follows after partnumber), but they cannot be read with xugrid anyway since they are mapformat=1
+    if not part_domainno_fromfname.isnumeric() or len(part_domainno_fromfname)!=4:
+        print(&#39;[nodomainfname] &#39;,end=&#39;&#39;)
+        return uds
+    
     #drop ghostcells
-    idx = np.flatnonzero(da_domainno == part_domainno)
-    ds = ds.isel({ds.grid.face_dimension:idx})
-    return ds
+    part_domainno_fromfname = int(part_domainno_fromfname)
+    da_domainno = uds[varn_domain]
+    idx = np.flatnonzero(da_domainno == part_domainno_fromfname)
+    uds = uds.isel({uds.grid.face_dimension:idx})
+    return uds
 
 
 def open_partitioned_dataset(file_nc, chunks={&#39;time&#39;:1}): 
@@ -246,9 +247,9 @@ def open_partitioned_dataset(file_nc, chunks={&#39;time&#39;:1}):
     partitions = []
     for iF, file_nc_one in enumerate(file_nc_list):
         print(iF+1,end=&#39; &#39;)
-        ds = xu.open_dataset(file_nc_one, chunks=chunks)
-        ds = remove_ghostcells(ds)
-        partitions.append(ds)
+        uds = xu.open_dataset(file_nc_one, chunks=chunks)
+        uds = remove_ghostcells(uds)
+        partitions.append(uds)
     print(&#39;: &#39;,end=&#39;&#39;)
     print(f&#39;{(dt.datetime.now()-dtstart).total_seconds():.2f} sec&#39;)
     
@@ -329,10 +330,8 @@ def open_partitioned_dataset(file_nc, chunks={&#39;time&#39;:1}):
     #loop over dimensions and set corresponding coordinates/variables from dim_coord_dict as their index
     for dim in dim_coord_dict.keys():
         coord = dim_coord_dict[dim]
-        coord_str = f&#39;{coord}&#39;#_str&#39; #avoid losing the original variable by creating a new name
-        ds[coord_str] = ds[coord].load().str.decode(&#39;utf-8&#39;,errors=&#39;ignore&#39;).str.strip() #.load() is essential to convert not only first letter of string.
-        #ds = ds.set_index({dim:[coord_str,&#39;station_x_coordinate&#39;,&#39;station_y_coordinate&#39;]}) #nearest station: &#34;ValueError: multi-index does not support ``method`` and ``tolerance``&#34;  #slice x/y: &#34;TypeError: float() argument must be a string or a number, not &#39;slice&#39;&#34;
-        ds = ds.set_index({dim:coord_str})
+        ds[coord] = ds[coord].load().str.decode(&#39;utf-8&#39;,errors=&#39;ignore&#39;).str.strip() #.load() is essential to convert not only first letter of string.
+        ds = ds.set_index({dim:coord})
         
         #drop duplicate indices (stations/crs/gs), this avoids &#34;InvalidIndexError: Reindexing only valid with uniquely valued Index objects&#34;
         duplicated_keepfirst = ds[dim].to_series().duplicated(keep=&#39;first&#39;)
@@ -340,18 +339,14 @@ def open_partitioned_dataset(file_nc, chunks={&#39;time&#39;:1}):
             print(f&#39;dropping {duplicated_keepfirst.sum()} duplicate &#34;{coord}&#34; labels to avoid InvalidIndexError&#39;)
             ds = ds[{dim:~duplicated_keepfirst}]
 
-    
-    if &#39;source&#39; in ds.attrs.keys():
-        source_attr = ds.attrs[&#34;source&#34;]
-    else:
-        source_attr = None
+    #check dflowfm version/date and potentially raise warning about incorrect layers
     try:
+        source_attr = ds.attrs[&#39;source&#39;] # fails if no source attr present in dataset
         source_attr_version = source_attr.split(&#39;, &#39;)[1]
         source_attr_date = source_attr.split(&#39;, &#39;)[2]
         if pd.Timestamp(source_attr_date) &lt; dt.datetime(2020,11,28):
             warnings.warn(UserWarning(f&#39;Your model was run with a D-FlowFM version from before 28-10-2020 ({source_attr_version} from {source_attr_date}), the layers in the hisfile are incorrect. Check UNST-2920 and UNST-3024 for more information, it was fixed from OSS 67858.&#39;))
-    except:
-        #print(&#39;No source attribute present in hisfile, cannot check version&#39;)
+    except: #no source attr present in hisfile, cannot check version
         pass
 
     return ds</code></pre>
@@ -468,38 +463,46 @@ processing MB_02_0*_map.nc
 </details>
 </dd>
 <dt id="dfm_tools.xarray_helpers.remove_ghostcells"><code class="name flex">
-<span>def <span class="ident">remove_ghostcells</span></span>(<span>ds, gridname='mesh2d')</span>
+<span>def <span class="ident">remove_ghostcells</span></span>(<span>uds)</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Dropping ghostcells if there is a domainno variable present and there is a domainno in the filename.
+Not using most-occurring domainno in var, since this is not a valid assumption for merged datasets and might be invalid for a very small partition.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def remove_ghostcells(ds,gridname=&#39;mesh2d&#39;): #TODO: create JIRA issue: add domainno attribute to partitioned mapfiles or remove ghostcells from output (or make values in ghostcells the same as not-ghostcells)
+<pre><code class="python">def remove_ghostcells(uds): #TODO: create JIRA issue: add domainno attribute to partitioned mapfiles or remove ghostcells from output (or make values in ghostcells the same as not-ghostcells)
+    &#34;&#34;&#34;
+    Dropping ghostcells if there is a domainno variable present and there is a domainno in the filename.
+    Not using most-occurring domainno in var, since this is not a valid assumption for merged datasets and might be invalid for a very small partition.
     
-    #check if dataset has ghostcells
+    &#34;&#34;&#34;
+    gridname = uds.grid.name
     varn_domain = f&#39;{gridname}_flowelem_domain&#39;
-    if varn_domain not in ds.data_vars:
-        print(&#39;[nodomainvar] &#39;,end=&#39;&#39;)
-        return ds
     
-    #derive domainno from domain var and filename
-    da_domainno = ds[varn_domain]
-    part_domainno = np.bincount(da_domainno).argmax()
-    part_domainno_fromfname = ds.encoding[&#39;source&#39;][-11:-7] #this is not valid for rstfiles but they cannot be read anyway since they are mapformat=1
-    if part_domainno_fromfname.isnumeric():
-        part_domainno_fromfname = int(part_domainno_fromfname)
-        if part_domainno != part_domainno_fromfname:
-            warnings.warn(f&#39;remove_ghostcells: different domainno found in filename ({part_domainno_fromfname}) and domain variable ({part_domainno})&#39;)
-    else: #TODO: this is for instance the case for a dataset that was merged with xugrid and then written to netcdf agian. It does contain domain numbers (of all partitions), but nothing should be filtered. Maybe better to only use the domain number from the filename (easier to implement/understand and safer)
+    #check if dataset has domainno variable, return uds if not present
+    if varn_domain not in uds.data_vars:
+        print(&#39;[nodomainvar] &#39;,end=&#39;&#39;)
+        return uds
+    
+    #derive domainno from filename, return uds if not present
+    fname = uds.encoding[&#39;source&#39;]
+    if &#39;_&#39; not in fname: #safety escape in case there is no _ in the filename
         print(&#39;[nodomainfname] &#39;,end=&#39;&#39;)
-        return ds
-        
+        return uds
+    fname_splitted = fname.split(&#39;_&#39;)
+    part_domainno_fromfname = fname_splitted[-2] #this is not valid for rstfiles (date follows after partnumber), but they cannot be read with xugrid anyway since they are mapformat=1
+    if not part_domainno_fromfname.isnumeric() or len(part_domainno_fromfname)!=4:
+        print(&#39;[nodomainfname] &#39;,end=&#39;&#39;)
+        return uds
+    
     #drop ghostcells
-    idx = np.flatnonzero(da_domainno == part_domainno)
-    ds = ds.isel({ds.grid.face_dimension:idx})
-    return ds</code></pre>
+    part_domainno_fromfname = int(part_domainno_fromfname)
+    da_domainno = uds[varn_domain]
+    idx = np.flatnonzero(da_domainno == part_domainno_fromfname)
+    uds = uds.isel({uds.grid.face_dimension:idx})
+    return uds</code></pre>
 </details>
 </dd>
 <dt id="dfm_tools.xarray_helpers.open_partitioned_dataset"><code class="name flex">
@@ -607,9 +610,9 @@ processing MB_02_0*_map.nc
     partitions = []
     for iF, file_nc_one in enumerate(file_nc_list):
         print(iF+1,end=&#39; &#39;)
-        ds = xu.open_dataset(file_nc_one, chunks=chunks)
-        ds = remove_ghostcells(ds)
-        partitions.append(ds)
+        uds = xu.open_dataset(file_nc_one, chunks=chunks)
+        uds = remove_ghostcells(uds)
+        partitions.append(uds)
     print(&#39;: &#39;,end=&#39;&#39;)
     print(f&#39;{(dt.datetime.now()-dtstart).total_seconds():.2f} sec&#39;)
     

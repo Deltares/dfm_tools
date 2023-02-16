@@ -179,7 +179,7 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
     return ForcingModel_object
 
 
-def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=None, refdate_str=None, reverse_depth=False):
+def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=None, refdate_str=None, reverse_depth=False, chunks=None):
     
     if conversion_dict is None:
         conversion_dict = get_conversion_dict()
@@ -203,7 +203,7 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
     
     #dtstart = dt.datetime.now()
     try:
-        data_xr = xr.open_mfdataset(file_list_nc)#,chunks={&#39;time&#39;:1}) #TODO: does chunks argument solve &#34;PerformanceWarning: Slicing is producing a large chunk.&#34;? {&#39;time&#39;:1} is not a convenient chunking to use for timeseries extraction
+        data_xr = xr.open_mfdataset(file_list_nc, chunks=chunks)#,chunks={&#39;time&#39;:1}) #TODO: does chunks argument solve &#34;PerformanceWarning: Slicing is producing a large chunk.&#34;? {&#39;time&#39;:1} is not a convenient chunking to use for timeseries extraction
     except xr.MergeError as e: #TODO: this except is necessary for CMCC, ux and uy have different lat/lon values, so renaming those of uy to avoid merging conflict
         def preprocess_CMCC_uovo(ds):
             if &#39;vo_&#39; in os.path.basename(ds.encoding[&#39;source&#39;]):
@@ -212,13 +212,38 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
                 ds = ds.drop_vars([&#39;vertices_longitude&#39;,&#39;vertices_latitude&#39;])
             return ds
         print(f&#39;catching &#34;MergeError: {e}&#34; &gt;&gt; WARNING: ux/uy have different latitude/longitude values, making two coordinates sets in Dataset.&#39;)
-        data_xr = xr.open_mfdataset(file_list_nc,chunks={&#39;time&#39;:1},preprocess=preprocess_CMCC_uovo)
+        data_xr = xr.open_mfdataset(file_list_nc, chunks=chunks, preprocess=preprocess_CMCC_uovo)
     
-    #rename variables with rename_dict derived from conversion_dict
-    rename_dict = {v[&#39;ncvarname&#39;]:k for k,v in conversion_dict.items()}
-    for ncvarn in data_xr.variables.mapping.keys():
-        if ncvarn in rename_dict.keys():
-            data_xr = data_xr.rename({ncvarn:rename_dict[ncvarn]})
+    #rename variables with rename_dict derived from conversion_dict. duplicate keys are not possible, so phyc is always renamed to tracerbndOpal (last in conversion_dict)
+    # rename_dict = {v[&#39;ncvarname&#39;]:k for k,v in conversion_dict.items()}
+    # for ncvarn in data_xr.variables.mapping.keys():
+    #     if ncvarn in rename_dict.keys():
+    #         data_xr = data_xr.rename({ncvarn:rename_dict[ncvarn]})
+
+    #renames ncvarnames to quantity names: proposal lisa, does not support ux/uy
+    # for ncvarn in data_xr.variables.mapping.keys():
+    #     if ncvarn == conversion_dict[quantity][&#39;ncvarname&#39;]:
+    #         data_xr = data_xr.rename({ncvarn:quantity})
+    #         print(f&#39;variable {ncvarn} renamed to {quantity}&#39;)
+    
+    for k,v in conversion_dict.items():
+        ncvarn = v[&#39;ncvarname&#39;]
+        if ncvarn in data_xr.variables.mapping.keys() and k in quantity_list: #k in quantity_list so phyc is not always renamed to tracerbndPON1 (first in conversion_dict)
+            data_xr = data_xr.rename({ncvarn:k})
+            print(f&#39;variable {ncvarn} renamed to {k}&#39;)
+    
+    #rename dims time/depth/lat/lon/x/y #TODO: this has to be phased out some time, or made as an argument or merged with conversion_dict?
+    rename_dims_dict = {&#39;time_counter&#39;:&#39;time&#39;, #time_counter instead of time for some CMCC files
+                        &#39;lev&#39;:&#39;depth&#39;, #depth for CMEMS and many others, but lev for GFDL
+                        &#39;deptht&#39;:&#39;depth&#39;, #deptht for some CMCC vars
+                        &#39;lon&#39;:&#39;longitude&#39;,&#39;lat&#39;:&#39;latitude&#39;,
+                        &#39;nav_lon&#39;:&#39;longitude&#39;,&#39;nav_lat&#39;:&#39;latitude&#39;, #nav_lon/nav_lat for some CMCC vars
+                        &#39;x&#39;:&#39;j&#39;,&#39;y&#39;:&#39;i&#39;, #x/y instead of j/i for some CMCC vars (non-regulargrid)
+                        }
+    for k,v in rename_dims_dict.items():
+        if k in data_xr.dims and v not in data_xr.dims: 
+            data_xr = data_xr.rename({k:v}) #TODO: can also do this for data_xr_var only?
+            print(f&#39;dimension {k} renamed to {v}&#39;)
     
     #get calendar and maybe convert_calendar, makes sure that nc_tstart/nc_tstop are of type pd._libs.tslibs.timestamps.Timestamp
     data_xr_calendar = data_xr[&#39;time&#39;].dt.calendar
@@ -239,17 +264,6 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
         raise Exception(f&#39;requested tstart {tstart} outside of available range {nc_tstart} to {nc_tstop}&#39;)
     if tstop &gt; nc_tstop:
         raise Exception(f&#39;requested tstop {tstop} outside of available range {nc_tstart} to {nc_tstop}&#39;)
-    
-    #rename coordinates depth/lat/lon
-    if &#39;depth&#39; not in data_xr.coords:
-        if &#39;lev&#39; in data_xr.coords: #depth for CMEMS and many others, but lev for GFDL, convert to depth #TODO: provide rename_dict as argument to this function or leave as is?
-            data_xr = data_xr.rename({&#39;lev&#39;:&#39;depth&#39;}) #TODO: can also do this for data_xr_var only?
-            print(&#39;variable/coordinate lev renamed to depth&#39;)
-    if &#39;longitude&#39; not in data_xr.coords:
-        if &#39;lon&#39; in data_xr.coords:
-            data_xr = data_xr.rename({&#39;lon&#39;:&#39;longitude&#39;,&#39;lat&#39;:&#39;latitude&#39;})
-        else:
-            raise Exception(f&#39;no lat/lon coords available in file: {data_xr.coords}&#39;)
     
     #360 to 180 conversion
     convert_360to180 = (data_xr[&#39;longitude&#39;].to_numpy()&gt;180).any() #TODO: replace to_numpy() with load()
@@ -296,7 +310,7 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
     return data_xr_vars
 
 
-def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, kdtree_k=3, load=True):
+def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True):
     &#34;&#34;&#34;
     load: interpolation errors are only raised upon loading, so do this per default
     #TODO: make format of this dataset more in line with existing bnd-nc format and hisfile: https://issuetracker.deltares.nl/browse/UNST-6549
@@ -334,10 +348,10 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, kdtree_k=
                                          method=&#39;linear&#39;, 
                                          kwargs={&#39;bounds_error&#39;:True}, #error is only raised upon load(), so when the actual value retrieval happens
                                          )
-
+    
     except ValueError as e: #Dimensions {&#39;latitude&#39;, &#39;longitude&#39;} do not exist. Expected one or more of Frozen({&#39;time&#39;: 17, &#39;depth&#39;: 50, &#39;i&#39;: 292, &#39;j&#39;: 362}).
         #this is for eg CMCC model with multidimensional lat/lon variable
-        #TODO: make nicer, without try except? eg latlon_ndims==1, but not sure if that is always valid
+        #TODO: make nicer, without try except? eg latlon_ndims==1, but not sure if that is always valid &gt;&gt; add nonregular alternative for interp_regularnc_to_plipoints() and set kdtree to 1 (closest value) (uy stuff has to be dropped anyway)
         #TODO: maybe also spherical coordinate distance calculation instead of cartesian/eucledian
         #TODO: maybe use .sel(method=&#39;nearest&#39;), but &#34;KeyError: &#34;no index found for coordinate &#39;longitude&#39;&#34;&#34;
         #TODO: interp for 2D also requested: https://github.com/pydata/xarray/issues/2281
@@ -354,6 +368,7 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, kdtree_k=
             data_lonlat_pd = pd.DataFrame({&#39;x&#39;:data_lon_flat,&#39;y&#39;:data_lat_flat})
             #KDTree, finds minimal eucledian distance between points (maybe haversine would be better)
             tree = KDTree(data_lonlat_pd) #alternatively sklearn.neighbors.BallTree: tree = BallTree(data_lonlat_pd)
+            kdtree_k = 3 #TODO: nearest is probably just as wrong/right as weighted average, but raises error when using 1
             distance, data_lonlat_idx = tree.query(path_lonlat_pd, k=kdtree_k) #TODO: maybe add outofbounds treshold for distance
             #data_lonlat_pd.iloc[data_lonlat_idx]
             idx_i,idx_j = np.divmod(data_lonlat_idx, data_xr_var[&#39;longitude&#39;].shape[1]) #get idx i and j by sort of counting over 2D array
@@ -675,7 +690,7 @@ conversion_dict = { # mg/l is the same as g/m3: conversion is phyc in mol/m3 to 
 </details>
 </dd>
 <dt id="dfm_tools.interpolate_grid2bnd.open_dataset_extra"><code class="name flex">
-<span>def <span class="ident">open_dataset_extra</span></span>(<span>dir_pattern, quantity, tstart, tstop, conversion_dict=None, refdate_str=None, reverse_depth=False)</span>
+<span>def <span class="ident">open_dataset_extra</span></span>(<span>dir_pattern, quantity, tstart, tstop, conversion_dict=None, refdate_str=None, reverse_depth=False, chunks=None)</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -683,7 +698,7 @@ conversion_dict = { # mg/l is the same as g/m3: conversion is phyc in mol/m3 to 
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=None, refdate_str=None, reverse_depth=False):
+<pre><code class="python">def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=None, refdate_str=None, reverse_depth=False, chunks=None):
     
     if conversion_dict is None:
         conversion_dict = get_conversion_dict()
@@ -707,7 +722,7 @@ conversion_dict = { # mg/l is the same as g/m3: conversion is phyc in mol/m3 to 
     
     #dtstart = dt.datetime.now()
     try:
-        data_xr = xr.open_mfdataset(file_list_nc)#,chunks={&#39;time&#39;:1}) #TODO: does chunks argument solve &#34;PerformanceWarning: Slicing is producing a large chunk.&#34;? {&#39;time&#39;:1} is not a convenient chunking to use for timeseries extraction
+        data_xr = xr.open_mfdataset(file_list_nc, chunks=chunks)#,chunks={&#39;time&#39;:1}) #TODO: does chunks argument solve &#34;PerformanceWarning: Slicing is producing a large chunk.&#34;? {&#39;time&#39;:1} is not a convenient chunking to use for timeseries extraction
     except xr.MergeError as e: #TODO: this except is necessary for CMCC, ux and uy have different lat/lon values, so renaming those of uy to avoid merging conflict
         def preprocess_CMCC_uovo(ds):
             if &#39;vo_&#39; in os.path.basename(ds.encoding[&#39;source&#39;]):
@@ -716,13 +731,38 @@ conversion_dict = { # mg/l is the same as g/m3: conversion is phyc in mol/m3 to 
                 ds = ds.drop_vars([&#39;vertices_longitude&#39;,&#39;vertices_latitude&#39;])
             return ds
         print(f&#39;catching &#34;MergeError: {e}&#34; &gt;&gt; WARNING: ux/uy have different latitude/longitude values, making two coordinates sets in Dataset.&#39;)
-        data_xr = xr.open_mfdataset(file_list_nc,chunks={&#39;time&#39;:1},preprocess=preprocess_CMCC_uovo)
+        data_xr = xr.open_mfdataset(file_list_nc, chunks=chunks, preprocess=preprocess_CMCC_uovo)
     
-    #rename variables with rename_dict derived from conversion_dict
-    rename_dict = {v[&#39;ncvarname&#39;]:k for k,v in conversion_dict.items()}
-    for ncvarn in data_xr.variables.mapping.keys():
-        if ncvarn in rename_dict.keys():
-            data_xr = data_xr.rename({ncvarn:rename_dict[ncvarn]})
+    #rename variables with rename_dict derived from conversion_dict. duplicate keys are not possible, so phyc is always renamed to tracerbndOpal (last in conversion_dict)
+    # rename_dict = {v[&#39;ncvarname&#39;]:k for k,v in conversion_dict.items()}
+    # for ncvarn in data_xr.variables.mapping.keys():
+    #     if ncvarn in rename_dict.keys():
+    #         data_xr = data_xr.rename({ncvarn:rename_dict[ncvarn]})
+
+    #renames ncvarnames to quantity names: proposal lisa, does not support ux/uy
+    # for ncvarn in data_xr.variables.mapping.keys():
+    #     if ncvarn == conversion_dict[quantity][&#39;ncvarname&#39;]:
+    #         data_xr = data_xr.rename({ncvarn:quantity})
+    #         print(f&#39;variable {ncvarn} renamed to {quantity}&#39;)
+    
+    for k,v in conversion_dict.items():
+        ncvarn = v[&#39;ncvarname&#39;]
+        if ncvarn in data_xr.variables.mapping.keys() and k in quantity_list: #k in quantity_list so phyc is not always renamed to tracerbndPON1 (first in conversion_dict)
+            data_xr = data_xr.rename({ncvarn:k})
+            print(f&#39;variable {ncvarn} renamed to {k}&#39;)
+    
+    #rename dims time/depth/lat/lon/x/y #TODO: this has to be phased out some time, or made as an argument or merged with conversion_dict?
+    rename_dims_dict = {&#39;time_counter&#39;:&#39;time&#39;, #time_counter instead of time for some CMCC files
+                        &#39;lev&#39;:&#39;depth&#39;, #depth for CMEMS and many others, but lev for GFDL
+                        &#39;deptht&#39;:&#39;depth&#39;, #deptht for some CMCC vars
+                        &#39;lon&#39;:&#39;longitude&#39;,&#39;lat&#39;:&#39;latitude&#39;,
+                        &#39;nav_lon&#39;:&#39;longitude&#39;,&#39;nav_lat&#39;:&#39;latitude&#39;, #nav_lon/nav_lat for some CMCC vars
+                        &#39;x&#39;:&#39;j&#39;,&#39;y&#39;:&#39;i&#39;, #x/y instead of j/i for some CMCC vars (non-regulargrid)
+                        }
+    for k,v in rename_dims_dict.items():
+        if k in data_xr.dims and v not in data_xr.dims: 
+            data_xr = data_xr.rename({k:v}) #TODO: can also do this for data_xr_var only?
+            print(f&#39;dimension {k} renamed to {v}&#39;)
     
     #get calendar and maybe convert_calendar, makes sure that nc_tstart/nc_tstop are of type pd._libs.tslibs.timestamps.Timestamp
     data_xr_calendar = data_xr[&#39;time&#39;].dt.calendar
@@ -743,17 +783,6 @@ conversion_dict = { # mg/l is the same as g/m3: conversion is phyc in mol/m3 to 
         raise Exception(f&#39;requested tstart {tstart} outside of available range {nc_tstart} to {nc_tstop}&#39;)
     if tstop &gt; nc_tstop:
         raise Exception(f&#39;requested tstop {tstop} outside of available range {nc_tstart} to {nc_tstop}&#39;)
-    
-    #rename coordinates depth/lat/lon
-    if &#39;depth&#39; not in data_xr.coords:
-        if &#39;lev&#39; in data_xr.coords: #depth for CMEMS and many others, but lev for GFDL, convert to depth #TODO: provide rename_dict as argument to this function or leave as is?
-            data_xr = data_xr.rename({&#39;lev&#39;:&#39;depth&#39;}) #TODO: can also do this for data_xr_var only?
-            print(&#39;variable/coordinate lev renamed to depth&#39;)
-    if &#39;longitude&#39; not in data_xr.coords:
-        if &#39;lon&#39; in data_xr.coords:
-            data_xr = data_xr.rename({&#39;lon&#39;:&#39;longitude&#39;,&#39;lat&#39;:&#39;latitude&#39;})
-        else:
-            raise Exception(f&#39;no lat/lon coords available in file: {data_xr.coords}&#39;)
     
     #360 to 180 conversion
     convert_360to180 = (data_xr[&#39;longitude&#39;].to_numpy()&gt;180).any() #TODO: replace to_numpy() with load()
@@ -801,7 +830,7 @@ conversion_dict = { # mg/l is the same as g/m3: conversion is phyc in mol/m3 to 
 </details>
 </dd>
 <dt id="dfm_tools.interpolate_grid2bnd.interp_regularnc_to_plipoints"><code class="name flex">
-<span>def <span class="ident">interp_regularnc_to_plipoints</span></span>(<span>data_xr_reg, file_pli, nPoints=None, kdtree_k=3, load=True)</span>
+<span>def <span class="ident">interp_regularnc_to_plipoints</span></span>(<span>data_xr_reg, file_pli, nPoints=None, load=True)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>load: interpolation errors are only raised upon loading, so do this per default</p>
@@ -810,7 +839,7 @@ conversion_dict = { # mg/l is the same as g/m3: conversion is phyc in mol/m3 to 
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, kdtree_k=3, load=True):
+<pre><code class="python">def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True):
     &#34;&#34;&#34;
     load: interpolation errors are only raised upon loading, so do this per default
     #TODO: make format of this dataset more in line with existing bnd-nc format and hisfile: https://issuetracker.deltares.nl/browse/UNST-6549
@@ -848,10 +877,10 @@ conversion_dict = { # mg/l is the same as g/m3: conversion is phyc in mol/m3 to 
                                          method=&#39;linear&#39;, 
                                          kwargs={&#39;bounds_error&#39;:True}, #error is only raised upon load(), so when the actual value retrieval happens
                                          )
-
+    
     except ValueError as e: #Dimensions {&#39;latitude&#39;, &#39;longitude&#39;} do not exist. Expected one or more of Frozen({&#39;time&#39;: 17, &#39;depth&#39;: 50, &#39;i&#39;: 292, &#39;j&#39;: 362}).
         #this is for eg CMCC model with multidimensional lat/lon variable
-        #TODO: make nicer, without try except? eg latlon_ndims==1, but not sure if that is always valid
+        #TODO: make nicer, without try except? eg latlon_ndims==1, but not sure if that is always valid &gt;&gt; add nonregular alternative for interp_regularnc_to_plipoints() and set kdtree to 1 (closest value) (uy stuff has to be dropped anyway)
         #TODO: maybe also spherical coordinate distance calculation instead of cartesian/eucledian
         #TODO: maybe use .sel(method=&#39;nearest&#39;), but &#34;KeyError: &#34;no index found for coordinate &#39;longitude&#39;&#34;&#34;
         #TODO: interp for 2D also requested: https://github.com/pydata/xarray/issues/2281
@@ -868,6 +897,7 @@ conversion_dict = { # mg/l is the same as g/m3: conversion is phyc in mol/m3 to 
             data_lonlat_pd = pd.DataFrame({&#39;x&#39;:data_lon_flat,&#39;y&#39;:data_lat_flat})
             #KDTree, finds minimal eucledian distance between points (maybe haversine would be better)
             tree = KDTree(data_lonlat_pd) #alternatively sklearn.neighbors.BallTree: tree = BallTree(data_lonlat_pd)
+            kdtree_k = 3 #TODO: nearest is probably just as wrong/right as weighted average, but raises error when using 1
             distance, data_lonlat_idx = tree.query(path_lonlat_pd, k=kdtree_k) #TODO: maybe add outofbounds treshold for distance
             #data_lonlat_pd.iloc[data_lonlat_idx]
             idx_i,idx_j = np.divmod(data_lonlat_idx, data_xr_var[&#39;longitude&#39;].shape[1]) #get idx i and j by sort of counting over 2D array
