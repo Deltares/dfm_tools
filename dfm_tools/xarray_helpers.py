@@ -166,7 +166,7 @@ def remove_ghostcells(uds): #TODO: create JIRA issue: add domainno attribute to 
     return uds
 
 
-def open_partitioned_dataset(file_nc, chunks={'time':1}): 
+def open_partitioned_dataset(file_nc, chunks={'time':1}, remove_ghost=True): 
     """
     using xugrid to read and merge partitions, with some additional features (remaning old layerdim, timings, set zcc/zw as data_vars)
 
@@ -218,7 +218,8 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}):
     for iF, file_nc_one in enumerate(file_nc_list):
         print(iF+1,end=' ')
         uds = xu.open_dataset(file_nc_one, chunks=chunks)
-        uds = remove_ghostcells(uds)
+        if remove_ghost: #TODO: this makes it way slower (at least for GTSM), but is necessary since values on overlapping cells are not always identical (eg in case of Venice ucmag)
+            uds = remove_ghostcells(uds)
         partitions.append(uds)
     print(': ',end='')
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
