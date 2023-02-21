@@ -753,16 +753,15 @@ def get_Dataset_atdepths(data_xr, depths, reference=&#39;z0&#39;, zlayer_z0_seln
                                                            &#39;reference&#39;:f&#39;model_{reference}&#39;,
                                                            &#39;positive&#39;:&#39;up&#39;}) #TODO: make more in line with CMEMS etc
     
-    #extract waterlevels and bedlevels from file, to correct layers with
-    data_wl = data_xr[varname_wl]
-    data_bl = data_xr[varname_bl]
-    
-    #simplified/faster method for zlayer icm z0 reference (mapfiles only)
+    #simplified/faster method for zlayer icm z0 reference (mapfiles only) #TODO: maybe remove this part of the code to make it better maintainable.
     if &#39;mesh2d_layer_z&#39; in data_xr.variables and zlayer_z0_selnearest and reference==&#39;z0&#39;: # selects nearest z-center values (instead of slicing), should be faster #TODO: check if this is faster than fullgrid
         print(&#39;z-layer model, zlayer_z0_selnearest=True and reference==&#34;z0&#34; so using xr.sel(method=&#34;nearest&#34;)]&#39;)
+        warnings.warn(DeprecationWarning(&#39;The get_Dataset_atdepths() keyword zlayer_z0_selnearest might be phased out.&#39;))
         data_xr = data_xr.set_index({dimn_layer:&#39;mesh2d_layer_z&#39;})#.rename({&#39;nmesh2d_layer&#39;:depth_varname}) #set depth as index on layers, to be able to interp to depths instead of layernumbers
         data_xr[depth_varname] = depths_xr
         data_xr_atdepths = data_xr.sel({dimn_layer:depths_xr},method=&#39;nearest&#39;)
+        data_wl = data_xr[varname_wl]
+        data_bl = data_xr[varname_bl]
         data_xr_atdepths = data_xr_atdepths.where((depths_xr&gt;=data_bl) &amp; (depths_xr&lt;=data_wl)) #filter above wl and below bl values
         return data_xr_atdepths #early return
     
@@ -783,8 +782,10 @@ def get_Dataset_atdepths(data_xr, depths, reference=&#39;z0&#39;, zlayer_z0_seln
     if reference==&#39;z0&#39;:
         zw_reference = data_xr[varname_zint]
     elif reference==&#39;waterlevel&#39;:
+        data_wl = data_xr[varname_wl]
         zw_reference = data_xr[varname_zint] - data_wl
     elif reference==&#39;bedlevel&#39;:
+        data_bl = data_xr[varname_bl]
         zw_reference = data_xr[varname_zint] - data_bl
     else:
         raise Exception(f&#39;unknown reference &#34;{reference}&#34; (possible are z0, waterlevel and bedlevel&#39;)
@@ -1910,16 +1911,15 @@ This is faster but results in values interpolated between zcc (z cell centers), 
                                                            &#39;reference&#39;:f&#39;model_{reference}&#39;,
                                                            &#39;positive&#39;:&#39;up&#39;}) #TODO: make more in line with CMEMS etc
     
-    #extract waterlevels and bedlevels from file, to correct layers with
-    data_wl = data_xr[varname_wl]
-    data_bl = data_xr[varname_bl]
-    
-    #simplified/faster method for zlayer icm z0 reference (mapfiles only)
+    #simplified/faster method for zlayer icm z0 reference (mapfiles only) #TODO: maybe remove this part of the code to make it better maintainable.
     if &#39;mesh2d_layer_z&#39; in data_xr.variables and zlayer_z0_selnearest and reference==&#39;z0&#39;: # selects nearest z-center values (instead of slicing), should be faster #TODO: check if this is faster than fullgrid
         print(&#39;z-layer model, zlayer_z0_selnearest=True and reference==&#34;z0&#34; so using xr.sel(method=&#34;nearest&#34;)]&#39;)
+        warnings.warn(DeprecationWarning(&#39;The get_Dataset_atdepths() keyword zlayer_z0_selnearest might be phased out.&#39;))
         data_xr = data_xr.set_index({dimn_layer:&#39;mesh2d_layer_z&#39;})#.rename({&#39;nmesh2d_layer&#39;:depth_varname}) #set depth as index on layers, to be able to interp to depths instead of layernumbers
         data_xr[depth_varname] = depths_xr
         data_xr_atdepths = data_xr.sel({dimn_layer:depths_xr},method=&#39;nearest&#39;)
+        data_wl = data_xr[varname_wl]
+        data_bl = data_xr[varname_bl]
         data_xr_atdepths = data_xr_atdepths.where((depths_xr&gt;=data_bl) &amp; (depths_xr&lt;=data_wl)) #filter above wl and below bl values
         return data_xr_atdepths #early return
     
@@ -1940,8 +1940,10 @@ This is faster but results in values interpolated between zcc (z cell centers), 
     if reference==&#39;z0&#39;:
         zw_reference = data_xr[varname_zint]
     elif reference==&#39;waterlevel&#39;:
+        data_wl = data_xr[varname_wl]
         zw_reference = data_xr[varname_zint] - data_wl
     elif reference==&#39;bedlevel&#39;:
+        data_bl = data_xr[varname_bl]
         zw_reference = data_xr[varname_zint] - data_bl
     else:
         raise Exception(f&#39;unknown reference &#34;{reference}&#34; (possible are z0, waterlevel and bedlevel&#39;)
