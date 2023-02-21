@@ -196,7 +196,7 @@ def remove_ghostcells(uds): #TODO: create JIRA issue: add domainno attribute to 
     return uds
 
 
-def open_partitioned_dataset(file_nc, chunks={&#39;time&#39;:1}): 
+def open_partitioned_dataset(file_nc, chunks={&#39;time&#39;:1}, remove_ghost=True): 
     &#34;&#34;&#34;
     using xugrid to read and merge partitions, with some additional features (remaning old layerdim, timings, set zcc/zw as data_vars)
 
@@ -248,7 +248,8 @@ def open_partitioned_dataset(file_nc, chunks={&#39;time&#39;:1}):
     for iF, file_nc_one in enumerate(file_nc_list):
         print(iF+1,end=&#39; &#39;)
         uds = xu.open_dataset(file_nc_one, chunks=chunks)
-        uds = remove_ghostcells(uds)
+        if remove_ghost: #TODO: this makes it way slower (at least for GTSM), but is necessary since values on overlapping cells are not always identical (eg in case of Venice ucmag)
+            uds = remove_ghostcells(uds)
         partitions.append(uds)
     print(&#39;: &#39;,end=&#39;&#39;)
     print(f&#39;{(dt.datetime.now()-dtstart).total_seconds():.2f} sec&#39;)
@@ -506,7 +507,7 @@ Not using most-occurring domainno in var, since this is not a valid assumption f
 </details>
 </dd>
 <dt id="dfm_tools.xarray_helpers.open_partitioned_dataset"><code class="name flex">
-<span>def <span class="ident">open_partitioned_dataset</span></span>(<span>file_nc, chunks={'time': 1})</span>
+<span>def <span class="ident">open_partitioned_dataset</span></span>(<span>file_nc, chunks={'time': 1}, remove_ghost=True)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>using xugrid to read and merge partitions, with some additional features (remaning old layerdim, timings, set zcc/zw as data_vars)</p>
@@ -559,7 +560,7 @@ Not using most-occurring domainno in var, since this is not a valid assumption f
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def open_partitioned_dataset(file_nc, chunks={&#39;time&#39;:1}): 
+<pre><code class="python">def open_partitioned_dataset(file_nc, chunks={&#39;time&#39;:1}, remove_ghost=True): 
     &#34;&#34;&#34;
     using xugrid to read and merge partitions, with some additional features (remaning old layerdim, timings, set zcc/zw as data_vars)
 
@@ -611,7 +612,8 @@ Not using most-occurring domainno in var, since this is not a valid assumption f
     for iF, file_nc_one in enumerate(file_nc_list):
         print(iF+1,end=&#39; &#39;)
         uds = xu.open_dataset(file_nc_one, chunks=chunks)
-        uds = remove_ghostcells(uds)
+        if remove_ghost: #TODO: this makes it way slower (at least for GTSM), but is necessary since values on overlapping cells are not always identical (eg in case of Venice ucmag)
+            uds = remove_ghostcells(uds)
         partitions.append(uds)
     print(&#39;: &#39;,end=&#39;&#39;)
     print(f&#39;{(dt.datetime.now()-dtstart).total_seconds():.2f} sec&#39;)

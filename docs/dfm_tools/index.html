@@ -74,15 +74,7 @@ from dfm_tools.bathymetry import *
 from dfm_tools.io.tim import * #TODO: remove this when moved to hydrolib
 
 import warnings
-warnings.filterwarnings(&#39;always&#39;,category=DeprecationWarning)
-
-#add plotmethod to xugrid grid object
-import xugrid as xr
-def plot(self,**kwargs): #TODO: maybe add to xugrid directly
-    xr.plot.line(self,**kwargs) #uds.ugrid.grid
-    pass
-ug2d = xr.ugrid.ugrid2d.Ugrid2d
-ug2d.plot = plot</code></pre>
+warnings.filterwarnings(&#39;always&#39;,category=DeprecationWarning)</code></pre>
 </details>
 </section>
 <section>
@@ -151,23 +143,6 @@ Copyright (C) 2020 Deltares. All rights reserved …</p></div>
 <section>
 </section>
 <section>
-<h2 class="section-title" id="header-functions">Functions</h2>
-<dl>
-<dt id="dfm_tools.plot"><code class="name flex">
-<span>def <span class="ident">plot</span></span>(<span>self, **kwargs)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def plot(self,**kwargs): #TODO: maybe add to xugrid directly
-    xr.plot.line(self,**kwargs) #uds.ugrid.grid
-    pass</code></pre>
-</details>
-</dd>
-</dl>
 </section>
 <section>
 </section>
@@ -199,11 +174,6 @@ Copyright (C) 2020 Deltares. All rights reserved …</p></div>
 <li><code><a title="dfm_tools.regulargrid" href="regulargrid.html">dfm_tools.regulargrid</a></code></li>
 <li><code><a title="dfm_tools.ugrid" href="ugrid.html">dfm_tools.ugrid</a></code></li>
 <li><code><a title="dfm_tools.xarray_helpers" href="xarray_helpers.html">dfm_tools.xarray_helpers</a></code></li>
-</ul>
-</li>
-<li><h3><a href="#header-functions">Functions</a></h3>
-<ul class="">
-<li><code><a title="dfm_tools.plot" href="#dfm_tools.plot">plot</a></code></li>
 </ul>
 </li>
 </ul>
