@@ -136,7 +136,7 @@ for file_nc in file_nc_list:
     
     print('plot grid from mapdata')
     fig, ax = plt.subplots()
-    pc = data_frommap_merged.ugrid.grid.plot(edgecolor='crimson', linewidth=0.5)
+    pc = data_frommap_merged.grid.plot(edgecolor='crimson', linewidth=0.5)
     ax.set_xlabel('x')
     ax.set_ylabel('y')
     ax.set_aspect('equal')
