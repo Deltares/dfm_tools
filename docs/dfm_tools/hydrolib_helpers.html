@@ -293,7 +293,9 @@ def pointlike_to_DataFrame(pointlike,drop_emptycols=True):
     -------
     pointlike_pd : TYPE
         DESCRIPTION.
-        
+    drop_emptycols : bool, optional
+        Drop empty (all-nan) columns automatically, like the z-column in ldb file. The default is True.
+    
     Example:
         polyfile_object = PolyFile(file_pli)
         data_pol_pd_list = [pointlike_to_DataFrame(polyobj) for polyobj in polyfile_object.objects]
@@ -307,8 +309,7 @@ def pointlike_to_DataFrame(pointlike,drop_emptycols=True):
         pointlike_pd = pd.concat([pointlike_pd.drop([&#39;data&#39;],axis=1), datavals_pd],axis=1)
         
     if drop_emptycols:
-        allempty_bool = pointlike_pd.isnull().all(axis=0)
-        pointlike_pd = pointlike_pd.loc[:,~allempty_bool]
+        pointlike_pd = pointlike_pd.dropna(axis=1).copy()
         
     return pointlike_pd
 
@@ -627,6 +628,8 @@ def parse_xy_to_datetime(pointlike_pd):
 <dl>
 <dt><strong><code>pointlike_pd</code></strong> :&ensp;<code>TYPE</code></dt>
 <dd>DESCRIPTION.</dd>
+<dt><strong><code>drop_emptycols</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>Drop empty (all-nan) columns automatically, like the z-column in ldb file. The default is True.</dd>
 </dl>
 <h2 id="example">Example</h2>
 <p>polyfile_object = PolyFile(file_pli)
@@ -648,7 +651,9 @@ data_pol_pd_list = [pointlike_to_DataFrame(polyobj) for polyobj in polyfile_obje
     -------
     pointlike_pd : TYPE
         DESCRIPTION.
-        
+    drop_emptycols : bool, optional
+        Drop empty (all-nan) columns automatically, like the z-column in ldb file. The default is True.
+    
     Example:
         polyfile_object = PolyFile(file_pli)
         data_pol_pd_list = [pointlike_to_DataFrame(polyobj) for polyobj in polyfile_object.objects]
@@ -662,8 +667,7 @@ data_pol_pd_list = [pointlike_to_DataFrame(polyobj) for polyobj in polyfile_obje
         pointlike_pd = pd.concat([pointlike_pd.drop([&#39;data&#39;],axis=1), datavals_pd],axis=1)
         
     if drop_emptycols:
-        allempty_bool = pointlike_pd.isnull().all(axis=0)
-        pointlike_pd = pointlike_pd.loc[:,~allempty_bool]
+        pointlike_pd = pointlike_pd.dropna(axis=1).copy()
         
     return pointlike_pd</code></pre>
 </details>
