@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 plt.close('all')
 import dfm_tools as dfmt
 
+#TODO: sometimes messes up resulting dataset, probably only in case of integer sourcedata: https://github.com/Deltares/dfm_tools/issues/239
 #TODO: sometimes crashes in pytest for some reason: "OSError: [Errno -51] NetCDF: Unknown file format"
 #TODO: add ERA5 conversions and features from hydro_tools\ERA5\ERA52DFM.py (except for varRhoair_alt, request FM support for varying airpressure: https://issuetracker.deltares.nl/browse/UNST-6593)
 #TODO: request FM support for charnock (etc) separate meteo forcing (currently airpressure_windx_windy_charnock merged file is required): https://issuetracker.deltares.nl/browse/UNST-6453
@@ -81,6 +82,12 @@ elif 'ERA5' in mode:
     elif mode=='ERA5_rainfall':
         varkey_list = ['mer','mtpr'] # mean_evaporation_rate, mean_total_precipitation_rate
     if 1:
+        all_tstart = dt.datetime(2023,1,1, 0, 0) 
+        all_tstop = dt.datetime(2023,2,1, 0, 0)
+        dir_data = r'p:\11207892-pez-metoceanmc\3D-DCSM-FM\workflow_manual\01_scripts\04_meteo\era5_temp' #TODO: add other vars with * (support separate files)
+        fn_match_pattern = f'era5_.*({"|".join(varkey_list)})_.*\.nc'
+        file_out_prefix = f'era5_{"_".join(varkey_list)}'
+    elif 1:
         dir_data = 'p:\\metocean-data\\open\\ERA5\\data\\Irish_North_Baltic_Sea\\*' #TODO: add other vars with * (support separate files)
         fn_match_pattern = f'era5_.*({"|".join(varkey_list)})_.*.nc'
         file_out_prefix = f'era5_{"_".join(varkey_list)}'
@@ -133,6 +140,9 @@ data_xr = xr.open_mfdataset(file_nc,
                             #concat_dim="time", combine="nested", data_vars='minimal', coords='minimal', compat='override', #TODO: optional vars to look into: https://docs.xarray.dev/en/stable/user-guide/io.html#reading-multi-file-datasets. might also resolve large chunks warning with ERA5 (which has dissapeared somehow)
                             )
 print('...done')
+
+fig,ax = plt.subplots()
+data_xr.msl.sel(time='2023-01-24 02:00:00').plot(ax=ax,cmap='jet')
 
 
 #rename variables
@@ -233,7 +243,7 @@ if zerostart:
     field_zerostart['time'] = [times_pd.index[0]-dt.timedelta(days=2),times_pd.index[0]-dt.timedelta(days=1)] #TODO: is one zero field not enough? (is replacing first field not also ok? (results in 1hr transition period)
     data_xr_tsel = xr.concat([field_zerostart,data_xr_tsel],dim='time')#.sortby('time')
 
-encoding = {}
+encoding = {} #TODO: careful with this: https://github.com/Deltares/dfm_tools/issues/239
 #encoding['time'] = {'units': 'hours since 1900-01-01 00:00:00'} #TODO: maybe add different reftime?
 #for varkey in list(data_xr_tsel.data_vars.keys()):
 #    encoding[varkey] = {'scale_factor':0.01,'add_offset':0} #TODO: maybe add, but not necessary since xarray uses encoding from first file and that is already quite efficient.
@@ -246,6 +256,7 @@ if 'expver' in data_xr_tsel.dims:
 print('writing file (can take a while)')
 file_out = os.path.join(dir_output, f'{file_out_prefix}_{tstart_str}to{tstop_str}_{mode}.nc')
 data_xr_tsel.to_netcdf(file_out, encoding=encoding)
+
 
 print('loading outputfile')
 with xr.open_dataset(file_out) as data_xr_check:
