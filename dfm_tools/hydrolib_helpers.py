@@ -263,7 +263,9 @@ def pointlike_to_DataFrame(pointlike,drop_emptycols=True):
     -------
     pointlike_pd : TYPE
         DESCRIPTION.
-        
+    drop_emptycols : bool, optional
+        Drop empty (all-nan) columns automatically, like the z-column in ldb file. The default is True.
+    
     Example:
         polyfile_object = PolyFile(file_pli)
         data_pol_pd_list = [pointlike_to_DataFrame(polyobj) for polyobj in polyfile_object.objects]
@@ -277,8 +279,7 @@ def pointlike_to_DataFrame(pointlike,drop_emptycols=True):
         pointlike_pd = pd.concat([pointlike_pd.drop(['data'],axis=1), datavals_pd],axis=1)
         
     if drop_emptycols:
-        allempty_bool = pointlike_pd.isnull().all(axis=0)
-        pointlike_pd = pointlike_pd.loc[:,~allempty_bool]
+        pointlike_pd = pointlike_pd.dropna(axis=1).copy()
         
     return pointlike_pd
 
