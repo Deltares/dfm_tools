@@ -30,10 +30,8 @@ mesh2d_dict_mf1 = {'cf_role': 'mesh_topology',
                  'edge_dimension': 'nNetLink', #'nmesh2d_edge',
                  'edge_coordinates': 'FlowLink_xu FlowLink_yu', #'mesh2d_edge_x mesh2d_edge_y',
                  'face_node_connectivity': 'NetElemNode', #'mesh2d_face_nodes',
-                 'face_dimension': 'nNetElem', #'nmesh2d_face', #TODO: rst (but also present in map)
-                 #'face_dimension': 'nFlowElem', #'nmesh2d_face', TODO: or nNetElem
+                 'face_dimension': 'nNetElem', #'nmesh2d_face',
                  'edge_face_connectivity': 'NetElemLink', #'mesh2d_edge_faces',
-                 #'edge_face_connectivity': 'FlowLink', #'mesh2d_edge_faces',
                  'face_coordinates': 'FlowElem_xzw FlowElem_yzw', #'mesh2d_face_x mesh2d_face_y', #TODO: rst, but also map
                  #'face_coordinates': 'FlowElem_xcc FlowElem_ycc', #'mesh2d_face_x mesh2d_face_y', #TODO: present in map, but is bounds?
                  'layer_dimension': 'laydim', #'nmesh2d_layer',
@@ -49,8 +47,9 @@ ds_rst['mesh2d'] = xr.DataArray(data=int()).assign_attrs(mesh2d_dict_mf1)
 #uds_rst = xu.core.wrap.UgridDataset(ds_rst)
 
 ds_map = xr.open_dataset(r'p:\1230882-emodnet_hrsm\GTSMv5.0\runs\GM43_2000m_eu0900m_ITfac5p5_wx\output\gtsm_model_0000_map.nc')
+ds_map = ds_map.rename({'nFlowElem':'nNetElem'}) #merge different face dimensions. maybe also nNetLinkPts/nFlowLinkPts=2 and nFlowElemContourPts/nFlowElemContourPts
 ds_map['mesh2d'] = xr.DataArray(data=int()).assign_attrs(mesh2d_dict_mf1)
-ds_map.NetLink
+
 uds_map = xu.core.wrap.UgridDataset(ds_map)
 
 breakit
