@@ -87,7 +87,7 @@ elif 'ERA5' in mode:
         dir_data = r'p:\11207892-pez-metoceanmc\3D-DCSM-FM\workflow_manual\01_scripts\04_meteo\era5_temp' #TODO: add other vars with * (support separate files)
         fn_match_pattern = f'era5_.*({"|".join(varkey_list)})_.*\.nc'
         file_out_prefix = f'era5_{"_".join(varkey_list)}'
-    elif 1:
+    elif 0:
         dir_data = 'p:\\metocean-data\\open\\ERA5\\data\\Irish_North_Baltic_Sea\\*' #TODO: add other vars with * (support separate files)
         fn_match_pattern = f'era5_.*({"|".join(varkey_list)})_.*.nc'
         file_out_prefix = f'era5_{"_".join(varkey_list)}'
