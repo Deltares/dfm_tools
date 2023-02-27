@@ -19,7 +19,7 @@ dir_output = '.'
 file_nc = r'p:\archivedprojects\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\fm\DFM_OUTPUT_inlet\inlet_map.nc'
 data_frommap_merged = dfmt.open_partitioned_dataset(file_nc)
 
-vars_pd = dfmt.get_ncvarproperties(file_nc=file_nc)
+vars_pd = dfmt.get_ncvarproperties(data_frommap_merged)
 vars_pd_sel = vars_pd[vars_pd['long_name'].str.contains('transport')]
 #vars_pd_sel = vars_pd[vars_pd['dimensions'].str.contains('mesh2d_nFaces') & vars_pd['long_name'].str.contains('wave')]
 
@@ -60,13 +60,11 @@ plt.savefig(os.path.join(dir_output,'%s_%s'%(os.path.basename(file_nc).replace('
 
 #WAVM FILE
 file_nc = r'p:\archivedprojects\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\wave\wavm-inlet.nc'
-vars_pd = dfmt.get_ncvarproperties(file_nc=file_nc)
+data_xr = xr.open_dataset(file_nc)
+vars_pd = dfmt.get_ncvarproperties(data_xr)
 vars_pd_sel = vars_pd[vars_pd['long_name'].str.contains('dissi')]
 #vars_pd_sel = vars_pd[vars_pd['dimensions'].str.contains('mesh2d_nFaces') & vars_pd['long_name'].str.contains('wave')]
 
-data_xr = xr.open_dataset(file_nc)
-
-#plt.close('all')
 varname_list = ['hsign', 'dir', 'period', 'dspr']
 var_clim = [[0,2], [0,360], [0,7.5], [0,35], [0,20]]
 for iV, varname in enumerate(varname_list):
