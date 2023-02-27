@@ -23,7 +23,7 @@ map_q = dict(zip(crs_q, bc_q))
 station_wl = ['BE_976.00', 'HD_983.41_R_LMW-Cl_Moerdijkbrug'] 
 bc_wl = ['Beneden-Merwede_0001','Nieuwe-Merwede_0001']
 map_wl = dict(zip(station_wl, bc_wl))
-dir_input = r'p:\11206813-006-kpp2021_rmm-2d\C_Work\07_Baseline\baseline-rmm_vzm-beno19_6-v1\models\dflowfm\dflowfm2d-rmm_vzm-beno19_6-v1b\computations\test'
+dir_input = r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\07_Baseline\baseline-rmm_vzm-beno19_6-v1\models\dflowfm\dflowfm2d-rmm_vzm-beno19_6-v1b\computations\test'
 dir_output = '.'
 
 sims = ['tba']#,'tbb','tbc','tbd','tbe','tbf']

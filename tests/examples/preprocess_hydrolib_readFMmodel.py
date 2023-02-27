@@ -15,14 +15,14 @@ plt.close('all')
 dtstart = dt.datetime.now()
 
 
-file_mdu = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB_structbc\RMM_dflowfm_general.mdu')
+file_mdu = Path(r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB_structbc\RMM_dflowfm_general.mdu')
 mdu_contents = open(str(file_mdu),'r').readlines()
 if '[model]' in mdu_contents[0]:
     print('WARNING: [model] found in mdufile, this should be [general]')
 fm = hcdfm.FMModel(file_mdu) #TODO: works, but many mdu-lines are comented, so uncomment things one by one
 
 
-file_struct = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_structures.ini')
+file_struct = Path(r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_structures.ini')
 structs = hcdfm.StructureModel(file_struct) #TODO SOLVED with : pli in structures.ini is currently not supported: https://github.com/Deltares/HYDROLIB-core/issues/353
 for struct in structs.structure:
     print(struct.id)
@@ -30,14 +30,14 @@ for struct in structs.structure:
 #structs.structure[0].__dict__
 
 
-file_network = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\rmm_v1p7_net.nc')
+file_network = Path(r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\rmm_v1p7_net.nc')
 #file_network = Path(r'p:\1230882-emodnet_hrsm\GTSMv5.0\runs\reference_GTSMv4.1_wiCA\step11_global_1p25eu_net.nc')
 #file_network = Path(r'p:\1230882-emodnet_hrsm\GTSMv5.0\runs\GM50_2000m_eu0900m_ITfac5p5_wx\gtsm_200s_2000m_eu0900m_ca2000m_v4_net.nc')
 #network = hcdfm.NetworkModel(file_network) #TODO: what is this used for? plotting network/map is easier with xugrid
 
 
-#file_extnew = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_bnd.ext') #TODO: waterlevelbnd for rivers are present three times: https://github.com/Deltares/HYDROLIB-core/issues/354
-file_extnew = Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_bnd_course.ext')
+#file_extnew = Path(r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_bnd.ext') #TODO: waterlevelbnd for rivers are present three times: https://github.com/Deltares/HYDROLIB-core/issues/354
+file_extnew = Path(r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_bnd_course.ext')
 #file_extnew = Path(r'p:\1230882-emodnet_hrsm\GTSMv5.0\SO_NHrivGTSM\computations\BD013_4par_mildslope_wflowdis_JV\gtsm_forcing_bc.ext')
 ext = hcdfm.ExtModel(file_extnew)
 
