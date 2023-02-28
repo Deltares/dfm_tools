@@ -44,7 +44,7 @@ for timestep in [2,3]:#[0,10,20,30]:
     #data_sel = dfmt.get_Dataset_atdepths(data_xr=data_map_timesel, depths=0, reference='bedlevel') #bottomlayer: 0m from bedlevel
     
     #creating geodataframe with cells from ugrid_verts
-    ugrid_all_verts = dfmt.get_ugrid_verts(data_map_timesel)
+    ugrid_all_verts = data_map_timesel.grid.face_node_coordinates
     pol_shp_list = [Polygon(verts_one[~np.isnan(verts_one).all(axis=1)]) for verts_one in ugrid_all_verts]
     newdata = gpd.GeoDataFrame({'geometry': pol_shp_list},crs=crs)
     

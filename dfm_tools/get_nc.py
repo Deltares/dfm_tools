@@ -42,10 +42,11 @@ import matplotlib.pyplot as plt
 from dfm_tools.xarray_helpers import get_vertical_dimensions
 
 
-def get_ugrid_verts(data_xr_map):
+def get_ugrid_verts(data_xr_map): #TODO: remove this deprecated function
     """
-    getting ugrid verts from xugrid mapfile. TODO: this will be replaced by xugrid: https://github.com/Deltares/xugrid/issues/48
+    getting ugrid verts from xugrid mapfile.
     """
+    raise DeprecationWarning('dfmt.get_ugrid_verts() is deprecated, use uds.grid.face_node_coordinates instead (https://github.com/Deltares/xugrid/issues/48)')
     
     face_nos = data_xr_map.grid.face_node_connectivity
     
@@ -114,7 +115,7 @@ def polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=None)
     #defining celinlinebox
     line_section = LineString(line_array)
     
-    ugrid_all_verts = get_ugrid_verts(data_frommap_merged)
+    ugrid_all_verts = data_frommap_merged.grid.face_node_coordinates
     verts_xmax = np.nanmax(ugrid_all_verts[:,:,0].data,axis=1)
     verts_xmin = np.nanmin(ugrid_all_verts[:,:,0].data,axis=1)
     verts_ymax = np.nanmax(ugrid_all_verts[:,:,1].data,axis=1)
