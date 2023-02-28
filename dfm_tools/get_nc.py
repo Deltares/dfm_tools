@@ -48,15 +48,15 @@ def get_ugrid_verts(data_xr_map): #TODO: remove this deprecated function
     """
     raise DeprecationWarning('dfmt.get_ugrid_verts() is deprecated, use uds.grid.face_node_coordinates instead (https://github.com/Deltares/xugrid/issues/48)')
     
-    face_nos = data_xr_map.grid.face_node_connectivity
+    # face_nos = data_xr_map.grid.face_node_connectivity
     
-    face_nnodecoords_x = data_xr_map.grid.node_x[face_nos]
-    face_nnodecoords_x[face_nos==-1] = np.nan
-    face_nnodecoords_y = data_xr_map.grid.node_y[face_nos]
-    face_nnodecoords_y[face_nos==-1] = np.nan
+    # face_nnodecoords_x = data_xr_map.grid.node_x[face_nos]
+    # face_nnodecoords_x[face_nos==-1] = np.nan
+    # face_nnodecoords_y = data_xr_map.grid.node_y[face_nos]
+    # face_nnodecoords_y[face_nos==-1] = np.nan
     
-    ugrid_all_verts = np.c_[face_nnodecoords_x[...,np.newaxis],face_nnodecoords_y[...,np.newaxis]]
-    return ugrid_all_verts
+    # ugrid_all_verts = np.c_[face_nnodecoords_x[...,np.newaxis],face_nnodecoords_y[...,np.newaxis]]
+    # return ugrid_all_verts
 
 
 def calc_dist_pythagoras(x1,x2,y1,y2): # TODO: only used in dfm_tools.ugrid, remove?
