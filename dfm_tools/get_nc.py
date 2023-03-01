@@ -433,7 +433,7 @@ def get_Dataset_atdepths(data_xr, depths, reference='z0', zlayer_z0_selnearest=F
     dtstart = dt.datetime.now()
         
     if 'time' in data_xr.dims: #TODO: suppress this warning for hisfiles since it does not make sense
-        warnings.warn(UserWarning('get_mapdata_onfixedepth() can be very slow when supplying dataset with time dimension, you could supply ds.isel(time=timestep) instead'))
+        warnings.warn(UserWarning('get_Dataset_atdepths() can be very slow when supplying dataset with time dimension, you could supply ds.isel(time=timestep) instead'))
         
     #get layerno via z-interface value (zw), check which celltop-interfaces are above/on depth and which which cellbottom-interfaces are below/on depth
     bool_topinterface_abovedepth = zw_reference.isel({dimname_layw:slice(1,None)}) >= depths_xr
