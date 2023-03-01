@@ -21,4 +21,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: Test and build with tox
+        run: |
+          pip install "tox>=3.8.1,<4"
+          tox -e build
       - uses: codecov/codecov-action@v1
