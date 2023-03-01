@@ -353,7 +353,7 @@ def get_Dataset_atdepths(data_xr, depths, reference='z0', zlayer_z0_selnearest=F
     #TODO: clean up unneccesary variables (like pre-interp depth values and interface dim)
     """
     
-    depth_varname = 'depth_fromref'
+    depth_varname = 'depth_fromref' #TODO: maybe replace with depth_from_z0, depth_from_waterlevel and depth_from_bedlevel respectively
     
     try:
         dimn_layer, dimn_interfaces = get_vertical_dimensions(data_xr)
