@@ -89,5 +89,6 @@ def get_varnamefromattrs(data_xr, varname):
         raise Exception(f'ERROR: requested variable {varname} is in netcdf not 1 but {len(varlist_longname)} times: {varlist_longname}')
     
     #if not returned above, the varname was not found so raise exception
-    raise Exception(f'ERROR: requested variable {varname} not in netcdf, available are: {varlist} and the standard_name and long_name attrs in dfm_tools.get_nc_helpers.get_ncvarproperties(file_nc=file_nc)')    
+    varprops = get_ncvarproperties(data_xr)[['long_name','standard_name']]
+    raise Exception(f'ERROR: requested variable {varname} not in netcdf, available are (full list in dfmt.get_ncvarproperties(ds)):\n{varprops}')
     return varname_matched
