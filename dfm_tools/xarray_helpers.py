@@ -219,6 +219,7 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}, remove_ghost=True):
         print(iF+1,end=' ')
         ds = xr.open_dataset(file_nc_one, chunks=chunks)
         if 'nFlowElem' in ds.dims and 'nNetElem' in ds.dims: #for mapformat1 mapfiles: merge different face dimensions (rename nFlowElem to nNetElem)
+            print(UserWarning('dimensions nFlowElem and nNetElem found (mapformat1), merging since it is both the face_dimension'))
             ds = ds.rename({'nFlowElem':'nNetElem'})
         uds = xu.core.wrap.UgridDataset(ds)
         if remove_ghost: #TODO: this makes it way slower (at least for GTSM), but is necessary since values on overlapping cells are not always identical (eg in case of Venice ucmag)
