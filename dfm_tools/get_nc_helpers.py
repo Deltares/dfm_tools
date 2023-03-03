@@ -92,3 +92,39 @@ def get_varnamefromattrs(data_xr, varname):
     varprops = get_ncvarproperties(data_xr)[['long_name','standard_name']]
     raise Exception(f'ERROR: requested variable {varname} not in netcdf, available are (full list in dfmt.get_ncvarproperties(ds)):\n{varprops}')
     return varname_matched
+
+
+def rename_waqvars(ds:(xr.Dataset,xu.UgridDataset)):
+    """
+    Rename water quality variables (like mesh2d_water_quality_output_24) to their long_name attribute (like mesh2d_DOscore)
+    
+
+    Parameters
+    ----------
+    ds : (xr.Dataset,xu.UgridDataset)
+        DESCRIPTION.
+
+    Returns
+    -------
+    ds : TYPE
+        DESCRIPTION.
+
+    """
+    
+    if hasattr(ds,'grid'): #append gridname (e.g. mesh2d) in case of mapfile
+        varn_prepend = f'{ds.grid.name}_'
+    else:
+        varn_prepend = ''
+    list_waqvars = [i for i in ds.data_vars if 'water_quality_' in i] #water_quality_output and water_quality_stat
+    rename_dict = {waqvar:varn_prepend+ds[waqvar].attrs['long_name'] for waqvar in list_waqvars}
+    
+    #prevent renaming duplicate long_names
+    rename_pd = pd.Series(rename_dict)
+    if rename_pd.duplicated().sum():
+        duplicated_pd = rename_pd.loc[rename_pd.duplicated(keep=False)]
+        print(UserWarning(f'duplicate long_name attributes found with dfmt.rename_waqvars(), renaming only first variable:\n{duplicated_pd}'))
+        rename_dict = rename_pd.loc[~rename_pd.duplicated()].to_dict()
+    
+    ds = ds.rename(rename_dict)
+    return ds
+
