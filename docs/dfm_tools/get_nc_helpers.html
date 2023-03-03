@@ -95,6 +95,7 @@ import pandas as pd
 def get_ncvarproperties(data_xr):
     if not isinstance(data_xr,(xr.Dataset,xu.UgridDataset)):
         raise Exception(&#39;data_xr should be of type xr.Dataset or xu.UgridDataset&#39;)
+    
     nc_varkeys = data_xr.variables.mapping.keys()
     
     list_varattrs_pd = []
@@ -115,6 +116,8 @@ def get_ncvarproperties(data_xr):
 
 
 def get_varnamefromattrs(data_xr, varname):
+    
+    print(DeprecationWarning(&#39;dfmt.get_varnamefromattrs() might be phased out, since dfmt.rename_waqvars(ds) is a more convenient alternative&#39;))
     
     # check if requested variable is in netcdf
     varlist = list(data_xr.variables.keys())
@@ -149,9 +152,8 @@ def get_varnamefromattrs(data_xr, varname):
 
 def rename_waqvars(ds:(xr.Dataset,xu.UgridDataset)):
     &#34;&#34;&#34;
-    Rename water quality variables (like mesh2d_water_quality_output_24) to their long_name attribute (like mesh2d_DOscore)
+    Rename all water quality variables in a dataset (like mesh2d_water_quality_output_24) to their long_name attribute (like mesh2d_DOscore)
     
-
     Parameters
     ----------
     ds : (xr.Dataset,xu.UgridDataset)
@@ -201,6 +203,7 @@ def rename_waqvars(ds:(xr.Dataset,xu.UgridDataset)):
 <pre><code class="python">def get_ncvarproperties(data_xr):
     if not isinstance(data_xr,(xr.Dataset,xu.UgridDataset)):
         raise Exception(&#39;data_xr should be of type xr.Dataset or xu.UgridDataset&#39;)
+    
     nc_varkeys = data_xr.variables.mapping.keys()
     
     list_varattrs_pd = []
@@ -230,6 +233,8 @@ def rename_waqvars(ds:(xr.Dataset,xu.UgridDataset)):
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def get_varnamefromattrs(data_xr, varname):
+    
+    print(DeprecationWarning(&#39;dfmt.get_varnamefromattrs() might be phased out, since dfmt.rename_waqvars(ds) is a more convenient alternative&#39;))
     
     # check if requested variable is in netcdf
     varlist = list(data_xr.variables.keys())
@@ -266,7 +271,7 @@ def rename_waqvars(ds:(xr.Dataset,xu.UgridDataset)):
 <span>def <span class="ident">rename_waqvars</span></span>(<span>ds: (<class 'xarray.core.dataset.Dataset'>, <class 'xugrid.core.wrap.UgridDataset'>))</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Rename water quality variables (like mesh2d_water_quality_output_24) to their long_name attribute (like mesh2d_DOscore)</p>
+<div class="desc"><p>Rename all water quality variables in a dataset (like mesh2d_water_quality_output_24) to their long_name attribute (like mesh2d_DOscore)</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
 <dt><strong><code>ds</code></strong> :&ensp;<code>(xr.Dataset,xu.UgridDataset)</code></dt>
@@ -283,9 +288,8 @@ def rename_waqvars(ds:(xr.Dataset,xu.UgridDataset)):
 </summary>
 <pre><code class="python">def rename_waqvars(ds:(xr.Dataset,xu.UgridDataset)):
     &#34;&#34;&#34;
-    Rename water quality variables (like mesh2d_water_quality_output_24) to their long_name attribute (like mesh2d_DOscore)
+    Rename all water quality variables in a dataset (like mesh2d_water_quality_output_24) to their long_name attribute (like mesh2d_DOscore)
     
-
     Parameters
     ----------
     ds : (xr.Dataset,xu.UgridDataset)
