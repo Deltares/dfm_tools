@@ -144,7 +144,42 @@ def get_varnamefromattrs(data_xr, varname):
     #if not returned above, the varname was not found so raise exception
     varprops = get_ncvarproperties(data_xr)[[&#39;long_name&#39;,&#39;standard_name&#39;]]
     raise Exception(f&#39;ERROR: requested variable {varname} not in netcdf, available are (full list in dfmt.get_ncvarproperties(ds)):\n{varprops}&#39;)
-    return varname_matched</code></pre>
+    return varname_matched
+
+
+def rename_waqvars(ds:(xr.Dataset,xu.UgridDataset)):
+    &#34;&#34;&#34;
+    Rename water quality variables (like mesh2d_water_quality_output_24) to their long_name attribute (like mesh2d_DOscore)
+    
+
+    Parameters
+    ----------
+    ds : (xr.Dataset,xu.UgridDataset)
+        DESCRIPTION.
+
+    Returns
+    -------
+    ds : TYPE
+        DESCRIPTION.
+
+    &#34;&#34;&#34;
+    
+    if hasattr(ds,&#39;grid&#39;): #append gridname (e.g. mesh2d) in case of mapfile
+        varn_prepend = f&#39;{ds.grid.name}_&#39;
+    else:
+        varn_prepend = &#39;&#39;
+    list_waqvars = [i for i in ds.data_vars if &#39;water_quality_&#39; in i] #water_quality_output and water_quality_stat
+    rename_dict = {waqvar:varn_prepend+ds[waqvar].attrs[&#39;long_name&#39;] for waqvar in list_waqvars}
+    
+    #prevent renaming duplicate long_names
+    rename_pd = pd.Series(rename_dict)
+    if rename_pd.duplicated().sum():
+        duplicated_pd = rename_pd.loc[rename_pd.duplicated(keep=False)]
+        print(UserWarning(f&#39;duplicate long_name attributes found with dfmt.rename_waqvars(), renaming only first variable:\n{duplicated_pd}&#39;))
+        rename_dict = rename_pd.loc[~rename_pd.duplicated()].to_dict()
+    
+    ds = ds.rename(rename_dict)
+    return ds</code></pre>
 </details>
 </section>
 <section>
@@ -227,6 +262,60 @@ def get_varnamefromattrs(data_xr, varname):
     return varname_matched</code></pre>
 </details>
 </dd>
+<dt id="dfm_tools.get_nc_helpers.rename_waqvars"><code class="name flex">
+<span>def <span class="ident">rename_waqvars</span></span>(<span>ds: (<class 'xarray.core.dataset.Dataset'>, <class 'xugrid.core.wrap.UgridDataset'>))</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Rename water quality variables (like mesh2d_water_quality_output_24) to their long_name attribute (like mesh2d_DOscore)</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>ds</code></strong> :&ensp;<code>(xr.Dataset,xu.UgridDataset)</code></dt>
+<dd>DESCRIPTION.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>ds</code></strong> :&ensp;<code>TYPE</code></dt>
+<dd>DESCRIPTION.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def rename_waqvars(ds:(xr.Dataset,xu.UgridDataset)):
+    &#34;&#34;&#34;
+    Rename water quality variables (like mesh2d_water_quality_output_24) to their long_name attribute (like mesh2d_DOscore)
+    
+
+    Parameters
+    ----------
+    ds : (xr.Dataset,xu.UgridDataset)
+        DESCRIPTION.
+
+    Returns
+    -------
+    ds : TYPE
+        DESCRIPTION.
+
+    &#34;&#34;&#34;
+    
+    if hasattr(ds,&#39;grid&#39;): #append gridname (e.g. mesh2d) in case of mapfile
+        varn_prepend = f&#39;{ds.grid.name}_&#39;
+    else:
+        varn_prepend = &#39;&#39;
+    list_waqvars = [i for i in ds.data_vars if &#39;water_quality_&#39; in i] #water_quality_output and water_quality_stat
+    rename_dict = {waqvar:varn_prepend+ds[waqvar].attrs[&#39;long_name&#39;] for waqvar in list_waqvars}
+    
+    #prevent renaming duplicate long_names
+    rename_pd = pd.Series(rename_dict)
+    if rename_pd.duplicated().sum():
+        duplicated_pd = rename_pd.loc[rename_pd.duplicated(keep=False)]
+        print(UserWarning(f&#39;duplicate long_name attributes found with dfmt.rename_waqvars(), renaming only first variable:\n{duplicated_pd}&#39;))
+        rename_dict = rename_pd.loc[~rename_pd.duplicated()].to_dict()
+    
+    ds = ds.rename(rename_dict)
+    return ds</code></pre>
+</details>
+</dd>
 </dl>
 </section>
 <section>
@@ -247,6 +336,7 @@ def get_varnamefromattrs(data_xr, varname):
 <ul class="">
 <li><code><a title="dfm_tools.get_nc_helpers.get_ncvarproperties" href="#dfm_tools.get_nc_helpers.get_ncvarproperties">get_ncvarproperties</a></code></li>
 <li><code><a title="dfm_tools.get_nc_helpers.get_varnamefromattrs" href="#dfm_tools.get_nc_helpers.get_varnamefromattrs">get_varnamefromattrs</a></code></li>
+<li><code><a title="dfm_tools.get_nc_helpers.rename_waqvars" href="#dfm_tools.get_nc_helpers.rename_waqvars">rename_waqvars</a></code></li>
 </ul>
 </li>
 </ul>
