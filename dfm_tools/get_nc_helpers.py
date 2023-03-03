@@ -42,6 +42,7 @@ import pandas as pd
 def get_ncvarproperties(data_xr):
     if not isinstance(data_xr,(xr.Dataset,xu.UgridDataset)):
         raise Exception('data_xr should be of type xr.Dataset or xu.UgridDataset')
+    
     nc_varkeys = data_xr.variables.mapping.keys()
     
     list_varattrs_pd = []
@@ -62,6 +63,8 @@ def get_ncvarproperties(data_xr):
 
 
 def get_varnamefromattrs(data_xr, varname):
+    
+    print(DeprecationWarning('dfmt.get_varnamefromattrs() might be phased out, since dfmt.rename_waqvars(ds) is a more convenient alternative'))
     
     # check if requested variable is in netcdf
     varlist = list(data_xr.variables.keys())
@@ -96,9 +99,8 @@ def get_varnamefromattrs(data_xr, varname):
 
 def rename_waqvars(ds:(xr.Dataset,xu.UgridDataset)):
     """
-    Rename water quality variables (like mesh2d_water_quality_output_24) to their long_name attribute (like mesh2d_DOscore)
+    Rename all water quality variables in a dataset (like mesh2d_water_quality_output_24) to their long_name attribute (like mesh2d_DOscore)
     
-
     Parameters
     ----------
     ds : (xr.Dataset,xu.UgridDataset)
