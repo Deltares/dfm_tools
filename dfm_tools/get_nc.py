@@ -378,6 +378,11 @@ def get_Dataset_atdepths(data_xr, depths, reference='z0', zlayer_z0_selnearest=F
         print('WARNING: depth dimension not found, probably 2D model, returning input Dataset')
         return data_xr #early return
     
+    if reference=='waterlevel' and varname_wl not in data_xr.variables:
+        raise Exception(f'get_Dataset_atdepths() called with reference=waterlevel, but {varname_wl} variable not present')
+    if reference=='bedlevel' and varname_wl not in data_xr.variables:
+        raise Exception(f'get_Dataset_atdepths() called with reference=bedlevel, but {varname_bl} variable not present')
+    
     if not isinstance(data_xr,(xr.Dataset,xu.UgridDataset)):
         raise Exception(f'data_xr_map should be of type xr.Dataset, but is {type(data_xr)}')
     
