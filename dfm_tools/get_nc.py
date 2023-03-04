@@ -348,12 +348,9 @@ def get_Dataset_atdepths(data_xr, depths, reference='z0', zlayer_z0_selnearest=F
     
     #TODO: zmodel gets depth in figure title, because of .set_index() in open_partitioned_dataset(). Sigmamodel gets percentage/fraction in title. >> set_index was removed there, so check again.
     #TODO: check if attributes should be passed/altered
-    #TODO: build in check whether layers/interfaces are coherent (len(int)=len(lay)+1), since one could also supply a uds.isel(layer=range(10)) where there are still 51 interfaces. (if not, raise error to remove layer selection)
-    #TODO: also waterlevelvar in 3D model gets depth_fromref coordinate, would be nice to avoid.
-    #TODO: clean up unneccesary variables (like pre-interp depth values and interface dim)
     """
     
-    depth_varname = 'depth_fromref' #TODO: maybe replace with depth_from_z0, depth_from_waterlevel and depth_from_bedlevel respectively
+    depth_vardimname = f'depth_from_{reference}'
     
     try:
         dimn_layer, dimn_interfaces = get_vertical_dimensions(data_xr)
@@ -373,7 +370,7 @@ def get_Dataset_atdepths(data_xr, depths, reference='z0', zlayer_z0_selnearest=F
         dimname_layw = 'laydimw'
         varname_wl = 'waterlevel'
         varname_bl = 'bedlevel'
-        warnings.warn(UserWarning('get_Dataset_atdepths() is not tested for hisfiles yet, please check your results.'))
+        warnings.warn(UserWarning('get_Dataset_atdepths() is not tested for hisfiles yet, please check your results.')) #TODO: remove this warning once it is checked
     else:
         print('WARNING: depth dimension not found, probably 2D model, returning input Dataset')
         return data_xr #early return
@@ -392,7 +389,7 @@ def get_Dataset_atdepths(data_xr, depths, reference='z0', zlayer_z0_selnearest=F
         depth_dims = ()
     else:
         depths = np.unique(depths) #array of unique+sorted floats/ints
-        depth_dims = (depth_varname)
+        depth_dims = (depth_vardimname)
     depths_xr = xr.DataArray(depths,dims=depth_dims,attrs={'units':'m',
                                                            'reference':f'model_{reference}',
                                                            'positive':'up'}) #TODO: make more in line with CMEMS etc
@@ -402,12 +399,12 @@ def get_Dataset_atdepths(data_xr, depths, reference='z0', zlayer_z0_selnearest=F
         print('z-layer model, zlayer_z0_selnearest=True and reference=="z0" so using xr.sel(method="nearest")]')
         warnings.warn(DeprecationWarning('The get_Dataset_atdepths() keyword zlayer_z0_selnearest might be phased out.'))
         data_xr = data_xr.set_index({dimn_layer:'mesh2d_layer_z'})#.rename({'nmesh2d_layer':depth_varname}) #set depth as index on layers, to be able to interp to depths instead of layernumbers
-        data_xr[depth_varname] = depths_xr
-        data_xr_atdepths = data_xr.sel({dimn_layer:depths_xr},method='nearest')
+        data_xr[depth_vardimname] = depths_xr
+        ds_atdepths = data_xr.sel({dimn_layer:depths_xr},method='nearest')
         data_wl = data_xr[varname_wl]
         data_bl = data_xr[varname_bl]
-        data_xr_atdepths = data_xr_atdepths.where((depths_xr>=data_bl) & (depths_xr<=data_wl)) #filter above wl and below bl values
-        return data_xr_atdepths #early return
+        ds_atdepths = ds_atdepths.where((depths_xr>=data_bl) & (depths_xr<=data_wl)) #filter above wl and below bl values
+        return ds_atdepths #early return
     
     #potentially construct fullgrid info (zcc/zw) #TODO: maybe move to separate function, like open_partitioned_dataset() (although bl/wl are needed anyway)
     if varname_zint in data_xr.variables: #fullgrid info already available, so continuing
@@ -439,32 +436,33 @@ def get_Dataset_atdepths(data_xr, depths, reference='z0', zlayer_z0_selnearest=F
         
     if 'time' in data_xr.dims: #TODO: suppress this warning for hisfiles since it does not make sense
         warnings.warn(UserWarning('get_Dataset_atdepths() can be very slow when supplying dataset with time dimension, you could supply ds.isel(time=timestep) instead'))
-        
-    #get layerno via z-interface value (zw), check which celltop-interfaces are above/on depth and which which cellbottom-interfaces are below/on depth
+    
+    #get layerbool via z-interface value (zw), check which celltop-interfaces are above/on depth and which which cellbottom-interfaces are below/on depth
     bool_topinterface_abovedepth = zw_reference.isel({dimname_layw:slice(1,None)}) >= depths_xr
     bool_botinterface_belowdepth = zw_reference.isel({dimname_layw:slice(None,-1)}) <= depths_xr
     bool_topbotinterface_arounddepth = bool_topinterface_abovedepth & bool_botinterface_belowdepth #this bool also automatically excludes all values below bed and above wl
     bool_topbotinterface_arounddepth = bool_topbotinterface_arounddepth.rename({dimname_layw:dimname_layc}) #correct dimname for interfaces to centers
-    data_xr_atdepths = data_xr.where(bool_topbotinterface_arounddepth).max(dim=dimname_layc,keep_attrs=True) #set all layers but one to nan, followed by an arbitrary reduce (max in this case)
-    #TODO: suppress/solve warning for DCSM (does not happen when supplying data_xr_map[['mesh2d_sa1','mesh2d_s1','mesh2d_flowelem_bl','mesh2d_flowelem_zw']]): "C:\Users\veenstra\Anaconda3\envs\dfm_tools_env\lib\site-packages\dask\array\core.py:4806: PerformanceWarning: Increasing number of chunks by factor of 20" >> still happens with new xugrid method?
-    #TODO: suppress warning (upon plotting/load/etc): "C:\Users\veenstra\Anaconda3\envs\dfm_tools_env\lib\site-packages\dask\array\reductions.py:640: RuntimeWarning: All-NaN slice encountered"
-    data_xr_atdepths = data_xr_atdepths.drop_dims(dimname_layw,errors='ignore') #dropping interface dim if it exists
     
-    #loop over al variables and remove/flatten dimension if it previously did not existed (like time dim in mesh2d_flowelem_bl)
-    for var in data_xr_atdepths.variables:
-        for dim in data_xr_atdepths[var].dims:
-            if dim==depth_varname: #skip newly created depth dimension, since it is new but does not have to be removed
-                continue
-            if dim not in data_xr[var].dims:
-                data_xr_atdepths[var] = data_xr_atdepths[var].isel({dim:0})
+    #subset variables that have no, time, face and/or layer dims, slice only variables with all three dims (and add to subset)
+    bool_dims = [x for x in bool_topbotinterface_arounddepth.dims if x!=depth_vardimname] #exclude depth_vardimname (present if multiple depths supplied), since it is not present in pre-slice variables
+    bool_dims_nolay = [x for x in bool_dims if x!=dimname_layc]
+    variables_basis = [var for var in data_xr.data_vars if set(data_xr[var].dims).issubset(bool_dims_nolay)] #TODO: including time dim results in no value for water_quality_stat_*, since it is time-reduced (which can almost not be valid for non-z layers)
+    variables_toslice = [var for var in data_xr.data_vars if set(bool_dims).issubset(data_xr[var].dims)]
+    ds_atdepths = data_xr[variables_basis+variables_toslice]
+    
+    #actual slicing with .where().max()
+    for var_toslice in variables_toslice:
+        ds_atdepths[var_toslice] = ds_atdepths[var_toslice].where(bool_topbotinterface_arounddepth).max(dim=dimname_layc,keep_attrs=True) #set all layers but one to nan, followed by an arbitrary reduce (max in this case)
+        #TODO: suppress warning (upon plotting/load/etc): "C:\Users\veenstra\Anaconda3\envs\dfm_tools_env\lib\site-packages\dask\array\reductions.py:640: RuntimeWarning: All-NaN slice encountered"
+    ds_atdepths = ds_atdepths.drop_dims([dimname_layw,dimname_layc],errors='ignore') #dropping interface dim if it exists, since it does not correspond to new depths dim
     
     #add depth as coordinate var
-    data_xr_atdepths[depth_varname] = depths_xr
-    data_xr_atdepths = data_xr_atdepths.set_coords([depth_varname])
+    ds_atdepths[depth_vardimname] = depths_xr
+    ds_atdepths = ds_atdepths.set_coords([depth_vardimname])
     
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
-    return data_xr_atdepths
+    return ds_atdepths
 
 
 def plot_background(ax=None, projection=None, google_style='satellite', resolution=1, features=None, nticks=6, latlon_format=False, gridlines=False, **kwargs):
