@@ -334,7 +334,9 @@ def reconstruct_zw_zcc_fromz(data_xr_map):
 
 def get_Dataset_atdepths(data_xr, depths, reference='z0', zlayer_z0_selnearest=False):
     """
-    data_xr_map:
+    Depth-slice dataset with layers. Subsetting variables or times often increases performance significantly.
+    
+    data_xr:
         has to be Dataset (not a DataArray), otherwise mesh2d_flowelem_zw etc are not available (interface z values)
         in case of zsigma/sigma layers (or fullgrid), it is advisable to .sel()/.isel() the time dimension first, because that is less computationally heavy
     depths:
@@ -432,9 +434,6 @@ def get_Dataset_atdepths(data_xr, depths, reference='z0', zlayer_z0_selnearest=F
     
     print('>> subsetting data on fixed depth in fullgrid z-data: ',end='')
     dtstart = dt.datetime.now()
-        
-    if 'time' in data_xr.dims: #TODO: suppress this warning for hisfiles since it does not make sense
-        warnings.warn(UserWarning('get_Dataset_atdepths() can be very slow when supplying dataset with time dimension, you could supply ds.isel(time=timestep) instead'))
     
     #get layerbool via z-interface value (zw), check which celltop-interfaces are above/on depth and which which cellbottom-interfaces are below/on depth
     bool_topinterface_abovedepth = zw_reference.isel({dimname_layw:slice(1,None)}) >= depths_xr
