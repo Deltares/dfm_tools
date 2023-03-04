@@ -123,7 +123,6 @@ for file_nc in file_nc_list:
     ax.set_ylim(-2,0.5)
     fig.savefig(os.path.join(dir_output,f'{basename}_zt_temp_zoomwl'))
     
-
     print('zt temperature plot sliced at depth(s)')
     depths = [-1,-4,0,-6]
     data_fromhis_atdepths = dfmt.get_Dataset_atdepths(data_xr=data_xr, depths=depths, reference='z0') #depth w.r.t. z0/waterlevel/bedlevel
@@ -131,4 +130,5 @@ for file_nc in file_nc_list:
     fig, ax = plt.subplots(1,1,figsize=(12,7))
     data_xr_selzt.temperature.plot(ax=ax, cmap='jet', x='time')
     fig.tight_layout()
+    fig.savefig(os.path.join(dir_output,f'{basename}_temp_atdepths'))
 
