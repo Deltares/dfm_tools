@@ -112,6 +112,7 @@ def rename_waqvars(ds:(xr.Dataset,xu.UgridDataset)):
         DESCRIPTION.
 
     """
+    #TODO: results also in variable "mesh2d_Water quality mass balance areas" (with spaces), report in FM issue (remove spaces from long_name attr)
     
     if hasattr(ds,'grid'): #append gridname (e.g. mesh2d) in case of mapfile
         varn_prepend = f'{ds.grid.name}_'

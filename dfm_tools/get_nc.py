@@ -348,7 +348,6 @@ def get_Dataset_atdepths(data_xr, depths, reference='z0', zlayer_z0_selnearest=F
     
     #TODO: zmodel gets depth in figure title, because of .set_index() in open_partitioned_dataset(). Sigmamodel gets percentage/fraction in title. >> set_index was removed there, so check again.
     #TODO: check if attributes should be passed/altered
-    #TODO: clean up unneccesary variables (like pre-interp depth values and interface dim)
     """
     
     depth_vardimname = f'depth_from_{reference}'
@@ -371,7 +370,7 @@ def get_Dataset_atdepths(data_xr, depths, reference='z0', zlayer_z0_selnearest=F
         dimname_layw = 'laydimw'
         varname_wl = 'waterlevel'
         varname_bl = 'bedlevel'
-        warnings.warn(UserWarning('get_Dataset_atdepths() is not tested for hisfiles yet, please check your results.'))
+        warnings.warn(UserWarning('get_Dataset_atdepths() is not tested for hisfiles yet, please check your results.')) #TODO: remove this warning once it is checked
     else:
         print('WARNING: depth dimension not found, probably 2D model, returning input Dataset')
         return data_xr #early return
