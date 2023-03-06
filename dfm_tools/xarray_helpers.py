@@ -209,6 +209,7 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}, remove_ghost=True):
         file_nc_list = file_nc
     else:
         file_nc_list = glob.glob(file_nc)
+        file_nc_list.sort()
     if len(file_nc_list)==0:
         raise Exception('file(s) not found, empty file_nc_list')
     
