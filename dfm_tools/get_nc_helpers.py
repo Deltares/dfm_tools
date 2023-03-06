@@ -121,6 +121,9 @@ def rename_waqvars(ds:(xr.Dataset,xu.UgridDataset)):
     list_waqvars = [i for i in ds.data_vars if 'water_quality_' in i] #water_quality_output and water_quality_stat
     rename_dict = {waqvar:varn_prepend+ds[waqvar].attrs['long_name'] for waqvar in list_waqvars}
     
+    if len(rename_dict) == 0: #early return to silence "FutureWarning: The default dtype for empty Series will be 'object' instead of 'float64' in a future version. Specify a dtype explicitly to silence this warning."
+        return ds
+    
     #prevent renaming duplicate long_names
     rename_pd = pd.Series(rename_dict)
     if rename_pd.duplicated().sum():

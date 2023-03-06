@@ -123,6 +123,10 @@ def get_vertical_dimensions(uds): #TODO: maybe add layer_dimension and interface
     processing MB_02_0*_map.nc
         >> found layer/interface dimensions in file: mesh2d_nLayers mesh2d_nInterfaces
     """
+    
+    if not hasattr(uds,'grid'): #early return in case of e.g. hisfile
+        return None, None
+        
     gridname = uds.grid.name
     grid_info = uds.grid.to_dataset()[gridname]
     if hasattr(grid_info,'layer_dimension'):
@@ -166,7 +170,7 @@ def remove_ghostcells(uds): #TODO: create JIRA issue: add domainno attribute to 
     return uds
 
 
-def open_partitioned_dataset(file_nc, chunks={'time':1}, remove_ghost=True): 
+def open_partitioned_dataset(file_nc, chunks={'time':1}, remove_ghost=True, **kwargs): 
     """
     using xugrid to read and merge partitions, with some additional features (remaning old layerdim, timings, set zcc/zw as data_vars)
 
@@ -209,6 +213,7 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}, remove_ghost=True):
         file_nc_list = file_nc
     else:
         file_nc_list = glob.glob(file_nc)
+        file_nc_list.sort()
     if len(file_nc_list)==0:
         raise Exception('file(s) not found, empty file_nc_list')
     
@@ -217,7 +222,7 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}, remove_ghost=True):
     partitions = []
     for iF, file_nc_one in enumerate(file_nc_list):
         print(iF+1,end=' ')
-        ds = xr.open_dataset(file_nc_one, chunks=chunks)
+        ds = xr.open_dataset(file_nc_one, chunks=chunks, **kwargs)
         if 'nFlowElem' in ds.dims and 'nNetElem' in ds.dims: #for mapformat1 mapfiles: merge different face dimensions (rename nFlowElem to nNetElem)
             print('[mapformat1] ',end='')
             ds = ds.rename({'nFlowElem':'nNetElem'})
