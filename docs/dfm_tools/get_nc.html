@@ -420,7 +420,6 @@ def get_Dataset_atdepths(data_xr, depths, reference=&#39;z0&#39;, zlayer_z0_seln
         dimname_layw = &#39;laydimw&#39;
         varname_wl = &#39;waterlevel&#39;
         varname_bl = &#39;bedlevel&#39;
-        warnings.warn(UserWarning(&#39;get_Dataset_atdepths() is not tested for hisfiles yet, please check your results.&#39;)) #TODO: remove this warning once it is checked
     else:
         print(UserWarning(&#39;depth/layer dimension not found, probably 2D model, returning input Dataset&#39;))
         return data_xr #early return
@@ -1113,7 +1112,6 @@ This is faster but results in values interpolated between zcc (z cell centers), 
         dimname_layw = &#39;laydimw&#39;
         varname_wl = &#39;waterlevel&#39;
         varname_bl = &#39;bedlevel&#39;
-        warnings.warn(UserWarning(&#39;get_Dataset_atdepths() is not tested for hisfiles yet, please check your results.&#39;)) #TODO: remove this warning once it is checked
     else:
         print(UserWarning(&#39;depth/layer dimension not found, probably 2D model, returning input Dataset&#39;))
         return data_xr #early return
