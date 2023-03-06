@@ -18,6 +18,7 @@ file_nc_list = [os.path.join(dir_testinput,'vanNithin','tttz_0000_his.nc'),
                 os.path.join(dir_testinput,'DFM_3D_z_Grevelingen\\computations\\run01\\DFM_OUTPUT_Grevelingen-FM\\Grevelingen-FM_0000_his.nc'),
                 r'p:\archivedprojects\11202512-h2020_impaqt\07_Mediterranean_model\MedSea_impaqt_model\computations_final\r013_waq\DFM_OUTPUT_MedSea_impaqt_FM\MedSea_impaqt_FM_0000_his.nc',
                 r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206\results\RMM_dflowfm_0000_his.nc', #contains duplicate station_names which are dropped
+                r'p:\11206811-002-kpp-veerse-meer\grove-model\vm_grof-j19_6-v1a\scenarios\S0\S0_run4\DFM_OUTPUT_VM_WQ_3D_grof\VM_WQ_3D_grof_0000_his.nc', #veersemeer, hisfile with proper z-coordinates
                 r'p:\archivedprojects\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\fm\DFM_OUTPUT_inlet\inlet_his.nc', #morphology
                 r'p:\11202255-sfincs\course_material\DSD_INT_2022\02_hands-on\Charleston_subgrid_example_allforcing\pre-run_output\sfincs_his.nc', #SFINCS
                 os.path.join(dir_testinput,'D3D_3D_sigma_curved_bend_nc\\trih-cb2-sal-added-3d.nc'), #DELFT3D4 netcdf
@@ -45,6 +46,8 @@ for file_nc in file_nc_list:
         stations_requested = ['MO_TS_MO_ATHOS','MO_TS_MO_LESVO','MO_TS_MO_SKYRO','IOC_thes','farm_impaqt']
     elif 'RMM_dflowfm' in file_nc:
         stations_requested = ['WAQ_Vuren','NW_1030.19_R_LMW-H_Hoek-van-Holland','WAQ_TielWaal_waq']
+    elif 'VM_WQ_3D_grof' in file_nc:
+        stations_requested = ['TSO_VM-3','TSO_VM-10','TSO_VM-16']
     elif 'moergestels_broek' in file_nc:
         stations_requested = ['ObsPt1', 'ObsPt2', 'ObsPt2D1', 'ObsPt2D2']
     elif 'morwaqeco3d' in file_nc:
@@ -91,7 +94,7 @@ for file_nc in file_nc_list:
     if 'sfincs' in file_nc or 'morwaqeco3d' in file_nc or 'trih-' in file_nc:
         continue
     
-    #at this stage there are only three hisfiles left where "continue" was not called for
+    #at this stage there are only four hisfiles left where "continue" was not called for
     
     print('plot salinity from his') #TODO: retreive variable on fixed depth (like dfmt.get_mapdata_atfixedepth())
     data_fromhis_xr = data_xr.salinity.sel(stations=stations_requested).isel(laydim=20)
