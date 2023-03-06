@@ -170,7 +170,7 @@ def remove_ghostcells(uds): #TODO: create JIRA issue: add domainno attribute to 
     return uds
 
 
-def open_partitioned_dataset(file_nc, chunks={'time':1}, remove_ghost=True): 
+def open_partitioned_dataset(file_nc, chunks={'time':1}, remove_ghost=True, **kwargs): 
     """
     using xugrid to read and merge partitions, with some additional features (remaning old layerdim, timings, set zcc/zw as data_vars)
 
@@ -222,7 +222,7 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}, remove_ghost=True):
     partitions = []
     for iF, file_nc_one in enumerate(file_nc_list):
         print(iF+1,end=' ')
-        ds = xr.open_dataset(file_nc_one, chunks=chunks)
+        ds = xr.open_dataset(file_nc_one, chunks=chunks, **kwargs)
         if 'nFlowElem' in ds.dims and 'nNetElem' in ds.dims: #for mapformat1 mapfiles: merge different face dimensions (rename nFlowElem to nNetElem)
             print('[mapformat1] ',end='')
             ds = ds.rename({'nFlowElem':'nNetElem'})
