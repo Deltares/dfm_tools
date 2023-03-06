@@ -42,7 +42,7 @@ for file_nc in file_nc_list:
         #   [2222.27822581, 3206.60282258],
         #   [2128.78024194, 3266.58266129]])
         val_ylim = None
-        clim_bl = None
+        clim_bl = None #TODO: replace clims with center=False argument?
         clim_sal = None
         crs = None
         file_nc_fou = None
