@@ -368,7 +368,6 @@ def get_Dataset_atdepths(data_xr, depths, reference='z0', zlayer_z0_selnearest=F
         dimname_layw = 'laydimw'
         varname_wl = 'waterlevel'
         varname_bl = 'bedlevel'
-        warnings.warn(UserWarning('get_Dataset_atdepths() is not tested for hisfiles yet, please check your results.')) #TODO: remove this warning once it is checked
     else:
         print(UserWarning('depth/layer dimension not found, probably 2D model, returning input Dataset'))
         return data_xr #early return
