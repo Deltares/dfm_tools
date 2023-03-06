@@ -386,7 +386,8 @@ def reconstruct_zw_zcc_fromz(data_xr_map):
 
 def get_Dataset_atdepths(data_xr, depths, reference=&#39;z0&#39;, zlayer_z0_selnearest=False):
     &#34;&#34;&#34;
-    Depth-slice dataset with layers. Subsetting variables or times often increases performance significantly.
+    Depth-slice dataset with layers. Performance can be increased by using a subset of variables or subsetting the dataset in any dimension.
+    This can be done for instance with ds.isel(time=-1) or uds.ugrid.sel(x=slice(),y=slice()) to subset a ugrid dataset in space.
     
     data_xr:
         has to be Dataset (not a DataArray), otherwise mesh2d_flowelem_zw etc are not available (interface z values)
@@ -400,15 +401,11 @@ def get_Dataset_atdepths(data_xr, depths, reference=&#39;z0&#39;, zlayer_z0_seln
         Use xr.interp() to interpolate zlayer model to z-value. Only possible for reference=&#39;z&#39; (not &#39;waterlevel&#39; or &#39;bedlevel&#39;). Only used if &#34;mesh2d_layer_z&#34; is present (zlayer model)
         This is faster but results in values interpolated between zcc (z cell centers), so it is different than slicing.
     
-    #TODO: check if attributes should be passed/altered
     &#34;&#34;&#34;
     
     depth_vardimname = f&#39;depth_from_{reference}&#39;
     
-    try:
-        dimn_layer, dimn_interfaces = get_vertical_dimensions(data_xr)
-    except: #TODO: catch nicely
-        dimn_layer = dimn_interfaces = None
+    dimn_layer, dimn_interfaces = get_vertical_dimensions(data_xr)
     
     if dimn_layer is not None: #D-FlowFM mapfile
         gridname = data_xr.grid.name
@@ -425,7 +422,7 @@ def get_Dataset_atdepths(data_xr, depths, reference=&#39;z0&#39;, zlayer_z0_seln
         varname_bl = &#39;bedlevel&#39;
         warnings.warn(UserWarning(&#39;get_Dataset_atdepths() is not tested for hisfiles yet, please check your results.&#39;)) #TODO: remove this warning once it is checked
     else:
-        print(&#39;WARNING: depth dimension not found, probably 2D model, returning input Dataset&#39;)
+        print(UserWarning(&#39;depth/layer dimension not found, probably 2D model, returning input Dataset&#39;))
         return data_xr #early return
     
     if reference==&#39;waterlevel&#39; and varname_wl not in data_xr.variables:
@@ -438,7 +435,6 @@ def get_Dataset_atdepths(data_xr, depths, reference=&#39;z0&#39;, zlayer_z0_seln
     
     #create depth xr.DataArray
     if isinstance(depths,(float,int)):
-        #depths = depths #float/int
         depth_dims = ()
     else:
         depths = np.unique(depths) #array of unique+sorted floats/ints
@@ -495,15 +491,11 @@ def get_Dataset_atdepths(data_xr, depths, reference=&#39;z0&#39;, zlayer_z0_seln
     
     #subset variables that have no, time, face and/or layer dims, slice only variables with all three dims (and add to subset)
     bool_dims = [x for x in bool_topbotinterface_arounddepth.dims if x!=depth_vardimname] #exclude depth_vardimname (present if multiple depths supplied), since it is not present in pre-slice variables
-    bool_dims_nolay = [x for x in bool_dims if x!=dimname_layc]
-    variables_basis = [var for var in data_xr.data_vars if set(data_xr[var].dims).issubset(bool_dims_nolay)] #TODO: including time dim results in no value for water_quality_stat_*, since it is time-reduced (which can almost not be valid for non-z layers)
     variables_toslice = [var for var in data_xr.data_vars if set(bool_dims).issubset(data_xr[var].dims)]
-    ds_atdepths = data_xr[variables_basis+variables_toslice]
     
     #actual slicing with .where().max()
-    for var_toslice in variables_toslice:
-        ds_atdepths[var_toslice] = ds_atdepths[var_toslice].where(bool_topbotinterface_arounddepth).max(dim=dimname_layc,keep_attrs=True) #set all layers but one to nan, followed by an arbitrary reduce (max in this case)
-        #TODO: suppress warning (upon plotting/load/etc): &#34;C:\Users\veenstra\Anaconda3\envs\dfm_tools_env\lib\site-packages\dask\array\reductions.py:640: RuntimeWarning: All-NaN slice encountered&#34;
+    ds_atdepths = data_xr[variables_toslice].where(bool_topbotinterface_arounddepth).max(dim=dimname_layc,keep_attrs=True) #set all layers but one to nan, followed by an arbitrary reduce (max in this case) #TODO: check if attributes should be passed/altered
+    #TODO: suppress warning (upon plotting/load/etc): &#34;C:\Users\veenstra\Anaconda3\envs\dfm_tools_env\lib\site-packages\dask\array\reductions.py:640: RuntimeWarning: All-NaN slice encountered&#34; &gt;&gt; already merged in xarray: https://github.com/dask/dask/pull/9916
     ds_atdepths = ds_atdepths.drop_dims([dimname_layw,dimname_layc],errors=&#39;ignore&#39;) #dropping interface dim if it exists, since it does not correspond to new depths dim
     
     #add depth as coordinate var
@@ -1068,7 +1060,8 @@ def plot_ztdata(data_xr_sel, varname, ax=None, only_contour=False, get_ds=False,
 <span>def <span class="ident">get_Dataset_atdepths</span></span>(<span>data_xr, depths, reference='z0', zlayer_z0_selnearest=False)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Depth-slice dataset with layers. Subsetting variables or times often increases performance significantly.</p>
+<div class="desc"><p>Depth-slice dataset with layers. Performance can be increased by using a subset of variables or subsetting the dataset in any dimension.
+This can be done for instance with ds.isel(time=-1) or uds.ugrid.sel(x=slice(),y=slice()) to subset a ugrid dataset in space.</p>
 <p>data_xr:
 has to be Dataset (not a DataArray), otherwise mesh2d_flowelem_zw etc are not available (interface z values)
 in case of zsigma/sigma layers (or fullgrid), it is advisable to .sel()/.isel() the time dimension first, because that is less computationally heavy
@@ -1079,15 +1072,15 @@ compute depth w.r.t. z0/waterlevel/bed
 default: reference='z0'
 zlayer_z0_interp:
 Use xr.interp() to interpolate zlayer model to z-value. Only possible for reference='z' (not 'waterlevel' or 'bedlevel'). Only used if "mesh2d_layer_z" is present (zlayer model)
-This is faster but results in values interpolated between zcc (z cell centers), so it is different than slicing.</p>
-<h1 id="todo-check-if-attributes-should-be-passedaltered">TODO: check if attributes should be passed/altered</h1></div>
+This is faster but results in values interpolated between zcc (z cell centers), so it is different than slicing.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def get_Dataset_atdepths(data_xr, depths, reference=&#39;z0&#39;, zlayer_z0_selnearest=False):
     &#34;&#34;&#34;
-    Depth-slice dataset with layers. Subsetting variables or times often increases performance significantly.
+    Depth-slice dataset with layers. Performance can be increased by using a subset of variables or subsetting the dataset in any dimension.
+    This can be done for instance with ds.isel(time=-1) or uds.ugrid.sel(x=slice(),y=slice()) to subset a ugrid dataset in space.
     
     data_xr:
         has to be Dataset (not a DataArray), otherwise mesh2d_flowelem_zw etc are not available (interface z values)
@@ -1101,15 +1094,11 @@ This is faster but results in values interpolated between zcc (z cell centers), 
         Use xr.interp() to interpolate zlayer model to z-value. Only possible for reference=&#39;z&#39; (not &#39;waterlevel&#39; or &#39;bedlevel&#39;). Only used if &#34;mesh2d_layer_z&#34; is present (zlayer model)
         This is faster but results in values interpolated between zcc (z cell centers), so it is different than slicing.
     
-    #TODO: check if attributes should be passed/altered
     &#34;&#34;&#34;
     
     depth_vardimname = f&#39;depth_from_{reference}&#39;
     
-    try:
-        dimn_layer, dimn_interfaces = get_vertical_dimensions(data_xr)
-    except: #TODO: catch nicely
-        dimn_layer = dimn_interfaces = None
+    dimn_layer, dimn_interfaces = get_vertical_dimensions(data_xr)
     
     if dimn_layer is not None: #D-FlowFM mapfile
         gridname = data_xr.grid.name
@@ -1126,7 +1115,7 @@ This is faster but results in values interpolated between zcc (z cell centers), 
         varname_bl = &#39;bedlevel&#39;
         warnings.warn(UserWarning(&#39;get_Dataset_atdepths() is not tested for hisfiles yet, please check your results.&#39;)) #TODO: remove this warning once it is checked
     else:
-        print(&#39;WARNING: depth dimension not found, probably 2D model, returning input Dataset&#39;)
+        print(UserWarning(&#39;depth/layer dimension not found, probably 2D model, returning input Dataset&#39;))
         return data_xr #early return
     
     if reference==&#39;waterlevel&#39; and varname_wl not in data_xr.variables:
@@ -1139,7 +1128,6 @@ This is faster but results in values interpolated between zcc (z cell centers), 
     
     #create depth xr.DataArray
     if isinstance(depths,(float,int)):
-        #depths = depths #float/int
         depth_dims = ()
     else:
         depths = np.unique(depths) #array of unique+sorted floats/ints
@@ -1196,15 +1184,11 @@ This is faster but results in values interpolated between zcc (z cell centers), 
     
     #subset variables that have no, time, face and/or layer dims, slice only variables with all three dims (and add to subset)
     bool_dims = [x for x in bool_topbotinterface_arounddepth.dims if x!=depth_vardimname] #exclude depth_vardimname (present if multiple depths supplied), since it is not present in pre-slice variables
-    bool_dims_nolay = [x for x in bool_dims if x!=dimname_layc]
-    variables_basis = [var for var in data_xr.data_vars if set(data_xr[var].dims).issubset(bool_dims_nolay)] #TODO: including time dim results in no value for water_quality_stat_*, since it is time-reduced (which can almost not be valid for non-z layers)
     variables_toslice = [var for var in data_xr.data_vars if set(bool_dims).issubset(data_xr[var].dims)]
-    ds_atdepths = data_xr[variables_basis+variables_toslice]
     
     #actual slicing with .where().max()
-    for var_toslice in variables_toslice:
-        ds_atdepths[var_toslice] = ds_atdepths[var_toslice].where(bool_topbotinterface_arounddepth).max(dim=dimname_layc,keep_attrs=True) #set all layers but one to nan, followed by an arbitrary reduce (max in this case)
-        #TODO: suppress warning (upon plotting/load/etc): &#34;C:\Users\veenstra\Anaconda3\envs\dfm_tools_env\lib\site-packages\dask\array\reductions.py:640: RuntimeWarning: All-NaN slice encountered&#34;
+    ds_atdepths = data_xr[variables_toslice].where(bool_topbotinterface_arounddepth).max(dim=dimname_layc,keep_attrs=True) #set all layers but one to nan, followed by an arbitrary reduce (max in this case) #TODO: check if attributes should be passed/altered
+    #TODO: suppress warning (upon plotting/load/etc): &#34;C:\Users\veenstra\Anaconda3\envs\dfm_tools_env\lib\site-packages\dask\array\reductions.py:640: RuntimeWarning: All-NaN slice encountered&#34; &gt;&gt; already merged in xarray: https://github.com/dask/dask/pull/9916
     ds_atdepths = ds_atdepths.drop_dims([dimname_layw,dimname_layc],errors=&#39;ignore&#39;) #dropping interface dim if it exists, since it does not correspond to new depths dim
     
     #add depth as coordinate var
