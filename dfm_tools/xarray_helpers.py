@@ -123,6 +123,10 @@ def get_vertical_dimensions(uds): #TODO: maybe add layer_dimension and interface
     processing MB_02_0*_map.nc
         >> found layer/interface dimensions in file: mesh2d_nLayers mesh2d_nInterfaces
     """
+    
+    if not hasattr(uds,'grid'): #early return in case of e.g. hisfile
+        return None, None
+        
     gridname = uds.grid.name
     grid_info = uds.grid.to_dataset()[gridname]
     if hasattr(grid_info,'layer_dimension'):
