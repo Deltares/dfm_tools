@@ -208,40 +208,42 @@ def polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=None)
     return intersect_pd
 
 
-def get_xzcoords_onintersection(data_frommap_merged, intersect_pd, timestep=None):
+def get_xzcoords_onintersection(uds, intersect_pd):
     #TODO: remove hardcoding of variable names
-    if timestep is None: #TODO: maybe make time dependent grid?
-        raise Exception('ERROR: argument timestep not provided, this is necessary to retrieve correct waterlevel or fullgrid output')
+    if 'time' in uds.dims: #TODO: maybe make time dependent grid?
+        raise Exception('time dimension present in uds, provide uds.isel(time=timestep) instead. This is necessary to retrieve correct waterlevel or fullgrid output')
     
-    dimn_layer, dimn_interfaces = get_vertical_dimensions(data_frommap_merged)
+    dimn_layer, dimn_interfaces = get_vertical_dimensions(uds)
     if dimn_layer is not None:
-        nlay = data_frommap_merged.dims[dimn_layer]
+        nlay = uds.dims[dimn_layer]
     else: #no layers, 2D model
         nlay = 1
 
-    xu_facedim = data_frommap_merged.grid.face_dimension
-    xu_edgedim = data_frommap_merged.grid.edge_dimension
-    xu_nodedim = data_frommap_merged.grid.node_dimension
+    xu_facedim = uds.grid.face_dimension
+    xu_edgedim = uds.grid.edge_dimension
+    xu_nodedim = uds.grid.node_dimension
         
     #potentially construct fullgrid info (zcc/zw) #TODO: this ifloop is copied from get_mapdata_atdepth(), prevent this duplicate code
-    if dimn_layer not in data_frommap_merged.dims: #2D model
+    if dimn_layer not in uds.dims: #2D model
         print('depth dimension not found, probably 2D model')
         pass
-    elif 'mesh2d_flowelem_zw' in data_frommap_merged.variables: #fullgrid info already available, so continuing
+    elif 'mesh2d_flowelem_zw' in uds.variables: #fullgrid info already available, so continuing
         print('zw/zcc (fullgrid) values already present in Dataset')
         pass
-    elif 'mesh2d_layer_sigma' in data_frommap_merged.variables: #reconstruct_zw_zcc_fromsigma and treat as zsigma/fullgrid mapfile from here
+    elif 'mesh2d_layer_sigma' in uds.variables: #reconstruct_zw_zcc_fromsigma and treat as zsigma/fullgrid mapfile from here
         print('sigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
-        data_frommap_merged = reconstruct_zw_zcc_fromsigma(data_frommap_merged)
-    elif 'mesh2d_layer_z' in data_frommap_merged.variables:        
+        uds = reconstruct_zw_zcc_fromsigma(uds)
+    elif 'mesh2d_layer_z' in uds.variables:        
         print('z-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
-        data_frommap_merged = reconstruct_zw_zcc_fromz(data_frommap_merged)
+        uds = reconstruct_zw_zcc_fromz(uds)
     else:
         raise Exception('layers present, but unknown layertype, expected one of variables: mesh2d_flowelem_zw, mesh2d_layer_sigma, mesh2d_layer_z')
     
+    #intersect_pd = intersect_pd.sort_index() #necesssary for uds.sel
     intersect_gridnos = intersect_pd.index
-    data_frommap_merged_sel = data_frommap_merged.ugrid.obj.drop_dims([xu_edgedim,xu_nodedim]).isel(time=timestep).isel({xu_facedim:intersect_gridnos}) #TODO: not possible to do isel with non-sorted gridnos on ugridDataset, but it is on xrDataset. Dropping edge/nodedims first for neatness, so there is not mismatch in face/node/edge after using .isel(faces)
-    if dimn_layer not in data_frommap_merged_sel.dims:
+    data_frommap_merged_sel = uds.drop_dims([xu_edgedim,xu_nodedim]).ugrid.obj.isel({xu_facedim:intersect_gridnos})
+    #data_frommap_merged_sel = uds.sel({xu_facedim:intersect_gridnos}) #TODO: does not work for RMM
+    if dimn_layer not in uds.dims: #2D model #TODO: add escape for missing wl/bl vars
         data_frommap_wl3_sel = data_frommap_merged_sel['mesh2d_s1'].to_numpy()
         data_frommap_bl_sel = data_frommap_merged_sel['mesh2d_flowelem_bl'].to_numpy()
         zvals_interface = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay+1)
@@ -266,7 +268,7 @@ def get_xzcoords_onintersection(data_frommap_merged, intersect_pd, timestep=None
                              )
 
     #define dataset
-    crs_plotdata_clean = data_frommap_merged_sel
+    crs_plotdata_clean = data_frommap_merged_sel#.ugrid.obj.drop_dims([xu_edgedim,xu_nodedim]) #TODO: dropping dims is necessary to avoid "ValueError". This is since we are constructing new nodes/edges here. How to do neatly?
     if dimn_layer in data_frommap_merged_sel.dims:
         facedim_tempname = 'facedim_tempname' #temporary new name to avoid duplicate from-to dimension name in .stack()
         crs_plotdata_clean = crs_plotdata_clean.rename({xu_facedim:facedim_tempname})
@@ -279,13 +281,13 @@ def get_xzcoords_onintersection(data_frommap_merged, intersect_pd, timestep=None
     return xr_crs_ugrid
 
 
-def polyline_mapslice(data_frommap_merged, line_array, timestep, calcdist_fromlatlon=None): #TODO: merge this into one function
+def polyline_mapslice(data_frommap_merged, line_array, calcdist_fromlatlon=None): #TODO: merge this into one function
     #intersect function, find crossed cell numbers (gridnos) and coordinates of intersection (2 per crossed cell)
     intersect_pd = polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=calcdist_fromlatlon)
     if len(intersect_pd) == 0:
         raise Exception('line_array does not cross mapdata') #TODO: move exception elsewhere?
     #derive vertices from cross section (distance from first point)
-    xr_crs_ugrid = get_xzcoords_onintersection(data_frommap_merged, intersect_pd=intersect_pd, timestep=timestep)
+    xr_crs_ugrid = get_xzcoords_onintersection(data_frommap_merged, intersect_pd=intersect_pd)
     return xr_crs_ugrid
 
 
