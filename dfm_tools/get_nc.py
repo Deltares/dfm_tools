@@ -332,24 +332,38 @@ def reconstruct_zw_zcc_fromz(data_xr_map):
     return data_xr_map
 
 
-def get_Dataset_atdepths(data_xr, depths, reference='z0', zlayer_z0_selnearest=False):
+def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str ='z0', zlayer_z0_selnearest:bool = False):    
     """
-    Depth-slice dataset with layers. Performance can be increased by using a subset of variables or subsetting the dataset in any dimension.
+    Lazily depth-slice a dataset with layers. Performance can be increased by using a subset of variables or subsetting the dataset in any dimension.
     This can be done for instance with ds.isel(time=-1) or uds.ugrid.sel(x=slice(),y=slice()) to subset a ugrid dataset in space.
+    The return dataset only contains the sliced variables.
     
-    data_xr:
+    Parameters
+    ----------
+    data_xr : xu.UgridDataset
         has to be Dataset (not a DataArray), otherwise mesh2d_flowelem_zw etc are not available (interface z values)
         in case of zsigma/sigma layers (or fullgrid), it is advisable to .sel()/.isel() the time dimension first, because that is less computationally heavy
-    depths:
+    depths : TYPE
         int/float or list/array of int/float. Depths w.r.t. reference level. If reference=='waterlevel', depth>0 returns only nans. If reference=='bedlevel', depth<0 returns only nans. Depths are sorted and only uniques are kept.
-    reference:
-        compute depth w.r.t. z0/waterlevel/bed
-        default: reference='z0'
-    zlayer_z0_interp:
+    reference : str, optional
+        compute depth w.r.t. z0/waterlevel/bed. The default is 'z0'.
+    zlayer_z0_selnearest : bool, optional
         Use xr.interp() to interpolate zlayer model to z-value. Only possible for reference='z' (not 'waterlevel' or 'bedlevel'). Only used if "mesh2d_layer_z" is present (zlayer model)
-        This is faster but results in values interpolated between zcc (z cell centers), so it is different than slicing.
-    
+        This is faster but results in values interpolated between zcc (z cell centers), so it is different than slicing.. The default is False.
+
+    Raises
+    ------
+    Exception
+        DESCRIPTION.
+
+    Returns
+    -------
+    xu.UgridDataset
+        Dataset with the depth-sliced variables.
+
     """
+    
+    
     
     depth_vardimname = f'depth_from_{reference}'
     
