@@ -35,6 +35,8 @@ Created on Fri Oct 14 19:58:36 2022
 @author: veenstra
 &#34;&#34;&#34;
 
+import os
+import re
 from netCDF4 import Dataset
 import xarray as xr
 import xugrid as xu
@@ -45,6 +47,25 @@ import glob
 import pandas as pd
 import warnings
 import numpy as np
+
+
+def file_to_list(file_nc):
+    if isinstance(file_nc,list):
+        file_nc_list = file_nc
+    else:
+        basename = os.path.basename(file_nc)
+        dirname = os.path.dirname(file_nc)
+        ext = os.path.splitext(file_nc)[-1]
+        if &#39;.*&#39; in basename:
+            def glob_re(pattern, strings):
+                return list(filter(re.compile(pattern).search, strings))
+            file_nc_list = glob_re(basename, glob.glob(os.path.join(dirname,f&#39;*{ext}&#39;)))
+        else:
+            file_nc_list = glob.glob(file_nc)
+        file_nc_list.sort()
+    if len(file_nc_list)==0:
+        raise Exception(&#39;file(s) not found, empty file_nc_list&#39;)
+    return file_nc_list
 
 
 def preprocess_hisnc(ds):
@@ -100,17 +121,19 @@ def preprocess_hisnc(ds):
 
 def preprocess_hirlam(ds):
     &#34;&#34;&#34;
-    add xy variables as longitude/latitude to avoid duplicate var/dim names
-    add xy as variables again with help of NetCDF4 
+    add xy variables as longitude/latitude to avoid duplicate var/dim names (we rename it anyway otherwise)
+    add xy as variables again with help of NetCDF4
+    this function is hopefully temporary, necessary since &gt;1D-variables cannot have the same name as one of its dimensions in xarray. Background and future solution: https://github.com/pydata/xarray/issues/6293
+    &#34;MissingDimensionsError: &#39;y&#39; has more than 1-dimension and the same name as one of its dimensions (&#39;y&#39;, &#39;x&#39;). xarray disallows such variables because they conflict with the coordinates used to label dimensions.&#34;
+    might be solved in https://github.com/pydata/xarray/releases/tag/v2023.02.0 (xr.concat), but not certain
     &#34;&#34;&#34;
-    #TODO: this function is hopefully temporary, necessary since variables cannot have the same name as dimensions in xarray. Background and future solution: https://github.com/pydata/xarray/issues/6293
     
-    print(&#39;adding x/y variables again as lon/lat&#39;)
+    print(&#39;hirlam workaround: adding dropped x/y variables again as lon/lat&#39;)
     file_nc_one = ds.encoding[&#39;source&#39;]
     with Dataset(file_nc_one) as data_nc:
         data_nc_x = data_nc[&#39;x&#39;]
         data_nc_y = data_nc[&#39;y&#39;]
-        ds[&#39;longitude&#39;] = xr.DataArray(data_nc_x,dims=data_nc_x.dimensions,attrs=data_nc_x.__dict__)
+        ds[&#39;longitude&#39;] = xr.DataArray(data_nc_x,dims=data_nc_x.dimensions,attrs=data_nc_x.__dict__) 
         ds[&#39;latitude&#39;] = xr.DataArray(data_nc_y,dims=data_nc_y.dimensions,attrs=data_nc_y.__dict__)
     ds = ds.set_coords([&#39;latitude&#39;,&#39;longitude&#39;])
     for varkey in ds.data_vars:
@@ -125,6 +148,199 @@ def preprocess_ERA5(ds):
     if &#39;expver&#39; in ds.dims:
         ds = ds.mean(dim=&#39;expver&#39;)
     return ds
+
+
+def preprocess_woa(ds):
+    &#34;&#34;&#34;
+    WOA time units is &#39;months since 0000-01-01 00:00:00&#39; and calendar is not set (360_day is the only calendar that supports that unit in xarray)
+    &#34;&#34;&#34;
+    ds.time.attrs[&#39;calendar&#39;] = &#39;360_day&#39;
+    ds = xr.decode_cf(ds) #decode_cf after adding 360_day calendar attribute
+    return ds
+
+
+def prevent_dtype_int(ds):
+    &#34;&#34;&#34;
+    Prevent writing to int, since it might mess up dataset (https://github.com/Deltares/dfm_tools/issues/239)
+    &#34;&#34;&#34;
+    for var in ds.data_vars:
+        var_encoding = ds[var].encoding
+        if &#39;dtype&#39; in var_encoding.keys():
+            if &#39;int&#39; in str(var_encoding[&#39;dtype&#39;]):
+                ds[var].encoding[&#39;dtype&#39;] = np.dtype(&#39;float32&#39;)
+    return ds
+
+
+def merge_meteofiles(file_nc:str, preprocess=None, 
+                     chunks:dict = {&#39;time&#39;:1},
+                     time_slice:slice = slice(None,None),
+                     add_global_overlap:bool = False, zerostart:bool = False) -&gt; xr.Dataset:
+    &#34;&#34;&#34;
+    for merging for instance meteo files
+    x/y and lon/lat are renamed to longitude/latitude #TODO: is this desireable?
+
+    Parameters
+    ----------
+    file_nc : str
+        DESCRIPTION.
+    preprocess : TYPE, optional
+        DESCRIPTION. The default is None.
+    chunks : dict, optional
+        Prevents large chunks and memory issues. The default is {&#39;time&#39;:1}.
+    time_slice : slice, optional
+        DESCRIPTION. The default is slice(None,None).
+    add_global_overlap : bool, optional
+        GTSM specific: extend data beyond -180 to 180 longitude. The default is False.
+    zerostart : bool, optional
+        GTSM specific: extend data with 0-value fields 1 and 2 days before time_slice.start. The default is False.
+
+    Raises
+    ------
+    Exception
+        DESCRIPTION.
+
+    Returns
+    -------
+    TYPE
+        DESCRIPTION.
+
+    &#34;&#34;&#34;
+    #TODO: add ERA5 conversions and features from hydro_tools\ERA5\ERA52DFM.py (except for varRhoair_alt, request FM support for varying airpressure: https://issuetracker.deltares.nl/browse/UNST-6593)
+    #TODO: request FM support for charnock (etc) separate meteo forcing (currently airpressure_windx_windy_charnock merged file is required): https://issuetracker.deltares.nl/browse/UNST-6453
+    #TODO: provide extfile example with fmquantity/ncvarname combinations and cleanup FM code: https://issuetracker.deltares.nl/browse/UNST-6453
+    #TODO: add coordinate conversion (only valid for models with multidimensional lat/lon variables like HARMONIE and HIRLAM). This should work: ds_reproj = ds.set_crs(4326).to_crs(28992)
+    #TODO: add CMCC etc from gtsmip repos (mainly calendar conversion)
+    #TODO: put conversions in separate function?
+    #TODO: maybe add renaming like {&#39;salinity&#39;:&#39;so&#39;, &#39;water_temp&#39;:&#39;thetao&#39;} for hycom
+    
+    #hirlam workaround
+    if preprocess == preprocess_hirlam:
+        drop_variables = [&#39;x&#39;,&#39;y&#39;] #will be added again as longitude/latitude, this is a workaround (see dfmt.preprocess_hirlam for details)
+    else:
+        drop_variables = None
+    #woa workaround
+    if preprocess == preprocess_woa:
+        decode_cf = False
+    else:
+        decode_cf = True        
+
+    file_nc_list = file_to_list(file_nc)
+
+    print(f&#39;&gt;&gt; opening multifile dataset of {len(file_nc_list)} files (can take a while with lots of files): &#39;,end=&#39;&#39;)
+    dtstart = dt.datetime.now()
+    data_xr = xr.open_mfdataset(file_nc_list,
+                                parallel=True, #speeds up the process
+                                preprocess=preprocess,
+                                chunks=chunks,
+                                drop_variables=drop_variables, #necessary since dims/vars with equal names are not allowed by xarray, add again later and requested matroos to adjust netcdf format.
+                                decode_cf=decode_cf)
+    print(f&#39;{(dt.datetime.now()-dtstart).total_seconds():.2f} sec&#39;)
+    
+    #rename variables
+    if not &#39;longitude&#39; in data_xr.variables: #TODO: make generic, comparable rename in rename_dims_dict in dfmt.open_dataset_extra()
+        if &#39;lon&#39; in data_xr.variables:
+            data_xr = data_xr.rename({&#39;lon&#39;:&#39;longitude&#39;, &#39;lat&#39;:&#39;latitude&#39;})
+        elif &#39;x&#39; in data_xr.variables:
+            data_xr = data_xr.rename({&#39;x&#39;:&#39;longitude&#39;, &#39;y&#39;:&#39;latitude&#39;})
+        else:
+            raise Exception(&#39;no longitude/latitude, lon/lat or x/y variables found in dataset&#39;)
+
+    varkeys = data_xr.variables.mapping.keys()
+    #data_xr.attrs[&#39;comment&#39;] = &#39;merged with dfm_tools from https://github.com/Deltares/dfm_tools&#39; #TODO: add something like this or other attributes? (some might also be dropped now)
+    
+    #select time and do checks #TODO: check if calendar is standard/gregorian
+    print(&#39;time selection&#39;)
+    data_xr_tsel = data_xr.sel(time=time_slice)
+    if data_xr_tsel.get_index(&#39;time&#39;).duplicated().any():
+        print(&#39;dropping duplicate timesteps&#39;)
+        data_xr_tsel = data_xr_tsel.sel(time=~data_xr_tsel.get_index(&#39;time&#39;).duplicated()) #drop duplicate timesteps
+    
+    #check if there are times selected
+    if len(data_xr_tsel.time)==0:
+        raise Exception(f&#39;ERROR: no times selected, ds_text={data_xr.time[[0,-1]].to_numpy()} and time_slice={time_slice}&#39;)
+    
+    #check if there are no gaps (more than one unique timestep)
+    times_pd = data_xr_tsel[&#39;time&#39;].to_series()
+    timesteps_uniq = times_pd.diff().iloc[1:].unique()
+    if len(timesteps_uniq)&gt;1:
+        raise Exception(f&#39;ERROR: gaps found in selected dataset (are there sourcefiles missing?), unique timesteps (hour): {timesteps_uniq/1e9/3600}&#39;)
+    
+    #check if requested times are available in selected files (in times_pd)
+    if not time_slice.start in times_pd.index:
+        raise Exception(f&#39;ERROR: time_slice_start=&#34;{time_slice.start}&#34; not in selected files, timerange: &#34;{times_pd.index[0]}&#34; to &#34;{times_pd.index[-1]}&#34;&#39;)
+    if not time_slice.stop in times_pd.index:
+        raise Exception(f&#39;ERROR: time_slice_stop=&#34;{time_slice.stop}&#34; not in selected files, timerange: &#34;{times_pd.index[0]}&#34; to &#34;{times_pd.index[-1]}&#34;&#39;)
+    
+    #TODO: check conversion implementation with hydro_tools\ERA5\ERA52DFM.py. Also move to separate function?
+    def get_unit(data_xr_var):
+        if &#39;units&#39; in data_xr_var.attrs.keys():
+            unit = data_xr_var.attrs[&#34;units&#34;]
+        else:
+            unit = &#39;-&#39;
+        return unit
+    #convert Kelvin to Celcius
+    for varkey_sel in [&#39;air_temperature&#39;,&#39;dew_point_temperature&#39;,&#39;d2m&#39;,&#39;t2m&#39;]: # 2 meter dewpoint temparature / 2 meter temperature
+        if varkey_sel in varkeys:
+            current_unit = get_unit(data_xr_tsel[varkey_sel])
+            new_unit = &#39;C&#39;
+            print(f&#39;converting {varkey_sel} unit from Kelvin to Celcius: [{current_unit}] to [{new_unit}]&#39;)
+            data_xr_tsel[varkey_sel].attrs[&#39;units&#39;] = new_unit
+            data_xr_tsel[varkey_sel] = data_xr_tsel[varkey_sel] - 273.15
+    #convert fraction to percentage
+    for varkey_sel in [&#39;cloud_area_fraction&#39;,&#39;tcc&#39;]: #total cloud cover
+        if varkey_sel in varkeys:
+            current_unit = get_unit(data_xr_tsel[varkey_sel])
+            new_unit = &#39;%&#39; #unit is soms al %
+            print(f&#39;converting {varkey_sel} unit from fraction to percentage: [{current_unit}] to [{new_unit}]&#39;)
+            data_xr_tsel[varkey_sel].attrs[&#39;units&#39;] = new_unit
+            data_xr_tsel[varkey_sel] = data_xr_tsel[varkey_sel] * 100
+    #convert kg/m2/s to mm/day
+    for varkey_sel in [&#39;mer&#39;,&#39;mtpr&#39;]: #mean evaporation rate / mean total precipitation rate
+        if varkey_sel in varkeys:
+            current_unit = get_unit(data_xr_tsel[varkey_sel])
+            new_unit = &#39;mm/day&#39;
+            print(f&#39;converting {varkey_sel} unit from kg/m2/s to mm/day: [{current_unit}] to [{new_unit}]&#39;)
+            data_xr_tsel[varkey_sel].attrs[&#39;units&#39;] = new_unit
+            data_xr_tsel[varkey_sel] = data_xr_tsel[varkey_sel] * 86400 # kg/m2/s to mm/day (assuming rho_water=1000)
+    #convert J/m2 to W/m2
+    for varkey_sel in [&#39;ssr&#39;,&#39;strd&#39;]: #solar influx (surface_net_solar_radiation) / surface_thermal_radiation_downwards
+        if varkey_sel in varkeys:
+            current_unit = get_unit(data_xr_tsel[varkey_sel])
+            new_unit = &#39;W m**-2&#39;
+            print(f&#39;converting {varkey_sel} unit from J/m2 to W/m2: [{current_unit}] to [{new_unit}]&#39;)
+            data_xr_tsel[varkey_sel].attrs[&#39;units&#39;] = new_unit
+            data_xr_tsel[varkey_sel] = data_xr_tsel[varkey_sel] / 3600 # 3600s/h #TODO: 1W = 1J/s, so does not make sense?
+    #solar influx increase for beta=6%
+    if &#39;ssr&#39; in varkeys:
+        print(&#39;ssr (solar influx) increase for beta=6%&#39;)
+        data_xr_tsel[&#39;ssr&#39;] = data_xr_tsel[&#39;ssr&#39;] *.94
+    
+    #convert 0to360 sourcedata to -180to+180
+    convert_360to180 = (data_xr[&#39;longitude&#39;].to_numpy()&gt;180).any()
+    if convert_360to180:
+        data_xr.coords[&#39;longitude&#39;] = (data_xr.coords[&#39;longitude&#39;] + 180) % 360 - 180
+        data_xr = data_xr.sortby(data_xr[&#39;longitude&#39;])
+    
+    #GTSM specific addition for longitude overlap
+    if add_global_overlap: # assumes -180 to ~+179.75 (full global extent, but no overlap). Does not seem to mess up results for local models.
+        if len(data_xr_tsel.longitude.values) != len(np.unique(data_xr_tsel.longitude.values%360)):
+            raise Exception(f&#39;add_global_overlap=True, but there are already overlapping longitude values: {data_xr_tsel.longitude}&#39;)
+        overlap_ltor = data_xr_tsel.sel(longitude=data_xr_tsel.longitude&lt;=-179)
+        overlap_ltor[&#39;longitude&#39;] = overlap_ltor[&#39;longitude&#39;] + 360
+        overlap_rtol = data_xr_tsel.sel(longitude=data_xr_tsel.longitude&gt;=179)
+        overlap_rtol[&#39;longitude&#39;] = overlap_rtol[&#39;longitude&#39;] - 360
+        data_xr_tsel = xr.concat([data_xr_tsel,overlap_ltor,overlap_rtol],dim=&#39;longitude&#39;).sortby(&#39;longitude&#39;)
+    
+    #GTSM specific addition for zerovalues during spinup
+    if zerostart:
+        field_zerostart = data_xr_tsel.isel(time=[0,0])*0 #two times first field, set values to 0
+        field_zerostart[&#39;time&#39;] = [times_pd.index[0]-dt.timedelta(days=2),times_pd.index[0]-dt.timedelta(days=1)] #TODO: is one zero field not enough? (is replacing first field not also ok? (results in 1hr transition period)
+        data_xr_tsel = xr.concat([field_zerostart,data_xr_tsel],dim=&#39;time&#39;)#.sortby(&#39;time&#39;)
+    
+    data_xr_tsel = prevent_dtype_int(data_xr_tsel)
+    #data_xr_tsel.time.encoding[&#39;units&#39;] = &#39;hours since 1900-01-01 00:00:00&#39; #TODO: maybe add different reftime?
+    
+    return data_xr_tsel
 
 
 def Dataset_varswithdim(ds,dimname): #TODO: dit zit ook in xugrid, wordt nu gebruikt in hisfile voorbeeldscript en kan handig zijn, maar misschien die uit xugrid gebruiken?
@@ -239,13 +455,7 @@ def open_partitioned_dataset(file_nc, chunks={&#39;time&#39;:1}, remove_ghost=Tr
     #TODO: speed up open_dataset https://github.com/Deltares/dfm_tools/issues/225
     
     dtstart_all = dt.datetime.now()
-    if isinstance(file_nc,list):
-        file_nc_list = file_nc
-    else:
-        file_nc_list = glob.glob(file_nc)
-        file_nc_list.sort()
-    if len(file_nc_list)==0:
-        raise Exception(&#39;file(s) not found, empty file_nc_list&#39;)
+    file_nc_list = file_to_list(file_nc)
     
     print(f&#39;&gt;&gt; xu.open_dataset() with {len(file_nc_list)} partition(s): &#39;,end=&#39;&#39;)
     dtstart = dt.datetime.now()
@@ -290,6 +500,34 @@ def open_partitioned_dataset(file_nc, chunks={&#39;time&#39;:1}, remove_ghost=Tr
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
+<dt id="dfm_tools.xarray_helpers.file_to_list"><code class="name flex">
+<span>def <span class="ident">file_to_list</span></span>(<span>file_nc)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def file_to_list(file_nc):
+    if isinstance(file_nc,list):
+        file_nc_list = file_nc
+    else:
+        basename = os.path.basename(file_nc)
+        dirname = os.path.dirname(file_nc)
+        ext = os.path.splitext(file_nc)[-1]
+        if &#39;.*&#39; in basename:
+            def glob_re(pattern, strings):
+                return list(filter(re.compile(pattern).search, strings))
+            file_nc_list = glob_re(basename, glob.glob(os.path.join(dirname,f&#39;*{ext}&#39;)))
+        else:
+            file_nc_list = glob.glob(file_nc)
+        file_nc_list.sort()
+    if len(file_nc_list)==0:
+        raise Exception(&#39;file(s) not found, empty file_nc_list&#39;)
+    return file_nc_list</code></pre>
+</details>
+</dd>
 <dt id="dfm_tools.xarray_helpers.preprocess_hisnc"><code class="name flex">
 <span>def <span class="ident">preprocess_hisnc</span></span>(<span>ds)</span>
 </code></dt>
@@ -366,25 +604,30 @@ def open_partitioned_dataset(file_nc, chunks={&#39;time&#39;:1}, remove_ghost=Tr
 <span>def <span class="ident">preprocess_hirlam</span></span>(<span>ds)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>add xy variables as longitude/latitude to avoid duplicate var/dim names
-add xy as variables again with help of NetCDF4</p></div>
+<div class="desc"><p>add xy variables as longitude/latitude to avoid duplicate var/dim names (we rename it anyway otherwise)
+add xy as variables again with help of NetCDF4
+this function is hopefully temporary, necessary since &gt;1D-variables cannot have the same name as one of its dimensions in xarray. Background and future solution: <a href="https://github.com/pydata/xarray/issues/6293">https://github.com/pydata/xarray/issues/6293</a>
+"MissingDimensionsError: 'y' has more than 1-dimension and the same name as one of its dimensions ('y', 'x'). xarray disallows such variables because they conflict with the coordinates used to label dimensions."
+might be solved in <a href="https://github.com/pydata/xarray/releases/tag/v2023.02.0">https://github.com/pydata/xarray/releases/tag/v2023.02.0</a> (xr.concat), but not certain</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def preprocess_hirlam(ds):
     &#34;&#34;&#34;
-    add xy variables as longitude/latitude to avoid duplicate var/dim names
-    add xy as variables again with help of NetCDF4 
+    add xy variables as longitude/latitude to avoid duplicate var/dim names (we rename it anyway otherwise)
+    add xy as variables again with help of NetCDF4
+    this function is hopefully temporary, necessary since &gt;1D-variables cannot have the same name as one of its dimensions in xarray. Background and future solution: https://github.com/pydata/xarray/issues/6293
+    &#34;MissingDimensionsError: &#39;y&#39; has more than 1-dimension and the same name as one of its dimensions (&#39;y&#39;, &#39;x&#39;). xarray disallows such variables because they conflict with the coordinates used to label dimensions.&#34;
+    might be solved in https://github.com/pydata/xarray/releases/tag/v2023.02.0 (xr.concat), but not certain
     &#34;&#34;&#34;
-    #TODO: this function is hopefully temporary, necessary since variables cannot have the same name as dimensions in xarray. Background and future solution: https://github.com/pydata/xarray/issues/6293
     
-    print(&#39;adding x/y variables again as lon/lat&#39;)
+    print(&#39;hirlam workaround: adding dropped x/y variables again as lon/lat&#39;)
     file_nc_one = ds.encoding[&#39;source&#39;]
     with Dataset(file_nc_one) as data_nc:
         data_nc_x = data_nc[&#39;x&#39;]
         data_nc_y = data_nc[&#39;y&#39;]
-        ds[&#39;longitude&#39;] = xr.DataArray(data_nc_x,dims=data_nc_x.dimensions,attrs=data_nc_x.__dict__)
+        ds[&#39;longitude&#39;] = xr.DataArray(data_nc_x,dims=data_nc_x.dimensions,attrs=data_nc_x.__dict__) 
         ds[&#39;latitude&#39;] = xr.DataArray(data_nc_y,dims=data_nc_y.dimensions,attrs=data_nc_y.__dict__)
     ds = ds.set_coords([&#39;latitude&#39;,&#39;longitude&#39;])
     for varkey in ds.data_vars:
@@ -408,6 +651,252 @@ add xy as variables again with help of NetCDF4</p></div>
     if &#39;expver&#39; in ds.dims:
         ds = ds.mean(dim=&#39;expver&#39;)
     return ds</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.xarray_helpers.preprocess_woa"><code class="name flex">
+<span>def <span class="ident">preprocess_woa</span></span>(<span>ds)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>WOA time units is 'months since 0000-01-01 00:00:00' and calendar is not set (360_day is the only calendar that supports that unit in xarray)</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def preprocess_woa(ds):
+    &#34;&#34;&#34;
+    WOA time units is &#39;months since 0000-01-01 00:00:00&#39; and calendar is not set (360_day is the only calendar that supports that unit in xarray)
+    &#34;&#34;&#34;
+    ds.time.attrs[&#39;calendar&#39;] = &#39;360_day&#39;
+    ds = xr.decode_cf(ds) #decode_cf after adding 360_day calendar attribute
+    return ds</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.xarray_helpers.prevent_dtype_int"><code class="name flex">
+<span>def <span class="ident">prevent_dtype_int</span></span>(<span>ds)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Prevent writing to int, since it might mess up dataset (<a href="https://github.com/Deltares/dfm_tools/issues/239">https://github.com/Deltares/dfm_tools/issues/239</a>)</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def prevent_dtype_int(ds):
+    &#34;&#34;&#34;
+    Prevent writing to int, since it might mess up dataset (https://github.com/Deltares/dfm_tools/issues/239)
+    &#34;&#34;&#34;
+    for var in ds.data_vars:
+        var_encoding = ds[var].encoding
+        if &#39;dtype&#39; in var_encoding.keys():
+            if &#39;int&#39; in str(var_encoding[&#39;dtype&#39;]):
+                ds[var].encoding[&#39;dtype&#39;] = np.dtype(&#39;float32&#39;)
+    return ds</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.xarray_helpers.merge_meteofiles"><code class="name flex">
+<span>def <span class="ident">merge_meteofiles</span></span>(<span>file_nc: str, preprocess=None, chunks: dict = {'time': 1}, time_slice: slice = slice(None, None, None), add_global_overlap: bool = False, zerostart: bool = False) ‑> xarray.core.dataset.Dataset</span>
+</code></dt>
+<dd>
+<div class="desc"><p>for merging for instance meteo files
+x/y and lon/lat are renamed to longitude/latitude #TODO: is this desireable?</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>file_nc</code></strong> :&ensp;<code>str</code></dt>
+<dd>DESCRIPTION.</dd>
+<dt><strong><code>preprocess</code></strong> :&ensp;<code>TYPE</code>, optional</dt>
+<dd>DESCRIPTION. The default is None.</dd>
+<dt><strong><code>chunks</code></strong> :&ensp;<code>dict</code>, optional</dt>
+<dd>Prevents large chunks and memory issues. The default is {'time':1}.</dd>
+<dt><strong><code>time_slice</code></strong> :&ensp;<code>slice</code>, optional</dt>
+<dd>DESCRIPTION. The default is slice(None,None).</dd>
+<dt><strong><code>add_global_overlap</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>GTSM specific: extend data beyond -180 to 180 longitude. The default is False.</dd>
+<dt><strong><code>zerostart</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>GTSM specific: extend data with 0-value fields 1 and 2 days before time_slice.start. The default is False.</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>Exception</code></dt>
+<dd>DESCRIPTION.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>TYPE</code></dt>
+<dd>DESCRIPTION.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def merge_meteofiles(file_nc:str, preprocess=None, 
+                     chunks:dict = {&#39;time&#39;:1},
+                     time_slice:slice = slice(None,None),
+                     add_global_overlap:bool = False, zerostart:bool = False) -&gt; xr.Dataset:
+    &#34;&#34;&#34;
+    for merging for instance meteo files
+    x/y and lon/lat are renamed to longitude/latitude #TODO: is this desireable?
+
+    Parameters
+    ----------
+    file_nc : str
+        DESCRIPTION.
+    preprocess : TYPE, optional
+        DESCRIPTION. The default is None.
+    chunks : dict, optional
+        Prevents large chunks and memory issues. The default is {&#39;time&#39;:1}.
+    time_slice : slice, optional
+        DESCRIPTION. The default is slice(None,None).
+    add_global_overlap : bool, optional
+        GTSM specific: extend data beyond -180 to 180 longitude. The default is False.
+    zerostart : bool, optional
+        GTSM specific: extend data with 0-value fields 1 and 2 days before time_slice.start. The default is False.
+
+    Raises
+    ------
+    Exception
+        DESCRIPTION.
+
+    Returns
+    -------
+    TYPE
+        DESCRIPTION.
+
+    &#34;&#34;&#34;
+    #TODO: add ERA5 conversions and features from hydro_tools\ERA5\ERA52DFM.py (except for varRhoair_alt, request FM support for varying airpressure: https://issuetracker.deltares.nl/browse/UNST-6593)
+    #TODO: request FM support for charnock (etc) separate meteo forcing (currently airpressure_windx_windy_charnock merged file is required): https://issuetracker.deltares.nl/browse/UNST-6453
+    #TODO: provide extfile example with fmquantity/ncvarname combinations and cleanup FM code: https://issuetracker.deltares.nl/browse/UNST-6453
+    #TODO: add coordinate conversion (only valid for models with multidimensional lat/lon variables like HARMONIE and HIRLAM). This should work: ds_reproj = ds.set_crs(4326).to_crs(28992)
+    #TODO: add CMCC etc from gtsmip repos (mainly calendar conversion)
+    #TODO: put conversions in separate function?
+    #TODO: maybe add renaming like {&#39;salinity&#39;:&#39;so&#39;, &#39;water_temp&#39;:&#39;thetao&#39;} for hycom
+    
+    #hirlam workaround
+    if preprocess == preprocess_hirlam:
+        drop_variables = [&#39;x&#39;,&#39;y&#39;] #will be added again as longitude/latitude, this is a workaround (see dfmt.preprocess_hirlam for details)
+    else:
+        drop_variables = None
+    #woa workaround
+    if preprocess == preprocess_woa:
+        decode_cf = False
+    else:
+        decode_cf = True        
+
+    file_nc_list = file_to_list(file_nc)
+
+    print(f&#39;&gt;&gt; opening multifile dataset of {len(file_nc_list)} files (can take a while with lots of files): &#39;,end=&#39;&#39;)
+    dtstart = dt.datetime.now()
+    data_xr = xr.open_mfdataset(file_nc_list,
+                                parallel=True, #speeds up the process
+                                preprocess=preprocess,
+                                chunks=chunks,
+                                drop_variables=drop_variables, #necessary since dims/vars with equal names are not allowed by xarray, add again later and requested matroos to adjust netcdf format.
+                                decode_cf=decode_cf)
+    print(f&#39;{(dt.datetime.now()-dtstart).total_seconds():.2f} sec&#39;)
+    
+    #rename variables
+    if not &#39;longitude&#39; in data_xr.variables: #TODO: make generic, comparable rename in rename_dims_dict in dfmt.open_dataset_extra()
+        if &#39;lon&#39; in data_xr.variables:
+            data_xr = data_xr.rename({&#39;lon&#39;:&#39;longitude&#39;, &#39;lat&#39;:&#39;latitude&#39;})
+        elif &#39;x&#39; in data_xr.variables:
+            data_xr = data_xr.rename({&#39;x&#39;:&#39;longitude&#39;, &#39;y&#39;:&#39;latitude&#39;})
+        else:
+            raise Exception(&#39;no longitude/latitude, lon/lat or x/y variables found in dataset&#39;)
+
+    varkeys = data_xr.variables.mapping.keys()
+    #data_xr.attrs[&#39;comment&#39;] = &#39;merged with dfm_tools from https://github.com/Deltares/dfm_tools&#39; #TODO: add something like this or other attributes? (some might also be dropped now)
+    
+    #select time and do checks #TODO: check if calendar is standard/gregorian
+    print(&#39;time selection&#39;)
+    data_xr_tsel = data_xr.sel(time=time_slice)
+    if data_xr_tsel.get_index(&#39;time&#39;).duplicated().any():
+        print(&#39;dropping duplicate timesteps&#39;)
+        data_xr_tsel = data_xr_tsel.sel(time=~data_xr_tsel.get_index(&#39;time&#39;).duplicated()) #drop duplicate timesteps
+    
+    #check if there are times selected
+    if len(data_xr_tsel.time)==0:
+        raise Exception(f&#39;ERROR: no times selected, ds_text={data_xr.time[[0,-1]].to_numpy()} and time_slice={time_slice}&#39;)
+    
+    #check if there are no gaps (more than one unique timestep)
+    times_pd = data_xr_tsel[&#39;time&#39;].to_series()
+    timesteps_uniq = times_pd.diff().iloc[1:].unique()
+    if len(timesteps_uniq)&gt;1:
+        raise Exception(f&#39;ERROR: gaps found in selected dataset (are there sourcefiles missing?), unique timesteps (hour): {timesteps_uniq/1e9/3600}&#39;)
+    
+    #check if requested times are available in selected files (in times_pd)
+    if not time_slice.start in times_pd.index:
+        raise Exception(f&#39;ERROR: time_slice_start=&#34;{time_slice.start}&#34; not in selected files, timerange: &#34;{times_pd.index[0]}&#34; to &#34;{times_pd.index[-1]}&#34;&#39;)
+    if not time_slice.stop in times_pd.index:
+        raise Exception(f&#39;ERROR: time_slice_stop=&#34;{time_slice.stop}&#34; not in selected files, timerange: &#34;{times_pd.index[0]}&#34; to &#34;{times_pd.index[-1]}&#34;&#39;)
+    
+    #TODO: check conversion implementation with hydro_tools\ERA5\ERA52DFM.py. Also move to separate function?
+    def get_unit(data_xr_var):
+        if &#39;units&#39; in data_xr_var.attrs.keys():
+            unit = data_xr_var.attrs[&#34;units&#34;]
+        else:
+            unit = &#39;-&#39;
+        return unit
+    #convert Kelvin to Celcius
+    for varkey_sel in [&#39;air_temperature&#39;,&#39;dew_point_temperature&#39;,&#39;d2m&#39;,&#39;t2m&#39;]: # 2 meter dewpoint temparature / 2 meter temperature
+        if varkey_sel in varkeys:
+            current_unit = get_unit(data_xr_tsel[varkey_sel])
+            new_unit = &#39;C&#39;
+            print(f&#39;converting {varkey_sel} unit from Kelvin to Celcius: [{current_unit}] to [{new_unit}]&#39;)
+            data_xr_tsel[varkey_sel].attrs[&#39;units&#39;] = new_unit
+            data_xr_tsel[varkey_sel] = data_xr_tsel[varkey_sel] - 273.15
+    #convert fraction to percentage
+    for varkey_sel in [&#39;cloud_area_fraction&#39;,&#39;tcc&#39;]: #total cloud cover
+        if varkey_sel in varkeys:
+            current_unit = get_unit(data_xr_tsel[varkey_sel])
+            new_unit = &#39;%&#39; #unit is soms al %
+            print(f&#39;converting {varkey_sel} unit from fraction to percentage: [{current_unit}] to [{new_unit}]&#39;)
+            data_xr_tsel[varkey_sel].attrs[&#39;units&#39;] = new_unit
+            data_xr_tsel[varkey_sel] = data_xr_tsel[varkey_sel] * 100
+    #convert kg/m2/s to mm/day
+    for varkey_sel in [&#39;mer&#39;,&#39;mtpr&#39;]: #mean evaporation rate / mean total precipitation rate
+        if varkey_sel in varkeys:
+            current_unit = get_unit(data_xr_tsel[varkey_sel])
+            new_unit = &#39;mm/day&#39;
+            print(f&#39;converting {varkey_sel} unit from kg/m2/s to mm/day: [{current_unit}] to [{new_unit}]&#39;)
+            data_xr_tsel[varkey_sel].attrs[&#39;units&#39;] = new_unit
+            data_xr_tsel[varkey_sel] = data_xr_tsel[varkey_sel] * 86400 # kg/m2/s to mm/day (assuming rho_water=1000)
+    #convert J/m2 to W/m2
+    for varkey_sel in [&#39;ssr&#39;,&#39;strd&#39;]: #solar influx (surface_net_solar_radiation) / surface_thermal_radiation_downwards
+        if varkey_sel in varkeys:
+            current_unit = get_unit(data_xr_tsel[varkey_sel])
+            new_unit = &#39;W m**-2&#39;
+            print(f&#39;converting {varkey_sel} unit from J/m2 to W/m2: [{current_unit}] to [{new_unit}]&#39;)
+            data_xr_tsel[varkey_sel].attrs[&#39;units&#39;] = new_unit
+            data_xr_tsel[varkey_sel] = data_xr_tsel[varkey_sel] / 3600 # 3600s/h #TODO: 1W = 1J/s, so does not make sense?
+    #solar influx increase for beta=6%
+    if &#39;ssr&#39; in varkeys:
+        print(&#39;ssr (solar influx) increase for beta=6%&#39;)
+        data_xr_tsel[&#39;ssr&#39;] = data_xr_tsel[&#39;ssr&#39;] *.94
+    
+    #convert 0to360 sourcedata to -180to+180
+    convert_360to180 = (data_xr[&#39;longitude&#39;].to_numpy()&gt;180).any()
+    if convert_360to180:
+        data_xr.coords[&#39;longitude&#39;] = (data_xr.coords[&#39;longitude&#39;] + 180) % 360 - 180
+        data_xr = data_xr.sortby(data_xr[&#39;longitude&#39;])
+    
+    #GTSM specific addition for longitude overlap
+    if add_global_overlap: # assumes -180 to ~+179.75 (full global extent, but no overlap). Does not seem to mess up results for local models.
+        if len(data_xr_tsel.longitude.values) != len(np.unique(data_xr_tsel.longitude.values%360)):
+            raise Exception(f&#39;add_global_overlap=True, but there are already overlapping longitude values: {data_xr_tsel.longitude}&#39;)
+        overlap_ltor = data_xr_tsel.sel(longitude=data_xr_tsel.longitude&lt;=-179)
+        overlap_ltor[&#39;longitude&#39;] = overlap_ltor[&#39;longitude&#39;] + 360
+        overlap_rtol = data_xr_tsel.sel(longitude=data_xr_tsel.longitude&gt;=179)
+        overlap_rtol[&#39;longitude&#39;] = overlap_rtol[&#39;longitude&#39;] - 360
+        data_xr_tsel = xr.concat([data_xr_tsel,overlap_ltor,overlap_rtol],dim=&#39;longitude&#39;).sortby(&#39;longitude&#39;)
+    
+    #GTSM specific addition for zerovalues during spinup
+    if zerostart:
+        field_zerostart = data_xr_tsel.isel(time=[0,0])*0 #two times first field, set values to 0
+        field_zerostart[&#39;time&#39;] = [times_pd.index[0]-dt.timedelta(days=2),times_pd.index[0]-dt.timedelta(days=1)] #TODO: is one zero field not enough? (is replacing first field not also ok? (results in 1hr transition period)
+        data_xr_tsel = xr.concat([field_zerostart,data_xr_tsel],dim=&#39;time&#39;)#.sortby(&#39;time&#39;)
+    
+    data_xr_tsel = prevent_dtype_int(data_xr_tsel)
+    #data_xr_tsel.time.encoding[&#39;units&#39;] = &#39;hours since 1900-01-01 00:00:00&#39; #TODO: maybe add different reftime?
+    
+    return data_xr_tsel</code></pre>
 </details>
 </dd>
 <dt id="dfm_tools.xarray_helpers.Dataset_varswithdim"><code class="name flex">
@@ -612,13 +1101,7 @@ Not using most-occurring domainno in var, since this is not a valid assumption f
     #TODO: speed up open_dataset https://github.com/Deltares/dfm_tools/issues/225
     
     dtstart_all = dt.datetime.now()
-    if isinstance(file_nc,list):
-        file_nc_list = file_nc
-    else:
-        file_nc_list = glob.glob(file_nc)
-        file_nc_list.sort()
-    if len(file_nc_list)==0:
-        raise Exception(&#39;file(s) not found, empty file_nc_list&#39;)
+    file_nc_list = file_to_list(file_nc)
     
     print(f&#39;&gt;&gt; xu.open_dataset() with {len(file_nc_list)} partition(s): &#39;,end=&#39;&#39;)
     dtstart = dt.datetime.now()
@@ -674,9 +1157,13 @@ Not using most-occurring domainno in var, since this is not a valid assumption f
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
+<li><code><a title="dfm_tools.xarray_helpers.file_to_list" href="#dfm_tools.xarray_helpers.file_to_list">file_to_list</a></code></li>
 <li><code><a title="dfm_tools.xarray_helpers.preprocess_hisnc" href="#dfm_tools.xarray_helpers.preprocess_hisnc">preprocess_hisnc</a></code></li>
 <li><code><a title="dfm_tools.xarray_helpers.preprocess_hirlam" href="#dfm_tools.xarray_helpers.preprocess_hirlam">preprocess_hirlam</a></code></li>
 <li><code><a title="dfm_tools.xarray_helpers.preprocess_ERA5" href="#dfm_tools.xarray_helpers.preprocess_ERA5">preprocess_ERA5</a></code></li>
+<li><code><a title="dfm_tools.xarray_helpers.preprocess_woa" href="#dfm_tools.xarray_helpers.preprocess_woa">preprocess_woa</a></code></li>
+<li><code><a title="dfm_tools.xarray_helpers.prevent_dtype_int" href="#dfm_tools.xarray_helpers.prevent_dtype_int">prevent_dtype_int</a></code></li>
+<li><code><a title="dfm_tools.xarray_helpers.merge_meteofiles" href="#dfm_tools.xarray_helpers.merge_meteofiles">merge_meteofiles</a></code></li>
 <li><code><a title="dfm_tools.xarray_helpers.Dataset_varswithdim" href="#dfm_tools.xarray_helpers.Dataset_varswithdim">Dataset_varswithdim</a></code></li>
 <li><code><a title="dfm_tools.xarray_helpers.get_vertical_dimensions" href="#dfm_tools.xarray_helpers.get_vertical_dimensions">get_vertical_dimensions</a></code></li>
 <li><code><a title="dfm_tools.xarray_helpers.remove_ghostcells" href="#dfm_tools.xarray_helpers.remove_ghostcells">remove_ghostcells</a></code></li>
