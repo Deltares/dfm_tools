@@ -223,7 +223,7 @@ for file_nc in file_nc_list:
     
     print('calculating and plotting cross section')
     crs_tstart = dt.datetime.now() #start timer
-    xr_crs_ugrid = dfmt.polyline_mapslice(data_frommap_merged, line_array, timestep=timestep)
+    xr_crs_ugrid = dfmt.polyline_mapslice(data_frommap_merged.isel(time=timestep), line_array)
     fig, ax = plt.subplots()
     xr_crs_ugrid['mesh2d_sa1'].ugrid.plot(cmap='jet')
     fig.tight_layout()
