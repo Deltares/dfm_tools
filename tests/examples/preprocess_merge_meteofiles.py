@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 plt.close('all')
 import dfm_tools as dfmt
 
-mode = 'HIRLAM_meteo' #'ERA5_wind_pressure' # 'HARMONIE' 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HYCOM' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall'
+mode = 'HARMONIE' #'ERA5_wind_pressure' # 'HARMONIE' 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HYCOM' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall'
 
 script_tstart = dt.datetime.now()
 
@@ -34,7 +34,7 @@ elif mode == 'HARMONIE':
     fn_match_pattern = 'HARMONIE_*_2020_*.nc'
     file_out_prefix = 'HARMONIE_'
     preprocess = None
-    time_slice = slice('2020-01-01','2020-02-01')
+    time_slice = slice('2020-01-01','2020-01-03')
 elif mode == 'HYCOM':
     dir_data = 'c:\\DATA\\dfm_tools_testdata\\GLBu0.08_expt_91.2'
     fn_match_pattern = 'HYCOM_ST_GoO_*.nc'

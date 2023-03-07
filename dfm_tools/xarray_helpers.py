@@ -133,6 +133,8 @@ def prevent_dtype_int(ds):
     """
     Prevent writing to int, since it might mess up dataset (https://github.com/Deltares/dfm_tools/issues/239 and https://github.com/pydata/xarray/issues/7039)
     Since floats are used instead of ints, the disksize of the dataset will be larger
+    TODO: alternatively remove scale_factor key from attrs, so it can be recomputed (seems to also work): ds[var].encoding.pop('scale_factor')
+    TODO: maybe add to preprocess_ERA5 (preferrably popping scale_factor attribute to keep file size small)
     """
     for var in ds.data_vars:
         var_encoding = ds[var].encoding
