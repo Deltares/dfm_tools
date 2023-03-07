@@ -248,9 +248,10 @@ def get_xzcoords_onintersection(uds, intersect_pd):
     else:
         raise Exception('layers present, but unknown layertype, expected one of variables: mesh2d_flowelem_zw, mesh2d_layer_sigma, mesh2d_layer_z')
     
-    intersect_pd = intersect_pd.sort_index() #necesssary for uds.sel
+    #intersect_pd = intersect_pd.sort_index() #necesssary for uds.sel
     intersect_gridnos = intersect_pd.index
-    data_frommap_merged_sel = uds.sel({xu_facedim:intersect_gridnos})
+    data_frommap_merged_sel = uds.drop_dims([xu_edgedim,xu_nodedim]).ugrid.obj.isel({xu_facedim:intersect_gridnos})
+    #data_frommap_merged_sel = uds.sel({xu_facedim:intersect_gridnos}) #TODO: does not work for RMM
     if dimn_layer not in uds.dims: #2D model #TODO: add escape for missing wl/bl vars
         data_frommap_wl3_sel = data_frommap_merged_sel['mesh2d_s1'].to_numpy()
         data_frommap_bl_sel = data_frommap_merged_sel['mesh2d_flowelem_bl'].to_numpy()
@@ -276,7 +277,7 @@ def get_xzcoords_onintersection(uds, intersect_pd):
                              )
 
     #define dataset
-    crs_plotdata_clean = data_frommap_merged_sel.ugrid.obj.drop_dims([xu_edgedim,xu_nodedim]) #TODO: dropping dims is necessary to avoid "ValueError". This is since we are constructing new nodes/edges here. How to do neatly?
+    crs_plotdata_clean = data_frommap_merged_sel#.ugrid.obj.drop_dims([xu_edgedim,xu_nodedim]) #TODO: dropping dims is necessary to avoid "ValueError". This is since we are constructing new nodes/edges here. How to do neatly?
     if dimn_layer in data_frommap_merged_sel.dims:
         facedim_tempname = 'facedim_tempname' #temporary new name to avoid duplicate from-to dimension name in .stack()
         crs_plotdata_clean = crs_plotdata_clean.rename({xu_facedim:facedim_tempname})
