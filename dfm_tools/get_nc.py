@@ -99,7 +99,7 @@ def polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=None)
     #from matplotlib.path import Path
     import shapely #separate import, since sometimes this works, while import shapely.geometry fails
     from shapely.geometry import LineString, Polygon, MultiLineString, Point
-    #from dfm_tools.get_nc import calc_dist_pythagoras, calc_dist_haversine
+    from dfm_tools.get_nc import calc_dist_pythagoras, calc_dist_haversine
 
     if calcdist_fromlatlon is None:
         #auto determine if cartesian/sperical
@@ -108,44 +108,34 @@ def polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=None)
         elif hasattr(data_frommap_merged.ugrid.obj,'wgs84'):
             calcdist_fromlatlon = True
         else:
-            raise Exception('To auto determine calcdist_fromlatlon, a variable "projected_coordinate_system" or "wgs84" is required, please provide calcdist_fromlatlon=True/False yourself.') #TODO: replace with set_crs() in open_partitioned_dataset() or xugrid?
-        
+            raise Exception('To auto determine calcdist_fromlatlon, a variable "projected_coordinate_system" or "wgs84" is required, please provide calcdist_fromlatlon=True/False yourself.')
+
     dtstart_all = dt.datetime.now()
 
     #defining celinlinebox
     line_section = LineString(line_array)
     
-    if 1:
-        ugrid_all_verts = data_frommap_merged.grid.face_node_coordinates
-        verts_xmax = np.nanmax(ugrid_all_verts[:,:,0].data,axis=1)
-        verts_xmin = np.nanmin(ugrid_all_verts[:,:,0].data,axis=1)
-        verts_ymax = np.nanmax(ugrid_all_verts[:,:,1].data,axis=1)
-        verts_ymin = np.nanmin(ugrid_all_verts[:,:,1].data,axis=1)
-        
-        #TODO: replace this with xr.sel() once it works for xugrid (getting verts_inlinebox_nos is than still an issue)
-        cellinlinebox_all_bool = (((np.min(line_array[:,0]) <= verts_xmax) &
-                                    (np.max(line_array[:,0]) >= verts_xmin)) &
-                                  ((np.min(line_array[:,1]) <= verts_ymax) & 
-                                    (np.max(line_array[:,1]) >= verts_ymin))
-                                  )
-        #cellinlinebox_all_bool[:] = 1 #to force all cells to be taken into account
-        verts_inlinebox = ugrid_all_verts[cellinlinebox_all_bool,:,:]
-        verts_inlinebox_nos = np.where(cellinlinebox_all_bool)[0]
-        print(f'>> finding crossing flow links (can take a while, processing {cellinlinebox_all_bool.sum()} of {len(cellinlinebox_all_bool)} cells): ',end='')
-    else: #TODO: this alternative works but it is 2-3 times slower
-        uds = data_frommap_merged
-        uds_nfaces = len(uds[uds.grid.face_dimension])
-        uds['face_nos'] = xr.DataArray(range(uds_nfaces), dims=(uds.grid.face_dimension))
-        line_xminmax = slice(np.min(line_array[:,0]),np.max(line_array[:,0]))
-        line_yminmax = slice(np.min(line_array[:,1]),np.max(line_array[:,1]))
-        uds_crop = uds.ugrid.sel(x=line_xminmax,y=line_yminmax)
-        uds_crop_nfaces = len(uds_crop[uds_crop.grid.face_dimension])
-        verts_inlinebox_nos = uds_crop['face_nos'].to_numpy()
-        verts_inlinebox = uds_crop.grid.face_node_coordinates
-        print(f'>> finding crossing flow links (can take a while, processing {uds_crop_nfaces} of {uds_nfaces} cells): ',end='')
+    ugrid_all_verts = data_frommap_merged.grid.face_node_coordinates
+    verts_xmax = np.nanmax(ugrid_all_verts[:,:,0].data,axis=1)
+    verts_xmin = np.nanmin(ugrid_all_verts[:,:,0].data,axis=1)
+    verts_ymax = np.nanmax(ugrid_all_verts[:,:,1].data,axis=1)
+    verts_ymin = np.nanmin(ugrid_all_verts[:,:,1].data,axis=1)
+    
+    #TODO: replace this with xr.sel() once it works for xugrid (getting verts_inlinebox_nos is than still an issue)
+    cellinlinebox_all_bool = (((np.min(line_array[:,0]) <= verts_xmax) &
+                               (np.max(line_array[:,0]) >= verts_xmin)) &
+                              ((np.min(line_array[:,1]) <= verts_ymax) & 
+                               (np.max(line_array[:,1]) >= verts_ymin))
+                              )
+    #cellinlinebox_all_bool[:] = 1 #to force all cells to be taken into account
     
     intersect_coords = np.empty((0,4))
     intersect_gridnos = np.empty((0),dtype=int) #has to be numbers, since a boolean is differently ordered
+    verts_inlinebox = ugrid_all_verts[cellinlinebox_all_bool,:,:]
+    verts_inlinebox_nos = np.where(cellinlinebox_all_bool)[0]
+
+    
+    print(f'>> finding crossing flow links (can take a while, processing {cellinlinebox_all_bool.sum()} of {len(cellinlinebox_all_bool)} cells): ',end='')
     dtstart = dt.datetime.now()
     for iP, pol_data in enumerate(verts_inlinebox):
         pol_shp = Polygon(pol_data[~np.isnan(pol_data).all(axis=1)])
@@ -173,6 +163,7 @@ def polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=None)
     intersect_pd = pd.DataFrame(intersect_coords,index=intersect_gridnos,columns=['x1','y1','x2','y2'])
     intersect_pd.index.name = 'gridnumber'
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
+            
     
     #calculating distance for all crossed cells, from first point of line
     nlinecoords = line_array.shape[0]
@@ -213,49 +204,48 @@ def polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=None)
     intersect_pd['linepartlen'] = crs_dist_stops-crs_dist_starts
     intersect_pd = intersect_pd.sort_values('crs_dist_starts')
     
-    print(f'>> polygon_intersect() total time: {(dt.datetime.now()-dtstart_all).total_seconds():.2f} sec')
+    print(f'>> polygon_intersect() total, found intersection trough {len(intersect_gridnos)} of {len(cellinlinebox_all_bool)} cells: {(dt.datetime.now()-dtstart_all).total_seconds():.2f} sec')
     return intersect_pd
 
 
-def get_xzcoords_onintersection(uds, intersect_pd):
+def get_xzcoords_onintersection(data_frommap_merged, intersect_pd, timestep=None):
     #TODO: remove hardcoding of variable names
-    if 'time' in uds.dims: #TODO: maybe make time dependent grid?
-        raise Exception('provided Dataset contains time dimension, provide uds.sel(time=..) instead. This is currently necessary to retrieve correct waterlevel or fullgrid output')
+    if timestep is None: #TODO: maybe make time dependent grid?
+        raise Exception('ERROR: argument timestep not provided, this is necessary to retrieve correct waterlevel or fullgrid output')
     
-    dimn_layer, dimn_interfaces = get_vertical_dimensions(uds)
+    dimn_layer, dimn_interfaces = get_vertical_dimensions(data_frommap_merged)
     if dimn_layer is not None:
-        nlay = uds.dims[dimn_layer]
+        nlay = data_frommap_merged.dims[dimn_layer]
     else: #no layers, 2D model
         nlay = 1
 
-    xu_facedim = uds.grid.face_dimension
-    xu_edgedim = uds.grid.edge_dimension
-    xu_nodedim = uds.grid.node_dimension
+    xu_facedim = data_frommap_merged.grid.face_dimension
+    xu_edgedim = data_frommap_merged.grid.edge_dimension
+    xu_nodedim = data_frommap_merged.grid.node_dimension
         
     #potentially construct fullgrid info (zcc/zw) #TODO: this ifloop is copied from get_mapdata_atdepth(), prevent this duplicate code
-    if dimn_layer not in uds.dims: #2D model
+    if dimn_layer not in data_frommap_merged.dims: #2D model
         print('depth dimension not found, probably 2D model')
         pass
-    elif 'mesh2d_flowelem_zw' in uds.variables: #fullgrid info already available, so continuing
+    elif 'mesh2d_flowelem_zw' in data_frommap_merged.variables: #fullgrid info already available, so continuing
         print('zw/zcc (fullgrid) values already present in Dataset')
         pass
-    elif 'mesh2d_layer_sigma' in uds.variables: #reconstruct_zw_zcc_fromsigma and treat as zsigma/fullgrid mapfile from here
+    elif 'mesh2d_layer_sigma' in data_frommap_merged.variables: #reconstruct_zw_zcc_fromsigma and treat as zsigma/fullgrid mapfile from here
         print('sigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
-        uds = reconstruct_zw_zcc_fromsigma(uds)
-    elif 'mesh2d_layer_z' in uds.variables:        
+        data_frommap_merged = reconstruct_zw_zcc_fromsigma(data_frommap_merged)
+    elif 'mesh2d_layer_z' in data_frommap_merged.variables:        
         print('z-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
-        uds = reconstruct_zw_zcc_fromz(uds)
+        data_frommap_merged = reconstruct_zw_zcc_fromz(data_frommap_merged)
     else:
         raise Exception('layers present, but unknown layertype, expected one of variables: mesh2d_flowelem_zw, mesh2d_layer_sigma, mesh2d_layer_z')
     
-    intersect_pd = intersect_pd.sort_index() #necesssary for uds.sel
     intersect_gridnos = intersect_pd.index
-    data_frommap_merged_sel = uds.sel({xu_facedim:intersect_gridnos})
-    if dimn_layer not in uds.dims: #2D model #TODO: add escape for missing wl/bl vars
+    data_frommap_merged_sel = data_frommap_merged.ugrid.obj.drop_dims([xu_edgedim,xu_nodedim]).isel(time=timestep).isel({xu_facedim:intersect_gridnos}) #TODO: not possible to do isel with non-sorted gridnos on ugridDataset, but it is on xrDataset. Dropping edge/nodedims first for neatness, so there is not mismatch in face/node/edge after using .isel(faces)
+    if dimn_layer not in data_frommap_merged_sel.dims:
         data_frommap_wl3_sel = data_frommap_merged_sel['mesh2d_s1'].to_numpy()
         data_frommap_bl_sel = data_frommap_merged_sel['mesh2d_flowelem_bl'].to_numpy()
         zvals_interface = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay+1)
-    elif 'mesh2d_flowelem_zw' in data_frommap_merged_sel.variables: #3D model
+    elif 'mesh2d_flowelem_zw' in data_frommap_merged_sel.variables:
         zvals_interface_filled = data_frommap_merged_sel['mesh2d_flowelem_zw'].bfill(dim=dimn_interfaces) #fill nan values (below bed) with equal values
         zvals_interface = zvals_interface_filled.to_numpy().T # transpose to make in line with 2D sigma dataset
     
@@ -276,7 +266,7 @@ def get_xzcoords_onintersection(uds, intersect_pd):
                              )
 
     #define dataset
-    crs_plotdata_clean = data_frommap_merged_sel.ugrid.obj.drop_dims([xu_edgedim,xu_nodedim]) #TODO: dropping dims is necessary to avoid "ValueError". This is since we are constructing new nodes/edges here. How to do neatly?
+    crs_plotdata_clean = data_frommap_merged_sel
     if dimn_layer in data_frommap_merged_sel.dims:
         facedim_tempname = 'facedim_tempname' #temporary new name to avoid duplicate from-to dimension name in .stack()
         crs_plotdata_clean = crs_plotdata_clean.rename({xu_facedim:facedim_tempname})
@@ -289,13 +279,13 @@ def get_xzcoords_onintersection(uds, intersect_pd):
     return xr_crs_ugrid
 
 
-def polyline_mapslice(uds, line_array, calcdist_fromlatlon=None): #TODO: merge this into one function
+def polyline_mapslice(data_frommap_merged, line_array, timestep, calcdist_fromlatlon=None): #TODO: merge this into one function
     #intersect function, find crossed cell numbers (gridnos) and coordinates of intersection (2 per crossed cell)
-    intersect_pd = polygon_intersect(uds, line_array, calcdist_fromlatlon=calcdist_fromlatlon)
+    intersect_pd = polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=calcdist_fromlatlon)
     if len(intersect_pd) == 0:
         raise Exception('line_array does not cross mapdata') #TODO: move exception elsewhere?
     #derive vertices from cross section (distance from first point)
-    xr_crs_ugrid = get_xzcoords_onintersection(uds, intersect_pd=intersect_pd)
+    xr_crs_ugrid = get_xzcoords_onintersection(data_frommap_merged, intersect_pd=intersect_pd, timestep=timestep)
     return xr_crs_ugrid
 
 
