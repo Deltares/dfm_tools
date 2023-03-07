@@ -126,7 +126,7 @@ def scatter_to_regulargrid(xcoords, ycoords, values, ncellx=None, ncelly=None, r
     import numpy as np
     from scipy.interpolate import griddata
     from scipy.spatial import KDTree
-    warnings.warn(DeprecationWarning('dfm_tools.regulargrid.scatter_to_regulargrid() is deprecated, use ds = dfmt.rasterize_ugrid(uds) instead'))
+    warnings.warn(DeprecationWarning('dfm_tools.regulargrid.scatter_to_regulargrid() is deprecated, use ds = dfmt.rasterize_ugrid(uds) instead')) #TODO: deprecate and remove from code
     
     if (reg_x_vec is None) or (reg_y_vec is None):
         if (ncellx is None) or (ncelly is None):
