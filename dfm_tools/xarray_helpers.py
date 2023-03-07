@@ -131,7 +131,8 @@ def preprocess_woa(ds):
 
 def prevent_dtype_int(ds):
     """
-    Prevent writing to int, since it might mess up dataset (https://github.com/Deltares/dfm_tools/issues/239)
+    Prevent writing to int, since it might mess up dataset (https://github.com/Deltares/dfm_tools/issues/239 and https://github.com/pydata/xarray/issues/7039)
+    Since floats are used instead of ints, the disksize of the dataset will be larger
     """
     for var in ds.data_vars:
         var_encoding = ds[var].encoding
