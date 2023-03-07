@@ -137,7 +137,7 @@ def prevent_dtype_int(ds):
         var_encoding = ds[var].encoding
         if 'dtype' in var_encoding.keys():
             if 'int' in str(var_encoding['dtype']):
-                ds[var].encoding['dtype'] = np.dtype('float32')
+                ds[var].encoding.pop('dtype') #remove dtype key from attrs
     return ds
 
 
