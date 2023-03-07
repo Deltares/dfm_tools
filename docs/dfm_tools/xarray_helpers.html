@@ -161,13 +161,14 @@ def preprocess_woa(ds):
 
 def prevent_dtype_int(ds):
     &#34;&#34;&#34;
-    Prevent writing to int, since it might mess up dataset (https://github.com/Deltares/dfm_tools/issues/239)
+    Prevent writing to int, since it might mess up dataset (https://github.com/Deltares/dfm_tools/issues/239 and https://github.com/pydata/xarray/issues/7039)
+    Since floats are used instead of ints, the disksize of the dataset will be larger
     &#34;&#34;&#34;
     for var in ds.data_vars:
         var_encoding = ds[var].encoding
         if &#39;dtype&#39; in var_encoding.keys():
             if &#39;int&#39; in str(var_encoding[&#39;dtype&#39;]):
-                ds[var].encoding[&#39;dtype&#39;] = np.dtype(&#39;float32&#39;)
+                ds[var].encoding.pop(&#39;dtype&#39;) #remove dtype key from attrs
     return ds
 
 
@@ -675,20 +676,22 @@ might be solved in <a href="https://github.com/pydata/xarray/releases/tag/v2023.
 <span>def <span class="ident">prevent_dtype_int</span></span>(<span>ds)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Prevent writing to int, since it might mess up dataset (<a href="https://github.com/Deltares/dfm_tools/issues/239">https://github.com/Deltares/dfm_tools/issues/239</a>)</p></div>
+<div class="desc"><p>Prevent writing to int, since it might mess up dataset (<a href="https://github.com/Deltares/dfm_tools/issues/239">https://github.com/Deltares/dfm_tools/issues/239</a> and <a href="https://github.com/pydata/xarray/issues/7039">https://github.com/pydata/xarray/issues/7039</a>)
+Since floats are used instead of ints, the disksize of the dataset will be larger</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def prevent_dtype_int(ds):
     &#34;&#34;&#34;
-    Prevent writing to int, since it might mess up dataset (https://github.com/Deltares/dfm_tools/issues/239)
+    Prevent writing to int, since it might mess up dataset (https://github.com/Deltares/dfm_tools/issues/239 and https://github.com/pydata/xarray/issues/7039)
+    Since floats are used instead of ints, the disksize of the dataset will be larger
     &#34;&#34;&#34;
     for var in ds.data_vars:
         var_encoding = ds[var].encoding
         if &#39;dtype&#39; in var_encoding.keys():
             if &#39;int&#39; in str(var_encoding[&#39;dtype&#39;]):
-                ds[var].encoding[&#39;dtype&#39;] = np.dtype(&#39;float32&#39;)
+                ds[var].encoding.pop(&#39;dtype&#39;) #remove dtype key from attrs
     return ds</code></pre>
 </details>
 </dd>
