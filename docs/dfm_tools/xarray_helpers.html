@@ -128,7 +128,7 @@ def preprocess_hirlam(ds):
     might be solved in https://github.com/pydata/xarray/releases/tag/v2023.02.0 (xr.concat), but not certain
     &#34;&#34;&#34;
     
-    print(&#39;hirlam workaround: adding dropped x/y variables again as lon/lat&#39;)
+    print(&#39;hirlam workaround: adding dropped x/y variables again as longitude/latitude&#39;)
     file_nc_one = ds.encoding[&#39;source&#39;]
     with Dataset(file_nc_one) as data_nc:
         data_nc_x = data_nc[&#39;x&#39;]
@@ -163,6 +163,8 @@ def prevent_dtype_int(ds):
     &#34;&#34;&#34;
     Prevent writing to int, since it might mess up dataset (https://github.com/Deltares/dfm_tools/issues/239 and https://github.com/pydata/xarray/issues/7039)
     Since floats are used instead of ints, the disksize of the dataset will be larger
+    TODO: alternatively remove scale_factor key from attrs, so it can be recomputed (seems to also work): ds[var].encoding.pop(&#39;scale_factor&#39;)
+    TODO: maybe add to preprocess_ERA5 (preferrably popping scale_factor attribute to keep file size small)
     &#34;&#34;&#34;
     for var in ds.data_vars:
         var_encoding = ds[var].encoding
@@ -623,7 +625,7 @@ might be solved in <a href="https://github.com/pydata/xarray/releases/tag/v2023.
     might be solved in https://github.com/pydata/xarray/releases/tag/v2023.02.0 (xr.concat), but not certain
     &#34;&#34;&#34;
     
-    print(&#39;hirlam workaround: adding dropped x/y variables again as lon/lat&#39;)
+    print(&#39;hirlam workaround: adding dropped x/y variables again as longitude/latitude&#39;)
     file_nc_one = ds.encoding[&#39;source&#39;]
     with Dataset(file_nc_one) as data_nc:
         data_nc_x = data_nc[&#39;x&#39;]
@@ -677,7 +679,9 @@ might be solved in <a href="https://github.com/pydata/xarray/releases/tag/v2023.
 </code></dt>
 <dd>
 <div class="desc"><p>Prevent writing to int, since it might mess up dataset (<a href="https://github.com/Deltares/dfm_tools/issues/239">https://github.com/Deltares/dfm_tools/issues/239</a> and <a href="https://github.com/pydata/xarray/issues/7039">https://github.com/pydata/xarray/issues/7039</a>)
-Since floats are used instead of ints, the disksize of the dataset will be larger</p></div>
+Since floats are used instead of ints, the disksize of the dataset will be larger
+TODO: alternatively remove scale_factor key from attrs, so it can be recomputed (seems to also work): ds[var].encoding.pop('scale_factor')
+TODO: maybe add to preprocess_ERA5 (preferrably popping scale_factor attribute to keep file size small)</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -686,6 +690,8 @@ Since floats are used instead of ints, the disksize of the dataset will be large
     &#34;&#34;&#34;
     Prevent writing to int, since it might mess up dataset (https://github.com/Deltares/dfm_tools/issues/239 and https://github.com/pydata/xarray/issues/7039)
     Since floats are used instead of ints, the disksize of the dataset will be larger
+    TODO: alternatively remove scale_factor key from attrs, so it can be recomputed (seems to also work): ds[var].encoding.pop(&#39;scale_factor&#39;)
+    TODO: maybe add to preprocess_ERA5 (preferrably popping scale_factor attribute to keep file size small)
     &#34;&#34;&#34;
     for var in ds.data_vars:
         var_encoding = ds[var].encoding
