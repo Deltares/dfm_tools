@@ -146,7 +146,7 @@ def prevent_dtype_int(ds): #TODO: this is not used, maybe phase out?
 
 def recompute_scaling_and_offset(ds:xr.Dataset) -> xr.Dataset:
     """
-    Recompute offset and scale factor for int conversion. As suggested by https://github.com/ArcticSnow/TopoPyScale/issues/60#issuecomment-1459747654
+    Recompute add_offset and scale_factor for variables of dtype int. As suggested by https://github.com/ArcticSnow/TopoPyScale/issues/60#issuecomment-1459747654
     This is a proper fix for https://github.com/Deltares/dfm_tools/issues/239, https://github.com/pydata/xarray/issues/7039 and more
     However, rescaling causes minor semi-accuracy loss, but it does keep the disksize small (which does not happen when converting it to dtype(float32)).
 
@@ -165,13 +165,16 @@ def recompute_scaling_and_offset(ds:xr.Dataset) -> xr.Dataset:
     for var in ds.data_vars:
         da = ds[var]
         
-        dtype = da.encoding['dtype']
-        if 'int' not in str(dtype): #TODO: make proper int-check?
+        if 'dtype' not in da.encoding: #check if dype is available, sometime encoding={}
             continue
-        if 'scale_factor' not in da.encoding.keys(): #prevent rescaling of non-scaled vars (like crs)
+        dtype = da.encoding['dtype']
+        
+        if 'int' not in str(dtype): #skip non-int vars TODO: make proper int-check?
+            continue
+        if 'scale_factor' not in da.encoding.keys() or 'add_offset' not in da.encoding.keys(): #prevent rescaling of non-scaled vars (like crs) #TODO: convert to set().issubset(set())
             continue
         
-        n = da.encoding['dtype'].itemsize * 8 #n=16 for int16
+        n = dtype.itemsize * 8 #n=16 for int16
         vmin = float(da.min().values)
         vmax = float(da.max().values)
         
