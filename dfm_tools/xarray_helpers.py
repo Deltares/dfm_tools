@@ -129,7 +129,7 @@ def preprocess_woa(ds):
     return ds
 
 
-def prevent_dtype_int(ds):
+def prevent_dtype_int(ds): #TODO: this is not used, maybe phase out?
     """
     Prevent writing to int, since it might mess up dataset (https://github.com/Deltares/dfm_tools/issues/239 and https://github.com/pydata/xarray/issues/7039)
     Since floats are used instead of ints, the disksize of the dataset will be larger
@@ -141,6 +141,52 @@ def prevent_dtype_int(ds):
         if 'dtype' in var_encoding.keys():
             if 'int' in str(var_encoding['dtype']):
                 ds[var].encoding.pop('dtype') #remove dtype key from attrs
+    return ds
+
+
+def recompute_scaling_and_offset(ds:xr.Dataset) -> xr.Dataset:
+    """
+    Recompute add_offset and scale_factor for variables of dtype int. As suggested by https://github.com/ArcticSnow/TopoPyScale/issues/60#issuecomment-1459747654
+    This is a proper fix for https://github.com/Deltares/dfm_tools/issues/239, https://github.com/pydata/xarray/issues/7039 and more
+    However, rescaling causes minor semi-accuracy loss, but it does keep the disksize small (which does not happen when converting it to dtype(float32)).
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        DESCRIPTION.
+
+    Returns
+    -------
+    ds : xr.Dataset
+        DESCRIPTION.
+
+    """
+
+    for var in ds.data_vars:
+        da = ds[var]
+        
+        if 'dtype' not in da.encoding: #check if dype is available, sometime encoding={}
+            continue
+        dtype = da.encoding['dtype']
+        
+        if 'int' not in str(dtype): #skip non-int vars TODO: make proper int-check?
+            continue
+        if 'scale_factor' not in da.encoding.keys() or 'add_offset' not in da.encoding.keys(): #prevent rescaling of non-scaled vars (like crs) #TODO: convert to set().issubset(set())
+            continue
+        
+        n = dtype.itemsize * 8 #n=16 for int16
+        vmin = float(da.min().values)
+        vmax = float(da.max().values)
+        
+        # stretch/compress data to the available packed range
+        scale_factor = (vmax - vmin) / (2 ** n - 1)
+        
+        # translate the range to be symmetric about zero
+        add_offset =  vmin + 2 ** (n - 1) * scale_factor
+        #add_offset = (vmax+vmin)/2 #difference with above is scale_factor/2
+        
+        da.encoding['scale_factor'] = scale_factor
+        da.encoding['add_offset'] = add_offset
     return ds
 
 
@@ -222,7 +268,6 @@ def merge_meteofiles(file_nc:str, preprocess=None,
     #data_xr.attrs['comment'] = 'merged with dfm_tools from https://github.com/Deltares/dfm_tools' #TODO: add something like this or other attributes? (some might also be dropped now)
     
     #select time and do checks #TODO: check if calendar is standard/gregorian
-    print('time selection')
     data_xr_tsel = data_xr.sel(time=time_slice)
     if data_xr_tsel.get_index('time').duplicated().any():
         print('dropping duplicate timesteps')
@@ -310,7 +355,10 @@ def merge_meteofiles(file_nc:str, preprocess=None,
         field_zerostart['time'] = [times_pd.index[0]-dt.timedelta(days=2),times_pd.index[0]-dt.timedelta(days=1)] #TODO: is one zero field not enough? (is replacing first field not also ok? (results in 1hr transition period)
         data_xr_tsel = xr.concat([field_zerostart,data_xr_tsel],dim='time')#.sortby('time')
     
-    data_xr_tsel = prevent_dtype_int(data_xr_tsel)
+    # converting from int16 to float32 (by removing dtype from encoding) or recompute scale_factor/add_offset is necessary for ERA5 dataset
+    #data_xr_tsel = prevent_dtype_int(data_xr_tsel)
+    data_xr_tsel = recompute_scaling_and_offset(data_xr_tsel)
+    
     #data_xr_tsel.time.encoding['units'] = 'hours since 1900-01-01 00:00:00' #TODO: maybe add different reftime?
     
     return data_xr_tsel

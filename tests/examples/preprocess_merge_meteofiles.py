@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 Created on Wed Oct 27 22:07:34 2021
-
 @author: veenstra
-
 script to merge netcdf file from several folders into one file (concatenate time dimension)
 too slow? Change fn_match_pattern to match less files if possible, or provide a list of (less) files as file_nc
-
 """
 
 import datetime as dt
@@ -16,9 +13,7 @@ import matplotlib.pyplot as plt
 plt.close('all')
 import dfm_tools as dfmt
 
-mode = 'WOA' # 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HARMONIE' 'HYCOM' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall' 'WOA'
-
-script_tstart = dt.datetime.now()
+mode = 'HYCOM' # 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HARMONIE' 'HYCOM' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall' 'WOA'
 
 if 'HIRLAM' in mode:
     if mode == 'HIRLAM_meteo': #1year voor meteo crasht (HIRLAM72_*\\h72_*) door conflicting dimension sizes, sourcefolders opruimen? meteo_heatflux folders zijn schoner dus daar werkt het wel
@@ -59,7 +54,7 @@ elif 'ERA5' in mode:
     file_out_prefix = f'era5_{"_".join(varkey_list)}_'
     dir_data = 'p:\\metocean-data\\open\\ERA5\\data\\Irish_North_Baltic_Sea\\*'
     time_slice = slice('2013-12-30','2014-01-01')
-    #time_slice = slice('2005-01-01','2022-01-01') #for performance checking, was 12 minutes (for which case?)
+    #time_slice = slice('2005-01-01','2022-01-01') #for performance checking, was 12 minutes (for which varkey_list?)
     preprocess = dfmt.preprocess_ERA5 #reduce expver dimension if present
 elif mode == 'WOA':
     dir_data = r'p:\1204257-dcsmzuno\data\WOA13'
@@ -82,33 +77,34 @@ data_xr_tsel = dfmt.merge_meteofiles(file_nc=file_nc, time_slice=time_slice,
                                      zerostart=False) #GTSM specific: extend data with 0-value fields 1 and 2 days before all_tstart
 
 #write to netcdf file
-print('writing file (can take a while)')
+print('>> writing file (can take a while): ',end='')
+dtstart = dt.datetime.now()
 try:
     times_np = data_xr_tsel['time'].to_series()
 except:
-    times_np = data_xr_tsel['time'].to_numpy() #.to_series() does not work for woa data. .to_numpy() results in numpy.datetime64 for other datasets, which has no attribute strftime
+    times_np = data_xr_tsel['time'].to_numpy() #.to_series() does not work for woa 360_day data. .to_numpy() results in numpy.datetime64 for other datasets, which has no attribute strftime
 time_start_str = times_np[0].strftime("%Y%m%d")
 time_stop_str = times_np[-1].strftime("%Y%m%d")
 file_out = os.path.join(dir_output, f'{file_out_prefix}{time_start_str}to{time_stop_str}_{mode}.nc')
 data_xr_tsel.to_netcdf(file_out)
+print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
 
 
-print('loading outputfile')
-with xr.open_dataset(file_out) as data_xr_check:
-    for varkey in data_xr_check.data_vars:
-        varsel = data_xr_check[varkey]
-        if not set(['longitude','latitude']).issubset(set(varsel.coords)): #skipping vars without lat/lon coordinate
-            continue
-        print(f'plotting {varkey}')
-        fig,ax1 = plt.subplots()
-        if 'HIRLAM' in mode:
-            varsel.isel(time=0).plot(ax=ax1,x='longitude',y='latitude') #x/y are necessary since coords are not 1D and dims
-        elif 'depth' in data_xr_tsel[varkey].coords:
-            varsel.isel(time=0).sel(depth=0).plot(ax=ax1)
-        else:
-            varsel.isel(time=0).plot(ax=ax1)
-        fig.savefig(file_out.replace('.nc',f'_{varkey}'))
+#load outputfile
+data_xr_check = xr.open_dataset(file_out)
 
-script_telapsed = (dt.datetime.now()-script_tstart)
-print(f'elapsed time: {script_telapsed}')
+for varkey in data_xr_check.data_vars:
+    varsel = data_xr_check[varkey]
+    if not set(['longitude','latitude']).issubset(set(varsel.coords)): #skipping vars without lat/lon coordinate
+        continue
+    print(f'plotting {varkey}')
+    fig,ax1 = plt.subplots()
+    if 'HIRLAM' in mode:
+        varsel.isel(time=0).plot(ax=ax1,x='longitude',y='latitude') #x/y are necessary since coords are not 1D and dims
+    elif 'depth' in data_xr_tsel[varkey].coords:
+        varsel.isel(time=0).sel(depth=0).plot(ax=ax1)
+    else:
+        varsel.isel(time=0).plot(ax=ax1)
+    fig.savefig(file_out.replace('.nc',f'_{varkey}'))
+
 
