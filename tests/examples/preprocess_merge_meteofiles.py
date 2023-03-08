@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 plt.close('all')
 import dfm_tools as dfmt
 
-mode = 'HIRLAM_meteo' # 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HARMONIE' 'HYCOM' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall' 'WOA'
+mode = 'WOA' # 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HARMONIE' 'HYCOM' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall' 'WOA'
 
 script_tstart = dt.datetime.now()
 
@@ -94,7 +94,6 @@ print('loading outputfile')
 with xr.open_dataset(file_out) as data_xr_check:
     for varkey in data_xr_check.data_vars:
         varsel = data_xr_check[varkey]
-        print(varsel.encoding['dtype'])
         if not set(['longitude','latitude']).issubset(set(varsel.coords)): #skipping vars without lat/lon coordinate
             continue
         print(f'plotting {varkey}')
