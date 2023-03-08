@@ -351,7 +351,7 @@ def merge_meteofiles(file_nc:str, preprocess=None,
     
     # converting from int16 to float32 (by removing dtype from encoding) or recompute scale_factor/add_offset is necessary for ERA5 dataset
     #data_xr_tsel = prevent_dtype_int(data_xr_tsel)
-    data_xr_tsel = compute_scaling_and_offset(data_xr_tsel)
+    #data_xr_tsel = compute_scaling_and_offset(data_xr_tsel)
     
     #data_xr_tsel.time.encoding['units'] = 'hours since 1900-01-01 00:00:00' #TODO: maybe add different reftime?
     

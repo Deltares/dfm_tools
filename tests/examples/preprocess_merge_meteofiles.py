@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 Created on Wed Oct 27 22:07:34 2021
-
 @author: veenstra
-
 script to merge netcdf file from several folders into one file (concatenate time dimension)
 too slow? Change fn_match_pattern to match less files if possible, or provide a list of (less) files as file_nc
-
 """
 
 import datetime as dt
@@ -16,7 +13,7 @@ import matplotlib.pyplot as plt
 plt.close('all')
 import dfm_tools as dfmt
 
-mode = 'HIRLAM_meteo' #'ERA5_wind_pressure' # 'HARMONIE' 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HYCOM' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall'
+mode = 'HIRLAM_meteo' # 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HARMONIE' 'HYCOM' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall' 'WOA'
 
 script_tstart = dt.datetime.now()
 
@@ -27,14 +24,14 @@ if 'HIRLAM' in mode:
         dir_data = 'P:\\1204257-dcsmzuno\\2014\\data\\meteo-heatflux\\HIRLAM72_*' # files contain: ['dew_point_temperature','air_temperature','cloud_area_fraction']
     fn_match_pattern = 'h72_20131*.nc'
     file_out_prefix = 'h72_'
-    preprocess = dfmt.preprocess_hirlam #temporary fix for dims/vars with same names
+    preprocess = dfmt.preprocess_hirlam #temporary(?) fix for >1D-vars with same name as its dim
     time_slice = slice('2013-12-30','2014-01-01')
 elif mode == 'HARMONIE':
     dir_data = 'p:\\1204257-dcsmzuno\\data\\meteo\\HARMONIE\\nc\\air_*' #many invalid files, so subsetting here
     fn_match_pattern = 'HARMONIE_*_2020_*.nc'
     file_out_prefix = 'HARMONIE_'
     preprocess = None
-    time_slice = slice('2020-01-01','2020-02-01')
+    time_slice = slice('2020-01-01','2020-01-02')
 elif mode == 'HYCOM':
     dir_data = 'c:\\DATA\\dfm_tools_testdata\\GLBu0.08_expt_91.2'
     fn_match_pattern = 'HYCOM_ST_GoO_*.nc'
@@ -56,12 +53,12 @@ elif 'ERA5' in mode:
     elif mode=='ERA5_rainfall':
         varkey_list = ['mer','mtpr'] # mean_evaporation_rate, mean_total_precipitation_rate
     fn_match_pattern = f'era5_.*({"|".join(varkey_list)})_.*.nc' #simpler but selects more files: 'era5_*.nc'
-    file_out_prefix = f'era5_{"_".join(varkey_list)}'
+    file_out_prefix = f'era5_{"_".join(varkey_list)}_'
     dir_data = 'p:\\metocean-data\\open\\ERA5\\data\\Irish_North_Baltic_Sea\\*'
     time_slice = slice('2013-12-30','2014-01-01')
     #time_slice = slice('2005-01-01','2022-01-01') #for performance checking, was 12 minutes (for which case?)
     preprocess = dfmt.preprocess_ERA5 #reduce expver dimension if present
-elif mode == 'WOA': #fails since 0000 is not a valid year.
+elif mode == 'WOA':
     dir_data = r'p:\1204257-dcsmzuno\data\WOA13'
     fn_match_pattern = 'woa13_decav_s*.nc'
     file_out_prefix = 'woa13_decav_s_'
@@ -83,23 +80,31 @@ data_xr_tsel = dfmt.merge_meteofiles(file_nc=file_nc, time_slice=time_slice,
 
 #write to netcdf file
 print('writing file (can take a while)')
-times_pd_str = data_xr_tsel['time'].to_series().dt.strftime("%Y%m%d")
-file_out = os.path.join(dir_output, f'{file_out_prefix}_{times_pd_str[0]}to{times_pd_str[-1]}_{mode}.nc')
+try:
+    times_np = data_xr_tsel['time'].to_series()
+except:
+    times_np = data_xr_tsel['time'].to_numpy() #.to_series() does not work for woa data. .to_numpy() results in numpy.datetime64 for other datasets, which has no attribute strftime
+time_start_str = times_np[0].strftime("%Y%m%d")
+time_stop_str = times_np[-1].strftime("%Y%m%d")
+file_out = os.path.join(dir_output, f'{file_out_prefix}{time_start_str}to{time_stop_str}_{mode}.nc')
 data_xr_tsel.to_netcdf(file_out)
 
 
 print('loading outputfile')
 with xr.open_dataset(file_out) as data_xr_check:
     for varkey in data_xr_check.data_vars:
+        varsel = data_xr_check[varkey]
+        print(varsel.encoding['dtype'])
+        if not set(['longitude','latitude']).issubset(set(varsel.coords)): #skipping vars without lat/lon coordinate
+            continue
         print(f'plotting {varkey}')
-        #continue #uncomment to skip plotting
         fig,ax1 = plt.subplots()
         if 'HIRLAM' in mode:
-            data_xr_check[varkey].isel(time=0).plot(ax=ax1,x='longitude',y='latitude') #x/y are necessary since coords are not 1D and dims
+            varsel.isel(time=0).plot(ax=ax1,x='longitude',y='latitude') #x/y are necessary since coords are not 1D and dims
         elif 'depth' in data_xr_tsel[varkey].coords:
-            data_xr_check[varkey].isel(time=0).sel(depth=0).plot(ax=ax1)
+            varsel.isel(time=0).sel(depth=0).plot(ax=ax1)
         else:
-            data_xr_check[varkey].isel(time=0).plot(ax=ax1)
+            varsel.isel(time=0).plot(ax=ax1)
         fig.savefig(file_out.replace('.nc',f'_{varkey}'))
 
 script_telapsed = (dt.datetime.now()-script_tstart)
