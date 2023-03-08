@@ -94,6 +94,7 @@ print('loading outputfile')
 with xr.open_dataset(file_out) as data_xr_check:
     for varkey in data_xr_check.data_vars:
         varsel = data_xr_check[varkey]
+        print(varsel.encoding['dtype'])
         if not set(['longitude','latitude']).issubset(set(varsel.coords)): #skipping vars without lat/lon coordinate
             continue
         print(f'plotting {varkey}')
