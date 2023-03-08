@@ -98,7 +98,7 @@ def preprocess_hirlam(ds):
     might be solved in https://github.com/pydata/xarray/releases/tag/v2023.02.0 (xr.concat), but not certain
     """
     
-    print('hirlam workaround: adding dropped x/y variables again as lon/lat')
+    print('hirlam workaround: adding dropped x/y variables again as longitude/latitude')
     file_nc_one = ds.encoding['source']
     with Dataset(file_nc_one) as data_nc:
         data_nc_x = data_nc['x']
