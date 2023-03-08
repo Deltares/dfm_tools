@@ -144,7 +144,7 @@ def prevent_dtype_int(ds): #TODO: this is not used, maybe phase out?
     return ds
 
 
-def compute_scaling_and_offset(ds:xr.Dataset) -> xr.Dataset:
+def recompute_scaling_and_offset(ds:xr.Dataset) -> xr.Dataset:
     """
     Recompute offset and scale factor for int conversion. As suggested by https://github.com/ArcticSnow/TopoPyScale/issues/60#issuecomment-1459747654
     This is a proper fix for https://github.com/Deltares/dfm_tools/issues/239, https://github.com/pydata/xarray/issues/7039 and more
@@ -167,6 +167,8 @@ def compute_scaling_and_offset(ds:xr.Dataset) -> xr.Dataset:
         
         dtype = da.encoding['dtype']
         if 'int' not in str(dtype): #TODO: make proper int-check?
+            continue
+        if 'scale_factor' not in da.encoding.keys(): #prevent rescaling of non-scaled vars (like crs)
             continue
         
         n = da.encoding['dtype'].itemsize * 8 #n=16 for int16
@@ -263,7 +265,6 @@ def merge_meteofiles(file_nc:str, preprocess=None,
     #data_xr.attrs['comment'] = 'merged with dfm_tools from https://github.com/Deltares/dfm_tools' #TODO: add something like this or other attributes? (some might also be dropped now)
     
     #select time and do checks #TODO: check if calendar is standard/gregorian
-    print('time selection')
     data_xr_tsel = data_xr.sel(time=time_slice)
     if data_xr_tsel.get_index('time').duplicated().any():
         print('dropping duplicate timesteps')
@@ -353,7 +354,7 @@ def merge_meteofiles(file_nc:str, preprocess=None,
     
     # converting from int16 to float32 (by removing dtype from encoding) or recompute scale_factor/add_offset is necessary for ERA5 dataset
     #data_xr_tsel = prevent_dtype_int(data_xr_tsel)
-    #data_xr_tsel = compute_scaling_and_offset(data_xr_tsel)
+    data_xr_tsel = recompute_scaling_and_offset(data_xr_tsel)
     
     #data_xr_tsel.time.encoding['units'] = 'hours since 1900-01-01 00:00:00' #TODO: maybe add different reftime?
     
