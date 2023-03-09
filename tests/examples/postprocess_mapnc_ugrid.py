@@ -33,6 +33,7 @@ for file_nc in file_nc_list:
         timestep = 72
         layno = 5
         sel_slice_x, sel_slice_y = slice(1500,3500), slice(1000,3500)
+        section_y = 2000
         line_array = np.array([[ 185.08667065, 2461.11775254],
                                [2934.63837418, 1134.16019127]])
         line_array = np.array([[ 104.15421399, 2042.7077107 ],
@@ -42,7 +43,7 @@ for file_nc in file_nc_list:
         #   [2222.27822581, 3206.60282258],
         #   [2128.78024194, 3266.58266129]])
         val_ylim = None
-        clim_bl = None #TODO: replace clims with center=False argument?
+        clim_bl = None
         clim_sal = None
         crs = None
         file_nc_fou = None
@@ -51,6 +52,7 @@ for file_nc in file_nc_list:
         timestep = 3
         layno = 33 #35 is top
         sel_slice_x, sel_slice_y = slice(50000,55000), slice(None,424000)
+        section_y = 418000
         line_array = np.array([[ 56267.59146475, 415644.67447155],
                                [ 64053.73427496, 419407.58239502]])
         line_array = np.array([[ 53181.96942503, 424270.83361629],
@@ -68,6 +70,7 @@ for file_nc in file_nc_list:
         timestep = 365
         layno = 45
         sel_slice_x, sel_slice_y = slice(0,5), slice(50,55)
+        section_y = None #52.5
         #provide xy order, so lonlat
         line_array = np.array([[ 0.97452229, 51.13407643],
                                [ 1.89808917, 50.75191083]])
@@ -83,8 +86,9 @@ for file_nc in file_nc_list:
         raster_res = 0.3
     elif 'RMM_dflowfm' in file_nc:
         timestep = 365 #50
-        layno = None
+        layno = 440000
         sel_slice_x, sel_slice_y = slice(None,None), slice(None,None)
+        section_y = None
         #provide xy order, so lonlat
         line_array = np.array([[ 65655.72699961, 444092.54776465],
                                [ 78880.42720631, 435019.78832052]])
@@ -116,6 +120,7 @@ for file_nc in file_nc_list:
         timestep = 10
         layno = 45
         sel_slice_x, sel_slice_y = slice(None,None), slice(None,None)
+        section_y = None #41
         #provide xy order, so lonlat
         line_array = np.array([[-71.81578813,  42.68460697],
                                [-65.2535983 ,  41.8699903 ]])
@@ -143,7 +148,7 @@ for file_nc in file_nc_list:
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,f'{basename}_grid'))
     
-        
+    
     print('plot bedlevel')
     #get bedlevel and create plot with ugrid and cross section line
     fig, ax_input = plt.subplots()
@@ -281,10 +286,26 @@ for file_nc in file_nc_list:
         
         fig,ax = plt.subplots(figsize=(9,5))
         pc = data_frommap_fou_atdepth['magn_mean'].ugrid.plot(edgecolor='face')
-        fou_raster = dfmt.rasterize_ugrid(data_frommap_fou_atdepth,resolution=raster_res)
+        fou_raster = dfmt.rasterize_ugrid(data_frommap_fou_atdepth,resolution=raster_res) #TODO: add rasterize+quiver to notebook
         fou_raster.plot.quiver(x='mesh2d_face_x',y='mesh2d_face_y',u=fou_varname_u,v=fou_varname_v,color='w',scale=5,add_guide=False)
         pc.set_clim(0,0.10)
         ax.set_aspect('equal')
         fig.tight_layout()
         fig.savefig(os.path.join(dir_output,f'{basename}_fou'))
-
+    
+    if section_y is not None: #TODO: add hovmoller to notebook. Does not work for DCSM yet: "ValueError: The input coordinate is not sorted in increasing order along axis 0. "
+        print('hovmoller plot: mean salinity over depth along section_y over time')
+        #ax.axhline(y=section_y, color="red")
+        data_frommap_merged_sel = data_frommap_merged.ugrid.sel(y=section_y)
+        fig, ax = plt.subplots(figsize=(10,5.5))
+        if 'nmesh2d_layer' in data_frommap_merged_sel.dims:
+            slice_sa1 = data_frommap_merged_sel.mesh2d_sa1.mean(dim='nmesh2d_layer')
+        elif 'mesh2d_nLayers' in data_frommap_merged_sel.dims:
+            slice_sa1 = data_frommap_merged_sel.mesh2d_sa1.mean(dim='mesh2d_nLayers')
+        else:
+            slice_sa1 = data_frommap_merged_sel.mesh2d_sa1
+        slice_sa1.plot(x='x',y='time')
+        fig.tight_layout()
+        fig.savefig(os.path.join(dir_output,f'{basename}_hovmoller'))
+        
+    
