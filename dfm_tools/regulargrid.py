@@ -36,6 +36,7 @@ import warnings
 import datetime as dt
 import xarray as xr
 import xugrid as xu
+import numpy as np
 from dfm_tools.xarray_helpers import Dataset_varswithdim
 
 
