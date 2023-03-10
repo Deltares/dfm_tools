@@ -70,7 +70,7 @@ for file_nc in file_nc_list:
         timestep = 365
         layno = 45
         sel_slice_x, sel_slice_y = slice(0,5), slice(50,55)
-        section_y = None #52.5
+        section_y = 52.5
         #provide xy order, so lonlat
         line_array = np.array([[ 0.97452229, 51.13407643],
                                [ 1.89808917, 50.75191083]])
@@ -86,9 +86,9 @@ for file_nc in file_nc_list:
         raster_res = 0.3
     elif 'RMM_dflowfm' in file_nc:
         timestep = 365 #50
-        layno = 440000
+        layno = None
         sel_slice_x, sel_slice_y = slice(None,None), slice(None,None)
-        section_y = None
+        section_y = 440000
         #provide xy order, so lonlat
         line_array = np.array([[ 65655.72699961, 444092.54776465],
                                [ 78880.42720631, 435019.78832052]])
@@ -120,7 +120,7 @@ for file_nc in file_nc_list:
         timestep = 10
         layno = 45
         sel_slice_x, sel_slice_y = slice(None,None), slice(None,None)
-        section_y = None #41
+        section_y = 41
         #provide xy order, so lonlat
         line_array = np.array([[-71.81578813,  42.68460697],
                                [-65.2535983 ,  41.8699903 ]])
@@ -293,19 +293,20 @@ for file_nc in file_nc_list:
         fig.tight_layout()
         fig.savefig(os.path.join(dir_output,f'{basename}_fou'))
     
-    if section_y is not None: #TODO: add hovmoller to notebook. Does not work for DCSM yet: "ValueError: The input coordinate is not sorted in increasing order along axis 0. "
-        print('hovmoller plot: mean salinity over depth along section_y over time')
-        #ax.axhline(y=section_y, color="red")
-        data_frommap_merged_sel = data_frommap_merged.ugrid.sel(y=section_y)
-        fig, ax = plt.subplots(figsize=(10,5.5))
-        if 'nmesh2d_layer' in data_frommap_merged_sel.dims:
-            slice_sa1 = data_frommap_merged_sel.mesh2d_sa1.mean(dim='nmesh2d_layer')
-        elif 'mesh2d_nLayers' in data_frommap_merged_sel.dims:
-            slice_sa1 = data_frommap_merged_sel.mesh2d_sa1.mean(dim='mesh2d_nLayers')
-        else:
-            slice_sa1 = data_frommap_merged_sel.mesh2d_sa1
-        slice_sa1.plot(x='x',y='time')
-        fig.tight_layout()
-        fig.savefig(os.path.join(dir_output,f'{basename}_hovmoller'))
+    
+    #TODO: add hovmoller to notebook. x='x' does not work for spherical models, since it is sorted by 's'
+    print('hovmoller plot: mean salinity over depth along section_y over time')
+    #ax.axhline(y=section_y, color="red")
+    data_frommap_merged_sel = data_frommap_merged.isel(time=slice(-30,-1)).ugrid.sel(y=section_y)
+    fig, ax = plt.subplots(figsize=(10,5.5))
+    if 'nmesh2d_layer' in data_frommap_merged_sel.dims:
+        slice_sa1 = data_frommap_merged_sel.mesh2d_sa1.mean(dim='nmesh2d_layer')
+    elif 'mesh2d_nLayers' in data_frommap_merged_sel.dims:
+        slice_sa1 = data_frommap_merged_sel.mesh2d_sa1.mean(dim='mesh2d_nLayers')
+    else:
+        slice_sa1 = data_frommap_merged_sel.mesh2d_sa1
+    slice_sa1.plot(x='s',y='time')
+    fig.tight_layout()
+    fig.savefig(os.path.join(dir_output,f'{basename}_hovmoller'))
         
     
