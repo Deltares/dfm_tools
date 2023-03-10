@@ -88,54 +88,64 @@ import warnings
 import datetime as dt
 import xarray as xr
 import xugrid as xu
+import numpy as np
 from dfm_tools.xarray_helpers import Dataset_varswithdim
 
 
-def rasterize_ugrid(uds, ds_like=None, **kwargs):
+def rasterize_ugrid(uds:xu.UgridDataset, ds_like:xr.Dataset = None, resolution:float = None):
     &#34;&#34;&#34;
-    rasterizing ugrid dataset to regular dataset
-    inspired by xugrid.plot.imshow and xugrid.ugrid.ugrid2d.rasterize/rasterize_like
-    ds_like: dataset with ed x/y variables to interpolate uds to
+    Rasterizing ugrid dataset to regular dataset. ds_like has higher priority than `resolution`. If both are not passed, a raster is generated of at least 200x200
+    inspired by xugrid.plot.imshow and xugrid.ugrid.ugrid2d.rasterize/rasterize_like.
+
+
+    Parameters
+    ----------
+    uds : xu.UgridDataset
+        DESCRIPTION.
+    ds_like : xr.Dataset, optional
+        xr.Dataset with ed x and y variables to interpolate uds to. The default is None.
+    resolution : float, optional
+        Only used if ds_like is not supplied. The default is None.
+    
+    Raises
+    ------
+    Exception
+        DESCRIPTION.
+
+    Returns
+    -------
+    ds : TYPE
+        DESCRIPTION.
+
     &#34;&#34;&#34;
-    #TODO: clean up code/options and maybe put part of code in xugrid (https://github.com/Deltares/xugrid/issues/31)
+    #TODO: maybe put part of code in xugrid (https://github.com/Deltares/xugrid/issues/31)
+    #TODO: vars can also be rasterized with uds_facevars[var].ugrid.rasterize(resolution), but is not efficient. Wait for uds.rasterize() method: https://github.com/Deltares/xugrid/issues/61
     if not isinstance(uds,xu.core.wrap.UgridDataset):
         raise Exception(f&#39;rasterize_ugrid expected xu.core.wrap.UgridDataset, got {type(uds)} instead&#39;)
     
     grid = uds.grid
     xu_facedim = uds.grid.face_dimension
-    
     uds_facevars = Dataset_varswithdim(uds,xu_facedim)
     
-    if ds_like is None:
-        if &#34;extent&#34; not in kwargs:
-            xmin, ymin, xmax, ymax = grid.bounds
-            kwargs[&#34;extent&#34;] = xmin, xmax, ymin, ymax
-        else:
-            if kwargs.get(&#34;origin&#34;, None) == &#34;upper&#34;:
-                xmin, xmax, ymin, ymax = kwargs[&#34;extent&#34;]
-            else:
-                xmin, xmax, ymax, ymin = kwargs[&#34;extent&#34;]
-    
-        dx = xmax - xmin
-        dy = ymax - ymin
-        
-        # Check if a rasterization resolution is passed; Default to 500 raster
-        # cells otherwise for the smallest axis.
-        resolution = kwargs.pop(&#34;resolution&#34;, None)
-        if resolution is None:
-            resolution = min(dx, dy) / 500
-        
-        regx, regy, index = grid.rasterize(resolution) #index.shape = (regy.shape,regx.shape)
-    else:
+    if ds_like is not None:
         regx = ds_like.x
         regy = ds_like.y
-        regx, regy, index = grid.rasterize_like(x=regx,y=regy) #TODO: this can be used to steer rasterization, eg with xstart/ystart/xres/yres
+    else:
+        xmin, ymin, xmax, ymax = grid.bounds
+        dx = xmax - xmin
+        dy = ymax - ymin
+        if resolution is None: # check if a rasterization resolution is passed, otherwise default to 200 raster cells otherwise for the smallest axis.
+            resolution = min(dx, dy) / 200
+        d = abs(resolution)
+        regx = np.arange(xmin + 0.5 * d, xmax, d)
+        regy = np.arange(ymin + 0.5 * d, ymax, d)
     
+    regx, regy, index = grid.rasterize_like(x=regx,y=regy) #TODO: this can be used to steer rasterization, eg with xstart/ystart/xres/yres
     index_da = xr.DataArray(index,dims=(&#39;y&#39;,&#39;x&#39;))
     
     print(f&#39;&gt;&gt; rasterizing ugrid dataset with {len(uds_facevars.data_vars)} face variables to shape={index_da.shape}: &#39;,end=&#39;&#39;)
     dtstart = dt.datetime.now()
-    ds = uds_facevars.isel({xu_facedim:index_da})#.astype(float)
+    ds = uds_facevars.isel({xu_facedim:index_da})
     ds = ds.where(index_da != grid.fill_value)
     ds[&#39;x&#39;] = xr.DataArray(regx,dims=&#39;x&#39;)
     ds[&#39;y&#39;] = xr.DataArray(regy,dims=&#39;y&#39;)
@@ -363,61 +373,88 @@ def uva2xymagdeg(U1, V1, ALFAS, KCU=None, KCV=None, inactivewhen4x0=True): #only
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="dfm_tools.regulargrid.rasterize_ugrid"><code class="name flex">
-<span>def <span class="ident">rasterize_ugrid</span></span>(<span>uds, ds_like=None, **kwargs)</span>
+<span>def <span class="ident">rasterize_ugrid</span></span>(<span>uds: xugrid.core.wrap.UgridDataset, ds_like: xarray.core.dataset.Dataset = None, resolution: float = None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>rasterizing ugrid dataset to regular dataset
-inspired by xugrid.plot.imshow and xugrid.ugrid.ugrid2d.rasterize/rasterize_like
-ds_like: dataset with ed x/y variables to interpolate uds to</p></div>
+<div class="desc"><p>Rasterizing ugrid dataset to regular dataset. ds_like has higher priority than <code>resolution</code>. If both are not passed, a raster is generated of at least 200x200
+inspired by xugrid.plot.imshow and xugrid.ugrid.ugrid2d.rasterize/rasterize_like.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>uds</code></strong> :&ensp;<code>xu.UgridDataset</code></dt>
+<dd>DESCRIPTION.</dd>
+<dt><strong><code>ds_like</code></strong> :&ensp;<code>xr.Dataset</code>, optional</dt>
+<dd>xr.Dataset with ed x and y variables to interpolate uds to. The default is None.</dd>
+<dt><strong><code>resolution</code></strong> :&ensp;<code>float</code>, optional</dt>
+<dd>Only used if ds_like is not supplied. The default is None.</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>Exception</code></dt>
+<dd>DESCRIPTION.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>ds</code></strong> :&ensp;<code>TYPE</code></dt>
+<dd>DESCRIPTION.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def rasterize_ugrid(uds, ds_like=None, **kwargs):
+<pre><code class="python">def rasterize_ugrid(uds:xu.UgridDataset, ds_like:xr.Dataset = None, resolution:float = None):
     &#34;&#34;&#34;
-    rasterizing ugrid dataset to regular dataset
-    inspired by xugrid.plot.imshow and xugrid.ugrid.ugrid2d.rasterize/rasterize_like
-    ds_like: dataset with ed x/y variables to interpolate uds to
+    Rasterizing ugrid dataset to regular dataset. ds_like has higher priority than `resolution`. If both are not passed, a raster is generated of at least 200x200
+    inspired by xugrid.plot.imshow and xugrid.ugrid.ugrid2d.rasterize/rasterize_like.
+
+
+    Parameters
+    ----------
+    uds : xu.UgridDataset
+        DESCRIPTION.
+    ds_like : xr.Dataset, optional
+        xr.Dataset with ed x and y variables to interpolate uds to. The default is None.
+    resolution : float, optional
+        Only used if ds_like is not supplied. The default is None.
+    
+    Raises
+    ------
+    Exception
+        DESCRIPTION.
+
+    Returns
+    -------
+    ds : TYPE
+        DESCRIPTION.
+
     &#34;&#34;&#34;
-    #TODO: clean up code/options and maybe put part of code in xugrid (https://github.com/Deltares/xugrid/issues/31)
+    #TODO: maybe put part of code in xugrid (https://github.com/Deltares/xugrid/issues/31)
+    #TODO: vars can also be rasterized with uds_facevars[var].ugrid.rasterize(resolution), but is not efficient. Wait for uds.rasterize() method: https://github.com/Deltares/xugrid/issues/61
     if not isinstance(uds,xu.core.wrap.UgridDataset):
         raise Exception(f&#39;rasterize_ugrid expected xu.core.wrap.UgridDataset, got {type(uds)} instead&#39;)
     
     grid = uds.grid
     xu_facedim = uds.grid.face_dimension
-    
     uds_facevars = Dataset_varswithdim(uds,xu_facedim)
     
-    if ds_like is None:
-        if &#34;extent&#34; not in kwargs:
-            xmin, ymin, xmax, ymax = grid.bounds
-            kwargs[&#34;extent&#34;] = xmin, xmax, ymin, ymax
-        else:
-            if kwargs.get(&#34;origin&#34;, None) == &#34;upper&#34;:
-                xmin, xmax, ymin, ymax = kwargs[&#34;extent&#34;]
-            else:
-                xmin, xmax, ymax, ymin = kwargs[&#34;extent&#34;]
-    
-        dx = xmax - xmin
-        dy = ymax - ymin
-        
-        # Check if a rasterization resolution is passed; Default to 500 raster
-        # cells otherwise for the smallest axis.
-        resolution = kwargs.pop(&#34;resolution&#34;, None)
-        if resolution is None:
-            resolution = min(dx, dy) / 500
-        
-        regx, regy, index = grid.rasterize(resolution) #index.shape = (regy.shape,regx.shape)
-    else:
+    if ds_like is not None:
         regx = ds_like.x
         regy = ds_like.y
-        regx, regy, index = grid.rasterize_like(x=regx,y=regy) #TODO: this can be used to steer rasterization, eg with xstart/ystart/xres/yres
+    else:
+        xmin, ymin, xmax, ymax = grid.bounds
+        dx = xmax - xmin
+        dy = ymax - ymin
+        if resolution is None: # check if a rasterization resolution is passed, otherwise default to 200 raster cells otherwise for the smallest axis.
+            resolution = min(dx, dy) / 200
+        d = abs(resolution)
+        regx = np.arange(xmin + 0.5 * d, xmax, d)
+        regy = np.arange(ymin + 0.5 * d, ymax, d)
     
+    regx, regy, index = grid.rasterize_like(x=regx,y=regy) #TODO: this can be used to steer rasterization, eg with xstart/ystart/xres/yres
     index_da = xr.DataArray(index,dims=(&#39;y&#39;,&#39;x&#39;))
     
     print(f&#39;&gt;&gt; rasterizing ugrid dataset with {len(uds_facevars.data_vars)} face variables to shape={index_da.shape}: &#39;,end=&#39;&#39;)
     dtstart = dt.datetime.now()
-    ds = uds_facevars.isel({xu_facedim:index_da})#.astype(float)
+    ds = uds_facevars.isel({xu_facedim:index_da})
     ds = ds.where(index_da != grid.fill_value)
     ds[&#39;x&#39;] = xr.DataArray(regx,dims=&#39;x&#39;)
     ds[&#39;y&#39;] = xr.DataArray(regy,dims=&#39;y&#39;)
