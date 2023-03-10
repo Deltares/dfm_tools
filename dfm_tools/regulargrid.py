@@ -79,10 +79,10 @@ def rasterize_ugrid(uds:xu.UgridDataset, ds_like:xr.Dataset = None, resolution:f
         regx = ds_like.x
         regy = ds_like.y
     else:
+        xmin, ymin, xmax, ymax = grid.bounds
+        dx = xmax - xmin
+        dy = ymax - ymin
         if resolution is None: # check if a rasterization resolution is passed, otherwise default to 200 raster cells otherwise for the smallest axis.
-            xmin, ymin, xmax, ymax = grid.bounds
-            dx = xmax - xmin
-            dy = ymax - ymin
             resolution = min(dx, dy) / 200
         d = abs(resolution)
         regx = np.arange(xmin + 0.5 * d, xmax, d)
