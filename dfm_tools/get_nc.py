@@ -248,7 +248,7 @@ def get_xzcoords_onintersection(uds, face_index, crs_dist_starts, crs_dist_stops
     xu_nodedim = uds.grid.node_dimension
     
     #potentially construct fullgrid info (zcc/zw) #TODO: this ifloop is copied from get_mapdata_atdepth(), prevent this duplicate code
-    if dimn_layer not in uds.dims: #2D model
+    if dimn_layer not in uds.dims: #2D model #TODO: maybe add layer-dummydim to ds facevars and put zvals_interface as variable in dataset (would make function slightly more generic)
         print('depth dimension not found, probably 2D model')
         pass
     elif 'mesh2d_flowelem_zw' in uds.variables: #fullgrid info already available, so continuing
