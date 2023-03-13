@@ -86,6 +86,34 @@ def calc_dist_haversine(lon1,lon2,lat1,lat2):
     return distance
 
 
+def intersect_edges_withsort(uds,edges):
+    #based on xugrid, so update for polygon_intersect() #TODO: phase out polygon_intersect()
+    edge_index, face_index, intersections = uds.grid.intersect_edges(edges) #TODO: is fast, but maybe speed can be increased with bounding box?
+    
+    if len(edge_index) == 0: #TODO: check if this still works with polyline outside of grid
+        raise Exception('polyline does not cross mapdata')
+    
+    #ordering of face_index is wrong (visible with cb3 with long line_array), so sort on distance from startpoint (in x/y units)
+    #computing lengths
+    edge_len = np.linalg.norm(edges[:,1] - edges[:,0], axis=1)
+    edge_len_cum = np.cumsum(edge_len)
+    edge_len_cum0 = np.concatenate([[0],edge_len_cum[:-1]])
+    intersections_lentostart_line = np.zeros(shape=intersections.shape[0])
+    for edge_id in np.unique(edge_index):
+        edge_bool = edge_index==edge_id
+        intersects_linepart = intersections[edge_bool]
+        startcoord_linepart = edges[edge_id,0]
+        dist_tostart_linepart = np.linalg.norm(intersects_linepart[:,0] - startcoord_linepart, axis=1)
+        intersections_lentostart_line[edge_bool] = dist_tostart_linepart + edge_len_cum0[edge_id]
+    
+    #actual sorting
+    id_sorted = np.argsort(intersections_lentostart_line)
+    edge_index = edge_index[id_sorted]
+    face_index = face_index[id_sorted]
+    intersections = intersections[id_sorted]
+    return edge_index, face_index, intersections
+
+
 def polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=None):
     #data_frommap_merged: xugrid dataset (contains ds and grid)
     #TODO: remove hardcoding
@@ -289,6 +317,43 @@ def polyline_mapslice(data_frommap_merged, line_array, calcdist_fromlatlon=None)
     #derive vertices from cross section (distance from first point)
     xr_crs_ugrid = get_xzcoords_onintersection(data_frommap_merged, intersect_pd=intersect_pd)
     return xr_crs_ugrid
+
+
+def polyline_mapslice2(data_frommap_merged, line_array, calcdist_fromlatlon=None): #TODO: replacement of polygon_mapslice, deprecate the old function
+    #intersect function, find crossed cell numbers (gridnos) and coordinates of intersection (2 per crossed cell)
+    #intersect_pd_backup = dfmt.polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=calcdist_fromlatlon)
+    
+    edges = np.stack([line_array[:-1],line_array[1:]],axis=1) # https://deltares.github.io/xugrid/api/xugrid.Ugrid2d.intersect_edges.html
+    edge_index, face_index, intersections = intersect_edges_withsort(uds=data_frommap_merged, edges=edges)
+
+    #compute pyt/haversine start/stop distances for all intersections
+    if calcdist_fromlatlon is None:
+        #auto determine if cartesian/sperical
+        if hasattr(data_frommap_merged.ugrid.obj,'projected_coordinate_system'):
+            calcdist_fromlatlon = False
+        elif hasattr(data_frommap_merged.ugrid.obj,'wgs84'):
+            calcdist_fromlatlon = True
+        else:
+            raise Exception('To auto determine calcdist_fromlatlon, a variable "projected_coordinate_system" or "wgs84" is required, please provide calcdist_fromlatlon=True/False yourself.')
+
+    edge_len = np.linalg.norm(edges[:,1] - edges[:,0], axis=1) #TODO: these lines are duplicated from intersect_edges_withsort(), find alternative
+    edge_len_cum = np.cumsum(edge_len)
+    edge_len_cum0 = np.concatenate([[0],edge_len_cum[:-1]])
+    
+    if not calcdist_fromlatlon:
+        crs_dist_starts = calc_dist_pythagoras(edges[edge_index,0,0], intersections[:,0,0], edges[edge_index,0,1], intersections[:,0,1]) + edge_len_cum0[edge_index]
+        crs_dist_stops  = calc_dist_pythagoras(edges[edge_index,0,0], intersections[:,1,0], edges[edge_index,0,1], intersections[:,1,1]) + edge_len_cum0[edge_index]
+    else:
+        crs_dist_starts = calc_dist_haversine(edges[edge_index,0,0], intersections[:,0,0], edges[edge_index,0,1], intersections[:,0,1]) + edge_len_cum0[edge_index]
+        crs_dist_stops  = calc_dist_haversine(edges[edge_index,0,0], intersections[:,1,0], edges[edge_index,0,1], intersections[:,1,1]) + edge_len_cum0[edge_index]
+         
+    import pandas as pd
+    intersect_pd = pd.DataFrame({'crs_dist_starts':crs_dist_starts,'crs_dist_stops':crs_dist_stops},index=face_index)
+    
+    #derive vertices from cross section (distance from first point)
+    xr_crs_ugrid = get_xzcoords_onintersection(data_frommap_merged, intersect_pd=intersect_pd)
+    return xr_crs_ugrid
+
 
 
 def reconstruct_zw_zcc_fromsigma(data_xr_map):
