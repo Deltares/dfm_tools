@@ -90,9 +90,6 @@ def intersect_edges_withsort(uds,edges):
     #based on xugrid, so update for polygon_intersect() #TODO: phase out polygon_intersect()
     edge_index, face_index, intersections = uds.grid.intersect_edges(edges) #TODO: is fast, but maybe speed can be increased with bounding box?
     
-    if len(edge_index) == 0: #TODO: check if this still works with polyline outside of grid
-        raise Exception('polyline does not cross mapdata')
-    
     #ordering of face_index is wrong (visible with cb3 with long line_array), so sort on distance from startpoint (in x/y units)
     #computing lengths
     edge_len = np.linalg.norm(edges[:,1] - edges[:,0], axis=1)
@@ -325,6 +322,8 @@ def polyline_mapslice2(data_frommap_merged, line_array, calcdist_fromlatlon=None
     
     edges = np.stack([line_array[:-1],line_array[1:]],axis=1) # https://deltares.github.io/xugrid/api/xugrid.Ugrid2d.intersect_edges.html
     edge_index, face_index, intersections = intersect_edges_withsort(uds=data_frommap_merged, edges=edges)
+    if len(edge_index) == 0:
+        raise Exception('polyline does not cross mapdata')
 
     #compute pyt/haversine start/stop distances for all intersections
     if calcdist_fromlatlon is None:
