@@ -339,8 +339,8 @@ def polyline_mapslice2(uds, line_array, calcdist_fromlatlon=None): #TODO: replac
             raise Exception('To auto determine calcdist_fromlatlon, a variable "projected_coordinate_system" or "wgs84" is required, please provide calcdist_fromlatlon=True/False yourself.')
 
     if not calcdist_fromlatlon:
-        edge_len = np.linalg.norm(edges[:,1] - edges[:,0], axis=1) #TODO: these lines are duplicated from intersect_edges_withsort(), find alternative?
-        #edge_len = calc_dist_pythagoras(edges[0,0], edges[0,1], edges[0,1], edges[1,1])
+        #edge_len = np.linalg.norm(edges[:,1] - edges[:,0], axis=1) #also works
+        edge_len = calc_dist_pythagoras(edges[:,0,0], edges[:,1,0], edges[:,0,1], edges[:,1,1])
     else:
         edge_len = calc_dist_haversine(edges[:,0,0], edges[:,1,0], edges[:,0,1], edges[:,1,1])
     edge_len_cum = np.cumsum(edge_len)
