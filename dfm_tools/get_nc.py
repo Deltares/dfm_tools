@@ -341,17 +341,16 @@ def polyline_mapslice2(uds, line_array, calcdist_fromlatlon=None): #TODO: replac
     if not calcdist_fromlatlon:
         #edge_len = np.linalg.norm(edges[:,1] - edges[:,0], axis=1) #also works
         edge_len = calc_dist_pythagoras(edges[:,0,0], edges[:,1,0], edges[:,0,1], edges[:,1,1])
-    else:
-        edge_len = calc_dist_haversine(edges[:,0,0], edges[:,1,0], edges[:,0,1], edges[:,1,1])
-    edge_len_cum = np.cumsum(edge_len)
-    edge_len_cum0 = np.concatenate([[0],edge_len_cum[:-1]])
-    
-    if not calcdist_fromlatlon:
+        edge_len_cum = np.cumsum(edge_len)
+        edge_len_cum0 = np.concatenate([[0],edge_len_cum[:-1]])
         #crs_dist_starts = np.linalg.norm(intersections[:,0,:] - edges[edge_index,0,:], axis=1) + edge_len_cum0[edge_index] #also works
         #crs_dist_stops = np.linalg.norm(intersections[:,1,:] - edges[edge_index,0,:], axis=1) + edge_len_cum0[edge_index] #also works
         crs_dist_starts = calc_dist_pythagoras(edges[edge_index,0,0], intersections[:,0,0], edges[edge_index,0,1], intersections[:,0,1]) + edge_len_cum0[edge_index]
         crs_dist_stops  = calc_dist_pythagoras(edges[edge_index,0,0], intersections[:,1,0], edges[edge_index,0,1], intersections[:,1,1]) + edge_len_cum0[edge_index]
     else:
+        edge_len = calc_dist_haversine(edges[:,0,0], edges[:,1,0], edges[:,0,1], edges[:,1,1])
+        edge_len_cum = np.cumsum(edge_len)
+        edge_len_cum0 = np.concatenate([[0],edge_len_cum[:-1]])
         crs_dist_starts = calc_dist_haversine(edges[edge_index,0,0], intersections[:,0,0], edges[edge_index,0,1], intersections[:,0,1]) + edge_len_cum0[edge_index]
         crs_dist_stops  = calc_dist_haversine(edges[edge_index,0,0], intersections[:,1,0], edges[edge_index,0,1], intersections[:,1,1]) + edge_len_cum0[edge_index]
     
