@@ -232,7 +232,7 @@ def polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=None)
     return intersect_pd
 
 
-def get_xzcoords_onintersection(uds, intersect_pd):
+def get_xzcoords_onintersection(uds, face_index, crs_dist_starts, crs_dist_stops):
     #TODO: remove hardcoding of variable names
     if 'time' in uds.dims: #TODO: maybe make time dependent grid?
         raise Exception('time dimension present in uds, provide uds.isel(time=timestep) instead. This is necessary to retrieve correct waterlevel or fullgrid output')
@@ -264,7 +264,7 @@ def get_xzcoords_onintersection(uds, intersect_pd):
         raise Exception('layers present, but unknown layertype, expected one of variables: mesh2d_flowelem_zw, mesh2d_layer_sigma, mesh2d_layer_z')
     
     #intersect_pd = intersect_pd.sort_index() #necesssary for uds.sel
-    intersect_gridnos = intersect_pd.index
+    intersect_gridnos = face_index#intersect_pd.index
     data_frommap_merged_sel = uds.drop_dims([xu_edgedim,xu_nodedim]).ugrid.obj.isel({xu_facedim:intersect_gridnos})
     #data_frommap_merged_sel = uds.sel({xu_facedim:intersect_gridnos}) #TODO: does not work for RMM
     if dimn_layer not in uds.dims: #2D model #TODO: add escape for missing wl/bl vars
@@ -276,8 +276,8 @@ def get_xzcoords_onintersection(uds, intersect_pd):
         zvals_interface = zvals_interface_filled.to_numpy().T # transpose to make in line with 2D sigma dataset
     
     #convert to output for plot_netmapdata
-    crs_dist_starts_matrix = np.repeat(intersect_pd['crs_dist_starts'].values[np.newaxis],nlay,axis=0)
-    crs_dist_stops_matrix = np.repeat(intersect_pd['crs_dist_stops'].values[np.newaxis],nlay,axis=0)
+    crs_dist_starts_matrix = np.repeat(crs_dist_starts[np.newaxis],nlay,axis=0)
+    crs_dist_stops_matrix = np.repeat(crs_dist_stops[np.newaxis],nlay,axis=0)
     crs_verts_x_all = np.array([[crs_dist_starts_matrix.ravel(),crs_dist_stops_matrix.ravel(),crs_dist_stops_matrix.ravel(),crs_dist_starts_matrix.ravel()]]).T
     crs_verts_z_all = np.ma.array([zvals_interface[1:,:].ravel(),zvals_interface[1:,:].ravel(),zvals_interface[:-1,:].ravel(),zvals_interface[:-1,:].ravel()]).T[:,:,np.newaxis]
     crs_verts = np.ma.concatenate([crs_verts_x_all, crs_verts_z_all], axis=2)
@@ -311,25 +311,29 @@ def polyline_mapslice(data_frommap_merged, line_array, calcdist_fromlatlon=None)
     if len(intersect_pd) == 0:
         raise Exception('line_array does not cross mapdata') #TODO: move exception elsewhere?
     #derive vertices from cross section (distance from first point)
-    xr_crs_ugrid = get_xzcoords_onintersection(data_frommap_merged, intersect_pd=intersect_pd)
+    
+    face_index = intersect_pd.index.values
+    crs_dist_starts = intersect_pd['crs_dist_starts'].values
+    crs_dist_stops = intersect_pd['crs_dist_stops'].values
+    xr_crs_ugrid = get_xzcoords_onintersection(uds = data_frommap_merged, face_index=face_index, crs_dist_starts=crs_dist_starts, crs_dist_stops=crs_dist_stops)
     return xr_crs_ugrid
 
 
-def polyline_mapslice2(data_frommap_merged, line_array, calcdist_fromlatlon=None): #TODO: replacement of polygon_mapslice, deprecate the old function
+def polyline_mapslice2(uds, line_array, calcdist_fromlatlon=None): #TODO: replacement of polygon_mapslice, deprecate the old function
     #intersect function, find crossed cell numbers (gridnos) and coordinates of intersection (2 per crossed cell)
     #intersect_pd_backup = dfmt.polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=calcdist_fromlatlon)
     
     edges = np.stack([line_array[:-1],line_array[1:]],axis=1) # https://deltares.github.io/xugrid/api/xugrid.Ugrid2d.intersect_edges.html
-    edge_index, face_index, intersections = intersect_edges_withsort(uds=data_frommap_merged, edges=edges)
+    edge_index, face_index, intersections = intersect_edges_withsort(uds=uds, edges=edges)
     if len(edge_index) == 0:
         raise Exception('polyline does not cross mapdata')
 
     #compute pyt/haversine start/stop distances for all intersections
     if calcdist_fromlatlon is None:
         #auto determine if cartesian/sperical
-        if hasattr(data_frommap_merged.ugrid.obj,'projected_coordinate_system'):
+        if hasattr(uds.ugrid.obj,'projected_coordinate_system'):
             calcdist_fromlatlon = False
-        elif hasattr(data_frommap_merged.ugrid.obj,'wgs84'):
+        elif hasattr(uds.ugrid.obj,'wgs84'):
             calcdist_fromlatlon = True
         else:
             raise Exception('To auto determine calcdist_fromlatlon, a variable "projected_coordinate_system" or "wgs84" is required, please provide calcdist_fromlatlon=True/False yourself.')
@@ -344,12 +348,9 @@ def polyline_mapslice2(data_frommap_merged, line_array, calcdist_fromlatlon=None
     else:
         crs_dist_starts = calc_dist_haversine(edges[edge_index,0,0], intersections[:,0,0], edges[edge_index,0,1], intersections[:,0,1]) + edge_len_cum0[edge_index]
         crs_dist_stops  = calc_dist_haversine(edges[edge_index,0,0], intersections[:,1,0], edges[edge_index,0,1], intersections[:,1,1]) + edge_len_cum0[edge_index]
-         
-    import pandas as pd
-    intersect_pd = pd.DataFrame({'crs_dist_starts':crs_dist_starts,'crs_dist_stops':crs_dist_stops},index=face_index)
     
     #derive vertices from cross section (distance from first point)
-    xr_crs_ugrid = get_xzcoords_onintersection(data_frommap_merged, intersect_pd=intersect_pd)
+    xr_crs_ugrid = get_xzcoords_onintersection(uds=uds, face_index=face_index, crs_dist_starts=crs_dist_starts, crs_dist_stops=crs_dist_stops)
     return xr_crs_ugrid
 
 
