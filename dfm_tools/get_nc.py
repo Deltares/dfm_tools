@@ -87,24 +87,23 @@ def calc_dist_haversine(lon1,lon2,lat1,lat2):
 
 
 def intersect_edges_withsort(uds,edges):
-    #based on xugrid, so update for polygon_intersect() #TODO: phase out polygon_intersect()
     edge_index, face_index, intersections = uds.grid.intersect_edges(edges) #TODO: is fast, but maybe speed can be increased with bounding box?
     
     #ordering of face_index is wrong (visible with cb3 with long line_array), so sort on distance from startpoint (in x/y units)
     #computing lengths
     edge_len = np.linalg.norm(edges[:,1] - edges[:,0], axis=1)
     edge_len_cum = np.cumsum(edge_len)
-    edge_len_cum0 = np.concatenate([[0],edge_len_cum[:-1]])
-    intersections_lentostart_line = np.zeros(shape=intersections.shape[0])
+    edge_len_cum0 = np.concatenate([[0],edge_len_cum[:-1]]) #distance from start of line to start of each linepart
+    dist_tostart_line = np.zeros(shape=intersections.shape[0])
     for edge_id in np.unique(edge_index):
         edge_bool = edge_index==edge_id
         intersects_linepart = intersections[edge_bool]
         startcoord_linepart = edges[edge_id,0]
         dist_tostart_linepart = np.linalg.norm(intersects_linepart[:,0] - startcoord_linepart, axis=1)
-        intersections_lentostart_line[edge_bool] = dist_tostart_linepart + edge_len_cum0[edge_id]
+        dist_tostart_line[edge_bool] = dist_tostart_linepart + edge_len_cum0[edge_id]
     
     #actual sorting
-    id_sorted = np.argsort(intersections_lentostart_line)
+    id_sorted = np.argsort(dist_tostart_line)
     edge_index = edge_index[id_sorted]
     face_index = face_index[id_sorted]
     intersections = intersections[id_sorted]
