@@ -242,7 +242,7 @@ def get_xzcoords_onintersection(uds, face_index, crs_dist_starts, crs_dist_stops
         nlay = uds.dims[dimn_layer]
     else: #no layers, 2D model
         nlay = 1
-
+    
     xu_facedim = uds.grid.face_dimension
     xu_edgedim = uds.grid.edge_dimension
     xu_nodedim = uds.grid.node_dimension
@@ -263,10 +263,9 @@ def get_xzcoords_onintersection(uds, face_index, crs_dist_starts, crs_dist_stops
     else:
         raise Exception('layers present, but unknown layertype, expected one of variables: mesh2d_flowelem_zw, mesh2d_layer_sigma, mesh2d_layer_z')
     
-    #intersect_pd = intersect_pd.sort_index() #necesssary for uds.sel
-    intersect_gridnos = face_index#intersect_pd.index
-    data_frommap_merged_sel = uds.drop_dims([xu_edgedim,xu_nodedim]).ugrid.obj.isel({xu_facedim:intersect_gridnos})
-    #data_frommap_merged_sel = uds.sel({xu_facedim:intersect_gridnos}) #TODO: does not work for RMM
+    face_index_xr = xr.DataArray(face_index,dims=('ncrossed_faces'))
+    data_frommap_merged_sel = uds.sel({xu_facedim:face_index_xr})
+    
     if dimn_layer not in uds.dims: #2D model #TODO: add escape for missing wl/bl vars
         data_frommap_wl3_sel = data_frommap_merged_sel['mesh2d_s1'].to_numpy()
         data_frommap_bl_sel = data_frommap_merged_sel['mesh2d_flowelem_bl'].to_numpy()
@@ -292,14 +291,12 @@ def get_xzcoords_onintersection(uds, face_index, crs_dist_starts, crs_dist_stops
                              )
 
     #define dataset
-    crs_plotdata_clean = data_frommap_merged_sel#.ugrid.obj.drop_dims([xu_edgedim,xu_nodedim]) #TODO: dropping dims is necessary to avoid "ValueError". This is since we are constructing new nodes/edges here. How to do neatly?
+    crs_plotdata_clean = data_frommap_merged_sel.drop_dims([xu_edgedim,xu_nodedim]) #TODO: dropping dims is necessary to avoid "ValueError". This is since we are constructing new nodes/edges here. How to do neatly?
     if dimn_layer in data_frommap_merged_sel.dims:
-        facedim_tempname = 'facedim_tempname' #temporary new name to avoid duplicate from-to dimension name in .stack()
-        crs_plotdata_clean = crs_plotdata_clean.rename({xu_facedim:facedim_tempname})
-        crs_plotdata_clean = crs_plotdata_clean.stack({xr_crs_grid.face_dimension:[dimn_layer,facedim_tempname]})
-        #reset_index converts face-dimension from multiindex to flat
-        crs_plotdata_clean = crs_plotdata_clean.reset_index([xr_crs_grid.face_dimension])
-    
+        crs_plotdata_clean = crs_plotdata_clean.stack({xr_crs_grid.face_dimension:[dimn_layer,'ncrossed_faces']},create_index=False)
+    else: #2D: still make sure xr_crs_grid.face_dimension is created, using stack since .rename() gives "UserWarning: rename 'ncrossed_faces' to 'mesh2d_nFaces' does not create an index anymore."
+        crs_plotdata_clean = crs_plotdata_clean.stack({xr_crs_grid.face_dimension:['ncrossed_faces']},create_index=False)
+                    
     #combine into xugrid
     xr_crs_ugrid = xu.UgridDataset(crs_plotdata_clean, grids=[xr_crs_grid])
     return xr_crs_ugrid
