@@ -59,12 +59,12 @@ def get_ugrid_verts(data_xr_map): #TODO: remove this deprecated function
     # return ugrid_all_verts
 
 
-def calc_dist_pythagoras(x1,x2,y1,y2): # TODO: only used in dfm_tools.ugrid, remove?
+def calc_dist_pythagoras(x1,x2,y1,y2):
     distance = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
     return distance
 
 
-def calc_dist_haversine(lon1,lon2,lat1,lat2): # TODO: only used in dfm_tools.ugrid, remove?
+def calc_dist_haversine(lon1,lon2,lat1,lat2):
     """
     calculates distance between lat/lon coordinates in meters
     https://community.esri.com/t5/coordinate-reference-systems-blog/distance-on-a-sphere-the-haversine-formula/ba-p/902128
