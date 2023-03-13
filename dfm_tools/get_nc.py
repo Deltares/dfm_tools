@@ -86,7 +86,8 @@ def calc_dist_haversine(lon1,lon2,lat1,lat2):
     return distance
 
 
-def intersect_edges_withsort(uds,edges):
+def intersect_edges_withsort(uds,edges): #TODO: move sorting to xugrid? https://deltares.github.io/xugrid/api/xugrid.Ugrid2d.intersect_edges.html
+    
     edge_index, face_index, intersections = uds.grid.intersect_edges(edges) #TODO: is fast, but maybe speed can be increased with bounding box?
     
     #ordering of face_index is wrong (visible with cb3 with long line_array), so sort on distance from startpoint (in x/y units)
@@ -97,8 +98,8 @@ def intersect_edges_withsort(uds,edges):
     edge_len_cum0 = np.concatenate([[0],edge_len_cum[:-1]])
     
     #compute distance from start to lineparts to start of line (via line)
-    startcoord_linepart = edges[edge_index,0]
-    dist_tostart_linepart = np.linalg.norm(intersections[:,0] - startcoord_linepart, axis=1)
+    startcoord_linepart = edges[edge_index,0,:]
+    dist_tostart_linepart = np.linalg.norm(intersections[:,0,:] - startcoord_linepart, axis=1)
     dist_tostart_line = dist_tostart_linepart + edge_len_cum0[edge_index]
     
     #sorting on distance
@@ -322,7 +323,7 @@ def polyline_mapslice2(uds, line_array, calcdist_fromlatlon=None): #TODO: replac
     #intersect function, find crossed cell numbers (gridnos) and coordinates of intersection (2 per crossed cell)
     #intersect_pd_backup = dfmt.polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=calcdist_fromlatlon)
     
-    edges = np.stack([line_array[:-1],line_array[1:]],axis=1) # https://deltares.github.io/xugrid/api/xugrid.Ugrid2d.intersect_edges.html
+    edges = np.stack([line_array[:-1],line_array[1:]],axis=1)
     edge_index, face_index, intersections = intersect_edges_withsort(uds=uds, edges=edges)
     if len(edge_index) == 0:
         raise Exception('polyline does not cross mapdata')
@@ -337,7 +338,11 @@ def polyline_mapslice2(uds, line_array, calcdist_fromlatlon=None): #TODO: replac
         else:
             raise Exception('To auto determine calcdist_fromlatlon, a variable "projected_coordinate_system" or "wgs84" is required, please provide calcdist_fromlatlon=True/False yourself.')
 
-    edge_len = np.linalg.norm(edges[:,1] - edges[:,0], axis=1) #TODO: these lines are duplicated from intersect_edges_withsort(), find alternative
+    if not calcdist_fromlatlon:
+        edge_len = np.linalg.norm(edges[:,1] - edges[:,0], axis=1) #TODO: these lines are duplicated from intersect_edges_withsort(), find alternative?
+        #edge_len = calc_dist_pythagoras(edges[0,0], edges[0,1], edges[0,1], edges[1,1])
+    else:
+        edge_len = calc_dist_haversine(edges[:,0,0], edges[:,1,0], edges[:,0,1], edges[:,1,1])
     edge_len_cum = np.cumsum(edge_len)
     edge_len_cum0 = np.concatenate([[0],edge_len_cum[:-1]])
     
@@ -351,7 +356,6 @@ def polyline_mapslice2(uds, line_array, calcdist_fromlatlon=None): #TODO: replac
     #derive vertices from cross section (distance from first point)
     xr_crs_ugrid = get_xzcoords_onintersection(uds=uds, face_index=face_index, crs_dist_starts=crs_dist_starts, crs_dist_stops=crs_dist_stops)
     return xr_crs_ugrid
-
 
 
 def reconstruct_zw_zcc_fromsigma(data_xr_map):
