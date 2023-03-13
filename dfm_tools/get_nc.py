@@ -319,7 +319,7 @@ def polyline_mapslice(data_frommap_merged, line_array, calcdist_fromlatlon=None)
     return xr_crs_ugrid
 
 
-def polyline_mapslice2(uds, line_array, calcdist_fromlatlon=None): #TODO: replacement of polygon_mapslice, deprecate the old function
+def polyline_mapslice2(uds, line_array, calcdist_fromlatlon=None): #TODO: replacement of polygon_mapslice, deprecate the old function, maybe wait until intersect_edges_withsort is in xugrid code
     #intersect function, find crossed cell numbers (gridnos) and coordinates of intersection (2 per crossed cell)
     #intersect_pd_backup = dfmt.polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=calcdist_fromlatlon)
     
