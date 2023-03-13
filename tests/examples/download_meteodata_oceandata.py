@@ -70,7 +70,7 @@ for varkey in varlist_cmems:
         #reanalisys: https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_PHY_001_030/description
         dataset_url = 'https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_my_0.083_P1D-m'
         #forecast: https://data.marine.copernicus.eu/product/GLOBAL_ANALYSISFORECAST_PHY_001_024/description
-        #dataset_url = 'https://nrt.cmems-du.eu/thredds/dodsC/global-analysis-forecast-phy-001-024' #old location for forecasts
+        #dataset_url = 'https://nrt.cmems-du.eu/thredds/dodsC/global-analysis-forecast-phy-001-024' #old location for forecasts (available up to 15 april_
         #dataset_url = 'https://nrt.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_anfc_0.083deg_PT1H-m.html' #hourly for cur/tem/sal
         #dataset_url = 'https://nrt.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy-cur_anfc_0.083deg_P1D-m.html' #currents
         #dataset_url = 'https://nrt.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy-thetao_anfc_0.083deg_P1D-m.html' #temperature
