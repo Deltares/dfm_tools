@@ -90,19 +90,18 @@ def intersect_edges_withsort(uds,edges):
     edge_index, face_index, intersections = uds.grid.intersect_edges(edges) #TODO: is fast, but maybe speed can be increased with bounding box?
     
     #ordering of face_index is wrong (visible with cb3 with long line_array), so sort on distance from startpoint (in x/y units)
-    #computing lengths
+    
+    #compute distance from start of line to start of each linepart
     edge_len = np.linalg.norm(edges[:,1] - edges[:,0], axis=1)
     edge_len_cum = np.cumsum(edge_len)
-    edge_len_cum0 = np.concatenate([[0],edge_len_cum[:-1]]) #distance from start of line to start of each linepart
-    dist_tostart_line = np.zeros(shape=intersections.shape[0])
-    for edge_id in np.unique(edge_index):
-        edge_bool = edge_index==edge_id
-        intersects_linepart = intersections[edge_bool]
-        startcoord_linepart = edges[edge_id,0]
-        dist_tostart_linepart = np.linalg.norm(intersects_linepart[:,0] - startcoord_linepart, axis=1)
-        dist_tostart_line[edge_bool] = dist_tostart_linepart + edge_len_cum0[edge_id]
+    edge_len_cum0 = np.concatenate([[0],edge_len_cum[:-1]])
     
-    #actual sorting
+    #compute distance from start to lineparts to start of line (via line)
+    startcoord_linepart = edges[edge_index,0]
+    dist_tostart_linepart = np.linalg.norm(intersections[:,0] - startcoord_linepart, axis=1)
+    dist_tostart_line = dist_tostart_linepart + edge_len_cum0[edge_index]
+    
+    #sorting on distance
     id_sorted = np.argsort(dist_tostart_line)
     edge_index = edge_index[id_sorted]
     face_index = face_index[id_sorted]
