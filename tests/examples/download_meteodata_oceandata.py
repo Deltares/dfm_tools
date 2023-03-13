@@ -31,7 +31,7 @@ date_min = '2010-01-01'
 date_max = '2010-01-02'
 
 #variables per model will be written to separate netcdf files. Set to [] to skip model.
-variables_era5 = []#['msl']#'v10n'] # check variables_dict in dfmt.download_ERA5() for valid names
+variables_era5 = ['msl']#'v10n'] # check variables_dict in dfmt.download_ERA5() for valid names
 varlist_cmems = ['bottomT']#['bottomT','thetao','no3'] # avaliable variables differ per source_combination, check cmems loop for some options
 varlist_hycom = []#'surf_el']#'water_temp'] #['tau','water_u','water_v','water_temp','salinity','surf_el']
 
