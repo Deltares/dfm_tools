@@ -450,7 +450,7 @@ def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str ='z0', z
         varname_wl = 'waterlevel'
         varname_bl = 'bedlevel'
     else:
-        print(UserWarning('depth/layer dimension not found, probably 2D model, returning input Dataset'))
+        print(UserWarning('depth/layer dimension not found, probably 2D model, returning input Dataset')) #TODO: this can also be at depth, since slice will put parts of model dry (and allnan if below wl or below bl). Implement this
         return data_xr #early return
     
     if reference=='waterlevel' and varname_wl not in data_xr.variables:
