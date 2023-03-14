@@ -92,9 +92,51 @@ def test_getmapdata(file_nc, varname, expected_size):
 
 @pytest.mark.systemtest
 def test_cartopy_epsg():
-    
     #this one crashes if the dummy in plot_background() is not created
     dfmt.plot_background(ax=None, projection=28992, google_style='satellite', resolution=5, features='land', nticks=6, latlon_format=False, gridlines=False)
+
+
+@pytest.mark.unittest
+def test_calc_dist_pythagoras():
+    edge_index = np.array([0,0,0,1,1,1,2,2])
+
+    edges = np.array([[[2084.67741935, 3353.02419355],
+                       [2255.79637097, 3307.15725806]],
+                      [[2255.79637097, 3307.15725806],
+                       [2222.27822581, 3206.60282258]],
+                      [[2222.27822581, 3206.60282258],
+                       [2128.78024194, 3266.58266129]]])
+
+    intersections = np.array([[[2084.67741935, 3353.02419355],
+                               [2144.15041424, 3337.08297842]],
+                              [[2144.15041424, 3337.08297842],
+                               [2202.53662217, 3321.43306702]],
+                              [[2202.53662217, 3321.43306702],
+                               [2255.79637097, 3307.15725806]],
+                              [[2255.79637097, 3307.15725806],
+                               [2246.9810802,  3280.71138574]],
+                              [[2246.9810802,  3280.71138574],
+                               [2239.02015401, 3256.82860719]],
+                              [[2239.02015401, 3256.82860719],
+                               [2222.27822581, 3206.60282258]],
+                              [[2222.27822581, 3206.60282258],
+                               [2173.05750857, 3238.17837704]],
+                              [[2173.05750857, 3238.17837704],
+                               [2128.78024194, 3266.58266129]]])
+    
+    edge_len = dfmt.calc_dist_pythagoras(edges[:,0,0], edges[:,1,0], edges[:,0,1], edges[:,1,1])
+    edge_len_cum = np.cumsum(edge_len)
+    edge_len_cum0 = np.concatenate([[0],edge_len_cum[:-1]])
+    crs_dist_starts = dfmt.calc_dist_pythagoras(edges[edge_index,0,0], intersections[:,0,0], edges[edge_index,0,1], intersections[:,0,1]) + edge_len_cum0[edge_index]
+    crs_dist_stops  = dfmt.calc_dist_pythagoras(edges[edge_index,0,0], intersections[:,1,0], edges[edge_index,0,1], intersections[:,1,1]) + edge_len_cum0[edge_index]
+    
+    crs_dist_starts_check = np.array([  0.        ,  61.57239204, 122.01963352, 177.15945184,
+                                      205.03584892, 230.21050794, 283.15313349, 341.63128877])
+    crs_dist_stops_check = np.array([ 61.57239204, 122.01963352, 177.15945184, 205.03584892,
+                                     230.21050794, 283.15313349, 341.63128877, 394.23622869])
+    
+    assert (crs_dist_starts == crs_dist_starts_check).all()
+    assert (crs_dist_stops == crs_dist_stops_check).all()
 
 
 @pytest.mark.unittest
@@ -141,34 +183,6 @@ def test_intersect_edges_withsort():
     assert (face_index == np.array([ 91, 146, 147, 147, 202, 201, 201, 146])).all()
 
 
-@pytest.mark.systemtest
-def test_polygon_intersect(): #TODO: update to new xarray method
-
-    file_nc = os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_cb_3d\\cb_3d_map.nc')
-    data_merged = dfmt.open_partitioned_dataset(file_nc)
-
-    line_array = np.array([[2084.67741935, 3353.02419355], #with linebend in cell en with line crossing same cell twice
-       [2255.79637097, 3307.15725806],
-       [2222.27822581, 3206.60282258],
-       [2128.78024194, 3266.58266129]])
-    
-    #intersect function, find crossed cell numbers (gridnos) and coordinates of intersection (2 per crossed cell)
-    intersect_pd = dfmt.polygon_intersect(data_merged, line_array)
-    intersect_pd = intersect_pd.sort_index()
-    expected_intersectgridnos = np.array([ 91, 146, 146, 147, 147, 201, 201, 202], dtype=np.int64)
-    expected_intersectcoords = np.array([[2084.67741935, 3353.02419355, 2144.15041424, 3337.08297842],
-                                        [2144.15041424, 3337.08297842, 2202.53662217, 3321.43306702],
-                                        [2173.05750857, 3238.17837704, 2128.78024194, 3266.58266129],
-                                        [2202.53662217, 3321.43306702, 2255.79637097, 3307.15725806],
-                                        [2255.79637097, 3307.15725806, 2246.9810802 , 3280.71138574],
-                                        [2239.02015401, 3256.82860719, 2222.27822581, 3206.60282258],
-                                        [2222.27822581, 3206.60282258, 2173.05750857, 3238.17837704],
-                                        [2246.9810802 , 3280.71138574, 2239.02015401, 3256.82860719]])
-    
-    assert (intersect_pd.index-expected_intersectgridnos<1e-9).all()
-    assert (intersect_pd.iloc[:,:4].values-expected_intersectcoords<1e-8).all()
-
-
 def test_zlayermodel_correct_layers():
     file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0*_map.nc') #zlayer
     data_frommap_merged = dfmt.open_partitioned_dataset(file_nc)
@@ -195,6 +209,34 @@ def test_zlayermodel_correct_layers():
 #DEPRECATED TESTS
 #DEPRECATED TESTS
 #DEPRECATED TESTS
+
+
+@pytest.mark.systemtest
+def SKIP_test_polygon_intersect(): #deprecated since usage of xu.ugrid2d.intersect_edges()
+
+    file_nc = os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_cb_3d\\cb_3d_map.nc')
+    data_merged = dfmt.open_partitioned_dataset(file_nc)
+
+    line_array = np.array([[2084.67741935, 3353.02419355], #with linebend in cell en with line crossing same cell twice
+       [2255.79637097, 3307.15725806],
+       [2222.27822581, 3206.60282258],
+       [2128.78024194, 3266.58266129]])
+    
+    #intersect function, find crossed cell numbers (gridnos) and coordinates of intersection (2 per crossed cell)
+    intersect_pd = dfmt.polygon_intersect(data_merged, line_array)
+    intersect_pd = intersect_pd.sort_index()
+    expected_intersectgridnos = np.array([ 91, 146, 146, 147, 147, 201, 201, 202], dtype=np.int64)
+    expected_intersectcoords = np.array([[2084.67741935, 3353.02419355, 2144.15041424, 3337.08297842],
+                                        [2144.15041424, 3337.08297842, 2202.53662217, 3321.43306702],
+                                        [2173.05750857, 3238.17837704, 2128.78024194, 3266.58266129],
+                                        [2202.53662217, 3321.43306702, 2255.79637097, 3307.15725806],
+                                        [2255.79637097, 3307.15725806, 2246.9810802 , 3280.71138574],
+                                        [2239.02015401, 3256.82860719, 2222.27822581, 3206.60282258],
+                                        [2222.27822581, 3206.60282258, 2173.05750857, 3238.17837704],
+                                        [2246.9810802 , 3280.71138574, 2239.02015401, 3256.82860719]])
+    
+    assert (intersect_pd.index-expected_intersectgridnos<1e-9).all()
+    assert (intersect_pd.iloc[:,:4].values-expected_intersectcoords<1e-8).all()
 
 
 @pytest.mark.unittest
