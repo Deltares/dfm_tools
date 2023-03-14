@@ -328,9 +328,9 @@ def polyline_mapslice2(uds, line_array, calcdist_fromlatlon=None): #TODO: replac
     #compute pyt/haversine start/stop distances for all intersections
     if calcdist_fromlatlon is None:
         #auto determine if cartesian/sperical
-        if hasattr(uds.ugrid.obj,'projected_coordinate_system'):
+        if hasattr(uds,'projected_coordinate_system'):
             calcdist_fromlatlon = False
-        elif hasattr(uds.ugrid.obj,'wgs84'):
+        elif hasattr(uds,'wgs84'):
             calcdist_fromlatlon = True
         else:
             raise Exception('To auto determine calcdist_fromlatlon, a variable "projected_coordinate_system" or "wgs84" is required, please provide calcdist_fromlatlon=True/False yourself.')
