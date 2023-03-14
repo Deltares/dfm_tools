@@ -81,8 +81,7 @@ def calc_dist_haversine(lon1,lon2,lat1,lat2):
     R = 6371000
     distance = R * c
     if np.isnan(distance).any():
-        raise Exception('nan encountered in calc_dist_latlon distance, replaced by 0') #warnings.warn
-        #distance[np.isnan(distance)] = 0
+        raise Exception('nan encountered in calc_dist_latlon distance, replaced by 0')
     return distance
 
 
@@ -108,128 +107,6 @@ def intersect_edges_withsort(uds,edges): #TODO: move sorting to xugrid? https://
     face_index = face_index[id_sorted]
     intersections = intersections[id_sorted]
     return edge_index, face_index, intersections
-
-
-def polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=None):
-    #data_frommap_merged: xugrid dataset (contains ds and grid)
-    #TODO: remove hardcoding
-    """
-    #TODO: maybe move to meshkernel/xugrid functionality?
-    Cross section functionality is implemented in MeshKernel (C++) but still needs to be exposed in MeshKernelPy (can be done in dec2022). Here is the function with documentation: 
-    https://github.com/Deltares/MeshKernel/blob/067f1493e7f972ba0cdb2a1f4deb48d1c74695d5/include/MeshKernelApi/MeshKernel.hpp#L356
-    """
-    
-    import numpy as np
-    #from matplotlib.path import Path
-    import shapely #separate import, since sometimes this works, while import shapely.geometry fails
-    from shapely.geometry import LineString, Polygon, MultiLineString, Point
-    from dfm_tools.get_nc import calc_dist_pythagoras, calc_dist_haversine
-
-    if calcdist_fromlatlon is None:
-        #auto determine if cartesian/sperical
-        if hasattr(data_frommap_merged.ugrid.obj,'projected_coordinate_system'):
-            calcdist_fromlatlon = False
-        elif hasattr(data_frommap_merged.ugrid.obj,'wgs84'):
-            calcdist_fromlatlon = True
-        else:
-            raise Exception('To auto determine calcdist_fromlatlon, a variable "projected_coordinate_system" or "wgs84" is required, please provide calcdist_fromlatlon=True/False yourself.')
-
-    dtstart_all = dt.datetime.now()
-
-    #defining celinlinebox
-    line_section = LineString(line_array)
-    
-    ugrid_all_verts = data_frommap_merged.grid.face_node_coordinates
-    verts_xmax = np.nanmax(ugrid_all_verts[:,:,0].data,axis=1)
-    verts_xmin = np.nanmin(ugrid_all_verts[:,:,0].data,axis=1)
-    verts_ymax = np.nanmax(ugrid_all_verts[:,:,1].data,axis=1)
-    verts_ymin = np.nanmin(ugrid_all_verts[:,:,1].data,axis=1)
-    
-    #TODO: replace this with xr.sel() once it works for xugrid (getting verts_inlinebox_nos is than still an issue)
-    cellinlinebox_all_bool = (((np.min(line_array[:,0]) <= verts_xmax) &
-                               (np.max(line_array[:,0]) >= verts_xmin)) &
-                              ((np.min(line_array[:,1]) <= verts_ymax) & 
-                               (np.max(line_array[:,1]) >= verts_ymin))
-                              )
-    #cellinlinebox_all_bool[:] = 1 #to force all cells to be taken into account
-    
-    intersect_coords = np.empty((0,4))
-    intersect_gridnos = np.empty((0),dtype=int) #has to be numbers, since a boolean is differently ordered
-    verts_inlinebox = ugrid_all_verts[cellinlinebox_all_bool,:,:]
-    verts_inlinebox_nos = np.where(cellinlinebox_all_bool)[0]
-
-    
-    print(f'>> finding crossing flow links (can take a while, processing {cellinlinebox_all_bool.sum()} of {len(cellinlinebox_all_bool)} cells): ',end='')
-    dtstart = dt.datetime.now()
-    for iP, pol_data in enumerate(verts_inlinebox):
-        pol_shp = Polygon(pol_data[~np.isnan(pol_data).all(axis=1)])
-        intersect_result = pol_shp.intersection(line_section)
-        if isinstance(intersect_result,shapely.geometry.multilinestring.MultiLineString): #in the rare case that a cell (pol_shp) is crossed by multiple parts of the line
-            intersect_result_multi = intersect_result
-        elif isinstance(intersect_result,shapely.geometry.linestring.LineString): #if one linepart trough cell (ex/including node), make multilinestring anyway
-            if intersect_result.coords == []: #when the line does not cross this cell, intersect_results.coords is an empty linestring and this cell can be skipped (continue makes forloop continue with next in line without finishing the rest of the steps for this instance)
-                continue
-            elif len(intersect_result.coords.xy[0]) == 0: #for newer cartopy versions, when line does not cross this cell, intersect_result.coords.xy is (array('d'), array('d')), and both arrays in tuple have len 0.
-                continue
-            intersect_result_multi = MultiLineString([intersect_result])
-        for iLL, intesect_result_one in enumerate(intersect_result_multi.geoms): #loop over multilinestrings, will mostly only contain one linestring. Will be two if the line crosses a cell more than once.
-            intersection_line = intesect_result_one.coords
-            intline_xyshape = np.array(intersection_line.xy).shape
-            #print('len(intersection_line.xy): %s'%([intline_xyshape]))
-            for numlinepart_incell in range(1,intline_xyshape[1]): #is mostly 1, but more if there is a linebreakpoint in this cell (then there are two or more lineparts)
-                intersect_gridnos = np.append(intersect_gridnos,verts_inlinebox_nos[iP])
-                #intersect_coords = np.concatenate([intersect_coords,np.array(intersection_line.xy)[np.newaxis,:,numlinepart_incell-1:numlinepart_incell+1]],axis=0)
-                intersect_coords = np.concatenate([intersect_coords,np.array(intersection_line.xy).T[numlinepart_incell-1:numlinepart_incell+1].flatten()[np.newaxis]])
-    
-    if intersect_coords.shape[0] != len(intersect_gridnos):
-        raise Exception('something went wrong, intersect_coords.shape[0] and len(intersect_gridnos) are not equal')
-    
-    intersect_pd = pd.DataFrame(intersect_coords,index=intersect_gridnos,columns=['x1','y1','x2','y2'])
-    intersect_pd.index.name = 'gridnumber'
-    print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
-            
-    
-    #calculating distance for all crossed cells, from first point of line
-    nlinecoords = line_array.shape[0]
-    nlinedims = len(line_array.shape)
-    ncrosscellparts = len(intersect_pd)
-    if nlinecoords<2 or nlinedims != 2:
-        raise Exception('ERROR: line_array should at least contain two xy points [[x,y],[x,y]]')
-    
-    #calculate distance between celledge-linepart crossing (is zero when line iL crosses cell)
-    distperline_tostart = np.zeros((ncrosscellparts,nlinecoords-1))
-    distperline_tostop = np.zeros((ncrosscellparts,nlinecoords-1))
-    linepart_length = np.zeros((nlinecoords))
-    for iL in range(nlinecoords-1):
-        #calculate length of lineparts
-        line_section_part = LineString(line_array[iL:iL+2,:])
-        if calcdist_fromlatlon:
-            linepart_length[iL+1] = calc_dist_haversine(line_array[iL,0],line_array[iL+1,0],line_array[iL,1],line_array[iL+1,1])
-        else:
-            linepart_length[iL+1] = line_section_part.length
-    
-        #get distance between all lineparts and point (later used to calculate distance from beginpoint of closest linepart)
-        for iP in range(ncrosscellparts):
-            distperline_tostart[iP,iL] = line_section_part.distance(Point(intersect_coords[:,0][iP],intersect_coords[:,1][iP]))
-            distperline_tostop[iP,iL] = line_section_part.distance(Point(intersect_coords[:,2][iP],intersect_coords[:,3][iP]))
-    linepart_lengthcum = np.cumsum(linepart_length)
-    cross_points_closestlineid = np.argmin(np.maximum(distperline_tostart,distperline_tostop),axis=1)
-    intersect_pd['closestlineid'] = cross_points_closestlineid
-    
-    
-    if not calcdist_fromlatlon:
-        crs_dist_starts = calc_dist_pythagoras(line_array[cross_points_closestlineid,0], intersect_coords[:,0], line_array[cross_points_closestlineid,1], intersect_coords[:,1]) + linepart_lengthcum[cross_points_closestlineid]
-        crs_dist_stops = calc_dist_pythagoras(line_array[cross_points_closestlineid,0], intersect_coords[:,2], line_array[cross_points_closestlineid,1], intersect_coords[:,3]) + linepart_lengthcum[cross_points_closestlineid]
-    else:
-        crs_dist_starts = calc_dist_haversine(line_array[cross_points_closestlineid,0], intersect_coords[:,0], line_array[cross_points_closestlineid,1], intersect_coords[:,1]) + linepart_lengthcum[cross_points_closestlineid]
-        crs_dist_stops = calc_dist_haversine(line_array[cross_points_closestlineid,0], intersect_coords[:,2], line_array[cross_points_closestlineid,1], intersect_coords[:,3]) + linepart_lengthcum[cross_points_closestlineid]
-    intersect_pd['crs_dist_starts'] = crs_dist_starts
-    intersect_pd['crs_dist_stops'] = crs_dist_stops
-    intersect_pd['linepartlen'] = crs_dist_stops-crs_dist_starts
-    intersect_pd = intersect_pd.sort_values('crs_dist_starts')
-    
-    print(f'>> polygon_intersect() total, found intersection trough {len(intersect_gridnos)} of {len(cellinlinebox_all_bool)} cells: {(dt.datetime.now()-dtstart_all).total_seconds():.2f} sec')
-    return intersect_pd
 
 
 def get_xzcoords_onintersection(uds, face_index, crs_dist_starts, crs_dist_stops):
@@ -302,57 +179,66 @@ def get_xzcoords_onintersection(uds, face_index, crs_dist_starts, crs_dist_stops
     return xr_crs_ugrid
 
 
-def polyline_mapslice(data_frommap_merged, line_array, calcdist_fromlatlon=None): #TODO: merge this into one function
-    #intersect function, find crossed cell numbers (gridnos) and coordinates of intersection (2 per crossed cell)
-    intersect_pd = polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=calcdist_fromlatlon)
-    if len(intersect_pd) == 0:
-        raise Exception('line_array does not cross mapdata') #TODO: move exception elsewhere?
-    #derive vertices from cross section (distance from first point)
-    
-    face_index = intersect_pd.index.values
-    crs_dist_starts = intersect_pd['crs_dist_starts'].values
-    crs_dist_stops = intersect_pd['crs_dist_stops'].values
-    xr_crs_ugrid = get_xzcoords_onintersection(uds = data_frommap_merged, face_index=face_index, crs_dist_starts=crs_dist_starts, crs_dist_stops=crs_dist_stops)
-    return xr_crs_ugrid
+def polyline_mapslice(uds:xu.UgridDataset, line_array:np.array, calcdist_fromlatlon:bool = None) -> xu.UgridDataset:
+    """
+    Slice trough mapdata, combine: intersect_edges_withsort, calculation of distances and conversion to ugrid dataset.
 
+    Parameters
+    ----------
+    uds : xu.UgridDataset
+        DESCRIPTION.
+    line_array : np.array
+        DESCRIPTION.
+    calcdist_fromlatlon : bool, optional
+        DESCRIPTION. The default is None.
 
-def polyline_mapslice2(uds, line_array, calcdist_fromlatlon=None): #TODO: replacement of polygon_mapslice, deprecate the old function, maybe wait until intersect_edges_withsort is in xugrid code
-    #intersect function, find crossed cell numbers (gridnos) and coordinates of intersection (2 per crossed cell)
-    #intersect_pd_backup = dfmt.polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=calcdist_fromlatlon)
+    Raises
+    ------
+    Exception
+        DESCRIPTION.
+
+    Returns
+    -------
+    xr_crs_ugrid : xu.UgridDataset
+        DESCRIPTION.
+
+    """
     
+    #compute intersection coordinates of crossings between edges and faces and their respective indices
     edges = np.stack([line_array[:-1],line_array[1:]],axis=1)
     edge_index, face_index, intersections = intersect_edges_withsort(uds=uds, edges=edges)
     if len(edge_index) == 0:
         raise Exception('polyline does not cross mapdata')
-
-    #compute pyt/haversine start/stop distances for all intersections
+    
+    #auto determine if cartesian/sperical distance should be computed
     if calcdist_fromlatlon is None:
-        #auto determine if cartesian/sperical
         if hasattr(uds,'projected_coordinate_system'):
             calcdist_fromlatlon = False
         elif hasattr(uds,'wgs84'):
             calcdist_fromlatlon = True
         else:
             raise Exception('To auto determine calcdist_fromlatlon, a variable "projected_coordinate_system" or "wgs84" is required, please provide calcdist_fromlatlon=True/False yourself.')
-
-    if not calcdist_fromlatlon:
-        #edge_len = np.linalg.norm(edges[:,1] - edges[:,0], axis=1) #also works
-        edge_len = calc_dist_pythagoras(edges[:,0,0], edges[:,1,0], edges[:,0,1], edges[:,1,1])
-        edge_len_cum = np.cumsum(edge_len)
-        edge_len_cum0 = np.concatenate([[0],edge_len_cum[:-1]])
-        #crs_dist_starts = np.linalg.norm(intersections[:,0,:] - edges[edge_index,0,:], axis=1) + edge_len_cum0[edge_index] #also works
-        #crs_dist_stops = np.linalg.norm(intersections[:,1,:] - edges[edge_index,0,:], axis=1) + edge_len_cum0[edge_index] #also works
-        crs_dist_starts = calc_dist_pythagoras(edges[edge_index,0,0], intersections[:,0,0], edges[edge_index,0,1], intersections[:,0,1]) + edge_len_cum0[edge_index]
-        crs_dist_stops  = calc_dist_pythagoras(edges[edge_index,0,0], intersections[:,1,0], edges[edge_index,0,1], intersections[:,1,1]) + edge_len_cum0[edge_index]
+    if calcdist_fromlatlon:
+        calc_dist = calc_dist_haversine
     else:
-        edge_len = calc_dist_haversine(edges[:,0,0], edges[:,1,0], edges[:,0,1], edges[:,1,1])
-        edge_len_cum = np.cumsum(edge_len)
-        edge_len_cum0 = np.concatenate([[0],edge_len_cum[:-1]])
-        crs_dist_starts = calc_dist_haversine(edges[edge_index,0,0], intersections[:,0,0], edges[edge_index,0,1], intersections[:,0,1]) + edge_len_cum0[edge_index]
-        crs_dist_stops  = calc_dist_haversine(edges[edge_index,0,0], intersections[:,1,0], edges[edge_index,0,1], intersections[:,1,1]) + edge_len_cum0[edge_index]
+        calc_dist = calc_dist_pythagoras
+    
+    #compute pyt/haversine start/stop distances for all intersections
+    print('edge_index')
+    print(edge_index)
+    print('edges')
+    print(edges)
+    print('intersections')
+    print(intersections)
+    edge_len = calc_dist(edges[:,0,0], edges[:,1,0], edges[:,0,1], edges[:,1,1])
+    edge_len_cum = np.cumsum(edge_len)
+    edge_len_cum0 = np.concatenate([[0],edge_len_cum[:-1]])
+    crs_dist_starts = calc_dist(edges[edge_index,0,0], intersections[:,0,0], edges[edge_index,0,1], intersections[:,0,1]) + edge_len_cum0[edge_index]
+    crs_dist_stops  = calc_dist(edges[edge_index,0,0], intersections[:,1,0], edges[edge_index,0,1], intersections[:,1,1]) + edge_len_cum0[edge_index]
     
     #derive vertices from cross section (distance from first point)
     xr_crs_ugrid = get_xzcoords_onintersection(uds=uds, face_index=face_index, crs_dist_starts=crs_dist_starts, crs_dist_stops=crs_dist_stops)
+    
     return xr_crs_ugrid
 
 
@@ -429,8 +315,6 @@ def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str ='z0', z
         Dataset with the depth-sliced variables.
 
     """
-    
-    
     
     depth_vardimname = f'depth_from_{reference}'
     
