@@ -75,7 +75,7 @@ def download_ERA5(varkey,
 
 
 def open_OPeNDAP_xr(dataset_url,
-                    credentials=None): #for CMEMS. credentials=['username','password'], or create "%USER%/CMEMS_credentials.txt" with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form'
+                    credentials=None): #for CMEMS. credentials=['username','password'], or create "%USERPROFILE%/CMEMS_credentials.txt" with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form'
     
     """
     How to get the opendap dataset_url (CMEMS example):
