@@ -224,6 +224,12 @@ def polyline_mapslice(uds:xu.UgridDataset, line_array:np.array, calcdist_fromlat
         calc_dist = calc_dist_pythagoras
     
     #compute pyt/haversine start/stop distances for all intersections
+    print('edge_index')
+    print(edge_index)
+    print('edges')
+    print(edges)
+    print('intersections')
+    print(intersections)
     edge_len = calc_dist(edges[:,0,0], edges[:,1,0], edges[:,0,1], edges[:,1,1])
     edge_len_cum = np.cumsum(edge_len)
     edge_len_cum0 = np.concatenate([[0],edge_len_cum[:-1]])

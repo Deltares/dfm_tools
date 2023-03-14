@@ -98,6 +98,9 @@ def test_cartopy_epsg():
 
 @pytest.mark.unittest
 def test_calc_dist_pythagoras():
+    """
+    all crossings for cb3 and testline (which has linebend in cell en with line crosses same cell twice)
+    """
     edge_index = np.array([0,0,0,1,1,1,2,2])
 
     edges = np.array([[[2084.67741935, 3353.02419355],
@@ -135,8 +138,68 @@ def test_calc_dist_pythagoras():
     crs_dist_stops_check = np.array([ 61.57239204, 122.01963352, 177.15945184, 205.03584892,
                                      230.21050794, 283.15313349, 341.63128877, 394.23622869])
     
-    assert (crs_dist_starts == crs_dist_starts_check).all()
-    assert (crs_dist_stops == crs_dist_stops_check).all()
+    assert np.allclose(crs_dist_starts, crs_dist_starts_check)
+    assert np.allclose(crs_dist_stops, crs_dist_stops_check)
+
+
+@pytest.mark.unittest
+def test_calc_dist_haversine():
+    """
+    first 15 crossings for DSCM
+    """
+    edge_index = np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0])
+ 
+    edges = np.array([[[ 8.92659074, 56.91538014],
+                       [ 8.58447136, 58.66874192]]])
+  
+    intersections = np.array([[[ 8.8856893 , 57.125     ],
+                               [ 8.88406329, 57.13333333]],
+                              [[ 8.88406329, 57.13333333],
+                               [ 8.88243727, 57.14166667]],
+                              [[ 8.88243727, 57.14166667],
+                               [ 8.88081125, 57.15      ]],
+                              [[ 8.88081125, 57.15      ],
+                               [ 8.87918524, 57.15833333]],
+                              [[ 8.87918524, 57.15833333],
+                               [ 8.87755922, 57.16666667]],
+                              [[ 8.87755922, 57.16666667],
+                               [ 8.87593321, 57.175     ]],
+                              [[ 8.87593321, 57.175     ],
+                               [ 8.875     , 57.17978268]],
+                              [[ 8.875     , 57.17978268],
+                               [ 8.87430719, 57.18333333]],
+                              [[ 8.87430719, 57.18333333],
+                               [ 8.87268117, 57.19166667]],
+                              [[ 8.87268117, 57.19166667],
+                               [ 8.87105516, 57.2       ]],
+                              [[ 8.87105516, 57.2       ],
+                               [ 8.86942914, 57.20833333]],
+                              [[ 8.86942914, 57.20833333],
+                               [ 8.86780312, 57.21666667]],
+                              [[ 8.86780312, 57.21666667],
+                               [ 8.86617711, 57.225     ]],
+                              [[ 8.86617711, 57.225     ],
+                               [ 8.86455109, 57.23333333]],
+                              [[ 8.86455109, 57.23333333],
+                               [ 8.86292507, 57.24166667]]])
+    
+    edge_len = dfmt.calc_dist_haversine(edges[:,0,0], edges[:,1,0], edges[:,0,1], edges[:,1,1])
+    edge_len_cum = np.cumsum(edge_len)
+    edge_len_cum0 = np.concatenate([[0],edge_len_cum[:-1]])
+    crs_dist_starts = dfmt.calc_dist_haversine(edges[edge_index,0,0], intersections[:,0,0], edges[edge_index,0,1], intersections[:,0,1]) + edge_len_cum0[edge_index]
+    crs_dist_stops  = dfmt.calc_dist_haversine(edges[edge_index,0,0], intersections[:,1,0], edges[edge_index,0,1], intersections[:,1,1]) + edge_len_cum0[edge_index]
+    
+    crs_dist_starts_check = np.array([23439.77082715, 24371.57628696, 25303.38057682, 26235.18142118,
+                                      27166.97986164, 28098.77713142, 29030.57089118, 29565.34666042,
+                                      29962.36237409, 30894.15262176, 31825.93935877, 32757.7238182 ,
+                                      33689.50704171, 34621.28675393, 35553.06418784])
+    crs_dist_stops_check = np.array([24371.57628696, 25303.38057682, 26235.18142118, 27166.97986164,
+                                     28098.77713142, 29030.57089118, 29565.34666042, 29962.36237409,
+                                     30894.15262176, 31825.93935877, 32757.7238182 , 33689.50704171,
+                                     34621.28675393, 35553.06418784, 36484.84038514])
+    
+    assert np.allclose(crs_dist_starts, crs_dist_starts_check)
+    assert np.allclose(crs_dist_stops, crs_dist_stops_check)
 
 
 @pytest.mark.unittest
