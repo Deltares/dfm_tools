@@ -81,7 +81,7 @@ for varkey in varlist_cmems:
     file_prefix = 'cmems_'
     
     dfmt.download_OPeNDAP(dataset_url=dataset_url,
-                          credentials=None, #credentials=['username','password'], or create "%USER%/motucredentials.txt" with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form'
+                          credentials=None, #credentials=['username','password'], or create "%USERPROFILE%/CMEMS_credentials.txt" with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form'
                           varkey=varkey,
                           longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
                           date_min=date_min_cmems, date_max=date_max,
