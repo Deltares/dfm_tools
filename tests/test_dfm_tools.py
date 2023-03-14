@@ -36,8 +36,7 @@ def test_run_examples(file_config):
     if not os.path.exists(dir_output):
         os.mkdir(dir_output)
     os.chdir(dir_output)
-    #test = os.system("python {0} > {1}/FILE_DIAGNOSTICS.txt 2>&1".format(file_config, dir_output))#+ " & pause")
-    test = os.system("python {0}".format(file_config))#+ " & pause")
+    test = os.system(f'python {file_config}')#+ " & pause")
     
     if test:
         raise Exception('execution did not finish properly')

@@ -86,6 +86,30 @@ def calc_dist_haversine(lon1,lon2,lat1,lat2):
     return distance
 
 
+def intersect_edges_withsort(uds,edges): #TODO: move sorting to xugrid? https://deltares.github.io/xugrid/api/xugrid.Ugrid2d.intersect_edges.html
+    
+    edge_index, face_index, intersections = uds.grid.intersect_edges(edges) #TODO: is fast, but maybe speed can be increased with bounding box?
+    
+    #ordering of face_index is wrong (visible with cb3 with long line_array), so sort on distance from startpoint (in x/y units)
+    
+    #compute distance from start of line to start of each linepart
+    edge_len = np.linalg.norm(edges[:,1] - edges[:,0], axis=1)
+    edge_len_cum = np.cumsum(edge_len)
+    edge_len_cum0 = np.concatenate([[0],edge_len_cum[:-1]])
+    
+    #compute distance from start to lineparts to start of line (via line)
+    startcoord_linepart = edges[edge_index,0,:]
+    dist_tostart_linepart = np.linalg.norm(intersections[:,0,:] - startcoord_linepart, axis=1)
+    dist_tostart_line = dist_tostart_linepart + edge_len_cum0[edge_index]
+    
+    #sorting on distance
+    id_sorted = np.argsort(dist_tostart_line)
+    edge_index = edge_index[id_sorted]
+    face_index = face_index[id_sorted]
+    intersections = intersections[id_sorted]
+    return edge_index, face_index, intersections
+
+
 def polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=None):
     #data_frommap_merged: xugrid dataset (contains ds and grid)
     #TODO: remove hardcoding
@@ -208,7 +232,7 @@ def polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=None)
     return intersect_pd
 
 
-def get_xzcoords_onintersection(uds, intersect_pd):
+def get_xzcoords_onintersection(uds, face_index, crs_dist_starts, crs_dist_stops):
     #TODO: remove hardcoding of variable names
     if 'time' in uds.dims: #TODO: maybe make time dependent grid?
         raise Exception('time dimension present in uds, provide uds.isel(time=timestep) instead. This is necessary to retrieve correct waterlevel or fullgrid output')
@@ -218,13 +242,13 @@ def get_xzcoords_onintersection(uds, intersect_pd):
         nlay = uds.dims[dimn_layer]
     else: #no layers, 2D model
         nlay = 1
-
+    
     xu_facedim = uds.grid.face_dimension
     xu_edgedim = uds.grid.edge_dimension
     xu_nodedim = uds.grid.node_dimension
-        
+    
     #potentially construct fullgrid info (zcc/zw) #TODO: this ifloop is copied from get_mapdata_atdepth(), prevent this duplicate code
-    if dimn_layer not in uds.dims: #2D model
+    if dimn_layer not in uds.dims: #2D model #TODO: maybe add layer-dummydim to ds facevars and put zvals_interface as variable in dataset (would make function slightly more generic)
         print('depth dimension not found, probably 2D model')
         pass
     elif 'mesh2d_flowelem_zw' in uds.variables: #fullgrid info already available, so continuing
@@ -239,10 +263,9 @@ def get_xzcoords_onintersection(uds, intersect_pd):
     else:
         raise Exception('layers present, but unknown layertype, expected one of variables: mesh2d_flowelem_zw, mesh2d_layer_sigma, mesh2d_layer_z')
     
-    #intersect_pd = intersect_pd.sort_index() #necesssary for uds.sel
-    intersect_gridnos = intersect_pd.index
-    data_frommap_merged_sel = uds.drop_dims([xu_edgedim,xu_nodedim]).ugrid.obj.isel({xu_facedim:intersect_gridnos})
-    #data_frommap_merged_sel = uds.sel({xu_facedim:intersect_gridnos}) #TODO: does not work for RMM
+    face_index_xr = xr.DataArray(face_index,dims=('ncrossed_faces'))
+    data_frommap_merged_sel = uds.sel({xu_facedim:face_index_xr})
+    
     if dimn_layer not in uds.dims: #2D model #TODO: add escape for missing wl/bl vars
         data_frommap_wl3_sel = data_frommap_merged_sel['mesh2d_s1'].to_numpy()
         data_frommap_bl_sel = data_frommap_merged_sel['mesh2d_flowelem_bl'].to_numpy()
@@ -252,8 +275,8 @@ def get_xzcoords_onintersection(uds, intersect_pd):
         zvals_interface = zvals_interface_filled.to_numpy().T # transpose to make in line with 2D sigma dataset
     
     #convert to output for plot_netmapdata
-    crs_dist_starts_matrix = np.repeat(intersect_pd['crs_dist_starts'].values[np.newaxis],nlay,axis=0)
-    crs_dist_stops_matrix = np.repeat(intersect_pd['crs_dist_stops'].values[np.newaxis],nlay,axis=0)
+    crs_dist_starts_matrix = np.repeat(crs_dist_starts[np.newaxis],nlay,axis=0)
+    crs_dist_stops_matrix = np.repeat(crs_dist_stops[np.newaxis],nlay,axis=0)
     crs_verts_x_all = np.array([[crs_dist_starts_matrix.ravel(),crs_dist_stops_matrix.ravel(),crs_dist_stops_matrix.ravel(),crs_dist_starts_matrix.ravel()]]).T
     crs_verts_z_all = np.ma.array([zvals_interface[1:,:].ravel(),zvals_interface[1:,:].ravel(),zvals_interface[:-1,:].ravel(),zvals_interface[:-1,:].ravel()]).T[:,:,np.newaxis]
     crs_verts = np.ma.concatenate([crs_verts_x_all, crs_verts_z_all], axis=2)
@@ -268,14 +291,12 @@ def get_xzcoords_onintersection(uds, intersect_pd):
                              )
 
     #define dataset
-    crs_plotdata_clean = data_frommap_merged_sel#.ugrid.obj.drop_dims([xu_edgedim,xu_nodedim]) #TODO: dropping dims is necessary to avoid "ValueError". This is since we are constructing new nodes/edges here. How to do neatly?
+    crs_plotdata_clean = data_frommap_merged_sel.drop_dims([xu_edgedim,xu_nodedim]) #TODO: dropping dims is necessary to avoid "ValueError". This is since we are constructing new nodes/edges here. How to do neatly?
     if dimn_layer in data_frommap_merged_sel.dims:
-        facedim_tempname = 'facedim_tempname' #temporary new name to avoid duplicate from-to dimension name in .stack()
-        crs_plotdata_clean = crs_plotdata_clean.rename({xu_facedim:facedim_tempname})
-        crs_plotdata_clean = crs_plotdata_clean.stack({xr_crs_grid.face_dimension:[dimn_layer,facedim_tempname]})
-        #reset_index converts face-dimension from multiindex to flat
-        crs_plotdata_clean = crs_plotdata_clean.reset_index([xr_crs_grid.face_dimension])
-    
+        crs_plotdata_clean = crs_plotdata_clean.stack({xr_crs_grid.face_dimension:[dimn_layer,'ncrossed_faces']},create_index=False)
+    else: #2D: still make sure xr_crs_grid.face_dimension is created, using stack since .rename() gives "UserWarning: rename 'ncrossed_faces' to 'mesh2d_nFaces' does not create an index anymore."
+        crs_plotdata_clean = crs_plotdata_clean.stack({xr_crs_grid.face_dimension:['ncrossed_faces']},create_index=False)
+                    
     #combine into xugrid
     xr_crs_ugrid = xu.UgridDataset(crs_plotdata_clean, grids=[xr_crs_grid])
     return xr_crs_ugrid
@@ -287,7 +308,51 @@ def polyline_mapslice(data_frommap_merged, line_array, calcdist_fromlatlon=None)
     if len(intersect_pd) == 0:
         raise Exception('line_array does not cross mapdata') #TODO: move exception elsewhere?
     #derive vertices from cross section (distance from first point)
-    xr_crs_ugrid = get_xzcoords_onintersection(data_frommap_merged, intersect_pd=intersect_pd)
+    
+    face_index = intersect_pd.index.values
+    crs_dist_starts = intersect_pd['crs_dist_starts'].values
+    crs_dist_stops = intersect_pd['crs_dist_stops'].values
+    xr_crs_ugrid = get_xzcoords_onintersection(uds = data_frommap_merged, face_index=face_index, crs_dist_starts=crs_dist_starts, crs_dist_stops=crs_dist_stops)
+    return xr_crs_ugrid
+
+
+def polyline_mapslice2(uds, line_array, calcdist_fromlatlon=None): #TODO: replacement of polygon_mapslice, deprecate the old function, maybe wait until intersect_edges_withsort is in xugrid code
+    #intersect function, find crossed cell numbers (gridnos) and coordinates of intersection (2 per crossed cell)
+    #intersect_pd_backup = dfmt.polygon_intersect(data_frommap_merged, line_array, calcdist_fromlatlon=calcdist_fromlatlon)
+    
+    edges = np.stack([line_array[:-1],line_array[1:]],axis=1)
+    edge_index, face_index, intersections = intersect_edges_withsort(uds=uds, edges=edges)
+    if len(edge_index) == 0:
+        raise Exception('polyline does not cross mapdata')
+
+    #compute pyt/haversine start/stop distances for all intersections
+    if calcdist_fromlatlon is None:
+        #auto determine if cartesian/sperical
+        if hasattr(uds.ugrid.obj,'projected_coordinate_system'):
+            calcdist_fromlatlon = False
+        elif hasattr(uds.ugrid.obj,'wgs84'):
+            calcdist_fromlatlon = True
+        else:
+            raise Exception('To auto determine calcdist_fromlatlon, a variable "projected_coordinate_system" or "wgs84" is required, please provide calcdist_fromlatlon=True/False yourself.')
+
+    if not calcdist_fromlatlon:
+        #edge_len = np.linalg.norm(edges[:,1] - edges[:,0], axis=1) #also works
+        edge_len = calc_dist_pythagoras(edges[:,0,0], edges[:,1,0], edges[:,0,1], edges[:,1,1])
+        edge_len_cum = np.cumsum(edge_len)
+        edge_len_cum0 = np.concatenate([[0],edge_len_cum[:-1]])
+        #crs_dist_starts = np.linalg.norm(intersections[:,0,:] - edges[edge_index,0,:], axis=1) + edge_len_cum0[edge_index] #also works
+        #crs_dist_stops = np.linalg.norm(intersections[:,1,:] - edges[edge_index,0,:], axis=1) + edge_len_cum0[edge_index] #also works
+        crs_dist_starts = calc_dist_pythagoras(edges[edge_index,0,0], intersections[:,0,0], edges[edge_index,0,1], intersections[:,0,1]) + edge_len_cum0[edge_index]
+        crs_dist_stops  = calc_dist_pythagoras(edges[edge_index,0,0], intersections[:,1,0], edges[edge_index,0,1], intersections[:,1,1]) + edge_len_cum0[edge_index]
+    else:
+        edge_len = calc_dist_haversine(edges[:,0,0], edges[:,1,0], edges[:,0,1], edges[:,1,1])
+        edge_len_cum = np.cumsum(edge_len)
+        edge_len_cum0 = np.concatenate([[0],edge_len_cum[:-1]])
+        crs_dist_starts = calc_dist_haversine(edges[edge_index,0,0], intersections[:,0,0], edges[edge_index,0,1], intersections[:,0,1]) + edge_len_cum0[edge_index]
+        crs_dist_stops  = calc_dist_haversine(edges[edge_index,0,0], intersections[:,1,0], edges[edge_index,0,1], intersections[:,1,1]) + edge_len_cum0[edge_index]
+    
+    #derive vertices from cross section (distance from first point)
+    xr_crs_ugrid = get_xzcoords_onintersection(uds=uds, face_index=face_index, crs_dist_starts=crs_dist_starts, crs_dist_stops=crs_dist_stops)
     return xr_crs_ugrid
 
 
@@ -385,7 +450,7 @@ def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str ='z0', z
         varname_wl = 'waterlevel'
         varname_bl = 'bedlevel'
     else:
-        print(UserWarning('depth/layer dimension not found, probably 2D model, returning input Dataset'))
+        print(UserWarning('depth/layer dimension not found, probably 2D model, returning input Dataset')) #TODO: this can also be at depth, since slice will put parts of model dry (and allnan if below wl or below bl). Implement this
         return data_xr #early return
     
     if reference=='waterlevel' and varname_wl not in data_xr.variables:
