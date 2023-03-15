@@ -1,0 +1,42 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: pytest-py39
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: checkout repos
+      uses: actions/checkout@v2
+    - name: Install dependencies
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        activate-environment: dfm_tools_env
+        environment-file: environment.yml
+        channels: conda-forge
+        python-version: 3.9
+        auto-activate-base: false
+    - name: test conda env
+      run: |
+        conda info
+        conda list
+    - name: Lint with flake8
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    - name: Test with pytest
+      run: |
+        pytest -m "not acceptance" --cov=dfm_tools
