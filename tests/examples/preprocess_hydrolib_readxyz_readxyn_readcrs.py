@@ -15,13 +15,13 @@ import hydrolib.core.dflowfm as hcdfm
 dir_output = '.'
 
 file_xyz = r'p:\archivedprojects\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\geometry_j19_NL_6-v2\rmm_vzm_v1p1_initial_water_level.xyz'
-#file_xyz = r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\general\diffusivity_rivzee_v6.xyz' #TODO: xyz file with initial whitespaces is not read properly: https://github.com/Deltares/HYDROLIB-core/issues/415
+#file_xyz = r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\general\diffusivity_rivzee_v6.xyz'
 
 data_xyz = hcdfm.XYZModel(Path(file_xyz))
 xyz_pd = dfmt.pointlike_to_DataFrame(data_xyz)
 
 fig,ax = plt.subplots()
-xyz_pd.plot.scatter(x='x',y='y',c='z',s=0.5,ax=ax,vmin=-1,vmax=1)
+xyz_pd.plot.scatter(x='x',y='y',c='z',s=0.5,ax=ax)#,vmin=-1,vmax=1)
 fig.tight_layout()
 fig.savefig(os.path.join(dir_output,os.path.basename(file_xyz).replace('.','')))
 
