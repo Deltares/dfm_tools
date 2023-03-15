@@ -43,9 +43,9 @@ def test_run_examples(file_config):
 def test_facenodecoordinates_shape(file_nc, expected_size):
     
     uds = dfmt.open_partitioned_dataset(file_nc)
-    fnc = uds.grid.face_node_coordinates
+    facenodecoordinates = uds.grid.face_node_coordinates
     
-    assert fnc.shape == expected_size
+    assert facenodecoordinates.shape == expected_size
 
 
 @pytest.mark.parametrize("file_nc, varname, expected_size", [pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0*_map.nc'), 'mesh2d_sa1', (44796, 36), id='from partitioned map Grevelingen'),
