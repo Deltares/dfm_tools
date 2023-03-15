@@ -23,7 +23,7 @@ fm = hcdfm.FMModel(file_mdu) #TODO: works, but many mdu-lines are comented, so u
 
 
 file_struct = Path(r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_structures.ini')
-structs = hcdfm.StructureModel(file_struct) #TODO SOLVED with : pli in structures.ini is currently not supported: https://github.com/Deltares/HYDROLIB-core/issues/353
+structs = hcdfm.StructureModel(file_struct)
 for struct in structs.structure:
     print(struct.id)
 #structs.save('tst.ini') #TODO: how to get xydata from plifile in structuremodel?
