@@ -4,7 +4,7 @@ matplotlib
 pandas
 hydrolib-core>=0.4.0
 #meshkernel>=2.0.0
-shapely
+shapely>=1.7.0
 cartopy
 pyepsg
 geopandas

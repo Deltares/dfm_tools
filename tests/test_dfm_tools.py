@@ -3,35 +3,26 @@
 """Tests for dfm_tools package environment"""
 
 import pytest
-#import inspect
 import os
 import glob
-from packaging import version
-
 import dfm_tools as dfmt
 import numpy as np
-import datetime as dt
-import pandas as pd
-from netCDF4 import Dataset
-import xarray as xr
 
 dir_testinput = os.path.join(r'c:\DATA','dfm_tools_testdata')
-dir_tests = os.path.dirname(__file__) #F9 doesnt work, only F5 (F5 also only method to reload external definition scripts)
+
 
 # ACCEPTANCE TESTS VIA EXAMPLE SCRIPTS, these are the ones who are only meant to generate output files
+
+dir_tests = os.path.dirname(__file__) #F9 doesnt work, only F5 (F5 also only method to reload external definition scripts)
 list_configfiles = glob.glob(os.path.join(dir_tests,'examples','*.py')) + glob.glob(os.path.join(dir_tests,'examples_workinprogress','*.py'))
 dir_output_general = os.path.join(dir_tests,'examples_output')
 if not os.path.exists(dir_output_general):
     os.mkdir(dir_output_general)
 
-
 @pytest.mark.requiresdata
 @pytest.mark.acceptance
 @pytest.mark.parametrize("file_config", [pytest.param(file_config, id=os.path.basename(file_config).replace('.py','')) for file_config in list_configfiles])
 def test_run_examples(file_config):
-    """
-    file_config = os.path.join(dir_tests,'configfiles','predictie_2019_b02ex2_19Ycomp4Ydia_CUXHVN_test.py')
-    """
     # 1. Set up test data
     dir_output = os.path.join(dir_output_general,os.path.basename(file_config).replace('.py',''))
     if not os.path.exists(dir_output):
@@ -45,32 +36,6 @@ def test_run_examples(file_config):
 
 ##### UNITTESTS AND SYSTEMTESTS
 
-modulename_list = ['os','sys','glob','shutil','scipy','numpy','datetime','pandas','matplotlib','netCDF4','click','shapely','shapely.geometry','cartopy','pyepsg'] #TODO: add xarray etc
-@pytest.mark.parametrize("modulename", [pytest.param('%s'%(stat), id='%s'%(stat)) for stat in modulename_list])
-@pytest.mark.unittest
-def test_import_libraries(modulename):
-    """
-    tests whether shapely can be imported successfully, this is a problem in some environments
-    in that case 'import shapely' works, but import 'shapely.geometry' fails
-    """
-    def try_importmodule(modulename=None):
-        command = '\t- open command window (or anaconda prompt)\n\t- conda activate dfm_tools_env\n\t- conda install -c conda-forge %s'%(modulename)
-    
-        try:
-            exec('import %s'%(modulename))
-        except:
-            raise Exception('ERROR: module %s not found, do the following:\n%s'%(modulename, command))
-        if modulename == 'shapely':
-            try:
-                import shapely.geometry
-            except:
-                raise Exception('ERROR: cannot execute "import shapely.geometry", do the following:\n%s'%(command))
-            if version.parse(shapely.__version__) < version.parse('1.7.0'):
-                raise Exception(f'ERROR: incorrect shapely version ({shapely.__version__}), should be 1.7.0 or higher, do the following:\n{command}')
-    
-    try_importmodule(modulename=modulename)
-
-
 @pytest.mark.parametrize("file_nc, expected_size", [pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'), (5599,3,2), id='from 1 map partion Grevelingen'),
                                                     pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\Grevelingen_FM_grid_20190603_net.nc'), (44804,4,2), id='fromnet Grevelingen')])
 @pytest.mark.requiresdata
@@ -78,9 +43,9 @@ def test_import_libraries(modulename):
 def test_facenodecoordinates_shape(file_nc, expected_size):
     
     uds = dfmt.open_partitioned_dataset(file_nc)
-    fnc = uds.grid.face_node_coordinates
+    facenodecoordinates = uds.grid.face_node_coordinates
     
-    assert fnc.shape == expected_size
+    assert facenodecoordinates.shape == expected_size
 
 
 @pytest.mark.parametrize("file_nc, varname, expected_size", [pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0*_map.nc'), 'mesh2d_sa1', (44796, 36), id='from partitioned map Grevelingen'),
