@@ -276,12 +276,6 @@ def polyline_mapslice(uds:xu.UgridDataset, line_array:np.array, calcdist_fromlat
         calc_dist = calc_dist_pythagoras
     
     #compute pyt/haversine start/stop distances for all intersections
-    print(&#39;edge_index&#39;)
-    print(edge_index)
-    print(&#39;edges&#39;)
-    print(edges)
-    print(&#39;intersections&#39;)
-    print(intersections)
     edge_len = calc_dist(edges[:,0,0], edges[:,1,0], edges[:,0,1], edges[:,1,1])
     edge_len_cum = np.cumsum(edge_len)
     edge_len_cum0 = np.concatenate([[0],edge_len_cum[:-1]])
@@ -909,12 +903,6 @@ def plot_ztdata(data_xr_sel, varname, ax=None, only_contour=False, get_ds=False,
         calc_dist = calc_dist_pythagoras
     
     #compute pyt/haversine start/stop distances for all intersections
-    print(&#39;edge_index&#39;)
-    print(edge_index)
-    print(&#39;edges&#39;)
-    print(edges)
-    print(&#39;intersections&#39;)
-    print(intersections)
     edge_len = calc_dist(edges[:,0,0], edges[:,1,0], edges[:,0,1], edges[:,1,1])
     edge_len_cum = np.cumsum(edge_len)
     edge_len_cum0 = np.concatenate([[0],edge_len_cum[:-1]])
