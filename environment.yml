@@ -23,4 +23,9 @@ dependencies:
   - pydap
   - pip:
     - hydrolib-core>=0.4.0
-
+    - pytest
+    - pytest-cov
+    - jupyter
+    - notebook
+    - bumpversion
+    - twine
