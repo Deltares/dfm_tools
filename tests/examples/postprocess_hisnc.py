@@ -34,13 +34,11 @@ for file_nc in file_nc_list:
     vars_pd = dfmt.get_ncvarproperties(data_xr)
     
     if 'Grevelingen-FM_0000' in file_nc:
-        #file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_his.nc')
         stations_requested = ['GTSO-01','GTSO-02','GTSO-03','GTSO-04','GTSO-05','GTSO-06','GTSO-07',
                               'GTSO-08','GTSO-09','GTSO-10','GTSO-11','GTSO-12','GTSO-13','GTSO-14',
                               'GTSO-15','GTSO-16','GTSO-17','GTSO-18','GTSO-19','GTSO-20',
                               'Bommenede','Grevelingen hevel West','Brouwerssluis binnen','Brouwerssluis binnen-hand']
     elif 'tttz' in file_nc: #NITHIN
-        #file_nc = os.path.join(dir_testinput,'vanNithin','tttz_0000_his.nc')
         stations_requested = ['Peiraias', 'Ovrios_2','Ovrios','Ovrios','Ortholithi']
     elif 'impaqt' in file_nc:
         stations_requested = ['MO_TS_MO_ATHOS','MO_TS_MO_LESVO','MO_TS_MO_SKYRO','IOC_thes','farm_impaqt']
