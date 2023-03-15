@@ -35,7 +35,7 @@ elif model=='TTTZ':
     times_idx = None #one timestep in TTTZ model
     layers_idx = [45,46]
     varname_list = ['mesh2d_s1','mesh2d_sa1']#, 'mesh2d_ucx', 'mesh2d_ucy', 'mesh2d_tem1', 'mesh2d_sa1', 'mesh2d_water_quality_output_17', 'mesh2d_OXY']
-dir_output = './data_output'
+dir_output = './mapfile_to_regulargrid'
 outname = os.path.basename(file_nc).replace('.nc','_regular.nc')
 
 """
