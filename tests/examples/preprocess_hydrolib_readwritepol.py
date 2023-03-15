@@ -28,16 +28,17 @@ file_pli_list = [Path(dir_testinput,'world.ldb'),
                  Path(dir_testinput,'GSHHS_high_min1000km2.ldb'), #works but slow
                  #Path(dir_testinput,'DFM_3D_z_Grevelingen\\geometry\\structures\\Grevelingen-FM_BL_fxw.pli'),
                  Path(dir_testinput,'DFM_3D_z_Grevelingen\\geometry\\structures\\Grevelingen-FM_BL_fxw.pliz'), #results also in data property of Points (not only xy)
-                 #Path(dir_testinput,r'ballenplot\SDS-zd003b5dec2-sal.tek'), #TODO: UserWarning: Expected valid dimensions at line 14. (3D file). Request support for 3D file?
+                 #Path(dir_testinput,r'ballenplot\SDS-zd003b5dec2-sal.tek'), #TODO: "ValueError: Expected valid dimensions at line 14". Request support for 3D file?
                  Path(dir_testinput,r'ballenplot\SDS-zd003b5dec2-sal_2D.tek'), #solved by removing 3rd dim, but than layers are sort of lost
-                 #Path(dir_testinput,r'ballenplot\0200a.tek'), #TODO: UserWarning: Expected valid dimensions at line 6. (3D file). Request support for 3D file?
+                 #Path(dir_testinput,r'ballenplot\0200a.tek'), #TODO: "ValueError: Expected valid dimensions at line 6". Request support for 3D file?
                  Path(dir_testinput,r'ballenplot\0200a_2D.tek'), #solved by removing 3rd dim, but than layers are sort of lost
                  #Path(dir_testinput,r'Gouda.tek'), #works (but slow since it is a large file)
                  Path(dir_testinput,r'Maeslant.tek'), #works
-                 #Path(dir_testinput,r'ballenplot\nima-1013-lo-wl.tek'), # UserWarning: Expected a valid name or description at line 3. (name contains spaces and brackets)
+                 #Path(dir_testinput,r'ballenplot\nima-1013-lo-wl.tek'), # TODO: "ValueError: Expected a valid name or description at line 3". (name contains spaces and brackets)
                  Path(dir_testinput,r'ballenplot\nima-1013-lo-wl_validname.tek'), # works
                  Path(dir_testinput,r'test_new.tek'), # works
                  ]
+
 
 for file_pli in file_pli_list:
     #load pol/tek/pli/ldb file
