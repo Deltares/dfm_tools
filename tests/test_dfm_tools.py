@@ -25,6 +25,7 @@ if not os.path.exists(dir_output_general):
     os.mkdir(dir_output_general)
 
 
+@pytest.mark.requiresdata
 @pytest.mark.acceptance
 @pytest.mark.parametrize("file_config", [pytest.param(file_config, id=os.path.basename(file_config).replace('.py','')) for file_config in list_configfiles])
 def test_run_examples(file_config):
@@ -72,6 +73,7 @@ def test_import_libraries(modulename):
 
 @pytest.mark.parametrize("file_nc, expected_size", [pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc'), (5599,3,2), id='from 1 map partion Grevelingen'),
                                                     pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\Grevelingen_FM_grid_20190603_net.nc'), (44804,4,2), id='fromnet Grevelingen')])
+@pytest.mark.requiresdata
 @pytest.mark.systemtest
 def test_facenodecoordinates_shape(file_nc, expected_size):
     
@@ -85,6 +87,7 @@ def test_facenodecoordinates_shape(file_nc, expected_size):
                                                              pytest.param(os.path.join(r'p:\archivedprojects\11203850-coastserv\06-Model\waq_model\simulations\run0_20200319\DFM_OUTPUT_kzn_waq', 'kzn_waq_0*_map.nc'), 'Chlfa', (17385, 39), id='from partitioned waq map coastserv'),
                                                              #pytest.param(r'p:\11205258-006-kpp2020_rmm-g6\C_Work\01_Rooster\final_totaalmodel\rooster_rmm_v1p5_net.nc', 'mesh2d_face_x', (44804,), id='fromnet RMM'), #no time dimension
                                                              ])
+@pytest.mark.requiresdata
 @pytest.mark.unittest
 def test_getmapdata(file_nc, varname, expected_size):
     """
@@ -101,6 +104,7 @@ def test_getmapdata(file_nc, varname, expected_size):
     assert data_varsel.shape == expected_size
 
 
+@pytest.mark.requiresdata
 @pytest.mark.unittest
 def test_rename_waqvars():
     file_nc = os.path.join(r'p:\archivedprojects\11203850-coastserv\06-Model\waq_model\simulations\run0_20200319\DFM_OUTPUT_kzn_waq', 'kzn_waq_0000_map.nc')
@@ -222,6 +226,7 @@ def test_calc_dist_haversine():
     assert np.allclose(crs_dist_stops, crs_dist_stops_check)
 
 
+@pytest.mark.requiresdata
 @pytest.mark.unittest
 def test_intersect_edges():
     """
@@ -244,6 +249,7 @@ def test_intersect_edges():
     assert (face_index == np.array([ 91, 146, 147, 202, 147, 201, 146, 201])).all()
 
 
+@pytest.mark.requiresdata
 @pytest.mark.unittest
 def test_intersect_edges_withsort():
     """
@@ -266,6 +272,7 @@ def test_intersect_edges_withsort():
     assert (face_index == np.array([ 91, 146, 147, 147, 202, 201, 201, 146])).all()
 
 
+@pytest.mark.requiresdata
 def test_zlayermodel_correct_layers():
     file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0*_map.nc') #zlayer
     data_frommap_merged = dfmt.open_partitioned_dataset(file_nc)
