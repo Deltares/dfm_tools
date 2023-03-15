@@ -1,3 +1,4 @@
+[![pytest-py39](https://github.com/Deltares/dfm_tools/actions/workflows/pytest-py39.yml/badge.svg?branch=main)](https://github.com/Deltares/dfm_tools/actions/workflows/pytest-py39.yml)
 [![generate-documentation](https://github.com/Deltares/dfm_tools/actions/workflows/generate-documentation.yml/badge.svg)](https://github.com/Deltares/dfm_tools/actions/workflows/generate-documentation.yml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Deltares_dfm_tools&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Deltares_dfm_tools)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/Deltares/dfm_tools/HEAD)
