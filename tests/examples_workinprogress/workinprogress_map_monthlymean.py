@@ -19,9 +19,7 @@ overwrite = True
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc')
 
-dir_output = os.path.join(os.path.dirname(file_nc),'monthlymeans')
-if not os.path.exists(dir_output):
-    os.mkdir(dir_output)
+dir_output = '.'
 postfix = '_'.join(os.path.basename(file_nc).split('_')[-2:])
 file_out = os.path.join(dir_output,os.path.basename(file_nc).replace(postfix,f'monthlymean_{postfix}'))
 
