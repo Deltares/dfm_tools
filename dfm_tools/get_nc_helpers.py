@@ -164,7 +164,7 @@ def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset)):
         fouvar_attrs_lower = {k.lower():v for k,v in ds[fouvar].attrs.items()}
         fouvar_lowerattrs = ds[fouvar].assign_attrs(fouvar_attrs_lower) #to avoid case issues
         
-        #quantity 
+        #quantity
         long_name = fouvar_lowerattrs.attrs['long_name']
         long_name_noprefix = long_name.split(': ')[1]
         quantity_long = long_name_noprefix.split(',')[0]
@@ -222,7 +222,8 @@ def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset)):
         tstart_str = (refdate + pd.Timedelta(minutes=tstart_min)).strftime('%Y%m%d%H%M%S')
         tstop_str = (refdate + pd.Timedelta(minutes=tstop_min)).strftime('%Y%m%d%H%M%S')
         
-        rename_dict[fouvar] = f'{gridname}_{quantity}_{analysistype}_{tstart_str}_{tstop_str}'
+        rename_dict[fouvar] = f'{gridname}_{quantity}_{analysistype}_{tstart_str}_{tstop_str}' #TODO: maybe drop tstart/tstop for tidal variables, but results in "ValueError: the new name 'mesh2d_s1_ampMF' conflicts"
     
     ds = ds.rename(rename_dict)
     return ds
+
