@@ -189,7 +189,7 @@ def rename_waqvars(ds:(xr.Dataset,xu.UgridDataset)):
     return ds
 
 
-def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset)):
+def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset), drop_tidal_times:bool = True):
     &#34;&#34;&#34;
     Rename all fourier variables in a dataset (like mesh2d_fourier033_amp) to a unique name containing gridname/quantity/analysistype/tstart/tstop
     
@@ -205,7 +205,7 @@ def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset)):
 
     &#34;&#34;&#34;
     
-    file_freqs = &#39;https://raw.githubusercontent.com/Deltares/hatyan/main/hatyan/data/data_foreman_frequencies.txt&#39;
+    file_freqs = &#39;https://raw.githubusercontent.com/Deltares/hatyan/main/hatyan/data/data_foreman_frequencies.txt&#39; #TODO: fix hatyan dependency (MSQM was also added, but file is not used by hatyan, so might disappear one day)
     freqs_pd = pd.read_csv(file_freqs,names=[&#39;freq&#39;,&#39;dependents&#39;],delim_whitespace=True,comment=&#39;#&#39;)
     freqs_pd[&#39;angfreq&#39;] = freqs_pd[&#39;freq&#39;] * 360 #deg/hr
     
@@ -275,7 +275,10 @@ def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset)):
         tstart_str = (refdate + pd.Timedelta(minutes=tstart_min)).strftime(&#39;%Y%m%d%H%M%S&#39;)
         tstop_str = (refdate + pd.Timedelta(minutes=tstop_min)).strftime(&#39;%Y%m%d%H%M%S&#39;)
         
-        rename_dict[fouvar] = f&#39;{gridname}_{quantity}_{analysistype}_{tstart_str}_{tstop_str}&#39; #TODO: maybe drop tstart/tstop for tidal variables, but results in &#34;ValueError: the new name &#39;mesh2d_s1_ampMF&#39; conflicts&#34;
+        if istidal and drop_tidal_times:
+            rename_dict[fouvar] = f&#39;{gridname}_{quantity}_{analysistype}&#39; #TODO: might cause conflicting variable names if one component is analysed for multiple periods or if component is not defined in frequency list. Add duplicate check like rename_waqvars() that provides some basic info for debugging.
+        else:
+            rename_dict[fouvar] = f&#39;{gridname}_{quantity}_{analysistype}_{tstart_str}_{tstop_str}&#39;
     
     ds = ds.rename(rename_dict)
     return ds</code></pre>
@@ -422,7 +425,7 @@ def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset)):
 </details>
 </dd>
 <dt id="dfm_tools.get_nc_helpers.rename_fouvars"><code class="name flex">
-<span>def <span class="ident">rename_fouvars</span></span>(<span>ds: (<class 'xarray.core.dataset.Dataset'>, <class 'xugrid.core.wrap.UgridDataset'>))</span>
+<span>def <span class="ident">rename_fouvars</span></span>(<span>ds: (<class 'xarray.core.dataset.Dataset'>, <class 'xugrid.core.wrap.UgridDataset'>), drop_tidal_times: bool = True)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Rename all fourier variables in a dataset (like mesh2d_fourier033_amp) to a unique name containing gridname/quantity/analysistype/tstart/tstop</p>
@@ -440,7 +443,7 @@ def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset)):
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset)):
+<pre><code class="python">def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset), drop_tidal_times:bool = True):
     &#34;&#34;&#34;
     Rename all fourier variables in a dataset (like mesh2d_fourier033_amp) to a unique name containing gridname/quantity/analysistype/tstart/tstop
     
@@ -456,7 +459,7 @@ def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset)):
 
     &#34;&#34;&#34;
     
-    file_freqs = &#39;https://raw.githubusercontent.com/Deltares/hatyan/main/hatyan/data/data_foreman_frequencies.txt&#39;
+    file_freqs = &#39;https://raw.githubusercontent.com/Deltares/hatyan/main/hatyan/data/data_foreman_frequencies.txt&#39; #TODO: fix hatyan dependency (MSQM was also added, but file is not used by hatyan, so might disappear one day)
     freqs_pd = pd.read_csv(file_freqs,names=[&#39;freq&#39;,&#39;dependents&#39;],delim_whitespace=True,comment=&#39;#&#39;)
     freqs_pd[&#39;angfreq&#39;] = freqs_pd[&#39;freq&#39;] * 360 #deg/hr
     
@@ -526,7 +529,10 @@ def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset)):
         tstart_str = (refdate + pd.Timedelta(minutes=tstart_min)).strftime(&#39;%Y%m%d%H%M%S&#39;)
         tstop_str = (refdate + pd.Timedelta(minutes=tstop_min)).strftime(&#39;%Y%m%d%H%M%S&#39;)
         
-        rename_dict[fouvar] = f&#39;{gridname}_{quantity}_{analysistype}_{tstart_str}_{tstop_str}&#39; #TODO: maybe drop tstart/tstop for tidal variables, but results in &#34;ValueError: the new name &#39;mesh2d_s1_ampMF&#39; conflicts&#34;
+        if istidal and drop_tidal_times:
+            rename_dict[fouvar] = f&#39;{gridname}_{quantity}_{analysistype}&#39; #TODO: might cause conflicting variable names if one component is analysed for multiple periods or if component is not defined in frequency list. Add duplicate check like rename_waqvars() that provides some basic info for debugging.
+        else:
+            rename_dict[fouvar] = f&#39;{gridname}_{quantity}_{analysistype}_{tstart_str}_{tstop_str}&#39;
     
     ds = ds.rename(rename_dict)
     return ds</code></pre>
