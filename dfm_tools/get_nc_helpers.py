@@ -138,7 +138,7 @@ def rename_waqvars(ds:(xr.Dataset,xu.UgridDataset)):
 
 def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset)):
     """
-    Rename all fourier variables in a dataset (like mesh2d_fourier033_amp) to a unique name containing quantity/analysistype/tstart/tstop
+    Rename all fourier variables in a dataset (like mesh2d_fourier033_amp) to a unique name containing gridname/quantity/analysistype/tstart/tstop
     
     Parameters
     ----------
@@ -185,8 +185,8 @@ def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset)):
                          'volume_on_ground':'vog',
                          'discharge through flow link':'q1',
                          'water level at flow link':'su1',
-                         'temperature':'tem', #not clear from fourier_analysis.f90
-                         'salt':'sal', #not clear from fourier_analysis.f90
+                         'temperature':'tem', #not clear from fourier_analysis.f90, ct in user manual C.13
+                         'salt':'sal', #not clear from fourier_analysis.f90, cs in user manual C.13
                          }
         if not quantity_long in quantity_dict.keys():
             raise Exception(f'quantity_dict does not yet contain quantity for: {quantity_long}')
@@ -206,10 +206,9 @@ def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset)):
             analysistype = tidepart+compname
             warnings.warn(UserWarning('tidal components found in foufile, matching frequency with online list to get component names, which might go wrong. Also, be aware that v0 and knfac columns from fourier inputfile are not available in fourier output. Recommended is to set them to 0 and compute them in postprocessing.'))
         else: #for all other quantities
-            analysistype = fouvar.split('_')[-1] #min/max/mean
-            if analysistype == 'depth': #ends with min_depth or max_depth
-                analysistype = ''.join(fouvar.split('_')[-2:]) #mindepth/maxdepth
-        
+            fouvar_splitted = fouvar.split('_')
+            analysistype = ''.join(fouvar_splitted[2:]) #min/max/mean. min_depth/max_depth etc are converted to mindepth/maxdepth
+            
         #tstart/tstop
         refdate = pd.Timestamp(str(fouvar_lowerattrs.attrs['reference_date_in_yyyymmdd']))
         if hasattr(fouvar_lowerattrs,'starttime_fourier_analysis_in_minutes_since_reference_date'):
