@@ -152,7 +152,7 @@ def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset)):
 
     """
     
-    file_freqs = 'https://raw.githubusercontent.com/Deltares/hatyan/main/hatyan/data/data_foreman_frequencies.txt'
+    file_freqs = 'https://raw.githubusercontent.com/Deltares/hatyan/main/hatyan/data/data_foreman_frequencies.txt' #TODO: fix hatyan dependency (MSQM was also added, but file is not used by hatyan, so might disappear one day)
     freqs_pd = pd.read_csv(file_freqs,names=['freq','dependents'],delim_whitespace=True,comment='#')
     freqs_pd['angfreq'] = freqs_pd['freq'] * 360 #deg/hr
     
@@ -222,7 +222,10 @@ def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset)):
         tstart_str = (refdate + pd.Timedelta(minutes=tstart_min)).strftime('%Y%m%d%H%M%S')
         tstop_str = (refdate + pd.Timedelta(minutes=tstop_min)).strftime('%Y%m%d%H%M%S')
         
-        rename_dict[fouvar] = f'{gridname}_{quantity}_{analysistype}_{tstart_str}_{tstop_str}' #TODO: maybe drop tstart/tstop for tidal variables, but results in "ValueError: the new name 'mesh2d_s1_ampMF' conflicts"
+        if istidal:
+            rename_dict[fouvar] = f'{gridname}_{quantity}_{analysistype}' #TODO: might cause conflicting variable names if one component is analysed for multiple periods or if component is not defined in frequency list. Add duplicate check like rename_waqvars() that provides some basic info for debugging.
+        else:
+            rename_dict[fouvar] = f'{gridname}_{quantity}_{analysistype}_{tstart_str}_{tstop_str}'
     
     ds = ds.rename(rename_dict)
     return ds
