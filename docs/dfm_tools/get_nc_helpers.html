@@ -90,6 +90,7 @@ helper functions for functions in get_nc.py
 import xarray as xr
 import xugrid as xu
 import pandas as pd
+import warnings
 
 
 def get_ncvarproperties(data_xr):
@@ -183,6 +184,98 @@ def rename_waqvars(ds:(xr.Dataset,xu.UgridDataset)):
         duplicated_pd = rename_pd.loc[rename_pd.duplicated(keep=False)]
         print(UserWarning(f&#39;duplicate long_name attributes found with dfmt.rename_waqvars(), renaming only first variable:\n{duplicated_pd}&#39;))
         rename_dict = rename_pd.loc[~rename_pd.duplicated()].to_dict()
+    
+    ds = ds.rename(rename_dict)
+    return ds
+
+
+def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset)):
+    &#34;&#34;&#34;
+    Rename all fourier variables in a dataset (like mesh2d_fourier033_amp) to a unique name containing gridname/quantity/analysistype/tstart/tstop
+    
+    Parameters
+    ----------
+    ds : (xr.Dataset,xu.UgridDataset)
+        DESCRIPTION.
+
+    Returns
+    -------
+    ds : TYPE
+        DESCRIPTION.
+
+    &#34;&#34;&#34;
+    
+    file_freqs = &#39;https://raw.githubusercontent.com/Deltares/hatyan/main/hatyan/data/data_foreman_frequencies.txt&#39;
+    freqs_pd = pd.read_csv(file_freqs,names=[&#39;freq&#39;,&#39;dependents&#39;],delim_whitespace=True,comment=&#39;#&#39;)
+    freqs_pd[&#39;angfreq&#39;] = freqs_pd[&#39;freq&#39;] * 360 #deg/hr
+    
+    gridname = ds.grid.name
+    list_fouvars = [i for i in ds.data_vars if &#39;_fourier&#39; in i] #water_quality_output and water_quality_stat
+    
+    rename_dict = {}
+    for fouvar in list_fouvars:
+        fouvar_attrs_lower = {k.lower():v for k,v in ds[fouvar].attrs.items()}
+        fouvar_lowerattrs = ds[fouvar].assign_attrs(fouvar_attrs_lower) #to avoid case issues
+        
+        #quantity 
+        long_name = fouvar_lowerattrs.attrs[&#39;long_name&#39;]
+        long_name_noprefix = long_name.split(&#39;: &#39;)[1]
+        quantity_long = long_name_noprefix.split(&#39;,&#39;)[0]
+        quantity_dict = {&#39;water level&#39;:&#39;s1&#39;, #dict based on https://svn.oss.deltares.nl/repos/delft3d/trunk/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/prepost/fourier_analysis.f90
+                         #&#39;energy head&#39;:&#39;s1&#39;, #TODO: duplicate namfun/dictvalue is not convenient
+                         &#39;wind speed&#39;:&#39;ws&#39;,
+                         &#39;U-component of cell-centre velocity&#39;:&#39;ux&#39;,
+                         &#39;V-component of cell-centre velocity&#39;:&#39;uy&#39;,
+                         &#39;U-component velocity, column average&#39;:&#39;uxa&#39;,
+                         &#39;V-component velocity, column average&#39;:&#39;uya&#39;,
+                         &#39;velocity magnitude&#39;:&#39;uc&#39;,
+                         #&#39;&#39;:&#39;r1&#39;, #TODO: unclear which namfun/dictvalue corresponds (trim(namcon(gdfourier%fconno(ifou))))
+                         &#39;velocity&#39;:&#39;u1&#39;,
+                         &#39;unit discharge&#39;:&#39;qx&#39;,
+                         &#39;bed stress&#39;:&#39;ta&#39;,
+                         &#39;freeboard&#39;:&#39;fb&#39;,
+                         &#39;waterdepth_on_ground&#39;:&#39;wdog&#39;,
+                         &#39;volume_on_ground&#39;:&#39;vog&#39;,
+                         &#39;discharge through flow link&#39;:&#39;q1&#39;,
+                         &#39;water level at flow link&#39;:&#39;su1&#39;,
+                         &#39;temperature&#39;:&#39;tem&#39;, #not clear from fourier_analysis.f90, ct in user manual C.13
+                         &#39;salt&#39;:&#39;sal&#39;, #not clear from fourier_analysis.f90, cs in user manual C.13
+                         }
+        if not quantity_long in quantity_dict.keys():
+            raise Exception(f&#39;quantity_dict does not yet contain quantity for: {quantity_long}&#39;)
+        quantity = quantity_dict[quantity_long]
+        
+        #analysistype
+        istidal = False
+        if hasattr(fouvar_lowerattrs,&#39;frequency_degrees_per_hour&#39;):
+            if fouvar_lowerattrs.attrs[&#39;frequency_degrees_per_hour&#39;] &gt; 0: #wl mean with numcyc=0 has frequency attribute (wl min with numcyc=0 does not)
+                istidal = True #for tidal components with frequency &gt;0
+        
+        if istidal: #for tidal analysistype
+            tidepart = fouvar.split(&#39;_&#39;)[-1] # amp/phs
+            freq = fouvar_lowerattrs.attrs[&#39;frequency_degrees_per_hour&#39;]
+            compidx_closestfreq = (freqs_pd[&#39;angfreq&#39;] - freq).abs().argmin()
+            compname = freqs_pd.index[compidx_closestfreq] #M2/NU2
+            analysistype = tidepart+compname
+            warnings.warn(UserWarning(&#39;tidal components found in foufile, matching frequency with online list to get component names, which might go wrong. Also, be aware that v0 and knfac columns from fourier inputfile are not available in fourier output. Recommended is to set them to 0 and compute them in postprocessing.&#39;))
+        else: #for all other quantities
+            fouvar_splitted = fouvar.split(&#39;_&#39;)
+            analysistype = &#39;&#39;.join(fouvar_splitted[2:]) #min/max/mean. min_depth/max_depth etc are converted to mindepth/maxdepth
+            
+        #tstart/tstop
+        refdate = pd.Timestamp(str(fouvar_lowerattrs.attrs[&#39;reference_date_in_yyyymmdd&#39;]))
+        if hasattr(fouvar_lowerattrs,&#39;starttime_fourier_analysis_in_minutes_since_reference_date&#39;):
+            tstart_min = fouvar_lowerattrs.attrs[&#39;starttime_fourier_analysis_in_minutes_since_reference_date&#39;]
+            tstop_min = fouvar_lowerattrs.attrs[&#39;stoptime_fourier_analysis_in_minutes_since_reference_date&#39;]
+        elif hasattr(fouvar_lowerattrs,&#39;starttime_min_max_analysis_in_minutes_since_reference_date&#39;):
+            tstart_min = fouvar_lowerattrs.attrs[&#39;starttime_min_max_analysis_in_minutes_since_reference_date&#39;]
+            tstop_min = fouvar_lowerattrs.attrs[&#39;stoptime_min_max_analysis_in_minutes_since_reference_date&#39;]
+        else:
+            raise Exception(f&#39;starttime/stoptime attribute not found in fouvar:\n{fouvar_lowerattrs.attrs}&#39;)
+        tstart_str = (refdate + pd.Timedelta(minutes=tstart_min)).strftime(&#39;%Y%m%d%H%M%S&#39;)
+        tstop_str = (refdate + pd.Timedelta(minutes=tstop_min)).strftime(&#39;%Y%m%d%H%M%S&#39;)
+        
+        rename_dict[fouvar] = f&#39;{gridname}_{quantity}_{analysistype}_{tstart_str}_{tstop_str}&#39;
     
     ds = ds.rename(rename_dict)
     return ds</code></pre>
@@ -328,6 +421,117 @@ def rename_waqvars(ds:(xr.Dataset,xu.UgridDataset)):
     return ds</code></pre>
 </details>
 </dd>
+<dt id="dfm_tools.get_nc_helpers.rename_fouvars"><code class="name flex">
+<span>def <span class="ident">rename_fouvars</span></span>(<span>ds: (<class 'xarray.core.dataset.Dataset'>, <class 'xugrid.core.wrap.UgridDataset'>))</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Rename all fourier variables in a dataset (like mesh2d_fourier033_amp) to a unique name containing gridname/quantity/analysistype/tstart/tstop</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>ds</code></strong> :&ensp;<code>(xr.Dataset,xu.UgridDataset)</code></dt>
+<dd>DESCRIPTION.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>ds</code></strong> :&ensp;<code>TYPE</code></dt>
+<dd>DESCRIPTION.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset)):
+    &#34;&#34;&#34;
+    Rename all fourier variables in a dataset (like mesh2d_fourier033_amp) to a unique name containing gridname/quantity/analysistype/tstart/tstop
+    
+    Parameters
+    ----------
+    ds : (xr.Dataset,xu.UgridDataset)
+        DESCRIPTION.
+
+    Returns
+    -------
+    ds : TYPE
+        DESCRIPTION.
+
+    &#34;&#34;&#34;
+    
+    file_freqs = &#39;https://raw.githubusercontent.com/Deltares/hatyan/main/hatyan/data/data_foreman_frequencies.txt&#39;
+    freqs_pd = pd.read_csv(file_freqs,names=[&#39;freq&#39;,&#39;dependents&#39;],delim_whitespace=True,comment=&#39;#&#39;)
+    freqs_pd[&#39;angfreq&#39;] = freqs_pd[&#39;freq&#39;] * 360 #deg/hr
+    
+    gridname = ds.grid.name
+    list_fouvars = [i for i in ds.data_vars if &#39;_fourier&#39; in i] #water_quality_output and water_quality_stat
+    
+    rename_dict = {}
+    for fouvar in list_fouvars:
+        fouvar_attrs_lower = {k.lower():v for k,v in ds[fouvar].attrs.items()}
+        fouvar_lowerattrs = ds[fouvar].assign_attrs(fouvar_attrs_lower) #to avoid case issues
+        
+        #quantity 
+        long_name = fouvar_lowerattrs.attrs[&#39;long_name&#39;]
+        long_name_noprefix = long_name.split(&#39;: &#39;)[1]
+        quantity_long = long_name_noprefix.split(&#39;,&#39;)[0]
+        quantity_dict = {&#39;water level&#39;:&#39;s1&#39;, #dict based on https://svn.oss.deltares.nl/repos/delft3d/trunk/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/prepost/fourier_analysis.f90
+                         #&#39;energy head&#39;:&#39;s1&#39;, #TODO: duplicate namfun/dictvalue is not convenient
+                         &#39;wind speed&#39;:&#39;ws&#39;,
+                         &#39;U-component of cell-centre velocity&#39;:&#39;ux&#39;,
+                         &#39;V-component of cell-centre velocity&#39;:&#39;uy&#39;,
+                         &#39;U-component velocity, column average&#39;:&#39;uxa&#39;,
+                         &#39;V-component velocity, column average&#39;:&#39;uya&#39;,
+                         &#39;velocity magnitude&#39;:&#39;uc&#39;,
+                         #&#39;&#39;:&#39;r1&#39;, #TODO: unclear which namfun/dictvalue corresponds (trim(namcon(gdfourier%fconno(ifou))))
+                         &#39;velocity&#39;:&#39;u1&#39;,
+                         &#39;unit discharge&#39;:&#39;qx&#39;,
+                         &#39;bed stress&#39;:&#39;ta&#39;,
+                         &#39;freeboard&#39;:&#39;fb&#39;,
+                         &#39;waterdepth_on_ground&#39;:&#39;wdog&#39;,
+                         &#39;volume_on_ground&#39;:&#39;vog&#39;,
+                         &#39;discharge through flow link&#39;:&#39;q1&#39;,
+                         &#39;water level at flow link&#39;:&#39;su1&#39;,
+                         &#39;temperature&#39;:&#39;tem&#39;, #not clear from fourier_analysis.f90, ct in user manual C.13
+                         &#39;salt&#39;:&#39;sal&#39;, #not clear from fourier_analysis.f90, cs in user manual C.13
+                         }
+        if not quantity_long in quantity_dict.keys():
+            raise Exception(f&#39;quantity_dict does not yet contain quantity for: {quantity_long}&#39;)
+        quantity = quantity_dict[quantity_long]
+        
+        #analysistype
+        istidal = False
+        if hasattr(fouvar_lowerattrs,&#39;frequency_degrees_per_hour&#39;):
+            if fouvar_lowerattrs.attrs[&#39;frequency_degrees_per_hour&#39;] &gt; 0: #wl mean with numcyc=0 has frequency attribute (wl min with numcyc=0 does not)
+                istidal = True #for tidal components with frequency &gt;0
+        
+        if istidal: #for tidal analysistype
+            tidepart = fouvar.split(&#39;_&#39;)[-1] # amp/phs
+            freq = fouvar_lowerattrs.attrs[&#39;frequency_degrees_per_hour&#39;]
+            compidx_closestfreq = (freqs_pd[&#39;angfreq&#39;] - freq).abs().argmin()
+            compname = freqs_pd.index[compidx_closestfreq] #M2/NU2
+            analysistype = tidepart+compname
+            warnings.warn(UserWarning(&#39;tidal components found in foufile, matching frequency with online list to get component names, which might go wrong. Also, be aware that v0 and knfac columns from fourier inputfile are not available in fourier output. Recommended is to set them to 0 and compute them in postprocessing.&#39;))
+        else: #for all other quantities
+            fouvar_splitted = fouvar.split(&#39;_&#39;)
+            analysistype = &#39;&#39;.join(fouvar_splitted[2:]) #min/max/mean. min_depth/max_depth etc are converted to mindepth/maxdepth
+            
+        #tstart/tstop
+        refdate = pd.Timestamp(str(fouvar_lowerattrs.attrs[&#39;reference_date_in_yyyymmdd&#39;]))
+        if hasattr(fouvar_lowerattrs,&#39;starttime_fourier_analysis_in_minutes_since_reference_date&#39;):
+            tstart_min = fouvar_lowerattrs.attrs[&#39;starttime_fourier_analysis_in_minutes_since_reference_date&#39;]
+            tstop_min = fouvar_lowerattrs.attrs[&#39;stoptime_fourier_analysis_in_minutes_since_reference_date&#39;]
+        elif hasattr(fouvar_lowerattrs,&#39;starttime_min_max_analysis_in_minutes_since_reference_date&#39;):
+            tstart_min = fouvar_lowerattrs.attrs[&#39;starttime_min_max_analysis_in_minutes_since_reference_date&#39;]
+            tstop_min = fouvar_lowerattrs.attrs[&#39;stoptime_min_max_analysis_in_minutes_since_reference_date&#39;]
+        else:
+            raise Exception(f&#39;starttime/stoptime attribute not found in fouvar:\n{fouvar_lowerattrs.attrs}&#39;)
+        tstart_str = (refdate + pd.Timedelta(minutes=tstart_min)).strftime(&#39;%Y%m%d%H%M%S&#39;)
+        tstop_str = (refdate + pd.Timedelta(minutes=tstop_min)).strftime(&#39;%Y%m%d%H%M%S&#39;)
+        
+        rename_dict[fouvar] = f&#39;{gridname}_{quantity}_{analysistype}_{tstart_str}_{tstop_str}&#39;
+    
+    ds = ds.rename(rename_dict)
+    return ds</code></pre>
+</details>
+</dd>
 </dl>
 </section>
 <section>
@@ -349,6 +553,7 @@ def rename_waqvars(ds:(xr.Dataset,xu.UgridDataset)):
 <li><code><a title="dfm_tools.get_nc_helpers.get_ncvarproperties" href="#dfm_tools.get_nc_helpers.get_ncvarproperties">get_ncvarproperties</a></code></li>
 <li><code><a title="dfm_tools.get_nc_helpers.get_varnamefromattrs" href="#dfm_tools.get_nc_helpers.get_varnamefromattrs">get_varnamefromattrs</a></code></li>
 <li><code><a title="dfm_tools.get_nc_helpers.rename_waqvars" href="#dfm_tools.get_nc_helpers.rename_waqvars">rename_waqvars</a></code></li>
+<li><code><a title="dfm_tools.get_nc_helpers.rename_fouvars" href="#dfm_tools.get_nc_helpers.rename_fouvars">rename_fouvars</a></code></li>
 </ul>
 </li>
 </ul>
