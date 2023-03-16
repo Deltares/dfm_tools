@@ -136,7 +136,7 @@ def rename_waqvars(ds:(xr.Dataset,xu.UgridDataset)):
     return ds
 
 
-def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset)):
+def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset), drop_tidal_times:bool = True):
     """
     Rename all fourier variables in a dataset (like mesh2d_fourier033_amp) to a unique name containing gridname/quantity/analysistype/tstart/tstop
     
@@ -222,7 +222,7 @@ def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset)):
         tstart_str = (refdate + pd.Timedelta(minutes=tstart_min)).strftime('%Y%m%d%H%M%S')
         tstop_str = (refdate + pd.Timedelta(minutes=tstop_min)).strftime('%Y%m%d%H%M%S')
         
-        if istidal:
+        if istidal and drop_tidal_times:
             rename_dict[fouvar] = f'{gridname}_{quantity}_{analysistype}' #TODO: might cause conflicting variable names if one component is analysed for multiple periods or if component is not defined in frequency list. Add duplicate check like rename_waqvars() that provides some basic info for debugging.
         else:
             rename_dict[fouvar] = f'{gridname}_{quantity}_{analysistype}_{tstart_str}_{tstop_str}'

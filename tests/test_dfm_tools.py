@@ -105,12 +105,17 @@ def test_rename_fouvars_regular():
 def test_rename_fouvars_tidal():
     file_nc_fou = r'p:\1230882-emodnet_hrsm\GTSMv3.0EMODnet\EMOD_MichaelTUM_yearcomponents\GTSMv4.1_yeartide_2014_2.20.06\output\gtsm_model_0000_fou.nc'
     uds = dfmt.open_partitioned_dataset(file_nc_fou)
-    uds_renamed = dfmt.rename_fouvars(uds)
+    uds_renamed = dfmt.rename_fouvars(uds,drop_tidal_times=False)
+    uds_renamed_clean = dfmt.rename_fouvars(uds)
     
     assert 'mesh2d_s1_mean_20131231000000_20150101000000' in uds_renamed.data_vars
     assert 'mesh2d_s1_min_20131231000000_20150101000000' in uds_renamed.data_vars
     assert 'mesh2d_s1_mindepth_20131231000000_20150101000000' in uds_renamed.data_vars
     assert 'mesh2d_s1_ampM2_20131231000000_20141227180000' in uds_renamed.data_vars
+    assert 'mesh2d_s1_mean_20131231000000_20150101000000' in uds_renamed_clean.data_vars
+    assert 'mesh2d_s1_min_20131231000000_20150101000000' in uds_renamed_clean.data_vars
+    assert 'mesh2d_s1_mindepth_20131231000000_20150101000000' in uds_renamed_clean.data_vars
+    assert 'mesh2d_s1_ampM2' in uds_renamed_clean.data_vars
 
 
 @pytest.mark.systemtest
