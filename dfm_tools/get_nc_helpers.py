@@ -204,7 +204,7 @@ def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset), drop_tidal_times:bool = True
             compidx_closestfreq = (freqs_pd['angfreq'] - freq).abs().argmin()
             compname = freqs_pd.index[compidx_closestfreq] #M2/NU2
             analysistype = tidepart+compname
-            warnings.warn(UserWarning('tidal components found in foufile, matching frequency with online list to get component names, which might go wrong. Also, be aware that v0 and knfac columns from fourier inputfile are not available in fourier output. Recommended is to set them to 0 and compute them in postprocessing.'))
+            warnings.warn(UserWarning('tidal components found in foufile, matching frequency with online list to get component names, which might go wrong. Also, be aware that v0 and knfac columns from fourier inputfile are not available in fourier output, so it is not clear whether to correct for these.'))
         else: #for all other quantities
             fouvar_splitted = fouvar.split('_')
             analysistype = ''.join(fouvar_splitted[2:]) #min/max/mean. min_depth/max_depth etc are converted to mindepth/maxdepth
