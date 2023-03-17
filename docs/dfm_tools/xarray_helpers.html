@@ -467,7 +467,25 @@ def remove_ghostcells(uds): #TODO: create JIRA issue: add domainno attribute to 
     return uds
 
 
-def open_partitioned_dataset(file_nc, chunks={&#39;time&#39;:1}, remove_ghost=True, **kwargs): 
+def remove_periodic_cells(uds): #TODO: implement proper fix: https://github.com/Deltares/xugrid/issues/63
+    &#34;&#34;&#34;
+    For global models with grids that go &#34;around the back&#34;. Temporary fix to drop all faces that are larger than grid_extent/2 (eg 360/2=180 degrees in case of GTSM)
+    
+    &#34;&#34;&#34;
+    #print(&#39;&gt;&gt; remove_periodic_cells() on dataset: &#39;,end=&#39;&#39;)
+    #dtstart = dt.datetime.now()
+    face_node_x = uds.grid.face_node_coordinates[:,:,0]
+    grid_extent = uds.grid.bounds[2] - uds.grid.bounds[0]
+    face_node_maxdx = np.nanmax(face_node_x,axis=1) - np.nanmin(face_node_x,axis=1)
+    bool_face = face_node_maxdx &lt; grid_extent/2
+    if bool_face.all(): #early return for when no cells have to be removed (might increase performance)
+        return uds
+    uds = uds.sel({uds.grid.face_dimension:bool_face})
+    #print(f&#39;{(dt.datetime.now()-dtstart).total_seconds():.2f} sec&#39;)
+    return uds
+
+
+def open_partitioned_dataset(file_nc, chunks={&#39;time&#39;:1}, remove_ghost=True, remove_periodic=False, **kwargs): 
     &#34;&#34;&#34;
     using xugrid to read and merge partitions, with some additional features (remaning old layerdim, timings, set zcc/zw as data_vars)
 
@@ -503,7 +521,7 @@ def open_partitioned_dataset(file_nc, chunks={&#39;time&#39;:1}, remove_ghost=Tr
     &#34;&#34;&#34;
     #TODO: FM-mapfiles contain wgs84/projected_coordinate_system variables. xugrid has .crs property, projected_coordinate_system/wgs84 should be updated to be crs so it will be automatically handled? &gt;&gt; make dflowfm issue (and https://github.com/Deltares/xugrid/issues/42)
     #TODO: add support for multiple grids via keyword? GTSM+riv grid also only contains only one grid, so no testcase available
-    #TODO: speed up open_dataset https://github.com/Deltares/dfm_tools/issues/225
+    #TODO: speed up open_dataset https://github.com/Deltares/dfm_tools/issues/225 (also remove_ghost and remove_periodic)
     
     dtstart_all = dt.datetime.now()
     file_nc_list = file_to_list(file_nc)
@@ -520,6 +538,8 @@ def open_partitioned_dataset(file_nc, chunks={&#39;time&#39;:1}, remove_ghost=Tr
         uds = xu.core.wrap.UgridDataset(ds)
         if remove_ghost: #TODO: this makes it way slower (at least for GTSM), but is necessary since values on overlapping cells are not always identical (eg in case of Venice ucmag)
             uds = remove_ghostcells(uds)
+        if remove_periodic: #TODO: makes it also slower, check if bool/idx makes difference in performance?
+            uds = remove_periodic_cells(uds)
         partitions.append(uds)
     print(&#39;: &#39;,end=&#39;&#39;)
     print(f&#39;{(dt.datetime.now()-dtstart).total_seconds():.2f} sec&#39;)
@@ -1134,8 +1154,35 @@ Not using most-occurring domainno in var, since this is not a valid assumption f
     return uds</code></pre>
 </details>
 </dd>
+<dt id="dfm_tools.xarray_helpers.remove_periodic_cells"><code class="name flex">
+<span>def <span class="ident">remove_periodic_cells</span></span>(<span>uds)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>For global models with grids that go "around the back". Temporary fix to drop all faces that are larger than grid_extent/2 (eg 360/2=180 degrees in case of GTSM)</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def remove_periodic_cells(uds): #TODO: implement proper fix: https://github.com/Deltares/xugrid/issues/63
+    &#34;&#34;&#34;
+    For global models with grids that go &#34;around the back&#34;. Temporary fix to drop all faces that are larger than grid_extent/2 (eg 360/2=180 degrees in case of GTSM)
+    
+    &#34;&#34;&#34;
+    #print(&#39;&gt;&gt; remove_periodic_cells() on dataset: &#39;,end=&#39;&#39;)
+    #dtstart = dt.datetime.now()
+    face_node_x = uds.grid.face_node_coordinates[:,:,0]
+    grid_extent = uds.grid.bounds[2] - uds.grid.bounds[0]
+    face_node_maxdx = np.nanmax(face_node_x,axis=1) - np.nanmin(face_node_x,axis=1)
+    bool_face = face_node_maxdx &lt; grid_extent/2
+    if bool_face.all(): #early return for when no cells have to be removed (might increase performance)
+        return uds
+    uds = uds.sel({uds.grid.face_dimension:bool_face})
+    #print(f&#39;{(dt.datetime.now()-dtstart).total_seconds():.2f} sec&#39;)
+    return uds</code></pre>
+</details>
+</dd>
 <dt id="dfm_tools.xarray_helpers.open_partitioned_dataset"><code class="name flex">
-<span>def <span class="ident">open_partitioned_dataset</span></span>(<span>file_nc, chunks={'time': 1}, remove_ghost=True, **kwargs)</span>
+<span>def <span class="ident">open_partitioned_dataset</span></span>(<span>file_nc, chunks={'time': 1}, remove_ghost=True, remove_periodic=False, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>using xugrid to read and merge partitions, with some additional features (remaning old layerdim, timings, set zcc/zw as data_vars)</p>
@@ -1188,7 +1235,7 @@ Not using most-occurring domainno in var, since this is not a valid assumption f
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def open_partitioned_dataset(file_nc, chunks={&#39;time&#39;:1}, remove_ghost=True, **kwargs): 
+<pre><code class="python">def open_partitioned_dataset(file_nc, chunks={&#39;time&#39;:1}, remove_ghost=True, remove_periodic=False, **kwargs): 
     &#34;&#34;&#34;
     using xugrid to read and merge partitions, with some additional features (remaning old layerdim, timings, set zcc/zw as data_vars)
 
@@ -1224,7 +1271,7 @@ Not using most-occurring domainno in var, since this is not a valid assumption f
     &#34;&#34;&#34;
     #TODO: FM-mapfiles contain wgs84/projected_coordinate_system variables. xugrid has .crs property, projected_coordinate_system/wgs84 should be updated to be crs so it will be automatically handled? &gt;&gt; make dflowfm issue (and https://github.com/Deltares/xugrid/issues/42)
     #TODO: add support for multiple grids via keyword? GTSM+riv grid also only contains only one grid, so no testcase available
-    #TODO: speed up open_dataset https://github.com/Deltares/dfm_tools/issues/225
+    #TODO: speed up open_dataset https://github.com/Deltares/dfm_tools/issues/225 (also remove_ghost and remove_periodic)
     
     dtstart_all = dt.datetime.now()
     file_nc_list = file_to_list(file_nc)
@@ -1241,6 +1288,8 @@ Not using most-occurring domainno in var, since this is not a valid assumption f
         uds = xu.core.wrap.UgridDataset(ds)
         if remove_ghost: #TODO: this makes it way slower (at least for GTSM), but is necessary since values on overlapping cells are not always identical (eg in case of Venice ucmag)
             uds = remove_ghostcells(uds)
+        if remove_periodic: #TODO: makes it also slower, check if bool/idx makes difference in performance?
+            uds = remove_periodic_cells(uds)
         partitions.append(uds)
     print(&#39;: &#39;,end=&#39;&#39;)
     print(f&#39;{(dt.datetime.now()-dtstart).total_seconds():.2f} sec&#39;)
@@ -1294,6 +1343,7 @@ Not using most-occurring domainno in var, since this is not a valid assumption f
 <li><code><a title="dfm_tools.xarray_helpers.Dataset_varswithdim" href="#dfm_tools.xarray_helpers.Dataset_varswithdim">Dataset_varswithdim</a></code></li>
 <li><code><a title="dfm_tools.xarray_helpers.get_vertical_dimensions" href="#dfm_tools.xarray_helpers.get_vertical_dimensions">get_vertical_dimensions</a></code></li>
 <li><code><a title="dfm_tools.xarray_helpers.remove_ghostcells" href="#dfm_tools.xarray_helpers.remove_ghostcells">remove_ghostcells</a></code></li>
+<li><code><a title="dfm_tools.xarray_helpers.remove_periodic_cells" href="#dfm_tools.xarray_helpers.remove_periodic_cells">remove_periodic_cells</a></code></li>
 <li><code><a title="dfm_tools.xarray_helpers.open_partitioned_dataset" href="#dfm_tools.xarray_helpers.open_partitioned_dataset">open_partitioned_dataset</a></code></li>
 </ul>
 </li>
