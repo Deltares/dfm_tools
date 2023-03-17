@@ -27,10 +27,9 @@ dir_output = './test_interpolate_nc_to_bc_TEMP'
 list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tracerbndNO3','tide']
 #list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','tracerbndNO3']
 list_quantities = ['salinitybnd','tracerbndNO3','tide']
-list_quantities = ['tracerbndNO3']
 #list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tracerbndNO3','tracerbndOpal','tracerbndDON','tide'] #also waq vars with same ncvarname, opal not available for GFDL and CMCC
 
-model = 'GFDL' #CMEMS GFDL CMCC HYCOM
+model = 'CMEMS' #CMEMS GFDL CMCC HYCOM
 
 
 #The {ncvarname} wildcard in dir_pattern_hydro/dir_patern_waq is used to replace it with conversion_dict[quantity]['ncvarname'] by using str(dir_pattern).format(ncvarname)
