@@ -437,7 +437,23 @@ def remove_ghostcells(uds): #TODO: create JIRA issue: add domainno attribute to 
     return uds
 
 
-def open_partitioned_dataset(file_nc, chunks={'time':1}, remove_ghost=True, **kwargs): 
+def remove_periodic_cells(uds): #TODO: implement proper fix: https://github.com/Deltares/xugrid/issues/63
+    """
+    For global models with grids that go "around the back". Temporary fix to drop all faces that are larger than grid_extent/2 (eg 360/2=180 degrees in case of GTSM)
+    
+    """
+    #print('>> remove_periodic_cells() on dataset: ',end='')
+    #dtstart = dt.datetime.now()
+    face_node_x = uds.grid.face_node_coordinates[:,:,0]
+    grid_extent = uds.grid.bounds[2] - uds.grid.bounds[0]
+    face_node_maxdx = np.nanmax(face_node_x,axis=1) - np.nanmin(face_node_x,axis=1)
+    bool_face = face_node_maxdx < grid_extent/2
+    uds = uds.sel({uds.grid.face_dimension:bool_face})
+    #print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
+    return uds
+
+
+def open_partitioned_dataset(file_nc, chunks={'time':1}, remove_ghost=True, remove_periodic=False, **kwargs): 
     """
     using xugrid to read and merge partitions, with some additional features (remaning old layerdim, timings, set zcc/zw as data_vars)
 
@@ -473,7 +489,7 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}, remove_ghost=True, **kw
     """
     #TODO: FM-mapfiles contain wgs84/projected_coordinate_system variables. xugrid has .crs property, projected_coordinate_system/wgs84 should be updated to be crs so it will be automatically handled? >> make dflowfm issue (and https://github.com/Deltares/xugrid/issues/42)
     #TODO: add support for multiple grids via keyword? GTSM+riv grid also only contains only one grid, so no testcase available
-    #TODO: speed up open_dataset https://github.com/Deltares/dfm_tools/issues/225
+    #TODO: speed up open_dataset https://github.com/Deltares/dfm_tools/issues/225 (also remove_ghost and remove_periodic)
     
     dtstart_all = dt.datetime.now()
     file_nc_list = file_to_list(file_nc)
@@ -490,6 +506,8 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}, remove_ghost=True, **kw
         uds = xu.core.wrap.UgridDataset(ds)
         if remove_ghost: #TODO: this makes it way slower (at least for GTSM), but is necessary since values on overlapping cells are not always identical (eg in case of Venice ucmag)
             uds = remove_ghostcells(uds)
+        if remove_periodic: #TODO: makes it also slower, check if bool/idx makes difference in performance?
+            uds = remove_periodic_cells(uds)
         partitions.append(uds)
     print(': ',end='')
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
