@@ -21,15 +21,16 @@ import hydrolib.core.dflowfm as hcdfm
 
 nPoints = 3# None #amount of Points to process per PolyObject in the plifile (use int for testing, use None for all Points)
 refdate_str = 'minutes since 2011-12-22 00:00:00 +00:00' # if None, xarray uses ds.time.encoding['units'] as refdate_str
-dir_output = './test_interpolate_nc_to_bc'
+dir_output = './test_interpolate_nc_to_bc_TEMP'
 
 #quantities should be in conversion_dict.keys(). waterlevelbnd is steric/zos, tide is tidal components from FES/EOT
 list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tracerbndNO3','tide']
 #list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','tracerbndNO3']
-list_quantities = ['salinitybnd','tracerbndNO3']
+list_quantities = ['salinitybnd','tracerbndNO3','tide']
+list_quantities = ['tracerbndNO3']
 #list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tracerbndNO3','tracerbndOpal','tracerbndDON','tide'] #also waq vars with same ncvarname, opal not available for GFDL and CMCC
 
-model = 'CMEMS' #CMEMS GFDL CMCC HYCOM
+model = 'GFDL' #CMEMS GFDL CMCC HYCOM
 
 
 #The {ncvarname} wildcard in dir_pattern_hydro/dir_patern_waq is used to replace it with conversion_dict[quantity]['ncvarname'] by using str(dir_pattern).format(ncvarname)
@@ -91,8 +92,8 @@ for file_pli in list_plifiles:
     for quantity in list_quantities:
         print(f'processing quantity: {quantity}')
         if quantity=='tide': #TODO: choose flexible/generic component notation
-            tidemodel = 'FES2014' #FES2014, FES2012, EOT20
-            component_list = ['2n2','mf','p1','m2','mks2','mu2','q1','t2','j1','m3','mm','n2','r2','k1','m4','mn4','s1','k2','m6','ms4','nu2','s2','l2','m8','msf','o1','s4'] #None results in all FES components
+            tidemodel = 'FES2014' #FES2014, FES2012, EOT20, GTSM4.1preliminary
+            component_list = ['2n2','mf','p1','m2','mks2','mu2','q1','t2','j1','m3','mm','n2','r2','k1','m4','mn4','s1','k2','m6','ms4','nu2','s2','l2','m8','msf','o1','s4'] #None results in all tidemodel components
             ForcingModel_object = dfmt.interpolate_tide_to_bc(tidemodel=tidemodel, file_pli=file_pli, component_list=component_list, nPoints=nPoints)
             for forcingobject in ForcingModel_object.forcing: #add A0 component
                 forcingobject.datablock.append(['A0',0.0,0.0])
@@ -114,9 +115,9 @@ for file_pli in list_plifiles:
                                                    conversion_dict=conversion_dict,
                                                    refdate_str=refdate_str)
             #interpolate regulargridDataset to plipointsDataset
-            data_interp = dfmt.interp_regularnc_to_plipoints(data_xr_reg=data_xr_vars, file_pli=file_pli,
+            data_interp = dfmt.interp_regularnc_to_plipoints(data_xr_reg=data_xr_vars, file_pli=file_pli, #TODO: difference in .interp() with float vs da arguments: https://github.com/Deltares/dfm_tools/issues/287
                                                              nPoints=nPoints) #argument for testing
-            #data_interp = data_interp.ffill(dim="plipoints").bfill(dim="plipoints") #to fill allnan plipoints with values from the neighbour point
+            #data_interp = data_interp.ffill(dim="plipoints").bfill(dim="plipoints") #to fill allnan plipoints with values from the neighbour point #TODO: this also fills the belowbed layers from one point onto another, so should be done after ffill/bfill in depth dimension. Currently all-nan arrays are replaced with .fillna(0)
             
             #convert plipointsDataset to hydrolib ForcingModel
             ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)

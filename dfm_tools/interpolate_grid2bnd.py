@@ -91,15 +91,20 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
     dir_pattern_dict = {'FES2014': Path(r'P:\metocean-data\licensed\FES2014','*.nc'), #ocean_tide_extrapolated
                         'FES2012': Path(r'P:\metocean-data\open\FES2012\data','*_FES2012_SLEV.nc'), #is eigenlijk ook licensed
                         'EOT20': Path(r'P:\metocean-data\open\EOT20\ocean_tides','*_ocean_eot20.nc'),
+                        'GTSM4.1preliminary': Path(r'p:\1230882-emodnet_hrsm\GTSMv3.0EMODnet\EMOD_MichaelTUM_yearcomponents\GTSMv4.1_yeartide_2014_2.20.06\compare_fouhis_fouxyz_v3','gtsmv4.1_2014_*_withfu_v3_rasterized.nc'),
                         #TODO: add tpxo8 (tpxo9 is also available), catalog: https://opendap.deltares.nl/thredds/catalog/opendap/deltares/delftdashboard/tidemodels/tpxo80/catalog.html
                         }
     if tidemodel not in dir_pattern_dict.keys():
         raise Exception(f'invalid tidemodel "{tidemodel}", options are: {list(dir_pattern_dict.keys())}')
+    if tidemodel == 'GTSM4.1preliminary':
+        warnings.warn(UserWarning(f'you are using tidemodel "{tidemodel}", beware that the dataset is preliminary so it is still quite coarse and may contain errors. Check your results carefully'))
     dir_pattern = dir_pattern_dict[tidemodel]
     
     if component_list is None:
         file_list_nc = glob.glob(str(dir_pattern))
-        component_list = [os.path.basename(x).replace('.nc','').replace('_FES2012_SLEV','').replace('_ocean_eot20','') for x in file_list_nc] #TODO: make this less hard-coded
+        dir_pattern_basename = os.path.basename(dir_pattern)
+        replace = dir_pattern_basename.split('*')
+        component_list = [os.path.basename(x).replace(replace[0],'').replace(replace[1],'') for x in file_list_nc] #TODO: make this less hard-coded
     else:
         file_list_nc = [str(dir_pattern).replace('*',comp) for comp in component_list]
     component_list_upper_pd = pd.Series([x.upper() for x in component_list]).replace(translate_dict, regex=True)
@@ -113,6 +118,12 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
         elif 'eot20' in ds.encoding["source"]:
             compname = os.path.basename(ds.encoding["source"]).replace('_ocean_eot20.nc','')
             ds = ds.sel(lon=ds.lon<360) #drop last instance, since 0 and 360 are both present
+        elif 'gtsm' in ds.encoding["source"].lower(): #TODO: make less hard coded
+            compname = os.path.basename(ds.encoding["source"]).replace('gtsmv4.1_2014_','').replace('_withfu_v3_rasterized.nc','')
+            ds = ds.rename({f'wl_amp{compname}':'amplitude',f'wl_phs{compname}':'phase'}) #TODO: adjust in rasterized dataset?
+            ds['amplitude'] = ds['amplitude'].assign_attrs({'units':'m'}) #TODO: handle this rasterize function
+            ds['phase'] = ds['phase'].assign_attrs({'units':'degrees'}) #TODO: handle this rasterize function
+            ds = ds.rename({'x':'lon','y':'lat'})
         else:
             compname = os.path.basename(ds.encoding["source"]).replace('.nc','')
         compnumber = [component_list.index(compname)]
@@ -143,7 +154,7 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
     
     data_interp = interp_regularnc_to_plipoints(data_xr_reg=data_xrsel, file_pli=file_pli, nPoints=nPoints)
     data_interp['phase_new'] = np.rad2deg(np.arctan2(data_interp['phase_v'],data_interp['phase_u']))
-
+    
     ForcingModel_object = plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
     
     return ForcingModel_object
@@ -296,12 +307,13 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True
         raise Exception(f'Duplicate polyobject names in polyfile {file_pli.name}, this is not allowed:\n{polynames_pd}')
     
     #create df of x/y/name of all plipoints in plifile
-    data_pol_pd = pd.DataFrame()
+    data_pol_list = []
     for polyobj in polyfile_object.objects:
         data_pol_pd_one = pointlike_to_DataFrame(polyobj)
         data_pol_pd_one = data_pol_pd_one.iloc[:nPoints] #only use testset of points per polyobj in polyfile
         data_pol_pd_one['name'] = pd.Series(data_pol_pd_one.index).apply(lambda x: f'{polyobj.metadata.name}_{x+1:04d}')
-        data_pol_pd = pd.concat([data_pol_pd,data_pol_pd_one])
+        data_pol_list.append(data_pol_pd_one)
+    data_pol_pd = pd.concat(data_pol_list)
     
     da_plipoints = xr.Dataset()
     da_plipoints['plipoint_x'] = xr.DataArray(data_pol_pd['x'], dims='plipoints')
@@ -445,8 +457,9 @@ def plipointsDataset_to_ForcingModel(plipointsDataset):
         
         for quan in quantity_list:
             datablock_xr_onepoint[quan].attrs['locationname'] = plipoint_name #TODO: is there a nicer way of passing this data?
-            if datablock_xr_onepoint[quan].isnull().all(): # check if only nan (on land)
-                warnings.warn(UserWarning(f'Plipoint "{plipoint_name}" might be on land since it only contain nan values. Consider altering your plifile or using plipointsDataset.ffill(dim="plipoints").bfill(dim="plipoints")'))
+            if datablock_xr_onepoint[quan].isnull().all(): # check if all values of plipoint are nan (on land)
+                warnings.warn(UserWarning(f'Plipoint "{plipoint_name}" might be on land since it only contain nan values. Consider altering your plifile or using plipointsDataset.ffill(dim="plipoints").bfill(dim="plipoints"). Nan values replaced with 0 to avoid bc-writing errors'))
+                datablock_xr_onepoint[quan] = datablock_xr_onepoint[quan].fillna(0)
         
         if 'depth' in plipointsDataset.dims:
             ts_one = Dataset_to_T3D(datablock_xr_onepoint)
