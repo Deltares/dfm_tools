@@ -90,9 +90,12 @@ for file_pli in list_plifiles:
     file_bc_basename = file_pli.name.replace('.pli','')
     for quantity in list_quantities:
         print(f'processing quantity: {quantity}')
-        if quantity=='tide': #TODO: choose flexible/generic component notation
+        if quantity=='tide': 
             tidemodel = 'FES2014' #FES2014, FES2012, EOT20, GTSM4.1preliminary
-            component_list = ['2n2','mf','p1','m2','mks2','mu2','q1','t2','j1','m3','mm','n2','r2','k1','m4','mn4','s1','k2','m6','ms4','nu2','s2','l2','m8','msf','o1','s4'] #None results in all tidemodel components
+            if tidemodel == 'FES2014': #for comparing to older FES bc-files #TODO: choose flexible/generic component notation
+                component_list = ['2n2','mf','p1','m2','mks2','mu2','q1','t2','j1','m3','mm','n2','r2','k1','m4','mn4','s1','k2','m6','ms4','nu2','s2','l2','m8','msf','o1','s4']
+            else:
+                component_list = None #None results in all tidemodel components
             ForcingModel_object = dfmt.interpolate_tide_to_bc(tidemodel=tidemodel, file_pli=file_pli, component_list=component_list, nPoints=nPoints)
             for forcingobject in ForcingModel_object.forcing: #add A0 component
                 forcingobject.datablock.append(['A0',0.0,0.0])
