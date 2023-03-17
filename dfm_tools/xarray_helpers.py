@@ -448,6 +448,8 @@ def remove_periodic_cells(uds): #TODO: implement proper fix: https://github.com/
     grid_extent = uds.grid.bounds[2] - uds.grid.bounds[0]
     face_node_maxdx = np.nanmax(face_node_x,axis=1) - np.nanmin(face_node_x,axis=1)
     bool_face = face_node_maxdx < grid_extent/2
+    if bool_face.all(): #early return for when no cells have to be removed (might increase performance)
+        return uds
     uds = uds.sel({uds.grid.face_dimension:bool_face})
     #print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     return uds
