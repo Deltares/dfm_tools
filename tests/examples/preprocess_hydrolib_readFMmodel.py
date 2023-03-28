@@ -15,7 +15,8 @@ plt.close('all')
 dtstart = dt.datetime.now()
 
 
-file_mdu = Path(r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB_structbc\RMM_dflowfm_general.mdu')
+#file_mdu = Path(r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB_structbc\RMM_dflowfm_general.mdu')
+file_mdu = Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\computations\validation\2018_HYDROLIB_JV\RMM_VZM_commented.mdu')
 mdu_contents = open(str(file_mdu),'r').readlines()
 if '[model]' in mdu_contents[0]:
     print('WARNING: [model] found in mdufile, this should be [general]')
@@ -26,7 +27,7 @@ file_struct = Path(r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_R
 structs = hcdfm.StructureModel(file_struct)
 for struct in structs.structure:
     print(struct.id)
-#structs.save('tst.ini') #TODO: how to get xydata from plifile in structuremodel?
+#structs.save('tst.ini') #TODO: how to get xydata from plifile in structuremodel? >> dfmt.pointlike_to_DataFrame() per object?
 #structs.structure[0].__dict__
 
 
