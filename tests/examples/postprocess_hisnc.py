@@ -94,7 +94,7 @@ for file_nc in file_nc_list:
     
     #at this stage there are only four hisfiles left where "continue" was not called for
     
-    print('plot salinity from his') #TODO: retreive variable on fixed depth (like dfmt.get_mapdata_atfixedepth())
+    print('plot salinity from his')
     data_fromhis_xr = data_xr.salinity.sel(stations=stations_requested).isel(laydim=20)
     fig, ax = plt.subplots(figsize=(10,6))
     data_fromhis_xr.plot.line('-',ax=ax,x='time')
