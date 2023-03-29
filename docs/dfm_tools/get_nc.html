@@ -303,8 +303,8 @@ def reconstruct_zw_zcc_fromsigma(uds):
     
     uds_eta = uds[osz_formulaterms_dict[&#39;eta&#39;]] #mesh2d_s1
     uds_depth = uds[osz_formulaterms_dict[&#39;depth&#39;]] #mesh2d_waterdepth
-    if uds_depth.attrs[&#39;standard_name&#39;] == &#39;sea_floor_depth_below_sea_surface&#39;: #TODO: before the waterdepth instead of negative bedlevel was coupled via the formula_terms in sigmamodels (was probably fixed with szigma implementation in https://issuetracker.deltares.nl/browse/UNST-5477)
-        uds_depth = -uds[&#39;mesh2d_flowelem_bl&#39;] #mesh2d_waterdepth
+    if uds_depth.attrs[&#39;standard_name&#39;] == &#39;sea_floor_depth_below_sea_surface&#39;: #TODO: before the waterdepth instead of negative bedlevel was coupled via the formula_terms in sigmamodels (was fixed in OSS 140982 / 29-3-2022)
+        uds_depth = -uds[&#39;mesh2d_flowelem_bl&#39;]
     uds_sigma = uds[osz_formulaterms_dict[&#39;sigma&#39;]] #mesh2d_interface_sigma
     
     uds[&#39;mesh2d_flowelem_zw&#39;] = uds_eta + uds_sigma*(uds_depth+uds_eta)
@@ -1006,8 +1006,8 @@ based on <a href="https://cfconventions.org/cf-conventions/cf-conventions.html#_
     
     uds_eta = uds[osz_formulaterms_dict[&#39;eta&#39;]] #mesh2d_s1
     uds_depth = uds[osz_formulaterms_dict[&#39;depth&#39;]] #mesh2d_waterdepth
-    if uds_depth.attrs[&#39;standard_name&#39;] == &#39;sea_floor_depth_below_sea_surface&#39;: #TODO: before the waterdepth instead of negative bedlevel was coupled via the formula_terms in sigmamodels (was probably fixed with szigma implementation in https://issuetracker.deltares.nl/browse/UNST-5477)
-        uds_depth = -uds[&#39;mesh2d_flowelem_bl&#39;] #mesh2d_waterdepth
+    if uds_depth.attrs[&#39;standard_name&#39;] == &#39;sea_floor_depth_below_sea_surface&#39;: #TODO: before the waterdepth instead of negative bedlevel was coupled via the formula_terms in sigmamodels (was fixed in OSS 140982 / 29-3-2022)
+        uds_depth = -uds[&#39;mesh2d_flowelem_bl&#39;]
     uds_sigma = uds[osz_formulaterms_dict[&#39;sigma&#39;]] #mesh2d_interface_sigma
     
     uds[&#39;mesh2d_flowelem_zw&#39;] = uds_eta + uds_sigma*(uds_depth+uds_eta)
