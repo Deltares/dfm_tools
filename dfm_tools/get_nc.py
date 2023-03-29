@@ -232,7 +232,7 @@ def get_formula_terms(uds, varn_contains='interface'):
     get formula_terms for zw/zcc reconstruction, convert to list and then to dict
     """
     osz_varnames = list(uds.filter_by_attrs(formula_terms=lambda v: v is not None).variables) #names of variables containing attribute "formula_terms"
-    osz_varn = [x for x in osz_varnames if varn_contains in x][0] #TODO: to get the interface ocean_*_coordinate. Not too pretty, but it works
+    osz_varn = [x for x in osz_varnames if varn_contains in x][0] #TODO: to get the layer/interface ocean_*_coordinate. Not too pretty, but it works
     osz_formulaterms = uds[osz_varn].attrs['formula_terms']
     tokens = re.split('[:\\s]+', osz_formulaterms)
     osz_formulaterms_dict = dict(zip(tokens[::2], tokens[1::2]))
@@ -280,7 +280,7 @@ def reconstruct_zw_zcc_fromz(data_xr_map):
     bool_int_abovewl = zvals_interface_zval>data_frommap_wl_sel
     data_xr_map['mesh2d_flowelem_zw'] = data_xr_map['mesh2d_flowelem_zw'].where(bool_notoplayer_int | bool_int_abovewl, other=data_frommap_wl_sel) #zvalues of top layer_interfaces that are lower than wl are replaced by wl
     
-    data_xr_map = data_xr_map.set_coords(['mesh2d_flowelem_zw'])#,'mesh2d_flowelem_zcc'])  #TODO: do we need zcc also? Temporarily removed since zsigma and sigma also do not return it.
+    data_xr_map = data_xr_map.set_coords(['mesh2d_flowelem_zw'])#,'mesh2d_flowelem_zcc']) #TODO: do we need zcc also? Temporarily removed since zsigma and sigma also do not return it.
     return data_xr_map
 
 
