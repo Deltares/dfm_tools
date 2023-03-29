@@ -124,8 +124,8 @@ def get_xzcoords_onintersection(uds, face_index, crs_dist_starts, crs_dist_stops
     xu_edgedim = uds.grid.edge_dimension
     xu_nodedim = uds.grid.node_dimension
     
-    #potentially construct fullgrid info (zcc/zw) #TODO: this ifloop is copied from get_mapdata_atdepth(), prevent this duplicate code
-    if dimn_layer not in uds.dims: #2D model #TODO: maybe add layer-dummydim to ds facevars and put zvals_interface as variable in dataset (would make function slightly more generic)
+    #potentially construct fullgrid info (zcc/zw)
+    if dimn_layer not in uds.dims: #2D model
         print('depth dimension not found, probably 2D model')
         pass
     else:
@@ -227,7 +227,7 @@ def polyline_mapslice(uds:xu.UgridDataset, line_array:np.array, calcdist_fromlat
     return xr_crs_ugrid
 
 
-def reconstruct_zw_zcc_fromsigma(data_xr_map):
+def reconstruct_zw_zcc_fromsigma(data_xr_map): #TODO: can also be done with formula_terms from attr (like reconstruct_zw_zcc_fromzsigma)
     """
     reconstruct full grid output (time/face-varying z-values) for sigma model, necessary for slicing sigmamodel on depth value
     """
@@ -302,7 +302,7 @@ def reconstruct_zw_zcc_fromzsigma(uds):
     zw_zpart = uds_zlev.clip(min=-uds_depth) #added clipping of zvalues with bedlevel #TODO: maybe also add max=uds_eta?
     uds['mesh2d_flowelem_zw'] = zw_sigmapart.fillna(zw_zpart)
     
-    uds = uds.set_coords(['mesh2d_flowelem_zw'])#,'mesh2d_flowelem_zcc']) #TODO: do we need zcc also?
+    uds = uds.set_coords(['mesh2d_flowelem_zw'])#,'mesh2d_flowelem_zcc']) #TODO: do we need zcc also? (otherwise maybe remove from other functions?)
     return uds
 
 
@@ -322,7 +322,7 @@ def reconstruct_zw_zcc(ds):
     elif len(ds.filter_by_attrs(standard_name='ocean_sigma_z_coordinate')) != 0:
         print('zsigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
         ds = reconstruct_zw_zcc_fromzsigma(ds)
-    elif 'mesh2d_layer_sigma' in ds.variables:
+    elif 'mesh2d_layer_sigma' in ds.variables: #TODO: var with standard_name='ocean_sigma_coordinate' available?
         print('sigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
         ds = reconstruct_zw_zcc_fromsigma(ds)
     elif 'mesh2d_layer_z' in ds.variables:
