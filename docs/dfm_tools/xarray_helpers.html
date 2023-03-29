@@ -425,8 +425,6 @@ def get_vertical_dimensions(uds): #TODO: maybe add layer_dimension and interface
     gridname = uds.grid.name
     grid_info = uds.grid.to_dataset()[gridname]
     if hasattr(grid_info,&#39;layer_dimension&#39;):
-        print(&#39;&gt;&gt; found layer/interface dimensions in file: &#39;,end=&#39;&#39;)
-        print(grid_info.layer_dimension, grid_info.interface_dimension) #combined in attr vertical_dimensions
         return grid_info.layer_dimension, grid_info.interface_dimension
     else:
         return None, None
@@ -1102,8 +1100,6 @@ processing MB_02_0*_map.nc
     gridname = uds.grid.name
     grid_info = uds.grid.to_dataset()[gridname]
     if hasattr(grid_info,&#39;layer_dimension&#39;):
-        print(&#39;&gt;&gt; found layer/interface dimensions in file: &#39;,end=&#39;&#39;)
-        print(grid_info.layer_dimension, grid_info.interface_dimension) #combined in attr vertical_dimensions
         return grid_info.layer_dimension, grid_info.interface_dimension
     else:
         return None, None</code></pre>
