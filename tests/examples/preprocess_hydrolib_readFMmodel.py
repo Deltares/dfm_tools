@@ -21,7 +21,7 @@ mdu_contents = open(str(file_mdu),'r').readlines()
 if '[model]' in mdu_contents[0]:
     print('WARNING: [model] found in mdufile, this should be [general]')
 fm = hcdfm.FMModel(file_mdu) #TODO: works, but many mdu-lines are comented, so uncomment things one by one (e.g. multiline obs/crs files not supported, but should it be?)
-
+crs_pd_list = [dfmt.pointlike_to_DataFrame(x) for x in fm.output.crsfile[0].objects]
 
 file_struct = Path(r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_structures.ini')
 structs = hcdfm.StructureModel(file_struct)
