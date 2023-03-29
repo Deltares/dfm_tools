@@ -232,7 +232,10 @@ def get_formula_terms(uds, varn_contains='interface'):
     get formula_terms for zw/zcc reconstruction, convert to list and then to dict
     """
     osz_varnames = list(uds.filter_by_attrs(formula_terms=lambda v: v is not None).variables) #names of variables containing attribute "formula_terms"
-    osz_varn = [x for x in osz_varnames if varn_contains in x][0] #TODO: to get the layer/interface ocean_*_coordinate. Not too pretty, but it works
+    osz_varnames_contains = [x for x in osz_varnames if varn_contains in x] #TODO: to get the layer/interface ocean_*_coordinate. Not too pretty, but it works
+    if len(osz_varnames_contains) != 1: #should be 1 exactly, none is the case in zlayer models
+        raise Exception(f'no or more than one {varn_contains} variable found with formula_terms attribute: {osz_varnames}')
+    osz_varn = osz_varnames_contains[0]
     osz_formulaterms = uds[osz_varn].attrs['formula_terms']
     tokens = re.split('[:\\s]+', osz_formulaterms)
     osz_formulaterms_dict = dict(zip(tokens[::2], tokens[1::2]))
