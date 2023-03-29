@@ -87,7 +87,7 @@ Created on Fri Feb 14 12:45:11 2020
 import warnings
 import numpy as np
 import datetime as dt
-import pandas as pd
+import re
 import xugrid as xu
 import xarray as xr
 import matplotlib.pyplot as plt
@@ -176,21 +176,12 @@ def get_xzcoords_onintersection(uds, face_index, crs_dist_starts, crs_dist_stops
     xu_edgedim = uds.grid.edge_dimension
     xu_nodedim = uds.grid.node_dimension
     
-    #potentially construct fullgrid info (zcc/zw) #TODO: this ifloop is copied from get_mapdata_atdepth(), prevent this duplicate code
-    if dimn_layer not in uds.dims: #2D model #TODO: maybe add layer-dummydim to ds facevars and put zvals_interface as variable in dataset (would make function slightly more generic)
+    #potentially construct fullgrid info (zcc/zw)
+    if dimn_layer not in uds.dims: #2D model
         print(&#39;depth dimension not found, probably 2D model&#39;)
         pass
-    elif &#39;mesh2d_flowelem_zw&#39; in uds.variables: #fullgrid info already available, so continuing
-        print(&#39;zw/zcc (fullgrid) values already present in Dataset&#39;)
-        pass
-    elif &#39;mesh2d_layer_sigma&#39; in uds.variables: #reconstruct_zw_zcc_fromsigma and treat as zsigma/fullgrid mapfile from here
-        print(&#39;sigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here&#39;)
-        uds = reconstruct_zw_zcc_fromsigma(uds)
-    elif &#39;mesh2d_layer_z&#39; in uds.variables:        
-        print(&#39;z-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here&#39;)
-        uds = reconstruct_zw_zcc_fromz(uds)
     else:
-        raise Exception(&#39;layers present, but unknown layertype, expected one of variables: mesh2d_flowelem_zw, mesh2d_layer_sigma, mesh2d_layer_z&#39;)
+        uds = reconstruct_zw_zcc(uds)
     
     face_index_xr = xr.DataArray(face_index,dims=(&#39;ncrossed_faces&#39;))
     data_frommap_merged_sel = uds.sel({xu_facedim:face_index_xr})
@@ -288,7 +279,7 @@ def polyline_mapslice(uds:xu.UgridDataset, line_array:np.array, calcdist_fromlat
     return xr_crs_ugrid
 
 
-def reconstruct_zw_zcc_fromsigma(data_xr_map):
+def reconstruct_zw_zcc_fromsigma(data_xr_map): #TODO: can also be done with formula_terms from attr (like reconstruct_zw_zcc_fromzsigma)
     &#34;&#34;&#34;
     reconstruct full grid output (time/face-varying z-values) for sigma model, necessary for slicing sigmamodel on depth value
     &#34;&#34;&#34;
@@ -331,6 +322,69 @@ def reconstruct_zw_zcc_fromz(data_xr_map):
     return data_xr_map
 
 
+def reconstruct_zw_zcc_fromzsigma(uds):
+    &#34;&#34;&#34;
+    reconstruct full grid output (time/face-varying z-values) for zsigmavalue model without full grid output. Implemented in https://issuetracker.deltares.nl/browse/UNST-5477
+    based on https://cfconventions.org/cf-conventions/cf-conventions.html#_ocean_sigma_over_z_coordinate
+    &#34;&#34;&#34;
+    
+    #default fillvalues are not automatically parsed to nan, so do manually: https://github.com/pydata/xarray/issues/2742
+    import netCDF4
+    fillvals = netCDF4.default_fillvals
+    
+    #get formula_terms, convert to list and then to dict
+    osz_varn = list(uds.filter_by_attrs(standard_name=&#39;ocean_sigma_z_coordinate&#39;).data_vars)[0]
+    osz_formulaterms = uds[osz_varn].attrs[&#39;formula_terms&#39;]
+    tokens = re.split(&#39;[:\\s]+&#39;, osz_formulaterms)
+    osz_formulaterms_dict = dict(zip(tokens[::2], tokens[1::2]))
+    
+    uds_eta = uds[osz_formulaterms_dict[&#39;eta&#39;]] #mesh2d_s1
+    uds_depth = uds[osz_formulaterms_dict[&#39;depth&#39;]] #mesh2d_bldepth: positive version of mesh2d_flowelem_bl, but is always in file
+    uds_zlev = uds[osz_formulaterms_dict[&#39;zlev&#39;]] #mesh2d_interface_z
+    uds_zlev = uds_zlev.where(uds_zlev!=fillvals[&#39;f8&#39;])
+    uds_sigma = uds[osz_formulaterms_dict[&#39;sigma&#39;]] #mesh2d_interface_sigma
+    uds_sigma = uds_sigma.where(uds_sigma!=fillvals[&#39;f8&#39;])
+    uds_depth_c = uds[osz_formulaterms_dict[&#39;depth_c&#39;]] #mesh2d_sigmazdepth
+    
+    # for levels k where sigma(k) has a defined value and zlev(k) is not defined:
+    # z(n,k,j,i) = eta(n,j,i) + sigma(k)*(min(depth_c,depth(j,i))+eta(n,j,i))
+    zw_sigmapart = uds_eta + uds_sigma*(uds_depth.clip(max=uds_depth_c)+uds_eta)
+    # for levels k where zlev(k) has a defined value and sigma(k) is not defined: 
+    # z(n,k,j,i) = zlev(k)
+    zw_zpart = uds_zlev.clip(min=-uds_depth) #added clipping of zvalues with bedlevel #TODO: maybe also add max=uds_eta?
+    uds[&#39;mesh2d_flowelem_zw&#39;] = zw_sigmapart.fillna(zw_zpart)
+    
+    uds = uds.set_coords([&#39;mesh2d_flowelem_zw&#39;])#,&#39;mesh2d_flowelem_zcc&#39;]) #TODO: do we need zcc also? (otherwise maybe remove from other functions?)
+    return uds
+
+
+def reconstruct_zw_zcc(ds):
+    dimn_layer, dimn_interfaces = get_vertical_dimensions(ds)
+    
+    if dimn_layer is not None: #D-FlowFM mapfile
+        gridname = ds.grid.name
+        varname_zint = f&#39;{gridname}_flowelem_zw&#39;
+    elif &#39;laydim&#39; in ds.dims: #D-FlowFM hisfile
+        varname_zint = &#39;zcoordinate_w&#39;
+    
+    #reconstruct zw/zcc variables (if not in file) and treat as fullgrid mapfile from here
+    if varname_zint in ds.variables: #fullgrid info already available, so continuing
+        print(f&#39;zw/zcc (fullgrid) values already present in Dataset in variable {varname_zint}&#39;)
+        pass
+    elif len(ds.filter_by_attrs(standard_name=&#39;ocean_sigma_z_coordinate&#39;)) != 0:
+        print(&#39;zsigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here&#39;)
+        ds = reconstruct_zw_zcc_fromzsigma(ds)
+    elif &#39;mesh2d_layer_sigma&#39; in ds.variables: #TODO: var with standard_name=&#39;ocean_sigma_coordinate&#39; available?
+        print(&#39;sigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here&#39;)
+        ds = reconstruct_zw_zcc_fromsigma(ds)
+    elif &#39;mesh2d_layer_z&#39; in ds.variables:
+        print(&#39;z-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here&#39;)
+        ds = reconstruct_zw_zcc_fromz(ds)
+    else:
+        raise Exception(&#39;layers present, but unknown layertype, expected one of variables: mesh2d_flowelem_zw, mesh2d_layer_sigma, mesh2d_layer_z&#39;)
+    return ds
+
+    
 def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str =&#39;z0&#39;, zlayer_z0_selnearest:bool = False):    
     &#34;&#34;&#34;
     Lazily depth-slice a dataset with layers. Performance can be increased by using a subset of variables or subsetting the dataset in any dimension.
@@ -413,18 +467,8 @@ def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str =&#39;z0
         ds_atdepths = ds_atdepths.where((depths_xr&gt;=data_bl) &amp; (depths_xr&lt;=data_wl)) #filter above wl and below bl values
         return ds_atdepths #early return
     
-    #potentially construct fullgrid info (zcc/zw) #TODO: maybe move to separate function, like open_partitioned_dataset() (although bl/wl are needed anyway)
-    if varname_zint in data_xr.variables: #fullgrid info already available, so continuing
-        print(f&#39;zw/zcc (fullgrid) values already present in Dataset in variable {varname_zint}&#39;)
-        pass
-    elif &#39;mesh2d_layer_sigma&#39; in data_xr.variables: #reconstruct_zw_zcc_fromsigma and treat as zsigma/fullgrid mapfile from here
-        print(&#39;sigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here&#39;)
-        data_xr = reconstruct_zw_zcc_fromsigma(data_xr)
-    elif &#39;mesh2d_layer_z&#39; in data_xr.variables:
-        print(&#39;z-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here&#39;)
-        data_xr = reconstruct_zw_zcc_fromz(data_xr)
-    else:
-        raise Exception(&#39;layers present, but unknown layertype/var&#39;)
+    #potentially construct fullgrid info (zcc/zw)
+    data_xr = reconstruct_zw_zcc(data_xr)
     
     #correct reference level
     if reference==&#39;z0&#39;:
@@ -775,21 +819,12 @@ def plot_ztdata(data_xr_sel, varname, ax=None, only_contour=False, get_ds=False,
     xu_edgedim = uds.grid.edge_dimension
     xu_nodedim = uds.grid.node_dimension
     
-    #potentially construct fullgrid info (zcc/zw) #TODO: this ifloop is copied from get_mapdata_atdepth(), prevent this duplicate code
-    if dimn_layer not in uds.dims: #2D model #TODO: maybe add layer-dummydim to ds facevars and put zvals_interface as variable in dataset (would make function slightly more generic)
+    #potentially construct fullgrid info (zcc/zw)
+    if dimn_layer not in uds.dims: #2D model
         print(&#39;depth dimension not found, probably 2D model&#39;)
         pass
-    elif &#39;mesh2d_flowelem_zw&#39; in uds.variables: #fullgrid info already available, so continuing
-        print(&#39;zw/zcc (fullgrid) values already present in Dataset&#39;)
-        pass
-    elif &#39;mesh2d_layer_sigma&#39; in uds.variables: #reconstruct_zw_zcc_fromsigma and treat as zsigma/fullgrid mapfile from here
-        print(&#39;sigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here&#39;)
-        uds = reconstruct_zw_zcc_fromsigma(uds)
-    elif &#39;mesh2d_layer_z&#39; in uds.variables:        
-        print(&#39;z-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here&#39;)
-        uds = reconstruct_zw_zcc_fromz(uds)
     else:
-        raise Exception(&#39;layers present, but unknown layertype, expected one of variables: mesh2d_flowelem_zw, mesh2d_layer_sigma, mesh2d_layer_z&#39;)
+        uds = reconstruct_zw_zcc(uds)
     
     face_index_xr = xr.DataArray(face_index,dims=(&#39;ncrossed_faces&#39;))
     data_frommap_merged_sel = uds.sel({xu_facedim:face_index_xr})
@@ -924,7 +959,7 @@ def plot_ztdata(data_xr_sel, varname, ax=None, only_contour=False, get_ds=False,
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def reconstruct_zw_zcc_fromsigma(data_xr_map):
+<pre><code class="python">def reconstruct_zw_zcc_fromsigma(data_xr_map): #TODO: can also be done with formula_terms from attr (like reconstruct_zw_zcc_fromzsigma)
     &#34;&#34;&#34;
     reconstruct full grid output (time/face-varying z-values) for sigma model, necessary for slicing sigmamodel on depth value
     &#34;&#34;&#34;
@@ -976,6 +1011,88 @@ def plot_ztdata(data_xr_sel, varname, ax=None, only_contour=False, get_ds=False,
     
     data_xr_map = data_xr_map.set_coords([&#39;mesh2d_flowelem_zw&#39;,&#39;mesh2d_flowelem_zcc&#39;])
     return data_xr_map</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.get_nc.reconstruct_zw_zcc_fromzsigma"><code class="name flex">
+<span>def <span class="ident">reconstruct_zw_zcc_fromzsigma</span></span>(<span>uds)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>reconstruct full grid output (time/face-varying z-values) for zsigmavalue model without full grid output. Implemented in <a href="https://issuetracker.deltares.nl/browse/UNST-5477">https://issuetracker.deltares.nl/browse/UNST-5477</a>
+based on <a href="https://cfconventions.org/cf-conventions/cf-conventions.html#_ocean_sigma_over_z_coordinate">https://cfconventions.org/cf-conventions/cf-conventions.html#_ocean_sigma_over_z_coordinate</a></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reconstruct_zw_zcc_fromzsigma(uds):
+    &#34;&#34;&#34;
+    reconstruct full grid output (time/face-varying z-values) for zsigmavalue model without full grid output. Implemented in https://issuetracker.deltares.nl/browse/UNST-5477
+    based on https://cfconventions.org/cf-conventions/cf-conventions.html#_ocean_sigma_over_z_coordinate
+    &#34;&#34;&#34;
+    
+    #default fillvalues are not automatically parsed to nan, so do manually: https://github.com/pydata/xarray/issues/2742
+    import netCDF4
+    fillvals = netCDF4.default_fillvals
+    
+    #get formula_terms, convert to list and then to dict
+    osz_varn = list(uds.filter_by_attrs(standard_name=&#39;ocean_sigma_z_coordinate&#39;).data_vars)[0]
+    osz_formulaterms = uds[osz_varn].attrs[&#39;formula_terms&#39;]
+    tokens = re.split(&#39;[:\\s]+&#39;, osz_formulaterms)
+    osz_formulaterms_dict = dict(zip(tokens[::2], tokens[1::2]))
+    
+    uds_eta = uds[osz_formulaterms_dict[&#39;eta&#39;]] #mesh2d_s1
+    uds_depth = uds[osz_formulaterms_dict[&#39;depth&#39;]] #mesh2d_bldepth: positive version of mesh2d_flowelem_bl, but is always in file
+    uds_zlev = uds[osz_formulaterms_dict[&#39;zlev&#39;]] #mesh2d_interface_z
+    uds_zlev = uds_zlev.where(uds_zlev!=fillvals[&#39;f8&#39;])
+    uds_sigma = uds[osz_formulaterms_dict[&#39;sigma&#39;]] #mesh2d_interface_sigma
+    uds_sigma = uds_sigma.where(uds_sigma!=fillvals[&#39;f8&#39;])
+    uds_depth_c = uds[osz_formulaterms_dict[&#39;depth_c&#39;]] #mesh2d_sigmazdepth
+    
+    # for levels k where sigma(k) has a defined value and zlev(k) is not defined:
+    # z(n,k,j,i) = eta(n,j,i) + sigma(k)*(min(depth_c,depth(j,i))+eta(n,j,i))
+    zw_sigmapart = uds_eta + uds_sigma*(uds_depth.clip(max=uds_depth_c)+uds_eta)
+    # for levels k where zlev(k) has a defined value and sigma(k) is not defined: 
+    # z(n,k,j,i) = zlev(k)
+    zw_zpart = uds_zlev.clip(min=-uds_depth) #added clipping of zvalues with bedlevel #TODO: maybe also add max=uds_eta?
+    uds[&#39;mesh2d_flowelem_zw&#39;] = zw_sigmapart.fillna(zw_zpart)
+    
+    uds = uds.set_coords([&#39;mesh2d_flowelem_zw&#39;])#,&#39;mesh2d_flowelem_zcc&#39;]) #TODO: do we need zcc also? (otherwise maybe remove from other functions?)
+    return uds</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.get_nc.reconstruct_zw_zcc"><code class="name flex">
+<span>def <span class="ident">reconstruct_zw_zcc</span></span>(<span>ds)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reconstruct_zw_zcc(ds):
+    dimn_layer, dimn_interfaces = get_vertical_dimensions(ds)
+    
+    if dimn_layer is not None: #D-FlowFM mapfile
+        gridname = ds.grid.name
+        varname_zint = f&#39;{gridname}_flowelem_zw&#39;
+    elif &#39;laydim&#39; in ds.dims: #D-FlowFM hisfile
+        varname_zint = &#39;zcoordinate_w&#39;
+    
+    #reconstruct zw/zcc variables (if not in file) and treat as fullgrid mapfile from here
+    if varname_zint in ds.variables: #fullgrid info already available, so continuing
+        print(f&#39;zw/zcc (fullgrid) values already present in Dataset in variable {varname_zint}&#39;)
+        pass
+    elif len(ds.filter_by_attrs(standard_name=&#39;ocean_sigma_z_coordinate&#39;)) != 0:
+        print(&#39;zsigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here&#39;)
+        ds = reconstruct_zw_zcc_fromzsigma(ds)
+    elif &#39;mesh2d_layer_sigma&#39; in ds.variables: #TODO: var with standard_name=&#39;ocean_sigma_coordinate&#39; available?
+        print(&#39;sigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here&#39;)
+        ds = reconstruct_zw_zcc_fromsigma(ds)
+    elif &#39;mesh2d_layer_z&#39; in ds.variables:
+        print(&#39;z-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here&#39;)
+        ds = reconstruct_zw_zcc_fromz(ds)
+    else:
+        raise Exception(&#39;layers present, but unknown layertype, expected one of variables: mesh2d_flowelem_zw, mesh2d_layer_sigma, mesh2d_layer_z&#39;)
+    return ds</code></pre>
 </details>
 </dd>
 <dt id="dfm_tools.get_nc.get_Dataset_atdepths"><code class="name flex">
@@ -1094,18 +1211,8 @@ This is faster but results in values interpolated between zcc (z cell centers), 
         ds_atdepths = ds_atdepths.where((depths_xr&gt;=data_bl) &amp; (depths_xr&lt;=data_wl)) #filter above wl and below bl values
         return ds_atdepths #early return
     
-    #potentially construct fullgrid info (zcc/zw) #TODO: maybe move to separate function, like open_partitioned_dataset() (although bl/wl are needed anyway)
-    if varname_zint in data_xr.variables: #fullgrid info already available, so continuing
-        print(f&#39;zw/zcc (fullgrid) values already present in Dataset in variable {varname_zint}&#39;)
-        pass
-    elif &#39;mesh2d_layer_sigma&#39; in data_xr.variables: #reconstruct_zw_zcc_fromsigma and treat as zsigma/fullgrid mapfile from here
-        print(&#39;sigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here&#39;)
-        data_xr = reconstruct_zw_zcc_fromsigma(data_xr)
-    elif &#39;mesh2d_layer_z&#39; in data_xr.variables:
-        print(&#39;z-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here&#39;)
-        data_xr = reconstruct_zw_zcc_fromz(data_xr)
-    else:
-        raise Exception(&#39;layers present, but unknown layertype/var&#39;)
+    #potentially construct fullgrid info (zcc/zw)
+    data_xr = reconstruct_zw_zcc(data_xr)
     
     #correct reference level
     if reference==&#39;z0&#39;:
@@ -1423,6 +1530,8 @@ More info at: <a href="https://contextily.readthedocs.io/en/latest/reference.htm
 <li><code><a title="dfm_tools.get_nc.polyline_mapslice" href="#dfm_tools.get_nc.polyline_mapslice">polyline_mapslice</a></code></li>
 <li><code><a title="dfm_tools.get_nc.reconstruct_zw_zcc_fromsigma" href="#dfm_tools.get_nc.reconstruct_zw_zcc_fromsigma">reconstruct_zw_zcc_fromsigma</a></code></li>
 <li><code><a title="dfm_tools.get_nc.reconstruct_zw_zcc_fromz" href="#dfm_tools.get_nc.reconstruct_zw_zcc_fromz">reconstruct_zw_zcc_fromz</a></code></li>
+<li><code><a title="dfm_tools.get_nc.reconstruct_zw_zcc_fromzsigma" href="#dfm_tools.get_nc.reconstruct_zw_zcc_fromzsigma">reconstruct_zw_zcc_fromzsigma</a></code></li>
+<li><code><a title="dfm_tools.get_nc.reconstruct_zw_zcc" href="#dfm_tools.get_nc.reconstruct_zw_zcc">reconstruct_zw_zcc</a></code></li>
 <li><code><a title="dfm_tools.get_nc.get_Dataset_atdepths" href="#dfm_tools.get_nc.get_Dataset_atdepths">get_Dataset_atdepths</a></code></li>
 <li><code><a title="dfm_tools.get_nc.plot_background" href="#dfm_tools.get_nc.plot_background">plot_background</a></code></li>
 <li><code><a title="dfm_tools.get_nc.plot_ztdata" href="#dfm_tools.get_nc.plot_ztdata">plot_ztdata</a></code></li>
