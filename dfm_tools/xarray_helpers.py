@@ -10,8 +10,6 @@ import re
 from netCDF4 import Dataset
 import xarray as xr
 import xugrid as xu
-import matplotlib.pyplot as plt
-plt.close('all')
 import datetime as dt
 import glob
 import pandas as pd

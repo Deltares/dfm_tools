@@ -20,14 +20,17 @@ dir_output = '.'
 file_nc_list = [os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_cb_3d\\cb_3d_map.nc'), #sigmalayer
                 os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0*_map.nc'), #zlayer
                 r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0*_map.nc', #fullgrid
+                r'p:\dflowfm\maintenance\JIRA\05000-05999\05477\c103_ws_3d_fourier\DFM_OUTPUT_westerscheldt01_0subst\westerscheldt01_0subst_map.nc', #zsigma model without fullgrid output but with new ocean_sigma_z_coordinate variable
                 r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_207\results\RMM_dflowfm_0*_map.nc', #2D model
                 r'p:\archivedprojects\11203379-005-mwra-updated-bem\03_model\02_final\A72_ntsu0_kzlb2\DFM_OUTPUT_MB_02\MB_02_0*_map.nc',
                 ]
 
-
 for file_nc in file_nc_list:
     print('processing %s'%(os.path.basename(file_nc)))
     basename = os.path.basename(file_nc).replace('.','').replace('_0*_','_0000_')
+    
+    data_frommap_merged = dfmt.open_partitioned_dataset(file_nc)
+    vars_pd = dfmt.get_ncvarproperties(data_frommap_merged)
     
     if 'cb_3d_map' in file_nc:
         timestep = 72
@@ -84,6 +87,22 @@ for file_nc in file_nc_list:
         crs = "EPSG:4326"
         file_nc_fou = None
         raster_res = 0.3
+    elif 'westerscheldt01_0subst_map' in file_nc:
+        timestep = 1
+        layno = -2
+        sel_slice_x, sel_slice_y = slice(None,None), slice(None,None)
+        section_y = 380000
+        line_array = np.array([[19108.74,386404.0],
+                               [40255.92,377797.6],
+                               [48739.38,376322.2],
+                               [52796.69,377428.7],
+                               [55255.67,382838.5]])
+        clim_bl = None
+        clim_sal = None
+        crs = "EPSG:28992"
+        file_nc_fou = None
+        raster_res = 2500
+        data_frommap_merged = data_frommap_merged.rename({'mesh2d_ucmag':'mesh2d_sa1'}) #rename variable to allow for hardcoded plotting
     elif 'RMM_dflowfm' in file_nc:
         timestep = 365 #50
         layno = None
@@ -133,10 +152,6 @@ for file_nc in file_nc_list:
         raster_res = 0.3
     else:
         raise Exception('ERROR: no settings provided for this mapfile')
-    
-    
-    data_frommap_merged = dfmt.open_partitioned_dataset(file_nc)
-    vars_pd = dfmt.get_ncvarproperties(data_frommap_merged)
     
     
     print('plot grid from mapdata')
@@ -198,21 +213,22 @@ for file_nc in file_nc_list:
     fig.savefig(os.path.join(dir_output,f'{basename}_selxyslice'))
     
     
-    print('plot bedlevel as polycollection, contourf, contour, rasterized')
-    #create fancy plots, more options at https://deltares.github.io/xugrid/examples/plotting.html
-    if clim_bl is None:
-        vmin = vmax = None
-    else:
-        vmin, vmax = clim_bl #TODO: vmin/vmax are necessary upon plot initialization (instead of pc.set_clim(clim_bl)) for proper colorbar, this is also matplotlib behaviour so not xugrid specific
-    fig, ((ax1,ax2),(ax3,ax4)) = plt.subplots(2,2,figsize=(12,7),sharex=True,sharey=True)
-    pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot(ax=ax1, linewidth=0.5, edgecolors='face', cmap='jet', vmin=vmin, vmax=vmax)
-    pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot.contourf(ax=ax2, levels=11, cmap='jet', vmin=vmin, vmax=vmax)
-    if 'cb_3d_map' not in file_nc: #TODO: cb_3d_map fails on contour with "UserWarning: No contour levels were found within the data range." (because all bedlevels are -5m) >> colorbar gives error, is this an xugrid or matplotlib issue?
-        pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot.contour(ax=ax3, levels=11, cmap='jet', vmin=vmin, vmax=vmax, add_colorbar=True)
-    bl_raster = dfmt.rasterize_ugrid(data_frommap_merged[['mesh2d_flowelem_bl']],resolution=raster_res) #rasterize ugrid
-    pc = bl_raster['mesh2d_flowelem_bl'].plot(ax=ax4, cmap='jet', vmin=vmin, vmax=vmax) #plot with non-ugrid method
-    fig.tight_layout()
-    fig.savefig(os.path.join(dir_output,f'{basename}_gridbedcontour'))
+    if 'westerscheldt01_0subst_map' not in file_nc: #TODO: skipping for esternscheldt since contourf/contour raise "ValueError: repeats may not contain negative values." (also happens in notebook) https://github.com/Deltares/xugrid/issues/68
+        print('plot bedlevel as polycollection, contourf, contour, rasterized')
+        #create fancy plots, more options at https://deltares.github.io/xugrid/examples/plotting.html
+        if clim_bl is None:
+            vmin = vmax = None
+        else:
+            vmin, vmax = clim_bl #TODO: vmin/vmax are necessary upon plot initialization (instead of pc.set_clim(clim_bl)) for proper colorbar, this is also matplotlib behaviour so not xugrid specific
+        fig, ((ax1,ax2),(ax3,ax4)) = plt.subplots(2,2,figsize=(12,7),sharex=True,sharey=True)
+        pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot(ax=ax1, linewidth=0.5, edgecolors='face', cmap='jet', vmin=vmin, vmax=vmax)
+        pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot.contourf(ax=ax2, levels=11, cmap='jet', vmin=vmin, vmax=vmax)
+        if 'cb_3d_map' not in file_nc: #TODO: cb_3d_map fails on contour with "UserWarning: No contour levels were found within the data range." (because all bedlevels are -5m) >> colorbar gives error, is this an xugrid or matplotlib issue?
+            pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot.contour(ax=ax3, levels=11, cmap='jet', vmin=vmin, vmax=vmax, add_colorbar=True)
+        bl_raster = dfmt.rasterize_ugrid(data_frommap_merged[['mesh2d_flowelem_bl']],resolution=raster_res) #rasterize ugrid
+        pc = bl_raster['mesh2d_flowelem_bl'].plot(ax=ax4, cmap='jet', vmin=vmin, vmax=vmax) #plot with non-ugrid method
+        fig.tight_layout()
+        fig.savefig(os.path.join(dir_output,f'{basename}_gridbedcontour'))
     
     
     #filter for dry cells
@@ -297,7 +313,7 @@ for file_nc in file_nc_list:
     #TODO: add hovmoller to notebook. x='x' does not work for spherical models, since it is sorted by 's'
     print('hovmoller plot: mean salinity over depth along section_y over time')
     #ax.axhline(y=section_y, color="red")
-    data_frommap_merged_sel = data_frommap_merged.isel(time=slice(-30,-1)).ugrid.sel(y=section_y)
+    data_frommap_merged_sel = data_frommap_merged.isel(time=slice(-30,None)).ugrid.sel(y=section_y)
     fig, ax = plt.subplots(figsize=(10,5.5))
     if 'nmesh2d_layer' in data_frommap_merged_sel.dims:
         slice_sa1 = data_frommap_merged_sel.mesh2d_sa1.mean(dim='nmesh2d_layer')
