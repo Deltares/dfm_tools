@@ -290,7 +290,7 @@ def reconstruct_zw_zcc_fromzsigma(uds):
     based on https://cfconventions.org/cf-conventions/cf-conventions.html#_ocean_sigma_over_z_coordinate
     """
     
-    #default fillvalues are not automatically parsed to nan, so do manually: https://github.com/pydata/xarray/issues/2742
+    #TODO: default fillvalues are not automatically parsed to nan, so doing it manually: https://github.com/pydata/xarray/issues/2742
     import netCDF4
     fillvals = netCDF4.default_fillvals
     
