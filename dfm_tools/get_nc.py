@@ -35,7 +35,7 @@ Created on Fri Feb 14 12:45:11 2020
 import warnings
 import numpy as np
 import datetime as dt
-import pandas as pd
+import re
 import xugrid as xu
 import xarray as xr
 import matplotlib.pyplot as plt
@@ -277,6 +277,42 @@ def reconstruct_zw_zcc_fromz(data_xr_map):
     
     data_xr_map = data_xr_map.set_coords(['mesh2d_flowelem_zw','mesh2d_flowelem_zcc'])
     return data_xr_map
+
+
+def reconstruct_zw_zcc_fromzsigma(uds):
+    """
+    reconstruct full grid output (time/face-varying z-values) for zsigmavalue model without full grid output. Implemented in https://issuetracker.deltares.nl/browse/UNST-5477
+    based on https://cfconventions.org/cf-conventions/cf-conventions.html#_ocean_sigma_over_z_coordinate
+    """
+    
+    #default fillvalues are not automatically parsed to nan, so do manually: https://github.com/pydata/xarray/issues/2742
+    import netCDF4
+    fillvals = netCDF4.default_fillvals
+    
+    #get formula_terms, convert to list and then to dict
+    osz_varn = list(uds.filter_by_attrs(standard_name='ocean_sigma_z_coordinate').data_vars)[0]
+    osz_formulaterms = uds[osz_varn].attrs['formula_terms']
+    tokens = re.split('[:\\s]+', osz_formulaterms)
+    osz_formulaterms_dict = dict(zip(tokens[::2], tokens[1::2]))
+    
+    uds_eta = uds[osz_formulaterms_dict['eta']] #mesh2d_s1
+    uds_depth = uds[osz_formulaterms_dict['depth']] #mesh2d_bldepth: positive version of mesh2d_flowelem_bl, but is always in file
+    uds_zlev = uds[osz_formulaterms_dict['zlev']] #mesh2d_interface_z
+    uds_zlev = uds_zlev.where(uds_zlev!=fillvals['f8'])
+    uds_sigma = uds[osz_formulaterms_dict['sigma']] #mesh2d_interface_sigma
+    uds_sigma = uds_sigma.where(uds_sigma!=fillvals['f8'])
+    uds_depth_c = uds[osz_formulaterms_dict['depth_c']] #mesh2d_sigmazdepth
+    
+    # for levels k where sigma(k) has a defined value and zlev(k) is not defined:
+    # z(n,k,j,i) = eta(n,j,i) + sigma(k)*(min(depth_c,depth(j,i))+eta(n,j,i))
+    zw_sigmapart = uds_eta + uds_sigma*(uds_depth.clip(max=uds_depth_c)+uds_eta)
+    # for levels k where zlev(k) has a defined value and sigma(k) is not defined: 
+    # z(n,k,j,i) = zlev(k)
+    zw_zpart = uds_zlev.clip(min=-uds_depth) #added clipping of zvalues with bedlevel #TODO: maybe also add max=uds_eta?
+    uds['mesh2d_flowelem_zw'] = zw_sigmapart.fillna(zw_zpart)
+    
+    uds = uds.set_coords(['mesh2d_flowelem_zw'])#,'mesh2d_flowelem_zcc']) #TODO: do we need zcc also?
+    return uds
 
 
 def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str ='z0', zlayer_z0_selnearest:bool = False):    
