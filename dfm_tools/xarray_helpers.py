@@ -395,8 +395,6 @@ def get_vertical_dimensions(uds): #TODO: maybe add layer_dimension and interface
     gridname = uds.grid.name
     grid_info = uds.grid.to_dataset()[gridname]
     if hasattr(grid_info,'layer_dimension'):
-        print('>> found layer/interface dimensions in file: ',end='')
-        print(grid_info.layer_dimension, grid_info.interface_dimension) #combined in attr vertical_dimensions
         return grid_info.layer_dimension, grid_info.interface_dimension
     else:
         return None, None
