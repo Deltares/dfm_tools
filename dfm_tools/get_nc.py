@@ -128,17 +128,8 @@ def get_xzcoords_onintersection(uds, face_index, crs_dist_starts, crs_dist_stops
     if dimn_layer not in uds.dims: #2D model #TODO: maybe add layer-dummydim to ds facevars and put zvals_interface as variable in dataset (would make function slightly more generic)
         print('depth dimension not found, probably 2D model')
         pass
-    elif 'mesh2d_flowelem_zw' in uds.variables: #fullgrid info already available, so continuing
-        print('zw/zcc (fullgrid) values already present in Dataset')
-        pass
-    elif 'mesh2d_layer_sigma' in uds.variables: #reconstruct_zw_zcc_fromsigma and treat as zsigma/fullgrid mapfile from here
-        print('sigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
-        uds = reconstruct_zw_zcc_fromsigma(uds)
-    elif 'mesh2d_layer_z' in uds.variables:        
-        print('z-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
-        uds = reconstruct_zw_zcc_fromz(uds)
     else:
-        raise Exception('layers present, but unknown layertype, expected one of variables: mesh2d_flowelem_zw, mesh2d_layer_sigma, mesh2d_layer_z')
+        uds = reconstruct_zw_zcc(uds)
     
     face_index_xr = xr.DataArray(face_index,dims=('ncrossed_faces'))
     data_frommap_merged_sel = uds.sel({xu_facedim:face_index_xr})
@@ -315,6 +306,33 @@ def reconstruct_zw_zcc_fromzsigma(uds):
     return uds
 
 
+def reconstruct_zw_zcc(ds):
+    dimn_layer, dimn_interfaces = get_vertical_dimensions(ds)
+    
+    if dimn_layer is not None: #D-FlowFM mapfile
+        gridname = ds.grid.name
+        varname_zint = f'{gridname}_flowelem_zw'
+    elif 'laydim' in ds.dims: #D-FlowFM hisfile
+        varname_zint = 'zcoordinate_w'
+    
+    #reconstruct zw/zcc variables (if not in file) and treat as fullgrid mapfile from here
+    if varname_zint in ds.variables: #fullgrid info already available, so continuing
+        print(f'zw/zcc (fullgrid) values already present in Dataset in variable {varname_zint}')
+        pass
+    elif len(ds.filter_by_attrs(standard_name='ocean_sigma_z_coordinate')) != 0:
+        print('zsigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
+        ds = reconstruct_zw_zcc_fromzsigma(ds)
+    elif 'mesh2d_layer_sigma' in ds.variables:
+        print('sigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
+        ds = reconstruct_zw_zcc_fromsigma(ds)
+    elif 'mesh2d_layer_z' in ds.variables:
+        print('z-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
+        ds = reconstruct_zw_zcc_fromz(ds)
+    else:
+        raise Exception('layers present, but unknown layertype, expected one of variables: mesh2d_flowelem_zw, mesh2d_layer_sigma, mesh2d_layer_z')
+    return ds
+
+    
 def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str ='z0', zlayer_z0_selnearest:bool = False):    
     """
     Lazily depth-slice a dataset with layers. Performance can be increased by using a subset of variables or subsetting the dataset in any dimension.
@@ -397,18 +415,8 @@ def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str ='z0', z
         ds_atdepths = ds_atdepths.where((depths_xr>=data_bl) & (depths_xr<=data_wl)) #filter above wl and below bl values
         return ds_atdepths #early return
     
-    #potentially construct fullgrid info (zcc/zw) #TODO: maybe move to separate function, like open_partitioned_dataset() (although bl/wl are needed anyway)
-    if varname_zint in data_xr.variables: #fullgrid info already available, so continuing
-        print(f'zw/zcc (fullgrid) values already present in Dataset in variable {varname_zint}')
-        pass
-    elif 'mesh2d_layer_sigma' in data_xr.variables: #reconstruct_zw_zcc_fromsigma and treat as zsigma/fullgrid mapfile from here
-        print('sigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
-        data_xr = reconstruct_zw_zcc_fromsigma(data_xr)
-    elif 'mesh2d_layer_z' in data_xr.variables:
-        print('z-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
-        data_xr = reconstruct_zw_zcc_fromz(data_xr)
-    else:
-        raise Exception('layers present, but unknown layertype/var')
+    #potentially construct fullgrid info (zcc/zw)
+    data_xr = reconstruct_zw_zcc(data_xr)
     
     #correct reference level
     if reference=='z0':
