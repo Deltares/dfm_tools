@@ -286,12 +286,9 @@ for file_nc in file_nc_list:
         vars_pd_fou = dfmt.get_ncvarproperties(data_frommap_fou)
         if 'mesh2d_nLayers' in data_frommap_fou.dims: #reduce layer dimension via isel/sel/interp. TODO: slicing over depth is not possible with dfmt.get_Dataset_atdepths(), since waterlevel is missing from file. (does it work for rstfiles?)
             data_frommap_fou = data_frommap_fou.set_index(mesh2d_nLayers='mesh2d_layer_z') #TODO: not supported for sigmalayers, zlayers is for some reason in foufile of this zsigma model (or not the case with a rerun?) TODO: should these not be coordinate variables to begin with? (zw/zcc are also coordinates)
-            if 1:
-                data_frommap_fou_atdepth = data_frommap_fou.isel(mesh2d_nLayers=-2) #second to last layer
-            elif 0: #nearest
-                data_frommap_fou_atdepth = data_frommap_fou.sel(mesh2d_nLayers=-4, method='nearest') #layer closest to z==-4m
-            else: #interp
-                data_frommap_fou_atdepth = data_frommap_fou.interp(mesh2d_nLayers=-4) #interp to -4m depth
+            data_frommap_fou_atdepth = data_frommap_fou.isel(mesh2d_nLayers=-2) #second to last layer
+            #data_frommap_fou_atdepth = data_frommap_fou.sel(mesh2d_nLayers=-4, method='nearest') #layer nearest/closest to z==-4m
+            #data_frommap_fou_atdepth = data_frommap_fou.interp(mesh2d_nLayers=-4) #interp to -4m depth
         else:
             data_frommap_fou_atdepth = data_frommap_fou
         
