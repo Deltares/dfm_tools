@@ -83,10 +83,6 @@ Created on Wed Feb 12 01:55:57 2020
 
 @author: veenstra
 &#34;&#34;&#34;
-import warnings
-import numpy as np
-import pandas as pd
-
 
 
 class Polygon:
@@ -124,89 +120,7 @@ class Polygon:
             DESCRIPTION.
 
         &#34;&#34;&#34;
-        raise DeprecationWarning(&#39;the function dfm_tools.polygon.Polygon.fromfile() is deprecated, please use the new hydrolib alternative. Example script: https://github.com/Deltares/dfm_tools/blob/main/tests/examples/preprocess_hydrolib_readwritepol.py&#39;) #TODO: remove this definition
-
-        with open(file_pol) as plifile:
-            lines = plifile.readlines()
-            pol_data_list = []
-            pol_name_list = []
-            pol_comment_list = []
-            pol_comment_temp = []
-            pol_data_pd_list = []
-            #pol_object_list = []
-            iLine=0
-            while iLine&lt;=len(lines)-1:
-                line_str = lines[iLine].split()
-                try:
-                    float(line_str[0]) #this line should start with a string, so this should fail
-                    raise Exception(&#39;ERROR: line_str[0] is not a string: (%s, on line %d), polygon file format might be wrong&#39;%(line_str, iLine))
-                except:
-                    pass
-                iLine=iLine+1
-                if line_str[0].startswith(&#39;*&#39;): #comments
-                    if (&#39;column&#39; in lines[iLine-1].lower()) or (&#39;kolom&#39; in lines[iLine-1].lower()):
-                        line_str_joined = &#39; &#39;.join(line_str)
-                        pol_comment_temp.append(line_str_joined)
-                else:
-                    #the start of a new polygon
-                    pol_name_list.append(line_str[0]) #get name from name line_str
-                    pol_comment_list.append(pol_comment_temp)
-                    
-                    #convert shape numbers to int
-                    line_shp = [int(x) for x in lines[iLine].split()] #eg [1150, 10, 10] if it is a tekal mapfile
-                    iLine=iLine+1
-                    len_pol=int(line_shp[0])
-                    
-                    #retrieve data numbers as floats
-                    data_pol_str = lines[iLine:iLine+len_pol]
-                    iLine = iLine+len_pol
-                    data_pol = np.array([x.split() for x in data_pol_str],dtype=float)
-                    data_pol_nanbool = data_pol==999.999
-                    data_pol[data_pol_nanbool] = np.nan
-                    pol_data_list.append(data_pol)
-                    if len(pol_comment_temp)==data_pol.shape[1]: #expected format
-                        pol_data_pd = pd.DataFrame(data_pol,columns=pol_comment_temp)
-                        if len(line_shp) == 2:
-                            if &#39;date&#39; in pol_comment_temp[0].lower() and &#39;time&#39; in pol_comment_temp[1].lower():
-                                #first convert columns to integers, since they were before
-                                #pol_data_pd.iloc[:,0] = pol_data_pd.iloc[:,0].astype(int)
-                                #pol_data_pd.iloc[:,1] = pol_data_pd.iloc[:,1].astype(int)
-                                try:
-                                    #add datetime column with parsed dates
-                                    pol_data_datetime = pd.to_datetime(pol_data_pd.iloc[:,0]*1000000+pol_data_pd.iloc[:,1],format=&#39;%Y%m%d%H%M%S&#39;) #this does not work anymore
-                                    #pol_data_datetime = (pol_data_pd.iloc[:,0]*1000000+pol_data_pd.iloc[:,1]).astype(&#39;datetime64[ns]&#39;).dt.round(freq=&#39;S&#39;)
-                                    pol_data_pd.insert(0, &#39;datetime&#39;, pol_data_datetime)
-                                except:
-                                    warnings.warn(&#39;conversion from date/time column to datetime failed, incorrect format of first two columns?&#39;)
-                                    print(&#39;conversion from date/time column to datetime failed, incorrect format of first two columns?&#39;)
-                        elif len(line_shp) == 3: #tekal 2D map files
-                            data_pol_map = data_pol.reshape([line_shp[0]//line_shp[2],line_shp[2],line_shp[1]])
-                        elif len(line_shp) == 4: #tekal 2D map files, with fourth dummy in shape array
-                            if line_shp[0]//line_shp[2]-line_shp[3]&gt;=1e-9:
-                                raise Exception(&#39;tekal map file shape header is not consistent with itself&#39;)
-                            data_pol_map = data_pol.reshape([line_shp[0]//line_shp[2],line_shp[2],line_shp[1]])
-                        else:
-                            raise Exception(&#39;tekal file should have 2 or 3 dimensions, but it has this shape: %s&#39;%(line_shp))
-                    else:
-                        pol_data_pd = pd.DataFrame(data_pol)
-                    pol_data_pd_list.append(pol_data_pd)
-                    
-                    #pol_object = Polygon(data=data_pol, name=line_str[0], comments=pol_comment_temp)
-                    #pol_object_list.append(pol_object)
-                    
-                    # reset comment list for next block
-                    pol_comment_temp = []
-        if pd_output is True:
-            return pol_data_pd_list
-        elif tekmap_output:
-            if len(pol_comment_list) &gt; 1:
-                raise Exception(&#39;multiple tekal maps not anticipated yet&#39;)
-            return data_pol_map, pol_comment_list[0]
-        #elif obj_output is True:
-        #    return pol_object_list
-        else:
-            return pol_data_list, pol_name_list, pol_comment_list
-            </code></pre>
+        raise DeprecationWarning(&#39;the function dfm_tools.polygon.Polygon.fromfile() is deprecated, please use the new hydrolib alternative. Example script: https://github.com/Deltares/dfm_tools/blob/main/tests/examples/preprocess_hydrolib_readwritepol.py&#39;) #TODO: remove this definition</code></pre>
 </details>
 </section>
 <section>
@@ -263,88 +177,7 @@ class Polygon:
             DESCRIPTION.
 
         &#34;&#34;&#34;
-        raise DeprecationWarning(&#39;the function dfm_tools.polygon.Polygon.fromfile() is deprecated, please use the new hydrolib alternative. Example script: https://github.com/Deltares/dfm_tools/blob/main/tests/examples/preprocess_hydrolib_readwritepol.py&#39;) #TODO: remove this definition
-
-        with open(file_pol) as plifile:
-            lines = plifile.readlines()
-            pol_data_list = []
-            pol_name_list = []
-            pol_comment_list = []
-            pol_comment_temp = []
-            pol_data_pd_list = []
-            #pol_object_list = []
-            iLine=0
-            while iLine&lt;=len(lines)-1:
-                line_str = lines[iLine].split()
-                try:
-                    float(line_str[0]) #this line should start with a string, so this should fail
-                    raise Exception(&#39;ERROR: line_str[0] is not a string: (%s, on line %d), polygon file format might be wrong&#39;%(line_str, iLine))
-                except:
-                    pass
-                iLine=iLine+1
-                if line_str[0].startswith(&#39;*&#39;): #comments
-                    if (&#39;column&#39; in lines[iLine-1].lower()) or (&#39;kolom&#39; in lines[iLine-1].lower()):
-                        line_str_joined = &#39; &#39;.join(line_str)
-                        pol_comment_temp.append(line_str_joined)
-                else:
-                    #the start of a new polygon
-                    pol_name_list.append(line_str[0]) #get name from name line_str
-                    pol_comment_list.append(pol_comment_temp)
-                    
-                    #convert shape numbers to int
-                    line_shp = [int(x) for x in lines[iLine].split()] #eg [1150, 10, 10] if it is a tekal mapfile
-                    iLine=iLine+1
-                    len_pol=int(line_shp[0])
-                    
-                    #retrieve data numbers as floats
-                    data_pol_str = lines[iLine:iLine+len_pol]
-                    iLine = iLine+len_pol
-                    data_pol = np.array([x.split() for x in data_pol_str],dtype=float)
-                    data_pol_nanbool = data_pol==999.999
-                    data_pol[data_pol_nanbool] = np.nan
-                    pol_data_list.append(data_pol)
-                    if len(pol_comment_temp)==data_pol.shape[1]: #expected format
-                        pol_data_pd = pd.DataFrame(data_pol,columns=pol_comment_temp)
-                        if len(line_shp) == 2:
-                            if &#39;date&#39; in pol_comment_temp[0].lower() and &#39;time&#39; in pol_comment_temp[1].lower():
-                                #first convert columns to integers, since they were before
-                                #pol_data_pd.iloc[:,0] = pol_data_pd.iloc[:,0].astype(int)
-                                #pol_data_pd.iloc[:,1] = pol_data_pd.iloc[:,1].astype(int)
-                                try:
-                                    #add datetime column with parsed dates
-                                    pol_data_datetime = pd.to_datetime(pol_data_pd.iloc[:,0]*1000000+pol_data_pd.iloc[:,1],format=&#39;%Y%m%d%H%M%S&#39;) #this does not work anymore
-                                    #pol_data_datetime = (pol_data_pd.iloc[:,0]*1000000+pol_data_pd.iloc[:,1]).astype(&#39;datetime64[ns]&#39;).dt.round(freq=&#39;S&#39;)
-                                    pol_data_pd.insert(0, &#39;datetime&#39;, pol_data_datetime)
-                                except:
-                                    warnings.warn(&#39;conversion from date/time column to datetime failed, incorrect format of first two columns?&#39;)
-                                    print(&#39;conversion from date/time column to datetime failed, incorrect format of first two columns?&#39;)
-                        elif len(line_shp) == 3: #tekal 2D map files
-                            data_pol_map = data_pol.reshape([line_shp[0]//line_shp[2],line_shp[2],line_shp[1]])
-                        elif len(line_shp) == 4: #tekal 2D map files, with fourth dummy in shape array
-                            if line_shp[0]//line_shp[2]-line_shp[3]&gt;=1e-9:
-                                raise Exception(&#39;tekal map file shape header is not consistent with itself&#39;)
-                            data_pol_map = data_pol.reshape([line_shp[0]//line_shp[2],line_shp[2],line_shp[1]])
-                        else:
-                            raise Exception(&#39;tekal file should have 2 or 3 dimensions, but it has this shape: %s&#39;%(line_shp))
-                    else:
-                        pol_data_pd = pd.DataFrame(data_pol)
-                    pol_data_pd_list.append(pol_data_pd)
-                    
-                    #pol_object = Polygon(data=data_pol, name=line_str[0], comments=pol_comment_temp)
-                    #pol_object_list.append(pol_object)
-                    
-                    # reset comment list for next block
-                    pol_comment_temp = []
-        if pd_output is True:
-            return pol_data_pd_list
-        elif tekmap_output:
-            if len(pol_comment_list) &gt; 1:
-                raise Exception(&#39;multiple tekal maps not anticipated yet&#39;)
-            return data_pol_map, pol_comment_list[0]
-        #elif obj_output is True:
-        #    return pol_object_list
-        else:
-            return pol_data_list, pol_name_list, pol_comment_list</code></pre>
+        raise DeprecationWarning(&#39;the function dfm_tools.polygon.Polygon.fromfile() is deprecated, please use the new hydrolib alternative. Example script: https://github.com/Deltares/dfm_tools/blob/main/tests/examples/preprocess_hydrolib_readwritepol.py&#39;) #TODO: remove this definition</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
@@ -402,88 +235,7 @@ DESCRIPTION. The default is False.</dd>
         DESCRIPTION.
 
     &#34;&#34;&#34;
-    raise DeprecationWarning(&#39;the function dfm_tools.polygon.Polygon.fromfile() is deprecated, please use the new hydrolib alternative. Example script: https://github.com/Deltares/dfm_tools/blob/main/tests/examples/preprocess_hydrolib_readwritepol.py&#39;) #TODO: remove this definition
-
-    with open(file_pol) as plifile:
-        lines = plifile.readlines()
-        pol_data_list = []
-        pol_name_list = []
-        pol_comment_list = []
-        pol_comment_temp = []
-        pol_data_pd_list = []
-        #pol_object_list = []
-        iLine=0
-        while iLine&lt;=len(lines)-1:
-            line_str = lines[iLine].split()
-            try:
-                float(line_str[0]) #this line should start with a string, so this should fail
-                raise Exception(&#39;ERROR: line_str[0] is not a string: (%s, on line %d), polygon file format might be wrong&#39;%(line_str, iLine))
-            except:
-                pass
-            iLine=iLine+1
-            if line_str[0].startswith(&#39;*&#39;): #comments
-                if (&#39;column&#39; in lines[iLine-1].lower()) or (&#39;kolom&#39; in lines[iLine-1].lower()):
-                    line_str_joined = &#39; &#39;.join(line_str)
-                    pol_comment_temp.append(line_str_joined)
-            else:
-                #the start of a new polygon
-                pol_name_list.append(line_str[0]) #get name from name line_str
-                pol_comment_list.append(pol_comment_temp)
-                
-                #convert shape numbers to int
-                line_shp = [int(x) for x in lines[iLine].split()] #eg [1150, 10, 10] if it is a tekal mapfile
-                iLine=iLine+1
-                len_pol=int(line_shp[0])
-                
-                #retrieve data numbers as floats
-                data_pol_str = lines[iLine:iLine+len_pol]
-                iLine = iLine+len_pol
-                data_pol = np.array([x.split() for x in data_pol_str],dtype=float)
-                data_pol_nanbool = data_pol==999.999
-                data_pol[data_pol_nanbool] = np.nan
-                pol_data_list.append(data_pol)
-                if len(pol_comment_temp)==data_pol.shape[1]: #expected format
-                    pol_data_pd = pd.DataFrame(data_pol,columns=pol_comment_temp)
-                    if len(line_shp) == 2:
-                        if &#39;date&#39; in pol_comment_temp[0].lower() and &#39;time&#39; in pol_comment_temp[1].lower():
-                            #first convert columns to integers, since they were before
-                            #pol_data_pd.iloc[:,0] = pol_data_pd.iloc[:,0].astype(int)
-                            #pol_data_pd.iloc[:,1] = pol_data_pd.iloc[:,1].astype(int)
-                            try:
-                                #add datetime column with parsed dates
-                                pol_data_datetime = pd.to_datetime(pol_data_pd.iloc[:,0]*1000000+pol_data_pd.iloc[:,1],format=&#39;%Y%m%d%H%M%S&#39;) #this does not work anymore
-                                #pol_data_datetime = (pol_data_pd.iloc[:,0]*1000000+pol_data_pd.iloc[:,1]).astype(&#39;datetime64[ns]&#39;).dt.round(freq=&#39;S&#39;)
-                                pol_data_pd.insert(0, &#39;datetime&#39;, pol_data_datetime)
-                            except:
-                                warnings.warn(&#39;conversion from date/time column to datetime failed, incorrect format of first two columns?&#39;)
-                                print(&#39;conversion from date/time column to datetime failed, incorrect format of first two columns?&#39;)
-                    elif len(line_shp) == 3: #tekal 2D map files
-                        data_pol_map = data_pol.reshape([line_shp[0]//line_shp[2],line_shp[2],line_shp[1]])
-                    elif len(line_shp) == 4: #tekal 2D map files, with fourth dummy in shape array
-                        if line_shp[0]//line_shp[2]-line_shp[3]&gt;=1e-9:
-                            raise Exception(&#39;tekal map file shape header is not consistent with itself&#39;)
-                        data_pol_map = data_pol.reshape([line_shp[0]//line_shp[2],line_shp[2],line_shp[1]])
-                    else:
-                        raise Exception(&#39;tekal file should have 2 or 3 dimensions, but it has this shape: %s&#39;%(line_shp))
-                else:
-                    pol_data_pd = pd.DataFrame(data_pol)
-                pol_data_pd_list.append(pol_data_pd)
-                
-                #pol_object = Polygon(data=data_pol, name=line_str[0], comments=pol_comment_temp)
-                #pol_object_list.append(pol_object)
-                
-                # reset comment list for next block
-                pol_comment_temp = []
-    if pd_output is True:
-        return pol_data_pd_list
-    elif tekmap_output:
-        if len(pol_comment_list) &gt; 1:
-            raise Exception(&#39;multiple tekal maps not anticipated yet&#39;)
-        return data_pol_map, pol_comment_list[0]
-    #elif obj_output is True:
-    #    return pol_object_list
-    else:
-        return pol_data_list, pol_name_list, pol_comment_list</code></pre>
+    raise DeprecationWarning(&#39;the function dfm_tools.polygon.Polygon.fromfile() is deprecated, please use the new hydrolib alternative. Example script: https://github.com/Deltares/dfm_tools/blob/main/tests/examples/preprocess_hydrolib_readwritepol.py&#39;) #TODO: remove this definition</code></pre>
 </details>
 </dd>
 </dl>
