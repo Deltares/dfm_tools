@@ -148,7 +148,6 @@ def get_varnamefromattrs(data_xr, varname):
     #if not returned above, the varname was not found so raise exception
     varprops = get_ncvarproperties(data_xr)[[&#39;long_name&#39;,&#39;standard_name&#39;]]
     raise Exception(f&#39;ERROR: requested variable {varname} not in netcdf, available are (full list in dfmt.get_ncvarproperties(ds)):\n{varprops}&#39;)
-    return varname_matched
 
 
 def rename_waqvars(ds:(xr.Dataset,xu.UgridDataset)):
@@ -363,8 +362,7 @@ def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset), drop_tidal_times:bool = True
     
     #if not returned above, the varname was not found so raise exception
     varprops = get_ncvarproperties(data_xr)[[&#39;long_name&#39;,&#39;standard_name&#39;]]
-    raise Exception(f&#39;ERROR: requested variable {varname} not in netcdf, available are (full list in dfmt.get_ncvarproperties(ds)):\n{varprops}&#39;)
-    return varname_matched</code></pre>
+    raise Exception(f&#39;ERROR: requested variable {varname} not in netcdf, available are (full list in dfmt.get_ncvarproperties(ds)):\n{varprops}&#39;)</code></pre>
 </details>
 </dd>
 <dt id="dfm_tools.get_nc_helpers.rename_waqvars"><code class="name flex">
