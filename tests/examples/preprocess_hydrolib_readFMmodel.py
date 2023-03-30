@@ -54,7 +54,8 @@ crs_pd_list = [dfmt.pointlike_to_DataFrame(x) for y in fm.output.crsfile for x i
 
 
 file_struct = Path(r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_structures.ini')
-file_struct = r'p:\archivedprojects\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\structures_toRTC\RMM_structures_ts_cl10_coeff10.ini' #with timfiles
+file_struct = r'p:\archivedprojects\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\structures_toRTC\RMM_structures_open_cl10_coeff10.ini'
+file_struct = r'p:\archivedprojects\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\structures_toRTC\RMM_structures_ts_cl10_coeff10.ini' #TODO with timfiles crashes: https://github.com/Deltares/HYDROLIB-core/issues/497
 structs = hcdfm.StructureModel(file_struct)
 for struct in structs.structure:
     print(struct.id)
