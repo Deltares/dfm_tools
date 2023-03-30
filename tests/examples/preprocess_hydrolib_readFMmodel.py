@@ -12,16 +12,46 @@ import datetime as dt
 import matplotlib.pyplot as plt
 plt.close('all')
 
-dtstart = dt.datetime.now()
-
-
-#file_mdu = Path(r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB_structbc\RMM_dflowfm_general.mdu')
-file_mdu = Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\computations\validation\2018_HYDROLIB_JV\RMM_VZM_commented.mdu')
+file_mdu = Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\computations\validation\2018_HYDROLIB_JV\RMM_VZM.mdu')
+file_mdu_commented = str(file_mdu).replace('.mdu','_commentedpy.mdu')
+file_mdu_rewrite = str(file_mdu).replace('.mdu','_rewritepy.mdu')
 mdu_contents = open(str(file_mdu),'r').readlines()
 if '[model]' in mdu_contents[0]:
     print('WARNING: [model] found in mdufile, this should be [general]')
-fm = hcdfm.FMModel(file_mdu) #TODO: works, but many mdu-lines are comented, so uncomment things one by one (e.g. multiline obs/crs files not supported, but should it be?)
-crs_pd_list = [dfmt.pointlike_to_DataFrame(x) for x in fm.output.crsfile[0].objects]
+for iL, line in enumerate(mdu_contents):
+    keywords_tocomment = ['FixedWeirFile', #47sec
+                          'DryPointsFile', #~0.5sec
+                          'ThinDamFile', #~3sec
+                          'StructureFile',#~15sec #TODO: does timfile in structurefile work?
+                          #'IniFieldFile', #~0sec (not loaded?)
+                          #'TrtL','TrtRou','TrtDef','DtTrt', #trachytopes (~0sec, not loaded?)
+                          #'AreaFile','UseCalibration','DefinitionFile', #calibration (~0sec, not loaded?)
+                          #'ExtForceFile', #~0sec, because not yet loaded: https://github.com/Deltares/HYDROLIB-core/issues/369)
+                          'ExtForceFileNew', #286sec #TODO: takes ages because of seaward waterlevelbnd
+                          ]
+    for keyword in keywords_tocomment:
+        if line.startswith(keyword):
+            mdu_contents[iL] = '#'+line
+    for keyword in ['ObsFile','CrsFile']: #replacing multi-line approach with space-delimited approach, multiline obs/crs filenames are currently not supported: https://github.com/Deltares/HYDROLIB-core/issues/485)
+        if '\\' in line:
+            line = line.split('#')[0].strip() #remove comment
+            line = line.replace('\\\n',' ').replace('\\',' ') #replace backslash with space
+            mdu_contents[iL] = line
+with open(file_mdu_commented,'w') as f:
+    f.write(''.join(mdu_contents))
+print('>> opening FMModel: ',end='')
+dtstart = dt.datetime.now()
+fm = hcdfm.FMModel(file_mdu_commented) #TODO: works, but many mdu-lines are comented, so uncomment things one by one
+print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
+#TODO: enable caching possible to save time on second load?
+#TODO: some things are not loaded, what happens when saving in new location?
+#TODO: is model validated? (e.g. presence of diskonlyfilemodels or other non-loaded things)
+fm.save(file_mdu_rewrite)
+#TODO: when writing mdu again, are all keywords written: https://github.com/Deltares/HYDROLIB-core/issues/495
+#TODO: when writing to mdu again, indents are used: https://github.com/Deltares/HYDROLIB-core/issues/493
+obs_pd_list = [dfmt.pointlike_to_DataFrame(x) for x in fm.output.obsfile]
+crs_pd_list = [dfmt.pointlike_to_DataFrame(x) for y in fm.output.crsfile for x in y.objects] #TODO: difficult to access crs (and names get lost), how to simplify?
+
 
 file_struct = Path(r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_structures.ini')
 structs = hcdfm.StructureModel(file_struct)
@@ -31,20 +61,14 @@ for struct in structs.structure:
 #structs.structure[0].__dict__
 
 
-file_network = Path(r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\rmm_v1p7_net.nc')
-#file_network = Path(r'p:\1230882-emodnet_hrsm\GTSMv5.0\runs\reference_GTSMv4.1_wiCA\step11_global_1p25eu_net.nc')
-#file_network = Path(r'p:\1230882-emodnet_hrsm\GTSMv5.0\runs\GM50_2000m_eu0900m_ITfac5p5_wx\gtsm_200s_2000m_eu0900m_ca2000m_v4_net.nc')
-#network = hcdfm.NetworkModel(file_network) #TODO: what is this used for? plotting network/map is easier with xugrid
-
-
 #file_extnew = Path(r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_bnd.ext') #TODO: waterlevelbnd for rivers are present three times: https://github.com/Deltares/HYDROLIB-core/issues/354
 file_extnew = Path(r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_bnd_course.ext')
 #file_extnew = Path(r'p:\1230882-emodnet_hrsm\GTSMv5.0\SO_NHrivGTSM\computations\BD013_4par_mildslope_wflowdis_JV\gtsm_forcing_bc.ext')
+#file_extnew = Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\computations\validation\2018_HYDROLIB_JV\RMM_bnd.ext') #slow because of waterlevelbnd seaside
+print('>> opening ExtModel: ',end='')
+dtstart = dt.datetime.now()
 ext = hcdfm.ExtModel(file_extnew)
-
-
-time_passed = (dt.datetime.now()-dtstart).total_seconds()
-print(f'>>time passed: {time_passed:.2f} sec')
+print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
 
 max_extforcings = 6 #None for all
 

@@ -34,7 +34,7 @@ dir_output = '.'
 
 for file_bc in file_bc_list:
     #Load .bc-file using HydroLib object ForcingModel.
-    m = hcdfm.ForcingModel(Path(file_bc)) #TODO: why can it not be str?
+    m = hcdfm.ForcingModel(Path(file_bc)) #TODO: support str: https://github.com/Deltares/HYDROLIB-core/issues/365
     ForcingModel_object_out = hcdfm.ForcingModel()
     
     # m.general.comments = {'a':'aa'} #TODO: adding comments to top of file is not possible, only if using filetype or fileversion: https://github.com/Deltares/HYDROLIB-core/issues/130. Top file comment newfeature: https://github.com/Deltares/HYDROLIB-core/issues/362
