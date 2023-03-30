@@ -9,12 +9,11 @@ def write_bathy_toasc(filename_asc,lon_sel_ext,lat_sel_ext,elev_sel_ext,asc_fmt=
     import numpy as np
 
     print('writing to asc file')
-    if not elev_sel_ext.shape == (lat_sel_ext.shape[0], lon_sel_ext.shape[0]):
+    if elev_sel_ext.shape != (lat_sel_ext.shape[0], lon_sel_ext.shape[0]):
         raise Exception('resulting shape of elev_sel_ext %s is not consistent with lat_sel_ext/lon_sel_ext vars %s'%(elev_sel_ext.shape,(lat_sel_ext.shape[0], lon_sel_ext.shape[0])))
     if isinstance(elev_sel_ext,np.ma.core.MaskedArray): #masked has to be filled in order for the nans to be visible
         elev_sel_ext = elev_sel_ext.filled(np.nan)
     if np.isnan(elev_sel_ext).sum()>0:
-        #raise Exception('nans in elev, check if asc writing works ok')
         elev_sel_ext = elev_sel_ext.copy()
         elev_sel_ext[np.isnan(elev_sel_ext)] = nodata_val
         print('replaced nan values with %d'%(nodata_val))
