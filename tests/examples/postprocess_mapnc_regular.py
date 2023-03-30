@@ -113,6 +113,7 @@ for file_nc in file_nc_list:
         #quiv_curved = dfmt.velovect(ax,reg_grid_X,reg_grid_Y,U,V, arrowstyle='fancy', scale = 5, grains = 25, color=speed)#, cmap='jet') #TODO: requested adding curved-quiver to matplotlib https://github.com/matplotlib/matplotlib/issues/20038
         #quiv_curved.lines.set_clim(0,5)
         quiv_curved = ax.streamplot(reg_x_vec,reg_y_vec,U,V, arrowstyle='-|>', integration_direction='forward',broken_streamlines=False, color=speed, density=1)
+        breakit
         cbar = fig.colorbar(quiv_curved.lines, ax=ax)
         cbar.set_label('velocity magnitude (%s)'%(data_v.attrs['units']))
         ax.set_title(data_v_tsel.time.to_pandas())

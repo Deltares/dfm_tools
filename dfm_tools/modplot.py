@@ -8,12 +8,13 @@ https://stackoverflow.com/questions/51843313/flow-visualisation-in-python-using-
     
 Streamline plotting for 2D vector fields.
 """
+
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-#import six
-#from six.moves import xrange
-#from scipy.interpolate import interp1d
+# import six
+# from six.moves import xrange
+# from scipy.interpolate import interp1d
 
 import numpy as np
 import matplotlib
@@ -25,7 +26,7 @@ import matplotlib.patches as patches
 
 
 
-def velovect(axes, x, y, u, v, linewidth=None, color=None, #TODO: simplify input
+def velovect(axes, x, y, u, v, linewidth=None, color=None,
                cmap=None, norm=None, arrowsize=1, arrowstyle='-|>',
                transform=None, zorder=None, start_points=None,
                scale=1.0, grains=15):
@@ -49,7 +50,7 @@ def velovect(axes, x, y, u, v, linewidth=None, color=None, #TODO: simplify input
         Colormap used to plot streamlines and arrows. Only necessary when using
         an array input for *color*.
     *norm* : :class:`~matplotlib.colors.Normalize`
-        Normalize object used to scale luminance data to 0, 1. if None, stretch
+        Normalize object used to scale luminance data to 0, 1. If None, stretch
         (min, max) to (0, 1). Only necessary when *color* is an array.
     *arrowsize* : float
         Factor scale arrow size.
@@ -100,7 +101,7 @@ def velovect(axes, x, y, u, v, linewidth=None, color=None, #TODO: simplify input
     if use_multicolor_lines:
         if color.shape != grid.shape:
             raise ValueError(
-                "if 'color' is given, must have the shape of 'Grid(x,y)'")
+                "If 'color' is given, must have the shape of 'Grid(x,y)'")
         line_colors = []
         color = np.ma.masked_invalid(color)
     else:
@@ -110,7 +111,7 @@ def velovect(axes, x, y, u, v, linewidth=None, color=None, #TODO: simplify input
     if isinstance(linewidth, np.ndarray):
         if linewidth.shape != grid.shape:
             raise ValueError(
-                "if 'linewidth' is given, must have the shape of 'Grid(x,y)'")
+                "If 'linewidth' is given, must have the shape of 'Grid(x,y)'")
         line_kw['linewidth'] = []
     else:
         line_kw['linewidth'] = linewidth
@@ -360,7 +361,7 @@ class StreamMask(object):
     def __init__(self, density):
         if np.isscalar(density):
             if density <= 0:
-                raise ValueError("if a scalar, 'density' must be positive")
+                raise ValueError("If a scalar, 'density' must be positive")
             self.nx = self.ny = int(30 * density)
         else:
             if len(density) != 2:
@@ -387,7 +388,7 @@ class StreamMask(object):
 
     def _update_trajectory(self, xm, ym):
         """Update current trajectory position in mask.
-        if the new position has already been filled, raise `InvalidIndexError`.
+        If the new position has already been filled, raise `InvalidIndexError`.
         """
         #if self._current_xy != (xm, ym):
         #    if self[ym, xm] == 0:
@@ -405,7 +406,6 @@ class StreamMask(object):
 
 def get_integrator(u, v, dmap, minlength, resolution, magnitude):
 
-    import warnings
     # rescale velocity onto grid-coordinates for integrations.
     u, v = dmap.data2grid(u, v)
 
@@ -417,10 +417,8 @@ def get_integrator(u, v, dmap, minlength, resolution, magnitude):
     def forward_time(xi, yi):
         ds_dt = interpgrid(speed, xi, yi)
         if ds_dt == 0:
-            dt_ds = 0
-            warnings.warn('TerminateTrajectory()')
-        else:
-            dt_ds = 1. / ds_dt
+            raise TerminateTrajectory()
+        dt_ds = 1. / ds_dt
         ui = interpgrid(u, xi, yi)
         vi = interpgrid(v, xi, yi)
         return ui * dt_ds, vi * dt_ds
@@ -509,9 +507,8 @@ def _integrate_rk12(x0, y0, dmap, f, resolution, magnitude):
             stotal += ds
             hit_edge = True
             break
-        except:# TerminateTrajectory:
-            #break
-            pass
+        except TerminateTrajectory:
+            break
 
         dx1 = ds * k1x
         dy1 = ds * k1y
@@ -607,7 +604,7 @@ def interpgrid(a, xi, yi):
 
     if not isinstance(xi, np.ndarray):
         if np.ma.is_masked(ai):
-            raise Exception('TerminateTrajectory')
+            raise TerminateTrajectory
 
     return ai
 
