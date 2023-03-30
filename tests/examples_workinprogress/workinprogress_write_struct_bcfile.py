@@ -20,7 +20,7 @@ list_structures = [struct.id for struct in structs.structure]
 ext_bnd = hcdfm.ExtModel()
 ForcingModel_object = hcdfm.ForcingModel()
 
-arr_time = np.array([0,10,20,1440])
+arr_time = np.array([0,10,20,60])
 arr_GOW = np.array([0,360,360,0])
 arr_GLEL = np.array([0,-5.5,-5.5,0])
 
