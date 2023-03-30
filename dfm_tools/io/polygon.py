@@ -31,10 +31,6 @@ Created on Wed Feb 12 01:55:57 2020
 
 @author: veenstra
 """
-import warnings
-import numpy as np
-import pandas as pd
-
 
 
 class Polygon:
