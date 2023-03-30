@@ -95,7 +95,6 @@ def get_varnamefromattrs(data_xr, varname):
     #if not returned above, the varname was not found so raise exception
     varprops = get_ncvarproperties(data_xr)[['long_name','standard_name']]
     raise Exception(f'ERROR: requested variable {varname} not in netcdf, available are (full list in dfmt.get_ncvarproperties(ds)):\n{varprops}')
-    return varname_matched
 
 
 def rename_waqvars(ds:(xr.Dataset,xu.UgridDataset)):
