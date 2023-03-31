@@ -65,7 +65,7 @@ fig.colorbar(strm.lines)
 print('>> dfmt.velovect(): ',end='')
 dtstart = dt.datetime.now()
 strm = dfmt.velovect(ax3, X, Y, U, V, color=speed, cmap='winter', arrowstyle='fancy', linewidth=speed/5, integration_direction='forward',
-                     scale=5, grains=grains)
+                     density=5, grains=grains)
 print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
 fig.colorbar(strm.lines)
 

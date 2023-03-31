@@ -24,11 +24,11 @@ import matplotlib.lines as mlines
 __all__ = ['velovect']
 
 
-def velovect(axes, x, y, u, v, linewidth=None, color=None,
+def velovect(axes, x, y, u, v, density=1, linewidth=None, color=None,
                cmap=None, norm=None, arrowsize=1, arrowstyle='-|>',
                transform=None, zorder=None, start_points=None,
                integration_direction='both',
-               scale=1.0, grains=15,
+               grains=15,
                broken_streamlines=True):
     """
     Draw streamlines of a vector flow.
@@ -158,7 +158,7 @@ def velovect(axes, x, y, u, v, linewidth=None, color=None,
     if integration_direction == 'both':
         magnitude /= 2.
 	
-    resolution = scale/grains
+    resolution = density/np.max(grains)
     integrate = _get_integrator(u, v, dmap, resolution, magnitude, integration_direction)
 
     trajectories = []    
@@ -686,15 +686,19 @@ def interpgrid(a, xi, yi):
 
 
 def _gen_starting_points(x,y,grains):
+    if isinstance(grains,tuple):
+        nx, ny = grains
+    elif isinstance(grains,int):
+        nx = ny = grains
     
     eps = np.finfo(np.float32).eps
     
-    tmp_x =  np.linspace(x.min()+eps, x.max()-eps, grains)
-    tmp_y =  np.linspace(y.min()+eps, y.max()-eps, grains)
+    tmp_x =  np.linspace(x.min()+eps, x.max()-eps, nx)
+    tmp_y =  np.linspace(y.min()+eps, y.max()-eps, ny)
     
-    xs = np.tile(tmp_x, grains)
-    ys = np.repeat(tmp_y, grains)
+    xs = np.tile(tmp_x, ny)
+    ys = np.repeat(tmp_y, nx)
 
-    seed_points = np.array([list(xs), list(ys)])
+    seed_points = np.array([xs, ys])
     
     return seed_points.T
