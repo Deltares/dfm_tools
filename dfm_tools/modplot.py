@@ -5,13 +5,12 @@ Created on Wed Mar 25 15:26:55 2020
 @author: Kieran Hunt
 https://github.com/kieranmrhunt/curved-quivers/blob/master/modplot.py
 https://stackoverflow.com/questions/51843313/flow-visualisation-in-python-using-curved-path-following-vectors
-edited by Jelmer Veenstra (30-03-2023), veenstrajelmer
+aligned with matplotlib.streamplot and improved by Jelmer Veenstra (30-03-2023), https://github.com/veenstrajelmer
+matplotlib.streamplot available at https://raw.githubusercontent.com/matplotlib/matplotlib/main/lib/matplotlib/streamplot.py
 
 Streamline plotting for 2D vector fields.
-"""
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+"""
 
 import numpy as np
 
@@ -22,10 +21,15 @@ import matplotlib.collections as mcollections
 import matplotlib.lines as mlines
 
 
+__all__ = ['velovect']
+
+
 def velovect(axes, x, y, u, v, linewidth=None, color=None,
                cmap=None, norm=None, arrowsize=1, arrowstyle='-|>',
                transform=None, zorder=None, start_points=None,
-               scale=1.0, grains=15):
+               integration_direction='both',
+               scale=1.0, grains=15,
+               broken_streamlines=True):
     """
     Draw streamlines of a vector flow.
 
@@ -45,7 +49,7 @@ def velovect(axes, x, y, u, v, linewidth=None, color=None,
         For different densities in each direction, use a tuple
         (density_x, density_y).
     linewidth : float or 2D array
-        The width of the stream lines. With a 2D array the line width can be
+        The width of the streamlines. With a 2D array the line width can be
         varied across the grid. The array must have the same shape as *u*
         and *v*.
     color : color or 2D array
@@ -63,14 +67,22 @@ def velovect(axes, x, y, u, v, linewidth=None, color=None,
         See `~matplotlib.patches.FancyArrowPatch`.
     minlength : float
         Minimum length of streamline in axes coordinates.
-    start_points : Nx2 array
+    start_points : (N, 2) array
         Coordinates of starting points for the streamlines in data coordinates
         (the same coordinates as the *x* and *y* arrays).
-    zorder : int
-        The zorder of the stream lines and arrows.
+    zorder : float
+        The zorder of the streamlines and arrows.
         Artists with lower zorder values are drawn first.
     maxlength : float
         Maximum length of streamline in axes coordinates.
+    integration_direction : {'forward', 'backward', 'both'}, default: 'both'
+        Integrate the streamline in forward, backward or both directions.
+    data : indexable object, optional
+        DATA_PARAMETER_PLACEHOLDER
+    broken_streamlines : boolean, default: True
+        If False, forces streamlines to continue until they
+        leave the plot domain.  If True, they may be terminated if they
+        come too close to another streamline.
 
     Returns
     -------
@@ -80,7 +92,7 @@ def velovect(axes, x, y, u, v, linewidth=None, color=None,
         - ``lines``: `.LineCollection` of streamlines
 
         - ``arrows``: `.PatchCollection` containing `.FancyArrowPatch`
-          objects representing the arrows half-way along stream lines.
+          objects representing the arrows half-way along streamlines.
 
             This container will probably change in the future to allow changes
             to the colormap, alpha, etc. for both lines and arrows, but these
@@ -105,6 +117,12 @@ def velovect(axes, x, y, u, v, linewidth=None, color=None,
 
     line_kw = {}
     arrow_kw = dict(arrowstyle=arrowstyle, mutation_scale=10 * arrowsize)
+
+    _api.check_in_list(['both', 'forward', 'backward'],
+                       integration_direction=integration_direction)
+
+    #if integration_direction == 'both': #done for magnitude
+    #    maxlength /= 2.
 
     use_multicolor_lines = isinstance(color, np.ndarray)
     if use_multicolor_lines:
@@ -137,14 +155,14 @@ def velovect(axes, x, y, u, v, linewidth=None, color=None,
     v = np.ma.masked_invalid(v)
     magnitude = np.sqrt(u**2 + v**2)
     magnitude/=np.max(magnitude)
+    if integration_direction == 'both':
+        magnitude /= 2.
 	
     resolution = scale/grains
-    minlength = .9*resolution
-    integrate = get_integrator(u, v, dmap, minlength, resolution, magnitude)
+    integrate = _get_integrator(u, v, dmap, resolution, magnitude, integration_direction)
 
-    trajectories = []
-    edges = []
-    
+    trajectories = []    
+   
     if start_points is None:
         start_points=_gen_starting_points(x,y,grains)
     
@@ -154,8 +172,8 @@ def velovect(axes, x, y, u, v, linewidth=None, color=None,
     for xs, ys in sp2:
         if not (grid.x_origin <= xs <= grid.x_origin + grid.width and
                 grid.y_origin <= ys <= grid.y_origin + grid.height):
-            raise ValueError("Starting point ({}, {}) outside of data "
-                             "boundaries".format(xs, ys))
+                raise ValueError(f"Starting point ({xs}, {ys}) outside of "
+                                 "data boundaries")
 
     # Convert start_points from data to array coords
     # Shift the seed points from the bottom left of the data so that
@@ -165,10 +183,16 @@ def velovect(axes, x, y, u, v, linewidth=None, color=None,
 
     for xs, ys in sp2:
         xg, yg = dmap.data2grid(xs, ys)
-        t = integrate(xg, yg)
+        # Floating point issues can cause xg, yg to be slightly out of
+        # bounds for xs, ys on the upper boundaries. Because we have
+        # already checked that the starting points are within the original
+        # grid, clip the xg, yg to the grid to work around this issue
+        xg = np.clip(xg, 0, grid.nx - 1)
+        yg = np.clip(yg, 0, grid.ny - 1)
+        
+        t = integrate(xg, yg, broken_streamlines)
         if t is not None:
-            trajectories.append(t[0])
-            edges.append(t[1])
+            trajectories.append(t)
 
     if use_multicolor_lines:
         if norm is None:
@@ -177,21 +201,22 @@ def velovect(axes, x, y, u, v, linewidth=None, color=None,
 
     streamlines = []
     arrows = []
-    for t, edge in zip(trajectories,edges):
-        tgx = np.array(t[0])
-        tgy = np.array(t[1])
-        
-		
+    for t in trajectories:
+        tgx, tgy = t.T
         # Rescale from grid-coordinates to data-coordinates.
-        tx, ty = dmap.grid2data(*np.array(t))
+        tx, ty = dmap.grid2data(tgx, tgy)
         tx += grid.x_origin
         ty += grid.y_origin
 
-        
-        points = np.transpose([tx, ty]).reshape(-1, 1, 2)
-        streamlines.extend(np.hstack([points[:-1], points[1:]]))
+        # Create multiple tiny segments if varying width or color is given
+        if isinstance(linewidth, np.ndarray) or use_multicolor_lines:
+            points = np.transpose([tx, ty]).reshape(-1, 1, 2)
+            streamlines.extend(np.hstack([points[:-1], points[1:]]))
+        else:
+            points = np.transpose([tx, ty])
+            streamlines.append(points)
 
-        # Add arrows half way along each trajectory.
+        # Add arrows halfway along each trajectory.
         s = np.cumsum(np.hypot(np.diff(tx), np.diff(ty)))
         n = np.searchsorted(s, s[-1])
         arrow_tail = (tx[n], ty[n])
@@ -206,18 +231,9 @@ def velovect(axes, x, y, u, v, linewidth=None, color=None,
             color_values = interpgrid(color, tgx, tgy)[:-1]
             line_colors.append(color_values)
             arrow_kw['color'] = cmap(norm(color_values[n]))
-        
-        if not edge:
-            p = patches.FancyArrowPatch(
-                arrow_tail, arrow_head, transform=transform, **arrow_kw)
-        else:
-            continue
-        
-        ds = np.sqrt((arrow_tail[0]-arrow_head[0])**2+(arrow_tail[1]-arrow_head[1])**2)
-        
-        if ds<1e-15: continue #remove vanishingly short arrows that cause Patch to fail
-        
-        axes.add_patch(p)
+
+        p = patches.FancyArrowPatch(
+            arrow_tail, arrow_head, transform=transform, **arrow_kw)
         arrows.append(p)
         
     lc = mcollections.LineCollection(
@@ -229,15 +245,20 @@ def velovect(axes, x, y, u, v, linewidth=None, color=None,
         lc.set_cmap(cmap)
         lc.set_norm(norm)
     axes.add_collection(lc)
+
+    ac = mcollections.PatchCollection(arrows)
+    # Adding the collection itself is broken; see #2341.
+    for p in arrows:
+        axes.add_patch(p)
+
     axes.autoscale_view()
-    ac = mpl.collections.PatchCollection(arrows)
     stream_container = StreamplotSet(lc, ac)
     return stream_container
 
 	
 class StreamplotSet:
 
-    def __init__(self, lines, arrows, **kwargs):
+    def __init__(self, lines, arrows):
         self.lines = lines
         self.arrows = arrows
 
@@ -279,8 +300,7 @@ class DomainMap:
 
     def grid2mask(self, xi, yi):
         """Return nearest space in mask-coords from given grid-coords."""
-        return (int(xi * self.x_grid2mask + 0.5),
-                int(yi * self.y_grid2mask + 0.5))
+        return round(xi * self.x_grid2mask), round(yi * self.y_grid2mask)
 
     def mask2grid(self, xm, ym):
         return xm * self.x_mask2grid, ym * self.y_mask2grid
@@ -291,22 +311,23 @@ class DomainMap:
     def grid2data(self, xg, yg):
         return xg / self.x_data2grid, yg / self.y_data2grid
 
-    def start_trajectory(self, xg, yg):
+    def start_trajectory(self, xg, yg, broken_streamlines=True):
         xm, ym = self.grid2mask(xg, yg)
-        self.mask._start_trajectory(xm, ym)
+        self.mask._start_trajectory(xm, ym, broken_streamlines)
 
     def reset_start_point(self, xg, yg):
         xm, ym = self.grid2mask(xg, yg)
         self.mask._current_xy = (xm, ym)
 
-    def update_trajectory(self, xg, yg):
-        
+    def update_trajectory(self, xg, yg, broken_streamlines=True):
+        if not self.grid.within_grid(xg, yg):
+            raise InvalidIndexError
         xm, ym = self.grid2mask(xg, yg)
-        #self.mask._update_trajectory(xm, ym)
+        self.mask._update_trajectory(xm, ym, broken_streamlines)
 
     def undo_trajectory(self):
         self.mask._undo_trajectory()
-        
+
 
 class Grid:
     """Grid of data."""
@@ -333,6 +354,11 @@ class Grid:
         else:
             raise ValueError("'y' can have at maximum 2 dimensions")
 
+        if not (np.diff(x) > 0).all():
+            raise ValueError("'x' must be strictly increasing")
+        if not (np.diff(y) > 0).all():
+            raise ValueError("'y' must be strictly increasing")
+
         self.nx = len(x)
         self.ny = len(y)
 
@@ -344,6 +370,11 @@ class Grid:
 
         self.width = x[-1] - x[0]
         self.height = y[-1] - y[0]
+
+        if not np.allclose(np.diff(x), self.width / (self.nx - 1)):
+            raise ValueError("'x' values must be equally spaced")
+        if not np.allclose(np.diff(y), self.height / (self.ny - 1)):
+            raise ValueError("'y' values must be equally spaced")
 
     @property
     def shape(self):
@@ -367,15 +398,13 @@ class StreamMask:
     """
 
     def __init__(self, density):
-        if np.isscalar(density):
-            if density <= 0:
-                raise ValueError("If a scalar, 'density' must be positive")
-            self.nx = self.ny = int(30 * density)
-        else:
-            if len(density) != 2:
-                raise ValueError("'density' can have at maximum 2 dimensions")
-            self.nx = int(30 * density[0])
-            self.ny = int(30 * density[1])
+        try:
+            self.nx, self.ny = (30 * np.broadcast_to(density, 2)).astype(int)
+        except ValueError as err:
+            raise ValueError("'density' must be a scalar or be of length "
+                             "2") from err
+        if self.nx < 0 or self.ny < 0:
+            raise ValueError("'density' must be positive")
         self._mask = np.zeros((self.ny, self.nx))
         self.shape = self._mask.shape
 
@@ -384,29 +413,36 @@ class StreamMask:
     def __getitem__(self, args):
         return self._mask[args]
 
-    def _start_trajectory(self, xm, ym):
+    def _start_trajectory(self, xm, ym, broken_streamlines=True):
         """Start recording streamline trajectory"""
         self._traj = []
-        self._update_trajectory(xm, ym)
+        self._update_trajectory(xm, ym, broken_streamlines)
 
     def _undo_trajectory(self):
         """Remove current trajectory from mask"""
         for t in self._traj:
             self._mask[t] = 0
 
-    def _update_trajectory(self, xm, ym):
+    def _update_trajectory(self, xm, ym, broken_streamlines=True):
         """
         Update current trajectory position in mask.
 
         If the new position has already been filled, raise `InvalidIndexError`.
         """
-        #if self._current_xy != (xm, ym):
-        #    if self[ym, xm] == 0:
-        self._traj.append((ym, xm))
-        self._mask[ym, xm] = 1
-        self._current_xy = (xm, ym)
-        #    else:
-        #        raise InvalidIndexError
+        if self._current_xy != (xm, ym):
+            if self[ym, xm] == 0:
+                self._traj.append((ym, xm))
+                self._mask[ym, xm] = 1
+                self._current_xy = (xm, ym)
+            else:
+                if broken_streamlines:
+                    raise InvalidIndexError
+                else:
+                    pass
+
+
+class InvalidIndexError(Exception):
+    pass
 
 
 class TerminateTrajectory(Exception):
@@ -416,17 +452,19 @@ class TerminateTrajectory(Exception):
 # Integrator definitions
 # =======================
 
-def get_integrator(u, v, dmap, minlength, resolution, magnitude):
+def _get_integrator(u, v, dmap, resolution, magnitude, integration_direction):
 
     # rescale velocity onto grid-coordinates for integrations.
     u, v = dmap.data2grid(u, v)
 
     # speed (path length) will be in axes-coordinates
-    u_ax = u / dmap.grid.nx
-    v_ax = v / dmap.grid.ny
+    u_ax = u / (dmap.grid.nx - 1)
+    v_ax = v / (dmap.grid.ny - 1)
     speed = np.ma.sqrt(u_ax ** 2 + v_ax ** 2)
 
     def forward_time(xi, yi):
+        if not dmap.grid.within_grid(xi, yi):
+            raise OutOfBounds
         ds_dt = interpgrid(speed, xi, yi)
         if ds_dt == 0:
             raise TerminateTrajectory()
@@ -435,27 +473,43 @@ def get_integrator(u, v, dmap, minlength, resolution, magnitude):
         vi = interpgrid(v, xi, yi)
         return ui * dt_ds, vi * dt_ds
 
+    def backward_time(xi, yi):
+        dxi, dyi = forward_time(xi, yi)
+        return -dxi, -dyi
 
-    def integrate(x0, y0):
-        """Return x, y grid-coordinates of trajectory based on starting point.
+    def integrate(x0, y0, broken_streamlines=True):
+        """
+        Return x, y grid-coordinates of trajectory based on starting point.
+
         Integrate both forward and backward in time from starting point in
         grid coordinates.
+
         Integration is terminated when a trajectory reaches a domain boundary
         or when it crosses into an already occupied cell in the StreamMask. The
         resulting trajectory is None if it is shorter than `minlength`.
         """
 
-        stotal, x_traj, y_traj = 0., [], []
+        stotal, xy_traj = 0., []
 
-        
-        dmap.start_trajectory(x0, y0)
+        try:
+            dmap.start_trajectory(x0, y0, broken_streamlines)
+        except InvalidIndexError:
+            return None
+        if integration_direction in ['both', 'backward']:
+            s, xyt = _integrate_rk12(x0, y0, dmap, backward_time, resolution, magnitude,
+                                     broken_streamlines)
+            stotal += s
+            xy_traj += xyt[::-1]
 
-        dmap.reset_start_point(x0, y0)
-        stotal, x_traj, y_traj, m_total, hit_edge = _integrate_rk12(x0, y0, dmap, forward_time, resolution, magnitude)
+        if integration_direction in ['both', 'forward']:
+            dmap.reset_start_point(x0, y0)
+            s, xyt = _integrate_rk12(x0, y0, dmap, forward_time, resolution, magnitude,
+                                     broken_streamlines)
+            stotal += s
+            xy_traj += xyt[1:]
 
-        
-        if len(x_traj)>1:
-            return (x_traj, y_traj), hit_edge
+        if len(xy_traj) > 1:
+            return np.broadcast_arrays(xy_traj, np.empty((1, 2)))[0]
         else:  # reject short trajectories
             dmap.undo_trajectory()
             return None
@@ -463,10 +517,17 @@ def get_integrator(u, v, dmap, minlength, resolution, magnitude):
     return integrate
 
 
-def _integrate_rk12(x0, y0, dmap, f, resolution, magnitude):
-    """2nd-order Runge-Kutta algorithm with adaptive step size.
+class OutOfBounds(IndexError):
+    pass
+
+
+def _integrate_rk12(x0, y0, dmap, f, resolution, magnitude, broken_streamlines=True):
+    """
+    2nd-order Runge-Kutta algorithm with adaptive step size.
+
     This method is also referred to as the improved Euler's method, or Heun's
     method. This method is favored over higher-order methods because:
+
     1. To get decent looking trajectories and to sample every mask cell
        on the trajectory we need a small timestep, so a lower order
        solver doesn't hurt us unless the data is *very* high resolution.
@@ -474,13 +535,14 @@ def _integrate_rk12(x0, y0, dmap, f, resolution, magnitude):
        data smaller or of similar grid size to the mask grid, the higher
        order corrections are negligible because of the very fast linear
        interpolation used in `interpgrid`.
+
     2. For high resolution input data (i.e. beyond the mask
        resolution), we must reduce the timestep. Therefore, an adaptive
        timestep is more suited to the problem as this would be very hard
        to judge automatically otherwise.
-    This integrator is about 1.5 - 2x as fast as both the RK4 and RK45
-    solvers in most setups on my machine. I would recommend removing the
-    other two to keep things simple.
+
+    This integrator is about 1.5 - 2x as fast as RK4 and RK45 solvers (using
+    similar Python implementations) in most setups.
     """
     # This error is below that needed to match the RK4 integrator. It
     # is set for visual reasons -- too low and corners start
@@ -499,25 +561,31 @@ def _integrate_rk12(x0, y0, dmap, f, resolution, magnitude):
     stotal = 0
     xi = x0
     yi = y0
-    xf_traj = []
-    yf_traj = []
+    xyf_traj = []
     m_total = []
-    hit_edge = False
     
-    while dmap.grid.within_grid(xi, yi):
-        xf_traj.append(xi)
-        yf_traj.append(yi)
-        m_total.append(interpgrid(magnitude, xi, yi))
+    while True:
         try:
+            if dmap.grid.within_grid(xi, yi):
+                xyf_traj.append((xi, yi))
+                m_total.append(interpgrid(magnitude, xi, yi))
+                maxlength = resolution*np.mean(m_total)
+            else:
+                raise OutOfBounds
+
+            # Compute the two intermediate gradients.
+            # f should raise OutOfBounds if the locations given are
+            # outside the grid.
             k1x, k1y = f(xi, yi)
-            k2x, k2y = f(xi + ds * k1x,
-                         yi + ds * k1y)
-        except IndexError:
-            # Out of the domain on one of the intermediate integration steps.
-            # Take an Euler step to the boundary to improve neatness.
-            ds, xf_traj, yf_traj = _euler_step(xf_traj, yf_traj, dmap, f)
-            stotal += ds
-            hit_edge = True
+            k2x, k2y = f(xi + ds * k1x, yi + ds * k1y)
+
+        except OutOfBounds:
+            # Out of the domain during this step.
+            # Take an Euler step to the boundary to improve neatness
+            # unless the trajectory is currently empty.
+            if xyf_traj:
+                ds, xyf_traj = _euler_step(xyf_traj, dmap, f)
+                stotal += ds
             break
         except TerminateTrajectory:
             break
@@ -527,21 +595,19 @@ def _integrate_rk12(x0, y0, dmap, f, resolution, magnitude):
         dx2 = ds * 0.5 * (k1x + k2x)
         dy2 = ds * 0.5 * (k1y + k2y)
 
-        nx, ny = dmap.grid.shape
+        ny, nx = dmap.grid.shape
         # Error is normalized to the axes coordinates
-        error = np.sqrt(((dx2 - dx1) / nx) ** 2 + ((dy2 - dy1) / ny) ** 2)
+        error = np.hypot((dx2 - dx1) / (nx - 1), (dy2 - dy1) / (ny - 1))
 
         # Only save step if within error tolerance
         if error < maxerror:
             xi += dx2
             yi += dy2
-            
-            dmap.update_trajectory(xi, yi)
-            
-            if not dmap.grid.within_grid(xi, yi):
-                hit_edge=True
-            
-            if (stotal + ds) > resolution*np.mean(m_total):
+            try:
+                dmap.update_trajectory(xi, yi, broken_streamlines)
+            except InvalidIndexError:
+                break
+            if stotal + ds > maxlength:
                 break
             stotal += ds
 
@@ -551,14 +617,13 @@ def _integrate_rk12(x0, y0, dmap, f, resolution, magnitude):
         else:
             ds = min(maxds, 0.85 * ds * (maxerror / error) ** 0.5)
 
-    return stotal, xf_traj, yf_traj, m_total, hit_edge
+    return stotal, xyf_traj
 
 
-def _euler_step(xf_traj, yf_traj, dmap, f):
+def _euler_step(xyf_traj, dmap, f):
     """Simple Euler integration step that extends streamline to boundary."""
     ny, nx = dmap.grid.shape
-    xi = xf_traj[-1]
-    yi = yf_traj[-1]
+    xi, yi = xyf_traj[-1]
     cx, cy = f(xi, yi)
     if cx == 0:
         dsx = np.inf
@@ -573,9 +638,8 @@ def _euler_step(xf_traj, yf_traj, dmap, f):
     else:
         dsy = (ny - 1 - yi) / cy
     ds = min(dsx, dsy)
-    xf_traj.append(xi + cx * ds)
-    yf_traj.append(yi + cy * ds)
-    return ds, xf_traj, yf_traj
+    xyf_traj.append((xi + cx * ds, yi + cy * ds))
+    return ds, xyf_traj
 
 
 # Utility functions
