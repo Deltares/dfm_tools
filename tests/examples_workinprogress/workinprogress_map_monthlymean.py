@@ -15,6 +15,7 @@ import dfm_tools as dfmt
 #TODO: experiment with monthly/daily means or depth average of his/map fields (to show power of pandas/xarray)
 
 overwrite = True
+yearmonth = True
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc')
@@ -27,7 +28,7 @@ data_frommap_merged = dfmt.open_partitioned_dataset(file_nc.replace('_0000_','_0
 
 print('>> computing monthly means: ', end='')
 dtstart = dt.datetime.now()
-if 0: #on unique month numbers
+if not yearmonth: #on unique month numbers
     data_xr_monthmean = data_frommap_merged.groupby('time.month').mean() 
     data_xr_monthmean.rename({'month':'time'})
 else: # on unique year+month combinations

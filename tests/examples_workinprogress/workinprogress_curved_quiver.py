@@ -12,7 +12,8 @@ import matplotlib.pyplot as plt
 import xarray as xr
 import dfm_tools as dfmt
 
-if 1:
+testdata = True
+if testdata:
     x = np.linspace(-4,4,120)
     y = np.linspace(-3,3,100)
     X,Y = np.meshgrid(x,y)

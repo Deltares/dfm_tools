@@ -50,7 +50,7 @@ def compute_energy_dissipation(data_xr_map,file_ED_computed):
     data_czs = data_xr_map.mesh2d_czs #m0.5s-1
     data_czs = data_czs.where(data_czs!=0) #0 will result in inf energyloss, so replace by nan
     data_ba = data_xr_map.mesh2d_flowelem_ba #m2
-    data_xr_map['ED'] = ((rho*g)/(data_czs**2) * data_ucmag**3 * data_ba).assign_attrs(attrs_ED) #(kg/m3)*(m/s2)/(m/s2)*(m3/s3)*m2 = kg/s3*m2 = W = J/s
+    data_xr_map['ED'] = ((rho*g)/(data_czs**2) * data_ucmag**3 * data_ba).assign_attrs(attrs_ED) #equation: (kg/m3)*(m/s2)/(m/s2)*(m3/s3)*m2 = kg/s3*m2 = W = J/s
     data_xr_map['ED_pm2'] = (data_xr_map['ED'] / data_ba).assign_attrs(attrs_ED_pm2) #TODO: maybe include ba instead of supplying _pm2 separately?
     
     #TODO: check da.sum(split_every=4): https://github.com/dask/dask/issues/883. Does not seem to work: "TypeError: nansum() got an unexpected keyword argument 'split_every'"

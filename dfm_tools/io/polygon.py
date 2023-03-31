@@ -35,38 +35,8 @@ Created on Wed Feb 12 01:55:57 2020
 
 class Polygon:
     def __init__(self, data, name, comments):
-        #import numpy as np
-        self.data = data
-        self.name = name
-        self.comments = comments
-        raise DeprecationWarning('the function dfm_tools.io.polygon.Polygon() is deprecated, please use the new hydrolib alternative.') #TODO: remove this code
-        #self.line_array = np.c_[self.x, self.y]
+        raise DeprecationWarning('the function dfm_tools.polygon.Polygon() is deprecated, please use the new hydrolib alternative.') #TODO: remove this code
         
-    def fromfile(file_pol, pd_output=False, tekmap_output=False):#, obj_output=False):
-        """
-        reads a pli boundary into an array
-        
-
-        Parameters
-        ----------
-        file_pol : TYPE
-            DESCRIPTION.
-        pd_output : TYPE, optional
-            pd_output==True: create pandas array of tekal file, including comments
-            pd_output==False (default): create list of numpy arrays and list of polygon names
-            DESCRIPTION. The default is False.
-        
-
-        Raises
-        ------
-        Exception
-            DESCRIPTION.
-
-        Returns
-        -------
-        TYPE
-            DESCRIPTION.
-
-        """
+    def fromfile(self, file_pol, pd_output=False, tekmap_output=False):
         raise DeprecationWarning('the function dfm_tools.polygon.Polygon.fromfile() is deprecated, please use the new hydrolib alternative. Example script: https://github.com/Deltares/dfm_tools/blob/main/tests/examples/preprocess_hydrolib_readwritepol.py') #TODO: remove this definition
 

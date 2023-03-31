@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 plt.close('all')
 import dfm_tools as dfmt
 
-mode = 'HYCOM' # 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HARMONIE' 'HYCOM' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall' 'WOA'
+mode = 'WOA' # 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HARMONIE' 'HYCOM' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall' 'WOA'
 
 if 'HIRLAM' in mode:
     if mode == 'HIRLAM_meteo': #1year voor meteo crasht (HIRLAM72_*\\h72_*) door conflicting dimension sizes, sourcefolders opruimen? meteo_heatflux folders zijn schoner dus daar werkt het wel
@@ -79,10 +79,7 @@ data_xr_tsel = dfmt.merge_meteofiles(file_nc=file_nc, time_slice=time_slice,
 #write to netcdf file
 print('>> writing file (can take a while): ',end='')
 dtstart = dt.datetime.now()
-try:
-    times_np = data_xr_tsel['time'].to_series()
-except:
-    times_np = data_xr_tsel['time'].to_numpy() #.to_series() does not work for woa 360_day data. .to_numpy() results in numpy.datetime64 for other datasets, which has no attribute strftime
+times_np = data_xr_tsel['time'].to_series() #used to not work for woa 360_day calendar, .to_numpy() did the trick
 time_start_str = times_np[0].strftime("%Y%m%d")
 time_stop_str = times_np[-1].strftime("%Y%m%d")
 file_out = os.path.join(dir_output, f'{file_out_prefix}{time_start_str}to{time_stop_str}_{mode}.nc')
