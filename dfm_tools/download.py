@@ -115,7 +115,7 @@ def open_OPeNDAP_xr(dataset_url,
         session = setup_session(cas_url, username, password)
         cookies_dict = session.cookies.get_dict()
         if not 'CASTGC' in cookies_dict.keys():
-            raise Exception('CASTGC key missing from session cookies_dict, probably authentication failure')
+            raise KeyError('CASTGC key missing from session cookies_dict, probably authentication failure')
         session.cookies.set("CASTGC", cookies_dict['CASTGC'])
         #TODO: add check for wrong dataset_id (now always "AttributeError: You cannot set the charset when no content-type is defined")
         DAP_dataset = open_url(dataset_url, session=session)#, user_charset='utf-8') # TODO: user_charset needs PyDAP >= v3.3.0 see https://github.com/pydap/pydap/pull/223/commits 

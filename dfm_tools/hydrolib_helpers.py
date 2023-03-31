@@ -32,9 +32,9 @@ def Dataset_to_T3D(datablock_xr):
             data_xr_var0 = datablock_xr[data_vars[0]]
             data_xr_var1 = datablock_xr[data_vars[1]]
         else:
-            raise Exception(f'Dataset should contain 1 or 2 data_vars, but contains {len(data_vars)} variables')
+            raise ValueError(f'Dataset should contain 1 or 2 data_vars, but contains {len(data_vars)} variables')
     else:
-        raise Exception(f'expected xarray.DataArray or xarray.Dataset, not {type(datablock_xr)}')
+        raise TypeError(f'expected xarray.DataArray or xarray.Dataset, not {type(datablock_xr)}')
     
     #ffill/bfill nan data along over depth dimension (corresponds to vertical extrapolation)
     data_xr_var0 = data_xr_var0.bfill(dim='depth').ffill(dim='depth')
@@ -46,7 +46,7 @@ def Dataset_to_T3D(datablock_xr):
     refdate_str = data_xr_var0.time.encoding['units']
     
     if data_xr_var0.dims != ('time','depth'): #check if both time and depth dimensions are present #TODO: add support for flipped dimensions (datablock_xr.T or something is needed)
-        raise Exception(f"ERROR: data_var in provided data_xr has dimensions {data_xr_var0.dims} while ('time','depth') is expected")
+        raise ValueError(f"data_var in provided data_xr has dimensions {data_xr_var0.dims} while ('time','depth') is expected")
     
     #get depth variable and values
     depth_array = data_xr_var0['depth'].to_numpy()
@@ -97,7 +97,7 @@ def Dataset_to_TimeSeries(datablock_xr):
     if isinstance(datablock_xr,xr.Dataset):
         data_vars = list(datablock_xr.data_vars)
         if len(data_vars)!=1:
-            raise Exception('more than one variable supplied in Dataset, not yet possible') #TODO: add support for multiple quantities and for vectors
+            raise ValueError('more than one variable supplied in Dataset, not yet possible') #TODO: add support for multiple quantities and for vectors
         datablock_xr = datablock_xr[data_vars[0]]
     
     #TODO: clean up these first lines of code and add description to docstring?
@@ -106,7 +106,7 @@ def Dataset_to_TimeSeries(datablock_xr):
     refdate_str = datablock_xr.time.encoding['units']
     
     if datablock_xr.dims != ('time',):
-        raise Exception(f"ERROR: datablock_xr provided to DataArray_to_TimeSeries has dimensions {datablock_xr.dims} while ('time') is expected")
+        raise ValueError(f"datablock_xr provided to DataArray_to_TimeSeries has dimensions {datablock_xr.dims} while ('time') is expected")
     
     #get datablock and concatenate with relative time data
     datablock_np = datablock_xr.to_numpy()[:,np.newaxis]
@@ -129,11 +129,11 @@ def Dataset_to_Astronomic(datablock_xr):
     
     """
     if not isinstance(datablock_xr,xr.Dataset):
-        raise Exception(f'Dataset_to_Astronomic expects xr.Dataset, not {type(datablock_xr)}')
+        raise TypeError(f'Dataset_to_Astronomic expects xr.Dataset, not {type(datablock_xr)}')
     
     data_vars = list(datablock_xr.data_vars)
     if 'amplitude' not in data_vars or 'phase_new' not in data_vars:
-        raise Exception('amplitude and/or phase_new not in input xr.Dataset')
+        raise KeyError('amplitude and/or phase_new not in input xr.Dataset')
 
     #TODO: clean up these first lines of code and add description to docstring?
     locationname = datablock_xr['amplitude'].attrs['locationname']
@@ -180,11 +180,11 @@ def forcinglike_to_Dataset(forcingobj, convertnan=False): #TODO: would be conven
     
     #check if forcingmodel instead of T3D/TimeSeries is provided
     if isinstance(forcingobj, hcdfm.ForcingModel):
-        raise Exception('ERROR: instead of supplying a ForcingModel, provide a ForcingObject (Timeseries/T3D etc), by doing something like ForcingModel.forcing[0]')
+        raise TypeError('instead of supplying a ForcingModel, provide a ForcingObject (Timeseries/T3D etc), by doing something like ForcingModel.forcing[0]')
     
     allowed_instances = (hcdfm.T3D, hcdfm.TimeSeries, hcdfm.Astronomic)
     if not isinstance(forcingobj, allowed_instances):
-        raise Exception(f'ERROR: supplied input is not one of: {allowed_instances}')
+        raise TypeError(f'supplied input is not one of: {allowed_instances}')
     
     if isinstance(forcingobj, hcdfm.Astronomic):
         var_quantity_list = [x.quantity for x in forcingobj.quantityunitpair[1:]]
