@@ -12,7 +12,8 @@ import datetime as dt
 import matplotlib.pyplot as plt
 plt.close('all')
 
-file_mdu = Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\computations\validation\2018_HYDROLIB_JV\RMM_VZM.mdu')
+#file_mdu = Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\computations\validation\2018_HYDROLIB_JV\RMM_VZM.mdu') #TODO: contains multiline obs/crs files, maybe raise more clear validationerror than "File: `\\directory.intra\Project\` not found, skipped parsing. (type=value_error)"
+file_mdu = Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\computations\validation\2018_HYDROLIB_JV\RMM_VZM_noML.mdu')
 file_mdu_commented = str(file_mdu).replace('.mdu','_commentedpy.mdu')
 file_mdu_rewrite = str(file_mdu).replace('.mdu','_rewritepy.mdu')
 mdu_contents = open(str(file_mdu),'r').readlines()
@@ -32,11 +33,11 @@ for iL, line in enumerate(mdu_contents):
     for keyword in keywords_tocomment:
         if line.startswith(keyword):
             mdu_contents[iL] = '#'+line
-    for keyword in ['ObsFile','CrsFile']: #replacing multi-line approach with space-delimited approach, multiline obs/crs filenames are currently not supported: https://github.com/Deltares/HYDROLIB-core/issues/485)
-        if '\\' in line:
-            line = line.split('#')[0].strip() #remove comment
-            line = line.replace('\\\n',' ').replace('\\',' ') #replace backslash with space
-            mdu_contents[iL] = line
+    # for keyword in ['ObsFile','CrsFile']: #replacing multi-line approach with space-delimited approach, multiline obs/crs filenames are currently not supported: https://github.com/Deltares/HYDROLIB-core/issues/485) #TODO: remove this commented code when decision is made to not support multiline obs/crs filenames
+    #     if '\\' in line:
+    #         line = line.split('#')[0].strip() #remove comment
+    #         line = line.replace('\\\n',' ').replace('\\',' ') #replace backslash with space
+    #         mdu_contents[iL] = line
 with open(file_mdu_commented,'w') as f:
     f.write(''.join(mdu_contents))
 print('>> opening FMModel: ',end='')
@@ -49,6 +50,11 @@ print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
 fm.save(file_mdu_rewrite)
 #TODO: when writing mdu again, are all keywords written: https://github.com/Deltares/HYDROLIB-core/issues/495
 #TODO: when writing to mdu again, indents are used: https://github.com/Deltares/HYDROLIB-core/issues/493
+structs = fm.geometry.structurefile
+if structs is not None: #is empty when commented
+    for struct in structs[0].structure: #TODO: why is structs a list of StructureModel instead of just StructureModel?
+        print(struct.id)
+#TODO: add newext/oldext printer
 obs_pd_list = [dfmt.pointlike_to_DataFrame(x) for x in fm.output.obsfile]
 crs_pd_list = [dfmt.pointlike_to_DataFrame(x) for y in fm.output.crsfile for x in y.objects] #TODO: difficult to access crs (and names get lost), how to simplify?
 
