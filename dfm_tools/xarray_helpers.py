@@ -81,7 +81,7 @@ def preprocess_hisnc(ds):
         source_attr_date = source_attr.split(', ')[2]
         if pd.Timestamp(source_attr_date) < dt.datetime(2020,11,28):
             warnings.warn(UserWarning(f'Your model was run with a D-FlowFM version from before 28-10-2020 ({source_attr_version} from {source_attr_date}), the layers in the hisfile are incorrect. Check UNST-2920 and UNST-3024 for more information, it was fixed from OSS 67858.'))
-    except: #no source attr present in hisfile, cannot check version
+    except KeyError: #no source attr present in hisfile, cannot check version
         pass
 
     return ds
