@@ -63,6 +63,6 @@ for timestep in [2,3]:#[0,10,20,30]:
     
     timestamp = data_map_timesel.time.dt.strftime('%Y%m%d').data
     file_shp = os.path.join(dir_output,f'shp_{basename}_{timestamp}') #TODO: add depth+reference to filename
-    newdata.to_file(file_shp)
+    newdata.to_file(file_shp) #TODO: solve "UserWarning: Column names longer than 10 characters will be truncated when saved to ESRI Shapefile."
 
 print(f'script runtime: {(dt.datetime.now()-dtstart_script).total_seconds():.2f} sec')
