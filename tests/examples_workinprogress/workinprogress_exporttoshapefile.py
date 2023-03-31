@@ -31,9 +31,10 @@ if 'Grevelingen' in file_nc:
 else:
     crs = "EPSG:4326"
 
-varlist = ['mesh2d_sa1','Chlfa']#,'mesh2d_s1']
+varlist = ['mesh2d_sa1','mesh2d_Chlfa']#,'mesh2d_s1']
 
 data_xr_map = dfmt.open_partitioned_dataset(file_nc)
+data_xr_map = dfmt.rename_waqvars(data_xr_map)
 vars_pd = dfmt.get_ncvarproperties(data_xr_map)
 
 for timestep in [2,3]:#[0,10,20,30]:
@@ -49,13 +50,11 @@ for timestep in [2,3]:#[0,10,20,30]:
     newdata = gpd.GeoDataFrame({'geometry': pol_shp_list},crs=crs)
     
     for iV, varname in enumerate(varlist):
-        try: #check if varname is present as key or in attributes
-            varname_found = dfmt.get_varnamefromattrs(data_map_timesel,varname)
-        except:
+        if not hasattr(data_map_timesel,varname):
             print(f'varname {varname} not found in dataset')
             continue
         
-        data_sel_var = data_sel[varname_found]
+        data_sel_var = data_sel[varname]
         newdata[varname] = data_sel_var.to_numpy() #can only have faces dimension (no time/layer)
         
         fig, ax = plt.subplots()
