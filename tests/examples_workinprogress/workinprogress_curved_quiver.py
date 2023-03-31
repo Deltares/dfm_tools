@@ -5,12 +5,15 @@ Created on Thu Mar 30 22:06:29 2023
 @author: veenstra
 """
 
+import os
 import datetime as dt
 import numpy as np
 import matplotlib.pyplot as plt
 #plt.close('all')
 import xarray as xr
 import dfm_tools as dfmt
+
+dir_output = '.'
 
 testdata = True
 if testdata:
@@ -66,5 +69,5 @@ strm = dfmt.velovect(ax3, X, Y, U, V, color=speed, cmap='winter', arrowstyle='fa
 print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
 fig.colorbar(strm.lines)
 
-plt.tight_layout()
-plt.show()
+fig.tight_layout()
+plt.savefig(os.path.join(dir_output,'curved_quiver'))
