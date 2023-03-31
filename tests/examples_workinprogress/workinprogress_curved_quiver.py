@@ -47,26 +47,21 @@ start_points = get_start_points(x=x,y=y,grains=grains)
 # Varying color along a streamline
 fig,(ax1,ax2,ax3) = plt.subplots(1,3,figsize=(14,5),sharex=True,sharey=True)
 
-strm = ax1.streamplot(X, Y, U, V, color=speed,
-                      cmap='winter', 
-                      arrowstyle='fancy',
-                      integration_direction='both')
+strm = ax1.streamplot(X, Y, U, V, color=speed, cmap='winter', arrowstyle='fancy', linewidth=speed/5, integration_direction='both')
 #strm = ds.plot.streamplot(ax=ax1, x='longitude',y='latitude',u='u',v='v',color=speed) #TODO: eventually do it with xarray directly
 fig.colorbar(strm.lines)
 
-strm = ax2.streamplot(X, Y, U, V, color=speed, 
-                      #linewidth=np.array(5*np.random.random_sample((100, 100))**2 + 1), 
-                      cmap='winter', 
+strm = ax2.streamplot(X, Y, U, V, color=speed, cmap='winter', arrowstyle='fancy', linewidth=speed/5, integration_direction='both',
                       density=5, #density=1 default, higher gives equally spaced view
                       minlength=0.01, maxlength = 0.07,
-                      arrowstyle='fancy',
-                      integration_direction='both', start_points=start_points)
+                      start_points=start_points)
 fig.colorbar(strm.lines)
 
 
 print('>> dfmt.velovect(): ',end='')
 dtstart = dt.datetime.now()
-strm = dfmt.velovect(ax3, X, Y, U, V, color=speed, cmap='winter', arrowstyle='fancy', scale=5, grains=grains, integration_direction='forward')
+strm = dfmt.velovect(ax3, X, Y, U, V, color=speed, cmap='winter', arrowstyle='fancy', linewidth=speed/5, integration_direction='forward',
+                     scale=5, grains=grains)
 print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
 fig.colorbar(strm.lines)
 
