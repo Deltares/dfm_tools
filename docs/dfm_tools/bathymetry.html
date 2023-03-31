@@ -40,7 +40,7 @@ def write_bathy_toasc(filename_asc,lon_sel_ext,lat_sel_ext,elev_sel_ext,asc_fmt=
 
     print(&#39;writing to asc file&#39;)
     if elev_sel_ext.shape != (lat_sel_ext.shape[0], lon_sel_ext.shape[0]):
-        raise Exception(&#39;resulting shape of elev_sel_ext %s is not consistent with lat_sel_ext/lon_sel_ext vars %s&#39;%(elev_sel_ext.shape,(lat_sel_ext.shape[0], lon_sel_ext.shape[0])))
+        raise ValueError(&#39;resulting shape of elev_sel_ext %s is not consistent with lat_sel_ext/lon_sel_ext vars %s&#39;%(elev_sel_ext.shape,(lat_sel_ext.shape[0], lon_sel_ext.shape[0])))
     if isinstance(elev_sel_ext,np.ma.core.MaskedArray): #masked has to be filled in order for the nans to be visible
         elev_sel_ext = elev_sel_ext.filled(np.nan)
     if np.isnan(elev_sel_ext).sum()&gt;0:
@@ -50,7 +50,7 @@ def write_bathy_toasc(filename_asc,lon_sel_ext,lat_sel_ext,elev_sel_ext,asc_fmt=
     resinv_lonlat = np.round(1/np.diff(lon_sel_ext[:2]),2)
     resinv_lat = np.round(1/np.diff(lat_sel_ext[:2]),2)
     if resinv_lonlat!=resinv_lat:
-        raise Exception(&#39;inconsistent resolution over lat/lon&#39;)
+        raise ValueError(&#39;inconsistent resolution over lat/lon&#39;)
     
     with open(filename_asc,&#39;w&#39;) as file_asc:
         file_asc.write(&#39;ncols         %d\n&#39;%(elev_sel_ext.shape[1]))
@@ -86,7 +86,7 @@ def write_bathy_toasc(filename_asc,lon_sel_ext,lat_sel_ext,elev_sel_ext,asc_fmt=
 
     print(&#39;writing to asc file&#39;)
     if elev_sel_ext.shape != (lat_sel_ext.shape[0], lon_sel_ext.shape[0]):
-        raise Exception(&#39;resulting shape of elev_sel_ext %s is not consistent with lat_sel_ext/lon_sel_ext vars %s&#39;%(elev_sel_ext.shape,(lat_sel_ext.shape[0], lon_sel_ext.shape[0])))
+        raise ValueError(&#39;resulting shape of elev_sel_ext %s is not consistent with lat_sel_ext/lon_sel_ext vars %s&#39;%(elev_sel_ext.shape,(lat_sel_ext.shape[0], lon_sel_ext.shape[0])))
     if isinstance(elev_sel_ext,np.ma.core.MaskedArray): #masked has to be filled in order for the nans to be visible
         elev_sel_ext = elev_sel_ext.filled(np.nan)
     if np.isnan(elev_sel_ext).sum()&gt;0:
@@ -96,7 +96,7 @@ def write_bathy_toasc(filename_asc,lon_sel_ext,lat_sel_ext,elev_sel_ext,asc_fmt=
     resinv_lonlat = np.round(1/np.diff(lon_sel_ext[:2]),2)
     resinv_lat = np.round(1/np.diff(lat_sel_ext[:2]),2)
     if resinv_lonlat!=resinv_lat:
-        raise Exception(&#39;inconsistent resolution over lat/lon&#39;)
+        raise ValueError(&#39;inconsistent resolution over lat/lon&#39;)
     
     with open(filename_asc,&#39;w&#39;) as file_asc:
         file_asc.write(&#39;ncols         %d\n&#39;%(elev_sel_ext.shape[1]))

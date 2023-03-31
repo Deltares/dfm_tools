@@ -276,7 +276,7 @@ def get_formula_terms(uds, varn_contains=&#39;interface&#39;):
     osz_varnames = list(uds.filter_by_attrs(formula_terms=lambda v: v is not None).variables) #names of variables containing attribute &#34;formula_terms&#34;
     osz_varnames_contains = [x for x in osz_varnames if varn_contains in x] #TODO: to get the layer/interface ocean_*_coordinate. Not too pretty, but it works
     if len(osz_varnames_contains) != 1: #should be 1 exactly, none is the case in zlayer models
-        raise Exception(f&#39;no or more than one {varn_contains} variable found with formula_terms attribute: {osz_varnames}&#39;)
+        raise ValueError(f&#39;no or more than one {varn_contains} variable found with formula_terms attribute: {osz_varnames}&#39;)
     osz_varn = osz_varnames_contains[0]
     osz_formulaterms = uds[osz_varn].attrs[&#39;formula_terms&#39;]
     tokens = re.split(&#39;[:\\s]+&#39;, osz_formulaterms)
@@ -958,7 +958,7 @@ def plot_ztdata(data_xr_sel, varname, ax=None, only_contour=False, **kwargs):
     osz_varnames = list(uds.filter_by_attrs(formula_terms=lambda v: v is not None).variables) #names of variables containing attribute &#34;formula_terms&#34;
     osz_varnames_contains = [x for x in osz_varnames if varn_contains in x] #TODO: to get the layer/interface ocean_*_coordinate. Not too pretty, but it works
     if len(osz_varnames_contains) != 1: #should be 1 exactly, none is the case in zlayer models
-        raise Exception(f&#39;no or more than one {varn_contains} variable found with formula_terms attribute: {osz_varnames}&#39;)
+        raise ValueError(f&#39;no or more than one {varn_contains} variable found with formula_terms attribute: {osz_varnames}&#39;)
     osz_varn = osz_varnames_contains[0]
     osz_formulaterms = uds[osz_varn].attrs[&#39;formula_terms&#39;]
     tokens = re.split(&#39;[:\\s]+&#39;, osz_formulaterms)

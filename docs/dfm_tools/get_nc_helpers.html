@@ -95,7 +95,7 @@ import warnings
 
 def get_ncvarproperties(data_xr):
     if not isinstance(data_xr,(xr.Dataset,xu.UgridDataset)):
-        raise Exception(&#39;data_xr should be of type xr.Dataset or xu.UgridDataset&#39;)
+        raise TypeError(&#39;data_xr should be of type xr.Dataset or xu.UgridDataset&#39;)
     
     nc_varkeys = data_xr.variables.mapping.keys()
     
@@ -133,7 +133,7 @@ def get_varnamefromattrs(data_xr, varname):
         print(f&#39;requested varname &#34;{varname}&#34; found in standard_name attribute of variable {varname_matched}&#39;)
         return varname_matched
     elif len(varlist_stdname)&gt;1:
-        raise Exception(f&#39;ERROR: requested variable {varname} is in netcdf not 1 but {len(varlist_stdname)} times: {varlist_stdname}&#39;)
+        raise ValueError(f&#39;ERROR: requested variable {varname} is in netcdf not 1 but {len(varlist_stdname)} times: {varlist_stdname}&#39;)
     
     #check if requested varname is in long_name attrs of ncvars
     ds_longname = data_xr.filter_by_attrs(long_name=varname)
@@ -143,11 +143,11 @@ def get_varnamefromattrs(data_xr, varname):
         print(f&#39;requested varname &#34;{varname}&#34; found in long_name attribute of variable {varname_matched}&#39;)
         return varname_matched
     elif len(varlist_longname)&gt;1:
-        raise Exception(f&#39;ERROR: requested variable {varname} is in netcdf not 1 but {len(varlist_longname)} times: {varlist_longname}&#39;)
+        raise ValueError(f&#39;ERROR: requested variable {varname} is in netcdf not 1 but {len(varlist_longname)} times: {varlist_longname}&#39;)
     
     #if not returned above, the varname was not found so raise exception
     varprops = get_ncvarproperties(data_xr)[[&#39;long_name&#39;,&#39;standard_name&#39;]]
-    raise Exception(f&#39;ERROR: requested variable {varname} not in netcdf, available are (full list in dfmt.get_ncvarproperties(ds)):\n{varprops}&#39;)
+    raise KeyError(f&#39;ERROR: requested variable {varname} not in netcdf, available are (full list in dfmt.get_ncvarproperties(ds)):\n{varprops}&#39;)
 
 
 def rename_waqvars(ds:(xr.Dataset,xu.UgridDataset)):
@@ -241,7 +241,7 @@ def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset), drop_tidal_times:bool = True
                          &#39;salt&#39;:&#39;sal&#39;, #not clear from fourier_analysis.f90, cs in user manual C.13
                          }
         if not quantity_long in quantity_dict.keys():
-            raise Exception(f&#39;quantity_dict does not yet contain quantity for: {quantity_long}&#39;)
+            raise KeyError(f&#39;quantity_dict does not yet contain quantity for: {quantity_long}&#39;)
         quantity = quantity_dict[quantity_long]
         
         #analysistype
@@ -270,7 +270,7 @@ def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset), drop_tidal_times:bool = True
             tstart_min = fouvar_lowerattrs.attrs[&#39;starttime_min_max_analysis_in_minutes_since_reference_date&#39;]
             tstop_min = fouvar_lowerattrs.attrs[&#39;stoptime_min_max_analysis_in_minutes_since_reference_date&#39;]
         else:
-            raise Exception(f&#39;starttime/stoptime attribute not found in fouvar:\n{fouvar_lowerattrs.attrs}&#39;)
+            raise AttributeError(f&#39;starttime/stoptime attribute not found in fouvar:\n{fouvar_lowerattrs.attrs}&#39;)
         tstart_str = (refdate + pd.Timedelta(minutes=tstart_min)).strftime(&#39;%Y%m%d%H%M%S&#39;)
         tstop_str = (refdate + pd.Timedelta(minutes=tstop_min)).strftime(&#39;%Y%m%d%H%M%S&#39;)
         
@@ -301,7 +301,7 @@ def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset), drop_tidal_times:bool = True
 </summary>
 <pre><code class="python">def get_ncvarproperties(data_xr):
     if not isinstance(data_xr,(xr.Dataset,xu.UgridDataset)):
-        raise Exception(&#39;data_xr should be of type xr.Dataset or xu.UgridDataset&#39;)
+        raise TypeError(&#39;data_xr should be of type xr.Dataset or xu.UgridDataset&#39;)
     
     nc_varkeys = data_xr.variables.mapping.keys()
     
@@ -348,7 +348,7 @@ def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset), drop_tidal_times:bool = True
         print(f&#39;requested varname &#34;{varname}&#34; found in standard_name attribute of variable {varname_matched}&#39;)
         return varname_matched
     elif len(varlist_stdname)&gt;1:
-        raise Exception(f&#39;ERROR: requested variable {varname} is in netcdf not 1 but {len(varlist_stdname)} times: {varlist_stdname}&#39;)
+        raise ValueError(f&#39;ERROR: requested variable {varname} is in netcdf not 1 but {len(varlist_stdname)} times: {varlist_stdname}&#39;)
     
     #check if requested varname is in long_name attrs of ncvars
     ds_longname = data_xr.filter_by_attrs(long_name=varname)
@@ -358,11 +358,11 @@ def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset), drop_tidal_times:bool = True
         print(f&#39;requested varname &#34;{varname}&#34; found in long_name attribute of variable {varname_matched}&#39;)
         return varname_matched
     elif len(varlist_longname)&gt;1:
-        raise Exception(f&#39;ERROR: requested variable {varname} is in netcdf not 1 but {len(varlist_longname)} times: {varlist_longname}&#39;)
+        raise ValueError(f&#39;ERROR: requested variable {varname} is in netcdf not 1 but {len(varlist_longname)} times: {varlist_longname}&#39;)
     
     #if not returned above, the varname was not found so raise exception
     varprops = get_ncvarproperties(data_xr)[[&#39;long_name&#39;,&#39;standard_name&#39;]]
-    raise Exception(f&#39;ERROR: requested variable {varname} not in netcdf, available are (full list in dfmt.get_ncvarproperties(ds)):\n{varprops}&#39;)</code></pre>
+    raise KeyError(f&#39;ERROR: requested variable {varname} not in netcdf, available are (full list in dfmt.get_ncvarproperties(ds)):\n{varprops}&#39;)</code></pre>
 </details>
 </dd>
 <dt id="dfm_tools.get_nc_helpers.rename_waqvars"><code class="name flex">
@@ -494,7 +494,7 @@ def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset), drop_tidal_times:bool = True
                          &#39;salt&#39;:&#39;sal&#39;, #not clear from fourier_analysis.f90, cs in user manual C.13
                          }
         if not quantity_long in quantity_dict.keys():
-            raise Exception(f&#39;quantity_dict does not yet contain quantity for: {quantity_long}&#39;)
+            raise KeyError(f&#39;quantity_dict does not yet contain quantity for: {quantity_long}&#39;)
         quantity = quantity_dict[quantity_long]
         
         #analysistype
@@ -523,7 +523,7 @@ def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset), drop_tidal_times:bool = True
             tstart_min = fouvar_lowerattrs.attrs[&#39;starttime_min_max_analysis_in_minutes_since_reference_date&#39;]
             tstop_min = fouvar_lowerattrs.attrs[&#39;stoptime_min_max_analysis_in_minutes_since_reference_date&#39;]
         else:
-            raise Exception(f&#39;starttime/stoptime attribute not found in fouvar:\n{fouvar_lowerattrs.attrs}&#39;)
+            raise AttributeError(f&#39;starttime/stoptime attribute not found in fouvar:\n{fouvar_lowerattrs.attrs}&#39;)
         tstart_str = (refdate + pd.Timedelta(minutes=tstart_min)).strftime(&#39;%Y%m%d%H%M%S&#39;)
         tstop_str = (refdate + pd.Timedelta(minutes=tstop_min)).strftime(&#39;%Y%m%d%H%M%S&#39;)
         

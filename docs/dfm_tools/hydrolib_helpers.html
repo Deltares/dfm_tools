@@ -62,9 +62,9 @@ def Dataset_to_T3D(datablock_xr):
             data_xr_var0 = datablock_xr[data_vars[0]]
             data_xr_var1 = datablock_xr[data_vars[1]]
         else:
-            raise Exception(f&#39;Dataset should contain 1 or 2 data_vars, but contains {len(data_vars)} variables&#39;)
+            raise ValueError(f&#39;Dataset should contain 1 or 2 data_vars, but contains {len(data_vars)} variables&#39;)
     else:
-        raise Exception(f&#39;expected xarray.DataArray or xarray.Dataset, not {type(datablock_xr)}&#39;)
+        raise TypeError(f&#39;expected xarray.DataArray or xarray.Dataset, not {type(datablock_xr)}&#39;)
     
     #ffill/bfill nan data along over depth dimension (corresponds to vertical extrapolation)
     data_xr_var0 = data_xr_var0.bfill(dim=&#39;depth&#39;).ffill(dim=&#39;depth&#39;)
@@ -76,7 +76,7 @@ def Dataset_to_T3D(datablock_xr):
     refdate_str = data_xr_var0.time.encoding[&#39;units&#39;]
     
     if data_xr_var0.dims != (&#39;time&#39;,&#39;depth&#39;): #check if both time and depth dimensions are present #TODO: add support for flipped dimensions (datablock_xr.T or something is needed)
-        raise Exception(f&#34;ERROR: data_var in provided data_xr has dimensions {data_xr_var0.dims} while (&#39;time&#39;,&#39;depth&#39;) is expected&#34;)
+        raise ValueError(f&#34;data_var in provided data_xr has dimensions {data_xr_var0.dims} while (&#39;time&#39;,&#39;depth&#39;) is expected&#34;)
     
     #get depth variable and values
     depth_array = data_xr_var0[&#39;depth&#39;].to_numpy()
@@ -127,7 +127,7 @@ def Dataset_to_TimeSeries(datablock_xr):
     if isinstance(datablock_xr,xr.Dataset):
         data_vars = list(datablock_xr.data_vars)
         if len(data_vars)!=1:
-            raise Exception(&#39;more than one variable supplied in Dataset, not yet possible&#39;) #TODO: add support for multiple quantities and for vectors
+            raise ValueError(&#39;more than one variable supplied in Dataset, not yet possible&#39;) #TODO: add support for multiple quantities and for vectors
         datablock_xr = datablock_xr[data_vars[0]]
     
     #TODO: clean up these first lines of code and add description to docstring?
@@ -136,7 +136,7 @@ def Dataset_to_TimeSeries(datablock_xr):
     refdate_str = datablock_xr.time.encoding[&#39;units&#39;]
     
     if datablock_xr.dims != (&#39;time&#39;,):
-        raise Exception(f&#34;ERROR: datablock_xr provided to DataArray_to_TimeSeries has dimensions {datablock_xr.dims} while (&#39;time&#39;) is expected&#34;)
+        raise ValueError(f&#34;datablock_xr provided to DataArray_to_TimeSeries has dimensions {datablock_xr.dims} while (&#39;time&#39;) is expected&#34;)
     
     #get datablock and concatenate with relative time data
     datablock_np = datablock_xr.to_numpy()[:,np.newaxis]
@@ -159,11 +159,11 @@ def Dataset_to_Astronomic(datablock_xr):
     
     &#34;&#34;&#34;
     if not isinstance(datablock_xr,xr.Dataset):
-        raise Exception(f&#39;Dataset_to_Astronomic expects xr.Dataset, not {type(datablock_xr)}&#39;)
+        raise TypeError(f&#39;Dataset_to_Astronomic expects xr.Dataset, not {type(datablock_xr)}&#39;)
     
     data_vars = list(datablock_xr.data_vars)
     if &#39;amplitude&#39; not in data_vars or &#39;phase_new&#39; not in data_vars:
-        raise Exception(&#39;amplitude and/or phase_new not in input xr.Dataset&#39;)
+        raise KeyError(&#39;amplitude and/or phase_new not in input xr.Dataset&#39;)
 
     #TODO: clean up these first lines of code and add description to docstring?
     locationname = datablock_xr[&#39;amplitude&#39;].attrs[&#39;locationname&#39;]
@@ -210,11 +210,11 @@ def forcinglike_to_Dataset(forcingobj, convertnan=False): #TODO: would be conven
     
     #check if forcingmodel instead of T3D/TimeSeries is provided
     if isinstance(forcingobj, hcdfm.ForcingModel):
-        raise Exception(&#39;ERROR: instead of supplying a ForcingModel, provide a ForcingObject (Timeseries/T3D etc), by doing something like ForcingModel.forcing[0]&#39;)
+        raise TypeError(&#39;instead of supplying a ForcingModel, provide a ForcingObject (Timeseries/T3D etc), by doing something like ForcingModel.forcing[0]&#39;)
     
     allowed_instances = (hcdfm.T3D, hcdfm.TimeSeries, hcdfm.Astronomic)
     if not isinstance(forcingobj, allowed_instances):
-        raise Exception(f&#39;ERROR: supplied input is not one of: {allowed_instances}&#39;)
+        raise TypeError(f&#39;supplied input is not one of: {allowed_instances}&#39;)
     
     if isinstance(forcingobj, hcdfm.Astronomic):
         var_quantity_list = [x.quantity for x in forcingobj.quantityunitpair[1:]]
@@ -359,9 +359,9 @@ def parse_xy_to_datetime(pointlike_pd):
             data_xr_var0 = datablock_xr[data_vars[0]]
             data_xr_var1 = datablock_xr[data_vars[1]]
         else:
-            raise Exception(f&#39;Dataset should contain 1 or 2 data_vars, but contains {len(data_vars)} variables&#39;)
+            raise ValueError(f&#39;Dataset should contain 1 or 2 data_vars, but contains {len(data_vars)} variables&#39;)
     else:
-        raise Exception(f&#39;expected xarray.DataArray or xarray.Dataset, not {type(datablock_xr)}&#39;)
+        raise TypeError(f&#39;expected xarray.DataArray or xarray.Dataset, not {type(datablock_xr)}&#39;)
     
     #ffill/bfill nan data along over depth dimension (corresponds to vertical extrapolation)
     data_xr_var0 = data_xr_var0.bfill(dim=&#39;depth&#39;).ffill(dim=&#39;depth&#39;)
@@ -373,7 +373,7 @@ def parse_xy_to_datetime(pointlike_pd):
     refdate_str = data_xr_var0.time.encoding[&#39;units&#39;]
     
     if data_xr_var0.dims != (&#39;time&#39;,&#39;depth&#39;): #check if both time and depth dimensions are present #TODO: add support for flipped dimensions (datablock_xr.T or something is needed)
-        raise Exception(f&#34;ERROR: data_var in provided data_xr has dimensions {data_xr_var0.dims} while (&#39;time&#39;,&#39;depth&#39;) is expected&#34;)
+        raise ValueError(f&#34;data_var in provided data_xr has dimensions {data_xr_var0.dims} while (&#39;time&#39;,&#39;depth&#39;) is expected&#34;)
     
     #get depth variable and values
     depth_array = data_xr_var0[&#39;depth&#39;].to_numpy()
@@ -433,7 +433,7 @@ def parse_xy_to_datetime(pointlike_pd):
     if isinstance(datablock_xr,xr.Dataset):
         data_vars = list(datablock_xr.data_vars)
         if len(data_vars)!=1:
-            raise Exception(&#39;more than one variable supplied in Dataset, not yet possible&#39;) #TODO: add support for multiple quantities and for vectors
+            raise ValueError(&#39;more than one variable supplied in Dataset, not yet possible&#39;) #TODO: add support for multiple quantities and for vectors
         datablock_xr = datablock_xr[data_vars[0]]
     
     #TODO: clean up these first lines of code and add description to docstring?
@@ -442,7 +442,7 @@ def parse_xy_to_datetime(pointlike_pd):
     refdate_str = datablock_xr.time.encoding[&#39;units&#39;]
     
     if datablock_xr.dims != (&#39;time&#39;,):
-        raise Exception(f&#34;ERROR: datablock_xr provided to DataArray_to_TimeSeries has dimensions {datablock_xr.dims} while (&#39;time&#39;) is expected&#34;)
+        raise ValueError(f&#34;datablock_xr provided to DataArray_to_TimeSeries has dimensions {datablock_xr.dims} while (&#39;time&#39;) is expected&#34;)
     
     #get datablock and concatenate with relative time data
     datablock_np = datablock_xr.to_numpy()[:,np.newaxis]
@@ -474,11 +474,11 @@ def parse_xy_to_datetime(pointlike_pd):
     
     &#34;&#34;&#34;
     if not isinstance(datablock_xr,xr.Dataset):
-        raise Exception(f&#39;Dataset_to_Astronomic expects xr.Dataset, not {type(datablock_xr)}&#39;)
+        raise TypeError(f&#39;Dataset_to_Astronomic expects xr.Dataset, not {type(datablock_xr)}&#39;)
     
     data_vars = list(datablock_xr.data_vars)
     if &#39;amplitude&#39; not in data_vars or &#39;phase_new&#39; not in data_vars:
-        raise Exception(&#39;amplitude and/or phase_new not in input xr.Dataset&#39;)
+        raise KeyError(&#39;amplitude and/or phase_new not in input xr.Dataset&#39;)
 
     #TODO: clean up these first lines of code and add description to docstring?
     locationname = datablock_xr[&#39;amplitude&#39;].attrs[&#39;locationname&#39;]
@@ -544,11 +544,11 @@ def parse_xy_to_datetime(pointlike_pd):
     
     #check if forcingmodel instead of T3D/TimeSeries is provided
     if isinstance(forcingobj, hcdfm.ForcingModel):
-        raise Exception(&#39;ERROR: instead of supplying a ForcingModel, provide a ForcingObject (Timeseries/T3D etc), by doing something like ForcingModel.forcing[0]&#39;)
+        raise TypeError(&#39;instead of supplying a ForcingModel, provide a ForcingObject (Timeseries/T3D etc), by doing something like ForcingModel.forcing[0]&#39;)
     
     allowed_instances = (hcdfm.T3D, hcdfm.TimeSeries, hcdfm.Astronomic)
     if not isinstance(forcingobj, allowed_instances):
-        raise Exception(f&#39;ERROR: supplied input is not one of: {allowed_instances}&#39;)
+        raise TypeError(f&#39;supplied input is not one of: {allowed_instances}&#39;)
     
     if isinstance(forcingobj, hcdfm.Astronomic):
         var_quantity_list = [x.quantity for x in forcingobj.quantityunitpair[1:]]
