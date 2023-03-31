@@ -62,7 +62,7 @@ def file_to_list(file_nc):
             file_nc_list = glob.glob(file_nc)
         file_nc_list.sort()
     if len(file_nc_list)==0:
-        raise Exception(&#39;file(s) not found, empty file_nc_list&#39;)
+        raise FileNotFoundError(&#39;file(s) not found, empty file_nc_list&#39;)
     return file_nc_list
 
 
@@ -290,7 +290,7 @@ def merge_meteofiles(file_nc:str, preprocess=None,
         elif &#39;x&#39; in data_xr.variables:
             data_xr = data_xr.rename({&#39;x&#39;:&#39;longitude&#39;, &#39;y&#39;:&#39;latitude&#39;})
         else:
-            raise Exception(&#39;no longitude/latitude, lon/lat or x/y variables found in dataset&#39;)
+            raise KeyError(&#39;no longitude/latitude, lon/lat or x/y variables found in dataset&#39;)
 
     varkeys = data_xr.variables.mapping.keys()
     #data_xr.attrs[&#39;comment&#39;] = &#39;merged with dfm_tools from https://github.com/Deltares/dfm_tools&#39; #TODO: add something like this or other attributes? (some might also be dropped now)
@@ -394,7 +394,7 @@ def merge_meteofiles(file_nc:str, preprocess=None,
 
 def Dataset_varswithdim(ds,dimname): #TODO: dit zit ook in xugrid, wordt nu gebruikt in hisfile voorbeeldscript en kan handig zijn, maar misschien die uit xugrid gebruiken?
     if dimname not in ds.dims:
-        raise Exception(f&#39;dimension {dimname} not in dataset, available are: {list(ds.dims)}&#39;)
+        raise KeyError(f&#39;dimension {dimname} not in dataset, available are: {list(ds.dims)}&#39;)
     
     varlist_keep = []
     for varname in ds.variables.keys():
@@ -591,7 +591,7 @@ def open_partitioned_dataset(file_nc, chunks={&#39;time&#39;:1}, remove_ghost=Tr
             file_nc_list = glob.glob(file_nc)
         file_nc_list.sort()
     if len(file_nc_list)==0:
-        raise Exception(&#39;file(s) not found, empty file_nc_list&#39;)
+        raise FileNotFoundError(&#39;file(s) not found, empty file_nc_list&#39;)
     return file_nc_list</code></pre>
 </details>
 </dd>
@@ -939,7 +939,7 @@ x/y and lon/lat are renamed to longitude/latitude #TODO: is this desireable?</p>
         elif &#39;x&#39; in data_xr.variables:
             data_xr = data_xr.rename({&#39;x&#39;:&#39;longitude&#39;, &#39;y&#39;:&#39;latitude&#39;})
         else:
-            raise Exception(&#39;no longitude/latitude, lon/lat or x/y variables found in dataset&#39;)
+            raise KeyError(&#39;no longitude/latitude, lon/lat or x/y variables found in dataset&#39;)
 
     varkeys = data_xr.variables.mapping.keys()
     #data_xr.attrs[&#39;comment&#39;] = &#39;merged with dfm_tools from https://github.com/Deltares/dfm_tools&#39; #TODO: add something like this or other attributes? (some might also be dropped now)
@@ -1052,7 +1052,7 @@ x/y and lon/lat are renamed to longitude/latitude #TODO: is this desireable?</p>
 </summary>
 <pre><code class="python">def Dataset_varswithdim(ds,dimname): #TODO: dit zit ook in xugrid, wordt nu gebruikt in hisfile voorbeeldscript en kan handig zijn, maar misschien die uit xugrid gebruiken?
     if dimname not in ds.dims:
-        raise Exception(f&#39;dimension {dimname} not in dataset, available are: {list(ds.dims)}&#39;)
+        raise KeyError(f&#39;dimension {dimname} not in dataset, available are: {list(ds.dims)}&#39;)
     
     varlist_keep = []
     for varname in ds.variables.keys():
