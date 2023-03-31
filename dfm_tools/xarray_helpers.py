@@ -32,7 +32,7 @@ def file_to_list(file_nc):
             file_nc_list = glob.glob(file_nc)
         file_nc_list.sort()
     if len(file_nc_list)==0:
-        raise Exception('file(s) not found, empty file_nc_list')
+        raise FileNotFoundError('file(s) not found, empty file_nc_list')
     return file_nc_list
 
 
@@ -260,7 +260,7 @@ def merge_meteofiles(file_nc:str, preprocess=None,
         elif 'x' in data_xr.variables:
             data_xr = data_xr.rename({'x':'longitude', 'y':'latitude'})
         else:
-            raise Exception('no longitude/latitude, lon/lat or x/y variables found in dataset')
+            raise KeyError('no longitude/latitude, lon/lat or x/y variables found in dataset')
 
     varkeys = data_xr.variables.mapping.keys()
     #data_xr.attrs['comment'] = 'merged with dfm_tools from https://github.com/Deltares/dfm_tools' #TODO: add something like this or other attributes? (some might also be dropped now)
@@ -364,7 +364,7 @@ def merge_meteofiles(file_nc:str, preprocess=None,
 
 def Dataset_varswithdim(ds,dimname): #TODO: dit zit ook in xugrid, wordt nu gebruikt in hisfile voorbeeldscript en kan handig zijn, maar misschien die uit xugrid gebruiken?
     if dimname not in ds.dims:
-        raise Exception(f'dimension {dimname} not in dataset, available are: {list(ds.dims)}')
+        raise KeyError(f'dimension {dimname} not in dataset, available are: {list(ds.dims)}')
     
     varlist_keep = []
     for varname in ds.variables.keys():

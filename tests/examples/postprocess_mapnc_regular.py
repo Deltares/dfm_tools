@@ -109,7 +109,6 @@ for file_nc in file_nc_list:
         U = griddata((lonvals_flat,latvals_flat),data_u_tsel.to_numpy().flatten(),(reg_grid_X,reg_grid_Y),method='nearest') #TODO: this is probably easier with xarray
         V = griddata((lonvals_flat,latvals_flat),data_v_tsel.to_numpy().flatten(),(reg_grid_X,reg_grid_Y),method='nearest')
         speed = np.sqrt(U*U + V*V)
-        #speed[np.isnan(speed)] = 0 #replace nans with 0
         #quiv_curved = dfmt.velovect(ax,reg_grid_X,reg_grid_Y,U,V, arrowstyle='fancy', scale = 5, grains = 25, color=speed)#, cmap='jet') #TODO: requested adding curved-quiver to matplotlib https://github.com/matplotlib/matplotlib/issues/20038
         #quiv_curved.lines.set_clim(0,5)
         quiv_curved = ax.streamplot(reg_x_vec,reg_y_vec,U,V, arrowstyle='-|>', integration_direction='forward',broken_streamlines=False, color=speed, density=1)

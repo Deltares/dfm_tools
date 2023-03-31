@@ -31,7 +31,7 @@ def test_run_examples(file_config):
     test = os.system(f'python {file_config}')#+ " & pause")
     
     if test:
-        raise Exception('execution did not finish properly')
+        raise OSError('execution did not finish properly')
 
 
 ##### UNITTESTS AND SYSTEMTESTS
@@ -290,7 +290,6 @@ def test_zlayermodel_correct_layers():
     vals_zw_bot = data_frommap_merged_fullgrid['mesh2d_flowelem_zw'].isel(nmesh2d_interface=0).to_numpy()
     vals_wl = data_frommap_merged_fullgrid['mesh2d_s1'].to_numpy()
     vals_bl = data_frommap_merged_fullgrid['mesh2d_flowelem_bl'].to_numpy()
-    assert (np.abs(vals_zw_top-vals_wl)<1e-6).all() #this should pass
-    #assert (np.abs(vals_zw_top-vals_bl)<1e-6).all() #This should fail
-    assert (np.abs(vals_zw_bot-vals_bl)<1e-6).all() #This should pass
+    assert (np.abs(vals_zw_top-vals_wl)<1e-6).all()
+    assert (np.abs(vals_zw_bot-vals_bl)<1e-6).all()
 
