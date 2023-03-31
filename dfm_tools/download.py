@@ -129,13 +129,13 @@ def open_OPeNDAP_xr(dataset_url,
     
     if 'cmems-du.eu' in dataset_url_one:
         if isinstance(dataset_url,list):
-            raise Exception('no list supported by opendap method used for cmems')
+            raise TypeError('list not supported by opendap method used for cmems')
         
         #parce credentials to username/password #TODO: now CMEMS specific, make more generic
         if credentials is None:
             file_credentials = f'{os.path.expanduser("~")}/CMEMS_credentials.txt'
             if not os.path.exists(file_credentials):
-                raise Exception(f'credentials argument not supplied and file_credentials not available ({file_credentials})')
+                raise FileNotFoundError(f'credentials argument not supplied and file_credentials not available ({file_credentials})')
             with open(file_credentials) as fc:
                 username = fc.readline().strip()
                 password = fc.readline().strip()
@@ -181,7 +181,7 @@ def download_OPeNDAP(dataset_url,
     
     print(f'xarray subsetting data (variable \'{varkey}\' and lon/lat extents)')
     if varkey not in data_xr.data_vars:
-        raise Exception(f'{varkey} not found in dataset, available are: {list(data_xr.data_vars)}')
+        raise KeyError(f'"{varkey}" not found in dataset, available are: {list(data_xr.data_vars)}')
     data_xr_var = data_xr[[varkey]]
     data_xr_var = data_xr_var.sel(longitude=slice(longitude_min,longitude_max), #TODO: add depth selection?
                                   latitude=slice(latitude_min,latitude_max))
