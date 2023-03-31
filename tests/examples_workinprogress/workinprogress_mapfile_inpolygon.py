@@ -18,6 +18,7 @@ from shapely.geometry import Point
 
 # modelrun settings
 crs = 4326
+plot_shp = False
 
 ## All the shapefiles in the Netherlands
 shpdir = os.path.join('p:\\11208800-kdvoedsel-noordzee\\3.data_analysis\\inputData','windFarmAreas')
@@ -91,7 +92,7 @@ for year in years: # last few years - from 2015
             # Select model points within the polygon:
             crop = waq_xr[var].isel(mesh2d_nLayers=-1,missing_dims='ignore').where(filter_boolean_xr, drop=True) # surface data (e.g. DIN_win) or Depth data (e.g. ucmag_ann)
             #plot cropped data and polygon
-            if 0:
+            if plot_shp:
                 fig, ax = plt.subplots()
                 crop.ugrid.plot()
                 area_shp.loc[[i]].plot(ax=ax,facecolor='none')
