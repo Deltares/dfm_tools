@@ -69,7 +69,7 @@ def rasterize_ugrid(uds:xu.UgridDataset, ds_like:xr.Dataset = None, resolution:f
     #TODO: maybe put part of code in xugrid (https://github.com/Deltares/xugrid/issues/31)
     #TODO: vars can also be rasterized with uds_facevars[var].ugrid.rasterize(resolution), but is not efficient. Wait for uds.rasterize() method: https://github.com/Deltares/xugrid/issues/61
     if not isinstance(uds,xu.core.wrap.UgridDataset):
-        raise Exception(f'rasterize_ugrid expected xu.core.wrap.UgridDataset, got {type(uds)} instead')
+        raise TypeError(f'rasterize_ugrid expected xu.core.wrap.UgridDataset, got {type(uds)} instead')
     
     grid = uds.grid
     xu_facedim = uds.grid.face_dimension
@@ -168,7 +168,7 @@ def center2corner(cen):
     import numpy as np
     
     if len(cen.shape) != 2:
-        raise Exception('input array should have 2 dimensions')
+        raise ValueError('input array should have 2 dimensions')
     
     cen_nobnd = corner2center(cen)
     cen_nobnd_diff_ax0 = np.diff(cen_nobnd, axis=0)
@@ -253,9 +253,7 @@ def uva2xymagdeg(U1, V1, ALFAS, KCU=None, KCV=None, inactivewhen4x0=True): #only
     Alles zou goed moeten gaan als je bij de middeling ervoor zorgt dat Uc(m,n) weer op de positie (m,n) in de array komt.
     Uc = (U1(1:end-1,:) + U1(2:end-1,:))/2 gaat dus net mis.
     Uc(2:end-1,: ) = (U1(1:end-1,: )) + U1(2:end,: ))/2 klopt wel, maar werkt alleen als je eerst Uc op de juiste afmeting hebt geïnitialiseerd.
-    """
-    import numpy as np
-    """
+
     vel_magn = np.sqrt(U1**2 + V1**2)
     direction_math_deg = np.rad2deg(np.arctan2(V1, U1))+ALFAS
     direction_naut_deg = (90-direction_math_deg)%360
@@ -305,8 +303,6 @@ def uva2xymagdeg(U1, V1, ALFAS, KCU=None, KCV=None, inactivewhen4x0=True): #only
     
     vel_x = Uc*np.cos(np.deg2rad(ALFAS)) - Vc*np.sin(np.deg2rad(ALFAS))
     vel_y = Uc*np.sin(np.deg2rad(ALFAS)) + Vc*np.cos(np.deg2rad(ALFAS))
-    #vel_x = vel_x[1:,1:]
-    #vel_y = vel_y[1:,1:]
     vel_magn = np.sqrt(vel_x**2 + vel_y**2)
     direction_naut_deg = np.rad2deg(np.arctan2(vel_y, vel_x))%360
    
