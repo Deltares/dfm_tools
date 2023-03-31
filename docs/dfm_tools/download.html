@@ -38,7 +38,6 @@ Created on Tue Oct 18 15:09:26 2022
 import os
 import pandas as pd
 from pathlib import Path
-#import requests
 import xarray as xr
 from pydap.client import open_url
 from pydap.cas.get_cookies import setup_session
@@ -76,7 +75,7 @@ def download_ERA5(varkey,
                       &#39;mtpr&#39;:&#39;mean_total_precipitation_rate&#39;,
                       }
     if varkey not in variables_dict.keys(): #TODO: how to get list of available vars? mean_sea_level_pressure and msl both return a dataset with msl varkey, but standard_name air_pressure_at_mean_sea_level returns an error
-        raise Exception(f&#39;&#34;{varkey}&#34; not available, choose from: {list(variables_dict.keys())}&#39;)
+        raise KeyError(f&#39;&#34;{varkey}&#34; not available, choose from: {list(variables_dict.keys())}&#39;)
     
     period_range = pd.period_range(date_min,date_max,freq=&#39;M&#39;)
     print(f&#39;retrieving data from {period_range[0]} to {period_range[-1]} (freq={period_range.freq})&#39;)
@@ -160,13 +159,13 @@ def open_OPeNDAP_xr(dataset_url,
     
     if &#39;cmems-du.eu&#39; in dataset_url_one:
         if isinstance(dataset_url,list):
-            raise Exception(&#39;no list supported by opendap method used for cmems&#39;)
+            raise TypeError(&#39;list not supported by opendap method used for cmems&#39;)
         
         #parce credentials to username/password #TODO: now CMEMS specific, make more generic
         if credentials is None:
             file_credentials = f&#39;{os.path.expanduser(&#34;~&#34;)}/CMEMS_credentials.txt&#39;
             if not os.path.exists(file_credentials):
-                raise Exception(f&#39;credentials argument not supplied and file_credentials not available ({file_credentials})&#39;)
+                raise FileNotFoundError(f&#39;credentials argument not supplied and file_credentials not available ({file_credentials})&#39;)
             with open(file_credentials) as fc:
                 username = fc.readline().strip()
                 password = fc.readline().strip()
@@ -212,7 +211,7 @@ def download_OPeNDAP(dataset_url,
     
     print(f&#39;xarray subsetting data (variable \&#39;{varkey}\&#39; and lon/lat extents)&#39;)
     if varkey not in data_xr.data_vars:
-        raise Exception(f&#39;{varkey} not found in dataset, available are: {list(data_xr.data_vars)}&#39;)
+        raise KeyError(f&#39;&#34;{varkey}&#34; not found in dataset, available are: {list(data_xr.data_vars)}&#39;)
     data_xr_var = data_xr[[varkey]]
     data_xr_var = data_xr_var.sel(longitude=slice(longitude_min,longitude_max), #TODO: add depth selection?
                                   latitude=slice(latitude_min,latitude_max))
@@ -292,7 +291,7 @@ def download_OPeNDAP(dataset_url,
                       &#39;mtpr&#39;:&#39;mean_total_precipitation_rate&#39;,
                       }
     if varkey not in variables_dict.keys(): #TODO: how to get list of available vars? mean_sea_level_pressure and msl both return a dataset with msl varkey, but standard_name air_pressure_at_mean_sea_level returns an error
-        raise Exception(f&#39;&#34;{varkey}&#34; not available, choose from: {list(variables_dict.keys())}&#39;)
+        raise KeyError(f&#39;&#34;{varkey}&#34; not available, choose from: {list(variables_dict.keys())}&#39;)
     
     period_range = pd.period_range(date_min,date_max,freq=&#39;M&#39;)
     print(f&#39;retrieving data from {period_range[0]} to {period_range[-1]} (freq={period_range.freq})&#39;)
@@ -413,13 +412,13 @@ Some examples:
     
     if &#39;cmems-du.eu&#39; in dataset_url_one:
         if isinstance(dataset_url,list):
-            raise Exception(&#39;no list supported by opendap method used for cmems&#39;)
+            raise TypeError(&#39;list not supported by opendap method used for cmems&#39;)
         
         #parce credentials to username/password #TODO: now CMEMS specific, make more generic
         if credentials is None:
             file_credentials = f&#39;{os.path.expanduser(&#34;~&#34;)}/CMEMS_credentials.txt&#39;
             if not os.path.exists(file_credentials):
-                raise Exception(f&#39;credentials argument not supplied and file_credentials not available ({file_credentials})&#39;)
+                raise FileNotFoundError(f&#39;credentials argument not supplied and file_credentials not available ({file_credentials})&#39;)
             with open(file_credentials) as fc:
                 username = fc.readline().strip()
                 password = fc.readline().strip()
@@ -474,7 +473,7 @@ Some examples:
     
     print(f&#39;xarray subsetting data (variable \&#39;{varkey}\&#39; and lon/lat extents)&#39;)
     if varkey not in data_xr.data_vars:
-        raise Exception(f&#39;{varkey} not found in dataset, available are: {list(data_xr.data_vars)}&#39;)
+        raise KeyError(f&#39;&#34;{varkey}&#34; not found in dataset, available are: {list(data_xr.data_vars)}&#39;)
     data_xr_var = data_xr[[varkey]]
     data_xr_var = data_xr_var.sel(longitude=slice(longitude_min,longitude_max), #TODO: add depth selection?
                                   latitude=slice(latitude_min,latitude_max))

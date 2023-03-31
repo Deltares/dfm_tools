@@ -99,16 +99,6 @@ def get_ugrid_verts(data_xr_map): #TODO: remove this deprecated function
     getting ugrid verts from xugrid mapfile.
     &#34;&#34;&#34;
     raise DeprecationWarning(&#39;dfmt.get_ugrid_verts() is deprecated, use uds.grid.face_node_coordinates instead (https://github.com/Deltares/xugrid/issues/48)&#39;)
-    
-    # face_nos = data_xr_map.grid.face_node_connectivity
-    
-    # face_nnodecoords_x = data_xr_map.grid.node_x[face_nos]
-    # face_nnodecoords_x[face_nos==-1] = np.nan
-    # face_nnodecoords_y = data_xr_map.grid.node_y[face_nos]
-    # face_nnodecoords_y[face_nos==-1] = np.nan
-    
-    # ugrid_all_verts = np.c_[face_nnodecoords_x[...,np.newaxis],face_nnodecoords_y[...,np.newaxis]]
-    # return ugrid_all_verts
 
 
 def calc_dist_pythagoras(x1,x2,y1,y2):
@@ -133,7 +123,7 @@ def calc_dist_haversine(lon1,lon2,lat1,lat2):
     R = 6371000
     distance = R * c
     if np.isnan(distance).any():
-        raise Exception(&#39;nan encountered in calc_dist_latlon distance, replaced by 0&#39;)
+        raise ValueError(&#39;nan encountered in calc_dist_latlon distance&#39;)
     return distance
 
 
@@ -251,7 +241,7 @@ def polyline_mapslice(uds:xu.UgridDataset, line_array:np.array, calcdist_fromlat
     edges = np.stack([line_array[:-1],line_array[1:]],axis=1)
     edge_index, face_index, intersections = intersect_edges_withsort(uds=uds, edges=edges)
     if len(edge_index) == 0:
-        raise Exception(&#39;polyline does not cross mapdata&#39;)
+        raise ValueError(&#39;polyline does not cross mapdata&#39;)
     
     #auto determine if cartesian/sperical distance should be computed
     if calcdist_fromlatlon is None:
@@ -260,7 +250,7 @@ def polyline_mapslice(uds:xu.UgridDataset, line_array:np.array, calcdist_fromlat
         elif hasattr(uds,&#39;wgs84&#39;):
             calcdist_fromlatlon = True
         else:
-            raise Exception(&#39;To auto determine calcdist_fromlatlon, a variable &#34;projected_coordinate_system&#34; or &#34;wgs84&#34; is required, please provide calcdist_fromlatlon=True/False yourself.&#39;)
+            raise KeyError(&#39;To auto determine calcdist_fromlatlon, a variable &#34;projected_coordinate_system&#34; or &#34;wgs84&#34; is required, please provide calcdist_fromlatlon=True/False yourself.&#39;)
     if calcdist_fromlatlon:
         calc_dist = calc_dist_haversine
     else:
@@ -394,7 +384,7 @@ def reconstruct_zw_zcc(ds):
         print(&#39;z-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here&#39;)
         ds = reconstruct_zw_zcc_fromz(ds)
     else:
-        raise Exception(&#39;layers present, but unknown layertype, expected one of variables: mesh2d_flowelem_zw, mesh2d_layer_sigma, mesh2d_layer_z&#39;)
+        raise KeyError(&#39;layers present, but unknown layertype, expected one of variables: mesh2d_flowelem_zw, mesh2d_layer_sigma, mesh2d_layer_z&#39;)
     return ds
 
     
@@ -451,12 +441,12 @@ def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str =&#39;z0
         return data_xr #early return
     
     if reference==&#39;waterlevel&#39; and varname_wl not in data_xr.variables:
-        raise Exception(f&#39;get_Dataset_atdepths() called with reference=waterlevel, but {varname_wl} variable not present&#39;)
+        raise KeyError(f&#39;get_Dataset_atdepths() called with reference=waterlevel, but {varname_wl} variable not present&#39;)
     if reference==&#39;bedlevel&#39; and varname_wl not in data_xr.variables:
-        raise Exception(f&#39;get_Dataset_atdepths() called with reference=bedlevel, but {varname_bl} variable not present&#39;)
+        raise KeyError(f&#39;get_Dataset_atdepths() called with reference=bedlevel, but {varname_bl} variable not present&#39;) #TODO: in case of zsigma/sigma it can also be -mesh2d_bldepth
     
     if not isinstance(data_xr,(xr.Dataset,xu.UgridDataset)):
-        raise Exception(f&#39;data_xr_map should be of type xr.Dataset, but is {type(data_xr)}&#39;)
+        raise TypeError(f&#39;data_xr_map should be of type xr.Dataset, but is {type(data_xr)}&#39;)
     
     #create depth xr.DataArray
     if isinstance(depths,(float,int)):
@@ -493,7 +483,7 @@ def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str =&#39;z0
         data_bl = data_xr[varname_bl]
         zw_reference = data_xr[varname_zint] - data_bl
     else:
-        raise Exception(f&#39;unknown reference &#34;{reference}&#34; (possible are z0, waterlevel and bedlevel&#39;)
+        raise KeyError(f&#39;unknown reference &#34;{reference}&#34; (possible are z0, waterlevel and bedlevel&#39;) #TODO: make enum?
     
     print(&#39;&gt;&gt; subsetting data on fixed depth in fullgrid z-data: &#39;,end=&#39;&#39;)
     dtstart = dt.datetime.now()
@@ -578,14 +568,13 @@ def plot_background(ax=None, projection=None, google_style=&#39;satellite&#39;, 
         elif type(projection) is int:
             projection = ccrs.epsg(projection)
         else:
-            raise Exception(&#39;argument projection should be of type integer, cartopy._crs.CRS or cartopy._epsg._EPSGProjection&#39;)
+            raise TypeError(&#39;argument projection should be of type integer, cartopy._crs.CRS or cartopy._epsg._EPSGProjection&#39;)
         fig, ax = plt.subplots(subplot_kw={&#39;projection&#39;: projection})
-        #ax = plt.axes(projection=projection)
     elif type(ax) is cartopy.mpl.geoaxes.GeoAxesSubplot:
         if projection is not None:
             print(&#39;arguments ax and projection are both provided, the projection from the ax is used so the projection argument is ignored&#39;)
     else:
-        raise Exception(&#39;argument ax should be of type cartopy.mpl.geoaxes.GeoAxesSubplot, leave argument empty or create correct instance with:\nimport cartopy.crs as ccrs\nfig, (ax1,ax2) = plt.subplots(1,2,figsize=(10,5), subplot_kw={&#34;projection&#34;: ccrs.epsg(28992)})&#39;)
+        raise TypeError(&#39;argument ax should be of type cartopy.mpl.geoaxes.GeoAxesSubplot, leave argument empty or create correct instance with:\nimport cartopy.crs as ccrs\nfig, (ax1,ax2) = plt.subplots(1,2,figsize=(10,5), subplot_kw={&#34;projection&#34;: ccrs.epsg(28992)})&#39;)
 
 
 
@@ -606,12 +595,12 @@ def plot_background(ax=None, projection=None, google_style=&#39;satellite&#39;, 
         if type(features) is str:
             features = [features]
         elif type(features) is not list:
-            raise Exception(&#39;argument features should be of type list of str&#39;)
+            raise TypeError(&#39;argument features should be of type list of str&#39;)
 
         valid_featurelist = [&#39;ocean&#39;,&#39;rivers&#39;,&#39;land&#39;,&#39;countries&#39;,&#39;countries_highres&#39;,&#39;coastlines&#39;,&#39;coastlines_highres&#39;]
         invalid_featurelist = [x for x in features if x not in valid_featurelist]
         if invalid_featurelist != []:
-            raise Exception(&#39;invalid features %s requested, possible are: %s&#39;%(invalid_featurelist, valid_featurelist))
+            raise KeyError(&#39;invalid features %s requested, possible are: %s&#39;%(invalid_featurelist, valid_featurelist))
 
         if &#39;ocean&#39; in features:
             #feat = cfeature.NaturalEarthFeature(category=&#39;physical&#39;, name=&#39;ocean&#39;, facecolor=cfeature.COLORS[&#39;water&#39;], scale=&#39;10m&#39;, edgecolor=&#39;face&#39;, alpha=alpha)
@@ -643,7 +632,7 @@ def plot_background(ax=None, projection=None, google_style=&#39;satellite&#39;, 
     return ax
 
 
-def plot_ztdata(data_xr_sel, varname, ax=None, only_contour=False, get_ds=False, **kwargs):
+def plot_ztdata(data_xr_sel, varname, ax=None, only_contour=False, **kwargs):
     &#34;&#34;&#34;
     
 
@@ -675,7 +664,7 @@ def plot_ztdata(data_xr_sel, varname, ax=None, only_contour=False, get_ds=False,
     if not ax: ax=plt.gca()
     
     if len(data_xr_sel[varname].shape) != 2:
-        raise Exception(f&#39;ERROR: unexpected number of dimensions in requested squeezed variable ({data_xr_sel[varname].shape}), first use data_xr.isel(stations=int) to select a single station&#39;) #TODO: can also have a different cause, improve message/testing?
+        raise ValueError(f&#39;ERROR: unexpected number of dimensions in requested squeezed variable ({data_xr_sel[varname].shape}), first use data_xr.isel(stations=int) to select a single station&#39;) #TODO: can also have a different cause, improve message/testing?
     
     #repair zvalues at wl/wl (filling nans and clipping to wl/bl). bfill replaces nan values with last valid value, this is necessary to enable pcolormesh to work. clip forces data to be within bl/wl
     #TODO: put clip in preproces_hisnc to make plotting easier?
@@ -691,7 +680,7 @@ def plot_ztdata(data_xr_sel, varname, ax=None, only_contour=False, get_ds=False,
     if only_contour:
         pc = data_xr_sel[varname].plot.contour(ax=ax, x=&#39;time&#39;, y=&#39;zcoordinate_c&#39;, **kwargs)
     else:
-        #pc = data_xr_sel[varname].plot.pcolormesh(ax=ax, x=&#39;time&#39;, y=&#39;zcoordinate_w&#39;, **kwargs) #is not possible to put center values on interfaces, som more difficult approach needed
+        #pc = data_xr_sel[varname].plot.pcolormesh(ax=ax, x=&#39;time&#39;, y=&#39;zcoordinate_w&#39;, **kwargs) #TODO: not possible to put center values on interfaces, so more difficult approach needed
         pc = ax.pcolormesh(time_mesh_cor, data_fromhis_zcor, data_xr_sel[varname], **kwargs)
    
     return pc</code></pre>
@@ -717,17 +706,7 @@ def plot_ztdata(data_xr_sel, varname, ax=None, only_contour=False, get_ds=False,
     &#34;&#34;&#34;
     getting ugrid verts from xugrid mapfile.
     &#34;&#34;&#34;
-    raise DeprecationWarning(&#39;dfmt.get_ugrid_verts() is deprecated, use uds.grid.face_node_coordinates instead (https://github.com/Deltares/xugrid/issues/48)&#39;)
-    
-    # face_nos = data_xr_map.grid.face_node_connectivity
-    
-    # face_nnodecoords_x = data_xr_map.grid.node_x[face_nos]
-    # face_nnodecoords_x[face_nos==-1] = np.nan
-    # face_nnodecoords_y = data_xr_map.grid.node_y[face_nos]
-    # face_nnodecoords_y[face_nos==-1] = np.nan
-    
-    # ugrid_all_verts = np.c_[face_nnodecoords_x[...,np.newaxis],face_nnodecoords_y[...,np.newaxis]]
-    # return ugrid_all_verts</code></pre>
+    raise DeprecationWarning(&#39;dfmt.get_ugrid_verts() is deprecated, use uds.grid.face_node_coordinates instead (https://github.com/Deltares/xugrid/issues/48)&#39;)</code></pre>
 </details>
 </dd>
 <dt id="dfm_tools.get_nc.calc_dist_pythagoras"><code class="name flex">
@@ -771,7 +750,7 @@ def plot_ztdata(data_xr_sel, varname, ax=None, only_contour=False, get_ds=False,
     R = 6371000
     distance = R * c
     if np.isnan(distance).any():
-        raise Exception(&#39;nan encountered in calc_dist_latlon distance, replaced by 0&#39;)
+        raise ValueError(&#39;nan encountered in calc_dist_latlon distance&#39;)
     return distance</code></pre>
 </details>
 </dd>
@@ -935,7 +914,7 @@ def plot_ztdata(data_xr_sel, varname, ax=None, only_contour=False, get_ds=False,
     edges = np.stack([line_array[:-1],line_array[1:]],axis=1)
     edge_index, face_index, intersections = intersect_edges_withsort(uds=uds, edges=edges)
     if len(edge_index) == 0:
-        raise Exception(&#39;polyline does not cross mapdata&#39;)
+        raise ValueError(&#39;polyline does not cross mapdata&#39;)
     
     #auto determine if cartesian/sperical distance should be computed
     if calcdist_fromlatlon is None:
@@ -944,7 +923,7 @@ def plot_ztdata(data_xr_sel, varname, ax=None, only_contour=False, get_ds=False,
         elif hasattr(uds,&#39;wgs84&#39;):
             calcdist_fromlatlon = True
         else:
-            raise Exception(&#39;To auto determine calcdist_fromlatlon, a variable &#34;projected_coordinate_system&#34; or &#34;wgs84&#34; is required, please provide calcdist_fromlatlon=True/False yourself.&#39;)
+            raise KeyError(&#39;To auto determine calcdist_fromlatlon, a variable &#34;projected_coordinate_system&#34; or &#34;wgs84&#34; is required, please provide calcdist_fromlatlon=True/False yourself.&#39;)
     if calcdist_fromlatlon:
         calc_dist = calc_dist_haversine
     else:
@@ -1127,7 +1106,7 @@ based on <a href="https://cfconventions.org/cf-conventions/cf-conventions.html#_
         print(&#39;z-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here&#39;)
         ds = reconstruct_zw_zcc_fromz(ds)
     else:
-        raise Exception(&#39;layers present, but unknown layertype, expected one of variables: mesh2d_flowelem_zw, mesh2d_layer_sigma, mesh2d_layer_z&#39;)
+        raise KeyError(&#39;layers present, but unknown layertype, expected one of variables: mesh2d_flowelem_zw, mesh2d_layer_sigma, mesh2d_layer_z&#39;)
     return ds</code></pre>
 </details>
 </dd>
@@ -1218,12 +1197,12 @@ This is faster but results in values interpolated between zcc (z cell centers), 
         return data_xr #early return
     
     if reference==&#39;waterlevel&#39; and varname_wl not in data_xr.variables:
-        raise Exception(f&#39;get_Dataset_atdepths() called with reference=waterlevel, but {varname_wl} variable not present&#39;)
+        raise KeyError(f&#39;get_Dataset_atdepths() called with reference=waterlevel, but {varname_wl} variable not present&#39;)
     if reference==&#39;bedlevel&#39; and varname_wl not in data_xr.variables:
-        raise Exception(f&#39;get_Dataset_atdepths() called with reference=bedlevel, but {varname_bl} variable not present&#39;)
+        raise KeyError(f&#39;get_Dataset_atdepths() called with reference=bedlevel, but {varname_bl} variable not present&#39;) #TODO: in case of zsigma/sigma it can also be -mesh2d_bldepth
     
     if not isinstance(data_xr,(xr.Dataset,xu.UgridDataset)):
-        raise Exception(f&#39;data_xr_map should be of type xr.Dataset, but is {type(data_xr)}&#39;)
+        raise TypeError(f&#39;data_xr_map should be of type xr.Dataset, but is {type(data_xr)}&#39;)
     
     #create depth xr.DataArray
     if isinstance(depths,(float,int)):
@@ -1260,7 +1239,7 @@ This is faster but results in values interpolated between zcc (z cell centers), 
         data_bl = data_xr[varname_bl]
         zw_reference = data_xr[varname_zint] - data_bl
     else:
-        raise Exception(f&#39;unknown reference &#34;{reference}&#34; (possible are z0, waterlevel and bedlevel&#39;)
+        raise KeyError(f&#39;unknown reference &#34;{reference}&#34; (possible are z0, waterlevel and bedlevel&#39;) #TODO: make enum?
     
     print(&#39;&gt;&gt; subsetting data on fixed depth in fullgrid z-data: &#39;,end=&#39;&#39;)
     dtstart = dt.datetime.now()
@@ -1390,14 +1369,13 @@ More info at: <a href="https://contextily.readthedocs.io/en/latest/reference.htm
         elif type(projection) is int:
             projection = ccrs.epsg(projection)
         else:
-            raise Exception(&#39;argument projection should be of type integer, cartopy._crs.CRS or cartopy._epsg._EPSGProjection&#39;)
+            raise TypeError(&#39;argument projection should be of type integer, cartopy._crs.CRS or cartopy._epsg._EPSGProjection&#39;)
         fig, ax = plt.subplots(subplot_kw={&#39;projection&#39;: projection})
-        #ax = plt.axes(projection=projection)
     elif type(ax) is cartopy.mpl.geoaxes.GeoAxesSubplot:
         if projection is not None:
             print(&#39;arguments ax and projection are both provided, the projection from the ax is used so the projection argument is ignored&#39;)
     else:
-        raise Exception(&#39;argument ax should be of type cartopy.mpl.geoaxes.GeoAxesSubplot, leave argument empty or create correct instance with:\nimport cartopy.crs as ccrs\nfig, (ax1,ax2) = plt.subplots(1,2,figsize=(10,5), subplot_kw={&#34;projection&#34;: ccrs.epsg(28992)})&#39;)
+        raise TypeError(&#39;argument ax should be of type cartopy.mpl.geoaxes.GeoAxesSubplot, leave argument empty or create correct instance with:\nimport cartopy.crs as ccrs\nfig, (ax1,ax2) = plt.subplots(1,2,figsize=(10,5), subplot_kw={&#34;projection&#34;: ccrs.epsg(28992)})&#39;)
 
 
 
@@ -1418,12 +1396,12 @@ More info at: <a href="https://contextily.readthedocs.io/en/latest/reference.htm
         if type(features) is str:
             features = [features]
         elif type(features) is not list:
-            raise Exception(&#39;argument features should be of type list of str&#39;)
+            raise TypeError(&#39;argument features should be of type list of str&#39;)
 
         valid_featurelist = [&#39;ocean&#39;,&#39;rivers&#39;,&#39;land&#39;,&#39;countries&#39;,&#39;countries_highres&#39;,&#39;coastlines&#39;,&#39;coastlines_highres&#39;]
         invalid_featurelist = [x for x in features if x not in valid_featurelist]
         if invalid_featurelist != []:
-            raise Exception(&#39;invalid features %s requested, possible are: %s&#39;%(invalid_featurelist, valid_featurelist))
+            raise KeyError(&#39;invalid features %s requested, possible are: %s&#39;%(invalid_featurelist, valid_featurelist))
 
         if &#39;ocean&#39; in features:
             #feat = cfeature.NaturalEarthFeature(category=&#39;physical&#39;, name=&#39;ocean&#39;, facecolor=cfeature.COLORS[&#39;water&#39;], scale=&#39;10m&#39;, edgecolor=&#39;face&#39;, alpha=alpha)
@@ -1456,7 +1434,7 @@ More info at: <a href="https://contextily.readthedocs.io/en/latest/reference.htm
 </details>
 </dd>
 <dt id="dfm_tools.get_nc.plot_ztdata"><code class="name flex">
-<span>def <span class="ident">plot_ztdata</span></span>(<span>data_xr_sel, varname, ax=None, only_contour=False, get_ds=False, **kwargs)</span>
+<span>def <span class="ident">plot_ztdata</span></span>(<span>data_xr_sel, varname, ax=None, only_contour=False, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><h2 id="parameters">Parameters</h2>
@@ -1486,7 +1464,7 @@ More info at: <a href="https://contextily.readthedocs.io/en/latest/reference.htm
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def plot_ztdata(data_xr_sel, varname, ax=None, only_contour=False, get_ds=False, **kwargs):
+<pre><code class="python">def plot_ztdata(data_xr_sel, varname, ax=None, only_contour=False, **kwargs):
     &#34;&#34;&#34;
     
 
@@ -1518,7 +1496,7 @@ More info at: <a href="https://contextily.readthedocs.io/en/latest/reference.htm
     if not ax: ax=plt.gca()
     
     if len(data_xr_sel[varname].shape) != 2:
-        raise Exception(f&#39;ERROR: unexpected number of dimensions in requested squeezed variable ({data_xr_sel[varname].shape}), first use data_xr.isel(stations=int) to select a single station&#39;) #TODO: can also have a different cause, improve message/testing?
+        raise ValueError(f&#39;ERROR: unexpected number of dimensions in requested squeezed variable ({data_xr_sel[varname].shape}), first use data_xr.isel(stations=int) to select a single station&#39;) #TODO: can also have a different cause, improve message/testing?
     
     #repair zvalues at wl/wl (filling nans and clipping to wl/bl). bfill replaces nan values with last valid value, this is necessary to enable pcolormesh to work. clip forces data to be within bl/wl
     #TODO: put clip in preproces_hisnc to make plotting easier?
@@ -1534,7 +1512,7 @@ More info at: <a href="https://contextily.readthedocs.io/en/latest/reference.htm
     if only_contour:
         pc = data_xr_sel[varname].plot.contour(ax=ax, x=&#39;time&#39;, y=&#39;zcoordinate_c&#39;, **kwargs)
     else:
-        #pc = data_xr_sel[varname].plot.pcolormesh(ax=ax, x=&#39;time&#39;, y=&#39;zcoordinate_w&#39;, **kwargs) #is not possible to put center values on interfaces, som more difficult approach needed
+        #pc = data_xr_sel[varname].plot.pcolormesh(ax=ax, x=&#39;time&#39;, y=&#39;zcoordinate_w&#39;, **kwargs) #TODO: not possible to put center values on interfaces, so more difficult approach needed
         pc = ax.pcolormesh(time_mesh_cor, data_fromhis_zcor, data_xr_sel[varname], **kwargs)
    
     return pc</code></pre>
