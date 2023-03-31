@@ -63,8 +63,6 @@ data_nc_YCOR = data_nc_YCOR.where(~mask_XYCOR)
 layno=-2
 
 
-
-
 fig, ax = plt.subplots()
 ax.plot(data_nc_XCOR,data_nc_YCOR,'-b',linewidth=0.2)
 ax.plot(data_nc_XCOR.T,data_nc_YCOR.T,'-b',linewidth=0.2)
@@ -84,7 +82,7 @@ for iT, timestep in enumerate([1,10,15]):
     pc.set_clim([0,0.15])
     cbar = fig.colorbar(pc, ax=ax)
     cbar.set_label('velocity magnitude (%s)'%(ds_thiery_tsel.U1.attrs['units']))
-    ax.set_title('t=%d (%s)'%(timestep,timestr))
+    ax.set_title(f't={timestep} ({timestr})')
     ax.set_aspect('equal')
     ax.quiver(data_nc_XZ[::2,::2], data_nc_YZ[::2,::2], vel_x[::2,::2], vel_y[::2,::2], 
               scale=3,color='w',width=0.005)
@@ -101,7 +99,7 @@ for iT, timestep in enumerate([1,10,15]):
     ALFAS = ds_thiery_tsel.ALFAS.to_numpy()
     timestr = ds_thiery_tsel.time.to_numpy()
     vel_x, vel_y, vel_magn, direction_naut_deg = dfmt.uva2xymagdeg(U1=U1,V1=V1,ALFAS=ALFAS) #TODO: clean up this function and make more convenient
-    ax.set_title('t=%d (%s)'%(timestep, timestr))
+    ax.set_title(f't={timestep} ({timestr})')
     ax.set_aspect('equal')
     pc = ax.quiver(data_nc_XZ[::2,::2], data_nc_YZ[::2,::2], vel_x[::2,::2], vel_y[::2,::2], vel_magn[::2,::2],
               scale=3,color='w',width=0.005, edgecolor='face', cmap='jet')
@@ -122,7 +120,7 @@ for iT, timestep in enumerate([1,10,15]):
     pc.set_clim([-60,60])
     cbar = fig.colorbar(pc, ax=ax)
     cbar.set_label('%s (%s)'%(ds_thiery_tsel.QNET.name, ds_thiery_tsel.QNET.attrs['units']))
-    ax.set_title('t=%d (%s)'%(timestep, timestr))
+    ax.set_title(f't={timestep} ({timestr})')
     ax.set_aspect('equal')
 fig.tight_layout()
 plt.savefig(os.path.join(dir_output,'kivu_Qnet'))
