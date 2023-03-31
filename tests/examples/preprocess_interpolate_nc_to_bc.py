@@ -144,7 +144,7 @@ for file_pli in list_plifiles:
                                          forcingfile=ForcingModel_object)
         ext_bnd.boundary.append(boundary_object)
 
-        if 1 and quantity!='tide': #TODO: data_xr_vars/data_interp does not exist for tide yet
+        if quantity!='tide': #TODO: data_xr_vars/data_interp does not exist for tide yet
             #plotting dataset and polyline (is wrong for CMCC)
             varname0 = list(data_xr_vars.data_vars)[0] 
             fig,ax = plt.subplots()
