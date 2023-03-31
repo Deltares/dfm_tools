@@ -22,7 +22,8 @@ dtstart = dt.datetime.now()
 
 write_outfile = False
 
-file_pli_list = [Path(dir_testinput,'GSHHS_high_min1000km2.ldb'),
+file_pli_list = [Path(r'p:\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli'), #TODO SOLVED: crashes because of labels: https://github.com/Deltares/HYDROLIB-core/issues/467
+                 Path(dir_testinput,'GSHHS_high_min1000km2.ldb'),
                  Path(dir_testinput,'DFM_3D_z_Grevelingen\\geometry\\structures\\Grevelingen-FM_BL_fxw.pliz'),
                  Path(dir_testinput,r'Maeslant.tek'),
                  Path(dir_testinput,r'nima-1013-lo-wl_validname.tek'),
