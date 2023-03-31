@@ -7,8 +7,7 @@ dependencies:
   - pip>=19.2.3
   #install older scipy version to avoid da.interp() issue: https://github.com/Deltares/dfm_tools/issues/287 and https://github.com/pydata/xarray/issues/7701
   - scipy<1.10.0
-  #install older numpy version #to avoid "SystemError: initialization of _internal failed without raising an exception" in #57 to #61. https://stackoverflow.com/questions/74947992/how-to-remove-the-error-systemerror-initialization-of-internal-failed-without
-  - numpy<1.24
+  - numpy
   - matplotlib
   - pandas
   - shapely>=1.7.0
