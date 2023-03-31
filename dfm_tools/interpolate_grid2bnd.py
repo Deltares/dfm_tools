@@ -85,9 +85,6 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
                       'MTM':'MFM', #Needs to be verified
                       }
     
-    print('initialize hcdfm.ForcingModel()')
-    ForcingModel_object = hcdfm.ForcingModel()
-    
     dir_pattern_dict = {'FES2014': Path(r'P:\metocean-data\licensed\FES2014','*.nc'), #ocean_tide_extrapolated
                         'FES2012': Path(r'P:\metocean-data\open\FES2012\data','*_FES2012_SLEV.nc'), #is eigenlijk ook licensed
                         'EOT20': Path(r'P:\metocean-data\open\EOT20\ocean_tides','*_ocean_eot20.nc'),
@@ -95,7 +92,7 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
                         #TODO: add tpxo8 (tpxo9 is also available), catalog: https://opendap.deltares.nl/thredds/catalog/opendap/deltares/delftdashboard/tidemodels/tpxo80/catalog.html
                         }
     if tidemodel not in dir_pattern_dict.keys():
-        raise Exception(f'invalid tidemodel "{tidemodel}", options are: {list(dir_pattern_dict.keys())}')
+        raise KeyError(f'invalid tidemodel "{tidemodel}", options are: {list(dir_pattern_dict.keys())}')
     if tidemodel == 'GTSM4.1preliminary':
         warnings.warn(UserWarning(f'you are using tidemodel "{tidemodel}", beware that the dataset is preliminary so it is still quite coarse and may contain errors. Check your results carefully'))
     dir_pattern = dir_pattern_dict[tidemodel]
@@ -105,8 +102,6 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
         dir_pattern_basename = os.path.basename(dir_pattern)
         replace = dir_pattern_basename.split('*')
         component_list = [os.path.basename(x).replace(replace[0],'').replace(replace[1],'') for x in file_list_nc] #TODO: make this less hard-coded
-    else:
-        file_list_nc = [str(dir_pattern).replace('*',comp) for comp in component_list]
     component_list_upper_pd = pd.Series([x.upper() for x in component_list]).replace(translate_dict, regex=True)
     
     def extract_component(ds):
@@ -182,9 +177,8 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
     list_pattern_names = [x.name for x in dir_pattern]
     print(f'loading mfdataset of {len(file_list_nc)} files with pattern(s) {list_pattern_names}')
     
-    #dtstart = dt.datetime.now()
     try:
-        data_xr = xr.open_mfdataset(file_list_nc, chunks=chunks)#,chunks={'time':1}) #TODO: does chunks argument solve "PerformanceWarning: Slicing is producing a large chunk."? {'time':1} is not a convenient chunking to use for timeseries extraction
+        data_xr = xr.open_mfdataset(file_list_nc, chunks=chunks) #TODO: does chunks argument solve "PerformanceWarning: Slicing is producing a large chunk."? {'time':1} is not a convenient chunking to use for timeseries extraction
     except xr.MergeError as e: #TODO: this except is necessary for CMCC, ux and uy have different lat/lon values, so renaming those of uy to avoid merging conflict
         def preprocess_CMCC_uovo(ds):
             if 'vo_' in os.path.basename(ds.encoding['source']):
@@ -195,6 +189,7 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
         print(f'catching "MergeError: {e}" >> WARNING: ux/uy have different latitude/longitude values, making two coordinates sets in Dataset.')
         data_xr = xr.open_mfdataset(file_list_nc, chunks=chunks, preprocess=preprocess_CMCC_uovo)
     
+    #TODO: remove this commented code
     #rename variables with rename_dict derived from conversion_dict. duplicate keys are not possible, so phyc is always renamed to tracerbndOpal (last in conversion_dict)
     # rename_dict = {v['ncvarname']:k for k,v in conversion_dict.items()}
     # for ncvarn in data_xr.variables.mapping.keys():
@@ -233,8 +228,6 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
         print(f'WARNING: calendar different than proleptic_gregorian found ({data_xr_calendar}), convert_calendar is called so check output carefully. It should be no issue for datasets with a monthly interval.')
         data_xr = data_xr.convert_calendar('standard') #TODO: does this not result in 29feb nan values in e.g. GFDL model? Check missing argument at https://docs.xarray.dev/en/stable/generated/xarray.Dataset.convert_calendar.html
         data_xr['time'].encoding['units'] = units_copy #put back dropped units
-    #time_passed = (dt.datetime.now()-dtstart).total_seconds()
-    # print(f'>>time passed: {time_passed:.2f} sec')
     
     #get timevar and compare requested dates
     timevar = data_xr['time']
@@ -261,7 +254,7 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
     bool_quanavailable = pd.Series(quantity_list).isin(data_vars)
     if not bool_quanavailable.all():
         quantity_list_notavailable = pd.Series(quantity_list).loc[~bool_quanavailable].tolist()
-        raise Exception(f'quantity {quantity_list_notavailable} not found in netcdf, available are: {data_vars}. Try updating conversion_dict to rename these variables.')
+        raise KeyError(f'quantity {quantity_list_notavailable} not found in netcdf, available are: {data_vars}. Try updating conversion_dict to rename these variables.')
     data_xr_vars = data_xr[quantity_list].sel(time=slice(tstart,tstop))
     
     #optional conversion of units. Multiplications or other simple operatiors do not affect performance (dask.array(getitem) becomes dask.array(mul). With more complex operation it is better do do it on the interpolated array.
@@ -304,7 +297,7 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True
     #check if polyobj names in plifile are unique
     polynames_pd = pd.Series([polyobj.metadata.name for polyobj in polyfile_object.objects])
     if polynames_pd.duplicated().any():
-        raise Exception(f'Duplicate polyobject names in polyfile {file_pli.name}, this is not allowed:\n{polynames_pd}')
+        raise ValueError(f'Duplicate polyobject names in polyfile {file_pli.name}, this is not allowed:\n{polynames_pd}')
     
     #create df of x/y/name of all plipoints in plifile
     data_pol_list = []
@@ -324,7 +317,7 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True
     
     #interpolation to lat/lon combinations
     print('> interp mfdataset to all PolyFile points (lat/lon coordinates)')
-    dtstart = dt.datetime.now()
+    #dtstart = dt.datetime.now()
     try:
         data_interp = data_xr_var.interp(longitude=da_plipoints['plipoint_x'], latitude=da_plipoints['plipoint_y'],
                                          method='linear', 
@@ -366,7 +359,7 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True
             data_interp[varone] = (da_varone_3k * da_invdistweight).sum(dim='nearestkpoints')
             data_interp[varone].attrs = data_xr_var[varone].attrs #copy units and other attributes
     
-    time_passed = (dt.datetime.now()-dtstart).total_seconds()
+    #time_passed = (dt.datetime.now()-dtstart).total_seconds()
     # print(f'>>time passed: {time_passed:.2f} sec')
     
     if not load:
