@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 plt.close('all')
 
 #file_mdu = Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\computations\validation\2018_HYDROLIB_JV\RMM_VZM.mdu') #TODO: contains multiline obs/crs files, maybe raise more clear validationerror than "File: `\\directory.intra\Project\` not found, skipped parsing. (type=value_error)"
+file_mdu = Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\computations\validation\2018_HYDROLIB_JV\RMM_VZM_MLnoslash.mdu') #TODO: contains multiline obs/crs files without slash, only reads first file but should raise an error: https://github.com/Deltares/HYDROLIB-core/issues/485#issuecomment-1494053471
 file_mdu = Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\computations\validation\2018_HYDROLIB_JV\RMM_VZM_noML.mdu')
 file_mdu_commented = str(file_mdu).replace('.mdu','_commentedpy.mdu')
 file_mdu_rewrite = str(file_mdu).replace('.mdu','_rewritepy.mdu')
