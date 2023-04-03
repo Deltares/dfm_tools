@@ -86,7 +86,7 @@ def write_timfile(filename, datablock, header, converttime=False, refdate=None, 
         try:
             times_wrtref_min = (data_pd_out.iloc[:,0]-refdate).dt.total_seconds()/60
         except TypeError:
-            raise Exception('Failure to convert time units. Please check that refdate is a valid datetime object and first column of dataset contains valid datetime objects.')
+            raise TypeError('Failure to convert time units. Please check that refdate is a valid datetime object and first column of dataset contains valid datetime objects.')
         
         #replace datetime values by minutes since
         data_pd_out.iloc[:,0] = times_wrtref_min
@@ -147,7 +147,7 @@ def read_timfile(filename, converttime=False, refdate=None):
         try:
             data_nc_datetimes = (refdate + data_nc_times_pdtd)#.to_pydatetime()
         except TypeError:
-            raise Exception('Failure to convert time units. Please check that refdate is a valid datetime object and first column of dataset contains minutes since refdate.')
+            raise TypeError('Failure to convert time units. Please check that refdate is a valid datetime object and first column of dataset contains minutes since refdate.')
         print('Converting times to datetime format...')
         data_block_pd.iloc[:,0] = data_nc_datetimes
                     

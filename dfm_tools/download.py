@@ -73,9 +73,7 @@ def download_ERA5(varkey,
         c.retrieve(name='reanalysis-era5-single-levels', request=request_dict, target=file_out)
 
 
-def open_OPeNDAP_xr(dataset_url,
-                    credentials=None): #for CMEMS. credentials=['username','password'], or create "%USERPROFILE%/CMEMS_credentials.txt" with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form'
-    
+def open_OPeNDAP_xr(dataset_url, credentials=None):
     """
     How to get the opendap dataset_url (CMEMS example):
         - https://data.marine.copernicus.eu/products
@@ -107,6 +105,28 @@ def open_OPeNDAP_xr(dataset_url,
         Some examples:
             https://tds.hycom.org/thredds/dodsC/GLBu0.08/expt_19.1/2010
             https://tds.hycom.org/thredds/dodsC/GLBy0.08/expt_93.0
+    
+    Parameters
+    ----------
+    dataset_url : TYPE
+        DESCRIPTION.
+    credentials : TYPE, optional
+        for CMEMS: credentials=['username','password'], or create "%USERPROFILE%/CMEMS_credentials.txt" with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form'. The default is None.
+
+    Raises
+    ------
+    KeyError
+        DESCRIPTION.
+    TypeError
+        DESCRIPTION.
+    FileNotFoundError
+        DESCRIPTION.
+
+    Returns
+    -------
+    TYPE
+        DESCRIPTION.
+
     """
     
     def copernicusmarine_datastore(dataset_url, username, password):
