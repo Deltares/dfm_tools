@@ -92,9 +92,10 @@ def Dataset_to_TimeSeries(datablock_xr):
     """
     convert an xarray.DataArray or xarray.Dataset with time dimension to a hydrolib TimeSeries object
     """
-    if isinstance(datablock_xr,xr.DataArray):
-        pass
-    if isinstance(datablock_xr,xr.Dataset):
+    if not isinstance(datablock_xr,(xr.DataArray,xr.Dataset)):
+        raise TypeError(f'Dataset_to_TimeSeries expects xr.DataArray or xr.Dataset, not {type(datablock_xr)}')
+    
+    if isinstance(datablock_xr,xr.Dataset): #convert Dataset to DataArray
         data_vars = list(datablock_xr.data_vars)
         if len(data_vars)!=1:
             raise ValueError('more than one variable supplied in Dataset, not yet possible') #TODO: add support for multiple quantities and for vectors
