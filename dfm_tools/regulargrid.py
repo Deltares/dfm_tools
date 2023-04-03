@@ -38,8 +38,6 @@ import xarray as xr
 import xugrid as xu
 import numpy as np
 from dfm_tools.xarray_helpers import Dataset_varswithdim
-from scipy.interpolate import griddata
-from scipy.spatial import KDTree
 
 
 def rasterize_ugrid(uds:xu.UgridDataset, ds_like:xr.Dataset = None, resolution:float = None):
@@ -139,7 +137,6 @@ def scatter_to_regulargrid(xcoords, ycoords, values, ncellx=None, ncelly=None, r
 
 
 def center2corner(cen):
-    import numpy as np
     
     warnings.warn(DeprecationWarning('center2corner() might be phased out in a future version, unless it is found useful for regulargrid netcdf reading/plotting.'))
     
