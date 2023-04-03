@@ -187,7 +187,7 @@ def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset), drop_tidal_times:bool = True
                          'temperature':'tem', #not clear from fourier_analysis.f90, ct in user manual C.13
                          'salt':'sal', #not clear from fourier_analysis.f90, cs in user manual C.13
                          }
-        if not quantity_long in quantity_dict.keys():
+        if quantity_long not in quantity_dict.keys():
             raise KeyError(f'quantity_dict does not yet contain quantity for: {quantity_long}')
         quantity = quantity_dict[quantity_long]
         
