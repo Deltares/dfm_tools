@@ -90,8 +90,6 @@ import xarray as xr
 import xugrid as xu
 import numpy as np
 from dfm_tools.xarray_helpers import Dataset_varswithdim
-from scipy.interpolate import griddata
-from scipy.spatial import KDTree
 
 
 def rasterize_ugrid(uds:xu.UgridDataset, ds_like:xr.Dataset = None, resolution:float = None):
@@ -156,7 +154,7 @@ def rasterize_ugrid(uds:xu.UgridDataset, ds_like:xr.Dataset = None, resolution:f
     return ds
 
 
-def scatter_to_regulargrid(xcoords, ycoords, values, ncellx=None, ncelly=None, reg_x_vec=None, reg_y_vec=None, method=&#39;nearest&#39;, maskland_dist=None):
+def scatter_to_regulargrid(xcoords, ycoords, values, ncellx=None, ncelly=None, reg_x_vec=None, reg_y_vec=None, method=&#39;nearest&#39;, maskland_dist=None): #TODO: remove from code
     &#34;&#34;&#34;
     interpolates scatter values (x,y,z) or meshgrids to regular grid
 
@@ -187,36 +185,10 @@ def scatter_to_regulargrid(xcoords, ycoords, values, ncellx=None, ncelly=None, r
         DESCRIPTION.
 
     &#34;&#34;&#34;
-    warnings.warn(DeprecationWarning(&#39;dfm_tools.regulargrid.scatter_to_regulargrid() is deprecated, use ds = dfmt.rasterize_ugrid(uds) instead&#39;)) #TODO: deprecate and remove from code
-    
-    if (reg_x_vec is None) or (reg_y_vec is None):
-        if (ncellx is None) or (ncelly is None):
-            raise Exception(&#39;if reg_x_vec/reg_y_vec are not supplied, ncellx and ncelly should be supplied&#39;)
-        print(&#39;reg_x_vec or reg_y_vec not supplied, so computing from ncellx and ncelly&#39;)
-        reg_x_vec = np.linspace(np.min(xcoords),np.max(xcoords),ncellx)
-        reg_y_vec = np.linspace(np.min(ycoords),np.max(ycoords),ncelly)
-    x_grid,y_grid = np.meshgrid(reg_x_vec,reg_y_vec)
-    
-    #first replace masked value with nan (mask is not used in griddata)
-    try:
-        values[values.mask] = np.nan
-    except:
-        pass
-    value_grid = griddata((xcoords,ycoords),values,(x_grid,y_grid),method=method)
-    
-    if maskland_dist is not None:
-        #Mask out land values with maskland_dist
-        #https://stackoverflow.com/questions/10456143/get-only-valid-points-in-2d-interpolation-of-cloud-point-using-scipy-numpy
-        tree = KDTree(np.c_[xcoords, ycoords])
-        dist, _ = tree.query(np.c_[x_grid.ravel(), y_grid.ravel()], k=1)
-        dist = dist.reshape(x_grid.shape)
-        value_grid[dist &gt; maskland_dist] = np.nan
-
-    return x_grid, y_grid, value_grid
+    raise DeprecationWarning(&#39;dfm_tools.regulargrid.scatter_to_regulargrid() is deprecated, use ds = dfmt.rasterize_ugrid(uds) instead&#39;)
 
 
 def center2corner(cen):
-    import numpy as np
     
     warnings.warn(DeprecationWarning(&#39;center2corner() might be phased out in a future version, unless it is found useful for regulargrid netcdf reading/plotting.&#39;))
     
@@ -496,7 +468,7 @@ inspired by xugrid.plot.imshow and xugrid.ugrid.ugrid2d.rasterize/rasterize_like
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def scatter_to_regulargrid(xcoords, ycoords, values, ncellx=None, ncelly=None, reg_x_vec=None, reg_y_vec=None, method=&#39;nearest&#39;, maskland_dist=None):
+<pre><code class="python">def scatter_to_regulargrid(xcoords, ycoords, values, ncellx=None, ncelly=None, reg_x_vec=None, reg_y_vec=None, method=&#39;nearest&#39;, maskland_dist=None): #TODO: remove from code
     &#34;&#34;&#34;
     interpolates scatter values (x,y,z) or meshgrids to regular grid
 
@@ -527,32 +499,7 @@ inspired by xugrid.plot.imshow and xugrid.ugrid.ugrid2d.rasterize/rasterize_like
         DESCRIPTION.
 
     &#34;&#34;&#34;
-    warnings.warn(DeprecationWarning(&#39;dfm_tools.regulargrid.scatter_to_regulargrid() is deprecated, use ds = dfmt.rasterize_ugrid(uds) instead&#39;)) #TODO: deprecate and remove from code
-    
-    if (reg_x_vec is None) or (reg_y_vec is None):
-        if (ncellx is None) or (ncelly is None):
-            raise Exception(&#39;if reg_x_vec/reg_y_vec are not supplied, ncellx and ncelly should be supplied&#39;)
-        print(&#39;reg_x_vec or reg_y_vec not supplied, so computing from ncellx and ncelly&#39;)
-        reg_x_vec = np.linspace(np.min(xcoords),np.max(xcoords),ncellx)
-        reg_y_vec = np.linspace(np.min(ycoords),np.max(ycoords),ncelly)
-    x_grid,y_grid = np.meshgrid(reg_x_vec,reg_y_vec)
-    
-    #first replace masked value with nan (mask is not used in griddata)
-    try:
-        values[values.mask] = np.nan
-    except:
-        pass
-    value_grid = griddata((xcoords,ycoords),values,(x_grid,y_grid),method=method)
-    
-    if maskland_dist is not None:
-        #Mask out land values with maskland_dist
-        #https://stackoverflow.com/questions/10456143/get-only-valid-points-in-2d-interpolation-of-cloud-point-using-scipy-numpy
-        tree = KDTree(np.c_[xcoords, ycoords])
-        dist, _ = tree.query(np.c_[x_grid.ravel(), y_grid.ravel()], k=1)
-        dist = dist.reshape(x_grid.shape)
-        value_grid[dist &gt; maskland_dist] = np.nan
-
-    return x_grid, y_grid, value_grid</code></pre>
+    raise DeprecationWarning(&#39;dfm_tools.regulargrid.scatter_to_regulargrid() is deprecated, use ds = dfmt.rasterize_ugrid(uds) instead&#39;)</code></pre>
 </details>
 </dd>
 <dt id="dfm_tools.regulargrid.center2corner"><code class="name flex">
@@ -565,7 +512,6 @@ inspired by xugrid.plot.imshow and xugrid.ugrid.ugrid2d.rasterize/rasterize_like
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def center2corner(cen):
-    import numpy as np
     
     warnings.warn(DeprecationWarning(&#39;center2corner() might be phased out in a future version, unless it is found useful for regulargrid netcdf reading/plotting.&#39;))
     
