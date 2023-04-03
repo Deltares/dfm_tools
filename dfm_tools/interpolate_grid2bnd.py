@@ -399,11 +399,13 @@ def interp_hisnc_to_plipoints(data_xr_his, file_pli, kdtree_k=3, load=True):
     
     #read polyfile and query k nearest hisstations (names)
     polyfile_object = hcdfm.PolyFile(file_pli)
-    data_pol_pd = pd.DataFrame()
+    data_pol_list = []
     for polyobj in polyfile_object.objects:
         data_pol_pd_one = pointlike_to_DataFrame(polyobj)
         data_pol_pd_one['name'] = pd.Series(data_pol_pd_one.index).apply(lambda x: f'{polyobj.metadata.name}_{x+1:04d}')
-        data_pol_pd = pd.concat([data_pol_pd,data_pol_pd_one])
+        data_pol_list.append(data_pol_pd_one)
+    data_pol_pd = pd.concat(data_pol_list)
+
     plicoords_distance2, plicoords_nestpointidx = tree_nest2.query(data_pol_pd[['x','y']], k=kdtree_k)
     da_plicoords_nestpointidx = xr.DataArray(plicoords_nestpointidx, dims=('plipoints','nearestkpoints'))
     da_plicoords_nestpointnames = data_xr_his.stations.isel(stations=da_plicoords_nestpointidx)
