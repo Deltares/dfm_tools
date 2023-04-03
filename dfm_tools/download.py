@@ -71,7 +71,6 @@ def download_ERA5(varkey,
                         'format':'netcdf'}
         
         c.retrieve(name='reanalysis-era5-single-levels', request=request_dict, target=file_out)
-    return
 
 
 def open_OPeNDAP_xr(dataset_url,
