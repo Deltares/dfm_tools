@@ -383,11 +383,6 @@ def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str ='z0', z
         print(UserWarning('depth/layer dimension not found, probably 2D model, returning input Dataset')) #TODO: this can also be at depth, since slice will put parts of model dry (and allnan if below wl or below bl). Implement this
         return data_xr #early return
     
-    if reference=='waterlevel' and varname_wl not in data_xr.variables:
-        raise KeyError(f'get_Dataset_atdepths() called with reference=waterlevel, but {varname_wl} variable not present')
-    if reference=='bedlevel' and varname_wl not in data_xr.variables:
-        raise KeyError(f'get_Dataset_atdepths() called with reference=bedlevel, but {varname_bl} variable not present') #TODO: in case of zsigma/sigma it can also be -mesh2d_bldepth
-    
     if not isinstance(data_xr,(xr.Dataset,xu.UgridDataset)):
         raise TypeError(f'data_xr_map should be of type xr.Dataset, but is {type(data_xr)}')
     
@@ -420,9 +415,13 @@ def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str ='z0', z
     if reference=='z0':
         zw_reference = data_xr[varname_zint]
     elif reference=='waterlevel':
+        if varname_wl not in data_xr.variables:
+            raise KeyError(f'get_Dataset_atdepths() called with reference=waterlevel, but {varname_wl} variable not present')
         data_wl = data_xr[varname_wl]
         zw_reference = data_xr[varname_zint] - data_wl
     elif reference=='bedlevel':
+        if varname_bl not in data_xr.variables:
+            raise KeyError(f'get_Dataset_atdepths() called with reference=bedlevel, but {varname_bl} variable not present') #TODO: in case of zsigma/sigma it can also be -mesh2d_bldepth
         data_bl = data_xr[varname_bl]
         zw_reference = data_xr[varname_zint] - data_bl
     else:
