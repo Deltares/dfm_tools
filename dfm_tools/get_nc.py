@@ -316,7 +316,6 @@ def reconstruct_zw_zcc(ds):
     #reconstruct zw/zcc variables (if not in file) and treat as fullgrid mapfile from here
     if varname_zint in ds.variables: #fullgrid info already available, so continuing
         print(f'zw/zcc (fullgrid) values already present in Dataset in variable {varname_zint}')
-        pass
     elif len(ds.filter_by_attrs(standard_name='ocean_sigma_z_coordinate')) != 0:
         print('zsigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
         ds = reconstruct_zw_zcc_fromzsigma(ds)
