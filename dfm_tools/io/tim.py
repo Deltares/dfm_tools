@@ -70,9 +70,9 @@ def write_timfile(filename, datablock, header, converttime=False, refdate=None, 
     
     warnings.warn(DeprecationWarning('the function dfm_tools.io.tim.write_timfile() is deprecated, please use the new hydrolib alternative (in development).')) #TODO: remove code (there is no hydrolib-core alternative available yet)
     
-    if type(datablocks) is not list:
-        datablocks = [datablocks]
-        metadatas = [metadatas]
+    if type(datablock) is not list:
+        datablock = [datablock]
+        #metadatas = [metadatas]
     
     #clear file
     with open(filename, 'w') as file_tim:
@@ -85,7 +85,7 @@ def write_timfile(filename, datablock, header, converttime=False, refdate=None, 
         print('datetime values are replaced by minutes since')
         try:
             times_wrtref_min = (data_pd_out.iloc[:,0]-refdate).dt.total_seconds()/60
-        except:
+        except TypeError:
             raise Exception('Failure to convert time units. Please check that refdate is a valid datetime object and first column of dataset contains valid datetime objects.')
         
         #replace datetime values by minutes since
@@ -112,7 +112,7 @@ def read_timfile(filename, converttime=False, refdate=None):
     refdate : datetime object, optional
         DESCRIPTION. The default is None
     
-Raises
+    Raises
     ------
     Exception
         DESCRIPTION.
@@ -146,7 +146,7 @@ Raises
         data_nc_times_pdtd = pd.to_timedelta(time_minutes, unit='m')
         try:
             data_nc_datetimes = (refdate + data_nc_times_pdtd)#.to_pydatetime()
-        except:
+        except TypeError:
             raise Exception('Failure to convert time units. Please check that refdate is a valid datetime object and first column of dataset contains minutes since refdate.')
         print('Converting times to datetime format...')
         data_block_pd.iloc[:,0] = data_nc_datetimes
