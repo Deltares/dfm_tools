@@ -17,7 +17,7 @@ def Dataset_to_T3D(datablock_xr):
     convert an xarray.DataArray (is one data_var) or an xarray.Dataset (with one or two data_vars) with time and depth dimension to a hydrolib T3D object
     """
     
-    if isinstance(datablock_xr,(xr.DataArray,xr.Dataset)):
+    if not isinstance(datablock_xr,(xr.DataArray,xr.Dataset)):
         raise TypeError(f'expected xarray.DataArray or xarray.Dataset, not {type(datablock_xr)}')
         
     vector = False
