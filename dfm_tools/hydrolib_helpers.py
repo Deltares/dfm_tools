@@ -275,7 +275,6 @@ def pointlike_to_DataFrame(pointlike,drop_emptycols=True):
     
     pointlike_pd = pd.DataFrame([dict(p) for p in pointlike.points])
     if 'data' in pointlike_pd.columns:
-        #datavals_pd = pointlike_pd['data'].apply(pd.Series) #this is quite slow, so use line below instead. maybe lambda or faster approach?
         datavals_pd = pd.DataFrame([p.data for p in pointlike.points])
         pointlike_pd = pd.concat([pointlike_pd.drop(['data'],axis=1), datavals_pd],axis=1)
         
