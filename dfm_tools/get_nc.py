@@ -331,7 +331,7 @@ def reconstruct_zw_zcc(ds):
     return ds
 
     
-def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str ='z0', zlayer_z0_selnearest:bool = False):    
+def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str ='z0'):    
     """
     Lazily depth-slice a dataset with layers. Performance can be increased by using a subset of variables or subsetting the dataset in any dimension.
     This can be done for instance with ds.isel(time=-1) or uds.ugrid.sel(x=slice(),y=slice()) to subset a ugrid dataset in space.
