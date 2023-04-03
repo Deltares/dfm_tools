@@ -38,6 +38,8 @@ import xarray as xr
 import xugrid as xu
 import numpy as np
 from dfm_tools.xarray_helpers import Dataset_varswithdim
+from scipy.interpolate import griddata
+from scipy.spatial import KDTree
 
 
 def rasterize_ugrid(uds:xu.UgridDataset, ds_like:xr.Dataset = None, resolution:float = None):
@@ -133,9 +135,6 @@ def scatter_to_regulargrid(xcoords, ycoords, values, ncellx=None, ncelly=None, r
         DESCRIPTION.
 
     """
-    import numpy as np
-    from scipy.interpolate import griddata
-    from scipy.spatial import KDTree
     warnings.warn(DeprecationWarning('dfm_tools.regulargrid.scatter_to_regulargrid() is deprecated, use ds = dfmt.rasterize_ugrid(uds) instead')) #TODO: deprecate and remove from code
     
     if (reg_x_vec is None) or (reg_y_vec is None):
@@ -166,6 +165,8 @@ def scatter_to_regulargrid(xcoords, ycoords, values, ncellx=None, ncelly=None, r
 
 def center2corner(cen):
     import numpy as np
+    
+    warnings.warn(DeprecationWarning('center2corner() might be phased out in a future version, unless it is found useful for regulargrid netcdf reading/plotting.'))
     
     if len(cen.shape) != 2:
         raise ValueError('input array should have 2 dimensions')
@@ -208,7 +209,8 @@ def corner2center(cor):
     array([[ 3.,  6.]])
     """
     
-    import numpy as np
+    warnings.warn(DeprecationWarning('corner2center() might be phased out in a future version, unless it is found useful for regulargrid netcdf reading/plotting.'))
+    
     cor = np.asarray(cor)
     shp = cor.shape
     
