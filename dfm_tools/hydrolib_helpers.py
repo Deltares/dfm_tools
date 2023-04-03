@@ -17,24 +17,22 @@ def Dataset_to_T3D(datablock_xr):
     convert an xarray.DataArray (is one data_var) or an xarray.Dataset (with one or two data_vars) with time and depth dimension to a hydrolib T3D object
     """
     
+    if isinstance(datablock_xr,(xr.DataArray,xr.Dataset)):
+        raise TypeError(f'expected xarray.DataArray or xarray.Dataset, not {type(datablock_xr)}')
+        
+    vector = False
     if isinstance(datablock_xr,xr.DataArray):
-        vector = False
         data_xr_var0 = datablock_xr
     elif isinstance(datablock_xr,xr.Dataset):
         data_vars = list(datablock_xr.data_vars)
-        if len(data_vars)==1: 
-            vector = False
-            data_xr_var0 = datablock_xr[data_vars[0]]
-        elif len(data_vars)==2:
+        data_xr_var0 = datablock_xr[data_vars[0]]
+        if len(data_vars)==2:
             if not pd.Series(data_vars).isin(['ux','uy']).all():
                 raise Exception(f'Dataset with 2 data_vars should contain only ux/uy data_vars, but contains {data_vars}')
             vector = True
-            data_xr_var0 = datablock_xr[data_vars[0]]
             data_xr_var1 = datablock_xr[data_vars[1]]
-        else:
+        elif len(data_vars) > 2:
             raise ValueError(f'Dataset should contain 1 or 2 data_vars, but contains {len(data_vars)} variables')
-    else:
-        raise TypeError(f'expected xarray.DataArray or xarray.Dataset, not {type(datablock_xr)}')
     
     #ffill/bfill nan data along over depth dimension (corresponds to vertical extrapolation)
     data_xr_var0 = data_xr_var0.bfill(dim='depth').ffill(dim='depth')
@@ -45,7 +43,7 @@ def Dataset_to_T3D(datablock_xr):
     locationname = data_xr_var0.attrs['locationname']
     refdate_str = data_xr_var0.time.encoding['units']
     
-    if data_xr_var0.dims != ('time','depth'): #check if both time and depth dimensions are present #TODO: add support for flipped dimensions (datablock_xr.T or something is needed)
+    if set(data_xr_var0.dims).issubset(set(('time','depth'))): #check if both time and depth dimensions are present
         raise ValueError(f"data_var in provided data_xr has dimensions {data_xr_var0.dims} while ('time','depth') is expected")
     
     #get depth variable and values
