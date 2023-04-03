@@ -104,7 +104,7 @@ def rasterize_ugrid(uds:xu.UgridDataset, ds_like:xr.Dataset = None, resolution:f
     return ds
 
 
-def scatter_to_regulargrid(xcoords, ycoords, values, ncellx=None, ncelly=None, reg_x_vec=None, reg_y_vec=None, method='nearest', maskland_dist=None):
+def scatter_to_regulargrid(xcoords, ycoords, values, ncellx=None, ncelly=None, reg_x_vec=None, reg_y_vec=None, method='nearest', maskland_dist=None): #TODO: remove from code
     """
     interpolates scatter values (x,y,z) or meshgrids to regular grid
 
@@ -135,32 +135,7 @@ def scatter_to_regulargrid(xcoords, ycoords, values, ncellx=None, ncelly=None, r
         DESCRIPTION.
 
     """
-    warnings.warn(DeprecationWarning('dfm_tools.regulargrid.scatter_to_regulargrid() is deprecated, use ds = dfmt.rasterize_ugrid(uds) instead')) #TODO: deprecate and remove from code
-    
-    if (reg_x_vec is None) or (reg_y_vec is None):
-        if (ncellx is None) or (ncelly is None):
-            raise Exception('if reg_x_vec/reg_y_vec are not supplied, ncellx and ncelly should be supplied')
-        print('reg_x_vec or reg_y_vec not supplied, so computing from ncellx and ncelly')
-        reg_x_vec = np.linspace(np.min(xcoords),np.max(xcoords),ncellx)
-        reg_y_vec = np.linspace(np.min(ycoords),np.max(ycoords),ncelly)
-    x_grid,y_grid = np.meshgrid(reg_x_vec,reg_y_vec)
-    
-    #first replace masked value with nan (mask is not used in griddata)
-    try:
-        values[values.mask] = np.nan
-    except:
-        pass
-    value_grid = griddata((xcoords,ycoords),values,(x_grid,y_grid),method=method)
-    
-    if maskland_dist is not None:
-        #Mask out land values with maskland_dist
-        #https://stackoverflow.com/questions/10456143/get-only-valid-points-in-2d-interpolation-of-cloud-point-using-scipy-numpy
-        tree = KDTree(np.c_[xcoords, ycoords])
-        dist, _ = tree.query(np.c_[x_grid.ravel(), y_grid.ravel()], k=1)
-        dist = dist.reshape(x_grid.shape)
-        value_grid[dist > maskland_dist] = np.nan
-
-    return x_grid, y_grid, value_grid
+    raise DeprecationWarning('dfm_tools.regulargrid.scatter_to_regulargrid() is deprecated, use ds = dfmt.rasterize_ugrid(uds) instead')
 
 
 def center2corner(cen):
