@@ -80,7 +80,7 @@ def Dataset_to_T3D(datablock_xr):
                            vertPositionType='ZDatum',
                            quantityunitpair=quantityunitpair,
                            timeinterpolation='linear',
-                           datablock=datablock_incltime.tolist(), #TODO: numpy array is not supported by TimeSeries. https://github.com/Deltares/HYDROLIB-core/issues/322
+                           datablock=datablock_incltime.tolist(),
                            )
     
     return T3D_object
