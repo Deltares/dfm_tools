@@ -75,7 +75,7 @@ elif model=='HYCOM':
     dir_sourcefiles_waq = None
     dir_pattern_waq = None
 else:
-    raise Exception(f'invalid model: {model}')
+    raise KeyError(f'invalid model: {model}')
 
 
 # start of interpolation process
