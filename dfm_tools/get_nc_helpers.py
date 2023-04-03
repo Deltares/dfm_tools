@@ -221,10 +221,9 @@ def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset), drop_tidal_times:bool = True
         tstart_str = (refdate + pd.Timedelta(minutes=tstart_min)).strftime('%Y%m%d%H%M%S')
         tstop_str = (refdate + pd.Timedelta(minutes=tstop_min)).strftime('%Y%m%d%H%M%S')
         
+        rename_dict[fouvar] = f'{gridname}_{quantity}_{analysistype}_{tstart_str}_{tstop_str}'
         if istidal and drop_tidal_times:
             rename_dict[fouvar] = f'{gridname}_{quantity}_{analysistype}' #TODO: might cause conflicting variable names if one component is analysed for multiple periods or if component is not defined in frequency list. Add duplicate check like rename_waqvars() that provides some basic info for debugging.
-        else:
-            rename_dict[fouvar] = f'{gridname}_{quantity}_{analysistype}_{tstart_str}_{tstop_str}'
     
     ds = ds.rename(rename_dict)
     return ds
