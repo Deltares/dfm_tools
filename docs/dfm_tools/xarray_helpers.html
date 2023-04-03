@@ -45,6 +45,7 @@ import glob
 import pandas as pd
 import warnings
 import numpy as np
+from dfm_tools.errors import OutOfRangeError
 
 
 def file_to_list(file_nc):
@@ -284,7 +285,7 @@ def merge_meteofiles(file_nc:str, preprocess=None,
     print(f&#39;{(dt.datetime.now()-dtstart).total_seconds():.2f} sec&#39;)
     
     #rename variables
-    if not &#39;longitude&#39; in data_xr.variables: #TODO: make generic, comparable rename in rename_dims_dict in dfmt.open_dataset_extra()
+    if &#39;longitude&#39; not in data_xr.variables: #TODO: make generic, comparable rename in rename_dims_dict in dfmt.open_dataset_extra()
         if &#39;lon&#39; in data_xr.variables:
             data_xr = data_xr.rename({&#39;lon&#39;:&#39;longitude&#39;, &#39;lat&#39;:&#39;latitude&#39;})
         elif &#39;x&#39; in data_xr.variables:
@@ -303,7 +304,7 @@ def merge_meteofiles(file_nc:str, preprocess=None,
     
     #check if there are times selected
     if len(data_xr_tsel.time)==0:
-        raise Exception(f&#39;ERROR: no times selected, ds_text={data_xr.time[[0,-1]].to_numpy()} and time_slice={time_slice}&#39;)
+        raise OutOfRangeError(f&#39;ERROR: no times selected, ds_text={data_xr.time[[0,-1]].to_numpy()} and time_slice={time_slice}&#39;)
     
     #check if there are no gaps (more than one unique timestep)
     times_pd = data_xr_tsel[&#39;time&#39;].to_series()
@@ -312,10 +313,10 @@ def merge_meteofiles(file_nc:str, preprocess=None,
         raise Exception(f&#39;ERROR: gaps found in selected dataset (are there sourcefiles missing?), unique timesteps (hour): {timesteps_uniq/1e9/3600}&#39;)
     
     #check if requested times are available in selected files (in times_pd)
-    if not time_slice.start in times_pd.index:
-        raise Exception(f&#39;ERROR: time_slice_start=&#34;{time_slice.start}&#34; not in selected files, timerange: &#34;{times_pd.index[0]}&#34; to &#34;{times_pd.index[-1]}&#34;&#39;)
-    if not time_slice.stop in times_pd.index:
-        raise Exception(f&#39;ERROR: time_slice_stop=&#34;{time_slice.stop}&#34; not in selected files, timerange: &#34;{times_pd.index[0]}&#34; to &#34;{times_pd.index[-1]}&#34;&#39;)
+    if time_slice.start not in times_pd.index:
+        raise OutOfRangeError(f&#39;ERROR: time_slice_start=&#34;{time_slice.start}&#34; not in selected files, timerange: &#34;{times_pd.index[0]}&#34; to &#34;{times_pd.index[-1]}&#34;&#39;)
+    if time_slice.stop not in times_pd.index:
+        raise OutOfRangeError(f&#39;ERROR: time_slice_stop=&#34;{time_slice.stop}&#34; not in selected files, timerange: &#34;{times_pd.index[0]}&#34; to &#34;{times_pd.index[-1]}&#34;&#39;)
     
     #TODO: check conversion implementation with hydro_tools\ERA5\ERA52DFM.py. Also move to separate function?
     def get_unit(data_xr_var):
@@ -933,7 +934,7 @@ x/y and lon/lat are renamed to longitude/latitude #TODO: is this desireable?</p>
     print(f&#39;{(dt.datetime.now()-dtstart).total_seconds():.2f} sec&#39;)
     
     #rename variables
-    if not &#39;longitude&#39; in data_xr.variables: #TODO: make generic, comparable rename in rename_dims_dict in dfmt.open_dataset_extra()
+    if &#39;longitude&#39; not in data_xr.variables: #TODO: make generic, comparable rename in rename_dims_dict in dfmt.open_dataset_extra()
         if &#39;lon&#39; in data_xr.variables:
             data_xr = data_xr.rename({&#39;lon&#39;:&#39;longitude&#39;, &#39;lat&#39;:&#39;latitude&#39;})
         elif &#39;x&#39; in data_xr.variables:
@@ -952,7 +953,7 @@ x/y and lon/lat are renamed to longitude/latitude #TODO: is this desireable?</p>
     
     #check if there are times selected
     if len(data_xr_tsel.time)==0:
-        raise Exception(f&#39;ERROR: no times selected, ds_text={data_xr.time[[0,-1]].to_numpy()} and time_slice={time_slice}&#39;)
+        raise OutOfRangeError(f&#39;ERROR: no times selected, ds_text={data_xr.time[[0,-1]].to_numpy()} and time_slice={time_slice}&#39;)
     
     #check if there are no gaps (more than one unique timestep)
     times_pd = data_xr_tsel[&#39;time&#39;].to_series()
@@ -961,10 +962,10 @@ x/y and lon/lat are renamed to longitude/latitude #TODO: is this desireable?</p>
         raise Exception(f&#39;ERROR: gaps found in selected dataset (are there sourcefiles missing?), unique timesteps (hour): {timesteps_uniq/1e9/3600}&#39;)
     
     #check if requested times are available in selected files (in times_pd)
-    if not time_slice.start in times_pd.index:
-        raise Exception(f&#39;ERROR: time_slice_start=&#34;{time_slice.start}&#34; not in selected files, timerange: &#34;{times_pd.index[0]}&#34; to &#34;{times_pd.index[-1]}&#34;&#39;)
-    if not time_slice.stop in times_pd.index:
-        raise Exception(f&#39;ERROR: time_slice_stop=&#34;{time_slice.stop}&#34; not in selected files, timerange: &#34;{times_pd.index[0]}&#34; to &#34;{times_pd.index[-1]}&#34;&#39;)
+    if time_slice.start not in times_pd.index:
+        raise OutOfRangeError(f&#39;ERROR: time_slice_start=&#34;{time_slice.start}&#34; not in selected files, timerange: &#34;{times_pd.index[0]}&#34; to &#34;{times_pd.index[-1]}&#34;&#39;)
+    if time_slice.stop not in times_pd.index:
+        raise OutOfRangeError(f&#39;ERROR: time_slice_stop=&#34;{time_slice.stop}&#34; not in selected files, timerange: &#34;{times_pd.index[0]}&#34; to &#34;{times_pd.index[-1]}&#34;&#39;)
     
     #TODO: check conversion implementation with hydro_tools\ERA5\ERA52DFM.py. Also move to separate function?
     def get_unit(data_xr_var):

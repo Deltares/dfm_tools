@@ -42,6 +42,7 @@ import xarray as xr
 from pydap.client import open_url
 from pydap.cas.get_cookies import setup_session
 import warnings
+from dfm_tools.errors import OutOfRangeError
 
 
 def download_ERA5(varkey,
@@ -100,12 +101,9 @@ def download_ERA5(varkey,
                         &#39;format&#39;:&#39;netcdf&#39;}
         
         c.retrieve(name=&#39;reanalysis-era5-single-levels&#39;, request=request_dict, target=file_out)
-    return
 
 
-def open_OPeNDAP_xr(dataset_url,
-                    credentials=None): #for CMEMS. credentials=[&#39;username&#39;,&#39;password&#39;], or create &#34;%USERPROFILE%/CMEMS_credentials.txt&#34; with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form&#39;
-    
+def open_OPeNDAP_xr(dataset_url, credentials=None):
     &#34;&#34;&#34;
     How to get the opendap dataset_url (CMEMS example):
         - https://data.marine.copernicus.eu/products
@@ -137,6 +135,7 @@ def open_OPeNDAP_xr(dataset_url,
         Some examples:
             https://tds.hycom.org/thredds/dodsC/GLBu0.08/expt_19.1/2010
             https://tds.hycom.org/thredds/dodsC/GLBy0.08/expt_93.0
+
     &#34;&#34;&#34;
     
     def copernicusmarine_datastore(dataset_url, username, password):
@@ -144,7 +143,7 @@ def open_OPeNDAP_xr(dataset_url,
         cas_url = &#39;https://cmems-cas.cls.fr/cas/login&#39;
         session = setup_session(cas_url, username, password)
         cookies_dict = session.cookies.get_dict()
-        if not &#39;CASTGC&#39; in cookies_dict.keys():
+        if &#39;CASTGC&#39; not in cookies_dict.keys():
             raise KeyError(&#39;CASTGC key missing from session cookies_dict, probably authentication failure&#39;)
         session.cookies.set(&#34;CASTGC&#34;, cookies_dict[&#39;CASTGC&#39;])
         #TODO: add check for wrong dataset_id (now always &#34;AttributeError: You cannot set the charset when no content-type is defined&#34;)
@@ -206,6 +205,50 @@ def download_OPeNDAP(dataset_url,
                      date_min, date_max, freq=&#39;D&#39;,
                      dir_output=&#39;.&#39;, file_prefix=&#39;&#39;, overwrite=False,
                      credentials=None):
+    &#34;&#34;&#34;
+    
+
+    Parameters
+    ----------
+    dataset_url : TYPE
+        DESCRIPTION.
+    varkey : TYPE
+        DESCRIPTION.
+    longitude_min : TYPE
+        DESCRIPTION.
+    longitude_max : TYPE
+        DESCRIPTION.
+    latitude_min : TYPE
+        DESCRIPTION.
+    latitude_max : TYPE
+        DESCRIPTION.
+    date_min : TYPE
+        DESCRIPTION.
+    date_max : TYPE
+        DESCRIPTION.
+    freq : TYPE, optional
+        DESCRIPTION. The default is &#39;D&#39;.
+    dir_output : TYPE, optional
+        DESCRIPTION. The default is &#39;.&#39;.
+    file_prefix : TYPE, optional
+        DESCRIPTION. The default is &#39;&#39;.
+    overwrite : TYPE, optional
+        DESCRIPTION. The default is False.
+    credentials : TYPE, optional
+        for CMEMS: credentials=[&#39;username&#39;,&#39;password&#39;], or create &#34;%USERPROFILE%/CMEMS_credentials.txt&#34; with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form&#39;. The default is None.
+
+    Raises
+    ------
+    KeyError
+        DESCRIPTION.
+    OutOfRangeError
+        DESCRIPTION.
+
+    Returns
+    -------
+    None.
+
+    &#34;&#34;&#34;
     
     data_xr = open_OPeNDAP_xr(dataset_url=dataset_url, credentials=credentials)
     
@@ -221,9 +264,9 @@ def download_OPeNDAP(dataset_url,
     
     #check if date_min/date_max are available in dataset
     if not (data_xr_times.index[0] &lt;= period_range[0].to_timestamp() &lt;= data_xr_times.index[-1]):
-        raise Exception(f&#39;date_min ({period_range[0]}) is outside available time range in dataset: {data_xr_times.index[0]} to {data_xr_times.index[-1]}&#39;)
+        raise OutOfRangeError(f&#39;date_min ({period_range[0]}) is outside available time range in dataset: {data_xr_times.index[0]} to {data_xr_times.index[-1]}&#39;)
     if not (data_xr_times.index[0] &lt;= period_range[-1].to_timestamp() &lt;= data_xr_times.index[-1]):
-        raise Exception(f&#39;date_max ({period_range[-1]}) is outside available time range in dataset: {data_xr_times.index[0]} to {data_xr_times.index[-1]}&#39;)
+        raise OutOfRangeError(f&#39;date_max ({period_range[-1]}) is outside available time range in dataset: {data_xr_times.index[0]} to {data_xr_times.index[-1]}&#39;)
     
     for date in period_range:
         date_str = str(date)
@@ -238,10 +281,7 @@ def download_OPeNDAP(dataset_url,
         
         print(f&#39;xarray writing netcdf file: {name_output}&#39;)
         data_xr_var_seltime.to_netcdf(os.path.join(dir_output,name_output)) #TODO: add chunks={&#39;time&#39;:1} or only possible with opening?
-        data_xr_var_seltime.close()
-    
-    print(&#39;done&#39;)
-    return</code></pre>
+        data_xr_var_seltime.close()</code></pre>
 </details>
 </section>
 <section>
@@ -315,8 +355,7 @@ def download_OPeNDAP(dataset_url,
                         #&#39;grid&#39;: [1.0, 1.0], # latitude/longitude grid: east-west (longitude) and north-south resolution (latitude). default: 0.25 x 0.25 - option not available through the Climate Data Store (CDS) web interface
                         &#39;format&#39;:&#39;netcdf&#39;}
         
-        c.retrieve(name=&#39;reanalysis-era5-single-levels&#39;, request=request_dict, target=file_out)
-    return</code></pre>
+        c.retrieve(name=&#39;reanalysis-era5-single-levels&#39;, request=request_dict, target=file_out)</code></pre>
 </details>
 </dd>
 <dt id="dfm_tools.download.open_OPeNDAP_xr"><code class="name flex">
@@ -356,9 +395,7 @@ Some examples:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def open_OPeNDAP_xr(dataset_url,
-                    credentials=None): #for CMEMS. credentials=[&#39;username&#39;,&#39;password&#39;], or create &#34;%USERPROFILE%/CMEMS_credentials.txt&#34; with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form&#39;
-    
+<pre><code class="python">def open_OPeNDAP_xr(dataset_url, credentials=None):
     &#34;&#34;&#34;
     How to get the opendap dataset_url (CMEMS example):
         - https://data.marine.copernicus.eu/products
@@ -390,6 +427,7 @@ Some examples:
         Some examples:
             https://tds.hycom.org/thredds/dodsC/GLBu0.08/expt_19.1/2010
             https://tds.hycom.org/thredds/dodsC/GLBy0.08/expt_93.0
+
     &#34;&#34;&#34;
     
     def copernicusmarine_datastore(dataset_url, username, password):
@@ -397,7 +435,7 @@ Some examples:
         cas_url = &#39;https://cmems-cas.cls.fr/cas/login&#39;
         session = setup_session(cas_url, username, password)
         cookies_dict = session.cookies.get_dict()
-        if not &#39;CASTGC&#39; in cookies_dict.keys():
+        if &#39;CASTGC&#39; not in cookies_dict.keys():
             raise KeyError(&#39;CASTGC key missing from session cookies_dict, probably authentication failure&#39;)
         session.cookies.set(&#34;CASTGC&#34;, cookies_dict[&#39;CASTGC&#39;])
         #TODO: add check for wrong dataset_id (now always &#34;AttributeError: You cannot set the charset when no content-type is defined&#34;)
@@ -457,7 +495,44 @@ Some examples:
 <span>def <span class="ident">download_OPeNDAP</span></span>(<span>dataset_url, varkey, longitude_min, longitude_max, latitude_min, latitude_max, date_min, date_max, freq='D', dir_output='.', file_prefix='', overwrite=False, credentials=None)</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>dataset_url</code></strong> :&ensp;<code>TYPE</code></dt>
+<dd>DESCRIPTION.</dd>
+<dt><strong><code>varkey</code></strong> :&ensp;<code>TYPE</code></dt>
+<dd>DESCRIPTION.</dd>
+<dt><strong><code>longitude_min</code></strong> :&ensp;<code>TYPE</code></dt>
+<dd>DESCRIPTION.</dd>
+<dt><strong><code>longitude_max</code></strong> :&ensp;<code>TYPE</code></dt>
+<dd>DESCRIPTION.</dd>
+<dt><strong><code>latitude_min</code></strong> :&ensp;<code>TYPE</code></dt>
+<dd>DESCRIPTION.</dd>
+<dt><strong><code>latitude_max</code></strong> :&ensp;<code>TYPE</code></dt>
+<dd>DESCRIPTION.</dd>
+<dt><strong><code>date_min</code></strong> :&ensp;<code>TYPE</code></dt>
+<dd>DESCRIPTION.</dd>
+<dt><strong><code>date_max</code></strong> :&ensp;<code>TYPE</code></dt>
+<dd>DESCRIPTION.</dd>
+<dt><strong><code>freq</code></strong> :&ensp;<code>TYPE</code>, optional</dt>
+<dd>DESCRIPTION. The default is 'D'.</dd>
+<dt><strong><code>dir_output</code></strong> :&ensp;<code>TYPE</code>, optional</dt>
+<dd>DESCRIPTION. The default is '.'.</dd>
+<dt><strong><code>file_prefix</code></strong> :&ensp;<code>TYPE</code>, optional</dt>
+<dd>DESCRIPTION. The default is ''.</dd>
+<dt><strong><code>overwrite</code></strong> :&ensp;<code>TYPE</code>, optional</dt>
+<dd>DESCRIPTION. The default is False.</dd>
+<dt><strong><code>credentials</code></strong> :&ensp;<code>TYPE</code>, optional</dt>
+<dd>for CMEMS: credentials=['username','password'], or create "%USERPROFILE%/CMEMS_credentials.txt" with username on line 1 and password on line 2. Register at: <a href="https://resources.marine.copernicus.eu/registration-form'.">https://resources.marine.copernicus.eu/registration-form'.</a> The default is None.</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>KeyError</code></dt>
+<dd>DESCRIPTION.</dd>
+<dt><code>OutOfRangeError</code></dt>
+<dd>DESCRIPTION.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>None.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -468,6 +543,50 @@ Some examples:
                      date_min, date_max, freq=&#39;D&#39;,
                      dir_output=&#39;.&#39;, file_prefix=&#39;&#39;, overwrite=False,
                      credentials=None):
+    &#34;&#34;&#34;
+    
+
+    Parameters
+    ----------
+    dataset_url : TYPE
+        DESCRIPTION.
+    varkey : TYPE
+        DESCRIPTION.
+    longitude_min : TYPE
+        DESCRIPTION.
+    longitude_max : TYPE
+        DESCRIPTION.
+    latitude_min : TYPE
+        DESCRIPTION.
+    latitude_max : TYPE
+        DESCRIPTION.
+    date_min : TYPE
+        DESCRIPTION.
+    date_max : TYPE
+        DESCRIPTION.
+    freq : TYPE, optional
+        DESCRIPTION. The default is &#39;D&#39;.
+    dir_output : TYPE, optional
+        DESCRIPTION. The default is &#39;.&#39;.
+    file_prefix : TYPE, optional
+        DESCRIPTION. The default is &#39;&#39;.
+    overwrite : TYPE, optional
+        DESCRIPTION. The default is False.
+    credentials : TYPE, optional
+        for CMEMS: credentials=[&#39;username&#39;,&#39;password&#39;], or create &#34;%USERPROFILE%/CMEMS_credentials.txt&#34; with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form&#39;. The default is None.
+
+    Raises
+    ------
+    KeyError
+        DESCRIPTION.
+    OutOfRangeError
+        DESCRIPTION.
+
+    Returns
+    -------
+    None.
+
+    &#34;&#34;&#34;
     
     data_xr = open_OPeNDAP_xr(dataset_url=dataset_url, credentials=credentials)
     
@@ -483,9 +602,9 @@ Some examples:
     
     #check if date_min/date_max are available in dataset
     if not (data_xr_times.index[0] &lt;= period_range[0].to_timestamp() &lt;= data_xr_times.index[-1]):
-        raise Exception(f&#39;date_min ({period_range[0]}) is outside available time range in dataset: {data_xr_times.index[0]} to {data_xr_times.index[-1]}&#39;)
+        raise OutOfRangeError(f&#39;date_min ({period_range[0]}) is outside available time range in dataset: {data_xr_times.index[0]} to {data_xr_times.index[-1]}&#39;)
     if not (data_xr_times.index[0] &lt;= period_range[-1].to_timestamp() &lt;= data_xr_times.index[-1]):
-        raise Exception(f&#39;date_max ({period_range[-1]}) is outside available time range in dataset: {data_xr_times.index[0]} to {data_xr_times.index[-1]}&#39;)
+        raise OutOfRangeError(f&#39;date_max ({period_range[-1]}) is outside available time range in dataset: {data_xr_times.index[0]} to {data_xr_times.index[-1]}&#39;)
     
     for date in period_range:
         date_str = str(date)
@@ -500,10 +619,7 @@ Some examples:
         
         print(f&#39;xarray writing netcdf file: {name_output}&#39;)
         data_xr_var_seltime.to_netcdf(os.path.join(dir_output,name_output)) #TODO: add chunks={&#39;time&#39;:1} or only possible with opening?
-        data_xr_var_seltime.close()
-    
-    print(&#39;done&#39;)
-    return</code></pre>
+        data_xr_var_seltime.close()</code></pre>
 </details>
 </dd>
 </dl>

@@ -368,7 +368,6 @@ def reconstruct_zw_zcc(ds):
     #reconstruct zw/zcc variables (if not in file) and treat as fullgrid mapfile from here
     if varname_zint in ds.variables: #fullgrid info already available, so continuing
         print(f&#39;zw/zcc (fullgrid) values already present in Dataset in variable {varname_zint}&#39;)
-        pass
     elif len(ds.filter_by_attrs(standard_name=&#39;ocean_sigma_z_coordinate&#39;)) != 0:
         print(&#39;zsigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here&#39;)
         ds = reconstruct_zw_zcc_fromzsigma(ds)
@@ -383,7 +382,7 @@ def reconstruct_zw_zcc(ds):
     return ds
 
     
-def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str =&#39;z0&#39;, zlayer_z0_selnearest:bool = False):    
+def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str =&#39;z0&#39;):    
     &#34;&#34;&#34;
     Lazily depth-slice a dataset with layers. Performance can be increased by using a subset of variables or subsetting the dataset in any dimension.
     This can be done for instance with ds.isel(time=-1) or uds.ugrid.sel(x=slice(),y=slice()) to subset a ugrid dataset in space.
@@ -1072,7 +1071,6 @@ based on <a href="https://cfconventions.org/cf-conventions/cf-conventions.html#_
     #reconstruct zw/zcc variables (if not in file) and treat as fullgrid mapfile from here
     if varname_zint in ds.variables: #fullgrid info already available, so continuing
         print(f&#39;zw/zcc (fullgrid) values already present in Dataset in variable {varname_zint}&#39;)
-        pass
     elif len(ds.filter_by_attrs(standard_name=&#39;ocean_sigma_z_coordinate&#39;)) != 0:
         print(&#39;zsigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here&#39;)
         ds = reconstruct_zw_zcc_fromzsigma(ds)
@@ -1088,7 +1086,7 @@ based on <a href="https://cfconventions.org/cf-conventions/cf-conventions.html#_
 </details>
 </dd>
 <dt id="dfm_tools.get_nc.get_Dataset_atdepths"><code class="name flex">
-<span>def <span class="ident">get_Dataset_atdepths</span></span>(<span>data_xr: xugrid.core.wrap.UgridDataset, depths, reference: str = 'z0', zlayer_z0_selnearest: bool = False)</span>
+<span>def <span class="ident">get_Dataset_atdepths</span></span>(<span>data_xr: xugrid.core.wrap.UgridDataset, depths, reference: str = 'z0')</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Lazily depth-slice a dataset with layers. Performance can be increased by using a subset of variables or subsetting the dataset in any dimension.
@@ -1121,7 +1119,7 @@ This is faster but results in values interpolated between zcc (z cell centers), 
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str =&#39;z0&#39;, zlayer_z0_selnearest:bool = False):    
+<pre><code class="python">def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str =&#39;z0&#39;):    
     &#34;&#34;&#34;
     Lazily depth-slice a dataset with layers. Performance can be increased by using a subset of variables or subsetting the dataset in any dimension.
     This can be done for instance with ds.isel(time=-1) or uds.ugrid.sel(x=slice(),y=slice()) to subset a ugrid dataset in space.

@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.10.0" />
-<title>dfm_tools.linebuilder API documentation</title>
-<meta name="description" content="Created on Mon Oct
-3 13:40:58 2022 …" />
+<title>dfm_tools.errors API documentation</title>
+<meta name="description" content="Created on Mon Apr
+3 14:38:20 2023 …" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
 <link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
@@ -20,11 +20,11 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>dfm_tools.linebuilder</code></h1>
+<h1 class="title">Module <code>dfm_tools.errors</code></h1>
 </header>
 <section id="section-intro">
-<p>Created on Mon Oct
-3 13:40:58 2022</p>
+<p>Created on Mon Apr
+3 14:38:20 2023</p>
 <p>@author: veenstra</p>
 <details class="source">
 <summary>
@@ -32,39 +32,13 @@
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 &#34;&#34;&#34;
-Created on Mon Oct  3 13:40:58 2022
+Created on Mon Apr  3 14:38:20 2023
 
 @author: veenstra
 &#34;&#34;&#34;
 
-import numpy as np
-
-
-class LineBuilder:
-    &#34;&#34;&#34;
-    https://matplotlib.org/stable/users/explain/event_handling.html
-    &#34;&#34;&#34;
-    def __init__(self, line):
-        #self.waiting_for_entry = True
-        self.line = line
-        self.xs = list(line.get_xdata())
-        self.ys = list(line.get_ydata())
-        self.cid = line.figure.canvas.mpl_connect(&#39;button_press_event&#39;, self)
-
-    def __call__(self, event):
-        print(&#39;click&#39;, event)
-        # if event.inaxes!=self.line.axes:
-        #     print(&#39;WARNING: that click was outside the figure axis&#39;)
-        #     return
-        # if event.dblclick:
-        #     print(&#39;WARNING: double click is interpreted as single click&#39;)
-        #     return
-        if event.inaxes!=self.line.axes: return
-        self.xs.append(event.xdata)
-        self.ys.append(event.ydata)
-        self.line_array = np.c_[self.xs, self.ys]
-        self.line.set_data(self.xs, self.ys)
-        self.line.figure.canvas.draw()</code></pre>
+class OutOfRangeError(Exception):
+    pass</code></pre>
 </details>
 </section>
 <section>
@@ -76,42 +50,24 @@ class LineBuilder:
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt id="dfm_tools.linebuilder.LineBuilder"><code class="flex name class">
-<span>class <span class="ident">LineBuilder</span></span>
-<span>(</span><span>line)</span>
+<dt id="dfm_tools.errors.OutOfRangeError"><code class="flex name class">
+<span>class <span class="ident">OutOfRangeError</span></span>
+<span>(</span><span>*args, **kwargs)</span>
 </code></dt>
 <dd>
-<div class="desc"><p><a href="https://matplotlib.org/stable/users/explain/event_handling.html">https://matplotlib.org/stable/users/explain/event_handling.html</a></p></div>
+<div class="desc"><p>Common base class for all non-exit exceptions.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class LineBuilder:
-    &#34;&#34;&#34;
-    https://matplotlib.org/stable/users/explain/event_handling.html
-    &#34;&#34;&#34;
-    def __init__(self, line):
-        #self.waiting_for_entry = True
-        self.line = line
-        self.xs = list(line.get_xdata())
-        self.ys = list(line.get_ydata())
-        self.cid = line.figure.canvas.mpl_connect(&#39;button_press_event&#39;, self)
-
-    def __call__(self, event):
-        print(&#39;click&#39;, event)
-        # if event.inaxes!=self.line.axes:
-        #     print(&#39;WARNING: that click was outside the figure axis&#39;)
-        #     return
-        # if event.dblclick:
-        #     print(&#39;WARNING: double click is interpreted as single click&#39;)
-        #     return
-        if event.inaxes!=self.line.axes: return
-        self.xs.append(event.xdata)
-        self.ys.append(event.ydata)
-        self.line_array = np.c_[self.xs, self.ys]
-        self.line.set_data(self.xs, self.ys)
-        self.line.figure.canvas.draw()</code></pre>
+<pre><code class="python">class OutOfRangeError(Exception):
+    pass</code></pre>
 </details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>builtins.Exception</li>
+<li>builtins.BaseException</li>
+</ul>
 </dd>
 </dl>
 </section>
@@ -130,7 +86,7 @@ class LineBuilder:
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
-<h4><code><a title="dfm_tools.linebuilder.LineBuilder" href="#dfm_tools.linebuilder.LineBuilder">LineBuilder</a></code></h4>
+<h4><code><a title="dfm_tools.errors.OutOfRangeError" href="#dfm_tools.errors.OutOfRangeError">OutOfRangeError</a></code></h4>
 </li>
 </ul>
 </li>

@@ -240,7 +240,7 @@ def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset), drop_tidal_times:bool = True
                          &#39;temperature&#39;:&#39;tem&#39;, #not clear from fourier_analysis.f90, ct in user manual C.13
                          &#39;salt&#39;:&#39;sal&#39;, #not clear from fourier_analysis.f90, cs in user manual C.13
                          }
-        if not quantity_long in quantity_dict.keys():
+        if quantity_long not in quantity_dict.keys():
             raise KeyError(f&#39;quantity_dict does not yet contain quantity for: {quantity_long}&#39;)
         quantity = quantity_dict[quantity_long]
         
@@ -274,10 +274,9 @@ def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset), drop_tidal_times:bool = True
         tstart_str = (refdate + pd.Timedelta(minutes=tstart_min)).strftime(&#39;%Y%m%d%H%M%S&#39;)
         tstop_str = (refdate + pd.Timedelta(minutes=tstop_min)).strftime(&#39;%Y%m%d%H%M%S&#39;)
         
+        rename_dict[fouvar] = f&#39;{gridname}_{quantity}_{analysistype}_{tstart_str}_{tstop_str}&#39;
         if istidal and drop_tidal_times:
             rename_dict[fouvar] = f&#39;{gridname}_{quantity}_{analysistype}&#39; #TODO: might cause conflicting variable names if one component is analysed for multiple periods or if component is not defined in frequency list. Add duplicate check like rename_waqvars() that provides some basic info for debugging.
-        else:
-            rename_dict[fouvar] = f&#39;{gridname}_{quantity}_{analysistype}_{tstart_str}_{tstop_str}&#39;
     
     ds = ds.rename(rename_dict)
     return ds</code></pre>
@@ -493,7 +492,7 @@ def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset), drop_tidal_times:bool = True
                          &#39;temperature&#39;:&#39;tem&#39;, #not clear from fourier_analysis.f90, ct in user manual C.13
                          &#39;salt&#39;:&#39;sal&#39;, #not clear from fourier_analysis.f90, cs in user manual C.13
                          }
-        if not quantity_long in quantity_dict.keys():
+        if quantity_long not in quantity_dict.keys():
             raise KeyError(f&#39;quantity_dict does not yet contain quantity for: {quantity_long}&#39;)
         quantity = quantity_dict[quantity_long]
         
@@ -527,10 +526,9 @@ def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset), drop_tidal_times:bool = True
         tstart_str = (refdate + pd.Timedelta(minutes=tstart_min)).strftime(&#39;%Y%m%d%H%M%S&#39;)
         tstop_str = (refdate + pd.Timedelta(minutes=tstop_min)).strftime(&#39;%Y%m%d%H%M%S&#39;)
         
+        rename_dict[fouvar] = f&#39;{gridname}_{quantity}_{analysistype}_{tstart_str}_{tstop_str}&#39;
         if istidal and drop_tidal_times:
             rename_dict[fouvar] = f&#39;{gridname}_{quantity}_{analysistype}&#39; #TODO: might cause conflicting variable names if one component is analysed for multiple periods or if component is not defined in frequency list. Add duplicate check like rename_waqvars() that provides some basic info for debugging.
-        else:
-            rename_dict[fouvar] = f&#39;{gridname}_{quantity}_{analysistype}_{tstart_str}_{tstop_str}&#39;
     
     ds = ds.rename(rename_dict)
     return ds</code></pre>

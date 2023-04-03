@@ -91,7 +91,7 @@ import datetime as dt
 from netCDF4 import num2date
 import warnings
 
-def write_timfile(filename, datablock, header, converttime=False, refdate=None, tzone=0, float_format=&#39;%6.2f&#39;):
+def write_timfile(filename, datablock, header, converttime=False, refdate=None, float_format=&#39;%6.2f&#39;):
     &#34;&#34;&#34;
     
 
@@ -139,7 +139,7 @@ def write_timfile(filename, datablock, header, converttime=False, refdate=None, 
         try:
             times_wrtref_min = (data_pd_out.iloc[:,0]-refdate).dt.total_seconds()/60
         except TypeError:
-            raise Exception(&#39;Failure to convert time units. Please check that refdate is a valid datetime object and first column of dataset contains valid datetime objects.&#39;)
+            raise TypeError(&#39;Failure to convert time units. Please check that refdate is a valid datetime object and first column of dataset contains valid datetime objects.&#39;)
         
         #replace datetime values by minutes since
         data_pd_out.iloc[:,0] = times_wrtref_min
@@ -200,7 +200,7 @@ def read_timfile(filename, converttime=False, refdate=None):
         try:
             data_nc_datetimes = (refdate + data_nc_times_pdtd)#.to_pydatetime()
         except TypeError:
-            raise Exception(&#39;Failure to convert time units. Please check that refdate is a valid datetime object and first column of dataset contains minutes since refdate.&#39;)
+            raise TypeError(&#39;Failure to convert time units. Please check that refdate is a valid datetime object and first column of dataset contains minutes since refdate.&#39;)
         print(&#39;Converting times to datetime format...&#39;)
         data_block_pd.iloc[:,0] = data_nc_datetimes
                     
@@ -216,7 +216,7 @@ def read_timfile(filename, converttime=False, refdate=None):
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="dfm_tools.io.tim.write_timfile"><code class="name flex">
-<span>def <span class="ident">write_timfile</span></span>(<span>filename, datablock, header, converttime=False, refdate=None, tzone=0, float_format='%6.2f')</span>
+<span>def <span class="ident">write_timfile</span></span>(<span>filename, datablock, header, converttime=False, refdate=None, float_format='%6.2f')</span>
 </code></dt>
 <dd>
 <div class="desc"><h2 id="parameters">Parameters</h2>
@@ -245,7 +245,7 @@ def read_timfile(filename, converttime=False, refdate=None):
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def write_timfile(filename, datablock, header, converttime=False, refdate=None, tzone=0, float_format=&#39;%6.2f&#39;):
+<pre><code class="python">def write_timfile(filename, datablock, header, converttime=False, refdate=None, float_format=&#39;%6.2f&#39;):
     &#34;&#34;&#34;
     
 
@@ -293,7 +293,7 @@ def read_timfile(filename, converttime=False, refdate=None):
         try:
             times_wrtref_min = (data_pd_out.iloc[:,0]-refdate).dt.total_seconds()/60
         except TypeError:
-            raise Exception(&#39;Failure to convert time units. Please check that refdate is a valid datetime object and first column of dataset contains valid datetime objects.&#39;)
+            raise TypeError(&#39;Failure to convert time units. Please check that refdate is a valid datetime object and first column of dataset contains valid datetime objects.&#39;)
         
         #replace datetime values by minutes since
         data_pd_out.iloc[:,0] = times_wrtref_min
@@ -381,7 +381,7 @@ def read_timfile(filename, converttime=False, refdate=None):
         try:
             data_nc_datetimes = (refdate + data_nc_times_pdtd)#.to_pydatetime()
         except TypeError:
-            raise Exception(&#39;Failure to convert time units. Please check that refdate is a valid datetime object and first column of dataset contains minutes since refdate.&#39;)
+            raise TypeError(&#39;Failure to convert time units. Please check that refdate is a valid datetime object and first column of dataset contains minutes since refdate.&#39;)
         print(&#39;Converting times to datetime format...&#39;)
         data_block_pd.iloc[:,0] = data_nc_datetimes
                     
