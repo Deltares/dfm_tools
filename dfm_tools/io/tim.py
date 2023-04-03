@@ -38,7 +38,7 @@ import datetime as dt
 from netCDF4 import num2date
 import warnings
 
-def write_timfile(filename, datablock, header, converttime=False, refdate=None, tzone=0, float_format='%6.2f'):
+def write_timfile(filename, datablock, header, converttime=False, refdate=None, float_format='%6.2f'):
     """
     
 
