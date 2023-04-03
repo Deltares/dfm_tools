@@ -113,7 +113,7 @@ def open_OPeNDAP_xr(dataset_url, credentials=None):
         cas_url = 'https://cmems-cas.cls.fr/cas/login'
         session = setup_session(cas_url, username, password)
         cookies_dict = session.cookies.get_dict()
-        if not 'CASTGC' in cookies_dict.keys():
+        if 'CASTGC' not in cookies_dict.keys():
             raise KeyError('CASTGC key missing from session cookies_dict, probably authentication failure')
         session.cookies.set("CASTGC", cookies_dict['CASTGC'])
         #TODO: add check for wrong dataset_id (now always "AttributeError: You cannot set the charset when no content-type is defined")
@@ -252,6 +252,3 @@ def download_OPeNDAP(dataset_url,
         print(f'xarray writing netcdf file: {name_output}')
         data_xr_var_seltime.to_netcdf(os.path.join(dir_output,name_output)) #TODO: add chunks={'time':1} or only possible with opening?
         data_xr_var_seltime.close()
-    
-    print('done')
-    return
