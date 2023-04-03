@@ -43,7 +43,7 @@ def Dataset_to_T3D(datablock_xr):
     locationname = data_xr_var0.attrs['locationname']
     refdate_str = data_xr_var0.time.encoding['units']
     
-    if set(data_xr_var0.dims).issubset(set(('time','depth'))): #check if both time and depth dimensions are present
+    if not set(data_xr_var0.dims).issubset(set(('time','depth'))): #check if both time and depth dimensions are present
         raise ValueError(f"data_var in provided data_xr has dimensions {data_xr_var0.dims} while ('time','depth') is expected")
     
     #get depth variable and values
