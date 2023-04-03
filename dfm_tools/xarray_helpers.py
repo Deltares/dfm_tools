@@ -499,7 +499,7 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}, remove_ghost=True, remo
     for iF, file_nc_one in enumerate(file_nc_list):
         print(iF+1,end=' ')
         ds = xr.open_dataset(file_nc_one, chunks=chunks, **kwargs)
-        if 'nFlowElem' in ds.dims and 'nNetElem' in ds.dims: #for mapformat1 mapfiles: merge different face dimensions (rename nFlowElem to nNetElem)
+        if 'nFlowElem' in ds.dims and 'nNetElem' in ds.dims: #for mapformat1 mapfiles: merge different face dimensions (rename nFlowElem to nNetElem) to make sure the dataset topology is correct
             print('[mapformat1] ',end='')
             ds = ds.rename({'nFlowElem':'nNetElem'})
         uds = xu.core.wrap.UgridDataset(ds)
