@@ -65,7 +65,7 @@ def get_ncvarproperties(data_xr):
 
 def get_varnamefromattrs(data_xr, varname):
     
-    print(DeprecationWarning('dfmt.get_varnamefromattrs() might be phased out, since dfmt.rename_waqvars(ds) is a more convenient alternative')) #TODO: deprecate?
+    print(DeprecationWarning('dfmt.get_varnamefromattrs() will be deprecated in a future version of dfm_tools, ds=dfmt.rename_waqvars(ds) is a more convenient alternative')) #TODO: raise DeprecationWarning, later remove
     
     # check if requested variable is in netcdf
     varlist = list(data_xr.variables.keys())
