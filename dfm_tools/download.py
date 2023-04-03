@@ -12,6 +12,7 @@ import xarray as xr
 from pydap.client import open_url
 from pydap.cas.get_cookies import setup_session
 import warnings
+from dfm_tools.errors import OutOfRangeError
 
 
 def download_ERA5(varkey,
@@ -191,9 +192,9 @@ def download_OPeNDAP(dataset_url,
     
     #check if date_min/date_max are available in dataset
     if not (data_xr_times.index[0] <= period_range[0].to_timestamp() <= data_xr_times.index[-1]):
-        raise Exception(f'date_min ({period_range[0]}) is outside available time range in dataset: {data_xr_times.index[0]} to {data_xr_times.index[-1]}')
+        raise OutOfRangeError(f'date_min ({period_range[0]}) is outside available time range in dataset: {data_xr_times.index[0]} to {data_xr_times.index[-1]}')
     if not (data_xr_times.index[0] <= period_range[-1].to_timestamp() <= data_xr_times.index[-1]):
-        raise Exception(f'date_max ({period_range[-1]}) is outside available time range in dataset: {data_xr_times.index[0]} to {data_xr_times.index[-1]}')
+        raise OutOfRangeError(f'date_max ({period_range[-1]}) is outside available time range in dataset: {data_xr_times.index[0]} to {data_xr_times.index[-1]}')
     
     for date in period_range:
         date_str = str(date)

@@ -17,8 +17,8 @@ from scipy.spatial import KDTree
 import warnings
 import hydrolib.core.dflowfm as hcdfm
 
-from dfm_tools.hydrolib_helpers import Dataset_to_TimeSeries, Dataset_to_T3D, Dataset_to_Astronomic
-from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame
+from dfm_tools.hydrolib_helpers import Dataset_to_TimeSeries, Dataset_to_T3D, Dataset_to_Astronomic, pointlike_to_DataFrame
+from dfm_tools.errors import OutOfRangeError
 
 
 def get_conversion_dict(ncvarname_updates={}):
@@ -235,9 +235,9 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
     nc_tstart = xr_tstartstop.index[0]
     nc_tstop = xr_tstartstop.index[-1]
     if tstart < nc_tstart:
-        raise Exception(f'requested tstart {tstart} outside of available range {nc_tstart} to {nc_tstop}')
+        raise OutOfRangeError(f'requested tstart {tstart} outside of available range {nc_tstart} to {nc_tstop}')
     if tstop > nc_tstop:
-        raise Exception(f'requested tstop {tstop} outside of available range {nc_tstart} to {nc_tstop}')
+        raise OutOfRangeError(f'requested tstop {tstop} outside of available range {nc_tstart} to {nc_tstop}')
     
     #360 to 180 conversion
     convert_360to180 = (data_xr['longitude'].to_numpy()>180).any() #TODO: replace to_numpy() with load()
