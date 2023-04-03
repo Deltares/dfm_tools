@@ -529,7 +529,7 @@ def open_partitioned_dataset(file_nc, chunks={&#39;time&#39;:1}, remove_ghost=Tr
     for iF, file_nc_one in enumerate(file_nc_list):
         print(iF+1,end=&#39; &#39;)
         ds = xr.open_dataset(file_nc_one, chunks=chunks, **kwargs)
-        if &#39;nFlowElem&#39; in ds.dims and &#39;nNetElem&#39; in ds.dims: #for mapformat1 mapfiles: merge different face dimensions (rename nFlowElem to nNetElem)
+        if &#39;nFlowElem&#39; in ds.dims and &#39;nNetElem&#39; in ds.dims: #for mapformat1 mapfiles: merge different face dimensions (rename nFlowElem to nNetElem) to make sure the dataset topology is correct
             print(&#39;[mapformat1] &#39;,end=&#39;&#39;)
             ds = ds.rename({&#39;nFlowElem&#39;:&#39;nNetElem&#39;})
         uds = xu.core.wrap.UgridDataset(ds)
@@ -1277,7 +1277,7 @@ Not using most-occurring domainno in var, since this is not a valid assumption f
     for iF, file_nc_one in enumerate(file_nc_list):
         print(iF+1,end=&#39; &#39;)
         ds = xr.open_dataset(file_nc_one, chunks=chunks, **kwargs)
-        if &#39;nFlowElem&#39; in ds.dims and &#39;nNetElem&#39; in ds.dims: #for mapformat1 mapfiles: merge different face dimensions (rename nFlowElem to nNetElem)
+        if &#39;nFlowElem&#39; in ds.dims and &#39;nNetElem&#39; in ds.dims: #for mapformat1 mapfiles: merge different face dimensions (rename nFlowElem to nNetElem) to make sure the dataset topology is correct
             print(&#39;[mapformat1] &#39;,end=&#39;&#39;)
             ds = ds.rename({&#39;nFlowElem&#39;:&#39;nNetElem&#39;})
         uds = xu.core.wrap.UgridDataset(ds)
