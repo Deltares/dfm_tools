@@ -27,7 +27,7 @@ arr_GLEL = np.array([0,-5.5,-5.5,0])
 for structname in list_structures:
     for quantity in ['general_structure_gateOpeningWidth','general_structure_gateLowerEdgeLevel']:
         if quantity=='general_structure_gateOpeningWidth':
-            if not 'Maeslan' in structname:
+            if 'Maeslan' not in structname:
                 continue
         if quantity=='general_structure_gateOpeningWidth':
             datablock_incltime = np.concatenate([arr_time[:,np.newaxis],arr_GOW[:,np.newaxis]],axis=1)
