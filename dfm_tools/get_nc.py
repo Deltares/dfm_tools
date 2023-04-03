@@ -39,7 +39,7 @@ import re
 import xugrid as xu
 import xarray as xr
 import matplotlib.pyplot as plt
-from dfm_tools.xarray_helpers import get_vertical_dimensions
+from dfm_tools.xarray_helpers import get_vertical_dimensions, Dataset_varswithdim
 
 
 def get_ugrid_verts(data_xr_map): #TODO: remove this deprecated function
@@ -105,34 +105,30 @@ def get_xzcoords_onintersection(uds, face_index, crs_dist_starts, crs_dist_stops
         raise Exception('time dimension present in uds, provide uds.isel(time=timestep) instead. This is necessary to retrieve correct waterlevel or fullgrid output')
     
     dimn_layer, dimn_interfaces = get_vertical_dimensions(uds)
-    if dimn_layer is not None:
-        nlay = uds.dims[dimn_layer]
-    else: #no layers, 2D model
-        nlay = 1
+    gridname = uds.grid.name
     
-    xu_facedim = uds.grid.face_dimension
-    xu_edgedim = uds.grid.edge_dimension
-    xu_nodedim = uds.grid.node_dimension
-    
-    #potentially construct fullgrid info (zcc/zw)
-    if dimn_layer not in uds.dims: #2D model
-        print('depth dimension not found, probably 2D model')
-        pass
-    else:
+    #construct fullgrid info (zcc/zw) for 3D models
+    if dimn_layer in uds.dims:
         uds = reconstruct_zw_zcc(uds)
-    
+
+    #drop all variables that do not contain a face dimension, then select only all sliced faceidx
+    xu_facedim = uds.grid.face_dimension
     face_index_xr = xr.DataArray(face_index,dims=('ncrossed_faces'))
-    data_frommap_merged_sel = uds.sel({xu_facedim:face_index_xr})
+    uds = Dataset_varswithdim(uds,dimname=xu_facedim) #TODO: is there an xugrid alternative?
+    uds_sel = uds.sel({xu_facedim:face_index_xr})
     
-    if dimn_layer not in uds.dims: #2D model #TODO: add escape for missing wl/bl vars
-        data_frommap_wl3_sel = data_frommap_merged_sel['mesh2d_s1'].to_numpy()
-        data_frommap_bl_sel = data_frommap_merged_sel['mesh2d_flowelem_bl'].to_numpy()
+    # take zvals_interface
+    if dimn_layer in uds_sel.dims: #3D model
+        nlay = uds.dims[dimn_layer]
+        zvals_interface_filled = uds_sel[f'{gridname}_flowelem_zw'].bfill(dim=dimn_interfaces) #fill nan values (below bed) with equal values
+        zvals_interface = zvals_interface_filled.to_numpy().T #transpose to make in line with 2D sigma dataset
+    else: #2D model, no layers
+        nlay = 1
+        data_frommap_wl3_sel = uds_sel[f'{gridname}_s1'].to_numpy() #TODO: add escape for missing wl/bl vars
+        data_frommap_bl_sel = uds_sel[f'{gridname}_flowelem_bl'].to_numpy()
         zvals_interface = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay+1)
-    elif 'mesh2d_flowelem_zw' in data_frommap_merged_sel.variables:
-        zvals_interface_filled = data_frommap_merged_sel['mesh2d_flowelem_zw'].bfill(dim=dimn_interfaces) #fill nan values (below bed) with equal values
-        zvals_interface = zvals_interface_filled.to_numpy().T # transpose to make in line with 2D sigma dataset
-    
-    #convert to output for plot_netmapdata
+
+    #derive crs_verts
     crs_dist_starts_matrix = np.repeat(crs_dist_starts[np.newaxis],nlay,axis=0)
     crs_dist_stops_matrix = np.repeat(crs_dist_stops[np.newaxis],nlay,axis=0)
     crs_verts_x_all = np.array([[crs_dist_starts_matrix.ravel(),crs_dist_stops_matrix.ravel(),crs_dist_stops_matrix.ravel(),crs_dist_starts_matrix.ravel()]]).T
@@ -149,11 +145,10 @@ def get_xzcoords_onintersection(uds, face_index, crs_dist_starts, crs_dist_stops
                              )
 
     #define dataset
-    crs_plotdata_clean = data_frommap_merged_sel.drop_dims([xu_edgedim,xu_nodedim]) #TODO: dropping dims is necessary to avoid "ValueError". This is since we are constructing new nodes/edges here. How to do neatly?
-    if dimn_layer in data_frommap_merged_sel.dims:
-        crs_plotdata_clean = crs_plotdata_clean.stack({xr_crs_grid.face_dimension:[dimn_layer,'ncrossed_faces']},create_index=False)
+    if dimn_layer in uds_sel.dims:
+        crs_plotdata_clean = uds_sel.stack({xr_crs_grid.face_dimension:[dimn_layer,'ncrossed_faces']},create_index=False)
     else: #2D: still make sure xr_crs_grid.face_dimension is created, using stack since .rename() gives "UserWarning: rename 'ncrossed_faces' to 'mesh2d_nFaces' does not create an index anymore."
-        crs_plotdata_clean = crs_plotdata_clean.stack({xr_crs_grid.face_dimension:['ncrossed_faces']},create_index=False)
+        crs_plotdata_clean = uds_sel.stack({xr_crs_grid.face_dimension:['ncrossed_faces']},create_index=False)
                     
     #combine into xugrid
     xr_crs_ugrid = xu.UgridDataset(crs_plotdata_clean, grids=[xr_crs_grid])
