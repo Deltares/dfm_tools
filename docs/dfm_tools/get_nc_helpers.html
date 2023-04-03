@@ -118,7 +118,7 @@ def get_ncvarproperties(data_xr):
 
 def get_varnamefromattrs(data_xr, varname):
     
-    print(DeprecationWarning(&#39;dfmt.get_varnamefromattrs() might be phased out, since dfmt.rename_waqvars(ds) is a more convenient alternative&#39;)) #TODO: deprecate?
+    print(DeprecationWarning(&#39;dfmt.get_varnamefromattrs() will be deprecated in a future version of dfm_tools, ds=dfmt.rename_waqvars(ds) is a more convenient alternative&#39;)) #TODO: raise DeprecationWarning, later remove
     
     # check if requested variable is in netcdf
     varlist = list(data_xr.variables.keys())
@@ -333,7 +333,7 @@ def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset), drop_tidal_times:bool = True
 </summary>
 <pre><code class="python">def get_varnamefromattrs(data_xr, varname):
     
-    print(DeprecationWarning(&#39;dfmt.get_varnamefromattrs() might be phased out, since dfmt.rename_waqvars(ds) is a more convenient alternative&#39;)) #TODO: deprecate?
+    print(DeprecationWarning(&#39;dfmt.get_varnamefromattrs() will be deprecated in a future version of dfm_tools, ds=dfmt.rename_waqvars(ds) is a more convenient alternative&#39;)) #TODO: raise DeprecationWarning, later remove
     
     # check if requested variable is in netcdf
     varlist = list(data_xr.variables.keys())
