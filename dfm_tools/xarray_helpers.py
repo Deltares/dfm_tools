@@ -255,7 +255,7 @@ def merge_meteofiles(file_nc:str, preprocess=None,
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
     #rename variables
-    if not 'longitude' in data_xr.variables: #TODO: make generic, comparable rename in rename_dims_dict in dfmt.open_dataset_extra()
+    if 'longitude' not in data_xr.variables: #TODO: make generic, comparable rename in rename_dims_dict in dfmt.open_dataset_extra()
         if 'lon' in data_xr.variables:
             data_xr = data_xr.rename({'lon':'longitude', 'lat':'latitude'})
         elif 'x' in data_xr.variables:
@@ -283,9 +283,9 @@ def merge_meteofiles(file_nc:str, preprocess=None,
         raise Exception(f'ERROR: gaps found in selected dataset (are there sourcefiles missing?), unique timesteps (hour): {timesteps_uniq/1e9/3600}')
     
     #check if requested times are available in selected files (in times_pd)
-    if not time_slice.start in times_pd.index:
+    if time_slice.start not in times_pd.index:
         raise OutOfRangeError(f'ERROR: time_slice_start="{time_slice.start}" not in selected files, timerange: "{times_pd.index[0]}" to "{times_pd.index[-1]}"')
-    if not time_slice.stop in times_pd.index:
+    if time_slice.stop not in times_pd.index:
         raise OutOfRangeError(f'ERROR: time_slice_stop="{time_slice.stop}" not in selected files, timerange: "{times_pd.index[0]}" to "{times_pd.index[-1]}"')
     
     #TODO: check conversion implementation with hydro_tools\ERA5\ERA52DFM.py. Also move to separate function?
