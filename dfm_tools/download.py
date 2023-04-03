@@ -105,27 +105,6 @@ def open_OPeNDAP_xr(dataset_url, credentials=None):
         Some examples:
             https://tds.hycom.org/thredds/dodsC/GLBu0.08/expt_19.1/2010
             https://tds.hycom.org/thredds/dodsC/GLBy0.08/expt_93.0
-    
-    Parameters
-    ----------
-    dataset_url : TYPE
-        DESCRIPTION.
-    credentials : TYPE, optional
-        for CMEMS: credentials=['username','password'], or create "%USERPROFILE%/CMEMS_credentials.txt" with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form'. The default is None.
-
-    Raises
-    ------
-    KeyError
-        DESCRIPTION.
-    TypeError
-        DESCRIPTION.
-    FileNotFoundError
-        DESCRIPTION.
-
-    Returns
-    -------
-    TYPE
-        DESCRIPTION.
 
     """
     
@@ -196,6 +175,50 @@ def download_OPeNDAP(dataset_url,
                      date_min, date_max, freq='D',
                      dir_output='.', file_prefix='', overwrite=False,
                      credentials=None):
+    """
+    
+
+    Parameters
+    ----------
+    dataset_url : TYPE
+        DESCRIPTION.
+    varkey : TYPE
+        DESCRIPTION.
+    longitude_min : TYPE
+        DESCRIPTION.
+    longitude_max : TYPE
+        DESCRIPTION.
+    latitude_min : TYPE
+        DESCRIPTION.
+    latitude_max : TYPE
+        DESCRIPTION.
+    date_min : TYPE
+        DESCRIPTION.
+    date_max : TYPE
+        DESCRIPTION.
+    freq : TYPE, optional
+        DESCRIPTION. The default is 'D'.
+    dir_output : TYPE, optional
+        DESCRIPTION. The default is '.'.
+    file_prefix : TYPE, optional
+        DESCRIPTION. The default is ''.
+    overwrite : TYPE, optional
+        DESCRIPTION. The default is False.
+    credentials : TYPE, optional
+        for CMEMS: credentials=['username','password'], or create "%USERPROFILE%/CMEMS_credentials.txt" with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form'. The default is None.
+
+    Raises
+    ------
+    KeyError
+        DESCRIPTION.
+    OutOfRangeError
+        DESCRIPTION.
+
+    Returns
+    -------
+    None.
+
+    """
     
     data_xr = open_OPeNDAP_xr(dataset_url=dataset_url, credentials=credentials)
     
