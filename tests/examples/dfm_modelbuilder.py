@@ -181,8 +181,7 @@ mdu.output.mapinterval = [86400]
 
 
 """
-#TODO: to be added to hydrolib-core: https://github.com/Deltares/HYDROLIB-core/issues/486
-#TODO now Manually add:
+#TODO: to be added to hydrolib-core: https://github.com/Deltares/HYDROLIB-core/issues/486. Now Manually add:
 [geometry]
 netFile                    = 5_bathy_net.nc
 
