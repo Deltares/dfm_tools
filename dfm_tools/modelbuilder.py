@@ -1,3 +1,11 @@
+"""
+Created on Tue Apr  4 16:12:56 2023
+
+@author: groenenb, sclaan
+edited by: veenstra
+
+This is a proof of concept that will be properly coded in the near future and probably end up under hydromt-delft3dfm
+"""
 
 import os
 import xarray as xr
@@ -10,10 +18,17 @@ import hydrolib.core.dflowfm as hcdfm
 import datetime as dt
 import glob
 import numpy as np
+
+#bathy
 from matplotlib.path import Path as pth
 import warnings
 from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame
 from dfm_tools.bathymetry import write_bathy_toasc
+
+#gridgen
+import getpass
+from meshkernel import Mesh2dFactory, MeshKernel
+import xugrid as xu
 
 
 def download_meteodata_oceandata(
@@ -127,42 +142,7 @@ def download_meteodata_oceandata(
                 ds.close()
                 ctx.add_basemap(ax=ax,crs="EPSG:4326",attribution=False)
     
-    
-    """
-    Download CMCC data (possible with opendap? urls seem really specific)
-    userguide: https://esgf.github.io/esgf-user-support/user_guide.html
-    server: https://esgf-data.dkrz.de/search/cmip6-dkrz/ (Sanne: exacte kopie op https://esgf-node.llnl.gov/search/cmip6/)
-    
-    Example selection:
-    source-id: CMCC-ESM2
-    experiment-id: historical
-    table-id: Omon (=monthly)
-    Variable: no3/o2
-    
-    > Search
-    """
-    
-    """
-    CMIP6
-    https://esgf-node.llnl.gov/search/cmip6/
-    there is also a esgf python client: https://esgf-pyclient.readthedocs.io/en/latest/
-    notebook: https://esgf-pyclient.readthedocs.io/en/latest/notebooks/examples/download.html
-    
-    example cdsapi request
-    request_dict = {
-                    'format': 'zip',
-                    'experiment': 'historical',
-                    'variable': 'storm_surge_residual',
-                    'model': 'CMCC-CM2-VHR4',
-                    'year': '1982',
-                    'month': '04',
-                    'temporal_aggregation': '10_min',
-                    }
-    
-    file_out = 'download.zip'
-    c.retrieve(name='sis-water-level-change-timeseries-cmip6', request=request_dict, target=file_out)
-    
-    """
+
     
     
 def preprocess_interpolate_nc_to_bc(
@@ -264,7 +244,6 @@ def preprocess_interpolate_nc_to_bc(
                 #interpolate regulargridDataset to plipointsDataset
                 data_interp = dfmt.interp_regularnc_to_plipoints(data_xr_reg=data_xr_vars, file_pli=file_pli, #TODO: difference in .interp() with float vs da arguments: https://github.com/Deltares/dfm_tools/issues/287
                                                                  nPoints=None) #argument for testing
-                #data_interp = data_interp.ffill(dim="plipoints").bfill(dim="plipoints") #to fill allnan plipoints with values from the neighbour point #TODO: this also fills the belowbed layers from one point onto another, so should be done after ffill/bfill in depth dimension. Currently all-nan arrays are replaced with .fillna(0)
                 
                 #convert plipointsDataset to hydrolib ForcingModel
                 ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
@@ -431,8 +410,9 @@ def preprocess_merge_meteofiles(
 
 
 
+# BATHYMETRY (TEMPORARY)
 
-def GEBCO2asc(lon_min,lon_max,lat_min,lat_max,dir_out='.',suffix='full',polygon=''): #TODO: default arg is None, not ''
+def GEBCO2asc(lon_min,lon_max,lat_min,lat_max,dir_out='.',suffix='full',polygon=None): #TODO: default arg is None, not ''
     """
     #input
     # =============================================================================
@@ -486,7 +466,7 @@ def GEBCO2asc(lon_min,lon_max,lat_min,lat_max,dir_out='.',suffix='full',polygon=
     None.
 
     """
-    warnings.warn(DeprecationWarning('GEBCO2asc will be deprecated since asc grid refinement will be done with netcdf data and meshkernel in the near future'))
+    warnings.warn(DeprecationWarning('modelbuilder.GEBCO2asc will be deprecated since asc grid refinement will be done with sliced netcdf data and meshkernel in the near future'))
     #settings
     source='GEBCO2021' #GEBCO2014 GEBCO2020 GEBCO2021 GEBCO2021SIT
     asc_fmt='%6d' #'%6d' '%8.2f'
@@ -498,31 +478,6 @@ def GEBCO2asc(lon_min,lon_max,lat_min,lat_max,dir_out='.',suffix='full',polygon=
     elif os.name == 'posix':
         pdrive = '/p'
     
-    #determine extent if using a polygon
-    if polygon!='': #TODO: this overwrites lat/lon extent, make prettier
-        #load boundary file and derive extents for range selection for nc dataset (speeds up process significantly)
-        polyfile_object = hcdfm.PolyFile(polygon)
-        pli_PolyObjects = polyfile_object.objects
-        lon_min,lon_max,lat_min,lat_max = None,None,None,None
-        for iPO, pli_PolyObject_sel in enumerate(pli_PolyObjects):
-            if iPO!=0:
-                raise Exception('Expected only one polygon in file')
-            xPO = np.array([point.x for point in pli_PolyObject_sel.points])
-            yPO = np.array([point.y for point in pli_PolyObject_sel.points])
-            xyPO = [(x,y) for x,y in zip(xPO,yPO)]
-            poly = pth(xyPO) #TODO: this is an inpolygon function, use also in other places in dfm_tools
-            lon_min = np.min(xPO.min(),lon_min)
-            lon_max = np.max(xPO.max(),lon_max)
-            lat_min = np.min(yPO.min(),lat_min)
-            lat_max = np.max(yPO.max(),lat_max)
-    
-        #TODO: this is more efficient, but poly is then not defined
-        # data_pol_pd_list = [pointlike_to_DataFrame(polyobj) for polyobj in polyfile_object.objects]
-        # data_pol_pd_all = pd.concat(data_pol_pd_list)
-        # lon_min,lat_min = data_pol_pd_all[['x','y']].min()
-        # lon_max,lat_max = data_pol_pd_all[['x','y']].max()
-        # print(lon_min,lon_max,lat_min,lat_max)
-
     # source data
     if source=='GEBCO2021':
         file_nc = os.path.join(pdrive,'metocean-data','open','GEBCO','2021','GEBCO_2021.nc')
@@ -535,8 +490,7 @@ def GEBCO2asc(lon_min,lon_max,lat_min,lat_max,dir_out='.',suffix='full',polygon=
     if not os.path.exists(dir_out):
         os.mkdir(dir_out)
     resinv_lonlat = np.round(1/np.diff(dsel.lon[:2]),2)
-    res_meter = np.round(40075*1000/360/resinv_lonlat)
-    filename_asc = os.path.join(dir_out,'%s_res1d%03ddeg_res%dm_%s.asc'%(source,resinv_lonlat,res_meter,suffix))
+    filename_asc = os.path.join(dir_out,'%s_res1d%03ddeg_%s.asc'%(source,resinv_lonlat,suffix))
     
     # convert to .asc
     lonvals = dsel.lon.to_series().values
@@ -544,7 +498,17 @@ def GEBCO2asc(lon_min,lon_max,lat_min,lat_max,dir_out='.',suffix='full',polygon=
     elevvals = dsel.variables['elevation'].to_numpy()
     
     # make mask based on polygon
-    if polygon!='':
+    if polygon is not None:
+        polyfile_object = hcdfm.PolyFile(polygon)
+        pli_PolyObjects = polyfile_object.objects
+        lon_min,lon_max,lat_min,lat_max = None,None,None,None
+        for iPO, pli_PolyObject_sel in enumerate(pli_PolyObjects):
+            if iPO!=0:
+                raise Exception('Expected only one polygon in file')
+            xPO = np.array([point.x for point in pli_PolyObject_sel.points])
+            yPO = np.array([point.y for point in pli_PolyObject_sel.points])
+            xyPO = [(x,y) for x,y in zip(xPO,yPO)]
+            poly = pth(xyPO) #TODO: this is an inpolygon function, use also in other places in dfm_tools
         lonGrid,latGrid = np.meshgrid(lonvals,latvals)
         lonGrid,latGrid = lonGrid.flatten(),latGrid.flatten()
         gridPoints = np.vstack((lonGrid,latGrid)).T
@@ -553,4 +517,70 @@ def GEBCO2asc(lon_min,lon_max,lat_min,lat_max,dir_out='.',suffix='full',polygon=
         elevvals[~gridMask] = 32767
     
     write_bathy_toasc(filename_asc,lonvals,latvals,elevvals,asc_fmt,nodata_val=32767)
+
+
+#GRIDGENERATION (TEMPORARY)
+
+
+#%%
+def make_basegrid(lon_min,lon_max,lat_min,lat_max,dx=0.05,dy=0.05,filepath='1_base_net.nc',name='empty'):
+    warnings.warn(DeprecationWarning('modelbuilder.make_basegrid will be deprecated since asc grid refinement will be done with netcdf data and meshkernel in the near future'))
+    # create base grid
+    nox = int(np.round((lon_max-lon_min)/dx))
+    noy = int(np.round((lat_max-lat_min)/dy))
+    mesh2d_input = Mesh2dFactory.create_rectilinear_mesh(rows=noy, columns=nox, origin_x=lon_min, origin_y=lat_min, spacing_x=dx, spacing_y=dy)
+    
+    # set to spherical
+    mk = MeshKernel(is_geographic=True)
+    mk.mesh2d_set(mesh2d_input)
+    mesh2d_mesh_kernel = mk.mesh2d_get()
+    
+    xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_mesh_kernel)
+
+    # plot grid
+    fig, ax = plt.subplots()
+    xu_grid.plot(ax=ax)
+    # add basemap
+    source = ctx.providers.Esri.WorldImagery
+    ctx.add_basemap(ax=ax, source=source, crs='EPSG:4326', attribution=False)
+    
+    #write xugrid grid to netcdf
+    xu_grid.to_dataset().to_netcdf(filepath) #TODO: why is .to_dataset necessary()?
+
+
+#%%
+def refine_basegrid(bathydataset_refine,filepath_in='1_base_net.nc',dir_out='.',dtmax=200,dxmin_refine='2000',DIMRver='2.23.05.78259'):
+    warnings.warn(DeprecationWarning('modelbuilder.refine_basegrid will be deprecated since asc grid refinement will be done with netcdf data and meshkernel in the near future'))
+    #settings
+    bathydataset_dummy='p:/11209231-003-bes-modellering/hydrodynamica/hackathon/preprocessing/grid/dummy.xyz' # file containing:      190     150     -9999
+    #exePath = '/p/d-hydro/dimrset/weekly/%s/lnx64/bin/run_dflowfm.sh'%DIMRver
+    exePath = 'p:/d-hydro/dimrset/weekly/%s/x64/dflowfm/bin/dflowfm-cli.exe'%DIMRver
+    #os.system('set PATH=p:/d-hydro/dimrset/weekly/%s/x64/share/bin/;%%PATH%%'%DIMRver)
+    os.environ['PATH'] += os.pathsep + 'p:/d-hydro/dimrset/weekly/%s/x64/share/bin'%DIMRver
+    
+    # refine base grid
+    os.system('%s --refine:dtmax=%s:hmin=%s:directional=0:outsidecell=0:connect=0:smoothiters=3:jasfer3d=1 %s %s'%(exePath,dtmax,dxmin_refine,filepath_in,bathydataset_refine))
+    os.replace('outdtmax%sdxmin%s_net.nc'%(dtmax,dxmin_refine),os.path.join(dir_out,'2_refined_net.nc'))
+    
+    # connect cells
+    os.system('%s --refine:dtmax=%s:hmin=%s:directional=0:outsidecell=0:connect=1:smoothiters=0:jasfer3d=1 %s %s'%(exePath,dtmax,dxmin_refine,os.path.join(dir_out,'2_refined_net.nc'),bathydataset_dummy))
+    os.replace('outdtmax%sdxmin%s_net.nc'%(dtmax,dxmin_refine),os.path.join(dir_out,'3_connected_net.nc'))
+    
+    # cut coastlines
+    with open('cutcellpolygons.lst', 'w') as file:
+        file.write('p:/i1000668-tcoms/03_newModel/01_input/01_network/scripts/construct_files/GSHHS_high_min10km2.ldb')
+    os.system('%s --cutcells:jasfer3d=1 %s'%(exePath,os.path.join(dir_out,'3_connected_net.nc')))
+    os.replace('out_net.nc',os.path.join(dir_out,'4_cut_net.nc'))
+    os.remove('cutcellpolygons.lst')
+
+def interp_bathy(bathydataset_full,filepath_in='4_cut_net.nc',filepath_out='5_bathy_net.nc',DIMRver='2.23.05.78259'):
+    warnings.warn(DeprecationWarning('modelbuilder.interp_bathy will be deprecated since asc grid refinement will be done with netcdf data and meshkernel in the near future'))
+    #settings
+    exePath = 'p:/d-hydro/dimrset/weekly/%s/x64/dflowfm/bin/dflowfm-cli.exe'%DIMRver
+    
+    # make mdu
+    # make ext
+    
+    # interpolate bathymetry
+    os.system('%s --nodisplay --autostartstop bathy.mdu --savenet -o %s'%(exePath,filepath_out))
 
