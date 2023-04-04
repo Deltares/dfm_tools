@@ -35,8 +35,10 @@ Created on Mon May 31 17:17:09 2021
 @author: veenstra
 &#34;&#34;&#34;
 
+import numpy as np
+
+
 def write_bathy_toasc(filename_asc,lon_sel_ext,lat_sel_ext,elev_sel_ext,asc_fmt=&#39;%9.2f&#39;,nodata_val=32767):
-    import numpy as np
 
     print(&#39;writing to asc file&#39;)
     if elev_sel_ext.shape != (lat_sel_ext.shape[0], lon_sel_ext.shape[0]):
@@ -82,7 +84,6 @@ def write_bathy_toasc(filename_asc,lon_sel_ext,lat_sel_ext,elev_sel_ext,asc_fmt=
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def write_bathy_toasc(filename_asc,lon_sel_ext,lat_sel_ext,elev_sel_ext,asc_fmt=&#39;%9.2f&#39;,nodata_val=32767):
-    import numpy as np
 
     print(&#39;writing to asc file&#39;)
     if elev_sel_ext.shape != (lat_sel_ext.shape[0], lon_sel_ext.shape[0]):
