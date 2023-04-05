@@ -160,18 +160,29 @@ ax.set_ylim(ylim)
 ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 
 
+
 """
-convert meshkernel grid to xugrid, plot and save to *_net.nc
+convert meshkernel grid to xugrid, interp bathymetry, plot and save to *_net.nc
 """
 
 xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid3)
+xu_grid_ds = xu_grid.assign_face_coords(xu_grid.to_dataset()) #this adds face_coordinates variables to file, step might not be necessary in the future: https://github.com/Deltares/xugrid/issues/67
+xu_grid_uds = xu.UgridDataset(xu_grid_ds) #TODO: ugrid is necessary for z-values plot
 
 fig, ax = plt.subplots(figsize=figsize)
 xu_grid.plot(ax=ax)
 ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 
+#interp bathy
+bathy = data_bathy_sel.elevation.interp(lon=xu_grid_ds.mesh2d_node_x, lat=xu_grid_ds.mesh2d_node_y) #interpolates lon/lat gebcodata to mesh2d_nNodes dimension #TODO: if these come from xu_grid_uds, the mesh2d_node_z var has no ugrid accessor since the dims are lat/lon instead of mesh2d_nNodes
+xu_grid_uds['mesh2d_node_z'] = bathy.clip(max=10)
+
+fig, ax = plt.subplots(figsize=figsize)
+xu_grid_uds.mesh2d_node_z.ugrid.plot(ax=ax,center=False)
+ctx.add_basemap(ax=ax, crs=crs, attribution=False)
+
 #write xugrid grid to netcdf
-xu_grid.to_dataset().to_netcdf('test_net.nc')
+xu_grid_uds.ugrid.to_netcdf('test_net.nc')
 
 #TODO: update https://github.com/Deltares/dfm_tools/issues/217
 

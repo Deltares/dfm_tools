@@ -14,12 +14,13 @@ import dfm_tools as dfmt
 mb = dfmt #from dfm_tools import dfm_modelbuilder as mb
 import hydrolib.core.dflowfm as hcdfm
 import shutil
-import pandas as pd
+import xarray as xr
 
 ## input
 model_name = 'Bonaire'
 dir_output = r'p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\ModelBuilderOutput_JV'
 dir_output_main = dir_output
+path_style='unix'
 
 # domain
 lon_min, lon_max, lat_min, lat_max = -68.55, -67.9, 11.8, 12.6, 
@@ -51,24 +52,32 @@ mdu = hcdfm.FMModel()
 ext = hcdfm.ExtModel()
 
 #%% land-sea-boundary
-#TODO
+#TODO get cutting with ldb from https://github.com/Deltares/dfm_tools/blob/main/tests/examples_workinprogress/workinprogress_meshkernel_creategrid.py
 
 #%% GEBCO bathymetry and Grid generation
 dir_output = os.path.join(dir_output_data, 'grid_bathymetry')
 if not os.path.isdir(dir_output):
     os.mkdir(dir_output)
 
-#TODO: create netfile (currently this file is prerequisite)
-#TODO: grid generation/refinement based on bathy still to be improved in meshkernel (https://github.com/Deltares/dfm_tools/issues/234), replace if fixed
-mb.GEBCO2asc(lon_min-1,    lon_max+1,    lat_min-1,    lat_max+1,    suffix='full', dir_out=dir_output) #TODO: use inpolygon functionality from this function also in todevelop function
-mb.GEBCO2asc(lon_min+0.05, lon_max-0.05, lat_min+0.05, lat_max-0.05, suffix='refine', dir_out=dir_output)
-netfile  = os.path.join(dir_output_main, f'{model_name}_net.nc')
-mb.make_basegrid(lon_min, lon_max, lat_min, lat_max, name=model_name, filepath=netfile.replace('_net.nc','_basegrid_net.nc'))
-#TODO mb.refine_basegrid(bathydataset_refine='GEBCO2021_res1d240deg_res464m_refine.asc', dxmin_refine='0200', filepath_in=netfile, dir_out=dir_output_main)
-#TODO mb.interp_bathy()
+#select and plot bathy
+file_nc_bathy = r'p:\metocean-data\open\GEBCO\2021\GEBCO_2021.nc'
+data_bathy = xr.open_dataset(file_nc_bathy)
+data_bathy_sel = data_bathy.sel(lon=slice(lon_min-1,lon_max+1),lat=slice(lat_min-1,lat_max+1))
 
-#mdu.geometry.netfile = netfile.replace('_net.nc','_basegrid_net.nc') #TODO: "KeyError: 'An attribute for "mesh2d_face_x" was not found in nc file. Expected "mesh2d_face_x"'" (happens with xugrid netfile, was ugrid netfile before)
+#TODO: grid generation/refinement based on bathy still to be improved in meshkernel (https://github.com/Deltares/dfm_tools/issues/234), replace if fixed
+net_base = mb.make_basegrid(lon_min, lon_max, lat_min, lat_max)
+
+#refine
+min_face_size = 200/(40075*1000/360) #convert meters to degrees
+net_refined = mb.refine_basegrid(mk=net_base, data_bathy_sel=data_bathy_sel, min_face_size=min_face_size) #TODO: min_face_size is now in degrees instead of meters
+xu_grid_uds = mb.xugrid_interp_bathy(mk=net_refined, data_bathy_sel=data_bathy_sel)
+
+#write xugrid grid to netcdf
+netfile  = os.path.join(dir_output_main, f'{model_name}_net.nc')
+xu_grid_uds.ugrid.to_netcdf(netfile)
+
 mdu.geometry.netfile = netfile
+
 
 #%% initial and open boundary condition
 # TODO create polyline (currently this file is prerequisite)
@@ -111,6 +120,10 @@ for filename in os.listdir(dir_output):
 cmems_ext_file = os.path.join(dir_output_data, 'cmems', 'example_bnd.ext')
 boundary_object = hcdfm.ExtModel(Path(cmems_ext_file))
 ext.boundary.append(boundary_object)
+
+#save ext file
+#ext.save(filepath=ext_file,path_style=path_style) #TODO: "AttributeError: 'ExtModel' object has no attribute '_to_section'"
+
 
 #%% ERA5
 # ERA5 - download
@@ -167,8 +180,8 @@ mdu.wind.rhoair = 1.2265
 mdu.wind.relativewind = 0.5
 mdu.wind.pavbnd = 101330
 
-# mdu.external_forcing.extforcefile = f'{model_name}.ext'
-# mdu.external_forcing.extforcefilenew = f'{model_name}_bc.ext'
+#mdu.external_forcing.extforcefile = f'{model_name}.ext' #TODO: is not written, but should be (with meteo)
+#mdu.external_forcing.extforcefilenew = ext_file #f'{model_name}_bc.ext' #TODO: relative paths?
 
 tstart = dt.datetime.strptime(date_max,'%Y-%m-%d') 
 tstop = dt.datetime.strptime(date_max,'%Y-%m-%d') 
@@ -212,6 +225,5 @@ autotimestep = 3
 """
 
 #%% export model
-mdu.save(mdu_file)
-#TODO ext.save(filepath=ext_file)
+mdu.save(mdu_file,path_style=path_style)
 # TODO: relative paths in .ext
