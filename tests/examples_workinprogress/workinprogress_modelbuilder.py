@@ -227,3 +227,8 @@ autotimestep = 3
 #%% export model
 mdu.save(mdu_file,path_style=path_style)
 # TODO: relative paths in .ext
+
+#TODO: fix dflowfm error when running this model (might be grid related, since it happens on partitioning process. opening grid in interacter shows it to be cartesian)
+#ug_get_meshgeom, #12, ierr=0
+#forrtl: severe (174): SIGSEGV, segmentation fault occurred
+
