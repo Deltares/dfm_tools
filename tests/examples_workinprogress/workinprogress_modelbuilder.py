@@ -152,6 +152,7 @@ mb.preprocess_merge_meteofiles(
 #%% .mdu settings
 #TODO: missing keywords to be added to hydrolib-core: https://github.com/Deltares/HYDROLIB-core/issues/486.
 #TODO: reference mdu: p:\11209231-003-bes-modellering\hydrodynamica\hackathon\simulations\run001_mapInterval_1800_trac_newGrid\Bonaire.mdu
+#TODO: also compare settings in diafiles again
 mdu.geometry.bedlevuni = 5
 mdu.geometry.kmx = 20
 mdu.geometry.layertype = 1
@@ -171,9 +172,9 @@ mdu.numerics.izbndpos = 1
 #mdu.numerics.mintimestepbreak = 0.1 #TODO: add to hydrolib-core
 #mdu.numerics.keepstbndonoutflow = 1 #TODO: add to hydrolib-core
 
-mdu.physics.tidalforcing = 1
+mdu.physics.tidalforcing = 1 #TODO: is 0 in diafile
 mdu.physics.salinity = 1
-mdu.physics.temperature = 5
+mdu.physics.temperature = 5 #TODO: is 1 in diafile
 mdu.physics.initialsalinity = 33.8
 mdu.physics.temperature = 5
 mdu.physics.initialtemperature = 29.3
@@ -182,14 +183,17 @@ mdu.physics.secchidepth = 4
 #mdu.physics.salimax = 50 #TODO: add to hydrolib-core
 #mdu.physics.tempmax = 50 #TODO: add to hydrolib-core
 #mdu.physics.iniwithnudge = 2 #TODO: add to hydrolib-core
+#mdu.physics.jasfer3d = 1 #TODO: is 0 in file but should be 1 automatically, might cause model instability (caused by non spherical grid)
 
 mdu.wind.icdtyp = 4
+#TODO: also add cdbreakpoints?
 mdu.wind.rhoair = 1.2265
 mdu.wind.relativewind = 0.5
 mdu.wind.pavbnd = 101330
 
 #mdu.external_forcing.extforcefile = f'{model_name}.ext' #TODO: is not written, but should be (with meteo)
 #mdu.external_forcing.extforcefilenew = ext_file_new #TODO: relative paths?
+#mdu.external_forcing.windext = 1 #TODO: is set in reference mdu, automatically?
 
 #TODO: ValidationError: 5 validation errors for ExternalForcing
 #extforcefilenew -> Bonaire_bc.ext -> boundary -> 0 -> forcingFile
@@ -208,11 +212,12 @@ mdu.time.tstop   = (dt.datetime.strptime(date_max,'%Y-%m-%d') - dt.datetime.strp
 #mdu.output.obsfile = #TODO: add obsfile
 mdu.output.hisinterval = [60]
 mdu.output.mapinterval = [1800]#[86400]
+mdu.output.ncformat = 4 #TODO: 3 is default, in hydrolib-core
 
 #%% export model
 mdu.save(mdu_file,path_style=path_style)
 # TODO: relative paths in .ext
-
+#TODO: model is instable (2000m waterlevel on second mapfile timestep)
 """
 #TODO: hydrolib-core written mdu-file contains old keywords
 ** WARNING: While reading 'Bonaire.mdu': keyword [numerics] qhrelax=0.01 was in file, but not used. Check possible typo.
@@ -222,3 +227,10 @@ mdu.save(mdu_file,path_style=path_style)
 ** WARNING: While reading 'Bonaire.mdu': keyword [output] waterdepthclasses=0.0 was in file, but not used. Check possible typo.
 """
 
+#TODO: QP warning:
+"""
+Unable to merge the partitions
+Too many outputs requested.  Most likely cause is missing [] around left hand side that has a comma separated list expansion.
+In private\nc_interpret>nc_mapmerge at line 1878
+In private\nc_interpret at line 91
+"""
