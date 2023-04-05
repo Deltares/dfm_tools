@@ -28,8 +28,11 @@ from dfm_tools.bathymetry import write_bathy_toasc
 #gridgen
 import getpass
 from meshkernel import Mesh2dFactory, MeshKernel
+import meshkernel
 import xugrid as xu
 
+
+#MODELBUILDER: p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\scripts\dfm_ModelBuilder_functions.py
 
 def download_meteodata_oceandata(
         longitude_min = 2, longitude_max = 4, latitude_min = 50, latitude_max = 52, # domain
@@ -409,8 +412,7 @@ def preprocess_merge_meteofiles(
             fig.savefig(file_out)
 
 
-
-# BATHYMETRY (TEMPORARY)
+# BATHYMETRY (TEMPORARY): p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\scripts\bathy_GEBCO2021asc.py
 
 def GEBCO2asc(lon_min,lon_max,lat_min,lat_max,dir_out='.',suffix='full',polygon=None): #TODO: default arg is None, not ''
     """
@@ -519,16 +521,16 @@ def GEBCO2asc(lon_min,lon_max,lat_min,lat_max,dir_out='.',suffix='full',polygon=
     write_bathy_toasc(filename_asc,lonvals,latvals,elevvals,asc_fmt,nodata_val=32767)
 
 
-#GRIDGENERATION (TEMPORARY)
+#GRIDGENERATION (TEMPORARY): p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\scripts\gridgeneration.py
 
-
-#%%
 def make_basegrid(lon_min,lon_max,lat_min,lat_max,dx=0.05,dy=0.05,filepath='1_base_net.nc',name='empty'):
     warnings.warn(DeprecationWarning('modelbuilder.make_basegrid will be deprecated since asc grid refinement will be done with netcdf data and meshkernel in the near future'))
     # create base grid
     nox = int(np.round((lon_max-lon_min)/dx))
     noy = int(np.round((lat_max-lat_min)/dy))
-    mesh2d_input = Mesh2dFactory.create_rectilinear_mesh(rows=noy, columns=nox, origin_x=lon_min, origin_y=lat_min, spacing_x=dx, spacing_y=dy)
+    
+    #mesh2d_input = Mesh2dFactory.create_rectilinear_mesh(rows=noy, columns=nox, origin_x=lon_min, origin_y=lat_min, spacing_x=dx, spacing_y=dy)
+    mesh2d_input = Mesh2dFactory.create(rows=noy, columns=nox, origin_x=lon_min, origin_y=lat_min, spacing_x=dx, spacing_y=dy)
     
     # set to spherical
     mk = MeshKernel(is_geographic=True)
@@ -548,7 +550,7 @@ def make_basegrid(lon_min,lon_max,lat_min,lat_max,dx=0.05,dy=0.05,filepath='1_ba
     xu_grid.to_dataset().to_netcdf(filepath) #TODO: why is .to_dataset necessary()?
 
 
-#%%
+
 def refine_basegrid(bathydataset_refine,filepath_in='1_base_net.nc',dir_out='.',dtmax=200,dxmin_refine='2000',DIMRver='2.23.05.78259'):
     warnings.warn(DeprecationWarning('modelbuilder.refine_basegrid will be deprecated since asc grid refinement will be done with netcdf data and meshkernel in the near future'))
     #settings
@@ -572,6 +574,7 @@ def refine_basegrid(bathydataset_refine,filepath_in='1_base_net.nc',dir_out='.',
     os.system('%s --cutcells:jasfer3d=1 %s'%(exePath,os.path.join(dir_out,'3_connected_net.nc')))
     os.replace('out_net.nc',os.path.join(dir_out,'4_cut_net.nc'))
     os.remove('cutcellpolygons.lst')
+
 
 def interp_bathy(bathydataset_full,filepath_in='4_cut_net.nc',filepath_out='5_bathy_net.nc',DIMRver='2.23.05.78259'):
     warnings.warn(DeprecationWarning('modelbuilder.interp_bathy will be deprecated since asc grid refinement will be done with netcdf data and meshkernel in the near future'))

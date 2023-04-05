@@ -14,6 +14,7 @@ import dfm_tools as dfmt
 mb = dfmt #from dfm_tools import dfm_modelbuilder as mb
 import hydrolib.core.dflowfm as hcdfm
 import shutil
+import pandas as pd
 
 ## input
 model_name = 'Bonaire'
@@ -166,8 +167,8 @@ mdu.wind.rhoair = 1.2265
 mdu.wind.relativewind = 0.5
 mdu.wind.pavbnd = 101330
 
-# mdu.external_forcing.extforcefile = model_name+'.ext'
-# mdu.external_forcing.extforcefilenew = model_name+'_bc.ext'
+# mdu.external_forcing.extforcefile = f'{model_name}.ext'
+# mdu.external_forcing.extforcefilenew = f'{model_name}_bc.ext'
 
 tstart = dt.datetime.strptime(date_max,'%Y-%m-%d') 
 tstop = dt.datetime.strptime(date_max,'%Y-%m-%d') 
@@ -175,6 +176,8 @@ mdu.time.refdate = dt.datetime.strptime(ref_date,'%Y-%m-%d').strftime('%Y%m%d')
 mdu.time.tunit   = 'S'
 mdu.time.tstart  = (dt.datetime.strptime(date_min,'%Y-%m-%d') - dt.datetime.strptime(ref_date,'%Y-%m-%d')).total_seconds() #TODO: replace with timestring keyword
 mdu.time.tstop   = (dt.datetime.strptime(date_max,'%Y-%m-%d') - dt.datetime.strptime(ref_date,'%Y-%m-%d')).total_seconds()
+#mdu.time.tstart  = (pd.Datetime(date_min) - pd.Datetime(ref_date)).total_seconds() #TODO: replace with timestring keyword
+#mdu.time.tstop   = (pd.Datetime(date_max) - pd.Datetime(ref_date)).total_seconds()
 
 mdu.output.hisinterval = [60]
 mdu.output.mapinterval = [86400]
