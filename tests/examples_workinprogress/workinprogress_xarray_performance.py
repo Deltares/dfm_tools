@@ -20,17 +20,17 @@ file_nc = r'P:\11208054-004-dcsm-fm\models\3D_DCSM-FM\2013-2017\B04_EOT20_RHO1_H
 
 chunks = {}
 chunks = {'time':1,'stations':10}
-#chunks = {'time':1000,'stations':10}
+chunks = {'time':1000,'stations':10}
 
 #performance measurements can be influenced by partly caching in memory
 #netcdf3
-#Open: 1581 sec (26 min)  #Plot: 12646 sec (210 min)
-#Open: 864 sec (14 min) #Plot: 2422 sec (40 min)
-#Open: 705 sec (12 min) #Plot: 1323 sec (22 min)
+#Open: 1581 sec (26 min) #Plot: 12646 sec (210 min)
+#Open: 864  sec (14 min) #Plot: 2422 sec (40 min)
+#Open: 705  sec (12 min) #Plot: 1323 sec (22 min)
 #netcdf4
-#Open: 0.3 sec (0 min)  #Plot: ?? sec (?? min) #killed after 33 minutes of plotting (0% progress)
-#Open: 16 sec (0 min) #Plot: ?? sec (?? min)
-#Open: ?? sec (?? min) #Plot: ?? sec (?? min)
+#Open: 0.3 sec (0 min) #Plot: ?? sec (?? min) #killed after 33 minutes of plotting (0% progress)
+#Open: 16  sec (0 min) #Plot: 7505 sec (125 min)
+#Open: 0.3 sec (0 min) #Plot: ?? sec (?? min)
 
 
 print('>> performance test opening: ',end='')
