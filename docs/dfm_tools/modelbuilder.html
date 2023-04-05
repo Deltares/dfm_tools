@@ -53,17 +53,13 @@ import datetime as dt
 import glob
 import numpy as np
 
-#bathy
-from matplotlib.path import Path as pth
-import warnings
-from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame
-from dfm_tools.bathymetry import write_bathy_toasc
-
 #gridgen
-import getpass
 from meshkernel import Mesh2dFactory, MeshKernel
+import meshkernel
 import xugrid as xu
 
+
+#MODELBUILDER: p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\scripts\dfm_ModelBuilder_functions.py
 
 def download_meteodata_oceandata(
         longitude_min = 2, longitude_max = 4, latitude_min = 50, latitude_max = 52, # domain
@@ -444,179 +440,89 @@ def preprocess_merge_meteofiles(
 
 
 
-# BATHYMETRY (TEMPORARY)
+#GRIDGENERATION (NOW WITH MESHKERNEL)
 
-def GEBCO2asc(lon_min,lon_max,lat_min,lat_max,dir_out=&#39;.&#39;,suffix=&#39;full&#39;,polygon=None): #TODO: default arg is None, not &#39;&#39;
-    &#34;&#34;&#34;
-    #input
-    # =============================================================================
-    # ## FULL
-    # suffix  = &#39;full&#39;
-    # polygon = &#39;&#39;
-    # lat_min =  11.5
-    # lat_max =  13
-    # lon_min = -69 #-68.55 left of Klein-Curacao
-    # lon_max = -67
-    # =============================================================================
-    # =============================================================================
-    # ## REFINEMENT
-    # suffix  = &#39;refine&#39;
-    # polygon = &#39;&#39;
-    # lat_min =  11.85
-    # lat_max =  12.55
-    # lon_min = -68.5
-    # lon_max = -67.9
-    # =============================================================================
-    # =============================================================================
-    # suffix  = &#39;coarse&#39;
-    # polygon = Path(&#39;p:\\i1000668-tcoms\\03_newModel\\01_input\\01_network\\bathy\\coarse.pol&#39;)
-    # =============================================================================
-
-
-    Parameters
-    ----------
-    lon_min : TYPE
-        DESCRIPTION.
-    lon_max : TYPE
-        DESCRIPTION.
-    lat_min : TYPE
-        DESCRIPTION.
-    lat_max : TYPE
-        DESCRIPTION.
-    dir_out : TYPE, optional
-        DESCRIPTION. The default is &#39;.&#39;.
-    suffix : TYPE, optional
-        DESCRIPTION. The default is &#39;full&#39;.
-    polygon : TYPE, optional
-        DESCRIPTION. The default is None.
-
-    Raises
-    ------
-    Exception
-        DESCRIPTION.
-
-    Returns
-    -------
-    None.
-
-    &#34;&#34;&#34;
-    warnings.warn(DeprecationWarning(&#39;modelbuilder.GEBCO2asc will be deprecated since asc grid refinement will be done with sliced netcdf data and meshkernel in the near future&#39;))
-    #settings
-    source=&#39;GEBCO2021&#39; #GEBCO2014 GEBCO2020 GEBCO2021 GEBCO2021SIT
-    asc_fmt=&#39;%6d&#39; #&#39;%6d&#39; &#39;%8.2f&#39;
-    LatIndexer, LonIndexer = &#39;lat&#39;, &#39;lon&#39;
-    
-    #type of path (windows/linux)
-    if os.name==&#39;nt&#39;:
-        pdrive = &#39;p:\\&#39;
-    elif os.name == &#39;posix&#39;:
-        pdrive = &#39;/p&#39;
-    
-    # source data
-    if source==&#39;GEBCO2021&#39;:
-        file_nc = os.path.join(pdrive,&#39;metocean-data&#39;,&#39;open&#39;,&#39;GEBCO&#39;,&#39;2021&#39;,&#39;GEBCO_2021.nc&#39;)
-    else:
-        raise Exception(&#39;invalid source&#39;)
-    data = xr.open_dataset(file_nc)
-    dsel = data.sel(**{LatIndexer: slice(lat_min, lat_max),LonIndexer: slice(lon_min, lon_max)})
-    
-    # output directory
-    if not os.path.exists(dir_out):
-        os.mkdir(dir_out)
-    resinv_lonlat = np.round(1/np.diff(dsel.lon[:2]),2)
-    filename_asc = os.path.join(dir_out,&#39;%s_res1d%03ddeg_%s.asc&#39;%(source,resinv_lonlat,suffix))
-    
-    # convert to .asc
-    lonvals = dsel.lon.to_series().values
-    latvals = dsel.lat.to_series().values
-    elevvals = dsel.variables[&#39;elevation&#39;].to_numpy()
-    
-    # make mask based on polygon
-    if polygon is not None:
-        polyfile_object = hcdfm.PolyFile(polygon)
-        pli_PolyObjects = polyfile_object.objects
-        lon_min,lon_max,lat_min,lat_max = None,None,None,None
-        for iPO, pli_PolyObject_sel in enumerate(pli_PolyObjects):
-            if iPO!=0:
-                raise Exception(&#39;Expected only one polygon in file&#39;)
-            xPO = np.array([point.x for point in pli_PolyObject_sel.points])
-            yPO = np.array([point.y for point in pli_PolyObject_sel.points])
-            xyPO = [(x,y) for x,y in zip(xPO,yPO)]
-            poly = pth(xyPO) #TODO: this is an inpolygon function, use also in other places in dfm_tools
-        lonGrid,latGrid = np.meshgrid(lonvals,latvals)
-        lonGrid,latGrid = lonGrid.flatten(),latGrid.flatten()
-        gridPoints = np.vstack((lonGrid,latGrid)).T
-        gridMask   = poly.contains_points(gridPoints)
-        gridMask   = gridMask.reshape(len(latvals),len(lonvals))
-        elevvals[~gridMask] = 32767
-    
-    write_bathy_toasc(filename_asc,lonvals,latvals,elevvals,asc_fmt,nodata_val=32767)
-
-
-#GRIDGENERATION (TEMPORARY)
-
-
-#%%
-def make_basegrid(lon_min,lon_max,lat_min,lat_max,dx=0.05,dy=0.05,filepath=&#39;1_base_net.nc&#39;,name=&#39;empty&#39;):
-    warnings.warn(DeprecationWarning(&#39;modelbuilder.make_basegrid will be deprecated since asc grid refinement will be done with netcdf data and meshkernel in the near future&#39;))
+def make_basegrid(lon_min,lon_max,lat_min,lat_max,dx=0.05,dy=0.05,filepath=&#39;1_base_net.nc&#39;):
+    print(&#39;modelbuilder.make_basegrid()&#39;)
     # create base grid
     nox = int(np.round((lon_max-lon_min)/dx))
     noy = int(np.round((lat_max-lat_min)/dy))
-    mesh2d_input = Mesh2dFactory.create_rectilinear_mesh(rows=noy, columns=nox, origin_x=lon_min, origin_y=lat_min, spacing_x=dx, spacing_y=dy)
+    
+    #mesh2d_input = Mesh2dFactory.create_rectilinear_mesh(rows=noy, columns=nox, origin_x=lon_min, origin_y=lat_min, spacing_x=dx, spacing_y=dy)
+    mesh2d_input = Mesh2dFactory.create(rows=noy, columns=nox, origin_x=lon_min, origin_y=lat_min, spacing_x=dx, spacing_y=dy)
     
     # set to spherical
-    mk = MeshKernel(is_geographic=True)
+    mk = MeshKernel()#is_geographic=True) #TODO: enabling is_geographic makes refinement super slow and raises &#34;MeshKernelError: MeshRefinement::connect_hanging_nodes: The number of non-hanging nodes is neither 3 nor 4.&#34;
     mk.mesh2d_set(mesh2d_input)
-    mesh2d_mesh_kernel = mk.mesh2d_get()
     
-    xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_mesh_kernel)
-
-    # plot grid
+    #plot
+    mesh2d_mesh_kernel = mk.mesh2d_get()
     fig, ax = plt.subplots()
-    xu_grid.plot(ax=ax)
-    # add basemap
+    mesh2d_mesh_kernel.plot_edges(ax, color=&#39;blue&#39;)
     source = ctx.providers.Esri.WorldImagery
     ctx.add_basemap(ax=ax, source=source, crs=&#39;EPSG:4326&#39;, attribution=False)
     
-    #write xugrid grid to netcdf
-    xu_grid.to_dataset().to_netcdf(filepath) #TODO: why is .to_dataset necessary()?
+    return mk
 
 
-#%%
-def refine_basegrid(bathydataset_refine,filepath_in=&#39;1_base_net.nc&#39;,dir_out=&#39;.&#39;,dtmax=200,dxmin_refine=&#39;2000&#39;,DIMRver=&#39;2.23.05.78259&#39;):
-    warnings.warn(DeprecationWarning(&#39;modelbuilder.refine_basegrid will be deprecated since asc grid refinement will be done with netcdf data and meshkernel in the near future&#39;))
-    #settings
-    bathydataset_dummy=&#39;p:/11209231-003-bes-modellering/hydrodynamica/hackathon/preprocessing/grid/dummy.xyz&#39; # file containing:      190     150     -9999
-    #exePath = &#39;/p/d-hydro/dimrset/weekly/%s/lnx64/bin/run_dflowfm.sh&#39;%DIMRver
-    exePath = &#39;p:/d-hydro/dimrset/weekly/%s/x64/dflowfm/bin/dflowfm-cli.exe&#39;%DIMRver
-    #os.system(&#39;set PATH=p:/d-hydro/dimrset/weekly/%s/x64/share/bin/;%%PATH%%&#39;%DIMRver)
-    os.environ[&#39;PATH&#39;] += os.pathsep + &#39;p:/d-hydro/dimrset/weekly/%s/x64/share/bin&#39;%DIMRver
+def refine_basegrid(mk, data_bathy_sel,min_face_size=0.1):
+    print(&#39;modelbuilder.refine_basegrid()&#39;)
+    samp_x,samp_y = np.meshgrid(data_bathy_sel.lon.to_numpy(),data_bathy_sel.lat.to_numpy())
+    samp_z = data_bathy_sel.elevation.to_numpy().astype(float) #TODO: without .astype(float), meshkernelpy generates &#34;TypeError: incompatible types, c_short_Array_27120 instance instead of LP_c_double instance&#34;: https://github.com/Deltares/MeshKernelPy/issues/31
+    samp_x = samp_x.ravel()
+    samp_y = samp_y.ravel()
+    samp_z = samp_z.ravel()
+    geomlist = meshkernel.GeometryList(x_coordinates=samp_x, y_coordinates=samp_y, values=samp_z) #TODO: does not check if lenghts of input array is equal (samp_z[1:]) https://github.com/Deltares/MeshKernelPy/issues/32
     
-    # refine base grid
-    os.system(&#39;%s --refine:dtmax=%s:hmin=%s:directional=0:outsidecell=0:connect=0:smoothiters=3:jasfer3d=1 %s %s&#39;%(exePath,dtmax,dxmin_refine,filepath_in,bathydataset_refine))
-    os.replace(&#39;outdtmax%sdxmin%s_net.nc&#39;%(dtmax,dxmin_refine),os.path.join(dir_out,&#39;2_refined_net.nc&#39;))
+    #refinement
+    mesh_refinement_parameters = meshkernel.MeshRefinementParameters(refine_intersected=False, #TODO: provide defaults for several arguments, so less arguments are required
+                                                                     use_mass_center_when_refining=False, #TODO: what does this do?
+                                                                     min_face_size=min_face_size, #TODO: size in meters would be more convenient: https://github.com/Deltares/MeshKernelPy/issues/33
+                                                                     refinement_type=meshkernel.RefinementType(1), #Wavecourant/1,
+                                                                     connect_hanging_nodes=True, #set to False to do multiple refinement steps (e.g. for multiple regions)
+                                                                     account_for_samples_outside_face=False, #outsidecell argument for --refine?
+                                                                     max_refinement_iterations=5,
+                                                                     ) #TODO: missing the arguments dtmax (necessary?), hmin (min_face_size but then in meters instead of degrees), smoothiters (currently refinement is patchy along coastlines, goes good in dflowfm exec after additional implementation of HK), spherical 1/0 (necessary?)
     
-    # connect cells
-    os.system(&#39;%s --refine:dtmax=%s:hmin=%s:directional=0:outsidecell=0:connect=1:smoothiters=0:jasfer3d=1 %s %s&#39;%(exePath,dtmax,dxmin_refine,os.path.join(dir_out,&#39;2_refined_net.nc&#39;),bathydataset_dummy))
-    os.replace(&#39;outdtmax%sdxmin%s_net.nc&#39;%(dtmax,dxmin_refine),os.path.join(dir_out,&#39;3_connected_net.nc&#39;))
+    #mk2 = meshkernel.MeshKernel()
+    #mk2.curvilinear_make_uniform(make_grid_parameters, geometry_list)
+    #mk2.curvilinear_convert_to_mesh2d() #convert to ugrid/mesh2d
+    mk.mesh2d_refine_based_on_samples(samples=geomlist,
+                                       relative_search_radius=0.5, #TODO: bilin interp is preferred, but this is currently not supported (samples have to be ravelled): https://github.com/Deltares/MeshKernelPy/issues/34
+                                       minimum_num_samples=3,
+                                       mesh_refinement_params=mesh_refinement_parameters,
+                                       )
     
-    # cut coastlines
-    with open(&#39;cutcellpolygons.lst&#39;, &#39;w&#39;) as file:
-        file.write(&#39;p:/i1000668-tcoms/03_newModel/01_input/01_network/scripts/construct_files/GSHHS_high_min10km2.ldb&#39;)
-    os.system(&#39;%s --cutcells:jasfer3d=1 %s&#39;%(exePath,os.path.join(dir_out,&#39;3_connected_net.nc&#39;)))
-    os.replace(&#39;out_net.nc&#39;,os.path.join(dir_out,&#39;4_cut_net.nc&#39;))
-    os.remove(&#39;cutcellpolygons.lst&#39;)
+    #plotting
+    mesh2d_grid2 = mk.mesh2d_get()
+    fig, ax = plt.subplots()
+    mesh2d_grid2.plot_edges(ax,linewidth=1.2)
+    ctx.add_basemap(ax=ax, crs=&#39;EPSG:4326&#39;, attribution=False)
+    
+    return mk
 
-def interp_bathy(bathydataset_full,filepath_in=&#39;4_cut_net.nc&#39;,filepath_out=&#39;5_bathy_net.nc&#39;,DIMRver=&#39;2.23.05.78259&#39;):
-    warnings.warn(DeprecationWarning(&#39;modelbuilder.interp_bathy will be deprecated since asc grid refinement will be done with netcdf data and meshkernel in the near future&#39;))
-    #settings
-    exePath = &#39;p:/d-hydro/dimrset/weekly/%s/x64/dflowfm/bin/dflowfm-cli.exe&#39;%DIMRver
+
+def xugrid_interp_bathy(mk,data_bathy_sel):
+    print(&#39;modelbuilder.xugrid_interp_bathy()&#39;)
+    mesh2d_grid3 = mk.mesh2d_get()
+
+    xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid3)
+    xu_grid_ds = xu_grid.assign_face_coords(xu_grid.to_dataset()) #this adds face_coordinates variables to file, step might not be necessary in the future: https://github.com/Deltares/xugrid/issues/67
+    xu_grid_uds = xu.UgridDataset(xu_grid_ds) #TODO: ugrid is necessary for z-values plot
     
-    # make mdu
-    # make ext
+    fig, ax = plt.subplots()
+    xu_grid.plot(ax=ax)
+    ctx.add_basemap(ax=ax, crs=&#39;EPSG:4326&#39;, attribution=False)
     
-    # interpolate bathymetry
-    os.system(&#39;%s --nodisplay --autostartstop bathy.mdu --savenet -o %s&#39;%(exePath,filepath_out))</code></pre>
+    #interp bathy
+    bathy = data_bathy_sel.elevation.interp(lon=xu_grid_ds.mesh2d_node_x, lat=xu_grid_ds.mesh2d_node_y) #interpolates lon/lat gebcodata to mesh2d_nNodes dimension #TODO: if these come from xu_grid_uds, the mesh2d_node_z var has no ugrid accessor since the dims are lat/lon instead of mesh2d_nNodes
+    xu_grid_uds[&#39;mesh2d_node_z&#39;] = bathy.clip(max=10)
+    
+    fig, ax = plt.subplots()
+    xu_grid_uds.mesh2d_node_z.ugrid.plot(ax=ax,center=False)
+    ctx.add_basemap(ax=ax, crs=&#39;EPSG:4326&#39;, attribution=False)
+    
+    return xu_grid_uds</code></pre>
 </details>
 </section>
 <section>
@@ -1038,177 +944,8 @@ def interp_bathy(bathydataset_full,filepath_in=&#39;4_cut_net.nc&#39;,filepath_o
             fig.savefig(file_out)</code></pre>
 </details>
 </dd>
-<dt id="dfm_tools.modelbuilder.GEBCO2asc"><code class="name flex">
-<span>def <span class="ident">GEBCO2asc</span></span>(<span>lon_min, lon_max, lat_min, lat_max, dir_out='.', suffix='full', polygon=None)</span>
-</code></dt>
-<dd>
-<div class="desc"><h1 id="input">input</h1>
-<h1 id="_1">=============================================================================</h1>
-<h1 id="full">## FULL</h1>
-<h1 id="suffix-full">suffix
-= 'full'</h1>
-<h1 id="polygon">polygon = ''</h1>
-<h1 id="lat_min-115">lat_min =
-11.5</h1>
-<h1 id="lat_max-13">lat_max =
-13</h1>
-<h1 id="lon_min-69-6855-left-of-klein-curacao">lon_min = -69 #-68.55 left of Klein-Curacao</h1>
-<h1 id="lon_max-67">lon_max = -67</h1>
-<h1 id="_2">=============================================================================</h1>
-<h1 id="_3">=============================================================================</h1>
-<h1 id="refinement">## REFINEMENT</h1>
-<h1 id="suffix-refine">suffix
-= 'refine'</h1>
-<h1 id="polygon_1">polygon = ''</h1>
-<h1 id="lat_min-1185">lat_min =
-11.85</h1>
-<h1 id="lat_max-1255">lat_max =
-12.55</h1>
-<h1 id="lon_min-685">lon_min = -68.5</h1>
-<h1 id="lon_max-679">lon_max = -67.9</h1>
-<h1 id="_4">=============================================================================</h1>
-<h1 id="_5">=============================================================================</h1>
-<h1 id="suffix-coarse">suffix
-= 'coarse'</h1>
-<h1 id="polygon-pathpi1000668-tcoms03_newmodel01_input01_networkbathycoarsepol">polygon = Path('p:\i1000668-tcoms\03_newModel\01_input\01_network\bathy\coarse.pol')</h1>
-<h1 id="_6">=============================================================================</h1>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>lon_min</code></strong> :&ensp;<code>TYPE</code></dt>
-<dd>DESCRIPTION.</dd>
-<dt><strong><code>lon_max</code></strong> :&ensp;<code>TYPE</code></dt>
-<dd>DESCRIPTION.</dd>
-<dt><strong><code>lat_min</code></strong> :&ensp;<code>TYPE</code></dt>
-<dd>DESCRIPTION.</dd>
-<dt><strong><code>lat_max</code></strong> :&ensp;<code>TYPE</code></dt>
-<dd>DESCRIPTION.</dd>
-<dt><strong><code>dir_out</code></strong> :&ensp;<code>TYPE</code>, optional</dt>
-<dd>DESCRIPTION. The default is '.'.</dd>
-<dt><strong><code>suffix</code></strong> :&ensp;<code>TYPE</code>, optional</dt>
-<dd>DESCRIPTION. The default is 'full'.</dd>
-<dt><strong><code>polygon</code></strong> :&ensp;<code>TYPE</code>, optional</dt>
-<dd>DESCRIPTION. The default is None.</dd>
-</dl>
-<h2 id="raises">Raises</h2>
-<dl>
-<dt><code>Exception</code></dt>
-<dd>DESCRIPTION.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<p>None.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def GEBCO2asc(lon_min,lon_max,lat_min,lat_max,dir_out=&#39;.&#39;,suffix=&#39;full&#39;,polygon=None): #TODO: default arg is None, not &#39;&#39;
-    &#34;&#34;&#34;
-    #input
-    # =============================================================================
-    # ## FULL
-    # suffix  = &#39;full&#39;
-    # polygon = &#39;&#39;
-    # lat_min =  11.5
-    # lat_max =  13
-    # lon_min = -69 #-68.55 left of Klein-Curacao
-    # lon_max = -67
-    # =============================================================================
-    # =============================================================================
-    # ## REFINEMENT
-    # suffix  = &#39;refine&#39;
-    # polygon = &#39;&#39;
-    # lat_min =  11.85
-    # lat_max =  12.55
-    # lon_min = -68.5
-    # lon_max = -67.9
-    # =============================================================================
-    # =============================================================================
-    # suffix  = &#39;coarse&#39;
-    # polygon = Path(&#39;p:\\i1000668-tcoms\\03_newModel\\01_input\\01_network\\bathy\\coarse.pol&#39;)
-    # =============================================================================
-
-
-    Parameters
-    ----------
-    lon_min : TYPE
-        DESCRIPTION.
-    lon_max : TYPE
-        DESCRIPTION.
-    lat_min : TYPE
-        DESCRIPTION.
-    lat_max : TYPE
-        DESCRIPTION.
-    dir_out : TYPE, optional
-        DESCRIPTION. The default is &#39;.&#39;.
-    suffix : TYPE, optional
-        DESCRIPTION. The default is &#39;full&#39;.
-    polygon : TYPE, optional
-        DESCRIPTION. The default is None.
-
-    Raises
-    ------
-    Exception
-        DESCRIPTION.
-
-    Returns
-    -------
-    None.
-
-    &#34;&#34;&#34;
-    warnings.warn(DeprecationWarning(&#39;modelbuilder.GEBCO2asc will be deprecated since asc grid refinement will be done with sliced netcdf data and meshkernel in the near future&#39;))
-    #settings
-    source=&#39;GEBCO2021&#39; #GEBCO2014 GEBCO2020 GEBCO2021 GEBCO2021SIT
-    asc_fmt=&#39;%6d&#39; #&#39;%6d&#39; &#39;%8.2f&#39;
-    LatIndexer, LonIndexer = &#39;lat&#39;, &#39;lon&#39;
-    
-    #type of path (windows/linux)
-    if os.name==&#39;nt&#39;:
-        pdrive = &#39;p:\\&#39;
-    elif os.name == &#39;posix&#39;:
-        pdrive = &#39;/p&#39;
-    
-    # source data
-    if source==&#39;GEBCO2021&#39;:
-        file_nc = os.path.join(pdrive,&#39;metocean-data&#39;,&#39;open&#39;,&#39;GEBCO&#39;,&#39;2021&#39;,&#39;GEBCO_2021.nc&#39;)
-    else:
-        raise Exception(&#39;invalid source&#39;)
-    data = xr.open_dataset(file_nc)
-    dsel = data.sel(**{LatIndexer: slice(lat_min, lat_max),LonIndexer: slice(lon_min, lon_max)})
-    
-    # output directory
-    if not os.path.exists(dir_out):
-        os.mkdir(dir_out)
-    resinv_lonlat = np.round(1/np.diff(dsel.lon[:2]),2)
-    filename_asc = os.path.join(dir_out,&#39;%s_res1d%03ddeg_%s.asc&#39;%(source,resinv_lonlat,suffix))
-    
-    # convert to .asc
-    lonvals = dsel.lon.to_series().values
-    latvals = dsel.lat.to_series().values
-    elevvals = dsel.variables[&#39;elevation&#39;].to_numpy()
-    
-    # make mask based on polygon
-    if polygon is not None:
-        polyfile_object = hcdfm.PolyFile(polygon)
-        pli_PolyObjects = polyfile_object.objects
-        lon_min,lon_max,lat_min,lat_max = None,None,None,None
-        for iPO, pli_PolyObject_sel in enumerate(pli_PolyObjects):
-            if iPO!=0:
-                raise Exception(&#39;Expected only one polygon in file&#39;)
-            xPO = np.array([point.x for point in pli_PolyObject_sel.points])
-            yPO = np.array([point.y for point in pli_PolyObject_sel.points])
-            xyPO = [(x,y) for x,y in zip(xPO,yPO)]
-            poly = pth(xyPO) #TODO: this is an inpolygon function, use also in other places in dfm_tools
-        lonGrid,latGrid = np.meshgrid(lonvals,latvals)
-        lonGrid,latGrid = lonGrid.flatten(),latGrid.flatten()
-        gridPoints = np.vstack((lonGrid,latGrid)).T
-        gridMask   = poly.contains_points(gridPoints)
-        gridMask   = gridMask.reshape(len(latvals),len(lonvals))
-        elevvals[~gridMask] = 32767
-    
-    write_bathy_toasc(filename_asc,lonvals,latvals,elevvals,asc_fmt,nodata_val=32767)</code></pre>
-</details>
-</dd>
 <dt id="dfm_tools.modelbuilder.make_basegrid"><code class="name flex">
-<span>def <span class="ident">make_basegrid</span></span>(<span>lon_min, lon_max, lat_min, lat_max, dx=0.05, dy=0.05, filepath='1_base_net.nc', name='empty')</span>
+<span>def <span class="ident">make_basegrid</span></span>(<span>lon_min, lon_max, lat_min, lat_max, dx=0.05, dy=0.05, filepath='1_base_net.nc')</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1216,33 +953,31 @@ def interp_bathy(bathydataset_full,filepath_in=&#39;4_cut_net.nc&#39;,filepath_o
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def make_basegrid(lon_min,lon_max,lat_min,lat_max,dx=0.05,dy=0.05,filepath=&#39;1_base_net.nc&#39;,name=&#39;empty&#39;):
-    warnings.warn(DeprecationWarning(&#39;modelbuilder.make_basegrid will be deprecated since asc grid refinement will be done with netcdf data and meshkernel in the near future&#39;))
+<pre><code class="python">def make_basegrid(lon_min,lon_max,lat_min,lat_max,dx=0.05,dy=0.05,filepath=&#39;1_base_net.nc&#39;):
+    print(&#39;modelbuilder.make_basegrid()&#39;)
     # create base grid
     nox = int(np.round((lon_max-lon_min)/dx))
     noy = int(np.round((lat_max-lat_min)/dy))
-    mesh2d_input = Mesh2dFactory.create_rectilinear_mesh(rows=noy, columns=nox, origin_x=lon_min, origin_y=lat_min, spacing_x=dx, spacing_y=dy)
+    
+    #mesh2d_input = Mesh2dFactory.create_rectilinear_mesh(rows=noy, columns=nox, origin_x=lon_min, origin_y=lat_min, spacing_x=dx, spacing_y=dy)
+    mesh2d_input = Mesh2dFactory.create(rows=noy, columns=nox, origin_x=lon_min, origin_y=lat_min, spacing_x=dx, spacing_y=dy)
     
     # set to spherical
-    mk = MeshKernel(is_geographic=True)
+    mk = MeshKernel()#is_geographic=True) #TODO: enabling is_geographic makes refinement super slow and raises &#34;MeshKernelError: MeshRefinement::connect_hanging_nodes: The number of non-hanging nodes is neither 3 nor 4.&#34;
     mk.mesh2d_set(mesh2d_input)
-    mesh2d_mesh_kernel = mk.mesh2d_get()
     
-    xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_mesh_kernel)
-
-    # plot grid
+    #plot
+    mesh2d_mesh_kernel = mk.mesh2d_get()
     fig, ax = plt.subplots()
-    xu_grid.plot(ax=ax)
-    # add basemap
+    mesh2d_mesh_kernel.plot_edges(ax, color=&#39;blue&#39;)
     source = ctx.providers.Esri.WorldImagery
     ctx.add_basemap(ax=ax, source=source, crs=&#39;EPSG:4326&#39;, attribution=False)
     
-    #write xugrid grid to netcdf
-    xu_grid.to_dataset().to_netcdf(filepath) #TODO: why is .to_dataset necessary()?</code></pre>
+    return mk</code></pre>
 </details>
 </dd>
 <dt id="dfm_tools.modelbuilder.refine_basegrid"><code class="name flex">
-<span>def <span class="ident">refine_basegrid</span></span>(<span>bathydataset_refine, filepath_in='1_base_net.nc', dir_out='.', dtmax=200, dxmin_refine='2000', DIMRver='2.23.05.78259')</span>
+<span>def <span class="ident">refine_basegrid</span></span>(<span>mk, data_bathy_sel, min_face_size=0.1)</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1250,33 +985,45 @@ def interp_bathy(bathydataset_full,filepath_in=&#39;4_cut_net.nc&#39;,filepath_o
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def refine_basegrid(bathydataset_refine,filepath_in=&#39;1_base_net.nc&#39;,dir_out=&#39;.&#39;,dtmax=200,dxmin_refine=&#39;2000&#39;,DIMRver=&#39;2.23.05.78259&#39;):
-    warnings.warn(DeprecationWarning(&#39;modelbuilder.refine_basegrid will be deprecated since asc grid refinement will be done with netcdf data and meshkernel in the near future&#39;))
-    #settings
-    bathydataset_dummy=&#39;p:/11209231-003-bes-modellering/hydrodynamica/hackathon/preprocessing/grid/dummy.xyz&#39; # file containing:      190     150     -9999
-    #exePath = &#39;/p/d-hydro/dimrset/weekly/%s/lnx64/bin/run_dflowfm.sh&#39;%DIMRver
-    exePath = &#39;p:/d-hydro/dimrset/weekly/%s/x64/dflowfm/bin/dflowfm-cli.exe&#39;%DIMRver
-    #os.system(&#39;set PATH=p:/d-hydro/dimrset/weekly/%s/x64/share/bin/;%%PATH%%&#39;%DIMRver)
-    os.environ[&#39;PATH&#39;] += os.pathsep + &#39;p:/d-hydro/dimrset/weekly/%s/x64/share/bin&#39;%DIMRver
+<pre><code class="python">def refine_basegrid(mk, data_bathy_sel,min_face_size=0.1):
+    print(&#39;modelbuilder.refine_basegrid()&#39;)
+    samp_x,samp_y = np.meshgrid(data_bathy_sel.lon.to_numpy(),data_bathy_sel.lat.to_numpy())
+    samp_z = data_bathy_sel.elevation.to_numpy().astype(float) #TODO: without .astype(float), meshkernelpy generates &#34;TypeError: incompatible types, c_short_Array_27120 instance instead of LP_c_double instance&#34;: https://github.com/Deltares/MeshKernelPy/issues/31
+    samp_x = samp_x.ravel()
+    samp_y = samp_y.ravel()
+    samp_z = samp_z.ravel()
+    geomlist = meshkernel.GeometryList(x_coordinates=samp_x, y_coordinates=samp_y, values=samp_z) #TODO: does not check if lenghts of input array is equal (samp_z[1:]) https://github.com/Deltares/MeshKernelPy/issues/32
     
-    # refine base grid
-    os.system(&#39;%s --refine:dtmax=%s:hmin=%s:directional=0:outsidecell=0:connect=0:smoothiters=3:jasfer3d=1 %s %s&#39;%(exePath,dtmax,dxmin_refine,filepath_in,bathydataset_refine))
-    os.replace(&#39;outdtmax%sdxmin%s_net.nc&#39;%(dtmax,dxmin_refine),os.path.join(dir_out,&#39;2_refined_net.nc&#39;))
+    #refinement
+    mesh_refinement_parameters = meshkernel.MeshRefinementParameters(refine_intersected=False, #TODO: provide defaults for several arguments, so less arguments are required
+                                                                     use_mass_center_when_refining=False, #TODO: what does this do?
+                                                                     min_face_size=min_face_size, #TODO: size in meters would be more convenient: https://github.com/Deltares/MeshKernelPy/issues/33
+                                                                     refinement_type=meshkernel.RefinementType(1), #Wavecourant/1,
+                                                                     connect_hanging_nodes=True, #set to False to do multiple refinement steps (e.g. for multiple regions)
+                                                                     account_for_samples_outside_face=False, #outsidecell argument for --refine?
+                                                                     max_refinement_iterations=5,
+                                                                     ) #TODO: missing the arguments dtmax (necessary?), hmin (min_face_size but then in meters instead of degrees), smoothiters (currently refinement is patchy along coastlines, goes good in dflowfm exec after additional implementation of HK), spherical 1/0 (necessary?)
     
-    # connect cells
-    os.system(&#39;%s --refine:dtmax=%s:hmin=%s:directional=0:outsidecell=0:connect=1:smoothiters=0:jasfer3d=1 %s %s&#39;%(exePath,dtmax,dxmin_refine,os.path.join(dir_out,&#39;2_refined_net.nc&#39;),bathydataset_dummy))
-    os.replace(&#39;outdtmax%sdxmin%s_net.nc&#39;%(dtmax,dxmin_refine),os.path.join(dir_out,&#39;3_connected_net.nc&#39;))
+    #mk2 = meshkernel.MeshKernel()
+    #mk2.curvilinear_make_uniform(make_grid_parameters, geometry_list)
+    #mk2.curvilinear_convert_to_mesh2d() #convert to ugrid/mesh2d
+    mk.mesh2d_refine_based_on_samples(samples=geomlist,
+                                       relative_search_radius=0.5, #TODO: bilin interp is preferred, but this is currently not supported (samples have to be ravelled): https://github.com/Deltares/MeshKernelPy/issues/34
+                                       minimum_num_samples=3,
+                                       mesh_refinement_params=mesh_refinement_parameters,
+                                       )
     
-    # cut coastlines
-    with open(&#39;cutcellpolygons.lst&#39;, &#39;w&#39;) as file:
-        file.write(&#39;p:/i1000668-tcoms/03_newModel/01_input/01_network/scripts/construct_files/GSHHS_high_min10km2.ldb&#39;)
-    os.system(&#39;%s --cutcells:jasfer3d=1 %s&#39;%(exePath,os.path.join(dir_out,&#39;3_connected_net.nc&#39;)))
-    os.replace(&#39;out_net.nc&#39;,os.path.join(dir_out,&#39;4_cut_net.nc&#39;))
-    os.remove(&#39;cutcellpolygons.lst&#39;)</code></pre>
+    #plotting
+    mesh2d_grid2 = mk.mesh2d_get()
+    fig, ax = plt.subplots()
+    mesh2d_grid2.plot_edges(ax,linewidth=1.2)
+    ctx.add_basemap(ax=ax, crs=&#39;EPSG:4326&#39;, attribution=False)
+    
+    return mk</code></pre>
 </details>
 </dd>
-<dt id="dfm_tools.modelbuilder.interp_bathy"><code class="name flex">
-<span>def <span class="ident">interp_bathy</span></span>(<span>bathydataset_full, filepath_in='4_cut_net.nc', filepath_out='5_bathy_net.nc', DIMRver='2.23.05.78259')</span>
+<dt id="dfm_tools.modelbuilder.xugrid_interp_bathy"><code class="name flex">
+<span>def <span class="ident">xugrid_interp_bathy</span></span>(<span>mk, data_bathy_sel)</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1284,16 +1031,27 @@ def interp_bathy(bathydataset_full,filepath_in=&#39;4_cut_net.nc&#39;,filepath_o
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def interp_bathy(bathydataset_full,filepath_in=&#39;4_cut_net.nc&#39;,filepath_out=&#39;5_bathy_net.nc&#39;,DIMRver=&#39;2.23.05.78259&#39;):
-    warnings.warn(DeprecationWarning(&#39;modelbuilder.interp_bathy will be deprecated since asc grid refinement will be done with netcdf data and meshkernel in the near future&#39;))
-    #settings
-    exePath = &#39;p:/d-hydro/dimrset/weekly/%s/x64/dflowfm/bin/dflowfm-cli.exe&#39;%DIMRver
+<pre><code class="python">def xugrid_interp_bathy(mk,data_bathy_sel):
+    print(&#39;modelbuilder.xugrid_interp_bathy()&#39;)
+    mesh2d_grid3 = mk.mesh2d_get()
+
+    xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid3)
+    xu_grid_ds = xu_grid.assign_face_coords(xu_grid.to_dataset()) #this adds face_coordinates variables to file, step might not be necessary in the future: https://github.com/Deltares/xugrid/issues/67
+    xu_grid_uds = xu.UgridDataset(xu_grid_ds) #TODO: ugrid is necessary for z-values plot
     
-    # make mdu
-    # make ext
+    fig, ax = plt.subplots()
+    xu_grid.plot(ax=ax)
+    ctx.add_basemap(ax=ax, crs=&#39;EPSG:4326&#39;, attribution=False)
     
-    # interpolate bathymetry
-    os.system(&#39;%s --nodisplay --autostartstop bathy.mdu --savenet -o %s&#39;%(exePath,filepath_out))</code></pre>
+    #interp bathy
+    bathy = data_bathy_sel.elevation.interp(lon=xu_grid_ds.mesh2d_node_x, lat=xu_grid_ds.mesh2d_node_y) #interpolates lon/lat gebcodata to mesh2d_nNodes dimension #TODO: if these come from xu_grid_uds, the mesh2d_node_z var has no ugrid accessor since the dims are lat/lon instead of mesh2d_nNodes
+    xu_grid_uds[&#39;mesh2d_node_z&#39;] = bathy.clip(max=10)
+    
+    fig, ax = plt.subplots()
+    xu_grid_uds.mesh2d_node_z.ugrid.plot(ax=ax,center=False)
+    ctx.add_basemap(ax=ax, crs=&#39;EPSG:4326&#39;, attribution=False)
+    
+    return xu_grid_uds</code></pre>
 </details>
 </dd>
 </dl>
@@ -1318,10 +1076,9 @@ def interp_bathy(bathydataset_full,filepath_in=&#39;4_cut_net.nc&#39;,filepath_o
 <li><code><a title="dfm_tools.modelbuilder.preprocess_interpolate_nc_to_bc" href="#dfm_tools.modelbuilder.preprocess_interpolate_nc_to_bc">preprocess_interpolate_nc_to_bc</a></code></li>
 <li><code><a title="dfm_tools.modelbuilder.preprocess_ini_cmems_to_nc" href="#dfm_tools.modelbuilder.preprocess_ini_cmems_to_nc">preprocess_ini_cmems_to_nc</a></code></li>
 <li><code><a title="dfm_tools.modelbuilder.preprocess_merge_meteofiles" href="#dfm_tools.modelbuilder.preprocess_merge_meteofiles">preprocess_merge_meteofiles</a></code></li>
-<li><code><a title="dfm_tools.modelbuilder.GEBCO2asc" href="#dfm_tools.modelbuilder.GEBCO2asc">GEBCO2asc</a></code></li>
 <li><code><a title="dfm_tools.modelbuilder.make_basegrid" href="#dfm_tools.modelbuilder.make_basegrid">make_basegrid</a></code></li>
 <li><code><a title="dfm_tools.modelbuilder.refine_basegrid" href="#dfm_tools.modelbuilder.refine_basegrid">refine_basegrid</a></code></li>
-<li><code><a title="dfm_tools.modelbuilder.interp_bathy" href="#dfm_tools.modelbuilder.interp_bathy">interp_bathy</a></code></li>
+<li><code><a title="dfm_tools.modelbuilder.xugrid_interp_bathy" href="#dfm_tools.modelbuilder.xugrid_interp_bathy">xugrid_interp_bathy</a></code></li>
 </ul>
 </li>
 </ul>
