@@ -22,6 +22,8 @@ dir_output = r'p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preproces
 dir_output_main = dir_output
 path_style='unix'
 
+#TODO: reference run in: p:\11209231-003-bes-modellering\hydrodynamica\hackathon\simulations\run001_mapInterval_1800_waq_newGrid
+
 # domain
 lon_min, lon_max, lat_min, lat_max = -68.55, -67.9, 11.8, 12.6, 
 
@@ -65,7 +67,7 @@ data_bathy = xr.open_dataset(file_nc_bathy)
 data_bathy_sel = data_bathy.sel(lon=slice(lon_min-1,lon_max+1),lat=slice(lat_min-1,lat_max+1))
 
 #TODO: grid generation/refinement based on bathy still to be improved in meshkernel (https://github.com/Deltares/dfm_tools/issues/234), replace if fixed
-net_base = mb.make_basegrid(lon_min, lon_max, lat_min, lat_max)
+net_base = mb.make_basegrid(lon_min, lon_max, lat_min, lat_max) #TODO: should be sperical, but is cartesian
 
 #refine
 min_face_size = 200/(40075*1000/360) #convert meters to degrees
@@ -155,6 +157,7 @@ mb.preprocess_merge_meteofiles(
         time_slice = slice(date_min, date_max))
 
 #%% obs points
+#TODO: add obs points
 
 #%% .mdu settings
 mdu.geometry.bedlevuni = 5

@@ -406,7 +406,7 @@ def preprocess_merge_meteofiles(
 
 
 
-#GRIDGENERATION (NOW WITH MESHKERNEL)
+#GRIDGENERATION (NOW WITH MESHKERNEL), was before: p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\scripts\gridgeneration.py
 
 def make_basegrid(lon_min,lon_max,lat_min,lat_max,dx=0.05,dy=0.05,filepath='1_base_net.nc'):
     print('modelbuilder.make_basegrid()')
