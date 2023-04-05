@@ -142,6 +142,7 @@ def download_meteodata_oceandata(
     
     
 def preprocess_interpolate_nc_to_bc(
+        ext_bnd,
         refdate_str = 'minutes since 2000-01-01 00:00:00 +00:00', # if None, xarray uses ds.time.encoding['units'] as refdate_str
         dir_output = './interpolate_nc_to_bc',
         #quantities should be in conversion_dict.keys(). waterlevelbnd is steric/zos, tide is tidal components from FES/EOT
@@ -203,7 +204,6 @@ def preprocess_interpolate_nc_to_bc(
     
     # start of interpolation process
     dtstart = dt.datetime.now()
-    ext_bnd = hcdfm.ExtModel()
     if not os.path.isdir(dir_output):
         os.mkdir(dir_output)
     
@@ -286,11 +286,12 @@ def preprocess_interpolate_nc_to_bc(
                     fig.tight_layout()
                     fig.savefig(str(file_bc_out).replace('.bc',''))
     
-    file_ext_out = Path(dir_output,'example_bnd.ext')
-    ext_bnd.save(filepath=file_ext_out)
+    #file_ext_out = Path(dir_output,'example_bnd.ext')
+    #ext_bnd.save(filepath=file_ext_out)
     
     time_passed = (dt.datetime.now()-dtstart).total_seconds()
     print(f'>>total script time passed: {time_passed:.2f} sec')
+    return ext_bnd
 
     
 def preprocess_ini_cmems_to_nc(tSimStart = dt.datetime(1998,1,1),
@@ -472,15 +473,38 @@ def refine_basegrid(mk, data_bathy_sel,min_face_size=0.1):
     return mk
 
 
+def remove_grid_withldb(mk,file_ldb=None):
+    print('>> reading+converting ldb: ',end='')
+    dtstart = dt.datetime.now()
+    if file_ldb is None:
+        file_ldb = r'p:\1230882-emodnet_hrsm\global_tide_surge_model\trunk\scripts_gtsm5\landboundary\GSHHS_intermediate_min1000km2.ldb'
+    pol_ldb = hcdfm.PolyFile(Path(file_ldb))
+    pol_ldb_list = [dfmt.pointlike_to_DataFrame(x) for x in pol_ldb.objects] #TODO, this is quite slow, speed up possible?
+    pol_ldb_list = [x for x in pol_ldb_list if len(x)>1000] #filter only large polygons for performance
+    print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
+    
+    for iP, pol_del in enumerate(pol_ldb_list): #TODO: also possible without loop? >> geometry_separator=-999.9 so that value can be used to concat polygons. >> use hydrolib poly as input? https://github.com/Deltares/MeshKernelPy/issues/35
+        delete_pol_geom = meshkernel.GeometryList(x_coordinates=pol_del['x'].to_numpy(), y_coordinates=pol_del['y'].to_numpy()) #TODO: .copy()/to_numpy() makes the array contiguous in memory, which is necessary for meshkernel.mesh2d_delete()
+        mk.mesh2d_delete(geometry_list=delete_pol_geom, 
+                         delete_option=meshkernel.DeleteMeshOption(2), #ALL_COMPLETE_FACES/2: Delete all faces of which the complete face is inside the polygon
+                         invert_deletion=False) #TODO: cuts away link that is neccesary, so results in non-orthogonal grid
+    return mk
+    
+
+
 def xugrid_interp_bathy(mk,data_bathy_sel):
     print('modelbuilder.xugrid_interp_bathy()')
     mesh2d_grid3 = mk.mesh2d_get()
 
     xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid3)
-    xu_grid_ds = xu_grid.assign_face_coords(xu_grid.to_dataset()) #this adds face_coordinates variables to file, step might not be necessary in the future: https://github.com/Deltares/xugrid/issues/67
-    xu_grid_ds = xu_grid_ds.drop_vars(['mesh2d_edge_nodes']) #TODO: otherwise segmentation fault upon dflowfm running? But dropping it results in "** WARNING: unc_read_net_ugrid: Could not read edge-node connectivity from mesh #1 in UGRID net file '/p/11209231-003-bes-modellering/hydrodynamica/ha"
-    #TODO: if removing edge_nodes, also remove that from mesh2d variable
-    
+    if 0: #** WARNING: Could not read mesh face x-coordinates
+        xu_grid_ds = xu_grid.assign_face_coords(xu_grid.to_dataset()) #this adds face_coordinates variables to file, step might not be necessary in the future: https://github.com/Deltares/xugrid/issues/67
+    elif 1: #SUCCESSFUL PARTITIONING AND RUN #remove set topology_dimension to 1 (faces are not used)
+        xu_grid_ds = xu_grid.to_dataset()
+        xu_grid_ds['mesh2d'] = xu_grid_ds.mesh2d.assign_attrs({'topology_dimension':1})
+    else: #** WARNING: Could not read mesh face x-coordinates
+        xu_grid_ds = xu_grid.to_dataset()
+
     fig, ax = plt.subplots()
     xu_grid.plot(ax=ax)
     ctx.add_basemap(ax=ax, crs='EPSG:4326', attribution=False)
@@ -500,17 +524,24 @@ def xugrid_interp_bathy(mk,data_bathy_sel):
         'inverse_flattening': np.array([6356752.314245], dtype=float),
         'EPSG_code': 'EPSG:4326',
         'value': 'value is equal to EPSG code'}
-    xu_grid_ds['wgs84'] = xr.DataArray(np.array(-2147483647,dtype=int),dims=(),attrs=attribute_dict)
-    # # add conventions (global attributes)
-    # conventions = {
-    #     'institution': 'Deltares',
-    #     #'references': name,
-    #     'source': 'Hackaton Moonshots 2 and 3',
-    #     'history': 'Created on %s, %s'%(dt.datetime.now().strftime('%Y-%m-%dT%H:%M:%S%z'),getpass.getuser()),
-    #     'Conventions': 'CF-1.6 UGRID-1.0/Deltares-0.8'}
-    # xu_grid_ds = xu_grid_ds.assign_attrs(conventions)
+    xu_grid_ds['wgs84'] = xr.DataArray(np.array(0,dtype=int),dims=(),attrs=attribute_dict)
+    # add conventions (global attributes)
+    conventions = {
+        'institution': 'Deltares',
+        'references': 'http://www.deltares.nl',
+        'source': 'Hackaton Moonshots 2 and 3',
+        'history': 'Created on %s, %s'%(dt.datetime.now().strftime('%Y-%m-%dT%H:%M:%S%z'),getpass.getuser()),
+        #TODO: this matters since dflowfm behaves differently based on convention versions
+        #'Conventions': 'CF-1.6 UGRID-1.0/Deltares-0.8', #from gridgeneration.py #** WARNING: Could not read mesh face x-coordinates. Check any previous warnings.
+        'Conventions': 'CF-1.8 UGRID-1.0/Deltares-0.10', #from io_ugrid.F90 #** WARNING: Could not read mesh face x-coordinates. Check any previous warnings.
+        #'Conventions': 'CF-1.8 UGRID-0.9/Deltares-0.10', #** WARNING: NetCDF error: NetCDF: Invalid dimension ID or name (nNetNode)
+        #'Conventions': 'CF-1.8 UGRID-0.8/Deltares-0.10', #** WARNING: NetCDF error: NetCDF: Invalid dimension ID or name (nNetNode)
+        #'Conventions': 'Deltares-0.10', #** WARNING: NetCDF error: NetCDF: Invalid dimension ID or name (nNetNode)
+        #'Conventions': 'UGRID-0.9', #** WARNING: NetCDF error: NetCDF: Invalid dimension ID or name (nNetNode)
+        }
+    xu_grid_ds = xu_grid_ds.assign_attrs(conventions)
     
-    xu_grid_uds = xu.UgridDataset(xu_grid_ds) #TODO: ugrid is necessary for z-values plot
+    xu_grid_uds = xu.UgridDataset(xu_grid_ds) #TODO: ugrid is necessary for z-values plot, but introduces mesh2d_nNodes variable with range(len(mesh2d_nNodes)) as contents
     fig, ax = plt.subplots()
     xu_grid_uds.mesh2d_node_z.ugrid.plot(ax=ax,center=False)
     ctx.add_basemap(ax=ax, crs='EPSG:4326', attribution=False)
