@@ -421,7 +421,7 @@ def make_basegrid(lon_min,lon_max,lat_min,lat_max,dx=0.05,dy=0.05,filepath='1_ba
                                                          origin_y=lat_min,
                                                          block_size_x=dx,
                                                          block_size_y=dy)
-    print(make_grid_parameters)
+    #print(make_grid_parameters)
     
     geometry_list = meshkernel.GeometryList(np.empty(0, dtype=np.double), np.empty(0, dtype=np.double)) # A polygon must to be provided. If empty it will not be used. If a polygon is provided it will be used in the generation of the curvilinear grid. The polygon must be closed
     mk = meshkernel.MeshKernel() #TODO: is_geographic=True was used in modelbuilder, but refinement super slow and raises "MeshKernelError: MeshRefinement::connect_hanging_nodes: The number of non-hanging nodes is neither 3 nor 4."
@@ -478,23 +478,20 @@ def xugrid_interp_bathy(mk,data_bathy_sel):
 
     xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid3)
     xu_grid_ds = xu_grid.assign_face_coords(xu_grid.to_dataset()) #this adds face_coordinates variables to file, step might not be necessary in the future: https://github.com/Deltares/xugrid/issues/67
-    xu_grid_uds = xu.UgridDataset(xu_grid_ds) #TODO: ugrid is necessary for z-values plot
+    xu_grid_ds = xu_grid_ds.drop_vars(['mesh2d_edge_nodes']) #TODO: otherwise segmentation fault upon dflowfm running? But dropping it results in "** WARNING: unc_read_net_ugrid: Could not read edge-node connectivity from mesh #1 in UGRID net file '/p/11209231-003-bes-modellering/hydrodynamica/ha"
+    #TODO: if removing edge_nodes, also remove that from mesh2d variable
     
     fig, ax = plt.subplots()
     xu_grid.plot(ax=ax)
     ctx.add_basemap(ax=ax, crs='EPSG:4326', attribution=False)
     
     #interp bathy
-    bathy = data_bathy_sel.elevation.interp(lon=xu_grid_ds.mesh2d_node_x, lat=xu_grid_ds.mesh2d_node_y) #interpolates lon/lat gebcodata to mesh2d_nNodes dimension #TODO: if these come from xu_grid_uds, the mesh2d_node_z var has no ugrid accessor since the dims are lat/lon instead of mesh2d_nNodes
-    xu_grid_uds['mesh2d_node_z'] = bathy.clip(max=10)
-    
-    fig, ax = plt.subplots()
-    xu_grid_uds.mesh2d_node_z.ugrid.plot(ax=ax,center=False)
-    ctx.add_basemap(ax=ax, crs='EPSG:4326', attribution=False)
+    data_bathy_interp = data_bathy_sel.interp(lon=xu_grid_ds.mesh2d_node_x, lat=xu_grid_ds.mesh2d_node_y).reset_coords(['lat','lon']) #interpolates lon/lat gebcodata to mesh2d_nNodes dimension #TODO: if these come from xu_grid_uds, the mesh2d_node_z var has no ugrid accessor since the dims are lat/lon instead of mesh2d_nNodes
+    xu_grid_ds['mesh2d_node_z'] = data_bathy_interp.elevation.clip(max=10)
     
     # add attrs (to projected_coordinate_system/wgs84 empty int variable): should depend on is_geographic flag in make_basegrid()
     attribute_dict = {
-        #'name': name,
+        'name': 'WGS84',
         'epsg': np.array([4326], dtype=int),
         'grid_mapping_name': 'Unknown projected',
         'longitude_of_prime_meridian': np.array([0.0], dtype=float),
@@ -503,7 +500,7 @@ def xugrid_interp_bathy(mk,data_bathy_sel):
         'inverse_flattening': np.array([6356752.314245], dtype=float),
         'EPSG_code': 'EPSG:4326',
         'value': 'value is equal to EPSG code'}
-    xu_grid_uds['wgs84'] = xr.DataArray(np.array([],dtype=int),attrs=attribute_dict)
+    xu_grid_ds['wgs84'] = xr.DataArray(np.array(-2147483647,dtype=int),dims=(),attrs=attribute_dict)
     # # add conventions (global attributes)
     # conventions = {
     #     'institution': 'Deltares',
@@ -511,6 +508,11 @@ def xugrid_interp_bathy(mk,data_bathy_sel):
     #     'source': 'Hackaton Moonshots 2 and 3',
     #     'history': 'Created on %s, %s'%(dt.datetime.now().strftime('%Y-%m-%dT%H:%M:%S%z'),getpass.getuser()),
     #     'Conventions': 'CF-1.6 UGRID-1.0/Deltares-0.8'}
-    # xu_grid_uds = xu_grid_uds.assign_attrs(conventions)
+    # xu_grid_ds = xu_grid_ds.assign_attrs(conventions)
     
-    return xu_grid_uds
+    xu_grid_uds = xu.UgridDataset(xu_grid_ds) #TODO: ugrid is necessary for z-values plot
+    fig, ax = plt.subplots()
+    xu_grid_uds.mesh2d_node_z.ugrid.plot(ax=ax,center=False)
+    ctx.add_basemap(ax=ax, crs='EPSG:4326', attribution=False)
+
+    return xu_grid_ds

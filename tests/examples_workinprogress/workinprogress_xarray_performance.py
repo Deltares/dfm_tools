@@ -29,7 +29,7 @@ chunks = {'time':1,'stations':10}
 #Open: 705  sec (12 min) #Plot: 1323 sec (22 min)
 #netcdf4
 #Open: 0.3 sec (0 min) #Plot: ?? sec (?? min) #killed after 33 minutes of plotting (0% progress)
-#Open: 16  sec (0 min) #Plot: 7505 sec (125 min)
+#Open: 20  sec (0 min) #Plot: 7505 sec (125 min)
 #Open: 0.3 sec (0 min) #Plot: 3405 sec (56 min)
 
 

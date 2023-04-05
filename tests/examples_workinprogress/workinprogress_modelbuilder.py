@@ -45,7 +45,7 @@ if not os.path.isdir(dir_output):
 dir_output_data = os.path.join(dir_output, 'data')
 if not os.path.isdir(dir_output_data):
     os.mkdir(dir_output_data)
-      
+
 #%% mdu
 mdu_file = os.path.join(dir_output_main, f'{model_name}.mdu')
 ext_file = os.path.join(dir_output_main, f'{model_name}_bc.ext')
@@ -74,12 +74,12 @@ min_face_size = 200/(40075*1000/360) #convert meters to degrees
 net_refined = mb.refine_basegrid(mk=net_base, data_bathy_sel=data_bathy_sel, min_face_size=min_face_size) #TODO: min_face_size is now in degrees instead of meters
 
 #convert to xugrid and interp bathy
-xu_grid_uds = mb.xugrid_interp_bathy(mk=net_refined, data_bathy_sel=data_bathy_sel)
+xu_grid_ds = mb.xugrid_interp_bathy(mk=net_refined, data_bathy_sel=data_bathy_sel)
 
 #write xugrid grid to netcdf
 netfile  = os.path.join(dir_output_main, f'{model_name}_net.nc')
-xu_grid_uds.ugrid.to_netcdf(netfile)
-
+xu_grid_ds.to_netcdf(netfile)
+breakit
 
 mdu.geometry.netfile = netfile #TODO: path is windows/unix dependent #TODO: providing os.path.basename(netfile) raises "ValidationError: 1 validation error for Geometry - netfile:   File: `C:\SnapVolumesTemp\MountPoints\{45c63495-0000-0000-0000-100000000000}\{79DE0690-9470-4166-B9EE-4548DC416BBD}\SVROOT\DATA\dfm_tools\tests\examples_workinprogress\Bonaire_net.nc` not found, skipped parsing." (wrong current directory)
 
@@ -246,4 +246,5 @@ mdu.save(mdu_file,path_style=path_style)
 #TODO: fix dflowfm error when running this model (might be grid related, since it happens on partitioning process. opening grid in interacter shows it to be cartesian)
 #ug_get_meshgeom, #12, ierr=0
 #forrtl: severe (174): SIGSEGV, segmentation fault occurred
+#also happens when using p:\11209231-003-bes-modellering\hydrodynamica\hackathon\simulations\run001_mapInterval_1800_waq_newGrid\4_cut_net.nc
 
