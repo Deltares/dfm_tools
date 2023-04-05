@@ -58,7 +58,7 @@ else:
     pol_y = np.empty(0, dtype=np.double)
 geometry_list = meshkernel.GeometryList(pol_x, pol_y)
 
-mk1 = meshkernel.MeshKernel()
+mk1 = meshkernel.MeshKernel() #TODO: is_geographic=True was used in modelbuilder, is that necessary (makes it slow and fails)
 mk1.curvilinear_make_uniform(make_grid_parameters, geometry_list) #TODO: make geometry_list argument optional: https://github.com/Deltares/MeshKernelPy/issues/30
 #TODO: alternatively: mk1 = Mesh2dFactory.create(rows=noy, columns=nox, origin_x=lon_min, origin_y=lat_min, spacing_x=dx, spacing_y=dy)
 mk1.curvilinear_convert_to_mesh2d() #convert to ugrid/mesh2d
