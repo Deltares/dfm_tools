@@ -212,7 +212,6 @@ mdu.time.tstop   = (dt.datetime.strptime(date_max,'%Y-%m-%d') - dt.datetime.strp
 #mdu.output.obsfile = #TODO: add obsfile
 mdu.output.hisinterval = [60]
 mdu.output.mapinterval = [1800]#[86400]
-mdu.output.ncformat = 4 #TODO: 3 is default, in hydrolib-core
 
 #%% export model
 mdu.save(mdu_file,path_style=path_style)
