@@ -20,7 +20,7 @@ import xarray as xr
 model_name = 'Bonaire'
 dir_output = r'p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\ModelBuilderOutput_JV'
 dir_output_main = dir_output
-path_style='unix'
+path_style = 'unix' # windows / unix
 
 #TODO: reference run in: p:\11209231-003-bes-modellering\hydrodynamica\hackathon\simulations\run001_mapInterval_1800_waq_newGrid
 
@@ -67,19 +67,21 @@ data_bathy = xr.open_dataset(file_nc_bathy)
 data_bathy_sel = data_bathy.sel(lon=slice(lon_min-1,lon_max+1),lat=slice(lat_min-1,lat_max+1))
 
 #TODO: grid generation/refinement based on bathy still to be improved in meshkernel (https://github.com/Deltares/dfm_tools/issues/234), replace if fixed
-net_base = mb.make_basegrid(lon_min, lon_max, lat_min, lat_max) #TODO: should be sperical, but is cartesian
+net_base = mb.make_basegrid(lon_min, lon_max, lat_min, lat_max) #TODO: should be sperical, but is cartesian >> is_geographic keywork does not work yet
 
 #refine
 min_face_size = 200/(40075*1000/360) #convert meters to degrees
 net_refined = mb.refine_basegrid(mk=net_base, data_bathy_sel=data_bathy_sel, min_face_size=min_face_size) #TODO: min_face_size is now in degrees instead of meters
+
+#convert to xugrid and interp bathy
 xu_grid_uds = mb.xugrid_interp_bathy(mk=net_refined, data_bathy_sel=data_bathy_sel)
 
 #write xugrid grid to netcdf
 netfile  = os.path.join(dir_output_main, f'{model_name}_net.nc')
 xu_grid_uds.ugrid.to_netcdf(netfile)
 
-mdu.geometry.netfile = netfile
 
+mdu.geometry.netfile = netfile #TODO: path is windows/unix dependent #TODO: providing os.path.basename(netfile) raises "ValidationError: 1 validation error for Geometry - netfile:   File: `C:\SnapVolumesTemp\MountPoints\{45c63495-0000-0000-0000-100000000000}\{79DE0690-9470-4166-B9EE-4548DC416BBD}\SVROOT\DATA\dfm_tools\tests\examples_workinprogress\Bonaire_net.nc` not found, skipped parsing." (wrong current directory)
 
 #%% initial and open boundary condition
 # TODO create polyline (currently this file is prerequisite)
@@ -230,6 +232,16 @@ autotimestep = 3
 #%% export model
 mdu.save(mdu_file,path_style=path_style)
 # TODO: relative paths in .ext
+
+"""
+#TODO: hydrolib-core written mdu-file contains old keywords
+** WARNING: While reading 'Bonaire.mdu': keyword [numerics] qhrelax=0.01 was in file, but not used. Check possible typo.
+** WARNING: While reading 'Bonaire.mdu': keyword [wind] windspeedbreakpoints=0.0 100.0 was in file, but not used. Check possible typo.
+** WARNING: While reading 'Bonaire.mdu': keyword [output] wrishp_enc=0 was in file, but not used. Check possible typo.
+** WARNING: While reading 'Bonaire.mdu': keyword [output] waterlevelclasses=0.0 was in file, but not used. Check possible typo.
+** WARNING: While reading 'Bonaire.mdu': keyword [output] waterdepthclasses=0.0 was in file, but not used. Check possible typo.
+
+"""
 
 #TODO: fix dflowfm error when running this model (might be grid related, since it happens on partitioning process. opening grid in interacter shows it to be cartesian)
 #ug_get_meshgeom, #12, ierr=0

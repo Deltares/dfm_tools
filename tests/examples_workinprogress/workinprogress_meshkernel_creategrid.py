@@ -38,15 +38,13 @@ Make a regular (potentially rotated) rectilinear grid. First generate a curvilin
 """
 
 # Create an instance of MakeGridParameters and set the values
-make_grid_parameters = meshkernel.MakeGridParameters() #TODO: contains default values that are maybe not intuitive
-make_grid_parameters.num_columns = num_x
-make_grid_parameters.num_rows = num_y
-make_grid_parameters.angle = 0.0 #TODO: does non-zero result in an orthogonal spherical grid?
-#make_grid_parameters.block_size = 0.0
-make_grid_parameters.origin_x = lon_min
-make_grid_parameters.origin_y = lat_min
-make_grid_parameters.block_size_x = lon_res
-make_grid_parameters.block_size_y = lat_res
+make_grid_parameters = meshkernel.MakeGridParameters(num_columns=num_x,
+                                                     num_rows=num_y,
+                                                     angle=0.0, #TODO: does non-zero result in an orthogonal spherical grid?
+                                                     origin_x=lon_min,
+                                                     origin_y=lat_min,
+                                                     block_size_x=lon_res,
+                                                     block_size_y=lat_res)
 
 grid_in_pol = False
 # A polygon must to be provided. If empty it will not be used. If a polygon is provided it will be used in the generation of the curvilinear grid. The polygon must be closed
@@ -58,9 +56,8 @@ else:
     pol_y = np.empty(0, dtype=np.double)
 geometry_list = meshkernel.GeometryList(pol_x, pol_y)
 
-mk1 = meshkernel.MeshKernel() #TODO: is_geographic=True was used in modelbuilder, is that necessary (makes it slow and fails)
+mk1 = meshkernel.MeshKernel() #TODO: is_geographic=True has to be used but it fails: https://github.com/Deltares/MeshKernelPy/issues/39
 mk1.curvilinear_make_uniform(make_grid_parameters, geometry_list) #TODO: make geometry_list argument optional: https://github.com/Deltares/MeshKernelPy/issues/30
-#TODO: alternatively: mk1 = Mesh2dFactory.create(rows=noy, columns=nox, origin_x=lon_min, origin_y=lat_min, spacing_x=dx, spacing_y=dy)
 mk1.curvilinear_convert_to_mesh2d() #convert to ugrid/mesh2d
 mesh2d_grid1 = mk1.mesh2d_get() #in case of curvi grid: mk.curvilinear_convert_to_mesh2d()
 fig, ax = plt.subplots(figsize=figsize)
@@ -90,9 +87,9 @@ samp_z = samp_z.ravel()
 geomlist = meshkernel.GeometryList(x_coordinates=samp_x, y_coordinates=samp_y, values=samp_z) #TODO: does not check if lenghts of input array is equal (samp_z[1:]) https://github.com/Deltares/MeshKernelPy/issues/32
 
 #refinement
-mesh_refinement_parameters = meshkernel.MeshRefinementParameters(refine_intersected=False, #TODO: provide defaults for several arguments, so less arguments are required
+mesh_refinement_parameters = meshkernel.MeshRefinementParameters(refine_intersected=False, #TODO: provide defaults for several arguments, so less arguments are required: https://github.com/Deltares/MeshKernelPy/issues/40
                                                                  use_mass_center_when_refining=False, #TODO: what does this do?
-                                                                 min_face_size=0.01, #TODO: size in meters would be more convenient: https://github.com/Deltares/MeshKernelPy/issues/33
+                                                                 min_face_size=0.01, #TODO: size in meters would be more convenient: https://github.com/Deltares/MeshKernelPy/issues/33 (maybe already works after is_geographic=True?)
                                                                  refinement_type=meshkernel.RefinementType(1), #Wavecourant/1,
                                                                  connect_hanging_nodes=True, #set to False to do multiple refinement steps (e.g. for multiple regions)
                                                                  account_for_samples_outside_face=False, #outsidecell argument for --refine?

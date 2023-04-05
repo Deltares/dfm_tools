@@ -20,9 +20,9 @@ import glob
 import numpy as np
 
 #gridgen
-from meshkernel import Mesh2dFactory, MeshKernel
 import meshkernel
 import xugrid as xu
+import getpass
 
 
 #MODELBUILDER: p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\scripts\dfm_ModelBuilder_functions.py
@@ -414,12 +414,19 @@ def make_basegrid(lon_min,lon_max,lat_min,lat_max,dx=0.05,dy=0.05,filepath='1_ba
     nox = int(np.round((lon_max-lon_min)/dx))
     noy = int(np.round((lat_max-lat_min)/dy))
     
-    #mesh2d_input = Mesh2dFactory.create_rectilinear_mesh(rows=noy, columns=nox, origin_x=lon_min, origin_y=lat_min, spacing_x=dx, spacing_y=dy)
-    mesh2d_input = Mesh2dFactory.create(rows=noy, columns=nox, origin_x=lon_min, origin_y=lat_min, spacing_x=dx, spacing_y=dy)
+    make_grid_parameters = meshkernel.MakeGridParameters(num_columns=nox,
+                                                         num_rows=noy,
+                                                         angle=0.0,
+                                                         origin_x=lon_min,
+                                                         origin_y=lat_min,
+                                                         block_size_x=dx,
+                                                         block_size_y=dy)
+    print(make_grid_parameters)
     
-    # set to spherical
-    mk = MeshKernel()#is_geographic=True) #TODO: enabling is_geographic makes refinement super slow and raises "MeshKernelError: MeshRefinement::connect_hanging_nodes: The number of non-hanging nodes is neither 3 nor 4."
-    mk.mesh2d_set(mesh2d_input)
+    geometry_list = meshkernel.GeometryList(np.empty(0, dtype=np.double), np.empty(0, dtype=np.double)) # A polygon must to be provided. If empty it will not be used. If a polygon is provided it will be used in the generation of the curvilinear grid. The polygon must be closed
+    mk = meshkernel.MeshKernel() #TODO: is_geographic=True was used in modelbuilder, but refinement super slow and raises "MeshKernelError: MeshRefinement::connect_hanging_nodes: The number of non-hanging nodes is neither 3 nor 4."
+    mk.curvilinear_make_uniform(make_grid_parameters, geometry_list) #TODO: make geometry_list argument optional: https://github.com/Deltares/MeshKernelPy/issues/30
+    mk.curvilinear_convert_to_mesh2d() #convert to ugrid/mesh2d
     
     #plot
     mesh2d_mesh_kernel = mk.mesh2d_get()
@@ -450,9 +457,6 @@ def refine_basegrid(mk, data_bathy_sel,min_face_size=0.1):
                                                                      max_refinement_iterations=5,
                                                                      ) #TODO: missing the arguments dtmax (necessary?), hmin (min_face_size but then in meters instead of degrees), smoothiters (currently refinement is patchy along coastlines, goes good in dflowfm exec after additional implementation of HK), spherical 1/0 (necessary?)
     
-    #mk2 = meshkernel.MeshKernel()
-    #mk2.curvilinear_make_uniform(make_grid_parameters, geometry_list)
-    #mk2.curvilinear_convert_to_mesh2d() #convert to ugrid/mesh2d
     mk.mesh2d_refine_based_on_samples(samples=geomlist,
                                        relative_search_radius=0.5, #TODO: bilin interp is preferred, but this is currently not supported (samples have to be ravelled): https://github.com/Deltares/MeshKernelPy/issues/34
                                        minimum_num_samples=3,
@@ -487,5 +491,26 @@ def xugrid_interp_bathy(mk,data_bathy_sel):
     fig, ax = plt.subplots()
     xu_grid_uds.mesh2d_node_z.ugrid.plot(ax=ax,center=False)
     ctx.add_basemap(ax=ax, crs='EPSG:4326', attribution=False)
+    
+    # add attrs (to projected_coordinate_system/wgs84 empty int variable): should depend on is_geographic flag in make_basegrid()
+    attribute_dict = {
+        #'name': name,
+        'epsg': np.array([4326], dtype=int),
+        'grid_mapping_name': 'Unknown projected',
+        'longitude_of_prime_meridian': np.array([0.0], dtype=float),
+        'semi_major_axis': np.array([6378137.0], dtype=float),
+        'semi_minor_axis': np.array([6356752.314245], dtype=float),
+        'inverse_flattening': np.array([6356752.314245], dtype=float),
+        'EPSG_code': 'EPSG:4326',
+        'value': 'value is equal to EPSG code'}
+    xu_grid_uds['wgs84'] = xr.DataArray(np.array([],dtype=int),attrs=attribute_dict)
+    # # add conventions (global attributes)
+    # conventions = {
+    #     'institution': 'Deltares',
+    #     #'references': name,
+    #     'source': 'Hackaton Moonshots 2 and 3',
+    #     'history': 'Created on %s, %s'%(dt.datetime.now().strftime('%Y-%m-%dT%H:%M:%S%z'),getpass.getuser()),
+    #     'Conventions': 'CF-1.6 UGRID-1.0/Deltares-0.8'}
+    # xu_grid_uds = xu_grid_uds.assign_attrs(conventions)
     
     return xu_grid_uds
