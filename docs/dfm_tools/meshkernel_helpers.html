@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>dfm_tools.meshkernel_helpers API documentation</title>
+<meta name="description" content="Created on Thu Apr
+6 18:46:35 2023 …" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>dfm_tools.meshkernel_helpers</code></h1>
+</header>
+<section id="section-intro">
+<p>Created on Thu Apr
+6 18:46:35 2023</p>
+<p>@author: veenstra</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python"># -*- coding: utf-8 -*-
+&#34;&#34;&#34;
+Created on Thu Apr  6 18:46:35 2023
+
+@author: veenstra
+&#34;&#34;&#34;
+
+import xugrid as xu
+import meshkernel
+import xarray as xr
+import datetime as dt
+import hydrolib.core.dflowfm as hcdfm
+import pandas as pd
+from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame
+import getpass
+
+
+def meshkernel_delete_withpol(mk, file_ldb, minpoints=None):
+    
+    print(&#39;&gt;&gt; reading+converting ldb: &#39;,end=&#39;&#39;)
+    dtstart = dt.datetime.now()
+    pol_ldb = hcdfm.PolyFile(file_ldb)
+    pol_ldb_list = [pointlike_to_DataFrame(x) for x in pol_ldb.objects] #TODO, this is quite slow, speed up possible?
+    if minpoints is not None:
+        pol_ldb_list = [x for x in pol_ldb_list if len(x)&gt;minpoints] #filter only large polygons for performance
+    for iP, pol_ldb in enumerate(pol_ldb_list):
+        if not (pol_ldb.iloc[0] == pol_ldb.iloc[-1]).all(): #close the polygon if it is not yet closed
+            pol_ldb_list[iP] = pd.concat([pol_ldb,pol_ldb.iloc[[0]]],axis=0)
+    print(f&#39;{(dt.datetime.now()-dtstart).total_seconds():.2f} sec&#39;)
+    
+    for iP, pol_del in enumerate(pol_ldb_list): #TODO: also possible without loop? &gt;&gt; geometry_separator=-999.9 so that value can be used to concat polygons. &gt;&gt; use hydrolib poly as input? https://github.com/Deltares/MeshKernelPy/issues/35
+        delete_pol_geom = meshkernel.GeometryList(x_coordinates=pol_del[&#39;x&#39;].to_numpy(), y_coordinates=pol_del[&#39;y&#39;].to_numpy()) #TODO: .copy()/to_numpy() makes the array contiguous in memory, which is necessary for meshkernel.mesh2d_delete()
+        mk.mesh2d_delete(geometry_list=delete_pol_geom, 
+                         delete_option=meshkernel.DeleteMeshOption(2), #ALL_COMPLETE_FACES/2: Delete all faces of which the complete face is inside the polygon
+                         invert_deletion=False) #TODO: cuts away link that is neccesary, so results in non-orthogonal grid
+    return mk
+
+
+def meshkernel_to_UgridDataset(mk:meshkernel.meshkernel.MeshKernel) -&gt; xr.Dataset:
+    mesh2d_grid3 = mk.mesh2d_get()
+
+    xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid3)
+    #xu_grid_ds = xu_grid.to_dataset()
+    xu_grid_ds = xu_grid.assign_face_coords(xu_grid.to_dataset()) #TODO: face_coords are necessary for hydrolib-core mdu.geometry.network validation, report this
+    
+    #convert 0-based to 1-based grid #TODO: FM kernel needs 1-based grid, but it should read the attributes instead. Report this (#ug_get_meshgeom, #12, ierr=0. ** WARNING: Could not read mesh face x-coordinates)
+    varn_fnc = xu_grid_ds.mesh2d.attrs[&#39;face_node_connectivity&#39;] #TODO: maybe also do for edge_node_connectivity
+    if xu_grid_ds[varn_fnc].attrs[&#39;start_index&#39;]==0:
+        xu_grid_ds[varn_fnc] += 1
+        xu_grid_ds[varn_fnc].attrs[&#34;_FillValue&#34;] += 1
+        xu_grid_ds[varn_fnc].attrs[&#34;start_index&#34;] += 1
+        
+    xu_grid_ds = xu_grid_ds.assign_attrs({#&#39;Conventions&#39;: &#39;CF-1.8 UGRID-1.0 Deltares-0.10&#39;, #add Deltares convention (was CF-1.8 UGRID-1.0)
+                                          &#39;institution&#39;: &#39;Deltares&#39;,
+                                          &#39;references&#39;: &#39;https://www.deltares.nl&#39;,
+                                          &#39;source&#39;: f&#39;meshkernel {meshkernel.__version__} and xugrid {xu.__version__}&#39;,
+                                          &#39;history&#39;: &#39;Created on %s, %s&#39;%(dt.datetime.now().strftime(&#39;%Y-%m-%dT%H:%M:%S%z&#39;),getpass.getuser()), #TODO: add timezone
+                                          })
+
+    #TODO: add more global attributes (Deltares, website, source:meshkernel+xugrid,
+    
+    # add attrs (to projected_coordinate_system/wgs84 empty int variable): #TODO: should depend on is_geographic flag in make_basegrid()
+    # attribute_dict = {
+    #     &#39;name&#39;: &#39;WGS84&#39;,
+    #     &#39;epsg&#39;: np.array([4326], dtype=int),
+    #     &#39;grid_mapping_name&#39;: &#39;Unknown projected&#39;,
+    #     &#39;longitude_of_prime_meridian&#39;: np.array([0.0], dtype=float),
+    #     &#39;semi_major_axis&#39;: np.array([6378137.0], dtype=float),
+    #     &#39;semi_minor_axis&#39;: np.array([6356752.314245], dtype=float),
+    #     &#39;inverse_flattening&#39;: np.array([6356752.314245], dtype=float),
+    #     &#39;EPSG_code&#39;: &#39;EPSG:4326&#39;,
+    #     &#39;value&#39;: &#39;value is equal to EPSG code&#39;}
+    # xu_grid_ds[&#39;wgs84&#39;] = xr.DataArray(np.array(0,dtype=int),dims=(),attrs=attribute_dict)
+    
+    xu_grid_uds = xu.UgridDataset(xu_grid_ds)
+    return xu_grid_uds</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="dfm_tools.meshkernel_helpers.meshkernel_delete_withpol"><code class="name flex">
+<span>def <span class="ident">meshkernel_delete_withpol</span></span>(<span>mk, file_ldb, minpoints=None)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def meshkernel_delete_withpol(mk, file_ldb, minpoints=None):
+    
+    print(&#39;&gt;&gt; reading+converting ldb: &#39;,end=&#39;&#39;)
+    dtstart = dt.datetime.now()
+    pol_ldb = hcdfm.PolyFile(file_ldb)
+    pol_ldb_list = [pointlike_to_DataFrame(x) for x in pol_ldb.objects] #TODO, this is quite slow, speed up possible?
+    if minpoints is not None:
+        pol_ldb_list = [x for x in pol_ldb_list if len(x)&gt;minpoints] #filter only large polygons for performance
+    for iP, pol_ldb in enumerate(pol_ldb_list):
+        if not (pol_ldb.iloc[0] == pol_ldb.iloc[-1]).all(): #close the polygon if it is not yet closed
+            pol_ldb_list[iP] = pd.concat([pol_ldb,pol_ldb.iloc[[0]]],axis=0)
+    print(f&#39;{(dt.datetime.now()-dtstart).total_seconds():.2f} sec&#39;)
+    
+    for iP, pol_del in enumerate(pol_ldb_list): #TODO: also possible without loop? &gt;&gt; geometry_separator=-999.9 so that value can be used to concat polygons. &gt;&gt; use hydrolib poly as input? https://github.com/Deltares/MeshKernelPy/issues/35
+        delete_pol_geom = meshkernel.GeometryList(x_coordinates=pol_del[&#39;x&#39;].to_numpy(), y_coordinates=pol_del[&#39;y&#39;].to_numpy()) #TODO: .copy()/to_numpy() makes the array contiguous in memory, which is necessary for meshkernel.mesh2d_delete()
+        mk.mesh2d_delete(geometry_list=delete_pol_geom, 
+                         delete_option=meshkernel.DeleteMeshOption(2), #ALL_COMPLETE_FACES/2: Delete all faces of which the complete face is inside the polygon
+                         invert_deletion=False) #TODO: cuts away link that is neccesary, so results in non-orthogonal grid
+    return mk</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.meshkernel_helpers.meshkernel_to_UgridDataset"><code class="name flex">
+<span>def <span class="ident">meshkernel_to_UgridDataset</span></span>(<span>mk: meshkernel.meshkernel.MeshKernel) ‑> xarray.core.dataset.Dataset</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def meshkernel_to_UgridDataset(mk:meshkernel.meshkernel.MeshKernel) -&gt; xr.Dataset:
+    mesh2d_grid3 = mk.mesh2d_get()
+
+    xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid3)
+    #xu_grid_ds = xu_grid.to_dataset()
+    xu_grid_ds = xu_grid.assign_face_coords(xu_grid.to_dataset()) #TODO: face_coords are necessary for hydrolib-core mdu.geometry.network validation, report this
+    
+    #convert 0-based to 1-based grid #TODO: FM kernel needs 1-based grid, but it should read the attributes instead. Report this (#ug_get_meshgeom, #12, ierr=0. ** WARNING: Could not read mesh face x-coordinates)
+    varn_fnc = xu_grid_ds.mesh2d.attrs[&#39;face_node_connectivity&#39;] #TODO: maybe also do for edge_node_connectivity
+    if xu_grid_ds[varn_fnc].attrs[&#39;start_index&#39;]==0:
+        xu_grid_ds[varn_fnc] += 1
+        xu_grid_ds[varn_fnc].attrs[&#34;_FillValue&#34;] += 1
+        xu_grid_ds[varn_fnc].attrs[&#34;start_index&#34;] += 1
+        
+    xu_grid_ds = xu_grid_ds.assign_attrs({#&#39;Conventions&#39;: &#39;CF-1.8 UGRID-1.0 Deltares-0.10&#39;, #add Deltares convention (was CF-1.8 UGRID-1.0)
+                                          &#39;institution&#39;: &#39;Deltares&#39;,
+                                          &#39;references&#39;: &#39;https://www.deltares.nl&#39;,
+                                          &#39;source&#39;: f&#39;meshkernel {meshkernel.__version__} and xugrid {xu.__version__}&#39;,
+                                          &#39;history&#39;: &#39;Created on %s, %s&#39;%(dt.datetime.now().strftime(&#39;%Y-%m-%dT%H:%M:%S%z&#39;),getpass.getuser()), #TODO: add timezone
+                                          })
+
+    #TODO: add more global attributes (Deltares, website, source:meshkernel+xugrid,
+    
+    # add attrs (to projected_coordinate_system/wgs84 empty int variable): #TODO: should depend on is_geographic flag in make_basegrid()
+    # attribute_dict = {
+    #     &#39;name&#39;: &#39;WGS84&#39;,
+    #     &#39;epsg&#39;: np.array([4326], dtype=int),
+    #     &#39;grid_mapping_name&#39;: &#39;Unknown projected&#39;,
+    #     &#39;longitude_of_prime_meridian&#39;: np.array([0.0], dtype=float),
+    #     &#39;semi_major_axis&#39;: np.array([6378137.0], dtype=float),
+    #     &#39;semi_minor_axis&#39;: np.array([6356752.314245], dtype=float),
+    #     &#39;inverse_flattening&#39;: np.array([6356752.314245], dtype=float),
+    #     &#39;EPSG_code&#39;: &#39;EPSG:4326&#39;,
+    #     &#39;value&#39;: &#39;value is equal to EPSG code&#39;}
+    # xu_grid_ds[&#39;wgs84&#39;] = xr.DataArray(np.array(0,dtype=int),dims=(),attrs=attribute_dict)
+    
+    xu_grid_uds = xu.UgridDataset(xu_grid_ds)
+    return xu_grid_uds</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="dfm_tools" href="index.html">dfm_tools</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="dfm_tools.meshkernel_helpers.meshkernel_delete_withpol" href="#dfm_tools.meshkernel_helpers.meshkernel_delete_withpol">meshkernel_delete_withpol</a></code></li>
+<li><code><a title="dfm_tools.meshkernel_helpers.meshkernel_to_UgridDataset" href="#dfm_tools.meshkernel_helpers.meshkernel_to_UgridDataset">meshkernel_to_UgridDataset</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>
