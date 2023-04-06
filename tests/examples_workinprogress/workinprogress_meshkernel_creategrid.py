@@ -8,7 +8,6 @@ Created on Thu Dec  8 20:54:39 2022
 
 import meshkernel #meshkernel>=2.0.0 #TODO: hydrolib currently has meshkernel<2/.0.0 >=1.0.0, so this conflicts: https://github.com/Deltares/HYDROLIB-core/issues/441. hydrolib-core 0.4.2 pre-release supports meshkernel 2.0.0, but that one has no linux support
 import xarray as xr
-import xugrid as xu
 import matplotlib.pyplot as plt
 plt.close('all')
 import numpy as np
@@ -121,39 +120,24 @@ ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 """
 delete (landward) part of grid with polygon and plot result
 """
-delete_with_ldb = True
-if delete_with_ldb: #landboundary file has to contain closed polygons
-    print('reading ldb')
-    file_ldb = r'p:\1230882-emodnet_hrsm\global_tide_surge_model\trunk\scripts_gtsm5\landboundary\GSHHS_intermediate_min1000km2.ldb'
-    pol_ldb = hcdfm.PolyFile(Path(file_ldb))
-    print('converting ldb')
-    pol_ldb_list = [dfmt.pointlike_to_DataFrame(x) for x in pol_ldb.objects] #TODO, this is quite slow, speed up possible?
-    pol_ldb_list = [x for x in pol_ldb_list if len(x)>1000] #filter only large polygons for performance
-    print('done with ldb')
-else:
-    #line, = ax.plot([], [],'o-') # empty line
-    #linebuilder = dfmt.LineBuilder(line) #this makes it possible to interactively click a line in the bedlevel figure. Use linebuilder.line_array as alternative line_array
-    delete_pol = np.array([[ 1.91741935, 49.76580645],
-                           [ 0.20387097, 49.9       ],
-                           [-0.25032258, 48.71290323],
-                           [ 1.92774194, 48.59935484]])
-    delete_pol = np.concatenate([delete_pol,delete_pol[[0],:]],axis=0) #close polygon
-    pol_ldb_list = [pd.DataFrame(delete_pol,columns=['x','y'])]
 
-for iP, pol_del in enumerate(pol_ldb_list): #TODO: also possible without loop? >> geometry_separator=-999.9 so that value can be used to concat polygons. >> use hydrolib poly as input? https://github.com/Deltares/MeshKernelPy/issues/35
-    delete_pol_geom = meshkernel.GeometryList(x_coordinates=pol_del['x'].to_numpy(), y_coordinates=pol_del['y'].to_numpy()) #TODO: .copy()/to_numpy() makes the array contiguous in memory, which is necessary for meshkernel.mesh2d_delete()
-    mk2.mesh2d_delete(geometry_list=delete_pol_geom, 
-                      delete_option=meshkernel.DeleteMeshOption(2), #ALL_COMPLETE_FACES/2: Delete all faces of which the complete face is inside the polygon
-                      invert_deletion=False) #TODO: cuts away link that is neccesary, so results in non-orthogonal grid
+#line, = ax.plot([], [],'o-') # empty line
+# #linebuilder = dfmt.LineBuilder(line) #TODO: this makes it possible to interactively click a line in the bedlevel figure. Use linebuilder.line_array as alternative line_array
+# delete_pol = np.array([[ 1.91741935, 49.76580645],
+#                         [ 0.20387097, 49.9       ],
+#                         [-0.25032258, 48.71290323],
+#                         [ 1.92774194, 48.59935484]])
+file_ldb = r'p:\1230882-emodnet_hrsm\global_tide_surge_model\trunk\scripts_gtsm5\landboundary\GSHHS_intermediate_min1000km2.ldb'
+mk2 = dfmt.meshkernel_delete_withpol(mk2, file_ldb=file_ldb, minpoints=1000)
 
 mesh2d_grid3 = mk2.mesh2d_get()
 fig, ax = plt.subplots(figsize=figsize)
 mesh2d_grid3.plot_edges(ax,linewidth=1.2)
-xlim,ylim = ax.get_xlim(),ax.get_ylim() #get x/ylims before ldb plotting changes it
-for iP, pol_del in enumerate(pol_ldb_list):
-    ax.plot(pol_del['x'],pol_del['y'],'-r')
-ax.set_xlim(xlim)
-ax.set_ylim(ylim)
+# xlim,ylim = ax.get_xlim(),ax.get_ylim() #get x/ylims before ldb plotting changes it
+# for iP, pol_del in enumerate(pol_ldb_list):
+#     ax.plot(pol_del['x'],pol_del['y'],'-r')
+# ax.set_xlim(xlim)
+# ax.set_ylim(ylim)
 ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 
 
@@ -161,27 +145,25 @@ ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 """
 convert meshkernel grid to xugrid, interp bathymetry, plot and save to *_net.nc
 """
-
-xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid3)
-xu_grid_ds = xu_grid.assign_face_coords(xu_grid.to_dataset()) #this adds face_coordinates variables to file, step might not be necessary in the future: https://github.com/Deltares/xugrid/issues/67
+xu_grid_uds = dfmt.meshkernel_to_UgridDataset(mk2)
+#TODO: add wgs84 variable with attrs
 
 fig, ax = plt.subplots(figsize=figsize)
-xu_grid.plot(ax=ax)
+xu_grid_uds.grid.plot(ax=ax) #TODO: maybe make uds instead of ds (but then bathy interpolation goes wrong)
 ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 
 #interp bathy
-data_bathy_interp = data_bathy_sel.interp(lon=xu_grid_ds.mesh2d_node_x, lat=xu_grid_ds.mesh2d_node_y).reset_coords(['lat','lon']) #interpolates lon/lat gebcodata to mesh2d_nNodes dimension #TODO: if these come from xu_grid_uds, the mesh2d_node_z var has no ugrid accessor since the dims are lat/lon instead of mesh2d_nNodes
-xu_grid_ds['mesh2d_node_z'] = data_bathy_interp.elevation.clip(max=10)
-#TODO: add wgs84 variable with attrs
-
-xu_grid_uds = xu.UgridDataset(xu_grid_ds) #TODO: ugrid is necessary for z-values plot #TODO: contains coordinates/variables mesh2d_nNodes and mesh2d_nFaces for some unknown reason
+data_bathy_interp = data_bathy_sel.interp(lon=xu_grid_uds.obj.mesh2d_node_x, lat=xu_grid_uds.obj.mesh2d_node_y).reset_coords(['lat','lon']) #interpolates lon/lat gebcodata to mesh2d_nNodes dimension #TODO: if these come from xu_grid_uds, the mesh2d_node_z var has no ugrid accessor since the dims are lat/lon instead of mesh2d_nNodes
+xu_grid_uds['mesh2d_node_z'] = data_bathy_interp.elevation.clip(max=10)
 
 fig, ax = plt.subplots(figsize=figsize)
 xu_grid_uds.mesh2d_node_z.ugrid.plot(ax=ax,center=False)
 ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 
 #write xugrid grid to netcdf
-xu_grid_ds.to_netcdf('test_net.nc')
+xu_grid_uds.ugrid.to_netcdf('test_net.nc')
 
 #TODO: update https://github.com/Deltares/dfm_tools/issues/217
+
+#TODO: network is not orthogonal (when initializing with interacter), probably since the is_geographic keyword does not work yet
 

@@ -66,19 +66,41 @@ mk_object = mb.make_basegrid(lon_min, lon_max, lat_min, lat_max) #TODO: should b
 #refine
 min_face_size = 200/(40075*1000/360) #convert meters to degrees
 mb.refine_basegrid(mk=mk_object, data_bathy_sel=data_bathy_sel, min_face_size=min_face_size) #TODO: min_face_size is now in degrees instead of meters
+#TODO: gives errors in model run: ** ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated
 
 #cutcells
 file_ldb = r'p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\grid\coastline.pli'
-mb.remove_grid_withldb(mk=mk_object,file_ldb=file_ldb) #TODO: does not seem to have effect
+dfmt.meshkernel_delete_withpol(mk=mk_object,file_ldb=file_ldb)
 
-#convert to xugrid and interp bathy #TODO: when providing mk=net_base, the grid is still refined, so mk is changed in-place (how to properly code this)
-xu_grid_ds = mb.xugrid_interp_bathy(mk=mk_object, data_bathy_sel=data_bathy_sel) #TODO: now has topology_dimension=1 to avoid model crash, but grid is pink in interacter
+#TODO: cleanup grid?
+# print('mk_object.mesh2d_get_obtuse_triangles_mass_centers()')
+# print(mk_object.mesh2d_get_obtuse_triangles_mass_centers())
+# print('mk_object.mesh2d_get_hanging_edges()')
+# print(mk_object.mesh2d_get_hanging_edges())
+
+#convert to xugrid
+xu_grid_uds = dfmt.meshkernel_to_UgridDataset(mk=mk_object)
+
+#TODO: when providing mk=net_base, the grid is still refined, so mk is changed in-place (how to properly code this)
+#interp bathy
+data_bathy_interp = data_bathy_sel.interp(lon=xu_grid_uds.obj.mesh2d_node_x, lat=xu_grid_uds.obj.mesh2d_node_y).reset_coords(['lat','lon']) #interpolates lon/lat gebcodata to mesh2d_nNodes dimension #TODO: if these come from xu_grid_uds, the mesh2d_node_z var has no ugrid accessor since the dims are lat/lon instead of mesh2d_nNodes
+xu_grid_uds['mesh2d_node_z'] = data_bathy_interp.elevation.clip(max=10)
+
+import xugrid as xu
+uds1 = xu.open_dataset(r'p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\ModelBuilderOutput_JV\Bonaire_rgfgrid_net.nc')
+
+
+fig, ax = plt.subplots()
+xu_grid_uds.mesh2d_node_z.ugrid.plot(ax=ax,center=False)#TODO: ugrid is necessary for z-values plot, but introduces mesh2d_nNodes variable with range(len(mesh2d_nNodes)) as contents
+#ctx.add_basemap(ax=ax, crs='EPSG:4326', attribution=False)
 
 #write xugrid grid to netcdf
 netfile  = os.path.join(dir_output, f'{model_name}_net.nc')
-xu_grid_ds.to_netcdf(netfile)
-
+xu_grid_uds.ugrid.to_netcdf(netfile)
+breakit
 mdu.geometry.netfile = netfile #TODO: path is windows/unix dependent #TODO: providing os.path.basename(netfile) raises "ValidationError: 1 validation error for Geometry - netfile:   File: `C:\SnapVolumesTemp\MountPoints\{45c63495-0000-0000-0000-100000000000}\{79DE0690-9470-4166-B9EE-4548DC416BBD}\SVROOT\DATA\dfm_tools\tests\examples_workinprogress\Bonaire_net.nc` not found, skipped parsing." (wrong current directory)
+#TODO: with old gridstyle: "KeyError: 'An attribute for "mesh2d_node_x" was not found in nc file. Expected "mesh2d_node_x"'"
+#TODO: also with new gridstyle, but the vars are not required so should not raise an error.
 
 #%% initial and open boundary condition
 # TODO create polyline (currently this file is prerequisite)
@@ -154,18 +176,24 @@ mb.preprocess_merge_meteofiles(
 #TODO: reference mdu: p:\11209231-003-bes-modellering\hydrodynamica\hackathon\simulations\run001_mapInterval_1800_trac_newGrid\Bonaire.mdu
 #TODO: also compare settings in diafiles again
 mdu.geometry.bedlevuni = 5
-mdu.geometry.kmx = 20
-mdu.geometry.layertype = 1
-mdu.geometry.numtopsig = 20
-mdu.geometry.sigmagrowthfactor = 1.2
-mdu.geometry.dxdoubleat1dendnodes = 1
-mdu.geometry.changevelocityatstructures = 0
-mdu.geometry.changestructuredimensions = 1
-mdu.geometry.numtopsiguniform = 1
-mdu.geometry.dztop = 5.0
-mdu.geometry.floorlevtoplay = -5.0
-mdu.geometry.dztopuniabovez = -100.0
-mdu.geometry.keepzlayeringatbed = 2
+if 0: #TODO: this raises a segmentation error in dflowfm, report this
+    mdu.geometry.kmx = 2
+    mdu.geometry.layertype = 2
+    mdu.geometry.numtopsig = 20
+    mdu.geometry.sigmagrowthfactor = 1.2
+else:
+    mdu.geometry.kmx = 20
+    mdu.geometry.layertype = 1
+    mdu.geometry.numtopsig = 20
+    mdu.geometry.sigmagrowthfactor = 1.2
+    mdu.geometry.dxdoubleat1dendnodes = 1
+    mdu.geometry.changevelocityatstructures = 0
+    mdu.geometry.changestructuredimensions = 1
+    mdu.geometry.numtopsiguniform = 1
+    mdu.geometry.dztop = 5.0
+    mdu.geometry.floorlevtoplay = -5.0
+    mdu.geometry.dztopuniabovez = -100.0
+    mdu.geometry.keepzlayeringatbed = 2
 
 mdu.numerics.tlfsmo = 86400
 mdu.numerics.izbndpos = 1
@@ -195,10 +223,32 @@ mdu.wind.pavbnd = 101330
 #mdu.external_forcing.extforcefilenew = ext_file_new #TODO: relative paths?
 #mdu.external_forcing.windext = 1 #TODO: is set in reference mdu, automatically?
 
-#TODO: ValidationError: 5 validation errors for ExternalForcing
+#TODO: validationerror for extforcefilenew
+#ValidationError: 5 validation errors for ExternalForcing
 #extforcefilenew -> Bonaire_bc.ext -> boundary -> 0 -> forcingFile
 #  File: `\\directory.intra\Project\p\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\ModelBuilderOutput_JV\data\cmems\waterlevelbnd_bnd_CMEMS.bc` not found, skipped parsing. (type=value_error)
 #TODO: this is since paths are unix and we are validating on a windows system
+
+#TODO: when manually enabling extforcefilenew, we get this, but maybe because of non-spherical grid?
+#TODO: it does not happen when we use the rgfgrid version of the grid
+"""
+** INFO   : added node-based ghostcells:              0
+** INFO   : partition_fixorientation_ghostlist: number of reversed flowlinks=              0
+** INFO   : partition_fixorientation_ghostlist: number of reversed flowlinks=              0
+** INFO   : partition_fixorientation_ghostlist: number of reversed flowlinks=              0
+** INFO   : partition_fixorientation_ghostlist: number of reversed flowlinks=              0
+** INFO   : Done partitioning model.
+** INFO   : Done partitioning model.
+** INFO   : Done partitioning model.
+** INFO   : Done partitioning model.
+** ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated
+** ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated
+** ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated
+** ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated
+Abort(1) on node 0 (rank 0 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+Abort(1) on node 3 (rank 3 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 3
+Abort(1) on node 2 (rank 2 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 2
+"""
 
 mdu.time.refdate = pd.Timestamp(ref_date).strftime('%Y%m%d')
 mdu.time.tunit   = 'S'

@@ -409,7 +409,7 @@ def preprocess_merge_meteofiles(
 
 #GRIDGENERATION (NOW WITH MESHKERNEL), was before: p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\scripts\gridgeneration.py
 
-def make_basegrid(lon_min,lon_max,lat_min,lat_max,dx=0.05,dy=0.05,filepath='1_base_net.nc'):
+def make_basegrid(lon_min,lon_max,lat_min,lat_max,dx=0.05,dy=0.05,angle=0):
     print('modelbuilder.make_basegrid()')
     # create base grid
     nox = int(np.round((lon_max-lon_min)/dx))
@@ -417,7 +417,7 @@ def make_basegrid(lon_min,lon_max,lat_min,lat_max,dx=0.05,dy=0.05,filepath='1_ba
     
     make_grid_parameters = meshkernel.MakeGridParameters(num_columns=nox,
                                                          num_rows=noy,
-                                                         angle=0.0,
+                                                         angle=angle,
                                                          origin_x=lon_min,
                                                          origin_y=lat_min,
                                                          block_size_x=dx,
@@ -454,7 +454,7 @@ def refine_basegrid(mk, data_bathy_sel,min_face_size=0.1):
                                                                      min_face_size=min_face_size, #TODO: size in meters would be more convenient: https://github.com/Deltares/MeshKernelPy/issues/33
                                                                      refinement_type=meshkernel.RefinementType(1), #Wavecourant/1,
                                                                      connect_hanging_nodes=True, #set to False to do multiple refinement steps (e.g. for multiple regions)
-                                                                     account_for_samples_outside_face=False, #outsidecell argument for --refine?
+                                                                     account_for_samples_outside_face=True, #outsidecell argument for --refine?
                                                                      max_refinement_iterations=5,
                                                                      ) #TODO: missing the arguments dtmax (necessary?), hmin (min_face_size but then in meters instead of degrees), smoothiters (currently refinement is patchy along coastlines, goes good in dflowfm exec after additional implementation of HK), spherical 1/0 (necessary?)
     
@@ -473,77 +473,6 @@ def refine_basegrid(mk, data_bathy_sel,min_face_size=0.1):
     return mk
 
 
-def remove_grid_withldb(mk,file_ldb=None):
-    print('>> reading+converting ldb: ',end='')
-    dtstart = dt.datetime.now()
-    if file_ldb is None:
-        file_ldb = r'p:\1230882-emodnet_hrsm\global_tide_surge_model\trunk\scripts_gtsm5\landboundary\GSHHS_intermediate_min1000km2.ldb'
-    pol_ldb = hcdfm.PolyFile(Path(file_ldb))
-    pol_ldb_list = [dfmt.pointlike_to_DataFrame(x) for x in pol_ldb.objects] #TODO, this is quite slow, speed up possible?
-    pol_ldb_list = [x for x in pol_ldb_list if len(x)>1000] #filter only large polygons for performance
-    print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
-    
-    for iP, pol_del in enumerate(pol_ldb_list): #TODO: also possible without loop? >> geometry_separator=-999.9 so that value can be used to concat polygons. >> use hydrolib poly as input? https://github.com/Deltares/MeshKernelPy/issues/35
-        delete_pol_geom = meshkernel.GeometryList(x_coordinates=pol_del['x'].to_numpy(), y_coordinates=pol_del['y'].to_numpy()) #TODO: .copy()/to_numpy() makes the array contiguous in memory, which is necessary for meshkernel.mesh2d_delete()
-        mk.mesh2d_delete(geometry_list=delete_pol_geom, 
-                         delete_option=meshkernel.DeleteMeshOption(2), #ALL_COMPLETE_FACES/2: Delete all faces of which the complete face is inside the polygon
-                         invert_deletion=False) #TODO: cuts away link that is neccesary, so results in non-orthogonal grid
-    return mk
     
 
 
-def xugrid_interp_bathy(mk,data_bathy_sel):
-    print('modelbuilder.xugrid_interp_bathy()')
-    mesh2d_grid3 = mk.mesh2d_get()
-
-    xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid3)
-    if 0: #** WARNING: Could not read mesh face x-coordinates
-        xu_grid_ds = xu_grid.assign_face_coords(xu_grid.to_dataset()) #this adds face_coordinates variables to file, step might not be necessary in the future: https://github.com/Deltares/xugrid/issues/67
-    elif 1: #SUCCESSFUL PARTITIONING AND RUN #remove set topology_dimension to 1 (faces are not used)
-        xu_grid_ds = xu_grid.to_dataset()
-        xu_grid_ds['mesh2d'] = xu_grid_ds.mesh2d.assign_attrs({'topology_dimension':1})
-    else: #** WARNING: Could not read mesh face x-coordinates
-        xu_grid_ds = xu_grid.to_dataset()
-
-    fig, ax = plt.subplots()
-    xu_grid.plot(ax=ax)
-    ctx.add_basemap(ax=ax, crs='EPSG:4326', attribution=False)
-    
-    #interp bathy
-    data_bathy_interp = data_bathy_sel.interp(lon=xu_grid_ds.mesh2d_node_x, lat=xu_grid_ds.mesh2d_node_y).reset_coords(['lat','lon']) #interpolates lon/lat gebcodata to mesh2d_nNodes dimension #TODO: if these come from xu_grid_uds, the mesh2d_node_z var has no ugrid accessor since the dims are lat/lon instead of mesh2d_nNodes
-    xu_grid_ds['mesh2d_node_z'] = data_bathy_interp.elevation.clip(max=10)
-    
-    # add attrs (to projected_coordinate_system/wgs84 empty int variable): should depend on is_geographic flag in make_basegrid()
-    attribute_dict = {
-        'name': 'WGS84',
-        'epsg': np.array([4326], dtype=int),
-        'grid_mapping_name': 'Unknown projected',
-        'longitude_of_prime_meridian': np.array([0.0], dtype=float),
-        'semi_major_axis': np.array([6378137.0], dtype=float),
-        'semi_minor_axis': np.array([6356752.314245], dtype=float),
-        'inverse_flattening': np.array([6356752.314245], dtype=float),
-        'EPSG_code': 'EPSG:4326',
-        'value': 'value is equal to EPSG code'}
-    xu_grid_ds['wgs84'] = xr.DataArray(np.array(0,dtype=int),dims=(),attrs=attribute_dict)
-    # add conventions (global attributes)
-    conventions = {
-        'institution': 'Deltares',
-        'references': 'http://www.deltares.nl',
-        'source': 'Hackaton Moonshots 2 and 3',
-        'history': 'Created on %s, %s'%(dt.datetime.now().strftime('%Y-%m-%dT%H:%M:%S%z'),getpass.getuser()),
-        #TODO: this matters since dflowfm behaves differently based on convention versions
-        #'Conventions': 'CF-1.6 UGRID-1.0/Deltares-0.8', #from gridgeneration.py #** WARNING: Could not read mesh face x-coordinates. Check any previous warnings.
-        'Conventions': 'CF-1.8 UGRID-1.0/Deltares-0.10', #from io_ugrid.F90 #** WARNING: Could not read mesh face x-coordinates. Check any previous warnings.
-        #'Conventions': 'CF-1.8 UGRID-0.9/Deltares-0.10', #** WARNING: NetCDF error: NetCDF: Invalid dimension ID or name (nNetNode)
-        #'Conventions': 'CF-1.8 UGRID-0.8/Deltares-0.10', #** WARNING: NetCDF error: NetCDF: Invalid dimension ID or name (nNetNode)
-        #'Conventions': 'Deltares-0.10', #** WARNING: NetCDF error: NetCDF: Invalid dimension ID or name (nNetNode)
-        #'Conventions': 'UGRID-0.9', #** WARNING: NetCDF error: NetCDF: Invalid dimension ID or name (nNetNode)
-        }
-    xu_grid_ds = xu_grid_ds.assign_attrs(conventions)
-    
-    xu_grid_uds = xu.UgridDataset(xu_grid_ds) #TODO: ugrid is necessary for z-values plot, but introduces mesh2d_nNodes variable with range(len(mesh2d_nNodes)) as contents
-    fig, ax = plt.subplots()
-    xu_grid_uds.mesh2d_node_z.ugrid.plot(ax=ax,center=False)
-    ctx.add_basemap(ax=ax, crs='EPSG:4326', attribution=False)
-
-    return xu_grid_ds

@@ -11,6 +11,7 @@ from dfm_tools.download import *
 from dfm_tools.get_nc import *
 from dfm_tools.get_nc_helpers import *
 from dfm_tools.hydrolib_helpers import *
+from dfm_tools.meshkernel_helpers import *
 from dfm_tools.interpolate_grid2bnd import *
 from dfm_tools.linebuilder import *
 from dfm_tools.modplot import *
