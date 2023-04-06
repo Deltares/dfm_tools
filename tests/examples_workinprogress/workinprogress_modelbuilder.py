@@ -10,7 +10,7 @@ import os
 import matplotlib.pyplot as plt
 plt.close('all')
 import dfm_tools as dfmt
-mb = dfmt #from dfm_tools import dfm_modelbuilder as mb
+from dfm_tools import modelbuilder as mb #different import for modelbuilder since it is not exposed publicly
 import hydrolib.core.dflowfm as hcdfm
 #import shutil
 import xarray as xr
@@ -20,6 +20,9 @@ import pandas as pd
 model_name = 'Bonaire'
 dir_output = r'p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\ModelBuilderOutput_JV'
 path_style = 'unix' # windows / unix
+
+# path to polyline: this is the only file that is not created in the script, besides: obsfiles, dimr.xml and the submit script
+poly_file = os.path.join(dir_output, 'bnd.pli')
 
 #TODO: reference run in: p:\11209231-003-bes-modellering\hydrodynamica\hackathon\simulations\run001_mapInterval_1800_waq_newGrid
 
@@ -45,34 +48,34 @@ dir_output_data = os.path.join(dir_output, 'data')
 if not os.path.isdir(dir_output_data):
     os.mkdir(dir_output_data)
 
-#%% mdu
+#%% initialize mdu/ext files
 mdu_file = os.path.join(dir_output, f'{model_name}.mdu')
-ext_file_new = os.path.join(dir_output, f'{model_name}_bc.ext')
-
 mdu = hcdfm.FMModel()
+ext_file_new = os.path.join(dir_output, f'{model_name}_bc.ext')
 ext_bnd = hcdfm.ExtModel()
+ext_file_old = os.path.join(dir_output, f'{model_name}.ext')
 #TODO: initialize old extmodel
 
-#%% GEBCO bathymetry and Grid generation
 
+#%% grid generation
+# GEBCO bathymetry and Grid generation
 #select and plot bathy
 file_nc_bathy = r'p:\metocean-data\open\GEBCO\2021\GEBCO_2021.nc'
 data_bathy = xr.open_dataset(file_nc_bathy)
 data_bathy_sel = data_bathy.sel(lon=slice(lon_min-1,lon_max+1),lat=slice(lat_min-1,lat_max+1))
 
-#TODO: grid generation/refinement based on bathy still to be improved in meshkernel (https://github.com/Deltares/dfm_tools/issues/234), replace if fixed
+#TODO: grid generation/refinement based on bathy still to be improved in meshkernel (https://github.com/Deltares/dfm_tools/issues/234)
 mk_object = mb.make_basegrid(lon_min, lon_max, lat_min, lat_max) #TODO: should be sperical, but is cartesian >> is_geographic keywork does not work yet
 
 #refine
 min_face_size = 200/(40075*1000/360) #convert meters to degrees
-mb.refine_basegrid(mk=mk_object, data_bathy_sel=data_bathy_sel, min_face_size=min_face_size) #TODO: min_face_size is now in degrees instead of meters
-#TODO: gives errors in model run: ** ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated
+mb.refine_basegrid(mk=mk_object, data_bathy_sel=data_bathy_sel, min_face_size=min_face_size) #TODO: min_face_size is now in degrees instead of meters (maybe already works when is_geographic=True?)
 
 #cutcells
 file_ldb = r'p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\grid\coastline.pli'
 dfmt.meshkernel_delete_withpol(mk=mk_object,file_ldb=file_ldb)
 
-#TODO: cleanup grid?
+#TODO: cleanup grid necessary?
 # print('mk_object.mesh2d_get_obtuse_triangles_mass_centers()')
 # print(mk_object.mesh2d_get_obtuse_triangles_mass_centers())
 # print('mk_object.mesh2d_get_hanging_edges()')
@@ -83,89 +86,85 @@ xu_grid_uds = dfmt.meshkernel_to_UgridDataset(mk=mk_object)
 
 #TODO: when providing mk=net_base, the grid is still refined, so mk is changed in-place (how to properly code this)
 #interp bathy
-data_bathy_interp = data_bathy_sel.interp(lon=xu_grid_uds.obj.mesh2d_node_x, lat=xu_grid_uds.obj.mesh2d_node_y).reset_coords(['lat','lon']) #interpolates lon/lat gebcodata to mesh2d_nNodes dimension #TODO: if these come from xu_grid_uds, the mesh2d_node_z var has no ugrid accessor since the dims are lat/lon instead of mesh2d_nNodes
+data_bathy_interp = data_bathy_sel.interp(lon=xu_grid_uds.obj.mesh2d_node_x, lat=xu_grid_uds.obj.mesh2d_node_y).reset_coords(['lat','lon']) #interpolates lon/lat gebcodata to mesh2d_nNodes dimension #TODO: if these come from xu_grid_uds (without ojb), the mesh2d_node_z var has no ugrid accessor since the dims are lat/lon instead of mesh2d_nNodes
 xu_grid_uds['mesh2d_node_z'] = data_bathy_interp.elevation.clip(max=10)
 
 fig, ax = plt.subplots()
-xu_grid_uds.mesh2d_node_z.ugrid.plot(ax=ax,center=False)#TODO: ugrid is necessary for z-values plot, but introduces mesh2d_nNodes variable with range(len(mesh2d_nNodes)) as contents
+xu_grid_uds.mesh2d_node_z.ugrid.plot(ax=ax,center=False)
 #ctx.add_basemap(ax=ax, crs='EPSG:4326', attribution=False)
 
 #write xugrid grid to netcdf
 netfile  = os.path.join(dir_output, f'{model_name}_net.nc')
 xu_grid_uds.ugrid.to_netcdf(netfile)
-breakit
 mdu.geometry.netfile = netfile #TODO: path is windows/unix dependent #TODO: providing os.path.basename(netfile) raises "ValidationError: 1 validation error for Geometry - netfile:   File: `C:\SnapVolumesTemp\MountPoints\{45c63495-0000-0000-0000-100000000000}\{79DE0690-9470-4166-B9EE-4548DC416BBD}\SVROOT\DATA\dfm_tools\tests\examples_workinprogress\Bonaire_net.nc` not found, skipped parsing." (wrong current directory)
-#TODO: with old gridstyle: "KeyError: 'An attribute for "mesh2d_node_x" was not found in nc file. Expected "mesh2d_node_x"'"
-#TODO: also with new gridstyle, but the vars are not required so should not raise an error.
+#breakit
 
-#%% initial and open boundary condition
-# TODO create polyline (currently this file is prerequisite)
-poly_file = os.path.join(dir_output, 'bnd.pli')
-
-#%% CMEMS
-# CMEMS - download
-dir_output_data_cmems = os.path.join(dir_output_data, 'cmems')
-if not os.path.isdir(dir_output_data_cmems):
-    os.mkdir(dir_output_data_cmems)
+if 1:
+    #%% new ext: initial and open boundary condition
     
-mb.download_meteodata_oceandata(
-    longitude_min = lon_min, longitude_max = lon_max, latitude_min = lat_min, latitude_max = lat_max,
-    model = 'CMEMS',
-    date_min = date_min, date_max = date_max,
-    varlist = ['so','thetao','uo','vo','zos'],
-    dir_output = dir_output_data_cmems)
-
-# CMEMS - boundary conditions file (.bc) (and add to ext_bnd)
-ext_bnd = mb.preprocess_interpolate_nc_to_bc(ext_bnd=ext_bnd, #TODO: is 12h on day before also downloaded/selected?
-                                             refdate_str = 'minutes since '+ref_date+' 00:00:00 +00:00',
-                                             dir_output = dir_output,
-                                             model = 'CMEMS',
-                                             tstart = date_min,
-                                             tstop = date_max,
-                                             list_plifiles = [poly_file],
-                                             dir_sourcefiles_hydro = dir_output_data_cmems)
-
-#save new ext file
-ext_bnd.save(filepath=ext_file_new,path_style=path_style)
-
-
-#%% old ext
-
-# CMEMS - initial condition file
-mb.preprocess_ini_cmems_to_nc(tSimStart=dt.datetime.strptime(date_min, '%Y-%m-%d'),
-                              dir_data=dir_output_data_cmems,
-                              dir_out=dir_output)
-
-# ERA5 - download
-dir_output = os.path.join(dir_output_data, 'ERA5')
-if not os.path.isdir(dir_output):
-    os.mkdir(dir_output)
+    # CMEMS
+    # CMEMS - download
+    dir_output_data_cmems = os.path.join(dir_output_data, 'cmems')
+    if not os.path.isdir(dir_output_data_cmems):
+        os.mkdir(dir_output_data_cmems)
+        
+    mb.download_meteodata_oceandata(
+        longitude_min = lon_min, longitude_max = lon_max, latitude_min = lat_min, latitude_max = lat_max,
+        model = 'CMEMS',
+        date_min = date_min, date_max = date_max,
+        varlist = ['so','thetao','uo','vo','zos'],
+        dir_output = dir_output_data_cmems)
     
-if ERA5_meteo_option == 0:
-    varlist = [['msl']]
-elif ERA5_meteo_option == 1:
-    varlist = [['msl','u10n','v10n','chnk']]
-elif ERA5_meteo_option == 2:
-    varlist = [['msl','u10n','v10n','chnk'],['d2m','t2m','tcc'],['ssr','strd'],['mer','mtpr']]
-    #TODO does it loop correctly over all lists?  
-           
-mb.download_meteodata_oceandata(
-    longitude_min = lon_min, longitude_max = lon_max, latitude_min = lat_min, latitude_max = lat_max,
-    model = 'ERA5',
-    date_min = date_min, date_max = date_max,
-    varlist = varlist, # check variables_dict in dfmt.download_ERA5() for valid names
-    dir_output = dir_output_data)
+    # CMEMS - boundary conditions file (.bc) (and add to ext_bnd)
+    ext_bnd = mb.preprocess_interpolate_nc_to_bc(ext_bnd=ext_bnd,
+                                                 refdate_str = 'minutes since '+ref_date+' 00:00:00 +00:00',
+                                                 dir_output = dir_output,
+                                                 model = 'CMEMS',
+                                                 tstart = date_min,
+                                                 tstop = date_max,
+                                                 list_plifiles = [poly_file],
+                                                 dir_sourcefiles_hydro = dir_output_data_cmems)
+    
+    #save new ext file #TODO: add below dataset to oldextmodel
+    ext_bnd.save(filepath=ext_file_new,path_style=path_style)
+    
+    
+    #%% old ext
+    
+    # CMEMS - initial condition file #TODO: add iniconditions to new or old extfile?
+    mb.preprocess_ini_cmems_to_nc(tSimStart=dt.datetime.strptime(date_min, '%Y-%m-%d'),
+                                  dir_data=dir_output_data_cmems,
+                                  dir_out=dir_output)
+    
+if 1:
+    # ERA5 - download
+    dir_output_data_era5 = os.path.join(dir_output_data,'ERA5')
+    if not os.path.exists(dir_output_data_era5):
+        os.mkdir(dir_output_data_era5)
+        
+    if ERA5_meteo_option == 0:
+        varlist = [['msl']]
+    elif ERA5_meteo_option == 1:
+        varlist = [['msl','u10n','v10n','chnk']]
+    elif ERA5_meteo_option == 2:
+        varlist = [['msl','u10n','v10n','chnk'],['d2m','t2m','tcc'],['ssr','strd'],['mer','mtpr']]
+        #TODO does it loop correctly over all lists?
+               
+    mb.download_meteodata_oceandata(
+        longitude_min = lon_min, longitude_max = lon_max, latitude_min = lat_min, latitude_max = lat_max,
+        model = 'ERA5',
+        date_min = date_min, date_max = date_max,
+        varlist = varlist, # check variables_dict in dfmt.download_ERA5() for valid names
+        dir_output = dir_output_data_era5)
+    
+    # ERA5 meteo - convert to netCDF for usage in Delft3D FM
+    mb.preprocess_merge_meteofiles(
+            mode = 'ERA5',
+            varkey_list = varlist,
+            dir_data = dir_output_data_era5,
+            dir_output = dir_output,
+            time_slice = slice(date_min, date_max))
 
-# ERA5 meteo - convert to netCDF for usage in Delft3D FM
-mb.preprocess_merge_meteofiles(
-        mode = 'ERA5',
-        varkey_list = varlist,
-        dir_data = dir_output_data,
-        dir_output = dir_output,
-        time_slice = slice(date_min, date_max))
-
-#%% obs points
-#TODO: add obs points
 
 #%% .mdu settings
 #TODO: missing keywords to be added to hydrolib-core: https://github.com/Deltares/HYDROLIB-core/issues/486.
@@ -196,7 +195,7 @@ mdu.numerics.izbndpos = 1
 #mdu.numerics.mintimestepbreak = 0.1 #TODO: add to hydrolib-core
 #mdu.numerics.keepstbndonoutflow = 1 #TODO: add to hydrolib-core
 
-mdu.physics.tidalforcing = 1 #TODO: is 0 in diafile
+mdu.physics.tidalforcing = 1 #TODO: is 0 in diafile (maybe because of non-spherical grid)
 mdu.physics.salinity = 1
 mdu.physics.temperature = 5 #TODO: is 1 in diafile
 mdu.physics.initialsalinity = 33.8
@@ -207,26 +206,50 @@ mdu.physics.secchidepth = 4
 #mdu.physics.salimax = 50 #TODO: add to hydrolib-core
 #mdu.physics.tempmax = 50 #TODO: add to hydrolib-core
 #mdu.physics.iniwithnudge = 2 #TODO: add to hydrolib-core
-#mdu.physics.jasfer3d = 1 #TODO: is 0 in file but should be 1 automatically, might cause model instability (caused by non spherical grid)
+#mdu.physics.jasfer3d = 1 #TODO: is 0 in file but should be 1 automatically, might cause model instability (might be caused by non spherical grid)
 
 mdu.wind.icdtyp = 4
-#TODO: also add cdbreakpoints?
+#TODO: also add cdbreakpoints for ERA5?
 mdu.wind.rhoair = 1.2265
 mdu.wind.relativewind = 0.5
 mdu.wind.pavbnd = 101330
 
-#mdu.external_forcing.extforcefile = f'{model_name}.ext' #TODO: is not written, but should be (with meteo)
-#mdu.external_forcing.extforcefilenew = ext_file_new #TODO: relative paths?
-#mdu.external_forcing.windext = 1 #TODO: is set in reference mdu, automatically?
+#mdu.external_forcing.extforcefile = ext_file_old #TODO: is not written, but should be (with meteo)
+#mdu.external_forcing.extforcefilenew = ext_file_new #TODO: relative paths? #TODO: extfile not found with path_style='unix': https://github.com/Deltares/HYDROLIB-core/issues/516
+#mdu.external_forcing.windext = 1 #TODO: is set in reference mdu, happens automatically?
 
-#TODO: validationerror for extforcefilenew
-#ValidationError: 5 validation errors for ExternalForcing
-#extforcefilenew -> Bonaire_bc.ext -> boundary -> 0 -> forcingFile
-#  File: `\\directory.intra\Project\p\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\ModelBuilderOutput_JV\data\cmems\waterlevelbnd_bnd_CMEMS.bc` not found, skipped parsing. (type=value_error)
-#TODO: this is since paths are unix and we are validating on a windows system
 
-#TODO: when manually enabling extforcefilenew, we get this, but maybe because of non-spherical grid?
-#TODO: it does not happen when we use the rgfgrid version of the grid
+mdu.time.refdate = pd.Timestamp(ref_date).strftime('%Y%m%d')
+mdu.time.tunit   = 'S'
+mdu.time.dtmax   = 300
+mdu.time.tstart  = (dt.datetime.strptime(date_min,'%Y-%m-%d') - dt.datetime.strptime(ref_date,'%Y-%m-%d')).total_seconds() #TODO: replace with timestring keyword
+mdu.time.tstop   = (dt.datetime.strptime(date_max,'%Y-%m-%d') - dt.datetime.strptime(ref_date,'%Y-%m-%d')).total_seconds()
+#mdu.time.Startdatetime  = pd.Timestamp(date_min).strftime('%Y%m%d%H%M%S') #TODO: add to hydrolib-core
+#mdu.time.Stopdatetime   = pd.Timestamp(date_max).strftime('%Y%m%d%H%M%S') #TODO: add to hydrolib-core
+#mdu.time.autotimestep = 3 #TODO: add to hydrolib-core
+
+mdu.output.obsfile = [os.path.join(dir_output,x) for x in ['osm_beach_centroids_offset_bonaire.xyn','stations_obs.xyn']] #TODO: validation error
+mdu.output.hisinterval = [60]
+mdu.output.mapinterval = [1800]#[86400]
+
+
+#%% export model
+mdu.save(mdu_file,path_style=path_style)
+#TODO: if windows/unix extfile validation is fixed, use relative paths in .ext and in .mdu files
+#TODO: investigate recurse saving
+
+
+#%% model run
+#TODO: hydrolib-core written mdu-file contains old keywords
+"""
+** WARNING: While reading 'Bonaire.mdu': keyword [numerics] qhrelax=0.01 was in file, but not used. Check possible typo.
+** WARNING: While reading 'Bonaire.mdu': keyword [wind] windspeedbreakpoints=0.0 100.0 was in file, but not used. Check possible typo.
+** WARNING: While reading 'Bonaire.mdu': keyword [output] wrishp_enc=0 was in file, but not used. Check possible typo.
+** WARNING: While reading 'Bonaire.mdu': keyword [output] waterlevelclasses=0.0 was in file, but not used. Check possible typo.
+** WARNING: While reading 'Bonaire.mdu': keyword [output] waterdepthclasses=0.0 was in file, but not used. Check possible typo.
+"""
+
+#TODO: when manually enabling extforcefilenew, we get the messages below, but maybe because of non-spherical grid or mdu settings?
 """
 ** INFO   : added node-based ghostcells:              0
 ** INFO   : partition_fixorientation_ghostlist: number of reversed flowlinks=              0
@@ -246,36 +269,4 @@ Abort(1) on node 3 (rank 3 in comm 0): application called MPI_Abort(MPI_COMM_WOR
 Abort(1) on node 2 (rank 2 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 2
 """
 
-mdu.time.refdate = pd.Timestamp(ref_date).strftime('%Y%m%d')
-mdu.time.tunit   = 'S'
-mdu.time.dtmax   = 300
-mdu.time.tstart  = (dt.datetime.strptime(date_min,'%Y-%m-%d') - dt.datetime.strptime(ref_date,'%Y-%m-%d')).total_seconds() #TODO: replace with timestring keyword
-mdu.time.tstop   = (dt.datetime.strptime(date_max,'%Y-%m-%d') - dt.datetime.strptime(ref_date,'%Y-%m-%d')).total_seconds()
-#mdu.time.Startdatetime  = pd.Timestamp(date_min).strftime('%Y%m%d%H%M%S') #TODO: add to hydrolib-core
-#mdu.time.Stopdatetime   = pd.Timestamp(date_max).strftime('%Y%m%d%H%M%S') #TODO: add to hydrolib-core
-#mdu.time.autotimestep = 3 #TODO: add to hydrolib-core
-
-#mdu.output.obsfile = #TODO: add obsfile
-mdu.output.hisinterval = [60]
-mdu.output.mapinterval = [1800]#[86400]
-
-#%% export model
-mdu.save(mdu_file,path_style=path_style)
-# TODO: relative paths in .ext
-#TODO: model is instable (2000m waterlevel on second mapfile timestep)
-"""
-#TODO: hydrolib-core written mdu-file contains old keywords
-** WARNING: While reading 'Bonaire.mdu': keyword [numerics] qhrelax=0.01 was in file, but not used. Check possible typo.
-** WARNING: While reading 'Bonaire.mdu': keyword [wind] windspeedbreakpoints=0.0 100.0 was in file, but not used. Check possible typo.
-** WARNING: While reading 'Bonaire.mdu': keyword [output] wrishp_enc=0 was in file, but not used. Check possible typo.
-** WARNING: While reading 'Bonaire.mdu': keyword [output] waterlevelclasses=0.0 was in file, but not used. Check possible typo.
-** WARNING: While reading 'Bonaire.mdu': keyword [output] waterdepthclasses=0.0 was in file, but not used. Check possible typo.
-"""
-
-#TODO: QP warning:
-"""
-Unable to merge the partitions
-Too many outputs requested.  Most likely cause is missing [] around left hand side that has a comma separated list expansion.
-In private\nc_interpret>nc_mapmerge at line 1878
-In private\nc_interpret at line 91
-"""
+#TODO: missing faces in quickplot, maybe because instable model

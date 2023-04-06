@@ -22,7 +22,7 @@ def meshkernel_delete_withpol(mk, file_ldb, minpoints=None):
     print('>> reading+converting ldb: ',end='')
     dtstart = dt.datetime.now()
     pol_ldb = hcdfm.PolyFile(file_ldb)
-    pol_ldb_list = [pointlike_to_DataFrame(x) for x in pol_ldb.objects] #TODO, this is quite slow, speed up possible?
+    pol_ldb_list = [pointlike_to_DataFrame(x) for x in pol_ldb.objects] #TODO: this is quite slow, speed up possible?
     if minpoints is not None:
         pol_ldb_list = [x for x in pol_ldb_list if len(x)>minpoints] #filter only large polygons for performance
     for iP, pol_ldb in enumerate(pol_ldb_list):
@@ -42,8 +42,10 @@ def meshkernel_to_UgridDataset(mk:meshkernel.meshkernel.MeshKernel) -> xr.Datase
     mesh2d_grid3 = mk.mesh2d_get()
 
     xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid3)
+    
+    #convert to dataset
     #xu_grid_ds = xu_grid.to_dataset()
-    xu_grid_ds = xu_grid.assign_face_coords(xu_grid.to_dataset()) #TODO: face_coords are necessary for hydrolib-core mdu.geometry.network validation, report this
+    xu_grid_ds = xu_grid.assign_face_coords(xu_grid.to_dataset()) #TODO: face_coords are necessary for hydrolib-core mdu.geometry.network validation: https://github.com/Deltares/HYDROLIB-core/issues/515
     
     #convert 0-based to 1-based grid #TODO: FM kernel needs 1-based grid, but it should read the attributes instead. Report this (#ug_get_meshgeom, #12, ierr=0. ** WARNING: Could not read mesh face x-coordinates)
     varn_fnc = xu_grid_ds.mesh2d.attrs['face_node_connectivity'] #TODO: maybe also do for edge_node_connectivity
@@ -72,5 +74,5 @@ def meshkernel_to_UgridDataset(mk:meshkernel.meshkernel.MeshKernel) -> xr.Datase
     #     'value': 'value is equal to EPSG code'}
     # xu_grid_ds['wgs84'] = xr.DataArray(np.array(0,dtype=int),dims=(),attrs=attribute_dict)
     
-    xu_grid_uds = xu.UgridDataset(xu_grid_ds)
+    xu_grid_uds = xu.UgridDataset(xu_grid_ds) #TODO: conversion to UgridDataset introduces mesh2d_nNodes variable with range(len(mesh2d_nNodes)) as contents, report?
     return xu_grid_uds

@@ -20,7 +20,7 @@ from dfm_tools.xarray_helpers import *
 from dfm_tools.energy_dissipation import *
 from dfm_tools.bathymetry import *
 from dfm_tools.io.tim import * #TODO: remove this when moved to hydrolib
-from dfm_tools.modelbuilder import *
+#from dfm_tools.modelbuilder import * #commented since we do not want to expose these functions with hardcoded parameters
 
 import warnings
 warnings.filterwarnings('always',category=DeprecationWarning)
