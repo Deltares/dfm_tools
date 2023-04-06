@@ -136,7 +136,6 @@ if 1:
                                   dir_data=dir_output_data_cmems,
                                   dir_out=dir_output)
     
-if 1:
     # ERA5 - download
     dir_output_data_era5 = os.path.join(dir_output_data,'ERA5')
     if not os.path.exists(dir_output_data_era5):
