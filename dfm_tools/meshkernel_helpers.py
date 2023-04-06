@@ -13,6 +13,8 @@ import hydrolib.core.dflowfm as hcdfm
 import pandas as pd
 from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame
 import getpass
+from importlib.metadata import version
+dfmt_version = version('dfm_tools') #TODO: cleaner way to do this?
 
 
 def meshkernel_delete_withpol(mk, file_ldb, minpoints=None):
@@ -53,11 +55,9 @@ def meshkernel_to_UgridDataset(mk:meshkernel.meshkernel.MeshKernel) -> xr.Datase
     xu_grid_ds = xu_grid_ds.assign_attrs({#'Conventions': 'CF-1.8 UGRID-1.0 Deltares-0.10', #add Deltares convention (was CF-1.8 UGRID-1.0)
                                           'institution': 'Deltares',
                                           'references': 'https://www.deltares.nl',
-                                          'source': f'meshkernel {meshkernel.__version__} and xugrid {xu.__version__}',
+                                          'source': f'Created with meshkernel {meshkernel.__version__}, xugrid {xu.__version__} and dfm_tools {dfmt_version}',
                                           'history': 'Created on %s, %s'%(dt.datetime.now().strftime('%Y-%m-%dT%H:%M:%S%z'),getpass.getuser()), #TODO: add timezone
                                           })
-
-    #TODO: add more global attributes (Deltares, website, source:meshkernel+xugrid,
     
     # add attrs (to projected_coordinate_system/wgs84 empty int variable): #TODO: should depend on is_geographic flag in make_basegrid()
     # attribute_dict = {

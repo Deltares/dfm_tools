@@ -86,10 +86,6 @@ xu_grid_uds = dfmt.meshkernel_to_UgridDataset(mk=mk_object)
 data_bathy_interp = data_bathy_sel.interp(lon=xu_grid_uds.obj.mesh2d_node_x, lat=xu_grid_uds.obj.mesh2d_node_y).reset_coords(['lat','lon']) #interpolates lon/lat gebcodata to mesh2d_nNodes dimension #TODO: if these come from xu_grid_uds, the mesh2d_node_z var has no ugrid accessor since the dims are lat/lon instead of mesh2d_nNodes
 xu_grid_uds['mesh2d_node_z'] = data_bathy_interp.elevation.clip(max=10)
 
-import xugrid as xu
-uds1 = xu.open_dataset(r'p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\ModelBuilderOutput_JV\Bonaire_rgfgrid_net.nc')
-
-
 fig, ax = plt.subplots()
 xu_grid_uds.mesh2d_node_z.ugrid.plot(ax=ax,center=False)#TODO: ugrid is necessary for z-values plot, but introduces mesh2d_nNodes variable with range(len(mesh2d_nNodes)) as contents
 #ctx.add_basemap(ax=ax, crs='EPSG:4326', attribution=False)

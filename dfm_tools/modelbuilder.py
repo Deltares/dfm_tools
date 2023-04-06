@@ -21,8 +21,6 @@ import numpy as np
 
 #gridgen
 import meshkernel
-import xugrid as xu
-import getpass
 
 
 #MODELBUILDER: p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\scripts\dfm_ModelBuilder_functions.py
