@@ -5,6 +5,32 @@ Created on Tue Mar 14 17:38:58 2023
 @author: veenstra
 """
 
+#TODO: A SIMPLE WORKFLOW WITH MATPLOTLIB SEEMS TO WORK MORE EFFICIENT THAN SHAPELY?
+
+import matplotlib as mpl
+import numpy as np
+
+delete_pol = np.array([[ 1.91741935, 49.76580645],
+                        [ 0.20387097, 49.9       ],
+                        [-0.25032258, 48.71290323],
+                        [ 1.92774194, 48.59935484],
+                        ])
+
+# xPO = delete_pol[:,0]
+# yPO = delete_pol[:,1]
+# xyPO = [(x,y) for x,y in zip(xPO,yPO)]
+# poly = mpl.path.Path(xyPO)
+poly = mpl.path.Path(delete_pol)
+
+lonvals,latvals = [1,2],[49,49]
+gridPoints = np.vstack((lonvals,latvals)).T
+gridMask   = poly.contains_points(gridPoints)
+print(gridMask)
+
+
+
+#BELOW IS A WORKFLOW WITH SHAPELY
+
 import os
 import numpy as np
 import xarray as xr
@@ -15,6 +41,7 @@ import dfm_tools as dfmt
 import cartopy
 import cartopy.crs as ccrs
 from shapely.geometry import Point
+
 
 # modelrun settings
 crs = 4326
