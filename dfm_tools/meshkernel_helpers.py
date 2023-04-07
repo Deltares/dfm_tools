@@ -13,9 +13,6 @@ import hydrolib.core.dflowfm as hcdfm
 import pandas as pd
 from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame
 import getpass
-from importlib.metadata import version
-dfmt_version = version('dfm_tools') #TODO: cleaner way to do this?
-
 
 def meshkernel_delete_withpol(mk, file_ldb, minpoints=None):
     
@@ -53,7 +50,9 @@ def meshkernel_to_UgridDataset(mk:meshkernel.meshkernel.MeshKernel) -> xr.Datase
         xu_grid_ds[varn_fnc] += 1
         xu_grid_ds[varn_fnc].attrs["_FillValue"] += 1
         xu_grid_ds[varn_fnc].attrs["start_index"] += 1
-        
+    
+    from importlib.metadata import version
+    dfmt_version = version('dfm_tools') #TODO: cleaner way to do this?
     xu_grid_ds = xu_grid_ds.assign_attrs({#'Conventions': 'CF-1.8 UGRID-1.0 Deltares-0.10', #add Deltares convention (was CF-1.8 UGRID-1.0)
                                           'institution': 'Deltares',
                                           'references': 'https://www.deltares.nl',
