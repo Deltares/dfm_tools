@@ -34,7 +34,7 @@ def download_meteodata_oceandata(
         date_max = '2010-01-02',
         varlist = [], 
         dir_output = './meteo_ocean_data',
-        make_figs = True
+        make_figs = False
         ):
      
     #download ERA5/CMEMS/HYCOM data for given domain, time extent and variables
@@ -60,16 +60,7 @@ def download_meteodata_oceandata(
                                    date_min=date_min, date_max=date_max,
                                    dir_output=dir_output, overwrite=overwrite)
             
-                #open mfdataset to check folder contents
-                if make_figs:
-                    ds = xr.open_mfdataset(os.path.join(dir_output,f'era5_{varkey}_*.nc'))
-                    ds.close()
-                    fig,ax = plt.subplots()
-                    ds[varkey].isel(time=0).plot(ax=ax)
-                    ctx.add_basemap(ax=ax,crs="EPSG:4326",attribution=False)
-                    #TODO    file_out = os.path.join(dir_output, f'era5_{varkey}_{time_start_str}to{time_stop_str}')
-                    #TODO    name_output = f'era5_{varkey}_{dt.datetime.strftime(ds[varkey].time[0],"%Y-%m")}.nc'
-                    #TODO    fig.savefig(file_out)
+
     
     
     #CMEMS
@@ -98,17 +89,7 @@ def download_meteodata_oceandata(
                                   longitude_min=longitude_min-1/12, longitude_max=longitude_max+1/12, latitude_min=latitude_min-1/12, latitude_max=latitude_max+1/12, # download 1 grid cell row/column extra
                                   date_min=date_min_cmems, date_max=date_max,
                                   dir_output=dir_output, file_prefix=file_prefix, overwrite=overwrite)
-            
-            #open mfdataset to check folder contents and plot first field of each variable
-            if make_figs:
-                ds = xr.open_mfdataset(os.path.join(dir_output,f'{file_prefix}{varkey}_*.nc'))
-                fig,ax = plt.subplots()
-                if 'depth' in ds[varkey].dims:
-                    ds[varkey].isel(time=0,depth=0).plot(ax=ax)
-                else:
-                    ds[varkey].isel(time=0).plot(ax=ax)
-                ds.close()
-                ctx.add_basemap(ax=ax,crs="EPSG:4326",attribution=False)
+
         
     
     #HYCOM
@@ -126,18 +107,18 @@ def download_meteodata_oceandata(
                                   date_min=date_min, date_max=date_max,
                                   dir_output=dir_output, file_prefix=file_prefix, overwrite=overwrite)
             
-            #open mfdataset to check folder contents and plot first field of each variable
-            if make_figs:
-                ds = xr.open_mfdataset(os.path.join(dir_output,f'{file_prefix}{varkey}_*.nc'))
-                fig,ax = plt.subplots()
-                if 'depth' in ds[varkey].dims:
-                    ds[varkey].isel(time=0,depth=0).plot(ax=ax)
-                else:
-                    ds[varkey].isel(time=0).plot(ax=ax)
-                ds.close()
-                ctx.add_basemap(ax=ax,crs="EPSG:4326",attribution=False)
     
-
+    if make_figs:
+        for varkey in varlist:
+            #open mfdataset to check folder contents and plot first field of each variable
+            ds = xr.open_mfdataset(os.path.join(dir_output,f'{file_prefix}{varkey}_*.nc'))
+            fig,ax = plt.subplots()
+            if 'depth' in ds[varkey].dims:
+                ds[varkey].isel(time=0,depth=0).plot(ax=ax)
+            else:
+                ds[varkey].isel(time=0).plot(ax=ax)
+            ds.close()
+            ctx.add_basemap(ax=ax,crs="EPSG:4326",attribution=False)
     
     
 def preprocess_interpolate_nc_to_bc(
@@ -151,7 +132,7 @@ def preprocess_interpolate_nc_to_bc(
         tstop = '2012-01-02 12:00',
         list_plifiles = [r'p:\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108_nocomments.pli'], #TODO: reading this file without '_nocomments' results in empty Polyfile, should raise an error. https://github.com/Deltares/HYDROLIB-core/issues/320
         dir_sourcefiles_hydro = r'p:\1204257-dcsmzuno\data\CMEMS\nc\DCSM_allAvailableTimes', #CMEMS hydro: bottomT, so, thetao, uo, vo, zos (2012-01-06 12:00:00 to 2013-01-03 12:00:00) (daily values at noon, not at midnight)
-        make_figs = True): 
+        make_figs = False): 
     
     list_plifiles = [Path(x) for x in list_plifiles]
     
@@ -318,18 +299,18 @@ def preprocess_ini_cmems_to_nc(ext_old, tSimStart = dt.datetime(1998,1,1),
     
     #append forcings to ext
     
-    forcing_so = hcdfm.ExtForcing(quantity='salinitybnd', #TODO: nudge_salinity_temperature
+    forcing_so = hcdfm.ExtForcing(quantity='initialsalinity', #TODO: nudge_salinity_temperature in reference model, but it's commented. The quantity is also not supported by hydrolib-core
                                   filename=outFile,
                                   filetype=hcdfm.FileType.NetCDFGridData,
                                   method=hcdfm.Method.InterpolateTime,
-                                  operand="O",#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error
+                                  operand="O",#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error #O
                                   )
     ext_old.forcing.append(forcing_so)
-    forcing_thetao = hcdfm.ExtForcing(quantity='temperaturebnd',
+    forcing_thetao = hcdfm.ExtForcing(quantity='initialtemperature',
                                       filename=outFile,
                                       filetype=hcdfm.FileType.NetCDFGridData,
                                       method=hcdfm.Method.InterpolateTime,
-                                      operand="O",#hcdfm.Operand.OverwriteExistingValues,
+                                      operand="O",#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error #O
                                       )
     ext_old.forcing.append(forcing_thetao)
 
@@ -341,8 +322,8 @@ def preprocess_merge_meteofiles(ext_old,
         varkey_list = [],
         dir_data = [],
         dir_output = '.',
-        time_slice = slice('2013-12-30','2014-01-01')
-        ):
+        time_slice = slice('2013-12-30','2014-01-01'),
+        make_figs = False):
 
     if isinstance(varkey_list[0], list):
         varkey_lists = varkey_list
@@ -411,7 +392,7 @@ def preprocess_merge_meteofiles(ext_old,
                                              varname='msl u10n v10n chnk',
                                              filetype=hcdfm.FileType.NetCDFGridData, #11
                                              method=hcdfm.Method.InterpolateTimeAndSpaceSaveWeights, #3
-                                             operand="O",#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error
+                                             operand="O",#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error #O
                                              )
             ext_old.forcing.append(forcing_meteo)
         elif varkey_list == ['d2m','t2m','tcc']:
@@ -420,7 +401,7 @@ def preprocess_merge_meteofiles(ext_old,
                                              varname='d2m t2m tcc',
                                              filetype=hcdfm.FileType.NetCDFGridData, #11
                                              method=hcdfm.Method.InterpolateTimeAndSpaceSaveWeights, #3
-                                             operand="O",#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error
+                                             operand="O",#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error #O
                                              )
             ext_old.forcing.append(forcing_meteo)
         elif varkey_list == ['ssr','strd']:
@@ -429,7 +410,7 @@ def preprocess_merge_meteofiles(ext_old,
                                              varname='ssr',
                                              filetype=hcdfm.FileType.NetCDFGridData, #11
                                              method=hcdfm.Method.InterpolateTimeAndSpaceSaveWeights, #3
-                                             operand="O",#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error
+                                             operand="O",#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error #O
                                              )
             ext_old.forcing.append(forcing_meteo)
             forcing_meteo = hcdfm.ExtForcing(quantity='longwaveradiation',
@@ -437,7 +418,7 @@ def preprocess_merge_meteofiles(ext_old,
                                              varname='strd',
                                              filetype=hcdfm.FileType.NetCDFGridData, #11
                                              method=hcdfm.Method.InterpolateTimeAndSpaceSaveWeights, #3
-                                             operand="O",#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error
+                                             operand="O",#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error #O
                                              )
             ext_old.forcing.append(forcing_meteo)
         elif varkey_list == ['mer','mtpr']:
@@ -446,7 +427,7 @@ def preprocess_merge_meteofiles(ext_old,
                                              varname='mtpr',
                                              filetype=hcdfm.FileType.NetCDFGridData, #11
                                              method=hcdfm.Method.InterpolateTimeAndSpaceSaveWeights, #3
-                                             operand="O",#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error
+                                             operand="O",#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error #O
                                              )
             ext_old.forcing.append(forcing_meteo)
             forcing_meteo = hcdfm.ExtForcing(quantity='rainfall_rate',
@@ -454,29 +435,31 @@ def preprocess_merge_meteofiles(ext_old,
                                              varname='mer',
                                              filetype=hcdfm.FileType.NetCDFGridData, #11
                                              method=hcdfm.Method.InterpolateTimeAndSpaceSaveWeights, #3
-                                             operand=hcdfm.Operand.SuperimposeNewValues, #+
+                                             operand='+',# hcdfm.Operand.SuperimposeNewValues, #TODO: commented part raises error #+
                                              )
             ext_old.forcing.append(forcing_meteo)
         
-        #load outputfile
-        data_xr_check = xr.open_dataset(file_out)
         
-        for varkey in data_xr_check.data_vars:
-            varsel = data_xr_check[varkey]
-            if not set(['longitude','latitude']).issubset(set(varsel.coords)): #skipping vars without lat/lon coordinate
-                continue
-            print(f'plotting {varkey}')
-            fig,ax1 = plt.subplots()
-            if 'HIRLAM' in mode:
-                varsel.isel(time=0).plot(ax=ax1,x='longitude',y='latitude') #x/y are necessary since coords are not 1D and dims
-            elif 'depth' in data_xr_tsel[varkey].coords:
-                varsel.isel(time=0).sel(depth=0).plot(ax=ax1)
-            else:
-                varsel.isel(time=0).plot(ax=ax1)
-            file_out = os.path.join(dir_output, f'era5_{varkey}_{time_start_str}')
-            fig.savefig(file_out)
+        if make_figs:
+            #load outputfile
+            data_xr_check = xr.open_dataset(file_out)
+            
+            for varkey in data_xr_check.data_vars:
+                varsel = data_xr_check[varkey]
+                if not set(['longitude','latitude']).issubset(set(varsel.coords)): #skipping vars without lat/lon coordinate
+                    continue
+                print(f'plotting {varkey}')
+                fig,ax1 = plt.subplots()
+                if 'HIRLAM' in mode:
+                    varsel.isel(time=0).plot(ax=ax1,x='longitude',y='latitude') #x/y are necessary since coords are not 1D and dims
+                elif 'depth' in data_xr_tsel[varkey].coords:
+                    varsel.isel(time=0).sel(depth=0).plot(ax=ax1)
+                else:
+                    varsel.isel(time=0).plot(ax=ax1)
+                file_out = os.path.join(dir_output, f'era5_{varkey}_{time_start_str}')
+                fig.savefig(file_out)
         
-        return ext_old
+    return ext_old
 
 
 #GRIDGENERATION WITH MESHKERNEL
@@ -502,11 +485,12 @@ def make_basegrid(lon_min,lon_max,lat_min,lat_max,dx=0.05,dy=0.05,angle=0):
     mk.curvilinear_convert_to_mesh2d() #convert to ugrid/mesh2d
     
     #plot
-    mesh2d_mesh_kernel = mk.mesh2d_get()
-    fig, ax = plt.subplots()
-    mesh2d_mesh_kernel.plot_edges(ax, color='blue')
-    source = ctx.providers.Esri.WorldImagery
-    ctx.add_basemap(ax=ax, source=source, crs='EPSG:4326', attribution=False)
+    # if make_figs:
+    #     mesh2d_mesh_kernel = mk.mesh2d_get()
+    #     fig, ax = plt.subplots()
+    #     mesh2d_mesh_kernel.plot_edges(ax, color='blue')
+    #     source = ctx.providers.Esri.WorldImagery
+    #     ctx.add_basemap(ax=ax, source=source, crs='EPSG:4326', attribution=False)
     
     return mk
 
@@ -537,10 +521,11 @@ def refine_basegrid(mk, data_bathy_sel,min_face_size=0.1):
                                        )
     
     #plotting
-    mesh2d_grid2 = mk.mesh2d_get()
-    fig, ax = plt.subplots()
-    mesh2d_grid2.plot_edges(ax,linewidth=1.2)
-    ctx.add_basemap(ax=ax, crs='EPSG:4326', attribution=False)
+    # if make_figs:
+    #     mesh2d_grid2 = mk.mesh2d_get()
+    #     fig, ax = plt.subplots()
+    #     mesh2d_grid2.plot_edges(ax,linewidth=1.2)
+    #     ctx.add_basemap(ax=ax, crs='EPSG:4326', attribution=False)
     
     return mk
 

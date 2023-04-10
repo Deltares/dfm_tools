@@ -19,15 +19,16 @@ import pandas as pd
 model_name = 'Bonaire'
 dir_output = r'p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\ModelBuilderOutput_JV'
 path_style = 'unix' # windows / unix
-overwrite = False # always set to True when changing the domain
+overwrite = False # used for downloading of forcing data. Always set to True when changing the domain
 
 # path to polyline: this is the only file that is not created in the script, besides: obsfiles, dimr.xml and the submit script
-poly_file = os.path.join(dir_output, 'bnd_short.pli')#'bnd.pli') #TODO: revert back to entire boundary plifile
+poly_file = os.path.join(dir_output, 'bnd.pli')
+#TODO: automate plifile generation with lat/lon bnds and dxy (possible via meshkernelpy?)
 
 #TODO: reference run in: p:\11209231-003-bes-modellering\hydrodynamica\hackathon\simulations\run001_mapInterval_1800_waq_newGrid
 
 # domain
-lon_min, lon_max, lat_min, lat_max = -68.55, -67.9, 11.8, 12.6, 
+lon_min, lon_max, lat_min, lat_max = -68.55, -67.9, 11.8, 12.6
 
 #dates as understood by pandas.period_range(). ERA5 has freq='M' (month) and CMEMS has freq='D' (day)
 date_min = '2022-11-01'
@@ -50,9 +51,9 @@ if not os.path.isdir(dir_output_data):
 #%% initialize mdu/ext files
 mdu_file = os.path.join(dir_output, f'{model_name}.mdu')
 mdu = hcdfm.FMModel()
-ext_file_new = os.path.join(dir_output, f'{model_name}_bc.ext')
+ext_file_new = os.path.join(dir_output, f'{model_name}_new.ext')
 ext_new = hcdfm.ExtModel()
-ext_file_old = os.path.join(dir_output, f'{model_name}.ext')
+ext_file_old = os.path.join(dir_output, f'{model_name}_old.ext')
 ext_old = hcdfm.ExtOldModel()
 
 
@@ -87,6 +88,9 @@ xu_grid_uds = dfmt.meshkernel_to_UgridDataset(mk=mk_object)
 #interp bathy
 data_bathy_interp = data_bathy_sel.interp(lon=xu_grid_uds.obj.mesh2d_node_x, lat=xu_grid_uds.obj.mesh2d_node_y).reset_coords(['lat','lon']) #interpolates lon/lat gebcodata to mesh2d_nNodes dimension #TODO: if these come from xu_grid_uds (without ojb), the mesh2d_node_z var has no ugrid accessor since the dims are lat/lon instead of mesh2d_nNodes
 xu_grid_uds['mesh2d_node_z'] = data_bathy_interp.elevation.clip(max=10)
+
+fig, ax = plt.subplots()
+xu_grid_uds.grid.plot(ax=ax,linewidth=1)
 
 fig, ax = plt.subplots()
 xu_grid_uds.mesh2d_node_z.ugrid.plot(ax=ax,center=False)
@@ -205,7 +209,7 @@ mdu.physics.rhomean = 1023
 mdu.physics.secchidepth = 4
 #mdu.physics.salimax = 50 #TODO: add to hydrolib-core
 #mdu.physics.tempmax = 50 #TODO: add to hydrolib-core
-#mdu.physics.iniwithnudge = 2 #TODO: add to hydrolib-core
+#mdu.physics.iniwithnudge = 2 #TODO: add to hydrolib-core #TODO: not implemented in oldextfile, do we want this?
 #mdu.physics.jasfer3d = 1 #TODO: is 0 in file but should be 1 automatically, might cause model instability (might be caused by non spherical grid)
 
 mdu.wind.icdtyp = 4
@@ -218,23 +222,31 @@ mdu.external_forcing.extforcefile = ext_file_old #TODO: is not written, but shou
 #mdu.external_forcing.extforcefilenew = ext_file_new #TODO: relative paths? #TODO: extfile not found with path_style='unix': https://github.com/Deltares/HYDROLIB-core/issues/516
 #mdu.external_forcing.windext = 1 #TODO: is set in reference mdu, happens automatically?
 
-
 mdu.time.refdate = pd.Timestamp(ref_date).strftime('%Y%m%d')
 mdu.time.tunit   = 'S'
 mdu.time.dtmax   = 300
-mdu.time.tstart  = (dt.datetime.strptime(date_min,'%Y-%m-%d') - dt.datetime.strptime(ref_date,'%Y-%m-%d')).total_seconds() #TODO: replace with timestring keyword
+mdu.time.tstart  = (dt.datetime.strptime(date_min,'%Y-%m-%d') - dt.datetime.strptime(ref_date,'%Y-%m-%d')).total_seconds()
 mdu.time.tstop   = (dt.datetime.strptime(date_max,'%Y-%m-%d') - dt.datetime.strptime(ref_date,'%Y-%m-%d')).total_seconds()
-#mdu.time.Startdatetime  = pd.Timestamp(date_min).strftime('%Y%m%d%H%M%S') #TODO: add to hydrolib-core
-#mdu.time.Stopdatetime   = pd.Timestamp(date_max).strftime('%Y%m%d%H%M%S') #TODO: add to hydrolib-core
+#mdu.time.Startdatetime  = pd.Timestamp(date_min).strftime('%Y%m%d%H%M%S') #TODO: add to hydrolib-core and remove mdu.time.tstart
+#mdu.time.Stopdatetime   = pd.Timestamp(date_max).strftime('%Y%m%d%H%M%S') #TODO: add to hydrolib-core and remove mdu.time.tstop
 #mdu.time.autotimestep = 3 #TODO: add to hydrolib-core
 
-mdu.output.obsfile = [os.path.join(dir_output,x) for x in ['osm_beach_centroids_offset_bonaire.xyn','stations_obs.xyn']] #TODO: validation error
+mdu.output.obsfile = [os.path.join(dir_output,x) for x in ['osm_beach_centroids_offset_bonaire.xyn','stations_obs.xyn']]
 mdu.output.hisinterval = [60]
 mdu.output.mapinterval = [1800]#[86400]
 
 
 #%% export model
 mdu.save(mdu_file,path_style=path_style)
+
+#TODO: temporary workaround for extforcefilenew
+mdu_contents = open(str(mdu_file),'r').readlines()
+for iL, line in enumerate(mdu_contents):
+    if line.startswith('[External Forcing]'):
+        mdu_contents[iL] = line+'extForceFilenew = Bonaire_new.ext'+'\n'
+with open(mdu_file,'w') as f:
+    f.write(''.join(mdu_contents))
+
 #TODO: if windows/unix extfile validation is fixed, use relative paths in .ext and in .mdu files
 #TODO: investigate recurse saving
 
