@@ -328,7 +328,7 @@ def preprocess_interpolate_nc_to_bc(
     return ext_bnd
 
     
-def preprocess_ini_cmems_to_nc(tSimStart = dt.datetime(1998,1,1),
+def preprocess_ini_cmems_to_nc(ext_old, tSimStart = dt.datetime(1998,1,1),
         dir_data  = r&#39;p:\i1000668-tcoms\03_newModel\01_input\02_bnd\data_opendap&#39;, #folder containing CMEMS so and thetao netcdf files
         dir_out = &#39;.&#39;):
     #TODO: merge with other ini script and make generic for getting an inifield out of CMEMS/etc regulargrid Dataset or a 2D/3D FM map/rst Dataset
@@ -351,8 +351,27 @@ def preprocess_ini_cmems_to_nc(tSimStart = dt.datetime(1998,1,1),
     outFile = os.path.join(dir_out,f&#39;InitialField_{tSimStart.strftime(&#34;%Y-%m-%d_%H-%M-%S&#34;)}.nc&#39;)
     data_xr_ontime.to_netcdf(outFile,format=&#34;NETCDF4_CLASSIC&#34;)
     
+    #append forcings to ext
     
-def preprocess_merge_meteofiles(
+    forcing_so = hcdfm.ExtForcing(quantity=&#39;salinitybnd&#39;, #TODO: nudge_salinity_temperature
+                                  filename=outFile,
+                                  filetype=hcdfm.FileType.NetCDFGridData,
+                                  method=hcdfm.Method.InterpolateTime,
+                                  operand=&#34;O&#34;,#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error
+                                  )
+    ext_old.forcing.append(forcing_so)
+    forcing_thetao = hcdfm.ExtForcing(quantity=&#39;temperaturebnd&#39;,
+                                      filename=outFile,
+                                      filetype=hcdfm.FileType.NetCDFGridData,
+                                      method=hcdfm.Method.InterpolateTime,
+                                      operand=&#34;O&#34;,#hcdfm.Operand.OverwriteExistingValues,
+                                      )
+    ext_old.forcing.append(forcing_thetao)
+
+    return ext_old
+    
+    
+def preprocess_merge_meteofiles(ext_old,
         mode = &#39;HYCOM&#39;, # &#39;HIRLAM_meteo&#39; &#39;HIRLAM_meteo-heatflux&#39; &#39;HARMONIE&#39; &#39;HYCOM&#39; &#39;ERA5_wind_pressure&#39; &#39;ERA5_heat_model&#39; &#39;ERA5_radiation&#39; &#39;ERA5_rainfall&#39; &#39;WOA&#39;
         varkey_list = [],
         dir_data = [],
@@ -363,8 +382,8 @@ def preprocess_merge_meteofiles(
     if isinstance(varkey_list[0], list):
         varkey_lists = varkey_list
     else:
-        varkey_list = [varkey_list]
-        
+        varkey_lists = [varkey_list]
+    
     for varkey_list in varkey_lists:
         if &#39;HIRLAM&#39; in mode:
             if mode == &#39;HIRLAM_meteo&#39;: #1year voor meteo crasht (HIRLAM72_*\\h72_*) door conflicting dimension sizes, sourcefolders opruimen? meteo_heatflux folders zijn schoner dus daar werkt het wel
@@ -420,6 +439,59 @@ def preprocess_merge_meteofiles(
         data_xr_tsel.to_netcdf(file_out)
         print(f&#39;{(dt.datetime.now()-dtstart).total_seconds():.2f} sec&#39;)
         
+        #append to ext model
+        if varkey_list == [&#39;msl&#39;,&#39;u10n&#39;,&#39;v10n&#39;,&#39;chnk&#39;]:
+            forcing_meteo = hcdfm.ExtForcing(quantity=&#39;airpressure_windx_windy_charnock&#39;,
+                                             filename=file_out,
+                                             varname=&#39;msl u10n v10n chnk&#39;,
+                                             filetype=hcdfm.FileType.NetCDFGridData, #11
+                                             method=hcdfm.Method.InterpolateTimeAndSpaceSaveWeights, #3
+                                             operand=&#34;O&#34;,#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error
+                                             )
+            ext_old.forcing.append(forcing_meteo)
+        elif varkey_list == [&#39;d2m&#39;,&#39;t2m&#39;,&#39;tcc&#39;]:
+            forcing_meteo = hcdfm.ExtForcing(quantity=&#39;dewpoint_airtemperature_cloudiness&#39;,
+                                             filename=file_out,
+                                             varname=&#39;d2m t2m tcc&#39;,
+                                             filetype=hcdfm.FileType.NetCDFGridData, #11
+                                             method=hcdfm.Method.InterpolateTimeAndSpaceSaveWeights, #3
+                                             operand=&#34;O&#34;,#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error
+                                             )
+            ext_old.forcing.append(forcing_meteo)
+        elif varkey_list == [&#39;ssr&#39;,&#39;strd&#39;]:
+            forcing_meteo = hcdfm.ExtForcing(quantity=&#39;solarradiation&#39;,
+                                             filename=file_out,
+                                             varname=&#39;ssr&#39;,
+                                             filetype=hcdfm.FileType.NetCDFGridData, #11
+                                             method=hcdfm.Method.InterpolateTimeAndSpaceSaveWeights, #3
+                                             operand=&#34;O&#34;,#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error
+                                             )
+            ext_old.forcing.append(forcing_meteo)
+            forcing_meteo = hcdfm.ExtForcing(quantity=&#39;longwaveradiation&#39;,
+                                             filename=file_out,
+                                             varname=&#39;strd&#39;,
+                                             filetype=hcdfm.FileType.NetCDFGridData, #11
+                                             method=hcdfm.Method.InterpolateTimeAndSpaceSaveWeights, #3
+                                             operand=&#34;O&#34;,#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error
+                                             )
+            ext_old.forcing.append(forcing_meteo)
+        elif varkey_list == [&#39;mer&#39;,&#39;mtpr&#39;]:
+            forcing_meteo = hcdfm.ExtForcing(quantity=&#39;rainfall_rate&#39;,
+                                             filename=file_out,
+                                             varname=&#39;mtpr&#39;,
+                                             filetype=hcdfm.FileType.NetCDFGridData, #11
+                                             method=hcdfm.Method.InterpolateTimeAndSpaceSaveWeights, #3
+                                             operand=&#34;O&#34;,#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error
+                                             )
+            ext_old.forcing.append(forcing_meteo)
+            forcing_meteo = hcdfm.ExtForcing(quantity=&#39;rainfall_rate&#39;,
+                                             filename=file_out,
+                                             varname=&#39;mer&#39;,
+                                             filetype=hcdfm.FileType.NetCDFGridData, #11
+                                             method=hcdfm.Method.InterpolateTimeAndSpaceSaveWeights, #3
+                                             operand=hcdfm.Operand.SuperimposeNewValues, #+
+                                             )
+            ext_old.forcing.append(forcing_meteo)
         
         #load outputfile
         data_xr_check = xr.open_dataset(file_out)
@@ -438,7 +510,8 @@ def preprocess_merge_meteofiles(
                 varsel.isel(time=0).plot(ax=ax1)
             file_out = os.path.join(dir_output, f&#39;era5_{varkey}_{time_start_str}&#39;)
             fig.savefig(file_out)
-
+        
+        return ext_old
 
 
 #GRIDGENERATION WITH MESHKERNEL
@@ -801,7 +874,7 @@ def refine_basegrid(mk, data_bathy_sel,min_face_size=0.1):
 </details>
 </dd>
 <dt id="dfm_tools.modelbuilder.preprocess_ini_cmems_to_nc"><code class="name flex">
-<span>def <span class="ident">preprocess_ini_cmems_to_nc</span></span>(<span>tSimStart=datetime.datetime(1998, 1, 1, 0, 0), dir_data='p:\\i1000668-tcoms\\03_newModel\\01_input\\02_bnd\\data_opendap', dir_out='.')</span>
+<span>def <span class="ident">preprocess_ini_cmems_to_nc</span></span>(<span>ext_old, tSimStart=datetime.datetime(1998, 1, 1, 0, 0), dir_data='p:\\i1000668-tcoms\\03_newModel\\01_input\\02_bnd\\data_opendap', dir_out='.')</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -809,7 +882,7 @@ def refine_basegrid(mk, data_bathy_sel,min_face_size=0.1):
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def preprocess_ini_cmems_to_nc(tSimStart = dt.datetime(1998,1,1),
+<pre><code class="python">def preprocess_ini_cmems_to_nc(ext_old, tSimStart = dt.datetime(1998,1,1),
         dir_data  = r&#39;p:\i1000668-tcoms\03_newModel\01_input\02_bnd\data_opendap&#39;, #folder containing CMEMS so and thetao netcdf files
         dir_out = &#39;.&#39;):
     #TODO: merge with other ini script and make generic for getting an inifield out of CMEMS/etc regulargrid Dataset or a 2D/3D FM map/rst Dataset
@@ -830,11 +903,30 @@ def refine_basegrid(mk, data_bathy_sel,min_face_size=0.1):
     
     print(&#39;writing file&#39;)
     outFile = os.path.join(dir_out,f&#39;InitialField_{tSimStart.strftime(&#34;%Y-%m-%d_%H-%M-%S&#34;)}.nc&#39;)
-    data_xr_ontime.to_netcdf(outFile,format=&#34;NETCDF4_CLASSIC&#34;)</code></pre>
+    data_xr_ontime.to_netcdf(outFile,format=&#34;NETCDF4_CLASSIC&#34;)
+    
+    #append forcings to ext
+    
+    forcing_so = hcdfm.ExtForcing(quantity=&#39;salinitybnd&#39;, #TODO: nudge_salinity_temperature
+                                  filename=outFile,
+                                  filetype=hcdfm.FileType.NetCDFGridData,
+                                  method=hcdfm.Method.InterpolateTime,
+                                  operand=&#34;O&#34;,#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error
+                                  )
+    ext_old.forcing.append(forcing_so)
+    forcing_thetao = hcdfm.ExtForcing(quantity=&#39;temperaturebnd&#39;,
+                                      filename=outFile,
+                                      filetype=hcdfm.FileType.NetCDFGridData,
+                                      method=hcdfm.Method.InterpolateTime,
+                                      operand=&#34;O&#34;,#hcdfm.Operand.OverwriteExistingValues,
+                                      )
+    ext_old.forcing.append(forcing_thetao)
+
+    return ext_old</code></pre>
 </details>
 </dd>
 <dt id="dfm_tools.modelbuilder.preprocess_merge_meteofiles"><code class="name flex">
-<span>def <span class="ident">preprocess_merge_meteofiles</span></span>(<span>mode='HYCOM', varkey_list=[], dir_data=[], dir_output='.', time_slice=slice('2013-12-30', '2014-01-01', None))</span>
+<span>def <span class="ident">preprocess_merge_meteofiles</span></span>(<span>ext_old, mode='HYCOM', varkey_list=[], dir_data=[], dir_output='.', time_slice=slice('2013-12-30', '2014-01-01', None))</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -842,7 +934,7 @@ def refine_basegrid(mk, data_bathy_sel,min_face_size=0.1):
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def preprocess_merge_meteofiles(
+<pre><code class="python">def preprocess_merge_meteofiles(ext_old,
         mode = &#39;HYCOM&#39;, # &#39;HIRLAM_meteo&#39; &#39;HIRLAM_meteo-heatflux&#39; &#39;HARMONIE&#39; &#39;HYCOM&#39; &#39;ERA5_wind_pressure&#39; &#39;ERA5_heat_model&#39; &#39;ERA5_radiation&#39; &#39;ERA5_rainfall&#39; &#39;WOA&#39;
         varkey_list = [],
         dir_data = [],
@@ -853,8 +945,8 @@ def refine_basegrid(mk, data_bathy_sel,min_face_size=0.1):
     if isinstance(varkey_list[0], list):
         varkey_lists = varkey_list
     else:
-        varkey_list = [varkey_list]
-        
+        varkey_lists = [varkey_list]
+    
     for varkey_list in varkey_lists:
         if &#39;HIRLAM&#39; in mode:
             if mode == &#39;HIRLAM_meteo&#39;: #1year voor meteo crasht (HIRLAM72_*\\h72_*) door conflicting dimension sizes, sourcefolders opruimen? meteo_heatflux folders zijn schoner dus daar werkt het wel
@@ -910,6 +1002,59 @@ def refine_basegrid(mk, data_bathy_sel,min_face_size=0.1):
         data_xr_tsel.to_netcdf(file_out)
         print(f&#39;{(dt.datetime.now()-dtstart).total_seconds():.2f} sec&#39;)
         
+        #append to ext model
+        if varkey_list == [&#39;msl&#39;,&#39;u10n&#39;,&#39;v10n&#39;,&#39;chnk&#39;]:
+            forcing_meteo = hcdfm.ExtForcing(quantity=&#39;airpressure_windx_windy_charnock&#39;,
+                                             filename=file_out,
+                                             varname=&#39;msl u10n v10n chnk&#39;,
+                                             filetype=hcdfm.FileType.NetCDFGridData, #11
+                                             method=hcdfm.Method.InterpolateTimeAndSpaceSaveWeights, #3
+                                             operand=&#34;O&#34;,#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error
+                                             )
+            ext_old.forcing.append(forcing_meteo)
+        elif varkey_list == [&#39;d2m&#39;,&#39;t2m&#39;,&#39;tcc&#39;]:
+            forcing_meteo = hcdfm.ExtForcing(quantity=&#39;dewpoint_airtemperature_cloudiness&#39;,
+                                             filename=file_out,
+                                             varname=&#39;d2m t2m tcc&#39;,
+                                             filetype=hcdfm.FileType.NetCDFGridData, #11
+                                             method=hcdfm.Method.InterpolateTimeAndSpaceSaveWeights, #3
+                                             operand=&#34;O&#34;,#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error
+                                             )
+            ext_old.forcing.append(forcing_meteo)
+        elif varkey_list == [&#39;ssr&#39;,&#39;strd&#39;]:
+            forcing_meteo = hcdfm.ExtForcing(quantity=&#39;solarradiation&#39;,
+                                             filename=file_out,
+                                             varname=&#39;ssr&#39;,
+                                             filetype=hcdfm.FileType.NetCDFGridData, #11
+                                             method=hcdfm.Method.InterpolateTimeAndSpaceSaveWeights, #3
+                                             operand=&#34;O&#34;,#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error
+                                             )
+            ext_old.forcing.append(forcing_meteo)
+            forcing_meteo = hcdfm.ExtForcing(quantity=&#39;longwaveradiation&#39;,
+                                             filename=file_out,
+                                             varname=&#39;strd&#39;,
+                                             filetype=hcdfm.FileType.NetCDFGridData, #11
+                                             method=hcdfm.Method.InterpolateTimeAndSpaceSaveWeights, #3
+                                             operand=&#34;O&#34;,#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error
+                                             )
+            ext_old.forcing.append(forcing_meteo)
+        elif varkey_list == [&#39;mer&#39;,&#39;mtpr&#39;]:
+            forcing_meteo = hcdfm.ExtForcing(quantity=&#39;rainfall_rate&#39;,
+                                             filename=file_out,
+                                             varname=&#39;mtpr&#39;,
+                                             filetype=hcdfm.FileType.NetCDFGridData, #11
+                                             method=hcdfm.Method.InterpolateTimeAndSpaceSaveWeights, #3
+                                             operand=&#34;O&#34;,#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error
+                                             )
+            ext_old.forcing.append(forcing_meteo)
+            forcing_meteo = hcdfm.ExtForcing(quantity=&#39;rainfall_rate&#39;,
+                                             filename=file_out,
+                                             varname=&#39;mer&#39;,
+                                             filetype=hcdfm.FileType.NetCDFGridData, #11
+                                             method=hcdfm.Method.InterpolateTimeAndSpaceSaveWeights, #3
+                                             operand=hcdfm.Operand.SuperimposeNewValues, #+
+                                             )
+            ext_old.forcing.append(forcing_meteo)
         
         #load outputfile
         data_xr_check = xr.open_dataset(file_out)
@@ -927,7 +1072,9 @@ def refine_basegrid(mk, data_bathy_sel,min_face_size=0.1):
             else:
                 varsel.isel(time=0).plot(ax=ax1)
             file_out = os.path.join(dir_output, f&#39;era5_{varkey}_{time_start_str}&#39;)
-            fig.savefig(file_out)</code></pre>
+            fig.savefig(file_out)
+        
+        return ext_old</code></pre>
 </details>
 </dd>
 <dt id="dfm_tools.modelbuilder.make_basegrid"><code class="name flex">
