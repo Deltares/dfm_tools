@@ -46,13 +46,12 @@ import pandas as pd
 from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame
 import getpass
 
-
 def meshkernel_delete_withpol(mk, file_ldb, minpoints=None):
     
     print(&#39;&gt;&gt; reading+converting ldb: &#39;,end=&#39;&#39;)
     dtstart = dt.datetime.now()
     pol_ldb = hcdfm.PolyFile(file_ldb)
-    pol_ldb_list = [pointlike_to_DataFrame(x) for x in pol_ldb.objects] #TODO, this is quite slow, speed up possible?
+    pol_ldb_list = [pointlike_to_DataFrame(x) for x in pol_ldb.objects] #TODO: this is quite slow, speed up possible?
     if minpoints is not None:
         pol_ldb_list = [x for x in pol_ldb_list if len(x)&gt;minpoints] #filter only large polygons for performance
     for iP, pol_ldb in enumerate(pol_ldb_list):
@@ -72,8 +71,10 @@ def meshkernel_to_UgridDataset(mk:meshkernel.meshkernel.MeshKernel) -&gt; xr.Dat
     mesh2d_grid3 = mk.mesh2d_get()
 
     xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid3)
+    
+    #convert to dataset
     #xu_grid_ds = xu_grid.to_dataset()
-    xu_grid_ds = xu_grid.assign_face_coords(xu_grid.to_dataset()) #TODO: face_coords are necessary for hydrolib-core mdu.geometry.network validation, report this
+    xu_grid_ds = xu_grid.assign_face_coords(xu_grid.to_dataset()) #TODO: face_coords are necessary for hydrolib-core mdu.geometry.network validation: https://github.com/Deltares/HYDROLIB-core/issues/515
     
     #convert 0-based to 1-based grid #TODO: FM kernel needs 1-based grid, but it should read the attributes instead. Report this (#ug_get_meshgeom, #12, ierr=0. ** WARNING: Could not read mesh face x-coordinates)
     varn_fnc = xu_grid_ds.mesh2d.attrs[&#39;face_node_connectivity&#39;] #TODO: maybe also do for edge_node_connectivity
@@ -81,15 +82,15 @@ def meshkernel_to_UgridDataset(mk:meshkernel.meshkernel.MeshKernel) -&gt; xr.Dat
         xu_grid_ds[varn_fnc] += 1
         xu_grid_ds[varn_fnc].attrs[&#34;_FillValue&#34;] += 1
         xu_grid_ds[varn_fnc].attrs[&#34;start_index&#34;] += 1
-        
+    
+    from importlib.metadata import version
+    dfmt_version = version(&#39;dfm_tools&#39;) #TODO: cleaner way to do this?
     xu_grid_ds = xu_grid_ds.assign_attrs({#&#39;Conventions&#39;: &#39;CF-1.8 UGRID-1.0 Deltares-0.10&#39;, #add Deltares convention (was CF-1.8 UGRID-1.0)
                                           &#39;institution&#39;: &#39;Deltares&#39;,
                                           &#39;references&#39;: &#39;https://www.deltares.nl&#39;,
-                                          &#39;source&#39;: f&#39;meshkernel {meshkernel.__version__} and xugrid {xu.__version__}&#39;,
+                                          &#39;source&#39;: f&#39;Created with meshkernel {meshkernel.__version__}, xugrid {xu.__version__} and dfm_tools {dfmt_version}&#39;,
                                           &#39;history&#39;: &#39;Created on %s, %s&#39;%(dt.datetime.now().strftime(&#39;%Y-%m-%dT%H:%M:%S%z&#39;),getpass.getuser()), #TODO: add timezone
                                           })
-
-    #TODO: add more global attributes (Deltares, website, source:meshkernel+xugrid,
     
     # add attrs (to projected_coordinate_system/wgs84 empty int variable): #TODO: should depend on is_geographic flag in make_basegrid()
     # attribute_dict = {
@@ -104,7 +105,7 @@ def meshkernel_to_UgridDataset(mk:meshkernel.meshkernel.MeshKernel) -&gt; xr.Dat
     #     &#39;value&#39;: &#39;value is equal to EPSG code&#39;}
     # xu_grid_ds[&#39;wgs84&#39;] = xr.DataArray(np.array(0,dtype=int),dims=(),attrs=attribute_dict)
     
-    xu_grid_uds = xu.UgridDataset(xu_grid_ds)
+    xu_grid_uds = xu.UgridDataset(xu_grid_ds) #TODO: conversion to UgridDataset introduces mesh2d_nNodes variable with range(len(mesh2d_nNodes)) as contents, report?
     return xu_grid_uds</code></pre>
 </details>
 </section>
@@ -129,7 +130,7 @@ def meshkernel_to_UgridDataset(mk:meshkernel.meshkernel.MeshKernel) -&gt; xr.Dat
     print(&#39;&gt;&gt; reading+converting ldb: &#39;,end=&#39;&#39;)
     dtstart = dt.datetime.now()
     pol_ldb = hcdfm.PolyFile(file_ldb)
-    pol_ldb_list = [pointlike_to_DataFrame(x) for x in pol_ldb.objects] #TODO, this is quite slow, speed up possible?
+    pol_ldb_list = [pointlike_to_DataFrame(x) for x in pol_ldb.objects] #TODO: this is quite slow, speed up possible?
     if minpoints is not None:
         pol_ldb_list = [x for x in pol_ldb_list if len(x)&gt;minpoints] #filter only large polygons for performance
     for iP, pol_ldb in enumerate(pol_ldb_list):
@@ -158,8 +159,10 @@ def meshkernel_to_UgridDataset(mk:meshkernel.meshkernel.MeshKernel) -&gt; xr.Dat
     mesh2d_grid3 = mk.mesh2d_get()
 
     xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid3)
+    
+    #convert to dataset
     #xu_grid_ds = xu_grid.to_dataset()
-    xu_grid_ds = xu_grid.assign_face_coords(xu_grid.to_dataset()) #TODO: face_coords are necessary for hydrolib-core mdu.geometry.network validation, report this
+    xu_grid_ds = xu_grid.assign_face_coords(xu_grid.to_dataset()) #TODO: face_coords are necessary for hydrolib-core mdu.geometry.network validation: https://github.com/Deltares/HYDROLIB-core/issues/515
     
     #convert 0-based to 1-based grid #TODO: FM kernel needs 1-based grid, but it should read the attributes instead. Report this (#ug_get_meshgeom, #12, ierr=0. ** WARNING: Could not read mesh face x-coordinates)
     varn_fnc = xu_grid_ds.mesh2d.attrs[&#39;face_node_connectivity&#39;] #TODO: maybe also do for edge_node_connectivity
@@ -167,15 +170,15 @@ def meshkernel_to_UgridDataset(mk:meshkernel.meshkernel.MeshKernel) -&gt; xr.Dat
         xu_grid_ds[varn_fnc] += 1
         xu_grid_ds[varn_fnc].attrs[&#34;_FillValue&#34;] += 1
         xu_grid_ds[varn_fnc].attrs[&#34;start_index&#34;] += 1
-        
+    
+    from importlib.metadata import version
+    dfmt_version = version(&#39;dfm_tools&#39;) #TODO: cleaner way to do this?
     xu_grid_ds = xu_grid_ds.assign_attrs({#&#39;Conventions&#39;: &#39;CF-1.8 UGRID-1.0 Deltares-0.10&#39;, #add Deltares convention (was CF-1.8 UGRID-1.0)
                                           &#39;institution&#39;: &#39;Deltares&#39;,
                                           &#39;references&#39;: &#39;https://www.deltares.nl&#39;,
-                                          &#39;source&#39;: f&#39;meshkernel {meshkernel.__version__} and xugrid {xu.__version__}&#39;,
+                                          &#39;source&#39;: f&#39;Created with meshkernel {meshkernel.__version__}, xugrid {xu.__version__} and dfm_tools {dfmt_version}&#39;,
                                           &#39;history&#39;: &#39;Created on %s, %s&#39;%(dt.datetime.now().strftime(&#39;%Y-%m-%dT%H:%M:%S%z&#39;),getpass.getuser()), #TODO: add timezone
                                           })
-
-    #TODO: add more global attributes (Deltares, website, source:meshkernel+xugrid,
     
     # add attrs (to projected_coordinate_system/wgs84 empty int variable): #TODO: should depend on is_geographic flag in make_basegrid()
     # attribute_dict = {
@@ -190,7 +193,7 @@ def meshkernel_to_UgridDataset(mk:meshkernel.meshkernel.MeshKernel) -&gt; xr.Dat
     #     &#39;value&#39;: &#39;value is equal to EPSG code&#39;}
     # xu_grid_ds[&#39;wgs84&#39;] = xr.DataArray(np.array(0,dtype=int),dims=(),attrs=attribute_dict)
     
-    xu_grid_uds = xu.UgridDataset(xu_grid_ds)
+    xu_grid_uds = xu.UgridDataset(xu_grid_ds) #TODO: conversion to UgridDataset introduces mesh2d_nNodes variable with range(len(mesh2d_nNodes)) as contents, report?
     return xu_grid_uds</code></pre>
 </details>
 </dd>
