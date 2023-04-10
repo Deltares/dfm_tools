@@ -12,7 +12,6 @@ plt.close('all')
 import dfm_tools as dfmt
 from dfm_tools import modelbuilder as mb #different import for modelbuilder since it is not exposed publicly
 import hydrolib.core.dflowfm as hcdfm
-#import shutil
 import xarray as xr
 import pandas as pd
 
@@ -20,9 +19,10 @@ import pandas as pd
 model_name = 'Bonaire'
 dir_output = r'p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\ModelBuilderOutput_JV'
 path_style = 'unix' # windows / unix
+overwrite = False # always set to True when changing the domain
 
 # path to polyline: this is the only file that is not created in the script, besides: obsfiles, dimr.xml and the submit script
-poly_file = os.path.join(dir_output, 'bnd.pli')
+poly_file = os.path.join(dir_output, 'bnd_short.pli')#'bnd.pli') #TODO: revert back to entire boundary plifile
 
 #TODO: reference run in: p:\11209231-003-bes-modellering\hydrodynamica\hackathon\simulations\run001_mapInterval_1800_waq_newGrid
 
@@ -35,10 +35,9 @@ date_max = '2022-11-03'
 ref_date = '2022-01-01'
 
 # meteo (ERA5)
-# option 0 (testing)  = [airpressure]
 # option 1 (2D-model) = [airpressure, windx, windy, charnock]
 # option 2 (3D-model) = [airpressure, windx, windy, charnock, dewpoint, airtemperature, cloudiness, solarradiation, longwaveradiation, rainfall, evaporation]
-ERA5_meteo_option = 0
+ERA5_meteo_option = 2
 
 ## process
 # make dirs
@@ -52,9 +51,9 @@ if not os.path.isdir(dir_output_data):
 mdu_file = os.path.join(dir_output, f'{model_name}.mdu')
 mdu = hcdfm.FMModel()
 ext_file_new = os.path.join(dir_output, f'{model_name}_bc.ext')
-ext_bnd = hcdfm.ExtModel()
+ext_new = hcdfm.ExtModel()
 ext_file_old = os.path.join(dir_output, f'{model_name}.ext')
-#TODO: initialize old extmodel
+ext_old = hcdfm.ExtOldModel()
 
 
 #%% grid generation
@@ -102,7 +101,6 @@ mdu.geometry.netfile = netfile #TODO: path is windows/unix dependent #TODO: prov
 if 1:
     #%% new ext: initial and open boundary condition
     
-    # CMEMS
     # CMEMS - download
     dir_output_data_cmems = os.path.join(dir_output_data, 'cmems')
     if not os.path.isdir(dir_output_data_cmems):
@@ -111,12 +109,13 @@ if 1:
     mb.download_meteodata_oceandata(
         longitude_min = lon_min, longitude_max = lon_max, latitude_min = lat_min, latitude_max = lat_max,
         model = 'CMEMS',
+        overwrite = overwrite,
         date_min = date_min, date_max = date_max,
         varlist = ['so','thetao','uo','vo','zos'],
         dir_output = dir_output_data_cmems)
     
     # CMEMS - boundary conditions file (.bc) (and add to ext_bnd)
-    ext_bnd = mb.preprocess_interpolate_nc_to_bc(ext_bnd=ext_bnd,
+    ext_new = mb.preprocess_interpolate_nc_to_bc(ext_bnd=ext_new,
                                                  refdate_str = 'minutes since '+ref_date+' 00:00:00 +00:00',
                                                  dir_output = dir_output,
                                                  model = 'CMEMS',
@@ -126,43 +125,45 @@ if 1:
                                                  dir_sourcefiles_hydro = dir_output_data_cmems)
     
     #save new ext file #TODO: add below dataset to oldextmodel
-    ext_bnd.save(filepath=ext_file_new,path_style=path_style)
+    ext_new.save(filepath=ext_file_new,path_style=path_style)
     
     
     #%% old ext
     
     # CMEMS - initial condition file #TODO: add iniconditions to new or old extfile?
-    mb.preprocess_ini_cmems_to_nc(tSimStart=dt.datetime.strptime(date_min, '%Y-%m-%d'),
-                                  dir_data=dir_output_data_cmems,
-                                  dir_out=dir_output)
+    ext_old = mb.preprocess_ini_cmems_to_nc(ext_old=ext_old,
+                                            tSimStart=dt.datetime.strptime(date_min, '%Y-%m-%d'),
+                                            dir_data=dir_output_data_cmems,
+                                            dir_out=dir_output)
     
     # ERA5 - download
     dir_output_data_era5 = os.path.join(dir_output_data,'ERA5')
     if not os.path.exists(dir_output_data_era5):
         os.mkdir(dir_output_data_era5)
         
-    if ERA5_meteo_option == 0:
-        varlist = [['msl']]
-    elif ERA5_meteo_option == 1:
+    if ERA5_meteo_option == 1: #TODO: pass option instead of varlist to fuctions?
         varlist = [['msl','u10n','v10n','chnk']]
     elif ERA5_meteo_option == 2:
         varlist = [['msl','u10n','v10n','chnk'],['d2m','t2m','tcc'],['ssr','strd'],['mer','mtpr']]
         #TODO does it loop correctly over all lists?
-               
+    
     mb.download_meteodata_oceandata(
         longitude_min = lon_min, longitude_max = lon_max, latitude_min = lat_min, latitude_max = lat_max,
         model = 'ERA5',
+        overwrite = overwrite,
         date_min = date_min, date_max = date_max,
         varlist = varlist, # check variables_dict in dfmt.download_ERA5() for valid names
         dir_output = dir_output_data_era5)
     
     # ERA5 meteo - convert to netCDF for usage in Delft3D FM
-    mb.preprocess_merge_meteofiles(
+    ext_old = mb.preprocess_merge_meteofiles(ext_old=ext_old,
             mode = 'ERA5',
             varkey_list = varlist,
             dir_data = dir_output_data_era5,
             dir_output = dir_output,
             time_slice = slice(date_min, date_max))
+    
+    ext_old.save(filepath=ext_file_old,path_style=path_style)
 
 
 #%% .mdu settings
@@ -213,7 +214,7 @@ mdu.wind.rhoair = 1.2265
 mdu.wind.relativewind = 0.5
 mdu.wind.pavbnd = 101330
 
-#mdu.external_forcing.extforcefile = ext_file_old #TODO: is not written, but should be (with meteo)
+mdu.external_forcing.extforcefile = ext_file_old #TODO: is not written, but should be (with meteo)
 #mdu.external_forcing.extforcefilenew = ext_file_new #TODO: relative paths? #TODO: extfile not found with path_style='unix': https://github.com/Deltares/HYDROLIB-core/issues/516
 #mdu.external_forcing.windext = 1 #TODO: is set in reference mdu, happens automatically?
 
