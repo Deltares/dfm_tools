@@ -15,12 +15,13 @@ from dask.diagnostics import ProgressBar
 
 
 file_nc = r'P:\11208054-004-dcsm-fm\models\3D_DCSM-FM\2013-2017\B04_EOT20_RHO1_H1_H2\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0000_his.nc' #does not seem to be dask? >> no chunks visible
-file_nc = r'P:\11208054-004-dcsm-fm\models\3D_DCSM-FM\2013-2017\B04_EOT20_RHO1_H1_H2\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0000_his_netcdf4.nc' #does not seem to be dask? >> no chunks visible
+#file_nc = r'P:\11208054-004-dcsm-fm\models\3D_DCSM-FM\2013-2017\B04_EOT20_RHO1_H1_H2\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0000_his_netcdf4.nc' #does not seem to be dask? >> no chunks visible
 
 
 chunks = {}
 chunks = {'time':1,'stations':10}
-#chunks = {'time':1000,'stations':10}
+chunks = {'time':1000,'stations':10}
+chunks = 'auto'
 
 #performance measurements can be influenced by partly caching in memory
 #netcdf3
@@ -35,7 +36,7 @@ chunks = {'time':1,'stations':10}
 
 print('>> performance test opening: ',end='')
 dtstart = dt.datetime.now()
-ds = xr.open_dataset(file_nc,chunks=chunks)
+ds = xr.open_dataset(file_nc,chunks=chunks,decode_cf=False,decode_times=False,decode_coords=False)
 print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
 
 ds = dfmt.preprocess_hisnc(ds)

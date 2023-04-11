@@ -45,12 +45,12 @@ def meshkernel_to_UgridDataset(mk:meshkernel.meshkernel.MeshKernel) -> xr.Datase
     #xu_grid_ds = xu_grid.to_dataset()
     xu_grid_ds = xu_grid.assign_face_coords(xu_grid.to_dataset()) #TODO: face_coords are necessary for hydrolib-core mdu.geometry.network validation: https://github.com/Deltares/HYDROLIB-core/issues/515
     
-    #convert 0-based to 1-based grid #TODO: FM kernel needs 1-based grid, but it should read the attributes instead. Report this (#ug_get_meshgeom, #12, ierr=0. ** WARNING: Could not read mesh face x-coordinates)
-    varn_fnc = xu_grid_ds.mesh2d.attrs['face_node_connectivity'] #TODO: maybe also do for edge_node_connectivity
-    if xu_grid_ds[varn_fnc].attrs['start_index']==0:
-        xu_grid_ds[varn_fnc] += 1
-        xu_grid_ds[varn_fnc].attrs["_FillValue"] += 1
-        xu_grid_ds[varn_fnc].attrs["start_index"] += 1
+    #convert 0-based to 1-based grid for connectivity variables like face_node_connectivity #TODO: FM kernel needs 1-based grid, but it should read the attributes instead. Report this (#ug_get_meshgeom, #12, ierr=0. ** WARNING: Could not read mesh face x-coordinates)
+    ds_idx = xu_grid_ds.filter_by_attrs(start_index=0)
+    for varn_conn in ds_idx.data_vars:
+        xu_grid_ds[varn_conn] += 1
+        xu_grid_ds[varn_conn].attrs["_FillValue"] += 1
+        xu_grid_ds[varn_conn].attrs["start_index"] += 1
     
     from importlib.metadata import version
     dfmt_version = version('dfm_tools') #TODO: cleaner way to do this?

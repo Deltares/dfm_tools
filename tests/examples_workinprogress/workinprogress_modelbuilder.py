@@ -73,7 +73,7 @@ mb.refine_basegrid(mk=mk_object, data_bathy_sel=data_bathy_sel, min_face_size=mi
 
 #cutcells
 file_ldb = r'p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\grid\coastline.pli'
-dfmt.meshkernel_delete_withpol(mk=mk_object,file_ldb=file_ldb)
+#dfmt.meshkernel_delete_withpol(mk=mk_object,file_ldb=file_ldb)
 
 #TODO: cleanup grid necessary?
 # print('mk_object.mesh2d_get_obtuse_triangles_mass_centers()')
@@ -128,13 +128,13 @@ if 1:
                                                  list_plifiles = [poly_file],
                                                  dir_sourcefiles_hydro = dir_output_data_cmems)
     
-    #save new ext file #TODO: add below dataset to oldextmodel
+    #save new ext file
     ext_new.save(filepath=ext_file_new,path_style=path_style)
     
     
     #%% old ext
     
-    # CMEMS - initial condition file #TODO: add iniconditions to new or old extfile?
+    # CMEMS - initial condition file
     ext_old = mb.preprocess_ini_cmems_to_nc(ext_old=ext_old,
                                             tSimStart=dt.datetime.strptime(date_min, '%Y-%m-%d'),
                                             dir_data=dir_output_data_cmems,
