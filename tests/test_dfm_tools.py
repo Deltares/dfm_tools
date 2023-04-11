@@ -293,3 +293,20 @@ def test_zlayermodel_correct_layers():
     assert (np.abs(vals_zw_top-vals_wl)<1e-6).all()
     assert (np.abs(vals_zw_bot-vals_bl)<1e-6).all()
 
+    
+@pytest.mark.requiresdata
+def test_timmodel_to_dataframe():
+    import dfm_tools as dfmt
+    import hydrolib.core.dflowfm as hcdfm
+    import pandas as pd
+    
+    file_tim = os.path.join(dir_testinput,'Brouwerssluis_short.tim')
+    
+    data_tim = hcdfm.TimModel(file_tim)
+    
+    refdate = '2016-01-01'
+    tim_pd = dfmt.TimModel_to_DataFrame(data_tim, parse_column_labels=True, refdate=refdate)
+    
+    assert tim_pd.index[0] == pd.Timestamp('2016-01-01 00:00:00')
+    assert len(tim_pd) == 91
+    assert tim_pd.columns[-1] == 'phaeocystis_p (g/m3)'

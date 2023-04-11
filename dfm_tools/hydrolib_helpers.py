@@ -11,6 +11,8 @@ import numpy as np
 import xarray as xr
 from cftime import date2num
 import hydrolib.core.dflowfm as hcdfm
+import warnings
+
 
 def Dataset_to_T3D(datablock_xr):
     """
@@ -291,4 +293,36 @@ def parse_xy_to_datetime(pointlike_pd):
     return pointlike_pd_timeidx
 
 
+def TimModel_to_DataFrame(data_tim, parse_column_labels=True, refdate=None):
+    #convert to pandas dataframe
+    datablock = np.array(list(data_tim.timeseries.values()))
+    timeblock = np.array(list(data_tim.timeseries.keys()))[np.newaxis].T
+    block = np.concatenate([timeblock,datablock],axis=1)
+    tim_pd = pd.DataFrame(block)
+    tim_pd.columns += 1 #make column numbers 1-based
+    
+    if parse_column_labels:
+        warnings.warn('parse_column_labels of tim files might fail since there is no standard way of prescribing them.')
+        #replace column labels with the ones in comments
+        tim_pd_columns = tim_pd.columns.tolist()
+        for line in data_tim.comments:
+            line_lower = line.lower() #remove casing to be able to check for Column/COLUMN/column in string
+            if 'column' in line_lower:
+                if ':' in line_lower: #assume ":" is separator
+                    sep = ':'
+                elif '=' in line_lower: #assume "=" is separator
+                    sep = '='
+                else:
+                    continue
+                line_lower_split = line_lower.split(sep)
+                colnum = line_lower_split[0].replace('column','').strip()
+                if colnum.isnumeric():
+                    tim_pd_columns[int(colnum)-1] = ':'.join(line_lower_split[1:]).strip()
+        tim_pd.columns = tim_pd_columns
+    
+    if refdate:
+        refdate_pd = pd.Timestamp(refdate)
+        tim_pd.index = refdate_pd + pd.to_timedelta(tim_pd.iloc[:,0],unit='minutes')
+        tim_pd.index.name = 'times'
+    return tim_pd
 
