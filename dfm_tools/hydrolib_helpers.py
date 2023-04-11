@@ -343,17 +343,16 @@ def TimModel_to_DataFrame(data_tim:hcdfm.TimModel, parse_column_labels:bool = Tr
         #replace column labels with the ones in comments
         tim_pd_columns = tim_pd.columns.tolist()
         for line in data_tim.comments:
-            if 'column' in line.lower(): #remove casing to be able to check for Column/COLUMN/column in string
-                if ':' in line: #assume ":" is separator
-                    sep = ':'
-                elif '=' in line: #assume "=" is separator
-                    sep = '='
-                else:
-                    continue
-                line_split = line.split(sep)
-                colnum = line_split[0].lower().replace('column','').strip()
-                if colnum.isnumeric():
-                    tim_pd_columns[int(colnum)-1] = ':'.join(line_split[1:]).strip()
+            if 'column' in line.lower() and ':' in line: #assume ":" is separator. Remove casing to be able to check for Column/COLUMN/column in string
+                sep = ':'
+            elif 'column' in line.lower() and '=' in line: #assume "=" is separator. Remove casing to be able to check for Column/COLUMN/column in string
+                sep = '='
+            else:
+                continue
+            line_split = line.split(sep)
+            colnum = line_split[0].lower().replace('column','').strip()
+            if colnum.isnumeric():
+                tim_pd_columns[int(colnum)-1] = ':'.join(line_split[1:]).strip()
         tim_pd.columns = tim_pd_columns
     
     if refdate:
