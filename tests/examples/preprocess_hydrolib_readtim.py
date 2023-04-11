@@ -12,7 +12,7 @@ file_tim = r'p:\archivedprojects\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmod
 
 data_tim = hcdfm.TimModel(file_tim)
 
-refdate = '2016-01-01'
+refdate = '2007-01-01'
 tim_pd = dfmt.TimModel_to_DataFrame(data_tim, parse_column_labels=True, refdate=refdate)
 
 data_tim_out = dfmt.DataFrame_to_TimModel(tim_pd)
