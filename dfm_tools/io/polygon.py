@@ -20,16 +20,6 @@ All names, logos, and references to "Deltares" are registered trademarks of
 Stichting Deltares and remain full property of Stichting Deltares at all times.
 All rights reserved.
 
-
-INFORMATION
-This script is part of dfm_tools: https://github.com/openearth/dfm_tools
-Check the README.rst on github for other available functions
-Check the tests folder on github for example scripts (this is the dfm_tools pytest testbank)
-Check the pptx and example figures in (created by the testbank): N:/Deltabox/Bulletin/veenstra/info dfm_tools
-
-Created on Wed Feb 12 01:55:57 2020
-
-@author: veenstra
 """
 
 

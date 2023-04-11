@@ -23,63 +23,9 @@ All rights reserved.
 """
 
 def write_timfile(filename, datablock, header, converttime=False, refdate=None, float_format='%6.2f'):
-    """
-    
-
-    Parameters
-    ----------
-    filename : TYPE
-        DESCRIPTION.
-    datablockss : Pandas dataframe
-        The DataFrame should contain time variable in the first column. Column names will not be parsed.
-    header : list of file header lines
-        Header lines will be printed to file
-    converttime : boolean True/False, optional
-        DESCRIPTION, Convert first data column from datetime to minutes since refdate. The default in False
-    refdate : datetime object, optional
-        DESCRIPTION. The default is None.
-    data_format : TYPE, optional
-        DESCRIPTION. The default is '%6.2f'.
-
-    Raises
-    ------
-    Exception
-        DESCRIPTION.
-
-    Returns
-    -------
-    None.
-
-    """
-    
-    raise DeprecationWarning('the function dfm_tools.write_timfile() is deprecated, please use the new hydrolib alternative: data_tim = hcdfm.TimModel(file_tim); tim_pd = dfmt.TimModel_to_DataFrame(data_tim).') #TODO: remove code
+    raise DeprecationWarning('the function dfm_tools.write_timfile() is deprecated, please use the new hydrolib alternative: https://github.com/Deltares/dfm_tools/blob/301-convert-timmodel-to-pandasdataframe/tests/examples/preprocess_hydrolib_readtim.py.') #TODO: remove code
 
 
 def read_timfile(filename, converttime=False, refdate=None):
-    """
-    
-
-    Parameters
-    ----------
-    filename : *.tim file name.
-    converttime : boolean True/False, optional
-        DESCRIPTION. The default is False. First column must be time in minues since refdate.
-    refdate : datetime object, optional
-        DESCRIPTION. The default is None
-    
-    Raises
-    ------
-    Exception
-        DESCRIPTION.
-
-    Returns
-    -------
-    datablock : Pandas dataframe
-        The DataFrame contains time variable in the first column. Column names are not parsed.
-    header : list
-        list of header lines from file
-
-    """
-    
-    raise DeprecationWarning('the function dfm_tools.read_timfile() is deprecated, please use the new hydrolib alternative: data_tim = hcdfm.TimModel(file_tim); tim_pd = dfmt.TimModel_to_DataFrame(data_tim).') #TODO: remove code
+    raise DeprecationWarning('the function dfm_tools.read_timfile() is deprecated, please use the new hydrolib alternative: https://github.com/Deltares/dfm_tools/blob/301-convert-timmodel-to-pandasdataframe/tests/examples/preprocess_hydrolib_readtim.py.') #TODO: remove code
     
