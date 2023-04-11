@@ -7,6 +7,8 @@ import os
 import glob
 import dfm_tools as dfmt
 import numpy as np
+import hydrolib.core.dflowfm as hcdfm
+import pandas as pd
 
 dir_testinput = os.path.join(r'c:\DATA','dfm_tools_testdata')
 
@@ -296,9 +298,6 @@ def test_zlayermodel_correct_layers():
     
 @pytest.mark.requiresdata
 def test_timmodel_to_dataframe():
-    import dfm_tools as dfmt
-    import hydrolib.core.dflowfm as hcdfm
-    import pandas as pd
     
     file_tim = os.path.join(dir_testinput,'Brouwerssluis_short.tim')
     
