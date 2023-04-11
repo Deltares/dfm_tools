@@ -36,7 +36,7 @@ chunks = 'auto'
 
 print('>> performance test opening: ',end='')
 dtstart = dt.datetime.now()
-ds = xr.open_dataset(file_nc,chunks=chunks,decode_cf=False,decode_times=False,decode_coords=False)
+ds = xr.open_dataset(file_nc,chunks=chunks)#,decode_cf=False,decode_times=False,decode_coords=False)
 print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
 
 ds = dfmt.preprocess_hisnc(ds)
