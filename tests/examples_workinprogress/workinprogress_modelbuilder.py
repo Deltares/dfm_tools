@@ -280,5 +280,13 @@ Abort(1) on node 0 (rank 0 in comm 0): application called MPI_Abort(MPI_COMM_WOR
 Abort(1) on node 3 (rank 3 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 3
 Abort(1) on node 2 (rank 2 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 2
 """
+#When doing a sequential run, the error is clearer (seems to be cartesian/spherical related)
+"""
+Dimr [2023-04-11 18:42:59.558644] #0 >> kernel: ...
+** WARNING: Variable 'air_pressure' in NetCDF file '/p/11209231-003-bes-modellering/hydrodynamica/hackathon/preprocessing/ModelBuilderOutput_JV/era5_msl_u10n_v10n_chnk_20221101to20221103_ERA5.nc requires 'projection_x_coordinate' and 'projection_y_coordinate'.
+Dimr [2023-04-11 18:42:59.558677] #0 >> kernel: Variable 'air_pressure' in NetCDF file '/p/11209231-003-bes-modellering/hydrodynamica/hackathon/preprocessing/ModelBuilderOutput_JV/era5_msl_u10n_v10n_chnk_20221101to20221103_ERA5.nc requires 'projection_x_coordinate' and 'projection_y_coordinate'.
+** ERROR  : flow_initexternalforcings: Error while initializing quantity: airpressure_windx_windy_charnock Check preceding log lines for details.
+"""
+
 
 #TODO: missing faces in quickplot, maybe because instable model
