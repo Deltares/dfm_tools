@@ -1,4 +1,4 @@
-#TODO: add meshkernel>=2.0.2 (pip or conda?)
+#TODO: add meshkernel>=2.0.2 (from pip)
 name: dfm_tools_env
 channels:
   - conda-forge
