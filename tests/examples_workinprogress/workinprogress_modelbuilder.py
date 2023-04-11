@@ -73,7 +73,7 @@ mb.refine_basegrid(mk=mk_object, data_bathy_sel=data_bathy_sel, min_face_size=mi
 
 #cutcells
 file_ldb = r'p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\grid\coastline.pli'
-#dfmt.meshkernel_delete_withpol(mk=mk_object,file_ldb=file_ldb)
+dfmt.meshkernel_delete_withpol(mk=mk_object,file_ldb=file_ldb)
 
 #TODO: cleanup grid necessary?
 # print('mk_object.mesh2d_get_obtuse_triangles_mass_centers()')
