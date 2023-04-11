@@ -12,6 +12,7 @@ import xarray as xr
 from cftime import date2num
 import hydrolib.core.dflowfm as hcdfm
 import warnings
+import dt.datetime
 
 
 def Dataset_to_T3D(datablock_xr):
@@ -293,7 +294,25 @@ def parse_xy_to_datetime(pointlike_pd):
     return pointlike_pd_timeidx
 
 
-def TimModel_to_DataFrame(data_tim, parse_column_labels=True, refdate=None):
+def TimModel_to_DataFrame(data_tim:hcdfm.TimModel, parse_column_labels:bool = True, refdate:(dt.datetime, pd.Timestamp, str, int, float) = None):
+    """
+    
+
+    Parameters
+    ----------
+    data_tim : hcdfm.TimModel
+        DESCRIPTION.
+    parse_column_labels : bool, optional
+        DESCRIPTION. The default is True.
+    refdate : (dt.datetime, pd.Timestamp, str, int, float), optional
+        DESCRIPTION. The default is None.
+
+    Returns
+    -------
+    tim_pd : TYPE
+        DESCRIPTION.
+
+    """
     #convert to pandas dataframe
     datablock = np.array(list(data_tim.timeseries.values()))
     timeblock = np.array(list(data_tim.timeseries.keys()))[np.newaxis].T
@@ -324,5 +343,6 @@ def TimModel_to_DataFrame(data_tim, parse_column_labels=True, refdate=None):
         refdate_pd = pd.Timestamp(refdate)
         tim_pd.index = refdate_pd + pd.to_timedelta(tim_pd.iloc[:,0],unit='minutes')
         tim_pd.index.name = 'times'
+    
     return tim_pd
 
