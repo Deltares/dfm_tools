@@ -11,6 +11,9 @@ import numpy as np
 import xarray as xr
 from cftime import date2num
 import hydrolib.core.dflowfm as hcdfm
+import warnings
+import datetime as dt
+
 
 def Dataset_to_T3D(datablock_xr):
     """
@@ -170,6 +173,25 @@ def DataFrame_to_PolyObject(poly_pd,name,content=None):
     return polyobject
 
 
+def DataFrame_to_TimModel(tim_pd):
+    """
+    converts data from tim_pd to TimModel and puts all headers as comments. Ignores the index, assumes first column is time in minutes since a refdate.
+    """
+    #TODO: add conversion from datetimes in index to minutes, maybe drop minutes column upon reading? First await https://github.com/Deltares/HYDROLIB-core/issues/511
+    
+    block_tim = tim_pd.values
+    data_tim = block_tim[:,1:].tolist()
+    times_tim = block_tim[:,0]
+    dict_tim = dict(zip(times_tim,data_tim))
+    
+    comments = tim_pd.columns.tolist()
+    for iC, comment in enumerate(comments):
+        comments[iC] = f'COLUMN {iC+1}: {comment}'
+    timmodel = hcdfm.TimModel(timeseries=dict_tim, comments=comments)
+    
+    return timmodel
+
+
 def forcinglike_to_Dataset(forcingobj, convertnan=False): #TODO: would be convenient to have this as a method of ForcingModel objects (Timeseries/T3D/etc): https://github.com/Deltares/HYDROLIB-core/issues/307
     """
     convert a hydrolib forcing like object (like Timeseries, T3D, Harmonic, etc) to an xarray Dataset with one or more variables.
@@ -291,4 +313,53 @@ def parse_xy_to_datetime(pointlike_pd):
     return pointlike_pd_timeidx
 
 
+def TimModel_to_DataFrame(data_tim:hcdfm.TimModel, parse_column_labels:bool = True, refdate:(dt.datetime, pd.Timestamp, str, int, float) = None):
+    """
+    
+
+    Parameters
+    ----------
+    data_tim : hcdfm.TimModel
+        DESCRIPTION.
+    parse_column_labels : bool, optional
+        Parse column labels from comments. This might fail since there is no standard way of prescribing the columns in the comments. The default is True.
+    refdate : (dt.datetime, pd.Timestamp, str, int, float), optional
+        DESCRIPTION. The default is None.
+
+    Returns
+    -------
+    tim_pd : TYPE
+        DESCRIPTION.
+
+    """
+    #convert to pandas dataframe
+    datablock = np.array(list(data_tim.timeseries.values()))
+    timeblock = np.array(list(data_tim.timeseries.keys()))[np.newaxis].T
+    block = np.concatenate([timeblock,datablock],axis=1)
+    tim_pd = pd.DataFrame(block)
+    tim_pd.columns += 1 #make column numbers 1-based
+    
+    if parse_column_labels:
+        #replace column labels with the ones in comments
+        tim_pd_columns = tim_pd.columns.tolist()
+        for line in data_tim.comments:
+            if 'column' in line.lower(): #remove casing to be able to check for Column/COLUMN/column in string
+                if ':' in line: #assume ":" is separator
+                    sep = ':'
+                elif '=' in line: #assume "=" is separator
+                    sep = '='
+                else:
+                    continue
+                line_split = line.split(sep)
+                colnum = line_split[0].lower().replace('column','').strip()
+                if colnum.isnumeric():
+                    tim_pd_columns[int(colnum)-1] = ':'.join(line_split[1:]).strip()
+        tim_pd.columns = tim_pd_columns
+    
+    if refdate:
+        refdate_pd = pd.Timestamp(refdate)
+        tim_pd.index = refdate_pd + pd.to_timedelta(tim_pd.iloc[:,0],unit='minutes')
+        tim_pd.index.name = 'times'
+    
+    return tim_pd
 

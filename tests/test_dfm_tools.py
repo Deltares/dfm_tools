@@ -7,6 +7,8 @@ import os
 import glob
 import dfm_tools as dfmt
 import numpy as np
+import hydrolib.core.dflowfm as hcdfm
+import pandas as pd
 
 dir_testinput = os.path.join(r'c:\DATA','dfm_tools_testdata')
 
@@ -292,4 +294,20 @@ def test_zlayermodel_correct_layers():
     vals_bl = data_frommap_merged_fullgrid['mesh2d_flowelem_bl'].to_numpy()
     assert (np.abs(vals_zw_top-vals_wl)<1e-6).all()
     assert (np.abs(vals_zw_bot-vals_bl)<1e-6).all()
+
+    
+@pytest.mark.requiresdata
+def test_timmodel_to_dataframe():
+    
+    file_tim = os.path.join(dir_testinput,'Brouwerssluis_short.tim')
+    
+    data_tim = hcdfm.TimModel(file_tim)
+    
+    refdate = '2016-01-01'
+    tim_pd = dfmt.TimModel_to_DataFrame(data_tim, parse_column_labels=True, refdate=refdate)
+    
+    assert tim_pd.index[0] == pd.Timestamp('2016-01-01 00:00:00')
+    assert len(tim_pd) == 91
+    assert tim_pd.columns[-1] == 'Phaeocystis_P (g/m3)'
+
 
