@@ -12,6 +12,7 @@ import datetime as dt
 import hydrolib.core.dflowfm as hcdfm
 import pandas as pd
 from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame
+from dfm_tools import __version__
 import getpass
 
 
@@ -52,12 +53,10 @@ def meshkernel_to_UgridDataset(mk:meshkernel.meshkernel.MeshKernel) -> xr.Datase
         xu_grid_ds[varn_conn].attrs["_FillValue"] += 1
         xu_grid_ds[varn_conn].attrs["start_index"] += 1
     
-    from importlib.metadata import version
-    dfmt_version = version('dfm_tools') #TODO: cleaner way to do this?
     xu_grid_ds = xu_grid_ds.assign_attrs({#'Conventions': 'CF-1.8 UGRID-1.0 Deltares-0.10', #add Deltares convention (was CF-1.8 UGRID-1.0)
                                           'institution': 'Deltares',
                                           'references': 'https://www.deltares.nl',
-                                          'source': f'Created with meshkernel {meshkernel.__version__}, xugrid {xu.__version__} and dfm_tools {dfmt_version}',
+                                          'source': f'Created with meshkernel {meshkernel.__version__}, xugrid {xu.__version__} and dfm_tools {__version__}',
                                           'history': 'Created on %s, %s'%(dt.datetime.now().strftime('%Y-%m-%dT%H:%M:%S%z'),getpass.getuser()), #TODO: add timezone
                                           })
     

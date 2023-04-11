@@ -428,7 +428,7 @@ def preprocess_merge_meteofiles(ext_old,
                                                 filetype=hcdfm.ExtOldFileType.NetCDFGridData, #11
                                                 method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
                                                 operand=hcdfm.Operand.override, #O
-                                                 
+                                                )
             ext_old.forcing.append(forcing_meteo)
             forcing_meteo = hcdfm.ExtOldForcing(quantity='rainfall_rate',
                                                 filename=file_out,
