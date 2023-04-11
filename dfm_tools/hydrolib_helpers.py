@@ -12,7 +12,7 @@ import xarray as xr
 from cftime import date2num
 import hydrolib.core.dflowfm as hcdfm
 import warnings
-import dt.datetime
+import datetime as dt
 
 
 def Dataset_to_T3D(datablock_xr):
@@ -173,6 +173,25 @@ def DataFrame_to_PolyObject(poly_pd,name,content=None):
     return polyobject
 
 
+def DataFrame_to_TimModel(tim_pd):
+    """
+    converts data from tim_pd to TimModel and puts all headers as comments. Ignores the index, assumes first column is time in minutes since a refdate.
+    """
+    #TODO: add conversion from datetimes in index to minutes, maybe drop minutes column upon reading? First await https://github.com/Deltares/HYDROLIB-core/issues/511
+    
+    block_tim = tim_pd.values
+    data_tim = block_tim[:,1:].tolist()
+    times_tim = block_tim[:,0]
+    dict_tim = dict(zip(times_tim,data_tim))
+    
+    comments = tim_pd.columns.tolist()
+    for iC, comment in enumerate(comments):
+        comments[iC] = f'COLUMN {iC+1}: {comment}'
+    timmodel = hcdfm.TimModel(timeseries=dict_tim, comments=comments)
+    
+    return timmodel
+
+
 def forcinglike_to_Dataset(forcingobj, convertnan=False): #TODO: would be convenient to have this as a method of ForcingModel objects (Timeseries/T3D/etc): https://github.com/Deltares/HYDROLIB-core/issues/307
     """
     convert a hydrolib forcing like object (like Timeseries, T3D, Harmonic, etc) to an xarray Dataset with one or more variables.
@@ -303,7 +322,7 @@ def TimModel_to_DataFrame(data_tim:hcdfm.TimModel, parse_column_labels:bool = Tr
     data_tim : hcdfm.TimModel
         DESCRIPTION.
     parse_column_labels : bool, optional
-        DESCRIPTION. The default is True.
+        Parse column labels from comments. This might fail since there is no standard way of prescribing the columns in the comments. The default is True.
     refdate : (dt.datetime, pd.Timestamp, str, int, float), optional
         DESCRIPTION. The default is None.
 
@@ -321,22 +340,20 @@ def TimModel_to_DataFrame(data_tim:hcdfm.TimModel, parse_column_labels:bool = Tr
     tim_pd.columns += 1 #make column numbers 1-based
     
     if parse_column_labels:
-        warnings.warn('parse_column_labels of tim files might fail since there is no standard way of prescribing them.')
         #replace column labels with the ones in comments
         tim_pd_columns = tim_pd.columns.tolist()
         for line in data_tim.comments:
-            line_lower = line.lower() #remove casing to be able to check for Column/COLUMN/column in string
-            if 'column' in line_lower:
-                if ':' in line_lower: #assume ":" is separator
+            if 'column' in line.lower(): #remove casing to be able to check for Column/COLUMN/column in string
+                if ':' in line: #assume ":" is separator
                     sep = ':'
-                elif '=' in line_lower: #assume "=" is separator
+                elif '=' in line: #assume "=" is separator
                     sep = '='
                 else:
                     continue
-                line_lower_split = line_lower.split(sep)
-                colnum = line_lower_split[0].replace('column','').strip()
+                line_split = line.split(sep)
+                colnum = line_split[0].lower().replace('column','').strip()
                 if colnum.isnumeric():
-                    tim_pd_columns[int(colnum)-1] = ':'.join(line_lower_split[1:]).strip()
+                    tim_pd_columns[int(colnum)-1] = ':'.join(line_split[1:]).strip()
         tim_pd.columns = tim_pd_columns
     
     if refdate:

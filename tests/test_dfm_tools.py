@@ -309,4 +309,6 @@ def test_timmodel_to_dataframe():
     
     assert tim_pd.index[0] == pd.Timestamp('2016-01-01 00:00:00')
     assert len(tim_pd) == 91
-    assert tim_pd.columns[-1] == 'phaeocystis_p (g/m3)'
+    assert tim_pd.columns[-1] == 'Phaeocystis_P (g/m3)'
+
+
