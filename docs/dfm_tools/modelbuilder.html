@@ -334,19 +334,19 @@ def preprocess_ini_cmems_to_nc(ext_old, tSimStart = dt.datetime(1998,1,1),
     
     #append forcings to ext
     
-    forcing_so = hcdfm.ExtForcing(quantity=&#39;initialsalinity&#39;, #TODO: nudge_salinity_temperature in reference model, but it&#39;s commented. The quantity is also not supported by hydrolib-core
-                                  filename=outFile,
-                                  filetype=hcdfm.FileType.NetCDFGridData,
-                                  method=hcdfm.Method.InterpolateTime,
-                                  operand=&#34;O&#34;,#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error #O
-                                  )
+    forcing_so = hcdfm.ExtOldForcing(quantity=&#39;initialsalinity&#39;, #TODO: nudge_salinity_temperature in reference model, but it&#39;s commented. The quantity is also not supported by hydrolib-core
+                                     filename=outFile,
+                                     filetype=hcdfm.ExtOldFileType.NetCDFGridData,
+                                     method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                     operand=hcdfm.Operand.override, #O
+                                     )
     ext_old.forcing.append(forcing_so)
-    forcing_thetao = hcdfm.ExtForcing(quantity=&#39;initialtemperature&#39;,
-                                      filename=outFile,
-                                      filetype=hcdfm.FileType.NetCDFGridData,
-                                      method=hcdfm.Method.InterpolateTime,
-                                      operand=&#34;O&#34;,#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error #O
-                                      )
+    forcing_thetao = hcdfm.ExtOldForcing(quantity=&#39;initialtemperature&#39;,
+                                         filename=outFile,
+                                         filetype=hcdfm.ExtOldFileType.NetCDFGridData,
+                                         method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                         operand=hcdfm.Operand.override, #O
+                                         )
     ext_old.forcing.append(forcing_thetao)
 
     return ext_old
@@ -422,58 +422,57 @@ def preprocess_merge_meteofiles(ext_old,
         
         #append to ext model
         if varkey_list == [&#39;msl&#39;,&#39;u10n&#39;,&#39;v10n&#39;,&#39;chnk&#39;]:
-            forcing_meteo = hcdfm.ExtForcing(quantity=&#39;airpressure_windx_windy_charnock&#39;,
-                                             filename=file_out,
-                                             varname=&#39;msl u10n v10n chnk&#39;,
-                                             filetype=hcdfm.FileType.NetCDFGridData, #11
-                                             method=hcdfm.Method.InterpolateTimeAndSpaceSaveWeights, #3
-                                             operand=&#34;O&#34;,#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error #O
-                                             )
+            forcing_meteo = hcdfm.ExtOldForcing(quantity=&#39;airpressure_windx_windy_charnock&#39;,
+                                                filename=file_out,
+                                                varname=&#39;msl u10n v10n chnk&#39;,
+                                                filetype=hcdfm.ExtOldFileType.NetCDFGridData, #11
+                                                method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                                operand=hcdfm.Operand.override, #O
+                                                )
             ext_old.forcing.append(forcing_meteo)
         elif varkey_list == [&#39;d2m&#39;,&#39;t2m&#39;,&#39;tcc&#39;]:
-            forcing_meteo = hcdfm.ExtForcing(quantity=&#39;dewpoint_airtemperature_cloudiness&#39;,
-                                             filename=file_out,
-                                             varname=&#39;d2m t2m tcc&#39;,
-                                             filetype=hcdfm.FileType.NetCDFGridData, #11
-                                             method=hcdfm.Method.InterpolateTimeAndSpaceSaveWeights, #3
-                                             operand=&#34;O&#34;,#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error #O
-                                             )
+            forcing_meteo = hcdfm.ExtOldForcing(quantity=&#39;dewpoint_airtemperature_cloudiness&#39;,
+                                                filename=file_out,
+                                                varname=&#39;d2m t2m tcc&#39;,
+                                                filetype=hcdfm.ExtOldFileType.NetCDFGridData, #11
+                                                method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                                operand=hcdfm.Operand.override, #O
+                                                )
             ext_old.forcing.append(forcing_meteo)
         elif varkey_list == [&#39;ssr&#39;,&#39;strd&#39;]:
-            forcing_meteo = hcdfm.ExtForcing(quantity=&#39;solarradiation&#39;,
-                                             filename=file_out,
-                                             varname=&#39;ssr&#39;,
-                                             filetype=hcdfm.FileType.NetCDFGridData, #11
-                                             method=hcdfm.Method.InterpolateTimeAndSpaceSaveWeights, #3
-                                             operand=&#34;O&#34;,#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error #O
-                                             )
+            forcing_meteo = hcdfm.ExtOldForcing(quantity=&#39;solarradiation&#39;,
+                                                filename=file_out,
+                                                varname=&#39;ssr&#39;,
+                                                filetype=hcdfm.ExtOldFileType.NetCDFGridData, #11
+                                                method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                                operand=hcdfm.Operand.override, #O
+                                                )
             ext_old.forcing.append(forcing_meteo)
-            forcing_meteo = hcdfm.ExtForcing(quantity=&#39;longwaveradiation&#39;,
-                                             filename=file_out,
-                                             varname=&#39;strd&#39;,
-                                             filetype=hcdfm.FileType.NetCDFGridData, #11
-                                             method=hcdfm.Method.InterpolateTimeAndSpaceSaveWeights, #3
-                                             operand=&#34;O&#34;,#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error #O
-                                             )
+            forcing_meteo = hcdfm.ExtOldForcing(quantity=&#39;longwaveradiation&#39;,
+                                                filename=file_out,
+                                                varname=&#39;strd&#39;,
+                                                filetype=hcdfm.ExtOldFileType.NetCDFGridData, #11
+                                                method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                                operand=hcdfm.Operand.override, #O
+                                                )
             ext_old.forcing.append(forcing_meteo)
         elif varkey_list == [&#39;mer&#39;,&#39;mtpr&#39;]:
-            forcing_meteo = hcdfm.ExtForcing(quantity=&#39;rainfall_rate&#39;,
-                                             filename=file_out,
-                                             varname=&#39;mtpr&#39;,
-                                             filetype=hcdfm.FileType.NetCDFGridData, #11
-                                             method=hcdfm.Method.InterpolateTimeAndSpaceSaveWeights, #3
-                                             operand=&#34;O&#34;,#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error #O
-                                             )
+            forcing_meteo = hcdfm.ExtOldForcing(quantity=&#39;rainfall_rate&#39;,
+                                                filename=file_out,
+                                                varname=&#39;mtpr&#39;,
+                                                filetype=hcdfm.ExtOldFileType.NetCDFGridData, #11
+                                                method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                                operand=hcdfm.Operand.override, #O
+                                                )
             ext_old.forcing.append(forcing_meteo)
-            forcing_meteo = hcdfm.ExtForcing(quantity=&#39;rainfall_rate&#39;,
-                                             filename=file_out,
-                                             varname=&#39;mer&#39;,
-                                             filetype=hcdfm.FileType.NetCDFGridData, #11
-                                             method=hcdfm.Method.InterpolateTimeAndSpaceSaveWeights, #3
-                                             operand=&#39;+&#39;,# hcdfm.Operand.SuperimposeNewValues, #TODO: commented part raises error #+
-                                             )
+            forcing_meteo = hcdfm.ExtOldForcing(quantity=&#39;rainfall_rate&#39;,
+                                                filename=file_out,
+                                                varname=&#39;mer&#39;,
+                                                filetype=hcdfm.ExtOldFileType.NetCDFGridData, #11
+                                                method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                                operand=hcdfm.Operand.add, #+
+                                                )
             ext_old.forcing.append(forcing_meteo)
-        
         
         if make_figs:
             #load outputfile
@@ -875,19 +874,19 @@ def refine_basegrid(mk, data_bathy_sel,min_face_size=0.1):
     
     #append forcings to ext
     
-    forcing_so = hcdfm.ExtForcing(quantity=&#39;initialsalinity&#39;, #TODO: nudge_salinity_temperature in reference model, but it&#39;s commented. The quantity is also not supported by hydrolib-core
-                                  filename=outFile,
-                                  filetype=hcdfm.FileType.NetCDFGridData,
-                                  method=hcdfm.Method.InterpolateTime,
-                                  operand=&#34;O&#34;,#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error #O
-                                  )
+    forcing_so = hcdfm.ExtOldForcing(quantity=&#39;initialsalinity&#39;, #TODO: nudge_salinity_temperature in reference model, but it&#39;s commented. The quantity is also not supported by hydrolib-core
+                                     filename=outFile,
+                                     filetype=hcdfm.ExtOldFileType.NetCDFGridData,
+                                     method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                     operand=hcdfm.Operand.override, #O
+                                     )
     ext_old.forcing.append(forcing_so)
-    forcing_thetao = hcdfm.ExtForcing(quantity=&#39;initialtemperature&#39;,
-                                      filename=outFile,
-                                      filetype=hcdfm.FileType.NetCDFGridData,
-                                      method=hcdfm.Method.InterpolateTime,
-                                      operand=&#34;O&#34;,#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error #O
-                                      )
+    forcing_thetao = hcdfm.ExtOldForcing(quantity=&#39;initialtemperature&#39;,
+                                         filename=outFile,
+                                         filetype=hcdfm.ExtOldFileType.NetCDFGridData,
+                                         method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                         operand=hcdfm.Operand.override, #O
+                                         )
     ext_old.forcing.append(forcing_thetao)
 
     return ext_old</code></pre>
@@ -972,58 +971,57 @@ def refine_basegrid(mk, data_bathy_sel,min_face_size=0.1):
         
         #append to ext model
         if varkey_list == [&#39;msl&#39;,&#39;u10n&#39;,&#39;v10n&#39;,&#39;chnk&#39;]:
-            forcing_meteo = hcdfm.ExtForcing(quantity=&#39;airpressure_windx_windy_charnock&#39;,
-                                             filename=file_out,
-                                             varname=&#39;msl u10n v10n chnk&#39;,
-                                             filetype=hcdfm.FileType.NetCDFGridData, #11
-                                             method=hcdfm.Method.InterpolateTimeAndSpaceSaveWeights, #3
-                                             operand=&#34;O&#34;,#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error #O
-                                             )
+            forcing_meteo = hcdfm.ExtOldForcing(quantity=&#39;airpressure_windx_windy_charnock&#39;,
+                                                filename=file_out,
+                                                varname=&#39;msl u10n v10n chnk&#39;,
+                                                filetype=hcdfm.ExtOldFileType.NetCDFGridData, #11
+                                                method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                                operand=hcdfm.Operand.override, #O
+                                                )
             ext_old.forcing.append(forcing_meteo)
         elif varkey_list == [&#39;d2m&#39;,&#39;t2m&#39;,&#39;tcc&#39;]:
-            forcing_meteo = hcdfm.ExtForcing(quantity=&#39;dewpoint_airtemperature_cloudiness&#39;,
-                                             filename=file_out,
-                                             varname=&#39;d2m t2m tcc&#39;,
-                                             filetype=hcdfm.FileType.NetCDFGridData, #11
-                                             method=hcdfm.Method.InterpolateTimeAndSpaceSaveWeights, #3
-                                             operand=&#34;O&#34;,#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error #O
-                                             )
+            forcing_meteo = hcdfm.ExtOldForcing(quantity=&#39;dewpoint_airtemperature_cloudiness&#39;,
+                                                filename=file_out,
+                                                varname=&#39;d2m t2m tcc&#39;,
+                                                filetype=hcdfm.ExtOldFileType.NetCDFGridData, #11
+                                                method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                                operand=hcdfm.Operand.override, #O
+                                                )
             ext_old.forcing.append(forcing_meteo)
         elif varkey_list == [&#39;ssr&#39;,&#39;strd&#39;]:
-            forcing_meteo = hcdfm.ExtForcing(quantity=&#39;solarradiation&#39;,
-                                             filename=file_out,
-                                             varname=&#39;ssr&#39;,
-                                             filetype=hcdfm.FileType.NetCDFGridData, #11
-                                             method=hcdfm.Method.InterpolateTimeAndSpaceSaveWeights, #3
-                                             operand=&#34;O&#34;,#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error #O
-                                             )
+            forcing_meteo = hcdfm.ExtOldForcing(quantity=&#39;solarradiation&#39;,
+                                                filename=file_out,
+                                                varname=&#39;ssr&#39;,
+                                                filetype=hcdfm.ExtOldFileType.NetCDFGridData, #11
+                                                method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                                operand=hcdfm.Operand.override, #O
+                                                )
             ext_old.forcing.append(forcing_meteo)
-            forcing_meteo = hcdfm.ExtForcing(quantity=&#39;longwaveradiation&#39;,
-                                             filename=file_out,
-                                             varname=&#39;strd&#39;,
-                                             filetype=hcdfm.FileType.NetCDFGridData, #11
-                                             method=hcdfm.Method.InterpolateTimeAndSpaceSaveWeights, #3
-                                             operand=&#34;O&#34;,#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error #O
-                                             )
+            forcing_meteo = hcdfm.ExtOldForcing(quantity=&#39;longwaveradiation&#39;,
+                                                filename=file_out,
+                                                varname=&#39;strd&#39;,
+                                                filetype=hcdfm.ExtOldFileType.NetCDFGridData, #11
+                                                method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                                operand=hcdfm.Operand.override, #O
+                                                )
             ext_old.forcing.append(forcing_meteo)
         elif varkey_list == [&#39;mer&#39;,&#39;mtpr&#39;]:
-            forcing_meteo = hcdfm.ExtForcing(quantity=&#39;rainfall_rate&#39;,
-                                             filename=file_out,
-                                             varname=&#39;mtpr&#39;,
-                                             filetype=hcdfm.FileType.NetCDFGridData, #11
-                                             method=hcdfm.Method.InterpolateTimeAndSpaceSaveWeights, #3
-                                             operand=&#34;O&#34;,#hcdfm.Operand.OverwriteExistingValues, #TODO: commented part raises error #O
-                                             )
+            forcing_meteo = hcdfm.ExtOldForcing(quantity=&#39;rainfall_rate&#39;,
+                                                filename=file_out,
+                                                varname=&#39;mtpr&#39;,
+                                                filetype=hcdfm.ExtOldFileType.NetCDFGridData, #11
+                                                method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                                operand=hcdfm.Operand.override, #O
+                                                )
             ext_old.forcing.append(forcing_meteo)
-            forcing_meteo = hcdfm.ExtForcing(quantity=&#39;rainfall_rate&#39;,
-                                             filename=file_out,
-                                             varname=&#39;mer&#39;,
-                                             filetype=hcdfm.FileType.NetCDFGridData, #11
-                                             method=hcdfm.Method.InterpolateTimeAndSpaceSaveWeights, #3
-                                             operand=&#39;+&#39;,# hcdfm.Operand.SuperimposeNewValues, #TODO: commented part raises error #+
-                                             )
+            forcing_meteo = hcdfm.ExtOldForcing(quantity=&#39;rainfall_rate&#39;,
+                                                filename=file_out,
+                                                varname=&#39;mer&#39;,
+                                                filetype=hcdfm.ExtOldFileType.NetCDFGridData, #11
+                                                method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                                operand=hcdfm.Operand.add, #+
+                                                )
             ext_old.forcing.append(forcing_meteo)
-        
         
         if make_figs:
             #load outputfile

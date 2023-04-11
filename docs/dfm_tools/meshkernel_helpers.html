@@ -44,6 +44,7 @@ import datetime as dt
 import hydrolib.core.dflowfm as hcdfm
 import pandas as pd
 from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame
+from dfm_tools import __version__
 import getpass
 
 
@@ -77,19 +78,17 @@ def meshkernel_to_UgridDataset(mk:meshkernel.meshkernel.MeshKernel) -&gt; xr.Dat
     #xu_grid_ds = xu_grid.to_dataset()
     xu_grid_ds = xu_grid.assign_face_coords(xu_grid.to_dataset()) #TODO: face_coords are necessary for hydrolib-core mdu.geometry.network validation: https://github.com/Deltares/HYDROLIB-core/issues/515
     
-    #convert 0-based to 1-based grid #TODO: FM kernel needs 1-based grid, but it should read the attributes instead. Report this (#ug_get_meshgeom, #12, ierr=0. ** WARNING: Could not read mesh face x-coordinates)
-    varn_fnc = xu_grid_ds.mesh2d.attrs[&#39;face_node_connectivity&#39;] #TODO: maybe also do for edge_node_connectivity
-    if xu_grid_ds[varn_fnc].attrs[&#39;start_index&#39;]==0:
-        xu_grid_ds[varn_fnc] += 1
-        xu_grid_ds[varn_fnc].attrs[&#34;_FillValue&#34;] += 1
-        xu_grid_ds[varn_fnc].attrs[&#34;start_index&#34;] += 1
+    #convert 0-based to 1-based grid for connectivity variables like face_node_connectivity #TODO: FM kernel needs 1-based grid, but it should read the attributes instead. Report this (#ug_get_meshgeom, #12, ierr=0. ** WARNING: Could not read mesh face x-coordinates)
+    ds_idx = xu_grid_ds.filter_by_attrs(start_index=0)
+    for varn_conn in ds_idx.data_vars:
+        xu_grid_ds[varn_conn] += 1
+        xu_grid_ds[varn_conn].attrs[&#34;_FillValue&#34;] += 1
+        xu_grid_ds[varn_conn].attrs[&#34;start_index&#34;] += 1
     
-    from importlib.metadata import version
-    dfmt_version = version(&#39;dfm_tools&#39;) #TODO: cleaner way to do this?
     xu_grid_ds = xu_grid_ds.assign_attrs({#&#39;Conventions&#39;: &#39;CF-1.8 UGRID-1.0 Deltares-0.10&#39;, #add Deltares convention (was CF-1.8 UGRID-1.0)
                                           &#39;institution&#39;: &#39;Deltares&#39;,
                                           &#39;references&#39;: &#39;https://www.deltares.nl&#39;,
-                                          &#39;source&#39;: f&#39;Created with meshkernel {meshkernel.__version__}, xugrid {xu.__version__} and dfm_tools {dfmt_version}&#39;,
+                                          &#39;source&#39;: f&#39;Created with meshkernel {meshkernel.__version__}, xugrid {xu.__version__} and dfm_tools {__version__}&#39;,
                                           &#39;history&#39;: &#39;Created on %s, %s&#39;%(dt.datetime.now().strftime(&#39;%Y-%m-%dT%H:%M:%S%z&#39;),getpass.getuser()), #TODO: add timezone
                                           })
     
@@ -165,19 +164,17 @@ def meshkernel_to_UgridDataset(mk:meshkernel.meshkernel.MeshKernel) -&gt; xr.Dat
     #xu_grid_ds = xu_grid.to_dataset()
     xu_grid_ds = xu_grid.assign_face_coords(xu_grid.to_dataset()) #TODO: face_coords are necessary for hydrolib-core mdu.geometry.network validation: https://github.com/Deltares/HYDROLIB-core/issues/515
     
-    #convert 0-based to 1-based grid #TODO: FM kernel needs 1-based grid, but it should read the attributes instead. Report this (#ug_get_meshgeom, #12, ierr=0. ** WARNING: Could not read mesh face x-coordinates)
-    varn_fnc = xu_grid_ds.mesh2d.attrs[&#39;face_node_connectivity&#39;] #TODO: maybe also do for edge_node_connectivity
-    if xu_grid_ds[varn_fnc].attrs[&#39;start_index&#39;]==0:
-        xu_grid_ds[varn_fnc] += 1
-        xu_grid_ds[varn_fnc].attrs[&#34;_FillValue&#34;] += 1
-        xu_grid_ds[varn_fnc].attrs[&#34;start_index&#34;] += 1
+    #convert 0-based to 1-based grid for connectivity variables like face_node_connectivity #TODO: FM kernel needs 1-based grid, but it should read the attributes instead. Report this (#ug_get_meshgeom, #12, ierr=0. ** WARNING: Could not read mesh face x-coordinates)
+    ds_idx = xu_grid_ds.filter_by_attrs(start_index=0)
+    for varn_conn in ds_idx.data_vars:
+        xu_grid_ds[varn_conn] += 1
+        xu_grid_ds[varn_conn].attrs[&#34;_FillValue&#34;] += 1
+        xu_grid_ds[varn_conn].attrs[&#34;start_index&#34;] += 1
     
-    from importlib.metadata import version
-    dfmt_version = version(&#39;dfm_tools&#39;) #TODO: cleaner way to do this?
     xu_grid_ds = xu_grid_ds.assign_attrs({#&#39;Conventions&#39;: &#39;CF-1.8 UGRID-1.0 Deltares-0.10&#39;, #add Deltares convention (was CF-1.8 UGRID-1.0)
                                           &#39;institution&#39;: &#39;Deltares&#39;,
                                           &#39;references&#39;: &#39;https://www.deltares.nl&#39;,
-                                          &#39;source&#39;: f&#39;Created with meshkernel {meshkernel.__version__}, xugrid {xu.__version__} and dfm_tools {dfmt_version}&#39;,
+                                          &#39;source&#39;: f&#39;Created with meshkernel {meshkernel.__version__}, xugrid {xu.__version__} and dfm_tools {__version__}&#39;,
                                           &#39;history&#39;: &#39;Created on %s, %s&#39;%(dt.datetime.now().strftime(&#39;%Y-%m-%dT%H:%M:%S%z&#39;),getpass.getuser()), #TODO: add timezone
                                           })
     
