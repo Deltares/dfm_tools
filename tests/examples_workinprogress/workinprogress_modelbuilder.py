@@ -13,6 +13,7 @@ from dfm_tools import modelbuilder as mb #different import for modelbuilder sinc
 import hydrolib.core.dflowfm as hcdfm
 import xarray as xr
 import pandas as pd
+import contextily as ctx
 
 ## input
 model_name = 'Bonaire'
@@ -90,10 +91,11 @@ xu_grid_uds['mesh2d_node_z'] = data_bathy_interp.elevation.clip(max=10)
 
 fig, ax = plt.subplots()
 xu_grid_uds.grid.plot(ax=ax,linewidth=1)
+ctx.add_basemap(ax=ax, crs='EPSG:4326', attribution=False)
 
 fig, ax = plt.subplots()
-xu_grid_uds.mesh2d_node_z.ugrid.plot(ax=ax,center=False,vmin=-500,vmax=10)
-#ctx.add_basemap(ax=ax, crs='EPSG:4326', attribution=False)
+xu_grid_uds.mesh2d_node_z.ugrid.plot(ax=ax,center=False)
+ctx.add_basemap(ax=ax, crs='EPSG:4326', attribution=False)
 
 #write xugrid grid to netcdf
 netfile  = os.path.join(dir_output, f'{model_name}_net.nc')
