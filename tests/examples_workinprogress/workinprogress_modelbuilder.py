@@ -5,7 +5,6 @@ Created on Tue Apr  4 16:12:56 2023
 @author: groenenb, laan_st, veenstra
 """
 
-import datetime as dt
 import os
 import matplotlib.pyplot as plt
 plt.close('all')
@@ -21,14 +20,12 @@ dir_output = r'p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preproces
 path_style = 'unix' # windows / unix
 overwrite = False # used for downloading of forcing data. Always set to True when changing the domain
 
-# path to polyline: this is the only file that is not created in the script, besides: obsfiles, dimr.xml and the submit script
-poly_file = os.path.join(dir_output, 'bnd.pli')
-#TODO: automate plifile generation with lat/lon bnds and dxy (possible via meshkernelpy?)
-
+#TODO: files that are not created in this script: obsfiles, dimr.xml and the submit script
 #TODO: reference run in: p:\11209231-003-bes-modellering\hydrodynamica\hackathon\simulations\run001_mapInterval_1800\
-
+#TODO: also compare settings to p:\11208054-004-dcsm-fm\models\3D_DCSM-FM\2013-2017\B05_hydrolib_JV\DCSM-FM_0_5nm.mdu (e.g. tlfSmo)
 # domain
 lon_min, lon_max, lat_min, lat_max = -68.55, -67.9, 11.8, 12.6
+bnd_dlon_dlat = 0.06
 
 #dates as understood by pandas.period_range(). ERA5 has freq='M' (month) and CMEMS has freq='D' (day)
 date_min = '2022-11-01'
@@ -53,6 +50,12 @@ mdu_file = os.path.join(dir_output, f'{model_name}.mdu')
 mdu = hcdfm.FMModel()
 
 
+#%%bnd generation
+pli_polyfile = mb.generate_bndpli(lon_min, lon_max, lat_min, lat_max, dlon=bnd_dlon_dlat, dlat=bnd_dlon_dlat, name=f'{model_name}_bnd')
+poly_file = os.path.join(dir_output, f'{model_name}.pli')
+pli_polyfile.save(poly_file)
+
+
 #%% grid generation
 # GEBCO bathymetry and Grid generation
 #select and plot bathy
@@ -60,7 +63,7 @@ file_nc_bathy = r'p:\metocean-data\open\GEBCO\2021\GEBCO_2021.nc'
 data_bathy = xr.open_dataset(file_nc_bathy)
 data_bathy_sel = data_bathy.sel(lon=slice(lon_min-1,lon_max+1),lat=slice(lat_min-1,lat_max+1))
 
-#TODO: grid generation/refinement based on bathy still to be improved in meshkernel (https://github.com/Deltares/dfm_tools/issues/234)
+#TODO: grid generation and bathy-refinement is still to be improved in meshkernel (https://github.com/Deltares/dfm_tools/issues/234)
 mk_object = mb.make_basegrid(lon_min, lon_max, lat_min, lat_max) #TODO: should be sperical, but is cartesian >> is_geographic keywork does not work yet
 
 #refine
@@ -79,7 +82,7 @@ dfmt.meshkernel_delete_withpol(mk=mk_object,file_ldb=file_ldb)
 # print(mk_object.mesh2d_get_hanging_edges())
 
 #convert to xugrid
-xu_grid_uds = dfmt.meshkernel_to_UgridDataset(mk=mk_object)
+xu_grid_uds = dfmt.meshkernel_to_UgridDataset(mk=mk_object) #TODO: after oldext is in main, remove face_coordinates from grid?
 
 #interp bathy
 data_bathy_interp = data_bathy_sel.interp(lon=xu_grid_uds.obj.mesh2d_node_x, lat=xu_grid_uds.obj.mesh2d_node_y).reset_coords(['lat','lon']) #interpolates lon/lat gebcodata to mesh2d_nNodes dimension #TODO: if these come from xu_grid_uds (without ojb), the mesh2d_node_z var has no ugrid accessor since the dims are lat/lon instead of mesh2d_nNodes
@@ -89,7 +92,7 @@ fig, ax = plt.subplots()
 xu_grid_uds.grid.plot(ax=ax,linewidth=1)
 
 fig, ax = plt.subplots()
-xu_grid_uds.mesh2d_node_z.ugrid.plot(ax=ax,center=False)
+xu_grid_uds.mesh2d_node_z.ugrid.plot(ax=ax,center=False,vmin=-500,vmax=10)
 #ctx.add_basemap(ax=ax, crs='EPSG:4326', attribution=False)
 
 #write xugrid grid to netcdf
@@ -125,9 +128,38 @@ if 1:
                                                  model = 'CMEMS',
                                                  tstart=pd.Timestamp(date_min)-pd.Timedelta(hours=12), tstop=pd.Timestamp(date_max)+pd.Timedelta(hours=12), #TODO: to account for noon-fields of CMEMS, build in safety?
                                                  list_plifiles = [poly_file],
-                                                 list_quantities = ['salinitybnd','temperaturebnd','uxuy','waterlevelbnd','tide'], #TODO: when adding both waterlevelbnd and tide as waterlevelbnd they should be consequetive. If there are other quantities in between, the model crashes with a update_ghostboundvals error (see below), report this.
+                                                 list_quantities = ['salinitybnd','temperaturebnd','uxuy','waterlevelbnd','tide'],
+                                                 #list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tide'], #TODO: see comment block below
                                                  dir_sourcefiles_hydro = dir_output_data_cmems)
-    
+    #TODO: when adding both waterlevelbnd and tide as waterlevelbnd they should be consequetive. If there are other quantities in between, the model crashes with a update_ghostboundvals error, report this:
+    """
+    ** INFO   : partition_fixorientation_ghostlist: number of reversed flowlinks=              0
+    ** INFO   : Done partitioning model.
+    ** ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated
+    ** INFO   : Closed file : /p/11209231-003-bes-modellering/hydrodynamica/hackathon/preprocessing/ModelBuilderOutput_JV/Bonaire_old.ext
+    ** INFO   : partition_fixorientation_ghostlist: number of reversed flowlinks=              0
+    ** INFO   : Done partitioning model.
+    ** ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated
+    ** INFO   : Closed file : /p/11209231-003-bes-modellering/hydrodynamica/hackathon/preprocessing/ModelBuilderOutput_JV/Bonaire_old.ext
+    Abort(1) on node 0 (rank 0 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+    Abort(1) on node 1 (rank 1 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 1
+    """
+    #When doing a sequential run, the model initializes successfully, but first timestep cannot be solved.
+    """
+    ** WARNING: Comp. time step average below threshold:  0.5742E-03 <  0.1000E+00.
+    ** INFO   : Performing direct write of solution state...
+    ** INFO   : Simulation current time: nt = 100, time1 =  26265600.06s (2022-11-01T00:00:00Z).
+    ** INFO   : Done writing solution state.
+    #### ERROR: dimr update ABORT,: myNameDFlowFM update failed, with return value 22 
+    """
+    #TODO: now also happened once with "correct" ordering, but after ~80% of simulation with auto_bnd and bnd_dlon_dlat=0.08 and 0.06
+    """
+    ** WARNING: Comp. time step average below threshold:  0.9077E-01 <  0.1000E+00.
+    ** INFO   : Performing direct write of solution state...
+    ** INFO   : Simulation current time: nt = 10632, time1 =  26413083.42s (2022-11-02T16:58:03Z).
+    ** INFO   : Done writing solution state.
+    #### ERROR: dimr update ABORT,: myNameDFlowFM update failed, with return value 22 
+    """
     #save new ext file
     ext_new.save(filepath=ext_file_new,path_style=path_style)
     
@@ -152,8 +184,6 @@ if 1:
         varlist = [['msl','u10n','v10n','chnk']]
     elif ERA5_meteo_option == 2:
         varlist = [['msl','u10n','v10n','chnk'],['d2m','t2m','tcc'],['ssr','strd'],['mer','mtpr']]
-        #TODO does it loop correctly over all lists?
-        #TODO: is "varname=msl u10n v10n chnk" ok, or should there be quotes around the value?
     
     mb.download_meteodata_oceandata(
         longitude_min = lon_min, longitude_max = lon_max, latitude_min = lat_min, latitude_max = lat_max,
@@ -212,8 +242,8 @@ mdu.wind.rhoair = 1.2265
 mdu.wind.relativewind = 0.5
 mdu.wind.pavbnd = 101330
 
-mdu.external_forcing.extforcefile = ext_file_old #TODO: is not written, but should be (with meteo)
-#mdu.external_forcing.extforcefilenew = ext_file_new #TODO: relative paths? #TODO: extfile not found with path_style='unix': https://github.com/Deltares/HYDROLIB-core/issues/516
+mdu.external_forcing.extforcefile = ext_file_old
+#mdu.external_forcing.extforcefilenew = ext_file_new #TODO: extfile not found with path_style='unix': https://github.com/Deltares/HYDROLIB-core/issues/516
 
 mdu.time.refdate = pd.Timestamp(ref_date).strftime('%Y%m%d')
 mdu.time.tunit = 'S'
@@ -225,7 +255,7 @@ mdu.time.autotimestep = 3
 mdu.output.obsfile = [os.path.join(dir_output,x) for x in ['osm_beach_centroids_offset_bonaire.xyn','stations_obs.xyn']]
 mdu.output.hisinterval = [60]
 mdu.output.mapinterval = [1800]#[86400]
-mdu.output.rstinterval = [0] #TODO: default is 0.0, but this translates to [0.0 tstart tstop]: https://github.com/Deltares/HYDROLIB-core/issues/525#issuecomment-1505111924
+mdu.output.rstinterval = [0] #TODO: default is 0.0, but this translates to [0.0 tstart tstop] instead of [0]: https://github.com/Deltares/HYDROLIB-core/issues/525#issuecomment-1505111924
 mdu.output.statsinterval = [3600]
 #TODO: disable many outputs (preferrably change many default values): https://github.com/Deltares/HYDROLIB-core/issues/525#issuecomment-1505111924
 
@@ -243,8 +273,7 @@ for iL, line in enumerate(mdu_contents):
 with open(mdu_file,'w') as f:
     f.write(''.join(mdu_contents))
 
-#TODO: if windows/unix extfile validation is fixed, use relative paths in .ext and in .mdu files
-#TODO: investigate recurse saving
+#TODO: if windows/unix newextfile validation is fixed, use relative paths in .ext and in .mdu files
 
 
 
@@ -258,32 +287,8 @@ with open(mdu_file,'w') as f:
 ** WARNING: While reading 'Bonaire.mdu': keyword [output] waterdepthclasses=0.0 was in file, but not used. Check possible typo.
 """
 
-#TODO: below is with two waterlevelbnd in new extfile
-#TODO: when manually enabling extforcefilenew, we get the messages below, but maybe because of non-spherical grid or mdu settings? >> same error with spherical grid
+#TODO: salinity instable, also waterlevel and velocity magnitude are instable at northeast side of island
 """
-** INFO   : added node-based ghostcells:              0
-** INFO   : partition_fixorientation_ghostlist: number of reversed flowlinks=              0
-** INFO   : partition_fixorientation_ghostlist: number of reversed flowlinks=              0
-** INFO   : partition_fixorientation_ghostlist: number of reversed flowlinks=              0
-** INFO   : partition_fixorientation_ghostlist: number of reversed flowlinks=              0
-** INFO   : Done partitioning model.
-** INFO   : Done partitioning model.
-** INFO   : Done partitioning model.
-** INFO   : Done partitioning model.
-** ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated
-** ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated
-** ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated
-** ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated
-Abort(1) on node 0 (rank 0 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
-Abort(1) on node 3 (rank 3 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 3
-Abort(1) on node 2 (rank 2 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 2
+** INFO   :  Min. salinity limited, number of cells Limmin =           20
+** INFO   :  Min. salinity limited, min =  -1.037033177733807E-005
 """
-#When doing a sequential run, the error is clearer (seems to be cartesian/spherical related) >> clear EC-module error with spherical grid (CMEMS 0.5 day missing)
-"""
-Dimr [2023-04-11 18:42:59.558644] #0 >> kernel: ...
-** WARNING: Variable 'air_pressure' in NetCDF file '/p/11209231-003-bes-modellering/hydrodynamica/hackathon/preprocessing/ModelBuilderOutput_JV/era5_msl_u10n_v10n_chnk_20221101to20221103_ERA5.nc requires 'projection_x_coordinate' and 'projection_y_coordinate'.
-Dimr [2023-04-11 18:42:59.558677] #0 >> kernel: Variable 'air_pressure' in NetCDF file '/p/11209231-003-bes-modellering/hydrodynamica/hackathon/preprocessing/ModelBuilderOutput_JV/era5_msl_u10n_v10n_chnk_20221101to20221103_ERA5.nc requires 'projection_x_coordinate' and 'projection_y_coordinate'.
-** ERROR  : flow_initexternalforcings: Error while initializing quantity: airpressure_windx_windy_charnock Check preceding log lines for details.
-"""
-
-

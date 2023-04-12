@@ -532,6 +532,23 @@ def refine_basegrid(mk, data_bathy_sel,min_face_size=0.1):
     return mk
 
 
+def generate_bndpli(lon_min, lon_max, lat_min, lat_max, dlon, dlat, name='bnd'):
+
+    vals_lon_ar = np.arange(lon_min, lon_max, dlon)
+    vals_lon = np.linspace(lon_min, lon_max,len(vals_lon_ar))
+    vals_lat_ar = np.arange(lat_min, lat_max, dlat)
+    vals_lat = np.linspace(lat_min, lat_max,len(vals_lat_ar))
+    pli_p1 = np.c_[np.repeat(lon_min,len(vals_lat)),vals_lat]
+    pli_p2 = np.c_[vals_lon,np.repeat(lat_max,len(vals_lon))]
+    pli_p3 = np.c_[np.repeat(lon_max,len(vals_lat)),vals_lat[::-1]]
+    pli_p4 = np.c_[vals_lon[::-1],np.repeat(lat_min,len(vals_lon))]
     
+    pli_all = np.concatenate([pli_p1[:-1],pli_p2[:-1],pli_p3[:-1],pli_p4[:-1]],axis=0)
+    
+    pli_polyobject = hcdfm.PolyObject(metadata=hcdfm.Metadata(name=name, n_rows=pli_all.shape[0], n_columns=pli_all.shape[1]),
+                                      points=[hcdfm.Point(x=x,y=y,data=[]) for x,y in pli_all])
+    pli_polyfile = hcdfm.PolyFile(objects=[pli_polyobject])
+    return pli_polyfile
+
 
 
