@@ -25,7 +25,7 @@ overwrite = False # used for downloading of forcing data. Always set to True whe
 poly_file = os.path.join(dir_output, 'bnd.pli')
 #TODO: automate plifile generation with lat/lon bnds and dxy (possible via meshkernelpy?)
 
-#TODO: reference run in: p:\11209231-003-bes-modellering\hydrodynamica\hackathon\simulations\run001_mapInterval_1800_waq_newGrid
+#TODO: reference run in: p:\11209231-003-bes-modellering\hydrodynamica\hackathon\simulations\run001_mapInterval_1800\
 
 # domain
 lon_min, lon_max, lat_min, lat_max = -68.55, -67.9, 11.8, 12.6
@@ -48,13 +48,9 @@ dir_output_data = os.path.join(dir_output, 'data')
 if not os.path.isdir(dir_output_data):
     os.mkdir(dir_output_data)
 
-#%% initialize mdu/ext files
+#%% initialize mdu file
 mdu_file = os.path.join(dir_output, f'{model_name}.mdu')
 mdu = hcdfm.FMModel()
-ext_file_new = os.path.join(dir_output, f'{model_name}_new.ext')
-ext_new = hcdfm.ExtModel()
-ext_file_old = os.path.join(dir_output, f'{model_name}_old.ext')
-ext_old = hcdfm.ExtOldModel()
 
 
 #%% grid generation
@@ -74,6 +70,7 @@ mb.refine_basegrid(mk=mk_object, data_bathy_sel=data_bathy_sel, min_face_size=mi
 #cutcells
 file_ldb = r'p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\grid\coastline.pli'
 dfmt.meshkernel_delete_withpol(mk=mk_object,file_ldb=file_ldb)
+#TODO: illegalcells.pol necessary?
 
 #TODO: cleanup grid necessary?
 # print('mk_object.mesh2d_get_obtuse_triangles_mass_centers()')
@@ -84,7 +81,6 @@ dfmt.meshkernel_delete_withpol(mk=mk_object,file_ldb=file_ldb)
 #convert to xugrid
 xu_grid_uds = dfmt.meshkernel_to_UgridDataset(mk=mk_object)
 
-#TODO: when providing mk=net_base, the grid is still refined, so mk is changed in-place (how to properly code this)
 #interp bathy
 data_bathy_interp = data_bathy_sel.interp(lon=xu_grid_uds.obj.mesh2d_node_x, lat=xu_grid_uds.obj.mesh2d_node_y).reset_coords(['lat','lon']) #interpolates lon/lat gebcodata to mesh2d_nNodes dimension #TODO: if these come from xu_grid_uds (without ojb), the mesh2d_node_z var has no ugrid accessor since the dims are lat/lon instead of mesh2d_nNodes
 xu_grid_uds['mesh2d_node_z'] = data_bathy_interp.elevation.clip(max=10)
@@ -102,13 +98,17 @@ xu_grid_uds.ugrid.to_netcdf(netfile)
 mdu.geometry.netfile = netfile #TODO: path is windows/unix dependent #TODO: providing os.path.basename(netfile) raises "ValidationError: 1 validation error for Geometry - netfile:   File: `C:\SnapVolumesTemp\MountPoints\{45c63495-0000-0000-0000-100000000000}\{79DE0690-9470-4166-B9EE-4548DC416BBD}\SVROOT\DATA\dfm_tools\tests\examples_workinprogress\Bonaire_net.nc` not found, skipped parsing." (wrong current directory)
 #breakit
 
+dir_output_data_cmems = os.path.join(dir_output_data, 'cmems')
+if not os.path.isdir(dir_output_data_cmems):
+    os.mkdir(dir_output_data_cmems)
+
 if 1:
     #%% new ext: initial and open boundary condition
     
+    ext_file_new = os.path.join(dir_output, f'{model_name}_new.ext')
+    ext_new = hcdfm.ExtModel()
+    
     # CMEMS - download
-    dir_output_data_cmems = os.path.join(dir_output_data, 'cmems')
-    if not os.path.isdir(dir_output_data_cmems):
-        os.mkdir(dir_output_data_cmems)
         
     mb.download_meteodata_oceandata(
         longitude_min = lon_min, longitude_max = lon_max, latitude_min = lat_min, latitude_max = lat_max,
@@ -123,9 +123,9 @@ if 1:
                                                  refdate_str = 'minutes since '+ref_date+' 00:00:00 +00:00',
                                                  dir_output = dir_output,
                                                  model = 'CMEMS',
-                                                 tstart = date_min,
-                                                 tstop = date_max,
+                                                 tstart=pd.Timestamp(date_min)-pd.Timedelta(hours=12), tstop=pd.Timestamp(date_max)+pd.Timedelta(hours=12), #TODO: to account for noon-fields of CMEMS, build in safety?
                                                  list_plifiles = [poly_file],
+                                                 list_quantities = ['salinitybnd','temperaturebnd','uxuy','waterlevelbnd','tide'], #TODO: when adding both waterlevelbnd and tide as waterlevelbnd they should be consequetive. If there are other quantities in between, the model crashes with a update_ghostboundvals error (see below), report this.
                                                  dir_sourcefiles_hydro = dir_output_data_cmems)
     
     #save new ext file
@@ -133,10 +133,13 @@ if 1:
     
     
     #%% old ext
-    
+if 1:    
     # CMEMS - initial condition file
+    ext_file_old = os.path.join(dir_output, f'{model_name}_old.ext')
+    ext_old = hcdfm.ExtOldModel()
+    
     ext_old = mb.preprocess_ini_cmems_to_nc(ext_old=ext_old,
-                                            tSimStart=dt.datetime.strptime(date_min, '%Y-%m-%d'),
+                                            tstart=date_min,
                                             dir_data=dir_output_data_cmems,
                                             dir_out=dir_output)
     
@@ -150,6 +153,7 @@ if 1:
     elif ERA5_meteo_option == 2:
         varlist = [['msl','u10n','v10n','chnk'],['d2m','t2m','tcc'],['ssr','strd'],['mer','mtpr']]
         #TODO does it loop correctly over all lists?
+        #TODO: is "varname=msl u10n v10n chnk" ok, or should there be quotes around the value?
     
     mb.download_meteodata_oceandata(
         longitude_min = lon_min, longitude_max = lon_max, latitude_min = lat_min, latitude_max = lat_max,
@@ -171,79 +175,71 @@ if 1:
 
 
 #%% .mdu settings
-#TODO: missing keywords to be added to hydrolib-core: https://github.com/Deltares/HYDROLIB-core/issues/486.
-#TODO: reference mdu: p:\11209231-003-bes-modellering\hydrodynamica\hackathon\simulations\run001_mapInterval_1800_trac_newGrid\Bonaire.mdu
-#TODO: also compare settings in diafiles again
 mdu.geometry.bedlevuni = 5
-if 0: #TODO: this raises a segmentation error in dflowfm, report this
-    mdu.geometry.kmx = 2
-    mdu.geometry.layertype = 2
-    mdu.geometry.numtopsig = 20
-    mdu.geometry.sigmagrowthfactor = 1.2
-else:
-    mdu.geometry.kmx = 20
-    mdu.geometry.layertype = 1
-    mdu.geometry.numtopsig = 20
-    mdu.geometry.sigmagrowthfactor = 1.2
-    mdu.geometry.dxdoubleat1dendnodes = 1
-    mdu.geometry.changevelocityatstructures = 0
-    mdu.geometry.changestructuredimensions = 1
-    mdu.geometry.numtopsiguniform = 1
-    mdu.geometry.dztop = 5.0
-    mdu.geometry.floorlevtoplay = -5.0
-    mdu.geometry.dztopuniabovez = -100.0
-    mdu.geometry.keepzlayeringatbed = 2
+mdu.geometry.kmx = 20
+mdu.geometry.layertype = 1
+mdu.geometry.numtopsig = 20
+mdu.geometry.sigmagrowthfactor = 1.2
+mdu.geometry.dxdoubleat1dendnodes = 1
+mdu.geometry.changevelocityatstructures = 0
+mdu.geometry.changestructuredimensions = 1
+mdu.geometry.numtopsiguniform = 1
+mdu.geometry.dztop = 5.0
+mdu.geometry.floorlevtoplay = -5.0
+mdu.geometry.dztopuniabovez = -100.0
+mdu.geometry.keepzlayeringatbed = 2
 
 mdu.numerics.tlfsmo = 86400
 mdu.numerics.izbndpos = 1
-#mdu.numerics.mintimestepbreak = 0.1 #TODO: add to hydrolib-core
-#mdu.numerics.keepstbndonoutflow = 1 #TODO: add to hydrolib-core
+mdu.numerics.mintimestepbreak = 0.1
+mdu.numerics.keepstbndonoutflow = 1
 
-mdu.physics.tidalforcing = 1 #TODO: is 0 in diafile (maybe because of non-spherical grid)
+mdu.physics.tidalforcing = 1
 mdu.physics.salinity = 1
-mdu.physics.temperature = 5 #TODO: is 1 in diafile
+mdu.physics.temperature = 5
 mdu.physics.initialsalinity = 33.8
 mdu.physics.temperature = 5
 mdu.physics.initialtemperature = 29.3
 mdu.physics.rhomean = 1023
 mdu.physics.secchidepth = 4
-#mdu.physics.salimax = 50 #TODO: add to hydrolib-core
-#mdu.physics.tempmax = 50 #TODO: add to hydrolib-core
-#mdu.physics.iniwithnudge = 2 #TODO: add to hydrolib-core #TODO: not implemented in oldextfile, do we want this?
-#mdu.physics.jasfer3d = 1 #TODO: is 0 in file but should be 1 automatically, might cause model instability (might be caused by non spherical grid)
+mdu.physics.salimax = 50
+mdu.physics.tempmax = 50
+#mdu.physics.iniwithnudge = 2 #TODO: commented in oldextfile in reference run, initial sal/tem profiles from deep layer were used instead (not yet derived, but 3D inifields also do not have an effect)
 
 mdu.wind.icdtyp = 4
-#TODO: also add cdbreakpoints for ERA5?
+#mdu.wind.cdbreakpoints = [0.025] #TODO: overwritten by spacevarying charnock from ERA5
 mdu.wind.rhoair = 1.2265
 mdu.wind.relativewind = 0.5
 mdu.wind.pavbnd = 101330
 
 mdu.external_forcing.extforcefile = ext_file_old #TODO: is not written, but should be (with meteo)
 #mdu.external_forcing.extforcefilenew = ext_file_new #TODO: relative paths? #TODO: extfile not found with path_style='unix': https://github.com/Deltares/HYDROLIB-core/issues/516
-#mdu.external_forcing.windext = 1 #TODO: is set in reference mdu, happens automatically?
 
 mdu.time.refdate = pd.Timestamp(ref_date).strftime('%Y%m%d')
-mdu.time.tunit   = 'S'
-mdu.time.dtmax   = 300
-mdu.time.tstart  = (dt.datetime.strptime(date_min,'%Y-%m-%d') - dt.datetime.strptime(ref_date,'%Y-%m-%d')).total_seconds()
-mdu.time.tstop   = (dt.datetime.strptime(date_max,'%Y-%m-%d') - dt.datetime.strptime(ref_date,'%Y-%m-%d')).total_seconds()
-#mdu.time.Startdatetime  = pd.Timestamp(date_min).strftime('%Y%m%d%H%M%S') #TODO: add to hydrolib-core and remove mdu.time.tstart
-#mdu.time.Stopdatetime   = pd.Timestamp(date_max).strftime('%Y%m%d%H%M%S') #TODO: add to hydrolib-core and remove mdu.time.tstop
-#mdu.time.autotimestep = 3 #TODO: add to hydrolib-core
+mdu.time.tunit = 'S'
+mdu.time.dtmax = 30
+mdu.time.startdatetime = pd.Timestamp(date_min).strftime('%Y%m%d%H%M%S')
+mdu.time.stopdatetime = pd.Timestamp(date_max).strftime('%Y%m%d%H%M%S')
+mdu.time.autotimestep = 3
 
 mdu.output.obsfile = [os.path.join(dir_output,x) for x in ['osm_beach_centroids_offset_bonaire.xyn','stations_obs.xyn']]
 mdu.output.hisinterval = [60]
 mdu.output.mapinterval = [1800]#[86400]
+mdu.output.rstinterval = [0] #TODO: default is 0.0, but this translates to [0.0 tstart tstop]: https://github.com/Deltares/HYDROLIB-core/issues/525#issuecomment-1505111924
+mdu.output.statsinterval = [3600]
+#TODO: disable many outputs (preferrably change many default values): https://github.com/Deltares/HYDROLIB-core/issues/525#issuecomment-1505111924
 
 
 #%% export model
 mdu.save(mdu_file,path_style=path_style)
 
-#TODO: temporary workaround for extforcefilenew
 mdu_contents = open(str(mdu_file),'r').readlines()
 for iL, line in enumerate(mdu_contents):
-    if line.startswith('[External Forcing]'):
+    if line.startswith('netFile'): #TODO: temporary workaround for non-meshkernel grid (converted to spherical with interacter)
+        mdu_contents[iL] = 'netFile = bonaire_spherical_net.nc\n'
+    if line.startswith('[External Forcing]'): #TODO: temporary workaround for extforcefilenew
         mdu_contents[iL] = line+'extForceFilenew = Bonaire_new.ext'+'\n'
+    pass
 with open(mdu_file,'w') as f:
     f.write(''.join(mdu_contents))
 
@@ -251,8 +247,9 @@ with open(mdu_file,'w') as f:
 #TODO: investigate recurse saving
 
 
+
 #%% model run
-#TODO: hydrolib-core written mdu-file contains old keywords
+#TODO: hydrolib-core written mdu-file contains unused keywords
 """
 ** WARNING: While reading 'Bonaire.mdu': keyword [numerics] qhrelax=0.01 was in file, but not used. Check possible typo.
 ** WARNING: While reading 'Bonaire.mdu': keyword [wind] windspeedbreakpoints=0.0 100.0 was in file, but not used. Check possible typo.
@@ -261,7 +258,8 @@ with open(mdu_file,'w') as f:
 ** WARNING: While reading 'Bonaire.mdu': keyword [output] waterdepthclasses=0.0 was in file, but not used. Check possible typo.
 """
 
-#TODO: when manually enabling extforcefilenew, we get the messages below, but maybe because of non-spherical grid or mdu settings?
+#TODO: below is with two waterlevelbnd in new extfile
+#TODO: when manually enabling extforcefilenew, we get the messages below, but maybe because of non-spherical grid or mdu settings? >> same error with spherical grid
 """
 ** INFO   : added node-based ghostcells:              0
 ** INFO   : partition_fixorientation_ghostlist: number of reversed flowlinks=              0
@@ -280,7 +278,7 @@ Abort(1) on node 0 (rank 0 in comm 0): application called MPI_Abort(MPI_COMM_WOR
 Abort(1) on node 3 (rank 3 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 3
 Abort(1) on node 2 (rank 2 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 2
 """
-#When doing a sequential run, the error is clearer (seems to be cartesian/spherical related)
+#When doing a sequential run, the error is clearer (seems to be cartesian/spherical related) >> clear EC-module error with spherical grid (CMEMS 0.5 day missing)
 """
 Dimr [2023-04-11 18:42:59.558644] #0 >> kernel: ...
 ** WARNING: Variable 'air_pressure' in NetCDF file '/p/11209231-003-bes-modellering/hydrodynamica/hackathon/preprocessing/ModelBuilderOutput_JV/era5_msl_u10n_v10n_chnk_20221101to20221103_ERA5.nc requires 'projection_x_coordinate' and 'projection_y_coordinate'.
@@ -289,4 +287,3 @@ Dimr [2023-04-11 18:42:59.558677] #0 >> kernel: Variable 'air_pressure' in NetCD
 """
 
 
-#TODO: missing faces in quickplot, maybe because instable model

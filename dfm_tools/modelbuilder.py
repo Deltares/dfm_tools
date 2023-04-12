@@ -274,7 +274,7 @@ def preprocess_interpolate_nc_to_bc(
     return ext_bnd
 
     
-def preprocess_ini_cmems_to_nc(ext_old, tSimStart = dt.datetime(1998,1,1),
+def preprocess_ini_cmems_to_nc(ext_old, tstart='1998-01-01',
         dir_data  = r'p:\i1000668-tcoms\03_newModel\01_input\02_bnd\data_opendap', #folder containing CMEMS so and thetao netcdf files
         dir_out = '.'):
     #TODO: merge with other ini script and make generic for getting an inifield out of CMEMS/etc regulargrid Dataset or a 2D/3D FM map/rst Dataset
@@ -286,6 +286,7 @@ def preprocess_ini_cmems_to_nc(ext_old, tSimStart = dt.datetime(1998,1,1),
     print(f'opening {len(file_nc_list)} datasets')
     data_xr = xr.open_mfdataset(file_nc_list)
     
+    tSimStart = pd.Timestamp(tstart)
     if 0: #this would be the proper way to do it, but FM needs two timesteps for some reason
         print('ds.interp()')
         data_xr_ontime = data_xr.interp(time=[tSimStart],kwargs=dict(bounds_error=True)) #bounds_error makes sure, outofbounds time results in "ValueError: A value in x_new is below the interpolation range."
@@ -301,6 +302,7 @@ def preprocess_ini_cmems_to_nc(ext_old, tSimStart = dt.datetime(1998,1,1),
     
     forcing_so = hcdfm.ExtOldForcing(quantity='initialsalinity', #TODO: nudge_salinity_temperature in reference model, but it's commented. The quantity is also not supported by hydrolib-core
                                      filename=outFile,
+                                     varname='so',
                                      filetype=hcdfm.ExtOldFileType.NetCDFGridData,
                                      method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
                                      operand=hcdfm.Operand.override, #O
@@ -308,6 +310,7 @@ def preprocess_ini_cmems_to_nc(ext_old, tSimStart = dt.datetime(1998,1,1),
     ext_old.forcing.append(forcing_so)
     forcing_thetao = hcdfm.ExtOldForcing(quantity='initialtemperature',
                                          filename=outFile,
+                                         varname='thetao',
                                          filetype=hcdfm.ExtOldFileType.NetCDFGridData,
                                          method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
                                          operand=hcdfm.Operand.override, #O
