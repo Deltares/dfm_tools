@@ -5,13 +5,10 @@ Created on Thu Apr 13 14:04:56 2023
 @author: veenstra
 """
 
-
 import os
 import dfm_tools as dfmt
 
-
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
-dir_output = '.'
 
 file_nc = os.path.join(dir_testinput,'DFM_sigma_curved_bend\\DFM_OUTPUT_cb_3d\\cb_3d_map.nc') #sigmalayer
 file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0*_map.nc') #zlayer
@@ -29,8 +26,6 @@ if 'mesh2d_vicwwu' in uds.data_vars:
 elif 'mesh2d_czu' in uds.data_vars:
     varn_onedges = 'mesh2d_czu'
 else:
-    # print(uds_edges)
-    # raise KeyError('vars not available, choose different one from above printed dataset')
     varn_onedges = 'mesh2d_edge_type' #if all else fails, interpolate this one
 
 print('construct indexer')
