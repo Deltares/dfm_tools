@@ -250,7 +250,7 @@ mdu.wind.relativewind = 0.5
 mdu.wind.pavbnd = 101330
 
 mdu.external_forcing.extforcefile = ext_file_old
-#mdu.external_forcing.extforcefilenew = ext_file_new #TODO: extfile not found with path_style='unix': https://github.com/Deltares/HYDROLIB-core/issues/516
+#mdu.external_forcing.extforcefilenew = ext_file_new #TODO: extfile not found with path_style='unix': https://github.com/Deltares/HYDROLIB-core/issues/516 (validation for newextfile not checked)
 
 mdu.time.refdate = pd.Timestamp(ref_date).strftime('%Y%m%d')
 mdu.time.tunit = 'S'
@@ -294,7 +294,7 @@ with open(mdu_file,'w') as f:
 ** WARNING: While reading 'Bonaire.mdu': keyword [output] waterdepthclasses=0.0 was in file, but not used. Check possible typo.
 """
 
-#TODO: salinity instable, also waterlevel and velocity magnitude are instable at northeast side of island
+#TODO: salinity instable, also waterlevel and velocity magnitude are instable at northeast side of island (latter is with incorrect ordering/selection in extfile)
 """
 ** INFO   :  Min. salinity limited, number of cells Limmin =           20
 ** INFO   :  Min. salinity limited, min =  -1.037033177733807E-005
