@@ -296,27 +296,35 @@ def preprocess_ini_cmems_to_nc(ext_old, tstart='1998-01-01',
     
     print('writing file')
     outFile = os.path.join(dir_out,f'InitialField_{tSimStart.strftime("%Y-%m-%d_%H-%M-%S")}.nc')
-    data_xr_ontime.to_netcdf(outFile,format="NETCDF4_CLASSIC")
+    data_xr_ontime.to_netcdf(outFile,format="NETCDF4_CLASSIC") #TODO: why the format setting?
     
     #append forcings to ext
-    
-    forcing_so = hcdfm.ExtOldForcing(quantity='initialsalinity', #TODO: nudge_salinity_temperature in reference model, but it's commented. The quantity is also not supported by hydrolib-core
-                                     filename=outFile,
-                                     varname='so',
-                                     filetype=hcdfm.ExtOldFileType.NetCDFGridData,
-                                     method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
-                                     operand=hcdfm.Operand.override, #O
-                                     )
-    ext_old.forcing.append(forcing_so)
-    forcing_thetao = hcdfm.ExtOldForcing(quantity='initialtemperature',
+    if 1: 
+        forcing_so = hcdfm.ExtOldForcing(quantity='initialsalinity',
                                          filename=outFile,
-                                         varname='thetao',
+                                         varname='so',
                                          filetype=hcdfm.ExtOldFileType.NetCDFGridData,
                                          method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
                                          operand=hcdfm.Operand.override, #O
                                          )
-    ext_old.forcing.append(forcing_thetao)
-
+        ext_old.forcing.append(forcing_so)
+        forcing_thetao = hcdfm.ExtOldForcing(quantity='initialtemperature',
+                                             filename=outFile,
+                                             varname='thetao',
+                                             filetype=hcdfm.ExtOldFileType.NetCDFGridData,
+                                             method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                             operand=hcdfm.Operand.override, #O
+                                             )
+        ext_old.forcing.append(forcing_thetao)
+    else: #TODO: 3D ini sal/tem fields are silently ignored, initial 3D conditions are only possible via nudging 1st timestep
+        forcing_saltem = hcdfm.ExtOldForcing(quantity='nudge_salinity_temperature', #TODO: nudge_salinity_temperature is not supported by hydrolib-core
+                                             filename=outFile,
+                                             filetype=hcdfm.ExtOldFileType.NetCDFGridData,
+                                             method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                             operand=hcdfm.Operand.override, #O
+                                             )
+        ext_old.forcing.append(forcing_saltem)
+    
     return ext_old
     
     

@@ -101,7 +101,7 @@ ctx.add_basemap(ax=ax, crs='EPSG:4326', attribution=False)
 netfile  = os.path.join(dir_output, f'{model_name}_net.nc')
 xu_grid_uds.ugrid.to_netcdf(netfile)
 mdu.geometry.netfile = netfile #TODO: path is windows/unix dependent #TODO: providing os.path.basename(netfile) raises "ValidationError: 1 validation error for Geometry - netfile:   File: `C:\SnapVolumesTemp\MountPoints\{45c63495-0000-0000-0000-100000000000}\{79DE0690-9470-4166-B9EE-4548DC416BBD}\SVROOT\DATA\dfm_tools\tests\examples_workinprogress\Bonaire_net.nc` not found, skipped parsing." (wrong current directory)
-#breakit
+
 
 dir_output_data_cmems = os.path.join(dir_output_data, 'cmems')
 if not os.path.isdir(dir_output_data_cmems):
@@ -130,8 +130,11 @@ if 1:
                                                  model = 'CMEMS',
                                                  tstart=pd.Timestamp(date_min)-pd.Timedelta(hours=12), tstop=pd.Timestamp(date_max)+pd.Timedelta(hours=12), #TODO: to account for noon-fields of CMEMS, build in safety?
                                                  list_plifiles = [poly_file],
-                                                 list_quantities = ['salinitybnd','temperaturebnd','uxuy','waterlevelbnd','tide'],
-                                                 #list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tide'], #TODO: see comment block below
+                                                 #TODO: need to put waterlevelbnds first (before salinity etc)? What happens when steric and tide are as waterlevelbnd since there is no operand keyword
+                                                 #list_quantities = ['salinitybnd','temperaturebnd','uxuy','waterlevelbnd','tide'], #TODO: this combination results in instable model and crash (is tide ignored?) o868342 (Comp. time step average below threshold)
+                                                 #list_quantities = ['salinitybnd','temperaturebnd','uxuy','tide'],#,'waterlevelbnd' #TODO: this gives stable model o868398
+                                                 list_quantities = ['tide','salinitybnd','temperaturebnd','uxuy'],#,'waterlevelbnd' #TODO: tide in front gives different results? (dia started equal, but this model is very slightly faster)
+                                                 #list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tide'], #TODO: this crashes, see comment block below
                                                  dir_sourcefiles_hydro = dir_output_data_cmems)
     #TODO: when adding both waterlevelbnd and tide as waterlevelbnd they should be consequetive. If there are other quantities in between, the model crashes with a update_ghostboundvals error, report this:
     """
@@ -220,6 +223,8 @@ mdu.geometry.dztop = 5.0
 mdu.geometry.floorlevtoplay = -5.0
 mdu.geometry.dztopuniabovez = -100.0
 mdu.geometry.keepzlayeringatbed = 2
+
+#TODO: keywords herman for stable model: keepzlayeringatbed=1 en baroczlaybed=1 en keepzlaybedvol=1 en zerozbndinflow/zerozbndadvectionvelocity=1
 
 mdu.numerics.tlfsmo = 86400
 mdu.numerics.izbndpos = 1
