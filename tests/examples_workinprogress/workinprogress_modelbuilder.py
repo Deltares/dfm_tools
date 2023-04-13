@@ -21,7 +21,7 @@ dir_output = r'p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preproces
 path_style = 'unix' # windows / unix
 overwrite = False # used for downloading of forcing data. Always set to True when changing the domain
 
-#TODO: files that are not created in this script: obsfiles, dimr.xml and the submit script
+#TODO: files that are not created in this script: ldb, obsfiles, dimr.xml and the submit script
 #TODO: reference run in: p:\11209231-003-bes-modellering\hydrodynamica\hackathon\simulations\run001_mapInterval_1800\
 #TODO: also compare settings to p:\11208054-004-dcsm-fm\models\3D_DCSM-FM\2013-2017\B05_hydrolib_JV\DCSM-FM_0_5nm.mdu (e.g. tlfSmo)
 # domain
