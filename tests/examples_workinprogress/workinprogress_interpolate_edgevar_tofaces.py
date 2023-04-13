@@ -31,6 +31,8 @@ else:
 print('construct indexer')
 varn_fnc = uds.grid.to_dataset().mesh2d.attrs['face_node_connectivity']
 dimn_maxfn = uds.grid.to_dataset().mesh2d.attrs['max_face_nodes_dimension']
+dimn_interface = uds.grid.to_dataset().mesh2d.attrs['interface_dimension']
+
 data_fnc = uds.grid.to_dataset()[varn_fnc]
 
 if hasattr(data_fnc,'_FillValue'):
@@ -44,13 +46,20 @@ if hasattr(data_fnc,'start_index'):
 
 #TODO: interpolation is slow for many timesteps, so maybe use .sel() on time dimension first
 print('interpolation with indexer: step 1')
-edgevar_tofaces_step1 = uds[varn_onedges].isel({uds.grid.edge_dimension:data_fnc}) #TODO: fails for cb_3d_map.nc, westernscheldt
+edgevar_tofaces_onint_step1 = uds[varn_onedges].isel({uds.grid.edge_dimension:data_fnc}) #TODO: fails for cb_3d_map.nc, westernscheldt
 print('interpolation with indexer: step 2')
-edgevar_tofaces_step2 = edgevar_tofaces_step1.where(data_fnc_validbool) #replace all values for fillvalue edges (-1) with nan
+edgevar_tofaces_onint_step2 = edgevar_tofaces_onint_step1.where(data_fnc_validbool) #replace all values for fillvalue edges (-1) with nan
 print('interpolation with indexer: step 3')
-edgevar_tofaces = edgevar_tofaces_step2.mean(dim=dimn_maxfn)
+edgevar_tofaces_onint = edgevar_tofaces_onint_step2.mean(dim=dimn_maxfn)
 print('interpolation with indexer: done')
 
+if dimn_interface in edgevar_tofaces_onint.dims:
+    #TODO: interpolate interfaces to centers (first we need zcc variable also, but this is 3D so inconvenient)
+    #TODO: easier might be to shift variable, add that to original variable, drop top/bottom values, change dimname from interfaces to centers
+    #edgevar_tofaces = edgevar_tofaces_onint.interp()#{dimn_interface:})
+    pass
+else:
+    edgevar_tofaces = edgevar_tofaces_onint
 #TODO: add inverse distance weighing, below example is from faces to edges, so make other way round
 """
 edge_coords = grid.edge_coordinates
