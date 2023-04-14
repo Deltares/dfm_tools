@@ -237,8 +237,8 @@ def reconstruct_zw_zcc_fromsigma(uds):
     
     uds_eta = uds[osz_formulaterms_int_dict['eta']] #mesh2d_s1
     uds_depth = uds[osz_formulaterms_int_dict['depth']] #mesh2d_waterdepth
-    if uds_depth.attrs['standard_name'] == 'sea_floor_depth_below_sea_surface': #TODO: previously the waterdepth instead of negative bedlevel was coupled via the formula_terms in sigmamodels (was fixed in OSS 140982 / 29-3-2022)
-        uds_depth = -uds['mesh2d_flowelem_bl']
+    if uds_depth.attrs['standard_name'] == 'sea_floor_depth_below_sea_surface': # previously the waterdepth instead of negative bedlevel was coupled via the formula_terms in sigmamodels (was fixed in OSS 140982 / 29-3-2022)
+        uds_depth = -uds['mesh2d_flowelem_bl'] # assuming this variable is available, which is not guaranteed
     uds_sigma_int = uds[osz_formulaterms_int_dict['sigma']] #mesh2d_interface_sigma
     uds_sigma_lay = uds[osz_formulaterms_lay_dict['sigma']] #mesh2d_layer_sigma
     
