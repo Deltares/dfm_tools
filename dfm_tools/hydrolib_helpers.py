@@ -173,18 +173,20 @@ def DataFrame_to_PolyObject(poly_pd,name,content=None):
     return polyobject
 
 
-def DataFrame_to_TimModel(tim_pd):
+def DataFrame_to_TimModel(tim_pd, refdate:(dt.datetime, pd.Timestamp, str)):
     """
     converts data from tim_pd to TimModel and puts all headers as comments. Ignores the index, assumes first column is time in minutes since a refdate.
     """
     #TODO: add conversion from datetimes in index to minutes, maybe drop minutes column upon reading? First await https://github.com/Deltares/HYDROLIB-core/issues/511
     
-    block_tim = tim_pd.values
-    data_tim = block_tim[:,1:].tolist()
-    times_tim = block_tim[:,0]
-    dict_tim = dict(zip(times_tim,data_tim))
+    refdate_pd = pd.Timestamp(refdate)
     
-    comments = tim_pd.columns.tolist()
+    data_tim = tim_pd.values.tolist()
+    times_tim = ((tim_pd.index - refdate_pd).total_seconds()/60).tolist()
+    dict_tim = [hcdfm.TimRecord(time=t,data=d) for t,d in zip(times_tim,data_tim)]
+    
+    comments_datacols = tim_pd.columns.tolist()
+    comments = [tim_pd.index.name] + comments_datacols
     for iC, comment in enumerate(comments):
         comments[iC] = f'COLUMN {iC+1}: {comment}'
     timmodel = hcdfm.TimModel(timeseries=dict_tim, comments=comments)
@@ -313,7 +315,7 @@ def parse_xy_to_datetime(pointlike_pd):
     return pointlike_pd_timeidx
 
 
-def TimModel_to_DataFrame(data_tim:hcdfm.TimModel, parse_column_labels:bool = True, refdate:(dt.datetime, pd.Timestamp, str, int, float) = None):
+def TimModel_to_DataFrame(data_tim:hcdfm.TimModel, parse_column_labels:bool = True, refdate:(dt.datetime, pd.Timestamp, str) = None):
     """
     
 
@@ -333,11 +335,10 @@ def TimModel_to_DataFrame(data_tim:hcdfm.TimModel, parse_column_labels:bool = Tr
 
     """
     #convert to pandas dataframe
-    datablock = np.array(list(data_tim.timeseries.values()))
-    timeblock = np.array(list(data_tim.timeseries.keys()))[np.newaxis].T
-    block = np.concatenate([timeblock,datablock],axis=1)
-    tim_pd = pd.DataFrame(block)
-    tim_pd.columns += 1 #make column numbers 1-based
+    timevals_pd = pd.Index([p.time for p in data_tim.timeseries])
+    tim_pd = pd.DataFrame([p.data for p in data_tim.timeseries],index=timevals_pd)
+    tim_pd.columns += 2 #make column numbers 1-based, but first column is already in index so start with 2
+    tim_pd.index.name = 'time in minutes'
     
     if parse_column_labels:
         #replace column labels with the ones in comments
@@ -352,13 +353,16 @@ def TimModel_to_DataFrame(data_tim:hcdfm.TimModel, parse_column_labels:bool = Tr
             line_split = line.split(sep)
             colnum = line_split[0].lower().replace('column','').strip()
             if colnum.isnumeric():
-                tim_pd_columns[int(colnum)-1] = ':'.join(line_split[1:]).strip()
+                comment_str = ':'.join(line_split[1:]).strip()
+                if colnum==1: #time column is now in index, overwrite index name
+                    tim_pd.index.name = comment_str
+                else:
+                    tim_pd_columns[int(colnum)-2] = comment_str
         tim_pd.columns = tim_pd_columns
     
     if refdate:
         refdate_pd = pd.Timestamp(refdate)
-        tim_pd.index = refdate_pd + pd.to_timedelta(tim_pd.iloc[:,0],unit='minutes')
-        tim_pd.index.name = 'times'
+        tim_pd.index = refdate_pd + pd.to_timedelta(tim_pd.index,unit='minutes')
     
     return tim_pd
 
