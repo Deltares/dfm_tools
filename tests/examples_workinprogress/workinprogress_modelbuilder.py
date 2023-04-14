@@ -145,7 +145,7 @@ if 1:
                                                  #list_quantities = ['salinitybnd','temperaturebnd','uxuy','tide'],#,'waterlevelbnd' #TODO: this gives stable model o868398 (but still expected no open bnd?)
                                                  #list_quantities = ['tide','salinitybnd','temperaturebnd','uxuy'],#,'waterlevelbnd' #TODO: tide in front gives different results? (dia started equal, but this model is very slightly faster)
                                                  #list_quantities = ['tide','waterlevelbnd','salinitybnd','temperaturebnd','uxuy'], #TODO: this should also be possible, but gives instability in wl after a few simulation hours and "** WARNING: Boundary link 00001662 already claimed [    -68.0750,     12.6625]"
-                                                 list_quantities = ['waterlevelbnd','tide','salinitybnd','temperaturebnd','uxuy'], #TODO: makes a difference with above? (not tested yet)
+                                                 list_quantities = ['waterlevelbnd','tide','salinitybnd','temperaturebnd','uxuy'], #TODO: seems to make no difference with above
                                                  #list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tide'], #TODO: this crashes with update_ghostboundvals error, see comment block below
                                                  dir_sourcefiles_hydro = dir_output_data_cmems)
     #TODO: when adding both waterlevelbnd and tide as waterlevelbnd they should be consequetive. If there are other quantities in between, the model crashes with a update_ghostboundvals error, report this:
