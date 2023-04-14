@@ -24,8 +24,6 @@ import numpy as np
 import meshkernel
 
 
-#MODELBUILDER: p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\scripts\dfm_ModelBuilder_functions.py
-
 def download_meteodata_oceandata(
         longitude_min = 2, longitude_max = 4, latitude_min = 50, latitude_max = 52, # domain
         model = 'CMEMS', #CMEMS ERA5
@@ -299,7 +297,7 @@ def preprocess_ini_cmems_to_nc(ext_old, tstart='1998-01-01',
     data_xr_ontime.to_netcdf(outFile,format="NETCDF4_CLASSIC") #TODO: why the format setting?
     
     #append forcings to ext
-    if 1: 
+    if 0: 
         forcing_so = hcdfm.ExtOldForcing(quantity='initialsalinity',
                                          filename=outFile,
                                          varname='so',
@@ -316,7 +314,7 @@ def preprocess_ini_cmems_to_nc(ext_old, tstart='1998-01-01',
                                              operand=hcdfm.Operand.override, #O
                                              )
         ext_old.forcing.append(forcing_thetao)
-    else: #TODO: 3D ini sal/tem fields are silently ignored, initial 3D conditions are only possible via nudging 1st timestep
+    else: #TODO: 3D initialsalinity/initialtemperature fields are silently ignored, initial 3D conditions are only possible via nudging 1st timestep
         forcing_saltem = hcdfm.ExtOldForcing(quantity='nudge_salinity_temperature', #TODO: nudge_salinity_temperature is not supported by hydrolib-core
                                              filename=outFile,
                                              filetype=hcdfm.ExtOldFileType.NetCDFGridData,

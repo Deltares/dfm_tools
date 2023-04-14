@@ -33,7 +33,7 @@ def meshkernel_delete_withpol(mk, file_ldb, minpoints=None):
         delete_pol_geom = meshkernel.GeometryList(x_coordinates=pol_del['x'].to_numpy(), y_coordinates=pol_del['y'].to_numpy()) #TODO: .copy()/to_numpy() makes the array contiguous in memory, which is necessary for meshkernel.mesh2d_delete()
         mk.mesh2d_delete(geometry_list=delete_pol_geom, 
                          delete_option=meshkernel.DeleteMeshOption(2), #ALL_COMPLETE_FACES/2: Delete all faces of which the complete face is inside the polygon
-                         invert_deletion=False) #TODO: cuts away link that is neccesary, so results in non-orthogonal grid
+                         invert_deletion=False) #TODO: cuts away link that is neccesary, so results in non-orthogonal grid (probably usecase of english channel?)
     return mk
 
 
@@ -43,8 +43,7 @@ def meshkernel_to_UgridDataset(mk:meshkernel.meshkernel.MeshKernel) -> xr.Datase
     xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid3)
     
     #convert to dataset
-    #xu_grid_ds = xu_grid.to_dataset()
-    xu_grid_ds = xu_grid.assign_face_coords(xu_grid.to_dataset()) #TODO: face_coords are necessary for hydrolib-core mdu.geometry.network validation: https://github.com/Deltares/HYDROLIB-core/issues/515
+    xu_grid_ds = xu_grid.to_dataset()
     
     #convert 0-based to 1-based grid for connectivity variables like face_node_connectivity #TODO: FM kernel needs 1-based grid, but it should read the attributes instead. Report this (#ug_get_meshgeom, #12, ierr=0. ** WARNING: Could not read mesh face x-coordinates)
     ds_idx = xu_grid_ds.filter_by_attrs(start_index=0)
@@ -73,5 +72,5 @@ def meshkernel_to_UgridDataset(mk:meshkernel.meshkernel.MeshKernel) -> xr.Datase
     #     'value': 'value is equal to EPSG code'}
     # xu_grid_ds['wgs84'] = xr.DataArray(np.array(0,dtype=int),dims=(),attrs=attribute_dict)
     
-    xu_grid_uds = xu.UgridDataset(xu_grid_ds) #TODO: conversion to UgridDataset introduces mesh2d_nNodes variable with range(len(mesh2d_nNodes)) as contents, report?
+    xu_grid_uds = xu.UgridDataset(xu_grid_ds)
     return xu_grid_uds
