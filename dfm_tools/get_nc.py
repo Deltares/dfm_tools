@@ -254,6 +254,7 @@ def reconstruct_zw_zcc_fromz(data_xr_map):
     reconstruct full grid output (time/face-varying z-values) for zvalue model. Necessary when extracting values with zdepth w.r.t. waterlevel/bedlevel
     #TODO: gives spotty result for 0/0.1m w.r.t. bedlevel for Grevelingen zmodel
     #TODO: remove hardcoding of varnames
+    #TODO: center values are clipped to wl/bl, so the top/bottom layer are currently incorrect
     """
     
     dimn_layer, dimn_interfaces = get_vertical_dimensions(data_xr_map)
@@ -263,7 +264,7 @@ def reconstruct_zw_zcc_fromz(data_xr_map):
     data_frommap_bl_sel = data_xr_map['mesh2d_flowelem_bl']
     
     zvals_cen_zval = data_xr_map['mesh2d_layer_z'] #no clipping for zcenter values, since otherwise interp will fail
-    data_xr_map['mesh2d_flowelem_zcc'] = (data_frommap_z0_sel+zvals_cen_zval)
+    data_xr_map['mesh2d_flowelem_zcc'] = (data_frommap_z0_sel+zvals_cen_zval).clip(min=data_frommap_bl_sel, max=data_frommap_wl_sel)
 
     zvals_interface_zval = data_xr_map['mesh2d_interface_z'] #clipping for zinterface values, to make sure layer interfaces are also at water/bed level
     data_xr_map['mesh2d_flowelem_zw'] = (data_frommap_z0_sel+zvals_interface_zval).clip(min=data_frommap_bl_sel, max=data_frommap_wl_sel)
