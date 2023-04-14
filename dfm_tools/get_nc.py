@@ -259,8 +259,8 @@ def reconstruct_zw_zcc_fromz(data_xr_map):
     data_frommap_z0_sel = data_frommap_wl_sel*0
     data_frommap_bl_sel = data_xr_map['mesh2d_flowelem_bl']
     
-    #zvals_cen_zval = data_xr_map['mesh2d_layer_z'] #no clipping for zcenter values, since otherwise interp will fail
-    #data_xr_map['mesh2d_flowelem_zcc'] = (data_frommap_z0_sel+zvals_cen_zval)
+    zvals_cen_zval = data_xr_map['mesh2d_layer_z'] #no clipping for zcenter values, since otherwise interp will fail
+    data_xr_map['mesh2d_flowelem_zcc'] = (data_frommap_z0_sel+zvals_cen_zval)
 
     zvals_interface_zval = data_xr_map['mesh2d_interface_z'] #clipping for zinterface values, to make sure layer interfaces are also at water/bed level
     data_xr_map['mesh2d_flowelem_zw'] = (data_frommap_z0_sel+zvals_interface_zval).clip(min=data_frommap_bl_sel, max=data_frommap_wl_sel)
@@ -268,7 +268,7 @@ def reconstruct_zw_zcc_fromz(data_xr_map):
     bool_int_abovewl = zvals_interface_zval>data_frommap_wl_sel
     data_xr_map['mesh2d_flowelem_zw'] = data_xr_map['mesh2d_flowelem_zw'].where(bool_notoplayer_int | bool_int_abovewl, other=data_frommap_wl_sel) #zvalues of top layer_interfaces that are lower than wl are replaced by wl
     
-    data_xr_map = data_xr_map.set_coords(['mesh2d_flowelem_zw'])#,'mesh2d_flowelem_zcc']) #TODO: do we need zcc also? Temporarily removed since zsigma and sigma also do not return it.
+    data_xr_map = data_xr_map.set_coords(['mesh2d_flowelem_zw','mesh2d_flowelem_zcc'])
     return data_xr_map
 
 
