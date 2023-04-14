@@ -64,21 +64,6 @@ class LineBuilder:
         self.ys.append(event.ydata)
         self.line_array = np.c_[self.xs, self.ys]
         self.line.set_data(self.xs, self.ys)
-        self.line.figure.canvas.draw()
-
-class NOT_LineBuilder:
-    def __init__(self, line):
-        self.line = line
-        self.xs = list(line.get_xdata())
-        self.ys = list(line.get_ydata())
-        self.cid = line.figure.canvas.mpl_connect(&#39;button_press_event&#39;, self)
-
-    def __call__(self, event):
-        print(&#39;click&#39;, event)
-        if event.inaxes!=self.line.axes: return
-        self.xs.append(event.xdata)
-        self.ys.append(event.ydata)
-        self.line.set_data(self.xs, self.ys)
         self.line.figure.canvas.draw()</code></pre>
 </details>
 </section>
@@ -128,32 +113,6 @@ class NOT_LineBuilder:
         self.line.figure.canvas.draw()</code></pre>
 </details>
 </dd>
-<dt id="dfm_tools.linebuilder.NOT_LineBuilder"><code class="flex name class">
-<span>class <span class="ident">NOT_LineBuilder</span></span>
-<span>(</span><span>line)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">class NOT_LineBuilder:
-    def __init__(self, line):
-        self.line = line
-        self.xs = list(line.get_xdata())
-        self.ys = list(line.get_ydata())
-        self.cid = line.figure.canvas.mpl_connect(&#39;button_press_event&#39;, self)
-
-    def __call__(self, event):
-        print(&#39;click&#39;, event)
-        if event.inaxes!=self.line.axes: return
-        self.xs.append(event.xdata)
-        self.ys.append(event.ydata)
-        self.line.set_data(self.xs, self.ys)
-        self.line.figure.canvas.draw()</code></pre>
-</details>
-</dd>
 </dl>
 </section>
 </article>
@@ -172,9 +131,6 @@ class NOT_LineBuilder:
 <ul>
 <li>
 <h4><code><a title="dfm_tools.linebuilder.LineBuilder" href="#dfm_tools.linebuilder.LineBuilder">LineBuilder</a></code></h4>
-</li>
-<li>
-<h4><code><a title="dfm_tools.linebuilder.NOT_LineBuilder" href="#dfm_tools.linebuilder.NOT_LineBuilder">NOT_LineBuilder</a></code></h4>
 </li>
 </ul>
 </li>

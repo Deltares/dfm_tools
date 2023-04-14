@@ -6,7 +6,6 @@ Created on Wed Aug 17 11:19:51 2022
 """
 
 import os
-from pathlib import Path
 import matplotlib.pyplot as plt
 plt.close('all')
 import dfm_tools as dfmt
@@ -34,7 +33,7 @@ dir_output = '.'
 
 for file_bc in file_bc_list:
     #Load .bc-file using HydroLib object ForcingModel.
-    m = hcdfm.ForcingModel(Path(file_bc)) #TODO: support str: https://github.com/Deltares/HYDROLIB-core/issues/365
+    m = hcdfm.ForcingModel(file_bc)
     ForcingModel_object_out = hcdfm.ForcingModel()
     
     # m.general.comments = {'a':'aa'} #TODO: adding comments to top of file is not possible, only if using filetype or fileversion: https://github.com/Deltares/HYDROLIB-core/issues/130. Top file comment newfeature: https://github.com/Deltares/HYDROLIB-core/issues/362

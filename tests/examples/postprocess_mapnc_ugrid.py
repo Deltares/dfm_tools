@@ -151,7 +151,7 @@ for file_nc in file_nc_list:
         fou_varname_u, fou_varname_v = 'mesh2d_fourier027_mean', 'mesh2d_fourier040_mean'
         raster_res = 0.3
     else:
-        raise Exception('ERROR: no settings provided for this mapfile')
+        raise KeyError('ERROR: no settings provided for this mapfile')
     
     
     print('plot grid from mapdata')

@@ -316,7 +316,6 @@ def reconstruct_zw_zcc(ds):
     #reconstruct zw/zcc variables (if not in file) and treat as fullgrid mapfile from here
     if varname_zint in ds.variables: #fullgrid info already available, so continuing
         print(f'zw/zcc (fullgrid) values already present in Dataset in variable {varname_zint}')
-        pass
     elif len(ds.filter_by_attrs(standard_name='ocean_sigma_z_coordinate')) != 0:
         print('zsigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
         ds = reconstruct_zw_zcc_fromzsigma(ds)
@@ -331,7 +330,7 @@ def reconstruct_zw_zcc(ds):
     return ds
 
     
-def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str ='z0', zlayer_z0_selnearest:bool = False):    
+def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str ='z0'):    
     """
     Lazily depth-slice a dataset with layers. Performance can be increased by using a subset of variables or subsetting the dataset in any dimension.
     This can be done for instance with ds.isel(time=-1) or uds.ugrid.sel(x=slice(),y=slice()) to subset a ugrid dataset in space.
@@ -383,11 +382,6 @@ def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str ='z0', z
         print(UserWarning('depth/layer dimension not found, probably 2D model, returning input Dataset')) #TODO: this can also be at depth, since slice will put parts of model dry (and allnan if below wl or below bl). Implement this
         return data_xr #early return
     
-    if reference=='waterlevel' and varname_wl not in data_xr.variables:
-        raise KeyError(f'get_Dataset_atdepths() called with reference=waterlevel, but {varname_wl} variable not present')
-    if reference=='bedlevel' and varname_wl not in data_xr.variables:
-        raise KeyError(f'get_Dataset_atdepths() called with reference=bedlevel, but {varname_bl} variable not present') #TODO: in case of zsigma/sigma it can also be -mesh2d_bldepth
-    
     if not isinstance(data_xr,(xr.Dataset,xu.UgridDataset)):
         raise TypeError(f'data_xr_map should be of type xr.Dataset, but is {type(data_xr)}')
     
@@ -401,18 +395,6 @@ def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str ='z0', z
                                                            'reference':f'model_{reference}',
                                                            'positive':'up'}) #TODO: make more in line with CMEMS etc
     
-    #simplified/faster method for zlayer icm z0 reference (mapfiles only) #TODO: maybe remove this part of the code to make it better maintainable.
-    if 'mesh2d_layer_z' in data_xr.variables and zlayer_z0_selnearest and reference=='z0': # selects nearest z-center values (instead of slicing), should be faster #TODO: check if this is faster than fullgrid
-        print('z-layer model, zlayer_z0_selnearest=True and reference=="z0" so using xr.sel(method="nearest")]')
-        warnings.warn(DeprecationWarning('The get_Dataset_atdepths() keyword zlayer_z0_selnearest might be phased out.'))
-        data_xr = data_xr.set_index({dimn_layer:'mesh2d_layer_z'})#.rename({'nmesh2d_layer':depth_varname}) #set depth as index on layers, to be able to interp to depths instead of layernumbers
-        data_xr[depth_vardimname] = depths_xr
-        ds_atdepths = data_xr.sel({dimn_layer:depths_xr},method='nearest')
-        data_wl = data_xr[varname_wl]
-        data_bl = data_xr[varname_bl]
-        ds_atdepths = ds_atdepths.where((depths_xr>=data_bl) & (depths_xr<=data_wl)) #filter above wl and below bl values
-        return ds_atdepths #early return
-    
     #potentially construct fullgrid info (zcc/zw)
     data_xr = reconstruct_zw_zcc(data_xr)
     
@@ -420,9 +402,13 @@ def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str ='z0', z
     if reference=='z0':
         zw_reference = data_xr[varname_zint]
     elif reference=='waterlevel':
+        if varname_wl not in data_xr.variables:
+            raise KeyError(f'get_Dataset_atdepths() called with reference=waterlevel, but {varname_wl} variable not present')
         data_wl = data_xr[varname_wl]
         zw_reference = data_xr[varname_zint] - data_wl
     elif reference=='bedlevel':
+        if varname_bl not in data_xr.variables:
+            raise KeyError(f'get_Dataset_atdepths() called with reference=bedlevel, but {varname_bl} variable not present') #TODO: in case of zsigma/sigma it can also be -mesh2d_bldepth
         data_bl = data_xr[varname_bl]
         zw_reference = data_xr[varname_zint] - data_bl
     else:

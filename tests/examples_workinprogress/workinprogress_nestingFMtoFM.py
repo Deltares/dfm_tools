@@ -75,8 +75,8 @@ for file_pli in file_pli_list:
     data_xr_his_selvars = data_xr_his[['waterlevel']]#,'velocity_magnitude']]
     
     data_interp = dfmt.interp_hisnc_to_plipoints(data_xr_his=data_xr_his_selvars,file_pli=file_pli,kdtree_k=kdtree_k)
-    #fig,ax = plt.subplots()
-    #data_interp.waterlevel.plot(ax=ax) #TODO: this does not work properly "TypeError: Dimensions of C (5473, 294) are incompatible with X (294) and/or Y (5474); see help(pcolormesh)"
+    fig,ax = plt.subplots()
+    data_interp.waterlevel.drop_vars('plipoints').T.plot(ax=ax) #TODO: this does not work properly "TypeError: Dimensions of C (5473, 294) are incompatible with X (294) and/or Y (5474); see help(pcolormesh)" >> removing plipoints (names) solves the issue but not super desireable.
     
     # rename_dict = {'waterlevel':'waterlevelbnd',
     #                 'velocity_magnitude':'velocitybnd'}

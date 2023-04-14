@@ -11,30 +11,31 @@ import numpy as np
 import xarray as xr
 from cftime import date2num
 import hydrolib.core.dflowfm as hcdfm
+import warnings
+import datetime as dt
+
 
 def Dataset_to_T3D(datablock_xr):
     """
     convert an xarray.DataArray (is one data_var) or an xarray.Dataset (with one or two data_vars) with time and depth dimension to a hydrolib T3D object
     """
     
+    if not isinstance(datablock_xr,(xr.DataArray,xr.Dataset)):
+        raise TypeError(f'expected xarray.DataArray or xarray.Dataset, not {type(datablock_xr)}')
+        
+    vector = False
     if isinstance(datablock_xr,xr.DataArray):
-        vector = False
         data_xr_var0 = datablock_xr
     elif isinstance(datablock_xr,xr.Dataset):
         data_vars = list(datablock_xr.data_vars)
-        if len(data_vars)==1: 
-            vector = False
-            data_xr_var0 = datablock_xr[data_vars[0]]
-        elif len(data_vars)==2:
+        data_xr_var0 = datablock_xr[data_vars[0]]
+        if len(data_vars)==2:
             if not pd.Series(data_vars).isin(['ux','uy']).all():
                 raise Exception(f'Dataset with 2 data_vars should contain only ux/uy data_vars, but contains {data_vars}')
             vector = True
-            data_xr_var0 = datablock_xr[data_vars[0]]
             data_xr_var1 = datablock_xr[data_vars[1]]
-        else:
+        elif len(data_vars) > 2:
             raise ValueError(f'Dataset should contain 1 or 2 data_vars, but contains {len(data_vars)} variables')
-    else:
-        raise TypeError(f'expected xarray.DataArray or xarray.Dataset, not {type(datablock_xr)}')
     
     #ffill/bfill nan data along over depth dimension (corresponds to vertical extrapolation)
     data_xr_var0 = data_xr_var0.bfill(dim='depth').ffill(dim='depth')
@@ -45,7 +46,7 @@ def Dataset_to_T3D(datablock_xr):
     locationname = data_xr_var0.attrs['locationname']
     refdate_str = data_xr_var0.time.encoding['units']
     
-    if data_xr_var0.dims != ('time','depth'): #check if both time and depth dimensions are present #TODO: add support for flipped dimensions (datablock_xr.T or something is needed)
+    if not set(data_xr_var0.dims).issubset(set(('time','depth'))): #check if both time and depth dimensions are present
         raise ValueError(f"data_var in provided data_xr has dimensions {data_xr_var0.dims} while ('time','depth') is expected")
     
     #get depth variable and values
@@ -82,7 +83,7 @@ def Dataset_to_T3D(datablock_xr):
                            vertPositionType='ZDatum',
                            quantityunitpair=quantityunitpair,
                            timeinterpolation='linear',
-                           datablock=datablock_incltime.tolist(), #TODO: numpy array is not supported by TimeSeries. https://github.com/Deltares/HYDROLIB-core/issues/322
+                           datablock=datablock_incltime.tolist(),
                            )
     
     return T3D_object
@@ -92,9 +93,10 @@ def Dataset_to_TimeSeries(datablock_xr):
     """
     convert an xarray.DataArray or xarray.Dataset with time dimension to a hydrolib TimeSeries object
     """
-    if isinstance(datablock_xr,xr.DataArray):
-        pass
-    if isinstance(datablock_xr,xr.Dataset):
+    if not isinstance(datablock_xr,(xr.DataArray,xr.Dataset)):
+        raise TypeError(f'Dataset_to_TimeSeries expects xr.DataArray or xr.Dataset, not {type(datablock_xr)}')
+    
+    if isinstance(datablock_xr,xr.Dataset): #convert Dataset to DataArray
         data_vars = list(datablock_xr.data_vars)
         if len(data_vars)!=1:
             raise ValueError('more than one variable supplied in Dataset, not yet possible') #TODO: add support for multiple quantities and for vectors
@@ -169,6 +171,27 @@ def DataFrame_to_PolyObject(poly_pd,name,content=None):
     if content is not None:
         polyobject.description = {'content':content}
     return polyobject
+
+
+def DataFrame_to_TimModel(tim_pd, refdate:(dt.datetime, pd.Timestamp, str)):
+    """
+    converts data from tim_pd to TimModel and puts all headers as comments. Ignores the index, assumes first column is time in minutes since a refdate.
+    """
+    #TODO: add conversion from datetimes in index to minutes, maybe drop minutes column upon reading? First await https://github.com/Deltares/HYDROLIB-core/issues/511
+    
+    refdate_pd = pd.Timestamp(refdate)
+    
+    data_tim = tim_pd.values.tolist()
+    times_tim = ((tim_pd.index - refdate_pd).total_seconds()/60).tolist()
+    dict_tim = [hcdfm.TimRecord(time=t,data=d) for t,d in zip(times_tim,data_tim)]
+    
+    comments_datacols = tim_pd.columns.tolist()
+    comments = [tim_pd.index.name] + comments_datacols
+    for iC, comment in enumerate(comments):
+        comments[iC] = f'COLUMN {iC+1}: {comment}'
+    timmodel = hcdfm.TimModel(timeseries=dict_tim, comments=comments)
+    
+    return timmodel
 
 
 def forcinglike_to_Dataset(forcingobj, convertnan=False): #TODO: would be convenient to have this as a method of ForcingModel objects (Timeseries/T3D/etc): https://github.com/Deltares/HYDROLIB-core/issues/307
@@ -274,7 +297,6 @@ def pointlike_to_DataFrame(pointlike,drop_emptycols=True):
     
     pointlike_pd = pd.DataFrame([dict(p) for p in pointlike.points])
     if 'data' in pointlike_pd.columns:
-        #datavals_pd = pointlike_pd['data'].apply(pd.Series) #this is quite slow, so use line below instead. maybe lambda or faster approach?
         datavals_pd = pd.DataFrame([p.data for p in pointlike.points])
         pointlike_pd = pd.concat([pointlike_pd.drop(['data'],axis=1), datavals_pd],axis=1)
         
@@ -293,4 +315,54 @@ def parse_xy_to_datetime(pointlike_pd):
     return pointlike_pd_timeidx
 
 
+def TimModel_to_DataFrame(data_tim:hcdfm.TimModel, parse_column_labels:bool = True, refdate:(dt.datetime, pd.Timestamp, str) = None):
+    """
+    
+
+    Parameters
+    ----------
+    data_tim : hcdfm.TimModel
+        DESCRIPTION.
+    parse_column_labels : bool, optional
+        Parse column labels from comments. This might fail since there is no standard way of prescribing the columns in the comments. The default is True.
+    refdate : (dt.datetime, pd.Timestamp, str, int, float), optional
+        DESCRIPTION. The default is None.
+
+    Returns
+    -------
+    tim_pd : TYPE
+        DESCRIPTION.
+
+    """
+    #convert to pandas dataframe
+    timevals_pd = pd.Index([p.time for p in data_tim.timeseries])
+    tim_pd = pd.DataFrame([p.data for p in data_tim.timeseries],index=timevals_pd)
+    tim_pd.columns += 2 #make column numbers 1-based, but first column is already in index so start with 2
+    tim_pd.index.name = 'time in minutes'
+    
+    if parse_column_labels:
+        #replace column labels with the ones in comments
+        tim_pd_columns = tim_pd.columns.tolist()
+        for line in data_tim.comments:
+            if 'column' in line.lower() and ':' in line: #assume ":" is separator. Remove casing to be able to check for Column/COLUMN/column in string
+                sep = ':'
+            elif 'column' in line.lower() and '=' in line: #assume "=" is separator. Remove casing to be able to check for Column/COLUMN/column in string
+                sep = '='
+            else:
+                continue
+            line_split = line.split(sep)
+            colnum = line_split[0].lower().replace('column','').strip()
+            if colnum.isnumeric():
+                comment_str = ':'.join(line_split[1:]).strip()
+                if colnum==1: #time column is now in index, overwrite index name
+                    tim_pd.index.name = comment_str
+                else:
+                    tim_pd_columns[int(colnum)-2] = comment_str
+        tim_pd.columns = tim_pd_columns
+    
+    if refdate:
+        refdate_pd = pd.Timestamp(refdate)
+        tim_pd.index = refdate_pd + pd.to_timedelta(tim_pd.index,unit='minutes')
+    
+    return tim_pd
 

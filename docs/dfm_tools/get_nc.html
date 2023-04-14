@@ -91,7 +91,7 @@ import re
 import xugrid as xu
 import xarray as xr
 import matplotlib.pyplot as plt
-from dfm_tools.xarray_helpers import get_vertical_dimensions
+from dfm_tools.xarray_helpers import get_vertical_dimensions, Dataset_varswithdim
 
 
 def get_ugrid_verts(data_xr_map): #TODO: remove this deprecated function
@@ -157,34 +157,30 @@ def get_xzcoords_onintersection(uds, face_index, crs_dist_starts, crs_dist_stops
         raise Exception(&#39;time dimension present in uds, provide uds.isel(time=timestep) instead. This is necessary to retrieve correct waterlevel or fullgrid output&#39;)
     
     dimn_layer, dimn_interfaces = get_vertical_dimensions(uds)
-    if dimn_layer is not None:
-        nlay = uds.dims[dimn_layer]
-    else: #no layers, 2D model
-        nlay = 1
+    gridname = uds.grid.name
     
-    xu_facedim = uds.grid.face_dimension
-    xu_edgedim = uds.grid.edge_dimension
-    xu_nodedim = uds.grid.node_dimension
-    
-    #potentially construct fullgrid info (zcc/zw)
-    if dimn_layer not in uds.dims: #2D model
-        print(&#39;depth dimension not found, probably 2D model&#39;)
-        pass
-    else:
+    #construct fullgrid info (zcc/zw) for 3D models
+    if dimn_layer in uds.dims:
         uds = reconstruct_zw_zcc(uds)
-    
+
+    #drop all variables that do not contain a face dimension, then select only all sliced faceidx
+    xu_facedim = uds.grid.face_dimension
     face_index_xr = xr.DataArray(face_index,dims=(&#39;ncrossed_faces&#39;))
-    data_frommap_merged_sel = uds.sel({xu_facedim:face_index_xr})
+    uds = Dataset_varswithdim(uds,dimname=xu_facedim) #TODO: is there an xugrid alternative?
+    uds_sel = uds.sel({xu_facedim:face_index_xr})
     
-    if dimn_layer not in uds.dims: #2D model #TODO: add escape for missing wl/bl vars
-        data_frommap_wl3_sel = data_frommap_merged_sel[&#39;mesh2d_s1&#39;].to_numpy()
-        data_frommap_bl_sel = data_frommap_merged_sel[&#39;mesh2d_flowelem_bl&#39;].to_numpy()
+    # take zvals_interface
+    if dimn_layer in uds_sel.dims: #3D model
+        nlay = uds.dims[dimn_layer]
+        zvals_interface_filled = uds_sel[f&#39;{gridname}_flowelem_zw&#39;].bfill(dim=dimn_interfaces) #fill nan values (below bed) with equal values
+        zvals_interface = zvals_interface_filled.to_numpy().T #transpose to make in line with 2D sigma dataset
+    else: #2D model, no layers
+        nlay = 1
+        data_frommap_wl3_sel = uds_sel[f&#39;{gridname}_s1&#39;].to_numpy() #TODO: add escape for missing wl/bl vars
+        data_frommap_bl_sel = uds_sel[f&#39;{gridname}_flowelem_bl&#39;].to_numpy()
         zvals_interface = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay+1)
-    elif &#39;mesh2d_flowelem_zw&#39; in data_frommap_merged_sel.variables:
-        zvals_interface_filled = data_frommap_merged_sel[&#39;mesh2d_flowelem_zw&#39;].bfill(dim=dimn_interfaces) #fill nan values (below bed) with equal values
-        zvals_interface = zvals_interface_filled.to_numpy().T # transpose to make in line with 2D sigma dataset
-    
-    #convert to output for plot_netmapdata
+
+    #derive crs_verts
     crs_dist_starts_matrix = np.repeat(crs_dist_starts[np.newaxis],nlay,axis=0)
     crs_dist_stops_matrix = np.repeat(crs_dist_stops[np.newaxis],nlay,axis=0)
     crs_verts_x_all = np.array([[crs_dist_starts_matrix.ravel(),crs_dist_stops_matrix.ravel(),crs_dist_stops_matrix.ravel(),crs_dist_starts_matrix.ravel()]]).T
@@ -201,11 +197,10 @@ def get_xzcoords_onintersection(uds, face_index, crs_dist_starts, crs_dist_stops
                              )
 
     #define dataset
-    crs_plotdata_clean = data_frommap_merged_sel.drop_dims([xu_edgedim,xu_nodedim]) #TODO: dropping dims is necessary to avoid &#34;ValueError&#34;. This is since we are constructing new nodes/edges here. How to do neatly?
-    if dimn_layer in data_frommap_merged_sel.dims:
-        crs_plotdata_clean = crs_plotdata_clean.stack({xr_crs_grid.face_dimension:[dimn_layer,&#39;ncrossed_faces&#39;]},create_index=False)
+    if dimn_layer in uds_sel.dims:
+        crs_plotdata_clean = uds_sel.stack({xr_crs_grid.face_dimension:[dimn_layer,&#39;ncrossed_faces&#39;]},create_index=False)
     else: #2D: still make sure xr_crs_grid.face_dimension is created, using stack since .rename() gives &#34;UserWarning: rename &#39;ncrossed_faces&#39; to &#39;mesh2d_nFaces&#39; does not create an index anymore.&#34;
-        crs_plotdata_clean = crs_plotdata_clean.stack({xr_crs_grid.face_dimension:[&#39;ncrossed_faces&#39;]},create_index=False)
+        crs_plotdata_clean = uds_sel.stack({xr_crs_grid.face_dimension:[&#39;ncrossed_faces&#39;]},create_index=False)
                     
     #combine into xugrid
     xr_crs_ugrid = xu.UgridDataset(crs_plotdata_clean, grids=[xr_crs_grid])
@@ -373,7 +368,6 @@ def reconstruct_zw_zcc(ds):
     #reconstruct zw/zcc variables (if not in file) and treat as fullgrid mapfile from here
     if varname_zint in ds.variables: #fullgrid info already available, so continuing
         print(f&#39;zw/zcc (fullgrid) values already present in Dataset in variable {varname_zint}&#39;)
-        pass
     elif len(ds.filter_by_attrs(standard_name=&#39;ocean_sigma_z_coordinate&#39;)) != 0:
         print(&#39;zsigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here&#39;)
         ds = reconstruct_zw_zcc_fromzsigma(ds)
@@ -388,7 +382,7 @@ def reconstruct_zw_zcc(ds):
     return ds
 
     
-def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str =&#39;z0&#39;, zlayer_z0_selnearest:bool = False):    
+def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str =&#39;z0&#39;):    
     &#34;&#34;&#34;
     Lazily depth-slice a dataset with layers. Performance can be increased by using a subset of variables or subsetting the dataset in any dimension.
     This can be done for instance with ds.isel(time=-1) or uds.ugrid.sel(x=slice(),y=slice()) to subset a ugrid dataset in space.
@@ -440,11 +434,6 @@ def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str =&#39;z0
         print(UserWarning(&#39;depth/layer dimension not found, probably 2D model, returning input Dataset&#39;)) #TODO: this can also be at depth, since slice will put parts of model dry (and allnan if below wl or below bl). Implement this
         return data_xr #early return
     
-    if reference==&#39;waterlevel&#39; and varname_wl not in data_xr.variables:
-        raise KeyError(f&#39;get_Dataset_atdepths() called with reference=waterlevel, but {varname_wl} variable not present&#39;)
-    if reference==&#39;bedlevel&#39; and varname_wl not in data_xr.variables:
-        raise KeyError(f&#39;get_Dataset_atdepths() called with reference=bedlevel, but {varname_bl} variable not present&#39;) #TODO: in case of zsigma/sigma it can also be -mesh2d_bldepth
-    
     if not isinstance(data_xr,(xr.Dataset,xu.UgridDataset)):
         raise TypeError(f&#39;data_xr_map should be of type xr.Dataset, but is {type(data_xr)}&#39;)
     
@@ -458,18 +447,6 @@ def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str =&#39;z0
                                                            &#39;reference&#39;:f&#39;model_{reference}&#39;,
                                                            &#39;positive&#39;:&#39;up&#39;}) #TODO: make more in line with CMEMS etc
     
-    #simplified/faster method for zlayer icm z0 reference (mapfiles only) #TODO: maybe remove this part of the code to make it better maintainable.
-    if &#39;mesh2d_layer_z&#39; in data_xr.variables and zlayer_z0_selnearest and reference==&#39;z0&#39;: # selects nearest z-center values (instead of slicing), should be faster #TODO: check if this is faster than fullgrid
-        print(&#39;z-layer model, zlayer_z0_selnearest=True and reference==&#34;z0&#34; so using xr.sel(method=&#34;nearest&#34;)]&#39;)
-        warnings.warn(DeprecationWarning(&#39;The get_Dataset_atdepths() keyword zlayer_z0_selnearest might be phased out.&#39;))
-        data_xr = data_xr.set_index({dimn_layer:&#39;mesh2d_layer_z&#39;})#.rename({&#39;nmesh2d_layer&#39;:depth_varname}) #set depth as index on layers, to be able to interp to depths instead of layernumbers
-        data_xr[depth_vardimname] = depths_xr
-        ds_atdepths = data_xr.sel({dimn_layer:depths_xr},method=&#39;nearest&#39;)
-        data_wl = data_xr[varname_wl]
-        data_bl = data_xr[varname_bl]
-        ds_atdepths = ds_atdepths.where((depths_xr&gt;=data_bl) &amp; (depths_xr&lt;=data_wl)) #filter above wl and below bl values
-        return ds_atdepths #early return
-    
     #potentially construct fullgrid info (zcc/zw)
     data_xr = reconstruct_zw_zcc(data_xr)
     
@@ -477,9 +454,13 @@ def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str =&#39;z0
     if reference==&#39;z0&#39;:
         zw_reference = data_xr[varname_zint]
     elif reference==&#39;waterlevel&#39;:
+        if varname_wl not in data_xr.variables:
+            raise KeyError(f&#39;get_Dataset_atdepths() called with reference=waterlevel, but {varname_wl} variable not present&#39;)
         data_wl = data_xr[varname_wl]
         zw_reference = data_xr[varname_zint] - data_wl
     elif reference==&#39;bedlevel&#39;:
+        if varname_bl not in data_xr.variables:
+            raise KeyError(f&#39;get_Dataset_atdepths() called with reference=bedlevel, but {varname_bl} variable not present&#39;) #TODO: in case of zsigma/sigma it can also be -mesh2d_bldepth
         data_bl = data_xr[varname_bl]
         zw_reference = data_xr[varname_zint] - data_bl
     else:
@@ -802,34 +783,30 @@ def plot_ztdata(data_xr_sel, varname, ax=None, only_contour=False, **kwargs):
         raise Exception(&#39;time dimension present in uds, provide uds.isel(time=timestep) instead. This is necessary to retrieve correct waterlevel or fullgrid output&#39;)
     
     dimn_layer, dimn_interfaces = get_vertical_dimensions(uds)
-    if dimn_layer is not None:
-        nlay = uds.dims[dimn_layer]
-    else: #no layers, 2D model
-        nlay = 1
+    gridname = uds.grid.name
     
-    xu_facedim = uds.grid.face_dimension
-    xu_edgedim = uds.grid.edge_dimension
-    xu_nodedim = uds.grid.node_dimension
-    
-    #potentially construct fullgrid info (zcc/zw)
-    if dimn_layer not in uds.dims: #2D model
-        print(&#39;depth dimension not found, probably 2D model&#39;)
-        pass
-    else:
+    #construct fullgrid info (zcc/zw) for 3D models
+    if dimn_layer in uds.dims:
         uds = reconstruct_zw_zcc(uds)
-    
+
+    #drop all variables that do not contain a face dimension, then select only all sliced faceidx
+    xu_facedim = uds.grid.face_dimension
     face_index_xr = xr.DataArray(face_index,dims=(&#39;ncrossed_faces&#39;))
-    data_frommap_merged_sel = uds.sel({xu_facedim:face_index_xr})
+    uds = Dataset_varswithdim(uds,dimname=xu_facedim) #TODO: is there an xugrid alternative?
+    uds_sel = uds.sel({xu_facedim:face_index_xr})
     
-    if dimn_layer not in uds.dims: #2D model #TODO: add escape for missing wl/bl vars
-        data_frommap_wl3_sel = data_frommap_merged_sel[&#39;mesh2d_s1&#39;].to_numpy()
-        data_frommap_bl_sel = data_frommap_merged_sel[&#39;mesh2d_flowelem_bl&#39;].to_numpy()
+    # take zvals_interface
+    if dimn_layer in uds_sel.dims: #3D model
+        nlay = uds.dims[dimn_layer]
+        zvals_interface_filled = uds_sel[f&#39;{gridname}_flowelem_zw&#39;].bfill(dim=dimn_interfaces) #fill nan values (below bed) with equal values
+        zvals_interface = zvals_interface_filled.to_numpy().T #transpose to make in line with 2D sigma dataset
+    else: #2D model, no layers
+        nlay = 1
+        data_frommap_wl3_sel = uds_sel[f&#39;{gridname}_s1&#39;].to_numpy() #TODO: add escape for missing wl/bl vars
+        data_frommap_bl_sel = uds_sel[f&#39;{gridname}_flowelem_bl&#39;].to_numpy()
         zvals_interface = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay+1)
-    elif &#39;mesh2d_flowelem_zw&#39; in data_frommap_merged_sel.variables:
-        zvals_interface_filled = data_frommap_merged_sel[&#39;mesh2d_flowelem_zw&#39;].bfill(dim=dimn_interfaces) #fill nan values (below bed) with equal values
-        zvals_interface = zvals_interface_filled.to_numpy().T # transpose to make in line with 2D sigma dataset
-    
-    #convert to output for plot_netmapdata
+
+    #derive crs_verts
     crs_dist_starts_matrix = np.repeat(crs_dist_starts[np.newaxis],nlay,axis=0)
     crs_dist_stops_matrix = np.repeat(crs_dist_stops[np.newaxis],nlay,axis=0)
     crs_verts_x_all = np.array([[crs_dist_starts_matrix.ravel(),crs_dist_stops_matrix.ravel(),crs_dist_stops_matrix.ravel(),crs_dist_starts_matrix.ravel()]]).T
@@ -846,11 +823,10 @@ def plot_ztdata(data_xr_sel, varname, ax=None, only_contour=False, **kwargs):
                              )
 
     #define dataset
-    crs_plotdata_clean = data_frommap_merged_sel.drop_dims([xu_edgedim,xu_nodedim]) #TODO: dropping dims is necessary to avoid &#34;ValueError&#34;. This is since we are constructing new nodes/edges here. How to do neatly?
-    if dimn_layer in data_frommap_merged_sel.dims:
-        crs_plotdata_clean = crs_plotdata_clean.stack({xr_crs_grid.face_dimension:[dimn_layer,&#39;ncrossed_faces&#39;]},create_index=False)
+    if dimn_layer in uds_sel.dims:
+        crs_plotdata_clean = uds_sel.stack({xr_crs_grid.face_dimension:[dimn_layer,&#39;ncrossed_faces&#39;]},create_index=False)
     else: #2D: still make sure xr_crs_grid.face_dimension is created, using stack since .rename() gives &#34;UserWarning: rename &#39;ncrossed_faces&#39; to &#39;mesh2d_nFaces&#39; does not create an index anymore.&#34;
-        crs_plotdata_clean = crs_plotdata_clean.stack({xr_crs_grid.face_dimension:[&#39;ncrossed_faces&#39;]},create_index=False)
+        crs_plotdata_clean = uds_sel.stack({xr_crs_grid.face_dimension:[&#39;ncrossed_faces&#39;]},create_index=False)
                     
     #combine into xugrid
     xr_crs_ugrid = xu.UgridDataset(crs_plotdata_clean, grids=[xr_crs_grid])
@@ -1095,7 +1071,6 @@ based on <a href="https://cfconventions.org/cf-conventions/cf-conventions.html#_
     #reconstruct zw/zcc variables (if not in file) and treat as fullgrid mapfile from here
     if varname_zint in ds.variables: #fullgrid info already available, so continuing
         print(f&#39;zw/zcc (fullgrid) values already present in Dataset in variable {varname_zint}&#39;)
-        pass
     elif len(ds.filter_by_attrs(standard_name=&#39;ocean_sigma_z_coordinate&#39;)) != 0:
         print(&#39;zsigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here&#39;)
         ds = reconstruct_zw_zcc_fromzsigma(ds)
@@ -1111,7 +1086,7 @@ based on <a href="https://cfconventions.org/cf-conventions/cf-conventions.html#_
 </details>
 </dd>
 <dt id="dfm_tools.get_nc.get_Dataset_atdepths"><code class="name flex">
-<span>def <span class="ident">get_Dataset_atdepths</span></span>(<span>data_xr: xugrid.core.wrap.UgridDataset, depths, reference: str = 'z0', zlayer_z0_selnearest: bool = False)</span>
+<span>def <span class="ident">get_Dataset_atdepths</span></span>(<span>data_xr: xugrid.core.wrap.UgridDataset, depths, reference: str = 'z0')</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Lazily depth-slice a dataset with layers. Performance can be increased by using a subset of variables or subsetting the dataset in any dimension.
@@ -1144,7 +1119,7 @@ This is faster but results in values interpolated between zcc (z cell centers), 
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str =&#39;z0&#39;, zlayer_z0_selnearest:bool = False):    
+<pre><code class="python">def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str =&#39;z0&#39;):    
     &#34;&#34;&#34;
     Lazily depth-slice a dataset with layers. Performance can be increased by using a subset of variables or subsetting the dataset in any dimension.
     This can be done for instance with ds.isel(time=-1) or uds.ugrid.sel(x=slice(),y=slice()) to subset a ugrid dataset in space.
@@ -1196,11 +1171,6 @@ This is faster but results in values interpolated between zcc (z cell centers), 
         print(UserWarning(&#39;depth/layer dimension not found, probably 2D model, returning input Dataset&#39;)) #TODO: this can also be at depth, since slice will put parts of model dry (and allnan if below wl or below bl). Implement this
         return data_xr #early return
     
-    if reference==&#39;waterlevel&#39; and varname_wl not in data_xr.variables:
-        raise KeyError(f&#39;get_Dataset_atdepths() called with reference=waterlevel, but {varname_wl} variable not present&#39;)
-    if reference==&#39;bedlevel&#39; and varname_wl not in data_xr.variables:
-        raise KeyError(f&#39;get_Dataset_atdepths() called with reference=bedlevel, but {varname_bl} variable not present&#39;) #TODO: in case of zsigma/sigma it can also be -mesh2d_bldepth
-    
     if not isinstance(data_xr,(xr.Dataset,xu.UgridDataset)):
         raise TypeError(f&#39;data_xr_map should be of type xr.Dataset, but is {type(data_xr)}&#39;)
     
@@ -1214,18 +1184,6 @@ This is faster but results in values interpolated between zcc (z cell centers), 
                                                            &#39;reference&#39;:f&#39;model_{reference}&#39;,
                                                            &#39;positive&#39;:&#39;up&#39;}) #TODO: make more in line with CMEMS etc
     
-    #simplified/faster method for zlayer icm z0 reference (mapfiles only) #TODO: maybe remove this part of the code to make it better maintainable.
-    if &#39;mesh2d_layer_z&#39; in data_xr.variables and zlayer_z0_selnearest and reference==&#39;z0&#39;: # selects nearest z-center values (instead of slicing), should be faster #TODO: check if this is faster than fullgrid
-        print(&#39;z-layer model, zlayer_z0_selnearest=True and reference==&#34;z0&#34; so using xr.sel(method=&#34;nearest&#34;)]&#39;)
-        warnings.warn(DeprecationWarning(&#39;The get_Dataset_atdepths() keyword zlayer_z0_selnearest might be phased out.&#39;))
-        data_xr = data_xr.set_index({dimn_layer:&#39;mesh2d_layer_z&#39;})#.rename({&#39;nmesh2d_layer&#39;:depth_varname}) #set depth as index on layers, to be able to interp to depths instead of layernumbers
-        data_xr[depth_vardimname] = depths_xr
-        ds_atdepths = data_xr.sel({dimn_layer:depths_xr},method=&#39;nearest&#39;)
-        data_wl = data_xr[varname_wl]
-        data_bl = data_xr[varname_bl]
-        ds_atdepths = ds_atdepths.where((depths_xr&gt;=data_bl) &amp; (depths_xr&lt;=data_wl)) #filter above wl and below bl values
-        return ds_atdepths #early return
-    
     #potentially construct fullgrid info (zcc/zw)
     data_xr = reconstruct_zw_zcc(data_xr)
     
@@ -1233,9 +1191,13 @@ This is faster but results in values interpolated between zcc (z cell centers), 
     if reference==&#39;z0&#39;:
         zw_reference = data_xr[varname_zint]
     elif reference==&#39;waterlevel&#39;:
+        if varname_wl not in data_xr.variables:
+            raise KeyError(f&#39;get_Dataset_atdepths() called with reference=waterlevel, but {varname_wl} variable not present&#39;)
         data_wl = data_xr[varname_wl]
         zw_reference = data_xr[varname_zint] - data_wl
     elif reference==&#39;bedlevel&#39;:
+        if varname_bl not in data_xr.variables:
+            raise KeyError(f&#39;get_Dataset_atdepths() called with reference=bedlevel, but {varname_bl} variable not present&#39;) #TODO: in case of zsigma/sigma it can also be -mesh2d_bldepth
         data_bl = data_xr[varname_bl]
         zw_reference = data_xr[varname_zint] - data_bl
     else:

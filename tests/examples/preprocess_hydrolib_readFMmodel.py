@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 plt.close('all')
 
 #file_mdu = Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\computations\validation\2018_HYDROLIB_JV\RMM_VZM.mdu') #TODO: contains multiline obs/crs files, maybe raise more clear validationerror than "File: `\\directory.intra\Project\` not found, skipped parsing. (type=value_error)"
+file_mdu = Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\computations\validation\2018_HYDROLIB_JV\RMM_VZM_MLnoslash.mdu') #TODO: contains multiline obs/crs files without slash, only reads first file but should raise an error: https://github.com/Deltares/HYDROLIB-core/issues/485#issuecomment-1494053471
 file_mdu = Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\computations\validation\2018_HYDROLIB_JV\RMM_VZM_noML.mdu')
 file_mdu_commented = str(file_mdu).replace('.mdu','_commentedpy.mdu')
 file_mdu_rewrite = str(file_mdu).replace('.mdu','_rewritepy.mdu')
@@ -33,11 +34,6 @@ for iL, line in enumerate(mdu_contents):
     for keyword in keywords_tocomment:
         if line.startswith(keyword):
             mdu_contents[iL] = '#'+line
-    # for keyword in ['ObsFile','CrsFile']: #replacing multi-line approach with space-delimited approach, multiline obs/crs filenames are currently not supported: https://github.com/Deltares/HYDROLIB-core/issues/485) #TODO: remove this commented code when decision is made to not support multiline obs/crs filenames
-    #     if '\\' in line:
-    #         line = line.split('#')[0].strip() #remove comment
-    #         line = line.replace('\\\n',' ').replace('\\',' ') #replace backslash with space
-    #         mdu_contents[iL] = line
 with open(file_mdu_commented,'w') as f:
     f.write(''.join(mdu_contents))
 print('>> opening FMModel: ',end='')
@@ -49,22 +45,22 @@ print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
 #TODO: is model validated? (e.g. presence of diskonlyfilemodels or other non-loaded things)
 fm.save(file_mdu_rewrite)
 #TODO: when writing mdu again, are all keywords written: https://github.com/Deltares/HYDROLIB-core/issues/495
-#TODO: when writing to mdu again, indents are used: https://github.com/Deltares/HYDROLIB-core/issues/493
 structs = fm.geometry.structurefile
 if structs is not None: #is empty when commented
     for struct in structs[0].structure: #TODO: why is structs a list of StructureModel instead of just StructureModel?
         print(struct.id)
 #TODO: add newext/oldext printer
-obs_pd_list = [dfmt.pointlike_to_DataFrame(x) for x in fm.output.obsfile]
+obs_pd_list = [dfmt.pointlike_to_DataFrame(x) for x in fm.output.obsfile] #TODO: "AttributeError: 'ObservationPointModel' object has no attribute 'points'" >> might be because of double quotes in names in combination with union type mess-up >> results in empty ObservationPointModel instead of XYNModel: https://github.com/Deltares/HYDROLIB-core/issues/519
 crs_pd_list = [dfmt.pointlike_to_DataFrame(x) for y in fm.output.crsfile for x in y.objects] #TODO: difficult to access crs (and names get lost), how to simplify?
 
 
 file_struct = Path(r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_structures.ini')
 file_struct = r'p:\archivedprojects\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\structures_toRTC\RMM_structures_open_cl10_coeff10.ini'
-file_struct = r'p:\archivedprojects\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\structures_toRTC\RMM_structures_ts_cl10_coeff10.ini' #TODO with timfiles crashes: https://github.com/Deltares/HYDROLIB-core/issues/497
+file_struct = r'p:\archivedprojects\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\structures_toRTC\RMM_structures_ts_cl10_coeff10.ini' #TODO: incorrect timfiles (e.g. with duplicate times) are now read as ForcingModel instead: https://github.com/Deltares/HYDROLIB-core/issues/519
 structs = hcdfm.StructureModel(file_struct)
 for struct in structs.structure:
     print(struct.id)
+    print(type(struct.gateloweredgelevel))
 #structs.save('tst.ini') #TODO: how to get xydata from plifile in structuremodel? >> dfmt.pointlike_to_DataFrame() per object?
 #structs.structure[0].__dict__
 

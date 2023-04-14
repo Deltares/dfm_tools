@@ -65,7 +65,7 @@ def get_ncvarproperties(data_xr):
 
 def get_varnamefromattrs(data_xr, varname):
     
-    print(DeprecationWarning('dfmt.get_varnamefromattrs() might be phased out, since dfmt.rename_waqvars(ds) is a more convenient alternative')) #TODO: deprecate?
+    print(DeprecationWarning('dfmt.get_varnamefromattrs() will be deprecated in a future version of dfm_tools, ds=dfmt.rename_waqvars(ds) is a more convenient alternative')) #TODO: raise DeprecationWarning, later remove
     
     # check if requested variable is in netcdf
     varlist = list(data_xr.variables.keys())
@@ -187,7 +187,7 @@ def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset), drop_tidal_times:bool = True
                          'temperature':'tem', #not clear from fourier_analysis.f90, ct in user manual C.13
                          'salt':'sal', #not clear from fourier_analysis.f90, cs in user manual C.13
                          }
-        if not quantity_long in quantity_dict.keys():
+        if quantity_long not in quantity_dict.keys():
             raise KeyError(f'quantity_dict does not yet contain quantity for: {quantity_long}')
         quantity = quantity_dict[quantity_long]
         
@@ -221,10 +221,9 @@ def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset), drop_tidal_times:bool = True
         tstart_str = (refdate + pd.Timedelta(minutes=tstart_min)).strftime('%Y%m%d%H%M%S')
         tstop_str = (refdate + pd.Timedelta(minutes=tstop_min)).strftime('%Y%m%d%H%M%S')
         
+        rename_dict[fouvar] = f'{gridname}_{quantity}_{analysistype}_{tstart_str}_{tstop_str}'
         if istidal and drop_tidal_times:
             rename_dict[fouvar] = f'{gridname}_{quantity}_{analysistype}' #TODO: might cause conflicting variable names if one component is analysed for multiple periods or if component is not defined in frequency list. Add duplicate check like rename_waqvars() that provides some basic info for debugging.
-        else:
-            rename_dict[fouvar] = f'{gridname}_{quantity}_{analysistype}_{tstart_str}_{tstop_str}'
     
     ds = ds.rename(rename_dict)
     return ds

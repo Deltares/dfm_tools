@@ -47,24 +47,22 @@ def Dataset_to_T3D(datablock_xr):
     convert an xarray.DataArray (is one data_var) or an xarray.Dataset (with one or two data_vars) with time and depth dimension to a hydrolib T3D object
     &#34;&#34;&#34;
     
+    if not isinstance(datablock_xr,(xr.DataArray,xr.Dataset)):
+        raise TypeError(f&#39;expected xarray.DataArray or xarray.Dataset, not {type(datablock_xr)}&#39;)
+        
+    vector = False
     if isinstance(datablock_xr,xr.DataArray):
-        vector = False
         data_xr_var0 = datablock_xr
     elif isinstance(datablock_xr,xr.Dataset):
         data_vars = list(datablock_xr.data_vars)
-        if len(data_vars)==1: 
-            vector = False
-            data_xr_var0 = datablock_xr[data_vars[0]]
-        elif len(data_vars)==2:
+        data_xr_var0 = datablock_xr[data_vars[0]]
+        if len(data_vars)==2:
             if not pd.Series(data_vars).isin([&#39;ux&#39;,&#39;uy&#39;]).all():
                 raise Exception(f&#39;Dataset with 2 data_vars should contain only ux/uy data_vars, but contains {data_vars}&#39;)
             vector = True
-            data_xr_var0 = datablock_xr[data_vars[0]]
             data_xr_var1 = datablock_xr[data_vars[1]]
-        else:
+        elif len(data_vars) &gt; 2:
             raise ValueError(f&#39;Dataset should contain 1 or 2 data_vars, but contains {len(data_vars)} variables&#39;)
-    else:
-        raise TypeError(f&#39;expected xarray.DataArray or xarray.Dataset, not {type(datablock_xr)}&#39;)
     
     #ffill/bfill nan data along over depth dimension (corresponds to vertical extrapolation)
     data_xr_var0 = data_xr_var0.bfill(dim=&#39;depth&#39;).ffill(dim=&#39;depth&#39;)
@@ -75,7 +73,7 @@ def Dataset_to_T3D(datablock_xr):
     locationname = data_xr_var0.attrs[&#39;locationname&#39;]
     refdate_str = data_xr_var0.time.encoding[&#39;units&#39;]
     
-    if data_xr_var0.dims != (&#39;time&#39;,&#39;depth&#39;): #check if both time and depth dimensions are present #TODO: add support for flipped dimensions (datablock_xr.T or something is needed)
+    if not set(data_xr_var0.dims).issubset(set((&#39;time&#39;,&#39;depth&#39;))): #check if both time and depth dimensions are present
         raise ValueError(f&#34;data_var in provided data_xr has dimensions {data_xr_var0.dims} while (&#39;time&#39;,&#39;depth&#39;) is expected&#34;)
     
     #get depth variable and values
@@ -112,7 +110,7 @@ def Dataset_to_T3D(datablock_xr):
                            vertPositionType=&#39;ZDatum&#39;,
                            quantityunitpair=quantityunitpair,
                            timeinterpolation=&#39;linear&#39;,
-                           datablock=datablock_incltime.tolist(), #TODO: numpy array is not supported by TimeSeries. https://github.com/Deltares/HYDROLIB-core/issues/322
+                           datablock=datablock_incltime.tolist(),
                            )
     
     return T3D_object
@@ -122,9 +120,10 @@ def Dataset_to_TimeSeries(datablock_xr):
     &#34;&#34;&#34;
     convert an xarray.DataArray or xarray.Dataset with time dimension to a hydrolib TimeSeries object
     &#34;&#34;&#34;
-    if isinstance(datablock_xr,xr.DataArray):
-        pass
-    if isinstance(datablock_xr,xr.Dataset):
+    if not isinstance(datablock_xr,(xr.DataArray,xr.Dataset)):
+        raise TypeError(f&#39;Dataset_to_TimeSeries expects xr.DataArray or xr.Dataset, not {type(datablock_xr)}&#39;)
+    
+    if isinstance(datablock_xr,xr.Dataset): #convert Dataset to DataArray
         data_vars = list(datablock_xr.data_vars)
         if len(data_vars)!=1:
             raise ValueError(&#39;more than one variable supplied in Dataset, not yet possible&#39;) #TODO: add support for multiple quantities and for vectors
@@ -304,7 +303,6 @@ def pointlike_to_DataFrame(pointlike,drop_emptycols=True):
     
     pointlike_pd = pd.DataFrame([dict(p) for p in pointlike.points])
     if &#39;data&#39; in pointlike_pd.columns:
-        #datavals_pd = pointlike_pd[&#39;data&#39;].apply(pd.Series) #this is quite slow, so use line below instead. maybe lambda or faster approach?
         datavals_pd = pd.DataFrame([p.data for p in pointlike.points])
         pointlike_pd = pd.concat([pointlike_pd.drop([&#39;data&#39;],axis=1), datavals_pd],axis=1)
         
@@ -344,24 +342,22 @@ def parse_xy_to_datetime(pointlike_pd):
     convert an xarray.DataArray (is one data_var) or an xarray.Dataset (with one or two data_vars) with time and depth dimension to a hydrolib T3D object
     &#34;&#34;&#34;
     
+    if not isinstance(datablock_xr,(xr.DataArray,xr.Dataset)):
+        raise TypeError(f&#39;expected xarray.DataArray or xarray.Dataset, not {type(datablock_xr)}&#39;)
+        
+    vector = False
     if isinstance(datablock_xr,xr.DataArray):
-        vector = False
         data_xr_var0 = datablock_xr
     elif isinstance(datablock_xr,xr.Dataset):
         data_vars = list(datablock_xr.data_vars)
-        if len(data_vars)==1: 
-            vector = False
-            data_xr_var0 = datablock_xr[data_vars[0]]
-        elif len(data_vars)==2:
+        data_xr_var0 = datablock_xr[data_vars[0]]
+        if len(data_vars)==2:
             if not pd.Series(data_vars).isin([&#39;ux&#39;,&#39;uy&#39;]).all():
                 raise Exception(f&#39;Dataset with 2 data_vars should contain only ux/uy data_vars, but contains {data_vars}&#39;)
             vector = True
-            data_xr_var0 = datablock_xr[data_vars[0]]
             data_xr_var1 = datablock_xr[data_vars[1]]
-        else:
+        elif len(data_vars) &gt; 2:
             raise ValueError(f&#39;Dataset should contain 1 or 2 data_vars, but contains {len(data_vars)} variables&#39;)
-    else:
-        raise TypeError(f&#39;expected xarray.DataArray or xarray.Dataset, not {type(datablock_xr)}&#39;)
     
     #ffill/bfill nan data along over depth dimension (corresponds to vertical extrapolation)
     data_xr_var0 = data_xr_var0.bfill(dim=&#39;depth&#39;).ffill(dim=&#39;depth&#39;)
@@ -372,7 +368,7 @@ def parse_xy_to_datetime(pointlike_pd):
     locationname = data_xr_var0.attrs[&#39;locationname&#39;]
     refdate_str = data_xr_var0.time.encoding[&#39;units&#39;]
     
-    if data_xr_var0.dims != (&#39;time&#39;,&#39;depth&#39;): #check if both time and depth dimensions are present #TODO: add support for flipped dimensions (datablock_xr.T or something is needed)
+    if not set(data_xr_var0.dims).issubset(set((&#39;time&#39;,&#39;depth&#39;))): #check if both time and depth dimensions are present
         raise ValueError(f&#34;data_var in provided data_xr has dimensions {data_xr_var0.dims} while (&#39;time&#39;,&#39;depth&#39;) is expected&#34;)
     
     #get depth variable and values
@@ -409,7 +405,7 @@ def parse_xy_to_datetime(pointlike_pd):
                            vertPositionType=&#39;ZDatum&#39;,
                            quantityunitpair=quantityunitpair,
                            timeinterpolation=&#39;linear&#39;,
-                           datablock=datablock_incltime.tolist(), #TODO: numpy array is not supported by TimeSeries. https://github.com/Deltares/HYDROLIB-core/issues/322
+                           datablock=datablock_incltime.tolist(),
                            )
     
     return T3D_object</code></pre>
@@ -428,9 +424,10 @@ def parse_xy_to_datetime(pointlike_pd):
     &#34;&#34;&#34;
     convert an xarray.DataArray or xarray.Dataset with time dimension to a hydrolib TimeSeries object
     &#34;&#34;&#34;
-    if isinstance(datablock_xr,xr.DataArray):
-        pass
-    if isinstance(datablock_xr,xr.Dataset):
+    if not isinstance(datablock_xr,(xr.DataArray,xr.Dataset)):
+        raise TypeError(f&#39;Dataset_to_TimeSeries expects xr.DataArray or xr.Dataset, not {type(datablock_xr)}&#39;)
+    
+    if isinstance(datablock_xr,xr.Dataset): #convert Dataset to DataArray
         data_vars = list(datablock_xr.data_vars)
         if len(data_vars)!=1:
             raise ValueError(&#39;more than one variable supplied in Dataset, not yet possible&#39;) #TODO: add support for multiple quantities and for vectors
@@ -662,7 +659,6 @@ data_pol_pd_list = [pointlike_to_DataFrame(polyobj) for polyobj in polyfile_obje
     
     pointlike_pd = pd.DataFrame([dict(p) for p in pointlike.points])
     if &#39;data&#39; in pointlike_pd.columns:
-        #datavals_pd = pointlike_pd[&#39;data&#39;].apply(pd.Series) #this is quite slow, so use line below instead. maybe lambda or faster approach?
         datavals_pd = pd.DataFrame([p.data for p in pointlike.points])
         pointlike_pd = pd.concat([pointlike_pd.drop([&#39;data&#39;],axis=1), datavals_pd],axis=1)
         

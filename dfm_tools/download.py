@@ -12,6 +12,7 @@ import xarray as xr
 from pydap.client import open_url
 from pydap.cas.get_cookies import setup_session
 import warnings
+from dfm_tools.errors import OutOfRangeError
 
 
 def download_ERA5(varkey,
@@ -70,12 +71,9 @@ def download_ERA5(varkey,
                         'format':'netcdf'}
         
         c.retrieve(name='reanalysis-era5-single-levels', request=request_dict, target=file_out)
-    return
 
 
-def open_OPeNDAP_xr(dataset_url,
-                    credentials=None): #for CMEMS. credentials=['username','password'], or create "%USERPROFILE%/CMEMS_credentials.txt" with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form'
-    
+def open_OPeNDAP_xr(dataset_url, credentials=None):
     """
     How to get the opendap dataset_url (CMEMS example):
         - https://data.marine.copernicus.eu/products
@@ -107,6 +105,7 @@ def open_OPeNDAP_xr(dataset_url,
         Some examples:
             https://tds.hycom.org/thredds/dodsC/GLBu0.08/expt_19.1/2010
             https://tds.hycom.org/thredds/dodsC/GLBy0.08/expt_93.0
+
     """
     
     def copernicusmarine_datastore(dataset_url, username, password):
@@ -114,7 +113,7 @@ def open_OPeNDAP_xr(dataset_url,
         cas_url = 'https://cmems-cas.cls.fr/cas/login'
         session = setup_session(cas_url, username, password)
         cookies_dict = session.cookies.get_dict()
-        if not 'CASTGC' in cookies_dict.keys():
+        if 'CASTGC' not in cookies_dict.keys():
             raise KeyError('CASTGC key missing from session cookies_dict, probably authentication failure')
         session.cookies.set("CASTGC", cookies_dict['CASTGC'])
         #TODO: add check for wrong dataset_id (now always "AttributeError: You cannot set the charset when no content-type is defined")
@@ -176,6 +175,50 @@ def download_OPeNDAP(dataset_url,
                      date_min, date_max, freq='D',
                      dir_output='.', file_prefix='', overwrite=False,
                      credentials=None):
+    """
+    
+
+    Parameters
+    ----------
+    dataset_url : TYPE
+        DESCRIPTION.
+    varkey : TYPE
+        DESCRIPTION.
+    longitude_min : TYPE
+        DESCRIPTION.
+    longitude_max : TYPE
+        DESCRIPTION.
+    latitude_min : TYPE
+        DESCRIPTION.
+    latitude_max : TYPE
+        DESCRIPTION.
+    date_min : TYPE
+        DESCRIPTION.
+    date_max : TYPE
+        DESCRIPTION.
+    freq : TYPE, optional
+        DESCRIPTION. The default is 'D'.
+    dir_output : TYPE, optional
+        DESCRIPTION. The default is '.'.
+    file_prefix : TYPE, optional
+        DESCRIPTION. The default is ''.
+    overwrite : TYPE, optional
+        DESCRIPTION. The default is False.
+    credentials : TYPE, optional
+        for CMEMS: credentials=['username','password'], or create "%USERPROFILE%/CMEMS_credentials.txt" with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form'. The default is None.
+
+    Raises
+    ------
+    KeyError
+        DESCRIPTION.
+    OutOfRangeError
+        DESCRIPTION.
+
+    Returns
+    -------
+    None.
+
+    """
     
     data_xr = open_OPeNDAP_xr(dataset_url=dataset_url, credentials=credentials)
     
@@ -191,9 +234,9 @@ def download_OPeNDAP(dataset_url,
     
     #check if date_min/date_max are available in dataset
     if not (data_xr_times.index[0] <= period_range[0].to_timestamp() <= data_xr_times.index[-1]):
-        raise Exception(f'date_min ({period_range[0]}) is outside available time range in dataset: {data_xr_times.index[0]} to {data_xr_times.index[-1]}')
+        raise OutOfRangeError(f'date_min ({period_range[0]}) is outside available time range in dataset: {data_xr_times.index[0]} to {data_xr_times.index[-1]}')
     if not (data_xr_times.index[0] <= period_range[-1].to_timestamp() <= data_xr_times.index[-1]):
-        raise Exception(f'date_max ({period_range[-1]}) is outside available time range in dataset: {data_xr_times.index[0]} to {data_xr_times.index[-1]}')
+        raise OutOfRangeError(f'date_max ({period_range[-1]}) is outside available time range in dataset: {data_xr_times.index[0]} to {data_xr_times.index[-1]}')
     
     for date in period_range:
         date_str = str(date)
@@ -209,6 +252,3 @@ def download_OPeNDAP(dataset_url,
         print(f'xarray writing netcdf file: {name_output}')
         data_xr_var_seltime.to_netcdf(os.path.join(dir_output,name_output)) #TODO: add chunks={'time':1} or only possible with opening?
         data_xr_var_seltime.close()
-    
-    print('done')
-    return

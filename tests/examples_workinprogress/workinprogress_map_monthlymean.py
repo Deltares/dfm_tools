@@ -25,22 +25,16 @@ postfix = '_'.join(os.path.basename(file_nc).split('_')[-2:])
 file_out = os.path.join(dir_output,os.path.basename(file_nc).replace(postfix,f'monthlymean_{postfix}'))
 
 data_frommap_merged = dfmt.open_partitioned_dataset(file_nc.replace('_0000_','_0*_'))
+data_frommap_merged = dfmt.Dataset_varswithdim(data_frommap_merged, dimname='time') #drop all variables without time dimension
 
 print('>> computing monthly means: ', end='')
 dtstart = dt.datetime.now()
-if not yearmonth: #on unique month numbers
-    data_xr_monthmean = data_frommap_merged.groupby('time.month').mean() 
-    data_xr_monthmean.rename({'month':'time'})
-else: # on unique year+month combinations
+if yearmonth: # on unique year+month combinations
     data_xr_monthmean = data_frommap_merged.resample(time='MS').mean(dim='time')
+else: #on unique month numbers
+    data_xr_monthmean = data_frommap_merged.groupby('time.month').mean() 
+    data_xr_monthmean = data_xr_monthmean.rename({'month':'time'})
 print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
-
-for varname in data_frommap_merged.data_vars: #TODO: avoid adding time dimension to time-independent variables: https://github.com/pydata/xarray/issues/2145
-    if data_frommap_merged[varname].dims != data_xr_monthmean[varname].dims:
-        #print(f'{varname} dims changed from {data_xr[varname].dims} to {data_xr_monthmean[varname].dims}')
-        data_xr_monthmean[varname] = data_xr_monthmean[varname].isel(time=0) #selecting first time of variables that did not have time dimension before
-        if data_frommap_merged[varname].dims != data_xr_monthmean[varname].dims:
-            print(f'{varname} dims changed from {data_frommap_merged[varname].dims} to {data_xr_monthmean[varname].dims}')
 
 #reconnect data and grid #TODO: support resampling/groupby in xugrid?
 import xugrid as xu

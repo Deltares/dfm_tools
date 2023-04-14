@@ -5,8 +5,10 @@ Created on Mon May 31 17:17:09 2021
 @author: veenstra
 """
 
+import numpy as np
+
+
 def write_bathy_toasc(filename_asc,lon_sel_ext,lat_sel_ext,elev_sel_ext,asc_fmt='%9.2f',nodata_val=32767):
-    import numpy as np
 
     print('writing to asc file')
     if elev_sel_ext.shape != (lat_sel_ext.shape[0], lon_sel_ext.shape[0]):
@@ -33,5 +35,4 @@ def write_bathy_toasc(filename_asc,lon_sel_ext,lat_sel_ext,elev_sel_ext,asc_fmt=
     with open(filename_asc,'a') as file_asc:
         np.savetxt(file_asc,np.flip(elev_sel_ext,axis=0),fmt=asc_fmt)
     print('...finished')
-
 

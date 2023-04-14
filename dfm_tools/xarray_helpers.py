@@ -15,6 +15,7 @@ import glob
 import pandas as pd
 import warnings
 import numpy as np
+from dfm_tools.errors import OutOfRangeError
 
 
 def file_to_list(file_nc):
@@ -254,7 +255,7 @@ def merge_meteofiles(file_nc:str, preprocess=None,
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
     #rename variables
-    if not 'longitude' in data_xr.variables: #TODO: make generic, comparable rename in rename_dims_dict in dfmt.open_dataset_extra()
+    if 'longitude' not in data_xr.variables: #TODO: make generic, comparable rename in rename_dims_dict in dfmt.open_dataset_extra()
         if 'lon' in data_xr.variables:
             data_xr = data_xr.rename({'lon':'longitude', 'lat':'latitude'})
         elif 'x' in data_xr.variables:
@@ -273,7 +274,7 @@ def merge_meteofiles(file_nc:str, preprocess=None,
     
     #check if there are times selected
     if len(data_xr_tsel.time)==0:
-        raise Exception(f'ERROR: no times selected, ds_text={data_xr.time[[0,-1]].to_numpy()} and time_slice={time_slice}')
+        raise OutOfRangeError(f'ERROR: no times selected, ds_text={data_xr.time[[0,-1]].to_numpy()} and time_slice={time_slice}')
     
     #check if there are no gaps (more than one unique timestep)
     times_pd = data_xr_tsel['time'].to_series()
@@ -282,10 +283,10 @@ def merge_meteofiles(file_nc:str, preprocess=None,
         raise Exception(f'ERROR: gaps found in selected dataset (are there sourcefiles missing?), unique timesteps (hour): {timesteps_uniq/1e9/3600}')
     
     #check if requested times are available in selected files (in times_pd)
-    if not time_slice.start in times_pd.index:
-        raise Exception(f'ERROR: time_slice_start="{time_slice.start}" not in selected files, timerange: "{times_pd.index[0]}" to "{times_pd.index[-1]}"')
-    if not time_slice.stop in times_pd.index:
-        raise Exception(f'ERROR: time_slice_stop="{time_slice.stop}" not in selected files, timerange: "{times_pd.index[0]}" to "{times_pd.index[-1]}"')
+    if time_slice.start not in times_pd.index:
+        raise OutOfRangeError(f'ERROR: time_slice_start="{time_slice.start}" not in selected files, timerange: "{times_pd.index[0]}" to "{times_pd.index[-1]}"')
+    if time_slice.stop not in times_pd.index:
+        raise OutOfRangeError(f'ERROR: time_slice_stop="{time_slice.stop}" not in selected files, timerange: "{times_pd.index[0]}" to "{times_pd.index[-1]}"')
     
     #TODO: check conversion implementation with hydro_tools\ERA5\ERA52DFM.py. Also move to separate function?
     def get_unit(data_xr_var):
@@ -498,7 +499,7 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}, remove_ghost=True, remo
     for iF, file_nc_one in enumerate(file_nc_list):
         print(iF+1,end=' ')
         ds = xr.open_dataset(file_nc_one, chunks=chunks, **kwargs)
-        if 'nFlowElem' in ds.dims and 'nNetElem' in ds.dims: #for mapformat1 mapfiles: merge different face dimensions (rename nFlowElem to nNetElem)
+        if 'nFlowElem' in ds.dims and 'nNetElem' in ds.dims: #for mapformat1 mapfiles: merge different face dimensions (rename nFlowElem to nNetElem) to make sure the dataset topology is correct
             print('[mapformat1] ',end='')
             ds = ds.rename({'nFlowElem':'nNetElem'})
         uds = xu.core.wrap.UgridDataset(ds)

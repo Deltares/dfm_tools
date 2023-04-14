@@ -17,8 +17,8 @@ from scipy.spatial import KDTree
 import warnings
 import hydrolib.core.dflowfm as hcdfm
 
-from dfm_tools.hydrolib_helpers import Dataset_to_TimeSeries, Dataset_to_T3D, Dataset_to_Astronomic
-from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame
+from dfm_tools.hydrolib_helpers import Dataset_to_TimeSeries, Dataset_to_T3D, Dataset_to_Astronomic, pointlike_to_DataFrame
+from dfm_tools.errors import OutOfRangeError
 
 
 def get_conversion_dict(ncvarname_updates={}):
@@ -235,9 +235,9 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
     nc_tstart = xr_tstartstop.index[0]
     nc_tstop = xr_tstartstop.index[-1]
     if tstart < nc_tstart:
-        raise Exception(f'requested tstart {tstart} outside of available range {nc_tstart} to {nc_tstop}')
+        raise OutOfRangeError(f'requested tstart {tstart} outside of available range {nc_tstart} to {nc_tstop}')
     if tstop > nc_tstop:
-        raise Exception(f'requested tstop {tstop} outside of available range {nc_tstart} to {nc_tstop}')
+        raise OutOfRangeError(f'requested tstop {tstop} outside of available range {nc_tstart} to {nc_tstop}')
     
     #360 to 180 conversion
     convert_360to180 = (data_xr['longitude'].to_numpy()>180).any() #TODO: replace to_numpy() with load()
@@ -399,11 +399,13 @@ def interp_hisnc_to_plipoints(data_xr_his, file_pli, kdtree_k=3, load=True):
     
     #read polyfile and query k nearest hisstations (names)
     polyfile_object = hcdfm.PolyFile(file_pli)
-    data_pol_pd = pd.DataFrame()
+    data_pol_list = []
     for polyobj in polyfile_object.objects:
         data_pol_pd_one = pointlike_to_DataFrame(polyobj)
         data_pol_pd_one['name'] = pd.Series(data_pol_pd_one.index).apply(lambda x: f'{polyobj.metadata.name}_{x+1:04d}')
-        data_pol_pd = pd.concat([data_pol_pd,data_pol_pd_one])
+        data_pol_list.append(data_pol_pd_one)
+    data_pol_pd = pd.concat(data_pol_list)
+
     plicoords_distance2, plicoords_nestpointidx = tree_nest2.query(data_pol_pd[['x','y']], k=kdtree_k)
     da_plicoords_nestpointidx = xr.DataArray(plicoords_nestpointidx, dims=('plipoints','nearestkpoints'))
     da_plicoords_nestpointnames = data_xr_his.stations.isel(stations=da_plicoords_nestpointidx)

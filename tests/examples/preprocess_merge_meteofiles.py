@@ -63,7 +63,7 @@ elif mode == 'WOA':
     preprocess = dfmt.preprocess_woa #add 360-day calendar unit to time attrs before decode_cf
     time_slice = slice('0000-01-16','0000-03-16')
 else:
-    raise Exception('ERROR: wrong mode %s'%(mode))
+    raise KeyError('ERROR: wrong mode %s'%(mode))
 
 dir_output = '.'
 if not os.path.exists(dir_output):
