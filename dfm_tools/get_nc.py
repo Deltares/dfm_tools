@@ -232,17 +232,20 @@ def reconstruct_zw_zcc_fromsigma(uds):
     reconstruct full grid output (time/face-varying z-values) for sigma model, necessary for slicing sigmamodel on depth value
     based on https://cfconventions.org/cf-conventions/cf-conventions.html#_ocean_sigma_coordinate
     """
-    osz_formulaterms_dict = get_formula_terms(uds)
+    osz_formulaterms_int_dict = get_formula_terms(uds,varn_contains='interface')
+    osz_formulaterms_lay_dict = get_formula_terms(uds,varn_contains='layer')
     
-    uds_eta = uds[osz_formulaterms_dict['eta']] #mesh2d_s1
-    uds_depth = uds[osz_formulaterms_dict['depth']] #mesh2d_waterdepth
-    if uds_depth.attrs['standard_name'] == 'sea_floor_depth_below_sea_surface': #TODO: before the waterdepth instead of negative bedlevel was coupled via the formula_terms in sigmamodels (was fixed in OSS 140982 / 29-3-2022)
+    uds_eta = uds[osz_formulaterms_int_dict['eta']] #mesh2d_s1
+    uds_depth = uds[osz_formulaterms_int_dict['depth']] #mesh2d_waterdepth
+    if uds_depth.attrs['standard_name'] == 'sea_floor_depth_below_sea_surface': #TODO: previously the waterdepth instead of negative bedlevel was coupled via the formula_terms in sigmamodels (was fixed in OSS 140982 / 29-3-2022)
         uds_depth = -uds['mesh2d_flowelem_bl']
-    uds_sigma = uds[osz_formulaterms_dict['sigma']] #mesh2d_interface_sigma
+    uds_sigma_int = uds[osz_formulaterms_int_dict['sigma']] #mesh2d_interface_sigma
+    uds_sigma_lay = uds[osz_formulaterms_lay_dict['sigma']] #mesh2d_layer_sigma
     
-    uds['mesh2d_flowelem_zw'] = uds_eta + uds_sigma*(uds_depth+uds_eta)
+    uds['mesh2d_flowelem_zw'] = uds_eta + uds_sigma_int*(uds_depth+uds_eta)
+    uds['mesh2d_flowelem_zcc'] = uds_eta + uds_sigma_lay*(uds_depth+uds_eta)
     
-    uds = uds.set_coords(['mesh2d_flowelem_zw'])#,'mesh2d_flowelem_zcc']) #TODO: also need zcc?
+    uds = uds.set_coords(['mesh2d_flowelem_zw','mesh2d_flowelem_zcc'])
     return uds
 
 
@@ -282,15 +285,16 @@ def reconstruct_zw_zcc_fromzsigma(uds):
     import netCDF4
     fillvals = netCDF4.default_fillvals
     
-    osz_formulaterms_dict = get_formula_terms(uds)
+    osz_formulaterms_int_dict = get_formula_terms(uds,varn_contains='interface')
+    osz_formulaterms_lay_dict = get_formula_terms(uds,varn_contains='layer')
     
-    uds_eta = uds[osz_formulaterms_dict['eta']] #mesh2d_s1
-    uds_depth = uds[osz_formulaterms_dict['depth']] #mesh2d_bldepth: positive version of mesh2d_flowelem_bl, but is always in file
-    uds_zlev = uds[osz_formulaterms_dict['zlev']] #mesh2d_interface_z
+    uds_eta = uds[osz_formulaterms_int_dict['eta']] #mesh2d_s1
+    uds_depth = uds[osz_formulaterms_int_dict['depth']] #mesh2d_bldepth: positive version of mesh2d_flowelem_bl, but is always in file
+    uds_zlev = uds[osz_formulaterms_int_dict['zlev']] #mesh2d_interface_z
     uds_zlev = uds_zlev.where(uds_zlev!=fillvals['f8'])
-    uds_sigma = uds[osz_formulaterms_dict['sigma']] #mesh2d_interface_sigma
+    uds_sigma = uds[osz_formulaterms_int_dict['sigma']] #mesh2d_interface_sigma
     uds_sigma = uds_sigma.where(uds_sigma!=fillvals['f8'])
-    uds_depth_c = uds[osz_formulaterms_dict['depth_c']] #mesh2d_sigmazdepth
+    uds_depth_c = uds[osz_formulaterms_int_dict['depth_c']] #mesh2d_sigmazdepth
     
     # for levels k where sigma(k) has a defined value and zlev(k) is not defined:
     # z(n,k,j,i) = eta(n,j,i) + sigma(k)*(min(depth_c,depth(j,i))+eta(n,j,i))
