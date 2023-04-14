@@ -15,6 +15,7 @@ dir_output = '.'
 
 file_xyz = r'p:\archivedprojects\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\geometry_j19_NL_6-v2\rmm_vzm_v1p1_initial_water_level.xyz'
 #file_xyz = r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\general\diffusivity_rivzee_v6.xyz'
+#TODO: some of the timfiles contain duplicate times, but these are not validated anymore since the TimRecord implementation: file_struct = r'p:\archivedprojects\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\structures_toRTC\RMM_structures_ts_cl10_coeff10.ini' #TODO: incorrect timfiles (e.g. with duplicate times) are now read as ForcingModel instead: https://github.com/Deltares/HYDROLIB-core/issues/519
 
 data_xyz = hcdfm.XYZModel(file_xyz)
 xyz_pd = dfmt.pointlike_to_DataFrame(data_xyz)
