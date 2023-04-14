@@ -253,7 +253,7 @@ def reconstruct_zw_zcc_fromz(data_xr_map):
     """
     reconstruct full grid output (time/face-varying z-values) for zvalue model. Necessary when extracting values with zdepth w.r.t. waterlevel/bedlevel
     #TODO: gives spotty result for 0/0.1m w.r.t. bedlevel for Grevelingen zmodel
-    #TODO: remove hardcoding of varnames
+    #TODO: remove hardcoding of varnames (assuming wl/bl variables are available)
     #TODO: center values are clipped to wl/bl, so the top/bottom layer are currently incorrect
     """
     
