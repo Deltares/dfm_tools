@@ -236,7 +236,7 @@ def reconstruct_zw_zcc_fromsigma(uds):
     osz_formulaterms_lay_dict = get_formula_terms(uds,varn_contains='layer')
     
     uds_eta = uds[osz_formulaterms_int_dict['eta']] #mesh2d_s1
-    uds_depth = uds[osz_formulaterms_int_dict['depth']] #mesh2d_waterdepth
+    uds_depth = uds[osz_formulaterms_int_dict['depth']] #mesh2d_bldepth in new output, mesh2d_waterdepth in old output (see comment below)
     if uds_depth.attrs['standard_name'] == 'sea_floor_depth_below_sea_surface': # previously the waterdepth instead of negative bedlevel was coupled via the formula_terms in sigmamodels (was fixed in OSS 140982 / 29-3-2022)
         uds_depth = -uds['mesh2d_flowelem_bl'] # assuming this variable is available, which is not guaranteed
     uds_sigma_int = uds[osz_formulaterms_int_dict['sigma']] #mesh2d_interface_sigma
@@ -290,22 +290,29 @@ def reconstruct_zw_zcc_fromzsigma(uds):
     osz_formulaterms_lay_dict = get_formula_terms(uds,varn_contains='layer')
     
     uds_eta = uds[osz_formulaterms_int_dict['eta']] #mesh2d_s1
-    uds_depth = uds[osz_formulaterms_int_dict['depth']] #mesh2d_bldepth: positive version of mesh2d_flowelem_bl, but is always in file
-    uds_zlev = uds[osz_formulaterms_int_dict['zlev']] #mesh2d_interface_z
-    uds_zlev = uds_zlev.where(uds_zlev!=fillvals['f8'])
-    uds_sigma = uds[osz_formulaterms_int_dict['sigma']] #mesh2d_interface_sigma
-    uds_sigma = uds_sigma.where(uds_sigma!=fillvals['f8'])
+    uds_depth = uds[osz_formulaterms_int_dict['depth']] #mesh2d_bldepth: positive version of mesh2d_flowelem_bl, but this one is always in file
     uds_depth_c = uds[osz_formulaterms_int_dict['depth_c']] #mesh2d_sigmazdepth
+    uds_zlev_int = uds[osz_formulaterms_int_dict['zlev']] #mesh2d_interface_z
+    uds_zlev_int = uds_zlev_int.where(uds_zlev_int!=fillvals['f8'])
+    uds_sigma_int = uds[osz_formulaterms_int_dict['sigma']] #mesh2d_interface_sigma
+    uds_sigma_int = uds_sigma_int.where(uds_sigma_int!=fillvals['f8'])
+    uds_zlev_lay = uds[osz_formulaterms_lay_dict['zlev']] #mesh2d_layer_z
+    uds_zlev_lay = uds_zlev_lay.where(uds_zlev_lay!=fillvals['f8'])
+    uds_sigma_lay = uds[osz_formulaterms_lay_dict['sigma']] #mesh2d_layer_sigma
+    uds_sigma_lay = uds_sigma_lay.where(uds_sigma_lay!=fillvals['f8'])
     
     # for levels k where sigma(k) has a defined value and zlev(k) is not defined:
     # z(n,k,j,i) = eta(n,j,i) + sigma(k)*(min(depth_c,depth(j,i))+eta(n,j,i))
-    zw_sigmapart = uds_eta + uds_sigma*(uds_depth.clip(max=uds_depth_c)+uds_eta)
+    zw_sigmapart = uds_eta + uds_sigma_int*(uds_depth.clip(max=uds_depth_c)+uds_eta)
+    zcc_sigmapart = uds_eta + uds_sigma_lay*(uds_depth.clip(max=uds_depth_c)+uds_eta)
     # for levels k where zlev(k) has a defined value and sigma(k) is not defined: 
     # z(n,k,j,i) = zlev(k)
-    zw_zpart = uds_zlev.clip(min=-uds_depth) #added clipping of zvalues with bedlevel #TODO: maybe also add max=uds_eta?
+    zw_zpart = uds_zlev_int.clip(min=-uds_depth) #added clipping of zvalues with bedlevel
+    zcc_zpart = uds_zlev_lay.clip(min=-uds_depth) #added clipping of zvalues with bedlevel
     uds['mesh2d_flowelem_zw'] = zw_sigmapart.fillna(zw_zpart)
+    uds['mesh2d_flowelem_zcc'] = zcc_sigmapart.fillna(zcc_zpart)
     
-    uds = uds.set_coords(['mesh2d_flowelem_zw'])#,'mesh2d_flowelem_zcc']) #TODO: do we need zcc also?
+    uds = uds.set_coords(['mesh2d_flowelem_zw','mesh2d_flowelem_zcc'])
     return uds
 
 
