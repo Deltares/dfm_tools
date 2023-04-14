@@ -212,9 +212,9 @@ def polyline_mapslice(uds:xu.UgridDataset, line_array:np.array, calcdist_fromlat
     return xr_crs_ugrid
 
 
-def get_formula_terms(uds, varn_contains='interface'):
+def get_formula_terms(uds, varn_contains):
     """
-    get formula_terms for zw/zcc reconstruction, convert to list and then to dict
+    get formula_terms for zw/zcc reconstruction, convert to list and then to dict. This can be done for layer/interface (via varn_contains)
     """
     osz_varnames = list(uds.filter_by_attrs(formula_terms=lambda v: v is not None).variables) #names of variables containing attribute "formula_terms"
     osz_varnames_contains = [x for x in osz_varnames if varn_contains in x] #TODO: to get the layer/interface ocean_*_coordinate. Not too pretty, but it works
