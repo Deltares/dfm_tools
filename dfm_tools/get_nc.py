@@ -254,7 +254,7 @@ def reconstruct_zw_zcc_fromz(data_xr_map):
     reconstruct full grid output (time/face-varying z-values) for zvalue model. Necessary when extracting values with zdepth w.r.t. waterlevel/bedlevel
     #TODO: gives spotty result for 0/0.1m w.r.t. bedlevel for Grevelingen zmodel
     #TODO: remove hardcoding of varnames (assuming wl/bl variables are available)
-    #TODO: center values are clipped to wl/bl, so the top/bottom layer are currently incorrect
+    #TODO: center values are clipped to waterlevel+bedlevel, so the center values of the top+bottom layer are currently incorrect
     """
     
     dimn_layer, dimn_interfaces = get_vertical_dimensions(data_xr_map)
@@ -280,6 +280,7 @@ def reconstruct_zw_zcc_fromzsigma(uds):
     """
     reconstruct full grid output (time/face-varying z-values) for zsigmavalue model without full grid output. Implemented in https://issuetracker.deltares.nl/browse/UNST-5477
     based on https://cfconventions.org/cf-conventions/cf-conventions.html#_ocean_sigma_over_z_coordinate
+    #TODO: center values are clipped to bedlevel, so the center values of the bottom layer are currently incorrect
     """
     
     #TODO: default fillvalues are not automatically parsed to nan, so doing it manually: https://github.com/pydata/xarray/issues/2742
