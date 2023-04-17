@@ -59,8 +59,6 @@ import numpy as np
 import meshkernel
 
 
-#MODELBUILDER: p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\scripts\dfm_ModelBuilder_functions.py
-
 def download_meteodata_oceandata(
         longitude_min = 2, longitude_max = 4, latitude_min = 50, latitude_max = 52, # domain
         model = &#39;CMEMS&#39;, #CMEMS ERA5
@@ -309,7 +307,7 @@ def preprocess_interpolate_nc_to_bc(
     return ext_bnd
 
     
-def preprocess_ini_cmems_to_nc(ext_old, tSimStart = dt.datetime(1998,1,1),
+def preprocess_ini_cmems_to_nc(ext_old, tstart=&#39;1998-01-01&#39;,
         dir_data  = r&#39;p:\i1000668-tcoms\03_newModel\01_input\02_bnd\data_opendap&#39;, #folder containing CMEMS so and thetao netcdf files
         dir_out = &#39;.&#39;):
     #TODO: merge with other ini script and make generic for getting an inifield out of CMEMS/etc regulargrid Dataset or a 2D/3D FM map/rst Dataset
@@ -321,6 +319,7 @@ def preprocess_ini_cmems_to_nc(ext_old, tSimStart = dt.datetime(1998,1,1),
     print(f&#39;opening {len(file_nc_list)} datasets&#39;)
     data_xr = xr.open_mfdataset(file_nc_list)
     
+    tSimStart = pd.Timestamp(tstart)
     if 0: #this would be the proper way to do it, but FM needs two timesteps for some reason
         print(&#39;ds.interp()&#39;)
         data_xr_ontime = data_xr.interp(time=[tSimStart],kwargs=dict(bounds_error=True)) #bounds_error makes sure, outofbounds time results in &#34;ValueError: A value in x_new is below the interpolation range.&#34;
@@ -330,25 +329,35 @@ def preprocess_ini_cmems_to_nc(ext_old, tSimStart = dt.datetime(1998,1,1),
     
     print(&#39;writing file&#39;)
     outFile = os.path.join(dir_out,f&#39;InitialField_{tSimStart.strftime(&#34;%Y-%m-%d_%H-%M-%S&#34;)}.nc&#39;)
-    data_xr_ontime.to_netcdf(outFile,format=&#34;NETCDF4_CLASSIC&#34;)
+    data_xr_ontime.to_netcdf(outFile,format=&#34;NETCDF4_CLASSIC&#34;) #TODO: why the format setting?
     
     #append forcings to ext
-    
-    forcing_so = hcdfm.ExtOldForcing(quantity=&#39;initialsalinity&#39;, #TODO: nudge_salinity_temperature in reference model, but it&#39;s commented. The quantity is also not supported by hydrolib-core
-                                     filename=outFile,
-                                     filetype=hcdfm.ExtOldFileType.NetCDFGridData,
-                                     method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
-                                     operand=hcdfm.Operand.override, #O
-                                     )
-    ext_old.forcing.append(forcing_so)
-    forcing_thetao = hcdfm.ExtOldForcing(quantity=&#39;initialtemperature&#39;,
+    if 0: 
+        forcing_so = hcdfm.ExtOldForcing(quantity=&#39;initialsalinity&#39;,
                                          filename=outFile,
+                                         varname=&#39;so&#39;,
                                          filetype=hcdfm.ExtOldFileType.NetCDFGridData,
                                          method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
                                          operand=hcdfm.Operand.override, #O
                                          )
-    ext_old.forcing.append(forcing_thetao)
-
+        ext_old.forcing.append(forcing_so)
+        forcing_thetao = hcdfm.ExtOldForcing(quantity=&#39;initialtemperature&#39;,
+                                             filename=outFile,
+                                             varname=&#39;thetao&#39;,
+                                             filetype=hcdfm.ExtOldFileType.NetCDFGridData,
+                                             method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                             operand=hcdfm.Operand.override, #O
+                                             )
+        ext_old.forcing.append(forcing_thetao)
+    else: #TODO: 3D initialsalinity/initialtemperature fields are silently ignored, initial 3D conditions are only possible via nudging 1st timestep
+        forcing_saltem = hcdfm.ExtOldForcing(quantity=&#39;nudge_salinity_temperature&#39;, #TODO: nudge_salinity_temperature is not supported by hydrolib-core
+                                             filename=outFile,
+                                             filetype=hcdfm.ExtOldFileType.NetCDFGridData,
+                                             method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                             operand=hcdfm.Operand.override, #O
+                                             )
+        ext_old.forcing.append(forcing_saltem)
+    
     return ext_old
     
     
@@ -564,7 +573,23 @@ def refine_basegrid(mk, data_bathy_sel,min_face_size=0.1):
     return mk
 
 
-    </code></pre>
+def generate_bndpli(lon_min, lon_max, lat_min, lat_max, dlon, dlat, name=&#39;bnd&#39;):
+
+    vals_lon_ar = np.arange(lon_min, lon_max, dlon)
+    vals_lon = np.linspace(lon_min, lon_max,len(vals_lon_ar))
+    vals_lat_ar = np.arange(lat_min, lat_max, dlat)
+    vals_lat = np.linspace(lat_min, lat_max,len(vals_lat_ar))
+    pli_p1 = np.c_[np.repeat(lon_min,len(vals_lat)),vals_lat]
+    pli_p2 = np.c_[vals_lon,np.repeat(lat_max,len(vals_lon))]
+    pli_p3 = np.c_[np.repeat(lon_max,len(vals_lat)),vals_lat[::-1]]
+    pli_p4 = np.c_[vals_lon[::-1],np.repeat(lat_min,len(vals_lon))]
+    
+    pli_all = np.concatenate([pli_p1[:-1],pli_p2[:-1],pli_p3[:-1],pli_p4[:-1]],axis=0)
+    
+    pli_polyobject = hcdfm.PolyObject(metadata=hcdfm.Metadata(name=name, n_rows=pli_all.shape[0], n_columns=pli_all.shape[1]),
+                                      points=[hcdfm.Point(x=x,y=y,data=[]) for x,y in pli_all])
+    pli_polyfile = hcdfm.PolyFile(objects=[pli_polyobject])
+    return pli_polyfile</code></pre>
 </details>
 </section>
 <section>
@@ -841,7 +866,7 @@ def refine_basegrid(mk, data_bathy_sel,min_face_size=0.1):
 </details>
 </dd>
 <dt id="dfm_tools.modelbuilder.preprocess_ini_cmems_to_nc"><code class="name flex">
-<span>def <span class="ident">preprocess_ini_cmems_to_nc</span></span>(<span>ext_old, tSimStart=datetime.datetime(1998, 1, 1, 0, 0), dir_data='p:\\i1000668-tcoms\\03_newModel\\01_input\\02_bnd\\data_opendap', dir_out='.')</span>
+<span>def <span class="ident">preprocess_ini_cmems_to_nc</span></span>(<span>ext_old, tstart='1998-01-01', dir_data='p:\\i1000668-tcoms\\03_newModel\\01_input\\02_bnd\\data_opendap', dir_out='.')</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -849,7 +874,7 @@ def refine_basegrid(mk, data_bathy_sel,min_face_size=0.1):
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def preprocess_ini_cmems_to_nc(ext_old, tSimStart = dt.datetime(1998,1,1),
+<pre><code class="python">def preprocess_ini_cmems_to_nc(ext_old, tstart=&#39;1998-01-01&#39;,
         dir_data  = r&#39;p:\i1000668-tcoms\03_newModel\01_input\02_bnd\data_opendap&#39;, #folder containing CMEMS so and thetao netcdf files
         dir_out = &#39;.&#39;):
     #TODO: merge with other ini script and make generic for getting an inifield out of CMEMS/etc regulargrid Dataset or a 2D/3D FM map/rst Dataset
@@ -861,6 +886,7 @@ def refine_basegrid(mk, data_bathy_sel,min_face_size=0.1):
     print(f&#39;opening {len(file_nc_list)} datasets&#39;)
     data_xr = xr.open_mfdataset(file_nc_list)
     
+    tSimStart = pd.Timestamp(tstart)
     if 0: #this would be the proper way to do it, but FM needs two timesteps for some reason
         print(&#39;ds.interp()&#39;)
         data_xr_ontime = data_xr.interp(time=[tSimStart],kwargs=dict(bounds_error=True)) #bounds_error makes sure, outofbounds time results in &#34;ValueError: A value in x_new is below the interpolation range.&#34;
@@ -870,25 +896,35 @@ def refine_basegrid(mk, data_bathy_sel,min_face_size=0.1):
     
     print(&#39;writing file&#39;)
     outFile = os.path.join(dir_out,f&#39;InitialField_{tSimStart.strftime(&#34;%Y-%m-%d_%H-%M-%S&#34;)}.nc&#39;)
-    data_xr_ontime.to_netcdf(outFile,format=&#34;NETCDF4_CLASSIC&#34;)
+    data_xr_ontime.to_netcdf(outFile,format=&#34;NETCDF4_CLASSIC&#34;) #TODO: why the format setting?
     
     #append forcings to ext
-    
-    forcing_so = hcdfm.ExtOldForcing(quantity=&#39;initialsalinity&#39;, #TODO: nudge_salinity_temperature in reference model, but it&#39;s commented. The quantity is also not supported by hydrolib-core
-                                     filename=outFile,
-                                     filetype=hcdfm.ExtOldFileType.NetCDFGridData,
-                                     method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
-                                     operand=hcdfm.Operand.override, #O
-                                     )
-    ext_old.forcing.append(forcing_so)
-    forcing_thetao = hcdfm.ExtOldForcing(quantity=&#39;initialtemperature&#39;,
+    if 0: 
+        forcing_so = hcdfm.ExtOldForcing(quantity=&#39;initialsalinity&#39;,
                                          filename=outFile,
+                                         varname=&#39;so&#39;,
                                          filetype=hcdfm.ExtOldFileType.NetCDFGridData,
                                          method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
                                          operand=hcdfm.Operand.override, #O
                                          )
-    ext_old.forcing.append(forcing_thetao)
-
+        ext_old.forcing.append(forcing_so)
+        forcing_thetao = hcdfm.ExtOldForcing(quantity=&#39;initialtemperature&#39;,
+                                             filename=outFile,
+                                             varname=&#39;thetao&#39;,
+                                             filetype=hcdfm.ExtOldFileType.NetCDFGridData,
+                                             method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                             operand=hcdfm.Operand.override, #O
+                                             )
+        ext_old.forcing.append(forcing_thetao)
+    else: #TODO: 3D initialsalinity/initialtemperature fields are silently ignored, initial 3D conditions are only possible via nudging 1st timestep
+        forcing_saltem = hcdfm.ExtOldForcing(quantity=&#39;nudge_salinity_temperature&#39;, #TODO: nudge_salinity_temperature is not supported by hydrolib-core
+                                             filename=outFile,
+                                             filetype=hcdfm.ExtOldFileType.NetCDFGridData,
+                                             method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                             operand=hcdfm.Operand.override, #O
+                                             )
+        ext_old.forcing.append(forcing_saltem)
+    
     return ext_old</code></pre>
 </details>
 </dd>
@@ -1129,6 +1165,34 @@ def refine_basegrid(mk, data_bathy_sel,min_face_size=0.1):
     return mk</code></pre>
 </details>
 </dd>
+<dt id="dfm_tools.modelbuilder.generate_bndpli"><code class="name flex">
+<span>def <span class="ident">generate_bndpli</span></span>(<span>lon_min, lon_max, lat_min, lat_max, dlon, dlat, name='bnd')</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def generate_bndpli(lon_min, lon_max, lat_min, lat_max, dlon, dlat, name=&#39;bnd&#39;):
+
+    vals_lon_ar = np.arange(lon_min, lon_max, dlon)
+    vals_lon = np.linspace(lon_min, lon_max,len(vals_lon_ar))
+    vals_lat_ar = np.arange(lat_min, lat_max, dlat)
+    vals_lat = np.linspace(lat_min, lat_max,len(vals_lat_ar))
+    pli_p1 = np.c_[np.repeat(lon_min,len(vals_lat)),vals_lat]
+    pli_p2 = np.c_[vals_lon,np.repeat(lat_max,len(vals_lon))]
+    pli_p3 = np.c_[np.repeat(lon_max,len(vals_lat)),vals_lat[::-1]]
+    pli_p4 = np.c_[vals_lon[::-1],np.repeat(lat_min,len(vals_lon))]
+    
+    pli_all = np.concatenate([pli_p1[:-1],pli_p2[:-1],pli_p3[:-1],pli_p4[:-1]],axis=0)
+    
+    pli_polyobject = hcdfm.PolyObject(metadata=hcdfm.Metadata(name=name, n_rows=pli_all.shape[0], n_columns=pli_all.shape[1]),
+                                      points=[hcdfm.Point(x=x,y=y,data=[]) for x,y in pli_all])
+    pli_polyfile = hcdfm.PolyFile(objects=[pli_polyobject])
+    return pli_polyfile</code></pre>
+</details>
+</dd>
 </dl>
 </section>
 <section>
@@ -1153,6 +1217,7 @@ def refine_basegrid(mk, data_bathy_sel,min_face_size=0.1):
 <li><code><a title="dfm_tools.modelbuilder.preprocess_merge_meteofiles" href="#dfm_tools.modelbuilder.preprocess_merge_meteofiles">preprocess_merge_meteofiles</a></code></li>
 <li><code><a title="dfm_tools.modelbuilder.make_basegrid" href="#dfm_tools.modelbuilder.make_basegrid">make_basegrid</a></code></li>
 <li><code><a title="dfm_tools.modelbuilder.refine_basegrid" href="#dfm_tools.modelbuilder.refine_basegrid">refine_basegrid</a></code></li>
+<li><code><a title="dfm_tools.modelbuilder.generate_bndpli" href="#dfm_tools.modelbuilder.generate_bndpli">generate_bndpli</a></code></li>
 </ul>
 </li>
 </ul>

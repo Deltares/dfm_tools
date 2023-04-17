@@ -39,14 +39,6 @@ If not, see <a href="http://www.gnu.org/licenses/">http://www.gnu.org/licenses/<
 <p>All names, logos, and references to "Deltares" are registered trademarks of
 Stichting Deltares and remain full property of Stichting Deltares at all times.
 All rights reserved.</p>
-<p>INFORMATION
-This script is part of dfm_tools: <a href="https://github.com/openearth/dfm_tools">https://github.com/openearth/dfm_tools</a>
-Check the README.rst on github for other available functions
-Check the tests folder on github for example scripts (this is the dfm_tools pytest testbank)
-Check the pptx and example figures in (created by the testbank): N:/Deltabox/Bulletin/veenstra/info dfm_tools</p>
-<p>Created on Thu Apr
-1 12:03:47 2021</p>
-<p>@author: buckman</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -73,139 +65,15 @@ All names, logos, and references to &#34;Deltares&#34; are registered trademarks
 Stichting Deltares and remain full property of Stichting Deltares at all times.
 All rights reserved.
 
-
-INFORMATION
-This script is part of dfm_tools: https://github.com/openearth/dfm_tools
-Check the README.rst on github for other available functions
-Check the tests folder on github for example scripts (this is the dfm_tools pytest testbank)
-Check the pptx and example figures in (created by the testbank): N:/Deltabox/Bulletin/veenstra/info dfm_tools
-
-Created on Thu Apr  1 12:03:47 2021
-
-@author: buckman
 &#34;&#34;&#34;
 
-import pandas as pd
-import numpy as np
-import datetime as dt
-from netCDF4 import num2date
-import warnings
-
 def write_timfile(filename, datablock, header, converttime=False, refdate=None, float_format=&#39;%6.2f&#39;):
-    &#34;&#34;&#34;
-    
-
-    Parameters
-    ----------
-    filename : TYPE
-        DESCRIPTION.
-    datablockss : Pandas dataframe
-        The DataFrame should contain time variable in the first column. Column names will not be parsed.
-    header : list of file header lines
-        Header lines will be printed to file
-    converttime : boolean True/False, optional
-        DESCRIPTION, Convert first data column from datetime to minutes since refdate. The default in False
-    refdate : datetime object, optional
-        DESCRIPTION. The default is None.
-    data_format : TYPE, optional
-        DESCRIPTION. The default is &#39;%6.2f&#39;.
-
-    Raises
-    ------
-    Exception
-        DESCRIPTION.
-
-    Returns
-    -------
-    None.
-
-    &#34;&#34;&#34;
-    
-    warnings.warn(DeprecationWarning(&#39;the function dfm_tools.io.tim.write_timfile() is deprecated, please use the new hydrolib alternative (in development).&#39;)) #TODO: remove code (there is no hydrolib-core alternative available yet)
-    
-    if type(datablock) is not list:
-        datablock = [datablock]
-        #metadatas = [metadatas]
-    
-    #clear file
-    with open(filename, &#39;w&#39;) as file_tim:
-        pass
-    
-    data_pd_out = datablock.copy()
-    if converttime:
-        if refdate is None:
-            raise Exception(&#39;datetime as units in input data, but no refdate provided&#39;)
-        print(&#39;datetime values are replaced by minutes since&#39;)
-        try:
-            times_wrtref_min = (data_pd_out.iloc[:,0]-refdate).dt.total_seconds()/60
-        except TypeError:
-            raise TypeError(&#39;Failure to convert time units. Please check that refdate is a valid datetime object and first column of dataset contains valid datetime objects.&#39;)
-        
-        #replace datetime values by minutes since
-        data_pd_out.iloc[:,0] = times_wrtref_min
-        
-    with open(filename, &#39;a&#39;) as file_tim:
-        for line in header:
-            file_tim.write(&#39;%s\n&#39;%(line))
-    data_pd_out.to_csv(filename, header=None, index=None, sep=&#39;\t&#39;, mode=&#39;a&#39;, float_format=float_format)
-    with open(filename,&#39;a&#39;) as file_tim:
-        file_tim.write(&#39;\n&#39;)
-
+    raise DeprecationWarning(&#39;the function dfm_tools.write_timfile() is deprecated, please use the new hydrolib alternative: https://github.com/Deltares/dfm_tools/blob/301-convert-timmodel-to-pandasdataframe/tests/examples/preprocess_hydrolib_readtim.py.&#39;) #TODO: remove code
 
 
 def read_timfile(filename, converttime=False, refdate=None):
-    &#34;&#34;&#34;
-    
-
-    Parameters
-    ----------
-    filename : *.tim file name.
-    converttime : boolean True/False, optional
-        DESCRIPTION. The default is False. First column must be time in minues since refdate.
-    refdate : datetime object, optional
-        DESCRIPTION. The default is None
-    
-    Raises
-    ------
-    Exception
-        DESCRIPTION.
-
-    Returns
-    -------
-    datablock : Pandas dataframe
-        The DataFrame contains time variable in the first column. Column names are not parsed.
-    header : list
-        list of header lines from file
-
-    &#34;&#34;&#34;
-    
-    warnings.warn(DeprecationWarning(&#39;the function dfm_tools.io.tim.read_timfile() is deprecated, please use the new hydrolib alternative (in development).&#39;)) #TODO: remove code (there is no hydrolib-core alternative available yet)
-    
-    with open(filename, &#39;r&#39;) as bc:
-        page = bc.readlines()
-
-    header = np.array([],dtype=str)
-    for iL, line in enumerate(page):    
-        if &#39;*&#39; not in line:#line.lower()[0].isnumeric():
-            line_datastart = iL
-            break
-        header = np.append(header,line.strip(&#39;\n&#39;))
-        
-            
-    #read data block
-    data_block_pd = pd.read_csv(filepath_or_buffer=filename, header=None, skiprows=line_datastart, delim_whitespace=True, engine=&#39;python&#39;)
-    if converttime:
-        time_minutes = data_block_pd.iloc[:,0]
-        data_nc_times_pdtd = pd.to_timedelta(time_minutes, unit=&#39;m&#39;)
-        try:
-            data_nc_datetimes = (refdate + data_nc_times_pdtd)#.to_pydatetime()
-        except TypeError:
-            raise TypeError(&#39;Failure to convert time units. Please check that refdate is a valid datetime object and first column of dataset contains minutes since refdate.&#39;)
-        print(&#39;Converting times to datetime format...&#39;)
-        data_block_pd.iloc[:,0] = data_nc_datetimes
-                    
-
-    return data_block_pd, header</code></pre>
+    raise DeprecationWarning(&#39;the function dfm_tools.read_timfile() is deprecated, please use the new hydrolib alternative: https://github.com/Deltares/dfm_tools/blob/301-convert-timmodel-to-pandasdataframe/tests/examples/preprocess_hydrolib_readtim.py.&#39;) #TODO: remove code
+    </code></pre>
 </details>
 </section>
 <section>
@@ -219,174 +87,26 @@ def read_timfile(filename, converttime=False, refdate=None):
 <span>def <span class="ident">write_timfile</span></span>(<span>filename, datablock, header, converttime=False, refdate=None, float_format='%6.2f')</span>
 </code></dt>
 <dd>
-<div class="desc"><h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>filename</code></strong> :&ensp;<code>TYPE</code></dt>
-<dd>DESCRIPTION.</dd>
-<dt><strong><code>datablockss</code></strong> :&ensp;<code>Pandas dataframe</code></dt>
-<dd>The DataFrame should contain time variable in the first column. Column names will not be parsed.</dd>
-<dt><strong><code>header</code></strong> :&ensp;<code>list</code> of <code>file header lines</code></dt>
-<dd>Header lines will be printed to file</dd>
-<dt><strong><code>converttime</code></strong> :&ensp;<code>boolean True/False</code>, optional</dt>
-<dd>DESCRIPTION, Convert first data column from datetime to minutes since refdate. The default in False</dd>
-<dt><strong><code>refdate</code></strong> :&ensp;<code>datetime object</code>, optional</dt>
-<dd>DESCRIPTION. The default is None.</dd>
-<dt><strong><code>data_format</code></strong> :&ensp;<code>TYPE</code>, optional</dt>
-<dd>DESCRIPTION. The default is '%6.2f'.</dd>
-</dl>
-<h2 id="raises">Raises</h2>
-<dl>
-<dt><code>Exception</code></dt>
-<dd>DESCRIPTION.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<p>None.</p></div>
+<div class="desc"></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def write_timfile(filename, datablock, header, converttime=False, refdate=None, float_format=&#39;%6.2f&#39;):
-    &#34;&#34;&#34;
-    
-
-    Parameters
-    ----------
-    filename : TYPE
-        DESCRIPTION.
-    datablockss : Pandas dataframe
-        The DataFrame should contain time variable in the first column. Column names will not be parsed.
-    header : list of file header lines
-        Header lines will be printed to file
-    converttime : boolean True/False, optional
-        DESCRIPTION, Convert first data column from datetime to minutes since refdate. The default in False
-    refdate : datetime object, optional
-        DESCRIPTION. The default is None.
-    data_format : TYPE, optional
-        DESCRIPTION. The default is &#39;%6.2f&#39;.
-
-    Raises
-    ------
-    Exception
-        DESCRIPTION.
-
-    Returns
-    -------
-    None.
-
-    &#34;&#34;&#34;
-    
-    warnings.warn(DeprecationWarning(&#39;the function dfm_tools.io.tim.write_timfile() is deprecated, please use the new hydrolib alternative (in development).&#39;)) #TODO: remove code (there is no hydrolib-core alternative available yet)
-    
-    if type(datablock) is not list:
-        datablock = [datablock]
-        #metadatas = [metadatas]
-    
-    #clear file
-    with open(filename, &#39;w&#39;) as file_tim:
-        pass
-    
-    data_pd_out = datablock.copy()
-    if converttime:
-        if refdate is None:
-            raise Exception(&#39;datetime as units in input data, but no refdate provided&#39;)
-        print(&#39;datetime values are replaced by minutes since&#39;)
-        try:
-            times_wrtref_min = (data_pd_out.iloc[:,0]-refdate).dt.total_seconds()/60
-        except TypeError:
-            raise TypeError(&#39;Failure to convert time units. Please check that refdate is a valid datetime object and first column of dataset contains valid datetime objects.&#39;)
-        
-        #replace datetime values by minutes since
-        data_pd_out.iloc[:,0] = times_wrtref_min
-        
-    with open(filename, &#39;a&#39;) as file_tim:
-        for line in header:
-            file_tim.write(&#39;%s\n&#39;%(line))
-    data_pd_out.to_csv(filename, header=None, index=None, sep=&#39;\t&#39;, mode=&#39;a&#39;, float_format=float_format)
-    with open(filename,&#39;a&#39;) as file_tim:
-        file_tim.write(&#39;\n&#39;)</code></pre>
+    raise DeprecationWarning(&#39;the function dfm_tools.write_timfile() is deprecated, please use the new hydrolib alternative: https://github.com/Deltares/dfm_tools/blob/301-convert-timmodel-to-pandasdataframe/tests/examples/preprocess_hydrolib_readtim.py.&#39;) #TODO: remove code</code></pre>
 </details>
 </dd>
 <dt id="dfm_tools.io.tim.read_timfile"><code class="name flex">
 <span>def <span class="ident">read_timfile</span></span>(<span>filename, converttime=False, refdate=None)</span>
 </code></dt>
 <dd>
-<div class="desc"><h2 id="parameters">Parameters</h2>
-<dl>
-<dt>filename : *.tim file name.</dt>
-<dt><strong><code>converttime</code></strong> :&ensp;<code>boolean True/False</code>, optional</dt>
-<dd>DESCRIPTION. The default is False. First column must be time in minues since refdate.</dd>
-<dt><strong><code>refdate</code></strong> :&ensp;<code>datetime object</code>, optional</dt>
-<dd>DESCRIPTION. The default is None</dd>
-</dl>
-<h2 id="raises">Raises</h2>
-<dl>
-<dt><code>Exception</code></dt>
-<dd>DESCRIPTION.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><strong><code>datablock</code></strong> :&ensp;<code>Pandas dataframe</code></dt>
-<dd>The DataFrame contains time variable in the first column. Column names are not parsed.</dd>
-<dt><strong><code>header</code></strong> :&ensp;<code>list</code></dt>
-<dd>list of header lines from file</dd>
-</dl></div>
+<div class="desc"></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def read_timfile(filename, converttime=False, refdate=None):
-    &#34;&#34;&#34;
-    
-
-    Parameters
-    ----------
-    filename : *.tim file name.
-    converttime : boolean True/False, optional
-        DESCRIPTION. The default is False. First column must be time in minues since refdate.
-    refdate : datetime object, optional
-        DESCRIPTION. The default is None
-    
-    Raises
-    ------
-    Exception
-        DESCRIPTION.
-
-    Returns
-    -------
-    datablock : Pandas dataframe
-        The DataFrame contains time variable in the first column. Column names are not parsed.
-    header : list
-        list of header lines from file
-
-    &#34;&#34;&#34;
-    
-    warnings.warn(DeprecationWarning(&#39;the function dfm_tools.io.tim.read_timfile() is deprecated, please use the new hydrolib alternative (in development).&#39;)) #TODO: remove code (there is no hydrolib-core alternative available yet)
-    
-    with open(filename, &#39;r&#39;) as bc:
-        page = bc.readlines()
-
-    header = np.array([],dtype=str)
-    for iL, line in enumerate(page):    
-        if &#39;*&#39; not in line:#line.lower()[0].isnumeric():
-            line_datastart = iL
-            break
-        header = np.append(header,line.strip(&#39;\n&#39;))
-        
-            
-    #read data block
-    data_block_pd = pd.read_csv(filepath_or_buffer=filename, header=None, skiprows=line_datastart, delim_whitespace=True, engine=&#39;python&#39;)
-    if converttime:
-        time_minutes = data_block_pd.iloc[:,0]
-        data_nc_times_pdtd = pd.to_timedelta(time_minutes, unit=&#39;m&#39;)
-        try:
-            data_nc_datetimes = (refdate + data_nc_times_pdtd)#.to_pydatetime()
-        except TypeError:
-            raise TypeError(&#39;Failure to convert time units. Please check that refdate is a valid datetime object and first column of dataset contains minutes since refdate.&#39;)
-        print(&#39;Converting times to datetime format...&#39;)
-        data_block_pd.iloc[:,0] = data_nc_datetimes
-                    
-
-    return data_block_pd, header</code></pre>
+    raise DeprecationWarning(&#39;the function dfm_tools.read_timfile() is deprecated, please use the new hydrolib alternative: https://github.com/Deltares/dfm_tools/blob/301-convert-timmodel-to-pandasdataframe/tests/examples/preprocess_hydrolib_readtim.py.&#39;) #TODO: remove code</code></pre>
 </details>
 </dd>
 </dl>

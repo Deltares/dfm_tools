@@ -264,9 +264,9 @@ def polyline_mapslice(uds:xu.UgridDataset, line_array:np.array, calcdist_fromlat
     return xr_crs_ugrid
 
 
-def get_formula_terms(uds, varn_contains=&#39;interface&#39;):
+def get_formula_terms(uds, varn_contains):
     &#34;&#34;&#34;
-    get formula_terms for zw/zcc reconstruction, convert to list and then to dict
+    get formula_terms for zw/zcc reconstruction, convert to list and then to dict. This can be done for layer/interface (via varn_contains)
     &#34;&#34;&#34;
     osz_varnames = list(uds.filter_by_attrs(formula_terms=lambda v: v is not None).variables) #names of variables containing attribute &#34;formula_terms&#34;
     osz_varnames_contains = [x for x in osz_varnames if varn_contains in x] #TODO: to get the layer/interface ocean_*_coordinate. Not too pretty, but it works
@@ -284,17 +284,20 @@ def reconstruct_zw_zcc_fromsigma(uds):
     reconstruct full grid output (time/face-varying z-values) for sigma model, necessary for slicing sigmamodel on depth value
     based on https://cfconventions.org/cf-conventions/cf-conventions.html#_ocean_sigma_coordinate
     &#34;&#34;&#34;
-    osz_formulaterms_dict = get_formula_terms(uds)
+    osz_formulaterms_int_dict = get_formula_terms(uds,varn_contains=&#39;interface&#39;)
+    osz_formulaterms_lay_dict = get_formula_terms(uds,varn_contains=&#39;layer&#39;)
     
-    uds_eta = uds[osz_formulaterms_dict[&#39;eta&#39;]] #mesh2d_s1
-    uds_depth = uds[osz_formulaterms_dict[&#39;depth&#39;]] #mesh2d_waterdepth
-    if uds_depth.attrs[&#39;standard_name&#39;] == &#39;sea_floor_depth_below_sea_surface&#39;: #TODO: before the waterdepth instead of negative bedlevel was coupled via the formula_terms in sigmamodels (was fixed in OSS 140982 / 29-3-2022)
-        uds_depth = -uds[&#39;mesh2d_flowelem_bl&#39;]
-    uds_sigma = uds[osz_formulaterms_dict[&#39;sigma&#39;]] #mesh2d_interface_sigma
+    uds_eta = uds[osz_formulaterms_int_dict[&#39;eta&#39;]] #mesh2d_s1
+    uds_depth = uds[osz_formulaterms_int_dict[&#39;depth&#39;]] #mesh2d_bldepth in new output, mesh2d_waterdepth in old output (see comment below)
+    if uds_depth.attrs[&#39;standard_name&#39;] == &#39;sea_floor_depth_below_sea_surface&#39;: # previously the waterdepth instead of negative bedlevel was coupled via the formula_terms in sigmamodels (was fixed in OSS 140982 / 29-3-2022)
+        uds_depth = -uds[&#39;mesh2d_flowelem_bl&#39;] # assuming this variable is available, which is not guaranteed
+    uds_sigma_int = uds[osz_formulaterms_int_dict[&#39;sigma&#39;]] #mesh2d_interface_sigma
+    uds_sigma_lay = uds[osz_formulaterms_lay_dict[&#39;sigma&#39;]] #mesh2d_layer_sigma
     
-    uds[&#39;mesh2d_flowelem_zw&#39;] = uds_eta + uds_sigma*(uds_depth+uds_eta)
+    uds[&#39;mesh2d_flowelem_zw&#39;] = uds_eta + uds_sigma_int*(uds_depth+uds_eta)
+    uds[&#39;mesh2d_flowelem_zcc&#39;] = uds_eta + uds_sigma_lay*(uds_depth+uds_eta)
     
-    uds = uds.set_coords([&#39;mesh2d_flowelem_zw&#39;])#,&#39;mesh2d_flowelem_zcc&#39;]) #TODO: also need zcc?
+    uds = uds.set_coords([&#39;mesh2d_flowelem_zw&#39;,&#39;mesh2d_flowelem_zcc&#39;])
     return uds
 
 
@@ -302,7 +305,8 @@ def reconstruct_zw_zcc_fromz(data_xr_map):
     &#34;&#34;&#34;
     reconstruct full grid output (time/face-varying z-values) for zvalue model. Necessary when extracting values with zdepth w.r.t. waterlevel/bedlevel
     #TODO: gives spotty result for 0/0.1m w.r.t. bedlevel for Grevelingen zmodel
-    #TODO: remove hardcoding of varnames
+    #TODO: remove hardcoding of varnames (assuming wl/bl variables are available)
+    #TODO: center values are clipped to waterlevel+bedlevel, so the center values of the top+bottom layer are currently incorrect
     &#34;&#34;&#34;
     
     dimn_layer, dimn_interfaces = get_vertical_dimensions(data_xr_map)
@@ -311,8 +315,8 @@ def reconstruct_zw_zcc_fromz(data_xr_map):
     data_frommap_z0_sel = data_frommap_wl_sel*0
     data_frommap_bl_sel = data_xr_map[&#39;mesh2d_flowelem_bl&#39;]
     
-    #zvals_cen_zval = data_xr_map[&#39;mesh2d_layer_z&#39;] #no clipping for zcenter values, since otherwise interp will fail
-    #data_xr_map[&#39;mesh2d_flowelem_zcc&#39;] = (data_frommap_z0_sel+zvals_cen_zval)
+    zvals_cen_zval = data_xr_map[&#39;mesh2d_layer_z&#39;] #no clipping for zcenter values, since otherwise interp will fail
+    data_xr_map[&#39;mesh2d_flowelem_zcc&#39;] = (data_frommap_z0_sel+zvals_cen_zval).clip(min=data_frommap_bl_sel, max=data_frommap_wl_sel)
 
     zvals_interface_zval = data_xr_map[&#39;mesh2d_interface_z&#39;] #clipping for zinterface values, to make sure layer interfaces are also at water/bed level
     data_xr_map[&#39;mesh2d_flowelem_zw&#39;] = (data_frommap_z0_sel+zvals_interface_zval).clip(min=data_frommap_bl_sel, max=data_frommap_wl_sel)
@@ -320,7 +324,7 @@ def reconstruct_zw_zcc_fromz(data_xr_map):
     bool_int_abovewl = zvals_interface_zval&gt;data_frommap_wl_sel
     data_xr_map[&#39;mesh2d_flowelem_zw&#39;] = data_xr_map[&#39;mesh2d_flowelem_zw&#39;].where(bool_notoplayer_int | bool_int_abovewl, other=data_frommap_wl_sel) #zvalues of top layer_interfaces that are lower than wl are replaced by wl
     
-    data_xr_map = data_xr_map.set_coords([&#39;mesh2d_flowelem_zw&#39;])#,&#39;mesh2d_flowelem_zcc&#39;]) #TODO: do we need zcc also? Temporarily removed since zsigma and sigma also do not return it.
+    data_xr_map = data_xr_map.set_coords([&#39;mesh2d_flowelem_zw&#39;,&#39;mesh2d_flowelem_zcc&#39;])
     return data_xr_map
 
 
@@ -328,31 +332,40 @@ def reconstruct_zw_zcc_fromzsigma(uds):
     &#34;&#34;&#34;
     reconstruct full grid output (time/face-varying z-values) for zsigmavalue model without full grid output. Implemented in https://issuetracker.deltares.nl/browse/UNST-5477
     based on https://cfconventions.org/cf-conventions/cf-conventions.html#_ocean_sigma_over_z_coordinate
+    #TODO: center values are clipped to bedlevel, so the center values of the bottom layer are currently incorrect
     &#34;&#34;&#34;
     
     #TODO: default fillvalues are not automatically parsed to nan, so doing it manually: https://github.com/pydata/xarray/issues/2742
     import netCDF4
     fillvals = netCDF4.default_fillvals
     
-    osz_formulaterms_dict = get_formula_terms(uds)
+    osz_formulaterms_int_dict = get_formula_terms(uds,varn_contains=&#39;interface&#39;)
+    osz_formulaterms_lay_dict = get_formula_terms(uds,varn_contains=&#39;layer&#39;)
     
-    uds_eta = uds[osz_formulaterms_dict[&#39;eta&#39;]] #mesh2d_s1
-    uds_depth = uds[osz_formulaterms_dict[&#39;depth&#39;]] #mesh2d_bldepth: positive version of mesh2d_flowelem_bl, but is always in file
-    uds_zlev = uds[osz_formulaterms_dict[&#39;zlev&#39;]] #mesh2d_interface_z
-    uds_zlev = uds_zlev.where(uds_zlev!=fillvals[&#39;f8&#39;])
-    uds_sigma = uds[osz_formulaterms_dict[&#39;sigma&#39;]] #mesh2d_interface_sigma
-    uds_sigma = uds_sigma.where(uds_sigma!=fillvals[&#39;f8&#39;])
-    uds_depth_c = uds[osz_formulaterms_dict[&#39;depth_c&#39;]] #mesh2d_sigmazdepth
+    uds_eta = uds[osz_formulaterms_int_dict[&#39;eta&#39;]] #mesh2d_s1
+    uds_depth = uds[osz_formulaterms_int_dict[&#39;depth&#39;]] #mesh2d_bldepth: positive version of mesh2d_flowelem_bl, but this one is always in file
+    uds_depth_c = uds[osz_formulaterms_int_dict[&#39;depth_c&#39;]] #mesh2d_sigmazdepth
+    uds_zlev_int = uds[osz_formulaterms_int_dict[&#39;zlev&#39;]] #mesh2d_interface_z
+    uds_zlev_int = uds_zlev_int.where(uds_zlev_int!=fillvals[&#39;f8&#39;])
+    uds_sigma_int = uds[osz_formulaterms_int_dict[&#39;sigma&#39;]] #mesh2d_interface_sigma
+    uds_sigma_int = uds_sigma_int.where(uds_sigma_int!=fillvals[&#39;f8&#39;])
+    uds_zlev_lay = uds[osz_formulaterms_lay_dict[&#39;zlev&#39;]] #mesh2d_layer_z
+    uds_zlev_lay = uds_zlev_lay.where(uds_zlev_lay!=fillvals[&#39;f8&#39;])
+    uds_sigma_lay = uds[osz_formulaterms_lay_dict[&#39;sigma&#39;]] #mesh2d_layer_sigma
+    uds_sigma_lay = uds_sigma_lay.where(uds_sigma_lay!=fillvals[&#39;f8&#39;])
     
     # for levels k where sigma(k) has a defined value and zlev(k) is not defined:
     # z(n,k,j,i) = eta(n,j,i) + sigma(k)*(min(depth_c,depth(j,i))+eta(n,j,i))
-    zw_sigmapart = uds_eta + uds_sigma*(uds_depth.clip(max=uds_depth_c)+uds_eta)
+    zw_sigmapart = uds_eta + uds_sigma_int*(uds_depth.clip(max=uds_depth_c)+uds_eta)
+    zcc_sigmapart = uds_eta + uds_sigma_lay*(uds_depth.clip(max=uds_depth_c)+uds_eta)
     # for levels k where zlev(k) has a defined value and sigma(k) is not defined: 
     # z(n,k,j,i) = zlev(k)
-    zw_zpart = uds_zlev.clip(min=-uds_depth) #added clipping of zvalues with bedlevel #TODO: maybe also add max=uds_eta?
+    zw_zpart = uds_zlev_int.clip(min=-uds_depth) #added clipping of zvalues with bedlevel
+    zcc_zpart = uds_zlev_lay.clip(min=-uds_depth) #added clipping of zvalues with bedlevel
     uds[&#39;mesh2d_flowelem_zw&#39;] = zw_sigmapart.fillna(zw_zpart)
+    uds[&#39;mesh2d_flowelem_zcc&#39;] = zcc_sigmapart.fillna(zcc_zpart)
     
-    uds = uds.set_coords([&#39;mesh2d_flowelem_zw&#39;])#,&#39;mesh2d_flowelem_zcc&#39;]) #TODO: do we need zcc also?
+    uds = uds.set_coords([&#39;mesh2d_flowelem_zw&#39;,&#39;mesh2d_flowelem_zcc&#39;])
     return uds
 
 
@@ -919,17 +932,17 @@ def plot_ztdata(data_xr_sel, varname, ax=None, only_contour=False, **kwargs):
 </details>
 </dd>
 <dt id="dfm_tools.get_nc.get_formula_terms"><code class="name flex">
-<span>def <span class="ident">get_formula_terms</span></span>(<span>uds, varn_contains='interface')</span>
+<span>def <span class="ident">get_formula_terms</span></span>(<span>uds, varn_contains)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>get formula_terms for zw/zcc reconstruction, convert to list and then to dict</p></div>
+<div class="desc"><p>get formula_terms for zw/zcc reconstruction, convert to list and then to dict. This can be done for layer/interface (via varn_contains)</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_formula_terms(uds, varn_contains=&#39;interface&#39;):
+<pre><code class="python">def get_formula_terms(uds, varn_contains):
     &#34;&#34;&#34;
-    get formula_terms for zw/zcc reconstruction, convert to list and then to dict
+    get formula_terms for zw/zcc reconstruction, convert to list and then to dict. This can be done for layer/interface (via varn_contains)
     &#34;&#34;&#34;
     osz_varnames = list(uds.filter_by_attrs(formula_terms=lambda v: v is not None).variables) #names of variables containing attribute &#34;formula_terms&#34;
     osz_varnames_contains = [x for x in osz_varnames if varn_contains in x] #TODO: to get the layer/interface ocean_*_coordinate. Not too pretty, but it works
@@ -957,17 +970,20 @@ based on <a href="https://cfconventions.org/cf-conventions/cf-conventions.html#_
     reconstruct full grid output (time/face-varying z-values) for sigma model, necessary for slicing sigmamodel on depth value
     based on https://cfconventions.org/cf-conventions/cf-conventions.html#_ocean_sigma_coordinate
     &#34;&#34;&#34;
-    osz_formulaterms_dict = get_formula_terms(uds)
+    osz_formulaterms_int_dict = get_formula_terms(uds,varn_contains=&#39;interface&#39;)
+    osz_formulaterms_lay_dict = get_formula_terms(uds,varn_contains=&#39;layer&#39;)
     
-    uds_eta = uds[osz_formulaterms_dict[&#39;eta&#39;]] #mesh2d_s1
-    uds_depth = uds[osz_formulaterms_dict[&#39;depth&#39;]] #mesh2d_waterdepth
-    if uds_depth.attrs[&#39;standard_name&#39;] == &#39;sea_floor_depth_below_sea_surface&#39;: #TODO: before the waterdepth instead of negative bedlevel was coupled via the formula_terms in sigmamodels (was fixed in OSS 140982 / 29-3-2022)
-        uds_depth = -uds[&#39;mesh2d_flowelem_bl&#39;]
-    uds_sigma = uds[osz_formulaterms_dict[&#39;sigma&#39;]] #mesh2d_interface_sigma
+    uds_eta = uds[osz_formulaterms_int_dict[&#39;eta&#39;]] #mesh2d_s1
+    uds_depth = uds[osz_formulaterms_int_dict[&#39;depth&#39;]] #mesh2d_bldepth in new output, mesh2d_waterdepth in old output (see comment below)
+    if uds_depth.attrs[&#39;standard_name&#39;] == &#39;sea_floor_depth_below_sea_surface&#39;: # previously the waterdepth instead of negative bedlevel was coupled via the formula_terms in sigmamodels (was fixed in OSS 140982 / 29-3-2022)
+        uds_depth = -uds[&#39;mesh2d_flowelem_bl&#39;] # assuming this variable is available, which is not guaranteed
+    uds_sigma_int = uds[osz_formulaterms_int_dict[&#39;sigma&#39;]] #mesh2d_interface_sigma
+    uds_sigma_lay = uds[osz_formulaterms_lay_dict[&#39;sigma&#39;]] #mesh2d_layer_sigma
     
-    uds[&#39;mesh2d_flowelem_zw&#39;] = uds_eta + uds_sigma*(uds_depth+uds_eta)
+    uds[&#39;mesh2d_flowelem_zw&#39;] = uds_eta + uds_sigma_int*(uds_depth+uds_eta)
+    uds[&#39;mesh2d_flowelem_zcc&#39;] = uds_eta + uds_sigma_lay*(uds_depth+uds_eta)
     
-    uds = uds.set_coords([&#39;mesh2d_flowelem_zw&#39;])#,&#39;mesh2d_flowelem_zcc&#39;]) #TODO: also need zcc?
+    uds = uds.set_coords([&#39;mesh2d_flowelem_zw&#39;,&#39;mesh2d_flowelem_zcc&#39;])
     return uds</code></pre>
 </details>
 </dd>
@@ -977,7 +993,8 @@ based on <a href="https://cfconventions.org/cf-conventions/cf-conventions.html#_
 <dd>
 <div class="desc"><p>reconstruct full grid output (time/face-varying z-values) for zvalue model. Necessary when extracting values with zdepth w.r.t. waterlevel/bedlevel</p>
 <h1 id="todo-gives-spotty-result-for-001m-wrt-bedlevel-for-grevelingen-zmodel">TODO: gives spotty result for 0/0.1m w.r.t. bedlevel for Grevelingen zmodel</h1>
-<h1 id="todo-remove-hardcoding-of-varnames">TODO: remove hardcoding of varnames</h1></div>
+<h1 id="todo-remove-hardcoding-of-varnames-assuming-wlbl-variables-are-available">TODO: remove hardcoding of varnames (assuming wl/bl variables are available)</h1>
+<h1 id="todo-center-values-are-clipped-to-waterlevelbedlevel-so-the-center-values-of-the-topbottom-layer-are-currently-incorrect">TODO: center values are clipped to waterlevel+bedlevel, so the center values of the top+bottom layer are currently incorrect</h1></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -986,7 +1003,8 @@ based on <a href="https://cfconventions.org/cf-conventions/cf-conventions.html#_
     &#34;&#34;&#34;
     reconstruct full grid output (time/face-varying z-values) for zvalue model. Necessary when extracting values with zdepth w.r.t. waterlevel/bedlevel
     #TODO: gives spotty result for 0/0.1m w.r.t. bedlevel for Grevelingen zmodel
-    #TODO: remove hardcoding of varnames
+    #TODO: remove hardcoding of varnames (assuming wl/bl variables are available)
+    #TODO: center values are clipped to waterlevel+bedlevel, so the center values of the top+bottom layer are currently incorrect
     &#34;&#34;&#34;
     
     dimn_layer, dimn_interfaces = get_vertical_dimensions(data_xr_map)
@@ -995,8 +1013,8 @@ based on <a href="https://cfconventions.org/cf-conventions/cf-conventions.html#_
     data_frommap_z0_sel = data_frommap_wl_sel*0
     data_frommap_bl_sel = data_xr_map[&#39;mesh2d_flowelem_bl&#39;]
     
-    #zvals_cen_zval = data_xr_map[&#39;mesh2d_layer_z&#39;] #no clipping for zcenter values, since otherwise interp will fail
-    #data_xr_map[&#39;mesh2d_flowelem_zcc&#39;] = (data_frommap_z0_sel+zvals_cen_zval)
+    zvals_cen_zval = data_xr_map[&#39;mesh2d_layer_z&#39;] #no clipping for zcenter values, since otherwise interp will fail
+    data_xr_map[&#39;mesh2d_flowelem_zcc&#39;] = (data_frommap_z0_sel+zvals_cen_zval).clip(min=data_frommap_bl_sel, max=data_frommap_wl_sel)
 
     zvals_interface_zval = data_xr_map[&#39;mesh2d_interface_z&#39;] #clipping for zinterface values, to make sure layer interfaces are also at water/bed level
     data_xr_map[&#39;mesh2d_flowelem_zw&#39;] = (data_frommap_z0_sel+zvals_interface_zval).clip(min=data_frommap_bl_sel, max=data_frommap_wl_sel)
@@ -1004,7 +1022,7 @@ based on <a href="https://cfconventions.org/cf-conventions/cf-conventions.html#_
     bool_int_abovewl = zvals_interface_zval&gt;data_frommap_wl_sel
     data_xr_map[&#39;mesh2d_flowelem_zw&#39;] = data_xr_map[&#39;mesh2d_flowelem_zw&#39;].where(bool_notoplayer_int | bool_int_abovewl, other=data_frommap_wl_sel) #zvalues of top layer_interfaces that are lower than wl are replaced by wl
     
-    data_xr_map = data_xr_map.set_coords([&#39;mesh2d_flowelem_zw&#39;])#,&#39;mesh2d_flowelem_zcc&#39;]) #TODO: do we need zcc also? Temporarily removed since zsigma and sigma also do not return it.
+    data_xr_map = data_xr_map.set_coords([&#39;mesh2d_flowelem_zw&#39;,&#39;mesh2d_flowelem_zcc&#39;])
     return data_xr_map</code></pre>
 </details>
 </dd>
@@ -1013,7 +1031,8 @@ based on <a href="https://cfconventions.org/cf-conventions/cf-conventions.html#_
 </code></dt>
 <dd>
 <div class="desc"><p>reconstruct full grid output (time/face-varying z-values) for zsigmavalue model without full grid output. Implemented in <a href="https://issuetracker.deltares.nl/browse/UNST-5477">https://issuetracker.deltares.nl/browse/UNST-5477</a>
-based on <a href="https://cfconventions.org/cf-conventions/cf-conventions.html#_ocean_sigma_over_z_coordinate">https://cfconventions.org/cf-conventions/cf-conventions.html#_ocean_sigma_over_z_coordinate</a></p></div>
+based on <a href="https://cfconventions.org/cf-conventions/cf-conventions.html#_ocean_sigma_over_z_coordinate">https://cfconventions.org/cf-conventions/cf-conventions.html#_ocean_sigma_over_z_coordinate</a></p>
+<h1 id="todo-center-values-are-clipped-to-bedlevel-so-the-center-values-of-the-bottom-layer-are-currently-incorrect">TODO: center values are clipped to bedlevel, so the center values of the bottom layer are currently incorrect</h1></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -1022,31 +1041,40 @@ based on <a href="https://cfconventions.org/cf-conventions/cf-conventions.html#_
     &#34;&#34;&#34;
     reconstruct full grid output (time/face-varying z-values) for zsigmavalue model without full grid output. Implemented in https://issuetracker.deltares.nl/browse/UNST-5477
     based on https://cfconventions.org/cf-conventions/cf-conventions.html#_ocean_sigma_over_z_coordinate
+    #TODO: center values are clipped to bedlevel, so the center values of the bottom layer are currently incorrect
     &#34;&#34;&#34;
     
     #TODO: default fillvalues are not automatically parsed to nan, so doing it manually: https://github.com/pydata/xarray/issues/2742
     import netCDF4
     fillvals = netCDF4.default_fillvals
     
-    osz_formulaterms_dict = get_formula_terms(uds)
+    osz_formulaterms_int_dict = get_formula_terms(uds,varn_contains=&#39;interface&#39;)
+    osz_formulaterms_lay_dict = get_formula_terms(uds,varn_contains=&#39;layer&#39;)
     
-    uds_eta = uds[osz_formulaterms_dict[&#39;eta&#39;]] #mesh2d_s1
-    uds_depth = uds[osz_formulaterms_dict[&#39;depth&#39;]] #mesh2d_bldepth: positive version of mesh2d_flowelem_bl, but is always in file
-    uds_zlev = uds[osz_formulaterms_dict[&#39;zlev&#39;]] #mesh2d_interface_z
-    uds_zlev = uds_zlev.where(uds_zlev!=fillvals[&#39;f8&#39;])
-    uds_sigma = uds[osz_formulaterms_dict[&#39;sigma&#39;]] #mesh2d_interface_sigma
-    uds_sigma = uds_sigma.where(uds_sigma!=fillvals[&#39;f8&#39;])
-    uds_depth_c = uds[osz_formulaterms_dict[&#39;depth_c&#39;]] #mesh2d_sigmazdepth
+    uds_eta = uds[osz_formulaterms_int_dict[&#39;eta&#39;]] #mesh2d_s1
+    uds_depth = uds[osz_formulaterms_int_dict[&#39;depth&#39;]] #mesh2d_bldepth: positive version of mesh2d_flowelem_bl, but this one is always in file
+    uds_depth_c = uds[osz_formulaterms_int_dict[&#39;depth_c&#39;]] #mesh2d_sigmazdepth
+    uds_zlev_int = uds[osz_formulaterms_int_dict[&#39;zlev&#39;]] #mesh2d_interface_z
+    uds_zlev_int = uds_zlev_int.where(uds_zlev_int!=fillvals[&#39;f8&#39;])
+    uds_sigma_int = uds[osz_formulaterms_int_dict[&#39;sigma&#39;]] #mesh2d_interface_sigma
+    uds_sigma_int = uds_sigma_int.where(uds_sigma_int!=fillvals[&#39;f8&#39;])
+    uds_zlev_lay = uds[osz_formulaterms_lay_dict[&#39;zlev&#39;]] #mesh2d_layer_z
+    uds_zlev_lay = uds_zlev_lay.where(uds_zlev_lay!=fillvals[&#39;f8&#39;])
+    uds_sigma_lay = uds[osz_formulaterms_lay_dict[&#39;sigma&#39;]] #mesh2d_layer_sigma
+    uds_sigma_lay = uds_sigma_lay.where(uds_sigma_lay!=fillvals[&#39;f8&#39;])
     
     # for levels k where sigma(k) has a defined value and zlev(k) is not defined:
     # z(n,k,j,i) = eta(n,j,i) + sigma(k)*(min(depth_c,depth(j,i))+eta(n,j,i))
-    zw_sigmapart = uds_eta + uds_sigma*(uds_depth.clip(max=uds_depth_c)+uds_eta)
+    zw_sigmapart = uds_eta + uds_sigma_int*(uds_depth.clip(max=uds_depth_c)+uds_eta)
+    zcc_sigmapart = uds_eta + uds_sigma_lay*(uds_depth.clip(max=uds_depth_c)+uds_eta)
     # for levels k where zlev(k) has a defined value and sigma(k) is not defined: 
     # z(n,k,j,i) = zlev(k)
-    zw_zpart = uds_zlev.clip(min=-uds_depth) #added clipping of zvalues with bedlevel #TODO: maybe also add max=uds_eta?
+    zw_zpart = uds_zlev_int.clip(min=-uds_depth) #added clipping of zvalues with bedlevel
+    zcc_zpart = uds_zlev_lay.clip(min=-uds_depth) #added clipping of zvalues with bedlevel
     uds[&#39;mesh2d_flowelem_zw&#39;] = zw_sigmapart.fillna(zw_zpart)
+    uds[&#39;mesh2d_flowelem_zcc&#39;] = zcc_sigmapart.fillna(zcc_zpart)
     
-    uds = uds.set_coords([&#39;mesh2d_flowelem_zw&#39;])#,&#39;mesh2d_flowelem_zcc&#39;]) #TODO: do we need zcc also?
+    uds = uds.set_coords([&#39;mesh2d_flowelem_zw&#39;,&#39;mesh2d_flowelem_zcc&#39;])
     return uds</code></pre>
 </details>
 </dd>

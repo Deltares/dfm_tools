@@ -41,6 +41,9 @@ import numpy as np
 import xarray as xr
 from cftime import date2num
 import hydrolib.core.dflowfm as hcdfm
+import warnings
+import datetime as dt
+
 
 def Dataset_to_T3D(datablock_xr):
     &#34;&#34;&#34;
@@ -200,6 +203,27 @@ def DataFrame_to_PolyObject(poly_pd,name,content=None):
     return polyobject
 
 
+def DataFrame_to_TimModel(tim_pd, refdate:(dt.datetime, pd.Timestamp, str)):
+    &#34;&#34;&#34;
+    converts data from tim_pd to TimModel and puts all headers as comments. Ignores the index, assumes first column is time in minutes since a refdate.
+    &#34;&#34;&#34;
+    #TODO: add conversion from datetimes in index to minutes, maybe drop minutes column upon reading? First await https://github.com/Deltares/HYDROLIB-core/issues/511
+    
+    refdate_pd = pd.Timestamp(refdate)
+    
+    data_tim = tim_pd.values.tolist()
+    times_tim = ((tim_pd.index - refdate_pd).total_seconds()/60).tolist()
+    dict_tim = [hcdfm.TimRecord(time=t,data=d) for t,d in zip(times_tim,data_tim)]
+    
+    comments_datacols = tim_pd.columns.tolist()
+    comments = [tim_pd.index.name] + comments_datacols
+    for iC, comment in enumerate(comments):
+        comments[iC] = f&#39;COLUMN {iC+1}: {comment}&#39;
+    timmodel = hcdfm.TimModel(timeseries=dict_tim, comments=comments)
+    
+    return timmodel
+
+
 def forcinglike_to_Dataset(forcingobj, convertnan=False): #TODO: would be convenient to have this as a method of ForcingModel objects (Timeseries/T3D/etc): https://github.com/Deltares/HYDROLIB-core/issues/307
     &#34;&#34;&#34;
     convert a hydrolib forcing like object (like Timeseries, T3D, Harmonic, etc) to an xarray Dataset with one or more variables.
@@ -318,7 +342,59 @@ def parse_xy_to_datetime(pointlike_pd):
     pointlike_pd.index = pd.to_datetime(datatimevals_pdstr)
     pointlike_pd_timeidx = pointlike_pd.drop([&#39;x&#39;,&#39;y&#39;],axis=1)
     
-    return pointlike_pd_timeidx</code></pre>
+    return pointlike_pd_timeidx
+
+
+def TimModel_to_DataFrame(data_tim, parse_column_labels:bool = True, refdate:(dt.datetime, pd.Timestamp, str) = None): #TODO: add dtype, so &#34;data_tim:hcdfm.TimModel&#34;
+    &#34;&#34;&#34;
+    
+
+    Parameters
+    ----------
+    data_tim : hcdfm.TimModel
+        DESCRIPTION.
+    parse_column_labels : bool, optional
+        Parse column labels from comments. This might fail since there is no standard way of prescribing the columns in the comments. The default is True.
+    refdate : (dt.datetime, pd.Timestamp, str, int, float), optional
+        DESCRIPTION. The default is None.
+
+    Returns
+    -------
+    tim_pd : TYPE
+        DESCRIPTION.
+
+    &#34;&#34;&#34;
+    #convert to pandas dataframe
+    timevals_pd = pd.Index([p.time for p in data_tim.timeseries])
+    tim_pd = pd.DataFrame([p.data for p in data_tim.timeseries],index=timevals_pd)
+    tim_pd.columns += 2 #make column numbers 1-based, but first column is already in index so start with 2
+    tim_pd.index.name = &#39;time in minutes&#39;
+    
+    if parse_column_labels:
+        #replace column labels with the ones in comments
+        tim_pd_columns = tim_pd.columns.tolist()
+        for line in data_tim.comments:
+            if &#39;column&#39; in line.lower() and &#39;:&#39; in line: #assume &#34;:&#34; is separator. Remove casing to be able to check for Column/COLUMN/column in string
+                sep = &#39;:&#39;
+            elif &#39;column&#39; in line.lower() and &#39;=&#39; in line: #assume &#34;=&#34; is separator. Remove casing to be able to check for Column/COLUMN/column in string
+                sep = &#39;=&#39;
+            else:
+                continue
+            line_split = line.split(sep)
+            colnum = line_split[0].lower().replace(&#39;column&#39;,&#39;&#39;).strip()
+            if colnum.isnumeric():
+                comment_str = &#39;:&#39;.join(line_split[1:]).strip()
+                if colnum==1: #time column is now in index, overwrite index name
+                    tim_pd.index.name = comment_str
+                else:
+                    tim_pd_columns[int(colnum)-2] = comment_str
+        tim_pd.columns = tim_pd_columns
+    
+    if refdate:
+        refdate_pd = pd.Timestamp(refdate)
+        tim_pd.index = refdate_pd + pd.to_timedelta(tim_pd.index,unit=&#39;minutes&#39;)
+    
+    return tim_pd</code></pre>
 </details>
 </section>
 <section>
@@ -522,6 +598,36 @@ def parse_xy_to_datetime(pointlike_pd):
     return polyobject</code></pre>
 </details>
 </dd>
+<dt id="dfm_tools.hydrolib_helpers.DataFrame_to_TimModel"><code class="name flex">
+<span>def <span class="ident">DataFrame_to_TimModel</span></span>(<span>tim_pd, refdate: (<class 'datetime.datetime'>, <class 'pandas._libs.tslibs.timestamps.Timestamp'>, <class 'str'>))</span>
+</code></dt>
+<dd>
+<div class="desc"><p>converts data from tim_pd to TimModel and puts all headers as comments. Ignores the index, assumes first column is time in minutes since a refdate.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def DataFrame_to_TimModel(tim_pd, refdate:(dt.datetime, pd.Timestamp, str)):
+    &#34;&#34;&#34;
+    converts data from tim_pd to TimModel and puts all headers as comments. Ignores the index, assumes first column is time in minutes since a refdate.
+    &#34;&#34;&#34;
+    #TODO: add conversion from datetimes in index to minutes, maybe drop minutes column upon reading? First await https://github.com/Deltares/HYDROLIB-core/issues/511
+    
+    refdate_pd = pd.Timestamp(refdate)
+    
+    data_tim = tim_pd.values.tolist()
+    times_tim = ((tim_pd.index - refdate_pd).total_seconds()/60).tolist()
+    dict_tim = [hcdfm.TimRecord(time=t,data=d) for t,d in zip(times_tim,data_tim)]
+    
+    comments_datacols = tim_pd.columns.tolist()
+    comments = [tim_pd.index.name] + comments_datacols
+    for iC, comment in enumerate(comments):
+        comments[iC] = f&#39;COLUMN {iC+1}: {comment}&#39;
+    timmodel = hcdfm.TimModel(timeseries=dict_tim, comments=comments)
+    
+    return timmodel</code></pre>
+</details>
+</dd>
 <dt id="dfm_tools.hydrolib_helpers.forcinglike_to_Dataset"><code class="name flex">
 <span>def <span class="ident">forcinglike_to_Dataset</span></span>(<span>forcingobj, convertnan=False)</span>
 </code></dt>
@@ -686,6 +792,80 @@ data_pol_pd_list = [pointlike_to_DataFrame(polyobj) for polyobj in polyfile_obje
     return pointlike_pd_timeidx</code></pre>
 </details>
 </dd>
+<dt id="dfm_tools.hydrolib_helpers.TimModel_to_DataFrame"><code class="name flex">
+<span>def <span class="ident">TimModel_to_DataFrame</span></span>(<span>data_tim, parse_column_labels: bool = True, refdate: (<class 'datetime.datetime'>, <class 'pandas._libs.tslibs.timestamps.Timestamp'>, <class 'str'>) = None)</span>
+</code></dt>
+<dd>
+<div class="desc"><h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>data_tim</code></strong> :&ensp;<code>hcdfm.TimModel</code></dt>
+<dd>DESCRIPTION.</dd>
+<dt><strong><code>parse_column_labels</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>Parse column labels from comments. This might fail since there is no standard way of prescribing the columns in the comments. The default is True.</dd>
+<dt><strong><code>refdate</code></strong> :&ensp;<code>(dt.datetime, pd.Timestamp, str, int, float)</code>, optional</dt>
+<dd>DESCRIPTION. The default is None.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>tim_pd</code></strong> :&ensp;<code>TYPE</code></dt>
+<dd>DESCRIPTION.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def TimModel_to_DataFrame(data_tim, parse_column_labels:bool = True, refdate:(dt.datetime, pd.Timestamp, str) = None): #TODO: add dtype, so &#34;data_tim:hcdfm.TimModel&#34;
+    &#34;&#34;&#34;
+    
+
+    Parameters
+    ----------
+    data_tim : hcdfm.TimModel
+        DESCRIPTION.
+    parse_column_labels : bool, optional
+        Parse column labels from comments. This might fail since there is no standard way of prescribing the columns in the comments. The default is True.
+    refdate : (dt.datetime, pd.Timestamp, str, int, float), optional
+        DESCRIPTION. The default is None.
+
+    Returns
+    -------
+    tim_pd : TYPE
+        DESCRIPTION.
+
+    &#34;&#34;&#34;
+    #convert to pandas dataframe
+    timevals_pd = pd.Index([p.time for p in data_tim.timeseries])
+    tim_pd = pd.DataFrame([p.data for p in data_tim.timeseries],index=timevals_pd)
+    tim_pd.columns += 2 #make column numbers 1-based, but first column is already in index so start with 2
+    tim_pd.index.name = &#39;time in minutes&#39;
+    
+    if parse_column_labels:
+        #replace column labels with the ones in comments
+        tim_pd_columns = tim_pd.columns.tolist()
+        for line in data_tim.comments:
+            if &#39;column&#39; in line.lower() and &#39;:&#39; in line: #assume &#34;:&#34; is separator. Remove casing to be able to check for Column/COLUMN/column in string
+                sep = &#39;:&#39;
+            elif &#39;column&#39; in line.lower() and &#39;=&#39; in line: #assume &#34;=&#34; is separator. Remove casing to be able to check for Column/COLUMN/column in string
+                sep = &#39;=&#39;
+            else:
+                continue
+            line_split = line.split(sep)
+            colnum = line_split[0].lower().replace(&#39;column&#39;,&#39;&#39;).strip()
+            if colnum.isnumeric():
+                comment_str = &#39;:&#39;.join(line_split[1:]).strip()
+                if colnum==1: #time column is now in index, overwrite index name
+                    tim_pd.index.name = comment_str
+                else:
+                    tim_pd_columns[int(colnum)-2] = comment_str
+        tim_pd.columns = tim_pd_columns
+    
+    if refdate:
+        refdate_pd = pd.Timestamp(refdate)
+        tim_pd.index = refdate_pd + pd.to_timedelta(tim_pd.index,unit=&#39;minutes&#39;)
+    
+    return tim_pd</code></pre>
+</details>
+</dd>
 </dl>
 </section>
 <section>
@@ -708,9 +888,11 @@ data_pol_pd_list = [pointlike_to_DataFrame(polyobj) for polyobj in polyfile_obje
 <li><code><a title="dfm_tools.hydrolib_helpers.Dataset_to_TimeSeries" href="#dfm_tools.hydrolib_helpers.Dataset_to_TimeSeries">Dataset_to_TimeSeries</a></code></li>
 <li><code><a title="dfm_tools.hydrolib_helpers.Dataset_to_Astronomic" href="#dfm_tools.hydrolib_helpers.Dataset_to_Astronomic">Dataset_to_Astronomic</a></code></li>
 <li><code><a title="dfm_tools.hydrolib_helpers.DataFrame_to_PolyObject" href="#dfm_tools.hydrolib_helpers.DataFrame_to_PolyObject">DataFrame_to_PolyObject</a></code></li>
+<li><code><a title="dfm_tools.hydrolib_helpers.DataFrame_to_TimModel" href="#dfm_tools.hydrolib_helpers.DataFrame_to_TimModel">DataFrame_to_TimModel</a></code></li>
 <li><code><a title="dfm_tools.hydrolib_helpers.forcinglike_to_Dataset" href="#dfm_tools.hydrolib_helpers.forcinglike_to_Dataset">forcinglike_to_Dataset</a></code></li>
 <li><code><a title="dfm_tools.hydrolib_helpers.pointlike_to_DataFrame" href="#dfm_tools.hydrolib_helpers.pointlike_to_DataFrame">pointlike_to_DataFrame</a></code></li>
 <li><code><a title="dfm_tools.hydrolib_helpers.parse_xy_to_datetime" href="#dfm_tools.hydrolib_helpers.parse_xy_to_datetime">parse_xy_to_datetime</a></code></li>
+<li><code><a title="dfm_tools.hydrolib_helpers.TimModel_to_DataFrame" href="#dfm_tools.hydrolib_helpers.TimModel_to_DataFrame">TimModel_to_DataFrame</a></code></li>
 </ul>
 </li>
 </ul>
