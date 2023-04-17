@@ -120,12 +120,16 @@ for iT, timestep in enumerate([1,10,15]):
     ax.set_aspect('equal')
     ax.quiver(data_nc_XZ[::2,::2], data_nc_YZ[::2,::2], vel_x[::2,::2], vel_y[::2,::2], 
               scale=3,color='w',width=0.005)
+    ax.plot(data_nc_XCOR,data_nc_YCOR,'-b',linewidth=0.2)
+    ax.plot(data_nc_XCOR.T,data_nc_YCOR.T,'-b',linewidth=0.2)
 fig.tight_layout()
 plt.savefig(os.path.join(dir_output,'kivu_velocity_pcolor'))
 
 
 fig, axs = plt.subplots(1,3, figsize=(16,7))
 for iT, timestep in enumerate([1,10,15]):
+    ax.plot(data_nc_XCOR,data_nc_YCOR,'-b',linewidth=0.2)
+    ax.plot(data_nc_XCOR.T,data_nc_YCOR.T,'-b',linewidth=0.2)
     ax=axs[iT]
     ds_thiery_tsel = ds_thiery.isel(KMAXOUT_RESTR=layno,time=timestep)
     U1 = ds_thiery_tsel.U1.to_numpy()
@@ -156,6 +160,8 @@ for iT, timestep in enumerate([1,10,15]):
     cbar.set_label('%s (%s)'%(ds_thiery_tsel.QNET.name, ds_thiery_tsel.QNET.attrs['units']))
     ax.set_title(f't={timestep} ({timestr})')
     ax.set_aspect('equal')
+    ax.plot(data_nc_XCOR,data_nc_YCOR,'-b',linewidth=0.2)
+    ax.plot(data_nc_XCOR.T,data_nc_YCOR.T,'-b',linewidth=0.2)
 fig.tight_layout()
 plt.savefig(os.path.join(dir_output,'kivu_Qnet'))
 
@@ -167,6 +173,8 @@ pc = ax.pcolor(data_nc_XCOR,data_nc_YCOR,data_nc_DPV0,cmap='jet')
 cbar = fig.colorbar(pc, ax=ax)
 cbar.set_label('%s (%s)'%(ds_thiery.DPV0.name, ds_thiery.DPV0.attrs['units']))
 ax.set_aspect('equal')
+ax.plot(data_nc_XCOR,data_nc_YCOR,'-b',linewidth=0.2)
+ax.plot(data_nc_XCOR.T,data_nc_YCOR.T,'-b',linewidth=0.2)
 fig.tight_layout()
 plt.savefig(os.path.join(dir_output,'kivu_bedlevel'))
 
