@@ -64,37 +64,7 @@ def get_ncvarproperties(data_xr):
 
 
 def get_varnamefromattrs(data_xr, varname):
-    
-    print(DeprecationWarning('dfmt.get_varnamefromattrs() will be deprecated in a future version of dfm_tools, ds=dfmt.rename_waqvars(ds) is a more convenient alternative')) #TODO: raise DeprecationWarning, later remove
-    
-    # check if requested variable is in netcdf
-    varlist = list(data_xr.variables.keys())
-    if varname in varlist:
-        return varname
-    
-    #check if requested varname is in standard_name attrs of ncvars
-    ds_stdname = data_xr.filter_by_attrs(standard_name=varname)
-    varlist_stdname = list(ds_stdname.data_vars.keys())
-    if len(varlist_stdname)==1:
-        varname_matched = varlist_stdname[0]
-        print(f'requested varname "{varname}" found in standard_name attribute of variable {varname_matched}')
-        return varname_matched
-    elif len(varlist_stdname)>1:
-        raise ValueError(f'ERROR: requested variable {varname} is in netcdf not 1 but {len(varlist_stdname)} times: {varlist_stdname}')
-    
-    #check if requested varname is in long_name attrs of ncvars
-    ds_longname = data_xr.filter_by_attrs(long_name=varname)
-    varlist_longname = list(ds_longname.data_vars.keys())
-    if len(varlist_longname)==1:
-        varname_matched = varlist_longname[0]
-        print(f'requested varname "{varname}" found in long_name attribute of variable {varname_matched}')
-        return varname_matched
-    elif len(varlist_longname)>1:
-        raise ValueError(f'ERROR: requested variable {varname} is in netcdf not 1 but {len(varlist_longname)} times: {varlist_longname}')
-    
-    #if not returned above, the varname was not found so raise exception
-    varprops = get_ncvarproperties(data_xr)[['long_name','standard_name']]
-    raise KeyError(f'ERROR: requested variable {varname} not in netcdf, available are (full list in dfmt.get_ncvarproperties(ds)):\n{varprops}')
+    raise DeprecationWarning('dfmt.get_varnamefromattrs() will be deprecated in a future version of dfm_tools, ds=dfmt.rename_waqvars(ds) is a more convenient alternative') #TODO: remove unused function
 
 
 def rename_waqvars(ds:(xr.Dataset,xu.UgridDataset)):
