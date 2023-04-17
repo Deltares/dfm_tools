@@ -20,6 +20,7 @@ import xarray as xr
 import dfm_tools as dfmt
 import hydrolib.core.dflowfm as hcdfm
 
+#TODO: are corner2center and center2corner functions still needed?
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
