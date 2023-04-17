@@ -61,7 +61,7 @@ def test_facenodecoordinates_shape(file_nc, expected_size):
 
 
 @pytest.mark.parametrize("file_nc, varname, expected_size", [pytest.param(os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0*_map.nc'), 'mesh2d_sa1', (44796, 36), id='from partitioned map Grevelingen'),
-                                                             pytest.param(os.path.join(r'p:\archivedprojects\11203850-coastserv\06-Model\waq_model\simulations\run0_20200319\DFM_OUTPUT_kzn_waq', 'kzn_waq_0*_map.nc'), 'Chlfa', (17385, 39), id='from partitioned waq map coastserv'),
+                                                             pytest.param(os.path.join(r'p:\archivedprojects\11203850-coastserv\06-Model\waq_model\simulations\run0_20200319\DFM_OUTPUT_kzn_waq', 'kzn_waq_0*_map.nc'), 'mesh2d_Chlfa', (17385, 39), id='from partitioned waq map coastserv'),
                                                              #pytest.param(r'p:\11205258-006-kpp2020_rmm-g6\C_Work\01_Rooster\final_totaalmodel\rooster_rmm_v1p5_net.nc', 'mesh2d_face_x', (44804,), id='fromnet RMM'), #no time dimension
                                                              ])
 @pytest.mark.requiresdata
@@ -75,8 +75,8 @@ def test_getmapdata(file_nc, varname, expected_size):
     """
     
     data_xr_map = dfmt.open_partitioned_dataset(file_nc)
-    varname_found = dfmt.get_varnamefromattrs(data_xr_map,varname)
-    data_varsel = data_xr_map[varname_found].isel(time=2)
+    data_xr_map = dfmt.rename_waqvars(data_xr_map)
+    data_varsel = data_xr_map[varname].isel(time=2)
     
     assert data_varsel.shape == expected_size
 
