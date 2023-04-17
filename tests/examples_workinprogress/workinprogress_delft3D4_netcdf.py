@@ -48,18 +48,50 @@ ds_thiery['XCOR'] = ds_thiery.XCOR.where(~mask_XYCOR)
 ds_thiery['YCOR'] = ds_thiery.YCOR.where(~mask_XYCOR)
 #ds_thiery['XCOR'] = ds_thiery.XZ.ffill(dim='M').ffill(dim='N').bfill('M').bfill('N')
 #ds_thiery['YCOR'] = ds_thiery.YZ.ffill(dim='M').ffill(dim='N').bfill('M').bfill('N')
+
+#TODO: better alternative is maybe:
+da.interpolate_na(dim='MC', fill_value="extrapolate").interpolate_na(dim='NC', fill_value="extrapolate")
 """
 
+def d3d_findnanval(data_nc_XZ,data_nc_YZ):
+    values, counts = np.unique(data_nc_XZ, return_counts=True)
+    X_nanval = values[np.argmax(counts)]
+    values, counts = np.unique(data_nc_YZ, return_counts=True)
+    Y_nanval = values[np.argmax(counts)]
+    if X_nanval!=Y_nanval:
+        XY_nanval = None
+    else:
+        XY_nanval = X_nanval
+    return XY_nanval
+
+def preprocess_delft3d4(ds):
+    ds = ds.isel(MC=slice(None,-1),NC=slice(None,-1),M=slice(None,-1),N=slice(None,-1)) #last values are all nan/fill values
+    
+    #find and set nans in XZ/YZ arrays
+    data_nc_XZ = ds.XZ
+    data_nc_YZ = ds.YZ
+    XY_nanval = d3d_findnanval(data_nc_XZ,data_nc_YZ)
+    if XY_nanval is not None:
+        mask_XY = (data_nc_XZ==XY_nanval) & (data_nc_YZ==XY_nanval)
+        ds['XZ'] = data_nc_XZ.where(~mask_XY)
+        ds['YZ'] = data_nc_YZ.where(~mask_XY)
+
+    #find and set nans in XCOR/YCOR arrays
+    data_nc_XCOR = ds.XCOR
+    data_nc_YCOR = ds.YCOR
+    XY_nanval = d3d_findnanval(data_nc_XCOR,data_nc_YCOR)
+    if XY_nanval is not None:
+        mask_XYCOR = (data_nc_XCOR==XY_nanval) & (data_nc_YCOR==XY_nanval)
+        ds['XCOR'] = data_nc_XCOR.where(~mask_XYCOR)
+        ds['YCOR'] = data_nc_YCOR.where(~mask_XYCOR)
+    
+    return ds
+
+ds_thiery = preprocess_delft3d4(ds_thiery)
 data_nc_XZ = ds_thiery.XZ
 data_nc_YZ = ds_thiery.YZ
 data_nc_XCOR = ds_thiery.XCOR
 data_nc_YCOR = ds_thiery.YCOR
-mask_XY = (data_nc_XZ==0) & (data_nc_YZ==0)
-data_nc_XZ = data_nc_XZ.where(~mask_XY)
-data_nc_YZ = data_nc_YZ.where(~mask_XY)
-mask_XYCOR = (data_nc_XCOR<=-999.999) & (data_nc_YCOR<=-999.999) #XCOR contains -2029.086333 and YCOR contains -1998.39249 for some reason
-data_nc_XCOR = data_nc_XCOR.where(~mask_XYCOR)
-data_nc_YCOR = data_nc_YCOR.where(~mask_XYCOR)
 
 layno=-2
 
@@ -80,6 +112,7 @@ for iT, timestep in enumerate([1,10,15]):
     timestr = ds_thiery_tsel.time.to_numpy()
     vel_x, vel_y, vel_magn, direction_naut_deg = dfmt.uva2xymagdeg(U1=U1,V1=V1,ALFAS=ALFAS)
     pc = ax.pcolor(data_nc_XCOR,data_nc_YCOR,vel_magn[1:,1:],cmap='jet')
+    #pc = ax.pcolormesh(data_nc_XCOR,data_nc_YCOR,vel_magn[1:,1:],cmap='jet')
     pc.set_clim([0,0.15])
     cbar = fig.colorbar(pc, ax=ax)
     cbar.set_label('velocity magnitude (%s)'%(ds_thiery_tsel.U1.attrs['units']))
@@ -144,30 +177,26 @@ file_nc = os.path.join(dir_testinput,'D3D_3D_sigma_curved_bend_nc\\trim-cb2-sal-
 ds_cb2 = xr.open_dataset(file_nc)
 vars_pd = dfmt.get_ncvarproperties(ds_cb2)
 
+ds_cb2 = preprocess_delft3d4(ds_cb2)
+
 data_nc_XZ = ds_cb2.XZ
 data_nc_YZ = ds_cb2.YZ
 data_nc_XCOR = ds_cb2.XCOR
 data_nc_YCOR = ds_cb2.YCOR
-mask_XY = (data_nc_XZ==0) & (data_nc_YZ==0)
-data_nc_XZ = data_nc_XZ.where(~mask_XY)
-data_nc_YZ = data_nc_YZ.where(~mask_XY)
-mask_XYCOR = (data_nc_XCOR<=0) & (data_nc_YCOR<=0)
-data_nc_XCOR = data_nc_XCOR.where(~mask_XYCOR)
-data_nc_YCOR = data_nc_YCOR.where(~mask_XYCOR)
-#masking should work but quiver does not read masks for X and Y, so use own
-#data_nc_XZ.mask = mask_XY
-#data_nc_YZ.mask = mask_XY
 
 
 fig, ax = plt.subplots()
 ax.plot(data_nc_XCOR,data_nc_YCOR,'-b',linewidth=0.2)
 ax.plot(data_nc_XCOR.T,data_nc_YCOR.T,'-b',linewidth=0.2)
+#ax.plot(data_nc_XZ,data_nc_YZ,'-r',linewidth=0.2)
+#ax.plot(data_nc_XZ.T,data_nc_YZ.T,'-r',linewidth=0.2)
 ax.set_aspect('equal')
 lim_x = [0,4100]
 lim_y = [0,4100]
 ax.set_xlim(lim_x)
 ax.set_ylim(lim_y)
 plt.savefig(os.path.join(dir_output,'curvedbend_mesh'))
+
 
 txt_abcd = 'abcdefgh'
 var_clim = [0,1.2]
@@ -184,7 +213,7 @@ for iT, timestep in enumerate([0,1,2,4]):
     ALFAS = ds_cb2_tsel.ALFAS.to_numpy() #contains rotation of all cells wrt real world
     timestr = ds_cb2_tsel.time.to_pandas()
     vel_x, vel_y, vel_magn, direction_naut_deg = dfmt.uva2xymagdeg(U1=U1,V1=V1,ALFAS=ALFAS)
-    pc = ax.pcolor(data_nc_XCOR,data_nc_YCOR,vel_magn[1:,1:],cmap='jet') #TODO: part of data is removed, not desireable
+    pc = ax.pcolormesh(data_nc_XCOR,data_nc_YCOR,vel_magn[1:,1:],cmap='jet') #TODO: part of data is remove, not desireable
     pc.set_clim(var_clim)
     ax.set_aspect('equal')
     ax.quiver(data_nc_XZ, data_nc_YZ, vel_x, vel_y,
