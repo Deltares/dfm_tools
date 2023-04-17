@@ -29,7 +29,7 @@ inisaltem = True #initialsalinity/initialtemperature gives 33.8ppt uniform and s
 ** INFO   :  Min. salinity limited, min =  -1.037033177733807E-005
 """
 
-#TODO: files that are not created in this script: ldb, obsfiles, dimr.xml and the submit script
+#TODO: files that are not created in this script: ldb, obsfiles, dimr.xml and the submit script (and GEBCO dataset)
 #TODO: reference run in: p:\11209231-003-bes-modellering\hydrodynamica\hackathon\simulations\run001_mapInterval_1800\
 #TODO: also compare settings to p:\11208054-004-dcsm-fm\models\3D_DCSM-FM\2013-2017\B05_hydrolib_JV\DCSM-FM_0_5nm.mdu (e.g. tlfSmo)
 # domain
