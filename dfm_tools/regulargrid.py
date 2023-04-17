@@ -33,11 +33,7 @@ Created on Sun Mar 22 08:41:00 2020
 """
 
 import warnings
-import datetime as dt
-import xarray as xr
-import xugrid as xu
 import numpy as np
-from dfm_tools.xarray_helpers import Dataset_varswithdim
 
 
 def scatter_to_regulargrid(xcoords, ycoords, values, ncellx=None, ncelly=None, reg_x_vec=None, reg_y_vec=None, method='nearest', maskland_dist=None): #TODO: remove from code
