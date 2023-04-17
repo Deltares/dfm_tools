@@ -1,4 +1,3 @@
-#TODO: add meshkernel>=2.0.2 (from pip)
 name: dfm_tools_env
 channels:
   - conda-forge
@@ -24,7 +23,8 @@ dependencies:
   - cdsapi
   - pydap
   - pip:
-    - hydrolib-core>=0.4.0
+    - hydrolib-core>=0.5.1
+    - meshkernel>=2.0.2
     - pytest
     - pytest-cov
     - jupyter
