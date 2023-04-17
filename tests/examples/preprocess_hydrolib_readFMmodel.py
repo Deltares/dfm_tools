@@ -39,6 +39,7 @@ with open(file_mdu_commented,'w') as f:
 print('>> opening FMModel: ',end='')
 dtstart = dt.datetime.now()
 fm = hcdfm.FMModel(file_mdu_commented) #TODO: works, but many mdu-lines are comented, so uncomment things one by one
+
 print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
 #TODO: enable caching possible to save time on second load?
 #TODO: some things are not loaded, what happens when saving at new location?
@@ -56,7 +57,7 @@ crs_pd_list = [dfmt.pointlike_to_DataFrame(x) for y in fm.output.crsfile for x i
 
 file_struct = Path(r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_structures.ini')
 file_struct = r'p:\archivedprojects\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\structures_toRTC\RMM_structures_open_cl10_coeff10.ini'
-file_struct = r'p:\archivedprojects\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\structures_toRTC\RMM_structures_ts_cl10_coeff10.ini' #TODO: incorrect timfiles (e.g. with duplicate times) are now read as ForcingModel instead: https://github.com/Deltares/HYDROLIB-core/issues/519
+file_struct = r'p:\archivedprojects\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\structures_toRTC\RMM_structures_ts_cl10_coeff10.ini' #TODO: incorrect timfiles (e.g. with duplicate times) are now read as ForcingModel instead: https://github.com/Deltares/HYDROLIB-core/issues/519 #TODO: some of the timfiles contain duplicate times, but these are not validated (probably due due to union type)
 structs = hcdfm.StructureModel(file_struct)
 for struct in structs.structure:
     print(struct.id)
