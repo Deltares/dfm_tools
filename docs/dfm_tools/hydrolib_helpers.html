@@ -345,7 +345,7 @@ def parse_xy_to_datetime(pointlike_pd):
     return pointlike_pd_timeidx
 
 
-def TimModel_to_DataFrame(data_tim, parse_column_labels:bool = True, refdate:(dt.datetime, pd.Timestamp, str) = None): #TODO: add dtype, so &#34;data_tim:hcdfm.TimModel&#34;
+def TimModel_to_DataFrame(data_tim:hcdfm.TimModel, parse_column_labels:bool = True, refdate:(dt.datetime, pd.Timestamp, str) = None):
     &#34;&#34;&#34;
     
 
@@ -793,7 +793,7 @@ data_pol_pd_list = [pointlike_to_DataFrame(polyobj) for polyobj in polyfile_obje
 </details>
 </dd>
 <dt id="dfm_tools.hydrolib_helpers.TimModel_to_DataFrame"><code class="name flex">
-<span>def <span class="ident">TimModel_to_DataFrame</span></span>(<span>data_tim, parse_column_labels: bool = True, refdate: (<class 'datetime.datetime'>, <class 'pandas._libs.tslibs.timestamps.Timestamp'>, <class 'str'>) = None)</span>
+<span>def <span class="ident">TimModel_to_DataFrame</span></span>(<span>data_tim: hydrolib.core.dflowfm.tim.models.TimModel, parse_column_labels: bool = True, refdate: (<class 'datetime.datetime'>, <class 'pandas._libs.tslibs.timestamps.Timestamp'>, <class 'str'>) = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><h2 id="parameters">Parameters</h2>
@@ -814,7 +814,7 @@ data_pol_pd_list = [pointlike_to_DataFrame(polyobj) for polyobj in polyfile_obje
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def TimModel_to_DataFrame(data_tim, parse_column_labels:bool = True, refdate:(dt.datetime, pd.Timestamp, str) = None): #TODO: add dtype, so &#34;data_tim:hcdfm.TimModel&#34;
+<pre><code class="python">def TimModel_to_DataFrame(data_tim:hcdfm.TimModel, parse_column_labels:bool = True, refdate:(dt.datetime, pd.Timestamp, str) = None):
     &#34;&#34;&#34;
     
 
