@@ -33,25 +33,6 @@ file_nc = r'p:\archivedprojects\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxi
 ds_thiery = xr.open_dataset(file_nc)
 vars_pd = dfmt.get_ncvarproperties(ds_thiery)
 
-""" #TODO: combine rest of script with this commented part, make more intuitive and put masking in function?
-#mask variables correctly, then bfill
-mask_XY = (ds_thiery.KCS==0).drop(['XZ','YZ']) #TODO: have to drop coords somehow, otherwise they are removed from variable with where
-#mask_XY = (ds_thiery.XZ==0) & (data_xr.YZ==0)
-ds_thiery['XZ'] = ds_thiery.XZ.where(~mask_XY)
-ds_thiery['YZ'] = ds_thiery.YZ.where(~mask_XY)
-#ds_thiery['XZ'] = ds_thiery.XZ.ffill(dim='M').ffill(dim='N').bfill('M').bfill('N')
-#ds_thiery['YZ'] = ds_thiery.YZ.ffill(dim='M').ffill(dim='N').bfill('M').bfill('N')
-
-mask_XYCOR = (ds_thiery.XCOR==-999.999) & (ds_thiery.YCOR==-999.999)
-mask_XYCOR = (ds_thiery.XCOR==0) & (ds_thiery.YCOR==0)
-ds_thiery['XCOR'] = ds_thiery.XCOR.where(~mask_XYCOR)
-ds_thiery['YCOR'] = ds_thiery.YCOR.where(~mask_XYCOR)
-#ds_thiery['XCOR'] = ds_thiery.XZ.ffill(dim='M').ffill(dim='N').bfill('M').bfill('N')
-#ds_thiery['YCOR'] = ds_thiery.YZ.ffill(dim='M').ffill(dim='N').bfill('M').bfill('N')
-
-#TODO: better alternative is maybe:
-da.interpolate_na(dim='MC', fill_value="extrapolate").interpolate_na(dim='NC', fill_value="extrapolate")
-"""
 
 def d3d_findnanval(data_nc_XZ,data_nc_YZ):
     values, counts = np.unique(data_nc_XZ, return_counts=True)
