@@ -315,7 +315,7 @@ def parse_xy_to_datetime(pointlike_pd):
     return pointlike_pd_timeidx
 
 
-def TimModel_to_DataFrame(data_tim, parse_column_labels:bool = True, refdate:(dt.datetime, pd.Timestamp, str) = None): TODO: add dtype, so "data_tim:hcdfm.TimModel"
+def TimModel_to_DataFrame(data_tim, parse_column_labels:bool = True, refdate:(dt.datetime, pd.Timestamp, str) = None): #TODO: add dtype, so "data_tim:hcdfm.TimModel"
     """
     
 
