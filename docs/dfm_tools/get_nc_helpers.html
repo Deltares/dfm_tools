@@ -117,37 +117,7 @@ def get_ncvarproperties(data_xr):
 
 
 def get_varnamefromattrs(data_xr, varname):
-    
-    print(DeprecationWarning(&#39;dfmt.get_varnamefromattrs() will be deprecated in a future version of dfm_tools, ds=dfmt.rename_waqvars(ds) is a more convenient alternative&#39;)) #TODO: raise DeprecationWarning, later remove
-    
-    # check if requested variable is in netcdf
-    varlist = list(data_xr.variables.keys())
-    if varname in varlist:
-        return varname
-    
-    #check if requested varname is in standard_name attrs of ncvars
-    ds_stdname = data_xr.filter_by_attrs(standard_name=varname)
-    varlist_stdname = list(ds_stdname.data_vars.keys())
-    if len(varlist_stdname)==1:
-        varname_matched = varlist_stdname[0]
-        print(f&#39;requested varname &#34;{varname}&#34; found in standard_name attribute of variable {varname_matched}&#39;)
-        return varname_matched
-    elif len(varlist_stdname)&gt;1:
-        raise ValueError(f&#39;ERROR: requested variable {varname} is in netcdf not 1 but {len(varlist_stdname)} times: {varlist_stdname}&#39;)
-    
-    #check if requested varname is in long_name attrs of ncvars
-    ds_longname = data_xr.filter_by_attrs(long_name=varname)
-    varlist_longname = list(ds_longname.data_vars.keys())
-    if len(varlist_longname)==1:
-        varname_matched = varlist_longname[0]
-        print(f&#39;requested varname &#34;{varname}&#34; found in long_name attribute of variable {varname_matched}&#39;)
-        return varname_matched
-    elif len(varlist_longname)&gt;1:
-        raise ValueError(f&#39;ERROR: requested variable {varname} is in netcdf not 1 but {len(varlist_longname)} times: {varlist_longname}&#39;)
-    
-    #if not returned above, the varname was not found so raise exception
-    varprops = get_ncvarproperties(data_xr)[[&#39;long_name&#39;,&#39;standard_name&#39;]]
-    raise KeyError(f&#39;ERROR: requested variable {varname} not in netcdf, available are (full list in dfmt.get_ncvarproperties(ds)):\n{varprops}&#39;)
+    raise DeprecationWarning(&#39;dfmt.get_varnamefromattrs() will be deprecated in a future version of dfm_tools, ds=dfmt.rename_waqvars(ds) is a more convenient alternative&#39;) #TODO: remove unused function
 
 
 def rename_waqvars(ds:(xr.Dataset,xu.UgridDataset)):
@@ -331,37 +301,7 @@ def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset), drop_tidal_times:bool = True
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def get_varnamefromattrs(data_xr, varname):
-    
-    print(DeprecationWarning(&#39;dfmt.get_varnamefromattrs() will be deprecated in a future version of dfm_tools, ds=dfmt.rename_waqvars(ds) is a more convenient alternative&#39;)) #TODO: raise DeprecationWarning, later remove
-    
-    # check if requested variable is in netcdf
-    varlist = list(data_xr.variables.keys())
-    if varname in varlist:
-        return varname
-    
-    #check if requested varname is in standard_name attrs of ncvars
-    ds_stdname = data_xr.filter_by_attrs(standard_name=varname)
-    varlist_stdname = list(ds_stdname.data_vars.keys())
-    if len(varlist_stdname)==1:
-        varname_matched = varlist_stdname[0]
-        print(f&#39;requested varname &#34;{varname}&#34; found in standard_name attribute of variable {varname_matched}&#39;)
-        return varname_matched
-    elif len(varlist_stdname)&gt;1:
-        raise ValueError(f&#39;ERROR: requested variable {varname} is in netcdf not 1 but {len(varlist_stdname)} times: {varlist_stdname}&#39;)
-    
-    #check if requested varname is in long_name attrs of ncvars
-    ds_longname = data_xr.filter_by_attrs(long_name=varname)
-    varlist_longname = list(ds_longname.data_vars.keys())
-    if len(varlist_longname)==1:
-        varname_matched = varlist_longname[0]
-        print(f&#39;requested varname &#34;{varname}&#34; found in long_name attribute of variable {varname_matched}&#39;)
-        return varname_matched
-    elif len(varlist_longname)&gt;1:
-        raise ValueError(f&#39;ERROR: requested variable {varname} is in netcdf not 1 but {len(varlist_longname)} times: {varlist_longname}&#39;)
-    
-    #if not returned above, the varname was not found so raise exception
-    varprops = get_ncvarproperties(data_xr)[[&#39;long_name&#39;,&#39;standard_name&#39;]]
-    raise KeyError(f&#39;ERROR: requested variable {varname} not in netcdf, available are (full list in dfmt.get_ncvarproperties(ds)):\n{varprops}&#39;)</code></pre>
+    raise DeprecationWarning(&#39;dfmt.get_varnamefromattrs() will be deprecated in a future version of dfm_tools, ds=dfmt.rename_waqvars(ds) is a more convenient alternative&#39;) #TODO: remove unused function</code></pre>
 </details>
 </dd>
 <dt id="dfm_tools.get_nc_helpers.rename_waqvars"><code class="name flex">
