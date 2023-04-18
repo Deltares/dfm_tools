@@ -114,6 +114,8 @@ def preprocess_hisnc(ds):
             warnings.warn(UserWarning(f&#39;Your model was run with a D-FlowFM version from before 28-10-2020 ({source_attr_version} from {source_attr_date}), the layers in the hisfile are incorrect. Check UNST-2920 and UNST-3024 for more information, it was fixed from OSS 67858.&#39;))
     except KeyError: #no source attr present in hisfile, cannot check version
         pass
+    except IndexError: #contains no &#39;, &#39;
+        pass
 
     return ds
 
@@ -663,6 +665,8 @@ def open_partitioned_dataset(file_nc, chunks={&#39;time&#39;:1}, remove_ghost=Tr
         if pd.Timestamp(source_attr_date) &lt; dt.datetime(2020,11,28):
             warnings.warn(UserWarning(f&#39;Your model was run with a D-FlowFM version from before 28-10-2020 ({source_attr_version} from {source_attr_date}), the layers in the hisfile are incorrect. Check UNST-2920 and UNST-3024 for more information, it was fixed from OSS 67858.&#39;))
     except KeyError: #no source attr present in hisfile, cannot check version
+        pass
+    except IndexError: #contains no &#39;, &#39;
         pass
 
     return ds</code></pre>
