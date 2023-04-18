@@ -84,6 +84,8 @@ def preprocess_hisnc(ds):
             warnings.warn(UserWarning(f'Your model was run with a D-FlowFM version from before 28-10-2020 ({source_attr_version} from {source_attr_date}), the layers in the hisfile are incorrect. Check UNST-2920 and UNST-3024 for more information, it was fixed from OSS 67858.'))
     except KeyError: #no source attr present in hisfile, cannot check version
         pass
+    except IndexError: #contains no ', '
+        pass
 
     return ds
 
