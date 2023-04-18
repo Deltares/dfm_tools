@@ -162,5 +162,6 @@ xu_grid_uds.ugrid.to_netcdf('test_net.nc')
 
 #TODO: update https://github.com/Deltares/dfm_tools/issues/217
 
-#TODO: network is not orthogonal (when initializing with interacter), probably since the is_geographic keyword does not work yet
+#TODO: network is not orthogonal (when initializing with interacter), probably since the is_geographic keyword does not work yet >> there is a link missing, maybe due to ldb?
+#TODO: remove non-contiguous parts of network: https://deltares.github.io/xugrid/examples/connectivity.html#connected-components >> or maybe meshkernel approach? (https://github.com/Deltares/MeshKernelPy/issues/44)
 

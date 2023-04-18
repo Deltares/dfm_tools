@@ -85,10 +85,11 @@ dfmt.meshkernel_delete_withpol(mk=mk_object,file_ldb=file_ldb)
 #TODO: illegalcells.pol necessary?
 
 #TODO: cleanup grid necessary?
-# print('mk_object.mesh2d_get_obtuse_triangles_mass_centers()')
-# print(mk_object.mesh2d_get_obtuse_triangles_mass_centers())
-# print('mk_object.mesh2d_get_hanging_edges()')
-# print(mk_object.mesh2d_get_hanging_edges())
+print('mk_object.mesh2d_get_obtuse_triangles_mass_centers()')
+print(mk_object.mesh2d_get_obtuse_triangles_mass_centers())
+print('mk_object.mesh2d_get_hanging_edges()')
+print(mk_object.mesh2d_get_hanging_edges())
+# mk_object.mesh2d_delete_hanging_edges()
 
 #convert to xugrid
 xu_grid_uds = dfmt.meshkernel_to_UgridDataset(mk=mk_object)
