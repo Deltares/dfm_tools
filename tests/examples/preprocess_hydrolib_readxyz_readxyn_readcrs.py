@@ -28,7 +28,7 @@ file_xyn = r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmod
 data_xyn1 = hcdfm.ObservationPointModel(file_xyn) #TODO: this should raise an error, but it returns an empy list: https://github.com/Deltares/HYDROLIB-core/issues/502
 data_xyn2 = hcdfm.XYNModel(file_xyn)
 data_xyn2_pd = dfmt.pointlike_to_DataFrame(data_xyn2) #works as expected #TODO: add DataFrame_to_XYNModel() conversion?
-data_xyn2.save(file_xyn.replace('_obs.xyn','_out_obs.xyn'))
+#data_xyn2.save(file_xyn.replace('_obs.xyn','_out_obs.xyn'))
 
 file_crs = r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\geometry_j19_6-v2\cross_sections\rmm_vzm-j19_6-v2b_3_measurement_crs.pli'
 data_crs1 = hcdfm.CrossLocModel(file_crs) #TODO: this should raise an error, but it returns an empty list: https://github.com/Deltares/HYDROLIB-core/issues/502
