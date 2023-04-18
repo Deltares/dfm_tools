@@ -47,7 +47,6 @@ if overwrite:
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
 
 
-
 data_frommap = dfmt.open_partitioned_dataset(file_out)
 crs = "EPSG:28992"
 
