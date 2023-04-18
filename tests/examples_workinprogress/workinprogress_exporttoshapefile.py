@@ -21,6 +21,7 @@ dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 if not os.path.exists(dir_output):
     os.makedirs(dir_output)
+export_kml = True
 
 #file_nc = os.path.join(r'p:\archivedprojects\11203850-coastserv\06-Model\waq_model\simulations\run0_20200319\DFM_OUTPUT_kzn_waq', 'kzn_waq_0*_map.nc')
 file_nc = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen','computations','run01','DFM_OUTPUT_Grevelingen-FM','Grevelingen-FM_0*_map.nc')
@@ -37,7 +38,7 @@ data_xr_map = dfmt.open_partitioned_dataset(file_nc)
 data_xr_map = dfmt.rename_waqvars(data_xr_map)
 vars_pd = dfmt.get_ncvarproperties(data_xr_map)
 
-for timestep in [2,3]:#[0,10,20,30]:
+for iT, timestep in enumerate([2,3]):#[0,10,20,30]:
     data_map_timesel = data_xr_map.isel(time=timestep)
     
     #data_sel = dfmt.get_Dataset_atdepths(data_xr=data_map_timesel, depths=0, reference='waterlevel') #top layer: 0m from waterlevel
@@ -48,6 +49,15 @@ for timestep in [2,3]:#[0,10,20,30]:
     ugrid_all_verts = data_map_timesel.grid.face_node_coordinates
     pol_shp_list = [Polygon(verts_one[~np.isnan(verts_one).all(axis=1)]) for verts_one in ugrid_all_verts]
     newdata = gpd.GeoDataFrame({'geometry': pol_shp_list},crs=crs)
+
+    if iT==0 and export_kml: #export without variable
+        #https://stackoverflow.com/questions/36222857/convert-geodataframe-polygons-to-kml-file
+        import fiona
+        fiona.supported_drivers['KML'] = 'rw'
+        file_kml = os.path.join(dir_output,f'{basename}.kml') #TODO: add depth+reference to filename
+        if os.path.exists(file_kml):#to avoid "DriverError: unsupported driver: 'LIBKML'"
+            os.remove(file_kml)
+        newdata.to_file(file_kml, driver='KML')
     
     for iV, varname in enumerate(varlist):
         if not hasattr(data_map_timesel,varname):
@@ -64,5 +74,5 @@ for timestep in [2,3]:#[0,10,20,30]:
     timestamp = data_map_timesel.time.dt.strftime('%Y%m%d').data
     file_shp = os.path.join(dir_output,f'shp_{basename}_{timestamp}') #TODO: add depth+reference to filename
     newdata.to_file(file_shp) #TODO: solve "UserWarning: Column names longer than 10 characters will be truncated when saved to ESRI Shapefile."
-
+    
 print(f'script runtime: {(dt.datetime.now()-dtstart_script).total_seconds():.2f} sec')
