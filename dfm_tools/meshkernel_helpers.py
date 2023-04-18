@@ -14,6 +14,7 @@ import pandas as pd
 from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame
 from dfm_tools import __version__
 import getpass
+import numpy as np
 
 
 def meshkernel_delete_withpol(mk, file_ldb, minpoints=None):
@@ -37,10 +38,27 @@ def meshkernel_delete_withpol(mk, file_ldb, minpoints=None):
     return mk
 
 
-def meshkernel_to_UgridDataset(mk:meshkernel.meshkernel.MeshKernel) -> xr.Dataset:
+def meshkernel_to_UgridDataset(mk:meshkernel.meshkernel.MeshKernel, remove_noncontiguous:bool = False) -> xr.Dataset:
     mesh2d_grid3 = mk.mesh2d_get()
 
     xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid3)
+    
+    #remove non-contiguous grid parts
+    def xugrid_remove_noncontiguous(grid):
+        #based on https://deltares.github.io/xugrid/examples/connectivity.html#connected-components
+        #uses https://docs.scipy.org/doc/scipy/reference/sparse.csgraph.html
+        #TODO: maybe replace with meshkernel?
+        uda = xu.UgridDataArray(
+            xr.DataArray(np.ones(grid.node_face_connectivity.shape[0]), dims=["face"]), grid
+        )
+        labels = uda.ugrid.connected_components()
+        counts = labels.groupby(labels).count()
+        most_frequent_label = counts["group"][np.argmax(counts.data)].item() #find largest contiguous part
+        labels = labels.where(labels == most_frequent_label, drop=True)
+        grid = labels.grid
+        return grid
+    if remove_noncontiguous:
+        xu_grid = xugrid_remove_noncontiguous(xu_grid)
     
     #convert to dataset
     xu_grid_ds = xu_grid.to_dataset()

@@ -142,7 +142,8 @@ ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 """
 convert meshkernel grid to xugrid, interp bathymetry, plot and save to *_net.nc
 """
-xu_grid_uds = dfmt.meshkernel_to_UgridDataset(mk2)
+
+xu_grid_uds = dfmt.meshkernel_to_UgridDataset(mk2, remove_noncontiguous=True) #TODO: put remove_noncontiguous in meshkernel?: https://github.com/Deltares/MeshKernelPy/issues/44
 #TODO: add wgs84 variable with attrs
 
 fig, ax = plt.subplots(figsize=figsize)
@@ -163,5 +164,4 @@ xu_grid_uds.ugrid.to_netcdf('test_net.nc')
 #TODO: update https://github.com/Deltares/dfm_tools/issues/217
 
 #TODO: network is not orthogonal (when initializing with interacter), probably since the is_geographic keyword does not work yet >> there is a link missing, maybe due to ldb?
-#TODO: remove non-contiguous parts of network: https://deltares.github.io/xugrid/examples/connectivity.html#connected-components >> or maybe meshkernel approach? (https://github.com/Deltares/MeshKernelPy/issues/44)
 
