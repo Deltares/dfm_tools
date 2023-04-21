@@ -123,32 +123,31 @@ if 1:
     ext_new = hcdfm.ExtModel()
     
     # CMEMS - download
-        
-    mb.download_meteodata_oceandata(
-        longitude_min = lon_min, longitude_max = lon_max, latitude_min = lat_min, latitude_max = lat_max,
-        model = 'CMEMS',
-        overwrite = overwrite,
-        date_min = date_min, date_max = date_max,
-        varlist = ['so','thetao','uo','vo','zos'],
-        dir_output = dir_output_data_cmems)
+    for varkey in ['so','thetao','uo','vo','zos']:
+        dfmt.download_CMEMS(credentials=None, #credentials=['username','password'], or create "%USERPROFILE%/CMEMS_credentials.txt" with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form'
+                            varkey=varkey,
+                            longitude_min=lon_min, longitude_max=lon_max, latitude_min=lat_min, latitude_max=lat_max,
+                            date_min=date_min, date_max=date_max,
+                            dir_output=dir_output_data_cmems, file_prefix='cmems_', overwrite=overwrite)
+    
     
     # CMEMS - boundary conditions file (.bc) (and add to ext_bnd)
+    #TODO: isssue https://github.com/Deltares/HYDROLIB-core/issues/533 contains below comments
+    #TODO: important to put two waterlevelbnds consequtively and probably also at the start of extfile (so bnd is open)
+    #TODO: two waterlevelbnds need to share same physical plifile in order to + (https://issuetracker.deltares.nl/browse/UNST-5320).
+    #list_quantities = ['salinitybnd','temperaturebnd','uxuy','waterlevelbnd','tide'] #TODO: this combination results in instable model and crash (is tide ignored? or maybe no open bnds for sal since wlbnd is later added) o868342 (Comp. time step average below threshold)
+    #list_quantities = ['salinitybnd','temperaturebnd','uxuy','tide'],#,'waterlevelbnd' #TODO: this gives stable model o868398 (but still expected no open bnd?)
+    #list_quantities = ['tide','salinitybnd','temperaturebnd','uxuy'],#,'waterlevelbnd' #TODO: tide in front gives different results? (dia started equal, but this model is very slightly faster)
+    #list_quantities = ['tide','waterlevelbnd','salinitybnd','temperaturebnd','uxuy'] #TODO: this should also be possible, but gives instability in wl after a few simulation hours and "** WARNING: Boundary link 00001662 already claimed [    -68.0750,     12.6625]"
+    list_quantities = ['waterlevelbnd','tide','salinitybnd','temperaturebnd','uxuy'] #TODO: seems to make no difference with the one above
+    #list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tide'] #TODO: this crashes with update_ghostboundvals error, see comment block below
     ext_new = mb.preprocess_interpolate_nc_to_bc(ext_bnd=ext_new,
                                                  refdate_str = 'minutes since '+ref_date+' 00:00:00 +00:00',
                                                  dir_output = dir_output,
-                                                 model = 'CMEMS',
+                                                 list_quantities = list_quantities,
                                                  tstart=pd.Timestamp(date_min)-pd.Timedelta(hours=12), tstop=pd.Timestamp(date_max)+pd.Timedelta(hours=12), #TODO: to account for noon-fields of CMEMS, build in safety?
                                                  list_plifiles = [poly_file],
-                                                 #TODO: isssue https://github.com/Deltares/HYDROLIB-core/issues/533 contains below comments
-                                                 #TODO: important to put two waterlevelbnds consequtively and probably also at the start of extfile (so bnd is open)
-                                                 #TODO: two waterlevelbnds need to share same physical plifile in order to + (https://issuetracker.deltares.nl/browse/UNST-5320).
-                                                 #list_quantities = ['salinitybnd','temperaturebnd','uxuy','waterlevelbnd','tide'], #TODO: this combination results in instable model and crash (is tide ignored? or maybe no open bnds for sal since wlbnd is later added) o868342 (Comp. time step average below threshold)
-                                                 #list_quantities = ['salinitybnd','temperaturebnd','uxuy','tide'],#,'waterlevelbnd' #TODO: this gives stable model o868398 (but still expected no open bnd?)
-                                                 #list_quantities = ['tide','salinitybnd','temperaturebnd','uxuy'],#,'waterlevelbnd' #TODO: tide in front gives different results? (dia started equal, but this model is very slightly faster)
-                                                 #list_quantities = ['tide','waterlevelbnd','salinitybnd','temperaturebnd','uxuy'], #TODO: this should also be possible, but gives instability in wl after a few simulation hours and "** WARNING: Boundary link 00001662 already claimed [    -68.0750,     12.6625]"
-                                                 list_quantities = ['waterlevelbnd','tide','salinitybnd','temperaturebnd','uxuy'], #TODO: seems to make no difference with above
-                                                 #list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tide'], #TODO: this crashes with update_ghostboundvals error, see comment block below
-                                                 dir_sourcefiles_hydro = dir_output_data_cmems)
+                                                 dir_pattern = os.path.join(dir_output_data_cmems,'cmems_{ncvarname}_*.nc'))
     #TODO: when adding both waterlevelbnd and tide as waterlevelbnd they should be consequetive. If there are other quantities in between, the model crashes with a update_ghostboundvals error, report this:
     """
     ** INFO   : partition_fixorientation_ghostlist: number of reversed flowlinks=              0
@@ -193,22 +192,21 @@ if 1:
         os.mkdir(dir_output_data_era5)
         
     if ERA5_meteo_option == 1: #TODO: pass option instead of varlist to fuctions?
-        varlist = [['msl','u10n','v10n','chnk']]
+        varlist_list = [['msl','u10n','v10n','chnk']]
     elif ERA5_meteo_option == 2:
-        varlist = [['msl','u10n','v10n','chnk'],['d2m','t2m','tcc'],['ssr','strd'],['mer','mtpr']]
+        varlist_list = [['msl','u10n','v10n','chnk'],['d2m','t2m','tcc'],['ssr','strd'],['mer','mtpr']]
     
-    mb.download_meteodata_oceandata(
-        longitude_min = lon_min, longitude_max = lon_max, latitude_min = lat_min, latitude_max = lat_max,
-        model = 'ERA5',
-        overwrite = overwrite,
-        date_min = date_min, date_max = date_max,
-        varlist = varlist, # check variables_dict in dfmt.download_ERA5() for valid names
-        dir_output = dir_output_data_era5)
-    
+    for varlist in varlist_list:
+        for varkey in varlist:
+            dfmt.download_ERA5(varkey, 
+                               longitude_min=lon_min-1/4, longitude_max=lon_max+1/4, latitude_min=lat_min-1/4, latitude_max=lat_max+1/4, # download 1 grid cell row/column extra
+                               date_min=date_min, date_max=date_max,
+                               dir_output=dir_output_data_era5, overwrite=overwrite)
+
     # ERA5 meteo - convert to netCDF for usage in Delft3D FM
     ext_old = mb.preprocess_merge_meteofiles(ext_old=ext_old,
             mode = 'ERA5',
-            varkey_list = varlist,
+            varkey_list = varlist_list,
             dir_data = dir_output_data_era5,
             dir_output = dir_output,
             time_slice = slice(date_min, date_max))
