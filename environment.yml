@@ -11,6 +11,7 @@ dependencies:
   - matplotlib
   - pandas
   - shapely>=1.7.0
+  #cartopy is not pip installable, so it is commented in setup.cfg
   - cartopy
   - pyepsg
   - geopandas
