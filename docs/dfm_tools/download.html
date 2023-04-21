@@ -103,6 +103,57 @@ def download_ERA5(varkey,
         c.retrieve(name=&#39;reanalysis-era5-single-levels&#39;, request=request_dict, target=file_out)
 
 
+def download_CMEMS(varkey,
+                   longitude_min, longitude_max, latitude_min, latitude_max, 
+                   date_min, date_max, freq=&#39;D&#39;,
+                   dir_output=&#39;.&#39;, file_prefix=&#39;&#39;, overwrite=False,
+                   credentials=None):
+
+    date_min = pd.Timestamp(date_min)-pd.Timedelta(days=1) #CMEMS has daily noon values (not midnight), so subtract one day from date_min to cover desired time extent
+    
+    if &#39;my_datemax&#39; not in globals(): #set multiyear date_max (my_datemax) as global variable, so it only has to be retreived once per download run (otherwise once per variable)
+        print(&#39;retrieving enddate of multiyear CMEMS dataset&#39;)
+        dataset_url = &#39;https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_my_0.083_P1D-m&#39; #assuming here that physchem and bio reanalyisus/multiyear datasets have the same enddate, this seems safe
+        ds = open_OPeNDAP_xr(dataset_url=dataset_url, credentials=credentials)
+        my_times = ds.time.to_series()
+        global my_datemax
+        my_datemax = my_times.iloc[-1]
+
+    if pd.Timestamp(date_max) &lt;= my_datemax:
+        product = &#39;reanalysis&#39;
+    elif pd.Timestamp(date_min) &gt; my_datemax:
+        product = &#39;analysisforecast&#39;
+    else:
+        raise ValueError(f&#39;Requested timerange is {date_min} to {date_max}. Currently, it is only possible to query periods before OR after the multiyear/reanalysis enddate ({my_datemax}).&#39;)
+    
+    Path(dir_output).mkdir(parents=True, exist_ok=True)
+    if varkey in [&#39;bottomT&#39;,&#39;tob&#39;,&#39;mlotst&#39;,&#39;siconc&#39;,&#39;sithick&#39;,&#39;so&#39;,&#39;thetao&#39;,&#39;uo&#39;,&#39;vo&#39;,&#39;usi&#39;,&#39;vsi&#39;,&#39;zos&#39;]: #for physchem
+        if product == &#39;analysisforecast&#39;: #forecast: https://data.marine.copernicus.eu/product/GLOBAL_ANALYSISFORECAST_PHY_001_024/description
+            if varkey==&#39;bottomT&#39;: #rename old to new anfc varname (still called bottomT in reanalysis)
+                varkey = &#39;tob&#39;
+            if varkey in [&#39;uo&#39;,&#39;vo&#39;]:
+                varkey_name = &#39;phy-cur&#39;
+            elif varkey in [&#39;so&#39;,&#39;thetao&#39;]:
+                varkey_name = &#39;phy-&#39;+varkey
+            else:
+                varkey_name = &#39;phy&#39;
+            dataset_url = f&#39;https://nrt.cmems-du.eu/thredds/dodsC/cmems_mod_glo_{varkey_name}_anfc_0.083deg_P1D-m&#39;#.html&#39; #TODO: also PT6H-i timeresolution available but not for all variables and not for reanalysis
+        else: #reanalysis: https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_PHY_001_030/description
+            dataset_url = &#39;https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_my_0.083_P1D-m&#39;
+    else: #for bio
+        if product == &#39;analysisforecast&#39;: #forecast: https://data.marine.copernicus.eu/product/GLOBAL_ANALYSISFORECAST_PHY_001_024/description
+            dataset_url = &#39;https://nrt.cmems-du.eu/thredds/dodsC/global-analysis-forecast-bio-001-028-daily&#39; #contains [&#39;chl&#39;,&#39;fe&#39;,&#39;no3&#39;,&#39;nppv&#39;,&#39;o2&#39;,&#39;ph&#39;,&#39;phyc&#39;,&#39;po4&#39;,&#39;si&#39;,&#39;spco2&#39;]
+        else: #https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_BGC_001_029/description
+            dataset_url = &#39;https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_bgc_my_0.25_P1D-m&#39; #contains [&#39;chl&#39;,&#39;no3&#39;,&#39;nppv&#39;,&#39;o2&#39;,&#39;po4&#39;,&#39;si&#39;]
+    
+    download_OPeNDAP(dataset_url=dataset_url,
+                     credentials=credentials, #credentials=[&#39;username&#39;,&#39;password&#39;], or create &#34;%USERPROFILE%/CMEMS_credentials.txt&#34; with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form&#39;
+                     varkey=varkey,
+                     longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
+                     date_min=date_min, date_max=date_max,
+                     dir_output=dir_output, file_prefix=file_prefix, overwrite=overwrite)
+
+
 def open_OPeNDAP_xr(dataset_url, credentials=None):
     &#34;&#34;&#34;
     How to get the opendap dataset_url (CMEMS example):
@@ -160,7 +211,7 @@ def open_OPeNDAP_xr(dataset_url, credentials=None):
         if isinstance(dataset_url,list):
             raise TypeError(&#39;list not supported by opendap method used for cmems&#39;)
         
-        #parce credentials to username/password #TODO: now CMEMS specific, make more generic
+        #parse credentials to username/password #TODO: now CMEMS specific, make more generic
         if credentials is None:
             file_credentials = f&#39;{os.path.expanduser(&#34;~&#34;)}/CMEMS_credentials.txt&#39;
             if not os.path.exists(file_credentials):
@@ -197,6 +248,12 @@ def open_OPeNDAP_xr(dataset_url, credentials=None):
             data_xr = data_xr.rename({&#39;lon&#39;:&#39;longitude&#39;,&#39;lat&#39;:&#39;latitude&#39;})
         
     return data_xr
+
+
+def download_OpenDAP_gettimes(dataset_url,credentials=None):
+    ds = open_OPeNDAP_xr(dataset_url=dataset_url, credentials=credentials)
+    ds_time = ds.time.to_series()
+    return ds_time
 
 
 def download_OPeNDAP(dataset_url,
@@ -358,6 +415,66 @@ def download_OPeNDAP(dataset_url,
         c.retrieve(name=&#39;reanalysis-era5-single-levels&#39;, request=request_dict, target=file_out)</code></pre>
 </details>
 </dd>
+<dt id="dfm_tools.download.download_CMEMS"><code class="name flex">
+<span>def <span class="ident">download_CMEMS</span></span>(<span>varkey, longitude_min, longitude_max, latitude_min, latitude_max, date_min, date_max, freq='D', dir_output='.', file_prefix='', overwrite=False, credentials=None)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def download_CMEMS(varkey,
+                   longitude_min, longitude_max, latitude_min, latitude_max, 
+                   date_min, date_max, freq=&#39;D&#39;,
+                   dir_output=&#39;.&#39;, file_prefix=&#39;&#39;, overwrite=False,
+                   credentials=None):
+
+    date_min = pd.Timestamp(date_min)-pd.Timedelta(days=1) #CMEMS has daily noon values (not midnight), so subtract one day from date_min to cover desired time extent
+    
+    if &#39;my_datemax&#39; not in globals(): #set multiyear date_max (my_datemax) as global variable, so it only has to be retreived once per download run (otherwise once per variable)
+        print(&#39;retrieving enddate of multiyear CMEMS dataset&#39;)
+        dataset_url = &#39;https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_my_0.083_P1D-m&#39; #assuming here that physchem and bio reanalyisus/multiyear datasets have the same enddate, this seems safe
+        ds = open_OPeNDAP_xr(dataset_url=dataset_url, credentials=credentials)
+        my_times = ds.time.to_series()
+        global my_datemax
+        my_datemax = my_times.iloc[-1]
+
+    if pd.Timestamp(date_max) &lt;= my_datemax:
+        product = &#39;reanalysis&#39;
+    elif pd.Timestamp(date_min) &gt; my_datemax:
+        product = &#39;analysisforecast&#39;
+    else:
+        raise ValueError(f&#39;Requested timerange is {date_min} to {date_max}. Currently, it is only possible to query periods before OR after the multiyear/reanalysis enddate ({my_datemax}).&#39;)
+    
+    Path(dir_output).mkdir(parents=True, exist_ok=True)
+    if varkey in [&#39;bottomT&#39;,&#39;tob&#39;,&#39;mlotst&#39;,&#39;siconc&#39;,&#39;sithick&#39;,&#39;so&#39;,&#39;thetao&#39;,&#39;uo&#39;,&#39;vo&#39;,&#39;usi&#39;,&#39;vsi&#39;,&#39;zos&#39;]: #for physchem
+        if product == &#39;analysisforecast&#39;: #forecast: https://data.marine.copernicus.eu/product/GLOBAL_ANALYSISFORECAST_PHY_001_024/description
+            if varkey==&#39;bottomT&#39;: #rename old to new anfc varname (still called bottomT in reanalysis)
+                varkey = &#39;tob&#39;
+            if varkey in [&#39;uo&#39;,&#39;vo&#39;]:
+                varkey_name = &#39;phy-cur&#39;
+            elif varkey in [&#39;so&#39;,&#39;thetao&#39;]:
+                varkey_name = &#39;phy-&#39;+varkey
+            else:
+                varkey_name = &#39;phy&#39;
+            dataset_url = f&#39;https://nrt.cmems-du.eu/thredds/dodsC/cmems_mod_glo_{varkey_name}_anfc_0.083deg_P1D-m&#39;#.html&#39; #TODO: also PT6H-i timeresolution available but not for all variables and not for reanalysis
+        else: #reanalysis: https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_PHY_001_030/description
+            dataset_url = &#39;https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_my_0.083_P1D-m&#39;
+    else: #for bio
+        if product == &#39;analysisforecast&#39;: #forecast: https://data.marine.copernicus.eu/product/GLOBAL_ANALYSISFORECAST_PHY_001_024/description
+            dataset_url = &#39;https://nrt.cmems-du.eu/thredds/dodsC/global-analysis-forecast-bio-001-028-daily&#39; #contains [&#39;chl&#39;,&#39;fe&#39;,&#39;no3&#39;,&#39;nppv&#39;,&#39;o2&#39;,&#39;ph&#39;,&#39;phyc&#39;,&#39;po4&#39;,&#39;si&#39;,&#39;spco2&#39;]
+        else: #https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_BGC_001_029/description
+            dataset_url = &#39;https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_bgc_my_0.25_P1D-m&#39; #contains [&#39;chl&#39;,&#39;no3&#39;,&#39;nppv&#39;,&#39;o2&#39;,&#39;po4&#39;,&#39;si&#39;]
+    
+    download_OPeNDAP(dataset_url=dataset_url,
+                     credentials=credentials, #credentials=[&#39;username&#39;,&#39;password&#39;], or create &#34;%USERPROFILE%/CMEMS_credentials.txt&#34; with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form&#39;
+                     varkey=varkey,
+                     longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
+                     date_min=date_min, date_max=date_max,
+                     dir_output=dir_output, file_prefix=file_prefix, overwrite=overwrite)</code></pre>
+</details>
+</dd>
 <dt id="dfm_tools.download.open_OPeNDAP_xr"><code class="name flex">
 <span>def <span class="ident">open_OPeNDAP_xr</span></span>(<span>dataset_url, credentials=None)</span>
 </code></dt>
@@ -452,7 +569,7 @@ Some examples:
         if isinstance(dataset_url,list):
             raise TypeError(&#39;list not supported by opendap method used for cmems&#39;)
         
-        #parce credentials to username/password #TODO: now CMEMS specific, make more generic
+        #parse credentials to username/password #TODO: now CMEMS specific, make more generic
         if credentials is None:
             file_credentials = f&#39;{os.path.expanduser(&#34;~&#34;)}/CMEMS_credentials.txt&#39;
             if not os.path.exists(file_credentials):
@@ -489,6 +606,21 @@ Some examples:
             data_xr = data_xr.rename({&#39;lon&#39;:&#39;longitude&#39;,&#39;lat&#39;:&#39;latitude&#39;})
         
     return data_xr</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.download.download_OpenDAP_gettimes"><code class="name flex">
+<span>def <span class="ident">download_OpenDAP_gettimes</span></span>(<span>dataset_url, credentials=None)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def download_OpenDAP_gettimes(dataset_url,credentials=None):
+    ds = open_OPeNDAP_xr(dataset_url=dataset_url, credentials=credentials)
+    ds_time = ds.time.to_series()
+    return ds_time</code></pre>
 </details>
 </dd>
 <dt id="dfm_tools.download.download_OPeNDAP"><code class="name flex">
@@ -641,7 +773,9 @@ Some examples:
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
 <li><code><a title="dfm_tools.download.download_ERA5" href="#dfm_tools.download.download_ERA5">download_ERA5</a></code></li>
+<li><code><a title="dfm_tools.download.download_CMEMS" href="#dfm_tools.download.download_CMEMS">download_CMEMS</a></code></li>
 <li><code><a title="dfm_tools.download.open_OPeNDAP_xr" href="#dfm_tools.download.open_OPeNDAP_xr">open_OPeNDAP_xr</a></code></li>
+<li><code><a title="dfm_tools.download.download_OpenDAP_gettimes" href="#dfm_tools.download.download_OpenDAP_gettimes">download_OpenDAP_gettimes</a></code></li>
 <li><code><a title="dfm_tools.download.download_OPeNDAP" href="#dfm_tools.download.download_OPeNDAP">download_OPeNDAP</a></code></li>
 </ul>
 </li>
