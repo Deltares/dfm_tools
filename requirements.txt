@@ -5,7 +5,7 @@ pandas
 hydrolib-core>=0.5.1
 meshkernel>=2.0.2
 shapely>=1.7.0
-cartopy
+#cartopy
 pyepsg
 geopandas
 contextily
