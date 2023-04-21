@@ -29,13 +29,10 @@ longitude_min, longitude_max, latitude_min, latitude_max =    2,   4,  50, 52 #t
 #dates as understood by pandas.period_range(). ERA5 has freq='M' (month) and CMEMS has freq='D' (day)
 date_min = '2010-01-01'
 date_max = '2010-01-02'
-date_min = '2021-10-31'
-date_max = '2021-11-01'
 
 #variables per model will be written to separate netcdf files. Set to [] to skip model.
-variables_era5 = []#'v10n'] # check variables_dict in dfmt.download_ERA5() for valid names
+variables_era5 = ['msl']#'v10n'] # check variables_dict in dfmt.download_ERA5() for valid names
 varlist_cmems = ['bottomT','thetao','no3'] # avaliable variables differ per source_combination, check cmems loop for some options
-varlist_cmems = ['bottomT','mlotst','siconc','sithick','so','thetao','uo','vo','usi','vsi','zos','no3']
 varlist_hycom = []#'surf_el']#'water_temp'] #['tau','water_u','water_v','water_temp','salinity','surf_el']
 
 #output directories per model
