@@ -73,6 +73,57 @@ def download_ERA5(varkey,
         c.retrieve(name='reanalysis-era5-single-levels', request=request_dict, target=file_out)
 
 
+def download_CMEMS(varkey,
+                   longitude_min, longitude_max, latitude_min, latitude_max, 
+                   date_min, date_max, freq='D',
+                   dir_output='.', file_prefix='', overwrite=False,
+                   credentials=None):
+
+    date_min = pd.Timestamp(date_min)-pd.Timedelta(days=1) #CMEMS has daily noon values (not midnight), so subtract one day from date_min to cover desired time extent
+    
+    if 'my_datemax' not in globals(): #set multiyear date_max (my_datemax) as global variable, so it only has to be retreived once per download run (otherwise once per variable)
+        print('retrieving enddate of multiyear CMEMS dataset')
+        dataset_url = 'https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_my_0.083_P1D-m' #assuming here that physchem and bio reanalyisus/multiyear datasets have the same enddate, this seems safe
+        ds = open_OPeNDAP_xr(dataset_url=dataset_url, credentials=credentials)
+        my_times = ds.time.to_series()
+        global my_datemax
+        my_datemax = my_times.iloc[-1]
+
+    if pd.Timestamp(date_max) <= my_datemax:
+        product = 'reanalysis'
+    elif pd.Timestamp(date_min) > my_datemax:
+        product = 'analysisforecast'
+    else:
+        raise ValueError(f'Requested timerange is {date_min} to {date_max}. Currently, it is only possible to query periods before OR after the multiyear/reanalysis enddate ({my_datemax}).')
+    
+    Path(dir_output).mkdir(parents=True, exist_ok=True)
+    if varkey in ['bottomT','tob','mlotst','siconc','sithick','so','thetao','uo','vo','usi','vsi','zos']: #for physchem
+        if product == 'analysisforecast': #forecast: https://data.marine.copernicus.eu/product/GLOBAL_ANALYSISFORECAST_PHY_001_024/description
+            if varkey=='bottomT': #rename old to new anfc varname (still called bottomT in reanalysis)
+                varkey = 'tob'
+            if varkey in ['uo','vo']:
+                varkey_name = 'phy-cur'
+            elif varkey in ['so','thetao']:
+                varkey_name = 'phy-'+varkey
+            else:
+                varkey_name = 'phy'
+            dataset_url = f'https://nrt.cmems-du.eu/thredds/dodsC/cmems_mod_glo_{varkey_name}_anfc_0.083deg_P1D-m'#.html' #TODO: also PT6H-i timeresolution available but not for all variables and not for reanalysis
+        else: #reanalysis: https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_PHY_001_030/description
+            dataset_url = 'https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_my_0.083_P1D-m'
+    else: #for bio
+        if product == 'analysisforecast': #forecast: https://data.marine.copernicus.eu/product/GLOBAL_ANALYSISFORECAST_PHY_001_024/description
+            dataset_url = 'https://nrt.cmems-du.eu/thredds/dodsC/global-analysis-forecast-bio-001-028-daily' #contains ['chl','fe','no3','nppv','o2','ph','phyc','po4','si','spco2']
+        else: #https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_BGC_001_029/description
+            dataset_url = 'https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_bgc_my_0.25_P1D-m' #contains ['chl','no3','nppv','o2','po4','si']
+    
+    download_OPeNDAP(dataset_url=dataset_url,
+                     credentials=credentials, #credentials=['username','password'], or create "%USERPROFILE%/CMEMS_credentials.txt" with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form'
+                     varkey=varkey,
+                     longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
+                     date_min=date_min, date_max=date_max,
+                     dir_output=dir_output, file_prefix=file_prefix, overwrite=overwrite)
+
+
 def open_OPeNDAP_xr(dataset_url, credentials=None):
     """
     How to get the opendap dataset_url (CMEMS example):
@@ -130,7 +181,7 @@ def open_OPeNDAP_xr(dataset_url, credentials=None):
         if isinstance(dataset_url,list):
             raise TypeError('list not supported by opendap method used for cmems')
         
-        #parce credentials to username/password #TODO: now CMEMS specific, make more generic
+        #parse credentials to username/password #TODO: now CMEMS specific, make more generic
         if credentials is None:
             file_credentials = f'{os.path.expanduser("~")}/CMEMS_credentials.txt'
             if not os.path.exists(file_credentials):
@@ -167,6 +218,12 @@ def open_OPeNDAP_xr(dataset_url, credentials=None):
             data_xr = data_xr.rename({'lon':'longitude','lat':'latitude'})
         
     return data_xr
+
+
+def download_OpenDAP_gettimes(dataset_url,credentials=None):
+    ds = open_OPeNDAP_xr(dataset_url=dataset_url, credentials=credentials)
+    ds_time = ds.time.to_series()
+    return ds_time
 
 
 def download_OPeNDAP(dataset_url,

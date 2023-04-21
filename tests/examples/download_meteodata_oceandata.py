@@ -32,7 +32,7 @@ date_max = '2010-01-02'
 
 #variables per model will be written to separate netcdf files. Set to [] to skip model.
 variables_era5 = ['msl']#'v10n'] # check variables_dict in dfmt.download_ERA5() for valid names
-varlist_cmems = ['bottomT']#['bottomT','thetao','no3'] # avaliable variables differ per source_combination, check cmems loop for some options
+varlist_cmems = ['bottomT','thetao','no3'] # avaliable variables differ per product, examples are ['bottomT','mlotst','siconc','sithick','so','thetao','uo','vo','usi','vsi','zos','no3']. More info on https://data.marine.copernicus.eu/products
 varlist_hycom = []#'surf_el']#'water_temp'] #['tau','water_u','water_v','water_temp','salinity','surf_el']
 
 #output directories per model
@@ -62,30 +62,13 @@ for varkey in variables_era5:
 
 #CMEMS
 dir_output = dir_output_cmems
-date_min_cmems = pd.Timestamp(date_min)-pd.Timedelta(days=1) #CMEMS has daily noon values (not midnight), so subtract one day from date_min to cover desired time extent
 for varkey in varlist_cmems:
-    Path(dir_output).mkdir(parents=True, exist_ok=True)
-    #TODO: update CMEMS urls after 15 april, since some are being replaced
-    if varkey in ['bottomT','mlotst','siconc','sithick','so','thetao','uo','usi','vo','vsi','zos']: #for physchem
-        #reanalisys: https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_PHY_001_030/description
-        dataset_url = 'https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_my_0.083_P1D-m'
-        #forecast: https://data.marine.copernicus.eu/product/GLOBAL_ANALYSISFORECAST_PHY_001_024/description
-        #dataset_url = 'https://nrt.cmems-du.eu/thredds/dodsC/global-analysis-forecast-phy-001-024' #old location for forecasts (available up to 15 april)
-        #dataset_url = 'https://nrt.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_anfc_0.083deg_PT1H-m.html' #hourly for cur/tem/sal (surface only)
-        #dataset_url = 'https://nrt.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy-cur_anfc_0.083deg_P1D-m.html' #currents
-        #dataset_url = 'https://nrt.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy-thetao_anfc_0.083deg_P1D-m.html' #temperature
-        #dataset_url = 'https://nrt.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy-so_anfc_0.083deg_P1D-m.html' #salinity
-    else: # for bio #https://data.marine.copernicus.eu/product/GLOBAL_ANALYSIS_FORECAST_BIO_001_028/description
-        dataset_url = 'https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_bgc_my_0.25_P1D-m' #contains ['chl','no3','nppv','o2','po4','si']
-        #dataset_url = 'https://nrt.cmems-du.eu/thredds/dodsC/global-analysis-forecast-bio-001-028-daily' #contains ['chl','fe','no3','nppv','o2','ph','phyc','po4','si','spco2']
     file_prefix = 'cmems_'
-    
-    dfmt.download_OPeNDAP(dataset_url=dataset_url,
-                          credentials=None, #credentials=['username','password'], or create "%USERPROFILE%/CMEMS_credentials.txt" with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form'
-                          varkey=varkey,
-                          longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
-                          date_min=date_min_cmems, date_max=date_max,
-                          dir_output=dir_output, file_prefix=file_prefix, overwrite=overwrite)
+    dfmt.download_CMEMS(credentials=None, #credentials=['username','password'], or create "%USERPROFILE%/CMEMS_credentials.txt" with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form'
+                        varkey=varkey,
+                        longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
+                        date_min=date_min, date_max=date_max,
+                        dir_output=dir_output, file_prefix=file_prefix, overwrite=overwrite)
     
     #open mfdataset to check folder contents and plot first field of each variable
     ds = xr.open_mfdataset(os.path.join(dir_output,f'{file_prefix}{varkey}_*.nc'))
