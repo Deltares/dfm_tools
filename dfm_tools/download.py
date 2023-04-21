@@ -81,8 +81,14 @@ def download_CMEMS(varkey,
 
     date_min = pd.Timestamp(date_min)-pd.Timedelta(days=1) #CMEMS has daily noon values (not midnight), so subtract one day from date_min to cover desired time extent
     
-    my_times = download_OpenDAP_gettimes('https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_my_0.083_P1D-m') #TODO: assuming the time extent is the same for physchem and bio datasets
-    my_datemax = my_times.iloc[-1]
+    if 'my_datemax' not in globals(): #set multiyear date_max (my_datemax) as global variable, so it only has to be retreived once per download run (otherwise once per variable)
+        print('retrieving enddate of multiyear CMEMS dataset')
+        dataset_url = 'https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_my_0.083_P1D-m' #assuming here that physchem and bio reanalyisus/multiyear datasets have the same enddate, this seems safe
+        ds = open_OPeNDAP_xr(dataset_url=dataset_url, credentials=credentials)
+        my_times = ds.time.to_series()
+        global my_datemax
+        my_datemax = my_times.iloc[-1]
+
     if pd.Timestamp(date_max) <= my_datemax:
         product = 'reanalysis'
     elif pd.Timestamp(date_min) > my_datemax:
