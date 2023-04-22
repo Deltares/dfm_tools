@@ -4,14 +4,35 @@ Created on Wed Oct 27 14:35:12 2021
 
 @author: veenstra
 """
-import os
 
+import os
 import matplotlib.pyplot as plt
 plt.close('all')
 import numpy as np
-import cartopy.crs as ccrs
+import cartopy.crs as ccrs #cartopy is not a dfm_tools dependency, install it with `conda install cartopy -c conda-forge`
+import cartopy.feature as cf #cartopy is not a dfm_tools dependency, install it with `conda install cartopy -c conda-forge`
 import xarray as xr
 import dfm_tools as dfmt
+import contextily as ctx
+
+
+def add_ticks(ax, nbins='auto'):
+    """
+    cartopy.mpl.geoaxes.GeoAxesSubplot does not have xticks/yticks by default, this function uses matplotlibs MaxNLocation to automatically create xticks and yticks
+    """
+    import matplotlib as mpl
+    #check if xticklabels are different than xticks
+    xticks = ax.get_xticks()
+    xticklabels = np.array([x.get_text().replace('−','-') for x in ax.get_xticklabels()]).astype(float)
+    if not (xticks==xticklabels).all():
+        raise Exception('you are transforming coordinates, please use ax.gridlines(draw_labels=True) to get proper axis ticks+ticklabels')
+    else:
+        extent = ax.get_extent()
+        mpl_al = mpl.ticker.MaxNLocator(nbins=nbins, prune='both') #https://github.com/matplotlib/matplotlib/blob/v3.7.1/lib/matplotlib/ticker.py#L1957-L2166
+        xticks = mpl_al.tick_values(vmin=extent[0],vmax=extent[1])
+        yticks = mpl_al.tick_values(vmin=extent[2],vmax=extent[3])
+        ax.set_xticks(xticks)
+        ax.set_yticks(yticks)
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
@@ -38,20 +59,24 @@ fig.savefig(os.path.join(dir_output,'cartopy_hirlam_aspect'))
 
 fig, ax = plt.subplots(figsize=(9,5),subplot_kw={'projection': ccrs.PlateCarree()}) #provide axis projection on initialisation, cannot be edited later on
 pc = magn.plot(ax=ax,x='longitude',y='latitude')
-dfmt.plot_background(ax=ax, resolution=1, google_style='street', features=['countries_highres'], linewidth=0.5, edgecolor='gray', facecolor='none', latlon_format=True)
-dfmt.plot_background(ax=ax, google_style=None, features=['coastlines_highres'], linewidth=0.5, latlon_format=True)
+ax.add_feature(cf.COASTLINE, linewidth=1)
+ax.add_feature(cf.BORDERS, linewidth=1, edgecolor='gray', facecolor='none')
+ctx.add_basemap(ax=ax,source=ctx.providers.Esri.WorldStreetMap,crs='EPSG:4326', attribution=False)
+add_ticks(ax)
 fig.savefig(os.path.join(dir_output,'cartopy_hirlam_moreoptions'))
 
 fig, ax = plt.subplots(figsize=(6,7),subplot_kw={'projection': ccrs.EuroPP()}) #provide axis projection on initialisation, cannot be edited later on
 pc = magn.plot(ax=ax,x='longitude',y='latitude', transform=ccrs.PlateCarree(),add_colorbar=False)
-dfmt.plot_background(ax=ax, google_style=None, features=['coastlines_highres'], latlon_format=True, gridlines=True)
+ax.add_feature(cf.COASTLINE, linewidth=1)
+ax.gridlines(draw_labels=True) #cannot use add_ticks() since we transformed the data
 fig.savefig(os.path.join(dir_output,'cartopy_hirlam_curvedgridlines'))
-
 
 #GREVELINGEN
 file_nc_map = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen\\computations\\run01\\DFM_OUTPUT_Grevelingen-FM\\Grevelingen-FM_0*_map.nc')
 data_frommap_merged = dfmt.open_partitioned_dataset(file_nc_map) #TODO: make starred default, but not supported by older code
 fig, ax = plt.subplots(1,1, subplot_kw={'projection': ccrs.epsg(28992)}) #provide axis projection on initialisation, cannot be edited later on
 pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot(ax=ax, linewidth=0.5, cmap='jet', vmin=-40, vmax=10)
-dfmt.plot_background(ax=ax, resolution=12, features=['coastlines_highres'], linewidth=0.5)
+ctx.add_basemap(ax=ax,source=ctx.providers.Esri.WorldImagery,crs='EPSG:28992', attribution=False)
+ax.add_feature(cf.COASTLINE, linewidth=1)
+add_ticks(ax)
 fig.savefig(os.path.join(dir_output,'cartopy_grevelingen_RD'))
