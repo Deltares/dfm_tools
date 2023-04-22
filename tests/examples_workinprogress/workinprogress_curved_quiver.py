@@ -15,14 +15,14 @@ import dfm_tools as dfmt
 
 dir_output = '.'
 
-testdata = True
-if testdata:
+mode = 'gtsm'
+if mode=='testdata':
     x = np.linspace(-4,4,120)
     y = np.linspace(-3,3,100)
     X,Y = np.meshgrid(x,y)
     U = -1 - X**2 + Y
     V = 1 + X - Y**2
-else:
+elif mode=='eraint_uvz':
     ds = xr.tutorial.load_dataset("eraint_uvz").isel(month=0,level=0)
     ds = ds.sortby('latitude') #.sortby() to avoid "ValueError: 'y' must be strictly increasing"
     x = ds.longitude.to_numpy()
@@ -30,6 +30,25 @@ else:
     X,Y = np.meshgrid(x,y)
     U = ds.u.to_numpy()
     V = ds.v.to_numpy()
+elif mode=='gtsm':
+    file_nc = r'p:\1230882-emodnet_hrsm\GTSMv5.0\runs\reference_GTSMv4.1_wiCA\output\gtsm_model_0000_map.nc'
+    drop_vars = ['waterdepth','TidalPotential_without_SAL','SALPotential','internal_tides_dissipation','czs','czu','FlowElemContour_x','FlowElemContour_y']
+    uds = dfmt.open_partitioned_dataset(file_nc,drop_variables=drop_vars)
+    uds_sel = uds.sel(time='2014-01-31 10:00:00').ugrid.sel(x=slice(-3,10),y=slice(48,58))
+    ds = dfmt.rasterize_ugrid(uds_sel,resolution=0.1)
+    x = ds.x.to_numpy()
+    y = ds.y.to_numpy()
+    X,Y = np.meshgrid(x,y)
+    U = ds.ucx.to_numpy()
+    V = ds.ucy.to_numpy()
+    #plot
+    fig,ax = plt.subplots()
+    uds_sel_speed = np.sqrt(uds_sel.ucx*uds_sel.ucx + uds_sel.ucy*uds_sel.ucy)
+    uds_sel_speed.ugrid.plot(edgecolor='face',cmap='jet',vmax=1)
+    #ax.quiver(X, Y, U, V, color='w')
+    speed = np.sqrt(U*U + V*V)
+    strm = dfmt.velovect(ax, X, Y, U, V, color='w', cmap='winter', arrowstyle='fancy', linewidth=speed*2, integration_direction='forward',
+                         density=5, grains=30, arrowsize=0.7)
 speed = np.sqrt(U*U + V*V)
 
 grains = 15

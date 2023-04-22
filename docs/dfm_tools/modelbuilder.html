@@ -46,9 +46,6 @@ Since the functions in this script contain hardcoded parameters, it is not expos
 import os
 import xarray as xr
 import pandas as pd
-from pathlib import Path
-import matplotlib.pyplot as plt
-import contextily as ctx
 import dfm_tools as dfmt
 import hydrolib.core.dflowfm as hcdfm
 import datetime as dt
@@ -59,258 +56,60 @@ import numpy as np
 import meshkernel
 
 
-def download_meteodata_oceandata(
-        longitude_min = 2, longitude_max = 4, latitude_min = 50, latitude_max = 52, # domain
-        model = &#39;CMEMS&#39;, #CMEMS ERA5
-        overwrite = True, # always set to True when changing the domain
-        date_min = &#39;2010-01-01&#39;, #dates as understood by pandas.period_range(). ERA5 has freq=&#39;M&#39; (month) and CMEMS has freq=&#39;D&#39; (day)
-        date_max = &#39;2010-01-02&#39;,
-        varlist = [], 
-        dir_output = &#39;./meteo_ocean_data&#39;,
-        make_figs = False
-        ):
-     
-    #download ERA5/CMEMS/HYCOM data for given domain, time extent and variables
-    #TODO: add CMCC, GFDL
-    #TODO: add climatedata cmip6
-    #TODO: add GFS and other NOAA models (https://www.ncei.noaa.gov/products/weather-climate-models/global-forecast &gt; NCEI &gt; TDS)
-    #TODO: add click?
-
-    #ERA5
-    if model == &#39;ERA5&#39;:
-        if isinstance(varlist[0], list):
-            varlists = varlist
-        else:
-            varlists = [varlist]
-        
-        for varlist in varlists:
-            for varkey in varlist:
-                if not os.path.isdir(dir_output):
-                    os.mkdir(dir_output)
-                
-                dfmt.download_ERA5(varkey, 
-                                   longitude_min=longitude_min-1/4, longitude_max=longitude_max+1/4, latitude_min=latitude_min-1/4, latitude_max=latitude_max+1/4, # download 1 grid cell row/column extra
-                                   date_min=date_min, date_max=date_max,
-                                   dir_output=dir_output, overwrite=overwrite)
-            
-
-    
-    
-    #CMEMS
-    if model == &#39;CMEMS&#39;:
-        date_min_cmems = pd.Timestamp(date_min)-pd.Timedelta(days=1) #CMEMS has daily noon values (not midnight), so subtract one day from date_min to cover desired time extent
-        for varkey in varlist:
-            Path(dir_output).mkdir(parents=True, exist_ok=True)
-            #TODO: update CMEMS urls after 15 april, since some are being replaced
-            if varkey in [&#39;bottomT&#39;,&#39;mlotst&#39;,&#39;siconc&#39;,&#39;sithick&#39;,&#39;so&#39;,&#39;thetao&#39;,&#39;uo&#39;,&#39;usi&#39;,&#39;vo&#39;,&#39;vsi&#39;,&#39;zos&#39;]: #for physchem
-                #reanalisys: https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_PHY_001_030/description
-                #dataset_url = &#39;https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_my_0.083_P1D-m&#39;
-                #forecast: https://data.marine.copernicus.eu/product/GLOBAL_ANALYSISFORECAST_PHY_001_024/description
-                dataset_url = &#39;https://nrt.cmems-du.eu/thredds/dodsC/global-analysis-forecast-phy-001-024&#39; #old location for forecasts (available up to 15 april)
-                #dataset_url = &#39;https://nrt.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_anfc_0.083deg_PT1H-m.html&#39; #hourly for cur/tem/sal (surface only)
-                #dataset_url = &#39;https://nrt.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy-cur_anfc_0.083deg_P1D-m.html&#39; #currents
-                #dataset_url = &#39;https://nrt.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy-thetao_anfc_0.083deg_P1D-m.html&#39; #temperature
-                #dataset_url = &#39;https://nrt.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy-so_anfc_0.083deg_P1D-m.html&#39; #salinity
-            else: # for bio #https://data.marine.copernicus.eu/product/GLOBAL_ANALYSIS_FORECAST_BIO_001_028/description
-                dataset_url = &#39;https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_bgc_my_0.25_P1D-m&#39; #contains [&#39;chl&#39;,&#39;no3&#39;,&#39;nppv&#39;,&#39;o2&#39;,&#39;po4&#39;,&#39;si&#39;]
-                #dataset_url = &#39;https://nrt.cmems-du.eu/thredds/dodsC/global-analysis-forecast-bio-001-028-daily&#39; #contains [&#39;chl&#39;,&#39;fe&#39;,&#39;no3&#39;,&#39;nppv&#39;,&#39;o2&#39;,&#39;ph&#39;,&#39;phyc&#39;,&#39;po4&#39;,&#39;si&#39;,&#39;spco2&#39;]
-            file_prefix = &#39;cmems_&#39;
-            
-            dfmt.download_OPeNDAP(dataset_url=dataset_url,
-                                  credentials=None, #credentials=[&#39;username&#39;,&#39;password&#39;], or create &#34;%USERPROFILE%/CMEMS_credentials.txt&#34; with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form&#39;
-                                  varkey=varkey,
-                                  longitude_min=longitude_min-1/12, longitude_max=longitude_max+1/12, latitude_min=latitude_min-1/12, latitude_max=latitude_max+1/12, # download 1 grid cell row/column extra
-                                  date_min=date_min_cmems, date_max=date_max,
-                                  dir_output=dir_output, file_prefix=file_prefix, overwrite=overwrite)
-
-        
-    
-    #HYCOM
-    if model == &#39;HYCOM&#39;:
-        for varkey in varlist:
-            Path(dir_output).mkdir(parents=True, exist_ok=True)
-            
-            period_range_years = pd.period_range(date_min,date_max,freq=&#39;Y&#39;)
-            dataset_url = [f&#39;https://tds.hycom.org/thredds/dodsC/GLBu0.08/expt_19.1/{year}&#39; for year in period_range_years] #list is possible with hycom, since it uses xr.open_mfdataset()
-            file_prefix = &#39;hycom_&#39;
-            
-            dfmt.download_OPeNDAP(dataset_url=dataset_url,
-                                  varkey=varkey,
-                                  longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
-                                  date_min=date_min, date_max=date_max,
-                                  dir_output=dir_output, file_prefix=file_prefix, overwrite=overwrite)
-            
-    
-    if make_figs:
-        for varkey in varlist:
-            #open mfdataset to check folder contents and plot first field of each variable
-            ds = xr.open_mfdataset(os.path.join(dir_output,f&#39;{file_prefix}{varkey}_*.nc&#39;))
-            fig,ax = plt.subplots()
-            if &#39;depth&#39; in ds[varkey].dims:
-                ds[varkey].isel(time=0,depth=0).plot(ax=ax)
-            else:
-                ds[varkey].isel(time=0).plot(ax=ax)
-            ds.close()
-            ctx.add_basemap(ax=ax,crs=&#34;EPSG:4326&#34;,attribution=False)
-    
-    
-def preprocess_interpolate_nc_to_bc(
-        ext_bnd,
-        refdate_str = &#39;minutes since 2000-01-01 00:00:00 +00:00&#39;, # if None, xarray uses ds.time.encoding[&#39;units&#39;] as refdate_str
-        dir_output = &#39;./interpolate_nc_to_bc&#39;,
-        #quantities should be in conversion_dict.keys(). waterlevelbnd is steric/zos, tide is tidal components from FES/EOT
-        list_quantities = [&#39;waterlevelbnd&#39;,&#39;salinitybnd&#39;,&#39;temperaturebnd&#39;,&#39;uxuy&#39;,&#39;tide&#39;], # e.g. [&#39;waterlevelbnd&#39;,&#39;salinitybnd&#39;,&#39;temperaturebnd&#39;,&#39;uxuy&#39;,&#39;tide&#39;,&#39;tracerbndNO3&#39;,&#39;tracerbndOpal&#39;,&#39;tracerbndDON&#39;]
-        model = &#39;CMEMS&#39;, #CMEMS GFDL CMCC HYCOM
-        tstart = &#39;2012-01-01 12:00&#39;,
-        tstop = &#39;2012-01-02 12:00&#39;,
-        list_plifiles = [r&#39;p:\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108_nocomments.pli&#39;], #TODO: reading this file without &#39;_nocomments&#39; results in empty Polyfile, should raise an error. https://github.com/Deltares/HYDROLIB-core/issues/320
-        dir_sourcefiles_hydro = r&#39;p:\1204257-dcsmzuno\data\CMEMS\nc\DCSM_allAvailableTimes&#39;, #CMEMS hydro: bottomT, so, thetao, uo, vo, zos (2012-01-06 12:00:00 to 2013-01-03 12:00:00) (daily values at noon, not at midnight)
-        make_figs = False): 
-    
-    list_plifiles = [Path(x) for x in list_plifiles]
-    
-    #TODO: add coordinate conversion of pli-coordinates? (for nesting RD models in oceanmodels)
-    #TODO: additional models/sources for download/interpolate (evt xESMF for CMCC, climate forcing cmip6 procedure (=calendarconversion) and others)
-    
-    #The {ncvarname} wildcard in dir_pattern_hydro/dir_patern_waq is used to replace it with conversion_dict[quantity][&#39;ncvarname&#39;] by using str(dir_pattern).format(ncvarname)
-    if model==&#39;CMEMS&#39;: #2012-01-06 12:00:00 to 2013-01-03 12:00:00
-        conversion_dict = dfmt.get_conversion_dict()
-        dir_pattern_hydro = Path(dir_sourcefiles_hydro,&#39;cmems_{ncvarname}_*.nc&#39;) # later remove 2012 from string, but this is faster for testing #TODO: it is quite slow, maybe speed up possible?
-        dir_sourcefiles_waq = r&#39;p:\11206304-futuremares\python_scripts\ocean_boundaryCMEMS\data_monthly&#39; #CMEMS waq: no3, o2, phyc, so4, si (2011-12-16 12:00:00 to 2019-01-16 12:00:00)
-        dir_pattern_waq = Path(dir_sourcefiles_waq,&#39;cmems_mod_glo_bgc_my_0.25_P1M-m_{ncvarname}_*.nc&#39;) 
-        #to reproduce old CMEMS data (icw reverse_depth=True) (from p:\1204257-dcsmzuno\data\CMEMS\bnd\NorthSeaAndBaltic_1993-2019_20210510)
-        #tstart = dt.datetime(1993,1,1,12,0)
-        #tstop = tstart + dt.timedelta(days=5)
-        #dir_pattern_hydro = Path(dir_sourcefiles_hydro,&#39;{ncvarname}_1993*.nc&#39;)
-        #TODO tstart = pd.Timestamp(tstart)-pd.Timedelta(days=1) #similar as download: CMEMS has daily noon values (not midnight), so subtract one day from date_min to cover desired time extent
-    elif model==&#39;GFDL&#39;:
-        conversion_dict = dfmt.get_conversion_dict()
-        tstart = &#39;2012-01-16 12:00&#39;
-        tstop = &#39;2012-04-01 12:00&#39;
-        list_plifiles = [Path(r&#39;p:\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108_nocomments.pli&#39;)] #TODO: reading this file without &#39;_nocomments&#39; results in empty Polyfile, should raise an error. https://github.com/Deltares/HYDROLIB-core/issues/320
-        dir_sourcefiles_hydro = None
-        dir_pattern_hydro = None
-        dir_sourcefiles_waq = r&#39;p:\11206304-futuremares\data\CMIP6_BC\GFDL-ESM4&#39; #GFDL waq: no3 (1850-01-16 12:00:00 to 2014-12-16 12:00:00)
-        dir_pattern_waq = Path(dir_sourcefiles_waq,&#39;{ncvarname}_esm-hist.nc&#39;)
-    elif model==&#39;CMCC&#39;: #TODO: check method, now finding nearest points (so always has values)
-        #TODO: time_bnds/lev_bnds are available, take into account in bc file?
-        conversion_dict = dfmt.get_conversion_dict(ncvarname_updates={&#39;salinitybnd&#39;:&#39;sos&#39;, &#39;temperaturebnd&#39;:&#39;tos&#39;})
-        conversion_dict[&#39;tracerbndNO3&#39;] = {&#39;ncvarname&#39;:&#39;no3&#39;, &#39;unit&#39;:&#39;g/m3&#39;, &#39;conversion&#39;:14.0} #other vars also have different conversion than cmems
-        tstart = &#39;2015-06-16 12:00&#39;
-        tstop = &#39;2015-12-01 12:00&#39;
-        list_plifiles = [Path(r&#39;p:\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108_nocomments.pli&#39;)] #TODO: reading this file without &#39;_nocomments&#39; results in empty Polyfile, should raise an error. https://github.com/Deltares/HYDROLIB-core/issues/320
-        dir_sourcefiles_hydro = r&#39;p:\11206304-futuremares\data\CMIP6_BC\CMCC-ESM2&#39;
-        dir_pattern_hydro = Path(dir_sourcefiles_hydro,&#39;{ncvarname}_Omon_CMCC-ESM2_ssp126_r1i1p1f1_gn_*.nc&#39;)
-        dir_sourcefiles_waq = dir_sourcefiles_hydro #CMCC waq: (2015-01-16 12:00:00 to 2100-12-16 12:00:00)
-        dir_pattern_waq = dir_pattern_hydro
-    elif model==&#39;HYCOM&#39;:
-        conversion_dict = dfmt.get_conversion_dict(ncvarname_updates={&#39;salinitybnd&#39;:&#39;salinity&#39;, &#39;temperaturebnd&#39;:&#39;water_temp&#39;})
-        tstart = &#39;2016-04-20&#39;
-        tstop = &#39;2016-05-03&#39;
-        list_plifiles = [Path(r&#39;c:\DATA\dfm_tools_testdata\GLBu0.08_expt_91.2\bcline.pli&#39;)] #HYCOM not available in DCSM area, so use other pli-file
-        dir_sourcefiles_hydro = &#39;c:\\DATA\\dfm_tools_testdata\\GLBu0.08_expt_91.2&#39; #HYCOM hydro: salinity/so, water_temp/thetao (2016-04-19 00:00:00 to 2016-05-06 00:00:00)
-        dir_pattern_hydro = Path(dir_sourcefiles_hydro,&#39;HYCOM_ST_GoO_*.nc&#39;)
-        dir_sourcefiles_waq = None
-        dir_pattern_waq = None
-    else:
-        raise Exception(f&#39;invalid model: {model}&#39;)
-    
-    # start of interpolation process
-    dtstart = dt.datetime.now()
-    if not os.path.isdir(dir_output):
-        os.mkdir(dir_output)
+def preprocess_interpolate_nc_to_bc(ext_bnd,
+                                    list_quantities,#quantities should be in conversion_dict.keys(). waterlevelbnd is steric/zos, tide is tidal components from FES/EOT
+                                    tstart,
+                                    tstop,
+                                    list_plifiles,
+                                    dir_pattern,
+                                    dir_output=&#39;.&#39;,
+                                    refdate_str=None,
+                                    conversion_dict=dfmt.get_conversion_dict(),
+                                    tidemodel=&#39;FES2014&#39;): #FES2014, FES2012, EOT20, GTSM4.1preliminary
+    #input examples in https://github.com/Deltares/dfm_tools/blob/main/tests/examples/preprocess_interpolate_nc_to_bc.py
+    model = &#39;CMEMS&#39;
     
     for file_pli in list_plifiles:
-        file_bc_basename = file_pli.name.replace(&#39;.pli&#39;,&#39;&#39;)
+        file_bc_basename = os.path.basename(file_pli).replace(&#39;.pli&#39;,&#39;&#39;)
         for quantity in list_quantities:
             print(f&#39;processing quantity: {quantity}&#39;)
             if quantity==&#39;tide&#39;: 
-                tidemodel = &#39;FES2014&#39; #FES2014, FES2012, EOT20, GTSM4.1preliminary
-                if tidemodel == &#39;FES2014&#39;: #for comparing to older FES bc-files #TODO: choose flexible/generic component notation
+                if tidemodel == &#39;FES2014&#39;: #for comparing to older FES bc-files
                     component_list = [&#39;2n2&#39;,&#39;mf&#39;,&#39;p1&#39;,&#39;m2&#39;,&#39;mks2&#39;,&#39;mu2&#39;,&#39;q1&#39;,&#39;t2&#39;,&#39;j1&#39;,&#39;m3&#39;,&#39;mm&#39;,&#39;n2&#39;,&#39;r2&#39;,&#39;k1&#39;,&#39;m4&#39;,&#39;mn4&#39;,&#39;s1&#39;,&#39;k2&#39;,&#39;m6&#39;,&#39;ms4&#39;,&#39;nu2&#39;,&#39;s2&#39;,&#39;l2&#39;,&#39;m8&#39;,&#39;msf&#39;,&#39;o1&#39;,&#39;s4&#39;]
                 else:
                     component_list = None #None results in all tidemodel components
                 ForcingModel_object = dfmt.interpolate_tide_to_bc(tidemodel=tidemodel, file_pli=file_pli, component_list=component_list, nPoints=None)
-                for forcingobject in ForcingModel_object.forcing: #add A0 component
-                    forcingobject.datablock.append([&#39;A0&#39;,0.0,0.0])
             else:
-                if quantity in [&#39;waterlevelbnd&#39;,&#39;salinitybnd&#39;,&#39;temperaturebnd&#39;,&#39;uxuy&#39;]: #hydro
-                    if dir_sourcefiles_hydro is None:
-                        continue
-                    if (model==&#39;HYCOM&#39;) &amp; (quantity not in [&#39;salinitybnd&#39;,&#39;temperaturebnd&#39;]): #only contains quantities salinity and water_temp, so crashes on others
-                        continue
-                    dir_pattern = dir_pattern_hydro
-                else: #waq
-                    if dir_pattern_waq is None:
-                        continue
-                    dir_pattern = dir_pattern_waq
-                
                 #open regulargridDataset and do some basic stuff (time selection, renaming depth/lat/lon/varname, converting units, etc)
-                data_xr_vars = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity=quantity, #TODO: maybe replace renaming part with package CMCC/Lisa?
+                data_xr_vars = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity=quantity,
                                                        tstart=tstart, tstop=tstop,
                                                        conversion_dict=conversion_dict,
                                                        refdate_str=refdate_str)
                 #interpolate regulargridDataset to plipointsDataset
-                data_interp = dfmt.interp_regularnc_to_plipoints(data_xr_reg=data_xr_vars, file_pli=file_pli, #TODO: difference in .interp() with float vs da arguments: https://github.com/Deltares/dfm_tools/issues/287
-                                                                 nPoints=None) #argument for testing
+                data_interp = dfmt.interp_regularnc_to_plipoints(data_xr_reg=data_xr_vars, file_pli=file_pli)
                 
                 #convert plipointsDataset to hydrolib ForcingModel
                 ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
                         
-            file_bc_basename = file_pli.name.replace(&#39;.pli&#39;,&#39;&#39;)
             if quantity==&#39;tide&#39;:
-                file_bc_out = Path(dir_output,f&#39;{quantity}_{file_bc_basename}_{tidemodel}.bc&#39;)
+                file_bc_out = os.path.join(dir_output,f&#39;{quantity}_{file_bc_basename}_{tidemodel}.bc&#39;)
             else:
-                file_bc_out = Path(dir_output,f&#39;{quantity}_{file_bc_basename}_{model}.bc&#39;)
+                file_bc_out = os.path.join(dir_output,f&#39;{quantity}_{file_bc_basename}_{model}.bc&#39;)
             
-            print(f&#39;writing ForcingModel to bc file with hydrolib ({file_bc_out.name})&#39;)
-            bc_type = &#39;bc&#39; #TODO: add netcdf bc support. https://github.com/Deltares/HYDROLIB-core/issues/318
-            if bc_type==&#39;bc&#39;:
-                #ForcingModel_object.serializer_config.float_format = &#39;.3f&#39; #TODO SOLVED: improve formatting of bc file: https://github.com/Deltares/HYDROLIB-core/issues/308
-                #ForcingModel_object.serializer_config.float_format_datablock = &#39;.5f&#39; #maybe move this to interp_regularnc_to_plipoints/interpolate_tide_to_bc?
-                ForcingModel_object.save(filepath=file_bc_out)
+            ForcingModel_object.save(filepath=file_bc_out)
             
-            #TODO: support for relative paths?
             #generate boundary object for the ext file (quantity, pli-filename, bc-filename)
             boundary_object = hcdfm.Boundary(quantity=quantity.replace(&#39;tide&#39;,&#39;waterlevelbnd&#39;), #the FM quantity for tide is also waterlevelbnd
                                              locationfile=file_pli,
                                              forcingfile=ForcingModel_object)
             ext_bnd.boundary.append(boundary_object)
     
-            if make_figs and quantity!=&#39;tide&#39;: #TODO: data_xr_vars/data_interp does not exist for tide yet
-                #plotting dataset and polyline (is wrong for CMCC)
-                varname0 = list(data_xr_vars.data_vars)[0] 
-                fig,ax = plt.subplots()
-                if &#39;depth&#39; in data_xr_vars[varname0].dims:
-                    data_xr_vars[varname0].isel(time=0,depth=0).plot(ax=ax)
-                else:
-                    data_xr_vars[varname0].isel(time=0).plot(ax=ax)
-                plipoint_coords = data_interp.plipoints.to_dataframe()
-                ax.plot(plipoint_coords[&#39;plipoint_x&#39;],plipoint_coords[&#39;plipoint_y&#39;],&#39;r-&#39;)
-                ctx.add_basemap(ax=ax,crs=&#34;EPSG:4326&#34;,attribution=False)
-                fig.tight_layout()
-                fig.savefig(str(file_bc_out).replace(&#39;.bc&#39;,&#39;_polyline&#39;))
-                
-                #plotting example data point
-                for iF in [2]:#range(nPoints): 
-                    data_vars = list(data_interp.data_vars)
-                    fig,ax1 = plt.subplots(figsize=(10, 6))
-                    data_interp[data_vars[0]].isel(plipoints=iF).T.plot()
-                    fig.tight_layout()
-                    fig.savefig(str(file_bc_out).replace(&#39;.bc&#39;,&#39;&#39;))
-    
-    #file_ext_out = Path(dir_output,&#39;example_bnd.ext&#39;)
-    #ext_bnd.save(filepath=file_ext_out)
-    
-    time_passed = (dt.datetime.now()-dtstart).total_seconds()
-    print(f&#39;&gt;&gt;total script time passed: {time_passed:.2f} sec&#39;)
     return ext_bnd
 
     
 def preprocess_ini_cmems_to_nc(ext_old, tstart=&#39;1998-01-01&#39;,
         dir_data  = r&#39;p:\i1000668-tcoms\03_newModel\01_input\02_bnd\data_opendap&#39;, #folder containing CMEMS so and thetao netcdf files
         dir_out = &#39;.&#39;):
-    #TODO: merge with other ini script and make generic for getting an inifield out of CMEMS/etc regulargrid Dataset or a 2D/3D FM map/rst Dataset
     
     file_nc_list_so = glob.glob(f&#39;{dir_data}\\cmems_so_*.nc&#39;)
     file_nc_list_thetao = glob.glob(f&#39;{dir_data}\\cmems_thetao_*.nc&#39;)
@@ -320,43 +119,21 @@ def preprocess_ini_cmems_to_nc(ext_old, tstart=&#39;1998-01-01&#39;,
     data_xr = xr.open_mfdataset(file_nc_list)
     
     tSimStart = pd.Timestamp(tstart)
-    if 0: #this would be the proper way to do it, but FM needs two timesteps for some reason
-        print(&#39;ds.interp()&#39;)
-        data_xr_ontime = data_xr.interp(time=[tSimStart],kwargs=dict(bounds_error=True)) #bounds_error makes sure, outofbounds time results in &#34;ValueError: A value in x_new is below the interpolation range.&#34;
-    else:
-        print(&#39;ds.sel()&#39;)
-        data_xr_ontime = data_xr.sel(time=slice(tSimStart-dt.timedelta(days=1),tSimStart+dt.timedelta(days=1)))
+    data_xr_ontime = data_xr.sel(time=slice(tSimStart-dt.timedelta(days=1),tSimStart+dt.timedelta(days=1)))
     
     print(&#39;writing file&#39;)
     outFile = os.path.join(dir_out,f&#39;InitialField_{tSimStart.strftime(&#34;%Y-%m-%d_%H-%M-%S&#34;)}.nc&#39;)
     data_xr_ontime.to_netcdf(outFile,format=&#34;NETCDF4_CLASSIC&#34;) #TODO: why the format setting?
     
     #append forcings to ext
-    if 0: 
-        forcing_so = hcdfm.ExtOldForcing(quantity=&#39;initialsalinity&#39;,
+    # 3D initialsalinity/initialtemperature fields are silently ignored, initial 3D conditions are only possible via nudging 1st timestep via quantity=nudge_salinity_temperature
+    forcing_saltem = hcdfm.ExtOldForcing(quantity=&#39;nudge_salinity_temperature&#39;,
                                          filename=outFile,
-                                         varname=&#39;so&#39;,
                                          filetype=hcdfm.ExtOldFileType.NetCDFGridData,
                                          method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
                                          operand=hcdfm.Operand.override, #O
                                          )
-        ext_old.forcing.append(forcing_so)
-        forcing_thetao = hcdfm.ExtOldForcing(quantity=&#39;initialtemperature&#39;,
-                                             filename=outFile,
-                                             varname=&#39;thetao&#39;,
-                                             filetype=hcdfm.ExtOldFileType.NetCDFGridData,
-                                             method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
-                                             operand=hcdfm.Operand.override, #O
-                                             )
-        ext_old.forcing.append(forcing_thetao)
-    else: #TODO: 3D initialsalinity/initialtemperature fields are silently ignored, initial 3D conditions are only possible via nudging 1st timestep
-        forcing_saltem = hcdfm.ExtOldForcing(quantity=&#39;nudge_salinity_temperature&#39;, #TODO: nudge_salinity_temperature is not supported by hydrolib-core
-                                             filename=outFile,
-                                             filetype=hcdfm.ExtOldFileType.NetCDFGridData,
-                                             method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
-                                             operand=hcdfm.Operand.override, #O
-                                             )
-        ext_old.forcing.append(forcing_saltem)
+    ext_old.forcing.append(forcing_saltem)
     
     return ext_old
     
@@ -366,8 +143,7 @@ def preprocess_merge_meteofiles(ext_old,
         varkey_list = [],
         dir_data = [],
         dir_output = &#39;.&#39;,
-        time_slice = slice(&#39;2013-12-30&#39;,&#39;2014-01-01&#39;),
-        make_figs = False):
+        time_slice = slice(&#39;2013-12-30&#39;,&#39;2014-01-01&#39;)):
 
     if isinstance(varkey_list[0], list):
         varkey_lists = varkey_list
@@ -483,25 +259,6 @@ def preprocess_merge_meteofiles(ext_old,
                                                 )
             ext_old.forcing.append(forcing_meteo)
         
-        if make_figs:
-            #load outputfile
-            data_xr_check = xr.open_dataset(file_out)
-            
-            for varkey in data_xr_check.data_vars:
-                varsel = data_xr_check[varkey]
-                if not set([&#39;longitude&#39;,&#39;latitude&#39;]).issubset(set(varsel.coords)): #skipping vars without lat/lon coordinate
-                    continue
-                print(f&#39;plotting {varkey}&#39;)
-                fig,ax1 = plt.subplots()
-                if &#39;HIRLAM&#39; in mode:
-                    varsel.isel(time=0).plot(ax=ax1,x=&#39;longitude&#39;,y=&#39;latitude&#39;) #x/y are necessary since coords are not 1D and dims
-                elif &#39;depth&#39; in data_xr_tsel[varkey].coords:
-                    varsel.isel(time=0).sel(depth=0).plot(ax=ax1)
-                else:
-                    varsel.isel(time=0).plot(ax=ax1)
-                file_out = os.path.join(dir_output, f&#39;era5_{varkey}_{time_start_str}&#39;)
-                fig.savefig(file_out)
-        
     return ext_old
 
 
@@ -520,20 +277,11 @@ def make_basegrid(lon_min,lon_max,lat_min,lat_max,dx=0.05,dy=0.05,angle=0):
                                                          origin_y=lat_min,
                                                          block_size_x=dx,
                                                          block_size_y=dy)
-    #print(make_grid_parameters)
     
     geometry_list = meshkernel.GeometryList(np.empty(0, dtype=np.double), np.empty(0, dtype=np.double)) # A polygon must to be provided. If empty it will not be used. If a polygon is provided it will be used in the generation of the curvilinear grid. The polygon must be closed
     mk = meshkernel.MeshKernel() #TODO: is_geographic=True was used in modelbuilder, but refinement super slow and raises &#34;MeshKernelError: MeshRefinement::connect_hanging_nodes: The number of non-hanging nodes is neither 3 nor 4.&#34;
     mk.curvilinear_make_uniform(make_grid_parameters, geometry_list) #TODO: make geometry_list argument optional: https://github.com/Deltares/MeshKernelPy/issues/30
     mk.curvilinear_convert_to_mesh2d() #convert to ugrid/mesh2d
-    
-    #plot
-    # if make_figs:
-    #     mesh2d_mesh_kernel = mk.mesh2d_get()
-    #     fig, ax = plt.subplots()
-    #     mesh2d_mesh_kernel.plot_edges(ax, color=&#39;blue&#39;)
-    #     source = ctx.providers.Esri.WorldImagery
-    #     ctx.add_basemap(ax=ax, source=source, crs=&#39;EPSG:4326&#39;, attribution=False)
     
     return mk
 
@@ -562,13 +310,6 @@ def refine_basegrid(mk, data_bathy_sel,min_face_size=0.1):
                                        minimum_num_samples=3,
                                        mesh_refinement_params=mesh_refinement_parameters,
                                        )
-    
-    #plotting
-    # if make_figs:
-    #     mesh2d_grid2 = mk.mesh2d_get()
-    #     fig, ax = plt.subplots()
-    #     mesh2d_grid2.plot_edges(ax,linewidth=1.2)
-    #     ctx.add_basemap(ax=ax, crs=&#39;EPSG:4326&#39;, attribution=False)
     
     return mk
 
@@ -599,112 +340,8 @@ def generate_bndpli(lon_min, lon_max, lat_min, lat_max, dlon, dlat, name=&#39;bn
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt id="dfm_tools.modelbuilder.download_meteodata_oceandata"><code class="name flex">
-<span>def <span class="ident">download_meteodata_oceandata</span></span>(<span>longitude_min=2, longitude_max=4, latitude_min=50, latitude_max=52, model='CMEMS', overwrite=True, date_min='2010-01-01', date_max='2010-01-02', varlist=[], dir_output='./meteo_ocean_data', make_figs=False)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def download_meteodata_oceandata(
-        longitude_min = 2, longitude_max = 4, latitude_min = 50, latitude_max = 52, # domain
-        model = &#39;CMEMS&#39;, #CMEMS ERA5
-        overwrite = True, # always set to True when changing the domain
-        date_min = &#39;2010-01-01&#39;, #dates as understood by pandas.period_range(). ERA5 has freq=&#39;M&#39; (month) and CMEMS has freq=&#39;D&#39; (day)
-        date_max = &#39;2010-01-02&#39;,
-        varlist = [], 
-        dir_output = &#39;./meteo_ocean_data&#39;,
-        make_figs = False
-        ):
-     
-    #download ERA5/CMEMS/HYCOM data for given domain, time extent and variables
-    #TODO: add CMCC, GFDL
-    #TODO: add climatedata cmip6
-    #TODO: add GFS and other NOAA models (https://www.ncei.noaa.gov/products/weather-climate-models/global-forecast &gt; NCEI &gt; TDS)
-    #TODO: add click?
-
-    #ERA5
-    if model == &#39;ERA5&#39;:
-        if isinstance(varlist[0], list):
-            varlists = varlist
-        else:
-            varlists = [varlist]
-        
-        for varlist in varlists:
-            for varkey in varlist:
-                if not os.path.isdir(dir_output):
-                    os.mkdir(dir_output)
-                
-                dfmt.download_ERA5(varkey, 
-                                   longitude_min=longitude_min-1/4, longitude_max=longitude_max+1/4, latitude_min=latitude_min-1/4, latitude_max=latitude_max+1/4, # download 1 grid cell row/column extra
-                                   date_min=date_min, date_max=date_max,
-                                   dir_output=dir_output, overwrite=overwrite)
-            
-
-    
-    
-    #CMEMS
-    if model == &#39;CMEMS&#39;:
-        date_min_cmems = pd.Timestamp(date_min)-pd.Timedelta(days=1) #CMEMS has daily noon values (not midnight), so subtract one day from date_min to cover desired time extent
-        for varkey in varlist:
-            Path(dir_output).mkdir(parents=True, exist_ok=True)
-            #TODO: update CMEMS urls after 15 april, since some are being replaced
-            if varkey in [&#39;bottomT&#39;,&#39;mlotst&#39;,&#39;siconc&#39;,&#39;sithick&#39;,&#39;so&#39;,&#39;thetao&#39;,&#39;uo&#39;,&#39;usi&#39;,&#39;vo&#39;,&#39;vsi&#39;,&#39;zos&#39;]: #for physchem
-                #reanalisys: https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_PHY_001_030/description
-                #dataset_url = &#39;https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_my_0.083_P1D-m&#39;
-                #forecast: https://data.marine.copernicus.eu/product/GLOBAL_ANALYSISFORECAST_PHY_001_024/description
-                dataset_url = &#39;https://nrt.cmems-du.eu/thredds/dodsC/global-analysis-forecast-phy-001-024&#39; #old location for forecasts (available up to 15 april)
-                #dataset_url = &#39;https://nrt.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_anfc_0.083deg_PT1H-m.html&#39; #hourly for cur/tem/sal (surface only)
-                #dataset_url = &#39;https://nrt.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy-cur_anfc_0.083deg_P1D-m.html&#39; #currents
-                #dataset_url = &#39;https://nrt.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy-thetao_anfc_0.083deg_P1D-m.html&#39; #temperature
-                #dataset_url = &#39;https://nrt.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy-so_anfc_0.083deg_P1D-m.html&#39; #salinity
-            else: # for bio #https://data.marine.copernicus.eu/product/GLOBAL_ANALYSIS_FORECAST_BIO_001_028/description
-                dataset_url = &#39;https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_bgc_my_0.25_P1D-m&#39; #contains [&#39;chl&#39;,&#39;no3&#39;,&#39;nppv&#39;,&#39;o2&#39;,&#39;po4&#39;,&#39;si&#39;]
-                #dataset_url = &#39;https://nrt.cmems-du.eu/thredds/dodsC/global-analysis-forecast-bio-001-028-daily&#39; #contains [&#39;chl&#39;,&#39;fe&#39;,&#39;no3&#39;,&#39;nppv&#39;,&#39;o2&#39;,&#39;ph&#39;,&#39;phyc&#39;,&#39;po4&#39;,&#39;si&#39;,&#39;spco2&#39;]
-            file_prefix = &#39;cmems_&#39;
-            
-            dfmt.download_OPeNDAP(dataset_url=dataset_url,
-                                  credentials=None, #credentials=[&#39;username&#39;,&#39;password&#39;], or create &#34;%USERPROFILE%/CMEMS_credentials.txt&#34; with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form&#39;
-                                  varkey=varkey,
-                                  longitude_min=longitude_min-1/12, longitude_max=longitude_max+1/12, latitude_min=latitude_min-1/12, latitude_max=latitude_max+1/12, # download 1 grid cell row/column extra
-                                  date_min=date_min_cmems, date_max=date_max,
-                                  dir_output=dir_output, file_prefix=file_prefix, overwrite=overwrite)
-
-        
-    
-    #HYCOM
-    if model == &#39;HYCOM&#39;:
-        for varkey in varlist:
-            Path(dir_output).mkdir(parents=True, exist_ok=True)
-            
-            period_range_years = pd.period_range(date_min,date_max,freq=&#39;Y&#39;)
-            dataset_url = [f&#39;https://tds.hycom.org/thredds/dodsC/GLBu0.08/expt_19.1/{year}&#39; for year in period_range_years] #list is possible with hycom, since it uses xr.open_mfdataset()
-            file_prefix = &#39;hycom_&#39;
-            
-            dfmt.download_OPeNDAP(dataset_url=dataset_url,
-                                  varkey=varkey,
-                                  longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
-                                  date_min=date_min, date_max=date_max,
-                                  dir_output=dir_output, file_prefix=file_prefix, overwrite=overwrite)
-            
-    
-    if make_figs:
-        for varkey in varlist:
-            #open mfdataset to check folder contents and plot first field of each variable
-            ds = xr.open_mfdataset(os.path.join(dir_output,f&#39;{file_prefix}{varkey}_*.nc&#39;))
-            fig,ax = plt.subplots()
-            if &#39;depth&#39; in ds[varkey].dims:
-                ds[varkey].isel(time=0,depth=0).plot(ax=ax)
-            else:
-                ds[varkey].isel(time=0).plot(ax=ax)
-            ds.close()
-            ctx.add_basemap(ax=ax,crs=&#34;EPSG:4326&#34;,attribution=False)</code></pre>
-</details>
-</dd>
 <dt id="dfm_tools.modelbuilder.preprocess_interpolate_nc_to_bc"><code class="name flex">
-<span>def <span class="ident">preprocess_interpolate_nc_to_bc</span></span>(<span>ext_bnd, refdate_str='minutes since 2000-01-01 00:00:00 +00:00', dir_output='./interpolate_nc_to_bc', list_quantities=['waterlevelbnd', 'salinitybnd', 'temperaturebnd', 'uxuy', 'tide'], model='CMEMS', tstart='2012-01-01 12:00', tstop='2012-01-02 12:00', list_plifiles=['p:\\11208054-004-dcsm-fm\\models\\model_input\\bnd_cond\\pli\\DCSM-FM_OB_all_20181108_nocomments.pli'], dir_sourcefiles_hydro='p:\\1204257-dcsmzuno\\data\\CMEMS\\nc\\DCSM_allAvailableTimes', make_figs=False)</span>
+<span>def <span class="ident">preprocess_interpolate_nc_to_bc</span></span>(<span>ext_bnd, list_quantities, tstart, tstop, list_plifiles, dir_pattern, dir_output='.', refdate_str=None, conversion_dict={'tracerbndOXY': {'ncvarname': 'o2', 'unit': 'g/m3', 'conversion': 0.032}, 'tracerbndNO3': {'ncvarname': 'no3', 'unit': 'g/m3', 'conversion': 0.014}, 'tracerbndPO4': {'ncvarname': 'po4', 'unit': 'g/m3', 'conversion': 0.030969999999999998}, 'tracerbndSi': {'ncvarname': 'si', 'unit': 'g/m3', 'conversion': 0.028079999999999997}, 'tracerbndPON1': {'ncvarname': 'phyc', 'unit': 'g/m3', 'conversion': 0.004226415094339623}, 'tracerbndPOP1': {'ncvarname': 'phyc', 'unit': 'g/m3', 'conversion': 0.0005843396226415094}, 'tracerbndPOC1': {'ncvarname': 'phyc', 'unit': 'g/m3', 'conversion': 0.024}, 'tracerbndDON': {'ncvarname': 'phyc', 'unit': 'g/m3', 'conversion': 0.013693584905660377}, 'tracerbndDOP': {'ncvarname': 'phyc', 'unit': 'g/m3', 'conversion': 0.0005843396226415094}, 'tracerbndDOC': {'ncvarname': 'phyc', 'unit': 'g/m3', 'conversion': 0.11678671698113208}, 'tracerbndOpal': {'ncvarname': 'phyc', 'unit': 'g/m3', 'conversion': 0.0018252}, 'salinitybnd': {'ncvarname': 'so'}, 'temperaturebnd': {'ncvarname': 'thetao'}, 'ux': {'ncvarname': 'uo'}, 'uy': {'ncvarname': 'vo'}, 'waterlevelbnd': {'ncvarname': 'zos'}, 'tide': {'ncvarname': ''}}, tidemodel='FES2014')</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -712,156 +349,54 @@ def generate_bndpli(lon_min, lon_max, lat_min, lat_max, dlon, dlat, name=&#39;bn
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def preprocess_interpolate_nc_to_bc(
-        ext_bnd,
-        refdate_str = &#39;minutes since 2000-01-01 00:00:00 +00:00&#39;, # if None, xarray uses ds.time.encoding[&#39;units&#39;] as refdate_str
-        dir_output = &#39;./interpolate_nc_to_bc&#39;,
-        #quantities should be in conversion_dict.keys(). waterlevelbnd is steric/zos, tide is tidal components from FES/EOT
-        list_quantities = [&#39;waterlevelbnd&#39;,&#39;salinitybnd&#39;,&#39;temperaturebnd&#39;,&#39;uxuy&#39;,&#39;tide&#39;], # e.g. [&#39;waterlevelbnd&#39;,&#39;salinitybnd&#39;,&#39;temperaturebnd&#39;,&#39;uxuy&#39;,&#39;tide&#39;,&#39;tracerbndNO3&#39;,&#39;tracerbndOpal&#39;,&#39;tracerbndDON&#39;]
-        model = &#39;CMEMS&#39;, #CMEMS GFDL CMCC HYCOM
-        tstart = &#39;2012-01-01 12:00&#39;,
-        tstop = &#39;2012-01-02 12:00&#39;,
-        list_plifiles = [r&#39;p:\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108_nocomments.pli&#39;], #TODO: reading this file without &#39;_nocomments&#39; results in empty Polyfile, should raise an error. https://github.com/Deltares/HYDROLIB-core/issues/320
-        dir_sourcefiles_hydro = r&#39;p:\1204257-dcsmzuno\data\CMEMS\nc\DCSM_allAvailableTimes&#39;, #CMEMS hydro: bottomT, so, thetao, uo, vo, zos (2012-01-06 12:00:00 to 2013-01-03 12:00:00) (daily values at noon, not at midnight)
-        make_figs = False): 
-    
-    list_plifiles = [Path(x) for x in list_plifiles]
-    
-    #TODO: add coordinate conversion of pli-coordinates? (for nesting RD models in oceanmodels)
-    #TODO: additional models/sources for download/interpolate (evt xESMF for CMCC, climate forcing cmip6 procedure (=calendarconversion) and others)
-    
-    #The {ncvarname} wildcard in dir_pattern_hydro/dir_patern_waq is used to replace it with conversion_dict[quantity][&#39;ncvarname&#39;] by using str(dir_pattern).format(ncvarname)
-    if model==&#39;CMEMS&#39;: #2012-01-06 12:00:00 to 2013-01-03 12:00:00
-        conversion_dict = dfmt.get_conversion_dict()
-        dir_pattern_hydro = Path(dir_sourcefiles_hydro,&#39;cmems_{ncvarname}_*.nc&#39;) # later remove 2012 from string, but this is faster for testing #TODO: it is quite slow, maybe speed up possible?
-        dir_sourcefiles_waq = r&#39;p:\11206304-futuremares\python_scripts\ocean_boundaryCMEMS\data_monthly&#39; #CMEMS waq: no3, o2, phyc, so4, si (2011-12-16 12:00:00 to 2019-01-16 12:00:00)
-        dir_pattern_waq = Path(dir_sourcefiles_waq,&#39;cmems_mod_glo_bgc_my_0.25_P1M-m_{ncvarname}_*.nc&#39;) 
-        #to reproduce old CMEMS data (icw reverse_depth=True) (from p:\1204257-dcsmzuno\data\CMEMS\bnd\NorthSeaAndBaltic_1993-2019_20210510)
-        #tstart = dt.datetime(1993,1,1,12,0)
-        #tstop = tstart + dt.timedelta(days=5)
-        #dir_pattern_hydro = Path(dir_sourcefiles_hydro,&#39;{ncvarname}_1993*.nc&#39;)
-        #TODO tstart = pd.Timestamp(tstart)-pd.Timedelta(days=1) #similar as download: CMEMS has daily noon values (not midnight), so subtract one day from date_min to cover desired time extent
-    elif model==&#39;GFDL&#39;:
-        conversion_dict = dfmt.get_conversion_dict()
-        tstart = &#39;2012-01-16 12:00&#39;
-        tstop = &#39;2012-04-01 12:00&#39;
-        list_plifiles = [Path(r&#39;p:\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108_nocomments.pli&#39;)] #TODO: reading this file without &#39;_nocomments&#39; results in empty Polyfile, should raise an error. https://github.com/Deltares/HYDROLIB-core/issues/320
-        dir_sourcefiles_hydro = None
-        dir_pattern_hydro = None
-        dir_sourcefiles_waq = r&#39;p:\11206304-futuremares\data\CMIP6_BC\GFDL-ESM4&#39; #GFDL waq: no3 (1850-01-16 12:00:00 to 2014-12-16 12:00:00)
-        dir_pattern_waq = Path(dir_sourcefiles_waq,&#39;{ncvarname}_esm-hist.nc&#39;)
-    elif model==&#39;CMCC&#39;: #TODO: check method, now finding nearest points (so always has values)
-        #TODO: time_bnds/lev_bnds are available, take into account in bc file?
-        conversion_dict = dfmt.get_conversion_dict(ncvarname_updates={&#39;salinitybnd&#39;:&#39;sos&#39;, &#39;temperaturebnd&#39;:&#39;tos&#39;})
-        conversion_dict[&#39;tracerbndNO3&#39;] = {&#39;ncvarname&#39;:&#39;no3&#39;, &#39;unit&#39;:&#39;g/m3&#39;, &#39;conversion&#39;:14.0} #other vars also have different conversion than cmems
-        tstart = &#39;2015-06-16 12:00&#39;
-        tstop = &#39;2015-12-01 12:00&#39;
-        list_plifiles = [Path(r&#39;p:\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108_nocomments.pli&#39;)] #TODO: reading this file without &#39;_nocomments&#39; results in empty Polyfile, should raise an error. https://github.com/Deltares/HYDROLIB-core/issues/320
-        dir_sourcefiles_hydro = r&#39;p:\11206304-futuremares\data\CMIP6_BC\CMCC-ESM2&#39;
-        dir_pattern_hydro = Path(dir_sourcefiles_hydro,&#39;{ncvarname}_Omon_CMCC-ESM2_ssp126_r1i1p1f1_gn_*.nc&#39;)
-        dir_sourcefiles_waq = dir_sourcefiles_hydro #CMCC waq: (2015-01-16 12:00:00 to 2100-12-16 12:00:00)
-        dir_pattern_waq = dir_pattern_hydro
-    elif model==&#39;HYCOM&#39;:
-        conversion_dict = dfmt.get_conversion_dict(ncvarname_updates={&#39;salinitybnd&#39;:&#39;salinity&#39;, &#39;temperaturebnd&#39;:&#39;water_temp&#39;})
-        tstart = &#39;2016-04-20&#39;
-        tstop = &#39;2016-05-03&#39;
-        list_plifiles = [Path(r&#39;c:\DATA\dfm_tools_testdata\GLBu0.08_expt_91.2\bcline.pli&#39;)] #HYCOM not available in DCSM area, so use other pli-file
-        dir_sourcefiles_hydro = &#39;c:\\DATA\\dfm_tools_testdata\\GLBu0.08_expt_91.2&#39; #HYCOM hydro: salinity/so, water_temp/thetao (2016-04-19 00:00:00 to 2016-05-06 00:00:00)
-        dir_pattern_hydro = Path(dir_sourcefiles_hydro,&#39;HYCOM_ST_GoO_*.nc&#39;)
-        dir_sourcefiles_waq = None
-        dir_pattern_waq = None
-    else:
-        raise Exception(f&#39;invalid model: {model}&#39;)
-    
-    # start of interpolation process
-    dtstart = dt.datetime.now()
-    if not os.path.isdir(dir_output):
-        os.mkdir(dir_output)
+<pre><code class="python">def preprocess_interpolate_nc_to_bc(ext_bnd,
+                                    list_quantities,#quantities should be in conversion_dict.keys(). waterlevelbnd is steric/zos, tide is tidal components from FES/EOT
+                                    tstart,
+                                    tstop,
+                                    list_plifiles,
+                                    dir_pattern,
+                                    dir_output=&#39;.&#39;,
+                                    refdate_str=None,
+                                    conversion_dict=dfmt.get_conversion_dict(),
+                                    tidemodel=&#39;FES2014&#39;): #FES2014, FES2012, EOT20, GTSM4.1preliminary
+    #input examples in https://github.com/Deltares/dfm_tools/blob/main/tests/examples/preprocess_interpolate_nc_to_bc.py
+    model = &#39;CMEMS&#39;
     
     for file_pli in list_plifiles:
-        file_bc_basename = file_pli.name.replace(&#39;.pli&#39;,&#39;&#39;)
+        file_bc_basename = os.path.basename(file_pli).replace(&#39;.pli&#39;,&#39;&#39;)
         for quantity in list_quantities:
             print(f&#39;processing quantity: {quantity}&#39;)
             if quantity==&#39;tide&#39;: 
-                tidemodel = &#39;FES2014&#39; #FES2014, FES2012, EOT20, GTSM4.1preliminary
-                if tidemodel == &#39;FES2014&#39;: #for comparing to older FES bc-files #TODO: choose flexible/generic component notation
+                if tidemodel == &#39;FES2014&#39;: #for comparing to older FES bc-files
                     component_list = [&#39;2n2&#39;,&#39;mf&#39;,&#39;p1&#39;,&#39;m2&#39;,&#39;mks2&#39;,&#39;mu2&#39;,&#39;q1&#39;,&#39;t2&#39;,&#39;j1&#39;,&#39;m3&#39;,&#39;mm&#39;,&#39;n2&#39;,&#39;r2&#39;,&#39;k1&#39;,&#39;m4&#39;,&#39;mn4&#39;,&#39;s1&#39;,&#39;k2&#39;,&#39;m6&#39;,&#39;ms4&#39;,&#39;nu2&#39;,&#39;s2&#39;,&#39;l2&#39;,&#39;m8&#39;,&#39;msf&#39;,&#39;o1&#39;,&#39;s4&#39;]
                 else:
                     component_list = None #None results in all tidemodel components
                 ForcingModel_object = dfmt.interpolate_tide_to_bc(tidemodel=tidemodel, file_pli=file_pli, component_list=component_list, nPoints=None)
-                for forcingobject in ForcingModel_object.forcing: #add A0 component
-                    forcingobject.datablock.append([&#39;A0&#39;,0.0,0.0])
             else:
-                if quantity in [&#39;waterlevelbnd&#39;,&#39;salinitybnd&#39;,&#39;temperaturebnd&#39;,&#39;uxuy&#39;]: #hydro
-                    if dir_sourcefiles_hydro is None:
-                        continue
-                    if (model==&#39;HYCOM&#39;) &amp; (quantity not in [&#39;salinitybnd&#39;,&#39;temperaturebnd&#39;]): #only contains quantities salinity and water_temp, so crashes on others
-                        continue
-                    dir_pattern = dir_pattern_hydro
-                else: #waq
-                    if dir_pattern_waq is None:
-                        continue
-                    dir_pattern = dir_pattern_waq
-                
                 #open regulargridDataset and do some basic stuff (time selection, renaming depth/lat/lon/varname, converting units, etc)
-                data_xr_vars = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity=quantity, #TODO: maybe replace renaming part with package CMCC/Lisa?
+                data_xr_vars = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity=quantity,
                                                        tstart=tstart, tstop=tstop,
                                                        conversion_dict=conversion_dict,
                                                        refdate_str=refdate_str)
                 #interpolate regulargridDataset to plipointsDataset
-                data_interp = dfmt.interp_regularnc_to_plipoints(data_xr_reg=data_xr_vars, file_pli=file_pli, #TODO: difference in .interp() with float vs da arguments: https://github.com/Deltares/dfm_tools/issues/287
-                                                                 nPoints=None) #argument for testing
+                data_interp = dfmt.interp_regularnc_to_plipoints(data_xr_reg=data_xr_vars, file_pli=file_pli)
                 
                 #convert plipointsDataset to hydrolib ForcingModel
                 ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
                         
-            file_bc_basename = file_pli.name.replace(&#39;.pli&#39;,&#39;&#39;)
             if quantity==&#39;tide&#39;:
-                file_bc_out = Path(dir_output,f&#39;{quantity}_{file_bc_basename}_{tidemodel}.bc&#39;)
+                file_bc_out = os.path.join(dir_output,f&#39;{quantity}_{file_bc_basename}_{tidemodel}.bc&#39;)
             else:
-                file_bc_out = Path(dir_output,f&#39;{quantity}_{file_bc_basename}_{model}.bc&#39;)
+                file_bc_out = os.path.join(dir_output,f&#39;{quantity}_{file_bc_basename}_{model}.bc&#39;)
             
-            print(f&#39;writing ForcingModel to bc file with hydrolib ({file_bc_out.name})&#39;)
-            bc_type = &#39;bc&#39; #TODO: add netcdf bc support. https://github.com/Deltares/HYDROLIB-core/issues/318
-            if bc_type==&#39;bc&#39;:
-                #ForcingModel_object.serializer_config.float_format = &#39;.3f&#39; #TODO SOLVED: improve formatting of bc file: https://github.com/Deltares/HYDROLIB-core/issues/308
-                #ForcingModel_object.serializer_config.float_format_datablock = &#39;.5f&#39; #maybe move this to interp_regularnc_to_plipoints/interpolate_tide_to_bc?
-                ForcingModel_object.save(filepath=file_bc_out)
+            ForcingModel_object.save(filepath=file_bc_out)
             
-            #TODO: support for relative paths?
             #generate boundary object for the ext file (quantity, pli-filename, bc-filename)
             boundary_object = hcdfm.Boundary(quantity=quantity.replace(&#39;tide&#39;,&#39;waterlevelbnd&#39;), #the FM quantity for tide is also waterlevelbnd
                                              locationfile=file_pli,
                                              forcingfile=ForcingModel_object)
             ext_bnd.boundary.append(boundary_object)
     
-            if make_figs and quantity!=&#39;tide&#39;: #TODO: data_xr_vars/data_interp does not exist for tide yet
-                #plotting dataset and polyline (is wrong for CMCC)
-                varname0 = list(data_xr_vars.data_vars)[0] 
-                fig,ax = plt.subplots()
-                if &#39;depth&#39; in data_xr_vars[varname0].dims:
-                    data_xr_vars[varname0].isel(time=0,depth=0).plot(ax=ax)
-                else:
-                    data_xr_vars[varname0].isel(time=0).plot(ax=ax)
-                plipoint_coords = data_interp.plipoints.to_dataframe()
-                ax.plot(plipoint_coords[&#39;plipoint_x&#39;],plipoint_coords[&#39;plipoint_y&#39;],&#39;r-&#39;)
-                ctx.add_basemap(ax=ax,crs=&#34;EPSG:4326&#34;,attribution=False)
-                fig.tight_layout()
-                fig.savefig(str(file_bc_out).replace(&#39;.bc&#39;,&#39;_polyline&#39;))
-                
-                #plotting example data point
-                for iF in [2]:#range(nPoints): 
-                    data_vars = list(data_interp.data_vars)
-                    fig,ax1 = plt.subplots(figsize=(10, 6))
-                    data_interp[data_vars[0]].isel(plipoints=iF).T.plot()
-                    fig.tight_layout()
-                    fig.savefig(str(file_bc_out).replace(&#39;.bc&#39;,&#39;&#39;))
-    
-    #file_ext_out = Path(dir_output,&#39;example_bnd.ext&#39;)
-    #ext_bnd.save(filepath=file_ext_out)
-    
-    time_passed = (dt.datetime.now()-dtstart).total_seconds()
-    print(f&#39;&gt;&gt;total script time passed: {time_passed:.2f} sec&#39;)
     return ext_bnd</code></pre>
 </details>
 </dd>
@@ -877,7 +412,6 @@ def generate_bndpli(lon_min, lon_max, lat_min, lat_max, dlon, dlat, name=&#39;bn
 <pre><code class="python">def preprocess_ini_cmems_to_nc(ext_old, tstart=&#39;1998-01-01&#39;,
         dir_data  = r&#39;p:\i1000668-tcoms\03_newModel\01_input\02_bnd\data_opendap&#39;, #folder containing CMEMS so and thetao netcdf files
         dir_out = &#39;.&#39;):
-    #TODO: merge with other ini script and make generic for getting an inifield out of CMEMS/etc regulargrid Dataset or a 2D/3D FM map/rst Dataset
     
     file_nc_list_so = glob.glob(f&#39;{dir_data}\\cmems_so_*.nc&#39;)
     file_nc_list_thetao = glob.glob(f&#39;{dir_data}\\cmems_thetao_*.nc&#39;)
@@ -887,49 +421,27 @@ def generate_bndpli(lon_min, lon_max, lat_min, lat_max, dlon, dlat, name=&#39;bn
     data_xr = xr.open_mfdataset(file_nc_list)
     
     tSimStart = pd.Timestamp(tstart)
-    if 0: #this would be the proper way to do it, but FM needs two timesteps for some reason
-        print(&#39;ds.interp()&#39;)
-        data_xr_ontime = data_xr.interp(time=[tSimStart],kwargs=dict(bounds_error=True)) #bounds_error makes sure, outofbounds time results in &#34;ValueError: A value in x_new is below the interpolation range.&#34;
-    else:
-        print(&#39;ds.sel()&#39;)
-        data_xr_ontime = data_xr.sel(time=slice(tSimStart-dt.timedelta(days=1),tSimStart+dt.timedelta(days=1)))
+    data_xr_ontime = data_xr.sel(time=slice(tSimStart-dt.timedelta(days=1),tSimStart+dt.timedelta(days=1)))
     
     print(&#39;writing file&#39;)
     outFile = os.path.join(dir_out,f&#39;InitialField_{tSimStart.strftime(&#34;%Y-%m-%d_%H-%M-%S&#34;)}.nc&#39;)
     data_xr_ontime.to_netcdf(outFile,format=&#34;NETCDF4_CLASSIC&#34;) #TODO: why the format setting?
     
     #append forcings to ext
-    if 0: 
-        forcing_so = hcdfm.ExtOldForcing(quantity=&#39;initialsalinity&#39;,
+    # 3D initialsalinity/initialtemperature fields are silently ignored, initial 3D conditions are only possible via nudging 1st timestep via quantity=nudge_salinity_temperature
+    forcing_saltem = hcdfm.ExtOldForcing(quantity=&#39;nudge_salinity_temperature&#39;,
                                          filename=outFile,
-                                         varname=&#39;so&#39;,
                                          filetype=hcdfm.ExtOldFileType.NetCDFGridData,
                                          method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
                                          operand=hcdfm.Operand.override, #O
                                          )
-        ext_old.forcing.append(forcing_so)
-        forcing_thetao = hcdfm.ExtOldForcing(quantity=&#39;initialtemperature&#39;,
-                                             filename=outFile,
-                                             varname=&#39;thetao&#39;,
-                                             filetype=hcdfm.ExtOldFileType.NetCDFGridData,
-                                             method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
-                                             operand=hcdfm.Operand.override, #O
-                                             )
-        ext_old.forcing.append(forcing_thetao)
-    else: #TODO: 3D initialsalinity/initialtemperature fields are silently ignored, initial 3D conditions are only possible via nudging 1st timestep
-        forcing_saltem = hcdfm.ExtOldForcing(quantity=&#39;nudge_salinity_temperature&#39;, #TODO: nudge_salinity_temperature is not supported by hydrolib-core
-                                             filename=outFile,
-                                             filetype=hcdfm.ExtOldFileType.NetCDFGridData,
-                                             method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
-                                             operand=hcdfm.Operand.override, #O
-                                             )
-        ext_old.forcing.append(forcing_saltem)
+    ext_old.forcing.append(forcing_saltem)
     
     return ext_old</code></pre>
 </details>
 </dd>
 <dt id="dfm_tools.modelbuilder.preprocess_merge_meteofiles"><code class="name flex">
-<span>def <span class="ident">preprocess_merge_meteofiles</span></span>(<span>ext_old, mode='HYCOM', varkey_list=[], dir_data=[], dir_output='.', time_slice=slice('2013-12-30', '2014-01-01', None), make_figs=False)</span>
+<span>def <span class="ident">preprocess_merge_meteofiles</span></span>(<span>ext_old, mode='HYCOM', varkey_list=[], dir_data=[], dir_output='.', time_slice=slice('2013-12-30', '2014-01-01', None))</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -942,8 +454,7 @@ def generate_bndpli(lon_min, lon_max, lat_min, lat_max, dlon, dlat, name=&#39;bn
         varkey_list = [],
         dir_data = [],
         dir_output = &#39;.&#39;,
-        time_slice = slice(&#39;2013-12-30&#39;,&#39;2014-01-01&#39;),
-        make_figs = False):
+        time_slice = slice(&#39;2013-12-30&#39;,&#39;2014-01-01&#39;)):
 
     if isinstance(varkey_list[0], list):
         varkey_lists = varkey_list
@@ -1059,25 +570,6 @@ def generate_bndpli(lon_min, lon_max, lat_min, lat_max, dlon, dlat, name=&#39;bn
                                                 )
             ext_old.forcing.append(forcing_meteo)
         
-        if make_figs:
-            #load outputfile
-            data_xr_check = xr.open_dataset(file_out)
-            
-            for varkey in data_xr_check.data_vars:
-                varsel = data_xr_check[varkey]
-                if not set([&#39;longitude&#39;,&#39;latitude&#39;]).issubset(set(varsel.coords)): #skipping vars without lat/lon coordinate
-                    continue
-                print(f&#39;plotting {varkey}&#39;)
-                fig,ax1 = plt.subplots()
-                if &#39;HIRLAM&#39; in mode:
-                    varsel.isel(time=0).plot(ax=ax1,x=&#39;longitude&#39;,y=&#39;latitude&#39;) #x/y are necessary since coords are not 1D and dims
-                elif &#39;depth&#39; in data_xr_tsel[varkey].coords:
-                    varsel.isel(time=0).sel(depth=0).plot(ax=ax1)
-                else:
-                    varsel.isel(time=0).plot(ax=ax1)
-                file_out = os.path.join(dir_output, f&#39;era5_{varkey}_{time_start_str}&#39;)
-                fig.savefig(file_out)
-        
     return ext_old</code></pre>
 </details>
 </dd>
@@ -1103,20 +595,11 @@ def generate_bndpli(lon_min, lon_max, lat_min, lat_max, dlon, dlat, name=&#39;bn
                                                          origin_y=lat_min,
                                                          block_size_x=dx,
                                                          block_size_y=dy)
-    #print(make_grid_parameters)
     
     geometry_list = meshkernel.GeometryList(np.empty(0, dtype=np.double), np.empty(0, dtype=np.double)) # A polygon must to be provided. If empty it will not be used. If a polygon is provided it will be used in the generation of the curvilinear grid. The polygon must be closed
     mk = meshkernel.MeshKernel() #TODO: is_geographic=True was used in modelbuilder, but refinement super slow and raises &#34;MeshKernelError: MeshRefinement::connect_hanging_nodes: The number of non-hanging nodes is neither 3 nor 4.&#34;
     mk.curvilinear_make_uniform(make_grid_parameters, geometry_list) #TODO: make geometry_list argument optional: https://github.com/Deltares/MeshKernelPy/issues/30
     mk.curvilinear_convert_to_mesh2d() #convert to ugrid/mesh2d
-    
-    #plot
-    # if make_figs:
-    #     mesh2d_mesh_kernel = mk.mesh2d_get()
-    #     fig, ax = plt.subplots()
-    #     mesh2d_mesh_kernel.plot_edges(ax, color=&#39;blue&#39;)
-    #     source = ctx.providers.Esri.WorldImagery
-    #     ctx.add_basemap(ax=ax, source=source, crs=&#39;EPSG:4326&#39;, attribution=False)
     
     return mk</code></pre>
 </details>
@@ -1154,13 +637,6 @@ def generate_bndpli(lon_min, lon_max, lat_min, lat_max, dlon, dlat, name=&#39;bn
                                        minimum_num_samples=3,
                                        mesh_refinement_params=mesh_refinement_parameters,
                                        )
-    
-    #plotting
-    # if make_figs:
-    #     mesh2d_grid2 = mk.mesh2d_get()
-    #     fig, ax = plt.subplots()
-    #     mesh2d_grid2.plot_edges(ax,linewidth=1.2)
-    #     ctx.add_basemap(ax=ax, crs=&#39;EPSG:4326&#39;, attribution=False)
     
     return mk</code></pre>
 </details>
@@ -1211,7 +687,6 @@ def generate_bndpli(lon_min, lon_max, lat_min, lat_max, dlon, dlat, name=&#39;bn
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
-<li><code><a title="dfm_tools.modelbuilder.download_meteodata_oceandata" href="#dfm_tools.modelbuilder.download_meteodata_oceandata">download_meteodata_oceandata</a></code></li>
 <li><code><a title="dfm_tools.modelbuilder.preprocess_interpolate_nc_to_bc" href="#dfm_tools.modelbuilder.preprocess_interpolate_nc_to_bc">preprocess_interpolate_nc_to_bc</a></code></li>
 <li><code><a title="dfm_tools.modelbuilder.preprocess_ini_cmems_to_nc" href="#dfm_tools.modelbuilder.preprocess_ini_cmems_to_nc">preprocess_ini_cmems_to_nc</a></code></li>
 <li><code><a title="dfm_tools.modelbuilder.preprocess_merge_meteofiles" href="#dfm_tools.modelbuilder.preprocess_merge_meteofiles">preprocess_merge_meteofiles</a></code></li>

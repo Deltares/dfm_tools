@@ -38,10 +38,9 @@ import pandas as pd
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import dfm_tools as dfmt
-import cartopy
-import cartopy.crs as ccrs
 from shapely.geometry import Point
-
+import cartopy.crs as ccrs #install cartopy with `conda install cartopy -c conda-forge`
+import cartopy.feature as cf #install cartopy with `conda install cartopy -c conda-forge`
 
 # modelrun settings
 crs = 4326
@@ -87,7 +86,7 @@ fig, ax = plt.subplots(subplot_kw=dict(projection=ccrs.PlateCarree()))
 ax.coastlines()
 ax.set_xlim(0.0, 10)
 ax.set_ylim(50, 56)
-ax.add_feature(cartopy.feature.LAND)
+ax.add_feature(cf.LAND)
 gls = ax.gridlines(crs=ccrs.PlateCarree(), linewidth=1, color='black', alpha=0.5, draw_labels=True)
 gls.top_labels=False   # suppress top labels
 gls.right_labels=False # suppress right labels
@@ -140,7 +139,7 @@ fig, ax = plt.subplots(subplot_kw=dict(projection=ccrs.PlateCarree()))
 ax.coastlines()
 ax.set_xlim(0.0, 10)
 ax.set_ylim(50, 56)
-ax.add_feature(cartopy.feature.LAND)
+ax.add_feature(cf.LAND)
 gls = ax.gridlines(crs=ccrs.PlateCarree(), linewidth=1, color='black', alpha=0.5, draw_labels=True)
 gls.top_labels=False   # suppress top labels
 gls.right_labels=False # suppress right labels

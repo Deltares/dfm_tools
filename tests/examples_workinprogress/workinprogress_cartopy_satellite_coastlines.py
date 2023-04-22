@@ -4,14 +4,16 @@ Created on Wed Oct 27 14:35:12 2021
 
 @author: veenstra
 """
-import os
 
+import os
 import matplotlib.pyplot as plt
 plt.close('all')
 import numpy as np
-import cartopy.crs as ccrs
 import xarray as xr
 import dfm_tools as dfmt
+import contextily as ctx
+import cartopy.crs as ccrs #install cartopy with `conda install cartopy -c conda-forge`
+import cartopy.feature as cf #install cartopy with `conda install cartopy -c conda-forge`
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
@@ -38,20 +40,26 @@ fig.savefig(os.path.join(dir_output,'cartopy_hirlam_aspect'))
 
 fig, ax = plt.subplots(figsize=(9,5),subplot_kw={'projection': ccrs.PlateCarree()}) #provide axis projection on initialisation, cannot be edited later on
 pc = magn.plot(ax=ax,x='longitude',y='latitude')
-dfmt.plot_background(ax=ax, resolution=1, google_style='street', features=['countries_highres'], linewidth=0.5, edgecolor='gray', facecolor='none', latlon_format=True)
-dfmt.plot_background(ax=ax, google_style=None, features=['coastlines_highres'], linewidth=0.5, latlon_format=True)
+ax.coastlines(linewidth=1)
+ax.add_feature(cf.BORDERS, linewidth=1, edgecolor='gray', facecolor='none')
+ctx.add_basemap(ax=ax,source=ctx.providers.Esri.WorldStreetMap,crs='EPSG:4326', attribution=False)
+ax.set_xticks(ax.get_xticks()[1:-1])
+ax.set_yticks(ax.get_yticks()[1:-1])
 fig.savefig(os.path.join(dir_output,'cartopy_hirlam_moreoptions'))
 
 fig, ax = plt.subplots(figsize=(6,7),subplot_kw={'projection': ccrs.EuroPP()}) #provide axis projection on initialisation, cannot be edited later on
 pc = magn.plot(ax=ax,x='longitude',y='latitude', transform=ccrs.PlateCarree(),add_colorbar=False)
-dfmt.plot_background(ax=ax, google_style=None, features=['coastlines_highres'], latlon_format=True, gridlines=True)
+ax.coastlines(linewidth=1)
+ax.gridlines(draw_labels=True) #cannot use ax.get_xticks+ax.set_xticks since the data was transformed
 fig.savefig(os.path.join(dir_output,'cartopy_hirlam_curvedgridlines'))
-
 
 #GREVELINGEN
 file_nc_map = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen\\computations\\run01\\DFM_OUTPUT_Grevelingen-FM\\Grevelingen-FM_0*_map.nc')
 data_frommap_merged = dfmt.open_partitioned_dataset(file_nc_map) #TODO: make starred default, but not supported by older code
 fig, ax = plt.subplots(1,1, subplot_kw={'projection': ccrs.epsg(28992)}) #provide axis projection on initialisation, cannot be edited later on
 pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot(ax=ax, linewidth=0.5, cmap='jet', vmin=-40, vmax=10)
-dfmt.plot_background(ax=ax, resolution=12, features=['coastlines_highres'], linewidth=0.5)
+ctx.add_basemap(ax=ax,source=ctx.providers.Esri.WorldImagery,crs='EPSG:28992', attribution=False)
+ax.coastlines(linewidth=1)
+ax.set_xticks(ax.get_xticks()[1:-1])
+ax.set_yticks(ax.get_yticks()[1:-1])
 fig.savefig(os.path.join(dir_output,'cartopy_grevelingen_RD'))

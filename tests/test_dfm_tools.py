@@ -120,12 +120,6 @@ def test_rename_fouvars_tidal():
     assert 'mesh2d_s1_ampM2' in uds_renamed_clean.data_vars
 
 
-@pytest.mark.systemtest
-def test_cartopy_epsg():
-    #this one crashes if the dummy in plot_background() is not created
-    dfmt.plot_background(ax=None, projection=28992, google_style='satellite', resolution=5, features='land', nticks=6, latlon_format=False, gridlines=False)
-
-
 @pytest.mark.unittest
 def test_calc_dist_pythagoras():
     """
