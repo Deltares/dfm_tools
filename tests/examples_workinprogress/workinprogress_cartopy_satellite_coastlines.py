@@ -15,24 +15,6 @@ import contextily as ctx
 import cartopy.crs as ccrs #install cartopy with `conda install cartopy -c conda-forge`
 import cartopy.feature as cf #install cartopy with `conda install cartopy -c conda-forge`
 
-def add_ticks(ax, nbins='auto'):
-    """
-    cartopy.mpl.geoaxes.GeoAxesSubplot does not have xticks/yticks by default, this function uses matplotlibs MaxNLocation to automatically create xticks and yticks
-    """
-    import matplotlib as mpl
-    #check if xticklabels are different than xticks
-    xticks = ax.get_xticks()
-    xticklabels = np.array([x.get_text().replace('−','-') for x in ax.get_xticklabels()]).astype(float)
-    if not (xticks==xticklabels).all():
-        raise Exception('you are transforming coordinates, please use ax.gridlines(draw_labels=True) to get proper axis ticks+ticklabels')
-    else:
-        extent = ax.get_extent()
-        mpl_al = mpl.ticker.MaxNLocator(nbins=nbins, prune='both') #https://github.com/matplotlib/matplotlib/blob/v3.7.1/lib/matplotlib/ticker.py#L1957-L2166
-        xticks = mpl_al.tick_values(vmin=extent[0],vmax=extent[1])
-        yticks = mpl_al.tick_values(vmin=extent[2],vmax=extent[3])
-        ax.set_xticks(xticks)
-        ax.set_yticks(yticks)
-
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
@@ -61,13 +43,14 @@ pc = magn.plot(ax=ax,x='longitude',y='latitude')
 ax.coastlines(linewidth=1)
 ax.add_feature(cf.BORDERS, linewidth=1, edgecolor='gray', facecolor='none')
 ctx.add_basemap(ax=ax,source=ctx.providers.Esri.WorldStreetMap,crs='EPSG:4326', attribution=False)
-add_ticks(ax)
+ax.set_xticks(ax.get_xticks()[1:-1])
+ax.set_yticks(ax.get_yticks()[1:-1])
 fig.savefig(os.path.join(dir_output,'cartopy_hirlam_moreoptions'))
 
 fig, ax = plt.subplots(figsize=(6,7),subplot_kw={'projection': ccrs.EuroPP()}) #provide axis projection on initialisation, cannot be edited later on
 pc = magn.plot(ax=ax,x='longitude',y='latitude', transform=ccrs.PlateCarree(),add_colorbar=False)
 ax.coastlines(linewidth=1)
-ax.gridlines(draw_labels=True) #cannot use add_ticks() since we transformed the data
+ax.gridlines(draw_labels=True) #cannot use ax.get_xticks+ax.set_xticks since the data was transformed
 fig.savefig(os.path.join(dir_output,'cartopy_hirlam_curvedgridlines'))
 
 #GREVELINGEN
@@ -77,5 +60,6 @@ fig, ax = plt.subplots(1,1, subplot_kw={'projection': ccrs.epsg(28992)}) #provid
 pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot(ax=ax, linewidth=0.5, cmap='jet', vmin=-40, vmax=10)
 ctx.add_basemap(ax=ax,source=ctx.providers.Esri.WorldImagery,crs='EPSG:28992', attribution=False)
 ax.coastlines(linewidth=1)
-add_ticks(ax)
+ax.set_xticks(ax.get_xticks()[1:-1])
+ax.set_yticks(ax.get_yticks()[1:-1])
 fig.savefig(os.path.join(dir_output,'cartopy_grevelingen_RD'))
