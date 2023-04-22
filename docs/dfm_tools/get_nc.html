@@ -568,6 +568,10 @@ def rasterize_ugrid(uds:xu.UgridDataset, ds_like:xr.Dataset = None, resolution:f
     return ds
 
 
+def plot_background(ax=None, projection=None, google_style=&#39;satellite&#39;, resolution=1, features=None, nticks=6, latlon_format=False, gridlines=False, **kwargs): #TODO: remove this deprecated function
+    raise DeprecationWarning(&#39;dfmt.plot_background() is deprecated, use contextily and cartopy instead like in https://github.com/Deltares/dfm_tools/blob/main/tests/examples_workinprogress/workinprogress_cartopy_satellite_coastlines.py&#39;)
+
+
 def plot_ztdata(data_xr_sel, varname, ax=None, only_contour=False, **kwargs):
     &#34;&#34;&#34;
     
@@ -1291,6 +1295,19 @@ inspired by xugrid.plot.imshow and xugrid.ugrid.ugrid2d.rasterize/rasterize_like
     return ds</code></pre>
 </details>
 </dd>
+<dt id="dfm_tools.get_nc.plot_background"><code class="name flex">
+<span>def <span class="ident">plot_background</span></span>(<span>ax=None, projection=None, google_style='satellite', resolution=1, features=None, nticks=6, latlon_format=False, gridlines=False, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_background(ax=None, projection=None, google_style=&#39;satellite&#39;, resolution=1, features=None, nticks=6, latlon_format=False, gridlines=False, **kwargs): #TODO: remove this deprecated function
+    raise DeprecationWarning(&#39;dfmt.plot_background() is deprecated, use contextily and cartopy instead like in https://github.com/Deltares/dfm_tools/blob/main/tests/examples_workinprogress/workinprogress_cartopy_satellite_coastlines.py&#39;)</code></pre>
+</details>
+</dd>
 <dt id="dfm_tools.get_nc.plot_ztdata"><code class="name flex">
 <span>def <span class="ident">plot_ztdata</span></span>(<span>data_xr_sel, varname, ax=None, only_contour=False, **kwargs)</span>
 </code></dt>
@@ -1407,6 +1424,7 @@ inspired by xugrid.plot.imshow and xugrid.ugrid.ugrid2d.rasterize/rasterize_like
 <li><code><a title="dfm_tools.get_nc.reconstruct_zw_zcc" href="#dfm_tools.get_nc.reconstruct_zw_zcc">reconstruct_zw_zcc</a></code></li>
 <li><code><a title="dfm_tools.get_nc.get_Dataset_atdepths" href="#dfm_tools.get_nc.get_Dataset_atdepths">get_Dataset_atdepths</a></code></li>
 <li><code><a title="dfm_tools.get_nc.rasterize_ugrid" href="#dfm_tools.get_nc.rasterize_ugrid">rasterize_ugrid</a></code></li>
+<li><code><a title="dfm_tools.get_nc.plot_background" href="#dfm_tools.get_nc.plot_background">plot_background</a></code></li>
 <li><code><a title="dfm_tools.get_nc.plot_ztdata" href="#dfm_tools.get_nc.plot_ztdata">plot_ztdata</a></code></li>
 </ul>
 </li>
