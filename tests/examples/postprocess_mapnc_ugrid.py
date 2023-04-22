@@ -181,11 +181,10 @@ for file_nc in file_nc_list:
         https://contextily.readthedocs.io/en/latest/reference.html
         https://contextily.readthedocs.io/en/latest/intro_guide.html
         ctx.add_basemap() defaults:
-        source: None defaults to ctx.providers.Stamen.Terrain 
+        source: None defaults to ctx.providers.Stamen.Terrain, suggestions: ctx.providers.Stamen.Terrain (default), ctx.providers.Esri.WorldStreetMap, ctx.providers.Esri.WorldImagery, ctx.providers.CartoDB.Voyager, ctx.providers.NASAGIBS.ViirsEarthAtNight2012, ctx.providers.Stamen.Watercolor
         crs: coordinate reference system (CRS). If None (default), no warping is performed and the original Spherical Mercator (EPSG:3857) is used.
-        More complex basemaps/coastlines are available in dfm_tools.net_nc.plot_background()
         """
-        source = ctx.providers.Esri.WorldImagery # ctx.providers.Stamen.Terrain (default), ctx.providers.CartoDB.Voyager, ctx.providers.NASAGIBS.ViirsEarthAtNight2012, ctx.providers.Stamen.Watercolor
+        source = ctx.providers.Esri.WorldImagery
         ctx.add_basemap(ax=ax_input, source=source, crs=crs, attribution=False)
         fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_flowelem_bl_withbasemap'))
     
