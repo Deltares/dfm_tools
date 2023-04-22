@@ -112,7 +112,7 @@ for varname in varname_list:
         data_rasterized[varname].isel(time=0,mesh2d_nLayers=-1).plot(ax=ax,x='longitude',y='latitude',alpha=0.8,edgecolor='face',linewidth=0.1)
     else:
         data_rasterized[varname].isel(time=0).plot(ax=ax,x='longitude',y='latitude',alpha=0.8,edgecolor='face',linewidth=0.1)
-    #source = ctx.providers.Esri.WorldImagery # ctx.providers.Stamen.Terrain (default), ctx.providers.CartoDB.Voyager, ctx.providers.NASAGIBS.ViirsEarthAtNight2012, ctx.providers.Stamen.Watercolor
+    #source = ctx.providers.Esri.WorldImagery
     #ctx.add_basemap(ax, attribution=False, crs='epsg:4326', source=source)
     fig.savefig(os.path.join(dir_output, f'{model}_{varname}'))
 data_xr_out.to_netcdf(file_nc_out)
