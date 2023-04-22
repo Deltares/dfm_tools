@@ -6,7 +6,7 @@ Created on Thu Dec  8 20:54:39 2022
 
 """
 
-import meshkernel #meshkernel>=2.0.0 #TODO: hydrolib currently has meshkernel<2/.0.0 >=1.0.0, so this conflicts: https://github.com/Deltares/HYDROLIB-core/issues/441. hydrolib-core 0.4.2 pre-release supports meshkernel 2.0.0, but that one has no linux support
+import meshkernel
 import xarray as xr
 import matplotlib.pyplot as plt
 plt.close('all')
@@ -14,6 +14,7 @@ import numpy as np
 import contextily as ctx
 import dfm_tools as dfmt
 
+#TODO: maybe use make_basegrid and refine_basegrid functions from dfmt.meshkernel_helpers
 
 #general settings
 lon_min,lon_max = -6,2
@@ -52,12 +53,12 @@ else:
     pol_y = np.empty(0, dtype=np.double)
 geometry_list = meshkernel.GeometryList(pol_x, pol_y)
 
-mk1 = meshkernel.MeshKernel() #TODO: is_geographic=True has to be used but it fails: https://github.com/Deltares/MeshKernelPy/issues/39
-mk1.curvilinear_make_uniform(make_grid_parameters, geometry_list) #TODO: make geometry_list argument optional: https://github.com/Deltares/MeshKernelPy/issues/30
-mk1.curvilinear_convert_to_mesh2d() #convert to ugrid/mesh2d
-mesh2d_grid1 = mk1.mesh2d_get() #in case of curvi grid: mk.curvilinear_convert_to_mesh2d()
+mk = meshkernel.MeshKernel() #TODO: is_geographic=True has to be used but it fails: https://github.com/Deltares/MeshKernelPy/issues/39
+mk.curvilinear_make_uniform(make_grid_parameters, geometry_list) #TODO: make geometry_list argument optional: https://github.com/Deltares/MeshKernelPy/issues/30
+mk.curvilinear_convert_to_mesh2d() #convert to ugrid/mesh2d
+mesh2d_basegrid = mk.mesh2d_get() #in case of curvi grid: mk.curvilinear_convert_to_mesh2d()
 fig, ax = plt.subplots(figsize=figsize)
-mesh2d_grid1.plot_edges(ax,linewidth=1.2)
+mesh2d_basegrid.plot_edges(ax,linewidth=1.2)
 ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 
 
@@ -92,23 +93,20 @@ mesh_refinement_parameters = meshkernel.MeshRefinementParameters(refine_intersec
                                                                  max_refinement_iterations=5,
                                                                  ) #TODO: missing the arguments dtmax (necessary?), hmin (min_face_size but then in meters instead of degrees), smoothiters (currently refinement is patchy along coastlines, goes good in dflowfm exec after additional implementation of HK), spherical 1/0 (necessary?)
 
-mk2 = meshkernel.MeshKernel()
-mk2.curvilinear_make_uniform(make_grid_parameters, geometry_list)
-mk2.curvilinear_convert_to_mesh2d() #convert to ugrid/mesh2d
-mk2.mesh2d_refine_based_on_samples(samples=geomlist,
+mk.mesh2d_refine_based_on_samples(samples=geomlist,
                                    relative_search_radius=0.5, #TODO: bilin interp is preferred, but this is currently not supported (samples have to be ravelled): https://github.com/Deltares/MeshKernelPy/issues/34
                                    minimum_num_samples=3,
                                    mesh_refinement_params=mesh_refinement_parameters,
                                    )
 
-mesh2d_grid2 = mk2.mesh2d_get()
+mesh2d_refinedgrid = mk.mesh2d_get()
 fig, ax = plt.subplots(figsize=figsize)
-mesh2d_grid2.plot_edges(ax,linewidth=1.2)
+mesh2d_refinedgrid.plot_edges(ax,linewidth=1.2)
 ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 
 #TODO: zoomed in plot to focus on patchy coastlines: https://github.com/Deltares/MeshKernelPy/issues/29
 fig, ax = plt.subplots(figsize=figsize)
-mesh2d_grid2.plot_edges(ax,linewidth=1)
+mesh2d_refinedgrid.plot_edges(ax,linewidth=1)
 ax.set_xlim(-2.5,-0.5)
 ax.set_ylim(49,50)
 ctx.add_basemap(ax=ax, crs=crs, attribution=False)
@@ -125,11 +123,11 @@ delete (landward) part of grid with polygon and plot result
 #                         [-0.25032258, 48.71290323],
 #                         [ 1.92774194, 48.59935484]])
 file_ldb = r'p:\1230882-emodnet_hrsm\global_tide_surge_model\trunk\scripts_gtsm5\landboundary\GSHHS_intermediate_min1000km2.ldb'
-mk2 = dfmt.meshkernel_delete_withpol(mk2, file_ldb=file_ldb, minpoints=1000)
+dfmt.meshkernel_delete_withpol(mk, file_ldb=file_ldb, minpoints=1000)
 
-mesh2d_grid3 = mk2.mesh2d_get()
+mesh2d_noland = mk.mesh2d_get()
 fig, ax = plt.subplots(figsize=figsize)
-mesh2d_grid3.plot_edges(ax,linewidth=1.2)
+mesh2d_noland.plot_edges(ax,linewidth=1.2)
 # xlim,ylim = ax.get_xlim(),ax.get_ylim() #get x/ylims before ldb plotting changes it
 # for iP, pol_del in enumerate(pol_ldb_list):
 #     ax.plot(pol_del['x'],pol_del['y'],'-r')
@@ -143,7 +141,7 @@ ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 convert meshkernel grid to xugrid, interp bathymetry, plot and save to *_net.nc
 """
 
-xu_grid_uds = dfmt.meshkernel_to_UgridDataset(mk2, remove_noncontiguous=True) #TODO: put remove_noncontiguous in meshkernel?: https://github.com/Deltares/MeshKernelPy/issues/44
+xu_grid_uds = dfmt.meshkernel_to_UgridDataset(mk, remove_noncontiguous=True) #TODO: put remove_noncontiguous in meshkernel?: https://github.com/Deltares/MeshKernelPy/issues/44
 #TODO: add wgs84 variable with attrs
 
 fig, ax = plt.subplots(figsize=figsize)

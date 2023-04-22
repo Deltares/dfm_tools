@@ -18,7 +18,6 @@ import numpy as np
 
 
 def meshkernel_delete_withpol(mk, file_ldb, minpoints=None):
-    
     print('>> reading+converting ldb: ',end='')
     dtstart = dt.datetime.now()
     pol_ldb = hcdfm.PolyFile(file_ldb)
@@ -35,7 +34,6 @@ def meshkernel_delete_withpol(mk, file_ldb, minpoints=None):
         mk.mesh2d_delete(geometry_list=delete_pol_geom, 
                          delete_option=meshkernel.DeleteMeshOption(2), #ALL_COMPLETE_FACES/2: Delete all faces of which the complete face is inside the polygon
                          invert_deletion=False) #TODO: cuts away link that is neccesary, so results in non-orthogonal grid (probably usecase of english channel?)
-    return mk
 
 
 def meshkernel_to_UgridDataset(mk:meshkernel.meshkernel.MeshKernel, remove_noncontiguous:bool = False) -> xr.Dataset:
@@ -92,3 +90,74 @@ def meshkernel_to_UgridDataset(mk:meshkernel.meshkernel.MeshKernel, remove_nonco
     
     xu_grid_uds = xu.UgridDataset(xu_grid_ds)
     return xu_grid_uds
+
+
+def make_basegrid(lon_min,lon_max,lat_min,lat_max,dx=0.05,dy=0.05,angle=0):
+    print('modelbuilder.make_basegrid()')
+    # create base grid
+    num_columns = int(np.round((lon_max-lon_min)/dx))
+    num_rows = int(np.round((lat_max-lat_min)/dy))
+    
+    make_grid_parameters = meshkernel.MakeGridParameters(num_columns=num_columns,
+                                                         num_rows=num_rows,
+                                                         angle=angle,
+                                                         origin_x=lon_min,
+                                                         origin_y=lat_min,
+                                                         block_size_x=dx,
+                                                         block_size_y=dy)
+    
+    geometry_list = meshkernel.GeometryList(np.empty(0, dtype=np.double), np.empty(0, dtype=np.double)) # A polygon must to be provided. If empty it will not be used. If a polygon is provided it will be used in the generation of the curvilinear grid. The polygon must be closed
+    mk = meshkernel.MeshKernel() #TODO: is_geographic=True was used in modelbuilder, but refinement super slow and raises "MeshKernelError: MeshRefinement::connect_hanging_nodes: The number of non-hanging nodes is neither 3 nor 4."
+    mk.curvilinear_make_uniform(make_grid_parameters, geometry_list) #TODO: make geometry_list argument optional: https://github.com/Deltares/MeshKernelPy/issues/30
+    mk.curvilinear_convert_to_mesh2d() #convert to ugrid/mesh2d
+    
+    return mk
+
+
+def refine_basegrid(mk, data_bathy_sel,min_face_size=0.1):
+    print('modelbuilder.refine_basegrid()')
+    samp_x,samp_y = np.meshgrid(data_bathy_sel.lon.to_numpy(),data_bathy_sel.lat.to_numpy())
+    samp_z = data_bathy_sel.elevation.to_numpy().astype(float) #TODO: without .astype(float), meshkernelpy generates "TypeError: incompatible types, c_short_Array_27120 instance instead of LP_c_double instance": https://github.com/Deltares/MeshKernelPy/issues/31
+    samp_x = samp_x.ravel()
+    samp_y = samp_y.ravel()
+    samp_z = samp_z.ravel()
+    geomlist = meshkernel.GeometryList(x_coordinates=samp_x, y_coordinates=samp_y, values=samp_z) #TODO: does not check if lenghts of input array is equal (samp_z[1:]) https://github.com/Deltares/MeshKernelPy/issues/32
+    
+    #refinement
+    mesh_refinement_parameters = meshkernel.MeshRefinementParameters(refine_intersected=False, #TODO: provide defaults for several arguments, so less arguments are required
+                                                                     use_mass_center_when_refining=False, #TODO: what does this do?
+                                                                     min_face_size=min_face_size, #TODO: size in meters would be more convenient: https://github.com/Deltares/MeshKernelPy/issues/33
+                                                                     refinement_type=meshkernel.RefinementType(1), #Wavecourant/1,
+                                                                     connect_hanging_nodes=True, #set to False to do multiple refinement steps (e.g. for multiple regions)
+                                                                     account_for_samples_outside_face=True, #outsidecell argument for --refine?
+                                                                     max_refinement_iterations=5,
+                                                                     ) #TODO: missing the arguments dtmax (necessary?), hmin (min_face_size but then in meters instead of degrees), smoothiters (currently refinement is patchy along coastlines, goes good in dflowfm exec after additional implementation of HK), spherical 1/0 (necessary?)
+    
+    mk.mesh2d_refine_based_on_samples(samples=geomlist,
+                                       relative_search_radius=0.5, #TODO: bilin interp is preferred, but this is currently not supported (samples have to be ravelled): https://github.com/Deltares/MeshKernelPy/issues/34
+                                       minimum_num_samples=3,
+                                       mesh_refinement_params=mesh_refinement_parameters,
+                                       )
+    
+    return mk
+
+
+def generate_bndpli(lon_min, lon_max, lat_min, lat_max, dlon, dlat, name='bnd'): #TODO: maybe generate with meshkernel?
+
+    vals_lon_ar = np.arange(lon_min, lon_max, dlon)
+    vals_lon = np.linspace(lon_min, lon_max,len(vals_lon_ar))
+    vals_lat_ar = np.arange(lat_min, lat_max, dlat)
+    vals_lat = np.linspace(lat_min, lat_max,len(vals_lat_ar))
+    pli_p1 = np.c_[np.repeat(lon_min,len(vals_lat)),vals_lat]
+    pli_p2 = np.c_[vals_lon,np.repeat(lat_max,len(vals_lon))]
+    pli_p3 = np.c_[np.repeat(lon_max,len(vals_lat)),vals_lat[::-1]]
+    pli_p4 = np.c_[vals_lon[::-1],np.repeat(lat_min,len(vals_lon))]
+    
+    pli_all = np.concatenate([pli_p1[:-1],pli_p2[:-1],pli_p3[:-1],pli_p4[:-1]],axis=0)
+    
+    pli_polyobject = hcdfm.PolyObject(metadata=hcdfm.Metadata(name=name, n_rows=pli_all.shape[0], n_columns=pli_all.shape[1]),
+                                      points=[hcdfm.Point(x=x,y=y,data=[]) for x,y in pli_all])
+    pli_polyfile = hcdfm.PolyFile(objects=[pli_polyobject])
+    return pli_polyfile
+
+
