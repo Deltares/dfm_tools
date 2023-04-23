@@ -337,12 +337,12 @@ def test_timmodel_to_dataframe():
 
 
 @pytest.mark.systemtest
-def test_opendataset_ugridplot():
+def test_opendataset_ugridplot(): #this one fails with newer xarray versions: https://github.com/Deltares/xugrid/issues/78
     file_nc = os.path.join(dir_testinput,'DFM_curvedbend_3D/cb_3d_map.nc')
     
     uds = dfmt.open_partitioned_dataset(file_nc,chunks={'time':1})
 
-    uds['mesh2d_flowelem_bl'].ugrid.plot(edgecolors='face', cmap='jet') #this fails with newer xarray versions: https://github.com/Deltares/xugrid/issues/78
+    uds['mesh2d_flowelem_bl'].ugrid.plot(edgecolors='face', cmap='jet')
     
     
     
