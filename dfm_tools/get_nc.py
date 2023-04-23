@@ -40,6 +40,7 @@ import xugrid as xu
 import xarray as xr
 import matplotlib.pyplot as plt
 from dfm_tools.xarray_helpers import get_vertical_dimensions, Dataset_varswithdim
+import netCDF4
 
 
 def get_ugrid_verts(data_xr_map): #TODO: remove this deprecated function
@@ -284,7 +285,6 @@ def reconstruct_zw_zcc_fromzsigma(uds):
     """
     
     #TODO: default fillvalues are not automatically parsed to nan, so doing it manually: https://github.com/pydata/xarray/issues/2742
-    import netCDF4
     fillvals = netCDF4.default_fillvals
     
     osz_formulaterms_int_dict = get_formula_terms(uds,varn_contains='interface')
