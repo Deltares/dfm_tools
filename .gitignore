@@ -47,6 +47,7 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 tests/examples_output
+tests/dfm_tools_testdata
 
 # Translations
 *.mo
