@@ -16,6 +16,7 @@ import pathlib
 def download_testdata():
     #TODO: work with pooch instead, like: https://github.com/Deltares/xugrid/blob/main/xugrid/data/sample_data.py
     #TODO: make opendap folder structure the same as local testdata folder
+    #TODO: does not check if url exists, will downl
     
     fname_list = []
     fname_list += ['DFM_curvedbend_3D/cb_3d_map.nc']
@@ -35,6 +36,8 @@ def download_testdata():
         file_url = f'https://opendap.deltares.nl/thredds/fileServer/opendap/deltares/Delft3D/netcdf_example_files/{fname}'
         print(f'downloading {file_url} to {file_nc}')
         r = requests.get(file_url, allow_redirects=True)
+        if r.status_code==404:
+            raise Exception('url not found')
         with open(file_nc, 'wb') as f:
             f.write(r.content)
 
@@ -301,6 +304,7 @@ def test_intersect_edges_withsort():
     assert (face_index == np.array([ 91, 146, 147, 147, 202, 201, 201, 146])).all()
 
 
+@pytest.mark.unittest
 def test_zlayermodel_correct_layers():
     file_nc = os.path.join(dir_testinput,'DFM_grevelingen_3D','Grevelingen-FM_0*_map.nc') #zlayer
     data_frommap_merged = dfmt.open_partitioned_dataset(file_nc)
