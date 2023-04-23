@@ -34,7 +34,7 @@ def download_testdata(): #TODO: work with pooch instead, like: https://github.co
             f.write(r.content)
 
 dir_testinput = os.path.join(r'c:\DATA','dfm_tools_testdata') #on WCF
-if 1:#not os.path.exists(dir_testinput): #for instance when running on github
+if not os.path.exists(dir_testinput): #for instance when running on github
     dir_testinput = './dfm_tools_testdata'
     download_testdata()
     
@@ -330,7 +330,7 @@ def test_timmodel_to_dataframe():
     assert len(tim_pd) == 91
     assert tim_pd.columns[-1] == 'Phaeocystis_P (g/m3)'
 
-            
+
 @pytest.mark.systemtest
 def test_opendataset_ugridplot():
     file_nc = os.path.join(dir_testinput,'DFM_curvedbend_3D/cb_3d_map.nc')
