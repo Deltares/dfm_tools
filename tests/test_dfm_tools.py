@@ -36,8 +36,7 @@ def download_testdata():
         file_url = f'https://opendap.deltares.nl/thredds/fileServer/opendap/deltares/Delft3D/netcdf_example_files/{fname}'
         print(f'downloading {file_url} to {file_nc}')
         r = requests.get(file_url, allow_redirects=True)
-        if r.status_code==404:
-            raise Exception(f'url not found: {file_url}')
+        r.raise_for_status() #raise HTTPError if url not exists
         with open(file_nc, 'wb') as f:
             f.write(r.content)
 
