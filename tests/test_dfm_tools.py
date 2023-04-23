@@ -17,7 +17,6 @@ import xarray as xr
 def download_testdata():
     #TODO: work with pooch instead, like: https://github.com/Deltares/xugrid/blob/main/xugrid/data/sample_data.py
     #TODO: make opendap folder structure the same as local testdata folder
-    #TODO: does not check if url exists, will downl
     
     fname_list = []
     fname_list += ['DFM_curvedbend_3D/cb_3d_map.nc']
