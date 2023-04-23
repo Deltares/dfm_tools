@@ -11,6 +11,7 @@ import hydrolib.core.dflowfm as hcdfm
 import pandas as pd
 import requests
 import pathlib
+import xarray as xr
 
 
 def download_testdata():
@@ -347,9 +348,6 @@ def test_opendataset_ugridplot(): #this one fails with xarray>=2023.3.0: https:/
     
 @pytest.mark.unittest
 def test_xr_interp_to_newdim(): #this one fails with scipy>=1.10.0: https://github.com/pydata/xarray/issues/7701
-    import numpy as np
-    import xarray as xr
-    
     ds = xr.Dataset()
     so_np = np.array([[[35.819576, 35.82568 , 35.82873 ],
                        [35.819576, 35.824154, 35.831783],
