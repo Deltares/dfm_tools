@@ -1,0 +1,9 @@
+#additional requirements for developers
+bumpversion
+pdoc3
+flake8
+pytest
+pytest-cov
+twine
+jupyter
+notebook
