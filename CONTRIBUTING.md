@@ -57,6 +57,16 @@ Increasing the dfm_tools version number:
 - ``bumpversion major`` or ``bumpversion minor`` or ``bumpversion patch`` (changes version numbers in files and commits changes)
 - push changes with ``git push`` (from git bash window)
 
+Create release:
+
+- make sure the ``main`` branch is up to date (important issues solved, all pullrequests closed, the versionnumber is correct)
+- copy the dfm_tools version from https://github.com/Deltares/dfm_tools/blob/main/setup.cfg (e.g. ``0.11.0``)
+- go to https://github.com/Deltares/dfm_tools/releases/new
+- click ``choose a tag`` and type v+versionnumber (e.g. ``v0.11.0``), click ``create new tag: v0.11.0 on publish``
+- set the release title to the tagname (e.g. ``v0.11.0``)
+- click ``Generate release notes`` and check if there is anything that should be removed
+- if all is set, click ``Publish release``
+
 What are all these packages for?:
 
 - shapely for slicing 2D/3D data
