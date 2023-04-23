@@ -61,6 +61,7 @@ __author__ = &#34;&#34;&#34;Jelmer Veenstra&#34;&#34;&#34;
 __email__ = &#39;jelmer.veenstra@deltares.nl&#39;
 __version__ = &#39;0.10.54&#39;
 
+from dfm_tools.deprecated import *
 from dfm_tools.errors import *
 from dfm_tools.download import *
 from dfm_tools.get_nc import *
@@ -74,7 +75,6 @@ from dfm_tools.regulargrid import *
 from dfm_tools.xarray_helpers import *
 from dfm_tools.energy_dissipation import *
 from dfm_tools.bathymetry import *
-from dfm_tools.io.tim import * #TODO: remove this when moved to hydrolib
 #from dfm_tools.modelbuilder import * #commented since we do not want to expose these functions with hardcoded parameters
 
 import warnings
@@ -87,6 +87,10 @@ warnings.filterwarnings(&#39;always&#39;,category=DeprecationWarning)</code></pr
 <dt><code class="name"><a title="dfm_tools.bathymetry" href="bathymetry.html">dfm_tools.bathymetry</a></code></dt>
 <dd>
 <div class="desc"><p>Created on Mon May 31 17:17:09 2021 …</p></div>
+</dd>
+<dt><code class="name"><a title="dfm_tools.deprecated" href="deprecated.html">dfm_tools.deprecated</a></code></dt>
+<dd>
+<div class="desc"><p>Created on Sun Apr 23 22:42:27 2023 …</p></div>
 </dd>
 <dt><code class="name"><a title="dfm_tools.download" href="download.html">dfm_tools.download</a></code></dt>
 <dd>
@@ -119,10 +123,6 @@ Copyright (C) 2020 Deltares. All rights reserved …</p></div>
 <dt><code class="name"><a title="dfm_tools.interpolate_grid2bnd" href="interpolate_grid2bnd.html">dfm_tools.interpolate_grid2bnd</a></code></dt>
 <dd>
 <div class="desc"><p>Created on Thu Aug 18 17:39:03 2022 …</p></div>
-</dd>
-<dt><code class="name"><a title="dfm_tools.io" href="io/index.html">dfm_tools.io</a></code></dt>
-<dd>
-<div class="desc"></div>
 </dd>
 <dt><code class="name"><a title="dfm_tools.linebuilder" href="linebuilder.html">dfm_tools.linebuilder</a></code></dt>
 <dd>
@@ -176,6 +176,7 @@ Copyright (C) 2020 Deltares. All rights reserved …</p></div>
 <li><h3><a href="#header-submodules">Sub-modules</a></h3>
 <ul>
 <li><code><a title="dfm_tools.bathymetry" href="bathymetry.html">dfm_tools.bathymetry</a></code></li>
+<li><code><a title="dfm_tools.deprecated" href="deprecated.html">dfm_tools.deprecated</a></code></li>
 <li><code><a title="dfm_tools.download" href="download.html">dfm_tools.download</a></code></li>
 <li><code><a title="dfm_tools.energy_dissipation" href="energy_dissipation.html">dfm_tools.energy_dissipation</a></code></li>
 <li><code><a title="dfm_tools.errors" href="errors.html">dfm_tools.errors</a></code></li>
@@ -183,7 +184,6 @@ Copyright (C) 2020 Deltares. All rights reserved …</p></div>
 <li><code><a title="dfm_tools.get_nc_helpers" href="get_nc_helpers.html">dfm_tools.get_nc_helpers</a></code></li>
 <li><code><a title="dfm_tools.hydrolib_helpers" href="hydrolib_helpers.html">dfm_tools.hydrolib_helpers</a></code></li>
 <li><code><a title="dfm_tools.interpolate_grid2bnd" href="interpolate_grid2bnd.html">dfm_tools.interpolate_grid2bnd</a></code></li>
-<li><code><a title="dfm_tools.io" href="io/index.html">dfm_tools.io</a></code></li>
 <li><code><a title="dfm_tools.linebuilder" href="linebuilder.html">dfm_tools.linebuilder</a></code></li>
 <li><code><a title="dfm_tools.meshkernel_helpers" href="meshkernel_helpers.html">dfm_tools.meshkernel_helpers</a></code></li>
 <li><code><a title="dfm_tools.modelbuilder" href="modelbuilder.html">dfm_tools.modelbuilder</a></code></li>

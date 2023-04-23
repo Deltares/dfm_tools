@@ -116,10 +116,6 @@ def get_ncvarproperties(data_xr):
     return vars_pd
 
 
-def get_varnamefromattrs(data_xr, varname):
-    raise DeprecationWarning(&#39;dfmt.get_varnamefromattrs() will be deprecated in a future version of dfm_tools, ds=dfmt.rename_waqvars(ds) is a more convenient alternative&#39;) #TODO: remove unused function
-
-
 def rename_waqvars(ds:(xr.Dataset,xu.UgridDataset)):
     &#34;&#34;&#34;
     Rename all water quality variables in a dataset (like mesh2d_water_quality_output_24) to their long_name attribute (like mesh2d_DOscore)
@@ -289,19 +285,6 @@ def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset), drop_tidal_times:bool = True
     data_xr.close()
 
     return vars_pd</code></pre>
-</details>
-</dd>
-<dt id="dfm_tools.get_nc_helpers.get_varnamefromattrs"><code class="name flex">
-<span>def <span class="ident">get_varnamefromattrs</span></span>(<span>data_xr, varname)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def get_varnamefromattrs(data_xr, varname):
-    raise DeprecationWarning(&#39;dfmt.get_varnamefromattrs() will be deprecated in a future version of dfm_tools, ds=dfmt.rename_waqvars(ds) is a more convenient alternative&#39;) #TODO: remove unused function</code></pre>
 </details>
 </dd>
 <dt id="dfm_tools.get_nc_helpers.rename_waqvars"><code class="name flex">
@@ -493,7 +476,6 @@ def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset), drop_tidal_times:bool = True
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
 <li><code><a title="dfm_tools.get_nc_helpers.get_ncvarproperties" href="#dfm_tools.get_nc_helpers.get_ncvarproperties">get_ncvarproperties</a></code></li>
-<li><code><a title="dfm_tools.get_nc_helpers.get_varnamefromattrs" href="#dfm_tools.get_nc_helpers.get_varnamefromattrs">get_varnamefromattrs</a></code></li>
 <li><code><a title="dfm_tools.get_nc_helpers.rename_waqvars" href="#dfm_tools.get_nc_helpers.rename_waqvars">rename_waqvars</a></code></li>
 <li><code><a title="dfm_tools.get_nc_helpers.rename_fouvars" href="#dfm_tools.get_nc_helpers.rename_fouvars">rename_fouvars</a></code></li>
 </ul>
