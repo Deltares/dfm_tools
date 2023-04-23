@@ -2,8 +2,6 @@ scipy<1.10.0
 numpy
 matplotlib
 pandas
-hydrolib-core>=0.5.1
-meshkernel>=2.0.2
 shapely>=1.7.0
 #cartopy #commented since cartopy is not pip installable
 pyepsg
@@ -16,3 +14,5 @@ bottleneck
 xugrid>=0.2.1
 cdsapi
 pydap
+hydrolib-core>=0.5.1
+meshkernel>=2.0.2

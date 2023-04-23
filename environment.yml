@@ -19,7 +19,7 @@ dependencies:
   #install xarray<2023.3.0 to avoid issue: https://github.com/Deltares/xugrid/issues/78
   - xarray<2023.3.0
   - dask
-  - netcdf4
+  - netcdf4>=1.5.3
   - bottleneck
   - xugrid>=0.2.1
   - cdsapi
