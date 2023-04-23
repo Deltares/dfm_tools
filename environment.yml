@@ -27,9 +27,13 @@ dependencies:
   - pip:
     - hydrolib-core>=0.5.1
     - meshkernel>=2.0.2
+    #additional requirements for developers
+    - bumpversion
+    - pdoc3
+    - pandoc
+    - flake8
     - pytest
     - pytest-cov
+    - twine
     - jupyter
     - notebook
-    - bumpversion
-    - twine
