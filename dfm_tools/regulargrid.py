@@ -36,40 +36,6 @@ import warnings
 import numpy as np
 
 
-def scatter_to_regulargrid(xcoords, ycoords, values, ncellx=None, ncelly=None, reg_x_vec=None, reg_y_vec=None, method='nearest', maskland_dist=None): #TODO: remove from code
-    """
-    interpolates scatter values (x,y,z) or meshgrids to regular grid
-
-    Parameters
-    ----------
-    xcoords : TYPE
-        DESCRIPTION. The default is None.
-    ycoords : TYPE
-        DESCRIPTION. The default is None.
-    values : TYPE
-        DESCRIPTION. The default is None.
-    ncellx : TYPE, optional
-        DESCRIPTION. The default is None.
-    ncelly : TYPE, optional
-        DESCRIPTION. The default is None.
-    method : TYPE, optional
-        DESCRIPTION. The default is 'nearest'.
-    maskland_dist : TYPE, optional
-        Distance used to mask out land cells. Value differs per model resolution. For sperical use maskland_dist of eg 0.01, for cartesian use maskland_dist of eg 100. The default is None.
-
-    Returns
-    -------
-    x_grid : TYPE
-        DESCRIPTION.
-    y_grid : TYPE
-        DESCRIPTION.
-    value_grid : TYPE
-        DESCRIPTION.
-
-    """
-    raise DeprecationWarning('dfm_tools.regulargrid.scatter_to_regulargrid() is deprecated, use ds = dfmt.rasterize_ugrid(uds) instead')
-
-
 def center2corner(cen):
     
     warnings.warn(DeprecationWarning('center2corner() might be phased out in a future version, unless it is found useful for regulargrid netcdf reading/plotting.'))

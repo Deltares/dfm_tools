@@ -32,7 +32,6 @@ Created on Fri Feb 14 12:45:11 2020
 @author: veenstra
 """
 
-import warnings
 import numpy as np
 import datetime as dt
 import re
@@ -41,13 +40,6 @@ import xarray as xr
 import matplotlib.pyplot as plt
 from dfm_tools.xarray_helpers import get_vertical_dimensions, Dataset_varswithdim
 import netCDF4
-
-
-def get_ugrid_verts(data_xr_map): #TODO: remove this deprecated function
-    """
-    getting ugrid verts from xugrid mapfile.
-    """
-    raise DeprecationWarning('dfmt.get_ugrid_verts() is deprecated, use uds.grid.face_node_coordinates instead (https://github.com/Deltares/xugrid/issues/48)')
 
 
 def calc_dist_pythagoras(x1,x2,y1,y2):
@@ -514,10 +506,6 @@ def rasterize_ugrid(uds:xu.UgridDataset, ds_like:xr.Dataset = None, resolution:f
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
     return ds
-
-
-def plot_background(ax=None, projection=None, google_style='satellite', resolution=1, features=None, nticks=6, latlon_format=False, gridlines=False, **kwargs): #TODO: remove this deprecated function
-    raise DeprecationWarning('dfmt.plot_background() is deprecated, use contextily and cartopy instead like in https://github.com/Deltares/dfm_tools/blob/main/tests/examples_workinprogress/workinprogress_cartopy_satellite_coastlines.py')
 
 
 def plot_ztdata(data_xr_sel, varname, ax=None, only_contour=False, **kwargs):
