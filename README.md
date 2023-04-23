@@ -19,8 +19,11 @@ Information and examples
 - [use binder](https://mybinder.org/v2/gh/Deltares/dfm_tools/HEAD) to run these notebooks interactively (loading takes a while)
 - [github folder](https://github.com/Deltares/dfm_tools/tree/main/tests/examples) with more example scripts
 
+Installation basics
+--------
+- latest release: ``pip install dfm_tools`` (excludes ``cartopy`` since it is only installable via conda)
 
-Installation
+Installation recommendation
 --------
 - download and install Anaconda 64 bit (with Python 3.8 or later) from https://www.anaconda.com/distribution/#download-section
 - open Anaconda prompt
