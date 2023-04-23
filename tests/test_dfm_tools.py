@@ -9,6 +9,7 @@ import dfm_tools as dfmt
 import numpy as np
 import hydrolib.core.dflowfm as hcdfm
 import pandas as pd
+import requests
 
 dir_testinput = os.path.join(r'c:\DATA','dfm_tools_testdata')
 
@@ -320,8 +321,25 @@ def test_opendataset_ugridplot():
     else:
         raise Exception(f'undefined model: {model}')
         
-    #open+merge mapfile with xugrid(xarray) and print netcdf structure
     uds = dfmt.open_partitioned_dataset(file_nc_map,chunks={'time':1})
 
     uds['mesh2d_flowelem_bl'].ugrid.plot(edgecolors='face', cmap='jet') #this fails with newer xarray versions: https://github.com/Deltares/xugrid/issues/78
+    
+
+@pytest.mark.systemtest
+def test_downloaddata_opendata(): #TODO: work with pooch instead, like: https://github.com/Deltares/xugrid/blob/main/xugrid/data/sample_data.py
+    fname = 'cb_3d_map.nc'
+    
+    if not os.path.exists(fname):
+        file_url = f'https://github.com/Deltares/dfm_tools/blob/330-fix-xarray-version-to-ensure-successful-plotting/data/{fname}?raw=true'
+        print(f'downloading {file_url}')
+        r = requests.get(file_url, allow_redirects=True)
+        with open(fname, 'wb') as f:
+            f.write(r.content)
+    
+    uds = dfmt.open_partitioned_dataset(fname,chunks={'time':1})
+
+    uds['mesh2d_flowelem_bl'].ugrid.plot(edgecolors='face', cmap='jet') #this fails with newer xarray versions: https://github.com/Deltares/xugrid/issues/78
+    
+    
     
