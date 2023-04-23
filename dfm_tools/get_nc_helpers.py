@@ -63,10 +63,6 @@ def get_ncvarproperties(data_xr):
     return vars_pd
 
 
-def get_varnamefromattrs(data_xr, varname):
-    raise DeprecationWarning('dfmt.get_varnamefromattrs() will be deprecated in a future version of dfm_tools, ds=dfmt.rename_waqvars(ds) is a more convenient alternative') #TODO: remove unused function
-
-
 def rename_waqvars(ds:(xr.Dataset,xu.UgridDataset)):
     """
     Rename all water quality variables in a dataset (like mesh2d_water_quality_output_24) to their long_name attribute (like mesh2d_DOscore)
