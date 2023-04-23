@@ -43,6 +43,7 @@ if not os.path.exists(dir_testinput): #for instance when running on github
 
 dir_tests = os.path.dirname(__file__) #F9 doesnt work, only F5 (F5 also only method to reload external definition scripts)
 list_configfiles = glob.glob(os.path.join(dir_tests,'examples','*.py')) + glob.glob(os.path.join(dir_tests,'examples_workinprogress','*.py'))
+list_configfiles = [x for x in list_configfiles if 'workinprogress_xarray_performance' not in x]
 dir_output_general = os.path.join(dir_tests,'examples_output')
 if not os.path.exists(dir_output_general):
     os.mkdir(dir_output_general)
