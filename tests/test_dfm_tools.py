@@ -305,3 +305,26 @@ def test_timmodel_to_dataframe():
     assert tim_pd.columns[-1] == 'Phaeocystis_P (g/m3)'
 
 
+@pytest.mark.systemtest
+def test_opendataset_ugridplot():
+    import matplotlib.pyplot as plt
+    import dfm_tools as dfmt
+    model = 'curvedbend' #'curvedbend' 'grevelingen' 'westernscheldt'
+
+    dir_opendap = 'http://opendap.deltares.nl/thredds/dodsC/opendap/deltares/Delft3D/netcdf_example_files'
+    if model=='curvedbend':
+        file_nc_map = [dir_opendap + '/DFM_curvedbend_3D/cb_3d_map.nc']
+    elif model=='grevelingen':
+        file_nc_map = [dir_opendap + f'/DFM_grevelingen_3D/Grevelingen-FM_{i:04d}_map.nc' for i in range(8)]
+    elif model=='westernscheldt':
+        file_nc_map = [dir_opendap + '/westernscheldt_sph_map.nc']
+    else:
+        raise Exception(f'undefined model: {model}')
+        
+    #open+merge mapfile with xugrid(xarray) and print netcdf structure
+    uds = dfmt.open_partitioned_dataset(file_nc_map,chunks={'time':1})
+
+    fig, ax = plt.subplots()
+    uds['mesh2d_flowelem_bl'].ugrid.plot(ax=ax, edgecolors='face', cmap='jet') #this fails with newer xarray versions: https://github.com/Deltares/xugrid/issues/78
+    
+    
