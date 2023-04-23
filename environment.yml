@@ -17,7 +17,7 @@ dependencies:
   - geopandas
   - contextily
   #install older xarray version to avoid issue: https://github.com/Deltares/xugrid/issues/78
-  - xarray<=2023.2.0
+  - xarray
   - dask
   - netcdf4
   - bottleneck
