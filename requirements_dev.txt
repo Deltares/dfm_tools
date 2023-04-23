@@ -1,5 +1,5 @@
 #additional requirements for developers
-bumpversion
+bump2version>=0.5.11
 pdoc3
 flake8
 pytest
