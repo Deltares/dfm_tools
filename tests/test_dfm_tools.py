@@ -308,8 +308,6 @@ def test_timmodel_to_dataframe():
 @pytest.mark.requiresdata #TODO: this fails in github actions so it is marked as requiresdata so it will not run: "OSError: [Errno -68] NetCDF: I/O failure: 'http://opendap.deltares.nl/thredds/dodsC/opendap/deltares/Delft3D/netcdf_example_files/DFM_curvedbend_3D/cb_3d_map.nc'"
 @pytest.mark.systemtest
 def test_opendataset_ugridplot():
-    import matplotlib.pyplot as plt
-    import dfm_tools as dfmt
     model = 'curvedbend' #'curvedbend' 'grevelingen' 'westernscheldt'
 
     dir_opendap = 'https://opendap.deltares.nl/thredds/dodsC/opendap/deltares/Delft3D/netcdf_example_files'
@@ -325,7 +323,5 @@ def test_opendataset_ugridplot():
     #open+merge mapfile with xugrid(xarray) and print netcdf structure
     uds = dfmt.open_partitioned_dataset(file_nc_map,chunks={'time':1})
 
-    fig, ax = plt.subplots()
-    uds['mesh2d_flowelem_bl'].ugrid.plot(ax=ax, edgecolors='face', cmap='jet') #this fails with newer xarray versions: https://github.com/Deltares/xugrid/issues/78
-    
+    uds['mesh2d_flowelem_bl'].ugrid.plot(edgecolors='face', cmap='jet') #this fails with newer xarray versions: https://github.com/Deltares/xugrid/issues/78
     
