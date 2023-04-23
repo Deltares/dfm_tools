@@ -88,40 +88,6 @@ import warnings
 import numpy as np
 
 
-def scatter_to_regulargrid(xcoords, ycoords, values, ncellx=None, ncelly=None, reg_x_vec=None, reg_y_vec=None, method=&#39;nearest&#39;, maskland_dist=None): #TODO: remove from code
-    &#34;&#34;&#34;
-    interpolates scatter values (x,y,z) or meshgrids to regular grid
-
-    Parameters
-    ----------
-    xcoords : TYPE
-        DESCRIPTION. The default is None.
-    ycoords : TYPE
-        DESCRIPTION. The default is None.
-    values : TYPE
-        DESCRIPTION. The default is None.
-    ncellx : TYPE, optional
-        DESCRIPTION. The default is None.
-    ncelly : TYPE, optional
-        DESCRIPTION. The default is None.
-    method : TYPE, optional
-        DESCRIPTION. The default is &#39;nearest&#39;.
-    maskland_dist : TYPE, optional
-        Distance used to mask out land cells. Value differs per model resolution. For sperical use maskland_dist of eg 0.01, for cartesian use maskland_dist of eg 100. The default is None.
-
-    Returns
-    -------
-    x_grid : TYPE
-        DESCRIPTION.
-    y_grid : TYPE
-        DESCRIPTION.
-    value_grid : TYPE
-        DESCRIPTION.
-
-    &#34;&#34;&#34;
-    raise DeprecationWarning(&#39;dfm_tools.regulargrid.scatter_to_regulargrid() is deprecated, use ds = dfmt.rasterize_ugrid(uds) instead&#39;)
-
-
 def center2corner(cen):
     
     warnings.warn(DeprecationWarning(&#39;center2corner() might be phased out in a future version, unless it is found useful for regulargrid netcdf reading/plotting.&#39;))
@@ -276,75 +242,6 @@ def uva2xymagdeg(U1, V1, ALFAS, KCU=None, KCV=None, inactivewhen4x0=True): #only
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt id="dfm_tools.regulargrid.scatter_to_regulargrid"><code class="name flex">
-<span>def <span class="ident">scatter_to_regulargrid</span></span>(<span>xcoords, ycoords, values, ncellx=None, ncelly=None, reg_x_vec=None, reg_y_vec=None, method='nearest', maskland_dist=None)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>interpolates scatter values (x,y,z) or meshgrids to regular grid</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>xcoords</code></strong> :&ensp;<code>TYPE</code></dt>
-<dd>DESCRIPTION. The default is None.</dd>
-<dt><strong><code>ycoords</code></strong> :&ensp;<code>TYPE</code></dt>
-<dd>DESCRIPTION. The default is None.</dd>
-<dt><strong><code>values</code></strong> :&ensp;<code>TYPE</code></dt>
-<dd>DESCRIPTION. The default is None.</dd>
-<dt><strong><code>ncellx</code></strong> :&ensp;<code>TYPE</code>, optional</dt>
-<dd>DESCRIPTION. The default is None.</dd>
-<dt><strong><code>ncelly</code></strong> :&ensp;<code>TYPE</code>, optional</dt>
-<dd>DESCRIPTION. The default is None.</dd>
-<dt><strong><code>method</code></strong> :&ensp;<code>TYPE</code>, optional</dt>
-<dd>DESCRIPTION. The default is 'nearest'.</dd>
-<dt><strong><code>maskland_dist</code></strong> :&ensp;<code>TYPE</code>, optional</dt>
-<dd>Distance used to mask out land cells. Value differs per model resolution. For sperical use maskland_dist of eg 0.01, for cartesian use maskland_dist of eg 100. The default is None.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><strong><code>x_grid</code></strong> :&ensp;<code>TYPE</code></dt>
-<dd>DESCRIPTION.</dd>
-<dt><strong><code>y_grid</code></strong> :&ensp;<code>TYPE</code></dt>
-<dd>DESCRIPTION.</dd>
-<dt><strong><code>value_grid</code></strong> :&ensp;<code>TYPE</code></dt>
-<dd>DESCRIPTION.</dd>
-</dl></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def scatter_to_regulargrid(xcoords, ycoords, values, ncellx=None, ncelly=None, reg_x_vec=None, reg_y_vec=None, method=&#39;nearest&#39;, maskland_dist=None): #TODO: remove from code
-    &#34;&#34;&#34;
-    interpolates scatter values (x,y,z) or meshgrids to regular grid
-
-    Parameters
-    ----------
-    xcoords : TYPE
-        DESCRIPTION. The default is None.
-    ycoords : TYPE
-        DESCRIPTION. The default is None.
-    values : TYPE
-        DESCRIPTION. The default is None.
-    ncellx : TYPE, optional
-        DESCRIPTION. The default is None.
-    ncelly : TYPE, optional
-        DESCRIPTION. The default is None.
-    method : TYPE, optional
-        DESCRIPTION. The default is &#39;nearest&#39;.
-    maskland_dist : TYPE, optional
-        Distance used to mask out land cells. Value differs per model resolution. For sperical use maskland_dist of eg 0.01, for cartesian use maskland_dist of eg 100. The default is None.
-
-    Returns
-    -------
-    x_grid : TYPE
-        DESCRIPTION.
-    y_grid : TYPE
-        DESCRIPTION.
-    value_grid : TYPE
-        DESCRIPTION.
-
-    &#34;&#34;&#34;
-    raise DeprecationWarning(&#39;dfm_tools.regulargrid.scatter_to_regulargrid() is deprecated, use ds = dfmt.rasterize_ugrid(uds) instead&#39;)</code></pre>
-</details>
-</dd>
 <dt id="dfm_tools.regulargrid.center2corner"><code class="name flex">
 <span>def <span class="ident">center2corner</span></span>(<span>cen)</span>
 </code></dt>
@@ -575,7 +472,6 @@ vel_y = vel_magn</em>np.sin(np.deg2rad(direction_math_deg))</p></div>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
-<li><code><a title="dfm_tools.regulargrid.scatter_to_regulargrid" href="#dfm_tools.regulargrid.scatter_to_regulargrid">scatter_to_regulargrid</a></code></li>
 <li><code><a title="dfm_tools.regulargrid.center2corner" href="#dfm_tools.regulargrid.center2corner">center2corner</a></code></li>
 <li><code><a title="dfm_tools.regulargrid.corner2center" href="#dfm_tools.regulargrid.corner2center">corner2center</a></code></li>
 <li><code><a title="dfm_tools.regulargrid.uva2xymagdeg" href="#dfm_tools.regulargrid.uva2xymagdeg">uva2xymagdeg</a></code></li>
