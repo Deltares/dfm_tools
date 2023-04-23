@@ -43,6 +43,8 @@ from pydap.client import open_url
 from pydap.cas.get_cookies import setup_session
 import warnings
 from dfm_tools.errors import OutOfRangeError
+import cdsapi
+import cftime
 
 
 def download_ERA5(varkey,
@@ -53,8 +55,7 @@ def download_ERA5(varkey,
     #TODO: describe something about the .cdsapirc file
     #TODO: make this function cdsapi generic, instead of ERA5 hardcoded (make flexible for product_type/name/name_output) (variables_dict is not used actively anymore, so this is possible)
     
-    import cdsapi # Import cdsapi and create a Client instance # https://cds.climate.copernicus.eu/api-how-to #TODO: move to top of script? (then make dependency of dfm_tools)
-    c = cdsapi.Client()
+    c = cdsapi.Client() # import cdsapi and create a Client instance # https://cds.climate.copernicus.eu/api-how-to
     
     #dictionary with ERA5 variables #this is not actively used
     variables_dict = {&#39;ssr&#39;:&#39;surface_net_solar_radiation&#39;,
@@ -232,8 +233,7 @@ def open_OPeNDAP_xr(dataset_url, credentials=None):
             data_xr = xr.open_mfdataset(dataset_url,decode_times=False) #TODO: for some reason decode_times does not work: &#34;ValueError: unable to decode time units &#39;hours since analysis&#39; with &#39;the default calendar&#39;.&#34;
         else:
             print(f&#39;xarray opening opendap dataset: {dataset_url}.html&#39;)
-            data_xr = xr.open_dataset(dataset_url,decode_times=False) #TODO: for some reason decode_times does not work: &#34;ValueError: unable to decode time units &#39;hours since analysis&#39; with &#39;the default calendar&#39;.&#34;
-        import cftime
+            data_xr = xr.open_dataset(dataset_url,decode_times=False) #TODO: for some reason decode_times does not work: &#34;ValueError: unable to decode time units &#39;hours since analysis&#39; with &#39;the default calendar
         data_xr[&#39;time&#39;] = cftime.num2date(data_xr.time,units=data_xr.time.units,calendar=data_xr.time.calendar)
         data_xr = data_xr.rename({&#39;lon&#39;:&#39;longitude&#39;,&#39;lat&#39;:&#39;latitude&#39;})
     else:
@@ -365,8 +365,7 @@ def download_OPeNDAP(dataset_url,
     #TODO: describe something about the .cdsapirc file
     #TODO: make this function cdsapi generic, instead of ERA5 hardcoded (make flexible for product_type/name/name_output) (variables_dict is not used actively anymore, so this is possible)
     
-    import cdsapi # Import cdsapi and create a Client instance # https://cds.climate.copernicus.eu/api-how-to #TODO: move to top of script? (then make dependency of dfm_tools)
-    c = cdsapi.Client()
+    c = cdsapi.Client() # import cdsapi and create a Client instance # https://cds.climate.copernicus.eu/api-how-to
     
     #dictionary with ERA5 variables #this is not actively used
     variables_dict = {&#39;ssr&#39;:&#39;surface_net_solar_radiation&#39;,
@@ -590,8 +589,7 @@ Some examples:
             data_xr = xr.open_mfdataset(dataset_url,decode_times=False) #TODO: for some reason decode_times does not work: &#34;ValueError: unable to decode time units &#39;hours since analysis&#39; with &#39;the default calendar&#39;.&#34;
         else:
             print(f&#39;xarray opening opendap dataset: {dataset_url}.html&#39;)
-            data_xr = xr.open_dataset(dataset_url,decode_times=False) #TODO: for some reason decode_times does not work: &#34;ValueError: unable to decode time units &#39;hours since analysis&#39; with &#39;the default calendar&#39;.&#34;
-        import cftime
+            data_xr = xr.open_dataset(dataset_url,decode_times=False) #TODO: for some reason decode_times does not work: &#34;ValueError: unable to decode time units &#39;hours since analysis&#39; with &#39;the default calendar
         data_xr[&#39;time&#39;] = cftime.num2date(data_xr.time,units=data_xr.time.units,calendar=data_xr.time.calendar)
         data_xr = data_xr.rename({&#39;lon&#39;:&#39;longitude&#39;,&#39;lat&#39;:&#39;latitude&#39;})
     else:

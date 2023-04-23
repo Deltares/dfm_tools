@@ -54,7 +54,7 @@ ax.gridlines(draw_labels=True) #cannot use ax.get_xticks+ax.set_xticks since the
 fig.savefig(os.path.join(dir_output,'cartopy_hirlam_curvedgridlines'))
 
 #GREVELINGEN
-file_nc_map = os.path.join(dir_testinput,'DFM_3D_z_Grevelingen\\computations\\run01\\DFM_OUTPUT_Grevelingen-FM\\Grevelingen-FM_0*_map.nc')
+file_nc_map = os.path.join(dir_testinput,'DFM_grevelingen_3D\\Grevelingen-FM_0*_map.nc')
 data_frommap_merged = dfmt.open_partitioned_dataset(file_nc_map) #TODO: make starred default, but not supported by older code
 fig, ax = plt.subplots(1,1, subplot_kw={'projection': ccrs.epsg(28992)}) #provide axis projection on initialisation, cannot be edited later on
 pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot(ax=ax, linewidth=0.5, cmap='jet', vmin=-40, vmax=10)

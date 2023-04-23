@@ -18,7 +18,7 @@ overwrite = True
 yearmonth = True
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
-file_nc = os.path.join(dir_testinput,r'DFM_3D_z_Grevelingen\computations\run01\DFM_OUTPUT_Grevelingen-FM\Grevelingen-FM_0000_map.nc')
+file_nc = os.path.join(dir_testinput,'DFM_grevelingen_3D','Grevelingen-FM_0000_map.nc')
 
 dir_output = '.'
 postfix = '_'.join(os.path.basename(file_nc).split('_')[-2:])
