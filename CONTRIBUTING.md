@@ -66,6 +66,7 @@ Create release:
 - set the release title to the tagname (e.g. ``v0.11.0``)
 - click ``Generate release notes`` and check if there is anything that should be removed
 - if all is set, click ``Publish release``
+- a release is created and the github action publishes it on PyPI (https://pypi.org/project/dfm-tools/)
 
 What are all these packages for?:
 
