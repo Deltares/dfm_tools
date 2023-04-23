@@ -4,9 +4,9 @@ channels:
 dependencies:
   - python=3.8
   - pip>=19.2.3
-  #install older scipy version to avoid da.interp() issue: https://github.com/Deltares/dfm_tools/issues/287 and https://github.com/pydata/xarray/issues/7701
+  #install scipy<1.10.0 to avoid da.interp() issue: https://github.com/Deltares/dfm_tools/issues/287 and https://github.com/pydata/xarray/issues/7701
   - scipy<1.10.0
-  #install older numpy version to avoid issue: https://github.com/Deltares/dfm_tools/issues/295
+  #install numpy<1.24.0 to avoid issue: https://github.com/Deltares/dfm_tools/issues/295
   - numpy<1.24.0
   - matplotlib
   - pandas
@@ -16,8 +16,8 @@ dependencies:
   - pyepsg
   - geopandas
   - contextily
-  #install older xarray version to avoid issue: https://github.com/Deltares/xugrid/issues/78
-  - xarray<=2023.2.0
+  #install xarray<2023.3.0 to avoid issue: https://github.com/Deltares/xugrid/issues/78
+  - xarray<2023.3.0
   - dask
   - netcdf4
   - bottleneck
