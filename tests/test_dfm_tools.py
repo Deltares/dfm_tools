@@ -14,7 +14,7 @@ import pathlib
 
 
 def download_testdata(): #TODO: work with pooch instead, like: https://github.com/Deltares/xugrid/blob/main/xugrid/data/sample_data.py
-    fname_list = ['DFM_curvedbend_3D/cb_3d_map.nc']
+    fname_list = ['DFM_curvedbend_3D/cb_3d_map.nc'] #TODO: make opendap folder structure the same as local testdata folder
 
     # file_nc_map = [dir_opendap + '/DFM_curvedbend_3D/cb_3d_map.nc']
     # file_nc_map = [dir_opendap + f'/DFM_grevelingen_3D/Grevelingen-FM_{i:04d}_map.nc' for i in range(8)]
@@ -34,7 +34,7 @@ def download_testdata(): #TODO: work with pooch instead, like: https://github.co
             f.write(r.content)
 
 dir_testinput = os.path.join(r'c:\DATA','dfm_tools_testdata') #on WCF
-if not os.path.exists(dir_testinput): #for instance when running on github
+if not os.path.exists(dir_testinput): #for instance when running on github or 
     dir_testinput = './dfm_tools_testdata'
     download_testdata()
     
