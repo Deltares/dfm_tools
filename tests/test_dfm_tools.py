@@ -21,7 +21,7 @@ def download_testdata():
     fname_list = []
     fname_list += ['DFM_curvedbend_3D/cb_3d_map.nc']
     fname_list += ['DFM_curvedbend_3D/cb_3d_his.nc']
-    fname_list += ['DFM_grevelingen_3D/Grevelingen-FM_{i:04d}_map.nc' for i in range(8)]
+    fname_list += [f'DFM_grevelingen_3D/Grevelingen-FM_{i:04d}_map.nc' for i in range(8)]
     fname_list += ['DFM_grevelingen_3D/Grevelingen-FM_0000_his.nc']
     fname_list += ['DFM_grevelingen_3D/Grevelingen_FM_grid_20190603_net.nc']
     # fname_list += ['westernscheldt_sph_map.nc']
@@ -37,7 +37,7 @@ def download_testdata():
         print(f'downloading {file_url} to {file_nc}')
         r = requests.get(file_url, allow_redirects=True)
         if r.status_code==404:
-            raise Exception('url not found')
+            raise Exception(f'url not found: {file_url}')
         with open(file_nc, 'wb') as f:
             f.write(r.content)
 
