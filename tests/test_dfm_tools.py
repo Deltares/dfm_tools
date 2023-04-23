@@ -331,7 +331,8 @@ def test_downloaddata_opendata(): #TODO: work with pooch instead, like: https://
     fname = 'cb_3d_map.nc'
     
     if not os.path.exists(fname):
-        file_url = f'https://github.com/Deltares/dfm_tools/blob/330-fix-xarray-version-to-ensure-successful-plotting/data/{fname}?raw=true'
+        #file_url = f'https://github.com/Deltares/dfm_tools/blob/330-fix-xarray-version-to-ensure-successful-plotting/data/{fname}?raw=true'
+        file_url = 'https://opendap.deltares.nl/thredds/dodsC/opendap/deltares/Delft3D/netcdf_example_files/DFM_curvedbend_3D/cb_3d_map.nc'
         print(f'downloading {file_url}')
         r = requests.get(file_url, allow_redirects=True)
         with open(fname, 'wb') as f:
