@@ -305,7 +305,7 @@ def test_timmodel_to_dataframe():
     assert tim_pd.columns[-1] == 'Phaeocystis_P (g/m3)'
 
 
-#@pytest.mark.requiresdata #TODO: this fails in github actions so it is marked as requiresdata so it will not run: "OSError: [Errno -68] NetCDF: I/O failure: 'http://opendap.deltares.nl/thredds/dodsC/opendap/deltares/Delft3D/netcdf_example_files/DFM_curvedbend_3D/cb_3d_map.nc'"
+@pytest.mark.requiresdata #TODO: this fails in github actions so it is marked as requiresdata so it will not run: "OSError: [Errno -68] NetCDF: I/O failure: 'http://opendap.deltares.nl/thredds/dodsC/opendap/deltares/Delft3D/netcdf_example_files/DFM_curvedbend_3D/cb_3d_map.nc'"
 @pytest.mark.systemtest
 def test_opendataset_ugridplot():
     import matplotlib.pyplot as plt
