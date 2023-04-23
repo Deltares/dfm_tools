@@ -10,9 +10,34 @@ import numpy as np
 import hydrolib.core.dflowfm as hcdfm
 import pandas as pd
 import requests
+import pathlib
 
-dir_testinput = os.path.join(r'c:\DATA','dfm_tools_testdata')
 
+def download_testdata(): #TODO: work with pooch instead, like: https://github.com/Deltares/xugrid/blob/main/xugrid/data/sample_data.py
+    fname_list = ['DFM_curvedbend_3D/cb_3d_map.nc']
+
+    # file_nc_map = [dir_opendap + '/DFM_curvedbend_3D/cb_3d_map.nc']
+    # file_nc_map = [dir_opendap + f'/DFM_grevelingen_3D/Grevelingen-FM_{i:04d}_map.nc' for i in range(8)]
+    # file_nc_map = [dir_opendap + '/westernscheldt_sph_map.nc']
+
+    for fname in fname_list:
+        file_nc = os.path.join(dir_testinput,fname)
+        file_dirname = os.path.dirname(file_nc)
+        if os.path.exists(file_nc): #skip if file exists
+            continue
+        pathlib.Path(file_dirname).mkdir(parents=True, exist_ok=True) #make subdir if needed
+        
+        file_url = f'https://opendap.deltares.nl/thredds/fileServer/opendap/deltares/Delft3D/netcdf_example_files/{fname}'
+        print(f'downloading {file_url} to {file_nc}')
+        r = requests.get(file_url, allow_redirects=True)
+        with open(file_nc, 'wb') as f:
+            f.write(r.content)
+
+dir_testinput = os.path.join(r'c:\DATA','dfm_tools_testdata') #on WCF
+if 1:#not os.path.exists(dir_testinput): #for instance when running on github
+    dir_testinput = './dfm_tools_testdata'
+    download_testdata()
+    
 
 # ACCEPTANCE TESTS VIA EXAMPLE SCRIPTS, these are the ones who are only meant to generate output files
 
@@ -305,40 +330,12 @@ def test_timmodel_to_dataframe():
     assert len(tim_pd) == 91
     assert tim_pd.columns[-1] == 'Phaeocystis_P (g/m3)'
 
-
-@pytest.mark.requiresdata #TODO: this fails in github actions so it is marked as requiresdata so it will not run: "OSError: [Errno -68] NetCDF: I/O failure: 'http://opendap.deltares.nl/thredds/dodsC/opendap/deltares/Delft3D/netcdf_example_files/DFM_curvedbend_3D/cb_3d_map.nc'"
+            
 @pytest.mark.systemtest
 def test_opendataset_ugridplot():
-    model = 'curvedbend' #'curvedbend' 'grevelingen' 'westernscheldt'
-
-    dir_opendap = 'https://opendap.deltares.nl/thredds/dodsC/opendap/deltares/Delft3D/netcdf_example_files'
-    if model=='curvedbend':
-        file_nc_map = [dir_opendap + '/DFM_curvedbend_3D/cb_3d_map.nc']
-    elif model=='grevelingen':
-        file_nc_map = [dir_opendap + f'/DFM_grevelingen_3D/Grevelingen-FM_{i:04d}_map.nc' for i in range(8)]
-    elif model=='westernscheldt':
-        file_nc_map = [dir_opendap + '/westernscheldt_sph_map.nc']
-    else:
-        raise Exception(f'undefined model: {model}')
-        
-    uds = dfmt.open_partitioned_dataset(file_nc_map,chunks={'time':1})
-
-    uds['mesh2d_flowelem_bl'].ugrid.plot(edgecolors='face', cmap='jet') #this fails with newer xarray versions: https://github.com/Deltares/xugrid/issues/78
+    file_nc = os.path.join(dir_testinput,'DFM_curvedbend_3D/cb_3d_map.nc')
     
-
-@pytest.mark.systemtest
-def test_downloaddata_opendata(): #TODO: work with pooch instead, like: https://github.com/Deltares/xugrid/blob/main/xugrid/data/sample_data.py
-    fname = 'cb_3d_map.nc'
-    
-    if not os.path.exists(fname):
-        #file_url = f'https://github.com/Deltares/dfm_tools/blob/330-fix-xarray-version-to-ensure-successful-plotting/data/{fname}?raw=true'
-        file_url = 'https://opendap.deltares.nl/thredds/fileServer/opendap/deltares/Delft3D/netcdf_example_files/DFM_curvedbend_3D/cb_3d_map.nc'
-        print(f'downloading {file_url}')
-        r = requests.get(file_url, allow_redirects=True)
-        with open(fname, 'wb') as f:
-            f.write(r.content)
-    
-    uds = dfmt.open_partitioned_dataset(fname,chunks={'time':1})
+    uds = dfmt.open_partitioned_dataset(file_nc,chunks={'time':1})
 
     uds['mesh2d_flowelem_bl'].ugrid.plot(edgecolors='face', cmap='jet') #this fails with newer xarray versions: https://github.com/Deltares/xugrid/issues/78
     
