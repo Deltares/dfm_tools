@@ -6,8 +6,7 @@ dependencies:
   - pip>=19.2.3
   #install scipy<1.10.0 to avoid da.interp() issue: https://github.com/Deltares/dfm_tools/issues/287 and https://github.com/pydata/xarray/issues/7701
   - scipy<1.10.0
-  #install numpy<1.24.0 to avoid issue: https://github.com/Deltares/dfm_tools/issues/295
-  - numpy<1.24.0
+  - numpy
   - matplotlib
   - pandas
   - shapely>=1.7.0
