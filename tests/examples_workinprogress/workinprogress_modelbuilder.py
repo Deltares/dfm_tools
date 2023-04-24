@@ -81,10 +81,7 @@ min_face_size = 200/(40075*1000/360) #convert meters to degrees
 dfmt.refine_basegrid(mk=mk_object, data_bathy_sel=data_bathy_sel, min_face_size=min_face_size) #TODO: min_face_size is now in degrees instead of meters (maybe already works when is_geographic=True?)
 
 #cutcells
-file_ldb = r'p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\grid\coastline.pli' #TODO: add GSHHS full dataset: p:\1230882-emodnet_hrsm\global_tide_surge_model\trunk\scripts_gtsm5\landboundary\GSHHS_high_min1km2.ldb (subselection desired before conversion to polygons) >> p:\1230882-emodnet_hrsm\data\landboundary_GSHHS\GSHHS_full.shp
-dfmt.meshkernel_delete_withpol(mk=mk_object, file_ldb=file_ldb)
-breakit
-dfmt.meshkernel_delete_withcoastlines(mk=mk_object, res='h') #TODO: write coastline to ldbfile?
+dfmt.meshkernel_delete_withcoastlines(mk=mk_object, res='h') #TODO: write used coastline to ldbfile?
 #TODO: illegalcells.pol necessary?
 
 #TODO: cleanup grid necessary?
