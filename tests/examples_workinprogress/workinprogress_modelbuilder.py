@@ -29,7 +29,7 @@ inisaltem = True #initialsalinity/initialtemperature gives 33.8ppt uniform and s
 ** INFO   :  Min. salinity limited, min =  -1.037033177733807E-005
 """
 
-#TODO: files that are not created in this script: ldb, obsfiles, dimr.xml and the submit script (and GEBCO dataset)
+#TODO: files that are not created in this script: obsfiles, dimr.xml and the submit script (and GEBCO+GSHHS datasets)
 #TODO: reference run in: p:\11209231-003-bes-modellering\hydrodynamica\hackathon\simulations\run001_mapInterval_1800\
 #TODO: also compare settings to p:\11208054-004-dcsm-fm\models\3D_DCSM-FM\2013-2017\B05_hydrolib_JV\DCSM-FM_0_5nm.mdu (e.g. tlfSmo)
 # domain
@@ -61,6 +61,7 @@ mdu = hcdfm.FMModel()
 
 #%%bnd generation
 pli_polyfile = dfmt.generate_bndpli(lon_min, lon_max, lat_min, lat_max, dlon=bnd_dlon_dlat, dlat=bnd_dlon_dlat, name=f'{model_name}_bnd')
+#TODO: generate pli from mk with mk_object.mesh2d_get_mesh_boundaries_as_polygons()
 poly_file = os.path.join(dir_output, f'{model_name}.pli')
 pli_polyfile.save(poly_file)
 
@@ -81,9 +82,9 @@ dfmt.refine_basegrid(mk=mk_object, data_bathy_sel=data_bathy_sel, min_face_size=
 
 #cutcells
 file_ldb = r'p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\grid\coastline.pli' #TODO: add GSHHS full dataset: p:\1230882-emodnet_hrsm\global_tide_surge_model\trunk\scripts_gtsm5\landboundary\GSHHS_high_min1km2.ldb (subselection desired before conversion to polygons) >> p:\1230882-emodnet_hrsm\data\landboundary_GSHHS\GSHHS_full.shp
-#coastlines_gdb = dfmt.get_coastlines_gdb(bbox=(lon_min, lat_min, lon_max, lat_max))
-
-dfmt.meshkernel_delete_withpol(mk=mk_object,file_ldb=file_ldb) #TODO: update this function to work with GSHHS more efficiently: coastlines_gdb = dfmt.get_coastlines_gdb(bbox=(-10, 35, 10, 60))
+dfmt.meshkernel_delete_withpol(mk=mk_object, file_ldb=file_ldb)
+breakit
+dfmt.meshkernel_delete_withcoastlines(mk=mk_object, res='h') #TODO: write coastline to ldbfile?
 #TODO: illegalcells.pol necessary?
 
 #TODO: cleanup grid necessary?
@@ -114,7 +115,7 @@ dfmt.plot_coastlines(ax=ax, crs='EPSG:4326')
 netfile  = os.path.join(dir_output, f'{model_name}_net.nc')
 xu_grid_uds.ugrid.to_netcdf(netfile)
 mdu.geometry.netfile = netfile #TODO: path is windows/unix dependent #TODO: providing os.path.basename(netfile) raises "ValidationError: 1 validation error for Geometry - netfile:   File: `C:\SnapVolumesTemp\MountPoints\{45c63495-0000-0000-0000-100000000000}\{79DE0690-9470-4166-B9EE-4548DC416BBD}\SVROOT\DATA\dfm_tools\tests\examples_workinprogress\Bonaire_net.nc` not found, skipped parsing." (wrong current directory)
-breakit
+
 
 dir_output_data_cmems = os.path.join(dir_output_data, 'cmems')
 if not os.path.isdir(dir_output_data_cmems):

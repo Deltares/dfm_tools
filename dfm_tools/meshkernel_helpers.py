@@ -15,11 +15,33 @@ from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame
 from dfm_tools import __version__
 import getpass
 import numpy as np
+from dfm_tools.coastlines import get_coastlines_gdb
+
+
+def meshkernel_delete_withcoastlines(mk, res:str='f', min_area:float = 0, crs=None):
+    mesh_bnds = mk.mesh2d_get_mesh_boundaries_as_polygons()
+    mesh_bnds.x_coordinates
+    bbox = (mesh_bnds.x_coordinates.min(), mesh_bnds.y_coordinates.min(), mesh_bnds.x_coordinates.max(), mesh_bnds.y_coordinates.max())
+    
+    print('>> reading coastlines: ',end='')
+    dtstart = dt.datetime.now()
+    coastlines_gdb = get_coastlines_gdb(bbox=bbox, res=res, min_area=min_area, crs=crs)
+    print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
+    
+    for coastline_geom in coastlines_gdb['geometry']: #TODO: also possible without loop? >> geometry_separator=-999.9 so that value can be used to concat polygons. >> use hydrolib poly as input? https://github.com/Deltares/MeshKernelPy/issues/35
+        xx, yy = coastline_geom.exterior.coords.xy
+        xx = np.array(xx)
+        yy = np.array(yy)
+        
+        delete_pol_geom = meshkernel.GeometryList(x_coordinates=xx, y_coordinates=yy) #TODO: .copy()/to_numpy() makes the array contiguous in memory, which is necessary for meshkernel.mesh2d_delete()
+        mk.mesh2d_delete(geometry_list=delete_pol_geom, 
+                         delete_option=meshkernel.DeleteMeshOption(2), #ALL_COMPLETE_FACES/2: Delete all faces of which the complete face is inside the polygon
+                         invert_deletion=False) #TODO: cuts away link that is neccesary, so results in non-orthogonal grid (probably usecase of english channel?)
 
 
 def meshkernel_delete_withpol(mk, file_ldb, minpoints=None):
-    #TODO: move to coastlines_gdb = dfmt.get_coastlines_gdb(bbox=(-10, 35, 10, 60))
-
+    #TODO: read file_ldb as geodataframe (convert pointlike to geodataframe) and merge code with meshkernel_delete_withcoastlines
+    
     print('>> reading+converting ldb: ',end='')
     dtstart = dt.datetime.now()
     pol_ldb = hcdfm.PolyFile(file_ldb)
