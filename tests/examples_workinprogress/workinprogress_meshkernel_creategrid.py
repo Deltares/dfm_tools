@@ -123,7 +123,9 @@ delete (landward) part of grid with polygon and plot result
 #                         [-0.25032258, 48.71290323],
 #                         [ 1.92774194, 48.59935484]])
 file_ldb = r'p:\1230882-emodnet_hrsm\global_tide_surge_model\trunk\scripts_gtsm5\landboundary\GSHHS_intermediate_min1000km2.ldb'
-dfmt.meshkernel_delete_withpol(mk, file_ldb=file_ldb, minpoints=1000)
+dfmt.meshkernel_delete_withpol(mk, file_ldb=file_ldb, minpoints=1000) #TODO: update this function to work with GSHHS more efficiently: coastlines_gdb = dfmt.get_coastlines_gdb(bbox=(-10, 35, 10, 60))
+
+
 
 mesh2d_noland = mk.mesh2d_get()
 fig, ax = plt.subplots(figsize=figsize)
