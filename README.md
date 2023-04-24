@@ -22,7 +22,7 @@ Information and examples
 
 Installation basics
 --------
-- latest release: ``pip install dfm_tools`` (excludes ``cartopy`` since it is only installable via conda)
+- ``pip install dfm_tools`` (excludes ``cartopy`` since it is only installable via conda)
 
 Installation recommendation
 --------
@@ -31,7 +31,8 @@ Installation recommendation
 - ``conda create --name dfm_tools_env -c conda-forge python=3.8 spyder -y`` (you can also install a newer python version)
 - ``conda activate dfm_tools_env``
 - ``conda install -c conda-forge git shapely cartopy pyepsg geopandas contextily xarray dask netcdf4 bottleneck xugrid cdsapi pydap -y`` (installs conda-forge requirements)
-- ``python -m pip install git+https://github.com/Deltares/dfm_tools`` (this command installs dfm_tools and all required non-conda packages, also use to update)
+- install latest dfm_tools release: ``pip install dfm_tools``
+- alternatively install most recent dfm_tools version from github: ``python -m pip install git+https://github.com/Deltares/dfm_tools``
 - long paths error? Check [this Github issue](https://github.com/Deltares/HYDROLIB-core/issues/327#issuecomment-1266534032)
 - OpenSSL error? Fix your conda base env by doing [this](https://github.com/conda/conda/issues/11795#issuecomment-1335666474) or maybe [this](https://github.com/conda/conda/issues/11795#issuecomment-1382661765). Let us know if you encounter this issue.
 - to remove environment when necessary: ``conda remove -n dfm_tools_env --all``
