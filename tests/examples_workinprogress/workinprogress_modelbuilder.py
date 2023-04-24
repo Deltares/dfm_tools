@@ -29,7 +29,7 @@ inisaltem = True #initialsalinity/initialtemperature gives 33.8ppt uniform and s
 ** INFO   :  Min. salinity limited, min =  -1.037033177733807E-005
 """
 
-#TODO: files that are not created in this script: ldb, obsfiles, dimr.xml and the submit script (and GEBCO dataset)
+#TODO: files that are not created in this script: obsfiles, dimr.xml and the submit script (and GEBCO+GSHHS datasets)
 #TODO: reference run in: p:\11209231-003-bes-modellering\hydrodynamica\hackathon\simulations\run001_mapInterval_1800\
 #TODO: also compare settings to p:\11208054-004-dcsm-fm\models\3D_DCSM-FM\2013-2017\B05_hydrolib_JV\DCSM-FM_0_5nm.mdu (e.g. tlfSmo)
 # domain
@@ -61,6 +61,7 @@ mdu = hcdfm.FMModel()
 
 #%%bnd generation
 pli_polyfile = dfmt.generate_bndpli(lon_min, lon_max, lat_min, lat_max, dlon=bnd_dlon_dlat, dlat=bnd_dlon_dlat, name=f'{model_name}_bnd')
+#TODO: generate pli from mk with mk_object.mesh2d_get_mesh_boundaries_as_polygons()
 poly_file = os.path.join(dir_output, f'{model_name}.pli')
 pli_polyfile.save(poly_file)
 
@@ -80,8 +81,7 @@ min_face_size = 200/(40075*1000/360) #convert meters to degrees
 dfmt.refine_basegrid(mk=mk_object, data_bathy_sel=data_bathy_sel, min_face_size=min_face_size) #TODO: min_face_size is now in degrees instead of meters (maybe already works when is_geographic=True?)
 
 #cutcells
-file_ldb = r'p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\grid\coastline.pli' #TODO: add GSHHS full dataset: p:\1230882-emodnet_hrsm\global_tide_surge_model\trunk\scripts_gtsm5\landboundary\GSHHS_high_min1km2.ldb (subselection desired before conversion to polygons) >> p:\1230882-emodnet_hrsm\data\landboundary_GSHHS\GSHHS_full.shp
-dfmt.meshkernel_delete_withpol(mk=mk_object,file_ldb=file_ldb)
+dfmt.meshkernel_delete_withcoastlines(mk=mk_object, res='h') #TODO: write used coastline to ldbfile?
 #TODO: illegalcells.pol necessary?
 
 #TODO: cleanup grid necessary?
@@ -101,10 +101,12 @@ xu_grid_uds['mesh2d_node_z'] = data_bathy_interp.elevation.clip(max=10)
 fig, ax = plt.subplots()
 xu_grid_uds.grid.plot(ax=ax,linewidth=1)
 ctx.add_basemap(ax=ax, crs='EPSG:4326', attribution=False)
+dfmt.plot_coastlines(ax=ax, crs='EPSG:4326')
 
 fig, ax = plt.subplots()
 xu_grid_uds.mesh2d_node_z.ugrid.plot(ax=ax,center=False)
 ctx.add_basemap(ax=ax, crs='EPSG:4326', attribution=False)
+dfmt.plot_coastlines(ax=ax, crs='EPSG:4326')
 
 #write xugrid grid to netcdf
 netfile  = os.path.join(dir_output, f'{model_name}_net.nc')
