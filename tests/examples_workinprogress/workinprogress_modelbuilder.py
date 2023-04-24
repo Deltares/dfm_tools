@@ -81,7 +81,9 @@ dfmt.refine_basegrid(mk=mk_object, data_bathy_sel=data_bathy_sel, min_face_size=
 
 #cutcells
 file_ldb = r'p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\grid\coastline.pli' #TODO: add GSHHS full dataset: p:\1230882-emodnet_hrsm\global_tide_surge_model\trunk\scripts_gtsm5\landboundary\GSHHS_high_min1km2.ldb (subselection desired before conversion to polygons) >> p:\1230882-emodnet_hrsm\data\landboundary_GSHHS\GSHHS_full.shp
-dfmt.meshkernel_delete_withpol(mk=mk_object,file_ldb=file_ldb)
+#coastlines_gdb = dfmt.get_coastlines_gdb(bbox=(lon_min, lat_min, lon_max, lat_max))
+
+dfmt.meshkernel_delete_withpol(mk=mk_object,file_ldb=file_ldb) #TODO: update this function to work with GSHHS more efficiently: coastlines_gdb = dfmt.get_coastlines_gdb(bbox=(-10, 35, 10, 60))
 #TODO: illegalcells.pol necessary?
 
 #TODO: cleanup grid necessary?
@@ -101,16 +103,18 @@ xu_grid_uds['mesh2d_node_z'] = data_bathy_interp.elevation.clip(max=10)
 fig, ax = plt.subplots()
 xu_grid_uds.grid.plot(ax=ax,linewidth=1)
 ctx.add_basemap(ax=ax, crs='EPSG:4326', attribution=False)
+dfmt.plot_coastlines(ax=ax, crs='EPSG:4326')
 
 fig, ax = plt.subplots()
 xu_grid_uds.mesh2d_node_z.ugrid.plot(ax=ax,center=False)
 ctx.add_basemap(ax=ax, crs='EPSG:4326', attribution=False)
+dfmt.plot_coastlines(ax=ax, crs='EPSG:4326')
 
 #write xugrid grid to netcdf
 netfile  = os.path.join(dir_output, f'{model_name}_net.nc')
 xu_grid_uds.ugrid.to_netcdf(netfile)
 mdu.geometry.netfile = netfile #TODO: path is windows/unix dependent #TODO: providing os.path.basename(netfile) raises "ValidationError: 1 validation error for Geometry - netfile:   File: `C:\SnapVolumesTemp\MountPoints\{45c63495-0000-0000-0000-100000000000}\{79DE0690-9470-4166-B9EE-4548DC416BBD}\SVROOT\DATA\dfm_tools\tests\examples_workinprogress\Bonaire_net.nc` not found, skipped parsing." (wrong current directory)
-
+breakit
 
 dir_output_data_cmems = os.path.join(dir_output_data, 'cmems')
 if not os.path.isdir(dir_output_data_cmems):

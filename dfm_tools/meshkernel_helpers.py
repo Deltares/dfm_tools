@@ -18,6 +18,8 @@ import numpy as np
 
 
 def meshkernel_delete_withpol(mk, file_ldb, minpoints=None):
+    #TODO: move to coastlines_gdb = dfmt.get_coastlines_gdb(bbox=(-10, 35, 10, 60))
+
     print('>> reading+converting ldb: ',end='')
     dtstart = dt.datetime.now()
     pol_ldb = hcdfm.PolyFile(file_ldb)
