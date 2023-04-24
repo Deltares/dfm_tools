@@ -32,7 +32,7 @@ Contributing:
 - ``git push`` (this pushes it to your branch on github)
 - open a pull request at the branch on github, there you can see what you just pushed and the results of the automated tests will show.
 - optionally do another iteration of add+commits+push (and maybe bumpversion)
-- merge the branch if you are done with the sissue and the automated tests are successful.
+- merge the branch if you are done with the issue and the automated tests are successful.
 
 Running the testbank:
 
