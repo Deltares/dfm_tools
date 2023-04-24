@@ -122,8 +122,8 @@ delete (landward) part of grid with polygon and plot result
 #                         [ 0.20387097, 49.9       ],
 #                         [-0.25032258, 48.71290323],
 #                         [ 1.92774194, 48.59935484]])
-file_ldb = r'p:\1230882-emodnet_hrsm\global_tide_surge_model\trunk\scripts_gtsm5\landboundary\GSHHS_intermediate_min1000km2.ldb'
-dfmt.meshkernel_delete_withpol(mk, file_ldb=file_ldb, minpoints=1000)
+dfmt.meshkernel_delete_withcoastlines(mk=mk, res='h', min_area=1000)
+
 
 mesh2d_noland = mk.mesh2d_get()
 fig, ax = plt.subplots(figsize=figsize)
@@ -133,6 +133,7 @@ mesh2d_noland.plot_edges(ax,linewidth=1.2)
 #     ax.plot(pol_del['x'],pol_del['y'],'-r')
 # ax.set_xlim(xlim)
 # ax.set_ylim(ylim)
+dfmt.plot_coastlines(ax=ax, res='h', min_area=1000)
 ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 
 
