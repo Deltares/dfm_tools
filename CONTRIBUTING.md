@@ -31,6 +31,8 @@ Contributing:
 - check if all edits were committed with ``git status``, if there are new files created also do ``git add [path-to-file]``
 - ``git push`` (this pushes it to your branch on github)
 - open a pull request at the branch on github, there you can see what you just pushed and the results of the automated tests will show.
+- the automated test have limited coverage, so all green does not mean nothing broke unfortunately
+- also check the sonarcloud code quality (bugs, code smells, etc), improve where possible
 - optionally do another iteration of add+commits+push (and maybe bumpversion)
 - merge the branch if you are done with the issue and the automated tests are successful.
 
