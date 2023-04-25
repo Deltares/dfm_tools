@@ -41,8 +41,9 @@ import numpy as np
 import xarray as xr
 from cftime import date2num
 import hydrolib.core.dflowfm as hcdfm
-import warnings
 import datetime as dt
+import geopandas
+from shapely.geometry import LineString
 
 
 def Dataset_to_T3D(datablock_xr):
@@ -394,7 +395,36 @@ def TimModel_to_DataFrame(data_tim:hcdfm.TimModel, parse_column_labels:bool = Tr
         refdate_pd = pd.Timestamp(refdate)
         tim_pd.index = refdate_pd + pd.to_timedelta(tim_pd.index,unit=&#39;minutes&#39;)
     
-    return tim_pd</code></pre>
+    return tim_pd
+
+
+def pointlike_to_geodataframe(polyline_object, crs=&#39;EPSG:4326&#39;, add_pointnames=True):
+    #conversion to dataframe
+    #polyobject_pd = dfmt.pointlike_to_DataFrame(polyline_object)
+    polyobject_pd = pd.DataFrame([dict(p) for p in polyline_object.points])
+
+    df = pd.DataFrame()
+    if add_pointnames: #optionally add names
+        df[&#39;plipoint_name&#39;] = pd.Series(polyobject_pd.index).apply(lambda x: f&#39;{polyline_object.metadata.name}_{x+1:04d}&#39;)
+    
+    #make gdf of points (1 point per row)
+    gdf = geopandas.GeoDataFrame(data=df, geometry=geopandas.points_from_xy(polyobject_pd[&#39;x&#39;],polyobject_pd[&#39;y&#39;]), crs=crs)
+        
+    return gdf
+
+
+def PolyFile_to_geodataframe(polyfile_object, crs=&#39;EPSG:4326&#39;):
+    plilines_list = []
+    plinames_list = []
+    for iPO, polyline_object in enumerate(polyfile_object.objects):
+        polyobject_pd = pd.DataFrame([dict(p) for p in polyline_object.points]) #TODO: getting only x/y might be faster, but maybe we also need the other columns?
+        polygon_geom = LineString(zip(polyobject_pd[&#39;x&#39;],polyobject_pd[&#39;y&#39;]))
+        
+        #make gdf of points (1 point per row)
+        plilines_list.append(polygon_geom)
+        plinames_list.append(polyline_object.metadata.name)
+    gdf_polyfile = geopandas.GeoDataFrame({&#39;name&#39;: plinames_list, &#39;geometry&#39;: plilines_list}, crs=crs)
+    return gdf_polyfile</code></pre>
 </details>
 </section>
 <section>
@@ -866,6 +896,53 @@ data_pol_pd_list = [pointlike_to_DataFrame(polyobj) for polyobj in polyfile_obje
     return tim_pd</code></pre>
 </details>
 </dd>
+<dt id="dfm_tools.hydrolib_helpers.pointlike_to_geodataframe"><code class="name flex">
+<span>def <span class="ident">pointlike_to_geodataframe</span></span>(<span>polyline_object, crs='EPSG:4326', add_pointnames=True)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def pointlike_to_geodataframe(polyline_object, crs=&#39;EPSG:4326&#39;, add_pointnames=True):
+    #conversion to dataframe
+    #polyobject_pd = dfmt.pointlike_to_DataFrame(polyline_object)
+    polyobject_pd = pd.DataFrame([dict(p) for p in polyline_object.points])
+
+    df = pd.DataFrame()
+    if add_pointnames: #optionally add names
+        df[&#39;plipoint_name&#39;] = pd.Series(polyobject_pd.index).apply(lambda x: f&#39;{polyline_object.metadata.name}_{x+1:04d}&#39;)
+    
+    #make gdf of points (1 point per row)
+    gdf = geopandas.GeoDataFrame(data=df, geometry=geopandas.points_from_xy(polyobject_pd[&#39;x&#39;],polyobject_pd[&#39;y&#39;]), crs=crs)
+        
+    return gdf</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.hydrolib_helpers.PolyFile_to_geodataframe"><code class="name flex">
+<span>def <span class="ident">PolyFile_to_geodataframe</span></span>(<span>polyfile_object, crs='EPSG:4326')</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def PolyFile_to_geodataframe(polyfile_object, crs=&#39;EPSG:4326&#39;):
+    plilines_list = []
+    plinames_list = []
+    for iPO, polyline_object in enumerate(polyfile_object.objects):
+        polyobject_pd = pd.DataFrame([dict(p) for p in polyline_object.points]) #TODO: getting only x/y might be faster, but maybe we also need the other columns?
+        polygon_geom = LineString(zip(polyobject_pd[&#39;x&#39;],polyobject_pd[&#39;y&#39;]))
+        
+        #make gdf of points (1 point per row)
+        plilines_list.append(polygon_geom)
+        plinames_list.append(polyline_object.metadata.name)
+    gdf_polyfile = geopandas.GeoDataFrame({&#39;name&#39;: plinames_list, &#39;geometry&#39;: plilines_list}, crs=crs)
+    return gdf_polyfile</code></pre>
+</details>
+</dd>
 </dl>
 </section>
 <section>
@@ -893,6 +970,8 @@ data_pol_pd_list = [pointlike_to_DataFrame(polyobj) for polyobj in polyfile_obje
 <li><code><a title="dfm_tools.hydrolib_helpers.pointlike_to_DataFrame" href="#dfm_tools.hydrolib_helpers.pointlike_to_DataFrame">pointlike_to_DataFrame</a></code></li>
 <li><code><a title="dfm_tools.hydrolib_helpers.parse_xy_to_datetime" href="#dfm_tools.hydrolib_helpers.parse_xy_to_datetime">parse_xy_to_datetime</a></code></li>
 <li><code><a title="dfm_tools.hydrolib_helpers.TimModel_to_DataFrame" href="#dfm_tools.hydrolib_helpers.TimModel_to_DataFrame">TimModel_to_DataFrame</a></code></li>
+<li><code><a title="dfm_tools.hydrolib_helpers.pointlike_to_geodataframe" href="#dfm_tools.hydrolib_helpers.pointlike_to_geodataframe">pointlike_to_geodataframe</a></code></li>
+<li><code><a title="dfm_tools.hydrolib_helpers.PolyFile_to_geodataframe" href="#dfm_tools.hydrolib_helpers.PolyFile_to_geodataframe">PolyFile_to_geodataframe</a></code></li>
 </ul>
 </li>
 </ul>
