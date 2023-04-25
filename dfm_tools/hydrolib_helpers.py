@@ -387,9 +387,7 @@ def PolyFile_to_geodataframe(polyfile_object, crs='EPSG:4326'):
     plilines_list = []
     plinames_list = []
     for iPO, polyline_object in enumerate(polyfile_object.objects):
-        polyobject_pd = pd.DataFrame([dict(p) for p in polyline_object.points])
-        # polyobject_pd_x = pd.DataFrame([p.x for p in polyline_object.points]) #TODO: getting only x/y might be faster, but maybe we also need the other columns?
-        # polyobject_pd_y = pd.DataFrame([p.y for p in polyline_object.points])
+        polyobject_pd = pd.DataFrame([dict(p) for p in polyline_object.points]) #TODO: getting only x/y might be faster, but maybe we also need the other columns?
         polygon_geom = LineString(zip(polyobject_pd['x'],polyobject_pd['y']))
         
         #make gdf of points (1 point per row)
