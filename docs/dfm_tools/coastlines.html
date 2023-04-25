@@ -40,7 +40,7 @@ import geopandas
 import pandas as pd
 
 
-def get_coastlines_gdb(res:str=&#39;f&#39;, bbox:tuple = (-180, -90, 180, 90), min_area:float = 0, crs:str = None, include_fields:list = [&#39;area&#39;]) -&gt; geopandas.geoseries.GeoSeries:
+def get_coastlines_gdb(res:str=&#39;h&#39;, bbox:tuple = (-180, -90, 180, 90), min_area:float = 0, crs:str = None, include_fields:list = [&#39;area&#39;]) -&gt; geopandas.geoseries.GeoSeries:
     &#34;&#34;&#34;
     get coastlines from GSHHS database: https://www.ngdc.noaa.gov/mgg/shorelines/data/gshhg/latest/readme.txt
     geopandas docs https://geopandas.org/en/stable/docs/reference/api/geopandas.read_file.html
@@ -48,7 +48,7 @@ def get_coastlines_gdb(res:str=&#39;f&#39;, bbox:tuple = (-180, -90, 180, 90), m
     Parameters
     ----------
     res : str, optional
-        f(ull), h(igh), i(ntermediate), l(ow), c(oarse) resolution. The default is &#39;f&#39;.
+        f(ull), h(igh), i(ntermediate), l(ow), c(oarse) resolution. The default is &#39;h&#39;.
     bbox : tuple, optional
         (minx, miny, maxx, maxy), also includes shapes that are partly in the bbox. The default is (-180, -90, 180, 90).
     min_area : float, optional
@@ -89,7 +89,7 @@ def get_coastlines_gdb(res:str=&#39;f&#39;, bbox:tuple = (-180, -90, 180, 90), m
     return coastlines_gdb
 
 
-def plot_coastlines(ax, res:str=&#39;f&#39;, min_area:float = 0, crs=None, **kwargs):
+def plot_coastlines(ax, res:str=&#39;h&#39;, min_area:float = 0, crs=None, **kwargs):
     #TODO: if ax is GeoAxis, get crs from ax
     
     xlim = ax.get_xlim()
@@ -104,8 +104,8 @@ def plot_coastlines(ax, res:str=&#39;f&#39;, min_area:float = 0, crs=None, **kwa
     coastlines_gdb = get_coastlines_gdb(bbox=bbox, res=res, min_area=min_area, crs=crs)
     if coastlines_gdb.empty:
         return
-    zorder = max([x.zorder for x in ax.get_children()]) #always plot on top
-    coastlines_gdb.plot(ax=ax, zorder=zorder, **kwargs)
+    
+    coastlines_gdb.plot(ax=ax, **kwargs)
     
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)</code></pre>
@@ -119,7 +119,7 @@ def plot_coastlines(ax, res:str=&#39;f&#39;, min_area:float = 0, crs=None, **kwa
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="dfm_tools.coastlines.get_coastlines_gdb"><code class="name flex">
-<span>def <span class="ident">get_coastlines_gdb</span></span>(<span>res: str = 'f', bbox: tuple = (-180, -90, 180, 90), min_area: float = 0, crs: str = None, include_fields: list = ['area']) ‑> geopandas.geoseries.GeoSeries</span>
+<span>def <span class="ident">get_coastlines_gdb</span></span>(<span>res: str = 'h', bbox: tuple = (-180, -90, 180, 90), min_area: float = 0, crs: str = None, include_fields: list = ['area']) ‑> geopandas.geoseries.GeoSeries</span>
 </code></dt>
 <dd>
 <div class="desc"><p>get coastlines from GSHHS database: <a href="https://www.ngdc.noaa.gov/mgg/shorelines/data/gshhg/latest/readme.txt">https://www.ngdc.noaa.gov/mgg/shorelines/data/gshhg/latest/readme.txt</a>
@@ -127,7 +127,7 @@ geopandas docs <a href="https://geopandas.org/en/stable/docs/reference/api/geopa
 <h2 id="parameters">Parameters</h2>
 <dl>
 <dt><strong><code>res</code></strong> :&ensp;<code>str</code>, optional</dt>
-<dd>f(ull), h(igh), i(ntermediate), l(ow), c(oarse) resolution. The default is 'f'.</dd>
+<dd>f(ull), h(igh), i(ntermediate), l(ow), c(oarse) resolution. The default is 'h'.</dd>
 <dt><strong><code>bbox</code></strong> :&ensp;<code>tuple</code>, optional</dt>
 <dd>(minx, miny, maxx, maxy), also includes shapes that are partly in the bbox. The default is (-180, -90, 180, 90).</dd>
 <dt><strong><code>min_area</code></strong> :&ensp;<code>float</code>, optional</dt>
@@ -146,7 +146,7 @@ geopandas docs <a href="https://geopandas.org/en/stable/docs/reference/api/geopa
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_coastlines_gdb(res:str=&#39;f&#39;, bbox:tuple = (-180, -90, 180, 90), min_area:float = 0, crs:str = None, include_fields:list = [&#39;area&#39;]) -&gt; geopandas.geoseries.GeoSeries:
+<pre><code class="python">def get_coastlines_gdb(res:str=&#39;h&#39;, bbox:tuple = (-180, -90, 180, 90), min_area:float = 0, crs:str = None, include_fields:list = [&#39;area&#39;]) -&gt; geopandas.geoseries.GeoSeries:
     &#34;&#34;&#34;
     get coastlines from GSHHS database: https://www.ngdc.noaa.gov/mgg/shorelines/data/gshhg/latest/readme.txt
     geopandas docs https://geopandas.org/en/stable/docs/reference/api/geopandas.read_file.html
@@ -154,7 +154,7 @@ geopandas docs <a href="https://geopandas.org/en/stable/docs/reference/api/geopa
     Parameters
     ----------
     res : str, optional
-        f(ull), h(igh), i(ntermediate), l(ow), c(oarse) resolution. The default is &#39;f&#39;.
+        f(ull), h(igh), i(ntermediate), l(ow), c(oarse) resolution. The default is &#39;h&#39;.
     bbox : tuple, optional
         (minx, miny, maxx, maxy), also includes shapes that are partly in the bbox. The default is (-180, -90, 180, 90).
     min_area : float, optional
@@ -196,7 +196,7 @@ geopandas docs <a href="https://geopandas.org/en/stable/docs/reference/api/geopa
 </details>
 </dd>
 <dt id="dfm_tools.coastlines.plot_coastlines"><code class="name flex">
-<span>def <span class="ident">plot_coastlines</span></span>(<span>ax, res: str = 'f', min_area: float = 0, crs=None, **kwargs)</span>
+<span>def <span class="ident">plot_coastlines</span></span>(<span>ax, res: str = 'h', min_area: float = 0, crs=None, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -204,7 +204,7 @@ geopandas docs <a href="https://geopandas.org/en/stable/docs/reference/api/geopa
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def plot_coastlines(ax, res:str=&#39;f&#39;, min_area:float = 0, crs=None, **kwargs):
+<pre><code class="python">def plot_coastlines(ax, res:str=&#39;h&#39;, min_area:float = 0, crs=None, **kwargs):
     #TODO: if ax is GeoAxis, get crs from ax
     
     xlim = ax.get_xlim()
@@ -219,8 +219,8 @@ geopandas docs <a href="https://geopandas.org/en/stable/docs/reference/api/geopa
     coastlines_gdb = get_coastlines_gdb(bbox=bbox, res=res, min_area=min_area, crs=crs)
     if coastlines_gdb.empty:
         return
-    zorder = max([x.zorder for x in ax.get_children()]) #always plot on top
-    coastlines_gdb.plot(ax=ax, zorder=zorder, **kwargs)
+    
+    coastlines_gdb.plot(ax=ax, **kwargs)
     
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)</code></pre>
