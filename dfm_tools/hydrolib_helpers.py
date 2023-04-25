@@ -11,10 +11,9 @@ import numpy as np
 import xarray as xr
 from cftime import date2num
 import hydrolib.core.dflowfm as hcdfm
-import warnings
 import datetime as dt
 import geopandas
-from shapely.geometry import Polygon
+from shapely.geometry import LineString
 
 
 def Dataset_to_T3D(datablock_xr):
@@ -392,7 +391,7 @@ def PolyFile_to_geodataframe(polyfile_object, crs='EPSG:4326'):
         polyobject_pd = pd.DataFrame([dict(p) for p in polyline_object.points])
         # polyobject_pd_x = pd.DataFrame([p.x for p in polyline_object.points]) #TODO: this might be faster, but do we need the other columns also?
         # polyobject_pd_y = pd.DataFrame([p.y for p in polyline_object.points])
-        polygon_geom = Polygon(zip(polyobject_pd['x'],polyobject_pd['y']))
+        polygon_geom = LineString(zip(polyobject_pd['x'],polyobject_pd['y']))
         
         #make gdf of points (1 point per row)
         plilines_list.append(polygon_geom)

@@ -13,14 +13,6 @@ plt.close('all')
 import dfm_tools as dfmt
 import hydrolib.core.dflowfm as hcdfm
 
-#TODO: add below geodataframe code:
-"""
-polyfile_object = hcdfm.PolyFile(file_pli)
-crs = 'epsg:4326'
-gdf_polyline = pointlike_to_geodataframe(polyfile_object.objects[0],crs=crs)
-gdf_polyfile = PolyFile_to_geodataframe(polyfile_object,crs=crs)
-gdf_polyfile.plot()
-"""
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
@@ -77,6 +69,17 @@ for file_pli in file_pli_list:
     if write_outfile:
         polyfile_object_out.save(os.path.join(dir_output,os.path.basename(file_pli).replace('.','_out.')))
     
+    #geopandas
+    if '.tek' not in file_pli:
+        if 'Grevelingen' in file_pli:
+            crs = 'epsg:28992'
+        else:
+            crs = 'epsg:4326'
+        gdf_polyline = dfmt.pointlike_to_geodataframe(polyfile_object.objects[0],crs=crs)
+        gdf_polyfile = dfmt.PolyFile_to_geodataframe(polyfile_object,crs=crs)
+        fig,ax = plt.subplots()
+        gdf_polyfile.plot(ax=ax)
+        
     #get extents of all objects in polyfile
     data_pol_pd_list = [dfmt.pointlike_to_DataFrame(polyobj) for polyobj in polyfile_object.objects]
     data_pol_pd_all = pd.concat(data_pol_pd_list)
