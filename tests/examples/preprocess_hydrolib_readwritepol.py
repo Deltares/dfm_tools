@@ -13,7 +13,7 @@ plt.close('all')
 import dfm_tools as dfmt
 import hydrolib.core.dflowfm as hcdfm
 
-
+#TODO: choose geopandas/pandas and simplify example script
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
@@ -52,7 +52,7 @@ for file_pli in file_pli_list:
         
         #collect for writing outfile
         if write_outfile:
-            polyobject_out = dfmt.DataFrame_to_PolyObject(polyobject_pd, name=pli_PolyObject_sel.metadata.name, content=content)
+            polyobject_out = dfmt.DataFrame_to_PolyObject(polyobject_pd, name=pli_PolyObject_sel.metadata.name, content=content) #TODO: add geodataframe_to_PolyObject? (replace?)
             polyfile_object_out.objects.append(polyobject_out)
 
         #plotting
