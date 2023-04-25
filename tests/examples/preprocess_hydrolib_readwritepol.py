@@ -13,6 +13,14 @@ plt.close('all')
 import dfm_tools as dfmt
 import hydrolib.core.dflowfm as hcdfm
 
+#TODO: add below geodataframe code:
+"""
+polyfile_object = hcdfm.PolyFile(file_pli)
+crs = 'epsg:4326'
+gdf_polyline = pointlike_to_geodataframe(polyfile_object.objects[0],crs=crs)
+gdf_polyfile = PolyFile_to_geodataframe(polyfile_object,crs=crs)
+gdf_polyfile.plot()
+"""
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
