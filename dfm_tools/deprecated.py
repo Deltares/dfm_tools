@@ -6,6 +6,18 @@ Created on Sun Apr 23 22:42:27 2023
 """
 
 
+def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, depth=None, station=None, multipart=None, get_linkedgridinfo=False, silent=False):
+    raise DeprecationWarning('dfmt.get_ncmodeldata() is deprecated, use `uds = dfmt.open_partitioned_dataset(file_nc)` instead: https://github.com/Deltares/dfm_tools/blob/main/notebooks/postprocessing_example.ipynb')
+
+
+def get_netdata(file_nc, multipart=None):
+    raise DeprecationWarning('dfmt.get_netdata() is deprecated, use `uds = dfmt.open_partitioned_dataset(file_nc)` instead: https://github.com/Deltares/dfm_tools/blob/main/notebooks/postprocessing_example.ipynb')
+
+
+def plot_netmapdata(verts, values=None, ax=None, **kwargs):
+    raise DeprecationWarning('dfmt.plot_netmapdata() is deprecated, use `uds = dfmt.open_partitioned_dataset(file_nc); uds.mesh2d_s1.isel(time=0).ugrid.plot()` instead: https://github.com/Deltares/dfm_tools/blob/main/notebooks/postprocessing_example.ipynb')
+
+
 def plot_background(ax=None, projection=None, google_style='satellite', resolution=1, features=None, nticks=6, latlon_format=False, gridlines=False, **kwargs):
     raise DeprecationWarning('dfmt.plot_background() is deprecated, use contextily and cartopy instead like in https://github.com/Deltares/dfm_tools/blob/main/tests/examples_workinprogress/workinprogress_cartopy_satellite_coastlines.py')
 
