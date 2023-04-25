@@ -15,19 +15,13 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 plt.close('all')
-from pathlib import Path
 import xarray as xr
 import dfm_tools as dfmt
-import hydrolib.core.dflowfm as hcdfm
 
 #TODO: are corner2center and center2corner functions still needed?
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
-
-file_ldb = Path(r'p:\archivedprojects\1220688-lake-kivu\3_modelling\1_FLOW\4_CH4_CO2_included\008\lake_kivu_geo.ldb')
-polyfile_object = hcdfm.PolyFile(file_ldb)
-data_ldb = dfmt.pointlike_to_DataFrame(polyfile_object.objects[0])
 
 file_nc = r'p:\archivedprojects\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\062_netcdf\trim-thiery_002_coarse.nc'
 ds_thiery = xr.open_dataset(file_nc)
