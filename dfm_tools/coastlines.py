@@ -74,8 +74,8 @@ def plot_coastlines(ax, res:str='f', min_area:float = 0, crs=None, **kwargs):
     coastlines_gdb = get_coastlines_gdb(bbox=bbox, res=res, min_area=min_area, crs=crs)
     if coastlines_gdb.empty:
         return
-    zorder = max([x.zorder for x in ax.get_children()]) #always plot on top
-    coastlines_gdb.plot(ax=ax, zorder=zorder, **kwargs)
+    
+    coastlines_gdb.plot(ax=ax, **kwargs)
     
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
