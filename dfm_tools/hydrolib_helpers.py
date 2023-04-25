@@ -13,6 +13,8 @@ from cftime import date2num
 import hydrolib.core.dflowfm as hcdfm
 import warnings
 import datetime as dt
+import geopandas
+from shapely.geometry import Polygon
 
 
 def Dataset_to_T3D(datablock_xr):
@@ -365,4 +367,36 @@ def TimModel_to_DataFrame(data_tim:hcdfm.TimModel, parse_column_labels:bool = Tr
         tim_pd.index = refdate_pd + pd.to_timedelta(tim_pd.index,unit='minutes')
     
     return tim_pd
+
+
+def pointlike_to_geodataframe(polyline_object, crs='EPSG:4326', add_pointnames=True):
+    #conversion to dataframe
+    #polyobject_pd = dfmt.pointlike_to_DataFrame(polyline_object)
+    polyobject_pd = pd.DataFrame([dict(p) for p in polyline_object.points])
+
+    df = pd.DataFrame()
+    if add_pointnames: #optionally add names
+        df['plipoint_name'] = pd.Series(polyobject_pd.index).apply(lambda x: f'{polyline_object.metadata.name}_{x+1:04d}')
+    
+    #make gdf of points (1 point per row)
+    gdf = geopandas.GeoDataFrame(data=df, geometry=geopandas.points_from_xy(polyobject_pd['x'],polyobject_pd['y']), crs=crs)
+        
+    return gdf
+
+
+def PolyFile_to_geodataframe(polyfile_object, crs='EPSG:4326'):
+    plilines_list = []
+    plinames_list = []
+    for iPO, polyline_object in enumerate(polyfile_object.objects):
+        print(f'processing PolyObject {iPO+1} of {len(polyfile_object.objects)}: name={polyline_object.metadata.name}')
+        polyobject_pd = pd.DataFrame([dict(p) for p in polyline_object.points])
+        # polyobject_pd_x = pd.DataFrame([p.x for p in polyline_object.points]) #TODO: this might be faster, but do we need the other columns also?
+        # polyobject_pd_y = pd.DataFrame([p.y for p in polyline_object.points])
+        polygon_geom = Polygon(zip(polyobject_pd['x'],polyobject_pd['y']))
+        
+        #make gdf of points (1 point per row)
+        plilines_list.append(polygon_geom)
+        plinames_list.append(polyline_object.metadata.name)
+    gdf_polyfile = geopandas.GeoDataFrame({'name': plinames_list, 'geometry': plilines_list}, crs=crs)
+    return gdf_polyfile
 
