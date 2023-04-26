@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 # security: restrict permissions for CI jobs.
 permissions:
