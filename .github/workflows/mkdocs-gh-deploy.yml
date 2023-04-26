@@ -18,11 +18,13 @@ jobs:
         with:
           key: ${{ github.ref }}
           path: .cache
-      - run: |
+      - name: Install dependencies
+        run: |
             #pip install -r requirements.txt
             pip install -r requirements_dev.txt
-      - run: |
-            README.md docs
+      - name: copying files and mkdocs build
+        run: |
+            cp README.md docs
             cp CONTRIBUTING.md docs
             cp -r notebooks docs
             mkdir docs/examples
