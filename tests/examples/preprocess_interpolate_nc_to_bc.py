@@ -81,8 +81,7 @@ else:
 # start of interpolation process
 dtstart = dt.datetime.now()
 ext_bnd = hcdfm.ExtModel()
-if not os.path.isdir(dir_output):
-    os.mkdir(dir_output)
+os.makedirs(dir_output, exist_ok=True)
 
 for file_pli in list_plifiles:
     file_bc_basename = file_pli.name.replace('.pli','')
