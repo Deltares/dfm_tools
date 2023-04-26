@@ -41,7 +41,19 @@ Running the testbank:
 - ``pytest -m acceptance`` (runs the acceptance tests, which are the scripts in [the examples folder](https://github.com/Deltares/dfm_tools/tree/main/tests/examples)) and [the examples_workinprogress folder](https://github.com/Deltares/dfm_tools/tree/main/tests/examples_workinprogress))
 - ``pytest -m "not requireslocaldata"`` (this is what github does)
 
-Generate documentation (automatically runs via Github Actions upon push to main):
+Generate documentation with mkdocs:
+
+- open anaconda prompt in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
+- ``conda activate dfm_tools_env``
+```
+cp README.md docs
+cp -r notebooks docs
+cp -r tests/examples docs
+cp -r tests/examples_workinprogress docs
+mkdocs build
+```
+
+Generate documentation with pdoc (automatically runs via Github Actions upon push to main):
 
 - open anaconda prompt in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
 - ``conda activate dfm_tools_env``
