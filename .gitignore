@@ -100,7 +100,7 @@ ENV/
 # mkdocs documentation
 /site
 /docs/**/
-/docs/README.md
+/docs/*.md
 
 # mypy
 .mypy_cache/
