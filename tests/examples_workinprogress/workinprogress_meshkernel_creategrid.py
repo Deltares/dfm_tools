@@ -152,6 +152,7 @@ ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 #interp bathy
 data_bathy_interp = data_bathy_sel.interp(lon=xu_grid_uds.obj.mesh2d_node_x, lat=xu_grid_uds.obj.mesh2d_node_y).reset_coords(['lat','lon']) #interpolates lon/lat gebcodata to mesh2d_nNodes dimension #TODO: if these come from xu_grid_uds, the mesh2d_node_z var has no ugrid accessor since the dims are lat/lon instead of mesh2d_nNodes
 xu_grid_uds['mesh2d_node_z'] = data_bathy_interp.elevation.clip(max=10)
+#TODO: alternatively do this with TODO: mk.mesh2d_averaging_interpolation() or mk.mesh2d_triangulation_interpolation()
 
 fig, ax = plt.subplots(figsize=figsize)
 xu_grid_uds.mesh2d_node_z.ugrid.plot(ax=ax,center=False)
