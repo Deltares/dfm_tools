@@ -29,7 +29,7 @@ plugins:
   - mkdocs-jupyter: #https://github.com/danielfrg/mkdocs-jupyter
       include: ["*.py", "*.ipynb"]
       include_source: True
-      execute: false #TODO: false is faster, but true gives you output in the docs
+      execute: false #TODO: false is faster, but true gives you output in the docs. It also requires install requirements.txt in the github action
       allow_errors: false
       execute_ignore:
         - "*.ipynb"
@@ -69,7 +69,7 @@ markdown_extensions:
       # emoji_generator: !!python/name:materialx.emoji.to_svg
 repo_url: https://github.com/Deltares/dfm_tools
 repo_name: deltares/dfm_tools #TODO: maybe "Github": repo_url: https://github.com/example/repository/
-edit_uri: blob/354-from-pdoc-to-mkdocs/docs/ #TODO: maybe replace blob with edit
+edit_uri: blob/354-from-pdoc-to-mkdocs/docs/ #TODO: maybe replace blob with edit, replace branch with main
 # extra:
   # version:
     # provider: mike
@@ -96,7 +96,7 @@ nav:
           # - guides/gettinghelp.md
   - Tutorials:
       - notebooks/postprocessing_example.ipynb
-      - notebooks/preprocessing_example_hydrolib.ipynb #pdrive file not found, but we do not have to execute it
+      - notebooks/preprocessing_example_hydrolib.ipynb
       - pyfile: examples/preprocess_interpolate_nc_to_bc.py
       # - tutorials/loading_and_saving_a_model.md
   # - Topics:
