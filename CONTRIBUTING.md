@@ -1,10 +1,9 @@
-Information for developers
---------
+# Information for developers
 
-Create python environment dfm_tools_env and install dfm_tools in developer mode:
+## Create python environment dfm_tools_env and install dfm_tools in developer mode
 
-- download and install Anaconda 64 bit Python 3.8 (or higher) from https://www.anaconda.com/distribution/#download-section (miniconda should also be sufficient, but this is not yet tested). Install it with the recommended settings.
-- download git from https://git-scm.com/download/win, install with default settings
+- download and install Anaconda 64 bit Python 3.8 (or higher) from [anaconda.com](https://www.anaconda.com/distribution/#download-section) (miniconda should also be sufficient, but this is not yet tested). Install it with the recommended settings.
+- download git from [git-scm.com](https://git-scm.com/download/win), install with default settings
 - open git bash window where you want to clone the dfm_tools github repository (e.g. C:\\DATA\\)
 - git clone https://github.com/deltares/dfm_tools (creates a folder dfm_tools with the checked out repository)
 - ``cd dfm_tools``
@@ -19,7 +18,8 @@ Create python environment dfm_tools_env and install dfm_tools in developer mode:
 - ``conda deactivate``
 - to remove dfm_tools_env when necessary: ``conda remove -n dfm_tools_env --all``
 
-Contributing:
+## Contributing
+
 - open an existing issue or create a new issue at https://github.com/Deltares/dfm_tools/issues
 - create a branch via ``Development`` on the right. This branch is now linked to the issue and the issue will be closed once the branch is merged with main again
 - open git bash window in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
@@ -32,7 +32,7 @@ Contributing:
 - optionally increase the dfm_tools version with: ``bumpversion patch``
 - request a review on the pull request
 
-Running the testbank:
+## Running the testbank
 
 - open anaconda prompt in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
 - ``conda activate dfm_tools_env``
@@ -41,13 +41,28 @@ Running the testbank:
 - ``pytest -m acceptance`` (runs the acceptance tests, which are the scripts in [the examples folder](https://github.com/Deltares/dfm_tools/tree/main/tests/examples)) and [the examples_workinprogress folder](https://github.com/Deltares/dfm_tools/tree/main/tests/examples_workinprogress))
 - ``pytest -m "not requireslocaldata"`` (this is what github does)
 
-Generate documentation (automatically runs via Github Actions upon push to main):
+## Generate documentation with mkdocs
+
+- open anaconda prompt in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
+- ``conda activate dfm_tools_env``
+```
+cp README.md docs
+cp CONTRIBUTING.md docs
+cp -r notebooks docs
+mkdir docs\examples
+cp -r tests/examples/preprocess_interpolate_nc_to_bc.py docs/examples/
+#cp -r tests/examples docs
+#cp -r tests/examples_workinprogress docs
+mkdocs build
+```
+
+## Generate documentation with pdoc (automatically runs via Github Actions upon push to main)
 
 - open anaconda prompt in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
 - ``conda activate dfm_tools_env``
 - ``pdoc --html dfm_tools -o docs --force --config sort_identifiers=False``
 
-Increasing the dfm_tools version number:
+## Increasing the dfm_tools version number
 
 - commit all changes via git
 - open anaconda prompt in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
@@ -55,7 +70,7 @@ Increasing the dfm_tools version number:
 - ``bumpversion major`` or ``bumpversion minor`` or ``bumpversion patch`` (changes version numbers in files and commits changes)
 - push changes with ``git push`` (from git bash window)
 
-Create release:
+## Create release
 
 - make sure the ``main`` branch is up to date (important issues solved, all pullrequests closed, the versionnumber is correct)
 - copy the dfm_tools version from https://github.com/Deltares/dfm_tools/blob/main/setup.cfg (e.g. ``0.11.0``)
@@ -66,7 +81,7 @@ Create release:
 - if all is set, click ``Publish release``
 - a release is created and the github action publishes it on PyPI (https://pypi.org/project/dfm-tools/)
 
-What are all these packages for?:
+## What are all these packages for?
 
 - shapely for slicing 2D/3D data
 - cartopy for satellite imagery, coastlines etc on plots (can only be installed via conda)
@@ -77,7 +92,7 @@ What are all these packages for?:
 - xugrid: wrapper around xarray by Huite Bootsma, for ugrid support
 - cdsapi/pydap: to download ERA5 and CMEMS data. Minimal pydap version is 3.3.0?
 
-Potential errors:
+## Potential errors
 
 - Qt error upon launching Spyder?: remove the system/user environment variable 'qt_plugin_path' set by an old Delft3D4 installation procedure.
 - netCDF4 DLL error upon import in Spyder?: remove Anaconda paths from the Path user environment variable (https://github.com/spyder-ide/spyder/issues/19220)

@@ -99,6 +99,8 @@ ENV/
 
 # mkdocs documentation
 /site
+/docs/**/
+/docs/*.md
 
 # mypy
 .mypy_cache/

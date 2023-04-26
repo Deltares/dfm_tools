@@ -6,13 +6,11 @@
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/Deltares/dfm_tools/HEAD)
 [![Available on pypi](https://img.shields.io/pypi/v/dfm_tools.svg)](https://pypi.python.org/pypi/dfm_tools)
 
-dfm_tools
-=========
+# dfm_tools
 
 A Python package for pre- and postprocessing D-FlowFM model input and output files. Contains convenience functions built on top of other packages like [xarray](https://github.com/pydata/xarray), [xugrid](https://github.com/Deltares/xugrid), [hydrolib-core](https://github.com/Deltares/HYDROLIB-core) and many more.
 
-Information and examples
---------
+## Information and examples
 - [source code on Github](https://github.com/Deltares/dfm_tools)
 - [pdf](https://nbviewer.org/github/Deltares/dfm_tools/raw/pptx/docs/dfm_tools.pdf?flush_cache=true) with dfm_tools information, features and examples
 - [online documentation](https://deltares.github.io/dfm_tools) generated from docstrings
@@ -20,12 +18,11 @@ Information and examples
 - [use binder](https://mybinder.org/v2/gh/Deltares/dfm_tools/HEAD) to run these notebooks interactively (loading takes a while)
 - [github folder](https://github.com/Deltares/dfm_tools/tree/main/tests/examples) with more example scripts
 
-Installation basics
---------
+## Installation
+### Basic installation
 - ``pip install dfm_tools`` (excludes ``cartopy`` since it is only installable via conda)
 
-Installation recommendation
---------
+### Recommended installation
 - download and install Anaconda 64 bit (with Python 3.8 or later) from https://www.anaconda.com/distribution/#download-section
 - open Anaconda prompt
 - ``conda create --name dfm_tools_env -c conda-forge python=3.8 spyder -y`` (you can also install a newer python version)
