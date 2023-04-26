@@ -46,12 +46,20 @@ def get_coastlines_gdb(res:str='h', bbox:tuple = (-180, -90, 180, 90), min_area:
         bbox = (bbox_points.x[0], bbox_points.y[0], bbox_points.x[1], bbox_points.y[1])
         
     #L(evel)1 (coastlines except antarctica) and L6 (antarctic grounding line)
-    file_shp_L1 = os.path.join(r'p:\1230882-emodnet_hrsm\data\landboundary_GSHHS\gshhg-shp-2.3.7\GSHHS_shp',res,f'GSHHS_{res}_L1.shp')
-    file_shp_L6 = os.path.join(r'p:\1230882-emodnet_hrsm\data\landboundary_GSHHS\gshhg-shp-2.3.7\GSHHS_shp',res,f'GSHHS_{res}_L6.shp')
+    dir_GSHHS_shp = r'p:\1230882-emodnet_hrsm\data\landboundary_GSHHS\gshhg-shp-2.3.7\GSHHS_shp'
+    file_shp_L1 = os.path.join(dir_GSHHS_shp,res,f'GSHHS_{res}_L1.shp') #coastlines
+    file_shp_L6 = os.path.join(dir_GSHHS_shp,res,f'GSHHS_{res}_L6.shp') #Antarctic grounding-line polygons
+    file_shp_L2 = os.path.join(dir_GSHHS_shp,res,f'GSHHS_{res}_L2.shp') #lakes
+    file_shp_L3 = os.path.join(dir_GSHHS_shp,res,f'GSHHS_{res}_L3.shp') #islands-in-lakes
     
     coastlines_gdb_L1 = geopandas.read_file(file_shp_L1, include_fields=include_fields, where=f"area>{min_area}", bbox=bbox)
     coastlines_gdb_L6 = geopandas.read_file(file_shp_L6, include_fields=include_fields, where=f"area>{min_area}", bbox=bbox)
-    coastlines_gdb = pd.concat([coastlines_gdb_L1,coastlines_gdb_L6])
+    coastlines_gdb_list = [coastlines_gdb_L1,coastlines_gdb_L6]
+    if len(coastlines_gdb_L1)<2: #if max one L1 polygon is selected, automatically add lakes and islands-in-lakes
+        coastlines_gdb_L2 = geopandas.read_file(file_shp_L2, include_fields=include_fields, where=f"area>{min_area}", bbox=bbox)
+        coastlines_gdb_L3 = geopandas.read_file(file_shp_L3, include_fields=include_fields, where=f"area>{min_area}", bbox=bbox)
+        coastlines_gdb_list = [coastlines_gdb_L1,coastlines_gdb_L6,coastlines_gdb_L2,coastlines_gdb_L3]
+    coastlines_gdb = pd.concat(coastlines_gdb_list)
     
     if crs:
         coastlines_gdb = coastlines_gdb.to_crs(crs)
