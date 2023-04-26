@@ -83,13 +83,13 @@ edit_uri: blob/354-from-pdoc-to-mkdocs/docs/ #TODO: maybe replace blob with edit
 
 nav:
   - Home: "README.md"
-  # - How-to:
+  - How-to:
       # - Installation:
           # - "pip install": "guides/setup.md"
           # - "Developer container": "guides/devcontainers.md"
           # - "Local clone + Poetry": "guides/poetry.md"
-      # - Contributing:
-          # - "guides/contributing.md"
+      - Contributing:
+          - "CONTRIBUTING.md"
       # - Documentation:
           # - "guides/documentation.md"
       # - Support:
