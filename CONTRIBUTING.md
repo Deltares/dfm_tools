@@ -20,21 +20,17 @@ Create python environment dfm_tools_env and install dfm_tools in developer mode:
 - to remove dfm_tools_env when necessary: ``conda remove -n dfm_tools_env --all``
 
 Contributing:
-- do not commit/push changes to the main branch
 - open an existing issue or create a new issue at https://github.com/Deltares/dfm_tools/issues
-- create a branch via ``Development`` on the right. This branch is now linked to the issue and the issue will be closed when the branch is merged with main agian
+- create a branch via ``Development`` on the right. This branch is now linked to the issue and the issue will be closed once the branch is merged with main again
 - open git bash window in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
-- optional: ``git remote update origin --prune`` (update local branch list, git provides the correct command upon branch creation)
-- ``git checkout [branchname]``
+- ``git fetch origin`` followed by ``git checkout [branchname]``
 - make your local changes to the dfm_tools code (also create unittests), after each subtask do ``git commit -am 'description of what you did'`` (``-am`` adds all changed files to the commit)
-- you can run the testbank locally, but github can also do it for you after you ``push``
-- check if all edits were committed with ``git status``, if there are new files created also do ``git add [path-to-file]``
-- ``git push`` (this pushes it to your branch on github)
-- open a pull request at the branch on github, there you can see what you just pushed and the results of the automated tests will show.
-- the automated test have limited coverage, so all green does not mean nothing broke unfortunately
-- also check the sonarcloud code quality (bugs, code smells, etc), improve where possible
-- optionally do another iteration of add+commits+push (and maybe bumpversion)
-- merge the branch if you are done with the issue and the automated tests are successful.
+- check if all edits were committed with ``git status``, if there are new files created also do ``git add [path-to-file]`` and commit again
+- ``git push`` to push your committed changes your branch on github
+- open a pull request at the branch on github, there you can see what you just pushed and the automated checks will show up (testbank and code quality analysis).
+- optionally make additional local changes (+commit+push) untill you are done with the issue and the automated checks have passed
+- optionally increase the dfm_tools version with: ``bumpversion patch``
+- request a review on the pull request
 
 Running the testbank:
 
