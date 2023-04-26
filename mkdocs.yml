@@ -82,7 +82,7 @@ edit_uri: blob/354-from-pdoc-to-mkdocs/docs/ #TODO: maybe replace blob with edit
   # - stylesheets/extra.css
 
 nav:
-  - Home: "index.md"
+  - Home: "README.md"
   # - How-to:
       # - Installation:
           # - "pip install": "guides/setup.md"
