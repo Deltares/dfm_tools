@@ -69,7 +69,7 @@ markdown_extensions:
       # emoji_generator: !!python/name:materialx.emoji.to_svg
 repo_url: https://github.com/Deltares/dfm_tools
 repo_name: deltares/dfm_tools #TODO: maybe "Github": repo_url: https://github.com/example/repository/
-edit_uri: blob/354-from-pdoc-to-mkdocs/docs/ #TODO: maybe replace blob with edit, replace branch with main
+edit_uri: blob/main/docs/ #TODO: maybe replace blob with edit
 # extra:
   # version:
     # provider: mike
