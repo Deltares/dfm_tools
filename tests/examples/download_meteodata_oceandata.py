@@ -44,7 +44,7 @@ dir_output_hycom = './hycom_temp'
 #ERA5
 dir_output = dir_output_era5
 for varkey in variables_era5:
-    os.makedir(dir_outputs, exist_ok=True)
+    os.makedirs(dir_output, exist_ok=True)
     
     dfmt.download_ERA5(varkey, 
                        longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
