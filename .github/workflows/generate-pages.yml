@@ -33,7 +33,7 @@ jobs:
           conda list
           pip list
       # We use a custom build script for pdoc itself, ideally you just run `pdoc -o docs/ ...` here.
-      - run: pdoc -o docs/ dfm_tools
+      - run: pdoc -o docs/ dfm_tools --force
 
       - uses: actions/upload-pages-artifact@v1
         with:
