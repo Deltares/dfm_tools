@@ -48,11 +48,9 @@ ERA5_meteo_option = 2
 
 ## process
 # make dirs
-if not os.path.isdir(dir_output):
-    os.mkdir(dir_output)
+os.makedirs(dir_output, exist_ok=True)
 dir_output_data = os.path.join(dir_output, 'data')
-if not os.path.isdir(dir_output_data):
-    os.mkdir(dir_output_data)
+os.makedirs(dir_output_data, exist_ok=True)
 
 #%% initialize mdu file
 mdu_file = os.path.join(dir_output, f'{model_name}.mdu')
@@ -115,8 +113,7 @@ mdu.geometry.netfile = netfile #TODO: path is windows/unix dependent #TODO: prov
 
 
 dir_output_data_cmems = os.path.join(dir_output_data, 'cmems')
-if not os.path.isdir(dir_output_data_cmems):
-    os.mkdir(dir_output_data_cmems)
+os.makedirs(dir_output_data_cmems, exist_ok=True)
 
 
 #%% new ext: initial and open boundary condition
@@ -190,8 +187,7 @@ if inisaltem:
 
 # ERA5 - download
 dir_output_data_era5 = os.path.join(dir_output_data,'ERA5')
-if not os.path.exists(dir_output_data_era5):
-    os.mkdir(dir_output_data_era5)
+os.makedirs(dir_output_data_era5, exist_ok=True)
     
 if ERA5_meteo_option == 1: #TODO: pass option instead of varlist to fuctions?
     varlist_list = [['msl','u10n','v10n','chnk']]
