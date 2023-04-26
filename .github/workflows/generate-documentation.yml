@@ -18,8 +18,7 @@ jobs:
     steps:
     # the checkout action persists the passed credentials by default
     # subsequent git commands will pick them up automatically
-    # works with PAT: https://stackoverflow.com/questions/69263843/how-to-push-to-protected-main-branches-in-a-github-action/72515781#72515781
-    # more accurate is this description: https://stackoverflow.com/a/64078507/5578371
+    # works with PAT as suggested in https://stackoverflow.com/a/64078507/5578371
     - uses: actions/checkout@v2
       with:
         token: ${{secrets.PAT}}
