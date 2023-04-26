@@ -67,9 +67,11 @@ def plot_coastlines(ax, res:str='h', min_area:float = 0, crs=None, **kwargs):
     bbox = (xlim[0], ylim[0], xlim[1], ylim[1])
     
     if 'edgecolor' not in kwargs:
-        kwargs['edgecolor']='k'
+        kwargs['edgecolor'] = 'k'
     if 'facecolor' not in kwargs:
-        kwargs['facecolor']='none'
+        kwargs['facecolor'] = 'none'
+    if 'linewidth' not in kwargs:
+        kwargs['linewidth'] = 0.7
     
     coastlines_gdb = get_coastlines_gdb(bbox=bbox, res=res, min_area=min_area, crs=crs)
     if coastlines_gdb.empty:
