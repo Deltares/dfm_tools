@@ -75,6 +75,7 @@ fig, ax = plt.subplots()
 ax.plot(data_nc_XCOR,data_nc_YCOR,'-b',linewidth=0.2)
 ax.plot(data_nc_XCOR.T,data_nc_YCOR.T,'-b',linewidth=0.2)
 ax.set_aspect('equal')
+dfmt.plot_coastlines(ax=ax)
 plt.savefig(os.path.join(dir_output,'kivu_mesh'))
 
 fig, axs = plt.subplots(1,3, figsize=(16,7))
@@ -97,6 +98,7 @@ for iT, timestep in enumerate([1,10,15]):
               scale=3,color='w',width=0.005)
     ax.plot(data_nc_XCOR,data_nc_YCOR,'-b',linewidth=0.2)
     ax.plot(data_nc_XCOR.T,data_nc_YCOR.T,'-b',linewidth=0.2)
+    dfmt.plot_coastlines(ax=ax)
 fig.tight_layout()
 plt.savefig(os.path.join(dir_output,'kivu_velocity_pcolor'))
 
@@ -119,6 +121,7 @@ for iT, timestep in enumerate([1,10,15]):
     pc.set_clim([0,0.15])
     cbar = fig.colorbar(pc, ax=ax)
     cbar.set_label('velocity magnitude (%s)'%(ds_thiery_tsel.U1.attrs['units']))
+    dfmt.plot_coastlines(ax=ax)
 fig.tight_layout()
 plt.savefig(os.path.join(dir_output,'kivu_velocity'))
 
@@ -137,6 +140,7 @@ for iT, timestep in enumerate([1,10,15]):
     ax.set_aspect('equal')
     ax.plot(data_nc_XCOR,data_nc_YCOR,'-b',linewidth=0.2)
     ax.plot(data_nc_XCOR.T,data_nc_YCOR.T,'-b',linewidth=0.2)
+    dfmt.plot_coastlines(ax=ax)
 fig.tight_layout()
 plt.savefig(os.path.join(dir_output,'kivu_Qnet'))
 
@@ -150,6 +154,7 @@ cbar.set_label('%s (%s)'%(ds_thiery.DPV0.name, ds_thiery.DPV0.attrs['units']))
 ax.set_aspect('equal')
 ax.plot(data_nc_XCOR,data_nc_YCOR,'-b',linewidth=0.2)
 ax.plot(data_nc_XCOR.T,data_nc_YCOR.T,'-b',linewidth=0.2)
+dfmt.plot_coastlines(ax=ax)
 fig.tight_layout()
 plt.savefig(os.path.join(dir_output,'kivu_bedlevel'))
 
