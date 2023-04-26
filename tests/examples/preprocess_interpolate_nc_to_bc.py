@@ -33,7 +33,7 @@ model = 'CMEMS' #CMEMS GFDL CMCC HYCOM
 
 
 #The {ncvarname} wildcard in dir_pattern_hydro/dir_patern_waq is used to replace it with conversion_dict[quantity]['ncvarname'] by using str(dir_pattern).format(ncvarname)
-list_plifiles = [Path(r'p:\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108_nocomments.pli')] #TODO SOLVED: reading this file without '_nocomments' results in empty Polyfile, should raise an error. https://github.com/Deltares/HYDROLIB-core/issues/320
+list_plifiles = [Path(r'p:\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli')]
 if model=='CMEMS': #2012-01-06 12:00:00 to 2013-01-03 12:00:00
     conversion_dict = dfmt.get_conversion_dict()
     tstart = '2012-01-16 12:00'
@@ -130,8 +130,8 @@ for file_pli in list_plifiles:
         print(f'writing ForcingModel to bc file with hydrolib ({file_bc_out.name})')
         bc_type = 'bc' #TODO: add netcdf bc support. https://github.com/Deltares/HYDROLIB-core/issues/318
         if bc_type=='bc':
-            #ForcingModel_object.serializer_config.float_format = '.3f' #TODO SOLVED: improve formatting of bc file: https://github.com/Deltares/HYDROLIB-core/issues/308
-            #ForcingModel_object.serializer_config.float_format_datablock = '.5f' #maybe move this to interp_regularnc_to_plipoints/interpolate_tide_to_bc?
+            #ForcingModel_object.serializer_config.float_format = '.3f' #TODO: improve formatting of bc file, maybe move this to interp_regularnc_to_plipoints/interpolate_tide_to_bc?
+            #ForcingModel_object.serializer_config.float_format_datablock = '.5f'
             ForcingModel_object.save(filepath=file_bc_out)
         
         #TODO: support for relative paths?
