@@ -97,9 +97,11 @@ def plot_coastlines(ax, res:str=&#39;h&#39;, min_area:float = 0, crs=None, **kwa
     bbox = (xlim[0], ylim[0], xlim[1], ylim[1])
     
     if &#39;edgecolor&#39; not in kwargs:
-        kwargs[&#39;edgecolor&#39;]=&#39;k&#39;
+        kwargs[&#39;edgecolor&#39;] = &#39;k&#39;
     if &#39;facecolor&#39; not in kwargs:
-        kwargs[&#39;facecolor&#39;]=&#39;none&#39;
+        kwargs[&#39;facecolor&#39;] = &#39;none&#39;
+    if &#39;linewidth&#39; not in kwargs:
+        kwargs[&#39;linewidth&#39;] = 0.7
     
     coastlines_gdb = get_coastlines_gdb(bbox=bbox, res=res, min_area=min_area, crs=crs)
     if coastlines_gdb.empty:
@@ -212,9 +214,11 @@ geopandas docs <a href="https://geopandas.org/en/stable/docs/reference/api/geopa
     bbox = (xlim[0], ylim[0], xlim[1], ylim[1])
     
     if &#39;edgecolor&#39; not in kwargs:
-        kwargs[&#39;edgecolor&#39;]=&#39;k&#39;
+        kwargs[&#39;edgecolor&#39;] = &#39;k&#39;
     if &#39;facecolor&#39; not in kwargs:
-        kwargs[&#39;facecolor&#39;]=&#39;none&#39;
+        kwargs[&#39;facecolor&#39;] = &#39;none&#39;
+    if &#39;linewidth&#39; not in kwargs:
+        kwargs[&#39;linewidth&#39;] = 0.7
     
     coastlines_gdb = get_coastlines_gdb(bbox=bbox, res=res, min_area=min_area, crs=crs)
     if coastlines_gdb.empty:
