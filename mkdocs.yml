@@ -1,0 +1,112 @@
+#pip install mkdocs mkdocstrings mkdocstrings-python mkdocs-exclude pymdown-extensions mkdocs-jupyter
+#README.md has to be copied from root
+#notebooks have to be copied from notebooks
+#example scripts have to be copied from tests/examples
+site_name: dfm_tools documentation
+use_directory_urls: false #TODO: true looks prettier but does not work locally
+theme:
+  name: readthedocs # material
+  language: en
+  # logo: images/HYDROLIB_logo_notext_mono_eroded.svg
+  # custom_dir: docs/overrides
+  # palette:
+    # - scheme: deltares
+      # toggle:
+        # icon: material/lightbulb-outline
+        # name: Switch to dark mode
+    # - scheme: slate
+      # toggle:
+        # icon: material/lightbulb
+        # name: Switch to light mode
+  # features:
+    # - navigation.instant
+    # - navigation.tracking
+    # - navigation.tabs
+    # - navigation.sections
+    # - navigation.expand
+    # - navigation.top
+plugins:
+  - search
+  - mkdocs-jupyter: #https://github.com/danielfrg/mkdocs-jupyter
+      include: ["*.py", "*.ipynb"]
+      include_source: True
+      execute: false #TODO: false is faster, but true gives you output in the docs
+      allow_errors: false
+      execute_ignore:
+        - "*.ipynb"
+  # - autorefs
+  # - table-reader
+  # - macros:
+     #  module_name: docs/include/mkdocs-macros/main
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          rendering:
+            show_root_toc_entry: false
+            show_source: true
+            show_signature_annotations: true
+            heading_level: 3
+            show_category_heading: false
+            group_by_category: false
+          selection:
+            inherited_members: false
+
+      custom_templates: templates
+      watch:
+        - dfm_tools
+  - exclude:
+      glob:
+        - dfm_tools.pdf
+        - dfm_tools.pptx
+markdown_extensions:
+  # - pymdownx.highlight
+  # - pymdownx.superfence
+  - pymdownx.snippets:
+       check_paths: true
+  - admonition
+  - toc:
+      permalink: true
+  # - pymdownx.emoji:
+      # emoji_index: !!python/name:materialx.emoji.twemoji
+      # emoji_generator: !!python/name:materialx.emoji.to_svg
+repo_url: https://github.com/Deltares/dfm_tools
+repo_name: deltares/dfm_tools #TODO: maybe "Github": repo_url: https://github.com/example/repository/
+edit_uri: blob/354-from-pdoc-to-mkdocs/docs/ #TODO: maybe replace blob with edit
+# extra:
+  # version:
+    # provider: mike
+  # social:
+    # - icon: fontawesome/brands/github
+      # link: https://github.com/Deltares/dfm_tools
+      # name: Source code
+# copyright: Copyright &copy; 2023 Deltares
+# extra_css:
+  # - stylesheets/extra.css
+
+nav:
+  - Home: "index.md"
+  # - How-to:
+      # - Installation:
+          # - "pip install": "guides/setup.md"
+          # - "Developer container": "guides/devcontainers.md"
+          # - "Local clone + Poetry": "guides/poetry.md"
+      # - Contributing:
+          # - "guides/contributing.md"
+      # - Documentation:
+          # - "guides/documentation.md"
+      # - Support:
+          # - guides/gettinghelp.md
+  - Tutorials:
+      - notebooks/postprocessing_example.ipynb
+      - notebooks/preprocessing_example_hydrolib.ipynb #pdrive file not found, but we do not have to execute it
+      - pyfile: examples/preprocess_interpolate_nc_to_bc.py
+      # - tutorials/loading_and_saving_a_model.md
+  # - Topics:
+      # - topics/dhydjupyro_support.md
+      # - topics/principles.md
+      # - topics/pydantic.md
+      # - topics/loadsave.md
+  - API Reference:
+    - api_reference.md #TODO: automate generation of this file
+# - Release notes: "releasenotes.md"
