@@ -37,7 +37,7 @@ jobs:
 
       - uses: actions/upload-pages-artifact@v1
         with:
-          path: docs/
+          path: docs/dfm_tools/
 
   # Deploy the artifact to GitHub pages.
   # This is a separate job so that only actions/deploy-pages has the necessary permissions.
