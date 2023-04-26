@@ -49,8 +49,8 @@
 cp README.md docs
 cp CONTRIBUTING.md docs
 cp -r notebooks docs
-mkdir docs/examples
-cp -r tests/examples/preprocess_interpolate_nc_to_bc.py docs/examples
+mkdir docs\examples
+cp -r tests/examples/preprocess_interpolate_nc_to_bc.py docs/examples/
 #cp -r tests/examples docs
 #cp -r tests/examples_workinprogress docs
 mkdocs build
