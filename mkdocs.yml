@@ -1,4 +1,3 @@
-#pip install mkdocs mkdocstrings mkdocstrings-python mkdocs-exclude pymdown-extensions mkdocs-jupyter
 #README.md has to be copied from root
 #notebooks have to be copied from notebooks
 #example scripts have to be copied from tests/examples
@@ -62,8 +61,6 @@ plugins:
 markdown_extensions:
   # - pymdownx.highlight
   # - pymdownx.superfence
-  - pymdownx.snippets:
-       check_paths: true
   - admonition
   - toc:
       permalink: true
