@@ -2,7 +2,6 @@
 [![pytest-py39](https://github.com/Deltares/dfm_tools/actions/workflows/pytest-py39.yml/badge.svg?branch=main)](https://github.com/Deltares/dfm_tools/actions/workflows/pytest-py39.yml)
 [![pytest-py310](https://github.com/Deltares/dfm_tools/actions/workflows/pytest-py310.yml/badge.svg?branch=main)](https://github.com/Deltares/dfm_tools/actions/workflows/pytest-py310.yml)
 [![codecov](https://img.shields.io/codecov/c/github/deltares/dfm_tools.svg?style=flat-square)](https://app.codecov.io/gh/deltares/dfm_tools?displayType=list)
-[![generate-documentation](https://github.com/Deltares/dfm_tools/actions/workflows/generate-documentation.yml/badge.svg)](https://github.com/Deltares/dfm_tools/actions/workflows/generate-documentation.yml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Deltares_dfm_tools&metric=alert_status)](https://sonarcloud.io/summary/overall?id=Deltares_dfm_tools)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/Deltares/dfm_tools/HEAD)
 [![Available on pypi](https://img.shields.io/pypi/v/dfm_tools.svg)](https://pypi.python.org/pypi/dfm_tools)
@@ -14,8 +13,9 @@ A Python package for pre- and postprocessing D-FlowFM model input and output fil
 
 Information and examples
 --------
+- [source code on Github](https://github.com/Deltares/dfm_tools)
 - [pdf](https://nbviewer.org/github/Deltares/dfm_tools/raw/pptx/docs/dfm_tools.pdf?flush_cache=true) with dfm_tools information, features and examples
-- [online documentation](https://htmlpreview.github.io/?https://github.com/Deltares/dfm_tools/blob/main/docs/dfm_tools/index.html) generated from docstrings
+- [online documentation](https://deltares.github.io/dfm_tools) generated from docstrings
 - [jupyter notebooks](https://github.com/Deltares/dfm_tools/blob/main/notebooks) with example code
 - [use binder](https://mybinder.org/v2/gh/Deltares/dfm_tools/HEAD) to run these notebooks interactively (loading takes a while)
 - [github folder](https://github.com/Deltares/dfm_tools/tree/main/tests/examples) with more example scripts
