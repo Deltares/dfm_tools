@@ -21,4 +21,24 @@ jobs:
       - run: |
             #pip install -r requirements.txt
             pip install -r requirements_dev.txt
-      - run: mkdocs gh-deploy --force
+      - run: |
+            mkdocs build
+      #- run: mkdocs gh-deploy --force
+      - uses: actions/upload-pages-artifact@v1
+        with:
+          path: docs/
+
+  # Deploy the artifact to GitHub pages.
+  # This is a separate job so that only actions/deploy-pages has the necessary permissions.
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v1
