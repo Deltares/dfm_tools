@@ -14,6 +14,7 @@ ds_gebco = xr.open_dataset('p:\\metocean-data\\open\\GEBCO\\2022\\GEBCO_2022.nc'
 file_net = r'p:\1230882-emodnet_hrsm\global_tide_surge_model\trunk\gtsm4.1\step11_global_1p25eu_withcellinfo_net.nc'
 uds = xu.open_dataset(file_net)
 nnodes = uds.dims[uds.grid.node_dimension]
+uds = uds[['NetNode_z']] #drop all variables but one dummy var (we also keep the grid)
 
 stepsize = 5
 print(f'interpolating GEBCO to {nnodes} nodes in 360/{stepsize}={360/stepsize} steps:')
