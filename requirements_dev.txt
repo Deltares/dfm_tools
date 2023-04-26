@@ -1,9 +1,13 @@
 #additional requirements for developers
 bump2version>=0.5.11
-pdoc3
+#pdoc3
 flake8
 pytest
 pytest-cov
 twine
 jupyter
 notebook
+mkdocs
+mkdocs-jupyter
+mkdocstrings-python
+mkdocs-exclude
