@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>dfm_tools.get_nc_helpers API documentation</title>
+<meta name="description" content="dfm_tools are post-processing tools for Delft3D FM
+Copyright (C) 2020 Deltares. All rights reserved …" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>dfm_tools.get_nc_helpers</code></h1>
+</header>
+<section id="section-intro">
+<p>dfm_tools are post-processing tools for Delft3D FM
+Copyright (C) 2020 Deltares. All rights reserved.</p>
+<p>This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.</p>
+<p>This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.</p>
+<p>You should have received a copy of the GNU General Public License
+along with this program.
+if not, see <a href="http://www.gnu.org/licenses/">http://www.gnu.org/licenses/</a>.</p>
+<p>All names, logos, and references to "Deltares" are registered trademarks of
+Stichting Deltares and remain full property of Stichting Deltares at all times.
+All rights reserved.</p>
+<p>INFORMATION
+This script is part of dfm_tools: <a href="https://github.com/openearth/dfm_tools">https://github.com/openearth/dfm_tools</a>
+Check the README.rst on github for other available functions
+Check the tests folder on github for example scripts (this is the dfm_tools pytest testbank)
+Check the pptx and example figures in (created by the testbank): N:/Deltabox/Bulletin/veenstra/info dfm_tools</p>
+<p>Created on Fri Feb 14 12:43:19 2020</p>
+<p>@author: veenstra</p>
+<p>helper functions for functions in get_nc.py</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python"># -*- coding: utf-8 -*-
+&#34;&#34;&#34;
+dfm_tools are post-processing tools for Delft3D FM
+Copyright (C) 2020 Deltares. All rights reserved.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  if not, see &lt;http://www.gnu.org/licenses/&gt;.
+
+All names, logos, and references to &#34;Deltares&#34; are registered trademarks of
+Stichting Deltares and remain full property of Stichting Deltares at all times.
+All rights reserved.
+
+
+INFORMATION
+This script is part of dfm_tools: https://github.com/openearth/dfm_tools
+Check the README.rst on github for other available functions
+Check the tests folder on github for example scripts (this is the dfm_tools pytest testbank)
+Check the pptx and example figures in (created by the testbank): N:/Deltabox/Bulletin/veenstra/info dfm_tools
+
+Created on Fri Feb 14 12:43:19 2020
+
+@author: veenstra
+
+helper functions for functions in get_nc.py
+&#34;&#34;&#34;
+
+import xarray as xr
+import xugrid as xu
+import pandas as pd
+import warnings
+
+
+def get_ncvarproperties(data_xr):
+    if not isinstance(data_xr,(xr.Dataset,xu.UgridDataset)):
+        raise TypeError(&#39;data_xr should be of type xr.Dataset or xu.UgridDataset&#39;)
+    
+    nc_varkeys = data_xr.variables.mapping.keys()
+    
+    list_varattrs_pd = []
+    for varkey in nc_varkeys:
+        varattrs_pd = pd.DataFrame({varkey:data_xr.variables.mapping[varkey].attrs}).T
+        varattrs_pd[[&#39;shape&#39;,&#39;dimensions&#39;]] = 2*[&#39;&#39;] #set dtype as str (float will raise an error when putting tuple in there)
+        varattrs_pd.at[varkey,&#39;shape&#39;] = data_xr[varkey].shape
+        varattrs_pd.at[varkey,&#39;dimensions&#39;] = data_xr.variables[varkey].dims
+        varattrs_pd.loc[varkey,&#39;dtype&#39;] = data_xr.variables[varkey].dtype
+        list_varattrs_pd.append(varattrs_pd)
+    
+    vars_pd = pd.concat(list_varattrs_pd,axis=0)
+    vars_pd[vars_pd.isnull()] = &#39;&#39; #avoid nan values
+    
+    data_xr.close()
+
+    return vars_pd
+
+
+def rename_waqvars(ds:(xr.Dataset,xu.UgridDataset)):
+    &#34;&#34;&#34;
+    Rename all water quality variables in a dataset (like mesh2d_water_quality_output_24) to their long_name attribute (like mesh2d_DOscore)
+    
+    Parameters
+    ----------
+    ds : (xr.Dataset,xu.UgridDataset)
+        DESCRIPTION.
+
+    Returns
+    -------
+    ds : TYPE
+        DESCRIPTION.
+
+    &#34;&#34;&#34;
+    #TODO: results also in variable &#34;mesh2d_Water quality mass balance areas&#34; (with spaces), report in FM issue (remove spaces from long_name attr)
+    
+    if hasattr(ds,&#39;grid&#39;): #append gridname (e.g. mesh2d) in case of mapfile
+        varn_prepend = f&#39;{ds.grid.name}_&#39;
+    else:
+        varn_prepend = &#39;&#39;
+    list_waqvars = [i for i in ds.data_vars if &#39;water_quality_&#39; in i] #water_quality_output and water_quality_stat
+    rename_dict = {waqvar:varn_prepend+ds[waqvar].attrs[&#39;long_name&#39;] for waqvar in list_waqvars}
+    
+    if len(rename_dict) == 0: #early return to silence &#34;FutureWarning: The default dtype for empty Series will be &#39;object&#39; instead of &#39;float64&#39; in a future version. Specify a dtype explicitly to silence this warning.&#34;
+        return ds
+    
+    #prevent renaming duplicate long_names
+    rename_pd = pd.Series(rename_dict)
+    if rename_pd.duplicated().sum():
+        duplicated_pd = rename_pd.loc[rename_pd.duplicated(keep=False)]
+        print(UserWarning(f&#39;duplicate long_name attributes found with dfmt.rename_waqvars(), renaming only first variable:\n{duplicated_pd}&#39;))
+        rename_dict = rename_pd.loc[~rename_pd.duplicated()].to_dict()
+    
+    ds = ds.rename(rename_dict)
+    return ds
+
+
+def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset), drop_tidal_times:bool = True):
+    &#34;&#34;&#34;
+    Rename all fourier variables in a dataset (like mesh2d_fourier033_amp) to a unique name containing gridname/quantity/analysistype/tstart/tstop
+    
+    Parameters
+    ----------
+    ds : (xr.Dataset,xu.UgridDataset)
+        DESCRIPTION.
+
+    Returns
+    -------
+    ds : TYPE
+        DESCRIPTION.
+
+    &#34;&#34;&#34;
+    
+    file_freqs = &#39;https://raw.githubusercontent.com/Deltares/hatyan/main/hatyan/data/data_foreman_frequencies.txt&#39; #TODO: fix hatyan dependency (MSQM and M1 were also added, but file is not used by hatyan, so might disappear one day)
+    freqs_pd = pd.read_csv(file_freqs,names=[&#39;freq&#39;,&#39;dependents&#39;],delim_whitespace=True,comment=&#39;#&#39;)
+    freqs_pd[&#39;angfreq&#39;] = freqs_pd[&#39;freq&#39;] * 360 #deg/hr
+    
+    gridname = ds.grid.name
+    list_fouvars = [i for i in ds.data_vars if &#39;_fourier&#39; in i] #water_quality_output and water_quality_stat
+    
+    rename_dict = {}
+    for fouvar in list_fouvars:
+        fouvar_attrs_lower = {k.lower():v for k,v in ds[fouvar].attrs.items()}
+        fouvar_lowerattrs = ds[fouvar].assign_attrs(fouvar_attrs_lower) #to avoid case issues
+        
+        #quantity
+        long_name = fouvar_lowerattrs.attrs[&#39;long_name&#39;]
+        long_name_noprefix = long_name.split(&#39;: &#39;)[1]
+        quantity_long = long_name_noprefix.split(&#39;,&#39;)[0]
+        quantity_dict = {&#39;water level&#39;:&#39;s1&#39;, #dict based on https://svn.oss.deltares.nl/repos/delft3d/trunk/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/prepost/fourier_analysis.f90
+                         #&#39;energy head&#39;:&#39;s1&#39;, #TODO: duplicate namfun/dictvalue is not convenient
+                         &#39;wind speed&#39;:&#39;ws&#39;,
+                         &#39;U-component of cell-centre velocity&#39;:&#39;ux&#39;,
+                         &#39;V-component of cell-centre velocity&#39;:&#39;uy&#39;,
+                         &#39;U-component velocity, column average&#39;:&#39;uxa&#39;,
+                         &#39;V-component velocity, column average&#39;:&#39;uya&#39;,
+                         &#39;velocity magnitude&#39;:&#39;uc&#39;,
+                         #&#39;&#39;:&#39;r1&#39;, #TODO: unclear which namfun/dictvalue corresponds (trim(namcon(gdfourier%fconno(ifou))))
+                         &#39;velocity&#39;:&#39;u1&#39;,
+                         &#39;unit discharge&#39;:&#39;qx&#39;,
+                         &#39;bed stress&#39;:&#39;ta&#39;,
+                         &#39;freeboard&#39;:&#39;fb&#39;,
+                         &#39;waterdepth_on_ground&#39;:&#39;wdog&#39;,
+                         &#39;volume_on_ground&#39;:&#39;vog&#39;,
+                         &#39;discharge through flow link&#39;:&#39;q1&#39;,
+                         &#39;water level at flow link&#39;:&#39;su1&#39;,
+                         &#39;temperature&#39;:&#39;tem&#39;, #not clear from fourier_analysis.f90, ct in user manual C.13
+                         &#39;salt&#39;:&#39;sal&#39;, #not clear from fourier_analysis.f90, cs in user manual C.13
+                         }
+        if quantity_long not in quantity_dict.keys():
+            raise KeyError(f&#39;quantity_dict does not yet contain quantity for: {quantity_long}&#39;)
+        quantity = quantity_dict[quantity_long]
+        
+        #analysistype
+        istidal = False
+        if hasattr(fouvar_lowerattrs,&#39;frequency_degrees_per_hour&#39;):
+            if fouvar_lowerattrs.attrs[&#39;frequency_degrees_per_hour&#39;] &gt; 0: #wl mean with numcyc=0 has frequency attribute (wl min with numcyc=0 does not)
+                istidal = True #for tidal components with frequency &gt;0
+        
+        if istidal: #for tidal analysistype
+            tidepart = fouvar.split(&#39;_&#39;)[-1] # amp/phs
+            freq = fouvar_lowerattrs.attrs[&#39;frequency_degrees_per_hour&#39;]
+            compidx_closestfreq = (freqs_pd[&#39;angfreq&#39;] - freq).abs().argmin()
+            compname = freqs_pd.index[compidx_closestfreq] #M2/NU2
+            analysistype = tidepart+compname
+            warnings.warn(UserWarning(&#39;tidal components found in foufile, matching frequency with online list to get component names, which might go wrong. Also, be aware that v0 and knfac columns from fourier inputfile are not available in fourier output, so it is not clear whether to correct for these.&#39;))
+        else: #for all other quantities
+            fouvar_splitted = fouvar.split(&#39;_&#39;)
+            analysistype = &#39;&#39;.join(fouvar_splitted[2:]) #min/max/mean. min_depth/max_depth etc are converted to mindepth/maxdepth
+            
+        #tstart/tstop
+        refdate = pd.Timestamp(str(fouvar_lowerattrs.attrs[&#39;reference_date_in_yyyymmdd&#39;]))
+        if hasattr(fouvar_lowerattrs,&#39;starttime_fourier_analysis_in_minutes_since_reference_date&#39;):
+            tstart_min = fouvar_lowerattrs.attrs[&#39;starttime_fourier_analysis_in_minutes_since_reference_date&#39;]
+            tstop_min = fouvar_lowerattrs.attrs[&#39;stoptime_fourier_analysis_in_minutes_since_reference_date&#39;]
+        elif hasattr(fouvar_lowerattrs,&#39;starttime_min_max_analysis_in_minutes_since_reference_date&#39;):
+            tstart_min = fouvar_lowerattrs.attrs[&#39;starttime_min_max_analysis_in_minutes_since_reference_date&#39;]
+            tstop_min = fouvar_lowerattrs.attrs[&#39;stoptime_min_max_analysis_in_minutes_since_reference_date&#39;]
+        else:
+            raise AttributeError(f&#39;starttime/stoptime attribute not found in fouvar:\n{fouvar_lowerattrs.attrs}&#39;)
+        tstart_str = (refdate + pd.Timedelta(minutes=tstart_min)).strftime(&#39;%Y%m%d%H%M%S&#39;)
+        tstop_str = (refdate + pd.Timedelta(minutes=tstop_min)).strftime(&#39;%Y%m%d%H%M%S&#39;)
+        
+        rename_dict[fouvar] = f&#39;{gridname}_{quantity}_{analysistype}_{tstart_str}_{tstop_str}&#39;
+        if istidal and drop_tidal_times:
+            rename_dict[fouvar] = f&#39;{gridname}_{quantity}_{analysistype}&#39; #TODO: might cause conflicting variable names if one component is analysed for multiple periods or if component is not defined in frequency list. Add duplicate check like rename_waqvars() that provides some basic info for debugging.
+    
+    ds = ds.rename(rename_dict)
+    return ds</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="dfm_tools.get_nc_helpers.get_ncvarproperties"><code class="name flex">
+<span>def <span class="ident">get_ncvarproperties</span></span>(<span>data_xr)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_ncvarproperties(data_xr):
+    if not isinstance(data_xr,(xr.Dataset,xu.UgridDataset)):
+        raise TypeError(&#39;data_xr should be of type xr.Dataset or xu.UgridDataset&#39;)
+    
+    nc_varkeys = data_xr.variables.mapping.keys()
+    
+    list_varattrs_pd = []
+    for varkey in nc_varkeys:
+        varattrs_pd = pd.DataFrame({varkey:data_xr.variables.mapping[varkey].attrs}).T
+        varattrs_pd[[&#39;shape&#39;,&#39;dimensions&#39;]] = 2*[&#39;&#39;] #set dtype as str (float will raise an error when putting tuple in there)
+        varattrs_pd.at[varkey,&#39;shape&#39;] = data_xr[varkey].shape
+        varattrs_pd.at[varkey,&#39;dimensions&#39;] = data_xr.variables[varkey].dims
+        varattrs_pd.loc[varkey,&#39;dtype&#39;] = data_xr.variables[varkey].dtype
+        list_varattrs_pd.append(varattrs_pd)
+    
+    vars_pd = pd.concat(list_varattrs_pd,axis=0)
+    vars_pd[vars_pd.isnull()] = &#39;&#39; #avoid nan values
+    
+    data_xr.close()
+
+    return vars_pd</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.get_nc_helpers.rename_waqvars"><code class="name flex">
+<span>def <span class="ident">rename_waqvars</span></span>(<span>ds: (<class 'xarray.core.dataset.Dataset'>, <class 'xugrid.core.wrap.UgridDataset'>))</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Rename all water quality variables in a dataset (like mesh2d_water_quality_output_24) to their long_name attribute (like mesh2d_DOscore)</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>ds</code></strong> :&ensp;<code>(xr.Dataset,xu.UgridDataset)</code></dt>
+<dd>DESCRIPTION.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>ds</code></strong> :&ensp;<code>TYPE</code></dt>
+<dd>DESCRIPTION.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def rename_waqvars(ds:(xr.Dataset,xu.UgridDataset)):
+    &#34;&#34;&#34;
+    Rename all water quality variables in a dataset (like mesh2d_water_quality_output_24) to their long_name attribute (like mesh2d_DOscore)
+    
+    Parameters
+    ----------
+    ds : (xr.Dataset,xu.UgridDataset)
+        DESCRIPTION.
+
+    Returns
+    -------
+    ds : TYPE
+        DESCRIPTION.
+
+    &#34;&#34;&#34;
+    #TODO: results also in variable &#34;mesh2d_Water quality mass balance areas&#34; (with spaces), report in FM issue (remove spaces from long_name attr)
+    
+    if hasattr(ds,&#39;grid&#39;): #append gridname (e.g. mesh2d) in case of mapfile
+        varn_prepend = f&#39;{ds.grid.name}_&#39;
+    else:
+        varn_prepend = &#39;&#39;
+    list_waqvars = [i for i in ds.data_vars if &#39;water_quality_&#39; in i] #water_quality_output and water_quality_stat
+    rename_dict = {waqvar:varn_prepend+ds[waqvar].attrs[&#39;long_name&#39;] for waqvar in list_waqvars}
+    
+    if len(rename_dict) == 0: #early return to silence &#34;FutureWarning: The default dtype for empty Series will be &#39;object&#39; instead of &#39;float64&#39; in a future version. Specify a dtype explicitly to silence this warning.&#34;
+        return ds
+    
+    #prevent renaming duplicate long_names
+    rename_pd = pd.Series(rename_dict)
+    if rename_pd.duplicated().sum():
+        duplicated_pd = rename_pd.loc[rename_pd.duplicated(keep=False)]
+        print(UserWarning(f&#39;duplicate long_name attributes found with dfmt.rename_waqvars(), renaming only first variable:\n{duplicated_pd}&#39;))
+        rename_dict = rename_pd.loc[~rename_pd.duplicated()].to_dict()
+    
+    ds = ds.rename(rename_dict)
+    return ds</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.get_nc_helpers.rename_fouvars"><code class="name flex">
+<span>def <span class="ident">rename_fouvars</span></span>(<span>ds: (<class 'xarray.core.dataset.Dataset'>, <class 'xugrid.core.wrap.UgridDataset'>), drop_tidal_times: bool = True)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Rename all fourier variables in a dataset (like mesh2d_fourier033_amp) to a unique name containing gridname/quantity/analysistype/tstart/tstop</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>ds</code></strong> :&ensp;<code>(xr.Dataset,xu.UgridDataset)</code></dt>
+<dd>DESCRIPTION.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>ds</code></strong> :&ensp;<code>TYPE</code></dt>
+<dd>DESCRIPTION.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset), drop_tidal_times:bool = True):
+    &#34;&#34;&#34;
+    Rename all fourier variables in a dataset (like mesh2d_fourier033_amp) to a unique name containing gridname/quantity/analysistype/tstart/tstop
+    
+    Parameters
+    ----------
+    ds : (xr.Dataset,xu.UgridDataset)
+        DESCRIPTION.
+
+    Returns
+    -------
+    ds : TYPE
+        DESCRIPTION.
+
+    &#34;&#34;&#34;
+    
+    file_freqs = &#39;https://raw.githubusercontent.com/Deltares/hatyan/main/hatyan/data/data_foreman_frequencies.txt&#39; #TODO: fix hatyan dependency (MSQM and M1 were also added, but file is not used by hatyan, so might disappear one day)
+    freqs_pd = pd.read_csv(file_freqs,names=[&#39;freq&#39;,&#39;dependents&#39;],delim_whitespace=True,comment=&#39;#&#39;)
+    freqs_pd[&#39;angfreq&#39;] = freqs_pd[&#39;freq&#39;] * 360 #deg/hr
+    
+    gridname = ds.grid.name
+    list_fouvars = [i for i in ds.data_vars if &#39;_fourier&#39; in i] #water_quality_output and water_quality_stat
+    
+    rename_dict = {}
+    for fouvar in list_fouvars:
+        fouvar_attrs_lower = {k.lower():v for k,v in ds[fouvar].attrs.items()}
+        fouvar_lowerattrs = ds[fouvar].assign_attrs(fouvar_attrs_lower) #to avoid case issues
+        
+        #quantity
+        long_name = fouvar_lowerattrs.attrs[&#39;long_name&#39;]
+        long_name_noprefix = long_name.split(&#39;: &#39;)[1]
+        quantity_long = long_name_noprefix.split(&#39;,&#39;)[0]
+        quantity_dict = {&#39;water level&#39;:&#39;s1&#39;, #dict based on https://svn.oss.deltares.nl/repos/delft3d/trunk/src/engines_gpl/dflowfm/packages/dflowfm_kernel/src/dflowfm_kernel/prepost/fourier_analysis.f90
+                         #&#39;energy head&#39;:&#39;s1&#39;, #TODO: duplicate namfun/dictvalue is not convenient
+                         &#39;wind speed&#39;:&#39;ws&#39;,
+                         &#39;U-component of cell-centre velocity&#39;:&#39;ux&#39;,
+                         &#39;V-component of cell-centre velocity&#39;:&#39;uy&#39;,
+                         &#39;U-component velocity, column average&#39;:&#39;uxa&#39;,
+                         &#39;V-component velocity, column average&#39;:&#39;uya&#39;,
+                         &#39;velocity magnitude&#39;:&#39;uc&#39;,
+                         #&#39;&#39;:&#39;r1&#39;, #TODO: unclear which namfun/dictvalue corresponds (trim(namcon(gdfourier%fconno(ifou))))
+                         &#39;velocity&#39;:&#39;u1&#39;,
+                         &#39;unit discharge&#39;:&#39;qx&#39;,
+                         &#39;bed stress&#39;:&#39;ta&#39;,
+                         &#39;freeboard&#39;:&#39;fb&#39;,
+                         &#39;waterdepth_on_ground&#39;:&#39;wdog&#39;,
+                         &#39;volume_on_ground&#39;:&#39;vog&#39;,
+                         &#39;discharge through flow link&#39;:&#39;q1&#39;,
+                         &#39;water level at flow link&#39;:&#39;su1&#39;,
+                         &#39;temperature&#39;:&#39;tem&#39;, #not clear from fourier_analysis.f90, ct in user manual C.13
+                         &#39;salt&#39;:&#39;sal&#39;, #not clear from fourier_analysis.f90, cs in user manual C.13
+                         }
+        if quantity_long not in quantity_dict.keys():
+            raise KeyError(f&#39;quantity_dict does not yet contain quantity for: {quantity_long}&#39;)
+        quantity = quantity_dict[quantity_long]
+        
+        #analysistype
+        istidal = False
+        if hasattr(fouvar_lowerattrs,&#39;frequency_degrees_per_hour&#39;):
+            if fouvar_lowerattrs.attrs[&#39;frequency_degrees_per_hour&#39;] &gt; 0: #wl mean with numcyc=0 has frequency attribute (wl min with numcyc=0 does not)
+                istidal = True #for tidal components with frequency &gt;0
+        
+        if istidal: #for tidal analysistype
+            tidepart = fouvar.split(&#39;_&#39;)[-1] # amp/phs
+            freq = fouvar_lowerattrs.attrs[&#39;frequency_degrees_per_hour&#39;]
+            compidx_closestfreq = (freqs_pd[&#39;angfreq&#39;] - freq).abs().argmin()
+            compname = freqs_pd.index[compidx_closestfreq] #M2/NU2
+            analysistype = tidepart+compname
+            warnings.warn(UserWarning(&#39;tidal components found in foufile, matching frequency with online list to get component names, which might go wrong. Also, be aware that v0 and knfac columns from fourier inputfile are not available in fourier output, so it is not clear whether to correct for these.&#39;))
+        else: #for all other quantities
+            fouvar_splitted = fouvar.split(&#39;_&#39;)
+            analysistype = &#39;&#39;.join(fouvar_splitted[2:]) #min/max/mean. min_depth/max_depth etc are converted to mindepth/maxdepth
+            
+        #tstart/tstop
+        refdate = pd.Timestamp(str(fouvar_lowerattrs.attrs[&#39;reference_date_in_yyyymmdd&#39;]))
+        if hasattr(fouvar_lowerattrs,&#39;starttime_fourier_analysis_in_minutes_since_reference_date&#39;):
+            tstart_min = fouvar_lowerattrs.attrs[&#39;starttime_fourier_analysis_in_minutes_since_reference_date&#39;]
+            tstop_min = fouvar_lowerattrs.attrs[&#39;stoptime_fourier_analysis_in_minutes_since_reference_date&#39;]
+        elif hasattr(fouvar_lowerattrs,&#39;starttime_min_max_analysis_in_minutes_since_reference_date&#39;):
+            tstart_min = fouvar_lowerattrs.attrs[&#39;starttime_min_max_analysis_in_minutes_since_reference_date&#39;]
+            tstop_min = fouvar_lowerattrs.attrs[&#39;stoptime_min_max_analysis_in_minutes_since_reference_date&#39;]
+        else:
+            raise AttributeError(f&#39;starttime/stoptime attribute not found in fouvar:\n{fouvar_lowerattrs.attrs}&#39;)
+        tstart_str = (refdate + pd.Timedelta(minutes=tstart_min)).strftime(&#39;%Y%m%d%H%M%S&#39;)
+        tstop_str = (refdate + pd.Timedelta(minutes=tstop_min)).strftime(&#39;%Y%m%d%H%M%S&#39;)
+        
+        rename_dict[fouvar] = f&#39;{gridname}_{quantity}_{analysistype}_{tstart_str}_{tstop_str}&#39;
+        if istidal and drop_tidal_times:
+            rename_dict[fouvar] = f&#39;{gridname}_{quantity}_{analysistype}&#39; #TODO: might cause conflicting variable names if one component is analysed for multiple periods or if component is not defined in frequency list. Add duplicate check like rename_waqvars() that provides some basic info for debugging.
+    
+    ds = ds.rename(rename_dict)
+    return ds</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="dfm_tools" href="index.html">dfm_tools</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="dfm_tools.get_nc_helpers.get_ncvarproperties" href="#dfm_tools.get_nc_helpers.get_ncvarproperties">get_ncvarproperties</a></code></li>
+<li><code><a title="dfm_tools.get_nc_helpers.rename_waqvars" href="#dfm_tools.get_nc_helpers.rename_waqvars">rename_waqvars</a></code></li>
+<li><code><a title="dfm_tools.get_nc_helpers.rename_fouvars" href="#dfm_tools.get_nc_helpers.rename_fouvars">rename_fouvars</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>
