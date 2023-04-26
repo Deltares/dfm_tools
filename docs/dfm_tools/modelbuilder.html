@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>dfm_tools.modelbuilder API documentation</title>
+<meta name="description" content="Created on Tue Apr
+4 16:12:56 2023 …" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>dfm_tools.modelbuilder</code></h1>
+</header>
+<section id="section-intro">
+<p>Created on Tue Apr
+4 16:12:56 2023</p>
+<p>@author: groenenb, sclaan
+edited by: veenstra</p>
+<p>This is a proof of concept that will be properly coded in the near future and probably end up under hydromt-delft3dfm
+Since the functions in this script contain hardcoded parameters, it is not exposed to public and you need to import like dfmt.modelbuilder.[function]</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">&#34;&#34;&#34;
+Created on Tue Apr  4 16:12:56 2023
+
+@author: groenenb, sclaan
+edited by: veenstra
+
+This is a proof of concept that will be properly coded in the near future and probably end up under hydromt-delft3dfm
+Since the functions in this script contain hardcoded parameters, it is not exposed to public and you need to import like dfmt.modelbuilder.[function]
+&#34;&#34;&#34;
+
+import os
+import xarray as xr
+import pandas as pd
+import dfm_tools as dfmt
+import hydrolib.core.dflowfm as hcdfm
+import datetime as dt
+import glob
+
+
+def preprocess_interpolate_nc_to_bc(ext_bnd,
+                                    list_quantities,#quantities should be in conversion_dict.keys(). waterlevelbnd is steric/zos, tide is tidal components from FES/EOT
+                                    tstart,
+                                    tstop,
+                                    list_plifiles,
+                                    dir_pattern,
+                                    dir_output=&#39;.&#39;,
+                                    refdate_str=None,
+                                    conversion_dict=dfmt.get_conversion_dict(),
+                                    tidemodel=&#39;FES2014&#39;): #FES2014, FES2012, EOT20, GTSM4.1preliminary
+    #input examples in https://github.com/Deltares/dfm_tools/blob/main/tests/examples/preprocess_interpolate_nc_to_bc.py
+    model = &#39;CMEMS&#39;
+    
+    for file_pli in list_plifiles:
+        file_bc_basename = os.path.basename(file_pli).replace(&#39;.pli&#39;,&#39;&#39;)
+        for quantity in list_quantities:
+            print(f&#39;processing quantity: {quantity}&#39;)
+            if quantity==&#39;tide&#39;: 
+                if tidemodel == &#39;FES2014&#39;: #for comparing to older FES bc-files
+                    component_list = [&#39;2n2&#39;,&#39;mf&#39;,&#39;p1&#39;,&#39;m2&#39;,&#39;mks2&#39;,&#39;mu2&#39;,&#39;q1&#39;,&#39;t2&#39;,&#39;j1&#39;,&#39;m3&#39;,&#39;mm&#39;,&#39;n2&#39;,&#39;r2&#39;,&#39;k1&#39;,&#39;m4&#39;,&#39;mn4&#39;,&#39;s1&#39;,&#39;k2&#39;,&#39;m6&#39;,&#39;ms4&#39;,&#39;nu2&#39;,&#39;s2&#39;,&#39;l2&#39;,&#39;m8&#39;,&#39;msf&#39;,&#39;o1&#39;,&#39;s4&#39;]
+                else:
+                    component_list = None #None results in all tidemodel components
+                ForcingModel_object = dfmt.interpolate_tide_to_bc(tidemodel=tidemodel, file_pli=file_pli, component_list=component_list, nPoints=None)
+            else:
+                #open regulargridDataset and do some basic stuff (time selection, renaming depth/lat/lon/varname, converting units, etc)
+                data_xr_vars = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity=quantity,
+                                                       tstart=tstart, tstop=tstop,
+                                                       conversion_dict=conversion_dict,
+                                                       refdate_str=refdate_str)
+                #interpolate regulargridDataset to plipointsDataset
+                data_interp = dfmt.interp_regularnc_to_plipoints(data_xr_reg=data_xr_vars, file_pli=file_pli)
+                
+                #convert plipointsDataset to hydrolib ForcingModel
+                ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
+                        
+            if quantity==&#39;tide&#39;:
+                file_bc_out = os.path.join(dir_output,f&#39;{quantity}_{file_bc_basename}_{tidemodel}.bc&#39;)
+            else:
+                file_bc_out = os.path.join(dir_output,f&#39;{quantity}_{file_bc_basename}_{model}.bc&#39;)
+            
+            ForcingModel_object.save(filepath=file_bc_out)
+            
+            #generate boundary object for the ext file (quantity, pli-filename, bc-filename)
+            boundary_object = hcdfm.Boundary(quantity=quantity.replace(&#39;tide&#39;,&#39;waterlevelbnd&#39;), #the FM quantity for tide is also waterlevelbnd
+                                             locationfile=file_pli,
+                                             forcingfile=ForcingModel_object)
+            ext_bnd.boundary.append(boundary_object)
+    
+    return ext_bnd
+
+    
+def preprocess_ini_cmems_to_nc(ext_old, tstart=&#39;1998-01-01&#39;,
+        dir_data  = r&#39;p:\i1000668-tcoms\03_newModel\01_input\02_bnd\data_opendap&#39;, #folder containing CMEMS so and thetao netcdf files
+        dir_out = &#39;.&#39;):
+    
+    file_nc_list_so = glob.glob(f&#39;{dir_data}\\cmems_so_*.nc&#39;)
+    file_nc_list_thetao = glob.glob(f&#39;{dir_data}\\cmems_thetao_*.nc&#39;)
+    file_nc_list = file_nc_list_so + file_nc_list_thetao
+    
+    print(f&#39;opening {len(file_nc_list)} datasets&#39;)
+    data_xr = xr.open_mfdataset(file_nc_list)
+    
+    tSimStart = pd.Timestamp(tstart)
+    data_xr_ontime = data_xr.sel(time=slice(tSimStart-dt.timedelta(days=1),tSimStart+dt.timedelta(days=1)))
+    
+    print(&#39;writing file&#39;)
+    outFile = os.path.join(dir_out,f&#39;InitialField_{tSimStart.strftime(&#34;%Y-%m-%d_%H-%M-%S&#34;)}.nc&#39;)
+    data_xr_ontime.to_netcdf(outFile,format=&#34;NETCDF4_CLASSIC&#34;) #TODO: why the format setting?
+    
+    #append forcings to ext
+    # 3D initialsalinity/initialtemperature fields are silently ignored, initial 3D conditions are only possible via nudging 1st timestep via quantity=nudge_salinity_temperature
+    forcing_saltem = hcdfm.ExtOldForcing(quantity=&#39;nudge_salinity_temperature&#39;,
+                                         filename=outFile,
+                                         filetype=hcdfm.ExtOldFileType.NetCDFGridData,
+                                         method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                         operand=hcdfm.Operand.override, #O
+                                         )
+    ext_old.forcing.append(forcing_saltem)
+    
+    return ext_old
+    
+    
+def preprocess_merge_meteofiles(ext_old,
+        mode = &#39;HYCOM&#39;, # &#39;HIRLAM_meteo&#39; &#39;HIRLAM_meteo-heatflux&#39; &#39;HARMONIE&#39; &#39;HYCOM&#39; &#39;ERA5_wind_pressure&#39; &#39;ERA5_heat_model&#39; &#39;ERA5_radiation&#39; &#39;ERA5_rainfall&#39; &#39;WOA&#39;
+        varkey_list = [],
+        dir_data = [],
+        dir_output = &#39;.&#39;,
+        time_slice = slice(&#39;2013-12-30&#39;,&#39;2014-01-01&#39;)):
+
+    if isinstance(varkey_list[0], list):
+        varkey_lists = varkey_list
+    else:
+        varkey_lists = [varkey_list]
+    
+    for varkey_list in varkey_lists:
+        if &#39;HIRLAM&#39; in mode:
+            if mode == &#39;HIRLAM_meteo&#39;: #1year voor meteo crasht (HIRLAM72_*\\h72_*) door conflicting dimension sizes, sourcefolders opruimen? meteo_heatflux folders zijn schoner dus daar werkt het wel
+                dir_data = &#39;P:\\1204257-dcsmzuno\\2014\\data\\meteo\\HIRLAM72_*&#39; #files contain: [&#39;air_pressure_fixed_height&#39;,&#39;northward_wind&#39;,&#39;eastward_wind&#39;]
+            elif mode == &#39;HIRLAM_meteo-heatflux&#39;:
+                dir_data = &#39;P:\\1204257-dcsmzuno\\2014\\data\\meteo-heatflux\\HIRLAM72_*&#39; # files contain: [&#39;dew_point_temperature&#39;,&#39;air_temperature&#39;,&#39;cloud_area_fraction&#39;]
+            fn_match_pattern = &#39;h72_20131*.nc&#39;
+            file_out_prefix = &#39;h72_&#39;
+            preprocess = dfmt.preprocess_hirlam #temporary(?) fix for &gt;1D-vars with same name as its dim
+        elif mode == &#39;HARMONIE&#39;:
+            dir_data = &#39;p:\\1204257-dcsmzuno\\data\\meteo\\HARMONIE\\nc\\air_*&#39; #many invalid files, so subsetting here
+            fn_match_pattern = &#39;HARMONIE_*_2020_*.nc&#39;
+            file_out_prefix = &#39;HARMONIE_&#39;
+            preprocess = None
+        elif mode == &#39;HYCOM&#39;:
+            dir_data = &#39;c:\\DATA\\dfm_tools_testdata\\GLBu0.08_expt_91.2&#39;
+            fn_match_pattern = &#39;HYCOM_ST_GoO_*.nc&#39;
+            file_out_prefix = &#39;HYCOM_ST_GoO_&#39;
+            preprocess = None
+            #rename_variables = {&#39;salinity&#39;:&#39;so&#39;, &#39;water_temp&#39;:&#39;thetao&#39;}
+        elif &#39;ERA5&#39; in mode:
+            fn_match_pattern = f&#39;era5_.*({&#34;|&#34;.join(varkey_list)})_.*.nc&#39; #simpler but selects more files: &#39;era5_*.nc&#39;
+            file_out_prefix = f&#39;era5_{&#34;_&#34;.join(varkey_list)}_&#39;
+            preprocess = dfmt.preprocess_ERA5 #reduce expver dimension if present
+        elif mode == &#39;WOA&#39;:
+            dir_data = r&#39;p:\1204257-dcsmzuno\data\WOA13&#39;
+            fn_match_pattern = &#39;woa13_decav_s*.nc&#39;
+            file_out_prefix = &#39;woa13_decav_s_&#39;
+            preprocess = dfmt.preprocess_woa #add 360-day calendar unit to time attrs before decode_cf
+        else:
+            raise Exception(&#39;ERROR: wrong mode %s&#39;%(mode))
+        
+        if not os.path.exists(dir_output):
+            os.makedirs(dir_output)
+        
+        file_nc = os.path.join(dir_data,fn_match_pattern)
+        
+        data_xr_tsel = dfmt.merge_meteofiles(file_nc=file_nc, time_slice=time_slice, 
+                                             preprocess=preprocess,
+                                             add_global_overlap=False, #GTSM specific: extend data beyond -180 to 180 longitude
+                                             zerostart=False) #GTSM specific: extend data with 0-value fields 1 and 2 days before all_tstart
+        
+        #write to netcdf file
+        print(&#39;&gt;&gt; writing file (can take a while): &#39;,end=&#39;&#39;)
+        dtstart = dt.datetime.now()
+        try:
+            times_np = data_xr_tsel[&#39;time&#39;].to_series()
+        except:
+            times_np = data_xr_tsel[&#39;time&#39;].to_numpy() #.to_series() does not work for woa 360_day data. .to_numpy() results in numpy.datetime64 for other datasets, which has no attribute strftime
+        time_start_str = times_np[0].strftime(&#34;%Y%m%d&#34;)
+        time_stop_str = times_np[-1].strftime(&#34;%Y%m%d&#34;)
+        file_out = os.path.join(dir_output, f&#39;{file_out_prefix}{time_start_str}to{time_stop_str}_{mode}.nc&#39;)
+        data_xr_tsel.to_netcdf(file_out)
+        print(f&#39;{(dt.datetime.now()-dtstart).total_seconds():.2f} sec&#39;)
+        
+        #append to ext model
+        if varkey_list == [&#39;msl&#39;,&#39;u10n&#39;,&#39;v10n&#39;,&#39;chnk&#39;]:
+            forcing_meteo = hcdfm.ExtOldForcing(quantity=&#39;airpressure_windx_windy_charnock&#39;,
+                                                filename=file_out,
+                                                varname=&#39;msl u10n v10n chnk&#39;,
+                                                filetype=hcdfm.ExtOldFileType.NetCDFGridData, #11
+                                                method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                                operand=hcdfm.Operand.override, #O
+                                                )
+            ext_old.forcing.append(forcing_meteo)
+        elif varkey_list == [&#39;d2m&#39;,&#39;t2m&#39;,&#39;tcc&#39;]:
+            forcing_meteo = hcdfm.ExtOldForcing(quantity=&#39;dewpoint_airtemperature_cloudiness&#39;,
+                                                filename=file_out,
+                                                varname=&#39;d2m t2m tcc&#39;,
+                                                filetype=hcdfm.ExtOldFileType.NetCDFGridData, #11
+                                                method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                                operand=hcdfm.Operand.override, #O
+                                                )
+            ext_old.forcing.append(forcing_meteo)
+        elif varkey_list == [&#39;ssr&#39;,&#39;strd&#39;]:
+            forcing_meteo = hcdfm.ExtOldForcing(quantity=&#39;solarradiation&#39;,
+                                                filename=file_out,
+                                                varname=&#39;ssr&#39;,
+                                                filetype=hcdfm.ExtOldFileType.NetCDFGridData, #11
+                                                method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                                operand=hcdfm.Operand.override, #O
+                                                )
+            ext_old.forcing.append(forcing_meteo)
+            forcing_meteo = hcdfm.ExtOldForcing(quantity=&#39;longwaveradiation&#39;,
+                                                filename=file_out,
+                                                varname=&#39;strd&#39;,
+                                                filetype=hcdfm.ExtOldFileType.NetCDFGridData, #11
+                                                method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                                operand=hcdfm.Operand.override, #O
+                                                )
+            ext_old.forcing.append(forcing_meteo)
+        elif varkey_list == [&#39;mer&#39;,&#39;mtpr&#39;]:
+            forcing_meteo = hcdfm.ExtOldForcing(quantity=&#39;rainfall_rate&#39;,
+                                                filename=file_out,
+                                                varname=&#39;mtpr&#39;,
+                                                filetype=hcdfm.ExtOldFileType.NetCDFGridData, #11
+                                                method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                                operand=hcdfm.Operand.override, #O
+                                                )
+            ext_old.forcing.append(forcing_meteo)
+            forcing_meteo = hcdfm.ExtOldForcing(quantity=&#39;rainfall_rate&#39;,
+                                                filename=file_out,
+                                                varname=&#39;mer&#39;,
+                                                filetype=hcdfm.ExtOldFileType.NetCDFGridData, #11
+                                                method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                                operand=hcdfm.Operand.add, #+
+                                                )
+            ext_old.forcing.append(forcing_meteo)
+        
+    return ext_old</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="dfm_tools.modelbuilder.preprocess_interpolate_nc_to_bc"><code class="name flex">
+<span>def <span class="ident">preprocess_interpolate_nc_to_bc</span></span>(<span>ext_bnd, list_quantities, tstart, tstop, list_plifiles, dir_pattern, dir_output='.', refdate_str=None, conversion_dict={'tracerbndOXY': {'ncvarname': 'o2', 'unit': 'g/m3', 'conversion': 0.032}, 'tracerbndNO3': {'ncvarname': 'no3', 'unit': 'g/m3', 'conversion': 0.014}, 'tracerbndPO4': {'ncvarname': 'po4', 'unit': 'g/m3', 'conversion': 0.030969999999999998}, 'tracerbndSi': {'ncvarname': 'si', 'unit': 'g/m3', 'conversion': 0.028079999999999997}, 'tracerbndPON1': {'ncvarname': 'phyc', 'unit': 'g/m3', 'conversion': 0.004226415094339623}, 'tracerbndPOP1': {'ncvarname': 'phyc', 'unit': 'g/m3', 'conversion': 0.0005843396226415094}, 'tracerbndPOC1': {'ncvarname': 'phyc', 'unit': 'g/m3', 'conversion': 0.024}, 'tracerbndDON': {'ncvarname': 'phyc', 'unit': 'g/m3', 'conversion': 0.013693584905660377}, 'tracerbndDOP': {'ncvarname': 'phyc', 'unit': 'g/m3', 'conversion': 0.0005843396226415094}, 'tracerbndDOC': {'ncvarname': 'phyc', 'unit': 'g/m3', 'conversion': 0.11678671698113208}, 'tracerbndOpal': {'ncvarname': 'phyc', 'unit': 'g/m3', 'conversion': 0.0018252}, 'salinitybnd': {'ncvarname': 'so'}, 'temperaturebnd': {'ncvarname': 'thetao'}, 'ux': {'ncvarname': 'uo'}, 'uy': {'ncvarname': 'vo'}, 'waterlevelbnd': {'ncvarname': 'zos'}, 'tide': {'ncvarname': ''}}, tidemodel='FES2014')</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def preprocess_interpolate_nc_to_bc(ext_bnd,
+                                    list_quantities,#quantities should be in conversion_dict.keys(). waterlevelbnd is steric/zos, tide is tidal components from FES/EOT
+                                    tstart,
+                                    tstop,
+                                    list_plifiles,
+                                    dir_pattern,
+                                    dir_output=&#39;.&#39;,
+                                    refdate_str=None,
+                                    conversion_dict=dfmt.get_conversion_dict(),
+                                    tidemodel=&#39;FES2014&#39;): #FES2014, FES2012, EOT20, GTSM4.1preliminary
+    #input examples in https://github.com/Deltares/dfm_tools/blob/main/tests/examples/preprocess_interpolate_nc_to_bc.py
+    model = &#39;CMEMS&#39;
+    
+    for file_pli in list_plifiles:
+        file_bc_basename = os.path.basename(file_pli).replace(&#39;.pli&#39;,&#39;&#39;)
+        for quantity in list_quantities:
+            print(f&#39;processing quantity: {quantity}&#39;)
+            if quantity==&#39;tide&#39;: 
+                if tidemodel == &#39;FES2014&#39;: #for comparing to older FES bc-files
+                    component_list = [&#39;2n2&#39;,&#39;mf&#39;,&#39;p1&#39;,&#39;m2&#39;,&#39;mks2&#39;,&#39;mu2&#39;,&#39;q1&#39;,&#39;t2&#39;,&#39;j1&#39;,&#39;m3&#39;,&#39;mm&#39;,&#39;n2&#39;,&#39;r2&#39;,&#39;k1&#39;,&#39;m4&#39;,&#39;mn4&#39;,&#39;s1&#39;,&#39;k2&#39;,&#39;m6&#39;,&#39;ms4&#39;,&#39;nu2&#39;,&#39;s2&#39;,&#39;l2&#39;,&#39;m8&#39;,&#39;msf&#39;,&#39;o1&#39;,&#39;s4&#39;]
+                else:
+                    component_list = None #None results in all tidemodel components
+                ForcingModel_object = dfmt.interpolate_tide_to_bc(tidemodel=tidemodel, file_pli=file_pli, component_list=component_list, nPoints=None)
+            else:
+                #open regulargridDataset and do some basic stuff (time selection, renaming depth/lat/lon/varname, converting units, etc)
+                data_xr_vars = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity=quantity,
+                                                       tstart=tstart, tstop=tstop,
+                                                       conversion_dict=conversion_dict,
+                                                       refdate_str=refdate_str)
+                #interpolate regulargridDataset to plipointsDataset
+                data_interp = dfmt.interp_regularnc_to_plipoints(data_xr_reg=data_xr_vars, file_pli=file_pli)
+                
+                #convert plipointsDataset to hydrolib ForcingModel
+                ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
+                        
+            if quantity==&#39;tide&#39;:
+                file_bc_out = os.path.join(dir_output,f&#39;{quantity}_{file_bc_basename}_{tidemodel}.bc&#39;)
+            else:
+                file_bc_out = os.path.join(dir_output,f&#39;{quantity}_{file_bc_basename}_{model}.bc&#39;)
+            
+            ForcingModel_object.save(filepath=file_bc_out)
+            
+            #generate boundary object for the ext file (quantity, pli-filename, bc-filename)
+            boundary_object = hcdfm.Boundary(quantity=quantity.replace(&#39;tide&#39;,&#39;waterlevelbnd&#39;), #the FM quantity for tide is also waterlevelbnd
+                                             locationfile=file_pli,
+                                             forcingfile=ForcingModel_object)
+            ext_bnd.boundary.append(boundary_object)
+    
+    return ext_bnd</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.modelbuilder.preprocess_ini_cmems_to_nc"><code class="name flex">
+<span>def <span class="ident">preprocess_ini_cmems_to_nc</span></span>(<span>ext_old, tstart='1998-01-01', dir_data='p:\\i1000668-tcoms\\03_newModel\\01_input\\02_bnd\\data_opendap', dir_out='.')</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def preprocess_ini_cmems_to_nc(ext_old, tstart=&#39;1998-01-01&#39;,
+        dir_data  = r&#39;p:\i1000668-tcoms\03_newModel\01_input\02_bnd\data_opendap&#39;, #folder containing CMEMS so and thetao netcdf files
+        dir_out = &#39;.&#39;):
+    
+    file_nc_list_so = glob.glob(f&#39;{dir_data}\\cmems_so_*.nc&#39;)
+    file_nc_list_thetao = glob.glob(f&#39;{dir_data}\\cmems_thetao_*.nc&#39;)
+    file_nc_list = file_nc_list_so + file_nc_list_thetao
+    
+    print(f&#39;opening {len(file_nc_list)} datasets&#39;)
+    data_xr = xr.open_mfdataset(file_nc_list)
+    
+    tSimStart = pd.Timestamp(tstart)
+    data_xr_ontime = data_xr.sel(time=slice(tSimStart-dt.timedelta(days=1),tSimStart+dt.timedelta(days=1)))
+    
+    print(&#39;writing file&#39;)
+    outFile = os.path.join(dir_out,f&#39;InitialField_{tSimStart.strftime(&#34;%Y-%m-%d_%H-%M-%S&#34;)}.nc&#39;)
+    data_xr_ontime.to_netcdf(outFile,format=&#34;NETCDF4_CLASSIC&#34;) #TODO: why the format setting?
+    
+    #append forcings to ext
+    # 3D initialsalinity/initialtemperature fields are silently ignored, initial 3D conditions are only possible via nudging 1st timestep via quantity=nudge_salinity_temperature
+    forcing_saltem = hcdfm.ExtOldForcing(quantity=&#39;nudge_salinity_temperature&#39;,
+                                         filename=outFile,
+                                         filetype=hcdfm.ExtOldFileType.NetCDFGridData,
+                                         method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                         operand=hcdfm.Operand.override, #O
+                                         )
+    ext_old.forcing.append(forcing_saltem)
+    
+    return ext_old</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.modelbuilder.preprocess_merge_meteofiles"><code class="name flex">
+<span>def <span class="ident">preprocess_merge_meteofiles</span></span>(<span>ext_old, mode='HYCOM', varkey_list=[], dir_data=[], dir_output='.', time_slice=slice('2013-12-30', '2014-01-01', None))</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def preprocess_merge_meteofiles(ext_old,
+        mode = &#39;HYCOM&#39;, # &#39;HIRLAM_meteo&#39; &#39;HIRLAM_meteo-heatflux&#39; &#39;HARMONIE&#39; &#39;HYCOM&#39; &#39;ERA5_wind_pressure&#39; &#39;ERA5_heat_model&#39; &#39;ERA5_radiation&#39; &#39;ERA5_rainfall&#39; &#39;WOA&#39;
+        varkey_list = [],
+        dir_data = [],
+        dir_output = &#39;.&#39;,
+        time_slice = slice(&#39;2013-12-30&#39;,&#39;2014-01-01&#39;)):
+
+    if isinstance(varkey_list[0], list):
+        varkey_lists = varkey_list
+    else:
+        varkey_lists = [varkey_list]
+    
+    for varkey_list in varkey_lists:
+        if &#39;HIRLAM&#39; in mode:
+            if mode == &#39;HIRLAM_meteo&#39;: #1year voor meteo crasht (HIRLAM72_*\\h72_*) door conflicting dimension sizes, sourcefolders opruimen? meteo_heatflux folders zijn schoner dus daar werkt het wel
+                dir_data = &#39;P:\\1204257-dcsmzuno\\2014\\data\\meteo\\HIRLAM72_*&#39; #files contain: [&#39;air_pressure_fixed_height&#39;,&#39;northward_wind&#39;,&#39;eastward_wind&#39;]
+            elif mode == &#39;HIRLAM_meteo-heatflux&#39;:
+                dir_data = &#39;P:\\1204257-dcsmzuno\\2014\\data\\meteo-heatflux\\HIRLAM72_*&#39; # files contain: [&#39;dew_point_temperature&#39;,&#39;air_temperature&#39;,&#39;cloud_area_fraction&#39;]
+            fn_match_pattern = &#39;h72_20131*.nc&#39;
+            file_out_prefix = &#39;h72_&#39;
+            preprocess = dfmt.preprocess_hirlam #temporary(?) fix for &gt;1D-vars with same name as its dim
+        elif mode == &#39;HARMONIE&#39;:
+            dir_data = &#39;p:\\1204257-dcsmzuno\\data\\meteo\\HARMONIE\\nc\\air_*&#39; #many invalid files, so subsetting here
+            fn_match_pattern = &#39;HARMONIE_*_2020_*.nc&#39;
+            file_out_prefix = &#39;HARMONIE_&#39;
+            preprocess = None
+        elif mode == &#39;HYCOM&#39;:
+            dir_data = &#39;c:\\DATA\\dfm_tools_testdata\\GLBu0.08_expt_91.2&#39;
+            fn_match_pattern = &#39;HYCOM_ST_GoO_*.nc&#39;
+            file_out_prefix = &#39;HYCOM_ST_GoO_&#39;
+            preprocess = None
+            #rename_variables = {&#39;salinity&#39;:&#39;so&#39;, &#39;water_temp&#39;:&#39;thetao&#39;}
+        elif &#39;ERA5&#39; in mode:
+            fn_match_pattern = f&#39;era5_.*({&#34;|&#34;.join(varkey_list)})_.*.nc&#39; #simpler but selects more files: &#39;era5_*.nc&#39;
+            file_out_prefix = f&#39;era5_{&#34;_&#34;.join(varkey_list)}_&#39;
+            preprocess = dfmt.preprocess_ERA5 #reduce expver dimension if present
+        elif mode == &#39;WOA&#39;:
+            dir_data = r&#39;p:\1204257-dcsmzuno\data\WOA13&#39;
+            fn_match_pattern = &#39;woa13_decav_s*.nc&#39;
+            file_out_prefix = &#39;woa13_decav_s_&#39;
+            preprocess = dfmt.preprocess_woa #add 360-day calendar unit to time attrs before decode_cf
+        else:
+            raise Exception(&#39;ERROR: wrong mode %s&#39;%(mode))
+        
+        if not os.path.exists(dir_output):
+            os.makedirs(dir_output)
+        
+        file_nc = os.path.join(dir_data,fn_match_pattern)
+        
+        data_xr_tsel = dfmt.merge_meteofiles(file_nc=file_nc, time_slice=time_slice, 
+                                             preprocess=preprocess,
+                                             add_global_overlap=False, #GTSM specific: extend data beyond -180 to 180 longitude
+                                             zerostart=False) #GTSM specific: extend data with 0-value fields 1 and 2 days before all_tstart
+        
+        #write to netcdf file
+        print(&#39;&gt;&gt; writing file (can take a while): &#39;,end=&#39;&#39;)
+        dtstart = dt.datetime.now()
+        try:
+            times_np = data_xr_tsel[&#39;time&#39;].to_series()
+        except:
+            times_np = data_xr_tsel[&#39;time&#39;].to_numpy() #.to_series() does not work for woa 360_day data. .to_numpy() results in numpy.datetime64 for other datasets, which has no attribute strftime
+        time_start_str = times_np[0].strftime(&#34;%Y%m%d&#34;)
+        time_stop_str = times_np[-1].strftime(&#34;%Y%m%d&#34;)
+        file_out = os.path.join(dir_output, f&#39;{file_out_prefix}{time_start_str}to{time_stop_str}_{mode}.nc&#39;)
+        data_xr_tsel.to_netcdf(file_out)
+        print(f&#39;{(dt.datetime.now()-dtstart).total_seconds():.2f} sec&#39;)
+        
+        #append to ext model
+        if varkey_list == [&#39;msl&#39;,&#39;u10n&#39;,&#39;v10n&#39;,&#39;chnk&#39;]:
+            forcing_meteo = hcdfm.ExtOldForcing(quantity=&#39;airpressure_windx_windy_charnock&#39;,
+                                                filename=file_out,
+                                                varname=&#39;msl u10n v10n chnk&#39;,
+                                                filetype=hcdfm.ExtOldFileType.NetCDFGridData, #11
+                                                method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                                operand=hcdfm.Operand.override, #O
+                                                )
+            ext_old.forcing.append(forcing_meteo)
+        elif varkey_list == [&#39;d2m&#39;,&#39;t2m&#39;,&#39;tcc&#39;]:
+            forcing_meteo = hcdfm.ExtOldForcing(quantity=&#39;dewpoint_airtemperature_cloudiness&#39;,
+                                                filename=file_out,
+                                                varname=&#39;d2m t2m tcc&#39;,
+                                                filetype=hcdfm.ExtOldFileType.NetCDFGridData, #11
+                                                method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                                operand=hcdfm.Operand.override, #O
+                                                )
+            ext_old.forcing.append(forcing_meteo)
+        elif varkey_list == [&#39;ssr&#39;,&#39;strd&#39;]:
+            forcing_meteo = hcdfm.ExtOldForcing(quantity=&#39;solarradiation&#39;,
+                                                filename=file_out,
+                                                varname=&#39;ssr&#39;,
+                                                filetype=hcdfm.ExtOldFileType.NetCDFGridData, #11
+                                                method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                                operand=hcdfm.Operand.override, #O
+                                                )
+            ext_old.forcing.append(forcing_meteo)
+            forcing_meteo = hcdfm.ExtOldForcing(quantity=&#39;longwaveradiation&#39;,
+                                                filename=file_out,
+                                                varname=&#39;strd&#39;,
+                                                filetype=hcdfm.ExtOldFileType.NetCDFGridData, #11
+                                                method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                                operand=hcdfm.Operand.override, #O
+                                                )
+            ext_old.forcing.append(forcing_meteo)
+        elif varkey_list == [&#39;mer&#39;,&#39;mtpr&#39;]:
+            forcing_meteo = hcdfm.ExtOldForcing(quantity=&#39;rainfall_rate&#39;,
+                                                filename=file_out,
+                                                varname=&#39;mtpr&#39;,
+                                                filetype=hcdfm.ExtOldFileType.NetCDFGridData, #11
+                                                method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                                operand=hcdfm.Operand.override, #O
+                                                )
+            ext_old.forcing.append(forcing_meteo)
+            forcing_meteo = hcdfm.ExtOldForcing(quantity=&#39;rainfall_rate&#39;,
+                                                filename=file_out,
+                                                varname=&#39;mer&#39;,
+                                                filetype=hcdfm.ExtOldFileType.NetCDFGridData, #11
+                                                method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                                operand=hcdfm.Operand.add, #+
+                                                )
+            ext_old.forcing.append(forcing_meteo)
+        
+    return ext_old</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="dfm_tools" href="index.html">dfm_tools</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="dfm_tools.modelbuilder.preprocess_interpolate_nc_to_bc" href="#dfm_tools.modelbuilder.preprocess_interpolate_nc_to_bc">preprocess_interpolate_nc_to_bc</a></code></li>
+<li><code><a title="dfm_tools.modelbuilder.preprocess_ini_cmems_to_nc" href="#dfm_tools.modelbuilder.preprocess_ini_cmems_to_nc">preprocess_ini_cmems_to_nc</a></code></li>
+<li><code><a title="dfm_tools.modelbuilder.preprocess_merge_meteofiles" href="#dfm_tools.modelbuilder.preprocess_merge_meteofiles">preprocess_merge_meteofiles</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>

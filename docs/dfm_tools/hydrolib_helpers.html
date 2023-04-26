@@ -1,0 +1,984 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>dfm_tools.hydrolib_helpers API documentation</title>
+<meta name="description" content="Created on Tue Aug 23 13:36:44 2022 …" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>dfm_tools.hydrolib_helpers</code></h1>
+</header>
+<section id="section-intro">
+<p>Created on Tue Aug 23 13:36:44 2022</p>
+<p>@author: veenstra</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python"># -*- coding: utf-8 -*-
+&#34;&#34;&#34;
+Created on Tue Aug 23 13:36:44 2022
+
+@author: veenstra
+&#34;&#34;&#34;
+
+import pandas as pd
+import cftime
+import numpy as np
+import xarray as xr
+from cftime import date2num
+import hydrolib.core.dflowfm as hcdfm
+import datetime as dt
+import geopandas
+from shapely.geometry import LineString
+
+
+def Dataset_to_T3D(datablock_xr):
+    &#34;&#34;&#34;
+    convert an xarray.DataArray (is one data_var) or an xarray.Dataset (with one or two data_vars) with time and depth dimension to a hydrolib T3D object
+    &#34;&#34;&#34;
+    
+    if not isinstance(datablock_xr,(xr.DataArray,xr.Dataset)):
+        raise TypeError(f&#39;expected xarray.DataArray or xarray.Dataset, not {type(datablock_xr)}&#39;)
+        
+    vector = False
+    if isinstance(datablock_xr,xr.DataArray):
+        data_xr_var0 = datablock_xr
+    elif isinstance(datablock_xr,xr.Dataset):
+        data_vars = list(datablock_xr.data_vars)
+        data_xr_var0 = datablock_xr[data_vars[0]]
+        if len(data_vars)==2:
+            if not pd.Series(data_vars).isin([&#39;ux&#39;,&#39;uy&#39;]).all():
+                raise Exception(f&#39;Dataset with 2 data_vars should contain only ux/uy data_vars, but contains {data_vars}&#39;)
+            vector = True
+            data_xr_var1 = datablock_xr[data_vars[1]]
+        elif len(data_vars) &gt; 2:
+            raise ValueError(f&#39;Dataset should contain 1 or 2 data_vars, but contains {len(data_vars)} variables&#39;)
+    
+    #ffill/bfill nan data along over depth dimension (corresponds to vertical extrapolation)
+    data_xr_var0 = data_xr_var0.bfill(dim=&#39;depth&#39;).ffill(dim=&#39;depth&#39;)
+    if vector:
+        data_xr_var1 = data_xr_var1.bfill(dim=&#39;depth&#39;).ffill(dim=&#39;depth&#39;)
+    
+    #TODO: clean up these first lines of code and add description to docstring?
+    locationname = data_xr_var0.attrs[&#39;locationname&#39;]
+    refdate_str = data_xr_var0.time.encoding[&#39;units&#39;]
+    
+    if not set(data_xr_var0.dims).issubset(set((&#39;time&#39;,&#39;depth&#39;))): #check if both time and depth dimensions are present
+        raise ValueError(f&#34;data_var in provided data_xr has dimensions {data_xr_var0.dims} while (&#39;time&#39;,&#39;depth&#39;) is expected&#34;)
+    
+    #get depth variable and values
+    depth_array = data_xr_var0[&#39;depth&#39;].to_numpy()
+    
+    #get datablock and concatenate with relative time data
+    if vector:
+        data_xr_var0_np = data_xr_var0.to_numpy()
+        data_xr_var1_np = data_xr_var1.to_numpy()
+        datablock_np = np.stack((data_xr_var0_np,data_xr_var1_np),2).reshape(data_xr_var0_np.shape[0],-1) #merge data with alternating rows
+    else:
+        datablock_np = data_xr_var0.to_numpy()
+    
+    timevar_sel_rel = date2num(pd.DatetimeIndex(data_xr_var0.time.to_numpy()).to_pydatetime(),units=refdate_str,calendar=&#39;standard&#39;)
+    datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock_np],axis=1)
+    
+    # Each .bc file can contain 1 or more timeseries, in this case one for each support point
+    verticalpositions_idx = np.arange(data_xr_var0[&#39;depth&#39;].size)+1
+    if vector: #vector T3D object
+        QUP_quan_list = [hcdfm.QuantityUnitPair(quantity=quan, unit=data_xr_var0.attrs[&#39;units&#39;], vertpositionindex=iVP) for iVP in verticalpositions_idx for quan in data_vars]
+        QUP_quan_vector = hcdfm.VectorQuantityUnitPairs(vectorname=&#39;uxuyadvectionvelocitybnd&#39;, #TODO: vectorname from global attr? (then also support other vectors which is not necessary)
+                                                  elementname=data_vars,
+                                                  quantityunitpair=QUP_quan_list)
+        quantityunitpair = [hcdfm.QuantityUnitPair(quantity=&#34;time&#34;, unit=refdate_str)]+[QUP_quan_vector]
+    else: #normal T3D object
+        QUP_quan_list = [hcdfm.QuantityUnitPair(quantity=data_xr_var0.name, unit=data_xr_var0.attrs[&#39;units&#39;], vertpositionindex=iVP) for iVP in verticalpositions_idx]
+        quantityunitpair=[hcdfm.QuantityUnitPair(quantity=&#34;time&#34;, unit=refdate_str)]+QUP_quan_list
+    
+    T3D_object = hcdfm.T3D(name=locationname,
+                           #offset=0,
+                           #factor=1,
+                           vertpositions=depth_array.tolist(),
+                           vertinterpolation=&#39;linear&#39;, #TODO: make these parameters user defined (via attrs)
+                           vertPositionType=&#39;ZDatum&#39;,
+                           quantityunitpair=quantityunitpair,
+                           timeinterpolation=&#39;linear&#39;,
+                           datablock=datablock_incltime.tolist(),
+                           )
+    
+    return T3D_object
+
+
+def Dataset_to_TimeSeries(datablock_xr):
+    &#34;&#34;&#34;
+    convert an xarray.DataArray or xarray.Dataset with time dimension to a hydrolib TimeSeries object
+    &#34;&#34;&#34;
+    if not isinstance(datablock_xr,(xr.DataArray,xr.Dataset)):
+        raise TypeError(f&#39;Dataset_to_TimeSeries expects xr.DataArray or xr.Dataset, not {type(datablock_xr)}&#39;)
+    
+    if isinstance(datablock_xr,xr.Dataset): #convert Dataset to DataArray
+        data_vars = list(datablock_xr.data_vars)
+        if len(data_vars)!=1:
+            raise ValueError(&#39;more than one variable supplied in Dataset, not yet possible&#39;) #TODO: add support for multiple quantities and for vectors
+        datablock_xr = datablock_xr[data_vars[0]]
+    
+    #TODO: clean up these first lines of code and add description to docstring?
+    locationname = datablock_xr.attrs[&#39;locationname&#39;]
+    bcvarname = datablock_xr.name
+    refdate_str = datablock_xr.time.encoding[&#39;units&#39;]
+    
+    if datablock_xr.dims != (&#39;time&#39;,):
+        raise ValueError(f&#34;datablock_xr provided to DataArray_to_TimeSeries has dimensions {datablock_xr.dims} while (&#39;time&#39;) is expected&#34;)
+    
+    #get datablock and concatenate with relative time data
+    datablock_np = datablock_xr.to_numpy()[:,np.newaxis]
+    timevar_sel_rel = date2num(pd.DatetimeIndex(datablock_xr.time.to_numpy()).to_pydatetime(),units=refdate_str,calendar=&#39;standard&#39;)
+    datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock_np],axis=1)
+    
+    # Each .bc file can contain 1 or more timeseries, in this case one for each support point
+    TimeSeries_object = hcdfm.TimeSeries(name=locationname,
+                                         quantityunitpair=[hcdfm.QuantityUnitPair(quantity=&#34;time&#34;, unit=refdate_str),
+                                                           hcdfm.QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs[&#39;units&#39;])],
+                                         timeinterpolation=&#39;linear&#39;, #TODO: make userdefined via attrs?
+                                         datablock=datablock_incltime.tolist(), 
+                                         )
+    return TimeSeries_object
+
+
+def Dataset_to_Astronomic(datablock_xr):
+    &#34;&#34;&#34;
+    convert an xarray.Dataset (with amplitude and phase data_vars) to a hydrolib Astronomic object
+    
+    &#34;&#34;&#34;
+    if not isinstance(datablock_xr,xr.Dataset):
+        raise TypeError(f&#39;Dataset_to_Astronomic expects xr.Dataset, not {type(datablock_xr)}&#39;)
+    
+    data_vars = list(datablock_xr.data_vars)
+    if &#39;amplitude&#39; not in data_vars or &#39;phase_new&#39; not in data_vars:
+        raise KeyError(&#39;amplitude and/or phase_new not in input xr.Dataset&#39;)
+
+    #TODO: clean up these first lines of code and add description to docstring?
+    locationname = datablock_xr[&#39;amplitude&#39;].attrs[&#39;locationname&#39;]
+        
+    #get datablock and concatenate with component names
+    datablock_np_cna = datablock_xr[&#39;compnames&#39;].to_numpy()[:,np.newaxis]
+    datablock_np_amp = datablock_xr[&#39;amplitude&#39;].to_numpy()[:,np.newaxis]
+    datablock_np_phs = datablock_xr[&#39;phase_new&#39;].to_numpy()[:,np.newaxis]
+    datablock_inclcomp = np.concatenate([datablock_np_cna,datablock_np_amp,datablock_np_phs],axis=1)
+    
+    Astronomic_object = hcdfm.Astronomic(name=locationname,
+                                         quantityunitpair=[hcdfm.QuantityUnitPair(quantity=&#34;astronomic component&#34;, unit=&#39;-&#39;),
+                                                           hcdfm.QuantityUnitPair(quantity=&#39;waterlevelbnd amplitude&#39;, unit=datablock_xr[&#39;amplitude&#39;].attrs[&#39;units&#39;]),
+                                                           hcdfm.QuantityUnitPair(quantity=&#39;waterlevelbnd phase&#39;, unit=datablock_xr[&#39;phase&#39;].attrs[&#39;units&#39;])],
+                                         datablock=datablock_inclcomp.tolist(), 
+                                         )
+    return Astronomic_object
+
+
+def DataFrame_to_PolyObject(poly_pd,name,content=None):
+    &#34;&#34;&#34;
+    convert a pandas dataframe with x/y columns (and optional others like z/data/comment) to a hydrolib PolyObject
+    &#34;&#34;&#34;
+    if &#39;z&#39; in poly_pd.columns:
+        nondata_cols = [&#39;x&#39;,&#39;y&#39;,&#39;z&#39;]
+    else:
+        nondata_cols = [&#39;x&#39;,&#39;y&#39;]
+    poly_pd_xy = poly_pd[nondata_cols]
+    poly_pd_data = pd.DataFrame({&#39;data&#39;:poly_pd.drop(nondata_cols,axis=1).values.tolist()})
+    poly_pd_polyobj = pd.concat([poly_pd_xy,poly_pd_data],axis=1)
+    pointsobj_list = poly_pd_polyobj.T.apply(dict).tolist() #TODO: maybe faster with list iteration
+    polyobject = hcdfm.PolyObject(metadata={&#39;name&#39;:name,&#39;n_rows&#39;:poly_pd.shape[0],&#39;n_columns&#39;:poly_pd.shape[1]}, points=pointsobj_list)
+    if content is not None:
+        polyobject.description = {&#39;content&#39;:content}
+    return polyobject
+
+
+def DataFrame_to_TimModel(tim_pd, refdate:(dt.datetime, pd.Timestamp, str)):
+    &#34;&#34;&#34;
+    converts data from tim_pd to TimModel and puts all headers as comments. Ignores the index, assumes first column is time in minutes since a refdate.
+    &#34;&#34;&#34;
+    #TODO: add conversion from datetimes in index to minutes, maybe drop minutes column upon reading? First await https://github.com/Deltares/HYDROLIB-core/issues/511
+    
+    refdate_pd = pd.Timestamp(refdate)
+    
+    data_tim = tim_pd.values.tolist()
+    times_tim = ((tim_pd.index - refdate_pd).total_seconds()/60).tolist()
+    dict_tim = [hcdfm.TimRecord(time=t,data=d) for t,d in zip(times_tim,data_tim)]
+    
+    comments_datacols = tim_pd.columns.tolist()
+    comments = [tim_pd.index.name] + comments_datacols
+    for iC, comment in enumerate(comments):
+        comments[iC] = f&#39;COLUMN {iC+1}: {comment}&#39;
+    timmodel = hcdfm.TimModel(timeseries=dict_tim, comments=comments)
+    
+    return timmodel
+
+
+def forcinglike_to_Dataset(forcingobj, convertnan=False): #TODO: would be convenient to have this as a method of ForcingModel objects (Timeseries/T3D/etc): https://github.com/Deltares/HYDROLIB-core/issues/307
+    &#34;&#34;&#34;
+    convert a hydrolib forcing like object (like Timeseries, T3D, Harmonic, etc) to an xarray Dataset with one or more variables.
+    
+    convertnan: convert depths with the same values over time as the deepest layer to nan (these were created with .bfill() or .ffill()).
+    &#34;&#34;&#34;
+    
+    #check if forcingmodel instead of T3D/TimeSeries is provided
+    if isinstance(forcingobj, hcdfm.ForcingModel):
+        raise TypeError(&#39;instead of supplying a ForcingModel, provide a ForcingObject (Timeseries/T3D etc), by doing something like ForcingModel.forcing[0]&#39;)
+    
+    allowed_instances = (hcdfm.T3D, hcdfm.TimeSeries, hcdfm.Astronomic)
+    if not isinstance(forcingobj, allowed_instances):
+        raise TypeError(f&#39;supplied input is not one of: {allowed_instances}&#39;)
+    
+    if isinstance(forcingobj, hcdfm.Astronomic):
+        var_quantity_list = [x.quantity for x in forcingobj.quantityunitpair[1:]]
+        var_unit = [x.unit for x in forcingobj.quantityunitpair[1:]]
+    elif hasattr(forcingobj.quantityunitpair[1],&#39;elementname&#39;): #T3D with vector quantity
+        var_quantity_list = forcingobj.quantityunitpair[1].elementname
+        var_unit_one = forcingobj.quantityunitpair[1].quantityunitpair[0].unit
+        var_unit = [var_unit_one,var_unit_one]
+    else: #non-vector TimeSeries or T3D
+        var_quantity_list = [forcingobj.quantityunitpair[1].quantity]
+        var_unit = [forcingobj.quantityunitpair[1].unit]
+    nquan = len(var_quantity_list)
+    
+    if isinstance(forcingobj, hcdfm.T3D):
+        dims = (&#39;time&#39;,&#39;depth&#39;)
+    elif isinstance(forcingobj, hcdfm.TimeSeries):
+        dims = (&#39;time&#39;)
+    elif isinstance(forcingobj, hcdfm.Astronomic):
+        dims = (&#39;astronomic_component&#39;)
+    
+    datablock_all = np.array(forcingobj.datablock)
+    datablock_data = datablock_all[:,1:] #select all columns except first one (which is the time column)
+    if isinstance(forcingobj, hcdfm.Astronomic):
+        datablock_data = datablock_data.astype(float) #convert str to float in case of &#34;astronomic component&#34;
+    
+    data_xr = xr.Dataset()
+    for iQ, var_quantity in enumerate(var_quantity_list):
+        datablock_data_onequan = datablock_data[:,iQ::nquan]
+        datablock_data_onequan = datablock_data_onequan.squeeze() #drop dimensions of len 1 in case of 1 dimension, eg &#34;waterlevelbnd&#34; (first subsetting over depth dimension)
+        
+        data_xr_var = xr.DataArray(datablock_data_onequan, name=var_quantity, dims=dims)
+        if &#39;depth&#39; in dims:
+            data_xr_var[&#39;depth&#39;] = forcingobj.vertpositions
+            #data_xr_var[&#39;depth&#39;].attrs[&#39;positive&#39;] == &#39;up&#39; #TODO: maybe add this attribute
+            if convertnan: #convert ffilled/bfilled values back to nan
+                deepestlayeridx = data_xr_var.depth.to_numpy().argmin()
+                if deepestlayeridx==0: #sorted from deep to shallow layers
+                    bool_nandepths = (data_xr_var==data_xr_var.shift(depth=-1)).all(dim=&#39;time&#39;)
+                else: #sorted from shallow to deep layers
+                    bool_nandepths = (data_xr_var==data_xr_var.shift(depth=1)).all(dim=&#39;time&#39;)
+                data_xr_var = data_xr_var.where(~bool_nandepths)
+        if &#39;time&#39; in dims:
+            time_unit = forcingobj.quantityunitpair[0].unit.lower()
+            data_xr_var[&#39;time&#39;] = cftime.num2pydate(datablock_all[:,0], units=time_unit)
+            data_xr_var[&#39;time&#39;].encoding[&#39;units&#39;] = time_unit #check tz conversion if eg &#39;+01:00&#39; is present in time_unit
+            data_xr_var[&#39;time&#39;].encoding[&#39;calendar&#39;] = &#39;standard&#39;
+        if &#39;astronomic_component&#39; in dims:
+            data_xr_var[&#39;astronomic_component&#39;] = datablock_all[:,0]
+        
+        #add attributes
+        data_xr_var.attrs[&#39;source&#39;] = &#39;hydrolib-core object converted to xarray.Dataset with dfm_tools.xarray_helpers.forcinglike_to_Dataset()&#39;
+        data_xr_var.attrs[&#39;locationname&#39;] = forcingobj.name
+        data_xr_var.attrs[&#39;units&#39;] = var_unit[iQ]
+        forcingobj_keys = forcingobj.__dict__.keys()
+        for key in forcingobj_keys: #[&#39;comments&#39;,&#39;name&#39;,&#39;function&#39;,&#39;offset&#39;,&#39;factor&#39;,&#39;vertinterpolation&#39;,&#39;vertpositiontype&#39;,&#39;timeinterpolation&#39;]: 
+            if key in [&#39;datablock&#39;,&#39;quantityunitpair&#39;,&#39;vertpositions&#39;]: #skipping these since they are in the DataArray already
+                continue
+            data_xr_var.attrs[key] = str(forcingobj.__dict__[key])
+        
+        #add DataArray to Dataset
+        data_xr[var_quantity] = data_xr_var
+    
+    return data_xr
+
+
+def pointlike_to_DataFrame(pointlike,drop_emptycols=True):
+    &#34;&#34;&#34;
+    convert a hydrolib object with points (like PolyObject, XYZModel and possibly others) to a pandas DataFrame.
+
+    Parameters
+    ----------
+    pointlike : TYPE
+        Hydrolib-core object with point objects.
+
+    Returns
+    -------
+    pointlike_pd : TYPE
+        DESCRIPTION.
+    drop_emptycols : bool, optional
+        Drop empty (all-nan) columns automatically, like the z-column in ldb file. The default is True.
+    
+    Example:
+        polyfile_object = PolyFile(file_pli)
+        data_pol_pd_list = [pointlike_to_DataFrame(polyobj) for polyobj in polyfile_object.objects]
+
+    &#34;&#34;&#34;
+    
+    pointlike_pd = pd.DataFrame([dict(p) for p in pointlike.points])
+    if &#39;data&#39; in pointlike_pd.columns:
+        datavals_pd = pd.DataFrame([p.data for p in pointlike.points])
+        pointlike_pd = pd.concat([pointlike_pd.drop([&#39;data&#39;],axis=1), datavals_pd],axis=1)
+        
+    if drop_emptycols:
+        pointlike_pd = pointlike_pd.dropna(axis=1).copy()
+        
+    return pointlike_pd
+
+
+def parse_xy_to_datetime(pointlike_pd):
+    datatimevals_pdstr = (pointlike_pd[&#39;x&#39;].astype(int).apply(lambda x:f&#39;{x:08d}&#39;) +
+                          pointlike_pd[&#39;y&#39;].astype(int).apply(lambda x:f&#39;{x:06d}&#39;))
+    pointlike_pd.index = pd.to_datetime(datatimevals_pdstr)
+    pointlike_pd_timeidx = pointlike_pd.drop([&#39;x&#39;,&#39;y&#39;],axis=1)
+    
+    return pointlike_pd_timeidx
+
+
+def TimModel_to_DataFrame(data_tim:hcdfm.TimModel, parse_column_labels:bool = True, refdate:(dt.datetime, pd.Timestamp, str) = None):
+    &#34;&#34;&#34;
+    
+
+    Parameters
+    ----------
+    data_tim : hcdfm.TimModel
+        DESCRIPTION.
+    parse_column_labels : bool, optional
+        Parse column labels from comments. This might fail since there is no standard way of prescribing the columns in the comments. The default is True.
+    refdate : (dt.datetime, pd.Timestamp, str, int, float), optional
+        DESCRIPTION. The default is None.
+
+    Returns
+    -------
+    tim_pd : TYPE
+        DESCRIPTION.
+
+    &#34;&#34;&#34;
+    #convert to pandas dataframe
+    timevals_pd = pd.Index([p.time for p in data_tim.timeseries])
+    tim_pd = pd.DataFrame([p.data for p in data_tim.timeseries],index=timevals_pd)
+    tim_pd.columns += 2 #make column numbers 1-based, but first column is already in index so start with 2
+    tim_pd.index.name = &#39;time in minutes&#39;
+    
+    if parse_column_labels:
+        #replace column labels with the ones in comments
+        tim_pd_columns = tim_pd.columns.tolist()
+        for line in data_tim.comments:
+            if &#39;column&#39; in line.lower() and &#39;:&#39; in line: #assume &#34;:&#34; is separator. Remove casing to be able to check for Column/COLUMN/column in string
+                sep = &#39;:&#39;
+            elif &#39;column&#39; in line.lower() and &#39;=&#39; in line: #assume &#34;=&#34; is separator. Remove casing to be able to check for Column/COLUMN/column in string
+                sep = &#39;=&#39;
+            else:
+                continue
+            line_split = line.split(sep)
+            colnum = line_split[0].lower().replace(&#39;column&#39;,&#39;&#39;).strip()
+            if colnum.isnumeric():
+                comment_str = &#39;:&#39;.join(line_split[1:]).strip()
+                if colnum==1: #time column is now in index, overwrite index name
+                    tim_pd.index.name = comment_str
+                else:
+                    tim_pd_columns[int(colnum)-2] = comment_str
+        tim_pd.columns = tim_pd_columns
+    
+    if refdate:
+        refdate_pd = pd.Timestamp(refdate)
+        tim_pd.index = refdate_pd + pd.to_timedelta(tim_pd.index,unit=&#39;minutes&#39;)
+    
+    return tim_pd
+
+
+def pointlike_to_geodataframe(polyline_object, crs=&#39;EPSG:4326&#39;, add_pointnames=True):
+    #conversion to dataframe
+    #polyobject_pd = dfmt.pointlike_to_DataFrame(polyline_object)
+    polyobject_pd = pd.DataFrame([dict(p) for p in polyline_object.points])
+
+    df = pd.DataFrame()
+    if add_pointnames: #optionally add names
+        df[&#39;plipoint_name&#39;] = pd.Series(polyobject_pd.index).apply(lambda x: f&#39;{polyline_object.metadata.name}_{x+1:04d}&#39;)
+    
+    #make gdf of points (1 point per row)
+    gdf = geopandas.GeoDataFrame(data=df, geometry=geopandas.points_from_xy(polyobject_pd[&#39;x&#39;],polyobject_pd[&#39;y&#39;]), crs=crs)
+        
+    return gdf
+
+
+def PolyFile_to_geodataframe(polyfile_object, crs=&#39;EPSG:4326&#39;):
+    plilines_list = []
+    plinames_list = []
+    for iPO, polyline_object in enumerate(polyfile_object.objects):
+        polyobject_pd = pd.DataFrame([dict(p) for p in polyline_object.points]) #TODO: getting only x/y might be faster, but maybe we also need the other columns?
+        polygon_geom = LineString(zip(polyobject_pd[&#39;x&#39;],polyobject_pd[&#39;y&#39;]))
+        
+        #make gdf of points (1 point per row)
+        plilines_list.append(polygon_geom)
+        plinames_list.append(polyline_object.metadata.name)
+    gdf_polyfile = geopandas.GeoDataFrame({&#39;name&#39;: plinames_list, &#39;geometry&#39;: plilines_list}, crs=crs)
+    return gdf_polyfile</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="dfm_tools.hydrolib_helpers.Dataset_to_T3D"><code class="name flex">
+<span>def <span class="ident">Dataset_to_T3D</span></span>(<span>datablock_xr)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>convert an xarray.DataArray (is one data_var) or an xarray.Dataset (with one or two data_vars) with time and depth dimension to a hydrolib T3D object</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def Dataset_to_T3D(datablock_xr):
+    &#34;&#34;&#34;
+    convert an xarray.DataArray (is one data_var) or an xarray.Dataset (with one or two data_vars) with time and depth dimension to a hydrolib T3D object
+    &#34;&#34;&#34;
+    
+    if not isinstance(datablock_xr,(xr.DataArray,xr.Dataset)):
+        raise TypeError(f&#39;expected xarray.DataArray or xarray.Dataset, not {type(datablock_xr)}&#39;)
+        
+    vector = False
+    if isinstance(datablock_xr,xr.DataArray):
+        data_xr_var0 = datablock_xr
+    elif isinstance(datablock_xr,xr.Dataset):
+        data_vars = list(datablock_xr.data_vars)
+        data_xr_var0 = datablock_xr[data_vars[0]]
+        if len(data_vars)==2:
+            if not pd.Series(data_vars).isin([&#39;ux&#39;,&#39;uy&#39;]).all():
+                raise Exception(f&#39;Dataset with 2 data_vars should contain only ux/uy data_vars, but contains {data_vars}&#39;)
+            vector = True
+            data_xr_var1 = datablock_xr[data_vars[1]]
+        elif len(data_vars) &gt; 2:
+            raise ValueError(f&#39;Dataset should contain 1 or 2 data_vars, but contains {len(data_vars)} variables&#39;)
+    
+    #ffill/bfill nan data along over depth dimension (corresponds to vertical extrapolation)
+    data_xr_var0 = data_xr_var0.bfill(dim=&#39;depth&#39;).ffill(dim=&#39;depth&#39;)
+    if vector:
+        data_xr_var1 = data_xr_var1.bfill(dim=&#39;depth&#39;).ffill(dim=&#39;depth&#39;)
+    
+    #TODO: clean up these first lines of code and add description to docstring?
+    locationname = data_xr_var0.attrs[&#39;locationname&#39;]
+    refdate_str = data_xr_var0.time.encoding[&#39;units&#39;]
+    
+    if not set(data_xr_var0.dims).issubset(set((&#39;time&#39;,&#39;depth&#39;))): #check if both time and depth dimensions are present
+        raise ValueError(f&#34;data_var in provided data_xr has dimensions {data_xr_var0.dims} while (&#39;time&#39;,&#39;depth&#39;) is expected&#34;)
+    
+    #get depth variable and values
+    depth_array = data_xr_var0[&#39;depth&#39;].to_numpy()
+    
+    #get datablock and concatenate with relative time data
+    if vector:
+        data_xr_var0_np = data_xr_var0.to_numpy()
+        data_xr_var1_np = data_xr_var1.to_numpy()
+        datablock_np = np.stack((data_xr_var0_np,data_xr_var1_np),2).reshape(data_xr_var0_np.shape[0],-1) #merge data with alternating rows
+    else:
+        datablock_np = data_xr_var0.to_numpy()
+    
+    timevar_sel_rel = date2num(pd.DatetimeIndex(data_xr_var0.time.to_numpy()).to_pydatetime(),units=refdate_str,calendar=&#39;standard&#39;)
+    datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock_np],axis=1)
+    
+    # Each .bc file can contain 1 or more timeseries, in this case one for each support point
+    verticalpositions_idx = np.arange(data_xr_var0[&#39;depth&#39;].size)+1
+    if vector: #vector T3D object
+        QUP_quan_list = [hcdfm.QuantityUnitPair(quantity=quan, unit=data_xr_var0.attrs[&#39;units&#39;], vertpositionindex=iVP) for iVP in verticalpositions_idx for quan in data_vars]
+        QUP_quan_vector = hcdfm.VectorQuantityUnitPairs(vectorname=&#39;uxuyadvectionvelocitybnd&#39;, #TODO: vectorname from global attr? (then also support other vectors which is not necessary)
+                                                  elementname=data_vars,
+                                                  quantityunitpair=QUP_quan_list)
+        quantityunitpair = [hcdfm.QuantityUnitPair(quantity=&#34;time&#34;, unit=refdate_str)]+[QUP_quan_vector]
+    else: #normal T3D object
+        QUP_quan_list = [hcdfm.QuantityUnitPair(quantity=data_xr_var0.name, unit=data_xr_var0.attrs[&#39;units&#39;], vertpositionindex=iVP) for iVP in verticalpositions_idx]
+        quantityunitpair=[hcdfm.QuantityUnitPair(quantity=&#34;time&#34;, unit=refdate_str)]+QUP_quan_list
+    
+    T3D_object = hcdfm.T3D(name=locationname,
+                           #offset=0,
+                           #factor=1,
+                           vertpositions=depth_array.tolist(),
+                           vertinterpolation=&#39;linear&#39;, #TODO: make these parameters user defined (via attrs)
+                           vertPositionType=&#39;ZDatum&#39;,
+                           quantityunitpair=quantityunitpair,
+                           timeinterpolation=&#39;linear&#39;,
+                           datablock=datablock_incltime.tolist(),
+                           )
+    
+    return T3D_object</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.hydrolib_helpers.Dataset_to_TimeSeries"><code class="name flex">
+<span>def <span class="ident">Dataset_to_TimeSeries</span></span>(<span>datablock_xr)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>convert an xarray.DataArray or xarray.Dataset with time dimension to a hydrolib TimeSeries object</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def Dataset_to_TimeSeries(datablock_xr):
+    &#34;&#34;&#34;
+    convert an xarray.DataArray or xarray.Dataset with time dimension to a hydrolib TimeSeries object
+    &#34;&#34;&#34;
+    if not isinstance(datablock_xr,(xr.DataArray,xr.Dataset)):
+        raise TypeError(f&#39;Dataset_to_TimeSeries expects xr.DataArray or xr.Dataset, not {type(datablock_xr)}&#39;)
+    
+    if isinstance(datablock_xr,xr.Dataset): #convert Dataset to DataArray
+        data_vars = list(datablock_xr.data_vars)
+        if len(data_vars)!=1:
+            raise ValueError(&#39;more than one variable supplied in Dataset, not yet possible&#39;) #TODO: add support for multiple quantities and for vectors
+        datablock_xr = datablock_xr[data_vars[0]]
+    
+    #TODO: clean up these first lines of code and add description to docstring?
+    locationname = datablock_xr.attrs[&#39;locationname&#39;]
+    bcvarname = datablock_xr.name
+    refdate_str = datablock_xr.time.encoding[&#39;units&#39;]
+    
+    if datablock_xr.dims != (&#39;time&#39;,):
+        raise ValueError(f&#34;datablock_xr provided to DataArray_to_TimeSeries has dimensions {datablock_xr.dims} while (&#39;time&#39;) is expected&#34;)
+    
+    #get datablock and concatenate with relative time data
+    datablock_np = datablock_xr.to_numpy()[:,np.newaxis]
+    timevar_sel_rel = date2num(pd.DatetimeIndex(datablock_xr.time.to_numpy()).to_pydatetime(),units=refdate_str,calendar=&#39;standard&#39;)
+    datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock_np],axis=1)
+    
+    # Each .bc file can contain 1 or more timeseries, in this case one for each support point
+    TimeSeries_object = hcdfm.TimeSeries(name=locationname,
+                                         quantityunitpair=[hcdfm.QuantityUnitPair(quantity=&#34;time&#34;, unit=refdate_str),
+                                                           hcdfm.QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs[&#39;units&#39;])],
+                                         timeinterpolation=&#39;linear&#39;, #TODO: make userdefined via attrs?
+                                         datablock=datablock_incltime.tolist(), 
+                                         )
+    return TimeSeries_object</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.hydrolib_helpers.Dataset_to_Astronomic"><code class="name flex">
+<span>def <span class="ident">Dataset_to_Astronomic</span></span>(<span>datablock_xr)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>convert an xarray.Dataset (with amplitude and phase data_vars) to a hydrolib Astronomic object</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def Dataset_to_Astronomic(datablock_xr):
+    &#34;&#34;&#34;
+    convert an xarray.Dataset (with amplitude and phase data_vars) to a hydrolib Astronomic object
+    
+    &#34;&#34;&#34;
+    if not isinstance(datablock_xr,xr.Dataset):
+        raise TypeError(f&#39;Dataset_to_Astronomic expects xr.Dataset, not {type(datablock_xr)}&#39;)
+    
+    data_vars = list(datablock_xr.data_vars)
+    if &#39;amplitude&#39; not in data_vars or &#39;phase_new&#39; not in data_vars:
+        raise KeyError(&#39;amplitude and/or phase_new not in input xr.Dataset&#39;)
+
+    #TODO: clean up these first lines of code and add description to docstring?
+    locationname = datablock_xr[&#39;amplitude&#39;].attrs[&#39;locationname&#39;]
+        
+    #get datablock and concatenate with component names
+    datablock_np_cna = datablock_xr[&#39;compnames&#39;].to_numpy()[:,np.newaxis]
+    datablock_np_amp = datablock_xr[&#39;amplitude&#39;].to_numpy()[:,np.newaxis]
+    datablock_np_phs = datablock_xr[&#39;phase_new&#39;].to_numpy()[:,np.newaxis]
+    datablock_inclcomp = np.concatenate([datablock_np_cna,datablock_np_amp,datablock_np_phs],axis=1)
+    
+    Astronomic_object = hcdfm.Astronomic(name=locationname,
+                                         quantityunitpair=[hcdfm.QuantityUnitPair(quantity=&#34;astronomic component&#34;, unit=&#39;-&#39;),
+                                                           hcdfm.QuantityUnitPair(quantity=&#39;waterlevelbnd amplitude&#39;, unit=datablock_xr[&#39;amplitude&#39;].attrs[&#39;units&#39;]),
+                                                           hcdfm.QuantityUnitPair(quantity=&#39;waterlevelbnd phase&#39;, unit=datablock_xr[&#39;phase&#39;].attrs[&#39;units&#39;])],
+                                         datablock=datablock_inclcomp.tolist(), 
+                                         )
+    return Astronomic_object</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.hydrolib_helpers.DataFrame_to_PolyObject"><code class="name flex">
+<span>def <span class="ident">DataFrame_to_PolyObject</span></span>(<span>poly_pd, name, content=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>convert a pandas dataframe with x/y columns (and optional others like z/data/comment) to a hydrolib PolyObject</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def DataFrame_to_PolyObject(poly_pd,name,content=None):
+    &#34;&#34;&#34;
+    convert a pandas dataframe with x/y columns (and optional others like z/data/comment) to a hydrolib PolyObject
+    &#34;&#34;&#34;
+    if &#39;z&#39; in poly_pd.columns:
+        nondata_cols = [&#39;x&#39;,&#39;y&#39;,&#39;z&#39;]
+    else:
+        nondata_cols = [&#39;x&#39;,&#39;y&#39;]
+    poly_pd_xy = poly_pd[nondata_cols]
+    poly_pd_data = pd.DataFrame({&#39;data&#39;:poly_pd.drop(nondata_cols,axis=1).values.tolist()})
+    poly_pd_polyobj = pd.concat([poly_pd_xy,poly_pd_data],axis=1)
+    pointsobj_list = poly_pd_polyobj.T.apply(dict).tolist() #TODO: maybe faster with list iteration
+    polyobject = hcdfm.PolyObject(metadata={&#39;name&#39;:name,&#39;n_rows&#39;:poly_pd.shape[0],&#39;n_columns&#39;:poly_pd.shape[1]}, points=pointsobj_list)
+    if content is not None:
+        polyobject.description = {&#39;content&#39;:content}
+    return polyobject</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.hydrolib_helpers.DataFrame_to_TimModel"><code class="name flex">
+<span>def <span class="ident">DataFrame_to_TimModel</span></span>(<span>tim_pd, refdate: (<class 'datetime.datetime'>, <class 'pandas._libs.tslibs.timestamps.Timestamp'>, <class 'str'>))</span>
+</code></dt>
+<dd>
+<div class="desc"><p>converts data from tim_pd to TimModel and puts all headers as comments. Ignores the index, assumes first column is time in minutes since a refdate.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def DataFrame_to_TimModel(tim_pd, refdate:(dt.datetime, pd.Timestamp, str)):
+    &#34;&#34;&#34;
+    converts data from tim_pd to TimModel and puts all headers as comments. Ignores the index, assumes first column is time in minutes since a refdate.
+    &#34;&#34;&#34;
+    #TODO: add conversion from datetimes in index to minutes, maybe drop minutes column upon reading? First await https://github.com/Deltares/HYDROLIB-core/issues/511
+    
+    refdate_pd = pd.Timestamp(refdate)
+    
+    data_tim = tim_pd.values.tolist()
+    times_tim = ((tim_pd.index - refdate_pd).total_seconds()/60).tolist()
+    dict_tim = [hcdfm.TimRecord(time=t,data=d) for t,d in zip(times_tim,data_tim)]
+    
+    comments_datacols = tim_pd.columns.tolist()
+    comments = [tim_pd.index.name] + comments_datacols
+    for iC, comment in enumerate(comments):
+        comments[iC] = f&#39;COLUMN {iC+1}: {comment}&#39;
+    timmodel = hcdfm.TimModel(timeseries=dict_tim, comments=comments)
+    
+    return timmodel</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.hydrolib_helpers.forcinglike_to_Dataset"><code class="name flex">
+<span>def <span class="ident">forcinglike_to_Dataset</span></span>(<span>forcingobj, convertnan=False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>convert a hydrolib forcing like object (like Timeseries, T3D, Harmonic, etc) to an xarray Dataset with one or more variables.</p>
+<p>convertnan: convert depths with the same values over time as the deepest layer to nan (these were created with .bfill() or .ffill()).</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forcinglike_to_Dataset(forcingobj, convertnan=False): #TODO: would be convenient to have this as a method of ForcingModel objects (Timeseries/T3D/etc): https://github.com/Deltares/HYDROLIB-core/issues/307
+    &#34;&#34;&#34;
+    convert a hydrolib forcing like object (like Timeseries, T3D, Harmonic, etc) to an xarray Dataset with one or more variables.
+    
+    convertnan: convert depths with the same values over time as the deepest layer to nan (these were created with .bfill() or .ffill()).
+    &#34;&#34;&#34;
+    
+    #check if forcingmodel instead of T3D/TimeSeries is provided
+    if isinstance(forcingobj, hcdfm.ForcingModel):
+        raise TypeError(&#39;instead of supplying a ForcingModel, provide a ForcingObject (Timeseries/T3D etc), by doing something like ForcingModel.forcing[0]&#39;)
+    
+    allowed_instances = (hcdfm.T3D, hcdfm.TimeSeries, hcdfm.Astronomic)
+    if not isinstance(forcingobj, allowed_instances):
+        raise TypeError(f&#39;supplied input is not one of: {allowed_instances}&#39;)
+    
+    if isinstance(forcingobj, hcdfm.Astronomic):
+        var_quantity_list = [x.quantity for x in forcingobj.quantityunitpair[1:]]
+        var_unit = [x.unit for x in forcingobj.quantityunitpair[1:]]
+    elif hasattr(forcingobj.quantityunitpair[1],&#39;elementname&#39;): #T3D with vector quantity
+        var_quantity_list = forcingobj.quantityunitpair[1].elementname
+        var_unit_one = forcingobj.quantityunitpair[1].quantityunitpair[0].unit
+        var_unit = [var_unit_one,var_unit_one]
+    else: #non-vector TimeSeries or T3D
+        var_quantity_list = [forcingobj.quantityunitpair[1].quantity]
+        var_unit = [forcingobj.quantityunitpair[1].unit]
+    nquan = len(var_quantity_list)
+    
+    if isinstance(forcingobj, hcdfm.T3D):
+        dims = (&#39;time&#39;,&#39;depth&#39;)
+    elif isinstance(forcingobj, hcdfm.TimeSeries):
+        dims = (&#39;time&#39;)
+    elif isinstance(forcingobj, hcdfm.Astronomic):
+        dims = (&#39;astronomic_component&#39;)
+    
+    datablock_all = np.array(forcingobj.datablock)
+    datablock_data = datablock_all[:,1:] #select all columns except first one (which is the time column)
+    if isinstance(forcingobj, hcdfm.Astronomic):
+        datablock_data = datablock_data.astype(float) #convert str to float in case of &#34;astronomic component&#34;
+    
+    data_xr = xr.Dataset()
+    for iQ, var_quantity in enumerate(var_quantity_list):
+        datablock_data_onequan = datablock_data[:,iQ::nquan]
+        datablock_data_onequan = datablock_data_onequan.squeeze() #drop dimensions of len 1 in case of 1 dimension, eg &#34;waterlevelbnd&#34; (first subsetting over depth dimension)
+        
+        data_xr_var = xr.DataArray(datablock_data_onequan, name=var_quantity, dims=dims)
+        if &#39;depth&#39; in dims:
+            data_xr_var[&#39;depth&#39;] = forcingobj.vertpositions
+            #data_xr_var[&#39;depth&#39;].attrs[&#39;positive&#39;] == &#39;up&#39; #TODO: maybe add this attribute
+            if convertnan: #convert ffilled/bfilled values back to nan
+                deepestlayeridx = data_xr_var.depth.to_numpy().argmin()
+                if deepestlayeridx==0: #sorted from deep to shallow layers
+                    bool_nandepths = (data_xr_var==data_xr_var.shift(depth=-1)).all(dim=&#39;time&#39;)
+                else: #sorted from shallow to deep layers
+                    bool_nandepths = (data_xr_var==data_xr_var.shift(depth=1)).all(dim=&#39;time&#39;)
+                data_xr_var = data_xr_var.where(~bool_nandepths)
+        if &#39;time&#39; in dims:
+            time_unit = forcingobj.quantityunitpair[0].unit.lower()
+            data_xr_var[&#39;time&#39;] = cftime.num2pydate(datablock_all[:,0], units=time_unit)
+            data_xr_var[&#39;time&#39;].encoding[&#39;units&#39;] = time_unit #check tz conversion if eg &#39;+01:00&#39; is present in time_unit
+            data_xr_var[&#39;time&#39;].encoding[&#39;calendar&#39;] = &#39;standard&#39;
+        if &#39;astronomic_component&#39; in dims:
+            data_xr_var[&#39;astronomic_component&#39;] = datablock_all[:,0]
+        
+        #add attributes
+        data_xr_var.attrs[&#39;source&#39;] = &#39;hydrolib-core object converted to xarray.Dataset with dfm_tools.xarray_helpers.forcinglike_to_Dataset()&#39;
+        data_xr_var.attrs[&#39;locationname&#39;] = forcingobj.name
+        data_xr_var.attrs[&#39;units&#39;] = var_unit[iQ]
+        forcingobj_keys = forcingobj.__dict__.keys()
+        for key in forcingobj_keys: #[&#39;comments&#39;,&#39;name&#39;,&#39;function&#39;,&#39;offset&#39;,&#39;factor&#39;,&#39;vertinterpolation&#39;,&#39;vertpositiontype&#39;,&#39;timeinterpolation&#39;]: 
+            if key in [&#39;datablock&#39;,&#39;quantityunitpair&#39;,&#39;vertpositions&#39;]: #skipping these since they are in the DataArray already
+                continue
+            data_xr_var.attrs[key] = str(forcingobj.__dict__[key])
+        
+        #add DataArray to Dataset
+        data_xr[var_quantity] = data_xr_var
+    
+    return data_xr</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.hydrolib_helpers.pointlike_to_DataFrame"><code class="name flex">
+<span>def <span class="ident">pointlike_to_DataFrame</span></span>(<span>pointlike, drop_emptycols=True)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>convert a hydrolib object with points (like PolyObject, XYZModel and possibly others) to a pandas DataFrame.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>pointlike</code></strong> :&ensp;<code>TYPE</code></dt>
+<dd>Hydrolib-core object with point objects.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>pointlike_pd</code></strong> :&ensp;<code>TYPE</code></dt>
+<dd>DESCRIPTION.</dd>
+<dt><strong><code>drop_emptycols</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>Drop empty (all-nan) columns automatically, like the z-column in ldb file. The default is True.</dd>
+</dl>
+<h2 id="example">Example</h2>
+<p>polyfile_object = PolyFile(file_pli)
+data_pol_pd_list = [pointlike_to_DataFrame(polyobj) for polyobj in polyfile_object.objects]</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def pointlike_to_DataFrame(pointlike,drop_emptycols=True):
+    &#34;&#34;&#34;
+    convert a hydrolib object with points (like PolyObject, XYZModel and possibly others) to a pandas DataFrame.
+
+    Parameters
+    ----------
+    pointlike : TYPE
+        Hydrolib-core object with point objects.
+
+    Returns
+    -------
+    pointlike_pd : TYPE
+        DESCRIPTION.
+    drop_emptycols : bool, optional
+        Drop empty (all-nan) columns automatically, like the z-column in ldb file. The default is True.
+    
+    Example:
+        polyfile_object = PolyFile(file_pli)
+        data_pol_pd_list = [pointlike_to_DataFrame(polyobj) for polyobj in polyfile_object.objects]
+
+    &#34;&#34;&#34;
+    
+    pointlike_pd = pd.DataFrame([dict(p) for p in pointlike.points])
+    if &#39;data&#39; in pointlike_pd.columns:
+        datavals_pd = pd.DataFrame([p.data for p in pointlike.points])
+        pointlike_pd = pd.concat([pointlike_pd.drop([&#39;data&#39;],axis=1), datavals_pd],axis=1)
+        
+    if drop_emptycols:
+        pointlike_pd = pointlike_pd.dropna(axis=1).copy()
+        
+    return pointlike_pd</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.hydrolib_helpers.parse_xy_to_datetime"><code class="name flex">
+<span>def <span class="ident">parse_xy_to_datetime</span></span>(<span>pointlike_pd)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def parse_xy_to_datetime(pointlike_pd):
+    datatimevals_pdstr = (pointlike_pd[&#39;x&#39;].astype(int).apply(lambda x:f&#39;{x:08d}&#39;) +
+                          pointlike_pd[&#39;y&#39;].astype(int).apply(lambda x:f&#39;{x:06d}&#39;))
+    pointlike_pd.index = pd.to_datetime(datatimevals_pdstr)
+    pointlike_pd_timeidx = pointlike_pd.drop([&#39;x&#39;,&#39;y&#39;],axis=1)
+    
+    return pointlike_pd_timeidx</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.hydrolib_helpers.TimModel_to_DataFrame"><code class="name flex">
+<span>def <span class="ident">TimModel_to_DataFrame</span></span>(<span>data_tim: hydrolib.core.dflowfm.tim.models.TimModel, parse_column_labels: bool = True, refdate: (<class 'datetime.datetime'>, <class 'pandas._libs.tslibs.timestamps.Timestamp'>, <class 'str'>) = None)</span>
+</code></dt>
+<dd>
+<div class="desc"><h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>data_tim</code></strong> :&ensp;<code>hcdfm.TimModel</code></dt>
+<dd>DESCRIPTION.</dd>
+<dt><strong><code>parse_column_labels</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>Parse column labels from comments. This might fail since there is no standard way of prescribing the columns in the comments. The default is True.</dd>
+<dt><strong><code>refdate</code></strong> :&ensp;<code>(dt.datetime, pd.Timestamp, str, int, float)</code>, optional</dt>
+<dd>DESCRIPTION. The default is None.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>tim_pd</code></strong> :&ensp;<code>TYPE</code></dt>
+<dd>DESCRIPTION.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def TimModel_to_DataFrame(data_tim:hcdfm.TimModel, parse_column_labels:bool = True, refdate:(dt.datetime, pd.Timestamp, str) = None):
+    &#34;&#34;&#34;
+    
+
+    Parameters
+    ----------
+    data_tim : hcdfm.TimModel
+        DESCRIPTION.
+    parse_column_labels : bool, optional
+        Parse column labels from comments. This might fail since there is no standard way of prescribing the columns in the comments. The default is True.
+    refdate : (dt.datetime, pd.Timestamp, str, int, float), optional
+        DESCRIPTION. The default is None.
+
+    Returns
+    -------
+    tim_pd : TYPE
+        DESCRIPTION.
+
+    &#34;&#34;&#34;
+    #convert to pandas dataframe
+    timevals_pd = pd.Index([p.time for p in data_tim.timeseries])
+    tim_pd = pd.DataFrame([p.data for p in data_tim.timeseries],index=timevals_pd)
+    tim_pd.columns += 2 #make column numbers 1-based, but first column is already in index so start with 2
+    tim_pd.index.name = &#39;time in minutes&#39;
+    
+    if parse_column_labels:
+        #replace column labels with the ones in comments
+        tim_pd_columns = tim_pd.columns.tolist()
+        for line in data_tim.comments:
+            if &#39;column&#39; in line.lower() and &#39;:&#39; in line: #assume &#34;:&#34; is separator. Remove casing to be able to check for Column/COLUMN/column in string
+                sep = &#39;:&#39;
+            elif &#39;column&#39; in line.lower() and &#39;=&#39; in line: #assume &#34;=&#34; is separator. Remove casing to be able to check for Column/COLUMN/column in string
+                sep = &#39;=&#39;
+            else:
+                continue
+            line_split = line.split(sep)
+            colnum = line_split[0].lower().replace(&#39;column&#39;,&#39;&#39;).strip()
+            if colnum.isnumeric():
+                comment_str = &#39;:&#39;.join(line_split[1:]).strip()
+                if colnum==1: #time column is now in index, overwrite index name
+                    tim_pd.index.name = comment_str
+                else:
+                    tim_pd_columns[int(colnum)-2] = comment_str
+        tim_pd.columns = tim_pd_columns
+    
+    if refdate:
+        refdate_pd = pd.Timestamp(refdate)
+        tim_pd.index = refdate_pd + pd.to_timedelta(tim_pd.index,unit=&#39;minutes&#39;)
+    
+    return tim_pd</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.hydrolib_helpers.pointlike_to_geodataframe"><code class="name flex">
+<span>def <span class="ident">pointlike_to_geodataframe</span></span>(<span>polyline_object, crs='EPSG:4326', add_pointnames=True)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def pointlike_to_geodataframe(polyline_object, crs=&#39;EPSG:4326&#39;, add_pointnames=True):
+    #conversion to dataframe
+    #polyobject_pd = dfmt.pointlike_to_DataFrame(polyline_object)
+    polyobject_pd = pd.DataFrame([dict(p) for p in polyline_object.points])
+
+    df = pd.DataFrame()
+    if add_pointnames: #optionally add names
+        df[&#39;plipoint_name&#39;] = pd.Series(polyobject_pd.index).apply(lambda x: f&#39;{polyline_object.metadata.name}_{x+1:04d}&#39;)
+    
+    #make gdf of points (1 point per row)
+    gdf = geopandas.GeoDataFrame(data=df, geometry=geopandas.points_from_xy(polyobject_pd[&#39;x&#39;],polyobject_pd[&#39;y&#39;]), crs=crs)
+        
+    return gdf</code></pre>
+</details>
+</dd>
+<dt id="dfm_tools.hydrolib_helpers.PolyFile_to_geodataframe"><code class="name flex">
+<span>def <span class="ident">PolyFile_to_geodataframe</span></span>(<span>polyfile_object, crs='EPSG:4326')</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def PolyFile_to_geodataframe(polyfile_object, crs=&#39;EPSG:4326&#39;):
+    plilines_list = []
+    plinames_list = []
+    for iPO, polyline_object in enumerate(polyfile_object.objects):
+        polyobject_pd = pd.DataFrame([dict(p) for p in polyline_object.points]) #TODO: getting only x/y might be faster, but maybe we also need the other columns?
+        polygon_geom = LineString(zip(polyobject_pd[&#39;x&#39;],polyobject_pd[&#39;y&#39;]))
+        
+        #make gdf of points (1 point per row)
+        plilines_list.append(polygon_geom)
+        plinames_list.append(polyline_object.metadata.name)
+    gdf_polyfile = geopandas.GeoDataFrame({&#39;name&#39;: plinames_list, &#39;geometry&#39;: plilines_list}, crs=crs)
+    return gdf_polyfile</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="dfm_tools" href="index.html">dfm_tools</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="dfm_tools.hydrolib_helpers.Dataset_to_T3D" href="#dfm_tools.hydrolib_helpers.Dataset_to_T3D">Dataset_to_T3D</a></code></li>
+<li><code><a title="dfm_tools.hydrolib_helpers.Dataset_to_TimeSeries" href="#dfm_tools.hydrolib_helpers.Dataset_to_TimeSeries">Dataset_to_TimeSeries</a></code></li>
+<li><code><a title="dfm_tools.hydrolib_helpers.Dataset_to_Astronomic" href="#dfm_tools.hydrolib_helpers.Dataset_to_Astronomic">Dataset_to_Astronomic</a></code></li>
+<li><code><a title="dfm_tools.hydrolib_helpers.DataFrame_to_PolyObject" href="#dfm_tools.hydrolib_helpers.DataFrame_to_PolyObject">DataFrame_to_PolyObject</a></code></li>
+<li><code><a title="dfm_tools.hydrolib_helpers.DataFrame_to_TimModel" href="#dfm_tools.hydrolib_helpers.DataFrame_to_TimModel">DataFrame_to_TimModel</a></code></li>
+<li><code><a title="dfm_tools.hydrolib_helpers.forcinglike_to_Dataset" href="#dfm_tools.hydrolib_helpers.forcinglike_to_Dataset">forcinglike_to_Dataset</a></code></li>
+<li><code><a title="dfm_tools.hydrolib_helpers.pointlike_to_DataFrame" href="#dfm_tools.hydrolib_helpers.pointlike_to_DataFrame">pointlike_to_DataFrame</a></code></li>
+<li><code><a title="dfm_tools.hydrolib_helpers.parse_xy_to_datetime" href="#dfm_tools.hydrolib_helpers.parse_xy_to_datetime">parse_xy_to_datetime</a></code></li>
+<li><code><a title="dfm_tools.hydrolib_helpers.TimModel_to_DataFrame" href="#dfm_tools.hydrolib_helpers.TimModel_to_DataFrame">TimModel_to_DataFrame</a></code></li>
+<li><code><a title="dfm_tools.hydrolib_helpers.pointlike_to_geodataframe" href="#dfm_tools.hydrolib_helpers.pointlike_to_geodataframe">pointlike_to_geodataframe</a></code></li>
+<li><code><a title="dfm_tools.hydrolib_helpers.PolyFile_to_geodataframe" href="#dfm_tools.hydrolib_helpers.PolyFile_to_geodataframe">PolyFile_to_geodataframe</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>
