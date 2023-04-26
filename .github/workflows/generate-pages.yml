@@ -1,4 +1,4 @@
-name: website
+name: generate-pages
 
 # build the documentation whenever there are new commits on main
 on:
@@ -15,10 +15,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v2
 
-      - run: pip install -e ".[docs]"
+      #- run: pip install -e .
       # We use a custom build script for pdoc itself, ideally you just run `pdoc -o docs/ ...` here.
       - run: pdoc -o docs/ dfm_tools
 
