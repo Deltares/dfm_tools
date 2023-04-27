@@ -47,10 +47,6 @@
 - ``conda activate dfm_tools_env``
 ```
 cp README.md docs
-mkdir docs\examples
-cp -r tests/examples/preprocess_interpolate_nc_to_bc.py docs/examples/
-#cp -r tests/examples docs
-#cp -r tests/examples_workinprogress docs
 mkdocs build
 ```
 
