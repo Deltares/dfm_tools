@@ -4,12 +4,12 @@
 
 - download and install Anaconda 64 bit Python 3.8 (or higher) from [anaconda.com](https://www.anaconda.com/distribution/#download-section) (miniconda should also be sufficient, but this is not yet tested). Install it with the recommended settings.
 - download git from [git-scm.com](https://git-scm.com/download/win), install with default settings
-- open git bash window where you want to clone the dfm_tools github repository (e.g. C:\\DATA\\)
+- open git bash window where you want to clone the dfm_tools github repository (e.g. ``C:\DATA\``)
 - git clone https://github.com/deltares/dfm_tools (creates a folder dfm_tools with the checked out repository)
 - ``cd dfm_tools``
 - optional: ``git config --global user.email [emailaddress]``
 - optional: ``git config --global user.name [username]``
-- open anaconda prompt and navigate to dfm_tools local folder, e.g. ``C:\\DATA\\dfm_tools``
+- open anaconda prompt and navigate to dfm_tools local folder, e.g. ``C:\DATA\dfm_tools``
 - ``conda env create -f environment.yml`` (creates an environment called dfm_tools_env) TODO: yml now contains almost the same as requirements.txt. Update this manual according to this
 - ``conda activate dfm_tools_env``
 - optional: ``conda install spyder -c conda-forge`` (installs spyder, using conda-forge channel since it was also used in environment.yml)
@@ -22,7 +22,7 @@
 
 - open an existing issue or create a new issue at https://github.com/Deltares/dfm_tools/issues
 - create a branch via ``Development`` on the right. This branch is now linked to the issue and the issue will be closed once the branch is merged with main again
-- open git bash window in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
+- open git bash window in local dfm_tools folder (e.g. ``C:\DATA\dfm_tools``)
 - ``git fetch origin`` followed by ``git checkout [branchname]``
 - make your local changes to the dfm_tools code (also create unittests), after each subtask do ``git commit -am 'description of what you did'`` (``-am`` adds all changed files to the commit)
 - check if all edits were committed with ``git status``, if there are new files created also do ``git add [path-to-file]`` and commit again
@@ -32,34 +32,28 @@
 - optionally increase the dfm_tools version with: ``bumpversion patch``
 - request a review on the pull request
 
-## Running the testbank
+## Running the testbank (also partly runs on github automatically)
 
-- open anaconda prompt in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
+- open anaconda prompt in local dfm_tools folder (e.g. ``C:\DATA\dfm_tools``)
 - ``conda activate dfm_tools_env``
 - ``pytest`` (runs all tests)
 - ``pytest -m "not acceptance"``
 - ``pytest -m acceptance`` (runs the acceptance tests, which are the scripts in [the examples folder](https://github.com/Deltares/dfm_tools/tree/main/tests/examples)) and [the examples_workinprogress folder](https://github.com/Deltares/dfm_tools/tree/main/tests/examples_workinprogress))
-- ``pytest -m "not requireslocaldata"`` (this is what github does)
+- ``pytest -m "not requireslocaldata"`` (this is what runs on github)
 
-## Generate documentation with mkdocs
+## Generate documentation with mkdocs (automatically runs via Github Actions upon push to main)
 
-- open anaconda prompt in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
+- open anaconda prompt in local dfm_tools folder (e.g. ``C:\DATA\dfm_tools``)
 - ``conda activate dfm_tools_env``
 ```
 cp README.md docs
 mkdocs build
 ```
 
-## Generate documentation with pdoc (automatically runs via Github Actions upon push to main)
-
-- open anaconda prompt in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
-- ``conda activate dfm_tools_env``
-- ``pdoc --html dfm_tools -o docs --force --config sort_identifiers=False``
-
-## Increasing the dfm_tools version number
+## Increase the dfm_tools version number
 
 - commit all changes via git
-- open anaconda prompt in local dfm_tools folder (e.g. C:\\DATA\\dfm_tools)
+- open anaconda prompt in local dfm_tools folder (e.g. ``C:\DATA\dfm_tools``)
 - ``conda activate dfm_tools_env``
 - ``bumpversion major`` or ``bumpversion minor`` or ``bumpversion patch`` (changes version numbers in files and commits changes)
 - push changes with ``git push`` (from git bash window)
@@ -86,7 +80,7 @@ mkdocs build
 - xugrid: wrapper around xarray by Huite Bootsma, for ugrid support
 - cdsapi/pydap: to download ERA5 and CMEMS data. Minimal pydap version is 3.3.0?
 
-## Potential errors
+## Potential spyder issues
 
 - Qt error upon launching Spyder?: remove the system/user environment variable 'qt_plugin_path' set by an old Delft3D4 installation procedure.
 - netCDF4 DLL error upon import in Spyder?: remove Anaconda paths from the Path user environment variable (https://github.com/spyder-ide/spyder/issues/19220)
