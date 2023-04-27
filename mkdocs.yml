@@ -4,7 +4,7 @@
 site_name: dfm_tools documentation
 use_directory_urls: false #TODO: true looks prettier but does not work locally
 theme:
-  name: readthedocs # material
+  name: material
   language: en
   # logo: images/HYDROLIB_logo_notext_mono_eroded.svg
   # custom_dir: docs/overrides
@@ -88,8 +88,7 @@ nav:
           # - "pip install": "guides/setup.md"
           # - "Developer container": "guides/devcontainers.md"
           # - "Local clone + Poetry": "guides/poetry.md"
-      - Contributing:
-          - "CONTRIBUTING.md"
+      - Contributing: "CONTRIBUTING.md"
       # - Documentation:
           # - "guides/documentation.md"
       # - Support:
@@ -104,6 +103,5 @@ nav:
       # - topics/principles.md
       # - topics/pydantic.md
       # - topics/loadsave.md
-  - API Reference:
-    - api_reference.md #TODO: automate generation of this file
+  - API Reference: api_reference.md #TODO: automate generation of this file
 # - Release notes: "releasenotes.md"

@@ -8,6 +8,7 @@ twine
 jupyter
 notebook
 mkdocs
+mkdocs-material
 mkdocs-jupyter
 mkdocstrings-python
 mkdocs-exclude
