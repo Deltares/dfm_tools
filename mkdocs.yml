@@ -94,9 +94,10 @@ nav:
       # - Support:
           # - guides/gettinghelp.md
   - Tutorials:
+      - tutorials.md
       - notebooks/postprocessing_example.ipynb
       - notebooks/preprocessing_example_hydrolib.ipynb
-      - pyfile: examples/preprocess_interpolate_nc_to_bc.py
+      # - pyfile: examples/preprocess_interpolate_nc_to_bc.py
       # - tutorials/loading_and_saving_a_model.md
   # - Topics:
       # - topics/dhydjupyro_support.md
