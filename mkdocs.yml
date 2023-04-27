@@ -41,15 +41,16 @@ plugins:
       default_handler: python
       handlers:
         python:
+          paths: dfm_tools
           rendering:
             show_root_toc_entry: false
             show_source: true
             show_signature_annotations: true
             heading_level: 3
             show_category_heading: false
-            group_by_category: false
+            group_by_category: true
           selection:
-            inherited_members: false
+            inherited_members: true
 
       custom_templates: templates
       watch:
@@ -61,7 +62,7 @@ plugins:
 markdown_extensions:
   # - pymdownx.highlight
   # - pymdownx.superfence
-  - admonition
+  # - admonition
   - toc:
       permalink: true
   # - pymdownx.emoji:
@@ -88,15 +89,17 @@ nav:
           # - "pip install": "guides/setup.md"
           # - "Developer container": "guides/devcontainers.md"
           # - "Local clone + Poetry": "guides/poetry.md"
+      - Installation: "installation.md"
       - Contributing: "CONTRIBUTING.md"
       # - Documentation:
           # - "guides/documentation.md"
       # - Support:
           # - guides/gettinghelp.md
   - Tutorials:
+      - tutorials.md
       - notebooks/postprocessing_example.ipynb
       - notebooks/preprocessing_example_hydrolib.ipynb
-      - pyfile: examples/preprocess_interpolate_nc_to_bc.py
+      # - pyfile: examples/preprocess_interpolate_nc_to_bc.py
       # - tutorials/loading_and_saving_a_model.md
   # - Topics:
       # - topics/dhydjupyro_support.md

@@ -48,10 +48,9 @@ def calc_dist_pythagoras(x1,x2,y1,y2):
 
 
 def calc_dist_haversine(lon1,lon2,lat1,lat2):
-    """
-    calculates distance between lat/lon coordinates in meters
-    https://community.esri.com/t5/coordinate-reference-systems-blog/distance-on-a-sphere-the-haversine-formula/ba-p/902128
-    """
+    #calculates distance between lat/lon coordinates in meters
+    #https://community.esri.com/t5/coordinate-reference-systems-blog/distance-on-a-sphere-the-haversine-formula/ba-p/902128
+    
     # convert to radians
     lon1_rad = np.deg2rad(lon1)
     lon2_rad = np.deg2rad(lon2)
@@ -245,10 +244,10 @@ def reconstruct_zw_zcc_fromsigma(uds):
 def reconstruct_zw_zcc_fromz(data_xr_map):
     """
     reconstruct full grid output (time/face-varying z-values) for zvalue model. Necessary when extracting values with zdepth w.r.t. waterlevel/bedlevel
+    """
     #TODO: gives spotty result for 0/0.1m w.r.t. bedlevel for Grevelingen zmodel
     #TODO: remove hardcoding of varnames (assuming wl/bl variables are available)
     #TODO: center values are clipped to waterlevel+bedlevel, so the center values of the top+bottom layer are currently incorrect
-    """
     
     dimn_layer, dimn_interfaces = get_vertical_dimensions(data_xr_map)
     
@@ -273,9 +272,8 @@ def reconstruct_zw_zcc_fromzsigma(uds):
     """
     reconstruct full grid output (time/face-varying z-values) for zsigmavalue model without full grid output. Implemented in https://issuetracker.deltares.nl/browse/UNST-5477
     based on https://cfconventions.org/cf-conventions/cf-conventions.html#_ocean_sigma_over_z_coordinate
-    #TODO: center values are clipped to bedlevel, so the center values of the bottom layer are currently incorrect
     """
-    
+    #TODO: center values are clipped to bedlevel, so the center values of the bottom layer are currently incorrect
     #TODO: default fillvalues are not automatically parsed to nan, so doing it manually: https://github.com/pydata/xarray/issues/2742
     fillvals = netCDF4.default_fillvals
     
@@ -310,6 +308,9 @@ def reconstruct_zw_zcc_fromzsigma(uds):
 
 
 def reconstruct_zw_zcc(ds):
+    """
+    reconstruct full grid output (time/face-varying z-values) for all layertypes, passes on to respective reconstruction function
+    """
     dimn_layer, dimn_interfaces = get_vertical_dimensions(ds)
     
     if dimn_layer is not None: #D-FlowFM mapfile
@@ -450,8 +451,7 @@ def rasterize_ugrid(uds:xu.UgridDataset, ds_like:xr.Dataset = None, resolution:f
     """
     Rasterizing ugrid dataset to regular dataset. ds_like has higher priority than `resolution`. If both are not passed, a raster is generated of at least 200x200
     inspired by xugrid.plot.imshow and xugrid.ugrid.ugrid2d.rasterize/rasterize_like.
-
-
+    
     Parameters
     ----------
     uds : xu.UgridDataset

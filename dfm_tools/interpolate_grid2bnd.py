@@ -76,6 +76,7 @@ def get_conversion_dict(ncvarname_updates={}):
 
 def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=None):
     """
+    empty docstring
     """
     # translate dict from .\hydro_tools\FES\PreProcessing_FES_TideModel_imaginary.m
     #component_list = ['2N2','LABDA2','MF','MFM','P1','SSA','EPSILON2','M2','MKS2','MU2','Q1','T2','J1','M3','MM','N2','R2','K1','M4','MN4','N4','S1','K2','M6','MS4','NU2','S2','L2','M8','MSF','O1','S4','MSQM','SA']
@@ -156,6 +157,9 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
 
 
 def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=None, refdate_str=None, reverse_depth=False, chunks=None):
+    """
+    empty docstring
+    """
     
     if conversion_dict is None:
         conversion_dict = get_conversion_dict()
@@ -287,8 +291,8 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
 def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True):
     """
     load: interpolation errors are only raised upon loading, so do this per default
-    #TODO: make format of this dataset more in line with existing bnd-nc format and hisfile: https://issuetracker.deltares.nl/browse/UNST-6549
     """
+    #TODO: make format of this dataset more in line with existing bnd-nc format and hisfile: https://issuetracker.deltares.nl/browse/UNST-6549
     data_xr_var = data_xr_reg #TODO: rename in script
     
     #load boundary file
@@ -436,6 +440,9 @@ def interp_hisnc_to_plipoints(data_xr_his, file_pli, kdtree_k=3, load=True):
     
 
 def plipointsDataset_to_ForcingModel(plipointsDataset):
+    """
+    empty docstring
+    """
     quantity_list = list(plipointsDataset.data_vars)
     npoints = len(plipointsDataset.plipoints)
     

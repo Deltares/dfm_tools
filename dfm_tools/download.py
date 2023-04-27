@@ -21,6 +21,9 @@ def download_ERA5(varkey,
                   longitude_min, longitude_max, latitude_min, latitude_max, 
                   date_min, date_max,
                   dir_output='.', overwrite=False):
+    """
+    empty docstring
+    """
     
     #TODO: describe something about the .cdsapirc file
     #TODO: make this function cdsapi generic, instead of ERA5 hardcoded (make flexible for product_type/name/name_output) (variables_dict is not used actively anymore, so this is possible)
@@ -79,6 +82,9 @@ def download_CMEMS(varkey,
                    date_min, date_max, freq='D',
                    dir_output='.', file_prefix='', overwrite=False,
                    credentials=None):
+    """
+    empty docstring
+    """
 
     date_min = pd.Timestamp(date_min)-pd.Timedelta(days=1) #CMEMS has daily noon values (not midnight), so subtract one day from date_min to cover desired time extent
     
@@ -132,23 +138,6 @@ def open_OPeNDAP_xr(dataset_url, credentials=None):
         - go to the data access tab of a product, e.g.: https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_PHY_001_030/services
         - click the opendap link of the dataset of your choice
         - copy the dataset_url from the adress bar (excl .html), e.g.: https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_my_0.083_P1D-m
-        
-        Example multiyear phys/chem:
-            https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_PHY_001_030/services
-            https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_my_0.083_P1D-m
-            ['bottomT','mlotst','siconc','sithick','so','thetao','uo','usi','vo','vsi','zos']
-        Example multiyear bio:
-            https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_BGC_001_029/services
-            https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_bgc_my_0.25_P1D-m
-            ['chl','no3','nppv','o2','po4','si']
-        Example forecast phys/chem:
-            https://data.marine.copernicus.eu/product/GLOBAL_ANALYSIS_FORECAST_PHY_001_024/services
-            https://nrt.cmems-du.eu/thredds/dodsC/global-analysis-forecast-phy-001-024
-            ['bottomT','mlotst','siconc','sithick','so','thetao','uo','usi','vo','vsi','zos']
-        Example forecast bio:
-            https://data.marine.copernicus.eu/product/GLOBAL_ANALYSIS_FORECAST_BIO_001_028/services
-            https://nrt.cmems-du.eu/thredds/dodsC/global-analysis-forecast-bio-001-028-daily
-            ['chl','fe','no3','nppv','o2','ph','phyc','po4','si','spco2']
     
     How to get the opendap dataset_url (HYCOM example):
         - https://www.hycom.org/dataserver
