@@ -9,6 +9,9 @@ import numpy as np
 
 
 def write_bathy_toasc(filename_asc,lon_sel_ext,lat_sel_ext,elev_sel_ext,asc_fmt='%9.2f',nodata_val=32767):
+    """
+    empty docstring
+    """
 
     print('writing to asc file')
     if elev_sel_ext.shape != (lat_sel_ext.shape[0], lon_sel_ext.shape[0]):
