@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - main
-      - 354-from-pdoc-to-mkdocs
 permissions:
   contents: write
 jobs:
@@ -25,7 +24,6 @@ jobs:
       - name: copying files and mkdocs build
         run: |
             cp README.md docs
-            cp CONTRIBUTING.md docs
             cp -r notebooks docs
             mkdir docs/examples
             cp tests/examples/preprocess_interpolate_nc_to_bc.py docs/examples/
