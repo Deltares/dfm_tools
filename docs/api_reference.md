@@ -1,4 +1,3 @@
-# Reference
 
 ::: dfm_tools.deprecated
 ::: dfm_tools.errors
