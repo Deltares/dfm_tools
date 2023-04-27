@@ -369,6 +369,9 @@ def TimModel_to_DataFrame(data_tim:hcdfm.TimModel, parse_column_labels:bool = Tr
 
 
 def pointlike_to_geodataframe(polyline_object, crs='EPSG:4326', add_pointnames=True):
+    """
+    empty docstring
+    """
     #conversion to dataframe
     #polyobject_pd = dfmt.pointlike_to_DataFrame(polyline_object)
     polyobject_pd = pd.DataFrame([dict(p) for p in polyline_object.points])
@@ -384,6 +387,9 @@ def pointlike_to_geodataframe(polyline_object, crs='EPSG:4326', add_pointnames=T
 
 
 def PolyFile_to_geodataframe(polyfile_object, crs='EPSG:4326'):
+    """
+    empty docstring
+    """
     plilines_list = []
     plinames_list = []
     for iPO, polyline_object in enumerate(polyfile_object.objects):

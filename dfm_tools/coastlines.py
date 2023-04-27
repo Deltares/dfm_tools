@@ -68,6 +68,9 @@ def get_coastlines_gdb(res:str='h', bbox:tuple = (-180, -90, 180, 90), min_area:
 
 
 def plot_coastlines(ax, res:str='h', min_area:float = 0, crs=None, **kwargs):
+    """
+    get coastlines with get_coastlines_gdb and bbox depending on axlims, plot on ax and set axlims back to original values
+    """
     #TODO: if ax is GeoAxis, get crs from ax
     
     xlim = ax.get_xlim()

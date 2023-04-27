@@ -19,6 +19,9 @@ from dfm_tools.coastlines import get_coastlines_gdb
 
 
 def meshkernel_delete_withcoastlines(mk, res:str='f', min_area:float = 0, crs=None):
+    """
+    empty docstring
+    """
     mesh_bnds = mk.mesh2d_get_mesh_boundaries_as_polygons()
     mesh_bnds.x_coordinates
     bbox = (mesh_bnds.x_coordinates.min(), mesh_bnds.y_coordinates.min(), mesh_bnds.x_coordinates.max(), mesh_bnds.y_coordinates.max())
@@ -40,6 +43,9 @@ def meshkernel_delete_withcoastlines(mk, res:str='f', min_area:float = 0, crs=No
 
 
 def meshkernel_delete_withpol(mk, file_ldb, minpoints=None):
+    """
+    empty docstring
+    """
     #TODO: read file_ldb as geodataframe (convert pointlike to geodataframe) and merge code with meshkernel_delete_withcoastlines
     
     print('>> reading+converting ldb: ',end='')
@@ -61,6 +67,9 @@ def meshkernel_delete_withpol(mk, file_ldb, minpoints=None):
 
 
 def meshkernel_to_UgridDataset(mk:meshkernel.meshkernel.MeshKernel, remove_noncontiguous:bool = False) -> xr.Dataset:
+    """
+    empty docstring
+    """
     mesh2d_grid3 = mk.mesh2d_get()
 
     xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid3)
@@ -117,6 +126,9 @@ def meshkernel_to_UgridDataset(mk:meshkernel.meshkernel.MeshKernel, remove_nonco
 
 
 def make_basegrid(lon_min,lon_max,lat_min,lat_max,dx=0.05,dy=0.05,angle=0):
+    """
+    empty docstring
+    """
     print('modelbuilder.make_basegrid()')
     # create base grid
     num_columns = int(np.round((lon_max-lon_min)/dx))
@@ -139,6 +151,9 @@ def make_basegrid(lon_min,lon_max,lat_min,lat_max,dx=0.05,dy=0.05,angle=0):
 
 
 def refine_basegrid(mk, data_bathy_sel,min_face_size=0.1):
+    """
+    empty docstring
+    """
     print('modelbuilder.refine_basegrid()')
     samp_x,samp_y = np.meshgrid(data_bathy_sel.lon.to_numpy(),data_bathy_sel.lat.to_numpy())
     samp_z = data_bathy_sel.elevation.to_numpy().astype(float) #TODO: without .astype(float), meshkernelpy generates "TypeError: incompatible types, c_short_Array_27120 instance instead of LP_c_double instance": https://github.com/Deltares/MeshKernelPy/issues/31
@@ -167,6 +182,9 @@ def refine_basegrid(mk, data_bathy_sel,min_face_size=0.1):
 
 
 def generate_bndpli(lon_min, lon_max, lat_min, lat_max, dlon, dlat, name='bnd'): #TODO: maybe generate with meshkernel?
+    """
+    empty docstring
+    """
 
     vals_lon_ar = np.arange(lon_min, lon_max, dlon)
     vals_lon = np.linspace(lon_min, lon_max,len(vals_lon_ar))
