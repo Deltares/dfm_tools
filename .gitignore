@@ -99,7 +99,7 @@ ENV/
 
 # mkdocs documentation
 /site
-/docs/**/
+/docs/examples
 /docs/README.md
 
 # mypy
