@@ -96,7 +96,7 @@ nav:
       # - Support:
           # - guides/gettinghelp.md
   - Tutorials:
-      - tutorials.md
+      - Introduction: tutorials.md
       - notebooks/postprocessing_example.ipynb
       - notebooks/preprocessing_example_hydrolib.ipynb
       # - pyfile: examples/preprocess_interpolate_nc_to_bc.py
