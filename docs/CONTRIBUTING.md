@@ -24,7 +24,7 @@
 - create a branch via ``Development`` on the right. This branch is now linked to the issue and the issue will be closed once the branch is merged with main again
 - open git bash window in local dfm_tools folder (e.g. ``C:\DATA\dfm_tools``)
 - ``git fetch origin`` followed by ``git checkout [branchname]``
-- make your local changes to the dfm_tools code (also create unittests), after each subtask do ``git commit -am 'description of what you did'`` (``-am`` adds all changed files to the commit)
+- make your local changes to the dfm_tools code (including docstrings and unittests for functions), after each subtask do ``git commit -am 'description of what you did'`` (``-am`` adds all changed files to the commit)
 - check if all edits were committed with ``git status``, if there are new files created also do ``git add [path-to-file]`` and commit again
 - ``git push`` to push your committed changes your branch on github
 - open a pull request at the branch on github, there you can see what you just pushed and the automated checks will show up (testbank and code quality analysis).
