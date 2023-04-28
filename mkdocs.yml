@@ -42,16 +42,14 @@ plugins:
       handlers:
         python:
           paths: dfm_tools
-          rendering:
+          options:
             show_root_toc_entry: false
             show_source: true
             show_signature_annotations: true
             heading_level: 3
             show_category_heading: false
             group_by_category: true
-          selection:
             inherited_members: true
-
       custom_templates: templates
       watch:
         - dfm_tools
