@@ -29,6 +29,8 @@ inisaltem = True #initialsalinity/initialtemperature gives 33.8ppt uniform and s
 ** INFO   :  Min. salinity limited, min =  -1.037033177733807E-005
 """
 
+
+
 #TODO: files that are not created in this script: obsfiles, dimr.xml and the submit script (and GEBCO+GSHHS datasets)
 #TODO: reference run in: p:\11209231-003-bes-modellering\hydrodynamica\hackathon\simulations\run001_mapInterval_1800\
 #TODO: also compare settings to p:\11208054-004-dcsm-fm\models\3D_DCSM-FM\2013-2017\B05_hydrolib_JV\DCSM-FM_0_5nm.mdu (e.g. tlfSmo)
@@ -125,21 +127,21 @@ ext_new = hcdfm.ExtModel()
 for varkey in ['so','thetao','uo','vo','zos']:
     dfmt.download_CMEMS(credentials=None, #credentials=['username','password'], or create "%USERPROFILE%/CMEMS_credentials.txt" with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form'
                         varkey=varkey,
-                        longitude_min=lon_min, longitude_max=lon_max, latitude_min=lat_min, latitude_max=lat_max,
+                        longitude_min=lon_min-1/12, longitude_max=lon_max+1/12, latitude_min=lat_min-1/12, latitude_max=lat_max+1/12,
                         date_min=date_min, date_max=date_max,
                         dir_output=dir_output_data_cmems, file_prefix='cmems_', overwrite=overwrite)
 
 
 # CMEMS - boundary conditions file (.bc) (and add to ext_bnd)
 #TODO: isssue https://github.com/Deltares/HYDROLIB-core/issues/533 contains below comments
-#TODO: important to put two waterlevelbnds consequtively and probably also at the start of extfile (so bnd is open)
+#TODO: important to put two waterlevelbnds consequtively and probably also at the start of extfile (so bnd is open) >> should not be the case according to AvD
 #TODO: two waterlevelbnds need to share same physical plifile in order to + (https://issuetracker.deltares.nl/browse/UNST-5320).
-#list_quantities = ['salinitybnd','temperaturebnd','uxuy','waterlevelbnd','tide'] #TODO: this combination results in instable model and crash (is tide ignored? or maybe no open bnds for sal since wlbnd is later added) o868342 (Comp. time step average below threshold)
-#list_quantities = ['salinitybnd','temperaturebnd','uxuy','tide'],#,'waterlevelbnd' #TODO: this gives stable model o868398 (but still expected no open bnd?)
-#list_quantities = ['tide','salinitybnd','temperaturebnd','uxuy'],#,'waterlevelbnd' #TODO: tide in front gives different results? (dia started equal, but this model is very slightly faster)
-#list_quantities = ['tide','waterlevelbnd','salinitybnd','temperaturebnd','uxuy'] #TODO: this should also be possible, but gives instability in wl after a few simulation hours and "** WARNING: Boundary link 00001662 already claimed [    -68.0750,     12.6625]"
-list_quantities = ['waterlevelbnd','tide','salinitybnd','temperaturebnd','uxuy'] #TODO: seems to make no difference with the one above
-#list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tide'] #TODO: this crashes with update_ghostboundvals error, see comment block below
+#list_quantities = ['salinitybnd','temperaturebnd','uxuy','waterlevelbnd','tide'] #TODO: JV1 stable ("WARNING: Boundary link 00000468 already claimed")
+#list_quantities = ['salinitybnd','temperaturebnd','uxuy','tide'] #,'waterlevelbnd' #TODO: JV2 "WARNING: Comp. time step average below threshold" >> crash
+#list_quantities = ['tide','salinitybnd','temperaturebnd','uxuy'] #,'waterlevelbnd' #TODO: JV3 same wl/sal as JV2
+#list_quantities = ['tide','waterlevelbnd','salinitybnd','temperaturebnd','uxuy'] #TODO: JV4 this should also be possible, but gives instability in wl after a few simulation hours and "** WARNING: Boundary link 00001662 already claimed [    -68.0750,     12.6625]"
+#list_quantities = ['waterlevelbnd','tide','salinitybnd','temperaturebnd','uxuy'] #TODO: JV5 same wl/sal as JV4
+list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tide'] #TODO: "ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated"
 ext_new = mb.preprocess_interpolate_nc_to_bc(ext_bnd=ext_new,
                                              refdate_str = 'minutes since '+ref_date+' 00:00:00 +00:00',
                                              dir_output = dir_output,
@@ -169,6 +171,23 @@ Abort(1) on node 1 (rank 1 in comm 0): application called MPI_Abort(MPI_COMM_WOR
 #### ERROR: dimr update ABORT,: myNameDFlowFM update failed, with return value 22 
 """
 
+"""
+import dfm_tools as dfmt
+import xarray as xr
+import matplotlib.pyplot as plt
+plt.close('all')
+
+fig, (ax1,ax2) = plt.subplots(2,1,figsize=(8,6),sharex=True)
+for i in [1,4,5]: #[2,3]
+    data = xr.open_mfdataset(rf'p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\ModelBuilderOutput_JV{i}\DFM_OUTPUT_Bonaire\Bonaire_0000_his.nc',preprocess=dfmt.preprocess_hisnc)
+    ds = data.sel(stations='test')
+    ds.waterlevel.plot(ax=ax1,label=f'JV{i}')
+    ds.salinity.isel(laydim=19).plot(ax=ax2,label=f'JV{i}')
+ax1.legend()
+ax2.legend()
+
+"""
+
 #save new ext file
 ext_new.save(filepath=ext_file_new,path_style=path_style)
 
@@ -185,29 +204,30 @@ if inisaltem:
                                             dir_data=dir_output_data_cmems,
                                             dir_out=dir_output)
 
-# ERA5 - download
-dir_output_data_era5 = os.path.join(dir_output_data,'ERA5')
-os.makedirs(dir_output_data_era5, exist_ok=True)
+#TODO: uncomment era5
+# # ERA5 - download
+# dir_output_data_era5 = os.path.join(dir_output_data,'ERA5')
+# os.makedirs(dir_output_data_era5, exist_ok=True)
     
-if ERA5_meteo_option == 1: #TODO: pass option instead of varlist to fuctions?
-    varlist_list = [['msl','u10n','v10n','chnk']]
-elif ERA5_meteo_option == 2:
-    varlist_list = [['msl','u10n','v10n','chnk'],['d2m','t2m','tcc'],['ssr','strd'],['mer','mtpr']]
+# if ERA5_meteo_option == 1: #TODO: pass option instead of varlist to fuctions?
+#     varlist_list = [['msl','u10n','v10n','chnk']]
+# elif ERA5_meteo_option == 2:
+#     varlist_list = [['msl','u10n','v10n','chnk'],['d2m','t2m','tcc'],['ssr','strd'],['mer','mtpr']]
 
-for varlist in varlist_list:
-    for varkey in varlist:
-        dfmt.download_ERA5(varkey, 
-                           longitude_min=lon_min-1/4, longitude_max=lon_max+1/4, latitude_min=lat_min-1/4, latitude_max=lat_max+1/4, # download 1 grid cell row/column extra
-                           date_min=date_min, date_max=date_max,
-                           dir_output=dir_output_data_era5, overwrite=overwrite)
+# for varlist in varlist_list:
+#     for varkey in varlist:
+#         dfmt.download_ERA5(varkey, 
+#                            longitude_min=lon_min-1/4, longitude_max=lon_max+1/4, latitude_min=lat_min-1/4, latitude_max=lat_max+1/4, # download 1 grid cell row/column extra
+#                            date_min=date_min, date_max=date_max,
+#                            dir_output=dir_output_data_era5, overwrite=overwrite)
 
-# ERA5 meteo - convert to netCDF for usage in Delft3D FM
-ext_old = mb.preprocess_merge_meteofiles(ext_old=ext_old,
-        mode = 'ERA5',
-        varkey_list = varlist_list,
-        dir_data = dir_output_data_era5,
-        dir_output = dir_output,
-        time_slice = slice(date_min, date_max))
+# # ERA5 meteo - convert to netCDF for usage in Delft3D FM
+# ext_old = mb.preprocess_merge_meteofiles(ext_old=ext_old,
+#         mode = 'ERA5',
+#         varkey_list = varlist_list,
+#         dir_data = dir_output_data_era5,
+#         dir_output = dir_output,
+#         time_slice = slice(date_min, date_max))
 
 ext_old.save(filepath=ext_file_old,path_style=path_style)
 
@@ -262,7 +282,7 @@ mdu.time.startdatetime = pd.Timestamp(date_min).strftime('%Y%m%d%H%M%S')
 mdu.time.stopdatetime = pd.Timestamp(date_max).strftime('%Y%m%d%H%M%S')
 mdu.time.autotimestep = 3
 
-mdu.output.obsfile = [os.path.join(dir_output,x) for x in ['osm_beach_centroids_offset_bonaire.xyn','stations_obs.xyn']]
+mdu.output.obsfile = [os.path.join(dir_output,x) for x in ['osm_beach_centroids_offset_bonaire.xyn','stations_obs.xyn','test_obs.xyn']]
 mdu.output.hisinterval = [60]
 mdu.output.mapinterval = [1800]#[86400]
 mdu.output.rstinterval = [0] #TODO: default is 0.0, but this translates to [0.0 tstart tstop] instead of [0]: https://github.com/Deltares/HYDROLIB-core/issues/525#issuecomment-1505111924
