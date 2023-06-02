@@ -164,7 +164,7 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
     if conversion_dict is None:
         conversion_dict = get_conversion_dict()
     
-    if quantity=='uxuy': #T3Dvector
+    if quantity=='uxuyadvectionvelocitybnd': #T3Dvector
         quantity_list = ['ux','uy']
     else:
         quantity_list = [quantity]

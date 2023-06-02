@@ -134,8 +134,8 @@ for varkey in ['so','thetao','uo','vo','zos']:
 
 # CMEMS - boundary conditions file (.bc) (and add to ext_bnd)
 #TODO: two waterlevelbnds need to share same physical plifile in order to + (https://issuetracker.deltares.nl/browse/UNST-5320).
-list_quantities = ['salinitybnd','temperaturebnd','uxuy','waterlevelbnd','tide'] #TODO: JV1 stable ("WARNING: Boundary link 00000468 already claimed")
-#list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tide'] #TODO: JV6 "ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated"
+list_quantities = ['salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd','waterlevelbnd','tide'] #TODO: JV1 stable ("WARNING: Boundary link 00000468 already claimed")
+#list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd','tide'] #TODO: JV6 "ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated"
 ext_new = mb.preprocess_interpolate_nc_to_bc(ext_bnd=ext_new,
                                              refdate_str = 'minutes since '+ref_date+' 00:00:00 +00:00',
                                              dir_output = dir_output,
