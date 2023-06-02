@@ -24,10 +24,10 @@ refdate_str = 'minutes since 2011-12-22 00:00:00 +00:00' # if None, xarray uses 
 dir_output = './test_interpolate_nc_to_bc_TEMP'
 
 #quantities should be in conversion_dict.keys(). waterlevelbnd is steric/zos, tide is tidal components from FES/EOT
-list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tracerbndNO3','tide']
+list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd','tracerbndNO3','tide']
 #list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','tracerbndNO3']
 list_quantities = ['salinitybnd','tracerbndNO3','tide']
-#list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tracerbndNO3','tracerbndOpal','tracerbndDON','tide'] #also waq vars with same ncvarname, opal not available for GFDL and CMCC
+#list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd','tracerbndNO3','tracerbndOpal','tracerbndDON','tide'] #also waq vars with same ncvarname, opal not available for GFDL and CMCC
 
 model = 'CMEMS' #CMEMS GFDL CMCC HYCOM
 
@@ -97,7 +97,7 @@ for file_pli in list_plifiles:
             for forcingobject in ForcingModel_object.forcing: #add A0 component
                 forcingobject.datablock.append(['A0',0.0,0.0])
         else:
-            if quantity in ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy']: #hydro
+            if quantity in ['waterlevelbnd','salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd']: #hydro
                 if dir_sourcefiles_hydro is None:
                     continue
                 if (model=='HYCOM') & (quantity not in ['salinitybnd','temperaturebnd']): #only contains quantities salinity and water_temp, so crashes on others
