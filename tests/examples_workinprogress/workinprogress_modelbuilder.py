@@ -133,15 +133,11 @@ for varkey in ['so','thetao','uo','vo','zos']:
 
 
 # CMEMS - boundary conditions file (.bc) (and add to ext_bnd)
-#TODO: isssue https://github.com/Deltares/HYDROLIB-core/issues/533 contains below comments
+#TODO: issue https://github.com/Deltares/HYDROLIB-core/issues/533 contains below comments
 #TODO: important to put two waterlevelbnds consequtively and probably also at the start of extfile (so bnd is open) >> should not be the case according to AvD
 #TODO: two waterlevelbnds need to share same physical plifile in order to + (https://issuetracker.deltares.nl/browse/UNST-5320).
-#list_quantities = ['salinitybnd','temperaturebnd','uxuy','waterlevelbnd','tide'] #TODO: JV1 stable ("WARNING: Boundary link 00000468 already claimed")
-#list_quantities = ['salinitybnd','temperaturebnd','uxuy','tide'] #,'waterlevelbnd' #TODO: JV2 "WARNING: Comp. time step average below threshold" >> crash
-#list_quantities = ['tide','salinitybnd','temperaturebnd','uxuy'] #,'waterlevelbnd' #TODO: JV3 same wl/sal as JV2
-#list_quantities = ['tide','waterlevelbnd','salinitybnd','temperaturebnd','uxuy'] #TODO: JV4 this should also be possible, but gives instability in wl after a few simulation hours and "** WARNING: Boundary link 00001662 already claimed [    -68.0750,     12.6625]"
-#list_quantities = ['waterlevelbnd','tide','salinitybnd','temperaturebnd','uxuy'] #TODO: JV5 same wl/sal as JV4
-list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tide'] #TODO: "ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated"
+list_quantities = ['salinitybnd','temperaturebnd','uxuy','waterlevelbnd','tide'] #TODO: JV1 stable ("WARNING: Boundary link 00000468 already claimed")
+#list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tide'] #TODO: JV6 "ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated"
 ext_new = mb.preprocess_interpolate_nc_to_bc(ext_bnd=ext_new,
                                              refdate_str = 'minutes since '+ref_date+' 00:00:00 +00:00',
                                              dir_output = dir_output,
