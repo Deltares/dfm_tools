@@ -30,7 +30,6 @@ inisaltem = True #initialsalinity/initialtemperature gives 33.8ppt uniform and s
 """
 
 
-
 #TODO: files that are not created in this script: obsfiles, dimr.xml and the submit script (and GEBCO+GSHHS datasets)
 #TODO: reference run in: p:\11209231-003-bes-modellering\hydrodynamica\hackathon\simulations\run001_mapInterval_1800\
 #TODO: also compare settings to p:\11208054-004-dcsm-fm\models\3D_DCSM-FM\2013-2017\B05_hydrolib_JV\DCSM-FM_0_5nm.mdu (e.g. tlfSmo)
@@ -74,7 +73,7 @@ data_bathy = xr.open_dataset(file_nc_bathy)
 data_bathy_sel = data_bathy.sel(lon=slice(lon_min-1,lon_max+1),lat=slice(lat_min-1,lat_max+1))
 
 #TODO: grid generation and bathy-refinement is still to be improved in meshkernel (https://github.com/Deltares/dfm_tools/issues/234)
-mk_object = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max) #TODO: should be sperical, but is cartesian >> is_geographic keywork does not work yet
+mk_object = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max) #TODO: should be sperical, but is cartesian >> is_geographic keyword does not work yet
 
 #refine
 min_face_size = 200/(40075*1000/360) #convert meters to degrees
@@ -181,30 +180,29 @@ if inisaltem:
                                             dir_data=dir_output_data_cmems,
                                             dir_out=dir_output)
 
-#TODO: uncomment era5
-# # ERA5 - download
-# dir_output_data_era5 = os.path.join(dir_output_data,'ERA5')
-# os.makedirs(dir_output_data_era5, exist_ok=True)
+# ERA5 - download
+dir_output_data_era5 = os.path.join(dir_output_data,'ERA5')
+os.makedirs(dir_output_data_era5, exist_ok=True)
     
-# if ERA5_meteo_option == 1: #TODO: pass option instead of varlist to fuctions?
-#     varlist_list = [['msl','u10n','v10n','chnk']]
-# elif ERA5_meteo_option == 2:
-#     varlist_list = [['msl','u10n','v10n','chnk'],['d2m','t2m','tcc'],['ssr','strd'],['mer','mtpr']]
+if ERA5_meteo_option == 1: #TODO: pass option instead of varlist to fuctions?
+    varlist_list = [['msl','u10n','v10n','chnk']]
+elif ERA5_meteo_option == 2:
+    varlist_list = [['msl','u10n','v10n','chnk'],['d2m','t2m','tcc'],['ssr','strd'],['mer','mtpr']]
 
-# for varlist in varlist_list:
-#     for varkey in varlist:
-#         dfmt.download_ERA5(varkey, 
-#                            longitude_min=lon_min-1/4, longitude_max=lon_max+1/4, latitude_min=lat_min-1/4, latitude_max=lat_max+1/4, # download 1 grid cell row/column extra
-#                            date_min=date_min, date_max=date_max,
-#                            dir_output=dir_output_data_era5, overwrite=overwrite)
+for varlist in varlist_list:
+    for varkey in varlist:
+        dfmt.download_ERA5(varkey, 
+                            longitude_min=lon_min-1/4, longitude_max=lon_max+1/4, latitude_min=lat_min-1/4, latitude_max=lat_max+1/4, # download 1 grid cell row/column extra
+                            date_min=date_min, date_max=date_max,
+                            dir_output=dir_output_data_era5, overwrite=overwrite)
 
-# # ERA5 meteo - convert to netCDF for usage in Delft3D FM
-# ext_old = mb.preprocess_merge_meteofiles(ext_old=ext_old,
-#         mode = 'ERA5',
-#         varkey_list = varlist_list,
-#         dir_data = dir_output_data_era5,
-#         dir_output = dir_output,
-#         time_slice = slice(date_min, date_max))
+# ERA5 meteo - convert to netCDF for usage in Delft3D FM
+ext_old = mb.preprocess_merge_meteofiles(ext_old=ext_old,
+        mode = 'ERA5',
+        varkey_list = varlist_list,
+        dir_data = dir_output_data_era5,
+        dir_output = dir_output,
+        time_slice = slice(date_min, date_max))
 
 ext_old.save(filepath=ext_file_old,path_style=path_style)
 
