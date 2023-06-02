@@ -133,8 +133,6 @@ for varkey in ['so','thetao','uo','vo','zos']:
 
 
 # CMEMS - boundary conditions file (.bc) (and add to ext_bnd)
-#TODO: issue https://github.com/Deltares/HYDROLIB-core/issues/533 contains below comments
-#TODO: important to put two waterlevelbnds consequtively and probably also at the start of extfile (so bnd is open) >> should not be the case according to AvD
 #TODO: two waterlevelbnds need to share same physical plifile in order to + (https://issuetracker.deltares.nl/browse/UNST-5320).
 list_quantities = ['salinitybnd','temperaturebnd','uxuy','waterlevelbnd','tide'] #TODO: JV1 stable ("WARNING: Boundary link 00000468 already claimed")
 #list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuy','tide'] #TODO: JV6 "ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated"
@@ -145,7 +143,7 @@ ext_new = mb.preprocess_interpolate_nc_to_bc(ext_bnd=ext_new,
                                              tstart=pd.Timestamp(date_min)-pd.Timedelta(hours=12), tstop=pd.Timestamp(date_max)+pd.Timedelta(hours=12), #TODO: to account for noon-fields of CMEMS, build in safety?
                                              list_plifiles = [poly_file],
                                              dir_pattern = os.path.join(dir_output_data_cmems,'cmems_{ncvarname}_*.nc'))
-#TODO: when adding both waterlevelbnd and tide as waterlevelbnd they should be consequetive. If there are other quantities in between, the model crashes with a update_ghostboundvals error, report this:
+#TODO: when adding both waterlevelbnd and tide as waterlevelbnd they should be consequetive. If there are other quantities in between, the model crashes with a update_ghostboundvals error, reported in https://issuetracker.deltares.nl/browse/UNST-7011:
 """
 ** INFO   : partition_fixorientation_ghostlist: number of reversed flowlinks=              0
 ** INFO   : Done partitioning model.
@@ -165,23 +163,6 @@ Abort(1) on node 1 (rank 1 in comm 0): application called MPI_Abort(MPI_COMM_WOR
 ** INFO   : Simulation current time: nt = 100, time1 =  26265600.06s (2022-11-01T00:00:00Z).
 ** INFO   : Done writing solution state.
 #### ERROR: dimr update ABORT,: myNameDFlowFM update failed, with return value 22 
-"""
-
-"""
-import dfm_tools as dfmt
-import xarray as xr
-import matplotlib.pyplot as plt
-plt.close('all')
-
-fig, (ax1,ax2) = plt.subplots(2,1,figsize=(8,6),sharex=True)
-for i in [1,4,5]: #[2,3]
-    data = xr.open_mfdataset(rf'p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\ModelBuilderOutput_JV{i}\DFM_OUTPUT_Bonaire\Bonaire_0000_his.nc',preprocess=dfmt.preprocess_hisnc)
-    ds = data.sel(stations='test')
-    ds.waterlevel.plot(ax=ax1,label=f'JV{i}')
-    ds.salinity.isel(laydim=19).plot(ax=ax2,label=f'JV{i}')
-ax1.legend()
-ax2.legend()
-
 """
 
 #save new ext file
