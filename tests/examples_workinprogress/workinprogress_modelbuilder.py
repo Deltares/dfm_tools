@@ -14,7 +14,7 @@ import hydrolib.core.dflowfm as hcdfm
 import xarray as xr
 import pandas as pd
 import contextily as ctx
-
+import warnings
 ## input
 model_name = 'Bonaire'
 dir_output = r'p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\ModelBuilderOutput_JV'
@@ -139,7 +139,7 @@ list_quantities = ['salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd','wa
 #Check whether the polyfile contains multiple polyline, in that case show a warning
 pli = hcdfm.PolyFile(poly_file)
 if len(pli.objects) > 1:
-    print(f"Warning: the polyfile {poly_file} contains multiple polylines. Only the first one will be used by DFLOW-FM for the boundary conditions.")
+    warnings.warn(UserWarning(f"The polyfile {poly_file} contains multiple polylines. Only the first one will be used by DFLOW-FM for the boundary conditions."))
     #TODO when issue UNST-7012 is solved, remove this warning or add it in more places)
 
 ext_new = mb.preprocess_interpolate_nc_to_bc(ext_bnd=ext_new,
