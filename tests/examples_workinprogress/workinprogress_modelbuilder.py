@@ -136,12 +136,6 @@ for varkey in ['so','thetao','uo','vo','zos']:
 list_quantities = ['salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd','waterlevelbnd','tide'] #TODO: JV1 stable ("WARNING: Boundary link 00000468 already claimed")
 #list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd','tide'] #TODO: JV6 "ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated"
 
-#Check whether the polyfile contains multiple polyline, in that case show a warning
-pli = hcdfm.PolyFile(poly_file)
-if len(pli.objects) > 1:
-    warnings.warn(UserWarning(f"The polyfile {poly_file} contains multiple polylines. Only the first one will be used by DFLOW-FM for the boundary conditions."))
-    #TODO when issue UNST-7012 is solved, remove this warning or add it in more places)
-
 ext_new = mb.preprocess_interpolate_nc_to_bc(ext_bnd=ext_new,
                                              refdate_str = 'minutes since '+ref_date+' 00:00:00 +00:00',
                                              dir_output = dir_output,
