@@ -96,6 +96,13 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
         raise KeyError(f'invalid tidemodel "{tidemodel}", options are: {list(dir_pattern_dict.keys())}')
     if tidemodel == 'GTSM4.1preliminary':
         warnings.warn(UserWarning(f'you are using tidemodel "{tidemodel}", beware that the dataset is preliminary so it is still quite coarse and may contain errors. Check your results carefully'))
+    
+    #Check whether the polyfile contains multiple polyline, in that case show a warning
+    pli = hcdfm.PolyFile(file_pli)
+    if len(pli.objects) > 1:
+        warnings.warn(UserWarning(f"The polyfile {file_pli} contains multiple polylines. Only the first one will be used by DFLOW-FM for the boundary conditions."))
+        #TODO when issue UNST-7012 is solved, remove this warning or add it in more places)
+    
     dir_pattern = dir_pattern_dict[tidemodel]
     
     if component_list is None:
