@@ -14,7 +14,7 @@ import hydrolib.core.dflowfm as hcdfm
 import xarray as xr
 import pandas as pd
 import contextily as ctx
-import warnings
+
 ## input
 model_name = 'Bonaire'
 dir_output = r'p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\ModelBuilderOutput_JV'
