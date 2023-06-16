@@ -20,7 +20,7 @@ dependencies:
   - dask
   - netcdf4>=1.5.3
   - bottleneck
-  - xugrid>=0.2.1
+  - xugrid>=0.4.0
   - cdsapi
   - pydap>=3.3.0
   - pip:
