@@ -20,7 +20,7 @@ dir_output = '.'
 file_nc_list = [os.path.join(dir_testinput,'DFM_curvedbend_3D','cb_3d_map.nc'), #sigmalayer
                 os.path.join(dir_testinput,'DFM_grevelingen_3D','Grevelingen-FM_0*_map.nc'), #zlayer
                 r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0*_map.nc', #fullgrid
-                r'p:\dflowfm\maintenance\JIRA\05000-05999\05477\c103_ws_3d_fourier\DFM_OUTPUT_westerscheldt01_0subst\westerscheldt01_0subst_map.nc', #zsigma model without fullgrid output but with new ocean_sigma_z_coordinate variable
+                #r'p:\dflowfm\maintenance\JIRA\05000-05999\05477\c103_ws_3d_fourier\DFM_OUTPUT_westerscheldt01_0subst\westerscheldt01_0subst_map.nc', #zsigma model without fullgrid output but with new ocean_sigma_z_coordinate variable #TODO: fails since https://github.com/Deltares/xugrid/issues/68#issuecomment-1594362969 was fixed, implement/catch edge validator?
                 r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_207\results\RMM_dflowfm_0*_map.nc', #2D model
                 r'p:\archivedprojects\11203379-005-mwra-updated-bem\03_model\02_final\A72_ntsu0_kzlb2\DFM_OUTPUT_MB_02\MB_02_0*_map.nc',
                 ]
@@ -167,7 +167,7 @@ for file_nc in file_nc_list:
     print('plot bedlevel')
     #get bedlevel and create plot with ugrid and cross section line
     fig, ax_input = plt.subplots()
-    pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot(edgecolor='face',cmap='jet') #TODO: should work even better with edgecolor='none', but that results in seethrough edges anyway, report to matplotlib?
+    pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot(cmap='jet') #TODO: default is edgecolor='face', should work even better with edgecolor='none', but that results in seethrough edges anyway, report to matplotlib?
     pc.set_clim(clim_bl)
     ax_input.set_aspect('equal')
     line, = ax_input.plot([], [],'o-') # empty line
@@ -195,9 +195,9 @@ for file_nc in file_nc_list:
         data_frommap_merged.ugrid.set_crs(crs)
         data_frommap_merged_wgs84 = data_frommap_merged.ugrid.to_crs(to_crs)
         fig, (ax1,ax2) = plt.subplots(2,1,figsize=(7,8))
-        data_frommap_merged["mesh2d_waterdepth"].isel(time=0).ugrid.plot(ax=ax1, edgecolor='face')
+        data_frommap_merged["mesh2d_waterdepth"].isel(time=0).ugrid.plot(ax=ax1)
         ctx.add_basemap(ax=ax1, source=None, crs=crs, attribution=False)
-        data_frommap_merged_wgs84["mesh2d_waterdepth"].isel(time=0).ugrid.plot(ax=ax2, edgecolor='face')
+        data_frommap_merged_wgs84["mesh2d_waterdepth"].isel(time=0).ugrid.plot(ax=ax2)
         ctx.add_basemap(ax=ax2, source=None, crs=to_crs, attribution=False)
         fig.tight_layout()
         fig.savefig(os.path.join(dir_output,f'{basename}_convertedcoords'))
@@ -206,13 +206,13 @@ for file_nc in file_nc_list:
     #ugrid sel via x/y
     data_frommap_merged_sel = data_frommap_merged.ugrid.sel(x=sel_slice_x,y=sel_slice_y)
     fig, ax = plt.subplots()
-    pc = data_frommap_merged_sel['mesh2d_flowelem_bl'].ugrid.plot(ax=ax, linewidth=0.5, edgecolors='face', cmap='jet')
+    pc = data_frommap_merged_sel['mesh2d_flowelem_bl'].ugrid.plot(ax=ax, linewidth=0.5, cmap='jet')
     pc.set_clim(clim_bl)
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,f'{basename}_selxyslice'))
     
     
-    if 'westerscheldt01_0subst_map' not in file_nc: #TODO: skipping for esternscheldt since contourf/contour raise "ValueError: repeats may not contain negative values." (also happens in notebook) https://github.com/Deltares/xugrid/issues/68
+    if 'westerscheldt01_0subst_map' not in file_nc: #TODO: skipping for westernscheldt since contourf/contour raise "ValueError: repeats may not contain negative values." (also happens in notebook) https://github.com/Deltares/xugrid/issues/68
         print('plot bedlevel as polycollection, contourf, contour, rasterized')
         #create fancy plots, more options at https://deltares.github.io/xugrid/examples/plotting.html
         if clim_bl is None:
@@ -220,12 +220,12 @@ for file_nc in file_nc_list:
         else:
             vmin, vmax = clim_bl #TODO: vmin/vmax are necessary upon plot initialization (instead of pc.set_clim(clim_bl)) for proper colorbar, this is also matplotlib behaviour so not xugrid specific
         fig, ((ax1,ax2),(ax3,ax4)) = plt.subplots(2,2,figsize=(12,7),sharex=True,sharey=True)
-        pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot(ax=ax1, linewidth=0.5, edgecolors='face', cmap='jet', vmin=vmin, vmax=vmax)
+        pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot(ax=ax1, linewidth=0.5, cmap='jet', vmin=vmin, vmax=vmax)
         pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot.contourf(ax=ax2, levels=11, cmap='jet', vmin=vmin, vmax=vmax)
         if 'cb_3d_map' not in file_nc: #TODO: cb_3d_map fails on contour with "UserWarning: No contour levels were found within the data range." (because all bedlevels are -5m) >> colorbar gives error, is this an xugrid or matplotlib issue?
             pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot.contour(ax=ax3, levels=11, cmap='jet', vmin=vmin, vmax=vmax, add_colorbar=True)
-        bl_raster = dfmt.rasterize_ugrid(data_frommap_merged[['mesh2d_flowelem_bl']],resolution=raster_res) #rasterize ugrid
-        pc = bl_raster['mesh2d_flowelem_bl'].plot(ax=ax4, cmap='jet', vmin=vmin, vmax=vmax) #plot with non-ugrid method
+        bl_raster = dfmt.rasterize_ugrid(data_frommap_merged['mesh2d_flowelem_bl'],resolution=raster_res) #rasterize ugrid uds/uda
+        pc = bl_raster.plot(ax=ax4, cmap='jet', vmin=vmin, vmax=vmax) #plot with non-ugrid method
         fig.tight_layout()
         fig.savefig(os.path.join(dir_output,f'{basename}_gridbedcontour'))
     
@@ -235,7 +235,7 @@ for file_nc in file_nc_list:
     data_frommap_merged['mesh2d_s1_filt'] = data_frommap_merged['mesh2d_s1'].where(~bool_drycells)
     print('plot grid and values from mapdata (waterlevel on layer, 2dim, on cell centers)')
     fig, ax = plt.subplots()
-    pc = data_frommap_merged['mesh2d_s1_filt'].isel(time=timestep).ugrid.plot(edgecolor='face',cmap='jet')
+    pc = data_frommap_merged['mesh2d_s1_filt'].isel(time=timestep).ugrid.plot(cmap='jet')
     ax.set_aspect('equal')
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_s1_filt'))
@@ -253,7 +253,7 @@ for file_nc in file_nc_list:
     
     print('plot grid and values from mapdata (salinity on layer, 3dim, on cell centers), on layer')
     fig, ax = plt.subplots()
-    pc = data_frommap_merged['mesh2d_sa1'].isel(time=timestep, mesh2d_nLayers=layno, nmesh2d_layer=layno, missing_dims='ignore').ugrid.plot(edgecolor='face',cmap='jet') #missing_dims='ignore' ignores .isel() on mesh2d_nLayers/nmesh2d_layer if that dimension is not present
+    pc = data_frommap_merged['mesh2d_sa1'].isel(time=timestep, mesh2d_nLayers=layno, nmesh2d_layer=layno, missing_dims='ignore').ugrid.plot(cmap='jet') #missing_dims='ignore' ignores .isel() on mesh2d_nLayers/nmesh2d_layer if that dimension is not present
     pc.set_clim(clim_sal)
     ax.set_aspect('equal')
     fig.tight_layout()
@@ -264,7 +264,7 @@ for file_nc in file_nc_list:
     data_frommap_timesel = data_frommap_merged.isel(time=timestep)
     data_frommap_timesel_atdepths = dfmt.get_Dataset_atdepths(data_xr=data_frommap_timesel, depths=-4, reference='z0') #depth w.r.t. z0/waterlevel/bedlevel (also possible to provide list of floats)
     fig, ax = plt.subplots()
-    pc = data_frommap_timesel_atdepths['mesh2d_sa1'].ugrid.plot(edgecolor='face',cmap='jet') #TODO: dask\array\reductions.py:640: RuntimeWarning: All-NaN slice encountered
+    pc = data_frommap_timesel_atdepths['mesh2d_sa1'].ugrid.plot(cmap='jet') #TODO: dask\array\reductions.py:640: RuntimeWarning: All-NaN slice encountered
     pc.set_clim(clim_sal)
     ax.set_aspect('equal')
     fig.tight_layout()
@@ -297,7 +297,7 @@ for file_nc in file_nc_list:
         data_frommap_fou_atdepth['magn_mean'] = np.sqrt(ux_mean**2+uy_mean**2).assign_attrs(magn_mean_attrs)
         
         fig,ax = plt.subplots(figsize=(9,5))
-        pc = data_frommap_fou_atdepth['magn_mean'].ugrid.plot(edgecolor='face')
+        pc = data_frommap_fou_atdepth['magn_mean'].ugrid.plot()
         fou_raster = dfmt.rasterize_ugrid(data_frommap_fou_atdepth,resolution=raster_res) #TODO: add rasterize+quiver to notebook
         fou_raster.plot.quiver(x='mesh2d_face_x',y='mesh2d_face_y',u=fou_varname_u,v=fou_varname_v,color='w',scale=5,add_guide=False)
         pc.set_clim(0,0.10)

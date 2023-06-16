@@ -83,7 +83,7 @@ lonvar_attrs = {'axis':'X',
 lonvar = xr.DataArray(reg_x_vec, dims=('longitude'), attrs=lonvar_attrs)
 data_xr_out['longitude'] = lonvar
 
-latvar_attrs = {'axis':'Y',
+latvar_attrs = {'axis':'Y', #TODO: attrs are not on data_rasterized.latitude
                 'reference':'geographical coordinates, WGS84 projection',
                 'units':'degrees_north',
                 '_CoordinateAxisType':'Lat',
@@ -101,7 +101,7 @@ data_xr_out['latitude'] = latvar
 # data_xr_out['depth'] = depthvar
 # data_xr_out = data_xr_out.set_coords('depth')
 
-
+data_frommap_merged = data_frommap_merged[varname_list] #speeds up rasterization significantly
 data_xr_out_temp = data_xr_out.rename({'longitude':'x','latitude':'y'}) #TODO: make rasterize_like more flexible for different xy-varnames? (look at xr.interp_like)
 data_rasterized = dfmt.rasterize_ugrid(uds=data_frommap_merged, ds_like=data_xr_out_temp) #TODO: speed up by applying uds.ugrid.sel(x/y) first
 data_rasterized = data_rasterized.rename({'x':'longitude','y':'latitude'})
@@ -115,6 +115,8 @@ for varname in varname_list:
     #source = ctx.providers.Esri.WorldImagery
     #ctx.add_basemap(ax, attribution=False, crs='epsg:4326', source=source)
     fig.savefig(os.path.join(dir_output, f'{model}_{varname}'))
+
+print('writing to netcdf')
 data_xr_out.to_netcdf(file_nc_out)
 
 
