@@ -472,20 +472,18 @@ def rasterize_ugrid(uds:xu.UgridDataset, ds_like:xr.Dataset = None, resolution:f
         DESCRIPTION.
 
     """
-    #TODO: maybe put part of code in xugrid (https://github.com/Deltares/xugrid/issues/31)
-    #TODO: vars can also be rasterized with uds_facevars[var].ugrid.rasterize(resolution), but is not efficient. Wait for uds.rasterize() method: https://github.com/Deltares/xugrid/issues/61
-    if not isinstance(uds,xu.core.wrap.UgridDataset):
-        raise TypeError(f'rasterize_ugrid expected xu.core.wrap.UgridDataset, got {type(uds)} instead')
     
-    grid = uds.grid
-    xu_facedim = uds.grid.face_dimension
-    uds_facevars = Dataset_varswithdim(uds,xu_facedim)
-    
-    if ds_like is not None:
-        regx = ds_like.x
-        regy = ds_like.y
+    if isinstance(uds,xu.core.wrap.UgridDataset):
+        xu_facedim = uds.grid.face_dimension
+        uds_facevars = Dataset_varswithdim(uds,xu_facedim)
+        face_str = f'Dataset with {len(uds_facevars.data_vars)} face variables'
+    elif isinstance(uds,xu.core.wrap.UgridDataArray):
+        face_str = 'DataArray'
     else:
-        xmin, ymin, xmax, ymax = grid.bounds
+        raise TypeError(f'rasterize_ugrid expected xu.core.wrap.UgridDataset or xu.core.wrap.UgridDataArray, got {type(uds)} instead')
+    
+    if ds_like is None:
+        xmin, ymin, xmax, ymax = uds.grid.bounds
         dx = xmax - xmin
         dy = ymax - ymin
         if resolution is None: # check if a rasterization resolution is passed, otherwise default to 200 raster cells otherwise for the smallest axis.
@@ -493,16 +491,11 @@ def rasterize_ugrid(uds:xu.UgridDataset, ds_like:xr.Dataset = None, resolution:f
         d = abs(resolution)
         regx = np.arange(xmin + 0.5 * d, xmax, d)
         regy = np.arange(ymin + 0.5 * d, ymax, d)
+        ds_like = xr.DataArray(np.empty((len(regy), len(regx))), {"y": regy, "x": regx}, ["y", "x"])
     
-    regx, regy, index = grid.rasterize_like(x=regx,y=regy) #TODO: this can be used to steer rasterization, eg with xstart/ystart/xres/yres
-    index_da = xr.DataArray(index,dims=('y','x'))
-    
-    print(f'>> rasterizing ugrid dataset with {len(uds_facevars.data_vars)} face variables to shape={index_da.shape}: ',end='')
+    print(f'>> rasterizing ugrid {face_str} to shape=({len(ds_like.y)},{len(ds_like.y)}): ',end='')
     dtstart = dt.datetime.now()
-    ds = uds_facevars.isel({xu_facedim:index_da})
-    ds = ds.where(index_da != grid.fill_value)
-    ds['x'] = xr.DataArray(regx,dims='x')
-    ds['y'] = xr.DataArray(regy,dims='y')
+    ds = uds.ugrid.rasterize_like(other=ds_like)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
     return ds

@@ -52,7 +52,7 @@ crs = "EPSG:28992"
 
 print('plot grid and values from mapdata (salinity on layer, 3dim, on cell centers)')
 fig, ax = plt.subplots()
-pc = data_frommap['mesh2d_sa1'].isel(nmesh2d_layer=33,month=0,time=0,missing_dims='ignore').ugrid.plot(linewidth=0.5, cmap="jet", edgecolor='face')
+pc = data_frommap['mesh2d_sa1'].isel(nmesh2d_layer=33,month=0,time=0,missing_dims='ignore').ugrid.plot(linewidth=0.5, cmap="jet")
 pc.set_clim([28,30.2])
 ax.set_aspect('equal')
 fig.tight_layout()
