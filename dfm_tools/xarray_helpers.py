@@ -265,7 +265,6 @@ def merge_meteofiles(file_nc:str, preprocess=None,
         else:
             raise KeyError('no longitude/latitude, lon/lat or x/y variables found in dataset')
 
-    varkeys = data_xr.variables.mapping.keys()
     #data_xr.attrs['comment'] = 'merged with dfm_tools from https://github.com/Deltares/dfm_tools' #TODO: add something like this or other attributes? (some might also be dropped now)
     
     #select time and do checks #TODO: check if calendar is standard/gregorian
@@ -290,13 +289,55 @@ def merge_meteofiles(file_nc:str, preprocess=None,
     if time_slice.stop not in times_pd.index:
         raise OutOfRangeError(f'ERROR: time_slice_stop="{time_slice.stop}" not in selected files, timerange: "{times_pd.index[0]}" to "{times_pd.index[-1]}"')
     
-    #TODO: check conversion implementation with hydro_tools\ERA5\ERA52DFM.py. Also move to separate function?
+    data_xr = convert_meteo_units(data_xr)
+    
+    #convert 0to360 sourcedata to -180to+180
+    convert_360to180 = (data_xr['longitude'].to_numpy()>180).any()
+    if convert_360to180: #TODO: make more flexible for models that eg pass -180/+180 crossing (add overlap at lon edges).
+        lon_newvar = (data_xr.coords['longitude'] + 180) % 360 - 180
+        data_xr.coords['longitude'] = lon_newvar.assign_attrs(data_xr['longitude'].attrs) #this re-adds original attrs
+        data_xr = data_xr.sortby(data_xr['longitude'])
+    
+    #GTSM specific addition for longitude overlap
+    if add_global_overlap: # assumes -180 to ~+179.75 (full global extent, but no overlap). Does not seem to mess up results for local models.
+        if len(data_xr.longitude.values) != len(np.unique(data_xr.longitude.values%360)):
+            raise Exception(f'add_global_overlap=True, but there are already overlapping longitude values: {data_xr.longitude}')
+        overlap_ltor = data_xr.sel(longitude=data_xr.longitude<=-179)
+        overlap_ltor['longitude'] = overlap_ltor['longitude'] + 360
+        overlap_rtol = data_xr.sel(longitude=data_xr.longitude>=179)
+        overlap_rtol['longitude'] = overlap_rtol['longitude'] - 360
+        data_xr = xr.concat([data_xr,overlap_ltor,overlap_rtol],dim='longitude').sortby('longitude')
+    
+    #GTSM specific addition for zerovalues during spinup
+    #TODO: doing this drops all encoding from variables, causing them to be converted into floats. Also makes sense since 0 pressure does not fit into int16 range as defined by scalefac and offset
+    #'scale_factor': 0.17408786412952254, 'add_offset': 99637.53795606793
+    #99637.53795606793 - 0.17408786412952254*32768
+    #99637.53795606793 + 0.17408786412952254*32767
+    if zerostart:
+        field_zerostart = data_xr.isel(time=[0,0])*0 #two times first field, set values to 0
+        field_zerostart['time'] = [times_pd.index[0]-dt.timedelta(days=2),times_pd.index[0]-dt.timedelta(days=1)] #TODO: is one zero field not enough? (is replacing first field not also ok? (results in 1hr transition period)
+        data_xr = xr.concat([field_zerostart,data_xr],dim='time',combine_attrs='no_conflicts') #combine_attrs argument prevents attrs from being dropped
+    
+    # converting from int16 to float32 (by removing dtype from encoding) or recompute scale_factor/add_offset is necessary for ERA5 dataset
+    #data_xr = prevent_dtype_int(data_xr)
+    data_xr = recompute_scaling_and_offset(data_xr)
+    
+    return data_xr
+
+
+def convert_meteo_units(data_xr):
+    
+    #TODO: check conversion implementation with hydro_tools\ERA5\ERA52DFM.py.
+    
     def get_unit(data_xr_var):
         if 'units' in data_xr_var.attrs.keys():
             unit = data_xr_var.attrs["units"]
         else:
             unit = '-'
         return unit
+    
+    varkeys = data_xr.variables.mapping.keys()
+    
     #convert Kelvin to Celcius
     for varkey_sel in ['air_temperature','dew_point_temperature','d2m','t2m']: # 2 meter dewpoint temparature / 2 meter temperature
         if varkey_sel in varkeys:
@@ -333,37 +374,6 @@ def merge_meteofiles(file_nc:str, preprocess=None,
     if 'ssr' in varkeys:
         print('ssr (solar influx) increase for beta=6%')
         data_xr['ssr'] = data_xr['ssr'] *.94
-    
-    #convert 0to360 sourcedata to -180to+180
-    convert_360to180 = (data_xr['longitude'].to_numpy()>180).any()
-    if convert_360to180: #TODO: make more flexible for models that eg pass -180/+180 crossing (add overlap at lon edges).
-        lon_newvar = (data_xr.coords['longitude'] + 180) % 360 - 180
-        data_xr.coords['longitude'] = lon_newvar.assign_attrs(data_xr['longitude'].attrs) #this re-adds original attrs
-        data_xr = data_xr.sortby(data_xr['longitude'])
-    
-    #GTSM specific addition for longitude overlap
-    if add_global_overlap: # assumes -180 to ~+179.75 (full global extent, but no overlap). Does not seem to mess up results for local models.
-        if len(data_xr.longitude.values) != len(np.unique(data_xr.longitude.values%360)):
-            raise Exception(f'add_global_overlap=True, but there are already overlapping longitude values: {data_xr.longitude}')
-        overlap_ltor = data_xr.sel(longitude=data_xr.longitude<=-179)
-        overlap_ltor['longitude'] = overlap_ltor['longitude'] + 360
-        overlap_rtol = data_xr.sel(longitude=data_xr.longitude>=179)
-        overlap_rtol['longitude'] = overlap_rtol['longitude'] - 360
-        data_xr = xr.concat([data_xr,overlap_ltor,overlap_rtol],dim='longitude').sortby('longitude')
-    
-    #GTSM specific addition for zerovalues during spinup
-    #TODO: doing this drops all encoding from variables, causing them to be converted into floats. Also makes sense since 0 pressure does not fit into int16 range as defined by scalefac and offset
-    #'scale_factor': 0.17408786412952254, 'add_offset': 99637.53795606793
-    #99637.53795606793 - 0.17408786412952254*32768
-    #99637.53795606793 + 0.17408786412952254*32767
-    if zerostart:
-        field_zerostart = data_xr.isel(time=[0,0])*0 #two times first field, set values to 0
-        field_zerostart['time'] = [times_pd.index[0]-dt.timedelta(days=2),times_pd.index[0]-dt.timedelta(days=1)] #TODO: is one zero field not enough? (is replacing first field not also ok? (results in 1hr transition period)
-        data_xr = xr.concat([field_zerostart,data_xr],dim='time',combine_attrs='no_conflicts') #combine_attrs argument prevents attrs from being dropped
-    
-    # converting from int16 to float32 (by removing dtype from encoding) or recompute scale_factor/add_offset is necessary for ERA5 dataset
-    #data_xr = prevent_dtype_int(data_xr)
-    data_xr = recompute_scaling_and_offset(data_xr)
     
     return data_xr
 
