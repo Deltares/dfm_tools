@@ -101,7 +101,7 @@ data_xr_out['latitude'] = latvar
 # data_xr_out['depth'] = depthvar
 # data_xr_out = data_xr_out.set_coords('depth')
 
-
+data_frommap_merged = data_frommap_merged[varname_list] #speeds up rasterization significantly
 data_xr_out_temp = data_xr_out.rename({'longitude':'x','latitude':'y'}) #TODO: make rasterize_like more flexible for different xy-varnames? (look at xr.interp_like)
 data_rasterized = dfmt.rasterize_ugrid(uds=data_frommap_merged, ds_like=data_xr_out_temp) #TODO: speed up by applying uds.ugrid.sel(x/y) first
 data_rasterized = data_rasterized.rename({'x':'longitude','y':'latitude'})
