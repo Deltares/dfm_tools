@@ -6,9 +6,10 @@
 
 ## Recommended installation
 
-- download and install Anaconda 64 bit (with Python 3.8 or later) from [anaconda.com](https://www.anaconda.com/distribution/#download-section)
+- download and install Anaconda 64 bit (with Python 3.9 or later) from [anaconda.com](https://www.anaconda.com/distribution/#download-section)
+- Python 3.8 is also still supported, but since packages like xarray are dropping support, dfm_tools will also do that in the near future
 - open Anaconda prompt
-- ``conda create --name dfm_tools_env -c conda-forge python=3.8 spyder -y`` (you can also install a newer python version)
+- ``conda create --name dfm_tools_env -c conda-forge python=3.9 spyder -y`` (you can also install a newer python version)
 - ``conda activate dfm_tools_env``
 - ``conda install -c conda-forge git shapely cartopy pyepsg geopandas contextily xarray dask netcdf4 bottleneck xugrid cdsapi pydap -y`` (installs conda-forge requirements)
 - install latest dfm_tools release: ``pip install dfm_tools``
