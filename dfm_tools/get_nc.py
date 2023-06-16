@@ -473,13 +473,10 @@ def rasterize_ugrid(uds:xu.UgridDataset, ds_like:xr.Dataset = None, resolution:f
 
     """
     #TODO: maybe put part of code in xugrid (https://github.com/Deltares/xugrid/issues/31)
-    #TODO: vars can also be rasterized with uds_facevars[var].ugrid.rasterize(resolution), but is not efficient. Wait for uds.rasterize() method: https://github.com/Deltares/xugrid/issues/61
     if not isinstance(uds,xu.core.wrap.UgridDataset):
         raise TypeError(f'rasterize_ugrid expected xu.core.wrap.UgridDataset, got {type(uds)} instead')
     
     grid = uds.grid
-    xu_facedim = uds.grid.face_dimension
-    uds_facevars = Dataset_varswithdim(uds,xu_facedim)
     
     if ds_like is not None:
         regx = ds_like.x
@@ -494,15 +491,12 @@ def rasterize_ugrid(uds:xu.UgridDataset, ds_like:xr.Dataset = None, resolution:f
         regx = np.arange(xmin + 0.5 * d, xmax, d)
         regy = np.arange(ymin + 0.5 * d, ymax, d)
     
-    regx, regy, index = grid.rasterize_like(x=regx,y=regy) #TODO: this can be used to steer rasterization, eg with xstart/ystart/xres/yres
-    index_da = xr.DataArray(index,dims=('y','x'))
-    
-    print(f'>> rasterizing ugrid dataset with {len(uds_facevars.data_vars)} face variables to shape={index_da.shape}: ',end='')
+    xu_facedim = uds.grid.face_dimension
+    uds_facevars = Dataset_varswithdim(uds,xu_facedim)
+    print(f'>> rasterizing ugrid dataset with {len(uds_facevars.data_vars)} face variables to shape=({len(regy)},{len(regx)}): ',end='')
     dtstart = dt.datetime.now()
-    ds = uds_facevars.isel({xu_facedim:index_da})
-    ds = ds.where(index_da != grid.fill_value)
-    ds['x'] = xr.DataArray(regx,dims='x')
-    ds['y'] = xr.DataArray(regy,dims='y')
+    index_da = xr.DataArray(np.empty((len(regy), len(regx))), {"y": regy, "x": regx}, ["y", "x"])
+    ds = uds.ugrid.rasterize_like(index_da)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
     return ds
