@@ -157,8 +157,8 @@ def open_OPeNDAP_xr(dataset_url, credentials=None):
             raise KeyError('CASTGC key missing from session cookies_dict, probably authentication failure')
         session.cookies.set("CASTGC", cookies_dict['CASTGC'])
         #TODO: add check for wrong dataset_id (now always "AttributeError: You cannot set the charset when no content-type is defined")
-        DAP_dataset = open_url(dataset_url, session=session, user_charset='utf-8')
-        data_store = xr.backends.PydapDataStore(DAP_dataset)
+        dap_dataset = open_url(dataset_url, session=session, user_charset='utf-8')
+        data_store = xr.backends.PydapDataStore(dap_dataset)
         return data_store
     
     if isinstance(dataset_url,list):
