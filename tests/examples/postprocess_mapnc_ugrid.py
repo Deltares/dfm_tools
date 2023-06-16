@@ -212,7 +212,7 @@ for file_nc in file_nc_list:
     fig.savefig(os.path.join(dir_output,f'{basename}_selxyslice'))
     
     
-    if 'westerscheldt01_0subst_map' not in file_nc: #TODO: skipping for esternscheldt since contourf/contour raise "ValueError: repeats may not contain negative values." (also happens in notebook) https://github.com/Deltares/xugrid/issues/68
+    if 'westerscheldt01_0subst_map' not in file_nc: #TODO: skipping for westernscheldt since contourf/contour raise "ValueError: repeats may not contain negative values." (also happens in notebook) https://github.com/Deltares/xugrid/issues/68
         print('plot bedlevel as polycollection, contourf, contour, rasterized')
         #create fancy plots, more options at https://deltares.github.io/xugrid/examples/plotting.html
         if clim_bl is None:
