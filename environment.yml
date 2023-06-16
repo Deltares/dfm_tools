@@ -22,7 +22,7 @@ dependencies:
   - bottleneck
   - xugrid>=0.2.1
   - cdsapi
-  - pydap
+  - pydap>=3.3.0
   - pip:
     - hydrolib-core>=0.5.1
     - meshkernel>=2.0.2
