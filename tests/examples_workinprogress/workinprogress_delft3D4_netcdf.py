@@ -117,7 +117,7 @@ for iT, timestep in enumerate([1,10,15]):
     ax.set_title(f't={timestep} ({timestr})')
     ax.set_aspect('equal')
     pc = ax.quiver(data_nc_XZ[::2,::2], data_nc_YZ[::2,::2], vel_x[::2,::2], vel_y[::2,::2], vel_magn[::2,::2],
-              scale=3,color='w',width=0.005, edgecolor='face', cmap='jet')
+              scale=3,color='w',width=0.005, cmap='jet')
     pc.set_clim([0,0.15])
     cbar = fig.colorbar(pc, ax=ax)
     cbar.set_label('velocity magnitude (%s)'%(ds_thiery_tsel.U1.attrs['units']))

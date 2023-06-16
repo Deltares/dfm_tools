@@ -83,7 +83,7 @@ lonvar_attrs = {'axis':'X',
 lonvar = xr.DataArray(reg_x_vec, dims=('longitude'), attrs=lonvar_attrs)
 data_xr_out['longitude'] = lonvar
 
-latvar_attrs = {'axis':'Y',
+latvar_attrs = {'axis':'Y', #TODO: attrs are not on data_rasterized.latitude
                 'reference':'geographical coordinates, WGS84 projection',
                 'units':'degrees_north',
                 '_CoordinateAxisType':'Lat',
@@ -115,6 +115,8 @@ for varname in varname_list:
     #source = ctx.providers.Esri.WorldImagery
     #ctx.add_basemap(ax, attribution=False, crs='epsg:4326', source=source)
     fig.savefig(os.path.join(dir_output, f'{model}_{varname}'))
+
+print('writing to netcdf')
 data_xr_out.to_netcdf(file_nc_out)
 
 

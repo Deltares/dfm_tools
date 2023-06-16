@@ -138,7 +138,7 @@ for RMM_name in ['RMM','RMMtestmodel']:
     data_nc_VELU_thin = data_nc_VELU.loc[::thinning,::thinning]
     data_nc_VELV_thin = data_nc_VELV.loc[::thinning,::thinning]
     ax.quiver(data_nc_VELU_thin.grid_x_cen, data_nc_VELU_thin.grid_y_cen, data_nc_VELU_thin, data_nc_VELV_thin, 
-              color='w',scale=10)#,width=0.005)#, edgecolor='face', cmap='jet')
+              color='w',scale=10)#,width=0.005)#, cmap='jet')
     if RMM_name=='RMM':
         ax.set_xlim([61000, 72000])
         ax.set_ylim([438000, 446000])
