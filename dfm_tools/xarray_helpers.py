@@ -341,36 +341,40 @@ def convert_meteo_units(data_xr):
     
     #convert Kelvin to Celcius
     for varkey_sel in ['air_temperature','dew_point_temperature','d2m','t2m']: # 2 meter dewpoint temparature / 2 meter temperature
-        if varkey_sel in varkeys:
-            current_unit = get_unit(data_xr[varkey_sel])
-            new_unit = 'C'
-            print(f'converting {varkey_sel} unit from Kelvin to Celcius: [{current_unit}] to [{new_unit}]')
-            data_xr[varkey_sel] = data_xr[varkey_sel] - 273.15
-            data_xr[varkey_sel].attrs['units'] = new_unit
+        if varkey_sel not in varkeys:
+            continue
+        current_unit = get_unit(data_xr[varkey_sel])
+        new_unit = 'C'
+        print(f'converting {varkey_sel} unit from Kelvin to Celcius: [{current_unit}] to [{new_unit}]')
+        data_xr[varkey_sel] = data_xr[varkey_sel] - 273.15
+        data_xr[varkey_sel].attrs['units'] = new_unit
     #convert fraction to percentage
     for varkey_sel in ['cloud_area_fraction','tcc']: #total cloud cover
-        if varkey_sel in varkeys:
-            current_unit = get_unit(data_xr[varkey_sel])
-            new_unit = '%' #unit is soms al %
-            print(f'converting {varkey_sel} unit from fraction to percentage: [{current_unit}] to [{new_unit}]')
-            data_xr[varkey_sel] = data_xr[varkey_sel] * 100
-            data_xr[varkey_sel].attrs['units'] = new_unit
+        if varkey_sel not in varkeys:
+            continue
+        current_unit = get_unit(data_xr[varkey_sel])
+        new_unit = '%' #unit is soms al %
+        print(f'converting {varkey_sel} unit from fraction to percentage: [{current_unit}] to [{new_unit}]')
+        data_xr[varkey_sel] = data_xr[varkey_sel] * 100
+        data_xr[varkey_sel].attrs['units'] = new_unit
     #convert kg/m2/s to mm/day
     for varkey_sel in ['mer','mtpr']: #mean evaporation rate / mean total precipitation rate
-        if varkey_sel in varkeys:
-            current_unit = get_unit(data_xr[varkey_sel])
-            new_unit = 'mm/day'
-            print(f'converting {varkey_sel} unit from kg/m2/s to mm/day: [{current_unit}] to [{new_unit}]')
-            data_xr[varkey_sel] = data_xr[varkey_sel] * 86400 # kg/m2/s to mm/day (assuming rho_water=1000)
-            data_xr[varkey_sel].attrs['units'] = new_unit
+        if varkey_sel not in varkeys:
+            continue
+        current_unit = get_unit(data_xr[varkey_sel])
+        new_unit = 'mm/day'
+        print(f'converting {varkey_sel} unit from kg/m2/s to mm/day: [{current_unit}] to [{new_unit}]')
+        data_xr[varkey_sel] = data_xr[varkey_sel] * 86400 # kg/m2/s to mm/day (assuming rho_water=1000)
+        data_xr[varkey_sel].attrs['units'] = new_unit
     #convert J/m2 to W/m2
     for varkey_sel in ['ssr','strd']: #solar influx (surface_net_solar_radiation) / surface_thermal_radiation_downwards
-        if varkey_sel in varkeys:
-            current_unit = get_unit(data_xr[varkey_sel])
-            new_unit = 'W m**-2'
-            print(f'converting {varkey_sel} unit from J/m2 to W/m2: [{current_unit}] to [{new_unit}]')
-            data_xr[varkey_sel] = data_xr[varkey_sel] / 3600 # 3600s/h #TODO: 1W = 1J/s, so does not make sense?
-            data_xr[varkey_sel].attrs['units'] = new_unit
+        if varkey_sel not in varkeys:
+            continue
+        current_unit = get_unit(data_xr[varkey_sel])
+        new_unit = 'W m**-2'
+        print(f'converting {varkey_sel} unit from J/m2 to W/m2: [{current_unit}] to [{new_unit}]')
+        data_xr[varkey_sel] = data_xr[varkey_sel] / 3600 # 3600s/h #TODO: 1W = 1J/s, so does not make sense?
+        data_xr[varkey_sel].attrs['units'] = new_unit
     #solar influx increase for beta=6%
     if 'ssr' in varkeys:
         print('ssr (solar influx) increase for beta=6%')
