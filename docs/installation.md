@@ -12,7 +12,7 @@
 - ``conda create --name dfm_tools_env -c conda-forge python=3.9 spyder -y`` (you can also install a newer python version)
 - ``conda activate dfm_tools_env``
 - ``conda install -c conda-forge git shapely cartopy pyepsg geopandas contextily xarray dask netcdf4 bottleneck xugrid cdsapi pydap -y`` (installs conda-forge requirements)
-- install latest dfm_tools release: ``pip install dfm_tools``
+- install latest dfm_tools release: ``pip install dfm_tools -U`` (the ``-U`` is for updating)
 - alternatively install most recent dfm_tools version from github: ``python -m pip install git+https://github.com/Deltares/dfm_tools``
 - to remove environment when necessary: ``conda remove -n dfm_tools_env --all``
 
