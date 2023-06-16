@@ -11,7 +11,6 @@ from pathlib import Path
 import xarray as xr
 from pydap.client import open_url
 from pydap.cas.get_cookies import setup_session
-import warnings
 from dfm_tools.errors import OutOfRangeError
 import cdsapi
 import cftime
