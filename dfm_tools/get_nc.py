@@ -476,13 +476,8 @@ def rasterize_ugrid(uds:xu.UgridDataset, ds_like:xr.Dataset = None, resolution:f
     if not isinstance(uds,xu.core.wrap.UgridDataset):
         raise TypeError(f'rasterize_ugrid expected xu.core.wrap.UgridDataset, got {type(uds)} instead')
     
-    grid = uds.grid
-    
-    if ds_like is not None:
-        regx = ds_like.x
-        regy = ds_like.y
-    else:
-        xmin, ymin, xmax, ymax = grid.bounds
+    if ds_like is None:
+        xmin, ymin, xmax, ymax = uds.grid.bounds
         dx = xmax - xmin
         dy = ymax - ymin
         if resolution is None: # check if a rasterization resolution is passed, otherwise default to 200 raster cells otherwise for the smallest axis.
@@ -490,13 +485,13 @@ def rasterize_ugrid(uds:xu.UgridDataset, ds_like:xr.Dataset = None, resolution:f
         d = abs(resolution)
         regx = np.arange(xmin + 0.5 * d, xmax, d)
         regy = np.arange(ymin + 0.5 * d, ymax, d)
+        ds_like = xr.DataArray(np.empty((len(regy), len(regx))), {"y": regy, "x": regx}, ["y", "x"])
     
     xu_facedim = uds.grid.face_dimension
     uds_facevars = Dataset_varswithdim(uds,xu_facedim)
-    print(f'>> rasterizing ugrid dataset with {len(uds_facevars.data_vars)} face variables to shape=({len(regy)},{len(regx)}): ',end='')
+    print(f'>> rasterizing ugrid dataset with {len(uds_facevars.data_vars)} face variables to shape=({len(ds_like.y)},{len(ds_like.y)}): ',end='')
     dtstart = dt.datetime.now()
-    index_da = xr.DataArray(np.empty((len(regy), len(regx))), {"y": regy, "x": regx}, ["y", "x"])
-    ds = uds.ugrid.rasterize_like(index_da)
+    ds = uds.ugrid.rasterize_like(other=ds_like)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
     return ds

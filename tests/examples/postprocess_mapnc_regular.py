@@ -78,7 +78,7 @@ for file_nc in file_nc_list:
         data_u_thin = data_u_tsel.loc[::thinning,::thinning]
         data_v_thin = data_v_tsel.loc[::thinning,::thinning]
         ax.quiver(data_u_thin[name_uv_x], data_u_thin[name_uv_y], data_u_thin, data_v_thin, #raises warnings for some reason
-                  color='w')#,scale=50,width=0.008)#, edgecolor='face', cmap='jet')
+                  color='w')#,scale=50,width=0.008), cmap='jet')
     fig.tight_layout()
     plt.savefig(os.path.join(dir_output,f'{basename}_magn_pcolorquiver'))
 

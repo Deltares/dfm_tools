@@ -68,7 +68,7 @@ for iT, timestep in enumerate([2,3]):#[0,10,20,30]:
         newdata[varname] = data_sel_var.to_numpy() #can only have faces dimension (no time/layer)
         
         fig, ax = plt.subplots()
-        data_sel_var.ugrid.plot(cmap='viridis',edgecolor='face')
+        data_sel_var.ugrid.plot(cmap='viridis')
         fig.tight_layout()
     
     timestamp = data_map_timesel.time.dt.strftime('%Y%m%d').data

@@ -44,7 +44,7 @@ elif mode=='gtsm':
     #plot
     fig,ax = plt.subplots()
     uds_sel_speed = np.sqrt(uds_sel.ucx*uds_sel.ucx + uds_sel.ucy*uds_sel.ucy)
-    uds_sel_speed.ugrid.plot(edgecolor='face',cmap='jet',vmax=1)
+    uds_sel_speed.ugrid.plot(cmap='jet',vmax=1)
     #ax.quiver(X, Y, U, V, color='w')
     speed = np.sqrt(U*U + V*V)
     strm = dfmt.velovect(ax, X, Y, U, V, color='w', cmap='winter', arrowstyle='fancy', linewidth=speed*2, integration_direction='forward',
