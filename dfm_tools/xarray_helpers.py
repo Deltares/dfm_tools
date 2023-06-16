@@ -249,7 +249,7 @@ def merge_meteofiles(file_nc:str, preprocess=None,
     print(f'>> opening multifile dataset of {len(file_nc_list)} files (can take a while with lots of files): ',end='')
     dtstart = dt.datetime.now()
     data_xr = xr.open_mfdataset(file_nc_list,
-                                parallel=True, #TODO: speeds up the process, but often "OSError: [Errno -51] NetCDF: Unknown file format" on WCF
+                                #parallel=True, #TODO: speeds up the process, but often "OSError: [Errno -51] NetCDF: Unknown file format" on WCF
                                 preprocess=preprocess,
                                 chunks=chunks,
                                 drop_variables=drop_variables, #necessary since dims/vars with equal names are not allowed by xarray, add again later and requested matroos to adjust netcdf format.
@@ -327,7 +327,8 @@ def merge_meteofiles(file_nc:str, preprocess=None,
 
 def convert_meteo_units(data_xr):
     
-    #TODO: check conversion implementation with hydro_tools\ERA5\ERA52DFM.py.
+    #TODO: check conversion implementation with hydro_tools\ERA5\ERA52DFM.py
+    #TODO: keep/update attrs
     
     def get_unit(data_xr_var):
         if 'units' in data_xr_var.attrs.keys():
@@ -344,32 +345,32 @@ def convert_meteo_units(data_xr):
             current_unit = get_unit(data_xr[varkey_sel])
             new_unit = 'C'
             print(f'converting {varkey_sel} unit from Kelvin to Celcius: [{current_unit}] to [{new_unit}]')
-            data_xr[varkey_sel].attrs['units'] = new_unit
             data_xr[varkey_sel] = data_xr[varkey_sel] - 273.15
+            data_xr[varkey_sel].attrs['units'] = new_unit
     #convert fraction to percentage
     for varkey_sel in ['cloud_area_fraction','tcc']: #total cloud cover
         if varkey_sel in varkeys:
             current_unit = get_unit(data_xr[varkey_sel])
             new_unit = '%' #unit is soms al %
             print(f'converting {varkey_sel} unit from fraction to percentage: [{current_unit}] to [{new_unit}]')
-            data_xr[varkey_sel].attrs['units'] = new_unit
             data_xr[varkey_sel] = data_xr[varkey_sel] * 100
+            data_xr[varkey_sel].attrs['units'] = new_unit
     #convert kg/m2/s to mm/day
     for varkey_sel in ['mer','mtpr']: #mean evaporation rate / mean total precipitation rate
         if varkey_sel in varkeys:
             current_unit = get_unit(data_xr[varkey_sel])
             new_unit = 'mm/day'
             print(f'converting {varkey_sel} unit from kg/m2/s to mm/day: [{current_unit}] to [{new_unit}]')
-            data_xr[varkey_sel].attrs['units'] = new_unit
             data_xr[varkey_sel] = data_xr[varkey_sel] * 86400 # kg/m2/s to mm/day (assuming rho_water=1000)
+            data_xr[varkey_sel].attrs['units'] = new_unit
     #convert J/m2 to W/m2
     for varkey_sel in ['ssr','strd']: #solar influx (surface_net_solar_radiation) / surface_thermal_radiation_downwards
         if varkey_sel in varkeys:
             current_unit = get_unit(data_xr[varkey_sel])
             new_unit = 'W m**-2'
             print(f'converting {varkey_sel} unit from J/m2 to W/m2: [{current_unit}] to [{new_unit}]')
-            data_xr[varkey_sel].attrs['units'] = new_unit
             data_xr[varkey_sel] = data_xr[varkey_sel] / 3600 # 3600s/h #TODO: 1W = 1J/s, so does not make sense?
+            data_xr[varkey_sel].attrs['units'] = new_unit
     #solar influx increase for beta=6%
     if 'ssr' in varkeys:
         print('ssr (solar influx) increase for beta=6%')
