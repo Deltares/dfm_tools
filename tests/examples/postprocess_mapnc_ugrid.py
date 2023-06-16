@@ -224,8 +224,8 @@ for file_nc in file_nc_list:
         pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot.contourf(ax=ax2, levels=11, cmap='jet', vmin=vmin, vmax=vmax)
         if 'cb_3d_map' not in file_nc: #TODO: cb_3d_map fails on contour with "UserWarning: No contour levels were found within the data range." (because all bedlevels are -5m) >> colorbar gives error, is this an xugrid or matplotlib issue?
             pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot.contour(ax=ax3, levels=11, cmap='jet', vmin=vmin, vmax=vmax, add_colorbar=True)
-    bl_raster = dfmt.rasterize_ugrid(data_frommap_merged['mesh2d_flowelem_bl'],resolution=raster_res) #rasterize ugrid uds/uda
-    pc = bl_raster.plot(ax=ax4, cmap='jet', vmin=vmin, vmax=vmax) #plot with non-ugrid method
+        bl_raster = dfmt.rasterize_ugrid(data_frommap_merged['mesh2d_flowelem_bl'],resolution=raster_res) #rasterize ugrid uds/uda
+        pc = bl_raster.plot(ax=ax4, cmap='jet', vmin=vmin, vmax=vmax) #plot with non-ugrid method
         fig.tight_layout()
         fig.savefig(os.path.join(dir_output,f'{basename}_gridbedcontour'))
     
