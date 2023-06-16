@@ -249,7 +249,7 @@ def merge_meteofiles(file_nc:str, preprocess=None,
     print(f'>> opening multifile dataset of {len(file_nc_list)} files (can take a while with lots of files): ',end='')
     dtstart = dt.datetime.now()
     data_xr = xr.open_mfdataset(file_nc_list,
-                                parallel=True, #speeds up the process
+                                #parallel=True, #TODO: speeds up the process, but often "OSError: [Errno -51] NetCDF: Unknown file format" on WCF
                                 preprocess=preprocess,
                                 chunks=chunks,
                                 drop_variables=drop_variables, #necessary since dims/vars with equal names are not allowed by xarray, add again later and requested matroos to adjust netcdf format.
@@ -265,21 +265,20 @@ def merge_meteofiles(file_nc:str, preprocess=None,
         else:
             raise KeyError('no longitude/latitude, lon/lat or x/y variables found in dataset')
 
-    varkeys = data_xr.variables.mapping.keys()
     #data_xr.attrs['comment'] = 'merged with dfm_tools from https://github.com/Deltares/dfm_tools' #TODO: add something like this or other attributes? (some might also be dropped now)
     
     #select time and do checks #TODO: check if calendar is standard/gregorian
-    data_xr_tsel = data_xr.sel(time=time_slice)
-    if data_xr_tsel.get_index('time').duplicated().any():
+    data_xr = data_xr.sel(time=time_slice)
+    if data_xr.get_index('time').duplicated().any():
         print('dropping duplicate timesteps')
-        data_xr_tsel = data_xr_tsel.sel(time=~data_xr_tsel.get_index('time').duplicated()) #drop duplicate timesteps
+        data_xr = data_xr.sel(time=~data_xr.get_index('time').duplicated()) #drop duplicate timesteps
     
     #check if there are times selected
-    if len(data_xr_tsel.time)==0:
+    if len(data_xr.time)==0:
         raise OutOfRangeError(f'ERROR: no times selected, ds_text={data_xr.time[[0,-1]].to_numpy()} and time_slice={time_slice}')
     
     #check if there are no gaps (more than one unique timestep)
-    times_pd = data_xr_tsel['time'].to_series()
+    times_pd = data_xr['time'].to_series()
     timesteps_uniq = times_pd.diff().iloc[1:].unique()
     if len(timesteps_uniq)>1:
         raise Exception(f'ERROR: gaps found in selected dataset (are there sourcefiles missing?), unique timesteps (hour): {timesteps_uniq/1e9/3600}')
@@ -290,79 +289,99 @@ def merge_meteofiles(file_nc:str, preprocess=None,
     if time_slice.stop not in times_pd.index:
         raise OutOfRangeError(f'ERROR: time_slice_stop="{time_slice.stop}" not in selected files, timerange: "{times_pd.index[0]}" to "{times_pd.index[-1]}"')
     
-    #TODO: check conversion implementation with hydro_tools\ERA5\ERA52DFM.py. Also move to separate function?
+    data_xr = convert_meteo_units(data_xr)
+    
+    #convert 0to360 sourcedata to -180to+180
+    convert_360to180 = (data_xr['longitude'].to_numpy()>180).any()
+    if convert_360to180: #TODO: make more flexible for models that eg pass -180/+180 crossing (add overlap at lon edges).
+        lon_newvar = (data_xr.coords['longitude'] + 180) % 360 - 180
+        data_xr.coords['longitude'] = lon_newvar.assign_attrs(data_xr['longitude'].attrs) #this re-adds original attrs
+        data_xr = data_xr.sortby(data_xr['longitude'])
+    
+    #GTSM specific addition for longitude overlap
+    if add_global_overlap: # assumes -180 to ~+179.75 (full global extent, but no overlap). Does not seem to mess up results for local models.
+        if len(data_xr.longitude.values) != len(np.unique(data_xr.longitude.values%360)):
+            raise Exception(f'add_global_overlap=True, but there are already overlapping longitude values: {data_xr.longitude}')
+        overlap_ltor = data_xr.sel(longitude=data_xr.longitude<=-179)
+        overlap_ltor['longitude'] = overlap_ltor['longitude'] + 360
+        overlap_rtol = data_xr.sel(longitude=data_xr.longitude>=179)
+        overlap_rtol['longitude'] = overlap_rtol['longitude'] - 360
+        data_xr = xr.concat([data_xr,overlap_ltor,overlap_rtol],dim='longitude').sortby('longitude')
+    
+    #GTSM specific addition for zerovalues during spinup
+    #TODO: doing this drops all encoding from variables, causing them to be converted into floats. Also makes sense since 0 pressure does not fit into int16 range as defined by scalefac and offset
+    #'scale_factor': 0.17408786412952254, 'add_offset': 99637.53795606793
+    #99637.53795606793 - 0.17408786412952254*32768
+    #99637.53795606793 + 0.17408786412952254*32767
+    if zerostart:
+        field_zerostart = data_xr.isel(time=[0,0])*0 #two times first field, set values to 0
+        field_zerostart['time'] = [times_pd.index[0]-dt.timedelta(days=2),times_pd.index[0]-dt.timedelta(days=1)] #TODO: is one zero field not enough? (is replacing first field not also ok? (results in 1hr transition period)
+        data_xr = xr.concat([field_zerostart,data_xr],dim='time',combine_attrs='no_conflicts') #combine_attrs argument prevents attrs from being dropped
+    
+    # converting from int16 to float32 (by removing dtype from encoding) or recompute scale_factor/add_offset is necessary for ERA5 dataset
+    #data_xr = prevent_dtype_int(data_xr)
+    data_xr = recompute_scaling_and_offset(data_xr)
+    
+    return data_xr
+
+
+def convert_meteo_units(data_xr):
+    
+    #TODO: check conversion implementation with hydro_tools\ERA5\ERA52DFM.py
+    #TODO: keep/update attrs
+    #TODO: reduce code complexity
+    
     def get_unit(data_xr_var):
         if 'units' in data_xr_var.attrs.keys():
             unit = data_xr_var.attrs["units"]
         else:
             unit = '-'
         return unit
+    
+    varkeys = data_xr.variables.mapping.keys()
+    
     #convert Kelvin to Celcius
     for varkey_sel in ['air_temperature','dew_point_temperature','d2m','t2m']: # 2 meter dewpoint temparature / 2 meter temperature
-        if varkey_sel in varkeys:
-            current_unit = get_unit(data_xr_tsel[varkey_sel])
-            new_unit = 'C'
-            print(f'converting {varkey_sel} unit from Kelvin to Celcius: [{current_unit}] to [{new_unit}]')
-            data_xr_tsel[varkey_sel].attrs['units'] = new_unit
-            data_xr_tsel[varkey_sel] = data_xr_tsel[varkey_sel] - 273.15
+        if varkey_sel not in varkeys:
+            continue
+        current_unit = get_unit(data_xr[varkey_sel])
+        new_unit = 'C'
+        print(f'converting {varkey_sel} unit from Kelvin to Celcius: [{current_unit}] to [{new_unit}]')
+        data_xr[varkey_sel] = data_xr[varkey_sel] - 273.15
+        data_xr[varkey_sel].attrs['units'] = new_unit
     #convert fraction to percentage
     for varkey_sel in ['cloud_area_fraction','tcc']: #total cloud cover
-        if varkey_sel in varkeys:
-            current_unit = get_unit(data_xr_tsel[varkey_sel])
-            new_unit = '%' #unit is soms al %
-            print(f'converting {varkey_sel} unit from fraction to percentage: [{current_unit}] to [{new_unit}]')
-            data_xr_tsel[varkey_sel].attrs['units'] = new_unit
-            data_xr_tsel[varkey_sel] = data_xr_tsel[varkey_sel] * 100
+        if varkey_sel not in varkeys:
+            continue
+        current_unit = get_unit(data_xr[varkey_sel])
+        new_unit = '%' #unit is soms al %
+        print(f'converting {varkey_sel} unit from fraction to percentage: [{current_unit}] to [{new_unit}]')
+        data_xr[varkey_sel] = data_xr[varkey_sel] * 100
+        data_xr[varkey_sel].attrs['units'] = new_unit
     #convert kg/m2/s to mm/day
     for varkey_sel in ['mer','mtpr']: #mean evaporation rate / mean total precipitation rate
-        if varkey_sel in varkeys:
-            current_unit = get_unit(data_xr_tsel[varkey_sel])
-            new_unit = 'mm/day'
-            print(f'converting {varkey_sel} unit from kg/m2/s to mm/day: [{current_unit}] to [{new_unit}]')
-            data_xr_tsel[varkey_sel].attrs['units'] = new_unit
-            data_xr_tsel[varkey_sel] = data_xr_tsel[varkey_sel] * 86400 # kg/m2/s to mm/day (assuming rho_water=1000)
+        if varkey_sel not in varkeys:
+            continue
+        current_unit = get_unit(data_xr[varkey_sel])
+        new_unit = 'mm/day'
+        print(f'converting {varkey_sel} unit from kg/m2/s to mm/day: [{current_unit}] to [{new_unit}]')
+        data_xr[varkey_sel] = data_xr[varkey_sel] * 86400 # kg/m2/s to mm/day (assuming rho_water=1000)
+        data_xr[varkey_sel].attrs['units'] = new_unit
     #convert J/m2 to W/m2
     for varkey_sel in ['ssr','strd']: #solar influx (surface_net_solar_radiation) / surface_thermal_radiation_downwards
-        if varkey_sel in varkeys:
-            current_unit = get_unit(data_xr_tsel[varkey_sel])
-            new_unit = 'W m**-2'
-            print(f'converting {varkey_sel} unit from J/m2 to W/m2: [{current_unit}] to [{new_unit}]')
-            data_xr_tsel[varkey_sel].attrs['units'] = new_unit
-            data_xr_tsel[varkey_sel] = data_xr_tsel[varkey_sel] / 3600 # 3600s/h #TODO: 1W = 1J/s, so does not make sense?
+        if varkey_sel not in varkeys:
+            continue
+        current_unit = get_unit(data_xr[varkey_sel])
+        new_unit = 'W m**-2'
+        print(f'converting {varkey_sel} unit from J/m2 to W/m2: [{current_unit}] to [{new_unit}]')
+        data_xr[varkey_sel] = data_xr[varkey_sel] / 3600 # 3600s/h #TODO: 1W = 1J/s, so does not make sense?
+        data_xr[varkey_sel].attrs['units'] = new_unit
     #solar influx increase for beta=6%
     if 'ssr' in varkeys:
         print('ssr (solar influx) increase for beta=6%')
-        data_xr_tsel['ssr'] = data_xr_tsel['ssr'] *.94
+        data_xr['ssr'] = data_xr['ssr'] *.94
     
-    #convert 0to360 sourcedata to -180to+180
-    convert_360to180 = (data_xr['longitude'].to_numpy()>180).any()
-    if convert_360to180:
-        data_xr.coords['longitude'] = (data_xr.coords['longitude'] + 180) % 360 - 180
-        data_xr = data_xr.sortby(data_xr['longitude'])
-    
-    #GTSM specific addition for longitude overlap
-    if add_global_overlap: # assumes -180 to ~+179.75 (full global extent, but no overlap). Does not seem to mess up results for local models.
-        if len(data_xr_tsel.longitude.values) != len(np.unique(data_xr_tsel.longitude.values%360)):
-            raise Exception(f'add_global_overlap=True, but there are already overlapping longitude values: {data_xr_tsel.longitude}')
-        overlap_ltor = data_xr_tsel.sel(longitude=data_xr_tsel.longitude<=-179)
-        overlap_ltor['longitude'] = overlap_ltor['longitude'] + 360
-        overlap_rtol = data_xr_tsel.sel(longitude=data_xr_tsel.longitude>=179)
-        overlap_rtol['longitude'] = overlap_rtol['longitude'] - 360
-        data_xr_tsel = xr.concat([data_xr_tsel,overlap_ltor,overlap_rtol],dim='longitude').sortby('longitude')
-    
-    #GTSM specific addition for zerovalues during spinup
-    if zerostart:
-        field_zerostart = data_xr_tsel.isel(time=[0,0])*0 #two times first field, set values to 0
-        field_zerostart['time'] = [times_pd.index[0]-dt.timedelta(days=2),times_pd.index[0]-dt.timedelta(days=1)] #TODO: is one zero field not enough? (is replacing first field not also ok? (results in 1hr transition period)
-        data_xr_tsel = xr.concat([field_zerostart,data_xr_tsel],dim='time')#.sortby('time')
-    
-    # converting from int16 to float32 (by removing dtype from encoding) or recompute scale_factor/add_offset is necessary for ERA5 dataset
-    #data_xr_tsel = prevent_dtype_int(data_xr_tsel)
-    data_xr_tsel = recompute_scaling_and_offset(data_xr_tsel)
-    
-    #data_xr_tsel.time.encoding['units'] = 'hours since 1900-01-01 00:00:00' #TODO: maybe add different reftime?
-    
-    return data_xr_tsel
+    return data_xr
 
 
 def Dataset_varswithdim(ds,dimname): #TODO: dit zit ook in xugrid, wordt nu gebruikt in hisfile voorbeeldscript en kan handig zijn, maar misschien die uit xugrid gebruiken?
