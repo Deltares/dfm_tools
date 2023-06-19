@@ -21,8 +21,8 @@ def test_opendataset_ugridplot(): #this one fails with xarray>=2023.3.0: https:/
     file_nc = os.path.join(dir_testinput,'DFM_curvedbend_3D/cb_3d_map.nc')
     
     uds = xu.open_dataset(file_nc,chunks={'time':1})
-
-    uds['mesh2d_flowelem_bl'].ugrid.plot(edgecolors='face', cmap='jet')
+    
+    uds['mesh2d_flowelem_bl'].ugrid.plot()
 
 
 @pytest.mark.unittest
