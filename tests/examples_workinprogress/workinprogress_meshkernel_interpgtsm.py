@@ -25,7 +25,7 @@ file_net = r'p:\1230882-emodnet_hrsm\global_tide_surge_model\trunk\gtsm4.1\step1
 uds = xu.open_dataset(file_net)
 nnodes = uds.dims[uds.grid.node_dimension]
 
-stepsize = 20 #this is optimal, 5 takes 900-1000 sec, 10 takes 500-600 sec, 20 takes 95 sec, 30 takes 377 sec
+stepsize = 20 #20 seems optimal, 5 takes 900-1000 sec, 10 takes 500-600 sec, 20 takes 95 sec, 30 takes 377 sec
 print(f'interpolating GEBCO to {nnodes} nodes in 360/{stepsize}={360/stepsize} steps:')
 dtstart = dt.datetime.now()
 for i in range(-180, 180, stepsize):
@@ -42,7 +42,7 @@ for i in range(-180, 180, stepsize):
 
 print('plot data grid')
 print(uds['NetNode_z'].isnull().sum()) #check if there are missing z-values
-#uds.NetNode_z.ugrid.plot()
+#uds.NetNode_z.ugrid.plot(center=False)
 
 print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
 
