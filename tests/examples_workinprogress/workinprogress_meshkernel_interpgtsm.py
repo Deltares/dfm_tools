@@ -37,7 +37,7 @@ for i in range(-180, 180, stepsize):
     x_sel, y_sel = uds.grid.node_coordinates[bool_nodeinslice].T
     x_sel_ds = xr.DataArray(x_sel,dims=(uds.grid.node_dimension))
     y_sel_ds = xr.DataArray(y_sel,dims=(uds.grid.node_dimension))
-    z_sel = ds_gebco.interp(lon=x_sel_ds, lat=y_sel_ds).reset_coords(['lat','lon']) #interpolates lon/lat gebcodata to mesh2d_nNodes dimension #TODO: if these come from xu_grid_uds (without ojb), the mesh2d_node_z var has no ugrid accessor since the dims are lat/lon instead of mesh2d_nNodes
+    z_sel = ds_gebco.interp(lon=x_sel_ds, lat=y_sel_ds)
     uds['NetNode_z'][bool_nodeinslice] = z_sel.elevation
 
 print('plot data grid')
