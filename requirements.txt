@@ -1,7 +1,7 @@
 scipy<1.10.0
 numpy
 matplotlib
-pandas
+pandas<2.0.2
 shapely>=1.7.0
 #cartopy #commented since cartopy is not pip installable
 pyepsg
