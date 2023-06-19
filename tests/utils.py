@@ -17,10 +17,14 @@ def maybe_download_testdata():
     #find dir_testinput
     dir_testinput = os.path.join(r'c:\DATA','dfm_tools_testdata') #on WCF
     if os.path.exists(dir_testinput):
+        print(f'local testdata found in {dir_testinput}')
         return dir_testinput
     dir_testinput = './dfm_tools_testdata' #for instance when running on github
     if os.path.exists(dir_testinput): #escape when data is already downloaded
+        print(f'local testdata found in {dir_testinput}')
         return dir_testinput
+    
+    print(f'no local testdata found, files are downloaded to {dir_testinput}')
     
     fname_list = []
     fname_list += ['DFM_curvedbend_3D/cb_3d_map.nc']
