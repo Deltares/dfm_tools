@@ -8,7 +8,8 @@ dependencies:
   - scipy<1.10.0
   - numpy
   - matplotlib
-  - pandas
+  #install pandas<2.0.2 to avoid conflict with xarray<2023.3.0: https://github.com/Deltares/xugrid/issues/78#issuecomment-1597723955
+  - pandas<2.0.2
   - shapely>=1.7.0
   #cartopy is not pip installable, so it is commented in setup.cfg and requirements.txt
   - cartopy
