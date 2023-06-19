@@ -7,7 +7,6 @@ Created on Mon Jun 19 22:03:43 2023
 
 import pytest
 import os
-import dfm_tools as dfmt
 import numpy as np
 import xarray as xr
 import xugrid as xu
@@ -21,7 +20,7 @@ dir_testinput = maybe_download_testdata()
 def test_opendataset_ugridplot(): #this one fails with xarray>=2023.3.0: https://github.com/Deltares/xugrid/issues/78
     file_nc = os.path.join(dir_testinput,'DFM_curvedbend_3D/cb_3d_map.nc')
     
-    uds = dfmt.open_partitioned_dataset(file_nc,chunks={'time':1})
+    uds = xu.open_dataset(file_nc,chunks={'time':1})
 
     uds['mesh2d_flowelem_bl'].ugrid.plot(edgecolors='face', cmap='jet')
 
