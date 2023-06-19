@@ -33,7 +33,7 @@ model = 'CMEMS' #CMEMS GFDL CMCC HYCOM
 
 
 #The {ncvarname} wildcard in dir_pattern_hydro/dir_patern_waq is used to replace it with conversion_dict[quantity]['ncvarname'] by using str(dir_pattern).format(ncvarname)
-list_plifiles = [Path(r'p:\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli')]
+list_plifiles = [Path(r'p:\archivedprojects\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli')]
 if model=='CMEMS': #2012-01-06 12:00:00 to 2013-01-03 12:00:00
     conversion_dict = dfmt.get_conversion_dict()
     tstart = '2012-01-16 12:00'
