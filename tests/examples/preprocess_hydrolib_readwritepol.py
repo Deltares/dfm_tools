@@ -21,7 +21,7 @@ dtstart = dt.datetime.now()
 
 write_outfile = False
 
-file_pli_list = [r'p:\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli',
+file_pli_list = [r'p:\archivedprojects\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli',
                  os.path.join(dir_testinput,'GSHHS_high_min1000km2.ldb'),
                  os.path.join(dir_testinput,'DFM_grevelingen_3D\\Grevelingen-FM_BL_fxw.pliz'),
                  os.path.join(dir_testinput,r'Maeslant.tek'),
