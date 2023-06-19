@@ -10,6 +10,8 @@ import os
 import dfm_tools as dfmt
 import numpy as np
 import xarray as xr
+import xugrid as xu
+import warnings
 
 from tests.utils import maybe_download_testdata
 dir_testinput = maybe_download_testdata()
@@ -75,4 +77,14 @@ def test_xr_interp_to_newdim(): #this one fails with scipy>=1.10.0: https://gith
     
     assert (interp_with_floats.isnull()==interp_with_da_existing.isnull()).all() #success
     assert (interp_with_floats.isnull()==interp_with_da_newdim.isnull()).all() #fails with scipy>=1.10.0
+
+
+@pytest.mark.unittest
+def test_xugrid_runtimewarning_invalid_value_encountered_in_cast(): #to catch the recently introduced "RuntimeWarning: invalid value encountered in cast"
+    warnings.filterwarnings("error") #set warnings as errors
+    
+    file_nc = os.path.join(dir_testinput,'DFM_grevelingen_3D','Grevelingen-FM_0003_map.nc')
+    xu.open_dataset(file_nc)
+    
+    warnings.resetwarnings() #set warnings back to warnings
 
