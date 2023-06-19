@@ -2,7 +2,7 @@
 
 ## Setup local developer environment
 
-- download and install Anaconda 64 bit Python 3.8 (or higher) from [anaconda.com](https://www.anaconda.com/distribution/#download-section) (miniconda should also be sufficient, but this is not yet tested). Install it with the recommended settings.
+- download and install Anaconda 64 bit Python 3.9 (or higher) from [anaconda.com](https://www.anaconda.com/distribution/#download-section) (miniconda should also be sufficient, but this is not yet tested). Install it with the recommended settings.
 - download git from [git-scm.com](https://git-scm.com/download/win), install with default settings
 - open git bash window where you want to clone the dfm_tools github repository (e.g. ``C:\DATA\``)
 - git clone https://github.com/deltares/dfm_tools (creates a folder dfm_tools with the checked out repository)
