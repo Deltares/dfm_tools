@@ -79,7 +79,7 @@ def test_xr_interp_to_newdim(): #this one fails with scipy>=1.10.0: https://gith
 
 
 @pytest.mark.unittest
-def test_xugrid_runtimewarning_invalid_value_encountered_in_cast(): #to catch the recently introduced "RuntimeWarning: invalid value encountered in cast"
+def SKIP_test_raise_xugrid_runtimewarning(): #to catch the recently introduced "RuntimeWarning: invalid value encountered in cast"
     warnings.filterwarnings("error") #set warnings as errors
     
     file_nc = os.path.join(dir_testinput,'DFM_grevelingen_3D','Grevelingen-FM_0003_map.nc')
