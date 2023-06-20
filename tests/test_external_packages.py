@@ -77,13 +77,3 @@ def test_xr_interp_to_newdim(): #this one fails with scipy>=1.10.0: https://gith
     assert (interp_with_floats.isnull()==interp_with_da_existing.isnull()).all() #success
     assert (interp_with_floats.isnull()==interp_with_da_newdim.isnull()).all() #fails with scipy>=1.10.0
 
-
-@pytest.mark.unittest
-def SKIP_test_raise_xugrid_runtimewarning(): #to catch the recently introduced "RuntimeWarning: invalid value encountered in cast"
-    warnings.filterwarnings("error") #set warnings as errors
-    
-    file_nc = os.path.join(dir_testinput,'DFM_grevelingen_3D','Grevelingen-FM_0003_map.nc')
-    xu.open_dataset(file_nc)
-    
-    warnings.resetwarnings() #set warnings back to warnings
-
