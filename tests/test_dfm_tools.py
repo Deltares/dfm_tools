@@ -40,16 +40,6 @@ def test_run_examples(file_config):
 
 ##### UNITTESTS AND SYSTEMTESTS
 
-@pytest.mark.unittest
-def test_import_shapely():
-    """
-    tests whether shapely can be imported successfully, this is a problem in some environments
-    in that case 'import shapely' works, but import 'shapely.geometry' fails
-    """
-    import shapely
-    import shapely.geometry
-    
-
 @pytest.mark.parametrize("file_nc, expected_size", [pytest.param(os.path.join(dir_testinput,'DFM_grevelingen_3D','Grevelingen-FM_0000_map.nc'), (5599,3,2), id='from 1 map partion Grevelingen'),
                                                     pytest.param(os.path.join(dir_testinput,'DFM_grevelingen_3D','Grevelingen_FM_grid_20190603_net.nc'), (44804,4,2), id='fromnet Grevelingen')])
 @pytest.mark.systemtest

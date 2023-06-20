@@ -16,6 +16,16 @@ from tests.utils import maybe_download_testdata
 dir_testinput = maybe_download_testdata()
 
 
+@pytest.mark.unittest
+def test_import_shapely():
+    """
+    tests whether shapely can be imported successfully, this is a problem in some environments
+    in that case 'import shapely' works, but import 'shapely.geometry' fails
+    """
+    import shapely
+    import shapely.geometry
+    
+
 @pytest.mark.systemtest
 def test_xugrid_opendataset_ugridplot(): #this one fails with xarray>=2023.3.0: https://github.com/Deltares/xugrid/issues/78
     file_nc = os.path.join(dir_testinput,'DFM_curvedbend_3D/cb_3d_map.nc')
