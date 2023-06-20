@@ -1,20 +1,22 @@
 # Information for developers
 
-## Setup local developer environment
+## Checkout dfm_tools git repository
 
-- download and install Anaconda 64 bit Python 3.8 (or higher) from [anaconda.com](https://www.anaconda.com/distribution/#download-section) (miniconda should also be sufficient, but this is not yet tested). Install it with the recommended settings.
+- this is just a suggestion, feel free to work with VScode or any other git-compatible workflow
 - download git from [git-scm.com](https://git-scm.com/download/win), install with default settings
 - open git bash window where you want to clone the dfm_tools github repository (e.g. ``C:\DATA\``)
 - git clone https://github.com/deltares/dfm_tools (creates a folder dfm_tools with the checked out repository)
 - ``cd dfm_tools``
 - optional: ``git config --global user.email [emailaddress]``
 - optional: ``git config --global user.name [username]``
-- open anaconda prompt and navigate to dfm_tools local folder, e.g. ``C:\DATA\dfm_tools``
-- ``conda env create -f environment.yml`` (creates an environment called dfm_tools_env) TODO: yml now contains almost the same as requirements.txt. Update this manual according to this
+
+## Setup local developer environment
+
+- download and install Anaconda 64 bit Python 3.9 (or higher) from [anaconda.com](https://www.anaconda.com/distribution/#download-section) (miniconda should also be sufficient, but this is not yet tested). Install it with the recommended settings.
+- open anaconda prompt and navigate to dfm_tools checkout folder, e.g. ``C:\DATA\dfm_tools``
+- ``conda create --name dfm_tools_env python=3.9 git spyder cartopy -c conda-forge -y`` (``git``, ``spyder`` and ``cartopy`` are optional, ``conda-forge`` channel is required by cartopy, you can also install a newer python version)
 - ``conda activate dfm_tools_env``
-- optional: ``conda install spyder -c conda-forge`` (installs spyder, using conda-forge channel since it was also used in environment.yml)
-- ``python -m pip install -r requirements_dev.txt`` (installs pytest and other developer dependencies)
-- ``python -m pip install -e .`` (pip developer mode, any updates to the local folder are immediately available in your python. It also installs all required non-conda packages) >> maybe add ``test`` to install also test requirements [like this](https://stackoverflow.com/questions/15422527/best-practices-how-do-you-list-required-dependencies-in-your-setup-py)
+- ``python -m pip install -e .[test]`` (pip developer mode, any updates to the local folder are immediately available in your python. It also installs all requirements via pip, ``[test]`` installs also the developer requirements)
 - ``conda deactivate``
 - to remove dfm_tools_env when necessary: ``conda remove -n dfm_tools_env --all``
 
