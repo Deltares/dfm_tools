@@ -368,7 +368,7 @@ def TimModel_to_DataFrame(data_tim:hcdfm.TimModel, parse_column_labels:bool = Tr
     return tim_pd
 
 
-def pointlike_to_geodataframe(polyline_object, crs='EPSG:4326', add_pointnames=True):
+def pointlike_to_geodataframe_points(polyline_object, crs='EPSG:4326', add_pointnames=True):
     """
     empty docstring
     """
@@ -386,7 +386,35 @@ def pointlike_to_geodataframe(polyline_object, crs='EPSG:4326', add_pointnames=T
     return gdf
 
 
-def PolyFile_to_geodataframe(polyfile_object, crs='EPSG:4326'):
+def PolyFile_to_geodataframe_points(polyfile_object:hcdfm.PolyFile, crs:str='EPSG:4326', add_pointnames:bool=True):
+    """
+    
+
+    Parameters
+    ----------
+    polyfile_object : hcdfm.PolyFile
+        get this object with hcdfm.PolyFile(path_to_plifile).
+    crs : str, optional
+        DESCRIPTION. The default is 'EPSG:4326'.
+    add_pointnames : bool, optional
+        DESCRIPTION. The default is True.
+
+    Returns
+    -------
+    gdf : TYPE
+        gdf of all the pli files with columns: location, geometry (Points). Crs = 4326 (decimal degrees).
+
+    """
+    
+    gdf_list = []
+    for polyobj in polyfile_object.objects:
+        gdf_one = pointlike_to_geodataframe_points(polyobj,crs=crs, add_pointnames=add_pointnames)
+        gdf_list.append(gdf_one)
+    gdf = pd.concat(gdf_list, ignore_index=True)
+    return gdf
+
+
+def PolyFile_to_geodataframe_linestrings(polyfile_object, crs='EPSG:4326'):
     """
     empty docstring
     """
