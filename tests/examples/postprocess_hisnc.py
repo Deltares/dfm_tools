@@ -70,7 +70,7 @@ for file_nc in file_nc_list:
     fig, ax = plt.subplots(figsize=(10,6))
     data_fromhis_xr.plot.line('-',ax=ax,x='time')
     ax.legend(data_fromhis_xr.stations.to_series(),fontsize=9) #optional, to reduce legend font size
-    data_fromhis_xr_dailymean = data_fromhis_xr.resample(time='D').mean(dim='time') #add daily mean values in the back
+    data_fromhis_xr_dailymean = data_fromhis_xr.resample(time='D').mean(dim='time') #add daily mean values in the back #TODO: raises "TypeError: __init__() got an unexpected keyword argument 'base'" since py39 environment
     data_fromhis_xr_dailymean.plot.line('-',ax=ax,x='time',add_legend=False,zorder=0,linewidth=.8,color='grey')
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,f'{basename}_waterlevel'))
