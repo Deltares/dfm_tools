@@ -386,13 +386,13 @@ def pointlike_to_geodataframe_points(polyline_object, crs='EPSG:4326', add_point
     return gdf
 
 
-def PolyFile_to_geodataframe_points(PolyFile:hcdfm.PolyFile, crs:str='EPSG:4326', add_pointnames:bool=True):
+def PolyFile_to_geodataframe_points(polyfile_object:hcdfm.PolyFile, crs:str='EPSG:4326', add_pointnames:bool=True):
     """
     
 
     Parameters
     ----------
-    PolyFile : hcdfm.PolyFile
+    polyfile_object : hcdfm.PolyFile
         get this object with hcdfm.PolyFile(path_to_plifile).
     crs : str, optional
         DESCRIPTION. The default is 'EPSG:4326'.
@@ -407,7 +407,7 @@ def PolyFile_to_geodataframe_points(PolyFile:hcdfm.PolyFile, crs:str='EPSG:4326'
     """
     
     gdf_list = []
-    for polyobj in PolyFile.objects:
+    for polyobj in polyfile_object.objects:
         gdf_one = pointlike_to_geodataframe_points(polyobj,crs=crs, add_pointnames=add_pointnames)
         gdf_list.append(gdf_one)
     gdf = pd.concat(gdf_list, ignore_index=True)
