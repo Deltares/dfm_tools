@@ -57,24 +57,23 @@ def test_xarray_interp_to_newdim(): #this one fails with scipy>=1.10.0: https://
                        [35.815   , 35.810417, 35.821102],
                        [35.824154, 35.813473, 35.81805 ]],
                       
-                      [[35.786003, 35.789055,       np.nan],
-                       [35.807365, 35.796684,       np.nan],
-                       [35.824154, 35.80584 ,       np.nan]],
+                      [[35.786003, 35.789055, np.nan],
+                       [35.807365, 35.796684, np.nan],
+                       [35.824154, 35.80584 , np.nan]],
                       
-                      [[35.776848,       np.nan,       np.nan],
-                       [35.792107,       np.nan,       np.nan],
-                       [35.822628,       np.nan,       np.nan]],
-                      
-                      [[35.781425,       np.nan,       np.nan],
-                       [35.792107,       np.nan,       np.nan],
-                       [35.789055,       np.nan,       np.nan]]])
+                      [[35.776848, np.nan,    np.nan],
+                       [35.792107, np.nan,    np.nan],
+                       [35.822628, np.nan,    np.nan]],
+                                              
+                      [[35.781425, np.nan,    np.nan],
+                       [35.792107, np.nan,    np.nan],
+                       [35.789055, np.nan,    np.nan]]])
     ds['so'] = xr.DataArray(so_np,dims=('depth','latitude','longitude'))
     ds['longitude'] = xr.DataArray([-9.6, -9.5, -9.4], dims=('longitude'))
     ds['latitude'] = xr.DataArray([42.9, 43.0, 43.1], dims=('latitude'))
     
     x_xr = xr.DataArray([-9.5],dims=('plipoints'))
     y_xr = xr.DataArray([43],dims=('plipoints'))
-    
     
     interp_with_floats = ds.interp(longitude=x_xr[0], latitude=y_xr[0], method='linear').so #selecting one value from the da drops the new plipoints dimension
     interp_with_da_existing = ds.interp(longitude=x_xr.values, latitude=y_xr.values, method='linear').so.isel(longitude=0,latitude=0) #using the DataArray values keeps lat/lon dimenions, gives the same interp result
