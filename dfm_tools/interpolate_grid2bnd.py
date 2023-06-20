@@ -12,12 +12,14 @@ import datetime as dt
 import numpy as np
 import pandas as pd
 import xarray as xr
+import xugrid as xu
 from pathlib import Path
 from scipy.spatial import KDTree
 import warnings
 import hydrolib.core.dflowfm as hcdfm
+import geopandas
 
-from dfm_tools.hydrolib_helpers import Dataset_to_TimeSeries, Dataset_to_T3D, Dataset_to_Astronomic, pointlike_to_DataFrame
+from dfm_tools.hydrolib_helpers import Dataset_to_TimeSeries, Dataset_to_T3D, Dataset_to_Astronomic, pointlike_to_DataFrame, PolyFile_to_geodataframe_points
 from dfm_tools.errors import OutOfRangeError
 
 
@@ -393,6 +395,58 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True
     print(f'>>time passed: {time_passed:.2f} sec')
 
     return data_interp_loaded
+
+
+def interp_uds_to_plipoints(uds:xu.UgridDataset, gdf:geopandas.GeoDataFrame, nPoints:int=None) -> xr.Dataset:
+    """
+    To interpolate an unstructured dataset (like a *_map.nc file) read with xugrid to plipoint locations
+    
+    Parameters
+    ----------
+    uds : xu.UgridDataset
+        dfm model output read using dfm_tools. Dims: mesh2d_nLayers, mesh2d_nInterfaces, time, mesh2d_nNodes, mesh2d_nFaces, mesh2d_nMax_face_nodes, mesh2d_nEdges.
+    gdf : geopandas.GeoDataFrame (str/path is also supported)
+        gdf with location, geometry (Point) and crs corresponding to model crs.
+    nPoints : int, optional
+        amount of points (None gives all). The default is None.
+
+    Raises
+    ------
+    Exception
+        DESCRIPTION.
+
+    Returns
+    -------
+    ds : TYPE
+        xr.Dataset with dims: plipoints, time, depth.
+
+    """
+    facedim = uds.grid.face_dimension
+    
+    if isinstance(gdf,(str,Path)): #TODO: align plipoints/gdf with other functions, now three input types are supported, but the interp_regularnc_to_plipoints requires paths to plifiles (and others also)
+        gdf = PolyFile_to_geodataframe_points(hcdfm.PolyFile(gdf))
+    
+    gdf = gdf.iloc[:nPoints]
+    ds = uds.ugrid.sel_points(x=gdf.geometry.x, y=gdf.geometry.y)
+    #TODO: drop mesh2d_face_x and mesh2d_face_y variables
+    
+    if len(gdf)!=ds.dims[facedim]: #TODO: check this until https://github.com/Deltares/xugrid/issues/100 is solved, after that, make a testcase that checks only this if-statement
+        ds_points = geopandas.points_from_xy(ds.x,ds.y)
+        gdfpoint_inds_bool = pd.Series(index=range(len(gdf)))
+        gdfpoint_inds_bool[:] = True
+        for iR, gdf_row in gdf.iterrows():
+            gdf_point = gdf_row.geometry
+            if gdf_point in ds_points:
+                gdfpoint_inds_bool.iloc[iR] = False
+        gdf_stats = gdf.copy()
+        gdf_stats['missing'] = gdfpoint_inds_bool
+        raise ValueError(f'requested {len(gdf)} points but resulted in ds with {ds.dims[facedim]} points, missing points are probably outside of the uds model domain:\n{gdf_stats}')
+
+    ds = ds.rename({facedim:'plipoints'}) # rename mesh2d_nFaces to plipoints
+    
+    ds['plipoint_name'] = xr.DataArray(gdf['plipoint_name'].tolist(), dims='plipoints') # change name of plipoint (node to gdf name)
+    ds = ds.set_index({'plipoints':'plipoint_name'})
+    return ds
 
 
 def interp_hisnc_to_plipoints(data_xr_his, file_pli, kdtree_k=3, load=True):

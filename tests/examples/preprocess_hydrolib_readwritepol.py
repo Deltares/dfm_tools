@@ -75,8 +75,8 @@ for file_pli in file_pli_list:
             crs = 'epsg:28992'
         else:
             crs = 'epsg:4326'
-        gdf_polyline = dfmt.pointlike_to_geodataframe(polyfile_object.objects[0],crs=crs)
-        gdf_polyfile = dfmt.PolyFile_to_geodataframe(polyfile_object,crs=crs)
+        gdf_polyline = dfmt.pointlike_to_geodataframe_points(polyfile_object.objects[0],crs=crs)
+        gdf_polyfile = dfmt.PolyFile_to_geodataframe_linestrings(polyfile_object,crs=crs)
         fig,ax = plt.subplots()
         gdf_polyfile.plot(ax=ax)
         
