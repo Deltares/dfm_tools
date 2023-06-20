@@ -2,6 +2,7 @@
 
 ## Checkout dfm_tools git repository
 
+- this is just a suggestion, feel free to work with VScode or any other git-compatible workflow
 - download git from [git-scm.com](https://git-scm.com/download/win), install with default settings
 - open git bash window where you want to clone the dfm_tools github repository (e.g. ``C:\DATA\``)
 - git clone https://github.com/deltares/dfm_tools (creates a folder dfm_tools with the checked out repository)
