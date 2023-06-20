@@ -4,19 +4,15 @@ channels:
 dependencies:
   - python=3.9
   - pip>=19.2.3
-  #install scipy<1.10.0 to avoid da.interp() issue: https://github.com/Deltares/dfm_tools/issues/287 and https://github.com/pydata/xarray/issues/7701
   - scipy<1.10.0
   - numpy
   - matplotlib
-  #install pandas<2.0.0 to avoid conflict with xarray<2023.3.0: https://github.com/Deltares/xugrid/issues/78#issuecomment-1597723955
   - pandas<2.0.0
   - shapely>=1.7.0
-  #cartopy is not pip installable, so it is commented in setup.cfg and requirements.txt
   - cartopy
   - pyepsg
   - geopandas
   - contextily
-  #install xarray<2023.3.0 to avoid issue: https://github.com/Deltares/xugrid/issues/78
   - xarray<2023.3.0
   - dask
   - netcdf4>=1.5.3
