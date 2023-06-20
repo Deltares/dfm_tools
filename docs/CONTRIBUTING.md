@@ -15,8 +15,7 @@
 - open anaconda prompt and navigate to dfm_tools checkout folder, e.g. ``C:\DATA\dfm_tools``
 - ``conda create --name dfm_tools_env python=3.9 git spyder cartopy -c conda-forge -y`` (``git``, ``spyder`` and ``cartopy`` are optional, ``conda-forge`` channel is required by cartopy, you can also install a newer python version)
 - ``conda activate dfm_tools_env``
-- ``python -m pip install -e .`` (pip developer mode, any updates to the local folder are immediately available in your python. It also installs all required packages via pip)
-- ``python -m pip install -r requirements_dev.txt`` (installs pytest and other developer dependencies) >> maybe add ``test`` to line above to also install the test/dev requirements [like this](https://stackoverflow.com/questions/15422527/best-practices-how-do-you-list-required-dependencies-in-your-setup-py)
+- ``python -m pip install -e .[test]`` (pip developer mode, any updates to the local folder are immediately available in your python. It also installs all requirements via pip, ``[test]`` installs also the developer requirements)
 - ``conda deactivate``
 - to remove dfm_tools_env when necessary: ``conda remove -n dfm_tools_env --all``
 
