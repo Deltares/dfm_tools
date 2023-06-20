@@ -9,49 +9,21 @@ from pathlib import Path
 import dfm_tools as dfmt
 import matplotlib.pyplot as plt
 plt.close('all')
-
-import geopandas
 import xarray as xr
 import xugrid as xu
 import pandas as pd
-from shapely.geometry import Point
-
-
-def dutch_crs_plipoint_list_to_decimaldeg_gdf(list_plifiles):
-    '''
-    input:
-    - list of all the plifiles as WindowsPath. Format = from offshore boundary pli files. Dutch crs!
-    
-    output:
-    - gdf of all the pli files with columns: location, geometry (Points). Crs = 4326 (decimal degrees)
-    
-    '''
-    all_boundaries = []
-    for i,file in list(enumerate(list_plifiles)):  # start with zuid (as did for testing)
-        print(str(file).split('\\')[-1].split('.')[0])
-
-        # Read points within this offshore boundary:
-        pli_file = pd.read_csv(list_plifiles[i], skiprows=1, sep=' ')   # read pli file
-        pli_file = pli_file.dropna(axis=1)                              # drop empty columns
-        # Convert dutch crs to decimal degrees (for DCSM)
-        points = [] 
-        for i in range(0,len(pli_file)):
-            points.append(Point(pli_file[pli_file.columns[0]].to_list()[i], pli_file[pli_file.columns[1]].to_list()[i]))
-        d = {'location': pli_file[pli_file.columns[2]].to_list(), 'geometry': points}
-        gdf = geopandas.GeoDataFrame(d, crs='epsg:28992')   # set Dutch crs
-        gdf = gdf.to_crs(4326)                              # convert to decimal degrees
-        all_boundaries.append(gdf)
-    all_boundaries = pd.concat(all_boundaries, ignore_index=True)
-    return all_boundaries
-
+import hydrolib.core.dflowfm as hcdfm
 
 
 # Read the pli points:
 list_plifiles = [Path(r'p:\11208479-sequestration-seaweed\Oosterschelde_DFM_hydro_waq\dflowfm3d-oosterschelde-wq\boundary_conditions\zee-noord.pli'),
                 Path(r'p:\11208479-sequestration-seaweed\Oosterschelde_DFM_hydro_waq\dflowfm3d-oosterschelde-wq\boundary_conditions\zee-west.pli'),
                 Path(r'p:\11208479-sequestration-seaweed\Oosterschelde_DFM_hydro_waq\dflowfm3d-oosterschelde-wq\boundary_conditions\zee-zuid.pli')]
+
 # Use function
-gdf = dutch_crs_plipoint_list_to_decimaldeg_gdf(list_plifiles)
+gdf_list = [dfmt.PolyFile_to_geodataframe_points(hcdfm.PolyFile(x), crs='epsg:28992') for x in list_plifiles]
+gdf = pd.concat(gdf_list, ignore_index=True)
+gdf = gdf.to_crs('epsg:4326')
 gdf
 
 
