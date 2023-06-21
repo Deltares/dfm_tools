@@ -86,22 +86,31 @@ def download_CMEMS(varkey,
     """
 
     date_min = pd.Timestamp(date_min)-pd.Timedelta(days=1) #CMEMS has daily noon values (not midnight), so subtract one day from date_min to cover desired time extent
-    
-    if 'my_datemax' not in globals(): #set multiyear date_max (my_datemax) as global variable, so it only has to be retreived once per download run (otherwise once per variable)
-        print('retrieving enddate of multiyear CMEMS dataset')
+
+    global product #set product as global variable, so it only has to be retreived once per download run (otherwise once per variable)
+    if 'product' not in globals(): 
+        print('retrieving time range of CMEMS reanalysis product')
         dataset_url = 'https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_my_0.083_P1D-m' #assuming here that physchem and bio reanalyisus/multiyear datasets have the same enddate, this seems safe
         ds = open_OPeNDAP_xr(dataset_url=dataset_url, credentials=credentials)
         my_times = ds.time.to_series()
-        global my_datemax
-        my_datemax = my_times.iloc[-1]
-
-    if pd.Timestamp(date_max) <= my_datemax:
-        product = 'reanalysis'
-    elif pd.Timestamp(date_min) > my_datemax:
-        product = 'analysisforecast'
-    else:
-        raise ValueError(f'Requested timerange is {date_min} to {date_max}. Currently, it is only possible to query periods before OR after the multiyear/reanalysis enddate ({my_datemax}).')
+        reanalysis_t0, reanalysis_tend = my_times.iloc[0], my_times.iloc[-1]
+        if (date_min >= reanalysis_t0) & (date_max <= reanalysis_tend):
+            product = 'reanalysis'
     
+    if 'product' not in globals(): #apparently, the reanalysis is not sufficient. Let's check forecast product.
+        print('retrieving time range of CMEMS forecast product')
+        dataset_url = 'https://nrt.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_anfc_0.083deg_P1D-m' #assuming here that physchem and bio reanalyisus/multiyear datasets have the same enddate, this seems safe
+        ds = open_OPeNDAP_xr(dataset_url=dataset_url, credentials=credentials)
+        my_times = ds.time.to_series()
+        forecast_t0, forecast_tend = my_times.iloc[0], my_times.iloc[-1]
+        if (date_min >= forecast_t0) & (date_max <= forecast_tend):
+            product = 'analysisforecast'
+            
+    if 'product' not in globals():
+        raise ValueError(f'Requested timerange ({date_min} to {date_max}) is not fully within timerange of reanalysis product ({reanalysis_t0} to {reanalysis_tend}) or forecast product ({forecast_t0} to {forecast_tend}).')
+    else:
+        print(f"The CMEMS '{product}'-product will be used.")
+        
     Path(dir_output).mkdir(parents=True, exist_ok=True)
     if varkey in ['bottomT','tob','mlotst','siconc','sithick','so','thetao','uo','vo','usi','vsi','zos']: #for physchem
         if product == 'analysisforecast': #forecast: https://data.marine.copernicus.eu/product/GLOBAL_ANALYSISFORECAST_PHY_001_024/description
