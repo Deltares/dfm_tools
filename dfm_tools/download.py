@@ -16,6 +16,13 @@ import cdsapi
 import cftime
 
 
+def extend_domain(lon_min, lon_max, lat_min, lat_max, delta_latlon):
+    lon_min = lon_min - delta_latlon
+    lon_max = lon_max + delta_latlon
+    lat_min = lat_min - delta_latlon
+    lat_max = lat_max + delta_latlon
+    return lon_min, lon_max, lat_min, lat_max
+
 def download_ERA5(varkey,
                   longitude_min, longitude_max, latitude_min, latitude_max, 
                   date_min, date_max,
@@ -53,6 +60,9 @@ def download_ERA5(varkey,
     
     period_range = pd.period_range(date_min,date_max,freq='M')
     print(f'retrieving data from {period_range[0]} to {period_range[-1]} (freq={period_range.freq})')
+    
+    #make sure the data fully covers the desired spatial extent. Download 1 additional grid cell (resolution is 1/4 degrees) in both direction
+    longitude_min, longitude_max, latitude_min, latitude_max = extend_domain(lon_min=longitude_min, lon_max=longitude_max, lat_min=latitude_min, lat_max=latitude_max, delta_latlon=1/4)
     
     for date in period_range:
         name_output = f'era5_{varkey}_{date.strftime("%Y-%m")}.nc'
@@ -121,6 +131,10 @@ def download_CMEMS(varkey,
             dataset_url = 'https://nrt.cmems-du.eu/thredds/dodsC/global-analysis-forecast-bio-001-028-daily' #contains ['chl','fe','no3','nppv','o2','ph','phyc','po4','si','spco2']
         else: #https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_BGC_001_029/description
             dataset_url = 'https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_bgc_my_0.25_P1D-m' #contains ['chl','no3','nppv','o2','po4','si']
+    
+    #make sure the data fully covers the desired spatial extent. Download 1 additional grid cell (resolution is 1/12 degrees) in each direction
+    delta_latlon = 0.085 # which is slightly more than grid resolution (~1/12 degrees) #TODO: we could make use of ds.latitude.step/ds.longitude.step when the grid resolution is stored in a global 
+    longitude_min, longitude_max, latitude_min, latitude_max = extend_domain(lon_min=longitude_min, lon_max=longitude_max, lat_min=latitude_min, lat_max=latitude_max, delta_latlon=delta_latlon)
     
     download_OPeNDAP(dataset_url=dataset_url,
                      credentials=credentials, #credentials=['username','password'], or create "%USERPROFILE%/CMEMS_credentials.txt" with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form'

@@ -43,7 +43,7 @@ def preprocess_interpolate_nc_to_bc(ext_bnd,
             else:
                 #open regulargridDataset and do some basic stuff (time selection, renaming depth/lat/lon/varname, converting units, etc)
                 data_xr_vars = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity=quantity,
-                                                       tstart=tstart, tstop=tstop,
+                                                       tstart=pd.Timestamp(tstart)-pd.Timedelta(hours=12), tstop=pd.Timestamp(tstop)+pd.Timedelta(hours=12),
                                                        conversion_dict=conversion_dict,
                                                        refdate_str=refdate_str)
                 #interpolate regulargridDataset to plipointsDataset

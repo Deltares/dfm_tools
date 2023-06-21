@@ -126,7 +126,7 @@ ext_new = hcdfm.ExtModel()
 for varkey in ['so','thetao','uo','vo','zos']:
     dfmt.download_CMEMS(credentials=None, #credentials=['username','password'], or create "%USERPROFILE%/CMEMS_credentials.txt" with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form'
                         varkey=varkey,
-                        longitude_min=lon_min-1/12, longitude_max=lon_max+1/12, latitude_min=lat_min-1/12, latitude_max=lat_max+1/12,
+                        longitude_min=lon_min, longitude_max=lon_max, latitude_min=lat_min, latitude_max=lat_max,
                         date_min=date_min, date_max=date_max,
                         dir_output=dir_output_data_cmems, file_prefix='cmems_', overwrite=overwrite)
 
@@ -139,7 +139,7 @@ ext_new = mb.preprocess_interpolate_nc_to_bc(ext_bnd=ext_new,
                                              refdate_str = 'minutes since '+ref_date+' 00:00:00 +00:00',
                                              dir_output = dir_output,
                                              list_quantities = list_quantities,
-                                             tstart=pd.Timestamp(date_min)-pd.Timedelta(hours=12), tstop=pd.Timestamp(date_max)+pd.Timedelta(hours=12), #TODO: to account for noon-fields of CMEMS, build in safety?
+                                             tstart=pd.Timestamp(date_min), tstop=pd.Timestamp(date_max), 
                                              list_plifiles = [poly_file],
                                              dir_pattern = os.path.join(dir_output_data_cmems,'cmems_{ncvarname}_*.nc'))
 #TODO: when adding both waterlevelbnd and tide as waterlevelbnd they should be consequetive. If there are other quantities in between, the model crashes with a update_ghostboundvals error, reported in https://issuetracker.deltares.nl/browse/UNST-7011:
@@ -192,7 +192,7 @@ elif ERA5_meteo_option == 2:
 for varlist in varlist_list:
     for varkey in varlist:
         dfmt.download_ERA5(varkey, 
-                            longitude_min=lon_min-1/4, longitude_max=lon_max+1/4, latitude_min=lat_min-1/4, latitude_max=lat_max+1/4, # download 1 grid cell row/column extra
+                            longitude_min=lon_min, longitude_max=lon_max, latitude_min=lat_min, latitude_max=lat_max,
                             date_min=date_min, date_max=date_max,
                             dir_output=dir_output_data_era5, overwrite=overwrite)
 
