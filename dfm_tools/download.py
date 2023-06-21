@@ -85,31 +85,27 @@ def download_CMEMS(varkey,
     empty docstring
     """
 
-    date_min = pd.Timestamp(date_min)-pd.Timedelta(days=1) #CMEMS has daily noon values (not midnight), so subtract one day from date_min to cover desired time extent
-
-    global product #set product as global variable, so it only has to be retreived once per download run (otherwise once per variable)
-    if 'product' not in globals(): 
-        print('retrieving time range of CMEMS reanalysis product')
-        dataset_url = 'https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_my_0.083_P1D-m' #assuming here that physchem and bio reanalyisus/multiyear datasets have the same enddate, this seems safe
+    def get_time_range_from_dataset(dataset_url, credentials):
         ds = open_OPeNDAP_xr(dataset_url=dataset_url, credentials=credentials)
         my_times = ds.time.to_series()
-        reanalysis_t0, reanalysis_tend = my_times.iloc[0], my_times.iloc[-1]
-        if (date_min >= reanalysis_t0) & (date_max <= reanalysis_tend):
-            product = 'reanalysis'
+        return [my_times.iloc[0], my_times.iloc[-1]]
     
-    if 'product' not in globals(): #apparently, the reanalysis is not sufficient. Let's check forecast product.
-        print('retrieving time range of CMEMS forecast product')
-        dataset_url = 'https://nrt.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_anfc_0.083deg_P1D-m' #assuming here that physchem and bio reanalyisus/multiyear datasets have the same enddate, this seems safe
-        ds = open_OPeNDAP_xr(dataset_url=dataset_url, credentials=credentials)
-        my_times = ds.time.to_series()
-        forecast_t0, forecast_tend = my_times.iloc[0], my_times.iloc[-1]
-        if (date_min >= forecast_t0) & (date_max <= forecast_tend):
-            product = 'analysisforecast'
-            
+    date_min = pd.Timestamp(date_min)-pd.Timedelta(days=1) #CMEMS has daily noon values (not midnight), so subtract one day from date_min to cover desired time extent
+    date_max = pd.Timestamp(date_max)
+    
+    global product #set product as global variable, so it only has to be retreived once per download run (otherwise once per variable)
     if 'product' not in globals():
-        raise ValueError(f'Requested timerange ({date_min} to {date_max}) is not fully within timerange of reanalysis product ({reanalysis_t0} to {reanalysis_tend}) or forecast product ({forecast_t0} to {forecast_tend}).')
-    else:
-        print(f"The CMEMS '{product}'-product will be used.")
+        print('retrieving time range of CMEMS reanalysis and forecast products') #assuming here that physchem and bio reanalyisus/multiyear datasets have the same enddate, this seems safe
+        reanalysis_time_range = get_time_range_from_dataset(dataset_url='https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_my_0.083_P1D-m', credentials=credentials)
+        forecast_time_range = get_time_range_from_dataset(dataset_url='https://nrt.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_anfc_0.083deg_P1D-m', credentials=credentials)
+        if (date_min >= reanalysis_time_range[0]) & (date_max <= reanalysis_time_range[1]):
+            product = 'reanalysis'
+            print(f"The CMEMS '{product}'-product will be used.")
+        elif (date_min >= forecast_time_range[0]) & (date_max <= forecast_time_range[1]):
+            product = 'analysisforecast'
+            print(f"The CMEMS '{product}'-product will be used.")
+        else:
+            raise ValueError(f'Requested timerange ({date_min} to {date_max}) is not fully within timerange of reanalysis product ({reanalysis_time_range[0]} to {reanalysis_time_range[1]}) or forecast product ({forecast_time_range[0]} to {forecast_time_range[1]}).')
         
     Path(dir_output).mkdir(parents=True, exist_ok=True)
     if varkey in ['bottomT','tob','mlotst','siconc','sithick','so','thetao','uo','vo','usi','vsi','zos']: #for physchem
