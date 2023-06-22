@@ -139,7 +139,7 @@ ext_new = mb.preprocess_interpolate_nc_to_bc(ext_bnd=ext_new,
                                              refdate_str = 'minutes since '+ref_date+' 00:00:00 +00:00',
                                              dir_output = dir_output,
                                              list_quantities = list_quantities,
-                                             tstart=pd.Timestamp(date_min), tstop=pd.Timestamp(date_max), 
+                                             tstart=date_min, tstop=date_max, 
                                              list_plifiles = [poly_file],
                                              dir_pattern = os.path.join(dir_output_data_cmems,'cmems_{ncvarname}_*.nc'))
 #TODO: when adding both waterlevelbnd and tide as waterlevelbnd they should be consequetive. If there are other quantities in between, the model crashes with a update_ghostboundvals error, reported in https://issuetracker.deltares.nl/browse/UNST-7011:
