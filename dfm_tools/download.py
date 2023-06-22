@@ -85,8 +85,7 @@ def download_CMEMS(varkey,
     empty docstring
     """
 
-    date_min = pd.Timestamp(date_min)-pd.Timedelta(days=1) #CMEMS has daily noon values (not midnight), so subtract one day from date_min to cover desired time extent
-    date_max = pd.Timestamp(date_max)
+    date_min, date_max = round_timestamp_to_outer_noon(date_min,date_max)
     
     global product #set product as global variable, so it only has to be retreived once per download run (otherwise once per variable)
     if 'product' not in globals():
