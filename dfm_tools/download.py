@@ -85,19 +85,14 @@ def download_CMEMS(varkey,
     empty docstring
     """
 
-    def get_time_range_from_dataset(dataset_url, credentials):
-        ds = open_OPeNDAP_xr(dataset_url=dataset_url, credentials=credentials)
-        my_times = ds.time.to_series()
-        return [my_times.iloc[0], my_times.iloc[-1]]
-    
     date_min = pd.Timestamp(date_min)-pd.Timedelta(days=1) #CMEMS has daily noon values (not midnight), so subtract one day from date_min to cover desired time extent
     date_max = pd.Timestamp(date_max)
     
     global product #set product as global variable, so it only has to be retreived once per download run (otherwise once per variable)
     if 'product' not in globals():
         print('retrieving time range of CMEMS reanalysis and forecast products') #assuming here that physchem and bio reanalyisus/multiyear datasets have the same enddate, this seems safe
-        reanalysis_time_range = get_time_range_from_dataset(dataset_url='https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_my_0.083_P1D-m', credentials=credentials)
-        forecast_time_range = get_time_range_from_dataset(dataset_url='https://nrt.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_anfc_0.083deg_P1D-m', credentials=credentials)
+        reanalysis_time_range = get_OPeNDAP_xr_ds_timerange(dataset_url='https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_my_0.083_P1D-m', credentials=credentials)
+        forecast_time_range = get_OPeNDAP_xr_ds_timerange(dataset_url='https://nrt.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_anfc_0.083deg_P1D-m', credentials=credentials)
         if (date_min >= reanalysis_time_range[0]) & (date_max <= reanalysis_time_range[1]):
             product = 'reanalysis'
             print(f"The CMEMS '{product}'-product will be used.")
@@ -302,3 +297,9 @@ def download_OPeNDAP(dataset_url,
         print(f'xarray writing netcdf file: {name_output}')
         data_xr_var_seltime.to_netcdf(os.path.join(dir_output,name_output)) #TODO: add chunks={'time':1} or only possible with opening?
         data_xr_var_seltime.close()
+
+
+def get_OPeNDAP_xr_ds_timerange(dataset_url, credentials):
+    ds = open_OPeNDAP_xr(dataset_url=dataset_url, credentials=credentials)
+    my_times = ds.time.to_series()
+    return my_times.iloc[0], my_times.iloc[-1]
