@@ -92,22 +92,21 @@ def download_CMEMS(varkey,
     """
 
     date_min, date_max = round_timestamp_to_outer_noon(date_min,date_max)
-
-    if 'my_datemax' not in globals(): #set multiyear date_max (my_datemax) as global variable, so it only has to be retreived once per download run (otherwise once per variable)
-        print('retrieving enddate of multiyear CMEMS dataset')
-        dataset_url = 'https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_my_0.083_P1D-m' #assuming here that physchem and bio reanalyisus/multiyear datasets have the same enddate, this seems safe
-        ds = open_OPeNDAP_xr(dataset_url=dataset_url, credentials=credentials)
-        my_times = ds.time.to_series()
-        global my_datemax
-        my_datemax = my_times.iloc[-1]
-
-    if pd.Timestamp(date_max) <= my_datemax:
-        product = 'reanalysis'
-    elif pd.Timestamp(date_min) > my_datemax:
-        product = 'analysisforecast'
-    else:
-        raise ValueError(f'Requested timerange is {date_min} to {date_max}. Currently, it is only possible to query periods before OR after the multiyear/reanalysis enddate ({my_datemax}).')
     
+    global product #set product as global variable, so it only has to be retreived once per download run (otherwise once per variable)
+    if 'product' not in globals():
+        print('retrieving time range of CMEMS reanalysis and forecast products') #assuming here that physchem and bio reanalyisus/multiyear datasets have the same enddate, this seems safe
+        reanalysis_tstart, reanalysis_tstop = get_OPeNDAP_xr_ds_timerange(dataset_url='https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_my_0.083_P1D-m', credentials=credentials)
+        forecast_tstart, forecast_tstop = get_OPeNDAP_xr_ds_timerange(dataset_url='https://nrt.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_anfc_0.083deg_P1D-m', credentials=credentials)
+        if (date_min >= reanalysis_tstart) & (date_max <= reanalysis_tstop):
+            product = 'reanalysis'
+            print(f"The CMEMS '{product}'-product will be used.")
+        elif (date_min >= forecast_tstart) & (date_max <= forecast_tstop):
+            product = 'analysisforecast'
+            print(f"The CMEMS '{product}'-product will be used.")
+        else:
+            raise ValueError(f'Requested timerange ({date_min} to {date_max}) is not fully within timerange of reanalysis product ({reanalysis_tstart} to {reanalysis_tstop}) or forecast product ({forecast_tstart} to {forecast_tstop}).')
+        
     Path(dir_output).mkdir(parents=True, exist_ok=True)
     if varkey in ['bottomT','tob','mlotst','siconc','sithick','so','thetao','uo','vo','usi','vsi','zos']: #for physchem
         if product == 'analysisforecast': #forecast: https://data.marine.copernicus.eu/product/GLOBAL_ANALYSISFORECAST_PHY_001_024/description
@@ -309,6 +308,13 @@ def download_OPeNDAP(dataset_url,
         print(f'xarray writing netcdf file: {name_output}')
         data_xr_var_seltime.to_netcdf(os.path.join(dir_output,name_output)) #TODO: add chunks={'time':1} or only possible with opening?
         data_xr_var_seltime.close()
+
+
+def get_OPeNDAP_xr_ds_timerange(dataset_url, credentials):
+    ds = open_OPeNDAP_xr(dataset_url=dataset_url, credentials=credentials)
+    ds_times = ds.time.to_series()
+    ds_tstart, ds_tstop = ds_times.iloc[0], ds_times.iloc[-1]
+    return ds_tstart, ds_tstop
 
 
 def round_timestamp_to_outer_noon(date_min, date_max):
