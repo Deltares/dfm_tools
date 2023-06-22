@@ -96,16 +96,16 @@ def download_CMEMS(varkey,
     global product #set product as global variable, so it only has to be retreived once per download run (otherwise once per variable)
     if 'product' not in globals():
         print('retrieving time range of CMEMS reanalysis and forecast products') #assuming here that physchem and bio reanalyisus/multiyear datasets have the same enddate, this seems safe
-        reanalysis_time_range = get_OPeNDAP_xr_ds_timerange(dataset_url='https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_my_0.083_P1D-m', credentials=credentials)
-        forecast_time_range = get_OPeNDAP_xr_ds_timerange(dataset_url='https://nrt.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_anfc_0.083deg_P1D-m', credentials=credentials)
-        if (date_min >= reanalysis_time_range[0]) & (date_max <= reanalysis_time_range[1]):
+        reanalysis_tstart, reanalysis_tstop = get_OPeNDAP_xr_ds_timerange(dataset_url='https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_my_0.083_P1D-m', credentials=credentials)
+        forecast_tstart, forecast_tstop = get_OPeNDAP_xr_ds_timerange(dataset_url='https://nrt.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_anfc_0.083deg_P1D-m', credentials=credentials)
+        if (date_min >= reanalysis_tstart) & (date_max <= reanalysis_tstop):
             product = 'reanalysis'
             print(f"The CMEMS '{product}'-product will be used.")
-        elif (date_min >= forecast_time_range[0]) & (date_max <= forecast_time_range[1]):
+        elif (date_min >= forecast_tstart) & (date_max <= forecast_tstop):
             product = 'analysisforecast'
             print(f"The CMEMS '{product}'-product will be used.")
         else:
-            raise ValueError(f'Requested timerange ({date_min} to {date_max}) is not fully within timerange of reanalysis product ({reanalysis_time_range[0]} to {reanalysis_time_range[1]}) or forecast product ({forecast_time_range[0]} to {forecast_time_range[1]}).')
+            raise ValueError(f'Requested timerange ({date_min} to {date_max}) is not fully within timerange of reanalysis product ({reanalysis_tstart} to {reanalysis_tstop}) or forecast product ({forecast_tstart} to {forecast_tstop}).')
         
     Path(dir_output).mkdir(parents=True, exist_ok=True)
     if varkey in ['bottomT','tob','mlotst','siconc','sithick','so','thetao','uo','vo','usi','vsi','zos']: #for physchem
@@ -312,8 +312,9 @@ def download_OPeNDAP(dataset_url,
 
 def get_OPeNDAP_xr_ds_timerange(dataset_url, credentials):
     ds = open_OPeNDAP_xr(dataset_url=dataset_url, credentials=credentials)
-    my_times = ds.time.to_series()
-    return my_times.iloc[0], my_times.iloc[-1]
+    ds_times = ds.time.to_series()
+    ds_tstart, ds_tstop = ds_times.iloc[0], ds_times.iloc[-1]
+    return ds_tstart, ds_tstop
 
 
 def round_timestamp_to_outer_noon(date_min, date_max):
