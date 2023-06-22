@@ -110,9 +110,7 @@ def download_CMEMS(varkey,
     Path(dir_output).mkdir(parents=True, exist_ok=True)
     if varkey in ['bottomT','tob','mlotst','siconc','sithick','so','thetao','uo','vo','usi','vsi','zos']: #for physchem
         if product == 'analysisforecast': #forecast: https://data.marine.copernicus.eu/product/GLOBAL_ANALYSISFORECAST_PHY_001_024/description
-            if varkey=='bottomT': #rename old to new anfc varname (still called bottomT in reanalysis)
-                varkey = 'tob'
-            if varkey in ['uo','vo']:
+            if varkey in ['uo','vo']: #anfc datset is splitted over multiple urls, construct the correct one here.
                 varkey_name = 'phy-cur'
             elif varkey in ['so','thetao']:
                 varkey_name = 'phy-'+varkey
