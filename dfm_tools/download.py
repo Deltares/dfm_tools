@@ -297,3 +297,16 @@ def download_OPeNDAP(dataset_url,
         print(f'xarray writing netcdf file: {name_output}')
         data_xr_var_seltime.to_netcdf(os.path.join(dir_output,name_output)) #TODO: add chunks={'time':1} or only possible with opening?
         data_xr_var_seltime.close()
+
+
+def round_timestamp_to_outer_noon(date_min, date_max):
+    """
+    Since the CMEMS dataset only contains noon-values, we often need to round to the previous or next noon timestep to download enough data.
+    
+    """
+    
+    td_12h = pd.Timedelta(hours=12)
+    date_min = (pd.Timestamp(date_min) + td_12h).floor('1d') - td_12h
+    date_max = (pd.Timestamp(date_max) - td_12h).ceil('1d') + td_12h
+    return date_min, date_max
+
