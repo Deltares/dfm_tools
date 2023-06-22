@@ -100,13 +100,13 @@ def download_CMEMS(varkey,
         forecast_tstart, forecast_tstop = get_OPeNDAP_xr_ds_timerange(dataset_url='https://nrt.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_anfc_0.083deg_P1D-m', credentials=credentials)
         if (date_min >= reanalysis_tstart) & (date_max <= reanalysis_tstop):
             product = 'reanalysis'
-            print(f"The CMEMS '{product}'-product will be used.")
+            print(f"The CMEMS '{product}' product will be used.")
         elif (date_min >= forecast_tstart) & (date_max <= forecast_tstop):
             product = 'analysisforecast'
-            print(f"The CMEMS '{product}'-product will be used.")
+            print(f"The CMEMS '{product}' product will be used.")
         else:
             raise ValueError(f'Requested timerange ({date_min} to {date_max}) is not fully within timerange of reanalysis product ({reanalysis_tstart} to {reanalysis_tstop}) or forecast product ({forecast_tstart} to {forecast_tstop}).')
-        
+    
     Path(dir_output).mkdir(parents=True, exist_ok=True)
     if varkey in ['bottomT','tob','mlotst','siconc','sithick','so','thetao','uo','vo','usi','vsi','zos']: #for physchem
         if product == 'analysisforecast': #forecast: https://data.marine.copernicus.eu/product/GLOBAL_ANALYSISFORECAST_PHY_001_024/description
@@ -192,9 +192,8 @@ def open_OPeNDAP_xr(dataset_url, credentials=None):
         else:
             username,password = credentials
 
-        print(f'opening pydap connection to opendap dataset: {dataset_url}.html')
+        print(f'opening pydap connection to opendap dataset and opening with xarray: {dataset_url}.html')
         data_store = copernicusmarine_datastore(dataset_url=dataset_url, username=username, password=password)
-        print('xarray opening opendap dataset')
         data_xr = xr.open_dataset(data_store)
     elif 'hycom.org' in dataset_url_one:
         if isinstance(dataset_url,list):
