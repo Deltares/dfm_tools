@@ -41,6 +41,7 @@ def preprocess_interpolate_nc_to_bc(ext_bnd,
                     component_list = None #None results in all tidemodel components
                 ForcingModel_object = dfmt.interpolate_tide_to_bc(tidemodel=tidemodel, file_pli=file_pli, component_list=component_list, nPoints=None)
             else:
+                tstart, tstop = dfmt.round_timestamp_to_outer_noon(tstart,tstop)
                 #open regulargridDataset and do some basic stuff (time selection, renaming depth/lat/lon/varname, converting units, etc)
                 data_xr_vars = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity=quantity,
                                                        tstart=tstart, tstop=tstop,
