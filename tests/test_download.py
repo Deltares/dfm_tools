@@ -19,8 +19,6 @@ def test_round_timestamp_to_outer_noon():
     for date_min_mod, date_max_mod in zip(date_min_mod_list, date_max_mod_list):
         
         date_min, date_max = round_timestamp_to_outer_noon(date_min_mod, date_max_mod)
-        #print('min', date_min_mod, date_min)
-        #print('max', date_max_mod, date_max)
         
         assert date_min.hour == 12
         assert date_min.minute == 0
