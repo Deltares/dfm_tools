@@ -93,26 +93,18 @@ def open_dataset_delft3d4(file_nc):
     ds = xr.open_dataset(file_nc,chunks={'time':1}) #TODO: move chunks/kwargs to input arguments
     
     #average U1/V1 values to M/N
-    for varn in ['U1','V1']:#ds.data_vars:
-        var_attrs = ds[varn].attrs
-        ds_var = ds[varn]
-        if varn=='U1':
-            ds_var = ds_var.where(ds.KFU,0)
-            ds_var = (ds_var + ds_var.shift(MC=1))/2 #TODO: or MC=-1
-            ds_var = ds_var.rename({'MC':'M'})
-            var_attrs['long_name'] = var_attrs['long_name'].replace('U-point','zeta point')
-        else:
-            ds_var = ds_var.where(ds.KFV,0)
-            ds_var = (ds_var + ds_var.shift(NC=1))/2 #TODO: or NC=-1
-            ds_var = ds_var.rename({'NC':'N'})
-            var_attrs['long_name'] = var_attrs['long_name'].replace('V-point','zeta point')
-        var_attrs['location'] = 'face'
-        ds[varn] = ds_var.assign_attrs(var_attrs)
+    U1_MN = ds.U1.where(ds.KFU,0)
+    U1_MN = (U1_MN + U1_MN.shift(MC=1))/2 #TODO: or MC=-1
+    U1_MN = U1_MN.rename({'MC':'M'})
+    V1_MN = ds.V1.where(ds.KFV,0)
+    V1_MN = (V1_MN + V1_MN.shift(NC=1))/2 #TODO: or NC=-1
+    V1_MN = V1_MN.rename({'NC':'N'})
+    ds = ds.drop_vars(['U1','V1']) #to avoid creating large chunks, alternative is to overwrite the vars with the MN-averaged vars, but it requires passing and updating of attrs
     
     #compute ux/uy/umag/udir #TODO: add attrs to variables
     ALFAS_rad = np.deg2rad(ds.ALFAS)
-    vel_x = ds.U1*np.cos(ALFAS_rad) - ds.V1*np.sin(ALFAS_rad)
-    vel_y = ds.U1*np.sin(ALFAS_rad) + ds.V1*np.cos(ALFAS_rad)
+    vel_x = U1_MN*np.cos(ALFAS_rad) - V1_MN*np.sin(ALFAS_rad)
+    vel_y = U1_MN*np.sin(ALFAS_rad) + V1_MN*np.cos(ALFAS_rad)
     ds['ux'] = vel_x
     ds['uy'] = vel_y
     ds['umag'] = np.sqrt(vel_x**2 + vel_y**2)
