@@ -55,32 +55,46 @@ import numpy as np
 import xarray as xr
 import matplotlib.pyplot as plt
 plt.close('all')
+import dfm_tools as dfmt
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
+
+
+file_nc = r'p:\1204257-dcsmzuno\2019\DCSMv6\A01\SDS-A01_map.nc'
+file_nc = r'p:\archivedprojects\11205258-006-kpp2020_rmm-g6\C_Work\07_WAQUAresultaten\j15\SDS-riv_tba_map.nc'
+file_nc = r'c:\DATA\dfm_tools_testdata\waqua_netcdf\SDS-haven_map.nc'
+
 
 
 #MAP ZUNO
 file_nc = r'p:\1204257-dcsmzuno\2019\DCSMv6\A01\SDS-A01_map.nc'
 #vars_pd = get_ncvarproperties(file_nc=file_nc)
 
-#TODO: this should also work, but there are nan values in node_coords_x and node_coords_y
-# import dfm_tools as dfmt
-# ds = xr.open_dataset(file_nc)
-# uds = dfmt.curvilinear_to_UgridDataset(ds,varn_vert_lon='grid_x', varn_vert_lat='grid_y', ij_dims=['M','N'])
-# fig,ax = plt.subplots()#figsize=figsize)
-# uds.isel(TIME=0,LAYER=0).SEP.ugrid.plot(ax=ax, center=False, cmap='jet')
+timestep = 1
+
+file_nc = r'c:\DATA\dfm_tools_testdata\waqua_netcdf\SDS-haven_map.nc'
+#file_nc = r'p:\archivedprojects\11205258-006-kpp2020_rmm-g6\C_Work\07_WAQUAresultaten\j15\SDS-riv_tba_map.nc'
+
+if 1:
+    ds = xr.open_dataset(file_nc)
+    uds = dfmt.open_dataset_curvilinear(file_nc,varn_vert_lon='grid_x', varn_vert_lat='grid_y', ij_dims=['N','M'])
+    fig,ax = plt.subplots()#figsize=figsize)
+    uds.isel(TIME=timestep,LAYER=0).SEP.ugrid.plot(ax=ax, center=False, cmap='jet')
+    #uds.grid.plot(ax=ax,linewidth=0.2)
+    ax.set_aspect('equal')
+    
+else:
+    data_xr = xr.open_dataset(file_nc)
+    data_xr['grid_x_cen'] = data_xr['grid_x'].mean(dim='bounds').bfill(dim='M').bfill(dim='N').ffill(dim='M').ffill(dim='N') #bfill/ffill to avoid nans
+    data_xr['grid_y_cen'] = data_xr['grid_y'].mean(dim='bounds').bfill(dim='M').bfill(dim='N').ffill(dim='M').ffill(dim='N') #bfill/ffill to avoid nans
+    data_xr = data_xr.set_coords(['grid_x_cen','grid_y_cen'])
+    data_nc_SEP = data_xr['SEP'].isel(TIME=timestep)
+    fig, ax = plt.subplots()
+    pc = data_nc_SEP.plot.pcolormesh(x='grid_x_cen',y='grid_y_cen',cmap='jet')
 
 
-timestep = 0
-data_xr = xr.open_dataset(file_nc)
-data_xr['grid_x_cen'] = data_xr['grid_x'].mean(dim='bounds').bfill(dim='M').bfill(dim='N').ffill(dim='M').ffill(dim='N') #bfill/ffill to avoid nans
-data_xr['grid_y_cen'] = data_xr['grid_y'].mean(dim='bounds').bfill(dim='M').bfill(dim='N').ffill(dim='M').ffill(dim='N') #bfill/ffill to avoid nans
-data_xr = data_xr.set_coords(['grid_x_cen','grid_y_cen'])
-data_nc_SEP = data_xr['SEP'].isel(TIME=timestep)
-
-fig, ax = plt.subplots()
-pc = data_nc_SEP.plot.pcolormesh(x='grid_x_cen',y='grid_y_cen',cmap='jet')
+breakit
 pc.set_clim([-0.1,0.1])
 fig.tight_layout()
 plt.savefig(os.path.join(dir_output,'waqua_DCSM_map_wl'))

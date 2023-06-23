@@ -173,25 +173,28 @@ def open_partitioned_dataset(file_nc, remove_ghost=True, **kwargs):
 def open_dataset_curvilinear(file_nc,
                              varn_vert_lon='vertices_longitude', #'grid_x'
                              varn_vert_lat='vertices_latitude', #'grid_y'
-                             ij_dims=['i','j'], #['M','N']
+                             ij_dims=['i','j'], #['N','M']
+                             convert_360to180=False,
                              **kwargs):
     """
     This is a first version of a function that creates a xugrid UgridDataset from a curvilinear dataset like CMCC. Curvilinear means in this case 2D lat/lon variables and i/j indexing. The CMCC dataset does contain vertices, which is essential for conversion to ugrid.
-    It should also work for WAQUA files, but does not work yet
+    It also works for WAQUA files that are converted with getdata
     """
     
     if 'chunks' not in kwargs:
         kwargs['chunks'] = {'time':1}
     
     ds = xr.open_mfdataset(file_nc, **kwargs)
-
+    
+    print('>> getting vertices from ds: ',end='') #long (but does not reflect in 
+    dtstart = dt.datetime.now()
     vertices_longitude = ds[varn_vert_lon].to_numpy()
     vertices_longitude = vertices_longitude.reshape(-1,vertices_longitude.shape[-1])
     vertices_latitude = ds[varn_vert_lat].to_numpy()
     vertices_latitude = vertices_latitude.reshape(-1,vertices_latitude.shape[-1])
-
+    print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
+    
     #convert from 0to360 to -180 to 180
-    convert_360to180 = (vertices_longitude>180).any()
     if convert_360to180:
         vertices_longitude = (vertices_longitude+180)%360 - 180 #TODO: check if periodic cell filter still works properly after doing this
     
@@ -209,16 +212,16 @@ def open_dataset_curvilinear(file_nc,
     
     face_node_connectivity = inv.reshape(face_xy_vertices.shape[:2]) #fnc.max() = 104925
     
-    #remove all faces that have only 1 unique node (does not result in a valid grid) #TODO: not used yet
+    #remove all faces that have only 1 unique node (does not result in a valid grid) #TODO: not used yet except for print
     fnc_all_duplicates = (face_node_connectivity.T==face_node_connectivity[:,0]).all(axis=0)
     
-    #create bool of cells with duplicate nodes (some have 1 unique node, some 3, all these are dropped) #TODO: support also triangles
+    #create bool of cells with duplicate nodes (some have 1 unique node, some 3, all these are dropped) #TODO: support also triangles?
     fnc_closed = np.c_[face_node_connectivity,face_node_connectivity[:,0]]
     fnc_has_duplicates = (np.diff(fnc_closed,axis=1)==0).any(axis=1)
     
     #only keep cells that have 4 unique nodes
     bool_combined = ~fnc_has_duplicates
-    print(f'WARNING: dropping {fnc_has_duplicates.sum()} faces with duplicate nodes ({fnc_all_duplicates.sum()} with one unique node)')#, dropping {bool_periodic_cells.sum()} periodic cells')
+    print(f'WARNING: dropping {fnc_has_duplicates.sum()} faces with duplicate nodes ({fnc_all_duplicates.sum()} with one unique node)')
     face_node_connectivity = face_node_connectivity[bool_combined]
     
     grid = xu.Ugrid2d(node_x=node_coords_x,
@@ -226,13 +229,27 @@ def open_dataset_curvilinear(file_nc,
                       face_node_connectivity=face_node_connectivity,
                       fill_value=-1,
                       )
-    # fig, ax = plt.subplots()
-    # grid.plot(ax=ax)
     
+    print('>> stacking ds i/j coordinates: ',end='') #fast
+    dtstart = dt.datetime.now()
     face_dim = grid.face_dimension
     ds_stacked = ds.stack({face_dim:ij_dims}).sel({face_dim:bool_combined}) #TODO: lev/time bnds are dropped, avoid this. maybe stack initial dataset since it would also simplify the rest of the function a bit
     ds_stacked = ds_stacked.drop_vars(ij_dims+['mesh2d_nFaces']) #TODO: solve "DeprecationWarning: Deleting a single level of a MultiIndex is deprecated", solved by removing mesh2d_nFaces variable
+    print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
+    
+    print('>> init uds: ',end='') #long
+    dtstart = dt.datetime.now()
     uds = xu.UgridDataset(ds_stacked,grids=[grid])
+    print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
+    
+    #remove faces that link to node coordinates that are nan (occurs in waqua models)
+    bool_faces_wnannodes = np.isnan(uds.grid.face_node_coordinates[:,:,0]).any(axis=1)
+    if bool_faces_wnannodes.any():
+        print(f'>> drop {bool_faces_wnannodes.sum()} faces with nan nodecoordinates from uds: ',end='') #long
+        dtstart = dt.datetime.now()
+        uds = uds.sel({face_dim:~bool_faces_wnannodes})
+        print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
+    
     return uds
 
 
