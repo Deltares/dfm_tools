@@ -144,7 +144,7 @@ def open_partitioned_dataset(file_nc, remove_ghost=True, **kwargs):
             print('[mapformat1] ',end='')
             ds = ds.rename({'nFlowElem':'nNetElem'})
         uds = xu.core.wrap.UgridDataset(ds)
-        if remove_ghost: #TODO: this makes it way slower (at least for GTSM), but is necessary since values on overlapping cells are not always identical (eg in case of Venice ucmag)
+        if remove_ghost: #TODO: this makes it way slower (at least for GTSM, although merging seems faster), but is necessary since values on overlapping cells are not always identical (eg in case of Venice ucmag)
             uds = remove_ghostcells(uds)
         partitions.append(uds)
     print(': ',end='')
