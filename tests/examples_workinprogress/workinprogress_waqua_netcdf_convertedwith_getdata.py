@@ -55,6 +55,7 @@ import numpy as np
 import xarray as xr
 import matplotlib.pyplot as plt
 plt.close('all')
+import dfm_tools as dfmt
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
@@ -63,6 +64,13 @@ dir_output = '.'
 #MAP ZUNO
 file_nc = r'p:\1204257-dcsmzuno\2019\DCSMv6\A01\SDS-A01_map.nc'
 #vars_pd = get_ncvarproperties(file_nc=file_nc)
+
+#TODO: this should also work, but there are nan values in node_coords_x and node_coords_y
+# ds = xr.open_dataset(file_nc)
+# uds = dfmt.curvilinear_to_UgridDataset(ds,varn_vert_lon='grid_x', varn_vert_lat='grid_y', ij_dims=['M','N'])
+# fig,ax = plt.subplots()#figsize=figsize)
+# uds.isel(TIME=0,LAYER=0).SEP.ugrid.plot(ax=ax, center=False, cmap='jet')
+
 
 timestep = 0
 data_xr = xr.open_dataset(file_nc)

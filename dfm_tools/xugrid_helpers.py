@@ -10,17 +10,25 @@ import xugrid as xu
 import xarray as xr
 
 
-def curvilinear_to_UgridDataset(ds):
+def curvilinear_to_UgridDataset(ds,
+                                varn_vert_lon='vertices_longitude', #'grid_x'
+                                varn_vert_lat='vertices_latitude', #'grid_y'
+                                ij_dims=['i','j'], #['M','N']
+                                ):
     """
     This is a first version of a function that creates a xugrid UgridDataset from a curvilinear dataset like CMCC. Curvilinear means in this case 2D lat/lon variables and i/j indexing. The CMCC dataset does contain vertices, which is essential for conversion to ugrid.
+    It should also work for WAQUA files, but does not work yet
     """
-    vertices_longitude = ds.vertices_longitude.to_numpy()
+    
+    vertices_longitude = ds[varn_vert_lon].to_numpy()
     vertices_longitude = vertices_longitude.reshape(-1,vertices_longitude.shape[-1])
-    vertices_latitude = ds.vertices_latitude.to_numpy()
+    vertices_latitude = ds[varn_vert_lat].to_numpy()
     vertices_latitude = vertices_latitude.reshape(-1,vertices_latitude.shape[-1])
 
     #convert from 0to360 to -180 to 180
-    vertices_longitude = (vertices_longitude+180)%360 - 180 #TODO: check if periodic cell filter still works properly
+    convert_360to180 = (vertices_longitude>180).any()
+    if convert_360to180:
+        vertices_longitude = (vertices_longitude+180)%360 - 180 #TODO: check if periodic cell filter still works properly after doing this
     
     # face_xy = np.stack([longitude,latitude],axis=-1)
     # face_coords_x, face_coords_y = face_xy.T
@@ -62,8 +70,8 @@ def curvilinear_to_UgridDataset(ds):
     # grid.plot(ax=ax)
     
     face_dim = grid.face_dimension
-    ds_stacked = ds.stack({face_dim:('i','j')}).sel({face_dim:bool_combined}) #TODO: lev/time bnds are dropped, avoid this. maybe stack initial dataset since it would also simplify the rest of the function a bit
-    ds_stacked = ds_stacked.drop_vars(['i','j','mesh2d_nFaces']) #TODO: solve "DeprecationWarning: Deleting a single level of a MultiIndex is deprecated", solved by removing mesh2d_nFaces variable
+    ds_stacked = ds.stack({face_dim:ij_dims}).sel({face_dim:bool_combined}) #TODO: lev/time bnds are dropped, avoid this. maybe stack initial dataset since it would also simplify the rest of the function a bit
+    ds_stacked = ds_stacked.drop_vars(ij_dims+['mesh2d_nFaces']) #TODO: solve "DeprecationWarning: Deleting a single level of a MultiIndex is deprecated", solved by removing mesh2d_nFaces variable
     uds = xu.UgridDataset(ds_stacked,grids=[grid])
     return uds
 
