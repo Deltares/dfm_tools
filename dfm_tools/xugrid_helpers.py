@@ -84,6 +84,7 @@ def remove_periodic_cells(uds): #TODO: implement proper fix: https://github.com/
     bool_face = face_node_maxdx < grid_extent/2
     if bool_face.all(): #early return for when no cells have to be removed (might increase performance)
         return uds
+    print(f'removing {(~bool_face).sum()} periodic cells on dataset')
     uds = uds.sel({uds.grid.face_dimension:bool_face})
     #print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     return uds
@@ -142,7 +143,7 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}, remove_ghost=True, remo
         uds = xu.core.wrap.UgridDataset(ds)
         if remove_ghost: #TODO: this makes it way slower (at least for GTSM), but is necessary since values on overlapping cells are not always identical (eg in case of Venice ucmag)
             uds = remove_ghostcells(uds)
-        if remove_periodic: #TODO: makes it also slower, check if bool/idx makes difference in performance?
+        if remove_periodic: #TODO: makes it also slower, maybe do on merged dataset instead?
             uds = remove_periodic_cells(uds)
         partitions.append(uds)
     print(': ',end='')
@@ -212,13 +213,13 @@ def open_dataset_curvilinear(file_nc,
     fnc_has_duplicates = (np.diff(fnc_closed,axis=1)==0).any(axis=1)
     
     #create boolean of perodic cells (going around the back) #TODO: put function in xugrid to convert periodic to non-periodic grid: https://github.com/Deltares/xugrid/issues/63
-    face_node_coordinates = uniq[face_node_connectivity]
-    fn_coords_diff = (face_node_coordinates[...,0].max(axis=1)-face_node_coordinates[...,0].min(axis=1))
-    bool_periodic_cells = (fn_coords_diff>180)
+    # face_node_coordinates = uniq[face_node_connectivity]
+    # fn_coords_diff = (face_node_coordinates[...,0].max(axis=1)-face_node_coordinates[...,0].min(axis=1))
+    # bool_periodic_cells = (fn_coords_diff>180)
     
     #only keep cells that are not periodic and have 4 unique nodes
-    bool_combined = ~fnc_has_duplicates & ~bool_periodic_cells
-    print(f'WARNING: dropping {fnc_has_duplicates.sum()} faces with duplicate nodes ({fnc_all_duplicates.sum()} with one unique node), dropping {bool_periodic_cells.sum()} periodic cells')
+    bool_combined = ~fnc_has_duplicates #& ~bool_periodic_cells
+    print(f'WARNING: dropping {fnc_has_duplicates.sum()} faces with duplicate nodes ({fnc_all_duplicates.sum()} with one unique node)')#, dropping {bool_periodic_cells.sum()} periodic cells')
     face_node_connectivity = face_node_connectivity[bool_combined]
     
     grid = xu.Ugrid2d(node_x=node_coords_x,
