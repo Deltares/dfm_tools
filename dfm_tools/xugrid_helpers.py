@@ -38,7 +38,7 @@ def get_vertical_dimensions(uds): #TODO: maybe add layer_dimension and interface
         return None, None
 
 
-def remove_ghostcells(uds): #TODO: create JIRA issue: add domainno attribute to partitioned mapfiles or remove ghostcells from output (or make values in ghostcells the same as not-ghostcells)
+def remove_ghostcells(uds): #TODO: create JIRA issue: remove ghostcells from output (or make values in ghostcells the same as not-ghostcells, is now not the case for velocities, probably due to edge-to-center interpolation)
     """
     Dropping ghostcells if there is a domainno variable present and there is a domainno in the filename.
     Not using most-occurring domainno in var, since this is not a valid assumption for merged datasets and might be invalid for a very small partition.
