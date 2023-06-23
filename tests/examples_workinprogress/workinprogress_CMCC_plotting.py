@@ -14,7 +14,7 @@ for varn in ['uo', 'vo','thetao']:
     #TODO: for vo, solve "RuntimeWarning: divide by zero encountered in divide"
     file_nc = f'p:\\11206304-futuremares\\data\\CMIP6_BC\\CMCC-ESM2\\{varn}_Omon_CMCC-ESM2_ssp126_r1i1p1f1_gn_201501-203412.nc'
     
-    uds = dfmt.open_dataset_curvilinear(file_nc) #TODO: check TODO in this function for improvements
+    uds = dfmt.open_dataset_curvilinear(file_nc, convert_360to180=True) #TODO: check TODO in this function for improvements #TODO: plot_coastlines gives wrong result when axis from 0-360
     uds = dfmt.remove_periodic_cells(uds)
     uds = uds.ugrid.sel(x=slice(-15,30), y=slice(30,70)) #slice to europe (arbitrary, but to visualy compare grids)
     
