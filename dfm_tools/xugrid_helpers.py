@@ -273,18 +273,18 @@ def open_dataset_delft3d4(file_nc, **kwargs):
     ds = xr.open_dataset(file_nc, **kwargs) #TODO: move chunks/kwargs to input arguments
     
     #average U1/V1 values to M/N
-    U1_MN = ds.U1.where(ds.KFU,0)
-    U1_MN = (U1_MN + U1_MN.shift(MC=1))/2 #TODO: or MC=-1
-    U1_MN = U1_MN.rename({'MC':'M'})
-    V1_MN = ds.V1.where(ds.KFV,0)
-    V1_MN = (V1_MN + V1_MN.shift(NC=1))/2 #TODO: or NC=-1
-    V1_MN = V1_MN.rename({'NC':'N'})
+    u1_mn = ds.U1.where(ds.KFU,0)
+    u1_mn = (u1_mn + u1_mn.shift(MC=1))/2 #TODO: or MC=-1
+    u1_mn = u1_mn.rename({'MC':'M'})
+    v1_mn = ds.V1.where(ds.KFV,0)
+    v1_mn = (v1_mn + v1_mn.shift(NC=1))/2 #TODO: or NC=-1
+    v1_mn = v1_mn.rename({'NC':'N'})
     ds = ds.drop_vars(['U1','V1']) #to avoid creating large chunks, alternative is to overwrite the vars with the MN-averaged vars, but it requires passing and updating of attrs
     
     #compute ux/uy/umag/udir #TODO: add attrs to variables
-    ALFAS_rad = np.deg2rad(ds.ALFAS)
-    vel_x = U1_MN*np.cos(ALFAS_rad) - V1_MN*np.sin(ALFAS_rad)
-    vel_y = U1_MN*np.sin(ALFAS_rad) + V1_MN*np.cos(ALFAS_rad)
+    alfas_rad = np.deg2rad(ds.ALFAS)
+    vel_x = u1_mn*np.cos(alfas_rad) - v1_mn*np.sin(alfas_rad)
+    vel_y = u1_mn*np.sin(alfas_rad) + v1_mn*np.cos(alfas_rad)
     ds['ux'] = vel_x
     ds['uy'] = vel_y
     ds['umag'] = np.sqrt(vel_x**2 + vel_y**2)
@@ -294,22 +294,22 @@ def open_dataset_delft3d4(file_nc, **kwargs):
     ds = ds.isel(M=mn_slice,N=mn_slice) #cut off first values of M/N (centers), since they are fillvalues and should have different size than MC/NC (corners)
     
     #find and set nans in XZ/YZ arrays, these are ignored in xugrid but still nice to mask
-    data_nc_XZ = ds.XZ
-    data_nc_YZ = ds.YZ
-    XY_nanval = delft3d4_findnanval(data_nc_XZ,data_nc_YZ)
-    if XY_nanval is not None:
-        mask_XY = (data_nc_XZ==XY_nanval) & (data_nc_YZ==XY_nanval)
-        ds['XZ'] = data_nc_XZ.where(~mask_XY)
-        ds['YZ'] = data_nc_YZ.where(~mask_XY)
+    data_nc_xz = ds.XZ
+    data_nc_yz = ds.YZ
+    xy_nanval = delft3d4_findnanval(data_nc_xz,data_nc_yz)
+    if xy_nanval is not None:
+        mask_xy = (data_nc_xz==xy_nanval) & (data_nc_yz==xy_nanval)
+        ds['XZ'] = data_nc_xz.where(~mask_xy)
+        ds['YZ'] = data_nc_yz.where(~mask_xy)
 
     #find and set nans in XCOR/YCOR arrays
-    data_nc_XCOR = ds.XCOR
-    data_nc_YCOR = ds.YCOR
-    XY_nanval = delft3d4_findnanval(data_nc_XCOR,data_nc_YCOR) #-999.999 in kivu and 0.0 in curvedbend
-    if XY_nanval is not None:
-        mask_XYCOR = (data_nc_XCOR==XY_nanval) & (data_nc_YCOR==XY_nanval)
-        ds['XCOR'] = data_nc_XCOR.where(~mask_XYCOR)
-        ds['YCOR'] = data_nc_YCOR.where(~mask_XYCOR)
+    data_nc_xcor = ds.XCOR
+    data_nc_ycor = ds.YCOR
+    xy_nanval = delft3d4_findnanval(data_nc_xcor,data_nc_ycor) #-999.999 in kivu and 0.0 in curvedbend
+    if xy_nanval is not None:
+        mask_xycor = (data_nc_xcor==xy_nanval) & (data_nc_ycor==xy_nanval)
+        ds['XCOR'] = data_nc_xcor.where(~mask_xycor)
+        ds['YCOR'] = data_nc_ycor.where(~mask_xycor)
 
     #convert to ugrid
     node_coords_x = ds.XCOR.to_numpy().ravel()
