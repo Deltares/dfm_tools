@@ -46,7 +46,6 @@ RMM: convert existing waqua output to netcdf files via putty with:
     getdata.pl -f SDS-riv_tba -v SEP,VELU,VELV,YZETA,XZETA -o netcdf -d SDS-riv_tba_map
     getdata.pl -f SDS-riv_tba -v ZWL,ZCURU,ZCURV,NAMWL,NAMC -o netcdf -d SDS-riv_tba_his
     http://simona.deltares.nl/release/doc/usedoc/getdata/getdata.pdf
-    
 
 """
 
@@ -55,105 +54,55 @@ import numpy as np
 import xarray as xr
 import matplotlib.pyplot as plt
 plt.close('all')
+import dfm_tools as dfmt
 
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
 
-#MAP ZUNO
-file_nc = r'p:\1204257-dcsmzuno\2019\DCSMv6\A01\SDS-A01_map.nc'
-#vars_pd = get_ncvarproperties(file_nc=file_nc)
-
-timestep = 0
-data_xr = xr.open_dataset(file_nc)
-data_xr['grid_x_cen'] = data_xr['grid_x'].mean(dim='bounds').bfill(dim='M').bfill(dim='N').ffill(dim='M').ffill(dim='N') #bfill/ffill to avoid nans
-data_xr['grid_y_cen'] = data_xr['grid_y'].mean(dim='bounds').bfill(dim='M').bfill(dim='N').ffill(dim='M').ffill(dim='N') #bfill/ffill to avoid nans
-data_xr = data_xr.set_coords(['grid_x_cen','grid_y_cen'])
-data_nc_SEP = data_xr['SEP'].isel(TIME=timestep)
-
-fig, ax = plt.subplots()
-pc = data_nc_SEP.plot.pcolormesh(x='grid_x_cen',y='grid_y_cen',cmap='jet')
-pc.set_clim([-0.1,0.1])
-fig.tight_layout()
-plt.savefig(os.path.join(dir_output,'waqua_DCSM_map_wl'))
-
-
-#HIS ZUNO
-file_nc = r'p:\1204257-dcsmzuno\2019\DCSMv6\A01\SDS-A01_his.nc'
-#vars_pd = get_ncvarproperties(file_nc=file_nc)
-data_xr = xr.open_dataset(file_nc)
-stations_pd = data_xr.NAMWL.astype(str).to_pandas().str.strip()
-
-fig, ax = plt.subplots(figsize=(16,7))
-for iS in range(10):
-    data_nc_ZWL = data_xr.ZWL.isel(STATION=iS).sel(TIME=slice('2018-12-22','2019-01-05'))
-    ax.plot(data_nc_ZWL.TIME,data_nc_ZWL,label=stations_pd.iloc[iS], linewidth=1)
-ax.legend()
-ax.set_ylabel('%s (%s)'%(data_nc_ZWL.attrs['long_name'], data_nc_ZWL.attrs['units']))
-time_ext = data_nc_ZWL.TIME[[0,-1]].to_numpy()
-ax.set_xlim(time_ext)
-plt.savefig(os.path.join(dir_output,'waqua_DCSM_his_ZWL'))
-
-
-
-
-for RMM_name in ['RMM','RMMtestmodel']:
+for RMM_name in ['RMMtestmodel','RMM']:
     if RMM_name=='RMM':
         file_nc_map = r'p:\archivedprojects\11205258-006-kpp2020_rmm-g6\C_Work\07_WAQUAresultaten\j15\SDS-riv_tba_map.nc'
         file_nc_his = r'p:\archivedprojects\11205258-006-kpp2020_rmm-g6\C_Work\07_WAQUAresultaten\j15\SDS-riv_tba_his.nc'
         timestep = 1
+        resolution = 300
     elif RMM_name == 'RMMtestmodel':
         file_nc_map = r'c:\DATA\dfm_tools_testdata\waqua_netcdf\SDS-haven_map.nc'
         file_nc_his = r'c:\DATA\dfm_tools_testdata\waqua_netcdf\SDS-haven_his.nc'
-        timestep = 10
-
+        timestep = 5
+        resolution = 500
+    figsize = (16,7)
+    
     #MAP RMM
-    file_nc = file_nc_map
-    #vars_pd = get_ncvarproperties(file_nc=file_nc)
+    uds = dfmt.open_dataset_curvilinear(file_nc_map, varn_vert_lon='grid_x', varn_vert_lat='grid_y', ij_dims=['N','M'])
+    uds_sel = uds.isel(TIME=timestep,LAYER=0)
+    uds_rastered = dfmt.rasterize_ugrid(uds_sel,resolution=resolution)
     
-    data_xr = xr.open_dataset(file_nc)
-    data_xr['grid_x_cen'] = data_xr['grid_x'].mean(dim='bounds').bfill(dim='M').bfill(dim='N').ffill(dim='M').ffill(dim='N') #bfill/ffill to avoid nans
-    data_xr['grid_y_cen'] = data_xr['grid_y'].mean(dim='bounds').bfill(dim='M').bfill(dim='N').ffill(dim='M').ffill(dim='N') #bfill/ffill to avoid nans
-    data_xr = data_xr.set_coords(['grid_x_cen','grid_y_cen'])
-    data_nc_SEP = data_xr['SEP'].isel(TIME=timestep)
-    data_nc_VELU = data_xr['VELU'].isel(TIME=timestep,LAYER=0)
-    data_nc_VELV = data_xr['VELV'].isel(TIME=timestep,LAYER=0)
-    
-    
-    fig, ax = plt.subplots(figsize=(16,7))
-    pc = data_nc_SEP.plot.pcolormesh(x='grid_x_cen',y='grid_y_cen',cmap='jet')
+    fig,ax = plt.subplots(figsize=figsize)
+    pc = uds_sel.SEP.ugrid.plot(ax=ax, center=False, cmap='jet')
     pc.set_clim([0,3])
     ax.set_aspect('equal')
     fig.tight_layout()
-    plt.savefig(os.path.join(dir_output,'waqua_%s_map_wl'%(RMM_name)))
-
-    fig, ax = plt.subplots(figsize=(16,7))
-    data_nc_VELmagn = np.sqrt(data_nc_VELU**2 + data_nc_VELV**2)
-    pc = data_nc_VELmagn.plot.pcolormesh(x='grid_x_cen',y='grid_y_cen',cmap='jet')
+    fig.savefig(os.path.join(dir_output,'waqua_%s_map_wl'%(RMM_name)))
+    
+    fig, ax = plt.subplots(figsize=figsize)
+    data_nc_VELmagn = np.sqrt(uds_sel.VELU**2 + uds_sel.VELV**2)
+    pc = data_nc_VELmagn.ugrid.plot(ax=ax, center=False, cmap='jet')
     pc.set_clim([0,1])
-    if RMM_name=='RMM':
-        thinning = 10
-    else:
-        thinning = 1
-    data_nc_VELU_thin = data_nc_VELU.loc[::thinning,::thinning]
-    data_nc_VELV_thin = data_nc_VELV.loc[::thinning,::thinning]
-    ax.quiver(data_nc_VELU_thin.grid_x_cen, data_nc_VELU_thin.grid_y_cen, data_nc_VELU_thin, data_nc_VELV_thin, 
-              color='w',scale=10)#,width=0.005)#, cmap='jet')
+    ax.quiver(uds_rastered.x, uds_rastered.y, uds_rastered.VELU, uds_rastered.VELV, 
+              color='w',scale=10)
     if RMM_name=='RMM':
         ax.set_xlim([61000, 72000])
         ax.set_ylim([438000, 446000])
     ax.set_aspect('equal')
     fig.tight_layout()
-    plt.savefig(os.path.join(dir_output,'waqua_%s_map_vel'%(RMM_name)))
+    fig.savefig(os.path.join(dir_output,'waqua_%s_map_vel'%(RMM_name)))
     
     #HIS RMM
-    file_nc = file_nc_his
-    #vars_pd = get_ncvarproperties(file_nc=file_nc)
-    
-    data_xr = xr.open_dataset(file_nc)
+    data_xr = xr.open_dataset(file_nc_his)
     stations_pd = data_xr.NAMWL.astype(str).to_pandas().str.strip()
     
-    fig, ax = plt.subplots(figsize=(16,7))
+    fig, ax = plt.subplots(figsize=figsize)
     for iS in range(10):
         data_nc_ZWL = data_xr.ZWL.isel(STATION=iS)
         ax.plot(data_nc_ZWL.TIME,data_nc_ZWL,label=stations_pd.iloc[iS], linewidth=1)
@@ -162,6 +111,5 @@ for RMM_name in ['RMM','RMMtestmodel']:
     time_ext = data_nc_ZWL.TIME[[0,-1]].to_numpy()
     ax.set_xlim(time_ext)
     plt.savefig(os.path.join(dir_output,'waqua_%s_his_ZWL'%(RMM_name)))
-
 
 

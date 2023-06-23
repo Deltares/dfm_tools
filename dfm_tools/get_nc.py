@@ -38,7 +38,8 @@ import re
 import xugrid as xu
 import xarray as xr
 import matplotlib.pyplot as plt
-from dfm_tools.xarray_helpers import get_vertical_dimensions, Dataset_varswithdim
+from dfm_tools.xarray_helpers import Dataset_varswithdim
+from dfm_tools.xugrid_helpers import get_vertical_dimensions
 import netCDF4
 
 
