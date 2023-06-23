@@ -253,16 +253,16 @@ def open_dataset_curvilinear(file_nc,
     return uds
 
 
-def delft3d4_findnanval(data_nc_XZ,data_nc_YZ):
-    values, counts = np.unique(data_nc_XZ, return_counts=True)
-    X_nanval = values[np.argmax(counts)]
-    values, counts = np.unique(data_nc_YZ, return_counts=True)
-    Y_nanval = values[np.argmax(counts)]
-    if X_nanval!=Y_nanval:
-        XY_nanval = None
+def delft3d4_findnanval(data_nc_xz,data_nc_yz):
+    values, counts = np.unique(data_nc_xz, return_counts=True)
+    x_nanval = values[np.argmax(counts)]
+    values, counts = np.unique(data_nc_yz, return_counts=True)
+    y_nanval = values[np.argmax(counts)]
+    if x_nanval!=y_nanval:
+        xy_nanval = None
     else:
-        XY_nanval = X_nanval
-    return XY_nanval
+        xy_nanval = x_nanval
+    return xy_nanval
 
 
 def open_dataset_delft3d4(file_nc, **kwargs):
