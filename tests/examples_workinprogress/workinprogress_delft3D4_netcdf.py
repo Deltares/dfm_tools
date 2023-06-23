@@ -18,12 +18,6 @@ import dfm_tools as dfmt
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
-#HIRLAM: no corners or vertices present
-#file_nc = r'p:\1204257-dcsmzuno\2014\data\meteo\HIRLAM72_2018\h72_201803.nc'
-#data_xr = xr.open_mfdataset(file_nc,drop_variables=['x','y'],preprocess=dfmt.preprocess_hirlam)
-
-#WAQUA #TODO: to be added
-
 file_nc_list = [r'p:\archivedprojects\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\062_netcdf\trim-thiery_002_coarse.nc',
                 os.path.join(dir_testinput,'D3D_3D_sigma_curved_bend_nc\\trim-cb2-sal-added-3d.nc')]
 
