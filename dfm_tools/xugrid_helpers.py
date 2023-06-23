@@ -89,7 +89,7 @@ def remove_periodic_cells(uds): #TODO: implement proper fix: https://github.com/
     return uds
 
 
-def open_partitioned_dataset(file_nc, chunks={'time':1}, remove_ghost=True, **kwargs): 
+def open_partitioned_dataset(file_nc, remove_ghost=True, **kwargs): 
     """
     using xugrid to read and merge partitions, with some additional features (remaning old layerdim, timings, set zcc/zw as data_vars)
 
@@ -97,7 +97,8 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}, remove_ghost=True, **kw
     ----------
     file_nc : TYPE
         DESCRIPTION.
-    chunks : TYPE, optional
+    kawrgs : TYPE, optional
+        arguments that are passed to xr.open_dataset. The chunks argument is set if not provided
         chunks={'time':1} increases performance significantly upon reading, but causes memory overloads when performing sum/mean/etc actions over time dimension (in that case 100/200 is better). The default is {'time':1}.
 
     Raises
@@ -127,6 +128,9 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}, remove_ghost=True, **kw
     #TODO: add support for multiple grids via keyword? GTSM+riv grid also only contains only one grid, so no testcase available
     #TODO: speed up open_dataset https://github.com/Deltares/dfm_tools/issues/225 (also remove_ghost and remove_periodic)
     
+    if 'chunks' not in kwargs:
+        kwargs['chunks'] = {'time':1}
+    
     dtstart_all = dt.datetime.now()
     file_nc_list = file_to_list(file_nc)
     
@@ -135,7 +139,7 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}, remove_ghost=True, **kw
     partitions = []
     for iF, file_nc_one in enumerate(file_nc_list):
         print(iF+1,end=' ')
-        ds = xr.open_dataset(file_nc_one, chunks=chunks, **kwargs)
+        ds = xr.open_dataset(file_nc_one, **kwargs)
         if 'nFlowElem' in ds.dims and 'nNetElem' in ds.dims: #for mapformat1 mapfiles: merge different face dimensions (rename nFlowElem to nNetElem) to make sure the dataset topology is correct
             print('[mapformat1] ',end='')
             ds = ds.rename({'nFlowElem':'nNetElem'})
@@ -175,6 +179,9 @@ def open_dataset_curvilinear(file_nc,
     This is a first version of a function that creates a xugrid UgridDataset from a curvilinear dataset like CMCC. Curvilinear means in this case 2D lat/lon variables and i/j indexing. The CMCC dataset does contain vertices, which is essential for conversion to ugrid.
     It should also work for WAQUA files, but does not work yet
     """
+    
+    if 'chunks' not in kwargs:
+        kwargs['chunks'] = {'time':1}
     
     ds = xr.open_mfdataset(file_nc, **kwargs)
 
@@ -246,9 +253,12 @@ def delft3d4_findnanval(data_nc_XZ,data_nc_YZ):
     return XY_nanval
 
 
-def open_dataset_delft3d4(file_nc):
+def open_dataset_delft3d4(file_nc, **kwargs):
     
-    ds = xr.open_dataset(file_nc,chunks={'time':1}) #TODO: move chunks/kwargs to input arguments
+    if 'chunks' not in kwargs:
+        kwargs['chunks'] = {'time':1}
+    
+    ds = xr.open_dataset(file_nc, **kwargs) #TODO: move chunks/kwargs to input arguments
     
     #average U1/V1 values to M/N
     U1_MN = ds.U1.where(ds.KFU,0)
