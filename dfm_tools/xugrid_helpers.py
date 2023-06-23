@@ -126,7 +126,7 @@ def open_partitioned_dataset(file_nc, remove_ghost=True, **kwargs):
     """
     #TODO: FM-mapfiles contain wgs84/projected_coordinate_system variables. xugrid has .crs property, projected_coordinate_system/wgs84 should be updated to be crs so it will be automatically handled? >> make dflowfm issue (and https://github.com/Deltares/xugrid/issues/42)
     #TODO: add support for multiple grids via keyword? GTSM+riv grid also only contains only one grid, so no testcase available
-    #TODO: speed up open_dataset https://github.com/Deltares/dfm_tools/issues/225 (also remove_ghost and remove_periodic)
+    #TODO: speed up open_dataset https://github.com/Deltares/dfm_tools/issues/225 (also remove_ghost)
     
     if 'chunks' not in kwargs:
         kwargs['chunks'] = {'time':1}
