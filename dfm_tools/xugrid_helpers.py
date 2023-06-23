@@ -216,13 +216,8 @@ def open_dataset_curvilinear(file_nc,
     fnc_closed = np.c_[face_node_connectivity,face_node_connectivity[:,0]]
     fnc_has_duplicates = (np.diff(fnc_closed,axis=1)==0).any(axis=1)
     
-    #create boolean of perodic cells (going around the back) #TODO: put function in xugrid to convert periodic to non-periodic grid: https://github.com/Deltares/xugrid/issues/63
-    # face_node_coordinates = uniq[face_node_connectivity]
-    # fn_coords_diff = (face_node_coordinates[...,0].max(axis=1)-face_node_coordinates[...,0].min(axis=1))
-    # bool_periodic_cells = (fn_coords_diff>180)
-    
-    #only keep cells that are not periodic and have 4 unique nodes
-    bool_combined = ~fnc_has_duplicates #& ~bool_periodic_cells
+    #only keep cells that have 4 unique nodes
+    bool_combined = ~fnc_has_duplicates
     print(f'WARNING: dropping {fnc_has_duplicates.sum()} faces with duplicate nodes ({fnc_all_duplicates.sum()} with one unique node)')#, dropping {bool_periodic_cells.sum()} periodic cells')
     face_node_connectivity = face_node_connectivity[bool_combined]
     
