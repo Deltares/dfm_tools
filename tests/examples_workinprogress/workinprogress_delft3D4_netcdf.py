@@ -19,7 +19,8 @@ dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
 file_nc_list = [r'p:\archivedprojects\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\062_netcdf\trim-thiery_002_coarse.nc',
-                os.path.join(dir_testinput,'D3D_3D_sigma_curved_bend_nc\\trim-cb2-sal-added-3d.nc')]
+                #os.path.join(dir_testinput,'D3D_3D_sigma_curved_bend_nc\\trim-cb2-sal-added-3d.nc'),
+                ]
 
 for file_nc in file_nc_list:
     

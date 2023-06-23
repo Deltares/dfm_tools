@@ -326,14 +326,7 @@ def open_dataset_delft3d4(file_nc, **kwargs):
                                        node_idx[:-1,:-1].ravel(), #ul
                                        ],axis=1)
     
-    add_triangles = False #seems to be all zeros, so remove from code?
-    if add_triangles: # also include faces with 3 nodes?
-        faces_w3nodes_bool = (face_node_connectivity!=-1).sum(axis=1)==3
-        fnc_3nodes_sorted = np.sort(face_node_connectivity[faces_w3nodes_bool],axis=1)[:,::-1]
-        face_node_connectivity[faces_w3nodes_bool] = fnc_3nodes_sorted
-        keep_faces_bool = (face_node_connectivity!=-1).sum(axis=1)>=3
-    else:
-        keep_faces_bool = (face_node_connectivity!=-1).sum(axis=1)==4
+    keep_faces_bool = (face_node_connectivity!=-1).sum(axis=1)==4
     
     face_node_connectivity = face_node_connectivity[keep_faces_bool]
     
