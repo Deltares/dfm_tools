@@ -10,16 +10,18 @@ import xugrid as xu
 import xarray as xr
 
 
-def curvilinear_to_UgridDataset(ds,
-                                varn_vert_lon='vertices_longitude', #'grid_x'
-                                varn_vert_lat='vertices_latitude', #'grid_y'
-                                ij_dims=['i','j'], #['M','N']
-                                ):
+def open_dataset_curvilinear(file_nc,
+                             varn_vert_lon='vertices_longitude', #'grid_x'
+                             varn_vert_lat='vertices_latitude', #'grid_y'
+                             ij_dims=['i','j'], #['M','N']
+                             **kwargs):
     """
     This is a first version of a function that creates a xugrid UgridDataset from a curvilinear dataset like CMCC. Curvilinear means in this case 2D lat/lon variables and i/j indexing. The CMCC dataset does contain vertices, which is essential for conversion to ugrid.
     It should also work for WAQUA files, but does not work yet
     """
     
+    ds = xr.open_mfdataset(file_nc, **kwargs)
+
     vertices_longitude = ds[varn_vert_lon].to_numpy()
     vertices_longitude = vertices_longitude.reshape(-1,vertices_longitude.shape[-1])
     vertices_latitude = ds[varn_vert_lat].to_numpy()
