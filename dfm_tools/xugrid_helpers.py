@@ -80,9 +80,9 @@ def delft3d4_findnanval(data_nc_XZ,data_nc_YZ):
     return XY_nanval
 
 
-def open_dataset_delft3d4(file_nc, *kwargs):
+def open_dataset_delft3d4(file_nc):
     
-    ds = xr.open_dataset(file_nc,chunks={'time':1})
+    ds = xr.open_dataset(file_nc,chunks={'time':1}) #TODO: move chunks/kwargs to input arguments
     
     #average U1/V1 values to M/N
     for varn in ['U1','V1']:#ds.data_vars:
