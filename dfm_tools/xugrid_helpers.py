@@ -76,21 +76,20 @@ def remove_periodic_cells(uds): #TODO: implement proper fix: https://github.com/
     For global models with grids that go "around the back". Temporary fix to drop all faces that are larger than grid_extent/2 (eg 360/2=180 degrees in case of GTSM)
     
     """
-    #print('>> remove_periodic_cells() on dataset: ',end='')
-    #dtstart = dt.datetime.now()
     face_node_x = uds.grid.face_node_coordinates[:,:,0]
     grid_extent = uds.grid.bounds[2] - uds.grid.bounds[0]
     face_node_maxdx = np.nanmax(face_node_x,axis=1) - np.nanmin(face_node_x,axis=1)
     bool_face = face_node_maxdx < grid_extent/2
     if bool_face.all(): #early return for when no cells have to be removed (might increase performance)
         return uds
-    print(f'removing {(~bool_face).sum()} periodic cells on dataset')
+    print(f'>> removing {(~bool_face).sum()} periodic cells from dataset: ',end='')
+    dtstart = dt.datetime.now()
     uds = uds.sel({uds.grid.face_dimension:bool_face})
-    #print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
+    print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     return uds
 
 
-def open_partitioned_dataset(file_nc, chunks={'time':1}, remove_ghost=True, remove_periodic=False, **kwargs): 
+def open_partitioned_dataset(file_nc, chunks={'time':1}, remove_ghost=True, **kwargs): 
     """
     using xugrid to read and merge partitions, with some additional features (remaning old layerdim, timings, set zcc/zw as data_vars)
 
@@ -143,8 +142,6 @@ def open_partitioned_dataset(file_nc, chunks={'time':1}, remove_ghost=True, remo
         uds = xu.core.wrap.UgridDataset(ds)
         if remove_ghost: #TODO: this makes it way slower (at least for GTSM), but is necessary since values on overlapping cells are not always identical (eg in case of Venice ucmag)
             uds = remove_ghostcells(uds)
-        if remove_periodic: #TODO: makes it also slower, maybe do on merged dataset instead?
-            uds = remove_periodic_cells(uds)
         partitions.append(uds)
     print(': ',end='')
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
