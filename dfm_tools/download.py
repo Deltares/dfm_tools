@@ -139,6 +139,19 @@ def download_CMEMS(varkey,
                      dir_output=dir_output, file_prefix=file_prefix, overwrite=overwrite)
 
 
+def get_CMEMS_credentials():
+    """
+    parse file with CMEMS credentials to username/password
+    """
+    file_credentials = f'{os.path.expanduser("~")}/CMEMS_credentials.txt'
+    if not os.path.exists(file_credentials):
+        raise FileNotFoundError(f'credentials argument not supplied and file_credentials not available ({file_credentials})')
+    with open(file_credentials) as fc:
+        username = fc.readline().strip()
+        password = fc.readline().strip()
+    return username, password
+
+
 def open_OPeNDAP_xr(dataset_url, credentials=None):
     """
     How to get the opendap dataset_url (CMEMS example):
@@ -179,16 +192,11 @@ def open_OPeNDAP_xr(dataset_url, credentials=None):
         if isinstance(dataset_url,list):
             raise TypeError('list not supported by opendap method used for cmems')
         
-        #parse credentials to username/password #TODO: now CMEMS specific, make more generic
+        #parse file with CMEMS credentials to username/password
         if credentials is None:
-            file_credentials = f'{os.path.expanduser("~")}/CMEMS_credentials.txt'
-            if not os.path.exists(file_credentials):
-                raise FileNotFoundError(f'credentials argument not supplied and file_credentials not available ({file_credentials})')
-            with open(file_credentials) as fc:
-                username = fc.readline().strip()
-                password = fc.readline().strip()
+            username, password = get_CMEMS_credentials()
         else:
-            username,password = credentials
+            username, password = credentials
 
         print(f'opening pydap connection to opendap dataset and opening with xarray: {dataset_url}.html')
         data_store = copernicusmarine_datastore(dataset_url=dataset_url, username=username, password=password)
