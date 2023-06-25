@@ -192,9 +192,8 @@ def open_OPeNDAP_xr(dataset_url, credentials=None):
         if isinstance(dataset_url,list):
             raise TypeError('list not supported by opendap method used for cmems')
         
-        #parse file with CMEMS credentials to username/password
         if credentials is None:
-            username, password = get_CMEMS_credentials()
+            username, password = get_CMEMS_credentials() #parse file with CMEMS credentials to username/password
         else:
             username, password = credentials
 
