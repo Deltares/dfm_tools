@@ -62,6 +62,7 @@ mkdocs build
 
 ## Create release
 
+- local check with: ``python setup.py sdist bdist_wheel`` and ``twine check dist/*``
 - make sure the ``main`` branch is up to date (important issues solved, all pullrequests closed, the versionnumber is correct)
 - copy the dfm_tools version from https://github.com/Deltares/dfm_tools/blob/main/setup.cfg (e.g. ``0.11.0``)
 - go to https://github.com/Deltares/dfm_tools/releases/new
