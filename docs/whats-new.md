@@ -2,12 +2,12 @@
 
 ### Feat
 
-- open_dataset_curvilinear() added support for curvilinear datasets like CMCC and WAQUA by @veenstrajelmer in https://github.com/Deltares/dfm_tools/pull/397
+- open_dataset_curvilinear() added support for curvilinear datasets like CMCC and WAQUA by https://github.com/veenstrajelmer in https://github.com/Deltares/dfm_tools/pull/397
 - open_dataset_delft3d4() added support for curvilinear Delft3D4 datasets by @veenstrajelmer in https://github.com/Deltares/dfm_tools/pull/398
 
 ### Fix
 
-- proper selection for either CMEMS reanalysis/forecast product in download_CMEMS() by @JulienGroenenboom in https://github.com/Deltares/dfm_tools/pull/388
+- proper selection for either CMEMS reanalysis/forecast product in download_CMEMS() by @JulienGroenenboom in [388](https://github.com/Deltares/dfm_tools/pull/388)
 
 ## 0.11.0 (2023-04-24)
 
