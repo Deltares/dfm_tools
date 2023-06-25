@@ -2,8 +2,8 @@
 
 ### Feat
 
-- open_dataset_curvilinear() added support for curvilinear datasets like CMCC and WAQUA in issue #369 and pull #397
-- open_dataset_delft3d4() added support for curvilinear Delft3D4 datasets in issue #369 and pull #398
+- open_dataset_curvilinear() added support for curvilinear datasets like CMCC and WAQUA in pull [#397](https://github.com/Deltares/dfm_tools/pull/397)
+- open_dataset_delft3d4() added support for curvilinear Delft3D4 datasets in pull [#398](https://github.com/Deltares/dfm_tools/pull/398)
 
 ### Fix
 
