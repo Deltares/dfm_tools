@@ -2,8 +2,9 @@
 
 ### Feat
 
-- open_dataset_curvilinear() added support for curvilinear datasets like CMCC and WAQUA by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#397](https://github.com/Deltares/dfm_tools/pull/397)
-- open_dataset_delft3d4() added support for curvilinear Delft3D4 datasets by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#398](https://github.com/Deltares/dfm_tools/pull/398)
+- added support for curvilinear datasets like CMCC and WAQUA with `open_dataset_curvilinear()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#397](https://github.com/Deltares/dfm_tools/pull/397)
+- added support for curvilinear Delft3D4 datasets with `open_dataset_delft3d4()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#398](https://github.com/Deltares/dfm_tools/pull/398)
+- retrieving [GSHHS landboundary](https://www.ngdc.noaa.gov/mgg/shorelines/) with `get_coastlines_gdb()` and cartopy-alternative `plot_coastlines()` with these dataset by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#342](https://github.com/Deltares/dfm_tools/pull/342)
 
 ### Fix
 
