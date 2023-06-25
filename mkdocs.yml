@@ -62,6 +62,7 @@ nav:
   - Home: "README.md"
   - How-to:
       - Installation: "installation.md"
+      - Whats New: "whats-new.md"
       - Contributing: "CONTRIBUTING.md"
   - Tutorials:
       - Introduction: tutorials.md
