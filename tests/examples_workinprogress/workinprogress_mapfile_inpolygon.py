@@ -37,10 +37,9 @@ import xarray as xr
 import pandas as pd
 import geopandas as gpd
 import matplotlib.pyplot as plt
+plt.close('all')
 import dfm_tools as dfmt
 from shapely.geometry import Point
-import cartopy.crs as ccrs #install cartopy with `conda install cartopy -c conda-forge`
-import cartopy.feature as cf #install cartopy with `conda install cartopy -c conda-forge`
 
 # modelrun settings
 crs = 4326
@@ -57,6 +56,7 @@ for i, shp_id in enumerate(shpfile):
     print(i, shp_id)
     # import area shapefile
     area_shp_single = gpd.read_file(os.path.join(shpdir, shp_id))
+    area_shp_single = area_shp_single[area_shp_single.area>5e8] #TODO: temporarily using only the large shapefiles
     
     if shp_id == 'Operational and tendered wind farms.shp':
         area_shp_single = area_shp_single[area_shp_single.country == 'Netherlands']
@@ -80,16 +80,12 @@ for i, shp_id in enumerate(shpfile):
     # add areaids to total list
     areaids = areaids + areaids_single
 
-
 ## Plotting the shapefiles
-fig, ax = plt.subplots(subplot_kw=dict(projection=ccrs.PlateCarree()))
-ax.coastlines()
+fig, ax = plt.subplots()
 ax.set_xlim(0.0, 10)
 ax.set_ylim(50, 56)
-ax.add_feature(cf.LAND)
-gls = ax.gridlines(crs=ccrs.PlateCarree(), linewidth=1, color='black', alpha=0.5, draw_labels=True)
-gls.top_labels=False   # suppress top labels
-gls.right_labels=False # suppress right labels
+dfmt.plot_coastlines(ax=ax,res='i')
+ax.grid()
 area_shp.plot(ax=ax, linewidth = 1, facecolor = (1, 1, 1, 0), edgecolor = (0.5, 0.5, 0.5, 1))
 
 
@@ -100,9 +96,13 @@ for year in years: # last few years - from 2015
     print(year)
     
     file_nc = os.path.join(basedir, year, f'DCSM-FM_0_5nm_waq_statistics_{year}_01*_map.nc') # read filepath #TODO: revert back from 01* to 0* again
+    part_nos = np.array([100, 101, 102, 103, 121, 128, 129, 130, 131, 132, 133, 134, 135,
+                         136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148,
+                         149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161,
+                         162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175])
+    file_nc = [os.path.join(basedir, year, f'DCSM-FM_0_5nm_waq_statistics_{year}_{partno:04d}_map.nc') for partno in part_nos]
     waq_xr = dfmt.open_partitioned_dataset(file_nc) # read data and combine parts
-    #ugrid_all_verts = dfmt.get_ugrid_verts(waq_xr) # Set up the ugrid (x,y coords for every tracer)
-
+    
     # 1. Grid conversion
     faces = [Point(face_xy) for face_xy in waq_xr.grid.face_coordinates] # create points to compare to polygon
     
@@ -135,15 +135,11 @@ for year in years: # last few years - from 2015
 area_shp['average_SPM_gro'] = area_shp.filter(regex='SPM_gro$',axis=1).mean(numeric_only=True, axis=1) # SPM_gro
 
 ## Plot the values onto each polygon, per variable:
-fig, ax = plt.subplots(subplot_kw=dict(projection=ccrs.PlateCarree()))
-ax.coastlines()
+fig, ax = plt.subplots()
 ax.set_xlim(0.0, 10)
 ax.set_ylim(50, 56)
-ax.add_feature(cf.LAND)
-gls = ax.gridlines(crs=ccrs.PlateCarree(), linewidth=1, color='black', alpha=0.5, draw_labels=True)
-gls.top_labels=False   # suppress top labels
-gls.right_labels=False # suppress right labels
-
+dfmt.plot_coastlines(ax=ax,res='i')
+ax.grid()
 ## SPM:
 area_shp.plot(column='average_SPM_gro', ax=ax, legend=True, vmin=0, vmax=8)
 
