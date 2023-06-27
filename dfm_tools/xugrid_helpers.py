@@ -297,18 +297,10 @@ def open_dataset_delft3d4(file_nc, **kwargs):
         ds['uy'] = vel_y
         ds['umag'] = np.sqrt(vel_x**2 + vel_y**2)
         ds['udir'] = np.rad2deg(np.arctan2(vel_y, vel_x))%360
-        #print(ds.isel(time=10).U1.max().load(),ds.isel(time=10).V1.max().load(), ds['umag'].isel(time=10).max().load())
     
     mn_slice = slice(1,None)
     ds = ds.isel(M=mn_slice,N=mn_slice) #cut off first values of M/N (centers), since they are fillvalues and should have different size than MC/NC (corners)
     
-    #find and set nans in XZ/YZ arrays, these are ignored in xugrid but still nice to mask
-    data_nc_xz = ds.XZ
-    data_nc_yz = ds.YZ
-    mask_xy = get_delft3d4_nanmask(data_nc_xz,data_nc_yz)
-    ds['XZ'] = data_nc_xz.where(~mask_xy)
-    ds['YZ'] = data_nc_yz.where(~mask_xy)
-
     #find and set nans in XCOR/YCOR arrays
     data_nc_xcor = ds.XCOR
     data_nc_ycor = ds.YCOR
