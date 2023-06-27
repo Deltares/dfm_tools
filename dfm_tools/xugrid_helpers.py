@@ -350,6 +350,7 @@ def open_dataset_delft3d4(file_nc, **kwargs):
     ds_stacked = ds_stacked.drop_vars(['M','N','mesh2d_nFaces'])
     uds = xu.UgridDataset(ds_stacked,grids=[grid]) 
     
-    uds = uds.drop_vars(['XCOR','YCOR'])#,'KCU','KCV','KFU','KFV','DP0','DPU0','DPV0']) #TODO: #drop additional vars with MC/NC (automate)
+    uds = uds.drop_vars(['XCOR','YCOR'])
+    uds = uds.drop_dims(['MC','NC']) #clean up dataset by dropping corner dims (drops also variabes with U/V masks and U/V/C bedlevel)
     
     return uds
