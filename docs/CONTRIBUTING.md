@@ -14,7 +14,7 @@
 
 - download and install Anaconda 64 bit Python 3.9 (or higher) from [anaconda.com](https://www.anaconda.com/distribution/#download-section) (miniconda should also be sufficient, but this is not yet tested). Install it with the recommended settings.
 - open anaconda prompt and navigate to dfm_tools checkout folder, e.g. ``C:\DATA\dfm_tools``
-- ``conda create --name dfm_tools_env python=3.9 git spyder cartopy -c conda-forge -y`` (``git``, ``spyder`` and ``cartopy`` are optional, ``conda-forge`` channel is required by cartopy, you can also install a newer python version)
+- ``conda create --name dfm_tools_env python=3.9 git spyder -y`` (``git`` and ``spyder``, you can also install a newer python version)
 - ``conda activate dfm_tools_env``
 - ``python -m pip install -e .[test]`` (pip developer mode, any updates to the local folder are immediately available in your python. It also installs all requirements via pip, ``[test]`` installs also the developer requirements)
 - ``conda deactivate``
@@ -75,13 +75,11 @@ mkdocs build
 ## What are all these packages for?
 
 - shapely for slicing 2D/3D data
-- cartopy for satellite imagery, coastlines etc on plots (can only be installed via conda)
-- pyepsg is necessary for cartopy and probably also for other libraries
 - geopandas for shapefile related operations
-- contextily for satellite imagery on plots, seems faster than cartopy
+- contextily for satellite imagery on plots, faster than cartopy
 - xarray developers advise to install dependecies dask/netCDF4/bottleneck with conda-forge also: https://docs.xarray.dev/en/v0.8.0/installing.html
 - xugrid: wrapper around xarray by Huite Bootsma, for ugrid support
-- cdsapi/pydap: to download ERA5 and CMEMS data. Minimal pydap version is 3.3.0?
+- cdsapi/pydap: to download ERA5 and CMEMS data
 
 ## Potential spyder issues
 

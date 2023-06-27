@@ -3,8 +3,6 @@ numpy
 matplotlib
 pandas<2.0.0
 shapely>=1.7.0
-#cartopy #commented since cartopy is not pip installable
-pyepsg
 geopandas
 contextily
 xarray<2023.3.0

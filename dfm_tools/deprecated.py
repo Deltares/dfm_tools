@@ -31,7 +31,7 @@ def plot_background(ax=None, projection=None, google_style='satellite', resoluti
     """
     deprecated
     """
-    raise DeprecationWarning('dfmt.plot_background() is deprecated, use contextily and cartopy instead like in https://github.com/Deltares/dfm_tools/blob/main/tests/examples_workinprogress/workinprogress_cartopy_satellite_coastlines.py')
+    raise DeprecationWarning('dfmt.plot_background() is deprecated, use contextily instead')
 
 
 def get_ugrid_verts(data_xr_map=None):
