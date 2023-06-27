@@ -253,10 +253,10 @@ def open_dataset_curvilinear(file_nc,
     return uds
 
 
-def get_delft3d4_nanmask(data_nc_xz,data_nc_yz):
-    bool_0 = (data_nc_xz==0) & (data_nc_yz==0)
-    bool_1 = (data_nc_xz==-999) & (data_nc_yz==-999)
-    bool_2 = (data_nc_xz==-999.999) & (data_nc_yz==-999.999)
+def get_delft3d4_nanmask(x,y):
+    bool_0 = (x==0) & (y==0)
+    bool_1 = (x==-999) & (y==-999)
+    bool_2 = (x==-999.999) & (y==-999.999)
     bool_mask = bool_0 | bool_1 | bool_2
     return bool_mask
 
@@ -302,11 +302,9 @@ def open_dataset_delft3d4(file_nc, **kwargs):
     ds = ds.isel(M=mn_slice,N=mn_slice) #cut off first values of M/N (centers), since they are fillvalues and should have different size than MC/NC (corners)
     
     #find and set nans in XCOR/YCOR arrays
-    data_nc_xcor = ds.XCOR
-    data_nc_ycor = ds.YCOR
-    mask_xy = get_delft3d4_nanmask(data_nc_xcor,data_nc_ycor) #-999.999 in kivu and 0.0 in curvedbend, both in westernscheldt
-    ds['XCOR'] = data_nc_xcor.where(~mask_xy)
-    ds['YCOR'] = data_nc_ycor.where(~mask_xy)
+    mask_xy = get_delft3d4_nanmask(ds.XCOR,ds.YCOR) #-999.999 in kivu and 0.0 in curvedbend, both in westernscheldt
+    ds['XCOR'] = ds.XCOR.where(~mask_xy)
+    ds['YCOR'] = ds.YCOR.where(~mask_xy)
 
     #convert to ugrid
     node_coords_x = ds.XCOR.to_numpy().ravel()
