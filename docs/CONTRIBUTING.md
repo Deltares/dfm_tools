@@ -33,6 +33,7 @@
 - optionally make additional local changes (+commit+push) untill you are done with the issue and the automated checks have passed
 - optionally increase the dfm_tools version with: ``bumpversion patch``
 - request a review on the pull request
+- after review, squash+merge the branch into main
 
 ## Running the testbank (also partly runs on github automatically)
 
