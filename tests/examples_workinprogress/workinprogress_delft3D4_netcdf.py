@@ -20,6 +20,7 @@ dir_output = '.'
 
 file_nc_list = [r'p:\archivedprojects\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\062_netcdf\trim-thiery_002_coarse.nc',
                 os.path.join(dir_testinput,'D3D_3D_sigma_curved_bend_nc\\trim-cb2-sal-added-3d.nc'),
+                os.path.join(dir_testinput,'D3D_westernscheldt_opendap_nc\\trim-westernscheldt_sph.nc'),
                 ]
 
 for file_nc in file_nc_list:
@@ -27,14 +28,25 @@ for file_nc in file_nc_list:
     if 'trim-cb2-sal' in file_nc:
         name = 'curvedbend'
         timestep = 4
+        layno = -1
         res = 100
         scale = 25
         figsize = (6,5)
         def maybe_add_coastlines(ax):
             ax.set_aspect('equal')
+    elif 'westernscheldt_sph' in file_nc:
+        name = 'westernscheldt'
+        timestep = 10
+        layno = 0
+        res = 1/70
+        scale = 30
+        figsize = (9,4)
+        def maybe_add_coastlines(ax):
+            dfmt.plot_coastlines(ax=ax,res='h')
     else:
         name = 'kivu'
         timestep = 10
+        layno = -2
         res = 1/70
         scale = 3
         figsize = (6,7)
@@ -42,7 +54,7 @@ for file_nc in file_nc_list:
             dfmt.plot_coastlines(ax=ax,res='h')
     
     uds = dfmt.open_dataset_delft3d4(file_nc)
-    uds_sel = uds.isel(time=timestep,KMAXOUT_RESTR=-2)
+    uds_sel = uds.isel(time=timestep,KMAXOUT_RESTR=layno)
     uds_raster = dfmt.rasterize_ugrid(uds_sel,resolution=res)
     
     fig,ax = plt.subplots(figsize=figsize)
