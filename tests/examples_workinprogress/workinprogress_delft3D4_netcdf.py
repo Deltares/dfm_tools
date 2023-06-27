@@ -20,7 +20,7 @@ dir_output = '.'
 
 file_nc_list = [r'p:\archivedprojects\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\062_netcdf\trim-thiery_002_coarse.nc',
                 os.path.join(dir_testinput,'D3D_3D_sigma_curved_bend_nc\\trim-cb2-sal-added-3d.nc'),
-                os.path.join(dir_testinput,'D3D_westernscheldt_opendap_nc\\trim-westernscheldt_sph.nc'),
+                os.path.join(dir_testinput,'D3D_westernscheldt_opendap_nc\\trim-westernscheldt_sph.nc'), #https://opendap.deltares.nl/thredds/catalog/opendap/deltares/Delft3D/netcdf_example_files/catalog.html?dataset=varopendap/deltares/Delft3D/netcdf_example_files/trim-westernscheldt_sph.nc
                 ]
 
 for file_nc in file_nc_list:
@@ -40,7 +40,7 @@ for file_nc in file_nc_list:
         layno = 0
         res = 1/70
         scale = 30
-        figsize = (9,4)
+        figsize = (10,4)
         def maybe_add_coastlines(ax):
             dfmt.plot_coastlines(ax=ax,res='h')
     else:
