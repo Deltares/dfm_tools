@@ -36,10 +36,11 @@ def preprocess_interpolate_nc_to_bc(ext_bnd,
             print(f'processing quantity: {quantity}')
             if quantity=='tide': 
                 if tidemodel == 'FES2014': #for comparing to older FES bc-files
-                    component_list = ['2n2','mf','p1','m2','mks2','mu2','q1','t2','j1','m3','mm','n2','r2','k1','m4','mn4','s1','k2','m6','ms4','nu2','s2','l2','m8','msf','o1','s4']
+                    component_list = ['2n2','la2','mf','mtm','p1','ssa','eps2','m2','mks2','mu2','q1','t2','j1','m3','mm','n2','r2','k1','m4','mn4','n4','s1','k2','m6','ms4','nu2','s2','l2','m8','msf','o1','s4','sa','msqm']
                 else:
                     component_list = None #None results in all tidemodel components
                 ForcingModel_object = dfmt.interpolate_tide_to_bc(tidemodel=tidemodel, file_pli=file_pli, component_list=component_list, nPoints=None)
+                ForcingModel_object.serializer_config.float_format_datablock = "21.9e"
             else:
                 tstart, tstop = dfmt.round_timestamp_to_outer_noon(tstart,tstop)
                 #open regulargridDataset and do some basic stuff (time selection, renaming depth/lat/lon/varname, converting units, etc)
