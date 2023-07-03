@@ -26,8 +26,6 @@ fig.savefig(os.path.join(dir_output,os.path.basename(file_xyz).replace('.','')))
 file_xyn = r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\geometry_j19_6-v2\output_locations\rmm_vzm-j19_6-v2b_3_measurement_obs.xyn'
 data_xyn1 = hcdfm.ObservationPointModel(file_xyn) #TODO: this should raise an error, but it returns an empty list: https://github.com/Deltares/HYDROLIB-core/issues/502
 data_xyn2 = hcdfm.XYNModel(file_xyn)
-#data_xyn2_pd = dfmt.pointlike_to_DataFrame(data_xyn2) #works as expected #TODO: add DataFrame_to_XYNModel() conversion?
-#data_xyn2.save(file_xyn.replace('_obs.xyn','_out_obs.xyn'))
 data_xyn2_gpd = dfmt.pointlike_to_geodataframe_points(data_xyn2,crs=None)
 data_xyn2_gpd.plot()
 
@@ -36,6 +34,5 @@ file_crs = r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmod
 data_crs1 = hcdfm.CrossLocModel(file_crs) #TODO: this should raise an error, but it returns an empty list: https://github.com/Deltares/HYDROLIB-core/issues/502
 data_crs2 = hcdfm.CrossDefModel(file_crs) #TODO: same
 data_crs3 = hcdfm.PolyFile(file_crs) #works with polyfile
-#polyobject_pd = [dfmt.pointlike_to_DataFrame(x) for x in data_crs3.objects] #TODO: how to get a useful+plottable object?
 polyobject_gpd = dfmt.PolyFile_to_geodataframe_linestrings(data_crs3,crs=None)
 polyobject_gpd.plot(color='r')
