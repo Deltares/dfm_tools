@@ -307,15 +307,6 @@ def pointlike_to_DataFrame(pointlike,drop_emptycols=True):
     return pointlike_pd
 
 
-def parse_xy_to_datetime(pointlike_pd):
-    datatimevals_pdstr = (pointlike_pd['x'].astype(int).apply(lambda x:f'{x:08d}') +
-                          pointlike_pd['y'].astype(int).apply(lambda x:f'{x:06d}'))
-    pointlike_pd.index = pd.to_datetime(datatimevals_pdstr)
-    pointlike_pd_timeidx = pointlike_pd.drop(['x','y'],axis=1)
-    
-    return pointlike_pd_timeidx
-
-
 def TimModel_to_DataFrame(data_tim:hcdfm.TimModel, parse_column_labels:bool = True, refdate:(dt.datetime, pd.Timestamp, str) = None):
     """
     
@@ -368,21 +359,25 @@ def TimModel_to_DataFrame(data_tim:hcdfm.TimModel, parse_column_labels:bool = Tr
     return tim_pd
 
 
-def pointlike_to_geodataframe_points(polyline_object, crs='EPSG:4326', add_pointnames=True):
+def pointlike_to_geodataframe_points(polyline_object, crs='EPSG:4326', add_pointnames=True, only_xy=False):
     """
     empty docstring
     """
     #conversion to dataframe
-    #polyobject_pd = dfmt.pointlike_to_DataFrame(polyline_object)
+    #polyobject_pd = dfmt.pointnames(polyline_object)
     polyobject_pd = pd.DataFrame([dict(p) for p in polyline_object.points])
-
-    df = pd.DataFrame()
-    if add_pointnames: #optionally add names
+    
+    if only_xy:
+        df = pd.DataFrame()
+    else:
+        df = polyobject_pd.drop(['x','y'],axis=1) #also includes n/z and maybe data column
+    
+    if add_pointnames and hasattr(polyline_object,'metadata'): #optionally add names
         df['plipoint_name'] = pd.Series(polyobject_pd.index).apply(lambda x: f'{polyline_object.metadata.name}_{x+1:04d}')
     
     #make gdf of points (1 point per row)
     gdf = geopandas.GeoDataFrame(data=df, geometry=geopandas.points_from_xy(polyobject_pd['x'],polyobject_pd['y']), crs=crs)
-        
+    
     return gdf
 
 
@@ -430,3 +425,22 @@ def PolyFile_to_geodataframe_linestrings(polyfile_object, crs='EPSG:4326'):
     gdf_polyfile = geopandas.GeoDataFrame({'name': plinames_list, 'geometry': plilines_list}, crs=crs)
     return gdf_polyfile
 
+
+def parse_xy_to_datetime(pointlike_pd):
+    datatimevals_pdstr = (pointlike_pd['x'].astype(int).apply(lambda x:f'{x:08d}') +
+                          pointlike_pd['y'].astype(int).apply(lambda x:f'{x:06d}'))
+    pointlike_pd.index = pd.to_datetime(datatimevals_pdstr)
+    pointlike_pd_timeidx = pointlike_pd.drop(['x','y'],axis=1)
+    
+    return pointlike_pd_timeidx
+
+
+def tekalobject_to_DataFrame(polyobject):
+    #conversion to dataframe
+    polyobject_pd = pointlike_to_DataFrame(polyobject)
+    
+    #conversion of xy to datetime
+    polyobject_pd = parse_xy_to_datetime(polyobject_pd) #TODO: not suported the other way round, necessary to add?
+    polyobject_pd.columns = polyobject.description.content.split('\n')[2:] #to fix legend labels
+    polyobject_pd.index.name = polyobject.metadata.name
+    return polyobject_pd
