@@ -52,7 +52,7 @@ if structs is not None: #is empty when commented
         print(struct.id)
 #TODO: add newext/oldext printer
 obs_pd_list = [dfmt.pointlike_to_DataFrame(x) for x in fm.output.obsfile] #TODO: "AttributeError: 'ObservationPointModel' object has no attribute 'points'" >> might be because of double quotes in names in combination with union type mess-up >> results in empty ObservationPointModel instead of XYNModel: https://github.com/Deltares/HYDROLIB-core/issues/519
-crs_pd_list = [dfmt.pointlike_to_DataFrame(x) for y in fm.output.crsfile for x in y.objects] #TODO: difficult to access crs (and names get lost), how to simplify?
+crs_pd_list = [dfmt.PolyFile_to_geodataframe_linestrings(x) for x in fm.output.crsfile]
 
 
 file_struct = Path(r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_structures.ini')
