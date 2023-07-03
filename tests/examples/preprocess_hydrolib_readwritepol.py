@@ -37,6 +37,7 @@ for file_pli in file_pli_list:
         ax.set_title(f'1 PolyObjects, name of last is {polyobject_pd.index.name}')
     
     else:
+        #df_polyline = dfmt.pointlike_to_DataFrame(polyfile_object.objects[0])
         #gdf_polyline = dfmt.pointlike_to_geodataframe_points(polyfile_object.objects[0],crs=crs)
         gdf_polyfile = dfmt.PolyFile_to_geodataframe_linestrings(polyfile_object,crs=None) #TODO: z-column (and next ones) are missing
         fig,ax = plt.subplots()
