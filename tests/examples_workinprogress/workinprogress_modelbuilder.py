@@ -113,10 +113,6 @@ xu_grid_uds.ugrid.to_netcdf(netfile)
 mdu.geometry.netfile = netfile #TODO: path is windows/unix dependent #TODO: providing os.path.basename(netfile) raises "ValidationError: 1 validation error for Geometry - netfile:   File: `C:\SnapVolumesTemp\MountPoints\{45c63495-0000-0000-0000-100000000000}\{79DE0690-9470-4166-B9EE-4548DC416BBD}\SVROOT\DATA\dfm_tools\tests\examples_workinprogress\Bonaire_net.nc` not found, skipped parsing." (wrong current directory)
 
 
-dir_output_data_cmems = os.path.join(dir_output_data, 'cmems')
-os.makedirs(dir_output_data_cmems, exist_ok=True)
-
-
 #%% new ext: initial and open boundary condition
 ext_file_new = os.path.join(dir_output, f'{model_name}_new.ext')
 ext_new = hcdfm.ExtModel()
@@ -132,6 +128,8 @@ boundary_object = hcdfm.Boundary(quantity='waterlevelbnd', #the FM quantity for 
 ext_new.boundary.append(boundary_object)
 
 # CMEMS - download
+dir_output_data_cmems = os.path.join(dir_output_data, 'cmems')
+os.makedirs(dir_output_data_cmems, exist_ok=True)
 for varkey in ['so','thetao','uo','vo','zos']:
     dfmt.download_CMEMS(credentials=None, #credentials=['username','password'], or create "%USERPROFILE%/CMEMS_credentials.txt" with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form'
                         varkey=varkey,
@@ -170,7 +168,7 @@ if inisaltem:
 dir_output_data_era5 = os.path.join(dir_output_data,'ERA5')
 os.makedirs(dir_output_data_era5, exist_ok=True)
     
-if ERA5_meteo_option == 1: #TODO: pass option instead of varlist to fuctions?
+if ERA5_meteo_option == 1:
     varlist_list = [['msl','u10n','v10n','chnk']]
 elif ERA5_meteo_option == 2:
     varlist_list = [['msl','u10n','v10n','chnk'],['d2m','t2m','tcc'],['ssr','strd'],['mer','mtpr']]
