@@ -102,7 +102,7 @@ dfmt.plot_coastlines(ax=ax, crs=crs)
 netfile  = os.path.join(dir_output, f'{model_name}_net.nc')
 xu_grid_uds.ugrid.to_netcdf(netfile)
 
-breakit
+
 #%% generate plifile from grid extent 
 grid_bounds = xu_grid_uds.grid.bounds #TODO: maybe redefine lon_min etc instead. Also possible to get bounds from mk_object?
 pli_polyfile = dfmt.generate_bndpli(lon_min=grid_bounds[0], lon_max=grid_bounds[2], lat_min=grid_bounds[1], lat_max=grid_bounds[3], dlon=dxy, dlat=dxy, name=f'{model_name}_bnd')
