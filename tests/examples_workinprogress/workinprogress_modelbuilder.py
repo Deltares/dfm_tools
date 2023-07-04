@@ -178,17 +178,16 @@ elif ERA5_meteo_option == 2:
 for varlist in varlist_list:
     for varkey in varlist:
         dfmt.download_ERA5(varkey, 
-                            longitude_min=lon_min, longitude_max=lon_max, latitude_min=lat_min, latitude_max=lat_max,
-                            date_min=date_min, date_max=date_max,
-                            dir_output=dir_output_data_era5, overwrite=overwrite)
+                           longitude_min=lon_min, longitude_max=lon_max, latitude_min=lat_min, latitude_max=lat_max,
+                           date_min=date_min, date_max=date_max,
+                           dir_output=dir_output_data_era5, overwrite=overwrite)
 
 # ERA5 meteo - convert to netCDF for usage in Delft3D FM
-ext_old = mb.preprocess_merge_meteofiles(ext_old=ext_old,
-        mode = 'ERA5',
-        varkey_list = varlist_list,
-        dir_data = dir_output_data_era5,
-        dir_output = dir_output,
-        time_slice = slice(date_min, date_max))
+ext_old = mb.preprocess_merge_meteofiles_era5(ext_old=ext_old,
+                                              varkey_list = varlist_list,
+                                              dir_data = dir_output_data_era5,
+                                              dir_output = dir_output,
+                                              time_slice = slice(date_min, date_max))
 
 ext_old.save(filepath=ext_file_old,path_style=path_style)
 
