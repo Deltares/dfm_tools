@@ -118,9 +118,18 @@ os.makedirs(dir_output_data_cmems, exist_ok=True)
 
 
 #%% new ext: initial and open boundary condition
-
 ext_file_new = os.path.join(dir_output, f'{model_name}_new.ext')
 ext_new = hcdfm.ExtModel()
+
+# FES2014 tidal components bc file
+file_bc_basename = os.path.basename(poly_file).replace('.pli','')
+ForcingModel_object = dfmt.interpolate_tide_to_bc(tidemodel='FES2014', file_pli=poly_file, component_list=None) # tidemodel: FES2014, FES2012, EOT20, GTSM4.1preliminary
+file_bc_out = os.path.join(dir_output,f'tide_{file_bc_basename}_FES2014.bc')
+ForcingModel_object.save(filepath=file_bc_out)
+boundary_object = hcdfm.Boundary(quantity='waterlevelbnd', #the FM quantity for tide is also waterlevelbnd
+                                 locationfile=poly_file,
+                                 forcingfile=ForcingModel_object)
+ext_new.boundary.append(boundary_object)
 
 # CMEMS - download
 for varkey in ['so','thetao','uo','vo','zos']:
@@ -130,18 +139,16 @@ for varkey in ['so','thetao','uo','vo','zos']:
                         date_min=date_min, date_max=date_max,
                         dir_output=dir_output_data_cmems, file_prefix='cmems_', overwrite=overwrite)
 
-
 # CMEMS - boundary conditions file (.bc) (and add to ext_bnd)
-#TODO: two waterlevelbnds need to share same physical plifile in order to + (https://issuetracker.deltares.nl/browse/UNST-5320).
-list_quantities = ['salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd','waterlevelbnd','tide']
-list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd','tide'] # when supplying two waterlevelbnds (tide and steric) with other quantities in between, dimrset>=2.24.00 is required or else "ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated" is raised
-ext_new = mb.preprocess_interpolate_nc_to_bc(ext_bnd=ext_new,
-                                             refdate_str = 'minutes since '+ref_date+' 00:00:00 +00:00',
-                                             dir_output = dir_output,
-                                             list_quantities = list_quantities,
-                                             tstart=date_min, tstop=date_max, 
-                                             list_plifiles = [poly_file],
-                                             dir_pattern = os.path.join(dir_output_data_cmems,'cmems_{ncvarname}_*.nc'))
+list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd'] # when supplying two waterlevelbnds to FM (tide and steric) with other quantities in between, dimrset>=2.24.00 is required or else "ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated" is raised (https://issuetracker.deltares.nl/browse/UNST-7011). Two waterlevelbnds need to share same physical plifile in order to be appended (https://issuetracker.deltares.nl/browse/UNST-5320).
+ext_new = mb.cmems_nc_to_bc(ext_bnd=ext_new,
+                            refdate_str=f'minutes since {ref_date} 00:00:00 +00:00',
+                            dir_output=dir_output,
+                            list_quantities=list_quantities,
+                            tstart=date_min,
+                            tstop=date_max, 
+                            file_pli=poly_file,
+                            dir_pattern=os.path.join(dir_output_data_cmems,'cmems_{ncvarname}_*.nc'))
 
 #save new ext file
 ext_new.save(filepath=ext_file_new,path_style=path_style)

@@ -17,54 +17,41 @@ import datetime as dt
 import glob
 
 
-def preprocess_interpolate_nc_to_bc(ext_bnd,
-                                    list_quantities,#quantities should be in conversion_dict.keys(). waterlevelbnd is steric/zos, tide is tidal components from FES/EOT
-                                    tstart,
-                                    tstop,
-                                    list_plifiles,
-                                    dir_pattern,
-                                    dir_output='.',
-                                    refdate_str=None,
-                                    conversion_dict=dfmt.get_conversion_dict(),
-                                    tidemodel='FES2014'): #FES2014, FES2012, EOT20, GTSM4.1preliminary
+def cmems_nc_to_bc(ext_bnd,
+                   list_quantities,#quantities should be in conversion_dict.keys(). waterlevelbnd is steric/zos, tide is tidal components from FES/EOT
+                   tstart,
+                   tstop,
+                   file_pli,
+                   dir_pattern,
+                   dir_output='.',
+                   refdate_str=None):
     #input examples in https://github.com/Deltares/dfm_tools/blob/main/tests/examples/preprocess_interpolate_nc_to_bc.py
-    model = 'CMEMS'
     
-    for file_pli in list_plifiles:
-        file_bc_basename = os.path.basename(file_pli).replace('.pli','')
-        for quantity in list_quantities:
-            print(f'processing quantity: {quantity}')
-            if quantity=='tide': 
-                if tidemodel == 'FES2014': #for comparing to older FES bc-files
-                    component_list = ['2n2','mf','p1','m2','mks2','mu2','q1','t2','j1','m3','mm','n2','r2','k1','m4','mn4','s1','k2','m6','ms4','nu2','s2','l2','m8','msf','o1','s4']
-                else:
-                    component_list = None #None results in all tidemodel components
-                ForcingModel_object = dfmt.interpolate_tide_to_bc(tidemodel=tidemodel, file_pli=file_pli, component_list=component_list, nPoints=None)
-            else:
-                tstart, tstop = dfmt.round_timestamp_to_outer_noon(tstart,tstop)
-                #open regulargridDataset and do some basic stuff (time selection, renaming depth/lat/lon/varname, converting units, etc)
-                data_xr_vars = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity=quantity,
-                                                       tstart=tstart, tstop=tstop,
-                                                       conversion_dict=conversion_dict,
-                                                       refdate_str=refdate_str)
-                #interpolate regulargridDataset to plipointsDataset
-                data_interp = dfmt.interp_regularnc_to_plipoints(data_xr_reg=data_xr_vars, file_pli=file_pli)
-                
-                #convert plipointsDataset to hydrolib ForcingModel
-                ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
-                        
-            if quantity=='tide':
-                file_bc_out = os.path.join(dir_output,f'{quantity}_{file_bc_basename}_{tidemodel}.bc')
-            else:
-                file_bc_out = os.path.join(dir_output,f'{quantity}_{file_bc_basename}_{model}.bc')
-            
-            ForcingModel_object.save(filepath=file_bc_out)
-            
-            #generate boundary object for the ext file (quantity, pli-filename, bc-filename)
-            boundary_object = hcdfm.Boundary(quantity=quantity.replace('tide','waterlevelbnd'), #the FM quantity for tide is also waterlevelbnd
-                                             locationfile=file_pli,
-                                             forcingfile=ForcingModel_object)
-            ext_bnd.boundary.append(boundary_object)
+    file_bc_basename = os.path.basename(file_pli).replace('.pli','')
+    for quantity in list_quantities:
+        print(f'processing quantity: {quantity}')
+        
+        tstart, tstop = dfmt.round_timestamp_to_outer_noon(tstart,tstop)
+        #open regulargridDataset and do some basic stuff (time selection, renaming depth/lat/lon/varname, converting units, etc)
+        data_xr_vars = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity=quantity,
+                                               tstart=tstart, tstop=tstop,
+                                               conversion_dict=dfmt.get_conversion_dict(),
+                                               refdate_str=refdate_str)
+        #interpolate regulargridDataset to plipointsDataset
+        data_interp = dfmt.interp_regularnc_to_plipoints(data_xr_reg=data_xr_vars, file_pli=file_pli)
+        
+        #convert plipointsDataset to hydrolib ForcingModel
+        ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
+                    
+        file_bc_out = os.path.join(dir_output,f'{quantity}_{file_bc_basename}_CMEMS.bc')
+        
+        ForcingModel_object.save(filepath=file_bc_out)
+        
+        #generate boundary object for the ext file (quantity, pli-filename, bc-filename)
+        boundary_object = hcdfm.Boundary(quantity=quantity.replace('tide','waterlevelbnd'), #the FM quantity for tide is also waterlevelbnd
+                                         locationfile=file_pli,
+                                         forcingfile=ForcingModel_object)
+        ext_bnd.boundary.append(boundary_object)
     
     return ext_bnd
 
