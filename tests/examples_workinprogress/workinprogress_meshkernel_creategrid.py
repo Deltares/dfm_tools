@@ -93,8 +93,8 @@ mesh_refinement_parameters = meshkernel.MeshRefinementParameters(#refine_interse
                                                                  max_courant_time=150) #TODO: consider 200 (gtsm value), is this value read?
 
 mk.mesh2d_refine_based_on_gridded_samples(gridded_samples=gridded_samples,
-                                           mesh_refinement_params=mesh_refinement_parameters,
-                                           use_nodal_refinement=True) #TODO: what does this do?
+                                          mesh_refinement_params=mesh_refinement_parameters,
+                                          use_nodal_refinement=True) #TODO: what does this do?
 
 mesh2d_refinedgrid = mk.mesh2d_get()
 fig, ax = plt.subplots(figsize=figsize)
