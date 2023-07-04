@@ -16,6 +16,7 @@ from dfm_tools import __version__
 import getpass
 import numpy as np
 from dfm_tools.coastlines import get_coastlines_gdb
+from netCDF4 import default_fillvals
 
 
 def meshkernel_delete_withcoastlines(mk, res:str='f', min_area:float = 0, crs=None):
@@ -66,7 +67,7 @@ def meshkernel_delete_withpol(mk, file_ldb, minpoints=None):
                          invert_deletion=False) #TODO: cuts away link that is neccesary, so results in non-orthogonal grid (probably usecase of english channel?)
 
 
-def meshkernel_to_UgridDataset(mk:meshkernel.meshkernel.MeshKernel, remove_noncontiguous:bool = False) -> xr.Dataset:
+def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, remove_noncontiguous:bool = False, is_geographic=True) -> xu.UgridDataset:
     """
     empty docstring
     """
@@ -101,26 +102,41 @@ def meshkernel_to_UgridDataset(mk:meshkernel.meshkernel.MeshKernel, remove_nonco
         xu_grid_ds[varn_conn].attrs["_FillValue"] += 1
         xu_grid_ds[varn_conn].attrs["start_index"] += 1
     
-    xu_grid_ds = xu_grid_ds.assign_attrs({#'Conventions': 'CF-1.8 UGRID-1.0 Deltares-0.10', #add Deltares convention (was CF-1.8 UGRID-1.0)
+    xu_grid_ds = xu_grid_ds.assign_attrs({#'Conventions': 'CF-1.8 UGRID-1.0 Deltares-0.10', #TODO: add Deltares convention (was CF-1.8 UGRID-1.0)
                                           'institution': 'Deltares',
                                           'references': 'https://www.deltares.nl',
                                           'source': f'Created with meshkernel {meshkernel.__version__}, xugrid {xu.__version__} and dfm_tools {__version__}',
                                           'history': 'Created on %s, %s'%(dt.datetime.now().strftime('%Y-%m-%dT%H:%M:%S%z'),getpass.getuser()), #TODO: add timezone
                                           })
     
-    # add attrs (to projected_coordinate_system/wgs84 empty int variable): #TODO: should depend on is_geographic flag in make_basegrid()
-    # attribute_dict = {
-    #     'name': 'WGS84',
-    #     'epsg': np.array([4326], dtype=int),
-    #     'grid_mapping_name': 'Unknown projected',
-    #     'longitude_of_prime_meridian': np.array([0.0], dtype=float),
-    #     'semi_major_axis': np.array([6378137.0], dtype=float),
-    #     'semi_minor_axis': np.array([6356752.314245], dtype=float),
-    #     'inverse_flattening': np.array([6356752.314245], dtype=float),
-    #     'EPSG_code': 'EPSG:4326',
-    #     'value': 'value is equal to EPSG code'}
-    # xu_grid_ds['wgs84'] = xr.DataArray(np.array(0,dtype=int),dims=(),attrs=attribute_dict)
-    
+    # add wgs84/projected_coordinate_system variable with attrs
+    if is_geographic: #TODO: extend this with flexible crs
+        attribute_dict = {
+            'name': 'Unknown projected',
+            'epsg': np.array(4326, dtype=int),
+            'grid_mapping_name': 'Unknown projected',
+            'longitude_of_prime_meridian': np.array(0.0, dtype=float),
+            'semi_major_axis': np.array(6378137.0, dtype=float),
+            'semi_minor_axis': np.array(6356752.314245, dtype=float),
+            'inverse_flattening': np.array(6356752.314245, dtype=float),
+            'EPSG_code': 'EPSG:4326',
+            'value': 'value is equal to EPSG code'}
+        crs_varn = 'wgs84'
+    else:
+        attribute_dict = {
+            'name': 'Unknown projected',
+            'epsg': np.array(28992, dtype=int),
+            'grid_mapping_name': 'Unknown projected',
+            'longitude_of_prime_meridian': np.array(0.0, dtype=float),
+            'semi_major_axis': np.array(6377397.155, dtype=float),
+            'semi_minor_axis': np.array(6356078.962818189, dtype=float),
+            'inverse_flattening': np.array(299.1528128, dtype=float),
+            'EPSG_code': 'EPSG:28992',
+            #'wkt': 'PROJCS["Amersfoort / RD New",\n    GEOGCS["...'
+            }
+        crs_varn = 'projected_coordinate_system'
+    xu_grid_ds[crs_varn] = xr.DataArray(np.array(default_fillvals['i4'],dtype=int),dims=(),attrs=attribute_dict)
+
     xu_grid_uds = xu.UgridDataset(xu_grid_ds)
     return xu_grid_uds
 
