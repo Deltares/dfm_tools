@@ -120,7 +120,7 @@ def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, remove_noncontiguous:bo
             'semi_minor_axis': np.array(6356752.314245, dtype=float),
             'inverse_flattening': np.array(6356752.314245, dtype=float),
             'EPSG_code': 'EPSG:4326',
-            'value': 'value is equal to EPSG code'}
+            }
         crs_varn = 'wgs84'
     else:
         attribute_dict = {
