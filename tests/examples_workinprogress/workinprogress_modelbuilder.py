@@ -35,7 +35,7 @@ inisaltem = True #initialsalinity/initialtemperature gives 33.8ppt uniform and s
 #TODO: files that are not created in this script: obsfiles, dimr.xml and the submit script (and GEBCO+GSHHS datasets)
 #TODO: reference run in: p:\11209231-003-bes-modellering\hydrodynamica\hackathon\simulations\run001_mapInterval_1800\
 #TODO: also compare settings to p:\11208054-004-dcsm-fm\models\3D_DCSM-FM\2013-2017\B05_hydrolib_JV\DCSM-FM_0_5nm.mdu (e.g. tlfSmo)
-# domain
+# domain and resolution
 lon_min, lon_max, lat_min, lat_max = -68.55, -67.9, 11.8, 12.6
 dxy = 0.05
 
@@ -49,7 +49,6 @@ ref_date = '2022-01-01'
 # option 2 (3D-model) = [airpressure, windx, windy, charnock, dewpoint, airtemperature, cloudiness, solarradiation, longwaveradiation, rainfall, evaporation]
 ERA5_meteo_option = 2
 
-## process
 # make dirs
 os.makedirs(dir_output, exist_ok=True)
 dir_output_data = os.path.join(dir_output, 'data')
