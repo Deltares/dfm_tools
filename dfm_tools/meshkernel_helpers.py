@@ -125,58 +125,49 @@ def meshkernel_to_UgridDataset(mk:meshkernel.meshkernel.MeshKernel, remove_nonco
     return xu_grid_uds
 
 
-def make_basegrid(lon_min,lon_max,lat_min,lat_max,dx=0.05,dy=0.05,angle=0):
+def make_basegrid(lon_min,lon_max,lat_min,lat_max,dx=0.05,dy=0.05,angle=0,is_geographic=True):
     """
     empty docstring
     """
     print('modelbuilder.make_basegrid()')
     # create base grid
-    num_columns = int(np.round((lon_max-lon_min)/dx))
-    num_rows = int(np.round((lat_max-lat_min)/dy))
-    
-    make_grid_parameters = meshkernel.MakeGridParameters(num_columns=num_columns,
-                                                         num_rows=num_rows,
-                                                         angle=angle,
+    make_grid_parameters = meshkernel.MakeGridParameters(angle=angle,
                                                          origin_x=lon_min,
                                                          origin_y=lat_min,
+                                                         upper_right_x=lon_max,
+                                                         upper_right_y=lat_max,
                                                          block_size_x=dx,
                                                          block_size_y=dy)
     
-    geometry_list = meshkernel.GeometryList(np.empty(0, dtype=np.double), np.empty(0, dtype=np.double)) # A polygon must to be provided. If empty it will not be used. If a polygon is provided it will be used in the generation of the curvilinear grid. The polygon must be closed
-    mk = meshkernel.MeshKernel() #TODO: is_geographic=True was used in modelbuilder, but refinement super slow and raises "MeshKernelError: MeshRefinement::connect_hanging_nodes: The number of non-hanging nodes is neither 3 nor 4."
-    mk.curvilinear_make_uniform(make_grid_parameters, geometry_list) #TODO: make geometry_list argument optional: https://github.com/Deltares/MeshKernelPy/issues/30
+    mk = meshkernel.MeshKernel(is_geographic=is_geographic)
+    mk.curvilinear_make_uniform_on_extension(make_grid_parameters)
     mk.curvilinear_convert_to_mesh2d() #convert to ugrid/mesh2d
     
     return mk
 
 
-def refine_basegrid(mk, data_bathy_sel,min_face_size=0.1):
+def refine_basegrid(mk, data_bathy_sel, min_edge_size):
     """
     empty docstring
     """
     print('modelbuilder.refine_basegrid()')
-    samp_x,samp_y = np.meshgrid(data_bathy_sel.lon.to_numpy(),data_bathy_sel.lat.to_numpy())
-    samp_z = data_bathy_sel.elevation.to_numpy().astype(float) #TODO: without .astype(float), meshkernelpy generates "TypeError: incompatible types, c_short_Array_27120 instance instead of LP_c_double instance": https://github.com/Deltares/MeshKernelPy/issues/31
-    samp_x = samp_x.ravel()
-    samp_y = samp_y.ravel()
-    samp_z = samp_z.ravel()
-    geomlist = meshkernel.GeometryList(x_coordinates=samp_x, y_coordinates=samp_y, values=samp_z) #TODO: does not check if lenghts of input array is equal (samp_z[1:]) https://github.com/Deltares/MeshKernelPy/issues/32
     
+    lon_np = data_bathy_sel.lon.to_numpy()
+    lat_np = data_bathy_sel.lat.to_numpy()
+    values_np = data_bathy_sel.elevation.to_numpy().flatten().astype('float') #TODO: astype to avoid "TypeError: incompatible types, c_short_Array_74880 instance instead of LP_c_double instance"
+    gridded_samples = meshkernel.GriddedSamples(x_coordinates=lon_np,y_coordinates=lat_np,values=values_np) #TODO: does not result in refinement
+
+
     #refinement
-    mesh_refinement_parameters = meshkernel.MeshRefinementParameters(refine_intersected=False, #TODO: provide defaults for several arguments, so less arguments are required
-                                                                     use_mass_center_when_refining=False, #TODO: what does this do?
-                                                                     min_face_size=min_face_size, #TODO: size in meters would be more convenient: https://github.com/Deltares/MeshKernelPy/issues/33
+    mesh_refinement_parameters = meshkernel.MeshRefinementParameters(min_edge_size=min_edge_size, #always in meters
                                                                      refinement_type=meshkernel.RefinementType(1), #Wavecourant/1,
                                                                      connect_hanging_nodes=True, #set to False to do multiple refinement steps (e.g. for multiple regions)
-                                                                     account_for_samples_outside_face=True, #outsidecell argument for --refine?
-                                                                     max_refinement_iterations=5,
-                                                                     ) #TODO: missing the arguments dtmax (necessary?), hmin (min_face_size but then in meters instead of degrees), smoothiters (currently refinement is patchy along coastlines, goes good in dflowfm exec after additional implementation of HK), spherical 1/0 (necessary?)
+                                                                     smoothing_iterations=2,
+                                                                     max_courant_time=120)
     
-    mk.mesh2d_refine_based_on_samples(samples=geomlist,
-                                       relative_search_radius=0.5, #TODO: bilin interp is preferred, but this is currently not supported (samples have to be ravelled): https://github.com/Deltares/MeshKernelPy/issues/34
-                                       minimum_num_samples=3,
-                                       mesh_refinement_params=mesh_refinement_parameters,
-                                       )
+    mk.mesh2d_refine_based_on_gridded_samples(gridded_samples=gridded_samples,
+                                               mesh_refinement_params=mesh_refinement_parameters,
+                                               use_nodal_refinement=True) #TODO: what does this do?
     
     return mk
 
