@@ -37,7 +37,7 @@ inisaltem = True #initialsalinity/initialtemperature gives 33.8ppt uniform and s
 #TODO: also compare settings to p:\11208054-004-dcsm-fm\models\3D_DCSM-FM\2013-2017\B05_hydrolib_JV\DCSM-FM_0_5nm.mdu (e.g. tlfSmo)
 # domain
 lon_min, lon_max, lat_min, lat_max = -68.55, -67.9, 11.8, 12.6
-bnd_dlon_dlat = 0.06
+dxy = 0.05
 
 #dates as understood by pandas.period_range(). ERA5 has freq='M' (month) and CMEMS has freq='D' (day)
 date_min = '2022-11-01'
@@ -56,22 +56,14 @@ dir_output_data = os.path.join(dir_output, 'data')
 os.makedirs(dir_output_data, exist_ok=True)
 
 
-#%%plifile generation
-pli_polyfile = dfmt.generate_bndpli(lon_min, lon_max, lat_min, lat_max, dlon=bnd_dlon_dlat, dlat=bnd_dlon_dlat, name=f'{model_name}_bnd')
-#TODO: generate pli from mk with mk_object.mesh2d_get_mesh_boundaries_as_polygons()
-poly_file = os.path.join(dir_output, f'{model_name}.pli')
-pli_polyfile.save(poly_file)
-
-
-#%% grid generation
-# GEBCO bathymetry and Grid generation
+#%% grid generation and refinement with GEBCO bathymetry
 #select and plot bathy
 file_nc_bathy = r'p:\metocean-data\open\GEBCO\2021\GEBCO_2021.nc'
 data_bathy = xr.open_dataset(file_nc_bathy)
 data_bathy_sel = data_bathy.sel(lon=slice(lon_min-1,lon_max+1),lat=slice(lat_min-1,lat_max+1))
 
 #TODO: grid generation and bathy-refinement is still to be improved in meshkernel (https://github.com/Deltares/dfm_tools/issues/234)
-mk_object = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, is_geographic=is_geographic)
+mk_object = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, is_geographic=is_geographic)
 
 #refine
 min_edge_size = 300 #in meters
@@ -125,6 +117,14 @@ dfmt.plot_coastlines(ax=ax, crs=crs)
 #write xugrid grid to netcdf
 netfile  = os.path.join(dir_output, f'{model_name}_net.nc')
 xu_grid_uds.ugrid.to_netcdf(netfile)
+
+
+#%% generate plifile from grid extent 
+grid_bounds = xu_grid_uds.grid.bounds #TODO: maybe redefine lon_min etc instead. Also possible to get bounds from mk_object?
+pli_polyfile = dfmt.generate_bndpli(lon_min=grid_bounds[0], lon_max=grid_bounds[2], lat_min=grid_bounds[1], lat_max=grid_bounds[3], dlon=dxy, dlat=dxy, name=f'{model_name}_bnd')
+#TODO: generate pli from mk with mk_object.mesh2d_get_mesh_boundaries_as_polygons()
+poly_file = os.path.join(dir_output, f'{model_name}.pli')
+pli_polyfile.save(poly_file)
 
 
 #%% new ext: initial and open boundary condition

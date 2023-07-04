@@ -125,7 +125,7 @@ def meshkernel_to_UgridDataset(mk:meshkernel.meshkernel.MeshKernel, remove_nonco
     return xu_grid_uds
 
 
-def make_basegrid(lon_min,lon_max,lat_min,lat_max,dx=0.05,dy=0.05,angle=0,is_geographic=True):
+def make_basegrid(lon_min,lon_max,lat_min,lat_max,dx,dy,angle=0,is_geographic=True):
     """
     empty docstring
     """
