@@ -113,16 +113,23 @@ xu_grid_uds.ugrid.to_netcdf(netfile)
 mdu.geometry.netfile = netfile #TODO: path is windows/unix dependent #TODO: providing os.path.basename(netfile) raises "ValidationError: 1 validation error for Geometry - netfile:   File: `C:\SnapVolumesTemp\MountPoints\{45c63495-0000-0000-0000-100000000000}\{79DE0690-9470-4166-B9EE-4548DC416BBD}\SVROOT\DATA\dfm_tools\tests\examples_workinprogress\Bonaire_net.nc` not found, skipped parsing." (wrong current directory)
 
 
-dir_output_data_cmems = os.path.join(dir_output_data, 'cmems')
-os.makedirs(dir_output_data_cmems, exist_ok=True)
-
-
 #%% new ext: initial and open boundary condition
-
 ext_file_new = os.path.join(dir_output, f'{model_name}_new.ext')
 ext_new = hcdfm.ExtModel()
 
+# FES2014 tidal components bc file
+file_bc_basename = os.path.basename(poly_file).replace('.pli','')
+ForcingModel_object = dfmt.interpolate_tide_to_bc(tidemodel='FES2014', file_pli=poly_file, component_list=None) # tidemodel: FES2014, FES2012, EOT20, GTSM4.1preliminary
+file_bc_out = os.path.join(dir_output,f'tide_{file_bc_basename}_FES2014.bc')
+ForcingModel_object.save(filepath=file_bc_out)
+boundary_object = hcdfm.Boundary(quantity='waterlevelbnd', #the FM quantity for tide is also waterlevelbnd
+                                 locationfile=poly_file,
+                                 forcingfile=ForcingModel_object)
+ext_new.boundary.append(boundary_object)
+
 # CMEMS - download
+dir_output_data_cmems = os.path.join(dir_output_data, 'cmems')
+os.makedirs(dir_output_data_cmems, exist_ok=True)
 for varkey in ['so','thetao','uo','vo','zos']:
     dfmt.download_CMEMS(credentials=None, #credentials=['username','password'], or create "%USERPROFILE%/CMEMS_credentials.txt" with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form'
                         varkey=varkey,
@@ -130,39 +137,16 @@ for varkey in ['so','thetao','uo','vo','zos']:
                         date_min=date_min, date_max=date_max,
                         dir_output=dir_output_data_cmems, file_prefix='cmems_', overwrite=overwrite)
 
-
 # CMEMS - boundary conditions file (.bc) (and add to ext_bnd)
-#TODO: two waterlevelbnds need to share same physical plifile in order to + (https://issuetracker.deltares.nl/browse/UNST-5320).
-list_quantities = ['salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd','waterlevelbnd','tide'] #TODO: JV1 stable ("WARNING: Boundary link 00000468 already claimed")
-#list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd','tide'] #TODO: JV6 "ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated"
-ext_new = mb.preprocess_interpolate_nc_to_bc(ext_bnd=ext_new,
-                                             refdate_str = 'minutes since '+ref_date+' 00:00:00 +00:00',
-                                             dir_output = dir_output,
-                                             list_quantities = list_quantities,
-                                             tstart=date_min, tstop=date_max, 
-                                             list_plifiles = [poly_file],
-                                             dir_pattern = os.path.join(dir_output_data_cmems,'cmems_{ncvarname}_*.nc'))
-#TODO: when adding both waterlevelbnd and tide as waterlevelbnd they should be consequetive. If there are other quantities in between, the model crashes with a update_ghostboundvals error, reported in https://issuetracker.deltares.nl/browse/UNST-7011:
-"""
-** INFO   : partition_fixorientation_ghostlist: number of reversed flowlinks=              0
-** INFO   : Done partitioning model.
-** ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated
-** INFO   : Closed file : /p/11209231-003-bes-modellering/hydrodynamica/hackathon/preprocessing/ModelBuilderOutput_JV/Bonaire_old.ext
-** INFO   : partition_fixorientation_ghostlist: number of reversed flowlinks=              0
-** INFO   : Done partitioning model.
-** ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated
-** INFO   : Closed file : /p/11209231-003-bes-modellering/hydrodynamica/hackathon/preprocessing/ModelBuilderOutput_JV/Bonaire_old.ext
-Abort(1) on node 0 (rank 0 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
-Abort(1) on node 1 (rank 1 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 1
-"""
-#When doing a sequential run, the model initializes successfully, but first timestep cannot be solved.
-"""
-** WARNING: Comp. time step average below threshold:  0.5742E-03 <  0.1000E+00.
-** INFO   : Performing direct write of solution state...
-** INFO   : Simulation current time: nt = 100, time1 =  26265600.06s (2022-11-01T00:00:00Z).
-** INFO   : Done writing solution state.
-#### ERROR: dimr update ABORT,: myNameDFlowFM update failed, with return value 22 
-"""
+list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd'] # when supplying two waterlevelbnds to FM (tide and steric) with other quantities in between, dimrset>=2.24.00 is required or else "ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated" is raised (https://issuetracker.deltares.nl/browse/UNST-7011). Two waterlevelbnds need to share same physical plifile in order to be appended (https://issuetracker.deltares.nl/browse/UNST-5320).
+ext_new = mb.cmems_nc_to_bc(ext_bnd=ext_new,
+                            refdate_str=f'minutes since {ref_date} 00:00:00 +00:00',
+                            dir_output=dir_output,
+                            list_quantities=list_quantities,
+                            tstart=date_min,
+                            tstop=date_max, 
+                            file_pli=poly_file,
+                            dir_pattern=os.path.join(dir_output_data_cmems,'cmems_{ncvarname}_*.nc'))
 
 #save new ext file
 ext_new.save(filepath=ext_file_new,path_style=path_style)
@@ -184,7 +168,7 @@ if inisaltem:
 dir_output_data_era5 = os.path.join(dir_output_data,'ERA5')
 os.makedirs(dir_output_data_era5, exist_ok=True)
     
-if ERA5_meteo_option == 1: #TODO: pass option instead of varlist to fuctions?
+if ERA5_meteo_option == 1:
     varlist_list = [['msl','u10n','v10n','chnk']]
 elif ERA5_meteo_option == 2:
     varlist_list = [['msl','u10n','v10n','chnk'],['d2m','t2m','tcc'],['ssr','strd'],['mer','mtpr']]
@@ -192,17 +176,16 @@ elif ERA5_meteo_option == 2:
 for varlist in varlist_list:
     for varkey in varlist:
         dfmt.download_ERA5(varkey, 
-                            longitude_min=lon_min, longitude_max=lon_max, latitude_min=lat_min, latitude_max=lat_max,
-                            date_min=date_min, date_max=date_max,
-                            dir_output=dir_output_data_era5, overwrite=overwrite)
+                           longitude_min=lon_min, longitude_max=lon_max, latitude_min=lat_min, latitude_max=lat_max,
+                           date_min=date_min, date_max=date_max,
+                           dir_output=dir_output_data_era5, overwrite=overwrite)
 
 # ERA5 meteo - convert to netCDF for usage in Delft3D FM
-ext_old = mb.preprocess_merge_meteofiles(ext_old=ext_old,
-        mode = 'ERA5',
-        varkey_list = varlist_list,
-        dir_data = dir_output_data_era5,
-        dir_output = dir_output,
-        time_slice = slice(date_min, date_max))
+ext_old = mb.preprocess_merge_meteofiles_era5(ext_old=ext_old,
+                                              varkey_list = varlist_list,
+                                              dir_data = dir_output_data_era5,
+                                              dir_output = dir_output,
+                                              time_slice = slice(date_min, date_max))
 
 ext_old.save(filepath=ext_file_old,path_style=path_style)
 
