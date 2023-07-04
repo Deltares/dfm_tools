@@ -112,13 +112,13 @@ def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, remove_noncontiguous:bo
     # add wgs84/projected_coordinate_system variable with attrs
     if is_geographic: #TODO: extend this with flexible crs
         attribute_dict = {
-            'name': 'Unknown projected',
+            'name': 'WGS84',
             'epsg': np.array(4326, dtype=int),
-            'grid_mapping_name': 'Unknown projected',
+            'grid_mapping_name': 'latitude_longitude',
             'longitude_of_prime_meridian': np.array(0.0, dtype=float),
             'semi_major_axis': np.array(6378137.0, dtype=float),
             'semi_minor_axis': np.array(6356752.314245, dtype=float),
-            'inverse_flattening': np.array(6356752.314245, dtype=float),
+            'inverse_flattening': np.array(298.257223563, dtype=float),
             'EPSG_code': 'EPSG:4326',
             }
         crs_varn = 'wgs84'
