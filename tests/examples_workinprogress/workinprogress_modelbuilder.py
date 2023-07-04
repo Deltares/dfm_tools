@@ -133,8 +133,8 @@ for varkey in ['so','thetao','uo','vo','zos']:
 
 # CMEMS - boundary conditions file (.bc) (and add to ext_bnd)
 #TODO: two waterlevelbnds need to share same physical plifile in order to + (https://issuetracker.deltares.nl/browse/UNST-5320).
-list_quantities = ['salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd','waterlevelbnd','tide'] #TODO: JV1 stable ("WARNING: Boundary link 00000468 already claimed")
-#list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd','tide'] #TODO: JV6 "ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated"
+list_quantities = ['salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd','waterlevelbnd','tide']
+list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd','tide'] # when supplying two waterlevelbnds (tide and steric) with other quantities in between, dimrset>=2.24.00 is required or else "ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated" is raised
 ext_new = mb.preprocess_interpolate_nc_to_bc(ext_bnd=ext_new,
                                              refdate_str = 'minutes since '+ref_date+' 00:00:00 +00:00',
                                              dir_output = dir_output,
@@ -142,27 +142,6 @@ ext_new = mb.preprocess_interpolate_nc_to_bc(ext_bnd=ext_new,
                                              tstart=date_min, tstop=date_max, 
                                              list_plifiles = [poly_file],
                                              dir_pattern = os.path.join(dir_output_data_cmems,'cmems_{ncvarname}_*.nc'))
-#TODO: when adding both waterlevelbnd and tide as waterlevelbnd they should be consequetive. If there are other quantities in between, the model crashes with a update_ghostboundvals error, reported in https://issuetracker.deltares.nl/browse/UNST-7011:
-"""
-** INFO   : partition_fixorientation_ghostlist: number of reversed flowlinks=              0
-** INFO   : Done partitioning model.
-** ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated
-** INFO   : Closed file : /p/11209231-003-bes-modellering/hydrodynamica/hackathon/preprocessing/ModelBuilderOutput_JV/Bonaire_old.ext
-** INFO   : partition_fixorientation_ghostlist: number of reversed flowlinks=              0
-** INFO   : Done partitioning model.
-** ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated
-** INFO   : Closed file : /p/11209231-003-bes-modellering/hydrodynamica/hackathon/preprocessing/ModelBuilderOutput_JV/Bonaire_old.ext
-Abort(1) on node 0 (rank 0 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
-Abort(1) on node 1 (rank 1 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 1
-"""
-#When doing a sequential run, the model initializes successfully, but first timestep cannot be solved.
-"""
-** WARNING: Comp. time step average below threshold:  0.5742E-03 <  0.1000E+00.
-** INFO   : Performing direct write of solution state...
-** INFO   : Simulation current time: nt = 100, time1 =  26265600.06s (2022-11-01T00:00:00Z).
-** INFO   : Done writing solution state.
-#### ERROR: dimr update ABORT,: myNameDFlowFM update failed, with return value 22 
-"""
 
 #save new ext file
 ext_new.save(filepath=ext_file_new,path_style=path_style)
