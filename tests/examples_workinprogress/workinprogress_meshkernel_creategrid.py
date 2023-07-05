@@ -112,7 +112,9 @@ delete (landward) part of grid with polygon and plot result
 #                         [ 0.20387097, 49.9       ],
 #                         [-0.25032258, 48.71290323],
 #                         [ 1.92774194, 48.59935484]])
-dfmt.meshkernel_delete_withcoastlines(mk=mk, res='h', min_area=1000)
+print('deleting coastlines (takes a while)...')
+dfmt.meshkernel_delete_withcoastlines(mk=mk, res='h', min_area=100)
+print('done')
 
 
 mesh2d_noland = mk.mesh2d_get()
@@ -123,7 +125,7 @@ mesh2d_noland.plot_edges(ax,linewidth=0.8)
 #     ax.plot(pol_del['x'],pol_del['y'],'-r')
 # ax.set_xlim(xlim)
 # ax.set_ylim(ylim)
-dfmt.plot_coastlines(ax=ax, res='h', min_area=1000)
+dfmt.plot_coastlines(ax=ax, res='h', min_area=100)
 ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 
 
@@ -136,7 +138,7 @@ xu_grid_uds = dfmt.meshkernel_to_UgridDataset(mk, remove_noncontiguous=True, is_
 #TODO: get is_geographic from mk and drop as input argument: https:/https://github.com/Deltares/MeshKernelPy/issues/69/github.com/Deltares/MeshKernelPy/issues/69
 
 fig, ax = plt.subplots(figsize=figsize)
-xu_grid_uds.grid.plot(ax=ax) #TODO: maybe make uds instead of ds (but then bathy interpolation goes wrong)
+xu_grid_uds.grid.plot(ax=ax,linewidth=0.8) #TODO: maybe make uds instead of ds (but then bathy interpolation goes wrong)
 ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 
 #interp bathy
