@@ -118,12 +118,13 @@ def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, crs=None, remove_noncon
         xu_grid_ds[varn_conn].attrs["_FillValue"] += 1
         xu_grid_ds[varn_conn].attrs["start_index"] += 1
     
-    xu_grid_ds = xu_grid_ds.assign_attrs({#'Conventions': 'CF-1.8 UGRID-1.0 Deltares-0.10', #TODO: add Deltares convention (was CF-1.8 UGRID-1.0)
+    xu_grid_ds = xu_grid_ds.assign_attrs({#'Conventions': 'CF-1.8 UGRID-1.0 Deltares-0.10', #TODO: conventions come from xugrid, so this line is not necessary
                                           'institution': 'Deltares',
                                           'references': 'https://www.deltares.nl',
                                           'source': f'Created with meshkernel {meshkernel.__version__}, xugrid {xu.__version__} and dfm_tools {__version__}',
                                           'history': 'Created on %s, %s'%(dt.datetime.now().strftime('%Y-%m-%dT%H:%M:%S%z'),getpass.getuser()), #TODO: add timezone
                                           })
+    #TODO: xugrid overwrites this upon saving the network file: https://github.com/Deltares/xugrid/issues/111
     
     xu_grid_uds = xu.UgridDataset(xu_grid_ds)
     add_crs_to_dataset(uds=xu_grid_uds,is_geographic=is_geographic,crs=crs)
