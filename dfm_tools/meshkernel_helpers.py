@@ -48,7 +48,7 @@ def meshkernel_delete_withpol(mk, file_ldb, minpoints=None):
     """
     empty docstring
     """
-    #TODO: read file_ldb as geodataframe (convert pointlike to geodataframe) and merge code with meshkernel_delete_withcoastlines
+    #TODO: read file_ldb as geodataframe (convert pointlike to geodataframe) and merge code with meshkernel_delete_withcoastlines: https://github.com/Deltares/dfm_tools/issues/427
     
     print('>> reading+converting ldb: ',end='')
     dtstart = dt.datetime.now()
