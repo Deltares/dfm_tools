@@ -13,15 +13,8 @@ from dfm_tools.meshkernel_helpers import add_crs_to_dataset
 @pytest.mark.unittest
 def test_add_crs_to_dataset_cartesian():
     uds = xu.data.adh_san_diego()
-    crs='EPSG:26946' #TODO: this is not the correct crs for this model (plotting fails)
+    crs='EPSG:26946' # this is not the correct crs for this model, but that does not matter
     add_crs_to_dataset(uds,crs=crs,is_geographic=False)
-    
-    # import contextily as ctx
-    # import matplotlib.pyplot as plt
-    # plt.close('all')
-    # fig,ax = plt.subplots()
-    # uds.elevation.ugrid.plot(ax=ax)
-    # ctx.add_basemap(ax=ax,crs=crs)
     
     assert 'projected_coordinate_system' in uds.data_vars
     crs_attrs = uds.projected_coordinate_system.attrs
@@ -31,15 +24,8 @@ def test_add_crs_to_dataset_cartesian():
 
 def test_add_crs_to_dataset_spherical():
     uds = xu.data.adh_san_diego()
-    crs='EPSG:4326' #TODO: this is not the correct crs for this model (plotting fails)
+    crs='EPSG:4326' # this is not the correct crs for this model, but that does not matter
     add_crs_to_dataset(uds,crs=crs,is_geographic=True)
-    
-    # import contextily as ctx
-    # import matplotlib.pyplot as plt
-    # plt.close('all')
-    # fig,ax = plt.subplots()
-    # uds.elevation.ugrid.plot(ax=ax)
-    # ctx.add_basemap(ax=ax,crs=crs)
     
     assert 'wgs84' in uds.data_vars
     crs_attrs = uds.wgs84.attrs
