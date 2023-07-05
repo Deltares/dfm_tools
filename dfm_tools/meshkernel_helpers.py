@@ -73,7 +73,8 @@ def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, remove_noncontiguous:bo
     empty docstring
     """
     mesh2d_grid3 = mk.mesh2d_get()
-
+    #TODO: get is_geographic from mk and drop as input argument: https:/https://github.com/Deltares/MeshKernelPy/issues/69/github.com/Deltares/MeshKernelPy/issues/69
+    
     xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid3)
     
     #remove non-contiguous grid parts
