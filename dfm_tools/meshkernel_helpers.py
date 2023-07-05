@@ -72,11 +72,10 @@ def meshkernel_check_geographic(mk):
     """
     get projection from meshkernel instance
     """
-    is_geographic = bool(mk.get_projection().value) #TODO: better would be doing the below, but ProjectionType is not yet exposed: https://github.com/Deltares/MeshKernelPy/pull/77
-    # if mk.get_projection()==meshkernel.ProjectionType.Spherical:
-    #     is_geographic = True
-    # else:
-    #     is_geographic = False
+    if mk.get_projection()==meshkernel.ProjectionType.SPHERICAL:
+        is_geographic = True
+    else:
+        is_geographic = False
     return is_geographic
 
 
