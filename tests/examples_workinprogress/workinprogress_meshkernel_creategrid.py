@@ -134,8 +134,7 @@ ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 convert meshkernel grid to xugrid, interp bathymetry, plot and save to *_net.nc
 """
 
-xu_grid_uds = dfmt.meshkernel_to_UgridDataset(mk, remove_noncontiguous=True, is_geographic=is_geographic, crs=crs) #TODO: put remove_noncontiguous in meshkernel?: https://github.com/Deltares/MeshKernelPy/issues/44
-#TODO: get is_geographic from mk and drop as input argument: https:/https://github.com/Deltares/MeshKernelPy/issues/69/github.com/Deltares/MeshKernelPy/issues/69
+xu_grid_uds = dfmt.meshkernel_to_UgridDataset(mk, remove_noncontiguous=True, crs=crs) #TODO: put remove_noncontiguous in meshkernel?: https://github.com/Deltares/MeshKernelPy/issues/44
 
 fig, ax = plt.subplots(figsize=figsize)
 xu_grid_uds.grid.plot(ax=ax,linewidth=0.8) #TODO: maybe make uds instead of ds (but then bathy interpolation goes wrong)

@@ -68,14 +68,28 @@ def meshkernel_delete_withpol(mk, file_ldb, minpoints=None):
                          invert_deletion=False) #TODO: cuts away link that is neccesary, so results in non-orthogonal grid (probably usecase of english channel?)
 
 
-def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, remove_noncontiguous:bool = False, is_geographic=True, crs=None) -> xu.UgridDataset:
+def meshkernel_check_geographic(mk):
+    """
+    get projection from meshkernel instance
+    """
+    is_geographic = bool(mk.get_projection().value) #TODO: better would be doing the below, but ProjectionType is not yet exposed: https://github.com/Deltares/MeshKernelPy/pull/77
+    # if mk.get_projection()==meshkernel.ProjectionType.Spherical:
+    #     is_geographic = True
+    # else:
+    #     is_geographic = False
+    return is_geographic
+
+
+def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, crs=None, remove_noncontiguous:bool = False) -> xu.UgridDataset:
     """
     empty docstring
     """
-    mesh2d_grid3 = mk.mesh2d_get()
-    #TODO: get is_geographic from mk and drop as input argument: https:/https://github.com/Deltares/MeshKernelPy/issues/69/github.com/Deltares/MeshKernelPy/issues/69
     
-    xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid3)
+    is_geographic = meshkernel_check_geographic(mk)
+    
+    mesh2d_grid = mk.mesh2d_get()
+    
+    xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid)
     
     #remove non-contiguous grid parts
     def xugrid_remove_noncontiguous(grid):
@@ -112,12 +126,12 @@ def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, remove_noncontiguous:bo
                                           })
     
     xu_grid_uds = xu.UgridDataset(xu_grid_ds)
-    add_crs_to_dataset(xu_grid_uds,crs,is_geographic)
+    add_crs_to_dataset(uds=xu_grid_uds,is_geographic=is_geographic,crs=crs)
     
     return xu_grid_uds
 
 
-def add_crs_to_dataset(uds:(xu.UgridDataset,xr.Dataset),crs:(str,int),is_geographic:bool):
+def add_crs_to_dataset(uds:(xu.UgridDataset,xr.Dataset),is_geographic:bool,crs:(str,int)):
     """
     
 
@@ -125,10 +139,10 @@ def add_crs_to_dataset(uds:(xu.UgridDataset,xr.Dataset),crs:(str,int),is_geograp
     ----------
     uds : (xu.UgridDataset,xr.Dataset)
         DESCRIPTION.
-    crs : (str,int)
-        epsg, e.g. 'EPSG:4326' or 4326.
     is_geographic : bool
         whether it is a spherical (True) or cartesian (False), property comes from meshkernel instance.
+    crs : (str,int)
+        epsg, e.g. 'EPSG:4326' or 4326.
 
     Raises
     ------
@@ -177,7 +191,6 @@ def make_basegrid(lon_min,lon_max,lat_min,lat_max,dx,dy,angle=0,is_geographic=Tr
     """
     empty docstring
     """
-    print('modelbuilder.make_basegrid()')
     # create base grid
     make_grid_parameters = meshkernel.MakeGridParameters(angle=angle,
                                                          origin_x=lon_min,
@@ -198,7 +211,6 @@ def refine_basegrid(mk, data_bathy_sel, min_edge_size):
     """
     empty docstring
     """
-    print('modelbuilder.refine_basegrid()')
     
     lon_np = data_bathy_sel.lon.to_numpy()
     lat_np = data_bathy_sel.lat.to_numpy()
