@@ -17,6 +17,7 @@ import getpass
 import numpy as np
 from dfm_tools.coastlines import get_coastlines_gdb
 from netCDF4 import default_fillvals
+import geopandas
 
 
 def meshkernel_delete_withcoastlines(mk, res:str='f', min_area:float = 0, crs=None):
@@ -67,7 +68,7 @@ def meshkernel_delete_withpol(mk, file_ldb, minpoints=None):
                          invert_deletion=False) #TODO: cuts away link that is neccesary, so results in non-orthogonal grid (probably usecase of english channel?)
 
 
-def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, remove_noncontiguous:bool = False, is_geographic=True) -> xu.UgridDataset:
+def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, remove_noncontiguous:bool = False, is_geographic=True, crs=None) -> xu.UgridDataset:
     """
     empty docstring
     """
@@ -109,36 +110,66 @@ def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, remove_noncontiguous:bo
                                           'history': 'Created on %s, %s'%(dt.datetime.now().strftime('%Y-%m-%dT%H:%M:%S%z'),getpass.getuser()), #TODO: add timezone
                                           })
     
-    # add wgs84/projected_coordinate_system variable with attrs
-    if is_geographic: #TODO: extend this with flexible crs
-        attribute_dict = {
-            #'name': 'WGS84',#TODO: also without this interacter recognizes the grid as spherical
-            #'epsg': np.array(4326, dtype=int), #epsg or EPSG_code should be present for the interacter to load the grid
-            'grid_mapping_name': 'latitude_longitude', #without this, interacter sees the grid as cartesian
-            # 'longitude_of_prime_meridian': np.array(0.0, dtype=float),#TODO: also without this interacter recognizes the grid as spherical
-            # 'semi_major_axis': np.array(6378137.0, dtype=float),#TODO: also without this interacter recognizes the grid as spherical
-            # 'semi_minor_axis': np.array(6356752.314245, dtype=float),#TODO: also without this interacter recognizes the grid as spherical
-            # 'inverse_flattening': np.array(298.257223563, dtype=float),#TODO: also without this interacter recognizes the grid as spherical
-            'EPSG_code': 'EPSG:4326', #epsg or EPSG_code should be present for the interacter to load the grid. EPSG_code is required from QGIS
-            }
+    xu_grid_uds = xu.UgridDataset(xu_grid_ds)
+    add_crs_to_dataset(xu_grid_uds,crs,is_geographic)
+    
+    return xu_grid_uds
+
+
+def add_crs_to_dataset(uds:(xu.UgridDataset,xr.Dataset),crs:(str,int),is_geographic:bool):
+    """
+    
+
+    Parameters
+    ----------
+    uds : (xu.UgridDataset,xr.Dataset)
+        DESCRIPTION.
+    crs : (str,int)
+        epsg, e.g. 'EPSG:4326' or 4326.
+    is_geographic : bool
+        whether it is a spherical (True) or cartesian (False), property comes from meshkernel instance.
+
+    Raises
+    ------
+    ValueError
+        DESCRIPTION.
+
+    Returns
+    -------
+    None.
+
+    """
+    #get crs information (name/num)
+    if crs is None:
+        crs_num = 0
+        crs_name = ''
+    else:
+        crs_info = geopandas.GeoSeries(crs=crs).crs #also contains area-of-use (name/bounds), datum (ellipsoid/prime-meridian)
+        crs_num = crs_info.to_epsg()
+        crs_name = crs_info.name
+    crs_str = f'EPSG:{crs_num}'
+    
+    #check if combination of is_geographic and crs makes sense
+    if is_geographic and crs_num!=4326:
+        raise ValueError(f'provided grid is sperical (is_geographic=True) but crs="{crs}" while only "EPSG:4326" (WGS84) is supported for spherical grids') #TODO: is this true?
+    if not is_geographic and crs_num==4326:
+        raise ValueError('provided grid is cartesian (is_geographic=False) but crs="EPSG:4326" (WGS84), this combination is not supported')
+    
+    if is_geographic:
+        grid_mapping_name = 'latitude_longitude'
         crs_varn = 'wgs84'
     else:
-        attribute_dict = {
-            #'name': 'Unknown projected',
-            #'epsg': np.array(28992, dtype=int),
-            'grid_mapping_name': 'Unknown projected',
-            #'longitude_of_prime_meridian': np.array(0.0, dtype=float),
-            #'semi_major_axis': np.array(6377397.155, dtype=float),
-            #'semi_minor_axis': np.array(6356078.962818189, dtype=float),
-            #'inverse_flattening': np.array(299.1528128, dtype=float),
-            'EPSG_code': 'EPSG:28992',
-            #'wkt': 'PROJCS["Amersfoort / RD New",\n    GEOGCS["...'
-            }
+        grid_mapping_name = 'Unknown projected'
         crs_varn = 'projected_coordinate_system'
-    xu_grid_ds[crs_varn] = xr.DataArray(np.array(default_fillvals['i4'],dtype=int),dims=(),attrs=attribute_dict)
-
-    xu_grid_uds = xu.UgridDataset(xu_grid_ds)
-    return xu_grid_uds
+    
+    attribute_dict = {
+        'name': crs_name, # not required, but convenient for the user
+        'epsg': np.array(crs_num, dtype=int), # epsg or EPSG_code should be present for the interacter to load the grid and by QGIS to recognize the epsg.
+        'EPSG_code': crs_str, # epsg or EPSG_code should be present for the interacter to load the grid and by QGIS to recognize the epsg.
+        'grid_mapping_name': grid_mapping_name, # without grid_mapping_name='latitude_longitude', interacter sees the grid as cartesian
+        }
+    
+    uds[crs_varn] = xr.DataArray(np.array(default_fillvals['i4'],dtype=int),dims=(),attrs=attribute_dict)
 
 
 def make_basegrid(lon_min,lon_max,lat_min,lat_max,dx,dy,angle=0,is_geographic=True):

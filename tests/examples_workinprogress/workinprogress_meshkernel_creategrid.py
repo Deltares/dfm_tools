@@ -23,7 +23,7 @@ lon_res,lat_res = 0.2,0.2
 is_geographic = True #True for spherical grids
 
 figsize = (10,4)
-crs = 'EPSG:4326' #TODO: couple to is_geographic
+crs = 'EPSG:4326'
 
 
 """
@@ -37,7 +37,7 @@ Make a regular (potentially rotated) rectilinear grid. First generate a curvilin
 make_grid_parameters = meshkernel.MakeGridParameters(angle=0.0, #TODO: does non-zero result in an orthogonal spherical grid?
                                                      origin_x=lon_min,
                                                      origin_y=lat_min,
-                                                     upper_right_x=lon_max, #TODO: angle and upper_right_x cannot be combined
+                                                     upper_right_x=lon_max, #TODO: angle and upper_right_x cannot be combined: https://github.com/Deltares/MeshKernelPy/issues/74
                                                      upper_right_y=lat_max,
                                                      block_size_x=lon_res,
                                                      block_size_y=lat_res)
@@ -53,7 +53,7 @@ else:
 
 
 mk = meshkernel.MeshKernel(is_geographic=is_geographic)
-mk.curvilinear_make_uniform_on_extension(make_grid_parameters) #TODO: geometry_list is possible with curvilinear_make_uniform, but not for this function
+mk.curvilinear_make_uniform_on_extension(make_grid_parameters) #TODO: geometry_list is possible with curvilinear_make_uniform, but not for this function: https://github.com/Deltares/MeshKernelPy/issues/76
 mk.curvilinear_convert_to_mesh2d() #convert to ugrid/mesh2d
 mesh2d_basegrid = mk.mesh2d_get() #in case of curvi grid: mk.curvilinear_convert_to_mesh2d()
 fig, ax = plt.subplots(figsize=figsize)
@@ -132,7 +132,7 @@ ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 convert meshkernel grid to xugrid, interp bathymetry, plot and save to *_net.nc
 """
 
-xu_grid_uds = dfmt.meshkernel_to_UgridDataset(mk, remove_noncontiguous=True, is_geographic=is_geographic) #TODO: put remove_noncontiguous in meshkernel?: https://github.com/Deltares/MeshKernelPy/issues/44
+xu_grid_uds = dfmt.meshkernel_to_UgridDataset(mk, remove_noncontiguous=True, is_geographic=is_geographic, crs=crs) #TODO: put remove_noncontiguous in meshkernel?: https://github.com/Deltares/MeshKernelPy/issues/44
 
 fig, ax = plt.subplots(figsize=figsize)
 xu_grid_uds.grid.plot(ax=ax) #TODO: maybe make uds instead of ds (but then bathy interpolation goes wrong)
@@ -152,6 +152,5 @@ xu_grid_uds.ugrid.to_netcdf('test_net.nc')
 
 #TODO: update https://github.com/Deltares/dfm_tools/issues/217
 
-#TODO: network file is not orthogonal, should be fixed with https://github.com/Deltares/dfm_tools/issues/421
 #TODO: there is (was) a link missing, maybe due to ldb?
 

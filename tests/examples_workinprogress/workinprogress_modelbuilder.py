@@ -82,7 +82,7 @@ dfmt.meshkernel_delete_withcoastlines(mk=mk_object, res='h') #TODO: write used c
 # mk_object.mesh2d_delete_hanging_edges()
 
 #convert to xugrid
-xu_grid_uds = dfmt.meshkernel_to_UgridDataset(mk=mk_object, is_geographic=is_geographic)
+xu_grid_uds = dfmt.meshkernel_to_UgridDataset(mk=mk_object, is_geographic=is_geographic, crs=crs)
 
 #interp bathy
 data_bathy_interp = data_bathy_sel.interp(lon=xu_grid_uds.obj.mesh2d_node_x, lat=xu_grid_uds.obj.mesh2d_node_y).reset_coords(['lat','lon']) #interpolates lon/lat gebcodata to mesh2d_nNodes dimension #TODO: if these come from xu_grid_uds (without ojb), the mesh2d_node_z var has no ugrid accessor since the dims are lat/lon instead of mesh2d_nNodes
