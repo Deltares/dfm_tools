@@ -115,10 +115,10 @@ def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, remove_noncontiguous:bo
             'name': 'WGS84',
             'epsg': np.array(4326, dtype=int),
             'grid_mapping_name': 'latitude_longitude',
-            'longitude_of_prime_meridian': np.array(0.0, dtype=float),
-            'semi_major_axis': np.array(6378137.0, dtype=float),
-            'semi_minor_axis': np.array(6356752.314245, dtype=float),
-            'inverse_flattening': np.array(298.257223563, dtype=float),
+            'longitude_of_prime_meridian': np.array(0.0, dtype=float),#TODO: also without this interacter recognizes the grid as spherical
+            'semi_major_axis': np.array(6378137.0, dtype=float),#TODO: also without this interacter recognizes the grid as spherical
+            'semi_minor_axis': np.array(6356752.314245, dtype=float),#TODO: also without this interacter recognizes the grid as spherical
+            'inverse_flattening': np.array(298.257223563, dtype=float),#TODO: also without this interacter recognizes the grid as spherical
             'EPSG_code': 'EPSG:4326',
             }
         crs_varn = 'wgs84'
