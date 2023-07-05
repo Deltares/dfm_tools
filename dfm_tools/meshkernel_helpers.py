@@ -112,25 +112,25 @@ def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, remove_noncontiguous:bo
     # add wgs84/projected_coordinate_system variable with attrs
     if is_geographic: #TODO: extend this with flexible crs
         attribute_dict = {
-            'name': 'WGS84',
-            'epsg': np.array(4326, dtype=int),
-            'grid_mapping_name': 'latitude_longitude',
-            'longitude_of_prime_meridian': np.array(0.0, dtype=float),#TODO: also without this interacter recognizes the grid as spherical
-            'semi_major_axis': np.array(6378137.0, dtype=float),#TODO: also without this interacter recognizes the grid as spherical
-            'semi_minor_axis': np.array(6356752.314245, dtype=float),#TODO: also without this interacter recognizes the grid as spherical
-            'inverse_flattening': np.array(298.257223563, dtype=float),#TODO: also without this interacter recognizes the grid as spherical
-            'EPSG_code': 'EPSG:4326',
+            #'name': 'WGS84',#TODO: also without this interacter recognizes the grid as spherical
+            #'epsg': np.array(4326, dtype=int), #epsg or EPSG_code should be present for the interacter to load the grid
+            'grid_mapping_name': 'latitude_longitude', #without this, interacter sees the grid as cartesian
+            # 'longitude_of_prime_meridian': np.array(0.0, dtype=float),#TODO: also without this interacter recognizes the grid as spherical
+            # 'semi_major_axis': np.array(6378137.0, dtype=float),#TODO: also without this interacter recognizes the grid as spherical
+            # 'semi_minor_axis': np.array(6356752.314245, dtype=float),#TODO: also without this interacter recognizes the grid as spherical
+            # 'inverse_flattening': np.array(298.257223563, dtype=float),#TODO: also without this interacter recognizes the grid as spherical
+            'EPSG_code': 'EPSG:4326', #epsg or EPSG_code should be present for the interacter to load the grid. EPSG_code is required from QGIS
             }
         crs_varn = 'wgs84'
     else:
         attribute_dict = {
-            'name': 'Unknown projected',
-            'epsg': np.array(28992, dtype=int),
+            #'name': 'Unknown projected',
+            #'epsg': np.array(28992, dtype=int),
             'grid_mapping_name': 'Unknown projected',
-            'longitude_of_prime_meridian': np.array(0.0, dtype=float),
-            'semi_major_axis': np.array(6377397.155, dtype=float),
-            'semi_minor_axis': np.array(6356078.962818189, dtype=float),
-            'inverse_flattening': np.array(299.1528128, dtype=float),
+            #'longitude_of_prime_meridian': np.array(0.0, dtype=float),
+            #'semi_major_axis': np.array(6377397.155, dtype=float),
+            #'semi_minor_axis': np.array(6356078.962818189, dtype=float),
+            #'inverse_flattening': np.array(299.1528128, dtype=float),
             'EPSG_code': 'EPSG:28992',
             #'wkt': 'PROJCS["Amersfoort / RD New",\n    GEOGCS["...'
             }
