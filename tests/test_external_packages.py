@@ -27,7 +27,10 @@ def test_import_shapely():
     
 
 @pytest.mark.systemtest
-def test_xugrid_opendataset_ugridplot(): #this one fails with xarray>=2023.3.0: https://github.com/Deltares/xugrid/issues/78
+def test_xugrid_opendataset_ugridplot():
+    """
+    this one fails with xarray>=2023.3.0: https://github.com/Deltares/xugrid/issues/78
+    """
     file_nc = os.path.join(dir_testinput,'DFM_curvedbend_3D/cb_3d_map.nc')
     
     uds = xu.open_dataset(file_nc,chunks={'time':1})
@@ -36,8 +39,9 @@ def test_xugrid_opendataset_ugridplot(): #this one fails with xarray>=2023.3.0: 
 
 
 @pytest.mark.unittest
-def test_xarray_pandas_resample(): #this one fails with xarray<2023.3.0 (required for test_opendataset_ugridplot()) and pandas>1.5.3: https://github.com/Deltares/xugrid/issues/78#issuecomment-1597723955
+def test_xarray_pandas_resample():
     """
+    this one fails with xarray<2023.3.0 (required for test_opendataset_ugridplot()) and pandas>1.5.3: https://github.com/Deltares/xugrid/issues/78#issuecomment-1597723955
     pandas 1.5.3 works with xarray<2023.3.0
     pandas 2.0.* fails with xarray<2023.3.0
     pandas 2.0.* works with xarray==2023.5.0
@@ -47,7 +51,10 @@ def test_xarray_pandas_resample(): #this one fails with xarray<2023.3.0 (require
 
     
 @pytest.mark.unittest
-def test_xarray_interp_to_newdim(): #this one fails with scipy>=1.10.0: https://github.com/pydata/xarray/issues/7701
+def test_xarray_interp_to_newdim():
+    """
+    this one fails with scipy>=1.10.0: https://github.com/pydata/xarray/issues/7701
+    """
     ds = xr.Dataset()
     so_np = np.array([[[35.819576, 35.82568 , 35.82873 ],
                        [35.819576, 35.824154, 35.831783],

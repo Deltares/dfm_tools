@@ -9,8 +9,8 @@ xarray<2023.3.0
 dask
 netcdf4>=1.5.3
 bottleneck
-xugrid>=0.4.0
+xugrid<0.6.0
 cdsapi
 pydap>=3.3.0
 hydrolib-core>=0.5.1
-meshkernel>=2.0.2
+meshkernel>=2.1.0
