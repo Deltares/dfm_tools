@@ -32,7 +32,7 @@ Replaced large parts of the code with [HYDROLIB-core](https://github.com/Deltare
 - renaming water quality variables in dataset with `rename_waqvars()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#259](https://github.com/Deltares/dfm_tools/pull/259), this deprecates `get_varnamefromattrs()`
 - renaming variables in fourier dataset with `rename_fouvars()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#283](https://github.com/Deltares/dfm_tools/pull/283)
 - simplified background plotting with contextily and cartopy by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#328](https://github.com/Deltares/dfm_tools/pull/328), this deprecates `plot_background()`
-- create release and pypipip installable by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#338](https://github.com/Deltares/dfm_tools/pull/338)
+- create release and pypi/pip installable by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#338](https://github.com/Deltares/dfm_tools/pull/338)
 - using [HYDROLIB-core](https://github.com/Deltares/hydrolib-core) for reading/writing of D-FlowFM files, this deprecates `write_bcfile()`, `read_bcfile()`, `Polygon()`, `write_timfile()` and `read_timfile()`
 - interpolation of regularly gridded dataset (CMEMS, HYCOM etc) to plipoints with `interp_regularnc_to_plipoints()` by [@veenstrajelmer](https://github.com/veenstrajelmer)
 - interpolation of regularly gridded tide datasets to plipoints with `interpolate_tide_to_bc()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#288](https://github.com/Deltares/dfm_tools/pull/288)
