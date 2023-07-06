@@ -16,6 +16,8 @@ from dfm_tools import __version__
 import getpass
 import numpy as np
 from dfm_tools.coastlines import get_coastlines_gdb
+from netCDF4 import default_fillvals
+import geopandas
 
 
 def meshkernel_delete_withcoastlines(mk, res:str='f', min_area:float = 0, crs=None):
@@ -46,7 +48,7 @@ def meshkernel_delete_withpol(mk, file_ldb, minpoints=None):
     """
     empty docstring
     """
-    #TODO: read file_ldb as geodataframe (convert pointlike to geodataframe) and merge code with meshkernel_delete_withcoastlines
+    #TODO: read file_ldb as geodataframe (convert pointlike to geodataframe) and merge code with meshkernel_delete_withcoastlines: https://github.com/Deltares/dfm_tools/issues/427
     
     print('>> reading+converting ldb: ',end='')
     dtstart = dt.datetime.now()
@@ -66,13 +68,27 @@ def meshkernel_delete_withpol(mk, file_ldb, minpoints=None):
                          invert_deletion=False) #TODO: cuts away link that is neccesary, so results in non-orthogonal grid (probably usecase of english channel?)
 
 
-def meshkernel_to_UgridDataset(mk:meshkernel.meshkernel.MeshKernel, remove_noncontiguous:bool = False) -> xr.Dataset:
+def meshkernel_check_geographic(mk):
+    """
+    get projection from meshkernel instance
+    """
+    if mk.get_projection()==meshkernel.ProjectionType.SPHERICAL:
+        is_geographic = True
+    else:
+        is_geographic = False
+    return is_geographic
+
+
+def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, crs=None, remove_noncontiguous:bool = False) -> xu.UgridDataset:
     """
     empty docstring
     """
-    mesh2d_grid3 = mk.mesh2d_get()
-
-    xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid3)
+    
+    is_geographic = meshkernel_check_geographic(mk)
+    
+    mesh2d_grid = mk.mesh2d_get()
+    
+    xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid)
     
     #remove non-contiguous grid parts
     def xugrid_remove_noncontiguous(grid):
@@ -101,35 +117,80 @@ def meshkernel_to_UgridDataset(mk:meshkernel.meshkernel.MeshKernel, remove_nonco
         xu_grid_ds[varn_conn].attrs["_FillValue"] += 1
         xu_grid_ds[varn_conn].attrs["start_index"] += 1
     
-    xu_grid_ds = xu_grid_ds.assign_attrs({#'Conventions': 'CF-1.8 UGRID-1.0 Deltares-0.10', #add Deltares convention (was CF-1.8 UGRID-1.0)
+    xu_grid_ds = xu_grid_ds.assign_attrs({#'Conventions': 'CF-1.8 UGRID-1.0 Deltares-0.10', #TODO: conventions come from xugrid, so this line is not necessary
                                           'institution': 'Deltares',
                                           'references': 'https://www.deltares.nl',
                                           'source': f'Created with meshkernel {meshkernel.__version__}, xugrid {xu.__version__} and dfm_tools {__version__}',
                                           'history': 'Created on %s, %s'%(dt.datetime.now().strftime('%Y-%m-%dT%H:%M:%S%z'),getpass.getuser()), #TODO: add timezone
                                           })
-    
-    # add attrs (to projected_coordinate_system/wgs84 empty int variable): #TODO: should depend on is_geographic flag in make_basegrid()
-    # attribute_dict = {
-    #     'name': 'WGS84',
-    #     'epsg': np.array([4326], dtype=int),
-    #     'grid_mapping_name': 'Unknown projected',
-    #     'longitude_of_prime_meridian': np.array([0.0], dtype=float),
-    #     'semi_major_axis': np.array([6378137.0], dtype=float),
-    #     'semi_minor_axis': np.array([6356752.314245], dtype=float),
-    #     'inverse_flattening': np.array([6356752.314245], dtype=float),
-    #     'EPSG_code': 'EPSG:4326',
-    #     'value': 'value is equal to EPSG code'}
-    # xu_grid_ds['wgs84'] = xr.DataArray(np.array(0,dtype=int),dims=(),attrs=attribute_dict)
+    #TODO: xugrid overwrites this upon saving the network file: https://github.com/Deltares/xugrid/issues/111
     
     xu_grid_uds = xu.UgridDataset(xu_grid_ds)
+    add_crs_to_dataset(uds=xu_grid_uds,is_geographic=is_geographic,crs=crs)
+    
     return xu_grid_uds
+
+
+def add_crs_to_dataset(uds:(xu.UgridDataset,xr.Dataset),is_geographic:bool,crs:(str,int)):
+    """
+    
+
+    Parameters
+    ----------
+    uds : (xu.UgridDataset,xr.Dataset)
+        DESCRIPTION.
+    is_geographic : bool
+        whether it is a spherical (True) or cartesian (False), property comes from meshkernel instance.
+    crs : (str,int)
+        epsg, e.g. 'EPSG:4326' or 4326.
+
+    Raises
+    ------
+    ValueError
+        DESCRIPTION.
+
+    Returns
+    -------
+    None.
+
+    """
+    #get crs information (name/num)
+    if crs is None:
+        crs_num = 0
+        crs_name = ''
+    else:
+        crs_info = geopandas.GeoSeries(crs=crs).crs #also contains area-of-use (name/bounds), datum (ellipsoid/prime-meridian)
+        crs_num = crs_info.to_epsg()
+        crs_name = crs_info.name
+    crs_str = f'EPSG:{crs_num}'
+    
+    #check if combination of is_geographic and crs makes sense
+    if is_geographic and crs_num!=4326:
+        raise ValueError(f'provided grid is sperical (is_geographic=True) but crs="{crs}" while only "EPSG:4326" (WGS84) is supported for spherical grids') #TODO: is this true?
+    if not is_geographic and crs_num==4326:
+        raise ValueError('provided grid is cartesian (is_geographic=False) but crs="EPSG:4326" (WGS84), this combination is not supported')
+    
+    if is_geographic:
+        grid_mapping_name = 'latitude_longitude'
+        crs_varn = 'wgs84'
+    else:
+        grid_mapping_name = 'Unknown projected'
+        crs_varn = 'projected_coordinate_system'
+    
+    attribute_dict = {
+        'name': crs_name, # not required, but convenient for the user
+        'epsg': np.array(crs_num, dtype=int), # epsg or EPSG_code should be present for the interacter to load the grid and by QGIS to recognize the epsg.
+        'EPSG_code': crs_str, # epsg or EPSG_code should be present for the interacter to load the grid and by QGIS to recognize the epsg.
+        'grid_mapping_name': grid_mapping_name, # without grid_mapping_name='latitude_longitude', interacter sees the grid as cartesian
+        }
+    
+    uds[crs_varn] = xr.DataArray(np.array(default_fillvals['i4'],dtype=int),dims=(),attrs=attribute_dict)
 
 
 def make_basegrid(lon_min,lon_max,lat_min,lat_max,dx,dy,angle=0,is_geographic=True):
     """
     empty docstring
     """
-    print('modelbuilder.make_basegrid()')
     # create base grid
     make_grid_parameters = meshkernel.MakeGridParameters(angle=angle,
                                                          origin_x=lon_min,
@@ -150,7 +211,6 @@ def refine_basegrid(mk, data_bathy_sel, min_edge_size):
     """
     empty docstring
     """
-    print('modelbuilder.refine_basegrid()')
     
     lon_np = data_bathy_sel.lon.to_numpy()
     lat_np = data_bathy_sel.lat.to_numpy()
