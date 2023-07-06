@@ -23,7 +23,7 @@ lon_res,lat_res = 0.2,0.2
 is_geographic = True #True for spherical grids
 
 figsize = (10,4)
-crs = 'EPSG:4326' #TODO: couple to is_geographic
+crs = 'EPSG:4326'
 
 
 """
@@ -37,7 +37,7 @@ Make a regular (potentially rotated) rectilinear grid. First generate a curvilin
 make_grid_parameters = meshkernel.MakeGridParameters(angle=0.0, #TODO: does non-zero result in an orthogonal spherical grid?
                                                      origin_x=lon_min,
                                                      origin_y=lat_min,
-                                                     upper_right_x=lon_max, #TODO: angle and upper_right_x cannot be combined
+                                                     upper_right_x=lon_max, #TODO: angle and upper_right_x cannot be combined: https://github.com/Deltares/MeshKernelPy/issues/74
                                                      upper_right_y=lat_max,
                                                      block_size_x=lon_res,
                                                      block_size_y=lat_res)
@@ -53,7 +53,7 @@ else:
 
 
 mk = meshkernel.MeshKernel(is_geographic=is_geographic)
-mk.curvilinear_make_uniform_on_extension(make_grid_parameters) #TODO: geometry_list is possible with curvilinear_make_uniform, but not for this function
+mk.curvilinear_make_uniform_on_extension(make_grid_parameters) #TODO: geometry_list is possible with curvilinear_make_uniform, but not for this function: https://github.com/Deltares/MeshKernelPy/issues/76
 mk.curvilinear_convert_to_mesh2d() #convert to ugrid/mesh2d
 mesh2d_basegrid = mk.mesh2d_get() #in case of curvi grid: mk.curvilinear_convert_to_mesh2d()
 fig, ax = plt.subplots(figsize=figsize)
@@ -93,8 +93,8 @@ mesh_refinement_parameters = meshkernel.MeshRefinementParameters(#refine_interse
                                                                  max_courant_time=150) #TODO: consider 200 (gtsm value), is this value read?
 
 mk.mesh2d_refine_based_on_gridded_samples(gridded_samples=gridded_samples,
-                                           mesh_refinement_params=mesh_refinement_parameters,
-                                           use_nodal_refinement=True) #TODO: what does this do?
+                                          mesh_refinement_params=mesh_refinement_parameters,
+                                          use_nodal_refinement=True) #TODO: what does this do?
 
 mesh2d_refinedgrid = mk.mesh2d_get()
 fig, ax = plt.subplots(figsize=figsize)
@@ -112,7 +112,9 @@ delete (landward) part of grid with polygon and plot result
 #                         [ 0.20387097, 49.9       ],
 #                         [-0.25032258, 48.71290323],
 #                         [ 1.92774194, 48.59935484]])
-dfmt.meshkernel_delete_withcoastlines(mk=mk, res='h', min_area=1000)
+print('deleting coastlines (takes a while)...')
+dfmt.meshkernel_delete_withcoastlines(mk=mk, res='h', min_area=100)
+print('done')
 
 
 mesh2d_noland = mk.mesh2d_get()
@@ -123,7 +125,7 @@ mesh2d_noland.plot_edges(ax,linewidth=0.8)
 #     ax.plot(pol_del['x'],pol_del['y'],'-r')
 # ax.set_xlim(xlim)
 # ax.set_ylim(ylim)
-dfmt.plot_coastlines(ax=ax, res='h', min_area=1000)
+dfmt.plot_coastlines(ax=ax, res='h', min_area=100)
 ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 
 
@@ -132,11 +134,10 @@ ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 convert meshkernel grid to xugrid, interp bathymetry, plot and save to *_net.nc
 """
 
-xu_grid_uds = dfmt.meshkernel_to_UgridDataset(mk, remove_noncontiguous=True) #TODO: put remove_noncontiguous in meshkernel?: https://github.com/Deltares/MeshKernelPy/issues/44
-#TODO: add wgs84 variable with attrs: https://github.com/Deltares/dfm_tools/issues/421
+xu_grid_uds = dfmt.meshkernel_to_UgridDataset(mk, remove_noncontiguous=True, crs=crs) #TODO: put remove_noncontiguous in meshkernel?: https://github.com/Deltares/MeshKernelPy/issues/44
 
 fig, ax = plt.subplots(figsize=figsize)
-xu_grid_uds.grid.plot(ax=ax) #TODO: maybe make uds instead of ds (but then bathy interpolation goes wrong)
+xu_grid_uds.grid.plot(ax=ax,linewidth=0.8) #TODO: maybe make uds instead of ds (but then bathy interpolation goes wrong)
 ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 
 #interp bathy
@@ -153,6 +154,5 @@ xu_grid_uds.ugrid.to_netcdf('test_net.nc')
 
 #TODO: update https://github.com/Deltares/dfm_tools/issues/217
 
-#TODO: network file is not orthogonal, should be fixed with https://github.com/Deltares/dfm_tools/issues/421
 #TODO: there is (was) a link missing, maybe due to ldb?
 

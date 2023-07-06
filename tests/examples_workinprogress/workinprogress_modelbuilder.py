@@ -82,22 +82,7 @@ dfmt.meshkernel_delete_withcoastlines(mk=mk_object, res='h') #TODO: write used c
 # mk_object.mesh2d_delete_hanging_edges()
 
 #convert to xugrid
-xu_grid_uds = dfmt.meshkernel_to_UgridDataset(mk=mk_object)
-
-#TODO: temporary fix until code from issue-fix is in main branch: https://github.com/Deltares/dfm_tools/issues/421
-from netCDF4 import default_fillvals
-import numpy as np
-attribute_dict = {
-            'name': 'WGS84',
-            'epsg': np.array(4326, dtype=int),
-            'grid_mapping_name': 'latitude_longitude',
-            'longitude_of_prime_meridian': np.array(0.0, dtype=float),
-            'semi_major_axis': np.array(6378137.0, dtype=float),
-            'semi_minor_axis': np.array(6356752.314245, dtype=float),
-            'inverse_flattening': np.array(298.257223563, dtype=float),
-            'EPSG_code': 'EPSG:4326',
-            }
-xu_grid_uds['wgs84'] = xr.DataArray(np.array(default_fillvals['i4'],dtype=int),dims=(),attrs=attribute_dict)
+xu_grid_uds = dfmt.meshkernel_to_UgridDataset(mk=mk_object, crs=crs)
 
 #interp bathy
 data_bathy_interp = data_bathy_sel.interp(lon=xu_grid_uds.obj.mesh2d_node_x, lat=xu_grid_uds.obj.mesh2d_node_y).reset_coords(['lat','lon']) #interpolates lon/lat gebcodata to mesh2d_nNodes dimension #TODO: if these come from xu_grid_uds (without ojb), the mesh2d_node_z var has no ugrid accessor since the dims are lat/lon instead of mesh2d_nNodes

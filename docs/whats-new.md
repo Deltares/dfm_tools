@@ -13,7 +13,8 @@
 - proper selection for either CMEMS reanalysis/forecast product in `download_CMEMS()` by [@JulienGroenenboom](https://github.com/JulienGroenenboom) in [#308](https://github.com/Deltares/dfm_tools/pull/388)
 - slightly extend spatial and time domain when downloading ERA5 and CMEMS data by [@JulienGroenenboom](https://github.com/JulienGroenenboom) in [#390](https://github.com/Deltares/dfm_tools/pull/390)
 - renamed uxuy to uxuyadvectionvelocitybnd in `open_dataset_extra()` and related example script by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#366](https://github.com/Deltares/dfm_tools/pull/366)
-- add warning when interpolating to a boundary that contains multiple polylines by [@Tammo-Zijlker-Deltares](https://github.com/Tammo-Zijlker-Deltares)[#372](https://github.com/Deltares/dfm_tools/pull/372)
+- add warning when interpolating to a boundary that contains multiple polylines by [@Tammo-Zijlker-Deltares](https://github.com/Tammo-Zijlker-Deltares) in [#372](https://github.com/Deltares/dfm_tools/pull/372)
+- improved netcdf writing from meshkernel+xugrid generated network with `add_crs_to_dataset()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#422](https://github.com/Deltares/dfm_tools/pull/422)
 
 ## 0.11.0 (2023-04-24)
 
@@ -31,7 +32,7 @@ Replaced large parts of the code with [HYDROLIB-core](https://github.com/Deltare
 - renaming water quality variables in dataset with `rename_waqvars()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#259](https://github.com/Deltares/dfm_tools/pull/259), this deprecates `get_varnamefromattrs()`
 - renaming variables in fourier dataset with `rename_fouvars()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#283](https://github.com/Deltares/dfm_tools/pull/283)
 - simplified background plotting with contextily and cartopy by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#328](https://github.com/Deltares/dfm_tools/pull/328), this deprecates `plot_background()`
-- create release and pypipip installable by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#338](https://github.com/Deltares/dfm_tools/pull/338)
+- create release and pypi/pip installable by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#338](https://github.com/Deltares/dfm_tools/pull/338)
 - using [HYDROLIB-core](https://github.com/Deltares/hydrolib-core) for reading/writing of D-FlowFM files, this deprecates `write_bcfile()`, `read_bcfile()`, `Polygon()`, `write_timfile()` and `read_timfile()`
 - interpolation of regularly gridded dataset (CMEMS, HYCOM etc) to plipoints with `interp_regularnc_to_plipoints()` by [@veenstrajelmer](https://github.com/veenstrajelmer)
 - interpolation of regularly gridded tide datasets to plipoints with `interpolate_tide_to_bc()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#288](https://github.com/Deltares/dfm_tools/pull/288)
