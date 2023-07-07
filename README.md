@@ -16,6 +16,5 @@ A Python package for pre- and postprocessing D-FlowFM model input and output fil
 ## Information
 
 - install with ``pip install dfm_tools -U`` (or [installation guide](https://deltares.github.io/dfm_tools/installation))
-- WARNING: temporarily add: ``pip install xugrid<0.6.0`` since xugrid 0.6.0 [does not work for FM datasets](https://github.com/Deltares/xugrid/issues/113)
 - [online documentation](https://deltares.github.io/dfm_tools) with installation guide, contributing guide, tutorials/examples, API reference and a convenient search box.
 - Bug or feature request? Create a [GitHub issue](https://github.com/Deltares/dfm_tools/issues)
