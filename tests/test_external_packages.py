@@ -38,6 +38,18 @@ def test_xugrid_opendataset_ugridplot():
     uds['mesh2d_flowelem_bl'].ugrid.plot()
 
 
+@pytest.mark.systemtest
+def SKIP_test_xugrid_opendataset_ugridplot_contourf():
+    """
+    this one fails with xarray>=2023.3.0: https://github.com/Deltares/xugrid/issues/117
+    """
+    file_nc = os.path.join(dir_testinput,'DFM_curvedbend_3D/cb_3d_map.nc')
+    
+    uds = xu.open_dataset(file_nc,chunks={'time':1})
+    
+    uds['mesh2d_flowelem_bl'].ugrid.plot.contourf()
+
+
 @pytest.mark.unittest
 def test_xarray_pandas_resample():
     """
