@@ -18,7 +18,7 @@
 
 ## 0.11.0 (2023-04-24)
 
-Replaced large parts of the code with [HYDROLIB-core](https://github.com/Deltares/hydrolib-core), [xugrid](https://github.com/Deltares/xugrid) and [xarray](https://github.com/pydata/xarray). This means a non-backwards compatible change in the API but improved experience.
+Replaced large parts of the code with [HYDROLIB-core](https://github.com/Deltares/hydrolib-core), [xugrid](https://github.com/Deltares/xugrid) and [xarray](https://github.com/pydata/xarray). This means a non-backwards compatible change in the API but improved experience. xugrid gives loads of new features like coordinate conversion, shapefile export, cropping a unstructured dataset, regridding, rasterizing.
 
 ### Feat
 
