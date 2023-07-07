@@ -9,4 +9,4 @@ authors:
 title: "dfm_tools: A Python package for pre- and postprocessing D-FlowFM model input and output files"
 type: software
 version: 0.12.0
-doi: 
+doi: https://doi.org/10.5281/zenodo.7857393
