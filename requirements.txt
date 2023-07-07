@@ -5,11 +5,11 @@ pandas<2.0.0
 shapely>=1.7.0
 geopandas
 contextily
-xarray<2023.3.0
+xarray
 dask
 netcdf4>=1.5.3
 bottleneck
-xugrid<0.6.0
+xugrid>=0.6.1
 cdsapi
 pydap>=3.3.0
 hydrolib-core>=0.5.1
