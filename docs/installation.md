@@ -11,7 +11,6 @@
 - ``conda create --name dfm_tools_env python=3.9 git spyder -c conda-forge -y`` (``git`` and ``spyder`` are optional, you can also install a newer python version)
 - ``conda activate dfm_tools_env``
 - install latest dfm_tools release: ``pip install dfm_tools -U`` (the ``-U`` is for updating)
-- WARNING: temporarily add: ``pip install xugrid<0.6.0`` since xugrid 0.6.0 [does not work for FM datasets](https://github.com/Deltares/xugrid/issues/113)
 - alternatively install most recent dfm_tools version from github: ``python -m pip install git+https://github.com/Deltares/dfm_tools``
 - to remove environment when necessary: ``conda remove -n dfm_tools_env --all``
 
