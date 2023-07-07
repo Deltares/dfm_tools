@@ -8,6 +8,7 @@
 [![Available on pypi](https://img.shields.io/pypi/v/dfm_tools.svg)](https://pypi.python.org/pypi/dfm_tools)
 [![Supported versions](https://img.shields.io/pypi/pyversions/dfm_tools.svg)](https://pypi.org/project/dfm_tools)
 [![Downloads](https://img.shields.io/pypi/dm/dfm_tools.svg)](https://pypistats.org/packages/dfm_tools)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7857393.svg)](https://doi.org/10.5281/zenodo.7857393)
 
 # dfm_tools
 
