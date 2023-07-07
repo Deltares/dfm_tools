@@ -63,9 +63,11 @@ mkdocs build
 
 ## Create release
 
+- make sure the ``main`` branch is up to date (important issues solved, all pullrequests and branches closed)
+- bump the versionnumber with ``bumpversion minor``
 - update ``docs/whats-new.md`` and add a date to the current release heading
+- run local testbank
 - local check with: ``python setup.py sdist bdist_wheel`` and ``twine check dist/*``
-- make sure the ``main`` branch is up to date (important issues solved, all pullrequests closed, the versionnumber is correct)
 - copy the dfm_tools version from https://github.com/Deltares/dfm_tools/blob/main/setup.cfg (e.g. ``0.11.0``)
 - go to https://github.com/Deltares/dfm_tools/releases/new
 - click ``choose a tag`` and type v+versionnumber (e.g. ``v0.11.0``), click ``create new tag: v0.11.0 on publish``
