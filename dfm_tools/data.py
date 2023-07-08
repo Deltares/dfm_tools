@@ -26,6 +26,7 @@ def maybe_download_opendap_data(file_nc,dir_subfolder=None):
     if os.path.exists(file_nc): # only download if file does not exist already
         return
     
+    #opendap catalog: https://opendap.deltares.nl/thredds/catalog/opendap/deltares/Delft3D/netcdf_example_files/catalog.html
     opendap_url = 'https://opendap.deltares.nl/thredds/fileServer/opendap/deltares/Delft3D/netcdf_example_files'
     if dir_subfolder is not None:
         opendap_url = f'{opendap_url}/{dir_subfolder}'
