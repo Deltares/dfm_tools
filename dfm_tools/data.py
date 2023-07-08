@@ -29,9 +29,10 @@ def maybe_download_opendap_data(file_nc,dir_subfolder=None):
     opendap_url = 'https://opendap.deltares.nl/thredds/fileServer/opendap/deltares/Delft3D/netcdf_example_files'
     if dir_subfolder is not None:
         opendap_url = f'{opendap_url}/{dir_subfolder}'
-    file_url = f'{opendap_url}/{os.path.basename(file_nc)}'
+    fname = os.path.basename(file_nc)
+    file_url = f'{opendap_url}/{fname}'
 
-    print(f'downloading {file_url} to {file_nc}')
+    print(f'downloading "{fname}" from OPeNDAP to "{os.path.dirname(file_nc)}"')
     r = requests.get(file_url, allow_redirects=True)
     r.raise_for_status() #raise HTTPError if url not exists
     with open(file_nc, 'wb') as f:
