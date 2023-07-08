@@ -38,7 +38,7 @@ def maybe_download_opendap_data(file_nc,dir_subfolder=None):
         f.write(r.content)
 
 
-def fm_grevelingen_map_8part(return_filepath:bool = False) -> xu.UgridDataset:
+def fm_grevelingen_map(return_filepath:bool = False) -> xu.UgridDataset:
     
     dir_subfolder = 'DFM_grevelingen_3D'
     dir_testdata = get_dir_testdata(dir_subfolder)
@@ -155,7 +155,7 @@ def fm_westernscheldt_map(return_filepath:bool = False) -> xu.UgridDataset:
 
 
 if __name__ == "__main__":
-    func_list = [fm_grevelingen_map_8part, fm_grevelingen_his, fm_grevelingen_net, 
+    func_list = [fm_grevelingen_map, fm_grevelingen_his, fm_grevelingen_net, 
                  fm_curvedbend_map, fm_curvedbend_his, 
                  fm_westernscheldt_map]
     for func in func_list:
