@@ -17,14 +17,13 @@ import datetime as dt
 
 dtstart_script = dt.datetime.now()
 
-dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 if not os.path.exists(dir_output):
     os.makedirs(dir_output)
 export_kml = True
 
 #file_nc = os.path.join(r'p:\archivedprojects\11203850-coastserv\06-Model\waq_model\simulations\run0_20200319\DFM_OUTPUT_kzn_waq', 'kzn_waq_0*_map.nc')
-file_nc = os.path.join(dir_testinput,'DFM_grevelingen_3D','Grevelingen-FM_0*_map.nc')
+file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True)
 basename = os.path.basename(file_nc).replace('.','').replace('_0*_','_0000_')
 
 if 'Grevelingen' in file_nc:

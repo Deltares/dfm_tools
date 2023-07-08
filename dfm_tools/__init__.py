@@ -4,7 +4,7 @@
 
 __author__ = """Jelmer Veenstra"""
 __email__ = 'jelmer.veenstra@deltares.nl'
-__version__ = '0.12.0'
+__version__ = '0.12.1'
 
 from dfm_tools.deprecated import *
 from dfm_tools.errors import *
@@ -21,6 +21,7 @@ from dfm_tools.xugrid_helpers import *
 from dfm_tools.energy_dissipation import *
 from dfm_tools.bathymetry import *
 from dfm_tools.coastlines import *
+from dfm_tools import data
 #from dfm_tools.modelbuilder import * #commented since we do not want to expose these functions with hardcoded parameters
 
 import warnings

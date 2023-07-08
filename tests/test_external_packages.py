@@ -11,9 +11,7 @@ import numpy as np
 import xarray as xr
 import xugrid as xu
 import warnings
-
-from tests.utils import maybe_download_testdata
-dir_testinput = maybe_download_testdata()
+import dfm_tools as dfmt
 
 
 @pytest.mark.unittest
@@ -31,7 +29,7 @@ def test_xugrid_opendataset_ugridplot():
     """
     this one fails with xarray>=2023.3.0: https://github.com/Deltares/xugrid/issues/78
     """
-    file_nc = os.path.join(dir_testinput,'DFM_curvedbend_3D/cb_3d_map.nc')
+    file_nc = dfmt.data.fm_curvedbend_map(return_filepath=True)
     
     uds = xu.open_dataset(file_nc,chunks={'time':1})
     
@@ -43,7 +41,7 @@ def SKIP_test_xugrid_opendataset_ugridplot_contourf():
     """
     this one fails with xarray>=2023.3.0: https://github.com/Deltares/xugrid/issues/117
     """
-    file_nc = os.path.join(dir_testinput,'DFM_curvedbend_3D/cb_3d_map.nc')
+    file_nc = dfmt.data.fm_curvedbend_map(return_filepath=True)
     
     uds = xu.open_dataset(file_nc,chunks={'time':1})
     
