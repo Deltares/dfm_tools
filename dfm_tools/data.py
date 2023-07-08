@@ -9,7 +9,7 @@ import os
 import requests
 import xarray as xr
 import xugrid as xu
-from dfm_tools import open_partitioned_dataset, preprocess_hisnc
+from dfm_tools import open_partitioned_dataset, preprocess_hisnc, open_dataset_delft3d4
 # TODO: work with pooch instead, like: https://github.com/Deltares/xugrid/blob/main/xugrid/data/sample_data.py
 
 
@@ -155,10 +155,29 @@ def fm_westernscheldt_map(return_filepath:bool = False) -> xu.UgridDataset:
     return uds
 
 
+def d3d_westernscheldt_trim(return_filepath:bool = False) -> xu.UgridDataset:
+    
+    dir_testdata = get_dir_testdata()
+    
+    #download data if not present
+    file_nc = os.path.join(dir_testdata,'trim-westernscheldt_sph.nc')
+    maybe_download_opendap_data(file_nc)
+    
+    #potentially only return filepath of downloaded file(s)
+    filepath = file_nc
+    if return_filepath:
+        return filepath
+    
+    #open as UgridDataset
+    uds = open_dataset_delft3d4(filepath)
+    return uds
+
+
 if __name__ == "__main__":
     func_list = [fm_grevelingen_map, fm_grevelingen_his, fm_grevelingen_net, 
                  fm_curvedbend_map, fm_curvedbend_his, 
-                 fm_westernscheldt_map]
+                 #fm_westernscheldt_map, 
+                 d3d_westernscheldt_trim]
     for func in func_list:
         file_nc = func(return_filepath=True)
         print(file_nc)

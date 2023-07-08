@@ -30,7 +30,7 @@ def test_getmapdata(file_nc, varname, expected_size):
     """
     Checks whether ghost cells are properly taken care of (by asserting shape). And also whether varname can be found from attributes in case of Chlfa.
     
-    file_nc = os.path.join(dir_testinput,'DFM_grevelingen_3D','Grevelingen-FM_0*_map.nc')
+    file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True)
     expected_size = (44796,)
     """
     

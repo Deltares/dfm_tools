@@ -56,7 +56,6 @@ import matplotlib.pyplot as plt
 plt.close('all')
 import dfm_tools as dfmt
 
-dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
 
