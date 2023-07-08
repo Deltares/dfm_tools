@@ -1,6 +1,6 @@
 #Introduction
 
-There are a few tutorials available as [Jupyter Notebooks](https://github.com/Deltares/dfm_tools/blob/main/docs/notebooks) which are embedded on the following pages. You can [use binder](https://mybinder.org/v2/gh/Deltares/dfm_tools/HEAD) to run these notebooks interactively (loading takes a while).
+There are a few tutorials available as [Jupyter Notebooks](https://github.com/Deltares/dfm_tools/blob/main/docs/notebooks) which are embedded on the following pages. You can [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/Deltares/dfm_tools/HEAD?urlpath=/tree/docs/notebooks) to run these notebooks interactively (loading can take a while).
 
 There are also [example scripts](https://github.com/Deltares/dfm_tools/tree/main/tests/examples) available with more specific applications.
 

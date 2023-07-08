@@ -24,6 +24,7 @@
 
 - open an existing issue or create a new issue at https://github.com/Deltares/dfm_tools/issues
 - create a branch via ``Development`` on the right. This branch is now linked to the issue and the issue will be closed once the branch is merged with main again
+- alternatively fork the repository and do your edits there
 - open git bash window in local dfm_tools folder (e.g. ``C:\DATA\dfm_tools``)
 - ``git fetch origin`` followed by ``git checkout [branchname]``
 - make your local changes to the dfm_tools code (including docstrings and unittests for functions), after each subtask do ``git commit -am 'description of what you did'`` (``-am`` adds all changed files to the commit)
@@ -66,6 +67,7 @@ mkdocs build
 - make sure the ``main`` branch is up to date (important issues solved, all pullrequests and branches closed)
 - bump the versionnumber with ``bumpversion minor``
 - update ``docs/whats-new.md`` and add a date to the current release heading
+- maybe add version tag to binder links in readme.md and tutorials.md
 - run local testbank
 - local check with: ``python setup.py sdist bdist_wheel`` and ``twine check dist/*``
 - copy the dfm_tools version from https://github.com/Deltares/dfm_tools/blob/main/setup.cfg (e.g. ``0.11.0``)
