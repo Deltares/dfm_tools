@@ -18,12 +18,13 @@ overwrite = True
 yearmonth = True
 
 file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True)
+file_basename = os.path.basename(file_nc.replace('_0*_','_0000_'))
 
 dir_output = '.'
-postfix = '_'.join(os.path.basename(file_nc).split('_')[-2:])
-file_out = os.path.join(dir_output,os.path.basename(file_nc).replace(postfix,f'monthlymean_{postfix}'))
+postfix = '_'.join(file_basename.split('_')[-2:])
+file_out = os.path.join(dir_output,file_basename.replace(postfix,f'monthlymean_{postfix}'))
 
-data_frommap_merged = dfmt.open_partitioned_dataset(file_nc.replace('_0000_','_0*_'))
+data_frommap_merged = dfmt.open_partitioned_dataset(file_nc)
 data_frommap_merged = dfmt.Dataset_varswithdim(data_frommap_merged, dimname='time') #drop all variables without time dimension
 
 print('>> computing monthly means: ', end='')
@@ -55,5 +56,5 @@ pc = data_frommap['mesh2d_sa1'].isel(nmesh2d_layer=33,month=0,time=0,missing_dim
 pc.set_clim([28,30.2])
 ax.set_aspect('equal')
 fig.tight_layout()
-#fig.savefig(os.path.join(dir_output,'%s_mesh2d_sa1'%(os.path.basename(file_nc).replace('.',''))))
+#fig.savefig(os.path.join(dir_output,'%s_mesh2d_sa1'%(file_basename.replace('.',''))))
 
