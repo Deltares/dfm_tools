@@ -15,7 +15,7 @@ dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
 file_nc_list = [os.path.join(dir_testinput,'vanNithin','tttz_0000_his.nc'),
-                os.path.join(dir_testinput,'DFM_grevelingen_3D\\Grevelingen-FM_0000_his.nc'),
+                dfmt.data.fm_grevelingen_his(return_filepath=True),
                 r'p:\archivedprojects\11202512-h2020_impaqt\07_Mediterranean_model\MedSea_impaqt_model\computations_final\r013_waq\DFM_OUTPUT_MedSea_impaqt_FM\MedSea_impaqt_FM_0000_his.nc',
                 r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206\results\RMM_dflowfm_0000_his.nc', #contains duplicate station_names which are dropped
                 r'p:\11206811-002-kpp-veerse-meer\grove-model\vm_grof-j19_6-v1a\scenarios\S0\S0_run4\DFM_OUTPUT_VM_WQ_3D_grof\VM_WQ_3D_grof_0000_his.nc', #veersemeer, hisfile with proper z-coordinates

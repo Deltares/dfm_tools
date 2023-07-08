@@ -17,8 +17,7 @@ import dfm_tools as dfmt
 overwrite = True
 yearmonth = True
 
-dir_testinput = r'c:\DATA\dfm_tools_testdata'
-file_nc = os.path.join(dir_testinput,'DFM_grevelingen_3D','Grevelingen-FM_0000_map.nc')
+file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True)
 
 dir_output = '.'
 postfix = '_'.join(os.path.basename(file_nc).split('_')[-2:])

@@ -13,8 +13,6 @@ plt.close('all')
 import xarray as xr
 import dfm_tools as dfmt
 
-
-dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
 file_nc_list = [r'p:\archivedprojects\1220688-lake-kivu\2_data\COSMO\COSMOCLM_2012_out02_merged_4Wouter.nc', #COSMO

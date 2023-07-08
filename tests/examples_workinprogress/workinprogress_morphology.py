@@ -11,9 +11,7 @@ plt.close('all')
 import xarray as xr
 import dfm_tools as dfmt
 
-dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
-
 
 #MAPFILE
 file_nc = r'p:\archivedprojects\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\fm\DFM_OUTPUT_inlet\inlet_map.nc'

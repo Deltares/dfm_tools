@@ -1,47 +1,16 @@
 #!/usr/bin/env python
 
-"""Tests for dfm_tools package environment"""
-
 import pytest
 import os
-import glob
 import dfm_tools as dfmt
 import numpy as np
 import hydrolib.core.dflowfm as hcdfm
 import pandas as pd
 
-from tests.utils import maybe_download_testdata
 
-dir_testinput = maybe_download_testdata()
-
-
-# ACCEPTANCE TESTS VIA EXAMPLE SCRIPTS, these are the ones who are only meant to generate output files
-
-dir_tests = os.path.dirname(__file__) #F9 doesnt work, only F5 (F5 also only method to reload external definition scripts)
-list_configfiles = glob.glob(os.path.join(dir_tests,'examples','*.py')) + glob.glob(os.path.join(dir_tests,'examples_workinprogress','*.py'))
-list_configfiles = [x for x in list_configfiles if 'workinprogress_xarray_performance' not in x] #ignore this slow script
-dir_output_general = os.path.join(dir_tests,'examples_output')
-os.makedirs(dir_output_general, exist_ok=True)
-
-@pytest.mark.requireslocaldata
-@pytest.mark.acceptance
-@pytest.mark.parametrize("file_config", [pytest.param(file_config, id=os.path.basename(file_config).replace('.py','')) for file_config in list_configfiles])
-def test_run_examples(file_config):
-    # 1. Set up test data
-    dir_output = os.path.join(dir_output_general,os.path.basename(file_config).replace('.py',''))
-    if not os.path.exists(dir_output):
-        os.mkdir(dir_output)
-    os.chdir(dir_output)
-    test = os.system(f'python {file_config}')#+ " & pause")
-    
-    if test:
-        raise OSError('execution did not finish properly')
-
-
-##### UNITTESTS AND SYSTEMTESTS
-
-@pytest.mark.parametrize("file_nc, expected_size", [pytest.param(os.path.join(dir_testinput,'DFM_grevelingen_3D','Grevelingen-FM_0000_map.nc'), (5599,3,2), id='from 1 map partion Grevelingen'),
-                                                    pytest.param(os.path.join(dir_testinput,'DFM_grevelingen_3D','Grevelingen_FM_grid_20190603_net.nc'), (44804,4,2), id='fromnet Grevelingen')])
+@pytest.mark.parametrize("file_nc, expected_size", [pytest.param(dfmt.data.fm_grevelingen_map(return_filepath=True), (44796, 4, 2), id='from partitioned map Grevelingen'),
+                                                    pytest.param(dfmt.data.fm_curvedbend_map(return_filepath=True), (550, 4, 2), id='from map curvedbend'),
+                                                    pytest.param(dfmt.data.fm_grevelingen_net(return_filepath=True), (44804,4,2), id='fromnet Grevelingen')])
 @pytest.mark.systemtest
 def test_facenodecoordinates_shape(file_nc, expected_size):
     
@@ -51,7 +20,7 @@ def test_facenodecoordinates_shape(file_nc, expected_size):
     assert facenodecoordinates.shape == expected_size
 
 
-@pytest.mark.parametrize("file_nc, varname, expected_size", [pytest.param(os.path.join(dir_testinput,'DFM_grevelingen_3D','Grevelingen-FM_0*_map.nc'), 'mesh2d_sa1', (44796, 36), id='from partitioned map Grevelingen'),
+@pytest.mark.parametrize("file_nc, varname, expected_size", [pytest.param(dfmt.data.fm_grevelingen_map(return_filepath=True), 'mesh2d_sa1', (44796, 36), id='from partitioned map Grevelingen'),
                                                              pytest.param(os.path.join(r'p:\archivedprojects\11203850-coastserv\06-Model\waq_model\simulations\run0_20200319\DFM_OUTPUT_kzn_waq', 'kzn_waq_0*_map.nc'), 'mesh2d_Chlfa', (17385, 39), id='from partitioned waq map coastserv'),
                                                              #pytest.param(r'p:\11205258-006-kpp2020_rmm-g6\C_Work\01_Rooster\final_totaalmodel\rooster_rmm_v1p5_net.nc', 'mesh2d_face_x', (44804,), id='fromnet RMM'), #no time dimension
                                                              ])
@@ -61,7 +30,7 @@ def test_getmapdata(file_nc, varname, expected_size):
     """
     Checks whether ghost cells are properly taken care of (by asserting shape). And also whether varname can be found from attributes in case of Chlfa.
     
-    file_nc = os.path.join(dir_testinput,'DFM_grevelingen_3D','Grevelingen-FM_0*_map.nc')
+    file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True)
     expected_size = (44796,)
     """
     
@@ -223,7 +192,7 @@ def test_intersect_edges():
     ordering of xu.ugrid2d.intersect_edges return arrays is wrong, but we test it here since this test will fail once sorting is fixed in xugrid or numba.celltree. If so, depracate dfmt.intersect_edges_withsort()
     """
     
-    file_nc = os.path.join(dir_testinput,'DFM_curvedbend_3D','cb_3d_map.nc') #sigmalayer
+    file_nc = dfmt.data.fm_curvedbend_map(return_filepath=True) #sigmalayer
                     
     line_array = np.array([[2084.67741935, 3353.02419355], #with linebend in cell en with line crossing same cell twice
                            [2255.79637097, 3307.15725806],
@@ -245,7 +214,7 @@ def test_intersect_edges_withsort():
     ordering of xu.ugrid2d.intersect_edges return arrays is wrong, so dfmt.intersect_edges_withsort() combines it with sorting. The line array clearly shows different ordering of the resulting face_index array
     """
     
-    file_nc = os.path.join(dir_testinput,'DFM_curvedbend_3D','cb_3d_map.nc') #sigmalayer
+    file_nc = dfmt.data.fm_curvedbend_map(return_filepath=True) #sigmalayer
     
     line_array = np.array([[2084.67741935, 3353.02419355], #with linebend in cell en with line crossing same cell twice
                            [2255.79637097, 3307.15725806],
@@ -263,7 +232,7 @@ def test_intersect_edges_withsort():
 
 @pytest.mark.unittest
 def test_zlayermodel_correct_layers():
-    file_nc = os.path.join(dir_testinput,'DFM_grevelingen_3D','Grevelingen-FM_0*_map.nc') #zlayer
+    file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True) #sigmalayer
     data_frommap_merged = dfmt.open_partitioned_dataset(file_nc)
     
     timestep = 3
@@ -282,6 +251,7 @@ def test_zlayermodel_correct_layers():
 @pytest.mark.requireslocaldata
 def test_timmodel_to_dataframe():
     
+    dir_testinput = dfmt.data.get_dir_testdata()
     file_tim = os.path.join(dir_testinput,'Brouwerssluis_short.tim')
     
     data_tim = hcdfm.TimModel(file_tim)
