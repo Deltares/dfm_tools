@@ -26,7 +26,7 @@ def test_get_coastlines_gdb_global():
 
 
 @pytest.mark.unittest
-def test_get_coastlines_gdb_L1allres():
+def test_get_coastlines_gdb_allres():
     """
     opens coastline gdb of Ireland and UK, only islands > 1000km2
     """
@@ -42,9 +42,9 @@ def test_get_coastlines_gdb_L1allres():
 
 
 @pytest.mark.unittest
-def test_get_coastlines_gdb_L2L3():
+def test_get_coastlines_gdb_lakes_islandsinlakes():
     """
-    opens coastline gdb of Ireland and UK, only islands > 1000km2
+    opens coastline gdb of lake Kivu (so lake and island in lake, L2 and L3)
     """
     
     bbox = (28.9, -2.4, 29.3, -1.6) # xmin, ymin, xmax, ymax
