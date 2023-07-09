@@ -12,14 +12,16 @@ import xugrid as xu
 import pooch
 import zipfile
 from dfm_tools import open_partitioned_dataset, preprocess_hisnc, open_dataset_delft3d4
-# TODO: work with pooch instead, like: https://github.com/Deltares/xugrid/blob/main/xugrid/data/sample_data.py
 
 
 def get_dir_testdata(dir_subfolder=''):
-    dir_testdata = os.path.join(r'c:\DATA','dfm_tools_data', dir_subfolder) #on WCF
+    # TODO: remove this path
+    dir_testdata = os.path.join(r'c:\DATA\dfm_tools_data', dir_subfolder) # WCF JV
     if os.path.exists(dir_testdata):
         return dir_testdata
-    #create cache dir
+    
+    # create cache dir
+    # TODO: add SHA256 checking and more, like: https://github.com/Deltares/xugrid/blob/main/xugrid/data/sample_data.py
     dir_testdata = str(pooch.os_cache('dfm_tools'))
     os.makedirs(dir_testdata, exist_ok=True)
     return dir_testdata
