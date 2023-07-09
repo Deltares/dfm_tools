@@ -6,14 +6,36 @@ Created on Sun Jul  9 22:17:16 2023
 """
 
 import pytest
+import xarray as xr
 import xugrid as xu
 import dfm_tools as dfmt
 
 
 @pytest.mark.unittest
-def test_fm_curvedbend_map():
-    uds = dfmt.data.fm_curvedbend_map()
-    assert isinstance(uds,xu.UgridDataset)
+def test_data_map():
+    func_list = [dfmt.data.fm_grevelingen_map, 
+                 dfmt.data.fm_grevelingen_net, 
+                 dfmt.data.fm_curvedbend_map, 
+                 #fm_westernscheldt_map, 
+                 dfmt.data.d3d_westernscheldt_trim]
+    
+    for func in func_list:
+        file_nc = func(return_filepath=True)
+        print(file_nc)
+        uds = func()
+        assert isinstance(uds,xu.UgridDataset)
+
+
+@pytest.mark.unittest
+def test_data_his():
+    func_list = [dfmt.data.fm_grevelingen_his, 
+                 dfmt.data.fm_curvedbend_his]
+    
+    for func in func_list:
+        file_nc = func(return_filepath=True)
+        print(file_nc)
+        uds = func()
+        assert isinstance(uds,xr.Dataset)
 
 
 @pytest.mark.unittest
