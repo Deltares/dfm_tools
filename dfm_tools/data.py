@@ -51,8 +51,8 @@ def fm_grevelingen_map(return_filepath:bool = False) -> xu.UgridDataset:
     file_nc_pat = os.path.join(dir_testdata,'Grevelingen-FM_0*_map.nc')
     
     #download data if not present
-    file_nc_list = [file_nc_pat.replace('0*',f'{i:04d}') for i in range(8)]
-    for file_nc in file_nc_list:
+    for part in range(8):
+        file_nc = file_nc_pat.replace('0*',f'{part:04d}')
         maybe_download_opendap_data(file_nc,dir_subfolder)
     
     #potentially only return filepath of downloaded file(s)
