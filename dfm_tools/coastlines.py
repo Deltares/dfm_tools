@@ -6,13 +6,13 @@ Created on Mon Apr 24 03:46:44 2023
 """
 
 import os
-import geopandas
+import geopandas as gpd
 import pandas as pd
 
 
-def get_coastlines_gdb(res:str='h', bbox:tuple = (-180, -90, 180, 90), min_area:float = 0, crs:str = None, include_fields:list = ['area']) -> geopandas.geoseries.GeoSeries:
+def get_coastlines_gdb(res:str='h', bbox:tuple = (-180, -90, 180, 90), min_area:float = 0, crs:str = None, include_fields:list = ['area']) -> gpd.geoseries.GeoSeries:
     """
-    get coastlines from GSHHS database: https://www.ngdc.noaa.gov/mgg/shorelines/data/gshhg/latest/readme.txt
+    GSHHS coastlines: https://www.ngdc.noaa.gov/mgg/shorelines/data/gshhg/latest/readme.txt
     geopandas docs https://geopandas.org/en/stable/docs/reference/api/geopandas.read_file.html
     
     Parameters
@@ -34,7 +34,7 @@ def get_coastlines_gdb(res:str='h', bbox:tuple = (-180, -90, 180, 90), min_area:
         DESCRIPTION.
 
     """
-    #TODO: maybe download+unzip+load+cache from https://www.ngdc.noaa.gov/mgg/shorelines/
+    #TODO: possible to cache subsetted datasets?
     #TODO: add auto deciding of res/min_area based on bbox size (in WGS84 coords)
     #TODO: maybe also add for rivers/borders?
     #TODO: when cutting grid with coastlines, lakes should be used inverse
@@ -42,24 +42,27 @@ def get_coastlines_gdb(res:str='h', bbox:tuple = (-180, -90, 180, 90), min_area:
     if res not in 'fhilc':
         raise KeyError(f'invalid res="{res}", resolution options are f(ull), h(igh), i(ntermediate), l(ow), c(oarse)')
     if crs is not None: #convert bbox from input crs to WGS84
-        bbox_points = geopandas.points_from_xy(x=[bbox[0],bbox[2]], y=[bbox[1],bbox[3]], crs=crs)
+        bbox_points = gpd.points_from_xy(x=[bbox[0],bbox[2]], y=[bbox[1],bbox[3]], crs=crs)
         bbox_points = bbox_points.to_crs('EPSG:4326') #convert to WGS84
         bbox = (bbox_points.x[0], bbox_points.y[0], bbox_points.x[1], bbox_points.y[1])
         
-    #L(evel)1 (coastlines except antarctica) and L6 (antarctic grounding line)
-    dir_GSHHS_shp = r'p:\1230882-emodnet_hrsm\data\landboundary_GSHHS\gshhg-shp-2.3.7\GSHHS_shp'
-    file_shp_L1 = os.path.join(dir_GSHHS_shp,res,f'GSHHS_{res}_L1.shp') #coastlines
-    file_shp_L6 = os.path.join(dir_GSHHS_shp,res,f'GSHHS_{res}_L6.shp') #Antarctic grounding-line polygons
-    file_shp_L2 = os.path.join(dir_GSHHS_shp,res,f'GSHHS_{res}_L2.shp') #lakes
-    file_shp_L3 = os.path.join(dir_GSHHS_shp,res,f'GSHHS_{res}_L3.shp') #islands-in-lakes
+    # download gshhs data if not present and return dir
+    from dfm_tools.data import gshhs_coastlines_shp # raises ImportError because of circular import when placed in top of script
+    dir_gshhs = gshhs_coastlines_shp()
+
+    file_shp_L1 = os.path.join(dir_gshhs,'GSHHS_shp',res,f'GSHHS_{res}_L1.shp') #coastlines
+    file_shp_L6 = os.path.join(dir_gshhs,'GSHHS_shp',res,f'GSHHS_{res}_L6.shp') #Antarctic grounding-line polygons
+    file_shp_L2 = os.path.join(dir_gshhs,'GSHHS_shp',res,f'GSHHS_{res}_L2.shp') #lakes
+    file_shp_L3 = os.path.join(dir_gshhs,'GSHHS_shp',res,f'GSHHS_{res}_L3.shp') #islands-in-lakes
     
-    coastlines_gdb_L1 = geopandas.read_file(file_shp_L1, include_fields=include_fields, where=f"area>{min_area}", bbox=bbox)
-    coastlines_gdb_L6 = geopandas.read_file(file_shp_L6, include_fields=include_fields, where=f"area>{min_area}", bbox=bbox)
+    coastlines_gdb_L1 = gpd.read_file(file_shp_L1, include_fields=include_fields, where=f"area>{min_area}", bbox=bbox)
+    coastlines_gdb_L6 = gpd.read_file(file_shp_L6, include_fields=include_fields, where=f"area>{min_area}", bbox=bbox)
     coastlines_gdb_list = [coastlines_gdb_L1,coastlines_gdb_L6]
-    if len(coastlines_gdb_L1)<2: #if max one L1 polygon is selected, automatically add lakes and islands-in-lakes
-        coastlines_gdb_L2 = geopandas.read_file(file_shp_L2, include_fields=include_fields, where=f"area>{min_area}", bbox=bbox)
-        coastlines_gdb_L3 = geopandas.read_file(file_shp_L3, include_fields=include_fields, where=f"area>{min_area}", bbox=bbox)
-        coastlines_gdb_list = [coastlines_gdb_L1,coastlines_gdb_L6,coastlines_gdb_L2,coastlines_gdb_L3]
+    if len(coastlines_gdb_L1)<2: #if only one L1 polygon is selected, automatically add lakes and islands-in-lakes
+        coastlines_gdb_L2 = gpd.read_file(file_shp_L2, include_fields=include_fields, where=f"area>{min_area}", bbox=bbox)
+        coastlines_gdb_list.append(coastlines_gdb_L2)
+        coastlines_gdb_L3 = gpd.read_file(file_shp_L3, include_fields=include_fields, where=f"area>{min_area}", bbox=bbox)
+        coastlines_gdb_list.append(coastlines_gdb_L3)
     coastlines_gdb = pd.concat(coastlines_gdb_list)
     
     if crs:

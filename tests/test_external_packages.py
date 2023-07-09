@@ -6,11 +6,9 @@ Created on Mon Jun 19 22:03:43 2023
 """
 
 import pytest
-import os
 import numpy as np
 import xarray as xr
 import xugrid as xu
-import warnings
 import dfm_tools as dfmt
 
 
