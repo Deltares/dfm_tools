@@ -37,6 +37,7 @@ def get_coastlines_gdb(res:str='h', bbox:tuple = (-180, -90, 180, 90), min_area:
     #TODO: maybe download+unzip+load+cache from https://www.ngdc.noaa.gov/mgg/shorelines/
     #TODO: add auto deciding of res/min_area based on bbox size (in WGS84 coords)
     #TODO: maybe also add for rivers/borders?
+    #TODO: when cutting grid with coastlines, lakes should be used inverse
     
     if res not in 'fhilc':
         raise KeyError(f'invalid res="{res}", resolution options are f(ull), h(igh), i(ntermediate), l(ow), c(oarse)')

@@ -9,15 +9,17 @@ import os
 import requests
 import xarray as xr
 import xugrid as xu
+import zipfile
+import geopandas as gpd
 from dfm_tools import open_partitioned_dataset, preprocess_hisnc, open_dataset_delft3d4
 # TODO: work with pooch instead, like: https://github.com/Deltares/xugrid/blob/main/xugrid/data/sample_data.py
 
 
 def get_dir_testdata(dir_subfolder=''):
-    dir_testdata = os.path.join(r'c:\DATA','dfm_tools_testdata', dir_subfolder) #on WCF
+    dir_testdata = os.path.join(r'c:\DATA','dfm_tools_data', dir_subfolder) #on WCF
     if os.path.exists(dir_testdata):
         return dir_testdata
-    dir_testdata = './data' #for instance when running on github/binder
+    dir_testdata = './dfm_tools_data' #for instance when running on github/binder
     os.makedirs(dir_testdata, exist_ok=True)
     return dir_testdata
 
@@ -174,11 +176,49 @@ def d3d_westernscheldt_trim(return_filepath:bool = False) -> xu.UgridDataset:
     return uds
 
 
+def gshhs_coastlines_shp_download(return_filepath=True) -> str:
+    
+    dir_testdata = get_dir_testdata()
+    
+    fname = 'gshhg-shp-2.3.7.zip'
+    filepath_zip = os.path.join(dir_testdata,fname)
+    filepath_dir = os.path.join(dir_testdata,'gshhg-shp-2.3.7')
+    
+    #download zipfile if not present
+    if not os.path.exists(filepath_zip) and not os.path.exists(filepath_dir):
+        file_url = f'https://www.ngdc.noaa.gov/mgg/shorelines/data/gshhg/latest/{fname}'
+        print(f'downloading "{fname}" from www.ngdc.noaa.gov to "{os.path.basename(filepath_zip)}"')
+        r = requests.get(file_url, allow_redirects=True)
+        r.raise_for_status() #raise HTTPError if url not exists
+        with open(filepath_zip, 'wb') as f:
+            f.write(r.content)
+
+    #unzip zipfile if unzipped folder not present
+    if not os.path.exists(filepath_dir):
+        print(f'unzipping "{fname}"')
+        with zipfile.ZipFile(filepath_zip, 'r') as zip_ref:
+            zip_ref.extractall(filepath_dir)
+    
+    #construct filepath list and check existence of shapefiles
+    filepaths_shp_dict = {res:os.path.join(filepath_dir,'GSHHS_shp',res,f'GSHHS_{res}_L1.shp') for res in ['f','h','i','l','c']}
+    for filepath_shp in filepaths_shp_dict.values():
+        assert os.path.exists(filepath_shp) #coastlines
+        assert os.path.exists(filepath_shp.replace('L1.shp','L2.shp')) #lakes
+        assert os.path.exists(filepath_shp.replace('L1.shp','L3.shp')) #islands-in-lakes
+        assert os.path.exists(filepath_shp.replace('L1.shp','L6.shp')) #Antarctic grounding-line polygons
+    
+    return filepaths_shp_dict
+    
+    
+    
+
 if __name__ == "__main__":
-    func_list = [fm_grevelingen_map, fm_grevelingen_his, fm_grevelingen_net, 
-                 fm_curvedbend_map, fm_curvedbend_his, 
+    func_list = [gshhs_coastlines_shp_download,
+                 #fm_grevelingen_map, fm_grevelingen_his, fm_grevelingen_net, 
+                 #fm_curvedbend_map, fm_curvedbend_his, 
                  #fm_westernscheldt_map, 
-                 d3d_westernscheldt_trim]
+                 #d3d_westernscheldt_trim
+                 ]
     for func in func_list:
         file_nc = func(return_filepath=True)
         print(file_nc)
