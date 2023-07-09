@@ -8,7 +8,7 @@ Created on Thu Jun 22 09:41:49 2023
 import pytest
 import pandas as pd
 import numpy as np
-from dfm_tools.download import round_timestamp_to_outer_noon
+import dfm_tools as dfmt
 
 
 @pytest.mark.unittest
@@ -18,7 +18,7 @@ def test_round_timestamp_to_outer_noon():
     
     for date_min_mod, date_max_mod in zip(date_min_mod_list, date_max_mod_list):
         
-        date_min, date_max = round_timestamp_to_outer_noon(date_min_mod, date_max_mod)
+        date_min, date_max = dfmt.round_timestamp_to_outer_noon(date_min_mod, date_max_mod)
         
         assert date_min.hour == 12
         assert date_min.minute == 0

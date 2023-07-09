@@ -7,14 +7,14 @@ Created on Wed Jul  5 12:59:23 2023
 
 import pytest
 import xugrid as xu
-from dfm_tools.meshkernel_helpers import add_crs_to_dataset, make_basegrid, meshkernel_check_geographic
+import dfm_tools as dfmt
 
 
 @pytest.mark.unittest
 def test_add_crs_to_dataset_cartesian():
     uds = xu.data.adh_san_diego()
     crs='EPSG:26946' # this is not the correct crs for this model, but that does not matter
-    add_crs_to_dataset(uds,is_geographic=False,crs=crs)
+    dfmt.add_crs_to_dataset(uds,is_geographic=False,crs=crs)
     
     assert 'projected_coordinate_system' in uds.data_vars
     crs_attrs = uds.projected_coordinate_system.attrs
@@ -27,7 +27,7 @@ def test_add_crs_to_dataset_cartesian():
 def test_add_crs_to_dataset_spherical():
     uds = xu.data.adh_san_diego()
     crs='EPSG:4326' # this is not the correct crs for this model, but that does not matter
-    add_crs_to_dataset(uds,is_geographic=True,crs=crs)
+    dfmt.add_crs_to_dataset(uds,is_geographic=True,crs=crs)
     
     assert 'wgs84' in uds.data_vars
     crs_attrs = uds.wgs84.attrs
@@ -44,10 +44,10 @@ def test_meshkernel_check_geographic():
     lon_min, lon_max, lat_min, lat_max = -68.55, -67.9, 11.8, 12.6
     dxy = 0.05
     
-    mk_cartesian = make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, is_geographic=False)
-    mk_cartesian_geograph = meshkernel_check_geographic(mk_cartesian)
-    mk_spherical = make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, is_geographic=True)
-    mk_spherical_geograph = meshkernel_check_geographic(mk_spherical)
+    mk_cartesian = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, is_geographic=False)
+    mk_cartesian_geograph = dfmt.meshkernel_check_geographic(mk_cartesian)
+    mk_spherical = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, is_geographic=True)
+    mk_spherical_geograph = dfmt.meshkernel_check_geographic(mk_spherical)
     
     assert mk_cartesian_geograph==False
     assert mk_spherical_geograph==True
