@@ -219,18 +219,3 @@ def gshhs_coastlines_shp() -> str:
         assert os.path.exists(filepath_shp.replace('L1.shp','L6.shp')) #Antarctic grounding-line polygons
     
     return dir_gshhs
-
-
-if __name__ == "__main__":
-    func_list = [#gshhs_coastlines_shp_download,
-                 #fm_grevelingen_map, fm_grevelingen_his, fm_grevelingen_net, 
-                 #fm_curvedbend_map, fm_curvedbend_his, 
-                 #fm_westernscheldt_map, 
-                 #d3d_westernscheldt_trim
-                 ]
-    for func in func_list:
-        file_nc = func(return_filepath=True)
-        print(file_nc)
-        uds = func()
-
-
