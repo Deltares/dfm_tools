@@ -21,8 +21,8 @@ def test_data_map():
     
     for func in func_list:
         file_nc = func(return_filepath=True)
-        print(file_nc)
         uds = func()
+        assert isinstance(file_nc,str)
         assert isinstance(uds,xu.UgridDataset)
 
 
@@ -33,8 +33,8 @@ def test_data_his():
     
     for func in func_list:
         file_nc = func(return_filepath=True)
-        print(file_nc)
         uds = func()
+        assert isinstance(file_nc,str)
         assert isinstance(uds,xr.Dataset)
 
 
