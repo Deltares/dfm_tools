@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 plt.close('all')
 import dfm_tools as dfmt
 
-mode = 'ERA5_heat_model' # 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HARMONIE' 'HYCOM' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall' 'WOA'
+mode = 'ERA5_heat_model' # 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HARMONIE' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall' 'WOA'
 
 if 'HIRLAM' in mode:
     if mode == 'HIRLAM_meteo': #1year voor meteo crasht (HIRLAM72_*\\h72_*) door conflicting dimension sizes, sourcefolders opruimen? meteo_heatflux folders zijn schoner dus daar werkt het wel
@@ -30,13 +30,6 @@ elif mode == 'HARMONIE':
     file_out_prefix = 'HARMONIE_'
     preprocess = None
     time_slice = slice('2020-01-01','2020-01-02')
-elif mode == 'HYCOM':
-    dir_data = 'c:\\DATA\\dfm_tools_testdata\\GLBu0.08_expt_91.2'
-    fn_match_pattern = 'HYCOM_ST_GoO_*.nc'
-    file_out_prefix = 'HYCOM_ST_GoO_'
-    preprocess = None
-    time_slice = slice('2016-04-28','2016-05-03')
-    #rename_variables = {'salinity':'so', 'water_temp':'thetao'}
 elif 'ERA5' in mode:
     if mode=='ERA5_u10':
         varkey_list = ['u10'] #for testing
