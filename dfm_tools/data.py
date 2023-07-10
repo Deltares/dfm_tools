@@ -14,13 +14,8 @@ import zipfile
 from dfm_tools import open_partitioned_dataset, preprocess_hisnc, open_dataset_delft3d4
 
 
-def get_dir_testdata(dir_subfolder=''):
-    # TODO: remove this path
-    dir_testdata = os.path.join(r'c:\DATA\dfm_tools_data', dir_subfolder) # WCF JV
-    if os.path.exists(dir_testdata):
-        return dir_testdata
-    
-    # create cache dir
+def get_dir_testdata():
+    # create cache dir like %USERPROFILE%/AppData/Local/dfm_tools/dfm_tools/Cache
     # TODO: add SHA256 checking and more, like: https://github.com/Deltares/xugrid/blob/main/xugrid/data/sample_data.py
     dir_testdata = str(pooch.os_cache('dfm_tools'))
     os.makedirs(dir_testdata, exist_ok=True)
@@ -48,7 +43,7 @@ def maybe_download_opendap_data(file_nc,dir_subfolder=None):
 def fm_grevelingen_map(return_filepath:bool = False) -> xu.UgridDataset:
     
     dir_subfolder = 'DFM_grevelingen_3D'
-    dir_testdata = get_dir_testdata(dir_subfolder)
+    dir_testdata = get_dir_testdata()
     
     file_nc_pat = os.path.join(dir_testdata,'Grevelingen-FM_0*_map.nc')
     
@@ -70,7 +65,7 @@ def fm_grevelingen_map(return_filepath:bool = False) -> xu.UgridDataset:
 def fm_grevelingen_his(return_filepath:bool = False) -> xr.Dataset:
     
     dir_subfolder = 'DFM_grevelingen_3D'
-    dir_testdata = get_dir_testdata(dir_subfolder)
+    dir_testdata = get_dir_testdata()
     
     #download data if not present
     file_nc = os.path.join(dir_testdata,'Grevelingen-FM_0000_his.nc')
@@ -89,7 +84,7 @@ def fm_grevelingen_his(return_filepath:bool = False) -> xr.Dataset:
 def fm_grevelingen_net(return_filepath:bool = False) -> xu.UgridDataset:
     
     dir_subfolder = 'DFM_grevelingen_3D'
-    dir_testdata = get_dir_testdata(dir_subfolder)
+    dir_testdata = get_dir_testdata()
     
     #download data if not present
     file_nc = os.path.join(dir_testdata,'Grevelingen_FM_grid_20190603_net.nc')
@@ -108,7 +103,7 @@ def fm_grevelingen_net(return_filepath:bool = False) -> xu.UgridDataset:
 def fm_curvedbend_map(return_filepath:bool = False) -> xu.UgridDataset:
     
     dir_subfolder = 'DFM_curvedbend_3D'
-    dir_testdata = get_dir_testdata(dir_subfolder)
+    dir_testdata = get_dir_testdata()
     
     #download data if not present
     file_nc = os.path.join(dir_testdata,'cb_3d_map.nc')
@@ -127,7 +122,7 @@ def fm_curvedbend_map(return_filepath:bool = False) -> xu.UgridDataset:
 def fm_curvedbend_his(return_filepath:bool = False) -> xr.Dataset:
     
     dir_subfolder = 'DFM_curvedbend_3D'
-    dir_testdata = get_dir_testdata(dir_subfolder)
+    dir_testdata = get_dir_testdata()
     
     #download data if not present
     file_nc = os.path.join(dir_testdata,'cb_3d_his.nc')
@@ -177,6 +172,42 @@ def d3d_westernscheldt_trim(return_filepath:bool = False) -> xu.UgridDataset:
     #open as UgridDataset
     uds = open_dataset_delft3d4(filepath)
     return uds
+
+
+def d3d_curvedbend_trim(return_filepath:bool = False) -> xu.UgridDataset:
+    
+    dir_testdata = get_dir_testdata()
+    
+    #download data if not present
+    file_nc = os.path.join(dir_testdata,'trim-cb2-sal-added-3d.nc')
+    maybe_download_opendap_data(file_nc)
+    
+    #potentially only return filepath of downloaded file(s)
+    filepath = file_nc
+    if return_filepath:
+        return filepath
+    
+    #open as UgridDataset
+    uds = open_dataset_delft3d4(filepath)
+    return uds
+
+
+def d3d_curvedbend_trih(return_filepath:bool = False) -> xr.Dataset:
+    
+    dir_testdata = get_dir_testdata()
+    
+    #download data if not present
+    file_nc = os.path.join(dir_testdata,'trih-cb2-sal-added-3d.nc')
+    maybe_download_opendap_data(file_nc)
+    
+    #potentially only return filepath of downloaded file(s)
+    filepath = file_nc
+    if return_filepath:
+        return filepath
+    
+    #open as UgridDataset
+    ds = xr.open_mfdataset(filepath,preprocess=preprocess_hisnc)
+    return ds
 
 
 def gshhs_coastlines_shp() -> str:

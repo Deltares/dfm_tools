@@ -6,22 +6,17 @@ Created on Wed Aug 24 13:25:41 2022
 """
 
 import os
-import datetime as dt
 import matplotlib.pyplot as plt
 plt.close('all')
 import dfm_tools as dfmt
 import hydrolib.core.dflowfm as hcdfm
 
-dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
-dtstart = dt.datetime.now()
-
 file_pli_list = [r'p:\archivedprojects\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli',
-                 os.path.join(dir_testinput,'GSHHS_high_min1000km2.ldb'),
-                 os.path.join(dir_testinput,'DFM_grevelingen_3D\\Grevelingen-FM_BL_fxw.pliz'),
-                 os.path.join(dir_testinput,r'Maeslant.tek'),
-                 os.path.join(dir_testinput,r'nima-1013-lo-wl_validname.tek'),
+                 r'p:\1230882-emodnet_hrsm\GTSMv5.0\data\GSHHS_high_min1000km2.ldb',
+                 r'p:\archivedprojects\11205259-006-d-hydro-grevelingen\2Dh\model\2002\geometry\structures\Grevelingen-FM_BL_fxw.pliz',
+                 r'p:\archivedprojects\11205258-006-kpp2020_rmm-g6\C_Work\04_randvoorwaarden\keringen\Maeslantkering\Maeslant.tek',
                  ]
 
 for file_pli in file_pli_list:
@@ -48,6 +43,3 @@ for file_pli in file_pli_list:
         #get extents of all objects in polyfile
         pol_bounds = gdf_polyfile.geometry.bounds
         print(pol_bounds['minx'].min(),pol_bounds['maxx'].max(),pol_bounds['miny'].min(),pol_bounds['maxy'].max())
-
-time_passed = (dt.datetime.now()-dtstart).total_seconds()
-print(f'>>time passed: {time_passed:.2f} sec')

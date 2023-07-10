@@ -16,8 +16,9 @@ def test_data_map():
     func_list = [dfmt.data.fm_grevelingen_map, 
                  dfmt.data.fm_grevelingen_net, 
                  dfmt.data.fm_curvedbend_map, 
-                 #fm_westernscheldt_map, 
-                 dfmt.data.d3d_westernscheldt_trim]
+                 #dfmt.data.fm_westernscheldt_map, 
+                 dfmt.data.d3d_westernscheldt_trim,
+                 dfmt.data.d3d_curvedbend_trim]
     
     for func in func_list:
         file_nc = func(return_filepath=True)
@@ -29,7 +30,8 @@ def test_data_map():
 @pytest.mark.unittest
 def test_data_his():
     func_list = [dfmt.data.fm_grevelingen_his, 
-                 dfmt.data.fm_curvedbend_his]
+                 dfmt.data.fm_curvedbend_his,
+                 dfmt.data.d3d_curvedbend_trih]
     
     for func in func_list:
         file_nc = func(return_filepath=True)

@@ -11,17 +11,15 @@ import matplotlib.pyplot as plt
 plt.close('all')
 import dfm_tools as dfmt
 
-dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
-file_nc_list = [os.path.join(dir_testinput,'vanNithin','tttz_0000_his.nc'),
-                dfmt.data.fm_grevelingen_his(return_filepath=True),
+file_nc_list = [dfmt.data.fm_grevelingen_his(return_filepath=True),
                 r'p:\archivedprojects\11202512-h2020_impaqt\07_Mediterranean_model\MedSea_impaqt_model\computations_final\r013_waq\DFM_OUTPUT_MedSea_impaqt_FM\MedSea_impaqt_FM_0000_his.nc',
                 r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206\results\RMM_dflowfm_0000_his.nc', #contains duplicate station_names which are dropped
                 r'p:\11206811-002-kpp-veerse-meer\grove-model\vm_grof-j19_6-v1a\scenarios\S0\S0_run4\DFM_OUTPUT_VM_WQ_3D_grof\VM_WQ_3D_grof_0000_his.nc', #veersemeer, hisfile with proper z-coordinates
                 r'p:\archivedprojects\11203869-morwaqeco3d\05-Tidal_inlet\02_FM_201910\FM_MF10_Max_30s\fm\DFM_OUTPUT_inlet\inlet_his.nc', #morphology
                 r'p:\11202255-sfincs\course_material\DSD_INT_2022\02_hands-on\Charleston_subgrid_example_allforcing\pre-run_output\sfincs_his.nc', #SFINCS
-                os.path.join(dir_testinput,'D3D_3D_sigma_curved_bend_nc\\trih-cb2-sal-added-3d.nc'), #DELFT3D4 netcdf
+                dfmt.data.d3d_curvedbend_trih(return_filepath=True), #DELFT3D4 netcdf
                 r'p:\archivedprojects\1220688-lake-kivu\3_modelling\1_FLOW\7_heatfluxinhis\063_netcdf\trih-thiery_002_coarse.nc', #DELFT3D4 netcdf
                 ]
 
@@ -38,8 +36,6 @@ for file_nc in file_nc_list:
                               'GTSO-08','GTSO-09','GTSO-10','GTSO-11','GTSO-12','GTSO-13','GTSO-14',
                               'GTSO-15','GTSO-16','GTSO-17','GTSO-18','GTSO-19','GTSO-20',
                               'Bommenede','Grevelingen hevel West','Brouwerssluis binnen','Brouwerssluis binnen-hand']
-    elif 'tttz' in file_nc: #NITHIN
-        stations_requested = ['Peiraias', 'Ovrios_2','Ovrios','Ovrios','Ortholithi']
     elif 'impaqt' in file_nc:
         stations_requested = ['MO_TS_MO_ATHOS','MO_TS_MO_LESVO','MO_TS_MO_SKYRO','IOC_thes','farm_impaqt']
     elif 'RMM_dflowfm' in file_nc:
