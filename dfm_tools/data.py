@@ -15,12 +15,7 @@ from dfm_tools import open_partitioned_dataset, preprocess_hisnc, open_dataset_d
 
 
 def get_dir_testdata(dir_subfolder=''):
-    # TODO: remove this path
-    dir_testdata = os.path.join(r'c:\DATA\dfm_tools_data', dir_subfolder) # WCF JV
-    if os.path.exists(dir_testdata):
-        return dir_testdata
-    
-    # create cache dir
+    # create cache dir like %USERPROFILE%/AppData/Local/dfm_tools/dfm_tools/Cache
     # TODO: add SHA256 checking and more, like: https://github.com/Deltares/xugrid/blob/main/xugrid/data/sample_data.py
     dir_testdata = str(pooch.os_cache('dfm_tools'))
     os.makedirs(dir_testdata, exist_ok=True)
