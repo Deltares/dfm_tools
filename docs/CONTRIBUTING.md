@@ -67,7 +67,6 @@ mkdocs build
 - make sure the ``main`` branch is up to date (important issues solved, all pullrequests and branches closed)
 - bump the versionnumber with ``bumpversion minor``
 - update ``docs/whats-new.md`` and add a date to the current release heading
-- maybe add version tag to binder links in readme.md and tutorials.md
 - run local testbank
 - local check with: ``python setup.py sdist bdist_wheel`` and ``twine check dist/*``
 - copy the dfm_tools version from https://github.com/Deltares/dfm_tools/blob/main/setup.cfg (e.g. ``0.11.0``)
