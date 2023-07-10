@@ -25,8 +25,6 @@ file_bc_list = [r'c:\DATA\dfm_tools_testdata\hydrolib_bc\DCSM\tide_OB_all_201811
                 r'c:\DATA\dfm_tools_testdata\hydrolib_bc\haixia\salinity_bc_South_v2_firstpoint.bc',
                 r'c:\DATA\dfm_tools_testdata\hydrolib_bc\haixia\uxuy_bc_South_v2_firstpoint.bc',
                 r'c:\DATA\dfm_tools_testdata\hydrolib_bc\haixia\salinity_bc_simple.bc',
-                #r'c:\DATA\dfm_tools_testdata\hydrolib_bc\haixia\salinity_bc_South_v2.bc', #large file, takes time
-                #r'c:\DATA\dfm_tools_testdata\hydrolib_bc\haixia\uxuy_bc_South_v2.bc',
                 ]
 
 dir_output = '.'
