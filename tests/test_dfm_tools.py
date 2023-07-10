@@ -20,18 +20,14 @@ def test_facenodecoordinates_shape(file_nc, expected_size):
     assert facenodecoordinates.shape == expected_size
 
 
-@pytest.mark.parametrize("file_nc, varname, expected_size", [pytest.param(dfmt.data.fm_grevelingen_map(return_filepath=True), 'mesh2d_sa1', (44796, 36), id='from partitioned map Grevelingen'),
-                                                             pytest.param(os.path.join(r'p:\archivedprojects\11203850-coastserv\06-Model\waq_model\simulations\run0_20200319\DFM_OUTPUT_kzn_waq', 'kzn_waq_0*_map.nc'), 'mesh2d_Chlfa', (17385, 39), id='from partitioned waq map coastserv'),
-                                                             ])
-@pytest.mark.requireslocaldata
 @pytest.mark.unittest
 def test_getmapdata(file_nc, varname, expected_size):
     """
     Checks whether ghost cells are properly taken care of (by asserting shape). And also whether varname can be found from attributes in case of Chlfa.
     
-    file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True)
-    expected_size = (44796,)
     """
+    file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True)
+    expected_size = (44796, 36)
     
     data_xr_map = dfmt.open_partitioned_dataset(file_nc)
     data_xr_map = dfmt.rename_waqvars(data_xr_map)
