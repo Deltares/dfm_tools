@@ -58,57 +58,48 @@ import dfm_tools as dfmt
 
 dir_output = '.'
 
+file_nc_map = r'p:\archivedprojects\11205258-006-kpp2020_rmm-g6\C_Work\07_WAQUAresultaten\j15\SDS-riv_tba_map.nc'
+file_nc_his = r'p:\archivedprojects\11205258-006-kpp2020_rmm-g6\C_Work\07_WAQUAresultaten\j15\SDS-riv_tba_his.nc'
+timestep = 1
+resolution = 300
+figsize = (16,7)
 
-for RMM_name in ['RMMtestmodel','RMM']:
-    if RMM_name=='RMM':
-        file_nc_map = r'p:\archivedprojects\11205258-006-kpp2020_rmm-g6\C_Work\07_WAQUAresultaten\j15\SDS-riv_tba_map.nc'
-        file_nc_his = r'p:\archivedprojects\11205258-006-kpp2020_rmm-g6\C_Work\07_WAQUAresultaten\j15\SDS-riv_tba_his.nc'
-        timestep = 1
-        resolution = 300
-    elif RMM_name == 'RMMtestmodel':
-        file_nc_map = r'c:\DATA\dfm_tools_testdata\waqua_netcdf\SDS-haven_map.nc'
-        file_nc_his = r'c:\DATA\dfm_tools_testdata\waqua_netcdf\SDS-haven_his.nc'
-        timestep = 5
-        resolution = 500
-    figsize = (16,7)
-    
-    #MAP RMM
-    uds = dfmt.open_dataset_curvilinear(file_nc_map, varn_vert_lon='grid_x', varn_vert_lat='grid_y', ij_dims=['N','M'])
-    uds_sel = uds.isel(TIME=timestep,LAYER=0)
-    uds_rastered = dfmt.rasterize_ugrid(uds_sel,resolution=resolution)
-    
-    fig,ax = plt.subplots(figsize=figsize)
-    pc = uds_sel.SEP.ugrid.plot(ax=ax, center=False, cmap='jet')
-    pc.set_clim([0,3])
-    ax.set_aspect('equal')
-    fig.tight_layout()
-    fig.savefig(os.path.join(dir_output,'waqua_%s_map_wl'%(RMM_name)))
-    
-    fig, ax = plt.subplots(figsize=figsize)
-    data_nc_VELmagn = np.sqrt(uds_sel.VELU**2 + uds_sel.VELV**2)
-    pc = data_nc_VELmagn.ugrid.plot(ax=ax, center=False, cmap='jet')
-    pc.set_clim([0,1])
-    ax.quiver(uds_rastered.x, uds_rastered.y, uds_rastered.VELU, uds_rastered.VELV, 
-              color='w',scale=10)
-    if RMM_name=='RMM':
-        ax.set_xlim([61000, 72000])
-        ax.set_ylim([438000, 446000])
-    ax.set_aspect('equal')
-    fig.tight_layout()
-    fig.savefig(os.path.join(dir_output,'waqua_%s_map_vel'%(RMM_name)))
-    
-    #HIS RMM
-    data_xr = xr.open_dataset(file_nc_his)
-    stations_pd = data_xr.NAMWL.astype(str).to_pandas().str.strip()
-    
-    fig, ax = plt.subplots(figsize=figsize)
-    for iS in range(10):
-        data_nc_ZWL = data_xr.ZWL.isel(STATION=iS)
-        ax.plot(data_nc_ZWL.TIME,data_nc_ZWL,label=stations_pd.iloc[iS], linewidth=1)
-    ax.legend()
-    ax.set_ylabel('%s (%s)'%(data_nc_ZWL.attrs['long_name'], data_nc_ZWL.attrs['units']))
-    time_ext = data_nc_ZWL.TIME[[0,-1]].to_numpy()
-    ax.set_xlim(time_ext)
-    plt.savefig(os.path.join(dir_output,'waqua_%s_his_ZWL'%(RMM_name)))
+#MAP RMM
+uds = dfmt.open_dataset_curvilinear(file_nc_map, varn_vert_lon='grid_x', varn_vert_lat='grid_y', ij_dims=['N','M'])
+uds_sel = uds.isel(TIME=timestep,LAYER=0)
+uds_rastered = dfmt.rasterize_ugrid(uds_sel,resolution=resolution)
+
+fig,ax = plt.subplots(figsize=figsize)
+pc = uds_sel.SEP.ugrid.plot(ax=ax, center=False, cmap='jet')
+pc.set_clim([0,3])
+ax.set_aspect('equal')
+fig.tight_layout()
+fig.savefig(os.path.join(dir_output,'waqua_RMM_map_wl'))
+
+fig, ax = plt.subplots(figsize=figsize)
+data_nc_VELmagn = np.sqrt(uds_sel.VELU**2 + uds_sel.VELV**2)
+pc = data_nc_VELmagn.ugrid.plot(ax=ax, center=False, cmap='jet')
+pc.set_clim([0,1])
+ax.quiver(uds_rastered.x, uds_rastered.y, uds_rastered.VELU, uds_rastered.VELV, 
+          color='w',scale=10)
+ax.set_xlim(61000, 72000)
+ax.set_ylim(438000, 446000)
+ax.set_aspect('equal')
+fig.tight_layout()
+fig.savefig(os.path.join(dir_output,'waqua_RMM_map_vel'))
+
+#HIS RMM
+data_xr = xr.open_dataset(file_nc_his)
+stations_pd = data_xr.NAMWL.astype(str).to_pandas().str.strip()
+
+fig, ax = plt.subplots(figsize=figsize)
+for iS in range(10):
+    data_nc_ZWL = data_xr.ZWL.isel(STATION=iS)
+    ax.plot(data_nc_ZWL.TIME,data_nc_ZWL,label=stations_pd.iloc[iS], linewidth=1)
+ax.legend()
+ax.set_ylabel('%s (%s)'%(data_nc_ZWL.attrs['long_name'], data_nc_ZWL.attrs['units']))
+time_ext = data_nc_ZWL.TIME[[0,-1]].to_numpy()
+ax.set_xlim(time_ext)
+plt.savefig(os.path.join(dir_output,'waqua_RMM_his_ZWL'))
 
 

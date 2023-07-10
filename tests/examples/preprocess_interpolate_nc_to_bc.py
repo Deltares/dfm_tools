@@ -29,7 +29,7 @@ list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuyadvection
 list_quantities = ['salinitybnd','tracerbndNO3','tide']
 #list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd','tracerbndNO3','tracerbndOpal','tracerbndDON','tide'] #also waq vars with same ncvarname, opal not available for GFDL and CMCC
 
-model = 'CMEMS' #CMEMS GFDL CMCC HYCOM
+model = 'CMEMS' #CMEMS GFDL CMCC
 
 
 #The {ncvarname} wildcard in dir_pattern_hydro/dir_patern_waq is used to replace it with conversion_dict[quantity]['ncvarname'] by using str(dir_pattern).format(ncvarname)
@@ -65,15 +65,6 @@ elif model=='CMCC': #TODO: check method, now finding nearest points (so always h
     dir_pattern_hydro = Path(dir_sourcefiles_hydro,'{ncvarname}_Omon_CMCC-ESM2_ssp126_r1i1p1f1_gn_*.nc')
     dir_sourcefiles_waq = dir_sourcefiles_hydro #CMCC waq: (2015-01-16 12:00:00 to 2100-12-16 12:00:00)
     dir_pattern_waq = dir_pattern_hydro
-elif model=='HYCOM':
-    list_plifiles = [Path(r'c:\DATA\dfm_tools_testdata\GLBu0.08_expt_91.2\bcline.pli')] #HYCOM not available in DCSM area, so use other pli-file
-    conversion_dict = dfmt.get_conversion_dict(ncvarname_updates={'salinitybnd':'salinity', 'temperaturebnd':'water_temp'})
-    tstart = '2016-04-20'
-    tstop = '2016-05-03'
-    dir_sourcefiles_hydro = 'c:\\DATA\\dfm_tools_testdata\\GLBu0.08_expt_91.2' #HYCOM hydro: salinity/so, water_temp/thetao (2016-04-19 00:00:00 to 2016-05-06 00:00:00)
-    dir_pattern_hydro = Path(dir_sourcefiles_hydro,'HYCOM_ST_GoO_*.nc')
-    dir_sourcefiles_waq = None
-    dir_pattern_waq = None
 else:
     raise KeyError(f'invalid model: {model}')
 
@@ -99,8 +90,6 @@ for file_pli in list_plifiles:
         else:
             if quantity in ['waterlevelbnd','salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd']: #hydro
                 if dir_sourcefiles_hydro is None:
-                    continue
-                if (model=='HYCOM') & (quantity not in ['salinitybnd','temperaturebnd']): #only contains quantities salinity and water_temp, so crashes on others
                     continue
                 dir_pattern = dir_pattern_hydro
             else: #waq

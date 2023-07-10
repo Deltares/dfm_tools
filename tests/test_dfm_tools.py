@@ -20,19 +20,33 @@ def test_facenodecoordinates_shape(file_nc, expected_size):
     assert facenodecoordinates.shape == expected_size
 
 
-@pytest.mark.parametrize("file_nc, varname, expected_size", [pytest.param(dfmt.data.fm_grevelingen_map(return_filepath=True), 'mesh2d_sa1', (44796, 36), id='from partitioned map Grevelingen'),
-                                                             pytest.param(os.path.join(r'p:\archivedprojects\11203850-coastserv\06-Model\waq_model\simulations\run0_20200319\DFM_OUTPUT_kzn_waq', 'kzn_waq_0*_map.nc'), 'mesh2d_Chlfa', (17385, 39), id='from partitioned waq map coastserv'),
-                                                             #pytest.param(r'p:\11205258-006-kpp2020_rmm-g6\C_Work\01_Rooster\final_totaalmodel\rooster_rmm_v1p5_net.nc', 'mesh2d_face_x', (44804,), id='fromnet RMM'), #no time dimension
-                                                             ])
-@pytest.mark.requireslocaldata
 @pytest.mark.unittest
-def test_getmapdata(file_nc, varname, expected_size):
+def test_getmapdata():
     """
     Checks whether ghost cells are properly taken care of (by asserting shape). And also whether varname can be found from attributes in case of Chlfa.
     
-    file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True)
-    expected_size = (44796,)
     """
+    file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True)
+    expected_size = (44796, 36)
+    varname = 'mesh2d_sa1'
+    
+    data_xr_map = dfmt.open_partitioned_dataset(file_nc)
+    data_xr_map = dfmt.rename_waqvars(data_xr_map)
+    data_varsel = data_xr_map[varname].isel(time=2)
+    
+    assert data_varsel.shape == expected_size
+
+
+@pytest.mark.requireslocaldata
+@pytest.mark.unittest
+def test_getmapdata_waq():
+    """
+    Checks whether ghost cells are properly taken care of (by asserting shape). And also whether varname can be found from attributes in case of Chlfa.
+    
+    """
+    file_nc = os.path.join(r'p:\archivedprojects\11203850-coastserv\06-Model\waq_model\simulations\run0_20200319\DFM_OUTPUT_kzn_waq', 'kzn_waq_0*_map.nc')
+    expected_size = (17385, 39)
+    varname = 'mesh2d_Chlfa'
     
     data_xr_map = dfmt.open_partitioned_dataset(file_nc)
     data_xr_map = dfmt.rename_waqvars(data_xr_map)
@@ -251,8 +265,7 @@ def test_zlayermodel_correct_layers():
 @pytest.mark.requireslocaldata
 def test_timmodel_to_dataframe():
     
-    dir_testinput = dfmt.data.get_dir_testdata()
-    file_tim = os.path.join(dir_testinput,'Brouwerssluis_short.tim')
+    file_tim = r'p:\archivedprojects\11206811-002-d-hydro-grevelingen\simulaties\Jaarsom2017_dfm_006_zlayer\boundary_conditions\hist\jaarsom_2017\sources_sinks\FlakkeeseSpuisluis.tim'
     
     data_tim = hcdfm.TimModel(file_tim)
     
@@ -260,6 +273,6 @@ def test_timmodel_to_dataframe():
     tim_pd = dfmt.TimModel_to_DataFrame(data_tim, parse_column_labels=True, refdate=refdate)
     
     assert tim_pd.index[0] == pd.Timestamp('2016-01-01 00:00:00')
-    assert len(tim_pd) == 91
+    assert len(tim_pd) == 39603
     assert tim_pd.columns[-1] == 'Phaeocystis_P (g/m3)'
 
