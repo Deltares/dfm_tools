@@ -179,6 +179,42 @@ def d3d_westernscheldt_trim(return_filepath:bool = False) -> xu.UgridDataset:
     return uds
 
 
+def d3d_curvedbend_trim(return_filepath:bool = False) -> xu.UgridDataset:
+    
+    dir_testdata = get_dir_testdata()
+    
+    #download data if not present
+    file_nc = os.path.join(dir_testdata,'trim-cb2-sal-added-3d.nc')
+    maybe_download_opendap_data(file_nc)
+    
+    #potentially only return filepath of downloaded file(s)
+    filepath = file_nc
+    if return_filepath:
+        return filepath
+    
+    #open as UgridDataset
+    uds = open_dataset_delft3d4(filepath)
+    return uds
+
+
+def d3d_curvedbend_trih(return_filepath:bool = False) -> xr.Dataset:
+    
+    dir_testdata = get_dir_testdata()
+    
+    #download data if not present
+    file_nc = os.path.join(dir_testdata,'trih-cb2-sal-added-3d.nc')
+    maybe_download_opendap_data(file_nc)
+    
+    #potentially only return filepath of downloaded file(s)
+    filepath = file_nc
+    if return_filepath:
+        return filepath
+    
+    #open as UgridDataset
+    ds = xr.open_mfdataset(filepath,preprocess=preprocess_hisnc)
+    return ds
+
+
 def gshhs_coastlines_shp() -> str:
     """
     Downloads and unzips GSHHS coastlines from NOAA if not present.
