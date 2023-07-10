@@ -14,15 +14,14 @@ import datetime as dt
 import dfm_tools as dfmt
 
 
-dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
-file_nc_list = [# dfmt.data.fm_curvedbend_map(return_filepath=True), #sigmalayer
-                # dfmt.data.fm_grevelingen_map(return_filepath=True), #zlayer
-                # r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0*_map.nc', #fullgrid
-                # #r'p:\dflowfm\maintenance\JIRA\05000-05999\05477\c103_ws_3d_fourier\DFM_OUTPUT_westerscheldt01_0subst\westerscheldt01_0subst_map.nc', #zsigma model without fullgrid output but with new ocean_sigma_z_coordinate variable #TODO: fails since https://github.com/Deltares/xugrid/issues/68#issuecomment-1594362969 was fixed, implement/catch edge validator?
+file_nc_list = [dfmt.data.fm_curvedbend_map(return_filepath=True), #sigmalayer
+                dfmt.data.fm_grevelingen_map(return_filepath=True), #zlayer
+                r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0*_map.nc', #fullgrid
+                # r'p:\dflowfm\maintenance\JIRA\05000-05999\05477\c103_ws_3d_fourier\DFM_OUTPUT_westerscheldt01_0subst\westerscheldt01_0subst_map.nc', #zsigma model without fullgrid output but with new ocean_sigma_z_coordinate variable #TODO: fails since https://github.com/Deltares/xugrid/issues/68#issuecomment-1594362969 was fixed, implement/catch edge validator?
                 r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_207\results\RMM_dflowfm_0*_map.nc', #2D model
-                # r'p:\archivedprojects\11203379-005-mwra-updated-bem\03_model\02_final\A72_ntsu0_kzlb2\DFM_OUTPUT_MB_02\MB_02_0*_map.nc',
+                r'p:\archivedprojects\11203379-005-mwra-updated-bem\03_model\02_final\A72_ntsu0_kzlb2\DFM_OUTPUT_MB_02\MB_02_0*_map.nc',
                 ]
 
 for file_nc in file_nc_list:
@@ -49,7 +48,6 @@ for file_nc in file_nc_list:
         clim_bl = None
         clim_sal = None
         crs = None
-        file_nc_fou = None
         raster_res = 200
         umag_clim = None
     elif 'Grevelingen' in file_nc:
@@ -68,7 +66,6 @@ for file_nc in file_nc_list:
         clim_bl = [-40,10]
         clim_sal = [28,30.2]
         crs = "EPSG:28992"
-        file_nc_fou = None
         raster_res = 1000
         umag_clim = (None,0.1)
     elif 'DCSM-FM_0_5nm' in file_nc:
@@ -87,7 +84,6 @@ for file_nc in file_nc_list:
         clim_bl = [-500,0]
         clim_sal = [25,36]
         crs = "EPSG:4326"
-        file_nc_fou = None
         raster_res = 0.3
         umag_clim = (None,1)
     elif 'westerscheldt01_0subst_map' in file_nc:
@@ -103,7 +99,6 @@ for file_nc in file_nc_list:
         clim_bl = None
         clim_sal = None
         crs = "EPSG:28992"
-        file_nc_fou = None
         raster_res = 2500
         data_frommap_merged = data_frommap_merged.rename({'mesh2d_ucmag':'mesh2d_sa1'}) #rename variable to allow for hardcoded plotting
         umag_clim = None
@@ -136,8 +131,6 @@ for file_nc in file_nc_list:
         clim_bl = [-10,10]
         clim_sal = None
         crs = "EPSG:28992"
-        file_nc_fou = os.path.join(dir_testinput,r'DFM_fou_RMM\RMM_dflowfm_0*_fou.nc')
-        fou_varname_u, fou_varname_v = 'mesh2d_fourier001_mean', 'mesh2d_fourier002_mean'
         raster_res = 2500
         umag_clim = (None,0.5)
     elif 'MB_02_' in file_nc:
@@ -152,8 +145,6 @@ for file_nc in file_nc_list:
         clim_bl = [-500,0]
         clim_sal = [25,36]
         crs = "EPSG:4326"
-        file_nc_fou = r'p:\archivedprojects\11203379-005-mwra-updated-bem\03_model\02_final\A72_ntsu0_kzlb2\DFM_OUTPUT_MB_02_fou\MB_02_0*_fou.nc'
-        fou_varname_u, fou_varname_v = 'mesh2d_fourier027_mean', 'mesh2d_fourier040_mean'
         raster_res = 0.3
         umag_clim = (None,0.8)
     else:
@@ -287,21 +278,18 @@ for file_nc in file_nc_list:
     
     
     print('plot velocity magnitude and quiver')
-    data_frommap_fou_atdepth = data_frommap_merged.isel(time=-1, mesh2d_nLayers=-2, nmesh2d_layer=-2, missing_dims='ignore') #.ugrid.sel(x=slice(-70.9,-70.4),y=slice(41.9,None))
-    fou_varname_u, fou_varname_v = 'mesh2d_ucx','mesh2d_ucy'
-    ux_mean = data_frommap_fou_atdepth[fou_varname_u]
-    uy_mean = data_frommap_fou_atdepth[fou_varname_v]
+    uds_quiv = data_frommap_merged.isel(time=-1, mesh2d_nLayers=-2, nmesh2d_layer=-2, missing_dims='ignore')
+    varn_ucx, varn_ucy = 'mesh2d_ucx', 'mesh2d_ucy'
     magn_attrs = {'long_name':'velocity magnitude', 'units':'m/s'}
-    data_frommap_fou_atdepth['magn'] = np.sqrt(ux_mean**2+uy_mean**2).assign_attrs(magn_attrs)
-    fou_raster = dfmt.rasterize_ugrid(data_frommap_fou_atdepth,resolution=raster_res) #TODO: add rasterize+quiver to notebook
-    
+    uds_quiv['magn'] = np.sqrt(uds_quiv[varn_ucx]**2+uds_quiv[varn_ucy]**2).assign_attrs(magn_attrs)
+    raster_quiv = dfmt.rasterize_ugrid(uds_quiv[[varn_ucx,varn_ucy]], resolution=raster_res)
     fig,ax = plt.subplots(figsize=(9,5))
-    pc = data_frommap_fou_atdepth['magn'].ugrid.plot()
-    fou_raster.plot.quiver(x='mesh2d_face_x',y='mesh2d_face_y',u=fou_varname_u,v=fou_varname_v,color='w',scale=25,add_guide=False)
+    pc = uds_quiv['magn'].ugrid.plot()
+    raster_quiv.plot.quiver(x='mesh2d_face_x',y='mesh2d_face_y',u=varn_ucx,v=varn_ucy,color='w',scale=25,add_guide=False)
     ax.set_aspect('equal')
     pc.set_clim(umag_clim)
     fig.tight_layout()
-    fig.savefig(os.path.join(dir_output,f'{basename}_fou'))
+    fig.savefig(os.path.join(dir_output,f'{basename}_quiver'))
     
     
     #TODO: add hovmoller to notebook. x='x' does not work for spherical models, since it is sorted by 's'
