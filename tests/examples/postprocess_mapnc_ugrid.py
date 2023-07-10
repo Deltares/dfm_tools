@@ -17,12 +17,12 @@ import dfm_tools as dfmt
 dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
-file_nc_list = [dfmt.data.fm_curvedbend_map(return_filepath=True), #sigmalayer
-                dfmt.data.fm_grevelingen_map(return_filepath=True), #zlayer
-                r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0*_map.nc', #fullgrid
-                #r'p:\dflowfm\maintenance\JIRA\05000-05999\05477\c103_ws_3d_fourier\DFM_OUTPUT_westerscheldt01_0subst\westerscheldt01_0subst_map.nc', #zsigma model without fullgrid output but with new ocean_sigma_z_coordinate variable #TODO: fails since https://github.com/Deltares/xugrid/issues/68#issuecomment-1594362969 was fixed, implement/catch edge validator?
+file_nc_list = [# dfmt.data.fm_curvedbend_map(return_filepath=True), #sigmalayer
+                # dfmt.data.fm_grevelingen_map(return_filepath=True), #zlayer
+                # r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0*_map.nc', #fullgrid
+                # #r'p:\dflowfm\maintenance\JIRA\05000-05999\05477\c103_ws_3d_fourier\DFM_OUTPUT_westerscheldt01_0subst\westerscheldt01_0subst_map.nc', #zsigma model without fullgrid output but with new ocean_sigma_z_coordinate variable #TODO: fails since https://github.com/Deltares/xugrid/issues/68#issuecomment-1594362969 was fixed, implement/catch edge validator?
                 r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_207\results\RMM_dflowfm_0*_map.nc', #2D model
-                r'p:\archivedprojects\11203379-005-mwra-updated-bem\03_model\02_final\A72_ntsu0_kzlb2\DFM_OUTPUT_MB_02\MB_02_0*_map.nc',
+                # r'p:\archivedprojects\11203379-005-mwra-updated-bem\03_model\02_final\A72_ntsu0_kzlb2\DFM_OUTPUT_MB_02\MB_02_0*_map.nc',
                 ]
 
 for file_nc in file_nc_list:
@@ -51,6 +51,7 @@ for file_nc in file_nc_list:
         crs = None
         file_nc_fou = None
         raster_res = 200
+        umag_clim = None
     elif 'Grevelingen' in file_nc:
         timestep = 3
         layno = 33 #35 is top
@@ -69,6 +70,7 @@ for file_nc in file_nc_list:
         crs = "EPSG:28992"
         file_nc_fou = None
         raster_res = 1000
+        umag_clim = (None,0.1)
     elif 'DCSM-FM_0_5nm' in file_nc:
         timestep = 365
         layno = 45
@@ -87,6 +89,7 @@ for file_nc in file_nc_list:
         crs = "EPSG:4326"
         file_nc_fou = None
         raster_res = 0.3
+        umag_clim = (None,1)
     elif 'westerscheldt01_0subst_map' in file_nc:
         timestep = 1
         layno = -2
@@ -103,6 +106,7 @@ for file_nc in file_nc_list:
         file_nc_fou = None
         raster_res = 2500
         data_frommap_merged = data_frommap_merged.rename({'mesh2d_ucmag':'mesh2d_sa1'}) #rename variable to allow for hardcoded plotting
+        umag_clim = None
     elif 'RMM_dflowfm' in file_nc:
         timestep = 365 #50
         layno = None
@@ -135,6 +139,7 @@ for file_nc in file_nc_list:
         file_nc_fou = os.path.join(dir_testinput,r'DFM_fou_RMM\RMM_dflowfm_0*_fou.nc')
         fou_varname_u, fou_varname_v = 'mesh2d_fourier001_mean', 'mesh2d_fourier002_mean'
         raster_res = 2500
+        umag_clim = (None,0.5)
     elif 'MB_02_' in file_nc:
         timestep = 10
         layno = 45
@@ -150,9 +155,10 @@ for file_nc in file_nc_list:
         file_nc_fou = r'p:\archivedprojects\11203379-005-mwra-updated-bem\03_model\02_final\A72_ntsu0_kzlb2\DFM_OUTPUT_MB_02_fou\MB_02_0*_fou.nc'
         fou_varname_u, fou_varname_v = 'mesh2d_fourier027_mean', 'mesh2d_fourier040_mean'
         raster_res = 0.3
+        umag_clim = (None,0.8)
     else:
         raise KeyError('ERROR: no settings provided for this mapfile')
-    
+        
     
     print('plot grid from mapdata')
     fig, ax = plt.subplots()
@@ -280,30 +286,22 @@ for file_nc in file_nc_list:
         fig.savefig(os.path.join(dir_output,f'{basename}_edges'))
     
     
-    if file_nc_fou is not None:
-        data_frommap_fou = dfmt.open_partitioned_dataset(file_nc_fou)
-        vars_pd_fou = dfmt.get_ncvarproperties(data_frommap_fou)
-        if 'mesh2d_nLayers' in data_frommap_fou.dims: #reduce layer dimension via isel/sel/interp. TODO: slicing over depth is not possible with dfmt.get_Dataset_atdepths(), since waterlevel is missing from file. (does it work for rstfiles?)
-            data_frommap_fou = data_frommap_fou.set_index(mesh2d_nLayers='mesh2d_layer_z') #TODO: not supported for sigmalayers, zlayers is for some reason in foufile of this zsigma model (or not the case with a rerun?) TODO: should these not be coordinate variables to begin with? (zw/zcc are also coordinates)
-            data_frommap_fou_atdepth = data_frommap_fou.isel(mesh2d_nLayers=-2) #second to last layer
-            #data_frommap_fou_atdepth = data_frommap_fou.sel(mesh2d_nLayers=-4, method='nearest') #layer nearest/closest to z==-4m
-            #data_frommap_fou_atdepth = data_frommap_fou.interp(mesh2d_nLayers=-4) #interp to -4m depth
-        else:
-            data_frommap_fou_atdepth = data_frommap_fou
-        
-        ux_mean = data_frommap_fou_atdepth[fou_varname_u]
-        uy_mean = data_frommap_fou_atdepth[fou_varname_v]
-        magn_mean_attrs = {'long_name':'residuele stroming', 'units':'m/s'}
-        data_frommap_fou_atdepth['magn_mean'] = np.sqrt(ux_mean**2+uy_mean**2).assign_attrs(magn_mean_attrs)
-        
-        fig,ax = plt.subplots(figsize=(9,5))
-        pc = data_frommap_fou_atdepth['magn_mean'].ugrid.plot()
-        fou_raster = dfmt.rasterize_ugrid(data_frommap_fou_atdepth,resolution=raster_res) #TODO: add rasterize+quiver to notebook
-        fou_raster.plot.quiver(x='mesh2d_face_x',y='mesh2d_face_y',u=fou_varname_u,v=fou_varname_v,color='w',scale=5,add_guide=False)
-        pc.set_clim(0,0.10)
-        ax.set_aspect('equal')
-        fig.tight_layout()
-        fig.savefig(os.path.join(dir_output,f'{basename}_fou'))
+    print('plot velocity magnitude and quiver')
+    data_frommap_fou_atdepth = data_frommap_merged.isel(time=-1, mesh2d_nLayers=-2, nmesh2d_layer=-2, missing_dims='ignore') #.ugrid.sel(x=slice(-70.9,-70.4),y=slice(41.9,None))
+    fou_varname_u, fou_varname_v = 'mesh2d_ucx','mesh2d_ucy'
+    ux_mean = data_frommap_fou_atdepth[fou_varname_u]
+    uy_mean = data_frommap_fou_atdepth[fou_varname_v]
+    magn_attrs = {'long_name':'velocity magnitude', 'units':'m/s'}
+    data_frommap_fou_atdepth['magn'] = np.sqrt(ux_mean**2+uy_mean**2).assign_attrs(magn_attrs)
+    fou_raster = dfmt.rasterize_ugrid(data_frommap_fou_atdepth,resolution=raster_res) #TODO: add rasterize+quiver to notebook
+    
+    fig,ax = plt.subplots(figsize=(9,5))
+    pc = data_frommap_fou_atdepth['magn'].ugrid.plot()
+    fou_raster.plot.quiver(x='mesh2d_face_x',y='mesh2d_face_y',u=fou_varname_u,v=fou_varname_v,color='w',scale=25,add_guide=False)
+    ax.set_aspect('equal')
+    pc.set_clim(umag_clim)
+    fig.tight_layout()
+    fig.savefig(os.path.join(dir_output,f'{basename}_fou'))
     
     
     #TODO: add hovmoller to notebook. x='x' does not work for spherical models, since it is sorted by 's'
