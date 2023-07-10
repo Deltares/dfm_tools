@@ -9,7 +9,7 @@ import dfm_tools as dfmt
 import hydrolib.core.dflowfm as hcdfm
 
 file_tim = r'p:\archivedprojects\11205258-006-kpp2020_rmm-g6\C_Work\08_RMM_FMmodel\structures_toRTC\Algerakering_GateLowerEdgeLevel.tim'
-#file_tim = r'c:\DATA\dfm_tools_testdata\Brouwerssluis_short.tim'
+file_tim = r'p:\archivedprojects\11206811-002-d-hydro-grevelingen\simulaties\Jaarsom2017_dfm_006_zlayer\boundary_conditions\hist\jaarsom_2017\sources_sinks\FlakkeeseSpuisluis.tim'
 
 data_tim = hcdfm.TimModel(file_tim)
 
