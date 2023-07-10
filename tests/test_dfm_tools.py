@@ -251,8 +251,7 @@ def test_zlayermodel_correct_layers():
 @pytest.mark.requireslocaldata
 def test_timmodel_to_dataframe():
     
-    dir_testinput = dfmt.data.get_dir_testdata()
-    file_tim = os.path.join(dir_testinput,'Brouwerssluis_short.tim')
+    file_tim = r'p:\archivedprojects\11206811-002-d-hydro-grevelingen\simulaties\Jaarsom2017_dfm_006_zlayer\boundary_conditions\hist\jaarsom_2017\sources_sinks\FlakkeeseSpuisluis.tim'
     
     data_tim = hcdfm.TimModel(file_tim)
     
@@ -260,6 +259,6 @@ def test_timmodel_to_dataframe():
     tim_pd = dfmt.TimModel_to_DataFrame(data_tim, parse_column_labels=True, refdate=refdate)
     
     assert tim_pd.index[0] == pd.Timestamp('2016-01-01 00:00:00')
-    assert len(tim_pd) == 91
+    assert len(tim_pd) == 39603
     assert tim_pd.columns[-1] == 'Phaeocystis_P (g/m3)'
 
