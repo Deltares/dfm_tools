@@ -256,19 +256,12 @@ def gshhs_coastlines_shp() -> str:
 
 def get_apikeys(token=None):
     
-    dir_apikeys = os.path.expanduser("~")
-    file_cds = os.path.join(dir_apikeys,'.cdsapirc')
-    file_cmems = os.path.join(dir_apikeys,'CMEMS_credentials.txt')
-    
-    if os.path.exists(file_cds) and os.path.exists(file_cmems):
-        print('apikeys found')
-        return
-    
     if token is None:
-        print('no apikeys found and no token provided')
+        print('no token provided')
         return
     
     print('download+unzip apikeys')
+    dir_apikeys = os.path.expanduser("~")
     fname = 'apikeys.zip'
     filepath_zip = os.path.join(dir_apikeys,fname)
     file_url = f'https://filesender.surf.nl/download.php?token={token}-ab01-4b21-a286-462dca1dcfbb&files_ids=14957838%2C14957840'
@@ -278,11 +271,5 @@ def get_apikeys(token=None):
         f.write(r.content)
     with zipfile.ZipFile(filepath_zip, 'r') as zip_ref:
         zip_ref.extractall(dir_apikeys)
+    print('succeeded')
     
-    if os.path.exists(file_cds) and os.path.exists(file_cmems):
-        print('apikeys found')
-        return
-    
-if __name__ == "__main__":
-    get_apikeys(token="5d3e21e5")
-
