@@ -252,3 +252,31 @@ def gshhs_coastlines_shp() -> str:
         assert os.path.exists(filepath_shp.replace('L1.shp','L6.shp')) #Antarctic grounding-line polygons
     
     return dir_gshhs
+
+
+def get_apikeys(token=None):
+    
+    dir_apikeys = os.path.expanduser("~")
+    file_cds = os.path.join(dir_apikeys,'.cdsapirc')
+    file_cmems = os.path.join(dir_apikeys,'CMEMS_credentials.txt')
+    
+    if os.path.exists(file_cds) and os.path.exists(file_cmems):
+        print('apikeys found')
+        return
+    
+    if token is None:
+        print('no token provided')
+        return
+    
+    print('download+unzip apikeys')
+    fname = 'apikeys.zip'
+    filepath_zip = os.path.join(dir_apikeys,fname)
+    file_url = f'https://filesender.surf.nl/download.php?token={token}-ab01-4b21-a286-462dca1dcfbb&files_ids=14957838%2C14957840'
+    r = requests.get(file_url, allow_redirects=True)
+    r.raise_for_status() #raise HTTPError if url not exists
+    with open(filepath_zip, 'wb') as f:
+        f.write(r.content)
+    with zipfile.ZipFile(filepath_zip, 'r') as zip_ref:
+        zip_ref.extractall(dir_apikeys)
+    print('succeeded')
+    
