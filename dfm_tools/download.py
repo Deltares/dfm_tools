@@ -14,6 +14,7 @@ from pydap.cas.get_cookies import setup_session
 from dfm_tools.errors import OutOfRangeError
 import cdsapi
 import cftime
+import getpass
 
 
 def download_ERA5(varkey,
@@ -26,6 +27,9 @@ def download_ERA5(varkey,
     
     #TODO: describe something about the .cdsapirc file
     #TODO: make this function cdsapi generic, instead of ERA5 hardcoded (make flexible for product_type/name/name_output) (variables_dict is not used actively anymore, so this is possible)
+    
+    # create $HOME/.cdsapirc if it does not exist
+    cds_credentials()
     
     c = cdsapi.Client() # import cdsapi and create a Client instance # https://cds.climate.copernicus.eu/api-how-to
     
@@ -86,8 +90,7 @@ def download_ERA5(varkey,
 def download_CMEMS(varkey,
                    longitude_min, longitude_max, latitude_min, latitude_max, 
                    date_min, date_max, freq='D',
-                   dir_output='.', file_prefix='', overwrite=False,
-                   credentials=None):
+                   dir_output='.', file_prefix='', overwrite=False):
     """
     empty docstring
     """
@@ -97,8 +100,8 @@ def download_CMEMS(varkey,
     global product #set product as global variable, so it only has to be retreived once per download run (otherwise once per variable)
     if 'product' not in globals():
         print('retrieving time range of CMEMS reanalysis and forecast products') #assuming here that physchem and bio reanalyisus/multiyear datasets have the same enddate, this seems safe
-        reanalysis_tstart, reanalysis_tstop = get_OPeNDAP_xr_ds_timerange(dataset_url='https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_my_0.083_P1D-m', credentials=credentials)
-        forecast_tstart, forecast_tstop = get_OPeNDAP_xr_ds_timerange(dataset_url='https://nrt.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_anfc_0.083deg_P1D-m', credentials=credentials)
+        reanalysis_tstart, reanalysis_tstop = get_OPeNDAP_xr_ds_timerange(dataset_url='https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_my_0.083_P1D-m')
+        forecast_tstart, forecast_tstop = get_OPeNDAP_xr_ds_timerange(dataset_url='https://nrt.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_anfc_0.083deg_P1D-m')
         if (date_min >= reanalysis_tstart) & (date_max <= reanalysis_tstop):
             product = 'reanalysis'
             print(f"The CMEMS '{product}' product will be used.")
@@ -133,27 +136,72 @@ def download_CMEMS(varkey,
     latitude_max  += 2/12
     
     download_OPeNDAP(dataset_url=dataset_url,
-                     credentials=credentials, #credentials=['username','password'], or create "%USERPROFILE%/CMEMS_credentials.txt" with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form'
                      varkey=varkey,
                      longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
                      date_min=date_min, date_max=date_max,
                      dir_output=dir_output, file_prefix=file_prefix, overwrite=overwrite)
 
 
-def get_CMEMS_credentials():
+def cds_credentials():
     """
-    parse file with CMEMS credentials to username/password
+    create $HOME/.cdsapirc via getpass if necessary
+    """
+    #TODO: put this in a PR at https://github.com/ecmwf/cdsapi (https://github.com/ecmwf/cdsapi/blob/master/cdsapi/api.py#L303)
+    file_credentials = f'{os.path.expanduser("~")}/.cdsapirc'
+    if os.path.exists(file_credentials):
+        print('found CDS apikey')
+    else:
+        print("Downloading CDS/ERA5 data requires a CDS apikey, copy the key from https://cds.climate.copernicus.eu/api-how-to (first register and sign in) ")
+        apikey = getpass.getpass("Enter your CDS apikey: ")
+        with open(file_credentials,'w') as fc:
+            fc.write('url: https://cds.climate.copernicus.eu/api/v2\n')
+            fc.write(f'key: {apikey}')
+
+
+def copernicusmarine_credentials():
+    """
+    get CMEMS username/password from file or via getpass
     """
     file_credentials = f'{os.path.expanduser("~")}/CMEMS_credentials.txt'
-    if not os.path.exists(file_credentials):
-        raise FileNotFoundError(f'credentials argument not supplied and file_credentials not available ({file_credentials})')
-    with open(file_credentials) as fc:
-        username = fc.readline().strip()
-        password = fc.readline().strip()
+    if os.path.exists(file_credentials):
+        print('found CMEMS credentials')
+        with open(file_credentials) as fc:
+            username = fc.readline().strip()
+            password = fc.readline().strip()
+    else: #query username and password with getpass
+        print("Downloading CMEMS data requires a Copernicus Marine username and password, sign up for free at: https://data.marine.copernicus.eu/register.")
+        username = getpass.getpass("Enter your Copernicus Marine username: ")
+        password = getpass.getpass("Enter your Copernicus Marine password: ")
+        userpass_save = input("Do you want to save your credentials as plain text? [y/n]: ")
+        if userpass_save == 'y':
+            with open(file_credentials,'w') as fc:
+                fc.write(f'{username}\n{password}\n')
     return username, password
 
 
-def open_OPeNDAP_xr(dataset_url, credentials=None):
+def copernicusmarine_datastore(dataset_url):
+    """
+    Setting up a copernicus marine PydapDataStore with authentication via username and password.
+    """
+    if 'session' not in globals():
+        username, password = copernicusmarine_credentials()
+        #setting up a session and making the variable global so we do not have to repeat it
+        #https://help.marine.copernicus.eu/en/articles/5182598-how-to-consume-the-opendap-api-and-cas-sso-using-python
+        cas_url = 'https://cmems-cas.cls.fr/cas/login'
+        global session
+        session = setup_session(cas_url, username, password)
+    
+    cookies_dict = session.cookies.get_dict()
+    if 'CASTGC' not in cookies_dict.keys():
+        raise KeyError('CASTGC key missing from session cookies_dict, probably authentication failure')
+    session.cookies.set("CASTGC", cookies_dict['CASTGC'])
+    #TODO: add check for wrong dataset_id (now always "AttributeError: You cannot set the charset when no content-type is defined")
+    dap_dataset = open_url(dataset_url, session=session, user_charset='utf-8')
+    data_store = xr.backends.PydapDataStore(dap_dataset)
+    return data_store
+
+
+def open_OPeNDAP_xr(dataset_url):
     """
     How to get the opendap dataset_url (CMEMS example):
         - https://data.marine.copernicus.eu/products
@@ -170,20 +218,7 @@ def open_OPeNDAP_xr(dataset_url, credentials=None):
             https://tds.hycom.org/thredds/dodsC/GLBy0.08/expt_93.0
 
     """
-    
-    def copernicusmarine_datastore(dataset_url, username, password):
-        #https://help.marine.copernicus.eu/en/articles/5182598-how-to-consume-the-opendap-api-and-cas-sso-using-python
-        cas_url = 'https://cmems-cas.cls.fr/cas/login'
-        session = setup_session(cas_url, username, password)
-        cookies_dict = session.cookies.get_dict()
-        if 'CASTGC' not in cookies_dict.keys():
-            raise KeyError('CASTGC key missing from session cookies_dict, probably authentication failure')
-        session.cookies.set("CASTGC", cookies_dict['CASTGC'])
-        #TODO: add check for wrong dataset_id (now always "AttributeError: You cannot set the charset when no content-type is defined")
-        dap_dataset = open_url(dataset_url, session=session, user_charset='utf-8')
-        data_store = xr.backends.PydapDataStore(dap_dataset)
-        return data_store
-    
+        
     if isinstance(dataset_url,list):
         dataset_url_one = dataset_url[0]
     else:
@@ -193,13 +228,8 @@ def open_OPeNDAP_xr(dataset_url, credentials=None):
         if isinstance(dataset_url,list):
             raise TypeError('list not supported by opendap method used for cmems')
         
-        if credentials is None:
-            username, password = get_CMEMS_credentials() #parse file with CMEMS credentials to username/password
-        else:
-            username, password = credentials
-
         print(f'opening pydap connection to opendap dataset and opening with xarray: {dataset_url}.html')
-        data_store = copernicusmarine_datastore(dataset_url=dataset_url, username=username, password=password)
+        data_store = copernicusmarine_datastore(dataset_url=dataset_url)
         data_xr = xr.open_dataset(data_store)
     elif 'hycom.org' in dataset_url_one:
         if isinstance(dataset_url,list):
@@ -224,8 +254,8 @@ def open_OPeNDAP_xr(dataset_url, credentials=None):
     return data_xr
 
 
-def download_OpenDAP_gettimes(dataset_url,credentials=None):
-    ds = open_OPeNDAP_xr(dataset_url=dataset_url, credentials=credentials)
+def download_OpenDAP_gettimes(dataset_url):
+    ds = open_OPeNDAP_xr(dataset_url=dataset_url)
     ds_time = ds.time.to_series()
     return ds_time
 
@@ -234,8 +264,7 @@ def download_OPeNDAP(dataset_url,
                      varkey,
                      longitude_min, longitude_max, latitude_min, latitude_max, 
                      date_min, date_max, freq='D',
-                     dir_output='.', file_prefix='', overwrite=False,
-                     credentials=None):
+                     dir_output='.', file_prefix='', overwrite=False):
     """
     
 
@@ -265,9 +294,7 @@ def download_OPeNDAP(dataset_url,
         DESCRIPTION. The default is ''.
     overwrite : TYPE, optional
         DESCRIPTION. The default is False.
-    credentials : TYPE, optional
-        for CMEMS: credentials=['username','password'], or create "%USERPROFILE%/CMEMS_credentials.txt" with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form'. The default is None.
-
+    
     Raises
     ------
     KeyError
@@ -281,7 +308,7 @@ def download_OPeNDAP(dataset_url,
 
     """
     
-    data_xr = open_OPeNDAP_xr(dataset_url=dataset_url, credentials=credentials)
+    data_xr = open_OPeNDAP_xr(dataset_url=dataset_url)
     
     print(f'xarray subsetting data (variable \'{varkey}\' and lon/lat extents)')
     if varkey not in data_xr.data_vars:
@@ -315,8 +342,8 @@ def download_OPeNDAP(dataset_url,
         data_xr_var_seltime.close()
 
 
-def get_OPeNDAP_xr_ds_timerange(dataset_url, credentials):
-    ds = open_OPeNDAP_xr(dataset_url=dataset_url, credentials=credentials)
+def get_OPeNDAP_xr_ds_timerange(dataset_url):
+    ds = open_OPeNDAP_xr(dataset_url=dataset_url)
     ds_times = ds.time.to_series()
     ds_tstart, ds_tstop = ds_times.iloc[0], ds_times.iloc[-1]
     return ds_tstart, ds_tstop
