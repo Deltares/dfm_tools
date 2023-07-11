@@ -31,8 +31,8 @@ date_min = '2010-01-01'
 date_max = '2010-01-02'
 
 #variables per model will be written to separate netcdf files. Set to [] to skip model.
-variables_era5 = []#'msl']#'v10n'] # check variables_dict in dfmt.download_ERA5() for valid names
-varlist_cmems = ['bottomT']#,'thetao','no3'] # avaliable variables differ per product, examples are ['bottomT','mlotst','siconc','sithick','so','thetao','uo','vo','usi','vsi','zos','no3']. More info on https://data.marine.copernicus.eu/products
+variables_era5 = ['msl']#'v10n'] # check variables_dict in dfmt.download_ERA5() for valid names
+varlist_cmems = ['bottomT','thetao','no3'] # avaliable variables differ per product, examples are ['bottomT','mlotst','siconc','sithick','so','thetao','uo','vo','usi','vsi','zos','no3']. More info on https://data.marine.copernicus.eu/products
 varlist_hycom = []#'surf_el']#'water_temp'] #['tau','water_u','water_v','water_temp','salinity','surf_el']
 
 #output directories per model

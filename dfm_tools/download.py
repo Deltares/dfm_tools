@@ -28,6 +28,9 @@ def download_ERA5(varkey,
     #TODO: describe something about the .cdsapirc file
     #TODO: make this function cdsapi generic, instead of ERA5 hardcoded (make flexible for product_type/name/name_output) (variables_dict is not used actively anymore, so this is possible)
     
+    # create $HOME/.cdsapirc if it does not exist
+    cds_credentials()
+    
     c = cdsapi.Client() # import cdsapi and create a Client instance # https://cds.climate.copernicus.eu/api-how-to
     
     #dictionary with ERA5 variables #this is not actively used
@@ -139,27 +142,49 @@ def download_CMEMS(varkey,
                      dir_output=dir_output, file_prefix=file_prefix, overwrite=overwrite)
 
 
+def cds_credentials():
+    """
+    create $HOME/.cdsapirc via getpass if necessary
+    """
+    #TODO: put this in a PR at https://github.com/ecmwf/cdsapi (https://github.com/ecmwf/cdsapi/blob/master/cdsapi/api.py#L303)
+    file_credentials = f'{os.path.expanduser("~")}/.cdsapirc'
+    if os.path.exists(file_credentials):
+        print('found CDS apikey')
+    else:
+        print("Downloading CDS/ERA5 data requires a CDS apikey, copy the key from https://cds.climate.copernicus.eu/api-how-to (first register and sign in) ")
+        apikey = getpass.getpass("Enter your CDS apikey: ")
+        with open(file_credentials,'w') as fc:
+            fc.write('url: https://cds.climate.copernicus.eu/api/v2\n')
+            fc.write(f'key: {apikey}')
+
+
+def copernicusmarine_credentials():
+    """
+    get CMEMS username/password from file or via getpass
+    """
+    file_credentials = f'{os.path.expanduser("~")}/CMEMS_credentials.txt'
+    if os.path.exists(file_credentials):
+        print('found CMEMS credentials')
+        with open(file_credentials) as fc:
+            username = fc.readline().strip()
+            password = fc.readline().strip()
+    else: #query username and password with getpass
+        print("Downloading CMEMS data requires a Copernicus Marine username and password, sign up for free at: https://data.marine.copernicus.eu/register.")
+        username = getpass.getpass("Enter your Copernicus Marine username: ")
+        password = getpass.getpass("Enter your Copernicus Marine password: ")
+        userpass_save = input("Do you want to save your credentials as plain text? [y/n]: ")
+        if userpass_save == 'y':
+            with open(file_credentials,'w') as fc:
+                fc.write(f'{username}\n{password}\n')
+    return username, password
+
+
 def copernicusmarine_datastore(dataset_url):
     """
     Setting up a copernicus marine PydapDataStore with authentication via username and password.
     """
     if 'session' not in globals():
-        # parse file with CMEMS credentials to username/password
-        file_credentials = f'{os.path.expanduser("~")}/CMEMS_credentials.txt'
-        if os.path.exists(file_credentials):
-            print('found CMEMS credentials')
-            with open(file_credentials) as fc:
-                username = fc.readline().strip()
-                password = fc.readline().strip()
-        else: #request username and password with getpass
-            print('''Downloading CMEMS data requires a Copernicus Marine username and password, sign up for free at: https://data.marine.copernicus.eu/register.''')
-            username = input("Enter your Copernicus Marine username and press enter: ")
-            password = getpass.getpass("Enter your Copernicus Marine password and press enter: ")
-            userpass_save = input("Do you want to save your credentials as plain text? [y/n]: ")
-            if userpass_save == 'y':
-                with open(file_credentials,'w') as fc:
-                    fc.write(f'{username}\n{password}\n')
-        
+        username, password = copernicusmarine_credentials()
         #setting up a session and making the variable global so we do not have to repeat it
         #https://help.marine.copernicus.eu/en/articles/5182598-how-to-consume-the-opendap-api-and-cas-sso-using-python
         cas_url = 'https://cmems-cas.cls.fr/cas/login'
