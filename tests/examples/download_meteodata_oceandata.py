@@ -23,7 +23,7 @@ import dfm_tools as dfmt
 overwrite = True # always set to True when changing the domain
 
 # domain
-longitude_min, longitude_max, latitude_min, latitude_max =    2,   4,  50, 52 #test domain
+longitude_min, longitude_max, latitude_min, latitude_max =    2,   3,  51, 52 #test domain
 #longitude_min, longitude_max, latitude_min, latitude_max = -180, 180, -90, 90 #global
 
 #dates as understood by pandas.period_range(). ERA5 has freq='M' (month) and CMEMS has freq='D' (day)
@@ -63,8 +63,7 @@ for varkey in variables_era5:
 dir_output = dir_output_cmems
 for varkey in varlist_cmems:
     file_prefix = 'cmems_'
-    dfmt.download_CMEMS(credentials=None, #credentials=['username','password'], or create "%USERPROFILE%/CMEMS_credentials.txt" with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form'
-                        varkey=varkey,
+    dfmt.download_CMEMS(varkey=varkey,
                         longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
                         date_min=date_min, date_max=date_max,
                         dir_output=dir_output, file_prefix=file_prefix, overwrite=overwrite)
