@@ -1,10 +1,11 @@
-## Unreleased
+## 0.13.0 (2023-07-12)
 
 ### Feat
 
 - exposed opendap testdata with `dfmt.data.fm_grevelingen_map()` (and others) by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#439](https://github.com/Deltares/dfm_tools/pull/439)
 - made coastlines portable with ` dfmt.data.gshhs_coastlines_shp()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#443](https://github.com/Deltares/dfm_tools/pull/443)
 - improved CMEMS and ERA5 authentication via [getpass](https://docs.python.org/3/library/getpass.html) by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#449](https://github.com/Deltares/dfm_tools/pull/449)
+- aligned mesh deletion with `dfmt.meshkernel_delete_withgdf()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#455](https://github.com/Deltares/dfm_tools/pull/455)
 
 ### Fix
 
