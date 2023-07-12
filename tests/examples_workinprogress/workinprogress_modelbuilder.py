@@ -101,7 +101,6 @@ dfmt.plot_coastlines(ax=ax, crs=crs)
 #write xugrid grid to netcdf
 netfile  = os.path.join(dir_output, f'{model_name}_net.nc')
 xu_grid_uds.ugrid.to_netcdf(netfile)
-breakit
 
 
 #%% generate plifile from grid extent 

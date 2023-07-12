@@ -95,7 +95,7 @@ def test_meshkernel_to_UgridDataset():
     generate grid with meshkernel. Then convert with `dfmt.meshkernel_to_UgridDataset()` from 0-based to 1-based indexing to make FM-compatible network.
     assert if _FillValue, start_index, min and max are the expected values, this ensures FM-compatibility
     """
-    is_geographic = False #TODO: polygon refinement does not work for spherical grids
+    is_geographic = False #TODO: polygon refinement does not work for spherical grids: https://github.com/Deltares/MeshKernelPy/issues/78
     crs = 'EPSG:28992' #arbitrary non-spherical epsg code
     
     # create basegrid
@@ -132,8 +132,9 @@ def test_meshkernel_to_UgridDataset():
     ds_out = xr.open_dataset(netfile,decode_cf=False).load()
     ds_out.close()
     os.remove(netfile)
-    assert ds_out.mesh2d_face_nodes.attrs['_FillValue'] == 0
+    assert ds_out.mesh2d_face_nodes.attrs['_FillValue'] == -1
     assert ds_out.mesh2d_face_nodes.attrs['start_index'] == 1
-    assert ds_out.mesh2d_face_nodes.to_numpy().min() == 0
+    assert 0 not in ds_out.mesh2d_face_nodes.to_numpy()
+    assert ds_out.mesh2d_face_nodes.to_numpy().min() == -1
     assert ds_out.mesh2d_face_nodes.to_numpy().max() == 135
 
