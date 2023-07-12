@@ -152,7 +152,7 @@ def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, crs:(int,str) = None, r
     for varn_conn in ds_idx.data_vars:
         xu_grid_ds[varn_conn] += 1 #from startindex 0 to 1 (fillvalues are now nans)
         xu_grid_ds[varn_conn].attrs["start_index"] += 1
-        xu_grid_ds[varn_conn].encoding["_FillValue"] = 0 #can be any value <=0
+        xu_grid_ds[varn_conn].encoding["_FillValue"] = 0 #can be any value <=0, but 0 is easiest for assertion in test_meshkernel_to_UgridDataset()
 
     # convert to uds and add attrs and crs
     xu_grid_uds = xu.UgridDataset(xu_grid_ds)
