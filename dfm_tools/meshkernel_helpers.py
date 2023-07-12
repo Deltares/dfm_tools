@@ -67,7 +67,7 @@ def meshkernel_delete_withgdf(mk:meshkernel.meshkernel.MeshKernel, coastlines_gd
 
     """
     
-    for coastline_geom in coastlines_gdf['geometry']: #TODO: also possible without loop? >> geometry_separator=-999.9 so that value can be used to concat polygons. >> use hydrolib poly as input? https://github.com/Deltares/MeshKernelPy/issues/35
+    for coastline_geom in coastlines_gdf['geometry']:
         xx, yy = coastline_geom.exterior.coords.xy
         xx = np.array(xx)
         yy = np.array(yy)
@@ -75,7 +75,7 @@ def meshkernel_delete_withgdf(mk:meshkernel.meshkernel.MeshKernel, coastlines_gd
         delete_pol_geom = meshkernel.GeometryList(x_coordinates=xx, y_coordinates=yy) #TODO: .copy()/to_numpy() makes the array contiguous in memory, which is necessary for meshkernel.mesh2d_delete()
         mk.mesh2d_delete(geometry_list=delete_pol_geom, 
                          delete_option=meshkernel.DeleteMeshOption(2), #ALL_COMPLETE_FACES/2: Delete all faces of which the complete face is inside the polygon
-                         invert_deletion=False) #TODO: cuts away link that is neccesary, so results in non-orthogonal grid (probably usecase of english channel?)
+                         invert_deletion=False)
 
 
 def meshkernel_check_geographic(mk:meshkernel.meshkernel.MeshKernel) -> bool:
