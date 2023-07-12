@@ -5,9 +5,13 @@ Created on Wed Jul  5 12:59:23 2023
 @author: veenstra
 """
 
+import os
 import pytest
 import xugrid as xu
 import dfm_tools as dfmt
+import meshkernel
+import xarray as xr
+import numpy as np
 
 
 @pytest.mark.unittest
@@ -83,4 +87,54 @@ def test_meshkernel_delete_withgdf():
     dfmt.meshkernel_delete_withgdf(mk=mk, coastlines_gdf=ldb_gdf)
     
     assert len(mk.mesh2d_get().face_nodes) == 17364
+
+
+@pytest.mark.systemtest
+def test_meshkernel_to_UgridDataset():
+    """
+    generate grid with meshkernel. Then convert with `dfmt.meshkernel_to_UgridDataset()` from 0-based to 1-based indexing to make FM-compatible network.
+    assert if _FillValue, start_index, min and max are the expected values, this ensures FM-compatibility
+    """
+    is_geographic = False #TODO: polygon refinement does not work for spherical grids: https://github.com/Deltares/MeshKernelPy/issues/78
+    crs = 'EPSG:28992' #arbitrary non-spherical epsg code
+    
+    # create basegrid
+    lon_min, lon_max, lat_min, lat_max = -6, 2, 48.5, 51.2
+    dxy = 0.5
+    make_grid_parameters = meshkernel.MakeGridParameters(origin_x=lon_min,
+                                                         origin_y=lat_min,
+                                                         upper_right_x=lon_max,
+                                                         upper_right_y=lat_max,
+                                                         block_size_x=dxy,
+                                                         block_size_y=dxy)
+    mk = meshkernel.MeshKernel(is_geographic=is_geographic)
+    mk.curvilinear_make_uniform_on_extension(make_grid_parameters)
+    mk.curvilinear_convert_to_mesh2d() #convert to ugrid/mesh2d
+    
+    # refine with polygon
+    pol_x = np.array([-5,-4,0,-5], dtype=np.double)
+    pol_y = np.array([49,51,49.5,49], dtype=np.double)
+    geometry_list = meshkernel.GeometryList(pol_x, pol_y)
+    mrp = meshkernel.MeshRefinementParameters()
+    mk.mesh2d_refine_based_on_polygon(polygon=geometry_list, mesh_refinement_params=mrp)
+    
+    #convert to xugrid and write to netcdf
+    xu_grid_uds = dfmt.meshkernel_to_UgridDataset(mk=mk, crs=crs)
+    netfile = 'test_startindex_net.nc'
+    xu_grid_uds.ugrid.to_netcdf(netfile)
+    
+    # plot
+    # fig,ax = plt.subplots()
+    # xu_grid_uds.grid.plot(ax=ax)
+    # ax.plot(pol_x,pol_y,'r-')
+    
+    #assert output grid
+    ds_out = xr.open_dataset(netfile,decode_cf=False).load()
+    ds_out.close()
+    os.remove(netfile)
+    assert ds_out.mesh2d_face_nodes.attrs['_FillValue'] == -1
+    assert ds_out.mesh2d_face_nodes.attrs['start_index'] == 1
+    assert 0 not in ds_out.mesh2d_face_nodes.to_numpy()
+    assert ds_out.mesh2d_face_nodes.to_numpy().min() == -1
+    assert ds_out.mesh2d_face_nodes.to_numpy().max() == 135
 
