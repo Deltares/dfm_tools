@@ -33,7 +33,7 @@ def maybe_download_opendap_data(file_nc,dir_subfolder=None):
     fname = os.path.basename(file_nc)
     file_url = f'{opendap_url}/{fname}'
 
-    print(f'downloading "{fname}" from opendap.deltares.nl')
+    print(f'downloading "{fname}" from opendap.deltares.nl to cachedir')
     r = requests.get(file_url, allow_redirects=True)
     r.raise_for_status() #raise HTTPError if url not exists
     with open(file_nc, 'wb') as f:
@@ -231,7 +231,7 @@ def gshhs_coastlines_shp() -> str:
     #download zipfile if not present
     if not os.path.exists(filepath_zip) and not os.path.exists(dir_gshhs):
         file_url = f'https://www.ngdc.noaa.gov/mgg/shorelines/data/gshhg/latest/{fname}'
-        print(f'downloading "{fname}" from www.ngdc.noaa.gov')
+        print(f'downloading "{fname}" from www.ngdc.noaa.gov to cachedir')
         r = requests.get(file_url, allow_redirects=True)
         r.raise_for_status() #raise HTTPError if url not exists
         with open(filepath_zip, 'wb') as f:
