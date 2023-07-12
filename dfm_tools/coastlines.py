@@ -8,6 +8,7 @@ Created on Mon Apr 24 03:46:44 2023
 import os
 import geopandas as gpd
 import pandas as pd
+import datetime as dt
 
 
 def get_coastlines_gdb(res:str='h', bbox:tuple = (-180, -90, 180, 90), min_area:float = 0, crs:str = None, include_fields:list = ['area']) -> gpd.geoseries.GeoSeries:
@@ -55,6 +56,8 @@ def get_coastlines_gdb(res:str='h', bbox:tuple = (-180, -90, 180, 90), min_area:
     file_shp_L2 = os.path.join(dir_gshhs,'GSHHS_shp',res,f'GSHHS_{res}_L2.shp') #lakes
     file_shp_L3 = os.path.join(dir_gshhs,'GSHHS_shp',res,f'GSHHS_{res}_L3.shp') #islands-in-lakes
     
+    print('>> reading coastlines: ',end='')
+    dtstart = dt.datetime.now()
     coastlines_gdb_L1 = gpd.read_file(file_shp_L1, include_fields=include_fields, where=f"area>{min_area}", bbox=bbox)
     coastlines_gdb_L6 = gpd.read_file(file_shp_L6, include_fields=include_fields, where=f"area>{min_area}", bbox=bbox)
     coastlines_gdb_list = [coastlines_gdb_L1,coastlines_gdb_L6]
@@ -64,6 +67,7 @@ def get_coastlines_gdb(res:str='h', bbox:tuple = (-180, -90, 180, 90), min_area:
         coastlines_gdb_L3 = gpd.read_file(file_shp_L3, include_fields=include_fields, where=f"area>{min_area}", bbox=bbox)
         coastlines_gdb_list.append(coastlines_gdb_L3)
     coastlines_gdb = pd.concat(coastlines_gdb_list)
+    print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
     if crs:
         coastlines_gdb = coastlines_gdb.to_crs(crs)

@@ -52,3 +52,35 @@ def test_meshkernel_check_geographic():
     assert mk_cartesian_geograph==False
     assert mk_spherical_geograph==True
 
+
+@pytest.mark.unittest
+def test_meshkernel_delete_withcoastlines():
+    #generate basegrid
+    lon_min, lon_max, lat_min, lat_max = -68.45, -68.1, 12, 12.35
+    dxy = 0.005
+    mk = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy)
+    
+    assert len(mk.mesh2d_get().face_nodes) == 20732
+    
+    # remove cells with GSHHS coastlines
+    dfmt.meshkernel_delete_withcoastlines(mk=mk, res='h')
+    
+    assert len(mk.mesh2d_get().face_nodes) == 17364
+
+
+@pytest.mark.unittest
+def test_meshkernel_delete_withgdf():
+    #generate basegrid
+    lon_min, lon_max, lat_min, lat_max = -68.45, -68.1, 12, 12.35
+    dxy = 0.005
+    mk = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy)
+    
+    assert len(mk.mesh2d_get().face_nodes) == 20732
+    
+    # remove cells with custom ldb_gdf (can also come from polyfile)
+    bbox = (lon_min, lat_min, lon_max, lat_max)
+    ldb_gdf = dfmt.get_coastlines_gdb(bbox=bbox, res='h')
+    dfmt.meshkernel_delete_withgdf(mk=mk, coastlines_gdf=ldb_gdf)
+    
+    assert len(mk.mesh2d_get().face_nodes) == 17364
+

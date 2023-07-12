@@ -17,23 +17,57 @@ import getpass
 import numpy as np
 from dfm_tools.coastlines import get_coastlines_gdb
 from netCDF4 import default_fillvals
-import geopandas
+import geopandas as gpd
 
 
-def meshkernel_delete_withcoastlines(mk, res:str='f', min_area:float = 0, crs=None):
+def meshkernel_delete_withcoastlines(mk:meshkernel.meshkernel.MeshKernel, res:str='f', min_area:float = 0, crs:(int,str) = None):
     """
-    empty docstring
+    Wrapper around meshkernel_delete_withgdf, which automatically gets the bbox from the meshkernel object and retrieves the coastlines_gdf.
+
+    Parameters
+    ----------
+    mk : meshkernel.meshkernel.MeshKernel
+        DESCRIPTION.
+    res : str, optional
+        DESCRIPTION. The default is 'f'.
+    min_area : float, optional
+        DESCRIPTION. The default is 0.
+    crs : (int,str), optional
+        DESCRIPTION. The default is None.
+
+    Returns
+    -------
+    None.
+
     """
+    
     mesh_bnds = mk.mesh2d_get_mesh_boundaries_as_polygons()
     mesh_bnds.x_coordinates
     bbox = (mesh_bnds.x_coordinates.min(), mesh_bnds.y_coordinates.min(), mesh_bnds.x_coordinates.max(), mesh_bnds.y_coordinates.max())
     
-    print('>> reading coastlines: ',end='')
-    dtstart = dt.datetime.now()
-    coastlines_gdb = get_coastlines_gdb(bbox=bbox, res=res, min_area=min_area, crs=crs)
-    print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
+    coastlines_gdf = get_coastlines_gdb(bbox=bbox, res=res, min_area=min_area, crs=crs)
     
-    for coastline_geom in coastlines_gdb['geometry']: #TODO: also possible without loop? >> geometry_separator=-999.9 so that value can be used to concat polygons. >> use hydrolib poly as input? https://github.com/Deltares/MeshKernelPy/issues/35
+    meshkernel_delete_withgdf(mk, coastlines_gdf)
+
+
+def meshkernel_delete_withgdf(mk:meshkernel.meshkernel.MeshKernel, coastlines_gdf:gpd.GeoDataFrame):
+    """
+    Delete parts of mesh that are inside the polygons/Linestrings in a GeoDataFrame.
+
+    Parameters
+    ----------
+    mk : meshkernel.meshkernel.MeshKernel
+        DESCRIPTION.
+    coastlines_gdf : gpd.GeoDataFrame
+        DESCRIPTION.
+
+    Returns
+    -------
+    None.
+
+    """
+    
+    for coastline_geom in coastlines_gdf['geometry']: #TODO: also possible without loop? >> geometry_separator=-999.9 so that value can be used to concat polygons. >> use hydrolib poly as input? https://github.com/Deltares/MeshKernelPy/issues/35
         xx, yy = coastline_geom.exterior.coords.xy
         xx = np.array(xx)
         yy = np.array(yy)
@@ -44,34 +78,22 @@ def meshkernel_delete_withcoastlines(mk, res:str='f', min_area:float = 0, crs=No
                          invert_deletion=False) #TODO: cuts away link that is neccesary, so results in non-orthogonal grid (probably usecase of english channel?)
 
 
-def meshkernel_delete_withpol(mk, file_ldb, minpoints=None):
+def meshkernel_check_geographic(mk:meshkernel.meshkernel.MeshKernel) -> bool:
     """
-    empty docstring
-    """
-    #TODO: read file_ldb as geodataframe (convert pointlike to geodataframe) and merge code with meshkernel_delete_withcoastlines: https://github.com/Deltares/dfm_tools/issues/427
-    
-    print('>> reading+converting ldb: ',end='')
-    dtstart = dt.datetime.now()
-    pol_ldb = hcdfm.PolyFile(file_ldb)
-    pol_ldb_list = [pointlike_to_DataFrame(x) for x in pol_ldb.objects] #TODO: this is quite slow, speed up possible?
-    if minpoints is not None:
-        pol_ldb_list = [x for x in pol_ldb_list if len(x)>minpoints] #filter only large polygons for performance
-    for iP, pol_ldb in enumerate(pol_ldb_list):
-        if not (pol_ldb.iloc[0] == pol_ldb.iloc[-1]).all(): #close the polygon if it is not yet closed
-            pol_ldb_list[iP] = pd.concat([pol_ldb,pol_ldb.iloc[[0]]],axis=0)
-    print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
-    
-    for iP, pol_del in enumerate(pol_ldb_list): #TODO: also possible without loop? >> geometry_separator=-999.9 so that value can be used to concat polygons. >> use hydrolib poly as input? https://github.com/Deltares/MeshKernelPy/issues/35
-        delete_pol_geom = meshkernel.GeometryList(x_coordinates=pol_del['x'].to_numpy(), y_coordinates=pol_del['y'].to_numpy()) #TODO: .copy()/to_numpy() makes the array contiguous in memory, which is necessary for meshkernel.mesh2d_delete()
-        mk.mesh2d_delete(geometry_list=delete_pol_geom, 
-                         delete_option=meshkernel.DeleteMeshOption(2), #ALL_COMPLETE_FACES/2: Delete all faces of which the complete face is inside the polygon
-                         invert_deletion=False) #TODO: cuts away link that is neccesary, so results in non-orthogonal grid (probably usecase of english channel?)
+    Get projection from meshkernel instance
 
+    Parameters
+    ----------
+    mk : meshkernel.meshkernel.MeshKernel
+        DESCRIPTION.
 
-def meshkernel_check_geographic(mk):
+    Returns
+    -------
+    bool
+        DESCRIPTION.
+
     """
-    get projection from meshkernel instance
-    """
+    
     if mk.get_projection()==meshkernel.ProjectionType.SPHERICAL:
         is_geographic = True
     else:
@@ -79,9 +101,25 @@ def meshkernel_check_geographic(mk):
     return is_geographic
 
 
-def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, crs=None, remove_noncontiguous:bool = False) -> xu.UgridDataset:
+def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, crs:(int,str) = None, remove_noncontiguous:bool = False) -> xu.UgridDataset:
     """
-    empty docstring
+    Convert a meshkernel object to a UgridDataset, including a variable with the crs (used by dflowfm to distinguish spherical/cartesian networks).
+    The UgridDataset enables bathymetry interpolation and writing to netfile.
+
+    Parameters
+    ----------
+    mk : meshkernel.MeshKernel
+        DESCRIPTION.
+    crs : (int,str), optional
+        DESCRIPTION. The default is None.
+    remove_noncontiguous : bool, optional
+        DESCRIPTION. The default is False.
+
+    Returns
+    -------
+    TYPE
+        DESCRIPTION.
+
     """
     
     is_geographic = meshkernel_check_geographic(mk)
@@ -159,7 +197,7 @@ def add_crs_to_dataset(uds:(xu.UgridDataset,xr.Dataset),is_geographic:bool,crs:(
         crs_num = 0
         crs_name = ''
     else:
-        crs_info = geopandas.GeoSeries(crs=crs).crs #also contains area-of-use (name/bounds), datum (ellipsoid/prime-meridian)
+        crs_info = gpd.GeoSeries(crs=crs).crs #also contains area-of-use (name/bounds), datum (ellipsoid/prime-meridian)
         crs_num = crs_info.to_epsg()
         crs_name = crs_info.name
     crs_str = f'EPSG:{crs_num}'
