@@ -100,7 +100,9 @@ dfmt.plot_coastlines(ax=ax, crs=crs)
 
 #write xugrid grid to netcdf
 netfile  = os.path.join(dir_output, f'{model_name}_net.nc')
-xu_grid_uds.ugrid.to_netcdf(netfile)
+#xu_grid_uds.ugrid.to_netcdf(netfile) # TODO: this currently fails, below is a workaround: https://github.com/Deltares/xugrid/issues/119
+xu_grid_ds = dfmt.uds_to_1based_ds(xu_grid_uds)
+xu_grid_ds.to_netcdf(netfile)
 
 
 #%% generate plifile from grid extent 
@@ -129,8 +131,7 @@ ext_new.boundary.append(boundary_object)
 dir_output_data_cmems = os.path.join(dir_output_data, 'cmems')
 os.makedirs(dir_output_data_cmems, exist_ok=True)
 for varkey in ['so','thetao','uo','vo','zos']:
-    dfmt.download_CMEMS(credentials=None, #credentials=['username','password'], or create "%USERPROFILE%/CMEMS_credentials.txt" with username on line 1 and password on line 2. Register at: https://resources.marine.copernicus.eu/registration-form'
-                        varkey=varkey,
+    dfmt.download_CMEMS(varkey=varkey,
                         longitude_min=lon_min, longitude_max=lon_max, latitude_min=lat_min, latitude_max=lat_max,
                         date_min=date_min, date_max=date_max,
                         dir_output=dir_output_data_cmems, file_prefix='cmems_', overwrite=overwrite)
