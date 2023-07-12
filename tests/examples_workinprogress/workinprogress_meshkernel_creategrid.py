@@ -151,11 +151,9 @@ ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 
 #write xugrid grid to netcdf
 netfile = 'englishchannel_net.nc'
-#xu_grid_uds.ugrid.to_netcdf(netfile) # TODO: this currently fails, below is a workaround: https://github.com/Deltares/xugrid/issues/119
-xu_grid_ds = dfmt.uds_to_1based_ds(xu_grid_uds)
-xu_grid_ds.to_netcdf(netfile)
+xu_grid_uds.ugrid.to_netcdf(netfile)
 
 #TODO: update https://github.com/Deltares/dfm_tools/issues/217
 
-#TODO: there is (was) a link missing, maybe due to ldb?
+#TODO: small flow links in resulting grid
 
