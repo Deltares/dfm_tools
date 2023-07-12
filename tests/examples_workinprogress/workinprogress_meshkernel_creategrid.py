@@ -150,7 +150,10 @@ xu_grid_uds.mesh2d_node_z.ugrid.plot(ax=ax,center=False)
 ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 
 #write xugrid grid to netcdf
-xu_grid_uds.ugrid.to_netcdf('englishchannel_net.nc')
+netfile = 'englishchannel_net.nc'
+#xu_grid_uds.ugrid.to_netcdf(netfile) # TODO: this currently fails, below is a workaround: https://github.com/Deltares/xugrid/issues/119
+xu_grid_ds = dfmt.uds_to_1based_ds(xu_grid_uds)
+xu_grid_ds.to_netcdf(netfile)
 
 #TODO: update https://github.com/Deltares/dfm_tools/issues/217
 

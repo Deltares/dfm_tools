@@ -149,24 +149,40 @@ def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, crs:(int,str) = None, r
     xu_grid_ds = xu_grid.to_dataset()
     
     #convert 0-based to 1-based grid for connectivity variables like face_node_connectivity #TODO: FM kernel needs 1-based grid, but it should read the attributes instead. Report this (#ug_get_meshgeom, #12, ierr=0. ** WARNING: Could not read mesh face x-coordinates)
-    ds_idx = xu_grid_ds.filter_by_attrs(start_index=0)
-    for varn_conn in ds_idx.data_vars:
-        xu_grid_ds[varn_conn] += 1
-        xu_grid_ds[varn_conn].attrs["_FillValue"] += 1
-        xu_grid_ds[varn_conn].attrs["start_index"] += 1
+    # TODO: this now results in corrupt grid, workaround is using uds_to_1based_ds after bathy interpolation
+    # ds_idx = xu_grid_ds.filter_by_attrs(start_index=0)
+    # for varn_conn in ds_idx.data_vars:
+    #     xu_grid_ds[varn_conn] += 1
+    #     xu_grid_ds[varn_conn].attrs["_FillValue"] += 1
+    #     xu_grid_ds[varn_conn].attrs["start_index"] += 1
     
-    xu_grid_ds = xu_grid_ds.assign_attrs({#'Conventions': 'CF-1.8 UGRID-1.0 Deltares-0.10', #TODO: conventions come from xugrid, so this line is not necessary
+    xu_grid_ds = xu_grid_ds.assign_attrs({#'Conventions': 'CF-1.8 UGRID-1.0 Deltares-0.10', #TODO: conventions come from xugrid, so this line is probably not necessary
                                           'institution': 'Deltares',
                                           'references': 'https://www.deltares.nl',
                                           'source': f'Created with meshkernel {meshkernel.__version__}, xugrid {xu.__version__} and dfm_tools {__version__}',
                                           'history': 'Created on %s, %s'%(dt.datetime.now().strftime('%Y-%m-%dT%H:%M:%S%z'),getpass.getuser()), #TODO: add timezone
                                           })
-    #TODO: xugrid overwrites this upon saving the network file: https://github.com/Deltares/xugrid/issues/111
+    #TODO: xugrid overwrites these global attributes upon saving the network file: https://github.com/Deltares/xugrid/issues/111
     
     xu_grid_uds = xu.UgridDataset(xu_grid_ds)
     add_crs_to_dataset(uds=xu_grid_uds,is_geographic=is_geographic,crs=crs)
     
     return xu_grid_uds
+
+
+def uds_to_1based_ds(uds):
+    ds = uds.ugrid.to_dataset()
+    ds_idx = ds.filter_by_attrs(start_index=0)
+    for varn_conn in ds_idx.data_vars:
+        ds[varn_conn] += 1
+        ds[varn_conn].attrs["_FillValue"] += 1
+        ds[varn_conn].attrs["start_index"] += 1
+    
+    print('_FillValue:', ds.mesh2d_face_nodes.attrs['_FillValue'])
+    print('start_index:', ds.mesh2d_face_nodes.attrs['start_index'])
+    print('min:', ds.mesh2d_face_nodes.to_numpy().min())
+    print('max:', ds.mesh2d_face_nodes.to_numpy().max())
+    return ds
 
 
 def add_crs_to_dataset(uds:(xu.UgridDataset,xr.Dataset),is_geographic:bool,crs:(str,int)):
