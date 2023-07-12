@@ -1,3 +1,9 @@
+## Unreleased
+
+### Fix
+- proper fix for FM-compatible network file (1-based face_node_connectivity) by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#461](https://github.com/Deltares/dfm_tools/pull/461)
+
+
 ## 0.13.0 (2023-07-12)
 
 ### Feat
