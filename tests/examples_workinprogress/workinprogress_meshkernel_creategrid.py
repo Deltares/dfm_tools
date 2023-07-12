@@ -112,7 +112,7 @@ delete (landward) part of grid with polygon and plot result
 #                         [ 0.20387097, 49.9       ],
 #                         [-0.25032258, 48.71290323],
 #                         [ 1.92774194, 48.59935484]])
-print('deleting coastlines (takes a while)...')
+print('deleting landward grid with coastlines (takes a while)...')
 dfmt.meshkernel_delete_withcoastlines(mk=mk, res='h', min_area=100)
 print('done')
 
@@ -150,7 +150,7 @@ xu_grid_uds.mesh2d_node_z.ugrid.plot(ax=ax,center=False)
 ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 
 #write xugrid grid to netcdf
-xu_grid_uds.ugrid.to_netcdf('test_net.nc')
+xu_grid_uds.ugrid.to_netcdf('englishchannel_net.nc')
 
 #TODO: update https://github.com/Deltares/dfm_tools/issues/217
 
