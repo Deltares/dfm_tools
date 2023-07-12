@@ -4,7 +4,11 @@
 
 - exposed opendap testdata with `dfmt.data.fm_grevelingen_map()` (and others) by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#439](https://github.com/Deltares/dfm_tools/pull/439)
 - made coastlines portable with ` dfmt.data.gshhs_coastlines_shp()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#443](https://github.com/Deltares/dfm_tools/pull/443)
-- improved CMEMS and ERA5 authentication via `getpass` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#449](https://github.com/Deltares/dfm_tools/pull/449)
+- improved CMEMS and ERA5 authentication via [getpass](https://docs.python.org/3/library/getpass.html) by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#449](https://github.com/Deltares/dfm_tools/pull/449)
+
+### Fix
+
+- added `dfmt.uds_to_1based_ds()` to ensure FM-compatible network file (1-based face_node_connectivity) by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#456](https://github.com/Deltares/dfm_tools/pull/456)
 
 
 ## 0.12.0 (2023-07-07)
