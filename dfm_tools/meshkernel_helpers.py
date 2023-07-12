@@ -178,10 +178,10 @@ def uds_to_1based_ds(uds):
         ds[varn_conn].attrs["_FillValue"] += 1
         ds[varn_conn].attrs["start_index"] += 1
     
-    print('_FillValue:', ds.mesh2d_face_nodes.attrs['_FillValue'])
-    print('start_index:', ds.mesh2d_face_nodes.attrs['start_index'])
-    print('min:', ds.mesh2d_face_nodes.to_numpy().min())
-    print('max:', ds.mesh2d_face_nodes.to_numpy().max())
+    # print('_FillValue:', ds.mesh2d_face_nodes.attrs['_FillValue'])
+    # print('start_index:', ds.mesh2d_face_nodes.attrs['start_index'])
+    # print('min:', ds.mesh2d_face_nodes.to_numpy().min())
+    # print('max:', ds.mesh2d_face_nodes.to_numpy().max())
     return ds
 
 
