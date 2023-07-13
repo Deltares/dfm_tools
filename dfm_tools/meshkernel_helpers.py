@@ -333,12 +333,12 @@ def interpolate_bndpli(bnd_gdf,res):
     
     bnd_gdf_interp = bnd_gdf.copy()
     for irow,row in bnd_gdf_interp.iterrows():
-        bnd_LS = row.geometry
-        interp_range = np.arange(0,bnd_LS.length,res)
-        bnd_LS_interp_points = bnd_LS.interpolate(interp_range)
-        if len(bnd_LS_interp_points)==1: #no change if interp results in only one point
+        bnd_ls = row.geometry
+        interp_range = np.arange(0,bnd_ls.length,res)
+        bnd_ls_interp_points = bnd_ls.interpolate(interp_range)
+        if len(bnd_ls_interp_points)==1: #no change if interp results in only one point
             continue
-        bnd_LS_interp = LineString(bnd_LS_interp_points)
-        bnd_gdf_interp['geometry'][irow] = bnd_LS_interp
+        bnd_ls_interp = LineString(bnd_ls_interp_points)
+        bnd_gdf_interp['geometry'][irow] = bnd_ls_interp
     return bnd_gdf_interp
 
