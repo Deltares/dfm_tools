@@ -151,7 +151,6 @@ def test_generate_bndpli_cutland():
     for params in params_all:
         lon_min, lon_max, lat_min, lat_max, len_gdf, len_linestr0 = params
     
-        #TODO: grid generation and bathy-refinement is still to be improved in meshkernel (https://github.com/Deltares/dfm_tools/issues/234)
         mk_object = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, is_geographic=True)
         bnd_gdf = dfmt.generate_bndpli_cutland(mk=mk_object, res='h', buffer=0.01)
         
