@@ -64,6 +64,14 @@ data_bathy_sel = data_bathy.sel(lon=slice(lon_min-1,lon_max+1),lat=slice(lat_min
 #TODO: grid generation and bathy-refinement is still to be improved in meshkernel (https://github.com/Deltares/dfm_tools/issues/234)
 mk_object = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, is_geographic=is_geographic)
 
+# generate plifile from grid extent and coastlines
+bnd_gdf = dfmt.generate_bndpli_cutland(mk=mk_object, res='h', buffer=0.01)
+bnd_gdf['name'] = f'{model_name}_bnd'
+bnd_gdf_interp = dfmt.interpolate_bndpli(bnd_gdf,res=0.03)
+poly_file = os.path.join(dir_output, f'{model_name}.pli')
+pli_polyfile = dfmt.geodataframe_to_PolyFile(bnd_gdf_interp)
+pli_polyfile.save(poly_file)
+
 #refine
 min_edge_size = 300 #in meters
 dfmt.refine_basegrid(mk=mk_object, data_bathy_sel=data_bathy_sel, min_edge_size=min_edge_size)
@@ -97,18 +105,11 @@ fig, ax = plt.subplots()
 xu_grid_uds.mesh2d_node_z.ugrid.plot(ax=ax,center=False)
 ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 dfmt.plot_coastlines(ax=ax, crs=crs)
+bnd_gdf_interp.plot(ax=ax,color='r')
 
 #write xugrid grid to netcdf
 netfile  = os.path.join(dir_output, f'{model_name}_net.nc')
 xu_grid_uds.ugrid.to_netcdf(netfile)
-
-
-#%% generate plifile from grid extent 
-grid_bounds = xu_grid_uds.grid.bounds #TODO: maybe redefine lon_min etc instead. Also possible to get bounds from mk_object?
-pli_polyfile = dfmt.generate_bndpli(lon_min=grid_bounds[0], lon_max=grid_bounds[2], lat_min=grid_bounds[1], lat_max=grid_bounds[3], dlon=dxy, dlat=dxy, name=f'{model_name}_bnd')
-#TODO: generate pli from mk with mk_object.mesh2d_get_mesh_boundaries_as_polygons()
-poly_file = os.path.join(dir_output, f'{model_name}.pli')
-pli_polyfile.save(poly_file)
 
 
 #%% new ext: initial and open boundary condition
