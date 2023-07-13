@@ -1,7 +1,7 @@
 ## Unreleased
 
 ### Fix
-- removed import to also support `matplotlib<3.4.0` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#465](https://github.com/Deltares/dfm_tools/pull/465)
+- removed `matplotlib._api` import to also support `matplotlib<3.4.0` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#465](https://github.com/Deltares/dfm_tools/pull/465)
 
 
 ## 0.13.1 (2023-07-12)
