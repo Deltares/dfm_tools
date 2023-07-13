@@ -278,6 +278,7 @@ def reconstruct_zw_zcc_fromzsigma(uds):
     #TODO: default fillvalues are not automatically parsed to nan, so doing it manually: https://github.com/pydata/xarray/issues/2742
     fillvals = netCDF4.default_fillvals
     
+    # get formulaterms for both interface and layer dimensions
     osz_formulaterms_int_dict = get_formula_terms(uds,varn_contains='interface')
     osz_formulaterms_lay_dict = get_formula_terms(uds,varn_contains='layer')
     
@@ -293,16 +294,28 @@ def reconstruct_zw_zcc_fromzsigma(uds):
     uds_sigma_lay = uds[osz_formulaterms_lay_dict['sigma']] #mesh2d_layer_sigma
     uds_sigma_lay = uds_sigma_lay.where(uds_sigma_lay!=fillvals['f8'])
     
+    # determine the names of the dimensions for later use
+    dimn_int = uds_zlev_int.dims[0]
+    dimn_lay = uds_zlev_lay.dims[0]
+    name_lay = uds_zlev_lay.name
+
     # for levels k where sigma(k) has a defined value and zlev(k) is not defined:
     # z(n,k,j,i) = eta(n,j,i) + sigma(k)*(min(depth_c,depth(j,i))+eta(n,j,i))
     zw_sigmapart = uds_eta + uds_sigma_int*(uds_depth.clip(max=uds_depth_c)+uds_eta)
     zcc_sigmapart = uds_eta + uds_sigma_lay*(uds_depth.clip(max=uds_depth_c)+uds_eta)
+
     # for levels k where zlev(k) has a defined value and sigma(k) is not defined: 
     # z(n,k,j,i) = zlev(k)
-    zw_zpart = uds_zlev_int.clip(min=-uds_depth) #added clipping of zvalues with bedlevel
-    zcc_zpart = uds_zlev_lay.clip(min=-uds_depth) #added clipping of zvalues with bedlevel
+    zw_zpart = xr.where(uds_zlev_int >= -uds_depth, uds_zlev_int, np.nan)
+
+    # for the zcc, the thicknessess of the layers (difference between interface heights) are used to determine zcc from zw
+    zcc_layers = (zw_zpart.diff(dim=dimn_int) / 2).rename(name_lay).rename({f'{dimn_int}':dimn_lay})
+    zcc_zpart = zw_zpart[1:].rename(name_lay).rename({f'{dimn_int}':dimn_lay}) - zcc_layers # rename dimensions and names to be consistent
+    zcc_mask = xr.where(zcc_layers!=0, zcc_layers, np.nan).notnull()
+    zcc_masked = zcc_zpart.where(zcc_mask)
+
     uds['mesh2d_flowelem_zw'] = zw_sigmapart.fillna(zw_zpart)
-    uds['mesh2d_flowelem_zcc'] = zcc_sigmapart.fillna(zcc_zpart)
+    uds['mesh2d_flowelem_zcc'] = zcc_sigmapart.fillna(zcc_masked)
     
     uds = uds.set_coords(['mesh2d_flowelem_zw','mesh2d_flowelem_zcc'])
     return uds
