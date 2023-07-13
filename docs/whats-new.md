@@ -1,5 +1,8 @@
 ## Unreleased
 
+### Feat
+- generate polyline only for open boundary with `dfmt.generate_bndpli_cutland()` (deprecates `dfmt.generate_bndpli()`) by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#466](https://github.com/Deltares/dfm_tools/pull/466)
+
 ### Fix
 - removed `matplotlib._api` import to also support `matplotlib<3.4.0` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#465](https://github.com/Deltares/dfm_tools/pull/465)
 

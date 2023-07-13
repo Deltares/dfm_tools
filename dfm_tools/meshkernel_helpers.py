@@ -5,19 +5,19 @@ Created on Thu Apr  6 18:46:35 2023
 @author: veenstra
 """
 
+import warnings
 import xugrid as xu
 import meshkernel
 import xarray as xr
 import datetime as dt
-import hydrolib.core.dflowfm as hcdfm
-import pandas as pd
-from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame
 from dfm_tools import __version__
 import getpass
 import numpy as np
 from dfm_tools.coastlines import get_coastlines_gdb
 from netCDF4 import default_fillvals
 import geopandas as gpd
+from shapely import MultiPolygon, LineString, MultiLineString
+from shapely.ops import linemerge
 
 
 def meshkernel_delete_withcoastlines(mk:meshkernel.meshkernel.MeshKernel, res:str='f', min_area:float = 0, crs:(int,str) = None):
@@ -42,13 +42,13 @@ def meshkernel_delete_withcoastlines(mk:meshkernel.meshkernel.MeshKernel, res:st
     """
     
     mesh_bnds = mk.mesh2d_get_mesh_boundaries_as_polygons()
-    mesh_bnds.x_coordinates
+    
     bbox = (mesh_bnds.x_coordinates.min(), mesh_bnds.y_coordinates.min(), mesh_bnds.x_coordinates.max(), mesh_bnds.y_coordinates.max())
     
     coastlines_gdf = get_coastlines_gdb(bbox=bbox, res=res, min_area=min_area, crs=crs)
     
     meshkernel_delete_withgdf(mk, coastlines_gdf)
-
+    
 
 def meshkernel_delete_withgdf(mk:meshkernel.meshkernel.MeshKernel, coastlines_gdf:gpd.GeoDataFrame):
     """
@@ -271,25 +271,74 @@ def refine_basegrid(mk, data_bathy_sel, min_edge_size):
     return mk
 
 
-def generate_bndpli(lon_min, lon_max, lat_min, lat_max, dlon, dlat, name='bnd'): #TODO: maybe generate with meshkernel?
+def generate_bndpli_cutland(mk:meshkernel.meshkernel.MeshKernel, res:str='f', min_area:float = 0, crs:(int,str) = None, buffer:float = 0):
     """
-    empty docstring
+    Generate a boundary polyline from the meshkernel object and cut away the landward part.
+    Be sure to do this on the base/refined grid, not on the grid where the landward cells were already cut.
+    
+    Parameters
+    ----------
+    mk : meshkernel.meshkernel.MeshKernel
+        DESCRIPTION.
+    res : str, optional
+        DESCRIPTION. The default is 'f'.
+    min_area : float, optional
+        DESCRIPTION. The default is 0.
+    crs : (int,str), optional
+        DESCRIPTION. The default is None.
+    buffer : float, optional
+        DESCRIPTION. The default is 0.
+
+    Returns
+    -------
+    bnd_gdf : TYPE
+        DESCRIPTION.
+
     """
-
-    vals_lon_ar = np.arange(lon_min, lon_max, dlon)
-    vals_lon = np.linspace(lon_min, lon_max,len(vals_lon_ar))
-    vals_lat_ar = np.arange(lat_min, lat_max, dlat)
-    vals_lat = np.linspace(lat_min, lat_max,len(vals_lat_ar))
-    pli_p1 = np.c_[np.repeat(lon_min,len(vals_lat)),vals_lat]
-    pli_p2 = np.c_[vals_lon,np.repeat(lat_max,len(vals_lon))]
-    pli_p3 = np.c_[np.repeat(lon_max,len(vals_lat)),vals_lat[::-1]]
-    pli_p4 = np.c_[vals_lon[::-1],np.repeat(lat_min,len(vals_lon))]
     
-    pli_all = np.concatenate([pli_p1[:-1],pli_p2[:-1],pli_p3[:-1],pli_p4[:-1]],axis=0)
+    mesh_bnds = mk.mesh2d_get_mesh_boundaries_as_polygons()
+    if mesh_bnds.geometry_separator in mesh_bnds.x_coordinates:
+        raise Exception('use dfmt.generate_bndpli_cutland() on an uncut grid')
+    mesh_bnds_xy = np.c_[mesh_bnds.x_coordinates,mesh_bnds.y_coordinates]
     
-    pli_polyobject = hcdfm.PolyObject(metadata=hcdfm.Metadata(name=name, n_rows=pli_all.shape[0], n_columns=pli_all.shape[1]),
-                                      points=[hcdfm.Point(x=x,y=y,data=[]) for x,y in pli_all])
-    pli_polyfile = hcdfm.PolyFile(objects=[pli_polyobject])
-    return pli_polyfile
+    bbox = (mesh_bnds.x_coordinates.min(), mesh_bnds.y_coordinates.min(), mesh_bnds.x_coordinates.max(), mesh_bnds.y_coordinates.max())
+    coastlines_gdf = get_coastlines_gdb(bbox=bbox, res=res, min_area=min_area, crs=crs)
+    
+    meshbnd_ls = LineString(mesh_bnds_xy)
+    coastlines_mp = MultiPolygon(coastlines_gdf.geometry.tolist())
+    coastlines_mp = coastlines_mp.buffer(buffer)
+    bnd_ls = meshbnd_ls.difference(coastlines_mp)
+    
+    #attempt to merge MultiLineString to single LineString
+    if isinstance(bnd_ls,MultiLineString):
+        print('attemting to merge lines in MultiLineString to single LineString (if connected)')
+        bnd_ls = linemerge(bnd_ls)
+    
+    #convert MultiLineString/LineString to GeoDataFrame
+    if isinstance(bnd_ls,MultiLineString):
+        bnd_gdf = gpd.GeoDataFrame(geometry=list(bnd_ls.geoms))
+    elif isinstance(bnd_ls,LineString):
+        bnd_gdf = gpd.GeoDataFrame(geometry=[bnd_ls])
+    
+    #set crs from coastlines
+    bnd_gdf.crs = coastlines_gdf.crs
+    return bnd_gdf
 
+
+def interpolate_bndpli(bnd_gdf,res):
+    """
+    interpolate bnd_gdf to a new resolution
+    """
+    #TODO: keep corners of grid, maybe use mk.polygon_refine()
+    
+    bnd_gdf_interp = bnd_gdf.copy()
+    for irow,row in bnd_gdf_interp.iterrows():
+        bnd_ls = row.geometry
+        interp_range = np.arange(0,bnd_ls.length,res)
+        bnd_ls_interp_points = bnd_ls.interpolate(interp_range)
+        if len(bnd_ls_interp_points)==1: #no change if interp results in only one point
+            continue
+        bnd_ls_interp = LineString(bnd_ls_interp_points)
+        bnd_gdf_interp['geometry'][irow] = bnd_ls_interp
+    return bnd_gdf_interp
 
