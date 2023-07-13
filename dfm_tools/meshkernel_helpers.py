@@ -298,27 +298,27 @@ def generate_bndpli_cutland(mk:meshkernel.meshkernel.MeshKernel, res:str='f', mi
     
     mesh_bnds = mk.mesh2d_get_mesh_boundaries_as_polygons()
     if mesh_bnds.geometry_separator in mesh_bnds.x_coordinates:
-        raise Exception('use dfmt.generate_bndpli_noland() on an uncut grid')
+        raise Exception('use dfmt.generate_bndpli_cutland() on an uncut grid')
     mesh_bnds_xy = np.c_[mesh_bnds.x_coordinates,mesh_bnds.y_coordinates]
     
     bbox = (mesh_bnds.x_coordinates.min(), mesh_bnds.y_coordinates.min(), mesh_bnds.x_coordinates.max(), mesh_bnds.y_coordinates.max())
     coastlines_gdf = get_coastlines_gdb(bbox=bbox, res=res, min_area=min_area, crs=crs)
     
-    meshbnd_LS = LineString(mesh_bnds_xy)
+    meshbnd_ls = LineString(mesh_bnds_xy)
     coastlines_mp = MultiPolygon(coastlines_gdf.geometry.tolist())
     coastlines_mp = coastlines_mp.buffer(buffer)
-    bnd_LS = meshbnd_LS.difference(coastlines_mp)
+    bnd_ls = meshbnd_ls.difference(coastlines_mp)
     
     #attempt to merge MultiLineString to single LineString
-    if isinstance(bnd_LS,MultiLineString):
+    if isinstance(bnd_ls,MultiLineString):
         print('attemting to merge lines in MultiLineString to single LineString (if connected)')
-        bnd_LS = linemerge(bnd_LS)
+        bnd_ls = linemerge(bnd_ls)
     
     #convert MultiLineString/LineString to GeoDataFrame
-    if isinstance(bnd_LS,MultiLineString):
-        bnd_gdf = gpd.GeoDataFrame(geometry=list(bnd_LS.geoms))
-    elif isinstance(bnd_LS,LineString):
-        bnd_gdf = gpd.GeoDataFrame(geometry=[bnd_LS])
+    if isinstance(bnd_ls,MultiLineString):
+        bnd_gdf = gpd.GeoDataFrame(geometry=list(bnd_ls.geoms))
+    elif isinstance(bnd_ls,LineString):
+        bnd_gdf = gpd.GeoDataFrame(geometry=[bnd_ls])
     
     #set crs from coastlines
     bnd_gdf.crs = coastlines_gdf.crs
