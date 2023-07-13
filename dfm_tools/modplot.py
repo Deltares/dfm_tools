@@ -13,9 +13,9 @@ Streamline plotting for 2D vector fields.
 """
 
 import numpy as np
-
+from packaging import version
 import matplotlib as mpl
-from matplotlib import _api, cm, patches
+from matplotlib import cm, patches
 import matplotlib.colors as mcolors
 import matplotlib.collections as mcollections
 import matplotlib.lines as mlines
@@ -98,6 +98,9 @@ def velovect(axes, x, y, u, v, density=1, linewidth=None, color=None,
             to the colormap, alpha, etc. for both lines and arrows, but these
             changes should be backward compatible.
     """
+    if version.parse(mpl.__version__) < version.parse("3.4.0"): # many of the used functions do not exists yet in matplotlib<3.4.0
+        raise ValueError(f'matplotlib {mpl.__version__} is installed, dfmt.modplot.velovect requires matplotlib>=3.4.0')
+    
     grid = Grid(x, y)
     mask = StreamMask(10)
     dmap = DomainMap(grid, mask)
@@ -118,7 +121,7 @@ def velovect(axes, x, y, u, v, density=1, linewidth=None, color=None,
     line_kw = {}
     arrow_kw = dict(arrowstyle=arrowstyle, mutation_scale=10 * arrowsize)
 
-    _api.check_in_list(['both', 'forward', 'backward'],
+    mpl._api.check_in_list(['both', 'forward', 'backward'],
                        integration_direction=integration_direction)
 
     #if integration_direction == 'both': #done for magnitude
