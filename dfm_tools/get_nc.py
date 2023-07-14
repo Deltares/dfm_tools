@@ -274,7 +274,7 @@ def reconstruct_zw_zcc_fromzsigma(uds):
     reconstruct full grid output (time/face-varying z-values) for zsigmavalue model without full grid output. Implemented in https://issuetracker.deltares.nl/browse/UNST-5477
     based on https://cfconventions.org/cf-conventions/cf-conventions.html#_ocean_sigma_over_z_coordinate
     """
-    
+
     #TODO: default fillvalues are not automatically parsed to nan, so doing it manually: https://github.com/pydata/xarray/issues/2742
     fillvals = netCDF4.default_fillvals
     
@@ -308,7 +308,7 @@ def reconstruct_zw_zcc_fromzsigma(uds):
     # for levels k where zlev(k) has a defined value and sigma(k) is not defined: 
     # z(n,k,j,i) = zlev(k)
     zw_zpart = uds_zlev_int.clip(min=-uds_depth) #added clipping of zvalues with bedlevel
-    zw_layers = xr.concat([zw_zpart.diff(dim=dimn_int), zw_zpart.diff(dim=dimn_int).isel(mesh2d_nInterfaces=-1)], dim=dimn_int)
+    zw_layers = xr.concat([zw_zpart.diff(dim=dimn_int), zw_zpart.diff(dim=dimn_int).isel({f'{dimn_int}':-1})], dim=dimn_int)
     zw_zpart = xr.where(zw_layers != 0, zw_zpart, np.nan)
 
     # for the zcc, the thicknessess of the layers (difference between interface heights) are used to determine zcc from zw
