@@ -265,7 +265,7 @@ def test_zlayermodel_correct_layers():
 @pytest.mark.requiresdata
 @pytest.mark.unittest
 def test_zsigmalayermodel_correct_layers():
-    file_nc = r'p:\dflowfm\maintenance\JIRA\05000-05999\05477\c103_ws_3d_fourier\DFM_OUTPUT_westerscheldt01_0subst\westerscheldt01_0subst_map.nc' #zsigma model without fullgrid output but with new ocean_sigma_z_coordinate variable #TODO: fails since https://github.com/Deltares/xugrid/issues/68#issuecomment-1594362969 was fixed, implement/catch edge validator?
+    file_nc = r'p:\dflowfm\maintenance\JIRA\05000-05999\05477\c103_ws_3d_fourier\DFM_OUTPUT_westerscheldt01_0subst\westerscheldt01_0subst_map.nc' #zsigma model without fullgrid output but with new ocean_sigma_z_coordinate variable
     data_frommap_merged = dfmt.open_partitioned_dataset(file_nc)
     
     timestep = 1
