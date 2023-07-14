@@ -246,7 +246,7 @@ def test_intersect_edges_withsort():
 
 @pytest.mark.unittest
 def test_zlayermodel_correct_layers():
-    file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True) #sigmalayer
+    file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True) #zlayer
     data_frommap_merged = dfmt.open_partitioned_dataset(file_nc)
     
     timestep = 3
@@ -261,7 +261,44 @@ def test_zlayermodel_correct_layers():
     assert (np.abs(vals_zw_top-vals_wl)<1e-6).all()
     assert (np.abs(vals_zw_bot-vals_bl)<1e-6).all()
 
+
+@pytest.mark.requiresdata
+@pytest.mark.unittest
+def test_zsigmalayermodel_correct_layers():
+    file_nc = r'p:\dflowfm\maintenance\JIRA\05000-05999\05477\c103_ws_3d_fourier\DFM_OUTPUT_westerscheldt01_0subst\westerscheldt01_0subst_map.nc' #zsigma model without fullgrid output but with new ocean_sigma_z_coordinate variable #TODO: fails since https://github.com/Deltares/xugrid/issues/68#issuecomment-1594362969 was fixed, implement/catch edge validator?
+    data_frommap_merged = dfmt.open_partitioned_dataset(file_nc)
     
+    timestep = 1
+    
+    data_frommap_timesel = data_frommap_merged.isel(time=timestep) #select data for all layers
+    data_frommap_merged_fullgrid = dfmt.reconstruct_zw_zcc_fromzsigma(data_frommap_timesel)
+    
+    vals_zw_top = data_frommap_merged_fullgrid['mesh2d_flowelem_zw'].isel(mesh2d_nInterfaces=-1).to_numpy()
+    vals_zw_bot = data_frommap_merged_fullgrid['mesh2d_flowelem_zw'].isel(mesh2d_nInterfaces=0).to_numpy()
+    vals_wl = data_frommap_merged_fullgrid['mesh2d_s1'].to_numpy()
+    vals_bl = data_frommap_merged_fullgrid['mesh2d_flowelem_bl'].to_numpy()
+    assert (np.abs(vals_zw_top-vals_wl)<1e-6).all()
+    assert (np.abs(vals_zw_bot-vals_bl)<1e-6).all()
+
+
+@pytest.mark.unittest
+def test_sigmalayermodel_correct_layers():
+    file_nc = dfmt.data.fm_curvedbend_map(return_filepath=True) #sigmalayer
+    data_frommap_merged = dfmt.open_partitioned_dataset(file_nc)
+    
+    timestep = 3
+    
+    data_frommap_timesel = data_frommap_merged.isel(time=timestep) #select data for all layers
+    data_frommap_merged_fullgrid = dfmt.reconstruct_zw_zcc_fromsigma(data_frommap_timesel)
+    
+    vals_zw_top = data_frommap_merged_fullgrid['mesh2d_flowelem_zw'].isel(mesh2d_nInterfaces=-1).to_numpy()
+    vals_zw_bot = data_frommap_merged_fullgrid['mesh2d_flowelem_zw'].isel(mesh2d_nInterfaces=0).to_numpy()
+    vals_wl = data_frommap_merged_fullgrid['mesh2d_s1'].to_numpy()
+    vals_bl = data_frommap_merged_fullgrid['mesh2d_flowelem_bl'].to_numpy()
+    assert (np.abs(vals_zw_top-vals_wl)<1e-6).all()
+    assert (np.abs(vals_zw_bot-vals_bl)<1e-6).all()
+
+
 @pytest.mark.requireslocaldata
 def test_timmodel_to_dataframe():
     
