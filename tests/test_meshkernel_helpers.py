@@ -138,3 +138,27 @@ def test_meshkernel_to_UgridDataset():
     assert ds_out.mesh2d_face_nodes.to_numpy().min() == -1
     assert ds_out.mesh2d_face_nodes.to_numpy().max() == 135
 
+
+def test_generate_bndpli_cutland():
+    # domain, resolution and expected values
+    params_all = [[-68.55, -68.05, 11.95, 12.4,    1, 99],
+                  [-68.55, -68.25, 11.95, 12.4,    1, 68],
+                  [-68.55, -68.31, 11.95, 12.4,    2, 67],
+                  [-68.31, -68.27, 12.10, 12.21,   2,  5]]
+    
+    dxy = 0.02
+    
+    for params in params_all:
+        lon_min, lon_max, lat_min, lat_max, len_gdf, len_linestr0 = params
+    
+        mk_object = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, is_geographic=True)
+        bnd_gdf = dfmt.generate_bndpli_cutland(mk=mk_object, res='h', buffer=0.01)
+        
+        # fig, ax = plt.subplots()
+        # mk_object.mesh2d_get().plot_edges(ax=ax)
+        # dfmt.plot_coastlines(ax=ax, crs=crs)
+        # bnd_gdf.plot(ax=ax, color='r',marker='o',markersize=3)
+        
+        assert len(bnd_gdf) == len_gdf
+        assert len(bnd_gdf.geometry[0].xy[0]) == len_linestr0
+

@@ -16,12 +16,12 @@ import dfm_tools as dfmt
 
 dir_output = '.'
 
-file_nc_list = [dfmt.data.fm_curvedbend_map(return_filepath=True), #sigmalayer
-                dfmt.data.fm_grevelingen_map(return_filepath=True), #zlayer
-                r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0*_map.nc', #fullgrid
-                # r'p:\dflowfm\maintenance\JIRA\05000-05999\05477\c103_ws_3d_fourier\DFM_OUTPUT_westerscheldt01_0subst\westerscheldt01_0subst_map.nc', #zsigma model without fullgrid output but with new ocean_sigma_z_coordinate variable #TODO: fails since https://github.com/Deltares/xugrid/issues/68#issuecomment-1594362969 was fixed, implement/catch edge validator?
-                r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_207\results\RMM_dflowfm_0*_map.nc', #2D model
-                r'p:\archivedprojects\11203379-005-mwra-updated-bem\03_model\02_final\A72_ntsu0_kzlb2\DFM_OUTPUT_MB_02\MB_02_0*_map.nc',
+file_nc_list = [dfmt.data.fm_curvedbend_map(return_filepath=True), # sigmalayer
+                dfmt.data.fm_grevelingen_map(return_filepath=True), # zlayer
+                r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0*_map.nc', # szigma fullgrid
+                r'p:\dflowfm\maintenance\JIRA\05000-05999\05477\c103_ws_3d_fourier\DFM_OUTPUT_westerscheldt01_0subst\westerscheldt01_0subst_map.nc', # zsigma model without fullgrid output but with new ocean_sigma_z_coordinate variable
+                r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_207\results\RMM_dflowfm_0*_map.nc', # 2D model
+                r'p:\archivedprojects\11203379-005-mwra-updated-bem\03_model\02_final\A72_ntsu0_kzlb2\DFM_OUTPUT_MB_02\MB_02_0*_map.nc', # zlayer
                 ]
 
 for file_nc in file_nc_list:
@@ -209,22 +209,21 @@ for file_nc in file_nc_list:
     fig.savefig(os.path.join(dir_output,f'{basename}_selxyslice'))
     
     
-    if 'westerscheldt01_0subst_map' not in file_nc: #TODO: skipping for westernscheldt since contourf/contour raise "ValueError: repeats may not contain negative values." (also happens in notebook) https://github.com/Deltares/xugrid/issues/68
-        print('plot bedlevel as polycollection, contourf, contour, rasterized')
-        #create fancy plots, more options at https://deltares.github.io/xugrid/examples/plotting.html
-        if clim_bl is None:
-            vmin = vmax = None
-        else:
-            vmin, vmax = clim_bl #TODO: vmin/vmax are necessary upon plot initialization (instead of pc.set_clim(clim_bl)) for proper colorbar, this is also matplotlib behaviour so not xugrid specific
-        fig, ((ax1,ax2),(ax3,ax4)) = plt.subplots(2,2,figsize=(12,7),sharex=True,sharey=True)
-        pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot(ax=ax1, linewidth=0.5, cmap='jet', vmin=vmin, vmax=vmax)
-        # pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot.contourf(ax=ax2, levels=11, cmap='jet', vmin=vmin, vmax=vmax) #TODO: contourf and temporarily commented until fix of https://github.com/Deltares/xugrid/issues/117
-        # if 'cb_3d_map' not in file_nc: #TODO: cb_3d_map fails on contour with "UserWarning: No contour levels were found within the data range." (because all bedlevels are -5m) >> colorbar gives error, is this an xugrid or matplotlib issue?
-        #     pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot.contour(ax=ax3, levels=11, cmap='jet', vmin=vmin, vmax=vmax, add_colorbar=True)
-        bl_raster = dfmt.rasterize_ugrid(data_frommap_merged['mesh2d_flowelem_bl'],resolution=raster_res) #rasterize ugrid uds/uda
-        pc = bl_raster.plot(ax=ax4, cmap='jet', vmin=vmin, vmax=vmax) #plot with non-ugrid method
-        fig.tight_layout()
-        fig.savefig(os.path.join(dir_output,f'{basename}_gridbedcontour'))
+    print('plot bedlevel as polycollection, contourf, contour, rasterized')
+    #create fancy plots, more options at https://deltares.github.io/xugrid/examples/plotting.html
+    if clim_bl is None:
+        vmin = vmax = None
+    else:
+        vmin, vmax = clim_bl #TODO: vmin/vmax are necessary upon plot initialization (instead of pc.set_clim(clim_bl)) for proper colorbar, this is also matplotlib behaviour so not xugrid specific
+    fig, ((ax1,ax2),(ax3,ax4)) = plt.subplots(2,2,figsize=(12,7),sharex=True,sharey=True)
+    pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot(ax=ax1, linewidth=0.5, cmap='jet', vmin=vmin, vmax=vmax)
+    # pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot.contourf(ax=ax2, levels=11, cmap='jet', vmin=vmin, vmax=vmax) #TODO: contourf and temporarily commented until fix of https://github.com/Deltares/xugrid/issues/117
+    # if 'cb_3d_map' not in file_nc: #TODO: cb_3d_map fails on contour with "UserWarning: No contour levels were found within the data range." (because all bedlevels are -5m) >> colorbar gives error, is this an xugrid or matplotlib issue?
+    #     pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot.contour(ax=ax3, levels=11, cmap='jet', vmin=vmin, vmax=vmax, add_colorbar=True)
+    bl_raster = dfmt.rasterize_ugrid(data_frommap_merged['mesh2d_flowelem_bl'],resolution=raster_res) #rasterize ugrid uds/uda
+    pc = bl_raster.plot(ax=ax4, cmap='jet', vmin=vmin, vmax=vmax) #plot with non-ugrid method
+    fig.tight_layout()
+    fig.savefig(os.path.join(dir_output,f'{basename}_gridbedcontour'))
     
     
     #filter for dry cells

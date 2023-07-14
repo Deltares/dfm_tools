@@ -89,6 +89,41 @@ def remove_periodic_cells(uds): #TODO: implement proper fix: https://github.com/
     return uds
 
 
+def remove_unassociated_edges(ds: xr.Dataset, topology: str = None) -> xr.Dataset:
+    """
+    Removes edges that are not associated to any of the faces, usecase in https://github.com/Deltares/xugrid/issues/68
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        DESCRIPTION.
+    topology : str, optional
+        DESCRIPTION. The default is None.
+
+    Returns
+    -------
+    ds : xr.Dataset
+        DESCRIPTION.
+
+    """
+    
+    if topology is None:
+        topology = xu.ugrid.ugridbase.AbstractUgrid._single_topology(ds)
+    
+    # Collect names
+    connectivity = ds.ugrid_roles.connectivity[topology]
+    dimensions = ds.ugrid_roles.dimensions[topology]
+    enc = ds[connectivity['edge_node_connectivity']].to_numpy()
+    fnc = ds[connectivity['face_node_connectivity']].to_numpy()
+    
+    associated = np.isin(enc, fnc)
+    associated = associated[:, 0] & associated[:, 1]
+    if not associated.all():
+        print(f"[{(~associated).sum()} unassociated edges removed] ",end='')
+        ds = ds.sel({dimensions['edge_dimension']: associated})
+    return ds
+
+
 def open_partitioned_dataset(file_nc, remove_ghost=True, **kwargs): 
     """
     using xugrid to read and merge partitions, with some additional features (remaning old layerdim, timings, set zcc/zw as data_vars)
@@ -140,6 +175,7 @@ def open_partitioned_dataset(file_nc, remove_ghost=True, **kwargs):
     for iF, file_nc_one in enumerate(file_nc_list):
         print(iF+1,end=' ')
         ds = xr.open_dataset(file_nc_one, **kwargs)
+        ds = remove_unassociated_edges(ds)
         if 'nFlowElem' in ds.dims and 'nNetElem' in ds.dims: #for mapformat1 mapfiles: merge different face dimensions (rename nFlowElem to nNetElem) to make sure the dataset topology is correct
             print('[mapformat1] ',end='')
             ds = ds.rename({'nFlowElem':'nNetElem'})
