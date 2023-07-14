@@ -92,7 +92,7 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
                         'FES2012': Path(r'P:\metocean-data\open\FES2012\data','*_FES2012_SLEV.nc'), #is eigenlijk ook licensed
                         'EOT20': Path(r'P:\metocean-data\open\EOT20\ocean_tides','*_ocean_eot20.nc'),
                         'GTSM4.1preliminary': Path(r'p:\1230882-emodnet_hrsm\GTSMv3.0EMODnet\EMOD_MichaelTUM_yearcomponents\GTSMv4.1_yeartide_2014_2.20.06\compare_fouhis_fouxyz_v3','gtsmv4.1_2014_*_withfu_v3_rasterized.nc'),
-                        #TODO: add tpxo8 (tpxo9 is also available), catalog: https://opendap.deltares.nl/thredds/catalog/opendap/deltares/delftdashboard/tidemodels/tpxo80/catalog.html
+                        'tpxo80':'https://opendap.deltares.nl/thredds/dodsC/opendap/deltares/delftdashboard/tidemodels/tpxo80/tpxo80.nc',
                         }
     if tidemodel not in dir_pattern_dict.keys():
         raise KeyError(f'invalid tidemodel "{tidemodel}", options are: {list(dir_pattern_dict.keys())}')
@@ -151,7 +151,7 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
             ds = ds.sortby('lon')
         ds = ds.rename({'tidal_amplitude_h':'amplitude','tidal_phase_h':'phase','constituents':'compno'})
         ds = ds.drop_dims(['lon_u','lon_v','lat_u','lat_v'])
-        components_infile = ds['tidal_constituents'].load().str.decode('utf-8',errors='ignore').str.strip()
+        components_infile = ds['tidal_constituents'].load().str.decode('utf-8',errors='ignore').str.strip().str.upper()
         ds['compnames'] = components_infile
         ds = ds.set_index({'compno':'compnames'})
         if component_list is not None:
@@ -161,7 +161,7 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
         #use open_mfdataset() with preprocess argument to open all requested FES files into one Dataset
         file_list_nc = [str(dir_pattern).replace('*',comp) for comp in component_list]
         data_xrsel = xr.open_mfdataset(file_list_nc, combine='nested', concat_dim='compno', preprocess=extract_component)
-        data_xrsel = data_xrsel.rename({'lon':'longitude','lat':'latitude'})
+    data_xrsel = data_xrsel.rename({'lon':'longitude','lat':'latitude'})
         
     #derive uv phase components (using amplitude=1)
     data_xrsel_phs_rad = np.deg2rad(data_xrsel['phase'])
