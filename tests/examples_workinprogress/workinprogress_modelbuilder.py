@@ -100,9 +100,7 @@ dfmt.plot_coastlines(ax=ax, crs=crs)
 
 #write xugrid grid to netcdf
 netfile  = os.path.join(dir_output, f'{model_name}_net.nc')
-#xu_grid_uds.ugrid.to_netcdf(netfile) # TODO: this currently fails, below is a workaround: https://github.com/Deltares/xugrid/issues/119
-xu_grid_ds = dfmt.uds_to_1based_ds(xu_grid_uds)
-xu_grid_ds.to_netcdf(netfile)
+xu_grid_uds.ugrid.to_netcdf(netfile)
 
 
 #%% generate plifile from grid extent 

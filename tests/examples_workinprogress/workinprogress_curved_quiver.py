@@ -9,7 +9,7 @@ import os
 import datetime as dt
 import numpy as np
 import matplotlib.pyplot as plt
-#plt.close('all')
+plt.close('all')
 import xarray as xr
 import dfm_tools as dfmt
 
