@@ -89,12 +89,26 @@ def remove_periodic_cells(uds): #TODO: implement proper fix: https://github.com/
     return uds
 
 
-def remove_unassociated_edges(ds: xr.Dataset, topology: str = None):
+def remove_unassociated_edges(ds: xr.Dataset, topology: str = None) -> xr.Dataset:
     """
-    removes edges that are not associated to any of the faces, usecase in https://github.com/Deltares/xugrid/issues/68
+    Removes edges that are not associated to any of the faces, usecase in https://github.com/Deltares/xugrid/issues/68
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        DESCRIPTION.
+    topology : str, optional
+        DESCRIPTION. The default is None.
+
+    Returns
+    -------
+    ds : xr.Dataset
+        DESCRIPTION.
+
     """
-    #TODO: also implement for other connectivities
-    topology = xu.ugrid.ugridbase.AbstractUgrid._single_topology(ds)
+    
+    if topology is None:
+        topology = xu.ugrid.ugridbase.AbstractUgrid._single_topology(ds)
     
     # Collect names
     connectivity = ds.ugrid_roles.connectivity[topology]
