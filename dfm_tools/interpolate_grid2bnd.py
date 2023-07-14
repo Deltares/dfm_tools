@@ -140,11 +140,29 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
             ds = ds.sortby('lon')
         return ds
     
-    #use open_mfdataset() with preprocess argument to open all requested FES files into one Dataset
-    file_list_nc = [str(dir_pattern).replace('*',comp) for comp in component_list]
-    data_xrsel = xr.open_mfdataset(file_list_nc, combine='nested', concat_dim='compno', preprocess=extract_component)
-    data_xrsel = data_xrsel.rename({'lon':'longitude','lat':'latitude'})
-    
+    if 'tpxo80' in dir_pattern:
+        ds = xr.open_dataset(dir_pattern)
+        bool_land = ds.depth==0
+        ds['tidal_amplitude_h'] = ds['tidal_amplitude_h'].where(~bool_land)
+        ds['tidal_phase_h'] = ds['tidal_phase_h'].where(~bool_land)
+        convert_360to180 = (ds['lon'].to_numpy()>180).any()
+        if convert_360to180: # results in large chunks if it is done after concatenation, so do for each file before concatenation
+            ds.coords['lon'] = (ds.coords['lon'] + 180) % 360 - 180
+            ds = ds.sortby('lon')
+        ds = ds.rename({'tidal_amplitude_h':'amplitude','tidal_phase_h':'phase','constituents':'compno'})
+        ds = ds.drop_dims(['lon_u','lon_v','lat_u','lat_v'])
+        components_infile = ds['tidal_constituents'].load().str.decode('utf-8',errors='ignore').str.strip()
+        ds['compnames'] = components_infile
+        ds = ds.set_index({'compno':'compnames'})
+        if component_list is not None:
+            ds = ds.sel(compno=component_list)
+        data_xrsel = ds
+    else:
+        #use open_mfdataset() with preprocess argument to open all requested FES files into one Dataset
+        file_list_nc = [str(dir_pattern).replace('*',comp) for comp in component_list]
+        data_xrsel = xr.open_mfdataset(file_list_nc, combine='nested', concat_dim='compno', preprocess=extract_component)
+        data_xrsel = data_xrsel.rename({'lon':'longitude','lat':'latitude'})
+        
     #derive uv phase components (using amplitude=1)
     data_xrsel_phs_rad = np.deg2rad(data_xrsel['phase'])
     #we need to compute u/v components for the phase to avoid zero-crossing interpolation issues
