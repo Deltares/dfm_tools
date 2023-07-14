@@ -209,22 +209,21 @@ for file_nc in file_nc_list:
     fig.savefig(os.path.join(dir_output,f'{basename}_selxyslice'))
     
     
-    if 'westerscheldt01_0subst_map' not in file_nc: #TODO: skipping for westernscheldt since contourf/contour raise "ValueError: repeats may not contain negative values." (also happens in notebook) https://github.com/Deltares/xugrid/issues/68
-        print('plot bedlevel as polycollection, contourf, contour, rasterized')
-        #create fancy plots, more options at https://deltares.github.io/xugrid/examples/plotting.html
-        if clim_bl is None:
-            vmin = vmax = None
-        else:
-            vmin, vmax = clim_bl #TODO: vmin/vmax are necessary upon plot initialization (instead of pc.set_clim(clim_bl)) for proper colorbar, this is also matplotlib behaviour so not xugrid specific
-        fig, ((ax1,ax2),(ax3,ax4)) = plt.subplots(2,2,figsize=(12,7),sharex=True,sharey=True)
-        pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot(ax=ax1, linewidth=0.5, cmap='jet', vmin=vmin, vmax=vmax)
-        # pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot.contourf(ax=ax2, levels=11, cmap='jet', vmin=vmin, vmax=vmax) #TODO: contourf and temporarily commented until fix of https://github.com/Deltares/xugrid/issues/117
-        # if 'cb_3d_map' not in file_nc: #TODO: cb_3d_map fails on contour with "UserWarning: No contour levels were found within the data range." (because all bedlevels are -5m) >> colorbar gives error, is this an xugrid or matplotlib issue?
-        #     pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot.contour(ax=ax3, levels=11, cmap='jet', vmin=vmin, vmax=vmax, add_colorbar=True)
-        bl_raster = dfmt.rasterize_ugrid(data_frommap_merged['mesh2d_flowelem_bl'],resolution=raster_res) #rasterize ugrid uds/uda
-        pc = bl_raster.plot(ax=ax4, cmap='jet', vmin=vmin, vmax=vmax) #plot with non-ugrid method
-        fig.tight_layout()
-        fig.savefig(os.path.join(dir_output,f'{basename}_gridbedcontour'))
+    print('plot bedlevel as polycollection, contourf, contour, rasterized')
+    #create fancy plots, more options at https://deltares.github.io/xugrid/examples/plotting.html
+    if clim_bl is None:
+        vmin = vmax = None
+    else:
+        vmin, vmax = clim_bl #TODO: vmin/vmax are necessary upon plot initialization (instead of pc.set_clim(clim_bl)) for proper colorbar, this is also matplotlib behaviour so not xugrid specific
+    fig, ((ax1,ax2),(ax3,ax4)) = plt.subplots(2,2,figsize=(12,7),sharex=True,sharey=True)
+    pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot(ax=ax1, linewidth=0.5, cmap='jet', vmin=vmin, vmax=vmax)
+    # pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot.contourf(ax=ax2, levels=11, cmap='jet', vmin=vmin, vmax=vmax) #TODO: contourf and temporarily commented until fix of https://github.com/Deltares/xugrid/issues/117
+    # if 'cb_3d_map' not in file_nc: #TODO: cb_3d_map fails on contour with "UserWarning: No contour levels were found within the data range." (because all bedlevels are -5m) >> colorbar gives error, is this an xugrid or matplotlib issue?
+    #     pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot.contour(ax=ax3, levels=11, cmap='jet', vmin=vmin, vmax=vmax, add_colorbar=True)
+    bl_raster = dfmt.rasterize_ugrid(data_frommap_merged['mesh2d_flowelem_bl'],resolution=raster_res) #rasterize ugrid uds/uda
+    pc = bl_raster.plot(ax=ax4, cmap='jet', vmin=vmin, vmax=vmax) #plot with non-ugrid method
+    fig.tight_layout()
+    fig.savefig(os.path.join(dir_output,f'{basename}_gridbedcontour'))
     
     
     #filter for dry cells
