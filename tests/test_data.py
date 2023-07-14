@@ -16,7 +16,7 @@ def test_data_map():
     func_list = [dfmt.data.fm_grevelingen_map, 
                  dfmt.data.fm_grevelingen_net, 
                  dfmt.data.fm_curvedbend_map, 
-                 #dfmt.data.fm_westernscheldt_map, 
+                 dfmt.data.fm_westernscheldt_map, 
                  dfmt.data.d3d_westernscheldt_trim,
                  dfmt.data.d3d_curvedbend_trim]
     
