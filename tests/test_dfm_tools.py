@@ -262,7 +262,7 @@ def test_zlayermodel_correct_layers():
     assert (np.abs(vals_zw_bot-vals_bl)<1e-6).all()
 
 
-@pytest.mark.requiresdata
+@pytest.mark.requireslocaldata
 @pytest.mark.unittest
 def test_zsigmalayermodel_correct_layers():
     file_nc = r'p:\dflowfm\maintenance\JIRA\05000-05999\05477\c103_ws_3d_fourier\DFM_OUTPUT_westerscheldt01_0subst\westerscheldt01_0subst_map.nc' #zsigma model without fullgrid output but with new ocean_sigma_z_coordinate variable
