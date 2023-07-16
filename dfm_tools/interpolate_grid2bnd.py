@@ -107,13 +107,6 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
     
     dir_pattern = dir_pattern_dict[tidemodel]
     
-    if component_list is None:
-        file_list_nc = glob.glob(str(dir_pattern))
-        dir_pattern_basename = os.path.basename(dir_pattern)
-        replace = dir_pattern_basename.split('*')
-        component_list = [os.path.basename(x).replace(replace[0],'').replace(replace[1],'') for x in file_list_nc] #TODO: make this less hard-coded
-    component_list_upper_pd = pd.Series([x.upper() for x in component_list]).replace(translate_dict, regex=True)
-    
     def extract_component(ds):
         #https://github.com/pydata/xarray/issues/1380
         if 'FES2012' in ds.encoding["source"]: #TODO: make more generic with regex, or just add tidemodel argument since they are quite specific
@@ -140,13 +133,13 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
             ds = ds.sortby('lon')
         return ds
     
-    if 'tpxo80' in dir_pattern:
+    if 'tpxo80' in str(dir_pattern):
         ds = xr.open_dataset(dir_pattern)
         bool_land = ds.depth==0
-        ds['tidal_amplitude_h'] = ds['tidal_amplitude_h'].where(~bool_land)
-        ds['tidal_phase_h'] = ds['tidal_phase_h'].where(~bool_land)
+        ds['tidal_amplitude_h'] = ds['tidal_amplitude_h'].where(~bool_land).assign_attrs({'units':'m'})
+        ds['tidal_phase_h'] = ds['tidal_phase_h'].where(~bool_land).assign_attrs({'units':'degrees'})
         convert_360to180 = (ds['lon'].to_numpy()>180).any()
-        if convert_360to180: # results in large chunks if it is done after concatenation, so do for each file before concatenation
+        if convert_360to180:
             ds.coords['lon'] = (ds.coords['lon'] + 180) % 360 - 180
             ds = ds.sortby('lon')
         ds = ds.rename({'tidal_amplitude_h':'amplitude','tidal_phase_h':'phase','constituents':'compno'})
@@ -156,8 +149,18 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
         ds = ds.set_index({'compno':'compnames'})
         if component_list is not None:
             ds = ds.sel(compno=component_list)
+        else:
+            component_list = list(components_infile.to_numpy())
+        component_list_upper_pd = [x.upper() for x in component_list]
         data_xrsel = ds
     else:
+        if component_list is None:
+            file_list_nc = glob.glob(str(dir_pattern))
+            dir_pattern_basename = os.path.basename(dir_pattern)
+            replace = dir_pattern_basename.split('*')
+            component_list = [os.path.basename(x).replace(replace[0],'').replace(replace[1],'') for x in file_list_nc] #TODO: make this less hard-coded
+        component_list_upper_pd = pd.Series([x.upper() for x in component_list]).replace(translate_dict, regex=True)
+        
         #use open_mfdataset() with preprocess argument to open all requested FES files into one Dataset
         file_list_nc = [str(dir_pattern).replace('*',comp) for comp in component_list]
         data_xrsel = xr.open_mfdataset(file_list_nc, combine='nested', concat_dim='compno', preprocess=extract_component)
