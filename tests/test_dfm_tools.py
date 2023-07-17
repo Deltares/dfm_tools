@@ -268,8 +268,8 @@ def test_zlayermodel_correct_layers():
     
     vals_zcc_max = data_frommap_merged_fullgrid['mesh2d_flowelem_zcc'].max(dim='nmesh2d_layer').to_numpy()
     vals_zcc_min = data_frommap_merged_fullgrid['mesh2d_flowelem_zcc'].min(dim='nmesh2d_layer').to_numpy()
-    # assert (vals_zcc_max < vals_wl).all() # TODO: zcc top layers currently clipped to wl (not center)
-    # assert (vals_zcc_min > vals_bl).all() # TODO: zcc bottom layers currently clipped to bl (not center)
+    assert (vals_zcc_max <= vals_wl).all() # TODO: zcc top layers currently clipped to wl (not center), so using <= instead of <
+    assert (vals_zcc_min >= vals_bl).all() # TODO: zcc bottom layers currently clipped to bl (not center), so using >= instead of >
 
 
 @pytest.mark.requireslocaldata
@@ -301,7 +301,7 @@ def test_zsigmalayermodel_correct_layers():
     vals_zcc_min = data_frommap_merged_fullgrid['mesh2d_flowelem_zcc'].min(dim='mesh2d_nLayers').to_numpy()
     vals_zcc_top = data_frommap_merged_fullgrid['mesh2d_flowelem_zcc'].isel(mesh2d_nLayers=-1).to_numpy()
     assert (vals_zcc_max <= vals_wl).all() # TODO: using <=, since < will be False, since in case of bl>0 the sigmalayers zcc and zw are all the same value
-    # assert (vals_zcc_min > vals_bl).all() # TODO: zcc bottom layers currently clipped to bl (not center)
+    assert (vals_zcc_min >= vals_bl).all() # TODO: zcc bottom layers currently clipped to bl (not center), so using >= instead of >
     assert (np.abs(vals_zcc_max-vals_zcc_top)<1e-6).all()
 
 
