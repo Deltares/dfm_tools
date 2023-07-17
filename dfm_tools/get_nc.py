@@ -227,18 +227,19 @@ def reconstruct_zw_zcc_fromsigma(uds):
     """
     osz_formulaterms_int_dict = get_formula_terms(uds,varn_contains='interface')
     osz_formulaterms_lay_dict = get_formula_terms(uds,varn_contains='layer')
+    gridname = uds.grid.name
     
     uds_eta = uds[osz_formulaterms_int_dict['eta']] #mesh2d_s1
     uds_depth = uds[osz_formulaterms_int_dict['depth']] #mesh2d_bldepth in new output, mesh2d_waterdepth in old output (see comment below)
     if uds_depth.attrs['standard_name'] == 'sea_floor_depth_below_sea_surface': # previously the waterdepth instead of negative bedlevel was coupled via the formula_terms in sigmamodels (was fixed in OSS 140982 / 29-3-2022)
-        uds_depth = -uds['mesh2d_flowelem_bl'] # assuming this variable is available, which is not guaranteed
+        uds_depth = -uds[f'{gridname}_flowelem_bl'] # assuming this variable is available, which is not guaranteed
     uds_sigma_int = uds[osz_formulaterms_int_dict['sigma']] #mesh2d_interface_sigma
     uds_sigma_lay = uds[osz_formulaterms_lay_dict['sigma']] #mesh2d_layer_sigma
     
-    uds['mesh2d_flowelem_zw'] = uds_eta + uds_sigma_int*(uds_depth+uds_eta)
-    uds['mesh2d_flowelem_zcc'] = uds_eta + uds_sigma_lay*(uds_depth+uds_eta)
+    uds[f'{gridname}_flowelem_zw'] = uds_eta + uds_sigma_int*(uds_depth+uds_eta)
+    uds[f'{gridname}_flowelem_zcc'] = uds_eta + uds_sigma_lay*(uds_depth+uds_eta)
     
-    uds = uds.set_coords(['mesh2d_flowelem_zw','mesh2d_flowelem_zcc'])
+    uds = uds.set_coords([f'{gridname}_flowelem_zw',f'{gridname}_flowelem_zcc'])
     return uds
 
 
@@ -246,27 +247,27 @@ def reconstruct_zw_zcc_fromz(uds):
     """
     reconstruct full grid output (time/face-varying z-values) for zvalue model. Necessary when extracting values with zdepth w.r.t. waterlevel/bedlevel
     """
-    #TODO: remove hardcoding of varnames (assuming wl/bl variables are available)
     #TODO: center values (zcc) are clipped to waterlevel+bedlevel, so the zcc of the top+bottom layer are currently incorrect
     
     dimn_layer, dimn_interfaces = get_vertical_dimensions(uds)
+    gridname = uds.grid.name
     
-    uds_eta = uds['mesh2d_s1']
+    uds_eta = uds[f'{gridname}_s1'] # assuming this variable is available, which is not guaranteed
     uds_z0 = xu.zeros_like(uds_eta)
-    uds_bl = uds['mesh2d_flowelem_bl']
+    uds_bl = uds[f'{gridname}_flowelem_bl'] # assuming this variable is available, which is not guaranteed
     
-    #no clipping for zcenter values, since otherwise interp will fail
-    zvals_center = uds['mesh2d_layer_z']
-    uds['mesh2d_flowelem_zcc'] = (uds_z0+zvals_center).clip(min=uds_bl, max=uds_eta)
+    #deriving zcenter values, clipping zcc to bl/wl
+    zvals_center = uds[f'{gridname}_layer_z']
+    uds[f'{gridname}_flowelem_zcc'] = (uds_z0+zvals_center).clip(min=uds_bl, max=uds_eta)
 
-    zvals_interface = uds['mesh2d_interface_z']
+    #deriving zinterface values, first expanding zint to wl.max(), then clipping zw to bl/wl
+    zvals_interface = uds[f'{gridname}_interface_z']
     # make sure mesh2d_interface_z.max()>=wl.max() (is clipped to wl again in next step)
     if zvals_interface[-1] < uds_eta.max():
         zvals_interface[-1] = uds_eta.max()
-    #clipping for zinterface values, to make sure layer interfaces are also at water/bed level
-    uds['mesh2d_flowelem_zw'] = (uds_z0+zvals_interface).clip(min=uds_bl, max=uds_eta)
+    uds[f'{gridname}_flowelem_zw'] = (uds_z0+zvals_interface).clip(min=uds_bl, max=uds_eta)
     
-    uds = uds.set_coords(['mesh2d_flowelem_zw','mesh2d_flowelem_zcc'])
+    uds = uds.set_coords([f'{gridname}_flowelem_zw',f'{gridname}_flowelem_zcc'])
     return uds
 
 
