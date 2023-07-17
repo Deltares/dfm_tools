@@ -258,14 +258,14 @@ def test_zlayermodel_correct_layers():
     data_frommap_timesel = data_frommap_merged.isel(time=timestep) #select data for all layers
     data_frommap_merged_fullgrid = dfmt.reconstruct_zw_zcc_fromz(data_frommap_timesel)
     
-    vals_wl = data_frommap_merged_fullgrid['mesh2d_s1'].to_numpy()
+    vals_wl = data_frommap_merged_fullgrid['mesh2d_s1']
     vals_bl = data_frommap_merged_fullgrid['mesh2d_flowelem_bl'].to_numpy()
     
-    vals_zw_max = data_frommap_merged_fullgrid['mesh2d_flowelem_zw'].max(dim='nmesh2d_interface').to_numpy()
-    vals_zw_min = data_frommap_merged_fullgrid['mesh2d_flowelem_zw'].min(dim='nmesh2d_interface').to_numpy()
+    vals_zw_max = data_frommap_merged_fullgrid['mesh2d_flowelem_zw'].max(dim='nmesh2d_interface')
+    vals_zw_min = data_frommap_merged_fullgrid['mesh2d_flowelem_zw'].min(dim='nmesh2d_interface')
     assert (np.abs(vals_zw_max-vals_wl)<1e-6).all()
     assert (np.abs(vals_zw_min-vals_bl)<1e-6).all()
-
+    
     vals_zcc_max = data_frommap_merged_fullgrid['mesh2d_flowelem_zcc'].max(dim='nmesh2d_layer').to_numpy()
     vals_zcc_min = data_frommap_merged_fullgrid['mesh2d_flowelem_zcc'].min(dim='nmesh2d_layer').to_numpy()
     # assert (vals_zcc_max < vals_wl).all() # TODO: zcc top layers currently clipped to wl (not center)
