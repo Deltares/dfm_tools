@@ -77,7 +77,7 @@ def get_conversion_dict(ncvarname_updates={}):
 
 
 def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=None):
-    data_interp = interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoints=None)
+    data_interp = interpolate_tide_to_plipoints(tidemodel=tidemodel, file_pli=file_pli, component_list=component_list, nPoints=nPoints)
     ForcingModel_object = plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
     
     return ForcingModel_object
@@ -131,8 +131,8 @@ def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoi
             ds = ds.rename({'x':'lon','y':'lat'})
         else:
             compname = os.path.basename(ds.encoding["source"]).replace('.nc','')
-        compnumber = [component_list.index(compname)]
-        ds = ds.assign(compno=compnumber)
+        #compnumber = [component_list.index(compname)]
+        #ds = ds.assign(compno=compnumber)
         
         convert_360to180 = (ds['lon'].to_numpy()>180).any()
         if convert_360to180: # results in large chunks if it is done after concatenation, so do for each file before concatenation
@@ -179,6 +179,7 @@ def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoi
     data_xrsel['phase_u'] = 1*np.cos(data_xrsel_phs_rad)
     data_xrsel['phase_v'] = 1*np.sin(data_xrsel_phs_rad)
     data_xrsel['compnames'] = xr.DataArray(component_list_upper_pd,dims=('compno')) #TODO: convert to proper string variable
+    data_xrsel = data_xrsel.set_index({'compno':'compnames'})
     
     #convert cm to m
     if data_xrsel['amplitude'].attrs['units'] == 'cm':
