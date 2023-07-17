@@ -77,6 +77,13 @@ def get_conversion_dict(ncvarname_updates={}):
 
 
 def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=None):
+    data_interp = interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoints=None)
+    ForcingModel_object = plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
+    
+    return ForcingModel_object
+
+
+def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoints=None):
     """
     empty docstring
     """
@@ -180,10 +187,7 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
     
     data_interp = interp_regularnc_to_plipoints(data_xr_reg=data_xrsel, file_pli=file_pli, nPoints=nPoints)
     data_interp['phase_new'] = np.rad2deg(np.arctan2(data_interp['phase_v'],data_interp['phase_u']))
-    
-    ForcingModel_object = plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
-    
-    return ForcingModel_object
+    return data_interp
 
 
 def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=None, refdate_str=None, reverse_depth=False, chunks=None):
