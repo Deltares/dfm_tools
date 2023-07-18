@@ -5,10 +5,12 @@ Created on Thu Apr 13 14:04:56 2023
 @author: veenstra
 """
 
-import os
 import dfm_tools as dfmt
+import matplotlib.pyplot as plt
+plt.close('all')
+import xarray as xr
 
-file_nc = dfmt.data.fm_curvedbend_map(return_filepath=True) #sigmalayer
+# file_nc = dfmt.data.fm_curvedbend_map(return_filepath=True) #sigmalayer
 file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True) #zlayer
 # file_nc = r'p:\dflowfm\maintenance\JIRA\05000-05999\05477\c103_ws_3d_fourier\DFM_OUTPUT_westerscheldt01_0subst\westerscheldt01_0subst_map.nc' #zsigma model without fullgrid output but with new ocean_sigma_z_coordinate variable
 # file_nc = r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_207\results\RMM_dflowfm_0*_map.nc' #2D model
@@ -27,38 +29,39 @@ elif 'mesh2d_czu' in uds.data_vars:
 else:
     varn_onedges = 'mesh2d_edge_type' #if all else fails, interpolate this one
 
+fig,ax = plt.subplots()
+uds[varn_onedges].isel(time=-1,nmesh2d_interface=-2,mesh2d_nInterfaces=-2,missing_dims='ignore').ugrid.plot()
+
 mesh2d_var = uds.grid.to_dataset().mesh2d
 
 print('construct indexer')
-varn_fnc = mesh2d_var.attrs['face_node_connectivity']
+dimn_faces = uds.grid.face_dimension
 dimn_maxfn = mesh2d_var.attrs['max_face_nodes_dimension']
+dimn_interface = mesh2d_var.attrs['interface_dimension']
+dimn_layer = mesh2d_var.attrs['layer_dimension']
 dimn_edges = uds.grid.edge_dimension
+fill_value = uds.grid.fill_value
 
-data_fnc = uds.grid.to_dataset()[varn_fnc]
-
-if hasattr(data_fnc,'_FillValue'):
-    data_fnc_validbool = data_fnc!=data_fnc.attrs['_FillValue']
-else:
-    data_fnc_validbool = None
-
-if hasattr(data_fnc,'start_index'):
-    if data_fnc.attrs['start_index'] != 0:
-        data_fnc = data_fnc - data_fnc.attrs['start_index'] #TODO: this drops attrs, re-add corrected attrs
+data_fec = xr.DataArray(uds.grid.face_edge_connectivity,dims=(dimn_faces,dimn_maxfn)) # (8355, 4)
+data_fec_validbool = data_fec!=fill_value
+data_fec = data_fec.where(data_fec_validbool,-1).astype(int)
+data_fec = data_fec.compute()
 
 #TODO: interpolation is slow for many timesteps, so maybe use .sel() on time dimension first
 print('interpolation with indexer: step 1 (for each face, select all corresponding edge values)')
-edgevar_tofaces_onint_step1 = uds[varn_onedges].isel({dimn_edges:data_fnc}) #TODO: fails for cb_3d_map.nc, westernscheldt
+edgevar_tofaces_onint_step1 = uds[varn_onedges].isel({dimn_edges:data_fec})
 print('interpolation with indexer: step 2 (replace nonexistent edges with nan)')
-edgevar_tofaces_onint_step2 = edgevar_tofaces_onint_step1.where(data_fnc_validbool) #replace all values for fillvalue edges (-1) with nan
+if hasattr(data_fec,'_FillValue'):
+    edgevar_tofaces_onint_step2 = edgevar_tofaces_onint_step1.where(data_fec_validbool) #replace all values for fillvalue edges (-1) with nan
+else:
+    edgevar_tofaces_onint_step2 = edgevar_tofaces_onint_step1
 print('interpolation with indexer: step 3 (average edge values per face)')
 edgevar_tofaces_onint = edgevar_tofaces_onint_step2.mean(dim=dimn_maxfn)
 print('interpolation with indexer: done')
 
 
-if hasattr(mesh2d_var,'interface_dimension'):
+if dimn_interface in edgevar_tofaces_onint.dims:
     print('average from interfaces to layers (so in z-direction) in case of a 3D model')
-    dimn_interface = mesh2d_var.attrs['interface_dimension']
-    dimn_layer = mesh2d_var.attrs['layer_dimension']
     #select all top interfaces and all bottom interfaces, sum, divide by two (same as average)
     edgevar_tofaces_topint = edgevar_tofaces_onint.isel({dimn_interface:slice(1,None)})
     edgevar_tofaces_botint = edgevar_tofaces_onint.isel({dimn_interface:slice(None,-1)})
@@ -68,7 +71,8 @@ if hasattr(mesh2d_var,'interface_dimension'):
 else:
     edgevar_tofaces = edgevar_tofaces_onint
 
-
+fig,ax = plt.subplots()
+edgevar_tofaces.isel(time=-1,nmesh2d_layer=-1,mesh2d_nLayers=-1,missing_dims='ignore').ugrid.plot()
 #TODO: add inverse distance weighing, below example is from faces to edges, so make other way round
 """
 edge_coords = grid.edge_coordinates
