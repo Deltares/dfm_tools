@@ -12,8 +12,9 @@ import numpy as np
 
 # TODO: test preprocess_interpolate_nc_to_bc.py and compare output to references (make extra systemtest if needed)
 # TODO: add gtsm (if fast)
+# TODO: make faster by not loading entire multifile dataset in case of only 3 components
 # TODO: for 0to360 model like fes, also add point just before or after 0 meridian
-@pytest.mark.acceptancetest # TODO: make faster by not loading entire multifile dataset in case of only 3 components (then convert to systemtest)
+@pytest.mark.systemtest
 @pytest.mark.requireslocaldata # TODO: this is not necessary in case of tpxo since data is on opendap, but plifile is local
 def test_interpolate_tide_to_plipoints():
     
