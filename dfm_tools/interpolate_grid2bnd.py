@@ -77,6 +77,13 @@ def get_conversion_dict(ncvarname_updates={}):
 
 
 def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=None):
+    data_interp = interpolate_tide_to_plipoints(tidemodel=tidemodel, file_pli=file_pli, component_list=component_list, nPoints=nPoints)
+    ForcingModel_object = plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
+    
+    return ForcingModel_object
+
+
+def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoints=None):
     """
     empty docstring
     """
@@ -92,7 +99,7 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
                         'FES2012': Path(r'P:\metocean-data\open\FES2012\data','*_FES2012_SLEV.nc'), #is eigenlijk ook licensed
                         'EOT20': Path(r'P:\metocean-data\open\EOT20\ocean_tides','*_ocean_eot20.nc'),
                         'GTSM4.1preliminary': Path(r'p:\1230882-emodnet_hrsm\GTSMv3.0EMODnet\EMOD_MichaelTUM_yearcomponents\GTSMv4.1_yeartide_2014_2.20.06\compare_fouhis_fouxyz_v3','gtsmv4.1_2014_*_withfu_v3_rasterized.nc'),
-                        #TODO: add tpxo8 (tpxo9 is also available), catalog: https://opendap.deltares.nl/thredds/catalog/opendap/deltares/delftdashboard/tidemodels/tpxo80/catalog.html
+                        'tpxo80':'https://opendap.deltares.nl/thredds/dodsC/opendap/deltares/delftdashboard/tidemodels/tpxo80/tpxo80.nc',
                         }
     if tidemodel not in dir_pattern_dict.keys():
         raise KeyError(f'invalid tidemodel "{tidemodel}", options are: {list(dir_pattern_dict.keys())}')
@@ -106,13 +113,6 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
         #TODO when issue UNST-7012 is solved, remove this warning or add it in more places)
     
     dir_pattern = dir_pattern_dict[tidemodel]
-    
-    if component_list is None:
-        file_list_nc = glob.glob(str(dir_pattern))
-        dir_pattern_basename = os.path.basename(dir_pattern)
-        replace = dir_pattern_basename.split('*')
-        component_list = [os.path.basename(x).replace(replace[0],'').replace(replace[1],'') for x in file_list_nc] #TODO: make this less hard-coded
-    component_list_upper_pd = pd.Series([x.upper() for x in component_list]).replace(translate_dict, regex=True)
     
     def extract_component(ds):
         #https://github.com/pydata/xarray/issues/1380
@@ -140,9 +140,35 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
             ds = ds.sortby('lon')
         return ds
     
-    #use open_mfdataset() with preprocess argument to open all requested FES files into one Dataset
-    file_list_nc = [str(dir_pattern).replace('*',comp) for comp in component_list]
-    data_xrsel = xr.open_mfdataset(file_list_nc, combine='nested', concat_dim='compno', preprocess=extract_component)
+    if 'tpxo80' in str(dir_pattern):
+        ds = xr.open_dataset(dir_pattern)
+        bool_land = ds.depth==0
+        ds['tidal_amplitude_h'] = ds['tidal_amplitude_h'].where(~bool_land).assign_attrs({'units':'m'})
+        ds['tidal_phase_h'] = ds['tidal_phase_h'].where(~bool_land).assign_attrs({'units':'degrees'})
+        convert_360to180 = (ds['lon'].to_numpy()>180).any()
+        if convert_360to180:
+            ds.coords['lon'] = (ds.coords['lon'] + 180) % 360 - 180
+            ds = ds.sortby('lon')
+        ds = ds.rename({'tidal_amplitude_h':'amplitude','tidal_phase_h':'phase','constituents':'compno'})
+        ds = ds.drop_dims(['lon_u','lon_v','lat_u','lat_v'])
+        components_infile = ds['tidal_constituents'].load().str.decode('utf-8',errors='ignore').str.strip().str.upper()
+        ds['compnames'] = components_infile
+        ds = ds.set_index({'compno':'compnames'})
+        if component_list is not None:
+            ds = ds.sel(compno=component_list)
+        else:
+            component_list = list(components_infile.to_numpy())
+        data_xrsel = ds
+    else:
+        if component_list is None:
+            file_list_nc = glob.glob(str(dir_pattern))
+            dir_pattern_basename = os.path.basename(dir_pattern)
+            replace = dir_pattern_basename.split('*')
+            component_list = [os.path.basename(x).replace(replace[0],'').replace(replace[1],'') for x in file_list_nc] #TODO: make this less hard-coded
+        
+        #use open_mfdataset() with preprocess argument to open all requested FES files into one Dataset
+        file_list_nc = [str(dir_pattern).replace('*',comp) for comp in component_list]
+        data_xrsel = xr.open_mfdataset(file_list_nc, combine='nested', concat_dim='compno', preprocess=extract_component)
     data_xrsel = data_xrsel.rename({'lon':'longitude','lat':'latitude'})
     
     #derive uv phase components (using amplitude=1)
@@ -150,7 +176,9 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
     #we need to compute u/v components for the phase to avoid zero-crossing interpolation issues
     data_xrsel['phase_u'] = 1*np.cos(data_xrsel_phs_rad)
     data_xrsel['phase_v'] = 1*np.sin(data_xrsel_phs_rad)
+    component_list_upper_pd = pd.Series([x.upper() for x in component_list]).replace(translate_dict, regex=True).values
     data_xrsel['compnames'] = xr.DataArray(component_list_upper_pd,dims=('compno')) #TODO: convert to proper string variable
+    data_xrsel = data_xrsel.set_index({'compno':'compnames'})
     
     #convert cm to m
     if data_xrsel['amplitude'].attrs['units'] == 'cm':
@@ -159,10 +187,7 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
     
     data_interp = interp_regularnc_to_plipoints(data_xr_reg=data_xrsel, file_pli=file_pli, nPoints=nPoints)
     data_interp['phase_new'] = np.rad2deg(np.arctan2(data_interp['phase_v'],data_interp['phase_u']))
-    
-    ForcingModel_object = plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
-    
-    return ForcingModel_object
+    return data_interp
 
 
 def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=None, refdate_str=None, reverse_depth=False, chunks=None):
