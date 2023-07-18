@@ -17,7 +17,9 @@ file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True) #zlayer
 # file_nc = r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0*_map.nc' #fullgrid
 # file_nc = r'p:\archivedprojects\11203379-005-mwra-updated-bem\03_model\02_final\A72_ntsu0_kzlb2\DFM_OUTPUT_MB_02\MB_02_0*_map.nc'
 
-uds = dfmt.open_partitioned_dataset(file_nc.replace('0*','0000')) #.isel(time=0)
+uds = dfmt.open_partitioned_dataset(file_nc.replace('0*','0000'))
+if 'RMM_dflowfm' in file_nc:
+    uds = uds.isel(time=[-1])
 
 uds_edges = dfmt.Dataset_varswithdim(uds, uds.grid.edge_dimension)
 
@@ -37,8 +39,7 @@ mesh2d_var = uds.grid.to_dataset().mesh2d
 print('construct indexer')
 dimn_faces = uds.grid.face_dimension
 dimn_maxfn = mesh2d_var.attrs['max_face_nodes_dimension']
-dimn_interface = mesh2d_var.attrs['interface_dimension']
-dimn_layer = mesh2d_var.attrs['layer_dimension']
+dimn_layer, dimn_interface = dfmt.get_vertical_dimensions(uds)
 dimn_edges = uds.grid.edge_dimension
 fill_value = uds.grid.fill_value
 
@@ -69,7 +70,7 @@ if dimn_interface in edgevar_tofaces_onint.dims:
     #rename int to lay dimension and re-assign variable attributes
     edgevar_tofaces = edgevar_tofaces.rename({dimn_interface:dimn_layer}).assign_attrs(edgevar_tofaces_onint_step1.attrs)
 else:
-    edgevar_tofaces = edgevar_tofaces_onint
+    edgevar_tofaces = edgevar_tofaces_onint.assign_attrs(edgevar_tofaces_onint_step1.attrs)
 
 fig,ax = plt.subplots()
 edgevar_tofaces.isel(time=-1,nmesh2d_layer=-1,mesh2d_nLayers=-1,missing_dims='ignore').ugrid.plot()
