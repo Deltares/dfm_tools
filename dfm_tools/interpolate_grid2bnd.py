@@ -131,8 +131,6 @@ def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoi
             ds = ds.rename({'x':'lon','y':'lat'})
         else:
             compname = os.path.basename(ds.encoding["source"]).replace('.nc','')
-        #compnumber = [component_list.index(compname)]
-        #ds = ds.assign(compno=compnumber)
         
         convert_360to180 = (ds['lon'].to_numpy()>180).any()
         if convert_360to180: # results in large chunks if it is done after concatenation, so do for each file before concatenation
