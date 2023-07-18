@@ -143,7 +143,7 @@ def Dataset_to_Astronomic(datablock_xr):
     locationname = datablock_xr['amplitude'].attrs['locationname']
         
     #get datablock and concatenate with component names
-    datablock_np_cna = datablock_xr['compnames'].to_numpy()[:,np.newaxis]
+    datablock_np_cna = datablock_xr['compno'].to_numpy()[:,np.newaxis]
     datablock_np_amp = datablock_xr['amplitude'].to_numpy()[:,np.newaxis]
     datablock_np_phs = datablock_xr['phase_new'].to_numpy()[:,np.newaxis]
     datablock_inclcomp = np.concatenate([datablock_np_cna,datablock_np_amp,datablock_np_phs],axis=1)
