@@ -390,7 +390,7 @@ def open_dataset_delft3d4(file_nc, **kwargs):
     return uds
 
 
-def uda_edge_to_faces(uda_edge : xu.UgridDataArray) -> xu.UgridDataArray:
+def uda_edges_to_faces(uda_edge : xu.UgridDataArray) -> xu.UgridDataArray:
     """
     Interpolates a ugrid variable (xu.DataArray) with an edge dimension to the faces by averaging the 3/4 edges around each face.
     Since edge variables are mostly defined on interfaces, it also interpolates from interfaces to layers
