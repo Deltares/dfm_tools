@@ -418,7 +418,7 @@ def uda_edges_to_faces(uda_edge : xu.UgridDataArray) -> xu.UgridDataArray:
     dimn_edges = uda_edge.grid.edge_dimension
     fill_value = uda_edge.grid.fill_value
     
-    if not dimn_edges in uda_edge.sizes:
+    if dimn_edges not in uda_edge.sizes:
         raise KeyError(f'varname "{uda_edge.name}" does not have an edge dimension ({dimn_edges})')
     
     # construct indexing array
