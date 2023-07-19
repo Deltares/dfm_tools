@@ -388,3 +388,67 @@ def open_dataset_delft3d4(file_nc, **kwargs):
     uds = uds.drop_dims(['MC','NC']) #clean up dataset by dropping corner dims (drops also variabes with U/V masks and U/V/C bedlevel)
     
     return uds
+
+
+def uda_edge_to_faces(uda_edge : xu.UgridDataArray) -> xu.UgridDataArray:
+    """
+    Interpolates a ugrid variable (xu.DataArray) with an edge dimension to the faces by averaging the 3/4 edges around each face.
+    Since edge variables are mostly defined on interfaces, it also interpolates from interfaces to layers
+
+    Parameters
+    ----------
+    uda_edge : xu.UgridDataArray
+        DESCRIPTION.
+
+    Raises
+    ------
+    KeyError
+        DESCRIPTION.
+
+    Returns
+    -------
+    uda_face : xu.UgridDataArray
+        DESCRIPTION.
+
+    """
+    
+    dimn_faces = uda_edge.grid.face_dimension
+    dimn_maxfn = 'nMax_face_nodes' #arbitrary dimname that is reduced anyway
+    dimn_layer, dimn_interface = get_vertical_dimensions(uda_edge)
+    dimn_edges = uda_edge.grid.edge_dimension
+    fill_value = uda_edge.grid.fill_value
+    
+    if not dimn_edges in uda_edge.sizes:
+        raise KeyError(f'varname "{uda_edge.name}" does not have an edge dimension ({dimn_edges})')
+    
+    # construct indexing array
+    data_fec = xr.DataArray(uda_edge.grid.face_edge_connectivity,dims=(dimn_faces,dimn_maxfn))
+    data_fec_validbool = data_fec!=fill_value
+    data_fec = data_fec.where(data_fec_validbool,-1)
+    
+    print('edge-to-face interpolation: ',end='')
+    dtstart = dt.datetime.now()
+    # for each face, select all corresponding edge values (this takes some time)
+    uda_face_onint_alledges = uda_edge.isel({dimn_edges:data_fec})
+    # replace nonexistent edges with nan
+    uda_face_onint_alledges = uda_face_onint_alledges.where(data_fec_validbool) #replace all values for fillvalue edges (-1) with nan
+    # average edge values per face
+    uda_face_onint = uda_face_onint_alledges.mean(dim=dimn_maxfn,keep_attrs=True)
+    #update attrs from edge to face
+    face_attrs = {'location': 'face', 'cell_methods': f'{dimn_faces}: mean'}
+    uda_face_onint = uda_face_onint.assign_attrs(face_attrs)
+    print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
+    
+    
+    if dimn_interface in uda_edge.dims:
+        # define layers to be halfway inbetween the interfaces
+        nlayers = uda_edge.sizes[dimn_interface] - 1
+        array_shift_half = xr.DataArray(np.arange(0.5,nlayers),dims=dimn_layer)
+        # interpolate from interfaces to layers
+        uda_face = uda_face_onint.interp({dimn_interface:array_shift_half},assume_sorted=True)
+        # drop interface coordinate
+        uda_face = uda_face.drop(dimn_interface)
+    else:
+        uda_face = uda_face_onint
+    return uda_face
+
