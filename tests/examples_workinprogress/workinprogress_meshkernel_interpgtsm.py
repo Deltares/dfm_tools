@@ -21,7 +21,7 @@ ds_gebco['lon'].values[0] = -180 #replace -179.99791667 with -180
 ds_gebco['lat'].values[-1] = 90 #replace 89.99791667 with 90
 ds_gebco = ds_gebco.set_index({'lat':'lat','lon':'lon'})
 
-file_net = r'p:\1230882-emodnet_hrsm\global_tide_surge_model\trunk\gtsm4.1\step11_global_1p25eu_withcellinfo_net.nc'
+file_net = r'p:\1230882-emodnet_hrsm\global_tide_surge_model\trunk\gtsm4.1\step11_global_1p25eu_net.nc'
 uds = xu.open_dataset(file_net)
 nnodes = uds.dims[uds.grid.node_dimension]
 
