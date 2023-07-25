@@ -15,6 +15,7 @@ from dfm_tools import open_partitioned_dataset, preprocess_hisnc, open_dataset_d
 import tarfile
 import glob
 import warnings
+import getpass
 
 
 def get_dir_testdata():
@@ -257,7 +258,7 @@ def gshhs_coastlines_shp() -> str:
     return dir_gshhs
 
 
-def fm_singularity_container(download_key):
+def fm_singularity_container():
     dir_testdata = get_dir_testdata()
     
     fname_zip = 'Stable_release.zip' # this can be any name, but is the default name from the download portal
@@ -265,7 +266,9 @@ def fm_singularity_container(download_key):
     dir_sif = os.path.join(dir_testdata,'delft3dfm_containers')
     
     #download zipfile if not present
-    if not os.path.exists(filepath_zip) and not os.path.exists(dir_sif):
+    if not os.path.exists(dir_sif):
+        download_key = getpass.getpass("Enter your deltares download key: ")
+        
         file_url = f'https://deltares.thegood.cloud/s/{download_key}/download'
         print(f'downloading "{fname_zip}" from deltares.thegood.cloud to cachedir')
         r = requests.get(file_url, allow_redirects=True)
