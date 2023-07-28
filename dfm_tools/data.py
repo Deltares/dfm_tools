@@ -263,10 +263,10 @@ def fm_singularity_container():
     
     fname_zip = 'Stable_release.zip' # this can be any name, but is the default name from the download portal
     filepath_zip = os.path.join(dir_testdata,fname_zip)
-    dir_sif = os.path.join(dir_testdata,'delft3dfm_containers')
+    dir_container = os.path.join(dir_testdata,'delft3dfm_container')
     
     #download zipfile if not present
-    if not os.path.exists(dir_sif):
+    if not os.path.exists(dir_container):
         download_key = getpass.getpass("Enter your deltares download key: ")
         
         file_url = f'https://deltares.thegood.cloud/s/{download_key}/download'
@@ -288,13 +288,9 @@ def fm_singularity_container():
         
         print(f'extracting "{fname_tar}"')
         with tarfile.open(filepath_tar, 'r:gz') as tar_ref:
-            #file_list = tar_ref.list()
-            tar_ref.extractall(dir_sif)
+            tar_ref.extractall(dir_container)
     
-    filepath_sif_list = glob.glob(os.path.join(dir_sif,'*.sif'))
-    if len(filepath_sif_list)==0:
-        raise Exception(f'no delft3dfm container (.sif file) found in {dir_sif}')
-    elif len(filepath_sif_list)>1:
-        warnings.warn(UserWarning(f'multiple delft3dfm containers found (.sif file) found, currenly using first one:\n{filepath_sif_list}'))
-    filepath_sif = filepath_sif_list[0]
-    return filepath_sif
+    filepath_sif_list = glob.glob(os.path.join(dir_container,'*.sif'))
+    if len(filepath_sif_list)!=1:
+        raise ValueError(f'no or multiple delft3dfm singularity containers (.sif file) found:\n{filepath_sif_list}')
+    return dir_container
