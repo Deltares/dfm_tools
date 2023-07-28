@@ -38,7 +38,7 @@ def get_vertical_dimensions(uds): #TODO: maybe add layer_dimension and interface
         return None, None
 
 
-def remove_ghostcells(uds): #TODO: create JIRA issue: remove ghostcells from output (or make values in ghostcells the same as not-ghostcells, is now not the case for velocities, probably due to edge-to-center interpolation)
+def remove_ghostcells(uds): #TODO: remove ghostcells from output or align values between (non)ghost cells: https://issuetracker.deltares.nl/browse/UNST-6701
     """
     Dropping ghostcells if there is a domainno variable present and there is a domainno in the filename.
     Not using most-occurring domainno in var, since this is not a valid assumption for merged datasets and might be invalid for a very small partition.
@@ -58,7 +58,7 @@ def remove_ghostcells(uds): #TODO: create JIRA issue: remove ghostcells from out
         print('[nodomainfname] ',end='')
         return uds
     fname_splitted = fname.split('_')
-    part_domainno_fromfname = fname_splitted[-2] #this is not valid for rstfiles (date follows after partnumber), but they cannot be read with xugrid anyway since they are mapformat=1
+    part_domainno_fromfname = fname_splitted[-2] #this is not valid for rstfiles (date follows after partnumber), but they cannot be read with xugrid anyway since they lack topology and node_x/node_y variables
     if not part_domainno_fromfname.isnumeric() or len(part_domainno_fromfname)!=4:
         print('[nodomainfname] ',end='')
         return uds
