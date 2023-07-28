@@ -110,12 +110,13 @@ def remove_unassociated_edges(ds: xr.Dataset, topology: str = None) -> xr.Datase
     if topology is None:
         topology = xu.ugrid.ugridbase.AbstractUgrid._single_topology(ds)
     
-    # Collect names
+    # collect names
     connectivity = ds.ugrid_roles.connectivity[topology]
     dimensions = ds.ugrid_roles.dimensions[topology]
     
+    # return original dataset in case of 1D topology, it contains no fnc
     if 'face_node_connectivity' not in connectivity:
-        print('Topology contains no face_node_connectivity, so unassociated edges cannot be removed, returning original ds')
+        print('[1D topology] ',end='')
         return ds
     
     enc = ds[connectivity['edge_node_connectivity']].to_numpy()
