@@ -266,7 +266,7 @@ def fm_singularity_container():
     dir_container = os.path.join(dir_testdata,'delft3dfm_container')
     
     #download zipfile if not present
-    if not os.path.exists(dir_container):
+    if not os.path.exists(dir_container) and not os.path.exists(filepath_zip):
         download_key = getpass.getpass("Enter your deltares download key: ")
         
         file_url = f'https://deltares.thegood.cloud/s/{download_key}/download'
@@ -276,6 +276,7 @@ def fm_singularity_container():
         with open(filepath_zip, 'wb') as f:
             f.write(r.content)
         
+    if not os.path.exists(dir_container):
         print(f'extracting "{fname_zip}"')
         with zipfile.ZipFile(filepath_zip, 'r') as zip_ref:
             file_list = zip_ref.namelist()
@@ -287,7 +288,7 @@ def fm_singularity_container():
         fname_tar = os.path.basename(filepath_tar)
         
         print(f'extracting "{fname_tar}"')
-        with tarfile.open(filepath_tar, 'r:gz') as tar_ref:
+        with tarfile.open(filepath_tar, 'r') as tar_ref:
             tar_ref.extractall(dir_container)
     
     filepath_sif_list = glob.glob(os.path.join(dir_container,'*.sif'))
