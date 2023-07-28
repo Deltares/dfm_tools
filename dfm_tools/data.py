@@ -288,8 +288,8 @@ def fm_singularity_container():
         fname_tar = os.path.basename(filepath_tar)
         
         print(f'extracting "{fname_tar}"')
-        with tarfile.open(filepath_tar, 'r') as tar_ref:
-            tar_ref.extractall(dir_container)
+        with tarfile.open(filepath_tar, 'r:gz') as tar_ref:
+            tar_ref.extractall(dir_container, filter='data')
     
     filepath_sif_list = glob.glob(os.path.join(dir_container,'*.sif'))
     if len(filepath_sif_list)!=1:
