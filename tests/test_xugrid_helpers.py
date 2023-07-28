@@ -26,6 +26,14 @@ def test_remove_unassociated_edges():
     assert ds2_edgedimsize == ds_edgedimsize-1
 
 
+@pytest.mark.requireslocaldata
+@pytest.mark.unittest
+def test_open_2Dnetwork_with_1Dtopology():
+    file_nc = r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DCSM-FM_0_5nm_grid_20191202_depth_20181213_net.nc'
+    uds = dfmt.open_partitioned_dataset(file_nc)
+    assert isinstance(uds.grid, xu.ugrid.ugrid1d.Ugrid1d)
+
+
 @pytest.mark.systemtest
 def test_uda_edges_to_faces_interfaces_to_centers():
     file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True) #zlayer
@@ -60,4 +68,3 @@ def test_uda_edges_to_faces_interfaces_to_centers():
         assert uda_face.dims == uds_face_dims_expected
     
         assert (np.abs(uda_face_sel.to_numpy()-uda_face_sel_expected)<1e-6).all()
-
