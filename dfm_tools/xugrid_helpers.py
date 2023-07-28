@@ -58,7 +58,7 @@ def remove_ghostcells(uds): #TODO: remove ghostcells from output or align values
         print('[nodomainfname] ',end='')
         return uds
     fname_splitted = fname.split('_')
-    part_domainno_fromfname = fname_splitted[-2] #this is not valid for rstfiles (date follows after partnumber), but they cannot be read with xugrid anyway since they lack topology and node_x/node_y variables
+    part_domainno_fromfname = fname_splitted[-2] #this is not valid for rstfiles (date follows after partnumber), but they cannot be read with xugrid anyway since they lack topology and node_x/node_y variables: https://issuetracker.deltares.nl/browse/UNST-7176
     if not part_domainno_fromfname.isnumeric() or len(part_domainno_fromfname)!=4:
         print('[nodomainfname] ',end='')
         return uds
