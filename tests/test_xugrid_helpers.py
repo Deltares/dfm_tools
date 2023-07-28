@@ -26,8 +26,8 @@ def test_remove_unassociated_edges():
     assert ds2_edgedimsize == ds_edgedimsize-1
 
 
-@pytest.mark.unittest
-def test_uda_edges_to_faces():
+@pytest.mark.systemtest
+def test_uda_edges_to_faces_interfaces_to_centers():
     file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True) #zlayer
     
     uds = xu.open_dataset(file_nc.replace('0*','0002')) #partition 0002 of grevelingen contains both triangles as squares
@@ -39,8 +39,9 @@ def test_uda_edges_to_faces():
         #edge_type array is completely different when masking is forgotten (when uda contains both triangles and squares)
         uda_edge = uds[varn_edge]
         
-        uda_face = dfmt.uda_edges_to_faces(uda_edge)
-        
+        uda_face_int = dfmt.uda_edges_to_faces(uda_edge)
+        uda_face = dfmt.uda_interfaces_to_centers(uda_face_int)
+
         if varn_edge == 'mesh2d_vicwwu':
             uda_face_sel = uda_face.isel({'time':-1, dimn_faces:slice(None,20), dimn_layer:-1})
             uda_face_sel_expected = np.array([0.000385  , 0.00036918, 0.00037161, 0.00055217, 0.00048461,

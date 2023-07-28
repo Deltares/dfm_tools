@@ -414,7 +414,6 @@ def uda_edges_to_faces(uda_edge : xu.UgridDataArray) -> xu.UgridDataArray:
     
     dimn_faces = uda_edge.grid.face_dimension
     dimn_maxfn = 'nMax_face_nodes' #arbitrary dimname that is reduced anyway
-    dimn_layer, dimn_interface = get_vertical_dimensions(uda_edge)
     dimn_edges = uda_edge.grid.edge_dimension
     fill_value = uda_edge.grid.fill_value
     
@@ -429,26 +428,32 @@ def uda_edges_to_faces(uda_edge : xu.UgridDataArray) -> xu.UgridDataArray:
     print('edge-to-face interpolation: ',end='')
     dtstart = dt.datetime.now()
     # for each face, select all corresponding edge values (this takes some time)
-    uda_face_onint_alledges = uda_edge.isel({dimn_edges:data_fec})
+    uda_face_alledges = uda_edge.isel({dimn_edges:data_fec})
     # replace nonexistent edges with nan
-    uda_face_onint_alledges = uda_face_onint_alledges.where(data_fec_validbool) #replace all values for fillvalue edges (-1) with nan
+    uda_face_alledges = uda_face_alledges.where(data_fec_validbool) #replace all values for fillvalue edges (-1) with nan
     # average edge values per face
-    uda_face_onint = uda_face_onint_alledges.mean(dim=dimn_maxfn,keep_attrs=True)
+    uda_face = uda_face_alledges.mean(dim=dimn_maxfn,keep_attrs=True)
     #update attrs from edge to face
     face_attrs = {'location': 'face', 'cell_methods': f'{dimn_faces}: mean'}
-    uda_face_onint = uda_face_onint.assign_attrs(face_attrs)
+    uda_face = uda_face.assign_attrs(face_attrs)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
-    
-    if dimn_interface in uda_edge.dims:
-        # define layers to be halfway inbetween the interfaces
-        nlayers = uda_edge.sizes[dimn_interface] - 1
-        array_shift_half = xr.DataArray(np.arange(0.5,nlayers),dims=dimn_layer)
-        # interpolate from interfaces to layers
-        uda_face = uda_face_onint.interp({dimn_interface:array_shift_half},assume_sorted=True)
-        # drop interface coordinate
-        uda_face = uda_face.drop(dimn_interface)
-    else:
-        uda_face = uda_face_onint
     return uda_face
 
+
+def uda_interfaces_to_centers(uda_int : xu.UgridDataArray) -> xu.UgridDataArray:
+    dimn_layer, dimn_interface = get_vertical_dimensions(uda_int)
+    
+    if dimn_interface not in uda_int.dims:
+        print('no interface dimension found, returning original array')
+        return uda_int
+        
+    # define layers to be halfway inbetween the interfaces
+    nlayers = uda_int.sizes[dimn_interface] - 1
+    array_shift_half = xr.DataArray(np.arange(0.5,nlayers),dims=dimn_layer)
+    # interpolate from interfaces to layers
+    uda_cen = uda_int.interp({dimn_interface:array_shift_half},assume_sorted=True)
+    # drop interface coordinate
+    uda_cen = uda_cen.drop(dimn_interface)
+    
+    return uda_cen
