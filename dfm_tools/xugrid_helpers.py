@@ -107,8 +107,9 @@ def remove_unassociated_edges(ds: xr.Dataset, topology: str = None) -> xr.Datase
 
     """
     
-    uds = xu.core.wrap.UgridDataset(ds)
-    if hasattr(uds.grid,'validate_edge_node_connectivity'): #available in xugrid>0.6.2
+    test_grid = xu.Ugrid2d
+    if hasattr(test_grid,'validate_edge_node_connectivity'): #available in xugrid>0.6.2
+        uds = xu.core.wrap.UgridDataset(ds)
         associated = uds.grid.validate_edge_node_connectivity()
         edge_dimension = uds.grid.edge_dimension
     else: #workaround for xugrid<=0.6.2 #TODO: remove this when new xugrid release is available
