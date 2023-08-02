@@ -130,7 +130,7 @@ def remove_unassociated_edges(ds: xr.Dataset, topology: str = None) -> xr.Datase
     return ds
 
 
-def add_default_fillvals(ds):
+def decode_default_fillvals(ds):
     """
     xarray only supports explicitly set _FillValue attrs, and therefore ignores the default netCDF4 fillvalue
     This function adds the default fillvalue as _FillValue attribute and decodes the dataset again.
@@ -205,7 +205,7 @@ def open_partitioned_dataset(file_nc, add_fillvals=False, remove_ghost=True, **k
         print(iF+1,end=' ')
         ds = xr.open_dataset(file_nc_one, **kwargs)
         if add_fillvals:
-            ds = add_default_fillvals(ds)
+            ds = decode_default_fillvals(ds)
         ds = remove_unassociated_edges(ds)
         if 'nFlowElem' in ds.dims and 'nNetElem' in ds.dims: #for mapformat1 mapfiles: merge different face dimensions (rename nFlowElem to nNetElem) to make sure the dataset topology is correct
             print('[mapformat1] ',end='')
