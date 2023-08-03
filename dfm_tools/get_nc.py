@@ -39,8 +39,7 @@ import xugrid as xu
 import xarray as xr
 import matplotlib.pyplot as plt
 from dfm_tools.xarray_helpers import Dataset_varswithdim
-from dfm_tools.xugrid_helpers import get_vertical_dimensions
-import netCDF4
+from dfm_tools.xugrid_helpers import get_vertical_dimensions, decode_default_fillvals
 
 
 def calc_dist_pythagoras(x1,x2,y1,y2):
@@ -276,9 +275,11 @@ def reconstruct_zw_zcc_fromzsigma(uds):
     reconstruct full grid output (time/face-varying z-values) for zsigmavalue model without full grid output. Implemented in https://issuetracker.deltares.nl/browse/UNST-5477
     based on https://cfconventions.org/cf-conventions/cf-conventions.html#_ocean_sigma_over_z_coordinate
     """
-    #TODO: center values are clipped to bedlevel, so the center values of the bottom layer are currently incorrect
-    #TODO: default fillvalues are not automatically parsed to nan, so doing it manually: https://github.com/pydata/xarray/issues/2742
-    fillvals = netCDF4.default_fillvals
+    # TODO: center values are clipped to bedlevel, so the center values of the bottom layer are currently incorrect
+    
+    # temporarily decode default fillvalues
+    # TODO: xarray only decodes explicitly set fillvalues: https://github.com/Deltares/dfm_tools/issues/490
+    uds = xu.UgridDataset(decode_default_fillvals(uds.obj),grids=[uds.grid])
     
     osz_formulaterms_int_dict = get_formula_terms(uds,varn_contains='interface')
     osz_formulaterms_lay_dict = get_formula_terms(uds,varn_contains='layer')
@@ -287,13 +288,9 @@ def reconstruct_zw_zcc_fromzsigma(uds):
     uds_depth = uds[osz_formulaterms_int_dict['depth']] #mesh2d_bldepth: positive version of mesh2d_flowelem_bl, but this one is always in file
     uds_depth_c = uds[osz_formulaterms_int_dict['depth_c']] #mesh2d_sigmazdepth
     uds_zlev_int = uds[osz_formulaterms_int_dict['zlev']] #mesh2d_interface_z
-    uds_zlev_int = uds_zlev_int.where(uds_zlev_int!=fillvals['f8'])
     uds_sigma_int = uds[osz_formulaterms_int_dict['sigma']] #mesh2d_interface_sigma
-    uds_sigma_int = uds_sigma_int.where(uds_sigma_int!=fillvals['f8'])
     uds_zlev_lay = uds[osz_formulaterms_lay_dict['zlev']] #mesh2d_layer_z
-    uds_zlev_lay = uds_zlev_lay.where(uds_zlev_lay!=fillvals['f8'])
     uds_sigma_lay = uds[osz_formulaterms_lay_dict['sigma']] #mesh2d_layer_sigma
-    uds_sigma_lay = uds_sigma_lay.where(uds_sigma_lay!=fillvals['f8'])
     
     # for levels k where sigma(k) has a defined value and zlev(k) is not defined:
     # z(n,k,j,i) = eta(n,j,i) + sigma(k)*(min(depth_c,depth(j,i))+eta(n,j,i))
