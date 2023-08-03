@@ -101,3 +101,52 @@ def test_xarray_interp_to_newdim():
     assert (interp_with_floats.isnull()==interp_with_da_existing.isnull()).all() #success
     assert (interp_with_floats.isnull()==interp_with_da_newdim.isnull()).all() #fails with scipy>=1.10.0
 
+
+@pytest.mark.unittest
+def test_xarray_decode_default_fillvals():
+    """
+    This test will fail as soon as xarray handles default fillvalues: https://github.com/Deltares/dfm_tools/issues/490
+    After that, the minimum xarray requirement can be updated
+    However, py38 support must then be dropped: https://github.com/Deltares/dfm_tools/issues/267
+    In that case, this testcase and `dfmt.decode_default_fillvals()` can be removed 
+    """
+    
+    import dfm_tools as dfmt
+    import xarray as xr
+    from netCDF4 import default_fillvals
+    
+    file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True)
+    file_nc = file_nc.replace('_0*','_0002')
+    
+    ds = xr.open_dataset(file_nc,decode_cf=False)
+    
+    #convert fillvalue in fnc to default fillvalue
+    varn_fnc = 'mesh2d_face_nodes'
+    fnc_dtype = ds[varn_fnc].dtype.str[1:]
+    fill_value = ds[varn_fnc].attrs['_FillValue']
+    fill_value_default = default_fillvals[fnc_dtype]
+    ds[varn_fnc].attrs.pop('_FillValue')
+    ds[varn_fnc] = ds[varn_fnc].where(ds[varn_fnc]!=fill_value,fill_value_default)
+    
+    #write file
+    file_out = 'fnc_default_fillvals_map.nc'
+    ds.to_netcdf(file_out)
+    ds.close()
+    
+    #open dataset with decode_fillvals
+    try:
+        uds = dfmt.open_partitioned_dataset(file_out,decode_fillvals=False)
+    except Exception as e:
+        # this raises "ValueError: connectivity contains negative values"
+        # until xarray handles default fillvalues: https://github.com/Deltares/dfm_tools/issues/490
+        assert isinstance(e,ValueError)
+    if 'uds' in locals():
+        raise Exception("apparently xarray now decodes default fillvalues, so "
+                        "`dfmt.decode_default_fillvals()` can be removed if minimum xarray "
+                        "version is set as requirement")
+    
+    #this should be successful
+    uds = dfmt.open_partitioned_dataset(file_out,decode_fillvals=True)
+    fnc_new = uds.grid.face_node_connectivity
+    
+    assert fill_value_default in fnc_new
