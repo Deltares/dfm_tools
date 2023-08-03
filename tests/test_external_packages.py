@@ -102,7 +102,15 @@ def test_xarray_interp_to_newdim():
     assert (interp_with_floats.isnull()==interp_with_da_newdim.isnull()).all() #fails with scipy>=1.10.0
 
 
+@pytest.mark.unittest
 def test_xarray_decode_default_fillvals():
+    """
+    This test will fail as soon as xarray handles default fillvalues: https://github.com/Deltares/dfm_tools/issues/490
+    After that, the minimum xarray requirement can be updated
+    However, py38 support must then be dropped: https://github.com/Deltares/dfm_tools/issues/267
+    In that case, this testcase and `dfmt.decode_default_fillvals()` can be removed 
+    """
+    
     import dfm_tools as dfmt
     import xarray as xr
     from netCDF4 import default_fillvals
