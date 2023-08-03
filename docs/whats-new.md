@@ -1,6 +1,7 @@
 ## Unreleased
 
 ### Feat
+- aquire cfname from ECMWF parameter database with `dfmt.get_ecmwf_cfname_from_shortname()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#499](https://github.com/Deltares/dfm_tools/pull/499)
 - decoding of default fillvalues with `dfmt.decode_default_fillvals()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#496](https://github.com/Deltares/dfm_tools/pull/496)
 - interpolation of edge variables to faces with `dfmt.uda_edges_to_faces()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#482](https://github.com/Deltares/dfm_tools/pull/482)
 - interpolation of variables on layer interfaces to layer centers with `dfmt.uda_interfaces_to_centers()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#482](https://github.com/Deltares/dfm_tools/pull/482)
