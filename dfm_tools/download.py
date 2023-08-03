@@ -65,11 +65,14 @@ def get_ecmwf_cfname_from_shortname(param_shortname:str) -> str:
 
     """
     
-    param_df = get_ecmwf_paramdb_netcdf()
-    param_df = param_df.set_index('param_shortName')
-    if param_shortname not in param_df.index:
-        raise KeyError(f'"{param_shortname}" not available in ECMWF NetCDF params-db')
-    param_id = param_df.loc[param_shortname,'param_id']
+    paramdb_df = get_ecmwf_paramdb_netcdf()
+    paramdb_df = paramdb_df.set_index('param_shortName')
+    paramdb_df = paramdb_df.sort_index()
+    shortname_list = paramdb_df.index.tolist()
+    shortname_list_str = ", ".join(shortname_list)
+    if param_shortname not in paramdb_df.index:
+        raise KeyError(f'"{param_shortname}" not available in ECMWF NetCDF params-db, choose from: {shortname_list_str}')
+    param_id = paramdb_df.loc[param_shortname,'param_id']
     
     url = f'https://codes.ecmwf.int/grib/param-db/?id={param_id}'
     response = urlopen(url)
@@ -91,38 +94,19 @@ def download_ERA5(varkey,
     """
     
     #TODO: describe something about the .cdsapirc file
-    #TODO: make this function cdsapi generic, instead of ERA5 hardcoded (make flexible for product_type/name/name_output) (variables_dict is not used actively anymore, so this is possible)
+    #TODO: make this function cdsapi generic, instead of ERA5 hardcoded (make flexible for product_type/name/name_output)
     
     # create $HOME/.cdsapirc if it does not exist
     cds_credentials()
     
-    c = cdsapi.Client() # import cdsapi and create a Client instance # https://cds.climate.copernicus.eu/api-how-to
+    # create a cdsapi Client instance # https://cds.climate.copernicus.eu/api-how-to
+    c = cdsapi.Client()
     
-    #dictionary with ERA5 variables #this is not actively used
-    variables_dict = {'ssr':'surface_net_solar_radiation',
-                      'sst':'sea_surface_temperature',
-                      'strd':'surface_thermal_radiation_downwards',
-                      'slhf':'surface_latent_heat_flux',
-                      'sshf':'surface_sensible_heat_flux',
-                      'str':'surface_net_thermal_radiation',
-                      'chnk':'charnock',
-                      'd2m':'2m_dewpoint_temperature',
-                      't2m':'2m_temperature',
-                      'tcc':'total_cloud_cover',
-                      'msl':'mean_sea_level_pressure',
-                      'u10':'10m_u_component_of_wind',
-                      'u10n':'10m_u_component_of_neutral_wind',
-                      'v10':'10m_v_component_of_wind',
-                      'v10n':'10m_v_component_of_neutral_wind',
-                      'mer':'mean_evaporation_rate',
-                      'mtpr':'mean_total_precipitation_rate',
-                      'p140209':'air_density_over_the_oceans', # TODO: paramID might be replaced with shortname rhoao: https://jira.ecmwf.int/plugins/servlet/desk/portal/4/SD-82050
-                      }
-    if varkey not in variables_dict.keys(): #TODO: how to get list of available vars? mean_sea_level_pressure and msl both return a dataset with msl varkey, but standard_name air_pressure_at_mean_sea_level returns an error
-        raise KeyError(f'"{varkey}" not available, choose from: {list(variables_dict.keys())}')
+    #get param_cfname from param_shortname
+    param_cfname = get_ecmwf_cfname_from_shortname(varkey)
     
     period_range = pd.period_range(date_min,date_max,freq='M')
-    print(f'retrieving data from {period_range[0]} to {period_range[-1]} (freq={period_range.freq})')
+    print(f'retrieving "{param_cfname}" data from {period_range[0]} to {period_range[-1]} (freq={period_range.freq})')
     
     #make sure the data fully covers the desired spatial extent. Download 1 additional grid cell (resolution is 1/4 degrees) in both directions
     longitude_min -= 1/4
@@ -139,7 +123,7 @@ def download_ERA5(varkey,
         print (f'retrieving ERA5 data for variable "{varkey}" and month {date.strftime("%Y-%m")} (YYYY-MM)')
 
         request_dict = {'product_type':'reanalysis',
-                        'variable':variables_dict[varkey],
+                        'variable':param_cfname,
                         'year':date.strftime('%Y'),
                         'month':date.strftime('%m'),
                         #'month':[f'{x:02d}' for x in range(1,12+1)], #all months, but instead retrieving per month
