@@ -71,7 +71,7 @@ def get_ecmwf_cfname_from_shortname(param_shortname:str) -> str:
     shortname_list = paramdb_df.index.tolist()
     shortname_list_str = ", ".join(shortname_list)
     if param_shortname not in paramdb_df.index:
-        raise KeyError(f'"{param_shortname}" not available in ECMWF NetCDF params-db, choose from: {shortname_list_str}')
+        raise KeyError(f'shortname "{param_shortname}" not available in ECMWF NetCDF params-db, choose from: {shortname_list_str}')
     param_id = paramdb_df.loc[param_shortname,'param_id']
     
     url = f'https://codes.ecmwf.int/grib/param-db/?id={param_id}'
@@ -86,9 +86,9 @@ def get_ecmwf_cfname_from_shortname(param_shortname:str) -> str:
 
 
 def download_ERA5(varkey,
-                  longitude_min, longitude_max, latitude_min, latitude_max, 
+                  longitude_min, longitude_max, latitude_min, latitude_max,
                   date_min, date_max,
-                  dir_output='.', overwrite=False):
+                  dir_output='.', overwrite=False, add_buffer=True):
     """
     empty docstring
     """
@@ -106,13 +106,14 @@ def download_ERA5(varkey,
     param_cfname = get_ecmwf_cfname_from_shortname(varkey)
     
     period_range = pd.period_range(date_min,date_max,freq='M')
-    print(f'retrieving "{param_cfname}" data from {period_range[0]} to {period_range[-1]} (freq={period_range.freq})')
+    print(f'retrieving ERA5 "{varkey}"/"{param_cfname}" data from {period_range[0]} to {period_range[-1]} (freq={period_range.freq})')
     
     #make sure the data fully covers the desired spatial extent. Download 1 additional grid cell (resolution is 1/4 degrees) in both directions
-    longitude_min -= 1/4
-    longitude_max += 1/4
-    latitude_min  -= 1/4
-    latitude_max  += 1/4
+    if add_buffer:
+        longitude_min -= 1/4
+        longitude_max += 1/4
+        latitude_min  -= 1/4
+        latitude_max  += 1/4
     
     for date in period_range:
         name_output = f'era5_{varkey}_{date.strftime("%Y-%m")}.nc'
@@ -120,7 +121,7 @@ def download_ERA5(varkey,
         if file_out.is_file() and not overwrite:
             print(f'"{name_output}" found and overwrite=False, continuing.')
             continue
-        print (f'retrieving ERA5 data for variable "{varkey}" and month {date.strftime("%Y-%m")} (YYYY-MM)')
+        print (f'retrieving data for month {date.strftime("%Y-%m")} (YYYY-MM)')
 
         request_dict = {'product_type':'reanalysis',
                         'variable':param_cfname,
@@ -137,9 +138,9 @@ def download_ERA5(varkey,
 
 
 def download_CMEMS(varkey,
-                   longitude_min, longitude_max, latitude_min, latitude_max, 
+                   longitude_min, longitude_max, latitude_min, latitude_max,
                    date_min, date_max, freq='D',
-                   dir_output='.', file_prefix='', overwrite=False):
+                   dir_output='.', file_prefix='', overwrite=False, add_buffer=True):
     """
     empty docstring
     """
@@ -179,10 +180,11 @@ def download_CMEMS(varkey,
             dataset_url = 'https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_bgc_my_0.25_P1D-m' #contains ['chl','no3','nppv','o2','po4','si']
     
     #make sure the data fully covers the desired spatial extent. Download 2 additional grid cells (resolution is 1/12 degrees, but a bit more/less in alternating cells) in each direction
-    longitude_min -= 2/12
-    longitude_max += 2/12
-    latitude_min  -= 2/12
-    latitude_max  += 2/12
+    if add_buffer:
+        longitude_min -= 2/12
+        longitude_max += 2/12
+        latitude_min  -= 2/12
+        latitude_max  += 2/12
     
     download_OPeNDAP(dataset_url=dataset_url,
                      varkey=varkey,
