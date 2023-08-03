@@ -135,8 +135,9 @@ def decode_default_fillvals(ds):
     xarray only supports explicitly set _FillValue attrs, and therefore ignores the default netCDF4 fillvalue
     This function adds the default fillvalue as _FillValue attribute and decodes the dataset again.
     """
-    from netCDF4 import default_fillvals
     # TODO: this function can be removed when xarray does it automatically: https://github.com/Deltares/dfm_tools/issues/490
+    
+    from netCDF4 import default_fillvals
     nfillattrs_added = 0
     for varn in ds.variables:
         # TODO: possible to get always_mask boolean with `netCDF4.Dataset(file_nc).variables[varn].always_mask`, but this seems to be always True for FM mapfiles
@@ -149,6 +150,8 @@ def decode_default_fillvals(ds):
         ds[varn] = ds[varn].assign_attrs({'_FillValue':varn_fillval})
         nfillattrs_added += 1
     print(f'[{nfillattrs_added} default_fillvals added] ',end='')
+    
+    #decode the dataset with newly added _FillValue attrs again
     ds = xr.decode_cf(ds)
     return ds
 
