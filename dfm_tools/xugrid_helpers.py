@@ -135,11 +135,11 @@ def decode_default_fillvals(ds):
     xarray only supports explicitly set _FillValue attrs, and therefore ignores the default netCDF4 fillvalue
     This function adds the default fillvalue as _FillValue attribute and decodes the dataset again.
     """
+    from netCDF4 import default_fillvals
     # TODO: this function can be removed when xarray does it automatically: https://github.com/Deltares/dfm_tools/issues/490
     nfillattrs_added = 0
     for varn in ds.variables:
         # TODO: possible to get always_mask boolean with `netCDF4.Dataset(file_nc).variables[varn].always_mask`, but this seems to be always True for FM mapfiles
-        from netCDF4 import default_fillvals
         if '_FillValue' in ds[varn].encoding:
             continue
         dtype_str = ds[varn].dtype.str[1:]
@@ -153,7 +153,7 @@ def decode_default_fillvals(ds):
     return ds
 
 
-def open_partitioned_dataset(file_nc, add_fillvals=False, remove_ghost=True, **kwargs): 
+def open_partitioned_dataset(file_nc, decode_fillvals=False, remove_ghost=True, **kwargs): 
     """
     using xugrid to read and merge partitions, with some additional features (remaning old layerdim, timings, set zcc/zw as data_vars)
 
@@ -204,7 +204,7 @@ def open_partitioned_dataset(file_nc, add_fillvals=False, remove_ghost=True, **k
     for iF, file_nc_one in enumerate(file_nc_list):
         print(iF+1,end=' ')
         ds = xr.open_dataset(file_nc_one, **kwargs)
-        if add_fillvals:
+        if decode_fillvals:
             ds = decode_default_fillvals(ds)
         ds = remove_unassociated_edges(ds)
         if 'nFlowElem' in ds.dims and 'nNetElem' in ds.dims: #for mapformat1 mapfiles: merge different face dimensions (rename nFlowElem to nNetElem) to make sure the dataset topology is correct
