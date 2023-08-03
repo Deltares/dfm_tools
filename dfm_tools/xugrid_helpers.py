@@ -149,7 +149,7 @@ def decode_default_fillvals(ds):
         varn_fillval = default_fillvals[dtype_str]
         ds[varn] = ds[varn].assign_attrs({'_FillValue':varn_fillval})
         nfillattrs_added += 1
-    print(f'[{nfillattrs_added} default_fillvals added] ',end='')
+    print(f'[default_fillvals decoded for {nfillattrs_added} variables] ',end='')
     
     #decode the dataset with newly added _FillValue attrs again
     ds = xr.decode_cf(ds)
