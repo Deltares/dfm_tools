@@ -51,7 +51,7 @@ def download_ERA5(varkey,
                       'v10n':'10m_v_component_of_neutral_wind',
                       'mer':'mean_evaporation_rate',
                       'mtpr':'mean_total_precipitation_rate',
-                      'p140209':'air_density_over_the_oceans',
+                      'p140209':'air_density_over_the_oceans', # TODO: paramID might be replaced with shortname rhoao: https://jira.ecmwf.int/plugins/servlet/desk/portal/4/SD-82050
                       }
     if varkey not in variables_dict.keys(): #TODO: how to get list of available vars? mean_sea_level_pressure and msl both return a dataset with msl varkey, but standard_name air_pressure_at_mean_sea_level returns an error
         raise KeyError(f'"{varkey}" not available, choose from: {list(variables_dict.keys())}')

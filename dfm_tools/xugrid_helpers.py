@@ -38,7 +38,7 @@ def get_vertical_dimensions(uds): #TODO: maybe add layer_dimension and interface
         return None, None
 
 
-def remove_ghostcells(uds): #TODO: create JIRA issue: remove ghostcells from output (or make values in ghostcells the same as not-ghostcells, is now not the case for velocities, probably due to edge-to-center interpolation)
+def remove_ghostcells(uds): #TODO: remove ghostcells from output or align values between (non)ghost cells: https://issuetracker.deltares.nl/browse/UNST-6701
     """
     Dropping ghostcells if there is a domainno variable present and there is a domainno in the filename.
     Not using most-occurring domainno in var, since this is not a valid assumption for merged datasets and might be invalid for a very small partition.
@@ -58,7 +58,7 @@ def remove_ghostcells(uds): #TODO: create JIRA issue: remove ghostcells from out
         print('[nodomainfname] ',end='')
         return uds
     fname_splitted = fname.split('_')
-    part_domainno_fromfname = fname_splitted[-2] #this is not valid for rstfiles (date follows after partnumber), but they cannot be read with xugrid anyway since they are mapformat=1
+    part_domainno_fromfname = fname_splitted[-2] #this is not valid for rstfiles (date follows after partnumber), but they cannot be read with xugrid anyway since they lack topology and node_x/node_y variables: https://issuetracker.deltares.nl/browse/UNST-7176
     if not part_domainno_fromfname.isnumeric() or len(part_domainno_fromfname)!=4:
         print('[nodomainfname] ',end='')
         return uds
@@ -130,7 +130,33 @@ def remove_unassociated_edges(ds: xr.Dataset, topology: str = None) -> xr.Datase
     return ds
 
 
-def open_partitioned_dataset(file_nc, remove_ghost=True, **kwargs): 
+def decode_default_fillvals(ds):
+    """
+    xarray only supports explicitly set _FillValue attrs, and therefore ignores the default netCDF4 fillvalue
+    This function adds the default fillvalue as _FillValue attribute and decodes the dataset again.
+    """
+    # TODO: this function can be removed when xarray does it automatically: https://github.com/Deltares/dfm_tools/issues/490
+    
+    from netCDF4 import default_fillvals
+    nfillattrs_added = 0
+    for varn in ds.variables:
+        # TODO: possible to get always_mask boolean with `netCDF4.Dataset(file_nc).variables[varn].always_mask`, but this seems to be always True for FM mapfiles
+        if '_FillValue' in ds[varn].encoding:
+            continue
+        dtype_str = ds[varn].dtype.str[1:]
+        if dtype_str not in default_fillvals.keys():
+            continue
+        varn_fillval = default_fillvals[dtype_str]
+        ds[varn] = ds[varn].assign_attrs({'_FillValue':varn_fillval})
+        nfillattrs_added += 1
+    print(f'[default_fillvals decoded for {nfillattrs_added} variables] ',end='')
+    
+    #decode the dataset with newly added _FillValue attrs again
+    ds = xr.decode_cf(ds)
+    return ds
+
+
+def open_partitioned_dataset(file_nc, decode_fillvals=False, remove_edges=True, remove_ghost=True, **kwargs): 
     """
     using xugrid to read and merge partitions, with some additional features (remaning old layerdim, timings, set zcc/zw as data_vars)
 
@@ -166,7 +192,7 @@ def open_partitioned_dataset(file_nc, remove_ghost=True, **kwargs):
     
     """
     #TODO: FM-mapfiles contain wgs84/projected_coordinate_system variables. xugrid has .crs property, projected_coordinate_system/wgs84 should be updated to be crs so it will be automatically handled? >> make dflowfm issue (and https://github.com/Deltares/xugrid/issues/42)
-    #TODO: add support for multiple grids via keyword? GTSM+riv grid also only contains only one grid, so no testcase available
+    #TODO: add support for multiple grids via keyword? https://github.com/Deltares/dfm_tools/issues/497
     #TODO: speed up open_dataset https://github.com/Deltares/dfm_tools/issues/225 (also remove_ghost)
     
     if 'chunks' not in kwargs:
@@ -181,9 +207,13 @@ def open_partitioned_dataset(file_nc, remove_ghost=True, **kwargs):
     for iF, file_nc_one in enumerate(file_nc_list):
         print(iF+1,end=' ')
         ds = xr.open_dataset(file_nc_one, **kwargs)
-        ds = remove_unassociated_edges(ds)
-        if 'nFlowElem' in ds.dims and 'nNetElem' in ds.dims: #for mapformat1 mapfiles: merge different face dimensions (rename nFlowElem to nNetElem) to make sure the dataset topology is correct
+        if decode_fillvals:
+            ds = decode_default_fillvals(ds)
+        if remove_edges:
+            ds = remove_unassociated_edges(ds)
+        if 'nFlowElem' in ds.dims and 'nNetElem' in ds.dims:
             print('[mapformat1] ',end='')
+            #for mapformat1 mapfiles: merge different face dimensions (rename nFlowElem to nNetElem) to make sure the dataset topology is correct
             ds = ds.rename({'nFlowElem':'nNetElem'})
         uds = xu.core.wrap.UgridDataset(ds)
         if remove_ghost: #TODO: this makes it way slower (at least for GTSM, although merging seems faster), but is necessary since values on overlapping cells are not always identical (eg in case of Venice ucmag)
