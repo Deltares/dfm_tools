@@ -156,7 +156,7 @@ def decode_default_fillvals(ds):
     return ds
 
 
-def open_partitioned_dataset(file_nc, decode_fillvals=False, remove_ghost=True, **kwargs): 
+def open_partitioned_dataset(file_nc, decode_fillvals=False, remove_edges=True, remove_ghost=True, **kwargs): 
     """
     using xugrid to read and merge partitions, with some additional features (remaning old layerdim, timings, set zcc/zw as data_vars)
 
@@ -192,7 +192,7 @@ def open_partitioned_dataset(file_nc, decode_fillvals=False, remove_ghost=True, 
     
     """
     #TODO: FM-mapfiles contain wgs84/projected_coordinate_system variables. xugrid has .crs property, projected_coordinate_system/wgs84 should be updated to be crs so it will be automatically handled? >> make dflowfm issue (and https://github.com/Deltares/xugrid/issues/42)
-    #TODO: add support for multiple grids via keyword? GTSM+riv grid also only contains only one grid, so no testcase available
+    #TODO: add support for multiple grids via keyword? https://github.com/Deltares/dfm_tools/issues/497
     #TODO: speed up open_dataset https://github.com/Deltares/dfm_tools/issues/225 (also remove_ghost)
     
     if 'chunks' not in kwargs:
@@ -209,9 +209,11 @@ def open_partitioned_dataset(file_nc, decode_fillvals=False, remove_ghost=True, 
         ds = xr.open_dataset(file_nc_one, **kwargs)
         if decode_fillvals:
             ds = decode_default_fillvals(ds)
-        ds = remove_unassociated_edges(ds)
-        if 'nFlowElem' in ds.dims and 'nNetElem' in ds.dims: #for mapformat1 mapfiles: merge different face dimensions (rename nFlowElem to nNetElem) to make sure the dataset topology is correct
+        if remove_edges:
+            ds = remove_unassociated_edges(ds)
+        if 'nFlowElem' in ds.dims and 'nNetElem' in ds.dims:
             print('[mapformat1] ',end='')
+            #for mapformat1 mapfiles: merge different face dimensions (rename nFlowElem to nNetElem) to make sure the dataset topology is correct
             ds = ds.rename({'nFlowElem':'nNetElem'})
         uds = xu.core.wrap.UgridDataset(ds)
         if remove_ghost: #TODO: this makes it way slower (at least for GTSM, although merging seems faster), but is necessary since values on overlapping cells are not always identical (eg in case of Venice ucmag)
