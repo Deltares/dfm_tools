@@ -85,21 +85,22 @@ def get_ecmwf_cfname_from_shortname(param_shortname:str) -> str:
     return param_cfname
 
 
-def download_ERA5(varkey:(str,tuple),
+def download_ERA5(varkey:str,
                   longitude_min, longitude_max, latitude_min, latitude_max,
                   date_min, date_max,
                   dir_output='.', overwrite=False, add_buffer=True):
     """
     Download ERA5 data via the CDS API by supplying the shortname
     An overview of parameters is available at https://codes.ecmwf.int/grib/param-db/
+    However, this is does not always contain cfnames or they are incorrect, so a variables_dict is necessary for now.
+    
     Authentication with the CDS API is required: https://cds.climate.copernicus.eu/api-how-to
     The CDS apikey file "$HOME/.cdsapirc" is automatically created if you provide this key when requested
-    
 
     Parameters
     ----------
-    varkey : (str,tuple)
-        varkey='msl' or varkey=('rhoao','air_density_over_the_ocean') if you know the shortname also has a cfname but the database is not synced yet.
+    varkey : str
+        DESCRIPTION.
     longitude_min : TYPE
         DESCRIPTION.
     longitude_max : TYPE
@@ -123,7 +124,6 @@ def download_ERA5(varkey:(str,tuple),
     -------
     None.
 
-    
     """
     
     #TODO: make this function cdsapi generic, instead of ERA5 hardcoded (make flexible for product_type/name/name_output)
@@ -133,17 +133,37 @@ def download_ERA5(varkey:(str,tuple),
     
     # create a cdsapi Client instance
     c = cdsapi.Client()
+
+    # TODO: this dict is necessary since the param-db is not up to date
+    # the param-db also contains incorrect cfnames like air_pressure_at_mean_sea_level instead of mean_sea_level_pressure for msl
+    variables_dict = {'ssr':'surface_net_solar_radiation',
+                      'sst':'sea_surface_temperature',
+                      'strd':'surface_thermal_radiation_downwards',
+                      'slhf':'surface_latent_heat_flux',
+                      'sshf':'surface_sensible_heat_flux',
+                      'str':'surface_net_thermal_radiation',
+                      'chnk':'charnock',
+                      'd2m':'2m_dewpoint_temperature',
+                      't2m':'2m_temperature',
+                      'tcc':'total_cloud_cover',
+                      'msl':'mean_sea_level_pressure',
+                      'u10':'10m_u_component_of_wind',
+                      'u10n':'10m_u_component_of_neutral_wind',
+                      'v10':'10m_v_component_of_wind',
+                      'v10n':'10m_v_component_of_neutral_wind',
+                      'mer':'mean_evaporation_rate',
+                      'mtpr':'mean_total_precipitation_rate',
+                      'rhoao':'air_density_over_the_oceans', # returns dataset with varname p140209
+                      }    
     
-    if isinstance(varkey,tuple):
-        param_shortname = varkey[0]
-        param_cfname = varkey[1]
+    if varkey in variables_dict.keys():
+        param_cfname = variables_dict[varkey]
     else:
-        #get param_cfname from param_shortname
-        param_shortname = varkey
-        param_cfname = get_ecmwf_cfname_from_shortname(param_shortname)
+        #get param_cfname from param_shortname, this does not always work
+        param_cfname = get_ecmwf_cfname_from_shortname(varkey)
     
     period_range = pd.period_range(date_min,date_max,freq='M')
-    print(f'retrieving ERA5 "{param_shortname}"/"{param_cfname}" data from {period_range[0]} to {period_range[-1]} (freq={period_range.freq})')
+    print(f'retrieving ERA5 "{varkey}"/"{param_cfname}" data from {period_range[0]} to {period_range[-1]} (freq={period_range.freq})')
     
     #make sure the data fully covers the desired spatial extent. Download 1 additional grid cell (resolution is 1/4 degrees) in both directions
     if add_buffer:
@@ -153,7 +173,7 @@ def download_ERA5(varkey:(str,tuple),
         latitude_max  += 1/4
     
     for date in period_range:
-        name_output = f'era5_{param_shortname}_{date.strftime("%Y-%m")}.nc'
+        name_output = f'era5_{varkey}_{date.strftime("%Y-%m")}.nc'
         file_out = Path(dir_output,name_output)
         if file_out.is_file() and not overwrite:
             print(f'"{name_output}" found and overwrite=False, continuing.')
