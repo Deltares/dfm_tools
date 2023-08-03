@@ -85,28 +85,65 @@ def get_ecmwf_cfname_from_shortname(param_shortname:str) -> str:
     return param_cfname
 
 
-def download_ERA5(varkey,
+def download_ERA5(varkey:(str,tuple),
                   longitude_min, longitude_max, latitude_min, latitude_max,
                   date_min, date_max,
                   dir_output='.', overwrite=False, add_buffer=True):
     """
-    empty docstring
+    Download ERA5 data via the CDS API by supplying the shortname
+    An overview of parameters is available at https://codes.ecmwf.int/grib/param-db/
+    Authentication with the CDS API is required: https://cds.climate.copernicus.eu/api-how-to
+    The CDS apikey file "$HOME/.cdsapirc" is automatically created if you provide this key when requested
+    
+
+    Parameters
+    ----------
+    varkey : (str,tuple)
+        varkey='msl' or varkey=('rhoao','air_density_over_the_ocean') if you know the shortname also has a cfname but the database is not synced yet.
+    longitude_min : TYPE
+        DESCRIPTION.
+    longitude_max : TYPE
+        DESCRIPTION.
+    latitude_min : TYPE
+        DESCRIPTION.
+    latitude_max : TYPE
+        DESCRIPTION.
+    date_min : TYPE
+        DESCRIPTION.
+    date_max : TYPE
+        DESCRIPTION.
+    dir_output : TYPE, optional
+        DESCRIPTION. The default is '.'.
+    overwrite : TYPE, optional
+        DESCRIPTION. The default is False.
+    add_buffer : TYPE, optional
+        DESCRIPTION. The default is True.
+
+    Returns
+    -------
+    None.
+
+    
     """
     
-    #TODO: describe something about the .cdsapirc file
     #TODO: make this function cdsapi generic, instead of ERA5 hardcoded (make flexible for product_type/name/name_output)
     
     # create $HOME/.cdsapirc if it does not exist
     cds_credentials()
     
-    # create a cdsapi Client instance # https://cds.climate.copernicus.eu/api-how-to
+    # create a cdsapi Client instance
     c = cdsapi.Client()
     
-    #get param_cfname from param_shortname
-    param_cfname = get_ecmwf_cfname_from_shortname(varkey)
+    if isinstance(varkey,tuple):
+        param_shortname = varkey[0]
+        param_cfname = varkey[1]
+    else:
+        #get param_cfname from param_shortname
+        param_shortname = varkey
+        param_cfname = get_ecmwf_cfname_from_shortname(param_shortname)
     
     period_range = pd.period_range(date_min,date_max,freq='M')
-    print(f'retrieving ERA5 "{varkey}"/"{param_cfname}" data from {period_range[0]} to {period_range[-1]} (freq={period_range.freq})')
+    print(f'retrieving ERA5 "{param_shortname}"/"{param_cfname}" data from {period_range[0]} to {period_range[-1]} (freq={period_range.freq})')
     
     #make sure the data fully covers the desired spatial extent. Download 1 additional grid cell (resolution is 1/4 degrees) in both directions
     if add_buffer:
@@ -116,7 +153,7 @@ def download_ERA5(varkey,
         latitude_max  += 1/4
     
     for date in period_range:
-        name_output = f'era5_{varkey}_{date.strftime("%Y-%m")}.nc'
+        name_output = f'era5_{param_shortname}_{date.strftime("%Y-%m")}.nc'
         file_out = Path(dir_output,name_output)
         if file_out.is_file() and not overwrite:
             print(f'"{name_output}" found and overwrite=False, continuing.')
