@@ -15,6 +15,71 @@ from dfm_tools.errors import OutOfRangeError
 import cdsapi
 import cftime
 import getpass
+from urllib.request import urlopen
+import json
+import re
+
+
+def get_ecmwf_paramdb_netcdf() -> pd.DataFrame:
+    """
+    Get the ECMWF NetCDF parameter database as a pandas DataFrame.
+
+    Returns
+    -------
+    param_df : pd.DataFrame
+        DESCRIPTION.
+
+    """
+    
+    # load JSON response from URL
+    url = "https://codes.ecmwf.int/grib/json?filter=netcdf"
+    response = urlopen(url)
+    data_json = json.loads(response.read())
+    
+    #convert parameters dict to dataframe
+    param_dict = data_json['parameters']
+    paramdb_df = pd.DataFrame(param_dict)
+    
+    return paramdb_df
+
+
+def get_ecmwf_cfname_from_shortname(param_shortname:str) -> str:
+    """
+    Get the ECMWF netcdf cfname from shortname from the online parameter database.
+    A filter of netcdf is used, since non-netcdf do not have a cfname.
+
+    Parameters
+    ----------
+    param_shortname : str
+        ECMWF shortname from https://codes.ecmwf.int/grib/param-db, like "msl" or "chnk".
+
+    Raises
+    ------
+    KeyError
+        DESCRIPTION.
+
+    Returns
+    -------
+    param_cfname : str
+        DESCRIPTION.
+
+    """
+    
+    param_df = get_ecmwf_paramdb_netcdf()
+    param_df = param_df.set_index('param_shortName')
+    if param_shortname not in param_df.index:
+        raise KeyError(f'"{param_shortname}" not available in ECMWF NetCDF params-db')
+    param_id = param_df.loc[param_shortname,'param_id']
+    
+    url = f'https://codes.ecmwf.int/grib/param-db/?id={param_id}'
+    response = urlopen(url)
+    html = response.read().decode("utf-8")
+    
+    # extract netcdf cfname (is last occurrence of class=table if present)
+    pattern = "<td class='value'>.*?</td>"
+    lastmatch = re.findall(pattern, html, re.IGNORECASE)[-1]
+    param_cfname = re.sub("<.*?>", "", lastmatch)
+    return param_cfname
 
 
 def download_ERA5(varkey,
