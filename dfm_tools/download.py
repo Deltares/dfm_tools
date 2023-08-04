@@ -93,6 +93,7 @@ def download_ERA5(varkey:str,
     Download ERA5 data via the CDS API by supplying the shortname
     An overview of parameters is available at https://codes.ecmwf.int/grib/param-db/
     However, this is does not always contain cfnames or they are incorrect, so a variables_dict is necessary for now.
+    Correct variables can be retrieved manually from https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-single-levels?tab=form
     
     Authentication with the CDS API is required: https://cds.climate.copernicus.eu/api-how-to
     The CDS apikey file "$HOME/.cdsapirc" is automatically created if you provide this key when requested
@@ -154,7 +155,7 @@ def download_ERA5(varkey:str,
                       'mer':'mean_evaporation_rate',
                       'mtpr':'mean_total_precipitation_rate',
                       'rhoao':'air_density_over_the_oceans', # returns dataset with varname p140209
-                      }    
+                      }
     
     if varkey in variables_dict.keys():
         param_cfname = variables_dict[varkey]
