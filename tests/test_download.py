@@ -28,3 +28,14 @@ def test_round_timestamp_to_outer_noon():
         assert date_max >= pd.Timestamp(date_max_mod)
         assert np.abs((date_min - pd.Timestamp(date_min_mod)).total_seconds()) < 24*3600
         assert np.abs((date_max - pd.Timestamp(date_max_mod)).total_seconds()) < 24*3600
+
+
+@pytest.mark.unittest
+def test_get_ecmwf_cfname_from_shortname():
+    # TODO: this test fails once the ECMWF parameter database is updated
+    # shortname msl will then return cfname mean_sea_level_pressure
+    # more issues mentioned in the description of https://github.com/Deltares/dfm_tools/pull/499
+    
+    param_cfname = dfmt.get_ecmwf_cfname_from_shortname('msl')
+    assert param_cfname == 'air_pressure_at_mean_sea_level'
+    
