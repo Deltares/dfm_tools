@@ -18,11 +18,12 @@ import getpass
 from urllib.request import urlopen
 import json
 import re
+import warnings
 
 
 def get_ecmwf_paramdb_netcdf() -> pd.DataFrame:
     """
-    Get the ECMWF NetCDF parameter database as a pandas DataFrame.
+    Get the ECMWF parameter database as a pandas DataFrame.
 
     Returns
     -------
@@ -32,7 +33,7 @@ def get_ecmwf_paramdb_netcdf() -> pd.DataFrame:
     """
     
     # load JSON response from URL
-    url = "https://codes.ecmwf.int/grib/json?filter=netcdf"
+    url = "https://codes.ecmwf.int/grib/json"#?filter=netcdf"
     response = urlopen(url)
     data_json = json.loads(response.read())
     
@@ -43,11 +44,10 @@ def get_ecmwf_paramdb_netcdf() -> pd.DataFrame:
     return paramdb_df
 
 
-def get_ecmwf_cfname_from_shortname(param_shortname:str) -> str:
+def get_ecmwf_paramid_from_shortname(param_shortname:str) -> str:
     """
-    Get the ECMWF netcdf cfname from shortname from the online parameter database.
-    A filter of netcdf is used, since non-netcdf do not have a cfname.
-
+    Get the ECMWF parameterID from shortname from the online parameter database.
+    
     Parameters
     ----------
     param_shortname : str
@@ -68,21 +68,22 @@ def get_ecmwf_cfname_from_shortname(param_shortname:str) -> str:
     paramdb_df = get_ecmwf_paramdb_netcdf()
     paramdb_df = paramdb_df.set_index('param_shortName')
     paramdb_df = paramdb_df.sort_index()
-    shortname_list = paramdb_df.index.tolist()
-    shortname_list_str = ", ".join(shortname_list)
     if param_shortname not in paramdb_df.index:
-        raise KeyError(f'shortname "{param_shortname}" not available in ECMWF NetCDF params-db, choose from: {shortname_list_str}')
-    param_id = paramdb_df.loc[param_shortname,'param_id']
+        raise KeyError(f'shortname "{param_shortname}" not available in ECMWF params-db on https://codes.ecmwf.int/grib/param-db/')
     
-    url = f'https://codes.ecmwf.int/grib/param-db/?id={param_id}'
-    response = urlopen(url)
-    html = response.read().decode("utf-8")
+    paramdb_sel = paramdb_df.loc[[param_shortname],['param_id','units_name','param_format_netcdf','netcdf','param_name']]
     
-    # extract netcdf cfname (is last occurrence of class=table if present)
-    pattern = "<td class='value'>.*?</td>"
-    lastmatch = re.findall(pattern, html, re.IGNORECASE)[-1]
-    param_cfname = re.sub("<.*?>", "", lastmatch)
-    return param_cfname
+    if len(paramdb_sel) > 1:
+        #if duplicated and only one is netcdf, use that one
+        paramdb_sel_netcdf = paramdb_sel.loc[paramdb_sel['param_format_netcdf'] == 1]
+        if len(paramdb_sel_netcdf) == 1:
+            print('duplicate short name in ECMWF params-db, using the only netcdf param')
+            paramdb_sel = paramdb_sel_netcdf
+        else: # print warning if shortname was duplicated
+            warnings.warn(f'duplicate short name in ECMWF params-db, first one used:\n{paramdb_sel}')
+    
+    param_id = paramdb_sel['param_id'].iloc[0]
+    return param_id
 
 
 def download_ERA5(varkey:str,
