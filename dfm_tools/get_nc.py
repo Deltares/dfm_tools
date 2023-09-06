@@ -32,340 +32,25 @@ Created on Fri Feb 14 12:45:11 2020
 @author: veenstra
 """
 
-import warnings
 import numpy as np
 import datetime as dt
-import pandas as pd
-from netCDF4 import Dataset
+import re
+import xugrid as xu
 import xarray as xr
 import matplotlib.pyplot as plt
-import matplotlib.collections
-
-from dfm_tools.get_nc_helpers import get_ncfilelist, get_ncvarproperties, get_varnamefrom_keyslongstandardname, get_timesfromnc, get_timeid_fromdatetime, get_hisstationlist, get_stationid_fromstationlist, ghostcell_filter, get_varname_fromnc
-from dfm_tools.ugrid import UGrid
+from dfm_tools.xarray_helpers import Dataset_varswithdim
+from dfm_tools.xugrid_helpers import get_vertical_dimensions, decode_default_fillvals
 
 
-def get_ncmodeldata(file_nc, varname=None, timestep=None, layer=None, station=None, multipart=None, silent=False, return_xarray=False):
-    """
-
-    Parameters
-    ----------
-    file_nc : str
-        path to netcdf file.
-    varname : str, optional
-        string of netcdf variable name (key/standard_name only?).
-    timestep : TYPE, optional
-        (list/range/ndarray of) 0-based int or datetime. Can be used to select one or more specific timesteps, or 'all'. The default is None.
-    layer : TYPE, optional
-        (list/range/ndarray of) 0-based int. The default is None.
-    station : TYPE, optional
-        DESCRIPTION. The default is None. Deprecated, not possible anymore (use xarray.sel instead)
-    multipart : TYPE, optional
-        set to False if you want only one of the map domains, can be left out otherwise. The default is None.
-
-    Raises
-    ------
-    Exception
-        DESCRIPTION.
-
-    Returns
-    -------
-    values_all : TYPE
-        DESCRIPTION.
-
-    """
-    
-    #get variable info (also checks if varname exists in keys, standard name, long name)
-    data_nc = Dataset(file_nc)
-    data_xr = xr.open_dataset(file_nc)
-    varname = get_varnamefrom_keyslongstandardname(file_nc, varname) #get varname from varkeys/standardname/longname if exists
-    nc_varobject = data_nc.variables[varname]
-    
-    #get list of station dimnames
-    vars_pd = get_ncvarproperties(file_nc=file_nc)
-    
-    listtype_int = [int, np.int8, np.int16, np.int32, np.int64]
-    listtype_str = [str]
-    listtype_range = [list, range, np.ndarray, pd.RangeIndex]
-    listtype_datetime = [dt.datetime, np.datetime64]
-    listtype_daterange = [pd.DatetimeIndex]
-
-    #CHECK if VARNAME IS STATION NAMES (STRINGS), OFFER ALTERNATIVE RETRIEVAL METHOD
-    if nc_varobject.dtype == '|S1':
-        print('variable "%s" should probably be retrieved with separate function:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist\nstation_names = get_hisstationlist(file_nc=file_nc, varname="%s") (or use any varname there to retrieve corresponding station list)'%(varname,varname))
-    if 'time' in varname.lower():
-        print('variable "%s" should probably be retrieved with separate function:\nfrom dfm_tools.get_nc_helpers import get_timesfromnc\ntimes = get_timesfromnc(file_nc=file_nc, varname="%s")'%(varname, varname))
-    
-    #TIMES CHECKS
-    dimn_time = 'time' #hard coded, since easy to change with xarray
-    if dimn_time not in nc_varobject.dimensions: #dimension time is not available in variable
-        if timestep is not None:
-            raise Exception('ERROR: netcdf file variable (%s) does not contain times, but parameter timestep is provided'%(varname))
-    else: #time dimension is present
-        data_nc_timevar = data_nc.variables['time']
-        time_length = data_nc_timevar.shape[0]
-        data_nc_datetimes_pd = get_timesfromnc(file_nc, varname=varname) #get all times
-        if timestep is None:
-            raise Exception('ERROR: netcdf variable contains a time dimension, but parameter timestep not provided (can be "all"), first and last timestep:\n%s\nretrieve entire times list:\nfrom dfm_tools.get_nc_helpers import get_timesfromnc\ntimes_pd = get_timesfromnc(file_nc=file_nc, varname="%s")'%(pd.DataFrame(data_nc_datetimes_pd),varname))
-        #convert timestep to list of int if it is not already
-        if timestep is str('all'):
-            time_ids = range(len(data_nc_datetimes_pd))
-        elif type(timestep) in listtype_range:
-            if len(timestep) == 0:
-                raise Exception('ERROR: timestep variable type is list/range/ndarray (%s), but it has no length'%(type(timestep)))
-            elif type(timestep[0]) in listtype_int:
-                data_nc_datetimes_pd = data_nc_datetimes_pd.iloc[timestep] #get selection of times
-                time_ids = timestep
-            elif type(timestep[0]) in listtype_datetime:
-                time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, timestep)
-                data_nc_datetimes_pd = data_nc_datetimes_pd.iloc[time_ids] #get selection of times
-            else:
-                raise Exception('ERROR: timestep variable type is list/range/ndarray (%s), but type of timestep[0] not anticipated (%s), options:\n - int\n - np.int64\n - datetime\n - np.datetime64'%(type(timestep),type(timestep[0])))
-        elif type(timestep) in listtype_daterange:
-            time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, timestep)
-            data_nc_datetimes_pd = data_nc_datetimes_pd.iloc[time_ids] #get selection of times
-        elif type(timestep) in listtype_int:
-            time_ids = [timestep]
-            data_nc_datetimes_pd = data_nc_datetimes_pd.iloc[time_ids] #get selection of times
-        elif type(timestep) in listtype_datetime:
-            time_ids = get_timeid_fromdatetime(data_nc_datetimes_pd, [timestep])
-            data_nc_datetimes_pd = data_nc_datetimes_pd.iloc[time_ids] #get selection of times
-        else:
-            raise Exception('ERROR: timestep variable type not anticipated (%s), options:\n - datetime/int\n - list/range/ndarray of datetime/int\n - pandas daterange\n - "all"'%(type(timestep)))
-        #convert to positive index, make unique(+sort), convert to list because of indexing with np.array of len 1 errors sometimes
-        time_ids = list(np.unique(np.array(range(time_length))[time_ids]))
-        #check if requested times are within range of netcdf
-        if np.max(time_ids) > time_length-1:
-            raise Exception('ERROR: requested maximum timestep (%d) is larger than available in netcdf file (%d)'%(np.max(time_ids),time_length-1))
-
-    #LAYER CHECKS
-    dimn_layer = get_varname_fromnc(data_nc,'nmesh2d_layer',vardim='dim')
-    if dimn_layer not in nc_varobject.dimensions: #no layer dimension in model and/or variable
-        if layer is not None:
-            raise Exception('ERROR: netcdf variable (%s) does not contain layers, but argument layer is provided'%(varname))
-    else: #layers are present in variable
-        dimn_layer_id = nc_varobject.dimensions.index(dimn_layer)
-        nlayers = nc_varobject.shape[dimn_layer_id]
-        if layer is None:
-            raise Exception('ERROR: netcdf variable contains a layer dimension, but argument layer not provided (can be "all")\nnumber of layers: %d (numbered 0 to %d)'%(nlayers, nlayers-1))
-        #convert layer to list of int if it is not already
-        if layer is str('all') or layer is str('top') or layer is str('bottom'):
-            layer_ids = range(nlayers)
-        elif type(layer) in listtype_range:
-            if type(layer[0]) in listtype_int:
-                layer_ids = np.unique(layer)
-            else:
-                raise Exception('ERROR: layer variable type not anticipated (%s), (list/range/ndarray of) int are accepted (or "all")'%(type(layer)))
-        elif type(layer) in listtype_int:
-            layer_ids = [layer]
-        else:
-            raise Exception('ERROR: layer variable type not anticipated (%s), (list/range/ndarray of) int are accepted (or "all", "top" or "bottom")'%(type(layer)))
-        #convert to positive index, make unique(+sort), convert to list because of indexing with np.array of len 1 errors sometimes
-        layer_ids = list(np.unique(np.array(range(nlayers))[layer_ids]))
-        #check if requested layers are within range of netcdf
-        if np.max(layer_ids) > nlayers-1:
-            raise Exception('ERROR: requested max layer (%d) is larger than available in netcdf file (%d)'%(np.max(layer_ids),nlayers-1))
-    
-    #STATION/GENERAL_STRUCTURES CHECKS
-    vars_pd_stats = vars_pd[(vars_pd['dtype'].astype(str).str.startswith('|S') | (vars_pd['dtype']=='object')) & (vars_pd['dimensions'].apply(lambda x: dimn_time not in x))] #TODO: better check for bytes string
-    dimname_stat_validvals = []
-    for iR, vars_pd_stat in vars_pd_stats.iterrows():
-        dimname_stat_validvals.append(vars_pd_stat['dimensions'][0]) #only append first dimension, the other one is often 'name_len'
-    if station is not None:
-        warnings.warn(DeprecationWarning('station argument will be phased out, use xarray instead like in the example script gethismodeldata.py'))
-    dimname_stat_validvals_boolpresent = [x in nc_varobject.dimensions for x in dimname_stat_validvals]
-    if not any(dimname_stat_validvals_boolpresent):
-        if station is not None:
-            raise Exception('ERROR: netcdf file variable (%s) does not contain stations/general_structures, but argument station is provided'%(varname))
-    else: #stations are present
-        #get appropriate station list
-        station_name_list_pd = get_hisstationlist(file_nc,varname=varname)
-        if station is None:
-            raise Exception('ERROR: netcdf variable contains a station/general_structures dimension, but argument station not provided (can be "all"), available stations/crs/generalstructures:\n%s\nretrieve entire station list:\nfrom dfm_tools.get_nc_helpers import get_hisstationlist\nstations_pd = get_hisstationlist(file_nc,varname="%s")'%(station_name_list_pd, varname))
-        #convert station to list of int if it is not already
-        if station is str('all'):
-            station_ids = range(len(station_name_list_pd))
-        elif type(station) in listtype_range:
-            if type(station[0]) in listtype_int:
-                station_ids = station
-            elif type(station[0]) in listtype_str:
-                station_ids = get_stationid_fromstationlist(station_name_list_pd, station)
-            else:
-                raise Exception('ERROR1: station variable type not anticipated (%s), (list/range/ndarray of) strings or ints are accepted (or "all")'%(type(station)))
-        elif type(station) in listtype_int:
-            station_ids = [station]
-        elif type(station) in listtype_str:
-            station_ids = get_stationid_fromstationlist(station_name_list_pd, [station])
-        else:
-            raise Exception('ERROR2: station variable type not anticipated (%s), (list/range/ndarray of) strings or ints are accepted (or "all")'%(type(station)))
-        #convert to positive index, make unique(+sort), convert to list because of indexing with np.array of len 1 errors sometimes
-        station_ids = list(np.unique(np.array(range(len(station_name_list_pd)))[station_ids]))
-        #check if requested times are within range of netcdf
-        if np.max(station_ids) > len(station_name_list_pd)-1:
-            raise Exception('ERROR: requested highest station id (%d) is larger than available in netcdf file (%d)'%(np.max(station_ids),len(station_name_list_pd)-1))
-    
-    #check faces existence, variable could have ghost cells if partitioned
-    dimn_faces = get_varname_fromnc(data_nc,'mesh2d_nFaces',vardim='dim')
-    dimn_nodes = get_varname_fromnc(data_nc,'mesh2d_nNodes',vardim='dim')
-    dimn_edges = get_varname_fromnc(data_nc,'nmesh2d_edge',vardim='dim')
-    dimn_nFlowElem = get_varname_fromnc(data_nc,'nFlowElem',vardim='dim')
-    dimn_nFlowLink = get_varname_fromnc(data_nc,'nFlowLink',vardim='dim')
-    
-    #revert back to single partition if non-partitioned variable is requested
-    bool_varpartitioned = any([True for x in nc_varobject.dimensions if x in [dimn_faces, dimn_nodes, dimn_edges, dimn_nFlowElem, dimn_nFlowLink]])
-    if not bool_varpartitioned:
-        multipart = False
-
-    #get list of partitioned files
-    file_ncs = get_ncfilelist(file_nc, multipart)
-
-    for iF, file_nc_sel in enumerate(file_ncs):
-        if (len(file_ncs) > 1) and not silent:
-            print('processing mapdata from domain %04d of %04d'%(iF, len(file_ncs)-1))
-
-        data_nc_sel = Dataset(file_nc_sel)
-        nc_varobject_sel = data_nc_sel.variables[varname]
-        
-        concat_axis = 0 #default value, overwritten by faces dimension
-        ghost_removeids = [] #default value, overwritten by faces/edges dimension
-
-        values_selid = []
-        values_dimlens = [] #list(nc_values.shape)
-        try:
-            nc_varobject_sel_coords = nc_varobject_sel.coordinates
-        except:
-            nc_varobject_sel_coords = None
-        if not silent:
-            print('varname: %s  %s  %s, coordinates=(%s)'%(varname, nc_varobject_sel.shape, nc_varobject_sel.dimensions, nc_varobject_sel_coords))
-
-        if len(nc_varobject_sel.dimensions) == 0:
-            raise Exception('variable contains no dimensions, cannot retrieve values')
-
-        for iD, nc_values_dimsel in enumerate(nc_varobject_sel.dimensions):
-            if nc_values_dimsel in [dimn_faces, dimn_nFlowElem]: # domain-like variable is present, so there are multiple domains (with ghost cells)
-                nonghost_bool = ghostcell_filter(file_nc_sel)
-                if nonghost_bool is not None:
-                    ghost_removeids = np.where(~nonghost_bool)[0] #remove after retrieval, since that is faster than retrieving nonghost ids or using a boolean
-                values_selid.append(range(nc_varobject_sel.shape[iD]))
-                values_dimlens.append(0) #because concatenate axis
-                concat_axis = iD
-            elif nc_values_dimsel in [dimn_edges]: # domain-like variable is present, so there are multiple domains (edges from partition boundaries are removed)
-                if 0:#bool_varpartitioned:
-                    mesh2d_edge_faces = data_nc_sel.variables[get_varname_fromnc(data_nc_sel,'mesh2d_edge_faces',vardim='var')][:]
-                    part_edges_removebool = (mesh2d_edge_faces==0).any(axis=1) #array is 1 based indexed, 0 means missing # & (np.in1d(mesh2d_edge_faces[:,0],ghost_removeids-1) | np.in1d(mesh2d_edge_faces[:,1],ghost_removeids-1))
-                    part_edges_removeids = np.where(part_edges_removebool)[0]
-                    ghost_removeids = part_edges_removeids #to make equal to faces varname
-                values_selid.append(range(nc_varobject_sel.shape[iD]))
-                values_dimlens.append(0) #because concatenate axis
-                concat_axis = iD
-            elif nc_values_dimsel in [dimn_nodes, dimn_nFlowLink]: # domain-like variable is present, so there are multiple domains (no ghost cells)
-                values_selid.append(range(nc_varobject_sel.shape[iD]))
-                values_dimlens.append(0) #because concatenate axis
-                concat_axis = iD
-            elif nc_values_dimsel in dimname_stat_validvals:
-                values_selid.append(station_ids)
-                values_dimlens.append(len(station_ids))
-            elif nc_values_dimsel == dimn_time:
-                values_selid.append(time_ids)
-                values_dimlens.append(len(time_ids))
-            elif nc_values_dimsel == dimn_layer:
-                values_selid.append(layer_ids)
-                values_dimlens.append(len(layer_ids))
-            else:
-                #warnings.warn('not a predefined dimension name')
-                values_selid.append(range(nc_varobject_sel.shape[iD]))
-                values_dimlens.append(nc_varobject_sel.shape[iD])
-
-        #get selected data (including ghostcells because that is faster)
-        nc_varobject_sel_selids_raw = nc_varobject_sel[values_selid]
-
-        #remove ghost cells (cannot delete from masked array, so delete from array and mask and then couple again)
-        if ghost_removeids is not []:
-            nc_varobject_sel_selids = np.delete(nc_varobject_sel_selids_raw,ghost_removeids,axis=concat_axis)
-            if nc_varobject_sel_selids_raw.mask.any() != False:
-                nc_varobject_sel_selids_mask = np.delete(nc_varobject_sel_selids_raw.mask,ghost_removeids,axis=concat_axis)
-                nc_varobject_sel_selids.mask = nc_varobject_sel_selids_mask
-                
-        #concatenate to other partitions
-        if len(file_ncs) > 1:
-            #initialize array
-            if iF == 0:
-                values_all = np.ma.empty(values_dimlens)
-                values_all[:] = np.nan
-            #concatenate array
-            values_all = np.ma.concatenate([values_all, nc_varobject_sel_selids], axis=concat_axis)
-        else:
-            values_all = nc_varobject_sel_selids
-        data_nc_sel.close()
-
-    #optional extraction of top/bottom layer, convenient for z-layer models since top and/or bottom layers are often masked for part of the cells
-    if layer is str('top') or layer is str('bottom'):
-        warnings.warn('you are retrieving data from the %s valid layer of each cell. it is assumed that the last axis of the variable is the layer axis'%(layer))
-        if not values_all.mask.any(): #if (all values in) the mask are False
-            raise Exception('there is no mask present in this dataset (or all its values are False), use layer=[0,-1] to get the bottom and top layers')
-        layerdim_id = nc_varobject.dimensions.index(dimn_layer)
-        if layer is str('top'):
-            bottomtoplay = values_all.shape[layerdim_id]-1-(~np.flip(values_all.mask,axis=layerdim_id)).argmax(axis=layerdim_id) #get index of first False value from the flipped array (over layer axis) and correct with size of that dimension. This corresponds to the top layer of each cell in case of D-Flow FM
-        if layer is str('bottom'):
-            bottomtoplay = (~values_all.mask).argmax(axis=layerdim_id) #get index of first False value from the original array. This corresponds to the top layer of each cell in case of D-Flow FM
-        values_selid_topbot = []
-        for iD, dimlen in enumerate(values_all.shape):
-            if iD == layerdim_id:
-                values_selid_topbot.append(bottomtoplay)
-            elif iD == concat_axis and not '_his.nc' in file_nc: #his files have no partitions and thus no concat_axis, this forces to 'else' and to transpose (no testcase available)
-                values_selid_topbot.append(np.array(range(dimlen)))
-            else:
-                values_selid_topbot.append(np.array([range(dimlen)]).T)
-        values_all_topbot = values_all[tuple(values_selid_topbot)] #layer dimension is removed due to advanced indexing instead of slicing
-        values_all_topbot = np.expand_dims(values_all_topbot, axis=layerdim_id) #re-add layer dimension to dataset on original location
-        values_all = values_all_topbot
-
-
-    #add metadata
-    values_all.var_filename = file_nc
-    values_all.var_varname = varname
-    values_all.var_dimensions = nc_varobject.dimensions
-    values_all.var_shape = nc_varobject.shape
-    values_all.var_dtype = nc_varobject.dtype
-    values_all.var_ncvarobject = f"from netCDF4 import Dataset;data_nc = Dataset('{file_nc}');nc_varobject = data_nc.variables['{varname}'];print(nc_varobject)" # nc_varobject #this is the netcdf variable, contains properties like shape/units/dimensions #disabled, since it becomes invalid after closing the dataset
-    values_all.var_ncattrs = nc_varobject.__dict__ #values in nc_varobject.ncattrs() or hasattr(nc_varobject,'attributename')
-
-    if dimn_time in nc_varobject.dimensions:
-        values_all.var_times = data_nc_datetimes_pd
-    else:
-        values_all.var_times = None
-    
-    if dimn_layer in nc_varobject.dimensions:
-        values_all.var_layers = layer_ids
-    else:
-        values_all.var_layers = None
-    
-    if return_xarray:
-        data_xr = xr.Dataset()
-        var_xr = xr.DataArray(values_all,dims=nc_varobject.dimensions,attrs=nc_varobject.__dict__,name=varname)
-        data_xr[varname] = var_xr
-        for vardim in nc_varobject.dimensions:
-            if vardim=='time':
-                data_xr['time'] = xr.DataArray(data_nc_datetimes_pd, dims=('time'), attrs=data_nc_timevar.__dict__, name='time')
-            if vardim=='mesh2d_nLayers':
-                data_xr['mesh2d_nLayers'] = xr.DataArray(layer_ids, dims=('mesh2d_nLayers'), name='mesh2d_nLayers')
-        data_nc.close()
-        return data_xr[varname]
-    else:
-        data_nc.close()
-        return values_all
-
-
-def calc_dist_pythagoras(x1,x2,y1,y2): # only used in dfm_tools.ugrid
+def calc_dist_pythagoras(x1,x2,y1,y2):
     distance = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
     return distance
 
 
-def calc_dist_haversine(lon1,lon2,lat1,lat2): # only used in dfm_tools.ugrid
-    """
-    calculates distance between lat/lon coordinates in meters
-    https://community.esri.com/t5/coordinate-reference-systems-blog/distance-on-a-sphere-the-haversine-formula/ba-p/902128
-    """
+def calc_dist_haversine(lon1,lon2,lat1,lat2):
+    #calculates distance between lat/lon coordinates in meters
+    #https://community.esri.com/t5/coordinate-reference-systems-blog/distance-on-a-sphere-the-haversine-formula/ba-p/902128
+    
     # convert to radians
     lon1_rad = np.deg2rad(lon1)
     lon2_rad = np.deg2rad(lon2)
@@ -378,242 +63,102 @@ def calc_dist_haversine(lon1,lon2,lat1,lat2): # only used in dfm_tools.ugrid
     R = 6371000
     distance = R * c
     if np.isnan(distance).any():
-        raise Exception('nan encountered in calc_dist_latlon distance, replaced by 0') #warnings.warn
-        #distance[np.isnan(distance)] = 0
+        raise ValueError('nan encountered in calc_dist_latlon distance')
     return distance
 
 
-def get_xzcoords_onintersection(file_nc, intersect_pd, timestep=None, multipart=None, varname=None):
+def intersect_edges_withsort(uds,edges): #TODO: move sorting to xugrid? https://deltares.github.io/xugrid/api/xugrid.Ugrid2d.intersect_edges.html
     
-    #check if all necessary arguments are provided
-    if timestep is None:
-        raise Exception('ERROR: argument timestep not provided, this is necessary to retrieve correct waterlevel or fullgrid output')
+    edge_index, face_index, intersections = uds.grid.intersect_edges(edges) #TODO: is fast, but maybe speed can be increased with bounding box?
     
-    data_nc = Dataset(file_nc)
-    varkeys_list = data_nc.variables.keys()
-    dimn_layer = get_varname_fromnc(data_nc,'nmesh2d_layer',vardim='dim')
-    if dimn_layer is None: #no layers, 2D model
+    #ordering of face_index is wrong (visible with cb3 with long line_array), so sort on distance from startpoint (in x/y units)
+    
+    #compute distance from start of line to start of each linepart
+    edge_len = np.linalg.norm(edges[:,1] - edges[:,0], axis=1)
+    edge_len_cum = np.cumsum(edge_len)
+    edge_len_cum0 = np.concatenate([[0],edge_len_cum[:-1]])
+    
+    #compute distance from start to lineparts to start of line (via line)
+    startcoord_linepart = edges[edge_index,0,:]
+    dist_tostart_linepart = np.linalg.norm(intersections[:,0,:] - startcoord_linepart, axis=1)
+    dist_tostart_line = dist_tostart_linepart + edge_len_cum0[edge_index]
+    
+    #sorting on distance
+    id_sorted = np.argsort(dist_tostart_line)
+    edge_index = edge_index[id_sorted]
+    face_index = face_index[id_sorted]
+    intersections = intersections[id_sorted]
+    return edge_index, face_index, intersections
+
+
+def get_xzcoords_onintersection(uds, face_index, crs_dist_starts, crs_dist_stops):
+    #TODO: remove hardcoding of variable names
+    if 'time' in uds.dims: #TODO: maybe make time dependent grid?
+        raise Exception('time dimension present in uds, provide uds.isel(time=timestep) instead. This is necessary to retrieve correct waterlevel or fullgrid output')
+    
+    dimn_layer, dimn_interfaces = get_vertical_dimensions(uds)
+    gridname = uds.grid.name
+    
+    #construct fullgrid info (zcc/zw) for 3D models
+    if dimn_layer in uds.dims:
+        uds = reconstruct_zw_zcc(uds)
+
+    #drop all variables that do not contain a face dimension, then select only all sliced faceidx
+    xu_facedim = uds.grid.face_dimension
+    face_index_xr = xr.DataArray(face_index,dims=('ncrossed_faces'))
+    uds = Dataset_varswithdim(uds,dimname=xu_facedim) #TODO: is there an xugrid alternative?
+    uds_sel = uds.sel({xu_facedim:face_index_xr})
+    
+    # take zvals_interface
+    if dimn_layer in uds_sel.dims: #3D model
+        nlay = uds.dims[dimn_layer]
+        zvals_interface_filled = uds_sel[f'{gridname}_flowelem_zw'].bfill(dim=dimn_interfaces) #fill nan values (below bed) with equal values
+        zvals_interface = zvals_interface_filled.to_numpy().T #transpose to make in line with 2D sigma dataset
+    else: #2D model, no layers
         nlay = 1
-    else:
-        nlay = data_nc.dimensions[dimn_layer].size
-        
-    intersect_gridnos = intersect_pd.index
-    if 'mesh2d_flowelem_zw' in varkeys_list:
-        print('layertype: fullgrid output')
-        zvals_interface_allfaces = get_ncmodeldata(file_nc, varname='mesh2d_flowelem_zw', timestep=timestep, multipart=multipart)
-        zvals_interface = zvals_interface_allfaces[0,intersect_gridnos,:].T #timestep=0 since correct timestep was already retrieved with get_ncmodeldata. Transpose to make in line with 2D sigma dataset
-    else: #no full grid output, so reconstruct
-        varn_mesh2d_s1 = get_varname_fromnc(data_nc,'mesh2d_s1',vardim='var')
-        data_frommap_wl3 = get_ncmodeldata(file_nc, varname=varn_mesh2d_s1, timestep=timestep, multipart=multipart)
-        data_frommap_wl3_sel = data_frommap_wl3[0,intersect_gridnos] #timestep=0 since correct timestep was already retrieved with get_ncmodeldata
-        varn_mesh2d_flowelem_bl = get_varname_fromnc(data_nc,'mesh2d_flowelem_bl',vardim='var')
-        data_frommap_bl = get_ncmodeldata(file_nc, varname=varn_mesh2d_flowelem_bl, multipart=multipart)
-        data_frommap_bl_sel = data_frommap_bl[intersect_gridnos]
-        if 'mesh2d_layer_z' in varkeys_list or 'LayCoord_cc' in varkeys_list:
-            print('layertype: zlayer')
-            warnings.warn('WARNING: your model seems to contain only z-layers. if the modeloutput is generated with an older version of dflowfm, the coordinates can be incorrect. if your model contains z-sigma-layers, use the fulloutput option in the mdu and rerun (happens automatically in newer dflowfm versions).')
-            zvals_interface_vec = data_nc.variables['mesh2d_interface_z'][:][:,np.newaxis]
-            zvals_interface = np.repeat(zvals_interface_vec,len(data_frommap_wl3_sel),axis=1)
-            # zvalues lower than bedlevel should be overwritten with bedlevel
-            for iL in range(nlay):
-                zvalbot_belowbl_bool = zvals_interface[iL,:]<data_frommap_bl_sel
-                zvals_interface[iL,zvalbot_belowbl_bool] = data_frommap_bl_sel[zvalbot_belowbl_bool]
-            #top z-layer is extended to water level, if wl is higher than zval_lay_top
-            zvals_interface[-1,:] = np.maximum(zvals_interface[-1,:],data_frommap_wl3_sel)
-        elif 'mesh2d_layer_sigma' in varkeys_list:
-            print('layertype: sigmalayer')
-            zvals_interface_percentage = data_nc.variables['mesh2d_interface_sigma'][:][:,np.newaxis]
-            zvals_interface = data_frommap_wl3_sel+(data_frommap_wl3_sel-data_frommap_bl_sel)[np.newaxis]*zvals_interface_percentage
-        else: # 2D model
-            print('layertype: 2D model')
-            if nlay!=1:
-                raise Exception('recheck this')
-            #zvals_cen = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay)
-            zvals_interface = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay+1)
-    data_nc.close()
-    
-    #convert to output for plot_netmapdata
-    crs_dist_starts_matrix = np.repeat(intersect_pd['crs_dist_starts'].values[np.newaxis],nlay,axis=0)
-    crs_dist_stops_matrix = np.repeat(intersect_pd['crs_dist_stops'].values[np.newaxis],nlay,axis=0)
+        data_frommap_wl3_sel = uds_sel[f'{gridname}_s1'].to_numpy() #TODO: add escape for missing wl/bl vars
+        data_frommap_bl_sel = uds_sel[f'{gridname}_flowelem_bl'].to_numpy()
+        zvals_interface = np.linspace(data_frommap_bl_sel,data_frommap_wl3_sel,nlay+1)
+
+    #derive crs_verts
+    crs_dist_starts_matrix = np.repeat(crs_dist_starts[np.newaxis],nlay,axis=0)
+    crs_dist_stops_matrix = np.repeat(crs_dist_stops[np.newaxis],nlay,axis=0)
     crs_verts_x_all = np.array([[crs_dist_starts_matrix.ravel(),crs_dist_stops_matrix.ravel(),crs_dist_stops_matrix.ravel(),crs_dist_starts_matrix.ravel()]]).T
     crs_verts_z_all = np.ma.array([zvals_interface[1:,:].ravel(),zvals_interface[1:,:].ravel(),zvals_interface[:-1,:].ravel(),zvals_interface[:-1,:].ravel()]).T[:,:,np.newaxis]
     crs_verts = np.ma.concatenate([crs_verts_x_all, crs_verts_z_all], axis=2)
     
-    if varname is not None: #retrieve data for varname and return
-        if dimn_layer is None: #no layers, 2D model
-            data_frommap = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep, multipart=multipart)
-        else:
-            data_frommap = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep, layer='all', multipart=multipart)
-        if len(data_frommap.shape) == 3:
-            data_frommap_sel = data_frommap[0,intersect_gridnos,:]
-            crs_plotdata = data_frommap_sel.T.flatten()
-        elif len(data_frommap.shape) == 2: #for 2D models, no layers 
-            data_frommap_sel = data_frommap[0,intersect_gridnos]
-            crs_plotdata = data_frommap_sel
-        return crs_verts, crs_plotdata
-    else:
-        return crs_verts
-    
+    #define grid
+    shape_crs_grid = crs_verts[:,:,0].shape
+    shape_crs_flat = crs_verts[:,:,0].ravel().shape
+    xr_crs_grid = xu.Ugrid2d(node_x=crs_verts[:,:,0].ravel(),
+                             node_y=crs_verts[:,:,1].ravel(),
+                             fill_value=-1,
+                             face_node_connectivity=np.arange(shape_crs_flat[0]).reshape(shape_crs_grid),
+                             )
+
+    #define dataset
+    if dimn_layer in uds_sel.dims:
+        crs_plotdata_clean = uds_sel.stack({xr_crs_grid.face_dimension:[dimn_layer,'ncrossed_faces']},create_index=False)
+    else: #2D: still make sure xr_crs_grid.face_dimension is created, using stack since .rename() gives "UserWarning: rename 'ncrossed_faces' to 'mesh2d_nFaces' does not create an index anymore."
+        crs_plotdata_clean = uds_sel.stack({xr_crs_grid.face_dimension:['ncrossed_faces']},create_index=False)
+                    
+    #combine into xugrid
+    xr_crs_ugrid = xu.UgridDataset(crs_plotdata_clean, grids=[xr_crs_grid])
+    return xr_crs_ugrid
 
 
-
-
-
-def get_netdata(file_nc, multipart=None):
-
-    file_ncs = get_ncfilelist(file_nc, multipart)
-    #get all data
-    num_nodes = [0]
-    verts_shape2_all = []
-    print('processing %d partitions (first getting max number of facenodes)'%(len(file_ncs)))
-    for iF, file_nc_sel in enumerate(file_ncs):
-        data_nc = Dataset(file_nc_sel)
-        varn_mesh2d_face_nodes = get_varname_fromnc(data_nc,'mesh2d_face_nodes',vardim='var')
-        if varn_mesh2d_face_nodes is not None: # node_z variable is present
-            mesh2d_face_nodes = data_nc.variables[varn_mesh2d_face_nodes]
-        else:
-            raise Exception('ERROR: provided file does not contain a variable mesh2d_face_nodes or similar:\n%s\nPlease do one of the following:\n- plot grid from *_map.nc file\n- import and export the grid with RGFGRID\n- import and save the gridd "with cellfinfo" from interacter'%(file_nc))
-        verts_shape2_all.append(mesh2d_face_nodes.shape[1])
-        data_nc.close()
-    verts_shape2_max = np.max(verts_shape2_all)
-    
-    for iF, file_nc_sel in enumerate(file_ncs):
-        print('processing netdata from domain %04d of %04d'%(iF, len(file_ncs)-1))
-        #data_nc = Dataset(file_nc_sel)
-        #list(data_nc.variables.keys())
-
-        ugrid = UGrid.fromfile(file_nc_sel)
-        node_x = ugrid.mesh2d_node_x
-        node_y = ugrid.mesh2d_node_y
-        node_z = ugrid.mesh2d_node_z
-        faces = ugrid.mesh2d_face_nodes
-        verts = ugrid.verts
-        #mesh2d_edge_x = ugrid.mesh2d_edge_x
-        #mesh2d_edge_y = ugrid.mesh2d_edge_y
-        edge_verts = ugrid.edge_verts
-
-        #setup initial array
-        if iF == 0:
-            node_x_all = np.ma.empty((0,))
-            node_y_all = np.ma.empty((0,))
-            if node_z is not None:
-                node_z_all = np.ma.empty((0,))
-            else:
-                node_z_all = None
-            verts_all = np.ma.empty((0,verts_shape2_max,verts.shape[2]))
-            faces_all = np.ma.empty((0,verts_shape2_max),dtype='int32')
-            #mesh2d_edge_x_all = np.ma.empty((0,))
-            #mesh2d_edge_y_all = np.ma.empty((0,))
-            if edge_verts is not None:
-                edge_verts_all = np.ma.empty((0,4,edge_verts.shape[2])) #create edge verts, which will contain the two edge node coordinates, as well as the two center coordinates from neighbouring faces
-            else:
-                edge_verts_all = None
-
-        #if necessary, add masked column(s) to increase size to max in domains
-        if verts.shape[1] < verts_shape2_max:
-            tofew_cols = -(verts.shape[1] - verts_shape2_max)
-            vcol_extra = verts[:,[0],:]
-            vcol_extra.mask = True
-            fcol_extra = faces[:,[0]]
-            fcol_extra.mask = True
-            for iC in range(tofew_cols):
-                verts = np.hstack([verts,vcol_extra])
-                faces = np.hstack([faces,fcol_extra])
-
-        #merge all
-        node_x_all = np.ma.concatenate([node_x_all,node_x])
-        node_y_all = np.ma.concatenate([node_y_all,node_y])
-        if node_z is not None:
-            node_z_all = np.ma.concatenate([node_z_all,node_z])
-        verts_all = np.ma.concatenate([verts_all,verts])
-        faces_all = np.ma.concatenate([faces_all,faces+np.sum(num_nodes)])
-        #mesh2d_edge_x_all = np.ma.concatenate([mesh2d_edge_x_all,mesh2d_edge_x])
-        #mesh2d_edge_y_all = np.ma.concatenate([mesh2d_edge_y_all,mesh2d_edge_y])
-        if edge_verts is not None:
-            edge_verts_all = np.ma.concatenate([edge_verts_all,edge_verts])
-        num_nodes.append(node_x.shape[0])
-
-    #set all invalid values to the same value (tends to differ between partitions)
-    #faces_all.data[faces_all.mask] = -999
-    #faces_all.fill_value = -999
-
-    ugrid_all = UGrid(node_x_all, node_y_all, faces_all, verts_all, mesh2d_node_z=node_z_all, edge_verts=edge_verts_all)
-    ugrid_all
-    return ugrid_all
-
-
-
-
-
-def plot_netmapdata(verts, values=None, ax=None, **kwargs):
-    #https://stackoverflow.com/questions/52202014/how-can-i-plot-2d-fem-results-using-matplotlib
-    #https://stackoverflow.com/questions/49640311/matplotlib-unstructered-quadrilaterals-instead-of-triangles
-    
-    if not values is None:
-        #squeeze values (remove dimensions with length 1)
-        values = np.squeeze(values)
-        #check if data shape is equal
-        if verts.shape[:-2] != values.shape:
-            raise Exception('size of first dimensions of verts (%s) and dimensions of squeezed values (%s) is not equal, cannot plot. Flatten your values array or if the values are on cell edges, try providing ugrid_all.edge_verts instead'%(verts.shape[:-2],values.shape))
-
-    #convert to 3D
-    if len(verts.shape) == 4 and verts.shape[-2] == 4 and verts.shape[-1] == 2: #from regular grid
-        # flatten first two dimensions to one
-        verts_3D = verts.reshape(-1,verts.shape[2],verts.shape[3])
-        if not values is None:
-            values_3D = values.reshape(-1)
-        else:
-            values_3D = None
-    elif len(verts.shape) == 3 and verts.shape[-1] == 2: #from ugrid
-        verts_3D = verts
-        values_3D = values
-    else:
-        raise Exception('dimensions should be [m,n,4,2] or [cells,maxcorners,2], last dimension is xy')
-
-
-    if not ax: ax=plt.gca()
-    pc = matplotlib.collections.PolyCollection(verts_3D, **kwargs)
-    pc.set_array(values_3D)
-    ax.add_collection(pc)
-    ax.autoscale()
-
-    return pc
-
-
-
-
-
-
-
-
-def plot_background(ax=None, projection=None, google_style='satellite', resolution=1, features=None, nticks=6, latlon_format=False, gridlines=False, **kwargs):
+def polyline_mapslice(uds:xu.UgridDataset, line_array:np.array, calcdist_fromlatlon:bool = None) -> xu.UgridDataset:
     """
-    this definition uses cartopy to plot a geoaxis and a satellite basemap and coastlines. A faster alternative for a basemap is contextily:
-    import contextily as ctx
-    fig, ax = plt.subplots(1,1)
-    ctx.add_basemap(ax, source=ctx.providers.Esri.WorldImagery, crs="EPSG:28992")
-    More info at: https://contextily.readthedocs.io/en/latest/reference.html
+    Slice trough mapdata, combine: intersect_edges_withsort, calculation of distances and conversion to ugrid dataset.
 
     Parameters
     ----------
-    ax : cartopy.mpl.geoaxes.GeoAxesSubplot, optional
+    uds : xu.UgridDataset
+        DESCRIPTION.
+    line_array : np.array
+        DESCRIPTION.
+    calcdist_fromlatlon : bool, optional
         DESCRIPTION. The default is None.
-    projection : integer, cartopy._crs.CRS or cartopy._epsg._EPSGProjection, optional
-        DESCRIPTION. The default is None.
-    google_style : Nonetype or string, optional
-       The style of the Google Maps tiles. One of None, ‘street’, ‘satellite’, ‘terrain’, and ‘only_streets’. The default is 'satellite'.
-    resolution : int, optional
-        resolution for the Google Maps tiles. 1 works wel for global images, 12 works well for a scale of Grevelingen lake, using 12 on global scale will give you a server timeout. The default is 1.
-    features : string, optional
-        Features to plot, options: None, 'ocean', 'rivers', 'land', 'countries', 'countries_highres', 'coastlines', 'coastlines_highres'. The default is None.
-    nticks : TYPE, optional
-        DESCRIPTION. The default is 6.
-    latlon_format : bool, optional
-        DESCRIPTION. The default is False.
-    gridlines : TYPE, optional
-        DESCRIPTION. The default is False.
-    **kwargs : TYPE
-        additional arguments for ax.add_feature or ax.coastlines(). examples arguments and values are: alpha=0.5, facecolor='none', edgecolor='gray', linewidth=0.5, linestyle=':'
 
     Raises
     ------
@@ -622,94 +167,341 @@ def plot_background(ax=None, projection=None, google_style='satellite', resoluti
 
     Returns
     -------
-    ax : TYPE
+    xr_crs_ugrid : xu.UgridDataset
         DESCRIPTION.
 
     """
-
-    import cartopy
-    import cartopy.crs as ccrs
-    import cartopy.io.img_tiles as cimgt
-    import cartopy.feature as cfeature
-    import cartopy.mpl.ticker as cticker
-
-    dummy = ccrs.epsg(28992) #to make cartopy realize it has a cartopy._epsg._EPSGProjection class (maybe gets fixed with cartopy updates, see unittest test_cartopy_epsg)
-    if ax is None: #provide axis projection on initialisation, cannot be edited later on
-        if projection is None:
-            projection=ccrs.PlateCarree() #projection of cimgt.GoogleTiles, useful default
-        elif isinstance(projection, (cartopy._epsg._EPSGProjection, cartopy.crs.CRS)): #checks if argument is an EPSG projection or CRS projection (like PlateCarree, Mercator etc). Note: it was cartopy._crs.CRS before instead of cartopy.crs.CRS
-            pass
-        elif type(projection) is int:
-            projection = ccrs.epsg(projection)
+    
+    #compute intersection coordinates of crossings between edges and faces and their respective indices
+    edges = np.stack([line_array[:-1],line_array[1:]],axis=1)
+    edge_index, face_index, intersections = intersect_edges_withsort(uds=uds, edges=edges)
+    if len(edge_index) == 0:
+        raise ValueError('polyline does not cross mapdata')
+    
+    #auto determine if cartesian/sperical distance should be computed
+    if calcdist_fromlatlon is None:
+        if hasattr(uds,'projected_coordinate_system'):
+            calcdist_fromlatlon = False
+        elif hasattr(uds,'wgs84'):
+            calcdist_fromlatlon = True
         else:
-            raise Exception('argument projection should be of type integer, cartopy._crs.CRS or cartopy._epsg._EPSGProjection')
-        fig, ax = plt.subplots(subplot_kw={'projection': projection})
-        #ax = plt.axes(projection=projection)
-    elif type(ax) is cartopy.mpl.geoaxes.GeoAxesSubplot:
-        if projection is not None:
-            print('arguments ax and projection are both provided, the projection from the ax is used so the projection argument is ignored')
+            raise KeyError('To auto determine calcdist_fromlatlon, a variable "projected_coordinate_system" or "wgs84" is required, please provide calcdist_fromlatlon=True/False yourself.')
+    if calcdist_fromlatlon:
+        calc_dist = calc_dist_haversine
     else:
-        raise Exception('argument ax should be of type cartopy.mpl.geoaxes.GeoAxesSubplot, leave argument empty or create correct instance with:\nimport cartopy.crs as ccrs\nfig, (ax1,ax2) = plt.subplots(1,2,figsize=(10,5), subplot_kw={"projection": ccrs.epsg(28992)})')
+        calc_dist = calc_dist_pythagoras
+    
+    #compute pyt/haversine start/stop distances for all intersections
+    edge_len = calc_dist(edges[:,0,0], edges[:,1,0], edges[:,0,1], edges[:,1,1])
+    edge_len_cum = np.cumsum(edge_len)
+    edge_len_cum0 = np.concatenate([[0],edge_len_cum[:-1]])
+    crs_dist_starts = calc_dist(edges[edge_index,0,0], intersections[:,0,0], edges[edge_index,0,1], intersections[:,0,1]) + edge_len_cum0[edge_index]
+    crs_dist_stops  = calc_dist(edges[edge_index,0,0], intersections[:,1,0], edges[edge_index,0,1], intersections[:,1,1]) + edge_len_cum0[edge_index]
+    
+    #derive vertices from cross section (distance from first point)
+    xr_crs_ugrid = get_xzcoords_onintersection(uds=uds, face_index=face_index, crs_dist_starts=crs_dist_starts, crs_dist_stops=crs_dist_stops)
+    
+    return xr_crs_ugrid
 
 
-
-    if gridlines:
-        ax.gridlines(draw_labels=True)
-    elif nticks is not None: #only look at nticks if gridlines are not used
-        extent = ax.get_extent()
-        ax.set_xticks(np.linspace(extent[0],extent[1],nticks))
-        ax.set_yticks(np.linspace(extent[2],extent[3],nticks))
-
-
-    if google_style is not None:
-        request = cimgt.GoogleTiles(style=google_style)
-        ax.add_image(request,resolution)
-
-
-    if features is not None:
-        if type(features) is str:
-            features = [features]
-        elif type(features) is not list:
-            raise Exception('argument features should be of type list of str')
-
-        valid_featurelist = ['ocean','rivers','land','countries','countries_highres','coastlines','coastlines_highres']
-        invalid_featurelist = [x for x in features if x not in valid_featurelist]
-        if invalid_featurelist != []:
-            raise Exception('invalid features %s requested, possible are: %s'%(invalid_featurelist, valid_featurelist))
-
-        if 'ocean' in features:
-            #feat = cfeature.NaturalEarthFeature(category='physical', name='ocean', facecolor=cfeature.COLORS['water'], scale='10m', edgecolor='face', alpha=alpha)
-            #ax.add_feature(feat)
-            ax.add_feature(cfeature.OCEAN, **kwargs)
-        if 'rivers' in features:
-            ax.add_feature(cfeature.RIVERS, **kwargs)
-        if 'land' in features:
-            #feat = cfeature.NaturalEarthFeature(category='physical', name='land', facecolor=cfeature.COLORS['land'], scale='10m', edgecolor='face', alpha=alpha)
-            #ax.add_feature(feat)
-            ax.add_feature(cfeature.LAND, **kwargs)
-        if 'countries' in features:
-            ax.add_feature(cfeature.BORDERS, **kwargs)
-        if 'countries_highres' in features:
-            feat = cfeature.NaturalEarthFeature(category='cultural', name='admin_0_countries', scale='10m')
-            ax.add_feature(feat, **kwargs)
-        if 'coastlines' in features:
-            ax.add_feature(cfeature.COASTLINE, **kwargs)
-        if 'coastlines_highres' in features:
-            ax.coastlines(resolution='10m', **kwargs)
-
-    if latlon_format:
-        lon_formatter = cticker.LongitudeFormatter()
-        lat_formatter = cticker.LatitudeFormatter()
-        ax.xaxis.set_major_formatter(lon_formatter)
-        ax.yaxis.set_major_formatter(lat_formatter)
+def get_formula_terms(uds, varn_contains):
+    """
+    get formula_terms for zw/zcc reconstruction, convert to list and then to dict. This can be done for layer/interface (via varn_contains)
+    """
+    osz_varnames = list(uds.filter_by_attrs(formula_terms=lambda v: v is not None).variables) #names of variables containing attribute "formula_terms"
+    osz_varnames_contains = [x for x in osz_varnames if varn_contains in x] #TODO: to get the layer/interface ocean_*_coordinate. Not too pretty, but it works
+    if len(osz_varnames_contains) != 1: #should be 1 exactly, none is the case in zlayer models
+        raise ValueError(f'no or more than one {varn_contains} variable found with formula_terms attribute: {osz_varnames}')
+    osz_varn = osz_varnames_contains[0]
+    osz_formulaterms = uds[osz_varn].attrs['formula_terms']
+    tokens = re.split('[:\\s]+', osz_formulaterms)
+    osz_formulaterms_dict = dict(zip(tokens[::2], tokens[1::2]))
+    return osz_formulaterms_dict
 
 
-    return ax
+def reconstruct_zw_zcc_fromsigma(uds):
+    """
+    reconstruct full grid output (time/face-varying z-values) for sigma model, necessary for slicing sigmamodel on depth value
+    based on https://cfconventions.org/cf-conventions/cf-conventions.html#_ocean_sigma_coordinate
+    """
+    osz_formulaterms_int_dict = get_formula_terms(uds,varn_contains='interface')
+    osz_formulaterms_lay_dict = get_formula_terms(uds,varn_contains='layer')
+    gridname = uds.grid.name
+    
+    uds_eta = uds[osz_formulaterms_int_dict['eta']] #mesh2d_s1
+    uds_depth = uds[osz_formulaterms_int_dict['depth']] #mesh2d_bldepth in new output, mesh2d_waterdepth in old output (see comment below)
+    if uds_depth.attrs['standard_name'] == 'sea_floor_depth_below_sea_surface': # previously the waterdepth instead of negative bedlevel was coupled via the formula_terms in sigmamodels (was fixed in OSS 140982 / 29-3-2022)
+        uds_depth = -uds[f'{gridname}_flowelem_bl'] # assuming this variable is available, which is not guaranteed
+    uds_sigma_int = uds[osz_formulaterms_int_dict['sigma']] #mesh2d_interface_sigma
+    uds_sigma_lay = uds[osz_formulaterms_lay_dict['sigma']] #mesh2d_layer_sigma
+    
+    uds[f'{gridname}_flowelem_zw'] = uds_eta + uds_sigma_int*(uds_depth+uds_eta)
+    uds[f'{gridname}_flowelem_zcc'] = uds_eta + uds_sigma_lay*(uds_depth+uds_eta)
+    
+    uds = uds.set_coords([f'{gridname}_flowelem_zw',f'{gridname}_flowelem_zcc'])
+    return uds
 
 
+def reconstruct_zw_zcc_fromz(uds):
+    """
+    reconstruct full grid output (time/face-varying z-values) for zvalue model. Necessary when extracting values with zdepth w.r.t. waterlevel/bedlevel
+    """
+    #TODO: center values (zcc) are clipped to waterlevel+bedlevel, so the zcc of the top+bottom layer are currently incorrect
+    
+    dimn_layer, dimn_interfaces = get_vertical_dimensions(uds)
+    gridname = uds.grid.name
+    
+    uds_eta = uds[f'{gridname}_s1'] # assuming this variable is available, which is not guaranteed
+    uds_z0 = xu.zeros_like(uds_eta)
+    uds_bl = uds[f'{gridname}_flowelem_bl'] # assuming this variable is available, which is not guaranteed
+    
+    #deriving zcenter values, clipping zcc to bl/wl
+    zvals_center = uds[f'{gridname}_layer_z']
+    uds[f'{gridname}_flowelem_zcc'] = (uds_z0+zvals_center).clip(min=uds_bl, max=uds_eta)
+
+    #deriving zinterface values, first expanding zint to wl.max(), then clipping zw to bl/wl
+    zvals_interface = uds[f'{gridname}_interface_z']
+    # make sure mesh2d_interface_z.max()>=wl.max() (is clipped to wl again in next step)
+    if zvals_interface[-1] < uds_eta.max():
+        zvals_interface[-1] = uds_eta.max()
+    uds[f'{gridname}_flowelem_zw'] = (uds_z0+zvals_interface).clip(min=uds_bl, max=uds_eta)
+    
+    uds = uds.set_coords([f'{gridname}_flowelem_zw',f'{gridname}_flowelem_zcc'])
+    return uds
 
 
-def plot_ztdata(data_xr_sel, varname, ax=None, mask_data=True, only_contour=False, **kwargs):
+def reconstruct_zw_zcc_fromzsigma(uds):
+    """
+    reconstruct full grid output (time/face-varying z-values) for zsigmavalue model without full grid output. Implemented in https://issuetracker.deltares.nl/browse/UNST-5477
+    based on https://cfconventions.org/cf-conventions/cf-conventions.html#_ocean_sigma_over_z_coordinate
+    """
+    # TODO: center values are clipped to bedlevel, so the center values of the bottom layer are currently incorrect
+    
+    # temporarily decode default fillvalues
+    # TODO: xarray only decodes explicitly set fillvalues: https://github.com/Deltares/dfm_tools/issues/490
+    uds = xu.UgridDataset(decode_default_fillvals(uds.obj),grids=[uds.grid])
+    
+    osz_formulaterms_int_dict = get_formula_terms(uds,varn_contains='interface')
+    osz_formulaterms_lay_dict = get_formula_terms(uds,varn_contains='layer')
+    
+    uds_eta = uds[osz_formulaterms_int_dict['eta']] #mesh2d_s1
+    uds_depth = uds[osz_formulaterms_int_dict['depth']] #mesh2d_bldepth: positive version of mesh2d_flowelem_bl, but this one is always in file
+    uds_depth_c = uds[osz_formulaterms_int_dict['depth_c']] #mesh2d_sigmazdepth
+    uds_zlev_int = uds[osz_formulaterms_int_dict['zlev']] #mesh2d_interface_z
+    uds_sigma_int = uds[osz_formulaterms_int_dict['sigma']] #mesh2d_interface_sigma
+    uds_zlev_lay = uds[osz_formulaterms_lay_dict['zlev']] #mesh2d_layer_z
+    uds_sigma_lay = uds[osz_formulaterms_lay_dict['sigma']] #mesh2d_layer_sigma
+    
+    # for levels k where sigma(k) has a defined value and zlev(k) is not defined:
+    # z(n,k,j,i) = eta(n,j,i) + sigma(k)*(min(depth_c,depth(j,i))+eta(n,j,i))
+    zw_sigmapart = uds_eta + uds_sigma_int*(uds_depth.clip(max=uds_depth_c)+uds_eta)
+    zcc_sigmapart = uds_eta + uds_sigma_lay*(uds_depth.clip(max=uds_depth_c)+uds_eta)
+    # for levels k where zlev(k) has a defined value and sigma(k) is not defined: 
+    # z(n,k,j,i) = zlev(k)
+    zw_zpart = uds_zlev_int.clip(min=-uds_depth) #added clipping of zvalues with bedlevel
+    zcc_zpart = uds_zlev_lay.clip(min=-uds_depth) #added clipping of zvalues with bedlevel
+    uds['mesh2d_flowelem_zw'] = zw_sigmapart.fillna(zw_zpart)
+    uds['mesh2d_flowelem_zcc'] = zcc_sigmapart.fillna(zcc_zpart)
+    
+    uds = uds.set_coords(['mesh2d_flowelem_zw','mesh2d_flowelem_zcc'])
+    return uds
+
+
+def reconstruct_zw_zcc(ds):
+    """
+    reconstruct full grid output (time/face-varying z-values) for all layertypes, passes on to respective reconstruction function
+    """
+    dimn_layer, dimn_interfaces = get_vertical_dimensions(ds)
+    
+    if dimn_layer is not None: #D-FlowFM mapfile
+        gridname = ds.grid.name
+        varname_zint = f'{gridname}_flowelem_zw'
+    elif 'laydim' in ds.dims: #D-FlowFM hisfile
+        varname_zint = 'zcoordinate_w'
+    
+    #reconstruct zw/zcc variables (if not in file) and treat as fullgrid mapfile from here
+    if varname_zint in ds.variables: #fullgrid info already available, so continuing
+        print(f'zw/zcc (fullgrid) values already present in Dataset in variable {varname_zint}')
+    elif len(ds.filter_by_attrs(standard_name='ocean_sigma_z_coordinate')) != 0:
+        print('zsigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
+        ds = reconstruct_zw_zcc_fromzsigma(ds)
+    elif 'mesh2d_layer_sigma' in ds.variables: #TODO: var with standard_name='ocean_sigma_coordinate' available?
+        print('sigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
+        ds = reconstruct_zw_zcc_fromsigma(ds)
+    elif 'mesh2d_layer_z' in ds.variables:
+        print('z-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
+        ds = reconstruct_zw_zcc_fromz(ds)
+    else:
+        raise KeyError('layers present, but unknown layertype, expected one of variables: mesh2d_flowelem_zw, mesh2d_layer_sigma, mesh2d_layer_z')
+    return ds
+
+    
+def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str ='z0'):    
+    """
+    Lazily depth-slice a dataset with layers. Performance can be increased by using a subset of variables or subsetting the dataset in any dimension.
+    This can be done for instance with ds.isel(time=-1) or uds.ugrid.sel(x=slice(),y=slice()) to subset a ugrid dataset in space.
+    The return dataset only contains the sliced variables.
+    
+    Parameters
+    ----------
+    data_xr : xu.UgridDataset
+        has to be Dataset (not a DataArray), otherwise mesh2d_flowelem_zw etc are not available (interface z values)
+        in case of zsigma/sigma layers (or fullgrid), it is advisable to .sel()/.isel() the time dimension first, because that is less computationally heavy
+    depths : TYPE
+        int/float or list/array of int/float. Depths w.r.t. reference level. If reference=='waterlevel', depth>0 returns only nans. If reference=='bedlevel', depth<0 returns only nans. Depths are sorted and only uniques are kept.
+    reference : str, optional
+        compute depth w.r.t. z0/waterlevel/bed. The default is 'z0'.
+    zlayer_z0_selnearest : bool, optional
+        Use xr.interp() to interpolate zlayer model to z-value. Only possible for reference='z' (not 'waterlevel' or 'bedlevel'). Only used if "mesh2d_layer_z" is present (zlayer model)
+        This is faster but results in values interpolated between zcc (z cell centers), so it is different than slicing.. The default is False.
+
+    Raises
+    ------
+    Exception
+        DESCRIPTION.
+
+    Returns
+    -------
+    xu.UgridDataset
+        Dataset with the depth-sliced variables.
+
+    """
+    
+    depth_vardimname = f'depth_from_{reference}'
+    
+    dimn_layer, dimn_interfaces = get_vertical_dimensions(data_xr)
+    
+    if dimn_layer is not None: #D-FlowFM mapfile
+        gridname = data_xr.grid.name
+        varname_zint = f'{gridname}_flowelem_zw'
+        dimname_layc = dimn_layer
+        dimname_layw = dimn_interfaces
+        varname_wl = f'{gridname}_s1'
+        varname_bl = f'{gridname}_flowelem_bl'
+    elif 'laydim' in data_xr.dims: #D-FlowFM hisfile
+        varname_zint = 'zcoordinate_w'
+        dimname_layc = 'laydim'
+        dimname_layw = 'laydimw'
+        varname_wl = 'waterlevel'
+        varname_bl = 'bedlevel'
+    else:
+        print(UserWarning('depth/layer dimension not found, probably 2D model, returning input Dataset')) #TODO: this can also be at depth, since slice will put parts of model dry (and allnan if below wl or below bl). Implement this
+        return data_xr #early return
+    
+    if not isinstance(data_xr,(xr.Dataset,xu.UgridDataset)):
+        raise TypeError(f'data_xr_map should be of type xr.Dataset, but is {type(data_xr)}')
+    
+    #create depth xr.DataArray
+    if isinstance(depths,(float,int)):
+        depth_dims = ()
+    else:
+        depths = np.unique(depths) #array of unique+sorted floats/ints
+        depth_dims = (depth_vardimname)
+    depths_xr = xr.DataArray(depths,dims=depth_dims,attrs={'units':'m',
+                                                           'reference':f'model_{reference}',
+                                                           'positive':'up'}) #TODO: make more in line with CMEMS etc
+    
+    #potentially construct fullgrid info (zcc/zw)
+    data_xr = reconstruct_zw_zcc(data_xr)
+    
+    #correct reference level
+    if reference=='z0':
+        zw_reference = data_xr[varname_zint]
+    elif reference=='waterlevel':
+        if varname_wl not in data_xr.variables:
+            raise KeyError(f'get_Dataset_atdepths() called with reference=waterlevel, but {varname_wl} variable not present')
+        data_wl = data_xr[varname_wl]
+        zw_reference = data_xr[varname_zint] - data_wl
+    elif reference=='bedlevel':
+        if varname_bl not in data_xr.variables:
+            raise KeyError(f'get_Dataset_atdepths() called with reference=bedlevel, but {varname_bl} variable not present') #TODO: in case of zsigma/sigma it can also be -mesh2d_bldepth
+        data_bl = data_xr[varname_bl]
+        zw_reference = data_xr[varname_zint] - data_bl
+    else:
+        raise KeyError(f'unknown reference "{reference}" (possible are z0, waterlevel and bedlevel') #TODO: make enum?
+    
+    print('>> subsetting data on fixed depth in fullgrid z-data: ',end='')
+    dtstart = dt.datetime.now()
+    
+    #get layerbool via z-interface value (zw), check which celltop-interfaces are above/on depth and which which cellbottom-interfaces are below/on depth
+    bool_topinterface_abovedepth = zw_reference.isel({dimname_layw:slice(1,None)}) >= depths_xr
+    bool_botinterface_belowdepth = zw_reference.isel({dimname_layw:slice(None,-1)}) <= depths_xr
+    bool_topbotinterface_arounddepth = bool_topinterface_abovedepth & bool_botinterface_belowdepth #this bool also automatically excludes all values below bed and above wl
+    bool_topbotinterface_arounddepth = bool_topbotinterface_arounddepth.rename({dimname_layw:dimname_layc}) #correct dimname for interfaces to centers
+    
+    #subset variables that have no, time, face and/or layer dims, slice only variables with all three dims (and add to subset)
+    bool_dims = [x for x in bool_topbotinterface_arounddepth.dims if x!=depth_vardimname] #exclude depth_vardimname (present if multiple depths supplied), since it is not present in pre-slice variables
+    variables_toslice = [var for var in data_xr.data_vars if set(bool_dims).issubset(data_xr[var].dims)]
+    
+    #actual slicing with .where().max()
+    ds_atdepths = data_xr[variables_toslice].where(bool_topbotinterface_arounddepth).max(dim=dimname_layc,keep_attrs=True) #set all layers but one to nan, followed by an arbitrary reduce (max in this case) #TODO: check if attributes should be passed/altered
+    #TODO: suppress warning (upon plotting/load/etc): "C:\Users\veenstra\Anaconda3\envs\dfm_tools_env\lib\site-packages\dask\array\reductions.py:640: RuntimeWarning: All-NaN slice encountered" >> already merged in xarray: https://github.com/dask/dask/pull/9916
+    ds_atdepths = ds_atdepths.drop_dims([dimname_layw,dimname_layc],errors='ignore') #dropping interface dim if it exists, since it does not correspond to new depths dim
+    
+    #add depth as coordinate var
+    ds_atdepths[depth_vardimname] = depths_xr
+    ds_atdepths = ds_atdepths.set_coords([depth_vardimname])
+    
+    print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
+    
+    return ds_atdepths
+
+
+def rasterize_ugrid(uds:xu.UgridDataset, ds_like:xr.Dataset = None, resolution:float = None):
+    """
+    Rasterizing ugrid dataset to regular dataset. ds_like has higher priority than `resolution`. If both are not passed, a raster is generated of at least 200x200
+    inspired by xugrid.plot.imshow and xugrid.ugrid.ugrid2d.rasterize/rasterize_like.
+    
+    Parameters
+    ----------
+    uds : xu.UgridDataset
+        DESCRIPTION.
+    ds_like : xr.Dataset, optional
+        xr.Dataset with ed x and y variables to interpolate uds to. The default is None.
+    resolution : float, optional
+        Only used if ds_like is not supplied. The default is None.
+    
+    Raises
+    ------
+    Exception
+        DESCRIPTION.
+
+    Returns
+    -------
+    ds : TYPE
+        DESCRIPTION.
+
+    """
+    
+    if isinstance(uds,xu.core.wrap.UgridDataset):
+        xu_facedim = uds.grid.face_dimension
+        uds_facevars = Dataset_varswithdim(uds,xu_facedim)
+        face_str = f'Dataset with {len(uds_facevars.data_vars)} face variables'
+    elif isinstance(uds,xu.core.wrap.UgridDataArray):
+        face_str = 'DataArray'
+    else:
+        raise TypeError(f'rasterize_ugrid expected xu.core.wrap.UgridDataset or xu.core.wrap.UgridDataArray, got {type(uds)} instead')
+    
+    if ds_like is None:
+        xmin, ymin, xmax, ymax = uds.grid.bounds
+        dx = xmax - xmin
+        dy = ymax - ymin
+        if resolution is None: # check if a rasterization resolution is passed, otherwise default to 200 raster cells otherwise for the smallest axis.
+            resolution = min(dx, dy) / 200
+        d = abs(resolution)
+        regx = np.arange(xmin + 0.5 * d, xmax, d)
+        regy = np.arange(ymin + 0.5 * d, ymax, d)
+        ds_like = xr.DataArray(np.empty((len(regy), len(regx))), {"y": regy, "x": regx}, ["y", "x"])
+    
+    print(f'>> rasterizing ugrid {face_str} to shape=({len(ds_like.y)},{len(ds_like.y)}): ',end='')
+    dtstart = dt.datetime.now()
+    ds = uds.ugrid.rasterize_like(other=ds_like)
+    print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
+    
+    return ds
+
+
+def plot_ztdata(data_xr_sel, varname, ax=None, only_contour=False, **kwargs):
     """
     
 
@@ -721,13 +513,11 @@ def plot_ztdata(data_xr_sel, varname, ax=None, mask_data=True, only_contour=Fals
         DESCRIPTION.
     ax : matplotlib.axes._subplots.AxesSubplot, optional
         the figure axis. The default is None.
-    mask_data : bool, optional
-        whether to repair z_interface coordinates and mask data in inactive layers. The default is True.
     only_contour : bool, optional
         Wheter to plot contour lines of the dataset. The default is False.
     **kwargs : TYPE
         properties to give on to the pcolormesh function.
-
+    
     Raises
     ------
     Exception
@@ -737,44 +527,30 @@ def plot_ztdata(data_xr_sel, varname, ax=None, mask_data=True, only_contour=Fals
     -------
     pc : matplotlib.collections.QuadMesh
         DESCRIPTION.
-
+    
     """
-
-   
-    print('WARNING: layers in dflowfm hisfile might be incorrect, check your figures carefully')
     
-    data_fromhis_var = data_xr_sel[varname].to_numpy()
-    if len(data_fromhis_var.shape) != 2:
-        raise Exception(f'ERROR: unexpected number of dimensions in requested squeezed variable ({data_fromhis_var.shape}), first use data_xr.isel(stations=int) to select a single station') #TODO: can also have a different cause, improve message/testing?
-    data_fromhis_zcen = data_xr_sel['zcoordinate_c'].bfill(dim='laydim').to_numpy()
-    data_fromhis_zcor = data_xr_sel['zcoordinate_w'].bfill(dim='laydimw').to_numpy() #bfill replaces nan values with last valid value, this is necessary to enable pcolormesh to work
-    data_fromhis_zcor = np.concatenate([data_fromhis_zcor,data_fromhis_zcor[[-1],:]],axis=0)
-    data_fromhis_wl = data_xr_sel['waterlevel'].to_numpy()
-    
-    if mask_data:
-        data_fromhis_var = np.ma.array(data_fromhis_var)
-        bool_zcen_equaltop = (data_fromhis_zcen==data_fromhis_zcen[:,-1:]).all(axis=0)
-        id_zcentop = np.argmax(bool_zcen_equaltop) # id of first z_center that is equal to z_center of last layer
-        if (data_fromhis_zcor[:-1,id_zcentop] > data_fromhis_zcen[:,id_zcentop]).any():
-            print('correcting z interface values')
-            data_fromhis_zcor[:-1,id_zcentop+1] = data_fromhis_wl
-            data_fromhis_zcor[:-1,id_zcentop] = (data_fromhis_zcen[:,id_zcentop-1]+data_fromhis_zcen[:,id_zcentop])/2
-        bool_zcen_equaltop[id_zcentop] = False
-        #bool_zcor_equaltop = (data_fromhis_zcor_flat[:,1:]==data_fromhis_zcor_flat[:,-1:]).all(axis=0)
-        mask_array = np.tile(bool_zcen_equaltop,(data_fromhis_zcor.shape[0],1))
-        data_fromhis_var.mask = mask_array
-
     if not ax: ax=plt.gca()
-
+    
+    if len(data_xr_sel[varname].shape) != 2:
+        raise ValueError(f'ERROR: unexpected number of dimensions in requested squeezed variable ({data_xr_sel[varname].shape}), first use data_xr.isel(stations=int) to select a single station') #TODO: can also have a different cause, improve message/testing?
+    
+    #repair zvalues at wl/wl (filling nans and clipping to wl/bl). bfill replaces nan values with last valid value, this is necessary to enable pcolormesh to work. clip forces data to be within bl/wl
+    #TODO: put clip in preproces_hisnc to make plotting easier?
+    data_xr_sel['zcoordinate_c'] = data_xr_sel['zcoordinate_c'].bfill(dim='laydim').clip(min=data_xr_sel.bedlevel,max=data_xr_sel.waterlevel)
+    data_xr_sel['zcoordinate_w'] = data_xr_sel['zcoordinate_w'].bfill(dim='laydimw').clip(min=data_xr_sel.bedlevel,max=data_xr_sel.waterlevel)
+    
     # generate 2 2d grids for the x & y bounds (you can also give one 2D array as input in case of eg time varying z coordinates)
+    data_fromhis_zcor = data_xr_sel['zcoordinate_w'].to_numpy() 
+    data_fromhis_zcor = np.concatenate([data_fromhis_zcor,data_fromhis_zcor[[-1],:]],axis=0)
     time_np = data_xr_sel.time.to_numpy()
     time_cor = np.concatenate([time_np,time_np[[-1]]])
     time_mesh_cor = np.tile(time_cor,(data_fromhis_zcor.shape[-1],1)).T
-    time_mesh_cen = np.tile(time_np,(data_fromhis_zcen.shape[-1],1)).T
     if only_contour:
-        pc = ax.contour(time_mesh_cen,data_fromhis_zcen,data_fromhis_var, **kwargs)
-    else: #TODO: should actually supply cell edges instead of centers to pcolor/pcolormesh, but inconvenient for time dimension.
-        pc = ax.pcolormesh(time_mesh_cor, data_fromhis_zcor, data_fromhis_var, **kwargs)
-
+        pc = data_xr_sel[varname].plot.contour(ax=ax, x='time', y='zcoordinate_c', **kwargs)
+    else:
+        #pc = data_xr_sel[varname].plot.pcolormesh(ax=ax, x='time', y='zcoordinate_w', **kwargs) #TODO: not possible to put center values on interfaces, so more difficult approach needed
+        pc = ax.pcolormesh(time_mesh_cor, data_fromhis_zcor, data_xr_sel[varname], **kwargs)
+   
     return pc
 

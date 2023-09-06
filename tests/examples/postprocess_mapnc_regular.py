@@ -10,13 +10,9 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 plt.close('all')
-from pathlib import Path
 import xarray as xr
+import dfm_tools as dfmt
 
-from dfm_tools.hydrolib_helpers import pointlike_to_DataFrame
-from hydrolib.core.io.polyfile.models import PolyFile
-
-dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
 
 file_nc_list = [r'p:\archivedprojects\1220688-lake-kivu\2_data\COSMO\COSMOCLM_2012_out02_merged_4Wouter.nc', #COSMO
@@ -34,8 +30,7 @@ for file_nc in file_nc_list:
         data_xr = data_xr.drop(['height_10m','height_2m']) #gives cleaner figure title
         clim_wl = [0,0.15]
         clim_uv = [0,5]
-        
-        file_ldb = Path(r'p:\archivedprojects\1220688-lake-kivu\3_modelling\1_FLOW\4_CH4_CO2_included\008\lake_kivu_geo.ldb')
+        add_ldb = True
         fig_args = dict(nrows=1,ncols=3,figsize=(14,6))
     elif 'sfincs' in file_nc:
         name_wl_x,name_wl_y,name_wl = 'x','y','zs'
@@ -44,14 +39,9 @@ for file_nc in file_nc_list:
         data_xr = data_xr.set_coords(['x','y','edge_x','edge_y']) #set coordinates for sfincs. TODO: request x/y/etc as coords in sfincs mapfile https://github.com/Deltares/SFINCS/issues/10
         clim_wl = [0,0.15]
         clim_uv = [0,0.6]
-        file_ldb = None
+        add_ldb = False
         fig_args = dict(nrows=3,ncols=1,figsize=(10,8))
     
-    if file_ldb is not None:
-        polyfile_object = PolyFile(file_ldb)
-        data_ldb = pointlike_to_DataFrame(polyfile_object.objects[0])
-        data_ldb[data_ldb==999.999] = np.nan
-
     
     if name_wl is not None:
         data_fromnc_zs = data_xr[name_wl]
@@ -81,13 +71,12 @@ for file_nc in file_nc_list:
         pc = data_magn.plot.pcolormesh(x=name_uv_x,y=name_uv_y, cmap='jet',ax=ax)
         #pc = data_uv_tsel.plot.quiver(x='lon',y='lat',u='U_10M',v='V_10M', cmap='jet',ax=ax)
         pc.set_clim(clim_uv)
-        ax.set_aspect('equal')
-        if file_ldb is not None:
-            ax.plot(data_ldb['x'], data_ldb['y'], 'k', linewidth=0.5)
+        if add_ldb:
+            dfmt.plot_coastlines(ax=ax)
         data_u_thin = data_u_tsel.loc[::thinning,::thinning]
         data_v_thin = data_v_tsel.loc[::thinning,::thinning]
-        ax.quiver(data_u_thin[name_uv_x], data_u_thin[name_uv_y], data_u_thin, data_v_thin, 
-                  color='w')#,scale=50,width=0.008)#, edgecolor='face', cmap='jet')
+        ax.quiver(data_u_thin[name_uv_x], data_u_thin[name_uv_y], data_u_thin, data_v_thin, #raises warnings for some reason
+                  color='w')#,scale=50,width=0.008), cmap='jet')
     fig.tight_layout()
     plt.savefig(os.path.join(dir_output,f'{basename}_magn_pcolorquiver'))
 
@@ -98,7 +87,6 @@ for file_nc in file_nc_list:
     reg_y_vec = np.arange(data_xr[name_uv_y].min(),data_xr[name_uv_y].max()+dist,dist)
     reg_grid_X,reg_grid_Y = np.meshgrid(reg_x_vec,reg_y_vec)
     from scipy.interpolate import griddata
-    #from dfm_tools.modplot import velovect
     
     fig, axs = plt.subplots(**fig_args,sharex=True,sharey=True)
     for iT, timestep in enumerate([0,1,10]):
@@ -110,15 +98,14 @@ for file_nc in file_nc_list:
         U = griddata((lonvals_flat,latvals_flat),data_u_tsel.to_numpy().flatten(),(reg_grid_X,reg_grid_Y),method='nearest') #TODO: this is probably easier with xarray
         V = griddata((lonvals_flat,latvals_flat),data_v_tsel.to_numpy().flatten(),(reg_grid_X,reg_grid_Y),method='nearest')
         speed = np.sqrt(U*U + V*V)
-        #quiv_curved = velovect(ax,reg_grid_X,reg_grid_Y,U,V, arrowstyle='fancy', scale = 5, grains = 25, color=speed)#, cmap='jet')
+        #quiv_curved = dfmt.velovect(ax,reg_grid_X,reg_grid_Y,U,V, arrowstyle='fancy', density=5, grains=25, color=speed)#, cmap='jet') #TODO: requested adding curved-quiver to matplotlib https://github.com/matplotlib/matplotlib/issues/20038
         #quiv_curved.lines.set_clim(0,5)
         quiv_curved = ax.streamplot(reg_x_vec,reg_y_vec,U,V, arrowstyle='-|>', integration_direction='forward',broken_streamlines=False, color=speed, density=1)
         cbar = fig.colorbar(quiv_curved.lines, ax=ax)
         cbar.set_label('velocity magnitude (%s)'%(data_v.attrs['units']))
         ax.set_title(data_v_tsel.time.to_pandas())
-        #ax.set_aspect('equal')
-        if file_ldb is not None:
-            ax.plot(data_ldb['x'], data_ldb['y'], 'k', linewidth=0.5)
+        if add_ldb:
+            dfmt.plot_coastlines(ax=ax)
     fig.tight_layout()
     plt.savefig(os.path.join(dir_output,f'{basename}_magn_curvedquiver'))
 

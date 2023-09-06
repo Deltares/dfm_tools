@@ -4,69 +4,74 @@ Created on Wed Oct 27 22:04:02 2021
 
 @author: veenstra
 
-WARNING: THIS TEST IS NOT YET FINISHED, WILL BE IMPROVED AND LINKED TO INTERNAL FUNCTIONS ASAP
 """
 
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 plt.close('all')
-import geopandas as gpd #conda install --channel conda-forge geopandas (breaks dfm_tools environment because of Qt issue)
+import geopandas as gpd
 from shapely.geometry import Polygon
+import dfm_tools as dfmt
+import datetime as dt
 
-from dfm_tools.get_nc import get_netdata, get_ncmodeldata
-from dfm_tools.get_nc_helpers import get_ncvarproperties#, get_ncfilelist
+dtstart_script = dt.datetime.now()
 
-dir_testinput = r'c:\DATA\dfm_tools_testdata'
 dir_output = '.'
+if not os.path.exists(dir_output):
+    os.makedirs(dir_output)
+export_kml = True
 
+#file_nc = os.path.join(r'p:\archivedprojects\11203850-coastserv\06-Model\waq_model\simulations\run0_20200319\DFM_OUTPUT_kzn_waq', 'kzn_waq_0*_map.nc')
+file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True)
+basename = os.path.basename(file_nc).replace('.','').replace('_0*_','_0000_')
 
-varlist = ['Chlfa']#,'mesh2d_s1']
-dir_shp = dir_output
-if not os.path.exists(dir_shp):
-    os.makedirs(dir_shp)
-file_nc = os.path.join(r'p:\archivedprojects\11203850-coastserv\06-Model\waq_model\simulations\run0_20200319\DFM_OUTPUT_kzn_waq', 'kzn_waq_0000_map.nc')
+if 'Grevelingen' in file_nc:
+    crs = "EPSG:28992"
+else:
+    crs = "EPSG:4326"
 
-vars_pd = get_ncvarproperties(file_nc=file_nc)
-vars_pd_matching = vars_pd[vars_pd.loc[:,'long_name'].str.match('.*Chl.*')]
-#vars_pd_matching = vars_pd[vars_pd.loc[:,'long_name'].str.startswith('') & vars_pd.loc[:,'long_name'].str.endswith('Chlo')]
-varns_Chl = vars_pd_matching.index.tolist()
-varns_Chl_long = vars_pd_matching['long_name'].tolist()
+varlist = ['mesh2d_sa1','mesh2d_Chlfa']#,'mesh2d_s1']
 
-ugrid = get_netdata(file_nc=file_nc)#, multipart=False)
+data_xr_map = dfmt.open_partitioned_dataset(file_nc)
+data_xr_map = dfmt.rename_waqvars(data_xr_map)
+vars_pd = dfmt.get_ncvarproperties(data_xr_map)
 
-pol_shp_list = []
-#partly from dfm_tools.ugrid.polygon_intersect()
-for iP, pol_data in enumerate(ugrid.verts): #[range(5000),:,:]
-    pol_data_nonan = pol_data[~np.isnan(pol_data).all(axis=1)]
-    pol_shp = Polygon(pol_data_nonan)
-    pol_shp_list.append(pol_shp)
+for iT, timestep in enumerate([2,3]):#[0,10,20,30]:
+    data_map_timesel = data_xr_map.isel(time=timestep)
+    
+    #data_sel = dfmt.get_Dataset_atdepths(data_xr=data_map_timesel, depths=0, reference='waterlevel') #top layer: 0m from waterlevel
+    data_sel = dfmt.get_Dataset_atdepths(data_xr=data_map_timesel, depths=-4, reference='z0') #4m from model reference
+    #data_sel = dfmt.get_Dataset_atdepths(data_xr=data_map_timesel, depths=0, reference='bedlevel') #bottomlayer: 0m from bedlevel
+    
+    #creating geodataframe with cells from ugrid_verts
+    ugrid_all_verts = data_map_timesel.grid.face_node_coordinates
+    pol_shp_list = [Polygon(verts_one[~np.isnan(verts_one).all(axis=1)]) for verts_one in ugrid_all_verts]
+    newdata = gpd.GeoDataFrame({'geometry': pol_shp_list},crs=crs)
 
-print('creating geodataframe with cells')
-newdata = gpd.GeoDataFrame({'geometry': pol_shp_list},crs="EPSG:4326") #way more time efficient than doing it the loop
-
-for iV, varname in enumerate(varlist):
-    newdata[varname] = None
-
-for timestep in [6]:#[0,10,20,30]:
+    if iT==0 and export_kml: #export without variable
+        #https://stackoverflow.com/questions/36222857/convert-geodataframe-polygons-to-kml-file
+        import fiona
+        fiona.supported_drivers['KML'] = 'rw'
+        file_kml = os.path.join(dir_output,f'{basename}.kml') #TODO: add depth+reference to filename
+        if os.path.exists(file_kml):#to avoid "DriverError: unsupported driver: 'LIBKML'"
+            os.remove(file_kml)
+        newdata.to_file(file_kml, driver='KML')
+    
     for iV, varname in enumerate(varlist):
-        try:
-            data_fromnc_all = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep, layer='all')
-            data_fromnc_bot = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep, layer='bottom')
-            data_fromnc_top = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep, layer='top')
-        except:
-            data_fromnc_top = get_ncmodeldata(file_nc=file_nc, varname=varname, timestep=timestep)
-
-        data_fromnc_nonan = data_fromnc_top[:]
-        data_fromnc_nonan[data_fromnc_nonan.mask] = np.nan
-        newdata[varname] = data_fromnc_nonan.data.flatten()
-    file_shp = os.path.join(dir_shp,'shp_%s_%s'%(varname,data_fromnc_top.var_times.iloc[0].strftime('%Y%m%d')))
-    newdata.to_file(file_shp)
-    """
-    fig, ax = plt.subplots(figsize=(6,7))
-    pc = plot_netmapdata(ugrid.verts, values=data_fromnc_top.data.flatten(), ax=None, linewidth=0.5, cmap='jet')
-    #pc.set_clim([-1,0])
-    fig.colorbar(pc)
-    ax.set_aspect(1./np.cos(np.mean(ax.get_ylim())/180*np.pi),adjustable='box')
-    fig.tight_layout()
-    """
+        if not hasattr(data_map_timesel,varname):
+            print(f'varname {varname} not found in dataset')
+            continue
+        
+        data_sel_var = data_sel[varname]
+        newdata[varname] = data_sel_var.to_numpy() #can only have faces dimension (no time/layer)
+        
+        fig, ax = plt.subplots()
+        data_sel_var.ugrid.plot(cmap='viridis')
+        fig.tight_layout()
+    
+    timestamp = data_map_timesel.time.dt.strftime('%Y%m%d').data
+    file_shp = os.path.join(dir_output,f'shp_{basename}_{timestamp}') #TODO: add depth+reference to filename
+    newdata.to_file(file_shp) #TODO: solve "UserWarning: Column names longer than 10 characters will be truncated when saved to ESRI Shapefile."
+    
+print(f'script runtime: {(dt.datetime.now()-dtstart_script).total_seconds():.2f} sec')

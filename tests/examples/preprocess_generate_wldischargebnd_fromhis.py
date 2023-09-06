@@ -9,11 +9,9 @@ import os
 import xarray as xr
 import matplotlib.pyplot as plt
 plt.close('all')
+import dfm_tools as dfmt
+import hydrolib.core.dflowfm as hcdfm
 
-from dfm_tools.xarray_helpers import preprocess_hisnc
-from dfm_tools.hydrolib_helpers import forcinglike_to_Dataset, Dataset_to_TimeSeries
-from hydrolib.core.io.bc.models import ForcingModel
-#from hydrolib.core.io.ext.models import Boundary, ExtModel
 
 plotting = True
 
@@ -25,15 +23,15 @@ map_q = dict(zip(crs_q, bc_q))
 station_wl = ['BE_976.00', 'HD_983.41_R_LMW-Cl_Moerdijkbrug'] 
 bc_wl = ['Beneden-Merwede_0001','Nieuwe-Merwede_0001']
 map_wl = dict(zip(station_wl, bc_wl))
-dir_input = r'p:\11206813-006-kpp2021_rmm-2d\C_Work\07_Baseline\baseline-rmm_vzm-beno19_6-v1\models\dflowfm\dflowfm2d-rmm_vzm-beno19_6-v1b\computations\test'
+dir_input = r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\07_Baseline\baseline-rmm_vzm-beno19_6-v1\models\dflowfm\dflowfm2d-rmm_vzm-beno19_6-v1b\computations\test'
 dir_output = '.'
 
-sims = ['tba','tbb','tbc','tbd','tbe','tbf']
+sims = ['tba']#,'tbb','tbc','tbd','tbe','tbf']
 
 for sim in sims: 
     file_bc_output = os.path.join(dir_output,f'{sim}_bnd.bc')
     file_nc = os.path.join(dir_input,sim, 'results','RMM_VZM_0000_his.nc')
-    data_xr = xr.open_mfdataset(file_nc,preprocess=preprocess_hisnc)
+    data_xr = xr.open_mfdataset(file_nc,preprocess=dfmt.preprocess_hisnc)
     
     if plotting:
         print('plot waterlevel from his')
@@ -54,13 +52,13 @@ for sim in sims:
         fig.tight_layout()
         fig.savefig(os.path.join(dir_output,f'{sim}_discharge.png'))
         
-    ForcingModel_object = ForcingModel()
+    ForcingModel_object = hcdfm.ForcingModel()
     for stat_wl in station_wl: 
         data_fromhis_xr = data_xr.waterlevel.sel(stations=stat_wl)
         data_fromhis_xr.attrs['locationname'] = map_wl[stat_wl]
         data_fromhis_xr.name = 'waterlevelbnd'
-        t = Dataset_to_TimeSeries(data_fromhis_xr)
-        forcingobject_one_xr = forcinglike_to_Dataset(t,convertnan=True)
+        t = dfmt.Dataset_to_TimeSeries(data_fromhis_xr)
+        forcingobject_one_xr = dfmt.forcinglike_to_Dataset(t,convertnan=True)
         ForcingModel_object.forcing.append(t)
 
     for crs_q_one in crs_q: 
@@ -68,8 +66,8 @@ for sim in sims:
         data_fromhis_xr.attrs['locationname'] = map_q[crs_q_one]
         data_fromhis_xr.attrs['units'] = 'm3/s'
         data_fromhis_xr.name = 'dischargebnd'
-        t = Dataset_to_TimeSeries(data_fromhis_xr)
-        forcingobject_one_xr = forcinglike_to_Dataset(t,convertnan=True)
+        t = dfmt.Dataset_to_TimeSeries(data_fromhis_xr)
+        forcingobject_one_xr = dfmt.forcinglike_to_Dataset(t,convertnan=True)
         ForcingModel_object.forcing.append(t)
 
     ForcingModel_object.save(file_bc_output)

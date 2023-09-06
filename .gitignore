@@ -47,6 +47,7 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 tests/examples_output
+tests/dfm_tools_testdata
 
 # Translations
 *.mo
@@ -98,9 +99,13 @@ ENV/
 
 # mkdocs documentation
 /site
+/docs/README.md
 
 # mypy
 .mypy_cache/
 
 # IDE settings
 .vscode/
+
+# github action env
+setup-miniconda-patched-environment.yml
