@@ -107,29 +107,9 @@ def remove_unassociated_edges(ds: xr.Dataset, topology: str = None) -> xr.Datase
 
     """
     
-    if hasattr(xu.Ugrid2d,'validate_edge_node_connectivity'): #available in xugrid>0.6.2
-        uds = xu.core.wrap.UgridDataset(ds)
-        associated = uds.grid.validate_edge_node_connectivity()
-        edge_dimension = uds.grid.edge_dimension
-    else: #workaround for xugrid<=0.6.2 #TODO: remove this when new xugrid release is available
-        if topology is None:
-            topology = xu.ugrid.ugridbase.AbstractUgrid._single_topology(ds)
-        
-        # collect names
-        connectivity = ds.ugrid_roles.connectivity[topology]
-        dimensions = ds.ugrid_roles.dimensions[topology]
-        
-        # return original dataset in case of 1D topology, it contains no fnc
-        if 'face_node_connectivity' not in connectivity:
-            print('[1D topology] ',end='')
-            return ds
-        
-        enc = ds[connectivity['edge_node_connectivity']].to_numpy()
-        fnc = ds[connectivity['face_node_connectivity']].to_numpy()
-        
-        associated = np.isin(enc, fnc)
-        associated = associated[:, 0] & associated[:, 1]
-        edge_dimension = dimensions['edge_dimension']
+    uds = xu.core.wrap.UgridDataset(ds)
+    associated = uds.grid.validate_edge_node_connectivity()
+    edge_dimension = uds.grid.edge_dimension
     
     if not associated.all():
          print(f"[{(~associated).sum()} unassociated edges removed] ",end='')
