@@ -1,7 +1,7 @@
 scipy<1.10.0
 numpy
 matplotlib
-pandas<2.0.0
+pandas
 shapely>=1.7.0
 geopandas
 fiona>=1.9
