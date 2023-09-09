@@ -106,8 +106,13 @@ def remove_unassociated_edges(ds: xr.Dataset) -> xr.Dataset:
         DESCRIPTION.
 
     """
-    
+    return ds
     uds = xu.core.wrap.UgridDataset(ds)
+    
+    # escape for 1D networks
+    if isinstance(uds.grid,xu.Ugrid1d):
+        return ds
+    
     associated = uds.grid.validate_edge_node_connectivity()
     edge_dimension = uds.grid.edge_dimension
     
