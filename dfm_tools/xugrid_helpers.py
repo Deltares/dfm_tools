@@ -71,24 +71,6 @@ def remove_ghostcells(uds): #TODO: remove ghostcells from output or align values
     return uds
 
 
-def remove_periodic_cells(uds): #TODO: implement proper fix: https://github.com/Deltares/xugrid/issues/63
-    """
-    For global models with grids that go "around the back". Temporary fix to drop all faces that are larger than grid_extent/2 (eg 360/2=180 degrees in case of GTSM)
-    
-    """
-    face_node_x = uds.grid.face_node_coordinates[:,:,0]
-    grid_extent = uds.grid.bounds[2] - uds.grid.bounds[0]
-    face_node_maxdx = np.nanmax(face_node_x,axis=1) - np.nanmin(face_node_x,axis=1)
-    bool_face = face_node_maxdx < grid_extent/2
-    if bool_face.all(): #early return for when no cells have to be removed (might increase performance)
-        return uds
-    print(f'>> removing {(~bool_face).sum()} periodic cells from dataset: ',end='')
-    dtstart = dt.datetime.now()
-    uds = uds.sel({uds.grid.face_dimension:bool_face})
-    print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
-    return uds
-
-
 def remove_unassociated_edges(ds: xr.Dataset) -> xr.Dataset:
     """
     Removes edges that are not associated to any of the faces, usecase in https://github.com/Deltares/xugrid/issues/68
