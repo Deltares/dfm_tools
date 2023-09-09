@@ -106,7 +106,7 @@ def remove_unassociated_edges(ds: xr.Dataset) -> xr.Dataset:
         DESCRIPTION.
 
     """
-    return ds
+    
     uds = xu.core.wrap.UgridDataset(ds)
     
     # escape for 1D networks
