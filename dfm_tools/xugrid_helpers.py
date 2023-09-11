@@ -232,7 +232,7 @@ def open_dataset_curvilinear(file_nc,
     
     ds = xr.open_mfdataset(file_nc, **kwargs)
     
-    print('>> getting vertices from ds: ',end='') #long (but does not reflect in 
+    print('>> getting vertices from ds: ',end='')
     dtstart = dt.datetime.now()
     vertices_longitude = ds[varn_vert_lon].to_numpy()
     vertices_longitude = vertices_longitude.reshape(-1,vertices_longitude.shape[-1])
@@ -242,7 +242,7 @@ def open_dataset_curvilinear(file_nc,
     
     #convert from 0to360 to -180 to 180
     if convert_360to180:
-        vertices_longitude = (vertices_longitude+180)%360 - 180 #TODO: check if periodic cell filter still works properly after doing this
+        vertices_longitude = (vertices_longitude+180)%360 - 180 #TODO: check if uds.ugrid.to_nonperiodic() still works properly after doing this
     
     # face_xy = np.stack([longitude,latitude],axis=-1)
     # face_coords_x, face_coords_y = face_xy.T

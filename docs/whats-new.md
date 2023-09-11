@@ -6,6 +6,7 @@
 - interpolation of variables on layer interfaces to layer centers with `dfmt.uda_interfaces_to_centers()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#482](https://github.com/Deltares/dfm_tools/pull/482)
 - generate polyline only for open boundary with `dfmt.generate_bndpli_cutland()` (deprecates `dfmt.generate_bndpli()`) by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#466](https://github.com/Deltares/dfm_tools/pull/466)
 - automatically remove unassociated edges with `dfmt.remove_unassociated_edges()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#470](https://github.com/Deltares/dfm_tools/pull/470) and [#494](https://github.com/Deltares/dfm_tools/pull/494)
+- xugrid feature `uds.ugrid.to_nonperiodic()` deprecates `dfmt.remove_periodic_cells()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#503](https://github.com/Deltares/dfm_tools/issues/503)
 
 ### Fix
 - removed `matplotlib._api` import to also support `matplotlib<3.4.0` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#465](https://github.com/Deltares/dfm_tools/pull/465)
