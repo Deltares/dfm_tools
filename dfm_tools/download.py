@@ -151,11 +151,12 @@ def cds_credentials():
     if os.path.exists(file_credentials):
         print('found CDS apikey')
     else:
-        print("Downloading CDS/ERA5 data requires a CDS apikey, copy the key from https://cds.climate.copernicus.eu/api-how-to (first register and sign in) ")
+        print("Downloading CDS/ERA5 data requires a CDS apikey, copy the user ID (UID) and API key from https://cds.climate.copernicus.eu/api-how-to (first register and sign in) ")
+        UID = getpass.getpass("\nEnter your UID: ")
         apikey = getpass.getpass("Enter your CDS apikey: ")
         with open(file_credentials,'w') as fc:
             fc.write('url: https://cds.climate.copernicus.eu/api/v2\n')
-            fc.write(f'key: {apikey}')
+            fc.write(f'key: {UID}:{apikey}')
 
 
 def copernicusmarine_credentials():
