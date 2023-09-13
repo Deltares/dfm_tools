@@ -50,7 +50,7 @@ def get_conversion_dict(ncvarname_updates={}):
                        'tide'                : {'ncvarname': ''},            #'m' #tide (dummy entry)
                        }
     """
-    # conversion_dict, 
+    # conversion_dict for CMEMS
     conversion_dict = { # mg/l is the same as g/m3: conversion is phyc in mmol/l to newvar in g/m3
                         'tracerbndOXY'        : {'ncvarname': 'o2',          'unit': 'g/m3', 'conversion': 32.0/1000},
                         'tracerbndNO3'        : {'ncvarname': 'no3',         'unit': 'g/m3', 'conversion': 14.0/1000},
