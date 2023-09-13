@@ -52,17 +52,17 @@ def get_conversion_dict(ncvarname_updates={}):
     """
     # conversion_dict, 
     conversion_dict = { # mg/l is the same as g/m3: conversion is phyc in mmol/l to newvar in g/m3
-                        'tracerbndOXY'        : {'ncvarname': 'o2',          'unit': 'g/m3', 'conversion': 32.0 / 1000.0}, 
-                        'tracerbndNO3'        : {'ncvarname': 'no3',         'unit': 'g/m3', 'conversion': 14.0 / 1000.0},
-                        'tracerbndPO4'        : {'ncvarname': 'po4',         'unit': 'g/m3', 'conversion': 31 / 1000.0},
-                        'tracerbndSi'         : {'ncvarname': 'si',          'unit': 'g/m3', 'conversion': 28.08 / 1000.0},
+                        'tracerbndOXY'        : {'ncvarname': 'o2',          'unit': 'g/m3', 'conversion': 32.0/1000},
+                        'tracerbndNO3'        : {'ncvarname': 'no3',         'unit': 'g/m3', 'conversion': 14.0/1000},
+                        'tracerbndPO4'        : {'ncvarname': 'po4',         'unit': 'g/m3', 'conversion': 30.97/1000},
+                        'tracerbndSi'         : {'ncvarname': 'si',          'unit': 'g/m3', 'conversion': 28.08/1000},
                         'tracerbndPON1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 2 * 14/117 * 14/1000}, # Caution: this empirical relation might not be applicable to your use case
-                        'tracerbndPOP1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 2 * 1/117 * 31/1000}, # Caution: this empirical relation might not be applicable to your use case
-                        'tracerbndPOC1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 2. * 12. / 1000.0}, # Caution: this empirical relation might not be applicable to your use case
-                        'tracerbndDON'        : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 3.24 * 2. * 16. * 14. / (106. * 1000.0)}, # Caution: this empirical relation might not be applicable to your use case
-                        'tracerbndDOP'        : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 1.0 * 2. * 30.97 / (106. * 1000.0)}, # Caution: this empirical relation might not be applicable to your use case
-                        'tracerbndDOC'        : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': (199. / 20.) * 3.24 * 2. * 16. * 12. / (106. * 1000.0)}, # Caution: this empirical relation might not be applicable to your use case
-                        'tracerbndOpal'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 0.5 * 0.13 * 28.08 / (1000.0)}, # Caution: this empirical relation might not be applicable to your use case
+                        'tracerbndPOP1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 2 * 1/117 * 30.97/1000}, # Caution: this empirical relation might not be applicable to your use case
+                        'tracerbndPOC1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 2 * 12/1000}, # Caution: this empirical relation might not be applicable to your use case
+                        'tracerbndDON'        : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 3.24 * 2 * 16/106 * 14/1000}, # Caution: this empirical relation might not be applicable to your use case
+                        'tracerbndDOP'        : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 2 * 30.97 / (106. * 1000)}, # Caution: this empirical relation might not be applicable to your use case
+                        'tracerbndDOC'        : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': (199. / 20) * 3.24 * 2 * 16 * 12 / (106 * 1000)}, # Caution: this empirical relation might not be applicable to your use case
+                        'tracerbndOpal'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 0.5 * 0.13 * 28.08/1000}, # Caution: this empirical relation might not be applicable to your use case
                         'salinitybnd'         : {'ncvarname': 'so'},          #'1e-3'
                         'temperaturebnd'      : {'ncvarname': 'thetao'},      #'degC'
                         'ux'                  : {'ncvarname': 'uo'},          #'m/s'
