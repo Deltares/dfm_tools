@@ -56,8 +56,8 @@ def get_conversion_dict(ncvarname_updates={}):
                         'tracerbndNO3'        : {'ncvarname': 'no3',         'unit': 'g/m3', 'conversion': 14.0/1000},
                         'tracerbndPO4'        : {'ncvarname': 'po4',         'unit': 'g/m3', 'conversion': 30.97/1000},
                         'tracerbndSi'         : {'ncvarname': 'si',          'unit': 'g/m3', 'conversion': 28.08/1000},
-                        'tracerbndPON1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 2 * 14/117 * 14/1000}, # Caution: this empirical relation might not be applicable to your use case
-                        'tracerbndPOP1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 2 * 1/117 * 30.97/1000}, # Caution: this empirical relation might not be applicable to your use case
+                        'tracerbndPON1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 2 * 16/106 * 14/1000}, # Caution: this empirical relation might not be applicable to your use case
+                        'tracerbndPOP1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 2. * 30.97 / (106. * 1000.0)}, # Caution: this empirical relation might not be applicable to your use case
                         'tracerbndPOC1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 2 * 12/1000}, # Caution: this empirical relation might not be applicable to your use case
                         'tracerbndDON'        : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 3.24 * 2 * 16/106 * 14/1000}, # Caution: this empirical relation might not be applicable to your use case
                         'tracerbndDOP'        : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 2 * 30.97 / (106. * 1000)}, # Caution: this empirical relation might not be applicable to your use case
