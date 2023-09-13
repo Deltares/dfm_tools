@@ -10,6 +10,30 @@ import dfm_tools as dfmt
 import numpy as np
 
 
+@pytest.mark.unittest
+def test_conversion_dict():
+    
+    dict_keys_waq = ['tracerbndOXY', 'tracerbndNO3', 'tracerbndPO4', 'tracerbndSi', 
+                     'tracerbndPON1', 'tracerbndPOP1', 'tracerbndPOC1', 
+                     'tracerbndDON', 'tracerbndDOP', 'tracerbndDOC', 'tracerbndOpal']
+    
+    conversion_expected = {'tracerbndOXY': 0.032,
+     'tracerbndNO3': 0.014,
+     'tracerbndPO4': 0.030969999999999998,
+     'tracerbndSi': 0.028079999999999997,
+     'tracerbndPON1': 0.004226415094339623,
+     'tracerbndPOP1': 0.0005843396226415094,
+     'tracerbndPOC1': 0.024,
+     'tracerbndDON': 0.013693584905660377,
+     'tracerbndDOP': 0.0005843396226415094,
+     'tracerbndDOC': 0.11678671698113208,
+     'tracerbndOpal': 0.0018252}
+    
+    conversion_dict = dfmt.get_conversion_dict()
+    for quan in dict_keys_waq:
+        assert np.abs(conversion_dict[quan]['conversion'] - conversion_expected[quan]) < 1e-9
+
+
 # TODO: test preprocess_interpolate_nc_to_bc.py and compare output to references (make extra systemtest if needed)
 # TODO: add gtsm (if fast)
 # TODO: make faster by not loading entire multifile dataset in case of only 3 components
