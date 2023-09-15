@@ -13,5 +13,6 @@ bottleneck
 xugrid>=0.6.4
 cdsapi
 pydap>=3.3.0
+pooch
 hydrolib-core>=0.5.1
 meshkernel>=2.1.0
