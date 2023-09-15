@@ -89,7 +89,7 @@ def remove_periodic_cells(uds): #TODO: implement proper fix: https://github.com/
     return uds
 
 
-def remove_unassociated_edges(ds: xr.Dataset, topology: str = None) -> xr.Dataset:
+def remove_unassociated_edges(ds: xr.Dataset) -> xr.Dataset:
     """
     Removes edges that are not associated to any of the faces, usecase in https://github.com/Deltares/xugrid/issues/68
 
@@ -107,26 +107,18 @@ def remove_unassociated_edges(ds: xr.Dataset, topology: str = None) -> xr.Datase
 
     """
     
-    if topology is None:
-        topology = xu.ugrid.ugridbase.AbstractUgrid._single_topology(ds)
+    uds = xu.core.wrap.UgridDataset(ds)
     
-    # collect names
-    connectivity = ds.ugrid_roles.connectivity[topology]
-    dimensions = ds.ugrid_roles.dimensions[topology]
-    
-    # return original dataset in case of 1D topology, it contains no fnc
-    if 'face_node_connectivity' not in connectivity:
-        print('[1D topology] ',end='')
+    # escape for 1D networks
+    if isinstance(uds.grid,xu.Ugrid1d):
         return ds
     
-    enc = ds[connectivity['edge_node_connectivity']].to_numpy()
-    fnc = ds[connectivity['face_node_connectivity']].to_numpy()
+    associated = uds.grid.validate_edge_node_connectivity()
+    edge_dimension = uds.grid.edge_dimension
     
-    associated = np.isin(enc, fnc)
-    associated = associated[:, 0] & associated[:, 1]
     if not associated.all():
-        print(f"[{(~associated).sum()} unassociated edges removed] ",end='')
-        ds = ds.sel({dimensions['edge_dimension']: associated})
+         print(f"[{(~associated).sum()} unassociated edges removed] ",end='')
+         ds = ds.sel({edge_dimension: associated})
     return ds
 
 

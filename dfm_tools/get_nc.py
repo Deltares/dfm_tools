@@ -493,7 +493,7 @@ def rasterize_ugrid(uds:xu.UgridDataset, ds_like:xr.Dataset = None, resolution:f
         regy = np.arange(ymin + 0.5 * d, ymax, d)
         ds_like = xr.DataArray(np.empty((len(regy), len(regx))), {"y": regy, "x": regx}, ["y", "x"])
     
-    print(f'>> rasterizing ugrid {face_str} to shape=({len(ds_like.y)},{len(ds_like.y)}): ',end='')
+    print(f'>> rasterizing ugrid {face_str} to shape=({len(ds_like.y)},{len(ds_like.x)}): ',end='')
     dtstart = dt.datetime.now()
     ds = uds.ugrid.rasterize_like(other=ds_like)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
