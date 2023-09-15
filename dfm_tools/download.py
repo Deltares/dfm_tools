@@ -154,7 +154,7 @@ def cds_credentials():
         print("Downloading CDS/ERA5 data requires a CDS API key, copy the key from https://cds.climate.copernicus.eu/api-how-to (first register and sign in) ")
         apikey = getpass.getpass("\nEnter your CDS API Key: ")
         if ":" not in apikey:
-            raise ValueError('A ":"-symbol is missing in the provided key (format should be {UID}:{apikey}). Please check the instructions above again.')
+            raise ValueError('A ":"-symbol is missing in the provided key (format should be "UID:apikey"). Please check the instructions above again.')
         with open(file_credentials,'w') as fc:
             fc.write('url: https://cds.climate.copernicus.eu/api/v2\n')
             fc.write(f'key: {apikey}')
