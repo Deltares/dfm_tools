@@ -49,13 +49,41 @@ def get_conversion_dict(ncvarname_updates={}):
                        'waterlevelbnd'       : {'ncvarname': 'zos'},         #'m' #steric
                        'tide'                : {'ncvarname': ''},            #'m' #tide (dummy entry)
                        }
+    
+    
+    The below clarification about the CMEMS conversion factors in this function is by Jos van Gils.
+    The use of boundary conditions from CMEMS requires some conversion (scaling). 
+    In the first place, there is the unit conversion from mmol/m3 in CMEMS to g/m3 in DFM. 
+    This involves a factor M/1000, where M is the molar weight of the constituent in question: 
+    M = 12 for constituents expressed in gC/m3, 14 for gN/m3, 30.97 for gP/m3, 28.08 for gSi/m3 and 32 for dissolved oxygen. 
+    
+    Next there is the issue that CMEMS does not provide all state variables in the water 
+    quality model. Dead organic matter, particulate and dissolved, are missing. 
+    In practice, we use phytoplankton biomass from CMEMS (phyc) to estimate these missing variables. 
+    For particulate organic matter (POM), often a carbon-based ratio of 2.0 to phytoplankton biomass is used.
+    PON and POP are derived from POC by classical Redfield ratios (C:N:P = 106:16:1) or revised Redfield ratios (C:N:P = 117:14:1). 
+    For Opal (biogenic silica from diatoms), the example here is based on a factor 0.5 expressing the share of diatoms in phytoplankton
+    and a 0.13 Si:C stoichiometric ratio by Brzezinski (1985).
+    For dissolved organic matter (DOM) there is limited experience. 
+    The current script uses the approach used for the “Bays Eutrophication Model” 
+    (Massachusetts Bay, https://www.mwra.com/harbor/enquad/pdf/2021-02.pdf). This relies on local field data.
+    
+    It is noted that such scale factors are anyhow inaccurate and typically water-system-specific. 
+    Therefore, the values included in the existing script should be considered indicative only and 
+    should by no means be seen as a default approach. Ideally, the scale factors to link missing 
+    states to available CMEMS variables are derived from local field data. 
+    A validation is strongly recommended, for example by a comparison of simulated and 
+    measured concentrations of total N and total P in the study area. 
+    Similar considerations would hold for other data sources than CMEMS.
     """
+    
     # conversion_dict for CMEMS
     conversion_dict = { # mg/l is the same as g/m3: conversion is phyc in mmol/l to newvar in g/m3
                         'tracerbndOXY'        : {'ncvarname': 'o2',          'unit': 'g/m3', 'conversion': 32.0/1000},
                         'tracerbndNO3'        : {'ncvarname': 'no3',         'unit': 'g/m3', 'conversion': 14.0/1000},
                         'tracerbndPO4'        : {'ncvarname': 'po4',         'unit': 'g/m3', 'conversion': 30.97/1000},
                         'tracerbndSi'         : {'ncvarname': 'si',          'unit': 'g/m3', 'conversion': 28.08/1000},
+                        'tracerbndGreen'      : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 12/1000},
                         'tracerbndPON1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 2 * 16/106 * 14/1000}, # Caution: this empirical relation might not be applicable to your use case
                         'tracerbndPOP1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 2 * 30.97 / (106 * 1000)}, # Caution: this empirical relation might not be applicable to your use case
                         'tracerbndPOC1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 2 * 12/1000}, # Caution: this empirical relation might not be applicable to your use case
