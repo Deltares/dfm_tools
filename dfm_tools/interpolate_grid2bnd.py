@@ -62,14 +62,14 @@ def get_conversion_dict(ncvarname_updates={}):
     In practice, we use phytoplankton biomass from CMEMS (phyc) to estimate these missing variables. 
     For particulate organic matter (POM), often a carbon-based ratio of 2.0 to phytoplankton biomass is used.
     PON and POP are derived from POC by classical Redfield ratios (C:N:P = 106:16:1) or revised Redfield ratios (C:N:P = 117:14:1). 
-    For Opal (biogenic silica from diatoms), the example here is based on a factor 0.5 expressing the share of diatoms in phytoplankton
-    and a 0.13 Si:C stoichiometric ratio by Brzezinski (1985).
-    For dissolved organic matter (DOM) there is limited experience. 
-    The current script uses the approach used for the “Bays Eutrophication Model” 
-    (Massachusetts Bay, https://www.mwra.com/harbor/enquad/pdf/2021-02.pdf). This relies on local field data.
+    For Opal (biogenic silica from diatoms), the example here is based on a factor 0.5 expressing the share of 
+    diatoms in phytoplankton and a 0.13 Si:C stoichiometric ratio by Brzezinski (1985).
+    For dissolved organic matter (DOM) there is limited experience. This
+    conversion_dict uses the approach used for the “Bays Eutrophication Model” (Massachusetts Bay, 
+    https://www.mwra.com/harbor/enquad/pdf/2021-02.pdf). This relies on local field data.
     
     It is noted that such scale factors are anyhow inaccurate and typically water-system-specific. 
-    Therefore, the values included in the existing script should be considered indicative only and 
+    Therefore, the values included in this conversion_dict should be considered indicative only and 
     should by no means be seen as a default approach. Ideally, the scale factors to link missing 
     states to available CMEMS variables are derived from local field data. 
     A validation is strongly recommended, for example by a comparison of simulated and 
