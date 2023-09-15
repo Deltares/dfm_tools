@@ -93,3 +93,9 @@ def read_timfile(filename=None, converttime=False, refdate=None):
     """
     raise DeprecationWarning('the function dfm_tools.read_timfile() is deprecated, please use the new hydrolib alternative: https://github.com/Deltares/dfm_tools/blob/301-convert-timmodel-to-pandasdataframe/tests/examples/preprocess_hydrolib_readtim.py.')
 
+
+def generate_bndpli(**kwargs):
+    """
+    deprecated
+    """
+    raise DeprecationWarning('the function dfmt.generate_bndpli() is deprecated, please use dfmt.generate_bndpli_cutland() instead.')
