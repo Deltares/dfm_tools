@@ -34,7 +34,7 @@ def get_conversion_dict(ncvarname_updates={}):
     data_xr = data_xr.rename({ncvarname:quantity})
     
     for CMCC:
-    conversion_dict = { # mg/l is the same as g/m3: conversion is phyc in mol/m3 to newvar in g/m3
+    conversion_dict = { # conversion is phyc in mol/m3 to newvar in g/m3
                        'tracerbndOXY'        : {'ncvarname': 'o2',          'unit': 'g/m3', 'conversion': 32.0 },
                        'tracerbndNO3'        : {'ncvarname': 'no3',         'unit': 'g/m3', 'conversion': 14.0 },
                        'tracerbndPO4'        : {'ncvarname': 'po4',         'unit': 'g/m3', 'conversion': 30.97 },
@@ -78,7 +78,7 @@ def get_conversion_dict(ncvarname_updates={}):
     """
     
     # conversion_dict for CMEMS
-    conversion_dict = { # mg/l is the same as g/m3: conversion is phyc in mmol/l to newvar in g/m3
+    conversion_dict = { # conversion is phyc in mmol/m3 to newvar in g/m3
                         'tracerbndOXY'        : {'ncvarname': 'o2',          'unit': 'g/m3', 'conversion': 32/1000},
                         'tracerbndNO3'        : {'ncvarname': 'no3',         'unit': 'g/m3', 'conversion': 14/1000},
                         'tracerbndPO4'        : {'ncvarname': 'po4',         'unit': 'g/m3', 'conversion': 30.97/1000},
