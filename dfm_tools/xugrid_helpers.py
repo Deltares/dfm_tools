@@ -38,7 +38,7 @@ def get_vertical_dimensions(uds): #TODO: maybe add layer_dimension and interface
         return None, None
 
 
-def remove_ghostcells(uds): #TODO: remove ghostcells from output or align values between (non)ghost cells: https://issuetracker.deltares.nl/browse/UNST-6701
+def remove_ghostcells(uds, fname): #TODO: remove ghostcells from output or align values between (non)ghost cells: https://issuetracker.deltares.nl/browse/UNST-6701
     """
     Dropping ghostcells if there is a domainno variable present and there is a domainno in the filename.
     Not using most-occurring domainno in var, since this is not a valid assumption for merged datasets and might be invalid for a very small partition.
@@ -53,7 +53,6 @@ def remove_ghostcells(uds): #TODO: remove ghostcells from output or align values
         return uds
     
     #derive domainno from filename, return uds if not present
-    fname = uds.encoding['source']
     if '_' not in fname: #safety escape in case there is no _ in the filename
         print('[nodomainfname] ',end='')
         return uds
@@ -198,7 +197,7 @@ def open_partitioned_dataset(file_nc, decode_fillvals=False, remove_edges=True, 
     partitions = []
     for iF, file_nc_one in enumerate(file_nc_list):
         print(iF+1,end=' ')
-        ds = xr.open_dataset(file_nc_one, **kwargs)
+        ds = xr.open_mfdataset(file_nc_one, **kwargs)
         if decode_fillvals:
             ds = decode_default_fillvals(ds)
         if remove_edges:
@@ -209,7 +208,7 @@ def open_partitioned_dataset(file_nc, decode_fillvals=False, remove_edges=True, 
             ds = ds.rename({'nFlowElem':'nNetElem'})
         uds = xu.core.wrap.UgridDataset(ds)
         if remove_ghost: #TODO: this makes it way slower (at least for GTSM, although merging seems faster), but is necessary since values on overlapping cells are not always identical (eg in case of Venice ucmag)
-            uds = remove_ghostcells(uds)
+            uds = remove_ghostcells(uds, file_nc_one)
         partitions.append(uds)
     print(': ',end='')
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
