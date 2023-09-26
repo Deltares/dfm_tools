@@ -198,7 +198,7 @@ def open_partitioned_dataset(file_nc, decode_fillvals=False, remove_edges=True, 
     partitions = []
     for iF, file_nc_one in enumerate(file_nc_list):
         print(iF+1,end=' ')
-        ds = xr.open_dataset(file_nc_one, **kwargs)
+        ds = xr.open_mfdataset(file_nc_one, **kwargs)
         if decode_fillvals:
             ds = decode_default_fillvals(ds)
         if remove_edges:
