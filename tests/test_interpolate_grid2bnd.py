@@ -50,7 +50,7 @@ def test_interpolate_tide_to_plipoints():
     file_pli = r'p:\archivedprojects\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli'
     nanvalue = -999
     
-    tidemodel_list = ['tpxo80', 'FES2014'] #, 'FES2012', 'GTSM4.1preliminary']
+    tidemodel_list = ['tpxo80', 'FES2014', 'FES2012', 'GTSM4.1preliminary']
     for tidemodel in tidemodel_list:
         print(tidemodel)
         dtstart = dt.datetime.now()
@@ -90,6 +90,6 @@ def test_interpolate_tide_to_plipoints():
             assert (np.abs(amp_expected-amp_now)<1e-6).all()
             assert (np.abs(phs_expected-phs_now)<1e-6).all()
 
-        print(f'>> interpolating tide from {tidemodel} took: ',end='')
+        print(f'>> tide interpolation from {tidemodel} took: ',end='')
         print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
 
