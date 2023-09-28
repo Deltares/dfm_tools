@@ -20,3 +20,6 @@ A Python package for pre- and postprocessing D-FlowFM model input and output fil
 - use python>=3.9 to ensure future updates: https://github.com/Deltares/dfm_tools/issues/267
 - [online documentation](https://deltares.github.io/dfm_tools) with installation guide, contributing guide, tutorials/examples, API reference and a convenient search box.
 - Bug or feature request? Create a [GitHub issue](https://github.com/Deltares/dfm_tools/issues)
+- This fork has a new feature: delete the mesh with shapefiles. Use it in this way:
+meshkernel_delete_withshp(mk:meshkernel.meshkernel.MeshKernel, coastlines_shp, min_area: float=0)
+
