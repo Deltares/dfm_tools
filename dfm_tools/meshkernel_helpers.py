@@ -103,7 +103,7 @@ def meshkernel_delete_withshp(mk:meshkernel.meshkernel.MeshKernel, coastlines_sh
     
     bbox = (mesh_bnds.x_coordinates.min(), mesh_bnds.y_coordinates.min(), mesh_bnds.x_coordinates.max(), mesh_bnds.y_coordinates.max())
     
-    coastlines_gdb = gpd.read_file(coastlines_shp, include_fields= ['area'], where=f"area>{min_area}", bbox=bbox)
+    coastlines_gdb = gpd.read_file(coastlines_shp, include_fields= ['polygons'], bbox=bbox)
     
     for coastline_geom in coastlines_gdb['geometry']:
         xx, yy = coastline_geom.exterior.coords.xy
