@@ -150,16 +150,10 @@ def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoi
     empty docstring
     """
     # TODO: for 0to360 model like fes, also add point just before or after 0 meridian
-
-    if tidemodel == 'GTSM4.1preliminary':
-        raise DeprecationWarning('tidemodel "GTSM4.1preliminary" was replaced by "GTSMv4.1" and "GTSMv4.1_opendap"')
-    if tidemodel == 'tpxo80':
-        raise DeprecationWarning('tidemodel "tpxo80" was replaced by "tpxo80_opendap"')
     
     dir_pattern_dict = {'FES2014': Path(r'P:\metocean-data\licensed\FES2014','*.nc'), #ocean_tide_extrapolated
                         'FES2012': Path(r'P:\metocean-data\open\FES2012\data','*_FES2012_SLEV.nc'), #is eigenlijk ook licensed
                         'EOT20': Path(r'P:\metocean-data\open\EOT20\ocean_tides','*_ocean_eot20.nc'),
-                        # 'GTSM4.1preliminary': Path(r'p:\1230882-emodnet_hrsm\GTSMv3.0EMODnet\EMOD_MichaelTUM_yearcomponents\GTSMv4.1_yeartide_2014_2.20.06\compare_fouhis_fouxyz_v3','gtsmv4.1_2014_*_withfu_v3_rasterized.nc'),
                         'GTSMv4.1': Path(r'p:\1230882-emodnet_hrsm\GTSMv3.0EMODnet\EMOD_MichaelTUM_yearcomponents\GTSMv4.1_yeartide_2014_2.20.06\compare_fouhis_fouxyz_v4','GTSMv4.1_tide_2014_*_extrapolated.nc'),
                         'GTSMv4.1_opendap': 'http://opendap.deltares.nl/thredds/dodsC/opendap/deltares/GTSM/GTSMv4.1_tide/GTSMv4.1_tide_2014_*_extrapolated.nc',
                         'tpxo80_opendap':'https://opendap.deltares.nl/thredds/dodsC/opendap/deltares/delftdashboard/tidemodels/tpxo80/tpxo80.nc',
@@ -167,7 +161,7 @@ def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoi
     if tidemodel not in dir_pattern_dict.keys():
         raise KeyError(f"Invalid tidemodel '{tidemodel}', options are: {str(list(dir_pattern_dict.keys()))}")
         
-    #Check whether the polyfile contains multiple polyline, in that case show a warning
+    #Check whether the polyfile contains multiple polylines, in that case show a warning
     pli = hcdfm.PolyFile(file_pli)
     if len(pli.objects) > 1:
         warnings.warn(UserWarning(f"The polyfile {file_pli} contains multiple polylines. Only the first one will be used by DFLOW-FM for the boundary conditions."))
@@ -229,11 +223,9 @@ def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoi
         data_xrsel['amplitude'] /= 100
         data_xrsel['amplitude'].attrs['units'] = 'm'
     
-    #derive uv phase components (using amplitude=1)
-    data_xrsel_phs_rad = np.deg2rad(data_xrsel['phase'])
-    
-    #we need to compute imag/real components for to avoid zero-crossing interpolation issues with phase
+    # compute imag/real components to avoid zero-crossing interpolation issues with phase
     if 'wl_real' not in data_xrsel.data_vars:
+        data_xrsel_phs_rad = np.deg2rad(data_xrsel['phase'])
         data_xrsel['wl_real'] = data_xrsel['amplitude']*np.cos(data_xrsel_phs_rad)
         data_xrsel['wl_imag'] = data_xrsel['amplitude']*np.sin(data_xrsel_phs_rad)
     

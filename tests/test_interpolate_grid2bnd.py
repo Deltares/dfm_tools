@@ -52,19 +52,19 @@ def test_interpolate_tide_to_plipoints():
         dtstart = dt.datetime.now()
         component_list_tidemodel = dfmt.tidemodel_componentlist(tidemodel, convention=True)
         
-        if tidemodel=='tpxo80_opendap': # 4.7 sec
+        if tidemodel=='tpxo80_opendap': # 4.7 sec (all components: 5.8 sec)
             amp_expected = np.array([1.09643936, 1.08739412, 1.08555067])
             phs_expected = np.array([81.92059326171875, 82.513671875, 82.69258117675781])
-        elif tidemodel=='FES2014': # 10.5 sec
+        elif tidemodel=='FES2014': # 10.5 sec (all components: 97.6 sec)
             amp_expected = np.array([1.1147955656051636, 1.1004363298416138, 1.0878639221191406])
             phs_expected = np.array([81.8884048461914, 82.19799041748047, 82.39784240722656])
-        elif tidemodel=='FES2012': # 9.5 sec
+        elif tidemodel=='FES2012': # 9.5 sec (all components: 92.4 sec)
             amp_expected = np.array([nanvalue, 1.0839321613311768, 1.0718189477920532])
             phs_expected = np.array([nanvalue, 82.33390808105469, 82.60922241210938])
-        elif tidemodel=='EOT20': # 9.9 sec
+        elif tidemodel=='EOT20': # 9.9 sec (all components: 61.9 sec)
             amp_expected = np.array([nanvalue, 1.10231938,  1.08968516])
             phs_expected = np.array([nanvalue, 82.54157149, 82.76990983])
-        elif tidemodel in ['GTSMv4.1','GTSMv4.1_opendap']: # 13.8 sec vs 39.2 sec
+        elif tidemodel in ['GTSMv4.1','GTSMv4.1_opendap']: # 13.8 sec vs 39.2 sec (all components: 82.4 sec vs 498.4 sec)
             amp_expected = np.array([1.13028932, 1.10648024, 1.09396541])
             phs_expected = np.array([81.21875763, 81.41669464, 81.66479492])
         
