@@ -27,7 +27,7 @@ for file_nc in file_nc_list:
         name_wl_x,name_wl_y,name_wl = None,None,None
         name_uv_x,name_uv_y,name_u,name_v = 'lon','lat','U_10M','V_10M'
         thinning = 2
-        data_xr = data_xr.drop(['height_10m','height_2m']) #gives cleaner figure title
+        data_xr = data_xr.drop_vars(['height_10m','height_2m']) #gives cleaner figure title
         clim_wl = [0,0.15]
         clim_uv = [0,5]
         add_ldb = True

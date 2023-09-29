@@ -2,6 +2,8 @@
 
 ### Feat
 - xugrid feature `uds.ugrid.to_nonperiodic()` deprecates `dfmt.remove_periodic_cells()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#503](https://github.com/Deltares/dfm_tools/issues/503)
+- added `GTSMv4.1` and `GTSMv4.1_opendap` datasets for tide interpolation with `dfmt.interpolate_tide_to_bc()` by [@veenstrajelmer] in [#544](https://github.com/Deltares/dfm_tools/pull/544)
+- support for `preprocess` argument in `dfmt.open_partitioned_dataset()`  by [@veenstrajelmer] in [#530](https://github.com/Deltares/dfm_tools/pull/530)
 
 
 ## 0.14.0 (2023-09-15)
@@ -34,14 +36,12 @@
 - aligned mesh deletion with `dfmt.meshkernel_delete_withgdf()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#455](https://github.com/Deltares/dfm_tools/pull/455)
 
 ### Fix
-
 - added `dfmt.uds_to_1based_ds()` to ensure FM-compatible network file (1-based face_node_connectivity) by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#456](https://github.com/Deltares/dfm_tools/pull/456)
 
 
 ## 0.12.0 (2023-07-07)
 
 ### Feat
-
 - added support for curvilinear datasets like CMCC and WAQUA with `open_dataset_curvilinear()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#397](https://github.com/Deltares/dfm_tools/pull/397)
 - added support for curvilinear Delft3D4 datasets with `open_dataset_delft3d4()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#398](https://github.com/Deltares/dfm_tools/pull/398)
 - retrieving [GSHHS landboundary](https://www.ngdc.noaa.gov/mgg/shorelines/) with `get_coastlines_gdb()` and cartopy-alternative `plot_coastlines()` with this dataset by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#342](https://github.com/Deltares/dfm_tools/pull/342)
@@ -49,7 +49,6 @@
 - added geodataframe support from polyfile with `PolyFile_to_geodataframe_points()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#387](https://github.com/Deltares/dfm_tools/pull/387)
 
 ### Fix
-
 - proper selection for either CMEMS reanalysis/forecast product in `download_CMEMS()` by [@JulienGroenenboom](https://github.com/JulienGroenenboom) in [#308](https://github.com/Deltares/dfm_tools/pull/388)
 - slightly extend spatial and time domain when downloading ERA5 and CMEMS data by [@JulienGroenenboom](https://github.com/JulienGroenenboom) in [#390](https://github.com/Deltares/dfm_tools/pull/390)
 - renamed uxuy to uxuyadvectionvelocitybnd in `open_dataset_extra()` and related example script by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#366](https://github.com/Deltares/dfm_tools/pull/366)
@@ -62,7 +61,6 @@
 Replaced large parts of the code with [HYDROLIB-core](https://github.com/Deltares/hydrolib-core), [xugrid](https://github.com/Deltares/xugrid) and [xarray](https://github.com/pydata/xarray). This means a non-backwards compatible change in the API but improved experience. xugrid gives loads of new features like coordinate conversion, shapefile export, cropping a unstructured dataset, regridding, rasterizing.
 
 ### Feat
-
 - improved support for ugrid datasets (D-FlowFM, D-HYDRO) with `open_partitioned_dataset()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in several PRs, this deprecates `get_ncmodeldata()`, `get_netdata()`, `plot_netmapdata()` and `get_ugrid_verts()`
 - improved rasterization of ugrid datasets with `rasterize_ugrid()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#314](https://github.com/Deltares/dfm_tools/pull/314), this deprecates `scatter_to_regulargrid()`
 - depth slicing of ugrid datasets with `get_Dataset_atdepths()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#261](https://github.com/Deltares/dfm_tools/pull/261)
@@ -81,5 +79,4 @@ Replaced large parts of the code with [HYDROLIB-core](https://github.com/Deltare
 - added meshkernelpy helper functions like `make_basegrid()`, `refine_basegrid()` and `meshkernel_to_UgridDataset()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#329](https://github.com/Deltares/dfm_tools/pull/329)
 
 ### Fix
-
 - made bedlevel variable optional in `get_Dataset_atdepths()`, if not explicitly needing it by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#241](https://github.com/Deltares/dfm_tools/pull/241)
