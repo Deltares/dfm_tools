@@ -220,23 +220,26 @@ def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoi
         #use open_mfdataset() with preprocess argument to open all requested FES files into one Dataset
         file_list_nc = [str(dir_pattern).replace('*',component_tidemodel_translate_dict[comp]) for comp in component_list]
         data_xrsel = xr.open_mfdataset(file_list_nc, combine='nested', concat_dim='compno', preprocess=extract_component)
+    
     data_xrsel = data_xrsel.rename({'lon':'longitude','lat':'latitude'})
-    
-    #derive uv phase components (using amplitude=1)
-    data_xrsel_phs_rad = np.deg2rad(data_xrsel['phase'])
-    #we need to compute u/v components for the phase to avoid zero-crossing interpolation issues
-    data_xrsel['phase_u'] = 1*np.cos(data_xrsel_phs_rad)
-    data_xrsel['phase_v'] = 1*np.sin(data_xrsel_phs_rad)
-    data_xrsel['compnames'] = xr.DataArray(component_list,dims=('compno')) #TODO: convert to proper string variable
-    data_xrsel = data_xrsel.set_index({'compno':'compnames'})
-    
+
     #convert cm to m
     if data_xrsel['amplitude'].attrs['units'] == 'cm':
         data_xrsel['amplitude'] /= 100
         data_xrsel['amplitude'].attrs['units'] = 'm'
     
+    #derive uv phase components (using amplitude=1)
+    data_xrsel_phs_rad = np.deg2rad(data_xrsel['phase'])
+    #we need to compute u/v components for the phase to avoid zero-crossing interpolation issues
+    #TODO: avoid computation of imag/real if already present
+    data_xrsel['tide_real'] = data_xrsel['amplitude']*np.cos(data_xrsel_phs_rad)
+    data_xrsel['tide_imag'] = data_xrsel['amplitude']*np.sin(data_xrsel_phs_rad)
+    data_xrsel['compnames'] = xr.DataArray(component_list,dims=('compno')) #TODO: convert to proper string variable
+    data_xrsel = data_xrsel.set_index({'compno':'compnames'})
+    
+    
     data_interp = interp_regularnc_to_plipoints(data_xr_reg=data_xrsel, file_pli=file_pli, nPoints=nPoints)
-    data_interp['phase_new'] = np.rad2deg(np.arctan2(data_interp['phase_v'],data_interp['phase_u']))
+    data_interp['phase_new'] = np.rad2deg(np.arctan2(data_interp['tide_imag'],data_interp['tide_real']))
     return data_interp
 
 
