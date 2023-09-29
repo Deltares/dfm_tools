@@ -149,8 +149,8 @@ def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoi
     """
     empty docstring
     """
-    #component_list = ['2N2','LABDA2','MF','MFM','P1','SSA','EPSILON2','M2','MKS2','MU2','Q1','T2','J1','M3','MM','N2','R2','K1','M4','MN4','N4','S1','K2','M6','MS4','NU2','S2','L2','M8','MSF','O1','S4','MSQM','SA']
-    
+    # TODO: for 0to360 model like fes, also add point just before or after 0 meridian
+
     if tidemodel == 'GTSM4.1preliminary':
         raise DeprecationWarning('tidemodel "GTSM4.1preliminary" was replaced by "GTSMv4.1" and "GTSMv4.1_opendap"')
     if tidemodel == 'tpxo80':
@@ -184,26 +184,14 @@ def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoi
         component_list = components_translate_upper(component_list)
         
     def extract_component(ds):
-        #https://github.com/pydata/xarray/issues/1380
         if 'FES2012' in ds.encoding["source"]: #TODO: make more generic with regex, or just add tidemodel argument since they are quite specific
-            # compname = os.path.basename(ds.encoding["source"]).replace('_FES2012_SLEV.nc','')
             ds = ds.sel(lon=ds.lon<360) #drop last instance, since 0 and 360 are both present
             ds = ds.rename({'Ha':'amplitude','Hg':'phase'})
         elif 'eot20' in ds.encoding["source"]:
-            # compname = os.path.basename(ds.encoding["source"]).replace('_ocean_eot20.nc','')
             ds = ds.rename({'imag':'wl_imag','real':'wl_real'})
             ds = ds.sel(lon=ds.lon<360) #drop last instance, since 0 and 360 are both present
-        # elif tidemodel=='GTSM4.1preliminary':
-        #     compname = os.path.basename(ds.encoding["source"]).replace('gtsmv4.1_2014_','').replace('_withfu_v3_rasterized.nc','')
-        #     ds = ds.rename({f'wl_amp{compname}':'amplitude',f'wl_phs{compname}':'phase'}) #TODO: adjust in rasterized dataset?
-        #     ds['amplitude'] = ds['amplitude'].assign_attrs({'units':'m'}) #TODO: handle this rasterize function
-        #     ds['phase'] = ds['phase'].assign_attrs({'units':'degrees'}) #TODO: handle this rasterize function
-        #     ds = ds.rename({'x':'lon','y':'lat'})
         elif tidemodel in ['GTSMv4.1','GTSMv4.1_opendap']:
-            # compname = os.path.basename(ds.encoding["source"]).replace('GTSMv4.1_tide_2014_','').replace('_extrapolated.nc','')
             ds = ds.rename({'wl_amp':'amplitude','wl_phs':'phase'})
-        # else:
-        #     compname = os.path.basename(ds.encoding["source"]).replace('.nc','')
         
         convert_360to180 = (ds['lon'].to_numpy()>180).any()
         if convert_360to180: # results in large chunks if it is done after concatenation, so do for each file before concatenation
@@ -229,7 +217,7 @@ def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoi
             ds = ds.sel(compno=component_list)
         data_xrsel = ds
     else:
-        #use open_mfdataset() with preprocess argument to open all requested FES files into one Dataset
+        #use open_mfdataset() with preprocess argument to open all requested tide files into one Dataset
         file_list_nc = [str(dir_pattern).replace('*',component_tidemodel_translate_dict[comp]) for comp in component_list]
         data_xrsel = xr.open_mfdataset(file_list_nc, combine='nested', concat_dim='compno', preprocess=extract_component)
     # print(data_xrsel.data_vars)
@@ -251,7 +239,6 @@ def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoi
     
     data_xrsel['compnames'] = xr.DataArray(component_list,dims=('compno')) #TODO: convert to proper string variable
     data_xrsel = data_xrsel.set_index({'compno':'compnames'})
-    
     
     data_interp = interp_regularnc_to_plipoints(data_xr_reg=data_xrsel, file_pli=file_pli, nPoints=nPoints)
     data_interp['phase_new'] = np.rad2deg(np.arctan2(data_interp['wl_imag'],data_interp['wl_real']))

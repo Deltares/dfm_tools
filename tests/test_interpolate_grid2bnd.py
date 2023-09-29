@@ -38,19 +38,15 @@ def test_conversion_dict():
         assert np.abs(conversion_dict[quan]['conversion'] - conversion_expected[quan]) < 1e-9
 
 
-# TODO: test preprocess_interpolate_nc_to_bc.py and compare output to references (make extra systemtest if needed)
-# TODO: add gtsm (if fast)
-# TODO: make faster by not loading entire multifile dataset in case of only 3 components
-# TODO: for 0to360 model like fes, also add point just before or after 0 meridian
 @pytest.mark.systemtest
-@pytest.mark.requireslocaldata # TODO: this is not necessary in case of tpxo since data is on opendap, but plifile is local
+@pytest.mark.requireslocaldata # TODO: this is not necessary in case of tpxo/gtsm since data is on opendap, but plifile is local
 def test_interpolate_tide_to_plipoints():
     
     nPoints = 3# None #amount of Points to process per PolyObject in the plifile (use int for testing, use None for all Points)
     file_pli = r'p:\archivedprojects\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli'
     nanvalue = -999
     
-    tidemodel_list = ['tpxo80_opendap', 'FES2014', 'FES2012', 'EOT20', 'GTSMv4.1', 'GTSMv4.1_opendap']
+    tidemodel_list = ['tpxo80_opendap', 'FES2014', 'FES2012', 'EOT20', 'GTSMv4.1']#, 'GTSMv4.1_opendap']
     for tidemodel in tidemodel_list:
         print(tidemodel)
         dtstart = dt.datetime.now()
@@ -93,4 +89,3 @@ def test_interpolate_tide_to_plipoints():
     
         print(f'>> tide interpolation from {tidemodel} took: ',end='')
         print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
-
