@@ -38,6 +38,13 @@ def test_conversion_dict():
         assert np.abs(conversion_dict[quan]['conversion'] - conversion_expected[quan]) < 1e-9
 
 
+@pytest.mark.unittest
+def test_tidemodel_componentlist():
+    comp_list = dfmt.tidemodel_componentlist(tidemodel='FES2014', convention=True)
+    assert len(comp_list) == 32
+    assert comp_list[1] == 'EPSILON2'
+
+
 @pytest.mark.systemtest
 @pytest.mark.requireslocaldata # TODO: this is not necessary in case of tpxo/gtsm since data is on opendap, but plifile is local
 def test_interpolate_tide_to_plipoints():
@@ -68,7 +75,6 @@ def test_interpolate_tide_to_plipoints():
             amp_expected = np.array([1.13028932, 1.10648024, 1.09396541])
             phs_expected = np.array([81.21875763, 81.41669464, 81.66479492])
         
-        
         for component_list in [['M2','S2','M4']]: # [None]: # 
             data_interp = dfmt.interpolate_tide_to_plipoints(tidemodel=tidemodel, file_pli=file_pli, component_list=component_list, nPoints=nPoints)
             
@@ -93,3 +99,4 @@ def test_interpolate_tide_to_plipoints():
     
         print(f'>> tide interpolation from {tidemodel} took: ',end='')
         print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
+
