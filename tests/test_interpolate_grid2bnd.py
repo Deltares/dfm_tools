@@ -49,6 +49,12 @@ def test_tidemodel_componentlist():
     assert comp_list_convention[1] == 'EPSILON2'
 
 
+@pytest.mark.unittest
+def test_components_translate_upper():
+    comp_list = dfmt.components_translate_upper(['m2','eps2','e2'])
+    assert comp_list == ['M2','EPSILON2','EPSILON2']
+
+
 @pytest.mark.systemtest
 @pytest.mark.requireslocaldata
 def test_interpolate_tide_to_plipoints():
