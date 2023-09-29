@@ -46,7 +46,7 @@ def test_tidemodel_componentlist():
 
 
 @pytest.mark.systemtest
-@pytest.mark.requireslocaldata # TODO: this is not necessary in case of tpxo/gtsm since data is on opendap, but plifile is local
+@pytest.mark.requireslocaldata
 def test_interpolate_tide_to_plipoints():
     
     nPoints = 3# None #amount of Points to process per PolyObject in the plifile (use int for testing, use None for all Points)
