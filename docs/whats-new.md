@@ -1,3 +1,11 @@
+## UNRELEASED
+
+### Feat
+
+- added `GTSMv4.1` and `GTSMv4.1_opendap` datasets for tide interpolation with `dfmt.interpolate_tide_to_bc()` by [@veenstrajelmer] in [#544](https://github.com/Deltares/dfm_tools/pull/544)
+- support for `preprocess` argument in `dfmt.open_partitioned_dataset()`  by [@veenstrajelmer] in [#530](https://github.com/Deltares/dfm_tools/pull/530)
+
+
 ## 0.14.0 (2023-09-15)
 
 ### Feat
