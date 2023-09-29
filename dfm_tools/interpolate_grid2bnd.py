@@ -155,7 +155,7 @@ def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoi
                         'FES2012': Path(r'P:\metocean-data\open\FES2012\data','*_FES2012_SLEV.nc'), #is eigenlijk ook licensed
                         'EOT20': Path(r'P:\metocean-data\open\EOT20\ocean_tides','*_ocean_eot20.nc'),
                         'GTSMv4.1': Path(r'p:\1230882-emodnet_hrsm\GTSMv3.0EMODnet\EMOD_MichaelTUM_yearcomponents\GTSMv4.1_yeartide_2014_2.20.06\compare_fouhis_fouxyz_v4','GTSMv4.1_tide_2014_*_extrapolated.nc'),
-                        'GTSMv4.1_opendap': 'http://opendap.deltares.nl/thredds/dodsC/opendap/deltares/GTSM/GTSMv4.1_tide/GTSMv4.1_tide_2014_*_extrapolated.nc',
+                        'GTSMv4.1_opendap': 'https://opendap.deltares.nl/thredds/dodsC/opendap/deltares/GTSM/GTSMv4.1_tide/GTSMv4.1_tide_2014_*_extrapolated.nc',
                         'tpxo80_opendap':'https://opendap.deltares.nl/thredds/dodsC/opendap/deltares/delftdashboard/tidemodels/tpxo80/tpxo80.nc',
                         }
     if tidemodel not in dir_pattern_dict.keys():
