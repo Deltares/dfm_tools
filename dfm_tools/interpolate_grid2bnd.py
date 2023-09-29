@@ -111,19 +111,24 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
     return ForcingModel_object
 
 
-def tidemodel_componentlist(tidemodel):
+def tidemodel_componentlist(tidemodel:str, convention:bool):
     
     comp_list_dict = {'FES2014':['2n2','eps2','j1','k1','k2','l2','la2','m2','m3','m4','m6','m8','mf','mks2','mm','mn4','ms4','msf','msqm','mtm','mu2','n2','n4','nu2','o1','p1','q1','r2','s1','s2','s4','sa','ssa','t2'],
                       'FES2012':['2N2','E2',  'J1','K1','K2','L2','La2','M2','M3','M4','M6','M8','Mf','MKS2','Mm','MN4','MS4','MSf',       'Mtm','Mu2','N2','N4','Nu2','O1','P1','Q1','R2','S1','S2','S4',     'Ssa','T2','Z0'],
                       'EOT20':['2N2','J1','K1','K2','M2','M4','MF','MM','N2','O1','P1','Q1','S1','S2','SA','SSA','T2'],
-                      'GTSM4.1':['2N2','2Q1','CHI1','EPS2','ETA2','J1','K1','K2','L2','LABDA2','M1','M2','M3','M4','MF','MM','MSF','MSQM','MU2','N2','NU2','O1','OO1','P1','PI1','Q1','R2','S1','S2','SA','SSA','T2'],
+                      'GTSMv4.1':['2N2','2Q1','CHI1','EPS2','ETA2','J1','K1','K2','L2','LABDA2','M1','M2','M3','M4','MF','MM','MSF','MSQM','MU2','N2','NU2','O1','OO1','P1','PI1','Q1','R2','S1','S2','SA','SSA','T2'],
                       'tpxo80':['M2','S2','N2','K2','K1','O1','P1','Q1','MF','MM','M4','MS4','MN4'],
                       }
-    comp_list_dict['GTSM4.1preliminary'] = comp_list_dict['GTSM4.1']
+    comp_list_dict['tpxo80_opendap'] = comp_list_dict['tpxo80']
+    comp_list_dict['GTSMv4.1_opendap'] = comp_list_dict['GTSMv4.1']
+    comp_list_dict['GTSM4.1preliminary'] = comp_list_dict['GTSMv4.1']
     
-    comp_list = comp_list_dict[tidemodel]
+    component_list = comp_list_dict[tidemodel]
     
-    return comp_list
+    if convention:
+        return components_translate_upper(component_list)
+    else:
+        return component_list
 
 
 def components_translate_upper(component_list):
@@ -146,17 +151,22 @@ def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoi
     """
     #component_list = ['2N2','LABDA2','MF','MFM','P1','SSA','EPSILON2','M2','MKS2','MU2','Q1','T2','J1','M3','MM','N2','R2','K1','M4','MN4','N4','S1','K2','M6','MS4','NU2','S2','L2','M8','MSF','O1','S4','MSQM','SA']
     
+    if tidemodel == 'GTSM4.1preliminary':
+        raise DeprecationWarning('tidemodel "GTSM4.1preliminary" was replaced by "GTSMv4.1" and "GTSMv4.1_opendap"')
+    if tidemodel == 'tpxo80':
+        raise DeprecationWarning('tidemodel "tpxo80" was replaced by "tpxo80_opendap"')
+    
     dir_pattern_dict = {'FES2014': Path(r'P:\metocean-data\licensed\FES2014','*.nc'), #ocean_tide_extrapolated
                         'FES2012': Path(r'P:\metocean-data\open\FES2012\data','*_FES2012_SLEV.nc'), #is eigenlijk ook licensed
                         'EOT20': Path(r'P:\metocean-data\open\EOT20\ocean_tides','*_ocean_eot20.nc'),
-                        'GTSM4.1preliminary': Path(r'p:\1230882-emodnet_hrsm\GTSMv3.0EMODnet\EMOD_MichaelTUM_yearcomponents\GTSMv4.1_yeartide_2014_2.20.06\compare_fouhis_fouxyz_v3','gtsmv4.1_2014_*_withfu_v3_rasterized.nc'),
-                        'tpxo80':'https://opendap.deltares.nl/thredds/dodsC/opendap/deltares/delftdashboard/tidemodels/tpxo80/tpxo80.nc',
+                        # 'GTSM4.1preliminary': Path(r'p:\1230882-emodnet_hrsm\GTSMv3.0EMODnet\EMOD_MichaelTUM_yearcomponents\GTSMv4.1_yeartide_2014_2.20.06\compare_fouhis_fouxyz_v3','gtsmv4.1_2014_*_withfu_v3_rasterized.nc'),
+                        'GTSMv4.1': Path(r'p:\1230882-emodnet_hrsm\GTSMv3.0EMODnet\EMOD_MichaelTUM_yearcomponents\GTSMv4.1_yeartide_2014_2.20.06\compare_fouhis_fouxyz_v4','GTSMv4.1_tide_2014_*_extrapolated.nc'),
+                        'GTSMv4.1_opendap': 'http://opendap.deltares.nl/thredds/dodsC/opendap/deltares/GTSM/GTSMv4.1_tide/GTSMv4.1_tide_2014_*_extrapolated.nc',
+                        'tpxo80_opendap':'https://opendap.deltares.nl/thredds/dodsC/opendap/deltares/delftdashboard/tidemodels/tpxo80/tpxo80.nc',
                         }
     if tidemodel not in dir_pattern_dict.keys():
         raise KeyError(f"Invalid tidemodel '{tidemodel}', options are: {str(list(dir_pattern_dict.keys()))}")
-    if tidemodel == 'GTSM4.1preliminary':
-        warnings.warn(UserWarning(f'you are using tidemodel "{tidemodel}", beware that the dataset is preliminary so it is still quite coarse and may contain errors. Check your results carefully'))
-    
+        
     #Check whether the polyfile contains multiple polyline, in that case show a warning
     pli = hcdfm.PolyFile(file_pli)
     if len(pli.objects) > 1:
@@ -165,8 +175,8 @@ def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoi
     
     dir_pattern = dir_pattern_dict[tidemodel]
 
-    component_list_tidemodel = tidemodel_componentlist(tidemodel)
-    component_list_tidemodel_convention = components_translate_upper(component_list_tidemodel)
+    component_list_tidemodel = tidemodel_componentlist(tidemodel, convention=False)
+    component_list_tidemodel_convention = tidemodel_componentlist(tidemodel, convention=True)
     component_tidemodel_translate_dict = {k:v for k,v in zip(component_list_tidemodel_convention,component_list_tidemodel)}
     if component_list is None:
         component_list = component_list_tidemodel_convention
@@ -176,20 +186,24 @@ def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoi
     def extract_component(ds):
         #https://github.com/pydata/xarray/issues/1380
         if 'FES2012' in ds.encoding["source"]: #TODO: make more generic with regex, or just add tidemodel argument since they are quite specific
-            compname = os.path.basename(ds.encoding["source"]).replace('_FES2012_SLEV.nc','')
+            # compname = os.path.basename(ds.encoding["source"]).replace('_FES2012_SLEV.nc','')
             ds = ds.sel(lon=ds.lon<360) #drop last instance, since 0 and 360 are both present
             ds = ds.rename({'Ha':'amplitude','Hg':'phase'})
         elif 'eot20' in ds.encoding["source"]:
-            compname = os.path.basename(ds.encoding["source"]).replace('_ocean_eot20.nc','')
+            # compname = os.path.basename(ds.encoding["source"]).replace('_ocean_eot20.nc','')
+            ds = ds.rename({'imag':'wl_imag','real':'wl_real'})
             ds = ds.sel(lon=ds.lon<360) #drop last instance, since 0 and 360 are both present
-        elif 'gtsm' in ds.encoding["source"].lower(): #TODO: make less hard coded
-            compname = os.path.basename(ds.encoding["source"]).replace('gtsmv4.1_2014_','').replace('_withfu_v3_rasterized.nc','')
-            ds = ds.rename({f'wl_amp{compname}':'amplitude',f'wl_phs{compname}':'phase'}) #TODO: adjust in rasterized dataset?
-            ds['amplitude'] = ds['amplitude'].assign_attrs({'units':'m'}) #TODO: handle this rasterize function
-            ds['phase'] = ds['phase'].assign_attrs({'units':'degrees'}) #TODO: handle this rasterize function
-            ds = ds.rename({'x':'lon','y':'lat'})
-        else:
-            compname = os.path.basename(ds.encoding["source"]).replace('.nc','')
+        # elif tidemodel=='GTSM4.1preliminary':
+        #     compname = os.path.basename(ds.encoding["source"]).replace('gtsmv4.1_2014_','').replace('_withfu_v3_rasterized.nc','')
+        #     ds = ds.rename({f'wl_amp{compname}':'amplitude',f'wl_phs{compname}':'phase'}) #TODO: adjust in rasterized dataset?
+        #     ds['amplitude'] = ds['amplitude'].assign_attrs({'units':'m'}) #TODO: handle this rasterize function
+        #     ds['phase'] = ds['phase'].assign_attrs({'units':'degrees'}) #TODO: handle this rasterize function
+        #     ds = ds.rename({'x':'lon','y':'lat'})
+        elif tidemodel in ['GTSMv4.1','GTSMv4.1_opendap']:
+            # compname = os.path.basename(ds.encoding["source"]).replace('GTSMv4.1_tide_2014_','').replace('_extrapolated.nc','')
+            ds = ds.rename({'wl_amp':'amplitude','wl_phs':'phase'})
+        # else:
+        #     compname = os.path.basename(ds.encoding["source"]).replace('.nc','')
         
         convert_360to180 = (ds['lon'].to_numpy()>180).any()
         if convert_360to180: # results in large chunks if it is done after concatenation, so do for each file before concatenation
@@ -197,7 +211,7 @@ def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoi
             ds = ds.sortby('lon')
         return ds
     
-    if 'tpxo80' in str(dir_pattern):
+    if tidemodel=='tpxo80_opendap':
         ds = xr.open_dataset(dir_pattern)
         bool_land = ds.depth==0
         ds['tidal_amplitude_h'] = ds['tidal_amplitude_h'].where(~bool_land).assign_attrs({'units':'m'})
@@ -218,6 +232,7 @@ def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoi
         #use open_mfdataset() with preprocess argument to open all requested FES files into one Dataset
         file_list_nc = [str(dir_pattern).replace('*',component_tidemodel_translate_dict[comp]) for comp in component_list]
         data_xrsel = xr.open_mfdataset(file_list_nc, combine='nested', concat_dim='compno', preprocess=extract_component)
+    # print(data_xrsel.data_vars)
     
     data_xrsel = data_xrsel.rename({'lon':'longitude','lat':'latitude'})
 
@@ -228,16 +243,18 @@ def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoi
     
     #derive uv phase components (using amplitude=1)
     data_xrsel_phs_rad = np.deg2rad(data_xrsel['phase'])
-    #we need to compute u/v components for the phase to avoid zero-crossing interpolation issues
-    #TODO: avoid computation of imag/real if already present
-    data_xrsel['tide_real'] = data_xrsel['amplitude']*np.cos(data_xrsel_phs_rad)
-    data_xrsel['tide_imag'] = data_xrsel['amplitude']*np.sin(data_xrsel_phs_rad)
+    
+    #we need to compute imag/real components for to avoid zero-crossing interpolation issues with phase
+    if 'wl_real' not in data_xrsel.data_vars:
+        data_xrsel['wl_real'] = data_xrsel['amplitude']*np.cos(data_xrsel_phs_rad)
+        data_xrsel['wl_imag'] = data_xrsel['amplitude']*np.sin(data_xrsel_phs_rad)
+    
     data_xrsel['compnames'] = xr.DataArray(component_list,dims=('compno')) #TODO: convert to proper string variable
     data_xrsel = data_xrsel.set_index({'compno':'compnames'})
     
     
     data_interp = interp_regularnc_to_plipoints(data_xr_reg=data_xrsel, file_pli=file_pli, nPoints=nPoints)
-    data_interp['phase_new'] = np.rad2deg(np.arctan2(data_interp['tide_imag'],data_interp['tide_real']))
+    data_interp['phase_new'] = np.rad2deg(np.arctan2(data_interp['wl_imag'],data_interp['wl_real']))
     return data_interp
 
 
