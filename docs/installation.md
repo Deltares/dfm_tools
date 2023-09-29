@@ -6,8 +6,8 @@
 
 ## Recommended installation
 
-- use python>=3.9 to ensure future updates: https://github.com/Deltares/dfm_tools/issues/267
-- download and install Anaconda 64 bit (with Python 3.9 or later) from [anaconda.com](https://www.anaconda.com/distribution/#download-section)
+- use python>=3.9 to ensure future updates ([more info](https://github.com/Deltares/dfm_tools/issues/267))
+- download and install Anaconda 64 bit (with Python 3.9 or later) from [anaconda.com](https://www.anaconda.com)
 - open Anaconda prompt
 - ``conda create --name dfm_tools_env python=3.9 git spyder -c conda-forge -y`` (``git`` and ``spyder`` are optional, you can also install a newer python version)
 - ``conda activate dfm_tools_env``
