@@ -111,6 +111,21 @@ def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=Non
     return ForcingModel_object
 
 
+def tidemodel_componentlist(tidemodel):
+    
+    comp_list_dict = {'FES2014':['2n2','eps2','j1','k1','k2','l2','la2','m2','m3','m4','m6','m8','mf','mks2','mm','mn4','ms4','msf','msqm','mtm','mu2','n2','n4','nu2','o1','p1','q1','r2','s1','s2','s4','sa','ssa','t2'],
+                      'FES2012':['2N2','E2',  'J1','K1','K2','L2','La2','M2','M3','M4','M6','M8','Mf','MKS2','Mm','MN4','MS4','MSf',       'Mtm','Mu2','N2','N4','Nu2','O1','P1','Q1','R2','S1','S2','S4',     'Ssa','T2','Z0'],
+                      'EOT20':['2N2','J1','K1','K2','M2','M4','MF','MM','N2','O1','P1','Q1','S1','S2','SA','SSA','T2'],
+                      'GTSM4.1':['2N2','2Q1','CHI1','EPS2','ETA2','J1','K1','K2','L2','LABDA2','M1','M2','M3','M4','MF','MM','MSF','MSQM','MU2','N2','NU2','O1','OO1','P1','PI1','Q1','R2','S1','S2','SA','SSA','T2'],
+                      'tpxo80':['M2','S2','N2','K2','K1','O1','P1','Q1','MF','MM','M4','MS4','MN4'],
+                      }
+    comp_list_dict['GTSM4.1preliminary'] = comp_list_dict['GTSM4.1']
+    
+    comp_list = comp_list_dict[tidemodel]
+    
+    return comp_list
+
+
 def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoints=None):
     """
     empty docstring
