@@ -40,9 +40,13 @@ def test_conversion_dict():
 
 @pytest.mark.unittest
 def test_tidemodel_componentlist():
-    comp_list = dfmt.tidemodel_componentlist(tidemodel='FES2014', convention=True)
+    comp_list = dfmt.tidemodel_componentlist(tidemodel='FES2014', convention=False)
+    comp_list_convention = dfmt.tidemodel_componentlist(tidemodel='FES2014', convention=True)
+    
     assert len(comp_list) == 34
-    assert comp_list[1] == 'EPSILON2'
+    assert len(comp_list_convention) == 34
+    assert comp_list[1] == 'eps2'
+    assert comp_list_convention[1] == 'EPSILON2'
 
 
 @pytest.mark.systemtest
