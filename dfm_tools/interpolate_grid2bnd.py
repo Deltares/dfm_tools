@@ -117,11 +117,9 @@ def tidemodel_componentlist(tidemodel:str, convention:bool):
                       'FES2012':['2N2','E2',  'J1','K1','K2','L2','La2','M2','M3','M4','M6','M8','Mf','MKS2','Mm','MN4','MS4','MSf',       'Mtm','Mu2','N2','N4','Nu2','O1','P1','Q1','R2','S1','S2','S4',     'Ssa','T2','Z0'],
                       'EOT20':['2N2','J1','K1','K2','M2','M4','MF','MM','N2','O1','P1','Q1','S1','S2','SA','SSA','T2'],
                       'GTSMv4.1':['2N2','2Q1','CHI1','EPS2','ETA2','J1','K1','K2','L2','LABDA2','M1','M2','M3','M4','MF','MM','MSF','MSQM','MU2','N2','NU2','O1','OO1','P1','PI1','Q1','R2','S1','S2','SA','SSA','T2'],
-                      'tpxo80':['M2','S2','N2','K2','K1','O1','P1','Q1','MF','MM','M4','MS4','MN4'],
+                      'tpxo80_opendap':['M2','S2','N2','K2','K1','O1','P1','Q1','MF','MM','M4','MS4','MN4'],
                       }
-    comp_list_dict['tpxo80_opendap'] = comp_list_dict['tpxo80']
     comp_list_dict['GTSMv4.1_opendap'] = comp_list_dict['GTSMv4.1']
-    comp_list_dict['GTSM4.1preliminary'] = comp_list_dict['GTSMv4.1']
     
     component_list = comp_list_dict[tidemodel]
     
