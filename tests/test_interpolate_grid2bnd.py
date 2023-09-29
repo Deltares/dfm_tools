@@ -41,7 +41,7 @@ def test_conversion_dict():
 @pytest.mark.unittest
 def test_tidemodel_componentlist():
     comp_list = dfmt.tidemodel_componentlist(tidemodel='FES2014', convention=True)
-    assert len(comp_list) == 32
+    assert len(comp_list) == 34
     assert comp_list[1] == 'EPSILON2'
 
 
