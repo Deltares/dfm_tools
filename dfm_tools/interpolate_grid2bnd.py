@@ -149,7 +149,6 @@ def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoi
     """
     empty docstring
     """
-    # TODO: for 0to360 model like fes, also add point just before or after 0 meridian
     
     dir_pattern_dict = {'FES2014': Path(r'P:\metocean-data\licensed\FES2014','*.nc'), #ocean_tide_extrapolated
                         'FES2012': Path(r'P:\metocean-data\open\FES2012\data','*_FES2012_SLEV.nc'), #is eigenlijk ook licensed
@@ -165,7 +164,7 @@ def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoi
     pli = hcdfm.PolyFile(file_pli)
     if len(pli.objects) > 1:
         warnings.warn(UserWarning(f"The polyfile {file_pli} contains multiple polylines. Only the first one will be used by DFLOW-FM for the boundary conditions."))
-        #TODO when issue UNST-7012 is solved, remove this warning or add it in more places
+        #TODO when issue UNST-7012 is properly solved, remove this warning or add it in more places
     
     dir_pattern = dir_pattern_dict[tidemodel]
 
@@ -178,10 +177,11 @@ def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoi
         component_list = components_translate_upper(component_list)
         
     def extract_component(ds):
-        if 'FES2012' in ds.encoding["source"]: #TODO: make more generic with regex, or just add tidemodel argument since they are quite specific
+        if tidemodel in ['FES2012']:
             ds = ds.sel(lon=ds.lon<360) #drop last instance, since 0 and 360 are both present
             ds = ds.rename({'Ha':'amplitude','Hg':'phase'})
-        elif 'eot20' in ds.encoding["source"]:
+            ds['phase'] = ds['phase'].assign_attrs({'units':'degrees'}) # degree in original file
+        elif tidemodel in ['EOT20']:
             ds = ds.rename({'imag':'wl_imag','real':'wl_real'})
             ds = ds.sel(lon=ds.lon<360) #drop last instance, since 0 and 360 are both present
         elif tidemodel in ['GTSMv4.1','GTSMv4.1_opendap']:
@@ -214,7 +214,6 @@ def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoi
         #use open_mfdataset() with preprocess argument to open all requested tide files into one Dataset
         file_list_nc = [str(dir_pattern).replace('*',component_tidemodel_translate_dict[comp]) for comp in component_list]
         data_xrsel = xr.open_mfdataset(file_list_nc, combine='nested', concat_dim='compno', preprocess=extract_component)
-    # print(data_xrsel.data_vars)
     
     data_xrsel = data_xrsel.rename({'lon':'longitude','lat':'latitude'})
 
@@ -226,10 +225,10 @@ def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoi
     # compute imag/real components to avoid zero-crossing interpolation issues with phase
     if 'wl_real' not in data_xrsel.data_vars:
         data_xrsel_phs_rad = np.deg2rad(data_xrsel['phase'])
-        data_xrsel['wl_real'] = data_xrsel['amplitude']*np.cos(data_xrsel_phs_rad)
-        data_xrsel['wl_imag'] = data_xrsel['amplitude']*np.sin(data_xrsel_phs_rad)
+        data_xrsel['wl_real'] = data_xrsel['amplitude'] * np.cos(data_xrsel_phs_rad)
+        data_xrsel['wl_imag'] = data_xrsel['amplitude'] * np.sin(data_xrsel_phs_rad)
     
-    data_xrsel['compnames'] = xr.DataArray(component_list,dims=('compno')) #TODO: convert to proper string variable
+    data_xrsel['compnames'] = xr.DataArray(component_list,dims=('compno'))
     data_xrsel = data_xrsel.set_index({'compno':'compnames'})
     
     data_interp = interp_regularnc_to_plipoints(data_xr_reg=data_xrsel, file_pli=file_pli, nPoints=nPoints)

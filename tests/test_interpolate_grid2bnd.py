@@ -86,6 +86,10 @@ def test_interpolate_tide_to_plipoints():
             assert compnames_now == compnames_expected
             assert (np.abs(amp_expected-amp_now)<1e-6).all()
             assert (np.abs(phs_expected-phs_now)<1e-6).all()
+            
+            # file_bc_out = f'tide_{tidemodel}.bc'
+            # ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
+            # ForcingModel_object.save(filepath=file_bc_out)
     
         print(f'>> tide interpolation from {tidemodel} took: ',end='')
         print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
