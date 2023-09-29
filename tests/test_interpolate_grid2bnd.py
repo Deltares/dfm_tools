@@ -55,26 +55,23 @@ def test_interpolate_tide_to_plipoints():
         print(tidemodel)
         dtstart = dt.datetime.now()
 
+        component_list_full = dfmt.tidemodel_componentlist(tidemodel)
+        
         if tidemodel=='tpxo80': # 17.1 sec
             amp_expected = np.array([1.09643936, 1.08739412, 1.08555067])
             phs_expected = np.array([81.92059326171875, 82.513671875, 82.69258117675781])
-            component_list_full = ['M2','S2','N2','K2','K1','O1','P1','Q1','MF','MM','M4','MS4','MN4']
         elif tidemodel=='FES2014': # 30.6 sec
             amp_expected = np.array([1.1147955656051636, 1.1004363298416138, 1.0878639221191406])
             phs_expected = np.array([81.8884048461914, 82.19799041748047, 82.39784240722656])
-            component_list_full = [] #TODO: add full list
         elif tidemodel=='FES2012': # 34.8 sec
             amp_expected = np.array([nanvalue, 1.0839321613311768, 1.0718189477920532])
             phs_expected = np.array([nanvalue, 82.33390808105469, 82.60922241210938])
-            component_list_full = [] #TODO: add full list
         elif tidemodel=='GTSM4.1preliminary': # 180.1 sec
             amp_expected = np.array([nanvalue, 1.10861691, 1.09537914])
             phs_expected = np.array([nanvalue, 81.36824495, 81.62704184])
-            component_list_full = [] #TODO: add full list
         elif tidemodel=='EOT20': #30.2 sec
             amp_expected = np.array([nanvalue, 1.10231938,  1.08968516])
             phs_expected = np.array([nanvalue, 82.54157149, 82.76990983])
-            component_list_full = [] #TODO: add full list
         
         for component_list in [['M2','S2','M4']]:#, None]:
             data_interp = dfmt.interpolate_tide_to_plipoints(tidemodel=tidemodel, file_pli=file_pli, component_list=component_list, nPoints=nPoints)

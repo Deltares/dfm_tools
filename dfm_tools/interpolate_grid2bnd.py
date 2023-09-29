@@ -145,7 +145,7 @@ def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoi
                         'tpxo80':'https://opendap.deltares.nl/thredds/dodsC/opendap/deltares/delftdashboard/tidemodels/tpxo80/tpxo80.nc',
                         }
     if tidemodel not in dir_pattern_dict.keys():
-        raise KeyError(f'invalid tidemodel "{tidemodel}", options are: {list(dir_pattern_dict.keys())}')
+        raise KeyError(f"Invalid tidemodel '{tidemodel}', options are: {str(list(dir_pattern_dict.keys()))}")
     if tidemodel == 'GTSM4.1preliminary':
         warnings.warn(UserWarning(f'you are using tidemodel "{tidemodel}", beware that the dataset is preliminary so it is still quite coarse and may contain errors. Check your results carefully'))
     
@@ -153,9 +153,12 @@ def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoi
     pli = hcdfm.PolyFile(file_pli)
     if len(pli.objects) > 1:
         warnings.warn(UserWarning(f"The polyfile {file_pli} contains multiple polylines. Only the first one will be used by DFLOW-FM for the boundary conditions."))
-        #TODO when issue UNST-7012 is solved, remove this warning or add it in more places)
+        #TODO when issue UNST-7012 is solved, remove this warning or add it in more places
     
     dir_pattern = dir_pattern_dict[tidemodel]
+
+    if component_list is None:
+        component_list = tidemodel_componentlist(tidemodel)
     
     def extract_component(ds):
         #https://github.com/pydata/xarray/issues/1380
@@ -199,15 +202,8 @@ def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoi
         ds = ds.set_index({'compno':'compnames'})
         if component_list is not None:
             ds = ds.sel(compno=component_list)
-        else:
-            component_list = list(components_infile.to_numpy())
         data_xrsel = ds
     else:
-        if component_list is None:
-            file_list_nc = glob.glob(str(dir_pattern))
-            dir_pattern_basename = os.path.basename(dir_pattern)
-            replace = dir_pattern_basename.split('*')
-            component_list = [os.path.basename(x).replace(replace[0],'').replace(replace[1],'') for x in file_list_nc] #TODO: make this less hard-coded
         
         #use open_mfdataset() with preprocess argument to open all requested FES files into one Dataset
         file_list_nc = [str(dir_pattern).replace('*',comp) for comp in component_list]
