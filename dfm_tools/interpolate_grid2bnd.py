@@ -126,17 +126,25 @@ def tidemodel_componentlist(tidemodel):
     return comp_list
 
 
-def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoints=None):
-    """
-    empty docstring
-    """
+def components_translate_upper(component_list):
     # translate dict from .\hydro_tools\FES\PreProcessing_FES_TideModel_imaginary.m
-    #component_list = ['2N2','LABDA2','MF','MFM','P1','SSA','EPSILON2','M2','MKS2','MU2','Q1','T2','J1','M3','MM','N2','R2','K1','M4','MN4','N4','S1','K2','M6','MS4','NU2','S2','L2','M8','MSF','O1','S4','MSQM','SA']
     translate_dict = {'LA2':'LABDA2', #TODO: use value instead of key in bc file? Support using value instead of key in const_list also (like line above)
                       'EPS2':'EPSILON2', 
                       'Z0':'A0',
                       'MTM':'MFM', #Needs to be verified
+                      #added later
+                      'E2':'EPSILON2',
                       }
+    
+    component_list = pd.Series([x.upper() for x in component_list]).replace(translate_dict, regex=True).to_list()
+    return component_list
+
+
+def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoints=None):
+    """
+    empty docstring
+    """
+    #component_list = ['2N2','LABDA2','MF','MFM','P1','SSA','EPSILON2','M2','MKS2','MU2','Q1','T2','J1','M3','MM','N2','R2','K1','M4','MN4','N4','S1','K2','M6','MS4','NU2','S2','L2','M8','MSF','O1','S4','MSQM','SA']
     
     dir_pattern_dict = {'FES2014': Path(r'P:\metocean-data\licensed\FES2014','*.nc'), #ocean_tide_extrapolated
                         'FES2012': Path(r'P:\metocean-data\open\FES2012\data','*_FES2012_SLEV.nc'), #is eigenlijk ook licensed
@@ -157,9 +165,14 @@ def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoi
     
     dir_pattern = dir_pattern_dict[tidemodel]
 
+    component_list_tidemodel = tidemodel_componentlist(tidemodel)
+    component_list_tidemodel_convention = components_translate_upper(component_list_tidemodel)
+    component_tidemodel_translate_dict = {k:v for k,v in zip(component_list_tidemodel_convention,component_list_tidemodel)}
     if component_list is None:
-        component_list = tidemodel_componentlist(tidemodel)
-    
+        component_list = component_list_tidemodel_convention
+    else:
+        component_list = components_translate_upper(component_list)
+        
     def extract_component(ds):
         #https://github.com/pydata/xarray/issues/1380
         if 'FES2012' in ds.encoding["source"]: #TODO: make more generic with regex, or just add tidemodel argument since they are quite specific
@@ -204,9 +217,8 @@ def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoi
             ds = ds.sel(compno=component_list)
         data_xrsel = ds
     else:
-        
         #use open_mfdataset() with preprocess argument to open all requested FES files into one Dataset
-        file_list_nc = [str(dir_pattern).replace('*',comp) for comp in component_list]
+        file_list_nc = [str(dir_pattern).replace('*',component_tidemodel_translate_dict[comp]) for comp in component_list]
         data_xrsel = xr.open_mfdataset(file_list_nc, combine='nested', concat_dim='compno', preprocess=extract_component)
     data_xrsel = data_xrsel.rename({'lon':'longitude','lat':'latitude'})
     
@@ -215,8 +227,7 @@ def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoi
     #we need to compute u/v components for the phase to avoid zero-crossing interpolation issues
     data_xrsel['phase_u'] = 1*np.cos(data_xrsel_phs_rad)
     data_xrsel['phase_v'] = 1*np.sin(data_xrsel_phs_rad)
-    component_list_upper_pd = pd.Series([x.upper() for x in component_list]).replace(translate_dict, regex=True).values
-    data_xrsel['compnames'] = xr.DataArray(component_list_upper_pd,dims=('compno')) #TODO: convert to proper string variable
+    data_xrsel['compnames'] = xr.DataArray(component_list,dims=('compno')) #TODO: convert to proper string variable
     data_xrsel = data_xrsel.set_index({'compno':'compnames'})
     
     #convert cm to m
