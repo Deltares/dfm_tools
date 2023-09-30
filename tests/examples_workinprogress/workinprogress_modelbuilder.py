@@ -55,99 +55,99 @@ dir_output_data = os.path.join(dir_output, 'data')
 os.makedirs(dir_output_data, exist_ok=True)
 
 
-# #%% grid generation and refinement with GEBCO bathymetry
-# #select and plot bathy
-# file_nc_bathy = r'p:\metocean-data\open\GEBCO\2021\GEBCO_2021.nc'
-# data_bathy = xr.open_dataset(file_nc_bathy)
-# data_bathy_sel = data_bathy.sel(lon=slice(lon_min-1,lon_max+1),lat=slice(lat_min-1,lat_max+1))
+#%% grid generation and refinement with GEBCO bathymetry
+#select and plot bathy
+file_nc_bathy = r'p:\metocean-data\open\GEBCO\2021\GEBCO_2021.nc'
+data_bathy = xr.open_dataset(file_nc_bathy)
+data_bathy_sel = data_bathy.sel(lon=slice(lon_min-1,lon_max+1),lat=slice(lat_min-1,lat_max+1))
 
-# #TODO: grid generation and bathy-refinement is still to be improved in meshkernel (https://github.com/Deltares/dfm_tools/issues/234)
-# mk_object = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, is_geographic=is_geographic)
+#TODO: grid generation and bathy-refinement is still to be improved in meshkernel (https://github.com/Deltares/dfm_tools/issues/234)
+mk_object = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, is_geographic=is_geographic)
 
-# # generate plifile from grid extent and coastlines
-# bnd_gdf = dfmt.generate_bndpli_cutland(mk=mk_object, res='h', buffer=0.01)
-# bnd_gdf['name'] = f'{model_name}_bnd'
-# bnd_gdf_interp = dfmt.interpolate_bndpli(bnd_gdf,res=0.03)
-# poly_file = os.path.join(dir_output, f'{model_name}.pli')
-# pli_polyfile = dfmt.geodataframe_to_PolyFile(bnd_gdf_interp)
-# pli_polyfile.save(poly_file)
+# generate plifile from grid extent and coastlines
+bnd_gdf = dfmt.generate_bndpli_cutland(mk=mk_object, res='h', buffer=0.01)
+bnd_gdf['name'] = f'{model_name}_bnd'
+bnd_gdf_interp = dfmt.interpolate_bndpli(bnd_gdf,res=0.03)
+poly_file = os.path.join(dir_output, f'{model_name}.pli')
+pli_polyfile = dfmt.geodataframe_to_PolyFile(bnd_gdf_interp)
+pli_polyfile.save(poly_file)
 
-# #refine
-# min_edge_size = 300 #in meters
-# dfmt.refine_basegrid(mk=mk_object, data_bathy_sel=data_bathy_sel, min_edge_size=min_edge_size)
+#refine
+min_edge_size = 300 #in meters
+dfmt.refine_basegrid(mk=mk_object, data_bathy_sel=data_bathy_sel, min_edge_size=min_edge_size)
 
-# #cutcells
-# dfmt.meshkernel_delete_withcoastlines(mk=mk_object, res='h') #TODO: write used coastline to ldbfile?
-# #TODO: illegalcells.pol necessary?
+#cutcells
+dfmt.meshkernel_delete_withcoastlines(mk=mk_object, res='h') #TODO: write used coastline to ldbfile?
+#TODO: illegalcells.pol necessary?
 
-# #TODO: cleanup grid necessary?
-# # print('mk_object.mesh2d_get_obtuse_triangles_mass_centers()')
-# # print(mk_object.mesh2d_get_obtuse_triangles_mass_centers().values)
-# # print('mk_object.mesh2d_get_orthogonality()')
-# # print(mk_object.mesh2d_get_orthogonality().values.max()) #TODO: couple back to uds, currently ordering mismatch: https://github.com/Deltares/MeshKernelPy/issues/72
-# # print('mk_object.mesh2d_get_hanging_edges()')
-# # print(mk_object.mesh2d_get_hanging_edges())
-# # mk_object.mesh2d_delete_hanging_edges()
+#TODO: cleanup grid necessary?
+# print('mk_object.mesh2d_get_obtuse_triangles_mass_centers()')
+# print(mk_object.mesh2d_get_obtuse_triangles_mass_centers().values)
+# print('mk_object.mesh2d_get_orthogonality()')
+# print(mk_object.mesh2d_get_orthogonality().values.max()) #TODO: couple back to uds, currently ordering mismatch: https://github.com/Deltares/MeshKernelPy/issues/72
+# print('mk_object.mesh2d_get_hanging_edges()')
+# print(mk_object.mesh2d_get_hanging_edges())
+# mk_object.mesh2d_delete_hanging_edges()
 
-# #convert to xugrid
-# xu_grid_uds = dfmt.meshkernel_to_UgridDataset(mk=mk_object, crs=crs)
+#convert to xugrid
+xu_grid_uds = dfmt.meshkernel_to_UgridDataset(mk=mk_object, crs=crs)
 
-# #interp bathy
-# data_bathy_interp = data_bathy_sel.interp(lon=xu_grid_uds.obj.mesh2d_node_x, lat=xu_grid_uds.obj.mesh2d_node_y).reset_coords(['lat','lon']) #interpolates lon/lat gebcodata to mesh2d_nNodes dimension #TODO: if these come from xu_grid_uds (without ojb), the mesh2d_node_z var has no ugrid accessor since the dims are lat/lon instead of mesh2d_nNodes
-# xu_grid_uds['mesh2d_node_z'] = data_bathy_interp.elevation.clip(max=10)
+#interp bathy
+data_bathy_interp = data_bathy_sel.interp(lon=xu_grid_uds.obj.mesh2d_node_x, lat=xu_grid_uds.obj.mesh2d_node_y).reset_coords(['lat','lon']) #interpolates lon/lat gebcodata to mesh2d_nNodes dimension #TODO: if these come from xu_grid_uds (without ojb), the mesh2d_node_z var has no ugrid accessor since the dims are lat/lon instead of mesh2d_nNodes
+xu_grid_uds['mesh2d_node_z'] = data_bathy_interp.elevation.clip(max=10)
 
-# fig, ax = plt.subplots()
-# xu_grid_uds.grid.plot(ax=ax,linewidth=1)
-# ctx.add_basemap(ax=ax, crs=crs, attribution=False)
-# dfmt.plot_coastlines(ax=ax, crs=crs)
+fig, ax = plt.subplots()
+xu_grid_uds.grid.plot(ax=ax,linewidth=1)
+ctx.add_basemap(ax=ax, crs=crs, attribution=False)
+dfmt.plot_coastlines(ax=ax, crs=crs)
 
-# fig, ax = plt.subplots()
-# xu_grid_uds.mesh2d_node_z.ugrid.plot(ax=ax,center=False)
-# ctx.add_basemap(ax=ax, crs=crs, attribution=False)
-# dfmt.plot_coastlines(ax=ax, crs=crs)
-# bnd_gdf_interp.plot(ax=ax,color='r')
+fig, ax = plt.subplots()
+xu_grid_uds.mesh2d_node_z.ugrid.plot(ax=ax,center=False)
+ctx.add_basemap(ax=ax, crs=crs, attribution=False)
+dfmt.plot_coastlines(ax=ax, crs=crs)
+bnd_gdf_interp.plot(ax=ax,color='r')
 
-# #write xugrid grid to netcdf
-# netfile  = os.path.join(dir_output, f'{model_name}_net.nc')
-# xu_grid_uds.ugrid.to_netcdf(netfile)
+#write xugrid grid to netcdf
+netfile  = os.path.join(dir_output, f'{model_name}_net.nc')
+xu_grid_uds.ugrid.to_netcdf(netfile)
 
 
-# #%% new ext: initial and open boundary condition
-# ext_file_new = os.path.join(dir_output, f'{model_name}_new.ext')
-# ext_new = hcdfm.ExtModel()
+#%% new ext: initial and open boundary condition
+ext_file_new = os.path.join(dir_output, f'{model_name}_new.ext')
+ext_new = hcdfm.ExtModel()
 
-# # FES2014 tidal components bc file
-# file_bc_basename = os.path.basename(poly_file).replace('.pli','')
-# ForcingModel_object = dfmt.interpolate_tide_to_bc(tidemodel='FES2014', file_pli=poly_file, component_list=None) # tidemodel: FES2014, FES2012, EOT20, GTSM4.1preliminary
-# file_bc_out = os.path.join(dir_output,f'tide_{file_bc_basename}_FES2014.bc')
-# ForcingModel_object.save(filepath=file_bc_out)
-# boundary_object = hcdfm.Boundary(quantity='waterlevelbnd', #the FM quantity for tide is also waterlevelbnd
-#                                  locationfile=poly_file,
-#                                  forcingfile=ForcingModel_object)
-# ext_new.boundary.append(boundary_object)
+# FES2014 tidal components bc file
+file_bc_basename = os.path.basename(poly_file).replace('.pli','')
+ForcingModel_object = dfmt.interpolate_tide_to_bc(tidemodel='FES2014', file_pli=poly_file, component_list=None) # tidemodel: FES2014, FES2012, EOT20, GTSM4.1preliminary
+file_bc_out = os.path.join(dir_output,f'tide_{file_bc_basename}_FES2014.bc')
+ForcingModel_object.save(filepath=file_bc_out)
+boundary_object = hcdfm.Boundary(quantity='waterlevelbnd', #the FM quantity for tide is also waterlevelbnd
+                                 locationfile=poly_file,
+                                 forcingfile=ForcingModel_object)
+ext_new.boundary.append(boundary_object)
 
-# # CMEMS - download
+# CMEMS - download
 dir_output_data_cmems = os.path.join(dir_output_data, 'cmems')
-# os.makedirs(dir_output_data_cmems, exist_ok=True)
-# for varkey in ['so','thetao','uo','vo','zos']:
-#     dfmt.download_CMEMS(varkey=varkey,
-#                         longitude_min=lon_min, longitude_max=lon_max, latitude_min=lat_min, latitude_max=lat_max,
-#                         date_min=date_min, date_max=date_max,
-#                         dir_output=dir_output_data_cmems, file_prefix='cmems_', overwrite=overwrite)
+os.makedirs(dir_output_data_cmems, exist_ok=True)
+for varkey in ['so','thetao','uo','vo','zos']:
+    dfmt.download_CMEMS(varkey=varkey,
+                        longitude_min=lon_min, longitude_max=lon_max, latitude_min=lat_min, latitude_max=lat_max,
+                        date_min=date_min, date_max=date_max,
+                        dir_output=dir_output_data_cmems, file_prefix='cmems_', overwrite=overwrite)
 
-# # CMEMS - boundary conditions file (.bc) (and add to ext_bnd)
-# list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd'] # when supplying two waterlevelbnds to FM (tide and steric) with other quantities in between, dimrset>=2.24.00 is required or else "ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated" is raised (https://issuetracker.deltares.nl/browse/UNST-7011). Two waterlevelbnds need to share same physical plifile in order to be appended (https://issuetracker.deltares.nl/browse/UNST-5320).
-# ext_new = mb.cmems_nc_to_bc(ext_bnd=ext_new,
-#                             refdate_str=f'minutes since {ref_date} 00:00:00 +00:00',
-#                             dir_output=dir_output,
-#                             list_quantities=list_quantities,
-#                             tstart=date_min,
-#                             tstop=date_max, 
-#                             file_pli=poly_file,
-#                             dir_pattern=os.path.join(dir_output_data_cmems,'cmems_{ncvarname}_*.nc'))
+# CMEMS - boundary conditions file (.bc) (and add to ext_bnd)
+list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd'] # when supplying two waterlevelbnds to FM (tide and steric) with other quantities in between, dimrset>=2.24.00 is required or else "ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated" is raised (https://issuetracker.deltares.nl/browse/UNST-7011). Two waterlevelbnds need to share same physical plifile in order to be appended (https://issuetracker.deltares.nl/browse/UNST-5320).
+ext_new = mb.cmems_nc_to_bc(ext_bnd=ext_new,
+                            refdate_str=f'minutes since {ref_date} 00:00:00 +00:00',
+                            dir_output=dir_output,
+                            list_quantities=list_quantities,
+                            tstart=date_min,
+                            tstop=date_max, 
+                            file_pli=poly_file,
+                            dir_pattern=os.path.join(dir_output_data_cmems,'cmems_{ncvarname}_*.nc'))
 
-# #save new ext file
-# ext_new.save(filepath=ext_file_new,path_style=path_style)
+#save new ext file
+ext_new.save(filepath=ext_file_new,path_style=path_style)
 
     
 #%% old ext
