@@ -17,7 +17,7 @@ dir_output = '.' #r'p:\11206811-002-kpp-veerse-meer\model\initial_conditions\VM_
 if not os.path.exists(dir_output):
     os.makedirs(dir_output)
 
-file_nc = r'p:\11206811-002-kpp-veerse-meer\model\runs_2011-2012\VM_WQ_3D_run9_c\DFM_OUTPUT_VM_WQ_3D\VM_WQ_3D_0000_20130101_000000_rst.nc' #mf1_rstfile (without topology var)
+file_nc = r'p:\archivedprojects\11206811-002-kpp-veerse-meer\model\runs_2011-2012\VM_WQ_3D_run9_c\DFM_OUTPUT_VM_WQ_3D\VM_WQ_3D_0000_20130101_000000_rst.nc' #mf1_rstfile (without topology var)
 
 ds = xr.open_dataset(file_nc)
 ds = ds.set_coords(['FlowElem_xzw','FlowElem_yzw']) #TODO: these are the wrong variables, should be FlowElem_xcc/FlowElem_ycc, but they are not in file

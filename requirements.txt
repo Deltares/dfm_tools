@@ -6,11 +6,11 @@ shapely>=1.7.0
 geopandas
 fiona>=1.9
 contextily
-xarray<2023.9.0
+xarray
 dask
 netcdf4>=1.5.3
 bottleneck
-xugrid>=0.6.4
+xugrid>=0.6.5
 cdsapi
 pydap>=3.3.0
 pooch
