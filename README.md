@@ -17,7 +17,7 @@ A Python package for pre- and postprocessing D-FlowFM model input and output fil
 
 ## Information
 
+- python 3.11 is recommended, at least use python>=3.9 to ensure future updates ([more info](https://github.com/Deltares/dfm_tools/issues/267))
 - install with ``pip install dfm_tools -U`` (or [installation guide](https://deltares.github.io/dfm_tools/installation))
-- use python>=3.9 to ensure future updates ([more info](https://github.com/Deltares/dfm_tools/issues/267))
 - [online documentation](https://deltares.github.io/dfm_tools) with installation guide, contributing guide, tutorials/examples, API reference and a convenient search box.
 - Bug or feature request? Create a [GitHub issue](https://github.com/Deltares/dfm_tools/issues)
