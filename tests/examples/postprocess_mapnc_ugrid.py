@@ -301,7 +301,7 @@ for file_nc in file_nc_list:
         slice_sa1 = data_frommap_merged_sel.mesh2d_sa1.mean(dim='mesh2d_nLayers')
     else:
         slice_sa1 = data_frommap_merged_sel.mesh2d_sa1
-    slice_sa1.plot(x='s',y='time')
+    slice_sa1.plot(x='mesh2d_s',y='time')
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,f'{basename}_hovmoller'))
         
