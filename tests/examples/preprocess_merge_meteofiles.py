@@ -72,9 +72,9 @@ data_xr_tsel = dfmt.merge_meteofiles(file_nc=file_nc, time_slice=time_slice,
 #write to netcdf file
 print('>> writing file (can take a while): ',end='')
 dtstart = dt.datetime.now()
-times_np = data_xr_tsel['time'].to_series() #used to not work for woa 360_day calendar, .to_numpy() did the trick
-time_start_str = times_np[0].strftime("%Y%m%d")
-time_stop_str = times_np[-1].strftime("%Y%m%d")
+times_pd = data_xr_tsel['time'].to_series() #used to not work for woa 360_day calendar, .to_numpy() did the trick
+time_start_str = times_pd.iloc[0].strftime("%Y%m%d")
+time_stop_str = times_pd.iloc[-1].strftime("%Y%m%d")
 file_out = os.path.join(dir_output, f'{file_out_prefix}{time_start_str}to{time_stop_str}_{mode}.nc')
 data_xr_tsel.to_netcdf(file_out)
 print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
