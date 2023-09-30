@@ -1,10 +1,10 @@
-scipy
+scipy<1.10.0
 numpy
 matplotlib
 pandas
 shapely>=1.7.0
 geopandas
-#fiona>=1.9
+fiona>=1.9
 contextily
 xarray
 dask
