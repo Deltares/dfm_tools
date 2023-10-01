@@ -35,15 +35,17 @@ def test_xugrid_opendataset_ugridplot():
 
 
 @pytest.mark.systemtest
-def SKIP_test_xugrid_opendataset_ugridplot_contourf():
+def test_xugrid_opendataset_ugridplot_contourf_scipy_numpy_deprecation():
     """
-    this one fails with xarray>=2023.3.0: https://github.com/Deltares/xugrid/issues/117
+    This testcase gives DeprecationWarning with scipy<1.10.0: https://github.com/Deltares/dfm_tools/issues/557
+    It will fail if the function is actually deprecated
+    After fix, keep the testcase but rename and move to xugrid helpers, since it checks the contour/contourf plots
     """
     file_nc = dfmt.data.fm_curvedbend_map(return_filepath=True)
     
-    uds = xu.open_dataset(file_nc,chunks={'time':1})
+    uds = xu.open_dataset(file_nc)
     
-    uds['mesh2d_flowelem_bl'].ugrid.plot.contourf()
+    uds['mesh2d_flowelem_bl'].ugrid.plot.contour()
 
 
 @pytest.mark.unittest
