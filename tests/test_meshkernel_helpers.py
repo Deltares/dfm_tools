@@ -71,6 +71,19 @@ def test_meshkernel_delete_withcoastlines():
     
     assert len(mk.mesh2d_get().face_nodes) == 17364
 
+@pytest.mark.unittest
+def test_meshkernel_delete_withshp():
+    #generate basegrid
+    lon_min, lon_max, lat_min, lat_max = -68.45, -68.1, 12, 12.35
+    dxy = 0.005
+    mk = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy)
+    
+    assert len(mk.mesh2d_get().face_nodes) == 20732
+    
+    # remove cells with a shapefile
+    dfmt.meshkernel_delete_withshp(mk=mk, coastlines_shp='./shp/test.shp')
+    
+    assert len(mk.mesh2d_get().face_nodes) == 17180
 
 @pytest.mark.unittest
 def test_meshkernel_delete_withgdf():
