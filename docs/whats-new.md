@@ -1,3 +1,7 @@
+## 0.14.1 (2023-10-3)
+- added a new feature: delete the mesh with shapefiles. Use it in this way:
+meshkernel_delete_withshp(mk:meshkernel.meshkernel.MeshKernel, coastlines_shp, min_area: float=0)
+
 ## 0.14.0 (2023-09-15)
 
 ### Feat
