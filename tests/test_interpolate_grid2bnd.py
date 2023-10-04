@@ -58,7 +58,7 @@ def test_components_translate_upper():
 
 
 @pytest.mark.unittest
-def test_xarray_interp_to_newdim():
+def test_interp_regularnc_to_plipointdataframe():
     """
     Linear interpolation to a new dimension in dfmt.interp_regularnc_to_plipoints() 
     resulted in unexpected nan values since scipy 1.10.0.
