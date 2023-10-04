@@ -259,30 +259,7 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
     list_pattern_names = [x.name for x in dir_pattern]
     print(f'loading mfdataset of {len(file_list_nc)} files with pattern(s) {list_pattern_names}')
     
-    try:
-        data_xr = xr.open_mfdataset(file_list_nc, chunks=chunks) #TODO: does chunks argument solve "PerformanceWarning: Slicing is producing a large chunk."? {'time':1} is not a convenient chunking to use for timeseries extraction
-    except xr.MergeError as e: #TODO: this except is necessary for CMCC, ux and uy have different lat/lon values, so renaming those of uy to avoid merging conflict
-        def preprocess_CMCC_uovo(ds):
-            if 'vo_' in os.path.basename(ds.encoding['source']):
-                ds.coords['longitude'] = (ds.coords['longitude'] + 180) % 360 - 180 #normally this is done at convert_360to180, but inconvenient after renaming longitude variable
-                ds = ds.rename({'longitude':'longitude_uy','latitude':'latitude_uy'})
-                ds = ds.drop_vars(['vertices_longitude','vertices_latitude'])
-            return ds
-        print(f'catching "MergeError: {e}" >> WARNING: ux/uy have different latitude/longitude values, making two coordinates sets in Dataset.')
-        data_xr = xr.open_mfdataset(file_list_nc, chunks=chunks, preprocess=preprocess_CMCC_uovo)
-    
-    #TODO: remove this commented code
-    #rename variables with rename_dict derived from conversion_dict. duplicate keys are not possible, so phyc is always renamed to tracerbndOpal (last in conversion_dict)
-    # rename_dict = {v['ncvarname']:k for k,v in conversion_dict.items()}
-    # for ncvarn in data_xr.variables.mapping.keys():
-    #     if ncvarn in rename_dict.keys():
-    #         data_xr = data_xr.rename({ncvarn:rename_dict[ncvarn]})
-
-    #renames ncvarnames to quantity names: proposal lisa, does not support ux/uy
-    # for ncvarn in data_xr.variables.mapping.keys():
-    #     if ncvarn == conversion_dict[quantity]['ncvarname']:
-    #         data_xr = data_xr.rename({ncvarn:quantity})
-    #         print(f'variable {ncvarn} renamed to {quantity}')
+    data_xr = xr.open_mfdataset(file_list_nc, chunks=chunks) #TODO: does chunks argument solve "PerformanceWarning: Slicing is producing a large chunk."? {'time':1} is not a convenient chunking to use for timeseries extraction
     
     for k,v in conversion_dict.items():
         ncvarn = v['ncvarname']
@@ -291,12 +268,12 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
             print(f'variable {ncvarn} renamed to {k}')
     
     #rename dims time/depth/lat/lon/x/y #TODO: this has to be phased out some time, or made as an argument or merged with conversion_dict?
-    rename_dims_dict = {'time_counter':'time', #time_counter instead of time for some CMCC files
+    rename_dims_dict = {#'time_counter':'time', #time_counter instead of time for some CMCC files
                         'lev':'depth', #depth for CMEMS and many others, but lev for GFDL
-                        'deptht':'depth', #deptht for some CMCC vars
+                        #'deptht':'depth', #deptht for some CMCC vars
                         'lon':'longitude','lat':'latitude',
-                        'nav_lon':'longitude','nav_lat':'latitude', #nav_lon/nav_lat for some CMCC vars
-                        'x':'j','y':'i', #x/y instead of j/i for some CMCC vars (non-regulargrid)
+                        #'nav_lon':'longitude','nav_lat':'latitude', #nav_lon/nav_lat for some CMCC vars
+                        #'x':'j','y':'i', #x/y instead of j/i for some CMCC vars (non-regulargrid)
                         }
     for k,v in rename_dims_dict.items():
         if k in data_xr.dims and v not in data_xr.dims: 
@@ -323,13 +300,9 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
     
     #360 to 180 conversion
     convert_360to180 = (data_xr['longitude'].to_numpy()>180).any() #TODO: replace to_numpy() with load()
-    latlon_ndims = len(data_xr['longitude'].shape)
     if convert_360to180: #TODO: make more flexible for models that eg pass -180/+180 crossing (add overlap at lon edges).
         data_xr.coords['longitude'] = (data_xr.coords['longitude'] + 180) % 360 - 180
-        if latlon_ndims==1: #lon/lat has 1 dimension, .sortby() not possible if there are 2 dimensions
-            data_xr = data_xr.sortby(data_xr['longitude'])
-        else: #lon/lat is 2D #TODO: this can be removed
-            print('WARNING: 2D latitude/longitude has more than one dim, continue without .sortby(). This is expected for e.g. CMCC')
+        data_xr = data_xr.sortby(data_xr['longitude'])
     
     #retrieve var(s) (after potential longitude conversion) (also selecting relevant times)
     data_vars = list(data_xr.data_vars)
@@ -407,51 +380,17 @@ def interp_regularnc_to_plipointdataframe(data_xr_reg, data_pol_pd, load=True):
     #interpolation to lat/lon combinations
     print('> interp mfdataset to all PolyFile points (lat/lon coordinates)')
     #dtstart = dt.datetime.now()
-    try:
-        # linear, nearest, combine_first
-        data_interp_lin = data_xr_reg.interp(longitude=da_plipoints['plipoint_x'], latitude=da_plipoints['plipoint_y'],
-                                         method='linear', 
-                                         kwargs={'bounds_error':True}, #error is only raised upon load(), so when the actual value retrieval happens
-                                         )
-        data_interp_near = data_xr_reg.interp(longitude=da_plipoints['plipoint_x'], latitude=da_plipoints['plipoint_y'],
-                                         method='nearest', 
-                                         kwargs={'bounds_error':True}, #error is only raised upon load(), so when the actual value retrieval happens
-                                         )
-        data_interp = data_interp_lin.combine_first(data_interp_near)
-    except ValueError as e: #Dimensions {'latitude', 'longitude'} do not exist. Expected one or more of Frozen({'time': 17, 'depth': 50, 'i': 292, 'j': 362}).
-        #this is for eg CMCC model with multidimensional lat/lon variable
-        #TODO: make nicer, without try except? eg latlon_ndims==1, but not sure if that is always valid >> add nonregular alternative for interp_regularnc_to_plipoints() and set kdtree to 1 (closest value) (uy stuff has to be dropped anyway)
-        #TODO: maybe also spherical coordinate distance calculation instead of cartesian/eucledian
-        #TODO: maybe use .sel(method='nearest'), but "KeyError: "no index found for coordinate 'longitude'""
-        #TODO: interp for 2D also requested: https://github.com/pydata/xarray/issues/2281
-        print(f'ValueError: {e}. Reverting to KDTree instead (nearest neigbour)')
-        data_interp = xr.Dataset()
-        for varone in list(data_xr_reg.data_vars):
-            path_lonlat_pd = data_pol_pd[['x','y']]
-            if (varone=='uy') & (len(data_xr_reg.data_vars)>1):
-                data_lon_flat = data_xr_reg['longitude_uy'].to_numpy().ravel()
-                data_lat_flat = data_xr_reg['latitude_uy'].to_numpy().ravel()
-            else:
-                data_lon_flat = data_xr_reg['longitude'].to_numpy().ravel()
-                data_lat_flat = data_xr_reg['latitude'].to_numpy().ravel()
-            data_lonlat_pd = pd.DataFrame({'x':data_lon_flat,'y':data_lat_flat})
-            #KDTree, finds minimal eucledian distance between points (maybe haversine would be better)
-            tree = KDTree(data_lonlat_pd) #alternatively sklearn.neighbors.BallTree: tree = BallTree(data_lonlat_pd)
-            kdtree_k = 3 #TODO: nearest is probably just as wrong/right as weighted average, but raises error when using 1
-            distance, data_lonlat_idx = tree.query(path_lonlat_pd, k=kdtree_k) #TODO: maybe add outofbounds treshold for distance
-            #data_lonlat_pd.iloc[data_lonlat_idx]
-            idx_i,idx_j = np.divmod(data_lonlat_idx, data_xr_reg['longitude'].shape[1]) #get idx i and j by sort of counting over 2D array
-            # import matplotlib.pyplot as plt
-            # fig,ax = plt.subplots()
-            # data_xr_reg[varone].isel(time=0,depth=0).plot(ax=ax)
-            # ax.plot(idx_j,idx_i,'xr')
-            da_plipoints['da_idxi'] = xr.DataArray(idx_i, dims=('plipoints','nearestkpoints'))
-            da_plipoints['da_idxj'] = xr.DataArray(idx_j, dims=('plipoints','nearestkpoints'))
-            da_dist = xr.DataArray(distance, dims=('plipoints','nearestkpoints'))
-            da_invdistweight = (1/da_dist)/(1/da_dist).sum(dim='nearestkpoints')
-            da_varone_3k = data_xr_reg[varone].isel(i=da_plipoints['da_idxi'],j=da_plipoints['da_idxj'])
-            data_interp[varone] = (da_varone_3k * da_invdistweight).sum(dim='nearestkpoints')
-            data_interp[varone].attrs = data_xr_reg[varone].attrs #copy units and other attributes
+    
+    # linear, nearest, combine_first
+    data_interp_lin = data_xr_reg.interp(longitude=da_plipoints['plipoint_x'], latitude=da_plipoints['plipoint_y'],
+                                     method='linear', 
+                                     kwargs={'bounds_error':True}, #error is only raised upon load(), so when the actual value retrieval happens
+                                     )
+    data_interp_near = data_xr_reg.interp(longitude=da_plipoints['plipoint_x'], latitude=da_plipoints['plipoint_y'],
+                                     method='nearest', 
+                                     kwargs={'bounds_error':True}, #error is only raised upon load(), so when the actual value retrieval happens
+                                     )
+    data_interp = data_interp_lin.combine_first(data_interp_near)
     
     #time_passed = (dt.datetime.now()-dtstart).total_seconds()
     # print(f'>>time passed: {time_passed:.2f} sec')
