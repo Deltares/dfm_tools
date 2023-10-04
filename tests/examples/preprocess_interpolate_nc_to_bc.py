@@ -29,8 +29,7 @@ list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuyadvection
 list_quantities = ['salinitybnd','tracerbndNO3','tide']
 #list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd','tracerbndNO3','tracerbndOpal','tracerbndDON','tide'] #also waq vars with same ncvarname, opal not available for GFDL and CMCC
 
-model = 'CMEMS' #CMEMS GFDL CMCC
-
+model = 'CMEMS' #CMEMS GFDL
 
 #The {ncvarname} wildcard in dir_pattern_hydro/dir_patern_waq is used to replace it with conversion_dict[quantity]['ncvarname'] by using str(dir_pattern).format(ncvarname)
 list_plifiles = [Path(r'p:\archivedprojects\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli')]
@@ -47,7 +46,7 @@ if model=='CMEMS': #2012-01-06 12:00:00 to 2013-01-03 12:00:00
     #tstart = dt.datetime(1993,1,1,12,0)
     #tstop = tstart + dt.timedelta(days=5)
     #dir_pattern_hydro = Path(dir_sourcefiles_hydro,'{ncvarname}_1993*.nc')
-elif model=='GFDL':
+elif model=='GFDL': # TODO: data is not available anymore
     conversion_dict = dfmt.get_conversion_dict()
     tstart = '2012-01-16 12:00'
     tstop = '2012-04-01 12:00'
@@ -55,16 +54,6 @@ elif model=='GFDL':
     dir_pattern_hydro = None
     dir_sourcefiles_waq = r'p:\11206304-futuremares\data\CMIP6_BC\GFDL-ESM4' #GFDL waq: no3 (1850-01-16 12:00:00 to 2014-12-16 12:00:00)
     dir_pattern_waq = Path(dir_sourcefiles_waq,'{ncvarname}_esm-hist.nc')
-elif model=='CMCC': #TODO: check method, now finding nearest points (so always has values)
-    #TODO: time_bnds/lev_bnds are available, take into account in bc file?
-    conversion_dict = dfmt.get_conversion_dict(ncvarname_updates={'salinitybnd':'sos', 'temperaturebnd':'tos'})
-    conversion_dict['tracerbndNO3'] = {'ncvarname':'no3', 'unit':'g/m3', 'conversion':14.0} #other vars also have different conversion than cmems
-    tstart = '2015-06-16 12:00'
-    tstop = '2015-12-01 12:00'
-    dir_sourcefiles_hydro = r'p:\11206304-futuremares\data\CMIP6_BC\CMCC-ESM2'
-    dir_pattern_hydro = Path(dir_sourcefiles_hydro,'{ncvarname}_Omon_CMCC-ESM2_ssp126_r1i1p1f1_gn_*.nc')
-    dir_sourcefiles_waq = dir_sourcefiles_hydro #CMCC waq: (2015-01-16 12:00:00 to 2100-12-16 12:00:00)
-    dir_pattern_waq = dir_pattern_hydro
 else:
     raise KeyError(f'invalid model: {model}')
 
