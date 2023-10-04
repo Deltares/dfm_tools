@@ -390,7 +390,6 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True
         data_pol_list.append(data_pol_pd_one)
     data_pol_pd = pd.concat(data_pol_list)
     
-
     data_interp = interp_regularnc_to_plipointdataframe(data_xr_reg, data_pol_pd, load=load)
     return data_interp
 

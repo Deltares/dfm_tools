@@ -10,6 +10,7 @@ import dfm_tools as dfmt
 import numpy as np
 import datetime as dt
 import xarray as xr
+import pandas as pd
 
 
 @pytest.mark.unittest
@@ -104,10 +105,8 @@ def test_xarray_interp_to_newdim():
         interp_with_floats = ds.interp(longitude=x_xr[0], latitude=y_xr[0], method='linear').so #selecting one value from the da drops the new plipoints dimension
         interp_with_da_existing = ds.interp(longitude=x_xr.values, latitude=y_xr.values, method='linear').so.isel(longitude=0,latitude=0) #using the DataArray values keeps lat/lon dimenions, gives the same interp result
         
-        # combination of linear and nearest interpn
-        interp_with_da_newdim_lin = ds.interp(longitude=x_xr, latitude=y_xr, method='linear').so.isel(plipoints=0) #using the DataArray introduces a plipoints dimension, which gives different interp result
-        interp_with_da_newdim_near = ds.interp(longitude=x_xr, latitude=y_xr, method='nearest').so.isel(plipoints=0) #using the DataArray introduces a plipoints dimension, which gives different interp result
-        interp_with_da_newdim = interp_with_da_newdim_lin.combine_first(interp_with_da_newdim_near)
+        data_pol_pd = pd.DataFrame({'x':x_xr, 'y':y_xr, 'name':[f'name_{ipoint+1:04d}']})
+        interp_with_da_newdim = dfmt.interp_regularnc_to_plipointdataframe(ds, data_pol_pd, load=True).so.isel(plipoints=0)
         
         #define expected values since in some cases like point 0 this is not the same as interp1d returns
         interp_da_expected = xr.DataArray(so_np[:,ipoint,ipoint],dims=('depth'))
