@@ -64,7 +64,6 @@ def test_interpolate_tide_to_plipoints():
     nanvalue = -999
     
     tidemodel_list = ['tpxo80_opendap', 'FES2014', 'FES2012', 'EOT20', 'GTSMv4.1']#, 'GTSMv4.1_opendap']
-    
     for tidemodel in tidemodel_list:
         print(tidemodel)
         dtstart = dt.datetime.now()
@@ -88,6 +87,7 @@ def test_interpolate_tide_to_plipoints():
         
         for component_list in [['M2','S2','M4']]: # [None]: # 
             data_interp = dfmt.interpolate_tide_to_plipoints(tidemodel=tidemodel, file_pli=file_pli, component_list=component_list, nPoints=nPoints)
+            
             compnames_now = data_interp['compno'].to_numpy().tolist()
             if component_list is None:
                 compnames_expected = component_list_tidemodel
