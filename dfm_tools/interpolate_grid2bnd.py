@@ -268,12 +268,8 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
             print(f'variable {ncvarn} renamed to {k}')
     
     #rename dims time/depth/lat/lon/x/y #TODO: this has to be phased out some time, or made as an argument or merged with conversion_dict?
-    rename_dims_dict = {#'time_counter':'time', #time_counter instead of time for some CMCC files
-                        'lev':'depth', #depth for CMEMS and many others, but lev for GFDL
-                        #'deptht':'depth', #deptht for some CMCC vars
+    rename_dims_dict = {'lev':'depth', #depth for CMEMS and many others, but lev for GFDL
                         'lon':'longitude','lat':'latitude',
-                        #'nav_lon':'longitude','nav_lat':'latitude', #nav_lon/nav_lat for some CMCC vars
-                        #'x':'j','y':'i', #x/y instead of j/i for some CMCC vars (non-regulargrid)
                         }
     for k,v in rename_dims_dict.items():
         if k in data_xr.dims and v not in data_xr.dims: 
