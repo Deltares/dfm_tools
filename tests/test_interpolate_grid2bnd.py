@@ -108,6 +108,8 @@ def test_xarray_interp_to_newdim():
         interp_with_da_newdim_lin = ds.interp(longitude=x_xr, latitude=y_xr, method='linear').so.isel(plipoints=0) #using the DataArray introduces a plipoints dimension, which gives different interp result
         interp_with_da_newdim_near = ds.interp(longitude=x_xr, latitude=y_xr, method='nearest').so.isel(plipoints=0) #using the DataArray introduces a plipoints dimension, which gives different interp result
         interp_with_da_newdim = interp_with_da_newdim_lin.combine_first(interp_with_da_newdim_near)
+        
+        #define expected values since in some cases like point 0 this is not the same as interp1d returns
         interp_da_expected = xr.DataArray(so_np[:,ipoint,ipoint],dims=('depth'))
         
         print(ipoint)
