@@ -367,11 +367,11 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
 
 
 def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True):
+
     """
     load: interpolation errors are only raised upon loading, so do this per default
     """
     #TODO: make format of this dataset more in line with existing bnd-nc format and hisfile: https://issuetracker.deltares.nl/browse/UNST-6549
-    data_xr_var = data_xr_reg #TODO: rename in script
     
     #load boundary file
     polyfile_object = hcdfm.PolyFile(file_pli)
@@ -390,23 +390,31 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True
         data_pol_list.append(data_pol_pd_one)
     data_pol_pd = pd.concat(data_pol_list)
     
+
+    data_interp = interp_regularnc_to_plipointdataframe(data_xr_reg, data_pol_pd, load=load)
+    return data_interp
+
+    
+def interp_regularnc_to_plipointdataframe(data_xr_reg, data_pol_pd, load=True):
+    #TODO: pass gdf instead of pandas dataframe
+
     da_plipoints = xr.Dataset()
     da_plipoints['plipoint_x'] = xr.DataArray(data_pol_pd['x'], dims='plipoints')
     da_plipoints['plipoint_y'] = xr.DataArray(data_pol_pd['y'], dims='plipoints')
     da_plipoints['plipoint_name'] = xr.DataArray(data_pol_pd['name'].astype('S64'), dims='plipoints').str.decode('utf-8',errors='ignore').str.strip() #TODO: must be possible to do this less complex
     da_plipoints = da_plipoints.set_coords(['plipoint_x','plipoint_y','plipoint_name'])
     da_plipoints = da_plipoints.set_index({'plipoints':'plipoint_name'})
-    
+
     #interpolation to lat/lon combinations
     print('> interp mfdataset to all PolyFile points (lat/lon coordinates)')
     #dtstart = dt.datetime.now()
     try:
         # linear, nearest, combine_first
-        data_interp_lin = data_xr_var.interp(longitude=da_plipoints['plipoint_x'], latitude=da_plipoints['plipoint_y'],
+        data_interp_lin = data_xr_reg.interp(longitude=da_plipoints['plipoint_x'], latitude=da_plipoints['plipoint_y'],
                                          method='linear', 
                                          kwargs={'bounds_error':True}, #error is only raised upon load(), so when the actual value retrieval happens
                                          )
-        data_interp_near = data_xr_var.interp(longitude=da_plipoints['plipoint_x'], latitude=da_plipoints['plipoint_y'],
+        data_interp_near = data_xr_reg.interp(longitude=da_plipoints['plipoint_x'], latitude=da_plipoints['plipoint_y'],
                                          method='nearest', 
                                          kwargs={'bounds_error':True}, #error is only raised upon load(), so when the actual value retrieval happens
                                          )
@@ -419,32 +427,32 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True
         #TODO: interp for 2D also requested: https://github.com/pydata/xarray/issues/2281
         print(f'ValueError: {e}. Reverting to KDTree instead (nearest neigbour)')
         data_interp = xr.Dataset()
-        for varone in list(data_xr_var.data_vars):
+        for varone in list(data_xr_reg.data_vars):
             path_lonlat_pd = data_pol_pd[['x','y']]
-            if (varone=='uy') & (len(data_xr_var.data_vars)>1):
-                data_lon_flat = data_xr_var['longitude_uy'].to_numpy().ravel()
-                data_lat_flat = data_xr_var['latitude_uy'].to_numpy().ravel()
+            if (varone=='uy') & (len(data_xr_reg.data_vars)>1):
+                data_lon_flat = data_xr_reg['longitude_uy'].to_numpy().ravel()
+                data_lat_flat = data_xr_reg['latitude_uy'].to_numpy().ravel()
             else:
-                data_lon_flat = data_xr_var['longitude'].to_numpy().ravel()
-                data_lat_flat = data_xr_var['latitude'].to_numpy().ravel()
+                data_lon_flat = data_xr_reg['longitude'].to_numpy().ravel()
+                data_lat_flat = data_xr_reg['latitude'].to_numpy().ravel()
             data_lonlat_pd = pd.DataFrame({'x':data_lon_flat,'y':data_lat_flat})
             #KDTree, finds minimal eucledian distance between points (maybe haversine would be better)
             tree = KDTree(data_lonlat_pd) #alternatively sklearn.neighbors.BallTree: tree = BallTree(data_lonlat_pd)
             kdtree_k = 3 #TODO: nearest is probably just as wrong/right as weighted average, but raises error when using 1
             distance, data_lonlat_idx = tree.query(path_lonlat_pd, k=kdtree_k) #TODO: maybe add outofbounds treshold for distance
             #data_lonlat_pd.iloc[data_lonlat_idx]
-            idx_i,idx_j = np.divmod(data_lonlat_idx, data_xr_var['longitude'].shape[1]) #get idx i and j by sort of counting over 2D array
+            idx_i,idx_j = np.divmod(data_lonlat_idx, data_xr_reg['longitude'].shape[1]) #get idx i and j by sort of counting over 2D array
             # import matplotlib.pyplot as plt
             # fig,ax = plt.subplots()
-            # data_xr_var[varone].isel(time=0,depth=0).plot(ax=ax)
+            # data_xr_reg[varone].isel(time=0,depth=0).plot(ax=ax)
             # ax.plot(idx_j,idx_i,'xr')
             da_plipoints['da_idxi'] = xr.DataArray(idx_i, dims=('plipoints','nearestkpoints'))
             da_plipoints['da_idxj'] = xr.DataArray(idx_j, dims=('plipoints','nearestkpoints'))
             da_dist = xr.DataArray(distance, dims=('plipoints','nearestkpoints'))
             da_invdistweight = (1/da_dist)/(1/da_dist).sum(dim='nearestkpoints')
-            da_varone_3k = data_xr_var[varone].isel(i=da_plipoints['da_idxi'],j=da_plipoints['da_idxj'])
+            da_varone_3k = data_xr_reg[varone].isel(i=da_plipoints['da_idxi'],j=da_plipoints['da_idxj'])
             data_interp[varone] = (da_varone_3k * da_invdistweight).sum(dim='nearestkpoints')
-            data_interp[varone].attrs = data_xr_var[varone].attrs #copy units and other attributes
+            data_interp[varone].attrs = data_xr_reg[varone].attrs #copy units and other attributes
     
     #time_passed = (dt.datetime.now()-dtstart).total_seconds()
     # print(f'>>time passed: {time_passed:.2f} sec')
@@ -456,9 +464,9 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True
     dtstart = dt.datetime.now()
     try:
         data_interp_loaded = data_interp.load() #loading data for all points at once is more efficient compared to loading data per point in loop 
-    except ValueError as e: #generate a proper error with outofbounds requested coordinates, default is "ValueError: One of the requested xi is out of bounds in dimension 0" #TODO: improve error in xarray
-        lonvar_vals = data_xr_var['longitude'].to_numpy()
-        latvar_vals = data_xr_var['latitude'].to_numpy()
+    except ValueError: #generate a proper error with outofbounds requested coordinates, default is "ValueError: One of the requested xi is out of bounds in dimension 0" #TODO: improve error in xarray
+        lonvar_vals = data_xr_reg['longitude'].to_numpy()
+        latvar_vals = data_xr_reg['latitude'].to_numpy()
         data_pol_pd = data_interp[['plipoint_x','plipoint_y']].to_dataframe()
         bool_reqlon_outbounds = (data_pol_pd['plipoint_x'] <= lonvar_vals.min()) | (data_pol_pd['plipoint_x'] >= lonvar_vals.max())
         bool_reqlat_outbounds = (data_pol_pd['plipoint_y'] <= latvar_vals.min()) | (data_pol_pd['plipoint_y'] >= latvar_vals.max())
