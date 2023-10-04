@@ -401,35 +401,6 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True
     print('> interp mfdataset to all PolyFile points (lat/lon coordinates)')
     #dtstart = dt.datetime.now()
     try:
-        # interp1d_firstgrid = True
-        # ds_points_list = []
-        # if interp1d_firstgrid:
-        #     # TODO: this grid interp is almost 2x faster than interp per point in a loop, even though way more interp points
-        #     # TODO: although with eg tide to 206 plipoints, the second attempt is not faster as is the case with interp to new dimension. Apparently the dataset was too large to contain
-        #     ds_grid = data_xr_var.interp(longitude=data_pol_pd['x'], latitude=data_pol_pd['y'], method='linear', 
-        #                               kwargs={'bounds_error':True}) #error is only raised upon load(), so when the actual value retrieval happens
-        #     print('looping over points of interp1d grid (not at once)')
-        # else:
-        #     print('looping over points with interp1d (not at once)')
-        # for ipoint in range(len(data_pol_pd)):
-        #     row = data_pol_pd.iloc[ipoint]
-        #     x_sel = row['x']
-        #     y_sel = row['y']
-        #     if interp1d_firstgrid:
-        #         ds_onepoint = ds_grid.isel(latitude=ipoint, longitude=ipoint)                    
-        #     else:
-        #         ds_onepoint = data_xr_var.interp(longitude=x_sel, latitude=y_sel, method='linear', 
-        #                                          kwargs={'bounds_error':True}) #error is only raised upon load(), so when the actual value retrieval happens
-            
-        #     ds_onepoint = ds_onepoint.drop_vars(['latitude', 'longitude'])
-        #     ds_onepoint = ds_onepoint.expand_dims('plipoints')
-        #     ds_onepoint['plipoint_x'] = xr.DataArray([row['x']], dims='plipoints')#.str.decode('utf-8',errors='ignore').str.strip()
-        #     ds_onepoint['plipoint_y'] = xr.DataArray([row['y']], dims='plipoints')#.str.decode('utf-8',errors='ignore').str.strip()
-        #     ds_onepoint['plipoint_name'] = xr.DataArray([row['name']], dims='plipoints')#.str.decode('utf-8',errors='ignore').str.strip()
-        #     ds_onepoint = ds_onepoint.set_coords(['plipoint_x','plipoint_y','plipoint_name'])
-        #     ds_points_list.append(ds_onepoint)
-        # data_interp = xr.concat(ds_points_list, dim='plipoints')
-        
         # linear, nearest, combine_first
         data_interp_lin = data_xr_var.interp(longitude=da_plipoints['plipoint_x'], latitude=da_plipoints['plipoint_y'],
                                          method='linear', 
@@ -440,13 +411,6 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True
                                          kwargs={'bounds_error':True}, #error is only raised upon load(), so when the actual value retrieval happens
                                          )
         data_interp = data_interp_lin.combine_first(data_interp_near)
-            
-        # linear only, results in nans at some depths where we would not expect this
-        # data_interp = data_xr_var.interp(longitude=da_plipoints['plipoint_x'], latitude=da_plipoints['plipoint_y'],
-        #                                  method='linear', 
-        #                                  kwargs={'bounds_error':True}, #error is only raised upon load(), so when the actual value retrieval happens
-        #                                  )
-    
     except ValueError as e: #Dimensions {'latitude', 'longitude'} do not exist. Expected one or more of Frozen({'time': 17, 'depth': 50, 'i': 292, 'j': 362}).
         #this is for eg CMCC model with multidimensional lat/lon variable
         #TODO: make nicer, without try except? eg latlon_ndims==1, but not sure if that is always valid >> add nonregular alternative for interp_regularnc_to_plipoints() and set kdtree to 1 (closest value) (uy stuff has to be dropped anyway)

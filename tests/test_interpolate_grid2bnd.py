@@ -59,12 +59,12 @@ def test_components_translate_upper():
 @pytest.mark.requireslocaldata
 def test_interpolate_tide_to_plipoints():
     
-    nPoints = 3 #None #amount of Points to process per PolyObject in the plifile (use int for testing, use None for all Points)
+    nPoints = 3# None #amount of Points to process per PolyObject in the plifile (use int for testing, use None for all Points)
     file_pli = r'p:\archivedprojects\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli'
     nanvalue = -999
     
     tidemodel_list = ['tpxo80_opendap', 'FES2014', 'FES2012', 'EOT20', 'GTSMv4.1']#, 'GTSMv4.1_opendap']
-    tidemodel_list = ['EOT20']
+    
     for tidemodel in tidemodel_list:
         print(tidemodel)
         dtstart = dt.datetime.now()
@@ -87,8 +87,7 @@ def test_interpolate_tide_to_plipoints():
             phs_expected = np.array([81.21875763, 81.41669464, 81.66479492])
         
         for component_list in [['M2','S2','M4']]: # [None]: # 
-            data_interp = dfmt.interpolate_tide_to_plipoints(tidemodel=tidemodel, file_pli=file_pli, 
-                                                             component_list=component_list, nPoints=nPoints)
+            data_interp = dfmt.interpolate_tide_to_plipoints(tidemodel=tidemodel, file_pli=file_pli, component_list=component_list, nPoints=nPoints)
             compnames_now = data_interp['compno'].to_numpy().tolist()
             if component_list is None:
                 compnames_expected = component_list_tidemodel
