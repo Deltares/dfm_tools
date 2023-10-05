@@ -12,6 +12,9 @@ import dfm_tools as dfmt
 import meshkernel
 import xarray as xr
 import numpy as np
+import geopandas as gpd
+from shapely.geometry import Polygon
+import glob
 
 
 @pytest.mark.unittest
@@ -71,8 +74,26 @@ def test_meshkernel_delete_withcoastlines():
     
     assert len(mk.mesh2d_get().face_nodes) == 17364
 
+
 @pytest.mark.unittest
 def test_meshkernel_delete_withshp():
+    # write shapefile from coords
+    file_shp = 'mk_delete_test.shp'
+    points_x = np.array([-68.40156631636155, -68.36143523088661, -68.28392176442131, -68.26413109213229,  
+                         -68.20915700244058, -68.1965129618115, -68.20860726154366, -68.199811407193,    
+                         -68.23059689742034, -68.23389534280184, -68.26303161033846, -68.29436684146273, 
+                         -68.27512591007063, -68.3064611411949, -68.37462901241263, -68.41146165250606, 
+    					 -68.41311087519682, -68.40156631636155])
+    points_y = np.array([12.301796772360385, 12.303445995051137, 12.243524237287176, 12.233628901142668, 
+                         12.225382787688911, 12.206141856296814, 12.184152220420131, 12.115984349202414, 
+                         12.080800931799722, 12.028025805695682, 12.033523214664854, 12.113785385614745, 
+                         12.144021134945184, 12.20119418822456,  12.220984860513575, 12.226482269482746, 
+                         12.286404027246707, 12.301796772360385])
+    
+    geom = Polygon(zip(points_x, points_y))
+    gdf = gpd.GeoDataFrame(geometry=[geom], crs='EPSG:4326')
+    gdf.to_file(file_shp)
+    
     #generate basegrid
     lon_min, lon_max, lat_min, lat_max = -68.45, -68.1, 12, 12.35
     dxy = 0.005
@@ -81,9 +102,14 @@ def test_meshkernel_delete_withshp():
     assert len(mk.mesh2d_get().face_nodes) == 20732
     
     # remove cells with a shapefile
-    dfmt.meshkernel_delete_withshp(mk=mk, coastlines_shp='./shp/test.shp')
+    dfmt.meshkernel_delete_withshp(mk=mk, coastlines_shp=file_shp)
     
-    assert len(mk.mesh2d_get().face_nodes) == 17180
+    assert len(mk.mesh2d_get().face_nodes) == 17272
+    
+    # delete shapefile
+    shp_list = glob.glob(file_shp.replace('.shp','.*'))
+    [os.remove(x) for x in shp_list]
+
 
 @pytest.mark.unittest
 def test_meshkernel_delete_withgdf():
