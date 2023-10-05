@@ -49,7 +49,34 @@ def meshkernel_delete_withcoastlines(mk:meshkernel.meshkernel.MeshKernel, res:st
     
     meshkernel_delete_withgdf(mk, coastlines_gdf)
     
+def meshkernel_delete_withshp(mk:meshkernel.meshkernel.MeshKernel, coastlines_shp, min_area: float=0, crs:(int,str) = None):
+    """
+    Delete parts of mesh that are inside the shapefile polygon.
 
+    Parameters
+    ----------
+    mk : meshkernel.meshkernel.MeshKernel
+        DESCRIPTION.
+    coastlines_shp : path to the shp file
+        DESCRIPTION.
+
+    Returns
+    -------
+    None.
+    
+    """
+        
+    mesh_bnds = mk.mesh2d_get_mesh_boundaries_as_polygons()
+    
+    bbox = (mesh_bnds.x_coordinates.min(), mesh_bnds.y_coordinates.min(), mesh_bnds.x_coordinates.max(), mesh_bnds.y_coordinates.max())
+    
+    coastlines_gdb = gpd.read_file(coastlines_shp, include_fields= ['polygons'], bbox=bbox)
+    
+    if crs:
+        coastlines_gdb = coastlines_gdb.to_crs(crs)
+    
+    meshkernel_delete_withgdf(mk, coastlines_gdb)
+    
 def meshkernel_delete_withgdf(mk:meshkernel.meshkernel.MeshKernel, coastlines_gdf:gpd.GeoDataFrame):
     """
     Delete parts of mesh that are inside the polygons/Linestrings in a GeoDataFrame.
