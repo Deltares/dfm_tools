@@ -99,7 +99,7 @@ for file_pli in list_plifiles:
             #convert plipointsDataset to hydrolib ForcingModel
             ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
                     
-        bctype = 'nc' #TODO: add netcdf bc support. https://github.com/Deltares/HYDROLIB-core/issues/318
+        bctype = 'bc' #TODO: add netcdf bc support to hcdfm.Boundary: https://github.com/Deltares/HYDROLIB-core/issues/318
         file_bc_basename = file_pli.name.replace('.pli','')
         if quantity=='tide':
             file_bc_out = Path(dir_output,f'{quantity}_{file_bc_basename}_{tidemodel}.{bctype}')
