@@ -94,7 +94,7 @@ for file_pli in list_plifiles:
             #interpolate regulargridDataset to plipointsDataset
             data_interp = dfmt.interp_regularnc_to_plipoints(data_xr_reg=data_xr_vars, file_pli=file_pli, #TODO: difference in .interp() with float vs da arguments: https://github.com/Deltares/dfm_tools/issues/287
                                                              nPoints=nPoints) #argument for testing
-            #data_interp = data_interp.ffill(dim="plipoints").bfill(dim="plipoints") #to fill allnan plipoints with values from the neighbour point #TODO: this also fills the belowbed layers from one point onto another, so should be done after ffill/bfill in depth dimension. Currently all-nan arrays are replaced with .fillna(0)
+            #data_interp = data_interp.ffill(dim="node").bfill(dim="node") #to fill allnan plipoints with values from the neighbour point #TODO: this also fills the belowbed layers from one point onto another, so should be done after ffill/bfill in depth dimension. Currently all-nan arrays are replaced with .fillna(0)
             
             #convert plipointsDataset to hydrolib ForcingModel
             ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
@@ -123,21 +123,21 @@ for file_pli in list_plifiles:
             #plotting dataset and polyline (is wrong for CMCC)
             varname0 = list(data_xr_vars.data_vars)[0] 
             fig,ax = plt.subplots()
-            if 'depth' in data_xr_vars[varname0].dims:
-                data_xr_vars[varname0].isel(time=0,depth=0).plot(ax=ax)
+            if 'z' in data_xr_vars[varname0].dims:
+                data_xr_vars[varname0].isel(time=0,z=0).plot(ax=ax)
             else:
                 data_xr_vars[varname0].isel(time=0).plot(ax=ax)
-            plipoint_coords = data_interp.plipoints.to_dataframe()
-            ax.plot(plipoint_coords['plipoint_x'],plipoint_coords['plipoint_y'],'r-')
+            plipoint_coords = data_interp.node.to_dataframe()
+            ax.plot(plipoint_coords['lon'],plipoint_coords['lon'],'r-')
             ctx.add_basemap(ax=ax,crs="EPSG:4326",attribution=False)
             fig.tight_layout()
             fig.savefig(str(file_bc_out).replace('.bc','_polyline'))
             
             #plotting example data point
-            for iF in [2]:#range(nPoints): 
+            for iF in [2]:#range(nPoints):
                 data_vars = list(data_interp.data_vars)
                 fig,ax1 = plt.subplots(figsize=(10, 6))
-                data_interp[data_vars[0]].isel(plipoints=iF).T.plot()
+                data_interp[data_vars[0]].isel(node=iF).T.plot()
                 fig.tight_layout()
                 fig.savefig(str(file_bc_out).replace('.bc',''))
 
