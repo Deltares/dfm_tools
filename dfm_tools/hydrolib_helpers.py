@@ -16,6 +16,9 @@ import datetime as dt
 import geopandas
 from shapely.geometry import LineString
 
+# get dict with ncbnd structure
+from dfm_tools.interpolate_grid2bnd import ncbnd_construct
+
 
 def Dataset_to_T3D(datablock_xr):
     """
