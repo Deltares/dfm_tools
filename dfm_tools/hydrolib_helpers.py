@@ -343,7 +343,7 @@ def forcinglike_to_Dataset(forcingobj, convertnan=False): #TODO: would be conven
     return data_xr
 
 
-def pointlike_to_DataFrame(pointlike,drop_emptycols=True):
+def pointlike_to_DataFrame(pointlike, drop_emptycols=True):
     """
     convert a hydrolib object with points (like PolyObject, XYZModel and possibly others) to a pandas DataFrame.
 
@@ -428,7 +428,7 @@ def TimModel_to_DataFrame(data_tim:hcdfm.TimModel, parse_column_labels:bool = Tr
     return tim_pd
 
 
-def pointlike_to_geodataframe_points(polyline_object, crs='EPSG:4326', add_pointnames=True, only_xy=False):
+def pointlike_to_geodataframe_points(polyline_object, crs:str=None, add_pointnames=True, only_xy=False):
     """
     empty docstring
     """
@@ -437,7 +437,6 @@ def pointlike_to_geodataframe_points(polyline_object, crs='EPSG:4326', add_point
     varn_pointname = ncbnd_construct['varn_pointname']
     
     #conversion to dataframe
-    #polyobject_pd = dfmt.pointnames(polyline_object)
     polyobject_pd = pd.DataFrame([dict(p) for p in polyline_object.points])
     
     if only_xy:
@@ -454,7 +453,7 @@ def pointlike_to_geodataframe_points(polyline_object, crs='EPSG:4326', add_point
     return gdf
 
 
-def PolyFile_to_geodataframe_points(polyfile_object:hcdfm.PolyFile, crs:str='EPSG:4326', add_pointnames:bool=True):
+def PolyFile_to_geodataframe_points(polyfile_object:hcdfm.PolyFile, crs:str=None, add_pointnames:bool=True):
     """
     
 
@@ -463,7 +462,7 @@ def PolyFile_to_geodataframe_points(polyfile_object:hcdfm.PolyFile, crs:str='EPS
     polyfile_object : hcdfm.PolyFile
         get this object with hcdfm.PolyFile(path_to_plifile).
     crs : str, optional
-        DESCRIPTION. The default is 'EPSG:4326'.
+        DESCRIPTION. The default is None'.
     add_pointnames : bool, optional
         DESCRIPTION. The default is True.
 
@@ -482,21 +481,44 @@ def PolyFile_to_geodataframe_points(polyfile_object:hcdfm.PolyFile, crs:str='EPS
     return gdf
 
 
-def PolyFile_to_geodataframe_linestrings(polyfile_object, crs='EPSG:4326'):
+def PolyFile_to_geodataframe_linestrings(polyfile_object, crs=None):
     """
     empty docstring
     """
     plilines_list = []
     plinames_list = []
+    pliz_list = []
+    plidata_list = [] #TODO: make more generic with polyobject_pd.columns or earlier
     for iPO, polyline_object in enumerate(polyfile_object.objects):
         polyobject_pd = pd.DataFrame([dict(p) for p in polyline_object.points]) #TODO: getting only x/y might be faster, but maybe we also need the other columns like z/n/data?
         polygon_geom = LineString(zip(polyobject_pd['x'],polyobject_pd['y']))
-        
+
         #make gdf of points (1 point per row)
         plilines_list.append(polygon_geom)
         plinames_list.append(polyline_object.metadata.name)
-    gdf_polyfile = geopandas.GeoDataFrame({'name': plinames_list, 'geometry': plilines_list}, crs=crs)
+        pliz_list.append(polyobject_pd['z'].tolist())
+        plidata_list.append(polyobject_pd['data'].tolist())
+
+    gdf_polyfile = geopandas.GeoDataFrame({'name':plinames_list, 'z':pliz_list, 'data':plidata_list, 'geometry':plilines_list}, crs=crs)
     return gdf_polyfile
+
+
+def gdf_linestrings_to_points(gdf_linestrings):
+
+    crs = gdf_linestrings.crs
+    gdf_points_list = []
+    for ir, gdf_row in gdf_linestrings.iterrows():
+        cols_list = list(gdf_linestrings.columns)
+        cols_list.remove('geometry')
+
+        gdf_one = geopandas.GeoDataFrame(data=None, geometry=geopandas.points_from_xy(*gdf_row.geometry.xy), crs=crs)
+        for colname in cols_list:
+            gdf_one[colname] = gdf_row[colname]
+        gdf_points_list.append(gdf_one)
+
+    gdf_points = pd.concat(gdf_points_list)
+    gdf_points = gdf_points.reset_index(drop=True)
+    return gdf_points
 
 
 def parse_xy_to_datetime(pointlike_pd):
