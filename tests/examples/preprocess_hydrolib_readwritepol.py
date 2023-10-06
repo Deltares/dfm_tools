@@ -34,7 +34,7 @@ for file_pli in file_pli_list:
     else:
         #df_polyline = dfmt.pointlike_to_DataFrame(polyfile_object.objects[0])
         #gdf_polyline = dfmt.pointlike_to_geodataframe_points(polyfile_object.objects[0],crs=crs)
-        gdf_polyfile = dfmt.PolyFile_to_geodataframe_linestrings(polyfile_object,crs=None) #TODO: z-column (and next ones) are missing
+        gdf_polyfile = dfmt.PolyFile_to_geodataframe_linestrings(polyfile_object,crs=None)
         fig,ax = plt.subplots()
         gdf_polyfile.plot(ax=ax)
         pf_name = gdf_polyfile.iloc[-1]['name']

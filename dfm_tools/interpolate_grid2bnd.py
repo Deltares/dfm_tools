@@ -19,7 +19,13 @@ import warnings
 import hydrolib.core.dflowfm as hcdfm
 import geopandas
 
-from dfm_tools.hydrolib_helpers import Dataset_to_TimeSeries, Dataset_to_T3D, Dataset_to_Astronomic, pointlike_to_DataFrame, PolyFile_to_geodataframe_points, get_ncbnd_construct
+from dfm_tools.hydrolib_helpers import (Dataset_to_TimeSeries, 
+                                        Dataset_to_T3D, 
+                                        Dataset_to_Astronomic, 
+                                        pointlike_to_DataFrame, 
+                                        PolyFile_to_geodataframe_linestrings,
+                                        PolyFile_to_geodataframe_points, 
+                                        get_ncbnd_construct)
 from dfm_tools.errors import OutOfRangeError
 
 
@@ -363,11 +369,13 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True
         data_pol_list.append(data_pol_pd_one)
     data_pol_pd = pd.concat(data_pol_list)
     
-    data_interp = interp_regularnc_to_plipointsDataset(data_xr_reg, data_pol_pd, load=load)
+    gdf = PolyFile_to_geodataframe_linestrings(polyfile_object)
+    
+    data_interp = interp_regularnc_to_plipointsDataset(data_xr_reg, data_pol_pd, gdf, load=load)
     return data_interp
 
     
-def interp_regularnc_to_plipointsDataset(data_xr_reg, data_pol_pd, load=True):
+def interp_regularnc_to_plipointsDataset(data_xr_reg, data_pol_pd, gdf, load=True):
     #TODO: pass gdf instead of pandas dataframe
     
     ncbnd_construct = get_ncbnd_construct()

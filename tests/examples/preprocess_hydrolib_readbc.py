@@ -59,7 +59,7 @@ for file_bc in file_bc_list:
         forcing_xr[data_vars[0]].plot(ax=ax, label=forcing_xr[data_vars[0]].attrs['name'], linewidth=0.8)
         ax.legend(loc=1)
     elif forcingobj.function=='astronomic': #eg tidal components
-        #forcing_ts = Dataset_to_Astronomic(forcing_xr) #TODO: implement Dataset_to_Astronomic() function
+        #forcing_ts = Dataset_to_Astronomic(forcing_xr) #TODO: Dataset_to_Astronomic() expects different vars amplitude and phase_new
         ax2 = ax.twinx()
         forcing_xr[data_vars[0]].plot(ax=ax, linewidth=0.8)
         forcing_xr[data_vars[1]].plot(ax=ax2, linewidth=0.8)
