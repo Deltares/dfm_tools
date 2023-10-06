@@ -99,24 +99,25 @@ for file_pli in list_plifiles:
             #convert plipointsDataset to hydrolib ForcingModel
             ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
                     
+        bctype = 'nc' #TODO: add netcdf bc support. https://github.com/Deltares/HYDROLIB-core/issues/318
         file_bc_basename = file_pli.name.replace('.pli','')
         if quantity=='tide':
-            file_bc_out = Path(dir_output,f'{quantity}_{file_bc_basename}_{tidemodel}.bc')
+            file_bc_out = Path(dir_output,f'{quantity}_{file_bc_basename}_{tidemodel}.{bctype}')
         else:
-            file_bc_out = Path(dir_output,f'{quantity}_{file_bc_basename}_{model}.bc')
-        
-        print(f'writing ForcingModel to bc file with hydrolib ({file_bc_out.name})')
-        bc_type = 'bc' #TODO: add netcdf bc support. https://github.com/Deltares/HYDROLIB-core/issues/318
-        if bc_type=='bc':
+            file_bc_out = Path(dir_output,f'{quantity}_{file_bc_basename}_{model}.{bctype}')
+        if bctype=='bc':
+            print(f'writing ForcingModel to bc file with hydrolib ({file_bc_out.name})')
             #ForcingModel_object.serializer_config.float_format = '.3f' #TODO: improve formatting of bc file, maybe move this to interp_regularnc_to_plipoints/interpolate_tide_to_bc?
             #ForcingModel_object.serializer_config.float_format_datablock = '.5f'
             ForcingModel_object.save(filepath=file_bc_out)
+        elif bctype=='nc':
+            data_interp.to_netcdf(file_bc_out)
         
         #TODO: support for relative paths?
         #generate boundary object for the ext file (quantity, pli-filename, bc-filename)
         boundary_object = hcdfm.Boundary(quantity=quantity.replace('tide','waterlevelbnd'), #the FM quantity for tide is also waterlevelbnd
                                          locationfile=file_pli,
-                                         forcingfile=ForcingModel_object)
+                                         forcingfile=file_bc_out)
         ext_bnd.boundary.append(boundary_object)
 
         if quantity!='tide': #TODO: data_xr_vars/data_interp does not exist for tide yet
