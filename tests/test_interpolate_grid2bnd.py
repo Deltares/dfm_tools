@@ -11,6 +11,8 @@ import numpy as np
 import datetime as dt
 import xarray as xr
 import pandas as pd
+import shapely
+import geopandas as gpd
 
 
 @pytest.mark.unittest
@@ -83,6 +85,11 @@ def test_interp_regularnc_to_plipointsDataset():
     This method gives as much valid values as possible given the input dataset, but does not fill nans where it should not do that.
     """
     
+    ncbnd_construct = dfmt.get_ncbnd_construct()
+    dimn_point = ncbnd_construct['dimn_point']
+    dimn_depth = ncbnd_construct['dimn_depth']
+    varn_pointname = ncbnd_construct['varn_pointname']
+    
     ds = xr.Dataset()
     so_np = np.array([[[35.819576, 35.82568 , 35.82873 ],
                        [35.819576, 35.824154, 35.831783],
@@ -103,25 +110,27 @@ def test_interp_regularnc_to_plipointsDataset():
                       [[35.781425, np.nan,    np.nan],
                        [35.792107, np.nan,    np.nan],
                        [35.789055, np.nan,    np.nan]]])
-    ds['so'] = xr.DataArray(so_np,dims=('depth','latitude','longitude'))
+    ds['so'] = xr.DataArray(so_np,dims=(dimn_depth,'latitude','longitude'))
     lons = [-9.6, -9.5, -9.4]
     lats = [42.9, 43.0, 43.1]
     ds['longitude'] = xr.DataArray(lons, dims=('longitude'))
     ds['latitude'] = xr.DataArray(lats, dims=('latitude'))
     
     for ipoint in range(3):
-        x_xr = xr.DataArray([lons[ipoint]],dims=('node'))
-        y_xr = xr.DataArray([lats[ipoint]],dims=('node'))
+        x_xr = xr.DataArray([lons[ipoint]],dims=(dimn_point))
+        y_xr = xr.DataArray([lats[ipoint]],dims=(dimn_point))
         
         # interp1d # these are actually irrelevant now, are not used for testing
         interp_with_floats = ds.interp(longitude=x_xr[0], latitude=y_xr[0], method='linear').so #selecting one value from the da drops the new plipoints dimension
         interp_with_da_existing = ds.interp(longitude=x_xr.values, latitude=y_xr.values, method='linear').so.isel(longitude=0,latitude=0) #using the DataArray values keeps lat/lon dimenions, gives the same interp result
         
-        data_pol_pd = pd.DataFrame({'x':x_xr, 'y':y_xr, 'name':[f'name_{ipoint+1:04d}']})
-        interp_with_da_newdim = dfmt.interp_regularnc_to_plipointsDataset(ds, data_pol_pd, load=True).so.isel(node=0)
+        # data_pol_pd = pd.DataFrame({'x':x_xr, 'y':y_xr, 'name':[f'name_{ipoint+1:04d}']})
+        geom = shapely.points(x_xr, y_xr)
+        gdf = gpd.GeoDataFrame(data={varn_pointname:[f'name_{ipoint+1:04d}']}, geometry=geom)
+        interp_with_da_newdim = dfmt.interp_regularnc_to_plipointsDataset(ds, gdf, load=True).so.isel(node=0)
         
         #define expected values since in some cases like point 0 this is not the same as interp1d returns
-        interp_da_expected = xr.DataArray(so_np[:,ipoint,ipoint],dims=('depth'))
+        interp_da_expected = xr.DataArray(so_np[:,ipoint,ipoint],dims=(dimn_depth))
         
         print(ipoint)
         print(interp_with_floats.to_numpy())

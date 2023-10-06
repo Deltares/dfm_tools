@@ -25,6 +25,7 @@ from dfm_tools.hydrolib_helpers import (Dataset_to_TimeSeries,
                                         pointlike_to_DataFrame, 
                                         PolyFile_to_geodataframe_linestrings,
                                         PolyFile_to_geodataframe_points, 
+                                        gdf_linestrings_to_points, 
                                         get_ncbnd_construct)
 from dfm_tools.errors import OutOfRangeError
 
@@ -360,22 +361,23 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True
     if polynames_pd.duplicated().any():
         raise ValueError(f'Duplicate polyobject names in polyfile {file_pli}, this is not allowed:\n{polynames_pd}')
     
-    #create df of x/y/name of all plipoints in plifile
-    data_pol_list = []
-    for polyobj in polyfile_object.objects:
-        data_pol_pd_one = pointlike_to_DataFrame(polyobj)
-        data_pol_pd_one = data_pol_pd_one.iloc[:nPoints] #only use testset of points per polyobj in polyfile
-        data_pol_pd_one['name'] = pd.Series(data_pol_pd_one.index).apply(lambda x: f'{polyobj.metadata.name}_{x+1:04d}')
-        data_pol_list.append(data_pol_pd_one)
-    data_pol_pd = pd.concat(data_pol_list)
+    # #create df of x/y/name of all plipoints in plifile
+    # data_pol_list = []
+    # for polyobj in polyfile_object.objects:
+    #     data_pol_pd_one = pointlike_to_DataFrame(polyobj)
+    #     data_pol_pd_one = data_pol_pd_one.iloc[:nPoints] #only use testset of points per polyobj in polyfile
+    #     data_pol_pd_one['name'] = pd.Series(data_pol_pd_one.index).apply(lambda x: f'{polyobj.metadata.name}_{x+1:04d}')
+    #     data_pol_list.append(data_pol_pd_one)
+    # data_pol_pd = pd.concat(data_pol_list)
     
-    gdf = PolyFile_to_geodataframe_linestrings(polyfile_object)
+    gdf_points = PolyFile_to_geodataframe_points(polyfile_object)
+    gdf_points = gdf_points.iloc[:nPoints] #only use testset of points per polyobj in polyfile
     
-    data_interp = interp_regularnc_to_plipointsDataset(data_xr_reg, data_pol_pd, gdf, load=load)
+    data_interp = interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points=gdf_points, load=load)
     return data_interp
 
     
-def interp_regularnc_to_plipointsDataset(data_xr_reg, data_pol_pd, gdf, load=True):
+def interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points, load=True):
     #TODO: pass gdf instead of pandas dataframe
     
     ncbnd_construct = get_ncbnd_construct()
@@ -387,9 +389,9 @@ def interp_regularnc_to_plipointsDataset(data_xr_reg, data_pol_pd, gdf, load=Tru
     attrs_pointy = ncbnd_construct['attrs_pointy']
     
     da_plipoints = xr.Dataset()
-    da_plipoints[varn_pointx] = xr.DataArray(data_pol_pd['x'], dims=dimn_point).assign_attrs(attrs_pointx)
-    da_plipoints[varn_pointy] = xr.DataArray(data_pol_pd['y'], dims=dimn_point).assign_attrs(attrs_pointy)
-    da_plipoints[varn_pointname] = xr.DataArray(data_pol_pd['name'].astype('S64'), dims=dimn_point).str.decode('utf-8',errors='ignore').str.strip() #TODO: must be possible to do this less complex
+    da_plipoints[varn_pointx] = xr.DataArray(gdf_points.geometry.x, dims=dimn_point).assign_attrs(attrs_pointx)
+    da_plipoints[varn_pointy] = xr.DataArray(gdf_points.geometry.y, dims=dimn_point).assign_attrs(attrs_pointy)
+    da_plipoints[varn_pointname] = xr.DataArray(gdf_points[varn_pointname].astype('S64'), dims=dimn_point).str.decode('utf-8',errors='ignore').str.strip() #TODO: must be possible to do this less complex
     da_plipoints = da_plipoints.set_coords([varn_pointx,varn_pointy,varn_pointname])
     da_plipoints = da_plipoints.set_index({dimn_point:varn_pointname})
 
@@ -412,7 +414,7 @@ def interp_regularnc_to_plipointsDataset(data_xr_reg, data_pol_pd, gdf, load=Tru
     if not load:
         return data_interp
     
-    print(f'> actual extraction of data from netcdf with .load() (for {len(data_pol_pd)} plipoints at once, this might take a while)')
+    print(f'> actual extraction of data from netcdf with .load() (for {len(gdf_points)} plipoints at once, this might take a while)')
     dtstart = dt.datetime.now()
     try:
         data_interp_loaded = data_interp.load() #loading data for all points at once is more efficient compared to loading data per point in loop 
