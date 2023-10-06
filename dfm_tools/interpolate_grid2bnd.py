@@ -351,7 +351,6 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True
     """
     load: interpolation errors are only raised upon loading, so do this per default
     """
-    #TODO: make format of this dataset more in line with existing bnd-nc format and hisfile: https://issuetracker.deltares.nl/browse/UNST-6549
     
     #load boundary file
     polyfile_object = hcdfm.PolyFile(file_pli)
@@ -361,24 +360,15 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True
     if polynames_pd.duplicated().any():
         raise ValueError(f'Duplicate polyobject names in polyfile {file_pli}, this is not allowed:\n{polynames_pd}')
     
-    # #create df of x/y/name of all plipoints in plifile
-    # data_pol_list = []
-    # for polyobj in polyfile_object.objects:
-    #     data_pol_pd_one = pointlike_to_DataFrame(polyobj)
-    #     data_pol_pd_one = data_pol_pd_one.iloc[:nPoints] #only use testset of points per polyobj in polyfile
-    #     data_pol_pd_one['name'] = pd.Series(data_pol_pd_one.index).apply(lambda x: f'{polyobj.metadata.name}_{x+1:04d}')
-    #     data_pol_list.append(data_pol_pd_one)
-    # data_pol_pd = pd.concat(data_pol_list)
-    
     gdf_points = PolyFile_to_geodataframe_points(polyfile_object)
-    gdf_points = gdf_points.iloc[:nPoints] #only use testset of points per polyobj in polyfile
+    # only use testset of n first points of polyfile
+    gdf_points = gdf_points.iloc[:nPoints]
     
     data_interp = interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points=gdf_points, load=load)
     return data_interp
 
     
 def interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points, load=True):
-    #TODO: pass gdf instead of pandas dataframe
     
     ncbnd_construct = get_ncbnd_construct()
     dimn_point = ncbnd_construct['dimn_point']
