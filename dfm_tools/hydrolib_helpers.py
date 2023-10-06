@@ -16,14 +16,47 @@ import datetime as dt
 import geopandas
 from shapely.geometry import LineString
 
-# get dict with ncbnd structure
-from dfm_tools.interpolate_grid2bnd import ncbnd_construct
+
+def get_ncbnd_construct():
+    attrs_pointx = {"standard_name": "longitude",
+                    "long_name": "longitude",
+                    "units": "degrees_east",
+                    # "axis": "X"
+                    }
+    attrs_pointy = {"standard_name": "latitude",
+                    "long_name": "latitude",
+                    "units": "degrees_north",
+                    # "axis": "Y"
+                    }
+    # attrs_depth = {'standard_name':'z',
+    #                'long_name':'z',
+    #                'units':'m',
+    #                'positive':'up',
+    #                'axis':'Z',
+    #                }
+    
+    ncbnd_construct = {'varn_depth':'z',
+                       'dimn_depth':'z',
+                       'varn_pointx':'lon',
+                       'varn_pointy':'lat',
+                       'varn_pointname':'station_id',
+                       'dimn_point':'node',
+                       'attrs_pointx':attrs_pointx,
+                       'attrs_pointy':attrs_pointy,
+                       # 'attrs_depth':attrs_depth,
+                       }
+    
+    return ncbnd_construct
 
 
 def Dataset_to_T3D(datablock_xr):
     """
     convert an xarray.DataArray (is one data_var) or an xarray.Dataset (with one or two data_vars) with time and depth dimension to a hydrolib T3D object
     """
+    
+    ncbnd_construct = get_ncbnd_construct()
+    dimn_depth = ncbnd_construct['dimn_depth']
+    varn_depth = ncbnd_construct['varn_depth']
     
     if not isinstance(datablock_xr,(xr.DataArray,xr.Dataset)):
         raise TypeError(f'expected xarray.DataArray or xarray.Dataset, not {type(datablock_xr)}')
@@ -43,19 +76,19 @@ def Dataset_to_T3D(datablock_xr):
             raise ValueError(f'Dataset should contain 1 or 2 data_vars, but contains {len(data_vars)} variables')
     
     #ffill/bfill nan data along over depth dimension (corresponds to vertical extrapolation)
-    data_xr_var0 = data_xr_var0.bfill(dim='depth').ffill(dim='depth')
+    data_xr_var0 = data_xr_var0.bfill(dim=dimn_depth).ffill(dim=dimn_depth)
     if vector:
-        data_xr_var1 = data_xr_var1.bfill(dim='depth').ffill(dim='depth')
+        data_xr_var1 = data_xr_var1.bfill(dim=dimn_depth).ffill(dim=dimn_depth)
     
     #TODO: clean up these first lines of code and add description to docstring?
     locationname = data_xr_var0.attrs['locationname']
     refdate_str = data_xr_var0.time.encoding['units']
     
-    if not set(data_xr_var0.dims).issubset(set(('time','depth'))): #check if both time and depth dimensions are present
-        raise ValueError(f"data_var in provided data_xr has dimensions {data_xr_var0.dims} while ('time','depth') is expected")
+    if not set(data_xr_var0.dims).issubset(set(('time',dimn_depth))): #check if both time and depth dimensions are present
+        raise ValueError(f"data_var in provided data_xr has dimensions {data_xr_var0.dims} while ('time',{dimn_depth}) is expected")
     
     #get depth variable and values
-    depth_array = data_xr_var0['depth'].to_numpy()
+    depth_array = data_xr_var0[varn_depth].to_numpy()
     
     #get datablock and concatenate with relative time data
     if vector:
@@ -69,7 +102,7 @@ def Dataset_to_T3D(datablock_xr):
     datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock_np],axis=1)
     
     # Each .bc file can contain 1 or more timeseries, in this case one for each support point
-    verticalpositions_idx = np.arange(data_xr_var0['depth'].size)+1
+    verticalpositions_idx = np.arange(data_xr_var0[varn_depth].size)+1
     if vector: #vector T3D object
         QUP_quan_list = [hcdfm.QuantityUnitPair(quantity=quan, unit=data_xr_var0.attrs['units'], vertpositionindex=iVP) for iVP in verticalpositions_idx for quan in data_vars]
         QUP_quan_vector = hcdfm.VectorQuantityUnitPairs(vectorname='uxuyadvectionvelocitybnd', #TODO: vectorname from global attr? (then also support other vectors which is not necessary)
@@ -98,6 +131,7 @@ def Dataset_to_TimeSeries(datablock_xr):
     """
     convert an xarray.DataArray or xarray.Dataset with time dimension to a hydrolib TimeSeries object
     """
+    
     if not isinstance(datablock_xr,(xr.DataArray,xr.Dataset)):
         raise TypeError(f'Dataset_to_TimeSeries expects xr.DataArray or xr.Dataset, not {type(datablock_xr)}')
     
@@ -398,6 +432,10 @@ def pointlike_to_geodataframe_points(polyline_object, crs='EPSG:4326', add_point
     """
     empty docstring
     """
+    
+    ncbnd_construct = get_ncbnd_construct()
+    varn_pointname = ncbnd_construct['varn_pointname']
+    
     #conversion to dataframe
     #polyobject_pd = dfmt.pointnames(polyline_object)
     polyobject_pd = pd.DataFrame([dict(p) for p in polyline_object.points])
@@ -408,7 +446,7 @@ def pointlike_to_geodataframe_points(polyline_object, crs='EPSG:4326', add_point
         df = polyobject_pd.drop(['x','y'],axis=1) #also includes n/z and maybe data column
     
     if add_pointnames and hasattr(polyline_object,'metadata'): #optionally add names
-        df['plipoint_name'] = pd.Series(polyobject_pd.index).apply(lambda x: f'{polyline_object.metadata.name}_{x+1:04d}')
+        df[varn_pointname] = pd.Series(polyobject_pd.index).apply(lambda x: f'{polyline_object.metadata.name}_{x+1:04d}')
     
     #make gdf of points (1 point per row)
     gdf = geopandas.GeoDataFrame(data=df, geometry=geopandas.points_from_xy(polyobject_pd['x'],polyobject_pd['y']), crs=crs)

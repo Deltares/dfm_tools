@@ -58,6 +58,17 @@ def test_components_translate_upper():
 
 
 @pytest.mark.unittest
+@pytest.mark.requireslocaldata
+def test_plipointsDataset_fews_accepted():
+    file_nc_fews = r'p:\dflowfm\maintenance\JIRA\06000-06999\06187\C01\salinity_DCSM-FM_OB_all.nc'
+    data_interp = xr.open_dataset(file_nc_fews)
+    
+    #convert plipointsDataset to hydrolib ForcingModel
+    ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
+    ForcingModel_object.save('test.bc')
+
+
+@pytest.mark.unittest
 def test_interp_regularnc_to_plipointsDataset():
     """
     Linear interpolation to a new dimension in dfmt.interp_regularnc_to_plipoints() 

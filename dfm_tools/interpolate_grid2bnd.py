@@ -19,19 +19,8 @@ import warnings
 import hydrolib.core.dflowfm as hcdfm
 import geopandas
 
-from dfm_tools.hydrolib_helpers import Dataset_to_TimeSeries, Dataset_to_T3D, Dataset_to_Astronomic, pointlike_to_DataFrame, PolyFile_to_geodataframe_points
+from dfm_tools.hydrolib_helpers import Dataset_to_TimeSeries, Dataset_to_T3D, Dataset_to_Astronomic, pointlike_to_DataFrame, PolyFile_to_geodataframe_points, get_ncbnd_construct
 from dfm_tools.errors import OutOfRangeError
-
-
-ncbnd_construct = {'varn_depth':'z',
-                   'dimn_depth':'z',
-                   'varn_pointx':'lon',
-                   'varn_pointy':'lat',
-                   'varn_pointname':'station_id',
-                   'dimn_point':'node',
-                   #'varn_point_x':'lon',
-                   #'varn_point_x':'lon',
-                   }
 
 
 def get_conversion_dict(ncvarname_updates={}):
@@ -250,6 +239,7 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
     empty docstring
     """
     
+    ncbnd_construct = get_ncbnd_construct()
     dimn_depth = ncbnd_construct['dimn_depth']
     varn_depth = ncbnd_construct['varn_depth']
     
@@ -380,25 +370,17 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True
 def interp_regularnc_to_plipointsDataset(data_xr_reg, data_pol_pd, load=True):
     #TODO: pass gdf instead of pandas dataframe
     
+    ncbnd_construct = get_ncbnd_construct()
     dimn_point = ncbnd_construct['dimn_point']
     varn_pointx = ncbnd_construct['varn_pointx']
     varn_pointy = ncbnd_construct['varn_pointy']
     varn_pointname = ncbnd_construct['varn_pointname']
-    
-    lat_attrs = {"standard_name": "latitude",
-                 "long_name": "latitude",
-                 "units": "degrees_north",
-                 # "axis": "Y"
-                 }
-    lon_attrs = {"standard_name": "longitude",
-                 "long_name": "longitude",
-                 "units": "degrees_east",
-                 # "axis": "X"
-                 }
+    attrs_pointx = ncbnd_construct['attrs_pointx']
+    attrs_pointy = ncbnd_construct['attrs_pointy']
     
     da_plipoints = xr.Dataset()
-    da_plipoints[varn_pointx] = xr.DataArray(data_pol_pd['x'], dims=dimn_point).assign_attrs(lon_attrs)
-    da_plipoints[varn_pointy] = xr.DataArray(data_pol_pd['y'], dims=dimn_point).assign_attrs(lat_attrs)
+    da_plipoints[varn_pointx] = xr.DataArray(data_pol_pd['x'], dims=dimn_point).assign_attrs(attrs_pointx)
+    da_plipoints[varn_pointy] = xr.DataArray(data_pol_pd['y'], dims=dimn_point).assign_attrs(attrs_pointy)
     da_plipoints[varn_pointname] = xr.DataArray(data_pol_pd['name'].astype('S64'), dims=dimn_point).str.decode('utf-8',errors='ignore').str.strip() #TODO: must be possible to do this less complex
     da_plipoints = da_plipoints.set_coords([varn_pointx,varn_pointy,varn_pointname])
     da_plipoints = da_plipoints.set_index({dimn_point:varn_pointname})
@@ -466,6 +448,7 @@ def interp_uds_to_plipoints(uds:xu.UgridDataset, gdf:geopandas.GeoDataFrame, nPo
 
     """
     facedim = uds.grid.face_dimension
+    ncbnd_construct = get_ncbnd_construct()
     dimn_point = ncbnd_construct['dimn_point']
     varn_pointname = ncbnd_construct['varn_pointname']
     
@@ -490,7 +473,7 @@ def interp_uds_to_plipoints(uds:xu.UgridDataset, gdf:geopandas.GeoDataFrame, nPo
 
     ds = ds.rename({facedim:dimn_point}) # rename mesh2d_nFaces to plipoints
     
-    ds[varn_pointname] = xr.DataArray(gdf['plipoint_name'].tolist(), dims=dimn_point) # change name of plipoint (node to gdf name)
+    ds[varn_pointname] = xr.DataArray(gdf[varn_pointname].tolist(), dims=dimn_point) # change name of plipoint (node to gdf name)
     ds = ds.set_index({dimn_point:varn_pointname})
     return ds
 
@@ -501,6 +484,7 @@ def interp_hisnc_to_plipoints(data_xr_his, file_pli, kdtree_k=3, load=True):
     """
     #KDTree, finds minimal eucledian distance between points (haversine would be better). Alternatively sklearn.neighbors.BallTree: tree = BallTree(data_lonlat_pd)
     
+    ncbnd_construct = get_ncbnd_construct()
     dimn_point = ncbnd_construct['dimn_point']
     varn_pointx = ncbnd_construct['varn_pointx']
     varn_pointy = ncbnd_construct['varn_pointy']
@@ -551,14 +535,36 @@ def interp_hisnc_to_plipoints(data_xr_his, file_pli, kdtree_k=3, load=True):
     return data_interp
     
 
+def _maybe_convert_fews_to_dfmt(ds):
+    ncbnd_construct = get_ncbnd_construct()
+    varn_pointname = ncbnd_construct['varn_pointname']
+    
+    # potential FEWS converts
+    for var_to_coord in ['station_id','station_names']:
+        if var_to_coord in ds.data_vars:
+            ds = ds.set_coords(var_to_coord)
+    ds[varn_pointname] = ds[varn_pointname].load().str.decode('utf-8',errors='ignore').str.strip() #.load() is essential to convert not only first letter of string.
+    
+    # time_units = ds.time.encoding['units']
+    # ds.time.encoding['units'] = time_units.replace('.0 +0000',' +00:00')
+    
+    return ds
+
+
 def plipointsDataset_to_ForcingModel(plipointsDataset):
     """
     empty docstring
     """
-    quantity_list = list(plipointsDataset.data_vars)
-    npoints = len(plipointsDataset.plipoints)
+    
+    ncbnd_construct = get_ncbnd_construct()
+    dimn_point = ncbnd_construct['dimn_point']
     dimn_depth = ncbnd_construct['dimn_depth']
     varn_pointname = ncbnd_construct['varn_pointname']
+    
+    plipointsDataset = _maybe_convert_fews_to_dfmt(plipointsDataset)
+    
+    quantity_list = list(plipointsDataset.data_vars)
+    npoints = len(plipointsDataset[dimn_point])
     
     #start conversion to Forcingmodel object
     print(f'Converting {npoints} plipoints to hcdfm.ForcingModel():',end='')
@@ -568,11 +574,10 @@ def plipointsDataset_to_ForcingModel(plipointsDataset):
         print(f' {iP+1}',end='')
         
         #select data for this point, ffill nans, concatenating time column, constructing T3D/TimeSeries and append to hcdfm.ForcingModel()
-        datablock_xr_onepoint = plipointsDataset.isel(plipoints=iP)
-        plipoint_name = str(datablock_xr_onepoint.plipoints.to_numpy())
-        
+        datablock_xr_onepoint = plipointsDataset.isel({dimn_point:iP})
+        plipoint_name = str(datablock_xr_onepoint[varn_pointname].to_numpy())
         for quan in quantity_list:
-            datablock_xr_onepoint[quan].attrs['locationname'] = varn_pointname #TODO: is there a nicer way of passing this data?
+            datablock_xr_onepoint[quan].attrs['locationname'] = plipoint_name #TODO: is there a nicer way of passing this data?
             if datablock_xr_onepoint[quan].isnull().all(): # check if all values of plipoint are nan (on land)
                 warnings.warn(UserWarning(f'Plipoint "{plipoint_name}" might be on land since it only contain nan values. Consider altering your plifile or using plipointsDataset.ffill(dim="plipoints").bfill(dim="plipoints"). Nan values replaced with 0 to avoid bc-writing errors')) #TODO: maybe fill along plipoints dimension, but beware on nans in deep water that are filled with neighbours
                 datablock_xr_onepoint[quan] = datablock_xr_onepoint[quan].fillna(0)
