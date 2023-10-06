@@ -5,12 +5,12 @@ Created on Mon Jul 17 13:08:34 2023
 @author: veenstra
 """
 
+import os
 import pytest
 import dfm_tools as dfmt
 import numpy as np
 import datetime as dt
 import xarray as xr
-import pandas as pd
 import shapely
 import geopandas as gpd
 
@@ -71,6 +71,27 @@ def test_plipointsDataset_fews_accepted():
     # ForcingModel_object.save('test.bc')
 
 
+@pytest.mark.systemtest
+@pytest.mark.requireslocaldata
+def test_interpolate_nc_to_bc():
+    nPoints = 3# None #amount of Points to process per PolyObject in the plifile (use int for testing, use None for all Points)
+    
+    file_pli = r'p:\archivedprojects\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli'
+    
+    tstart = '2012-12-16 12:00'
+    tstop = '2013-01-01 12:00'
+    
+    dir_pattern = os.path.join(r'p:\1204257-dcsmzuno\data\CMEMS\nc\DCSM_allAvailableTimes','{ncvarname}_2012-1*.nc')
+    
+    #open regulargridDataset and do some basic stuff (time selection, renaming depth/lat/lon/varname, converting units, etc)
+    data_xr_vars = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity='salinitybnd', tstart=tstart, tstop=tstop)
+    #interpolate regulargridDataset to plipointsDataset
+    data_interp = dfmt.interp_regularnc_to_plipoints(data_xr_reg=data_xr_vars, file_pli=file_pli,
+                                                     nPoints=nPoints) #argument for testing
+    #convert plipointsDataset to hydrolib ForcingModel
+    ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
+
+
 @pytest.mark.unittest
 def test_interp_regularnc_to_plipointsDataset():
     """
@@ -124,7 +145,6 @@ def test_interp_regularnc_to_plipointsDataset():
         interp_with_floats = ds.interp(longitude=x_xr[0], latitude=y_xr[0], method='linear').so #selecting one value from the da drops the new plipoints dimension
         interp_with_da_existing = ds.interp(longitude=x_xr.values, latitude=y_xr.values, method='linear').so.isel(longitude=0,latitude=0) #using the DataArray values keeps lat/lon dimenions, gives the same interp result
         
-        # data_pol_pd = pd.DataFrame({'x':x_xr, 'y':y_xr, 'name':[f'name_{ipoint+1:04d}']})
         geom = shapely.points(x_xr, y_xr)
         gdf = gpd.GeoDataFrame(data={varn_pointname:[f'name_{ipoint+1:04d}']}, geometry=geom)
         interp_with_da_newdim = dfmt.interp_regularnc_to_plipointsDataset(ds, gdf, load=True).so.isel(node=0)

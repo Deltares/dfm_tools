@@ -383,7 +383,7 @@ def interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points, load=True):
     da_plipoints[varn_pointy] = xr.DataArray(gdf_points.geometry.y, dims=dimn_point).assign_attrs(attrs_pointy)
     da_plipoints[varn_pointname] = xr.DataArray(gdf_points[varn_pointname].astype('S64'), dims=dimn_point).str.decode('utf-8',errors='ignore').str.strip() #TODO: must be possible to do this less complex
     da_plipoints = da_plipoints.set_coords([varn_pointx,varn_pointy,varn_pointname])
-    da_plipoints = da_plipoints.set_index({dimn_point:varn_pointname})
+    # da_plipoints = da_plipoints.set_index({dimn_point:varn_pointname})
 
     #interpolation to lat/lon combinations
     print('> interp mfdataset to all PolyFile points (lat/lon coordinates)')
@@ -543,7 +543,10 @@ def _maybe_convert_fews_to_dfmt(ds):
     for var_to_coord in ['station_id','station_names']:
         if var_to_coord in ds.data_vars:
             ds = ds.set_coords(var_to_coord)
-    ds[varn_pointname] = ds[varn_pointname].load().str.decode('utf-8',errors='ignore').str.strip() #.load() is essential to convert not only first letter of string.
+    
+    # convert station names to string format
+    if not ds[varn_pointname].dtype.str.startswith('<'):
+        ds[varn_pointname] = ds[varn_pointname].load().str.decode('utf-8',errors='ignore').str.strip() #.load() is essential to convert not only first letter of string.
     
     # time_units = ds.time.encoding['units']
     # ds.time.encoding['units'] = time_units.replace('.0 +0000',' +00:00')
