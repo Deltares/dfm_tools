@@ -359,33 +359,42 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True
         data_pol_list.append(data_pol_pd_one)
     data_pol_pd = pd.concat(data_pol_list)
     
-    data_interp = interp_regularnc_to_plipointdataframe(data_xr_reg, data_pol_pd, load=load)
+    data_interp = interp_regularnc_to_plipointsDataset(data_xr_reg, data_pol_pd, load=load)
     return data_interp
 
     
-def interp_regularnc_to_plipointdataframe(data_xr_reg, data_pol_pd, load=True):
+def interp_regularnc_to_plipointsDataset(data_xr_reg, data_pol_pd, load=True):
     #TODO: pass gdf instead of pandas dataframe
-
+    
+    lat_attrs = {"standard_name": "latitude",
+                 "long_name": "latitude",
+                 "units": "degrees_north",
+                 # "axis": "Y"
+                 }
+    lon_attrs = {"standard_name": "longitude",
+                 "long_name": "longitude",
+                 "units": "degrees_east",
+                 # "axis": "X"
+                 }
+    
     da_plipoints = xr.Dataset()
-    da_plipoints['plipoint_x'] = xr.DataArray(data_pol_pd['x'], dims='plipoints')
-    da_plipoints['plipoint_y'] = xr.DataArray(data_pol_pd['y'], dims='plipoints')
-    da_plipoints['plipoint_name'] = xr.DataArray(data_pol_pd['name'].astype('S64'), dims='plipoints').str.decode('utf-8',errors='ignore').str.strip() #TODO: must be possible to do this less complex
-    da_plipoints = da_plipoints.set_coords(['plipoint_x','plipoint_y','plipoint_name'])
-    da_plipoints = da_plipoints.set_index({'plipoints':'plipoint_name'})
+    da_plipoints['lon'] = xr.DataArray(data_pol_pd['x'], dims='node').assign_attrs(lon_attrs)
+    da_plipoints['lat'] = xr.DataArray(data_pol_pd['y'], dims='node').assign_attrs(lat_attrs)
+    da_plipoints['station_id'] = xr.DataArray(data_pol_pd['name'].astype('S64'), dims='node').str.decode('utf-8',errors='ignore').str.strip() #TODO: must be possible to do this less complex
+    da_plipoints = da_plipoints.set_coords(['lon','lat','station_id'])
+    da_plipoints = da_plipoints.set_index({'node':'station_id'})
 
     #interpolation to lat/lon combinations
     print('> interp mfdataset to all PolyFile points (lat/lon coordinates)')
     #dtstart = dt.datetime.now()
     
     # linear, nearest, combine_first
-    data_interp_lin = data_xr_reg.interp(longitude=da_plipoints['plipoint_x'], latitude=da_plipoints['plipoint_y'],
-                                     method='linear', 
-                                     kwargs={'bounds_error':True}, #error is only raised upon load(), so when the actual value retrieval happens
-                                     )
-    data_interp_near = data_xr_reg.interp(longitude=da_plipoints['plipoint_x'], latitude=da_plipoints['plipoint_y'],
-                                     method='nearest', 
-                                     kwargs={'bounds_error':True}, #error is only raised upon load(), so when the actual value retrieval happens
-                                     )
+    data_interp_lin = data_xr_reg.interp(longitude=da_plipoints['lon'], latitude=da_plipoints['lat'],
+                                         method='linear', 
+                                         kwargs={'bounds_error':True}) #error is only raised upon load(), so when the actual value retrieval happens
+    data_interp_near = data_xr_reg.interp(longitude=da_plipoints['lon'], latitude=da_plipoints['lat'],
+                                          method='nearest', 
+                                          kwargs={'bounds_error':True}) #error is only raised upon load(), so when the actual value retrieval happens
     data_interp = data_interp_lin.combine_first(data_interp_near)
     
     #time_passed = (dt.datetime.now()-dtstart).total_seconds()
@@ -401,10 +410,10 @@ def interp_regularnc_to_plipointdataframe(data_xr_reg, data_pol_pd, load=True):
     except ValueError: #generate a proper error with outofbounds requested coordinates, default is "ValueError: One of the requested xi is out of bounds in dimension 0" #TODO: improve error in xarray
         lonvar_vals = data_xr_reg['longitude'].to_numpy()
         latvar_vals = data_xr_reg['latitude'].to_numpy()
-        data_pol_pd = data_interp[['plipoint_x','plipoint_y']].to_dataframe()
-        bool_reqlon_outbounds = (data_pol_pd['plipoint_x'] <= lonvar_vals.min()) | (data_pol_pd['plipoint_x'] >= lonvar_vals.max())
-        bool_reqlat_outbounds = (data_pol_pd['plipoint_y'] <= latvar_vals.min()) | (data_pol_pd['plipoint_y'] >= latvar_vals.max())
-        reqlatlon_pd = pd.DataFrame({'longitude':data_pol_pd['plipoint_x'],'latitude':data_pol_pd['plipoint_y'],'lon outbounds':bool_reqlon_outbounds,'lat outbounds':bool_reqlat_outbounds})
+        data_pol_pd = data_interp[['lon','lat']].to_dataframe()
+        bool_reqlon_outbounds = (data_pol_pd['lon'] <= lonvar_vals.min()) | (data_pol_pd['lon'] >= lonvar_vals.max())
+        bool_reqlat_outbounds = (data_pol_pd['lat'] <= latvar_vals.min()) | (data_pol_pd['lat'] >= latvar_vals.max())
+        reqlatlon_pd = pd.DataFrame({'longitude':data_pol_pd['lon'],'latitude':data_pol_pd['lat'],'lon outbounds':bool_reqlon_outbounds,'lat outbounds':bool_reqlat_outbounds})
         reqlatlon_pd_outbounds = reqlatlon_pd.loc[bool_reqlon_outbounds | bool_reqlat_outbounds]
         raise ValueError(f'{len(reqlatlon_pd_outbounds)} of requested pli points are out of bounds (valid longitude range {lonvar_vals.min()} to {lonvar_vals.max()}, valid latitude range {latvar_vals.min()} to {latvar_vals.max()}):\n{reqlatlon_pd_outbounds}')
     time_passed = (dt.datetime.now()-dtstart).total_seconds()

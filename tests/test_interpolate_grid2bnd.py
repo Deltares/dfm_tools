@@ -58,7 +58,7 @@ def test_components_translate_upper():
 
 
 @pytest.mark.unittest
-def test_interp_regularnc_to_plipointdataframe():
+def test_interp_regularnc_to_plipointsDataset():
     """
     Linear interpolation to a new dimension in dfmt.interp_regularnc_to_plipoints() 
     resulted in unexpected nan values since scipy 1.10.0.
@@ -106,7 +106,7 @@ def test_interp_regularnc_to_plipointdataframe():
         interp_with_da_existing = ds.interp(longitude=x_xr.values, latitude=y_xr.values, method='linear').so.isel(longitude=0,latitude=0) #using the DataArray values keeps lat/lon dimenions, gives the same interp result
         
         data_pol_pd = pd.DataFrame({'x':x_xr, 'y':y_xr, 'name':[f'name_{ipoint+1:04d}']})
-        interp_with_da_newdim = dfmt.interp_regularnc_to_plipointdataframe(ds, data_pol_pd, load=True).so.isel(plipoints=0)
+        interp_with_da_newdim = dfmt.interp_regularnc_to_plipointsDataset(ds, data_pol_pd, load=True).so.isel(plipoints=0)
         
         #define expected values since in some cases like point 0 this is not the same as interp1d returns
         interp_da_expected = xr.DataArray(so_np[:,ipoint,ipoint],dims=('depth'))
