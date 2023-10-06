@@ -98,15 +98,15 @@ def test_interp_regularnc_to_plipointsDataset():
     ds['latitude'] = xr.DataArray(lats, dims=('latitude'))
     
     for ipoint in range(3):
-        x_xr = xr.DataArray([lons[ipoint]],dims=('plipoints'))
-        y_xr = xr.DataArray([lats[ipoint]],dims=('plipoints'))
+        x_xr = xr.DataArray([lons[ipoint]],dims=('node'))
+        y_xr = xr.DataArray([lats[ipoint]],dims=('node'))
         
         # interp1d # these are actually irrelevant now, are not used for testing
         interp_with_floats = ds.interp(longitude=x_xr[0], latitude=y_xr[0], method='linear').so #selecting one value from the da drops the new plipoints dimension
         interp_with_da_existing = ds.interp(longitude=x_xr.values, latitude=y_xr.values, method='linear').so.isel(longitude=0,latitude=0) #using the DataArray values keeps lat/lon dimenions, gives the same interp result
         
         data_pol_pd = pd.DataFrame({'x':x_xr, 'y':y_xr, 'name':[f'name_{ipoint+1:04d}']})
-        interp_with_da_newdim = dfmt.interp_regularnc_to_plipointsDataset(ds, data_pol_pd, load=True).so.isel(plipoints=0)
+        interp_with_da_newdim = dfmt.interp_regularnc_to_plipointsDataset(ds, data_pol_pd, load=True).so.isel(node=0)
         
         #define expected values since in some cases like point 0 this is not the same as interp1d returns
         interp_da_expected = xr.DataArray(so_np[:,ipoint,ipoint],dims=('depth'))
