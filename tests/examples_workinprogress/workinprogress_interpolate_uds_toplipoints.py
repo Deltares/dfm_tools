@@ -50,6 +50,6 @@ gdf.plot(ax=ax)
 for i in range(1,24,8):
     fig,ax = plt.subplots()
     #ds_plipoints.mesh2d_sa1.isel(time=-1).plot() #TODO: raises "TypeError: Dimensions of C (23, 25) should be one smaller than X(26) and Y(23) while using shading='flat' see help(pcolormesh)"
-    ds_plipoints.mesh2d_sa1.isel(plipoints=i).T.plot(ax=ax)
+    ds_plipoints.mesh2d_sa1.isel(node=i).T.plot(ax=ax)
     ax.set_ylim(-30,1)
 
