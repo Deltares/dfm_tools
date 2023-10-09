@@ -1,11 +1,11 @@
 ## UNRELEASED
 
 ### Feat
-- aligned ncbnd dataset with FM/FEWS conventions by [@veenstrajelmer] in [#567](https://github.com/Deltares/dfm_tools/pull/567)
+- aligned ncbnd dataset with FM/FEWS conventions by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#567](https://github.com/Deltares/dfm_tools/pull/567)
 - added `dfmt.meshkernel_delete_withshp()` to delete parts of a mesh with a shapefile, while only reading the shapefile within the bounding box of the mesh by [@rqwang](https://github.com/rqwang) in [#548](https://github.com/Deltares/dfm_tools/pull/548) and [#566](https://github.com/Deltares/dfm_tools/pull/566)
-- improved spatial interpolation in `dfmt.interp_regularnc_to_plipoints()` by combining linear with nearest interpolation by [@veenstrajelmer] in [#561](https://github.com/Deltares/dfm_tools/pull/561)
-- added `GTSMv4.1` and `GTSMv4.1_opendap` datasets for tide interpolation with `dfmt.interpolate_tide_to_bc()` by [@veenstrajelmer] in [#544](https://github.com/Deltares/dfm_tools/pull/544)
-- support for `preprocess` argument in `dfmt.open_partitioned_dataset()`  by [@veenstrajelmer] in [#530](https://github.com/Deltares/dfm_tools/pull/530)
+- improved spatial interpolation in `dfmt.interp_regularnc_to_plipoints()` by combining linear with nearest interpolation by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#561](https://github.com/Deltares/dfm_tools/pull/561)
+- added `GTSMv4.1` and `GTSMv4.1_opendap` datasets for tide interpolation with `dfmt.interpolate_tide_to_bc()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#544](https://github.com/Deltares/dfm_tools/pull/544)
+- support for `preprocess` argument in `dfmt.open_partitioned_dataset()`  by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#530](https://github.com/Deltares/dfm_tools/pull/530)
 
 
 ## 0.14.0 (2023-09-15)
