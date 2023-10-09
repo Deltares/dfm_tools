@@ -35,5 +35,5 @@ else:
 
 print('writing file')
 outFile = os.path.join(dir_out,f'InitialField_{tSimStart.strftime("%Y-%m-%d_%H-%M-%S")}.nc')
-data_xr_ontime.to_netcdf(outFile) # ,format="NETCDF4_CLASSIC")
+data_xr_ontime.to_netcdf(outFile)
 
