@@ -67,7 +67,7 @@ mk_object = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dx
 # generate plifile from grid extent and coastlines
 bnd_gdf = dfmt.generate_bndpli_cutland(mk=mk_object, res='h', buffer=0.01)
 bnd_gdf['name'] = f'{model_name}_bnd'
-bnd_gdf_interp = dfmt.interpolate_bndpli(bnd_gdf,res=0.03)
+bnd_gdf_interp = dfmt.interpolate_bndpli(bnd_gdf,res=0.06)
 poly_file = os.path.join(dir_output, f'{model_name}.pli')
 pli_polyfile = dfmt.geodataframe_to_PolyFile(bnd_gdf_interp)
 pli_polyfile.save(poly_file)
@@ -118,7 +118,7 @@ ext_new = hcdfm.ExtModel()
 
 # FES2014 tidal components bc file
 file_bc_basename = os.path.basename(poly_file).replace('.pli','')
-ForcingModel_object = dfmt.interpolate_tide_to_bc(tidemodel='FES2014', file_pli=poly_file, component_list=None) # tidemodel: FES2014, FES2012, EOT20, GTSM4.1preliminary
+ForcingModel_object = dfmt.interpolate_tide_to_bc(tidemodel='FES2014', file_pli=poly_file, component_list=None) # tidemodel: FES2014, FES2012, EOT20, GTSMv4.1
 file_bc_out = os.path.join(dir_output,f'tide_{file_bc_basename}_FES2014.bc')
 ForcingModel_object.save(filepath=file_bc_out)
 boundary_object = hcdfm.Boundary(quantity='waterlevelbnd', #the FM quantity for tide is also waterlevelbnd

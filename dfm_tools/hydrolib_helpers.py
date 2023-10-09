@@ -271,6 +271,10 @@ def forcinglike_to_Dataset(forcingobj, convertnan=False): #TODO: would be conven
     convertnan: convert depths with the same values over time as the deepest layer to nan (these were created with .bfill() or .ffill()).
     """
     
+    ncbnd_construct = get_ncbnd_construct()
+    dimn_depth = ncbnd_construct['dimn_depth']
+    varn_depth = ncbnd_construct['varn_depth']
+    
     #check if forcingmodel instead of T3D/TimeSeries is provided
     if isinstance(forcingobj, hcdfm.ForcingModel):
         raise TypeError('instead of supplying a ForcingModel, provide a ForcingObject (Timeseries/T3D etc), by doing something like ForcingModel.forcing[0]')
@@ -292,7 +296,7 @@ def forcinglike_to_Dataset(forcingobj, convertnan=False): #TODO: would be conven
     nquan = len(var_quantity_list)
     
     if isinstance(forcingobj, hcdfm.T3D):
-        dims = ('time','depth')
+        dims = ('time',dimn_depth)
     elif isinstance(forcingobj, hcdfm.TimeSeries):
         dims = ('time')
     elif isinstance(forcingobj, hcdfm.Astronomic):
@@ -309,9 +313,9 @@ def forcinglike_to_Dataset(forcingobj, convertnan=False): #TODO: would be conven
         datablock_data_onequan = datablock_data_onequan.squeeze() #drop dimensions of len 1 in case of 1 dimension, eg "waterlevelbnd" (first subsetting over depth dimension)
         
         data_xr_var = xr.DataArray(datablock_data_onequan, name=var_quantity, dims=dims)
-        if 'depth' in dims:
-            data_xr_var['depth'] = forcingobj.vertpositions
-            #data_xr_var['depth'].attrs['positive'] == 'up' #TODO: maybe add this attribute
+        if dimn_depth in dims:
+            data_xr_var[varn_depth] = forcingobj.vertpositions
+            data_xr_var[varn_depth].attrs['positive'] == 'up'
             if convertnan: #convert ffilled/bfilled values back to nan
                 deepestlayeridx = data_xr_var.depth.to_numpy().argmin()
                 if deepestlayeridx==0: #sorted from deep to shallow layers
