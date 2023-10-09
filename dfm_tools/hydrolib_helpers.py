@@ -28,12 +28,12 @@ def get_ncbnd_construct():
                     "units": "degrees_north",
                     # "axis": "Y"
                     }
-    # attrs_depth = {'standard_name':'z',
-    #                'long_name':'z',
-    #                'units':'m',
-    #                'positive':'up',
-    #                'axis':'Z',
-    #                }
+    attrs_depth = {'standard_name':'z',
+                    'long_name':'z',
+                    'units':'m',
+                    'positive':'up',
+                    # 'axis':'Z',
+                    }
     
     ncbnd_construct = {'varn_depth':'z',
                        'dimn_depth':'z',
@@ -43,7 +43,7 @@ def get_ncbnd_construct():
                        'dimn_point':'node',
                        'attrs_pointx':attrs_pointx,
                        'attrs_pointy':attrs_pointy,
-                       # 'attrs_depth':attrs_depth,
+                       'attrs_depth':attrs_depth,
                        }
     
     return ncbnd_construct
@@ -274,6 +274,7 @@ def forcinglike_to_Dataset(forcingobj, convertnan=False): #TODO: would be conven
     ncbnd_construct = get_ncbnd_construct()
     dimn_depth = ncbnd_construct['dimn_depth']
     varn_depth = ncbnd_construct['varn_depth']
+    attrs_depth = ncbnd_construct['attrs_depth']
     
     #check if forcingmodel instead of T3D/TimeSeries is provided
     if isinstance(forcingobj, hcdfm.ForcingModel):
@@ -315,13 +316,13 @@ def forcinglike_to_Dataset(forcingobj, convertnan=False): #TODO: would be conven
         data_xr_var = xr.DataArray(datablock_data_onequan, name=var_quantity, dims=dims)
         if dimn_depth in dims:
             data_xr_var[varn_depth] = forcingobj.vertpositions
-            data_xr_var[varn_depth].attrs['positive'] == 'up'
+            data_xr_var[varn_depth] = data_xr_var[varn_depth].assign_attrs(attrs_depth)
             if convertnan: #convert ffilled/bfilled values back to nan
-                deepestlayeridx = data_xr_var.depth.to_numpy().argmin()
+                deepestlayeridx = data_xr_var[varn_depth].to_numpy().argmin()
                 if deepestlayeridx==0: #sorted from deep to shallow layers
-                    bool_nandepths = (data_xr_var==data_xr_var.shift(depth=-1)).all(dim='time')
+                    bool_nandepths = (data_xr_var==data_xr_var.shift({varn_depth:-1})).all(dim='time')
                 else: #sorted from shallow to deep layers
-                    bool_nandepths = (data_xr_var==data_xr_var.shift(depth=1)).all(dim='time')
+                    bool_nandepths = (data_xr_var==data_xr_var.shift({varn_depth:1})).all(dim='time')
                 data_xr_var = data_xr_var.where(~bool_nandepths)
         if 'time' in dims:
             time_unit = forcingobj.quantityunitpair[0].unit.lower()
