@@ -41,7 +41,22 @@ def write_bathy_toasc(filename_asc,lon_sel_ext,lat_sel_ext,elev_sel_ext,asc_fmt=
     print('...finished')
 
 
-def read_asc(file_asc):
+def read_asc(file_asc:str) -> xr.Dataset:
+    """
+    Reading asc file into a xarray.Dataset
+
+    Parameters
+    ----------
+    file_asc : str
+        asc file with header ncols, nrows, xllcenter, yllcenter, cellsize, NODATA_value.
+
+    Returns
+    -------
+    ds_asc : xr.Dataset
+        xarray.Dataset with the data from the asc file as an array and 
+        the lat/lon coordinates as separate coordinate variables.
+
+    """
     with open(file_asc) as f:
         lines = f.readlines()
     
