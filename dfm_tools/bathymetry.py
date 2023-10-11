@@ -57,29 +57,27 @@ def read_asc(file_asc:str) -> xr.Dataset:
         the lat/lon coordinates as separate coordinate variables.
 
     """
-    with open(file_asc) as f:
-        lines = f.readlines()
-    
     # read header
     header_dict = {}
-    for il, line in enumerate(lines):
-        linesplit = line.split()
-        linestart = linesplit[0]
-        linestop = linesplit[-1]
-        
-        try:
-            # try to convert it to float, this will fail for headerlines
-            # it will succeed for numeric lines, but then the loop breaks
-            float(linestart)
-            skiprows = il
-            break
-        except ValueError:
-            # convert header values to int if possible or float if not
+    with open(file_asc) as f:
+        for linenum, line in enumerate(f, 1):
+            linesplit = line.split()
+            linestart = linesplit[0]
+            linestop = linesplit[-1]
+            
             try:
-                header_value = int(linestop)
+                # try to convert it to float, this will fail for headerlines
+                # it will succeed for numeric lines, but then the loop breaks
+                float(linestart)
+                break
             except ValueError:
-                header_value = float(linestop)
-            header_dict[linestart] = header_value
+                # convert header values to int if possible or float if not
+                try:
+                    header_value = int(linestop)
+                except ValueError:
+                    header_value = float(linestop)
+                header_dict[linestart] = header_value
+                skiprows = linenum
     
     # read data
     asc_np = np.loadtxt(file_asc, skiprows=skiprows, dtype=float)
