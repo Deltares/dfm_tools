@@ -6,6 +6,7 @@ Created on Mon May 31 17:17:09 2021
 """
 
 import numpy as np
+import xarray as xr
 
 
 def write_bathy_toasc(filename_asc,lon_sel_ext,lat_sel_ext,elev_sel_ext,asc_fmt='%9.2f',nodata_val=32767):
@@ -38,4 +39,72 @@ def write_bathy_toasc(filename_asc,lon_sel_ext,lat_sel_ext,elev_sel_ext,asc_fmt=
     with open(filename_asc,'a') as file_asc:
         np.savetxt(file_asc,np.flip(elev_sel_ext,axis=0),fmt=asc_fmt)
     print('...finished')
+
+
+def read_asc(file_asc:str) -> xr.Dataset:
+    """
+    Reading asc file into a xarray.Dataset
+
+    Parameters
+    ----------
+    file_asc : str
+        asc file with header ncols, nrows, xllcenter, yllcenter, cellsize, NODATA_value.
+
+    Returns
+    -------
+    ds_asc : xr.Dataset
+        xarray.Dataset with the data from the asc file as an array and 
+        the lat/lon coordinates as separate coordinate variables.
+
+    """
+    with open(file_asc) as f:
+        lines = f.readlines()
+    
+    # read header
+    header_dict = {}
+    for il, line in enumerate(lines):
+        linesplit = line.split()
+        linestart = linesplit[0]
+        linestop = linesplit[-1]
+        
+        try:
+            # try to convert it to float, this will fail for headerlines
+            # it will succeed for numeric lines, but then the loop breaks
+            float(linestart)
+            skiprows = il
+            break
+        except ValueError:
+            # convert header values to int if possible or float if not
+            try:
+                header_value = int(linestop)
+            except ValueError:
+                header_value = float(linestop)
+            header_dict[linestart] = header_value
+    
+    # read data
+    asc_np = np.loadtxt(file_asc, skiprows=skiprows, dtype=float)
+    
+    # derive x/y values and assert shape
+    num_x = header_dict['ncols']
+    num_y = header_dict['nrows']
+    start_x = header_dict['xllcenter']
+    start_y = header_dict['yllcenter']
+    step = header_dict['cellsize']
+    nodata = header_dict['NODATA_value']
+    
+    assert asc_np.shape == (num_y, num_x)
+    
+    x_vals = np.arange(0, num_x) * step + start_x
+    y_vals = np.arange(0, num_y) * step + start_y
+    
+    # flip over latitude and replace nodata with nan
+    asc_np = np.flipud(asc_np)
+    asc_np[asc_np==nodata] = np.nan
+    
+    ds_asc = xr.Dataset()
+    ds_asc['lon'] = xr.DataArray(x_vals, dims=('lon'))
+    ds_asc['lat'] = xr.DataArray(y_vals, dims=('lat'))
+    ds_asc['data'] = xr.DataArray(asc_np, dims=('lat','lon'))
+    ds_asc = ds_asc.assign_attrs(header_dict)
+    return ds_asc
 
