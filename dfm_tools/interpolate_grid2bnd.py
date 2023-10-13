@@ -278,14 +278,17 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
             data_xr = data_xr.rename({ncvarn:k})
             print(f'variable {ncvarn} renamed to {k}')
     
-    #rename dims time/depth/lat/lon/x/y #TODO: this has to be phased out some time, or made as an argument or merged with conversion_dict?
+    #rename dims and vars time/depth/lat/lon/x/y #TODO: this has to be phased out some time, or made as an argument or merged with conversion_dict?
     rename_dims_dict = {'depth':dimn_depth, # depth for CMEMS and many others
                         'lev':dimn_depth, # lev for GFDL
                         'lon':'longitude','lat':'latitude'}
     for k,v in rename_dims_dict.items():
         if k in data_xr.dims and v not in data_xr.dims:
-            data_xr = data_xr.rename_dims({k:v}) #TODO: can also do this for data_xr_var only?
+            data_xr = data_xr.rename_dims({k:v})
             print(f'dimension {k} renamed to {v}')
+        if k in data_xr.variables and v not in data_xr.variables:
+            data_xr = data_xr.rename_vars({k:v})
+            print(f'varname {k} renamed to {v}')
     
     #get calendar and maybe convert_calendar, makes sure that nc_tstart/nc_tstop are of type pd._libs.tslibs.timestamps.Timestamp
     data_xr_calendar = data_xr['time'].dt.calendar
