@@ -72,6 +72,56 @@ def test_plipointsDataset_fews_accepted():
 
 
 @pytest.mark.systemtest
+def test_open_dataset_extra_correctdepths():
+    """
+    to validate open_dataset_extra behaviour for depths, in the past the depth values got lost and replaced by depth idx
+    """
+    ncbnd_construct = dfmt.get_ncbnd_construct()
+    varn_depth = ncbnd_construct['varn_depth']
+    dimn_depth = ncbnd_construct['dimn_depth']
+    
+    ds = xr.Dataset()
+    so_np = np.array([[[35.819576, 35.82568 , 35.82873 ],
+                       [35.819576, 35.824154, 35.831783],
+                       [35.822628, 35.824154, 35.82873 ]],
+                      
+                      [[35.802788, 35.80584 , 35.815   ],
+                       [35.815   , 35.810417, 35.821102],
+                       [35.824154, 35.813473, 35.81805 ]],
+                      
+                      [[35.786003, 35.789055, np.nan],
+                       [35.807365, 35.796684, np.nan],
+                       [35.824154, 35.80584 , np.nan]],
+                      
+                      [[35.776848, np.nan,    np.nan],
+                       [35.792107, np.nan,    np.nan],
+                       [35.822628, np.nan,    np.nan]],
+                                              
+                      [[35.781425, np.nan,    np.nan],
+                       [35.792107, np.nan,    np.nan],
+                       [35.789055, np.nan,    np.nan]]])
+    ds['so'] = xr.DataArray(so_np,dims=(dimn_depth,'latitude','longitude'))
+    lons = [-9.6, -9.5, -9.4]
+    lats = [42.9, 43.0, 43.1]
+    depths = [-0.494025, -1.541375, -2.645669, -3.819495, -5.078224]
+    ds['longitude'] = xr.DataArray(lons, dims=('longitude'))
+    ds['latitude'] = xr.DataArray(lats, dims=('latitude'))
+    ds['depth'] = xr.DataArray(depths, dims=('depth')) #to simulate cmems dim/var names
+    
+    ds_moretime = xr.concat(4*[ds.expand_dims('time')],dim='time')
+    ds_moretime['time'] = xr.DataArray([-12,12,36,60],dims='time').assign_attrs({'standard_name':'time','units':'hours since 2020-01-01'})
+    file_nc = 'test_cmems_fake.nc'
+    ds_moretime.to_netcdf(file_nc)
+    
+    ds_moretime_import = dfmt.open_dataset_extra(dir_pattern=file_nc, quantity='salinitybnd', tstart='2020-01-01', tstop='2020-01-02')
+    
+    depth_actual = ds_moretime_import[varn_depth].to_numpy()
+    depth_expected = np.array(depths)
+    
+    assert (np.abs(depth_actual - depth_expected) < 1e-5).all()
+
+
+@pytest.mark.systemtest
 @pytest.mark.requireslocaldata
 def test_interpolate_nc_to_bc():
     nPoints = 3# None #amount of Points to process per PolyObject in the plifile (use int for testing, use None for all Points)
