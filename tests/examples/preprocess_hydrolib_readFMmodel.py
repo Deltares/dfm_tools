@@ -12,9 +12,9 @@ import datetime as dt
 import matplotlib.pyplot as plt
 plt.close('all')
 
-#file_mdu = Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\computations\validation\2018_HYDROLIB_JV\RMM_VZM.mdu') #TODO: contains multiline obs/crs files, maybe raise more clear validationerror than "File: `\\directory.intra\Project\` not found, skipped parsing. (type=value_error)"
-file_mdu = Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\computations\validation\2018_HYDROLIB_JV\RMM_VZM_MLnoslash.mdu') #TODO: contains multiline obs/crs files without slash, only reads first file but should raise an error: https://github.com/Deltares/HYDROLIB-core/issues/485#issuecomment-1494053471
-file_mdu = Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\computations\validation\2018_HYDROLIB_JV\RMM_VZM_noML.mdu')
+#file_mdu = Path(r'p:\archivedprojects\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\computations\validation\2018_HYDROLIB_JV\RMM_VZM.mdu') #TODO: contains multiline obs/crs files, maybe raise more clear validationerror than "File: `\\directory.intra\Project\` not found, skipped parsing. (type=value_error)"
+file_mdu = Path(r'p:\archivedprojects\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\computations\validation\2018_HYDROLIB_JV\RMM_VZM_MLnoslash.mdu') #TODO: contains multiline obs/crs files without slash, only reads first file but should raise an error: https://github.com/Deltares/HYDROLIB-core/issues/485#issuecomment-1494053471
+file_mdu = Path(r'p:\archivedprojects\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\computations\validation\2018_HYDROLIB_JV\RMM_VZM_noML.mdu')
 file_mdu_commented = str(file_mdu).replace('.mdu','_commentedpy.mdu')
 file_mdu_rewrite = str(file_mdu).replace('.mdu','_rewritepy.mdu')
 mdu_contents = open(str(file_mdu),'r').readlines()
@@ -69,7 +69,7 @@ for struct in structs.structure:
 #file_extnew = Path(r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_bnd.ext') #TODO: waterlevelbnd for rivers are present three times: https://github.com/Deltares/HYDROLIB-core/issues/354
 file_extnew = Path(r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\RMM_bnd_course.ext')
 #file_extnew = Path(r'p:\1230882-emodnet_hrsm\GTSMv5.0\SO_NHrivGTSM\computations\BD013_4par_mildslope_wflowdis_JV\gtsm_forcing_bc.ext')
-#file_extnew = Path(r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\computations\validation\2018_HYDROLIB_JV\RMM_bnd.ext') #slow because of waterlevelbnd seaside
+#file_extnew = Path(r'p:\archivedprojects\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\computations\validation\2018_HYDROLIB_JV\RMM_bnd.ext') #slow because of waterlevelbnd seaside
 print('>> opening ExtModel: ',end='')
 dtstart = dt.datetime.now()
 ext = hcdfm.ExtModel(file_extnew)

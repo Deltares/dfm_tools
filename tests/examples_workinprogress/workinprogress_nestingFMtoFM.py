@@ -52,7 +52,7 @@ for file_pli in file_pli_list:
     cellidx_uniq = np.unique(plicoords_cellidx)
     cellcoords = face_coords_pd.iloc[cellidx_uniq]
     cellcoords = cellcoords.reset_index() #revert from face numbers to 0-based, prevents SettingWithCopyWarning
-    ax.plot(cellcoords['x'],cellcoords['y'],'x',label='{file_pli.name}_cellcenters')
+    ax.plot(cellcoords['x'],cellcoords['y'],'x',label=f'{file_pli.name}_cellcenters')
     maxnumlen = cellcoords.index.astype(str).str.len().max()
     cellcoords['name'] = pd.Series(cellcoords.index).apply(lambda x: f'nestpoint_{x+1:0{maxnumlen}d}')
     
