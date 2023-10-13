@@ -6,7 +6,6 @@ Created on Mon Jun 19 22:03:43 2023
 """
 
 import pytest
-import numpy as np
 import xarray as xr
 import xugrid as xu
 import dfm_tools as dfmt
@@ -20,22 +19,29 @@ def test_import_shapely():
     """
     import shapely
     import shapely.geometry
-    
 
-@pytest.mark.systemtest
+
+@pytest.mark.unittest
+def test_matplotlib_path():
+    """
+    available from matplotlib>=3.4.0
+    """
+    import matplotlib as mpl
+    mpl.path.Path
+
+
+@pytest.mark.unittest
 def test_xugrid_opendataset_ugridplot():
     """
     this one used to fail with xarray>=2023.3.0: https://github.com/Deltares/xugrid/issues/78
     This will probably not happen again, but it is convenient to test anyway.
     """
     file_nc = dfmt.data.fm_curvedbend_map(return_filepath=True)
-    
     uds = xu.open_dataset(file_nc,chunks={'time':1})
-    
     uds['mesh2d_flowelem_bl'].ugrid.plot()
 
 
-@pytest.mark.systemtest
+@pytest.mark.unittest
 def test_xugrid_opendataset_ugridplot_contourf():
     """
     This testcase gave a DeprecationWarning with scipy<1.10.0: https://github.com/Deltares/dfm_tools/issues/557
@@ -47,11 +53,11 @@ def test_xugrid_opendataset_ugridplot_contourf():
     uds['mesh2d_flowelem_bl'].ugrid.plot.contourf()
 
 
-@pytest.mark.systemtest
+@pytest.mark.unittest
 def test_xugrid_opendataset_ugridplot_contour_with_colorbar():
     """
     Plotting a contour plot on uniform data (bedlevel -10 meter everywhere),
-    resulted in several errors upon contour, with matplotlib 3.6.0 when adding a colorbar
+    resulted in several errors when adding a colorbar with matplotlib<=3.6.0
     """
     file_nc = dfmt.data.fm_curvedbend_map(return_filepath=True)
     uds = xu.open_dataset(file_nc)
