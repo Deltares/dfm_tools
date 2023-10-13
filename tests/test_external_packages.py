@@ -107,9 +107,11 @@ def test_xugrid_opendataset_ugridplot_contour_with_colorbar():
 def test_xarray_pandas_resample():
     """
     this one fails with xarray<2023.3.0 (required for test_opendataset_ugridplot()) and pandas>1.5.3: https://github.com/Deltares/xugrid/issues/78#issuecomment-1597723955
-    pandas==1.5.3 works with xarray<2023.3.0
+    pandas<1.5.3 works with xarray (any version)
     pandas>=2.0.0 fails with xarray<2023.3.0
+    pandas>=2.0.0 cannot be installed with xarray==2023.3.0 (latter requires pandas<2 and >=1.4)
     pandas>=2.0.0 works with xarray>=2023.4.0
+    therefore, xarray>=2023.4.0 works pandas (any version)
     """
     ds = xr.tutorial.load_dataset("air_temperature")
     ds.resample(time='D')
