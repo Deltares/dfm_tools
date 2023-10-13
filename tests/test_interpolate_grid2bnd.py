@@ -74,8 +74,6 @@ def test_plipointsDataset_fews_accepted():
 @pytest.mark.systemtest
 @pytest.mark.requireslocaldata
 def test_interpolate_nc_to_bc():
-    nPoints = 3# None #amount of Points to process per PolyObject in the plifile (use int for testing, use None for all Points)
-    
     file_pli = r'p:\archivedprojects\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli'
     
     tstart = '2012-12-16 12:00'
@@ -87,7 +85,7 @@ def test_interpolate_nc_to_bc():
     data_xr_vars = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity='salinitybnd', tstart=tstart, tstop=tstop)
     #interpolate regulargridDataset to plipointsDataset
     data_interp = dfmt.interp_regularnc_to_plipoints(data_xr_reg=data_xr_vars, file_pli=file_pli,
-                                                     nPoints=nPoints) #argument for testing
+                                                     nPoints=3) #argument for testing
     #convert plipointsDataset to hydrolib ForcingModel
     ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
 
