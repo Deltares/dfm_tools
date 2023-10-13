@@ -24,6 +24,14 @@ def test_import_shapely():
 
 
 @pytest.mark.unittest
+def test_import_numba():
+    """
+    for some reason, numba often fails importing if versions of numpy/scipy are a bit too new
+    """
+    import numba as nb
+
+    
+@pytest.mark.unittest
 def test_modplot_velovect():
     """
     this test will fail with matplotlib<3.6.0
