@@ -460,8 +460,7 @@ def interp_uds_to_plipoints(uds:xu.UgridDataset, gdf:geopandas.GeoDataFrame, nPo
 
     ds = ds.rename({facedim:'plipoints'}) # rename mesh2d_nFaces to plipoints
     
-    ds['plipoint_name'] = xr.DataArray(gdf['plipoint_name'].tolist(), dims='plipoints') # change name of plipoint (node to gdf name)
-    ds = ds.set_index({'plipoints':'plipoint_name'})
+    ds['plipoints'] = xr.DataArray(gdf['plipoint_name'].tolist(), dims='plipoints') # change name of plipoint (node to gdf name)
     return ds
 
 

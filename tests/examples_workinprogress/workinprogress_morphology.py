@@ -24,21 +24,18 @@ vars_pd_sel = vars_pd[vars_pd['long_name'].str.contains('transport')]
 varname = 'mesh2d_mor_bl'
 var_clims = [-50,0]
 var_longname = vars_pd['long_name'][vars_pd.index==varname].iloc[0]
-fig, axs = plt.subplots(3,1, figsize=(6,9))
+fig, (ax1,ax2,ax3) = plt.subplots(3,1, figsize=(6,9))
 
-ax = axs[0]
 data_frommap_0 = data_frommap_merged[varname].isel(time=0)
-pc = data_frommap_0.ugrid.plot(ax=ax, linewidth=0.5, cmap='jet', clim=var_clims)
+pc = data_frommap_0.ugrid.plot(ax=ax1, linewidth=0.5, cmap='jet', clim=var_clims)
 
-ax = axs[1]
 data_frommap_end = data_frommap_merged[varname].isel(time=-1)
-pc = data_frommap_end.ugrid.plot(ax=ax, linewidth=0.5, cmap='jet', clim=var_clims)
+pc = data_frommap_end.ugrid.plot(ax=ax2, linewidth=0.5, cmap='jet', clim=var_clims)
 
-ax = axs[2]
 data_diff = data_frommap_end-data_frommap_0
-pc = data_diff.ugrid.plot(ax=ax, linewidth=0.5, cmap='jet', clim=[-3,3])
+pc = data_diff.ugrid.plot(ax=ax3, linewidth=0.5, cmap='jet', clim=[-3,3])
 
-for ax in axs:
+for ax in (ax1,ax2,ax3):
     ax.set_aspect('equal')
     #ax.set_ylim(val_ylim)
 fig.tight_layout()
@@ -68,20 +65,16 @@ var_clim = [[0,2], [0,360], [0,7.5], [0,35], [0,20]]
 for iV, varname in enumerate(varname_list):
     var_longname = vars_pd['long_name'][vars_pd.index==varname].iloc[0]
     
-    fig, axs = plt.subplots(1,2, figsize=(12,7))
+    fig, (ax1,ax2) = plt.subplots(1,2, figsize=(12,7))
     fig.suptitle('%s (%s)'%(varname, var_longname))
 
-    timestep = 10
-    ax = axs[0]
-    pc = data_xr[varname].isel(time=timestep).plot(ax=ax, cmap='jet')
+    pc = data_xr[varname].isel(time=10).plot(ax=ax1, cmap='jet')
     pc.set_clim(var_clim[iV])
-    ax.set_aspect('equal')
+    ax1.set_aspect('equal')
     
-    timestep = -1
-    ax = axs[1]
-    pc = data_xr[varname].isel(time=timestep).plot(ax=ax, cmap='jet')
+    pc = data_xr[varname].isel(time=-1).plot(ax=ax2, cmap='jet')
     pc.set_clim(var_clim[iV])
-    ax.set_aspect('equal')
+    ax2.set_aspect('equal')
     
     fig.tight_layout()
     plt.savefig(os.path.join(dir_output,'%s_%s'%(os.path.basename(file_nc).replace('.',''), varname)))
