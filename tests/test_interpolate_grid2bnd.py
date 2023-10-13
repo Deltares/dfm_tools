@@ -118,7 +118,7 @@ def test_open_dataset_extra_correctdepths():
     depth_actual = ds_moretime_import[varn_depth].to_numpy()
     depth_expected = np.array(depths)
     
-    assert (np.abs(depth_actual - depth_expected) < 1e-5).all()
+    assert (np.abs(depth_actual - depth_expected) < 1e-9).all()
 
 
 @pytest.mark.systemtest
