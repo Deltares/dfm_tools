@@ -513,7 +513,7 @@ def interp_hisnc_to_plipoints(data_xr_his, file_pli, kdtree_k=3, load=True):
     data_pol_pd = pd.concat(data_pol_list)
 
     plicoords_distance2, plicoords_nestpointidx = tree_nest2.query(data_pol_pd[['x','y']], k=kdtree_k)
-    da_plicoords_nestpointidx = xr.DataArray(plicoords_nestpointidx, dims=('plipoints','nearestkpoints'))
+    da_plicoords_nestpointidx = xr.DataArray(plicoords_nestpointidx, dims=(dimn_point,'nearestkpoints'))
     da_plicoords_nestpointnames = data_xr_his.stations.isel(stations=da_plicoords_nestpointidx)
     
     #interpolate hisfile variables to plipoints
@@ -522,7 +522,7 @@ def interp_hisnc_to_plipoints(data_xr_his, file_pli, kdtree_k=3, load=True):
     data_interp[varn_pointy] = xr.DataArray(data_pol_pd['y'],dims=(dimn_point))
     data_interp[varn_pointname] = xr.DataArray(data_pol_pd['name'].astype('S64'), dims=dimn_point).str.decode('utf-8',errors='ignore').str.strip() #TODO: must be possible to do this less complex
     data_interp = data_interp.set_coords([varn_pointx,varn_pointy,varn_pointname])
-    data_interp = data_interp.set_index({dimn_point:varn_pointname})
+    # data_interp = data_interp.set_index({dimn_point:varn_pointname})
     
     for varone in datavars_list:
         da_dist = xr.DataArray(plicoords_distance2, dims=(dimn_point,'nearestkpoints'))
