@@ -1,4 +1,4 @@
-name: pytest-py39
+name: pytest-py39-mindeps
 
 on:
   push:
