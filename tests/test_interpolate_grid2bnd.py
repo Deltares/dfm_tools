@@ -72,6 +72,27 @@ def test_plipointsDataset_fews_accepted():
 
 
 @pytest.mark.systemtest
+@pytest.mark.requireslocaldata
+def test_interpolate_nc_to_bc():
+    nPoints = 3# None #amount of Points to process per PolyObject in the plifile (use int for testing, use None for all Points)
+    
+    file_pli = r'p:\archivedprojects\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli'
+    
+    tstart = '2012-12-16 12:00'
+    tstop = '2013-01-01 12:00'
+    
+    dir_pattern = os.path.join(r'p:\1204257-dcsmzuno\data\CMEMS\nc\DCSM_allAvailableTimes','{ncvarname}_2012-1*.nc')
+    
+    #open regulargridDataset and do some basic stuff (time selection, renaming depth/lat/lon/varname, converting units, etc)
+    data_xr_vars = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity='salinitybnd', tstart=tstart, tstop=tstop)
+    #interpolate regulargridDataset to plipointsDataset
+    data_interp = dfmt.interp_regularnc_to_plipoints(data_xr_reg=data_xr_vars, file_pli=file_pli,
+                                                     nPoints=nPoints) #argument for testing
+    #convert plipointsDataset to hydrolib ForcingModel
+    ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
+
+
+@pytest.mark.systemtest
 def test_open_dataset_extra_correctdepths():
     """
     to validate open_dataset_extra behaviour for depths, in the past the depth values got lost and replaced by depth idx
@@ -120,27 +141,6 @@ def test_open_dataset_extra_correctdepths():
     
     assert (np.abs(depth_actual - depth_expected) < 1e-9).all()
     assert len(ds_moretime_import.time) == 2
-
-
-@pytest.mark.systemtest
-@pytest.mark.requireslocaldata
-def test_interpolate_nc_to_bc():
-    nPoints = 3# None #amount of Points to process per PolyObject in the plifile (use int for testing, use None for all Points)
-    
-    file_pli = r'p:\archivedprojects\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli'
-    
-    tstart = '2012-12-16 12:00'
-    tstop = '2013-01-01 12:00'
-    
-    dir_pattern = os.path.join(r'p:\1204257-dcsmzuno\data\CMEMS\nc\DCSM_allAvailableTimes','{ncvarname}_2012-1*.nc')
-    
-    #open regulargridDataset and do some basic stuff (time selection, renaming depth/lat/lon/varname, converting units, etc)
-    data_xr_vars = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity='salinitybnd', tstart=tstart, tstop=tstop)
-    #interpolate regulargridDataset to plipointsDataset
-    data_interp = dfmt.interp_regularnc_to_plipoints(data_xr_reg=data_xr_vars, file_pli=file_pli,
-                                                     nPoints=nPoints) #argument for testing
-    #convert plipointsDataset to hydrolib ForcingModel
-    ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
 
 
 @pytest.mark.unittest
