@@ -14,8 +14,8 @@ import xarray as xr
 from dask.diagnostics import ProgressBar
 
 
-file_nc = r'P:\archivedprojects\11208054-004-dcsm-fm\models\3D_DCSM-FM\2013-2017\B04_EOT20_RHO1_H1_H2\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0000_his.nc' #does not seem to be dask? >> no chunks visible
-#file_nc = r'P:\archivedprojects\11208054-004-dcsm-fm\models\3D_DCSM-FM\2013-2017\B04_EOT20_RHO1_H1_H2\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0000_his_netcdf4.nc' #does not seem to be dask? >> no chunks visible
+file_nc = r'P:\11208054-004-dcsm-fm\models\3D_DCSM-FM\2013-2017\B04_EOT20_RHO1_H1_H2\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0000_his.nc' #does not seem to be dask? >> no chunks visible
+#file_nc = r'P:\11208054-004-dcsm-fm\models\3D_DCSM-FM\2013-2017\B04_EOT20_RHO1_H1_H2\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0000_his_netcdf4.nc' #does not seem to be dask? >> no chunks visible
 
 
 chunks = {}
