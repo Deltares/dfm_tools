@@ -16,11 +16,7 @@ import hydrolib.core.dflowfm as hcdfm
 #NOTE: for examples with writing bc files, check dfm_tools.interpolate_grid2bnd.* and dfm_tools.hydrolib_helpers.
 
 file_bc_list = [r'p:\11208154-002-haixia\02-hydrodynamics\02_Model_set_up\02_Make_forcing\FES2014\New_bnd_lines_2022\bc_South_v2.bc',
-<<<<<<< HEAD
                 r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\boundary_conditions\flow\rmm_rivdis_meas_20070101_20140101_MET.bc', #three timeseries
-=======
-                r'p:\archivedprojects\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\boundary_conditions\rmm_rivdis_meas_20171101_20210102_MET.bc', #three timeseries
->>>>>>> main
                 r'p:\11208154-002-haixia\02-hydrodynamics\02_Model_set_up\02_Make_forcing\CMEMS\bc_2022\South_v2\nonan\salinitybnd_bc_South_v2_CMEMS.bc',
                 r'p:\11208154-002-haixia\02-hydrodynamics\02_Model_set_up\02_Make_forcing\CMEMS\bc_2022\South_v2\nonan\uxuy_bc_South_v2_CMEMS.bc',
                 ]
