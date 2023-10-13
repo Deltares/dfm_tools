@@ -27,7 +27,7 @@ file_net = r'p:\1230882-emodnet_hrsm\global_tide_surge_model\trunk\gtsm4.1\step1
 uds = xu.open_dataset(file_net)
 nnodes = uds.dims[uds.grid.node_dimension]
 
-stepsize = 10 #20 seems optimal, 5 takes 900-1000 sec, 10 takes 500-600 sec, 20 takes 95 sec, 30 takes 377 sec
+stepsize = 5 #20 seems optimal, 5 takes 900-1000 sec, 10 takes 500-600 sec, 20 takes 95 sec, 30 takes 377 sec
 print(f'interpolating GEBCO to {nnodes} nodes in 360/{stepsize}={360/stepsize} steps:')
 dtstart = dt.datetime.now()
 for i in range(-180, lat_max, stepsize):
