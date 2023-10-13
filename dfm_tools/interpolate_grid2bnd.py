@@ -553,10 +553,7 @@ def _maybe_convert_fews_to_dfmt(ds):
     # convert station names to string format
     if not ds[varn_pointname].dtype.str.startswith('<'):
         ds[varn_pointname] = ds[varn_pointname].load().str.decode('utf-8',errors='ignore').str.strip() #.load() is essential to convert not only first letter of string.
-    
-    # time_units = ds.time.encoding['units']
-    # ds.time.encoding['units'] = time_units.replace('.0 +0000',' +00:00')
-    
+        
     return ds
 
 
