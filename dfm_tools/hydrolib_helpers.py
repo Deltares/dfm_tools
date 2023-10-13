@@ -270,7 +270,27 @@ def DataFrame_to_TimModel(tim_pd, refdate:(dt.datetime, pd.Timestamp, str)):
     return timmodel
 
 
-def forcinglike_to_Dataset(forcingobj, convertnan=False): #TODO: would be convenient to have this as a method of ForcingModel objects (Timeseries/T3D/etc): https://github.com/Deltares/HYDROLIB-core/issues/307
+def ForcingModel_to_plipointsDataset(forcingmodel:hcdfm.ForcingModel, npoints=None) -> xr.Dataset:
+    if not isinstance(forcingmodel, hcdfm.ForcingModel):
+        raise TypeError('ForcingModel_to_plipointsDataset expects type hcdfm.ForcingModel, not type {type(forcingobj)}')
+
+    ncbnd_construct = get_ncbnd_construct()
+    dimn_point = ncbnd_construct['dimn_point']
+    varn_pointname = ncbnd_construct['varn_pointname']
+    plipointsDataset_list = []
+    for forcinglike in forcingmodel.forcing[:npoints]:
+        ds_onepoint = forcinglike_to_Dataset(forcinglike)
+        ds_onepoint = ds_onepoint.expand_dims(dimn_point)
+        datavar0 = list(ds_onepoint.data_vars)[0] #TODO: this is tricky, preferrably loop over datavars?
+        pointname = ds_onepoint[datavar0].attrs['locationname']
+        ds_onepoint[varn_pointname] = xr.DataArray([pointname],dims=dimn_point)
+        ds_onepoint = ds_onepoint.set_coords(varn_pointname)
+        plipointsDataset_list.append(ds_onepoint)
+    ds = xr.concat(plipointsDataset_list, dim=dimn_point)
+    return ds
+
+
+def forcinglike_to_Dataset(forcingobj, convertnan=False):
     """
     convert a hydrolib forcing like object (like Timeseries, T3D, Harmonic, etc) to an xarray Dataset with one or more variables.
     
@@ -284,7 +304,7 @@ def forcinglike_to_Dataset(forcingobj, convertnan=False): #TODO: would be conven
     
     #check if forcingmodel instead of T3D/TimeSeries is provided
     if isinstance(forcingobj, hcdfm.ForcingModel):
-        raise TypeError('instead of supplying a ForcingModel, provide a ForcingObject (Timeseries/T3D etc), by doing something like ForcingModel.forcing[0]')
+        raise TypeError('instead of supplying a ForcingModel, provide a ForcingObject (Timeseries/T3D etc), by doing something like ForcingModel.forcing[0], or use dfmt.ForcingModel_to_plipointsDataset() instead')
     
     allowed_instances = (hcdfm.T3D, hcdfm.TimeSeries, hcdfm.Astronomic)
     if not isinstance(forcingobj, allowed_instances):
