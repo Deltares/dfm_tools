@@ -11,7 +11,7 @@ from pathlib import Path
 
 #TODO: bc files are probably not yet supported for structures. If they are, this is probably the way to couple them.
 
-dir_out = r'p:\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\computations\validation\2018_HYDROLIB_JV_structbc'
+dir_out = r'p:\archivedprojects\11208053-004-kpp2022-rmm1d2d\C_Work\09_Validatie2018_2020\dflowfm2d-rmm_vzm-j19_6-v2d\computations\validation\2018_HYDROLIB_JV_structbc'
 
 file_struct = os.path.join(dir_out,'RMM_structures_j19.ini')
 structs = hcdfm.StructureModel(file_struct)
@@ -42,7 +42,7 @@ for structname in list_structures:
                                   )
         
         ForcingModel_object.forcing.append(ts_one)
-        ForcingModel_object.save(Path(dir_out,'test_struct.bc')) #TODO: has to be saved all the time, otherwise forcingFile in ext is empty
+        # ForcingModel_object.save(Path(dir_out,'test_struct.bc')) #TODO: has to be saved all the time, otherwise forcingFile in ext is empty
         
         file_pli = f'../../../geometry_j19_6-v2/structures/{structname}.pli'
         boundary_object = hcdfm.Boundary(quantity=quantity,
@@ -52,7 +52,7 @@ for structname in list_structures:
         ext_bnd.boundary.append(boundary_object)
 
 
-ext_bnd.save(Path(dir_out,'test_struct.ext')) #seems not necesary
+# ext_bnd.save(Path(dir_out,'test_struct.ext')) #seems not necesary
 
 
 #strmod = StructureModel(Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB_structbc\RMM_structures.ini'))
