@@ -142,7 +142,7 @@ def test_xarray_decode_default_fillvals():
     ds[varn_fnc] = ds[varn_fnc].where(ds[varn_fnc]!=fill_value,fill_value_default)
     
     #write file
-    file_out = 'fnc_default_fillvals_map.nc'
+    file_out = 'temp_fnc_default_fillvals_map.nc'
     ds.to_netcdf(file_out)
     ds.close()
     

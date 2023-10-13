@@ -27,18 +27,18 @@ def get_ncbnd_construct():
     attrs_pointx = {"standard_name": "longitude",
                     "long_name": "longitude",
                     "units": "degrees_east",
-                    # "axis": "X"
+                    "axis": "X"
                     }
     attrs_pointy = {"standard_name": "latitude",
                     "long_name": "latitude",
                     "units": "degrees_north",
-                    # "axis": "Y"
+                    "axis": "Y"
                     }
     attrs_depth = {'standard_name':'z',
                     'long_name':'z',
                     'units':'m',
                     'positive':'up',
-                    # 'axis':'Z',
+                    'axis':'Z',
                     }
     
     ncbnd_construct = {'varn_depth':'z',

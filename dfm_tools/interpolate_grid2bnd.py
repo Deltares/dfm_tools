@@ -401,6 +401,9 @@ def interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points, load=True):
                                           kwargs={'bounds_error':True}) #error is only raised upon load(), so when the actual value retrieval happens
     data_interp = data_interp_lin.combine_first(data_interp_near)
     
+    # drop original latitude/longitude vars (lat/lon in da_plipoints)
+    data_interp = data_interp.drop_vars(['latitude','longitude'])
+    
     #time_passed = (dt.datetime.now()-dtstart).total_seconds()
     # print(f'>>time passed: {time_passed:.2f} sec')
     

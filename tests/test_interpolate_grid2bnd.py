@@ -129,7 +129,7 @@ def test_open_dataset_extra_correctdepths():
     
     ds_moretime = xr.concat(4*[ds.expand_dims('time')],dim='time')
     ds_moretime['time'] = xr.DataArray([-12,12,36,60],dims='time').assign_attrs({'standard_name':'time','units':'hours since 2020-01-01'})
-    file_nc = 'cmems_dummyfile.nc'
+    file_nc = 'temp_cmems_dummydata.nc'
     ds_moretime.to_netcdf(file_nc)
     
     ds_moretime_import = dfmt.open_dataset_extra(dir_pattern=file_nc, quantity='salinitybnd', tstart='2020-01-01', tstop='2020-01-03')
@@ -160,6 +160,8 @@ def test_interp_regularnc_to_plipointsDataset():
     ncbnd_construct = dfmt.get_ncbnd_construct()
     dimn_point = ncbnd_construct['dimn_point']
     dimn_depth = ncbnd_construct['dimn_depth']
+    varn_pointx = ncbnd_construct['varn_pointx']
+    varn_pointy = ncbnd_construct['varn_pointy']
     varn_pointname = ncbnd_construct['varn_pointname']
     
     ds = xr.Dataset()
@@ -198,7 +200,8 @@ def test_interp_regularnc_to_plipointsDataset():
         
         geom = shapely.points(x_xr, y_xr)
         gdf = gpd.GeoDataFrame(data={varn_pointname:[f'name_{ipoint+1:04d}']}, geometry=geom)
-        interp_with_da_newdim = dfmt.interp_regularnc_to_plipointsDataset(ds, gdf, load=True).so.isel(node=0)
+        interp_with_da_newdim = dfmt.interp_regularnc_to_plipointsDataset(ds, gdf, load=True)
+        interp_da_actual = interp_with_da_newdim.so.isel(node=0)
         
         #define expected values since in some cases like point 0 this is not the same as interp1d returns
         interp_da_expected = xr.DataArray(so_np[:,ipoint,ipoint],dims=(dimn_depth))
@@ -206,11 +209,19 @@ def test_interp_regularnc_to_plipointsDataset():
         print(ipoint)
         print(interp_with_floats.to_numpy())
         print(interp_with_da_existing.to_numpy())
-        print(interp_with_da_newdim.to_numpy())
+        print(interp_da_actual.to_numpy())
         print(interp_da_expected.to_numpy())
         
         assert (interp_with_floats.isnull()==interp_with_da_existing.isnull()).all()
-        assert (interp_da_expected.isnull()==interp_with_da_newdim.isnull()).all()
+        assert (interp_da_expected.isnull()==interp_da_actual.isnull()).all()
+
+        # check if only expected dims/vars are present # TODO: this can be a separate less complex testcase (renaming of depth is also not properly checked)
+        varn_inda = set(list(interp_with_da_newdim.variables))
+        varn_expected = set(['so', dimn_point, varn_pointx, varn_pointy, varn_pointname])
+        dimn_inda = set(list(interp_with_da_newdim.dims))
+        dimn_expected = set([dimn_point, dimn_depth])
+        assert varn_inda == varn_expected
+        assert dimn_inda == dimn_expected
 
     """
     prints with scipy 1.11.3:
