@@ -243,11 +243,15 @@ def test_interp_uds_to_plipoints():
     very basic test for function, 
     should be made more strict with learnings from workinprogress_interpolate_uds_toplipoints.py
     """
+    
+    ncbnd_construct = dfmt.get_ncbnd_construct()
+    varn_pointname = ncbnd_construct['varn_pointname']
+    
     file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True)
     uds = dfmt.open_partitioned_dataset(file_nc)
     
     gdf = gpd.GeoDataFrame(geometry=gpd.points_from_xy([51500,55000],[418800,421500]))
-    gdf['plipoint_name'] = ['pt_0001','pt_0002']
+    gdf[varn_pointname] = ['pt_0001','pt_0002']
     
     # fig, ax = plt.subplots()
     # uds.mesh2d_flowelem_bl.ugrid.plot(ax=ax)
