@@ -270,7 +270,7 @@ def DataFrame_to_TimModel(tim_pd, refdate:(dt.datetime, pd.Timestamp, str)):
     return timmodel
 
 
-def ForcingModel_to_plipointsDataset(forcingmodel:hcdfm.ForcingModel, npoints=None) -> xr.Dataset:
+def ForcingModel_to_plipointsDataset(forcingmodel:hcdfm.ForcingModel, conversion_dict:dict, npoints=None) -> xr.Dataset:
     if not isinstance(forcingmodel, hcdfm.ForcingModel):
         raise TypeError('ForcingModel_to_plipointsDataset expects type hcdfm.ForcingModel, not type {type(forcingobj)}')
 
@@ -283,6 +283,9 @@ def ForcingModel_to_plipointsDataset(forcingmodel:hcdfm.ForcingModel, npoints=No
         ds_onepoint = ds_onepoint.expand_dims(dimn_point)
         datavar0 = list(ds_onepoint.data_vars)[0] #TODO: this is tricky, preferrably loop over datavars?
         pointname = ds_onepoint[datavar0].attrs['locationname']
+        var_attrs = {'long_name': ds_onepoint[datavar0].attrs['units'],
+                     'units': ds_onepoint[datavar0].attrs['units'],
+                     }
         ds_onepoint[varn_pointname] = xr.DataArray([pointname],dims=dimn_point)
         ds_onepoint = ds_onepoint.set_coords(varn_pointname)
         plipointsDataset_list.append(ds_onepoint)

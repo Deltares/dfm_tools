@@ -550,6 +550,12 @@ def _maybe_convert_fews_to_dfmt(ds):
         if var_to_coord in ds.data_vars:
             ds = ds.set_coords(var_to_coord)
     
+    # rename data_vars to long_name
+    for datavar in ds.data_vars:
+        if hasattr(ds[datavar],'long_name'):
+            longname = ds[datavar].attrs['long_name']
+            ds = ds.rename_vars({datavar:longname})
+    
     # convert station names to string format
     if not ds[varn_pointname].dtype.str.startswith('<'):
         ds[varn_pointname] = ds[varn_pointname].load().str.decode('utf-8',errors='ignore').str.strip() #.load() is essential to convert not only first letter of string.
