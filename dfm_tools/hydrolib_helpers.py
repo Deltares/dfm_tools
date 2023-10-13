@@ -18,6 +18,12 @@ from shapely.geometry import LineString
 
 
 def get_ncbnd_construct():
+    """
+    netcdf structure is based on FEWS example file:
+    p:\\dflowfm\\maintenance\\JIRA\\06000-06999\\06187\\C01_JV\\salinity_DCSM-FM_OB_all.nc
+    Some improvement suggestions are provided in:
+    p:\\dflowfm\\maintenance\\JIRA\\06000-06999\\06187\\C01_JV\\convert_netcdf_bnd.py
+    """
     attrs_pointx = {"standard_name": "longitude",
                     "long_name": "longitude",
                     "units": "degrees_east",
