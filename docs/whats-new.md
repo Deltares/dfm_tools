@@ -8,7 +8,7 @@
 - support for `preprocess` argument in `dfmt.open_partitioned_dataset()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#530](https://github.com/Deltares/dfm_tools/pull/530)
 
 ### Fix
-- properly documented minimal dependency versions to avoid issues with installation in environments that contain older packages by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#581](https://github.com/Deltares/dfm_tools/pull/581)
+- documented minimal dependency versions to avoid issues with installation in existing environments containing old dependency versions by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#581](https://github.com/Deltares/dfm_tools/pull/581)
 
 
 ## 0.14.0 (2023-09-15)
