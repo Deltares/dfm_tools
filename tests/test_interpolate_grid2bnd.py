@@ -113,12 +113,13 @@ def test_open_dataset_extra_correctdepths():
     file_nc = 'test_cmems_fake.nc'
     ds_moretime.to_netcdf(file_nc)
     
-    ds_moretime_import = dfmt.open_dataset_extra(dir_pattern=file_nc, quantity='salinitybnd', tstart='2020-01-01', tstop='2020-01-02')
+    ds_moretime_import = dfmt.open_dataset_extra(dir_pattern=file_nc, quantity='salinitybnd', tstart='2020-01-01', tstop='2020-01-03')
     
     depth_actual = ds_moretime_import[varn_depth].to_numpy()
     depth_expected = np.array(depths)
     
     assert (np.abs(depth_actual - depth_expected) < 1e-9).all()
+    assert len(ds_moretime_import.time) == 2
 
 
 @pytest.mark.systemtest
