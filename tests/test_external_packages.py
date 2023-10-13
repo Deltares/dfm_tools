@@ -8,6 +8,8 @@ Created on Mon Jun 19 22:03:43 2023
 import pytest
 import xarray as xr
 import xugrid as xu
+import numpy as np
+import matplotlib.pyplot as plt
 import dfm_tools as dfmt
 
 
@@ -22,12 +24,40 @@ def test_import_shapely():
 
 
 @pytest.mark.unittest
-def test_matplotlib_path():
+def test_modplot_velovect():
     """
-    available from matplotlib>=3.4.0
+    this test will fail with matplotlib<3.6.0
     """
-    import matplotlib as mpl
-    mpl.path.Path
+    x = np.linspace(-4,4,120)
+    y = np.linspace(-3,3,100)
+    X,Y = np.meshgrid(x,y)
+    U = -1 - X**2 + Y
+    V = 1 + X - Y**2
+    speed = np.sqrt(U*U + V*V)
+    grains = 15
+    
+    # dfmt.velovect requires matplotlib>=3.4.0
+    fig,ax = plt.subplots()
+    dfmt.velovect(ax, X, Y, U, V, color=speed, cmap='winter', arrowstyle='fancy', 
+                  linewidth=speed/5, integration_direction='forward',
+                  density=5, grains=grains)
+
+
+@pytest.mark.unittest
+def test_matplotlib_streamplot_broken_streamlines():
+    """
+    this test will fail with matplotlib<3.6.0
+    """
+    x = np.linspace(-4,4,120)
+    y = np.linspace(-3,3,100)
+    X,Y = np.meshgrid(x,y)
+    U = -1 - X**2 + Y
+    V = 1 + X - Y**2
+    speed = np.sqrt(U*U + V*V)
+    
+    # broken_streamlines requires matplotlib>=3.6.0
+    fig,ax = plt.subplots()
+    ax.streamplot(X, Y, U, V, color=speed, cmap='winter', arrowstyle='fancy', linewidth=speed/5, broken_streamlines=False)
 
 
 @pytest.mark.unittest
@@ -47,6 +77,7 @@ def test_xugrid_opendataset_ugridplot_contourf():
     This testcase gave a DeprecationWarning with scipy<1.10.0: https://github.com/Deltares/dfm_tools/issues/557
     Contourf/contour resulted in several other issues,
     so it is useful to test if the function can be called
+    this test will fail with matplotlib 3.4.0 and 3.5.0
     """
     file_nc = dfmt.data.fm_curvedbend_map(return_filepath=True)
     uds = xu.open_dataset(file_nc)
