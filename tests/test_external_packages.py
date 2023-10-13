@@ -47,6 +47,17 @@ def test_xugrid_opendataset_ugridplot_contourf():
     uds['mesh2d_flowelem_bl'].ugrid.plot.contourf()
 
 
+@pytest.mark.systemtest
+def test_xugrid_opendataset_ugridplot_contour_with_colorbar():
+    """
+    Plotting a contour plot on uniform data (bedlevel -10 meter everywhere),
+    resulted in several errors upon contour, with matplotlib 3.6.0 when adding a colorbar
+    """
+    file_nc = dfmt.data.fm_curvedbend_map(return_filepath=True)
+    uds = xu.open_dataset(file_nc)
+    uds['mesh2d_flowelem_bl'].ugrid.plot.contour(add_colorbar=True)
+
+
 @pytest.mark.unittest
 def test_xarray_pandas_resample():
     """
