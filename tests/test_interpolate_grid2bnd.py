@@ -211,7 +211,7 @@ def test_interpolate_tide_to_plipoints():
             amp_expected = np.array([1.13028932, 1.10648024, 1.09396541])
             phs_expected = np.array([81.21875763, 81.41669464, 81.66479492])
         
-        for component_list in [['M2','S2','M4']]: # [None]: # 
+        for component_list in [['M2','S2']]: # [None]: # 
             data_interp = dfmt.interpolate_tide_to_plipoints(tidemodel=tidemodel, file_pli=file_pli, component_list=component_list, nPoints=nPoints)
             
             compnames_now = data_interp['compno'].to_numpy().tolist()
@@ -236,3 +236,32 @@ def test_interpolate_tide_to_plipoints():
         print(f'>> tide interpolation from {tidemodel} took: ',end='')
         print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
 
+
+@pytest.mark.unittest
+def test_interp_uds_to_plipoints():
+    """
+    very basic test for function, 
+    should be made more strict with learnings from workinprogress_interpolate_uds_toplipoints.py
+    """
+    file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True)
+    uds = dfmt.open_partitioned_dataset(file_nc)
+    
+    gdf = gpd.GeoDataFrame(geometry=gpd.points_from_xy([51500,55000],[418800,421500]))
+    gdf['plipoint_name'] = ['pt_0001','pt_0002']
+    
+    # fig, ax = plt.subplots()
+    # uds.mesh2d_flowelem_bl.ugrid.plot(ax=ax)
+    # gdf.plot(ax=ax)
+    
+    # interpolate depths (zsigma to z):
+    ds_atdepths = dfmt.get_Dataset_atdepths(data_xr=uds, depths=[-5,-1])
+    ds_atdepths = ds_atdepths.rename({'depth_from_z0':'depth'})
+    
+    #interpolate to plipoints
+    ds_plipoints = dfmt.interp_uds_to_plipoints(uds=ds_atdepths, gdf=gdf) #workaround for plipoints out of the model domain
+    
+    retrieved = ds_plipoints.mesh2d_sa1.isel(time=-1).to_numpy()
+    expected = np.array([[29.00111981, 28.99379263],
+                         [28.95170139, 28.63716083]])
+    
+    assert (np.abs(retrieved - expected) < 1e-8).all()
