@@ -14,9 +14,9 @@ import hydrolib.core.dflowfm as hcdfm
 dir_output = '.'
 
 file_pli_list = [r'p:\archivedprojects\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli',
-                 # r'p:\1230882-emodnet_hrsm\GTSMv5.0\data\GSHHS_high_min1000km2.ldb',
-                 # r'p:\archivedprojects\11205259-006-d-hydro-grevelingen\2Dh\model\2002\geometry\structures\Grevelingen-FM_BL_fxw.pliz',
-                 # r'p:\archivedprojects\11205258-006-kpp2020_rmm-g6\C_Work\04_randvoorwaarden\keringen\Maeslantkering\Maeslant.tek',
+                 r'p:\1230882-emodnet_hrsm\GTSMv5.0\data\GSHHS_high_min1000km2.ldb',
+                 r'p:\archivedprojects\11205259-006-d-hydro-grevelingen\2Dh\model\2002\geometry\structures\Grevelingen-FM_BL_fxw.pliz',
+                 r'p:\archivedprojects\11205258-006-kpp2020_rmm-g6\C_Work\04_randvoorwaarden\keringen\Maeslantkering\Maeslant.tek',
                  ]
 
 for file_pli in file_pli_list:
