@@ -285,7 +285,7 @@ def ForcingModel_to_plipointsDataset(forcingmodel:hcdfm.ForcingModel, npoints=No
             longname = datavar
             if datavar in ['ux','uy']: #TODO: hardcoded behaviour is consitent with maybe_convert_fews_to_dfmt() and elsewhere in dfm_tools, but not desireable
                 longname = 'uxuyadvectionvelocitybnd'
-            var_attrs = {'long_name': longname, #TODO: add long_name/units attrs per variable?
+            var_attrs = {'long_name': longname, #TODO: add other attrs per variable
                          'units': ds_onepoint[datavar].attrs['units']}
             ds_onepoint[datavar] = ds_onepoint[datavar].assign_attrs(var_attrs)
         datavar0 = list(ds_onepoint.data_vars)[0] #TODO: is ordering of two variables the same?
