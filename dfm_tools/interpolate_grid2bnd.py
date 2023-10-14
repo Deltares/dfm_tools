@@ -546,11 +546,12 @@ def maybe_convert_fews_to_dfmt(ds):
     varn_pointname = ncbnd_construct['varn_pointname']
     
     # potential FEWS converts
-    for var_to_coord in ['station_id','station_names']:
+    for var_to_coord in [varn_pointname,'station_names']:
         if var_to_coord in ds.data_vars:
             ds = ds.set_coords(var_to_coord)
+    ds[varn_pointname] = ds[varn_pointname].assign_attrs({'cf_role': 'timeseries_id'})
     
-    # rename data_vars to long_name
+    # rename data_vars to long_name (e.g. renames so to salinitybnd)
     for datavar in ds.data_vars:
         if datavar in ['ux','uy']: #TODO: keeping these is consistent with hardcoded behaviour in dfm_tools elsewhere, but not desireable
             continue
@@ -558,10 +559,17 @@ def maybe_convert_fews_to_dfmt(ds):
             longname = ds[datavar].attrs['long_name']
             ds = ds.rename_vars({datavar:longname})
     
-    # convert station names to string format
+    # convert station names to string format (keep attrs and encoding)
     if not ds[varn_pointname].dtype.str.startswith('<'):
-        ds[varn_pointname] = ds[varn_pointname].load().str.decode('utf-8',errors='ignore').str.strip() #.load() is essential to convert not only first letter of string.
-        
+        with xr.set_options(keep_attrs=True):
+            ds[varn_pointname] = ds[varn_pointname].load().str.decode('utf-8',errors='ignore').str.strip() #.load() is essential to convert not only first letter of string.
+
+    # add relevant encoding if not present
+    ds[varn_pointname].encoding.update({'dtype': 'S1', 'char_dim_name': 'char_leng_id'})
+    
+    # assign global attributes #TODO: add more
+    ds = ds.assign_attrs({'Conventions': 'CF-1.6',
+                          'institution': 'Deltares'})
     return ds
 
 
