@@ -541,7 +541,7 @@ def interp_hisnc_to_plipoints(data_xr_his, file_pli, kdtree_k=3, load=True):
     return data_interp
     
 
-def _maybe_convert_fews_to_dfmt(ds):
+def maybe_convert_fews_to_dfmt(ds):
     ncbnd_construct = get_ncbnd_construct()
     varn_pointname = ncbnd_construct['varn_pointname']
     
@@ -552,6 +552,8 @@ def _maybe_convert_fews_to_dfmt(ds):
     
     # rename data_vars to long_name
     for datavar in ds.data_vars:
+        if datavar in ['ux','uy']: #TODO: keeping these is consistent with hardcoded behaviour in dfm_tools elsewhere, but not desireable
+            continue
         if hasattr(ds[datavar],'long_name'):
             longname = ds[datavar].attrs['long_name']
             ds = ds.rename_vars({datavar:longname})
@@ -573,7 +575,7 @@ def plipointsDataset_to_ForcingModel(plipointsDataset):
     dimn_depth = ncbnd_construct['dimn_depth']
     varn_pointname = ncbnd_construct['varn_pointname']
     
-    plipointsDataset = _maybe_convert_fews_to_dfmt(plipointsDataset)
+    plipointsDataset = maybe_convert_fews_to_dfmt(plipointsDataset)
     
     quantity_list = list(plipointsDataset.data_vars)
     npoints = len(plipointsDataset[dimn_point])

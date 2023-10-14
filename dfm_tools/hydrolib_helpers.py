@@ -270,7 +270,7 @@ def DataFrame_to_TimModel(tim_pd, refdate:(dt.datetime, pd.Timestamp, str)):
     return timmodel
 
 
-def ForcingModel_to_plipointsDataset(forcingmodel:hcdfm.ForcingModel, conversion_dict:dict, npoints=None) -> xr.Dataset:
+def ForcingModel_to_plipointsDataset(forcingmodel:hcdfm.ForcingModel, npoints=None) -> xr.Dataset:
     if not isinstance(forcingmodel, hcdfm.ForcingModel):
         raise TypeError('ForcingModel_to_plipointsDataset expects type hcdfm.ForcingModel, not type {type(forcingobj)}')
 
@@ -281,11 +281,15 @@ def ForcingModel_to_plipointsDataset(forcingmodel:hcdfm.ForcingModel, conversion
     for forcinglike in forcingmodel.forcing[:npoints]:
         ds_onepoint = forcinglike_to_Dataset(forcinglike)
         ds_onepoint = ds_onepoint.expand_dims(dimn_point)
-        datavar0 = list(ds_onepoint.data_vars)[0] #TODO: this is tricky, preferrably loop over datavars?
+        for datavar in ds_onepoint.data_vars:
+            longname = datavar
+            if datavar in ['ux','uy']: #TODO: hardcoded behaviour is consitent with maybe_convert_fews_to_dfmt() and elsewhere in dfm_tools, but not desireable
+                longname = 'uxuyadvectionvelocitybnd'
+            var_attrs = {'long_name': longname, #TODO: add long_name/units attrs per variable?
+                         'units': ds_onepoint[datavar].attrs['units']}
+            ds_onepoint[datavar] = ds_onepoint[datavar].assign_attrs(var_attrs)
+        datavar0 = list(ds_onepoint.data_vars)[0] #TODO: is ordering of two variables the same?
         pointname = ds_onepoint[datavar0].attrs['locationname']
-        var_attrs = {'long_name': ds_onepoint[datavar0].attrs['units'],
-                     'units': ds_onepoint[datavar0].attrs['units'],
-                     }
         ds_onepoint[varn_pointname] = xr.DataArray([pointname],dims=dimn_point)
         ds_onepoint = ds_onepoint.set_coords(varn_pointname)
         plipointsDataset_list.append(ds_onepoint)
