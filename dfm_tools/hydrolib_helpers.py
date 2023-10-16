@@ -41,12 +41,12 @@ def get_ncbnd_construct():
                    "axis":"Z",
                     }
     
-    ncbnd_construct = {"varn_depth":"depth",
-                       "dimn_depth":"depth",
+    ncbnd_construct = {"varn_depth":"z",
+                       "dimn_depth":"z",
                        "varn_pointx":"lon",
                        "varn_pointy":"lat",
                        "varn_pointname":"station_id",
-                       "dimn_point":"location",
+                       "dimn_point":"node",
                        "attrs_pointx":attrs_pointx,
                        "attrs_pointy":attrs_pointy,
                        "attrs_depth":attrs_depth,
@@ -270,7 +270,7 @@ def DataFrame_to_TimModel(tim_pd, refdate:(dt.datetime, pd.Timestamp, str)):
     return timmodel
 
 
-def ForcingModel_to_plipointsDataset(forcingmodel:hcdfm.ForcingModel, npoints=None) -> xr.Dataset:
+def ForcingModel_to_plipointsDataset(forcingmodel:hcdfm.ForcingModel, npoints=None, convertnan=False) -> xr.Dataset:
     if not isinstance(forcingmodel, hcdfm.ForcingModel):
         raise TypeError('ForcingModel_to_plipointsDataset expects type hcdfm.ForcingModel, not type {type(forcingobj)}')
 
@@ -279,7 +279,7 @@ def ForcingModel_to_plipointsDataset(forcingmodel:hcdfm.ForcingModel, npoints=No
     varn_pointname = ncbnd_construct['varn_pointname']
     plipointsDataset_list = []
     for forcinglike in forcingmodel.forcing[:npoints]:
-        ds_onepoint = forcinglike_to_Dataset(forcinglike)
+        ds_onepoint = forcinglike_to_Dataset(forcinglike, convertnan=convertnan)
         ds_onepoint = ds_onepoint.expand_dims(dimn_point)
         for datavar in ds_onepoint.data_vars:
             longname = datavar

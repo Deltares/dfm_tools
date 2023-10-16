@@ -44,6 +44,8 @@ for file_bc in file_bc_list:
     fig, ax = plt.subplots(figsize=(12, 6))
     forcingobj = m.forcing[1]
     forcing_xr = dfmt.forcinglike_to_Dataset(forcingobj, convertnan=True)
+    forcing_xr_all = dfmt.ForcingModel_to_plipointsDataset(m, convertnan=True)
+    forcing_xr2 = forcing_xr_all.sel(node=1)
     data_vars = list(forcing_xr.data_vars)
     if forcingobj.function=='t3d':
         forcing_ts = dfmt.Dataset_to_T3D(forcing_xr)

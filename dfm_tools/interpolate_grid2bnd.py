@@ -545,16 +545,15 @@ def maybe_convert_fews_to_dfmt(ds):
     ncbnd_construct = get_ncbnd_construct()
     dimn_point = ncbnd_construct['dimn_point']
     varn_pointname = ncbnd_construct['varn_pointname']
-    dimn_depth = ncbnd_construct['dimn_depth']
-    varn_depth = ncbnd_construct['varn_depth']
     
-    # potential FEWS converts
+    # convert station data_vars to coords to avoid dfmt issues
     for var_to_coord in [varn_pointname,'station_names']:
         if var_to_coord in ds.data_vars:
             ds = ds.set_coords(var_to_coord)
+    # assign timeseries_id cf_role to let FM read the station names
     ds[varn_pointname] = ds[varn_pointname].assign_attrs({'cf_role': 'timeseries_id'})
     
-    # rename data_vars to long_name (e.g. renames so to salinitybnd)
+    # rename data_vars to long_name (e.g. renames FEWS so to salinitybnd)
     for datavar in ds.data_vars:
         if datavar in ['ux','uy']: #TODO: keeping these is consistent with hardcoded behaviour in dfm_tools elsewhere, but not desireable
             continue
@@ -562,19 +561,12 @@ def maybe_convert_fews_to_dfmt(ds):
             longname = ds[datavar].attrs['long_name']
             ds = ds.rename_vars({datavar:longname})
     
-    # rename dims/vars
-    if 'node' in ds.dims:
-        ds = ds.rename_dims({'node':dimn_point})
-    if 'z' in ds.dims:
-        ds = ds.rename_dims({'z':dimn_depth})
-    if 'z' in ds.variables:
-        ds = ds.rename_vars({'z':varn_depth})
-
     # transpose dims #TODO: the order impacts the model results: https://issuetracker.deltares.nl/browse/UNST-7402
     # dfmt (arbitrary) dimension ordering is node/time/z
     # required to reorder to FEWS time/node/z order for comparable results
     # also time/z/node will result in unexpected results
-    ds = ds.transpose("time", dimn_point, ...)
+    if "time" in ds.dims: # check if time dimension is present (astronomic does not have time)
+        ds = ds.transpose("time", dimn_point, ...)
     
     # convert station names to string format (keep attrs and encoding)
     # also needed to properly export, since we cannot encode it at dtype S1 properly otherwise
