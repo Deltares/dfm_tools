@@ -543,7 +543,10 @@ def interp_hisnc_to_plipoints(data_xr_his, file_pli, kdtree_k=3, load=True):
 
 def maybe_convert_fews_to_dfmt(ds):
     ncbnd_construct = get_ncbnd_construct()
+    dimn_point = ncbnd_construct['dimn_point']
     varn_pointname = ncbnd_construct['varn_pointname']
+    dimn_depth = ncbnd_construct['dimn_depth']
+    varn_depth = ncbnd_construct['varn_depth']
     
     # potential FEWS converts
     for var_to_coord in [varn_pointname,'station_names']:
@@ -558,6 +561,18 @@ def maybe_convert_fews_to_dfmt(ds):
         if hasattr(ds[datavar],'long_name'):
             longname = ds[datavar].attrs['long_name']
             ds = ds.rename_vars({datavar:longname})
+    
+    # rename dims/vars
+    if 'node' in ds.dims:
+        ds = ds.rename_dims({'node':dimn_point})
+    if 'z' in ds.dims:
+        ds = ds.rename_dims({'z':dimn_depth})
+    if 'z' in ds.variables:
+        ds = ds.rename_vars({'z':varn_depth})
+
+    # transpose dims #TODO: the order impacts the model results: https://issuetracker.deltares.nl/browse/UNST-7402
+    # dfmt (arbitrary) dimension ordering is node/time/z, required to reorder to FEWS order for comparable results
+    ds = ds.transpose("time", dimn_point, ...)
     
     # convert station names to string format (keep attrs and encoding)
     if not ds[varn_pointname].dtype.str.startswith('<'):

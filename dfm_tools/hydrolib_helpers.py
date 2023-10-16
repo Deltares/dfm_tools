@@ -34,22 +34,22 @@ def get_ncbnd_construct():
                     "units": "degrees_north",
                     "axis": "Y"
                     }
-    attrs_depth = {'standard_name':'z',
-                    'long_name':'z',
-                    'units':'m',
-                    'positive':'up',
-                    'axis':'Z',
+    attrs_depth = {"standard_name":"z",
+                   "long_name":"z",
+                   "units":"m",
+                   "positive":"up",
+                   "axis":"Z",
                     }
     
-    ncbnd_construct = {'varn_depth':'z',
-                       'dimn_depth':'z',
-                       'varn_pointx':'lon',
-                       'varn_pointy':'lat',
-                       'varn_pointname':'station_id',
-                       'dimn_point':'node',
-                       'attrs_pointx':attrs_pointx,
-                       'attrs_pointy':attrs_pointy,
-                       'attrs_depth':attrs_depth,
+    ncbnd_construct = {"varn_depth":"depth",
+                       "dimn_depth":"depth",
+                       "varn_pointx":"lon",
+                       "varn_pointy":"lat",
+                       "varn_pointname":"station_id",
+                       "dimn_point":"location",
+                       "attrs_pointx":attrs_pointx,
+                       "attrs_pointy":attrs_pointy,
+                       "attrs_depth":attrs_depth,
                        }
     
     return ncbnd_construct
