@@ -199,7 +199,7 @@ def test_interp_regularnc_to_plipointsDataset():
         geom = shapely.points(x_xr, y_xr)
         gdf = gpd.GeoDataFrame(data={varn_pointname:[f'name_{ipoint+1:04d}']}, geometry=geom)
         interp_with_da_newdim = dfmt.interp_regularnc_to_plipointsDataset(ds, gdf, load=True)
-        interp_da_actual = interp_with_da_newdim.so.isel(node=0)
+        interp_da_actual = interp_with_da_newdim.so.isel({dimn_point:0})
         
         #define expected values since in some cases like point 0 this is not the same as interp1d returns
         interp_da_expected = xr.DataArray(so_np[:,ipoint,ipoint],dims=(dimn_depth))

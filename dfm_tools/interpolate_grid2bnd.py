@@ -571,13 +571,15 @@ def maybe_convert_fews_to_dfmt(ds):
         ds = ds.rename_vars({'z':varn_depth})
 
     # transpose dims #TODO: the order impacts the model results: https://issuetracker.deltares.nl/browse/UNST-7402
-    # dfmt (arbitrary) dimension ordering is node/time/z, required to reorder to FEWS order for comparable results
+    # dfmt (arbitrary) dimension ordering is node/time/z
+    # required to reorder to FEWS time/node/z order for comparable results
+    # also time/z/node will result in unexpected results
     ds = ds.transpose("time", dimn_point, ...)
     
     # convert station names to string format (keep attrs and encoding)
-    if not ds[varn_pointname].dtype.str.startswith('<'):
-        with xr.set_options(keep_attrs=True):
-            ds[varn_pointname] = ds[varn_pointname].load().str.decode('utf-8',errors='ignore').str.strip() #.load() is essential to convert not only first letter of string.
+    # if not ds[varn_pointname].dtype.str.startswith('<'):
+    #     with xr.set_options(keep_attrs=True):
+    #         ds[varn_pointname] = ds[varn_pointname].load().str.decode('utf-8',errors='ignore').str.strip() #.load() is essential to convert not only first letter of string.
 
     # add relevant encoding if not present
     ds[varn_pointname].encoding.update({'dtype': 'S1', 'char_dim_name': 'char_leng_id'})
