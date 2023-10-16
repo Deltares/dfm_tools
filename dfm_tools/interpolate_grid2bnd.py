@@ -577,9 +577,10 @@ def maybe_convert_fews_to_dfmt(ds):
     ds = ds.transpose("time", dimn_point, ...)
     
     # convert station names to string format (keep attrs and encoding)
-    # if not ds[varn_pointname].dtype.str.startswith('<'):
-    #     with xr.set_options(keep_attrs=True):
-    #         ds[varn_pointname] = ds[varn_pointname].load().str.decode('utf-8',errors='ignore').str.strip() #.load() is essential to convert not only first letter of string.
+    # also needed to properly export, since we cannot encode it at dtype S1 properly otherwise
+    if not ds[varn_pointname].dtype.str.startswith('<'):
+        with xr.set_options(keep_attrs=True):
+            ds[varn_pointname] = ds[varn_pointname].load().str.decode('utf-8',errors='ignore').str.strip() #.load() is essential to convert not only first letter of string.
 
     # add relevant encoding if not present
     ds[varn_pointname].encoding.update({'dtype': 'S1', 'char_dim_name': 'char_leng_id'})

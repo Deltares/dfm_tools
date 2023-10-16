@@ -295,6 +295,10 @@ def ForcingModel_to_plipointsDataset(forcingmodel:hcdfm.ForcingModel, npoints=No
         plipointsDataset_list.append(ds_onepoint)
     ds = xr.concat(plipointsDataset_list, dim=dimn_point)
     
+    # prevent circular import #TODO: solve underlaying issue
+    from dfm_tools.interpolate_grid2bnd import maybe_convert_fews_to_dfmt
+    ds = maybe_convert_fews_to_dfmt(ds)
+    
     return ds
 
 
@@ -372,7 +376,7 @@ def forcinglike_to_Dataset(forcingobj, convertnan=False):
         data_xr_var.attrs['units'] = var_unit[iQ]
         forcingobj_keys = forcingobj.__dict__.keys()
         for key in forcingobj_keys: #['comments','name','function','offset','factor','vertinterpolation','vertpositiontype','timeinterpolation']: 
-            if key in ['datablock','quantityunitpair','vertpositions']: #skipping these since they are in the DataArray already
+            if key in ['datablock','quantityunitpair','vertpositions','name']: #skipping these since they are in the DataArray already
                 continue
             data_xr_var.attrs[key] = str(forcingobj.__dict__[key])
         
