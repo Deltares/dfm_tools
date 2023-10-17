@@ -1,7 +1,6 @@
 ## UNRELEASED
 
 ### Feat
-- aligned ncbnd dataset with FM/FEWS conventions by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#567](https://github.com/Deltares/dfm_tools/pull/567)
 - conversion of `hcdfm.ForcingModel` to `xr.Dataset` with `dfmt.ForcingModel_to_plipointsDataset()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#567](https://github.com/Deltares/dfm_tools/pull/567)
 - support for reading asc files with `dfmt.read_asc()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#571](https://github.com/Deltares/dfm_tools/pull/571)
 - added `dfmt.meshkernel_delete_withshp()` to delete parts of a mesh with a shapefile, while only reading the shapefile within the bounding box of the mesh by [@rqwang](https://github.com/rqwang) in [#548](https://github.com/Deltares/dfm_tools/pull/548) and [#566](https://github.com/Deltares/dfm_tools/pull/566)
@@ -10,6 +9,7 @@
 - support for `preprocess` argument in `dfmt.open_partitioned_dataset()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#530](https://github.com/Deltares/dfm_tools/pull/530)
 
 ### Fix
+- aligned ncbnd dataset with FM/FEWS conventions by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#567](https://github.com/Deltares/dfm_tools/pull/567)
 - documented minimal dependency versions to avoid issues with installation in existing environments containing old dependency versions by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#581](https://github.com/Deltares/dfm_tools/pull/581)
 
 
