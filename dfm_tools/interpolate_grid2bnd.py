@@ -21,10 +21,7 @@ import geopandas
 from dfm_tools.hydrolib_helpers import (Dataset_to_TimeSeries, 
                                         Dataset_to_T3D, 
                                         Dataset_to_Astronomic, 
-                                        # pointlike_to_DataFrame, 
-                                        # PolyFile_to_geodataframe_linestrings,
                                         PolyFile_to_geodataframe_points, 
-                                        # gdf_linestrings_to_points, 
                                         get_ncbnd_construct,
                                         _da_from_gdf_points)
 from dfm_tools.errors import OutOfRangeError
