@@ -13,6 +13,18 @@ import datetime as dt
 import xarray as xr
 import shapely
 import geopandas as gpd
+from dfm_tools.interpolate_grid2bnd import _read_polyfile_as_gdf_points
+
+
+def data_dcsm_gdf():
+    # dummy gdf
+    points_x = [-9.25, -9.5, -9.75]
+    points_y = [43, 43, 43]
+    points_n = [f'DCSM-FM_OB_all_20181108_{i+1:04d}' for i in range(3)]
+    geom = gpd.points_from_xy(x=points_x, y=points_y)
+    gdf_points = gpd.GeoDataFrame(geometry=geom, crs='EPSG:4326')
+    gdf_points['station_id'] = points_n
+    return gdf_points
 
 
 def cmems_dataset_notime():
@@ -260,10 +272,11 @@ def test_interp_regularnc_to_plipointsDataset_checkvardimnames():
 @pytest.mark.systemtest
 @pytest.mark.requireslocaldata
 def test_interpolate_tide_to_plipoints():
-    
     nPoints = 3# None #amount of Points to process per PolyObject in the plifile (use int for testing, use None for all Points)
     file_pli = r'p:\archivedprojects\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli'
     nanvalue = -999
+    
+    gdf_points = _read_polyfile_as_gdf_points(file_pli, nPoints=nPoints)
     
     tidemodel_list = ['tpxo80_opendap', 'FES2014', 'FES2012', 'EOT20', 'GTSMv4.1']#, 'GTSMv4.1_opendap']
     for tidemodel in tidemodel_list:
@@ -288,7 +301,7 @@ def test_interpolate_tide_to_plipoints():
             phs_expected = np.array([81.21875763, 81.41669464, 81.66479492])
         
         for component_list in [['M2','S2']]: # [None]: # 
-            data_interp = dfmt.interpolate_tide_to_plipoints(tidemodel=tidemodel, file_pli=file_pli, component_list=component_list, nPoints=nPoints)
+            data_interp = dfmt.interpolate_tide_to_plipoints(tidemodel=tidemodel, gdf_points=gdf_points, component_list=component_list)
             
             compnames_now = data_interp['compno'].to_numpy().tolist()
             if component_list is None:
@@ -311,6 +324,36 @@ def test_interpolate_tide_to_plipoints():
     
         print(f'>> tide interpolation from {tidemodel} took: ',end='')
         print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
+
+    
+@pytest.mark.systemtest
+@pytest.mark.requireslocaldata
+def test_read_polyfile_as_gdf_points():
+    ncbnd_construct = dfmt.get_ncbnd_construct()
+    varn_pointname = ncbnd_construct['varn_pointname']
+    
+    nPoints = 3
+    file_pli = r'p:\archivedprojects\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli'
+    
+    gdf_points = _read_polyfile_as_gdf_points(file_pli, nPoints=nPoints)
+    
+    reference = data_dcsm_gdf()
+    
+    assert isinstance(gdf_points, gpd.GeoDataFrame)
+    assert (gdf_points.geometry == reference.geometry).all()
+    assert gdf_points[varn_pointname].tolist() == reference[varn_pointname].tolist()
+
+
+@pytest.mark.unittest
+def test_interpolate_tide_to_forcingmodel():
+    
+    tidemodel = 'FES2014'
+    component_list = ['M2','S2']
+    gdf_points = data_dcsm_gdf()
+
+    data_interp = dfmt.interpolate_tide_to_plipoints(tidemodel=tidemodel, gdf_points=gdf_points, 
+                                                     component_list=component_list, load=True)
+    ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
 
 
 @pytest.mark.unittest

@@ -111,8 +111,10 @@ def get_conversion_dict(ncvarname_updates={}):
     return conversion_dict
 
 
-def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=None):
-    data_interp = interpolate_tide_to_plipoints(tidemodel=tidemodel, file_pli=file_pli, component_list=component_list, nPoints=nPoints)
+def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=None, load=True):
+    gdf_points = _read_polyfile_as_gdf_points(file_pli, nPoints=nPoints)
+    data_interp = interpolate_tide_to_plipoints(tidemodel=tidemodel, gdf_points=gdf_points, 
+                                                component_list=component_list, load=load)
     ForcingModel_object = plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
     
     return ForcingModel_object
@@ -150,7 +152,7 @@ def components_translate_upper(component_list):
     return component_list
 
 
-def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoints=None):
+def interpolate_tide_to_plipoints(tidemodel, gdf_points, component_list=None, load=True):
     """
     empty docstring
     """
@@ -165,12 +167,6 @@ def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoi
     if tidemodel not in dir_pattern_dict.keys():
         raise KeyError(f"Invalid tidemodel '{tidemodel}', options are: {str(list(dir_pattern_dict.keys()))}")
         
-    #Check whether the polyfile contains multiple polylines, in that case show a warning
-    pli = hcdfm.PolyFile(file_pli)
-    if len(pli.objects) > 1:
-        warnings.warn(UserWarning(f"The polyfile {file_pli} contains multiple polylines. Only the first one will be used by DFLOW-FM for the boundary conditions."))
-        #TODO when issue UNST-7012 is properly solved, remove this warning or add it in more places
-    
     dir_pattern = dir_pattern_dict[tidemodel]
 
     component_list_tidemodel = tidemodel_componentlist(tidemodel, convention=False)
@@ -236,7 +232,8 @@ def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoi
     data_xrsel['compnames'] = xr.DataArray(component_list,dims=('compno'))
     data_xrsel = data_xrsel.set_index({'compno':'compnames'})
     
-    data_interp = interp_regularnc_to_plipoints(data_xr_reg=data_xrsel, file_pli=file_pli, nPoints=nPoints)
+    # data_interp = interp_regularnc_to_plipoints(data_xr_reg=data_xrsel, file_pli=file_pli, nPoints=nPoints)
+    data_interp = interp_regularnc_to_plipointsDataset(data_xr_reg=data_xrsel, gdf_points=gdf_points, load=load)
     data_interp['phase_new'] = np.rad2deg(np.arctan2(data_interp['wl_imag'],data_interp['wl_real']))
     return data_interp
 
@@ -349,16 +346,16 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
     return data_xr_vars
 
 
-def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True):
-
-    """
-    load: interpolation errors are only raised upon loading, so do this per default
-    """
-    
+def _read_polyfile_as_gdf_points(file_pli, nPoints=None):
     #load boundary file
     polyfile_object = hcdfm.PolyFile(file_pli)
     
-    #check if polyobj names in plifile are unique #TODO: check this everywhere
+    #Check whether the polyfile contains multiple polylines, in that case show a warning
+    if len(polyfile_object.objects) > 1:
+        warnings.warn(UserWarning(f"The polyfile {file_pli} contains multiple polylines. Only the first one will be used by DFLOW-FM for the boundary conditions."))
+        #TODO when issue UNST-7012 is properly solved, remove this warning or add it in more places
+    
+    #check if polyobj names in plifile are unique
     polynames_pd = pd.Series([polyobj.metadata.name for polyobj in polyfile_object.objects])
     if polynames_pd.duplicated().any():
         raise ValueError(f'Duplicate polyobject names in polyfile {file_pli}, this is not allowed:\n{polynames_pd}')
@@ -367,9 +364,19 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True
     
     # only use testset of n first points of polyfile
     gdf_points = gdf_points.iloc[:nPoints]
+    return gdf_points
+
+
+# def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True):
+
+#     """
+#     load: interpolation errors are only raised upon loading, so do this per default
+#     """
     
-    data_interp = interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points=gdf_points, load=load)
-    return data_interp
+#     gdf_points = _read_polyfile_as_gdf_points(file_pli, nPoints=None)
+    
+#     data_interp = interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points=gdf_points, load=load)
+#     return data_interp
 
 
 def interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points, load=True):
