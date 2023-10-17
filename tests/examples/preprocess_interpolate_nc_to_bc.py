@@ -129,7 +129,7 @@ for file_pli in list_plifiles:
             else:
                 data_xr_vars[varname0].isel(time=0).plot(ax=ax)
             plipoint_coords = data_interp.node.to_dataframe()
-            ax.plot(plipoint_coords['lon'],plipoint_coords['lon'],'r-')
+            ax.plot(plipoint_coords['lon'],plipoint_coords['lat'],'r-')
             ctx.add_basemap(ax=ax,crs="EPSG:4326",attribution=False)
             fig.tight_layout()
             fig.savefig(str(file_bc_out).replace('.bc','_polyline'))
