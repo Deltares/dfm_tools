@@ -280,16 +280,21 @@ def ForcingModel_to_plipointsDataset(forcingmodel:hcdfm.ForcingModel, npoints=No
     plipointsDataset_list = []
     for forcinglike in forcingmodel.forcing[:npoints]:
         ds_onepoint = forcinglike_to_Dataset(forcinglike, convertnan=convertnan)
-        ds_onepoint = ds_onepoint.expand_dims(dimn_point)
+        
+        #set longname attr
         for datavar in ds_onepoint.data_vars:
             longname = datavar
             if datavar in ['ux','uy']: #TODO: hardcoded behaviour is consitent with maybe_convert_fews_to_dfmt() and elsewhere in dfm_tools, but not desireable
                 longname = 'uxuyadvectionvelocitybnd'
             ds_onepoint[datavar] = ds_onepoint[datavar].assign_attrs({'long_name': longname})
-        datavar0 = list(ds_onepoint.data_vars)[0] #TODO: is ordering of two variables the same?
+        
+        # expand pointdim and add pointname as var
+        ds_onepoint = ds_onepoint.expand_dims(dimn_point)
+        datavar0 = list(ds_onepoint.data_vars)[0]
         pointname = ds_onepoint[datavar0].attrs['locationname']
         ds_onepoint[varn_pointname] = xr.DataArray([pointname],dims=dimn_point)
         ds_onepoint = ds_onepoint.set_coords(varn_pointname)
+        
         plipointsDataset_list.append(ds_onepoint)
     ds = xr.concat(plipointsDataset_list, dim=dimn_point)
     

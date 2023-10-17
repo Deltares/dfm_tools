@@ -364,14 +364,15 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True
         raise ValueError(f'Duplicate polyobject names in polyfile {file_pli}, this is not allowed:\n{polynames_pd}')
     
     gdf_points = PolyFile_to_geodataframe_points(polyfile_object)
+    
     # only use testset of n first points of polyfile
     gdf_points = gdf_points.iloc[:nPoints]
     
     data_interp = interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points=gdf_points, load=load)
     return data_interp
 
-    
-def interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points, load=True):
+
+def _da_from_gdf_points(gdf_points):
     
     ncbnd_construct = get_ncbnd_construct()
     dimn_point = ncbnd_construct['dimn_point']
@@ -386,6 +387,17 @@ def interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points, load=True):
     da_plipoints[varn_pointy] = xr.DataArray(gdf_points.geometry.y.tolist(), dims=dimn_point).assign_attrs(attrs_pointy)
     da_plipoints[varn_pointname] = xr.DataArray(gdf_points[varn_pointname].tolist(), dims=dimn_point)
     da_plipoints = da_plipoints.set_coords([varn_pointx,varn_pointy,varn_pointname])
+    
+    return da_plipoints
+
+
+def interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points, load=True):
+    
+    ncbnd_construct = get_ncbnd_construct()
+    varn_pointx = ncbnd_construct['varn_pointx']
+    varn_pointy = ncbnd_construct['varn_pointy']
+    
+    da_plipoints = _da_from_gdf_points(gdf_points)
     
     #interpolation to lat/lon combinations
     print('> interp mfdataset to all PolyFile points (lat/lon coordinates)')
@@ -487,9 +499,6 @@ def interp_hisnc_to_plipoints(data_xr_his, file_pli, kdtree_k=3, load=True):
     
     ncbnd_construct = get_ncbnd_construct()
     dimn_point = ncbnd_construct['dimn_point']
-    varn_pointx = ncbnd_construct['varn_pointx']
-    varn_pointy = ncbnd_construct['varn_pointy']
-    varn_pointname = ncbnd_construct['varn_pointname']
     
     datavars_list = list(data_xr_his.data_vars)
     if len(datavars_list)>5:
@@ -498,27 +507,20 @@ def interp_hisnc_to_plipoints(data_xr_his, file_pli, kdtree_k=3, load=True):
     hisstations_pd = data_xr_his.stations.to_dataframe() #TODO: add check if stations are strings? (whether preprocess_hisnc was used)
     tree_nest2 = KDTree(hisstations_pd[['station_x_coordinate','station_y_coordinate']])
     
-    #read polyfile and query k nearest hisstations (names)
+    #read polyfile
     polyfile_object = hcdfm.PolyFile(file_pli)
-    data_pol_list = []
-    for polyobj in polyfile_object.objects:
-        data_pol_pd_one = pointlike_to_DataFrame(polyobj)
-        data_pol_pd_one['name'] = pd.Series(data_pol_pd_one.index).apply(lambda x: f'{polyobj.metadata.name}_{x+1:04d}')
-        data_pol_list.append(data_pol_pd_one)
-    data_pol_pd = pd.concat(data_pol_list)
-
-    plicoords_distance2, plicoords_nestpointidx = tree_nest2.query(data_pol_pd[['x','y']], k=kdtree_k)
+    gdf_points = PolyFile_to_geodataframe_points(polyfile_object)
+    gdf_coords = gdf_points.get_coordinates()
+    
+    # query k nearest hisstations (names)
+    plicoords_distance2, plicoords_nestpointidx = tree_nest2.query(gdf_coords, k=kdtree_k)
     da_plicoords_nestpointidx = xr.DataArray(plicoords_nestpointidx, dims=(dimn_point,'nearestkpoints'))
     da_plicoords_nestpointnames = data_xr_his.stations.isel(stations=da_plicoords_nestpointidx)
     
-    #interpolate hisfile variables to plipoints
-    data_interp = xr.Dataset()
-    data_interp[varn_pointx] = xr.DataArray(data_pol_pd['x'],dims=(dimn_point))
-    data_interp[varn_pointy] = xr.DataArray(data_pol_pd['y'],dims=(dimn_point))
-    data_interp[varn_pointname] = xr.DataArray(data_pol_pd['name'].astype('S64'), dims=dimn_point).str.decode('utf-8',errors='ignore').str.strip() #TODO: must be possible to do this less complex
-    data_interp = data_interp.set_coords([varn_pointx,varn_pointy,varn_pointname])
-    # data_interp = data_interp.set_index({dimn_point:varn_pointname})
+    # convert gdf to xarray dataset
+    data_interp = _da_from_gdf_points(gdf_points)
     
+    #interpolate hisfile variables to plipoints
     for varone in datavars_list:
         da_dist = xr.DataArray(plicoords_distance2, dims=(dimn_point,'nearestkpoints'))
         da_invdistweight = (1/da_dist)/(1/da_dist).sum(dim='nearestkpoints') #TODO: set weigths for invalid points to 0 (and increase others weights so sum remains 1)
