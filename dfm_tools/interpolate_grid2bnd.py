@@ -229,7 +229,6 @@ def interpolate_tide_to_plipoints(tidemodel, gdf_points, component_list=None, lo
     data_xrsel['compnames'] = xr.DataArray(component_list,dims=('compno'))
     data_xrsel = data_xrsel.set_index({'compno':'compnames'})
     
-    # data_interp = interp_regularnc_to_plipoints(data_xr_reg=data_xrsel, file_pli=file_pli, nPoints=nPoints)
     data_interp = interp_regularnc_to_plipointsDataset(data_xr_reg=data_xrsel, gdf_points=gdf_points, load=load)
     data_interp['phase_new'] = np.rad2deg(np.arctan2(data_interp['wl_imag'],data_interp['wl_real']))
     return data_interp
