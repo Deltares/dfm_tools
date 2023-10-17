@@ -299,8 +299,8 @@ def ForcingModel_to_plipointsDataset(forcingmodel:hcdfm.ForcingModel, npoints=No
     ds = xr.concat(plipointsDataset_list, dim=dimn_point)
     
     # prevent circular import #TODO: solve underlaying issue
-    from dfm_tools.interpolate_grid2bnd import maybe_convert_fews_to_dfmt
-    ds = maybe_convert_fews_to_dfmt(ds)
+    from dfm_tools.interpolate_grid2bnd import _maybe_convert_fews_to_dfmt
+    ds = _maybe_convert_fews_to_dfmt(ds)
     
     return ds
 

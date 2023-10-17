@@ -358,7 +358,7 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True
     #load boundary file
     polyfile_object = hcdfm.PolyFile(file_pli)
     
-    #check if polyobj names in plifile are unique
+    #check if polyobj names in plifile are unique #TODO: check this everywhere
     polynames_pd = pd.Series([polyobj.metadata.name for polyobj in polyfile_object.objects])
     if polynames_pd.duplicated().any():
         raise ValueError(f'Duplicate polyobject names in polyfile {file_pli}, this is not allowed:\n{polynames_pd}')
@@ -519,7 +519,7 @@ def interp_hisnc_to_plipoints(data_xr_his, file_pli, kdtree_k=3, load=True):
     return data_interp
     
 
-def maybe_convert_fews_to_dfmt(ds):
+def _maybe_convert_fews_to_dfmt(ds):
     ncbnd_construct = get_ncbnd_construct()
     dimn_point = ncbnd_construct['dimn_point']
     varn_pointname = ncbnd_construct['varn_pointname']
@@ -571,7 +571,7 @@ def plipointsDataset_to_ForcingModel(plipointsDataset):
     dimn_depth = ncbnd_construct['dimn_depth']
     varn_pointname = ncbnd_construct['varn_pointname']
     
-    plipointsDataset = maybe_convert_fews_to_dfmt(plipointsDataset)
+    plipointsDataset = _maybe_convert_fews_to_dfmt(plipointsDataset)
     
     quantity_list = list(plipointsDataset.data_vars)
     npoints = len(plipointsDataset[dimn_point])
