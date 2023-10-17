@@ -168,8 +168,6 @@ def test_interp_regularnc_to_plipointsDataset():
     dimn_point = ncbnd_construct['dimn_point']
     dimn_depth = ncbnd_construct['dimn_depth']
     varn_depth = ncbnd_construct['varn_depth']
-    varn_pointx = ncbnd_construct['varn_pointx']
-    varn_pointy = ncbnd_construct['varn_pointy']
     varn_pointname = ncbnd_construct['varn_pointname']
     
     ds = cmems_dataset_notime()
@@ -203,15 +201,7 @@ def test_interp_regularnc_to_plipointsDataset():
         
         assert (interp_with_floats.isnull()==interp_with_da_existing.isnull()).all()
         assert (interp_da_expected.isnull()==interp_da_actual.isnull()).all()
-
-        # check if only expected dims/vars are present # TODO: this can be a separate less complex testcase (renaming of depth is also not properly checked)
-        varn_inda = set(list(interp_with_da_newdim.variables))
-        varn_expected = set(['so', varn_depth, varn_pointx, varn_pointy, varn_pointname])
-        dimn_inda = set(list(interp_with_da_newdim.dims))
-        dimn_expected = set([dimn_point, dimn_depth])
-        assert varn_inda == varn_expected
-        assert dimn_inda == dimn_expected
-
+    
     """
     prints with scipy 1.11.3:
     0
@@ -230,6 +220,41 @@ def test_interp_regularnc_to_plipointsDataset():
     [35.82873 35.81805      nan      nan      nan]
     [35.82873 35.81805      nan      nan      nan]
     """
+
+
+@pytest.mark.unittest
+def test_interp_regularnc_to_plipointsDataset_checkvardimnames():
+    """
+    """
+    
+    ncbnd_construct = dfmt.get_ncbnd_construct()
+    dimn_point = ncbnd_construct['dimn_point']
+    dimn_depth = ncbnd_construct['dimn_depth']
+    varn_depth = ncbnd_construct['varn_depth']
+    varn_pointx = ncbnd_construct['varn_pointx']
+    varn_pointy = ncbnd_construct['varn_pointy']
+    varn_pointname = ncbnd_construct['varn_pointname']
+    
+    ds = cmems_dataset_notime()
+    ds = ds.rename_dims({'depth':dimn_depth})
+    ds = ds.rename_vars({'depth':varn_depth})
+    lons = ds['longitude'].to_numpy()
+    lats = ds['latitude'].to_numpy()
+    
+    x_xr = xr.DataArray([lons[0]],dims=(dimn_point))
+    y_xr = xr.DataArray([lats[0]],dims=(dimn_point))
+    
+    geom = shapely.points(x_xr, y_xr)
+    gdf = gpd.GeoDataFrame(data={varn_pointname:['name_0001']}, geometry=geom)
+    interp_with_da_newdim = dfmt.interp_regularnc_to_plipointsDataset(ds, gdf, load=True)
+    
+    # check if only expected dims/vars are present
+    varn_inda = set(list(interp_with_da_newdim.variables))
+    varn_expected = set(['so', varn_depth, varn_pointx, varn_pointy, varn_pointname])
+    dimn_inda = set(list(interp_with_da_newdim.dims))
+    dimn_expected = set([dimn_point, dimn_depth])
+    assert varn_inda == varn_expected
+    assert dimn_inda == dimn_expected
 
 
 @pytest.mark.systemtest
