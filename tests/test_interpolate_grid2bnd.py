@@ -15,6 +15,45 @@ import shapely
 import geopandas as gpd
 
 
+def cmems_dataset_notime():
+    # use hardcoded depth varname/dimname to simulate CMEMS dataset
+    ds = xr.Dataset()
+    so_np = np.array([[[35.819576, 35.82568 , 35.82873 ],
+                       [35.819576, 35.824154, 35.831783],
+                       [35.822628, 35.824154, 35.82873 ]],
+                      
+                      [[35.802788, 35.80584 , 35.815   ],
+                       [35.815   , 35.810417, 35.821102],
+                       [35.824154, 35.813473, 35.81805 ]],
+                      
+                      [[35.786003, 35.789055, np.nan],
+                       [35.807365, 35.796684, np.nan],
+                       [35.824154, 35.80584 , np.nan]],
+                      
+                      [[35.776848, np.nan,    np.nan],
+                       [35.792107, np.nan,    np.nan],
+                       [35.822628, np.nan,    np.nan]],
+                                              
+                      [[35.781425, np.nan,    np.nan],
+                       [35.792107, np.nan,    np.nan],
+                       [35.789055, np.nan,    np.nan]]])
+    ds['so'] = xr.DataArray(so_np,dims=('depth','latitude','longitude'))
+    lons = [-9.6, -9.5, -9.4]
+    lats = [42.9, 43.0, 43.1]
+    depths = [-0.494025, -1.541375, -2.645669, -3.819495, -5.078224]
+    ds['longitude'] = xr.DataArray(lons, dims=('longitude'))
+    ds['latitude'] = xr.DataArray(lats, dims=('latitude'))
+    ds['depth'] = xr.DataArray(depths, dims=('depth'))
+    return ds
+
+
+def cmems_dataset_4times():
+    ds = cmems_dataset_notime()
+    ds_moretime = xr.concat(4*[ds.expand_dims('time')],dim='time')
+    ds_moretime['time'] = xr.DataArray([-12,12,36,60],dims='time').assign_attrs({'standard_name':'time','units':'hours since 2020-01-01'})
+    return ds_moretime
+
+
 @pytest.mark.unittest
 def test_conversion_dict():
     """
@@ -96,37 +135,7 @@ def test_open_dataset_extra_correctdepths():
     to validate open_dataset_extra behaviour for depths, in the past the depth values got lost and replaced by depth idx
     """
     
-    # use hardcoded depth varname/dimname to simulate CMEMS dataset
-    ds = xr.Dataset()
-    so_np = np.array([[[35.819576, 35.82568 , 35.82873 ],
-                       [35.819576, 35.824154, 35.831783],
-                       [35.822628, 35.824154, 35.82873 ]],
-                      
-                      [[35.802788, 35.80584 , 35.815   ],
-                       [35.815   , 35.810417, 35.821102],
-                       [35.824154, 35.813473, 35.81805 ]],
-                      
-                      [[35.786003, 35.789055, np.nan],
-                       [35.807365, 35.796684, np.nan],
-                       [35.824154, 35.80584 , np.nan]],
-                      
-                      [[35.776848, np.nan,    np.nan],
-                       [35.792107, np.nan,    np.nan],
-                       [35.822628, np.nan,    np.nan]],
-                                              
-                      [[35.781425, np.nan,    np.nan],
-                       [35.792107, np.nan,    np.nan],
-                       [35.789055, np.nan,    np.nan]]])
-    ds['so'] = xr.DataArray(so_np,dims=('depth','latitude','longitude'))
-    lons = [-9.6, -9.5, -9.4]
-    lats = [42.9, 43.0, 43.1]
-    depths = [-0.494025, -1.541375, -2.645669, -3.819495, -5.078224]
-    ds['longitude'] = xr.DataArray(lons, dims=('longitude'))
-    ds['latitude'] = xr.DataArray(lats, dims=('latitude'))
-    ds['depth'] = xr.DataArray(depths, dims=('depth'))
-    
-    ds_moretime = xr.concat(4*[ds.expand_dims('time')],dim='time')
-    ds_moretime['time'] = xr.DataArray([-12,12,36,60],dims='time').assign_attrs({'standard_name':'time','units':'hours since 2020-01-01'})
+    ds_moretime = cmems_dataset_4times()
     file_nc = 'temp_cmems_dummydata.nc'
     ds_moretime.to_netcdf(file_nc)
     
@@ -135,7 +144,7 @@ def test_open_dataset_extra_correctdepths():
     ncbnd_construct = dfmt.get_ncbnd_construct()
     varn_depth = ncbnd_construct['varn_depth']
     depth_actual = ds_moretime_import[varn_depth].to_numpy()
-    depth_expected = np.array(depths)
+    depth_expected = ds_moretime['depth'].to_numpy()
     
     assert (np.abs(depth_actual - depth_expected) < 1e-9).all()
     assert len(ds_moretime_import.time) == 2
@@ -158,35 +167,43 @@ def test_interp_regularnc_to_plipointsDataset():
     ncbnd_construct = dfmt.get_ncbnd_construct()
     dimn_point = ncbnd_construct['dimn_point']
     dimn_depth = ncbnd_construct['dimn_depth']
+    varn_depth = ncbnd_construct['varn_depth']
     varn_pointx = ncbnd_construct['varn_pointx']
     varn_pointy = ncbnd_construct['varn_pointy']
     varn_pointname = ncbnd_construct['varn_pointname']
     
-    ds = xr.Dataset()
-    so_np = np.array([[[35.819576, 35.82568 , 35.82873 ],
-                       [35.819576, 35.824154, 35.831783],
-                       [35.822628, 35.824154, 35.82873 ]],
+    
+    # ds = xr.Dataset()
+    # so_np = np.array([[[35.819576, 35.82568 , 35.82873 ],
+    #                    [35.819576, 35.824154, 35.831783],
+    #                    [35.822628, 35.824154, 35.82873 ]],
                       
-                      [[35.802788, 35.80584 , 35.815   ],
-                       [35.815   , 35.810417, 35.821102],
-                       [35.824154, 35.813473, 35.81805 ]],
+    #                   [[35.802788, 35.80584 , 35.815   ],
+    #                    [35.815   , 35.810417, 35.821102],
+    #                    [35.824154, 35.813473, 35.81805 ]],
                       
-                      [[35.786003, 35.789055, np.nan],
-                       [35.807365, 35.796684, np.nan],
-                       [35.824154, 35.80584 , np.nan]],
+    #                   [[35.786003, 35.789055, np.nan],
+    #                    [35.807365, 35.796684, np.nan],
+    #                    [35.824154, 35.80584 , np.nan]],
                       
-                      [[35.776848, np.nan,    np.nan],
-                       [35.792107, np.nan,    np.nan],
-                       [35.822628, np.nan,    np.nan]],
+    #                   [[35.776848, np.nan,    np.nan],
+    #                    [35.792107, np.nan,    np.nan],
+    #                    [35.822628, np.nan,    np.nan]],
                                               
-                      [[35.781425, np.nan,    np.nan],
-                       [35.792107, np.nan,    np.nan],
-                       [35.789055, np.nan,    np.nan]]])
-    ds['so'] = xr.DataArray(so_np,dims=(dimn_depth,'latitude','longitude'))
-    lons = [-9.6, -9.5, -9.4]
-    lats = [42.9, 43.0, 43.1]
-    ds['longitude'] = xr.DataArray(lons, dims=('longitude'))
-    ds['latitude'] = xr.DataArray(lats, dims=('latitude'))
+    #                   [[35.781425, np.nan,    np.nan],
+    #                    [35.792107, np.nan,    np.nan],
+    #                    [35.789055, np.nan,    np.nan]]])
+    # ds['so'] = xr.DataArray(so_np,dims=(dimn_depth,'latitude','longitude'))
+    # lons = [-9.6, -9.5, -9.4]
+    # lats = [42.9, 43.0, 43.1]
+    # ds['longitude'] = xr.DataArray(lons, dims=('longitude'))
+    # ds['latitude'] = xr.DataArray(lats, dims=('latitude'))
+    ds = cmems_dataset_notime()
+    ds = ds.rename_dims({'depth':dimn_depth})
+    ds = ds.rename_vars({'depth':varn_depth})
+    so_np = ds['so'].to_numpy()
+    lons = ds['longitude'].to_numpy()
+    lats = ds['latitude'].to_numpy()
     
     for ipoint in range(3):
         x_xr = xr.DataArray([lons[ipoint]],dims=(dimn_point))
@@ -215,7 +232,7 @@ def test_interp_regularnc_to_plipointsDataset():
 
         # check if only expected dims/vars are present # TODO: this can be a separate less complex testcase (renaming of depth is also not properly checked)
         varn_inda = set(list(interp_with_da_newdim.variables))
-        varn_expected = set(['so', dimn_point, varn_pointx, varn_pointy, varn_pointname])
+        varn_expected = set(['so', varn_depth, varn_pointx, varn_pointy, varn_pointname])
         dimn_inda = set(list(interp_with_da_newdim.dims))
         dimn_expected = set([dimn_point, dimn_depth])
         assert varn_inda == varn_expected

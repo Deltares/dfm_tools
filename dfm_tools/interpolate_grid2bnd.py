@@ -382,9 +382,9 @@ def interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points, load=True):
     attrs_pointy = ncbnd_construct['attrs_pointy']
     
     da_plipoints = xr.Dataset()
-    da_plipoints[varn_pointx] = xr.DataArray(gdf_points.geometry.x, dims=dimn_point).assign_attrs(attrs_pointx)
-    da_plipoints[varn_pointy] = xr.DataArray(gdf_points.geometry.y, dims=dimn_point).assign_attrs(attrs_pointy)
-    da_plipoints[varn_pointname] = xr.DataArray(gdf_points[varn_pointname].astype('S64'), dims=dimn_point).str.decode('utf-8',errors='ignore').str.strip() #TODO: must be possible to do this less complex
+    da_plipoints[varn_pointx] = xr.DataArray(gdf_points.geometry.x.tolist(), dims=dimn_point).assign_attrs(attrs_pointx)
+    da_plipoints[varn_pointy] = xr.DataArray(gdf_points.geometry.y.tolist(), dims=dimn_point).assign_attrs(attrs_pointy)
+    da_plipoints[varn_pointname] = xr.DataArray(gdf_points[varn_pointname].astype('S64').tolist(), dims=dimn_point).str.decode('utf-8',errors='ignore').str.strip() #TODO: must be possible to do this less complex
     da_plipoints = da_plipoints.set_coords([varn_pointx,varn_pointy,varn_pointname])
     # da_plipoints = da_plipoints.set_index({dimn_point:varn_pointname})
 
