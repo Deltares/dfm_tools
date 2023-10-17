@@ -127,6 +127,8 @@ def test_plipointsDataset_fews_accepted():
 def test_interpolate_nc_to_bc():
     file_pli = r'p:\archivedprojects\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli'
     
+    gdf_points = _read_polyfile_as_gdf_points(file_pli, nPoints=3)
+    
     tstart = '2012-12-16 12:00'
     tstop = '2013-01-01 12:00'
     
@@ -135,8 +137,8 @@ def test_interpolate_nc_to_bc():
     #open regulargridDataset and do some basic stuff (time selection, renaming depth/lat/lon/varname, converting units, etc)
     data_xr_vars = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity='salinitybnd', tstart=tstart, tstop=tstop)
     #interpolate regulargridDataset to plipointsDataset
-    data_interp = dfmt.interp_regularnc_to_plipoints(data_xr_reg=data_xr_vars, file_pli=file_pli,
-                                                     nPoints=3) #argument for testing
+    data_interp = dfmt.interp_regularnc_to_plipoints(data_xr_reg=data_xr_vars, gdf_points=gdf_points)
+    
     #convert plipointsDataset to hydrolib ForcingModel
     ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
 

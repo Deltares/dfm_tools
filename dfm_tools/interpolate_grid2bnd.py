@@ -540,7 +540,7 @@ def _maybe_convert_fews_to_dfmt(ds):
     
     # rename data_vars to long_name (e.g. renames FEWS so to salinitybnd)
     for datavar in ds.data_vars:
-        if datavar in ['ux','uy']: #TODO: keeping these is consistent with hardcoded behaviour in dfm_tools elsewhere, but not desireable
+        if datavar not in ['so','thetao']:
             continue
         if hasattr(ds[datavar],'long_name'):
             longname = ds[datavar].attrs['long_name']
