@@ -384,13 +384,11 @@ def interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points, load=True):
     da_plipoints = xr.Dataset()
     da_plipoints[varn_pointx] = xr.DataArray(gdf_points.geometry.x.tolist(), dims=dimn_point).assign_attrs(attrs_pointx)
     da_plipoints[varn_pointy] = xr.DataArray(gdf_points.geometry.y.tolist(), dims=dimn_point).assign_attrs(attrs_pointy)
-    da_plipoints[varn_pointname] = xr.DataArray(gdf_points[varn_pointname].astype('S64').tolist(), dims=dimn_point).str.decode('utf-8',errors='ignore').str.strip() #TODO: must be possible to do this less complex
+    da_plipoints[varn_pointname] = xr.DataArray(gdf_points[varn_pointname].tolist(), dims=dimn_point)
     da_plipoints = da_plipoints.set_coords([varn_pointx,varn_pointy,varn_pointname])
-    # da_plipoints = da_plipoints.set_index({dimn_point:varn_pointname})
-
+    
     #interpolation to lat/lon combinations
     print('> interp mfdataset to all PolyFile points (lat/lon coordinates)')
-    #dtstart = dt.datetime.now()
     
     # linear, nearest, combine_first
     data_interp_lin = data_xr_reg.interp(longitude=da_plipoints[varn_pointx], latitude=da_plipoints[varn_pointy],
@@ -403,9 +401,6 @@ def interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points, load=True):
     
     # drop original latitude/longitude vars (lat/lon in da_plipoints)
     data_interp = data_interp.drop_vars(['latitude','longitude'])
-    
-    #time_passed = (dt.datetime.now()-dtstart).total_seconds()
-    # print(f'>>time passed: {time_passed:.2f} sec')
     
     if not load:
         return data_interp

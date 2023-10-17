@@ -172,32 +172,6 @@ def test_interp_regularnc_to_plipointsDataset():
     varn_pointy = ncbnd_construct['varn_pointy']
     varn_pointname = ncbnd_construct['varn_pointname']
     
-    
-    # ds = xr.Dataset()
-    # so_np = np.array([[[35.819576, 35.82568 , 35.82873 ],
-    #                    [35.819576, 35.824154, 35.831783],
-    #                    [35.822628, 35.824154, 35.82873 ]],
-                      
-    #                   [[35.802788, 35.80584 , 35.815   ],
-    #                    [35.815   , 35.810417, 35.821102],
-    #                    [35.824154, 35.813473, 35.81805 ]],
-                      
-    #                   [[35.786003, 35.789055, np.nan],
-    #                    [35.807365, 35.796684, np.nan],
-    #                    [35.824154, 35.80584 , np.nan]],
-                      
-    #                   [[35.776848, np.nan,    np.nan],
-    #                    [35.792107, np.nan,    np.nan],
-    #                    [35.822628, np.nan,    np.nan]],
-                                              
-    #                   [[35.781425, np.nan,    np.nan],
-    #                    [35.792107, np.nan,    np.nan],
-    #                    [35.789055, np.nan,    np.nan]]])
-    # ds['so'] = xr.DataArray(so_np,dims=(dimn_depth,'latitude','longitude'))
-    # lons = [-9.6, -9.5, -9.4]
-    # lats = [42.9, 43.0, 43.1]
-    # ds['longitude'] = xr.DataArray(lons, dims=('longitude'))
-    # ds['latitude'] = xr.DataArray(lats, dims=('latitude'))
     ds = cmems_dataset_notime()
     ds = ds.rename_dims({'depth':dimn_depth})
     ds = ds.rename_vars({'depth':varn_depth})
