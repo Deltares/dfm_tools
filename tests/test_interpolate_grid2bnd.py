@@ -137,7 +137,7 @@ def test_interpolate_nc_to_bc():
     #open regulargridDataset and do some basic stuff (time selection, renaming depth/lat/lon/varname, converting units, etc)
     data_xr_vars = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity='salinitybnd', tstart=tstart, tstop=tstop)
     #interpolate regulargridDataset to plipointsDataset
-    data_interp = dfmt.interp_regularnc_to_plipoints(data_xr_reg=data_xr_vars, gdf_points=gdf_points)
+    data_interp = dfmt.interp_regularnc_to_plipointsDataset(data_xr_reg=data_xr_vars, gdf_points=gdf_points)
     
     #convert plipointsDataset to hydrolib ForcingModel
     ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)

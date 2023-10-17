@@ -367,16 +367,18 @@ def _read_polyfile_as_gdf_points(file_pli, nPoints=None):
     return gdf_points
 
 
-# def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True):
+def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True):
 
-#     """
-#     load: interpolation errors are only raised upon loading, so do this per default
-#     """
+    """
+    load: interpolation errors are only raised upon loading, so do this per default
+    """
+    # TODO: consider phasing out, this function is probably only used in 
+    # the example script preprocess_interpolate_nc_to_bc.py and modelbuilder.py
     
-#     gdf_points = _read_polyfile_as_gdf_points(file_pli, nPoints=None)
+    gdf_points = _read_polyfile_as_gdf_points(file_pli, nPoints=nPoints)
     
-#     data_interp = interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points=gdf_points, load=load)
-#     return data_interp
+    data_interp = interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points=gdf_points, load=load)
+    return data_interp
 
 
 def interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points, load=True):
@@ -540,11 +542,12 @@ def _maybe_convert_fews_to_dfmt(ds):
     
     # rename data_vars to long_name (e.g. renames FEWS so to salinitybnd)
     for datavar in ds.data_vars:
-        if datavar not in ['so','thetao']:
+        if datavar in ['ux','uy']: #TODO: keeping these is consistent with hardcoded behaviour in dfm_tools elsewhere, but not desireable
             continue
         if hasattr(ds[datavar],'long_name'):
             longname = ds[datavar].attrs['long_name']
-            ds = ds.rename_vars({datavar:longname})
+            if longname.endswith('bnd'):
+                ds = ds.rename_vars({datavar:longname})
     
     # transpose dims #TODO: the order impacts the model results: https://issuetracker.deltares.nl/browse/UNST-7402
     # dfmt (arbitrary) dimension ordering is node/time/z
