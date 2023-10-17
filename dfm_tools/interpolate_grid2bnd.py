@@ -6,7 +6,6 @@ Created on Thu Aug 18 17:39:03 2022
 
 """
 
-import os
 import glob
 import datetime as dt
 import numpy as np
@@ -22,11 +21,12 @@ import geopandas
 from dfm_tools.hydrolib_helpers import (Dataset_to_TimeSeries, 
                                         Dataset_to_T3D, 
                                         Dataset_to_Astronomic, 
-                                        pointlike_to_DataFrame, 
-                                        PolyFile_to_geodataframe_linestrings,
+                                        # pointlike_to_DataFrame, 
+                                        # PolyFile_to_geodataframe_linestrings,
                                         PolyFile_to_geodataframe_points, 
-                                        gdf_linestrings_to_points, 
-                                        get_ncbnd_construct)
+                                        # gdf_linestrings_to_points, 
+                                        get_ncbnd_construct,
+                                        _da_from_gdf_points)
 from dfm_tools.errors import OutOfRangeError
 
 
@@ -370,25 +370,6 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True
     
     data_interp = interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points=gdf_points, load=load)
     return data_interp
-
-
-def _da_from_gdf_points(gdf_points):
-    
-    ncbnd_construct = get_ncbnd_construct()
-    dimn_point = ncbnd_construct['dimn_point']
-    varn_pointx = ncbnd_construct['varn_pointx']
-    varn_pointy = ncbnd_construct['varn_pointy']
-    varn_pointname = ncbnd_construct['varn_pointname']
-    attrs_pointx = ncbnd_construct['attrs_pointx']
-    attrs_pointy = ncbnd_construct['attrs_pointy']
-    
-    da_plipoints = xr.Dataset()
-    da_plipoints[varn_pointx] = xr.DataArray(gdf_points.geometry.x.tolist(), dims=dimn_point).assign_attrs(attrs_pointx)
-    da_plipoints[varn_pointy] = xr.DataArray(gdf_points.geometry.y.tolist(), dims=dimn_point).assign_attrs(attrs_pointy)
-    da_plipoints[varn_pointname] = xr.DataArray(gdf_points[varn_pointname].tolist(), dims=dimn_point)
-    da_plipoints = da_plipoints.set_coords([varn_pointx,varn_pointy,varn_pointname])
-    
-    return da_plipoints
 
 
 def interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points, load=True):

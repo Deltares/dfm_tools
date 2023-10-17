@@ -527,6 +527,25 @@ def PolyFile_to_geodataframe_points(polyfile_object:hcdfm.PolyFile, crs:str=None
     return gdf
 
 
+def _da_from_gdf_points(gdf_points):
+    
+    ncbnd_construct = get_ncbnd_construct()
+    dimn_point = ncbnd_construct['dimn_point']
+    varn_pointx = ncbnd_construct['varn_pointx']
+    varn_pointy = ncbnd_construct['varn_pointy']
+    varn_pointname = ncbnd_construct['varn_pointname']
+    attrs_pointx = ncbnd_construct['attrs_pointx']
+    attrs_pointy = ncbnd_construct['attrs_pointy']
+    
+    da_plipoints = xr.Dataset()
+    da_plipoints[varn_pointx] = xr.DataArray(gdf_points.geometry.x.tolist(), dims=dimn_point).assign_attrs(attrs_pointx)
+    da_plipoints[varn_pointy] = xr.DataArray(gdf_points.geometry.y.tolist(), dims=dimn_point).assign_attrs(attrs_pointy)
+    da_plipoints[varn_pointname] = xr.DataArray(gdf_points[varn_pointname].tolist(), dims=dimn_point)
+    da_plipoints = da_plipoints.set_coords([varn_pointx,varn_pointy,varn_pointname])
+    
+    return da_plipoints
+
+
 def PolyFile_to_geodataframe_linestrings(polyfile_object, crs=None):
     """
     empty docstring
