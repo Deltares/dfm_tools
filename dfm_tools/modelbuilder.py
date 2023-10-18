@@ -169,7 +169,7 @@ def preprocess_merge_meteofiles_era5(ext_old, varkey_list, dir_data, dir_output,
     return ext_old
 
 
-def create_model_exec_files(file_dimr, file_mdu, model_name, nproc=1, path_style=None, dimrset_folder=None):
+def create_model_exec_files(file_dimr, file_mdu, model_name, nproc=1, dimrset_folder=None, path_style=None):
     """
     creates a dimr_config.xml and if desired a batfile to run the model
     """
@@ -199,7 +199,8 @@ def create_model_exec_files(file_dimr, file_mdu, model_name, nproc=1, path_style
             f.write(line)
     
     if path_style is None:
-        return
+        from hydrolib.core.utils import get_path_style_for_current_operating_system
+        path_style = get_path_style_for_current_operating_system().value
     
     #TODO: currently only bat files are supported (for windows), but linux extension can easily be made
     if path_style == 'windows':
