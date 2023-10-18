@@ -10,6 +10,7 @@ import pytest
 import dfm_tools as dfmt
 import numpy as np
 import datetime as dt
+import pandas as pd
 import xarray as xr
 import shapely
 import geopandas as gpd
@@ -61,10 +62,11 @@ def cmems_dataset_notime():
 
 
 def cmems_dataset_4times():
-    ds = cmems_dataset_notime()
-    ds_moretime = xr.concat(4*[ds.expand_dims('time')],dim='time')
-    ds_moretime['time'] = xr.DataArray([-12,12,36,60],dims='time').assign_attrs({'standard_name':'time','units':'hours since 2020-01-01'})
-    return ds_moretime
+    ds_notime = cmems_dataset_notime()
+    ds = xr.concat(4*[ds_notime.expand_dims('time')],dim='time')
+    ds['time'] = xr.DataArray([-12,12,36,60],dims='time').assign_attrs({'standard_name':'time','units':'hours since 2020-01-01'})
+    ds = xr.decode_cf(ds)
+    return ds
 
 
 @pytest.mark.unittest
@@ -181,6 +183,34 @@ def test_open_dataset_extra_correctdepths():
     
     assert (np.abs(depth_actual - depth_expected) < 1e-9).all()
     assert len(ds_moretime_import.time) == 2
+
+
+@pytest.mark.unittest
+def test_open_dataset_extra_slightly_different_latlons():
+    """
+    to check whether an error is raised when trying to combine datasets with slightly 
+    different coordinates: https://github.com/Deltares/dfm_tools/issues/574
+    
+    """
+    ds1 = cmems_dataset_4times().isel(time=slice(None,2))
+    ds2 = cmems_dataset_4times().isel(time=slice(2,None))
+    
+    # deliberately alter longitude coordinate slightly
+    ds_lon = ds1.longitude.to_numpy().copy()
+    ds_lon[1] += 1e-8
+    ds2['longitude'] = xr.DataArray(ds_lon,dims='longitude')
+    
+    ds1.to_netcdf('temp_cmems_2day_p1.nc')
+    ds2.to_netcdf('temp_cmems_2day_p2.nc')
+    
+    try:
+        ds = dfmt.open_dataset_extra('temp_cmems_2day_*.nc', quantity='salinitybnd', tstart='2020-01-01', tstop='2020-01-03')
+        
+        # add assertion just to be safe, but the code will not reach here
+        assert ds.dims['longitude'] == ds1.dims['longitude']
+    except ValueError:
+        # ValueError: cannot align objects with join='exact' where index/labels/sizes are not equal along these coordinates (dimensions): 'longitude' ('longitude',)
+        pass # this is expected, so pass
 
 
 @pytest.mark.unittest
@@ -420,3 +450,4 @@ def test_interp_uds_to_plipoints():
                          [28.95170139, 28.63716083]])
     
     assert (np.abs(retrieved - expected) < 1e-8).all()
+

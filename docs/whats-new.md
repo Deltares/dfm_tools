@@ -9,6 +9,7 @@
 - support for `preprocess` argument in `dfmt.open_partitioned_dataset()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#530](https://github.com/Deltares/dfm_tools/pull/530)
 
 ### Fix
+- prevent concatenation of datasets with slightly different coordinates by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#595](https://github.com/Deltares/dfm_tools/pull/595)
 - aligned ncbnd dataset with FM/FEWS conventions by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#567](https://github.com/Deltares/dfm_tools/pull/567)
 - documented minimal dependency versions to avoid issues with installation in existing environments containing old dependency versions by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#581](https://github.com/Deltares/dfm_tools/pull/581)
 
