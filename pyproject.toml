@@ -80,6 +80,7 @@ test = [
 	"flake8",
 	"pytest",
 	"pytest-cov",
+	"pytest-timeout",
 	"twine",
 	"jupyter",
 	"notebook",
