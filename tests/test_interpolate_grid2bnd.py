@@ -348,9 +348,13 @@ def test_read_polyfile_as_gdf_points():
 
 @pytest.mark.unittest
 def test_interpolate_tide_to_forcingmodel():
+    """
+    This tests adds to test_interpolate_tide_to_plipoints, since it also interpolates to ForcingModel
+    Furthermore, it runs on Github since it does not depend on local data
+    """
     
     tidemodel = 'GTSMv4.1_opendap'
-    component_list = ['M2','S2']
+    component_list = ['M2']
     gdf_points = data_dcsm_gdf()
 
     data_interp = dfmt.interpolate_tide_to_plipoints(tidemodel=tidemodel, gdf_points=gdf_points, 
