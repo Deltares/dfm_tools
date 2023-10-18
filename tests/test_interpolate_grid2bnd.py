@@ -347,10 +347,9 @@ def test_read_polyfile_as_gdf_points():
 
 
 @pytest.mark.unittest
-@pytest.mark.requireslocaldata
 def test_interpolate_tide_to_forcingmodel():
     
-    tidemodel = 'FES2014'
+    tidemodel = 'GTSMv4.1_opendap'
     component_list = ['M2','S2']
     gdf_points = data_dcsm_gdf()
 
