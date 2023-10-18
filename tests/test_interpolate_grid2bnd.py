@@ -114,6 +114,10 @@ def test_components_translate_upper():
 @pytest.mark.unittest
 @pytest.mark.requireslocaldata
 def test_plipointsDataset_fews_accepted():
+    """
+    check if FEWS netcdf bnd export is correctly processed to a 
+    hcdfm ForcingModel object including the necessary conversions
+    """
     file_nc_fews = r'p:\dflowfm\maintenance\JIRA\06000-06999\06187\C01\salinity_DCSM-FM_OB_all.nc'
     data_interp = xr.open_dataset(file_nc_fews)
     
