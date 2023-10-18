@@ -168,7 +168,7 @@ def preprocess_merge_meteofiles_era5(ext_old, varkey_list, dir_data, dir_output,
     return ext_old
 
 
-def create_model_exec_files(file_dimr, file_mdu, model_name, nproc=1, d3d_folder=None):
+def create_model_exec_files(file_dimr, file_mdu, model_name, nproc=1, dimrset_folder=None):
     """
     creates a dimr_config.xml and if desired a batfile to run the model
     """
@@ -196,12 +196,13 @@ def create_model_exec_files(file_dimr, file_mdu, model_name, nproc=1, d3d_folder
     with open(file_dimr,'w') as f:
         for line in lines_new:
             f.write(line)
-        
-    if d3d_folder is not None:
-        generate_bat_file(dimr_model, d3d_folder)
+    
+    #TODO: currently only bat files are supported (for windows), but linux extension can easily be made
+    if dimrset_folder is not None:
+        generate_bat_file(dimr_model=dimr_model, dimrset_folder=dimrset_folder)
     
 
-def generate_bat_file(dimr_model, d3d_folder=None):
+def generate_bat_file(dimr_model, dimrset_folder=None):
     
     if dimr_model.filepath is None:
         raise Exception('first save the dimr_model before passing it to generate_bat_file')
@@ -212,25 +213,25 @@ def generate_bat_file(dimr_model, d3d_folder=None):
     dimr_name = os.path.basename(dimr_model.filepath)
     mdu_name = os.path.basename(dimr_model.component[0].inputFile)
     nproc = dimr_model.component[0].process
-    if d3d_folder is None:
-        d3d_folder = r"c:\Program Files\Deltares\Delft3D FM Suite 2023.02 HMWQ"
+    if dimrset_folder is None:
+        dimrset_folder = r"c:\Program Files\Deltares\Delft3D FM Suite 2023.02 HMWQ\plugins\DeltaShell.Dimr\kernels"
     
     # generate bat file for running on windows
     bat_str = fr"""
-    rem User input
-    set D3D_folder={d3d_folder}
-    set MDU_file={mdu_name}
-    set partitions={nproc}
-    
-    rem Partition the network and mdu
-    call %D3D_folder%\plugins\DeltaShell.Dimr\kernels\x64\dflowfm\scripts\run_dflowfm.bat "--partition:ndomains=%partitions%:icgsolver=6" %MDU_file%
-    
-    rem Execute the simulation
-    call %D3D_folder%\plugins\DeltaShell.Dimr\kernels\x64\dimr\scripts\run_dimr_parallel.bat %partitions% {dimr_name}
-    
-    rem To prevent the DOS box from disappearing immediately: enable pause on the following line
-    pause
-    """
+rem User input
+set dimrset_folder="{dimrset_folder}"
+set MDU_file="{mdu_name}"
+set partitions={nproc}
+
+rem Partition the network and mdu
+call %dimrset_folder%\x64\dflowfm\scripts\run_dflowfm.bat "--partition:ndomains=%partitions%:icgsolver=6" %MDU_file%
+
+rem Execute the simulation
+call %dimrset_folder%\x64\dimr\scripts\run_dimr_parallel.bat %partitions% {dimr_name}
+
+rem To prevent the DOS box from disappearing immediately: enable pause on the following line
+pause
+"""
     print(f"writing {file_bat}")
     with open(file_bat,'w') as f:
         f.write(bat_str)

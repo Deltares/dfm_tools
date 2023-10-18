@@ -17,7 +17,7 @@ import contextily as ctx
 ## input
 model_name = 'Bonaire'
 dir_output = r'p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\ModelBuilderOutput_JV2'
-path_style = 'unix' # windows / unix
+path_style = 'windows' # windows / unix
 overwrite = False # used for downloading of forcing data. Always set to True when changing the domain
 paths_relative = False #TODO: currently only works with path_style='windows' (same OS as IDE)
 is_geographic = True
@@ -262,7 +262,7 @@ if paths_relative:
             file.write(filedata)
 
 file_dimr = os.path.join(dir_output,'dimr_config.xml')
-nproc = 1
-d3d_folder = r"c:\Program Files\Deltares\Delft3D FM Suite 2023.02 HMWQ"
-dfmt.create_model_exec_files(file_dimr, file_mdu=mdu_file, model_name=model_name, nproc=nproc, d3d_folder=d3d_folder)
+nproc = 2 # number of processes
+dimrset_folder = r"c:\Program Files\Deltares\Delft3D FM Suite 2023.03 HMWQ\plugins\DeltaShell.Dimr\kernels" #alternatively r"p:\d-hydro\dimrset\weekly\2.25.17.78708"
+dfmt.create_model_exec_files(file_dimr, file_mdu=mdu_file, model_name=model_name, nproc=nproc, dimrset_folder=dimrset_folder)
 
