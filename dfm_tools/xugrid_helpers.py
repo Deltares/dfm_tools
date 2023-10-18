@@ -481,6 +481,6 @@ def uda_interfaces_to_centers(uda_int : xu.UgridDataArray) -> xu.UgridDataArray:
     # interpolate from interfaces to layers
     uda_cen = uda_int.interp({dimn_interface:array_shift_half},assume_sorted=True)
     # drop interface coordinate
-    uda_cen = uda_cen.drop(dimn_interface)
+    uda_cen = uda_cen.drop_vars(dimn_interface)
     
     return uda_cen

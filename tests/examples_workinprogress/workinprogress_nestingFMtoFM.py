@@ -23,7 +23,7 @@ import hydrolib.core.dflowfm as hcdfm
 #TODO: add conversion of sigma/z-sigma model (time-varying z coords) to T3D with fixed z reference?
 
 dir_output = '.'
-
+npoints = 20
 
 #NESTING PART 1
 #get net and make KDTree of cellcenters
@@ -70,13 +70,16 @@ ctx.add_basemap(ax=ax,attribution=False,crs=crs_net)
 #NESTING PART 2
 for file_pli in file_pli_list:
     kdtree_k = 4
+    
     file_his = r'p:\1230882-emodnet_hrsm\GTSMv5.0\runs\reference_GTSMv4.1_wiCA\output\gtsm_model_0000_his.nc'
     data_xr_his = xr.open_mfdataset(file_his,preprocess=dfmt.preprocess_hisnc)
     data_xr_his_selvars = data_xr_his[['waterlevel']]#,'velocity_magnitude']]
     
-    data_interp = dfmt.interp_hisnc_to_plipoints(data_xr_his=data_xr_his_selvars,file_pli=file_pli,kdtree_k=kdtree_k)
+    data_interp = dfmt.interp_hisnc_to_plipoints(data_xr_his=data_xr_his_selvars, file_pli=file_pli, kdtree_k=kdtree_k)
+    if npoints is not None:
+        data_interp = data_interp.isel(node=range(npoints))
     fig,ax = plt.subplots()
-    data_interp.waterlevel.drop_vars('plipoints').T.plot(ax=ax) #TODO: this does not work properly "TypeError: Dimensions of C (5473, 294) are incompatible with X (294) and/or Y (5474); see help(pcolormesh)" >> removing plipoints (names) solves the issue but not super desireable.
+    data_interp.waterlevel.T.plot(ax=ax)
     
     # rename_dict = {'waterlevel':'waterlevelbnd',
     #                 'velocity_magnitude':'velocitybnd'}

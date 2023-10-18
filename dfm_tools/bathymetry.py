@@ -23,8 +23,8 @@ def write_bathy_toasc(filename_asc,lon_sel_ext,lat_sel_ext,elev_sel_ext,asc_fmt=
         elev_sel_ext = elev_sel_ext.copy()
         elev_sel_ext[np.isnan(elev_sel_ext)] = nodata_val
         print('replaced nan values with %d'%(nodata_val))
-    resinv_lonlat = np.round(1/np.diff(lon_sel_ext[:2]),2)
-    resinv_lat = np.round(1/np.diff(lat_sel_ext[:2]),2)
+    resinv_lonlat = np.round(1/np.diff(lon_sel_ext[:2]),2)[0]
+    resinv_lat = np.round(1/np.diff(lat_sel_ext[:2]),2)[0]
     if resinv_lonlat!=resinv_lat:
         raise ValueError('inconsistent resolution over lat/lon')
     
