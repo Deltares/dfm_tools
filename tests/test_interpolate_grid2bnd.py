@@ -5,13 +5,66 @@ Created on Mon Jul 17 13:08:34 2023
 @author: veenstra
 """
 
+import os
 import pytest
 import dfm_tools as dfmt
 import numpy as np
 import datetime as dt
 import xarray as xr
-import pandas as pd
+import shapely
 import geopandas as gpd
+from dfm_tools.interpolate_grid2bnd import _read_polyfile_as_gdf_points
+import hydrolib.core.dflowfm as hcdfm
+
+
+def data_dcsm_gdf():
+    # dummy gdf
+    points_x = [-9.25, -9.5, -9.75]
+    points_y = [43, 43, 43]
+    points_n = [f'DCSM-FM_OB_all_20181108_{i+1:04d}' for i in range(3)]
+    geom = gpd.points_from_xy(x=points_x, y=points_y)
+    gdf_points = gpd.GeoDataFrame(geometry=geom, crs='EPSG:4326')
+    gdf_points['station_id'] = points_n
+    return gdf_points
+
+
+def cmems_dataset_notime():
+    # use hardcoded depth varname/dimname to simulate CMEMS dataset
+    ds = xr.Dataset()
+    so_np = np.array([[[35.819576, 35.82568 , 35.82873 ],
+                       [35.819576, 35.824154, 35.831783],
+                       [35.822628, 35.824154, 35.82873 ]],
+                      
+                      [[35.802788, 35.80584 , 35.815   ],
+                       [35.815   , 35.810417, 35.821102],
+                       [35.824154, 35.813473, 35.81805 ]],
+                      
+                      [[35.786003, 35.789055, np.nan],
+                       [35.807365, 35.796684, np.nan],
+                       [35.824154, 35.80584 , np.nan]],
+                      
+                      [[35.776848, np.nan,    np.nan],
+                       [35.792107, np.nan,    np.nan],
+                       [35.822628, np.nan,    np.nan]],
+                                              
+                      [[35.781425, np.nan,    np.nan],
+                       [35.792107, np.nan,    np.nan],
+                       [35.789055, np.nan,    np.nan]]])
+    ds['so'] = xr.DataArray(so_np,dims=('depth','latitude','longitude'))
+    lons = [-9.6, -9.5, -9.4]
+    lats = [42.9, 43.0, 43.1]
+    depths = [-0.494025, -1.541375, -2.645669, -3.819495, -5.078224]
+    ds['longitude'] = xr.DataArray(lons, dims=('longitude'))
+    ds['latitude'] = xr.DataArray(lats, dims=('latitude'))
+    ds['depth'] = xr.DataArray(depths, dims=('depth'))
+    return ds
+
+
+def cmems_dataset_4times():
+    ds = cmems_dataset_notime()
+    ds_moretime = xr.concat(4*[ds.expand_dims('time')],dim='time')
+    ds_moretime['time'] = xr.DataArray([-12,12,36,60],dims='time').assign_attrs({'standard_name':'time','units':'hours since 2020-01-01'})
+    return ds_moretime
 
 
 @pytest.mark.unittest
@@ -59,7 +112,79 @@ def test_components_translate_upper():
 
 
 @pytest.mark.unittest
-def test_interp_regularnc_to_plipointdataframe():
+@pytest.mark.requireslocaldata
+def test_plipointsDataset_fews_accepted():
+    """
+    check if FEWS netcdf bnd export is correctly processed to a 
+    hcdfm ForcingModel object including the necessary conversions
+    """
+    file_nc_fews = r'p:\dflowfm\maintenance\JIRA\06000-06999\06187\C01\salinity_DCSM-FM_OB_all.nc'
+    data_interp = xr.open_dataset(file_nc_fews)
+    
+    #convert plipointsDataset to hydrolib ForcingModel
+    ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
+    
+    forcing0 = ForcingModel_object.forcing[0]
+    assert isinstance(ForcingModel_object, hcdfm.ForcingModel)
+    assert isinstance(forcing0, hcdfm.T3D)
+    assert forcing0.quantityunitpair[1].unit == 'ppt'
+    
+    # test whether so was renamed to salinitybnd
+    assert forcing0.quantityunitpair[1].quantity == 'salinitybnd'
+
+
+@pytest.mark.systemtest
+@pytest.mark.requireslocaldata
+def test_interpolate_nc_to_bc():
+    file_pli = r'p:\archivedprojects\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli'
+    
+    gdf_points = _read_polyfile_as_gdf_points(file_pli, nPoints=3)
+    
+    tstart = '2012-12-16 12:00'
+    tstop = '2013-01-01 12:00'
+    
+    dir_pattern = os.path.join(r'p:\1204257-dcsmzuno\data\CMEMS\nc\DCSM_allAvailableTimes','{ncvarname}_2012-1*.nc')
+    
+    #open regulargridDataset and do some basic stuff (time selection, renaming depth/lat/lon/varname, converting units, etc)
+    data_xr_vars = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity='salinitybnd', tstart=tstart, tstop=tstop)
+    #interpolate regulargridDataset to plipointsDataset
+    data_interp = dfmt.interp_regularnc_to_plipointsDataset(data_xr_reg=data_xr_vars, gdf_points=gdf_points)
+    
+    #convert plipointsDataset to hydrolib ForcingModel
+    ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
+    
+    forcing0 = ForcingModel_object.forcing[0]
+    assert isinstance(ForcingModel_object, hcdfm.ForcingModel)
+    assert isinstance(forcing0, hcdfm.T3D)
+    assert forcing0.quantityunitpair[1].unit == '1e-3'
+    
+    # test whether so was renamed to salinitybnd
+    assert forcing0.quantityunitpair[1].quantity == 'salinitybnd'
+
+
+@pytest.mark.systemtest
+def test_open_dataset_extra_correctdepths():
+    """
+    to validate open_dataset_extra behaviour for depths, in the past the depth values got lost and replaced by depth idx
+    """
+    
+    ds_moretime = cmems_dataset_4times()
+    file_nc = 'temp_cmems_dummydata.nc'
+    ds_moretime.to_netcdf(file_nc)
+    
+    ds_moretime_import = dfmt.open_dataset_extra(dir_pattern=file_nc, quantity='salinitybnd', tstart='2020-01-01', tstop='2020-01-03')
+    
+    ncbnd_construct = dfmt.get_ncbnd_construct()
+    varn_depth = ncbnd_construct['varn_depth']
+    depth_actual = ds_moretime_import[varn_depth].to_numpy()
+    depth_expected = ds_moretime['depth'].to_numpy()
+    
+    assert (np.abs(depth_actual - depth_expected) < 1e-9).all()
+    assert len(ds_moretime_import.time) == 2
+
+
+@pytest.mark.unittest
+def test_interp_regularnc_to_plipointsDataset():
     """
     Linear interpolation to a new dimension in dfmt.interp_regularnc_to_plipoints() 
     resulted in unexpected nan values since scipy 1.10.0.
@@ -72,55 +197,44 @@ def test_interp_regularnc_to_plipointdataframe():
     This method gives as much valid values as possible given the input dataset, but does not fill nans where it should not do that.
     """
     
-    ds = xr.Dataset()
-    so_np = np.array([[[35.819576, 35.82568 , 35.82873 ],
-                       [35.819576, 35.824154, 35.831783],
-                       [35.822628, 35.824154, 35.82873 ]],
-                      
-                      [[35.802788, 35.80584 , 35.815   ],
-                       [35.815   , 35.810417, 35.821102],
-                       [35.824154, 35.813473, 35.81805 ]],
-                      
-                      [[35.786003, 35.789055, np.nan],
-                       [35.807365, 35.796684, np.nan],
-                       [35.824154, 35.80584 , np.nan]],
-                      
-                      [[35.776848, np.nan,    np.nan],
-                       [35.792107, np.nan,    np.nan],
-                       [35.822628, np.nan,    np.nan]],
-                                              
-                      [[35.781425, np.nan,    np.nan],
-                       [35.792107, np.nan,    np.nan],
-                       [35.789055, np.nan,    np.nan]]])
-    ds['so'] = xr.DataArray(so_np,dims=('depth','latitude','longitude'))
-    lons = [-9.6, -9.5, -9.4]
-    lats = [42.9, 43.0, 43.1]
-    ds['longitude'] = xr.DataArray(lons, dims=('longitude'))
-    ds['latitude'] = xr.DataArray(lats, dims=('latitude'))
+    ncbnd_construct = dfmt.get_ncbnd_construct()
+    dimn_point = ncbnd_construct['dimn_point']
+    dimn_depth = ncbnd_construct['dimn_depth']
+    varn_depth = ncbnd_construct['varn_depth']
+    varn_pointname = ncbnd_construct['varn_pointname']
+    
+    ds = cmems_dataset_notime()
+    ds = ds.rename_dims({'depth':dimn_depth})
+    ds = ds.rename_vars({'depth':varn_depth})
+    so_np = ds['so'].to_numpy()
+    lons = ds['longitude'].to_numpy()
+    lats = ds['latitude'].to_numpy()
     
     for ipoint in range(3):
-        x_xr = xr.DataArray([lons[ipoint]],dims=('plipoints'))
-        y_xr = xr.DataArray([lats[ipoint]],dims=('plipoints'))
+        x_xr = xr.DataArray([lons[ipoint]],dims=(dimn_point))
+        y_xr = xr.DataArray([lats[ipoint]],dims=(dimn_point))
         
         # interp1d # these are actually irrelevant now, are not used for testing
         interp_with_floats = ds.interp(longitude=x_xr[0], latitude=y_xr[0], method='linear').so #selecting one value from the da drops the new plipoints dimension
         interp_with_da_existing = ds.interp(longitude=x_xr.values, latitude=y_xr.values, method='linear').so.isel(longitude=0,latitude=0) #using the DataArray values keeps lat/lon dimenions, gives the same interp result
         
-        data_pol_pd = pd.DataFrame({'x':x_xr, 'y':y_xr, 'name':[f'name_{ipoint+1:04d}']})
-        interp_with_da_newdim = dfmt.interp_regularnc_to_plipointdataframe(ds, data_pol_pd, load=True).so.isel(plipoints=0)
+        geom = shapely.points(x_xr, y_xr)
+        gdf = gpd.GeoDataFrame(data={varn_pointname:[f'name_{ipoint+1:04d}']}, geometry=geom)
+        interp_with_da_newdim = dfmt.interp_regularnc_to_plipointsDataset(ds, gdf, load=True)
+        interp_da_actual = interp_with_da_newdim.so.isel({dimn_point:0})
         
         #define expected values since in some cases like point 0 this is not the same as interp1d returns
-        interp_da_expected = xr.DataArray(so_np[:,ipoint,ipoint],dims=('depth'))
+        interp_da_expected = xr.DataArray(so_np[:,ipoint,ipoint],dims=(dimn_depth))
         
         print(ipoint)
         print(interp_with_floats.to_numpy())
         print(interp_with_da_existing.to_numpy())
-        print(interp_with_da_newdim.to_numpy())
+        print(interp_da_actual.to_numpy())
         print(interp_da_expected.to_numpy())
         
         assert (interp_with_floats.isnull()==interp_with_da_existing.isnull()).all()
-        assert (interp_da_expected.isnull()==interp_with_da_newdim.isnull()).all()
-
+        assert (interp_da_expected.isnull()==interp_da_actual.isnull()).all()
+    
     """
     prints with scipy 1.11.3:
     0
@@ -141,13 +255,49 @@ def test_interp_regularnc_to_plipointdataframe():
     """
 
 
+@pytest.mark.unittest
+def test_interp_regularnc_to_plipointsDataset_checkvardimnames():
+    """
+    """
+    
+    ncbnd_construct = dfmt.get_ncbnd_construct()
+    dimn_point = ncbnd_construct['dimn_point']
+    dimn_depth = ncbnd_construct['dimn_depth']
+    varn_depth = ncbnd_construct['varn_depth']
+    varn_pointx = ncbnd_construct['varn_pointx']
+    varn_pointy = ncbnd_construct['varn_pointy']
+    varn_pointname = ncbnd_construct['varn_pointname']
+    
+    ds = cmems_dataset_notime()
+    ds = ds.rename_dims({'depth':dimn_depth})
+    ds = ds.rename_vars({'depth':varn_depth})
+    lons = ds['longitude'].to_numpy()
+    lats = ds['latitude'].to_numpy()
+    
+    x_xr = xr.DataArray([lons[0]],dims=(dimn_point))
+    y_xr = xr.DataArray([lats[0]],dims=(dimn_point))
+    
+    geom = shapely.points(x_xr, y_xr)
+    gdf = gpd.GeoDataFrame(data={varn_pointname:['name_0001']}, geometry=geom)
+    interp_with_da_newdim = dfmt.interp_regularnc_to_plipointsDataset(ds, gdf, load=True)
+    
+    # check if only expected dims/vars are present
+    varn_inda = set(list(interp_with_da_newdim.variables))
+    varn_expected = set(['so', varn_depth, varn_pointx, varn_pointy, varn_pointname])
+    dimn_inda = set(list(interp_with_da_newdim.dims))
+    dimn_expected = set([dimn_point, dimn_depth])
+    assert varn_inda == varn_expected
+    assert dimn_inda == dimn_expected
+
+
 @pytest.mark.systemtest
 @pytest.mark.requireslocaldata
 def test_interpolate_tide_to_plipoints():
-    
     nPoints = 3# None #amount of Points to process per PolyObject in the plifile (use int for testing, use None for all Points)
     file_pli = r'p:\archivedprojects\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli'
     nanvalue = -999
+    
+    gdf_points = _read_polyfile_as_gdf_points(file_pli, nPoints=nPoints)
     
     tidemodel_list = ['tpxo80_opendap', 'FES2014', 'FES2012', 'EOT20', 'GTSMv4.1']#, 'GTSMv4.1_opendap']
     for tidemodel in tidemodel_list:
@@ -172,7 +322,7 @@ def test_interpolate_tide_to_plipoints():
             phs_expected = np.array([81.21875763, 81.41669464, 81.66479492])
         
         for component_list in [['M2','S2']]: # [None]: # 
-            data_interp = dfmt.interpolate_tide_to_plipoints(tidemodel=tidemodel, file_pli=file_pli, component_list=component_list, nPoints=nPoints)
+            data_interp = dfmt.interpolate_tide_to_plipoints(tidemodel=tidemodel, gdf_points=gdf_points, component_list=component_list)
             
             compnames_now = data_interp['compno'].to_numpy().tolist()
             if component_list is None:
@@ -188,13 +338,54 @@ def test_interpolate_tide_to_plipoints():
             assert compnames_now == compnames_expected
             assert (np.abs(amp_expected-amp_now)<1e-6).all()
             assert (np.abs(phs_expected-phs_now)<1e-6).all()
-            
-            # file_bc_out = f'tide_{tidemodel}.bc'
-            # ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
-            # ForcingModel_object.save(filepath=file_bc_out)
-    
+        
         print(f'>> tide interpolation from {tidemodel} took: ',end='')
         print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
+
+    
+@pytest.mark.unittest
+def test_interpolate_tide_to_forcingmodel():
+    """
+    This tests adds to test_interpolate_tide_to_plipoints, since it also interpolates to ForcingModel
+    Furthermore, it runs on Github since it does not depend on local data
+    """
+    
+    tidemodel = 'GTSMv4.1_opendap'
+    component_list = ['M2']
+    gdf_points = data_dcsm_gdf()
+
+    data_interp = dfmt.interpolate_tide_to_plipoints(tidemodel=tidemodel, gdf_points=gdf_points, 
+                                                     component_list=component_list, load=True)
+    ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
+    
+    forcing0 = ForcingModel_object.forcing[0]
+    assert isinstance(ForcingModel_object, hcdfm.ForcingModel)
+    assert isinstance(forcing0, hcdfm.Astronomic)
+    
+    assert forcing0.quantityunitpair[0].unit == '-'
+    assert forcing0.quantityunitpair[0].quantity == 'astronomic component'
+    assert forcing0.quantityunitpair[1].unit == 'm'
+    assert forcing0.quantityunitpair[1].quantity == 'waterlevelbnd amplitude'
+    assert forcing0.quantityunitpair[2].unit == 'degrees'
+    assert forcing0.quantityunitpair[2].quantity == 'waterlevelbnd phase'
+
+
+@pytest.mark.systemtest
+@pytest.mark.requireslocaldata
+def test_read_polyfile_as_gdf_points():
+    ncbnd_construct = dfmt.get_ncbnd_construct()
+    varn_pointname = ncbnd_construct['varn_pointname']
+    
+    nPoints = 3
+    file_pli = r'p:\archivedprojects\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli'
+    
+    gdf_points = _read_polyfile_as_gdf_points(file_pli, nPoints=nPoints)
+    
+    reference = data_dcsm_gdf()
+    
+    assert isinstance(gdf_points, gpd.GeoDataFrame)
+    assert (gdf_points.geometry == reference.geometry).all()
+    assert gdf_points[varn_pointname].tolist() == reference[varn_pointname].tolist()
 
 
 @pytest.mark.unittest
@@ -203,11 +394,15 @@ def test_interp_uds_to_plipoints():
     very basic test for function, 
     should be made more strict with learnings from workinprogress_interpolate_uds_toplipoints.py
     """
+    
+    ncbnd_construct = dfmt.get_ncbnd_construct()
+    varn_pointname = ncbnd_construct['varn_pointname']
+    
     file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True)
     uds = dfmt.open_partitioned_dataset(file_nc)
     
     gdf = gpd.GeoDataFrame(geometry=gpd.points_from_xy([51500,55000],[418800,421500]))
-    gdf['plipoint_name'] = ['pt_0001','pt_0002']
+    gdf[varn_pointname] = ['pt_0001','pt_0002']
     
     # fig, ax = plt.subplots()
     # uds.mesh2d_flowelem_bl.ugrid.plot(ax=ax)

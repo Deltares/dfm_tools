@@ -17,10 +17,52 @@ import geopandas
 from shapely.geometry import LineString
 
 
+def get_ncbnd_construct():
+    """
+    netcdf structure is based on FEWS example file:
+    p:\\dflowfm\\maintenance\\JIRA\\06000-06999\\06187\\C01_JV\\salinity_DCSM-FM_OB_all.nc
+    Some improvement suggestions are provided in:
+    p:\\dflowfm\\maintenance\\JIRA\\06000-06999\\06187\\C01_JV\\convert_netcdf_bnd.py
+    """
+    attrs_pointx = {"standard_name": "longitude",
+                    "long_name": "longitude",
+                    "units": "degrees_east",
+                    "axis": "X"
+                    }
+    attrs_pointy = {"standard_name": "latitude",
+                    "long_name": "latitude",
+                    "units": "degrees_north",
+                    "axis": "Y"
+                    }
+    attrs_depth = {"standard_name":"z",
+                   "long_name":"z",
+                   "units":"m",
+                   "positive":"up",
+                   "axis":"Z",
+                    }
+    
+    ncbnd_construct = {"varn_depth":"z",
+                       "dimn_depth":"z",
+                       "varn_pointx":"lon",
+                       "varn_pointy":"lat",
+                       "varn_pointname":"station_id",
+                       "dimn_point":"node",
+                       "attrs_pointx":attrs_pointx,
+                       "attrs_pointy":attrs_pointy,
+                       "attrs_depth":attrs_depth,
+                       }
+    
+    return ncbnd_construct
+
+
 def Dataset_to_T3D(datablock_xr):
     """
     convert an xarray.DataArray (is one data_var) or an xarray.Dataset (with one or two data_vars) with time and depth dimension to a hydrolib T3D object
     """
+    
+    ncbnd_construct = get_ncbnd_construct()
+    dimn_depth = ncbnd_construct['dimn_depth']
+    varn_depth = ncbnd_construct['varn_depth']
     
     if not isinstance(datablock_xr,(xr.DataArray,xr.Dataset)):
         raise TypeError(f'expected xarray.DataArray or xarray.Dataset, not {type(datablock_xr)}')
@@ -40,19 +82,19 @@ def Dataset_to_T3D(datablock_xr):
             raise ValueError(f'Dataset should contain 1 or 2 data_vars, but contains {len(data_vars)} variables')
     
     #ffill/bfill nan data along over depth dimension (corresponds to vertical extrapolation)
-    data_xr_var0 = data_xr_var0.bfill(dim='depth').ffill(dim='depth')
+    data_xr_var0 = data_xr_var0.bfill(dim=dimn_depth).ffill(dim=dimn_depth)
     if vector:
-        data_xr_var1 = data_xr_var1.bfill(dim='depth').ffill(dim='depth')
+        data_xr_var1 = data_xr_var1.bfill(dim=dimn_depth).ffill(dim=dimn_depth)
     
     #TODO: clean up these first lines of code and add description to docstring?
     locationname = data_xr_var0.attrs['locationname']
     refdate_str = data_xr_var0.time.encoding['units']
     
-    if not set(data_xr_var0.dims).issubset(set(('time','depth'))): #check if both time and depth dimensions are present
-        raise ValueError(f"data_var in provided data_xr has dimensions {data_xr_var0.dims} while ('time','depth') is expected")
+    if not set(data_xr_var0.dims).issubset(set(('time',dimn_depth))): #check if both time and depth dimensions are present
+        raise ValueError(f"data_var in provided data_xr has dimensions {data_xr_var0.dims} while ('time',{dimn_depth}) is expected")
     
     #get depth variable and values
-    depth_array = data_xr_var0['depth'].to_numpy()
+    depth_array = data_xr_var0[varn_depth].to_numpy()
     
     #get datablock and concatenate with relative time data
     if vector:
@@ -66,7 +108,7 @@ def Dataset_to_T3D(datablock_xr):
     datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock_np],axis=1)
     
     # Each .bc file can contain 1 or more timeseries, in this case one for each support point
-    verticalpositions_idx = np.arange(data_xr_var0['depth'].size)+1
+    verticalpositions_idx = np.arange(data_xr_var0[varn_depth].size)+1
     if vector: #vector T3D object
         QUP_quan_list = [hcdfm.QuantityUnitPair(quantity=quan, unit=data_xr_var0.attrs['units'], vertpositionindex=iVP) for iVP in verticalpositions_idx for quan in data_vars]
         QUP_quan_vector = hcdfm.VectorQuantityUnitPairs(vectorname='uxuyadvectionvelocitybnd', #TODO: vectorname from global attr? (then also support other vectors which is not necessary)
@@ -95,6 +137,7 @@ def Dataset_to_TimeSeries(datablock_xr):
     """
     convert an xarray.DataArray or xarray.Dataset with time dimension to a hydrolib TimeSeries object
     """
+    
     if not isinstance(datablock_xr,(xr.DataArray,xr.Dataset)):
         raise TypeError(f'Dataset_to_TimeSeries expects xr.DataArray or xr.Dataset, not {type(datablock_xr)}')
     
@@ -227,16 +270,56 @@ def DataFrame_to_TimModel(tim_pd, refdate:(dt.datetime, pd.Timestamp, str)):
     return timmodel
 
 
-def forcinglike_to_Dataset(forcingobj, convertnan=False): #TODO: would be convenient to have this as a method of ForcingModel objects (Timeseries/T3D/etc): https://github.com/Deltares/HYDROLIB-core/issues/307
+def ForcingModel_to_plipointsDataset(forcingmodel:hcdfm.ForcingModel, npoints=None, convertnan=False) -> xr.Dataset:
+    if not isinstance(forcingmodel, hcdfm.ForcingModel):
+        raise TypeError('ForcingModel_to_plipointsDataset expects type hcdfm.ForcingModel, not type {type(forcingobj)}')
+
+    ncbnd_construct = get_ncbnd_construct()
+    dimn_point = ncbnd_construct['dimn_point']
+    varn_pointname = ncbnd_construct['varn_pointname']
+    plipointsDataset_list = []
+    for forcinglike in forcingmodel.forcing[:npoints]:
+        ds_onepoint = forcinglike_to_Dataset(forcinglike, convertnan=convertnan)
+        
+        #set longname attr
+        for datavar in ds_onepoint.data_vars:
+            longname = datavar
+            if datavar in ['ux','uy']: #TODO: hardcoded behaviour is consitent with maybe_convert_fews_to_dfmt() and elsewhere in dfm_tools, but not desireable
+                longname = 'uxuyadvectionvelocitybnd'
+            ds_onepoint[datavar] = ds_onepoint[datavar].assign_attrs({'long_name': longname})
+        
+        # expand pointdim and add pointname as var
+        ds_onepoint = ds_onepoint.expand_dims(dimn_point)
+        datavar0 = list(ds_onepoint.data_vars)[0]
+        pointname = ds_onepoint[datavar0].attrs['locationname']
+        ds_onepoint[varn_pointname] = xr.DataArray([pointname],dims=dimn_point)
+        ds_onepoint = ds_onepoint.set_coords(varn_pointname)
+        
+        plipointsDataset_list.append(ds_onepoint)
+    ds = xr.concat(plipointsDataset_list, dim=dimn_point)
+    
+    # prevent circular import #TODO: solve underlaying issue
+    from dfm_tools.interpolate_grid2bnd import _maybe_convert_fews_to_dfmt
+    ds = _maybe_convert_fews_to_dfmt(ds)
+    
+    return ds
+
+
+def forcinglike_to_Dataset(forcingobj, convertnan=False):
     """
     convert a hydrolib forcing like object (like Timeseries, T3D, Harmonic, etc) to an xarray Dataset with one or more variables.
     
     convertnan: convert depths with the same values over time as the deepest layer to nan (these were created with .bfill() or .ffill()).
     """
     
+    ncbnd_construct = get_ncbnd_construct()
+    dimn_depth = ncbnd_construct['dimn_depth']
+    varn_depth = ncbnd_construct['varn_depth']
+    attrs_depth = ncbnd_construct['attrs_depth']
+    
     #check if forcingmodel instead of T3D/TimeSeries is provided
     if isinstance(forcingobj, hcdfm.ForcingModel):
-        raise TypeError('instead of supplying a ForcingModel, provide a ForcingObject (Timeseries/T3D etc), by doing something like ForcingModel.forcing[0]')
+        raise TypeError('instead of supplying a ForcingModel, provide a ForcingObject (Timeseries/T3D etc), by doing something like ForcingModel.forcing[0], or use dfmt.ForcingModel_to_plipointsDataset() instead')
     
     allowed_instances = (hcdfm.T3D, hcdfm.TimeSeries, hcdfm.Astronomic)
     if not isinstance(forcingobj, allowed_instances):
@@ -255,7 +338,7 @@ def forcinglike_to_Dataset(forcingobj, convertnan=False): #TODO: would be conven
     nquan = len(var_quantity_list)
     
     if isinstance(forcingobj, hcdfm.T3D):
-        dims = ('time','depth')
+        dims = ('time',dimn_depth)
     elif isinstance(forcingobj, hcdfm.TimeSeries):
         dims = ('time')
     elif isinstance(forcingobj, hcdfm.Astronomic):
@@ -272,15 +355,15 @@ def forcinglike_to_Dataset(forcingobj, convertnan=False): #TODO: would be conven
         datablock_data_onequan = datablock_data_onequan.squeeze() #drop dimensions of len 1 in case of 1 dimension, eg "waterlevelbnd" (first subsetting over depth dimension)
         
         data_xr_var = xr.DataArray(datablock_data_onequan, name=var_quantity, dims=dims)
-        if 'depth' in dims:
-            data_xr_var['depth'] = forcingobj.vertpositions
-            #data_xr_var['depth'].attrs['positive'] == 'up' #TODO: maybe add this attribute
+        if dimn_depth in dims:
+            data_xr_var[varn_depth] = forcingobj.vertpositions
+            data_xr_var[varn_depth] = data_xr_var[varn_depth].assign_attrs(attrs_depth)
             if convertnan: #convert ffilled/bfilled values back to nan
-                deepestlayeridx = data_xr_var.depth.to_numpy().argmin()
+                deepestlayeridx = data_xr_var[varn_depth].to_numpy().argmin()
                 if deepestlayeridx==0: #sorted from deep to shallow layers
-                    bool_nandepths = (data_xr_var==data_xr_var.shift(depth=-1)).all(dim='time')
+                    bool_nandepths = (data_xr_var==data_xr_var.shift({varn_depth:-1})).all(dim='time')
                 else: #sorted from shallow to deep layers
-                    bool_nandepths = (data_xr_var==data_xr_var.shift(depth=1)).all(dim='time')
+                    bool_nandepths = (data_xr_var==data_xr_var.shift({varn_depth:1})).all(dim='time')
                 data_xr_var = data_xr_var.where(~bool_nandepths)
         if 'time' in dims:
             time_unit = forcingobj.quantityunitpair[0].unit.lower()
@@ -296,7 +379,7 @@ def forcinglike_to_Dataset(forcingobj, convertnan=False): #TODO: would be conven
         data_xr_var.attrs['units'] = var_unit[iQ]
         forcingobj_keys = forcingobj.__dict__.keys()
         for key in forcingobj_keys: #['comments','name','function','offset','factor','vertinterpolation','vertpositiontype','timeinterpolation']: 
-            if key in ['datablock','quantityunitpair','vertpositions']: #skipping these since they are in the DataArray already
+            if key in ['datablock','quantityunitpair','vertpositions','name']: #skipping these since they are in the DataArray already
                 continue
             data_xr_var.attrs[key] = str(forcingobj.__dict__[key])
         
@@ -306,7 +389,7 @@ def forcinglike_to_Dataset(forcingobj, convertnan=False): #TODO: would be conven
     return data_xr
 
 
-def pointlike_to_DataFrame(pointlike,drop_emptycols=True):
+def pointlike_to_DataFrame(pointlike, drop_emptycols=True):
     """
     convert a hydrolib object with points (like PolyObject, XYZModel and possibly others) to a pandas DataFrame.
 
@@ -391,12 +474,15 @@ def TimModel_to_DataFrame(data_tim:hcdfm.TimModel, parse_column_labels:bool = Tr
     return tim_pd
 
 
-def pointlike_to_geodataframe_points(polyline_object, crs='EPSG:4326', add_pointnames=True, only_xy=False):
+def pointlike_to_geodataframe_points(polyline_object, crs:str=None, add_pointnames=True, only_xy=False):
     """
     empty docstring
     """
+    
+    ncbnd_construct = get_ncbnd_construct()
+    varn_pointname = ncbnd_construct['varn_pointname']
+    
     #conversion to dataframe
-    #polyobject_pd = dfmt.pointnames(polyline_object)
     polyobject_pd = pd.DataFrame([dict(p) for p in polyline_object.points])
     
     if only_xy:
@@ -405,7 +491,7 @@ def pointlike_to_geodataframe_points(polyline_object, crs='EPSG:4326', add_point
         df = polyobject_pd.drop(['x','y'],axis=1) #also includes n/z and maybe data column
     
     if add_pointnames and hasattr(polyline_object,'metadata'): #optionally add names
-        df['plipoint_name'] = pd.Series(polyobject_pd.index).apply(lambda x: f'{polyline_object.metadata.name}_{x+1:04d}')
+        df[varn_pointname] = pd.Series(polyobject_pd.index).apply(lambda x: f'{polyline_object.metadata.name}_{x+1:04d}')
     
     #make gdf of points (1 point per row)
     gdf = geopandas.GeoDataFrame(data=df, geometry=geopandas.points_from_xy(polyobject_pd['x'],polyobject_pd['y']), crs=crs)
@@ -413,7 +499,7 @@ def pointlike_to_geodataframe_points(polyline_object, crs='EPSG:4326', add_point
     return gdf
 
 
-def PolyFile_to_geodataframe_points(polyfile_object:hcdfm.PolyFile, crs:str='EPSG:4326', add_pointnames:bool=True):
+def PolyFile_to_geodataframe_points(polyfile_object:hcdfm.PolyFile, crs:str=None, add_pointnames:bool=True):
     """
     
 
@@ -422,7 +508,7 @@ def PolyFile_to_geodataframe_points(polyfile_object:hcdfm.PolyFile, crs:str='EPS
     polyfile_object : hcdfm.PolyFile
         get this object with hcdfm.PolyFile(path_to_plifile).
     crs : str, optional
-        DESCRIPTION. The default is 'EPSG:4326'.
+        DESCRIPTION. The default is None'.
     add_pointnames : bool, optional
         DESCRIPTION. The default is True.
 
@@ -441,21 +527,63 @@ def PolyFile_to_geodataframe_points(polyfile_object:hcdfm.PolyFile, crs:str='EPS
     return gdf
 
 
-def PolyFile_to_geodataframe_linestrings(polyfile_object, crs='EPSG:4326'):
+def _da_from_gdf_points(gdf_points):
+    
+    ncbnd_construct = get_ncbnd_construct()
+    dimn_point = ncbnd_construct['dimn_point']
+    varn_pointx = ncbnd_construct['varn_pointx']
+    varn_pointy = ncbnd_construct['varn_pointy']
+    varn_pointname = ncbnd_construct['varn_pointname']
+    attrs_pointx = ncbnd_construct['attrs_pointx']
+    attrs_pointy = ncbnd_construct['attrs_pointy']
+    
+    da_plipoints = xr.Dataset()
+    da_plipoints[varn_pointx] = xr.DataArray(gdf_points.geometry.x.tolist(), dims=dimn_point).assign_attrs(attrs_pointx)
+    da_plipoints[varn_pointy] = xr.DataArray(gdf_points.geometry.y.tolist(), dims=dimn_point).assign_attrs(attrs_pointy)
+    da_plipoints[varn_pointname] = xr.DataArray(gdf_points[varn_pointname].tolist(), dims=dimn_point)
+    da_plipoints = da_plipoints.set_coords([varn_pointx,varn_pointy,varn_pointname])
+    
+    return da_plipoints
+
+
+def PolyFile_to_geodataframe_linestrings(polyfile_object, crs=None):
     """
     empty docstring
     """
     plilines_list = []
     plinames_list = []
+    pliz_list = []
+    plidata_list = [] #TODO: make more generic with polyobject_pd.columns or earlier
     for iPO, polyline_object in enumerate(polyfile_object.objects):
         polyobject_pd = pd.DataFrame([dict(p) for p in polyline_object.points]) #TODO: getting only x/y might be faster, but maybe we also need the other columns like z/n/data?
         polygon_geom = LineString(zip(polyobject_pd['x'],polyobject_pd['y']))
-        
+
         #make gdf of points (1 point per row)
         plilines_list.append(polygon_geom)
         plinames_list.append(polyline_object.metadata.name)
-    gdf_polyfile = geopandas.GeoDataFrame({'name': plinames_list, 'geometry': plilines_list}, crs=crs)
+        pliz_list.append(polyobject_pd['z'].tolist())
+        plidata_list.append(polyobject_pd['data'].tolist())
+
+    gdf_polyfile = geopandas.GeoDataFrame({'name':plinames_list, 'z':pliz_list, 'data':plidata_list, 'geometry':plilines_list}, crs=crs)
     return gdf_polyfile
+
+
+def gdf_linestrings_to_points(gdf_linestrings):
+
+    crs = gdf_linestrings.crs
+    gdf_points_list = []
+    for ir, gdf_row in gdf_linestrings.iterrows():
+        cols_list = list(gdf_linestrings.columns)
+        cols_list.remove('geometry')
+
+        gdf_one = geopandas.GeoDataFrame(data=None, geometry=geopandas.points_from_xy(*gdf_row.geometry.xy), crs=crs)
+        for colname in cols_list:
+            gdf_one[colname] = gdf_row[colname]
+        gdf_points_list.append(gdf_one)
+
+    gdf_points = pd.concat(gdf_points_list)
+    gdf_points = gdf_points.reset_index(drop=True)
+    return gdf_points
 
 
 def parse_xy_to_datetime(pointlike_pd):

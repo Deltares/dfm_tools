@@ -12,13 +12,13 @@ import xarray as xr
 
 #TODO: merge with other ini script and make generic for getting an inifield out of CMEMS/etc regulargrid Dataset or a 2D/3D FM map/rst Dataset
 
-tSimStart = dt.datetime(1998,1,1)
+tSimStart = dt.datetime(1998,11,1)
 dir_data  = r'p:\i1000668-tcoms\03_newModel\01_input\02_bnd\data_opendap' #folder containing CMEMS so and thetao netcdf files
 
 dir_out = '.'
 
-file_nc_list_so = glob.glob(f'{dir_data}\\cmems_so_199*.nc')
-file_nc_list_thetao = glob.glob(f'{dir_data}\\cmems_thetao_199*.nc')
+file_nc_list_so = glob.glob(f'{dir_data}\\cmems_so_1998-1*.nc')
+file_nc_list_thetao = glob.glob(f'{dir_data}\\cmems_thetao_1998-1*.nc')
 file_nc_list = file_nc_list_so + file_nc_list_thetao
 
 print(f'opening {len(file_nc_list)} datasets')
@@ -35,5 +35,5 @@ else:
 
 print('writing file')
 outFile = os.path.join(dir_out,f'InitialField_{tSimStart.strftime("%Y-%m-%d_%H-%M-%S")}.nc')
-data_xr_ontime.to_netcdf(outFile,format="NETCDF4_CLASSIC")
+data_xr_ontime.to_netcdf(outFile)
 
