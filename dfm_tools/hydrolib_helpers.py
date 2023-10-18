@@ -502,7 +502,7 @@ def pointlike_to_geodataframe_points(polyline_object, crs:str=None, add_pointnam
 def PolyFile_to_geodataframe_points(polyfile_object:hcdfm.PolyFile, crs:str=None, add_pointnames:bool=True):
     """
     
-
+    
     Parameters
     ----------
     polyfile_object : hcdfm.PolyFile
