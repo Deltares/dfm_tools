@@ -10,6 +10,7 @@ import pytest
 import dfm_tools as dfmt
 import numpy as np
 import datetime as dt
+import pandas as pd
 import xarray as xr
 import shapely
 import geopandas as gpd
@@ -61,10 +62,11 @@ def cmems_dataset_notime():
 
 
 def cmems_dataset_4times():
-    ds = cmems_dataset_notime()
-    ds_moretime = xr.concat(4*[ds.expand_dims('time')],dim='time')
-    ds_moretime['time'] = xr.DataArray([-12,12,36,60],dims='time').assign_attrs({'standard_name':'time','units':'hours since 2020-01-01'})
-    return ds_moretime
+    ds_notime = cmems_dataset_notime()
+    ds = xr.concat(4*[ds_notime.expand_dims('time')],dim='time')
+    ds['time'] = xr.DataArray([-12,12,36,60],dims='time').assign_attrs({'standard_name':'time','units':'hours since 2020-01-01'})
+    ds = xr.decode_cf(ds)
+    return ds
 
 
 @pytest.mark.unittest
@@ -420,3 +422,4 @@ def test_interp_uds_to_plipoints():
                          [28.95170139, 28.63716083]])
     
     assert (np.abs(retrieved - expected) < 1e-8).all()
+
