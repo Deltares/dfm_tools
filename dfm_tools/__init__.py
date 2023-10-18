@@ -22,7 +22,7 @@ from dfm_tools.energy_dissipation import *
 from dfm_tools.bathymetry import *
 from dfm_tools.coastlines import *
 from dfm_tools import data
-#from dfm_tools.modelbuilder import * #commented since we do not want to expose these functions with hardcoded parameters
+from dfm_tools.modelbuilder import *
 
 import warnings
 warnings.filterwarnings("always",category=DeprecationWarning)

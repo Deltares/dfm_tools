@@ -15,6 +15,8 @@ import dfm_tools as dfmt
 import hydrolib.core.dflowfm as hcdfm
 import datetime as dt
 import glob
+from hydrolib.core.dimr.models import DIMR, FMComponent, Start
+import warnings
 
 
 def cmems_nc_to_bc(ext_bnd, list_quantities, tstart, tstop, file_pli, dir_pattern, dir_output, refdate_str):
@@ -165,4 +167,84 @@ def preprocess_merge_meteofiles_era5(ext_old, varkey_list, dir_data, dir_output,
             ext_old.forcing.append(forcing_meteo)
         
     return ext_old
+
+
+def create_model_exec_files(file_dimr, file_mdu, model_name, nproc=1, dimrset_folder=None, path_style=None):
+    """
+    creates a dimr_config.xml and if desired a batfile to run the model
+    """
+    
+    mdu_name = os.path.basename(file_mdu)
+    
+    # generate dimr_config.xml
+    control_comp = Start(name=model_name)
+    fm_comp = FMComponent(name=model_name, workingDir='.', inputfile=mdu_name,
+                          process=nproc, 
+                          mpiCommunicator="DFM_COMM_DFMWORLD")
+    dimr_model = DIMR(control=control_comp, component=fm_comp)
+    print(f"writing {file_dimr}")
+    dimr_model.save(file_dimr)
+    
+    # TODO: hydrolib-core does not support multiple cores properly: https://github.com/Deltares/dfm_tools/issues/214
+    # therefore we manually replace it in the file
+    print(f"re-writing {file_dimr}")
+    with open(file_dimr,'r') as f:
+        lines = f.readlines()
+    str_from = f"<process>{nproc}</process>"
+    nproc_range_str = " ".join([str(x) for x in range(nproc)])
+    str_to = f"<process>{nproc_range_str}</process>"
+    lines_new = [line.replace(str_from,str_to) for line in lines]
+    with open(file_dimr,'w') as f:
+        for line in lines_new:
+            f.write(line)
+    
+    if path_style is None:
+        from hydrolib.core.utils import get_path_style_for_current_operating_system
+        path_style = get_path_style_for_current_operating_system().value
+    
+    #TODO: currently only bat files are supported (for windows), but linux extension can easily be made
+    if path_style == 'windows':
+        _generate_bat_file(dimr_model=dimr_model, dimrset_folder=dimrset_folder)
+    else:
+        raise ValueError("path_style {path_style} not yet supported, use different value like None or 'windows'")
+
+
+def _generate_bat_file(dimr_model, dimrset_folder=None):
+    """
+    generate bat file for running on windows
+    """
+    
+    if dimr_model.filepath is None:
+        raise Exception('first save the dimr_model before passing it to generate_bat_file')
+    
+    dirname = os.path.dirname(dimr_model.filepath)
+    file_bat = os.path.join(dirname, "run_parallel.bat")
+    
+    dimr_name = os.path.basename(dimr_model.filepath)
+    mdu_name = os.path.basename(dimr_model.component[0].inputFile)
+    nproc = dimr_model.component[0].process
+    if dimrset_folder is None:
+        dimrset_folder = r"c:\Program Files\Deltares\Delft3D FM Suite 2023.02 HMWQ\plugins\DeltaShell.Dimr\kernels"
+    
+    if not os.path.exists(dimrset_folder):
+        raise FileNotFoundError(f"dimrset_folder not found: {dimrset_folder}")
+    
+    bat_str = fr"""
+rem User input
+set dimrset_folder="{dimrset_folder}"
+set MDU_file="{mdu_name}"
+set partitions={nproc}
+
+rem Partition the network and mdu
+call %dimrset_folder%\x64\dflowfm\scripts\run_dflowfm.bat "--partition:ndomains=%partitions%:icgsolver=6" %MDU_file%
+
+rem Execute the simulation
+call %dimrset_folder%\x64\dimr\scripts\run_dimr_parallel.bat %partitions% {dimr_name}
+
+rem To prevent the DOS box from disappearing immediately: enable pause on the following line
+pause
+"""
+    print(f"writing {file_bat}")
+    with open(file_bat,'w') as f:
+        f.write(bat_str)
 
