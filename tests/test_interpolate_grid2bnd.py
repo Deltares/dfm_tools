@@ -14,6 +14,7 @@ import xarray as xr
 import shapely
 import geopandas as gpd
 from dfm_tools.interpolate_grid2bnd import _read_polyfile_as_gdf_points
+import hydrolib.core.dflowfm as hcdfm
 
 
 def data_dcsm_gdf():
@@ -118,8 +119,14 @@ def test_plipointsDataset_fews_accepted():
     
     #convert plipointsDataset to hydrolib ForcingModel
     ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
-    # ds_new = dfmt.forcinglike_to_Dataset(ForcingModel_object.forcing[0])
-    # ForcingModel_object.save('test.bc')
+    
+    forcing0 = ForcingModel_object.forcing[0]
+    
+    assert isinstance(forcing0, hcdfm.T3D)
+    assert forcing0.quantityunitpair[1].unit == 'ppt'
+    
+    # test whether so was renamed to salinitybnd
+    assert forcing0.quantityunitpair[1].quantity == 'salinitybnd'
 
 
 @pytest.mark.systemtest

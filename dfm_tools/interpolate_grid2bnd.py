@@ -343,15 +343,15 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
 
 
 def _read_polyfile_as_gdf_points(file_pli, nPoints=None):
-    #load boundary file
+    # read polyfile
     polyfile_object = hcdfm.PolyFile(file_pli)
     
-    #Check whether the polyfile contains multiple polylines, in that case show a warning
+    # warn if the polyfile contains multiple polylines
     if len(polyfile_object.objects) > 1:
         warnings.warn(UserWarning(f"The polyfile {file_pli} contains multiple polylines. Only the first one will be used by DFLOW-FM for the boundary conditions."))
-        #TODO when issue UNST-7012 is properly solved, remove this warning or add it in more places
+        #TODO after issue UNST-7012 is properly solved, remove this warning
     
-    #check if polyobj names in plifile are unique
+    # check if polyobj names in plifile are unique
     polynames_pd = pd.Series([polyobj.metadata.name for polyobj in polyfile_object.objects])
     if polynames_pd.duplicated().any():
         raise ValueError(f'Duplicate polyobject names in polyfile {file_pli}, this is not allowed:\n{polynames_pd}')
@@ -369,7 +369,7 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True
     load: interpolation errors are only raised upon loading, so do this per default
     """
     # TODO: consider phasing out, this function is probably only used in 
-    # the example script preprocess_interpolate_nc_to_bc.py and modelbuilder.py
+    # tests/examples/preprocess_interpolate_nc_to_bc.py and dfm_tools/modelbuilder.py
     
     gdf_points = _read_polyfile_as_gdf_points(file_pli, nPoints=nPoints)
     
