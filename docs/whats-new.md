@@ -1,6 +1,7 @@
 ## UNRELEASED
 
 ### Feat
+- create `dimr_config.xml` and `run_parallel.bat` with `dfmt.create_model_exec_files()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#](https://github.com/Deltares/dfm_tools/pull/)
 - conversion of `hcdfm.ForcingModel` to `xr.Dataset` with `dfmt.ForcingModel_to_plipointsDataset()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#567](https://github.com/Deltares/dfm_tools/pull/567)
 - support for reading asc files with `dfmt.read_asc()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#571](https://github.com/Deltares/dfm_tools/pull/571)
 - added `dfmt.meshkernel_delete_withshp()` to delete parts of a mesh with a shapefile, while only reading the shapefile within the bounding box of the mesh by [@rqwang](https://github.com/rqwang) in [#548](https://github.com/Deltares/dfm_tools/pull/548) and [#566](https://github.com/Deltares/dfm_tools/pull/566)

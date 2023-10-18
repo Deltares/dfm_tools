@@ -9,7 +9,6 @@ import os
 import matplotlib.pyplot as plt
 plt.close('all')
 import dfm_tools as dfmt
-from dfm_tools import modelbuilder as mb #different import for modelbuilder since it is not exposed publicly
 import hydrolib.core.dflowfm as hcdfm
 import xarray as xr
 import pandas as pd
@@ -137,14 +136,14 @@ for varkey in ['so','thetao','uo','vo','zos']:
 
 # CMEMS - boundary conditions file (.bc) (and add to ext_bnd)
 list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd'] # when supplying two waterlevelbnds to FM (tide and steric) with other quantities in between, dimrset>=2.24.00 is required or else "ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated" is raised (https://issuetracker.deltares.nl/browse/UNST-7011). Two waterlevelbnds need to share same physical plifile in order to be appended (https://issuetracker.deltares.nl/browse/UNST-5320).
-ext_new = mb.cmems_nc_to_bc(ext_bnd=ext_new,
-                            refdate_str=f'minutes since {ref_date} 00:00:00 +00:00',
-                            dir_output=dir_output,
-                            list_quantities=list_quantities,
-                            tstart=date_min,
-                            tstop=date_max, 
-                            file_pli=poly_file,
-                            dir_pattern=os.path.join(dir_output_data_cmems,'cmems_{ncvarname}_*.nc'))
+ext_new = dfmt.cmems_nc_to_bc(ext_bnd=ext_new,
+                              refdate_str=f'minutes since {ref_date} 00:00:00 +00:00',
+                              dir_output=dir_output,
+                              list_quantities=list_quantities,
+                              tstart=date_min,
+                              tstop=date_max, 
+                              file_pli=poly_file,
+                              dir_pattern=os.path.join(dir_output_data_cmems,'cmems_{ncvarname}_*.nc'))
 
 #save new ext file
 ext_new.save(filepath=ext_file_new,path_style=path_style)
@@ -157,10 +156,10 @@ ext_file_old = os.path.join(dir_output, f'{model_name}_old.ext')
 ext_old = hcdfm.ExtOldModel()
 
 if inisaltem:
-    ext_old = mb.preprocess_ini_cmems_to_nc(ext_old=ext_old,
-                                            tstart=date_min,
-                                            dir_data=dir_output_data_cmems,
-                                            dir_out=dir_output)
+    ext_old = dfmt.preprocess_ini_cmems_to_nc(ext_old=ext_old,
+                                              tstart=date_min,
+                                              dir_data=dir_output_data_cmems,
+                                              dir_out=dir_output)
 
 # ERA5 - download
 dir_output_data_era5 = os.path.join(dir_output_data,'ERA5')
@@ -179,11 +178,11 @@ for varlist in varlist_list:
                            dir_output=dir_output_data_era5, overwrite=overwrite)
 
 # ERA5 meteo - convert to netCDF for usage in Delft3D FM
-ext_old = mb.preprocess_merge_meteofiles_era5(ext_old=ext_old,
-                                              varkey_list = varlist_list,
-                                              dir_data = dir_output_data_era5,
-                                              dir_output = dir_output,
-                                              time_slice = slice(date_min, date_max))
+ext_old = dfmt.preprocess_merge_meteofiles_era5(ext_old=ext_old,
+                                                varkey_list = varlist_list,
+                                                dir_data = dir_output_data_era5,
+                                                dir_output = dir_output,
+                                                time_slice = slice(date_min, date_max))
 
 ext_old.save(filepath=ext_file_old,path_style=path_style)
 
@@ -261,4 +260,9 @@ if paths_relative:
         filedata = filedata.replace(dir_output.replace('\\','/')+'/', '') #dir_output or os.path.dirname(mdu_file)
         with open(filename, 'w') as file:
             file.write(filedata)
+
+file_dimr = os.path.join(dir_output,'dimr_config.xml')
+nproc = 1
+d3d_folder = r"c:\Program Files\Deltares\Delft3D FM Suite 2023.02 HMWQ"
+dfmt.create_model_exec_files(file_dimr, file_mdu=mdu_file, model_name=model_name, nproc=nproc, d3d_folder=d3d_folder)
 
