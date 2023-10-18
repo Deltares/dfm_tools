@@ -74,7 +74,7 @@ Home = "https://github.com/deltares/dfm_tools"
 Code = "https://github.com/deltares/dfm_tools"
 Issues = "https://github.com/deltares/dfm_tools/issues"
 
-[options.extras_require]
+[project.optional-dependencies]
 test = [
 	"bump2version>=0.5.11",
 	"flake8",
