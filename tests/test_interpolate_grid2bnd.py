@@ -186,6 +186,34 @@ def test_open_dataset_extra_correctdepths():
 
 
 @pytest.mark.unittest
+def test_open_dataset_extra_slightly_different_latlons():
+    """
+    to check whether an error is raised when trying to combine datasets with slightly 
+    different coordinates: https://github.com/Deltares/dfm_tools/issues/574
+    
+    """
+    ds1 = cmems_dataset_4times().isel(time=slice(None,2))
+    ds2 = cmems_dataset_4times().isel(time=slice(2,None))
+    
+    # deliberately alter longitude coordinate slightly
+    ds_lon = ds1.longitude.to_numpy().copy()
+    ds_lon[1] += 1e-8
+    ds2['longitude'] = xr.DataArray(ds_lon,dims='longitude')
+    
+    ds1.to_netcdf('temp_cmems_2day_p1.nc')
+    ds2.to_netcdf('temp_cmems_2day_p2.nc')
+    
+    try:
+        ds = dfmt.open_dataset_extra('temp_cmems_2day_*.nc', quantity='salinitybnd', tstart='2020-01-01', tstop='2020-01-03')
+        
+        # add assertion just to be safe, but the code will not reach here
+        assert ds.dims['longitude'] == ds1.dims['longitude']
+    except ValueError:
+        # ValueError: cannot align objects with join='exact' where index/labels/sizes are not equal along these coordinates (dimensions): 'longitude' ('longitude',)
+        pass # this is expected, so pass
+
+
+@pytest.mark.unittest
 def test_interp_regularnc_to_plipointsDataset():
     """
     Linear interpolation to a new dimension in dfmt.interp_regularnc_to_plipoints() 
