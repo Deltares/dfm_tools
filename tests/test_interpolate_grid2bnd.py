@@ -125,7 +125,7 @@ def test_plipointsDataset_fews_accepted():
     ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
     
     forcing0 = ForcingModel_object.forcing[0]
-    
+    assert isinstance(ForcingModel_object, hcdfm.ForcingModel)
     assert isinstance(forcing0, hcdfm.T3D)
     assert forcing0.quantityunitpair[1].unit == 'ppt'
     
@@ -152,6 +152,14 @@ def test_interpolate_nc_to_bc():
     
     #convert plipointsDataset to hydrolib ForcingModel
     ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
+    
+    forcing0 = ForcingModel_object.forcing[0]
+    assert isinstance(ForcingModel_object, hcdfm.ForcingModel)
+    assert isinstance(forcing0, hcdfm.T3D)
+    assert forcing0.quantityunitpair[1].unit == '1e-3'
+    
+    # test whether so was renamed to salinitybnd
+    assert forcing0.quantityunitpair[1].quantity == 'salinitybnd'
 
 
 @pytest.mark.systemtest
@@ -330,15 +338,38 @@ def test_interpolate_tide_to_plipoints():
             assert compnames_now == compnames_expected
             assert (np.abs(amp_expected-amp_now)<1e-6).all()
             assert (np.abs(phs_expected-phs_now)<1e-6).all()
-            
-            # file_bc_out = f'tide_{tidemodel}.bc'
-            # ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
-            # ForcingModel_object.save(filepath=file_bc_out)
-    
+        
         print(f'>> tide interpolation from {tidemodel} took: ',end='')
         print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
 
     
+@pytest.mark.unittest
+def test_interpolate_tide_to_forcingmodel():
+    """
+    This tests adds to test_interpolate_tide_to_plipoints, since it also interpolates to ForcingModel
+    Furthermore, it runs on Github since it does not depend on local data
+    """
+    
+    tidemodel = 'GTSMv4.1_opendap'
+    component_list = ['M2']
+    gdf_points = data_dcsm_gdf()
+
+    data_interp = dfmt.interpolate_tide_to_plipoints(tidemodel=tidemodel, gdf_points=gdf_points, 
+                                                     component_list=component_list, load=True)
+    ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
+    
+    forcing0 = ForcingModel_object.forcing[0]
+    assert isinstance(ForcingModel_object, hcdfm.ForcingModel)
+    assert isinstance(forcing0, hcdfm.Astronomic)
+    
+    assert forcing0.quantityunitpair[0].unit == '-'
+    assert forcing0.quantityunitpair[0].quantity == 'astronomic component'
+    assert forcing0.quantityunitpair[1].unit == 'm'
+    assert forcing0.quantityunitpair[1].quantity == 'waterlevelbnd amplitude'
+    assert forcing0.quantityunitpair[2].unit == 'degrees'
+    assert forcing0.quantityunitpair[2].quantity == 'waterlevelbnd phase'
+
+
 @pytest.mark.systemtest
 @pytest.mark.requireslocaldata
 def test_read_polyfile_as_gdf_points():
@@ -355,22 +386,6 @@ def test_read_polyfile_as_gdf_points():
     assert isinstance(gdf_points, gpd.GeoDataFrame)
     assert (gdf_points.geometry == reference.geometry).all()
     assert gdf_points[varn_pointname].tolist() == reference[varn_pointname].tolist()
-
-
-@pytest.mark.unittest
-def test_interpolate_tide_to_forcingmodel():
-    """
-    This tests adds to test_interpolate_tide_to_plipoints, since it also interpolates to ForcingModel
-    Furthermore, it runs on Github since it does not depend on local data
-    """
-    
-    tidemodel = 'GTSMv4.1_opendap'
-    component_list = ['M2']
-    gdf_points = data_dcsm_gdf()
-
-    data_interp = dfmt.interpolate_tide_to_plipoints(tidemodel=tidemodel, gdf_points=gdf_points, 
-                                                     component_list=component_list, load=True)
-    ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
 
 
 @pytest.mark.unittest
