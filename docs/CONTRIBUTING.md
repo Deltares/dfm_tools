@@ -70,7 +70,7 @@ mkdocs build
 - update ``docs/whats-new.md`` and add a date to the current release heading
 - run local testbank
 - local check with: ``python setup.py sdist bdist_wheel`` and ``twine check dist/*``
-- copy the dfm_tools version from https://github.com/Deltares/dfm_tools/blob/main/setup.cfg (e.g. ``0.11.0``)
+- copy the dfm_tools version from https://github.com/Deltares/dfm_tools/blob/main/pyproject.toml (e.g. ``0.11.0``)
 - go to https://github.com/Deltares/dfm_tools/releases/new
 - click ``choose a tag`` and type v+versionnumber (e.g. ``v0.11.0``), click ``create new tag: v0.11.0 on publish``
 - set the release title to the tagname (e.g. ``v0.11.0``)
