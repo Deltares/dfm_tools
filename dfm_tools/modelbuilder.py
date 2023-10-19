@@ -16,7 +16,6 @@ import hydrolib.core.dflowfm as hcdfm
 import datetime as dt
 import glob
 from hydrolib.core.dimr.models import DIMR, FMComponent, Start
-import warnings
 
 
 def cmems_nc_to_bc(ext_bnd, list_quantities, tstart, tstop, file_pli, dir_pattern, dir_output, refdate_str):
@@ -43,7 +42,7 @@ def cmems_nc_to_bc(ext_bnd, list_quantities, tstart, tstop, file_pli, dir_patter
         ForcingModel_object.save(filepath=file_bc_out)
         
         #generate boundary object for the ext file (quantity, pli-filename, bc-filename)
-        boundary_object = hcdfm.Boundary(quantity=quantity.replace('tide','waterlevelbnd'), #the FM quantity for tide is also waterlevelbnd
+        boundary_object = hcdfm.Boundary(quantity=quantity,
                                          locationfile=file_pli,
                                          forcingfile=ForcingModel_object)
         ext_bnd.boundary.append(boundary_object)

@@ -250,6 +250,12 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
         quantity_list = ['ux','uy']
     else:
         quantity_list = [quantity]
+    
+    # check existence of requested keys in conversion_dict
+    for quan in quantity_list:
+        if quan not in conversion_dict.keys():
+            raise KeyError(f"quantity '{quan}' not in conversion_dict, (case sensitive) options are: {str(list(conversion_dict.keys()))}")
+    
     ncvarname_list = [conversion_dict[quan]['ncvarname'] for quan in quantity_list]
     
     #convert tstart/tstop from str/dt.datetime/pd.Timestamp to pd.Timestamp. WARNING: when supplying '05-04-2016', monthfirst is assumed, so 2016-05-04 will be the result (may instead of april).
