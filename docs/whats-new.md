@@ -1,4 +1,4 @@
-## UNRELEASED
+## 0.15.0 (2023-10-19)
 
 ### Feat
 - create `dimr_config.xml` and `run_parallel.bat` with `dfmt.create_model_exec_files()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#599](https://github.com/Deltares/dfm_tools/pull/599)
