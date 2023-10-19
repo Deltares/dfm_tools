@@ -117,15 +117,17 @@ ext_new = hcdfm.ExtModel()
 
 # FES2014 tidal components bc file
 file_bc_basename = os.path.basename(poly_file).replace('.pli','')
-# ForcingModel_object = dfmt.interpolate_tide_to_bc(tidemodel='FES2014', file_pli=poly_file, component_list=None) # tidemodel: FES2014, FES2012, EOT20, GTSMv4.1
-# file_bc_out = os.path.join(dir_output,f'tide_{file_bc_basename}_FES2014.bc')
-# ForcingModel_object.save(filepath=file_bc_out)
-# boundary_object = hcdfm.Boundary(quantity='waterlevelbnd', #the FM quantity for tide is also waterlevelbnd
-#                                  locationfile=poly_file,
-#                                  forcingfile=ForcingModel_object)
-# ext_new.boundary.append(boundary_object)
+ForcingModel_object = dfmt.interpolate_tide_to_bc(tidemodel='FES2014', file_pli=poly_file, component_list=None) # tidemodel: FES2014, FES2012, EOT20, GTSMv4.1
+file_bc_out = os.path.join(dir_output,f'tide_{file_bc_basename}_FES2014.bc')
+ForcingModel_object.save(filepath=file_bc_out)
+boundary_object = hcdfm.Boundary(quantity='waterlevelbnd', #the FM quantity for tide is also waterlevelbnd
+                                  locationfile=poly_file,
+                                  forcingfile=ForcingModel_object)
+ext_new.boundary.append(boundary_object)
 
 # CMEMS - download
+# you can also add WAQ variables like 'no3' and 'phyc'
+# check dfmt.get_conversion_dict() for an overview of parameter/quantity names
 dir_output_data_cmems = os.path.join(dir_output_data, 'cmems')
 os.makedirs(dir_output_data_cmems, exist_ok=True)
 for varkey in ['zos','so','thetao','uo','vo','no3','phyc']:
@@ -135,6 +137,8 @@ for varkey in ['zos','so','thetao','uo','vo','no3','phyc']:
                         dir_output=dir_output_data_cmems, file_prefix='cmems_', overwrite=overwrite)
 
 # CMEMS - boundary conditions file (.bc) (and add to ext_bnd)
+# you can also add WAQ variables like 'tracerbndNO3' and 'tracerbndPON1'
+# check dfmt.get_conversion_dict() for an overview of parameter/quantity names
 # when supplying two waterlevelbnds to FM (tide and steric) with other quantities in between, dimrset>=2.24.00 is required
 # or else "ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated" is raised (https://issuetracker.deltares.nl/browse/UNST-7011).
 # Two waterlevelbnds need to share same physical plifile in order to be appended (https://issuetracker.deltares.nl/browse/UNST-5320).
