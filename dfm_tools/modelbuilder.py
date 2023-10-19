@@ -206,7 +206,7 @@ def create_model_exec_files(file_dimr, file_mdu, model_name, nproc=1, dimrset_fo
     if path_style == 'windows':
         _generate_bat_file(dimr_model=dimr_model, dimrset_folder=dimrset_folder)
     else:
-        warnings.warn(UserWarning(f"path_style/os {path_style} not yet supported, no bat/sh file is written"))
+        warnings.warn(UserWarning(f"path_style/os {path_style} not yet supported by `dfmt.create_model_exec_files()`, no bat/sh file is written"))
 
 
 def _generate_bat_file(dimr_model, dimrset_folder=None):
