@@ -16,6 +16,7 @@ import hydrolib.core.dflowfm as hcdfm
 import datetime as dt
 import glob
 from hydrolib.core.dimr.models import DIMR, FMComponent, Start
+import warnings
 
 
 def cmems_nc_to_bc(ext_bnd, list_quantities, tstart, tstop, file_pli, dir_pattern, dir_output, refdate_str):
@@ -205,7 +206,7 @@ def create_model_exec_files(file_dimr, file_mdu, model_name, nproc=1, dimrset_fo
     if path_style == 'windows':
         _generate_bat_file(dimr_model=dimr_model, dimrset_folder=dimrset_folder)
     else:
-        raise ValueError("path_style {path_style} not yet supported, use different value like None or 'windows'")
+        warnings.warn(UserWarning(f"path_style/os {path_style} not yet supported by `dfmt.create_model_exec_files()`, no bat/sh file is written"))
 
 
 def _generate_bat_file(dimr_model, dimrset_folder=None):
