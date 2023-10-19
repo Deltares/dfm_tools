@@ -113,6 +113,7 @@ def download_CMEMS(varkey,
     
     Path(dir_output).mkdir(parents=True, exist_ok=True)
     if varkey in ['bottomT','tob','mlotst','siconc','sithick','so','thetao','uo','vo','usi','vsi','zos']: #for physchem
+        buffer = 2/12 # resolution is 1/12 degrees
         if product == 'analysisforecast': #forecast: https://data.marine.copernicus.eu/product/GLOBAL_ANALYSISFORECAST_PHY_001_024/description
             if varkey in ['uo','vo']: #anfc datset is splitted over multiple urls, construct the correct one here.
                 varkey_name = 'phy-cur'
@@ -124,16 +125,17 @@ def download_CMEMS(varkey,
         else: #reanalysis: https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_PHY_001_030/description
             dataset_url = 'https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_my_0.083_P1D-m'
     else: #for bio
+        buffer = 2/4 # resolution is 1/4 degrees
         if product == 'analysisforecast': #forecast: https://data.marine.copernicus.eu/product/GLOBAL_ANALYSIS_FORECAST_BIO_001_028/description
             dataset_url = 'https://nrt.cmems-du.eu/thredds/dodsC/global-analysis-forecast-bio-001-028-daily' #contains ['chl','fe','no3','nppv','o2','ph','phyc','po4','si','spco2']
         else: #https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_BGC_001_029/description
             dataset_url = 'https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_bgc_my_0.25_P1D-m' #contains ['chl','no3','nppv','o2','po4','si']
     
     #make sure the data fully covers the desired spatial extent. Download 2 additional grid cells (resolution is 1/12 degrees, but a bit more/less in alternating cells) in each direction
-    longitude_min -= 2/12
-    longitude_max += 2/12
-    latitude_min  -= 2/12
-    latitude_max  += 2/12
+    longitude_min -= buffer
+    longitude_max += buffer
+    latitude_min  -= buffer
+    latitude_max  += buffer
     
     download_OPeNDAP(dataset_url=dataset_url,
                      varkey=varkey,
