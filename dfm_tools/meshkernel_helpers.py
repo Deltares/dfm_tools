@@ -103,7 +103,7 @@ def meshkernel_delete_withgdf(mk:meshkernel.meshkernel.MeshKernel, coastlines_gd
         
         delete_pol_geom = meshkernel.GeometryList(x_coordinates=xx, y_coordinates=yy) #TODO: .copy()/to_numpy() makes the array contiguous in memory, which is necessary for meshkernel.mesh2d_delete()
         mk.mesh2d_delete(geometry_list=delete_pol_geom, 
-                         delete_option=meshkernel.DeleteMeshOption(2), #ALL_COMPLETE_FACES/2: Delete all faces of which the complete face is inside the polygon
+                         delete_option=meshkernel.DeleteMeshOption.INSIDE_NOT_INTERSECTED,
                          invert_deletion=False)
 
 
