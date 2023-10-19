@@ -128,14 +128,17 @@ file_bc_basename = os.path.basename(poly_file).replace('.pli','')
 # CMEMS - download
 dir_output_data_cmems = os.path.join(dir_output_data, 'cmems')
 os.makedirs(dir_output_data_cmems, exist_ok=True)
-for varkey in ['zos','so','thetao','uo','vo','no3']:
+for varkey in ['zos','so','thetao','uo','vo','no3','phyc']:
     dfmt.download_CMEMS(varkey=varkey,
                         longitude_min=lon_min, longitude_max=lon_max, latitude_min=lat_min, latitude_max=lat_max,
                         date_min=date_min, date_max=date_max,
                         dir_output=dir_output_data_cmems, file_prefix='cmems_', overwrite=overwrite)
 
 # CMEMS - boundary conditions file (.bc) (and add to ext_bnd)
-list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd','tracerbndNO3'] # when supplying two waterlevelbnds to FM (tide and steric) with other quantities in between, dimrset>=2.24.00 is required or else "ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated" is raised (https://issuetracker.deltares.nl/browse/UNST-7011). Two waterlevelbnds need to share same physical plifile in order to be appended (https://issuetracker.deltares.nl/browse/UNST-5320).
+# when supplying two waterlevelbnds to FM (tide and steric) with other quantities in between, dimrset>=2.24.00 is required
+# or else "ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated" is raised (https://issuetracker.deltares.nl/browse/UNST-7011).
+# Two waterlevelbnds need to share same physical plifile in order to be appended (https://issuetracker.deltares.nl/browse/UNST-5320).
+list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd','tracerbndNO3','tracerbndPON1']
 ext_new = dfmt.cmems_nc_to_bc(ext_bnd=ext_new,
                               refdate_str=f'minutes since {ref_date} 00:00:00 +00:00',
                               dir_output=dir_output,
@@ -262,7 +265,7 @@ if paths_relative:
             file.write(filedata)
 
 file_dimr = os.path.join(dir_output,'dimr_config.xml')
-nproc = 2 # number of processes
+nproc = 1 # number of processes
 dimrset_folder = r"c:\Program Files\Deltares\Delft3D FM Suite 2023.03 HMWQ\plugins\DeltaShell.Dimr\kernels" #alternatively r"p:\d-hydro\dimrset\weekly\2.25.17.78708"
 dfmt.create_model_exec_files(file_dimr, file_mdu=mdu_file, model_name=model_name, nproc=nproc, dimrset_folder=dimrset_folder)
 
