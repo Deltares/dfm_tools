@@ -259,6 +259,11 @@ def make_basegrid(lon_min,lon_max,lat_min,lat_max,dx,dy,angle=0,is_geographic=Tr
     """
     empty docstring
     """
+    if is_geographic:
+        projection = meshkernel.ProjectionType.SPHERICAL
+    else:
+        projection = meshkernel.ProjectionType.CARTESIAN
+    
     # create base grid
     make_grid_parameters = meshkernel.MakeGridParameters(angle=angle,
                                                          origin_x=lon_min,
@@ -268,8 +273,8 @@ def make_basegrid(lon_min,lon_max,lat_min,lat_max,dx,dy,angle=0,is_geographic=Tr
                                                          block_size_x=dx,
                                                          block_size_y=dy)
     
-    mk = meshkernel.MeshKernel(is_geographic=is_geographic)
-    mk.curvilinear_make_uniform_on_extension(make_grid_parameters)
+    mk = meshkernel.MeshKernel(projection=projection)
+    mk.curvilinear_compute_rectangular_grid_on_extension(make_grid_parameters)
     mk.curvilinear_convert_to_mesh2d() #convert to ugrid/mesh2d
     
     return mk

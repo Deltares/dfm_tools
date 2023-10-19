@@ -6,6 +6,10 @@ __author__ = """Jelmer Veenstra"""
 __email__ = "jelmer.veenstra@deltares.nl"
 __version__ = "0.15.0"
 
+# TODO workaround for hcdfm calling of deprecated enum: https://github.com/Deltares/HYDROLIB-core/blob/bf75f024e48b515d4cd7c93cd3f997de4fc5b1ef/hydrolib/core/dflowfm/net/models.py#L1185
+import meshkernel as mk
+mk.DeleteMeshOption.ALL_FACE_CIRCUMCENTERS = 999
+
 from dfm_tools.deprecated import *
 from dfm_tools.errors import *
 from dfm_tools.download import *
