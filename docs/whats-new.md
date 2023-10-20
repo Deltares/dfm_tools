@@ -1,3 +1,9 @@
+## UNRELEASED
+
+### Fix
+- support for Polygon geometries in `geodataframe_to_PolyFile` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#610](https://github.com/Deltares/dfm_tools/pull/610)
+
+
 ## 0.15.0 (2023-10-19)
 
 ### Feat
