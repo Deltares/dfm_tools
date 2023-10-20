@@ -5,7 +5,6 @@ Created on Tue Aug 23 13:36:44 2022
 @author: veenstra
 """
 
-import warnings
 import pandas as pd
 import cftime
 import numpy as np
@@ -231,7 +230,10 @@ def geodataframe_to_PolyFile(poly_gdf):
             name = poly_gdf['name'].iloc[irow] #TODO: not allowed to use identical polyline names in 1 file, but this is not catched by hydrolib-core
         else:
             name = f'L{irow+1}' #TODO: when providing name='' it will result in an invalid plifile, but this is not catched by hydrolib-core
-        poly_geom_np = np.array(poly_geom.boundary.xy).T
+        if isinstance(poly_geom, LineString):
+            poly_geom_np = np.array(poly_geom.xy).T
+        else: # isinstance(poly_geom, shapely.Polygon):
+            poly_geom_np = np.array(poly_geom.boundary.xy).T
         pd_columns = ['x','y']
         if poly_geom_np.shape[1]==3:
             pd_columns = ['x','y','z']
