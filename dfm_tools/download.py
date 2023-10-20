@@ -60,10 +60,11 @@ def download_ERA5(varkey,
     print(f'retrieving data from {period_range[0]} to {period_range[-1]} (freq={period_range.freq})')
     
     #make sure the data fully covers the desired spatial extent. Download 1 additional grid cell (resolution is 1/4 degrees) in both directions
-    longitude_min -= 1/4
-    longitude_max += 1/4
-    latitude_min  -= 1/4
-    latitude_max  += 1/4
+    buffer = 2/4
+    longitude_min -= buffer
+    longitude_max += buffer
+    latitude_min  -= buffer
+    latitude_max  += buffer
     
     for date in period_range:
         name_output = f'era5_{varkey}_{date.strftime("%Y-%m")}.nc'
