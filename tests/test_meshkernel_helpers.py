@@ -72,7 +72,7 @@ def test_meshkernel_delete_withcoastlines():
     # remove cells with GSHHS coastlines
     dfmt.meshkernel_delete_withcoastlines(mk=mk, res='h')
     
-    assert len(mk.mesh2d_get().face_nodes) == 17364
+    assert len(mk.mesh2d_get().face_nodes) == 17368
 
 
 @pytest.mark.unittest
@@ -125,7 +125,7 @@ def test_meshkernel_delete_withgdf():
     ldb_gdf = dfmt.get_coastlines_gdb(bbox=bbox, res='h')
     dfmt.meshkernel_delete_withgdf(mk=mk, coastlines_gdf=ldb_gdf)
     
-    assert len(mk.mesh2d_get().face_nodes) == 17364
+    assert len(mk.mesh2d_get().face_nodes) == 17368
 
 
 @pytest.mark.systemtest
@@ -134,8 +134,8 @@ def test_meshkernel_to_UgridDataset():
     generate grid with meshkernel. Then convert with `dfmt.meshkernel_to_UgridDataset()` from 0-based to 1-based indexing to make FM-compatible network.
     assert if _FillValue, start_index, min and max are the expected values, this ensures FM-compatibility
     """
-    is_geographic = False #TODO: polygon refinement does not work for spherical grids: https://github.com/Deltares/MeshKernelPy/issues/78
-    crs = 'EPSG:28992' #arbitrary non-spherical epsg code
+    is_geographic = True
+    crs = 'EPSG:4326'
     
     # create basegrid
     lon_min, lon_max, lat_min, lat_max = -6, 2, 48.5, 51.2
@@ -146,15 +146,15 @@ def test_meshkernel_to_UgridDataset():
                                                          upper_right_y=lat_max,
                                                          block_size_x=dxy,
                                                          block_size_y=dxy)
-    mk = meshkernel.MeshKernel(is_geographic=is_geographic)
-    mk.curvilinear_make_uniform_on_extension(make_grid_parameters)
+    mk = meshkernel.MeshKernel(projection=is_geographic)
+    mk.curvilinear_compute_rectangular_grid_on_extension(make_grid_parameters)
     mk.curvilinear_convert_to_mesh2d() #convert to ugrid/mesh2d
     
     # refine with polygon
     pol_x = np.array([-5,-4,0,-5], dtype=np.double)
     pol_y = np.array([49,51,49.5,49], dtype=np.double)
     geometry_list = meshkernel.GeometryList(pol_x, pol_y)
-    mrp = meshkernel.MeshRefinementParameters()
+    mrp = meshkernel.MeshRefinementParameters(min_edge_size=3000)
     mk.mesh2d_refine_based_on_polygon(polygon=geometry_list, mesh_refinement_params=mrp)
     
     #convert to xugrid and write to netcdf
@@ -163,9 +163,11 @@ def test_meshkernel_to_UgridDataset():
     xu_grid_uds.ugrid.to_netcdf(netfile)
     
     # plot
-    # fig,ax = plt.subplots()
-    # xu_grid_uds.grid.plot(ax=ax)
-    # ax.plot(pol_x,pol_y,'r-')
+    import matplotlib.pyplot as plt
+    plt.close("all")
+    fig,ax = plt.subplots()
+    xu_grid_uds.grid.plot(ax=ax)
+    ax.plot(pol_x,pol_y,'r-')
     
     #assert output grid
     ds_out = xr.open_dataset(netfile,decode_cf=False).load()
@@ -175,7 +177,7 @@ def test_meshkernel_to_UgridDataset():
     assert ds_out.mesh2d_face_nodes.attrs['start_index'] == 1
     assert 0 not in ds_out.mesh2d_face_nodes.to_numpy()
     assert ds_out.mesh2d_face_nodes.to_numpy().min() == -1
-    assert ds_out.mesh2d_face_nodes.to_numpy().max() == 135
+    assert ds_out.mesh2d_face_nodes.to_numpy().max() == 626
 
 
 def test_generate_bndpli_cutland():
