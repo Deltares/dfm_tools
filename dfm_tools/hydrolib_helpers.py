@@ -222,9 +222,7 @@ def geodataframe_to_PolyFile(poly_gdf):
     """
     convert a geopandas geodataframe with x/y columns (and optional others like z/data/comment) to a hydrolib PolyFile
     """
-    if len(poly_gdf)>1:
-        warnings.warn(UserWarning(f'D-FlowFM will only read the first polyline from a boundary polyfile (UNST-7012), make sure you write your {len(poly_gdf)} separate boundaries to separate files')) #TODO: fix in FM-kernel: https://issuetracker.deltares.nl/browse/UNST-7012
-
+    
     polyfile_obj = hcdfm.PolyFile()
     #TODO: now only name+geometry, still add other data columns
     for irow, gdf_row in poly_gdf.iterrows():
@@ -233,7 +231,7 @@ def geodataframe_to_PolyFile(poly_gdf):
             name = poly_gdf['name'].iloc[irow] #TODO: not allowed to use identical polyline names in 1 file, but this is not catched by hydrolib-core
         else:
             name = f'L{irow+1}' #TODO: when providing name='' it will result in an invalid plifile, but this is not catched by hydrolib-core
-        poly_geom_np = np.array(poly_geom.xy).T
+        poly_geom_np = np.array(poly_geom.boundary.xy).T
         pd_columns = ['x','y']
         if poly_geom_np.shape[1]==3:
             pd_columns = ['x','y','z']
