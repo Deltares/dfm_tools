@@ -4,7 +4,7 @@
 
 __author__ = """Jelmer Veenstra"""
 __email__ = "jelmer.veenstra@deltares.nl"
-__version__ = "0.15.0"
+__version__ = "0.15.1"
 
 # TODO: workaround for hcdfm calling of deprecated enum: https://github.com/Deltares/HYDROLIB-core/blob/bf75f024e48b515d4cd7c93cd3f997de4fc5b1ef/hydrolib/core/dflowfm/net/models.py#L1185
 import meshkernel as mk

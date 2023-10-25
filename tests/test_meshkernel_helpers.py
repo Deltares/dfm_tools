@@ -180,6 +180,7 @@ def test_meshkernel_to_UgridDataset():
     assert ds_out.mesh2d_face_nodes.to_numpy().max() == 626
 
 
+@pytest.mark.unittest
 def test_generate_bndpli_cutland():
     # domain, resolution and expected values
     params_all = [[-68.55, -68.05, 11.95, 12.4,    1, 99],

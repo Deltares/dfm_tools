@@ -1,3 +1,10 @@
+## UNRELEASED
+
+### Fix
+- increased buffer in `dfmt.download_ERA5()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#612](https://github.com/Deltares/dfm_tools/pull/612)
+- support for Polygon geometries in `dfmt.geodataframe_to_PolyFile()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#610](https://github.com/Deltares/dfm_tools/pull/610)
+
+
 ## 0.15.0 (2023-10-19)
 
 ### Feat
