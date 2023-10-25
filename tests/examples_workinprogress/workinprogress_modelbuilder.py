@@ -16,7 +16,7 @@ import contextily as ctx
 
 ## input
 model_name = 'Bonaire'
-dir_output = r'p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\ModelBuilderOutput_JV3'
+dir_output = r'p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\ModelBuilderOutput_JV2'
 path_style = 'windows' # windows / unix
 overwrite = False # used for downloading of forcing data. Always set to True when changing the domain
 paths_relative = False #TODO: currently only works with path_style='windows' (same OS as IDE)
