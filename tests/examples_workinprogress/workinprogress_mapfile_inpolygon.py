@@ -46,7 +46,7 @@ crs = 4326
 plot_shp = False
 
 ## All the shapefiles in the Netherlands
-shpdir = os.path.join('p:\\11208800-kdvoedsel-noordzee\\3.data_analysis\\inputData','windFarmAreas')
+shpdir = os.path.join('p:\\archivedprojects\\11208800-kdvoedsel-noordzee\\3.data_analysis\\inputData','windFarmAreas')
 shpfile = ['Operational and tendered wind farms.shp', 'Search areas offshore wind.shp']  # 2x folders
 idcol =  'wndfrm_'
 
@@ -91,7 +91,7 @@ area_shp.plot(ax=ax, linewidth = 1, facecolor = (1, 1, 1, 0), edgecolor = (0.5, 
 
 ## Loop over years
 years = ['2017'] #['2009', '2010', '2011', '2012', '2013', '2014', '2015', '2016', '2017']
-basedir = r"p:\11208800-kdvoedsel-noordzee\3.data_analysis\inputData\extractedModelData" 
+basedir = r"p:\archivedprojects\11208800-kdvoedsel-noordzee\3.data_analysis\inputData\extractedModelData" 
 for year in years: # last few years - from 2015
     print(year)
     

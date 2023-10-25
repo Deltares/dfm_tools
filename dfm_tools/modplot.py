@@ -98,8 +98,6 @@ def velovect(axes, x, y, u, v, density=1, linewidth=None, color=None,
             to the colormap, alpha, etc. for both lines and arrows, but these
             changes should be backward compatible.
     """
-    if version.parse(mpl.__version__) < version.parse("3.4.0"): # many of the used functions do not exists yet in matplotlib<3.4.0
-        raise ValueError(f'matplotlib {mpl.__version__} is installed, dfmt.modplot.velovect requires matplotlib>=3.4.0')
     
     grid = Grid(x, y)
     mask = StreamMask(10)

@@ -9,7 +9,6 @@ import os
 import matplotlib.pyplot as plt
 plt.close('all')
 import dfm_tools as dfmt
-from dfm_tools import modelbuilder as mb #different import for modelbuilder since it is not exposed publicly
 import hydrolib.core.dflowfm as hcdfm
 import xarray as xr
 import pandas as pd
@@ -17,10 +16,10 @@ import contextily as ctx
 
 ## input
 model_name = 'Bonaire'
-dir_output = r'p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\ModelBuilderOutput_JV'
-path_style = 'unix' # windows / unix
+dir_output = r'p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\ModelBuilderOutput_JV2'
+path_style = 'windows' # windows / unix
 overwrite = False # used for downloading of forcing data. Always set to True when changing the domain
-paths_relative = False #TODO: currently only works with path_style='windows' (same OS as IDE)
+paths_relative = True #TODO: currently only works with path_style='windows' (same OS as IDE)
 is_geographic = True
 crs = 'EPSG:4326'
 
@@ -67,7 +66,7 @@ mk_object = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dx
 # generate plifile from grid extent and coastlines
 bnd_gdf = dfmt.generate_bndpli_cutland(mk=mk_object, res='h', buffer=0.01)
 bnd_gdf['name'] = f'{model_name}_bnd'
-bnd_gdf_interp = dfmt.interpolate_bndpli(bnd_gdf,res=0.03)
+bnd_gdf_interp = dfmt.interpolate_bndpli(bnd_gdf,res=0.06)
 poly_file = os.path.join(dir_output, f'{model_name}.pli')
 pli_polyfile = dfmt.geodataframe_to_PolyFile(bnd_gdf_interp)
 pli_polyfile.save(poly_file)
@@ -118,8 +117,9 @@ ext_new = hcdfm.ExtModel()
 
 # FES2014 tidal components bc file
 file_bc_basename = os.path.basename(poly_file).replace('.pli','')
-ForcingModel_object = dfmt.interpolate_tide_to_bc(tidemodel='FES2014', file_pli=poly_file, component_list=None) # tidemodel: FES2014, FES2012, EOT20, GTSM4.1preliminary
-file_bc_out = os.path.join(dir_output,f'tide_{file_bc_basename}_FES2014.bc')
+tidemodel = 'EOT20' # tidemodel: FES2014, FES2012, EOT20, GTSMv4.1, GTSMv4.1_opendap
+ForcingModel_object = dfmt.interpolate_tide_to_bc(tidemodel=tidemodel, file_pli=poly_file, component_list=None)
+file_bc_out = os.path.join(dir_output,f'tide_{file_bc_basename}_{tidemodel}.bc')
 ForcingModel_object.save(filepath=file_bc_out)
 boundary_object = hcdfm.Boundary(quantity='waterlevelbnd', #the FM quantity for tide is also waterlevelbnd
                                  locationfile=poly_file,
@@ -127,24 +127,31 @@ boundary_object = hcdfm.Boundary(quantity='waterlevelbnd', #the FM quantity for 
 ext_new.boundary.append(boundary_object)
 
 # CMEMS - download
+# you can also add WAQ variables like 'no3' and 'phyc'
+# check dfmt.get_conversion_dict() for an overview of parameter/quantity names
 dir_output_data_cmems = os.path.join(dir_output_data, 'cmems')
 os.makedirs(dir_output_data_cmems, exist_ok=True)
-for varkey in ['so','thetao','uo','vo','zos']:
+for varkey in ['zos','so','thetao','uo','vo','no3','phyc']:
     dfmt.download_CMEMS(varkey=varkey,
                         longitude_min=lon_min, longitude_max=lon_max, latitude_min=lat_min, latitude_max=lat_max,
                         date_min=date_min, date_max=date_max,
                         dir_output=dir_output_data_cmems, file_prefix='cmems_', overwrite=overwrite)
 
 # CMEMS - boundary conditions file (.bc) (and add to ext_bnd)
-list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd'] # when supplying two waterlevelbnds to FM (tide and steric) with other quantities in between, dimrset>=2.24.00 is required or else "ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated" is raised (https://issuetracker.deltares.nl/browse/UNST-7011). Two waterlevelbnds need to share same physical plifile in order to be appended (https://issuetracker.deltares.nl/browse/UNST-5320).
-ext_new = mb.cmems_nc_to_bc(ext_bnd=ext_new,
-                            refdate_str=f'minutes since {ref_date} 00:00:00 +00:00',
-                            dir_output=dir_output,
-                            list_quantities=list_quantities,
-                            tstart=date_min,
-                            tstop=date_max, 
-                            file_pli=poly_file,
-                            dir_pattern=os.path.join(dir_output_data_cmems,'cmems_{ncvarname}_*.nc'))
+# you can also add WAQ variables like 'tracerbndNO3' and 'tracerbndPON1'
+# check dfmt.get_conversion_dict() for an overview of parameter/quantity names
+# when supplying two waterlevelbnds to FM (tide and steric) with other quantities in between, dimrset>=2.24.00 is required
+# or else "ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated" is raised (https://issuetracker.deltares.nl/browse/UNST-7011).
+# Two waterlevelbnds need to share same physical plifile in order to be appended (https://issuetracker.deltares.nl/browse/UNST-5320).
+list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd','tracerbndNO3','tracerbndPON1']
+ext_new = dfmt.cmems_nc_to_bc(ext_bnd=ext_new,
+                              refdate_str=f'minutes since {ref_date} 00:00:00 +00:00',
+                              dir_output=dir_output,
+                              list_quantities=list_quantities,
+                              tstart=date_min,
+                              tstop=date_max, 
+                              file_pli=poly_file,
+                              dir_pattern=os.path.join(dir_output_data_cmems,'cmems_{ncvarname}_*.nc'))
 
 #save new ext file
 ext_new.save(filepath=ext_file_new,path_style=path_style)
@@ -157,10 +164,10 @@ ext_file_old = os.path.join(dir_output, f'{model_name}_old.ext')
 ext_old = hcdfm.ExtOldModel()
 
 if inisaltem:
-    ext_old = mb.preprocess_ini_cmems_to_nc(ext_old=ext_old,
-                                            tstart=date_min,
-                                            dir_data=dir_output_data_cmems,
-                                            dir_out=dir_output)
+    ext_old = dfmt.preprocess_ini_cmems_to_nc(ext_old=ext_old,
+                                              tstart=date_min,
+                                              dir_data=dir_output_data_cmems,
+                                              dir_out=dir_output)
 
 # ERA5 - download
 dir_output_data_era5 = os.path.join(dir_output_data,'ERA5')
@@ -179,11 +186,11 @@ for varlist in varlist_list:
                            dir_output=dir_output_data_era5, overwrite=overwrite)
 
 # ERA5 meteo - convert to netCDF for usage in Delft3D FM
-ext_old = mb.preprocess_merge_meteofiles_era5(ext_old=ext_old,
-                                              varkey_list = varlist_list,
-                                              dir_data = dir_output_data_era5,
-                                              dir_output = dir_output,
-                                              time_slice = slice(date_min, date_max))
+ext_old = dfmt.preprocess_merge_meteofiles_era5(ext_old=ext_old,
+                                                varkey_list = varlist_list,
+                                                dir_data = dir_output_data_era5,
+                                                dir_output = dir_output,
+                                                time_slice = slice(date_min, date_max))
 
 ext_old.save(filepath=ext_file_old,path_style=path_style)
 
@@ -261,4 +268,9 @@ if paths_relative:
         filedata = filedata.replace(dir_output.replace('\\','/')+'/', '') #dir_output or os.path.dirname(mdu_file)
         with open(filename, 'w') as file:
             file.write(filedata)
+
+file_dimr = os.path.join(dir_output,'dimr_config.xml')
+nproc = 1 # number of processes
+dimrset_folder = r"c:\Program Files\Deltares\Delft3D FM Suite 2023.03 HMWQ\plugins\DeltaShell.Dimr\kernels" #alternatively r"p:\d-hydro\dimrset\weekly\2.25.17.78708"
+dfmt.create_model_exec_files(file_dimr, file_mdu=mdu_file, model_name=model_name, nproc=nproc, dimrset_folder=dimrset_folder)
 

@@ -6,7 +6,6 @@ Created on Thu Aug 18 17:39:03 2022
 
 """
 
-import os
 import glob
 import datetime as dt
 import numpy as np
@@ -19,7 +18,12 @@ import warnings
 import hydrolib.core.dflowfm as hcdfm
 import geopandas
 
-from dfm_tools.hydrolib_helpers import Dataset_to_TimeSeries, Dataset_to_T3D, Dataset_to_Astronomic, pointlike_to_DataFrame, PolyFile_to_geodataframe_points
+from dfm_tools.hydrolib_helpers import (Dataset_to_TimeSeries, 
+                                        Dataset_to_T3D, 
+                                        Dataset_to_Astronomic, 
+                                        PolyFile_to_geodataframe_points, 
+                                        get_ncbnd_construct,
+                                        _da_from_gdf_points)
 from dfm_tools.errors import OutOfRangeError
 
 
@@ -104,8 +108,10 @@ def get_conversion_dict(ncvarname_updates={}):
     return conversion_dict
 
 
-def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=None):
-    data_interp = interpolate_tide_to_plipoints(tidemodel=tidemodel, file_pli=file_pli, component_list=component_list, nPoints=nPoints)
+def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=None, load=True):
+    gdf_points = _read_polyfile_as_gdf_points(file_pli, nPoints=nPoints)
+    data_interp = interpolate_tide_to_plipoints(tidemodel=tidemodel, gdf_points=gdf_points, 
+                                                component_list=component_list, load=load)
     ForcingModel_object = plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
     
     return ForcingModel_object
@@ -143,7 +149,7 @@ def components_translate_upper(component_list):
     return component_list
 
 
-def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoints=None):
+def interpolate_tide_to_plipoints(tidemodel, gdf_points, component_list=None, load=True):
     """
     empty docstring
     """
@@ -158,12 +164,6 @@ def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoi
     if tidemodel not in dir_pattern_dict.keys():
         raise KeyError(f"Invalid tidemodel '{tidemodel}', options are: {str(list(dir_pattern_dict.keys()))}")
         
-    #Check whether the polyfile contains multiple polylines, in that case show a warning
-    pli = hcdfm.PolyFile(file_pli)
-    if len(pli.objects) > 1:
-        warnings.warn(UserWarning(f"The polyfile {file_pli} contains multiple polylines. Only the first one will be used by DFLOW-FM for the boundary conditions."))
-        #TODO when issue UNST-7012 is properly solved, remove this warning or add it in more places
-    
     dir_pattern = dir_pattern_dict[tidemodel]
 
     component_list_tidemodel = tidemodel_componentlist(tidemodel, convention=False)
@@ -229,7 +229,7 @@ def interpolate_tide_to_plipoints(tidemodel, file_pli, component_list=None, nPoi
     data_xrsel['compnames'] = xr.DataArray(component_list,dims=('compno'))
     data_xrsel = data_xrsel.set_index({'compno':'compnames'})
     
-    data_interp = interp_regularnc_to_plipoints(data_xr_reg=data_xrsel, file_pli=file_pli, nPoints=nPoints)
+    data_interp = interp_regularnc_to_plipointsDataset(data_xr_reg=data_xrsel, gdf_points=gdf_points, load=load)
     data_interp['phase_new'] = np.rad2deg(np.arctan2(data_interp['wl_imag'],data_interp['wl_real']))
     return data_interp
 
@@ -239,6 +239,10 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
     empty docstring
     """
     
+    ncbnd_construct = get_ncbnd_construct()
+    dimn_depth = ncbnd_construct['dimn_depth']
+    varn_depth = ncbnd_construct['varn_depth']
+    
     if conversion_dict is None:
         conversion_dict = get_conversion_dict()
     
@@ -246,6 +250,12 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
         quantity_list = ['ux','uy']
     else:
         quantity_list = [quantity]
+    
+    # check existence of requested keys in conversion_dict
+    for quan in quantity_list:
+        if quan not in conversion_dict.keys():
+            raise KeyError(f"quantity '{quan}' not in conversion_dict, (case sensitive) options are: {str(list(conversion_dict.keys()))}")
+    
     ncvarname_list = [conversion_dict[quan]['ncvarname'] for quan in quantity_list]
     
     #convert tstart/tstop from str/dt.datetime/pd.Timestamp to pd.Timestamp. WARNING: when supplying '05-04-2016', monthfirst is assumed, so 2016-05-04 will be the result (may instead of april).
@@ -259,7 +269,7 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
     list_pattern_names = [x.name for x in dir_pattern]
     print(f'loading mfdataset of {len(file_list_nc)} files with pattern(s) {list_pattern_names}')
     
-    data_xr = xr.open_mfdataset(file_list_nc, chunks=chunks) #TODO: does chunks argument solve "PerformanceWarning: Slicing is producing a large chunk."? {'time':1} is not a convenient chunking to use for timeseries extraction
+    data_xr = xr.open_mfdataset(file_list_nc, chunks=chunks, join="exact") #TODO: does chunks argument solve "PerformanceWarning: Slicing is producing a large chunk."? {'time':1} is not a convenient chunking to use for timeseries extraction
     
     for k,v in conversion_dict.items():
         ncvarn = v['ncvarname']
@@ -267,14 +277,17 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
             data_xr = data_xr.rename({ncvarn:k})
             print(f'variable {ncvarn} renamed to {k}')
     
-    #rename dims time/depth/lat/lon/x/y #TODO: this has to be phased out some time, or made as an argument or merged with conversion_dict?
-    rename_dims_dict = {'lev':'depth', #depth for CMEMS and many others, but lev for GFDL
-                        'lon':'longitude','lat':'latitude',
-                        }
+    #rename dims and vars time/depth/lat/lon/x/y #TODO: this has to be phased out some time, or made as an argument or merged with conversion_dict?
+    rename_dims_dict = {'depth':dimn_depth, # depth for CMEMS and many others
+                        'lev':dimn_depth, # lev for GFDL
+                        'lon':'longitude','lat':'latitude'}
     for k,v in rename_dims_dict.items():
-        if k in data_xr.dims and v not in data_xr.dims: 
-            data_xr = data_xr.rename({k:v}) #TODO: can also do this for data_xr_var only?
+        if k in data_xr.dims and v not in data_xr.dims:
+            data_xr = data_xr.rename_dims({k:v})
             print(f'dimension {k} renamed to {v}')
+        if k in data_xr.variables and v not in data_xr.variables:
+            data_xr = data_xr.rename_vars({k:v})
+            print(f'varname {k} renamed to {v}')
     
     #get calendar and maybe convert_calendar, makes sure that nc_tstart/nc_tstop are of type pd._libs.tslibs.timestamps.Timestamp
     data_xr_calendar = data_xr['time'].dt.calendar
@@ -322,17 +335,38 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
             del data_xr_vars.time.attrs['long_name']
         data_xr_vars.time.encoding['units'] = refdate_str
     
-    if 'depth' in data_xr_vars.coords:
+    if varn_depth in data_xr_vars.coords:
         #make negative down
-        if 'positive' in data_xr_vars['depth'].attrs.keys():
-            if data_xr_vars['depth'].attrs['positive'] == 'down': #attribute appears in CMEMS, GFDL and CMCC, save to assume presence?
-                data_xr_vars['depth'] = -data_xr_vars['depth']
+        if 'positive' in data_xr_vars[varn_depth].attrs.keys():
+            if data_xr_vars[varn_depth].attrs['positive'] == 'down': #attribute appears in CMEMS, GFDL and CMCC, save to assume presence?
+                data_xr_vars[varn_depth] = -data_xr_vars[varn_depth]
         #optional reversing depth dimension for comparison to coastserv
         if reverse_depth:
             print('> reversing depth dimension')
-            data_xr_vars = data_xr_vars.reindex({'depth':list(reversed(data_xr_vars['depth']))})
+            data_xr_vars = data_xr_vars.reindex({varn_depth:list(reversed(data_xr_vars[varn_depth]))})
     
     return data_xr_vars
+
+
+def _read_polyfile_as_gdf_points(file_pli, nPoints=None):
+    # read polyfile
+    polyfile_object = hcdfm.PolyFile(file_pli)
+    
+    # warn if the polyfile contains multiple polylines
+    if len(polyfile_object.objects) > 1:
+        warnings.warn(UserWarning(f"The polyfile {file_pli} contains multiple polylines. Only the first one will be used by DFLOW-FM for the boundary conditions."))
+        #TODO after issue UNST-7012 is properly solved, remove this warning
+    
+    # check if polyobj names in plifile are unique
+    polynames_pd = pd.Series([polyobj.metadata.name for polyobj in polyfile_object.objects])
+    if polynames_pd.duplicated().any():
+        raise ValueError(f'Duplicate polyobject names in polyfile {file_pli}, this is not allowed:\n{polynames_pd}')
+    
+    gdf_points = PolyFile_to_geodataframe_points(polyfile_object)
+    
+    # only use testset of n first points of polyfile
+    gdf_points = gdf_points.iloc[:nPoints]
+    return gdf_points
 
 
 def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True):
@@ -340,71 +374,52 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True
     """
     load: interpolation errors are only raised upon loading, so do this per default
     """
-    #TODO: make format of this dataset more in line with existing bnd-nc format and hisfile: https://issuetracker.deltares.nl/browse/UNST-6549
+    # TODO: consider phasing out, this function is probably only used in 
+    # tests/examples/preprocess_interpolate_nc_to_bc.py and dfm_tools/modelbuilder.py
     
-    #load boundary file
-    polyfile_object = hcdfm.PolyFile(file_pli)
+    gdf_points = _read_polyfile_as_gdf_points(file_pli, nPoints=nPoints)
     
-    #check if polyobj names in plifile are unique
-    polynames_pd = pd.Series([polyobj.metadata.name for polyobj in polyfile_object.objects])
-    if polynames_pd.duplicated().any():
-        raise ValueError(f'Duplicate polyobject names in polyfile {file_pli}, this is not allowed:\n{polynames_pd}')
-    
-    #create df of x/y/name of all plipoints in plifile
-    data_pol_list = []
-    for polyobj in polyfile_object.objects:
-        data_pol_pd_one = pointlike_to_DataFrame(polyobj)
-        data_pol_pd_one = data_pol_pd_one.iloc[:nPoints] #only use testset of points per polyobj in polyfile
-        data_pol_pd_one['name'] = pd.Series(data_pol_pd_one.index).apply(lambda x: f'{polyobj.metadata.name}_{x+1:04d}')
-        data_pol_list.append(data_pol_pd_one)
-    data_pol_pd = pd.concat(data_pol_list)
-    
-    data_interp = interp_regularnc_to_plipointdataframe(data_xr_reg, data_pol_pd, load=load)
+    data_interp = interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points=gdf_points, load=load)
     return data_interp
 
+
+def interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points, load=True):
     
-def interp_regularnc_to_plipointdataframe(data_xr_reg, data_pol_pd, load=True):
-    #TODO: pass gdf instead of pandas dataframe
-
-    da_plipoints = xr.Dataset()
-    da_plipoints['plipoint_x'] = xr.DataArray(data_pol_pd['x'], dims='plipoints')
-    da_plipoints['plipoint_y'] = xr.DataArray(data_pol_pd['y'], dims='plipoints')
-    da_plipoints['plipoint_name'] = xr.DataArray(data_pol_pd['name'].astype('S64'), dims='plipoints').str.decode('utf-8',errors='ignore').str.strip() #TODO: must be possible to do this less complex
-    da_plipoints = da_plipoints.set_coords(['plipoint_x','plipoint_y','plipoint_name'])
-    da_plipoints = da_plipoints.set_index({'plipoints':'plipoint_name'})
-
+    ncbnd_construct = get_ncbnd_construct()
+    varn_pointx = ncbnd_construct['varn_pointx']
+    varn_pointy = ncbnd_construct['varn_pointy']
+    
+    da_plipoints = _da_from_gdf_points(gdf_points)
+    
     #interpolation to lat/lon combinations
     print('> interp mfdataset to all PolyFile points (lat/lon coordinates)')
-    #dtstart = dt.datetime.now()
     
     # linear, nearest, combine_first
-    data_interp_lin = data_xr_reg.interp(longitude=da_plipoints['plipoint_x'], latitude=da_plipoints['plipoint_y'],
-                                     method='linear', 
-                                     kwargs={'bounds_error':True}, #error is only raised upon load(), so when the actual value retrieval happens
-                                     )
-    data_interp_near = data_xr_reg.interp(longitude=da_plipoints['plipoint_x'], latitude=da_plipoints['plipoint_y'],
-                                     method='nearest', 
-                                     kwargs={'bounds_error':True}, #error is only raised upon load(), so when the actual value retrieval happens
-                                     )
+    data_interp_lin = data_xr_reg.interp(longitude=da_plipoints[varn_pointx], latitude=da_plipoints[varn_pointy],
+                                         method='linear', 
+                                         kwargs={'bounds_error':True}) #error is only raised upon load(), so when the actual value retrieval happens
+    data_interp_near = data_xr_reg.interp(longitude=da_plipoints[varn_pointx], latitude=da_plipoints[varn_pointy],
+                                          method='nearest', 
+                                          kwargs={'bounds_error':True}) #error is only raised upon load(), so when the actual value retrieval happens
     data_interp = data_interp_lin.combine_first(data_interp_near)
     
-    #time_passed = (dt.datetime.now()-dtstart).total_seconds()
-    # print(f'>>time passed: {time_passed:.2f} sec')
+    # drop original latitude/longitude vars (lat/lon in da_plipoints)
+    data_interp = data_interp.drop_vars(['latitude','longitude'])
     
     if not load:
         return data_interp
     
-    print(f'> actual extraction of data from netcdf with .load() (for {len(data_pol_pd)} plipoints at once, this might take a while)')
+    print(f'> actual extraction of data from netcdf with .load() (for {len(gdf_points)} plipoints at once, this might take a while)')
     dtstart = dt.datetime.now()
     try:
         data_interp_loaded = data_interp.load() #loading data for all points at once is more efficient compared to loading data per point in loop 
     except ValueError: #generate a proper error with outofbounds requested coordinates, default is "ValueError: One of the requested xi is out of bounds in dimension 0" #TODO: improve error in xarray
         lonvar_vals = data_xr_reg['longitude'].to_numpy()
         latvar_vals = data_xr_reg['latitude'].to_numpy()
-        data_pol_pd = data_interp[['plipoint_x','plipoint_y']].to_dataframe()
-        bool_reqlon_outbounds = (data_pol_pd['plipoint_x'] <= lonvar_vals.min()) | (data_pol_pd['plipoint_x'] >= lonvar_vals.max())
-        bool_reqlat_outbounds = (data_pol_pd['plipoint_y'] <= latvar_vals.min()) | (data_pol_pd['plipoint_y'] >= latvar_vals.max())
-        reqlatlon_pd = pd.DataFrame({'longitude':data_pol_pd['plipoint_x'],'latitude':data_pol_pd['plipoint_y'],'lon outbounds':bool_reqlon_outbounds,'lat outbounds':bool_reqlat_outbounds})
+        data_pol_pd = data_interp[[varn_pointx,varn_pointy]].to_dataframe()
+        bool_reqlon_outbounds = (data_pol_pd[varn_pointx] <= lonvar_vals.min()) | (data_pol_pd[varn_pointx] >= lonvar_vals.max())
+        bool_reqlat_outbounds = (data_pol_pd[varn_pointy] <= latvar_vals.min()) | (data_pol_pd[varn_pointy] >= latvar_vals.max())
+        reqlatlon_pd = pd.DataFrame({'longitude':data_pol_pd[varn_pointx],'latitude':data_pol_pd[varn_pointy],'lon outbounds':bool_reqlon_outbounds,'lat outbounds':bool_reqlat_outbounds})
         reqlatlon_pd_outbounds = reqlatlon_pd.loc[bool_reqlon_outbounds | bool_reqlat_outbounds]
         raise ValueError(f'{len(reqlatlon_pd_outbounds)} of requested pli points are out of bounds (valid longitude range {lonvar_vals.min()} to {lonvar_vals.max()}, valid latitude range {latvar_vals.min()} to {latvar_vals.max()}):\n{reqlatlon_pd_outbounds}')
     time_passed = (dt.datetime.now()-dtstart).total_seconds()
@@ -434,10 +449,13 @@ def interp_uds_to_plipoints(uds:xu.UgridDataset, gdf:geopandas.GeoDataFrame, nPo
     Returns
     -------
     ds : TYPE
-        xr.Dataset with dims: plipoints, time, depth.
+        xr.Dataset with dims: node, time, z.
 
     """
     facedim = uds.grid.face_dimension
+    ncbnd_construct = get_ncbnd_construct()
+    dimn_point = ncbnd_construct['dimn_point']
+    varn_pointname = ncbnd_construct['varn_pointname']
     
     if isinstance(gdf,(str,Path)): #TODO: align plipoints/gdf with other functions, now three input types are supported, but the interp_regularnc_to_plipoints requires paths to plifiles (and others also)
         gdf = PolyFile_to_geodataframe_points(hcdfm.PolyFile(gdf))
@@ -458,10 +476,10 @@ def interp_uds_to_plipoints(uds:xu.UgridDataset, gdf:geopandas.GeoDataFrame, nPo
         gdf_stats['missing'] = gdfpoint_inds_bool
         raise ValueError(f'requested {len(gdf)} points but resulted in ds with {ds.dims[facedim]} points, missing points are probably outside of the uds model domain:\n{gdf_stats}')
 
-    ds = ds.rename({facedim:'plipoints'}) # rename mesh2d_nFaces to plipoints
+    ds = ds.rename({facedim:dimn_point}) # rename mesh2d_nFaces to plipoints
     
-    ds['plipoint_name'] = xr.DataArray(gdf['plipoint_name'].tolist(), dims='plipoints') # change name of plipoint (node to gdf name)
-    ds = ds.set_index({'plipoints':'plipoint_name'})
+    ds[dimn_point] = xr.DataArray(gdf[varn_pointname].tolist(), dims=dimn_point) # change name of plipoint (node to gdf name)
+    
     return ds
 
 
@@ -471,6 +489,9 @@ def interp_hisnc_to_plipoints(data_xr_his, file_pli, kdtree_k=3, load=True):
     """
     #KDTree, finds minimal eucledian distance between points (haversine would be better). Alternatively sklearn.neighbors.BallTree: tree = BallTree(data_lonlat_pd)
     
+    ncbnd_construct = get_ncbnd_construct()
+    dimn_point = ncbnd_construct['dimn_point']
+    
     datavars_list = list(data_xr_his.data_vars)
     if len(datavars_list)>5:
         print('WARNING: more than 5 data_vars, you might want to subset your data_xr_his')
@@ -478,29 +499,22 @@ def interp_hisnc_to_plipoints(data_xr_his, file_pli, kdtree_k=3, load=True):
     hisstations_pd = data_xr_his.stations.to_dataframe() #TODO: add check if stations are strings? (whether preprocess_hisnc was used)
     tree_nest2 = KDTree(hisstations_pd[['station_x_coordinate','station_y_coordinate']])
     
-    #read polyfile and query k nearest hisstations (names)
+    #read polyfile
     polyfile_object = hcdfm.PolyFile(file_pli)
-    data_pol_list = []
-    for polyobj in polyfile_object.objects:
-        data_pol_pd_one = pointlike_to_DataFrame(polyobj)
-        data_pol_pd_one['name'] = pd.Series(data_pol_pd_one.index).apply(lambda x: f'{polyobj.metadata.name}_{x+1:04d}')
-        data_pol_list.append(data_pol_pd_one)
-    data_pol_pd = pd.concat(data_pol_list)
-
-    plicoords_distance2, plicoords_nestpointidx = tree_nest2.query(data_pol_pd[['x','y']], k=kdtree_k)
-    da_plicoords_nestpointidx = xr.DataArray(plicoords_nestpointidx, dims=('plipoints','nearestkpoints'))
+    gdf_points = PolyFile_to_geodataframe_points(polyfile_object)
+    gdf_coords = gdf_points.get_coordinates()
+    
+    # query k nearest hisstations (names)
+    plicoords_distance2, plicoords_nestpointidx = tree_nest2.query(gdf_coords, k=kdtree_k)
+    da_plicoords_nestpointidx = xr.DataArray(plicoords_nestpointidx, dims=(dimn_point,'nearestkpoints'))
     da_plicoords_nestpointnames = data_xr_his.stations.isel(stations=da_plicoords_nestpointidx)
     
-    #interpolate hisfile variables to plipoints
-    data_interp = xr.Dataset()
-    data_interp['plipoint_x'] = xr.DataArray(data_pol_pd['x'],dims=('plipoints'))
-    data_interp['plipoint_y'] = xr.DataArray(data_pol_pd['y'],dims=('plipoints'))
-    data_interp['plipoint_name'] = xr.DataArray(data_pol_pd['name'].astype('S64'), dims='plipoints').str.decode('utf-8',errors='ignore').str.strip() #TODO: must be possible to do this less complex
-    data_interp = data_interp.set_coords(['plipoint_x','plipoint_y','plipoint_name'])
-    data_interp = data_interp.set_index({'plipoints':'plipoint_name'})
+    # convert gdf to xarray dataset
+    data_interp = _da_from_gdf_points(gdf_points)
     
+    #interpolate hisfile variables to plipoints
     for varone in datavars_list:
-        da_dist = xr.DataArray(plicoords_distance2, dims=('plipoints','nearestkpoints'))
+        da_dist = xr.DataArray(plicoords_distance2, dims=(dimn_point,'nearestkpoints'))
         da_invdistweight = (1/da_dist)/(1/da_dist).sum(dim='nearestkpoints') #TODO: set weigths for invalid points to 0 (and increase others weights so sum remains 1)
         data_xr_his_pli_knearest = data_xr_his[varone].sel(stations=da_plicoords_nestpointnames)
         data_interp[varone] = (data_xr_his_pli_knearest * da_invdistweight).sum(dim='nearestkpoints')
@@ -516,12 +530,63 @@ def interp_hisnc_to_plipoints(data_xr_his, file_pli, kdtree_k=3, load=True):
     return data_interp
     
 
+def _maybe_convert_fews_to_dfmt(ds):
+    ncbnd_construct = get_ncbnd_construct()
+    dimn_point = ncbnd_construct['dimn_point']
+    varn_pointname = ncbnd_construct['varn_pointname']
+    
+    # convert station data_vars to coords to avoid dfmt issues
+    for var_to_coord in [varn_pointname,'station_names']:
+        if var_to_coord in ds.data_vars:
+            ds = ds.set_coords(var_to_coord)
+    # assign timeseries_id cf_role to let FM read the station names
+    ds[varn_pointname] = ds[varn_pointname].assign_attrs({'cf_role': 'timeseries_id'})
+    
+    # rename data_vars to long_name (e.g. renames FEWS so to salinitybnd)
+    for datavar in ds.data_vars:
+        if datavar in ['ux','uy']: #TODO: keeping these is consistent with hardcoded behaviour in dfm_tools elsewhere, but not desireable
+            continue
+        if hasattr(ds[datavar],'long_name'):
+            longname = ds[datavar].attrs['long_name']
+            if longname.endswith('bnd'):
+                ds = ds.rename_vars({datavar:longname})
+    
+    # transpose dims #TODO: the order impacts the model results: https://issuetracker.deltares.nl/browse/UNST-7402
+    # dfmt (arbitrary) dimension ordering is node/time/z
+    # required to reorder to FEWS time/node/z order for comparable results
+    # also time/z/node will result in unexpected results
+    if "time" in ds.dims: # check if time dimension is present (astronomic does not have time)
+        ds = ds.transpose("time", dimn_point, ...)
+    
+    # convert station names to string format (keep attrs and encoding)
+    # also needed to properly export, since we cannot encode it at dtype S1 properly otherwise
+    if not ds[varn_pointname].dtype.str.startswith('<'):
+        with xr.set_options(keep_attrs=True):
+            ds[varn_pointname] = ds[varn_pointname].load().str.decode('utf-8',errors='ignore').str.strip() #.load() is essential to convert not only first letter of string.
+
+    # add relevant encoding if not present
+    ds[varn_pointname].encoding.update({'dtype': 'S1', 'char_dim_name': 'char_leng_id'})
+    
+    # assign global attributes #TODO: add more
+    ds = ds.assign_attrs({'Conventions': 'CF-1.6',
+                          'institution': 'Deltares'})
+    return ds
+
+
 def plipointsDataset_to_ForcingModel(plipointsDataset):
     """
     empty docstring
     """
+    
+    ncbnd_construct = get_ncbnd_construct()
+    dimn_point = ncbnd_construct['dimn_point']
+    dimn_depth = ncbnd_construct['dimn_depth']
+    varn_pointname = ncbnd_construct['varn_pointname']
+    
+    plipointsDataset = _maybe_convert_fews_to_dfmt(plipointsDataset)
+    
     quantity_list = list(plipointsDataset.data_vars)
-    npoints = len(plipointsDataset.plipoints)
+    npoints = len(plipointsDataset[dimn_point])
     
     #start conversion to Forcingmodel object
     print(f'Converting {npoints} plipoints to hcdfm.ForcingModel():',end='')
@@ -531,16 +596,15 @@ def plipointsDataset_to_ForcingModel(plipointsDataset):
         print(f' {iP+1}',end='')
         
         #select data for this point, ffill nans, concatenating time column, constructing T3D/TimeSeries and append to hcdfm.ForcingModel()
-        datablock_xr_onepoint = plipointsDataset.isel(plipoints=iP)
-        plipoint_name = str(datablock_xr_onepoint.plipoints.to_numpy())
-        
+        datablock_xr_onepoint = plipointsDataset.isel({dimn_point:iP})
+        plipoint_name = str(datablock_xr_onepoint[varn_pointname].to_numpy())
         for quan in quantity_list:
             datablock_xr_onepoint[quan].attrs['locationname'] = plipoint_name #TODO: is there a nicer way of passing this data?
             if datablock_xr_onepoint[quan].isnull().all(): # check if all values of plipoint are nan (on land)
                 warnings.warn(UserWarning(f'Plipoint "{plipoint_name}" might be on land since it only contain nan values. Consider altering your plifile or using plipointsDataset.ffill(dim="plipoints").bfill(dim="plipoints"). Nan values replaced with 0 to avoid bc-writing errors')) #TODO: maybe fill along plipoints dimension, but beware on nans in deep water that are filled with neighbours
                 datablock_xr_onepoint[quan] = datablock_xr_onepoint[quan].fillna(0)
         
-        if 'depth' in plipointsDataset.dims:
+        if dimn_depth in plipointsDataset.dims:
             ts_one = Dataset_to_T3D(datablock_xr_onepoint)
         elif 'amplitude' in quantity_list:
             ts_one = Dataset_to_Astronomic(datablock_xr_onepoint)
