@@ -60,6 +60,11 @@ def preprocess_ini_cmems_to_nc(ext_old, tstart, dir_data, dir_out):
     print(f'opening {len(file_nc_list)} datasets')
     data_xr = xr.open_mfdataset(file_nc_list)
     
+    # fill nans start with lat/lon to avoid values from shallow coastal areas in deep layers
+    data_xr = data_xr.ffill(dim='lat').bfill(dim='lat')
+    data_xr = data_xr.ffill(dim='lon').bfill(dim='lon')
+    data_xr = data_xr.ffill(dim='depth').bfill(dim='depth')
+    
     tSimStart = pd.Timestamp(tstart)
     data_xr_ontime = data_xr.sel(time=slice(tSimStart-dt.timedelta(days=1),tSimStart+dt.timedelta(days=1)))
     
