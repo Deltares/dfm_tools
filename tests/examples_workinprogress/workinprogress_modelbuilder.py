@@ -19,7 +19,7 @@ model_name = 'Bonaire'
 dir_output = r'p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\ModelBuilderOutput_JV2'
 path_style = 'windows' # windows / unix
 overwrite = False # used for downloading of forcing data. Always set to True when changing the domain
-paths_relative = False #TODO: currently only works with path_style='windows' (same OS as IDE)
+paths_relative = True #TODO: currently only works with path_style='windows' (same OS as IDE)
 is_geographic = True
 crs = 'EPSG:4326'
 
@@ -117,12 +117,13 @@ ext_new = hcdfm.ExtModel()
 
 # FES2014 tidal components bc file
 file_bc_basename = os.path.basename(poly_file).replace('.pli','')
-ForcingModel_object = dfmt.interpolate_tide_to_bc(tidemodel='FES2014', file_pli=poly_file, component_list=None) # tidemodel: FES2014, FES2012, EOT20, GTSMv4.1
-file_bc_out = os.path.join(dir_output,f'tide_{file_bc_basename}_FES2014.bc')
+tidemodel = 'EOT20' # tidemodel: FES2014, FES2012, EOT20, GTSMv4.1, GTSMv4.1_opendap
+ForcingModel_object = dfmt.interpolate_tide_to_bc(tidemodel=tidemodel, file_pli=poly_file, component_list=None)
+file_bc_out = os.path.join(dir_output,f'tide_{file_bc_basename}_{tidemodel}.bc')
 ForcingModel_object.save(filepath=file_bc_out)
 boundary_object = hcdfm.Boundary(quantity='waterlevelbnd', #the FM quantity for tide is also waterlevelbnd
-                                  locationfile=poly_file,
-                                  forcingfile=ForcingModel_object)
+                                 locationfile=poly_file,
+                                 forcingfile=ForcingModel_object)
 ext_new.boundary.append(boundary_object)
 
 # CMEMS - download

@@ -60,6 +60,16 @@ def preprocess_ini_cmems_to_nc(ext_old, tstart, dir_data, dir_out):
     print(f'opening {len(file_nc_list)} datasets')
     data_xr = xr.open_mfdataset(file_nc_list)
     
+    # fill nans
+    # start with lat/lon to avoid values from shallow coastal areas in deep layers
+    # first interpolate nans to get smooth filling of e.g. islands, this cannot fill nans at the edge of the dataset
+    data_xr = data_xr.interpolate_na(dim='latitude').interpolate_na(dim='longitude')
+    
+    # then use bfill/ffill to fill nans at the edge for lat/lon/depth
+    data_xr = data_xr.ffill(dim='latitude').bfill(dim='latitude')
+    data_xr = data_xr.ffill(dim='longitude').bfill(dim='longitude')
+    data_xr = data_xr.ffill(dim='depth').bfill(dim='depth')
+    
     tSimStart = pd.Timestamp(tstart)
     data_xr_ontime = data_xr.sel(time=slice(tSimStart-dt.timedelta(days=1),tSimStart+dt.timedelta(days=1)))
     
