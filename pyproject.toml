@@ -51,8 +51,8 @@ dependencies = [
 	"pooch>=1.1.0",
 	#hydrolib-core<0.5.1 does not yet contain 3D z-sigma mdu settings and many other essentials
 	"hydrolib-core>=0.5.1",
-	#meshkernel<2.1.0 does not yet contain mesh2d_refine_based_on_gridded_samples and other essentials
-	"meshkernel>=2.1.0",
+	#meshkernel<3.0.0 api is fundamentally different
+	"meshkernel>=3.0.0",
 ]
 classifiers = [
 	"Development Status :: 4 - Beta",

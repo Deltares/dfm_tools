@@ -15,4 +15,4 @@ cdsapi>=0.6.1
 pydap>=3.4.0
 pooch>=1.1.0
 hydrolib-core>=0.5.1 
-meshkernel>=2.1.0
+meshkernel>=3.0.0
