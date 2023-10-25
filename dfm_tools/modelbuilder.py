@@ -16,17 +16,14 @@ import dfm_tools as dfmt
 import hydrolib.core.dflowfm as hcdfm
 import datetime as dt
 import glob
-<<<<<<< HEAD
 import geopandas as gpd
 import numpy as np
 import pyproj
 import shapely
 from shapely.geometry import LineString, MultiPoint, Point
 from scipy.spatial import KDTree
-=======
 from hydrolib.core.dimr.models import DIMR, FMComponent, Start
 import warnings
->>>>>>> main
 
 def generate_coastline_obspoints(lon_min : float, # degrees
                                  lon_max : float, # degrees
