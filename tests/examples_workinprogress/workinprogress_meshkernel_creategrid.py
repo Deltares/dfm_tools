@@ -20,7 +20,7 @@ import dfm_tools as dfmt
 lon_min,lon_max = -6,2
 lat_min,lat_max = 48.5,51.2
 lon_res,lat_res = 0.2,0.2
-is_geographic = True #True for spherical grids
+projection = meshkernel.ProjectionType.SPHERICAL #True for spherical grids
 
 figsize = (10,4)
 crs = 'EPSG:4326'
@@ -52,7 +52,7 @@ else:
     geometry_list = None
 
 
-mk = meshkernel.MeshKernel(projection=is_geographic)
+mk = meshkernel.MeshKernel(projection=projection)
 mk.curvilinear_compute_rectangular_grid_on_extension(make_grid_parameters) #TODO: geometry_list is possible with curvilinear_make_uniform, but not for this function: https://github.com/Deltares/MeshKernelPy/issues/76
 mk.curvilinear_convert_to_mesh2d() #convert to ugrid/mesh2d
 mesh2d_basegrid = mk.mesh2d_get() #in case of curvi grid: mk.curvilinear_convert_to_mesh2d()
@@ -101,6 +101,15 @@ fig, ax = plt.subplots(figsize=figsize)
 mesh2d_refinedgrid.plot_edges(ax,linewidth=0.8)
 ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 
+#TODO: remove this part
+# mk_uds = dfmt.meshkernel_to_UgridDataset(mk, crs="EPSG:4326")
+# mk_uds.ugrid.to_netcdf(r'n:\Deltabox\Postbox\Carniato, Luca\vanJelmer\grid_ref_net.nc')
+# mesh_bnds = mk.mesh2d_get_mesh_boundaries_as_polygons()
+# bbox = (mesh_bnds.x_coordinates.min(), mesh_bnds.y_coordinates.min(), mesh_bnds.x_coordinates.max(), mesh_bnds.y_coordinates.max())
+# coastlines_gdf = dfmt.get_coastlines_gdb(bbox=bbox, res='h', min_area=100, crs=None)
+# coastlines_polyfile = dfmt.geodataframe_to_PolyFile(coastlines_gdf)
+# coastlines_polyfile.save(r'n:\Deltabox\Postbox\Carniato, Luca\vanJelmer\coastlines_france_new.pol')
+# breakit
 
 """
 delete (landward) part of grid with polygon and plot result
