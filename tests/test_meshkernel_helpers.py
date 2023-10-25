@@ -134,7 +134,7 @@ def test_meshkernel_to_UgridDataset():
     generate grid with meshkernel. Then convert with `dfmt.meshkernel_to_UgridDataset()` from 0-based to 1-based indexing to make FM-compatible network.
     assert if _FillValue, start_index, min and max are the expected values, this ensures FM-compatibility
     """
-    is_geographic = True
+    projection = meshkernel.ProjectionType.SPHERICAL
     crs = 'EPSG:4326'
     
     # create basegrid
@@ -146,7 +146,7 @@ def test_meshkernel_to_UgridDataset():
                                                          upper_right_y=lat_max,
                                                          block_size_x=dxy,
                                                          block_size_y=dxy)
-    mk = meshkernel.MeshKernel(projection=is_geographic)
+    mk = meshkernel.MeshKernel(projection=projection)
     mk.curvilinear_compute_rectangular_grid_on_extension(make_grid_parameters)
     mk.curvilinear_convert_to_mesh2d() #convert to ugrid/mesh2d
     

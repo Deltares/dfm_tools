@@ -14,11 +14,12 @@ mk.DeleteMeshOption.ALL_FACE_CIRCUMCENTERS = 999
 import hydrolib.core.dflowfm as hcdfm
 from hydrolib.core.basemodel import ParsableFileModel
 from pydantic import Field
-def Network_init(self, is_geographic: bool = False) -> None:
-    self.meshkernel = mk.MeshKernel(projection=is_geographic)
+projection = mk.ProjectionType.SPHERICAL
+def Network_init(self, projection: mk.ProjectionType = projection) -> None:
+    self.meshkernel = mk.MeshKernel(projection=projection)
     # Monkeypatch the meshkernel object, because the "is_geographic" is not saved
     # otherwise, and needed for reinitializing the meshkernel
-    self.meshkernel.is_geographic = is_geographic
+    self.meshkernel.projection = projection
     self._mesh1d = hcdfm.Mesh1d(meshkernel=self.meshkernel)
     self._mesh2d = hcdfm.Mesh2d(meshkernel=self.meshkernel)
     self._link1d2d = hcdfm.Link1d2d(meshkernel=self.meshkernel)
