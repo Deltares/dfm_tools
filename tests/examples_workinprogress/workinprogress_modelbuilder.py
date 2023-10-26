@@ -144,6 +144,7 @@ for varkey in ['zos','so','thetao','uo','vo','no3','phyc']:
 # or else "ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated" is raised (https://issuetracker.deltares.nl/browse/UNST-7011).
 # Two waterlevelbnds need to share same physical plifile in order to be appended (https://issuetracker.deltares.nl/browse/UNST-5320).
 list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd','tracerbndNO3','tracerbndPON1']
+dir_pattern = os.path.join(dir_output_data_cmems,'cmems_{ncvarname}_*.nc')
 ext_new = dfmt.cmems_nc_to_bc(ext_bnd=ext_new,
                               refdate_str=f'minutes since {ref_date} 00:00:00 +00:00',
                               dir_output=dir_output,
@@ -151,7 +152,7 @@ ext_new = dfmt.cmems_nc_to_bc(ext_bnd=ext_new,
                               tstart=date_min,
                               tstop=date_max, 
                               file_pli=poly_file,
-                              dir_pattern=os.path.join(dir_output_data_cmems,'cmems_{ncvarname}_*.nc'))
+                              dir_pattern=dir_pattern)
 
 #save new ext file
 ext_new.save(filepath=ext_file_new,path_style=path_style)
@@ -164,10 +165,11 @@ ext_file_old = os.path.join(dir_output, f'{model_name}_old.ext')
 ext_old = hcdfm.ExtOldModel()
 
 if inisaltem:
-    ext_old = dfmt.preprocess_ini_cmems_to_nc(ext_old=ext_old,
-                                              tstart=date_min,
-                                              dir_data=dir_output_data_cmems,
-                                              dir_out=dir_output)
+    ext_old = dfmt.cmems_nc_to_ini(ext_old=ext_old,
+                                   dir_output=dir_output,
+                                   list_quantities=list_quantities,
+                                   tstart=date_min,
+                                   dir_pattern=dir_pattern)
 
 # ERA5 - download
 dir_output_data_era5 = os.path.join(dir_output_data,'ERA5')

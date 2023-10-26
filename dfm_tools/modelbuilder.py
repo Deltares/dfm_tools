@@ -51,45 +51,71 @@ def cmems_nc_to_bc(ext_bnd, list_quantities, tstart, tstop, file_pli, dir_patter
     return ext_bnd
 
     
-def preprocess_ini_cmems_to_nc(ext_old, tstart, dir_data, dir_out):
+def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, conversion_dict=None):
     
-    file_nc_list_so = glob.glob(f'{dir_data}\\cmems_so_*.nc')
-    file_nc_list_thetao = glob.glob(f'{dir_data}\\cmems_thetao_*.nc')
-    file_nc_list = file_nc_list_so + file_nc_list_thetao
+    if conversion_dict is None:
+        conversion_dict = dfmt.get_conversion_dict()
     
-    print(f'opening {len(file_nc_list)} datasets')
-    data_xr = xr.open_mfdataset(file_nc_list)
-    
-    # fill nans
-    # start with lat/lon to avoid values from shallow coastal areas in deep layers
-    # first interpolate nans to get smooth filling of e.g. islands, this cannot fill nans at the edge of the dataset
-    data_xr = data_xr.interpolate_na(dim='latitude').interpolate_na(dim='longitude')
-    
-    # then use bfill/ffill to fill nans at the edge for lat/lon/depth
-    data_xr = data_xr.ffill(dim='latitude').bfill(dim='latitude')
-    data_xr = data_xr.ffill(dim='longitude').bfill(dim='longitude')
-    data_xr = data_xr.ffill(dim='depth').bfill(dim='depth')
-    
-    tSimStart = pd.Timestamp(tstart)
-    data_xr_ontime = data_xr.sel(time=slice(tSimStart-dt.timedelta(days=1),tSimStart+dt.timedelta(days=1)))
-    
-    print('writing file')
-    outFile = os.path.join(dir_out,f'InitialField_{tSimStart.strftime("%Y-%m-%d_%H-%M-%S")}.nc')
-    data_xr_ontime.to_netcdf(outFile,format="NETCDF4_CLASSIC") #TODO: why the format setting?
-    
-    #append forcings to ext
-    # 3D initialsalinity/initialtemperature fields are silently ignored, initial 3D conditions are only possible via nudging 1st timestep via quantity=nudge_salinity_temperature
-    forcing_saltem = hcdfm.ExtOldForcing(quantity='nudge_salinity_temperature',
-                                         filename=outFile,
-                                         filetype=hcdfm.ExtOldFileType.NetCDFGridData,
-                                         method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
-                                         operand=hcdfm.Operand.override, #O
-                                         )
-    ext_old.forcing.append(forcing_saltem)
+    tstart_pd = pd.Timestamp(tstart)
+    tstart_str = tstart_pd.strftime("%Y-%m-%d_%H-%M-%S")
+    for quan_bnd in list_quantities:
+        
+        if quan_bnd=="salinitybnd":
+            file_nc_list_so = glob.glob(dir_pattern.format(ncvarname='so'))
+            file_nc_list_thetao = glob.glob(dir_pattern.format(ncvarname='thetao'))
+            file_nc_list = file_nc_list_so + file_nc_list_thetao
+            quantity = "nudge_salinity_temperature"
+            # 3D initialsalinity/initialtemperature fields are silently ignored
+            # initial 3D conditions are only possible via nudging 1st timestep via quantity=nudge_salinity_temperature
+            # interp would be the proper way to do it, but FM needs two timesteps for nudge_salinity_temperature
+            interp = False
+        elif quan_bnd in ["temperaturebnd","uxuyadvectionvelocitybnd"]:
+            # silently skipped, temperature is handled with salinity, uxuy not supported
+            pass
+        else:
+            ncvarname = conversion_dict[quan_bnd]["ncvarname"]
+            file_nc_list = glob.glob(dir_pattern.format(ncvarname=ncvarname))
+            quantity = f'initial{quan_bnd.replace("bnd","")}'
+            interp = True
+        
+        print(f'opening {len(file_nc_list)} datasets')
+        data_xr = xr.open_mfdataset(file_nc_list)
+        
+        # fill nans
+        # start with lat/lon to avoid values from shallow coastal areas in deep layers
+        # first interpolate nans to get smooth filling of e.g. islands, this cannot fill nans at the edge of the dataset
+        data_xr = data_xr.interpolate_na(dim='latitude').interpolate_na(dim='longitude')
+        
+        # then use bfill/ffill to fill nans at the edge for lat/lon/depth
+        data_xr = data_xr.ffill(dim='latitude').bfill(dim='latitude')
+        data_xr = data_xr.ffill(dim='longitude').bfill(dim='longitude')
+        data_xr = data_xr.ffill(dim='depth').bfill(dim='depth')
+        
+        if interp: #TODO: test bounds error (or load)
+            data_xr_ontime = data_xr.interp(time=[tstart_pd],kwargs=dict(bounds_error=True)) #bounds_error makes sure, outofbounds time results in "ValueError: A value in x_new is below the interpolation range."
+        else:
+            data_xr_ontime = data_xr.sel(time=slice(tstart_pd-dt.timedelta(days=1),tstart_pd+dt.timedelta(days=1)))
+
+        print('writing file')
+        file_output = os.path.join(dir_output,f"{quantity}_{tstart_str}.nc")
+        data_xr_ontime.to_netcdf(file_output)
+        
+        #append forcings to ext
+        forcing_saltem = hcdfm.ExtOldForcing(quantity=quantity,
+                                             filename=file_output,
+                                             filetype=hcdfm.ExtOldFileType.NetCDFGridData,
+                                             method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                             operand=hcdfm.Operand.override, #O
+                                             )
+        ext_old.forcing.append(forcing_saltem)
     
     return ext_old
-    
-    
+
+
+def cmems_nc_to_nudge_saltem():
+    return
+
+
 def preprocess_merge_meteofiles_era5(ext_old, varkey_list, dir_data, dir_output, time_slice):
 
     if isinstance(varkey_list[0], list):
