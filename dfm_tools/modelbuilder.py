@@ -62,7 +62,6 @@ def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, c
     for quan_bnd in list_quantities:
         
         if quan_bnd=="salinitybnd":
-            ncvarname = None
             file_nc_list_so = glob.glob(dir_pattern.format(ncvarname='so'))
             file_nc_list_thetao = glob.glob(dir_pattern.format(ncvarname='thetao'))
             file_nc_list = file_nc_list_so + file_nc_list_thetao
@@ -75,8 +74,6 @@ def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, c
             # silently skipped, temperature is handled with salinity, uxuy not supported
             continue
         else:
-            ncvarname = conversion_dict[quan_bnd]["ncvarname"]
-            file_nc_list = glob.glob(dir_pattern.format(ncvarname=ncvarname))
             quantity = f'initial{quan_bnd.replace("bnd","")}'
             varname = quantity
             data_xr = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity=quan_bnd,
@@ -84,16 +81,11 @@ def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, c
                                               conversion_dict=conversion_dict)
             data_xr = data_xr.rename_vars({quan_bnd:quantity}) #TODO: prevent for inisalnudge
         
-        #bounds_error makes sure, outofbounds time results in "ValueError: A value in x_new is below the interpolation range."
-        #TODO: test bounds error (or load)
-        # data_xr_ontime = data_xr.interp(time=[tstart_pd],kwargs=dict(bounds_error=True))
-        # interp would be the proper way to do it, but FM needs two timesteps for nudge_salinity_temperature and initial waq vars
-        data_xr_ontime = data_xr.sel(time=slice(tstart_round, tstop_round))
+        # subset two times. interp to tstart would be the proper way to do it, 
+        # but FM needs two timesteps for nudge_salinity_temperature and initial waq vars
+        data_xr = data_xr.sel(time=slice(tstart_round, tstop_round))
         
-        data_xr = data_xr_ontime
-        
-        # fill nans
-        # start with lat/lon to avoid values from shallow coastal areas in deep layers
+        # fill nans, start with lat/lon to avoid values from shallow coastal areas in deep layers
         # first interpolate nans to get smooth filling of e.g. islands, this cannot fill nans at the edge of the dataset
         data_xr = data_xr.interpolate_na(dim='latitude').interpolate_na(dim='longitude')
         
@@ -105,7 +97,7 @@ def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, c
 
         print('writing file')
         file_output = os.path.join(dir_output,f"{quantity}_{tstart_str}.nc")
-        data_xr_ontime.to_netcdf(file_output)
+        data_xr.to_netcdf(file_output)
         
         #append forcings to ext
         forcing_saltem = hcdfm.ExtOldForcing(quantity=quantity,
@@ -113,8 +105,7 @@ def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, c
                                              filename=file_output,
                                              filetype=hcdfm.ExtOldFileType.NetCDFGridData,
                                              method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
-                                             operand=hcdfm.Operand.override, #O
-                                             )
+                                             operand=hcdfm.Operand.override) #O
         ext_old.forcing.append(forcing_saltem)
     
     return ext_old

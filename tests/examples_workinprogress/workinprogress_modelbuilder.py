@@ -23,7 +23,6 @@ paths_relative = True #TODO: currently only works with path_style='windows' (sam
 is_geographic = True
 crs = 'EPSG:4326'
 
-inisaltem = True #initialsalinity/initialtemperature gives 33.8ppt uniform and sal instabilities right from the start of the model run. Proper way seems to be with iniwithnudge=2 and nudge_salinity_temperature, which gives ini sal/tem indeed but also instable. Providing nudge_salinity_temperature and iniwithnudge=0 gives more stable model but also inisal is 33.8 (not spatially varying) (is same as False maybe?)
 #TODO: salinity instable, also waterlevel and velocity magnitude are instable at northeast side of island (latter is with incorrect ordering/selection in extfile)
 """
 ** INFO   :  Min. salinity limited, number of cells Limmin =           20
@@ -164,12 +163,11 @@ ext_new.save(filepath=ext_file_new,path_style=path_style)
 ext_file_old = os.path.join(dir_output, f'{model_name}_old.ext')
 ext_old = hcdfm.ExtOldModel()
 
-if inisaltem:
-    ext_old = dfmt.cmems_nc_to_ini(ext_old=ext_old,
-                                   dir_output=dir_output,
-                                   list_quantities=list_quantities,
-                                   tstart=date_min,
-                                   dir_pattern=dir_pattern)
+ext_old = dfmt.cmems_nc_to_ini(ext_old=ext_old,
+                               dir_output=dir_output,
+                               list_quantities=list_quantities,
+                               tstart=date_min,
+                               dir_pattern=dir_pattern)
 
 # ERA5 - download
 dir_output_data_era5 = os.path.join(dir_output_data,'ERA5')
@@ -232,7 +230,7 @@ mdu.physics.rhomean = 1023
 mdu.physics.secchidepth = 4
 mdu.physics.salimax = 50
 mdu.physics.tempmax = 50
-if inisaltem:
+if 'nudge_salinity_temperature' in [x.quantity for x in ext_old.forcing]:
     mdu.physics.iniwithnudge = 2 #TODO: commented in oldextfile in reference run, initial sal/tem profiles from deep layer were used instead (not yet derived, but 3D inifields also do not have an effect)
 
 mdu.wind.icdtyp = 4
