@@ -5,6 +5,7 @@ Created on Mon Jun 19 22:03:43 2023
 @author: veenstra
 """
 
+import os
 import pytest
 import xarray as xr
 import xugrid as xu
@@ -146,7 +147,6 @@ def test_xarray_decode_default_fillvals():
     #write file
     file_out = 'temp_fnc_default_fillvals_map.nc'
     ds.to_netcdf(file_out)
-    ds.close()
     
     #open dataset with decode_fillvals
     try:
@@ -165,3 +165,8 @@ def test_xarray_decode_default_fillvals():
     fnc_new = uds.grid.face_node_connectivity
     
     assert fill_value_default in fnc_new
+
+    # cleanup
+    del uds
+    os.remove(file_out)
+

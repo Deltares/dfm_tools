@@ -182,6 +182,10 @@ def test_open_dataset_extra_correctdepths():
     
     assert (np.abs(depth_actual - depth_expected) < 1e-9).all()
     assert len(ds_moretime_import.time) == 2
+    
+    # cleanup
+    del ds_moretime_import
+    os.remove(file_nc)
 
 
 @pytest.mark.unittest
@@ -199,8 +203,10 @@ def test_open_dataset_extra_slightly_different_latlons():
     ds_lon[1] += 1e-8
     ds2['longitude'] = xr.DataArray(ds_lon,dims='longitude')
     
-    ds1.to_netcdf('temp_cmems_2day_p1.nc')
-    ds2.to_netcdf('temp_cmems_2day_p2.nc')
+    file_nc1 = 'temp_cmems_2day_p1.nc'
+    file_nc2 = 'temp_cmems_2day_p2.nc'
+    ds1.to_netcdf(file_nc1)
+    ds2.to_netcdf(file_nc2)
     
     try:
         ds = dfmt.open_dataset_extra('temp_cmems_2day_*.nc', quantity='salinitybnd', tstart='2020-01-01', tstop='2020-01-03')
@@ -210,6 +216,12 @@ def test_open_dataset_extra_slightly_different_latlons():
     except ValueError:
         # ValueError: cannot align objects with join='exact' where index/labels/sizes are not equal along these coordinates (dimensions): 'longitude' ('longitude',)
         pass # this is expected, so pass
+
+    # cleanup
+    del ds1
+    del ds2
+    os.remove(file_nc1)
+    os.remove(file_nc2)
 
 
 @pytest.mark.unittest

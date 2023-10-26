@@ -18,10 +18,17 @@ def test_cmems_nc_to_ini():
     not so covering test, preferrably include
     - conversion of quantity names
     - sal/tem combined in file, fail if no tem
-    - depends on file created by other test
     """
-    # TODO: depends on other test to create this
-    dir_pattern = "../temp_cmems_2day_*.nc"
+    # TODO: create fixture
+    from tests.test_interpolate_grid2bnd import cmems_dataset_4times
+    ds1 = cmems_dataset_4times().isel(time=slice(None,2))
+    ds2 = cmems_dataset_4times().isel(time=slice(2,None))
+    
+    dir_pattern = "./temp_cmems_2day_*.nc"
+    file_nc1 = dir_pattern.replace("*","p1")
+    file_nc2 = dir_pattern.replace("*","p2")
+    ds1.to_netcdf(file_nc1)
+    ds2.to_netcdf(file_nc2)
     
     ext_old = hcdfm.ExtOldModel()
     
@@ -40,7 +47,12 @@ def test_cmems_nc_to_ini():
     times_actual = ds_out.time.to_pandas().dt.strftime("%Y-%m-%d %H:%M:%S").tolist()
     assert "so" in ds_out.data_vars
     assert times_expected == times_actual
-    ds_out.close()
-    os.remove(file_expected)
     
+    # cleanup
+    del ds_out
+    del ds1
+    del ds2
+    os.remove(file_expected)
+    os.remove(file_nc1)
+    os.remove(file_nc2)
     
