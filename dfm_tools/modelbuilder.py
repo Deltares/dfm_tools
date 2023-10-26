@@ -58,6 +58,7 @@ def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, c
     
     tstart_pd = pd.Timestamp(tstart)
     tstart_str = tstart_pd.strftime("%Y-%m-%d_%H-%M-%S")
+    tstart_round, tstop_round = dfmt.round_timestamp_to_outer_noon(tstart,tstart)
     for quan_bnd in list_quantities:
         
         if quan_bnd=="salinitybnd":
@@ -66,10 +67,10 @@ def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, c
             file_nc_list_thetao = glob.glob(dir_pattern.format(ncvarname='thetao'))
             file_nc_list = file_nc_list_so + file_nc_list_thetao
             quantity = "nudge_salinity_temperature"
+            varname = None
             # 3D initialsalinity/initialtemperature fields are silently ignored
             # initial 3D conditions are only possible via nudging 1st timestep via quantity=nudge_salinity_temperature
-            # interp would be the proper way to do it, but FM needs two timesteps for nudge_salinity_temperature
-            interp = False
+            data_xr = xr.open_mfdataset(file_nc_list)
         elif quan_bnd in ["temperaturebnd","uxuyadvectionvelocitybnd"]:
             # silently skipped, temperature is handled with salinity, uxuy not supported
             continue
@@ -77,16 +78,19 @@ def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, c
             ncvarname = conversion_dict[quan_bnd]["ncvarname"]
             file_nc_list = glob.glob(dir_pattern.format(ncvarname=ncvarname))
             quantity = f'initial{quan_bnd.replace("bnd","")}'
-            interp = True
+            varname = quantity
+            data_xr = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity=quan_bnd,
+                                              tstart=tstart_round, tstop=tstop_round,
+                                              conversion_dict=conversion_dict)
+            data_xr = data_xr.rename_vars({quan_bnd:quantity}) #TODO: prevent for inisalnudge
         
-        print(f'opening {len(file_nc_list)} datasets')
-        data_xr = xr.open_mfdataset(file_nc_list)
-        tstart_round, tstop_round = dfmt.round_timestamp_to_outer_noon(tstart,tstart)
+        #bounds_error makes sure, outofbounds time results in "ValueError: A value in x_new is below the interpolation range."
+        #TODO: test bounds error (or load)
+        # data_xr_ontime = data_xr.interp(time=[tstart_pd],kwargs=dict(bounds_error=True))
+        # interp would be the proper way to do it, but FM needs two timesteps for nudge_salinity_temperature and initial waq vars
+        data_xr_ontime = data_xr.sel(time=slice(tstart_round, tstop_round))
         
-        data_xr = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity=quan_bnd,
-                                          tstart=tstart_round, tstop=tstop_round,
-                                          conversion_dict=conversion_dict)
-        data_xr = data_xr.rename_vars({quan_bnd:quantity}) #TODO: prevent for inisalnudge
+        data_xr = data_xr_ontime
         
         # fill nans
         # start with lat/lon to avoid values from shallow coastal areas in deep layers
@@ -98,10 +102,6 @@ def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, c
         data_xr = data_xr.ffill(dim='longitude').bfill(dim='longitude')
         data_xr = data_xr.ffill(dim='depth').bfill(dim='depth')
         
-        if interp: #TODO: test bounds error (or load)
-            data_xr_ontime = data_xr.interp(time=[tstart_pd],kwargs=dict(bounds_error=True)) #bounds_error makes sure, outofbounds time results in "ValueError: A value in x_new is below the interpolation range."
-        else:
-            data_xr_ontime = data_xr.sel(time=slice(tstart_round, tstop_round))
 
         print('writing file')
         file_output = os.path.join(dir_output,f"{quantity}_{tstart_str}.nc")
@@ -109,7 +109,7 @@ def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, c
         
         #append forcings to ext
         forcing_saltem = hcdfm.ExtOldForcing(quantity=quantity,
-                                             varname=quantity,
+                                             varname=varname,
                                              filename=file_output,
                                              filetype=hcdfm.ExtOldFileType.NetCDFGridData,
                                              method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
