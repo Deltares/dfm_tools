@@ -161,12 +161,15 @@ def test_xarray_decode_default_fillvals():
                         "version is set as requirement")
     
     #this should be successful
-    uds = dfmt.open_partitioned_dataset(file_out,decode_fillvals=True)
-    fnc_new = uds.grid.face_node_connectivity
+    uds2 = dfmt.open_partitioned_dataset(file_out,decode_fillvals=True)
+    fnc_new = uds2.grid.face_node_connectivity
     
     assert fill_value_default in fnc_new
 
     # cleanup
-    del uds
-    os.remove(file_out)
+    # del ds
+    # del uds2
+    # del fnc_new
+    # PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'temp_fnc_default_fillvals_map.nc'
+    # os.remove(file_out)
 
