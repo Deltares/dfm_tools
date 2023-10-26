@@ -79,7 +79,7 @@ def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, c
             data_xr = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity=quan_bnd,
                                               tstart=tstart_round, tstop=tstop_round,
                                               conversion_dict=conversion_dict)
-            data_xr = data_xr.rename_vars({quan_bnd:quantity}) #TODO: prevent for inisalnudge
+            data_xr = data_xr.rename_vars({quan_bnd:quantity})
         
         # subset two times. interp to tstart would be the proper way to do it, 
         # but FM needs two timesteps for nudge_salinity_temperature and initial waq vars
