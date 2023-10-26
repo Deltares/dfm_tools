@@ -231,6 +231,9 @@ mdu.physics.secchidepth = 4
 mdu.physics.salimax = 50
 mdu.physics.tempmax = 50
 if 'nudge_salinity_temperature' in [x.quantity for x in ext_old.forcing]:
+    # initialsalinity/initialtemperature gives 33.8ppt uniform (so is not read)
+    # the only possible way is with iniwithnudge=2 and nudge_salinity_temperature in old extfile.
+    # for other variables we can use initialtracerbndNO3 for instance
     mdu.physics.iniwithnudge = 2 #TODO: commented in oldextfile in reference run, initial sal/tem profiles from deep layer were used instead (not yet derived, but 3D inifields also do not have an effect)
 
 mdu.wind.icdtyp = 4

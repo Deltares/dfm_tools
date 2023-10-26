@@ -10,7 +10,6 @@ import pytest
 import dfm_tools as dfmt
 import numpy as np
 import datetime as dt
-import pandas as pd
 import xarray as xr
 import shapely
 import geopandas as gpd
