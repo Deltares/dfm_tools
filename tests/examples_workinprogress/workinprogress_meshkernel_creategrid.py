@@ -42,7 +42,7 @@ make_grid_parameters = meshkernel.MakeGridParameters(angle=0.0, #TODO: does non-
                                                      block_size_y=lat_res)
 
 mk = meshkernel.MeshKernel(projection=projection)
-mk.curvilinear_compute_rectangular_grid_on_extension(make_grid_parameters) #TODO: geometry_list is possible with curvilinear_make_uniform, but not for this function: https://github.com/Deltares/MeshKernelPy/issues/76
+mk.curvilinear_compute_rectangular_grid_on_extension(make_grid_parameters)
 mk.curvilinear_convert_to_mesh2d() #convert to ugrid/mesh2d
 
 mesh2d_basegrid = mk.mesh2d_get() #in case of curvi grid: mk.curvilinear_convert_to_mesh2d()
