@@ -342,8 +342,7 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
         if 'positive' in data_xr_vars[varn_depth].attrs.keys():
             if data_xr_vars[varn_depth].attrs['positive'] == 'down': #attribute appears in CMEMS, GFDL and CMCC, save to assume presence?
                 data_xr_vars[varn_depth] = -data_xr_vars[varn_depth]
-                # TODO: when updating the attr to the correct new term, this negatively impacts moddel results when using netcdf inifields
-                # data_xr_vars[varn_depth].attrs['positive'] = 'up'
+                data_xr_vars[varn_depth].attrs['positive'] = 'up'
         #optional reversing depth dimension for comparison to coastserv
         if reverse_depth:
             print('> reversing depth dimension')

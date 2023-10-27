@@ -9,14 +9,13 @@ Since the functions in this script contain hardcoded parameters, it is not expos
 """
 
 import os
-import xarray as xr
 import pandas as pd
 import dfm_tools as dfmt
 import hydrolib.core.dflowfm as hcdfm
 import datetime as dt
-import glob
 from hydrolib.core.dimr.models import DIMR, FMComponent, Start
 import warnings
+from dfm_tools.hydrolib_helpers import get_ncbnd_construct
 
 
 def cmems_nc_to_bc(ext_bnd, list_quantities, tstart, tstop, file_pli, dir_pattern, dir_output, refdate_str):
@@ -50,7 +49,11 @@ def cmems_nc_to_bc(ext_bnd, list_quantities, tstart, tstop, file_pli, dir_patter
     
     return ext_bnd
 
-    
+
+def preprocess_ini_cmems_to_nc(**kwargs):
+    raise DeprecationWarning("`dfmt.preprocess_ini_cmems_to_nc()` was deprecated, use `cmems_nc_to_ini()` instead")
+
+
 def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, conversion_dict=None):
     
     if conversion_dict is None:
@@ -81,6 +84,13 @@ def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, c
             varname = quantity
             data_xr = data_xr.rename_vars({quan_bnd:quantity})
         
+        # open_dataset_extra converted depths from positive down to positive up, including update of the "positive" attribute
+        # TODO: this correctly updated attr negatively impacts model results when using netcdf inifields, so we revert it here
+        # https://issuetracker.deltares.nl/browse/UNST-7455
+        ncbnd_construct = get_ncbnd_construct()
+        varn_depth = ncbnd_construct['varn_depth']
+        data_xr[varn_depth].attrs['positive'] = 'down'
+        
         # subset two times. interp to tstart would be the proper way to do it, 
         # but FM needs two timesteps for nudge_salinity_temperature and initial waq vars
         data_xr = data_xr.sel(time=slice(tstart_round, tstop_round))
@@ -109,10 +119,6 @@ def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, c
         ext_old.forcing.append(forcing_saltem)
     
     return ext_old
-
-
-def cmems_nc_to_nudge_saltem():
-    return
 
 
 def preprocess_merge_meteofiles_era5(ext_old, varkey_list, dir_data, dir_output, time_slice):
