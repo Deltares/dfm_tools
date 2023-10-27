@@ -1,4 +1,4 @@
-## Unreleased
+## UNRELEASED
 
 ### Feat
 - xugrid feature `uds.ugrid.to_nonperiodic()` deprecates `dfmt.remove_periodic_cells()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#503](https://github.com/Deltares/dfm_tools/issues/503)
