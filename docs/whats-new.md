@@ -1,6 +1,10 @@
 ## UNRELEASED
 
+### Feat
+- support for initial fields for variables other than salinity/temperature with `dfmt.cmems_nc_to_ini()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#619](https://github.com/Deltares/dfm_tools/pull/619)
+
 ### Fix
+- fix initial fields for salinity/temperature with `dfmt.cmems_nc_to_ini()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#619](https://github.com/Deltares/dfm_tools/pull/619)
 - increased buffer in `dfmt.download_ERA5()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#612](https://github.com/Deltares/dfm_tools/pull/612)
 - support for Polygon geometries in `dfmt.geodataframe_to_PolyFile()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#610](https://github.com/Deltares/dfm_tools/pull/610)
 - fill nan-values in initial salinity/temperature netcdf dataset in `dfmt.preprocess_ini_cmems_to_nc()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#617](https://github.com/Deltares/dfm_tools/pull/617)
