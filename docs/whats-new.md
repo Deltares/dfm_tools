@@ -2,8 +2,32 @@
 
 ### Feat
 - xugrid feature `uds.ugrid.to_nonperiodic()` deprecates `dfmt.remove_periodic_cells()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#503](https://github.com/Deltares/dfm_tools/issues/503)
-- added `GTSMv4.1` and `GTSMv4.1_opendap` datasets for tide interpolation with `dfmt.interpolate_tide_to_bc()` by [@veenstrajelmer] in [#544](https://github.com/Deltares/dfm_tools/pull/544)
-- support for `preprocess` argument in `dfmt.open_partitioned_dataset()`  by [@veenstrajelmer] in [#530](https://github.com/Deltares/dfm_tools/pull/530)
+- support for initial fields for variables other than salinity/temperature with `dfmt.cmems_nc_to_ini()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#619](https://github.com/Deltares/dfm_tools/pull/619)
+
+### Fix
+- fix initial fields for salinity/temperature with `dfmt.cmems_nc_to_ini()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#619](https://github.com/Deltares/dfm_tools/pull/619)
+- increased buffer in `dfmt.download_ERA5()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#612](https://github.com/Deltares/dfm_tools/pull/612)
+- support for Polygon geometries in `dfmt.geodataframe_to_PolyFile()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#610](https://github.com/Deltares/dfm_tools/pull/610)
+- fill nan-values in initial salinity/temperature netcdf dataset in `dfmt.preprocess_ini_cmems_to_nc()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#617](https://github.com/Deltares/dfm_tools/pull/617)
+
+
+## 0.15.0 (2023-10-19)
+
+### Feat
+- create `dimr_config.xml` and `run_parallel.bat` with `dfmt.create_model_exec_files()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#599](https://github.com/Deltares/dfm_tools/pull/599)
+- conversion of `hcdfm.ForcingModel` to `xr.Dataset` with `dfmt.ForcingModel_to_plipointsDataset()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#567](https://github.com/Deltares/dfm_tools/pull/567)
+- support for reading asc files with `dfmt.read_asc()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#571](https://github.com/Deltares/dfm_tools/pull/571)
+- added `dfmt.meshkernel_delete_withshp()` to delete parts of a mesh with a shapefile, while only reading the shapefile within the bounding box of the mesh by [@rqwang](https://github.com/rqwang) in [#548](https://github.com/Deltares/dfm_tools/pull/548) and [#566](https://github.com/Deltares/dfm_tools/pull/566)
+- improved spatial interpolation in `dfmt.interp_regularnc_to_plipoints()` by combining linear with nearest interpolation by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#561](https://github.com/Deltares/dfm_tools/pull/561)
+- added `GTSMv4.1` and `GTSMv4.1_opendap` datasets for tide interpolation with `dfmt.interpolate_tide_to_bc()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#544](https://github.com/Deltares/dfm_tools/pull/544)
+- support for `preprocess` argument in `dfmt.open_partitioned_dataset()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#530](https://github.com/Deltares/dfm_tools/pull/530)
+
+### Fix
+- increased buffer for WAQ cmems variables by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#601](https://github.com/Deltares/dfm_tools/pull/601)
+- prevent concatenation of datasets with slightly different coordinates by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#595](https://github.com/Deltares/dfm_tools/pull/595)
+- aligned ncbnd dataset with FM/FEWS conventions by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#567](https://github.com/Deltares/dfm_tools/pull/567)
+- documented minimal dependency versions to avoid issues with installation in existing environments containing old dependency versions by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#581](https://github.com/Deltares/dfm_tools/pull/581)
+>>>>>>> main
 
 
 ## 0.14.0 (2023-09-15)

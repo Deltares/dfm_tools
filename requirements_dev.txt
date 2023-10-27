@@ -3,6 +3,7 @@ bump2version>=0.5.11
 flake8
 pytest
 pytest-cov
+pytest-timeout
 twine
 jupyter
 notebook

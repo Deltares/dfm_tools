@@ -29,8 +29,7 @@ list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuyadvection
 list_quantities = ['salinitybnd','tracerbndNO3','tide']
 #list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd','tracerbndNO3','tracerbndOpal','tracerbndDON','tide'] #also waq vars with same ncvarname, opal not available for GFDL and CMCC
 
-model = 'CMEMS' #CMEMS GFDL CMCC
-
+model = 'CMEMS' #CMEMS GFDL
 
 #The {ncvarname} wildcard in dir_pattern_hydro/dir_patern_waq is used to replace it with conversion_dict[quantity]['ncvarname'] by using str(dir_pattern).format(ncvarname)
 list_plifiles = [Path(r'p:\archivedprojects\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli')]
@@ -47,7 +46,7 @@ if model=='CMEMS': #2012-01-06 12:00:00 to 2013-01-03 12:00:00
     #tstart = dt.datetime(1993,1,1,12,0)
     #tstop = tstart + dt.timedelta(days=5)
     #dir_pattern_hydro = Path(dir_sourcefiles_hydro,'{ncvarname}_1993*.nc')
-elif model=='GFDL':
+elif model=='GFDL': # TODO: data is not available anymore
     conversion_dict = dfmt.get_conversion_dict()
     tstart = '2012-01-16 12:00'
     tstop = '2012-04-01 12:00'
@@ -55,16 +54,6 @@ elif model=='GFDL':
     dir_pattern_hydro = None
     dir_sourcefiles_waq = r'p:\11206304-futuremares\data\CMIP6_BC\GFDL-ESM4' #GFDL waq: no3 (1850-01-16 12:00:00 to 2014-12-16 12:00:00)
     dir_pattern_waq = Path(dir_sourcefiles_waq,'{ncvarname}_esm-hist.nc')
-elif model=='CMCC': #TODO: check method, now finding nearest points (so always has values)
-    #TODO: time_bnds/lev_bnds are available, take into account in bc file?
-    conversion_dict = dfmt.get_conversion_dict(ncvarname_updates={'salinitybnd':'sos', 'temperaturebnd':'tos'})
-    conversion_dict['tracerbndNO3'] = {'ncvarname':'no3', 'unit':'g/m3', 'conversion':14.0} #other vars also have different conversion than cmems
-    tstart = '2015-06-16 12:00'
-    tstop = '2015-12-01 12:00'
-    dir_sourcefiles_hydro = r'p:\11206304-futuremares\data\CMIP6_BC\CMCC-ESM2'
-    dir_pattern_hydro = Path(dir_sourcefiles_hydro,'{ncvarname}_Omon_CMCC-ESM2_ssp126_r1i1p1f1_gn_*.nc')
-    dir_sourcefiles_waq = dir_sourcefiles_hydro #CMCC waq: (2015-01-16 12:00:00 to 2100-12-16 12:00:00)
-    dir_pattern_waq = dir_pattern_hydro
 else:
     raise KeyError(f'invalid model: {model}')
 
@@ -79,7 +68,7 @@ for file_pli in list_plifiles:
     for quantity in list_quantities:
         print(f'processing quantity: {quantity}')
         if quantity=='tide': 
-            tidemodel = 'FES2014' #FES2014, FES2012, EOT20, GTSM4.1preliminary
+            tidemodel = 'FES2014' #FES2014, FES2012, EOT20, GTSMv4.1, GTSMv4.1_opendap
             if tidemodel == 'FES2014': #for comparing to older FES bc-files #TODO: choose flexible/generic component notation
                 component_list = ['2n2','mf','p1','m2','mks2','mu2','q1','t2','j1','m3','mm','n2','r2','k1','m4','mn4','s1','k2','m6','ms4','nu2','s2','l2','m8','msf','o1','s4']
             else:
@@ -105,50 +94,51 @@ for file_pli in list_plifiles:
             #interpolate regulargridDataset to plipointsDataset
             data_interp = dfmt.interp_regularnc_to_plipoints(data_xr_reg=data_xr_vars, file_pli=file_pli, #TODO: difference in .interp() with float vs da arguments: https://github.com/Deltares/dfm_tools/issues/287
                                                              nPoints=nPoints) #argument for testing
-            #data_interp = data_interp.ffill(dim="plipoints").bfill(dim="plipoints") #to fill allnan plipoints with values from the neighbour point #TODO: this also fills the belowbed layers from one point onto another, so should be done after ffill/bfill in depth dimension. Currently all-nan arrays are replaced with .fillna(0)
+            #data_interp = data_interp.ffill(dim="node").bfill(dim="node") #to fill allnan plipoints with values from the neighbour point #TODO: this also fills the belowbed layers from one point onto another, so should be done after ffill/bfill in depth dimension. Currently all-nan arrays are replaced with .fillna(0)
             
             #convert plipointsDataset to hydrolib ForcingModel
             ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
                     
+        bctype = 'bc' #TODO: add netcdf bc support to hcdfm.Boundary: https://github.com/Deltares/HYDROLIB-core/issues/318
         file_bc_basename = file_pli.name.replace('.pli','')
         if quantity=='tide':
-            file_bc_out = Path(dir_output,f'{quantity}_{file_bc_basename}_{tidemodel}.bc')
+            file_bc_out = Path(dir_output,f'{quantity}_{file_bc_basename}_{tidemodel}.{bctype}')
         else:
-            file_bc_out = Path(dir_output,f'{quantity}_{file_bc_basename}_{model}.bc')
-        
-        print(f'writing ForcingModel to bc file with hydrolib ({file_bc_out.name})')
-        bc_type = 'bc' #TODO: add netcdf bc support. https://github.com/Deltares/HYDROLIB-core/issues/318
-        if bc_type=='bc':
+            file_bc_out = Path(dir_output,f'{quantity}_{file_bc_basename}_{model}.{bctype}')
+        if bctype=='bc':
+            print(f'writing ForcingModel to bc file with hydrolib ({file_bc_out.name})')
             #ForcingModel_object.serializer_config.float_format = '.3f' #TODO: improve formatting of bc file, maybe move this to interp_regularnc_to_plipoints/interpolate_tide_to_bc?
             #ForcingModel_object.serializer_config.float_format_datablock = '.5f'
             ForcingModel_object.save(filepath=file_bc_out)
+        elif bctype=='nc':
+            data_interp.to_netcdf(file_bc_out)
         
         #TODO: support for relative paths?
         #generate boundary object for the ext file (quantity, pli-filename, bc-filename)
         boundary_object = hcdfm.Boundary(quantity=quantity.replace('tide','waterlevelbnd'), #the FM quantity for tide is also waterlevelbnd
                                          locationfile=file_pli,
-                                         forcingfile=ForcingModel_object)
+                                         forcingfile=file_bc_out)
         ext_bnd.boundary.append(boundary_object)
 
         if quantity!='tide': #TODO: data_xr_vars/data_interp does not exist for tide yet
             #plotting dataset and polyline (is wrong for CMCC)
             varname0 = list(data_xr_vars.data_vars)[0] 
             fig,ax = plt.subplots()
-            if 'depth' in data_xr_vars[varname0].dims:
-                data_xr_vars[varname0].isel(time=0,depth=0).plot(ax=ax)
+            if 'z' in data_xr_vars[varname0].dims:
+                data_xr_vars[varname0].isel(time=0,z=0).plot(ax=ax)
             else:
                 data_xr_vars[varname0].isel(time=0).plot(ax=ax)
-            plipoint_coords = data_interp.plipoints.to_dataframe()
-            ax.plot(plipoint_coords['plipoint_x'],plipoint_coords['plipoint_y'],'r-')
+            plipoint_coords = data_interp.node.to_dataframe()
+            ax.plot(plipoint_coords['lon'],plipoint_coords['lat'],'r-')
             ctx.add_basemap(ax=ax,crs="EPSG:4326",attribution=False)
             fig.tight_layout()
             fig.savefig(str(file_bc_out).replace('.bc','_polyline'))
             
             #plotting example data point
-            for iF in [2]:#range(nPoints): 
+            for iF in [2]:#range(nPoints):
                 data_vars = list(data_interp.data_vars)
                 fig,ax1 = plt.subplots(figsize=(10, 6))
-                data_interp[data_vars[0]].isel(plipoints=iF).T.plot()
+                data_interp[data_vars[0]].isel(node=iF).T.plot()
                 fig.tight_layout()
                 fig.savefig(str(file_bc_out).replace('.bc',''))
 

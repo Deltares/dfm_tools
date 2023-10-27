@@ -12,9 +12,10 @@
 
 ## Setup local developer environment
 
-- download and install Anaconda 64 bit Python 3.9 (or higher) from [anaconda.com](https://www.anaconda.com/distribution/#download-section) (miniconda should also be sufficient, but this is not yet tested). Install it with the recommended settings.
+- python 3.11 is recommended, at least use python>=3.9 to ensure future updates ([more info](https://github.com/Deltares/dfm_tools/issues/267))
+- download and install Anaconda from [anaconda.com](https://www.anaconda.com)
 - open anaconda prompt and navigate to dfm_tools checkout folder, e.g. ``C:\DATA\dfm_tools``
-- ``conda create --name dfm_tools_env python=3.9 git spyder -c conda-forge -y`` (``git`` and ``spyder`` are optional, you can also install a newer python version)
+- ``conda create --name dfm_tools_env python=3.11 git spyder -c conda-forge -y`` (``git`` and ``spyder`` are optional)
 - ``conda activate dfm_tools_env``
 - ``python -m pip install -e .[test]`` (pip developer mode, any updates to the local folder are immediately available in your python. It also installs all requirements via pip, ``[test]`` installs also the developer requirements)
 - ``conda deactivate``
@@ -69,7 +70,7 @@ mkdocs build
 - update ``docs/whats-new.md`` and add a date to the current release heading
 - run local testbank
 - local check with: ``python setup.py sdist bdist_wheel`` and ``twine check dist/*``
-- copy the dfm_tools version from https://github.com/Deltares/dfm_tools/blob/main/setup.cfg (e.g. ``0.11.0``)
+- copy the dfm_tools version from https://github.com/Deltares/dfm_tools/blob/main/pyproject.toml (e.g. ``0.11.0``)
 - go to https://github.com/Deltares/dfm_tools/releases/new
 - click ``choose a tag`` and type v+versionnumber (e.g. ``v0.11.0``), click ``create new tag: v0.11.0 on publish``
 - set the release title to the tagname (e.g. ``v0.11.0``)
