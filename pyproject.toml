@@ -50,7 +50,7 @@ dependencies = [
 	#pooch<1.1.0 do not have attribute retrieve
 	"pooch>=1.1.0",
 	#hydrolib-core<0.5.1 does not yet contain 3D z-sigma mdu settings and many other essentials
-	"hydrolib-core>=0.5.1",
+	"hydrolib-core>=0.5.1", # TODO: currently requires branch 569-bumping-meshkernel-version-to-latest-v300
 	#meshkernel<3.0.0 api is fundamentally different
 	"meshkernel>=3.0.0",
 ]

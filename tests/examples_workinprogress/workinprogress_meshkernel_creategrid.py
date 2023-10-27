@@ -115,7 +115,6 @@ mesh2d_noland.plot_edges(ax,linewidth=0.8)
 dfmt.plot_coastlines(ax=ax, res='h', min_area=100)
 ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 
-
 """
 convert meshkernel grid to xugrid, interp bathymetry, plot and save to *_net.nc
 """
@@ -124,6 +123,7 @@ xu_grid_uds = dfmt.meshkernel_to_UgridDataset(mk, remove_noncontiguous=True, crs
 
 fig, ax = plt.subplots(figsize=figsize)
 xu_grid_uds.grid.plot(ax=ax,linewidth=0.8) #TODO: maybe make uds instead of ds (but then bathy interpolation goes wrong)
+dfmt.plot_coastlines(ax=ax, res='h', min_area=100)
 ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 
 #interp bathy
