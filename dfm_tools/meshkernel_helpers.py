@@ -20,13 +20,13 @@ from shapely import MultiPolygon, LineString, MultiLineString
 from shapely.ops import linemerge
 
 
-def meshkernel_delete_withcoastlines(mk:meshkernel.meshkernel.MeshKernel, res:str='f', min_area:float = 0, crs:(int,str) = None):
+def meshkernel_delete_withcoastlines(mk:meshkernel.MeshKernel, res:str='f', min_area:float = 0, crs:(int,str) = None):
     """
     Wrapper around meshkernel_delete_withgdf, which automatically gets the bbox from the meshkernel object and retrieves the coastlines_gdf.
 
     Parameters
     ----------
-    mk : meshkernel.meshkernel.MeshKernel
+    mk : meshkernel.MeshKernel
         DESCRIPTION.
     res : str, optional
         DESCRIPTION. The default is 'f'.
@@ -50,13 +50,13 @@ def meshkernel_delete_withcoastlines(mk:meshkernel.meshkernel.MeshKernel, res:st
     meshkernel_delete_withgdf(mk, coastlines_gdf)
 
 
-def meshkernel_delete_withshp(mk:meshkernel.meshkernel.MeshKernel, coastlines_shp:str, crs:(int,str) = None):
+def meshkernel_delete_withshp(mk:meshkernel.MeshKernel, coastlines_shp:str, crs:(int,str) = None):
     """
     Delete parts of mesh that are inside the shapefile polygon.
 
     Parameters
     ----------
-    mk : meshkernel.meshkernel.MeshKernel
+    mk : meshkernel.MeshKernel
         DESCRIPTION.
     coastlines_shp : str
         Path to the shp file.
@@ -79,13 +79,13 @@ def meshkernel_delete_withshp(mk:meshkernel.meshkernel.MeshKernel, coastlines_sh
     meshkernel_delete_withgdf(mk, coastlines_gdb)
 
 
-def meshkernel_delete_withgdf(mk:meshkernel.meshkernel.MeshKernel, coastlines_gdf:gpd.GeoDataFrame):
+def meshkernel_delete_withgdf(mk:meshkernel.MeshKernel, coastlines_gdf:gpd.GeoDataFrame):
     """
     Delete parts of mesh that are inside the polygons/Linestrings in a GeoDataFrame.
 
     Parameters
     ----------
-    mk : meshkernel.meshkernel.MeshKernel
+    mk : meshkernel.MeshKernel
         DESCRIPTION.
     coastlines_gdf : gpd.GeoDataFrame
         DESCRIPTION.
@@ -107,13 +107,13 @@ def meshkernel_delete_withgdf(mk:meshkernel.meshkernel.MeshKernel, coastlines_gd
                          invert_deletion=False)
 
 
-def meshkernel_check_geographic(mk:meshkernel.meshkernel.MeshKernel) -> bool:
+def meshkernel_check_geographic(mk:meshkernel.MeshKernel) -> bool:
     """
     Get projection from meshkernel instance
 
     Parameters
     ----------
-    mk : meshkernel.meshkernel.MeshKernel
+    mk : meshkernel.MeshKernel
         DESCRIPTION.
 
     Returns
@@ -305,14 +305,14 @@ def refine_basegrid(mk, data_bathy_sel, min_edge_size):
     return mk
 
 
-def generate_bndpli_cutland(mk:meshkernel.meshkernel.MeshKernel, res:str='f', min_area:float = 0, crs:(int,str) = None, buffer:float = 0):
+def generate_bndpli_cutland(mk:meshkernel.MeshKernel, res:str='f', min_area:float = 0, crs:(int,str) = None, buffer:float = 0):
     """
     Generate a boundary polyline from the meshkernel object and cut away the landward part.
     Be sure to do this on the base/refined grid, not on the grid where the landward cells were already cut.
     
     Parameters
     ----------
-    mk : meshkernel.meshkernel.MeshKernel
+    mk : meshkernel.MeshKernel
         DESCRIPTION.
     res : str, optional
         DESCRIPTION. The default is 'f'.
