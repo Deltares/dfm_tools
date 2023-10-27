@@ -10,14 +10,12 @@ import pytest
 import dfm_tools as dfmt
 import hydrolib.core.dflowfm as hcdfm
 import xarray as xr
+from dfm_tools.hydrolib_helpers import get_ncbnd_construct
 
 
 @pytest.mark.systemtest
 def test_cmems_nc_to_ini():
-    """
-    not so covering test, preferrably include
-    - conversion of quantity names
-    """
+    
     # TODO: create fixture
     from tests.test_interpolate_grid2bnd import cmems_dataset_4times
     ds1 = cmems_dataset_4times().isel(time=slice(None,2))
@@ -47,10 +45,18 @@ def test_cmems_nc_to_ini():
     
     assert os.path.exists(file_expected)
     ds_out = xr.open_dataset(file_expected)
+    
     times_actual = ds_out.time.to_pandas().dt.strftime("%Y-%m-%d %H:%M:%S").tolist()
     assert times_expected == times_actual
+    
     assert "so" in ds_out.data_vars
     assert ds_out.so.isnull().sum().load() == 0
+    
+    ncbnd_construct = get_ncbnd_construct()
+    varn_depth = ncbnd_construct['varn_depth']
+    assert varn_depth in ds_out.coords
+    # the below is inconsistent since depth is actually defined positive up, but FM requires this for inifields: https://issuetracker.deltares.nl/browse/UNST-7455
+    assert ds_out[varn_depth].attrs['positive'] == 'down'
     
     # cleanup
     del ds_out

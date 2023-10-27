@@ -89,7 +89,8 @@ def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, c
         # https://issuetracker.deltares.nl/browse/UNST-7455
         ncbnd_construct = get_ncbnd_construct()
         varn_depth = ncbnd_construct['varn_depth']
-        data_xr[varn_depth].attrs['positive'] = 'down'
+        if varn_depth in data_xr.coords:
+            data_xr[varn_depth].attrs['positive'] = 'down'
         
         # subset two times. interp to tstart would be the proper way to do it, 
         # but FM needs two timesteps for nudge_salinity_temperature and initial waq vars
