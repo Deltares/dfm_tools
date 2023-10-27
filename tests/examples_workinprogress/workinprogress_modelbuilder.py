@@ -159,7 +159,7 @@ ext_new.save(filepath=ext_file_new,path_style=path_style)
     
 #%% old ext
 
-# CMEMS - initial condition file
+# CMEMS - initial conditions
 ext_file_old = os.path.join(dir_output, f'{model_name}_old.ext')
 ext_old = hcdfm.ExtOldModel()
 
@@ -172,7 +172,7 @@ ext_old = dfmt.cmems_nc_to_ini(ext_old=ext_old,
 # ERA5 - download
 dir_output_data_era5 = os.path.join(dir_output_data,'ERA5')
 os.makedirs(dir_output_data_era5, exist_ok=True)
-    
+
 if ERA5_meteo_option == 1:
     varlist_list = [['msl','u10n','v10n','chnk']]
 elif ERA5_meteo_option == 2:

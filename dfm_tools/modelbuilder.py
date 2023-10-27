@@ -61,24 +61,24 @@ def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, c
     tstart_round, tstop_round = dfmt.round_timestamp_to_outer_noon(tstart,tstart)
     for quan_bnd in list_quantities:
         
-        if quan_bnd=="salinitybnd":
-            file_nc_list_so = glob.glob(dir_pattern.format(ncvarname='so'))
-            file_nc_list_thetao = glob.glob(dir_pattern.format(ncvarname='thetao'))
-            file_nc_list = file_nc_list_so + file_nc_list_thetao
-            quantity = "nudge_salinity_temperature"
-            varname = None
-            # 3D initialsalinity/initialtemperature fields are silently ignored
-            # initial 3D conditions are only possible via nudging 1st timestep via quantity=nudge_salinity_temperature
-            data_xr = xr.open_mfdataset(file_nc_list)
-        elif quan_bnd in ["temperaturebnd","uxuyadvectionvelocitybnd"]:
+        if quan_bnd in ["temperaturebnd","uxuyadvectionvelocitybnd"]:
             # silently skipped, temperature is handled with salinity, uxuy not supported
             continue
+        elif quan_bnd=="salinitybnd":
+            # 3D initialsalinity/initialtemperature fields are silently ignored
+            # initial 3D conditions are only possible via nudging 1st timestep via quantity=nudge_salinity_temperature
+            data_xr = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity=["salinitybnd","temperaturebnd"],
+                                              tstart=tstart_round, tstop=tstop_round,
+                                              conversion_dict=conversion_dict)
+            data_xr = data_xr.rename_vars({"salinitybnd":"so", "temperaturebnd":"thetao"})
+            quantity = "nudge_salinity_temperature"
+            varname = None
         else:
-            quantity = f'initial{quan_bnd.replace("bnd","")}'
-            varname = quantity
             data_xr = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity=quan_bnd,
                                               tstart=tstart_round, tstop=tstop_round,
                                               conversion_dict=conversion_dict)
+            quantity = f'initial{quan_bnd.replace("bnd","")}'
+            varname = quantity
             data_xr = data_xr.rename_vars({quan_bnd:quantity})
         
         # subset two times. interp to tstart would be the proper way to do it, 
