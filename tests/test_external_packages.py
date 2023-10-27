@@ -5,6 +5,7 @@ Created on Mon Jun 19 22:03:43 2023
 @author: veenstra
 """
 
+import os
 import pytest
 import xarray as xr
 import xugrid as xu
@@ -146,7 +147,6 @@ def test_xarray_decode_default_fillvals():
     #write file
     file_out = 'temp_fnc_default_fillvals_map.nc'
     ds.to_netcdf(file_out)
-    ds.close()
     
     #open dataset with decode_fillvals
     try:
@@ -161,7 +161,15 @@ def test_xarray_decode_default_fillvals():
                         "version is set as requirement")
     
     #this should be successful
-    uds = dfmt.open_partitioned_dataset(file_out,decode_fillvals=True)
-    fnc_new = uds.grid.face_node_connectivity
+    uds2 = dfmt.open_partitioned_dataset(file_out,decode_fillvals=True)
+    fnc_new = uds2.grid.face_node_connectivity
     
     assert fill_value_default in fnc_new
+
+    # cleanup
+    # del ds
+    # del uds2
+    # del fnc_new
+    # PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'temp_fnc_default_fillvals_map.nc'
+    # os.remove(file_out)
+

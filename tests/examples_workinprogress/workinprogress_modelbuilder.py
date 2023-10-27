@@ -23,7 +23,6 @@ paths_relative = True #TODO: currently only works with path_style='windows' (sam
 is_geographic = True
 crs = 'EPSG:4326'
 
-inisaltem = True #initialsalinity/initialtemperature gives 33.8ppt uniform and sal instabilities right from the start of the model run. Proper way seems to be with iniwithnudge=2 and nudge_salinity_temperature, which gives ini sal/tem indeed but also instable. Providing nudge_salinity_temperature and iniwithnudge=0 gives more stable model but also inisal is 33.8 (not spatially varying) (is same as False maybe?)
 #TODO: salinity instable, also waterlevel and velocity magnitude are instable at northeast side of island (latter is with incorrect ordering/selection in extfile)
 """
 ** INFO   :  Min. salinity limited, number of cells Limmin =           20
@@ -144,6 +143,7 @@ for varkey in ['zos','so','thetao','uo','vo','no3','phyc']:
 # or else "ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated" is raised (https://issuetracker.deltares.nl/browse/UNST-7011).
 # Two waterlevelbnds need to share same physical plifile in order to be appended (https://issuetracker.deltares.nl/browse/UNST-5320).
 list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd','tracerbndNO3','tracerbndPON1']
+dir_pattern = os.path.join(dir_output_data_cmems,'cmems_{ncvarname}_*.nc')
 ext_new = dfmt.cmems_nc_to_bc(ext_bnd=ext_new,
                               refdate_str=f'minutes since {ref_date} 00:00:00 +00:00',
                               dir_output=dir_output,
@@ -151,7 +151,7 @@ ext_new = dfmt.cmems_nc_to_bc(ext_bnd=ext_new,
                               tstart=date_min,
                               tstop=date_max, 
                               file_pli=poly_file,
-                              dir_pattern=os.path.join(dir_output_data_cmems,'cmems_{ncvarname}_*.nc'))
+                              dir_pattern=dir_pattern)
 
 #save new ext file
 ext_new.save(filepath=ext_file_new,path_style=path_style)
@@ -159,20 +159,20 @@ ext_new.save(filepath=ext_file_new,path_style=path_style)
     
 #%% old ext
 
-# CMEMS - initial condition file
+# CMEMS - initial conditions
 ext_file_old = os.path.join(dir_output, f'{model_name}_old.ext')
 ext_old = hcdfm.ExtOldModel()
 
-if inisaltem:
-    ext_old = dfmt.preprocess_ini_cmems_to_nc(ext_old=ext_old,
-                                              tstart=date_min,
-                                              dir_data=dir_output_data_cmems,
-                                              dir_out=dir_output)
+ext_old = dfmt.cmems_nc_to_ini(ext_old=ext_old,
+                               dir_output=dir_output,
+                               list_quantities=list_quantities,
+                               tstart=date_min,
+                               dir_pattern=dir_pattern)
 
 # ERA5 - download
 dir_output_data_era5 = os.path.join(dir_output_data,'ERA5')
 os.makedirs(dir_output_data_era5, exist_ok=True)
-    
+
 if ERA5_meteo_option == 1:
     varlist_list = [['msl','u10n','v10n','chnk']]
 elif ERA5_meteo_option == 2:
@@ -230,7 +230,10 @@ mdu.physics.rhomean = 1023
 mdu.physics.secchidepth = 4
 mdu.physics.salimax = 50
 mdu.physics.tempmax = 50
-if inisaltem:
+if 'nudge_salinity_temperature' in [x.quantity for x in ext_old.forcing]:
+    # initialsalinity/initialtemperature gives 33.8ppt uniform (so is not read)
+    # the only possible way is with iniwithnudge=2 and nudge_salinity_temperature in old extfile.
+    # for other variables we can use initialtracerbndNO3 for instance
     mdu.physics.iniwithnudge = 2 #TODO: commented in oldextfile in reference run, initial sal/tem profiles from deep layer were used instead (not yet derived, but 3D inifields also do not have an effect)
 
 mdu.wind.icdtyp = 4
