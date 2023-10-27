@@ -70,24 +70,6 @@ def remove_ghostcells(uds, fname): #TODO: remove ghostcells from output or align
     return uds
 
 
-def remove_periodic_cells(uds): #TODO: implement proper fix: https://github.com/Deltares/xugrid/issues/63
-    """
-    For global models with grids that go "around the back". Temporary fix to drop all faces that are larger than grid_extent/2 (eg 360/2=180 degrees in case of GTSM)
-    
-    """
-    face_node_x = uds.grid.face_node_coordinates[:,:,0]
-    grid_extent = uds.grid.bounds[2] - uds.grid.bounds[0]
-    face_node_maxdx = np.nanmax(face_node_x,axis=1) - np.nanmin(face_node_x,axis=1)
-    bool_face = face_node_maxdx < grid_extent/2
-    if bool_face.all(): #early return for when no cells have to be removed (might increase performance)
-        return uds
-    print(f'>> removing {(~bool_face).sum()} periodic cells from dataset: ',end='')
-    dtstart = dt.datetime.now()
-    uds = uds.sel({uds.grid.face_dimension:bool_face})
-    print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
-    return uds
-
-
 def remove_unassociated_edges(ds: xr.Dataset) -> xr.Dataset:
     """
     Removes edges that are not associated to any of the faces, usecase in https://github.com/Deltares/xugrid/issues/68
@@ -249,7 +231,7 @@ def open_dataset_curvilinear(file_nc,
     
     ds = xr.open_mfdataset(file_nc, **kwargs)
     
-    print('>> getting vertices from ds: ',end='') #long (but does not reflect in 
+    print('>> getting vertices from ds: ',end='')
     dtstart = dt.datetime.now()
     vertices_longitude = ds[varn_vert_lon].to_numpy()
     vertices_longitude = vertices_longitude.reshape(-1,vertices_longitude.shape[-1])
@@ -259,7 +241,7 @@ def open_dataset_curvilinear(file_nc,
     
     #convert from 0to360 to -180 to 180
     if convert_360to180:
-        vertices_longitude = (vertices_longitude+180)%360 - 180 #TODO: check if periodic cell filter still works properly after doing this
+        vertices_longitude = (vertices_longitude+180)%360 - 180 #TODO: check if uds.ugrid.to_nonperiodic() still works properly after doing this
     
     # face_xy = np.stack([longitude,latitude],axis=-1)
     # face_coords_x, face_coords_y = face_xy.T
