@@ -36,6 +36,11 @@ def test_open_2Dnetwork_with_1Dtopology():
     uds_withcellinfo = dfmt.add_network_cellinfo(uds)
     assert isinstance(uds_withcellinfo.grid, xu.Ugrid2d)
     assert hasattr(uds_withcellinfo.grid, "face_node_connectivity")
+    
+    # test projected attr, xugrid automatically sets standard_name 
+    # based on projected property
+    node_x = uds_withcellinfo.grid.to_dataset().mesh2d_node_x
+    assert node_x.attrs['standard_name'] == "longitude"
 
 
 @pytest.mark.systemtest
