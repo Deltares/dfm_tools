@@ -478,7 +478,13 @@ def get_uds_isgeographic(uds):
     return is_geographic
 
 
-def add_network_cellinfo(uds):
+def add_network_cellinfo(uds:xu.UgridDataset):
+    """
+    Reads a UgridDataset with a minimal topology as it occurs in dflowfm netfiles,
+    this contains only node_x, node_y and edge_node_connectivity. xugrid reads this as Ugrid1d
+    It converts it to a Ugrid2d grid which includes the face_node_connectivity.
+    It also couples the variables like NetNode_z again, but drops the edge_dims to avoid conflicts.
+    """
     #check if indeed 1D grid object
     assert isinstance(uds.grid, xu.Ugrid1d)
 
@@ -493,14 +499,24 @@ def add_network_cellinfo(uds):
     
     # use Mesh1d nodes/edgenodes info for generation of meshkernel with Mesh2d
     is_geographic = get_uds_isgeographic(uds)
-    mk2 = meshkernel.MeshKernel(is_geographic=is_geographic)
     mk_mesh2d = meshkernel.Mesh2d(mk_mesh1d.node_x, mk_mesh1d.node_y, mk_mesh1d.edge_nodes)
+    mk2 = meshkernel.MeshKernel(is_geographic=is_geographic)
     mk2.mesh2d_set(mk_mesh2d)
+    mesh2d_grid = mk2.mesh2d_get() #this is a more populated version of mk_mesh2d, needed for xugrid
+    xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid, projected=is_geographic) #TODO: we have to supply is_geographic twice, necessary?
+    
+    # convert uds.obj (non-grid vars from dataset) to new xugrid standards
+    rename_dims_dict = {uds.grid.node_dimension:xu_grid.node_dimension,
+                        # uds.grid.edge_dimension:xu_grid.edge_dimension,
+                        }
+    uds_obj = uds.obj.rename_dims(rename_dims_dict)
+    # drop edge dim since dim size can be changed in case of hanging edges
+    uds_obj = uds_obj.drop_dims(uds.grid.edge_dimension)
+    # drop node coordinate var since the order might conflict with the new grid and it has no meaning
+    uds_obj = uds_obj.drop_vars(uds.grid.node_dimension)
     
     # combine again with rest of dataset
-    mesh2d_grid = mk2.mesh2d_get()
-    xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid)
-    uds_withinfo = xu.UgridDataset(obj=uds.obj, grids=[xu_grid])
+    uds_withinfo = xu.UgridDataset(obj=uds_obj, grids=[xu_grid])
     
     return uds_withinfo
     
