@@ -10,6 +10,7 @@ import xarray as xr
 import xugrid as xu
 import dfm_tools as dfmt
 import numpy as np
+from dfm_tools.xugrid_helpers import _get_uds_isgeographic
 
 #TODO: many xugrid_helpers tests are still in test_dfm_tools.py
 
@@ -24,6 +25,14 @@ def test_remove_unassociated_edges():
     ds2_edgedimsize = ds2.dims['nmesh2d_edge']
     
     assert ds2_edgedimsize == ds_edgedimsize-1
+
+
+@pytest.mark.unittest
+def test_get_uds_isgeographic():
+    file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True) #zlayer
+    uds = xu.open_dataset(file_nc.replace('0*','0002')) #partition 0002 of grevelingen contains both triangles as squares
+    is_geographic = _get_uds_isgeographic(uds)
+    assert is_geographic == False
 
 
 @pytest.mark.requireslocaldata
