@@ -10,6 +10,7 @@ import xarray as xr
 import xugrid as xu
 import dfm_tools as dfmt
 import numpy as np
+from dfm_tools.xugrid_helpers import _get_uds_isgeographic
 
 #TODO: many xugrid_helpers tests are still in test_dfm_tools.py
 
@@ -26,12 +27,30 @@ def test_remove_unassociated_edges():
     assert ds2_edgedimsize == ds_edgedimsize-1
 
 
+@pytest.mark.unittest
+def test_get_uds_isgeographic():
+    file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True) #zlayer
+    uds = xu.open_dataset(file_nc.replace('0*','0002')) #partition 0002 of grevelingen contains both triangles as squares
+    is_geographic = _get_uds_isgeographic(uds)
+    assert is_geographic == False
+
+
 @pytest.mark.requireslocaldata
 @pytest.mark.unittest
 def test_open_2Dnetwork_with_1Dtopology():
     file_nc = r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DCSM-FM_0_5nm_grid_20191202_depth_20181213_net.nc'
     uds = dfmt.open_partitioned_dataset(file_nc)
     assert isinstance(uds.grid, xu.ugrid.ugrid1d.Ugrid1d)
+    assert not hasattr(uds.grid, "face_node_connectivity")
+    
+    uds_withcellinfo = dfmt.add_network_cellinfo(uds)
+    assert isinstance(uds_withcellinfo.grid, xu.Ugrid2d)
+    assert hasattr(uds_withcellinfo.grid, "face_node_connectivity")
+    
+    # test projected attr, xugrid automatically sets standard_name 
+    # based on projected property
+    node_x = uds_withcellinfo.grid.to_dataset().mesh2d_node_x
+    assert node_x.attrs['standard_name'] == "longitude"
 
 
 @pytest.mark.systemtest
