@@ -26,6 +26,7 @@ def test_remove_unassociated_edges():
     assert ds2_edgedimsize == ds_edgedimsize-1
 
 
+@pytest.mark.requireslocaldata
 @pytest.mark.unittest
 def test_open_2Dnetwork_with_1Dtopology():
     file_nc = r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DCSM-FM_0_5nm_grid_20191202_depth_20181213_net.nc'
