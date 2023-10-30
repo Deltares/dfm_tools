@@ -503,7 +503,9 @@ def add_network_cellinfo(uds:xu.UgridDataset):
     mk2 = meshkernel.MeshKernel(is_geographic=is_geographic)
     mk2.mesh2d_set(mk_mesh2d)
     mesh2d_grid = mk2.mesh2d_get() #this is a more populated version of mk_mesh2d, needed for xugrid
-    xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid, projected=is_geographic) #TODO: we have to supply is_geographic twice, necessary?
+    #TODO: we have to supply is_geographic twice, necessary?
+    # also "projected" is opposite of "is_geographic" according to the docstring
+    xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid, projected= not is_geographic)
     
     # convert uds.obj (non-grid vars from dataset) to new xugrid standards
     rename_dims_dict = {uds.grid.node_dimension:xu_grid.node_dimension,
