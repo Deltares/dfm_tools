@@ -500,7 +500,7 @@ def add_network_cellinfo(uds:xu.UgridDataset):
     # use Mesh1d nodes/edgenodes info for generation of meshkernel with Mesh2d
     is_geographic = _get_uds_isgeographic(uds)
     mk_mesh2d = meshkernel.Mesh2d(mk_mesh1d.node_x, mk_mesh1d.node_y, mk_mesh1d.edge_nodes)
-    mk2 = meshkernel.MeshKernel(is_geographic=is_geographic)
+    mk2 = meshkernel.MeshKernel(is_geographic=is_geographic) #TODO: this should be updated, but avoid duplicate code from dfmt.make_basegrid()
     mk2.mesh2d_set(mk_mesh2d)
     mesh2d_grid = mk2.mesh2d_get() #this is a more populated version of mk_mesh2d, needed for xugrid
     #TODO: we have to supply is_geographic twice, necessary?
