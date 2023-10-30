@@ -10,6 +10,7 @@ import xugrid as xu
 import xarray as xr
 import datetime as dt
 import pandas as pd
+import meshkernel
 from dfm_tools.xarray_helpers import file_to_list
 
 
@@ -466,3 +467,41 @@ def uda_interfaces_to_centers(uda_int : xu.UgridDataArray) -> xu.UgridDataArray:
     uda_cen = uda_cen.drop_vars(dimn_interface)
     
     return uda_cen
+
+
+def get_uds_isgeographic(uds):
+    uds_wgs84 = uds.filter_by_attrs(grid_mapping_name="latitude_longitude")
+    if len(uds_wgs84.data_vars) > 0:
+        is_geographic = True
+    else:
+        is_geographic = False
+    return is_geographic
+
+
+def add_network_cellinfo(uds):
+    #check if indeed 1D grid object
+    assert isinstance(uds.grid, xu.Ugrid1d)
+
+    # simple approach, but results in cartesian grid
+    # mk.mesh2d_set(input_mesh2d)
+    # uds_ugrid2d = xu.Ugrid2d.from_meshkernel(mk.mesh2d_get())
+    #TODO: is_geographic=False is currently hardcoded: https://github.com/Deltares/xugrid/issues/128
+
+    # derive meshkernel from grid with Mesh1d
+    mk1 = uds.grid.meshkernel
+    mk_mesh1d = mk1.mesh1d_get()
+    
+    # use Mesh1d nodes/edgenodes info for generation of meshkernel with Mesh2d
+    is_geographic = get_uds_isgeographic(uds)
+    mk2 = meshkernel.MeshKernel(is_geographic=is_geographic)
+    mk_mesh2d = meshkernel.Mesh2d(mk_mesh1d.node_x, mk_mesh1d.node_y, mk_mesh1d.edge_nodes)
+    mk2.mesh2d_set(mk_mesh2d)
+    
+    # combine again with rest of dataset
+    mesh2d_grid = mk2.mesh2d_get()
+    xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid)
+    uds_withinfo = xu.UgridDataset(obj=uds.obj, grids=[xu_grid])
+    
+    return uds_withinfo
+    
+    

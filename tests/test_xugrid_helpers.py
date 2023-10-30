@@ -26,12 +26,16 @@ def test_remove_unassociated_edges():
     assert ds2_edgedimsize == ds_edgedimsize-1
 
 
-@pytest.mark.requireslocaldata
 @pytest.mark.unittest
 def test_open_2Dnetwork_with_1Dtopology():
     file_nc = r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DCSM-FM_0_5nm_grid_20191202_depth_20181213_net.nc'
     uds = dfmt.open_partitioned_dataset(file_nc)
     assert isinstance(uds.grid, xu.ugrid.ugrid1d.Ugrid1d)
+    assert not hasattr(uds.grid, "face_node_connectivity")
+    
+    uds_withcellinfo = dfmt.add_network_cellinfo(uds)
+    assert isinstance(uds_withcellinfo.grid, xu.Ugrid2d)
+    assert hasattr(uds_withcellinfo.grid, "face_node_connectivity")
 
 
 @pytest.mark.systemtest
