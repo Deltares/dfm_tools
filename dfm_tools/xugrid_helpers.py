@@ -10,6 +10,7 @@ import xugrid as xu
 import xarray as xr
 import datetime as dt
 import pandas as pd
+import meshkernel
 from dfm_tools.xarray_helpers import file_to_list
 
 
@@ -466,3 +467,59 @@ def uda_interfaces_to_centers(uda_int : xu.UgridDataArray) -> xu.UgridDataArray:
     uda_cen = uda_cen.drop_vars(dimn_interface)
     
     return uda_cen
+
+
+def _get_uds_isgeographic(uds):
+    uds_wgs84 = uds.filter_by_attrs(grid_mapping_name="latitude_longitude")
+    if len(uds_wgs84.data_vars) > 0:
+        is_geographic = True
+    else:
+        is_geographic = False
+    return is_geographic
+
+
+def add_network_cellinfo(uds:xu.UgridDataset):
+    """
+    Reads a UgridDataset with a minimal topology as it occurs in dflowfm netfiles,
+    this contains only node_x, node_y and edge_node_connectivity. xugrid reads this as Ugrid1d
+    It converts it to a Ugrid2d grid which includes the face_node_connectivity.
+    It also couples the variables like NetNode_z again, but drops the edge_dims to avoid conflicts.
+    """
+    #check if indeed 1D grid object
+    assert isinstance(uds.grid, xu.Ugrid1d)
+
+    # simple approach, but results in cartesian grid
+    # mk.mesh2d_set(input_mesh2d)
+    # uds_ugrid2d = xu.Ugrid2d.from_meshkernel(mk.mesh2d_get())
+    #TODO: is_geographic=False is currently hardcoded: https://github.com/Deltares/xugrid/issues/128
+
+    # derive meshkernel from grid with Mesh1d
+    mk1 = uds.grid.meshkernel
+    mk_mesh1d = mk1.mesh1d_get()
+    
+    # use Mesh1d nodes/edgenodes info for generation of meshkernel with Mesh2d
+    is_geographic = _get_uds_isgeographic(uds)
+    mk_mesh2d = meshkernel.Mesh2d(mk_mesh1d.node_x, mk_mesh1d.node_y, mk_mesh1d.edge_nodes)
+    mk2 = meshkernel.MeshKernel(is_geographic=is_geographic)
+    mk2.mesh2d_set(mk_mesh2d)
+    mesh2d_grid = mk2.mesh2d_get() #this is a more populated version of mk_mesh2d, needed for xugrid
+    #TODO: we have to supply is_geographic twice, necessary?
+    # also "projected" is opposite of "is_geographic" according to the docstring
+    xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid, projected= not is_geographic)
+    
+    # convert uds.obj (non-grid vars from dataset) to new xugrid standards
+    rename_dims_dict = {uds.grid.node_dimension:xu_grid.node_dimension,
+                        # uds.grid.edge_dimension:xu_grid.edge_dimension,
+                        }
+    uds_obj = uds.obj.rename_dims(rename_dims_dict)
+    # drop edge dim since dim size can be changed in case of hanging edges
+    uds_obj = uds_obj.drop_dims(uds.grid.edge_dimension)
+    # drop node coordinate var since the order might conflict with the new grid and it has no meaning
+    uds_obj = uds_obj.drop_vars(uds.grid.node_dimension)
+    
+    # combine again with rest of dataset
+    uds_withinfo = xu.UgridDataset(obj=uds_obj, grids=[xu_grid])
+    
+    return uds_withinfo
+    
+    
