@@ -87,3 +87,17 @@ def test_uda_edges_to_faces_interfaces_to_centers():
         assert uda_face.dims == uds_face_dims_expected
     
         assert (np.abs(uda_face_sel.to_numpy()-uda_face_sel_expected)<1e-6).all()
+
+
+@pytest.mark.requireslocaldata
+@pytest.mark.unittest
+def test_enrich_rst_with_map():
+    """
+    this tests whether rst file is correctly enriched with map
+    by trying to plot a ugrid (face node) variable
+    """
+    file_nc_rst = r"p:\11203618-uae-wqps\2_models\3_WAQ\03_Simulations\05_OptimizationOctoberCoarse\05_RefTestSmartLoads\DFM_OUTPUT_AGM3D\AGM3D_0*_20210102_000000_rst.nc"
+    
+    uds_rst = dfmt.open_partitioned_dataset(file_nc_rst, preprocess=dfmt.enrich_rst_with_map)
+    
+    uds_rst.s1.isel(time=0).ugrid.plot()
