@@ -107,7 +107,7 @@ def meshkernel_delete_withgdf(mk:meshkernel.MeshKernel, coastlines_gdf:gpd.GeoDa
                          invert_deletion=False)
 
 
-def meshkernel_check_geographic(mk:meshkernel.MeshKernel) -> bool:
+def _meshkernel_check_geographic(mk:meshkernel.MeshKernel) -> bool:
     """
     Get projection from meshkernel instance
 
@@ -173,7 +173,7 @@ def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, crs:(int,str) = None, r
 
     """
     
-    is_geographic = meshkernel_check_geographic(mk)
+    is_geographic = _meshkernel_check_geographic(mk)
     
     mesh2d_grid = mk.mesh2d_get()
     

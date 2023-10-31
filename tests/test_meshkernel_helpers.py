@@ -15,7 +15,7 @@ import numpy as np
 import geopandas as gpd
 from shapely.geometry import Polygon
 import glob
-from dfm_tools.meshkernel_helpers import meshkernel_check_geographic, _geographic_to_meshkernel_projection
+from dfm_tools.meshkernel_helpers import _meshkernel_check_geographic, _geographic_to_meshkernel_projection
 
 
 @pytest.mark.unittest
@@ -133,15 +133,15 @@ def test_meshkernel_check_geographic_dfmt():
 def test_meshkernel_check_geographic():
     
     mk = meshkernel.MeshKernel(projection=meshkernel.ProjectionType.CARTESIAN)
-    is_geographic = meshkernel_check_geographic(mk)
+    is_geographic = _meshkernel_check_geographic(mk)
     assert is_geographic==False
     
     mk = meshkernel.MeshKernel(projection=meshkernel.ProjectionType.SPHERICAL)
-    is_geographic = meshkernel_check_geographic(mk)
+    is_geographic = _meshkernel_check_geographic(mk)
     assert is_geographic==True
     
     mk = meshkernel.MeshKernel(projection=meshkernel.ProjectionType.SPHERICALACCURATE)
-    is_geographic = meshkernel_check_geographic(mk)
+    is_geographic = _meshkernel_check_geographic(mk)
     assert is_geographic==True
 
 
