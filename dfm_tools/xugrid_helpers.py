@@ -5,6 +5,7 @@ Created on Thu Jun 22 17:02:16 2023
 @author: veenstra
 """
 
+import os
 import numpy as np
 import xugrid as xu
 import xarray as xr
@@ -521,5 +522,66 @@ def add_network_cellinfo(uds:xu.UgridDataset):
     uds_withinfo = xu.UgridDataset(obj=uds_obj, grids=[xu_grid])
     
     return uds_withinfo
+
+
+def enrich_rst_with_map(ds_rst:xr.Dataset):
+    """
+    enriches rst dataset with topology from mapfile in the same folder.
+    in order to merge, the bnd dimension has to be dropped.
+    Also, the domain variable is currently not merged, so ghostcells are not removed.
+
+    Parameters
+    ----------
+    ds_rst : xr.Dataset
+        DESCRIPTION.
+
+    Returns
+    -------
+    ds_rst : TYPE
+        DESCRIPTION.
+
+    """
     
+    # derive fname of mapfile and open dataset
+    file_nc_rst = ds_rst.encoding["source"]
+    dir_output = os.path.dirname(file_nc_rst)
+    fname_rst = os.path.basename(file_nc_rst)
+    fname_map = "_".join(fname_rst.split("_")[:-3]) + "_map.nc"
+    file_nc_map = os.path.join(dir_output, fname_map)
+    ds_map = xr.open_dataset(file_nc_map)
     
+    # enrich rst file with topology variables from mapfile
+    topology_varn = ds_map.ugrid_roles.topology[0]
+    topo_var = ds_map[topology_varn]
+    ds_rst[topology_varn] = topo_var
+    nodecoords = topo_var.attrs["node_coordinates"]
+    for topovar in nodecoords.split():
+        ds_rst[topovar] = ds_map[topovar]
+        ds_rst = ds_rst.set_coords(topovar)
+    edgecoords = topo_var.attrs["edge_coordinates"]
+    for topovar in edgecoords.split():
+        ds_rst[topovar] = ds_map[topovar]
+        ds_rst = ds_rst.set_coords(topovar)
+    fnc_varn = topo_var.attrs["face_node_connectivity"]
+    ds_rst[fnc_varn] = ds_map[fnc_varn]
+    
+    # rename old dims
+    if 'nFlowElem' in ds_rst.dims and 'nNetElem' in ds_rst.dims:
+        ds_rst = ds_rst.rename({'nFlowElem':'nNetElem'})
+    if 'nFlowLinkPts' in ds_rst.dims and 'nNetLinkPts' in ds_rst.dims:
+        ds_rst = ds_rst.rename({'nFlowLinkPts':'nNetLinkPts'})
+    if 'nNetElem' in ds_rst.dims:
+        facedim = topo_var.attrs["face_dimension"]
+        ds_rst = ds_rst.rename({'nNetElem':facedim})
+    if "nNetLink" in ds_rst.dims:
+        edgedim = topo_var.attrs["edge_dimension"]
+        ds_rst = ds_rst.rename({"nNetLink":edgedim})
+    if "nNetElemMaxNode" in ds_rst.dims:
+        mfndim = topo_var.attrs["max_face_nodes_dimension"]
+        ds_rst = ds_rst.rename({"nNetElemMaxNode":mfndim})
+    
+    # drop bnd dim since it cannot be merged by xugrid
+    if "nFlowElemBnd" in ds_rst.dims:
+        ds_rst = ds_rst.drop_dims("nFlowElemBnd")
+    
+    return ds_rst
