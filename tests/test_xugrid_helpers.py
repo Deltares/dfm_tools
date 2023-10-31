@@ -96,7 +96,7 @@ def test_enrich_rst_with_map():
     this tests whether rst file is correctly enriched with map
     by trying to plot a ugrid (face node) variable
     """
-    file_nc_rst = r"p:\11203618-uae-wqps\2_models\3_WAQ\03_Simulations\05_OptimizationOctoberCoarse\05_RefTestSmartLoads\DFM_OUTPUT_AGM3D\AGM3D_0*_20210102_000000_rst.nc"
+    file_nc_rst = r'p:\archivedprojects\11206811-002-kpp-veerse-meer\model\runs_2011-2012\VM_WQ_3D_run9_c\DFM_OUTPUT_VM_WQ_3D\VM_WQ_3D_0000_20130101_000000_rst.nc' #mf1_rstfile (without topology var)
     
     uds_rst = dfmt.open_partitioned_dataset(file_nc_rst, preprocess=dfmt.enrich_rst_with_map)
     

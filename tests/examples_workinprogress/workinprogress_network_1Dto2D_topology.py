@@ -15,7 +15,6 @@ import dfm_tools as dfmt
 dir_issue = r'p:\dflowfm\maintenance\JIRA\06000-06999\06548'
 file_nc = os.path.join(dir_issue,'set_bathy_2.17.06','baltic_nobathy_net.nc') #1D/minimal network, with hanging edges
 # file_nc = r"p:\dflowfm\maintenance\JIRA\06000-06999\06548\set_bathy_2.25.07\DFM_interpreted_network_dummy_model_net.nc"
-file_nc = r"p:\11203618-uae-wqps\2_models\4_models_to_FEWS\preVisit2\ArabianGulf\1_FM\AGM3DWQ\agm_v20231015a_net.nc"
 
 uds = xu.open_dataset(file_nc)
 

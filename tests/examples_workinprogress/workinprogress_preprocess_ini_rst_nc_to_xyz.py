@@ -11,7 +11,8 @@ import dfm_tools as dfmt
 import matplotlib.pyplot as plt
 plt.close('all')
 
-file_nc = r'p:\archivedprojects\11206811-002-kpp-veerse-meer\model\runs_2011-2012\VM_WQ_3D_run9_c\DFM_OUTPUT_VM_WQ_3D\VM_WQ_3D_0000_20130101_000000_rst.nc' #mf1_rstfile (without topology var)
+# mf1_rstfile (without topology var)
+file_nc = r'p:\archivedprojects\11206811-002-kpp-veerse-meer\model\runs_2011-2012\VM_WQ_3D_run9_c\DFM_OUTPUT_VM_WQ_3D\VM_WQ_3D_0000_20130101_000000_rst.nc'
 
 uds = dfmt.open_partitioned_dataset(file_nc, preprocess=dfmt.enrich_rst_with_map)
 
