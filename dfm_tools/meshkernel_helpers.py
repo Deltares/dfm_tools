@@ -130,6 +130,28 @@ def meshkernel_check_geographic(mk:meshkernel.MeshKernel) -> bool:
     return is_geographic
 
 
+def _geographic_to_meshkernel_projection(is_geographic:bool) -> meshkernel.ProjectionType:
+    """
+    converts is_geographic boolean to meshkernel.ProjectionType (SPHERICAL OR CARTESIAN)
+
+    Parameters
+    ----------
+    is_geographic : bool
+        DESCRIPTION.
+
+    Returns
+    -------
+    projection : TYPE
+        DESCRIPTION.
+
+    """
+    if is_geographic:
+        projection = meshkernel.ProjectionType.SPHERICAL
+    else:
+        projection = meshkernel.ProjectionType.CARTESIAN
+    return projection
+
+
 def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, crs:(int,str) = None, remove_noncontiguous:bool = False) -> xu.UgridDataset:
     """
     Convert a meshkernel object to a UgridDataset, including a variable with the crs (used by dflowfm to distinguish spherical/cartesian networks).
@@ -259,10 +281,7 @@ def make_basegrid(lon_min,lon_max,lat_min,lat_max,dx,dy,angle=0,is_geographic=Tr
     """
     empty docstring
     """
-    if is_geographic:
-        projection = meshkernel.ProjectionType.SPHERICAL
-    else:
-        projection = meshkernel.ProjectionType.CARTESIAN
+    projection = _geographic_to_meshkernel_projection(is_geographic)
     
     # create base grid
     make_grid_parameters = meshkernel.MakeGridParameters(angle=angle,
