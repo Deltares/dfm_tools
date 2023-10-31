@@ -489,12 +489,7 @@ def add_network_cellinfo(uds:xu.UgridDataset):
     """
     #check if indeed 1D grid object
     assert isinstance(uds.grid, xu.Ugrid1d)
-
-    # simple approach, but results in cartesian grid
-    # mk.mesh2d_set(input_mesh2d)
-    # uds_ugrid2d = xu.Ugrid2d.from_meshkernel(mk.mesh2d_get())
-    #TODO: is_geographic=False is currently hardcoded: https://github.com/Deltares/xugrid/issues/128
-
+    
     # derive meshkernel from grid with Mesh1d
     mk1 = uds.grid.meshkernel
     mk_mesh1d = mk1.mesh1d_get()
