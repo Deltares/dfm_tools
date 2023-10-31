@@ -15,6 +15,7 @@ import numpy as np
 import geopandas as gpd
 from shapely.geometry import Polygon
 import glob
+from dfm_tools.meshkernel_helpers import meshkernel_check_geographic, _geographic_to_meshkernel_projection
 
 
 @pytest.mark.unittest
@@ -41,23 +42,6 @@ def test_add_crs_to_dataset_spherical():
     assert crs_attrs['EPSG_code'] == 'EPSG:4326'
     assert crs_attrs['epsg'] == 4326
     assert crs_attrs['grid_mapping_name'] == 'latitude_longitude'
-    
-
-@pytest.mark.systemtest
-def test_meshkernel_check_geographic():
-    """
-    to check whether is_geographic can be correctly derived from the mk object, for cartesian as well spherical objects
-    """
-    lon_min, lon_max, lat_min, lat_max = -68.55, -67.9, 11.8, 12.6
-    dxy = 0.05
-    
-    mk_cartesian = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, is_geographic=False)
-    mk_cartesian_geograph = dfmt.meshkernel_check_geographic(mk_cartesian)
-    mk_spherical = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, is_geographic=True)
-    mk_spherical_geograph = dfmt.meshkernel_check_geographic(mk_spherical)
-    
-    assert mk_cartesian_geograph==False
-    assert mk_spherical_geograph==True
 
 
 @pytest.mark.unittest
@@ -126,6 +110,51 @@ def test_meshkernel_delete_withgdf():
     dfmt.meshkernel_delete_withgdf(mk=mk, coastlines_gdf=ldb_gdf)
     
     assert len(mk.mesh2d_get().face_nodes) == 17368
+
+
+@pytest.mark.systemtest
+def test_meshkernel_check_geographic_dfmt():
+    """
+    to check whether is_geographic can be correctly derived from the mk object, for cartesian as well spherical objects
+    """
+    lon_min, lon_max, lat_min, lat_max = -68.55, -67.9, 11.8, 12.6
+    dxy = 0.05
+    
+    mk_cartesian = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, is_geographic=False)
+    mk_cartesian_geograph = dfmt.meshkernel_check_geographic(mk_cartesian)
+    mk_spherical = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, is_geographic=True)
+    mk_spherical_geograph = dfmt.meshkernel_check_geographic(mk_spherical)
+    
+    assert mk_cartesian_geograph==False
+    assert mk_spherical_geograph==True
+
+
+@pytest.mark.unittest
+def test_meshkernel_check_geographic():
+    
+    mk = meshkernel.MeshKernel(projection=meshkernel.ProjectionType.CARTESIAN)
+    is_geographic = meshkernel_check_geographic(mk)
+    assert is_geographic==False
+    
+    mk = meshkernel.MeshKernel(projection=meshkernel.ProjectionType.SPHERICAL)
+    is_geographic = meshkernel_check_geographic(mk)
+    assert is_geographic==True
+    
+    mk = meshkernel.MeshKernel(projection=meshkernel.ProjectionType.SPHERICALACCURATE)
+    is_geographic = meshkernel_check_geographic(mk)
+    assert is_geographic==True
+
+
+@pytest.mark.unittest
+def test_geographic_to_meshkernel_projection():
+    
+    spherical = _geographic_to_meshkernel_projection(is_geographic=True)
+    cartesian = _geographic_to_meshkernel_projection(is_geographic=False)
+    spherical_mk = meshkernel.ProjectionType.SPHERICAL
+    cartesian_mk = meshkernel.ProjectionType.CARTESIAN
+    
+    assert spherical == spherical_mk
+    assert cartesian == cartesian_mk
 
 
 @pytest.mark.systemtest

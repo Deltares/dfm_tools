@@ -123,10 +123,10 @@ def meshkernel_check_geographic(mk:meshkernel.MeshKernel) -> bool:
 
     """
     
-    if mk.get_projection()==meshkernel.ProjectionType.SPHERICAL:
-        is_geographic = True
-    else:
+    if mk.get_projection()==meshkernel.ProjectionType.CARTESIAN:
         is_geographic = False
+    else:
+        is_geographic = True
     return is_geographic
 
 
