@@ -146,15 +146,9 @@ def download_CMEMS(varkey,
                      dir_output=dir_output, file_prefix=file_prefix, overwrite=overwrite)
 
 
-def get_file_cds_credentials():
-    # environment variable defined in https://github.com/ecmwf/cdsapi/blob/0ad7f77f83e5b66fa5e048328cf254f79e6fcd51/cdsapi/api.py#L288
-    file_cds_credentials = os.environ.get("CDSAPI_RC", os.path.expanduser("~/.cdsapirc"))
-    return file_cds_credentials
-
-
 def cds_credentials():
     """
-    create ~/.cdsapirc via getpass if necessary
+    get cdsapikey from environment variables or file or query via getpass if necessary
     """
     #TODO: put this in a PR at https://github.com/ecmwf/cdsapi (https://github.com/ecmwf/cdsapi/blob/master/cdsapi/api.py#L303)
     cds_url = os.environ.get("CDSAPI_URL", "https://cds.climate.copernicus.eu/api/v2")
@@ -162,8 +156,9 @@ def cds_credentials():
     
     try:
         # checks whether CDS apikey is in environment variable or ~/.cdsapirc file and if it is in correct format
-        cds_client_withargs()
-        cds_validate_credentials()
+        c = cds_client_withargs()
+        # checks whether credentials (uid and apikey) are correct
+        c.retrieve(name="dummy", request={})
     except Exception as e:
         if "Missing/incomplete configuration file" in str(e):
             # to catch "Exception: Missing/incomplete configuration file"
@@ -174,11 +169,17 @@ def cds_credentials():
             cds_uid_apikey = f"{cds_uid}:{cds_apikey}"
             os.environ["CDSAPI_URL"] = cds_url
             os.environ["CDSAPI_KEY"] = cds_uid_apikey
-            cds_validate_credentials()
+            cds_credentials()
         elif "not the correct format" in str(e):
             # to catch "AssertionError: The cdsapi key provided is not the correct format, please ensure it conforms to: <UID>:<APIKEY>."
             cds_remove_credentials()
             raise Exception(f"{e}. The CDS apikey environment variables were deleted. Try again.")
+        elif "Authorization Required" in str(e):
+            cds_remove_credentials()
+            raise Exception("Authorization failed. The CDS apikey environment variables were deleted. Try again.")
+        elif "Resource dummy not found" in str(e):
+            # catching incorrect name, but authentication was successful
+            print('found CDS credentials and authorization successful')
         else:
             raise e
 
@@ -186,8 +187,10 @@ def cds_credentials():
 def cds_remove_credentials():
     """
     remove CDS url and uid:apikey environment variables and ~/.cdsapi file
+    environment variables defined in https://github.com/ecmwf/cdsapi/blob/main/cdsapi/api.py
     """
-    file_cds_credentials = get_file_cds_credentials()
+    
+    file_cds_credentials = os.environ.get("CDSAPI_RC", os.path.expanduser("~/.cdsapirc"))
     if os.path.isfile(file_cds_credentials):
         os.remove(file_cds_credentials)
     
@@ -207,22 +210,6 @@ def cds_client_withargs():
     c = cdsapi.Client(url=os.environ.get("CDSAPI_URL"),
                       key=os.environ.get("CDSAPI_KEY"))
     return c
-
-
-def cds_validate_credentials():
-    try:
-        c = cds_client_withargs()
-        # checks whether credentials (uid and apikey) are correct
-        c.retrieve(name="dummy", request={})
-    except Exception as e:
-        if "Authorization Required" in str(e):
-            cds_remove_credentials()
-            raise Exception("Authorization failed. The CDS apikey environment variables were deleted. Try again.")
-        elif "Resource dummy not found" in str(e):
-            # catching incorrect name, but authentication was successful
-            print('found CDS credentials and authorization successful')
-        else:
-            raise e
 
 
 def copernicusmarine_remove_credentials():

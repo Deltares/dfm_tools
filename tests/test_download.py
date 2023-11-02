@@ -8,7 +8,7 @@ Created on Thu Jun 22 09:41:49 2023
 import pytest
 import pandas as pd
 import numpy as np
-from dfm_tools.download import round_timestamp_to_outer_noon, cds_credentials, cmems_credentials
+from dfm_tools.download import round_timestamp_to_outer_noon, cds_credentials, copernicusmarine_credentials
 
 
 @pytest.mark.unittest
@@ -31,10 +31,10 @@ def test_round_timestamp_to_outer_noon():
         
 
 @pytest.mark.unitest
-def test_cmems_credentials():
-    cmems_credentials()
+def test_cds_credentials():
+    cds_credentials()
 
 
 @pytest.mark.unitest
-def test_cds_credentials():
-    cds_credentials()
+def test_copernicusmarine_credentials():
+    copernicusmarine_credentials()
