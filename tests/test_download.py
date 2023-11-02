@@ -30,12 +30,15 @@ def test_round_timestamp_to_outer_noon():
         assert np.abs((date_max - pd.Timestamp(date_max_mod)).total_seconds()) < 24*3600
         
 
+@pytest.mark.requireslocaldata
 @pytest.mark.unitest
 def test_cds_credentials():
     val = cds_credentials()
     assert not val
 
 
+#TODO: properly set environment variables in github would prevent localness
+@pytest.mark.requireslocaldata
 @pytest.mark.unitest
 def test_copernicusmarine_credentials():
     copernicusmarine_credentials()
