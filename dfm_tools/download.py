@@ -146,7 +146,7 @@ def download_CMEMS(varkey,
                      dir_output=dir_output, file_prefix=file_prefix, overwrite=overwrite)
 
 
-def get_get_file_cds_credentials():
+def get_file_cds_credentials():
     # environment variable defined in https://github.com/ecmwf/cdsapi/blob/0ad7f77f83e5b66fa5e048328cf254f79e6fcd51/cdsapi/api.py#L288
     file_cds_credentials = os.environ.get("CDSAPI_RC", os.path.expanduser("~/.cdsapirc"))
     return file_cds_credentials
@@ -157,7 +157,7 @@ def cds_credentials():
     create ~/.cdsapirc via getpass if necessary
     """
     #TODO: put this in a PR at https://github.com/ecmwf/cdsapi (https://github.com/ecmwf/cdsapi/blob/master/cdsapi/api.py#L303)
-    file_cds_credentials = get_get_file_cds_credentials()
+    file_cds_credentials = get_file_cds_credentials()
     try:
         # checks whether configuration file is present and apikey is in correct format
         cds_client_withargs()
@@ -183,7 +183,7 @@ def cds_credentials():
 
 
 def cds_remove_credentials():
-    file_cds_credentials = get_get_file_cds_credentials()
+    file_cds_credentials = get_file_cds_credentials()
     if os.path.isfile(file_cds_credentials):
         os.remove(file_cds_credentials)
 
