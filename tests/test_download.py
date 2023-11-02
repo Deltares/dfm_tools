@@ -8,7 +8,7 @@ Created on Thu Jun 22 09:41:49 2023
 import pytest
 import pandas as pd
 import numpy as np
-import dfm_tools as dfmt
+from dfm_tools.download import round_timestamp_to_outer_noon, cds_credentials, cmems_credentials
 
 
 @pytest.mark.unittest
@@ -18,7 +18,7 @@ def test_round_timestamp_to_outer_noon():
     
     for date_min_mod, date_max_mod in zip(date_min_mod_list, date_max_mod_list):
         
-        date_min, date_max = dfmt.round_timestamp_to_outer_noon(date_min_mod, date_max_mod)
+        date_min, date_max = round_timestamp_to_outer_noon(date_min_mod, date_max_mod)
         
         assert date_min.hour == 12
         assert date_min.minute == 0
@@ -28,3 +28,13 @@ def test_round_timestamp_to_outer_noon():
         assert date_max >= pd.Timestamp(date_max_mod)
         assert np.abs((date_min - pd.Timestamp(date_min_mod)).total_seconds()) < 24*3600
         assert np.abs((date_max - pd.Timestamp(date_max_mod)).total_seconds()) < 24*3600
+        
+
+@pytest.mark.unitest
+def test_cmems_credentials():
+    cmems_credentials()
+
+
+@pytest.mark.unitest
+def test_cds_credentials():
+    cds_credentials()
