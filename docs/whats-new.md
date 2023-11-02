@@ -1,6 +1,7 @@
 ## UNRELEASED
 
 ### Feat
+- support CMEMS/CDS credentials via environment variables and deletion upon authentication error by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#633](https://github.com/Deltares/dfm_tools/issues/633)
 - enrich rst file with topology from corresponding mapfile with `dfmt.enrich_rst_with_map()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#626](https://github.com/Deltares/dfm_tools/issues/626)
 - add cellinfo to minimal 2D networks (with 1D topology) with `dfmt.add_network_cellinfo()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#624](https://github.com/Deltares/dfm_tools/issues/624)
 - xugrid feature `uds.ugrid.to_nonperiodic()` deprecates `dfmt.remove_periodic_cells()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#503](https://github.com/Deltares/dfm_tools/issues/503)
