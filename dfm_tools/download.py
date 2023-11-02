@@ -28,11 +28,12 @@ def download_ERA5(varkey,
     #TODO: describe something about the .cdsapirc file
     #TODO: make this function cdsapi generic, instead of ERA5 hardcoded (make flexible for product_type/name/name_output) (variables_dict is not used actively anymore, so this is possible)
     
-    # create $HOME/.cdsapirc if it does not exist
+    # create ~/.cdsapirc if it does not exist
     cds_credentials()
     
-    c = cdsapi.Client() # import cdsapi and create a Client instance # https://cds.climate.copernicus.eu/api-how-to
-    
+    # import cdsapi and create a Client instance # https://cds.climate.copernicus.eu/api-how-to
+    c = cds_client_withargs()
+
     #dictionary with ERA5 variables #this is not actively used
     variables_dict = {'ssr':'surface_net_solar_radiation',
                       'sst':'sea_surface_temperature',
@@ -145,32 +146,97 @@ def download_CMEMS(varkey,
                      dir_output=dir_output, file_prefix=file_prefix, overwrite=overwrite)
 
 
+def get_get_file_cds_credentials():
+    # environment variable defined in https://github.com/ecmwf/cdsapi/blob/0ad7f77f83e5b66fa5e048328cf254f79e6fcd51/cdsapi/api.py#L288
+    file_cds_credentials = os.environ.get("CDSAPI_RC", os.path.expanduser("~/.cdsapirc"))
+    return file_cds_credentials
+
+
 def cds_credentials():
     """
-    create $HOME/.cdsapirc via getpass if necessary
+    create ~/.cdsapirc via getpass if necessary
     """
     #TODO: put this in a PR at https://github.com/ecmwf/cdsapi (https://github.com/ecmwf/cdsapi/blob/master/cdsapi/api.py#L303)
-    file_credentials = f'{os.path.expanduser("~")}/.cdsapirc'
-    if os.path.exists(file_credentials):
-        print('found CDS apikey')
-    else:
-        print("Downloading CDS/ERA5 data requires a CDS API key, copy the key from https://cds.climate.copernicus.eu/api-how-to (first register and sign in) ")
-        apikey = getpass.getpass("\nEnter your CDS API Key: ")
-        if ":" not in apikey:
-            raise ValueError('A ":"-symbol is missing in the provided key (format should be "UID:apikey"). Please check the instructions above again.')
-        with open(file_credentials,'w') as fc:
-            fc.write('url: https://cds.climate.copernicus.eu/api/v2\n')
-            fc.write(f'key: {apikey}')
+    file_cds_credentials = get_get_file_cds_credentials()
+    try:
+        # checks whether configuration file is present and apikey is in correct format
+        cds_client_withargs()
+        cds_check_credentials()
+    except Exception as e:
+        if "Missing/incomplete configuration file" in str(e):
+            # to catch "Exception: Missing/incomplete configuration file"
+            print("Downloading CDS/ERA5 data requires a CDS API key, copy your UID and API-key from https://cds.climate.copernicus.eu/user (first register, login and accept the terms). ")
+            cds_uid = getpass.getpass("\nEnter your CDS UID (six digits): ")
+            cds_apikey = getpass.getpass("\nEnter your CDS API-key (string with dashes): ")
+            cds_uid_apikey = f"{cds_uid}:{cds_apikey}"
+            with open(file_cds_credentials,'w') as fc:
+                cds_url = os.environ.get("CDSAPI_URL", "https://cds.climate.copernicus.eu/api/v2")
+                fc.write(f'url: {cds_url}\n')
+                fc.write(f'key: {cds_uid_apikey}')
+            cds_check_credentials()
+        elif "not the correct format" in str(e):
+            # to catch "AssertionError: The cdsapi key provided is not the correct format, please ensure it conforms to: <UID>:<APIKEY>."
+            cds_remove_credentials()
+            raise Exception(f"{e}. The credentials file is deleted if present. Try again.")
+        else:
+            raise e
 
 
-def copernicusmarine_credentials():
+def cds_remove_credentials():
+    file_cds_credentials = get_get_file_cds_credentials()
+    if os.path.isfile(file_cds_credentials):
+        os.remove(file_cds_credentials)
+
+
+def cds_client_withargs():
+    """
+    Initialize a csdapi client with url and key from os environment variables
+    These are the default values for the url/key arguments, but somehow this 
+    is necessary to use the key/url from environment variables.
+    """
+    c = cdsapi.Client(url=os.environ.get("CDSAPI_URL"),
+                      key=os.environ.get("CDSAPI_KEY"))
+    return c
+
+
+def cds_check_credentials():
+    try:
+        c = cds_client_withargs()
+        # checks whether credentials (uid and apikey) are correct
+        c.retrieve(name="dummy", request={})
+    except Exception as e:
+        if "Authorization Required" in str(e):
+            cds_remove_credentials()
+            raise Exception("Authorization failed. The credentials file is deleted if present. Try again.")
+        elif "Resource dummy not found" in str(e):
+            # catching incorrect name, but authentication was successful
+            print('found CDS credentials in file and authorization successful')
+        else:
+            raise e
+
+
+def get_file_cmems_credentials():
+    file_cmems_credentials = f'{os.path.expanduser("~")}/CMEMS_credentials.txt'
+    return file_cmems_credentials
+
+
+def copernicusmarine_remove_credentials():
+    """
+    reset CMEMS username/password from file or via getpass
+    """
+    file_cmems_credentials = get_file_cmems_credentials()
+    if os.path.isfile(file_cmems_credentials):
+        os.remove(file_cmems_credentials)
+
+
+def copernicusmarine_credentials(reset=False):
     """
     get CMEMS username/password from file or via getpass
     """
-    file_credentials = f'{os.path.expanduser("~")}/CMEMS_credentials.txt'
-    if os.path.exists(file_credentials):
+    file_cmems_credentials = get_file_cmems_credentials()
+    if os.path.exists(file_cmems_credentials):
         print('found CMEMS credentials')
-        with open(file_credentials) as fc:
+        with open(file_cmems_credentials) as fc:
             username = fc.readline().strip()
             password = fc.readline().strip()
     else: #query username and password with getpass
@@ -179,7 +245,7 @@ def copernicusmarine_credentials():
         password = getpass.getpass("Enter your Copernicus Marine password: ")
         userpass_save = input("Do you want to save your credentials as plain text? [y/n]: ")
         if userpass_save == 'y':
-            with open(file_credentials,'w') as fc:
+            with open(file_cmems_credentials,'w') as fc:
                 fc.write(f'{username}\n{password}\n')
     return username, password
 
@@ -198,7 +264,8 @@ def copernicusmarine_datastore(dataset_url):
     
     cookies_dict = session.cookies.get_dict()
     if 'CASTGC' not in cookies_dict.keys():
-        raise KeyError('CASTGC key missing from session cookies_dict, probably authentication failure')
+        copernicusmarine_remove_credentials()
+        raise KeyError('CASTGC key missing from session cookies_dict, probably authentication failure. Credentials were reset if saved. Try again.')
     session.cookies.set("CASTGC", cookies_dict['CASTGC'])
     #TODO: add check for wrong dataset_id (now always "AttributeError: You cannot set the charset when no content-type is defined")
     dap_dataset = open_url(dataset_url, session=session, user_charset='utf-8')
