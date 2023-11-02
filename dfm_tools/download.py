@@ -146,6 +146,12 @@ def download_CMEMS(varkey,
                      dir_output=dir_output, file_prefix=file_prefix, overwrite=overwrite)
 
 
+def cds_get_file():
+    file_cds_credentials = os.environ.get("CDSAPI_RC", os.path.expanduser("~/.cdsapirc"))
+    return file_cds_credentials
+
+
+
 def cds_credentials():
     """
     get cdsapikey from environment variables or file or query via getpass if necessary
@@ -153,6 +159,13 @@ def cds_credentials():
     #TODO: put this in a PR at https://github.com/ecmwf/cdsapi (https://github.com/ecmwf/cdsapi/blob/master/cdsapi/api.py#L303)
     cds_url = os.environ.get("CDSAPI_URL", "https://cds.climate.copernicus.eu/api/v2")
     cds_uid_apikey = os.environ.get("CDSAPI_KEY")
+    
+    # read credentials from file if it exists. This has higher precedence over env vars
+    file_cds_credentials = cds_get_file()
+    if os.path.isfile(file_cds_credentials):
+        config = cdsapi.api.read_config(file_cds_credentials)
+        cds_url = config["url"]
+        cds_uid_apikey = config["key"]
     
     try:
         # checks whether CDS apikey is in environment variable or ~/.cdsapirc file and if it is in correct format
@@ -169,6 +182,9 @@ def cds_credentials():
             cds_uid_apikey = f"{cds_uid}:{cds_apikey}"
             os.environ["CDSAPI_URL"] = cds_url
             os.environ["CDSAPI_KEY"] = cds_uid_apikey
+            with open(file_cds_credentials,'w') as fc:
+                fc.write(f'url: {cds_url}\n')
+                fc.write(f'key: {cds_uid_apikey}')
             cds_credentials()
         elif "not the correct format" in str(e):
             # to catch "AssertionError: The cdsapi key provided is not the correct format, please ensure it conforms to: <UID>:<APIKEY>."
@@ -186,19 +202,19 @@ def cds_credentials():
 
 def cds_remove_credentials():
     """
-    remove CDS url and uid:apikey environment variables and ~/.cdsapi file
+    remove CDS url and uid:apikey environment variables and ~/.cdsapirc file
     environment variables defined in https://github.com/ecmwf/cdsapi/blob/main/cdsapi/api.py
     """
-    
-    file_cds_credentials = os.environ.get("CDSAPI_RC", os.path.expanduser("~/.cdsapirc"))
-    if os.path.isfile(file_cds_credentials):
-        os.remove(file_cds_credentials)
     
     keys_toremove = ["CDSAPI_URL",
                      "CDSAPI_KEY"]
     for key in keys_toremove:
         if key in os.environ.keys():
             os.environ.pop(key)
+    
+    file_cds_credentials = cds_get_file()
+    if os.path.isfile(file_cds_credentials):
+        os.remove(file_cds_credentials)
 
 
 def cds_client_withargs():
@@ -212,9 +228,14 @@ def cds_client_withargs():
     return c
 
 
+def copernicusmarine_get_file():
+    file_credentials = os.path.expanduser("~/CMEMS_credentials.txt")
+    return file_credentials
+
+
 def copernicusmarine_remove_credentials():
     """
-    remove CMEMS username/password environment variables
+    remove CMEMS username/password environment variables and file
     """
     
     keys_toremove = ["COPERNICUS_MARINE_SERVICE_USERNAME",
@@ -222,6 +243,10 @@ def copernicusmarine_remove_credentials():
     for key in keys_toremove:
         if key in os.environ.keys():
             os.environ.pop(key)
+    
+    file_credentials = copernicusmarine_get_file()
+    if os.path.isfile(file_credentials):
+        os.remove(file_credentials)
 
 
 def copernicusmarine_credentials():
@@ -231,6 +256,13 @@ def copernicusmarine_credentials():
     username = os.environ.get("COPERNICUS_MARINE_SERVICE_USERNAME")
     password = os.environ.get("COPERNICUS_MARINE_SERVICE_PASSWORD")
     
+    # read credentials from file if it exists. This has higher precedence over env vars
+    file_credentials = copernicusmarine_get_file()
+    if os.path.exists(file_credentials):
+        with open(file_credentials) as fc:
+            username = fc.readline().strip()
+            password = fc.readline().strip()
+    
     if username is None or password is None:
         #query username and password with getpass
         print("Downloading CMEMS data requires a Copernicus Marine username and password, sign up for free at: https://data.marine.copernicus.eu/register.")
@@ -238,7 +270,8 @@ def copernicusmarine_credentials():
         password = getpass.getpass("Enter your Copernicus Marine password: ")
         os.environ["COPERNICUS_MARINE_SERVICE_USERNAME"] = username
         os.environ["COPERNICUS_MARINE_SERVICE_PASSWORD"] = password
-    
+        with open(file_credentials,'w') as fc:
+            fc.write(f'{username}\n{password}\n')
     return username, password
 
 

@@ -32,7 +32,8 @@ def test_round_timestamp_to_outer_noon():
 
 @pytest.mark.unitest
 def test_cds_credentials():
-    cds_credentials()
+    val = cds_credentials()
+    assert not val
 
 
 @pytest.mark.unitest
