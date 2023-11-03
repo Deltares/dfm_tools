@@ -10,7 +10,10 @@ import xarray as xr
 import xugrid as xu
 import dfm_tools as dfmt
 import numpy as np
-from dfm_tools.xugrid_helpers import get_uds_isgeographic, remove_unassociated_edges
+from dfm_tools.xugrid_helpers import (get_uds_isgeographic,
+                                      remove_unassociated_edges,
+                                      get_vertical_dimensions
+                                      )
 
 #TODO: many xugrid_helpers tests are still in test_dfm_tools.py
 
@@ -59,7 +62,7 @@ def test_uda_edges_to_faces_interfaces_to_centers():
     
     uds = xu.open_dataset(file_nc.replace('0*','0002')) #partition 0002 of grevelingen contains both triangles as squares
     dimn_faces = uds.grid.face_dimension
-    dimn_layer, _ = dfmt.get_vertical_dimensions(uds)
+    dimn_layer, _ = get_vertical_dimensions(uds)
     
     for varn_edge in ['mesh2d_vicwwu','mesh2d_edge_type']:
         #vicwwu includes interface to layer interpolation
