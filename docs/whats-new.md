@@ -1,4 +1,4 @@
-## UNRELEASED
+## 0.16.0 (2023-11-03)
 
 ### Feat
 - more robust support for CMEMS/CDS credentials including environment variables by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#633](https://github.com/Deltares/dfm_tools/issues/633)
