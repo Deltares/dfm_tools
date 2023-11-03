@@ -570,11 +570,16 @@ def plipointsDataset_to_ForcingModel(plipointsDataset):
         #select data for this point, ffill nans, concatenating time column, constructing T3D/TimeSeries and append to hcdfm.ForcingModel()
         datablock_xr_onepoint = plipointsDataset.isel({dimn_point:iP})
         plipoint_name = str(datablock_xr_onepoint[varn_pointname].to_numpy())
+        plipoint_onlynan = False
         for quan in quantity_list:
             datablock_xr_onepoint[quan].attrs['locationname'] = plipoint_name #TODO: is there a nicer way of passing this data?
             if datablock_xr_onepoint[quan].isnull().all(): # check if all values of plipoint are nan (on land)
-                warnings.warn(UserWarning(f'Plipoint "{plipoint_name}" might be on land since it only contain nan values. Consider altering your plifile or using plipointsDataset.ffill(dim="plipoints").bfill(dim="plipoints"). Nan values replaced with 0 to avoid bc-writing errors')) #TODO: maybe fill along plipoints dimension, but beware on nans in deep water that are filled with neighbours
-                datablock_xr_onepoint[quan] = datablock_xr_onepoint[quan].fillna(0)
+                plipoint_onlynan = True
+                warnings.warn(UserWarning(f'Plipoint "{plipoint_name}" might be on land since it only contain nan values. This point is skipped to avoid bc-writing errors. Consider altering your PolyFile or extrapolate the data.'))
+        
+        # skip this point if quantity has only-nan values
+        if plipoint_onlynan:
+            continue
         
         if dimn_depth in plipointsDataset.dims:
             ts_one = Dataset_to_T3D(datablock_xr_onepoint)
