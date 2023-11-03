@@ -203,13 +203,13 @@ def test_plipointsDataset_to_ForcingModel_drop_allnan_points():
     
     # interpolate to points and convert to forcingmodel
     data_interp = interp_regularnc_to_plipointsDataset(data_xr_reg=ds, gdf_points=gdf_points)
-    ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
+    forcingmodel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
     
     # check if the resulting forcingmodel does not have 4 but 2 points
     # the first two points were skipped because they were all nan
-    assert len(ForcingModel_object.forcing) == 2
-    assert ForcingModel_object.forcing[0].name == 'abc_bnd_0003'
-    assert ForcingModel_object.forcing[1].name == 'abc_bnd_0004'
+    assert len(forcingmodel_object.forcing) == 2
+    assert forcingmodel_object.forcing[0].name == 'abc_bnd_0003'
+    assert forcingmodel_object.forcing[1].name == 'abc_bnd_0004'
 
 
 @pytest.mark.systemtest
