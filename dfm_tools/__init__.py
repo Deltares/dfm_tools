@@ -24,4 +24,14 @@ from dfm_tools import data
 from dfm_tools.modelbuilder import *
 
 import warnings
-warnings.filterwarnings("always",category=DeprecationWarning)
+warnings.filterwarnings(action="always", category=DeprecationWarning)
+
+# python 3.8 DeprecationWarning
+import sys
+version_info = sys.version_info
+if (version_info.major == 3) & (version_info.minor <= 8):
+    warnings.warn(
+        DeprecationWarning("You are using Python 3.8 or lower, please note that "
+                           "dfm_tools will soon drop support for Python 3.8: "
+                           "https://github.com/Deltares/dfm_tools/issues/267")
+        )

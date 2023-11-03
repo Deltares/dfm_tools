@@ -25,6 +25,8 @@ file_nc_list = [dfmt.data.fm_curvedbend_map(return_filepath=True), # sigmalayer
                 ]
 
 for file_nc in file_nc_list:
+    plt.close('all')
+
     print('processing %s'%(os.path.basename(file_nc)))
     basename = os.path.basename(file_nc).replace('.','').replace('_0*_','_0000_')
     

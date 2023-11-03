@@ -25,6 +25,8 @@ file_nc_list = [dfmt.data.fm_grevelingen_his(return_filepath=True),
 
 
 for file_nc in file_nc_list:
+    plt.close('all')
+    
     print('processing %s'%(os.path.basename(file_nc)))
     basename = os.path.basename(file_nc).replace('.','')
     
