@@ -12,12 +12,15 @@ import numpy as np
 import datetime as dt
 import xarray as xr
 import shapely
+import pandas as pd
 import geopandas as gpd
 from dfm_tools.interpolate_grid2bnd import (read_polyfile_as_gdf_points,
                                             tidemodel_componentlist,
                                             components_translate_upper,
-                                            get_ncbnd_construct
+                                            get_ncbnd_construct,
+                                            interp_regularnc_to_plipointsDataset,
                                             )
+from dfm_tools.hydrolib_helpers import PolyFile_to_geodataframe_points
 import hydrolib.core.dflowfm as hcdfm
 
 
@@ -165,6 +168,48 @@ def test_interpolate_nc_to_bc():
     
     # test whether so was renamed to salinitybnd
     assert forcing0.quantityunitpair[1].quantity == 'salinitybnd'
+
+
+@pytest.mark.systemtest
+def test_plipointsDataset_to_ForcingModel_drop_allnan_points():
+    #construct polyfile gdf
+    point_x = [-71.5, -71.5, -71.5, -71.5,]
+    point_y = [12.5, 12.6, 12.7, 12.8]
+    polyobject_pd = pd.DataFrame(dict(x=point_x, y=point_y))
+    poly_object = dfmt.DataFrame_to_PolyObject(polyobject_pd, name="abc_bnd")
+    polyfile_object = hcdfm.PolyFile()
+    polyfile_object.objects.append(poly_object)
+    gdf_points = PolyFile_to_geodataframe_points(polyfile_object)
+    
+    # actual cmems data
+    no3_values = [[[       np.nan,        np.nan,        np.nan,        np.nan,
+             5.2622618e-05],
+            [       np.nan,        np.nan,        np.nan,        np.nan,
+             5.1448391e-05],
+            [9.0356334e-05, 1.8063841e-04,        np.nan, 7.0045113e-05,
+             4.9546972e-05],
+            [4.0657567e-05, 4.6050434e-05, 4.7762936e-05, 4.2734890e-05,
+             4.0186114e-05],
+            [2.6492798e-05, 2.8967228e-05, 3.0298394e-05, 3.1432221e-05,
+             3.2138258e-05],
+            [2.4448847e-05, 2.6705173e-05, 2.6929094e-05, 2.5548252e-05,
+             2.5827681e-05]]]
+    ds = xr.Dataset()
+    ds['longitude'] = xr.DataArray([-72.  , -71.75, -71.5 , -71.25, -71.  ], dims='longitude')
+    ds['latitude'] = xr.DataArray([12.  , 12.25, 12.5 , 12.75, 13.  , 13.25], dims='latitude')
+    ds['time'] = xr.DataArray([639204.],dims='time').assign_attrs({'units': 'hours since 1950-01-01'})
+    ds['tracerbndNO3'] =  xr.DataArray(no3_values, dims=('time','latitude','longitude')).assign_attrs({'units': 'mmol m-3'})
+    ds = xr.decode_cf(ds)
+    
+    # interpolate to points and convert to forcingmodel
+    data_interp = interp_regularnc_to_plipointsDataset(data_xr_reg=ds, gdf_points=gdf_points)
+    ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
+    
+    # check if the resulting forcingmodel does not have 4 but 2 points
+    # the first two points were skipped because they were all nan
+    assert len(ForcingModel_object.forcing) == 2
+    ForcingModel_object.forcing[0].name == 'abc_bnd_0003'
+    ForcingModel_object.forcing[1].name == 'abc_bnd_0004'
 
 
 @pytest.mark.systemtest
