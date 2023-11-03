@@ -16,6 +16,11 @@ import cdsapi
 import cftime
 import getpass
 
+__all__ = [
+    "download_ERA5",
+    "download_CMEMS",
+]
+
 
 def download_ERA5(varkey,
                   longitude_min, longitude_max, latitude_min, latitude_max, 

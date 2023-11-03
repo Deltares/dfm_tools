@@ -10,6 +10,10 @@ import geopandas as gpd
 import pandas as pd
 import datetime as dt
 
+__all__ = ["get_coastlines_gdb",
+           "plot_coastlines",
+    ]
+
 
 def get_coastlines_gdb(res:str='h', bbox:tuple = (-180, -90, 180, 90), min_area:float = 0, crs:str = None, include_fields:list = ['area']) -> gpd.geoseries.GeoSeries:
     """

@@ -23,8 +23,19 @@ from dfm_tools.hydrolib_helpers import (Dataset_to_TimeSeries,
                                         Dataset_to_Astronomic, 
                                         PolyFile_to_geodataframe_points, 
                                         get_ncbnd_construct,
-                                        _da_from_gdf_points)
+                                        da_from_gdf_points)
 from dfm_tools.errors import OutOfRangeError
+
+__all__ = ["get_conversion_dict",
+           "interpolate_tide_to_bc",
+           "interpolate_tide_to_plipoints",
+           "open_dataset_extra",
+           "interp_regularnc_to_plipoints",
+           "interp_regularnc_to_plipointsDataset",
+           "interp_uds_to_plipoints",
+           "interp_hisnc_to_plipoints",
+           "plipointsDataset_to_ForcingModel",
+    ]
 
 
 def get_conversion_dict(ncvarname_updates={}):
@@ -109,7 +120,7 @@ def get_conversion_dict(ncvarname_updates={}):
 
 
 def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=None, load=True):
-    gdf_points = _read_polyfile_as_gdf_points(file_pli, nPoints=nPoints)
+    gdf_points = read_polyfile_as_gdf_points(file_pli, nPoints=nPoints)
     data_interp = interpolate_tide_to_plipoints(tidemodel=tidemodel, gdf_points=gdf_points, 
                                                 component_list=component_list, load=load)
     ForcingModel_object = plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
@@ -351,7 +362,7 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
     return data_xr_vars
 
 
-def _read_polyfile_as_gdf_points(file_pli, nPoints=None):
+def read_polyfile_as_gdf_points(file_pli, nPoints=None):
     # read polyfile
     polyfile_object = hcdfm.PolyFile(file_pli)
     
@@ -380,7 +391,7 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True
     # TODO: consider phasing out, this function is probably only used in 
     # tests/examples/preprocess_interpolate_nc_to_bc.py and dfm_tools/modelbuilder.py
     
-    gdf_points = _read_polyfile_as_gdf_points(file_pli, nPoints=nPoints)
+    gdf_points = read_polyfile_as_gdf_points(file_pli, nPoints=nPoints)
     
     data_interp = interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points=gdf_points, load=load)
     return data_interp
@@ -392,7 +403,7 @@ def interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points, load=True):
     varn_pointx = ncbnd_construct['varn_pointx']
     varn_pointy = ncbnd_construct['varn_pointy']
     
-    da_plipoints = _da_from_gdf_points(gdf_points)
+    da_plipoints = da_from_gdf_points(gdf_points)
     
     #interpolation to lat/lon combinations
     print('> interp mfdataset to all PolyFile points (lat/lon coordinates)')
@@ -513,7 +524,7 @@ def interp_hisnc_to_plipoints(data_xr_his, file_pli, kdtree_k=3, load=True):
     da_plicoords_nestpointnames = data_xr_his.stations.isel(stations=da_plicoords_nestpointidx)
     
     # convert gdf to xarray dataset
-    data_interp = _da_from_gdf_points(gdf_points)
+    data_interp = da_from_gdf_points(gdf_points)
     
     #interpolate hisfile variables to plipoints
     for varone in datavars_list:
@@ -533,7 +544,7 @@ def interp_hisnc_to_plipoints(data_xr_his, file_pli, kdtree_k=3, load=True):
     return data_interp
     
 
-def _maybe_convert_fews_to_dfmt(ds):
+def maybe_convert_fews_to_dfmt(ds):
     ncbnd_construct = get_ncbnd_construct()
     dimn_point = ncbnd_construct['dimn_point']
     varn_pointname = ncbnd_construct['varn_pointname']
@@ -586,7 +597,7 @@ def plipointsDataset_to_ForcingModel(plipointsDataset):
     dimn_depth = ncbnd_construct['dimn_depth']
     varn_pointname = ncbnd_construct['varn_pointname']
     
-    plipointsDataset = _maybe_convert_fews_to_dfmt(plipointsDataset)
+    plipointsDataset = maybe_convert_fews_to_dfmt(plipointsDataset)
     
     quantity_list = list(plipointsDataset.data_vars)
     npoints = len(plipointsDataset[dimn_point])

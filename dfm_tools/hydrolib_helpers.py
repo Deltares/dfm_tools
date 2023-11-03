@@ -15,6 +15,23 @@ import datetime as dt
 import geopandas
 from shapely.geometry import LineString
 
+__all__ = ["Dataset_to_T3D",
+           "Dataset_to_TimeSeries",
+           "Dataset_to_Astronomic",
+           "DataFrame_to_PolyObject",
+           "geodataframe_to_PolyFile",
+           "DataFrame_to_TimModel",
+           "ForcingModel_to_plipointsDataset",
+           "forcinglike_to_Dataset",
+           "pointlike_to_DataFrame",
+           "TimModel_to_DataFrame",
+           "pointlike_to_geodataframe_points",
+           "PolyFile_to_geodataframe_points",
+           "PolyFile_to_geodataframe_linestrings",
+           "gdf_linestrings_to_points",
+           "tekalobject_to_DataFrame",
+       ]
+
 
 def get_ncbnd_construct():
     """
@@ -527,7 +544,7 @@ def PolyFile_to_geodataframe_points(polyfile_object:hcdfm.PolyFile, crs:str=None
     return gdf
 
 
-def _da_from_gdf_points(gdf_points):
+def da_from_gdf_points(gdf_points):
     
     ncbnd_construct = get_ncbnd_construct()
     dimn_point = ncbnd_construct['dimn_point']

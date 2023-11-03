@@ -16,6 +16,15 @@ import datetime as dt
 from hydrolib.core.dimr.models import DIMR, FMComponent, Start
 import warnings
 from dfm_tools.hydrolib_helpers import get_ncbnd_construct
+from dfm_tools.download import round_timestamp_to_outer_noon
+
+__all__ = [
+    "cmems_nc_to_bc",
+    "preprocess_ini_cmems_to_nc",
+    "cmems_nc_to_ini",
+    "preprocess_merge_meteofiles_era5",
+    "create_model_exec_files",
+    ]
 
 
 def cmems_nc_to_bc(ext_bnd, list_quantities, tstart, tstop, file_pli, dir_pattern, dir_output, refdate_str):
@@ -25,7 +34,7 @@ def cmems_nc_to_bc(ext_bnd, list_quantities, tstart, tstop, file_pli, dir_patter
     for quantity in list_quantities:
         print(f'processing quantity: {quantity}')
         
-        tstart, tstop = dfmt.round_timestamp_to_outer_noon(tstart,tstop)
+        tstart, tstop = round_timestamp_to_outer_noon(tstart,tstop)
         #open regulargridDataset and do some basic stuff (time selection, renaming depth/lat/lon/varname, converting units, etc)
         data_xr_vars = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity=quantity,
                                                tstart=tstart, tstop=tstop,
@@ -61,7 +70,7 @@ def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, c
     
     tstart_pd = pd.Timestamp(tstart)
     tstart_str = tstart_pd.strftime("%Y-%m-%d_%H-%M-%S")
-    tstart_round, tstop_round = dfmt.round_timestamp_to_outer_noon(tstart,tstart)
+    tstart_round, tstop_round = round_timestamp_to_outer_noon(tstart,tstart)
     for quan_bnd in list_quantities:
         
         if quan_bnd in ["temperaturebnd","uxuyadvectionvelocitybnd"]:
@@ -246,12 +255,12 @@ def create_model_exec_files(file_dimr, file_mdu, model_name, nproc=1, dimrset_fo
     
     #TODO: currently only bat files are supported (for windows), but linux extension can easily be made
     if path_style == 'windows':
-        _generate_bat_file(dimr_model=dimr_model, dimrset_folder=dimrset_folder)
+        generate_bat_file(dimr_model=dimr_model, dimrset_folder=dimrset_folder)
     else:
         warnings.warn(UserWarning(f"path_style/os {path_style} not yet supported by `dfmt.create_model_exec_files()`, no bat/sh file is written"))
 
 
-def _generate_bat_file(dimr_model, dimrset_folder=None):
+def generate_bat_file(dimr_model, dimrset_folder=None):
     """
     generate bat file for running on windows
     """
