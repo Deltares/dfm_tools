@@ -26,7 +26,7 @@ def test_run_examples(file_config):
     if not os.path.exists(dir_output):
         os.mkdir(dir_output)
     os.chdir(dir_output)
-    test = os.system(f'python {file_config}')#+ " & pause")
+    test = os.system(f'python {file_config}')
     
     if test:
         raise OSError('execution did not finish properly')

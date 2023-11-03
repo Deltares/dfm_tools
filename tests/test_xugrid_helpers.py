@@ -99,8 +99,12 @@ def test_enrich_rst_with_map():
     this tests whether rst file is correctly enriched with map
     by trying to plot a ugrid (face node) variable
     """
-    file_nc_rst = r'p:\archivedprojects\11206811-002-kpp-veerse-meer\model\runs_2011-2012\VM_WQ_3D_run9_c\DFM_OUTPUT_VM_WQ_3D\VM_WQ_3D_0000_20130101_000000_rst.nc' #mf1_rstfile (without topology var)
+    # mf1_rstfile (without topology var)
+    file_nc_rst = r'p:\archivedprojects\11206811-002-kpp-veerse-meer\model\runs_2011-2012\VM_WQ_3D_run9_c\DFM_OUTPUT_VM_WQ_3D\VM_WQ_3D_0000_20130101_000000_rst.nc'
     
     uds_rst = dfmt.open_partitioned_dataset(file_nc_rst, preprocess=dfmt.enrich_rst_with_map)
     
     uds_rst.s1.isel(time=0).ugrid.plot()
+    
+    uda_rst = uds_rst['DetCS1']
+    assert "mesh2d_face_x" in uda_rst.coords

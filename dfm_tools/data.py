@@ -11,7 +11,8 @@ import xarray as xr
 import xugrid as xu
 import pooch
 import zipfile
-from dfm_tools import open_partitioned_dataset, preprocess_hisnc, open_dataset_delft3d4
+from dfm_tools.xugrid_helpers import open_partitioned_dataset, open_dataset_delft3d4
+from dfm_tools.xarray_helpers import preprocess_hisnc
 
 __all__ = ["fm_grevelingen_map",
            "fm_grevelingen_his",

@@ -9,12 +9,13 @@ Since the functions in this script contain hardcoded parameters, it is not expos
 """
 
 import os
+import warnings
 import pandas as pd
 import dfm_tools as dfmt
-import hydrolib.core.dflowfm as hcdfm
 import datetime as dt
+import hydrolib.core.dflowfm as hcdfm
 from hydrolib.core.dimr.models import DIMR, FMComponent, Start
-import warnings
+from hydrolib.core.utils import get_path_style_for_current_operating_system
 from dfm_tools.hydrolib_helpers import get_ncbnd_construct
 from dfm_tools.download import round_timestamp_to_outer_noon
 
@@ -250,7 +251,6 @@ def create_model_exec_files(file_dimr, file_mdu, model_name, nproc=1, dimrset_fo
             f.write(line)
     
     if path_style is None:
-        from hydrolib.core.utils import get_path_style_for_current_operating_system
         path_style = get_path_style_for_current_operating_system().value
     
     #TODO: currently only bat files are supported (for windows), but linux extension can easily be made

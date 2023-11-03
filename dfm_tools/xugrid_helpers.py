@@ -13,6 +13,7 @@ import datetime as dt
 import pandas as pd
 import meshkernel
 from dfm_tools.xarray_helpers import file_to_list
+from netCDF4 import default_fillvals
 
 __all__ = [
     "open_partitioned_dataset",
@@ -122,7 +123,6 @@ def decode_default_fillvals(ds):
     """
     # TODO: this function can be removed when xarray does it automatically: https://github.com/Deltares/dfm_tools/issues/490
     
-    from netCDF4 import default_fillvals
     nfillattrs_added = 0
     for varn in ds.variables:
         # TODO: possible to get always_mask boolean with `netCDF4.Dataset(file_nc).variables[varn].always_mask`, but this seems to be always True for FM mapfiles

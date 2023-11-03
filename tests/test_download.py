@@ -31,7 +31,7 @@ def test_round_timestamp_to_outer_noon():
         
 
 @pytest.mark.requireslocaldata
-@pytest.mark.unitest
+@pytest.mark.unittest
 def test_cds_credentials():
     val = cds_credentials()
     assert not val
@@ -39,6 +39,6 @@ def test_cds_credentials():
 
 #TODO: properly set environment variables in github would prevent localness
 @pytest.mark.requireslocaldata
-@pytest.mark.unitest
+@pytest.mark.unittest
 def test_copernicusmarine_credentials():
     copernicusmarine_credentials()

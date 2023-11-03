@@ -9,6 +9,7 @@ import os
 import geopandas as gpd
 import pandas as pd
 import datetime as dt
+from dfm_tools.data import gshhs_coastlines_shp
 
 __all__ = ["get_coastlines_gdb",
            "plot_coastlines",
@@ -48,7 +49,6 @@ def get_coastlines_gdb(res:str='h', bbox:tuple = (-180, -90, 180, 90), min_area:
         bbox = (bbox_points.x[0], bbox_points.y[0], bbox_points.x[1], bbox_points.y[1])
         
     # download gshhs data if not present and return dir
-    from dfm_tools.data import gshhs_coastlines_shp # raises ImportError because of circular import when placed in top of script
     dir_gshhs = gshhs_coastlines_shp()
 
     file_shp_L1 = os.path.join(dir_gshhs,'GSHHS_shp',res,f'GSHHS_{res}_L1.shp') #coastlines
