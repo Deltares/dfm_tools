@@ -158,11 +158,10 @@ ext_new.save(filepath=ext_file_new,path_style=path_style)
 
     
 #%% old ext
-
-# CMEMS - initial conditions
 ext_file_old = os.path.join(dir_output, f'{model_name}_old.ext')
 ext_old = hcdfm.ExtOldModel()
 
+# CMEMS - initial conditions
 ext_old = dfmt.cmems_nc_to_ini(ext_old=ext_old,
                                dir_output=dir_output,
                                list_quantities=list_quantities,
