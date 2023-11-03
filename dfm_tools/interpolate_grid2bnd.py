@@ -23,8 +23,20 @@ from dfm_tools.hydrolib_helpers import (Dataset_to_TimeSeries,
                                         Dataset_to_Astronomic, 
                                         PolyFile_to_geodataframe_points, 
                                         get_ncbnd_construct,
-                                        _da_from_gdf_points)
+                                        da_from_gdf_points,
+                                        maybe_convert_fews_to_dfmt)
 from dfm_tools.errors import OutOfRangeError
+
+__all__ = ["get_conversion_dict",
+           "interpolate_tide_to_bc",
+           "interpolate_tide_to_plipoints",
+           "open_dataset_extra",
+           "interp_regularnc_to_plipoints",
+           "interp_regularnc_to_plipointsDataset",
+           "interp_uds_to_plipoints",
+           "interp_hisnc_to_plipoints",
+           "plipointsDataset_to_ForcingModel",
+    ]
 
 
 def get_conversion_dict(ncvarname_updates={}):
@@ -109,7 +121,7 @@ def get_conversion_dict(ncvarname_updates={}):
 
 
 def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=None, load=True):
-    gdf_points = _read_polyfile_as_gdf_points(file_pli, nPoints=nPoints)
+    gdf_points = read_polyfile_as_gdf_points(file_pli, nPoints=nPoints)
     data_interp = interpolate_tide_to_plipoints(tidemodel=tidemodel, gdf_points=gdf_points, 
                                                 component_list=component_list, load=load)
     ForcingModel_object = plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
@@ -351,7 +363,7 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
     return data_xr_vars
 
 
-def _read_polyfile_as_gdf_points(file_pli, nPoints=None):
+def read_polyfile_as_gdf_points(file_pli, nPoints=None):
     # read polyfile
     polyfile_object = hcdfm.PolyFile(file_pli)
     
@@ -380,7 +392,7 @@ def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True
     # TODO: consider phasing out, this function is probably only used in 
     # tests/examples/preprocess_interpolate_nc_to_bc.py and dfm_tools/modelbuilder.py
     
-    gdf_points = _read_polyfile_as_gdf_points(file_pli, nPoints=nPoints)
+    gdf_points = read_polyfile_as_gdf_points(file_pli, nPoints=nPoints)
     
     data_interp = interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points=gdf_points, load=load)
     return data_interp
@@ -392,7 +404,7 @@ def interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points, load=True):
     varn_pointx = ncbnd_construct['varn_pointx']
     varn_pointy = ncbnd_construct['varn_pointy']
     
-    da_plipoints = _da_from_gdf_points(gdf_points)
+    da_plipoints = da_from_gdf_points(gdf_points)
     
     #interpolation to lat/lon combinations
     print('> interp mfdataset to all PolyFile points (lat/lon coordinates)')
@@ -513,7 +525,7 @@ def interp_hisnc_to_plipoints(data_xr_his, file_pli, kdtree_k=3, load=True):
     da_plicoords_nestpointnames = data_xr_his.stations.isel(stations=da_plicoords_nestpointidx)
     
     # convert gdf to xarray dataset
-    data_interp = _da_from_gdf_points(gdf_points)
+    data_interp = da_from_gdf_points(gdf_points)
     
     #interpolate hisfile variables to plipoints
     for varone in datavars_list:
@@ -533,49 +545,6 @@ def interp_hisnc_to_plipoints(data_xr_his, file_pli, kdtree_k=3, load=True):
     return data_interp
     
 
-def _maybe_convert_fews_to_dfmt(ds):
-    ncbnd_construct = get_ncbnd_construct()
-    dimn_point = ncbnd_construct['dimn_point']
-    varn_pointname = ncbnd_construct['varn_pointname']
-    
-    # convert station data_vars to coords to avoid dfmt issues
-    for var_to_coord in [varn_pointname,'station_names']:
-        if var_to_coord in ds.data_vars:
-            ds = ds.set_coords(var_to_coord)
-    # assign timeseries_id cf_role to let FM read the station names
-    ds[varn_pointname] = ds[varn_pointname].assign_attrs({'cf_role': 'timeseries_id'})
-    
-    # rename data_vars to long_name (e.g. renames FEWS so to salinitybnd)
-    for datavar in ds.data_vars:
-        if datavar in ['ux','uy']: #TODO: keeping these is consistent with hardcoded behaviour in dfm_tools elsewhere, but not desireable
-            continue
-        if hasattr(ds[datavar],'long_name'):
-            longname = ds[datavar].attrs['long_name']
-            if longname.endswith('bnd'):
-                ds = ds.rename_vars({datavar:longname})
-    
-    # transpose dims #TODO: the order impacts the model results: https://issuetracker.deltares.nl/browse/UNST-7402
-    # dfmt (arbitrary) dimension ordering is node/time/z
-    # required to reorder to FEWS time/node/z order for comparable results
-    # also time/z/node will result in unexpected results
-    if "time" in ds.dims: # check if time dimension is present (astronomic does not have time)
-        ds = ds.transpose("time", dimn_point, ...)
-    
-    # convert station names to string format (keep attrs and encoding)
-    # also needed to properly export, since we cannot encode it at dtype S1 properly otherwise
-    if not ds[varn_pointname].dtype.str.startswith('<'):
-        with xr.set_options(keep_attrs=True):
-            ds[varn_pointname] = ds[varn_pointname].load().str.decode('utf-8',errors='ignore').str.strip() #.load() is essential to convert not only first letter of string.
-
-    # add relevant encoding if not present
-    ds[varn_pointname].encoding.update({'dtype': 'S1', 'char_dim_name': 'char_leng_id'})
-    
-    # assign global attributes #TODO: add more
-    ds = ds.assign_attrs({'Conventions': 'CF-1.6',
-                          'institution': 'Deltares'})
-    return ds
-
-
 def plipointsDataset_to_ForcingModel(plipointsDataset):
     """
     empty docstring
@@ -586,7 +555,7 @@ def plipointsDataset_to_ForcingModel(plipointsDataset):
     dimn_depth = ncbnd_construct['dimn_depth']
     varn_pointname = ncbnd_construct['varn_pointname']
     
-    plipointsDataset = _maybe_convert_fews_to_dfmt(plipointsDataset)
+    plipointsDataset = maybe_convert_fews_to_dfmt(plipointsDataset)
     
     quantity_list = list(plipointsDataset.data_vars)
     npoints = len(plipointsDataset[dimn_point])
