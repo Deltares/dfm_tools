@@ -208,8 +208,8 @@ def test_plipointsDataset_to_ForcingModel_drop_allnan_points():
     # check if the resulting forcingmodel does not have 4 but 2 points
     # the first two points were skipped because they were all nan
     assert len(ForcingModel_object.forcing) == 2
-    ForcingModel_object.forcing[0].name == 'abc_bnd_0003'
-    ForcingModel_object.forcing[1].name == 'abc_bnd_0004'
+    assert ForcingModel_object.forcing[0].name == 'abc_bnd_0003'
+    assert ForcingModel_object.forcing[1].name == 'abc_bnd_0004'
 
 
 @pytest.mark.systemtest
