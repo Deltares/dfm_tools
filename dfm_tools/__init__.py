@@ -30,4 +30,8 @@ warnings.filterwarnings(action="always", category=DeprecationWarning)
 import sys
 version_info = sys.version_info
 if (version_info.major == 3) & (version_info.minor <= 8):
-    warnings.warn(DeprecationWarning("You are using Python 3.8 or lower, please note that support will soon be dropped by dfm_tools: https://github.com/Deltares/dfm_tools/issues/267"))
+    warnings.warn(
+        DeprecationWarning("You are using Python 3.8 or lower, please note that "
+                           "support will soon be dropped by dfm_tools: "
+                           "https://github.com/Deltares/dfm_tools/issues/267")
+        )
