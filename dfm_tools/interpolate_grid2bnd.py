@@ -23,7 +23,8 @@ from dfm_tools.hydrolib_helpers import (Dataset_to_TimeSeries,
                                         Dataset_to_Astronomic, 
                                         PolyFile_to_geodataframe_points, 
                                         get_ncbnd_construct,
-                                        da_from_gdf_points)
+                                        da_from_gdf_points,
+                                        maybe_convert_fews_to_dfmt)
 from dfm_tools.errors import OutOfRangeError
 
 __all__ = ["get_conversion_dict",
@@ -543,49 +544,6 @@ def interp_hisnc_to_plipoints(data_xr_his, file_pli, kdtree_k=3, load=True):
 
     return data_interp
     
-
-def maybe_convert_fews_to_dfmt(ds):
-    ncbnd_construct = get_ncbnd_construct()
-    dimn_point = ncbnd_construct['dimn_point']
-    varn_pointname = ncbnd_construct['varn_pointname']
-    
-    # convert station data_vars to coords to avoid dfmt issues
-    for var_to_coord in [varn_pointname,'station_names']:
-        if var_to_coord in ds.data_vars:
-            ds = ds.set_coords(var_to_coord)
-    # assign timeseries_id cf_role to let FM read the station names
-    ds[varn_pointname] = ds[varn_pointname].assign_attrs({'cf_role': 'timeseries_id'})
-    
-    # rename data_vars to long_name (e.g. renames FEWS so to salinitybnd)
-    for datavar in ds.data_vars:
-        if datavar in ['ux','uy']: #TODO: keeping these is consistent with hardcoded behaviour in dfm_tools elsewhere, but not desireable
-            continue
-        if hasattr(ds[datavar],'long_name'):
-            longname = ds[datavar].attrs['long_name']
-            if longname.endswith('bnd'):
-                ds = ds.rename_vars({datavar:longname})
-    
-    # transpose dims #TODO: the order impacts the model results: https://issuetracker.deltares.nl/browse/UNST-7402
-    # dfmt (arbitrary) dimension ordering is node/time/z
-    # required to reorder to FEWS time/node/z order for comparable results
-    # also time/z/node will result in unexpected results
-    if "time" in ds.dims: # check if time dimension is present (astronomic does not have time)
-        ds = ds.transpose("time", dimn_point, ...)
-    
-    # convert station names to string format (keep attrs and encoding)
-    # also needed to properly export, since we cannot encode it at dtype S1 properly otherwise
-    if not ds[varn_pointname].dtype.str.startswith('<'):
-        with xr.set_options(keep_attrs=True):
-            ds[varn_pointname] = ds[varn_pointname].load().str.decode('utf-8',errors='ignore').str.strip() #.load() is essential to convert not only first letter of string.
-
-    # add relevant encoding if not present
-    ds[varn_pointname].encoding.update({'dtype': 'S1', 'char_dim_name': 'char_leng_id'})
-    
-    # assign global attributes #TODO: add more
-    ds = ds.assign_attrs({'Conventions': 'CF-1.6',
-                          'institution': 'Deltares'})
-    return ds
-
 
 def plipointsDataset_to_ForcingModel(plipointsDataset):
     """
