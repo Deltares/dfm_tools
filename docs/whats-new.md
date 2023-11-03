@@ -12,6 +12,7 @@
 - increased buffer in `dfmt.download_ERA5()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#612](https://github.com/Deltares/dfm_tools/pull/612)
 - support for Polygon geometries in `dfmt.geodataframe_to_PolyFile()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#610](https://github.com/Deltares/dfm_tools/pull/610)
 - fill nan-values in initial salinity/temperature netcdf dataset in `dfmt.preprocess_ini_cmems_to_nc()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#617](https://github.com/Deltares/dfm_tools/pull/617)
+- skip all-nan boundary support points instead of converting to zeros in `dfmt.plipointsDataset_to_ForcingModel()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#637](https://github.com/Deltares/dfm_tools/pull/637)
 
 
 ## 0.15.0 (2023-10-19)
