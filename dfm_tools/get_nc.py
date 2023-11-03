@@ -41,6 +41,12 @@ import matplotlib.pyplot as plt
 from dfm_tools.xarray_helpers import Dataset_varswithdim
 from dfm_tools.xugrid_helpers import get_vertical_dimensions, decode_default_fillvals
 
+__all__ = ["polyline_mapslice",
+           "reconstruct_zw_zcc",
+           "get_Dataset_atdepths",
+           "rasterize_ugrid",
+           "plot_ztdata",
+    ]
 
 def calc_dist_pythagoras(x1,x2,y1,y2):
     distance = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)

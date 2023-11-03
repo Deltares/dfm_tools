@@ -7,7 +7,6 @@ __email__ = "jelmer.veenstra@deltares.nl"
 __version__ = "0.15.1"
 
 from dfm_tools.deprecated import *
-from dfm_tools.errors import *
 from dfm_tools.download import *
 from dfm_tools.get_nc import *
 from dfm_tools.get_nc_helpers import *

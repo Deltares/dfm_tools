@@ -7,6 +7,8 @@ Created on Mon Oct  3 13:40:58 2022
 
 import numpy as np
 
+__all__ = ["LineBuilder"]
+
 
 class LineBuilder:
     """

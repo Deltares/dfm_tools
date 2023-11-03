@@ -16,6 +16,15 @@ import warnings
 import numpy as np
 from dfm_tools.errors import OutOfRangeError
 
+__all__ = [
+    "preprocess_hisnc",
+    "preprocess_hirlam",
+    "preprocess_ERA5",
+    "preprocess_woa",
+    "merge_meteofiles",
+    "Dataset_varswithdim",
+]
+
 
 def file_to_list(file_nc):
     if isinstance(file_nc,list):

@@ -39,6 +39,11 @@ import xugrid as xu
 import pandas as pd
 import warnings
 
+__all__ = ["get_ncvarproperties",
+           "rename_waqvars",
+           "rename_fouvars",
+           ]
+
 
 def get_ncvarproperties(data_xr):
     if not isinstance(data_xr,(xr.Dataset,xu.UgridDataset)):

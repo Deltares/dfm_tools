@@ -13,6 +13,17 @@ import datetime as dt
 import pandas as pd
 import meshkernel
 from dfm_tools.xarray_helpers import file_to_list
+from netCDF4 import default_fillvals
+
+__all__ = [
+    "open_partitioned_dataset",
+    "open_dataset_curvilinear",
+    "open_dataset_delft3d4",
+    "uda_edges_to_faces",
+    "uda_interfaces_to_centers",
+    "add_network_cellinfo",
+    "enrich_rst_with_map",
+]
 
 
 def get_vertical_dimensions(uds): #TODO: maybe add layer_dimension and interface_dimension properties to xugrid?
@@ -112,7 +123,6 @@ def decode_default_fillvals(ds):
     """
     # TODO: this function can be removed when xarray does it automatically: https://github.com/Deltares/dfm_tools/issues/490
     
-    from netCDF4 import default_fillvals
     nfillattrs_added = 0
     for varn in ds.variables:
         # TODO: possible to get always_mask boolean with `netCDF4.Dataset(file_nc).variables[varn].always_mask`, but this seems to be always True for FM mapfiles
@@ -470,7 +480,7 @@ def uda_interfaces_to_centers(uda_int : xu.UgridDataArray) -> xu.UgridDataArray:
     return uda_cen
 
 
-def _get_uds_isgeographic(uds):
+def get_uds_isgeographic(uds):
     uds_wgs84 = uds.filter_by_attrs(grid_mapping_name="latitude_longitude")
     if len(uds_wgs84.data_vars) > 0:
         is_geographic = True
@@ -499,7 +509,7 @@ def add_network_cellinfo(uds:xu.UgridDataset):
     mk_mesh1d = mk1.mesh1d_get()
     
     # use Mesh1d nodes/edgenodes info for generation of meshkernel with Mesh2d
-    is_geographic = _get_uds_isgeographic(uds)
+    is_geographic = get_uds_isgeographic(uds)
     mk_mesh2d = meshkernel.Mesh2d(mk_mesh1d.node_x, mk_mesh1d.node_y, mk_mesh1d.edge_nodes)
     mk2 = meshkernel.MeshKernel(is_geographic=is_geographic)
     mk2.mesh2d_set(mk_mesh2d)

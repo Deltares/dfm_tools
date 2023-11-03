@@ -15,13 +15,14 @@ import numpy as np
 import geopandas as gpd
 from shapely.geometry import Polygon
 import glob
+from dfm_tools.meshkernel_helpers import meshkernel_check_geographic, add_crs_to_dataset
 
 
 @pytest.mark.unittest
 def test_add_crs_to_dataset_cartesian():
     uds = xu.data.adh_san_diego()
     crs='EPSG:26946' # this is not the correct crs for this model, but that does not matter
-    dfmt.add_crs_to_dataset(uds,is_geographic=False,crs=crs)
+    add_crs_to_dataset(uds,is_geographic=False,crs=crs)
     
     assert 'projected_coordinate_system' in uds.data_vars
     crs_attrs = uds.projected_coordinate_system.attrs
@@ -34,7 +35,7 @@ def test_add_crs_to_dataset_cartesian():
 def test_add_crs_to_dataset_spherical():
     uds = xu.data.adh_san_diego()
     crs='EPSG:4326' # this is not the correct crs for this model, but that does not matter
-    dfmt.add_crs_to_dataset(uds,is_geographic=True,crs=crs)
+    add_crs_to_dataset(uds,is_geographic=True,crs=crs)
     
     assert 'wgs84' in uds.data_vars
     crs_attrs = uds.wgs84.attrs
@@ -52,9 +53,9 @@ def test_meshkernel_check_geographic():
     dxy = 0.05
     
     mk_cartesian = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, is_geographic=False)
-    mk_cartesian_geograph = dfmt.meshkernel_check_geographic(mk_cartesian)
+    mk_cartesian_geograph = meshkernel_check_geographic(mk_cartesian)
     mk_spherical = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, is_geographic=True)
-    mk_spherical_geograph = dfmt.meshkernel_check_geographic(mk_spherical)
+    mk_spherical_geograph = meshkernel_check_geographic(mk_spherical)
     
     assert mk_cartesian_geograph==False
     assert mk_spherical_geograph==True

@@ -6,6 +6,13 @@ import dfm_tools as dfmt
 import numpy as np
 import hydrolib.core.dflowfm as hcdfm
 import pandas as pd
+from dfm_tools.get_nc import (calc_dist_pythagoras,
+                              calc_dist_haversine,
+                              intersect_edges_withsort,
+                              reconstruct_zw_zcc_fromz,
+                              reconstruct_zw_zcc_fromzsigma,
+                              reconstruct_zw_zcc_fromsigma
+                              )
 
 
 @pytest.mark.parametrize("file_nc, expected_size", [pytest.param(dfmt.data.fm_grevelingen_map(return_filepath=True), (44796, 4, 2), id='from partitioned map Grevelingen'),
@@ -125,11 +132,11 @@ def test_calc_dist_pythagoras():
                               [[2173.05750857, 3238.17837704],
                                [2128.78024194, 3266.58266129]]])
     
-    edge_len = dfmt.calc_dist_pythagoras(edges[:,0,0], edges[:,1,0], edges[:,0,1], edges[:,1,1])
+    edge_len = calc_dist_pythagoras(edges[:,0,0], edges[:,1,0], edges[:,0,1], edges[:,1,1])
     edge_len_cum = np.cumsum(edge_len)
     edge_len_cum0 = np.concatenate([[0],edge_len_cum[:-1]])
-    crs_dist_starts = dfmt.calc_dist_pythagoras(edges[edge_index,0,0], intersections[:,0,0], edges[edge_index,0,1], intersections[:,0,1]) + edge_len_cum0[edge_index]
-    crs_dist_stops  = dfmt.calc_dist_pythagoras(edges[edge_index,0,0], intersections[:,1,0], edges[edge_index,0,1], intersections[:,1,1]) + edge_len_cum0[edge_index]
+    crs_dist_starts = calc_dist_pythagoras(edges[edge_index,0,0], intersections[:,0,0], edges[edge_index,0,1], intersections[:,0,1]) + edge_len_cum0[edge_index]
+    crs_dist_stops  = calc_dist_pythagoras(edges[edge_index,0,0], intersections[:,1,0], edges[edge_index,0,1], intersections[:,1,1]) + edge_len_cum0[edge_index]
     
     crs_dist_starts_check = np.array([  0.        ,  61.57239204, 122.01963352, 177.15945184,
                                       205.03584892, 230.21050794, 283.15313349, 341.63128877])
@@ -181,11 +188,11 @@ def test_calc_dist_haversine():
                               [[ 8.86455109, 57.23333333],
                                [ 8.86292507, 57.24166667]]])
     
-    edge_len = dfmt.calc_dist_haversine(edges[:,0,0], edges[:,1,0], edges[:,0,1], edges[:,1,1])
+    edge_len = calc_dist_haversine(edges[:,0,0], edges[:,1,0], edges[:,0,1], edges[:,1,1])
     edge_len_cum = np.cumsum(edge_len)
     edge_len_cum0 = np.concatenate([[0],edge_len_cum[:-1]])
-    crs_dist_starts = dfmt.calc_dist_haversine(edges[edge_index,0,0], intersections[:,0,0], edges[edge_index,0,1], intersections[:,0,1]) + edge_len_cum0[edge_index]
-    crs_dist_stops  = dfmt.calc_dist_haversine(edges[edge_index,0,0], intersections[:,1,0], edges[edge_index,0,1], intersections[:,1,1]) + edge_len_cum0[edge_index]
+    crs_dist_starts = calc_dist_haversine(edges[edge_index,0,0], intersections[:,0,0], edges[edge_index,0,1], intersections[:,0,1]) + edge_len_cum0[edge_index]
+    crs_dist_stops  = calc_dist_haversine(edges[edge_index,0,0], intersections[:,1,0], edges[edge_index,0,1], intersections[:,1,1]) + edge_len_cum0[edge_index]
     
     crs_dist_starts_check = np.array([23439.77082715, 24371.57628696, 25303.38057682, 26235.18142118,
                                       27166.97986164, 28098.77713142, 29030.57089118, 29565.34666042,
@@ -238,7 +245,7 @@ def test_intersect_edges_withsort():
     uds = dfmt.open_partitioned_dataset(file_nc)
     
     edges = np.stack([line_array[:-1],line_array[1:]],axis=1)
-    edge_index, face_index, intersections = dfmt.intersect_edges_withsort(uds,edges)
+    edge_index, face_index, intersections = intersect_edges_withsort(uds,edges)
     
     assert (edge_index == np.array([0, 0, 0, 1, 1, 1, 2, 2])).all()
     assert (face_index == np.array([ 91, 146, 147, 147, 202, 201, 201, 146])).all()
@@ -256,7 +263,7 @@ def test_zlayermodel_correct_layers():
     timestep = 3
     
     data_frommap_timesel = data_frommap_merged.isel(time=timestep) #select data for all layers
-    data_frommap_merged_fullgrid = dfmt.reconstruct_zw_zcc_fromz(data_frommap_timesel)
+    data_frommap_merged_fullgrid = reconstruct_zw_zcc_fromz(data_frommap_timesel)
     
     vals_wl = data_frommap_merged_fullgrid['mesh2d_s1']
     vals_bl = data_frommap_merged_fullgrid['mesh2d_flowelem_bl'].to_numpy()
@@ -285,7 +292,7 @@ def test_zsigmalayermodel_correct_layers():
     timestep = 1
     
     data_frommap_timesel = data_frommap_merged.isel(time=timestep) #select data for all layers
-    data_frommap_merged_fullgrid = dfmt.reconstruct_zw_zcc_fromzsigma(data_frommap_timesel)
+    data_frommap_merged_fullgrid = reconstruct_zw_zcc_fromzsigma(data_frommap_timesel)
     
     vals_wl = data_frommap_merged_fullgrid['mesh2d_s1'].to_numpy()
     vals_bl = data_frommap_merged_fullgrid['mesh2d_flowelem_bl'].to_numpy()
@@ -316,7 +323,7 @@ def test_sigmalayermodel_correct_layers():
     timestep = 3
     
     data_frommap_timesel = data_frommap_merged.isel(time=timestep) #select data for all layers
-    data_frommap_merged_fullgrid = dfmt.reconstruct_zw_zcc_fromsigma(data_frommap_timesel)
+    data_frommap_merged_fullgrid = reconstruct_zw_zcc_fromsigma(data_frommap_timesel)
     
     vals_wl = data_frommap_merged_fullgrid['mesh2d_s1'].to_numpy()
     vals_bl = data_frommap_merged_fullgrid['mesh2d_flowelem_bl'].to_numpy()
