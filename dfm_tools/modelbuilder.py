@@ -221,17 +221,20 @@ def preprocess_merge_meteofiles_era5(ext_old, varkey_list, dir_data, dir_output,
     return ext_old
 
 
-def create_model_exec_files(file_dimr, file_mdu, model_name, nproc=1, dimrset_folder=None, path_style=None):
+def create_model_exec_files(file_mdu, nproc=1, dimrset_folder=None, path_style=None):
     """
     creates a dimr_config.xml and if desired a batfile to run the model
     """
     
+    dirname = os.path.dirname(file_mdu)
     mdu_name = os.path.basename(file_mdu)
+    file_dimr = os.path.join(dirname,'dimr_config.xml')
     dimr_name = os.path.basename(file_dimr)
     
     # generate dimr_config.xml
-    control_comp = Start(name=model_name)
-    fm_comp = FMComponent(name=model_name, workingDir='.', inputfile=mdu_name,
+    fm_modelname = "DFlowFM"
+    control_comp = Start(name=fm_modelname)
+    fm_comp = FMComponent(name=fm_modelname, workingDir='.', inputfile=mdu_name,
                           process=nproc, 
                           mpiCommunicator="DFM_COMM_DFMWORLD")
     dimr_model = DIMR(control=control_comp, component=fm_comp)

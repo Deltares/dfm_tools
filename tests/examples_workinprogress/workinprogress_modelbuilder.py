@@ -271,8 +271,7 @@ if paths_relative:
         with open(filename, 'w') as file:
             file.write(filedata)
 
-file_dimr = os.path.join(dir_output,'dimr_config.xml')
 nproc = 1 # number of processes
 dimrset_folder = r"c:\Program Files\Deltares\Delft3D FM Suite 2023.03 HMWQ\plugins\DeltaShell.Dimr\kernels" #alternatively r"p:\d-hydro\dimrset\weekly\2.25.17.78708"
-dfmt.create_model_exec_files(file_dimr, file_mdu=mdu_file, model_name=model_name, nproc=nproc, dimrset_folder=dimrset_folder)
+dfmt.create_model_exec_files(file_mdu=mdu_file, nproc=nproc, dimrset_folder=dimrset_folder)
 

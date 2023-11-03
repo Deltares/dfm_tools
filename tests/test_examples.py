@@ -32,7 +32,7 @@ def test_run_examples(file_config):
                          stderr=subprocess.STDOUT, # Merge stdout and stderr
                          stdout=subprocess.PIPE,
                          shell=True)
-    p.wait(1000)
+    p.wait(1500)
     
     if p.returncode:
         out, err = p.communicate()
