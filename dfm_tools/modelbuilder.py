@@ -221,25 +221,32 @@ def preprocess_merge_meteofiles_era5(ext_old, varkey_list, dir_data, dir_output,
     return ext_old
 
 
-def create_model_exec_files(file_dimr, file_mdu, model_name, nproc=1, dimrset_folder=None, path_style=None):
+def create_model_exec_files(file_mdu, nproc=1, dimrset_folder=None, path_style=None):
     """
     creates a dimr_config.xml and if desired a batfile to run the model
     """
     
+    if not os.path.isfile(file_mdu):
+        raise FileNotFoundError(f"file_mdu not found: {file_mdu}")
+        
+    dirname = os.path.dirname(file_mdu)
     mdu_name = os.path.basename(file_mdu)
+    file_dimr = os.path.join(dirname,'dimr_config.xml')
+    dimr_name = os.path.basename(file_dimr)
     
     # generate dimr_config.xml
-    control_comp = Start(name=model_name)
-    fm_comp = FMComponent(name=model_name, workingDir='.', inputfile=mdu_name,
+    fm_modelname = "DFlowFM"
+    control_comp = Start(name=fm_modelname)
+    fm_comp = FMComponent(name=fm_modelname, workingDir='.', inputfile=mdu_name,
                           process=nproc, 
                           mpiCommunicator="DFM_COMM_DFMWORLD")
     dimr_model = DIMR(control=control_comp, component=fm_comp)
-    print(f"writing {file_dimr}")
+    print(f"writing {dimr_name}")
     dimr_model.save(file_dimr)
     
     # TODO: hydrolib-core does not support multiple cores properly: https://github.com/Deltares/dfm_tools/issues/214
     # therefore we manually replace it in the file
-    print(f"re-writing {file_dimr}")
+    print(f"re-writing {dimr_name}")
     with open(file_dimr,'r') as f:
         lines = f.readlines()
     str_from = f"<process>{nproc}</process>"
@@ -270,12 +277,14 @@ def generate_bat_file(dimr_model, dimrset_folder=None):
     
     dirname = os.path.dirname(dimr_model.filepath)
     file_bat = os.path.join(dirname, "run_parallel.bat")
+    bat_name = os.path.basename(file_bat)
     
     dimr_name = os.path.basename(dimr_model.filepath)
     mdu_name = os.path.basename(dimr_model.component[0].inputFile)
     nproc = dimr_model.component[0].process
     if dimrset_folder is None:
-        dimrset_folder = r"c:\Program Files\Deltares\Delft3D FM Suite 2023.02 HMWQ\plugins\DeltaShell.Dimr\kernels"
+        print(f"no dimrset_folder provided, cannot write {bat_name}")
+        return
     
     if not os.path.exists(dimrset_folder):
         raise FileNotFoundError(f"dimrset_folder not found: {dimrset_folder}")
@@ -295,7 +304,7 @@ call %dimrset_folder%\x64\dimr\scripts\run_dimr_parallel.bat %partitions% {dimr_
 rem To prevent the DOS box from disappearing immediately: enable pause on the following line
 pause
 """
-    print(f"writing {file_bat}")
+    print(f"writing {bat_name}")
     with open(file_bat,'w') as f:
         f.write(bat_str)
 
