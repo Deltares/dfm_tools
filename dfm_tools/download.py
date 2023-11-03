@@ -19,6 +19,7 @@ import getpass
 __all__ = [
     "download_ERA5",
     "download_CMEMS",
+    "download_OPeNDAP",
 ]
 
 
