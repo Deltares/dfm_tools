@@ -67,4 +67,21 @@ def test_cmems_nc_to_ini():
     os.remove(file_nc2)
     os.remove(file_nc3)
     os.remove(file_nc4)
+
+
+@pytest.mark.unittest
+def test_create_model_exec_files():
+    mdu_file = "./temp_test.mdu"
+    file_dimr = "./dimr_config.xml"
     
+    nproc = 1 # number of processes
+    dimrset_folder = None
+    mdu = hcdfm.FMModel()
+    mdu.save(mdu_file)
+    dfmt.create_model_exec_files(file_mdu=mdu_file, nproc=nproc, dimrset_folder=dimrset_folder)
+    
+    assert os.path.isfile(file_dimr)
+    
+    os.remove(mdu_file)
+    os.remove(file_dimr)
+
