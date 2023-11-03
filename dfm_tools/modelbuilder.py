@@ -226,6 +226,9 @@ def create_model_exec_files(file_mdu, nproc=1, dimrset_folder=None, path_style=N
     creates a dimr_config.xml and if desired a batfile to run the model
     """
     
+    if not os.path.isfile(file_mdu):
+        raise FileNotFoundError(f"file_mdu not found: {file_mdu}")
+        
     dirname = os.path.dirname(file_mdu)
     mdu_name = os.path.basename(file_mdu)
     file_dimr = os.path.join(dirname,'dimr_config.xml')
@@ -280,7 +283,8 @@ def generate_bat_file(dimr_model, dimrset_folder=None):
     mdu_name = os.path.basename(dimr_model.component[0].inputFile)
     nproc = dimr_model.component[0].process
     if dimrset_folder is None:
-        dimrset_folder = r"c:\Program Files\Deltares\Delft3D FM Suite 2023.02 HMWQ\plugins\DeltaShell.Dimr\kernels"
+        print(f"no dimrset_folder provided, cannot write {bat_name}")
+        return
     
     if not os.path.exists(dimrset_folder):
         raise FileNotFoundError(f"dimrset_folder not found: {dimrset_folder}")
