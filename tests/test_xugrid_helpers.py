@@ -56,6 +56,17 @@ def test_open_2Dnetwork_with_1Dtopology():
     assert node_x.attrs['standard_name'] == "longitude"
 
 
+@pytest.mark.unittest
+def test_uda_edges_to_faces():
+    file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True) #zlayer
+    
+    uds = xu.open_dataset(file_nc.replace('0*','0002')) #partition 0002 of grevelingen contains both triangles as squares
+    
+    uda_edge = uds['mesh2d_vicwwu'].isel(time=0, nmesh2d_interface=0)
+    uda_face = dfmt.uda_edges_to_faces(uda_edge)
+    assert uda_face.dims == (uds.grid.face_dimension,)
+
+
 @pytest.mark.systemtest
 def test_uda_edges_to_faces_interfaces_to_centers():
     file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True) #zlayer
@@ -90,6 +101,17 @@ def test_uda_edges_to_faces_interfaces_to_centers():
         assert uda_face.dims == uds_face_dims_expected
     
         assert (np.abs(uda_face_sel.to_numpy()-uda_face_sel_expected)<1e-6).all()
+
+
+@pytest.mark.unittest
+def test_uda_nodes_to_faces():
+    file_nc = dfmt.data.fm_grevelingen_net(return_filepath=True)
+    uds = dfmt.open_partitioned_dataset(file_nc)
+    
+    uda_node = uds.mesh2d_node_z
+    uda_face = dfmt.uda_nodes_to_faces(uda_node)
+    
+    assert uda_face.dims ==  (uds.grid.face_dimension,)
 
 
 @pytest.mark.requireslocaldata

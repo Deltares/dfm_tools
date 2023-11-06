@@ -20,6 +20,7 @@ __all__ = [
     "open_dataset_curvilinear",
     "open_dataset_delft3d4",
     "uda_edges_to_faces",
+    "uda_nodes_to_faces",
     "uda_interfaces_to_centers",
     "add_network_cellinfo",
     "enrich_rst_with_map",
@@ -455,6 +456,57 @@ def uda_edges_to_faces(uda_edge : xu.UgridDataArray) -> xu.UgridDataArray:
     # average edge values per face
     uda_face = uda_face_alledges.mean(dim=dimn_maxfn,keep_attrs=True)
     #update attrs from edge to face
+    face_attrs = {'location': 'face', 'cell_methods': f'{dimn_faces}: mean'}
+    uda_face = uda_face.assign_attrs(face_attrs)
+    print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
+    
+    return uda_face
+
+
+def uda_nodes_to_faces(uda_node : xu.UgridDataArray) -> xu.UgridDataArray:
+    """
+    Interpolates a ugrid variable (xu.DataArray) with an node dimension to the faces by averaging the 3/4 nodes around each face.
+    Since node variables are mostly defined on interfaces, it also interpolates from interfaces to layers
+
+    Parameters
+    ----------
+    uda_node : xu.UgridDataArray
+        DESCRIPTION.
+
+    Raises
+    ------
+    KeyError
+        DESCRIPTION.
+
+    Returns
+    -------
+    uda_face : xu.UgridDataArray
+        DESCRIPTION.
+
+    """
+    
+    dimn_faces = uda_node.grid.face_dimension
+    dimn_maxfn = 'nMax_face_nodes' #arbitrary dimname that is reduced anyway
+    dimn_nodes = uda_node.grid.node_dimension
+    fill_value = uda_node.grid.fill_value
+    
+    if dimn_nodes not in uda_node.sizes:
+        raise KeyError(f'varname "{uda_node.name}" does not have an node dimension ({dimn_nodes})')
+    
+    # construct indexing array
+    data_fnc = xr.DataArray(uda_node.grid.face_node_connectivity,dims=(dimn_faces,dimn_maxfn))
+    data_fnc_validbool = data_fnc!=fill_value
+    data_fnc = data_fnc.where(data_fnc_validbool,-1)
+    
+    print('node-to-face interpolation: ',end='')
+    dtstart = dt.datetime.now()
+    # for each face, select all corresponding node values (this takes some time)
+    uda_face_allnodes = uda_node.isel({dimn_nodes:data_fnc})
+    # replace nonexistent nodes with nan
+    uda_face_allnodes = uda_face_allnodes.where(data_fnc_validbool) #replace all values for fillvalue nodes (-1) with nan
+    # average node values per face
+    uda_face = uda_face_allnodes.mean(dim=dimn_maxfn,keep_attrs=True)
+    #update attrs from node to face
     face_attrs = {'location': 'face', 'cell_methods': f'{dimn_faces}: mean'}
     uda_face = uda_face.assign_attrs(face_attrs)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
