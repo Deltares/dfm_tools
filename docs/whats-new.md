@@ -1,3 +1,9 @@
+## UNRELEASED
+
+### Feat
+- interpolation of node variables to faces with `dfmt.uda_nodes_to_faces()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#644](https://github.com/Deltares/dfm_tools/pull/644)
+
+
 ## 0.16.0 (2023-11-03)
 
 ### Feat
