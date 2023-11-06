@@ -112,7 +112,7 @@ def test_uda_nodes_to_faces():
     
     uda_node = uds.mesh2d_node_z
     uda_face = dfmt.uda_nodes_to_faces(uda_node)
-    # uda_face.ugrid.plot()
+    
     assert uda_face.dims ==  (uds.grid.face_dimension,)
 
 
