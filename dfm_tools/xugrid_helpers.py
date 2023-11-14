@@ -19,8 +19,7 @@ __all__ = [
     "open_partitioned_dataset",
     "open_dataset_curvilinear",
     "open_dataset_delft3d4",
-    "uda_edges_to_faces",
-    "uda_nodes_to_faces",
+    "uda_to_faces",
     "uda_interfaces_to_centers",
     "add_network_cellinfo",
     "enrich_rst_with_map",
@@ -412,58 +411,7 @@ def open_dataset_delft3d4(file_nc, **kwargs):
     return uds
 
 
-def uda_edges_to_faces(uda_edge : xu.UgridDataArray) -> xu.UgridDataArray:
-    """
-    Interpolates a ugrid variable (xu.DataArray) with an edge dimension to the faces by averaging the 3/4 edges around each face.
-    Since edge variables are mostly defined on interfaces, it also interpolates from interfaces to layers
-
-    Parameters
-    ----------
-    uda_edge : xu.UgridDataArray
-        DESCRIPTION.
-
-    Raises
-    ------
-    KeyError
-        DESCRIPTION.
-
-    Returns
-    -------
-    uda_face : xu.UgridDataArray
-        DESCRIPTION.
-
-    """
-    
-    dimn_faces = uda_edge.grid.face_dimension
-    dimn_maxfn = 'nMax_face_nodes' #arbitrary dimname that is reduced anyway
-    dimn_edges = uda_edge.grid.edge_dimension
-    fill_value = uda_edge.grid.fill_value
-    
-    if dimn_edges not in uda_edge.sizes:
-        raise KeyError(f'varname "{uda_edge.name}" does not have an edge dimension ({dimn_edges})')
-    
-    # construct indexing array
-    data_fec = xr.DataArray(uda_edge.grid.face_edge_connectivity,dims=(dimn_faces,dimn_maxfn))
-    data_fec_validbool = data_fec!=fill_value
-    data_fec = data_fec.where(data_fec_validbool,-1)
-    
-    print('edge-to-face interpolation: ',end='')
-    dtstart = dt.datetime.now()
-    # for each face, select all corresponding edge values (this takes some time)
-    uda_face_alledges = uda_edge.isel({dimn_edges:data_fec})
-    # replace nonexistent edges with nan
-    uda_face_alledges = uda_face_alledges.where(data_fec_validbool) #replace all values for fillvalue edges (-1) with nan
-    # average edge values per face
-    uda_face = uda_face_alledges.mean(dim=dimn_maxfn,keep_attrs=True)
-    #update attrs from edge to face
-    face_attrs = {'location': 'face', 'cell_methods': f'{dimn_faces}: mean'}
-    uda_face = uda_face.assign_attrs(face_attrs)
-    print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
-    
-    return uda_face
-
-
-def uda_nodes_to_faces(uda_node : xu.UgridDataArray) -> xu.UgridDataArray:
+def uda_to_faces(uda_notface : xu.UgridDataArray) -> xu.UgridDataArray:
     """
     Interpolates a ugrid variable (xu.DataArray) with an node dimension to the faces by averaging the 3/4 nodes around each face.
     Since node variables are mostly defined on interfaces, it also interpolates from interfaces to layers
@@ -484,28 +432,34 @@ def uda_nodes_to_faces(uda_node : xu.UgridDataArray) -> xu.UgridDataArray:
         DESCRIPTION.
 
     """
+    grid = uda_notface.grid
     
-    dimn_faces = uda_node.grid.face_dimension
-    dimn_maxfn = 'nMax_face_nodes' #arbitrary dimname that is reduced anyway
-    dimn_nodes = uda_node.grid.node_dimension
-    fill_value = uda_node.grid.fill_value
-    
-    if dimn_nodes not in uda_node.sizes:
-        raise KeyError(f'varname "{uda_node.name}" does not have an node dimension ({dimn_nodes})')
+    dimn_faces = grid.face_dimension
+    reduce_dim = 'nMax_face_nodes' #arbitrary dimname that is reduced anyway
+    dimn_nodes = grid.node_dimension
+    dimn_edges = grid.edge_dimension
+    fill_value = grid.fill_value
     
     # construct indexing array
-    data_fnc = xr.DataArray(uda_node.grid.face_node_connectivity,dims=(dimn_faces,dimn_maxfn))
-    data_fnc_validbool = data_fnc!=fill_value
-    data_fnc = data_fnc.where(data_fnc_validbool,-1)
+    if dimn_nodes in uda_notface.dims:
+        indexer_np = grid.face_node_connectivity
+    elif dimn_edges in uda_notface.dims:
+        indexer_np = grid.face_edge_connectivity
+    else:
+        raise KeyError(f'provided uda/variable "{uda_notface.name}" does not have an node or edge dimension, dfmt.uda_to_faces() not possible')
+
+    indexer = xr.DataArray(indexer_np,dims=(dimn_faces,reduce_dim))
+    indexer_validbool = indexer!=fill_value
+    indexer = indexer.where(indexer_validbool,-1)
     
     print('node-to-face interpolation: ',end='')
     dtstart = dt.datetime.now()
     # for each face, select all corresponding node values (this takes some time)
-    uda_face_allnodes = uda_node.isel({dimn_nodes:data_fnc})
+    uda_face_allnodes = uda_notface.isel({dimn_nodes:indexer})
     # replace nonexistent nodes with nan
-    uda_face_allnodes = uda_face_allnodes.where(data_fnc_validbool) #replace all values for fillvalue nodes (-1) with nan
+    uda_face_allnodes = uda_face_allnodes.where(indexer_validbool) #replace all values for fillvalue nodes (-1) with nan
     # average node values per face
-    uda_face = uda_face_allnodes.mean(dim=dimn_maxfn,keep_attrs=True)
+    uda_face = uda_face_allnodes.mean(dim=reduce_dim,keep_attrs=True)
     #update attrs from node to face
     face_attrs = {'location': 'face', 'cell_methods': f'{dimn_faces}: mean'}
     uda_face = uda_face.assign_attrs(face_attrs)
