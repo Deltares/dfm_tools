@@ -81,7 +81,7 @@ def test_uda_edges_to_faces_interfaces_to_centers():
         #edge_type array is completely different when masking is forgotten (when uda contains both triangles and squares)
         uda_edge = uds[varn_edge]
         
-        uda_face_int = dfmt.uda_edges_to_faces(uda_edge)
+        uda_face_int = dfmt.uda_to_faces(uda_edge)
         uda_face = dfmt.uda_interfaces_to_centers(uda_face_int)
 
         if varn_edge == 'mesh2d_vicwwu':
@@ -110,9 +110,9 @@ def test_uda_nodes_to_faces():
     uds = dfmt.open_partitioned_dataset(file_nc)
     
     uda_node = uds.mesh2d_node_z
-    uda_face = dfmt.uda_nodes_to_faces(uda_node)
+    uda_face = dfmt.uda_to_faces(uda_node)
     
-    assert uda_face.dims ==  (uds.grid.face_dimension,)
+    assert uda_face.dims == (uds.grid.face_dimension,)
 
 
 @pytest.mark.requireslocaldata
