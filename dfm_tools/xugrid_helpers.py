@@ -413,7 +413,7 @@ def open_dataset_delft3d4(file_nc, **kwargs):
 
 def uda_to_faces(uda_notface : xu.UgridDataArray) -> xu.UgridDataArray:
     """
-    Interpolates a ugrid variable (xu.DataArray) with an node or edge dimension to the faces by averaging the 3/4 nodes/edges around each face.
+    Interpolates a ugrid variable (xu.DataArray) with a node or edge dimension to the faces by averaging the 3/4 nodes/edges around each face.
     
     Parameters
     ----------
@@ -441,9 +441,11 @@ def uda_to_faces(uda_notface : xu.UgridDataArray) -> xu.UgridDataArray:
     
     # construct indexing array
     if dimn_nodes in uda_notface.dims:
+        dimn_notfaces_name = "node"
         dimn_notfaces = dimn_nodes
         indexer_np = grid.face_node_connectivity
     elif dimn_edges in uda_notface.dims:
+        dimn_notfaces_name = "edge"
         dimn_notfaces = dimn_edges
         indexer_np = grid.face_edge_connectivity
     else:
@@ -453,7 +455,7 @@ def uda_to_faces(uda_notface : xu.UgridDataArray) -> xu.UgridDataArray:
     indexer_validbool = indexer!=fill_value
     indexer = indexer.where(indexer_validbool,-1)
     
-    print('node/edge-to-face interpolation: ',end='')
+    print(f'{dimn_notfaces_name}-to-face interpolation: ',end='')
     dtstart = dt.datetime.now()
     # for each face, select all corresponding node/edge values (this takes some time)
     uda_face_allnodes = uda_notface.isel({dimn_notfaces:indexer})
