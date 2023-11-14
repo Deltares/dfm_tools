@@ -451,7 +451,8 @@ def uda_to_faces(uda_notface : xu.UgridDataArray) -> xu.UgridDataArray:
     else:
         raise KeyError(f'provided uda/variable "{uda_notface.name}" does not have an node or edge dimension, dfmt.uda_to_faces() not possible')
 
-    # rechunk to make sure the node/edge dimension is not chunked
+    # rechunk to make sure the node/edge dimension is not chunked, otherwise we will 
+    # get "PerformanceWarning: Slicing with an out-of-order index is generating 384539 times more chunks."
     chunks = {dimn_notfaces:-1}
     uda_notface = uda_notface.chunk(chunks)
 
@@ -461,13 +462,15 @@ def uda_to_faces(uda_notface : xu.UgridDataArray) -> xu.UgridDataArray:
     
     print(f'{dimn_notfaces_name}-to-face interpolation: ',end='')
     dtstart = dt.datetime.now()
-    # for each face, select all corresponding node/edge values (this takes some time)
-    if True:
-        indexer_stacked = indexer.stack(__tmp_dim__=(dimn_faces, reduce_dim))
-        uda_face_allnodes_stacked = uda_notface.isel({dimn_notfaces: indexer_stacked})
-        uda_face_allnodes = uda_face_allnodes_stacked.unstack("__tmp_dim__")
-    else:
-        uda_face_allnodes = uda_notface.isel({dimn_notfaces:indexer})
+    # for each face, select all corresponding node/edge values
+    # we do this via stack and unstack since 2D indexing does not
+    # properly work in dask yet: https://github.com/dask/dask/pull/10237
+    # this process converts the xu.UgridDataArray to a xr.DataArray, so we convert it back
+    indexer_stacked = indexer.stack(__tmp_dim__=(dimn_faces, reduce_dim))
+    uda_face_allnodes_ds_stacked = uda_notface.isel({dimn_notfaces: indexer_stacked})
+    uda_face_allnodes_ds = uda_face_allnodes_ds_stacked.unstack("__tmp_dim__")
+    uda_face_allnodes = xu.UgridDataArray(uda_face_allnodes_ds,grid=grid)
+    
     # replace nonexistent nodes/edges with nan
     uda_face_allnodes = uda_face_allnodes.where(indexer_validbool) #replace all values for fillvalue nodes/edges (-1) with nan
     # average node/edge values per face

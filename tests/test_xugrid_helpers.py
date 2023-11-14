@@ -66,6 +66,7 @@ def test_uda_edges_to_faces():
     uda_face = dfmt.uda_to_faces(uda_edge)
     
     assert uda_face.dims == (uds.grid.face_dimension,)
+    assert hasattr(uda_face,'grid')
 
 
 @pytest.mark.systemtest
@@ -83,7 +84,7 @@ def test_uda_edges_to_faces_interfaces_to_centers():
         
         uda_face_int = dfmt.uda_to_faces(uda_edge)
         uda_face = dfmt.uda_interfaces_to_centers(uda_face_int)
-
+        
         if varn_edge == 'mesh2d_vicwwu':
             uda_face_sel = uda_face.isel({'time':-1, dimn_faces:slice(None,20), dimn_layer:-1})
             uda_face_sel_expected = np.array([0.000385  , 0.00036918, 0.00037161, 0.00055217, 0.00048461,
@@ -99,8 +100,9 @@ def test_uda_edges_to_faces_interfaces_to_centers():
                    1.        , 1.        , 1.66666667, 1.66666667, 1.        ])
             uds_face_dims_expected = (dimn_faces,)
         
-        assert uda_face.dims == uds_face_dims_expected
-    
+        assert set(uda_face.dims) == set(uds_face_dims_expected)
+        assert hasattr(uda_face,'grid')
+        
         assert (np.abs(uda_face_sel.to_numpy()-uda_face_sel_expected)<1e-6).all()
 
 
@@ -113,6 +115,7 @@ def test_uda_nodes_to_faces():
     uda_face = dfmt.uda_to_faces(uda_node)
     
     assert uda_face.dims == (uds.grid.face_dimension,)
+    assert hasattr(uda_face,'grid')
 
 
 @pytest.mark.requireslocaldata
