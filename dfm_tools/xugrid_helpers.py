@@ -458,7 +458,12 @@ def uda_to_faces(uda_notface : xu.UgridDataArray) -> xu.UgridDataArray:
     print(f'{dimn_notfaces_name}-to-face interpolation: ',end='')
     dtstart = dt.datetime.now()
     # for each face, select all corresponding node/edge values (this takes some time)
-    uda_face_allnodes = uda_notface.isel({dimn_notfaces:indexer})
+    if True:
+        indexer_stacked = indexer.stack(__tmp_dim__=(dimn_faces, reduce_dim))
+        uda_face_allnodes_stacked = uda_notface.isel({dimn_notfaces: indexer_stacked})
+        uda_face_allnodes = uda_face_allnodes_stacked.unstack("__tmp_dim__")
+    else:
+        uda_face_allnodes = uda_notface.isel({dimn_notfaces:indexer})
     # replace nonexistent nodes/edges with nan
     uda_face_allnodes = uda_face_allnodes.where(indexer_validbool) #replace all values for fillvalue nodes/edges (-1) with nan
     # average node/edge values per face
