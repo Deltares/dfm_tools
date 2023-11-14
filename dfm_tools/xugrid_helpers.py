@@ -413,9 +413,8 @@ def open_dataset_delft3d4(file_nc, **kwargs):
 
 def uda_to_faces(uda_notface : xu.UgridDataArray) -> xu.UgridDataArray:
     """
-    Interpolates a ugrid variable (xu.DataArray) with an node dimension to the faces by averaging the 3/4 nodes around each face.
-    Since node variables are mostly defined on interfaces, it also interpolates from interfaces to layers
-
+    Interpolates a ugrid variable (xu.DataArray) with an node or edge dimension to the faces by averaging the 3/4 nodes/edges around each face.
+    
     Parameters
     ----------
     uda_node : xu.UgridDataArray
@@ -442,8 +441,10 @@ def uda_to_faces(uda_notface : xu.UgridDataArray) -> xu.UgridDataArray:
     
     # construct indexing array
     if dimn_nodes in uda_notface.dims:
+        dimn_notfaces = dimn_nodes
         indexer_np = grid.face_node_connectivity
     elif dimn_edges in uda_notface.dims:
+        dimn_notfaces = dimn_edges
         indexer_np = grid.face_edge_connectivity
     else:
         raise KeyError(f'provided uda/variable "{uda_notface.name}" does not have an node or edge dimension, dfmt.uda_to_faces() not possible')
@@ -452,15 +453,15 @@ def uda_to_faces(uda_notface : xu.UgridDataArray) -> xu.UgridDataArray:
     indexer_validbool = indexer!=fill_value
     indexer = indexer.where(indexer_validbool,-1)
     
-    print('node-to-face interpolation: ',end='')
+    print('node/edge-to-face interpolation: ',end='')
     dtstart = dt.datetime.now()
-    # for each face, select all corresponding node values (this takes some time)
-    uda_face_allnodes = uda_notface.isel({dimn_nodes:indexer})
-    # replace nonexistent nodes with nan
-    uda_face_allnodes = uda_face_allnodes.where(indexer_validbool) #replace all values for fillvalue nodes (-1) with nan
-    # average node values per face
+    # for each face, select all corresponding node/edge values (this takes some time)
+    uda_face_allnodes = uda_notface.isel({dimn_notfaces:indexer})
+    # replace nonexistent nodes/edges with nan
+    uda_face_allnodes = uda_face_allnodes.where(indexer_validbool) #replace all values for fillvalue nodes/edges (-1) with nan
+    # average node/edge values per face
     uda_face = uda_face_allnodes.mean(dim=reduce_dim,keep_attrs=True)
-    #update attrs from node to face
+    #update attrs from node/edge to face
     face_attrs = {'location': 'face', 'cell_methods': f'{dimn_faces}: mean'}
     uda_face = uda_face.assign_attrs(face_attrs)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')

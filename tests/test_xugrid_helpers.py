@@ -63,7 +63,7 @@ def test_uda_edges_to_faces():
     uds = xu.open_dataset(file_nc.replace('0*','0002')) #partition 0002 of grevelingen contains both triangles as squares
     
     uda_edge = uds['mesh2d_vicwwu'].isel(time=0, nmesh2d_interface=0)
-    uda_face = dfmt.uda_edges_to_faces(uda_edge)
+    uda_face = dfmt.uda_to_faces(uda_edge)
     assert uda_face.dims == (uds.grid.face_dimension,)
 
 
