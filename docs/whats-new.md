@@ -1,7 +1,7 @@
 ## UNRELEASED
 
 ### Feat
-- interpolation of edge/node variables to faces with `dfmt.uda_to_faces()` (deprecates `dfmt.uda_edges_to_faces()`) by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#651](https://github.com/Deltares/dfm_tools/pull/651) and [#644](https://github.com/Deltares/dfm_tools/pull/644)
+- interpolation of edge/node variables to faces with `dfmt.uda_to_faces()` including performance improvements (deprecates `dfmt.uda_edges_to_faces()`) by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#651](https://github.com/Deltares/dfm_tools/pull/651) and [#644](https://github.com/Deltares/dfm_tools/pull/644)
 
 
 ## 0.16.0 (2023-11-03)
