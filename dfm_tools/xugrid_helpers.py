@@ -451,6 +451,10 @@ def uda_to_faces(uda_notface : xu.UgridDataArray) -> xu.UgridDataArray:
     else:
         raise KeyError(f'provided uda/variable "{uda_notface.name}" does not have an node or edge dimension, dfmt.uda_to_faces() not possible')
 
+    # rechunk to make sure the node/edge dimension is not chunked
+    chunks = {dimn_notfaces:-1}
+    uda_notface = uda_notface.chunk(chunks)
+
     indexer = xr.DataArray(indexer_np,dims=(dimn_faces,reduce_dim))
     indexer_validbool = indexer!=fill_value
     indexer = indexer.where(indexer_validbool,-1)
