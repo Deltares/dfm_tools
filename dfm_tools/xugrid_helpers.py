@@ -13,7 +13,17 @@ import datetime as dt
 import pandas as pd
 import meshkernel
 from dfm_tools.xarray_helpers import file_to_list
-from dfm_tools.meshkernel_helpers import _geographic_to_meshkernel_projection
+from netCDF4 import default_fillvals
+
+__all__ = [
+    "open_partitioned_dataset",
+    "open_dataset_curvilinear",
+    "open_dataset_delft3d4",
+    "uda_to_faces",
+    "uda_interfaces_to_centers",
+    "add_network_cellinfo",
+    "enrich_rst_with_map",
+]
 
 
 def get_vertical_dimensions(uds): #TODO: maybe add layer_dimension and interface_dimension properties to xugrid?
@@ -113,7 +123,6 @@ def decode_default_fillvals(ds):
     """
     # TODO: this function can be removed when xarray does it automatically: https://github.com/Deltares/dfm_tools/issues/490
     
-    from netCDF4 import default_fillvals
     nfillattrs_added = 0
     for varn in ds.variables:
         # TODO: possible to get always_mask boolean with `netCDF4.Dataset(file_nc).variables[varn].always_mask`, but this seems to be always True for FM mapfiles
@@ -402,14 +411,13 @@ def open_dataset_delft3d4(file_nc, **kwargs):
     return uds
 
 
-def uda_edges_to_faces(uda_edge : xu.UgridDataArray) -> xu.UgridDataArray:
+def uda_to_faces(uda : xu.UgridDataArray) -> xu.UgridDataArray:
     """
-    Interpolates a ugrid variable (xu.DataArray) with an edge dimension to the faces by averaging the 3/4 edges around each face.
-    Since edge variables are mostly defined on interfaces, it also interpolates from interfaces to layers
-
+    Interpolates a ugrid variable (xu.DataArray) with a node or edge dimension to the faces by averaging the 3/4 nodes/edges around each face.
+    
     Parameters
     ----------
-    uda_edge : xu.UgridDataArray
+    uda_node : xu.UgridDataArray
         DESCRIPTION.
 
     Raises
@@ -423,29 +431,52 @@ def uda_edges_to_faces(uda_edge : xu.UgridDataArray) -> xu.UgridDataArray:
         DESCRIPTION.
 
     """
+    grid = uda.grid
     
-    dimn_faces = uda_edge.grid.face_dimension
-    dimn_maxfn = 'nMax_face_nodes' #arbitrary dimname that is reduced anyway
-    dimn_edges = uda_edge.grid.edge_dimension
-    fill_value = uda_edge.grid.fill_value
-    
-    if dimn_edges not in uda_edge.sizes:
-        raise KeyError(f'varname "{uda_edge.name}" does not have an edge dimension ({dimn_edges})')
+    dimn_faces = grid.face_dimension
+    reduce_dim = 'nMax_face_nodes' #arbitrary dimname that is reduced anyway
+    dimn_nodes = grid.node_dimension
+    dimn_edges = grid.edge_dimension
+    fill_value = grid.fill_value
     
     # construct indexing array
-    data_fec = xr.DataArray(uda_edge.grid.face_edge_connectivity,dims=(dimn_faces,dimn_maxfn))
-    data_fec_validbool = data_fec!=fill_value
-    data_fec = data_fec.where(data_fec_validbool,-1)
+    if dimn_nodes in uda.dims:
+        dimn_notfaces_name = "node"
+        dimn_notfaces = dimn_nodes
+        indexer_np = grid.face_node_connectivity
+    elif dimn_edges in uda.dims:
+        dimn_notfaces_name = "edge"
+        dimn_notfaces = dimn_edges
+        indexer_np = grid.face_edge_connectivity
+    else:
+        print(f'provided uda/variable "{uda.name}" does not have an node or edge dimension, returning unchanged uda')
+        return uda
     
-    print('edge-to-face interpolation: ',end='')
+    # rechunk to make sure the node/edge dimension is not chunked, otherwise we will 
+    # get "PerformanceWarning: Slicing with an out-of-order index is generating 384539 times more chunks."
+    chunks = {dimn_notfaces:-1}
+    uda = uda.chunk(chunks)
+
+    indexer = xr.DataArray(indexer_np,dims=(dimn_faces,reduce_dim))
+    indexer_validbool = indexer!=fill_value
+    indexer = indexer.where(indexer_validbool,-1)
+    
+    print(f'{dimn_notfaces_name}-to-face interpolation: ',end='')
     dtstart = dt.datetime.now()
-    # for each face, select all corresponding edge values (this takes some time)
-    uda_face_alledges = uda_edge.isel({dimn_edges:data_fec})
-    # replace nonexistent edges with nan
-    uda_face_alledges = uda_face_alledges.where(data_fec_validbool) #replace all values for fillvalue edges (-1) with nan
-    # average edge values per face
-    uda_face = uda_face_alledges.mean(dim=dimn_maxfn,keep_attrs=True)
-    #update attrs from edge to face
+    # for each face, select all corresponding node/edge values
+    # we do this via stack and unstack since 2D indexing does not
+    # properly work in dask yet: https://github.com/dask/dask/pull/10237
+    # this process converts the xu.UgridDataArray to a xr.DataArray, so we convert it back
+    indexer_stacked = indexer.stack(__tmp_dim__=(dimn_faces, reduce_dim))
+    uda_face_allnodes_ds_stacked = uda.isel({dimn_notfaces: indexer_stacked})
+    uda_face_allnodes_ds = uda_face_allnodes_ds_stacked.unstack("__tmp_dim__")
+    uda_face_allnodes = xu.UgridDataArray(uda_face_allnodes_ds,grid=grid)
+    
+    # replace nonexistent nodes/edges with nan
+    uda_face_allnodes = uda_face_allnodes.where(indexer_validbool) #replace all values for fillvalue nodes/edges (-1) with nan
+    # average node/edge values per face
+    uda_face = uda_face_allnodes.mean(dim=reduce_dim,keep_attrs=True)
+    #update attrs from node/edge to face
     face_attrs = {'location': 'face', 'cell_methods': f'{dimn_faces}: mean'}
     uda_face = uda_face.assign_attrs(face_attrs)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
@@ -471,7 +502,7 @@ def uda_interfaces_to_centers(uda_int : xu.UgridDataArray) -> xu.UgridDataArray:
     return uda_cen
 
 
-def _get_uds_isgeographic(uds):
+def get_uds_isgeographic(uds):
     uds_wgs84 = uds.filter_by_attrs(grid_mapping_name="latitude_longitude")
     if len(uds_wgs84.data_vars) > 0:
         is_geographic = True
@@ -495,8 +526,9 @@ def add_network_cellinfo(uds:xu.UgridDataset):
     mk_mesh1d = mk1.mesh1d_get()
     
     # use Mesh1d nodes/edgenodes info for generation of meshkernel with Mesh2d
-    is_geographic = _get_uds_isgeographic(uds)
-    projection = _geographic_to_meshkernel_projection(is_geographic)
+    is_geographic = get_uds_isgeographic(uds)
+    from dfm_tools.meshkernel_helpers import geographic_to_meshkernel_projection
+    projection = geographic_to_meshkernel_projection(is_geographic)
     mk_mesh2d = meshkernel.Mesh2d(mk_mesh1d.node_x, mk_mesh1d.node_y, mk_mesh1d.edge_nodes)
     mk2 = meshkernel.MeshKernel(projection=projection)
     mk2.mesh2d_set(mk_mesh2d)

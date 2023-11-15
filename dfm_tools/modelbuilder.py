@@ -9,23 +9,33 @@ Since the functions in this script contain hardcoded parameters, it is not expos
 """
 
 import os
+import warnings
 import pandas as pd
 import dfm_tools as dfmt
-import hydrolib.core.dflowfm as hcdfm
 import datetime as dt
+import hydrolib.core.dflowfm as hcdfm
 from hydrolib.core.dimr.models import DIMR, FMComponent, Start
-import warnings
+from hydrolib.core.utils import get_path_style_for_current_operating_system
 from dfm_tools.hydrolib_helpers import get_ncbnd_construct
+from dfm_tools.download import round_timestamp_to_outer_noon
+
+__all__ = [
+    "cmems_nc_to_bc",
+    "preprocess_ini_cmems_to_nc",
+    "cmems_nc_to_ini",
+    "preprocess_merge_meteofiles_era5",
+    "create_model_exec_files",
+    ]
 
 
-def cmems_nc_to_bc(ext_bnd, list_quantities, tstart, tstop, file_pli, dir_pattern, dir_output, refdate_str):
+def cmems_nc_to_bc(ext_bnd, list_quantities, tstart, tstop, file_pli, dir_pattern, dir_output, refdate_str=None):
     #input examples in https://github.com/Deltares/dfm_tools/blob/main/tests/examples/preprocess_interpolate_nc_to_bc.py
     
     file_bc_basename = os.path.basename(file_pli).replace('.pli','')
     for quantity in list_quantities:
         print(f'processing quantity: {quantity}')
         
-        tstart, tstop = dfmt.round_timestamp_to_outer_noon(tstart,tstop)
+        tstart, tstop = round_timestamp_to_outer_noon(tstart,tstop)
         #open regulargridDataset and do some basic stuff (time selection, renaming depth/lat/lon/varname, converting units, etc)
         data_xr_vars = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity=quantity,
                                                tstart=tstart, tstop=tstop,
@@ -61,7 +71,7 @@ def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, c
     
     tstart_pd = pd.Timestamp(tstart)
     tstart_str = tstart_pd.strftime("%Y-%m-%d_%H-%M-%S")
-    tstart_round, tstop_round = dfmt.round_timestamp_to_outer_noon(tstart,tstart)
+    tstart_round, tstop_round = round_timestamp_to_outer_noon(tstart,tstart)
     for quan_bnd in list_quantities:
         
         if quan_bnd in ["temperaturebnd","uxuyadvectionvelocitybnd"]:
@@ -211,25 +221,32 @@ def preprocess_merge_meteofiles_era5(ext_old, varkey_list, dir_data, dir_output,
     return ext_old
 
 
-def create_model_exec_files(file_dimr, file_mdu, model_name, nproc=1, dimrset_folder=None, path_style=None):
+def create_model_exec_files(file_mdu, nproc=1, dimrset_folder=None, path_style=None):
     """
     creates a dimr_config.xml and if desired a batfile to run the model
     """
     
+    if not os.path.isfile(file_mdu):
+        raise FileNotFoundError(f"file_mdu not found: {file_mdu}")
+        
+    dirname = os.path.dirname(file_mdu)
     mdu_name = os.path.basename(file_mdu)
+    file_dimr = os.path.join(dirname,'dimr_config.xml')
+    dimr_name = os.path.basename(file_dimr)
     
     # generate dimr_config.xml
-    control_comp = Start(name=model_name)
-    fm_comp = FMComponent(name=model_name, workingDir='.', inputfile=mdu_name,
+    fm_modelname = "DFlowFM"
+    control_comp = Start(name=fm_modelname)
+    fm_comp = FMComponent(name=fm_modelname, workingDir='.', inputfile=mdu_name,
                           process=nproc, 
                           mpiCommunicator="DFM_COMM_DFMWORLD")
     dimr_model = DIMR(control=control_comp, component=fm_comp)
-    print(f"writing {file_dimr}")
+    print(f"writing {dimr_name}")
     dimr_model.save(file_dimr)
     
     # TODO: hydrolib-core does not support multiple cores properly: https://github.com/Deltares/dfm_tools/issues/214
     # therefore we manually replace it in the file
-    print(f"re-writing {file_dimr}")
+    print(f"re-writing {dimr_name}")
     with open(file_dimr,'r') as f:
         lines = f.readlines()
     str_from = f"<process>{nproc}</process>"
@@ -241,17 +258,16 @@ def create_model_exec_files(file_dimr, file_mdu, model_name, nproc=1, dimrset_fo
             f.write(line)
     
     if path_style is None:
-        from hydrolib.core.utils import get_path_style_for_current_operating_system
         path_style = get_path_style_for_current_operating_system().value
     
     #TODO: currently only bat files are supported (for windows), but linux extension can easily be made
     if path_style == 'windows':
-        _generate_bat_file(dimr_model=dimr_model, dimrset_folder=dimrset_folder)
+        generate_bat_file(dimr_model=dimr_model, dimrset_folder=dimrset_folder)
     else:
         warnings.warn(UserWarning(f"path_style/os {path_style} not yet supported by `dfmt.create_model_exec_files()`, no bat/sh file is written"))
 
 
-def _generate_bat_file(dimr_model, dimrset_folder=None):
+def generate_bat_file(dimr_model, dimrset_folder=None):
     """
     generate bat file for running on windows
     """
@@ -261,12 +277,14 @@ def _generate_bat_file(dimr_model, dimrset_folder=None):
     
     dirname = os.path.dirname(dimr_model.filepath)
     file_bat = os.path.join(dirname, "run_parallel.bat")
+    bat_name = os.path.basename(file_bat)
     
     dimr_name = os.path.basename(dimr_model.filepath)
     mdu_name = os.path.basename(dimr_model.component[0].inputFile)
     nproc = dimr_model.component[0].process
     if dimrset_folder is None:
-        dimrset_folder = r"c:\Program Files\Deltares\Delft3D FM Suite 2023.02 HMWQ\plugins\DeltaShell.Dimr\kernels"
+        print(f"no dimrset_folder provided, cannot write {bat_name}")
+        return
     
     if not os.path.exists(dimrset_folder):
         raise FileNotFoundError(f"dimrset_folder not found: {dimrset_folder}")
@@ -286,7 +304,7 @@ call %dimrset_folder%\x64\dimr\scripts\run_dimr_parallel.bat %partitions% {dimr_
 rem To prevent the DOS box from disappearing immediately: enable pause on the following line
 pause
 """
-    print(f"writing {file_bat}")
+    print(f"writing {bat_name}")
     with open(file_bat,'w') as f:
         f.write(bat_str)
 

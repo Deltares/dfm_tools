@@ -12,8 +12,15 @@ import numpy as np
 import datetime as dt
 import xarray as xr
 import shapely
+import pandas as pd
 import geopandas as gpd
-from dfm_tools.interpolate_grid2bnd import _read_polyfile_as_gdf_points
+from dfm_tools.interpolate_grid2bnd import (read_polyfile_as_gdf_points,
+                                            tidemodel_componentlist,
+                                            components_translate_upper,
+                                            get_ncbnd_construct,
+                                            interp_regularnc_to_plipointsDataset,
+                                            )
+from dfm_tools.hydrolib_helpers import PolyFile_to_geodataframe_points
 import hydrolib.core.dflowfm as hcdfm
 
 
@@ -97,8 +104,8 @@ def test_conversion_dict():
 
 @pytest.mark.unittest
 def test_tidemodel_componentlist():
-    comp_list = dfmt.tidemodel_componentlist(tidemodel='FES2014', convention=False)
-    comp_list_convention = dfmt.tidemodel_componentlist(tidemodel='FES2014', convention=True)
+    comp_list = tidemodel_componentlist(tidemodel='FES2014', convention=False)
+    comp_list_convention = tidemodel_componentlist(tidemodel='FES2014', convention=True)
     
     assert len(comp_list) == 34
     assert len(comp_list_convention) == 34
@@ -108,7 +115,7 @@ def test_tidemodel_componentlist():
 
 @pytest.mark.unittest
 def test_components_translate_upper():
-    comp_list = dfmt.components_translate_upper(['m2','eps2','e2'])
+    comp_list = components_translate_upper(['m2','eps2','e2'])
     assert comp_list == ['M2','EPSILON2','EPSILON2']
 
 
@@ -139,7 +146,7 @@ def test_plipointsDataset_fews_accepted():
 def test_interpolate_nc_to_bc():
     file_pli = r'p:\archivedprojects\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli'
     
-    gdf_points = _read_polyfile_as_gdf_points(file_pli, nPoints=3)
+    gdf_points = read_polyfile_as_gdf_points(file_pli, nPoints=3)
     
     tstart = '2012-12-16 12:00'
     tstop = '2013-01-01 12:00'
@@ -164,6 +171,48 @@ def test_interpolate_nc_to_bc():
 
 
 @pytest.mark.systemtest
+def test_plipointsDataset_to_ForcingModel_drop_allnan_points():
+    #construct polyfile gdf
+    point_x = [-71.5, -71.5, -71.5, -71.5,]
+    point_y = [12.5, 12.6, 12.7, 12.8]
+    polyobject_pd = pd.DataFrame(dict(x=point_x, y=point_y))
+    poly_object = dfmt.DataFrame_to_PolyObject(polyobject_pd, name="abc_bnd")
+    polyfile_object = hcdfm.PolyFile()
+    polyfile_object.objects.append(poly_object)
+    gdf_points = PolyFile_to_geodataframe_points(polyfile_object)
+    
+    # actual cmems data
+    no3_values = [[[       np.nan,        np.nan,        np.nan,        np.nan,
+             5.2622618e-05],
+            [       np.nan,        np.nan,        np.nan,        np.nan,
+             5.1448391e-05],
+            [9.0356334e-05, 1.8063841e-04,        np.nan, 7.0045113e-05,
+             4.9546972e-05],
+            [4.0657567e-05, 4.6050434e-05, 4.7762936e-05, 4.2734890e-05,
+             4.0186114e-05],
+            [2.6492798e-05, 2.8967228e-05, 3.0298394e-05, 3.1432221e-05,
+             3.2138258e-05],
+            [2.4448847e-05, 2.6705173e-05, 2.6929094e-05, 2.5548252e-05,
+             2.5827681e-05]]]
+    ds = xr.Dataset()
+    ds['longitude'] = xr.DataArray([-72.  , -71.75, -71.5 , -71.25, -71.  ], dims='longitude')
+    ds['latitude'] = xr.DataArray([12.  , 12.25, 12.5 , 12.75, 13.  , 13.25], dims='latitude')
+    ds['time'] = xr.DataArray([639204.],dims='time').assign_attrs({'units': 'hours since 1950-01-01'})
+    ds['tracerbndNO3'] =  xr.DataArray(no3_values, dims=('time','latitude','longitude')).assign_attrs({'units': 'mmol m-3'})
+    ds = xr.decode_cf(ds)
+    
+    # interpolate to points and convert to forcingmodel
+    data_interp = interp_regularnc_to_plipointsDataset(data_xr_reg=ds, gdf_points=gdf_points)
+    forcingmodel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
+    
+    # check if the resulting forcingmodel does not have 4 but 2 points
+    # the first two points were skipped because they were all nan
+    assert len(forcingmodel_object.forcing) == 2
+    assert forcingmodel_object.forcing[0].name == 'abc_bnd_0003'
+    assert forcingmodel_object.forcing[1].name == 'abc_bnd_0004'
+
+
+@pytest.mark.systemtest
 def test_open_dataset_extra_correctdepths():
     """
     to validate open_dataset_extra behaviour for depths, in the past the depth values got lost and replaced by depth idx
@@ -175,7 +224,7 @@ def test_open_dataset_extra_correctdepths():
     
     ds_moretime_import = dfmt.open_dataset_extra(dir_pattern=file_nc, quantity='salinitybnd', tstart='2020-01-01', tstop='2020-01-03')
     
-    ncbnd_construct = dfmt.get_ncbnd_construct()
+    ncbnd_construct = get_ncbnd_construct()
     varn_depth = ncbnd_construct['varn_depth']
     depth_actual = ds_moretime_import[varn_depth].to_numpy()
     depth_expected = ds_moretime['depth'].to_numpy()
@@ -238,7 +287,7 @@ def test_interp_regularnc_to_plipointsDataset():
     This method gives as much valid values as possible given the input dataset, but does not fill nans where it should not do that.
     """
     
-    ncbnd_construct = dfmt.get_ncbnd_construct()
+    ncbnd_construct = get_ncbnd_construct()
     dimn_point = ncbnd_construct['dimn_point']
     dimn_depth = ncbnd_construct['dimn_depth']
     varn_depth = ncbnd_construct['varn_depth']
@@ -301,7 +350,7 @@ def test_interp_regularnc_to_plipointsDataset_checkvardimnames():
     """
     """
     
-    ncbnd_construct = dfmt.get_ncbnd_construct()
+    ncbnd_construct = get_ncbnd_construct()
     dimn_point = ncbnd_construct['dimn_point']
     dimn_depth = ncbnd_construct['dimn_depth']
     varn_depth = ncbnd_construct['varn_depth']
@@ -338,13 +387,13 @@ def test_interpolate_tide_to_plipoints():
     file_pli = r'p:\archivedprojects\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli'
     nanvalue = -999
     
-    gdf_points = _read_polyfile_as_gdf_points(file_pli, nPoints=nPoints)
+    gdf_points = read_polyfile_as_gdf_points(file_pli, nPoints=nPoints)
     
     tidemodel_list = ['tpxo80_opendap', 'FES2014', 'FES2012', 'EOT20', 'GTSMv4.1']#, 'GTSMv4.1_opendap']
     for tidemodel in tidemodel_list:
         print(tidemodel)
         dtstart = dt.datetime.now()
-        component_list_tidemodel = dfmt.tidemodel_componentlist(tidemodel, convention=True)
+        component_list_tidemodel = tidemodel_componentlist(tidemodel, convention=True)
         
         if tidemodel=='tpxo80_opendap': # 4.7 sec (all components: 5.8 sec)
             amp_expected = np.array([1.09643936, 1.08739412, 1.08555067])
@@ -414,13 +463,13 @@ def test_interpolate_tide_to_forcingmodel():
 @pytest.mark.systemtest
 @pytest.mark.requireslocaldata
 def test_read_polyfile_as_gdf_points():
-    ncbnd_construct = dfmt.get_ncbnd_construct()
+    ncbnd_construct = get_ncbnd_construct()
     varn_pointname = ncbnd_construct['varn_pointname']
     
     nPoints = 3
     file_pli = r'p:\archivedprojects\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli'
     
-    gdf_points = _read_polyfile_as_gdf_points(file_pli, nPoints=nPoints)
+    gdf_points = read_polyfile_as_gdf_points(file_pli, nPoints=nPoints)
     
     reference = data_dcsm_gdf()
     
@@ -436,7 +485,7 @@ def test_interp_uds_to_plipoints():
     should be made more strict with learnings from workinprogress_interpolate_uds_toplipoints.py
     """
     
-    ncbnd_construct = dfmt.get_ncbnd_construct()
+    ncbnd_construct = get_ncbnd_construct()
     varn_pointname = ncbnd_construct['varn_pointname']
     
     file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True)

@@ -7,6 +7,7 @@ Created on Thu Dec  8 22:07:22 2022
 import datetime as dt
 from dask.diagnostics import ProgressBar
 
+__all__ = ["compute_energy_dissipation"]
 
 def compute_energy_dissipation(data_xr_map,file_ED_computed):
     """

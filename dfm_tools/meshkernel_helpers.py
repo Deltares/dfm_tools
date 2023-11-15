@@ -5,7 +5,6 @@ Created on Thu Apr  6 18:46:35 2023
 @author: veenstra
 """
 
-import warnings
 import xugrid as xu
 import meshkernel
 import xarray as xr
@@ -19,6 +18,16 @@ import geopandas as gpd
 from shapely import MultiPolygon, LineString, MultiLineString
 from shapely.ops import linemerge
 
+__all__ = [
+    "meshkernel_delete_withcoastlines",
+    "meshkernel_delete_withshp",
+    "meshkernel_delete_withgdf",
+    "meshkernel_to_UgridDataset",
+    "make_basegrid",
+    "refine_basegrid",
+    "generate_bndpli_cutland",
+    "interpolate_bndpli",
+    ]
 
 def meshkernel_delete_withcoastlines(mk:meshkernel.MeshKernel, res:str='f', min_area:float = 0, crs:(int,str) = None):
     """
@@ -107,7 +116,7 @@ def meshkernel_delete_withgdf(mk:meshkernel.MeshKernel, coastlines_gdf:gpd.GeoDa
                          invert_deletion=False)
 
 
-def _meshkernel_check_geographic(mk:meshkernel.MeshKernel) -> bool:
+def meshkernel_check_geographic(mk:meshkernel.MeshKernel) -> bool:
     """
     Get projection from meshkernel instance
 
@@ -130,7 +139,7 @@ def _meshkernel_check_geographic(mk:meshkernel.MeshKernel) -> bool:
     return is_geographic
 
 
-def _geographic_to_meshkernel_projection(is_geographic:bool) -> meshkernel.ProjectionType:
+def geographic_to_meshkernel_projection(is_geographic:bool) -> meshkernel.ProjectionType:
     """
     converts is_geographic boolean to meshkernel.ProjectionType (SPHERICAL OR CARTESIAN)
 
@@ -173,7 +182,7 @@ def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, crs:(int,str) = None, r
 
     """
     
-    is_geographic = _meshkernel_check_geographic(mk)
+    is_geographic = meshkernel_check_geographic(mk)
     
     mesh2d_grid = mk.mesh2d_get()
     
@@ -281,7 +290,7 @@ def make_basegrid(lon_min,lon_max,lat_min,lat_max,dx,dy,angle=0,is_geographic=Tr
     """
     empty docstring
     """
-    projection = _geographic_to_meshkernel_projection(is_geographic)
+    projection = geographic_to_meshkernel_projection(is_geographic)
     
     # create base grid
     make_grid_parameters = meshkernel.MakeGridParameters(angle=angle,

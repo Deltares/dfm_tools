@@ -13,13 +13,11 @@ Streamline plotting for 2D vector fields.
 """
 
 import numpy as np
-from packaging import version
 import matplotlib as mpl
 from matplotlib import cm, patches
 import matplotlib.colors as mcolors
 import matplotlib.collections as mcollections
 import matplotlib.lines as mlines
-
 
 __all__ = ['velovect']
 

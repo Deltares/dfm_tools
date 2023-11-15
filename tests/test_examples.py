@@ -8,6 +8,7 @@ Created on Sat Jul  8 11:04:27 2023
 import pytest
 import os
 import glob
+import subprocess
 
 # ACCEPTANCE TESTS VIA EXAMPLE SCRIPTS, these are the ones who are only meant to generate output files
 
@@ -26,7 +27,16 @@ def test_run_examples(file_config):
     if not os.path.exists(dir_output):
         os.mkdir(dir_output)
     os.chdir(dir_output)
-    test = os.system(f'python {file_config}')#+ " & pause")
     
-    if test:
-        raise OSError('execution did not finish properly')
+    p = subprocess.Popen(f"python {file_config}",
+                         stderr=subprocess.STDOUT, # Merge stdout and stderr
+                         stdout=subprocess.PIPE,
+                         shell=True)
+    # max 30 minutes per test, if it hangs longer the test is killed
+    p.wait(1800)
+    
+    if p.returncode:
+        out, err = p.communicate()
+        out_str = "\n".join([x.decode("utf-8") for x in out.split(b'\r\n')])
+        raise OSError(f'execution did not finish properly:\n{out_str}')
+        
