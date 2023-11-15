@@ -411,7 +411,7 @@ def open_dataset_delft3d4(file_nc, **kwargs):
     return uds
 
 
-def uda_to_faces(uda_notface : xu.UgridDataArray) -> xu.UgridDataArray:
+def uda_to_faces(uda : xu.UgridDataArray) -> xu.UgridDataArray:
     """
     Interpolates a ugrid variable (xu.DataArray) with a node or edge dimension to the faces by averaging the 3/4 nodes/edges around each face.
     
@@ -431,7 +431,7 @@ def uda_to_faces(uda_notface : xu.UgridDataArray) -> xu.UgridDataArray:
         DESCRIPTION.
 
     """
-    grid = uda_notface.grid
+    grid = uda.grid
     
     dimn_faces = grid.face_dimension
     reduce_dim = 'nMax_face_nodes' #arbitrary dimname that is reduced anyway
@@ -440,21 +440,22 @@ def uda_to_faces(uda_notface : xu.UgridDataArray) -> xu.UgridDataArray:
     fill_value = grid.fill_value
     
     # construct indexing array
-    if dimn_nodes in uda_notface.dims:
+    if dimn_nodes in uda.dims:
         dimn_notfaces_name = "node"
         dimn_notfaces = dimn_nodes
         indexer_np = grid.face_node_connectivity
-    elif dimn_edges in uda_notface.dims:
+    elif dimn_edges in uda.dims:
         dimn_notfaces_name = "edge"
         dimn_notfaces = dimn_edges
         indexer_np = grid.face_edge_connectivity
     else:
-        raise KeyError(f'provided uda/variable "{uda_notface.name}" does not have an node or edge dimension, dfmt.uda_to_faces() not possible')
-
+        print(f'provided uda/variable "{uda.name}" does not have an node or edge dimension, returning unchanged uda')
+        return uda
+    
     # rechunk to make sure the node/edge dimension is not chunked, otherwise we will 
     # get "PerformanceWarning: Slicing with an out-of-order index is generating 384539 times more chunks."
     chunks = {dimn_notfaces:-1}
-    uda_notface = uda_notface.chunk(chunks)
+    uda = uda.chunk(chunks)
 
     indexer = xr.DataArray(indexer_np,dims=(dimn_faces,reduce_dim))
     indexer_validbool = indexer!=fill_value
@@ -467,7 +468,7 @@ def uda_to_faces(uda_notface : xu.UgridDataArray) -> xu.UgridDataArray:
     # properly work in dask yet: https://github.com/dask/dask/pull/10237
     # this process converts the xu.UgridDataArray to a xr.DataArray, so we convert it back
     indexer_stacked = indexer.stack(__tmp_dim__=(dimn_faces, reduce_dim))
-    uda_face_allnodes_ds_stacked = uda_notface.isel({dimn_notfaces: indexer_stacked})
+    uda_face_allnodes_ds_stacked = uda.isel({dimn_notfaces: indexer_stacked})
     uda_face_allnodes_ds = uda_face_allnodes_ds_stacked.unstack("__tmp_dim__")
     uda_face_allnodes = xu.UgridDataArray(uda_face_allnodes_ds,grid=grid)
     
