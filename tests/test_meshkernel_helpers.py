@@ -23,7 +23,7 @@ from dfm_tools.meshkernel_helpers import (meshkernel_check_geographic,
 @pytest.mark.unittest
 def test_add_crs_to_dataset_cartesian():
     uds = xu.data.adh_san_diego()
-    crs='EPSG:26946' # this is not the correct crs for this model, but that does not matter
+    crs='EPSG:28992' # this is not the correct crs for this model, but that does not matter
     add_crs_to_dataset(uds,is_geographic=False,crs=crs)
     
     assert "projected_coordinate_system" in uds.data_vars
