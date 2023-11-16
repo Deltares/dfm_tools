@@ -145,7 +145,7 @@ def test_geographic_to_meshkernel_projection():
 
 
 @pytest.mark.systemtest
-def test_meshkernel_to_UgridDataset_fillvalue_startindex():
+def test_meshkernel_to_UgridDataset():
     """
     generate grid with meshkernel. Then convert with `dfmt.meshkernel_to_UgridDataset()` from 0-based to 1-based indexing to make FM-compatible network.
     assert if _FillValue, start_index, min and max are the expected values, this ensures FM-compatibility
