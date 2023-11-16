@@ -14,6 +14,5 @@ xugrid>=0.7.0
 cdsapi>=0.6.1
 pydap>=3.4.0
 pooch>=1.1.0
-#hydrolib-core>=0.5.1
-hydrolib-core @ git+https://github.com/deltares/hydrolib-core@569-bumping-meshkernel-version-to-latest-v300
+hydrolib-core>=0.6.0
 meshkernel>=3.0.0
