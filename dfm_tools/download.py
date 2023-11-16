@@ -157,13 +157,15 @@ def cds_get_file():
     return file_cds_credentials
 
 
-
 def cds_credentials():
     """
     get cdsapikey from environment variables or file or query via getpass if necessary
     """
     #TODO: put this in a PR at https://github.com/ecmwf/cdsapi (https://github.com/ecmwf/cdsapi/blob/master/cdsapi/api.py#L303)
     cds_url = os.environ.get("CDSAPI_URL", "https://cds.climate.copernicus.eu/api/v2")
+    # set default/provided CDSAPI_URL back to environ for platforms like EDITO 
+    # that depend on environ (only CDSAPI_KEY has to be set in that case)
+    os.environ["CDSAPI_URL"] = cds_url
     cds_uid_apikey = os.environ.get("CDSAPI_KEY")
     
     # read credentials from file if it exists. This has higher precedence over env vars
