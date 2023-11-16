@@ -5,6 +5,7 @@ Created on Thu Jun 22 09:41:49 2023
 @author: veenstra
 """
 
+import os
 import pytest
 import pandas as pd
 import numpy as np
@@ -33,8 +34,12 @@ def test_round_timestamp_to_outer_noon():
 @pytest.mark.requireslocaldata
 @pytest.mark.unittest
 def test_cds_credentials():
+    # check if the credentials are present on this system
     val = cds_credentials()
     assert not val
+    
+    # some platforms depend on environ for url/apikey, check if the default cdsapi_url is set after running cds_credentials()
+    assert "CDSAPI_URL" in os.environ.keys()
 
 
 #TODO: properly set environment variables in github would prevent localness
