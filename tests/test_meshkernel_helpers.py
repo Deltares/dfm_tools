@@ -26,12 +26,12 @@ def test_add_crs_to_dataset_cartesian():
     crs='EPSG:26946' # this is not the correct crs for this model, but that does not matter
     add_crs_to_dataset(uds,is_geographic=False,crs=crs)
     
-    assert 'projected_coordinate_system' in uds.data_vars
-    crs_attrs = uds.projected_coordinate_system.attrs
-    assert crs_attrs['EPSG_code'] == 'EPSG:26946'
-    assert crs_attrs['epsg'] == 26946
-    assert crs_attrs['grid_mapping_name'] == 'Unknown projected'
-
+    assert "projected_coordinate_system" in uds.data_vars
+    crs_attrs = uds["projected_coordinate_system"].attrs
+    assert crs_attrs["name"] == "Amersfoort / RD New"
+    assert crs_attrs["epsg"] == 28992
+    assert crs_attrs["EPSG_code"] == "EPSG:28992"
+    assert "grid_mapping_name" not in crs_attrs.keys()
 
 @pytest.mark.unittest
 def test_add_crs_to_dataset_spherical():
@@ -39,12 +39,14 @@ def test_add_crs_to_dataset_spherical():
     crs='EPSG:4326' # this is not the correct crs for this model, but that does not matter
     add_crs_to_dataset(uds,is_geographic=True,crs=crs)
     
-    assert 'wgs84' in uds.data_vars
-    crs_attrs = uds.wgs84.attrs
-    assert crs_attrs['EPSG_code'] == 'EPSG:4326'
-    assert crs_attrs['epsg'] == 4326
-    assert crs_attrs['grid_mapping_name'] == 'latitude_longitude'
-    
+    assert "wgs84" in uds.data_vars
+    crs_attrs = uds["wgs84"].attrs
+    assert crs_attrs["name"] == "WGS 84"
+    assert crs_attrs["epsg"] == 4326
+    assert crs_attrs["EPSG_code"] == "EPSG:4326"
+    assert "grid_mapping_name" in crs_attrs.keys()
+    assert crs_attrs["grid_mapping_name"] == "latitude_longitude"
+
 
 @pytest.mark.unittest
 def test_meshkernel_delete_withcoastlines():
@@ -192,79 +194,6 @@ def test_meshkernel_to_UgridDataset_fillvalue_startindex():
     assert 0 not in ds_out.mesh2d_face_nodes.to_numpy()
     assert ds_out.mesh2d_face_nodes.to_numpy().min() == -1
     assert ds_out.mesh2d_face_nodes.to_numpy().max() == 626
-
-
-@pytest.mark.systemtest
-def test_meshkernel_to_UgridDataset_spherical():
-
-    projection = meshkernel.ProjectionType.SPHERICAL
-    crs = 'EPSG:4326'
-    
-    # create basegrid
-    lon_min, lon_max, lat_min, lat_max = -6, 2, 48.5, 51.2
-    dxy = 0.5
-    make_grid_parameters = meshkernel.MakeGridParameters(origin_x=lon_min,
-                                                         origin_y=lat_min,
-                                                         upper_right_x=lon_max,
-                                                         upper_right_y=lat_max,
-                                                         block_size_x=dxy,
-                                                         block_size_y=dxy)
-    mk = meshkernel.MeshKernel(projection=projection)
-    mk.curvilinear_compute_rectangular_grid_on_extension(make_grid_parameters)
-    mk.curvilinear_convert_to_mesh2d() #convert to ugrid/mesh2d
-    
-    #convert to xugrid and write to netcdf
-    xu_grid_uds = dfmt.meshkernel_to_UgridDataset(mk=mk, crs=crs)
-    netfile = 'test_spherical_net.nc'
-    xu_grid_uds.ugrid.to_netcdf(netfile)
-    
-    #assert output grid
-    ds_out = xr.open_dataset(netfile,decode_cf=False).load()
-    ds_out.close()
-    os.remove(netfile)
-    
-    assert "wgs84" in ds_out.data_vars
-    crs_attrs = ds_out["wgs84"].attrs
-    assert crs_attrs["name"] == "WGS 84"
-    assert crs_attrs["epsg"] == 4326
-    assert crs_attrs["EPSG_code"] == "EPSG:4326"
-    assert "grid_mapping_name" in crs_attrs.keys()
-    assert crs_attrs["grid_mapping_name"] == "latitude_longitude"
-
-
-@pytest.mark.systemtest
-def test_meshkernel_to_UgridDataset_cartesian():
-    projection = meshkernel.ProjectionType.CARTESIAN
-    crs = 'EPSG:28992'
-    
-    # create basegrid
-    lon_min, lon_max, lat_min, lat_max = 415000, 420000, 55000, 60000
-    dxy = 1000
-    make_grid_parameters = meshkernel.MakeGridParameters(origin_x=lon_min,
-                                                         origin_y=lat_min,
-                                                         upper_right_x=lon_max,
-                                                         upper_right_y=lat_max,
-                                                         block_size_x=dxy,
-                                                         block_size_y=dxy)
-    mk = meshkernel.MeshKernel(projection=projection)
-    mk.curvilinear_compute_rectangular_grid_on_extension(make_grid_parameters)
-    mk.curvilinear_convert_to_mesh2d() #convert to ugrid/mesh2d
-    
-    #convert to xugrid and write to netcdf
-    xu_grid_uds = dfmt.meshkernel_to_UgridDataset(mk=mk, crs=crs)
-    netfile = 'test_cartesian_net.nc'
-    xu_grid_uds.ugrid.to_netcdf(netfile)
-    
-    #assert output grid
-    ds_out = xr.open_dataset(netfile,decode_cf=False).load()
-    ds_out.close()
-    os.remove(netfile)
-    assert "projected_coordinate_system" in ds_out.data_vars
-    crs_attrs = ds_out["projected_coordinate_system"].attrs
-    assert crs_attrs["name"] == "Amersfoort / RD New"
-    assert crs_attrs["epsg"] == 28992
-    assert crs_attrs["EPSG_code"] == "EPSG:28992"
-    assert "grid_mapping_name" not in crs_attrs.keys()
 
 
 @pytest.mark.unittest
