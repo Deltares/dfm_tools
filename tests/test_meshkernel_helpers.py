@@ -23,15 +23,15 @@ from dfm_tools.meshkernel_helpers import (meshkernel_check_geographic,
 @pytest.mark.unittest
 def test_add_crs_to_dataset_cartesian():
     uds = xu.data.adh_san_diego()
-    crs='EPSG:26946' # this is not the correct crs for this model, but that does not matter
+    crs='EPSG:28992' # this is not the correct crs for this model, but that does not matter
     add_crs_to_dataset(uds,is_geographic=False,crs=crs)
     
-    assert 'projected_coordinate_system' in uds.data_vars
-    crs_attrs = uds.projected_coordinate_system.attrs
-    assert crs_attrs['EPSG_code'] == 'EPSG:26946'
-    assert crs_attrs['epsg'] == 26946
-    assert crs_attrs['grid_mapping_name'] == 'Unknown projected'
-
+    assert "projected_coordinate_system" in uds.data_vars
+    crs_attrs = uds["projected_coordinate_system"].attrs
+    assert crs_attrs["name"] == "Amersfoort / RD New"
+    assert crs_attrs["epsg"] == 28992
+    assert crs_attrs["EPSG_code"] == "EPSG:28992"
+    assert "grid_mapping_name" not in crs_attrs.keys()
 
 @pytest.mark.unittest
 def test_add_crs_to_dataset_spherical():
@@ -39,12 +39,14 @@ def test_add_crs_to_dataset_spherical():
     crs='EPSG:4326' # this is not the correct crs for this model, but that does not matter
     add_crs_to_dataset(uds,is_geographic=True,crs=crs)
     
-    assert 'wgs84' in uds.data_vars
-    crs_attrs = uds.wgs84.attrs
-    assert crs_attrs['EPSG_code'] == 'EPSG:4326'
-    assert crs_attrs['epsg'] == 4326
-    assert crs_attrs['grid_mapping_name'] == 'latitude_longitude'
-    
+    assert "wgs84" in uds.data_vars
+    crs_attrs = uds["wgs84"].attrs
+    assert crs_attrs["name"] == "WGS 84"
+    assert crs_attrs["epsg"] == 4326
+    assert crs_attrs["EPSG_code"] == "EPSG:4326"
+    assert "grid_mapping_name" in crs_attrs.keys()
+    assert crs_attrs["grid_mapping_name"] == "latitude_longitude"
+
 
 @pytest.mark.unittest
 def test_meshkernel_delete_withcoastlines():

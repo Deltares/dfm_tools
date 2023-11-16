@@ -253,35 +253,42 @@ def add_crs_to_dataset(uds:(xu.UgridDataset,xr.Dataset),is_geographic:bool,crs:(
     None.
 
     """
+    #TODO: get is_geographic from uds, align with xugrid
+    
     #get crs information (name/num)
     if crs is None:
         crs_num = 0
+        crs_str = 'EPSG:0'
         crs_name = ''
+        crs_is_geographic = False
     else:
+        # get crs info, should actually be `import pyproj; pyproj.CRS.from_user_input(crs)`
         crs_info = gpd.GeoSeries(crs=crs).crs #also contains area-of-use (name/bounds), datum (ellipsoid/prime-meridian)
         crs_num = crs_info.to_epsg()
+        crs_str = crs_info.to_string()
         crs_name = crs_info.name
-    crs_str = f'EPSG:{crs_num}'
+        crs_is_geographic = crs_info.is_geographic
+        # TODO: standard names for lat/lon in crs_info.cs_to_cf()
     
     #check if combination of is_geographic and crs makes sense
-    if is_geographic and crs_num!=4326:
-        raise ValueError(f'provided grid is sperical (is_geographic=True) but crs="{crs}" while only "EPSG:4326" (WGS84) is supported for spherical grids') #TODO: is this true?
-    if not is_geographic and crs_num==4326:
-        raise ValueError('provided grid is cartesian (is_geographic=False) but crs="EPSG:4326" (WGS84), this combination is not supported')
+    if is_geographic != crs_is_geographic:
+        raise ValueError(f"`is_geographic` mismatch between provided grid (is_geographic={is_geographic}) and provided crs ({crs}, is_geographic={crs_is_geographic})")
     
+    #TODO: consider always using the same crs_varn, align with xugrid
     if is_geographic:
-        grid_mapping_name = 'latitude_longitude'
         crs_varn = 'wgs84'
     else:
-        grid_mapping_name = 'Unknown projected'
         crs_varn = 'projected_coordinate_system'
     
     attribute_dict = {
         'name': crs_name, # not required, but convenient for the user
         'epsg': np.array(crs_num, dtype=int), # epsg or EPSG_code should be present for the interacter to load the grid and by QGIS to recognize the epsg.
         'EPSG_code': crs_str, # epsg or EPSG_code should be present for the interacter to load the grid and by QGIS to recognize the epsg.
-        'grid_mapping_name': grid_mapping_name, # without grid_mapping_name='latitude_longitude', interacter sees the grid as cartesian
         }
+    if is_geographic:
+        # without grid_mapping_name="latitude_longitude", interacter sees the grid as cartesian
+        # grid_mapping_name is not available for projected crs's
+        attribute_dict['grid_mapping_name'] = crs_info.to_cf()['grid_mapping_name']
     
     uds[crs_varn] = xr.DataArray(np.array(default_fillvals['i4'],dtype=int),dims=(),attrs=attribute_dict)
 

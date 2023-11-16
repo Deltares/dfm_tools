@@ -4,6 +4,7 @@
 - interpolation of edge/node variables to faces with `dfmt.uda_to_faces()` (deprecates `dfmt.uda_edges_to_faces()`) by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#651](https://github.com/Deltares/dfm_tools/pull/651) and [#644](https://github.com/Deltares/dfm_tools/pull/644)
 
 ### Fix
+- get `is_geographic` from crs instead of hardcoded in `add_crs_to_dataset` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#657](https://github.com/Deltares/dfm_tools/pull/657)
 - performance improvements of `dfmt.uda_to_faces()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#652](https://github.com/Deltares/dfm_tools/pull/652)
 
 
