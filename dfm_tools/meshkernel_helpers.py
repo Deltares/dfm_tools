@@ -253,6 +253,8 @@ def add_crs_to_dataset(uds:(xu.UgridDataset,xr.Dataset),is_geographic:bool,crs:(
     None.
 
     """
+    #TODO: get is_geographic from uds, align with xugrid
+    
     #get crs information (name/num)
     if crs is None:
         crs_num = 0
@@ -272,7 +274,7 @@ def add_crs_to_dataset(uds:(xu.UgridDataset,xr.Dataset),is_geographic:bool,crs:(
     if is_geographic != crs_is_geographic:
         raise ValueError(f"`is_geographic` mismatch between provided grid (is_geographic={is_geographic}) and provided crs ({crs}, is_geographic={crs_is_geographic})")
     
-    #TODO: consider using same crs_varn, align with xugrid
+    #TODO: consider always using the same crs_varn, align with xugrid
     if is_geographic:
         crs_varn = 'wgs84'
     else:
@@ -284,6 +286,8 @@ def add_crs_to_dataset(uds:(xu.UgridDataset,xr.Dataset),is_geographic:bool,crs:(
         'EPSG_code': crs_str, # epsg or EPSG_code should be present for the interacter to load the grid and by QGIS to recognize the epsg.
         }
     if is_geographic:
+        # without grid_mapping_name="latitude_longitude", interacter sees the grid as cartesian
+        # grid_mapping_name is not available for projected crs's
         attribute_dict['grid_mapping_name'] = crs_info.to_cf()['grid_mapping_name']
     
     uds[crs_varn] = xr.DataArray(np.array(default_fillvals['i4'],dtype=int),dims=(),attrs=attribute_dict)
