@@ -520,25 +520,22 @@ def add_network_cellinfo(uds:xu.UgridDataset):
     """
     #check if indeed 1D grid object
     assert isinstance(uds.grid, xu.Ugrid1d)
-
-    # simple approach, but results in cartesian grid
-    # mk.mesh2d_set(input_mesh2d)
-    # uds_ugrid2d = xu.Ugrid2d.from_meshkernel(mk.mesh2d_get())
-    #TODO: is_geographic=False is currently hardcoded: https://github.com/Deltares/xugrid/issues/128
-
+    
     # derive meshkernel from grid with Mesh1d
     mk1 = uds.grid.meshkernel
     mk_mesh1d = mk1.mesh1d_get()
     
     # use Mesh1d nodes/edgenodes info for generation of meshkernel with Mesh2d
     is_geographic = get_uds_isgeographic(uds)
+    from dfm_tools.meshkernel_helpers import geographic_to_meshkernel_projection
+    projection = geographic_to_meshkernel_projection(is_geographic)
     mk_mesh2d = meshkernel.Mesh2d(mk_mesh1d.node_x, mk_mesh1d.node_y, mk_mesh1d.edge_nodes)
-    mk2 = meshkernel.MeshKernel(is_geographic=is_geographic)
+    mk2 = meshkernel.MeshKernel(projection=projection)
     mk2.mesh2d_set(mk_mesh2d)
     mesh2d_grid = mk2.mesh2d_get() #this is a more populated version of mk_mesh2d, needed for xugrid
     #TODO: we have to supply is_geographic twice, necessary?
     # also "projected" is opposite of "is_geographic" according to the docstring
-    xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid, projected= not is_geographic)
+    xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid, projected = not is_geographic)
     
     # convert uds.obj (non-grid vars from dataset) to new xugrid standards
     rename_dims_dict = {uds.grid.node_dimension:xu_grid.node_dimension,
