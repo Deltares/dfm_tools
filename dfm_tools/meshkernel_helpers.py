@@ -29,13 +29,13 @@ __all__ = [
     "interpolate_bndpli",
     ]
 
-def meshkernel_delete_withcoastlines(mk:meshkernel.meshkernel.MeshKernel, res:str='f', min_area:float = 0, crs:(int,str) = None):
+def meshkernel_delete_withcoastlines(mk:meshkernel.MeshKernel, res:str='f', min_area:float = 0, crs:(int,str) = None):
     """
     Wrapper around meshkernel_delete_withgdf, which automatically gets the bbox from the meshkernel object and retrieves the coastlines_gdf.
 
     Parameters
     ----------
-    mk : meshkernel.meshkernel.MeshKernel
+    mk : meshkernel.MeshKernel
         DESCRIPTION.
     res : str, optional
         DESCRIPTION. The default is 'f'.
@@ -59,13 +59,13 @@ def meshkernel_delete_withcoastlines(mk:meshkernel.meshkernel.MeshKernel, res:st
     meshkernel_delete_withgdf(mk, coastlines_gdf)
 
 
-def meshkernel_delete_withshp(mk:meshkernel.meshkernel.MeshKernel, coastlines_shp:str, crs:(int,str) = None):
+def meshkernel_delete_withshp(mk:meshkernel.MeshKernel, coastlines_shp:str, crs:(int,str) = None):
     """
     Delete parts of mesh that are inside the shapefile polygon.
 
     Parameters
     ----------
-    mk : meshkernel.meshkernel.MeshKernel
+    mk : meshkernel.MeshKernel
         DESCRIPTION.
     coastlines_shp : str
         Path to the shp file.
@@ -88,13 +88,13 @@ def meshkernel_delete_withshp(mk:meshkernel.meshkernel.MeshKernel, coastlines_sh
     meshkernel_delete_withgdf(mk, coastlines_gdb)
 
 
-def meshkernel_delete_withgdf(mk:meshkernel.meshkernel.MeshKernel, coastlines_gdf:gpd.GeoDataFrame):
+def meshkernel_delete_withgdf(mk:meshkernel.MeshKernel, coastlines_gdf:gpd.GeoDataFrame):
     """
     Delete parts of mesh that are inside the polygons/Linestrings in a GeoDataFrame.
 
     Parameters
     ----------
-    mk : meshkernel.meshkernel.MeshKernel
+    mk : meshkernel.MeshKernel
         DESCRIPTION.
     coastlines_gdf : gpd.GeoDataFrame
         DESCRIPTION.
@@ -112,17 +112,17 @@ def meshkernel_delete_withgdf(mk:meshkernel.meshkernel.MeshKernel, coastlines_gd
         
         delete_pol_geom = meshkernel.GeometryList(x_coordinates=xx, y_coordinates=yy) #TODO: .copy()/to_numpy() makes the array contiguous in memory, which is necessary for meshkernel.mesh2d_delete()
         mk.mesh2d_delete(geometry_list=delete_pol_geom, 
-                         delete_option=meshkernel.DeleteMeshOption(2), #ALL_COMPLETE_FACES/2: Delete all faces of which the complete face is inside the polygon
+                         delete_option=meshkernel.DeleteMeshOption.INSIDE_NOT_INTERSECTED,
                          invert_deletion=False)
 
 
-def meshkernel_check_geographic(mk:meshkernel.meshkernel.MeshKernel) -> bool:
+def meshkernel_check_geographic(mk:meshkernel.MeshKernel) -> bool:
     """
     Get projection from meshkernel instance
 
     Parameters
     ----------
-    mk : meshkernel.meshkernel.MeshKernel
+    mk : meshkernel.MeshKernel
         DESCRIPTION.
 
     Returns
@@ -132,11 +132,33 @@ def meshkernel_check_geographic(mk:meshkernel.meshkernel.MeshKernel) -> bool:
 
     """
     
-    if mk.get_projection()==meshkernel.ProjectionType.SPHERICAL:
-        is_geographic = True
-    else:
+    if mk.get_projection()==meshkernel.ProjectionType.CARTESIAN:
         is_geographic = False
+    else:
+        is_geographic = True
     return is_geographic
+
+
+def geographic_to_meshkernel_projection(is_geographic:bool) -> meshkernel.ProjectionType:
+    """
+    converts is_geographic boolean to meshkernel.ProjectionType (SPHERICAL OR CARTESIAN)
+
+    Parameters
+    ----------
+    is_geographic : bool
+        DESCRIPTION.
+
+    Returns
+    -------
+    projection : TYPE
+        DESCRIPTION.
+
+    """
+    if is_geographic:
+        projection = meshkernel.ProjectionType.SPHERICAL
+    else:
+        projection = meshkernel.ProjectionType.CARTESIAN
+    return projection
 
 
 def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, crs:(int,str) = None, remove_noncontiguous:bool = False) -> xu.UgridDataset:
@@ -268,6 +290,8 @@ def make_basegrid(lon_min,lon_max,lat_min,lat_max,dx,dy,angle=0,is_geographic=Tr
     """
     empty docstring
     """
+    projection = geographic_to_meshkernel_projection(is_geographic)
+    
     # create base grid
     make_grid_parameters = meshkernel.MakeGridParameters(angle=angle,
                                                          origin_x=lon_min,
@@ -277,8 +301,8 @@ def make_basegrid(lon_min,lon_max,lat_min,lat_max,dx,dy,angle=0,is_geographic=Tr
                                                          block_size_x=dx,
                                                          block_size_y=dy)
     
-    mk = meshkernel.MeshKernel(is_geographic=is_geographic)
-    mk.curvilinear_make_uniform_on_extension(make_grid_parameters)
+    mk = meshkernel.MeshKernel(projection=projection)
+    mk.curvilinear_compute_rectangular_grid_on_extension(make_grid_parameters)
     mk.curvilinear_convert_to_mesh2d() #convert to ugrid/mesh2d
     
     return mk
@@ -309,14 +333,14 @@ def refine_basegrid(mk, data_bathy_sel, min_edge_size):
     return mk
 
 
-def generate_bndpli_cutland(mk:meshkernel.meshkernel.MeshKernel, res:str='f', min_area:float = 0, crs:(int,str) = None, buffer:float = 0):
+def generate_bndpli_cutland(mk:meshkernel.MeshKernel, res:str='f', min_area:float = 0, crs:(int,str) = None, buffer:float = 0):
     """
     Generate a boundary polyline from the meshkernel object and cut away the landward part.
     Be sure to do this on the base/refined grid, not on the grid where the landward cells were already cut.
     
     Parameters
     ----------
-    mk : meshkernel.meshkernel.MeshKernel
+    mk : meshkernel.MeshKernel
         DESCRIPTION.
     res : str, optional
         DESCRIPTION. The default is 'f'.

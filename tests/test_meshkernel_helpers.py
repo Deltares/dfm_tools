@@ -15,7 +15,9 @@ import numpy as np
 import geopandas as gpd
 from shapely.geometry import Polygon
 import glob
-from dfm_tools.meshkernel_helpers import meshkernel_check_geographic, add_crs_to_dataset
+from dfm_tools.meshkernel_helpers import (meshkernel_check_geographic, 
+                                          geographic_to_meshkernel_projection, 
+                                          add_crs_to_dataset)
 
 
 @pytest.mark.unittest
@@ -44,23 +46,6 @@ def test_add_crs_to_dataset_spherical():
     assert crs_attrs['grid_mapping_name'] == 'latitude_longitude'
     
 
-@pytest.mark.systemtest
-def test_meshkernel_check_geographic():
-    """
-    to check whether is_geographic can be correctly derived from the mk object, for cartesian as well spherical objects
-    """
-    lon_min, lon_max, lat_min, lat_max = -68.55, -67.9, 11.8, 12.6
-    dxy = 0.05
-    
-    mk_cartesian = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, is_geographic=False)
-    mk_cartesian_geograph = meshkernel_check_geographic(mk_cartesian)
-    mk_spherical = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, is_geographic=True)
-    mk_spherical_geograph = meshkernel_check_geographic(mk_spherical)
-    
-    assert mk_cartesian_geograph==False
-    assert mk_spherical_geograph==True
-
-
 @pytest.mark.unittest
 def test_meshkernel_delete_withcoastlines():
     #generate basegrid
@@ -73,7 +58,7 @@ def test_meshkernel_delete_withcoastlines():
     # remove cells with GSHHS coastlines
     dfmt.meshkernel_delete_withcoastlines(mk=mk, res='h')
     
-    assert len(mk.mesh2d_get().face_nodes) == 17364
+    assert len(mk.mesh2d_get().face_nodes) == 17368
 
 
 @pytest.mark.unittest
@@ -126,7 +111,35 @@ def test_meshkernel_delete_withgdf():
     ldb_gdf = dfmt.get_coastlines_gdb(bbox=bbox, res='h')
     dfmt.meshkernel_delete_withgdf(mk=mk, coastlines_gdf=ldb_gdf)
     
-    assert len(mk.mesh2d_get().face_nodes) == 17364
+    assert len(mk.mesh2d_get().face_nodes) == 17368
+
+
+@pytest.mark.unittest
+def test_meshkernel_check_geographic():
+    
+    mk = meshkernel.MeshKernel(projection=meshkernel.ProjectionType.CARTESIAN)
+    is_geographic = meshkernel_check_geographic(mk)
+    assert is_geographic==False
+    
+    mk = meshkernel.MeshKernel(projection=meshkernel.ProjectionType.SPHERICAL)
+    is_geographic = meshkernel_check_geographic(mk)
+    assert is_geographic==True
+    
+    mk = meshkernel.MeshKernel(projection=meshkernel.ProjectionType.SPHERICALACCURATE)
+    is_geographic = meshkernel_check_geographic(mk)
+    assert is_geographic==True
+
+
+@pytest.mark.unittest
+def test_geographic_to_meshkernel_projection():
+    
+    spherical = geographic_to_meshkernel_projection(is_geographic=True)
+    cartesian = geographic_to_meshkernel_projection(is_geographic=False)
+    spherical_mk = meshkernel.ProjectionType.SPHERICAL
+    cartesian_mk = meshkernel.ProjectionType.CARTESIAN
+    
+    assert spherical == spherical_mk
+    assert cartesian == cartesian_mk
 
 
 @pytest.mark.systemtest
@@ -135,8 +148,8 @@ def test_meshkernel_to_UgridDataset():
     generate grid with meshkernel. Then convert with `dfmt.meshkernel_to_UgridDataset()` from 0-based to 1-based indexing to make FM-compatible network.
     assert if _FillValue, start_index, min and max are the expected values, this ensures FM-compatibility
     """
-    is_geographic = False #TODO: polygon refinement does not work for spherical grids: https://github.com/Deltares/MeshKernelPy/issues/78
-    crs = 'EPSG:28992' #arbitrary non-spherical epsg code
+    projection = meshkernel.ProjectionType.SPHERICAL
+    crs = 'EPSG:4326'
     
     # create basegrid
     lon_min, lon_max, lat_min, lat_max = -6, 2, 48.5, 51.2
@@ -147,15 +160,15 @@ def test_meshkernel_to_UgridDataset():
                                                          upper_right_y=lat_max,
                                                          block_size_x=dxy,
                                                          block_size_y=dxy)
-    mk = meshkernel.MeshKernel(is_geographic=is_geographic)
-    mk.curvilinear_make_uniform_on_extension(make_grid_parameters)
+    mk = meshkernel.MeshKernel(projection=projection)
+    mk.curvilinear_compute_rectangular_grid_on_extension(make_grid_parameters)
     mk.curvilinear_convert_to_mesh2d() #convert to ugrid/mesh2d
     
     # refine with polygon
     pol_x = np.array([-5,-4,0,-5], dtype=np.double)
     pol_y = np.array([49,51,49.5,49], dtype=np.double)
     geometry_list = meshkernel.GeometryList(pol_x, pol_y)
-    mrp = meshkernel.MeshRefinementParameters()
+    mrp = meshkernel.MeshRefinementParameters(min_edge_size=3000)
     mk.mesh2d_refine_based_on_polygon(polygon=geometry_list, mesh_refinement_params=mrp)
     
     #convert to xugrid and write to netcdf
@@ -164,9 +177,11 @@ def test_meshkernel_to_UgridDataset():
     xu_grid_uds.ugrid.to_netcdf(netfile)
     
     # plot
-    # fig,ax = plt.subplots()
-    # xu_grid_uds.grid.plot(ax=ax)
-    # ax.plot(pol_x,pol_y,'r-')
+    import matplotlib.pyplot as plt
+    plt.close("all")
+    fig,ax = plt.subplots()
+    xu_grid_uds.grid.plot(ax=ax)
+    ax.plot(pol_x,pol_y,'r-')
     
     #assert output grid
     ds_out = xr.open_dataset(netfile,decode_cf=False).load()
@@ -176,7 +191,7 @@ def test_meshkernel_to_UgridDataset():
     assert ds_out.mesh2d_face_nodes.attrs['start_index'] == 1
     assert 0 not in ds_out.mesh2d_face_nodes.to_numpy()
     assert ds_out.mesh2d_face_nodes.to_numpy().min() == -1
-    assert ds_out.mesh2d_face_nodes.to_numpy().max() == 135
+    assert ds_out.mesh2d_face_nodes.to_numpy().max() == 626
 
 
 @pytest.mark.unittest
