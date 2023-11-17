@@ -41,15 +41,15 @@ dependencies = [
 	"netcdf4>=1.5.4",
 	#bottleneck<1.3.3 pip install fails in py39
 	"bottleneck>=1.3.3",
-	#xugrid 0.7.0 supports wider xarray version range and has uds.to_nonperiodic() feature
-	"xugrid>=0.7.0",
+	#xugrid 0.7.1 supports meshkernel>=3.0.0
+	"xugrid>=0.7.1",
 	#cdsapi<0.6.1 is from Feb 2021 and does not support newer python versions
 	"cdsapi>=0.6.1",
 	#pydap<3.4.0 is from May 2017 and does not support newer python versions
 	"pydap>=3.4.0",
 	#pooch<1.1.0 do not have attribute retrieve
 	"pooch>=1.1.0",
-	#hydrolib-core<0.6.0 does not work with meshkernel>=3.0.0
+	#hydrolib-core 0.6.0 supports meshkernel>=3.0.0
 	"hydrolib-core>=0.6.0",
 	#meshkernel<3.0.0 api is fundamentally different
 	"meshkernel>=3.0.0",
