@@ -141,6 +141,24 @@ def decode_default_fillvals(ds):
     return ds
 
 
+def remove_nan_fillvalue_attrs(ds : (xr.Dataset, xu.UgridDataset)):
+    """
+    xarray writes {"_FillValue": np.nan} to encoding for variables without _FillValue attribute.
+    Remove these again upon reading to avoid issues.
+    """
+    if isinstance(ds,xu.UgridDataset):
+        ds = ds.obj
+    
+    count = 0
+    for varn in ds.variables:
+        if '_FillValue' in ds[varn].encoding:
+            if np.isnan(ds[varn].encoding['_FillValue']):
+                ds[varn].encoding.pop('_FillValue')
+                count += 1
+    if count > 0:
+        print(f"[{count} nan fillvalue attrs removed]", end="")
+
+
 def open_partitioned_dataset(file_nc, decode_fillvals=False, remove_edges=True, remove_ghost=True, **kwargs): 
     """
     using xugrid to read and merge partitions, with some additional features (remaning old layerdim, timings, set zcc/zw as data_vars)
@@ -200,6 +218,7 @@ def open_partitioned_dataset(file_nc, decode_fillvals=False, remove_edges=True, 
             print('[mapformat1] ',end='')
             #for mapformat1 mapfiles: merge different face dimensions (rename nFlowElem to nNetElem) to make sure the dataset topology is correct
             ds = ds.rename({'nFlowElem':'nNetElem'})
+        remove_nan_fillvalue_attrs(ds)
         uds = xu.core.wrap.UgridDataset(ds)
         if remove_ghost: #TODO: this makes it way slower (at least for GTSM, although merging seems faster), but is necessary since values on overlapping cells are not always identical (eg in case of Venice ucmag)
             uds = remove_ghostcells(uds, file_nc_one)

@@ -31,6 +31,42 @@ def test_remove_unassociated_edges():
 
 
 @pytest.mark.unittest
+def test_remove_nan_fillvalue_attrs():
+    """
+    xarray writes {"_FillValue": np.nan} to encoding for variables without _FillValue attribute.
+    This test checks if that is still the case and checks if dfmt.open_partitioned_dataset removes them.
+    """
+    file_nc = dfmt.data.fm_curvedbend_map(return_filepath=True)
+    file_out = "temp_fillvals_map.nc"
+    ds_org = xr.open_dataset(file_nc)
+    ds_org.to_netcdf(file_out)
+    
+    ds_out_xr = xr.open_dataset(file_out)
+    ds_out_dfmt = dfmt.open_partitioned_dataset(file_out, chunks="auto")
+    
+    print("nan fillvalue attrs in dataset written by xugrid/xarray")
+    ds = ds_out_xr
+    count_xr = 0
+    for varn in ds.variables:
+        if '_FillValue' in ds[varn].encoding:
+            if np.isnan(ds[varn].encoding['_FillValue']):
+                print(varn, ds[varn].encoding['_FillValue'])
+                count_xr += 1
+    
+    print("nan fillvalue attrs in dataset written by xugrid/xarray, read with dfm_tools")
+    ds = ds_out_dfmt
+    count_dfmt = 0
+    for varn in ds.variables:
+        if '_FillValue' in ds[varn].encoding:
+            if np.isnan(ds[varn].encoding['_FillValue']):
+                print(varn, ds[varn].encoding['_FillValue'])
+                count_dfmt += 1
+    
+    assert count_xr == 10
+    assert count_dfmt == 0
+
+
+@pytest.mark.unittest
 def test_get_uds_isgeographic():
     file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True) #zlayer
     uds = xu.open_dataset(file_nc.replace('0*','0002')) #partition 0002 of grevelingen contains both triangles as squares
