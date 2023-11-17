@@ -143,7 +143,7 @@ def decode_default_fillvals(ds):
 
 def remove_nan_fillvalue_attrs(ds : (xr.Dataset, xu.UgridDataset)):
     """
-    xarray writes {"_FillValue": np.nan} for variables without _FillValue attribute.
+    xarray writes {"_FillValue": np.nan} to encoding for variables without _FillValue attribute.
     Remove these again upon reading to avoid issues.
     """
     if isinstance(ds,xu.UgridDataset):
@@ -155,7 +155,8 @@ def remove_nan_fillvalue_attrs(ds : (xr.Dataset, xu.UgridDataset)):
             if np.isnan(ds[varn].encoding['_FillValue']):
                 ds[varn].encoding.pop('_FillValue')
                 count += 1
-    print(f"[{count} nan fillvalue attrs removed]", end="")
+    if count > 0:
+        print(f"[{count} nan fillvalue attrs removed]", end="")
 
 
 def open_partitioned_dataset(file_nc, decode_fillvals=False, remove_edges=True, remove_ghost=True, **kwargs): 
