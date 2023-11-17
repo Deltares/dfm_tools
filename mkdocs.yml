@@ -39,7 +39,6 @@ plugins:
             show_category_heading: false
             group_by_category: true
             inherited_members: true
-      custom_templates: templates
       watch:
         - dfm_tools
   - exclude:
