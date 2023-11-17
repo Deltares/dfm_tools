@@ -1,4 +1,3 @@
-[![pytest-py38](https://github.com/Deltares/dfm_tools/actions/workflows/pytest-py38.yml/badge.svg?branch=main)](https://github.com/Deltares/dfm_tools/actions/workflows/pytest-py38.yml)
 [![pytest-py39](https://github.com/Deltares/dfm_tools/actions/workflows/pytest-py39.yml/badge.svg?branch=main)](https://github.com/Deltares/dfm_tools/actions/workflows/pytest-py39.yml)
 [![pytest-py310](https://github.com/Deltares/dfm_tools/actions/workflows/pytest-py310.yml/badge.svg?branch=main)](https://github.com/Deltares/dfm_tools/actions/workflows/pytest-py310.yml)
 [![pytest-py311](https://github.com/Deltares/dfm_tools/actions/workflows/pytest-py311.yml/badge.svg?branch=main)](https://github.com/Deltares/dfm_tools/actions/workflows/pytest-py311.yml)
@@ -16,7 +15,7 @@ A Python package for pre- and postprocessing D-FlowFM model input and output fil
 
 ## Information
 
-- python 3.11 is recommended, at least use python>=3.9 to ensure future updates ([more info](https://github.com/Deltares/dfm_tools/issues/267))
+- python 3.11 is recommended, python>=3.9 is required ([more info](https://github.com/Deltares/dfm_tools/issues/267)), python 3.12 not yet supported ([more info](https://github.com/Deltares/dfm_tools/issues/551))
 - install with ``pip install dfm_tools -U`` (or [installation guide](https://deltares.github.io/dfm_tools/installation))
 - [online documentation](https://deltares.github.io/dfm_tools) with installation guide, contributing guide, tutorials/examples, API reference and a convenient search box.
 - Bug or feature request? Create a [GitHub issue](https://github.com/Deltares/dfm_tools/issues)
