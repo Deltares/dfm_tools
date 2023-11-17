@@ -5,7 +5,6 @@ Created on Fri Jul 14 12:04:27 2023
 @author: veenstra
 """
 
-import os
 import pytest
 import xarray as xr
 import xugrid as xu
