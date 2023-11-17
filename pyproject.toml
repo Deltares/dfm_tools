@@ -18,9 +18,7 @@ dependencies = [
 	"numpy>=1.22",
 	#contour colorbar on uniform values fails with matplotlib<3.7.0, several other features with matplotlib<3.6.0
 	"matplotlib>=3.7.0",
-	#pandas<2.0.0 in case of py38 to avoid conflict with xarray<2023.3.0: https://github.com/Deltares/xugrid/issues/78#issuecomment-1597723955 (xarray 2023.1.0 is the latest py38 release, and py38 is still supported by dfm_tools)
 	#pandas>=1.4 is required by xarray>=2023.3.0
-	"pandas<2.0.0;python_version<='3.8'",
 	"pandas>=1.4.0",
 	#shapely<2.0.0 give "AttributeError: module 'shapely' has no attribute 'GeometryType'"
 	"shapely>=2.0.0",
