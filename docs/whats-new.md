@@ -1,4 +1,4 @@
-## UNRELEASED
+## 0.17.0 (2023-11-17)
 Support for Python 3.8 was dropped ([more info](https://github.com/Deltares/dfm_tools/issues/267))
 
 ### Feat
