@@ -1,9 +1,11 @@
 ## UNRELEASED
+Support for Python 3.8 was dropped ([more info](https://github.com/Deltares/dfm_tools/issues/267))
 
 ### Feat
 - pop np.nan `_FillValue` attrs in `dfmt.open_partitioned_dataset()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#662](https://github.com/Deltares/dfm_tools/pull/662)
 - interpolation of edge/node variables to faces with `dfmt.uda_to_faces()` (deprecates `dfmt.uda_edges_to_faces()`) by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#651](https://github.com/Deltares/dfm_tools/pull/651) and [#644](https://github.com/Deltares/dfm_tools/pull/644)
 - meshkernel 3.0.0 support by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#621](https://github.com/Deltares/dfm_tools/pull/621) and [#665](https://github.com/Deltares/dfm_tools/pull/665)
+- removed support for Python 3.8 by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#666](https://github.com/Deltares/dfm_tools/pull/666)
 
 ### Fix
 - get `is_geographic` from crs instead of hardcoded in `add_crs_to_dataset` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#657](https://github.com/Deltares/dfm_tools/pull/657)

@@ -12,7 +12,7 @@
 
 ## Setup local developer environment
 
-- python 3.11 is recommended, at least use python>=3.9 to ensure future updates ([more info](https://github.com/Deltares/dfm_tools/issues/267))
+- python 3.11 is recommended, python>=3.9 is required ([more info](https://github.com/Deltares/dfm_tools/issues/267)), python 3.12 not yet supported ([more info](https://github.com/Deltares/dfm_tools/issues/551))
 - download and install Anaconda from [anaconda.com](https://www.anaconda.com)
 - open anaconda prompt and navigate to dfm_tools checkout folder, e.g. ``C:\DATA\dfm_tools``
 - ``conda create --name dfm_tools_env python=3.11 git spyder -c conda-forge -y`` (``git`` and ``spyder`` are optional)
