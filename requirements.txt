@@ -14,5 +14,6 @@ xugrid>=0.7.1
 cdsapi>=0.6.1
 pydap>=3.4.0
 pooch>=1.1.0
-hydrolib-core>=0.6.0
+#hydrolib-core>=0.6.0
+git+https://github.com/Deltares/HYDROLIB-core/tree/584-remove-type_enforced-dependency
 meshkernel>=3.0.0
