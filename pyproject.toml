@@ -45,7 +45,8 @@ dependencies = [
 	#pooch<1.1.0 do not have attribute retrieve
 	"pooch>=1.1.0",
 	#hydrolib-core 0.6.0 supports meshkernel>=3.0.0
-	"hydrolib-core>=0.6.0",
+	#"hydrolib-core>=0.6.0",
+	"git+https://github.com/Deltares/HYDROLIB-core/tree/584-remove-type_enforced-dependency",
 	#meshkernel<3.0.0 api is fundamentally different
 	"meshkernel>=3.0.0",
 ]
