@@ -35,7 +35,7 @@ uda_edge = uds[varn_onedges]
 fig,ax = plt.subplots()
 uda_edge.isel(time=-1,nmesh2d_interface=-2,mesh2d_nInterfaces=-2,missing_dims='ignore').ugrid.plot()
 
-uda_face_int = dfmt.uda_edges_to_faces(uda_edge)
+uda_face_int = dfmt.uda_to_faces(uda_edge)
 uda_face = dfmt.uda_interfaces_to_centers(uda_face_int)
 
 uds[f'{varn_onedges}_onfaces'] = uda_face
