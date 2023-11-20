@@ -18,7 +18,7 @@ import dfm_tools as dfmt
 model = 'DCSM'
 
 if model=='DCSM':
-    file_nc = r'p:\11200463-mixitin-mixotrophs\24.NS_D3DFM\Model_runs\NS_54\DFM_OUTPUT_DCSM-FM_4nm_waq\DCSM-FM_4nm_waq_0000_map.nc'
+    file_nc = r'p:\archivedprojects\11200463-mixitin-mixotrophs\24.NS_D3DFM\Model_runs\NS_54\DFM_OUTPUT_DCSM-FM_4nm_waq\DCSM-FM_4nm_waq_0000_map.nc'
     multipart = True
     lat_min, lat_max, lat_res = 51.0, 57.0, 0.04
     lon_min, lon_max, lon_res = -2.0,  6.0, 0.04
@@ -27,7 +27,7 @@ if model=='DCSM':
     layers_idx = [49]
     varname_list = ['mesh2d_greenC_1']#,'mesh2d_diatC_1','mesh2d_zooC_1','mesh2d_cmC_1','mesh2d_diatChl_1','mesh2d_greenChl_1','mesh2d_cmChl_1']
 elif model=='TTTZ':
-    file_nc = r'p:\11202428-hisea\03-Model\Greece_model\waq_model\run2_DYNAMO_20200727\DFM_OUTPUT_tttz_waq\tttz_waq_0000_map.nc'
+    file_nc = r'p:\archivedprojects\11202428-hisea\03-Model\Greece_model\waq_model\run2_DYNAMO_20200727\DFM_OUTPUT_tttz_waq\tttz_waq_0000_map.nc'
     multipart = True
     lat_min, lat_max, lat_res = 36.6, 38.0, 0.02
     lon_min, lon_max, lon_res = 22.8, 24.3, 0.02
