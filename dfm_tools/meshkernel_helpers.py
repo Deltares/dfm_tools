@@ -161,7 +161,7 @@ def geographic_to_meshkernel_projection(is_geographic:bool) -> meshkernel.Projec
     return projection
 
 
-def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, crs:(int,str) = None, remove_noncontiguous:bool = False) -> xu.UgridDataset:
+def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, crs:(int,str) = None) -> xu.UgridDataset:
     """
     Convert a meshkernel object to a UgridDataset, including a variable with the crs (used by dflowfm to distinguish spherical/cartesian networks).
     The UgridDataset enables bathymetry interpolation and writing to netfile.
@@ -172,8 +172,6 @@ def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, crs:(int,str) = None, r
         DESCRIPTION.
     crs : (int,str), optional
         DESCRIPTION. The default is None.
-    remove_noncontiguous : bool, optional
-        DESCRIPTION. The default is False.
 
     Returns
     -------
@@ -187,23 +185,6 @@ def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, crs:(int,str) = None, r
     mesh2d_grid = mk.mesh2d_get()
     
     xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid)
-    
-    #remove non-contiguous grid parts
-    def xugrid_remove_noncontiguous(grid):
-        #based on https://deltares.github.io/xugrid/examples/connectivity.html#connected-components
-        #uses https://docs.scipy.org/doc/scipy/reference/sparse.csgraph.html
-        #TODO: maybe replace with meshkernel?
-        uda = xu.UgridDataArray(
-            xr.DataArray(np.ones(grid.node_face_connectivity.shape[0]), dims=["face"]), grid
-        )
-        labels = uda.ugrid.connected_components()
-        counts = labels.groupby(labels).count()
-        most_frequent_label = counts["group"][np.argmax(counts.data)].item() #find largest contiguous part
-        labels = labels.where(labels == most_frequent_label, drop=True)
-        grid = labels.grid
-        return grid
-    if remove_noncontiguous:
-        xu_grid = xugrid_remove_noncontiguous(xu_grid)
     
     #convert 0-based to 1-based indices for connectivity variables like face_node_connectivity
     xu_grid_ds = xu_grid.to_dataset()
