@@ -15,7 +15,7 @@ import dfm_tools as dfmt
 import datetime as dt
 
 #general settings
-lon_min,lon_max = -6,2
+lon_min,lon_max = -5,2
 lat_min,lat_max = 48.5,51.2
 lon_res,lat_res = 0.2,0.2
 projection = meshkernel.ProjectionType.SPHERICAL #True for spherical grids
@@ -106,11 +106,25 @@ mesh2d_noland.plot_edges(ax,linewidth=0.8)
 dfmt.plot_coastlines(ax=ax, res='h', min_area=100)
 ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 
+
+"""
+remove disconnected parts of grid (from non-contiguous to contiguous)
+"""
+
+mk.mesh2d_remove_disconnected_regions()
+
+mesh2d_contiguous = mk.mesh2d_get()
+fig, ax = plt.subplots(figsize=figsize)
+mesh2d_contiguous.plot_edges(ax,linewidth=0.8)
+dfmt.plot_coastlines(ax=ax, res='h', min_area=100)
+ctx.add_basemap(ax=ax, crs=crs, attribution=False)
+
+
 """
 convert meshkernel grid to xugrid, interp bathymetry, plot and save to *_net.nc
 """
 
-xu_grid_uds = dfmt.meshkernel_to_UgridDataset(mk, remove_noncontiguous=True, crs=crs) #TODO: put remove_noncontiguous in meshkernel?: https://github.com/Deltares/MeshKernelPy/issues/44
+xu_grid_uds = dfmt.meshkernel_to_UgridDataset(mk, crs=crs)
 
 fig, ax = plt.subplots(figsize=figsize)
 xu_grid_uds.grid.plot(ax=ax,linewidth=0.8) #TODO: maybe make uds instead of ds (but then bathy interpolation goes wrong)
