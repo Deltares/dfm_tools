@@ -18,7 +18,7 @@ plugins:
   - mkdocs-jupyter: #https://github.com/danielfrg/mkdocs-jupyter
       include: ["*.py", "*.ipynb"]
       include_source: True
-      execute: false # false is faster, but true gives you python script output in the docs. It requires `pip install -r requirements.txt` in the github action
+      execute: false # false is faster, but true gives you python script output in the docs. It requires `pip install -e .` in the github action
       allow_errors: false
       execute_ignore:
         - "*.ipynb"
