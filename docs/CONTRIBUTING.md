@@ -69,7 +69,7 @@ mkdocs build
 - bump the versionnumber with ``bumpversion minor``
 - update ``docs/whats-new.md`` and add a date to the current release heading
 - run local testbank
-- local check with: ``python -m build`` and ``twine check dist/*`` ([does not work on WCF](https://github.com/pypa/build/issues/703))
+- local check with: ``python -m build`` and ``twine check dist/*`` ([does not work on WCF](https://github.com/pypa/setuptools/issues/4133))
 - copy the dfm_tools version from https://github.com/Deltares/dfm_tools/blob/main/pyproject.toml (e.g. ``0.11.0``)
 - go to https://github.com/Deltares/dfm_tools/releases/new
 - click ``choose a tag`` and type v+versionnumber (e.g. ``v0.11.0``), click ``create new tag: v0.11.0 on publish``
