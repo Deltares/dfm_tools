@@ -75,10 +75,9 @@ dev = [
 	"pytest",
 	"pytest-cov",
 	"twine",
-]
-examples = [
-	"jupyter",
-	"notebook",
+	"build",
+	"setuptools", #required?
+	"wheel", #required?
 ]
 docs = [
 	"mkdocs",
@@ -86,6 +85,10 @@ docs = [
 	"mkdocs-jupyter",
 	"mkdocstrings-python",
 	"mkdocs-exclude",
+]
+examples = [
+	"jupyter",
+	"notebook",
 ]
 
 [tool.pytest.ini_options]

@@ -19,13 +19,12 @@ jobs:
           path: .cache
       - name: Install dependencies
         run: |
-            #pip install -r requirements.txt
-            pip install -r requirements_dev.txt
+        python -m pip install --upgrade pip
+        python -m pip install -e .[docs]
       - name: copying files and mkdocs build
         run: |
             cp README.md docs
             mkdocs build
-      #- run: mkdocs gh-deploy --force
       - uses: actions/upload-pages-artifact@v1
         with:
           path: site/
