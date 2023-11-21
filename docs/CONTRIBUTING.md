@@ -17,7 +17,7 @@
 - open anaconda prompt and navigate to dfm_tools checkout folder, e.g. ``C:\DATA\dfm_tools``
 - ``conda create --name dfm_tools_env python=3.11 git spyder -c conda-forge -y`` (``git`` and ``spyder`` are optional)
 - ``conda activate dfm_tools_env``
-- ``python -m pip install -e .[test]`` (pip developer mode, any updates to the local folder are immediately available in your python. It also installs all requirements via pip, ``[test]`` installs also the developer requirements)
+- ``python -m pip install -e .[dev,docs,examples]`` (pip developer mode, any updates to the local folder are immediately available in your python. It also installs all requirements via pip, square brackets are to install optional dependency groups)
 - ``conda deactivate``
 - to remove dfm_tools_env when necessary: ``conda remove -n dfm_tools_env --all``
 
