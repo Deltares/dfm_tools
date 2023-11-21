@@ -76,8 +76,6 @@ dev = [
 	"pytest-cov",
 	"twine",
 	"build",
-	"setuptools", #required?
-	"wheel", #required?
 ]
 docs = [
 	"mkdocs",
