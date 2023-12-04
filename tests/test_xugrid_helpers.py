@@ -74,6 +74,33 @@ def test_get_uds_isgeographic():
     assert is_geographic == False
 
 
+@pytest.mark.unittest
+def test_uds_auto_set_crs_cartesian():
+    file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True).replace('0*','0002')
+    uds = dfmt.open_partitioned_dataset(file_nc)
+    assert uds.ugrid.crs['mesh2d'] is not None
+    assert uds.ugrid.crs['mesh2d'].to_epsg() == 28992
+    assert uds.grid.is_geographic is False
+
+
+@pytest.mark.unittest
+def test_uds_auto_set_crs_none():
+    file_nc = dfmt.data.fm_curvedbend_map(return_filepath=True)
+    uds = dfmt.open_partitioned_dataset(file_nc)
+    assert uds.ugrid.crs['mesh2d'] is None
+    assert uds.grid.is_geographic is False
+
+
+@pytest.mark.requireslocaldata
+@pytest.mark.unittest
+def test_uds_auto_set_crs_spherical():
+    file_nc = r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DCSM-FM_0_5nm_grid_20191202_depth_20181213_net.nc'
+    uds = dfmt.open_partitioned_dataset(file_nc)
+    assert uds.ugrid.crs['Mesh2D'] is not None
+    assert uds.ugrid.crs['Mesh2D'].to_epsg() == 4326
+    assert uds.grid.is_geographic is True
+
+
 @pytest.mark.requireslocaldata
 @pytest.mark.unittest
 def test_open_2Dnetwork_with_1Dtopology():
