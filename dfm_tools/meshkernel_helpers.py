@@ -181,17 +181,13 @@ def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, crs:(int,str) = None) -
 
     """
     
-    is_geographic = meshkernel_check_geographic(mk)
+    mk_is_geographic = meshkernel_check_geographic(mk)
     
     mesh2d_grid = mk.mesh2d_get()
     
     # TODO: below is not correctly handled by xugrid yet, projected=False does not give is_geographic=True
     # related issue is https://github.com/Deltares/dfm_tools/issues/686
-    xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid, projected= not is_geographic)
-    if crs is not None:
-        xu_grid.set_crs(crs)
-    
-    assert xu_grid.is_geographic is is_geographic
+    xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid, projected= not mk_is_geographic)
     
     #convert 0-based to 1-based indices for connectivity variables like face_node_connectivity
     xu_grid_ds = xu_grid.to_dataset()
@@ -212,9 +208,12 @@ def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, crs:(int,str) = None) -
                                           'history': 'Created on %s, %s'%(dt.datetime.now().strftime('%Y-%m-%dT%H:%M:%S%z'),getpass.getuser()), #TODO: add timezone
                                           })
     
+    # add crs including attrs
     if crs is not None:
         xu_grid_uds.ugrid.set_crs(crs)
-    
+    grid_is_geographic = xu_grid_uds.grid.is_geographic
+    if grid_is_geographic != mk_is_geographic:
+        raise ValueError(f"`grid_is_geographic` mismatch between provided grid (is_geographic={grid_is_geographic}) and meshkernel instance (is_geographic={mk_is_geographic})")
     uds_add_crs_attrs(uds=xu_grid_uds)
     
     return xu_grid_uds
