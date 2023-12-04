@@ -17,14 +17,15 @@ from shapely.geometry import Polygon
 import glob
 from dfm_tools.meshkernel_helpers import (meshkernel_check_geographic, 
                                           geographic_to_meshkernel_projection, 
-                                          add_crs_to_dataset)
+                                          uds_add_crs_attrs)
 
 
 @pytest.mark.unittest
-def test_add_crs_to_dataset_cartesian():
+def test_uds_add_crs_attrs_cartesian():
     uds = xu.data.adh_san_diego()
     crs='EPSG:28992' # this is not the correct crs for this model, but that does not matter
-    add_crs_to_dataset(uds,is_geographic=False,crs=crs)
+    uds.ugrid.set_crs(crs)
+    uds_add_crs_attrs(uds)
     
     assert "projected_coordinate_system" in uds.data_vars
     crs_attrs = uds["projected_coordinate_system"].attrs
@@ -33,11 +34,13 @@ def test_add_crs_to_dataset_cartesian():
     assert crs_attrs["EPSG_code"] == "EPSG:28992"
     assert "grid_mapping_name" not in crs_attrs.keys()
 
+
 @pytest.mark.unittest
-def test_add_crs_to_dataset_spherical():
+def test_uds_add_crs_attrs_spherical():
     uds = xu.data.adh_san_diego()
     crs='EPSG:4326' # this is not the correct crs for this model, but that does not matter
-    add_crs_to_dataset(uds,is_geographic=True,crs=crs)
+    uds.ugrid.set_crs(crs)
+    uds_add_crs_attrs(uds)
     
     assert "wgs84" in uds.data_vars
     crs_attrs = uds["wgs84"].attrs
