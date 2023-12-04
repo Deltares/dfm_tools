@@ -1,3 +1,9 @@
+## UNRELEASED
+
+### Feat
+- automatically parse epsg from mapfile to crs in `dfmt.open_partitioned_dataset()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#685](https://github.com/Deltares/dfm_tools/pull/685)
+
+
 ## 0.17.0 (2023-11-17)
 Support for Python 3.8 was dropped ([more info](https://github.com/Deltares/dfm_tools/issues/267))
 
