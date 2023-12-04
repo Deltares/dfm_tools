@@ -536,15 +536,6 @@ def uda_interfaces_to_centers(uda_int : xu.UgridDataArray) -> xu.UgridDataArray:
     return uda_cen
 
 
-def get_uds_isgeographic(uds):
-    uds_wgs84 = uds.filter_by_attrs(grid_mapping_name="latitude_longitude")
-    if len(uds_wgs84.data_vars) > 0:
-        is_geographic = True
-    else:
-        is_geographic = False
-    return is_geographic
-
-
 def add_network_cellinfo(uds:xu.UgridDataset):
     """
     Reads a UgridDataset with a minimal topology as it occurs in dflowfm netfiles,
@@ -560,7 +551,7 @@ def add_network_cellinfo(uds:xu.UgridDataset):
     mk_mesh1d = mk1.mesh1d_get()
     
     # use Mesh1d nodes/edgenodes info for generation of meshkernel with Mesh2d
-    is_geographic = get_uds_isgeographic(uds)
+    is_geographic = uds.grid.is_geographic
     from dfm_tools.meshkernel_helpers import geographic_to_meshkernel_projection
     projection = geographic_to_meshkernel_projection(is_geographic)
     mk_mesh2d = meshkernel.Mesh2d(mk_mesh1d.node_x, mk_mesh1d.node_y, mk_mesh1d.edge_nodes)

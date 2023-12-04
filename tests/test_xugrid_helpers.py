@@ -10,8 +10,7 @@ import xarray as xr
 import xugrid as xu
 import dfm_tools as dfmt
 import numpy as np
-from dfm_tools.xugrid_helpers import (get_uds_isgeographic,
-                                      remove_unassociated_edges,
+from dfm_tools.xugrid_helpers import (remove_unassociated_edges,
                                       get_vertical_dimensions
                                       )
 
@@ -64,14 +63,6 @@ def test_remove_nan_fillvalue_attrs():
     
     assert count_xr == 10
     assert count_dfmt == 0
-
-
-@pytest.mark.unittest
-def test_get_uds_isgeographic():
-    file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True) #zlayer
-    uds = xu.open_dataset(file_nc.replace('0*','0002')) #partition 0002 of grevelingen contains both triangles as squares
-    is_geographic = get_uds_isgeographic(uds)
-    assert is_geographic == False
 
 
 @pytest.mark.unittest
