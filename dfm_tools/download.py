@@ -182,7 +182,8 @@ def cds_client_withargs():
 
 def download_CMEMS(varkey,
                    longitude_min, longitude_max, latitude_min, latitude_max, 
-                   date_min, date_max, freq='D',
+                   date_min, date_max, #freq='D',
+                   dataset_id=None,
                    dir_output='.', file_prefix='', overwrite=False):
     """
     empty docstring
@@ -190,43 +191,13 @@ def download_CMEMS(varkey,
     copernicusmarine_remove_manual_credentials_file()
     copernicusmarine_credentials()
     
-    #TODO: times in cmems API are at midnight (opendap had noon-values), so this might not be necessary anymore
+    #TODO: times in cmems API are at midnight (opendap had noon-values), can be simplified in that case
     date_min, date_max = round_timestamp_to_outer_noon(date_min,date_max)
     
-    # set product as global variable, so it only has to be retreived once per download run (otherwise once per variable)
-    global product
-    if 'product' not in globals():
-        print('retrieving time range of CMEMS reanalysis and forecast products') #assuming here that physchem and bio reanalyisus/multiyear datasets have the same enddate, this seems safe
-        reanalysis_tstart, reanalysis_tstop = copernicusmarine_dataset_timerange(dataset_id="cmems_mod_glo_phy_my_0.083deg_P1D-m")
-        forecast_tstart, forecast_tstop = copernicusmarine_dataset_timerange(dataset_id="cmems_mod_glo_phy_anfc_0.083deg_P1D-m")
-        if (date_min >= reanalysis_tstart) & (date_max <= reanalysis_tstop):
-            product = 'reanalysis'
-            print(f"The CMEMS '{product}' product will be used.")
-        elif (date_min >= forecast_tstart) & (date_max <= forecast_tstop):
-            product = 'analysisforecast'
-            print(f"The CMEMS '{product}' product will be used.")
-        else:
-            raise ValueError(f'Requested timerange ({date_min} to {date_max}) is not fully within timerange of reanalysis product ({reanalysis_tstart} to {reanalysis_tstop}) or forecast product ({forecast_tstart} to {forecast_tstop}).')
-    
-    Path(dir_output).mkdir(parents=True, exist_ok=True)
-    if varkey in ['bottomT','tob','mlotst','siconc','sithick','so','thetao','uo','vo','usi','vsi','zos']: #for physchem
-        buffer = 2/12 # resolution is 1/12 degrees
-        if product == 'analysisforecast': #forecast: https://data.marine.copernicus.eu/product/GLOBAL_ANALYSISFORECAST_PHY_001_024/description
-            if varkey in ['uo','vo']: #anfc datset is splitted over multiple urls, construct the correct one here.
-                varkey_name = 'phy-cur'
-            elif varkey in ['so','thetao']:
-                varkey_name = 'phy-'+varkey
-            else:
-                varkey_name = 'phy'
-            dataset_id = f'cmems_mod_glo_{varkey_name}_anfc_0.083deg_P1D-m'
-        else: #reanalysis: https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_PHY_001_030/description
-            dataset_id = 'cmems_mod_glo_phy_my_0.083deg_P1D-m'
-    else: #for bio
-        buffer = 2/4 # resolution is 1/4 degrees
-        if product == 'analysisforecast': #forecast: https://data.marine.copernicus.eu/product/GLOBAL_ANALYSISFORECAST_BGC_001_028/description
-            dataset_id = 'global-analysis-forecast-bio-001-028-daily'
-        else: #https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_BGC_001_029/description
-            dataset_id = 'cmems_mod_glo_bgc_my_0.25_P1D-m'
+    if dataset_id is None:
+        dataset_id, buffer = copernicusmarine_get_dataset_id(varkey, date_min, date_max)
+    else:
+        buffer = 2/4 # take large buffer per default (from bio dataset)
     
     #make sure the data fully covers the desired spatial extent. Download 2 additional grid cells (resolution is 1/12 degrees, but a bit more/less in alternating cells) in each direction
     longitude_min -= buffer
@@ -234,6 +205,7 @@ def download_CMEMS(varkey,
     latitude_min  -= buffer
     latitude_max  += buffer
 
+    Path(dir_output).mkdir(parents=True, exist_ok=True)
     date_str = "cmc" #TODO: later maybe add subsetting per day/month
     name_output = f'{file_prefix}{varkey}_{date_str}.nc'
     output_filename = Path(dir_output,name_output)
@@ -255,6 +227,44 @@ def download_CMEMS(varkey,
     print(f'xarray writing netcdf file: {name_output}')
     
     dataset.to_netcdf(output_filename)
+
+
+def copernicusmarine_get_dataset_id(varkey, date_min, date_max):
+    #TODO: maybe get dataset_id from 'copernicus-marine describe --include-datasets --contains <search_token>'
+    # set product as global variable, so it only has to be retreived once per download run (otherwise once per variable)
+    global product
+    if 'product' not in globals():
+        print('retrieving time range of CMEMS reanalysis and forecast products') #assuming here that physchem and bio reanalyisus/multiyear datasets have the same enddate, this seems safe
+        reanalysis_tstart, reanalysis_tstop = copernicusmarine_dataset_timerange(dataset_id="cmems_mod_glo_phy_my_0.083deg_P1D-m")
+        forecast_tstart, forecast_tstop = copernicusmarine_dataset_timerange(dataset_id="cmems_mod_glo_phy_anfc_0.083deg_P1D-m")
+        if (date_min >= reanalysis_tstart) & (date_max <= reanalysis_tstop):
+            product = 'reanalysis'
+            print(f"The CMEMS '{product}' product will be used.")
+        elif (date_min >= forecast_tstart) & (date_max <= forecast_tstop):
+            product = 'analysisforecast'
+            print(f"The CMEMS '{product}' product will be used.")
+        else:
+            raise ValueError(f'Requested timerange ({date_min} to {date_max}) is not fully within timerange of reanalysis product ({reanalysis_tstart} to {reanalysis_tstop}) or forecast product ({forecast_tstart} to {forecast_tstop}).')
+    
+    if varkey in ['bottomT','tob','mlotst','siconc','sithick','so','thetao','uo','vo','usi','vsi','zos']: #for physchem
+        buffer = 2/12 # resolution is 1/12 degrees
+        if product == 'analysisforecast': #forecast: https://data.marine.copernicus.eu/product/GLOBAL_ANALYSISFORECAST_PHY_001_024/description
+            if varkey in ['uo','vo']: #anfc datset is splitted over multiple urls, construct the correct one here.
+                varkey_name = 'phy-cur'
+            elif varkey in ['so','thetao']:
+                varkey_name = 'phy-'+varkey
+            else:
+                varkey_name = 'phy'
+            dataset_id = f'cmems_mod_glo_{varkey_name}_anfc_0.083deg_P1D-m'
+        else: #reanalysis: https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_PHY_001_030/description
+            dataset_id = 'cmems_mod_glo_phy_my_0.083deg_P1D-m'
+    else: #for bio
+        buffer = 2/4 # resolution is 1/4 degrees
+        if product == 'analysisforecast': #forecast: https://data.marine.copernicus.eu/product/GLOBAL_ANALYSISFORECAST_BGC_001_028/description
+            dataset_id = 'global-analysis-forecast-bio-001-028-daily'
+        else: #https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_BGC_001_029/description
+            dataset_id = 'cmems_mod_glo_bgc_my_0.25_P1D-m'
+    return dataset_id, buffer
 
 
 def copernicusmarine_remove_manual_credentials_file():
