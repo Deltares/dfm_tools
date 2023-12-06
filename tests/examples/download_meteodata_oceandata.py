@@ -38,7 +38,6 @@ varlist_hycom = []#'surf_el']#'water_temp'] #['tau','water_u','water_v','water_t
 #output directories per model
 dir_output_era5 = './era5_temp'
 dir_output_cmems = './cmems_temp'
-dir_output_cmems_cmc = './cmems_cmc_temp'
 dir_output_hycom = './hycom_temp'
 
 
@@ -60,31 +59,11 @@ for varkey in variables_era5:
     ctx.add_basemap(ax=ax,crs="EPSG:4326",attribution=False)
 
 
-#CMEMS via opendap
+#CMEMS via copernicus-marine-client
 dir_output = dir_output_cmems
 for varkey in varlist_cmems:
     file_prefix = 'cmems_'
     dfmt.download_CMEMS(varkey=varkey,
-                        longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
-                        date_min=date_min, date_max=date_max,
-                        dir_output=dir_output, file_prefix=file_prefix, overwrite=overwrite)
-    
-    #open mfdataset to check folder contents and plot first field of each variable
-    ds = xr.open_mfdataset(os.path.join(dir_output,f'{file_prefix}{varkey}_*.nc'))
-    fig,ax = plt.subplots()
-    if 'depth' in ds[varkey].dims:
-        ds[varkey].isel(time=0,depth=0).plot(ax=ax)
-    else:
-        ds[varkey].isel(time=0).plot(ax=ax)
-    ds.close()
-    ctx.add_basemap(ax=ax,crs="EPSG:4326",attribution=False)
-
-
-#CMEMS via copernicus-marine-client
-dir_output = dir_output_cmems_cmc
-for varkey in varlist_cmems:
-    file_prefix = 'cmems_'
-    dfmt.download_CMEMS_cmc(varkey=varkey,
                         longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
                         date_min=date_min, date_max=date_max,
                         dir_output=dir_output, file_prefix=file_prefix, overwrite=overwrite)
