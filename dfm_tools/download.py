@@ -229,8 +229,7 @@ def download_CMEMS(varkey,
     dataset.to_netcdf(output_filename)
 
 
-def copernicusmarine_get_dataset_id(varkey, date_min, date_max):
-    #TODO: maybe get dataset_id from 'copernicus-marine describe --include-datasets --contains <search_token>'
+def copernicusmarine_get_product(date_min, date_max):
     # set product as global variable, so it only has to be retreived once per download run (otherwise once per variable)
     global product
     if 'product' not in globals():
@@ -245,6 +244,13 @@ def copernicusmarine_get_dataset_id(varkey, date_min, date_max):
             print(f"The CMEMS '{product}' product will be used.")
         else:
             raise ValueError(f'Requested timerange ({date_min} to {date_max}) is not fully within timerange of reanalysis product ({reanalysis_tstart} to {reanalysis_tstop}) or forecast product ({forecast_tstart} to {forecast_tstop}).')
+    return product
+
+
+def copernicusmarine_get_dataset_id(varkey, date_min, date_max):
+    #TODO: maybe get dataset_id from 'copernicus-marine describe --include-datasets --contains <search_token>'
+    
+    product = copernicusmarine_get_product(date_min, date_max)
     
     if varkey in ['bottomT','tob','mlotst','siconc','sithick','so','thetao','uo','vo','usi','vsi','zos']: #for physchem
         # resolution is 1/12 degrees in lat/lon dimension, but a bit more/less in alternating cells
