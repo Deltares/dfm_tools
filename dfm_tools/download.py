@@ -108,7 +108,7 @@ def download_CMEMS(varkey,
     global product #set product as global variable, so it only has to be retreived once per download run (otherwise once per variable)
     if 'product' not in globals():
         print('retrieving time range of CMEMS reanalysis and forecast products') #assuming here that physchem and bio reanalyisus/multiyear datasets have the same enddate, this seems safe
-        reanalysis_tstart, reanalysis_tstop = get_OPeNDAP_xr_ds_timerange(dataset_url='https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_my_0.083_P1D-m')
+        reanalysis_tstart, reanalysis_tstop = get_OPeNDAP_xr_ds_timerange(dataset_url='https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_my_0.083deg_P1D-m')
         forecast_tstart, forecast_tstop = get_OPeNDAP_xr_ds_timerange(dataset_url='https://nrt.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_anfc_0.083deg_P1D-m')
         if (date_min >= reanalysis_tstart) & (date_max <= reanalysis_tstop):
             product = 'reanalysis'
@@ -131,7 +131,7 @@ def download_CMEMS(varkey,
                 varkey_name = 'phy'
             dataset_url = f'https://nrt.cmems-du.eu/thredds/dodsC/cmems_mod_glo_{varkey_name}_anfc_0.083deg_P1D-m'#.html' #TODO: also PT6H-i timeresolution available but not for all variables and not for reanalysis
         else: #reanalysis: https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_PHY_001_030/description
-            dataset_url = 'https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_my_0.083_P1D-m'
+            dataset_url = 'https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_my_0.083deg_P1D-m'
     else: #for bio
         buffer = 2/4 # resolution is 1/4 degrees
         if product == 'analysisforecast': #forecast: https://data.marine.copernicus.eu/product/GLOBAL_ANALYSIS_FORECAST_BIO_001_028/description
