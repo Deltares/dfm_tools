@@ -42,6 +42,8 @@ dependencies = [
 	"cdsapi>=0.6.1",
 	#pydap<3.4.0 is from May 2017 and does not support newer python versions
 	"pydap>=3.4.0",
+	#copernicus-marine-client<0.10.0 expects different metadata catalog keys
+	"copernicus-marine-client>=0.10.0",
 	#pooch<1.1.0 do not have attribute retrieve
 	"pooch>=1.1.0",
 	#hydrolib-core 0.6.0 supports meshkernel>=3.0.0

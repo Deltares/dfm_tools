@@ -83,3 +83,20 @@ def test_download_cmems():
                             longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
                             date_min=date_min, date_max=date_max,
                             dir_output=dir_output, file_prefix=file_prefix, overwrite=True)
+
+
+#TODO: properly set environment variables in github would prevent localness
+@pytest.mark.requireslocaldata
+@pytest.mark.unittest
+def test_download_cmems_cmc():
+    date_min = '2010-01-01'
+    date_max = '2010-01-02'
+    longitude_min, longitude_max, latitude_min, latitude_max =    2,   3,  51, 52 #test domain
+    varlist_cmems = ['bottomT','no3'] # avaliable variables differ per product, examples are ['bottomT','mlotst','siconc','sithick','so','thetao','uo','vo','usi','vsi','zos','no3']. More info on https://data.marine.copernicus.eu/products
+    dir_output = './cmems_cmc_temp'
+    for varkey in varlist_cmems:
+        file_prefix = 'cmems_'
+        dfmt.download_CMEMS_cmc(varkey=varkey,
+                                longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
+                                date_min=date_min, date_max=date_max,
+                                dir_output=dir_output, file_prefix=file_prefix, overwrite=True)

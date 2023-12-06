@@ -19,6 +19,7 @@ import getpass
 __all__ = [
     "download_ERA5",
     "download_CMEMS",
+    "download_CMEMS_cmc",
     "download_OPeNDAP",
 ]
 
@@ -150,6 +151,89 @@ def download_CMEMS(varkey,
                      longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
                      date_min=date_min, date_max=date_max,
                      dir_output=dir_output, file_prefix=file_prefix, overwrite=overwrite)
+
+
+import copernicus_marine_client as cmc #TODO: add as dependency
+
+def download_CMEMS_cmc(varkey,
+                       longitude_min, longitude_max, latitude_min, latitude_max, 
+                       date_min, date_max, freq='D',
+                       dir_output='.', file_prefix='', overwrite=False):
+    """
+    empty docstring
+    """
+    
+    username, password = copernicusmarine_credentials()
+    os.environ["COPERNICUS_MARINE_SERVICE_USERNAME"] = username
+    os.environ["COPERNICUS_MARINE_SERVICE_PASSWORD"] = password
+
+    date_min, date_max = round_timestamp_to_outer_noon(date_min,date_max) #TODO: times now seem to be at midnight, so this might not be necessary anymore
+    
+    # set product as global variable, so it only has to be retreived once per download run (otherwise once per variable)
+    global product
+    if 'product' not in globals():
+        print('retrieving time range of CMEMS reanalysis and forecast products') #assuming here that physchem and bio reanalyisus/multiyear datasets have the same enddate, this seems safe
+        reanalysis_tstart, reanalysis_tstop = get_cmc_dataset_timerange(dataset_id="cmems_mod_glo_phy_my_0.083deg_P1D-m")
+        forecast_tstart, forecast_tstop = get_cmc_dataset_timerange(dataset_id="cmems_mod_glo_phy_anfc_0.083deg_P1D-m")
+        if (date_min >= reanalysis_tstart) & (date_max <= reanalysis_tstop):
+            product = 'reanalysis'
+            print(f"The CMEMS '{product}' product will be used.")
+        elif (date_min >= forecast_tstart) & (date_max <= forecast_tstop):
+            product = 'analysisforecast'
+            print(f"The CMEMS '{product}' product will be used.")
+        else:
+            raise ValueError(f'Requested timerange ({date_min} to {date_max}) is not fully within timerange of reanalysis product ({reanalysis_tstart} to {reanalysis_tstop}) or forecast product ({forecast_tstart} to {forecast_tstop}).')
+    
+    Path(dir_output).mkdir(parents=True, exist_ok=True)
+    if varkey in ['bottomT','tob','mlotst','siconc','sithick','so','thetao','uo','vo','usi','vsi','zos']: #for physchem
+        buffer = 2/12 # resolution is 1/12 degrees
+        if product == 'analysisforecast': #forecast: https://data.marine.copernicus.eu/product/GLOBAL_ANALYSISFORECAST_PHY_001_024/description
+            if varkey in ['uo','vo']: #anfc datset is splitted over multiple urls, construct the correct one here.
+                varkey_name = 'phy-cur'
+            elif varkey in ['so','thetao']:
+                varkey_name = 'phy-'+varkey
+            else:
+                varkey_name = 'phy'
+            dataset_id = f'cmems_mod_glo_{varkey_name}_anfc_0.083deg_P1D-m'
+        else: #reanalysis: https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_PHY_001_030/description
+            dataset_id = 'cmems_mod_glo_phy_my_0.083deg_P1D-m'
+    else: #for bio
+        buffer = 2/4 # resolution is 1/4 degrees
+        if product == 'analysisforecast': #forecast: https://data.marine.copernicus.eu/product/GLOBAL_ANALYSIS_FORECAST_BIO_001_028/description
+            dataset_id = 'global-analysis-forecast-bio-001-028-daily'
+        else: #https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_BGC_001_029/description
+            dataset_id = 'cmems_mod_glo_bgc_my_0.25_P1D-m'
+    
+    #make sure the data fully covers the desired spatial extent. Download 2 additional grid cells (resolution is 1/12 degrees, but a bit more/less in alternating cells) in each direction
+    longitude_min -= buffer
+    longitude_max += buffer
+    latitude_min  -= buffer
+    latitude_max  += buffer
+
+    date_str = "cmc" #TODO: later maybe add subsetting per day/month
+    name_output = f'{file_prefix}{varkey}_{date_str}.nc'
+    output_filename = Path(dir_output,name_output)
+    if output_filename.is_file() and not overwrite:
+        print(f'"{name_output}" found and overwrite=False, continuing.')
+        return
+    
+    dataset = cmc.open_dataset(
+         dataset_id = dataset_id,
+         variables = [varkey],
+         minimum_longitude = longitude_min,
+         maximum_longitude = longitude_max,
+         minimum_latitude = latitude_min,
+         maximum_latitude = latitude_max,
+         # minimum_depth = 0,
+         # maximum_depth = 30,
+         start_datetime = date_min, #"2022-01-01 00:00:00",
+         end_datetime = date_max, #"2022-01-01 23:00:00",
+         # no_metadata_cache=True, # seems to be necessary to prevent conflicts from catalogs in different environments
+    )
+    
+    print(f'xarray writing netcdf file: {name_output}')
+    
+    dataset.to_netcdf(output_filename)
 
 
 def cds_get_file():
@@ -451,6 +535,13 @@ def get_OPeNDAP_xr_ds_timerange(dataset_url):
     ds = open_OPeNDAP_xr(dataset_url=dataset_url)
     ds_times = ds.time.to_series()
     ds_tstart, ds_tstop = ds_times.iloc[0], ds_times.iloc[-1]
+    return ds_tstart, ds_tstop
+
+
+def get_cmc_dataset_timerange(dataset_id):
+    ds = cmc.open_dataset(dataset_id=dataset_id)
+    ds_tstart = pd.Timestamp(ds.time.isel(time=0).values)
+    ds_tstop = pd.Timestamp(ds.time.isel(time=-1).values)
     return ds_tstart, ds_tstop
 
 
