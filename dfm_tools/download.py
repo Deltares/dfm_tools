@@ -186,12 +186,12 @@ def download_CMEMS(varkey,
                    dataset_id=None,
                    dir_output='.', file_prefix='', overwrite=False):
     """
-    empty docstring
+    https://help.marine.copernicus.eu/en/articles/8283072-copernicus-marine-toolbox-api-subset
     """
     copernicusmarine_remove_manual_credentials_file()
     copernicusmarine_credentials()
     
-    #TODO: times in cmems API are at midnight (opendap had noon-values), can be simplified in that case
+    # TODO: times in cmems API are at midnight (opendap had noon-values), can be simplified in that case
     date_min, date_max = round_timestamp_to_outer_noon(date_min,date_max)
     
     if dataset_id is None:
@@ -199,7 +199,7 @@ def download_CMEMS(varkey,
     else:
         buffer = 2/4 # take large buffer per default (from bio dataset)
     
-    #make sure the data fully covers the desired spatial extent. Download 2 additional grid cells (resolution is 1/12 degrees, but a bit more/less in alternating cells) in each direction
+    # make sure the data fully covers the desired spatial extent. Download 2 additional grid cells
     longitude_min -= buffer
     longitude_max += buffer
     latitude_min  -= buffer
@@ -247,6 +247,7 @@ def copernicusmarine_get_dataset_id(varkey, date_min, date_max):
             raise ValueError(f'Requested timerange ({date_min} to {date_max}) is not fully within timerange of reanalysis product ({reanalysis_tstart} to {reanalysis_tstop}) or forecast product ({forecast_tstart} to {forecast_tstop}).')
     
     if varkey in ['bottomT','tob','mlotst','siconc','sithick','so','thetao','uo','vo','usi','vsi','zos']: #for physchem
+        # resolution is 1/12 degrees in lat/lon dimension, but a bit more/less in alternating cells
         buffer = 2/12 # resolution is 1/12 degrees
         if product == 'analysisforecast': #forecast: https://data.marine.copernicus.eu/product/GLOBAL_ANALYSISFORECAST_PHY_001_024/description
             if varkey in ['uo','vo']: #anfc datset is splitted over multiple urls, construct the correct one here.
