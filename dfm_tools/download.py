@@ -188,7 +188,7 @@ def download_CMEMS(varkey,
     empty docstring
     """
     copernicusmarine_remove_manual_credentials_file()
-    copernicusmarine_maybe_login()
+    copernicusmarine_credentials()
     
     #TODO: times in cmems API are at midnight (opendap had noon-values), so this might not be necessary anymore
     date_min, date_max = round_timestamp_to_outer_noon(date_min,date_max)
@@ -263,11 +263,12 @@ def copernicusmarine_remove_manual_credentials_file():
         os.remove(cmems_file_old)
 
 
-def copernicusmarine_maybe_login():
+def copernicusmarine_credentials():
     """
-    This function is to login at copernicus marine if this was not the case yet.
-    If the credentials file is present, it is skipped.
-    If it is not present, get_and_check_username_password checks env vars or prompts the user.
+    To login at copernicus marine if this was not the case yet.
+    If the credentials file is present, the function returns None.
+    If the credentials file is not present, get_and_check_username_password first
+    checks env vars and if not present it prompts the user for credentials.
     Feeding the returned credentials to cmc.login() generates the credentials file.
     """
     from copernicus_marine_client.core_functions.credentials_utils import (
