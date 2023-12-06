@@ -325,29 +325,6 @@ def round_timestamp_to_outer_noon(date_min, date_max):
     return date_min, date_max
 
 
-# def copernicusmarine_datastore(dataset_url):
-#     """
-#     Setting up a copernicus marine PydapDataStore with authentication via username and password.
-#     """
-#     if 'session' not in globals():
-#         username, password = copernicusmarine_credentials()
-#         #setting up a session and making the variable global so we do not have to repeat it
-#         #https://help.marine.copernicus.eu/en/articles/5182598-how-to-consume-the-opendap-api-and-cas-sso-using-python
-#         cas_url = 'https://cmems-cas.cls.fr/cas/login'
-#         global session
-#         session = setup_session(cas_url, username, password)
-    
-#     cookies_dict = session.cookies.get_dict()
-#     if 'CASTGC' not in cookies_dict.keys():
-#         copernicusmarine_remove_credentials()
-#         raise KeyError('CASTGC key missing from session cookies_dict, probably due to Copernicus Marine authentication failure. Credentials were reset. Try again.')
-#     session.cookies.set("CASTGC", cookies_dict['CASTGC'])
-#     #TODO: add check for wrong dataset_id (now always "AttributeError: You cannot set the charset when no content-type is defined")
-#     dap_dataset = open_url(dataset_url, session=session, user_charset='utf-8')
-#     data_store = xr.backends.PydapDataStore(dap_dataset)
-#     return data_store
-
-
 def open_OPeNDAP_xr(dataset_url):
     """
     
@@ -366,13 +343,6 @@ def open_OPeNDAP_xr(dataset_url):
     else:
         dataset_url_one = dataset_url
     
-    # if 'cmems-du.eu' in dataset_url_one:
-    #     if isinstance(dataset_url,list):
-    #         raise TypeError('list not supported by opendap method used for cmems')
-        
-    #     print(f'opening pydap connection to opendap dataset and opening with xarray: {dataset_url}.html')
-    #     data_store = copernicusmarine_datastore(dataset_url=dataset_url)
-    #     data_xr = xr.open_dataset(data_store)
     if 'hycom.org' in dataset_url_one:
         if isinstance(dataset_url,list):
             print(f'xarray opening opendap dataset like: {dataset_url[0]}.html ({len(dataset_url)} urls/years)')
