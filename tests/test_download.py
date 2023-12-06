@@ -58,7 +58,7 @@ def test_download_era5():
     date_max = '2010-01-02'
     longitude_min, longitude_max, latitude_min, latitude_max =    2,   3,  51, 52 #test domain
     variables_era5 = ['msl']#'v10n'] # check variables_dict in dfmt.download_ERA5() for valid names
-    dir_output = './era5_temp'
+    dir_output = './tests/tests_output/era5_temp'
     for varkey in variables_era5:
         os.makedirs(dir_output, exist_ok=True)
         
@@ -66,6 +66,7 @@ def test_download_era5():
                            longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
                            date_min=date_min, date_max=date_max,
                            dir_output=dir_output, overwrite=True)
+    # os.rmdir(dir_output)
 
 
 #TODO: properly set environment variables in github would prevent localness
@@ -76,13 +77,14 @@ def test_download_cmems():
     date_max = '2010-01-02'
     longitude_min, longitude_max, latitude_min, latitude_max =    2,   3,  51, 52 #test domain
     varlist_cmems = ['bottomT','no3'] # avaliable variables differ per product, examples are ['bottomT','mlotst','siconc','sithick','so','thetao','uo','vo','usi','vsi','zos','no3']. More info on https://data.marine.copernicus.eu/products
-    dir_output = './cmems_temp'
+    dir_output = './tests/tests_output/cmems_temp'
     for varkey in varlist_cmems:
         file_prefix = 'cmems_'
         dfmt.download_CMEMS(varkey=varkey,
                             longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
                             date_min=date_min, date_max=date_max,
                             dir_output=dir_output, file_prefix=file_prefix, overwrite=True)
+    # os.rmdir(dir_output)
 
 
 #TODO: properly set environment variables in github would prevent localness
@@ -93,10 +95,11 @@ def test_download_cmems_cmc():
     date_max = '2010-01-02'
     longitude_min, longitude_max, latitude_min, latitude_max =    2,   3,  51, 52 #test domain
     varlist_cmems = ['bottomT','no3'] # avaliable variables differ per product, examples are ['bottomT','mlotst','siconc','sithick','so','thetao','uo','vo','usi','vsi','zos','no3']. More info on https://data.marine.copernicus.eu/products
-    dir_output = './cmems_cmc_temp'
+    dir_output = './tests/tests_output/cmems_cmc_temp'
     for varkey in varlist_cmems:
         file_prefix = 'cmems_'
         dfmt.download_CMEMS_cmc(varkey=varkey,
                                 longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
                                 date_min=date_min, date_max=date_max,
                                 dir_output=dir_output, file_prefix=file_prefix, overwrite=True)
+    # os.rmdir(dir_output)
