@@ -187,11 +187,9 @@ def download_CMEMS(varkey,
     """
     empty docstring
     """
+    copernicusmarine_remove_manual_credentials_file()
+    copernicusmarine_maybe_login()
     
-    username, password = copernicusmarine_credentials()
-    os.environ["COPERNICUS_MARINE_SERVICE_USERNAME"] = username
-    os.environ["COPERNICUS_MARINE_SERVICE_PASSWORD"] = password
-
     #TODO: times in cmems API are at midnight (opendap had noon-values), so this might not be necessary anymore
     date_min, date_max = round_timestamp_to_outer_noon(date_min,date_max)
     
@@ -259,51 +257,30 @@ def download_CMEMS(varkey,
     dataset.to_netcdf(output_filename)
 
 
-def copernicusmarine_get_file():
-    file_credentials = os.path.expanduser("~/CMEMS_credentials.txt")
-    return file_credentials
+def copernicusmarine_remove_manual_credentials_file():
+    cmems_file_old = os.path.expanduser("~/CMEMS_credentials.txt")
+    if os.path.isfile(cmems_file_old):
+        os.remove(cmems_file_old)
 
 
-def copernicusmarine_remove_credentials():
+def copernicusmarine_maybe_login():
     """
-    remove CMEMS username/password environment variables and file
+    This function is to login at copernicus marine if this was not the case yet.
+    If the credentials file is present, it is skipped.
+    If it is not present, get_and_check_username_password checks env vars or prompts the user.
+    Feeding the returned credentials to cmc.login() generates the credentials file.
     """
-    
-    keys_toremove = ["COPERNICUS_MARINE_SERVICE_USERNAME",
-                     "COPERNICUS_MARINE_SERVICE_PASSWORD"]
-    for key in keys_toremove:
-        if key in os.environ.keys():
-            os.environ.pop(key)
-    
-    file_credentials = copernicusmarine_get_file()
-    if os.path.isfile(file_credentials):
-        os.remove(file_credentials)
-
-
-def copernicusmarine_credentials():
-    """
-    get CMEMS username/password from environment variables or via getpass
-    """
-    username = os.environ.get("COPERNICUS_MARINE_SERVICE_USERNAME")
-    password = os.environ.get("COPERNICUS_MARINE_SERVICE_PASSWORD")
-    
-    # read credentials from file if it exists. This has higher precedence over env vars
-    file_credentials = copernicusmarine_get_file()
-    if os.path.exists(file_credentials):
-        with open(file_credentials) as fc:
-            username = fc.readline().strip()
-            password = fc.readline().strip()
-    
-    if username is None or password is None:
-        #query username and password with getpass
+    from copernicus_marine_client.core_functions.credentials_utils import (
+        DEFAULT_CLIENT_CREDENTIALS_FILEPATH,
+        InvalidUsernameOrPassword,
+        get_and_check_username_password,
+    )
+    if not DEFAULT_CLIENT_CREDENTIALS_FILEPATH.is_file():
         print("Downloading CMEMS data requires a Copernicus Marine username and password, sign up for free at: https://data.marine.copernicus.eu/register.")
-        username = getpass.getpass("Enter your Copernicus Marine username: ")
-        password = getpass.getpass("Enter your Copernicus Marine password: ")
-        os.environ["COPERNICUS_MARINE_SERVICE_USERNAME"] = username
-        os.environ["COPERNICUS_MARINE_SERVICE_PASSWORD"] = password
-        with open(file_credentials,'w') as fc:
-            fc.write(f'{username}\n{password}\n')
-    return username, password
+        username, password = get_and_check_username_password(username=None, password=None, credentials_file=DEFAULT_CLIENT_CREDENTIALS_FILEPATH)
+        success = cmc.login(username, password)
+        if not success:
+            raise InvalidUsernameOrPassword("invalid credentials")
 
 
 def copernicusmarine_dataset_timerange(dataset_id):
