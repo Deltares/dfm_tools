@@ -183,7 +183,7 @@ def cds_client_withargs():
 def download_CMEMS(varkey,
                    longitude_min, longitude_max, latitude_min, latitude_max, 
                    date_min, date_max, #freq='D',
-                   dataset_id=None,
+                   dataset_id=None, buffer=None,
                    dir_output='.', file_prefix='', overwrite=False):
     """
     https://help.marine.copernicus.eu/en/articles/8283072-copernicus-marine-toolbox-api-subset
@@ -195,11 +195,11 @@ def download_CMEMS(varkey,
     date_min, date_max = round_timestamp_to_outer_noon(date_min,date_max)
     
     if dataset_id is None:
-        dataset_id, buffer = copernicusmarine_get_dataset_id(varkey, date_min, date_max)
-    else:
-        buffer = 2/4 # take large buffer per default (from bio dataset)
-    
-    # make sure the data fully covers the desired spatial extent. Download 2 additional grid cells
+        dataset_id = copernicusmarine_get_dataset_id(varkey, date_min, date_max)
+    if buffer is None:
+        buffer = copernicus_marine_get_buffer(dataset_id)
+
+    # make sure the data fully covers more than the desired spatial extent
     longitude_min -= buffer
     longitude_max += buffer
     latitude_min  -= buffer
@@ -248,24 +248,34 @@ def copernicusmarine_get_dataset_id(varkey, date_min, date_max):
     
     if varkey in ['bottomT','tob','mlotst','siconc','sithick','so','thetao','uo','vo','usi','vsi','zos']: #for physchem
         # resolution is 1/12 degrees in lat/lon dimension, but a bit more/less in alternating cells
-        buffer = 2/12 # resolution is 1/12 degrees
         if product == 'analysisforecast': #forecast: https://data.marine.copernicus.eu/product/GLOBAL_ANALYSISFORECAST_PHY_001_024/description
-            if varkey in ['uo','vo']: #anfc datset is splitted over multiple urls, construct the correct one here.
-                varkey_name = 'phy-cur'
-            elif varkey in ['so','thetao']:
-                varkey_name = 'phy-'+varkey
+            if varkey in ['uo','vo']: #anfc datset is splitted over multiple urls
+                dataset_id = 'cmems_mod_glo_phy-cur_anfc_0.083deg_P1D-m'
+            elif varkey in ['so']:
+                dataset_id = 'cmems_mod_glo_phy-so_anfc_0.083deg_P1D-m'
+            elif varkey in ['thetao']:
+                dataset_id = 'cmems_mod_glo_phy-thetao_anfc_0.083deg_P1D-m'
             else:
-                varkey_name = 'phy'
-            dataset_id = f'cmems_mod_glo_{varkey_name}_anfc_0.083deg_P1D-m'
+                dataset_id = 'cmems_mod_glo_phy_anfc_0.083deg_P1D-m'
         else: #reanalysis: https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_PHY_001_030/description
             dataset_id = 'cmems_mod_glo_phy_my_0.083deg_P1D-m'
-    else: #for bio
-        buffer = 2/4 # resolution is 1/4 degrees
+    else: #for bio (resolution is 1/4 degrees)
         if product == 'analysisforecast': #forecast: https://data.marine.copernicus.eu/product/GLOBAL_ANALYSISFORECAST_BGC_001_028/description
             dataset_id = 'global-analysis-forecast-bio-001-028-daily'
         else: #https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_BGC_001_029/description
             dataset_id = 'cmems_mod_glo_bgc_my_0.25_P1D-m'
-    return dataset_id, buffer
+    return dataset_id
+
+
+def copernicus_marine_get_buffer(dataset_id):
+    ds = cmc.open_dataset(dataset_id=dataset_id)
+    try:
+        resolution = ds.latitude.attrs["step"]
+        buffer = 2 * resolution
+    except (AttributeError, KeyError, TypeError):
+        print("failed to automatically derive a buffer from the dataset, using buffer=0")
+        buffer = 0
+    return buffer
 
 
 def copernicusmarine_remove_manual_credentials_file():
