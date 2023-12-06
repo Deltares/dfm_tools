@@ -225,7 +225,7 @@ def download_CMEMS(varkey,
             dataset_id = 'cmems_mod_glo_phy_my_0.083deg_P1D-m'
     else: #for bio
         buffer = 2/4 # resolution is 1/4 degrees
-        if product == 'analysisforecast': #forecast: https://data.marine.copernicus.eu/product/GLOBAL_ANALYSIS_FORECAST_BIO_001_028/description
+        if product == 'analysisforecast': #forecast: https://data.marine.copernicus.eu/product/GLOBAL_ANALYSISFORECAST_BGC_001_028/description
             dataset_id = 'global-analysis-forecast-bio-001-028-daily'
         else: #https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_BGC_001_029/description
             dataset_id = 'cmems_mod_glo_bgc_my_0.25_P1D-m'
@@ -250,11 +250,8 @@ def download_CMEMS(varkey,
          maximum_longitude = longitude_max,
          minimum_latitude = latitude_min,
          maximum_latitude = latitude_max,
-         # minimum_depth = 0,
-         # maximum_depth = 30,
-         start_datetime = date_min, #"2022-01-01 00:00:00",
-         end_datetime = date_max, #"2022-01-01 23:00:00",
-         # no_metadata_cache=True, # seems to be necessary to prevent conflicts from catalogs in different environments
+         start_datetime = date_min,
+         end_datetime = date_max,
     )
     
     print(f'xarray writing netcdf file: {name_output}')
