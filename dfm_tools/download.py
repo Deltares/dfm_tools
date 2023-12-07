@@ -228,20 +228,21 @@ def download_CMEMS(varkey,
 
 
 def copernicusmarine_get_product(date_min, date_max):
-    # set product as global variable, so it only has to be retreived once per download run (otherwise once per variable)
-    global product
-    if 'product' not in globals():
+    # time extents as global variables, so they only has to be retreived once per download run (otherwise once per variable)
+    global reanalysis_tstart, reanalysis_tstop
+    global forecast_tstart, forecast_tstop
+    if 'reanalysis_tstart' not in globals():
         print('retrieving time range of CMEMS reanalysis and forecast products') #assuming here that physchem and bio reanalyisus/multiyear datasets have the same enddate, this seems safe
         reanalysis_tstart, reanalysis_tstop = copernicusmarine_dataset_timerange(dataset_id="cmems_mod_glo_phy_my_0.083deg_P1D-m")
         forecast_tstart, forecast_tstop = copernicusmarine_dataset_timerange(dataset_id="cmems_mod_glo_phy_anfc_0.083deg_P1D-m")
-        if (date_min >= reanalysis_tstart) & (date_max <= reanalysis_tstop):
-            product = 'reanalysis'
-            print(f"The CMEMS '{product}' product will be used.")
-        elif (date_min >= forecast_tstart) & (date_max <= forecast_tstop):
-            product = 'analysisforecast'
-            print(f"The CMEMS '{product}' product will be used.")
-        else:
-            raise ValueError(f'Requested timerange ({date_min} to {date_max}) is not fully within timerange of reanalysis product ({reanalysis_tstart} to {reanalysis_tstop}) or forecast product ({forecast_tstart} to {forecast_tstop}).')
+    
+    if (date_min >= reanalysis_tstart) & (date_max <= reanalysis_tstop):
+        product = 'reanalysis'
+    elif (date_min >= forecast_tstart) & (date_max <= forecast_tstop):
+        product = 'analysisforecast'
+    else:
+        raise ValueError(f'Requested timerange ({date_min} to {date_max}) is not fully within timerange of reanalysis product ({reanalysis_tstart} to {reanalysis_tstop}) or forecast product ({forecast_tstart} to {forecast_tstop}).')
+    print(f"The CMEMS '{product}' product will be used.")
     return product
 
 
