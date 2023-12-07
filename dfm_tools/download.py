@@ -308,7 +308,7 @@ def copernicusmarine_credentials():
         print("Downloading CMEMS data requires a Copernicus Marine username and password, sign up for free at: https://data.marine.copernicus.eu/register.")
         username, password = get_and_check_username_password(username=None, password=None, credentials_file=DEFAULT_CLIENT_CREDENTIALS_FILEPATH)
         success = cmc.login(username, password)
-        if not success: 
+        if not success:
             raise InvalidUsernameOrPassword("invalid credentials")
     else:
         username, password = get_and_check_username_password(username=None, password=None, credentials_file=DEFAULT_CLIENT_CREDENTIALS_FILEPATH)
