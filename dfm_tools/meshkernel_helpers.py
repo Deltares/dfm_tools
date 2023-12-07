@@ -165,7 +165,7 @@ def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, crs:(int,str) = None) -
     
     # TODO: below is not correctly handled by xugrid yet, projected=False does not give is_geographic=True
     # related issue is https://github.com/Deltares/dfm_tools/issues/686
-    xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid, projected= not crs_is_geographic)
+    xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid, projected= not crs_is_geographic, crs=crs)
     
     #convert 0-based to 1-based indices for connectivity variables like face_node_connectivity
     xu_grid_ds = xu_grid.to_dataset()
