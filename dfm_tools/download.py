@@ -204,7 +204,7 @@ def download_CMEMS(varkey,
     latitude_max  += buffer
 
     Path(dir_output).mkdir(parents=True, exist_ok=True)
-    date_str = "cmc" #TODO: later maybe add subsetting per day/month
+    date_str = f"{date_min.strftime('%Y%m%d')}_{date_max.strftime('%Y%m%d')}" #TODO: later maybe add subsetting per day/month
     name_output = f'{file_prefix}{varkey}_{date_str}.nc'
     output_filename = Path(dir_output,name_output)
     if output_filename.is_file() and not overwrite:
