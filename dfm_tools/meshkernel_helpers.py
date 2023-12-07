@@ -117,29 +117,6 @@ def meshkernel_delete_withgdf(mk:meshkernel.MeshKernel, coastlines_gdf:gpd.GeoDa
                          invert_deletion=False)
 
 
-def meshkernel_check_geographic(mk:meshkernel.MeshKernel) -> bool:
-    """
-    Get projection from meshkernel instance
-
-    Parameters
-    ----------
-    mk : meshkernel.MeshKernel
-        DESCRIPTION.
-
-    Returns
-    -------
-    bool
-        DESCRIPTION.
-
-    """
-    
-    if mk.get_projection()==meshkernel.ProjectionType.CARTESIAN:
-        is_geographic = False
-    else:
-        is_geographic = True
-    return is_geographic
-
-
 def geographic_to_meshkernel_projection(is_geographic:bool) -> meshkernel.ProjectionType:
     """
     converts is_geographic boolean to meshkernel.ProjectionType (SPHERICAL OR CARTESIAN)
@@ -181,13 +158,14 @@ def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, crs:(int,str) = None) -
 
     """
     
-    mk_is_geographic = meshkernel_check_geographic(mk)
+    crs_is_geographic = crs_to_isgeographic(crs)
+    # mk_is_geographic = meshkernel_check_geographic(mk)
     
     mesh2d_grid = mk.mesh2d_get()
     
     # TODO: below is not correctly handled by xugrid yet, projected=False does not give is_geographic=True
     # related issue is https://github.com/Deltares/dfm_tools/issues/686
-    xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid, projected= not mk_is_geographic)
+    xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid, projected= not crs_is_geographic)
     
     #convert 0-based to 1-based indices for connectivity variables like face_node_connectivity
     xu_grid_ds = xu_grid.to_dataset()
@@ -211,10 +189,6 @@ def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, crs:(int,str) = None) -
     # add crs including attrs
     if crs is not None:
         xu_grid_uds.ugrid.set_crs(crs)
-    grid_is_geographic = xu_grid_uds.grid.is_geographic
-    if grid_is_geographic != mk_is_geographic:
-        raise ValueError(f"`grid_is_geographic` mismatch between provided grid (is_geographic={grid_is_geographic}) and meshkernel instance (is_geographic={mk_is_geographic})")
-    uds_add_crs_attrs(uds=xu_grid_uds)
     
     return xu_grid_uds
 

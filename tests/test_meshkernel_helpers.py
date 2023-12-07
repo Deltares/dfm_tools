@@ -15,8 +15,7 @@ import numpy as np
 import geopandas as gpd
 from shapely.geometry import Polygon
 import glob
-from dfm_tools.meshkernel_helpers import (meshkernel_check_geographic, 
-                                          geographic_to_meshkernel_projection, 
+from dfm_tools.meshkernel_helpers import (geographic_to_meshkernel_projection, 
                                           uds_add_crs_attrs,
                                           crs_to_isgeographic
                                           )
@@ -141,22 +140,6 @@ def test_meshkernel_delete_withgdf():
     dfmt.meshkernel_delete_withgdf(mk=mk, coastlines_gdf=ldb_gdf)
     
     assert len(mk.mesh2d_get().face_nodes) == 17368
-
-
-@pytest.mark.unittest
-def test_meshkernel_check_geographic():
-    
-    mk = meshkernel.MeshKernel(projection=meshkernel.ProjectionType.CARTESIAN)
-    is_geographic = meshkernel_check_geographic(mk)
-    assert is_geographic==False
-    
-    mk = meshkernel.MeshKernel(projection=meshkernel.ProjectionType.SPHERICAL)
-    is_geographic = meshkernel_check_geographic(mk)
-    assert is_geographic==True
-    
-    mk = meshkernel.MeshKernel(projection=meshkernel.ProjectionType.SPHERICALACCURATE)
-    is_geographic = meshkernel_check_geographic(mk)
-    assert is_geographic==True
 
 
 @pytest.mark.unittest
