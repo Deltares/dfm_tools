@@ -295,6 +295,8 @@ def copernicusmarine_credentials():
     If the credentials file is not present, get_and_check_username_password first
     checks env vars and if not present it prompts the user for credentials.
     Feeding the returned credentials to cmc.login() generates the credentials file.
+    If the file is available, it gets the credentials from the file.
+    Either way, the credentials are returned for use in e.g. ftp login
     """
     from copernicus_marine_client.core_functions.credentials_utils import (
         DEFAULT_CLIENT_CREDENTIALS_FILEPATH,
@@ -307,6 +309,9 @@ def copernicusmarine_credentials():
         success = cmc.login(username, password)
         if not success:
             raise InvalidUsernameOrPassword("invalid credentials")
+    else:
+        username, password = get_and_check_username_password(username=None, password=None, credentials_file=DEFAULT_CLIENT_CREDENTIALS_FILEPATH)
+    return username, password
 
 
 def copernicusmarine_dataset_timerange(dataset_id):
