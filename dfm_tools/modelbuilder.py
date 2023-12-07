@@ -75,9 +75,8 @@ def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, c
     tstart_str = tstart_pd.strftime("%Y-%m-%d_%H-%M-%S")
     
     # FM needs two timesteps, so convert timestamp to two surrounding timestamps
-    td_24h = pd.Timedelta(hours=24)
-    tstart_round = (pd.Timestamp(tstart) + td_24h).floor('1d') - td_24h
-    tstop_round = (pd.Timestamp(tstart) - td_24h).ceil('1d') + td_24h
+    tstart_round = pd.Timestamp(tstart).floor('1d')
+    tstop_round = (pd.Timestamp(tstart) + pd.Timedelta(hours=24)).ceil('1d')
     for quan_bnd in list_quantities:
         
         if quan_bnd in ["temperaturebnd","uxuyadvectionvelocitybnd"]:
@@ -124,6 +123,10 @@ def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, c
 
         print('writing file')
         file_output = os.path.join(dir_output,f"{quantity}_{tstart_str}.nc")
+        if len(data_xr.time) < 2:
+            raise ValueError(f"your initial field contains less than two timesteps ({data_xr.time.to_pandas().index.tolist()}), "
+                             "this is not accepted by FM. CMEMS moved to midday to midnight based daily times. "
+                             "Re-download your CMEMS data and try again.")
         data_xr.to_netcdf(file_output)
         
         #append forcings to ext
