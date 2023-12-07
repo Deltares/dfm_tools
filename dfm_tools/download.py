@@ -9,8 +9,6 @@ import os
 import pandas as pd
 from pathlib import Path
 import xarray as xr
-from pydap.client import open_url
-from pydap.cas.get_cookies import setup_session
 from dfm_tools.errors import OutOfRangeError
 import cdsapi
 import copernicus_marine_client as cmc
@@ -191,9 +189,9 @@ def download_CMEMS(varkey,
     copernicusmarine_remove_manual_credentials_file()
     copernicusmarine_credentials()
     
-    # TODO: times in cmems API are at midnight (opendap had noon-values), can be simplified in that case
-    date_min, date_max = round_timestamp_to_outer_noon(date_min,date_max)
-    
+    date_min = pd.Timestamp(date_min).floor('1d')
+    date_max = pd.Timestamp(date_max).ceil('1d')
+
     if dataset_id is None:
         dataset_id = copernicusmarine_get_dataset_id(varkey, date_min, date_max)
     if buffer is None:
@@ -316,18 +314,6 @@ def copernicusmarine_dataset_timerange(dataset_id):
     ds_tstart = pd.Timestamp(ds.time.isel(time=0).values)
     ds_tstop = pd.Timestamp(ds.time.isel(time=-1).values)
     return ds_tstart, ds_tstop
-
-
-def round_timestamp_to_outer_noon(date_min, date_max):
-    """
-    Since the CMEMS dataset only contains noon-values, we often need to round to the previous or next noon timestep to download enough data.
-    
-    """
-    
-    td_12h = pd.Timedelta(hours=12)
-    date_min = (pd.Timestamp(date_min) + td_12h).floor('1d') - td_12h
-    date_max = (pd.Timestamp(date_max) - td_12h).ceil('1d') + td_12h
-    return date_min, date_max
 
 
 def open_OPeNDAP_xr(dataset_url):

@@ -17,7 +17,6 @@ import hydrolib.core.dflowfm as hcdfm
 from hydrolib.core.dimr.models import DIMR, FMComponent, Start
 from hydrolib.core.utils import get_path_style_for_current_operating_system
 from dfm_tools.hydrolib_helpers import get_ncbnd_construct
-from dfm_tools.download import round_timestamp_to_outer_noon
 
 __all__ = [
     "cmems_nc_to_bc",
@@ -35,7 +34,10 @@ def cmems_nc_to_bc(ext_bnd, list_quantities, tstart, tstop, file_pli, dir_patter
     for quantity in list_quantities:
         print(f'processing quantity: {quantity}')
         
-        tstart, tstop = round_timestamp_to_outer_noon(tstart,tstop)
+        # times in cmems API are at midnight, so round to nearest outer midnight datetime
+        tstart = pd.Timestamp(tstart).floor('1d')
+        tstop = pd.Timestamp(tstop).ceil('1d')
+        
         #open regulargridDataset and do some basic stuff (time selection, renaming depth/lat/lon/varname, converting units, etc)
         data_xr_vars = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity=quantity,
                                                tstart=tstart, tstop=tstop,
@@ -71,7 +73,11 @@ def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, c
     
     tstart_pd = pd.Timestamp(tstart)
     tstart_str = tstart_pd.strftime("%Y-%m-%d_%H-%M-%S")
-    tstart_round, tstop_round = round_timestamp_to_outer_noon(tstart,tstart)
+    
+    # FM needs two timesteps, so convert timestamp to two surrounding timestamps
+    td_24h = pd.Timedelta(hours=24)
+    tstart_round = (pd.Timestamp(tstart) + td_24h).floor('1d') - td_24h
+    tstop_round = (pd.Timestamp(tstart) - td_24h).ceil('1d') + td_24h
     for quan_bnd in list_quantities:
         
         if quan_bnd in ["temperaturebnd","uxuyadvectionvelocitybnd"]:
