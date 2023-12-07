@@ -108,7 +108,7 @@ bnd_gdf_interp.plot(ax=ax,color='r')
 netfile  = os.path.join(dir_output, f'{model_name}_net.nc')
 xu_grid_uds.ugrid.to_netcdf(netfile)
 
-breakit
+
 #%% new ext: initial and open boundary condition
 ext_file_new = os.path.join(dir_output, f'{model_name}_new.ext')
 ext_new = hcdfm.ExtModel()
