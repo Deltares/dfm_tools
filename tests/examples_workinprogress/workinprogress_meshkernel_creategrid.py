@@ -18,7 +18,6 @@ import datetime as dt
 lon_min,lon_max = -5,2
 lat_min,lat_max = 48.5,51.2
 lon_res,lat_res = 0.2,0.2
-projection = meshkernel.ProjectionType.SPHERICAL #True for spherical grids
 
 figsize = (10,4)
 crs = 'EPSG:4326'
@@ -41,7 +40,7 @@ make_grid_parameters = meshkernel.MakeGridParameters(angle=0.0, #TODO: does non-
                                                      block_size_x=lon_res,
                                                      block_size_y=lat_res)
 
-mk = meshkernel.MeshKernel(projection=projection)
+mk = meshkernel.MeshKernel(projection=meshkernel.ProjectionType.SPHERICAL)
 mk.curvilinear_compute_rectangular_grid_on_extension(make_grid_parameters)
 mk.curvilinear_convert_to_mesh2d() #convert to ugrid/mesh2d
 
