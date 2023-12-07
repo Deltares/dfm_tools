@@ -16,11 +16,10 @@ import contextily as ctx
 
 ## input
 model_name = 'Bonaire'
-dir_output = r'p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\ModelBuilderOutput_JV3'
+dir_output = r'p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\ModelBuilderOutput_JV2'
 path_style = 'windows' # windows / unix
 overwrite = False # used for downloading of forcing data. Always set to True when changing the domain
 paths_relative = True #TODO: currently only works with path_style='windows' (same OS as IDE)
-is_geographic = True
 crs = 'EPSG:4326'
 
 #TODO: salinity instable, also waterlevel and velocity magnitude are instable at northeast side of island (latter is with incorrect ordering/selection in extfile)
@@ -60,7 +59,7 @@ data_bathy = xr.open_dataset(file_nc_bathy)
 data_bathy_sel = data_bathy.sel(lon=slice(lon_min-1,lon_max+1),lat=slice(lat_min-1,lat_max+1))
 
 #TODO: grid generation and bathy-refinement is still to be improved in meshkernel (https://github.com/Deltares/dfm_tools/issues/234)
-mk_object = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, is_geographic=is_geographic)
+mk_object = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, crs=crs)
 
 # generate plifile from grid extent and coastlines
 bnd_gdf = dfmt.generate_bndpli_cutland(mk=mk_object, res='h', buffer=0.01)

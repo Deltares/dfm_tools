@@ -1,6 +1,7 @@
 ## UNRELEASED
 
 ### Feat
+- replaced `is_geographic` with `crs` argument in `dfmt.make_basegrid()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#696](https://github.com/Deltares/dfm_tools/pull/696)
 - moved from `OPeNDAP` to `copernicus-marine-client` in `dfmt.download_CMEMS()` including safer authentication by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#691](https://github.com/Deltares/dfm_tools/pull/691)
 
 

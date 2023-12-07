@@ -17,7 +17,29 @@ from shapely.geometry import Polygon
 import glob
 from dfm_tools.meshkernel_helpers import (meshkernel_check_geographic, 
                                           geographic_to_meshkernel_projection, 
-                                          uds_add_crs_attrs)
+                                          uds_add_crs_attrs,
+                                          crs_to_isgeographic
+                                          )
+
+
+@pytest.mark.unittest
+def test_crs_to_isgeographic():
+    is_geographic = crs_to_isgeographic(4326)
+    assert is_geographic is True
+    is_geographic = crs_to_isgeographic("EPSG:4326")
+    assert is_geographic is True
+    is_geographic = crs_to_isgeographic("WGS84")
+    assert is_geographic is True
+
+    is_geographic = crs_to_isgeographic(28992)
+    assert is_geographic is False
+    is_geographic = crs_to_isgeographic("EPSG:28992")
+    assert is_geographic is False
+    is_geographic = crs_to_isgeographic("Amersfoort / RD New")
+    assert is_geographic is False
+    
+    is_geographic = crs_to_isgeographic(None)
+    assert is_geographic is False
 
 
 @pytest.mark.unittest
@@ -56,8 +78,8 @@ def test_meshkernel_delete_withcoastlines():
     #generate basegrid
     lon_min, lon_max, lat_min, lat_max = -68.45, -68.1, 12, 12.35
     dxy = 0.005
-    mk = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy)
-    
+    mk = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, crs=4326)
+    assert mk.get_projection() == meshkernel.ProjectionType.SPHERICAL
     assert len(mk.mesh2d_get().face_nodes) == 20732
     
     # remove cells with GSHHS coastlines
@@ -88,7 +110,8 @@ def test_meshkernel_delete_withshp():
     #generate basegrid
     lon_min, lon_max, lat_min, lat_max = -68.45, -68.1, 12, 12.35
     dxy = 0.005
-    mk = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy)
+    mk = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, crs=4326)
+    assert mk.get_projection() == meshkernel.ProjectionType.SPHERICAL
     
     assert len(mk.mesh2d_get().face_nodes) == 20732
     
@@ -107,8 +130,9 @@ def test_meshkernel_delete_withgdf():
     #generate basegrid
     lon_min, lon_max, lat_min, lat_max = -68.45, -68.1, 12, 12.35
     dxy = 0.005
-    mk = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy)
-    
+    mk = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, crs=4326)
+    assert mk.get_projection() == meshkernel.ProjectionType.SPHERICAL
+
     assert len(mk.mesh2d_get().face_nodes) == 20732
     
     # remove cells with custom ldb_gdf (can also come from polyfile)
@@ -212,7 +236,7 @@ def test_generate_bndpli_cutland():
     for params in params_all:
         lon_min, lon_max, lat_min, lat_max, len_gdf, len_linestr0 = params
     
-        mk_object = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, is_geographic=True)
+        mk_object = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, crs=4326)
         bnd_gdf = dfmt.generate_bndpli_cutland(mk=mk_object, res='h', buffer=0.01)
         
         # fig, ax = plt.subplots()
