@@ -17,7 +17,28 @@ from shapely.geometry import Polygon
 import glob
 from dfm_tools.meshkernel_helpers import (meshkernel_check_geographic, 
                                           geographic_to_meshkernel_projection, 
-                                          add_crs_to_dataset)
+                                          add_crs_to_dataset,
+                                          crs_to_isgeographic)
+
+
+@pytest.mark.unittest
+def test_crs_to_isgeographic():
+    is_geographic = crs_to_isgeographic(4326)
+    assert is_geographic is True
+    is_geographic = crs_to_isgeographic("EPSG:4326")
+    assert is_geographic is True
+    is_geographic = crs_to_isgeographic("WGS84")
+    assert is_geographic is True
+
+    is_geographic = crs_to_isgeographic(28992)
+    assert is_geographic is False
+    is_geographic = crs_to_isgeographic("EPSG:28992")
+    assert is_geographic is False
+    is_geographic = crs_to_isgeographic("Amersfoort / RD New")
+    assert is_geographic is False
+    
+    is_geographic = crs_to_isgeographic(None)
+    assert is_geographic is False
 
 
 @pytest.mark.unittest
@@ -32,6 +53,7 @@ def test_add_crs_to_dataset_cartesian():
     assert crs_attrs["epsg"] == 28992
     assert crs_attrs["EPSG_code"] == "EPSG:28992"
     assert "grid_mapping_name" not in crs_attrs.keys()
+
 
 @pytest.mark.unittest
 def test_add_crs_to_dataset_spherical():

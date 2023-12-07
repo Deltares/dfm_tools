@@ -274,6 +274,16 @@ def add_crs_to_dataset(uds:(xu.UgridDataset,xr.Dataset),is_geographic:bool,crs:(
     uds[crs_varn] = xr.DataArray(np.array(default_fillvals['i4'],dtype=int),dims=(),attrs=attribute_dict)
 
 
+def crs_to_isgeographic(crs=None):
+    if crs is None:
+        is_geographic = False
+    else:
+        import pyproj
+        crs = pyproj.CRS.from_user_input(crs)
+        is_geographic = crs.is_geographic
+    return is_geographic
+
+
 def make_basegrid(lon_min,lon_max,lat_min,lat_max,dx,dy,angle=0,
                   crs=None, is_geographic=None):
     """
@@ -283,13 +293,8 @@ def make_basegrid(lon_min,lon_max,lat_min,lat_max,dx,dy,angle=0,
     if is_geographic is not None:
         raise ValueError("'is_geographic' was deprecated as argument for dfmt.make_basegrid(), it is now derived from 'crs' instead")
     
-    if crs is None:
-        is_geographic = False
-    else:
-        import pyproj
-        crs = pyproj.CRS.from_user_input(crs)
-        is_geographic = crs.is_geographic
     
+    is_geographic = crs_to_isgeographic(crs)
     projection = geographic_to_meshkernel_projection(is_geographic)
     
     # create base grid
