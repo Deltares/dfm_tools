@@ -59,7 +59,7 @@ for varkey in variables_era5:
     ctx.add_basemap(ax=ax,crs="EPSG:4326",attribution=False)
 
 
-#CMEMS
+#CMEMS via copernicus-marine-client
 dir_output = dir_output_cmems
 for varkey in varlist_cmems:
     file_prefix = 'cmems_'
@@ -77,7 +77,7 @@ for varkey in varlist_cmems:
         ds[varkey].isel(time=0).plot(ax=ax)
     ds.close()
     ctx.add_basemap(ax=ax,crs="EPSG:4326",attribution=False)
-    
+
 
 #HYCOM
 dir_output = dir_output_hycom

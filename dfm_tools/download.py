@@ -9,10 +9,9 @@ import os
 import pandas as pd
 from pathlib import Path
 import xarray as xr
-from pydap.client import open_url
-from pydap.cas.get_cookies import setup_session
 from dfm_tools.errors import OutOfRangeError
 import cdsapi
+import copernicus_marine_client as cmc
 import cftime
 import getpass
 
@@ -93,63 +92,6 @@ def download_ERA5(varkey,
                         'format':'netcdf'}
         
         c.retrieve(name='reanalysis-era5-single-levels', request=request_dict, target=file_out)
-
-
-def download_CMEMS(varkey,
-                   longitude_min, longitude_max, latitude_min, latitude_max, 
-                   date_min, date_max, freq='D',
-                   dir_output='.', file_prefix='', overwrite=False):
-    """
-    empty docstring
-    """
-
-    date_min, date_max = round_timestamp_to_outer_noon(date_min,date_max)
-    
-    global product #set product as global variable, so it only has to be retreived once per download run (otherwise once per variable)
-    if 'product' not in globals():
-        print('retrieving time range of CMEMS reanalysis and forecast products') #assuming here that physchem and bio reanalyisus/multiyear datasets have the same enddate, this seems safe
-        reanalysis_tstart, reanalysis_tstop = get_OPeNDAP_xr_ds_timerange(dataset_url='https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_my_0.083_P1D-m')
-        forecast_tstart, forecast_tstop = get_OPeNDAP_xr_ds_timerange(dataset_url='https://nrt.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_anfc_0.083deg_P1D-m')
-        if (date_min >= reanalysis_tstart) & (date_max <= reanalysis_tstop):
-            product = 'reanalysis'
-            print(f"The CMEMS '{product}' product will be used.")
-        elif (date_min >= forecast_tstart) & (date_max <= forecast_tstop):
-            product = 'analysisforecast'
-            print(f"The CMEMS '{product}' product will be used.")
-        else:
-            raise ValueError(f'Requested timerange ({date_min} to {date_max}) is not fully within timerange of reanalysis product ({reanalysis_tstart} to {reanalysis_tstop}) or forecast product ({forecast_tstart} to {forecast_tstop}).')
-    
-    Path(dir_output).mkdir(parents=True, exist_ok=True)
-    if varkey in ['bottomT','tob','mlotst','siconc','sithick','so','thetao','uo','vo','usi','vsi','zos']: #for physchem
-        buffer = 2/12 # resolution is 1/12 degrees
-        if product == 'analysisforecast': #forecast: https://data.marine.copernicus.eu/product/GLOBAL_ANALYSISFORECAST_PHY_001_024/description
-            if varkey in ['uo','vo']: #anfc datset is splitted over multiple urls, construct the correct one here.
-                varkey_name = 'phy-cur'
-            elif varkey in ['so','thetao']:
-                varkey_name = 'phy-'+varkey
-            else:
-                varkey_name = 'phy'
-            dataset_url = f'https://nrt.cmems-du.eu/thredds/dodsC/cmems_mod_glo_{varkey_name}_anfc_0.083deg_P1D-m'#.html' #TODO: also PT6H-i timeresolution available but not for all variables and not for reanalysis
-        else: #reanalysis: https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_PHY_001_030/description
-            dataset_url = 'https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_my_0.083_P1D-m'
-    else: #for bio
-        buffer = 2/4 # resolution is 1/4 degrees
-        if product == 'analysisforecast': #forecast: https://data.marine.copernicus.eu/product/GLOBAL_ANALYSIS_FORECAST_BIO_001_028/description
-            dataset_url = 'https://nrt.cmems-du.eu/thredds/dodsC/global-analysis-forecast-bio-001-028-daily' #contains ['chl','fe','no3','nppv','o2','ph','phyc','po4','si','spco2']
-        else: #https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_BGC_001_029/description
-            dataset_url = 'https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_bgc_my_0.25_P1D-m' #contains ['chl','no3','nppv','o2','po4','si']
-    
-    #make sure the data fully covers the desired spatial extent. Download 2 additional grid cells (resolution is 1/12 degrees, but a bit more/less in alternating cells) in each direction
-    longitude_min -= buffer
-    longitude_max += buffer
-    latitude_min  -= buffer
-    latitude_max  += buffer
-    
-    download_OPeNDAP(dataset_url=dataset_url,
-                     varkey=varkey,
-                     longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
-                     date_min=date_min, date_max=date_max,
-                     dir_output=dir_output, file_prefix=file_prefix, overwrite=overwrite)
 
 
 def cds_get_file():
@@ -236,83 +178,152 @@ def cds_client_withargs():
     return c
 
 
-def copernicusmarine_get_file():
-    file_credentials = os.path.expanduser("~/CMEMS_credentials.txt")
-    return file_credentials
+def download_CMEMS(varkey,
+                   longitude_min, longitude_max, latitude_min, latitude_max, 
+                   date_min, date_max, #freq='D',
+                   dataset_id=None, buffer=None,
+                   dir_output='.', file_prefix='', overwrite=False):
+    """
+    https://help.marine.copernicus.eu/en/articles/8283072-copernicus-marine-toolbox-api-subset
+    """
+    copernicusmarine_remove_manual_credentials_file()
+    copernicusmarine_credentials()
+    
+    date_min = pd.Timestamp(date_min).floor('1d')
+    date_max = pd.Timestamp(date_max).ceil('1d')
+
+    if dataset_id is None:
+        dataset_id = copernicusmarine_get_dataset_id(varkey, date_min, date_max)
+    if buffer is None:
+        buffer = copernicus_marine_get_buffer(dataset_id)
+
+    # make sure the data fully covers more than the desired spatial extent
+    longitude_min -= buffer
+    longitude_max += buffer
+    latitude_min  -= buffer
+    latitude_max  += buffer
+
+    Path(dir_output).mkdir(parents=True, exist_ok=True)
+    date_str = f"{date_min.strftime('%Y%m%d')}_{date_max.strftime('%Y%m%d')}" #TODO: later maybe add subsetting per day/month
+    name_output = f'{file_prefix}{varkey}_{date_str}.nc'
+    output_filename = Path(dir_output,name_output)
+    if output_filename.is_file() and not overwrite:
+        print(f'"{name_output}" found and overwrite=False, continuing.')
+        return
+    
+    dataset = cmc.open_dataset(
+         dataset_id = dataset_id,
+         variables = [varkey],
+         minimum_longitude = longitude_min,
+         maximum_longitude = longitude_max,
+         minimum_latitude = latitude_min,
+         maximum_latitude = latitude_max,
+         start_datetime = date_min,
+         end_datetime = date_max,
+    )
+    
+    print(f'xarray writing netcdf file: {name_output}')
+    
+    dataset.to_netcdf(output_filename)
 
 
-def copernicusmarine_remove_credentials():
-    """
-    remove CMEMS username/password environment variables and file
-    """
+def copernicusmarine_get_product(date_min, date_max):
+    # time extents as global variables, so they only has to be retreived once per download run (otherwise once per variable)
+    global reanalysis_tstart, reanalysis_tstop
+    global forecast_tstart, forecast_tstop
+    if 'reanalysis_tstart' not in globals():
+        print('retrieving time range of CMEMS reanalysis and forecast products') #assuming here that physchem and bio reanalyisus/multiyear datasets have the same enddate, this seems safe
+        reanalysis_tstart, reanalysis_tstop = copernicusmarine_dataset_timerange(dataset_id="cmems_mod_glo_phy_my_0.083deg_P1D-m")
+        forecast_tstart, forecast_tstop = copernicusmarine_dataset_timerange(dataset_id="cmems_mod_glo_phy_anfc_0.083deg_P1D-m")
     
-    keys_toremove = ["COPERNICUS_MARINE_SERVICE_USERNAME",
-                     "COPERNICUS_MARINE_SERVICE_PASSWORD"]
-    for key in keys_toremove:
-        if key in os.environ.keys():
-            os.environ.pop(key)
+    if (date_min >= reanalysis_tstart) & (date_max <= reanalysis_tstop):
+        product = 'reanalysis'
+    elif (date_min >= forecast_tstart) & (date_max <= forecast_tstop):
+        product = 'analysisforecast'
+    else:
+        raise ValueError(f'Requested timerange ({date_min} to {date_max}) is not fully within timerange of reanalysis product ({reanalysis_tstart} to {reanalysis_tstop}) or forecast product ({forecast_tstart} to {forecast_tstop}).')
+    print(f"The CMEMS '{product}' product will be used.")
+    return product
+
+
+def copernicusmarine_get_dataset_id(varkey, date_min, date_max):
+    #TODO: maybe get dataset_id from 'copernicus-marine describe --include-datasets --contains <search_token>'
     
-    file_credentials = copernicusmarine_get_file()
-    if os.path.isfile(file_credentials):
-        os.remove(file_credentials)
+    product = copernicusmarine_get_product(date_min, date_max)
+    
+    if varkey in ['bottomT','tob','mlotst','siconc','sithick','so','thetao','uo','vo','usi','vsi','zos']: #for physchem
+        # resolution is 1/12 degrees in lat/lon dimension, but a bit more/less in alternating cells
+        if product == 'analysisforecast': #forecast: https://data.marine.copernicus.eu/product/GLOBAL_ANALYSISFORECAST_PHY_001_024/description
+            if varkey in ['uo','vo']: #anfc datset is splitted over multiple urls
+                dataset_id = 'cmems_mod_glo_phy-cur_anfc_0.083deg_P1D-m'
+            elif varkey in ['so']:
+                dataset_id = 'cmems_mod_glo_phy-so_anfc_0.083deg_P1D-m'
+            elif varkey in ['thetao']:
+                dataset_id = 'cmems_mod_glo_phy-thetao_anfc_0.083deg_P1D-m'
+            else:
+                dataset_id = 'cmems_mod_glo_phy_anfc_0.083deg_P1D-m'
+        else: #reanalysis: https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_PHY_001_030/description
+            dataset_id = 'cmems_mod_glo_phy_my_0.083deg_P1D-m'
+    else: #for bio (resolution is 1/4 degrees)
+        if product == 'analysisforecast': #forecast: https://data.marine.copernicus.eu/product/GLOBAL_ANALYSISFORECAST_BGC_001_028/description
+            dataset_id = 'global-analysis-forecast-bio-001-028-daily'
+        else: #https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_BGC_001_029/description
+            dataset_id = 'cmems_mod_glo_bgc_my_0.25_P1D-m'
+    return dataset_id
+
+
+def copernicus_marine_get_buffer(dataset_id):
+    ds = cmc.open_dataset(dataset_id=dataset_id)
+    try:
+        resolution = ds.latitude.attrs["step"]
+        buffer = 2 * resolution
+    except (AttributeError, KeyError, TypeError):
+        print("failed to automatically derive a buffer from the dataset, using buffer=0")
+        buffer = 0
+    return buffer
+
+
+def copernicusmarine_remove_manual_credentials_file():
+    cmems_file_old = os.path.expanduser("~/CMEMS_credentials.txt")
+    if os.path.isfile(cmems_file_old):
+        os.remove(cmems_file_old)
 
 
 def copernicusmarine_credentials():
     """
-    get CMEMS username/password from environment variables or via getpass
+    To login at copernicus marine if this was not the case yet.
+    If the credentials file is present, the function returns None.
+    If the credentials file is not present, get_and_check_username_password first
+    checks env vars and if not present it prompts the user for credentials.
+    Feeding the returned credentials to cmc.login() generates the credentials file.
+    If the file is available, it gets the credentials from the file.
+    Either way, the credentials are returned for use in e.g. ftp login
     """
-    username = os.environ.get("COPERNICUS_MARINE_SERVICE_USERNAME")
-    password = os.environ.get("COPERNICUS_MARINE_SERVICE_PASSWORD")
-    
-    # read credentials from file if it exists. This has higher precedence over env vars
-    file_credentials = copernicusmarine_get_file()
-    if os.path.exists(file_credentials):
-        with open(file_credentials) as fc:
-            username = fc.readline().strip()
-            password = fc.readline().strip()
-    
-    if username is None or password is None:
-        #query username and password with getpass
+    from copernicus_marine_client.core_functions.credentials_utils import (
+        DEFAULT_CLIENT_CREDENTIALS_FILEPATH,
+        InvalidUsernameOrPassword,
+        get_and_check_username_password,
+    )
+    if not DEFAULT_CLIENT_CREDENTIALS_FILEPATH.is_file():
         print("Downloading CMEMS data requires a Copernicus Marine username and password, sign up for free at: https://data.marine.copernicus.eu/register.")
-        username = getpass.getpass("Enter your Copernicus Marine username: ")
-        password = getpass.getpass("Enter your Copernicus Marine password: ")
-        os.environ["COPERNICUS_MARINE_SERVICE_USERNAME"] = username
-        os.environ["COPERNICUS_MARINE_SERVICE_PASSWORD"] = password
-        with open(file_credentials,'w') as fc:
-            fc.write(f'{username}\n{password}\n')
+        username, password = get_and_check_username_password(username=None, password=None, credentials_file=DEFAULT_CLIENT_CREDENTIALS_FILEPATH)
+        success = cmc.login(username, password)
+        if not success:
+            raise InvalidUsernameOrPassword("invalid credentials")
+    else:
+        username, password = get_and_check_username_password(username=None, password=None, credentials_file=DEFAULT_CLIENT_CREDENTIALS_FILEPATH)
     return username, password
 
 
-def copernicusmarine_datastore(dataset_url):
-    """
-    Setting up a copernicus marine PydapDataStore with authentication via username and password.
-    """
-    if 'session' not in globals():
-        username, password = copernicusmarine_credentials()
-        #setting up a session and making the variable global so we do not have to repeat it
-        #https://help.marine.copernicus.eu/en/articles/5182598-how-to-consume-the-opendap-api-and-cas-sso-using-python
-        cas_url = 'https://cmems-cas.cls.fr/cas/login'
-        global session
-        session = setup_session(cas_url, username, password)
-    
-    cookies_dict = session.cookies.get_dict()
-    if 'CASTGC' not in cookies_dict.keys():
-        copernicusmarine_remove_credentials()
-        raise KeyError('CASTGC key missing from session cookies_dict, probably due to Copernicus Marine authentication failure. Credentials were reset. Try again.')
-    session.cookies.set("CASTGC", cookies_dict['CASTGC'])
-    #TODO: add check for wrong dataset_id (now always "AttributeError: You cannot set the charset when no content-type is defined")
-    dap_dataset = open_url(dataset_url, session=session, user_charset='utf-8')
-    data_store = xr.backends.PydapDataStore(dap_dataset)
-    return data_store
+def copernicusmarine_dataset_timerange(dataset_id):
+    ds = cmc.open_dataset(dataset_id=dataset_id)
+    ds_tstart = pd.Timestamp(ds.time.isel(time=0).values)
+    ds_tstop = pd.Timestamp(ds.time.isel(time=-1).values)
+    return ds_tstart, ds_tstop
 
 
 def open_OPeNDAP_xr(dataset_url):
     """
-    How to get the opendap dataset_url (CMEMS example):
-        - https://data.marine.copernicus.eu/products
-        - go to the data access tab of a product, e.g.: https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_PHY_001_030/services
-        - click the opendap link of the dataset of your choice
-        - copy the dataset_url from the adress bar (excl .html), e.g.: https://my.cmems-du.eu/thredds/dodsC/cmems_mod_glo_phy_my_0.083_P1D-m
     
     How to get the opendap dataset_url (HYCOM example):
         - https://www.hycom.org/dataserver
@@ -329,14 +340,7 @@ def open_OPeNDAP_xr(dataset_url):
     else:
         dataset_url_one = dataset_url
     
-    if 'cmems-du.eu' in dataset_url_one:
-        if isinstance(dataset_url,list):
-            raise TypeError('list not supported by opendap method used for cmems')
-        
-        print(f'opening pydap connection to opendap dataset and opening with xarray: {dataset_url}.html')
-        data_store = copernicusmarine_datastore(dataset_url=dataset_url)
-        data_xr = xr.open_dataset(data_store)
-    elif 'hycom.org' in dataset_url_one:
+    if 'hycom.org' in dataset_url_one:
         if isinstance(dataset_url,list):
             print(f'xarray opening opendap dataset like: {dataset_url[0]}.html ({len(dataset_url)} urls/years)')
             data_xr = xr.open_mfdataset(dataset_url,decode_times=False) #TODO: for some reason decode_times does not work: "ValueError: unable to decode time units 'hours since analysis' with 'the default calendar'."
@@ -357,12 +361,6 @@ def open_OPeNDAP_xr(dataset_url):
             data_xr = data_xr.rename({'lon':'longitude','lat':'latitude'})
         
     return data_xr
-
-
-def download_OpenDAP_gettimes(dataset_url):
-    ds = open_OPeNDAP_xr(dataset_url=dataset_url)
-    ds_time = ds.time.to_series()
-    return ds_time
 
 
 def download_OPeNDAP(dataset_url,
@@ -445,23 +443,3 @@ def download_OPeNDAP(dataset_url,
         print(f'xarray writing netcdf file: {name_output}')
         data_xr_var_seltime.to_netcdf(os.path.join(dir_output,name_output)) #TODO: add chunks={'time':1} or only possible with opening?
         data_xr_var_seltime.close()
-
-
-def get_OPeNDAP_xr_ds_timerange(dataset_url):
-    ds = open_OPeNDAP_xr(dataset_url=dataset_url)
-    ds_times = ds.time.to_series()
-    ds_tstart, ds_tstop = ds_times.iloc[0], ds_times.iloc[-1]
-    return ds_tstart, ds_tstop
-
-
-def round_timestamp_to_outer_noon(date_min, date_max):
-    """
-    Since the CMEMS dataset only contains noon-values, we often need to round to the previous or next noon timestep to download enough data.
-    
-    """
-    
-    td_12h = pd.Timedelta(hours=12)
-    date_min = (pd.Timestamp(date_min) + td_12h).floor('1d') - td_12h
-    date_max = (pd.Timestamp(date_max) - td_12h).ceil('1d') + td_12h
-    return date_min, date_max
-
