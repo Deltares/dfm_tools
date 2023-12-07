@@ -1,3 +1,8 @@
+## UNRELEASED
+
+### Feat
+- moved from `OPeNDAP` to `copernicus-marine-client` in `dfmt.download_CMEMS()` including safer authentication by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#691](https://github.com/Deltares/dfm_tools/pull/691)
+
 ## 0.17.0 (2023-11-17)
 Support for Python 3.8 was dropped ([more info](https://github.com/Deltares/dfm_tools/issues/267))
 
