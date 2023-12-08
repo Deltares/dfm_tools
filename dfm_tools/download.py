@@ -180,7 +180,7 @@ def cds_client_withargs():
 
 def download_CMEMS(varkey,
                    longitude_min, longitude_max, latitude_min, latitude_max, 
-                   date_min, date_max, #freq='D',
+                   date_min, date_max, freq=None,#'D',
                    dataset_id=None, buffer=None,
                    dir_output='.', file_prefix='', overwrite=False):
     """
@@ -204,27 +204,43 @@ def download_CMEMS(varkey,
     latitude_max  += buffer
 
     Path(dir_output).mkdir(parents=True, exist_ok=True)
-    date_str = f"{date_min.strftime('%Y%m%d')}_{date_max.strftime('%Y%m%d')}" #TODO: later maybe add subsetting per day/month
-    name_output = f'{file_prefix}{varkey}_{date_str}.nc'
-    output_filename = Path(dir_output,name_output)
-    if output_filename.is_file() and not overwrite:
-        print(f'"{name_output}" found and overwrite=False, continuing.')
-        return
     
-    dataset = cmc.open_dataset(
-         dataset_id = dataset_id,
-         variables = [varkey],
-         minimum_longitude = longitude_min,
-         maximum_longitude = longitude_max,
-         minimum_latitude = latitude_min,
-         maximum_latitude = latitude_max,
-         start_datetime = date_min,
-         end_datetime = date_max,
-    )
+    def CMEMS_subset_save(date_min, date_max, date_str):
+        name_output = f'{file_prefix}{varkey}_{date_str}.nc'
+        output_filename = Path(dir_output,name_output)
+        if output_filename.is_file() and not overwrite:
+            print(f'"{name_output}" found and overwrite=False, continuing.')
+            return
+        dataset = cmc.open_dataset(
+             dataset_id = dataset_id,
+             variables = [varkey],
+             minimum_longitude = longitude_min,
+             maximum_longitude = longitude_max,
+             minimum_latitude = latitude_min,
+             maximum_latitude = latitude_max,
+             start_datetime = date_min,
+             end_datetime = date_max,
+        )
+        print(f'xarray writing netcdf file: {name_output}')
+        dataset.to_netcdf(output_filename)
     
-    print(f'xarray writing netcdf file: {name_output}')
     
-    dataset.to_netcdf(output_filename)
+    if freq is None:
+        date_str = f"{date_min.strftime('%Y%m%d')}_{date_max.strftime('%Y%m%d')}" #TODO: later maybe add subsetting per day/month
+        CMEMS_subset_save(date_min, date_max, date_str)
+
+    else:
+        period_range = pd.period_range(date_min,date_max,freq=freq)
+    
+        # #check if date_min/date_max are available in dataset
+        # if not (data_xr_times.index[0] <= period_range[0].to_timestamp() <= data_xr_times.index[-1]):
+        #     raise OutOfRangeError(f'date_min ({period_range[0]}) is outside available time range in dataset: {data_xr_times.index[0]} to {data_xr_times.index[-1]}')
+        # if not (data_xr_times.index[0] <= period_range[-1].to_timestamp() <= data_xr_times.index[-1]):
+        #     raise OutOfRangeError(f'date_max ({period_range[-1]}) is outside available time range in dataset: {data_xr_times.index[0]} to {data_xr_times.index[-1]}')
+        
+        for date in period_range:
+            date_str = str(date)
+            CMEMS_subset_save(date_str, date_str, date_str)
 
 
 def copernicusmarine_get_product(date_min, date_max):
