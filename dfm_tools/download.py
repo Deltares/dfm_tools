@@ -180,7 +180,7 @@ def cds_client_withargs():
 
 def download_CMEMS(varkey,
                    longitude_min, longitude_max, latitude_min, latitude_max, 
-                   date_min, date_max, #freq='D',
+                   date_min, date_max, freq='D',
                    dataset_id=None, buffer=None,
                    dir_output='.', file_prefix='', overwrite=False):
     """
@@ -189,6 +189,8 @@ def download_CMEMS(varkey,
     copernicusmarine_remove_manual_credentials_file()
     copernicusmarine_credentials()
     
+    # We floor/ceil the input timestamps to make sure we
+    # subset enough data in case of data with daily timesteps.
     date_min = pd.Timestamp(date_min).floor('1d')
     date_max = pd.Timestamp(date_max).ceil('1d')
 
@@ -203,14 +205,6 @@ def download_CMEMS(varkey,
     latitude_min  -= buffer
     latitude_max  += buffer
 
-    Path(dir_output).mkdir(parents=True, exist_ok=True)
-    date_str = f"{date_min.strftime('%Y%m%d')}_{date_max.strftime('%Y%m%d')}" #TODO: later maybe add subsetting per day/month
-    name_output = f'{file_prefix}{varkey}_{date_str}.nc'
-    output_filename = Path(dir_output,name_output)
-    if output_filename.is_file() and not overwrite:
-        print(f'"{name_output}" found and overwrite=False, continuing.')
-        return
-    
     dataset = cmc.open_dataset(
          dataset_id = dataset_id,
          variables = [varkey],
@@ -222,9 +216,29 @@ def download_CMEMS(varkey,
          end_datetime = date_max,
     )
     
-    print(f'xarray writing netcdf file: {name_output}')
+    Path(dir_output).mkdir(parents=True, exist_ok=True)
     
-    dataset.to_netcdf(output_filename)
+    if freq is None:
+        date_str = f"{date_min.strftime('%Y%m%d')}_{date_max.strftime('%Y%m%d')}"
+        name_output = f'{file_prefix}{varkey}_{date_str}.nc'
+        output_filename = Path(dir_output,name_output)
+        if output_filename.is_file() and not overwrite:
+            print(f'"{name_output}" found and overwrite=False, returning.')
+            return
+        print(f'xarray writing netcdf file: {name_output}')
+        dataset.to_netcdf(output_filename)
+    else:
+        period_range = pd.period_range(date_min,date_max,freq=freq)
+        for date in period_range:
+            date_str = str(date)
+            name_output = f'{file_prefix}{varkey}_{date_str}.nc'
+            output_filename = Path(dir_output,name_output)
+            if output_filename.is_file() and not overwrite:
+                print(f'"{name_output}" found and overwrite=False, continuing.')
+                continue
+            dataset_perperiod = dataset.sel(time=slice(date_str, date_str))
+            print(f'xarray writing netcdf file: {name_output}')
+            dataset_perperiod.to_netcdf(output_filename)
 
 
 def copernicusmarine_get_product(date_min, date_max):
