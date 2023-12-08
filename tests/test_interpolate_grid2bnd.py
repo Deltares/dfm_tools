@@ -97,6 +97,8 @@ def test_check_time_extent():
     
     # on ds timerange
     check_time_extent(ds, tstart="2019-12-31 12:00:00", tstop="2020-01-03 12:00:00")
+    
+    del ds
 
 
 @pytest.mark.unittest
@@ -246,7 +248,7 @@ def test_open_dataset_extra_correctdepths():
     file_nc = 'temp_cmems_dummydata.nc'
     ds_moretime.to_netcdf(file_nc)
     
-    ds_moretime_import = dfmt.open_dataset_extra(dir_pattern=file_nc, quantity='salinitybnd', tstart='2020-01-01', tstop='2020-01-03')
+    ds_moretime_import = dfmt.open_dataset_extra(dir_pattern=file_nc, quantity='salinitybnd', tstart='2020-01-01 12:00:00', tstop='2020-01-02 12:00:00')
     
     ncbnd_construct = get_ncbnd_construct()
     varn_depth = ncbnd_construct['varn_depth']
@@ -282,7 +284,7 @@ def test_open_dataset_extra_slightly_different_latlons():
     ds2.to_netcdf(file_nc2)
     
     try:
-        ds = dfmt.open_dataset_extra('temp_cmems_2day_*.nc', quantity='salinitybnd', tstart='2020-01-01', tstop='2020-01-03')
+        ds = dfmt.open_dataset_extra('temp_cmems_2day_*.nc', quantity='salinitybnd', tstart='2020-01-01 12:00:00', tstop='2020-01-02 12:00:00')
         
         # add assertion just to be safe, but the code will not reach here
         assert ds.dims['longitude'] == ds1.dims['longitude']
