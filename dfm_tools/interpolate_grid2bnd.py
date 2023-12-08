@@ -246,6 +246,21 @@ def interpolate_tide_to_plipoints(tidemodel, gdf_points, component_list=None, lo
     return data_interp
 
 
+def check_time_extent(data_xr, tstart, tstop):
+    tstart = pd.Timestamp(tstart)
+    tstop = pd.Timestamp(tstop)
+    
+    #get timevar and compare requested dates
+    timevar = data_xr['time']
+    xr_tstartstop = pd.to_datetime(timevar.isel(time=[0,-1]).to_series())
+    nc_tstart = xr_tstartstop.index[0]
+    nc_tstop = xr_tstartstop.index[-1]
+    if tstart < nc_tstart:
+        raise OutOfRangeError(f'requested tstart {tstart} outside of available range {nc_tstart} to {nc_tstop}.')
+    if tstop > nc_tstop:
+        raise OutOfRangeError(f'requested tstop {tstop} outside of available range {nc_tstart} to {nc_tstop}.')
+
+
 def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=None, refdate_str=None, reverse_depth=False, chunks=None):
     """
     empty docstring
@@ -310,16 +325,8 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
         print(f'WARNING: calendar different than proleptic_gregorian found ({data_xr_calendar}), convert_calendar is called so check output carefully. It should be no issue for datasets with a monthly interval.')
         data_xr = data_xr.convert_calendar('standard') #TODO: does this not result in 29feb nan values in e.g. GFDL model? Check missing argument at https://docs.xarray.dev/en/stable/generated/xarray.Dataset.convert_calendar.html
         data_xr['time'].encoding['units'] = units_copy #put back dropped units
-    
-    #get timevar and compare requested dates
-    timevar = data_xr['time']
-    xr_tstartstop = pd.to_datetime(timevar.isel(time=[0,-1]).to_series())
-    nc_tstart = xr_tstartstop.index[0]
-    nc_tstop = xr_tstartstop.index[-1]
-    if tstart < nc_tstart:
-        raise OutOfRangeError(f'requested tstart {tstart} outside of available range {nc_tstart} to {nc_tstop}')
-    if tstop > nc_tstop:
-        raise OutOfRangeError(f'requested tstop {tstop} outside of available range {nc_tstart} to {nc_tstop}')
+        
+    check_time_extent(data_xr, tstart, tstop)
     
     #360 to 180 conversion
     convert_360to180 = (data_xr['longitude'].to_numpy()>180).any() #TODO: replace to_numpy() with load()
@@ -334,6 +341,9 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
         quantity_list_notavailable = pd.Series(quantity_list).loc[~bool_quanavailable].tolist()
         raise KeyError(f'quantity {quantity_list_notavailable} not found in netcdf, available are: {data_vars}. Try updating conversion_dict to rename these variables.')
     data_xr_vars = data_xr[quantity_list].sel(time=slice(tstart,tstop))
+    # check time extent again to avoid issues with eg midday data being 
+    # sliced to midnight times: https://github.com/Deltares/dfm_tools/issues/707
+    check_time_extent(data_xr_vars, tstart, tstop)
     
     #optional conversion of units. Multiplications or other simple operatiors do not affect performance (dask.array(getitem) becomes dask.array(mul). With more complex operation it is better do do it on the interpolated array.
     for quan in quantity_list: #TODO: maybe do unit conversion before interp or is that computationally heavy?
