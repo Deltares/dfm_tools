@@ -256,9 +256,9 @@ def check_time_extent(data_xr, tstart, tstop):
     nc_tstart = xr_tstartstop.index[0]
     nc_tstop = xr_tstartstop.index[-1]
     if tstart < nc_tstart:
-        raise OutOfRangeError(f'requested tstart {tstart} outside of available range {nc_tstart} to {nc_tstop}')
+        raise OutOfRangeError(f'requested tstart {tstart} outside of available range {nc_tstart} to {nc_tstop}.')
     if tstop > nc_tstop:
-        raise OutOfRangeError(f'requested tstop {tstop} outside of available range {nc_tstart} to {nc_tstop}')
+        raise OutOfRangeError(f'requested tstop {tstop} outside of available range {nc_tstart} to {nc_tstop}.')
 
 
 def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=None, refdate_str=None, reverse_depth=False, chunks=None):
