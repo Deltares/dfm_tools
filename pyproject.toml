@@ -95,6 +95,7 @@ examples = [
 console_output_style = "count"
 testpaths = ["tests"]
 addopts = "-v --tb=short --durations=0"
+filterwarnings = ["ignore::UserWarning"]
 markers = [
 	"unittest: mark a test as unittest. Used for testing single methods",
 	"systemtest: mark a test as systemtest. Used for testing at a higher level, verifying a given input returns the expected output",
