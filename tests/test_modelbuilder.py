@@ -15,37 +15,6 @@ from dfm_tools.hydrolib_helpers import get_ncbnd_construct
 
 
 @pytest.mark.systemtest
-def test_cmems_nc_to_ini_midday_centered():
-    
-    # TODO: create fixture
-    from tests.test_interpolate_grid2bnd import cmems_dataset_4times
-    ds1 = cmems_dataset_4times().isel(time=slice(None,2))
-    ds2 = cmems_dataset_4times().isel(time=slice(2,None))
-    
-    dir_pattern = "./temp_cmems_2day_*.nc"
-    file_nc1 = dir_pattern.replace("*","sal_p1")
-    file_nc2 = dir_pattern.replace("*","sal_p2")
-    file_nc3 = dir_pattern.replace("*","tem_p1")
-    file_nc4 = dir_pattern.replace("*","tem_p2")
-    ds1.to_netcdf(file_nc1)
-    ds2.to_netcdf(file_nc2)
-    ds1.rename({"so":"thetao"}).to_netcdf(file_nc3)
-    ds2.rename({"so":"thetao"}).to_netcdf(file_nc4)
-    
-    ext_old = hcdfm.ExtOldModel()
-    try:
-        ext_old = dfmt.cmems_nc_to_ini(ext_old=ext_old,
-                                   dir_output='.',
-                                   list_quantities=["salinitybnd"],
-                                   tstart="2020-01-01",
-                                   dir_pattern=dir_pattern)
-    except ValueError as e:
-        assert "less than two timesteps" in str(e)
-    
-    # times_expected were '2019-12-31 12:00:00' and '2020-01-01 12:00:00'
-
-
-@pytest.mark.systemtest
 def test_cmems_nc_to_ini_midnight_centered():
     
     # TODO: create fixture

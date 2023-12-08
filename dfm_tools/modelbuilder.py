@@ -123,10 +123,6 @@ def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, c
 
         print('writing file')
         file_output = os.path.join(dir_output,f"{quantity}_{tstart_str}.nc")
-        if len(data_xr.time) < 2:
-            raise ValueError(f"your initial field contains less than two timesteps ({data_xr.time.to_pandas().index.tolist()}), "
-                             "this is not accepted by FM. CMEMS moved to midday to midnight based daily times. "
-                             "Re-download your CMEMS data and try again.")
         data_xr.to_netcdf(file_output)
         
         #append forcings to ext
