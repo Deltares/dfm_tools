@@ -19,9 +19,11 @@ from dfm_tools.interpolate_grid2bnd import (read_polyfile_as_gdf_points,
                                             components_translate_upper,
                                             get_ncbnd_construct,
                                             interp_regularnc_to_plipointsDataset,
+                                            check_time_extent,
                                             )
 from dfm_tools.hydrolib_helpers import PolyFile_to_geodataframe_points
 import hydrolib.core.dflowfm as hcdfm
+from dfm_tools.errors import OutOfRangeError
 
 
 def data_dcsm_gdf():
@@ -73,6 +75,28 @@ def cmems_dataset_4times():
     ds['time'] = xr.DataArray([-12,12,36,60],dims='time').assign_attrs({'standard_name':'time','units':'hours since 2020-01-01'})
     ds = xr.decode_cf(ds)
     return ds
+
+
+def test_check_time_extent():
+    ds = cmems_dataset_4times()
+    
+    # prior to ds timerange
+    try:
+        check_time_extent(ds, tstart="2011-01-01", tstop="2011-01-01")
+    except OutOfRangeError as e:
+        assert "tstart" in str(e)
+    
+    # after ds timerange
+    try:
+        check_time_extent(ds, tstart="2021-01-01", tstop="2021-01-01")
+    except OutOfRangeError as e:
+        assert "tstop" in str(e)
+    
+    # in ds timerange
+    check_time_extent(ds, tstart="2020-01-01", tstop="2020-01-01")
+    
+    # on ds timerange
+    check_time_extent(ds, tstart="2019-12-31 12:00:00", tstop="2020-01-03 12:00:00")
 
 
 @pytest.mark.unittest
