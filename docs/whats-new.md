@@ -1,4 +1,4 @@
-## UNRELEASED
+## 0.18.0 (2023-12-08)
 
 ### Feat
 - replaced `is_geographic` with `crs` argument in `dfmt.make_basegrid()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#696](https://github.com/Deltares/dfm_tools/pull/696)
