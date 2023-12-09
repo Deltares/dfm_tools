@@ -22,6 +22,7 @@ from dfm_tools.bathymetry import *
 from dfm_tools.coastlines import *
 from dfm_tools import data
 from dfm_tools.modelbuilder import *
+from dfm_tools.observations import *
 
 import warnings
 warnings.filterwarnings(action="always", category=DeprecationWarning)

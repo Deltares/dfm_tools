@@ -23,12 +23,10 @@ plt.close('all')
 from zipfile import ZipFile
 from io import BytesIO
 
-__all__ = ["ssc_sscid_from_otherid",
-           "ssc_ssh_subset_groups",
-           "ssh_catalog_subset",
+__all__ = ["ssh_catalog_subset",
            "ssh_catalog_toxynfile",
            "ssh_retrieve_data",
-       ]
+           ]
 
 
 def _remove_accents(input_str):
@@ -209,7 +207,10 @@ def cmems_ssh_read_catalog():
     rename_dict = {'time_coverage_start':'time_min',
                    'time_coverage_end':'time_max'}
     index_history_gpd = index_history_gpd.rename(rename_dict, axis=1)
+    index_history_gpd["time_min"] = pd.to_datetime(index_history_gpd["time_min"])
+    index_history_gpd["time_max"] = pd.to_datetime(index_history_gpd["time_max"])
     
+    index_history_gpd["time_ndays"] = (index_history_gpd['time_max'] - index_history_gpd['time_min']).dt.total_seconds()/3600/24
     return index_history_gpd
 
 
@@ -237,11 +238,13 @@ def uhslc_ssh_read_catalog(source):
     time_min = uhslc_gpd[timespan_var].apply(lambda x: x["oldest"])
     time_max = uhslc_gpd[timespan_var].apply(lambda x: x["latest"])
     uhslc_gpd = uhslc_gpd.loc[~time_min.isnull()].copy()
-    uhslc_gpd["time_min"] = time_min
-    uhslc_gpd["time_max"] = time_max
+    uhslc_gpd["time_min"] = pd.to_datetime(time_min)
+    uhslc_gpd["time_max"] = pd.to_datetime(time_max)
     
     stat_names = source + "-" + uhslc_gpd['uhslc_id'].apply(lambda x: f"{x:03d}")
     uhslc_gpd["station_name_unique"] = stat_names
+    
+    uhslc_gpd["time_ndays"] = (uhslc_gpd['time_max'] - uhslc_gpd['time_min']).dt.total_seconds()/3600/24
     return uhslc_gpd
 
 
@@ -274,6 +277,10 @@ def ioc_ssh_read_catalog(drop_uhslc=True, drop_dart=True, drop_nonutc=True):
     
     #set ssc_id as index
     ioc_catalog_pd = ioc_catalog_pd.set_index('Code',drop=False)
+    
+    #derive start/stop times indications from metadata
+    ioc_catalog_pd["time_min"] = pd.to_datetime(ioc_catalog_pd["date_created"])
+    ioc_catalog_pd["time_max"] = pd.to_datetime(ioc_catalog_pd["lasttime"])
     
     # generate geom and geodataframe and remove the old columns
     geom = [Point(x["lon"], x["lat"]) for irow, x in ioc_catalog_pd.iterrows()]
@@ -308,7 +315,8 @@ def ioc_ssh_read_catalog(drop_uhslc=True, drop_dart=True, drop_nonutc=True):
     if drop_nonutc:
         # filter out all non-UTC stations
         ioc_catalog_gpd = ioc_catalog_gpd.loc[ioc_catalog_gpd['UTCOffset']==0]
-        
+    
+    ioc_catalog_gpd["time_ndays"] = (ioc_catalog_gpd['time_max'] - ioc_catalog_gpd['time_min']).dt.total_seconds()/3600/24
     return ioc_catalog_gpd
 
 
@@ -347,8 +355,11 @@ def psmsl_gnssir_ssh_read_catalog_gettimes(station_list_gpd):
         print(irow+1, end=" ")
         url = f"https://psmsl.org/data/gnssir/data/daily/{station_id}_daily.csv"
         data_daily = pd.read_csv(url)
-        station_list_gpd.loc[station_id, "time_min"] = pd.Timestamp(data_daily["time"].iloc[0])
-        station_list_gpd.loc[station_id, "time_max"] = pd.Timestamp(data_daily["time"].iloc[-1])
+        time_min = pd.Timestamp(data_daily["time"].iloc[0])
+        time_max = pd.Timestamp(data_daily["time"].iloc[-1])
+        station_list_gpd.loc[station_id, "time_min"] = time_min
+        station_list_gpd.loc[station_id, "time_max"] = time_max
+        station_list_gpd.loc[station_id, "time_ndays"] = (time_max - time_min).total_seconds()/3600/24
     print()
 
     return station_list_gpd
@@ -368,7 +379,6 @@ def gesla3_ssh_read_catalog(file_gesla3_meta=None, only_coastal=True):
     station_list_pd = station_list_pd.set_index('file_name', drop=False)
     station_list_pd["start_date_time"] = pd.to_datetime(station_list_pd["start_date_time"])
     station_list_pd["end_date_time"] = pd.to_datetime(station_list_pd["end_date_time"])
-    station_list_pd["ndays"] = (station_list_pd['end_date_time'] - station_list_pd['start_date_time']).dt.total_seconds()/3600/24
     
     # drop non-coastal
     if only_coastal:
@@ -387,6 +397,7 @@ def gesla3_ssh_read_catalog(file_gesla3_meta=None, only_coastal=True):
     rename_dict = {'start_date_time':'time_min',
                    'end_date_time':'time_max'}
     station_list_gpd = station_list_gpd.rename(rename_dict, axis=1)
+    station_list_gpd["time_ndays"] = (station_list_gpd['time_max'] - station_list_gpd['time_min']).dt.total_seconds()/3600/24
     return station_list_gpd
 
 
@@ -433,8 +444,6 @@ def cmems_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max
         fname_out = os.path.join(dir_output, f"{stat_name}.nc")
         with open(fname_out, 'wb') as fp:
             ftp.retrbinary(f'RETR {fname}', fp.write)
-        # TODO: add fname to netcdf attrs
-        # ds = xr.open_dataset(fname_out, mode="a")
     print()
 
 
@@ -638,7 +647,7 @@ def psmsl_gnssir_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_
     # https://psmsl.org/data/gnssir/gnssir_daily_means.html
     # https://psmsl.org/data/gnssir/gnssir_example.html (also contains IOC retrieval example)
     
-    print(f"retrieving data for {len(ssh_catalog_gpd)} stations:", end=" ")
+    print(f"retrieving data for {len(ssh_catalog_gpd)} psmsl-gnssir stations:", end=" ")
     for station_id, row in ssh_catalog_gpd.iterrows():
         irow = ssh_catalog_gpd.index.tolist().index(station_id)
         print(irow+1, end=" ")
