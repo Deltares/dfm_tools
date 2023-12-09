@@ -90,26 +90,26 @@ def ssc_ssh_read_catalog():
     """
     
     url_json = 'https://www.ioc-sealevelmonitoring.org/ssc/service.php?format=json'
-    SSC_catalog_pd = pd.read_json(url_json)
+    ssc_catalog_pd = pd.read_json(url_json)
     
     #convert all cells with ids to list of strings or NaN
     for colname in ['psmsl','ioc','ptwc','gloss','uhslc','sonel_gps','sonel_tg']:
-        SSC_catalog_pd[colname] = SSC_catalog_pd[colname].apply(lambda x: x if isinstance(x,list) else [] if x is np.nan else [x])
+        ssc_catalog_pd[colname] = ssc_catalog_pd[colname].apply(lambda x: x if isinstance(x,list) else [] if x is np.nan else [x])
     
     #generate station_name_fname (remove all non numeric/letter characters and replace by -, strip '-' from begin/end, set ssc_id as prefix)
-    SSC_catalog_pd['station_name_fname'] = SSC_catalog_pd['name'].str.replace('ø','o') # necessary since otherwise these letters are dropped with remove_accents()
-    SSC_catalog_pd['station_name_fname'] = SSC_catalog_pd['station_name_fname'].apply(lambda x: _remove_accents(x)) #remove accents from letters
-    bool_somethingdropped = (SSC_catalog_pd['station_name_fname'].str.len() != SSC_catalog_pd['name'].str.len())
+    ssc_catalog_pd['station_name_fname'] = ssc_catalog_pd['name'].str.replace('ø','o') # necessary since otherwise these letters are dropped with remove_accents()
+    ssc_catalog_pd['station_name_fname'] = ssc_catalog_pd['station_name_fname'].apply(lambda x: _remove_accents(x)) #remove accents from letters
+    bool_somethingdropped = (ssc_catalog_pd['station_name_fname'].str.len() != ssc_catalog_pd['name'].str.len())
     if bool_somethingdropped.any():
-        raise Exception('lengths mismatch, characters were dropped:\n%s'%(SSC_catalog_pd.loc[bool_somethingdropped,['name','station_name_fname']]))
-    SSC_catalog_pd['station_name_fname'] = SSC_catalog_pd['station_name_fname'].apply(lambda x: re.sub("[^0-9a-zA-Z]+", "-", x)) #replace comma and brackets with dash
-    SSC_catalog_pd['station_name_fname'] = SSC_catalog_pd['station_name_fname'].str.strip('-') #remove first/last dash from name if present
-    col = SSC_catalog_pd.pop('station_name_fname')
-    SSC_catalog_pd.insert(3, col.name, col)
-    SSC_catalog_pd['station_name_unique'] = SSC_catalog_pd['ssc_id']+'_'+SSC_catalog_pd['station_name_fname']
+        raise Exception('lengths mismatch, characters were dropped:\n%s'%(ssc_catalog_pd.loc[bool_somethingdropped,['name','station_name_fname']]))
+    ssc_catalog_pd['station_name_fname'] = ssc_catalog_pd['station_name_fname'].apply(lambda x: re.sub("[^0-9a-zA-Z]+", "-", x)) #replace comma and brackets with dash
+    ssc_catalog_pd['station_name_fname'] = ssc_catalog_pd['station_name_fname'].str.strip('-') #remove first/last dash from name if present
+    col = ssc_catalog_pd.pop('station_name_fname')
+    ssc_catalog_pd.insert(3, col.name, col)
+    ssc_catalog_pd['station_name_unique'] = ssc_catalog_pd['ssc_id']+'_'+ssc_catalog_pd['station_name_fname']
     
     #set ssc_id as index
-    SSC_catalog_pd = SSC_catalog_pd.set_index('ssc_id',drop=False)
+    ssc_catalog_pd = ssc_catalog_pd.set_index('ssc_id',drop=False)
     
     #convert datetimestrings to datetime values, check for new ones
     # last_retrieve = dt.date(2023,2,22)
@@ -123,22 +123,22 @@ def ssc_ssh_read_catalog():
     # SSC_catalog_pd = SSC_catalog_pd.loc[~SSC_catalog_pd['name'].str.startswith('DART ')]
     
     # generate geom and geodataframe
-    geom = [Point(x["geo:lon"], x["geo:lat"]) for irow, x in SSC_catalog_pd.iterrows()]
-    SSC_catalog_gpd = gpd.GeoDataFrame(data=SSC_catalog_pd, geometry=geom)
+    geom = [Point(x["geo:lon"], x["geo:lat"]) for irow, x in ssc_catalog_pd.iterrows()]
+    ssc_catalog_gpd = gpd.GeoDataFrame(data=ssc_catalog_pd, geometry=geom)
 
     # compare coordinates of station metadata with coordinates of IOC/UHSLC linked stations
     if 0: 
-        for station_ssc_id, row in SSC_catalog_gpd.iterrows():
-            idx = SSC_catalog_gpd.index.tolist().index(station_ssc_id)
-            print(f'station {idx+1} of {len(SSC_catalog_gpd)}: {station_ssc_id}')
-            SSC_catalog_pd_stat_IOCUHSLC = SSC_catalog_gpd.loc[station_ssc_id,['ioc','uhslc']]
+        for station_ssc_id, row in ssc_catalog_gpd.iterrows():
+            idx = ssc_catalog_gpd.index.tolist().index(station_ssc_id)
+            print(f'station {idx+1} of {len(ssc_catalog_gpd)}: {station_ssc_id}')
+            SSC_catalog_pd_stat_IOCUHSLC = ssc_catalog_gpd.loc[station_ssc_id,['ioc','uhslc']]
     
             url_station = f'https://www.ioc-sealevelmonitoring.org/ssc/stationdetails.php?id={station_ssc_id}'
             url_response = urlopen(url_station)
             url_response_read = url_response.read()
             
-            station_meta_lon = SSC_catalog_gpd.loc[station_ssc_id].geometry.x
-            station_meta_lat = SSC_catalog_gpd.loc[station_ssc_id].geometry.y
+            station_meta_lon = ssc_catalog_gpd.loc[station_ssc_id].geometry.x
+            station_meta_lat = ssc_catalog_gpd.loc[station_ssc_id].geometry.y
     
             if (SSC_catalog_pd_stat_IOCUHSLC.str.len()==0).all(): #skip station if no IOC/UHSLC id present (after retrieval of precise coordinate)
                 continue
@@ -162,11 +162,11 @@ def ssc_ssh_read_catalog():
                 station_check_dist = np.sqrt((station_meta_lat-station_check_lat)**2+(station_meta_lon-station_check_lon)**2)
                 station_check_dist_all.append(station_check_dist)
                 station_check_dict[row['Codes']] = [station_check_dist,station_check_lat,station_check_lon]
-            SSC_catalog_gpd.loc[station_ssc_id,'dist_dict'] = [station_check_dict]
-            SSC_catalog_gpd.loc[station_ssc_id,'dist_min'] = np.min(station_check_dist_all)
-            SSC_catalog_gpd.loc[station_ssc_id,'dist_max'] = np.max(station_check_dist_all)
+            ssc_catalog_gpd.loc[station_ssc_id,'dist_dict'] = [station_check_dict]
+            ssc_catalog_gpd.loc[station_ssc_id,'dist_min'] = np.min(station_check_dist_all)
+            ssc_catalog_gpd.loc[station_ssc_id,'dist_max'] = np.max(station_check_dist_all)
 
-    return SSC_catalog_gpd
+    return ssc_catalog_gpd
 
 
 def cmems_ssh_read_catalog():
@@ -359,48 +359,7 @@ def gesla3_ssh_read_catalog(file_gesla3_meta=None, only_coastal=True):
     return station_list_gpd
 
 
-def ssh_catalog_subset(source=None,
-                       lon_min=-180, lon_max=180, 
-                       lat_min=-90, lat_max=90, 
-                       time_min=None, time_max=None):
-    # TODO: check if min<max
-    # TODO: accept None but replace with min/max value from dict. Time min/max are pd.min() and pd.max()
-    # TODO: accept partial None (now one None is same as all None)
-    # TODO: add support for catalog args like file_gesla3_meta, only_coastal, drop_uhslc, drop_nonutc, drop_dart, etc
-    
-    ssh_sources = {"ssc": ssc_ssh_read_catalog,
-                   "gesla3": gesla3_ssh_read_catalog,
-                   "ioc": ioc_ssh_read_catalog,
-                   "cmems": cmems_ssh_read_catalog,
-                   "uhslc-fast": uhslc_fast_ssh_read_catalog,
-                   "uhslc-rqds": uhslc_rqds_ssh_read_catalog,
-                   "psmsl-gnssir": psmsl_gnssir_ssh_read_catalog,
-                   }
-    
-    if source not in ssh_sources.keys():
-        raise ValueError(f"source for ssh_catalog_subset should be one of {list(ssh_sources.keys())}, recieved '{source}'")
-    
-    catalog_read_func = ssh_sources[source]
-    
-    ssh_catalog_gpd = catalog_read_func()
-    ssh_catalog_gpd["source"] = source
-
-    # spatial subsetting
-    ssh_catalog_gpd = ssh_catalog_gpd.clip((lon_min, lat_min, lon_max, lat_max))
-    
-    if None not in [time_min, time_max]:
-        if source=="psmsl-gnssir":
-            ssh_catalog_gpd = psmsl_gnssir_ssh_read_catalog_gettimes(ssh_catalog_gpd)
-        if not "time_min" in ssh_catalog_gpd.columns:
-            raise KeyError(f"ssh_catalog_gpd for source='{source}' does not contain time_min and time_max, no time subsetting possible.")
-        intime_bool = ((ssh_catalog_gpd['time_min']<time_max) &
-                       (ssh_catalog_gpd['time_max']>time_min)
-                       )
-        ssh_catalog_gpd = ssh_catalog_gpd.loc[intime_bool].copy()
-    return ssh_catalog_gpd
-
-
-def cmems_ssh_retrieve_data(index_history_gpd, dir_output):
+def cmems_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None):
     """
     Retrieve data from FTP
     Can only retrieve entire files, no temporal subsetting possible
@@ -419,6 +378,10 @@ def cmems_ssh_retrieve_data(index_history_gpd, dir_output):
     # #working example on https://pypi.org/project/copernicus-marine-client/
     
     """
+    
+    if time_min is not None or time_max is not None:
+        raise ValueError("can only supply None for 'time_min' or 'time_max' to 'cmems_ssh_retrieve_data()'")
+    
     # setup ftp connection
     host = 'my.cmems-du.eu'
     ftp = FTP(host=host)
@@ -426,13 +389,13 @@ def cmems_ssh_retrieve_data(index_history_gpd, dir_output):
     ftp.login(user=username, passwd=password)
     # ftp.pwd()
     
-    dir_data = os.path.dirname(index_history_gpd['file_name'].iloc[0]).split(host)[1]
+    dir_data = os.path.dirname(ssh_catalog_gpd['file_name'].iloc[0]).split(host)[1]
     ftp.cwd(dir_data)
     # retrieve
-    print(f"retrieving data for {len(index_history_gpd)} stations:", end=" ")
+    print(f"retrieving data for {len(ssh_catalog_gpd)} cmems stations:", end=" ")
     ftp.cwd("")
-    for idx_arbitrary, row in index_history_gpd.iterrows():
-        irow = index_history_gpd.index.tolist().index(idx_arbitrary)
+    for idx_arbitrary, row in ssh_catalog_gpd.iterrows():
+        irow = ssh_catalog_gpd.index.tolist().index(idx_arbitrary)
         print(irow+1, end=" ")
         fname = os.path.basename(row.loc["file_name"])
         fname_out = os.path.join(dir_output, fname) #TODO: write in cachedir
@@ -443,7 +406,7 @@ def cmems_ssh_retrieve_data(index_history_gpd, dir_output):
     print()
 
 
-def uhslc_ssh_retrieve_data(uhslc_json, dir_output, time_min=None, time_max=None):
+def uhslc_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None):
     
     # TODO: maybe merge rqds/fast datasets automatically
     # TODO: 5 meter offset?
@@ -470,11 +433,11 @@ def uhslc_ssh_retrieve_data(uhslc_json, dir_output, time_min=None, time_max=None
     dataset_id_dict = {"uhslc-fast":"global_hourly_fast",
                        "uhslc-rqds":"global_hourly_rqds"}
     
-    print(f"retrieving data for {len(uhslc_json)} UHSLC stations: ", end="")
-    uhslc_id_list = uhslc_json["uhslc_id"].tolist()
+    print(f"retrieving data for {len(ssh_catalog_gpd)} uhslc stations: ", end="")
+    uhslc_id_list = ssh_catalog_gpd["uhslc_id"].tolist()
     for inum, uhslc_id in enumerate(uhslc_id_list):
         print(f'{inum+1} ', end="")
-        source = uhslc_json.loc[uhslc_id, "source"]
+        source = ssh_catalog_gpd.loc[uhslc_id, "source"]
         dataset_id = dataset_id_dict[source]
         e.dataset_id = dataset_id
         
@@ -515,20 +478,18 @@ def uhslc_ssh_retrieve_data(uhslc_json, dir_output, time_min=None, time_max=None
     print()
 
 
-def gesla3_ssh_retrieve_data(gesla3_stations_gpd, dir_output,
-                             time_min=None, time_max=None,
-                             dir_gesla3_data=None, file_gesla3_meta=None, only_coastal=True
-                             ):
+def gesla3_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
+                             dir_gesla3_data=None):
     
     if dir_gesla3_data is None:
         # https://www.icloud.com/iclouddrive/0tHXOLCgBBjgmpHecFsfBXLag#GESLA3
         # linked on https://gesla787883612.wordpress.com/downloads/
         dir_gesla3_data = r"p:\1230882-emodnet_hrsm\data\GESLA3\GESLA3.0_ALL"
     
-    for file_gesla, row in gesla3_stations_gpd.iterrows():
-        irow = gesla3_stations_gpd.index.tolist().index(file_gesla)
-        print(f'processing {irow+1} of {len(gesla3_stations_gpd)}: {file_gesla}')
-        
+    print(f"retrieving data for {len(ssh_catalog_gpd)} gesla3 stations: ", end="")
+    for file_gesla, row in ssh_catalog_gpd.iterrows():
+        irow = ssh_catalog_gpd.index.tolist().index(file_gesla)
+        print(f'{irow+1} ', end="")
         file_gesla_org = os.path.join(dir_gesla3_data, file_gesla)
         file_gesla_nc = os.path.join(dir_output, f'{file_gesla}.nc')
         
@@ -546,10 +507,10 @@ def gesla3_ssh_retrieve_data(gesla3_stations_gpd, dir_output,
         bool_duplicate = data.index.duplicated()
         if bool_duplicate.sum() > 0:
             data = data.loc[~bool_duplicate]
-            print(f"[{bool_duplicate.sum()} duplicate timestamps removed]")
+            print(f"[{bool_duplicate.sum()} duplicate timestamps removed] ", end="")
         
         # convert to xarray and add metadata
-        meta_sel = gesla3_stations_gpd.loc[file_gesla].copy()
+        meta_sel = ssh_catalog_gpd.loc[file_gesla].copy()
         geometry = meta_sel.pop('geometry')
         meta_sel["time_min"] = str(meta_sel["time_min"])
         meta_sel["time_max"] = str(meta_sel["time_max"])
@@ -564,7 +525,7 @@ def gesla3_ssh_retrieve_data(gesla3_stations_gpd, dir_output,
         # subset time
         ds = ds.sel(time=slice(time_min, time_max))
         if len(ds.time) == 0:
-            print("[NODATA]")
+            print("[NODATA] ", end="")
             continue
         
         # filter bad quality data
@@ -573,15 +534,20 @@ def gesla3_ssh_retrieve_data(gesla3_stations_gpd, dir_output,
         # write to file
         ds.to_netcdf(file_gesla_nc)
         del ds
+    print()
 
 
-def ioc_ssh_retrieve_data(ioc_catalog_gpd, dir_output, time_min, time_max, subset_hourly=True):
+def ioc_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, subset_hourly=False):
     # https://www.ioc-sealevelmonitoring.org/service.php?query=help
-    print(f"retrieving data for {len(ioc_catalog_gpd)} stations.")
-    for station_code, row in ioc_catalog_gpd.iterrows():
+    
+    if time_min is None or time_max is None:
+        raise ValueError("cannot supply None for 'time_min' or 'time_max' to 'ioc_ssh_retrieve_data()'")
+    
+    print(f"retrieving data for {len(ssh_catalog_gpd)} ioc stations:")
+    for station_code, row in ssh_catalog_gpd.iterrows():
         results_list = []
         period_range = pd.period_range(time_min, time_max,freq="1M")
-        print(f'retrieving data for {station_code}: ', end="")
+        print(f'{station_code}: ', end="")
         for date in period_range:
             date_str = str(date)
             print(f'{date_str} ', end="")
@@ -633,13 +599,13 @@ def ioc_ssh_retrieve_data(ioc_catalog_gpd, dir_output, time_min, time_max, subse
         ds.to_netcdf(file_out)
 
 
-def psmsl_gnssir_retrieve_data(station_list_gpd, dir_output, time_min=None, time_max=None):
+def psmsl_gnssir_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None):
     # https://psmsl.org/data/gnssir/gnssir_daily_means.html
     # https://psmsl.org/data/gnssir/gnssir_example.html (also contains IOC retrieval example)
     
-    print(f"retrieving data for {len(station_list_gpd)} stations:", end=" ")
-    for station_id, row in station_list_gpd.iterrows():
-        irow = station_list_gpd.index.tolist().index(station_id)
+    print(f"retrieving data for {len(ssh_catalog_gpd)} stations:", end=" ")
+    for station_id, row in ssh_catalog_gpd.iterrows():
+        irow = ssh_catalog_gpd.index.tolist().index(station_id)
         print(irow+1, end=" ")
         resp = urlopen(rf"https://psmsl.org/data/gnssir/data/main/{station_id}.zip")
         myzip = ZipFile(BytesIO(resp.read()))
@@ -672,10 +638,49 @@ def psmsl_gnssir_retrieve_data(station_list_gpd, dir_output, time_min=None, time
     print()
 
 
-def ssh_retrieve_data(ssh_catalog_gpd, dir_output,
-                      time_min=None, time_max=None, # TODO: not relevant for all sources
-                      # dir_gesla3_data=None, file_gesla3_meta=None, only_coastal=True
-                      ):
+def ssh_catalog_subset(source=None,
+                       lon_min=-180, lon_max=180, 
+                       lat_min=-90, lat_max=90, 
+                       time_min=None, time_max=None,
+                       **kwargs):
+    # TODO: check if min<max
+    # TODO: accept None but replace with min/max value from dict. Time min/max are pd.min() and pd.max()
+    # TODO: accept partial None (now one None is same as all None)
+    
+    ssh_sources = {"ssc": ssc_ssh_read_catalog,
+                   "gesla3": gesla3_ssh_read_catalog,
+                   "ioc": ioc_ssh_read_catalog,
+                   "cmems": cmems_ssh_read_catalog,
+                   "uhslc-fast": uhslc_fast_ssh_read_catalog,
+                   "uhslc-rqds": uhslc_rqds_ssh_read_catalog,
+                   "psmsl-gnssir": psmsl_gnssir_ssh_read_catalog,
+                   }
+    
+    if source not in ssh_sources.keys():
+        raise ValueError(f"source for ssh_catalog_subset should be one of {list(ssh_sources.keys())}, recieved '{source}'")
+    
+    catalog_read_func = ssh_sources[source]
+    
+    ssh_catalog_gpd = catalog_read_func(**kwargs)
+    ssh_catalog_gpd["source"] = source
+
+    # spatial subsetting
+    ssh_catalog_gpd = ssh_catalog_gpd.clip((lon_min, lat_min, lon_max, lat_max))
+    
+    if None not in [time_min, time_max]:
+        if source=="psmsl-gnssir":
+            ssh_catalog_gpd = psmsl_gnssir_ssh_read_catalog_gettimes(ssh_catalog_gpd)
+        if not "time_min" in ssh_catalog_gpd.columns:
+            raise KeyError(f"ssh_catalog_gpd for source='{source}' does not contain time_min and time_max, no time subsetting possible.")
+        intime_bool = ((ssh_catalog_gpd['time_min']<time_max) &
+                       (ssh_catalog_gpd['time_max']>time_min)
+                       )
+        ssh_catalog_gpd = ssh_catalog_gpd.loc[intime_bool].copy()
+    return ssh_catalog_gpd
+
+
+def ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
+                      **kwargs):
     
     source_list = ssh_catalog_gpd["source"].unique()
     if len(source_list) > 1:
@@ -694,8 +699,5 @@ def ssh_retrieve_data(ssh_catalog_gpd, dir_output,
         raise ValueError(f"source for ssh_catalog_subset should be one of {list(ssh_sources.keys())}, recieved '{source}'")
     
     retrieve_data_func = ssh_sources[source]
-    if time_min is None and time_max is None:
-        # avoid TypeError with funtions like cmems_ssh_retrieve_data that do not accept time_min/time_max
-        retrieve_data_func(ssh_catalog_gpd, dir_output)
-    else:
-        retrieve_data_func(ssh_catalog_gpd, dir_output, time_min=time_min, time_max=time_max)
+    
+    retrieve_data_func(ssh_catalog_gpd, dir_output, time_min=time_min, time_max=time_max, **kwargs)
