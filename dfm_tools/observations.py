@@ -403,23 +403,10 @@ def cmems_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max
     Retrieve data from FTP
     Can only retrieve entire files, no temporal subsetting possible
     
-    # # TODO: the below does not work anymore
-    # import copernicus_marine_client as cmc
-    # catalogue = cmc.fetch_catalogue()
-    # dataset_id = 'cmems_mod_ibi_bgc_anfc_0.027deg-3D_P1D-m'
-    # dataset_id = 'cmems_obs-ins_glo_phy-ssh_my_na_PT1H'
-    # assert(dataset_id in cmc.get_all_dataset_ids())
-    # dataset = catalogue.filter([dataset_id]).products[0].datasets[0]
-    # # Object "dataset" can be used to display all the metadata necessary to build a SubsetRequest
-    # variable_short = [variable for variable in dataset.variables]
-    # variable = [variable for variable in dataset.variables if variable.short_name in ['zooc']][0]
-    # coordinates = {coordinate.coordinates_id: (coordinate.minimum_value, coordinate.maximum_value) for coordinate in variable.coordinates}
-    # #working example on https://pypi.org/project/copernicus-marine-client/
-    
     """
     
     if time_min is not None or time_max is not None:
-        raise ValueError("can only supply None for 'time_min' or 'time_max' to 'cmems_ssh_retrieve_data()'")
+        print("time extents supplied to 'cmems_ssh_retrieve_data()', tehse will be ignored.")
     
     # setup ftp connection
     host = 'my.cmems-du.eu'
