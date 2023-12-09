@@ -181,18 +181,17 @@ def cmems_ssh_read_catalog():
     
     # read index
     fname = 'index_history.txt'
-    fname_out = os.path.join('.', fname) #TODO: write in cachedir
-    with open(fname_out, 'wb') as fp:
+    with open(fname, 'wb') as fp:
         ftp.retrbinary(f'RETR {fname}', fp.write)
-    
-    with open(fname_out, 'r') as f:
+    with open(fname, 'r') as f:
         for line in f:
             if line.startswith('#'):
                 header = line
             else:
                 break #stop when there are no more #
     colnames = header.strip('#').strip().split(',')
-    index_history_pd = pd.read_csv(fname_out,comment='#',names=colnames)
+    index_history_pd = pd.read_csv(fname,comment='#',names=colnames)
+    os.remove(fname) # remove the local file again
     
     # generate geom and geodataframe
     assert (index_history_pd["geospatial_lon_min"] == index_history_pd["geospatial_lon_max"]).all()
