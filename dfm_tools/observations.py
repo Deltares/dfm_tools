@@ -25,6 +25,7 @@ from io import BytesIO
 
 __all__ = ["ssc_sscid_from_otherid",
            "ssc_ssh_subset_groups",
+           "ssh_catalog_toxynfile",
            "ssh_catalog_subset",
            "ssh_retrieve_data",
        ]
@@ -125,7 +126,7 @@ def ssc_ssh_read_catalog():
     # generate geom and geodataframe
     geom = [Point(x["geo:lon"], x["geo:lat"]) for irow, x in ssc_catalog_pd.iterrows()]
     ssc_catalog_gpd = gpd.GeoDataFrame(data=ssc_catalog_pd, geometry=geom)
-
+    
     # compare coordinates of station metadata with coordinates of IOC/UHSLC linked stations
     if 0: 
         for station_ssc_id, row in ssc_catalog_gpd.iterrows():
@@ -202,6 +203,10 @@ def cmems_ssh_read_catalog():
                  "geospatial_lat_min", "geospatial_lat_max"]
     index_history_gpd = index_history_gpd.drop(drop_list, axis=1)
     
+    # add dummy country column for the test to pass
+    # TODO: hopefully data is available via cmems API in the future
+    index_history_gpd["country"] = ""
+    
     # rename columns
     rename_dict = {'time_coverage_start':'time_min',
                    'time_coverage_end':'time_max'}
@@ -211,6 +216,7 @@ def cmems_ssh_read_catalog():
 
 
 def uhslc_ssh_read_catalog(timespan_var):
+    # TODO: country is "New Zealand" and country_code is 554. We would like country=NZL
     # TODO: maybe use min of rqds and max of fast for time subsetting
     # TODO: maybe enable merging of datasets?
     uhslc_json = gpd.read_file("https://uhslc.soest.hawaii.edu/data/meta.geojson")
@@ -264,8 +270,11 @@ def ioc_ssh_read_catalog(drop_uhslc=True, drop_dart=True, drop_nonutc=True):
     #set ssc_id as index
     IOC_catalog_pd = IOC_catalog_pd.set_index('Code',drop=False)
     
+    # generate geom and geodataframe and remove the old columns
     geom = [Point(x["lon"], x["lat"]) for irow, x in IOC_catalog_pd.iterrows()]
     ioc_catalog_gpd = gpd.GeoDataFrame(data=IOC_catalog_pd, geometry=geom)
+    drop_list = ["lon","lat"]
+    ioc_catalog_gpd = ioc_catalog_gpd.drop(drop_list, axis=1)
     
     if drop_uhslc:
         # filter non-UHSLC stations
@@ -302,11 +311,16 @@ def psmsl_gnssir_ssh_read_catalog():
     #TODO: use only good_sites instead of all (request field in json)
     #TODO: filter on time
     url = "https://psmsl.org/data/gnssir/data/sites.json"
-    station_list = pd.read_json(url).T
+    station_list_pd = pd.read_json(url).T
     
-    # generate geom and geodataframe
-    geom = [Point(x["Longitude"], x["Latitude"]) for irow, x in station_list.iterrows()]
-    station_list_gpd = gpd.GeoDataFrame(data=station_list, geometry=geom)
+    rename_dict = {"CountryCode":"country"}
+    station_list_pd = station_list_pd.rename(rename_dict, axis=1)
+    
+    # generate geom and geodataframe and remove the old columns
+    geom = [Point(x["Longitude"], x["Latitude"]) for irow, x in station_list_pd.iterrows()]
+    station_list_gpd = gpd.GeoDataFrame(data=station_list_pd, geometry=geom)
+    drop_list = ["Longitude","Latitude"]
+    station_list_gpd = station_list_gpd.drop(drop_list, axis=1)
     return station_list_gpd
 
 
@@ -345,16 +359,16 @@ def gesla3_ssh_read_catalog(file_gesla3_meta=None, only_coastal=True):
     if only_coastal:
         station_list_pd = station_list_pd.loc[station_list_pd['gauge_type']=='Coastal']
         
-    # generate geom and geodataframe
+    # generate geom and geodataframe and remove the old columns
     geom = [Point(x["longitude"], x["latitude"]) for irow, x in station_list_pd.iterrows()]
     station_list_gpd = gpd.GeoDataFrame(data=station_list_pd, geometry=geom)
-    
-    # rename and drop columns
+    drop_list = ["longitude","latitude"]
+    station_list_gpd = station_list_gpd.drop(drop_list, axis=1)
+
+    # rename columns
     rename_dict = {'start_date_time':'time_min',
                    'end_date_time':'time_max'}
     station_list_gpd = station_list_gpd.rename(rename_dict, axis=1)
-    drop_list = ["longitude","latitude"]
-    station_list_gpd = station_list_gpd.drop(drop_list, axis=1)
     return station_list_gpd
 
 
@@ -621,9 +635,9 @@ def psmsl_gnssir_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_
         ds['slev'] = ds['slev'].assign_attrs(units="m")
         ds = ds.assign_attrs(station_id=row["Name"],
                              station_code=row["Code"],
-                             longitude=row["Longitude"],
-                             latitude=row["Latitude"],
-                             country_code=row["CountryCode"],
+                             longitude=row.geometry.x,
+                             latitude=row.geometry.y,
+                             country_code=row["country"],
                              )
         
         ds = ds.sel(time=slice(time_min, time_max))
@@ -663,8 +677,9 @@ def ssh_catalog_subset(source=None,
     ssh_catalog_gpd = catalog_read_func(**kwargs)
     ssh_catalog_gpd["source"] = source
 
-    # spatial subsetting
+    # spatial subsetting and sort again: https://github.com/geopandas/geopandas/issues/2937
     ssh_catalog_gpd = ssh_catalog_gpd.clip((lon_min, lat_min, lon_max, lat_max))
+    ssh_catalog_gpd = ssh_catalog_gpd.sort_index()
     
     if None not in [time_min, time_max]:
         if source=="psmsl-gnssir":
@@ -676,6 +691,14 @@ def ssh_catalog_subset(source=None,
                        )
         ssh_catalog_gpd = ssh_catalog_gpd.loc[intime_bool].copy()
     return ssh_catalog_gpd
+
+
+def ssh_catalog_toxynfile(ssc_catalog_gpd, file_xyn, name_column='station_name_unique'):
+    lon = ssc_catalog_gpd.geometry.x
+    lat = ssc_catalog_gpd.geometry.y
+    name = ssc_catalog_gpd[name_column]
+    data = np.c_[lon, lat, name]
+    np.savetxt(file_xyn, data, fmt='%11.6f %11.6f %-s')
 
 
 def ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
