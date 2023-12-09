@@ -41,7 +41,7 @@ def _check_ssc_groups_valid(groups):
         groups = [groups]
     for groupname in groups:
         if groupname not in list_validgroups:
-            raise Exception(f"groupname should be one of {list_validgroups}, '{groupname}' is not valid")
+            raise ValueError(f"groupname should be one of {list_validgroups}, '{groupname}' is not valid")
 
 
 def ssc_sscid_from_otherid(group_id, groupname):
@@ -55,9 +55,9 @@ def ssc_sscid_from_otherid(group_id, groupname):
         
     bool_strinseries = ssc_catalog_pd[groupname].apply(lambda x: group_id in x)
     if bool_strinseries.sum() < 1:
-        raise Exception('sscid not found for id %s in group %s'%(group_id, groupname))
+        raise ValueError('sscid not found for id %s in group %s'%(group_id, groupname))
     if bool_strinseries.sum() > 1:
-        raise Exception('More than 1 sscid found for id %s in group %s:\n%s'%(group_id, groupname, ssc_catalog_pd.loc[bool_strinseries,['name','country', 'geo:lat', 'geo:lon',groupname]]))
+        raise ValueError('More than 1 sscid found for id %s in group %s:\n%s'%(group_id, groupname, ssc_catalog_pd.loc[bool_strinseries,['name','country', 'geo:lat', 'geo:lon',groupname]]))
     
     sscid = ssc_catalog_pd.loc[bool_strinseries].index[0]
     return sscid
@@ -128,7 +128,7 @@ def ssc_ssh_read_catalog():
         for station_ssc_id, row in ssc_catalog_gpd.iterrows():
             idx = ssc_catalog_gpd.index.tolist().index(station_ssc_id)
             print(f'station {idx+1} of {len(ssc_catalog_gpd)}: {station_ssc_id}')
-            SSC_catalog_pd_stat_IOCUHSLC = ssc_catalog_gpd.loc[station_ssc_id,['ioc','uhslc']]
+            ssc_catalog_pd_stat_ioc_uhslc = ssc_catalog_gpd.loc[station_ssc_id,['ioc','uhslc']]
     
             url_station = f'https://www.ioc-sealevelmonitoring.org/ssc/stationdetails.php?id={station_ssc_id}'
             url_response = urlopen(url_station)
@@ -137,7 +137,7 @@ def ssc_ssh_read_catalog():
             station_meta_lon = ssc_catalog_gpd.loc[station_ssc_id].geometry.x
             station_meta_lat = ssc_catalog_gpd.loc[station_ssc_id].geometry.y
     
-            if (SSC_catalog_pd_stat_IOCUHSLC.str.len()==0).all(): #skip station if no IOC/UHSLC id present (after retrieval of precise coordinate)
+            if (ssc_catalog_pd_stat_ioc_uhslc.str.len()==0).all(): #skip station if no IOC/UHSLC id present (after retrieval of precise coordinate)
                 continue
             # fix html, fetch last matched table and set row with codes/location/lat/lon/sensors as column names
             # TODO: report missing <tr> to VLIZ?
@@ -153,7 +153,7 @@ def ssc_ssh_read_catalog():
             tab_linked_tocheck = tab_linked.loc[bool_tocheck]
             station_check_dict = {}
             station_check_dist_all = []
-            for iR, row in tab_linked_tocheck.iterrows():
+            for _, row in tab_linked_tocheck.iterrows():
                 station_check_lat = float(row['Latitude'])
                 station_check_lon = float(row['Longitude'])
                 station_check_dist = np.sqrt((station_meta_lat-station_check_lat)**2+(station_meta_lon-station_check_lon)**2)
@@ -198,7 +198,7 @@ def cmems_ssh_read_catalog():
     index_history_gpd = index_history_gpd.drop(drop_list, axis=1)
     
     # add dummy country column for the test to pass
-    # TODO: hopefully data is available via cmems API in the future
+    # TODO: hopefully country metadata is available via cmems API in the future
     index_history_gpd["country"] = ""
     stat_names = index_history_gpd["file_name"].apply(lambda x: os.path.basename(x).strip(".nc").strip("_60minute"))
     index_history_gpd["station_name_unique"] = stat_names
@@ -219,8 +219,6 @@ def uhslc_ssh_read_catalog(source):
     # TODO: maybe use min of rqds and max of fast for time subsetting
     # TODO: maybe enable merging of datasets?
     uhslc_gpd = gpd.read_file("https://uhslc.soest.hawaii.edu/data/meta.geojson")
-    # col_list = ['name', 'uhslc_id', 'ssc_id', 'gloss_id', 'country', 'country_code',
-    #             'fd_span', 'rq_span', 'rq_basin', 'rq_versions', 'geometry']
     
     for drop_col in ["rq_basin", "rq_versions"]:
         if drop_col in uhslc_gpd.columns:
@@ -324,8 +322,8 @@ def psmsl_gnssir_ssh_read_catalog():
     # https://psmsl.org/data/gnssir/metadatainfo.php
     # https://psmsl.org/data/gnssir/useful_files.php
     # url = "https://psmsl.org/data/gnssir/data/maplayers/good_sites.json"
-    #TODO: use only good_sites instead of all (request field in json)
-    #TODO: filter on time
+    # TODO: use only good_sites instead of all (request field in json)
+    # TODO: request time extents in json instead of with psmsl_gnssir_ssh_read_catalog_gettimes()
     url = "https://psmsl.org/data/gnssir/data/sites.json"
     station_list_pd = pd.read_json(url).T
     
@@ -346,7 +344,6 @@ def psmsl_gnssir_ssh_read_catalog():
 
 def psmsl_gnssir_ssh_read_catalog_gettimes(station_list_gpd):
     # the catalog json does not contain time ranges so we derive it from daily csv files
-    # TODO: request time extents in json
     station_list_gpd["time_min"] = pd.NaT
     station_list_gpd["time_max"] = pd.NaT
     print(f"retrieving psmsl-gnssir time extents for {len(station_list_gpd)} stations:", end=" ")
@@ -457,20 +454,6 @@ def uhslc_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max
     server = "https://uhslc.soest.hawaii.edu/erddap"
     e = ERDDAP(server=server, protocol="tabledap", response="nc") #opendap is way slower than nc/csv/html
     
-    # search_for = "global_hourly_"
-    # url = e.get_search_url(search_for=search_for, response="csv")
-    # df = pd.read_csv(url)
-    # df["Dataset ID"]
-    
-    # uhslc_id, station_name, station_country, station_country_code, record_id, gloss_id, ssc_id
-    # rowSize, version, decimation_method, reference_code, reference_offset, sea_level
-    # e.variables = [
-    #     "time", # we cannot drop time, erddappy will raise error (might be from server)
-    #     "latitude",
-    #     "longitude",
-    #     "uhslc_id",
-    # ]
-    
     dataset_id_dict = {"uhslc-fast":"global_hourly_fast",
                        "uhslc-rqds":"global_hourly_rqds"}
     
@@ -516,7 +499,7 @@ def uhslc_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max
         stat_name = row["station_name_unique"]
         file_out = os.path.join(dir_output, f"{stat_name}.nc")
         ds.to_netcdf(file_out)
-        # del ds
+        del ds
     print()
 
 
@@ -716,7 +699,7 @@ def ssh_catalog_subset(source=None,
     if None not in [time_min, time_max]:
         if source=="psmsl-gnssir":
             ssh_catalog_gpd = psmsl_gnssir_ssh_read_catalog_gettimes(ssh_catalog_gpd)
-        if not "time_min" in ssh_catalog_gpd.columns:
+        if "time_min" not in ssh_catalog_gpd.columns:
             raise KeyError(f"ssh_catalog_gpd for source='{source}' does not contain time_min and time_max, no time subsetting possible.")
         intime_bool = ((ssh_catalog_gpd['time_min']<time_max) &
                        (ssh_catalog_gpd['time_max']>time_min)
