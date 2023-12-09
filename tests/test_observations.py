@@ -25,10 +25,12 @@ def test_ssh_catalog_subset():
     time_min, time_max = '2020-01-01','2020-06-01'
     
     fields_expected = ["geometry", "source", "country"]
-    source_list_witime = ["cmems", "uhslc-fast", "uhslc-rqds", "psmsl-gnssir"]
+    source_list_witime = ["uhslc-fast", "uhslc-rqds", "psmsl-gnssir"]
     if os.path.exists(r"p:\1230882-emodnet_hrsm"):
         # not possible without p-drive connection
         source_list_witime += ["gesla3"]
+    if os.name=="nt":
+        source_list_witime += ["cmems"] # TODO: not possible on Github, due to missing credentials
     source_list_notime = ["ssc", "ioc"]
     for source in source_list_witime+source_list_notime:
         ssc_catalog_gpd = ssh_catalog_subset(source=source)
@@ -57,6 +59,8 @@ def test_ssh_retrieve_data():
     if os.path.exists(r"p:\1230882-emodnet_hrsm"):
         # not possible without p-drive connection
         source_list += ["gesla3"]
+    if os.name=="nt":
+        source_list += ["cmems"] # TODO: not possible on Github, due to missing credentials
     for source in source_list:
         ssc_catalog_gpd = ssh_catalog_subset(source=source)
         ssc_catalog_gpd_sel = ssc_catalog_gpd.iloc[:1]
