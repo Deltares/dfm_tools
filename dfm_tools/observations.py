@@ -26,18 +26,14 @@ from io import BytesIO
 
 
 # example scripts in https://repos.deltares.nl/repos/global_tide_surge_model/trunk/scripts_gtsm5/observationdata/
-__all__ = ["ssc_ssh_subset",
-           "get_sscid_fromSSCcatalog",
-           "ssh_catalog_subset",
+__all__ = ["ssc_sscid_from_otherid",
+           "ssc_ssh_subset_groups",
            "cmems_ssh_retrieve_data",
-           "uhslc_ssh_subset",
            "uhslc_ssh_retrieve_data",
-           "ioc_ssh_subset",
            "ioc_ssh_retrieve_data",
-           "psmsl_gnssir_ssh_subset",
            "psmsl_gnssir_retrieve_data",
-           "gesla3_ssh_subset",
            "gesla3_ssh_retrieve_data",
+           "ssh_catalog_subset",
        ]
 
 
@@ -62,16 +58,16 @@ def ssc_sscid_from_otherid(group_id, groupname):
     fname_fromcatalog = IOC_catalog_pd.loc[sscid_fromcatalog,'station_name_fname']
     """
     group_id = str(group_id)
-    SSC_catalog_pd = ssc_ssh_read_catalog()
+    ssc_catalog_pd = ssc_ssh_read_catalog()
     _check_ssc_groups_valid(groupname)
         
-    bool_strinseries = SSC_catalog_pd[groupname].apply(lambda x: group_id in x)
+    bool_strinseries = ssc_catalog_pd[groupname].apply(lambda x: group_id in x)
     if bool_strinseries.sum() < 1:
         raise Exception('sscid not found for id %s in group %s'%(group_id, groupname))
     if bool_strinseries.sum() > 1:
-        raise Exception('More than 1 sscid found for id %s in group %s:\n%s'%(group_id, groupname, SSC_catalog_pd.loc[bool_strinseries,['name','country', 'geo:lat', 'geo:lon',groupname]]))
+        raise Exception('More than 1 sscid found for id %s in group %s:\n%s'%(group_id, groupname, ssc_catalog_pd.loc[bool_strinseries,['name','country', 'geo:lat', 'geo:lon',groupname]]))
     
-    sscid = SSC_catalog_pd.loc[bool_strinseries].index[0]
+    sscid = ssc_catalog_pd.loc[bool_strinseries].index[0]
     return sscid
 
 
@@ -391,11 +387,11 @@ def ioc_ssh_read_catalog(drop_uhslc=True, drop_dart=True, drop_nonutc=True):
     
     if drop_uhslc:
         # filter non-UHSLC stations
-        SSC_catalog_pd = ssc_ssh_subset()
+        ssc_catalog_pd = ssh_catalog_subset(source='ssc')
         ioc_catalog_gpd['UHSLC'] = False
         ioc_catalog_gpd['inSSClist'] = False
         for ioc_code in ioc_catalog_gpd['Code']:
-            iocstat_uhslcid = SSC_catalog_pd.loc[SSC_catalog_pd['ioc'].apply(lambda x: ioc_code in x),'uhslc']
+            iocstat_uhslcid = ssc_catalog_pd.loc[ssc_catalog_pd['ioc'].apply(lambda x: ioc_code in x),'uhslc']
             if len(iocstat_uhslcid)==0: #ioc_code not in the SSC list
                 continue
             else:
