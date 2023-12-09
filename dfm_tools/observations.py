@@ -30,8 +30,6 @@ __all__ = ["ssc_sscid_from_otherid",
            "ssh_retrieve_data",
        ]
 
-# TODO: example scripts in https://repos.deltares.nl/repos/global_tide_surge_model/trunk/scripts_gtsm5/observationdata/
-
 
 def _remove_accents(input_str):
     nfkd_form = unicodedata.normalize('NFKD', input_str)
@@ -176,7 +174,6 @@ def cmems_ssh_read_catalog():
     ftp = FTP(host=host)
     username, password = copernicusmarine_credentials()
     ftp.login(user=username, passwd=password)
-    # TODO: maybe get path from catalogue?
     ftp.cwd('Core/INSITU_GLO_PHY_SSH_DISCRETE_MY_013_053/cmems_obs-ins_glo_phy-ssh_my_na_PT1H')
     
     # read index
@@ -205,6 +202,8 @@ def cmems_ssh_read_catalog():
     # add dummy country column for the test to pass
     # TODO: hopefully data is available via cmems API in the future
     index_history_gpd["country"] = ""
+    stat_names = index_history_gpd["file_name"].apply(lambda x: os.path.basename(x).strip(".nc").strip("_60minute"))
+    index_history_gpd["station_name_unique"] = stat_names
     
     # rename columns
     rename_dict = {'time_coverage_start':'time_min',
@@ -214,42 +213,46 @@ def cmems_ssh_read_catalog():
     return index_history_gpd
 
 
-def uhslc_ssh_read_catalog(timespan_var):
+def uhslc_ssh_read_catalog(source):
     # TODO: country is "New Zealand" and country_code is 554. We would like country=NZL
     # TODO: maybe use min of rqds and max of fast for time subsetting
     # TODO: maybe enable merging of datasets?
-    uhslc_json = gpd.read_file("https://uhslc.soest.hawaii.edu/data/meta.geojson")
+    uhslc_gpd = gpd.read_file("https://uhslc.soest.hawaii.edu/data/meta.geojson")
     # col_list = ['name', 'uhslc_id', 'ssc_id', 'gloss_id', 'country', 'country_code',
     #             'fd_span', 'rq_span', 'rq_basin', 'rq_versions', 'geometry']
     
     for drop_col in ["rq_basin", "rq_versions"]:
-        if drop_col in uhslc_json.columns:
-            uhslc_json = uhslc_json.drop(drop_col, axis=1)
+        if drop_col in uhslc_gpd.columns:
+            uhslc_gpd = uhslc_gpd.drop(drop_col, axis=1)
     
-    uhslc_json = uhslc_json.set_index('uhslc_id', drop=False)
+    uhslc_gpd = uhslc_gpd.set_index('uhslc_id', drop=False)
     
     # shift from 0to360 to -180to180
     from shapely import Point
-    geom_shift = [Point(((pnt.x + 180)%360 - 180), pnt.y) for pnt in uhslc_json.geometry]
-    uhslc_json.geometry = geom_shift
+    geom_shift = [Point(((pnt.x + 180)%360 - 180), pnt.y) for pnt in uhslc_gpd.geometry]
+    uhslc_gpd.geometry = geom_shift
     
-    time_min = uhslc_json[timespan_var].apply(lambda x: x["oldest"])
-    time_max = uhslc_json[timespan_var].apply(lambda x: x["latest"])
-    uhslc_json = uhslc_json.loc[~time_min.isnull()].copy()
-    uhslc_json["time_min"] = time_min
-    uhslc_json["time_max"] = time_max
+    timespan_dict = {"uhslc-fast":"fd_span", "uhslc-rqds":"rq_span"}
+    timespan_var = timespan_dict[source]
+    time_min = uhslc_gpd[timespan_var].apply(lambda x: x["oldest"])
+    time_max = uhslc_gpd[timespan_var].apply(lambda x: x["latest"])
+    uhslc_gpd = uhslc_gpd.loc[~time_min.isnull()].copy()
+    uhslc_gpd["time_min"] = time_min
+    uhslc_gpd["time_max"] = time_max
     
-    return uhslc_json
+    stat_names = source + "-" + uhslc_gpd['uhslc_id'].apply(lambda x: f"{x:03d}")
+    uhslc_gpd["station_name_unique"] = stat_names
+    return uhslc_gpd
 
 
 def uhslc_rqds_ssh_read_catalog():
-    uhslc_json = uhslc_ssh_read_catalog(timespan_var="rq_span")
-    return uhslc_json
+    uhslc_gpd = uhslc_ssh_read_catalog(source="uhslc-rqds")
+    return uhslc_gpd
 
 
 def uhslc_fast_ssh_read_catalog():
-    uhslc_json = uhslc_ssh_read_catalog(timespan_var="fd_span")
-    return uhslc_json
+    uhslc_gpd = uhslc_ssh_read_catalog(source="uhslc-fast")
+    return uhslc_gpd
 
 
 def ioc_ssh_read_catalog(drop_uhslc=True, drop_dart=True, drop_nonutc=True):
@@ -259,22 +262,28 @@ def ioc_ssh_read_catalog(drop_uhslc=True, drop_dart=True, drop_nonutc=True):
     The stations that are already in UHSLC are dropped,
     as well as DART stations and non-UTC stations.
     """
+    #TODO: "Code" contains more station codes than "code", what is the difference?
+    #TODO: "Location" contains full name, but contains spaces etcetera, retrieve from SSC instead?
+    
     url_json = 'https://www.ioc-sealevelmonitoring.org/service.php?query=stationlist&showall=a'
     resp = requests.get(url_json)
     if resp.status_code==404: #continue to next station if not found
         raise Exception(f'url 404: {resp.text}')    
     resp_json = resp.json()
-    IOC_catalog_pd = pd.DataFrame.from_dict(resp_json)
+    ioc_catalog_pd = pd.DataFrame.from_dict(resp_json)
     
     #set ssc_id as index
-    IOC_catalog_pd = IOC_catalog_pd.set_index('Code',drop=False)
+    ioc_catalog_pd = ioc_catalog_pd.set_index('Code',drop=False)
     
     # generate geom and geodataframe and remove the old columns
-    geom = [Point(x["lon"], x["lat"]) for irow, x in IOC_catalog_pd.iterrows()]
-    ioc_catalog_gpd = gpd.GeoDataFrame(data=IOC_catalog_pd, geometry=geom)
+    geom = [Point(x["lon"], x["lat"]) for irow, x in ioc_catalog_pd.iterrows()]
+    ioc_catalog_gpd = gpd.GeoDataFrame(data=ioc_catalog_pd, geometry=geom)
     drop_list = ["lon","lat"]
     ioc_catalog_gpd = ioc_catalog_gpd.drop(drop_list, axis=1)
     
+    stat_names = "ioc-" + ioc_catalog_gpd['Code'] + "-" + ioc_catalog_gpd['code'].astype(str)
+    ioc_catalog_gpd["station_name_unique"] = stat_names
+
     if drop_uhslc:
         # filter non-UHSLC stations
         ssc_catalog_pd = ssh_catalog_subset(source='ssc')
@@ -320,6 +329,10 @@ def psmsl_gnssir_ssh_read_catalog():
     station_list_gpd = gpd.GeoDataFrame(data=station_list_pd, geometry=geom)
     drop_list = ["Longitude","Latitude"]
     station_list_gpd = station_list_gpd.drop(drop_list, axis=1)
+    
+    station_list_gpd["psmsl_id"] = station_list_gpd.index
+    stat_names = "psmsl-gnssir-" + station_list_gpd['psmsl_id'].astype(str) + "-" + station_list_gpd['Code']
+    station_list_gpd["station_name_unique"] = stat_names
     return station_list_gpd
 
 
@@ -347,6 +360,9 @@ def gesla3_ssh_read_catalog(file_gesla3_meta=None, only_coastal=True):
         # linked on https://gesla787883612.wordpress.com/downloads/
         file_gesla3_meta = r"p:\1230882-emodnet_hrsm\data\GESLA3\GESLA3_ALL 2.csv"
     
+    if not os.path.isfile(file_gesla3_meta):
+        raise FileNotFoundError(f"The 'file_gesla3_meta' file '{file_gesla3_meta}' was not found, provide another one")
+    
     station_list_pd = pd.read_csv(file_gesla3_meta)
     station_list_pd.columns = [c.replace(" ", "_").replace("(", "").replace(")", "").replace("/", "_").lower() for c in station_list_pd.columns]
     station_list_pd = station_list_pd.set_index('file_name', drop=False)
@@ -363,7 +379,10 @@ def gesla3_ssh_read_catalog(file_gesla3_meta=None, only_coastal=True):
     station_list_gpd = gpd.GeoDataFrame(data=station_list_pd, geometry=geom)
     drop_list = ["longitude","latitude"]
     station_list_gpd = station_list_gpd.drop(drop_list, axis=1)
-
+    
+    stat_names = station_list_gpd["file_name"]
+    station_list_gpd["station_name_unique"] = stat_names
+    
     # rename columns
     rename_dict = {'start_date_time':'time_min',
                    'end_date_time':'time_max'}
@@ -497,6 +516,9 @@ def gesla3_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_ma
         # https://www.icloud.com/iclouddrive/0tHXOLCgBBjgmpHecFsfBXLag#GESLA3
         # linked on https://gesla787883612.wordpress.com/downloads/
         dir_gesla3_data = r"p:\1230882-emodnet_hrsm\data\GESLA3\GESLA3.0_ALL"
+    
+    if not os.path.exists(dir_gesla3_data):
+        raise FileNotFoundError(f"The 'dir_gesla3_data' path '{dir_gesla3_data}' was not found, provide another one")
     
     print(f"retrieving data for {len(ssh_catalog_gpd)} gesla3 stations: ", end="")
     for file_gesla, row in ssh_catalog_gpd.iterrows():
@@ -692,10 +714,10 @@ def ssh_catalog_subset(source=None,
     return ssh_catalog_gpd
 
 
-def ssh_catalog_toxynfile(ssc_catalog_gpd, file_xyn, name_column='station_name_unique'):
+def ssh_catalog_toxynfile(ssc_catalog_gpd, file_xyn):
     lon = ssc_catalog_gpd.geometry.x
     lat = ssc_catalog_gpd.geometry.y
-    name = ssc_catalog_gpd[name_column]
+    name = ssc_catalog_gpd['station_name_unique']
     data = np.c_[lon, lat, name]
     np.savetxt(file_xyn, data, fmt='%11.6f %11.6f %-s')
 

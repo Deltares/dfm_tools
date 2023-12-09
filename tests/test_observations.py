@@ -17,6 +17,21 @@ from dfm_tools.observations import (ssh_catalog_subset,
 
 
 @pytest.mark.unittest
+def test_ssh_catalog_subset_expected_fields():
+    fields_expected = ["geometry", "source", "country", "station_name_unique"]
+    source_list = ["uhslc-fast", "uhslc-rqds", "psmsl-gnssir", "ssc", "ioc"]
+    if os.path.exists(r"p:\1230882-emodnet_hrsm"):
+        # not possible without p-drive connection
+        source_list += ["gesla3"]
+    if os.name=="nt":
+        source_list += ["cmems"] # TODO: not possible on Github, due to missing credentials
+    for source in source_list:
+        ssc_catalog_gpd = ssh_catalog_subset(source=source)
+        for field in fields_expected:
+            assert field in ssc_catalog_gpd.columns
+
+
+@pytest.mark.unittest
 def test_ssh_catalog_subset():
     lon_min, lon_max, lat_min, lat_max = -6, 5, 48, 50.5 # france
     # lon_min, lon_max, lat_min, lat_max = 123, 148, 23, 47 # japan
@@ -24,7 +39,6 @@ def test_ssh_catalog_subset():
     # time_min, time_max = '2016-01-01','2016-06-01'
     time_min, time_max = '2020-01-01','2020-06-01'
     
-    fields_expected = ["geometry", "source", "country"]
     source_list_witime = ["uhslc-fast", "uhslc-rqds", "psmsl-gnssir"]
     if os.path.exists(r"p:\1230882-emodnet_hrsm"):
         # not possible without p-drive connection
@@ -44,8 +58,6 @@ def test_ssh_catalog_subset():
                                                      lat_min=lat_min, lat_max=lat_max, 
                                                      time_min=time_min, time_max=time_max)
         assert len(ssc_catalog_gpd) > len(ssc_catalog_gpd_sel)
-        for field in fields_expected:
-            assert field in ssc_catalog_gpd.columns
 
 
 @pytest.mark.unittest
