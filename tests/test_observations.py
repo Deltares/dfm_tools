@@ -5,6 +5,7 @@ Created on Sat Dec  9 17:46:57 2023
 @author: veenstra
 """
 
+import shutil
 import os
 import pytest
 from dfm_tools.observations import (ssh_catalog_subset,
@@ -52,7 +53,7 @@ def test_ssh_retrieve_data():
     
     time_min, time_max = '2020-01-01','2020-02-01'
     
-    source_list = ["ioc", "cmems", "uhslc-fast", "uhslc-rqds", "psmsl-gnssir"] # "gesla3" not possible on github
+    source_list = ["ioc", "cmems", "uhslc-fast", "uhslc-rqds", "psmsl-gnssir"]
     if os.path.exists(r"p:\1230882-emodnet_hrsm"):
         # not possible without p-drive connection
         source_list += ["gesla3"]
@@ -64,6 +65,8 @@ def test_ssh_retrieve_data():
         else:
             ssh_retrieve_data(ssc_catalog_gpd_sel, dir_output,
                               time_min=time_min, time_max=time_max)
+    #clean up
+    shutil.rmtree(dir_output)
 
 
 @pytest.mark.unittest
