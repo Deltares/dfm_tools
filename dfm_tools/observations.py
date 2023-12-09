@@ -247,7 +247,6 @@ def uhslc_fast_ssh_read_catalog():
     return uhslc_json
 
 
-
 def ioc_ssh_read_catalog(drop_uhslc=True, drop_dart=True, drop_nonutc=True):
     """
     Generates a list of all active IOC stations (showall=a).
