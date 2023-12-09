@@ -80,11 +80,11 @@ def ssc_ssh_read_catalog():
     The SSC catalog contains e.g. UHSLC and GLOSS ids, this can be used
     for unique station naming across several observation datasets
 
-    info: http://www.ioc-sealevelmonitoring.org/ssc.php
-    station list: http://www.ioc-sealevelmonitoring.org/ssc/
+    info: https://www.ioc-sealevelmonitoring.org/ssc.php
+    station list: https://www.ioc-sealevelmonitoring.org/ssc/
     """
     
-    url_json = 'http://www.ioc-sealevelmonitoring.org/ssc/service.php?format=json'
+    url_json = 'https://www.ioc-sealevelmonitoring.org/ssc/service.php?format=json'
     SSC_catalog_pd = pd.read_json(url_json)
     
     #convert all cells with ids to list of strings or NaN
@@ -128,7 +128,7 @@ def ssc_ssh_read_catalog():
             print(f'station {idx+1} of {len(SSC_catalog_gpd)}: {station_ssc_id}')
             SSC_catalog_pd_stat_IOCUHSLC = SSC_catalog_gpd.loc[station_ssc_id,['ioc','uhslc']]
     
-            url_station = f'http://www.ioc-sealevelmonitoring.org/ssc/stationdetails.php?id={station_ssc_id}'
+            url_station = f'https://www.ioc-sealevelmonitoring.org/ssc/stationdetails.php?id={station_ssc_id}'
             url_response = urlopen(url_station)
             url_response_read = url_response.read()
             
@@ -422,7 +422,7 @@ def uhslc_ssh_retrieve_data(uhslc_json, dir_output, time_min=None, time_max=None
 
 
 def ioc_ssh_read_catalog(drop_uhslc=True, drop_nonutc=True):
-    url_json = 'http://www.ioc-sealevelmonitoring.org/service.php?query=stationlist&showall=a' #showall=a means active. showall=all is all known and gives more results than no argument, but also returns nonexistent stations
+    url_json = 'https://www.ioc-sealevelmonitoring.org/service.php?query=stationlist&showall=a' #showall=a means active. showall=all is all known and gives more results than no argument, but also returns nonexistent stations
     resp = requests.get(url_json)
     if resp.status_code==404: #continue to next station if not found
         raise Exception(f'url 404: {resp.text}')    
@@ -554,7 +554,7 @@ def ioc_ssh_retrieve_data(ioc_catalog_gpd, dir_output, date_min, date_max, subse
                 endtime = pd.Timestamp(year+1,1,1)
             else:
                 endtime = pd.Timestamp(year,month+1,1)
-            url_json = (f"http://www.ioc-sealevelmonitoring.org/service.php?query=data&"
+            url_json = (f"https://www.ioc-sealevelmonitoring.org/service.php?query=data&"
                         f"code={station_code}&format=json&"
                         f"timestart={starttime.isoformat()}&timestop={endtime.isoformat()}")
             resp = requests.get(url_json)
