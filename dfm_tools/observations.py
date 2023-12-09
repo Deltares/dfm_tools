@@ -510,31 +510,29 @@ def uhslc_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max
 
 
 def gesla3_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
-                             dir_gesla3_data=None):
+                             file_gesla3_data=None):
     
-    if dir_gesla3_data is None:
+    if file_gesla3_data is None:
         # https://www.icloud.com/iclouddrive/0tHXOLCgBBjgmpHecFsfBXLag#GESLA3
         # linked on https://gesla787883612.wordpress.com/downloads/
-        dir_gesla3_data = r"p:\1230882-emodnet_hrsm\data\GESLA3\GESLA3.0_ALL"
+        file_gesla3_data = r"p:\1230882-emodnet_hrsm\data\GESLA3\GESLA3.0_ALL.zip"
     
-    if not os.path.exists(dir_gesla3_data):
-        raise FileNotFoundError(f"The 'dir_gesla3_data' path '{dir_gesla3_data}' was not found, provide another one")
+    if not os.path.isfile(file_gesla3_data):
+        raise FileNotFoundError(f"The 'file_gesla3_data' file '{file_gesla3_data}' was not found, provide another one")
+    
+    myzip = ZipFile(file_gesla3_data)
     
     print(f"retrieving data for {len(ssh_catalog_gpd)} gesla3 stations: ", end="")
     for file_gesla, row in ssh_catalog_gpd.iterrows():
         irow = ssh_catalog_gpd.index.tolist().index(file_gesla)
         print(f'{irow+1} ', end="")
-        file_gesla_org = os.path.join(dir_gesla3_data, file_gesla)
+        # file_gesla_org = os.path.join(dir_gesla3_data, file_gesla)
         file_gesla_nc = os.path.join(dir_output, f'{file_gesla}.nc')
         
-        with open(file_gesla_org, "r") as f:
-            data = pd.read_csv(
-                f,
-                comment='#',
-                names=["date", "time", "sea_level", "qc_flag", "use_flag"],
-                delim_whitespace = True,
-                parse_dates=[[0, 1]],
-                index_col=0)
+        with myzip.open(file_gesla, "r") as f:
+            data = pd.read_csv(f, comment='#', delim_whitespace = True,
+                               names=["date", "time", "sea_level", "qc_flag", "use_flag"],
+                               parse_dates=[[0, 1]], index_col=0)
         
         # clean up time duplicates
         data.index.name = 'time'
