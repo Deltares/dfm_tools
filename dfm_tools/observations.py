@@ -406,7 +406,7 @@ def cmems_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max
     """
     
     if time_min is not None or time_max is not None:
-        print("time extents supplied to 'cmems_ssh_retrieve_data()', tehse will be ignored.")
+        print("time extents supplied to 'cmems_ssh_retrieve_data()', these will be ignored.")
     
     # setup ftp connection
     host = 'my.cmems-du.eu'
