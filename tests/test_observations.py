@@ -9,10 +9,10 @@ import shutil
 import os
 import pytest
 from dfm_tools.observations import (ssh_catalog_subset,
+                                    ssh_catalog_toxynfile,
                                     ssh_retrieve_data,
                                     ssc_sscid_from_otherid,
                                     ssc_ssh_subset_groups,
-                                    ssh_catalog_toxynfile,
                                     )
 
 

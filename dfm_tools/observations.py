@@ -25,8 +25,8 @@ from io import BytesIO
 
 __all__ = ["ssc_sscid_from_otherid",
            "ssc_ssh_subset_groups",
-           "ssh_catalog_toxynfile",
            "ssh_catalog_subset",
+           "ssh_catalog_toxynfile",
            "ssh_retrieve_data",
        ]
 
@@ -429,7 +429,8 @@ def cmems_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max
         irow = ssh_catalog_gpd.index.tolist().index(idx_arbitrary)
         print(irow+1, end=" ")
         fname = os.path.basename(row.loc["file_name"])
-        fname_out = os.path.join(dir_output, fname) #TODO: write in cachedir
+        stat_name = row.loc["station_name_unique"]
+        fname_out = os.path.join(dir_output, f"{stat_name}.nc")
         with open(fname_out, 'wb') as fp:
             ftp.retrbinary(f'RETR {fname}', fp.write)
         # TODO: add fname to netcdf attrs
@@ -465,10 +466,10 @@ def uhslc_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max
                        "uhslc-rqds":"global_hourly_rqds"}
     
     print(f"retrieving data for {len(ssh_catalog_gpd)} uhslc stations: ", end="")
-    uhslc_id_list = ssh_catalog_gpd["uhslc_id"].tolist()
-    for inum, uhslc_id in enumerate(uhslc_id_list):
-        print(f'{inum+1} ', end="")
-        source = ssh_catalog_gpd.loc[uhslc_id, "source"]
+    for uhslc_id, row in ssh_catalog_gpd.iterrows():
+        irow = ssh_catalog_gpd.index.tolist().index(uhslc_id)
+        print(f'{irow+1} ', end="")
+        source = row["source"]
         dataset_id = dataset_id_dict[source]
         e.dataset_id = dataset_id
         
@@ -503,7 +504,8 @@ def uhslc_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max
         ds['time'] = ds.time.dt.round('S') #round to seconds
         
         # write to netcdf file
-        file_out = os.path.join(dir_output, f"{source}-{uhslc_id}_ssh.nc")
+        stat_name = row["station_name_unique"]
+        file_out = os.path.join(dir_output, f"{stat_name}.nc")
         ds.to_netcdf(file_out)
         # del ds
     print()
@@ -526,8 +528,6 @@ def gesla3_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_ma
     for file_gesla, row in ssh_catalog_gpd.iterrows():
         irow = ssh_catalog_gpd.index.tolist().index(file_gesla)
         print(f'{irow+1} ', end="")
-        # file_gesla_org = os.path.join(dir_gesla3_data, file_gesla)
-        file_gesla_nc = os.path.join(dir_output, f'{file_gesla}.nc')
         
         with myzip.open(file_gesla, "r") as f:
             data = pd.read_csv(f, comment='#', delim_whitespace = True,
@@ -564,7 +564,9 @@ def gesla3_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_ma
         ds = ds.where(ds.qc_flag==1)
         
         # write to file
-        ds.to_netcdf(file_gesla_nc)
+        stat_name = row["station_name_unique"]
+        file_out = os.path.join(dir_output, f"{stat_name}.nc")
+        ds.to_netcdf(file_out)
         del ds
     print()
 
@@ -627,7 +629,8 @@ def ioc_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, subse
                              )
         
         # write to netcdf file
-        file_out = os.path.join(dir_output, f"IOC-{station_code}_ssh.nc")
+        stat_name = row["station_name_unique"]
+        file_out = os.path.join(dir_output, f"{stat_name}.nc")
         ds.to_netcdf(file_out)
 
 
@@ -664,7 +667,8 @@ def psmsl_gnssir_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_
             print("[NODATA] ",end="")
             continue
         
-        file_out = os.path.join(dir_output, f"PSMSL-GNSSIR-{station_id}_ssh.nc")
+        stat_name = row["station_name_unique"]
+        file_out = os.path.join(dir_output, f"{stat_name}.nc")
         ds.to_netcdf(file_out)
         del ds
     print()
