@@ -55,7 +55,7 @@ def test_ssh_retrieve_data():
     
     time_min, time_max = '2020-01-01','2020-02-01'
     
-    source_list = ["ioc", "cmems", "uhslc-fast", "uhslc-rqds", "psmsl-gnssir"]
+    source_list = ["ioc", "uhslc-fast", "uhslc-rqds", "psmsl-gnssir"]
     if os.path.exists(r"p:\1230882-emodnet_hrsm"):
         # not possible without p-drive connection
         source_list += ["gesla3"]
