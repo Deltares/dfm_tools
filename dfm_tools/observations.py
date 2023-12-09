@@ -421,31 +421,13 @@ def uhslc_ssh_retrieve_data(uhslc_json, dir_output, time_min=None, time_max=None
         # del ds
 
 
-def ioc_ssh_read_catalog(drop_uhslc=True, drop_nonutc=True):
+def ioc_ssh_read_catalog(drop_uhslc=True, drop_dart=True, drop_nonutc=True):
     url_json = 'https://www.ioc-sealevelmonitoring.org/service.php?query=stationlist&showall=a' #showall=a means active. showall=all is all known and gives more results than no argument, but also returns nonexistent stations
     resp = requests.get(url_json)
     if resp.status_code==404: #continue to next station if not found
         raise Exception(f'url 404: {resp.text}')    
     resp_json = resp.json()
     IOC_catalog_pd = pd.DataFrame.from_dict(resp_json)
-    
-    # def remove_accents(input_str):
-    #     import unicodedata
-    #     nfkd_form = unicodedata.normalize('NFKD', input_str)
-    #     only_ascii = nfkd_form.encode('ASCII', 'ignore').decode('ASCII')
-    #     return only_ascii
-    #generate station_name_fname (remove all non numeric/letter characters and replace by -, strip '-' from begin/end, set ssc_id as prefix)
-    # IOC_catalog_pd['station_name_fname'] = IOC_catalog_pd['Location'].str.replace('ø','o').str.replace('’',"'") # necessary since otherwise these letters are dropped with remove_accents()
-    # IOC_catalog_pd['station_name_fname'] = IOC_catalog_pd['station_name_fname'].apply(lambda x: remove_accents(x)) #remove accents from letters
-    # bool_somethingdropped = (IOC_catalog_pd['station_name_fname'].str.len() != IOC_catalog_pd['Location'].str.len())
-    # if bool_somethingdropped.any():
-    #     raise Exception('lengths mismatch, characters were dropped:\n%s'%(IOC_catalog_pd.loc[bool_somethingdropped,['Location','station_name_fname']]))
-    # IOC_catalog_pd['station_name_fname'] = IOC_catalog_pd['station_name_fname'].apply(lambda x: re.sub("[^0-9a-zA-Z]+", "-", x)) #replace comma and brackets with dash
-    # IOC_catalog_pd['station_name_fname'] = IOC_catalog_pd['station_name_fname'].str.strip('-') #remove first/last dash from name if present
-    
-    # IOC_catalog_pd['station_lat'] = IOC_catalog_pd['Lat']
-    # IOC_catalog_pd['station_lon'] = IOC_catalog_pd['Lon']
-    # IOC_catalog_pd['station_name_unique'] = 'IOC-'+IOC_catalog_pd['Code']+'_'+IOC_catalog_pd['station_name_fname']
     
     #set ssc_id as index
     IOC_catalog_pd = IOC_catalog_pd.set_index('Code',drop=False)
@@ -455,8 +437,7 @@ def ioc_ssh_read_catalog(drop_uhslc=True, drop_nonutc=True):
     
     if drop_uhslc:
         # filter non-UHSLC stations
-        # TODO: do this without pkl file
-        SSC_catalog_pd = pd.read_pickle(r'p:\1230882-emodnet_hrsm\global_tide_surge_model\trunk\observation_locations_org\SSC-catalog.pkl')
+        SSC_catalog_pd = ssc_ssh_subset()
         ioc_catalog_gpd['UHSLC'] = False
         ioc_catalog_gpd['inSSClist'] = False
         for ioc_code in ioc_catalog_gpd['Code']:
@@ -470,6 +451,10 @@ def ioc_ssh_read_catalog(drop_uhslc=True, drop_nonutc=True):
                 else:
                     ioc_catalog_gpd.loc[ioc_code,'UHSLC'] = True
         ioc_catalog_gpd = ioc_catalog_gpd.loc[~ioc_catalog_gpd['UHSLC']]
+    
+    if drop_dart:
+        bool_dart = ioc_catalog_gpd["Location"].str.startswith("DART ")
+        ioc_catalog_gpd = ioc_catalog_gpd.loc[~bool_dart]
     
     if drop_nonutc:
         # filter out all non-UTC stations
@@ -681,7 +666,7 @@ def psmsl_gnssir_retrieve_data(station_list_gpd, dir_output):
     print()
 
 
-def gesla3_ssh_read_catalog(file_gesla3_meta=None):
+def gesla3_ssh_read_catalog(file_gesla3_meta=None, only_coastal=True):
     if file_gesla3_meta is None:
         # from https://www.icloud.com/iclouddrive/01a8u37HiumNKbg6CpQUEA7-A#GESLA3_ALL_2
         # linked on https://gesla787883612.wordpress.com/downloads/
@@ -692,6 +677,11 @@ def gesla3_ssh_read_catalog(file_gesla3_meta=None):
     station_list_pd = station_list_pd.set_index('file_name', drop=False)
     station_list_pd["start_date_time"] = pd.to_datetime(station_list_pd["start_date_time"])
     station_list_pd["end_date_time"] = pd.to_datetime(station_list_pd["end_date_time"])
+    station_list_pd["ndays"] = (station_list_pd['end_date_time'] - station_list_pd['start_date_time']).dt.total_seconds()/3600/24
+    
+    # drop non-coastal
+    if only_coastal:
+        station_list_pd = station_list_pd.loc[station_list_pd['gauge_type']=='Coastal']
     
     # generate geom and geodataframe
     geom = [Point(x["longitude"], x["latitude"]) for irow, x in station_list_pd.iterrows()]
@@ -702,12 +692,13 @@ def gesla3_ssh_read_catalog(file_gesla3_meta=None):
 def gesla3_ssh_subset(lon_min=-180, lon_max=180, 
                       lat_min=-90, lat_max=90, 
                       time_min=None, time_max=None,
-                      file_gesla3_meta=None):
+                      file_gesla3_meta=None,
+                      only_coastal=True):
     # TODO: check if min<max
     # TODO: accept None but replace with min/max value from dict. Time min/max are pd.min() and pd.max()
     # TODO: accept partial None (now one None is same as all None)
     
-    station_list_gpd = gesla3_ssh_read_catalog(file_gesla3_meta=file_gesla3_meta)
+    station_list_gpd = gesla3_ssh_read_catalog(file_gesla3_meta=file_gesla3_meta, only_coastal=only_coastal)
 
     # spatial subsetting
     station_list_gpd = station_list_gpd.clip((lon_min, lat_min, lon_max, lat_max))
@@ -722,7 +713,7 @@ def gesla3_ssh_subset(lon_min=-180, lon_max=180,
 
 def gesla3_ssh_retrieve_data(gesla3_stations_gpd, dir_output,
                              time_min=None, time_max=None,
-                             dir_gesla3_data=None, file_gesla3_meta=None,
+                             dir_gesla3_data=None, file_gesla3_meta=None, only_coastal=True
                              ):
     
     if dir_gesla3_data is None:
@@ -730,7 +721,7 @@ def gesla3_ssh_retrieve_data(gesla3_stations_gpd, dir_output,
         # linked on https://gesla787883612.wordpress.com/downloads/
         dir_gesla3_data = r"p:\1230882-emodnet_hrsm\data\GESLA3\GESLA3.0_ALL"
     
-    gesla_stations_gpd = gesla3_ssh_subset(file_gesla3_meta=file_gesla3_meta)
+    gesla_stations_gpd = gesla3_ssh_subset(file_gesla3_meta=file_gesla3_meta, only_coastal=only_coastal)
     
     for file_gesla, row in gesla3_stations_gpd.iterrows():
         irow = gesla3_stations_gpd.index.tolist().index(file_gesla)
