@@ -369,7 +369,8 @@ def gesla3_ssh_read_catalog(file_gesla3_meta=None, only_coastal=True):
         file_gesla3_meta = r"p:\1230882-emodnet_hrsm\data\GESLA3\GESLA3_ALL 2.csv"
     
     if not os.path.isfile(file_gesla3_meta):
-        raise FileNotFoundError(f"The 'file_gesla3_meta' file '{file_gesla3_meta}' was not found, provide another one")
+        raise FileNotFoundError(f"The 'file_gesla3_meta' file '{file_gesla3_meta}' was not found. "
+                                "You can download it from https://gesla787883612.wordpress.com/downloads and provide the path")
     
     station_list_pd = pd.read_csv(file_gesla3_meta)
     station_list_pd.columns = [c.replace(" ", "_").replace("(", "").replace(")", "").replace("/", "_").lower() for c in station_list_pd.columns]
@@ -513,7 +514,8 @@ def gesla3_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_ma
         file_gesla3_data = r"p:\1230882-emodnet_hrsm\data\GESLA3\GESLA3.0_ALL.zip"
     
     if not os.path.isfile(file_gesla3_data):
-        raise FileNotFoundError(f"The 'file_gesla3_data' file '{file_gesla3_data}' was not found, provide another one")
+        raise FileNotFoundError(f"The 'file_gesla3_data' file '{file_gesla3_data}' was not found. "
+                                "You can download it from https://gesla787883612.wordpress.com/downloads and provide the path")
     
     myzip = ZipFile(file_gesla3_data)
     
