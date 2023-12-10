@@ -364,8 +364,6 @@ def psmsl_gnssir_ssh_read_catalog_gettimes(station_list_gpd):
 
 def gesla3_ssh_read_catalog(file_gesla3_meta=None, only_coastal=True):
     if file_gesla3_meta is None:
-        # from https://www.icloud.com/iclouddrive/01a8u37HiumNKbg6CpQUEA7-A#GESLA3_ALL_2
-        # linked on https://gesla787883612.wordpress.com/downloads/
         file_gesla3_meta = r"p:\1230882-emodnet_hrsm\data\GESLA3\GESLA3_ALL 2.csv"
     
     if not os.path.isfile(file_gesla3_meta):
@@ -509,8 +507,6 @@ def gesla3_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_ma
                              file_gesla3_data=None):
     
     if file_gesla3_data is None:
-        # https://www.icloud.com/iclouddrive/0tHXOLCgBBjgmpHecFsfBXLag#GESLA3
-        # linked on https://gesla787883612.wordpress.com/downloads/
         file_gesla3_data = r"p:\1230882-emodnet_hrsm\data\GESLA3\GESLA3.0_ALL.zip"
     
     if not os.path.isfile(file_gesla3_data):
