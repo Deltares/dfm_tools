@@ -401,19 +401,15 @@ def gesla3_ssh_read_catalog(file_gesla3_meta=None, only_coastal=True):
 def cmems_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None):
     """
     Retrieve data from FTP
-    Can only retrieve entire files, no temporal subsetting possible
+    Can only retrieve entire files, subsetting is done during reconstruction
     
     """
-    
-    if time_min is not None or time_max is not None:
-        print("time extents supplied to 'cmems_ssh_retrieve_data()', these will be ignored.")
     
     # setup ftp connection
     host = 'my.cmems-du.eu'
     ftp = FTP(host=host)
     username, password = copernicusmarine_credentials()
     ftp.login(user=username, passwd=password)
-    # ftp.pwd()
     
     dir_data = os.path.dirname(ssh_catalog_gpd['file_name'].iloc[0]).split(host)[1]
     ftp.cwd(dir_data)
@@ -425,9 +421,26 @@ def cmems_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max
         print(irow+1, end=" ")
         fname = os.path.basename(row.loc["file_name"])
         stat_name = row.loc["station_name_unique"]
+        fname_out_raw = os.path.join(dir_output, f"{stat_name}_raw.nc")
         fname_out = os.path.join(dir_output, f"{stat_name}.nc")
-        with open(fname_out, 'wb') as fp:
+        with open(fname_out_raw, 'wb') as fp:
             ftp.retrbinary(f'RETR {fname}', fp.write)
+        
+        # reconstruct this dataset (including time subsetting) and write again
+        ds = xr.open_dataset(fname_out_raw)
+        ds = ds.rename(TIME="time")
+        ds["SLEV"] = ds.SLEV.where(ds.SLEV_QC==1)
+        ds = ds.rename_vars(SLEV="waterlevel")
+        ds = ds.sel(time=slice(time_min, time_max))
+        if len(ds.time) == 0:
+            print("[NODATA] ", end="")
+            del ds
+            os.remove(fname_out_raw)
+            continue
+        ds.to_netcdf(fname_out)
+        del ds
+        os.remove(fname_out_raw)
+        
     print()
 
 
@@ -477,6 +490,7 @@ def uhslc_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max
             assert ds["sea_level"].attrs["units"] == "millimeters"
             ds["sea_level"] = ds["sea_level"]/1000
             ds["sea_level"] = ds["sea_level"].assign_attrs(units="meters")
+        ds = ds.rename_vars(sea_level="waterlevel")
         
         # set time index
         ds = ds.set_index(obs="time").rename(obs="time")
@@ -531,7 +545,8 @@ def gesla3_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_ma
         ds['site_name'] = xr.DataArray([meta_sel.site_name], dims=('stations'))
         ds['latitude'] = xr.DataArray([meta_sel.latitude], dims=('stations'))
         ds['longitude'] = xr.DataArray([meta_sel.longitude], dims=('stations'))
-        ds['longitude'] = ds['longitude'].assign_attrs(units="meters")
+        ds['sea_level'] = ds['sea_level'].assign_attrs(units="meters")
+        ds = ds.rename_vars(sea_level="waterlevel")
         
         # subset time
         ds = ds.sel(time=slice(time_min, time_max))
@@ -556,14 +571,14 @@ def ioc_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, subse
     if time_min is None or time_max is None:
         raise ValueError("cannot supply None for 'time_min' or 'time_max' to 'ioc_ssh_retrieve_data()'")
     
-    print(f"retrieving data for {len(ssh_catalog_gpd)} ioc stations:")
+    period_range = pd.period_range(time_min, time_max, freq="1M")
+    print(f"retrieving data for {len(ssh_catalog_gpd)} ioc stations for {len(period_range)} months: ", end="")
     for station_code, row in ssh_catalog_gpd.iterrows():
+        irow = ssh_catalog_gpd.index.tolist().index(station_code)
         results_list = []
-        period_range = pd.period_range(time_min, time_max,freq="1M")
-        print(f'{station_code}: ', end="")
+        print(irow+1, end="")
         for date in period_range:
-            date_str = str(date)
-            print(f'{date_str} ', end="")
+            print('.', end="")
             year = date.year
             month = date.month
             starttime = date.to_timestamp()
@@ -585,7 +600,7 @@ def ioc_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, subse
                 raise Exception(resp.text)
             data_pd_one = pd.DataFrame.from_dict(resp_json)
             results_list.append(data_pd_one)
-        print()
+        print(" ", end="")
         
         if len(results_list)==0:
             # continue with next station if no data present in entire period
@@ -594,7 +609,7 @@ def ioc_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, subse
         # convert to xarray
         data_pd_all = pd.concat(results_list)
         data_pd_all = data_pd_all.rename({"stime":"time"},axis=1)
-        data_pd_all = pd.DataFrame({'slev':data_pd_all['slevel'].values},
+        data_pd_all = pd.DataFrame({'slevel':data_pd_all['slevel'].values},
                                 index=pd.to_datetime(data_pd_all['time']))
         data_pd_all = data_pd_all[~data_pd_all.index.duplicated(keep='last')]
         if subset_hourly:
@@ -606,11 +621,13 @@ def ioc_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, subse
                              latitude=row["Lat"],
                              country_code=row["country"],
                              )
+        ds = ds.rename_vars(slevel="waterlevel")
         
         # write to netcdf file
         stat_name = row["station_name_unique"]
         file_out = os.path.join(dir_output, f"{stat_name}.nc")
         ds.to_netcdf(file_out)
+    print()
 
 
 def psmsl_gnssir_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None):
@@ -634,6 +651,7 @@ def psmsl_gnssir_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_
         
         ds = data.to_xarray()
         ds['slev'] = ds['slev'].assign_attrs(units="m")
+        ds = ds.rename_vars(slev="waterlevel")
         ds = ds.assign_attrs(station_id=row["Name"],
                              station_code=row["Code"],
                              longitude=row.geometry.x,
