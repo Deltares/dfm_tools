@@ -159,6 +159,20 @@ def remove_nan_fillvalue_attrs(ds : (xr.Dataset, xu.UgridDataset)):
         print(f"[{count} nan fillvalue attrs removed]", end="")
 
 
+def uds_auto_set_crs(uds : xu.UgridDataset):
+    uds_epsg = uds.filter_by_attrs(epsg=lambda v: v is not None)
+    if len(uds_epsg.data_vars) != 1:
+        return
+    
+    crs_varn = list(uds_epsg.data_vars)[0]
+    epsg = uds[crs_varn].attrs["epsg"]
+    from pyproj.exceptions import CRSError
+    try:
+        uds.ugrid.set_crs(epsg)
+    except CRSError:
+        return
+
+
 def open_partitioned_dataset(file_nc, decode_fillvals=False, remove_edges=True, remove_ghost=True, **kwargs): 
     """
     using xugrid to read and merge partitions, with some additional features (remaning old layerdim, timings, set zcc/zw as data_vars)
@@ -222,6 +236,7 @@ def open_partitioned_dataset(file_nc, decode_fillvals=False, remove_edges=True, 
         uds = xu.core.wrap.UgridDataset(ds)
         if remove_ghost: #TODO: this makes it way slower (at least for GTSM, although merging seems faster), but is necessary since values on overlapping cells are not always identical (eg in case of Venice ucmag)
             uds = remove_ghostcells(uds, file_nc_one)
+        uds_auto_set_crs(uds)
         partitions.append(uds)
     print(': ',end='')
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
@@ -521,15 +536,6 @@ def uda_interfaces_to_centers(uda_int : xu.UgridDataArray) -> xu.UgridDataArray:
     return uda_cen
 
 
-def get_uds_isgeographic(uds):
-    uds_wgs84 = uds.filter_by_attrs(grid_mapping_name="latitude_longitude")
-    if len(uds_wgs84.data_vars) > 0:
-        is_geographic = True
-    else:
-        is_geographic = False
-    return is_geographic
-
-
 def add_network_cellinfo(uds:xu.UgridDataset):
     """
     Reads a UgridDataset with a minimal topology as it occurs in dflowfm netfiles,
@@ -543,9 +549,10 @@ def add_network_cellinfo(uds:xu.UgridDataset):
     # derive meshkernel from grid with Mesh1d
     mk1 = uds.grid.meshkernel
     mk_mesh1d = mk1.mesh1d_get()
+    crs = uds.grid.crs
     
     # use Mesh1d nodes/edgenodes info for generation of meshkernel with Mesh2d
-    is_geographic = get_uds_isgeographic(uds)
+    is_geographic = uds.grid.is_geographic
     from dfm_tools.meshkernel_helpers import geographic_to_meshkernel_projection
     projection = geographic_to_meshkernel_projection(is_geographic)
     mk_mesh2d = meshkernel.Mesh2d(mk_mesh1d.node_x, mk_mesh1d.node_y, mk_mesh1d.edge_nodes)
@@ -554,7 +561,7 @@ def add_network_cellinfo(uds:xu.UgridDataset):
     mesh2d_grid = mk2.mesh2d_get() #this is a more populated version of mk_mesh2d, needed for xugrid
     #TODO: we have to supply is_geographic twice, necessary?
     # also "projected" is opposite of "is_geographic" according to the docstring
-    xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid, projected = not is_geographic)
+    xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid, projected = not is_geographic, crs=crs)
     
     # convert uds.obj (non-grid vars from dataset) to new xugrid standards
     rename_dims_dict = {uds.grid.node_dimension:xu_grid.node_dimension,

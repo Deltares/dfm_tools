@@ -15,10 +15,10 @@ import numpy as np
 import geopandas as gpd
 from shapely.geometry import Polygon
 import glob
-from dfm_tools.meshkernel_helpers import (meshkernel_check_geographic, 
-                                          geographic_to_meshkernel_projection, 
-                                          add_crs_to_dataset,
-                                          crs_to_isgeographic)
+from dfm_tools.meshkernel_helpers import (geographic_to_meshkernel_projection, 
+                                          uds_add_crs_attrs,
+                                          crs_to_isgeographic
+                                          )
 
 
 @pytest.mark.unittest
@@ -42,10 +42,11 @@ def test_crs_to_isgeographic():
 
 
 @pytest.mark.unittest
-def test_add_crs_to_dataset_cartesian():
+def test_uds_add_crs_attrs_cartesian():
     uds = xu.data.adh_san_diego()
     crs='EPSG:28992' # this is not the correct crs for this model, but that does not matter
-    add_crs_to_dataset(uds,is_geographic=False,crs=crs)
+    uds.ugrid.set_crs(crs)
+    uds_add_crs_attrs(uds)
     
     assert "projected_coordinate_system" in uds.data_vars
     crs_attrs = uds["projected_coordinate_system"].attrs
@@ -56,10 +57,11 @@ def test_add_crs_to_dataset_cartesian():
 
 
 @pytest.mark.unittest
-def test_add_crs_to_dataset_spherical():
+def test_uds_add_crs_attrs_spherical():
     uds = xu.data.adh_san_diego()
     crs='EPSG:4326' # this is not the correct crs for this model, but that does not matter
-    add_crs_to_dataset(uds,is_geographic=True,crs=crs)
+    uds.ugrid.set_crs(crs)
+    uds_add_crs_attrs(uds)
     
     assert "wgs84" in uds.data_vars
     crs_attrs = uds["wgs84"].attrs
@@ -138,22 +140,6 @@ def test_meshkernel_delete_withgdf():
     dfmt.meshkernel_delete_withgdf(mk=mk, coastlines_gdf=ldb_gdf)
     
     assert len(mk.mesh2d_get().face_nodes) == 17368
-
-
-@pytest.mark.unittest
-def test_meshkernel_check_geographic():
-    
-    mk = meshkernel.MeshKernel(projection=meshkernel.ProjectionType.CARTESIAN)
-    is_geographic = meshkernel_check_geographic(mk)
-    assert is_geographic==False
-    
-    mk = meshkernel.MeshKernel(projection=meshkernel.ProjectionType.SPHERICAL)
-    is_geographic = meshkernel_check_geographic(mk)
-    assert is_geographic==True
-    
-    mk = meshkernel.MeshKernel(projection=meshkernel.ProjectionType.SPHERICALACCURATE)
-    is_geographic = meshkernel_check_geographic(mk)
-    assert is_geographic==True
 
 
 @pytest.mark.unittest
