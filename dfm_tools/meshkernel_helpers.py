@@ -13,7 +13,6 @@ from dfm_tools import __version__
 import getpass
 import numpy as np
 from dfm_tools.coastlines import get_coastlines_gdb
-from dfm_tools.xugrid_helpers import uds_auto_set_crs
 from netCDF4 import default_fillvals
 import geopandas as gpd
 from shapely import MultiPolygon, LineString, MultiLineString
@@ -159,7 +158,6 @@ def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, crs:(int,str) = None) -
     """
     
     crs_is_geographic = crs_to_isgeographic(crs)
-    # mk_is_geographic = meshkernel_check_geographic(mk)
     
     mesh2d_grid = mk.mesh2d_get()
     
