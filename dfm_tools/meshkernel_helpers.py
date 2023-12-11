@@ -116,29 +116,6 @@ def meshkernel_delete_withgdf(mk:meshkernel.MeshKernel, coastlines_gdf:gpd.GeoDa
                          invert_deletion=False)
 
 
-def meshkernel_check_geographic(mk:meshkernel.MeshKernel) -> bool:
-    """
-    Get projection from meshkernel instance
-
-    Parameters
-    ----------
-    mk : meshkernel.MeshKernel
-        DESCRIPTION.
-
-    Returns
-    -------
-    bool
-        DESCRIPTION.
-
-    """
-    
-    if mk.get_projection()==meshkernel.ProjectionType.CARTESIAN:
-        is_geographic = False
-    else:
-        is_geographic = True
-    return is_geographic
-
-
 def geographic_to_meshkernel_projection(is_geographic:bool) -> meshkernel.ProjectionType:
     """
     converts is_geographic boolean to meshkernel.ProjectionType (SPHERICAL OR CARTESIAN)
@@ -180,11 +157,13 @@ def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, crs:(int,str) = None) -
 
     """
     
-    is_geographic = meshkernel_check_geographic(mk)
+    crs_is_geographic = crs_to_isgeographic(crs)
     
     mesh2d_grid = mk.mesh2d_get()
     
-    xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid)
+    # TODO: below is not correctly handled by xugrid yet, projected=False does not give is_geographic=True
+    # related issue is https://github.com/Deltares/dfm_tools/issues/686
+    xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid, projected= not crs_is_geographic, crs=crs)
     
     #convert 0-based to 1-based indices for connectivity variables like face_node_connectivity
     xu_grid_ds = xu_grid.to_dataset()
@@ -204,14 +183,25 @@ def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, crs:(int,str) = None) -
                                           'source': f'Created with meshkernel {meshkernel.__version__}, xugrid {xu.__version__} and dfm_tools {__version__}',
                                           'history': 'Created on %s, %s'%(dt.datetime.now().strftime('%Y-%m-%dT%H:%M:%S%z'),getpass.getuser()), #TODO: add timezone
                                           })
-    #TODO: xugrid overwrites these global attributes upon saving the network file: https://github.com/Deltares/xugrid/issues/111
     
-    add_crs_to_dataset(uds=xu_grid_uds,is_geographic=is_geographic,crs=crs)
+    # add crs including attrs
+    if crs is not None:
+        xu_grid_uds.ugrid.set_crs(crs)
     
     return xu_grid_uds
 
 
-def add_crs_to_dataset(uds:(xu.UgridDataset,xr.Dataset),is_geographic:bool,crs:(str,int)):
+def uds_get_crs(uds):
+    uds_crs_dict = uds.ugrid.crs
+    if uds_crs_dict is None:
+        return None
+    else:
+        keys = list(uds_crs_dict.keys())
+        crs = uds_crs_dict[keys[0]]
+        return crs
+
+
+def uds_add_crs_attrs(uds:(xu.UgridDataset,xr.Dataset)):
     """
     
 
@@ -219,8 +209,6 @@ def add_crs_to_dataset(uds:(xu.UgridDataset,xr.Dataset),is_geographic:bool,crs:(
     ----------
     uds : (xu.UgridDataset,xr.Dataset)
         DESCRIPTION.
-    is_geographic : bool
-        whether it is a spherical (True) or cartesian (False), property comes from meshkernel instance.
     crs : (str,int)
         epsg, e.g. 'EPSG:4326' or 4326.
 
@@ -234,7 +222,10 @@ def add_crs_to_dataset(uds:(xu.UgridDataset,xr.Dataset),is_geographic:bool,crs:(
     None.
 
     """
-    #TODO: get is_geographic from uds, align with xugrid
+    
+    grid_is_geographic = uds.grid.is_geographic
+    
+    crs = uds_get_crs(uds)
     
     #get crs information (name/num)
     if crs is None:
@@ -252,11 +243,11 @@ def add_crs_to_dataset(uds:(xu.UgridDataset,xr.Dataset),is_geographic:bool,crs:(
         # TODO: standard names for lat/lon in crs_info.cs_to_cf()
     
     #check if combination of is_geographic and crs makes sense
-    if is_geographic != crs_is_geographic:
-        raise ValueError(f"`is_geographic` mismatch between provided grid (is_geographic={is_geographic}) and provided crs ({crs}, is_geographic={crs_is_geographic})")
+    if grid_is_geographic != crs_is_geographic:
+        raise ValueError(f"`grid_is_geographic` mismatch between provided grid (is_geographic={grid_is_geographic}) and provided crs ({crs}, is_geographic={crs_is_geographic})")
     
     #TODO: consider always using the same crs_varn, align with xugrid
-    if is_geographic:
+    if grid_is_geographic:
         crs_varn = 'wgs84'
     else:
         crs_varn = 'projected_coordinate_system'
@@ -266,7 +257,7 @@ def add_crs_to_dataset(uds:(xu.UgridDataset,xr.Dataset),is_geographic:bool,crs:(
         'epsg': np.array(crs_num, dtype=int), # epsg or EPSG_code should be present for the interacter to load the grid and by QGIS to recognize the epsg.
         'EPSG_code': crs_str, # epsg or EPSG_code should be present for the interacter to load the grid and by QGIS to recognize the epsg.
         }
-    if is_geographic:
+    if grid_is_geographic:
         # without grid_mapping_name="latitude_longitude", interacter sees the grid as cartesian
         # grid_mapping_name is not available for projected crs's
         attribute_dict['grid_mapping_name'] = crs_info.to_cf()['grid_mapping_name']

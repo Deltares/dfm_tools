@@ -1,6 +1,7 @@
 ## UNRELEASED
 
 ### Feat
+- automatically parse epsg from FM mapfile to crs in `dfmt.open_partitioned_dataset()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#685](https://github.com/Deltares/dfm_tools/pull/685)
 - added spatial/temporal subsetting and retrieving of insitu observation data with `dfmt.ssh_catalog_subset()` and `dfmt.ssh_retrieve_data()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#711](https://github.com/Deltares/dfm_tools/pull/711)
 
 
