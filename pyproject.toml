@@ -93,6 +93,9 @@ examples = [
 	"notebook",
 ]
 
+[tool.setuptools]
+packages = ["dfm_tools"]
+
 [tool.pytest.ini_options]
 console_output_style = "count"
 testpaths = ["tests"]
