@@ -214,59 +214,6 @@ def cmems_ssh_read_catalog():
     return index_history_gpd
 
 
-def cmems_nrt_ssh_read_catalog():
-    # setup ftp connection
-    host = 'nrt.cmems-du.eu'
-    ftp = FTP(host=host)
-    username, password = copernicusmarine_credentials()
-    ftp.login(user=username, passwd=password)
-    ftp.cwd('Core/INSITU_GLO_PHYBGCWAV_DISCRETE_MYNRT_013_030/cmems_obs-ins_glo_phybgcwav_mynrt_na_irr')
-    
-    # read index
-    fname = 'index_history.txt'
-    with open(fname, 'wb') as fp:
-        ftp.retrbinary(f'RETR {fname}', fp.write)
-    with open(fname, 'r') as f:
-        for line in f:
-            if line.startswith('#'):
-                header = line
-            else:
-                break #stop when there are no more #
-    colnames = header.strip('#').strip().split(',')
-    index_history_pd = pd.read_csv(fname,comment='#',names=colnames)
-    os.remove(fname) # remove the local file again
-    
-    # we keep only stations with variables DEPH SLEV to avoid varying lat/lon coordinates in nrt dataset
-    index_history_pd = index_history_pd.loc[index_history_pd["file_name"].str.contains("/history/TG/")]
-    # the below TG also has varying coords, so we drop it
-    index_history_pd = index_history_pd.loc[~index_history_pd["file_name"].str.contains("MO_TS_TG_ANDRATX.nc")]
-    
-    # generate geom and geodataframe
-    assert (index_history_pd["geospatial_lon_min"] == index_history_pd["geospatial_lon_max"]).all()
-    assert (index_history_pd["geospatial_lat_min"] == index_history_pd["geospatial_lat_max"]).all()
-    geom = [Point(x["geospatial_lon_min"], x["geospatial_lat_min"]) for irow, x in index_history_pd.iterrows()]
-    index_history_gpd = gpd.GeoDataFrame(data=index_history_pd, geometry=geom)
-    drop_list = ["geospatial_lon_min", "geospatial_lon_max",
-                 "geospatial_lat_min", "geospatial_lat_max"]
-    index_history_gpd = index_history_gpd.drop(drop_list, axis=1)
-    
-    # add dummy country column for the test to pass
-    # TODO: hopefully country metadata is available via cmems API in the future
-    index_history_gpd["country"] = ""
-    stat_names = index_history_gpd["file_name"].apply(lambda x: os.path.basename(x).strip(".nc").strip("_60minute"))
-    index_history_gpd["station_name_unique"] = stat_names
-    
-    # rename columns
-    rename_dict = {'time_coverage_start':'time_min',
-                   'time_coverage_end':'time_max'}
-    index_history_gpd = index_history_gpd.rename(rename_dict, axis=1)
-    index_history_gpd["time_min"] = pd.to_datetime(index_history_gpd["time_min"])
-    index_history_gpd["time_max"] = pd.to_datetime(index_history_gpd["time_max"])
-    
-    index_history_gpd["time_ndays"] = (index_history_gpd['time_max'] - index_history_gpd['time_min']).dt.total_seconds()/3600/24
-    return index_history_gpd
-
-
 def uhslc_ssh_read_catalog(source):
     # TODO: country is "New Zealand" and country_code is 554. We would like country=NZL
     # TODO: maybe use min of rqds and max of fast for time subsetting
@@ -735,7 +682,6 @@ def ssh_catalog_subset(source=None,
                    "gesla3": gesla3_ssh_read_catalog,
                    "ioc": ioc_ssh_read_catalog,
                    "cmems": cmems_ssh_read_catalog,
-                   "cmems-nrt": cmems_nrt_ssh_read_catalog,
                    "uhslc-fast": uhslc_fast_ssh_read_catalog,
                    "uhslc-rqds": uhslc_rqds_ssh_read_catalog,
                    "psmsl-gnssir": psmsl_gnssir_ssh_read_catalog,
