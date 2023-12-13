@@ -170,7 +170,7 @@ def ssc_ssh_read_catalog():
 
 
 def copernicusmarine_retrieve_from_ftp(dataset_id, file_filter, output_directory):
-    direct = True
+    direct = False
     if direct:
         dir_ftp = os.path.dirname(file_filter)
         fname = os.path.basename(file_filter)
@@ -184,7 +184,9 @@ def copernicusmarine_retrieve_from_ftp(dataset_id, file_filter, output_directory
         with open(fname_out, 'wb') as fp:
             ftp.retrbinary(f'RETR {fname}', fp.write)
     else:
+        # avoid INFO prints from cmc
         logging.getLogger("copernicus_marine_root_logger").setLevel("ERROR")
+        #TODO: currently still causing "DeprecationWarning: Function 'semver.match' is deprecated."
         print() #TODO: temporary newline print to avoid the progressbar messing up the station numbers
         cmc.get(
             dataset_id=dataset_id,
