@@ -67,8 +67,11 @@ def get_coastlines_gdb(res:str='h', bbox:tuple = (-180, -90, 180, 90), min_area:
         coastlines_gdb_L3 = gpd.read_file(file_shp_L3, include_fields=include_fields, where=f"area>{min_area}", bbox=bbox)
         coastlines_gdb_list.append(coastlines_gdb_L3)
     
-    # remove empty geodataframes from list to avoid FutureWarning and concatenate
+    # remove empty geodataframes from list to avoid FutureWarning
+    # escape for empty resulting list and concatenate otherwise
     coastlines_gdb_list = [x for x in coastlines_gdb_list if not x.empty]
+    if not coastlines_gdb_list:
+        return gpd.GeoDataFrame()
     coastlines_gdb = pd.concat(coastlines_gdb_list)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
