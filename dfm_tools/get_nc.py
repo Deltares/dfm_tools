@@ -153,7 +153,7 @@ def get_xzcoords_onintersection(uds, face_index, crs_dist_starts, crs_dist_stops
     return xr_crs_ugrid
 
 
-def polyline_mapslice(uds:xu.UgridDataset, line_array:np.array, calcdist_fromlatlon:bool = None) -> xu.UgridDataset:
+def polyline_mapslice(uds:xu.UgridDataset, line_array:np.array) -> xu.UgridDataset:
     """
     Slice trough mapdata, combine: intersect_edges_withsort, calculation of distances and conversion to ugrid dataset.
 
