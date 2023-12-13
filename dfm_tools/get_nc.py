@@ -153,7 +153,7 @@ def get_xzcoords_onintersection(uds, face_index, crs_dist_starts, crs_dist_stops
     return xr_crs_ugrid
 
 
-def polyline_mapslice(uds:xu.UgridDataset, line_array:np.array, calcdist_fromlatlon:bool = None) -> xu.UgridDataset:
+def polyline_mapslice(uds:xu.UgridDataset, line_array:np.array) -> xu.UgridDataset:
     """
     Slice trough mapdata, combine: intersect_edges_withsort, calculation of distances and conversion to ugrid dataset.
 
@@ -184,15 +184,7 @@ def polyline_mapslice(uds:xu.UgridDataset, line_array:np.array, calcdist_fromlat
     if len(edge_index) == 0:
         raise ValueError('polyline does not cross mapdata')
     
-    #auto determine if cartesian/sperical distance should be computed
-    if calcdist_fromlatlon is None:
-        if hasattr(uds,'projected_coordinate_system'):
-            calcdist_fromlatlon = False
-        elif hasattr(uds,'wgs84'):
-            calcdist_fromlatlon = True
-        else:
-            raise KeyError('To auto determine calcdist_fromlatlon, a variable "projected_coordinate_system" or "wgs84" is required, please provide calcdist_fromlatlon=True/False yourself.')
-    if calcdist_fromlatlon:
+    if uds.grids[0].is_geographic:
         calc_dist = calc_dist_haversine
     else:
         calc_dist = calc_dist_pythagoras

@@ -160,6 +160,10 @@ def remove_nan_fillvalue_attrs(ds : (xr.Dataset, xu.UgridDataset)):
 
 
 def uds_auto_set_crs(uds : xu.UgridDataset):
+    # FM-mapfiles contain wgs84/projected_coordinate_system variables with epsg attr, xugrid has .crs property
+    # TODO: parse+set crs in xugrid instead: https://github.com/Deltares/xugrid/issues/42
+    # also adjusting projected_coordinate_system/wgs84 when using set_crs/to_crs
+    
     uds_epsg = uds.filter_by_attrs(epsg=lambda v: v is not None)
     if len(uds_epsg.data_vars) != 1:
         return
@@ -208,7 +212,6 @@ def open_partitioned_dataset(file_nc, decode_fillvals=False, remove_edges=True, 
         - MWRA 3D 20 partitions 2551 timesteps:  74.4/ 3.4 sec (decode_times=False:  79.0 sec)
     
     """
-    #TODO: FM-mapfiles contain wgs84/projected_coordinate_system variables. xugrid has .crs property, projected_coordinate_system/wgs84 should be updated to be crs so it will be automatically handled? >> make dflowfm issue (and https://github.com/Deltares/xugrid/issues/42)
     #TODO: add support for multiple grids via keyword? https://github.com/Deltares/dfm_tools/issues/497
     #TODO: speed up open_dataset https://github.com/Deltares/dfm_tools/issues/225 (also remove_ghost)
     
