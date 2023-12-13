@@ -24,8 +24,8 @@ from dfm_tools import data
 from dfm_tools.modelbuilder import *
 from dfm_tools.observations import *
 
-# import warnings
-# warnings.filterwarnings(action="always", category=DeprecationWarning)
+import warnings
+warnings.filterwarnings(action="always", category=DeprecationWarning)
 
 # python 3.8 DeprecationWarning
 import sys

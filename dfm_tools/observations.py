@@ -14,16 +14,17 @@ import geopandas as gpd
 from shapely import Point
 import os
 import xarray as xr
+from ftplib import FTP
+from dfm_tools.download import copernicusmarine_credentials
 import copernicus_marine_client as cmc
+import logging
 from erddapy import ERDDAP #pip install erddapy
 import requests
 import matplotlib.pyplot as plt
 plt.close('all')
 from zipfile import ZipFile
 from io import BytesIO
-from ftplib import FTP
-from dfm_tools.download import copernicusmarine_credentials
-import logging
+
 
 __all__ = ["ssh_catalog_subset",
            "ssh_catalog_toxynfile",
