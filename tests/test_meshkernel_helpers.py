@@ -155,6 +155,19 @@ def test_geographic_to_meshkernel_projection():
 
 
 @pytest.mark.systemtest
+def test_meshkernel_to_UgridDataset_geographic_mismatch():
+    """
+    """
+    projection = meshkernel.ProjectionType.CARTESIAN
+    crs = 'EPSG:4326'
+    mk = meshkernel.MeshKernel(projection=projection)
+    try:
+        _ = dfmt.meshkernel_to_UgridDataset(mk=mk, crs=crs)
+    except ValueError as e:
+        assert "crs has is_geographic=True and grid has is_geographic=False" in str(e)
+
+
+@pytest.mark.systemtest
 def test_meshkernel_to_UgridDataset():
     """
     generate grid with meshkernel. Then convert with `dfmt.meshkernel_to_UgridDataset()` from 0-based to 1-based indexing to make FM-compatible network.
@@ -204,6 +217,7 @@ def test_meshkernel_to_UgridDataset():
     assert 0 not in ds_out.mesh2d_face_nodes.to_numpy()
     assert ds_out.mesh2d_face_nodes.to_numpy().min() == -1
     assert ds_out.mesh2d_face_nodes.to_numpy().max() == 626
+    assert "wgs84" in ds_out.variables
 
 
 @pytest.mark.unittest

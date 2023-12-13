@@ -138,6 +138,14 @@ def geographic_to_meshkernel_projection(is_geographic:bool) -> meshkernel.Projec
     return projection
 
 
+def meshkernel_is_geographic(mk):
+    if mk.get_projection()==meshkernel.ProjectionType.CARTESIAN:
+        is_geographic = False
+    else:
+        is_geographic = True
+    return is_geographic
+
+
 def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, crs:(int,str) = None) -> xu.UgridDataset:
     """
     Convert a meshkernel object to a UgridDataset, including a variable with the crs (used by dflowfm to distinguish spherical/cartesian networks).
@@ -160,6 +168,12 @@ def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, crs:(int,str) = None) -
     crs_is_geographic = crs_to_isgeographic(crs)
     
     mesh2d_grid = mk.mesh2d_get()
+    
+    #check if both crs and grid are geograpic or not
+    #TODO: do this in xugrid: https://github.com/Deltares/xugrid/issues/188
+    grid_is_geographic = meshkernel_is_geographic(mk)
+    if crs_is_geographic != grid_is_geographic:
+        raise ValueError(f"crs has is_geographic={crs_is_geographic} and grid has is_geographic={grid_is_geographic}. This is not allowed.")
     
     # TODO: below is not correctly handled by xugrid yet, projected=False does not give is_geographic=True
     # related issue is https://github.com/Deltares/dfm_tools/issues/686
@@ -187,7 +201,7 @@ def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, crs:(int,str) = None) -
     # add crs including attrs
     if crs is not None:
         xu_grid_uds.ugrid.set_crs(crs)
-    
+        uds_add_crs_attrs(xu_grid_uds)
     return xu_grid_uds
 
 
@@ -222,6 +236,7 @@ def uds_add_crs_attrs(uds:(xu.UgridDataset,xr.Dataset)):
     None.
 
     """
+    # TODO: upon crs conversion and to_netcdf(), the netcdf file could get two crs vars, catch this
     
     grid_is_geographic = uds.grid.is_geographic
     
