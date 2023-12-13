@@ -187,7 +187,7 @@ def copernicusmarine_retrieve_from_ftp(dataset_id, file_filter, output_directory
         print() #TODO: temporary newline print to avoid the progressbar messing up the station numbers
         cmc.get(
             dataset_id=dataset_id,
-            # force_service="ftp",
+            force_service="ftp",
             filter=file_filter,
             output_directory=output_directory,
             force_download=True,
