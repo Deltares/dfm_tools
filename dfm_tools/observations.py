@@ -25,7 +25,6 @@ plt.close('all')
 from zipfile import ZipFile
 from io import BytesIO
 
-
 __all__ = ["ssh_catalog_subset",
            "ssh_catalog_toxynfile",
            "ssh_retrieve_data",
