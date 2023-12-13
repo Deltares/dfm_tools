@@ -261,7 +261,9 @@ def uds_add_crs_attrs(uds:(xu.UgridDataset,xr.Dataset)):
     if grid_is_geographic != crs_is_geographic:
         raise ValueError(f"`grid_is_geographic` mismatch between provided grid (is_geographic={grid_is_geographic}) and provided crs ({crs}, is_geographic={crs_is_geographic})")
     
-    #TODO: consider always using the same crs_varn, align with xugrid
+    # TODO: consider always using the same crs_varn, align with xugrid
+    # QGIS also does not recognize epsg anymore when renaming variable to `crs` 
+    # or something else (`wgs84` and `projected_coordinate_system` both do work)
     if grid_is_geographic:
         crs_varn = 'wgs84'
     else:
