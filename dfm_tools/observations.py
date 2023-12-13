@@ -14,14 +14,16 @@ import geopandas as gpd
 from shapely import Point
 import os
 import xarray as xr
-from ftplib import FTP
-from dfm_tools.download import copernicusmarine_credentials
+import copernicus_marine_client as cmc
 from erddapy import ERDDAP #pip install erddapy
 import requests
 import matplotlib.pyplot as plt
 plt.close('all')
 from zipfile import ZipFile
 from io import BytesIO
+from ftplib import FTP
+from dfm_tools.download import copernicusmarine_credentials
+import logging
 
 __all__ = ["ssh_catalog_subset",
            "ssh_catalog_toxynfile",
@@ -166,18 +168,45 @@ def ssc_ssh_read_catalog():
     return ssc_catalog_gpd
 
 
+def copernicusmarine_retrieve_from_ftp(dataset_id, file_filter, output_directory):
+    direct = True
+    if direct:
+        dir_ftp = os.path.dirname(file_filter)
+        fname = os.path.basename(file_filter)
+        fname_out = os.path.join(output_directory, fname)
+        # setup ftp connection
+        host = 'my.cmems-du.eu'
+        ftp = FTP(host=host)
+        username, password = copernicusmarine_credentials()
+        ftp.login(user=username, passwd=password)
+        ftp.cwd(dir_ftp)
+        with open(fname_out, 'wb') as fp:
+            ftp.retrbinary(f'RETR {fname}', fp.write)
+    else:
+        logging.getLogger("copernicus_marine_root_logger").setLevel("ERROR")
+        print() #TODO: temporary newline print to avoid the progressbar messing up the station numbers
+        cmc.get(
+            dataset_id=dataset_id,
+            # force_service="ftp",
+            filter=file_filter,
+            output_directory=output_directory,
+            force_download=True,
+            no_directories=True,
+            # disable_progress_bar=True, # TODO: setting to True hangs the retrieval process
+            show_outputnames=False,
+            overwrite_output_data=True,
+        )
+
+
 def cmems_ssh_read_catalog():
-    # setup ftp connection
-    host = 'my.cmems-du.eu'
-    ftp = FTP(host=host)
-    username, password = copernicusmarine_credentials()
-    ftp.login(user=username, passwd=password)
-    ftp.cwd('Core/INSITU_GLO_PHY_SSH_DISCRETE_MY_013_053/cmems_obs-ins_glo_phy-ssh_my_na_PT1H')
-    
-    # read index
-    fname = 'index_history.txt'
-    with open(fname, 'wb') as fp:
-        ftp.retrbinary(f'RETR {fname}', fp.write)
+
+    # retrieve indexfile
+    dataset_id = "cmems_obs-ins_glo_phy-ssh_my_na_PT1H"
+    file_filter = "Core/INSITU_GLO_PHY_SSH_DISCRETE_MY_013_053/cmems_obs-ins_glo_phy-ssh_my_na_PT1H/index_history.txt"
+    fname = os.path.basename(file_filter)
+    copernicusmarine_retrieve_from_ftp(dataset_id, file_filter, output_directory=".")
+
+    # read indexfile
     with open(fname, 'r') as f:
         for line in f:
             if line.startswith('#'):
@@ -404,29 +433,27 @@ def cmems_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max
     
     """
     
-    # setup ftp connection
-    host = 'my.cmems-du.eu'
-    ftp = FTP(host=host)
-    username, password = copernicusmarine_credentials()
-    ftp.login(user=username, passwd=password)
-    
-    dir_data = os.path.dirname(ssh_catalog_gpd['file_name'].iloc[0]).split(host)[1]
-    ftp.cwd(dir_data)
     # retrieve
     print(f"retrieving data for {len(ssh_catalog_gpd)} cmems stations:", end=" ")
-    ftp.cwd("")
     for idx_arbitrary, row in ssh_catalog_gpd.iterrows():
         irow = ssh_catalog_gpd.index.tolist().index(idx_arbitrary)
         print(irow+1, end=" ")
-        fname = os.path.basename(row.loc["file_name"])
+        # fname = os.path.basename(row.loc["file_name"])
         stat_name = row.loc["station_name_unique"]
-        fname_out_raw = os.path.join(dir_output, f"{stat_name}_raw.nc")
+        # fname_out_raw = os.path.join(dir_output, f"{stat_name}_raw.nc")
         fname_out = os.path.join(dir_output, f"{stat_name}.nc")
-        with open(fname_out_raw, 'wb') as fp:
-            ftp.retrbinary(f'RETR {fname}', fp.write)
+        
+        # retrieve observations file
+        file_name_fromgpd = row.loc["file_name"]
+        host = "my.cmems-du.eu/"
+        file_filter = file_name_fromgpd.split(host)[1]
+        dataset_id = "cmems_obs-ins_glo_phy-ssh_my_na_PT1H"
+        copernicusmarine_retrieve_from_ftp(dataset_id, file_filter,
+                                           output_directory=dir_output)
         
         # reconstruct this dataset (including time subsetting) and write again
-        ds = xr.open_dataset(fname_out_raw)
+        fname_ftp = os.path.join(dir_output, os.path.basename(file_filter))
+        ds = xr.open_dataset(fname_ftp)
         ds = ds.rename(TIME="time")
         ds["SLEV"] = ds.SLEV.where(ds.SLEV_QC==1)
         ds = ds.rename_vars(SLEV="waterlevel")
@@ -434,11 +461,11 @@ def cmems_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max
         if len(ds.time) == 0:
             print("[NODATA] ", end="")
             del ds
-            os.remove(fname_out_raw)
+            os.remove(fname_ftp)
             continue
         ds.to_netcdf(fname_out)
         del ds
-        os.remove(fname_out_raw)
+        os.remove(fname_ftp)
         
     print()
 
