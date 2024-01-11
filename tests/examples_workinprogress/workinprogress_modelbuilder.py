@@ -17,9 +17,8 @@ import contextily as ctx
 ## input
 model_name = 'Bonaire'
 dir_output = r'p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\ModelBuilderOutput_JV2'
-path_style = 'windows' # windows / unix
+path_style = 'windows' # windows / unix, making relative paths only works when path_style is equal to os
 overwrite = False # used for downloading of forcing data. Always set to True when changing the domain
-paths_relative = True #TODO: currently only works with path_style='windows' (same OS as IDE)
 crs = 'EPSG:4326'
 
 #TODO: salinity instable, also waterlevel and velocity magnitude are instable at northeast side of island (latter is with incorrect ordering/selection in extfile)
@@ -261,6 +260,7 @@ mdu.output.statsinterval = [3600]
 mdu.save(mdu_file,path_style=path_style)
 
 #TODO: workaround to make paths relative until https://github.com/Deltares/HYDROLIB-core/issues/532 is implemented
+#TODO: currently only works with path_style='windows' (same OS as IDE)
 dfmt.make_paths_relative(mdu_file)
 
 nproc = 1 # number of processes
