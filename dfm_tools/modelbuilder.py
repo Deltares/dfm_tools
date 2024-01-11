@@ -24,6 +24,7 @@ __all__ = [
     "cmems_nc_to_ini",
     "preprocess_merge_meteofiles_era5",
     "create_model_exec_files",
+    "make_paths_relative",
     ]
 
 
@@ -312,4 +313,38 @@ pause
     print(f"writing {bat_name}")
     with open(file_bat,'w') as f:
         f.write(bat_str)
+
+
+def make_paths_relative(mdu_file:str):
+    """
+    Making paths on windows and unix relative by removing the dir_model prefix from paths in the mdu and ext files
+    This is a temporary workaround until implemented in https://github.com/Deltares/HYDROLIB-core/issues/532    
+
+    Parameters
+    ----------
+    mdu_file : str
+        path to mdu_file.
+
+    Returns
+    -------
+    None.
+
+    """
+    dir_model = os.path.dirname(mdu_file)
+    mdu_existing = hcdfm.FMModel(mdu_file, recurse=False)
+    file_list = [mdu_file]
+    ext_old = mdu_existing.external_forcing.extforcefile
+    if ext_old is not None:
+        file_list.append(ext_old.filepath)
+    ext_new = mdu_existing.external_forcing.extforcefilenew
+    if ext_new is not None:
+        file_list.append(ext_new.filepath)
+    for filename in file_list:
+        if filename is None:
+            continue
+        with open(filename, 'r') as file:
+            filedata = file.read()
+        filedata = filedata.replace(dir_model.replace('\\','/')+'/', '')
+        with open(filename, 'w') as file:
+            file.write(filedata)
 

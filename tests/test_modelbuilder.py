@@ -88,3 +88,70 @@ def test_create_model_exec_files():
     os.remove(mdu_file)
     os.remove(file_dimr)
 
+
+@pytest.mark.unittest
+def test_make_paths_relative():
+    dir_output = '.'
+        
+    #create dummy file
+    if not os.path.exists(dir_output):
+        os.mkdir(dir_output)
+    file_pli = os.path.join(dir_output,'test_model.pli')
+    with open(file_pli,'w') as f:
+        f.write("""name
+                    2    2
+                    1.0    2.0
+                    3.0    4.0
+                    """)
+    
+    # new ext
+    ext_file_new = os.path.join(dir_output, 'test_new.ext')
+    ext_new = hcdfm.ExtModel()
+    ForcingModel_object = hcdfm.ForcingModel()
+    boundary_object = hcdfm.Boundary(quantity='waterlevelbnd', #the FM quantity for tide is also waterlevelbnd
+                                     locationfile=file_pli,
+                                     forcingfile=ForcingModel_object)
+    ext_new.boundary.append(boundary_object)
+    ext_new.save(filepath=ext_file_new)
+        
+    # old ext
+    ext_file_old = os.path.join(dir_output, 'test_old.ext')
+    ext_old = hcdfm.ExtOldModel()
+    forcing_old = hcdfm.ExtOldForcing(quantity='airpressure_windx_windy_charnock',
+                                      filename=file_pli,
+                                      filetype=hcdfm.ExtOldFileType.NetCDFGridData, #11
+                                      method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                      operand=hcdfm.Operand.override) #O
+    ext_old.forcing.append(forcing_old)
+    ext_old.save(filepath=ext_file_old)
+    
+    # initialize mdu file, update settings and save
+    mdu_file = os.path.join(dir_output, 'test_model.mdu')
+    mdu = hcdfm.FMModel()
+    mdu.geometry.fixedweirfile = file_pli
+    mdu.external_forcing.extforcefile = ext_old
+    mdu.external_forcing.extforcefilenew = ext_new
+    mdu.save(mdu_file)
+    
+    # make relative and test
+    dfmt.make_paths_relative(mdu_file)
+    
+    # assertions: including equal sign is essential to check for relative paths
+    with open(mdu_file, 'r') as file:
+        filedata = file.read()
+    assert "= test_model.pli" in filedata
+    assert "= test_old.ext" in filedata
+    assert "= test_new.ext" in filedata
+    
+    with open(ext_file_old, 'r') as file:
+        filedata = file.read()
+    assert "FILENAME=test_model.pli" in filedata
+    
+    with open(ext_file_new, 'r') as file:
+        filedata = file.read()
+    assert "locationFile = test_model.pli" in filedata
+
+    os.remove(file_pli)
+    os.remove(ext_file_new)
+    os.remove(ext_file_old)
+    os.remove(mdu_file)
