@@ -260,14 +260,8 @@ mdu.output.statsinterval = [3600]
 #%% export model
 mdu.save(mdu_file,path_style=path_style)
 
-#TODO: if windows/unix newextfile validation is fixed, use relative paths in .ext and in .mdu files (this is a workaround that only works for same-OS so windows paths)
-if paths_relative:
-    for filename in [mdu_file,ext_file_old,ext_file_new]:
-        with open(filename, 'r') as file :
-            filedata = file.read()
-        filedata = filedata.replace(dir_output.replace('\\','/')+'/', '') #dir_output or os.path.dirname(mdu_file)
-        with open(filename, 'w') as file:
-            file.write(filedata)
+#TODO: workaround to make paths relative until https://github.com/Deltares/HYDROLIB-core/issues/532 is implemented
+dfmt.make_paths_relative(mdu_file)
 
 nproc = 1 # number of processes
 dimrset_folder = r"c:\Program Files\Deltares\Delft3D FM Suite 2023.03 HMWQ\plugins\DeltaShell.Dimr\kernels" #alternatively r"p:\d-hydro\dimrset\weekly\2.25.17.78708"
