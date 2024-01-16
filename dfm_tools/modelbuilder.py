@@ -340,11 +340,8 @@ export I_MPI_FABRICS=shm # required on windows
 
 # optionally first load a docker container
 # docker load -i <file.tar>
-# RUN THIS FILE ON COMMAND LINE WITH:
-# docker run --shm-size=4gb -v /path/to/dimr:/data --ulimit stack=-1 -t deltares/delft3dfm:latest /data/run_docker_2024.01.sh
-# minimal alternative
-# docker run -v /path/to/dimr:/data -t deltares/delft3dfm:latest /data/run_docker.sh
-# this run_docker.sh file requires unix file endings, otherwise it will not be found by docker somehow
+# RUN THIS run_docker.sh FILE ON COMMAND LINE WITH (shm-size and ulimit seem optional):
+# docker run -v /path/to/dimr:/data -t deltares/delft3dfm:latest /data/run_docker.sh --shm-size=4gb --ulimit stack=-1
 
 # stop after an error occured
 set -e
@@ -374,7 +371,8 @@ else
 fi
 """
     print(f"writing {docker_name}")
-    with open(file_docker,'w') as f:
+    # run_docker.sh requires unix file endings, so we use newline='\n'
+    with open(file_docker, 'w', newline='\n') as f:
         f.write(docker_str)
 
 
