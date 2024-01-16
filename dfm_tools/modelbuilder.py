@@ -338,7 +338,8 @@ def generate_docker_file(dimr_model):
 # export OMP_NUM_THREADS=1 # not sure what for
 export I_MPI_FABRICS=shm # required on windows
 
-# optionally first load a docker container
+# first pull or load a docker container
+# docker pull deltares/delft3dfm
 # docker load -i <file.tar>
 # RUN THIS run_docker.sh FILE ON COMMAND LINE WITH (shm-size and ulimit seem optional):
 # docker run -v /path/to/dimr:/data -t deltares/delft3dfm:latest /data/run_docker.sh --shm-size=4gb --ulimit stack=-1
