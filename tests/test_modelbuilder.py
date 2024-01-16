@@ -73,7 +73,7 @@ def test_cmems_nc_to_ini_midnight_centered():
 
 
 @pytest.mark.unittest
-def test_create_model_exec_files():
+def test_create_model_exec_files_none():
     mdu_file = "./temp_test.mdu"
     file_dimr = "./dimr_config.xml"
     
@@ -87,6 +87,31 @@ def test_create_model_exec_files():
     
     os.remove(mdu_file)
     os.remove(file_dimr)
+
+
+@pytest.mark.unittest
+def test_create_model_exec_files_docker():
+    mdu_file = "./temp_test.mdu"
+    file_dimr = "./dimr_config.xml"
+    file_docker = "./run_docker.sh"
+    
+    nproc = 1 # number of processes
+    dimrset_folder = "docker"
+    mdu = hcdfm.FMModel()
+    mdu.save(mdu_file)
+    dfmt.create_model_exec_files(file_mdu=mdu_file, nproc=nproc, dimrset_folder=dimrset_folder)
+    
+    assert os.path.isfile(file_dimr)
+    assert os.path.isfile(file_docker)
+    
+    # check for unix line endings, this is required to be found by docker somehow
+    with open(file_docker, 'rb') as f:
+        data = f.readline()
+    assert data == b'#!/bin/bash\n'
+    
+    os.remove(mdu_file)
+    os.remove(file_dimr)
+    os.remove(file_docker)
 
 
 @pytest.mark.unittest
