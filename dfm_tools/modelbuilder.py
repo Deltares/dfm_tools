@@ -263,10 +263,17 @@ def create_model_exec_files(file_mdu, nproc=1, dimrset_folder=None, path_style=N
         for line in lines_new:
             f.write(line)
     
+    if dimrset_folder is None:
+        print("no dimrset_folder provided, cannot write bat/sh file")
+        return
+    elif dimrset_folder=='docker':
+        generate_docker_file(dimr_model=dimr_model, nproc=nproc)
+        return
+    
+    # continue with dimrset_folder which is not None or 'docker'
     if path_style is None:
         path_style = get_path_style_for_current_operating_system().value
     
-    #TODO: currently only bat files are supported (for windows), but linux extension can easily be made
     if path_style == 'windows':
         generate_bat_file(dimr_model=dimr_model, dimrset_folder=dimrset_folder)
     else:
@@ -288,15 +295,11 @@ def generate_bat_file(dimr_model, dimrset_folder=None):
     dimr_name = os.path.basename(dimr_model.filepath)
     mdu_name = os.path.basename(dimr_model.component[0].inputFile)
     nproc = dimr_model.component[0].process
-    if dimrset_folder is None:
-        print(f"no dimrset_folder provided, cannot write {bat_name}")
-        return
     
     if not os.path.exists(dimrset_folder):
         raise FileNotFoundError(f"dimrset_folder not found: {dimrset_folder}")
     
-    bat_str = fr"""
-rem User input
+    bat_str = fr"""rem User input
 set dimrset_folder="{dimrset_folder}"
 set MDU_file="{mdu_name}"
 set partitions={nproc}
@@ -313,6 +316,66 @@ pause
     print(f"writing {bat_name}")
     with open(file_bat,'w') as f:
         f.write(bat_str)
+
+
+def generate_docker_file(dimr_model, nproc=1):
+    """
+    generate run_docker.sh file for running on windows or unix with docker
+    """
+    
+    if dimr_model.filepath is None:
+        raise Exception('first save the dimr_model before passing it to generate_bat_file')
+    
+    dirname = os.path.dirname(dimr_model.filepath)
+    file_docker = os.path.join(dirname, "run_docker.sh")
+    docker_name = os.path.basename(file_docker)
+    
+    dimr_name = os.path.basename(dimr_model.filepath)
+    mdu_name = os.path.basename(dimr_model.component[0].inputFile)
+    nproc = dimr_model.component[0].process
+    
+    docker_str = fr"""#!/bin/bash
+# export OMP_NUM_THREADS=1 # not sure what for
+export I_MPI_FABRICS=shm # required on windows
+
+# optionally first load a docker container
+# docker load -i <file.tar>
+# RUN THIS FILE ON COMMAND LINE WITH:
+# docker run --shm-size=4gb -v /path/to/dimr:/data --ulimit stack=-1 -t deltares/delft3dfm:latest /data/run_docker_2024.01.sh
+# minimal alternative
+# docker run -v /path/to/dimr:/data -t deltares/delft3dfm:latest /data/run_docker.sh
+# this run_docker.sh file requires unix file endings, otherwise it will not be found by docker somehow
+
+# stop after an error occured
+set -e
+
+# set number of partitions
+nPart={nproc}
+
+# location of the binaries inside Docker image
+delft3d=/opt/delft3dfm_latest/lnx64
+
+# DIMR input-file; must already exist!
+dimrFile={dimr_name}
+
+# Replace number of processes in DIMR file
+PROCESSSTR="$(seq -s " " 0 $((nPart-1)))"
+sed -i "s/\(<process.*>\)[^<>]*\(<\/process.*\)/\1$PROCESSSTR\2/" $dimrFile
+
+# Read MDU file from DIMR-file
+# mduFile="$(sed -n 's/\r//; s/<inputFile>\(.*\).mdu<\/inputFile>/\1/p' $dimrFile)".mdu
+mduFile={mdu_name}
+
+if [ "$nPart" == "1" ]; then
+    $delft3d/bin/run_dimr.sh -m $dimrFile
+else
+    $delft3d/bin/run_dflowfm.sh --partition:ndomains=$nPart:icgsolver=6 $mduFile
+    $delft3d/bin/run_dimr.sh -c $nPart -m $dimrFile
+fi
+"""
+    print(f"writing {docker_name}")
+    with open(file_docker,'w') as f:
+        f.write(docker_str)
 
 
 def make_paths_relative(mdu_file:str):
