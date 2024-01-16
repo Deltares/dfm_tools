@@ -267,7 +267,7 @@ def create_model_exec_files(file_mdu, nproc=1, dimrset_folder=None, path_style=N
         print("no dimrset_folder provided, cannot write bat/sh file")
         return
     elif dimrset_folder=='docker':
-        generate_docker_file(dimr_model=dimr_model, nproc=nproc)
+        generate_docker_file(dimr_model=dimr_model)
         return
     
     # continue with dimrset_folder which is not None or 'docker'
@@ -318,7 +318,7 @@ pause
         f.write(bat_str)
 
 
-def generate_docker_file(dimr_model, nproc=1):
+def generate_docker_file(dimr_model):
     """
     generate run_docker.sh file for running on windows or unix with docker
     """
