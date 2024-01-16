@@ -104,6 +104,11 @@ def test_create_model_exec_files_docker():
     assert os.path.isfile(file_dimr)
     assert os.path.isfile(file_docker)
     
+    # check for unix line endings, this is required to be found by docker somehow
+    with open(file_docker, 'rb') as f:
+        data = f.readline()
+    assert data == b'#!/bin/bash\n'
+    
     os.remove(mdu_file)
     os.remove(file_dimr)
     os.remove(file_docker)
