@@ -44,8 +44,8 @@ dependencies = [
 	"pydap>=3.4.0",
 	#erddapy<2.0.0 does not support pandas>=2.0.0
 	"erddapy>=2.0.0",
-	#copernicus-marine-client<0.10.3 has looser requirements and fix for hanging queries
-	"copernicus-marine-client>=0.10.3",
+	#copernicus-marine-client<0.10.6 has looser requirements
+	"copernicus-marine-client>=0.10.6",
 	#pooch<1.1.0 do not have attribute retrieve
 	"pooch>=1.1.0",
 	#hydrolib-core 0.6.0 supports meshkernel>=3.0.0
