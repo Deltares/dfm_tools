@@ -29,7 +29,7 @@ dependencies = [
 	#contextily<1.0.0 is from April 2020
 	"contextily>=1.0.0",
 	#xarray<2023.4.0 conflicts with pandas<2.0.0 for resampling
-	"xarray>=2023.4.0",
+	"xarray>=2023.9.0", #>=2023.4.0", #TODO: temporary for cmc
 	#dask is aligned with xarray, no particular reason
 	"dask>=2023.4.0",
 	#netcdf4<1.5.4 pip install fails in py39
