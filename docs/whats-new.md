@@ -4,10 +4,12 @@
 - added reset of Copernicus Marine Toolbox with `dfmt.download.copernicusmarine_reset()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#714](https://github.com/Deltares/dfm_tools/pull/714)
 - automatically parse epsg from FM mapfile to crs in `dfmt.open_partitioned_dataset()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#685](https://github.com/Deltares/dfm_tools/pull/685)
 - added spatial/temporal subsetting and retrieving of insitu observation data with `dfmt.ssh_catalog_subset()` and `dfmt.ssh_retrieve_data()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#711](https://github.com/Deltares/dfm_tools/pull/711)
+- added conversion of absolute to relative paths for modelbuilder with `dfmt.make_paths_relative()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#723](https://github.com/Deltares/dfm_tools/pull/723)
 
 ### Fix
 - prevent ValueError upon concatenation of only emtpy coastlines geodataframes by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#717](https://github.com/Deltares/dfm_tools/pull/717)
 - added dropped crs variable in network file by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#719](https://github.com/Deltares/dfm_tools/pull/719)
+- moved gtsmv4.1 tide interpolation from extrapolated to rasterized dataset by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#731](https://github.com/Deltares/dfm_tools/pull/731)
 
 
 ## 0.18.0 (2023-12-08)
