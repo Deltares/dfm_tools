@@ -14,6 +14,7 @@ import glob
 import pandas as pd
 import warnings
 import numpy as np
+import netCDF4
 from dfm_tools.errors import OutOfRangeError
 
 __all__ = [
@@ -126,6 +127,10 @@ def preprocess_ERA5(ds):
     """
     if 'expver' in ds.dims:
         ds = ds.mean(dim='expver')
+    
+    # prevent incorrect scaling/offset when merging files
+    prevent_dtype_int(ds)
+    
     return ds
 
 
@@ -138,65 +143,35 @@ def preprocess_woa(ds):
     return ds
 
 
-def prevent_dtype_int(ds): #TODO: this is not used, maybe phase out?
+def prevent_dtype_int(ds, zlib:bool = True):
     """
-    Prevent writing to int, since it might mess up dataset (https://github.com/Deltares/dfm_tools/issues/239 and https://github.com/pydata/xarray/issues/7039)
+    Prevent writing to int, since it might mess up mfdataset (https://github.com/Deltares/dfm_tools/issues/239)
     Since floats are used instead of ints, the disksize of the dataset will be larger
+    zlib=True decreases the filesize again (approx same as int filesize), but writing this file is slower
     """
-    #TODO: alternatively remove scale_factor key from attrs, so it can be recomputed (seems to also work): ds[var].encoding.pop('scale_factor')
-    #TODO: maybe add to preprocess_ERA5 (preferrably popping scale_factor attribute to keep file size small)
+    
     for var in ds.data_vars:
         var_encoding = ds[var].encoding
-        if 'dtype' in var_encoding.keys():
-            if 'int' in str(var_encoding['dtype']):
-                ds[var].encoding.pop('dtype') #remove dtype key from attrs
-    return ds
-
-
-def recompute_scaling_and_offset(ds:xr.Dataset) -> xr.Dataset:
-    """
-    Recompute add_offset and scale_factor for variables of dtype int. As suggested by https://github.com/ArcticSnow/TopoPyScale/issues/60#issuecomment-1459747654
-    This is a proper fix for https://github.com/Deltares/dfm_tools/issues/239, https://github.com/pydata/xarray/issues/7039 and more
-    However, rescaling causes minor semi-accuracy loss, but it does keep the disksize small (which does not happen when converting it to dtype(float32)).
-
-    Parameters
-    ----------
-    ds : xr.Dataset
-        DESCRIPTION.
-
-    Returns
-    -------
-    ds : xr.Dataset
-        DESCRIPTION.
-
-    """
-
-    for var in ds.data_vars:
-        da = ds[var]
-        
-        if 'dtype' not in da.encoding: #check if dype is available, sometime encoding={}
+        if not set(['dtype','scale_factor','add_offset']).issubset(ds[var].encoding.keys()):
             continue
-        dtype = da.encoding['dtype']
+
+        if 'int' not in str(var_encoding['dtype']):
+            print(f"unexpected dtype:{var_encoding['dtype']}")
+
+        # prevent incorrectly scaled integers by dropping scaling/offset encoding
+        ds[var].encoding.pop('scale_factor')
+        ds[var].encoding.pop('add_offset')
         
-        if 'int' not in str(dtype): #skip non-int vars TODO: make proper int-check?
-            continue
-        if 'scale_factor' not in da.encoding.keys() or 'add_offset' not in da.encoding.keys(): #prevent rescaling of non-scaled vars (like crs) #TODO: convert to set().issubset(set())
-            continue
-        
-        n = dtype.itemsize * 8 #n=16 for int16
-        vmin = float(da.min().values)
-        vmax = float(da.max().values)
-        
-        # stretch/compress data to the available packed range
-        scale_factor = (vmax - vmin) / (2 ** n - 1)
-        
-        # translate the range to be symmetric about zero
-        add_offset =  vmin + 2 ** (n - 1) * scale_factor
-        #add_offset = (vmax+vmin)/2 #difference with above is scale_factor/2
-        
-        da.encoding['scale_factor'] = scale_factor
-        da.encoding['add_offset'] = add_offset
-    return ds
+        # remove non-convention attribute
+        if 'missing_value' in ds[var].encoding.keys():
+            ds[var].encoding.pop('missing_value')
+
+        # reduce filesize with float32 instead of int and compression
+        ds[var].encoding["dtype"] = "float32"
+        if '_FillValue' in ds[var].encoding.keys():
+            float32_fillvalue = netCDF4.default_fillvals['f4']
+            ds[var].encoding['_FillValue'] = float32_fillvalue
+        ds[var].encoding["zlib"] = zlib
 
 
 def merge_meteofiles(file_nc:str, preprocess=None, 
@@ -316,19 +291,15 @@ def merge_meteofiles(file_nc:str, preprocess=None,
         overlap_rtol['longitude'] = overlap_rtol['longitude'] - 360
         data_xr = xr.concat([data_xr,overlap_ltor,overlap_rtol],dim='longitude').sortby('longitude')
     
-    #GTSM specific addition for zerovalues during spinup
-    #TODO: doing this drops all encoding from variables, causing them to be converted into floats. Also makes sense since 0 pressure does not fit into int16 range as defined by scalefac and offset
-    #'scale_factor': 0.17408786412952254, 'add_offset': 99637.53795606793
-    #99637.53795606793 - 0.17408786412952254*32768
-    #99637.53795606793 + 0.17408786412952254*32767
+    # GTSM specific addition for zerovalues during spinup
+    # doing this drops all encoding from variables, causing them to be converted into floats
     if zerostart:
         field_zerostart = data_xr.isel(time=[0,0])*0 #two times first field, set values to 0
         field_zerostart['time'] = [times_pd.index[0]-dt.timedelta(days=2),times_pd.index[0]-dt.timedelta(days=1)] #TODO: is one zero field not enough? (is replacing first field not also ok? (results in 1hr transition period)
         data_xr = xr.concat([field_zerostart,data_xr],dim='time',combine_attrs='no_conflicts') #combine_attrs argument prevents attrs from being dropped
     
-    # converting from int16 to float32 (by removing dtype from encoding) or recompute scale_factor/add_offset is necessary for ERA5 dataset
-    #data_xr = prevent_dtype_int(data_xr)
-    data_xr = recompute_scaling_and_offset(data_xr)
+    # converting from int16 with scalefac/offset to float32 with zlib
+    prevent_dtype_int(data_xr)
     
     return data_xr
 
