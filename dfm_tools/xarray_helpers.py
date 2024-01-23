@@ -138,19 +138,28 @@ def preprocess_woa(ds):
     return ds
 
 
-def prevent_dtype_int(ds): #TODO: this is not used, maybe phase out?
+def prevent_dtype_int(ds, zlib:bool = True): #TODO: this is not used, maybe phase out?
     """
-    Prevent writing to int, since it might mess up dataset (https://github.com/Deltares/dfm_tools/issues/239 and https://github.com/pydata/xarray/issues/7039)
+    Prevent writing to int, since it might mess up dataset (https://github.com/Deltares/dfm_tools/issues/239)
     Since floats are used instead of ints, the disksize of the dataset will be larger
+    zlib=True decreases the filesize again (approx same as int filesize), but writing this file is slower
     """
-    #TODO: alternatively remove scale_factor key from attrs, so it can be recomputed (seems to also work): ds[var].encoding.pop('scale_factor')
     #TODO: maybe add to preprocess_ERA5 (preferrably popping scale_factor attribute to keep file size small)
     for var in ds.data_vars:
         var_encoding = ds[var].encoding
-        if 'dtype' in var_encoding.keys():
-            if 'int' in str(var_encoding['dtype']):
-                ds[var].encoding.pop('dtype') #remove dtype key from attrs
-    return ds
+        if not set(['dtype','scale_factor','add_offset']).issubset(ds[var].encoding.keys()):
+            continue
+
+        if 'int' not in str(var_encoding['dtype']):
+            print(f"unexpected dtype:{var_encoding['dtype']}")
+
+        # prevent incorrectly scaled integers by dropping scaling/offset encoding
+        ds[var].encoding.pop('scale_factor')
+        ds[var].encoding.pop('add_offset')
+
+        # reduce filesize with float32 instead of int and compression
+        ds[var].encoding["dtype"] = "float32"
+        ds[var].encoding["zlib"] = zlib
 
 
 def recompute_scaling_and_offset(ds:xr.Dataset) -> xr.Dataset:
