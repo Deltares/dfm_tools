@@ -199,8 +199,11 @@ def download_CMEMS(varkey,
     if dataset_id is None:
         dataset_id = copernicusmarine_get_dataset_id(varkey, date_min, date_max)
     if buffer is None:
-        buffer = copernicus_marine_get_buffer(dataset_id)
-
+        buffer = copernicusmarine_get_buffer(dataset_id)
+    # date_range with same start as stoptime is a bit tricky so we limit freqs: https://github.com/Deltares/dfm_tools/issues/720
+    if freq not in ["D","M"]:
+        raise ValueError(f"freq should be 'D' or 'M', not {freq}")
+    
     # make sure the data fully covers more than the desired spatial extent
     longitude_min -= buffer
     longitude_max += buffer
@@ -288,7 +291,7 @@ def copernicusmarine_get_dataset_id(varkey, date_min, date_max):
     return dataset_id
 
 
-def copernicus_marine_get_buffer(dataset_id):
+def copernicusmarine_get_buffer(dataset_id):
     ds = cmc.open_dataset(dataset_id=dataset_id)
     try:
         resolution = ds.latitude.attrs["step"]
