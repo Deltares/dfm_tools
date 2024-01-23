@@ -283,19 +283,15 @@ def merge_meteofiles(file_nc:str, preprocess=None,
         overlap_rtol['longitude'] = overlap_rtol['longitude'] - 360
         data_xr = xr.concat([data_xr,overlap_ltor,overlap_rtol],dim='longitude').sortby('longitude')
     
-    #GTSM specific addition for zerovalues during spinup
-    #TODO: doing this drops all encoding from variables, causing them to be converted into floats. Also makes sense since 0 pressure does not fit into int16 range as defined by scalefac and offset
-    #'scale_factor': 0.17408786412952254, 'add_offset': 99637.53795606793
-    #99637.53795606793 - 0.17408786412952254*32768
-    #99637.53795606793 + 0.17408786412952254*32767
+    # GTSM specific addition for zerovalues during spinup
+    # doing this drops all encoding from variables, causing them to be converted into floats
     if zerostart:
         field_zerostart = data_xr.isel(time=[0,0])*0 #two times first field, set values to 0
         field_zerostart['time'] = [times_pd.index[0]-dt.timedelta(days=2),times_pd.index[0]-dt.timedelta(days=1)] #TODO: is one zero field not enough? (is replacing first field not also ok? (results in 1hr transition period)
         data_xr = xr.concat([field_zerostart,data_xr],dim='time',combine_attrs='no_conflicts') #combine_attrs argument prevents attrs from being dropped
     
-    # converting from int16 to float32 (by removing dtype from encoding) or recompute scale_factor/add_offset is necessary for ERA5 dataset
-    #data_xr = prevent_dtype_int(data_xr)
-    data_xr = recompute_scaling_and_offset(data_xr)
+    # converting from int16 with scalefac/offset to float32 with zlib
+    prevent_dtype_int(data_xr)
     
     return data_xr
 
