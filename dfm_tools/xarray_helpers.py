@@ -126,6 +126,10 @@ def preprocess_ERA5(ds):
     """
     if 'expver' in ds.dims:
         ds = ds.mean(dim='expver')
+    
+    # prevent incorrect scaling/offset when merging files
+    prevent_dtype_int(ds)
+    
     return ds
 
 
@@ -144,7 +148,7 @@ def prevent_dtype_int(ds, zlib:bool = True): #TODO: this is not used, maybe phas
     Since floats are used instead of ints, the disksize of the dataset will be larger
     zlib=True decreases the filesize again (approx same as int filesize), but writing this file is slower
     """
-    #TODO: maybe add to preprocess_ERA5 (preferrably popping scale_factor attribute to keep file size small)
+    
     for var in ds.data_vars:
         var_encoding = ds[var].encoding
         if not set(['dtype','scale_factor','add_offset']).issubset(ds[var].encoding.keys()):
@@ -160,52 +164,6 @@ def prevent_dtype_int(ds, zlib:bool = True): #TODO: this is not used, maybe phas
         # reduce filesize with float32 instead of int and compression
         ds[var].encoding["dtype"] = "float32"
         ds[var].encoding["zlib"] = zlib
-
-
-def recompute_scaling_and_offset(ds:xr.Dataset) -> xr.Dataset:
-    """
-    Recompute add_offset and scale_factor for variables of dtype int. As suggested by https://github.com/ArcticSnow/TopoPyScale/issues/60#issuecomment-1459747654
-    This is a proper fix for https://github.com/Deltares/dfm_tools/issues/239, https://github.com/pydata/xarray/issues/7039 and more
-    However, rescaling causes minor semi-accuracy loss, but it does keep the disksize small (which does not happen when converting it to dtype(float32)).
-
-    Parameters
-    ----------
-    ds : xr.Dataset
-        DESCRIPTION.
-
-    Returns
-    -------
-    ds : xr.Dataset
-        DESCRIPTION.
-
-    """
-
-    for var in ds.data_vars:
-        da = ds[var]
-        
-        if 'dtype' not in da.encoding: #check if dype is available, sometime encoding={}
-            continue
-        dtype = da.encoding['dtype']
-        
-        if 'int' not in str(dtype): #skip non-int vars TODO: make proper int-check?
-            continue
-        if 'scale_factor' not in da.encoding.keys() or 'add_offset' not in da.encoding.keys(): #prevent rescaling of non-scaled vars (like crs) #TODO: convert to set().issubset(set())
-            continue
-        
-        n = dtype.itemsize * 8 #n=16 for int16
-        vmin = float(da.min().values)
-        vmax = float(da.max().values)
-        
-        # stretch/compress data to the available packed range
-        scale_factor = (vmax - vmin) / (2 ** n - 1)
-        
-        # translate the range to be symmetric about zero
-        add_offset =  vmin + 2 ** (n - 1) * scale_factor
-        #add_offset = (vmax+vmin)/2 #difference with above is scale_factor/2
-        
-        da.encoding['scale_factor'] = scale_factor
-        da.encoding['add_offset'] = add_offset
-    return ds
 
 
 def merge_meteofiles(file_nc:str, preprocess=None, 
