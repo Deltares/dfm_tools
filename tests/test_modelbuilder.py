@@ -15,7 +15,7 @@ from dfm_tools.hydrolib_helpers import get_ncbnd_construct
 
 
 @pytest.mark.systemtest
-def test_cmems_nc_to_ini_midnight_centered():
+def test_cmems_nc_to_ini_midnight_centered(tmp_path):
     
     # TODO: create fixture
     from tests.test_interpolate_grid2bnd import cmems_dataset_4times
@@ -24,7 +24,7 @@ def test_cmems_nc_to_ini_midnight_centered():
     ds2 = cmems_dataset_4times().isel(time=slice(2,None))
     ds2["time"] = ds2["time"] + pd.Timedelta(hours=12)
     
-    dir_pattern = "./temp_cmems_2day_*.nc"
+    dir_pattern = tmp_path / "temp_cmems_2day_*.nc"
     file_nc1 = dir_pattern.replace("*","sal_p1")
     file_nc2 = dir_pattern.replace("*","sal_p2")
     file_nc3 = dir_pattern.replace("*","tem_p1")
@@ -42,7 +42,7 @@ def test_cmems_nc_to_ini_midnight_centered():
                                    tstart="2020-01-01",
                                    dir_pattern=dir_pattern)
     
-    file_expected = "./nudge_salinity_temperature_2020-01-01_00-00-00.nc"
+    file_expected = tmp_path / "./nudge_salinity_temperature_2020-01-01_00-00-00.nc"
     
     times_expected =  ['2020-01-01 00:00:00', '2020-01-02 00:00:00']
     
@@ -60,22 +60,12 @@ def test_cmems_nc_to_ini_midnight_centered():
     assert varn_depth in ds_out.coords
     # the below is inconsistent since depth is actually defined positive up, but FM requires this for inifields: https://issuetracker.deltares.nl/browse/UNST-7455
     assert ds_out[varn_depth].attrs['positive'] == 'down'
-    
-    # cleanup
-    del ds_out
-    del ds1
-    del ds2
-    os.remove(file_expected)
-    os.remove(file_nc1)
-    os.remove(file_nc2)
-    os.remove(file_nc3)
-    os.remove(file_nc4)
 
 
 @pytest.mark.unittest
-def test_create_model_exec_files_none():
-    mdu_file = "./temp_test.mdu"
-    file_dimr = "./dimr_config.xml"
+def test_create_model_exec_files_none(tmp_path):
+    mdu_file = tmp_path / "temp_test.mdu"
+    file_dimr = tmp_path / "dimr_config.xml"
     
     nproc = 1 # number of processes
     dimrset_folder = None
@@ -84,16 +74,13 @@ def test_create_model_exec_files_none():
     dfmt.create_model_exec_files(file_mdu=mdu_file, nproc=nproc, dimrset_folder=dimrset_folder)
     
     assert os.path.isfile(file_dimr)
-    
-    os.remove(mdu_file)
-    os.remove(file_dimr)
 
 
 @pytest.mark.unittest
-def test_create_model_exec_files_docker():
-    mdu_file = "./temp_test.mdu"
-    file_dimr = "./dimr_config.xml"
-    file_docker = "./run_docker.sh"
+def test_create_model_exec_files_docker(tmp_path):
+    mdu_file = tmp_path / "temp_test.mdu"
+    file_dimr = tmp_path / "dimr_config.xml"
+    file_docker = tmp_path / "run_docker.sh"
     
     nproc = 1 # number of processes
     dimrset_folder = "docker"
@@ -108,20 +95,11 @@ def test_create_model_exec_files_docker():
     with open(file_docker, 'rb') as f:
         data = f.readline()
     assert data == b'#!/bin/bash\n'
-    
-    os.remove(mdu_file)
-    os.remove(file_dimr)
-    os.remove(file_docker)
 
 
 @pytest.mark.unittest
-def test_make_paths_relative():
-    dir_output = '.'
-        
-    #create dummy file
-    if not os.path.exists(dir_output):
-        os.mkdir(dir_output)
-    file_pli = os.path.join(dir_output,'test_model.pli')
+def test_make_paths_relative(tmp_path):
+    file_pli = os.path.join(tmp_path,'test_model.pli')
     with open(file_pli,'w') as f:
         f.write("""name
                     2    2
@@ -130,7 +108,7 @@ def test_make_paths_relative():
                     """)
     
     # new ext
-    ext_file_new = os.path.join(dir_output, 'test_new.ext')
+    ext_file_new = os.path.join(tmp_path, 'test_new.ext')
     ext_new = hcdfm.ExtModel()
     ForcingModel_object = hcdfm.ForcingModel()
     boundary_object = hcdfm.Boundary(quantity='waterlevelbnd', #the FM quantity for tide is also waterlevelbnd
@@ -140,7 +118,7 @@ def test_make_paths_relative():
     ext_new.save(filepath=ext_file_new)
         
     # old ext
-    ext_file_old = os.path.join(dir_output, 'test_old.ext')
+    ext_file_old = os.path.join(tmp_path, 'test_old.ext')
     ext_old = hcdfm.ExtOldModel()
     forcing_old = hcdfm.ExtOldForcing(quantity='airpressure_windx_windy_charnock',
                                       filename=file_pli,
@@ -151,7 +129,7 @@ def test_make_paths_relative():
     ext_old.save(filepath=ext_file_old)
     
     # initialize mdu file, update settings and save
-    mdu_file = os.path.join(dir_output, 'test_model.mdu')
+    mdu_file = os.path.join(tmp_path, 'test_model.mdu')
     mdu = hcdfm.FMModel()
     mdu.geometry.fixedweirfile = file_pli
     mdu.external_forcing.extforcefile = ext_old
@@ -175,8 +153,3 @@ def test_make_paths_relative():
     with open(ext_file_new, 'r') as file:
         filedata = file.read()
     assert "locationFile = test_model.pli" in filedata
-
-    os.remove(file_pli)
-    os.remove(ext_file_new)
-    os.remove(ext_file_old)
-    os.remove(mdu_file)

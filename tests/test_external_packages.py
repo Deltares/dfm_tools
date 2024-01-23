@@ -5,7 +5,6 @@ Created on Mon Jun 19 22:03:43 2023
 @author: veenstra
 """
 
-import os
 import pytest
 import xarray as xr
 import xugrid as xu
@@ -119,7 +118,7 @@ def test_xarray_pandas_resample():
 
     
 @pytest.mark.unittest
-def test_xarray_decode_default_fillvals():
+def test_xarray_decode_default_fillvals(tmp_path):
     """
     This test will fail as soon as xarray handles default fillvalues: https://github.com/Deltares/dfm_tools/issues/490
     After that, the minimum xarray requirement can be updated
@@ -145,7 +144,7 @@ def test_xarray_decode_default_fillvals():
     ds[varn_fnc] = ds[varn_fnc].where(ds[varn_fnc]!=fill_value,fill_value_default)
     
     #write file
-    file_out = 'temp_fnc_default_fillvals_map.nc'
+    file_out = tmp_path / 'temp_fnc_default_fillvals_map.nc'
     ds.to_netcdf(file_out)
     
     #open dataset with decode_fillvals
@@ -165,11 +164,3 @@ def test_xarray_decode_default_fillvals():
     fnc_new = uds2.grid.face_node_connectivity
     
     assert fill_value_default in fnc_new
-
-    # cleanup
-    # del ds
-    # del uds2
-    # del fnc_new
-    # PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'temp_fnc_default_fillvals_map.nc'
-    # os.remove(file_out)
-

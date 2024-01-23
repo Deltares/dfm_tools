@@ -5,7 +5,6 @@ Created on Fri Oct 20 16:09:20 2023
 @author: veenstra
 """
 
-import os
 import pytest
 import dfm_tools as dfmt
 import hydrolib.core.dflowfm as hcdfm
@@ -27,12 +26,12 @@ def test_geodataframe_with_Polygon_to_PolyFile():
 
 
 @pytest.mark.unittest
-def test_geodataframe_with_LineString_to_PolyFile():
+def test_geodataframe_with_LineString_to_PolyFile(tmp_path):
     """
     converting a geodataframe with Linestring geometries to hcdfm.PolyFile
     """
     # write polygon file
-    file_pol = 'temp_coastlines.pol'
+    file_pol = tmp_path / 'temp_coastlines.pol'
     lon_min, lon_max, lat_min, lat_max = -68.45, -68.1, 12, 12.35
     bbox = (lon_min, lat_min, lon_max, lat_max)
     coastlines_gdf = dfmt.get_coastlines_gdb(bbox=bbox, res='h')
@@ -46,6 +45,4 @@ def test_geodataframe_with_LineString_to_PolyFile():
     gdf_polyfile = dfmt.PolyFile_to_geodataframe_linestrings(polyfile_object,crs=None)
     
     polyfile = dfmt.geodataframe_to_PolyFile(gdf_polyfile)
-    
     assert isinstance(polyfile, hcdfm.PolyFile)
-    os.remove(file_pol)

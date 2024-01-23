@@ -5,7 +5,6 @@ Created on Sat Dec  9 17:46:57 2023
 @author: veenstra
 """
 
-import shutil
 import os
 import pytest
 import dfm_tools as dfmt
@@ -61,10 +60,7 @@ def test_ssh_catalog_subset():
 
 
 @pytest.mark.unittest
-def test_ssh_retrieve_data():
-    dir_output = "./temp_ssh_data"
-    os.makedirs(dir_output, exist_ok=True)
-    
+def test_ssh_retrieve_data(tmp_path):
     time_min, time_max = '2020-01-01','2020-02-01'
     
     source_list = ["ioc", "uhslc-fast", "uhslc-rqds", "psmsl-gnssir"]
@@ -77,12 +73,10 @@ def test_ssh_retrieve_data():
         ssc_catalog_gpd = dfmt.ssh_catalog_subset(source=source)
         ssc_catalog_gpd_sel = ssc_catalog_gpd.iloc[:1]
         if source=="cmems": #TODO: remove this exception when the cmems API works for insitu data
-            dfmt.ssh_retrieve_data(ssc_catalog_gpd_sel, dir_output)
+            dfmt.ssh_retrieve_data(ssc_catalog_gpd_sel, dir_output=tmp_path)
         else:
-            dfmt.ssh_retrieve_data(ssc_catalog_gpd_sel, dir_output,
+            dfmt.ssh_retrieve_data(ssc_catalog_gpd_sel, dir_output=tmp_path, 
                                    time_min=time_min, time_max=time_max)
-    #clean up
-    shutil.rmtree(dir_output)
 
 
 @pytest.mark.unittest
@@ -102,10 +96,9 @@ def test_ssc_ssh_subset_groups():
 
 
 @pytest.mark.unittest
-def test_ssh_catalog_toxynfile():
+def test_ssh_catalog_toxynfile(tmp_path):
     ssc_catalog_gpd = dfmt.ssh_catalog_subset(source="ssc")
-    file_xyn = 'test_ssc_obs.xyn'
+    file_xyn = tmp_path / 'test_ssc_obs.xyn'
     dfmt.ssh_catalog_toxynfile(ssc_catalog_gpd, file_xyn)
     assert os.path.isfile(file_xyn)
-    os.remove(file_xyn)
 
