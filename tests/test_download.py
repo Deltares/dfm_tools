@@ -5,7 +5,6 @@ Created on Thu Jun 22 09:41:49 2023
 @author: veenstra
 """
 
-import shutil
 import os
 import pytest
 import pandas as pd
@@ -34,71 +33,58 @@ def test_copernicusmarine_credentials():
 #TODO: properly set environment variables in github would prevent localness
 @pytest.mark.requireslocaldata
 @pytest.mark.unittest
-def test_download_era5():
+def test_download_era5(tmp_path):
     date_min = '2010-01-01'
     date_max = '2010-01-02'
     longitude_min, longitude_max, latitude_min, latitude_max =    2,   3,  51, 52 #test domain
     variables_era5 = ['msl']#'v10n'] # check variables_dict in dfmt.download_ERA5() for valid names
-    dir_output = 'era5_temp'
     for varkey in variables_era5:
-        os.makedirs(dir_output, exist_ok=True)
-        
         dfmt.download_ERA5(varkey, 
                            longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
                            date_min=date_min, date_max=date_max,
-                           dir_output=dir_output, overwrite=True)
-    #clean up
-    shutil.rmtree(dir_output)
+                           dir_output=tmp_path, overwrite=True)
 
 
 #TODO: properly set environment variables in github would prevent localness
 @pytest.mark.requireslocaldata
 @pytest.mark.unittest
-def test_download_cmems_my():
+def test_download_cmems_my(tmp_path):
     date_min = '2010-01-01'
     date_max = '2010-01-02'
     longitude_min, longitude_max, latitude_min, latitude_max =    2,   3,  51, 52 #test domain
     varlist_cmems = ['bottomT','no3'] # avaliable variables differ per product, examples are ['bottomT','mlotst','siconc','sithick','so','thetao','uo','vo','usi','vsi','zos','no3']. More info on https://data.marine.copernicus.eu/products
-    dir_output = 'cmems_temp_my'
     for varkey in varlist_cmems:
         file_prefix = 'cmems_'
         dfmt.download_CMEMS(varkey=varkey,
                             longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
                             date_min=date_min, date_max=date_max,
-                            dir_output=dir_output, file_prefix=file_prefix, overwrite=True)
-    #clean up
-    shutil.rmtree(dir_output)
+                            dir_output=tmp_path, file_prefix=file_prefix, overwrite=True)
 
 
 #TODO: properly set environment variables in github would prevent localness
 @pytest.mark.requireslocaldata
 @pytest.mark.unittest
-def test_download_cmems_forecast():
+def test_download_cmems_forecast(tmp_path):
     date_min = pd.Timestamp.today()
     date_max = pd.Timestamp.today() + pd.Timedelta(days=1)
     longitude_min, longitude_max, latitude_min, latitude_max =    2,   3,  51, 52 #test domain
     varlist_cmems = ['tob','no3'] # avaliable variables differ per product, examples are ['bottomT','mlotst','siconc','sithick','so','thetao','uo','vo','usi','vsi','zos','no3']. More info on https://data.marine.copernicus.eu/products
-    dir_output = 'cmems_temp_forecast'
     for varkey in varlist_cmems:
         file_prefix = 'cmems_'
         dfmt.download_CMEMS(varkey=varkey,
                             longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
                             date_min=date_min, date_max=date_max,
-                            dir_output=dir_output, file_prefix=file_prefix, overwrite=True)
-    #clean up
-    shutil.rmtree(dir_output)
+                            dir_output=tmp_path, file_prefix=file_prefix, overwrite=True)
 
 
 @pytest.mark.unittest
-def test_download_hycom():
+def test_download_hycom(tmp_path):
     # domain
     longitude_min, longitude_max, latitude_min, latitude_max =    2,   3,  51, 52 #test domain
     date_min = '2010-01-01'
     date_max = '2010-01-02'
     varlist_hycom = ['surf_el']#'water_temp'] #['tau','water_u','water_v','water_temp','salinity','surf_el']
     
-    dir_output = 'hycom_temp'
-    os.makedirs(dir_output, exist_ok=True)
     for varkey in varlist_hycom:
         # Path(dir_output).mkdir(parents=True, exist_ok=True)
         period_range_years = pd.period_range(date_min,date_max,freq='Y')
@@ -108,6 +94,4 @@ def test_download_hycom():
                               varkey=varkey,
                               longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
                               date_min=date_min, date_max=date_max,
-                              dir_output=dir_output, file_prefix=file_prefix, overwrite=True)
-    #clean up
-    shutil.rmtree(dir_output)
+                              dir_output=tmp_path, file_prefix=file_prefix, overwrite=True)

@@ -5,6 +5,7 @@ Created on Fri Jul 14 12:04:27 2023
 @author: veenstra
 """
 
+import os
 import pytest
 import xarray as xr
 import xugrid as xu
@@ -30,13 +31,13 @@ def test_remove_unassociated_edges():
 
 
 @pytest.mark.unittest
-def test_remove_nan_fillvalue_attrs():
+def test_remove_nan_fillvalue_attrs(tmp_path):
     """
     xarray writes {"_FillValue": np.nan} to encoding for variables without _FillValue attribute.
     This test checks if that is still the case and checks if dfmt.open_partitioned_dataset removes them.
     """
     file_nc = dfmt.data.fm_curvedbend_map(return_filepath=True)
-    file_out = "temp_fillvals_map.nc"
+    file_out = os.path.join(tmp_path, "temp_fillvals_map.nc")
     ds_org = xr.open_dataset(file_nc)
     ds_org.to_netcdf(file_out)
     
