@@ -5,6 +5,7 @@ Created on Mon Jun 19 22:03:43 2023
 @author: veenstra
 """
 
+import os
 import pytest
 import xarray as xr
 import xugrid as xu
@@ -144,7 +145,7 @@ def test_xarray_decode_default_fillvals(tmp_path):
     ds[varn_fnc] = ds[varn_fnc].where(ds[varn_fnc]!=fill_value,fill_value_default)
     
     #write file
-    file_out = tmp_path / 'temp_fnc_default_fillvals_map.nc'
+    file_out = os.path.join(tmp_path, 'temp_fnc_default_fillvals_map.nc')
     ds.to_netcdf(file_out)
     
     #open dataset with decode_fillvals

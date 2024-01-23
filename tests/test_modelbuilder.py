@@ -24,7 +24,7 @@ def test_cmems_nc_to_ini_midnight_centered(tmp_path):
     ds2 = cmems_dataset_4times().isel(time=slice(2,None))
     ds2["time"] = ds2["time"] + pd.Timedelta(hours=12)
     
-    dir_pattern = tmp_path / "temp_cmems_2day_*.nc"
+    dir_pattern = os.path.join(tmp_path, "temp_cmems_2day_*.nc")
     file_nc1 = dir_pattern.replace("*","sal_p1")
     file_nc2 = dir_pattern.replace("*","sal_p2")
     file_nc3 = dir_pattern.replace("*","tem_p1")
@@ -37,12 +37,12 @@ def test_cmems_nc_to_ini_midnight_centered(tmp_path):
     ext_old = hcdfm.ExtOldModel()
     
     ext_old = dfmt.cmems_nc_to_ini(ext_old=ext_old,
-                                   dir_output='.',
+                                   dir_output=tmp_path,
                                    list_quantities=["salinitybnd"],
                                    tstart="2020-01-01",
                                    dir_pattern=dir_pattern)
     
-    file_expected = tmp_path / "./nudge_salinity_temperature_2020-01-01_00-00-00.nc"
+    file_expected = tmp_path / "nudge_salinity_temperature_2020-01-01_00-00-00.nc"
     
     times_expected =  ['2020-01-01 00:00:00', '2020-01-02 00:00:00']
     
