@@ -14,6 +14,7 @@ import glob
 import pandas as pd
 import warnings
 import numpy as np
+import netCDF4
 from dfm_tools.errors import OutOfRangeError
 
 __all__ = [
@@ -144,7 +145,7 @@ def preprocess_woa(ds):
 
 def prevent_dtype_int(ds, zlib:bool = True): #TODO: this is not used, maybe phase out?
     """
-    Prevent writing to int, since it might mess up dataset (https://github.com/Deltares/dfm_tools/issues/239)
+    Prevent writing to int, since it might mess up mfdataset (https://github.com/Deltares/dfm_tools/issues/239)
     Since floats are used instead of ints, the disksize of the dataset will be larger
     zlib=True decreases the filesize again (approx same as int filesize), but writing this file is slower
     """
@@ -160,9 +161,16 @@ def prevent_dtype_int(ds, zlib:bool = True): #TODO: this is not used, maybe phas
         # prevent incorrectly scaled integers by dropping scaling/offset encoding
         ds[var].encoding.pop('scale_factor')
         ds[var].encoding.pop('add_offset')
+        
+        # remove non-convention attribute
+        if 'missing_value' in ds[var].encoding.keys():
+            ds[var].encoding.pop('missing_value')
 
         # reduce filesize with float32 instead of int and compression
         ds[var].encoding["dtype"] = "float32"
+        if '_FillValue' in ds[var].encoding.keys():
+            float32_fillvalue = netCDF4.default_fillvals['f4']
+            ds[var].encoding['_FillValue'] = float32_fillvalue
         ds[var].encoding["zlib"] = zlib
 
 
