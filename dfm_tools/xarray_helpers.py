@@ -143,7 +143,7 @@ def preprocess_woa(ds):
     return ds
 
 
-def prevent_dtype_int(ds, zlib:bool = True): #TODO: this is not used, maybe phase out?
+def prevent_dtype_int(ds, zlib:bool = True):
     """
     Prevent writing to int, since it might mess up mfdataset (https://github.com/Deltares/dfm_tools/issues/239)
     Since floats are used instead of ints, the disksize of the dataset will be larger
