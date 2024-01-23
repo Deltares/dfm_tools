@@ -97,8 +97,6 @@ def test_check_time_extent():
     
     # on ds timerange
     check_time_extent(ds, tstart="2019-12-31 12:00:00", tstop="2020-01-03 12:00:00")
-    
-    del ds
 
 
 @pytest.mark.unittest
@@ -239,13 +237,13 @@ def test_plipointsDataset_to_ForcingModel_drop_allnan_points():
 
 
 @pytest.mark.systemtest
-def test_open_dataset_extra_correctdepths():
+def test_open_dataset_extra_correctdepths(tmp_path):
     """
     to validate open_dataset_extra behaviour for depths, in the past the depth values got lost and replaced by depth idx
     """
     
     ds_moretime = cmems_dataset_4times()
-    file_nc = 'temp_cmems_dummydata.nc'
+    file_nc = tmp_path / 'temp_cmems_dummydata.nc'
     ds_moretime.to_netcdf(file_nc)
     
     ds_moretime_import = dfmt.open_dataset_extra(dir_pattern=file_nc, quantity='salinitybnd', tstart='2020-01-01 12:00:00', tstop='2020-01-02 12:00:00')
@@ -257,14 +255,10 @@ def test_open_dataset_extra_correctdepths():
     
     assert (np.abs(depth_actual - depth_expected) < 1e-9).all()
     assert len(ds_moretime_import.time) == 2
-    
-    # cleanup
-    del ds_moretime_import
-    os.remove(file_nc)
 
 
 @pytest.mark.unittest
-def test_open_dataset_extra_slightly_different_latlons():
+def test_open_dataset_extra_slightly_different_latlons(tmp_path):
     """
     to check whether an error is raised when trying to combine datasets with slightly 
     different coordinates: https://github.com/Deltares/dfm_tools/issues/574
@@ -278,25 +272,19 @@ def test_open_dataset_extra_slightly_different_latlons():
     ds_lon[1] += 1e-8
     ds2['longitude'] = xr.DataArray(ds_lon,dims='longitude')
     
-    file_nc1 = 'temp_cmems_2day_p1.nc'
-    file_nc2 = 'temp_cmems_2day_p2.nc'
+    file_nc1 = tmp_path / 'temp_cmems_2day_p1.nc'
+    file_nc2 = tmp_path / 'temp_cmems_2day_p2.nc'
     ds1.to_netcdf(file_nc1)
     ds2.to_netcdf(file_nc2)
+    file_nc = tmp_path / 'temp_cmems_2day_*.nc'
     
     try:
-        ds = dfmt.open_dataset_extra('temp_cmems_2day_*.nc', quantity='salinitybnd', tstart='2020-01-01 12:00:00', tstop='2020-01-02 12:00:00')
-        
+        ds = dfmt.open_dataset_extra(file_nc, quantity='salinitybnd', tstart='2020-01-01 12:00:00', tstop='2020-01-02 12:00:00')
         # add assertion just to be safe, but the code will not reach here
         assert ds.dims['longitude'] == ds1.dims['longitude']
     except ValueError:
         # ValueError: cannot align objects with join='exact' where index/labels/sizes are not equal along these coordinates (dimensions): 'longitude' ('longitude',)
         pass # this is expected, so pass
-
-    # cleanup
-    del ds1
-    del ds2
-    os.remove(file_nc1)
-    os.remove(file_nc2)
 
 
 @pytest.mark.unittest
