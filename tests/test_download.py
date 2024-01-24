@@ -12,6 +12,7 @@ from dfm_tools.download import cds_credentials, copernicusmarine_credentials
 import dfm_tools as dfmt
 
 
+@pytest.mark.requiressecrets
 @pytest.mark.requireslocaldata
 @pytest.mark.unittest
 def test_cds_credentials():
@@ -24,6 +25,7 @@ def test_cds_credentials():
 
 
 #TODO: properly set environment variables in github would prevent localness
+@pytest.mark.requiressecrets
 @pytest.mark.requireslocaldata
 @pytest.mark.unittest
 def test_copernicusmarine_credentials():
@@ -31,6 +33,7 @@ def test_copernicusmarine_credentials():
 
 
 #TODO: properly set environment variables in github would prevent localness
+@pytest.mark.requiressecrets
 @pytest.mark.requireslocaldata
 @pytest.mark.unittest
 def test_download_era5(tmp_path):
@@ -46,6 +49,7 @@ def test_download_era5(tmp_path):
 
 
 #TODO: properly set environment variables in github would prevent localness
+@pytest.mark.requiressecrets
 @pytest.mark.requireslocaldata
 @pytest.mark.unittest
 def test_download_cmems_my(tmp_path):
@@ -62,6 +66,7 @@ def test_download_cmems_my(tmp_path):
 
 
 #TODO: properly set environment variables in github would prevent localness
+@pytest.mark.requiressecrets
 @pytest.mark.requireslocaldata
 @pytest.mark.unittest
 def test_download_cmems_forecast(tmp_path):

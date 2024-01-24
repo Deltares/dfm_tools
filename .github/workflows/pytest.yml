@@ -41,5 +41,5 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
-        pytest -m "not requireslocaldata" --cov=dfm_tools --cov-report xml --cov-report term
+        pytest -m "requiressecrets" --cov=dfm_tools --cov-report xml --cov-report term
     - uses: codecov/codecov-action@v1
