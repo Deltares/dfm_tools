@@ -10,6 +10,7 @@ import pytest
 import pandas as pd
 from dfm_tools.download import cds_credentials, copernicusmarine_credentials
 import dfm_tools as dfmt
+import xarray as xr
 
 
 @pytest.mark.requiressecrets
@@ -41,6 +42,13 @@ def test_download_era5(tmp_path):
                            longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
                            date_min=date_min, date_max=date_max,
                            dir_output=tmp_path, overwrite=True)
+    
+    # assert downloaded files
+    file_nc_pat = os.path.join(tmp_path, "*.nc")
+    ds = xr.open_mfdataset(file_nc_pat)
+    assert ds.sizes["time"] == 744
+    assert ds.time.to_pandas().iloc[0] == pd.Timestamp('2010-01-01')
+    assert ds.time.to_pandas().iloc[-1] == pd.Timestamp('2010-01-31 23:00')
 
 
 @pytest.mark.requiressecrets
@@ -56,6 +64,13 @@ def test_download_cmems_my(tmp_path):
                             longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
                             date_min=date_min, date_max=date_max,
                             dir_output=tmp_path, file_prefix=file_prefix, overwrite=True)
+    
+    # assert downloaded files
+    file_nc_pat = os.path.join(tmp_path, "*.nc")
+    ds = xr.open_mfdataset(file_nc_pat)
+    assert ds.sizes["time"] == 2
+    assert ds.time.to_pandas().iloc[0] == pd.Timestamp('2010-01-01')
+    assert ds.time.to_pandas().iloc[-1] == pd.Timestamp('2010-01-02')
 
 
 @pytest.mark.requiressecrets
@@ -71,6 +86,13 @@ def test_download_cmems_forecast(tmp_path):
                             longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
                             date_min=date_min, date_max=date_max,
                             dir_output=tmp_path, file_prefix=file_prefix, overwrite=True)
+
+    # assert downloaded files
+    file_nc_pat = os.path.join(tmp_path, "*.nc")
+    ds = xr.open_mfdataset(file_nc_pat)
+    assert ds.sizes["time"] == 3
+    assert ds.time.to_pandas().iloc[0] == date_min.floor("D")
+    assert ds.time.to_pandas().iloc[-1] == date_max.ceil("D")
 
 
 @pytest.mark.unittest
@@ -91,3 +113,10 @@ def test_download_hycom(tmp_path):
                               longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
                               date_min=date_min, date_max=date_max,
                               dir_output=tmp_path, file_prefix=file_prefix, overwrite=True)
+
+    # assert downloaded files
+    file_nc_pat = os.path.join(tmp_path, "*.nc")
+    ds = xr.open_mfdataset(file_nc_pat)
+    assert ds.sizes["time"] == 2
+    assert ds.time.to_pandas().iloc[0] == pd.Timestamp('2010-01-01')
+    assert ds.time.to_pandas().iloc[-1] == pd.Timestamp('2010-01-02')
