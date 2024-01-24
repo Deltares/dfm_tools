@@ -12,6 +12,7 @@ from dfm_tools.download import cds_credentials, copernicusmarine_credentials
 import dfm_tools as dfmt
 
 
+@pytest.mark.requiressecrets
 @pytest.mark.unittest
 def test_cds_credentials():
     # check if the credentials are present on this system
@@ -22,11 +23,13 @@ def test_cds_credentials():
     assert "CDSAPI_URL" in os.environ.keys()
 
 
+@pytest.mark.requiressecrets
 @pytest.mark.unittest
 def test_copernicusmarine_credentials():
     copernicusmarine_credentials()
 
 
+@pytest.mark.requiressecrets
 @pytest.mark.unittest
 def test_download_era5(tmp_path):
     date_min = '2010-01-01'
@@ -40,6 +43,7 @@ def test_download_era5(tmp_path):
                            dir_output=tmp_path, overwrite=True)
 
 
+@pytest.mark.requiressecrets
 @pytest.mark.unittest
 def test_download_cmems_my(tmp_path):
     date_min = '2010-01-01'
@@ -54,6 +58,7 @@ def test_download_cmems_my(tmp_path):
                             dir_output=tmp_path, file_prefix=file_prefix, overwrite=True)
 
 
+@pytest.mark.requiressecrets
 @pytest.mark.unittest
 def test_download_cmems_forecast(tmp_path):
     date_min = pd.Timestamp.today()
