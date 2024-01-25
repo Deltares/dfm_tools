@@ -336,15 +336,13 @@ def copernicusmarine_credentials():
 
 def copernicusmarine_reset():
     print("resetting Copernicus Marine Toolbox, you will have to login again.")
-    dir_cachier = os.path.expanduser("~/.cachier")
-    dir_cmc = os.path.expanduser("~/.copernicus-marine-client")
-    for dir_remove in [dir_cachier, dir_cmc]:
-        print(f"- removing {dir_remove}")
-        shutil.rmtree(dir_remove, ignore_errors=True)
-    print("- overwriting copernicus-marine metadata cache (takes some time)")
-    subprocess.run("copernicus-marine describe --overwrite-metadata-cache")
-    print("- updating copernicus-marine-client")
-    subprocess.run("pip install copernicus-marine-client -U")
+    dir_copernicusmarine = os.path.expanduser("~/.copernicusmarine")
+    print(f"- removing {dir_copernicusmarine}")
+    shutil.rmtree(dir_copernicusmarine, ignore_errors=True)
+    print("- overwriting copernicusmarine metadata cache (takes some time)")
+    subprocess.run("copernicusmarine describe --overwrite-metadata-cache")
+    print("- updating copernicusmarine")
+    subprocess.run("pip install copernicusmarine -U")
 
 
 def copernicusmarine_dataset_timerange(dataset_id):
