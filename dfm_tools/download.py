@@ -266,7 +266,7 @@ def copernicusmarine_get_product(date_min, date_max):
 
 
 def copernicusmarine_get_dataset_id(varkey, date_min, date_max):
-    #TODO: maybe get dataset_id from 'copernicus-marine describe --include-datasets --contains <search_token>'
+    #TODO: maybe get dataset_id from 'copernicusmarine describe --include-datasets --contains <search_token>'
     
     product = copernicusmarine_get_product(date_min, date_max)
     
@@ -310,7 +310,7 @@ def copernicusmarine_remove_manual_credentials_file():
 
 def copernicusmarine_credentials():
     """
-    To login at copernicus marine if this was not the case yet.
+    To login at copernicusmarine if this was not the case yet.
     If the credentials file is present, the function returns None.
     If the credentials file is not present, get_and_check_username_password first
     checks env vars and if not present it prompts the user for credentials.
