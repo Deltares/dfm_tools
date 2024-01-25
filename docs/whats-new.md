@@ -13,6 +13,7 @@
 - moved gtsmv4.1 tide interpolation from extrapolated to rasterized dataset by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#731](https://github.com/Deltares/dfm_tools/pull/731)
 - limited `dfmt.download_CMEMS()` freq argument to M/D only by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#733](https://github.com/Deltares/dfm_tools/pull/733)
 - suppres xarray chunking warning by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#742](https://github.com/Deltares/dfm_tools/pull/742)
+- remove mesh2d hardcoding from layer reconstruction by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#747](https://github.com/Deltares/dfm_tools/pull/747)
 
 
 ## 0.18.0 (2023-12-08)
