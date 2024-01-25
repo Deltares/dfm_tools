@@ -275,6 +275,8 @@ def reconstruct_zw_zcc_fromzsigma(uds):
     """
     # TODO: center values are clipped to bedlevel, so the center values of the bottom layer are currently incorrect
     
+    gridname = uds.grid.name
+    
     # temporarily decode default fillvalues
     # TODO: xarray only decodes explicitly set fillvalues: https://github.com/Deltares/dfm_tools/issues/490
     uds = xu.UgridDataset(decode_default_fillvals(uds.obj),grids=[uds.grid])
@@ -298,10 +300,10 @@ def reconstruct_zw_zcc_fromzsigma(uds):
     # z(n,k,j,i) = zlev(k)
     zw_zpart = uds_zlev_int.clip(min=-uds_depth) #added clipping of zvalues with bedlevel
     zcc_zpart = uds_zlev_lay.clip(min=-uds_depth) #added clipping of zvalues with bedlevel
-    uds['mesh2d_flowelem_zw'] = zw_sigmapart.fillna(zw_zpart)
-    uds['mesh2d_flowelem_zcc'] = zcc_sigmapart.fillna(zcc_zpart)
+    uds[f'{gridname}_flowelem_zw'] = zw_sigmapart.fillna(zw_zpart)
+    uds[f'{gridname}_flowelem_zcc'] = zcc_sigmapart.fillna(zcc_zpart)
     
-    uds = uds.set_coords(['mesh2d_flowelem_zw','mesh2d_flowelem_zcc'])
+    uds = uds.set_coords([f'{gridname}_flowelem_zw',f'{gridname}_flowelem_zcc'])
     return uds
 
 
@@ -310,6 +312,7 @@ def reconstruct_zw_zcc(ds):
     reconstruct full grid output (time/face-varying z-values) for all layertypes, passes on to respective reconstruction function
     """
     dimn_layer, dimn_interfaces = get_vertical_dimensions(ds)
+    gridname = uds.grid.name
     
     if dimn_layer is not None: #D-FlowFM mapfile
         gridname = ds.grid.name
@@ -323,10 +326,10 @@ def reconstruct_zw_zcc(ds):
     elif len(ds.filter_by_attrs(standard_name='ocean_sigma_z_coordinate')) != 0:
         print('zsigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
         ds = reconstruct_zw_zcc_fromzsigma(ds)
-    elif 'mesh2d_layer_sigma' in ds.variables: #TODO: var with standard_name='ocean_sigma_coordinate' available?
+    elif f'{gridname}_layer_sigma' in ds.variables: #TODO: var with standard_name='ocean_sigma_coordinate' available?
         print('sigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
         ds = reconstruct_zw_zcc_fromsigma(ds)
-    elif 'mesh2d_layer_z' in ds.variables:
+    elif f'{gridname}_layer_z' in ds.variables:
         print('z-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
         ds = reconstruct_zw_zcc_fromz(ds)
     else:
