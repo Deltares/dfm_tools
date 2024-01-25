@@ -307,12 +307,28 @@ def reconstruct_zw_zcc_fromzsigma(uds):
     return uds
 
 
-def reconstruct_zw_zcc(uds):
+def reconstruct_zw_zcc(uds:xu.UgridDataset):
     """
-    reconstruct full grid output (time/face-varying z-values) for all layertypes, passes on to respective reconstruction function
+    reconstruct full grid output (time/face-varying z-values) for all layertypes,
+    calls the respective reconstruction function
+
+    Parameters
+    ----------
+    uds : xu.UgridDataset
+        DESCRIPTION.
+
+    Raises
+    ------
+    KeyError
+        DESCRIPTION.
+
+    Returns
+    -------
+    uds : TYPE
+        DESCRIPTION.
+
     """
     
-    # from here assume 3D D-FlowFM mapfile
     gridname = uds.grid.name
     varname_zint = f'{gridname}_flowelem_zw'
     
@@ -329,7 +345,7 @@ def reconstruct_zw_zcc(uds):
         print('z-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
         uds = reconstruct_zw_zcc_fromz(uds)
     else:
-        raise KeyError('layers present, but unknown layertype, expected one of variables: mesh2d_flowelem_zw, mesh2d_layer_sigma, mesh2d_layer_z')
+        raise KeyError(f'layers present, but unknown layertype, expected one of variables: {gridname}_flowelem_zw, {gridname}_layer_sigma, {gridname}_layer_z')
     return uds
 
     
