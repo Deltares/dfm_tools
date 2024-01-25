@@ -10,6 +10,8 @@
 - prevent ValueError upon concatenation of only emtpy coastlines geodataframes by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#717](https://github.com/Deltares/dfm_tools/pull/717)
 - added dropped crs variable in network file by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#719](https://github.com/Deltares/dfm_tools/pull/719)
 - moved gtsmv4.1 tide interpolation from extrapolated to rasterized dataset by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#731](https://github.com/Deltares/dfm_tools/pull/731)
+- limited `dfmt.download_CMEMS()` freq argument to M/D only by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#733](https://github.com/Deltares/dfm_tools/pull/733)
+- suppres xarray chunking warning by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#742](https://github.com/Deltares/dfm_tools/pull/742)
 
 
 ## 0.18.0 (2023-12-08)

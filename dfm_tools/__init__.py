@@ -27,12 +27,5 @@ from dfm_tools.observations import *
 import warnings
 warnings.filterwarnings(action="always", category=DeprecationWarning)
 
-# python 3.8 DeprecationWarning
-import sys
-version_info = sys.version_info
-if (version_info.major == 3) & (version_info.minor <= 8):
-    warnings.warn(
-        DeprecationWarning("You are using Python 3.8 or lower, please note that "
-                           "dfm_tools will soon drop support for Python 3.8: "
-                           "https://github.com/Deltares/dfm_tools/issues/267")
-        )
+# suppress chunks warning: https://github.com/Deltares/dfm_tools/issues/679
+warnings.filterwarnings("ignore", category=UserWarning, message='The specified chunks separate the stored chunks along dimension "time" starting at index 1. This could degrade performance. Instead, consider rechunking after loading.')
