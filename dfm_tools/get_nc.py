@@ -312,10 +312,6 @@ def reconstruct_zw_zcc(uds):
     reconstruct full grid output (time/face-varying z-values) for all layertypes, passes on to respective reconstruction function
     """
     
-    dimn_layer, dimn_interfaces = get_vertical_dimensions(uds)
-    if dimn_layer is None:
-        raise Exception('reconstruct_zw_zcc requested for file without layers')
-    
     # from here assume 3D D-FlowFM mapfile
     gridname = uds.grid.name
     varname_zint = f'{gridname}_flowelem_zw'
