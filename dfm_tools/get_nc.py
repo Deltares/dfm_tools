@@ -275,6 +275,8 @@ def reconstruct_zw_zcc_fromzsigma(uds):
     """
     # TODO: center values are clipped to bedlevel, so the center values of the bottom layer are currently incorrect
     
+    gridname = uds.grid.name
+    
     # temporarily decode default fillvalues
     # TODO: xarray only decodes explicitly set fillvalues: https://github.com/Deltares/dfm_tools/issues/490
     uds = xu.UgridDataset(decode_default_fillvals(uds.obj),grids=[uds.grid])
@@ -298,40 +300,53 @@ def reconstruct_zw_zcc_fromzsigma(uds):
     # z(n,k,j,i) = zlev(k)
     zw_zpart = uds_zlev_int.clip(min=-uds_depth) #added clipping of zvalues with bedlevel
     zcc_zpart = uds_zlev_lay.clip(min=-uds_depth) #added clipping of zvalues with bedlevel
-    uds['mesh2d_flowelem_zw'] = zw_sigmapart.fillna(zw_zpart)
-    uds['mesh2d_flowelem_zcc'] = zcc_sigmapart.fillna(zcc_zpart)
+    uds[f'{gridname}_flowelem_zw'] = zw_sigmapart.fillna(zw_zpart)
+    uds[f'{gridname}_flowelem_zcc'] = zcc_sigmapart.fillna(zcc_zpart)
     
-    uds = uds.set_coords(['mesh2d_flowelem_zw','mesh2d_flowelem_zcc'])
+    uds = uds.set_coords([f'{gridname}_flowelem_zw',f'{gridname}_flowelem_zcc'])
     return uds
 
 
-def reconstruct_zw_zcc(ds):
+def reconstruct_zw_zcc(uds:xu.UgridDataset):
     """
-    reconstruct full grid output (time/face-varying z-values) for all layertypes, passes on to respective reconstruction function
+    reconstruct full grid output (time/face-varying z-values) for all layertypes,
+    calls the respective reconstruction function
+
+    Parameters
+    ----------
+    uds : xu.UgridDataset
+        DESCRIPTION.
+
+    Raises
+    ------
+    KeyError
+        DESCRIPTION.
+
+    Returns
+    -------
+    uds : TYPE
+        DESCRIPTION.
+
     """
-    dimn_layer, dimn_interfaces = get_vertical_dimensions(ds)
     
-    if dimn_layer is not None: #D-FlowFM mapfile
-        gridname = ds.grid.name
-        varname_zint = f'{gridname}_flowelem_zw'
-    elif 'laydim' in ds.dims: #D-FlowFM hisfile
-        varname_zint = 'zcoordinate_w'
+    gridname = uds.grid.name
+    varname_zint = f'{gridname}_flowelem_zw'
     
     #reconstruct zw/zcc variables (if not in file) and treat as fullgrid mapfile from here
-    if varname_zint in ds.variables: #fullgrid info already available, so continuing
+    if varname_zint in uds.variables: #fullgrid info already available, so continuing
         print(f'zw/zcc (fullgrid) values already present in Dataset in variable {varname_zint}')
-    elif len(ds.filter_by_attrs(standard_name='ocean_sigma_z_coordinate')) != 0:
+    elif len(uds.filter_by_attrs(standard_name='ocean_sigma_z_coordinate')) != 0:
         print('zsigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
-        ds = reconstruct_zw_zcc_fromzsigma(ds)
-    elif 'mesh2d_layer_sigma' in ds.variables: #TODO: var with standard_name='ocean_sigma_coordinate' available?
+        uds = reconstruct_zw_zcc_fromzsigma(uds)
+    elif f'{gridname}_layer_sigma' in uds.variables: #TODO: var with standard_name='ocean_sigma_coordinate' available?
         print('sigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
-        ds = reconstruct_zw_zcc_fromsigma(ds)
-    elif 'mesh2d_layer_z' in ds.variables:
+        uds = reconstruct_zw_zcc_fromsigma(uds)
+    elif f'{gridname}_layer_z' in uds.variables:
         print('z-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
-        ds = reconstruct_zw_zcc_fromz(ds)
+        uds = reconstruct_zw_zcc_fromz(uds)
     else:
-        raise KeyError('layers present, but unknown layertype, expected one of variables: mesh2d_flowelem_zw, mesh2d_layer_sigma, mesh2d_layer_z')
-    return ds
+        raise KeyError(f'layers present, but unknown layertype, expected one of variables: {gridname}_flowelem_zw, {gridname}_layer_sigma, {gridname}_layer_z')
+    return uds
 
     
 def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str ='z0'):    
@@ -400,7 +415,8 @@ def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str ='z0'):
                                                            'positive':'up'}) #TODO: make more in line with CMEMS etc
     
     #potentially construct fullgrid info (zcc/zw)
-    data_xr = reconstruct_zw_zcc(data_xr)
+    if dimn_layer is not None: #D-FlowFM mapfile
+        data_xr = reconstruct_zw_zcc(data_xr)
     
     #correct reference level
     if reference=='z0':
