@@ -11,7 +11,7 @@ from pathlib import Path
 import xarray as xr
 from dfm_tools.errors import OutOfRangeError
 import cdsapi
-import copernicusmarine
+import copernicus_marine_client as cmc
 import cftime
 import getpass
 import shutil
@@ -207,7 +207,7 @@ def download_CMEMS(varkey,
     latitude_min  -= buffer
     latitude_max  += buffer
 
-    dataset = copernicusmarine.open_dataset(
+    dataset = cmc.open_dataset(
          dataset_id = dataset_id,
          variables = [varkey],
          minimum_longitude = longitude_min,
@@ -289,7 +289,7 @@ def copernicusmarine_get_dataset_id(varkey, date_min, date_max):
 
 
 def copernicus_marine_get_buffer(dataset_id):
-    ds = copernicusmarine.open_dataset(dataset_id=dataset_id)
+    ds = cmc.open_dataset(dataset_id=dataset_id)
     try:
         resolution = ds.latitude.attrs["step"]
         buffer = 2 * resolution
@@ -315,7 +315,7 @@ def copernicusmarine_credentials():
     If the file is available, it gets the credentials from the file.
     Either way, the credentials are returned for use in e.g. ftp login
     """
-    from copernicusmarine.core_functions.credentials_utils import (
+    from copernicus_marine_client.core_functions.credentials_utils import (
         DEFAULT_CLIENT_CREDENTIALS_FILEPATH,
         InvalidUsernameOrPassword,
         get_and_check_username_password,
@@ -323,7 +323,7 @@ def copernicusmarine_credentials():
     if not DEFAULT_CLIENT_CREDENTIALS_FILEPATH.is_file():
         print("Downloading CMEMS data requires a Copernicus Marine username and password, sign up for free at: https://data.marine.copernicus.eu/register.")
         username, password = get_and_check_username_password(username=None, password=None, credentials_file=DEFAULT_CLIENT_CREDENTIALS_FILEPATH)
-        success = copernicusmarine.login(username, password)
+        success = cmc.login(username, password)
         if not success:
             raise InvalidUsernameOrPassword("invalid credentials")
     else:
@@ -345,7 +345,7 @@ def copernicusmarine_reset():
 
 
 def copernicusmarine_dataset_timerange(dataset_id):
-    ds = copernicusmarine.open_dataset(dataset_id=dataset_id)
+    ds = cmc.open_dataset(dataset_id=dataset_id)
     ds_tstart = pd.Timestamp(ds.time.isel(time=0).values)
     ds_tstop = pd.Timestamp(ds.time.isel(time=-1).values)
     return ds_tstart, ds_tstop
