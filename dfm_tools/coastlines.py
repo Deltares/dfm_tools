@@ -151,7 +151,7 @@ def plot_coastlines(ax=None, res:str='h', min_area:float = 0, crs=None, **kwargs
     if 'facecolor' not in kwargs:
         kwargs['facecolor'] = 'none'
     if 'linewidth' not in kwargs:
-        kwargs['linewidth'] = 0.7
+        kwargs['linewidth'] = 0.5
     
     coastlines_gdb = get_coastlines_gdb(bbox=bbox, res=res, min_area=min_area, crs=crs)
     if coastlines_gdb.empty:
@@ -179,7 +179,7 @@ def plot_borders(ax=None, res:str='h', crs=None, **kwargs):
     if 'edgecolor' not in kwargs:
         kwargs['edgecolor'] = 'grey'
     if 'linewidth' not in kwargs:
-        kwargs['linewidth'] = 0.7
+        kwargs['linewidth'] = 0.5
     
     coastlines_gdb = get_borders_gdb(bbox=bbox, res=res, crs=crs)
     if coastlines_gdb.empty:
