@@ -262,6 +262,9 @@ def gshhs_coastlines_shp() -> str:
         assert os.path.exists(filepath_shp.replace('L1.shp','L2.shp')) #lakes
         assert os.path.exists(filepath_shp.replace('L1.shp','L3.shp')) #islands-in-lakes
         assert os.path.exists(filepath_shp.replace('L1.shp','L6.shp')) #Antarctic grounding-line polygons
+    filepath_shp_list = [os.path.join(dir_gshhs,'WDBII_shp',res,f'WDBII_border_{res}_L1.shp') for res in ['f','h','i','l','c']]
+    for filepath_shp in filepath_shp_list:
+        assert os.path.exists(filepath_shp) #coastlines
     
     return dir_gshhs
 
