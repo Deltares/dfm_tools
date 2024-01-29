@@ -496,7 +496,7 @@ def test_read_polyfile_as_gdf_points():
 def test_interp_uds_to_plipoints():
     """
     very basic test for function, 
-    should be made more strict with learnings from workinprogress_interpolate_uds_toplipoints.py
+    should be made more strict with learnings from postprocess_interpolate_uds_toplipoints.py
     """
     
     ncbnd_construct = get_ncbnd_construct()
