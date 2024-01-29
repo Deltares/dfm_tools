@@ -195,7 +195,7 @@ ext_old.save(filepath=ext_file_old,path_style=path_style)
 mdu_file = os.path.join(dir_output, f'{model_name}.mdu')
 mdu = hcdfm.FMModel()
 
-mdu.geometry.netfile = netfile #TODO: path is windows/unix dependent #TODO: providing os.path.basename(netfile) raises "ValidationError: 1 validation error for Geometry - netfile:   File: `C:\SnapVolumesTemp\MountPoints\{45c63495-0000-0000-0000-100000000000}\{79DE0690-9470-4166-B9EE-4548DC416BBD}\SVROOT\DATA\dfm_tools\tests\examples_workinprogress\Bonaire_net.nc` not found, skipped parsing." (wrong current directory)
+mdu.geometry.netfile = netfile #TODO: path is windows/unix dependent #TODO: providing os.path.basename(netfile) raises "ValidationError: 1 validation error for Geometry - netfile:   File: `C:\SnapVolumesTemp\MountPoints\{45c63495-0000-0000-0000-100000000000}\{79DE0690-9470-4166-B9EE-4548DC416BBD}\SVROOT\DATA\dfm_tools\tests\examples\Bonaire_net.nc` not found, skipped parsing." (wrong current directory)
 mdu.geometry.bedlevuni = 5
 mdu.geometry.kmx = 20
 mdu.geometry.layertype = 1
