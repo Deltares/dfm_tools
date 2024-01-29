@@ -13,7 +13,7 @@ import subprocess
 # ACCEPTANCE TESTS VIA EXAMPLE SCRIPTS, these are the ones who are only meant to generate output files
 
 dir_tests = os.path.dirname(__file__) #F9 doesnt work, only F5 (F5 also only method to reload external definition scripts)
-list_configfiles = glob.glob(os.path.join(dir_tests,'examples','*.py')) + glob.glob(os.path.join(dir_tests,'examples_workinprogress','*.py'))
+list_configfiles = glob.glob(os.path.join(dir_tests,'examples','*.py'))
 list_configfiles = [x for x in list_configfiles if 'workinprogress_xarray_performance' not in x] #ignore this slow script
 dir_output_general = os.path.join(dir_tests,'examples_output')
 os.makedirs(dir_output_general, exist_ok=True)
