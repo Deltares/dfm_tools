@@ -68,5 +68,6 @@ nav:
       - notebooks/postprocessing_example.ipynb
       - notebooks/preprocessing_example_hydrolib.ipynb
       - notebooks/modelbuilder_example.ipynb
-  - API reference:
+      - notebooks/subset_retrieve_sealevel_observations.ipynb
+ - API reference:
       - API reference: api_reference.md #TODO: automate generation of this file
