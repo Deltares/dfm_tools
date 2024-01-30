@@ -270,13 +270,27 @@ def test_zlayermodel_correct_layers():
     
     vals_zw_max = data_frommap_merged_fullgrid['mesh2d_flowelem_zw'].max(dim='nmesh2d_interface')
     vals_zw_min = data_frommap_merged_fullgrid['mesh2d_flowelem_zw'].min(dim='nmesh2d_interface')
-    assert (np.abs(vals_zw_max-vals_wl)<1e-6).all()
-    assert (np.abs(vals_zw_min-vals_bl)<1e-6).all()
+    assert np.allclose(vals_zw_max, vals_wl)
+    assert np.allclose(vals_zw_min, vals_bl)
     
+    # check z-centers in one specific cell
+    zcc = data_frommap_merged_fullgrid['mesh2d_flowelem_zcc']
+    zcc_onecell = zcc.isel(nmesh2d_face=5000).load().fillna(-999)
+    zcc_onecell_expected = np.array([-999]*32 + [ -4.1403    , -3.375     , -2.125, -0.84786265])
+    assert np.allclose(zcc_onecell, zcc_onecell_expected)
+    
+    # check z-interfaces in one specific cell
+    zw = data_frommap_merged_fullgrid['mesh2d_flowelem_zw']
+    zw_onecell = zw.isel(nmesh2d_face=5000).load().fillna(-999)
+    zw_onecell_expected = np.array([-999]*32 + [-4.2806, -4.0, -2.75, -1.5, -0.195725292])
+    assert np.allclose(zw_onecell, zw_onecell_expected)
+    
+    # check if all non-dry centers are below waterlevel and above bed
     vals_zcc_max = data_frommap_merged_fullgrid['mesh2d_flowelem_zcc'].max(dim='nmesh2d_layer').to_numpy()
     vals_zcc_min = data_frommap_merged_fullgrid['mesh2d_flowelem_zcc'].min(dim='nmesh2d_layer').to_numpy()
-    assert (vals_zcc_max <= vals_wl).all() # TODO: zcc top layers currently clipped to wl (not center), so using <= instead of <
-    assert (vals_zcc_min >= vals_bl).all() # TODO: zcc bottom layers currently clipped to bl (not center), so using >= instead of >
+    bool_dry = vals_wl == vals_bl
+    assert ((vals_zcc_max < vals_wl) | bool_dry).all()
+    assert ((vals_zcc_min > vals_bl) | bool_dry).all()
 
 
 @pytest.mark.requireslocaldata
@@ -297,19 +311,33 @@ def test_zsigmalayermodel_correct_layers():
     vals_wl = data_frommap_merged_fullgrid['mesh2d_s1'].to_numpy()
     vals_bl = data_frommap_merged_fullgrid['mesh2d_flowelem_bl'].to_numpy()
 
+    # check z-centers in one specific cell
+    zcc = data_frommap_merged_fullgrid['mesh2d_flowelem_zcc']
+    zcc_onecell = zcc.isel(mesh2d_nFaces=5000).load().fillna(-999)
+    zcc_onecell_expected = np.array([-999, -999, -999, -4.86792313, -0.250909869])
+    assert np.allclose(zcc_onecell, zcc_onecell_expected)
+    
+    # check z-interfaces in one specific cell
+    zw = data_frommap_merged_fullgrid['mesh2d_flowelem_zw']
+    zw_onecell = zw.isel(mesh2d_nFaces=5000).load().fillna(-999)
+    zw_onecell_expected = np.array([-999., -999., -999.,   -7.17642976, -2.5594165, 2.05759676])
+    assert np.allclose(zw_onecell, zw_onecell_expected)
+    
     vals_zw_max = data_frommap_merged_fullgrid['mesh2d_flowelem_zw'].max(dim='mesh2d_nInterfaces').to_numpy()
     vals_zw_min = data_frommap_merged_fullgrid['mesh2d_flowelem_zw'].min(dim='mesh2d_nInterfaces').to_numpy()
     vals_zw_top = data_frommap_merged_fullgrid['mesh2d_flowelem_zw'].isel(mesh2d_nInterfaces=-1).to_numpy()
-    assert (np.abs(vals_zw_max-vals_wl)<1e-6).all()
-    assert (np.abs(vals_zw_min-vals_bl)<1e-6).all()
-    assert (np.abs(vals_zw_max-vals_zw_top)<1e-6).all()
+    assert np.allclose(vals_zw_max, vals_wl)
+    assert np.allclose(vals_zw_min, vals_bl)
+    assert np.allclose(vals_zw_max, vals_zw_top)
 
+    # check if all non-dry cell centers are below waterlevel and above bed
     vals_zcc_max = data_frommap_merged_fullgrid['mesh2d_flowelem_zcc'].max(dim='mesh2d_nLayers').to_numpy()
     vals_zcc_min = data_frommap_merged_fullgrid['mesh2d_flowelem_zcc'].min(dim='mesh2d_nLayers').to_numpy()
     vals_zcc_top = data_frommap_merged_fullgrid['mesh2d_flowelem_zcc'].isel(mesh2d_nLayers=-1).to_numpy()
-    assert (vals_zcc_max <= vals_wl).all() # using <=, since < can be False: in case of bl>0 the sigmalayers zcc and zw are all the same value
-    assert (vals_zcc_min >= vals_bl).all() # TODO: zcc bottom layers currently clipped to bl (not center), so using >= instead of >
-    assert (np.abs(vals_zcc_max-vals_zcc_top)<1e-6).all()
+    bool_dry = vals_wl == vals_bl
+    assert ((vals_zcc_max < vals_wl) | bool_dry).all()
+    assert ((vals_zcc_min > vals_bl) | bool_dry).all()
+    assert (np.isclose(vals_zcc_max, vals_zcc_top) | bool_dry).all()
 
 
 @pytest.mark.unittest
