@@ -293,6 +293,36 @@ def test_zlayermodel_correct_layers():
     assert ((vals_zcc_min > vals_bl) | bool_dry).all()
 
 
+@pytest.mark.unittest
+def test_zlayermodel_correct_layers_nanabovewl():
+    """
+    we assert max/min only, since zlayers can also be valid when the top/bottom layer contains nan values
+    """
+    
+    file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True) #zlayer
+    uds = dfmt.open_partitioned_dataset(file_nc)
+    
+    # set wl/bl below the second interface (first is at -0.25, second is at -1.5)
+    uds['mesh2d_s1'] = uds['mesh2d_s1'].clip(max=-1.8)  # assuming this variable is available, which is not guaranteed
+    uds['mesh2d_flowelem_bl'] = uds['mesh2d_flowelem_bl'].clip(max=-1.8)  # assuming this variable is available, which is not guaranteed
+
+    timestep = 3
+    uds_timesel = uds.isel(time=timestep) #select data for all layers
+    uds_timesel_fullgrid = reconstruct_zw_zcc_fromz(uds_timesel)
+    
+    # check z-centers in one specific cell
+    zcc = uds_timesel_fullgrid['mesh2d_flowelem_zcc']
+    zcc_onecell = zcc.isel(nmesh2d_face=5000).load().fillna(-999)
+    zcc_onecell_expected = np.array([-999]*32 + [ -4.1403    , -3.375     , -2.275, -999.])
+    assert np.allclose(zcc_onecell, zcc_onecell_expected)
+    
+    # check z-interfaces in one specific cell
+    zw = uds_timesel_fullgrid['mesh2d_flowelem_zw']
+    zw_onecell = zw.isel(nmesh2d_face=5000).load().fillna(-999)
+    zw_onecell_expected = np.array([-999]*32 + [-4.2806, -4.0, -2.75, -1.8, -999.])
+    assert np.allclose(zw_onecell, zw_onecell_expected)
+
+
 @pytest.mark.requireslocaldata
 @pytest.mark.unittest
 def test_zsigmalayermodel_correct_layers():
