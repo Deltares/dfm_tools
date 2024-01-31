@@ -19,7 +19,6 @@ from dfm_tools.download import copernicusmarine_credentials
 from erddapy import ERDDAP #pip install erddapy
 import requests
 import matplotlib.pyplot as plt
-plt.close('all')
 from zipfile import ZipFile
 from io import BytesIO
 
