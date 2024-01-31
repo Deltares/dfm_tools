@@ -266,6 +266,9 @@ def reconstruct_zw_zcc_fromz(uds):
     # correction: set interfaces below bed to nan (keeping the interface at the bed with shift)
     bool_belowbed = zw.shift({dimn_interfaces:-1}) <= uds_bl
     zw = zw.where(~bool_belowbed)
+    # correction: set interfaces above wl to nan (keeping the interface at the wl with shift)
+    bool_abovewl = zw.shift({dimn_interfaces:1}) >= uds_eta
+    zw = zw.where(~bool_abovewl)
     
     # correction: set centers to values in between interfaces (and reshape+rename from int to cent dim)
     zcc = zw.rolling({dimn_interfaces:2}).mean()
