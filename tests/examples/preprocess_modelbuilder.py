@@ -55,7 +55,7 @@ os.makedirs(dir_output_data, exist_ok=True)
 #select and plot bathy
 file_nc_bathy = r'p:\metocean-data\open\GEBCO\2021\GEBCO_2021.nc'
 data_bathy = xr.open_dataset(file_nc_bathy)
-data_bathy_sel = data_bathy.sel(lon=slice(lon_min-1,lon_max+1),lat=slice(lat_min-1,lat_max+1))
+data_bathy_sel = data_bathy.sel(lon=slice(lon_min-1,lon_max+1),lat=slice(lat_min-1,lat_max+1)).elevation
 
 #TODO: grid generation and bathy-refinement is still to be improved in meshkernel (https://github.com/Deltares/dfm_tools/issues/234)
 mk_object = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, crs=crs)
@@ -89,8 +89,8 @@ dfmt.meshkernel_delete_withcoastlines(mk=mk_object, res='h') #TODO: write used c
 xu_grid_uds = dfmt.meshkernel_to_UgridDataset(mk=mk_object, crs=crs)
 
 #interp bathy
-data_bathy_interp = data_bathy_sel.interp(lon=xu_grid_uds.obj.mesh2d_node_x, lat=xu_grid_uds.obj.mesh2d_node_y).reset_coords(['lat','lon']) #interpolates lon/lat gebcodata to mesh2d_nNodes dimension #TODO: if these come from xu_grid_uds (without ojb), the mesh2d_node_z var has no ugrid accessor since the dims are lat/lon instead of mesh2d_nNodes
-xu_grid_uds['mesh2d_node_z'] = data_bathy_interp.elevation.clip(max=10)
+data_bathy_interp = data_bathy_sel.interp(lon=xu_grid_uds.obj.mesh2d_node_x, lat=xu_grid_uds.obj.mesh2d_node_y)
+xu_grid_uds['mesh2d_node_z'] = data_bathy_interp.clip(max=10)
 
 fig, ax = plt.subplots()
 xu_grid_uds.grid.plot(ax=ax,linewidth=1)
