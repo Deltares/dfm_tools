@@ -8,6 +8,7 @@
 - add retrieval and plotting of borders with `dfmt.get_borders_gdb()` and `dfmt.plot_borders()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#750](https://github.com/Deltares/dfm_tools/pull/750)
 - improve z and sigmaz layer reconstruction (nans below bed and above waterlevel and centers as mean of interfaces) in `reconstruct_zw_zcc()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#755](https://github.com/Deltares/dfm_tools/pull/755) and [#759](https://github.com/Deltares/dfm_tools/pull/759)
 - simplified correctly merging of ERA5 int16 meteofiles in `merge_meteofiles()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#738](https://github.com/Deltares/dfm_tools/pull/738)
+- expecting da instead of ds in `refine_basegrid()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#762](https://github.com/Deltares/dfm_tools/pull/762)
 
 ### Fix
 - prevent ValueError upon concatenation of only emtpy coastlines geodataframes by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#717](https://github.com/Deltares/dfm_tools/pull/717)
