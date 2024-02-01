@@ -71,6 +71,33 @@ def test_uds_add_crs_attrs_spherical():
 
 
 @pytest.mark.unittest
+def test_meshkernel_refine_basegrid():
+    # domain and resolution
+    lon_min, lon_max, lat_min, lat_max = -68.55, -67.9, 11.8, 12.6
+    dxy = 0.05
+    crs = 'EPSG:4326'
+
+    # grid generation and refinement with GEBCO bathymetry
+    file_nc_bathy = r'http://opendap.deltares.nl/thredds/dodsC/opendap/deltares/Delft3D/netcdf_example_files/GEBCO_2022/GEBCO_2022_coarsefac08.nc'
+    data_bathy = xr.open_dataset(file_nc_bathy)
+    data_bathy_sel = data_bathy.sel(lon=slice(lon_min,lon_max),lat=slice(lat_min,lat_max))
+
+    for dtype in ["float64", "float32", "int32", "int16"]:
+        data_bathy_sel = data_bathy.sel(lon=slice(lon_min,lon_max),lat=slice(lat_min,lat_max))
+        data_bathy_sel["elevation"] = data_bathy_sel["elevation"].astype(dtype=dtype)
+        
+        # basegrid
+        mk_object = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, crs=crs)
+    
+        # refine (fails if wrong type)
+        min_edge_size = 300 #in meters
+        dfmt.refine_basegrid(mk=mk_object, data_bathy_sel=data_bathy_sel, min_edge_size=min_edge_size)
+        
+        assert len(mk_object.mesh2d_get().node_x) == 4074
+        assert len(mk_object.mesh2d_get().face_nodes) == 17298
+
+
+@pytest.mark.unittest
 def test_meshkernel_delete_withcoastlines():
     #generate basegrid
     lon_min, lon_max, lat_min, lat_max = -68.45, -68.1, 12, 12.35
