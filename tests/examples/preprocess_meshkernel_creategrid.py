@@ -56,16 +56,16 @@ Mesh refinement in MeshKernelPy with bathymetry samples and plot result
 #select and plot bathy
 file_nc_bathy = r'p:\metocean-data\open\GEBCO\2021\GEBCO_2021.nc'
 data_bathy = xr.open_dataset(file_nc_bathy)
-data_bathy_sel = data_bathy.sel(lon=slice(lon_min-1,lon_max+1),lat=slice(lat_min-1,lat_max+1))
+data_bathy_sel = data_bathy.sel(lon=slice(lon_min-1,lon_max+1),lat=slice(lat_min-1,lat_max+1)).elevation
 
 fig, ax = plt.subplots(figsize=figsize)
-data_bathy_sel.elevation.plot(ax=ax, center=False)
+data_bathy_sel.plot(ax=ax, center=False)
 ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 
 #convert bathy data to GriddedSamples
 lon_np = data_bathy_sel.lon.to_numpy()
 lat_np = data_bathy_sel.lat.to_numpy()
-values_np = data_bathy_sel.elevation.to_numpy().flatten().astype('float') #TODO: astype to avoid "TypeError: incompatible types, c_short_Array_74880 instance instead of LP_c_double instance"
+values_np = data_bathy_sel.to_numpy().flatten().astype('float') #TODO: astype to avoid "TypeError: incompatible types, c_short_Array_74880 instance instead of LP_c_double instance"
 gridded_samples = meshkernel.GriddedSamples(x_coordinates=lon_np,y_coordinates=lat_np,values=values_np) #TODO: does not result in refinement
 
 #refinement
@@ -131,8 +131,8 @@ dfmt.plot_coastlines(ax=ax, res='h', min_area=100)
 ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 
 #interp bathy
-data_bathy_interp = data_bathy_sel.interp(lon=xu_grid_uds.obj.mesh2d_node_x, lat=xu_grid_uds.obj.mesh2d_node_y).reset_coords(['lat','lon']) #interpolates lon/lat gebcodata to mesh2d_nNodes dimension #TODO: if these come from xu_grid_uds, the mesh2d_node_z var has no ugrid accessor since the dims are lat/lon instead of mesh2d_nNodes
-xu_grid_uds['mesh2d_node_z'] = data_bathy_interp.elevation.clip(max=10)
+data_bathy_interp = data_bathy_sel.interp(lon=xu_grid_uds.obj.mesh2d_node_x, lat=xu_grid_uds.obj.mesh2d_node_y) #interpolates lon/lat gebcodata to mesh2d_nNodes dimension #TODO: if these come from xu_grid_uds, the mesh2d_node_z var has no ugrid accessor since the dims are lat/lon instead of mesh2d_nNodes
+xu_grid_uds['mesh2d_node_z'] = data_bathy_interp.clip(max=10)
 #TODO: alternatively do this with TODO: mk.mesh2d_averaging_interpolation() or mk.mesh2d_triangulation_interpolation() >> bilinear would be faster
 
 fig, ax = plt.subplots(figsize=figsize)
