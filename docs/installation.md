@@ -6,7 +6,7 @@
 
 ## Recommended installation
 
-- python 3.11 is recommended, python>=3.9 is required ([more info](https://github.com/Deltares/dfm_tools/issues/267)), python 3.12 not yet supported ([more info](https://github.com/Deltares/dfm_tools/issues/551))
+- python 3.11 is recommended, python>=3.9 is required ([more info](https://github.com/Deltares/dfm_tools/issues/267)), python 3.13 not yet supported ([more info](https://github.com/Deltares/dfm_tools/issues/559))
 - download and install Anaconda from [anaconda.com](https://www.anaconda.com)
 - open Anaconda prompt
 - ``conda create --name dfm_tools_env python=3.11 git spyder -c conda-forge -y`` (``git`` and ``spyder`` are optional)

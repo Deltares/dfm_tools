@@ -5,6 +5,11 @@
 - automatically parse epsg from FM mapfile to crs in `dfmt.open_partitioned_dataset()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#685](https://github.com/Deltares/dfm_tools/pull/685)
 - added spatial/temporal subsetting and retrieving of insitu observation data with `dfmt.ssh_catalog_subset()` and `dfmt.ssh_retrieve_data()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#711](https://github.com/Deltares/dfm_tools/pull/711)
 - added conversion of absolute to relative paths for modelbuilder with `dfmt.make_paths_relative()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#723](https://github.com/Deltares/dfm_tools/pull/723)
+- add retrieval and plotting of borders with `dfmt.get_borders_gdb()` and `dfmt.plot_borders()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#750](https://github.com/Deltares/dfm_tools/pull/750)
+- improve z and sigmaz layer reconstruction (nans below bed and above waterlevel and centers as mean of interfaces) in `reconstruct_zw_zcc()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#755](https://github.com/Deltares/dfm_tools/pull/755) and [#759](https://github.com/Deltares/dfm_tools/pull/759)
+- simplified correctly merging of ERA5 int16 meteofiles in `merge_meteofiles()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#738](https://github.com/Deltares/dfm_tools/pull/738)
+- expecting da instead of ds in `refine_basegrid()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#762](https://github.com/Deltares/dfm_tools/pull/762)
+- added support for Python 3.12 by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#763](https://github.com/Deltares/dfm_tools/pull/763)
 - moved from `copernicus-marine-client` to `copernicusmarine` in `dfmt.download_CMEMS()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#721](https://github.com/Deltares/dfm_tools/pull/721)
 
 ### Fix

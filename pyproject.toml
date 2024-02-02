@@ -64,7 +64,7 @@ classifiers = [
 	"Programming Language :: Python :: 3.9",
 	"Programming Language :: Python :: 3.10",
 	"Programming Language :: Python :: 3.11",
-	#python 3.12 is not supported yet: https://github.com/Deltares/dfm_tools/issues/551
+	"Programming Language :: Python :: 3.12",
 ]
 
 [project.urls]

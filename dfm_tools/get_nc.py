@@ -244,7 +244,6 @@ def reconstruct_zw_zcc_fromz(uds):
     """
     reconstruct full grid output (time/face-varying z-values) for zvalue model. Necessary when extracting values with zdepth w.r.t. waterlevel/bedlevel
     """
-    #TODO: center values (zcc) are clipped to waterlevel+bedlevel, so the zcc of the top+bottom layer are currently incorrect
     
     dimn_layer, dimn_interfaces = get_vertical_dimensions(uds)
     gridname = uds.grid.name
@@ -254,16 +253,29 @@ def reconstruct_zw_zcc_fromz(uds):
     uds_bl = uds[f'{gridname}_flowelem_bl'] # assuming this variable is available, which is not guaranteed
     
     #deriving zcenter values, clipping zcc to bl/wl
-    zvals_center = uds[f'{gridname}_layer_z']
-    uds[f'{gridname}_flowelem_zcc'] = (uds_z0+zvals_center).clip(min=uds_bl, max=uds_eta)
+    # zvals_center = uds[f'{gridname}_layer_z']
+    # zcc = (uds_z0+zvals_center).clip(min=uds_bl, max=uds_eta)
 
     #deriving zinterface values, first expanding zint to wl.max(), then clipping zw to bl/wl
     zvals_interface = uds[f'{gridname}_interface_z']
     # make sure mesh2d_interface_z.max()>=wl.max() (is clipped to wl again in next step)
     if zvals_interface[-1] < uds_eta.max():
         zvals_interface[-1] = uds_eta.max()
-    uds[f'{gridname}_flowelem_zw'] = (uds_z0+zvals_interface).clip(min=uds_bl, max=uds_eta)
+    zw = (uds_z0+zvals_interface).clip(min=uds_bl, max=uds_eta)
+       
+    # correction: set interfaces below bed to nan (keeping the interface at the bed with shift)
+    bool_belowbed = zw.shift({dimn_interfaces:-1}) <= uds_bl
+    zw = zw.where(~bool_belowbed)
+    # correction: set interfaces above wl to nan (keeping the interface at the wl with shift)
+    bool_abovewl = zw.shift({dimn_interfaces:1}) >= uds_eta
+    zw = zw.where(~bool_abovewl)
     
+    # correction: set centers to values in between interfaces (and reshape+rename from int to cent dim)
+    zcc = zw.rolling({dimn_interfaces:2}).mean()
+    zcc = zcc.isel({dimn_interfaces:slice(1,None)}).rename({dimn_interfaces:dimn_layer})
+    
+    uds[f'{gridname}_flowelem_zw'] = zw
+    uds[f'{gridname}_flowelem_zcc'] = zcc
     uds = uds.set_coords([f'{gridname}_flowelem_zw',f'{gridname}_flowelem_zcc'])
     return uds
 
@@ -273,8 +285,8 @@ def reconstruct_zw_zcc_fromzsigma(uds):
     reconstruct full grid output (time/face-varying z-values) for zsigmavalue model without full grid output. Implemented in https://issuetracker.deltares.nl/browse/UNST-5477
     based on https://cfconventions.org/cf-conventions/cf-conventions.html#_ocean_sigma_over_z_coordinate
     """
-    # TODO: center values are clipped to bedlevel, so the center values of the bottom layer are currently incorrect
     
+    dimn_layer, dimn_interfaces = get_vertical_dimensions(uds)
     gridname = uds.grid.name
     
     # temporarily decode default fillvalues
@@ -282,27 +294,37 @@ def reconstruct_zw_zcc_fromzsigma(uds):
     uds = xu.UgridDataset(decode_default_fillvals(uds.obj),grids=[uds.grid])
     
     osz_formulaterms_int_dict = get_formula_terms(uds,varn_contains='interface')
-    osz_formulaterms_lay_dict = get_formula_terms(uds,varn_contains='layer')
+    # osz_formulaterms_lay_dict = get_formula_terms(uds,varn_contains='layer')
     
     uds_eta = uds[osz_formulaterms_int_dict['eta']] #mesh2d_s1
     uds_depth = uds[osz_formulaterms_int_dict['depth']] #mesh2d_bldepth: positive version of mesh2d_flowelem_bl, but this one is always in file
     uds_depth_c = uds[osz_formulaterms_int_dict['depth_c']] #mesh2d_sigmazdepth
     uds_zlev_int = uds[osz_formulaterms_int_dict['zlev']] #mesh2d_interface_z
     uds_sigma_int = uds[osz_formulaterms_int_dict['sigma']] #mesh2d_interface_sigma
-    uds_zlev_lay = uds[osz_formulaterms_lay_dict['zlev']] #mesh2d_layer_z
-    uds_sigma_lay = uds[osz_formulaterms_lay_dict['sigma']] #mesh2d_layer_sigma
+    # uds_zlev_lay = uds[osz_formulaterms_lay_dict['zlev']] #mesh2d_layer_z
+    # uds_sigma_lay = uds[osz_formulaterms_lay_dict['sigma']] #mesh2d_layer_sigma
     
     # for levels k where sigma(k) has a defined value and zlev(k) is not defined:
     # z(n,k,j,i) = eta(n,j,i) + sigma(k)*(min(depth_c,depth(j,i))+eta(n,j,i))
     zw_sigmapart = uds_eta + uds_sigma_int*(uds_depth.clip(max=uds_depth_c)+uds_eta)
-    zcc_sigmapart = uds_eta + uds_sigma_lay*(uds_depth.clip(max=uds_depth_c)+uds_eta)
+    # zcc_sigmapart = uds_eta + uds_sigma_lay*(uds_depth.clip(max=uds_depth_c)+uds_eta)
     # for levels k where zlev(k) has a defined value and sigma(k) is not defined: 
     # z(n,k,j,i) = zlev(k)
     zw_zpart = uds_zlev_int.clip(min=-uds_depth) #added clipping of zvalues with bedlevel
-    zcc_zpart = uds_zlev_lay.clip(min=-uds_depth) #added clipping of zvalues with bedlevel
-    uds[f'{gridname}_flowelem_zw'] = zw_sigmapart.fillna(zw_zpart)
-    uds[f'{gridname}_flowelem_zcc'] = zcc_sigmapart.fillna(zcc_zpart)
+    # zcc_zpart = uds_zlev_lay.clip(min=-uds_depth) #added clipping of zvalues with bedlevel
+    zw = zw_sigmapart.fillna(zw_zpart)
+    # zcc = zcc_sigmapart.fillna(zcc_zpart)
     
+    # correction: set interfaces below bed to nan (keeping the interface at the bed with shift)
+    bool_belowbed = zw.shift({dimn_interfaces:-1}) <= -uds_depth
+    zw = zw.where(~bool_belowbed)
+    
+    # correction: set centers to values in between interfaces (and reshape+rename from int to cent dim)
+    zcc = zw.rolling({dimn_interfaces:2}).mean()
+    zcc = zcc.isel({dimn_interfaces:slice(1,None)}).rename({dimn_interfaces:dimn_layer})
+    
+    uds[f'{gridname}_flowelem_zw'] = zw
+    uds[f'{gridname}_flowelem_zcc'] = zcc
     uds = uds.set_coords([f'{gridname}_flowelem_zw',f'{gridname}_flowelem_zcc'])
     return uds
 

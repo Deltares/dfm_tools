@@ -39,8 +39,8 @@ plugins:
             show_category_heading: false
             group_by_category: true
             inherited_members: true
-      watch:
-        - dfm_tools
+     # watch:
+     #   - dfm_tools
   - exclude:
       glob:
         - dfm_tools.pdf
@@ -68,5 +68,6 @@ nav:
       - notebooks/postprocessing_example.ipynb
       - notebooks/preprocessing_example_hydrolib.ipynb
       - notebooks/modelbuilder_example.ipynb
+      - notebooks/subset_retrieve_sealevel_observations.ipynb
   - API reference:
       - API reference: api_reference.md #TODO: automate generation of this file

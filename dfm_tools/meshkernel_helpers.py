@@ -328,7 +328,7 @@ def refine_basegrid(mk, data_bathy_sel, min_edge_size):
     
     lon_np = data_bathy_sel.lon.to_numpy()
     lat_np = data_bathy_sel.lat.to_numpy()
-    values_np = data_bathy_sel.elevation.to_numpy().flatten().astype('float') #TODO: astype to avoid "TypeError: incompatible types, c_short_Array_74880 instance instead of LP_c_double instance"
+    values_np = data_bathy_sel.to_numpy().flatten().astype('float') #TODO: astype to avoid "TypeError: incompatible types, c_short_Array_74880 instance instead of LP_c_double instance"
     gridded_samples = meshkernel.GriddedSamples(x_coordinates=lon_np,y_coordinates=lat_np,values=values_np)
 
 
