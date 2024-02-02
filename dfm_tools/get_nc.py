@@ -360,7 +360,7 @@ def reconstruct_zw_zcc(uds:xu.UgridDataset):
     elif len(uds.filter_by_attrs(standard_name='ocean_sigma_z_coordinate')) != 0:
         print('zsigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
         uds = reconstruct_zw_zcc_fromzsigma(uds)
-    elif f'{gridname}_layer_sigma' in uds.variables: #TODO: var with standard_name='ocean_sigma_coordinate' available?
+    elif len(uds.filter_by_attrs(standard_name='ocean_sigma_coordinate')) != 0:
         print('sigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
         uds = reconstruct_zw_zcc_fromsigma(uds)
     elif f'{gridname}_layer_z' in uds.variables:

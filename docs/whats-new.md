@@ -18,6 +18,7 @@
 - limited `dfmt.download_CMEMS()` freq argument to M/D only by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#733](https://github.com/Deltares/dfm_tools/pull/733)
 - suppres xarray chunking warning by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#742](https://github.com/Deltares/dfm_tools/pull/742)
 - remove mesh2d hardcoding from layer reconstruction by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#747](https://github.com/Deltares/dfm_tools/pull/747)
+- generalized finding of sigma layer/interface variables via attrs in `reconstruct_zw_zcc()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#765](https://github.com/Deltares/dfm_tools/pull/765)
 
 
 ## 0.18.0 (2023-12-08)
