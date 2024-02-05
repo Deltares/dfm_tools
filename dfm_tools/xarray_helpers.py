@@ -19,7 +19,6 @@ from dfm_tools.errors import OutOfRangeError
 
 __all__ = [
     "preprocess_hisnc",
-    "preprocess_hirlam",
     "preprocess_ERA5",
     "preprocess_woa",
     "merge_meteofiles",
@@ -99,28 +98,6 @@ def preprocess_hisnc(ds):
     return ds
 
 
-def preprocess_hirlam(ds):
-    """
-    add xy variables as longitude/latitude to avoid duplicate var/dim names (we rename it anyway otherwise)
-    add xy as variables again with help of NetCDF4
-    this function is hopefully temporary, necessary since >1D-variables cannot have the same name as one of its dimensions in xarray. Background and future solution: https://github.com/pydata/xarray/issues/6293
-    "MissingDimensionsError: 'y' has more than 1-dimension and the same name as one of its dimensions ('y', 'x'). xarray disallows such variables because they conflict with the coordinates used to label dimensions."
-    might be solved in https://github.com/pydata/xarray/releases/tag/v2023.02.0 (xr.concat), but not certain
-    """
-    
-    print('hirlam workaround: adding dropped x/y variables again as longitude/latitude')
-    file_nc_one = ds.encoding['source']
-    with Dataset(file_nc_one) as data_nc:
-        data_nc_x = data_nc['x']
-        data_nc_y = data_nc['y']
-        ds['longitude'] = xr.DataArray(data_nc_x,dims=data_nc_x.dimensions,attrs=data_nc_x.__dict__) 
-        ds['latitude'] = xr.DataArray(data_nc_y,dims=data_nc_y.dimensions,attrs=data_nc_y.__dict__)
-    ds = ds.set_coords(['latitude','longitude'])
-    for varkey in ds.data_vars:
-        del ds[varkey].encoding['coordinates'] #remove {'coordinates':'y x'} from encoding (otherwise set twice)
-    return ds
-
-
 def preprocess_ERA5(ds):
     """
     Reduces the expver dimension in some of the ERA5 data (mtpr and other variables), which occurs in files with very recent data. The dimension contains the unvalidated data from the latest month in the second index in the expver dimension. The reduction is done with mean, but this is arbitrary, since there is only one valid value per timestep and the other one is nan.
@@ -156,7 +133,7 @@ def prevent_dtype_int(ds, zlib:bool = True):
             continue
 
         if 'int' not in str(var_encoding['dtype']):
-            print(f"unexpected dtype:{var_encoding['dtype']}")
+            continue
 
         # prevent incorrectly scaled integers by dropping scaling/offset encoding
         ds[var].encoding.pop('scale_factor')
@@ -175,9 +152,9 @@ def prevent_dtype_int(ds, zlib:bool = True):
 
 
 def merge_meteofiles(file_nc:str, preprocess=None, 
-                     chunks:dict = {'time':1},
                      time_slice:slice = slice(None,None),
-                     add_global_overlap:bool = False, zerostart:bool = False) -> xr.Dataset:
+                     add_global_overlap:bool = False, zerostart:bool = False,
+                     **kwargs) -> xr.Dataset:
     """
     for merging for instance meteo files
     x/y and lon/lat are renamed to longitude/latitude #TODO: is this desireable?
@@ -216,11 +193,10 @@ def merge_meteofiles(file_nc:str, preprocess=None,
     #TODO: put conversions in separate function?
     #TODO: maybe add renaming like {'salinity':'so', 'water_temp':'thetao'} for hycom
     
-    #hirlam workaround
-    if preprocess == preprocess_hirlam:
-        drop_variables = ['x','y'] #will be added again as longitude/latitude, this is a workaround (see dfmt.preprocess_hirlam for details)
-    else:
-        drop_variables = None
+    if "chunks" not in kwargs.keys():
+        kwargs["chunks"] = {'time':1}
+        
+    
     #woa workaround
     if preprocess == preprocess_woa:
         decode_cf = False
@@ -234,9 +210,8 @@ def merge_meteofiles(file_nc:str, preprocess=None,
     data_xr = xr.open_mfdataset(file_nc_list,
                                 #parallel=True, #TODO: speeds up the process, but often "OSError: [Errno -51] NetCDF: Unknown file format" on WCF
                                 preprocess=preprocess,
-                                chunks=chunks,
-                                drop_variables=drop_variables, #necessary since dims/vars with equal names are not allowed by xarray, add again later and requested matroos to adjust netcdf format.
-                                decode_cf=decode_cf)
+                                decode_cf=decode_cf,
+                                **kwargs)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
     #rename variables
@@ -298,7 +273,7 @@ def merge_meteofiles(file_nc:str, preprocess=None,
         field_zerostart['time'] = [times_pd.index[0]-dt.timedelta(days=2),times_pd.index[0]-dt.timedelta(days=1)] #TODO: is one zero field not enough? (is replacing first field not also ok? (results in 1hr transition period)
         data_xr = xr.concat([field_zerostart,data_xr],dim='time',combine_attrs='no_conflicts') #combine_attrs argument prevents attrs from being dropped
     
-    # converting from int16 with scalefac/offset to float32 with zlib
+    # converting from int16 with scalefac/offset to float32 with zlib, relevant for ERA5
     prevent_dtype_int(data_xr)
     
     return data_xr
