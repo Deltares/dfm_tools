@@ -59,8 +59,7 @@ else:
     raise KeyError('ERROR: wrong mode %s'%(mode))
 
 dir_output = '.'
-if not os.path.exists(dir_output):
-    os.makedirs(dir_output)
+os.makedirs(dir_output, exist_ok=True)
 
 file_nc = os.path.join(dir_data,fn_match_pattern)
 
