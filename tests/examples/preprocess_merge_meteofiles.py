@@ -22,13 +22,13 @@ if 'HIRLAM' in mode:
         dir_data = 'P:\\1204257-dcsmzuno\\2014\\data\\meteo-heatflux\\HIRLAM72_*' # files contain: ['dew_point_temperature','air_temperature','cloud_area_fraction']
     fn_match_pattern = 'h72_20131*.nc'
     file_out_prefix = 'h72_'
-    preprocess = dfmt.preprocess_hirlam #temporary(?) fix for >1D-vars with same name as its dim
+    kwargs = dict(preprocess=None, combine="nested", concat_dim="time") # additional keyword arguments for xarray.open_mfdataset. 
     time_slice = slice('2013-12-30','2014-01-01')
 elif mode == 'HARMONIE':
     dir_data = 'p:\\1204257-dcsmzuno\\data\\meteo\\HARMONIE\\nc\\air_*' #many invalid files, so subsetting here
     fn_match_pattern = 'HARMONIE_*_2020_*.nc'
     file_out_prefix = 'HARMONIE_'
-    preprocess = None
+    kwargs = dict() # additional keyword arguments for xarray.open_mfdataset. 
     time_slice = slice('2020-01-01','2020-01-02')
 elif 'ERA5' in mode:
     if mode=='ERA5_u10':
@@ -46,28 +46,27 @@ elif 'ERA5' in mode:
     fn_match_pattern = f'era5_.*({"|".join(varkey_list)})_.*.nc' #simpler but selects more files: 'era5_*.nc'
     file_out_prefix = f'era5_{"_".join(varkey_list)}_'
     dir_data = 'p:\\metocean-data\\open\\ERA5\\data\\Irish_North_Baltic_Sea\\*'
+    kwargs = dict(preprocess=dfmt.preprocess_ERA5) # additional keyword arguments for xarray.open_mfdataset. dfmt.preprocess_ERA5: reduce expver dimension if present and prevent dtype int
     time_slice = slice('2013-12-30','2014-01-01')
     #time_slice = slice('2005-01-01','2022-01-01') #for performance checking, was 12 minutes (for which varkey_list?)
-    preprocess = dfmt.preprocess_ERA5 #reduce expver dimension if present
 elif mode == 'WOA':
     dir_data = r'p:\1204257-dcsmzuno\data\WOA13'
     fn_match_pattern = 'woa13_decav_s*.nc'
     file_out_prefix = 'woa13_decav_s_'
-    preprocess = dfmt.preprocess_woa #add 360-day calendar unit to time attrs before decode_cf
+    kwargs = dict(preprocess=dfmt.preprocess_woa) # additional keyword arguments for xarray.open_mfdataset. dfmt.preprocess_woa: add 360-day calendar unit to time attrs before decode_cf
     time_slice = slice('0000-01-16','0000-03-16')
 else:
     raise KeyError('ERROR: wrong mode %s'%(mode))
 
 dir_output = '.'
-if not os.path.exists(dir_output):
-    os.makedirs(dir_output)
+os.makedirs(dir_output, exist_ok=True)
 
 file_nc = os.path.join(dir_data,fn_match_pattern)
 
 data_xr_tsel = dfmt.merge_meteofiles(file_nc=file_nc, time_slice=time_slice, 
-                                     preprocess=preprocess,
                                      add_global_overlap=False, #GTSM specific: extend data beyond -180 to 180 longitude
-                                     zerostart=False) #GTSM specific: extend data with 0-value fields 1 and 2 days before all_tstart
+                                     zerostart=False, #GTSM specific: extend data with 0-value fields 1 and 2 days before all_tstart
+                                     **kwargs)
 
 #write to netcdf file
 print('>> writing file (can take a while): ',end='')
@@ -96,5 +95,3 @@ for varkey in data_xr_check.data_vars:
     else:
         varsel.isel(time=0).plot(ax=ax1)
     fig.savefig(file_out.replace('.nc',f'_{varkey}'))
-
-
