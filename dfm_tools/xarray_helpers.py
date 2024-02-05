@@ -152,9 +152,9 @@ def prevent_dtype_int(ds, zlib:bool = True):
 
 
 def merge_meteofiles(file_nc:str, preprocess=None, 
-                     chunks:dict = {'time':1},
                      time_slice:slice = slice(None,None),
-                     add_global_overlap:bool = False, zerostart:bool = False) -> xr.Dataset:
+                     add_global_overlap:bool = False, zerostart:bool = False,
+                     **kwargs) -> xr.Dataset:
     """
     for merging for instance meteo files
     x/y and lon/lat are renamed to longitude/latitude #TODO: is this desireable?
@@ -193,6 +193,10 @@ def merge_meteofiles(file_nc:str, preprocess=None,
     #TODO: put conversions in separate function?
     #TODO: maybe add renaming like {'salinity':'so', 'water_temp':'thetao'} for hycom
     
+    if "chunks" not in kwargs.keys():
+        kwargs["chunks"] = {'time':1}
+        
+    
     #woa workaround
     if preprocess == preprocess_woa:
         decode_cf = False
@@ -206,8 +210,8 @@ def merge_meteofiles(file_nc:str, preprocess=None,
     data_xr = xr.open_mfdataset(file_nc_list,
                                 #parallel=True, #TODO: speeds up the process, but often "OSError: [Errno -51] NetCDF: Unknown file format" on WCF
                                 preprocess=preprocess,
-                                chunks=chunks,
-                                decode_cf=decode_cf)
+                                decode_cf=decode_cf,
+                                **kwargs)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
     #rename variables
