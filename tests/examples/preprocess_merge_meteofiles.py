@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 plt.close('all')
 import dfm_tools as dfmt
 
-mode = 'ERA5_heat_model' # 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HARMONIE' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall' 'WOA'
+mode = 'HIRLAM_meteo' # 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HARMONIE' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall' 'WOA'
 
 if 'HIRLAM' in mode:
     if mode == 'HIRLAM_meteo': #1year voor meteo crasht (HIRLAM72_*\\h72_*) door conflicting dimension sizes, sourcefolders opruimen? meteo_heatflux folders zijn schoner dus daar werkt het wel
@@ -22,7 +22,7 @@ if 'HIRLAM' in mode:
         dir_data = 'P:\\1204257-dcsmzuno\\2014\\data\\meteo-heatflux\\HIRLAM72_*' # files contain: ['dew_point_temperature','air_temperature','cloud_area_fraction']
     fn_match_pattern = 'h72_20131*.nc'
     file_out_prefix = 'h72_'
-    preprocess = dfmt.preprocess_hirlam #temporary(?) fix for >1D-vars with same name as its dim
+    preprocess = None
     time_slice = slice('2013-12-30','2014-01-01')
 elif mode == 'HARMONIE':
     dir_data = 'p:\\1204257-dcsmzuno\\data\\meteo\\HARMONIE\\nc\\air_*' #many invalid files, so subsetting here
