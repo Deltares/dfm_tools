@@ -30,7 +30,7 @@ dependencies = [
 	"contextily>=1.0.0",
 	#xarray<2023.9.0 does not support multidimensional coordinates (used in e.g. HIRLAM meteo data)
 	"xarray>=2023.9.0",
-	#dask is aligned with xarray, no particular reason
+	#dask version is aligned with xarray
 	"dask>=2023.9.0",
 	#netcdf4<1.5.4 pip install fails in py39
 	"netcdf4>=1.5.4",
