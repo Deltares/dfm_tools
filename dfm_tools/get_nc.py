@@ -291,7 +291,7 @@ def reconstruct_zw_zcc_fromzsigma(uds):
     
     # temporarily decode default fillvalues
     # TODO: xarray only decodes explicitly set fillvalues: https://github.com/Deltares/dfm_tools/issues/490
-    uds = xu.UgridDataset(decode_default_fillvals(uds.obj),grids=[uds.grid])
+    uds = xu.UgridDataset(decode_default_fillvals(uds.obj),grids=uds.grids)
     
     osz_formulaterms_int_dict = get_formula_terms(uds,varn_contains='interface')
     # osz_formulaterms_lay_dict = get_formula_terms(uds,varn_contains='layer')
