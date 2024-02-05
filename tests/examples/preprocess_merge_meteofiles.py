@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 plt.close('all')
 import dfm_tools as dfmt
 
-mode = 'ERA5_u10' # 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HARMONIE' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall' 'WOA'
+mode = 'ERA5_heat_model' # 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HARMONIE' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall' 'WOA'
 
 if 'HIRLAM' in mode:
     if mode == 'HIRLAM_meteo': #1year voor meteo crasht (HIRLAM72_*\\h72_*) door conflicting dimension sizes, sourcefolders opruimen? meteo_heatflux folders zijn schoner dus daar werkt het wel
