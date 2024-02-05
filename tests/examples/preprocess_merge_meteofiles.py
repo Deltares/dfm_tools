@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 plt.close('all')
 import dfm_tools as dfmt
 
-mode = 'HIRLAM_meteo' # 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HARMONIE' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall' 'WOA'
+mode = 'ERA5_u10' # 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HARMONIE' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall' 'WOA'
 
 if 'HIRLAM' in mode:
     if mode == 'HIRLAM_meteo': #1year voor meteo crasht (HIRLAM72_*\\h72_*) door conflicting dimension sizes, sourcefolders opruimen? meteo_heatflux folders zijn schoner dus daar werkt het wel
@@ -46,7 +46,7 @@ elif 'ERA5' in mode:
     fn_match_pattern = f'era5_.*({"|".join(varkey_list)})_.*.nc' #simpler but selects more files: 'era5_*.nc'
     file_out_prefix = f'era5_{"_".join(varkey_list)}_'
     dir_data = 'p:\\metocean-data\\open\\ERA5\\data\\Irish_North_Baltic_Sea\\*'
-    kwargs = dict(preprocess=dfmt.preprocess_ERA5) # additional keyword arguments for xarray.open_mfdataset. dfmt.preprocess_ERA5: reduce expver dimension if present
+    kwargs = dict(preprocess=dfmt.preprocess_ERA5) # additional keyword arguments for xarray.open_mfdataset. dfmt.preprocess_ERA5: reduce expver dimension if present and prevent dtype int
     time_slice = slice('2013-12-30','2014-01-01')
     #time_slice = slice('2005-01-01','2022-01-01') #for performance checking, was 12 minutes (for which varkey_list?)
 elif mode == 'WOA':
@@ -95,5 +95,3 @@ for varkey in data_xr_check.data_vars:
     else:
         varsel.isel(time=0).plot(ax=ax1)
     fig.savefig(file_out.replace('.nc',f'_{varkey}'))
-
-

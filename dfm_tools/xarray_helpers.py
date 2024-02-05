@@ -133,7 +133,7 @@ def prevent_dtype_int(ds, zlib:bool = True):
             continue
 
         if 'int' not in str(var_encoding['dtype']):
-            print(f"unexpected dtype:{var_encoding['dtype']}")
+            continue
 
         # prevent incorrectly scaled integers by dropping scaling/offset encoding
         ds[var].encoding.pop('scale_factor')
@@ -273,7 +273,7 @@ def merge_meteofiles(file_nc:str, preprocess=None,
         field_zerostart['time'] = [times_pd.index[0]-dt.timedelta(days=2),times_pd.index[0]-dt.timedelta(days=1)] #TODO: is one zero field not enough? (is replacing first field not also ok? (results in 1hr transition period)
         data_xr = xr.concat([field_zerostart,data_xr],dim='time',combine_attrs='no_conflicts') #combine_attrs argument prevents attrs from being dropped
     
-    # converting from int16 with scalefac/offset to float32 with zlib
+    # converting from int16 with scalefac/offset to float32 with zlib, relevant for ERA5
     prevent_dtype_int(data_xr)
     
     return data_xr

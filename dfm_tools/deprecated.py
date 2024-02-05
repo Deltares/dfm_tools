@@ -99,3 +99,11 @@ def generate_bndpli(**kwargs):
     deprecated
     """
     raise DeprecationWarning('the function dfmt.generate_bndpli() is deprecated, please use dfmt.generate_bndpli_cutland() instead.')
+
+
+def preprocess_hirlam(ds):
+    """
+    deprecated
+    """
+    raise DeprecationWarning('the function dfmt.preprocess_hirlam() is deprecated, xarray now supports datasets with multidimensional coordinates.')
+
