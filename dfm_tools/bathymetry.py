@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon May 31 17:17:09 2021
-
-@author: veenstra
-"""
-
 import numpy as np
 import xarray as xr
 

@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sat Jul  8 09:38:01 2023
-
-@author: veenstra
-"""
-
 import os
 import requests
 import xarray as xr

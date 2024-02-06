@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Apr 24 03:46:44 2023
-
-@author: veenstra
-"""
-
 import os
 import geopandas as gpd
 import matplotlib.pyplot as plt

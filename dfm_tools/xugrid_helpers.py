@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Jun 22 17:02:16 2023
-
-@author: veenstra
-"""
-
 import os
 import numpy as np
 import xugrid as xu

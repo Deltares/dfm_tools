@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Apr  6 18:46:35 2023
-
-@author: veenstra
-"""
-
 import xugrid as xu
 import meshkernel
 import xarray as xr
