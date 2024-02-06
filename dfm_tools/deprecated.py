@@ -1,11 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sun Apr 23 22:42:27 2023
-
-@author: veenstra
-"""
-
-
 def get_ncmodeldata(file_nc=None, varname=None, timestep=None, layer=None, depth=None, station=None, multipart=None, get_linkedgridinfo=False, silent=False):
     """
     deprecated

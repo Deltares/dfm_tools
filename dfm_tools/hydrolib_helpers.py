@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Aug 23 13:36:44 2022
-
-@author: veenstra
-"""
-
 import pandas as pd
 import cftime
 import numpy as np

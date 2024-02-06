@@ -1,13 +1,3 @@
-"""
-Created on Tue Apr  4 16:12:56 2023
-
-@author: groenenb, sclaan
-edited by: veenstra, zijlker
-
-This is a proof of concept that will be properly coded in the near future and probably end up under hydromt-delft3dfm
-Since the functions in this script contain hardcoded parameters, it is not exposed to public and you need to import like dfmt.modelbuilder.[function]
-"""
-
 import os
 import warnings
 import pandas as pd

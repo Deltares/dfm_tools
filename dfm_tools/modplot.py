@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """
-Created on Wed Mar 25 15:26:55 2020
-
 @author: Kieran Hunt
 https://github.com/kieranmrhunt/curved-quivers/blob/master/modplot.py
 https://stackoverflow.com/questions/51843313/flow-visualisation-in-python-using-curved-path-following-vectors

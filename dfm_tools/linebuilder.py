@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Oct  3 13:40:58 2022
-
-@author: veenstra
-"""
-
 import numpy as np
 
 __all__ = ["LineBuilder"]

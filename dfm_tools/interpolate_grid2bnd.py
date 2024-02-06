@@ -1,11 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Aug 18 17:39:03 2022
-
-@author: veenstra
-
-"""
-
 import glob
 import datetime as dt
 import numpy as np

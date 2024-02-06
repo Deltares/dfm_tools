@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Dec  8 22:07:22 2022
-
-@author: veenstra
-"""
 import datetime as dt
 from dask.diagnostics import ProgressBar
 

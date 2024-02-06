@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Oct 18 15:09:26 2022
-
-@author: veenstra
-"""
-
 import os
 import pandas as pd
 from pathlib import Path

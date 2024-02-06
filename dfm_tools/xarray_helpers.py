@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Oct 14 19:58:36 2022
-
-@author: veenstra
-"""
-
 import os
 import re
 from netCDF4 import Dataset
