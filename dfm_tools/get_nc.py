@@ -83,7 +83,7 @@ def get_xzcoords_onintersection(uds, face_index, crs_dist_starts, crs_dist_stops
     
     # take zvals_interface
     if dimn_layer in uds_sel.dims: #3D model
-        nlay = uds.dims[dimn_layer]
+        nlay = uds.sizes[dimn_layer]
         zvals_interface_filled = uds_sel[f'{gridname}_flowelem_zw'].bfill(dim=dimn_interfaces) #fill nan values (below bed) with equal values
         zvals_interface = zvals_interface_filled.to_numpy().T #transpose to make in line with 2D sigma dataset
     else: #2D model, no layers
