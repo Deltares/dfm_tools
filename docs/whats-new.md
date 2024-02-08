@@ -10,7 +10,7 @@
 - simplified correctly merging of ERA5 int16 meteofiles in `merge_meteofiles()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#738](https://github.com/Deltares/dfm_tools/pull/738)
 - expecting da instead of ds in `refine_basegrid()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#762](https://github.com/Deltares/dfm_tools/pull/762)
 - added support for Python 3.12 by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#763](https://github.com/Deltares/dfm_tools/pull/763)
-- moved from `copernicus-marine-client` to `copernicusmarine` in `dfmt.download_CMEMS()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#721](https://github.com/Deltares/dfm_tools/pull/721)
+- moved from `copernicus-marine-client` to `copernicusmarine` in `dfmt.download_CMEMS()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#721](https://github.com/Deltares/dfm_tools/pull/721) and [#772](https://github.com/Deltares/dfm_tools/pull/772)
 
 ### Fix
 - prevent ValueError upon concatenation of only emtpy coastlines geodataframes by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#717](https://github.com/Deltares/dfm_tools/pull/717)
