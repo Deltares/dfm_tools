@@ -481,7 +481,7 @@ def interp_uds_to_plipoints(uds:xu.UgridDataset, gdf:geopandas.GeoDataFrame, nPo
     ds = uds.ugrid.sel_points(x=gdf.geometry.x, y=gdf.geometry.y)
     #TODO: drop mesh2d_face_x and mesh2d_face_y variables
     
-    if len(gdf)!=ds.dims[facedim]: #TODO: check this until https://github.com/Deltares/xugrid/issues/100 is solved, after that, make a testcase that checks only this if-statement
+    if len(gdf)!=ds.sizes[facedim]: #TODO: check this until https://github.com/Deltares/xugrid/issues/100 is solved, after that, make a testcase that checks only this if-statement
         ds_points = geopandas.points_from_xy(ds.x,ds.y)
         gdfpoint_inds_bool = pd.Series(index=range(len(gdf)))
         gdfpoint_inds_bool[:] = True
@@ -491,7 +491,7 @@ def interp_uds_to_plipoints(uds:xu.UgridDataset, gdf:geopandas.GeoDataFrame, nPo
                 gdfpoint_inds_bool.iloc[iR] = False
         gdf_stats = gdf.copy()
         gdf_stats['missing'] = gdfpoint_inds_bool
-        raise ValueError(f'requested {len(gdf)} points but resulted in ds with {ds.dims[facedim]} points, missing points are probably outside of the uds model domain:\n{gdf_stats}')
+        raise ValueError(f'requested {len(gdf)} points but resulted in ds with {ds.sizes[facedim]} points, missing points are probably outside of the uds model domain:\n{gdf_stats}')
 
     ds = ds.rename({facedim:dimn_point}) # rename mesh2d_nFaces to plipoints
     
