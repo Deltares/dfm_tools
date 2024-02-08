@@ -5,7 +5,7 @@ theme:
   name: material
   language: en
   # logo: images/HYDROLIB_logo_notext_mono_eroded.svg
-  # custom_dir: docs/overrides
+  custom_dir: docs/overrides
   features:
     # - navigation.instant
     # - navigation.tracking
