@@ -96,6 +96,7 @@ def preprocess_ERA5(ds):
     Reduces the expver dimension in some of the ERA5 data (mtpr and other variables), which occurs in files with very recent data. The dimension contains the unvalidated data from the latest month in the second index in the expver dimension. The reduction is done with mean, but this is arbitrary, since there is only one valid value per timestep and the other one is nan.
     """
     if 'expver' in ds.dims:
+        # TODO: this drops int encoding which leads to unzipped float32 netcdf files: https://github.com/Deltares/dfm_tools/issues/781
         ds = ds.mean(dim='expver')
     
     # prevent incorrect scaling/offset when merging files
