@@ -1,4 +1,4 @@
-## UNRELEASED
+## 0.20.0 (2024-02-22)
 
 ### Fix
 - solve xarray FutureWarning about `ds.dims[dim]` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#779](https://github.com/Deltares/dfm_tools/pull/779)

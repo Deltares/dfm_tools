@@ -23,7 +23,7 @@
 
 ## Contributing
 
-- open an existing issue or create a new issue at https://github.com/Deltares/dfm_tools/issues
+- open an existing issue or create a new issue at [the issues page](https://github.com/Deltares/dfm_tools/issues)
 - create a branch via ``Development`` on the right. This branch is now linked to the issue and the issue will be closed once the branch is merged with main again
 - alternatively fork the repository and do your edits there
 - open git bash window in local dfm_tools folder (e.g. ``C:\DATA\dfm_tools``)
@@ -43,7 +43,7 @@
 - ``conda activate dfm_tools_env``
 - ``pytest`` (runs all tests)
 - ``pytest -m "not acceptance"``
-- ``pytest -m acceptance`` (runs the acceptance tests, which are the scripts in [the examples folder](https://github.com/Deltares/dfm_tools/tree/main/tests/examples)) and [the examples_workinprogress folder](https://github.com/Deltares/dfm_tools/tree/main/tests/examples_workinprogress))
+- ``pytest -m acceptance`` (runs the acceptance tests, which are the scripts in [the examples folder](https://github.com/Deltares/dfm_tools/tree/main/tests/examples))
 - ``pytest -m "not requireslocaldata"`` (this is what runs on github)
 
 ## Generate documentation with mkdocs (automatically runs via Github Actions upon push to main)
@@ -70,24 +70,24 @@ mkdocs build
 - update ``docs/whats-new.md`` and add a date to the current release heading
 - run local testbank
 - local check with: ``python -m build`` and ``twine check dist/*`` ([does not work on WCF](https://github.com/pypa/setuptools/issues/4133))
-- copy the dfm_tools version from https://github.com/Deltares/dfm_tools/blob/main/pyproject.toml (e.g. ``0.11.0``)
-- go to https://github.com/Deltares/dfm_tools/releases/new
+- copy the dfm_tools version from [pyproject.toml](https://github.com/Deltares/dfm_tools/blob/main/pyproject.toml) (e.g. ``0.11.0``)
+- create a [new release](https://github.com/Deltares/dfm_tools/releases/new)
 - click ``choose a tag`` and type v+versionnumber (e.g. ``v0.11.0``), click ``create new tag: v0.11.0 on publish``
 - set the release title to the tagname (e.g. ``v0.11.0``)
 - click `Generate release notes` and replace the `What's Changed` info by a tagged link to ``docs/whats-new.md``
 - if all is set, click ``Publish release``
-- a release is created and the github action publishes it on PyPI (https://pypi.org/project/dfm-tools/)
+- a release is created and the github action publishes it [on PyPI](https://pypi.org/project/dfm-tools)
 
 ## What are all these packages for?
 
 - shapely for slicing 2D/3D data
 - geopandas for shapefile related operations
 - contextily for satellite imagery on plots, faster than cartopy
-- xarray developers advise to install dependecies dask/netCDF4/bottleneck with conda-forge also: https://docs.xarray.dev/en/v0.8.0/installing.html
+- xarray developers advise to install dependecies dask/netCDF4/bottleneck
 - xugrid: wrapper around xarray by Huite Bootsma, for ugrid support
 - cdsapi/pydap: to download ERA5 and CMEMS data
 
 ## Potential spyder issues
 
 - Qt error upon launching Spyder?: remove the system/user environment variable 'qt_plugin_path' set by an old Delft3D4 installation procedure.
-- netCDF4 DLL error upon import in Spyder?: remove Anaconda paths from the Path user environment variable (https://github.com/spyder-ide/spyder/issues/19220)
+- netCDF4 DLL error upon import in Spyder?: [remove Anaconda paths from the Path user environment variable](https://github.com/spyder-ide/spyder/issues/19220)
