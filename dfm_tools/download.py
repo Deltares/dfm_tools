@@ -316,14 +316,15 @@ def copernicusmarine_credentials():
         InvalidUsernameOrPassword,
         get_and_check_username_password,
     )
+    login_kwargs = dict(username=None, password=None, credentials_file=DEFAULT_CLIENT_CREDENTIALS_FILEPATH, no_metadata_cache=False)
     if not DEFAULT_CLIENT_CREDENTIALS_FILEPATH.is_file():
         print("Downloading CMEMS data requires a Copernicus Marine username and password, sign up for free at: https://data.marine.copernicus.eu/register.")
-        username, password = get_and_check_username_password(username=None, password=None, credentials_file=DEFAULT_CLIENT_CREDENTIALS_FILEPATH)
-        success = copernicusmarine.login(username, password)
+        username, password = get_and_check_username_password(**login_kwargs)
+        success = copernicusmarine.login(username=None, password=None)
         if not success:
             raise InvalidUsernameOrPassword("invalid credentials")
     else:
-        username, password = get_and_check_username_password(username=None, password=None, credentials_file=DEFAULT_CLIENT_CREDENTIALS_FILEPATH)
+        username, password = get_and_check_username_password(**login_kwargs)
     return username, password
 
 
