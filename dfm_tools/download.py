@@ -320,7 +320,7 @@ def copernicusmarine_credentials():
     if not DEFAULT_CLIENT_CREDENTIALS_FILEPATH.is_file():
         print("Downloading CMEMS data requires a Copernicus Marine username and password, sign up for free at: https://data.marine.copernicus.eu/register.")
         username, password = get_and_check_username_password(**login_kwargs)
-        success = copernicusmarine.login(username=None, password=None)
+        success = copernicusmarine.login(username, password)
         if not success:
             raise InvalidUsernameOrPassword("invalid credentials")
     else:
@@ -328,15 +328,17 @@ def copernicusmarine_credentials():
     return username, password
 
 
-def copernicusmarine_reset():
-    print("resetting Copernicus Marine Toolbox, you will have to login again.")
-    dir_copernicusmarine = os.path.expanduser("~/.copernicusmarine")
-    print(f"- removing {dir_copernicusmarine}")
-    shutil.rmtree(dir_copernicusmarine, ignore_errors=True)
-    print("- overwriting copernicusmarine metadata cache (takes some time)")
-    subprocess.run("copernicusmarine describe --overwrite-metadata-cache")
-    print("- updating copernicusmarine")
-    subprocess.run("pip install copernicusmarine -U")
+def copernicusmarine_reset(remove_folder=False, overwrite_cache=True, update_package=False):
+    if remove_folder:
+        dir_copernicusmarine = os.path.expanduser("~/.copernicusmarine")
+        print(f"reset copernicusmarine: removing {dir_copernicusmarine}, you will have to login again.")
+        shutil.rmtree(dir_copernicusmarine, ignore_errors=True)
+    if overwrite_cache:
+        print("reset copernicusmarine: overwriting copernicusmarine metadata cache (takes some time)")
+        subprocess.run("copernicusmarine describe --overwrite-metadata-cache")
+    if update_package:
+        print("reset copernicusmarine: updating copernicusmarine")
+        subprocess.run("pip install copernicusmarine -U")
 
 
 def copernicusmarine_dataset_timerange(dataset_id):

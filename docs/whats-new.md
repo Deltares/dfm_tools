@@ -2,7 +2,7 @@
 
 ### Fix
 - solve xarray FutureWarning about `ds.dims[dim]` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#779](https://github.com/Deltares/dfm_tools/pull/779)
-- add `no_metadata_cache` argument to `copernicusmarine_credentials()` to support copernicusmarine>=1.0.2 by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#787](https://github.com/Deltares/dfm_tools/pull/787)
+- support copernicusmarine>=1.0.2 in `copernicusmarine_credentials()` and made `copernicusmarine_reset()` modular by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#787](https://github.com/Deltares/dfm_tools/pull/787)
 
 
 ## 0.19.0 (2024-02-08)
