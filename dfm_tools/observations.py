@@ -208,7 +208,7 @@ def cmems_ssh_read_catalog(source):
     
     # drop andratx station, lat/lon vary over time in nrt dataset
     bool_moving = index_history_pd["file_name"].str.contains("MO_TS_TG_ANDRATX")
-    index_history_pd = index_history_pd.loc[~bool_moving]    
+    index_history_pd = index_history_pd.loc[~bool_moving]
     
     # generate geom and geodataframe
     assert (index_history_pd["geospatial_lon_min"] == index_history_pd["geospatial_lon_max"]).all()
