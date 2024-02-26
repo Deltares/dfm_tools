@@ -1,5 +1,8 @@
 ## UNRELEASED
 
+### Feat
+- added cmems nrt insitu data to `dfmt.ssh_catalog_subset()` and `dfmt.ssh_retrieve_data()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#791](https://github.com/Deltares/dfm_tools/pull/791)
+
 
 ## 0.20.0 (2024-02-22)
 
