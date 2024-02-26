@@ -223,7 +223,7 @@ def cmems_ssh_read_catalog(source):
     # add dummy country column for the test to pass
     # TODO: hopefully country metadata is available via cmems API in the future
     index_history_gpd["country"] = ""
-    stat_names = index_history_gpd["file_name"].apply(lambda x: os.path.basename(x).strip(".nc").strip("_60minute"))
+    stat_names = index_history_gpd["file_name"].apply(lambda x: os.path.basename(x).replace(".nc",""))
     index_history_gpd["station_name_unique"] = stat_names
     
     # rename columns
@@ -454,6 +454,11 @@ def cmems_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max
         
         # reconstruct this dataset (including time subsetting) and write again
         ds = xr.open_dataset(fname_out_raw)
+        
+        # reduce DEPTH dimension if present (nrt dataset)
+        if "DEPTH" in ds.dims:
+            ds = ds.max(dim="DEPTH", keep_attrs=True)
+    
         ds = ds.rename(TIME="time")
         ds["SLEV"] = ds.SLEV.where(ds.SLEV_QC==1)
         ds = ds.rename_vars(SLEV="waterlevel")
@@ -463,10 +468,10 @@ def cmems_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max
             del ds
             os.remove(fname_out_raw)
             continue
+        
         ds.to_netcdf(fname_out)
         del ds
         os.remove(fname_out_raw)
-        
     print()
 
 
