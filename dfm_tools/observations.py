@@ -158,13 +158,35 @@ def ssc_ssh_read_catalog():
     return ssc_catalog_gpd
 
 
-def cmems_ssh_read_catalog():
+def get_cmems_params(source):
+    params_cmems_my = {"host": "my.cmems-du.eu",
+                       "cwd": "Core/INSITU_GLO_PHY_SSH_DISCRETE_MY_013_053/cmems_obs-ins_glo_phy-ssh_my_na_PT1H"}
+    params_cmems_nrt = {"host": "nrt.cmems-du.eu",
+                        "cwd": "Core/INSITU_GLO_PHYBGCWAV_DISCRETE_MYNRT_013_030/cmems_obs-ins_glo_phybgcwav_mynrt_na_irr"}
+    params_dict = {"cmems": params_cmems_my,
+                   "cmems-nrt": params_cmems_nrt}
+    params = params_dict[source]
+    return params
+
+
+def cmems_my_ssh_read_catalog():
+    cmems_catalog_gpd = cmems_ssh_read_catalog(source="cmems")
+    return cmems_catalog_gpd
+    
+
+def cmems_nrt_ssh_read_catalog():
+    cmems_catalog_gpd = cmems_ssh_read_catalog(source="cmems-nrt")
+    return cmems_catalog_gpd
+
+
+def cmems_ssh_read_catalog(source):
+    cmems_params = get_cmems_params(source)
+    
     # setup ftp connection
-    host = 'my.cmems-du.eu'
-    ftp = FTP(host=host)
+    ftp = FTP(host=cmems_params["host"])
     username, password = copernicusmarine_credentials()
     ftp.login(user=username, passwd=password)
-    ftp.cwd('Core/INSITU_GLO_PHY_SSH_DISCRETE_MY_013_053/cmems_obs-ins_glo_phy-ssh_my_na_PT1H')
+    ftp.cwd(cmems_params["cwd"])
     
     # read index
     fname = 'index_history.txt'
@@ -179,6 +201,14 @@ def cmems_ssh_read_catalog():
     colnames = header.strip('#').strip().split(',')
     index_history_pd = pd.read_csv(fname,comment='#',names=colnames)
     os.remove(fname) # remove the local file again
+    
+    # filter only history tidegauges (TG), relevant for nrt dataset
+    bool_tidegauge = index_history_pd["file_name"].str.contains("/history/TG/")
+    index_history_pd = index_history_pd.loc[bool_tidegauge]
+    
+    # drop andratx station, lat/lon vary over time
+    bool_moving = index_history_pd["file_name"].str.contains("MO_TS_TG_ANDRATX")
+    index_history_pd = index_history_pd.loc[~bool_moving]    
     
     # generate geom and geodataframe
     assert (index_history_pd["geospatial_lon_min"] == index_history_pd["geospatial_lon_max"]).all()
@@ -396,8 +426,12 @@ def cmems_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max
     
     """
     
+    # get source from gdf, uniqueness is checked in ssh_retrieve_data
+    source = ssh_catalog_gpd['source'].iloc[0]
+    cmems_params = get_cmems_params(source)
+    
     # setup ftp connection
-    host = 'my.cmems-du.eu'
+    host = cmems_params["host"]
     ftp = FTP(host=host)
     username, password = copernicusmarine_credentials()
     ftp.login(user=username, passwd=password)
@@ -673,7 +707,8 @@ def ssh_catalog_subset(source=None,
     ssh_sources = {"ssc": ssc_ssh_read_catalog,
                    "gesla3": gesla3_ssh_read_catalog,
                    "ioc": ioc_ssh_read_catalog,
-                   "cmems": cmems_ssh_read_catalog,
+                   "cmems": cmems_my_ssh_read_catalog,
+                   "cmems-nrt": cmems_nrt_ssh_read_catalog,
                    "uhslc-fast": uhslc_fast_ssh_read_catalog,
                    "uhslc-rqds": uhslc_rqds_ssh_read_catalog,
                    "psmsl-gnssir": psmsl_gnssir_ssh_read_catalog,
@@ -722,13 +757,14 @@ def ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
     ssh_sources = {"gesla3": gesla3_ssh_retrieve_data,
                    "ioc": ioc_ssh_retrieve_data,
                    "cmems": cmems_ssh_retrieve_data,
+                   "cmems-nrt": cmems_ssh_retrieve_data,
                    "uhslc-fast": uhslc_ssh_retrieve_data,
                    "uhslc-rqds": uhslc_ssh_retrieve_data,
                    "psmsl-gnssir": psmsl_gnssir_retrieve_data,
                    }
     
     if source not in ssh_sources.keys():
-        raise ValueError(f"source for ssh_catalog_subset should be one of {list(ssh_sources.keys())}, recieved '{source}'")
+        raise ValueError(f"source for ssh_retrieve_data should be one of {list(ssh_sources.keys())}, recieved '{source}'")
     
     retrieve_data_func = ssh_sources[source]
     
