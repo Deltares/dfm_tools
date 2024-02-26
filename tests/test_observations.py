@@ -13,15 +13,16 @@ from dfm_tools.observations import (ssc_sscid_from_otherid,
                                     )
 
 
+@pytest.mark.requiressecrets
 @pytest.mark.unittest
 def test_ssh_catalog_subset_expected_fields():
     fields_expected = ["geometry", "source", "country", "station_name_unique"]
-    source_list = ["uhslc-fast", "uhslc-rqds", "psmsl-gnssir", "ssc", "ioc"]
+    source_list = ["uhslc-fast", "uhslc-rqds", "psmsl-gnssir", "ssc", "ioc", "cmems", "cmems-nrt"]
     if os.path.exists(r"p:\1230882-emodnet_hrsm\data\GESLA3"):
         # not possible without p-drive connection
         source_list += ["gesla3"]
-    if os.name=="nt":
-        source_list += ["cmems"] # TODO: not possible on Github, due to missing credentials
+    # if os.name=="nt":
+    #     source_list += ["cmems", "cmems-nrt"] # TODO: not possible on Github, due to missing credentials
     for source in source_list:
         ssc_catalog_gpd = dfmt.ssh_catalog_subset(source=source)
         for field in fields_expected:
@@ -30,6 +31,7 @@ def test_ssh_catalog_subset_expected_fields():
             assert "time_ndays" in ssc_catalog_gpd.columns
 
 
+@pytest.mark.requiressecrets
 @pytest.mark.unittest
 def test_ssh_catalog_subset():
     lon_min, lon_max, lat_min, lat_max = -6, 5, 48, 50.5 # france
@@ -38,12 +40,12 @@ def test_ssh_catalog_subset():
     # time_min, time_max = '2016-01-01','2016-06-01'
     time_min, time_max = '2020-01-01','2020-06-01'
     
-    source_list_witime = ["uhslc-fast", "uhslc-rqds", "psmsl-gnssir", "ioc"]
+    source_list_witime = ["uhslc-fast", "uhslc-rqds", "psmsl-gnssir", "ioc", "cmems", "cmems-nrt"]
     if os.path.exists(r"p:\1230882-emodnet_hrsm\data\GESLA3"):
         # not possible without p-drive connection
         source_list_witime += ["gesla3"]
-    if os.name=="nt":
-        source_list_witime += ["cmems"] # TODO: not possible on Github, due to missing credentials
+    # if os.name=="nt":
+    #     source_list_witime += ["cmems", "cmems-nrt"] # TODO: not possible on Github, due to missing credentials
     source_list_notime = ["ssc"]
     for source in source_list_witime+source_list_notime:
         ssc_catalog_gpd = dfmt.ssh_catalog_subset(source=source)
@@ -59,16 +61,17 @@ def test_ssh_catalog_subset():
         assert len(ssc_catalog_gpd) > len(ssc_catalog_gpd_sel)
 
 
+@pytest.mark.requiressecrets
 @pytest.mark.unittest
 def test_ssh_retrieve_data(tmp_path):
     time_min, time_max = '2020-01-01','2020-02-01'
     
-    source_list = ["ioc", "uhslc-fast", "uhslc-rqds", "psmsl-gnssir"]
+    source_list = ["ioc", "uhslc-fast", "uhslc-rqds", "psmsl-gnssir", "cmems", "cmems-nrt"]
     if os.path.exists(r"p:\1230882-emodnet_hrsm"):
         # not possible without p-drive connection
         source_list += ["gesla3"]
-    if os.name=="nt":
-        source_list += ["cmems"] # TODO: not possible on Github, due to missing credentials
+    # if os.name=="nt":
+    #     source_list += ["cmems", "cmems-nrt"] # TODO: not possible on Github, due to missing credentials
     for source in source_list:
         ssc_catalog_gpd = dfmt.ssh_catalog_subset(source=source)
         ssc_catalog_gpd_sel = ssc_catalog_gpd.iloc[:1]
