@@ -625,7 +625,7 @@ def uhslc_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max
         
         # set time index
         ds = ds.set_index(obs="time").rename(obs="time")
-        ds['time'] = ds.time.dt.round('S') #round to seconds
+        ds['time'] = ds.time.dt.round('s') #round to seconds
         
         # write to netcdf file
         stat_name = row["station_name_unique"]
