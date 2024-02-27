@@ -202,9 +202,10 @@ def cmems_ssh_read_catalog(source):
     index_history_pd = pd.read_csv(fname,comment='#',names=colnames)
     os.remove(fname) # remove the local file again
     
-    # filter only history tidegauges (TG), relevant for nrt dataset
+    # filter only history tidegauges (TG) containing SLEV variable, relevant for nrt dataset
     bool_tidegauge = index_history_pd["file_name"].str.contains("/history/TG/")
-    index_history_pd = index_history_pd.loc[bool_tidegauge]
+    bool_slev = index_history_pd["parameters"].str.contains("SLEV")
+    index_history_pd = index_history_pd.loc[bool_tidegauge & bool_slev]
     
     # drop andratx station, lat/lon vary over time in nrt dataset
     # TODO: remove this exception when the CMEMS nrt dataset is cleaned up
