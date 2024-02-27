@@ -64,7 +64,10 @@ def test_ssh_retrieve_data(source, tmp_path):
     
     ssc_catalog_gpd = dfmt.ssh_catalog_subset(source=source)
     ssc_catalog_gpd_sel = ssc_catalog_gpd.iloc[:1]
-    if source=="cmems": #TODO: remove this exception when the cmems API works for insitu data
+    if source=="ssc":
+        # ssc does not contain data, only station locations
+        pass
+    elif source=="cmems": #TODO: remove this exception when the cmems API works for insitu data
         dfmt.ssh_retrieve_data(ssc_catalog_gpd_sel, dir_output=tmp_path)
     else:
         dfmt.ssh_retrieve_data(ssc_catalog_gpd_sel, dir_output=tmp_path, 

@@ -813,7 +813,11 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max):
     #TODO: maybe support time_min/time_max==None
     
     hatyan = ddl_maybe_install_hatyan()
-
+    
+    # TODO: convert to pandas timestamp, put this in hatyan ddl code
+    time_min = pd.Timestamp(time_min)
+    time_max = pd.Timestamp(time_max)
+    
     cat_locatielijst = ssh_catalog_gpd.set_index("Code", drop=False)
     
     for station_id, row in cat_locatielijst.iterrows():
