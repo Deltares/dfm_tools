@@ -427,6 +427,8 @@ def ddl_maybe_install_hatyan():
     except ImportError:
         print("hatyan is required for this functionality, installing via pip")
         subprocess.run("pip install hatyan")
+        import subprocess, sys
+        subprocess.check_call(f"{sys.executable} -m pip install hatyan")
         import hatyan
     return hatyan
 
