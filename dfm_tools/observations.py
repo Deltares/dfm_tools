@@ -13,7 +13,6 @@ from erddapy import ERDDAP #pip install erddapy
 import requests
 from zipfile import ZipFile
 from io import BytesIO
-import subprocess
 
 __all__ = ["ssh_catalog_subset",
            "ssh_catalog_toxynfile",
@@ -426,7 +425,6 @@ def ddl_maybe_install_hatyan():
         import hatyan
     except ImportError:
         print("hatyan is required for this functionality, installing via pip")
-        subprocess.run("pip install hatyan")
         import subprocess, sys
         subprocess.check_call(f"{sys.executable} -m pip install hatyan")
         import hatyan
