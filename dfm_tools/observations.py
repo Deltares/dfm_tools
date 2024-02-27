@@ -467,7 +467,7 @@ def ddl_ssh_meta_dict():
     541                                  205                  Afstandsdraad
     """
     meta_dict = {'Grootheid.Code':'WATHTE', 'Groepering.Code':'NVT', #combination for measured waterlevels
-                 'Hoedanigheid.Code':'NAP', # vertical reference. Hoedanigheid is necessary for eg EURPFM/LICHTELGRE, where NAP and MSL values are available while it should only contain MSL #MSL, NAP, PLAATSLR, TAW, NVT (from cat_aquometadatalijst_waterhoogte['Hoedanigheid.Code'])
+                 #'Hoedanigheid.Code':'NAP', # vertical reference. Hoedanigheid is necessary for eg EURPFM/LICHTELGRE, where NAP and MSL values are available while it should only contain MSL #MSL, NAP, PLAATSLR, TAW, NVT (from cat_aquometadatalijst_waterhoogte['Hoedanigheid.Code'])
                  'MeetApparaat.Code':'127', # measurement device type. MeetApparaat.Code is necessary for IJMDBTHVN/ROOMPBTN, where also radar measurements are available (all other stations are vlotter and these stations also have all important data in vlotter) TODO: Except LICHTELGRE/K13APFM which have Radar/Stappenbaak en Radar as MeetApparaat
                  }
     return meta_dict
@@ -514,6 +514,8 @@ def ddl_ssh_read_catalog():
     ddl_slev_gdf = ddl_slev_gdf.to_crs(4326)
     
     ddl_slev_gdf = ddl_slev_gdf.reset_index()
+    ddl_slev_gdf["country"] = "NLD"
+    ddl_slev_gdf["station_name_unique"] = ddl_slev_gdf["Code"]
     return ddl_slev_gdf
 
 
