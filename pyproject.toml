@@ -92,6 +92,9 @@ examples = [
 	"jupyter",
 	"notebook",
 ]
+ddl = [
+	"hatyan",
+]
 
 [tool.setuptools]
 packages = ["dfm_tools"]

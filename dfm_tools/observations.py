@@ -420,17 +420,6 @@ def gesla3_ssh_read_catalog(file_gesla3_meta=None, only_coastal=True):
     return station_list_gpd
 
 
-def ddl_maybe_install_hatyan():
-    try:
-        import hatyan
-    except ImportError:
-        print("hatyan is required for this functionality, installing via pip")
-        import subprocess, sys
-        subprocess.check_call(f"{sys.executable} -m pip install hatyan")
-        import hatyan
-    return hatyan
-
-
 def ddl_ssh_meta_dict():
     """
     Subset of catalog and station list with all waterlevel related values
@@ -489,7 +478,10 @@ def ddl_ssh_read_catalog():
     """
     convert LocatieLijst to geopandas dataframe
     """
-    hatyan = ddl_maybe_install_hatyan()
+    try:
+        import hatyan
+    except ImportError:
+        raise ImportError("hatyan is required for this functionality, install with 'pip install hatyan'")
     
     print('retrieving DDL catalog')
     catalog_dict = hatyan.get_DDL_catalog(catalog_extrainfo=['WaardeBepalingsmethoden','MeetApparaten','Typeringen'])
@@ -811,9 +803,11 @@ def psmsl_gnssir_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, t
 
 def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max):
     #TODO: maybe support time_min/time_max==None
-    
-    hatyan = ddl_maybe_install_hatyan()
-    
+    try:
+        import hatyan
+    except ImportError:
+        raise ImportError("hatyan is required for this functionality, install with 'pip install hatyan'")
+
     # TODO: convert to pandas timestamp, put this in hatyan ddl code
     time_min = pd.Timestamp(time_min)
     time_max = pd.Timestamp(time_max)
