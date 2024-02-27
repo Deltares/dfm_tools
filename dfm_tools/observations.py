@@ -11,7 +11,6 @@ from ftplib import FTP
 from dfm_tools.download import copernicusmarine_credentials
 from erddapy import ERDDAP #pip install erddapy
 import requests
-import matplotlib.pyplot as plt
 from zipfile import ZipFile
 from io import BytesIO
 
@@ -420,6 +419,104 @@ def gesla3_ssh_read_catalog(file_gesla3_meta=None, only_coastal=True):
     return station_list_gpd
 
 
+def ddl_ssh_meta_dict():
+    """
+    Subset of catalog and station list with all waterlevel related values
+    
+    unique Eenheid available in requested subset:
+                           Eenheid.Code Eenheid.Omschrijving
+    AquoMetadata_MessageID                                  
+    299                              cm           centimeter
+    
+    unique Grootheid available in requested subset:
+                           Grootheid.Code Grootheid.Omschrijving
+    AquoMetadata_MessageID                                      
+    299                            HEFHTE              Hefhoogte
+    357                          HOOGWTDG          Hoogwater dag
+    443                          LAAGWTDG          Laagwater dag
+    515                            WATHTE            Waterhoogte
+    
+    unique Groepering available in requested subset:
+                           Groepering.Code Groepering.Omschrijving
+    AquoMetadata_MessageID                                        
+    299                                NVT     Niet van toepassing
+    515                            GETETM2           Getijextremen
+
+    unique Hoedanigheid available in requested subset:
+                           Hoedanigheid.Code            Hoedanigheid.Omschrijving
+    AquoMetadata_MessageID                                                       
+    485                                  MSL                t.o.v. Mean Sea Level
+    517                                  NAP       t.o.v. Normaal Amsterdams Peil
+    546                             PLAATSLR    t.o.v. plaatselijk referentievlak
+    551                                  TAW  t.o.v. Tweede Algemene Waterpassing
+    
+    unique MeetApparaat available in requested subset:
+                           MeetApparaat.Code      MeetApparaat.Omschrijving
+    AquoMetadata_MessageID                                                 
+    490                                  NVT  Waarde is niet van toepassing
+    497                                  106              Troebelheidsmeter
+    499                                  109                          Radar
+    506                                  124                     Peilschaal
+    509                                  125                    Stappenbaak
+    514                                  126                      Ultrasoon
+    517                                  127                        Vlotter
+    529                                  134      Akoestisch Doppler (ADCP)
+    530                                  135      Elektromagnetische sensor
+    533                                  155                     Druksensor
+    539                                  156           Stroomsnelheidsmeter
+    541                                  205                  Afstandsdraad
+    """
+    meta_dict = {'Grootheid.Code':'WATHTE', 'Groepering.Code':'NVT', #combination for measured waterlevels
+                 'Hoedanigheid.Code':'NAP', # vertical reference. Hoedanigheid is necessary for eg EURPFM/LICHTELGRE, where NAP and MSL values are available while it should only contain MSL #MSL, NAP, PLAATSLR, TAW, NVT (from cat_aquometadatalijst_waterhoogte['Hoedanigheid.Code'])
+                 'MeetApparaat.Code':'127', # measurement device type. MeetApparaat.Code is necessary for IJMDBTHVN/ROOMPBTN, where also radar measurements are available (all other stations are vlotter and these stations also have all important data in vlotter) TODO: Except LICHTELGRE/K13APFM which have Radar/Stappenbaak en Radar as MeetApparaat
+                 }
+    return meta_dict
+
+
+def ddl_ssh_read_catalog():
+    """
+    convert LocatieLijst to geopandas dataframe
+    """
+    print('retrieving DDL catalog')
+    try:
+        import hatyan
+    except ImportError:
+        raise ImportError("hatyan is required for this functionality, install with 'pip install hatyan'")
+    
+    catalog_dict = hatyan.get_DDL_catalog(catalog_extrainfo=['WaardeBepalingsmethoden','MeetApparaten','Typeringen'])
+    print('...done')
+    
+    meta_dict = ddl_ssh_meta_dict()
+    cat_aquometadatalijst, cat_locatielijst = hatyan.get_DDL_stationmetasubset(catalog_dict=catalog_dict,station_dict=None,meta_dict=meta_dict)
+    key_list = ['Eenheid','Grootheid','Groepering','Hoedanigheid','MeetApparaat']
+    #printing unique metadata in selection
+    for key in key_list:
+        print(f'unique {key} available in requested subset:\n{cat_aquometadatalijst[[f"{key}.Code",f"{key}.Omschrijving"]].drop_duplicates()}')
+    
+    xcoords = cat_locatielijst["X"]
+    ycoords = cat_locatielijst["Y"]
+    epsg_all = cat_locatielijst["Coordinatenstelsel"]
+    epsg_uniq = epsg_all.unique()
+    if len(epsg_uniq)>1:
+        raise ValueError(f"multiple EPSG codes in one LocatieLijst not supported: {epsg_uniq.tolist()}")
+    epsg = epsg_uniq[0]
+    geom_points = [Point(x,y) for x,y in zip(xcoords,ycoords)]
+    ddl_slev_gdf = gpd.GeoDataFrame(cat_locatielijst, geometry=geom_points, crs=epsg)
+    
+    # filter invalid coords #TODO: maybe move to haytan ddl code
+    bool_invalid = (ddl_slev_gdf.geometry.x == 0) & (ddl_slev_gdf.geometry.y == 0)
+    if bool_invalid.sum():
+        invalid_stats = ddl_slev_gdf.loc[bool_invalid,['X','Y','Naam','Code']]
+        print(f"dropping stations with invalid coordinates:\n{invalid_stats}")
+    ddl_slev_gdf = ddl_slev_gdf.loc[~bool_invalid]
+    
+    # convert coordinates to wgs84
+    ddl_slev_gdf = ddl_slev_gdf.to_crs(4326)
+    
+    ddl_slev_gdf = ddl_slev_gdf.reset_index()
+    return ddl_slev_gdf
+
+
 def cmems_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None):
     """
     Retrieve data from FTP
@@ -660,7 +757,7 @@ def ioc_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, subse
     print()
 
 
-def psmsl_gnssir_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None):
+def psmsl_gnssir_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None):
     # https://psmsl.org/data/gnssir/gnssir_daily_means.html
     # https://psmsl.org/data/gnssir/gnssir_example.html (also contains IOC retrieval example)
     
@@ -701,6 +798,60 @@ def psmsl_gnssir_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_
     print()
 
 
+def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max):
+    #TODO: maybe support time_min/time_max==None
+    
+    try:
+        import hatyan
+    except ImportError:
+        raise ImportError("hatyan is required for this functionality, install with 'pip install hatyan'")
+
+    cat_locatielijst = ssh_catalog_gpd.set_index("Code", drop=False)
+    
+    for station_id, row in cat_locatielijst.iterrows():
+        station_dict = row[['Locatie_MessageID','X','Y','Naam','Code']] #station query
+        
+        meta_dict = ddl_ssh_meta_dict()
+        
+        allow_multipleresultsfor = ['WaardeBepalingsmethode'] # necessary for retrieving very long timeseries
+        
+        #retrieving waterlevels
+        print(f'retrieving measwl data from DDL for {row["Code"]}')
+        request_output = hatyan.get_DDL_data(station_dict=station_dict,
+                                             tstart_dt=time_min, tstop_dt=time_max, tzone='UTC+00:00', 
+                                             meta_dict=meta_dict, 
+                                             allow_multipleresultsfor=allow_multipleresultsfor)
+        if request_output is None: #no output so this station is skipped
+            continue
+        
+        data, metadata, stationdata = request_output #ts_meas_pd contains values/QC/Status/WaardeBepalingsmethode, metadata contains unit/reference/etc, stationdata contains X/Y/Naam/Code
+        
+        # dropping timezone is required to get proper encoding in time variable (in file)
+        data.index = data.index.tz_convert(None)
+        # set name so xarray recognizes the time coordinate/index
+        data.index.name = "time"
+        
+        data = data.loc[:,['values', 'QC', 'Status']] #dropping WaardeBepalingsmethode reduces memory 
+        if not (metadata['Eenheid.Code']=='cm').all():
+            raise Exception("unexpected unit")
+        data['values'] /= 100 #convert from cm to m
+        
+        ds = data.to_xarray()
+        ds['values'] = ds['values'].assign_attrs(units="m")
+        ds = ds.rename_vars(values="waterlevel")
+        ds = ds.assign_attrs(station_id=row["Naam"],
+                             station_code=row["Code"],
+                             longitude=row.geometry.x,
+                             latitude=row.geometry.y,
+                             country_code="NLD",
+                             )
+        
+        stat_name = row["Code"] #row["station_name_unique"]
+        file_out = os.path.join(dir_output, f"{stat_name}.nc")
+        ds.to_netcdf(file_out)
+        del ds
+
+
 def ssh_catalog_subset(source=None,
                        lon_min=-180, lon_max=180, 
                        lat_min=-90, lat_max=90, 
@@ -718,6 +869,7 @@ def ssh_catalog_subset(source=None,
                    "uhslc-fast": uhslc_fast_ssh_read_catalog,
                    "uhslc-rqds": uhslc_rqds_ssh_read_catalog,
                    "psmsl-gnssir": psmsl_gnssir_ssh_read_catalog,
+                   "ddl": ddl_ssh_read_catalog,
                    }
     
     if source not in ssh_sources.keys():
@@ -766,7 +918,8 @@ def ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
                    "cmems-nrt": cmems_ssh_retrieve_data,
                    "uhslc-fast": uhslc_ssh_retrieve_data,
                    "uhslc-rqds": uhslc_ssh_retrieve_data,
-                   "psmsl-gnssir": psmsl_gnssir_retrieve_data,
+                   "psmsl-gnssir": psmsl_gnssir_ssh_retrieve_data,
+                   "ddl": ddl_ssh_retrieve_data,
                    }
     
     if source not in ssh_sources.keys():
