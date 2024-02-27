@@ -13,6 +13,7 @@ from erddapy import ERDDAP #pip install erddapy
 import requests
 from zipfile import ZipFile
 from io import BytesIO
+import subprocess
 
 __all__ = ["ssh_catalog_subset",
            "ssh_catalog_toxynfile",
@@ -419,6 +420,16 @@ def gesla3_ssh_read_catalog(file_gesla3_meta=None, only_coastal=True):
     return station_list_gpd
 
 
+def ddl_maybe_install_hatyan():
+    try:
+        import hatyan
+    except ImportError:
+        print("hatyan is required for this functionality, installing via pip")
+        subprocess.run("pip install hatyan")
+        import hatyan
+    return hatyan
+
+
 def ddl_ssh_meta_dict():
     """
     Subset of catalog and station list with all waterlevel related values
@@ -477,12 +488,9 @@ def ddl_ssh_read_catalog():
     """
     convert LocatieLijst to geopandas dataframe
     """
-    print('retrieving DDL catalog')
-    try:
-        import hatyan
-    except ImportError:
-        raise ImportError("hatyan is required for this functionality, install with 'pip install hatyan'")
+    hatyan = ddl_maybe_install_hatyan()
     
+    print('retrieving DDL catalog')
     catalog_dict = hatyan.get_DDL_catalog(catalog_extrainfo=['WaardeBepalingsmethoden','MeetApparaten','Typeringen'])
     print('...done')
     
@@ -803,10 +811,7 @@ def psmsl_gnssir_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, t
 def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max):
     #TODO: maybe support time_min/time_max==None
     
-    try:
-        import hatyan
-    except ImportError:
-        raise ImportError("hatyan is required for this functionality, install with 'pip install hatyan'")
+    hatyan = ddl_maybe_install_hatyan()
 
     cat_locatielijst = ssh_catalog_gpd.set_index("Code", drop=False)
     
