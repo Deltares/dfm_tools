@@ -202,6 +202,7 @@ def cmems_ssh_read_catalog(source):
     os.remove(fname) # remove the local file again
     
     # filter only history tidegauges (TG) containing SLEV variable, relevant for nrt dataset
+    # TODO: why are there non-SLEV files in TG folder? Cleanup possible?
     bool_tidegauge = index_history_pd["file_name"].str.contains("/history/TG/")
     bool_slev = index_history_pd["parameters"].str.contains("SLEV")
     index_history_pd = index_history_pd.loc[bool_tidegauge & bool_slev]
@@ -562,6 +563,14 @@ def cmems_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max
         ds = ds.rename(TIME="time")
         ds["SLEV"] = ds.SLEV.where(ds.SLEV_QC==1)
         ds = ds.rename_vars(SLEV="waterlevel")
+        if not ds.time.to_pandas().index.is_monotonic_increasing:
+            # TODO: happens in some MO_TS_TG_RMN-* stations in NRT dataset, asked to fix
+            # Genova, Imperia, LaSpezia, Livorno, Ravenna, Venice
+            print(f"[{stat_name} NOT MONOTONIC] ", end="")
+            del ds
+            os.remove(fname_out_raw)
+            continue
+            # ds = ds.sortby("time")
         ds = ds.sel(time=slice(time_min, time_max))
         if len(ds.time) == 0:
             print("[NODATA] ", end="")
