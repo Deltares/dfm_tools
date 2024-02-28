@@ -470,12 +470,12 @@ def ddl_ssh_meta_dict():
     """
     meta_dict = {'Grootheid.Code':'WATHTE', 'Groepering.Code':'NVT', #combination for measured waterlevels
                  #'Hoedanigheid.Code':'NAP', # vertical reference. Hoedanigheid is necessary for eg EURPFM/LICHTELGRE, where NAP and MSL values are available while it should only contain MSL #MSL, NAP, PLAATSLR, TAW, NVT (from cat_aquometadatalijst_waterhoogte['Hoedanigheid.Code'])
-                 'MeetApparaat.Code':'127', # measurement device type. MeetApparaat.Code is necessary for IJMDBTHVN/ROOMPBTN, where also radar measurements are available (all other stations are vlotter and these stations also have all important data in vlotter) TODO: Except LICHTELGRE/K13APFM which have Radar/Stappenbaak en Radar as MeetApparaat
+                 #'MeetApparaat.Code':'127', # measurement device type. MeetApparaat.Code is necessary for IJMDBTHVN/ROOMPBTN, where also radar measurements are available (all other stations are vlotter and these stations also have all important data in vlotter) TODO: Except LICHTELGRE/K13APFM which have Radar/Stappenbaak en Radar as MeetApparaat
                  }
     return meta_dict
 
 
-def ddl_ssh_read_catalog():
+def ddl_ssh_read_catalog(meta_dict=None):
     """
     convert LocatieLijst to geopandas dataframe
     """
@@ -488,7 +488,9 @@ def ddl_ssh_read_catalog():
     catalog_dict = hatyan.get_DDL_catalog(catalog_extrainfo=['WaardeBepalingsmethoden','MeetApparaten','Typeringen'])
     print('...done')
     
-    meta_dict = ddl_ssh_meta_dict()
+    if meta_dict is None:
+        meta_dict = ddl_ssh_meta_dict()
+    
     cat_aquometadatalijst, cat_locatielijst = hatyan.get_DDL_stationmetasubset(catalog_dict=catalog_dict,station_dict=None,meta_dict=meta_dict)
     key_list = ['Eenheid','Grootheid','Groepering','Hoedanigheid','MeetApparaat']
     #printing unique metadata in selection
@@ -810,7 +812,7 @@ def psmsl_gnssir_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, t
     print()
 
 
-def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max):
+def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_dict=None):
     #TODO: maybe support time_min/time_max==None
     try:
         import hatyan
@@ -821,12 +823,13 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max):
     time_min = pd.Timestamp(time_min)
     time_max = pd.Timestamp(time_max)
     
+    if meta_dict is None:
+        meta_dict = ddl_ssh_meta_dict()
+    
     cat_locatielijst = ssh_catalog_gpd.set_index("Code", drop=False)
     
     for station_id, row in cat_locatielijst.iterrows():
         station_dict = row[['Locatie_MessageID','X','Y','Naam','Code']] #station query
-        
-        meta_dict = ddl_ssh_meta_dict()
         
         allow_multipleresultsfor = ['WaardeBepalingsmethode'] # necessary for retrieving very long timeseries
         
@@ -863,6 +866,11 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max):
         
         stat_name = row["Code"] #row["station_name_unique"]
         file_out = os.path.join(dir_output, f"{stat_name}.nc")
+        
+        # replace all invalid values with nan
+        # TODO: move to hatyan ddl code
+        ds = ds.where(ds.QC != 99)
+        
         ds.to_netcdf(file_out)
         del ds
 
