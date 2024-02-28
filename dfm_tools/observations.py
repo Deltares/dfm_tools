@@ -930,6 +930,9 @@ def ssh_catalog_toxynfile(ssc_catalog_gpd, file_xyn):
 def ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
                       **kwargs):
     
+    if ssh_catalog_gpd.empty:
+        raise ValueError("empty ssh_catalog_gpd provided to ssh_retrieve_data")
+    
     source_list = ssh_catalog_gpd["source"].unique()
     if len(source_list) > 1:
         raise Exception("A ssh_catalog_gpd with multiple unique 'source' values was passed to ssh_retrieve_data(), this is not supported.")
