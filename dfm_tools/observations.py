@@ -909,7 +909,8 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
                                                  tstart_dt=time_min, tstop_dt=time_max, tzone='UTC+00:00', 
                                                  meta_dict=meta_dict, 
                                                  allow_multipleresultsfor=allow_multipleresultsfor)
-            if request_output is None: #no output so this station is skipped
+            if request_output is None:
+                # no output so this station is skipped
                 continue
             
             data, metadata, stationdata = request_output #ts_meas_pd contains values/QC/Status/WaardeBepalingsmethode, metadata contains unit/reference/etc, stationdata contains X/Y/Naam/Code
@@ -917,6 +918,16 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
             # if we pass one row to the measurements function you can get all the measurements
             print(time_min, time_max)
             measurements = ddlpy.measurements(row, time_min, time_max)
+            
+            # we expect a pandas.DataFrame, sometimes we get an empty list instead
+            # TODO: we also check if we get a non-empty list, which is not yet anticipated for
+            # TODO: consider making ddlpy.measurements return a pandas.DataFrame always
+            if isinstance(measurements, list):
+                if len(measurements)==0:
+                    # no output so this station is skipped
+                    continue
+                else:
+                    raise TypeError(f"non-empty list returned by ddlpy.measurements(), this is unexpected:\n{measurements}")
             
             # TODO: rename lowercase code to uppercase Code
             measurements.columns = [x.replace(".code",".Code") for x in measurements.columns]
