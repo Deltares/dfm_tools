@@ -911,6 +911,7 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
                                                  allow_multipleresultsfor=allow_multipleresultsfor)
             if request_output is None:
                 # no output so this station is skipped
+                print("no data, station is skipped")
                 continue
             
             data, metadata, stationdata = request_output #ts_meas_pd contains values/QC/Status/WaardeBepalingsmethode, metadata contains unit/reference/etc, stationdata contains X/Y/Naam/Code
@@ -925,6 +926,7 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
             if isinstance(measurements, list):
                 if len(measurements)==0:
                     # no output so this station is skipped
+                    print("no data, station is skipped")
                     continue
                 else:
                     raise TypeError(f"non-empty list returned by ddlpy.measurements(), this is unexpected:\n{measurements}")
