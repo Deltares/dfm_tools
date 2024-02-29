@@ -962,13 +962,15 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
             
             # add metadata to timeseries (to be able to distinguish difference later on)
             metadict_keys_nocode = [x.replace(".Code","") for x in meta_dict.keys()]
-            addmeta_list = ['Grootheid', 'Groepering', 'Hoedanigheid', "MeetApparaat"]
+            meta_list = ['Grootheid', 'Groepering', 'Hoedanigheid', 'MeetApparaat']
+            addmeta_list = []
+            for metaname in meta_list:
+                if metaname not in metadict_keys_nocode:
+                    addmeta_list.append(metaname)
             for metaname in addmeta_list:
-                if metaname in metadict_keys_nocode:
-                    addmeta_list.remove(metaname)
-            for metaname in addmeta_list:
-                metaname_wicode = f"{metaname}.Code"
-                data[metaname_wicode] = measurements_wathte[metaname_wicode].values
+                for suffix in ["Code","Omschrijving"]:
+                    metaname_wisuffix = f"{metaname}.{suffix}"
+                    data[metaname_wisuffix] = measurements_wathte[metaname_wisuffix].values
             
             # sort on time values
             # TODO: do this in ddlpy or in ddl
