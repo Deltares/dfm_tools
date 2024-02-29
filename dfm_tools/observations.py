@@ -960,6 +960,12 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
                                  },
                                 index=pd.to_datetime(measurements_wathte['Tijdstip']))
             
+            addcolumns_names = [x.replace(".Code","") for x in meta_dict.keys()] + ["MeetApparaat"]
+            addcolumns_list = [f'{x}.{y}' for x in addcolumns_names for y in ['Code','Omschrijving']]
+            # add metadata to timeseries for allow_multipleresultsfor (to be able to distinguish difference later on)
+            for addcolumn in addcolumns_list:
+                data[addcolumn] = measurements_wathte[addcolumn].values
+            
             # sort on time values
             # TODO: do this in ddlpy or in ddl
             data = data.sort_index()
@@ -972,7 +978,9 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
         # set name so xarray recognizes the time coordinate/index
         data.index.name = "time"
         
-        data = data.loc[:,['values', 'QC', 'Status']] #dropping WaardeBepalingsmethode reduces memory 
+        if old:
+            data = data.loc[:,['values', 'QC', 'Status']] #dropping WaardeBepalingsmethode reduces memory 
+        
         if not (metadata['Eenheid.Code']=='cm').all():
             raise Exception("unexpected unit")
         data['values'] /= 100 #convert from cm to m
