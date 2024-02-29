@@ -961,14 +961,12 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
                                 index=pd.to_datetime(measurements_wathte['Tijdstip']))
             
             # sort on time values
+            # TODO: do this in ddlpy or in ddl
             data = data.sort_index()
             
+            # TODO: simplify this when "old" is discontinued
             metadata = measurements_wathte[["Eenheid.Code"]]
             
-            # data = measurements_wathte[['t', 'Meetwaarde.Waarde_Numeriek', 'QC', 'Status']].set_index("t")
-            # data.index.name = "time"
-            # data = data.rename("Meetwaarde.Waarde_Numeriek", "values")
-        
         # dropping timezone is required to get proper encoding in time variable (in file)
         data.index = data.index.tz_convert(None)
         # set name so xarray recognizes the time coordinate/index
