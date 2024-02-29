@@ -506,7 +506,7 @@ def ddl_ssh_meta_dict():
     return meta_dict
 
 
-def ddl_ssh_read_catalog(meta_dict=None, hatyan=False):
+def ddl_ssh_read_catalog(meta_dict=None, old=False):
     """
     convert LocatieLijst to geopandas dataframe
     """
@@ -519,7 +519,7 @@ def ddl_ssh_read_catalog(meta_dict=None, hatyan=False):
     if meta_dict is None:
         meta_dict = ddl_ssh_meta_dict()
     
-    if hatyan: # hatyan
+    if old: # hatyan
         print('>> retrieving DDL catalog: ',end='')
         dtstart = dt.datetime.now()
         # catalog with less extra info is faster
@@ -538,7 +538,7 @@ def ddl_ssh_read_catalog(meta_dict=None, hatyan=False):
                 bool_sel = selected[key].isin([value])
                 selected = selected.loc[bool_sel]
             except KeyError:
-                print(f"ddlpy can not yet subset for '{key}', ignored")            
+                print(f"ddlpy.locations() cannot yet subset for '{key}', ignored.")            
            
         # bool_stations = selected['Code'].isin(['HOEKVHLD', 'IJMDBTHVN','SCHEVNGN'])
         # bool_grootheid = selected['Grootheid.Code'].isin(['WATHTE'])
@@ -569,7 +569,14 @@ def ddl_ssh_read_catalog(meta_dict=None, hatyan=False):
     
     ddl_slev_gdf = ddl_slev_gdf.reset_index()
     ddl_slev_gdf["country"] = "NLD"
-    ddl_slev_gdf["station_name_unique"] = ddl_slev_gdf["Code"]
+    
+    # import re
+    # stat_naam_alphanumeric = df["Naam"].str.replace('[^0-9a-zA-Z]+', '-', regex=True)
+    station_name_unique = ddl_slev_gdf["Code"]
+    station_name_unique2 = [name + "-1" if duplicated else name for duplicated, name in zip(station_name_unique.duplicated(), station_name_unique)]
+    ddl_slev_gdf["station_name_unique"] = station_name_unique2
+    if ddl_slev_gdf["station_name_unique"].duplicated().sum():
+        raise Exception("still duplicated station codes")
     
     return ddl_slev_gdf
 
@@ -863,7 +870,7 @@ def psmsl_gnssir_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, t
     print()
 
 
-def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_dict=None):
+def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_dict=None, old=False):
     #TODO: maybe support time_min/time_max==None
     try:
         import hatyan
@@ -890,15 +897,58 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
         allow_multipleresultsfor = ['WaardeBepalingsmethode'] # necessary for retrieving very long timeseries
         
         #retrieving waterlevels
-        print(f'retrieving measwl data from DDL for station {irow+1} of {len(cat_locatielijst)}: {row["Code"]}')
-        request_output = hatyan.get_DDL_data(station_dict=station_dict,
-                                             tstart_dt=time_min, tstop_dt=time_max, tzone='UTC+00:00', 
-                                             meta_dict=meta_dict, 
-                                             allow_multipleresultsfor=allow_multipleresultsfor)
-        if request_output is None: #no output so this station is skipped
-            continue
-        
-        data, metadata, stationdata = request_output #ts_meas_pd contains values/QC/Status/WaardeBepalingsmethode, metadata contains unit/reference/etc, stationdata contains X/Y/Naam/Code
+        if old:
+            print(f'retrieving measwl data from DDL for station {irow+1} of {len(cat_locatielijst)}: {row["Code"]}')
+            request_output = hatyan.get_DDL_data(station_dict=station_dict,
+                                                 tstart_dt=time_min, tstop_dt=time_max, tzone='UTC+00:00', 
+                                                 meta_dict=meta_dict, 
+                                                 allow_multipleresultsfor=allow_multipleresultsfor)
+            if request_output is None: #no output so this station is skipped
+                continue
+            
+            data, metadata, stationdata = request_output #ts_meas_pd contains values/QC/Status/WaardeBepalingsmethode, metadata contains unit/reference/etc, stationdata contains X/Y/Naam/Code
+        else:
+            # if we pass one row to the measurements function you can get all the measurements
+            print(time_min, time_max)
+            measurements = ddlpy.measurements(row, time_min, time_max)
+            
+            # TODO: rename lowercase code to uppercase Code
+            measurements.columns = [x.replace(".code",".Code") for x in measurements.columns]
+            
+            # TODO: ddlpy returns waterlevels and extremes (and for multiple meetapparaat), concatenated, so first filter out with meta_dict
+            # TODO: filter for Groepering and MeetApparaat not possible yet in ddlpy.locations(): https://github.com/openearth/ddlpy/issues/21
+            selected = measurements.copy()
+            for key in meta_dict.keys():
+                value = meta_dict[key]
+                key_lowercode = key
+                bool_sel = selected[key_lowercode].isin([value])
+                selected = selected.loc[bool_sel]
+            ndropped = len(measurements) - len(selected)
+            print(f"{ndropped} values dropped in 'ddl_ssh_retrieve_data' based on meta_dict")
+            
+            measurements_wathte = selected
+            
+            #TODO: below copied from hatyan.getonlinedata.py (more TODO in that script)
+            key_numericvalues = 'Meetwaarde.Waarde_Numeriek'
+            if not key_numericvalues in measurements_wathte.columns: #alfanumeric values for 'Typering.Code':'GETETTPE' #DDL IMPROVEMENT: also include numeric values for getijtype. Also, it is quite complex to get this data in the first place, would be convenient if it would be a column when retrieving 'Groepering.Code':'GETETM2' or 'GETETBRKD2'
+                key_numericvalues = 'Meetwaarde.Waarde_Alfanumeriek'
+            data = pd.DataFrame({'values':measurements_wathte[key_numericvalues].values,
+                                 'QC':pd.to_numeric(measurements_wathte['WaarnemingMetadata.KwaliteitswaardecodeLijst'].str[0],downcast='integer').values, # DDL IMPROVEMENT: should be possible with .astype(int), but pd.to_numeric() is necessary for HARVT10 (eg 2019-09-01 to 2019-11-01) since QC contains None values that cannot be ints (in that case array of floats with some nans is returned) >> replace None with int code
+                                 'Status':measurements_wathte['WaarnemingMetadata.StatuswaardeLijst'].str[0].values,
+                                 #'Bemonsteringshoogte':measurements_wathte['WaarnemingMetadata.BemonsteringshoogteLijst'].str[0].astype(int).values, 
+                                 #'Referentievlak':measurements_wathte['WaarnemingMetadata.ReferentievlakLijst'].str[0].values,
+                                 #'OpdrachtgevendeInstantie':measurements_wathte['WaarnemingMetadata.OpdrachtgevendeInstantieLijst'].str[0].values,
+                                 },
+                                index=pd.to_datetime(measurements_wathte['Tijdstip']))
+            
+            # sort on time values
+            data = data.sort_index()
+            
+            metadata = measurements_wathte[["Eenheid.Code"]]
+            
+            # data = measurements_wathte[['t', 'Meetwaarde.Waarde_Numeriek', 'QC', 'Status']].set_index("t")
+            # data.index.name = "time"
+            # data = data.rename("Meetwaarde.Waarde_Numeriek", "values")
         
         # dropping timezone is required to get proper encoding in time variable (in file)
         data.index = data.index.tz_localize(None)
