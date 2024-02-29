@@ -903,15 +903,15 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
         allow_multipleresultsfor = ['WaardeBepalingsmethode'] # necessary for retrieving very long timeseries
         
         #retrieving waterlevels
+        print(f'retrieving measwl data from DDL for station {irow+1} of {len(cat_locatielijst)}: {row["Code"]}')
         if old:
-            print(f'retrieving measwl data from DDL for station {irow+1} of {len(cat_locatielijst)}: {row["Code"]}')
             request_output = hatyan.get_DDL_data(station_dict=station_dict,
                                                  tstart_dt=time_min, tstop_dt=time_max, tzone='UTC+00:00', 
                                                  meta_dict=meta_dict, 
                                                  allow_multipleresultsfor=allow_multipleresultsfor)
             if request_output is None:
                 # no output so this station is skipped
-                print("no data, station is skipped")
+                print("[NO DATA]")
                 continue
             
             data, metadata, stationdata = request_output #ts_meas_pd contains values/QC/Status/WaardeBepalingsmethode, metadata contains unit/reference/etc, stationdata contains X/Y/Naam/Code
@@ -926,7 +926,7 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
             if isinstance(measurements, list):
                 if len(measurements)==0:
                     # no output so this station is skipped
-                    print("no data, station is skipped")
+                    print("[NO DATA]")
                     continue
                 else:
                     raise TypeError(f"non-empty list returned by ddlpy.measurements(), this is unexpected:\n{measurements}")
@@ -942,8 +942,8 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
                 key_lowercode = key
                 bool_sel = selected[key_lowercode].isin([value])
                 selected = selected.loc[bool_sel]
-            ndropped = len(measurements) - len(selected)
-            print(f"{ndropped} values dropped in 'ddl_ssh_retrieve_data' based on meta_dict")
+                ndropped = (~bool_sel).sum()
+                print(f"meta_dict: {key}={value} condition dropped {ndropped} values in 'ddl_ssh_retrieve_data'")
             
             measurements_wathte = selected
             
