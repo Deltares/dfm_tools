@@ -94,6 +94,7 @@ examples = [
 ]
 ddl = [
 	"hatyan",
+	"rws-ddlpy",
 ]
 
 [tool.setuptools]
