@@ -960,11 +960,15 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
                                  },
                                 index=pd.to_datetime(measurements_wathte['Tijdstip']))
             
-            addcolumns_names = [x.replace(".Code","") for x in meta_dict.keys()] + ["MeetApparaat"]
-            addcolumns_list = [f'{x}.{y}' for x in addcolumns_names for y in ['Code','Omschrijving']]
-            # add metadata to timeseries for allow_multipleresultsfor (to be able to distinguish difference later on)
-            for addcolumn in addcolumns_list:
-                data[addcolumn] = measurements_wathte[addcolumn].values
+            # add metadata to timeseries (to be able to distinguish difference later on)
+            metadict_keys_nocode = [x.replace(".Code","") for x in meta_dict.keys()]
+            addmeta_list = ['Grootheid', 'Groepering', 'Hoedanigheid', "MeetApparaat"]
+            for metaname in addmeta_list:
+                if metaname in metadict_keys_nocode:
+                    addmeta_list.remove(metaname)
+            for metaname in addmeta_list:
+                metaname_wicode = f"{metaname}.Code"
+                data[metaname_wicode] = measurements_wathte[metaname_wicode].values
             
             # sort on time values
             # TODO: do this in ddlpy or in ddl
@@ -985,15 +989,19 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
             raise Exception("unexpected unit")
         data['values'] /= 100 #convert from cm to m
         
+        wl_attrs = dict(station_id=row["Naam"],
+                        station_code=row["Code"],
+                        longitude=row.geometry.x,
+                        latitude=row.geometry.y,
+                        country_code="NLD",
+                        )
+        for key in meta_dict.keys():
+            wl_attrs[key] = meta_dict[key]
+        
         ds = data.to_xarray()
         ds['values'] = ds['values'].assign_attrs(units="m")
         ds = ds.rename_vars(values="waterlevel")
-        ds = ds.assign_attrs(station_id=row["Naam"],
-                             station_code=row["Code"],
-                             longitude=row.geometry.x,
-                             latitude=row.geometry.y,
-                             country_code="NLD",
-                             )
+        ds = ds.assign_attrs(wl_attrs)
         
         stat_name = row["Code"] #row["station_name_unique"]
         file_out = os.path.join(dir_output, f"{stat_name}.nc")
