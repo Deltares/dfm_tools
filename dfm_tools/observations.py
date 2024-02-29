@@ -506,7 +506,7 @@ def ddl_ssh_meta_dict():
     return meta_dict
 
 
-def ddl_ssh_read_catalog(meta_dict=None, old=False):
+def ddl_ssh_read_catalog(meta_dict=None, hatyan=False):
     """
     convert LocatieLijst to geopandas dataframe
     """
@@ -519,7 +519,7 @@ def ddl_ssh_read_catalog(meta_dict=None, old=False):
     if meta_dict is None:
         meta_dict = ddl_ssh_meta_dict()
     
-    if old:
+    if hatyan: # hatyan
         print('>> retrieving DDL catalog: ',end='')
         dtstart = dt.datetime.now()
         # catalog with less extra info is faster
@@ -527,7 +527,7 @@ def ddl_ssh_read_catalog(meta_dict=None, old=False):
         print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
         
         cat_aquometadatalijst, cat_locatielijst = hatyan.get_DDL_stationmetasubset(catalog_dict=catalog_dict,station_dict=None,meta_dict=meta_dict)
-    else:
+    else: # ddlpy
         # TODO: Groepering.Code and MeetApparaat.Code columns not available: https://github.com/openearth/ddlpy/issues/21
         locations_ddlpy = ddlpy.locations()
         locations = locations_ddlpy.reset_index(drop=False).set_index('Locatie_MessageID')
