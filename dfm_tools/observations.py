@@ -530,15 +530,15 @@ def ddl_ssh_read_catalog(meta_dict=None, old=False):
     else:
         # TODO: Groepering.Code and MeetApparaat.Code columns not available: https://github.com/openearth/ddlpy/issues/21
         locations_ddlpy = ddlpy.locations()
-        locations = locations_ddlpy.reset_index(drop=False)
+        locations = locations_ddlpy.reset_index(drop=False).set_index('Locatie_MessageID')
         selected = locations.copy()
         for key in meta_dict.keys():
             value = meta_dict[key]
             try:
                 bool_sel = selected[key].isin([value])
+                selected = selected.loc[bool_sel]
             except KeyError:
                 print(f"ddlpy can not yet subset for '{key}', ignored")            
-            selected = selected.loc[bool_sel]
            
         # bool_stations = selected['Code'].isin(['HOEKVHLD', 'IJMDBTHVN','SCHEVNGN'])
         # bool_grootheid = selected['Grootheid.Code'].isin(['WATHTE'])
@@ -556,8 +556,6 @@ def ddl_ssh_read_catalog(meta_dict=None, old=False):
     epsg = epsg_uniq[0]
     geom_points = [Point(x,y) for x,y in zip(xcoords,ycoords)]
     ddl_slev_gdf = gpd.GeoDataFrame(cat_locatielijst, geometry=geom_points, crs=epsg)
-    
-    
     
     # filter invalid coords #TODO: maybe move to haytan ddl code
     bool_invalid = (ddl_slev_gdf.geometry.x == 0) & (ddl_slev_gdf.geometry.y == 0)
