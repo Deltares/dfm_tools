@@ -13,6 +13,8 @@ from erddapy import ERDDAP #pip install erddapy
 import requests
 from zipfile import ZipFile
 from io import BytesIO
+import datetime as dt
+
 
 __all__ = ["ssh_catalog_subset",
            "ssh_catalog_toxynfile",
@@ -424,6 +426,11 @@ def gesla3_ssh_read_catalog(file_gesla3_meta=None, only_coastal=True):
 def ddl_ssh_meta_dict():
     """
     Subset of catalog and station list with all waterlevel related values
+
+    unique Compartiment available in requested subset:
+                           Compartiment.Code Compartiment.Omschrijving
+    AquoMetadata_MessageID                                            
+    1463                                  OW          Oppervlaktewater
     
     unique Eenheid available in requested subset:
                            Eenheid.Code Eenheid.Omschrijving
@@ -439,11 +446,12 @@ def ddl_ssh_meta_dict():
     515                            WATHTE            Waterhoogte
     
     unique Groepering available in requested subset:
-                           Groepering.Code Groepering.Omschrijving
-    AquoMetadata_MessageID                                        
-    299                                NVT     Niet van toepassing
-    515                            GETETM2           Getijextremen
-
+                           Groepering.Code   Groepering.Omschrijving
+    AquoMetadata_MessageID                                          
+    1463                               NVT       Niet van toepassing
+    1464                         GETETMSL2  Getijextremen t.o.v. MSL
+    1481                           GETETM2             Getijextremen
+    
     unique Hoedanigheid available in requested subset:
                            Hoedanigheid.Code            Hoedanigheid.Omschrijving
     AquoMetadata_MessageID                                                       
@@ -467,6 +475,29 @@ def ddl_ssh_meta_dict():
     533                                  155                     Druksensor
     539                                  156           Stroomsnelheidsmeter
     541                                  205                  Afstandsdraad
+    
+    unique Parameter available in requested subset:
+                           Parameter.Code         Parameter.Omschrijving
+    AquoMetadata_MessageID                                              
+    1463                              NVT  Waarde is niet van toepassing
+    
+    unique Typering available in requested subset:
+                           Typering.Code          Typering.Omschrijving
+    AquoMetadata_MessageID                                             
+    1463                             NVT  Waarde is niet van toepassing
+    
+    unique WaardeBepalingsmethode available in requested subset:
+                           WaardeBepalingsmethode.Code                WaardeBepalingsmethode.Omschrijving
+    AquoMetadata_MessageID                                                                               
+    1463                                    other:F007  Rekenkundig gemiddelde waarde over vorige 5 en...
+    1464                                    other:F009                          Visuele aflezing van blad
+    1465                                    other:F010  HW en LW uit 1 min. waterhoogten gefilterd uit...
+    1466                                    other:F001  Rekenkundig gemiddelde waarde over vorige 10 m...
+    [...]
+    1531                                    other:F097  Rek. gem. stroomsnelheid over vorige 5 en volg...
+    1532                                    other:F103  Rek. gem. afvoer over vorige 5 en volgende 5 m...
+    1541                                    other:F153          Rek. gem. waterhoogte over vorige 15 min.
+    1544                                    other:F012  Astronomische waterhoogte mbv harmonische analyse
     """
     meta_dict = {'Grootheid.Code':'WATHTE', 'Groepering.Code':'NVT', #combination for measured waterlevels
                  #'Hoedanigheid.Code':'NAP', # vertical reference. Hoedanigheid is necessary for eg EURPFM/LICHTELGRE, where NAP and MSL values are available while it should only contain MSL #MSL, NAP, PLAATSLR, TAW, NVT (from cat_aquometadatalijst_waterhoogte['Hoedanigheid.Code'])
@@ -484,18 +515,16 @@ def ddl_ssh_read_catalog(meta_dict=None):
     except ImportError:
         raise ImportError("hatyan is required for this functionality, install with 'pip install hatyan'")
     
-    print('retrieving DDL catalog')
-    catalog_dict = hatyan.get_DDL_catalog(catalog_extrainfo=['WaardeBepalingsmethoden','MeetApparaten','Typeringen'])
-    print('...done')
+    print('>> retrieving DDL catalog: ',end='')
+    dtstart = dt.datetime.now()
+    # catalog with less extra info is faster
+    catalog_dict = hatyan.get_DDL_catalog(catalog_extrainfo=['MeetApparaten'])#,'Typeringen','WaardeBepalingsmethoden','Parameters'])
+    print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
     if meta_dict is None:
         meta_dict = ddl_ssh_meta_dict()
     
     cat_aquometadatalijst, cat_locatielijst = hatyan.get_DDL_stationmetasubset(catalog_dict=catalog_dict,station_dict=None,meta_dict=meta_dict)
-    key_list = ['Eenheid','Grootheid','Groepering','Hoedanigheid','MeetApparaat']
-    #printing unique metadata in selection
-    for key in key_list:
-        print(f'unique {key} available in requested subset:\n{cat_aquometadatalijst[[f"{key}.Code",f"{key}.Omschrijving"]].drop_duplicates()}')
     
     xcoords = cat_locatielijst["X"]
     ycoords = cat_locatielijst["Y"]
@@ -849,7 +878,7 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
         data, metadata, stationdata = request_output #ts_meas_pd contains values/QC/Status/WaardeBepalingsmethode, metadata contains unit/reference/etc, stationdata contains X/Y/Naam/Code
         
         # dropping timezone is required to get proper encoding in time variable (in file)
-        data.index = data.index.tz_convert(None)
+        data.index = data.index.tz_localize(None)
         # set name so xarray recognizes the time coordinate/index
         data.index.name = "time"
         
