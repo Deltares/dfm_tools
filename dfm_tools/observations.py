@@ -506,26 +506,47 @@ def ddl_ssh_meta_dict():
     return meta_dict
 
 
-def ddl_ssh_read_catalog(meta_dict=None):
+def ddl_ssh_read_catalog(meta_dict=None, old=False):
     """
     convert LocatieLijst to geopandas dataframe
     """
     try:
         import hatyan
+        import ddlpy
     except ImportError:
-        raise ImportError("hatyan is required for this functionality, install with 'pip install hatyan'")
-    
-    print('>> retrieving DDL catalog: ',end='')
-    dtstart = dt.datetime.now()
-    # catalog with less extra info is faster
-    catalog_dict = hatyan.get_DDL_catalog(catalog_extrainfo=['MeetApparaten'])#,'Typeringen','WaardeBepalingsmethoden','Parameters'])
-    print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
+        raise ImportError("hatyan and ddlpy are required for this functionality, install with 'pip install hatyan rws-ddlpy'")
     
     if meta_dict is None:
         meta_dict = ddl_ssh_meta_dict()
     
-    cat_aquometadatalijst, cat_locatielijst = hatyan.get_DDL_stationmetasubset(catalog_dict=catalog_dict,station_dict=None,meta_dict=meta_dict)
-    
+    if old:
+        print('>> retrieving DDL catalog: ',end='')
+        dtstart = dt.datetime.now()
+        # catalog with less extra info is faster
+        catalog_dict = hatyan.get_DDL_catalog(catalog_extrainfo=['MeetApparaten'])#,'Typeringen','WaardeBepalingsmethoden','Parameters'])
+        print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
+        
+        cat_aquometadatalijst, cat_locatielijst = hatyan.get_DDL_stationmetasubset(catalog_dict=catalog_dict,station_dict=None,meta_dict=meta_dict)
+    else:
+        # TODO: Groepering.Code and MeetApparaat.Code columns not available: https://github.com/openearth/ddlpy/issues/21
+        locations_ddlpy = ddlpy.locations()
+        locations = locations_ddlpy.reset_index(drop=False)
+        selected = locations.copy()
+        for key in meta_dict.keys():
+            value = meta_dict[key]
+            try:
+                bool_sel = selected[key].isin([value])
+            except KeyError:
+                print(f"ddlpy can not yet subset for '{key}', ignored")            
+            selected = selected.loc[bool_sel]
+           
+        # bool_stations = selected['Code'].isin(['HOEKVHLD', 'IJMDBTHVN','SCHEVNGN'])
+        # bool_grootheid = selected['Grootheid.Code'].isin(['WATHTE'])
+        # bool_groepering = selected['Groepering.code'].isin(['NVT'])
+        # bool_hoedanigheid = selected['Hoedanigheid.Code'].isin(['NAP'])
+        # selected = selected.loc[bool_grootheid & bool_hoedanigheid]
+        # dupl_codes = selected.loc[selected.index.duplicated(keep=False)]
+        cat_locatielijst = selected
     xcoords = cat_locatielijst["X"]
     ycoords = cat_locatielijst["Y"]
     epsg_all = cat_locatielijst["Coordinatenstelsel"]
@@ -535,6 +556,8 @@ def ddl_ssh_read_catalog(meta_dict=None):
     epsg = epsg_uniq[0]
     geom_points = [Point(x,y) for x,y in zip(xcoords,ycoords)]
     ddl_slev_gdf = gpd.GeoDataFrame(cat_locatielijst, geometry=geom_points, crs=epsg)
+    
+    
     
     # filter invalid coords #TODO: maybe move to haytan ddl code
     bool_invalid = (ddl_slev_gdf.geometry.x == 0) & (ddl_slev_gdf.geometry.y == 0)
@@ -549,6 +572,7 @@ def ddl_ssh_read_catalog(meta_dict=None):
     ddl_slev_gdf = ddl_slev_gdf.reset_index()
     ddl_slev_gdf["country"] = "NLD"
     ddl_slev_gdf["station_name_unique"] = ddl_slev_gdf["Code"]
+    
     return ddl_slev_gdf
 
 
@@ -845,8 +869,9 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
     #TODO: maybe support time_min/time_max==None
     try:
         import hatyan
+        import ddlpy
     except ImportError:
-        raise ImportError("hatyan is required for this functionality, install with 'pip install hatyan'")
+        raise ImportError("hatyan and ddlpy are required for this functionality, install with 'pip install hatyan rws-ddlpy'")
 
     # TODO: convert to pandas timestamp, put this in hatyan ddl code
     time_min = pd.Timestamp(time_min)
