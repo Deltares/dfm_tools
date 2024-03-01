@@ -898,13 +898,11 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
         irow = cat_locatielijst.index.tolist().index(station_id)
         # print(irow+1, end=" ")
 
-        station_dict = row[['Locatie_MessageID','X','Y','Naam','Code']] #station query
-        
-        allow_multipleresultsfor = ['WaardeBepalingsmethode'] # necessary for retrieving very long timeseries
-        
         #retrieving waterlevels
         print(f'retrieving measwl data from DDL for station {irow+1} of {len(cat_locatielijst)}: {row["Code"]}')
         if old:
+            station_dict = row[['Locatie_MessageID','X','Y','Naam','Code']] #station query
+            allow_multipleresultsfor = ['WaardeBepalingsmethode'] # necessary for retrieving very long timeseries
             request_output = hatyan.get_DDL_data(station_dict=station_dict,
                                                  tstart_dt=time_min, tstop_dt=time_max, tzone='UTC+00:00', 
                                                  meta_dict=meta_dict, 
