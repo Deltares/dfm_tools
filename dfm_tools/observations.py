@@ -942,20 +942,20 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
             raise Exception("unexpected unit")
         data['values'] /= 100 #convert from cm to m
         
-        wl_attrs = dict(station_id=row["Naam"],
+        ds_attrs = dict(station_id=row["Naam"],
                         station_code=row["Code"],
                         longitude=row.geometry.x,
                         latitude=row.geometry.y,
                         country_code="NLD",
                         )
         for key in meta_dict.keys():
-            wl_attrs[key] = meta_dict[key]
+            ds_attrs[key] = meta_dict[key]
         
         ds = data.to_xarray()
         #TODO: add standard_name attrs?
         ds['values'] = ds['values'].assign_attrs(units="m")
         ds = ds.rename_vars(values="waterlevel")
-        ds = ds.assign_attrs(wl_attrs)
+        ds = ds.assign_attrs(ds_attrs)
         
         stat_name = row["station_name_unique"]
         file_out = os.path.join(dir_output, f"{stat_name}.nc")
