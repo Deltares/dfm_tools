@@ -938,7 +938,7 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
                 metaname_wisuffix = f"{metaname}.{suffix}"
                 data[metaname_wisuffix] = ddlpy_meas[metaname_wisuffix].values
         
-        # dropping timezone is required to get proper encoding in time variable (in file)
+        # dropping timezone is required to get proper encoding in time variable (in netcdf file)
         data.index = data.index.tz_convert(None)
         
         if not (ddlpy_meas['Eenheid.Code']=='cm').all():
@@ -961,10 +961,6 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
         
         stat_name = row["station_name_unique"]
         file_out = os.path.join(dir_output, f"{stat_name}.nc")
-        
-        # replace all invalid values with nan
-        # TODO: this is already sort of done in ddlpy: https://github.com/openearth/ddlpy/issues/29
-        ds = ds.where(ds.QC != 99)
         
         ds.to_netcdf(file_out)
         del ds
