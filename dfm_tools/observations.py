@@ -915,7 +915,6 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
             data, metadata, stationdata = request_output #ts_meas_pd contains values/QC/Status/WaardeBepalingsmethode, metadata contains unit/reference/etc, stationdata contains X/Y/Naam/Code
         else:
             # if we pass one row to the measurements function you can get all the measurements
-            print(time_min, time_max)
             measurements = ddlpy.measurements(row, time_min, time_max)
             
             # we expect a pandas.DataFrame, sometimes we get an empty list instead
