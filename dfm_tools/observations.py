@@ -911,21 +911,18 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
 
         ddlpy_meas = selected
         
-        #TODO: below code also present in hatyan.getonlinedataddl.py_to_hatyan(), implement partly in ddlpy
-        key_numericvalues = 'Meetwaarde.Waarde_Numeriek'
-        if not key_numericvalues in ddlpy_meas.columns: #alfanumeric values for 'Typering.Code':'GETETTPE' #DDL IMPROVEMENT: also include numeric values for getijtype. Also, it is quite complex to get this data in the first place, would be convenient if it would be a column when retrieving 'Groepering.Code':'GETETM2' or 'GETETBRKD2'
-            key_numericvalues = 'Meetwaarde.Waarde_Alfanumeriek'
-        
+        #TODO: below code also present in hatyan.getonlinedata.ddlpy_to_hatyan(), implement partly in ddlpy
         #TODO: put in ddlpy: https://github.com/openearth/ddlpy/issues/38
         ddlpy_meas = ddlpy_meas.set_index("t")
         ddlpy_meas.index.name = "time"
         
         # DDL IMPROVEMENT: qc conversion should be possible with .astype(int), but pd.to_numeric() is necessary for HARVT10 (eg 2019-09-01 to 2019-11-01) since QC contains None values that cannot be ints (in that case array of floats with some nans is returned) >> now flattened by ddlpy
-        data = pd.DataFrame({'values':ddlpy_meas[key_numericvalues],
+        data = pd.DataFrame({'values':ddlpy_meas['Meetwaarde.Waarde_Numeriek'],
                              'QC':pd.to_numeric(ddlpy_meas['WaarnemingMetadata.KwaliteitswaardecodeLijst'],downcast='integer'),
                              'Status':ddlpy_meas['WaarnemingMetadata.StatuswaardeLijst'],
                              })
 
+        # TODO: more automated metadata adding? All columns with 1 value as attr, rest as var (exclude some). also avoid eenheid since it should be under waterlevel var
         # add metadata to timeseries (to be able to distinguish difference later on)
         metadict_keys_nocode = [x.replace(".Code","") for x in meta_dict.keys()]
         meta_list = ['Grootheid', 'Groepering', 'Hoedanigheid', 'MeetApparaat']
@@ -955,6 +952,7 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
             wl_attrs[key] = meta_dict[key]
         
         ds = data.to_xarray()
+        #TODO: add standard_name attrs?
         ds['values'] = ds['values'].assign_attrs(units="m")
         ds = ds.rename_vars(values="waterlevel")
         ds = ds.assign_attrs(wl_attrs)
