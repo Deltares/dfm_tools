@@ -955,7 +955,6 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
         ds['waterlevel'] /= 100 #convert from cm to m
         ds_attrs.pop('Eenheid.Code')
         ds_attrs.pop('Eenheid.Omschrijving')
-        print(ds_attrs)
         ds = ds.assign_attrs(ds_attrs)
         
         # set QC as int
