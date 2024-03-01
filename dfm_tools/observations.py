@@ -910,52 +910,56 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
             continue
 
         ddlpy_meas = selected
-        
+
         #TODO: below code also present in hatyan.getonlinedata.ddlpy_to_hatyan(), implement partly in ddlpy
         #TODO: put in ddlpy: https://github.com/openearth/ddlpy/issues/38
         ddlpy_meas = ddlpy_meas.set_index("t")
         ddlpy_meas.index.name = "time"
-        
-        # DDL IMPROVEMENT: qc conversion should be possible with .astype(int), but pd.to_numeric() is necessary for HARVT10 (eg 2019-09-01 to 2019-11-01) since QC contains None values that cannot be ints (in that case array of floats with some nans is returned) >> now flattened by ddlpy
-        data = pd.DataFrame({'values':ddlpy_meas['Meetwaarde.Waarde_Numeriek'],
-                             'QC':pd.to_numeric(ddlpy_meas['WaarnemingMetadata.KwaliteitswaardecodeLijst'],downcast='integer'),
-                             'Status':ddlpy_meas['WaarnemingMetadata.StatuswaardeLijst'],
-                             })
 
-        # TODO: more automated metadata adding? All columns with 1 value as attr, rest as var (exclude some). also avoid eenheid since it should be under waterlevel var
+        data = ddlpy_meas[['Meetwaarde.Waarde_Numeriek',
+                           'WaarnemingMetadata.KwaliteitswaardecodeLijst',
+                           'WaarnemingMetadata.StatuswaardeLijst']]
+
         # add metadata to timeseries (to be able to distinguish difference later on)
-        metadict_keys_nocode = [x.replace(".Code","") for x in meta_dict.keys()]
-        meta_list = ['Grootheid', 'Groepering', 'Hoedanigheid', 'MeetApparaat']
-        addmeta_list = []
-        for metaname in meta_list:
-            if metaname not in metadict_keys_nocode:
-                addmeta_list.append(metaname)
-        for metaname in addmeta_list:
-            for suffix in ["Code","Omschrijving"]:
-                metaname_wisuffix = f"{metaname}.{suffix}"
-                data[metaname_wisuffix] = ddlpy_meas[metaname_wisuffix].values
-        
-        # dropping timezone is required to get proper encoding in time variable (in netcdf file)
-        data.index = data.index.tz_convert(None)
-        
-        if not (ddlpy_meas['Eenheid.Code']=='cm').all():
-            raise Exception("unexpected unit")
-        data['values'] /= 100 #convert from cm to m
-        
+        meta_list = ['Grootheid', 'Eenheid', 'Groepering', 'Hoedanigheid', 'MeetApparaat'] #TODO: maybe add more (avoid eenheid because of conversion)
         ds_attrs = dict(station_id=row["Naam"],
                         station_code=row["Code"],
                         longitude=row.geometry.x,
                         latitude=row.geometry.y,
                         country_code="NLD",
                         )
-        for key in meta_dict.keys():
-            ds_attrs[key] = meta_dict[key]
-        
+        for metaname in meta_list:
+            meta_uniq = ddlpy_meas[metaname+".Code"].drop_duplicates()
+            meta_num_uniq = len(meta_uniq)
+            for suffix in ["Code","Omschrijving"]:
+                metaname_wisuffix = f"{metaname}.{suffix}"
+                if meta_num_uniq==1:
+                    ds_attrs[metaname_wisuffix] = ddlpy_meas[metaname_wisuffix].iloc[0]
+                else:
+                    data[metaname_wisuffix] = ddlpy_meas[metaname_wisuffix].values
+                    
+        # dropping timezone is required to get proper encoding in time variable (in netcdf file)
+        data.index = data.index.tz_convert(None)
+
         ds = data.to_xarray()
+
+        ds = ds.rename_vars({'Meetwaarde.Waarde_Numeriek':'waterlevel',
+                             'WaarnemingMetadata.KwaliteitswaardecodeLijst':'QC',
+                             'WaarnemingMetadata.StatuswaardeLijst':"Status"})
+
+        # convert meters to cm
+        if not (ddlpy_meas['Eenheid.Code']=='cm').all():
+            raise Exception("unexpected unit")
         #TODO: add standard_name attrs?
-        ds['values'] = ds['values'].assign_attrs(units="m")
-        ds = ds.rename_vars(values="waterlevel")
+        ds['waterlevel'] = ds['waterlevel'].assign_attrs(units="m")
+        ds['waterlevel'] /= 100 #convert from cm to m
+        ds_attrs.pop('Eenheid.Code')
+        ds_attrs.pop('Eenheid.Omschrijving')
+        print(ds_attrs)
         ds = ds.assign_attrs(ds_attrs)
+        
+        # set QC as int
+        ds['QC'] = ds['QC'].astype(int)
         
         stat_name = row["station_name_unique"]
         file_out = os.path.join(dir_output, f"{stat_name}.nc")
