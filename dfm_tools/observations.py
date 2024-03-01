@@ -1011,7 +1011,7 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
         file_out = os.path.join(dir_output, f"{stat_name}.nc")
         
         # replace all invalid values with nan
-        # TODO: move to hatyan ddl code
+        # TODO: this is already sort of done in ddlpy: https://github.com/openearth/ddlpy/issues/29
         ds = ds.where(ds.QC != 99)
         
         ds.to_netcdf(file_out)
