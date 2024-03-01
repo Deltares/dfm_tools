@@ -506,12 +506,11 @@ def ddl_ssh_meta_dict():
     return meta_dict
 
 
-def ddl_ssh_read_catalog(meta_dict=None, old=False):
+def ddl_ssh_read_catalog(meta_dict=None):
     """
     convert LocatieLijst to geopandas dataframe
     """
     try:
-        import hatyan
         import ddlpy
     except ImportError:
         raise ImportError("hatyan and ddlpy are required for this functionality, install with 'pip install hatyan rws-ddlpy'")
@@ -519,43 +518,27 @@ def ddl_ssh_read_catalog(meta_dict=None, old=False):
     if meta_dict is None:
         meta_dict = ddl_ssh_meta_dict()
     
-    if old: # hatyan
-        print('>> retrieving DDL catalog: ',end='')
-        dtstart = dt.datetime.now()
-        # catalog with less extra info is faster
-        catalog_dict = hatyan.get_DDL_catalog(catalog_extrainfo=['MeetApparaten'])#,'Typeringen','WaardeBepalingsmethoden','Parameters'])
-        print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
-        
-        cat_aquometadatalijst, cat_locatielijst = hatyan.get_DDL_stationmetasubset(catalog_dict=catalog_dict,station_dict=None,meta_dict=meta_dict)
-    else: # ddlpy
-        # TODO: Groepering.Code and MeetApparaat.Code columns not available: https://github.com/openearth/ddlpy/issues/21
-        locations_ddlpy = ddlpy.locations()
-        locations = locations_ddlpy.reset_index(drop=False).set_index('Locatie_MessageID')
-        selected = locations.copy()
-        for key in meta_dict.keys():
-            value = meta_dict[key]
-            try:
-                bool_sel = selected[key].isin([value])
-                selected = selected.loc[bool_sel]
-            except KeyError:
-                print(f"ddlpy.locations() cannot yet subset for '{key}', ignored.")            
-           
-        # bool_stations = selected['Code'].isin(['HOEKVHLD', 'IJMDBTHVN','SCHEVNGN'])
-        # bool_grootheid = selected['Grootheid.Code'].isin(['WATHTE'])
-        # bool_groepering = selected['Groepering.code'].isin(['NVT'])
-        # bool_hoedanigheid = selected['Hoedanigheid.Code'].isin(['NAP'])
-        # selected = selected.loc[bool_grootheid & bool_hoedanigheid]
-        # dupl_codes = selected.loc[selected.index.duplicated(keep=False)]
-        cat_locatielijst = selected
-    xcoords = cat_locatielijst["X"]
-    ycoords = cat_locatielijst["Y"]
-    epsg_all = cat_locatielijst["Coordinatenstelsel"]
+    # TODO: Groepering.Code and MeetApparaat.Code columns not available: https://github.com/openearth/ddlpy/issues/21
+    locations_ddlpy = ddlpy.locations()
+    locations = locations_ddlpy.reset_index(drop=False).set_index('Locatie_MessageID')
+    selected = locations.copy()
+    for key in meta_dict.keys():
+        value = meta_dict[key]
+        try:
+            bool_sel = selected[key].isin([value])
+            selected = selected.loc[bool_sel]
+        except KeyError:
+            print(f"ddlpy.locations() cannot yet subset for '{key}', ignored.")            
+    
+    xcoords = selected["X"]
+    ycoords = selected["Y"]
+    epsg_all = selected["Coordinatenstelsel"]
     epsg_uniq = epsg_all.unique()
     if len(epsg_uniq)>1:
         raise ValueError(f"multiple EPSG codes in one LocatieLijst not supported: {epsg_uniq.tolist()}")
     epsg = epsg_uniq[0]
     geom_points = [Point(x,y) for x,y in zip(xcoords,ycoords)]
-    ddl_slev_gdf = gpd.GeoDataFrame(cat_locatielijst, geometry=geom_points, crs=epsg)
+    ddl_slev_gdf = gpd.GeoDataFrame(selected, geometry=geom_points, crs=epsg)
     
     # filter invalid coords #TODO: maybe move to haytan ddl code
     bool_invalid = (ddl_slev_gdf.geometry.x == 0) & (ddl_slev_gdf.geometry.y == 0)
@@ -876,15 +859,14 @@ def psmsl_gnssir_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, t
     print()
 
 
-def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_dict=None, old=False):
+def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_dict=None):
     #TODO: maybe support time_min/time_max==None
     try:
-        import hatyan
         import ddlpy
     except ImportError:
         raise ImportError("hatyan and ddlpy are required for this functionality, install with 'pip install hatyan rws-ddlpy'")
 
-    # TODO: convert to pandas timestamp, put this in hatyan ddl code
+    # TODO: convert to pandas timestamp, put this in ddlpy code: https://github.com/openearth/ddlpy/issues/39
     time_min = pd.Timestamp(time_min)
     time_max = pd.Timestamp(time_max)
     
@@ -900,95 +882,66 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
 
         #retrieving waterlevels
         print(f'retrieving measwl data from DDL for station {irow+1} of {len(cat_locatielijst)}: {row["Code"]}')
-        if old:
-            station_dict = row[['Locatie_MessageID','X','Y','Naam','Code']] #station query
-            allow_multipleresultsfor = ['WaardeBepalingsmethode'] # necessary for retrieving very long timeseries
-            request_output = hatyan.get_DDL_data(station_dict=station_dict,
-                                                 tstart_dt=time_min, tstop_dt=time_max, tzone='UTC+00:00', 
-                                                 meta_dict=meta_dict, 
-                                                 allow_multipleresultsfor=allow_multipleresultsfor)
-            if request_output is None:
-                # no output so this station is skipped
-                print("[NO DATA]")
-                continue
-            
-            data, metadata, stationdata = request_output #ts_meas_pd contains values/QC/Status/WaardeBepalingsmethode, metadata contains unit/reference/etc, stationdata contains X/Y/Naam/Code
-        else:
-            # if we pass one row to the measurements function you can get all the measurements
-            measurements = ddlpy.measurements(row, time_min, time_max)
-            
-            # we expect a pandas.DataFrame, sometimes we get an empty list instead
-            # TODO: we also check if we get a non-empty list, which is not yet anticipated for
-            # TODO: consider making ddlpy.measurements return a pandas.DataFrame always
-            if isinstance(measurements, list):
-                if len(measurements)==0:
-                    # no output so this station is skipped
-                    print("[NO DATA]")
-                    continue
-                else:
-                    raise TypeError(f"non-empty list returned by ddlpy.measurements(), this is unexpected:\n{measurements}")
-            
-            # TODO: rename lowercase code to uppercase Code
-            measurements.columns = [x.replace(".code",".Code") for x in measurements.columns]
-            
-            # TODO: ddlpy returns waterlevels and extremes (and for multiple meetapparaat), concatenated, so first filter out with meta_dict
-            # TODO: filter for Groepering and MeetApparaat not possible yet in ddlpy.locations(): https://github.com/openearth/ddlpy/issues/21
-            selected = measurements.copy()
-            for key in meta_dict.keys():
-                value = meta_dict[key]
-                key_lowercode = key
-                bool_sel = selected[key_lowercode].isin([value])
-                selected = selected.loc[bool_sel]
-                ndropped = (~bool_sel).sum()
-                print(f"meta_dict: {key}={value} condition dropped {ndropped} values in 'ddl_ssh_retrieve_data'")
-            
-            if len(selected)==0:
-                print("[NO DATA left after dropping]")
-                continue
+        # if we pass one row to the measurements function you can get all the measurements
+        measurements = ddlpy.measurements(row, time_min, time_max)
+        
+        # TODO: consider making ddlpy.measurements return None if nodata: https://github.com/openearth/ddlpy/issues/38
+        if isinstance(measurements, list) and len(measurements)==0:
+            # no output so this station is skipped
+            print("[NO DATA]")
+            continue
+        
+        # TODO: rename lowercase code to uppercase Code: https://github.com/openearth/ddlpy/issues/38
+        measurements.columns = [x.replace(".code",".Code") for x in measurements.columns]
+        
+        # TODO: ddlpy returns waterlevels and extremes (and for multiple meetapparaat), concatenated, so first filter out with meta_dict
+        # TODO: filter for Groepering and MeetApparaat not possible yet in ddlpy.locations(): https://github.com/openearth/ddlpy/issues/21
+        selected = measurements.copy()
+        for key in meta_dict.keys():
+            value = meta_dict[key]
+            key_lowercode = key
+            bool_sel = selected[key_lowercode].isin([value])
+            selected = selected.loc[bool_sel]
+            ndropped = (~bool_sel).sum()
+            print(f"meta_dict: {key}={value} condition dropped {ndropped} values in 'ddl_ssh_retrieve_data'")
+        
+        if len(selected)==0:
+            print("[NO DATA left after dropping]")
+            continue
 
-            measurements_wathte = selected
-            
-            #TODO: below code also present in hatyan.getonlinedataddl.py_to_hatyan(), implement partly in ddlpy
-            key_numericvalues = 'Meetwaarde.Waarde_Numeriek'
-            if not key_numericvalues in measurements_wathte.columns: #alfanumeric values for 'Typering.Code':'GETETTPE' #DDL IMPROVEMENT: also include numeric values for getijtype. Also, it is quite complex to get this data in the first place, would be convenient if it would be a column when retrieving 'Groepering.Code':'GETETM2' or 'GETETBRKD2'
-                key_numericvalues = 'Meetwaarde.Waarde_Alfanumeriek'
-            data = pd.DataFrame({'values':measurements_wathte[key_numericvalues].values,
-                                 'QC':pd.to_numeric(measurements_wathte['WaarnemingMetadata.KwaliteitswaardecodeLijst'].str[0],downcast='integer').values, # DDL IMPROVEMENT: should be possible with .astype(int), but pd.to_numeric() is necessary for HARVT10 (eg 2019-09-01 to 2019-11-01) since QC contains None values that cannot be ints (in that case array of floats with some nans is returned) >> replace None with int code
-                                 'Status':measurements_wathte['WaarnemingMetadata.StatuswaardeLijst'].str[0].values,
-                                 #'Bemonsteringshoogte':measurements_wathte['WaarnemingMetadata.BemonsteringshoogteLijst'].str[0].astype(int).values, 
-                                 #'Referentievlak':measurements_wathte['WaarnemingMetadata.ReferentievlakLijst'].str[0].values,
-                                 #'OpdrachtgevendeInstantie':measurements_wathte['WaarnemingMetadata.OpdrachtgevendeInstantieLijst'].str[0].values,
-                                 },
-                                index=pd.to_datetime(measurements_wathte['Tijdstip']))
-            
-            # add metadata to timeseries (to be able to distinguish difference later on)
-            metadict_keys_nocode = [x.replace(".Code","") for x in meta_dict.keys()]
-            meta_list = ['Grootheid', 'Groepering', 'Hoedanigheid', 'MeetApparaat']
-            addmeta_list = []
-            for metaname in meta_list:
-                if metaname not in metadict_keys_nocode:
-                    addmeta_list.append(metaname)
-            for metaname in addmeta_list:
-                for suffix in ["Code","Omschrijving"]:
-                    metaname_wisuffix = f"{metaname}.{suffix}"
-                    data[metaname_wisuffix] = measurements_wathte[metaname_wisuffix].values
-            
-            # sort on time values
-            # TODO: do this in ddlpy or in ddl
-            data = data.sort_index()
-            
-            # TODO: simplify this when "old" is discontinued
-            metadata = measurements_wathte[["Eenheid.Code"]]
-            
+        ddlpy_meas = selected
+        
+        #TODO: below code also present in hatyan.getonlinedataddl.py_to_hatyan(), implement partly in ddlpy
+        key_numericvalues = 'Meetwaarde.Waarde_Numeriek'
+        if not key_numericvalues in ddlpy_meas.columns: #alfanumeric values for 'Typering.Code':'GETETTPE' #DDL IMPROVEMENT: also include numeric values for getijtype. Also, it is quite complex to get this data in the first place, would be convenient if it would be a column when retrieving 'Groepering.Code':'GETETM2' or 'GETETBRKD2'
+            key_numericvalues = 'Meetwaarde.Waarde_Alfanumeriek'
+        
+        #TODO: put in ddlpy: https://github.com/openearth/ddlpy/issues/38
+        ddlpy_meas = ddlpy_meas.set_index("t")
+        ddlpy_meas.index.name = "time"
+        
+        # DDL IMPROVEMENT: qc conversion should be possible with .astype(int), but pd.to_numeric() is necessary for HARVT10 (eg 2019-09-01 to 2019-11-01) since QC contains None values that cannot be ints (in that case array of floats with some nans is returned) >> now flattened by ddlpy
+        data = pd.DataFrame({'values':ddlpy_meas[key_numericvalues],
+                             'QC':pd.to_numeric(ddlpy_meas['WaarnemingMetadata.KwaliteitswaardecodeLijst'],downcast='integer'),
+                             'Status':ddlpy_meas['WaarnemingMetadata.StatuswaardeLijst'],
+                             })
+
+        # add metadata to timeseries (to be able to distinguish difference later on)
+        metadict_keys_nocode = [x.replace(".Code","") for x in meta_dict.keys()]
+        meta_list = ['Grootheid', 'Groepering', 'Hoedanigheid', 'MeetApparaat']
+        addmeta_list = []
+        for metaname in meta_list:
+            if metaname not in metadict_keys_nocode:
+                addmeta_list.append(metaname)
+        for metaname in addmeta_list:
+            for suffix in ["Code","Omschrijving"]:
+                metaname_wisuffix = f"{metaname}.{suffix}"
+                data[metaname_wisuffix] = ddlpy_meas[metaname_wisuffix].values
+        
         # dropping timezone is required to get proper encoding in time variable (in file)
         data.index = data.index.tz_convert(None)
-        # set name so xarray recognizes the time coordinate/index
-        data.index.name = "time"
         
-        if old:
-            data = data.loc[:,['values', 'QC', 'Status']] #dropping WaardeBepalingsmethode reduces memory 
-        
-        if not (metadata['Eenheid.Code']=='cm').all():
+        if not (ddlpy_meas['Eenheid.Code']=='cm').all():
             raise Exception("unexpected unit")
         data['values'] /= 100 #convert from cm to m
         

@@ -93,7 +93,6 @@ examples = [
 	"notebook",
 ]
 ddl = [
-	"hatyan",
 	#"rws-ddlpy", #TODO: we temporarily require the master branch: https://github.com/openearth/ddlpy/issues/20
 	"rws-ddlpy@git+https://github.com/openearth/ddlpy",
 ]
