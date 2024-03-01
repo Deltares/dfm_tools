@@ -945,6 +945,10 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
                 ndropped = (~bool_sel).sum()
                 print(f"meta_dict: {key}={value} condition dropped {ndropped} values in 'ddl_ssh_retrieve_data'")
             
+            if len(selected)==0:
+                print("[NO DATA left after dropping]")
+                continue
+
             measurements_wathte = selected
             
             #TODO: below code also present in hatyan.getonlinedataddl.py_to_hatyan(), implement partly in ddlpy
