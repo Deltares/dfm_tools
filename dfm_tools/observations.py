@@ -947,7 +947,7 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
             
             measurements_wathte = selected
             
-            #TODO: below copied from hatyan.getonlinedata.py (more TODO in that script)
+            #TODO: below code also present in hatyan.getonlinedataddl.py_to_hatyan(), implement partly in ddlpy
             key_numericvalues = 'Meetwaarde.Waarde_Numeriek'
             if not key_numericvalues in measurements_wathte.columns: #alfanumeric values for 'Typering.Code':'GETETTPE' #DDL IMPROVEMENT: also include numeric values for getijtype. Also, it is quite complex to get this data in the first place, would be convenient if it would be a column when retrieving 'Groepering.Code':'GETETM2' or 'GETETBRKD2'
                 key_numericvalues = 'Meetwaarde.Waarde_Alfanumeriek'
@@ -1005,7 +1005,7 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
         ds = ds.rename_vars(values="waterlevel")
         ds = ds.assign_attrs(wl_attrs)
         
-        stat_name = row["Code"] #row["station_name_unique"]
+        stat_name = row["station_name_unique"]
         file_out = os.path.join(dir_output, f"{stat_name}.nc")
         
         # replace all invalid values with nan
