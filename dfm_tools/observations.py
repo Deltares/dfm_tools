@@ -953,8 +953,8 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
         ds_attrs.pop('Eenheid.Omschrijving')
         ds = ds.assign_attrs(ds_attrs)
         
-        # set QC as int
-        ds['QC'] = ds['QC'].astype(int)
+        # set QC as int #TODO: we disable this to avoid TypeError "int() argument must be a string, a bytes-like object or a real number, not 'NoneType'"
+        # ds['QC'] = ds['QC'].astype(int)
         
         stat_name = row["station_name_unique"]
         file_out = os.path.join(dir_output, f"{stat_name}.nc")
