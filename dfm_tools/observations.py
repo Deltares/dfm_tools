@@ -866,10 +866,6 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
     except ImportError:
         raise ImportError("hatyan and ddlpy are required for this functionality, install with 'pip install hatyan rws-ddlpy'")
 
-    # TODO: convert to pandas timestamp, put this in ddlpy code: https://github.com/openearth/ddlpy/issues/39
-    time_min = pd.Timestamp(time_min)
-    time_max = pd.Timestamp(time_max)
-    
     if meta_dict is None:
         meta_dict = ddl_ssh_meta_dict()
     
