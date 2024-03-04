@@ -907,11 +907,18 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
         if len(selected)==0:
             print("[NO DATA left after dropping]")
             continue
-
+        
+        # TODO: drop alfanumeriek if duplicate of numeriek: https://github.com/openearth/ddlpy/issues/38
+        if "Meetwaarde.Waarde_Alfanumeriek" in selected.columns and 'Meetwaarde.Waarde_Numeriek' in selected.columns:
+            selected = selected.drop("Meetwaarde.Waarde_Alfanumeriek", axis=1)
+        
+        rename_dict = {'Meetwaarde.Waarde_Numeriek':'waterlevel',
+                       'WaarnemingMetadata.KwaliteitswaardecodeLijst':'QC',
+                       'WaarnemingMetadata.StatuswaardeLijst':'Status'}
+        selected = selected.rename(columns=rename_dict)
+        
         # simplify dataframe
         simplified = ddlpy.simplify_dataframe(selected)
-        if "Meetwaarde.Waarde_Alfanumeriek" in simplified.columns:
-            simplified = simplified.drop("Meetwaarde.Waarde_Alfanumeriek", axis=1)
         
         # get dataframe attrs
         ds_attrs = simplified.attrs
@@ -929,10 +936,6 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
         ds = simplified.to_xarray()
         ds = ds.assign_attrs(ds_attrs)
         
-        ds = ds.rename_vars({'Meetwaarde.Waarde_Numeriek':'waterlevel',
-                             'WaarnemingMetadata.KwaliteitswaardecodeLijst':'QC',
-                             'WaarnemingMetadata.StatuswaardeLijst':'Status'})
-
         # set QC as int #TODO: we disable this to avoid TypeError "int() argument must be a string, a bytes-like object or a real number, not 'NoneType'"
         # ds['QC'] = ds['QC'].astype(int)
         
