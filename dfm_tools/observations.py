@@ -887,11 +887,14 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
             print("[NO DATA]")
             continue
         
-        # TODO: rename lowercase code to uppercase Code: https://github.com/openearth/ddlpy/issues/38
+        # TODO: rename lowercase code to uppercase Code, put in ddlpy: https://github.com/openearth/ddlpy/issues/38
         measurements.columns = [x.replace(".code",".Code") for x in measurements.columns]
+        #TODO: rename time and set as index, put in ddlpy: https://github.com/openearth/ddlpy/issues/38
+        measurements = measurements.set_index("t")
+        measurements.index.name = "time"
         
-        # TODO: ddlpy returns waterlevels and extremes (and for multiple meetapparaat), concatenated, so first filter out with meta_dict
-        # TODO: filter for Groepering and MeetApparaat not possible yet in ddlpy.locations(): https://github.com/openearth/ddlpy/issues/21
+        # TODO: ddlpy returns both waterlevels and extremes, concatenated, so first filter out with meta_dict
+        # TODO: filter for Groepering not possible yet in ddlpy.locations(): https://github.com/openearth/ddlpy/issues/21
         selected = measurements.copy()
         for key in meta_dict.keys():
             value = meta_dict[key]
@@ -905,56 +908,42 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
             print("[NO DATA left after dropping]")
             continue
 
-        ddlpy_meas = selected
-
-        #TODO: below code also present in hatyan.getonlinedata.ddlpy_to_hatyan(), implement partly in ddlpy
-        #TODO: put in ddlpy: https://github.com/openearth/ddlpy/issues/38
-        ddlpy_meas = ddlpy_meas.set_index("t")
-        ddlpy_meas.index.name = "time"
-
-        data = ddlpy_meas[['Meetwaarde.Waarde_Numeriek',
-                           'WaarnemingMetadata.KwaliteitswaardecodeLijst',
-                           'WaarnemingMetadata.StatuswaardeLijst']]
-
+        # simplify dataframe
+        simplified = ddlpy.simplify_dataframe(selected)
+        if "Meetwaarde.Waarde_Alfanumeriek" in simplified.columns:
+            simplified = simplified.drop("Meetwaarde.Waarde_Alfanumeriek", axis=1)
+        
+        # get dataframe attrs
+        ds_attrs = simplified.attrs
+        # drop irrelevant attrs
+        ds_attrs = {k:v for k,v in ds_attrs.items() if not k.startswith("Bemonstering") and not k.startswith("BioTaxon")}
         # add metadata to timeseries (to be able to distinguish difference later on)
-        meta_list = ['Grootheid', 'Eenheid', 'Groepering', 'Hoedanigheid', 'MeetApparaat'] #TODO: maybe add more (avoid eenheid because of conversion)
-        ds_attrs = dict(station_id=row["Naam"],
-                        station_code=row["Code"],
-                        longitude=row.geometry.x,
-                        latitude=row.geometry.y,
-                        country_code="NLD",
-                        )
-        for metaname in meta_list:
-            meta_uniq = ddlpy_meas[metaname+".Code"].drop_duplicates()
-            meta_num_uniq = len(meta_uniq)
-            for suffix in ["Code","Omschrijving"]:
-                metaname_wisuffix = f"{metaname}.{suffix}"
-                if meta_num_uniq==1:
-                    ds_attrs[metaname_wisuffix] = ddlpy_meas[metaname_wisuffix].iloc[0]
-                else:
-                    data[metaname_wisuffix] = ddlpy_meas[metaname_wisuffix].values
-                    
+        ds_attrs["station_id"] = ds_attrs["Naam"]
+        ds_attrs["station_code"] = ds_attrs["locatie_code"]
+        ds_attrs["longitude"] = row.geometry.x # in wgs84
+        ds_attrs["latitude"] = row.geometry.y # in wgs84
+        ds_attrs["country_code"] = "NLD"
+        
         # dropping timezone is required to get proper encoding in time variable (in netcdf file)
-        data.index = data.index.tz_convert(None)
-
-        ds = data.to_xarray()
-
+        simplified.index = simplified.index.tz_convert(None)
+        ds = simplified.to_xarray()
+        ds = ds.assign_attrs(ds_attrs)
+        
         ds = ds.rename_vars({'Meetwaarde.Waarde_Numeriek':'waterlevel',
                              'WaarnemingMetadata.KwaliteitswaardecodeLijst':'QC',
-                             'WaarnemingMetadata.StatuswaardeLijst':"Status"})
+                             'WaarnemingMetadata.StatuswaardeLijst':'Status'})
 
+        # set QC as int #TODO: we disable this to avoid TypeError "int() argument must be a string, a bytes-like object or a real number, not 'NoneType'"
+        # ds['QC'] = ds['QC'].astype(int)
+        
         # convert meters to cm
-        if not (ddlpy_meas['Eenheid.Code']=='cm').all():
+        if ds_attrs['Eenheid.Code'] != 'cm':
             raise Exception("unexpected unit")
         #TODO: add standard_name attrs?
         ds['waterlevel'] = ds['waterlevel'].assign_attrs(units="m")
         ds['waterlevel'] /= 100 #convert from cm to m
-        ds_attrs.pop('Eenheid.Code')
-        ds_attrs.pop('Eenheid.Omschrijving')
-        ds = ds.assign_attrs(ds_attrs)
-        
-        # set QC as int #TODO: we disable this to avoid TypeError "int() argument must be a string, a bytes-like object or a real number, not 'NoneType'"
-        # ds['QC'] = ds['QC'].astype(int)
+        ds.attrs.pop('Eenheid.Code')
+        ds.attrs.pop('Eenheid.Omschrijving')
         
         stat_name = row["station_name_unique"]
         file_out = os.path.join(dir_output, f"{stat_name}.nc")
