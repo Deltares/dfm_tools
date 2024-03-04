@@ -881,17 +881,10 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
         # if we pass one row to the measurements function you can get all the measurements
         measurements = ddlpy.measurements(row, time_min, time_max)
         
-        # TODO: consider making ddlpy.measurements return None if nodata: https://github.com/openearth/ddlpy/issues/38
-        if isinstance(measurements, list) and len(measurements)==0:
+        if measurements is None:
             # no output so this station is skipped
             print("[NO DATA]")
             continue
-        
-        # TODO: rename lowercase code to uppercase Code, put in ddlpy: https://github.com/openearth/ddlpy/issues/38
-        measurements.columns = [x.replace(".code",".Code") for x in measurements.columns]
-        #TODO: rename time and set as index, put in ddlpy: https://github.com/openearth/ddlpy/issues/38
-        measurements = measurements.set_index("t")
-        measurements.index.name = "time"
         
         # TODO: ddlpy returns both waterlevels and extremes, concatenated, so first filter out with meta_dict
         # TODO: filter for Groepering not possible yet in ddlpy.locations(): https://github.com/openearth/ddlpy/issues/21
