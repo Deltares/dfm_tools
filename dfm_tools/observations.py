@@ -919,7 +919,7 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
         ds_attrs = {k:v for k,v in ds_attrs.items() if not k.startswith("Bemonstering") and not k.startswith("BioTaxon")}
         # add metadata to timeseries (to be able to distinguish difference later on)
         ds_attrs["station_id"] = ds_attrs["Naam"]
-        ds_attrs["station_code"] = ds_attrs["locatie_code"]
+        ds_attrs["station_code"] = ds_attrs["Code"]
         ds_attrs["longitude"] = row.geometry.x # in wgs84
         ds_attrs["latitude"] = row.geometry.y # in wgs84
         ds_attrs["country_code"] = "NLD"
