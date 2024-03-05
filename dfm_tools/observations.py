@@ -13,13 +13,24 @@ from erddapy import ERDDAP #pip install erddapy
 import requests
 from zipfile import ZipFile
 from io import BytesIO
-import datetime as dt
 
 
 __all__ = ["ssh_catalog_subset",
            "ssh_catalog_toxynfile",
            "ssh_retrieve_data",
            ]
+
+
+def _make_hydrotools_consistent(ds):
+    # TODO: to make consistent with hydro_tools >> move to generic part and apply everywhere
+    ds["station_name"] = xr.DataArray(ds.attrs["station_id"]).astype("S64")
+    ds["platform_id"] = xr.DataArray(ds.attrs["station_id"]).astype("S64")
+    x_attrs = dict(standard_name = 'longitude',
+                   units = 'degrees_east')
+    y_attrs = dict(standard_name = 'latitude',
+                   units = 'degrees_north')
+    ds["station_x_coordinate"] = xr.DataArray(ds.attrs["longitude"]).assign_attrs(x_attrs)
+    ds["station_y_coordinate"] = xr.DataArray(ds.attrs["latitude"]).assign_attrs(y_attrs)
 
 
 def _remove_accents(input_str):
@@ -940,6 +951,8 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
         ds['waterlevel'] /= 100 #convert from cm to m
         ds.attrs.pop('Eenheid.Code')
         ds.attrs.pop('Eenheid.Omschrijving')
+        
+        _make_hydrotools_consistent(ds)
         
         stat_name = row["station_name_unique"]
         file_out = os.path.join(dir_output, f"{stat_name}.nc")
