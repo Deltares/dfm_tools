@@ -23,8 +23,14 @@ __all__ = ["ssh_catalog_subset",
 
 def _make_hydrotools_consistent(ds):
     # TODO: to make consistent with hydro_tools >> move to generic part and apply everywhere
-    ds["station_name"] = xr.DataArray(ds.attrs["station_id"]).astype("S64")
-    ds["platform_id"] = xr.DataArray(ds.attrs["station_id"]).astype("S64")
+    
+    # assert presence and units of waterlevel variable
+    assert "waterlevel" in ds.data_vars
+    assert hasattr(ds["waterlevel"], "units")
+    assert ds["waterlevel"].attrs["units"] == "m"
+    
+    ds["station_name"] = xr.DataArray(ds.attrs["station_name"]).astype("S64")
+    ds["station_id"] = xr.DataArray(ds.attrs["station_id"]).astype("S64")
     x_attrs = dict(standard_name = 'longitude',
                    units = 'degrees_east')
     y_attrs = dict(standard_name = 'latitude',
@@ -517,6 +523,29 @@ def ddl_ssh_meta_dict():
     return meta_dict
 
 
+def ddl_ssh_get_time_max(locations):
+    try:
+        import ddlpy
+    except ImportError:
+        raise ImportError("hatyan and ddlpy are required for this functionality, install with 'pip install hatyan rws-ddlpy'")
+    
+    locations = locations.copy() # copy to prevent SettingWithCopyWarning
+    
+    print(f"getting time_max for {len(locations)} locations: ", end="")
+    dtstart = pd.Timestamp.now()
+    list_time_latest = []
+    for stat_code, location in locations.iterrows():
+        try:
+            meas_latest = ddlpy.measurements_latest(location)
+            time_latest = meas_latest.index.max().tz_convert(None)
+        except ddlpy.ddlpy.NoDataException:
+            time_latest = pd.NaT
+        list_time_latest.append(time_latest)
+    locations["time_max"] = list_time_latest
+    print(f'{(pd.Timestamp.now()-dtstart).total_seconds():.2f} sec')
+    return locations
+
+
 def ddl_ssh_read_catalog(meta_dict=None):
     """
     convert LocatieLijst to geopandas dataframe
@@ -568,15 +597,16 @@ def ddl_ssh_read_catalog(meta_dict=None):
     # stat_naam_alphanumeric = df["Naam"].str.replace('[^0-9a-zA-Z]+', '-', regex=True)
     # generate unique names, we need suffixes since not all station codes are unique
     # TODO: make this more generic
-    station_name_unique = ddl_slev_gdf["Code"]
-    station_name_unique2 = [name + "-1" if duplicated else name for duplicated, name in zip(station_name_unique.duplicated(), station_name_unique)]
-    station_name_unique2 = pd.Series(station_name_unique2)
-    station_name_unique3 = [name.replace("-1","-2") if duplicated else name for duplicated, name in zip(station_name_unique2.duplicated(), station_name_unique2)]
-    ddl_slev_gdf["station_name_unique"] = station_name_unique3
-    dupl_bool = ddl_slev_gdf["station_name_unique"].duplicated(keep=False)
-    dupl_df = ddl_slev_gdf.loc[dupl_bool, ["Code", "Naam", "station_name_unique"]].sort_values("Code")
-    if dupl_bool.sum():
-        raise Exception(f"still duplicated station codes\n{dupl_df}")
+    # station_name_unique = ddl_slev_gdf["Code"]
+    # station_name_unique2 = [name + "-1" if duplicated else name for duplicated, name in zip(station_name_unique.duplicated(), station_name_unique)]
+    # station_name_unique2 = pd.Series(station_name_unique2)
+    # station_name_unique3 = [name.replace("-1","-2") if duplicated else name for duplicated, name in zip(station_name_unique2.duplicated(), station_name_unique2)]
+    # ddl_slev_gdf["station_name_unique"] = station_name_unique3
+    # dupl_bool = ddl_slev_gdf["station_name_unique"].duplicated(keep=False)
+    # dupl_df = ddl_slev_gdf.loc[dupl_bool, ["Code", "Naam", "station_name_unique"]].sort_values("Code")
+    # if dupl_bool.sum():
+    #     raise Exception(f"still duplicated station codes\n{dupl_df}")
+    ddl_slev_gdf["station_name_unique"] = ddl_slev_gdf["Code"]
     
     return ddl_slev_gdf
 
@@ -637,6 +667,15 @@ def cmems_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max
             del ds
             os.remove(fname_out_raw)
             continue
+        
+        ds = ds.assign_attrs(station_name=row["station_name_unique"],
+                             station_id=row["station_name_unique"],
+                             longitude=row.geometry.x,
+                             latitude=row.geometry.x,
+                             country_code=row["country"], # TODO: this is currently an empty string
+                             )
+        
+        _make_hydrotools_consistent(ds)
         
         ds.to_netcdf(fname_out)
         del ds
@@ -929,8 +968,8 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
         # drop irrelevant attrs
         ds_attrs = {k:v for k,v in ds_attrs.items() if not k.startswith("Bemonstering") and not k.startswith("BioTaxon")}
         # add metadata to timeseries (to be able to distinguish difference later on)
-        ds_attrs["station_id"] = ds_attrs["Naam"]
-        ds_attrs["station_code"] = ds_attrs["Code"]
+        ds_attrs["station_name"] = ds_attrs["Naam"]
+        ds_attrs["station_id"] = ds_attrs["Code"]
         ds_attrs["longitude"] = row.geometry.x # in wgs84
         ds_attrs["latitude"] = row.geometry.y # in wgs84
         ds_attrs["country_code"] = "NLD"
