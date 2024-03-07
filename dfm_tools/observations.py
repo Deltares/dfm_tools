@@ -580,13 +580,6 @@ def ddl_ssh_read_catalog(meta_dict=None):
     geom_points = [Point(x,y) for x,y in zip(xcoords,ycoords)]
     ddl_slev_gdf = gpd.GeoDataFrame(selected, geometry=geom_points, crs=epsg)
     
-    # filter invalid coords #TODO: maybe move to haytan ddl code
-    bool_invalid = (ddl_slev_gdf.geometry.x == 0) & (ddl_slev_gdf.geometry.y == 0)
-    if bool_invalid.sum():
-        invalid_stats = ddl_slev_gdf.loc[bool_invalid,['X','Y','Naam','Code']]
-        print(f"dropping stations with invalid coordinates:\n{invalid_stats}")
-    ddl_slev_gdf = ddl_slev_gdf.loc[~bool_invalid]
-    
     # convert coordinates to wgs84
     ddl_slev_gdf = ddl_slev_gdf.to_crs(4326)
     
