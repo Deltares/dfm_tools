@@ -22,9 +22,12 @@ __all__ = ["ssh_catalog_subset",
 
 
 def _make_hydrotools_consistent(ds):
-    # TODO: to make consistent with hydro_tools >> move to generic part and apply everywhere
+    """
+    to make resulting netcdf file consistent with hydro_tools matlab post-processing
+    """
     
     # assert presence and units of waterlevel variable
+    #TODO: add/check for standard_name attr?
     assert "waterlevel" in ds.data_vars
     assert hasattr(ds["waterlevel"], "units")
     assert ds["waterlevel"].attrs["units"] == "m"
@@ -987,7 +990,6 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
         # convert meters to cm
         if ds_attrs['Eenheid.Code'] != 'cm':
             raise Exception("unexpected unit")
-        #TODO: add standard_name attrs?
         ds['waterlevel'] = ds['waterlevel'].assign_attrs(units="m")
         ds['waterlevel'] /= 100 #convert from cm to m
         ds.attrs.pop('Eenheid.Code')
