@@ -558,7 +558,6 @@ def ddl_ssh_read_catalog(meta_dict=None):
     if meta_dict is None:
         meta_dict = ddl_ssh_meta_dict()
     
-    # TODO: Groepering.Code and MeetApparaat.Code columns not available: https://github.com/openearth/ddlpy/issues/21
     locations_ddlpy = ddlpy.locations()
     locations = locations_ddlpy.reset_index(drop=False).set_index('Locatie_MessageID')
     selected = locations.copy()
@@ -568,7 +567,7 @@ def ddl_ssh_read_catalog(meta_dict=None):
             bool_sel = selected[key].isin([value])
             selected = selected.loc[bool_sel]
         except KeyError:
-            print(f"ddlpy.locations() cannot yet subset for '{key}', ignored.")            
+            print(f"ddlpy.locations() cannot subset for '{key}', ignored.")            
     
     xcoords = selected["X"]
     ycoords = selected["Y"]
@@ -929,8 +928,7 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
             print("[NO DATA]")
             continue
         
-        # TODO: ddlpy returns both waterlevels and extremes, concatenated, so first filter out with meta_dict
-        # TODO: filter for Groepering not possible yet in ddlpy.locations(): https://github.com/openearth/ddlpy/issues/21
+        # filter on metadata that was not filtered in locations
         selected = measurements.copy()
         for key in meta_dict.keys():
             value = meta_dict[key]
@@ -944,7 +942,7 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
             print("[NO DATA left after dropping]")
             continue
         
-        # TODO: drop alfanumeriek if duplicate of numeriek: https://github.com/openearth/ddlpy/issues/38
+        # drop alfanumeriek if duplicate of numeriek
         if "Meetwaarde.Waarde_Alfanumeriek" in selected.columns and 'Meetwaarde.Waarde_Numeriek' in selected.columns:
             selected = selected.drop("Meetwaarde.Waarde_Alfanumeriek", axis=1)
         
