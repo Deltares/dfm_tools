@@ -585,19 +585,6 @@ def ddl_ssh_read_catalog(meta_dict=None):
     ddl_slev_gdf = ddl_slev_gdf.reset_index()
     ddl_slev_gdf["country"] = "NLD"
     
-    # import re
-    # stat_naam_alphanumeric = df["Naam"].str.replace('[^0-9a-zA-Z]+', '-', regex=True)
-    # generate unique names, we need suffixes since not all station codes are unique
-    # TODO: make this more generic
-    # station_name_unique = ddl_slev_gdf["Code"]
-    # station_name_unique2 = [name + "-1" if duplicated else name for duplicated, name in zip(station_name_unique.duplicated(), station_name_unique)]
-    # station_name_unique2 = pd.Series(station_name_unique2)
-    # station_name_unique3 = [name.replace("-1","-2") if duplicated else name for duplicated, name in zip(station_name_unique2.duplicated(), station_name_unique2)]
-    # ddl_slev_gdf["station_name_unique"] = station_name_unique3
-    # dupl_bool = ddl_slev_gdf["station_name_unique"].duplicated(keep=False)
-    # dupl_df = ddl_slev_gdf.loc[dupl_bool, ["Code", "Naam", "station_name_unique"]].sort_values("Code")
-    # if dupl_bool.sum():
-    #     raise Exception(f"still duplicated station codes\n{dupl_df}")
     ddl_slev_gdf["station_name_unique"] = ddl_slev_gdf["Code"]
     
     return ddl_slev_gdf
