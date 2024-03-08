@@ -970,9 +970,6 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
         ds = simplified.to_xarray()
         ds = ds.assign_attrs(ds_attrs)
         
-        # set QC as int #TODO: we disable this to avoid TypeError "int() argument must be a string, a bytes-like object or a real number, not 'NoneType'"
-        # ds['QC'] = ds['QC'].astype(int)
-        
         # convert meters to cm
         if ds_attrs['Eenheid.Code'] != 'cm':
             raise Exception("unexpected unit")
