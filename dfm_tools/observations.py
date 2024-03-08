@@ -649,6 +649,7 @@ def cmems_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max
         
         ds = ds.assign_attrs(station_name=row["station_name_unique"],
                              station_id=row["station_name_unique"],
+                             station_name_unique=row["station_name_unique"],
                              longitude=row.geometry.x,
                              latitude=row.geometry.x,
                              country_code=row["country"], # TODO: this is currently an empty string
@@ -714,10 +715,16 @@ def uhslc_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max
         ds = ds.set_index(obs="time").rename(obs="time")
         ds['time'] = ds.time.dt.round('s') #round to seconds
         
+        ds_attrs = {"station_id":row["uhslc_id"],
+                    "station_name":row["name"],
+                    "station_name_unique":row["station_name_unique"],
+                    "longitude": row.geometry.x,
+                    "latitude": row.geometry.y}
+        ds = ds.assign_attrs(ds_attrs)
         _make_hydrotools_consistent(ds)
 
         # write to netcdf file
-        stat_name = row["station_name_unique"]
+        stat_name = ds.attrs["station_name_unique"]
         file_out = os.path.join(dir_output, f"{stat_name}.nc")
         ds.to_netcdf(file_out)
         del ds
@@ -776,10 +783,18 @@ def gesla3_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_ma
         # filter bad quality data
         ds = ds.where(ds.qc_flag==1)
 
+        ds = ds.assign_attrs(station_name=row["site_name"],
+                             station_id=row["site_code"],
+                             station_name_unique=row["station_name_unique"],
+                             longitude=row.geometry.x,
+                             latitude=row.geometry.y,
+                             country_code=row["country"],
+                             )
+        
         _make_hydrotools_consistent(ds)
         
         # write to file
-        stat_name = row["station_name_unique"]
+        stat_name = ds.attrs["station_name_unique"]
         file_out = os.path.join(dir_output, f"{stat_name}.nc")
         ds.to_netcdf(file_out)
         del ds
@@ -836,18 +851,20 @@ def ioc_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, subse
         if subset_hourly:
             data_pd_all = data_pd_all.loc[data_pd_all.index.minute==0]
         ds = data_pd_all.to_xarray()
-        ds = ds.assign_attrs(station_id=row["Location"],
-                             station_code=row["Code"],
+        ds = ds.assign_attrs(station_name=row["Location"],
+                             station_id=row["Code"],
+                             station_name_unique=row["station_name_unique"],
                              longitude=row["Lon"],
                              latitude=row["Lat"],
                              country_code=row["country"],
                              )
         ds = ds.rename_vars(slevel="waterlevel")
+        ds["waterlevel"] = ds["waterlevel"].assign_attrs({"units":"m"})
         
         _make_hydrotools_consistent(ds)
         
         # write to netcdf file
-        stat_name = row["station_name_unique"]
+        stat_name = ds.attrs["station_name_unique"]
         file_out = os.path.join(dir_output, f"{stat_name}.nc")
         ds.to_netcdf(file_out)
     print()
@@ -875,8 +892,9 @@ def psmsl_gnssir_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, t
         ds = data.to_xarray()
         ds['slev'] = ds['slev'].assign_attrs(units="m")
         ds = ds.rename_vars(slev="waterlevel")
-        ds = ds.assign_attrs(station_id=row["Name"],
-                             station_code=row["Code"],
+        ds = ds.assign_attrs(station_name=row["Name"],
+                             station_id=row["Code"],
+                             station_name_unique=row["station_name_unique"],
                              longitude=row.geometry.x,
                              latitude=row.geometry.y,
                              country_code=row["country"],
@@ -889,7 +907,7 @@ def psmsl_gnssir_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, t
         
         _make_hydrotools_consistent(ds)
         
-        stat_name = row["station_name_unique"]
+        stat_name = ds.attrs["station_name_unique"]
         file_out = os.path.join(dir_output, f"{stat_name}.nc")
         ds.to_netcdf(file_out)
         del ds
@@ -956,6 +974,7 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
         # add metadata to timeseries (to be able to distinguish difference later on)
         ds_attrs["station_name"] = ds_attrs["Naam"]
         ds_attrs["station_id"] = ds_attrs["Code"]
+        ds_attrs["station_name_unique"] = row["station_name_unique"]
         ds_attrs["longitude"] = row.geometry.x # in wgs84
         ds_attrs["latitude"] = row.geometry.y # in wgs84
         ds_attrs["country_code"] = "NLD"
@@ -976,7 +995,7 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
         
         _make_hydrotools_consistent(ds)
         
-        stat_name = row["station_name_unique"]
+        stat_name = ds.attrs["station_name_unique"]
         file_out = os.path.join(dir_output, f"{stat_name}.nc")
         
         ds.to_netcdf(file_out)
