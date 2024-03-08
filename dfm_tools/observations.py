@@ -707,13 +707,15 @@ def uhslc_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max
         with xr.set_options(keep_attrs=True):
             assert ds["sea_level"].attrs["units"] == "millimeters"
             ds["sea_level"] = ds["sea_level"]/1000
-            ds["sea_level"] = ds["sea_level"].assign_attrs(units="meters")
+            ds["sea_level"] = ds["sea_level"].assign_attrs(units="m")
         ds = ds.rename_vars(sea_level="waterlevel")
         
         # set time index
         ds = ds.set_index(obs="time").rename(obs="time")
         ds['time'] = ds.time.dt.round('s') #round to seconds
         
+        _make_hydrotools_consistent(ds)
+
         # write to netcdf file
         stat_name = row["station_name_unique"]
         file_out = os.path.join(dir_output, f"{stat_name}.nc")
@@ -762,7 +764,7 @@ def gesla3_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_ma
         ds['site_name'] = xr.DataArray([meta_sel.site_name], dims=('stations'))
         ds['latitude'] = xr.DataArray([meta_sel.latitude], dims=('stations'))
         ds['longitude'] = xr.DataArray([meta_sel.longitude], dims=('stations'))
-        ds['sea_level'] = ds['sea_level'].assign_attrs(units="meters")
+        ds['sea_level'] = ds['sea_level'].assign_attrs(units="m")
         ds = ds.rename_vars(sea_level="waterlevel")
         
         # subset time
@@ -773,6 +775,8 @@ def gesla3_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_ma
         
         # filter bad quality data
         ds = ds.where(ds.qc_flag==1)
+
+        _make_hydrotools_consistent(ds)
         
         # write to file
         stat_name = row["station_name_unique"]
@@ -840,6 +844,8 @@ def ioc_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, subse
                              )
         ds = ds.rename_vars(slevel="waterlevel")
         
+        _make_hydrotools_consistent(ds)
+        
         # write to netcdf file
         stat_name = row["station_name_unique"]
         file_out = os.path.join(dir_output, f"{stat_name}.nc")
@@ -880,6 +886,8 @@ def psmsl_gnssir_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, t
         if len(ds.time) == 0:
             print("[NODATA] ",end="")
             continue
+        
+        _make_hydrotools_consistent(ds)
         
         stat_name = row["station_name_unique"]
         file_out = os.path.join(dir_output, f"{stat_name}.nc")
