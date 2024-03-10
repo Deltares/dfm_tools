@@ -72,9 +72,14 @@ def test_ssh_retrieve_data(source, tmp_path):
         time_min, time_max = '2020-01-01','2020-02-01'
     
     ssc_catalog_gpd = dfmt.ssh_catalog_subset(source=source)
+    if source=="rwsddl":
+        # order of rows in rwsddl locations dataframe is python-version-dependent
+        # make sure we always test on the same hist station (no realtime data)
+        bool_hoekvhld = ssc_catalog_gpd["Code"].isin(["HOEKVHLD"])
+        ssc_catalog_gpd = ssc_catalog_gpd.loc[bool_hoekvhld]
     
     index_dict = {"uhslc-fast":0, "uhslc-rqds":2, 
-                  "psmsl-gnssir":0, "ioc":0, "rwsddl":6, 
+                  "psmsl-gnssir":0, "ioc":0, "rwsddl":0, 
                   "cmems":0, "cmems-nrt":0, # cmems requires credentials
                   "gesla3":0}
     index = index_dict[source]
