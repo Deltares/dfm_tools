@@ -261,7 +261,7 @@ def cmems_ssh_read_catalog(source):
 
 
 def uhslc_ssh_read_catalog(source):
-    # TODO: country is "New Zealand" and country_code is 554. We would like country=NZL
+    # TODO: country is "New Zealand" and country is 554. We would like country=NZL
     # TODO: maybe use min of rqds and max of fast for time subsetting
     # TODO: maybe enable merging of datasets?
     uhslc_gpd = gpd.read_file("https://uhslc.soest.hawaii.edu/data/meta.geojson")
@@ -561,8 +561,7 @@ def ddl_ssh_read_catalog(meta_dict=None):
     if meta_dict is None:
         meta_dict = ddl_ssh_meta_dict()
     
-    locations_ddlpy = ddlpy.locations()
-    locations = locations_ddlpy.reset_index(drop=False).set_index('Locatie_MessageID')
+    locations = ddlpy.locations()
     selected = locations.copy()
     for key in meta_dict.keys():
         value = meta_dict[key]
@@ -570,7 +569,11 @@ def ddl_ssh_read_catalog(meta_dict=None):
             bool_sel = selected[key].isin([value])
             selected = selected.loc[bool_sel]
         except KeyError:
-            print(f"ddlpy.locations() cannot subset for '{key}', ignored.")            
+            cols_with_code = [x for x in selected.columns if ".Code" in x]
+            raise KeyError(f"ddlpy.locations() cannot subset for '{key}', available are {cols_with_code}")            
+    
+    # add "Code" index as column and reset the index
+    selected = selected.reset_index()
     
     xcoords = selected["X"]
     ycoords = selected["Y"]
@@ -585,10 +588,9 @@ def ddl_ssh_read_catalog(meta_dict=None):
     # convert coordinates to wgs84
     ddl_slev_gdf = ddl_slev_gdf.to_crs(4326)
     
-    ddl_slev_gdf = ddl_slev_gdf.reset_index()
-    ddl_slev_gdf["country"] = "NLD"
-    
     ddl_slev_gdf["station_name_unique"] = ddl_slev_gdf["Code"]
+    ddl_slev_gdf["country"] = "NLD"
+
     
     return ddl_slev_gdf
 
@@ -655,7 +657,7 @@ def cmems_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max
                              station_name_unique=row["station_name_unique"],
                              longitude=row.geometry.x,
                              latitude=row.geometry.x,
-                             country_code=row["country"], # TODO: this is currently an empty string
+                             country=row["country"], # TODO: this is currently an empty string
                              )
         
         _make_hydrotools_consistent(ds)
@@ -791,7 +793,7 @@ def gesla3_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_ma
                              station_name_unique=row["station_name_unique"],
                              longitude=row.geometry.x,
                              latitude=row.geometry.y,
-                             country_code=row["country"],
+                             country=row["country"],
                              )
         
         _make_hydrotools_consistent(ds)
@@ -859,7 +861,7 @@ def ioc_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, subse
                              station_name_unique=row["station_name_unique"],
                              longitude=row["Lon"],
                              latitude=row["Lat"],
-                             country_code=row["country"],
+                             country=row["country"],
                              )
         ds = ds.rename_vars(slevel="waterlevel")
         ds["waterlevel"] = ds["waterlevel"].assign_attrs({"units":"m"})
@@ -900,7 +902,7 @@ def psmsl_gnssir_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, t
                              station_name_unique=row["station_name_unique"],
                              longitude=row.geometry.x,
                              latitude=row.geometry.y,
-                             country_code=row["country"],
+                             country=row["country"],
                              )
         
         ds = ds.sel(time=slice(time_min, time_max))
@@ -927,15 +929,13 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
     if meta_dict is None:
         meta_dict = ddl_ssh_meta_dict()
     
-    cat_locatielijst = ssh_catalog_gpd.set_index("Code", drop=False)
-    
     # print(f"retrieving data for {len(ssh_catalog_gpd)} ddl stations:", end=" ")
-    for station_id, row in cat_locatielijst.iterrows():
-        irow = cat_locatielijst.index.tolist().index(station_id)
+    for irow_raw, row in ssh_catalog_gpd.iterrows():
+        irow = ssh_catalog_gpd.index.tolist().index(irow_raw)
         # print(irow+1, end=" ")
 
         #retrieving waterlevels
-        print(f'retrieving measwl data from DDL for station {irow+1} of {len(cat_locatielijst)}: {row["Code"]}')
+        print(f'retrieving measwl data from DDL for station {irow+1} of {len(ssh_catalog_gpd)}: {row["Code"]}')
         # if we pass one row to the measurements function you can get all the measurements
         measurements = ddlpy.measurements(row, time_min, time_max)
         
@@ -944,31 +944,17 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
             print("[NO DATA]")
             continue
         
-        # filter on metadata that was not filtered in locations
-        selected = measurements.copy()
-        for key in meta_dict.keys():
-            value = meta_dict[key]
-            key_lowercode = key
-            bool_sel = selected[key_lowercode].isin([value])
-            selected = selected.loc[bool_sel]
-            ndropped = (~bool_sel).sum()
-            print(f"meta_dict: {key}={value} condition dropped {ndropped} values in 'ddl_ssh_retrieve_data'")
-        
-        if len(selected)==0:
-            print("[NO DATA left after dropping]")
-            continue
-        
         # drop alfanumeriek if duplicate of numeriek
-        if "Meetwaarde.Waarde_Alfanumeriek" in selected.columns and 'Meetwaarde.Waarde_Numeriek' in selected.columns:
-            selected = selected.drop("Meetwaarde.Waarde_Alfanumeriek", axis=1)
+        if "Meetwaarde.Waarde_Alfanumeriek" in measurements.columns and 'Meetwaarde.Waarde_Numeriek' in measurements.columns:
+            measurements = measurements.drop("Meetwaarde.Waarde_Alfanumeriek", axis=1)
         
         rename_dict = {'Meetwaarde.Waarde_Numeriek':'waterlevel',
                        'WaarnemingMetadata.KwaliteitswaardecodeLijst':'QC',
                        'WaarnemingMetadata.StatuswaardeLijst':'Status'}
-        selected = selected.rename(columns=rename_dict)
+        measurements = measurements.rename(columns=rename_dict)
         
         # simplify dataframe
-        simplified = ddlpy.simplify_dataframe(selected)
+        simplified = ddlpy.simplify_dataframe(measurements)
         
         # get dataframe attrs
         ds_attrs = simplified.attrs
@@ -980,7 +966,7 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
         ds_attrs["station_name_unique"] = row["station_name_unique"]
         ds_attrs["longitude"] = row.geometry.x # in wgs84
         ds_attrs["latitude"] = row.geometry.y # in wgs84
-        ds_attrs["country_code"] = "NLD"
+        ds_attrs["country"] = row["country"]
         
         # dropping timezone is required to get proper encoding in time variable (in netcdf file)
         simplified.index = simplified.index.tz_convert(None)
