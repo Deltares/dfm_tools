@@ -818,7 +818,7 @@ def ioc_ssh_retrieve_data(row, dir_output, time_min, time_max, subset_hourly=Fal
         if resp.status_code==404: #continue to next station if not found
             raise Exception(f'url 404: {resp.text}')    
         if resp.text == '[]':
-            print("[NODATA] ", end="")
+            print("[NODATA]", end="")
             continue
         resp_json = resp.json()
         if 'error' in resp.json()[0].keys():
