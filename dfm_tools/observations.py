@@ -644,6 +644,8 @@ def cmems_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None):
         ds = ds.max(dim="DEPTH", keep_attrs=True)
 
     ds = ds.rename(TIME="time")
+    
+    # keep only data with "good_data" quality flag
     ds["SLEV"] = ds.SLEV.where(ds.SLEV_QC==1)
     ds = ds.rename_vars(SLEV="waterlevel")
     
