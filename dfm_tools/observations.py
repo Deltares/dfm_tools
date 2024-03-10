@@ -28,7 +28,7 @@ def _make_hydrotools_consistent(ds):
     """
     
     # assert presence of time variable/dim (case sensitive)
-    assert "time" in ds.data_vars
+    assert "time" in ds.variables
     assert "time" in ds.dims
     
     # assert presence and units of waterlevel variable
@@ -645,6 +645,11 @@ def cmems_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None):
     ds = ds.rename(TIME="time")
     ds["SLEV"] = ds.SLEV.where(ds.SLEV_QC==1)
     ds = ds.rename_vars(SLEV="waterlevel")
+    
+    # drop all unnecessary vars
+    ds = ds.drop_vars(["SLEV_QC","TIME_QC","DEPH_QC","LATITUDE","LONGITUDE","STATION","POSITION"], errors="ignore")
+    
+    # check order of time variable
     if not ds.time.to_pandas().index.is_monotonic_increasing:
         # TODO: happens in some MO_TS_TG_RMN-* stations in NRT dataset, asked to fix
         # Genova, Imperia, LaSpezia, Livorno, Ravenna, Venice
@@ -653,6 +658,8 @@ def cmems_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None):
         os.remove(fname_out_raw)
         return
         # ds = ds.sortby("time")
+    
+    # slice on time extent
     ds = ds.sel(time=slice(time_min, time_max))
     if len(ds.time) == 0:
         print("[NODATA] ", end="")
