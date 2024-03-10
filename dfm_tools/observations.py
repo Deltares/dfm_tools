@@ -27,6 +27,10 @@ def _make_hydrotools_consistent(ds):
     to make resulting netcdf file consistent with hydro_tools matlab post-processing
     """
     
+    # assert presence of time variable/dim (case sensitive)
+    assert "time" in ds.data_vars
+    assert "time" in ds.dims
+    
     # assert presence and units of waterlevel variable
     #TODO: add/check for standard_name attr?
     assert "waterlevel" in ds.data_vars
