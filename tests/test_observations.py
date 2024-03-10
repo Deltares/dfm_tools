@@ -12,7 +12,7 @@ from dfm_tools.observations import (ssc_sscid_from_otherid,
                                     ssc_ssh_subset_groups,
                                     )
 
-source_list = ["uhslc-fast", "uhslc-rqds", "psmsl-gnssir", "ssc", "ioc", "ddl", 
+source_list = ["uhslc-fast", "uhslc-rqds", "psmsl-gnssir", "ssc", "ioc", "rwsddl", 
                "cmems", "cmems-nrt"] # cmems requires credentials
 if os.path.exists(r"p:\1230882-emodnet_hrsm\data\GESLA3"):
     # not possible without p-drive connection
@@ -28,7 +28,7 @@ def test_ssh_catalog_subset_expected_fields(source):
     ssc_catalog_gpd = dfmt.ssh_catalog_subset(source=source)
     for field in fields_expected:
         assert field in ssc_catalog_gpd.columns
-    if source not in ["ssc", "psmsl-gnssir", "ddl"]:
+    if source not in ["ssc", "psmsl-gnssir", "rwsddl"]:
         assert "time_ndays" in ssc_catalog_gpd.columns
 
 
@@ -42,7 +42,7 @@ def test_ssh_catalog_subset(source):
     # time_min, time_max = '2016-01-01','2016-06-01'
     time_min, time_max = '2020-01-01','2020-06-01'
     
-    source_list_notime = ["ssc","ddl"]
+    source_list_notime = ["ssc","rwsddl"]
     ssc_catalog_gpd = dfmt.ssh_catalog_subset(source=source)
     if source in source_list_notime:
         ssc_catalog_gpd_sel = dfmt.ssh_catalog_subset(source=source,

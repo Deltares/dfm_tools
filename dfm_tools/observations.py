@@ -443,7 +443,7 @@ def gesla3_ssh_read_catalog(file_gesla3_meta=None, only_coastal=True):
     return station_list_gpd
 
 
-def ddl_ssh_meta_dict():
+def rwsddl_ssh_meta_dict():
     """
     Subset of catalog and station list with all waterlevel related values
 
@@ -526,7 +526,7 @@ def ddl_ssh_meta_dict():
     return meta_dict
 
 
-def ddl_ssh_get_time_max(locations):
+def rwsddl_ssh_get_time_max(locations):
     try:
         import ddlpy
     except ImportError:
@@ -549,7 +549,7 @@ def ddl_ssh_get_time_max(locations):
     return locations
 
 
-def ddl_ssh_read_catalog(meta_dict=None):
+def rwsddl_ssh_read_catalog(meta_dict=None):
     """
     convert LocatieLijst to geopandas dataframe
     """
@@ -559,7 +559,7 @@ def ddl_ssh_read_catalog(meta_dict=None):
         raise ImportError("hatyan and ddlpy are required for this functionality, install with 'pip install hatyan rws-ddlpy'")
     
     if meta_dict is None:
-        meta_dict = ddl_ssh_meta_dict()
+        meta_dict = rwsddl_ssh_meta_dict()
     
     locations = ddlpy.locations()
     selected = locations.copy()
@@ -919,7 +919,7 @@ def psmsl_gnssir_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, t
     print()
 
 
-def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_dict=None):
+def rwsddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_dict=None):
     #TODO: maybe support time_min/time_max==None
     try:
         import ddlpy
@@ -927,7 +927,7 @@ def ddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_
         raise ImportError("hatyan and ddlpy are required for this functionality, install with 'pip install hatyan rws-ddlpy'")
 
     if meta_dict is None:
-        meta_dict = ddl_ssh_meta_dict()
+        meta_dict = rwsddl_ssh_meta_dict()
     
     # print(f"retrieving data for {len(ssh_catalog_gpd)} ddl stations:", end=" ")
     for irow_raw, row in ssh_catalog_gpd.iterrows():
@@ -1007,7 +1007,7 @@ def ssh_catalog_subset(source=None,
                    "uhslc-fast": uhslc_fast_ssh_read_catalog,
                    "uhslc-rqds": uhslc_rqds_ssh_read_catalog,
                    "psmsl-gnssir": psmsl_gnssir_ssh_read_catalog,
-                   "ddl": ddl_ssh_read_catalog,
+                   "rwsddl": rwsddl_ssh_read_catalog,
                    }
     
     if source not in ssh_sources.keys():
@@ -1060,7 +1060,7 @@ def ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
                    "uhslc-fast": uhslc_ssh_retrieve_data,
                    "uhslc-rqds": uhslc_ssh_retrieve_data,
                    "psmsl-gnssir": psmsl_gnssir_ssh_retrieve_data,
-                   "ddl": ddl_ssh_retrieve_data,
+                   "rwsddl": rwsddl_ssh_retrieve_data,
                    }
     
     if source not in ssh_sources.keys():
