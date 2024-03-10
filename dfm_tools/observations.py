@@ -13,6 +13,7 @@ from erddapy import ERDDAP #pip install erddapy
 import requests
 from zipfile import ZipFile
 from io import BytesIO
+import functools
 
 
 __all__ = ["ssh_catalog_subset",
@@ -736,9 +737,8 @@ def uhslc_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max
     print()
 
 
-def gesla3_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
-                             file_gesla3_data=None):
-    
+@functools.lru_cache
+def gesla3_cache_zipfile(file_gesla3_data=None):
     if file_gesla3_data is None:
         file_gesla3_data = r"p:\1230882-emodnet_hrsm\data\GESLA3\GESLA3.0_ALL.zip"
     
@@ -746,14 +746,21 @@ def gesla3_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_ma
         raise FileNotFoundError(f"The 'file_gesla3_data' file '{file_gesla3_data}' was not found. "
                                 "You can download it from https://gesla787883612.wordpress.com/downloads and provide the path")
     
-    myzip = ZipFile(file_gesla3_data)
+    gesla3_zip = ZipFile(file_gesla3_data)
+    return gesla3_zip
+
+
+def gesla3_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
+                             file_gesla3_data=None):
+    
+    gesla3_zip = gesla3_cache_zipfile(file_gesla3_data=file_gesla3_data)
     
     print(f"retrieving data for {len(ssh_catalog_gpd)} gesla3 stations: ", end="")
     for file_gesla, row in ssh_catalog_gpd.iterrows():
         irow = ssh_catalog_gpd.index.tolist().index(file_gesla)
         print(f'{irow+1} ', end="")
         
-        with myzip.open(file_gesla, "r") as f:
+        with gesla3_zip.open(file_gesla, "r") as f:
             data = pd.read_csv(f, comment='#', delim_whitespace = True,
                                names=["date", "time", "sea_level", "qc_flag", "use_flag"],
                                parse_dates=[[0, 1]], index_col=0)
@@ -921,6 +928,9 @@ def psmsl_gnssir_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, t
 
 def rwsddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_dict=None):
     #TODO: maybe support time_min/time_max==None
+    if time_min is None or time_max is None:
+        raise ValueError("cannot supply None for 'time_min' or 'time_max' to 'rwsddl_ssh_retrieve_data()'")
+    
     try:
         import ddlpy
     except ImportError:
