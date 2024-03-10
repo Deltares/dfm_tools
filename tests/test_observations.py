@@ -31,6 +31,7 @@ def test_ssh_catalog_subset_expected_fields(source):
         assert field in ssc_catalog_gpd.columns
     if source not in ["ssc", "psmsl-gnssir", "rwsddl"]:
         assert "time_ndays" in ssc_catalog_gpd.columns
+    assert ssc_catalog_gpd.crs.to_string()=='EPSG:4326'
 
 
 @pytest.mark.requiressecrets

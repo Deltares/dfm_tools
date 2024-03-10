@@ -135,7 +135,7 @@ def ssc_ssh_read_catalog():
     
     # generate geom and geodataframe
     geom = [Point(x["geo:lon"], x["geo:lat"]) for irow, x in ssc_catalog_pd.iterrows()]
-    ssc_catalog_gpd = gpd.GeoDataFrame(data=ssc_catalog_pd, geometry=geom)
+    ssc_catalog_gpd = gpd.GeoDataFrame(data=ssc_catalog_pd, geometry=geom, crs='EPSG:4326')
     
     # compare coordinates of station metadata with coordinates of IOC/UHSLC linked stations
     if 0: 
@@ -239,7 +239,7 @@ def cmems_ssh_read_catalog(source):
     assert (index_history_pd["geospatial_lon_min"] == index_history_pd["geospatial_lon_max"]).all()
     assert (index_history_pd["geospatial_lat_min"] == index_history_pd["geospatial_lat_max"]).all()
     geom = [Point(x["geospatial_lon_min"], x["geospatial_lat_min"]) for irow, x in index_history_pd.iterrows()]
-    index_history_gpd = gpd.GeoDataFrame(data=index_history_pd, geometry=geom)
+    index_history_gpd = gpd.GeoDataFrame(data=index_history_pd, geometry=geom, crs='EPSG:4326')
     drop_list = ["geospatial_lon_min", "geospatial_lon_max",
                  "geospatial_lat_min", "geospatial_lat_max"]
     index_history_gpd = index_history_gpd.drop(drop_list, axis=1)
@@ -329,7 +329,7 @@ def ioc_ssh_read_catalog(drop_uhslc=True, drop_dart=True, drop_nonutc=True):
     
     # generate geom and geodataframe and remove the old columns
     geom = [Point(x["lon"], x["lat"]) for irow, x in ioc_catalog_pd.iterrows()]
-    ioc_catalog_gpd = gpd.GeoDataFrame(data=ioc_catalog_pd, geometry=geom)
+    ioc_catalog_gpd = gpd.GeoDataFrame(data=ioc_catalog_pd, geometry=geom, crs='EPSG:4326')
     drop_list = ["lon","lat"]
     ioc_catalog_gpd = ioc_catalog_gpd.drop(drop_list, axis=1)
     
@@ -379,7 +379,7 @@ def psmsl_gnssir_ssh_read_catalog():
     
     # generate geom and geodataframe and remove the old columns
     geom = [Point(x["Longitude"], x["Latitude"]) for irow, x in station_list_pd.iterrows()]
-    station_list_gpd = gpd.GeoDataFrame(data=station_list_pd, geometry=geom)
+    station_list_gpd = gpd.GeoDataFrame(data=station_list_pd, geometry=geom, crs='EPSG:4326')
     drop_list = ["Longitude","Latitude"]
     station_list_gpd = station_list_gpd.drop(drop_list, axis=1)
     
@@ -429,7 +429,7 @@ def gesla3_ssh_read_catalog(file_gesla3_meta=None, only_coastal=True):
         
     # generate geom and geodataframe and remove the old columns
     geom = [Point(x["longitude"], x["latitude"]) for irow, x in station_list_pd.iterrows()]
-    station_list_gpd = gpd.GeoDataFrame(data=station_list_pd, geometry=geom)
+    station_list_gpd = gpd.GeoDataFrame(data=station_list_pd, geometry=geom, crs='EPSG:4326')
     drop_list = ["longitude","latitude"]
     station_list_gpd = station_list_gpd.drop(drop_list, axis=1)
     
