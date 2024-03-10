@@ -14,6 +14,7 @@ import requests
 from zipfile import ZipFile
 from io import BytesIO
 import functools
+import tempfile
 
 
 __all__ = ["ssh_catalog_subset",
@@ -622,7 +623,7 @@ def cmems_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None):
     # get source from gdf, uniqueness is checked in ssh_retrieve_data
     source = row['source']
     cmems_params = get_cmems_params(source)
-    
+
     # get cached ftp connection
     host = cmems_params["host"]
     dir_data = os.path.dirname(row["file_name"]).split(host)[1]
@@ -630,8 +631,8 @@ def cmems_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None):
     
     fname = os.path.basename(row["file_name"])
     stat_name = row.loc["station_name_unique"]
-    fname_out_raw = os.path.join(dir_output, "cmems_tempfile.nc")
-    # fname_out = os.path.join(dir_output, f"{stat_name}.nc")
+    tempdir = tempfile.gettempdir()
+    fname_out_raw = os.path.join(tempdir, "dfmtools_cmems_ssh_retrieve_data_temporary_file.nc")
     with open(fname_out_raw, 'wb') as fp:
         ftp.retrbinary(f'RETR {fname}', fp.write)
     
@@ -674,7 +675,6 @@ def cmems_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None):
                          latitude=row.geometry.x,
                          country=row["country"], # TODO: this is currently an empty string
                          )
-    
     return ds
 
 
@@ -1050,11 +1050,5 @@ def ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
         file_out = os.path.join(dir_output, f"{stat_name}.nc")
         ds.to_netcdf(file_out)
         del ds
-        
-        if "cmems" in source:
-            # delete raw cmems file (same name as in cmems retrieve function)
-            # we have to do this after writing the eventual file and deleting the ds variable
-            fname_out_raw = os.path.join(dir_output, "cmems_tempfile.nc")
-            os.remove(fname_out_raw)
     print()
 
