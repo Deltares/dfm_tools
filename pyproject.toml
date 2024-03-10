@@ -94,7 +94,7 @@ examples = [
 ]
 ddl = [
 	#"rws-ddlpy", #TODO: we temporarily require the master branch: https://github.com/openearth/ddlpy/issues/20
-	"rws-ddlpy@git+https://github.com/openearth/ddlpy",
+	"ddlpy@git+https://github.com/openearth/ddlpy",
 ]
 
 [tool.setuptools]
