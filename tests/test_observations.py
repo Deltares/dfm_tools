@@ -7,6 +7,7 @@ Created on Sat Dec  9 17:46:57 2023
 
 import os
 import pytest
+import glob
 import dfm_tools as dfmt
 from dfm_tools.observations import (ssc_sscid_from_otherid,
                                     ssc_ssh_subset_groups,
@@ -60,13 +61,28 @@ def test_ssh_catalog_subset(source):
 @pytest.mark.unittest
 @pytest.mark.parametrize("source", source_list)
 def test_ssh_retrieve_data(source, tmp_path):
-    time_min, time_max = '2020-01-01','2020-02-01'
+    # ssc does not contain data, only station locations, so early return
+    if source=="ssc":
+        return
+    
+    if source=="uhslc-rqds":
+        time_min, time_max = '2018-01-01','2018-02-01'
+    else:
+        time_min, time_max = '2020-01-01','2020-02-01'
     
     ssc_catalog_gpd = dfmt.ssh_catalog_subset(source=source)
-    ssc_catalog_gpd_sel = ssc_catalog_gpd.iloc[:1]
-    if source!="ssc": # ssc does not contain data, only station locations
-        dfmt.ssh_retrieve_data(ssc_catalog_gpd_sel, dir_output=tmp_path, 
-                               time_min=time_min, time_max=time_max)
+    
+    index_dict = {"uhslc-fast":0, "uhslc-rqds":2, 
+                  "psmsl-gnssir":0, "ioc":0, "rwsddl":6, 
+                  "cmems":0, "cmems-nrt":0, # cmems requires credentials
+                  "gesla3":0}
+    index = index_dict[source]
+    ssc_catalog_gpd_sel = ssc_catalog_gpd.iloc[index:index+1]
+    
+    dfmt.ssh_retrieve_data(ssc_catalog_gpd_sel, dir_output=tmp_path, 
+                           time_min=time_min, time_max=time_max)
+    nc_list = glob.glob(os.path.join(tmp_path, "*.nc"))
+    assert len(nc_list)==1
 
 
 @pytest.mark.unittest
