@@ -591,12 +591,24 @@ def rwsddl_ssh_read_catalog(meta_dict=None):
     
     ddl_slev_gdf["station_name_unique"] = ddl_slev_gdf["Code"]
     ddl_slev_gdf["country"] = "NLD"
-
     
     return ddl_slev_gdf
 
 
-def cmems_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None):
+@functools.lru_cache
+def cmems_ftp_login(host, dir_data):
+    """
+    cache ftp connection so it does not matter that we call it for each station
+    """
+    # setup ftp connection
+    ftp = FTP(host=host)
+    username, password = copernicusmarine_credentials()
+    ftp.login(user=username, passwd=password)
+    ftp.cwd(dir_data)
+    return ftp
+
+
+def cmems_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None):
     """
     Retrieve data from FTP
     Can only retrieve entire files, subsetting is done during reconstruction
@@ -604,137 +616,115 @@ def cmems_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max
     """
     
     # get source from gdf, uniqueness is checked in ssh_retrieve_data
-    source = ssh_catalog_gpd['source'].iloc[0]
+    source = row['source']
     cmems_params = get_cmems_params(source)
     
-    # setup ftp connection
+    # get cached ftp connection
     host = cmems_params["host"]
-    ftp = FTP(host=host)
-    username, password = copernicusmarine_credentials()
-    ftp.login(user=username, passwd=password)
+    dir_data = os.path.dirname(row["file_name"]).split(host)[1]
+    ftp = cmems_ftp_login(host, dir_data)
     
-    dir_data = os.path.dirname(ssh_catalog_gpd['file_name'].iloc[0]).split(host)[1]
-    ftp.cwd(dir_data)
-    # retrieve
-    print(f"retrieving data for {len(ssh_catalog_gpd)} cmems stations:", end=" ")
-    ftp.cwd("")
-    for idx_arbitrary, row in ssh_catalog_gpd.iterrows():
-        irow = ssh_catalog_gpd.index.tolist().index(idx_arbitrary)
-        print(irow+1, end=" ")
-        fname = os.path.basename(row.loc["file_name"])
-        stat_name = row.loc["station_name_unique"]
-        fname_out_raw = os.path.join(dir_output, f"{stat_name}_raw.nc")
-        fname_out = os.path.join(dir_output, f"{stat_name}.nc")
-        with open(fname_out_raw, 'wb') as fp:
-            ftp.retrbinary(f'RETR {fname}', fp.write)
-        
-        # reconstruct this dataset (including time subsetting) and write again
-        ds = xr.open_dataset(fname_out_raw)
-        
-        # reduce DEPTH dimension if present (nrt dataset)
-        if "DEPTH" in ds.dims:
-            ds = ds.max(dim="DEPTH", keep_attrs=True)
+    fname = os.path.basename(row["file_name"])
+    stat_name = row.loc["station_name_unique"]
+    fname_out_raw = os.path.join(dir_output, "cmems_tempfile.nc")
+    # fname_out = os.path.join(dir_output, f"{stat_name}.nc")
+    with open(fname_out_raw, 'wb') as fp:
+        ftp.retrbinary(f'RETR {fname}', fp.write)
     
-        ds = ds.rename(TIME="time")
-        ds["SLEV"] = ds.SLEV.where(ds.SLEV_QC==1)
-        ds = ds.rename_vars(SLEV="waterlevel")
-        if not ds.time.to_pandas().index.is_monotonic_increasing:
-            # TODO: happens in some MO_TS_TG_RMN-* stations in NRT dataset, asked to fix
-            # Genova, Imperia, LaSpezia, Livorno, Ravenna, Venice
-            print(f"[{stat_name} NOT MONOTONIC] ", end="")
-            del ds
-            os.remove(fname_out_raw)
-            continue
-            # ds = ds.sortby("time")
-        ds = ds.sel(time=slice(time_min, time_max))
-        if len(ds.time) == 0:
-            print("[NODATA] ", end="")
-            del ds
-            os.remove(fname_out_raw)
-            continue
-        
-        ds = ds.assign_attrs(station_name=row["station_name_unique"],
-                             station_id=row["station_name_unique"],
-                             station_name_unique=row["station_name_unique"],
-                             longitude=row.geometry.x,
-                             latitude=row.geometry.x,
-                             country=row["country"], # TODO: this is currently an empty string
-                             )
-        
-        _make_hydrotools_consistent(ds)
-        
-        ds.to_netcdf(fname_out)
+    # reconstruct this dataset (including time subsetting) and write again
+    ds = xr.open_dataset(fname_out_raw)
+    
+    # reduce DEPTH dimension if present (nrt dataset)
+    if "DEPTH" in ds.dims:
+        ds = ds.max(dim="DEPTH", keep_attrs=True)
+
+    ds = ds.rename(TIME="time")
+    ds["SLEV"] = ds.SLEV.where(ds.SLEV_QC==1)
+    ds = ds.rename_vars(SLEV="waterlevel")
+    if not ds.time.to_pandas().index.is_monotonic_increasing:
+        # TODO: happens in some MO_TS_TG_RMN-* stations in NRT dataset, asked to fix
+        # Genova, Imperia, LaSpezia, Livorno, Ravenna, Venice
+        print(f"[{stat_name} NOT MONOTONIC] ", end="")
         del ds
         os.remove(fname_out_raw)
-    print()
+        return
+        # ds = ds.sortby("time")
+    ds = ds.sel(time=slice(time_min, time_max))
+    if len(ds.time) == 0:
+        print("[NODATA] ", end="")
+        del ds
+        os.remove(fname_out_raw)
+        return
+    
+    ds = ds.assign_attrs(station_name=row["station_name_unique"],
+                         station_id=row["station_name_unique"],
+                         station_name_unique=row["station_name_unique"],
+                         longitude=row.geometry.x,
+                         latitude=row.geometry.x,
+                         country=row["country"], # TODO: this is currently an empty string
+                         )
+    
+    return ds
 
 
-def uhslc_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None):
+def uhslc_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None):
     
     # TODO: maybe merge rqds/fast datasets automatically
     # TODO: 5 meter offset?
     
     # docs from https://ioos.github.io/erddapy/ and https://ioos.github.io/erddapy/02-extras-output.html#
     
+    # setup server connection, this takes no time so does not have to be cached
     server = "https://uhslc.soest.hawaii.edu/erddap"
     e = ERDDAP(server=server, protocol="tabledap", response="nc") #opendap is way slower than nc/csv/html
     
     dataset_id_dict = {"uhslc-fast":"global_hourly_fast",
                        "uhslc-rqds":"global_hourly_rqds"}
     
-    print(f"retrieving data for {len(ssh_catalog_gpd)} uhslc stations: ", end="")
-    for uhslc_id, row in ssh_catalog_gpd.iterrows():
-        irow = ssh_catalog_gpd.index.tolist().index(uhslc_id)
-        print(f'{irow+1} ', end="")
-        source = row["source"]
-        dataset_id = dataset_id_dict[source]
-        e.dataset_id = dataset_id
-        
-        # set erddap constraints
-        e.constraints = {}
-        e.constraints["uhslc_id="] = uhslc_id
-        if time_min is not None:
-            e.constraints["time>="] = pd.Timestamp(time_min)
-        if time_max is not None:
-            e.constraints["time<="] = pd.Timestamp(time_max)
-        
-        from httpx import HTTPError
-        try:
-            ds = e.to_xarray()
-        except HTTPError:
-            print(f"station {uhslc_id} not found in {dataset_id} with "
-                  f"timerange tstart={time_min} to tstop={time_max}")
-            continue
-        
-        # change longitude from 0to360 to -180to180
-        ds["longitude"] = (ds.longitude + 180)%360 - 180
-        ds = ds.sortby("longitude")
-        
-        # change units to meters
-        with xr.set_options(keep_attrs=True):
-            assert ds["sea_level"].attrs["units"] == "millimeters"
-            ds["sea_level"] = ds["sea_level"]/1000
-            ds["sea_level"] = ds["sea_level"].assign_attrs(units="m")
-        ds = ds.rename_vars(sea_level="waterlevel")
-        
-        # set time index
-        ds = ds.set_index(obs="time").rename(obs="time")
-        ds['time'] = ds.time.dt.round('s') #round to seconds
-        
-        ds_attrs = {"station_id":row["uhslc_id"],
-                    "station_name":row["name"],
-                    "station_name_unique":row["station_name_unique"],
-                    "longitude": row.geometry.x,
-                    "latitude": row.geometry.y}
-        ds = ds.assign_attrs(ds_attrs)
-        _make_hydrotools_consistent(ds)
-
-        # write to netcdf file
-        stat_name = ds.attrs["station_name_unique"]
-        file_out = os.path.join(dir_output, f"{stat_name}.nc")
-        ds.to_netcdf(file_out)
-        del ds
-    print()
+    uhslc_id = row.name
+    source = row["source"]
+    dataset_id = dataset_id_dict[source]
+    e.dataset_id = dataset_id
+    
+    # set erddap constraints
+    e.constraints = {}
+    e.constraints["uhslc_id="] = uhslc_id
+    if time_min is not None:
+        e.constraints["time>="] = pd.Timestamp(time_min)
+    if time_max is not None:
+        e.constraints["time<="] = pd.Timestamp(time_max)
+    
+    from httpx import HTTPError
+    try:
+        ds = e.to_xarray()
+    except HTTPError:
+        # print(f"station {uhslc_id} not found in {dataset_id} with "
+        #       f"timerange tstart={time_min} to tstop={time_max}")
+        # no data so early return
+        return
+    
+    # change longitude from 0to360 to -180to180
+    ds["longitude"] = (ds.longitude + 180)%360 - 180
+    ds = ds.sortby("longitude")
+    
+    # change units to meters
+    with xr.set_options(keep_attrs=True):
+        assert ds["sea_level"].attrs["units"] == "millimeters"
+        ds["sea_level"] = ds["sea_level"]/1000
+        ds["sea_level"] = ds["sea_level"].assign_attrs(units="m")
+    ds = ds.rename_vars(sea_level="waterlevel")
+    
+    # set time index
+    ds = ds.set_index(obs="time").rename(obs="time")
+    ds['time'] = ds.time.dt.round('s') #round to seconds
+    
+    ds_attrs = {"station_id":row["uhslc_id"],
+                "station_name":row["name"],
+                "station_name_unique":row["station_name_unique"],
+                "longitude": row.geometry.x,
+                "latitude": row.geometry.y}
+    ds = ds.assign_attrs(ds_attrs)
+    return ds
 
 
 @functools.lru_cache
@@ -750,184 +740,154 @@ def gesla3_cache_zipfile(file_gesla3_data=None):
     return gesla3_zip
 
 
-def gesla3_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
+def gesla3_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None,
                              file_gesla3_data=None):
     
+    # get cached gesla3 zipfile instance
     gesla3_zip = gesla3_cache_zipfile(file_gesla3_data=file_gesla3_data)
     
-    print(f"retrieving data for {len(ssh_catalog_gpd)} gesla3 stations: ", end="")
-    for file_gesla, row in ssh_catalog_gpd.iterrows():
-        irow = ssh_catalog_gpd.index.tolist().index(file_gesla)
-        print(f'{irow+1} ', end="")
-        
-        with gesla3_zip.open(file_gesla, "r") as f:
-            data = pd.read_csv(f, comment='#', delim_whitespace = True,
-                               names=["date", "time", "sea_level", "qc_flag", "use_flag"],
-                               parse_dates=[[0, 1]], index_col=0)
-        
-        # clean up time duplicates
-        data.index.name = 'time'
-        bool_duplicate = data.index.duplicated()
-        if bool_duplicate.sum() > 0:
-            data = data.loc[~bool_duplicate]
-            print(f"[{bool_duplicate.sum()} duplicate timestamps removed] ", end="")
-        
-        # convert to xarray and add metadata
-        meta_sel = ssh_catalog_gpd.loc[file_gesla].copy()
-        geometry = meta_sel.pop('geometry')
-        meta_sel["time_min"] = str(meta_sel["time_min"])
-        meta_sel["time_max"] = str(meta_sel["time_max"])
-        meta_sel["longitude"] = geometry.x
-        meta_sel["latitude"] = geometry.y
-        ds = data.to_xarray().assign_attrs(meta_sel.to_dict())
-        ds['site_name'] = xr.DataArray([meta_sel.site_name], dims=('stations'))
-        ds['latitude'] = xr.DataArray([meta_sel.latitude], dims=('stations'))
-        ds['longitude'] = xr.DataArray([meta_sel.longitude], dims=('stations'))
-        ds['sea_level'] = ds['sea_level'].assign_attrs(units="m")
-        ds = ds.rename_vars(sea_level="waterlevel")
-        
-        # subset time
-        ds = ds.sel(time=slice(time_min, time_max))
-        if len(ds.time) == 0:
-            print("[NODATA] ", end="")
-            continue
-        
-        # filter bad quality data
-        ds = ds.where(ds.qc_flag==1)
+    file_gesla = row.name
+    with gesla3_zip.open(file_gesla, "r") as f:
+        data = pd.read_csv(f, comment='#', delim_whitespace = True,
+                           names=["date", "time", "sea_level", "qc_flag", "use_flag"],
+                           parse_dates=[[0, 1]], index_col=0)
+    
+    # clean up time duplicates
+    data.index.name = 'time'
+    bool_duplicate = data.index.duplicated()
+    if bool_duplicate.sum() > 0:
+        data = data.loc[~bool_duplicate]
+        print(f"[{bool_duplicate.sum()} duplicate timestamps removed] ", end="")
+    
+    # convert to xarray and add metadata
+    meta_sel = row.copy()
+    geometry = meta_sel.pop('geometry')
+    meta_sel["time_min"] = str(meta_sel["time_min"])
+    meta_sel["time_max"] = str(meta_sel["time_max"])
+    meta_sel["longitude"] = geometry.x
+    meta_sel["latitude"] = geometry.y
+    ds = data.to_xarray().assign_attrs(meta_sel.to_dict())
+    ds['site_name'] = xr.DataArray([meta_sel.site_name], dims=('stations'))
+    ds['latitude'] = xr.DataArray([meta_sel.latitude], dims=('stations'))
+    ds['longitude'] = xr.DataArray([meta_sel.longitude], dims=('stations'))
+    ds['sea_level'] = ds['sea_level'].assign_attrs(units="m")
+    ds = ds.rename_vars(sea_level="waterlevel")
+    
+    # subset time
+    ds = ds.sel(time=slice(time_min, time_max))
+    if len(ds.time) == 0:
+        return
+    
+    # filter bad quality data
+    ds = ds.where(ds.qc_flag==1)
 
-        ds = ds.assign_attrs(station_name=row["site_name"],
-                             station_id=row["site_code"],
-                             station_name_unique=row["station_name_unique"],
-                             longitude=row.geometry.x,
-                             latitude=row.geometry.y,
-                             country=row["country"],
-                             )
-        
-        _make_hydrotools_consistent(ds)
-        
-        # write to file
-        stat_name = ds.attrs["station_name_unique"]
-        file_out = os.path.join(dir_output, f"{stat_name}.nc")
-        ds.to_netcdf(file_out)
-        del ds
-    print()
+    ds = ds.assign_attrs(station_name=row["site_name"],
+                         station_id=row["site_code"],
+                         station_name_unique=row["station_name_unique"],
+                         longitude=row.geometry.x,
+                         latitude=row.geometry.y,
+                         country=row["country"],
+                         )
+    return ds
 
 
-def ioc_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, subset_hourly=False):
+def ioc_ssh_retrieve_data(row, dir_output, time_min, time_max, subset_hourly=False):
+    
     # https://www.ioc-sealevelmonitoring.org/service.php?query=help
+    
+    station_code = row.name
+    period_range = pd.period_range(time_min, time_max, freq="1M")
     
     if time_min is None or time_max is None:
         raise ValueError("cannot supply None for 'time_min' or 'time_max' to 'ioc_ssh_retrieve_data()'")
     
-    period_range = pd.period_range(time_min, time_max, freq="1M")
-    print(f"retrieving data for {len(ssh_catalog_gpd)} ioc stations for {len(period_range)} months: ", end="")
-    for station_code, row in ssh_catalog_gpd.iterrows():
-        irow = ssh_catalog_gpd.index.tolist().index(station_code)
-        results_list = []
-        print(irow+1, end="")
-        for date in period_range:
-            print('.', end="")
-            year = date.year
-            month = date.month
-            starttime = date.to_timestamp()
-            if month==12:
-                endtime = pd.Timestamp(year+1,1,1)
-            else:
-                endtime = pd.Timestamp(year,month+1,1)
-            url_json = (f"https://www.ioc-sealevelmonitoring.org/service.php?query=data&"
-                        f"code={station_code}&format=json&"
-                        f"timestart={starttime.isoformat()}&timestop={endtime.isoformat()}")
-            resp = requests.get(url_json)
-            if resp.status_code==404: #continue to next station if not found
-                raise Exception(f'url 404: {resp.text}')    
-            if resp.text == '[]':
-                print("[NODATA] ", end="")
-                continue
-            resp_json = resp.json()
-            if 'error' in resp.json()[0].keys():
-                raise Exception(resp.text)
-            data_pd_one = pd.DataFrame.from_dict(resp_json)
-            results_list.append(data_pd_one)
-        print(" ", end="")
-        
-        if len(results_list)==0:
-            # continue with next station if no data present in entire period
+    results_list = []
+    for date in period_range:
+        print('.', end="")
+        year = date.year
+        month = date.month
+        starttime = date.to_timestamp()
+        if month==12:
+            endtime = pd.Timestamp(year+1,1,1)
+        else:
+            endtime = pd.Timestamp(year,month+1,1)
+        url_json = (f"https://www.ioc-sealevelmonitoring.org/service.php?query=data&"
+                    f"code={station_code}&format=json&"
+                    f"timestart={starttime.isoformat()}&timestop={endtime.isoformat()}")
+        resp = requests.get(url_json)
+        if resp.status_code==404: #continue to next station if not found
+            raise Exception(f'url 404: {resp.text}')    
+        if resp.text == '[]':
+            print("[NODATA] ", end="")
             continue
-        
-        # convert to xarray
-        data_pd_all = pd.concat(results_list)
-        data_pd_all = data_pd_all.rename({"stime":"time"},axis=1)
-        data_pd_all = pd.DataFrame({'slevel':data_pd_all['slevel'].values},
-                                index=pd.to_datetime(data_pd_all['time']))
-        data_pd_all = data_pd_all[~data_pd_all.index.duplicated(keep='last')]
-        if subset_hourly:
-            data_pd_all = data_pd_all.loc[data_pd_all.index.minute==0]
-        ds = data_pd_all.to_xarray()
-        ds = ds.assign_attrs(station_name=row["Location"],
-                             station_id=row["Code"],
-                             station_name_unique=row["station_name_unique"],
-                             longitude=row["Lon"],
-                             latitude=row["Lat"],
-                             country=row["country"],
-                             )
-        ds = ds.rename_vars(slevel="waterlevel")
-        ds["waterlevel"] = ds["waterlevel"].assign_attrs({"units":"m"})
-        
-        _make_hydrotools_consistent(ds)
-        
-        # write to netcdf file
-        stat_name = ds.attrs["station_name_unique"]
-        file_out = os.path.join(dir_output, f"{stat_name}.nc")
-        ds.to_netcdf(file_out)
-    print()
+        resp_json = resp.json()
+        if 'error' in resp.json()[0].keys():
+            raise Exception(resp.text)
+        data_pd_one = pd.DataFrame.from_dict(resp_json)
+        results_list.append(data_pd_one)
+    print(" ", end="")
+    
+    if len(results_list)==0:
+        # continue with next station if no data present in entire period
+        return
+    
+    # convert to xarray
+    data_pd_all = pd.concat(results_list)
+    data_pd_all = data_pd_all.rename({"stime":"time"},axis=1)
+    data_pd_all = pd.DataFrame({'slevel':data_pd_all['slevel'].values},
+                            index=pd.to_datetime(data_pd_all['time']))
+    data_pd_all = data_pd_all[~data_pd_all.index.duplicated(keep='last')]
+    if subset_hourly:
+        data_pd_all = data_pd_all.loc[data_pd_all.index.minute==0]
+    ds = data_pd_all.to_xarray()
+    ds = ds.assign_attrs(station_name=row["Location"],
+                         station_id=row["Code"],
+                         station_name_unique=row["station_name_unique"],
+                         longitude=row["Lon"],
+                         latitude=row["Lat"],
+                         country=row["country"],
+                         )
+    ds = ds.rename_vars(slevel="waterlevel")
+    ds["waterlevel"] = ds["waterlevel"].assign_attrs({"units":"m"})
+    return ds
 
 
-def psmsl_gnssir_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None):
+def psmsl_gnssir_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None):
+    
     # https://psmsl.org/data/gnssir/gnssir_daily_means.html
     # https://psmsl.org/data/gnssir/gnssir_example.html (also contains IOC retrieval example)
     
-    print(f"retrieving data for {len(ssh_catalog_gpd)} psmsl-gnssir stations:", end=" ")
-    for station_id, row in ssh_catalog_gpd.iterrows():
-        irow = ssh_catalog_gpd.index.tolist().index(station_id)
-        print(irow+1, end=" ")
-        resp = urlopen(rf"https://psmsl.org/data/gnssir/data/main/{station_id}.zip")
-        myzip = ZipFile(BytesIO(resp.read()))
-        with myzip.open(f"{station_id}.csv") as f:
-            data = pd.read_csv(f, comment="#", parse_dates=["time"])
-        
-        url = f"https://psmsl.org/data/gnssir/data/sites/{station_id}.json"
-        station_meta = pd.read_json(url)["properties"]
-        #TODO: the below equation is a guess to get the reference level about right
-        data['slev'] = data['adjusted_height'] - station_meta['ellipsoidalHeight'] + station_meta['reflectorHeight']
-        data = data.set_index("time")
-        
-        ds = data.to_xarray()
-        ds['slev'] = ds['slev'].assign_attrs(units="m")
-        ds = ds.rename_vars(slev="waterlevel")
-        ds = ds.assign_attrs(station_name=row["Name"],
-                             station_id=row["Code"],
-                             station_name_unique=row["station_name_unique"],
-                             longitude=row.geometry.x,
-                             latitude=row.geometry.y,
-                             country=row["country"],
-                             )
-        
-        ds = ds.sel(time=slice(time_min, time_max))
-        if len(ds.time) == 0:
-            print("[NODATA] ",end="")
-            continue
-        
-        _make_hydrotools_consistent(ds)
-        
-        stat_name = ds.attrs["station_name_unique"]
-        file_out = os.path.join(dir_output, f"{stat_name}.nc")
-        ds.to_netcdf(file_out)
-        del ds
-    print()
+    station_id = row.name
+    resp = urlopen(rf"https://psmsl.org/data/gnssir/data/main/{station_id}.zip")
+    myzip = ZipFile(BytesIO(resp.read()))
+    with myzip.open(f"{station_id}.csv") as f:
+        data = pd.read_csv(f, comment="#", parse_dates=["time"])
+    
+    url = f"https://psmsl.org/data/gnssir/data/sites/{station_id}.json"
+    station_meta = pd.read_json(url)["properties"]
+    #TODO: the below equation is a guess to get the reference level about right
+    data['slev'] = data['adjusted_height'] - station_meta['ellipsoidalHeight'] + station_meta['reflectorHeight']
+    data = data.set_index("time")
+    
+    ds = data.to_xarray()
+    ds['slev'] = ds['slev'].assign_attrs(units="m")
+    ds = ds.rename_vars(slev="waterlevel")
+    ds = ds.assign_attrs(station_name=row["Name"],
+                         station_id=row["Code"],
+                         station_name_unique=row["station_name_unique"],
+                         longitude=row.geometry.x,
+                         latitude=row.geometry.y,
+                         country=row["country"],
+                         )
+    
+    ds = ds.sel(time=slice(time_min, time_max))
+    if len(ds.time) == 0:
+        return
+    return ds
 
 
-def rwsddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, meta_dict=None):
-    #TODO: maybe support time_min/time_max==None
+def rwsddl_ssh_retrieve_data(row, dir_output, time_min, time_max, meta_dict=None):
+    
     if time_min is None or time_max is None:
         raise ValueError("cannot supply None for 'time_min' or 'time_max' to 'rwsddl_ssh_retrieve_data()'")
     
@@ -939,65 +899,50 @@ def rwsddl_ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max, me
     if meta_dict is None:
         meta_dict = rwsddl_ssh_meta_dict()
     
-    # print(f"retrieving data for {len(ssh_catalog_gpd)} ddl stations:", end=" ")
-    for irow_raw, row in ssh_catalog_gpd.iterrows():
-        irow = ssh_catalog_gpd.index.tolist().index(irow_raw)
-        # print(irow+1, end=" ")
-
-        #retrieving waterlevels
-        print(f'retrieving measwl data from DDL for station {irow+1} of {len(ssh_catalog_gpd)}: {row["Code"]}')
-        # if we pass one row to the measurements function you can get all the measurements
-        measurements = ddlpy.measurements(row, time_min, time_max)
-        
-        if measurements is None:
-            # no output so this station is skipped
-            print("[NO DATA]")
-            continue
-        
-        # drop alfanumeriek if duplicate of numeriek
-        if "Meetwaarde.Waarde_Alfanumeriek" in measurements.columns and 'Meetwaarde.Waarde_Numeriek' in measurements.columns:
-            measurements = measurements.drop("Meetwaarde.Waarde_Alfanumeriek", axis=1)
-        
-        rename_dict = {'Meetwaarde.Waarde_Numeriek':'waterlevel',
-                       'WaarnemingMetadata.KwaliteitswaardecodeLijst':'QC',
-                       'WaarnemingMetadata.StatuswaardeLijst':'Status'}
-        measurements = measurements.rename(columns=rename_dict)
-        
-        # simplify dataframe
-        simplified = ddlpy.simplify_dataframe(measurements)
-        
-        # get dataframe attrs
-        ds_attrs = simplified.attrs
-        # drop irrelevant attrs
-        ds_attrs = {k:v for k,v in ds_attrs.items() if not k.startswith("Bemonstering") and not k.startswith("BioTaxon")}
-        # add metadata to timeseries (to be able to distinguish difference later on)
-        ds_attrs["station_name"] = ds_attrs["Naam"]
-        ds_attrs["station_id"] = ds_attrs["Code"]
-        ds_attrs["station_name_unique"] = row["station_name_unique"]
-        ds_attrs["longitude"] = row.geometry.x # in wgs84
-        ds_attrs["latitude"] = row.geometry.y # in wgs84
-        ds_attrs["country"] = row["country"]
-        
-        # dropping timezone is required to get proper encoding in time variable (in netcdf file)
-        simplified.index = simplified.index.tz_convert(None)
-        ds = simplified.to_xarray()
-        ds = ds.assign_attrs(ds_attrs)
-        
-        # convert meters to cm
-        if ds_attrs['Eenheid.Code'] != 'cm':
-            raise Exception("unexpected unit")
-        ds['waterlevel'] = ds['waterlevel'].assign_attrs(units="m")
-        ds['waterlevel'] /= 100 #convert from cm to m
-        ds.attrs.pop('Eenheid.Code')
-        ds.attrs.pop('Eenheid.Omschrijving')
-        
-        _make_hydrotools_consistent(ds)
-        
-        stat_name = ds.attrs["station_name_unique"]
-        file_out = os.path.join(dir_output, f"{stat_name}.nc")
-        
-        ds.to_netcdf(file_out)
-        del ds
+    # if we pass one row to the measurements function you can get all the measurements
+    measurements = ddlpy.measurements(row, time_min, time_max)
+    
+    if measurements is None:
+        # no output so this station is skipped
+        return
+    
+    # drop alfanumeriek if duplicate of numeriek
+    if "Meetwaarde.Waarde_Alfanumeriek" in measurements.columns and 'Meetwaarde.Waarde_Numeriek' in measurements.columns:
+        measurements = measurements.drop("Meetwaarde.Waarde_Alfanumeriek", axis=1)
+    
+    rename_dict = {'Meetwaarde.Waarde_Numeriek':'waterlevel',
+                   'WaarnemingMetadata.KwaliteitswaardecodeLijst':'QC',
+                   'WaarnemingMetadata.StatuswaardeLijst':'Status'}
+    measurements = measurements.rename(columns=rename_dict)
+    
+    # simplify dataframe
+    simplified = ddlpy.simplify_dataframe(measurements)
+    
+    # get dataframe attrs
+    ds_attrs = simplified.attrs
+    # drop irrelevant attrs
+    ds_attrs = {k:v for k,v in ds_attrs.items() if not k.startswith("Bemonstering") and not k.startswith("BioTaxon")}
+    # add metadata to timeseries (to be able to distinguish difference later on)
+    ds_attrs["station_name"] = ds_attrs["Naam"]
+    ds_attrs["station_id"] = ds_attrs["Code"]
+    ds_attrs["station_name_unique"] = row["station_name_unique"]
+    ds_attrs["longitude"] = row.geometry.x # in wgs84
+    ds_attrs["latitude"] = row.geometry.y # in wgs84
+    ds_attrs["country"] = row["country"]
+    
+    # dropping timezone is required to get proper encoding in time variable (in netcdf file)
+    simplified.index = simplified.index.tz_convert(None)
+    ds = simplified.to_xarray()
+    ds = ds.assign_attrs(ds_attrs)
+    
+    # convert meters to cm
+    if ds_attrs['Eenheid.Code'] != 'cm':
+        raise Exception("unexpected unit")
+    ds['waterlevel'] = ds['waterlevel'].assign_attrs(units="m")
+    ds['waterlevel'] /= 100 #convert from cm to m
+    ds.attrs.pop('Eenheid.Code')
+    ds.attrs.pop('Eenheid.Omschrijving')
+    return ds
 
 
 def ssh_catalog_subset(source=None,
@@ -1078,4 +1023,25 @@ def ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
     
     retrieve_data_func = ssh_sources[source]
     
-    retrieve_data_func(ssh_catalog_gpd, dir_output, time_min=time_min, time_max=time_max, **kwargs)
+    # retrieve
+    print(f"retrieving data for {len(ssh_catalog_gpd)} {source} stations:", end=" ")
+    for idx_arbitrary, row in ssh_catalog_gpd.iterrows():
+        irow = ssh_catalog_gpd.index.tolist().index(idx_arbitrary)
+        print(irow+1, end=" ")
+        ds = retrieve_data_func(row, dir_output, time_min=time_min, time_max=time_max, **kwargs)
+        if ds is None:
+            print("[NODATA] ",end="")
+            continue
+        _make_hydrotools_consistent(ds)
+        stat_name = ds.attrs["station_name_unique"]
+        file_out = os.path.join(dir_output, f"{stat_name}.nc")
+        ds.to_netcdf(file_out)
+        del ds
+        
+        if "cmems" in source:
+            # delete raw cmems file (same name as in cmems retrieve function)
+            # we have to do this after writing the eventual file and deleting the ds variable
+            fname_out_raw = os.path.join(dir_output, "cmems_tempfile.nc")
+            os.remove(fname_out_raw)
+    print()
+
