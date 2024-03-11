@@ -93,8 +93,8 @@ examples = [
 	"notebook",
 ]
 ddl = [
-	#"rws-ddlpy", #TODO: we temporarily require the master branch: https://github.com/openearth/ddlpy/issues/20
-	"ddlpy@git+https://github.com/openearth/ddlpy",
+	#"ddlpy>=0.3.0", #ddlpy 0.3.0 was new release with fixes and new features #TODO: we temporarily require the main branch: https://github.com/deltares/ddlpy/issues/20
+	"ddlpy@git+https://github.com/deltares/ddlpy",
 ]
 
 [tool.setuptools]
