@@ -48,10 +48,10 @@ dependencies = [
 	"copernicusmarine>=1.0.2",
 	#pooch<1.1.0 do not have attribute retrieve
 	"pooch>=1.1.0",
-	#hydrolib-core 0.6.0 supports meshkernel>=3.0.0
-	"hydrolib-core>=0.6.0",
-	#meshkernel<3.0.0 api is fundamentally different
-	"meshkernel>=3.0.0",
+	#hydrolib-core 0.7.0 supports meshkernel>=4.1.0
+	"hydrolib-core>=0.7.0",
+	#meshkernel<4.1.0 does not support contacts_get, no macos support, etc
+	"meshkernel>=4.1.0",
 ]
 classifiers = [
 	"Development Status :: 4 - Beta",
