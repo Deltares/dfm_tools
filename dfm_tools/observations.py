@@ -108,9 +108,14 @@ def ssc_ssh_read_catalog():
     url_json = 'https://www.ioc-sealevelmonitoring.org/ssc/service.php?format=json'
     ssc_catalog_pd = pd.read_json(url_json)
     
+    #TODO: country column has 2-digit codes instead of 3
+    
     #convert all cells with ids to list of strings or NaN
     for colname in ['psmsl','ioc','ptwc','gloss','uhslc','sonel_gps','sonel_tg']:
         ssc_catalog_pd[colname] = ssc_catalog_pd[colname].apply(lambda x: x if isinstance(x,list) else [] if x is np.nan else [x])
+    
+    ssc_catalog_pd['station_name'] = ssc_catalog_pd['name']
+    ssc_catalog_pd['station_id'] = ssc_catalog_pd['ssc_id']
     
     #generate station_name_fname (remove all non numeric/letter characters and replace by -, strip '-' from begin/end, set ssc_id as prefix)
     ssc_catalog_pd['station_name_fname'] = ssc_catalog_pd['name'].str.replace('ø','o') # necessary since otherwise these letters are dropped with remove_accents()
@@ -141,6 +146,7 @@ def ssc_ssh_read_catalog():
     # generate geom and geodataframe
     geom = [Point(x["geo:lon"], x["geo:lat"]) for irow, x in ssc_catalog_pd.iterrows()]
     ssc_catalog_gpd = gpd.GeoDataFrame(data=ssc_catalog_pd, geometry=geom, crs='EPSG:4326')
+    ssc_catalog_gpd = ssc_catalog_gpd.drop(["geo:lon","geo:lat"], axis=1)
     
     # compare coordinates of station metadata with coordinates of IOC/UHSLC linked stations
     if 0: 
@@ -252,8 +258,11 @@ def cmems_ssh_read_catalog(source):
     # add dummy country column for the test to pass
     # TODO: hopefully country metadata is available via cmems API in the future
     index_history_gpd["country"] = ""
-    stat_names = index_history_gpd["file_name"].apply(lambda x: os.path.basename(x).replace(".nc",""))
-    index_history_gpd["station_name_unique"] = stat_names
+    stat_ids = index_history_gpd["file_name"].apply(lambda x: os.path.basename(x).replace(".nc",""))
+    stat_names = stat_ids.str.split("_").str[-1]
+    index_history_gpd["station_name"] = stat_names
+    index_history_gpd["station_id"] = stat_ids
+    index_history_gpd["station_name_unique"] = stat_ids
     
     # rename columns
     rename_dict = {'time_coverage_start':'time_min',
@@ -267,7 +276,7 @@ def cmems_ssh_read_catalog(source):
 
 
 def uhslc_ssh_read_catalog(source):
-    # TODO: country is "New Zealand" and country is 554. We would like country=NZL
+    # TODO: country is "New Zealand" and country_code is 554. We would like country/country_code=NZL
     # TODO: maybe use min of rqds and max of fast for time subsetting
     # TODO: maybe enable merging of datasets?
     uhslc_gpd = gpd.read_file("https://uhslc.soest.hawaii.edu/data/meta.geojson")
@@ -291,6 +300,8 @@ def uhslc_ssh_read_catalog(source):
     uhslc_gpd["time_min"] = pd.to_datetime(time_min)
     uhslc_gpd["time_max"] = pd.to_datetime(time_max)
     
+    uhslc_gpd["station_name"] = uhslc_gpd['name']
+    uhslc_gpd["station_id"] = uhslc_gpd['uhslc_id']
     stat_names = source + "-" + uhslc_gpd['uhslc_id'].apply(lambda x: f"{x:03d}")
     uhslc_gpd["station_name_unique"] = stat_names
     
@@ -338,6 +349,8 @@ def ioc_ssh_read_catalog(drop_uhslc=True, drop_dart=True, drop_nonutc=True):
     drop_list = ["lon","lat"]
     ioc_catalog_gpd = ioc_catalog_gpd.drop(drop_list, axis=1)
     
+    ioc_catalog_gpd["station_name"] = ioc_catalog_gpd['Code']
+    ioc_catalog_gpd["station_id"] = ioc_catalog_gpd['Code']
     stat_names = "ioc-" + ioc_catalog_gpd['Code'] + "-" + ioc_catalog_gpd['code'].astype(str)
     ioc_catalog_gpd["station_name_unique"] = stat_names
 
@@ -388,8 +401,9 @@ def psmsl_gnssir_ssh_read_catalog():
     drop_list = ["Longitude","Latitude"]
     station_list_gpd = station_list_gpd.drop(drop_list, axis=1)
     
-    station_list_gpd["psmsl_id"] = station_list_gpd.index
-    stat_names = "psmsl-gnssir-" + station_list_gpd['psmsl_id'].astype(str) + "-" + station_list_gpd['Code']
+    station_list_gpd['station_name'] = station_list_gpd['Code']
+    station_list_gpd["station_id"] = station_list_gpd.index
+    stat_names = "psmsl-gnssir-" + station_list_gpd['station_id'].astype(str) + "-" + station_list_gpd['station_name']
     station_list_gpd["station_name_unique"] = stat_names
     return station_list_gpd
 
@@ -440,6 +454,8 @@ def gesla3_ssh_read_catalog(file_gesla3_meta=None, only_coastal=True):
     
     stat_names = station_list_gpd["file_name"]
     station_list_gpd["station_name_unique"] = stat_names
+    station_list_gpd["station_id"] = station_list_gpd["file_name"]
+    station_list_gpd["station_name"] = station_list_gpd["site_name"]
     
     # rename columns
     rename_dict = {'start_date_time':'time_min',
@@ -450,85 +466,8 @@ def gesla3_ssh_read_catalog(file_gesla3_meta=None, only_coastal=True):
 
 
 def rwsddl_ssh_meta_dict():
-    """
-    Subset of catalog and station list with all waterlevel related values
-
-    unique Compartiment available in requested subset:
-                           Compartiment.Code Compartiment.Omschrijving
-    AquoMetadata_MessageID                                            
-    1463                                  OW          Oppervlaktewater
-    
-    unique Eenheid available in requested subset:
-                           Eenheid.Code Eenheid.Omschrijving
-    AquoMetadata_MessageID                                  
-    299                              cm           centimeter
-    
-    unique Grootheid available in requested subset:
-                           Grootheid.Code Grootheid.Omschrijving
-    AquoMetadata_MessageID                                      
-    299                            HEFHTE              Hefhoogte
-    357                          HOOGWTDG          Hoogwater dag
-    443                          LAAGWTDG          Laagwater dag
-    515                            WATHTE            Waterhoogte
-    
-    unique Groepering available in requested subset:
-                           Groepering.Code   Groepering.Omschrijving
-    AquoMetadata_MessageID                                          
-    1463                               NVT       Niet van toepassing
-    1464                         GETETMSL2  Getijextremen t.o.v. MSL
-    1481                           GETETM2             Getijextremen
-    
-    unique Hoedanigheid available in requested subset:
-                           Hoedanigheid.Code            Hoedanigheid.Omschrijving
-    AquoMetadata_MessageID                                                       
-    485                                  MSL                t.o.v. Mean Sea Level
-    517                                  NAP       t.o.v. Normaal Amsterdams Peil
-    546                             PLAATSLR    t.o.v. plaatselijk referentievlak
-    551                                  TAW  t.o.v. Tweede Algemene Waterpassing
-    
-    unique MeetApparaat available in requested subset:
-                           MeetApparaat.Code      MeetApparaat.Omschrijving
-    AquoMetadata_MessageID                                                 
-    490                                  NVT  Waarde is niet van toepassing
-    497                                  106              Troebelheidsmeter
-    499                                  109                          Radar
-    506                                  124                     Peilschaal
-    509                                  125                    Stappenbaak
-    514                                  126                      Ultrasoon
-    517                                  127                        Vlotter
-    529                                  134      Akoestisch Doppler (ADCP)
-    530                                  135      Elektromagnetische sensor
-    533                                  155                     Druksensor
-    539                                  156           Stroomsnelheidsmeter
-    541                                  205                  Afstandsdraad
-    
-    unique Parameter available in requested subset:
-                           Parameter.Code         Parameter.Omschrijving
-    AquoMetadata_MessageID                                              
-    1463                              NVT  Waarde is niet van toepassing
-    
-    unique Typering available in requested subset:
-                           Typering.Code          Typering.Omschrijving
-    AquoMetadata_MessageID                                             
-    1463                             NVT  Waarde is niet van toepassing
-    
-    unique WaardeBepalingsmethode available in requested subset:
-                           WaardeBepalingsmethode.Code                WaardeBepalingsmethode.Omschrijving
-    AquoMetadata_MessageID                                                                               
-    1463                                    other:F007  Rekenkundig gemiddelde waarde over vorige 5 en...
-    1464                                    other:F009                          Visuele aflezing van blad
-    1465                                    other:F010  HW en LW uit 1 min. waterhoogten gefilterd uit...
-    1466                                    other:F001  Rekenkundig gemiddelde waarde over vorige 10 m...
-    [...]
-    1531                                    other:F097  Rek. gem. stroomsnelheid over vorige 5 en volg...
-    1532                                    other:F103  Rek. gem. afvoer over vorige 5 en volgende 5 m...
-    1541                                    other:F153          Rek. gem. waterhoogte over vorige 15 min.
-    1544                                    other:F012  Astronomische waterhoogte mbv harmonische analyse
-    """
-    meta_dict = {'Grootheid.Code':'WATHTE', 'Groepering.Code':'NVT', #combination for measured waterlevels
-                 #'Hoedanigheid.Code':'NAP', # vertical reference. Hoedanigheid is necessary for eg EURPFM/LICHTELGRE, where NAP and MSL values are available while it should only contain MSL #MSL, NAP, PLAATSLR, TAW, NVT (from cat_aquometadatalijst_waterhoogte['Hoedanigheid.Code'])
-                 #'MeetApparaat.Code':'127', # measurement device type. MeetApparaat.Code is necessary for IJMDBTHVN/ROOMPBTN, where also radar measurements are available (all other stations are vlotter and these stations also have all important data in vlotter) TODO: Except LICHTELGRE/K13APFM which have Radar/Stappenbaak en Radar as MeetApparaat
-                 }
+    # combination for measured waterlevels
+    meta_dict = {'Grootheid.Code':'WATHTE', 'Groepering.Code':'NVT'}
     return meta_dict
 
 
@@ -594,7 +533,9 @@ def rwsddl_ssh_read_catalog(meta_dict=None):
     # convert coordinates to wgs84
     ddl_slev_gdf = ddl_slev_gdf.to_crs(4326)
     
+    ddl_slev_gdf["station_name"] = ddl_slev_gdf["Naam"]
     ddl_slev_gdf["station_name_unique"] = ddl_slev_gdf["Code"]
+    ddl_slev_gdf["station_id"] = ddl_slev_gdf["Code"]
     ddl_slev_gdf["country"] = "NLD"
     
     return ddl_slev_gdf
@@ -630,7 +571,6 @@ def cmems_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None):
     ftp = cmems_ftp_login(host, dir_data)
     
     fname = os.path.basename(row["file_name"])
-    stat_name = row.loc["station_name_unique"]
     tempdir = tempfile.gettempdir()
     fname_out_raw = os.path.join(tempdir, "dfmtools_cmems_ssh_retrieve_data_temporary_file.nc")
     with open(fname_out_raw, 'wb') as fp:
@@ -656,6 +596,7 @@ def cmems_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None):
     if not ds.time.to_pandas().index.is_monotonic_increasing:
         # TODO: happens in some MO_TS_TG_RMN-* stations in NRT dataset, asked to fix
         # Genova, Imperia, LaSpezia, Livorno, Ravenna, Venice
+        stat_name = row.loc["station_name_unique"]
         print(f"[{stat_name} NOT MONOTONIC] ", end="")
         del ds
         os.remove(fname_out_raw)
@@ -670,13 +611,6 @@ def cmems_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None):
         os.remove(fname_out_raw)
         return
     
-    ds = ds.assign_attrs(station_name=row["station_name_unique"],
-                         station_id=row["station_name_unique"],
-                         station_name_unique=row["station_name_unique"],
-                         longitude=row.geometry.x,
-                         latitude=row.geometry.x,
-                         country=row["country"], # TODO: this is currently an empty string
-                         )
     return ds
 
 
@@ -711,8 +645,6 @@ def uhslc_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None):
     try:
         ds = e.to_xarray()
     except HTTPError:
-        # print(f"station {uhslc_id} not found in {dataset_id} with "
-        #       f"timerange tstart={time_min} to tstop={time_max}")
         # no data so early return
         return
     
@@ -730,13 +662,6 @@ def uhslc_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None):
     # set time index
     ds = ds.set_index(obs="time").rename(obs="time")
     ds['time'] = ds.time.dt.round('s') #round to seconds
-    
-    ds_attrs = {"station_id":row["uhslc_id"],
-                "station_name":row["name"],
-                "station_name_unique":row["station_name_unique"],
-                "longitude": row.geometry.x,
-                "latitude": row.geometry.y}
-    ds = ds.assign_attrs(ds_attrs)
     return ds
 
 
@@ -793,14 +718,6 @@ def gesla3_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None,
     
     # filter bad quality data
     ds = ds.where(ds.qc_flag==1)
-
-    ds = ds.assign_attrs(station_name=row["site_name"],
-                         station_id=row["site_code"],
-                         station_name_unique=row["station_name_unique"],
-                         longitude=row.geometry.x,
-                         latitude=row.geometry.y,
-                         country=row["country"],
-                         )
     return ds
 
 
@@ -853,13 +770,6 @@ def ioc_ssh_retrieve_data(row, dir_output, time_min, time_max, subset_hourly=Fal
     if subset_hourly:
         data_pd_all = data_pd_all.loc[data_pd_all.index.minute==0]
     ds = data_pd_all.to_xarray()
-    ds = ds.assign_attrs(station_name=row["Location"],
-                         station_id=row["Code"],
-                         station_name_unique=row["station_name_unique"],
-                         longitude=row["Lon"],
-                         latitude=row["Lat"],
-                         country=row["country"],
-                         )
     ds = ds.rename_vars(slevel="waterlevel")
     ds["waterlevel"] = ds["waterlevel"].assign_attrs({"units":"m"})
     return ds
@@ -885,14 +795,7 @@ def psmsl_gnssir_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None
     ds = data.to_xarray()
     ds['slev'] = ds['slev'].assign_attrs(units="m")
     ds = ds.rename_vars(slev="waterlevel")
-    ds = ds.assign_attrs(station_name=row["Name"],
-                         station_id=row["Code"],
-                         station_name_unique=row["station_name_unique"],
-                         longitude=row.geometry.x,
-                         latitude=row.geometry.y,
-                         country=row["country"],
-                         )
-    
+
     ds = ds.sel(time=slice(time_min, time_max))
     if len(ds.time) == 0:
         return
@@ -935,13 +838,6 @@ def rwsddl_ssh_retrieve_data(row, dir_output, time_min, time_max, meta_dict=None
     ds_attrs = simplified.attrs
     # drop irrelevant attrs
     ds_attrs = {k:v for k,v in ds_attrs.items() if not k.startswith("Bemonstering") and not k.startswith("BioTaxon")}
-    # add metadata to timeseries (to be able to distinguish difference later on)
-    ds_attrs["station_name"] = ds_attrs["Naam"]
-    ds_attrs["station_id"] = ds_attrs["Code"]
-    ds_attrs["station_name_unique"] = row["station_name_unique"]
-    ds_attrs["longitude"] = row.geometry.x # in wgs84
-    ds_attrs["latitude"] = row.geometry.y # in wgs84
-    ds_attrs["country"] = row["country"]
     
     # dropping timezone is required to get proper encoding in time variable (in netcdf file)
     simplified.index = simplified.index.tz_convert(None)
@@ -1046,8 +942,17 @@ def ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
             print("[NODATA] ",end="")
             continue
         
+        # assign attrs from station catalog row
+        ds = ds.assign_attrs(station_name=row["station_name"],
+                             station_id=row["station_id"],
+                             station_name_unique=row["station_name_unique"],
+                             longitude=row.geometry.x,
+                             latitude=row.geometry.x,
+                             country=row["country"])
+        
         ds["waterlevel"] = ds["waterlevel"].astype("float32")
         _make_hydrotools_consistent(ds)
+        
         stat_name = ds.attrs["station_name_unique"]
         file_out = os.path.join(dir_output, f"{stat_name}.nc")
         ds.to_netcdf(file_out)

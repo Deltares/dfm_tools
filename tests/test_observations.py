@@ -24,7 +24,8 @@ if os.path.exists(r"p:\1230882-emodnet_hrsm\data\GESLA3"):
 @pytest.mark.unittest
 @pytest.mark.parametrize("source", source_list)
 def test_ssh_catalog_subset_expected_fields(source):
-    fields_expected = ["geometry", "source", "country", "station_name_unique"]
+    fields_expected = ["geometry", "source", "country", 
+                       "station_name", "station_id", "station_name_unique"]
     
     ssc_catalog_gpd = dfmt.ssh_catalog_subset(source=source)
     for field in fields_expected:
