@@ -81,7 +81,8 @@ def test_meshkernel_refine_basegrid():
     file_nc_bathy = r'https://opendap.deltares.nl/thredds/dodsC/opendap/deltares/Delft3D/netcdf_example_files/GEBCO_2022/GEBCO_2022_coarsefac08.nc'
     data_bathy = xr.open_dataset(file_nc_bathy)
     
-    for dtype in ["float64", "float32", "int32", "int16"]:
+    # TODO: in the future meshkernel supports all these four datatypes, so add more datatypes to list
+    for dtype in ["float32", "int16"]: # ["float64", "float32", "int32", "int16"]:
         data_bathy_sel = data_bathy.sel(lon=slice(lon_min,lon_max),lat=slice(lat_min,lat_max)).elevation
         data_bathy_sel = data_bathy_sel.astype(dtype=dtype)
         
@@ -91,7 +92,7 @@ def test_meshkernel_refine_basegrid():
         # refine (fails if wrong type)
         min_edge_size = 300 #in meters
         dfmt.refine_basegrid(mk=mk_object, data_bathy_sel=data_bathy_sel, min_edge_size=min_edge_size)
-        
+
         assert len(mk_object.mesh2d_get().node_x) == 4074
         assert len(mk_object.mesh2d_get().face_nodes) == 17298
 
