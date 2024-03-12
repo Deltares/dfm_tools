@@ -93,6 +93,21 @@ def test_ssh_retrieve_data(source, tmp_path):
 
 
 @pytest.mark.unittest
+def test_rwsddl_ssh_get_time_max():
+    import ddlpy
+
+    locations = ddlpy.locations()
+    bool_hoedanigheid = locations['Hoedanigheid.Code'].isin(['NAP'])
+    bool_stations = locations.index.isin(['HOEKVHLD', 'IJMDBTHVN','SCHEVNGN'])
+    bool_grootheid = locations['Grootheid.Code'].isin(['WATHTE'])
+    bool_groepering = locations['Groepering.Code'].isin(['NVT'])
+    selected = locations.loc[bool_grootheid & bool_hoedanigheid & bool_groepering & bool_stations]
+    selected_withtimemax = dfmt.observations.rwsddl_ssh_get_time_max(selected)
+    assert "time_max" not in selected.columns
+    assert "time_max" in selected_withtimemax.columns
+
+    
+@pytest.mark.unittest
 def test_ssc_sscid_from_otherid():
     sscid_from_uhslcid = ssc_sscid_from_otherid(group_id=347, groupname='uhslc')
     assert sscid_from_uhslcid=="SSC-abas"
