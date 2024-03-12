@@ -818,7 +818,7 @@ def rwsddl_ssh_retrieve_data(row, dir_output, time_min, time_max, meta_dict=None
     # if we pass one row to the measurements function you can get all the measurements
     measurements = ddlpy.measurements(row, time_min, time_max)
     
-    if measurements is None:
+    if measurements.empty:
         # no output so this station is skipped
         return
     
