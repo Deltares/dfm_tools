@@ -259,9 +259,9 @@ def cmems_ssh_read_catalog(source):
     # TODO: hopefully country metadata is available via cmems API in the future
     index_history_gpd["country"] = ""
     stat_ids = index_history_gpd["file_name"].apply(lambda x: os.path.basename(x).replace(".nc",""))
-    stat_names = stat_ids.str.split("_").str[-1]
+    stat_names = stat_ids.str.split("_").str[3] # corresponds to the cmems platform_code
     index_history_gpd["station_name"] = stat_names
-    index_history_gpd["station_id"] = stat_ids
+    index_history_gpd["station_id"] = stat_names
     index_history_gpd["station_name_unique"] = stat_ids
     
     # rename columns
