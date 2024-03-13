@@ -8,6 +8,7 @@ Created on Sat Dec  9 17:46:57 2023
 import os
 import pytest
 import glob
+import ddlpy
 import dfm_tools as dfmt
 from dfm_tools.observations import (ssc_sscid_from_otherid,
                                     ssc_ssh_subset_groups,
@@ -94,8 +95,6 @@ def test_ssh_retrieve_data(source, tmp_path):
 
 @pytest.mark.unittest
 def test_rwsddl_ssh_get_time_max():
-    import ddlpy
-
     locations = ddlpy.locations()
     bool_hoedanigheid = locations['Hoedanigheid.Code'].isin(['NAP'])
     bool_stations = locations.index.isin(['HOEKVHLD', 'IJMDBTHVN','SCHEVNGN'])
