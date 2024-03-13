@@ -9,6 +9,7 @@ import cftime
 import getpass
 import shutil
 import subprocess
+import sys
 
 __all__ = [
     "download_ERA5",
@@ -338,7 +339,7 @@ def copernicusmarine_reset(remove_folder=False, overwrite_cache=True, update_pac
         subprocess.run("copernicusmarine describe --overwrite-metadata-cache")
     if update_package:
         print("reset copernicusmarine: updating copernicusmarine")
-        subprocess.run("pip install copernicusmarine -U")
+        subprocess.check_call(f"{sys.executable} -m pip install copernicusmarine -U")
 
 
 def copernicusmarine_dataset_timerange(dataset_id):
