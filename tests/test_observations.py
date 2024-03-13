@@ -70,6 +70,9 @@ def test_ssh_retrieve_data(source, tmp_path):
     
     if source=="uhslc-rqds":
         time_min, time_max = '2018-01-01','2018-02-01'
+    elif source=="rwsddl":
+        #TODO: temporarily more recent period since ddl data is being replaced
+        time_min, time_max = '2023-01-01','2023-02-01'
     else:
         time_min, time_max = '2020-01-01','2020-02-01'
     
