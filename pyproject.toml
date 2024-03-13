@@ -46,6 +46,8 @@ dependencies = [
 	"erddapy>=2.0.0",
 	#copernicusmarine<1.0.2 does not support no_metadata_cache in get_and_check_username_password function
 	"copernicusmarine>=1.0.2",
+	#rws-ddlpy<0.3.0 is very old and does not support newer pandas versions
+	"rws-ddlpy>=0.3.0",
 	#pooch<1.1.0 do not have attribute retrieve
 	"pooch>=1.1.0",
 	#hydrolib-core 0.7.0 supports meshkernel>=4.1.0
@@ -91,10 +93,6 @@ docs = [
 examples = [
 	"jupyter",
 	"notebook",
-]
-ddl = [
-	#"ddlpy>=0.3.0", #ddlpy 0.3.0 was new release with fixes and new features #TODO: we temporarily require the main branch: https://github.com/deltares/ddlpy/issues/20
-	"ddlpy@git+https://github.com/deltares/ddlpy",
 ]
 
 [tool.setuptools]
