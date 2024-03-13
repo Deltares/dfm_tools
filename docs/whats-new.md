@@ -1,6 +1,7 @@
 ## UNRELEASED
 
 ### Feat
+- added ddl/rws insitu data to `dfmt.ssh_catalog_subset()` and `dfmt.ssh_retrieve_data()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#791](https://github.com/Deltares/dfm_tools/pull/791) and [#796](https://github.com/Deltares/dfm_tools/pull/796)
 - added cmems nrt insitu data to `dfmt.ssh_catalog_subset()` and `dfmt.ssh_retrieve_data()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#791](https://github.com/Deltares/dfm_tools/pull/791) and [#793](https://github.com/Deltares/dfm_tools/pull/793)
 - support for meshkernel>=4.1.0 in [#801](https://github.com/Deltares/dfm_tools/pull/801)
 

@@ -7,78 +7,109 @@ Created on Sat Dec  9 17:46:57 2023
 
 import os
 import pytest
+import glob
+import ddlpy
 import dfm_tools as dfmt
 from dfm_tools.observations import (ssc_sscid_from_otherid,
                                     ssc_ssh_subset_groups,
                                     )
 
-
-@pytest.mark.requiressecrets
-@pytest.mark.unittest
-def test_ssh_catalog_subset_expected_fields():
-    fields_expected = ["geometry", "source", "country", "station_name_unique"]
-    source_list = ["uhslc-fast", "uhslc-rqds", "psmsl-gnssir", "ssc", "ioc",
-                   "cmems", "cmems-nrt"] # cmems requires credentials
-    if os.path.exists(r"p:\1230882-emodnet_hrsm\data\GESLA3"):
-        # not possible without p-drive connection
-        source_list += ["gesla3"]
-    for source in source_list:
-        ssc_catalog_gpd = dfmt.ssh_catalog_subset(source=source)
-        for field in fields_expected:
-            assert field in ssc_catalog_gpd.columns
-        if source not in ["ssc", "psmsl-gnssir"]:
-            assert "time_ndays" in ssc_catalog_gpd.columns
+source_list = ["uhslc-fast", "uhslc-rqds", "psmsl-gnssir", "ssc", "ioc", "rwsddl", 
+               "cmems", "cmems-nrt"] # cmems requires credentials
+if os.path.exists(r"p:\1230882-emodnet_hrsm\data\GESLA3"):
+    # not possible without p-drive connection
+    source_list += ["gesla3"]
 
 
 @pytest.mark.requiressecrets
 @pytest.mark.unittest
-def test_ssh_catalog_subset():
+@pytest.mark.parametrize("source", source_list)
+def test_ssh_catalog_subset_expected_fields(source):
+    fields_expected = ["geometry", "source", "country", 
+                       "station_name", "station_id", "station_name_unique"]
+    
+    ssc_catalog_gpd = dfmt.ssh_catalog_subset(source=source)
+    for field in fields_expected:
+        assert field in ssc_catalog_gpd.columns
+    if source not in ["ssc", "psmsl-gnssir", "rwsddl"]:
+        assert "time_ndays" in ssc_catalog_gpd.columns
+    assert ssc_catalog_gpd.crs.to_string()=='EPSG:4326'
+
+
+@pytest.mark.requiressecrets
+@pytest.mark.unittest
+@pytest.mark.parametrize("source", source_list)
+def test_ssh_catalog_subset(source):
     lon_min, lon_max, lat_min, lat_max = -6, 5, 48, 50.5 # france
     # lon_min, lon_max, lat_min, lat_max = 123, 148, 23, 47 # japan
     # lon_min, lon_max, lat_min, lat_max = -20, 40, 25, 72
     # time_min, time_max = '2016-01-01','2016-06-01'
     time_min, time_max = '2020-01-01','2020-06-01'
     
-    source_list_witime = ["uhslc-fast", "uhslc-rqds", "psmsl-gnssir", "ioc", 
-                          "cmems", "cmems-nrt"] # cmems requires credentials
-    if os.path.exists(r"p:\1230882-emodnet_hrsm\data\GESLA3"):
-        # not possible without p-drive connection
-        source_list_witime += ["gesla3"]
-    source_list_notime = ["ssc"]
-    for source in source_list_witime+source_list_notime:
-        ssc_catalog_gpd = dfmt.ssh_catalog_subset(source=source)
-        if source in source_list_notime:
-            ssc_catalog_gpd_sel = dfmt.ssh_catalog_subset(source=source,
-                                                          lon_min=lon_min, lon_max=lon_max, 
-                                                          lat_min=lat_min, lat_max=lat_max)
-        else:
-            ssc_catalog_gpd_sel = dfmt.ssh_catalog_subset(source=source,
-                                                          lon_min=lon_min, lon_max=lon_max, 
-                                                          lat_min=lat_min, lat_max=lat_max, 
-                                                          time_min=time_min, time_max=time_max)
-        assert len(ssc_catalog_gpd) > len(ssc_catalog_gpd_sel)
+    source_list_notime = ["ssc","rwsddl"]
+    ssc_catalog_gpd = dfmt.ssh_catalog_subset(source=source)
+    if source in source_list_notime:
+        ssc_catalog_gpd_sel = dfmt.ssh_catalog_subset(source=source,
+                                                      lon_min=lon_min, lon_max=lon_max, 
+                                                      lat_min=lat_min, lat_max=lat_max)
+    else:
+        ssc_catalog_gpd_sel = dfmt.ssh_catalog_subset(source=source,
+                                                      lon_min=lon_min, lon_max=lon_max, 
+                                                      lat_min=lat_min, lat_max=lat_max, 
+                                                      time_min=time_min, time_max=time_max)
+    assert len(ssc_catalog_gpd) > len(ssc_catalog_gpd_sel)
 
 
 @pytest.mark.requiressecrets
 @pytest.mark.unittest
-def test_ssh_retrieve_data(tmp_path):
-    time_min, time_max = '2020-01-01','2020-02-01'
+@pytest.mark.parametrize("source", source_list)
+def test_ssh_retrieve_data(source, tmp_path):
+    # ssc does not contain data, only station locations, so early return
+    if source=="ssc":
+        return
     
-    source_list = ["ioc", "uhslc-fast", "uhslc-rqds", "psmsl-gnssir", 
-                   "cmems", "cmems-nrt"] # cmems requires credentials
-    if os.path.exists(r"p:\1230882-emodnet_hrsm"):
-        # not possible without p-drive connection
-        source_list += ["gesla3"]
-    for source in source_list:
-        ssc_catalog_gpd = dfmt.ssh_catalog_subset(source=source)
-        ssc_catalog_gpd_sel = ssc_catalog_gpd.iloc[:1]
-        if source=="cmems": #TODO: remove this exception when the cmems API works for insitu data
-            dfmt.ssh_retrieve_data(ssc_catalog_gpd_sel, dir_output=tmp_path)
-        else:
-            dfmt.ssh_retrieve_data(ssc_catalog_gpd_sel, dir_output=tmp_path, 
-                                   time_min=time_min, time_max=time_max)
+    if source=="uhslc-rqds":
+        # 2020 not available in uhslc-rqds yet
+        time_min, time_max = '2018-01-01','2018-02-01'
+    elif source=="rwsddl":
+        #TODO: temporarily more recent period since ddl data is being replaced
+        time_min, time_max = '2023-01-01','2023-02-01'
+    else:
+        time_min, time_max = '2020-01-01','2020-02-01'
+    
+    ssc_catalog_gpd = dfmt.ssh_catalog_subset(source=source)
+    if source=="rwsddl":
+        # order of rows in rwsddl locations dataframe is python-version-dependent
+        # make sure we always test on the same hist station (no realtime data)
+        bool_hoekvhld = ssc_catalog_gpd["Code"].isin(["HOEKVHLD"])
+        ssc_catalog_gpd = ssc_catalog_gpd.loc[bool_hoekvhld]
+    
+    index_dict = {"uhslc-fast":0, "uhslc-rqds":2, 
+                  "psmsl-gnssir":0, "ioc":0, "rwsddl":0, 
+                  "cmems":0, "cmems-nrt":0, # cmems requires credentials
+                  "gesla3":0}
+    index = index_dict[source]
+    ssc_catalog_gpd_sel = ssc_catalog_gpd.iloc[index:index+1]
+    
+    dfmt.ssh_retrieve_data(ssc_catalog_gpd_sel, dir_output=tmp_path, 
+                           time_min=time_min, time_max=time_max)
+    nc_list = glob.glob(os.path.join(tmp_path, "*.nc"))
+    assert len(nc_list)==1
 
 
+@pytest.mark.unittest
+def test_rwsddl_ssh_get_time_max():
+    locations = ddlpy.locations()
+    bool_hoedanigheid = locations['Hoedanigheid.Code'].isin(['NAP'])
+    bool_stations = locations.index.isin(['HOEKVHLD', 'IJMDBTHVN','SCHEVNGN'])
+    bool_grootheid = locations['Grootheid.Code'].isin(['WATHTE'])
+    bool_groepering = locations['Groepering.Code'].isin(['NVT'])
+    selected = locations.loc[bool_grootheid & bool_hoedanigheid & bool_groepering & bool_stations]
+    selected_withtimemax = dfmt.observations.rwsddl_ssh_get_time_max(selected)
+    assert "time_max" not in selected.columns
+    assert "time_max" in selected_withtimemax.columns
+
+    
 @pytest.mark.unittest
 def test_ssc_sscid_from_otherid():
     sscid_from_uhslcid = ssc_sscid_from_otherid(group_id=347, groupname='uhslc')

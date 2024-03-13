@@ -115,7 +115,7 @@ def get_borders_gdb(res:str='h', bbox:tuple = (-180, -90, 180, 90), crs:str = No
 
     file_shp_L1 = os.path.join(dir_gshhs,'WDBII_shp',res,f'WDBII_border_{res}_L1.shp') #borders
     
-    print('>> reading coastlines: ',end='')
+    print('>> reading country borders: ',end='')
     dtstart = dt.datetime.now()
     coastlines_gdb = gpd.read_file(file_shp_L1, bbox=bbox)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
