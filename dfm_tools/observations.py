@@ -9,13 +9,13 @@ import os
 import xarray as xr
 from ftplib import FTP
 from dfm_tools.download import copernicusmarine_credentials
-from erddapy import ERDDAP #pip install erddapy
+from erddapy import ERDDAP
 import requests
 from zipfile import ZipFile
 from io import BytesIO
 import functools
 import tempfile
-
+import ddlpy
 
 __all__ = ["ssh_catalog_subset",
            "ssh_catalog_toxynfile",
@@ -472,11 +472,6 @@ def rwsddl_ssh_meta_dict():
 
 
 def rwsddl_ssh_get_time_max(locations):
-    try:
-        import ddlpy
-    except ImportError:
-        raise ImportError("hatyan and ddlpy are required for this functionality, install with 'pip install hatyan rws-ddlpy'")
-    
     locations = locations.copy() # copy to prevent SettingWithCopyWarning
     
     print(f"getting time_max for {len(locations)} locations: ", end="")
@@ -498,11 +493,6 @@ def rwsddl_ssh_read_catalog(meta_dict=None):
     """
     convert LocatieLijst to geopandas dataframe
     """
-    try:
-        import ddlpy
-    except ImportError:
-        raise ImportError("hatyan and ddlpy are required for this functionality, install with 'pip install hatyan rws-ddlpy'")
-    
     if meta_dict is None:
         meta_dict = rwsddl_ssh_meta_dict()
     
@@ -806,11 +796,6 @@ def rwsddl_ssh_retrieve_data(row, dir_output, time_min, time_max, meta_dict=None
     
     if time_min is None or time_max is None:
         raise ValueError("cannot supply None for 'time_min' or 'time_max' to 'rwsddl_ssh_retrieve_data()'")
-    
-    try:
-        import ddlpy
-    except ImportError:
-        raise ImportError("hatyan and ddlpy are required for this functionality, install with 'pip install hatyan rws-ddlpy'")
 
     if meta_dict is None:
         meta_dict = rwsddl_ssh_meta_dict()
