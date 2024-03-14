@@ -1,4 +1,4 @@
-## UNRELEASED
+## 0.21.0 (2024-03-14)
 
 ### Feat
 - added ddl/rws insitu data to `dfmt.ssh_catalog_subset()` and `dfmt.ssh_retrieve_data()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#791](https://github.com/Deltares/dfm_tools/pull/791) and [#796](https://github.com/Deltares/dfm_tools/pull/796)
