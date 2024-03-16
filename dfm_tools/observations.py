@@ -956,7 +956,7 @@ def ssh_netcdf_overview(dir_netcdf, perplot=30, date_start="1980-01-01", date_en
     file_list = glob.glob(os.path.join(dir_netcdf, "*.nc"))
     file_list.sort()
     
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(12,7))
     stats_list = []
     fig_file_list = []
     for ifile, file_nc in enumerate(file_list):
@@ -965,6 +965,7 @@ def ssh_netcdf_overview(dir_netcdf, perplot=30, date_start="1980-01-01", date_en
         print(f"processing file {ifile+1} of {len(file_list)}: {fname}")
         
         ds_full = xr.open_dataset(file_nc)
+        ds_full = ds_full.sortby("time") #TODO: necessary for BODC
         ds = ds_full.sel(time=slice(date_start, date_end))
         
         # station identifiers
@@ -1008,9 +1009,9 @@ def ssh_netcdf_overview(dir_netcdf, perplot=30, date_start="1980-01-01", date_en
         stats_list.append(stats_one_pd)
         
         
-        # unique timestamps after rounding to days
-        time_day_uniq = ds.time.to_pandas().index.round("d").drop_duplicates()
-        time_yaxis_value = pd.Series(index=time_day_uniq)
+        # take unique timestamps after rounding to hours, this is faster and consumes less memory
+        time_hr_uniq = ds.time.to_pandas().index.round("H").drop_duplicates()
+        time_yaxis_value = pd.Series(index=time_hr_uniq)
         time_yaxis_value[:] = ifile%perplot
         time_yaxis_value.plot(ax=ax, marker='s', linestyle='none', markersize=1, color="r")
         
@@ -1030,11 +1031,13 @@ def ssh_netcdf_overview(dir_netcdf, perplot=30, date_start="1980-01-01", date_en
             fig.savefig(os.path.join(dir_output, figname), dpi=200)
         
         if bool_lastinrange:
-            plt.close()
-        else:
             # reset figure
             ax.cla()
             fig_file_list = []
+
+        if bool_lastfile:
+            plt.close()
+
             
     stats = pd.concat(stats_list)
     stats.index.name = "file_name"
