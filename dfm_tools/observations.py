@@ -16,10 +16,13 @@ from io import BytesIO
 import functools
 import tempfile
 import ddlpy
+import glob
+import matplotlib.pyplot as plt
 
 __all__ = ["ssh_catalog_subset",
            "ssh_catalog_toxynfile",
            "ssh_retrieve_data",
+           "ssh_netcdf_overview",
            ]
 
 
@@ -883,14 +886,6 @@ def ssh_catalog_subset(source=None,
     return ssh_catalog_gpd
 
 
-def ssh_catalog_toxynfile(ssc_catalog_gpd, file_xyn):
-    lon = ssc_catalog_gpd.geometry.x
-    lat = ssc_catalog_gpd.geometry.y
-    name = ssc_catalog_gpd['station_name_unique']
-    data = np.c_[lon, lat, name]
-    np.savetxt(file_xyn, data, fmt='%11.6f %11.6f %-s')
-
-
 def ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
                       **kwargs):
     
@@ -943,4 +938,113 @@ def ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
         ds.to_netcdf(file_out)
         del ds
     print()
+
+
+def ssh_catalog_toxynfile(ssc_catalog_gpd, file_xyn):
+    lon = ssc_catalog_gpd.geometry.x
+    lat = ssc_catalog_gpd.geometry.y
+    name = ssc_catalog_gpd['station_name_unique']
+    data = np.c_[lon, lat, name]
+    np.savetxt(file_xyn, data, fmt='%11.6f %11.6f %-s')
+
+
+def ssh_netcdf_overview(dir_netcdf, perplot=30, date_start="1980-01-01", date_end="2025-01-01"):
+    
+    dir_output = os.path.join(dir_netcdf, "overview")
+    os.makedirs(dir_output, exist_ok=True)
+    
+    file_list = glob.glob(os.path.join(dir_netcdf, "*.nc"))
+    file_list.sort()
+    
+    fig, ax = plt.subplots()
+    stats_list = []
+    fig_file_list = []
+    for ifile, file_nc in enumerate(file_list):
+        
+        fname = os.path.basename(file_nc)
+        print(f"processing file {ifile+1} of {len(file_list)}: {fname}")
+        
+        ds_full = xr.open_dataset(file_nc)
+        ds = ds_full.sel(time=slice(date_start, date_end))
+        
+        # station identifiers
+        station_name = str(ds.station_name.str.decode('utf-8',errors='ignore').to_numpy())
+        station_id = str(ds.station_name.str.decode('utf-8',errors='ignore').to_numpy())
+        if "station_name_unique" in ds.attrs:
+            station_name_unique = ds.attrs["station_name_unique"]
+        else:
+            station_name_unique = fname.replace(".nc","") #TODO: if we keep writing netcdf files with this attr this is sort of safe
+        longitude = float(ds.station_x_coordinate) #TODO: these are the same for zeebrugge, check this
+        latitude = float(ds.station_y_coordinate)
+        
+        fig_file_list.append(station_name)
+        
+        # stats
+        ds_ndays = round(float((ds.time.max() - ds.time.min()).dt.total_seconds()/3600/24), 2)
+        nvalues = len(ds.waterlevel)
+        nnan = int(ds.waterlevel.isnull().sum())
+        time_diff_min = ds.time.to_pandas().diff().dt.total_seconds()/60
+        
+        stats_one = {"station_name":station_name,
+                     "station_id":station_id,
+                     "station_name_unique":station_name_unique,
+                     "longitude":longitude,
+                     "latitude":latitude,
+                     "tstart":str(ds.time[0].dt.strftime("%Y-%m-%d").values),
+                     "tstop":str(ds.time[-1].dt.strftime("%Y-%m-%d").values),
+                     "ndays": ds_ndays,
+                     "#values": nvalues,
+                     "#nan": nnan,
+                     "%nan": (nnan/nvalues)*100,
+                     "dt min [min]":int(time_diff_min.min()),
+                     "dt max [min]":int(time_diff_min.max()),
+                     "dt mean [min]":time_diff_min.mean(),
+                     "dt mode [min]":time_diff_min.mode().iloc[0],
+                     "ndupl": ds.time.to_pandas().duplicated().sum(),
+                     "min": float(ds.waterlevel.min()),
+                     "max": float(ds.waterlevel.max()),
+                     }
+        stats_one_pd = pd.DataFrame(stats_one, index=[fname])
+        stats_list.append(stats_one_pd)
+        
+        
+        # unique timestamps after rounding to days
+        time_day_uniq = ds.time.to_pandas().index.round("d").drop_duplicates()
+        time_yaxis_value = pd.Series(index=time_day_uniq)
+        time_yaxis_value[:] = ifile%perplot
+        time_yaxis_value.plot(ax=ax, marker='s', linestyle='none', markersize=1, color="r")
+        
+        # clear file links
+        del ds
+        
+        bool_lastinrange = (ifile%perplot) == (perplot-1)
+        bool_lastfile = ifile == (len(file_list)-1)
+        if bool_lastinrange | bool_lastfile:
+            # finish and save figure
+            nlines = len(fig_file_list)
+            ax.set_yticks(range(nlines), fig_file_list)
+            figname = f"overview_availability_{ifile-nlines+2:03d}_{ifile+1:03d}"
+            ax.set_xlim(date_start, date_end)
+            ax.grid()
+            fig.tight_layout()
+            fig.savefig(os.path.join(dir_output, figname), dpi=200)
+        
+        if bool_lastinrange:
+            plt.close()
+        else:
+            # reset figure
+            ax.cla()
+            fig_file_list = []
+            
+    stats = pd.concat(stats_list)
+    stats.index.name = "file_name"
+    file_csv = os.path.join(dir_output, "waterlevel_data_netcdf_overview.csv")
+    stats.to_csv(file_csv, float_format="%.2f")
+    
+    # write xyn file #TODO: currently uses station_name_unique, make this flexible?
+    geom_points = [Point(x,y) for x,y in zip(stats["longitude"],stats["latitude"])]
+    stations_df = stats[["station_name_unique"]]
+    stations_gdf = gpd.GeoDataFrame(data=stations_df, geometry=geom_points, crs='EPSG:4326')
+    file_xyn = os.path.join(dir_output, "stations_obs.xyn")
+    ssh_catalog_toxynfile(stations_gdf, file_xyn)
 
