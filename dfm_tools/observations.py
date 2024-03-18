@@ -18,6 +18,7 @@ import tempfile
 import ddlpy
 import glob
 import matplotlib.pyplot as plt
+import matplotlib.dates as md
 
 __all__ = ["ssh_catalog_subset",
            "ssh_catalog_toxynfile",
@@ -945,10 +946,10 @@ def ssh_catalog_toxynfile(ssc_catalog_gpd, file_xyn):
     lat = ssc_catalog_gpd.geometry.y
     name = ssc_catalog_gpd['station_name_unique']
     data = np.c_[lon, lat, name]
-    np.savetxt(file_xyn, data, fmt='%11.6f %11.6f %-s')
+    np.savetxt(file_xyn, data, fmt='%13.8f %13.8f %-s')
 
 
-def ssh_netcdf_overview(dir_netcdf, perplot=30, date_start="1980-01-01", date_end="2025-01-01"):
+def ssh_netcdf_overview(dir_netcdf, perplot=30, date_start="1980-01-01", date_end="2025-01-01", yearstep=2):
     
     dir_output = os.path.join(dir_netcdf, "overview")
     os.makedirs(dir_output, exist_ok=True)
@@ -956,17 +957,17 @@ def ssh_netcdf_overview(dir_netcdf, perplot=30, date_start="1980-01-01", date_en
     file_list = glob.glob(os.path.join(dir_netcdf, "*.nc"))
     file_list.sort()
     
-    fig, ax = plt.subplots(figsize=(12,7))
+    print(f"creating overview for {len(file_list)} files: ", end="")
+    fig, ax = plt.subplots(figsize=(15,8))
     stats_list = []
     fig_file_list = []
     for ifile, file_nc in enumerate(file_list):
         
         fname = os.path.basename(file_nc)
-        print(f"processing file {ifile+1} of {len(file_list)}: {fname}")
+        print(f"{ifile+1} ", end="")
         
-        ds_full = xr.open_dataset(file_nc)
-        ds_full = ds_full.sortby("time") #TODO: necessary for BODC
-        ds = ds_full.sel(time=slice(date_start, date_end))
+        ds = xr.open_dataset(file_nc)
+        ds = ds.sortby("time") #TODO: necessary for BODC
         
         # station identifiers
         station_name = str(ds.station_name.str.decode('utf-8',errors='ignore').to_numpy())
@@ -1008,9 +1009,12 @@ def ssh_netcdf_overview(dir_netcdf, perplot=30, date_start="1980-01-01", date_en
         stats_one_pd = pd.DataFrame(stats_one, index=[fname])
         stats_list.append(stats_one_pd)
         
-        
+        # derive unique hourly times with non-nan values
+        bool_nan = ds.waterlevel.isnull()
+        ds_nonan = ds.sel(time=~bool_nan)
+        ds_slice = ds_nonan.sel(time=slice(date_start, date_end))
         # take unique timestamps after rounding to hours, this is faster and consumes less memory
-        time_hr_uniq = ds.time.to_pandas().index.round("H").drop_duplicates()
+        time_hr_uniq = ds_slice.time.to_pandas().index.round("H").drop_duplicates()
         time_yaxis_value = pd.Series(index=time_hr_uniq)
         time_yaxis_value[:] = ifile%perplot
         time_yaxis_value.plot(ax=ax, marker='s', linestyle='none', markersize=1, color="r")
@@ -1026,7 +1030,12 @@ def ssh_netcdf_overview(dir_netcdf, perplot=30, date_start="1980-01-01", date_en
             ax.set_yticks(range(nlines), fig_file_list)
             figname = f"overview_availability_{ifile-nlines+2:03d}_{ifile+1:03d}"
             ax.set_xlim(date_start, date_end)
+            if yearstep is not None:
+                # set xtick steps
+                ax.xaxis.set_major_locator(md.YearLocator(base=yearstep))
+                ax.xaxis.set_major_formatter(md.DateFormatter('%Y'))
             ax.grid()
+            ax.set_xlabel(None)
             fig.tight_layout()
             fig.savefig(os.path.join(dir_output, figname), dpi=200)
         
@@ -1037,7 +1046,7 @@ def ssh_netcdf_overview(dir_netcdf, perplot=30, date_start="1980-01-01", date_en
 
         if bool_lastfile:
             plt.close()
-
+    print()
             
     stats = pd.concat(stats_list)
     stats.index.name = "file_name"
