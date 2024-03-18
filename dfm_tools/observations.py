@@ -949,7 +949,7 @@ def ssh_catalog_toxynfile(ssc_catalog_gpd, file_xyn):
     np.savetxt(file_xyn, data, fmt='%13.8f %13.8f %-s')
 
 
-def ssh_netcdf_overview(dir_netcdf, perplot=30, date_start="1980-01-01", date_end="2025-01-01", yearstep=2):
+def ssh_netcdf_overview(dir_netcdf, perplot=30, time_min=None, time_max=None, yearstep=None):
     
     dir_output = os.path.join(dir_netcdf, "overview")
     os.makedirs(dir_output, exist_ok=True)
@@ -1012,7 +1012,7 @@ def ssh_netcdf_overview(dir_netcdf, perplot=30, date_start="1980-01-01", date_en
         # derive unique hourly times with non-nan values
         bool_nan = ds.waterlevel.isnull()
         ds_nonan = ds.sel(time=~bool_nan)
-        ds_slice = ds_nonan.sel(time=slice(date_start, date_end))
+        ds_slice = ds_nonan.sel(time=slice(time_min, time_max))
         # take unique timestamps after rounding to hours, this is faster and consumes less memory
         time_hr_uniq = ds_slice.time.to_pandas().index.round("H").drop_duplicates()
         time_yaxis_value = pd.Series(index=time_hr_uniq)
@@ -1029,7 +1029,7 @@ def ssh_netcdf_overview(dir_netcdf, perplot=30, date_start="1980-01-01", date_en
             nlines = len(fig_file_list)
             ax.set_yticks(range(nlines), fig_file_list)
             figname = f"overview_availability_{ifile-nlines+2:03d}_{ifile+1:03d}"
-            ax.set_xlim(date_start, date_end)
+            ax.set_xlim(time_min, time_max)
             if yearstep is not None:
                 # set xtick steps
                 ax.xaxis.set_major_locator(md.YearLocator(base=yearstep))
@@ -1044,8 +1044,6 @@ def ssh_netcdf_overview(dir_netcdf, perplot=30, date_start="1980-01-01", date_en
             ax.cla()
             fig_file_list = []
 
-        if bool_lastfile:
-            plt.close()
     print()
             
     stats = pd.concat(stats_list)
