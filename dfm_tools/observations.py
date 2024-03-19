@@ -967,10 +967,10 @@ def ssh_netcdf_overview(dir_netcdf, perplot=30, time_min=None, time_max=None, ye
         print(f"{ifile+1} ", end="")
         
         ds = xr.open_dataset(file_nc)
-        ds = ds.sortby("time") #TODO: necessary for BODC
+        ds = ds.sortby("time") # necessary for BODC data
         
         fname_clean = fname.replace(".nc","")
-        longitude = float(ds.station_x_coordinate) #TODO: these are the same for zeebrugge, check this
+        longitude = float(ds.station_x_coordinate)
         latitude = float(ds.station_y_coordinate)
         
         fig_file_list.append(fname_clean)
