@@ -1016,7 +1016,7 @@ def ssh_netcdf_overview(dir_netcdf, perplot=30, time_min=None, time_max=None, ye
         # take unique timestamps after rounding to hours, this is faster and consumes less memory
         time_hr_uniq = ds_slice.time.to_pandas().index.round("H").drop_duplicates()
         time_yaxis_value = pd.Series(index=time_hr_uniq)
-        time_yaxis_value[:] = ifile%perplot
+        time_yaxis_value[:] = -(ifile%perplot)
         time_yaxis_value.plot(ax=ax, marker='s', linestyle='none', markersize=1, color="r")
         
         # clear file links
@@ -1027,7 +1027,7 @@ def ssh_netcdf_overview(dir_netcdf, perplot=30, time_min=None, time_max=None, ye
         if bool_lastinrange | bool_lastfile:
             # finish and save figure
             nlines = len(fig_file_list)
-            ax.set_yticks(range(nlines), fig_file_list)
+            ax.set_yticks(range(0,-nlines,-1), fig_file_list)
             figname = f"overview_availability_{ifile-nlines+2:03d}_{ifile+1:03d}"
             ax.set_xlim(time_min, time_max)
             if yearstep is not None:
