@@ -19,6 +19,7 @@ import ddlpy
 import glob
 import matplotlib.pyplot as plt
 import matplotlib.dates as md
+import shutil
 
 __all__ = ["ssh_catalog_subset",
            "ssh_catalog_toxynfile",
@@ -952,7 +953,9 @@ def ssh_catalog_toxynfile(ssc_catalog_gpd, file_xyn):
 def ssh_netcdf_overview(dir_netcdf, perplot=30, time_min=None, time_max=None, yearstep=None):
     
     dir_output = os.path.join(dir_netcdf, "overview")
-    os.makedirs(dir_output, exist_ok=True)
+    if os.path.isdir(dir_output):
+        shutil.rmtree(dir_output)
+    os.makedirs(dir_output, exist_ok=False)
     
     file_list = glob.glob(os.path.join(dir_netcdf, "*.nc"))
     file_list.sort()
