@@ -928,7 +928,7 @@ def ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
                              station_id=row["station_id"],
                              station_name_unique=row["station_name_unique"],
                              longitude=row.geometry.x,
-                             latitude=row.geometry.x,
+                             latitude=row.geometry.y,
                              country=row["country"])
         
         ds["waterlevel"] = ds["waterlevel"].astype("float32")
@@ -969,17 +969,11 @@ def ssh_netcdf_overview(dir_netcdf, perplot=30, time_min=None, time_max=None, ye
         ds = xr.open_dataset(file_nc)
         ds = ds.sortby("time") #TODO: necessary for BODC
         
-        # station identifiers
-        station_name = str(ds.station_name.str.decode('utf-8',errors='ignore').to_numpy())
-        station_id = str(ds.station_name.str.decode('utf-8',errors='ignore').to_numpy())
-        if "station_name_unique" in ds.attrs:
-            station_name_unique = ds.attrs["station_name_unique"]
-        else:
-            station_name_unique = fname.replace(".nc","") #TODO: if we keep writing netcdf files with this attr this is sort of safe
+        fname_clean = fname.replace(".nc","")
         longitude = float(ds.station_x_coordinate) #TODO: these are the same for zeebrugge, check this
         latitude = float(ds.station_y_coordinate)
         
-        fig_file_list.append(station_name)
+        fig_file_list.append(fname_clean)
         
         # stats
         ds_ndays = round(float((ds.time.max() - ds.time.min()).dt.total_seconds()/3600/24), 2)
@@ -987,9 +981,7 @@ def ssh_netcdf_overview(dir_netcdf, perplot=30, time_min=None, time_max=None, ye
         nnan = int(ds.waterlevel.isnull().sum())
         time_diff_min = ds.time.to_pandas().diff().dt.total_seconds()/60
         
-        stats_one = {"station_name":station_name,
-                     "station_id":station_id,
-                     "station_name_unique":station_name_unique,
+        stats_one = {"fname_clean":fname_clean,
                      "longitude":longitude,
                      "latitude":latitude,
                      "tstart":str(ds.time[0].dt.strftime("%Y-%m-%d").values),
@@ -1043,18 +1035,17 @@ def ssh_netcdf_overview(dir_netcdf, perplot=30, time_min=None, time_max=None, ye
             # reset figure
             ax.cla()
             fig_file_list = []
-
     print()
-            
+    
+    # write statistics csv
     stats = pd.concat(stats_list)
     stats.index.name = "file_name"
     file_csv = os.path.join(dir_output, "waterlevel_data_netcdf_overview.csv")
     stats.to_csv(file_csv, float_format="%.2f")
     
-    # write xyn file #TODO: currently uses station_name_unique, make this flexible?
-    geom_points = [Point(x,y) for x,y in zip(stats["longitude"],stats["latitude"])]
-    stations_df = stats[["station_name_unique"]]
-    stations_gdf = gpd.GeoDataFrame(data=stations_df, geometry=geom_points, crs='EPSG:4326')
+    # write xynfile
     file_xyn = os.path.join(dir_output, "stations_obs.xyn")
-    ssh_catalog_toxynfile(stations_gdf, file_xyn)
+    lon, lat, name = stats["longitude"], stats["latitude"], stats["fname_clean"]
+    data = np.c_[lon, lat, name]
+    np.savetxt(file_xyn, data, fmt='%13.8f %13.8f %-s')
 
