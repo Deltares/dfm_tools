@@ -16,10 +16,15 @@ from io import BytesIO
 import functools
 import tempfile
 import ddlpy
+import glob
+import matplotlib.pyplot as plt
+import matplotlib.dates as md
+import shutil
 
 __all__ = ["ssh_catalog_subset",
            "ssh_catalog_toxynfile",
            "ssh_retrieve_data",
+           "ssh_netcdf_overview",
            ]
 
 
@@ -883,14 +888,6 @@ def ssh_catalog_subset(source=None,
     return ssh_catalog_gpd
 
 
-def ssh_catalog_toxynfile(ssc_catalog_gpd, file_xyn):
-    lon = ssc_catalog_gpd.geometry.x
-    lat = ssc_catalog_gpd.geometry.y
-    name = ssc_catalog_gpd['station_name_unique']
-    data = np.c_[lon, lat, name]
-    np.savetxt(file_xyn, data, fmt='%11.6f %11.6f %-s')
-
-
 def ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
                       **kwargs):
     
@@ -932,7 +929,7 @@ def ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
                              station_id=row["station_id"],
                              station_name_unique=row["station_name_unique"],
                              longitude=row.geometry.x,
-                             latitude=row.geometry.x,
+                             latitude=row.geometry.y,
                              country=row["country"])
         
         ds["waterlevel"] = ds["waterlevel"].astype("float32")
@@ -943,4 +940,115 @@ def ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
         ds.to_netcdf(file_out)
         del ds
     print()
+
+
+def ssh_catalog_toxynfile(ssc_catalog_gpd, file_xyn):
+    lon = ssc_catalog_gpd.geometry.x
+    lat = ssc_catalog_gpd.geometry.y
+    name = ssc_catalog_gpd['station_name_unique']
+    data = np.c_[lon, lat, name]
+    np.savetxt(file_xyn, data, fmt='%13.8f %13.8f %-s')
+
+
+def ssh_netcdf_overview(dir_netcdf, perplot=30, time_min=None, time_max=None, yearstep=None):
+    
+    dir_output = os.path.join(dir_netcdf, "overview")
+    if os.path.isdir(dir_output):
+        shutil.rmtree(dir_output)
+    os.makedirs(dir_output, exist_ok=False)
+    
+    file_list = glob.glob(os.path.join(dir_netcdf, "*.nc"))
+    file_list = sorted(file_list, key=str.casefold)
+    
+    print(f"creating overview for {len(file_list)} files: ", end="")
+    fig, ax = plt.subplots(figsize=(15,8))
+    stats_list = []
+    fig_file_list = []
+    for ifile, file_nc in enumerate(file_list):
+        
+        fname = os.path.basename(file_nc)
+        print(f"{ifile+1} ", end="")
+        
+        ds = xr.open_dataset(file_nc)
+        ds = ds.sortby("time") # necessary for BODC data
+        
+        fname_clean = fname.replace(".nc","")
+        longitude = float(ds.station_x_coordinate)
+        latitude = float(ds.station_y_coordinate)
+        
+        fig_file_list.append(fname_clean)
+        
+        # stats
+        ds_ndays = round(float((ds.time.max() - ds.time.min()).dt.total_seconds()/3600/24), 2)
+        nvalues = len(ds.waterlevel)
+        nnan = int(ds.waterlevel.isnull().sum())
+        time_diff_min = ds.time.to_pandas().diff().dt.total_seconds()/60
+        
+        stats_one = {"fname_clean":fname_clean,
+                     "longitude":longitude,
+                     "latitude":latitude,
+                     "tstart":str(ds.time[0].dt.strftime("%Y-%m-%d").values),
+                     "tstop":str(ds.time[-1].dt.strftime("%Y-%m-%d").values),
+                     "ndays": ds_ndays,
+                     "#values": nvalues,
+                     "#nan": nnan,
+                     "%nan": (nnan/nvalues)*100,
+                     "dt min [min]":int(time_diff_min.min()),
+                     "dt max [min]":int(time_diff_min.max()),
+                     "dt mean [min]":time_diff_min.mean(),
+                     "dt mode [min]":time_diff_min.mode().iloc[0],
+                     "ndupl": ds.time.to_pandas().duplicated().sum(),
+                     "min": float(ds.waterlevel.min()),
+                     "max": float(ds.waterlevel.max()),
+                     }
+        stats_one_pd = pd.DataFrame(stats_one, index=[fname])
+        stats_list.append(stats_one_pd)
+        
+        # derive unique hourly times with non-nan values
+        bool_nan = ds.waterlevel.isnull()
+        ds_nonan = ds.sel(time=~bool_nan)
+        ds_slice = ds_nonan.sel(time=slice(time_min, time_max))
+        # take unique timestamps after rounding to hours, this is faster and consumes less memory
+        time_hr_uniq = ds_slice.time.to_pandas().index.round("H").drop_duplicates()
+        time_yaxis_value = pd.Series(index=time_hr_uniq)
+        time_yaxis_value[:] = -(ifile%perplot)
+        time_yaxis_value.plot(ax=ax, marker='s', linestyle='none', markersize=1, color="r")
+        
+        # clear file links
+        del ds
+        
+        bool_lastinrange = (ifile%perplot) == (perplot-1)
+        bool_lastfile = ifile == (len(file_list)-1)
+        if bool_lastinrange | bool_lastfile:
+            # finish and save figure
+            nlines = len(fig_file_list)
+            ax.set_yticks(range(0,-nlines,-1), fig_file_list)
+            figname = f"overview_availability_{ifile-nlines+2:03d}_{ifile+1:03d}"
+            ax.set_xlim(time_min, time_max)
+            if yearstep is not None:
+                # set xtick steps
+                ax.xaxis.set_major_locator(md.YearLocator(base=yearstep))
+                ax.xaxis.set_major_formatter(md.DateFormatter('%Y'))
+            ax.grid()
+            ax.set_xlabel(None)
+            fig.tight_layout()
+            fig.savefig(os.path.join(dir_output, figname), dpi=200)
+        
+        if bool_lastinrange:
+            # reset figure
+            ax.cla()
+            fig_file_list = []
+    print()
+    
+    # write statistics csv
+    stats = pd.concat(stats_list)
+    stats.index.name = "file_name"
+    file_csv = os.path.join(dir_output, "waterlevel_data_netcdf_overview.csv")
+    stats.to_csv(file_csv, float_format="%.2f")
+    
+    # write xynfile
+    file_xyn = os.path.join(dir_output, "stations_obs.xyn")
+    lon, lat, name = stats["longitude"], stats["latitude"], stats["fname_clean"]
+    data = np.c_[lon, lat, name]
+    np.savetxt(file_xyn, data, fmt='%13.8f %13.8f %-s')
 

@@ -71,9 +71,6 @@ def test_ssh_retrieve_data(source, tmp_path):
     if source=="uhslc-rqds":
         # 2020 not available in uhslc-rqds yet
         time_min, time_max = '2018-01-01','2018-02-01'
-    elif source=="rwsddl":
-        #TODO: temporarily more recent period since ddl data is being replaced
-        time_min, time_max = '2023-01-01','2023-02-01'
     else:
         time_min, time_max = '2020-01-01','2020-02-01'
     
@@ -95,6 +92,28 @@ def test_ssh_retrieve_data(source, tmp_path):
                            time_min=time_min, time_max=time_max)
     nc_list = glob.glob(os.path.join(tmp_path, "*.nc"))
     assert len(nc_list)==1
+
+
+@pytest.mark.unittest
+def test_ssh_netcdf_overview(tmp_path):
+    source = "rwsddl"
+    time_min, time_max = '2020-01-01','2020-01-05'
+    
+    ssc_catalog_gpd = dfmt.ssh_catalog_subset(source=source)
+    
+    # order of rows in rwsddl locations dataframe is python-version-dependent
+    # make sure we always test on the same hist station (no realtime data)
+    bool_hoekvhld = ssc_catalog_gpd["Code"].isin(["HOEKVHLD"])
+    ssc_catalog_gpd_sel = ssc_catalog_gpd.loc[bool_hoekvhld]
+    
+    dfmt.ssh_retrieve_data(ssc_catalog_gpd_sel, dir_output=tmp_path, 
+                           time_min=time_min, time_max=time_max)
+    
+    dfmt.ssh_netcdf_overview(tmp_path)
+    assert os.path.isdir(os.path.join(tmp_path, "overview"))
+    assert os.path.isfile(os.path.join(tmp_path, "overview", "overview_availability_001_001.png"))
+    assert os.path.isfile(os.path.join(tmp_path, "overview", "waterlevel_data_netcdf_overview.csv"))
+    assert os.path.isfile(os.path.join(tmp_path, "overview", "stations_obs.xyn"))
 
 
 @pytest.mark.unittest
