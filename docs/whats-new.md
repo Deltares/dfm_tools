@@ -3,6 +3,9 @@
 ### Feat
 - generate overview/statistics from insitu netcdf files with `dfmt.ssh_netcdf_overview()` in [#807](https://github.com/Deltares/dfm_tools/pull/807)
 
+### Fix
+- fixed xy coordinates for cmems insitu netcdf files in [#807](https://github.com/Deltares/dfm_tools/pull/807)
+
 
 ## 0.21.0 (2024-03-14)
 
