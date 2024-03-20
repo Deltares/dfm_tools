@@ -958,7 +958,7 @@ def ssh_netcdf_overview(dir_netcdf, perplot=30, time_min=None, time_max=None, ye
     os.makedirs(dir_output, exist_ok=False)
     
     file_list = glob.glob(os.path.join(dir_netcdf, "*.nc"))
-    file_list.sort()
+    file_list = sorted(file_list, key=str.casefold)
     
     print(f"creating overview for {len(file_list)} files: ", end="")
     fig, ax = plt.subplots(figsize=(15,8))
