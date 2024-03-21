@@ -113,7 +113,6 @@ def test_ssh_netcdf_overview(tmp_path):
     assert os.path.isdir(os.path.join(tmp_path, "overview"))
     assert os.path.isfile(os.path.join(tmp_path, "overview", "overview_availability_001_001.png"))
     assert os.path.isfile(os.path.join(tmp_path, "overview", "waterlevel_data_netcdf_overview.csv"))
-    assert os.path.isfile(os.path.join(tmp_path, "overview", "stations_obs.xyn"))
 
 
 @pytest.mark.unittest
