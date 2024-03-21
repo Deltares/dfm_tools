@@ -1,7 +1,8 @@
 ## UNRELEASED
 
 ### Feat
-- generate overview/statistics from insitu netcdf files with `dfmt.ssh_netcdf_overview()` in [#807](https://github.com/Deltares/dfm_tools/pull/807)
+- generate kml file from ssh_catalog (`geopandas.GeoDataFrame`) with `dfmt.ssh_catalog_tokmlfile()` in [#809](https://github.com/Deltares/dfm_tools/pull/809)
+- generate time availability overview and statistics from insitu netcdf files with `dfmt.ssh_netcdf_overview()` in [#807](https://github.com/Deltares/dfm_tools/pull/807)
 
 ### Fix
 - fixed xy coordinates for cmems insitu netcdf files in [#807](https://github.com/Deltares/dfm_tools/pull/807)
