@@ -113,7 +113,6 @@ def test_ssh_netcdf_overview(tmp_path):
     assert os.path.isdir(os.path.join(tmp_path, "overview"))
     assert os.path.isfile(os.path.join(tmp_path, "overview", "overview_availability_001_001.png"))
     assert os.path.isfile(os.path.join(tmp_path, "overview", "waterlevel_data_netcdf_overview.csv"))
-    assert os.path.isfile(os.path.join(tmp_path, "overview", "stations_obs.xyn"))
 
 
 @pytest.mark.unittest
@@ -150,5 +149,13 @@ def test_ssh_catalog_toxynfile(tmp_path):
     ssc_catalog_gpd = dfmt.ssh_catalog_subset(source="ssc")
     file_xyn = tmp_path / 'test_ssc_obs.xyn'
     dfmt.ssh_catalog_toxynfile(ssc_catalog_gpd, file_xyn)
+    assert os.path.isfile(file_xyn)
+
+
+@pytest.mark.unittest
+def test_ssh_catalog_tokmlfile(tmp_path):
+    ssc_catalog_gpd = dfmt.ssh_catalog_subset(source="ssc")
+    file_xyn = tmp_path / 'test_ssc.kml'
+    dfmt.ssh_catalog_tokmlfile(ssc_catalog_gpd, file_xyn)
     assert os.path.isfile(file_xyn)
 
