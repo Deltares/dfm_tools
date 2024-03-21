@@ -20,9 +20,11 @@ import glob
 import matplotlib.pyplot as plt
 import matplotlib.dates as md
 import shutil
+import fiona
 
 __all__ = ["ssh_catalog_subset",
            "ssh_catalog_toxynfile",
+           "ssh_catalog_tokmlfile",
            "ssh_retrieve_data",
            "ssh_netcdf_overview",
            ]
@@ -948,6 +950,23 @@ def ssh_catalog_toxynfile(ssc_catalog_gpd, file_xyn):
     name = ssc_catalog_gpd['station_name_unique']
     data = np.c_[lon, lat, name]
     np.savetxt(file_xyn, data, fmt='%13.8f %13.8f %-s')
+
+
+def ssh_catalog_tokmlfile(ssc_catalog_gpd, file_kml):
+    # Enable fiona driver
+    # TODO: gpd sometimes fails with "AttributeError: 'NoneType' object has no attribute 'drvsupport'" 
+    # gpd.io.file.fiona.drvsupport.supported_drivers['KML'] = 'rw' # 
+    # gpd.io.file.fiona.drvsupport.supported_drivers['LIBKML'] = 'rw'
+    fiona.supported_drivers['KML'] = 'rw'
+    fiona.supported_drivers['LIBKML'] = 'rw'
+    
+    #select only names and geometry column to reduce file size
+    ssc_catalog_gpd_minimal = ssc_catalog_gpd[["station_name_unique","geometry"]]
+    # rename to "name" results in a label in Google Earth
+    ssc_catalog_gpd_minimal = ssc_catalog_gpd_minimal.rename({"station_name_unique":"name"},axis=1)
+    
+    # Write file
+    ssc_catalog_gpd_minimal.to_file(file_kml, driver='KML')
 
 
 def ssh_netcdf_overview(dir_netcdf, perplot=30, time_min=None, time_max=None, yearstep=None):
