@@ -44,8 +44,8 @@ dependencies = [
 	"pydap>=3.4.0",
 	#erddapy<2.0.0 does not support pandas>=2.0.0
 	"erddapy>=2.0.0",
-	#copernicusmarine<1.0.2 does not support no_metadata_cache in get_and_check_username_password function
-	"copernicusmarine>=1.0.2",
+	#copernicusmarine<1.0.7 does not support cmc.loging(skip_if_user_logged_in=True)
+	"copernicusmarine>=1.0.7",
 	#rws-ddlpy<0.3.0 is very old and does not support newer pandas versions
 	"rws-ddlpy>=0.3.0",
 	#pooch<1.1.0 do not have attribute retrieve
