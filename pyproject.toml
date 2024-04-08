@@ -46,8 +46,8 @@ dependencies = [
 	"erddapy>=2.0.0",
 	#copernicusmarine<1.0.2 does not support no_metadata_cache in get_and_check_username_password function
 	"copernicusmarine>=1.0.2",
-	#rws-ddlpy<0.3.0 is very old and does not support newer pandas versions
-	"rws-ddlpy>=0.3.0",
+	#rws-ddlpy<0.4.0 does not yet have `ddlpy.dataframe_to_xarray()`
+	"rws-ddlpy>=0.4.0",
 	#pooch<1.1.0 do not have attribute retrieve
 	"pooch>=1.1.0",
 	#hydrolib-core 0.7.0 supports meshkernel>=4.1.0
