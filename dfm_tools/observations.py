@@ -799,13 +799,10 @@ def psmsl_gnssir_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None
     return ds
 
 
-def rwsddl_ssh_retrieve_data(row, dir_output, time_min, time_max, meta_dict=None):
+def rwsddl_ssh_retrieve_data(row, dir_output, time_min, time_max):
     
     if time_min is None or time_max is None:
         raise ValueError("cannot supply None for 'time_min' or 'time_max' to 'rwsddl_ssh_retrieve_data()'")
-
-    if meta_dict is None:
-        meta_dict = rwsddl_ssh_meta_dict()
     
     # if we pass one row to the measurements function you can get all the measurements
     measurements = ddlpy.measurements(row, time_min, time_max)
