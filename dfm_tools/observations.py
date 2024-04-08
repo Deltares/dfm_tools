@@ -811,35 +811,39 @@ def rwsddl_ssh_retrieve_data(row, dir_output, time_min, time_max):
         # no output so this station is skipped
         return
     
-    # drop alfanumeriek if duplicate of numeriek
-    if "Meetwaarde.Waarde_Alfanumeriek" in measurements.columns and 'Meetwaarde.Waarde_Numeriek' in measurements.columns:
-        measurements = measurements.drop("Meetwaarde.Waarde_Alfanumeriek", axis=1)
+    # minimize disk usage of StatuswaardeLijst by converting to U1
+    varn_status = "WaarnemingMetadata.StatuswaardeLijst"
+    status_dict = {"O":"Ongecontroleerd",
+                   "G":"Gecontroleerd",
+                   "D":"Definitief"}
+    for k,v in status_dict.items():
+        measurements[varn_status] = measurements[varn_status].str.replace(v, k)
+    
+    # convert to xarray (dropping some constant columns)
+    drop_if_constant = ["WaarnemingMetadata.OpdrachtgevendeInstantieLijst",
+                        "WaarnemingMetadata.BemonsteringshoogteLijst",
+                        "WaarnemingMetadata.ReferentievlakLijst",
+                        "AquoMetadata_MessageID", 
+                        "BioTaxonType", 
+                        "BemonsteringsSoort.Code", 
+                        "Compartiment.Code", "Eenheid.Code", "Grootheid.Code", "Hoedanigheid.Code",
+                        "WaardeBepalingsmethode.Code", "MeetApparaat.Code",
+                        ]
+    ds = ddlpy.dataframe_to_xarray(measurements, drop_if_constant)
+    
+    ds[varn_status] = ds[varn_status].assign_attrs(status_dict)
     
     rename_dict = {'Meetwaarde.Waarde_Numeriek':'waterlevel',
-                   'WaarnemingMetadata.KwaliteitswaardecodeLijst':'QC',
-                   'WaarnemingMetadata.StatuswaardeLijst':'Status'}
-    measurements = measurements.rename(columns=rename_dict)
-    
-    # simplify dataframe
-    simplified = ddlpy.simplify_dataframe(measurements)
-    
-    # get dataframe attrs
-    ds_attrs = simplified.attrs
-    # drop irrelevant attrs
-    ds_attrs = {k:v for k,v in ds_attrs.items() if not k.startswith("Bemonstering") and not k.startswith("BioTaxon")}
-    
-    # dropping timezone is required to get proper encoding in time variable (in netcdf file)
-    simplified.index = simplified.index.tz_convert(None)
-    ds = simplified.to_xarray()
-    ds = ds.assign_attrs(ds_attrs)
+                   'WaarnemingMetadata.KwaliteitswaardecodeLijst':'qc',
+                   'WaarnemingMetadata.StatuswaardeLijst':'status'}
+    ds = ds.rename_vars(rename_dict)
     
     # convert meters to cm
-    if ds_attrs['Eenheid.Code'] != 'cm':
+    eenheid = ds.attrs.pop('Eenheid.Code')
+    if eenheid != 'cm':
         raise Exception("unexpected unit")
     ds['waterlevel'] = ds['waterlevel'].assign_attrs(units="m")
     ds['waterlevel'] /= 100 #convert from cm to m
-    ds.attrs.pop('Eenheid.Code')
-    ds.attrs.pop('Eenheid.Omschrijving')
     return ds
 
 
