@@ -236,7 +236,6 @@ def cmems_ssh_read_catalog(source, overwrite=True):
             overwrite_output_data=True,
             force_download=True,
             no_directories=True,
-            # download_file_list=True
             )
     else:
         print(f"CMEMS insitu catalog for dataset_id='{dataset_id}' is already present and overwrite=False")
