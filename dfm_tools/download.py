@@ -5,6 +5,7 @@ import xarray as xr
 from dfm_tools.errors import OutOfRangeError
 import cdsapi
 import copernicusmarine
+from copernicusmarine.core_functions.credentials_utils import InvalidUsernameOrPassword
 import cftime
 import getpass
 import shutil
@@ -316,27 +317,14 @@ def copernicusmarine_remove_manual_credentials_file():
 
 def copernicusmarine_credentials():
     """
-    To login at copernicusmarine if this was not the case yet.
-    If the credentials file is present, the function returns None.
-    If the credentials file is not present, get_and_check_username_password first
-    checks env vars and if not present it prompts the user for credentials.
-    Feeding the returned credentials to copernicusmarine.login() generates the credentials file.
-    If the file is available, it gets the credentials from the file.
+    Login at copernicusmarine if user not logged in yet.
+    Works via prompt, environment variables or credentials file.
     """
-    from copernicusmarine.core_functions.credentials_utils import (
-        DEFAULT_CLIENT_CREDENTIALS_FILEPATH,
-        InvalidUsernameOrPassword,
-        get_and_check_username_password,
-    )
-    login_kwargs = dict(username=None, password=None, credentials_file=DEFAULT_CLIENT_CREDENTIALS_FILEPATH, no_metadata_cache=False)
-    if not DEFAULT_CLIENT_CREDENTIALS_FILEPATH.is_file():
-        print("Downloading CMEMS data requires a Copernicus Marine username and password, sign up for free at: https://data.marine.copernicus.eu/register.")
-        username, password = get_and_check_username_password(**login_kwargs)
-        success = copernicusmarine.login(username, password)
-        if not success:
-            raise InvalidUsernameOrPassword("invalid credentials")
-    else:
-        _, _ = get_and_check_username_password(**login_kwargs)
+    print("Downloading CMEMS data requires a Copernicus Marine username and password, "
+          "sign up for free at: https://data.marine.copernicus.eu/register.")
+    success = copernicusmarine.login(skip_if_user_logged_in=True)
+    if not success:
+        raise InvalidUsernameOrPassword("Invalid credentials, please try again")
 
 
 def copernicusmarine_reset(remove_folder=False, overwrite_cache=True, update_package=False):
