@@ -4,6 +4,7 @@
 - generate kml file from ssh_catalog (`geopandas.GeoDataFrame`) with `dfmt.ssh_catalog_tokmlfile()` in [#809](https://github.com/Deltares/dfm_tools/pull/809)
 - generate time availability overview and statistics from insitu netcdf files with `dfmt.ssh_netcdf_overview()` in [#807](https://github.com/Deltares/dfm_tools/pull/807)
 - simplified `rwsddl_ssh_retrieve_data()` by using `ddlpy.dataframe_to_xarray()` in [#805](https://github.com/Deltares/dfm_tools/pull/815)
+- updated cmems analysisforecast bio dataset ids in [#816](https://github.com/Deltares/dfm_tools/pull/816)
 
 ### Fix
 - fixed xy coordinates for cmems insitu netcdf files in [#807](https://github.com/Deltares/dfm_tools/pull/807)
