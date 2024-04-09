@@ -5,6 +5,7 @@
 - generate time availability overview and statistics from insitu netcdf files with `dfmt.ssh_netcdf_overview()` in [#807](https://github.com/Deltares/dfm_tools/pull/807)
 - simplified `rwsddl_ssh_retrieve_data()` by using `ddlpy.dataframe_to_xarray()` in [#805](https://github.com/Deltares/dfm_tools/pull/815)
 - updated cmems analysisforecast bio dataset ids in [#816](https://github.com/Deltares/dfm_tools/pull/816)
+- from ftp to copernicusmarine files service for insitu data in [#818](https://github.com/Deltares/dfm_tools/pull/818)
 
 ### Fix
 - fixed xy coordinates for cmems insitu netcdf files in [#807](https://github.com/Deltares/dfm_tools/pull/807)
