@@ -12,10 +12,9 @@ plt.close('all')
 import datetime as dt
 import dfm_tools as dfmt
 
-#TODO: experiment with monthly/daily means or depth average of his/map fields (to show power of pandas/xarray)
+#TODO: experiment with monthly/daily means or depth average of his/map fields (to show convenience of pandas/xarray)
 
 overwrite = True
-yearmonth = True
 
 file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True)
 file_basename = os.path.basename(file_nc.replace('_0*_','_0000_'))
@@ -29,11 +28,10 @@ data_frommap_merged = dfmt.Dataset_varswithdim(data_frommap_merged, dimname='tim
 
 print('>> computing monthly means: ', end='')
 dtstart = dt.datetime.now()
-if yearmonth: # on unique year+month combinations
-    data_xr_monthmean = data_frommap_merged.resample(time='MS').mean(dim='time')
-else: #on unique month numbers
-    data_xr_monthmean = data_frommap_merged.groupby('time.month').mean() 
-    data_xr_monthmean = data_xr_monthmean.rename({'month':'time'})
+data_xr_monthmean = data_frommap_merged.resample(time='MS').mean(dim='time')
+# on unique month numbers
+# data_xr_monthmean = data_frommap_merged.groupby('time.month').mean() 
+# data_xr_monthmean = data_xr_monthmean.rename({'month':'time'})
 print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
 
 #reconnect data and grid #TODO: support resampling/groupby in xugrid?
