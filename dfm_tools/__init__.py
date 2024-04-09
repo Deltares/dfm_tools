@@ -4,7 +4,7 @@
 
 __author__ = """Jelmer Veenstra"""
 __email__ = "jelmer.veenstra@deltares.nl"
-__version__ = "0.21.1"
+__version__ = "0.22.0"
 
 from dfm_tools.deprecated import *
 from dfm_tools.download import *
