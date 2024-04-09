@@ -1,4 +1,4 @@
-## UNRELEASED
+## 0.22.0 (2024-04-09)
 
 ### Feat
 - generate kml file from ssh_catalog (`geopandas.GeoDataFrame`) with `dfmt.ssh_catalog_tokmlfile()` in [#809](https://github.com/Deltares/dfm_tools/pull/809)
