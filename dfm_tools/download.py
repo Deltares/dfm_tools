@@ -322,7 +322,6 @@ def copernicusmarine_credentials():
     checks env vars and if not present it prompts the user for credentials.
     Feeding the returned credentials to copernicusmarine.login() generates the credentials file.
     If the file is available, it gets the credentials from the file.
-    Either way, the credentials are returned for use in e.g. ftp login
     """
     from copernicusmarine.core_functions.credentials_utils import (
         DEFAULT_CLIENT_CREDENTIALS_FILEPATH,
@@ -337,8 +336,7 @@ def copernicusmarine_credentials():
         if not success:
             raise InvalidUsernameOrPassword("invalid credentials")
     else:
-        username, password = get_and_check_username_password(**login_kwargs)
-    return username, password
+        _, _ = get_and_check_username_password(**login_kwargs)
 
 
 def copernicusmarine_reset(remove_folder=False, overwrite_cache=True, update_package=False):
