@@ -7,8 +7,8 @@ import geopandas as gpd
 from shapely import Point
 import os
 import xarray as xr
-from ftplib import FTP
 from dfm_tools.download import copernicusmarine_credentials
+from dfm_tools.data import get_dir_testdata
 from erddapy import ERDDAP
 import requests
 from zipfile import ZipFile
@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as md
 import shutil
 import fiona
+import copernicusmarine
 
 __all__ = ["ssh_catalog_subset",
            "ssh_catalog_toxynfile",
@@ -198,49 +199,56 @@ def ssc_ssh_read_catalog():
     return ssc_catalog_gpd
 
 
-def get_cmems_params(source):
-    params_cmems_my = {"host": "my.cmems-du.eu",
-                       "cwd": "Core/INSITU_GLO_PHY_SSH_DISCRETE_MY_013_053/cmems_obs-ins_glo_phy-ssh_my_na_PT1H"}
-    params_cmems_nrt = {"host": "nrt.cmems-du.eu",
-                        "cwd": "Core/INSITU_GLO_PHYBGCWAV_DISCRETE_MYNRT_013_030/cmems_obs-ins_glo_phybgcwav_mynrt_na_irr"}
-    params_dict = {"cmems": params_cmems_my,
-                   "cmems-nrt": params_cmems_nrt}
-    params = params_dict[source]
-    return params
+def get_cmems_dataset_id(source):
+    dataset_id_dict = {"cmems": "cmems_obs-ins_glo_phy-ssh_my_na_PT1H",
+                       "cmems-nrt": "cmems_obs-ins_glo_phybgcwav_mynrt_na_irr"}
+    dataset_id = dataset_id_dict[source]
+    return dataset_id
 
 
-def cmems_my_ssh_read_catalog():
-    cmems_catalog_gpd = cmems_ssh_read_catalog(source="cmems")
+def cmems_my_ssh_read_catalog(overwrite=True):
+    cmems_catalog_gpd = cmems_ssh_read_catalog(source="cmems", overwrite=overwrite)
     return cmems_catalog_gpd
     
 
-def cmems_nrt_ssh_read_catalog():
-    cmems_catalog_gpd = cmems_ssh_read_catalog(source="cmems-nrt")
+def cmems_nrt_ssh_read_catalog(overwrite=True):
+    cmems_catalog_gpd = cmems_ssh_read_catalog(source="cmems-nrt", overwrite=overwrite)
     return cmems_catalog_gpd
 
 
-def cmems_ssh_read_catalog(source):
-    cmems_params = get_cmems_params(source)
+def cmems_ssh_read_catalog(source, overwrite=True):
+    dataset_id = get_cmems_dataset_id(source)
     
-    # setup ftp connection
-    ftp = FTP(host=cmems_params["host"])
-    username, password = copernicusmarine_credentials()
-    ftp.login(user=username, passwd=password)
-    ftp.cwd(cmems_params["cwd"])
+    dir_cache = get_dir_testdata()
+    dir_index = os.path.join(dir_cache, dataset_id)
+    os.makedirs(dir_index, exist_ok=True)
+    file_index = os.path.join(dir_index, 'index_history.txt')
     
-    # read index
-    fname = 'index_history.txt'
-    with open(fname, 'wb') as fp:
-        ftp.retrbinary(f'RETR {fname}', fp.write)
-    with open(fname, 'r') as f:
+    if not os.path.exists(file_index) or overwrite:
+        #TODO: downloading all index files since filter does not work, can be avoided?
+        copernicusmarine_credentials()
+        copernicusmarine.get(
+            dataset_id=dataset_id,
+            service="files",
+            index_parts=True,
+            filter="*index_history.txt",
+            output_directory=dir_index,
+            overwrite_output_data=True,
+            force_download=True,
+            no_directories=True,
+            # download_file_list=True
+            )
+    else:
+        print(f"CMEMS insitu catalog for dataset_id='{dataset_id}' is already present and overwrite=False")
+    
+    with open(file_index, 'r') as f:
         for line in f:
             if line.startswith('#'):
                 header = line
             else:
                 break #stop when there are no more #
     colnames = header.strip('#').strip().split(',')
-    index_history_pd = pd.read_csv(fname,comment='#',names=colnames)
-    os.remove(fname) # remove the local file again
+    index_history_pd = pd.read_csv(file_index,comment='#',names=colnames)
     
     # filter only history tidegauges (TG) containing SLEV variable, relevant for nrt dataset
     # TODO: why are there non-SLEV files in TG folder? Cleanup possible?
@@ -538,43 +546,47 @@ def rwsddl_ssh_read_catalog(meta_dict=None):
     return ddl_slev_gdf
 
 
-@functools.lru_cache
-def cmems_ftp_login(host, dir_data):
+def cmems_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None, 
+                            level="WARNING", disable_progress_bar=True):
     """
-    cache ftp connection so it does not matter that we call it for each station
-    """
-    # setup ftp connection
-    ftp = FTP(host=host)
-    username, password = copernicusmarine_credentials()
-    ftp.login(user=username, passwd=password)
-    ftp.cwd(dir_data)
-    return ftp
-
-
-def cmems_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None):
-    """
-    Retrieve data from FTP
+    Retrieve data from copernicusmarine files service
     Can only retrieve entire files, subsetting is done during reconstruction
     
+    Sometimes the process hangs when using disable_progress_bar=True
     """
     
-    # get source from gdf, uniqueness is checked in ssh_retrieve_data
+    # get source from gdf
     source = row['source']
-    cmems_params = get_cmems_params(source)
+    dataset_id = get_cmems_dataset_id(source)
 
-    # get cached ftp connection
-    host = cmems_params["host"]
-    dir_data = os.path.dirname(row["file_name"]).split(host)[1]
-    ftp = cmems_ftp_login(host, dir_data)
-    
-    fname = os.path.basename(row["file_name"])
     tempdir = tempfile.gettempdir()
-    fname_out_raw = os.path.join(tempdir, "dfmtools_cmems_ssh_retrieve_data_temporary_file.nc")
-    with open(fname_out_raw, 'wb') as fp:
-        ftp.retrbinary(f'RETR {fname}', fp.write)
+    url_file = row["file_name"]
+    
+    copernicusmarine_credentials()
+    
+    import logging
+    logging.getLogger("copernicus_marine_root_logger").setLevel(level)
+    copernicusmarine.get(
+        dataset_id=dataset_id,
+        dataset_part="history",
+        service="files",
+        filter=url_file,
+        output_directory=tempdir,
+        overwrite_output_data=True,
+        force_download=True,
+        no_directories=True,
+        disable_progress_bar=disable_progress_bar,
+        )
+    
+    file_data_org = os.path.join(tempdir, os.path.basename(url_file))
+    random_suffix = str(pd.Timestamp.now().microsecond)[0]
+    file_data_raw = os.path.join(tempdir, f"dfmtools_cmems_ssh_retrieve_data_temporary_file_{random_suffix}.nc")
+    if os.path.exists(file_data_raw):
+        os.remove(file_data_raw)
+    os.rename(file_data_org, file_data_raw)
     
     # reconstruct this dataset (including time subsetting) and write again
-    ds = xr.open_dataset(fname_out_raw)
+    ds = xr.open_dataset(file_data_raw)
     
     # reduce DEPTH dimension if present (nrt dataset)
     if "DEPTH" in ds.dims:
@@ -596,7 +608,7 @@ def cmems_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None):
         stat_name = row.loc["station_name_unique"]
         print(f"[{stat_name} NOT MONOTONIC] ", end="")
         del ds
-        os.remove(fname_out_raw)
+        os.remove(file_data_raw)
         return
         # ds = ds.sortby("time")
     
@@ -605,7 +617,7 @@ def cmems_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None):
     if len(ds.time) == 0:
         print("[NODATA] ", end="")
         del ds
-        os.remove(fname_out_raw)
+        os.remove(file_data_raw)
         return
     
     return ds
@@ -916,6 +928,7 @@ def ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
         raise ValueError(f"source for ssh_retrieve_data should be one of {list(ssh_sources.keys())}, recieved '{source}'")
     
     retrieve_data_func = ssh_sources[source]
+    os.makedirs(dir_output, exist_ok=True)
     
     # retrieve
     print(f"retrieving data for {len(ssh_catalog_gpd)} {source} stations:", end=" ")
