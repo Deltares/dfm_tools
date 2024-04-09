@@ -277,11 +277,23 @@ def copernicusmarine_get_dataset_id(varkey, date_min, date_max):
                 dataset_id = 'cmems_mod_glo_phy_anfc_0.083deg_P1D-m'
         else: #reanalysis: https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_PHY_001_030/description
             dataset_id = 'cmems_mod_glo_phy_my_0.083deg_P1D-m'
-    else: #for bio (resolution is 1/4 degrees)
+    elif varkey in ['nppv','o2','talk','dissic','ph','spco2','no3','po4','si','fe','chl','phyc']: # for bio
+        # resolution is 1/4 degrees
         if product == 'analysisforecast': #forecast: https://data.marine.copernicus.eu/product/GLOBAL_ANALYSISFORECAST_BGC_001_028/description
-            dataset_id = 'global-analysis-forecast-bio-001-028-daily'
+            if varkey in ['nppv','o2']:
+                dataset_id = 'cmems_mod_glo_bgc-bio_anfc_0.25deg_P1D-m'
+            elif varkey in ['talk','dissic','ph']:
+                dataset_id = 'cmems_mod_glo_bgc-car_anfc_0.25deg_P1D-m'
+            elif varkey in ['spco2']:
+                dataset_id = 'cmems_mod_glo_bgc-co2_anfc_0.25deg_P1D-m'
+            elif varkey in ['no3','po4','si','fe']:
+                dataset_id = 'cmems_mod_glo_bgc-nut_anfc_0.25deg_P1D-m'
+            elif varkey in ['chl','phyc']:
+                dataset_id = 'cmems_mod_glo_bgc-pft_anfc_0.25deg_P1D-m'
         else: #https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_BGC_001_029/description
             dataset_id = 'cmems_mod_glo_bgc_my_0.25_P1D-m'
+    else:
+        raise KeyError(f"unknown varkey for cmems: {varkey}")
     return dataset_id
 
 
