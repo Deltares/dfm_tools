@@ -1020,7 +1020,7 @@ def ssh_netcdf_overview(dir_netcdf, perplot=30, time_min=None, time_max=None, ye
         fig_file_list.append(fname_clean)
         
         # stats
-        ds_ndays = round(float((ds.time.max() - ds.time.min()).dt.total_seconds()/3600/24), 2)
+        ds_ndays = round(int(ds.time.max() - ds.time.min())/1e9/3600/24, 2)
         nvalues = len(ds.waterlevel)
         nnan = int(ds.waterlevel.isnull().sum())
         time_diff_min = ds.time.to_pandas().diff().dt.total_seconds()/60
