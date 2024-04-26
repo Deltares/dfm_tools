@@ -46,4 +46,6 @@ jobs:
         COPERNICUS_MARINE_SERVICE_PASSWORD: ${{ secrets.COPERNICUS_MARINE_SERVICE_PASSWORD }}
       run: |
         pytest -m "not requireslocaldata" --cov=dfm_tools --cov-report xml --cov-report term
-    - uses: codecov/codecov-action@v1
+    - uses: codecov/codecov-action@v4
+      env:
+        CODECOV_TOKEN: ${{secrets.CODECOV_TOKEN}}
