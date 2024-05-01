@@ -327,7 +327,10 @@ def copernicusmarine_credentials():
         raise InvalidUsernameOrPassword("Invalid credentials, please try again")
 
 
-def copernicusmarine_reset(remove_folder=False, overwrite_cache=True, update_package=False):
+def copernicusmarine_reset(update_package=False, remove_folder=False, overwrite_cache=True):
+    if update_package:
+        print("reset copernicusmarine: updating copernicusmarine")
+        subprocess.check_call(f"{sys.executable} -m pip install copernicusmarine -U")
     if remove_folder:
         dir_copernicusmarine = os.path.expanduser("~/.copernicusmarine")
         print(f"reset copernicusmarine: removing {dir_copernicusmarine}, you will have to login again.")
@@ -335,9 +338,6 @@ def copernicusmarine_reset(remove_folder=False, overwrite_cache=True, update_pac
     if overwrite_cache:
         print("reset copernicusmarine: overwriting copernicusmarine metadata cache (takes some time)")
         subprocess.run("copernicusmarine describe --overwrite-metadata-cache")
-    if update_package:
-        print("reset copernicusmarine: updating copernicusmarine")
-        subprocess.check_call(f"{sys.executable} -m pip install copernicusmarine -U")
 
 
 def copernicusmarine_dataset_timerange(dataset_id):
