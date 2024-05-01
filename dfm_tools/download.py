@@ -34,7 +34,7 @@ def download_ERA5(varkey,
     cds_credentials()
     
     # import cdsapi and create a Client instance # https://cds.climate.copernicus.eu/api-how-to
-    c = cds_client_withargs()
+    c = cdsapi.Client()
 
     #dictionary with ERA5 variables #this is not actively used
     variables_dict = {'ssr':'surface_net_solar_radiation',
@@ -116,7 +116,7 @@ def cds_credentials():
     
     try:
         # checks whether CDS apikey is in environment variable or ~/.cdsapirc file and if it is in correct format
-        c = cds_client_withargs()
+        c = cdsapi.Client()
         # checks whether credentials (uid and apikey) are correct
         c.retrieve(name="dummy", request={})
     except Exception as e:
@@ -162,17 +162,6 @@ def cds_remove_credentials():
     file_cds_credentials = cds_get_file()
     if os.path.isfile(file_cds_credentials):
         os.remove(file_cds_credentials)
-
-
-def cds_client_withargs():
-    """
-    Initialize a csdapi client with url and key from os environment variables
-    These are the default values for the url/key arguments, but somehow this 
-    is necessary to use the key/url from environment variables.
-    """
-    c = cdsapi.Client(url=os.environ.get("CDSAPI_URL"),
-                      key=os.environ.get("CDSAPI_KEY"))
-    return c
 
 
 def download_CMEMS(varkey,
