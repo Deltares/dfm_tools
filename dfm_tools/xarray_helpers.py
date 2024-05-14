@@ -1,7 +1,7 @@
 import os
 import re
-from netCDF4 import Dataset
 import xarray as xr
+import dask
 import datetime as dt
 import glob
 import pandas as pd
@@ -159,14 +159,14 @@ def merge_meteofiles(file_nc:str, preprocess=None,
         DESCRIPTION.
     preprocess : TYPE, optional
         DESCRIPTION. The default is None.
-    chunks : dict, optional
-        Prevents large chunks and memory issues. The default is {'time':1}.
     time_slice : slice, optional
         DESCRIPTION. The default is slice(None,None).
     add_global_overlap : bool, optional
         GTSM specific: extend data beyond -180 to 180 longitude. The default is False.
     zerostart : bool, optional
         GTSM specific: extend data with 0-value fields 1 and 2 days before time_slice.start. The default is False.
+    kwargs : dict, optional
+        arguments for xr.open_mfdataset() like `chunks` to prevent large chunks and resulting memory issues.
 
     Raises
     ------
@@ -180,17 +180,12 @@ def merge_meteofiles(file_nc:str, preprocess=None,
 
     """
     #TODO: add ERA5 conversions and features from hydro_tools\ERA5\ERA52DFM.py (except for varRhoair_alt, request FM support for varying airpressure: https://issuetracker.deltares.nl/browse/UNST-6593)
-    #TODO: request FM support for charnock (etc) separate meteo forcing (currently airpressure_windx_windy_charnock merged file is required): https://issuetracker.deltares.nl/browse/UNST-6453
     #TODO: provide extfile example with fmquantity/ncvarname combinations and cleanup FM code: https://issuetracker.deltares.nl/browse/UNST-6453
     #TODO: add coordinate conversion (only valid for models with multidimensional lat/lon variables like HARMONIE and HIRLAM). This should work: ds_reproj = ds.set_crs(4326).to_crs(28992)
     #TODO: add CMCC etc from gtsmip repos (mainly calendar conversion)
     #TODO: put conversions in separate function?
     #TODO: maybe add renaming like {'salinity':'so', 'water_temp':'thetao'} for hycom
-    
-    if "chunks" not in kwargs.keys():
-        kwargs["chunks"] = {'time':1}
-        
-    
+       
     #woa workaround
     if preprocess == preprocess_woa:
         decode_cf = False
@@ -201,11 +196,12 @@ def merge_meteofiles(file_nc:str, preprocess=None,
 
     print(f'>> opening multifile dataset of {len(file_nc_list)} files (can take a while with lots of files): ',end='')
     dtstart = dt.datetime.now()
-    data_xr = xr.open_mfdataset(file_nc_list,
-                                #parallel=True, #TODO: speeds up the process, but often "OSError: [Errno -51] NetCDF: Unknown file format" on WCF
-                                preprocess=preprocess,
-                                decode_cf=decode_cf,
-                                **kwargs)
+    with dask.config.set(**{'array.slicing.split_large_chunks': True}):
+        # using dask option to avoid large chunks which speeds up the merging/writing process
+        data_xr = xr.open_mfdataset(file_nc_list,
+                                    preprocess=preprocess,
+                                    decode_cf=decode_cf,
+                                    **kwargs)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
     #rename variables
@@ -216,8 +212,6 @@ def merge_meteofiles(file_nc:str, preprocess=None,
             data_xr = data_xr.rename({'x':'longitude', 'y':'latitude'})
         else:
             raise KeyError('no longitude/latitude, lon/lat or x/y variables found in dataset')
-
-    #data_xr.attrs['comment'] = 'merged with dfm_tools from https://github.com/Deltares/dfm_tools' #TODO: add something like this or other attributes? (some might also be dropped now)
     
     #select time and do checks #TODO: check if calendar is standard/gregorian
     data_xr = data_xr.sel(time=time_slice)
