@@ -168,15 +168,10 @@ def merge_meteofiles(file_nc:str, preprocess=None,
     kwargs : dict, optional
         arguments for xr.open_mfdataset() like `chunks` to prevent large chunks and resulting memory issues.
 
-    Raises
-    ------
-    Exception
-        DESCRIPTION.
-
     Returns
     -------
-    TYPE
-        DESCRIPTION.
+    data_xr : xr.Dataset
+        Merged meteo dataset.
 
     """
     #TODO: add ERA5 conversions and features from hydro_tools\ERA5\ERA52DFM.py (except for varRhoair_alt, request FM support for varying airpressure: https://issuetracker.deltares.nl/browse/UNST-6593)
