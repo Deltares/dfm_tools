@@ -10,16 +10,19 @@ from dfm_tools.hydrolib_helpers import get_ncbnd_construct
 
 __all__ = [
     "cmems_nc_to_bc",
-    "preprocess_ini_cmems_to_nc",
     "cmems_nc_to_ini",
+    "preprocess_ini_cmems_to_nc",
     "preprocess_merge_meteofiles_era5",
     "create_model_exec_files",
     "make_paths_relative",
     ]
 
 
-def cmems_nc_to_bc(ext_bnd, list_quantities, tstart, tstop, file_pli, dir_pattern, dir_output, refdate_str=None):
+def cmems_nc_to_bc(ext_bnd, list_quantities, tstart, tstop, file_pli, dir_pattern, dir_output, conversion_dict=None, refdate_str=None):
     #input examples in https://github.com/Deltares/dfm_tools/blob/main/tests/examples/preprocess_interpolate_nc_to_bc.py
+    
+    if conversion_dict is None:
+        conversion_dict = dfmt.get_conversion_dict()
     
     file_bc_basename = os.path.basename(file_pli).replace('.pli','')
     for quantity in list_quantities:
@@ -32,7 +35,7 @@ def cmems_nc_to_bc(ext_bnd, list_quantities, tstart, tstop, file_pli, dir_patter
         #open regulargridDataset and do some basic stuff (time selection, renaming depth/lat/lon/varname, converting units, etc)
         data_xr_vars = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity=quantity,
                                                tstart=tstart, tstop=tstop,
-                                               conversion_dict=dfmt.get_conversion_dict(),
+                                               conversion_dict=conversion_dict,
                                                refdate_str=refdate_str)
         #interpolate regulargridDataset to plipointsDataset
         data_interp = dfmt.interp_regularnc_to_plipoints(data_xr_reg=data_xr_vars, file_pli=file_pli)
