@@ -10,16 +10,19 @@ from dfm_tools.hydrolib_helpers import get_ncbnd_construct
 
 __all__ = [
     "cmems_nc_to_bc",
-    "preprocess_ini_cmems_to_nc",
     "cmems_nc_to_ini",
+    "preprocess_ini_cmems_to_nc",
     "preprocess_merge_meteofiles_era5",
     "create_model_exec_files",
     "make_paths_relative",
     ]
 
 
-def cmems_nc_to_bc(ext_bnd, list_quantities, tstart, tstop, file_pli, dir_pattern, dir_output, refdate_str=None):
+def cmems_nc_to_bc(ext_bnd, list_quantities, tstart, tstop, file_pli, dir_pattern, dir_output, conversion_dict=None, refdate_str=None):
     #input examples in https://github.com/Deltares/dfm_tools/blob/main/tests/examples/preprocess_interpolate_nc_to_bc.py
+    
+    if conversion_dict is None:
+        conversion_dict = dfmt.get_conversion_dict()
     
     file_bc_basename = os.path.basename(file_pli).replace('.pli','')
     for quantity in list_quantities:
