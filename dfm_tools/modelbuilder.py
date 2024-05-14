@@ -35,7 +35,7 @@ def cmems_nc_to_bc(ext_bnd, list_quantities, tstart, tstop, file_pli, dir_patter
         #open regulargridDataset and do some basic stuff (time selection, renaming depth/lat/lon/varname, converting units, etc)
         data_xr_vars = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity=quantity,
                                                tstart=tstart, tstop=tstop,
-                                               conversion_dict=dfmt.get_conversion_dict(),
+                                               conversion_dict=conversion_dict,
                                                refdate_str=refdate_str)
         #interpolate regulargridDataset to plipointsDataset
         data_interp = dfmt.interp_regularnc_to_plipoints(data_xr_reg=data_xr_vars, file_pli=file_pli)
