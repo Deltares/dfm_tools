@@ -2,6 +2,7 @@
 
 ### Fix
 - improved `dfmt.download.copernicusmarine_reset()` by changing order of tasks in [#833](https://github.com/Deltares/dfm_tools/pull/833)
+- improved performance of `dfmt.merge_meteofiles()` by using more generic chunking method in [#840](https://github.com/Deltares/dfm_tools/pull/840)
 
 
 ## 0.22.0 (2024-04-09)
