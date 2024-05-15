@@ -33,6 +33,11 @@ dfm_tools pre-processing
    :undoc-members:
    :show-inheritance:
 
+.. automodule:: dfm_tools.download
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 .. automodule:: dfm_tools.interpolate_grid2bnd
    :members:
    :undoc-members:
@@ -53,18 +58,8 @@ dfm_tools pre-processing
    :undoc-members:
    :show-inheritance:
 
-dfm_tools data retrieval
-------------------------
-
-.. automodule:: dfm_tools.data
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-.. automodule:: dfm_tools.download
-   :members:
-   :undoc-members:
-   :show-inheritance:
+dfm_tools insitu data retrieval
+-------------------------------
 
 .. automodule:: dfm_tools.observations
    :members:
@@ -91,6 +86,15 @@ dfm_tools unimportant stuff
    :show-inheritance:
 
 .. automodule:: dfm_tools.linebuilder
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+dfm_tools example datasets
+--------------------------
+
+.. automodule:: dfm_tools.data
    :members:
    :undoc-members:
    :show-inheritance:
