@@ -53,11 +53,17 @@ ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 """
 Mesh refinement in MeshKernelPy with bathymetry samples and plot result
 """
-#select and plot bathy
+# connect to bathymetry dataset
 file_nc_bathy = r'p:\metocean-data\open\GEBCO\2021\GEBCO_2021.nc'
-data_bathy = xr.open_dataset(file_nc_bathy)
-data_bathy_sel = data_bathy.sel(lon=slice(lon_min-1,lon_max+1),lat=slice(lat_min-1,lat_max+1)).elevation
+data_bathy = xr.open_dataset(file_nc_bathy).elevation
+# alternatively you can connect to ETOPO, for which there is also a 15s (15 arcseconds) resolution dataset available
+# file_nc_bathy = "https://www.ngdc.noaa.gov/thredds/dodsC/global/ETOPO2022/30s/30s_surface_elev_netcdf/ETOPO_2022_v1_30s_N90W180_surface.nc"
+# data_bathy = xr.open_dataset(file_nc_bathy).z
 
+# subset bathy to area of interest 
+data_bathy_sel = data_bathy.sel(lon=slice(lon_min-1, lon_max+1), lat=slice(lat_min-1, lat_max+1))
+
+# plot bathymetry
 fig, ax = plt.subplots(figsize=figsize)
 data_bathy_sel.plot(ax=ax, center=False)
 ctx.add_basemap(ax=ax, crs=crs, attribution=False)
