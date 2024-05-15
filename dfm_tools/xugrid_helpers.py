@@ -435,8 +435,24 @@ def open_dataset_delft3d4(file_nc, **kwargs):
     ds_stacked = ds_stacked.drop_vars(['M','N','mesh2d_nFaces'])
     uds = xu.UgridDataset(ds_stacked,grids=[grid]) 
     
-    uds = uds.drop_vars(['XCOR','YCOR'])
+    uds = uds.drop_vars(['XCOR','YCOR','grid'])
     uds = uds.drop_dims(['MC','NC']) #clean up dataset by dropping corner dims (drops also variabes with U/V masks and U/V/C bedlevel)
+    
+    # convert to xarray.Dataset to update/remove attrs
+    ds_temp = uds.ugrid.to_dataset()
+    
+    # set vertical dimensions attr
+    # TODO: would be more convenient to do within xu.Ugrid2d(): https://github.com/Deltares/xugrid/issues/195#issuecomment-2111841390
+    grid_attrs = {"vertical_dimensions": ds.grid.attrs["vertical_dimensions"]}
+    ds_temp["mesh2d"] = ds_temp["mesh2d"].assign_attrs(grid_attrs)
+
+    # drop attrs pointing to the removed grid variable (topology is now in mesh2d)
+    # TODO: this is not possible on the xu.UgridDataset directly
+    for varn in ds_temp.data_vars:
+        if "grid" in ds_temp[varn].attrs.keys():
+            del ds_temp[varn].attrs["grid"]
+
+    uds = xu.UgridDataset(ds_temp)
     
     return uds
 
