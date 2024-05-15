@@ -189,3 +189,17 @@ def test_enrich_rst_with_map():
     
     uda_rst = uds_rst['DetCS1']
     assert "mesh2d_face_x" in uda_rst.coords
+
+
+@pytest.mark.unittest
+def test_open_dataset_delft3d4():
+    file_nc = dfmt.data.d3d_curvedbend_trim(return_filepath=True)
+
+    uds = dfmt.open_dataset_delft3d4(file_nc)
+
+    assert "mesh2d" in uds.grid.to_dataset().data_vars
+    assert "vertical_dimensions" in uds.grid.attrs
+    assert "grid" not in uds.data_vars
+
+    # test if plotting works, this is a basic validation of whether it is a proper ugrid dataset
+    uds.umag.isel(time=-1, KMAXOUT_RESTR=-1).ugrid.plot()
