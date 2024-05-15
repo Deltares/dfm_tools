@@ -52,10 +52,16 @@ os.makedirs(dir_output_data, exist_ok=True)
 
 
 #%% grid generation and refinement with GEBCO bathymetry
-#select and plot bathy
+# connect to bathymetry dataset
 file_nc_bathy = r'p:\metocean-data\open\GEBCO\2021\GEBCO_2021.nc'
-data_bathy = xr.open_dataset(file_nc_bathy)
-data_bathy_sel = data_bathy.sel(lon=slice(lon_min-1,lon_max+1),lat=slice(lat_min-1,lat_max+1)).elevation
+data_bathy = xr.open_dataset(file_nc_bathy).elevation
+# alternatively you can connect to ETOPO, for which there is also a 15s (15 arcseconds) resolution dataset available
+# file_nc_bathy = "https://www.ngdc.noaa.gov/thredds/dodsC/global/ETOPO2022/30s/30s_surface_elev_netcdf/ETOPO_2022_v1_30s_N90W180_surface.nc"
+# data_bathy = xr.open_dataset(file_nc_bathy).z
+
+# subset bathy to area of interest 
+data_bathy_sel = data_bathy.sel(lon=slice(lon_min-1, lon_max+1), lat=slice(lat_min-1, lat_max+1))
+
 
 #TODO: grid generation and bathy-refinement is still to be improved in meshkernel (https://github.com/Deltares/dfm_tools/issues/234)
 mk_object = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, crs=crs)
