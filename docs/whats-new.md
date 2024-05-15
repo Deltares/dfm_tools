@@ -1,6 +1,6 @@
 # What's new
 
-## UNRELEASED
+## 0.23.0 (2024-05-15)
 
 ### Feat
 - added `conversion_dict` parameter to `dfmt.cmems_nc_to_bc()` in [#841](https://github.com/Deltares/dfm_tools/pull/841)
