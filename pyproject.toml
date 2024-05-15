@@ -84,11 +84,11 @@ dev = [
 	"build",
 ]
 docs = [
-	"mkdocs",
-	"mkdocs-material",
-	"mkdocs-jupyter",
-	"mkdocstrings-python",
-	"mkdocs-exclude",
+	"sphinx>=1.8.1",
+	"sphinx_mdinclude",
+	"nbsphinx",
+	"pydata-sphinx-theme",
+	#"pandoc", # installed with choco on github
 ]
 examples = [
 	"jupyter",

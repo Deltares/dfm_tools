@@ -1,0 +1,4 @@
+/* enlarge deltares & github icon size; only works with local/url svg files; not with fa icons */
+img.icon-link-image {
+    height: 2.5em !important;
+}

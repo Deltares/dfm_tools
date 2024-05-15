@@ -1,4 +1,4 @@
-# Information for developers
+# Contributing
 
 ## Checkout dfm_tools git repository
 
@@ -12,7 +12,7 @@
 
 ## Setup local developer environment
 
-- python 3.11 is recommended, python>=3.9 is required ([more info](https://github.com/Deltares/dfm_tools/issues/267)), python 3.13 not yet supported ([more info](https://github.com/Deltares/dfm_tools/issues/559))
+- python 3.11 is recommended, [python>=3.9 is required](https://github.com/Deltares/dfm_tools/issues/267), [python 3.13 not yet supported](https://github.com/Deltares/dfm_tools/issues/559)
 - download and install Anaconda from [anaconda.com](https://www.anaconda.com)
 - open anaconda prompt and navigate to dfm_tools checkout folder, e.g. ``C:\DATA\dfm_tools``
 - ``conda create --name dfm_tools_env python=3.11 git spyder -c conda-forge -y`` (``git`` and ``spyder`` are optional)
@@ -37,7 +37,7 @@
 - request a review on the pull request
 - after review, squash+merge the branch into main
 
-## Running the testbank (also partly runs on github automatically)
+## Running the testbank
 
 - open anaconda prompt in local dfm_tools folder (e.g. ``C:\DATA\dfm_tools``)
 - ``conda activate dfm_tools_env``
@@ -45,15 +45,14 @@
 - ``pytest -m "not acceptance"``
 - ``pytest -m acceptance`` (runs the acceptance tests, which are the scripts in [the examples folder](https://github.com/Deltares/dfm_tools/tree/main/tests/examples))
 - ``pytest -m "not requireslocaldata"`` (this is what runs on github)
+- this workflow automatically runs via Github Actions upon push and pullrequest to main
 
-## Generate documentation with mkdocs (automatically runs via Github Actions upon push to main)
+## Generate documentation with sphinx
 
 - open anaconda prompt in local dfm_tools folder (e.g. ``C:\DATA\dfm_tools``)
 - ``conda activate dfm_tools_env``
-```
-cp README.md docs
-mkdocs build
-```
+- ``sphinx-build docs docs/_build``
+- this workflow automatically runs via Github Actions upon push to main
 
 ## Increase the dfm_tools version number
 

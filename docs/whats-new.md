@@ -1,3 +1,5 @@
+# What's new
+
 ## UNRELEASED
 
 ### Feat
@@ -61,7 +63,7 @@
 - remove mesh2d hardcoding from layer reconstruction by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#747](https://github.com/Deltares/dfm_tools/pull/747)
 - generalized finding of sigma layer/interface variables via attrs in `reconstruct_zw_zcc()` by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#765](https://github.com/Deltares/dfm_tools/pull/765)
 
-## Deprecated
+### Deprecated
 - deprecated `dfmt.preprocess_hirlam()` since xarray>=2023.9.0 supports multidimensional coordinates by [@veenstrajelmer](https://github.com/veenstrajelmer) in [#770](https://github.com/Deltares/dfm_tools/pull/770)
 
 
