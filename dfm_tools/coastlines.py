@@ -36,7 +36,7 @@ def get_coastlines_gdb(res:str='h', bbox:tuple = (-180, -90, 180, 90), min_area:
     min_area : float, optional
         in km2, min_area>0 speeds up process. The default is 0.
     crs : str, optional
-        
+        coordinate reference system
     include_fields : list, optional
         which shapefile fields to include, None gives all. The default is ['area'].
 
@@ -97,6 +97,7 @@ def get_borders_gdb(res:str='h', bbox:tuple = (-180, -90, 180, 90), crs:str = No
     bbox : tuple, optional
         (minx, miny, maxx, maxy), also includes shapes that are partly in the bbox. The default is (-180, -90, 180, 90).
     crs : str, optional
+        coordinate reference system
     
     Returns
     -------

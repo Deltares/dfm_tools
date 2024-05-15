@@ -1,5 +1,5 @@
 """
-.. include:: ../README.md
+Pre- and postprocessing D-FlowFM model input and output files
 """
 
 __author__ = """Jelmer Veenstra"""

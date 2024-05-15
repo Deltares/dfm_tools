@@ -42,21 +42,22 @@ def get_conversion_dict(ncvarname_updates={}):
     data_xr = data_xr.rename({ncvarname:quantity})
     
     for CMCC:
-    conversion_dict = { # conversion is phyc in mol/m3 to newvar in g/m3
-                       'tracerbndOXY'        : {'ncvarname': 'o2',          'unit': 'g/m3', 'conversion': 32.0 },
-                       'tracerbndNO3'        : {'ncvarname': 'no3',         'unit': 'g/m3', 'conversion': 14.0 },
-                       'tracerbndPO4'        : {'ncvarname': 'po4',         'unit': 'g/m3', 'conversion': 30.97 },
-                       'tracerbndSi'         : {'ncvarname': 'si',          'unit': 'g/m3', 'conversion': 28.08},
-                       'tracerbndPON1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 14.0}, # Caution: this empirical relation might not be applicable to your use case
-                       'tracerbndPOP1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 30.97}, # Caution: this empirical relation might not be applicable to your use case
-                       'tracerbndPOC1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 14.0 * (106 / 16)}, # Caution: this empirical relation might not be applicable to your use case
-                       'salinitybnd'         : {'ncvarname': 'sos'},         #'1e-3'
-                       'temperaturebnd'      : {'ncvarname': 'tos'},         #'degC'
-                       'ux'                  : {'ncvarname': 'uo'},          #'m/s'
-                       'uy'                  : {'ncvarname': 'vo'},          #'m/s'
-                       'waterlevelbnd'       : {'ncvarname': 'zos'},         #'m' #steric
-                       'tide'                : {'ncvarname': ''},            #'m' #tide (dummy entry)
-                       }
+    conversion_dict = {
+    # conversion is phyc in mol/m3 to newvar in g/m3
+    'tracerbndOXY'        : {'ncvarname': 'o2',          'unit': 'g/m3', 'conversion': 32.0 },
+    'tracerbndNO3'        : {'ncvarname': 'no3',         'unit': 'g/m3', 'conversion': 14.0 },
+    'tracerbndPO4'        : {'ncvarname': 'po4',         'unit': 'g/m3', 'conversion': 30.97 },
+    'tracerbndSi'         : {'ncvarname': 'si',          'unit': 'g/m3', 'conversion': 28.08},
+    'tracerbndPON1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 14.0}, # Caution: this empirical relation might not be applicable to your use case
+    'tracerbndPOP1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 30.97}, # Caution: this empirical relation might not be applicable to your use case
+    'tracerbndPOC1'       : {'ncvarname': 'phyc',        'unit': 'g/m3', 'conversion': 14.0 * (106 / 16)}, # Caution: this empirical relation might not be applicable to your use case
+    'salinitybnd'         : {'ncvarname': 'sos'},         #'1e-3'
+    'temperaturebnd'      : {'ncvarname': 'tos'},         #'degC'
+    'ux'                  : {'ncvarname': 'uo'},          #'m/s'
+    'uy'                  : {'ncvarname': 'vo'},          #'m/s'
+    'waterlevelbnd'       : {'ncvarname': 'zos'},         #'m' #steric
+    'tide'                : {'ncvarname': ''},            #'m' #tide (dummy entry)
+    }
     
     
     The below clarification about the CMEMS conversion factors in this function is by Jos van Gils.
@@ -447,7 +448,7 @@ def interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points, load=True):
 
 def interp_uds_to_plipoints(uds:xu.UgridDataset, gdf:geopandas.GeoDataFrame, nPoints:int=None) -> xr.Dataset:
     """
-    To interpolate an unstructured dataset (like a *_map.nc file) read with xugrid to plipoint locations
+    To interpolate an unstructured dataset (like a _map.nc file) read with xugrid to plipoint locations
     
     Parameters
     ----------
