@@ -517,7 +517,7 @@ def plot_ztdata(data_xr_sel, varname, ax=None, only_contour=False, **kwargs):
         the figure axis. The default is None.
     only_contour : bool, optional
         Wheter to plot contour lines of the dataset. The default is False.
-    **kwargs : TYPE
+    kwargs : TYPE
         properties to give on to the pcolormesh function.
     
     Raises
