@@ -12,6 +12,7 @@ import xugrid as xu
 import numpy as np
 import matplotlib.pyplot as plt
 import dfm_tools as dfmt
+import contextily as ctx
 
 
 @pytest.mark.unittest
@@ -165,3 +166,16 @@ def test_xarray_decode_default_fillvals(tmp_path):
     fnc_new = uds2.grid.face_node_connectivity
     
     assert fill_value_default in fnc_new
+
+
+@pytest.mark.unittest
+def test_ctx_add_basemap():
+    """
+    tests wheter this often used function still works, it fails in contextily 1.3.0
+    mainly relevant to update the minimal contextily version in the pyproject.toml file sometimes
+    https://github.com/Deltares/dfm_tools/issues/857
+    """
+    _, ax = plt.subplots()
+    ax.set_xlim(1.8,3.2)
+    ax.set_ylim(50.8, 52.2)
+    ctx.add_basemap(ax=ax,crs="EPSG:4326",attribution=False)
