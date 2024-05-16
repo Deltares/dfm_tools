@@ -11,6 +11,7 @@ import pandas as pd
 from dfm_tools.download import cds_credentials, copernicusmarine_credentials
 import dfm_tools as dfmt
 import xarray as xr
+import glob
 
 
 @pytest.mark.requiressecrets
@@ -32,23 +33,15 @@ def test_copernicusmarine_credentials():
 
 @pytest.mark.requiressecrets
 @pytest.mark.unittest
-def test_download_era5(tmp_path):
-    date_min = '2010-01-01'
-    date_max = '2010-01-02'
-    longitude_min, longitude_max, latitude_min, latitude_max =    2,   3,  51, 52 #test domain
-    variables_era5 = ['msl']#'v10n'] # check variables_dict in dfmt.download_ERA5() for valid names
-    for varkey in variables_era5:
-        dfmt.download_ERA5(varkey, 
-                           longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
-                           date_min=date_min, date_max=date_max,
-                           dir_output=tmp_path, overwrite=True)
+def test_download_era5(file_nc_era5_pattern):
+    # file_nc_era5_pattern comes from conftest.py
+    file_list = glob.glob(file_nc_era5_pattern)
+    assert len(file_list) == 2
     
-    # assert downloaded files
-    file_nc_pat = os.path.join(tmp_path, "*.nc")
-    ds = xr.open_mfdataset(file_nc_pat)
-    assert ds.sizes["time"] == 744
+    ds = xr.open_mfdataset(file_nc_era5_pattern)
+    assert ds.sizes["time"] == 1416
     assert ds.time.to_pandas().iloc[0] == pd.Timestamp('2010-01-01')
-    assert ds.time.to_pandas().iloc[-1] == pd.Timestamp('2010-01-31 23:00')
+    assert ds.time.to_pandas().iloc[-1] == pd.Timestamp('2010-02-28 23:00')
 
 
 @pytest.mark.requiressecrets
