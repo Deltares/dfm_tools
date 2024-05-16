@@ -57,3 +57,4 @@ def test_merge_meteofiles(file_nc_era5_pattern):
     assert ds.sizes["time"] == 72
     assert ds.time.to_pandas().iloc[0] == pd.Timestamp('2010-01-30')
     assert ds.time.to_pandas().iloc[-1] == pd.Timestamp('2010-02-01 23:00')
+    assert "msl" in ds.data_vars
