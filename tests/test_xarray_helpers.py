@@ -11,30 +11,29 @@ import pytest
 import xarray as xr
 import numpy as np
 from dfm_tools.xarray_helpers import prevent_dtype_int
+# from .test_download import file_nc_era5_pattern
 
 #TODO: many xarray_helpers tests are still in test_dfm_tools.py
 
 
-@pytest.mark.requireslocaldata
 @pytest.mark.unittest
-def test_prevent_dtype_int(tmp_path):
-    #open data
-    dir_data = r'p:\11207892-pez-metoceanmc\3D-DCSM-FM\workflow_manual\01_scripts\04_meteo\era5_temp'
-    file_nc = os.path.join(dir_data,'era5_mslp_*.nc')
+def test_prevent_dtype_int(tmp_path, file_nc_era5_pattern):
+    # file_nc_era5_pattern comes from conftest.py
+    varn = "v10n"
     
     #optional encoding
     for zlib, size_expected in zip([False, True], [100e6, 50e6]):
-        data_xr = xr.open_mfdataset(file_nc)
+        data_xr = xr.open_mfdataset(file_nc_era5_pattern)
         prevent_dtype_int(data_xr, zlib=zlib)
         
         #write to netcdf file
         file_out = os.path.join(tmp_path, 'era5_mslp_prevent_dtype_int.nc')
         data_xr.to_netcdf(file_out)
         data_xr_check = xr.open_dataset(file_out)
-        print(data_xr_check.msl.encoding)
+        print(data_xr_check[varn].encoding)
         
         absdiff = (data_xr_check - data_xr).apply(np.fabs)
-        absdiff_max = absdiff.msl.max(dim=['longitude','latitude'])
+        absdiff_max = absdiff[varn].max(dim=['longitude','latitude'])
         
         assert np.allclose(absdiff_max, 0)
     
