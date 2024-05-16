@@ -17,9 +17,10 @@ import pandas as pd
 #TODO: many xarray_helpers tests are still in test_dfm_tools.py
 
 
+@pytest.mark.requiressecrets
 @pytest.mark.unittest
 def test_prevent_dtype_int(tmp_path, file_nc_era5_pattern):
-    # file_nc_era5_pattern comes from conftest.py
+    # file_nc_era5_pattern comes from file_nc_era5_pattern() in conftest.py
     varn = "msl"
     file_nc = os.path.join(tmp_path,f'era5_{varn}_*.nc')
     
@@ -47,9 +48,10 @@ def test_prevent_dtype_int(tmp_path, file_nc_era5_pattern):
         assert file_size < size_expected
 
 
+@pytest.mark.requiressecrets
 @pytest.mark.unittest
 def test_merge_meteofiles(file_nc_era5_pattern):
-    # file_nc_era5_pattern comes from conftest.py
+    # file_nc_era5_pattern comes from file_nc_era5_pattern() in conftest.py
     ds = dfmt.merge_meteofiles(file_nc=file_nc_era5_pattern, 
                                preprocess=dfmt.preprocess_ERA5, 
                                time_slice=slice("2010-01-30","2010-02-01")
