@@ -35,9 +35,6 @@ def test_prevent_dtype_int(tmp_path, file_nc_era5_pattern):
         data_xr_check = xr.open_dataset(file_out)
         print(data_xr_check[varn].encoding)
         
-        # data_diff = data_xr_check - data_xr
-        # data_diff[varn].isel(time=-1).plot()
-        
         assert np.allclose(data_xr[varn], data_xr_check[varn])
         
         del data_xr
