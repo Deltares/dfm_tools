@@ -169,10 +169,11 @@ for file_nc in file_nc_list:
     pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot(cmap='jet') #TODO: default is edgecolor='face', should work even better with edgecolor='none', but that results in seethrough edges anyway, report to matplotlib?
     pc.set_clim(clim_bl)
     ax_input.set_aspect('equal')
-    line, = ax_input.plot([], [],'o-') # empty line
-    linebuilder = dfmt.LineBuilder(line) #this makes it possible to interactively click a line in the bedlevel figure. Use linebuilder.line_array as alternative line_array
+    # line_array is defined above, alternatively click a cross-section line_array in the figure interactively with dfmt.LineBuilder
+    # line_array = dfmt.LineBuilder(ax=ax_input).line_array
     ax_input.plot(line_array[0,0],line_array[0,1],'bx',linewidth=3,markersize=10)
     ax_input.plot(line_array[:,0],line_array[:,1],'b',linewidth=3)
+
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_flowelem_bl'))
     if crs is not None:
