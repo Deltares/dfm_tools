@@ -26,8 +26,8 @@ dependencies = [
 	"geopandas>=0.13.0",
 	#fiona<1.9 does not contain sql where filter
 	"fiona>=1.9",
-	#contextily<1.0.0 is from April 2020
-	"contextily>=1.0.0",
+	#contextily<1.4.0 raises AttributeError and UnidentifiedImageError: https://github.com/Deltares/dfm_tools/issues/857
+	"contextily>=1.4.0",
 	#xarray<2023.9.0 does not support multidimensional coordinates (used in e.g. HIRLAM meteo data)
 	"xarray>=2023.9.0",
 	#dask version is aligned with xarray
