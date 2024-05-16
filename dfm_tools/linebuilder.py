@@ -7,14 +7,12 @@ __all__ = ["LineBuilder"]
 class LineBuilder:
     """
     To interactively draw a line in a figure axis, for instance to use as cross-section.
+    - ctrl+leftmouseclick to add a point to the line
+    - ctrl+rightmouseclick to remove the last point of the line
+    - ctrl+doublemouseclick to finish and let the script continue
     """
     def __init__(self, ax=None):
-        # print some user help
-        print("Draw a line interactively:\n"
-              "- ctrl+leftmouseclick to add a point to the line\n"
-              "- ctrl+rightmouseclick to remove the last point of the line\n"
-              "- ctrl+doublemouseclick to finish and let the script continue\n"
-              )
+        print("draw a line in the figure interactively: ctrl+click to add point, ctrl+rightclick to undo, ctrl+doubleclick to finish")
         
         # get current axis if not provided
         if ax is None:
