@@ -175,7 +175,7 @@ def test_ctx_add_basemap():
     mainly relevant to update the minimal contextily version in the pyproject.toml file sometimes
     https://github.com/Deltares/dfm_tools/issues/857
     """
-    fig,ax = plt.subplots()
+    _, ax = plt.subplots()
     ax.set_xlim(1.8,3.2)
     ax.set_ylim(50.8, 52.2)
     ctx.add_basemap(ax=ax,crs="EPSG:4326",attribution=False)
