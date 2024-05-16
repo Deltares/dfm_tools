@@ -11,36 +11,49 @@ import pytest
 import xarray as xr
 import numpy as np
 from dfm_tools.xarray_helpers import prevent_dtype_int
+import dfm_tools as dfmt
+import pandas as pd
 
 #TODO: many xarray_helpers tests are still in test_dfm_tools.py
 
 
-@pytest.mark.requireslocaldata
+@pytest.mark.requiressecrets
 @pytest.mark.unittest
-def test_prevent_dtype_int(tmp_path):
-    #open data
-    dir_data = r'p:\11207892-pez-metoceanmc\3D-DCSM-FM\workflow_manual\01_scripts\04_meteo\era5_temp'
-    file_nc = os.path.join(dir_data,'era5_mslp_*.nc')
+def test_prevent_dtype_int(tmp_path, file_nc_era5_pattern):
+    # file_nc_era5_pattern comes from file_nc_era5_pattern() in conftest.py
+    varn = "msl"
+    file_nc = os.path.join(tmp_path,f'era5_{varn}_*.nc')
     
     #optional encoding
-    for zlib, size_expected in zip([False, True], [100e6, 50e6]):
+    for zlib, size_expected in zip([False, True], [480000, 250000]):
         data_xr = xr.open_mfdataset(file_nc)
         prevent_dtype_int(data_xr, zlib=zlib)
         
         #write to netcdf file
-        file_out = os.path.join(tmp_path, 'era5_mslp_prevent_dtype_int.nc')
+        file_out = os.path.join(tmp_path, f'era5_prevent_dtype_int_{varn}_zlib_{zlib}.nc')
         data_xr.to_netcdf(file_out)
         data_xr_check = xr.open_dataset(file_out)
-        print(data_xr_check.msl.encoding)
+        print(data_xr_check[varn].encoding)
         
-        absdiff = (data_xr_check - data_xr).apply(np.fabs)
-        absdiff_max = absdiff.msl.max(dim=['longitude','latitude'])
+        assert np.allclose(data_xr[varn], data_xr_check[varn])
         
-        assert np.allclose(absdiff_max, 0)
-    
         del data_xr
         del data_xr_check
         
         file_size = os.path.getsize(file_out)
         print(file_size)
         assert file_size < size_expected
+
+
+@pytest.mark.requiressecrets
+@pytest.mark.unittest
+def test_merge_meteofiles(file_nc_era5_pattern):
+    # file_nc_era5_pattern comes from file_nc_era5_pattern() in conftest.py
+    ds = dfmt.merge_meteofiles(file_nc=file_nc_era5_pattern, 
+                               preprocess=dfmt.preprocess_ERA5, 
+                               time_slice=slice("2010-01-30","2010-02-01")
+                               )
+    assert ds.sizes["time"] == 72
+    assert ds.time.to_pandas().iloc[0] == pd.Timestamp('2010-01-30')
+    assert ds.time.to_pandas().iloc[-1] == pd.Timestamp('2010-02-01 23:00')
+    assert "msl" in ds.data_vars
