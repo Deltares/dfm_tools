@@ -84,4 +84,3 @@ class LineBuilder:
         # remove last point from line upon "ctrl + right mouse click"
         if event.button == 3:
             self.remove_last_xy_from_line(event)
-            return            
