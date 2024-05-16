@@ -44,8 +44,8 @@ dependencies = [
 	"pydap>=3.4.0",
 	#erddapy<2.0.0 does not support pandas>=2.0.0
 	"erddapy>=2.0.0",
-	#copernicusmarine<1.2.0 returns incorrect time ranges of cmems my/forecast datasets (https://github.com/Deltares/dfm_tools/issues/842)
-	"copernicusmarine>=1.2.0",
+	#copernicusmarine<1.2.1 will raise error according to copernicus (https://github.com/Deltares/dfm_tools/issues/850)
+	"copernicusmarine>=1.2.1",
 	#rws-ddlpy<0.4.0 does not yet have `ddlpy.dataframe_to_xarray()`
 	"rws-ddlpy>=0.4.0",
 	#pooch<1.1.0 do not have attribute retrieve
