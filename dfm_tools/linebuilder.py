@@ -6,20 +6,26 @@ __all__ = ["LineBuilder"]
 
 class LineBuilder:
     """
-    https://matplotlib.org/stable/users/explain/event_handling.html
+    To interactively draw a line in a figure axis, for instance to use as cross-section.
     """
     def __init__(self, ax=None):
-        if ax is None:
-            ax = plt.gca()
-        self.xs = []
-        self.ys = []
-        line, = ax.plot(self.xs, self.ys,'o-') # empty line
-        self.line = line
+        # print some user help
         print("Draw a line interactively:\n"
               "- ctrl+leftmouseclick to add a point to the line\n"
               "- ctrl+rightmouseclick to remove the last point of the line\n"
               "- ctrl+doublemouseclick to finish and let the script continue\n"
               )
+        
+        # get current axis if not provided
+        if ax is None:
+            ax = plt.gca()
+        
+        # initialize x/y arrays and line object
+        self.xs = []
+        self.ys = []
+        line, = ax.plot(self.xs, self.ys,'o-') # empty line
+        self.line = line
+        
         # register both button press events and key press events
         self.cid_button = self.line.figure.canvas.mpl_connect('button_press_event', self.on_press)
         self.cid_key = self.line.figure.canvas.mpl_connect('key_press_event', self.on_press)
