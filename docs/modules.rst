@@ -24,6 +24,11 @@ dfm_tools post-processing
    :undoc-members:
    :show-inheritance:
 
+.. automodule:: dfm_tools.linebuilder
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 
 dfm_tools pre-processing
 ------------------------
@@ -81,11 +86,6 @@ dfm_tools unimportant stuff
    :show-inheritance:
 
 .. automodule:: dfm_tools.energy_dissipation
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-.. automodule:: dfm_tools.linebuilder
    :members:
    :undoc-members:
    :show-inheritance:
