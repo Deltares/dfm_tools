@@ -25,7 +25,5 @@ from dfm_tools.modelbuilder import *
 from dfm_tools.observations import *
 
 import warnings
-warnings.filterwarnings(action="always", category=DeprecationWarning)
-
 # suppress chunks warning: https://github.com/Deltares/dfm_tools/issues/679
 warnings.filterwarnings("ignore", category=UserWarning, message='The specified chunks separate the stored chunks along dimension "time" starting at index 1. This could degrade performance. Instead, consider rechunking after loading.')
