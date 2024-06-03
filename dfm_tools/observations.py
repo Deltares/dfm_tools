@@ -713,9 +713,6 @@ def gesla3_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None,
     meta_sel["longitude"] = geometry.x
     meta_sel["latitude"] = geometry.y
     ds = data.to_xarray().assign_attrs(meta_sel.to_dict())
-    ds['site_name'] = xr.DataArray([meta_sel.site_name], dims=('stations'))
-    ds['latitude'] = xr.DataArray([meta_sel.latitude], dims=('stations'))
-    ds['longitude'] = xr.DataArray([meta_sel.longitude], dims=('stations'))
     ds['sea_level'] = ds['sea_level'].assign_attrs(units="m")
     ds = ds.rename_vars(sea_level="waterlevel")
     
