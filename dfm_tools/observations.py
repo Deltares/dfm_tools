@@ -48,10 +48,8 @@ def _make_hydrotools_consistent(ds):
     
     ds["station_name"] = xr.DataArray(ds.attrs["station_name"]).astype("S64")
     ds["station_id"] = xr.DataArray(ds.attrs["station_id"]).astype("S64")
-    x_attrs = dict(standard_name = 'longitude',
-                   units = 'degrees_east')
-    y_attrs = dict(standard_name = 'latitude',
-                   units = 'degrees_north')
+    x_attrs = dict(standard_name='longitude', units='degrees_east')
+    y_attrs = dict(standard_name='latitude', units='degrees_north')
     ds["station_x_coordinate"] = xr.DataArray(ds.attrs["longitude"]).assign_attrs(x_attrs)
     ds["station_y_coordinate"] = xr.DataArray(ds.attrs["latitude"]).assign_attrs(y_attrs)
 
@@ -360,7 +358,7 @@ def ioc_ssh_read_catalog(drop_uhslc=True, drop_dart=True, drop_nonutc=True):
     # generate geom and geodataframe and remove the old columns
     geom = [Point(x["lon"], x["lat"]) for irow, x in ioc_catalog_pd.iterrows()]
     ioc_catalog_gpd = gpd.GeoDataFrame(data=ioc_catalog_pd, geometry=geom, crs='EPSG:4326')
-    drop_list = ["lon","lat"]
+    drop_list = ["Lon","lat","lon","lat"]
     ioc_catalog_gpd = ioc_catalog_gpd.drop(drop_list, axis=1)
     
     ioc_catalog_gpd["station_name"] = ioc_catalog_gpd['Code']
@@ -656,9 +654,11 @@ def uhslc_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None):
         # no data so early return
         return
     
-    # change longitude from 0to360 to -180to180
-    ds["longitude"] = (ds.longitude + 180)%360 - 180
-    ds = ds.sortby("longitude")
+    # reduce timeseries dimension
+    assert ds.sizes["timeseries"] == 1
+    ds = ds.max(dim="timeseries", keep_attrs=True)
+    # check if lat/lon variables were also dropped, these are already present as attrs
+    assert "latitude" not in ds.variables
     
     # change units to meters
     with xr.set_options(keep_attrs=True):
@@ -706,16 +706,7 @@ def gesla3_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None,
         print(f"[{bool_duplicate.sum()} duplicate timestamps removed] ", end="")
     
     # convert to xarray and add metadata
-    meta_sel = row.copy()
-    geometry = meta_sel.pop('geometry')
-    meta_sel["time_min"] = str(meta_sel["time_min"])
-    meta_sel["time_max"] = str(meta_sel["time_max"])
-    meta_sel["longitude"] = geometry.x
-    meta_sel["latitude"] = geometry.y
-    ds = data.to_xarray().assign_attrs(meta_sel.to_dict())
-    ds['site_name'] = xr.DataArray([meta_sel.site_name], dims=('stations'))
-    ds['latitude'] = xr.DataArray([meta_sel.latitude], dims=('stations'))
-    ds['longitude'] = xr.DataArray([meta_sel.longitude], dims=('stations'))
+    ds = data.to_xarray()
     ds['sea_level'] = ds['sea_level'].assign_attrs(units="m")
     ds = ds.rename_vars(sea_level="waterlevel")
     
@@ -945,7 +936,8 @@ def ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
                              station_name_unique=row["station_name_unique"],
                              longitude=row.geometry.x,
                              latitude=row.geometry.y,
-                             country=row["country"])
+                             country=row["country"],
+                             source=row["source"])
         
         ds["waterlevel"] = ds["waterlevel"].astype("float32")
         _make_hydrotools_consistent(ds)
