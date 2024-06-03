@@ -52,8 +52,8 @@ dependencies = [
 	"pooch>=1.1.0",
 	#hydrolib-core 0.7.0 supports meshkernel>=4.1.0
 	"hydrolib-core>=0.7.0",
-	#meshkernel<4.1.0 does not support contacts_get, no macos support, etc
-	"meshkernel>=4.1.0",
+	#meshkernel<4.2.0 support for more gridded_samples dtypes and workarounds for non-orthogonal grids
+	"meshkernel>=4.2.0",
 ]
 classifiers = [
 	"Development Status :: 4 - Beta",
