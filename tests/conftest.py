@@ -11,6 +11,7 @@ import os
 
 @pytest.mark.requiressecrets
 @pytest.fixture
+@pytest.mark.timeout(60) # useful since CDS downloads are terribly slow sometimes, so skip in that case
 def file_nc_era5_pattern(tmp_path):
     date_min = '2010-01-31'
     date_max = '2010-02-01'
