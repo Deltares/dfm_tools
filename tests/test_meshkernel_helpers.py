@@ -207,8 +207,8 @@ def test_meshkernel_get_illegalcells():
                                                           max_courant_time=120)
     
     mk.mesh2d_refine_based_on_gridded_samples(gridded_samples=gridded_samples,
-                                                mesh_refinement_params=mesh_refinement_parameters,
-                                                )    
+                                              mesh_refinement_params=mesh_refinement_parameters,
+                                              )    
     # cutcells
     geometry_separator = -999
     xx = np.array([147.83625 , 147.839556, 147.855833, 147.877528, 147.904139,
@@ -217,7 +217,7 @@ def test_meshkernel_get_illegalcells():
             -40.301639, -40.326278, -40.324611, -40.309222, -40.305028])
     xx = np.concatenate([xx-0.075, [geometry_separator], xx])
     yy = np.concatenate([yy, [geometry_separator], yy])
-    delete_pol_geom = GeometryList(x_coordinates=xx, y_coordinates=yy, geometry_separator=geometry_separator) #TODO: .copy()/to_numpy() makes the array contiguous in memory, which is necessary for meshkernel.mesh2d_delete()
+    delete_pol_geom = GeometryList(x_coordinates=xx, y_coordinates=yy, geometry_separator=geometry_separator)
     mk.mesh2d_delete(geometry_list=delete_pol_geom, 
                      delete_option=DeleteMeshOption.INSIDE_NOT_INTERSECTED,
                      invert_deletion=False)
