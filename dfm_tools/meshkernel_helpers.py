@@ -423,6 +423,6 @@ def interpolate_bndpli(bnd_gdf,res):
         if len(bnd_ls_interp_points)==1: #no change if interp results in only one point
             continue
         bnd_ls_interp = LineString(bnd_ls_interp_points)
-        bnd_gdf_interp['geometry'][irow] = bnd_ls_interp
+        bnd_gdf_interp.loc[irow,'geometry'] = bnd_ls_interp
     return bnd_gdf_interp
 
