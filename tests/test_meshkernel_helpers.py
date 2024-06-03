@@ -316,11 +316,11 @@ def test_generate_bndpli_cutland():
                   [-68.31, -68.27, 12.10, 12.21,   2,  5]]
     
     dxy = 0.02
-    
+    crs = 4326
     for params in params_all:
         lon_min, lon_max, lat_min, lat_max, len_gdf, len_linestr0 = params
     
-        mk_object = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, crs=4326)
+        mk_object = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, crs=crs)
         bnd_gdf = dfmt.generate_bndpli_cutland(mk=mk_object, res='h', buffer=0.01)
         
         # fig, ax = plt.subplots()
@@ -330,3 +330,19 @@ def test_generate_bndpli_cutland():
         
         assert len(bnd_gdf) == len_gdf
         assert len(bnd_gdf.geometry[0].xy[0]) == len_linestr0
+
+
+@pytest.mark.unittest
+def test_interpolate_bndpli():
+    dxy = 0.02
+    crs = 4326
+    lon_min, lon_max, lat_min, lat_max = -68.55, -68.05, 11.95, 12.4
+
+    mk_object = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, crs=crs)
+    bnd_gdf = dfmt.generate_bndpli_cutland(mk=mk_object, res='h', buffer=0.01)
+    bnd_gdf_ref = dfmt.interpolate_bndpli(bnd_gdf, res=0.00511)
+
+    assert len(bnd_gdf) == 1
+    assert len(bnd_gdf.geometry[0].xy[0]) == 99
+    assert len(bnd_gdf_ref) == 1
+    assert len(bnd_gdf_ref.geometry[0].xy[0]) == 377
