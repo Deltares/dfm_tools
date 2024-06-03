@@ -10,7 +10,7 @@ import os
 
 
 @pytest.mark.requiressecrets
-@pytest.fixture(scope="session")
+@pytest.fixture
 def file_nc_era5_pattern(tmp_path):
     date_min = '2010-01-31'
     date_max = '2010-02-01'
