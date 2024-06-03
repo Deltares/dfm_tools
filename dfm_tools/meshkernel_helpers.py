@@ -10,11 +10,14 @@ from netCDF4 import default_fillvals
 import geopandas as gpd
 from shapely import MultiPolygon, LineString, MultiLineString
 from shapely.ops import linemerge
+from itertools import groupby
+from shapely import Polygon
 
 __all__ = [
     "meshkernel_delete_withcoastlines",
     "meshkernel_delete_withshp",
     "meshkernel_delete_withgdf",
+    "meshkernel_get_illegalcells",
     "meshkernel_to_UgridDataset",
     "make_basegrid",
     "refine_basegrid",
@@ -107,6 +110,19 @@ def meshkernel_delete_withgdf(mk:meshkernel.MeshKernel, coastlines_gdf:gpd.GeoDa
         mk.mesh2d_delete(geometry_list=delete_pol_geom, 
                          delete_option=meshkernel.DeleteMeshOption.INSIDE_NOT_INTERSECTED,
                          invert_deletion=False)
+
+
+def meshkernel_get_illegalcells(mk):
+    # get illegalcells from meshkernel instance
+    illegalcells_geom = mk.mesh2d_get_face_polygons(num_edges=6)
+    # convert xy coords to numpy array
+    illegalcells_np = np.c_[illegalcells_geom.x_coordinates, illegalcells_geom.y_coordinates]
+    # split illegalcells array based on the geomtry_separator
+    xy_lists = [list(g) for k, g in groupby(illegalcells_np, lambda x: (x != illegalcells_geom.geometry_separator).all()) if k]
+    # convert to geodataframe of Polygons
+    list_polygons = [Polygon(xylist) for xylist in xy_lists]
+    illegalcells_gdf = gpd.GeoDataFrame(geometry=list_polygons)
+    return illegalcells_gdf
 
 
 def geographic_to_meshkernel_projection(is_geographic:bool) -> meshkernel.ProjectionType:
