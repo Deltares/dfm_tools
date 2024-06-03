@@ -19,6 +19,7 @@ import pandas as pd
 
 @pytest.mark.requiressecrets
 @pytest.mark.unittest
+@pytest.mark.timeout(60) # useful since CDS downloads are terribly slow sometimes, so skip in that case
 def test_prevent_dtype_int(tmp_path, file_nc_era5_pattern):
     # file_nc_era5_pattern comes from file_nc_era5_pattern() in conftest.py
     varn = "msl"
