@@ -656,9 +656,12 @@ def uhslc_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None):
         # no data so early return
         return
     
+    # reduce timeseries dimension
+    assert ds.sizes["timeseries"] == 1
+    ds = ds.reset_coords(['latitude','longitude']).max(dim="timeseries", keep_attrs=True)
+    
     # change longitude from 0to360 to -180to180
     ds["longitude"] = (ds.longitude + 180)%360 - 180
-    ds = ds.sortby("longitude")
     
     # change units to meters
     with xr.set_options(keep_attrs=True):
