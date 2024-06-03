@@ -358,7 +358,7 @@ def ioc_ssh_read_catalog(drop_uhslc=True, drop_dart=True, drop_nonutc=True):
     # generate geom and geodataframe and remove the old columns
     geom = [Point(x["lon"], x["lat"]) for irow, x in ioc_catalog_pd.iterrows()]
     ioc_catalog_gpd = gpd.GeoDataFrame(data=ioc_catalog_pd, geometry=geom, crs='EPSG:4326')
-    drop_list = ["lon","lat"]
+    drop_list = ["Lon","lat","lon","lat"]
     ioc_catalog_gpd = ioc_catalog_gpd.drop(drop_list, axis=1)
     
     ioc_catalog_gpd["station_name"] = ioc_catalog_gpd['Code']
@@ -936,7 +936,8 @@ def ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
                              station_name_unique=row["station_name_unique"],
                              longitude=row.geometry.x,
                              latitude=row.geometry.y,
-                             country=row["country"])
+                             country=row["country"],
+                             source=row["source"])
         
         ds["waterlevel"] = ds["waterlevel"].astype("float32")
         _make_hydrotools_consistent(ds)
