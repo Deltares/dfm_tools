@@ -4,6 +4,7 @@
 
 ### Feat
 - improved usability of `dfmt.LineBuilder()` in [#854](https://github.com/Deltares/dfm_tools/pull/854)
+- added workaround for grids that are not orthogonal after cutting the land with `dfmt.meshkernel_get_illegalcells()` in [#866](https://github.com/Deltares/dfm_tools/pull/866)
 
 
 ## 0.23.0 (2024-05-15)

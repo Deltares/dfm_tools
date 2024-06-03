@@ -8,7 +8,6 @@ Created on Wed Jul  5 12:59:23 2023
 import pytest
 import xugrid as xu
 import dfm_tools as dfmt
-import meshkernel
 import xarray as xr
 import numpy as np
 import geopandas as gpd
@@ -17,6 +16,10 @@ from dfm_tools.meshkernel_helpers import (geographic_to_meshkernel_projection,
                                           uds_add_crs_attrs,
                                           crs_to_isgeographic
                                           )
+from meshkernel import (ProjectionType, MakeGridParameters, MeshKernel, 
+                        MeshRefinementParameters, GriddedSamples, RefinementType,
+                        GeometryList, DeleteMeshOption,
+                        )
 
 
 @pytest.mark.unittest
@@ -81,8 +84,7 @@ def test_meshkernel_refine_basegrid():
     file_nc_bathy = r'https://opendap.deltares.nl/thredds/dodsC/opendap/deltares/Delft3D/netcdf_example_files/GEBCO_2022/GEBCO_2022_coarsefac08.nc'
     data_bathy = xr.open_dataset(file_nc_bathy)
     
-    # TODO: in the future meshkernel supports all these four datatypes, so add more datatypes to list
-    for dtype in ["float32", "int16"]: # ["float64", "float32", "int32", "int16"]:
+    for dtype in ["float64", "float32", "int32", "int16"]:
         data_bathy_sel = data_bathy.sel(lon=slice(lon_min,lon_max),lat=slice(lat_min,lat_max)).elevation
         data_bathy_sel = data_bathy_sel.astype(dtype=dtype)
         
@@ -103,7 +105,7 @@ def test_meshkernel_delete_withcoastlines():
     lon_min, lon_max, lat_min, lat_max = -68.45, -68.1, 12, 12.35
     dxy = 0.005
     mk = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, crs=4326)
-    assert mk.get_projection() == meshkernel.ProjectionType.SPHERICAL
+    assert mk.get_projection() == ProjectionType.SPHERICAL
     assert len(mk.mesh2d_get().face_nodes) == 20732
     
     # remove cells with GSHHS coastlines
@@ -135,7 +137,7 @@ def test_meshkernel_delete_withshp(tmp_path):
     lon_min, lon_max, lat_min, lat_max = -68.45, -68.1, 12, 12.35
     dxy = 0.005
     mk = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, crs=4326)
-    assert mk.get_projection() == meshkernel.ProjectionType.SPHERICAL
+    assert mk.get_projection() == ProjectionType.SPHERICAL
     
     assert len(mk.mesh2d_get().face_nodes) == 20732
     
@@ -151,7 +153,7 @@ def test_meshkernel_delete_withgdf():
     lon_min, lon_max, lat_min, lat_max = -68.45, -68.1, 12, 12.35
     dxy = 0.005
     mk = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, crs=4326)
-    assert mk.get_projection() == meshkernel.ProjectionType.SPHERICAL
+    assert mk.get_projection() == ProjectionType.SPHERICAL
 
     assert len(mk.mesh2d_get().face_nodes) == 20732
     
@@ -164,12 +166,78 @@ def test_meshkernel_delete_withgdf():
 
 
 @pytest.mark.unittest
+def test_meshkernel_get_illegalcells():    
+    # input params
+    lon_min, lon_max, lat_min, lat_max = 147.75, 147.9, -40.4, -40.25
+    dxy = 0.05 #0.05
+    
+    # grid generation and refinement with GEBCO bathymetry
+    # create base grid
+    projection = ProjectionType.SPHERICAL
+    make_grid_parameters = MakeGridParameters(angle=0,
+                                              origin_x=lon_min,
+                                              origin_y=lat_min,
+                                              upper_right_x=lon_max,
+                                              upper_right_y=lat_max,
+                                              block_size_x=dxy,
+                                              block_size_y=dxy)
+    
+    mk = MeshKernel(projection=projection)
+    mk.curvilinear_compute_rectangular_grid_on_extension(make_grid_parameters)
+    mk.curvilinear_convert_to_mesh2d() #convert to ugrid/mesh2d
+    
+    # refine
+    min_edge_size = 500 #in meters
+    gebco_elev = np.array([[-37, -37, -36, -36],
+            [-41, -39, -38, -34],
+            [-42, -32, -27,  -6],
+            [-38,  -6,  -2,   2],
+            [-43, -42, -31, -20]],dtype=np.int16)
+    lat_np = np.array([-40.397917, -40.364583, -40.33125 , -40.297917, -40.264583])
+    lon_np = np.array([147.76875 , 147.802083, 147.835417, 147.86875 ])
+    values_np = gebco_elev.flatten()
+    gridded_samples = GriddedSamples(x_coordinates=lon_np,y_coordinates=lat_np,values=values_np)
+    
+    
+    #refinement
+    mesh_refinement_parameters = MeshRefinementParameters(min_edge_size=min_edge_size, #always in meters
+                                                          refinement_type=RefinementType(1), #Wavecourant/1,
+                                                          connect_hanging_nodes=True, #set to False to do multiple refinement steps (e.g. for multiple regions)
+                                                          smoothing_iterations=2,
+                                                          max_courant_time=120)
+    
+    mk.mesh2d_refine_based_on_gridded_samples(gridded_samples=gridded_samples,
+                                              mesh_refinement_params=mesh_refinement_parameters,
+                                              )    
+    # cutcells
+    geometry_separator = -999
+    xx = np.array([147.83625 , 147.839556, 147.855833, 147.877528, 147.904139,
+            147.911222, 147.885861, 147.849111, 147.85625 , 147.83625 ])
+    yy = np.array([-40.305028, -40.301667, -40.293778, -40.30625 , -40.291222,
+            -40.301639, -40.326278, -40.324611, -40.309222, -40.305028])
+    xx = np.concatenate([xx-0.075, [geometry_separator], xx])
+    yy = np.concatenate([yy, [geometry_separator], yy])
+    delete_pol_geom = GeometryList(x_coordinates=xx, y_coordinates=yy, geometry_separator=geometry_separator)
+    mk.mesh2d_delete(geometry_list=delete_pol_geom, 
+                     delete_option=DeleteMeshOption.INSIDE_NOT_INTERSECTED,
+                     invert_deletion=False)
+    
+    # derive illegalcells as geodataframe
+    illegalcells_gdf = dfmt.meshkernel_get_illegalcells(mk)
+    
+    # assert number of polygons
+    assert len(illegalcells_gdf) == 2
+    # assert number of points per polygon
+    assert (illegalcells_gdf.geometry.apply(lambda x: len(x.exterior.xy[0])) == 7).all()
+
+
+@pytest.mark.unittest
 def test_geographic_to_meshkernel_projection():
     
     spherical = geographic_to_meshkernel_projection(is_geographic=True)
     cartesian = geographic_to_meshkernel_projection(is_geographic=False)
-    spherical_mk = meshkernel.ProjectionType.SPHERICAL
-    cartesian_mk = meshkernel.ProjectionType.CARTESIAN
+    spherical_mk = ProjectionType.SPHERICAL
+    cartesian_mk = ProjectionType.CARTESIAN
     
     assert spherical == spherical_mk
     assert cartesian == cartesian_mk
@@ -179,9 +247,9 @@ def test_geographic_to_meshkernel_projection():
 def test_meshkernel_to_UgridDataset_geographic_mismatch():
     """
     """
-    projection = meshkernel.ProjectionType.CARTESIAN
+    projection = ProjectionType.CARTESIAN
     crs = 'EPSG:4326'
-    mk = meshkernel.MeshKernel(projection=projection)
+    mk = MeshKernel(projection=projection)
     try:
         _ = dfmt.meshkernel_to_UgridDataset(mk=mk, crs=crs)
     except ValueError as e:
@@ -194,27 +262,27 @@ def test_meshkernel_to_UgridDataset(tmp_path):
     generate grid with meshkernel. Then convert with `dfmt.meshkernel_to_UgridDataset()` from 0-based to 1-based indexing to make FM-compatible network.
     assert if _FillValue, start_index, min and max are the expected values, this ensures FM-compatibility
     """
-    projection = meshkernel.ProjectionType.SPHERICAL
+    projection = ProjectionType.SPHERICAL
     crs = 'EPSG:4326'
     
     # create basegrid
     lon_min, lon_max, lat_min, lat_max = -6, 2, 48.5, 51.2
     dxy = 0.5
-    make_grid_parameters = meshkernel.MakeGridParameters(origin_x=lon_min,
-                                                         origin_y=lat_min,
-                                                         upper_right_x=lon_max,
-                                                         upper_right_y=lat_max,
-                                                         block_size_x=dxy,
-                                                         block_size_y=dxy)
-    mk = meshkernel.MeshKernel(projection=projection)
+    make_grid_parameters = MakeGridParameters(origin_x=lon_min,
+                                              origin_y=lat_min,
+                                              upper_right_x=lon_max,
+                                              upper_right_y=lat_max,
+                                              block_size_x=dxy,
+                                              block_size_y=dxy)
+    mk = MeshKernel(projection=projection)
     mk.curvilinear_compute_rectangular_grid_on_extension(make_grid_parameters)
     mk.curvilinear_convert_to_mesh2d() #convert to ugrid/mesh2d
     
     # refine with polygon
     pol_x = np.array([-5,-4,0,-5], dtype=np.double)
     pol_y = np.array([49,51,49.5,49], dtype=np.double)
-    geometry_list = meshkernel.GeometryList(pol_x, pol_y)
-    mrp = meshkernel.MeshRefinementParameters(min_edge_size=3000)
+    geometry_list = GeometryList(pol_x, pol_y)
+    mrp = MeshRefinementParameters(min_edge_size=3000)
     mk.mesh2d_refine_based_on_polygon(polygon=geometry_list, mesh_refinement_params=mrp)
     
     #convert to xugrid and write to netcdf
@@ -262,4 +330,3 @@ def test_generate_bndpli_cutland():
         
         assert len(bnd_gdf) == len_gdf
         assert len(bnd_gdf.geometry[0].xy[0]) == len_linestr0
-
