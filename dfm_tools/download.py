@@ -281,7 +281,7 @@ def copernicusmarine_get_dataset_id(varkey, date_min, date_max):
             elif varkey in ['chl','phyc']:
                 dataset_id = 'cmems_mod_glo_bgc-pft_anfc_0.25deg_P1D-m'
         else: #https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_BGC_001_029/description
-            dataset_id = 'cmems_mod_glo_bgc_my_0.25_P1D-m'
+            dataset_id = 'cmems_mod_glo_bgc_my_0.25deg_P1D-m'
     else:
         raise KeyError(f"unknown varkey for cmems: {varkey}")
     return dataset_id
