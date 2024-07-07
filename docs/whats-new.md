@@ -6,6 +6,7 @@
 - improved usability of `dfmt.LineBuilder()` in [#854](https://github.com/Deltares/dfm_tools/pull/854)
 - added workaround for grids that are not orthogonal after cutting the land with `dfmt.meshkernel_get_illegalcells()` in [#866](https://github.com/Deltares/dfm_tools/pull/866)
 - updated CMEMS bcg multiyear dataset name in [#880](https://github.com/Deltares/dfm_tools/pull/880)
+- added CMEMS reananalysis-interim (myint) datasets to `dfmt.download_CMEMS()` in [#883](https://github.com/Deltares/dfm_tools/pull/883)
 
 ### Fix
 - cleanups for datasets retrieved with `dfmt.ssh_retrieve_data()` in [#867](https://github.com/Deltares/dfm_tools/pull/867)
