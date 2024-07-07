@@ -454,7 +454,7 @@ def test_interpolate_tide_to_forcingmodel():
     Furthermore, it runs on Github since it does not depend on local data
     """
     
-    tidemodel = 'GTSMv4.1_opendap'
+    tidemodel = 'tpxo80_opendap'
     component_list = ['M2']
     gdf_points = data_dcsm_gdf()
 
