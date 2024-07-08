@@ -291,7 +291,7 @@ def uhslc_ssh_read_catalog(source):
     # TODO: country is "New Zealand" and country_code is 554. We would like country/country_code=NZL
     # TODO: maybe use min of rqds and max of fast for time subsetting
     # TODO: maybe enable merging of datasets?
-    uhslc_gpd = gpd.read_file("https://uhslc.soest.hawaii.edu/data/meta.geojson", engine="Fiona")
+    uhslc_gpd = gpd.read_file("https://uhslc.soest.hawaii.edu/data/meta.geojson", engine="fiona")
     
     for drop_col in ["rq_basin", "rq_versions"]:
         if drop_col in uhslc_gpd.columns:
