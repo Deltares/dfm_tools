@@ -236,8 +236,6 @@ def geodataframe_to_PolyFile(poly_gdf):
     # TODO: now only name+geometry, still add other data columns
     for irow, gdf_row in poly_gdf.iterrows():
         poly_geom = gdf_row.geometry
-        # TODO: not allowed to have empty or duplicated polyline names in a polyfile, this is not 
-        # catched by hydrolib-core: https://github.com/Deltares/HYDROLIB-core/issues/483
         if 'name' in poly_gdf.columns:
             name = poly_gdf['name'].iloc[irow]
         else:
@@ -257,6 +255,15 @@ def geodataframe_to_PolyFile(poly_gdf):
         #if content is not None: # TODO: add support for content
         #    polyobject.description = {'content':content}
         polyfile_obj.objects.append(polyobject)
+    
+    # TODO: not allowed to have empty or duplicated polyline names in a polyfile, this is not 
+    # catched by hydrolib-core: https://github.com/Deltares/HYDROLIB-core/issues/483
+    # therefore, we check it here
+    names = [x.metadata.name for x in polyfile_obj.objects]
+    if '' in names:
+        raise ValueError(f'empty polyline names found in polyfile: {names}')
+    if len(set(names)) != len(names):
+        raise ValueError(f'duplicate polyline names found in polyfile: {names}')
     
     return polyfile_obj
 

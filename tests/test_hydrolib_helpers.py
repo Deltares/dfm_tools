@@ -46,3 +46,31 @@ def test_geodataframe_with_LineString_to_PolyFile(tmp_path):
     
     polyfile = dfmt.geodataframe_to_PolyFile(gdf_polyfile)
     assert isinstance(polyfile, hcdfm.PolyFile)
+
+
+@pytest.fixture(scope='session')
+def bnd_gdf():
+    dxy = 0.02
+    crs = 4326
+    lon_min, lon_max, lat_min, lat_max = -68.31, -68.27, 12.10, 12.21
+    mk_object = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, crs=crs)
+    bnd_gdf = dfmt.generate_bndpli_cutland(mk=mk_object, res='h', buffer=0.01)
+    return bnd_gdf
+
+
+@pytest.mark.unittest
+def test_geodataframe_to_PolyFile_empty_names(bnd_gdf):
+    # deliberately giving all polylines the same name
+    bnd_gdf['name'] = ''
+    with pytest.raises(ValueError) as e:
+        dfmt.geodataframe_to_PolyFile(bnd_gdf)
+    assert "polyline names found in polyfile" in str(e.value)
+
+
+@pytest.mark.unittest
+def test_geodataframe_to_PolyFile_duplicated_names(bnd_gdf):
+    # deliberately giving all polylines the same name
+    bnd_gdf['name'] = 'duplicate_bnd'
+    with pytest.raises(ValueError) as e:
+        dfmt.geodataframe_to_PolyFile(bnd_gdf)
+    assert "duplicate polyline names found in polyfile" in str(e.value)
