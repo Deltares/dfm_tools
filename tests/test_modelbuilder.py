@@ -153,3 +153,20 @@ def test_make_paths_relative(tmp_path):
     with open(ext_file_new, 'r') as file:
         filedata = file.read()
     assert "locationFile = test_model.pli" in filedata
+
+
+@pytest.mark.unittest
+def test_preprocess_merge_meteofiles_era5_unsupported_varlist(file_nc_era5_pattern, tmp_path):
+    ext_old = None # this won't be reached, so not relevant what to supply
+    date_min = '2010-01-31'
+    date_max = '2010-02-01'
+    varlist_list = ['msl']
+    dir_output_data_era5 = os.path.dirname(file_nc_era5_pattern)
+    with pytest.raises(KeyError) as e:
+        ext_old = dfmt.preprocess_merge_meteofiles_era5(ext_old=ext_old,
+                                                        varkey_list=varlist_list,
+                                                        dir_data=dir_output_data_era5,
+                                                        dir_output=tmp_path,
+                                                        time_slice=slice(date_min, date_max))
+    assert "is not supported by dfmt.preprocess_merge_meteofiles_era5" in str(e.value)
+

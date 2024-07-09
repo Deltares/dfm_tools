@@ -216,6 +216,10 @@ def preprocess_merge_meteofiles_era5(ext_old, varkey_list, dir_data, dir_output,
                                                 operand=hcdfm.Operand.add, #+
                                                 )
             ext_old.forcing.append(forcing_meteo)
+        else:
+            # TODO: add support for other quantities: https://github.com/Deltares/dfm_tools/issues/887
+            raise KeyError(f"'{varkey_list}' is not supported by dfmt.preprocess_merge_meteofiles_era5(), "
+                           "the files were merged but the ExtModel Forcing cannot be appended.")
         
     return ext_old
 
