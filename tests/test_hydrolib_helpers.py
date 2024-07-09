@@ -89,7 +89,18 @@ def test_geodataframe_to_PolyFile_name_incorrect(bnd_gdf):
 
 @pytest.mark.unittest
 def test_geodataframe_to_PolyFile_namecolumn_some(bnd_gdf):
-    polyfile_obj = bnd_gdf['name'] = ['test_model1','test_model2']
+    bnd_gdf['name'] = ['test_model1','test_model2']
+    polyfile_obj = dfmt.geodataframe_to_PolyFile(bnd_gdf)
+    names = [x.metadata.name for x in polyfile_obj.objects]
+    assert names == ['test_model1', 'test_model2']
+
+
+@pytest.mark.unittest
+def test_geodataframe_to_PolyFile_namecolumn_name_both(bnd_gdf):
+    # name argument is ignored if name column is provided
+    # not per se desired, but also not completely wrong
+    bnd_gdf['name'] = ['test_model1','test_model2']
+    polyfile_obj = dfmt.geodataframe_to_PolyFile(bnd_gdf, name='dummy')
     names = [x.metadata.name for x in polyfile_obj.objects]
     assert names == ['test_model1', 'test_model2']
 
