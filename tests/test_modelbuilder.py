@@ -67,13 +67,19 @@ def test_create_model_exec_files_none(tmp_path):
     mdu_file = tmp_path / "temp_test.mdu"
     file_dimr = tmp_path / "dimr_config.xml"
     
-    nproc = 1 # number of processes
+    nproc = 4 # number of processes
     dimrset_folder = None
     mdu = hcdfm.FMModel()
     mdu.save(mdu_file)
     dfmt.create_model_exec_files(file_mdu=mdu_file, nproc=nproc, dimrset_folder=dimrset_folder)
     
     assert os.path.isfile(file_dimr)
+    
+    # check if the dimr_config.xml file had the correct amount of processes
+    # this failed before fixing https://github.com/Deltares/HYDROLIB-core/issues/562
+    with open(file_dimr, 'r') as f:
+        data = f.readlines()
+    assert '    <process>0 1 2 3</process>\n' in data
 
 
 @pytest.mark.unittest
@@ -116,7 +122,7 @@ def test_make_paths_relative(tmp_path):
                                      forcingfile=ForcingModel_object)
     ext_new.boundary.append(boundary_object)
     ext_new.save(filepath=ext_file_new)
-        
+    
     # old ext
     ext_file_old = os.path.join(tmp_path, 'test_old.ext')
     ext_old = hcdfm.ExtOldModel()

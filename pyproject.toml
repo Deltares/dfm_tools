@@ -50,8 +50,8 @@ dependencies = [
 	"rws-ddlpy>=0.4.0",
 	#pooch<1.1.0 do not have attribute retrieve
 	"pooch>=1.1.0",
-	#hydrolib-core 0.7.0 supports meshkernel>=4.1.0
-	"hydrolib-core>=0.7.0",
+	#hydrolib-core 0.8.0 support for many more mdu keywords and correct dimr_config.xml for parallel runs
+	"hydrolib-core>=0.8.0",
 	#meshkernel<4.2.0 support for more gridded_samples dtypes and workarounds for non-orthogonal grids
 	"meshkernel>=4.2.0",
 ]
