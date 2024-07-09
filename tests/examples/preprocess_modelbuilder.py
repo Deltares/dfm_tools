@@ -68,10 +68,9 @@ mk_object = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dx
 
 # generate plifile from grid extent and coastlines
 bnd_gdf = dfmt.generate_bndpli_cutland(mk=mk_object, res='h', buffer=0.01)
-bnd_gdf['name'] = f'{model_name}_bnd'
 bnd_gdf_interp = dfmt.interpolate_bndpli(bnd_gdf,res=0.06)
+pli_polyfile = dfmt.geodataframe_to_PolyFile(bnd_gdf_interp, name=f'{model_name}_bnd')
 poly_file = os.path.join(dir_output, f'{model_name}.pli')
-pli_polyfile = dfmt.geodataframe_to_PolyFile(bnd_gdf_interp)
 pli_polyfile.save(poly_file)
 
 #refine

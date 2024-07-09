@@ -227,19 +227,31 @@ def DataFrame_to_PolyObject(poly_pd,name,content=None):
     return polyobject
 
 
-def geodataframe_to_PolyFile(poly_gdf):
+def geodataframe_to_PolyFile(poly_gdf, name="L"):
     """
     convert a geopandas geodataframe with x/y columns (and optional others like z/data/comment) to a hydrolib PolyFile
     """
     
+    # catch some invalid occurences of name
+    if not isinstance(name, str):
+        raise TypeError("name should be a string")
+    if name == "":
+        raise ValueError("name is not allowed to be an empty string")
+    if not name[0].isalpha():
+        raise ValueError("name should start with a letter")
+    
+    # add name column if not present
+    if 'name' not in poly_gdf.columns:
+        # make a copy to avoid alternating the geodataframe
+        poly_gdf = poly_gdf.copy()
+        name_nums = poly_gdf.reset_index().index+1
+        poly_gdf['name'] = name + name_nums.astype(str)
+    
     polyfile_obj = hcdfm.PolyFile()
-    #TODO: now only name+geometry, still add other data columns
+    # TODO: now only name+geometry, still add other data columns
     for irow, gdf_row in poly_gdf.iterrows():
         poly_geom = gdf_row.geometry
-        if 'name' in poly_gdf.columns:
-            name = poly_gdf['name'].iloc[irow] #TODO: not allowed to use identical polyline names in 1 file, but this is not catched by hydrolib-core
-        else:
-            name = f'L{irow+1}' #TODO: when providing name='' it will result in an invalid plifile, but this is not catched by hydrolib-core
+        name_str = gdf_row['name']
         if isinstance(poly_geom, LineString):
             poly_geom_np = np.array(poly_geom.xy).T
         else: # isinstance(poly_geom, shapely.Polygon):
@@ -251,10 +263,20 @@ def geodataframe_to_PolyFile(poly_gdf):
         pointsobj_list = poly_geom_df.T.apply(dict).tolist()
         for pnt in pointsobj_list:
             pnt['data'] = []
-        polyobject = hcdfm.PolyObject(metadata={'name':name,'n_rows':poly_geom_np.shape[0],'n_columns':poly_geom_np.shape[1]}, points=pointsobj_list)
+        polyobject = hcdfm.PolyObject(metadata={'name':name_str,'n_rows':poly_geom_np.shape[0],'n_columns':poly_geom_np.shape[1]}, points=pointsobj_list)
         #if content is not None: # TODO: add support for content
         #    polyobject.description = {'content':content}
         polyfile_obj.objects.append(polyobject)
+    
+    # TODO: not allowed to have empty or duplicated polyline names in a polyfile, this is not 
+    # catched by hydrolib-core: https://github.com/Deltares/HYDROLIB-core/issues/483
+    # therefore, we check it here
+    names = [x.metadata.name for x in polyfile_obj.objects]
+    if len(set(names)) != len(names):
+        raise ValueError(f'duplicate polyline names found in polyfile: {names}')
+    first_alpha = [x[0].isalpha() for x in names]
+    if not all(first_alpha):
+        raise ValueError(f'names in polyfile do not all start with a letter: {names}')
     
     return polyfile_obj
 
