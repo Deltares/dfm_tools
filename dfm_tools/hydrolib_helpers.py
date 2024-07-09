@@ -227,14 +227,14 @@ def DataFrame_to_PolyObject(poly_pd,name,content=None):
     return polyobject
 
 
-def geodataframe_to_PolyFile(poly_gdf, name=None):
+def geodataframe_to_PolyFile(poly_gdf, name="L"):
     """
     convert a geopandas geodataframe with x/y columns (and optional others like z/data/comment) to a hydrolib PolyFile
     """
     
-    # catch some occurences of None, has to be in this order
-    if name is None:
-        name = "L"
+    # catch some invalid occurences of name
+    if not isinstance(name, str):
+        raise TypeError("name should be a string")
     if name == "":
         raise ValueError("name is not allowed to be an empty string")
     if not name[0].isalpha():

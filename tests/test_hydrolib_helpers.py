@@ -59,7 +59,7 @@ def bnd_gdf():
 
 
 @pytest.mark.unittest
-def test_geodataframe_to_PolyFile_name_none(bnd_gdf):
+def test_geodataframe_to_PolyFile_name_default(bnd_gdf):
     polyfile_obj = dfmt.geodataframe_to_PolyFile(bnd_gdf)
     names = [x.metadata.name for x in polyfile_obj.objects]
     assert names == ['L1', 'L2']
@@ -70,6 +70,13 @@ def test_geodataframe_to_PolyFile_name_some(bnd_gdf):
     polyfile_obj = dfmt.geodataframe_to_PolyFile(bnd_gdf, name="test_model")
     names = [x.metadata.name for x in polyfile_obj.objects]
     assert names == ['test_model1', 'test_model2']
+
+
+@pytest.mark.unittest
+def test_geodataframe_to_PolyFile_name_invalidtype(bnd_gdf):
+    with pytest.raises(TypeError) as e:
+        dfmt.geodataframe_to_PolyFile(bnd_gdf, name=None)
+    assert 'name should be a string' in str(e.value)
 
 
 @pytest.mark.unittest
