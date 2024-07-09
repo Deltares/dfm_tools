@@ -59,12 +59,17 @@ def bnd_gdf():
 
 
 @pytest.mark.unittest
-def test_geodataframe_to_PolyFile_empty_names(bnd_gdf):
-    # deliberately giving all polylines the same name
-    bnd_gdf['name'] = ''
-    with pytest.raises(ValueError) as e:
-        dfmt.geodataframe_to_PolyFile(bnd_gdf)
-    assert "polyline names found in polyfile" in str(e.value)
+def test_geodataframe_to_PolyFile_name_none(bnd_gdf):
+    polyfile_obj = dfmt.geodataframe_to_PolyFile(bnd_gdf)
+    names = [x.metadata.name for x in polyfile_obj.objects]
+    assert names == ['L1', 'L2']
+
+
+@pytest.mark.unittest
+def test_geodataframe_to_PolyFile_name_some(bnd_gdf):
+    polyfile_obj = dfmt.geodataframe_to_PolyFile(bnd_gdf, name="test_model")
+    names = [x.metadata.name for x in polyfile_obj.objects]
+    assert names == ['test_model1', 'test_model2']
 
 
 @pytest.mark.unittest
@@ -73,4 +78,25 @@ def test_geodataframe_to_PolyFile_duplicated_names(bnd_gdf):
     bnd_gdf['name'] = 'duplicate_bnd'
     with pytest.raises(ValueError) as e:
         dfmt.geodataframe_to_PolyFile(bnd_gdf)
+    assert 'duplicate polyline names found in polyfile' in str(e.value)
+
+    # deliberately giving all polylines the same empty name
+    bnd_gdf['name'] = ''
+    with pytest.raises(ValueError) as e:
+        dfmt.geodataframe_to_PolyFile(bnd_gdf)
     assert "duplicate polyline names found in polyfile" in str(e.value)
+
+
+@pytest.mark.unittest
+def test_geodataframe_to_PolyFile_incorrect_name(bnd_gdf):
+    with pytest.raises(ValueError) as e:
+        dfmt.geodataframe_to_PolyFile(bnd_gdf, name='1')
+    assert 'name should start with a letter' in str(e.value)
+    
+    with pytest.raises(ValueError) as e:
+        dfmt.geodataframe_to_PolyFile(bnd_gdf, name='-')
+    assert 'name should start with a letter' in str(e.value)
+    
+    with pytest.raises(ValueError) as e:
+        dfmt.geodataframe_to_PolyFile(bnd_gdf, name='')
+    assert 'name is not allowed to be an empty string' in str(e.value)
