@@ -116,7 +116,7 @@ def test_make_paths_relative(tmp_path):
                                      forcingfile=ForcingModel_object)
     ext_new.boundary.append(boundary_object)
     ext_new.save(filepath=ext_file_new)
-        
+    
     # old ext
     ext_file_old = os.path.join(tmp_path, 'test_old.ext')
     ext_old = hcdfm.ExtOldModel()
