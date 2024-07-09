@@ -60,6 +60,7 @@ def test_download_era5_unsupported_varkey():
                             dir_output='.', overwrite=True)
     assert '"unexisting" not available' in str(e.value)
 
+
 @pytest.mark.requiressecrets
 @pytest.mark.unittest
 def test_download_cmems_my(tmp_path):
