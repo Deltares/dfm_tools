@@ -73,7 +73,29 @@ def test_geodataframe_to_PolyFile_name_some(bnd_gdf):
 
 
 @pytest.mark.unittest
-def test_geodataframe_to_PolyFile_duplicated_names(bnd_gdf):
+def test_geodataframe_to_PolyFile_name_incorrect(bnd_gdf):
+    with pytest.raises(ValueError) as e:
+        dfmt.geodataframe_to_PolyFile(bnd_gdf, name='1')
+    assert 'name should start with a letter' in str(e.value)
+    
+    with pytest.raises(ValueError) as e:
+        dfmt.geodataframe_to_PolyFile(bnd_gdf, name='-')
+    assert 'name should start with a letter' in str(e.value)
+    
+    with pytest.raises(ValueError) as e:
+        dfmt.geodataframe_to_PolyFile(bnd_gdf, name='')
+    assert 'name is not allowed to be an empty string' in str(e.value)
+
+
+@pytest.mark.unittest
+def test_geodataframe_to_PolyFile_namecolumn_some(bnd_gdf):
+    polyfile_obj = bnd_gdf['name'] = ['test_model1','test_model2']
+    names = [x.metadata.name for x in polyfile_obj.objects]
+    assert names == ['test_model1', 'test_model2']
+
+
+@pytest.mark.unittest
+def test_geodataframe_to_PolyFile_namecolumn_duplicated_names(bnd_gdf):
     # deliberately giving all polylines the same name
     bnd_gdf['name'] = 'duplicate_bnd'
     with pytest.raises(ValueError) as e:
@@ -88,23 +110,10 @@ def test_geodataframe_to_PolyFile_duplicated_names(bnd_gdf):
 
 
 @pytest.mark.unittest
-def test_geodataframe_to_PolyFile_numeric_start(bnd_gdf):
+def test_geodataframe_to_PolyFile_namecolumn_numeric_start(bnd_gdf):
     bnd_gdf['name'] = ['1','2']
     with pytest.raises(ValueError) as e:
         dfmt.geodataframe_to_PolyFile(bnd_gdf)
     assert 'names in polyfile do not all start with a letter' in str(e.value)
 
 
-@pytest.mark.unittest
-def test_geodataframe_to_PolyFile_incorrect_name(bnd_gdf):
-    with pytest.raises(ValueError) as e:
-        dfmt.geodataframe_to_PolyFile(bnd_gdf, name='1')
-    assert 'name should start with a letter' in str(e.value)
-    
-    with pytest.raises(ValueError) as e:
-        dfmt.geodataframe_to_PolyFile(bnd_gdf, name='-')
-    assert 'name should start with a letter' in str(e.value)
-    
-    with pytest.raises(ValueError) as e:
-        dfmt.geodataframe_to_PolyFile(bnd_gdf, name='')
-    assert 'name is not allowed to be an empty string' in str(e.value)
