@@ -247,19 +247,6 @@ def create_model_exec_files(file_mdu, nproc=1, dimrset_folder=None, path_style=N
     print(f"writing {dimr_name}")
     dimr_model.save(file_dimr)
     
-    # TODO: hydrolib-core does not support multiple cores properly: https://github.com/Deltares/dfm_tools/issues/214
-    # therefore we manually replace it in the file
-    print(f"re-writing {dimr_name}")
-    with open(file_dimr,'r') as f:
-        lines = f.readlines()
-    str_from = f"<process>{nproc}</process>"
-    nproc_range_str = " ".join([str(x) for x in range(nproc)])
-    str_to = f"<process>{nproc_range_str}</process>"
-    lines_new = [line.replace(str_from,str_to) for line in lines]
-    with open(file_dimr,'w') as f:
-        for line in lines_new:
-            f.write(line)
-    
     if dimrset_folder is None:
         print("no dimrset_folder provided, cannot write bat/sh file")
         return
