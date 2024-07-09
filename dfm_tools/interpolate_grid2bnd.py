@@ -6,7 +6,7 @@ import xarray as xr
 import xugrid as xu
 from pathlib import Path
 from scipy.spatial import KDTree
-import warnings
+import logging
 import hydrolib.core.dflowfm as hcdfm
 import geopandas
 
@@ -29,6 +29,8 @@ __all__ = ["get_conversion_dict",
            "interp_hisnc_to_plipoints",
            "plipointsDataset_to_ForcingModel",
     ]
+
+logger = logging.getLogger(__name__)
 
 
 def get_conversion_dict(ncvarname_updates={}):
@@ -372,7 +374,8 @@ def read_polyfile_as_gdf_points(file_pli, nPoints=None):
     
     # warn if the polyfile contains multiple polylines
     if len(polyfile_object.objects) > 1:
-        warnings.warn(UserWarning(f"The polyfile {file_pli} contains multiple polylines. Only the first one will be used by DFLOW-FM for the boundary conditions."))
+        logger.warning(f"The polyfile {file_pli} contains multiple polylines. "
+                       "Only the first one will be used by DFLOW-FM for the boundary conditions.")
         #TODO after issue UNST-7012 is properly solved, remove this warning
     
     # check if polyobj names in plifile are unique
@@ -578,7 +581,8 @@ def plipointsDataset_to_ForcingModel(plipointsDataset):
             datablock_xr_onepoint[quan].attrs['locationname'] = plipoint_name #TODO: is there a nicer way of passing this data?
             if datablock_xr_onepoint[quan].isnull().all(): # check if all values of plipoint are nan (on land)
                 plipoint_onlynan = True
-                warnings.warn(UserWarning(f'Plipoint "{plipoint_name}" might be on land since it only contain nan values. This point is skipped to avoid bc-writing errors. Consider altering your PolyFile or extrapolate the data.'))
+                logger.warning(f'Plipoint "{plipoint_name}" might be on land since it only contain nan values. '
+                               'This point is skipped to avoid bc-writing errors. Consider altering your PolyFile or extrapolate the data.')
         
         # skip this point if quantity has only-nan values
         if plipoint_onlynan:

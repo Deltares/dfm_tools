@@ -5,7 +5,7 @@ import dask
 import datetime as dt
 import glob
 import pandas as pd
-import warnings
+import logging
 import numpy as np
 import netCDF4
 from dfm_tools.errors import OutOfRangeError
@@ -17,6 +17,8 @@ __all__ = [
     "merge_meteofiles",
     "Dataset_varswithdim",
 ]
+
+logger = logging.getLogger(__name__)
 
 
 def file_to_list(file_nc):
@@ -82,7 +84,9 @@ def preprocess_hisnc(ds):
         source_attr_version = source_attr.split(', ')[1]
         source_attr_date = source_attr.split(', ')[2]
         if pd.Timestamp(source_attr_date) < dt.datetime(2020,11,28):
-            warnings.warn(UserWarning(f'Your model was run with a D-FlowFM version from before 28-10-2020 ({source_attr_version} from {source_attr_date}), the layers in the hisfile are incorrect. Check UNST-2920 and UNST-3024 for more information, it was fixed from OSS 67858.'))
+            logger.warning('Your model was run with a D-FlowFM version from before 28-10-2020 '
+                           f'({source_attr_version} from {source_attr_date}), the layers in the hisfile are incorrect. '
+                           'Check UNST-2920 and UNST-3024 for more information, it was fixed from OSS 67858.')
     except KeyError: #no source attr present in hisfile, cannot check version
         pass
     except IndexError: #contains no ', '
