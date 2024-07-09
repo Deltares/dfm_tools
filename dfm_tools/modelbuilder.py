@@ -1,5 +1,5 @@
 import os
-import warnings
+import logging
 import pandas as pd
 import dfm_tools as dfmt
 import datetime as dt
@@ -16,6 +16,8 @@ __all__ = [
     "create_model_exec_files",
     "make_paths_relative",
     ]
+
+logger = logging.getLogger(__name__)
 
 
 def cmems_nc_to_bc(ext_bnd, list_quantities, tstart, tstop, file_pli, dir_pattern, dir_output, conversion_dict=None, refdate_str=None):
@@ -261,7 +263,7 @@ def create_model_exec_files(file_mdu, nproc=1, dimrset_folder=None, path_style=N
     if path_style == 'windows':
         generate_bat_file(dimr_model=dimr_model, dimrset_folder=dimrset_folder)
     else:
-        warnings.warn(UserWarning(f"path_style/os {path_style} not yet supported by `dfmt.create_model_exec_files()`, no bat/sh file is written"))
+        logger.warning(f"path_style/os {path_style} not yet supported by `dfmt.create_model_exec_files()`, no bat/sh file is written")
 
 
 def generate_bat_file(dimr_model, dimrset_folder=None):
