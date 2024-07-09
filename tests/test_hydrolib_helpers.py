@@ -88,6 +88,14 @@ def test_geodataframe_to_PolyFile_duplicated_names(bnd_gdf):
 
 
 @pytest.mark.unittest
+def test_geodataframe_to_PolyFile_numeric_start(bnd_gdf):
+    bnd_gdf['name'] = ['1','2']
+    with pytest.raises(ValueError) as e:
+        dfmt.geodataframe_to_PolyFile(bnd_gdf)
+    assert 'names in polyfile do not all start with a letter' in str(e.value)
+
+
+@pytest.mark.unittest
 def test_geodataframe_to_PolyFile_incorrect_name(bnd_gdf):
     with pytest.raises(ValueError) as e:
         dfmt.geodataframe_to_PolyFile(bnd_gdf, name='1')
