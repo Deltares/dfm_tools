@@ -233,13 +233,15 @@ def geodataframe_to_PolyFile(poly_gdf):
     """
     
     polyfile_obj = hcdfm.PolyFile()
-    #TODO: now only name+geometry, still add other data columns
+    # TODO: now only name+geometry, still add other data columns
     for irow, gdf_row in poly_gdf.iterrows():
         poly_geom = gdf_row.geometry
+        # TODO: not allowed to have empty or duplicated polyline names in a polyfile, this is not 
+        # catched by hydrolib-core: https://github.com/Deltares/HYDROLIB-core/issues/483
         if 'name' in poly_gdf.columns:
-            name = poly_gdf['name'].iloc[irow] #TODO: not allowed to use identical polyline names in 1 file, but this is not catched by hydrolib-core
+            name = poly_gdf['name'].iloc[irow]
         else:
-            name = f'L{irow+1}' #TODO: when providing name='' it will result in an invalid plifile, but this is not catched by hydrolib-core
+            name = f'L{irow+1}'
         if isinstance(poly_geom, LineString):
             poly_geom_np = np.array(poly_geom.xy).T
         else: # isinstance(poly_geom, shapely.Polygon):
