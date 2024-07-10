@@ -126,6 +126,8 @@ def ext_add_boundary_object_per_polyline(ext_new:hcdfm.ExtModel, boundary_object
     dir_output = os.path.dirname(boundary_object.forcingfile.filepath)
     for polyline_obj in polyfile_obj.objects:
         if len(polyfile_obj.objects) > 1:
+            # copy to avoid location file to be the same for all duplicated boundary objects
+            boundary_object = boundary_object.copy()
             # create a polyfile with a single plifile
             polyfile_oneline_obj = hcdfm.PolyFile(objects=[polyline_obj])
             file_pli_oneline = os.path.join(dir_output, f"{polyline_obj.metadata.name}.pli")
@@ -136,13 +138,28 @@ def ext_add_boundary_object_per_polyline(ext_new:hcdfm.ExtModel, boundary_object
         ext_new.boundary.append(boundary_object)
 
 
-def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=None, load=True):
-    gdf_points = read_polyfile_as_gdf_points(file_pli, nPoints=nPoints)
+def interpolate_tide_to_bc(ext_new: hcdfm.ExtModel, tidemodel, file_pli, component_list=None, nPoints=None, load=True):
+    # read polyfile as geodataframe
+    polyfile_object = hcdfm.PolyFile(file_pli)
+    gdf_points = PolyFile_to_geodataframe_points(polyfile_object)
+    
+    # interpolate tidal components to plipoints
     data_interp = interpolate_tide_to_plipoints(tidemodel=tidemodel, gdf_points=gdf_points, 
                                                 component_list=component_list, load=load)
-    ForcingModel_object = plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
     
-    return ForcingModel_object
+    # convert interpolated xarray.Dataset to hydrolib ForcingModel and save as bc file
+    ForcingModel_object = plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
+    dir_output = os.path.dirname(file_pli)
+    file_bc_out = os.path.join(dir_output,f'tide_{tidemodel}.bc')
+    ForcingModel_object.save(filepath=file_bc_out)
+    
+    # generate hydrolib-core Boundary object to be appended to the ext file
+    boundary_object = hcdfm.Boundary(quantity='waterlevelbnd', #the FM quantity for tide is also waterlevelbnd
+                                      locationfile=file_pli,
+                                      forcingfile=ForcingModel_object)
+    
+    # add the boundary object to the ext file for each polyline in the polyfile
+    ext_add_boundary_object_per_polyline(ext_new=ext_new, boundary_object=boundary_object)
 
 
 def tidemodel_componentlist(tidemodel:str, convention:bool):
@@ -389,26 +406,26 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
     return data_xr_vars
 
 
-def read_polyfile_as_gdf_points(file_pli, nPoints=None):
-    # read polyfile
-    polyfile_object = hcdfm.PolyFile(file_pli)
+# def read_polyfile_as_gdf_points(file_pli, nPoints=None):
+#     # read polyfile
+#     polyfile_object = hcdfm.PolyFile(file_pli)
     
-    # warn if the polyfile contains multiple polylines
-    if len(polyfile_object.objects) > 1:
-        logger.warning(f"The polyfile {file_pli} contains multiple polylines. "
-                       "Only the first one will be used by DFLOW-FM for the boundary conditions.")
-        #TODO after issue UNST-7012 is properly solved, remove this warning
+#     # warn if the polyfile contains multiple polylines
+#     if len(polyfile_object.objects) > 1:
+#         logger.warning(f"The polyfile {file_pli} contains multiple polylines. "
+#                        "Only the first one will be used by DFLOW-FM for the boundary conditions.")
+#         #TODO after issue UNST-7012 is properly solved, remove this warning
     
-    # check if polyobj names in plifile are unique
-    polynames_pd = pd.Series([polyobj.metadata.name for polyobj in polyfile_object.objects])
-    if polynames_pd.duplicated().any():
-        raise ValueError(f'Duplicate polyobject names in polyfile {file_pli}, this is not allowed:\n{polynames_pd}')
+#     # check if polyobj names in plifile are unique
+#     polynames_pd = pd.Series([polyobj.metadata.name for polyobj in polyfile_object.objects])
+#     if polynames_pd.duplicated().any():
+#         raise ValueError(f'Duplicate polyobject names in polyfile {file_pli}, this is not allowed:\n{polynames_pd}')
     
-    gdf_points = PolyFile_to_geodataframe_points(polyfile_object)
+#     gdf_points = PolyFile_to_geodataframe_points(polyfile_object)
     
-    # only use testset of n first points of polyfile
-    gdf_points = gdf_points.iloc[:nPoints]
-    return gdf_points
+#     # only use testset of n first points of polyfile
+#     gdf_points = gdf_points.iloc[:nPoints]
+#     return gdf_points
 
 
 # def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True):

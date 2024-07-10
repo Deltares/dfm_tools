@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 def cmems_nc_to_bc(ext_bnd, list_quantities, tstart, tstop, file_pli, dir_pattern, dir_output, conversion_dict=None, refdate_str=None):
     #input examples in https://github.com/Deltares/dfm_tools/blob/main/tests/examples/preprocess_interpolate_nc_to_bc.py
-    
+    # TODO: rename ext_bnd to ext_new for consistency
     if conversion_dict is None:
         conversion_dict = dfmt.get_conversion_dict()
     
