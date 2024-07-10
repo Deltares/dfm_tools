@@ -1,3 +1,4 @@
+import os
 import glob
 import datetime as dt
 import numpy as np
@@ -23,7 +24,7 @@ __all__ = ["get_conversion_dict",
            "interpolate_tide_to_bc",
            "interpolate_tide_to_plipoints",
            "open_dataset_extra",
-           "interp_regularnc_to_plipoints",
+           # "interp_regularnc_to_plipoints",
            "interp_regularnc_to_plipointsDataset",
            "interp_uds_to_plipoints",
            "interp_hisnc_to_plipoints",
@@ -113,6 +114,26 @@ def get_conversion_dict(ncvarname_updates={}):
     for k,v in ncvarname_updates.items():
         conversion_dict[k]['ncvarname'] = v
     return conversion_dict
+
+
+def ext_add_boundary_object_per_polyline(ext_new:hcdfm.ExtModel, boundary_object:hcdfm.Boundary):
+    """
+    If the polyfile contains multiple polylines, only the first one will be used by DFLOW-FM for the boundary conditions.
+    If the polyfile contains multiple polylines, this function will save each polyline as a separate polyfile 
+    and add duplicate boundary entries for each polyline to the extfile.
+    """
+    polyfile_obj = hcdfm.PolyFile(boundary_object.locationfile.filepath)
+    dir_output = os.path.dirname(boundary_object.forcingfile.filepath)
+    for polyline_obj in polyfile_obj.objects:
+        if len(polyfile_obj.objects) > 1:
+            # create a polyfile with a single plifile
+            polyfile_oneline_obj = hcdfm.PolyFile(objects=[polyline_obj])
+            file_pli_oneline = os.path.join(dir_output, f"{polyline_obj.metadata.name}.pli")
+            polyfile_oneline_obj.save(file_pli_oneline)
+            # update locationfile to the plifile with a single polyline
+            boundary_object.locationfile = file_pli_oneline
+        # add boundary to extmodel
+        ext_new.boundary.append(boundary_object)
 
 
 def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=None, load=True):
@@ -390,18 +411,17 @@ def read_polyfile_as_gdf_points(file_pli, nPoints=None):
     return gdf_points
 
 
-def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True):
-
-    """
-    load: interpolation errors are only raised upon loading, so do this per default
-    """
-    # TODO: consider phasing out, this function is probably only used in 
-    # tests/examples/preprocess_interpolate_nc_to_bc.py and dfm_tools/modelbuilder.py
+# def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True):
+#     """
+#     load: interpolation errors are only raised upon loading, so do this per default
+#     """
+#     # TODO: consider phasing out, this function is probably only used in 
+#     # tests/examples/preprocess_interpolate_nc_to_bc.py and dfm_tools/modelbuilder.py
     
-    gdf_points = read_polyfile_as_gdf_points(file_pli, nPoints=nPoints)
+#     gdf_points = read_polyfile_as_gdf_points(file_pli, nPoints=nPoints)
     
-    data_interp = interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points=gdf_points, load=load)
-    return data_interp
+#     data_interp = interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points=gdf_points, load=load)
+#     return data_interp
 
 
 def interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points, load=True):

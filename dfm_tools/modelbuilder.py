@@ -7,6 +7,7 @@ import hydrolib.core.dflowfm as hcdfm
 from hydrolib.core.dimr.models import DIMR, FMComponent, Start
 from hydrolib.core.utils import get_path_style_for_current_operating_system
 from dfm_tools.hydrolib_helpers import get_ncbnd_construct
+from dfm_tools.interpolate_grid2bnd import ext_add_boundary_object_per_polyline
 
 __all__ = [
     "cmems_nc_to_bc",
@@ -26,7 +27,6 @@ def cmems_nc_to_bc(ext_bnd, list_quantities, tstart, tstop, file_pli, dir_patter
     if conversion_dict is None:
         conversion_dict = dfmt.get_conversion_dict()
     
-    file_bc_basename = os.path.basename(file_pli).replace('.pli','')
     for quantity in list_quantities:
         print(f'processing quantity: {quantity}')
         
@@ -39,22 +39,24 @@ def cmems_nc_to_bc(ext_bnd, list_quantities, tstart, tstop, file_pli, dir_patter
                                                tstart=tstart, tstop=tstop,
                                                conversion_dict=conversion_dict,
                                                refdate_str=refdate_str)
-        #interpolate regulargridDataset to plipointsDataset
-        data_interp = dfmt.interp_regularnc_to_plipoints(data_xr_reg=data_xr_vars, file_pli=file_pli)
+        # interpolate regulargridDataset to plipointsDataset
+        polyfile_obj = hcdfm.PolyFile(file_pli)
+        gdf_points = dfmt.PolyFile_to_geodataframe_points(polyfile_object=polyfile_obj)
+        data_interp = dfmt.interp_regularnc_to_plipointsDataset(data_xr_reg=data_xr_vars, gdf_points=gdf_points, load=True)
         
         #convert plipointsDataset to hydrolib ForcingModel
         ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
         
-        file_bc_out = os.path.join(dir_output,f'{quantity}_{file_bc_basename}_CMEMS.bc')
-        
+        # generate boundary object for the ext file (quantity, pli-filename, bc-filename)
+        file_bc_out = os.path.join(dir_output,f'{quantity}_CMEMS.bc')
         ForcingModel_object.save(filepath=file_bc_out)
-        
-        #generate boundary object for the ext file (quantity, pli-filename, bc-filename)
         boundary_object = hcdfm.Boundary(quantity=quantity,
-                                         locationfile=file_pli,
+                                         locationfile=file_pli, #placeholder, will be replaced later on
                                          forcingfile=ForcingModel_object)
-        ext_bnd.boundary.append(boundary_object)
-    
+        
+        # add the boundary object to the ext file for each polyline in the polyfile
+        ext_add_boundary_object_per_polyline(ext_new=ext_bnd, boundary_object=boundary_object)
+
     return ext_bnd
 
 
