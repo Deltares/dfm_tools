@@ -14,8 +14,7 @@ import xarray as xr
 import shapely
 import pandas as pd
 import geopandas as gpd
-from dfm_tools.interpolate_grid2bnd import (read_polyfile_as_gdf_points,
-                                            tidemodel_componentlist,
+from dfm_tools.interpolate_grid2bnd import (tidemodel_componentlist,
                                             components_translate_upper,
                                             get_ncbnd_construct,
                                             interp_regularnc_to_plipointsDataset,
@@ -170,7 +169,10 @@ def test_plipointsDataset_fews_accepted():
 def test_interpolate_nc_to_bc():
     file_pli = r'p:\archivedprojects\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli'
     
-    gdf_points = read_polyfile_as_gdf_points(file_pli, nPoints=3)
+    # read polyfile as geodataframe
+    polyfile_object = hcdfm.PolyFile(file_pli)
+    gdf_points_all = PolyFile_to_geodataframe_points(polyfile_object)
+    gdf_points = gdf_points_all.iloc[:nPoints]
     
     tstart = '2012-12-16 12:00'
     tstop = '2013-01-01 12:00'
@@ -401,7 +403,10 @@ def test_interpolate_tide_to_plipoints():
     file_pli = r'p:\archivedprojects\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli'
     nanvalue = -999
     
-    gdf_points = read_polyfile_as_gdf_points(file_pli, nPoints=nPoints)
+    # read polyfile as geodataframe
+    polyfile_object = hcdfm.PolyFile(file_pli)
+    gdf_points_all = PolyFile_to_geodataframe_points(polyfile_object)
+    gdf_points = gdf_points_all.iloc[:nPoints]
     
     tidemodel_list = ['tpxo80_opendap', 'FES2014', 'FES2012', 'EOT20', 'GTSMv4.1']#, 'GTSMv4.1_opendap']
     for tidemodel in tidemodel_list:
@@ -483,7 +488,10 @@ def test_read_polyfile_as_gdf_points():
     nPoints = 3
     file_pli = r'p:\archivedprojects\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli'
     
-    gdf_points = read_polyfile_as_gdf_points(file_pli, nPoints=nPoints)
+    # read polyfile as geodataframe
+    polyfile_object = hcdfm.PolyFile(file_pli)
+    gdf_points_all = PolyFile_to_geodataframe_points(polyfile_object)
+    gdf_points = gdf_points_all.iloc[:nPoints]
     
     reference = data_dcsm_gdf()
     
