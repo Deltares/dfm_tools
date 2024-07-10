@@ -22,7 +22,7 @@ def bbox_convert_crs(bbox, crs):
     return bbox
 
 
-def get_coastlines_gdb(res:str='h', bbox:tuple = (-180, -90, 180, 90), min_area:float = 0, crs:str = None, include_fields:list = ['area']) -> gpd.geoseries.GeoSeries:
+def get_coastlines_gdb(res:str='h', bbox:tuple = (-180, -90, 180, 90), min_area:float = 0, crs:str = None, columns:list = ['area']) -> gpd.geoseries.GeoSeries:
     """
     GSHHS coastlines: https://www.ngdc.noaa.gov/mgg/shorelines/data/gshhg/latest/readme.txt
     geopandas docs https://geopandas.org/en/stable/docs/reference/api/geopandas.read_file.html
@@ -37,8 +37,8 @@ def get_coastlines_gdb(res:str='h', bbox:tuple = (-180, -90, 180, 90), min_area:
         in km2, min_area>0 speeds up process. The default is 0.
     crs : str, optional
         coordinate reference system
-    include_fields : list, optional
-        which shapefile fields to include, None gives all. The default is ['area'].
+    columns : list, optional
+        which shapefile columns to include, None gives all. The default is ['area'].
 
     Returns
     -------
@@ -62,13 +62,13 @@ def get_coastlines_gdb(res:str='h', bbox:tuple = (-180, -90, 180, 90), min_area:
     
     print('>> reading coastlines: ',end='')
     dtstart = dt.datetime.now()
-    coastlines_gdb_L1 = gpd.read_file(file_shp_L1, include_fields=include_fields, where=f"area>{min_area}", bbox=bbox)
-    coastlines_gdb_L6 = gpd.read_file(file_shp_L6, include_fields=include_fields, where=f"area>{min_area}", bbox=bbox)
+    coastlines_gdb_L1 = gpd.read_file(file_shp_L1, columns=columns, where=f"area>{min_area}", bbox=bbox)
+    coastlines_gdb_L6 = gpd.read_file(file_shp_L6, columns=columns, where=f"area>{min_area}", bbox=bbox)
     coastlines_gdb_list = [coastlines_gdb_L1,coastlines_gdb_L6]
     if len(coastlines_gdb_L1)<2: #if only one L1 polygon is selected, automatically add lakes and islands-in-lakes
-        coastlines_gdb_L2 = gpd.read_file(file_shp_L2, include_fields=include_fields, where=f"area>{min_area}", bbox=bbox)
+        coastlines_gdb_L2 = gpd.read_file(file_shp_L2, columns=columns, where=f"area>{min_area}", bbox=bbox)
         coastlines_gdb_list.append(coastlines_gdb_L2)
-        coastlines_gdb_L3 = gpd.read_file(file_shp_L3, include_fields=include_fields, where=f"area>{min_area}", bbox=bbox)
+        coastlines_gdb_L3 = gpd.read_file(file_shp_L3, columns=columns, where=f"area>{min_area}", bbox=bbox)
         coastlines_gdb_list.append(coastlines_gdb_L3)
     
     # remove empty geodataframes from list to avoid FutureWarning
