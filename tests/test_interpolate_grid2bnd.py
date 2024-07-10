@@ -168,6 +168,7 @@ def test_plipointsDataset_fews_accepted():
 @pytest.mark.requireslocaldata
 def test_interpolate_nc_to_bc():
     file_pli = r'p:\archivedprojects\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli'
+    nPoints = 3
     
     # read polyfile as geodataframe
     polyfile_object = hcdfm.PolyFile(file_pli)

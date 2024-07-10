@@ -117,15 +117,8 @@ ext_file_new = os.path.join(dir_output, f'{model_name}_new.ext')
 ext_new = hcdfm.ExtModel()
 
 # FES2014 tidal components bc file
-file_bc_basename = os.path.basename(poly_file).replace('.pli','')
 tidemodel = 'EOT20' # tidemodel: FES2014, FES2012, EOT20, GTSMv4.1, GTSMv4.1_opendap
-ForcingModel_object = dfmt.interpolate_tide_to_bc(tidemodel=tidemodel, file_pli=poly_file, component_list=None)
-file_bc_out = os.path.join(dir_output,f'tide_{file_bc_basename}_{tidemodel}.bc')
-ForcingModel_object.save(filepath=file_bc_out)
-boundary_object = hcdfm.Boundary(quantity='waterlevelbnd', #the FM quantity for tide is also waterlevelbnd
-                                 locationfile=poly_file,
-                                 forcingfile=ForcingModel_object)
-ext_new.boundary.append(boundary_object)
+dfmt.interpolate_tide_to_bc(ext_new=ext_new, tidemodel=tidemodel, file_pli=poly_file, component_list=None)
 
 # CMEMS - download
 # you can also add WAQ variables like 'no3' and 'phyc'
