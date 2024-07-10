@@ -24,7 +24,6 @@ __all__ = ["get_conversion_dict",
            "interpolate_tide_to_bc",
            "interpolate_tide_to_plipoints",
            "open_dataset_extra",
-           # "interp_regularnc_to_plipoints",
            "interp_regularnc_to_plipointsDataset",
            "interp_uds_to_plipoints",
            "interp_hisnc_to_plipoints",
@@ -404,41 +403,6 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
             data_xr_vars = data_xr_vars.reindex({varn_depth:list(reversed(data_xr_vars[varn_depth]))})
     
     return data_xr_vars
-
-
-# def read_polyfile_as_gdf_points(file_pli, nPoints=None):
-#     # read polyfile
-#     polyfile_object = hcdfm.PolyFile(file_pli)
-    
-#     # warn if the polyfile contains multiple polylines
-#     if len(polyfile_object.objects) > 1:
-#         logger.warning(f"The polyfile {file_pli} contains multiple polylines. "
-#                        "Only the first one will be used by DFLOW-FM for the boundary conditions.")
-#         #TODO after issue UNST-7012 is properly solved, remove this warning
-    
-#     # check if polyobj names in plifile are unique
-#     polynames_pd = pd.Series([polyobj.metadata.name for polyobj in polyfile_object.objects])
-#     if polynames_pd.duplicated().any():
-#         raise ValueError(f'Duplicate polyobject names in polyfile {file_pli}, this is not allowed:\n{polynames_pd}')
-    
-#     gdf_points = PolyFile_to_geodataframe_points(polyfile_object)
-    
-#     # only use testset of n first points of polyfile
-#     gdf_points = gdf_points.iloc[:nPoints]
-#     return gdf_points
-
-
-# def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True):
-#     """
-#     load: interpolation errors are only raised upon loading, so do this per default
-#     """
-#     # TODO: consider phasing out, this function is probably only used in 
-#     # tests/examples/preprocess_interpolate_nc_to_bc.py and dfm_tools/modelbuilder.py
-    
-#     gdf_points = read_polyfile_as_gdf_points(file_pli, nPoints=nPoints)
-    
-#     data_interp = interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points=gdf_points, load=load)
-#     return data_interp
 
 
 def interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points, load=True):
