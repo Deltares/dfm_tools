@@ -1042,7 +1042,7 @@ def ssh_netcdf_overview(dir_netcdf, perplot=30, time_min=None, time_max=None, ye
         ds_nonan = ds.sel(time=~bool_nan)
         ds_slice = ds_nonan.sel(time=slice(time_min, time_max))
         # take unique timestamps after rounding to hours, this is faster and consumes less memory
-        time_hr_uniq = ds_slice.time.to_pandas().index.round("H").drop_duplicates()
+        time_hr_uniq = ds_slice.time.to_pandas().index.round("h").drop_duplicates()
         time_yaxis_value = pd.Series(index=time_hr_uniq)
         time_yaxis_value[:] = -(ifile%perplot)
         time_yaxis_value.plot(ax=ax, marker='s', linestyle='none', markersize=1, color="r")
