@@ -125,7 +125,7 @@ dfmt.interpolate_tide_to_bc(ext_new=ext_new, tidemodel=tidemodel, file_pli=poly_
 # check dfmt.get_conversion_dict() for an overview of parameter/quantity names
 dir_output_data_cmems = os.path.join(dir_output_data, 'cmems')
 os.makedirs(dir_output_data_cmems, exist_ok=True)
-for varkey in ['zos','so','thetao','uo','vo','no3','phyc']:
+for varkey in ['zos','so','thetao','uo','vo','no3']:#,'phyc']: # TODO: phyc not available in reanalysis: https://github.com/Deltares/dfm_tools/issues/847
     dfmt.download_CMEMS(varkey=varkey,
                         longitude_min=lon_min, longitude_max=lon_max, latitude_min=lat_min, latitude_max=lat_max,
                         date_min=date_min, date_max=date_max,
@@ -137,7 +137,7 @@ for varkey in ['zos','so','thetao','uo','vo','no3','phyc']:
 # when supplying two waterlevelbnds to FM (tide and steric) with other quantities in between, dimrset>=2.24.00 is required
 # or else "ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated" is raised (https://issuetracker.deltares.nl/browse/UNST-7011).
 # Two waterlevelbnds need to share same physical plifile in order to be appended (https://issuetracker.deltares.nl/browse/UNST-5320).
-list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd','tracerbndNO3','tracerbndPON1']
+list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd','tracerbndNO3']#,'tracerbndPON1']
 dir_pattern = os.path.join(dir_output_data_cmems,'cmems_{ncvarname}_*.nc')
 ext_new = dfmt.cmems_nc_to_bc(ext_bnd=ext_new,
                               refdate_str=f'minutes since {ref_date} 00:00:00 +00:00',
