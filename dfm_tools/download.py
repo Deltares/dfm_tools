@@ -230,17 +230,41 @@ def download_CMEMS(varkey,
             dataset_perperiod.to_netcdf(output_filename)
 
 
-def copernicusmarine_get_product(date_min, date_max):
-    # time extents as global variables, so they only has to be retreived once per download run (otherwise once per variable)
-    global reanalysis_tstart, reanalysis_tstop
-    global reanalysis_int_tstart, reanalysis_int_tstop
-    global forecast_tstart, forecast_tstop
-    if 'reanalysis_tstart' not in globals():
-        print('retrieving time range of CMEMS reanalysis, reanalysis-interim and forecast products') #assuming here that physchem and bio reanalyisus/multiyear datasets have the same enddate, this seems safe
-        reanalysis_tstart, reanalysis_tstop = copernicusmarine_dataset_timerange(dataset_id="cmems_mod_glo_phy_my_0.083deg_P1D-m")
-        reanalysis_int_tstart, reanalysis_int_tstop = copernicusmarine_dataset_timerange(dataset_id="cmems_mod_glo_phy_myint_0.083deg_P1D-m")
-        forecast_tstart, forecast_tstop = copernicusmarine_dataset_timerange(dataset_id="cmems_mod_glo_phy_anfc_0.083deg_P1D-m")
+def copernicusmarine_get_product(date_min, date_max, vartype):
+    assert vartype in ['phy','bio']
     
+    # the time extents between phy and bio can be different so we have to retrieve them both
+    
+    # time extents as global variables, so they only has to be retreived once per download run (otherwise once per variable)
+    global phy_reanalysis_tstart, phy_reanalysis_tstop
+    global phy_reanalysis_int_tstart, phy_reanalysis_int_tstop
+    global phy_forecast_tstart, phy_forecast_tstop
+    global bio_reanalysis_tstart, bio_reanalysis_tstop
+    global bio_reanalysis_int_tstart, bio_reanalysis_int_tstop
+    global bio_forecast_tstart, bio_forecast_tstop
+    
+    # retrieve times
+    if vartype=='phy' and 'phy_reanalysis_tstart' not in globals():
+        print('retrieving time range of CMEMS reanalysis, reanalysis-interim and forecast products (phy)') #assuming here that physchem and bio reanalyisus/multiyear datasets have the same enddate, this seems safe
+        phy_reanalysis_tstart, phy_reanalysis_tstop = copernicusmarine_dataset_timerange(dataset_id="cmems_mod_glo_phy_my_0.083deg_P1D-m")
+        phy_reanalysis_int_tstart, phy_reanalysis_int_tstop = copernicusmarine_dataset_timerange(dataset_id="cmems_mod_glo_phy_myint_0.083deg_P1D-m")
+        phy_forecast_tstart, phy_forecast_tstop = copernicusmarine_dataset_timerange(dataset_id="cmems_mod_glo_phy_anfc_0.083deg_P1D-m")
+    if vartype=='bio' and 'bio_reanalysis_tstart' not in globals():
+        print('retrieving time range of CMEMS reanalysis, reanalysis-interim and forecast products (bio)') #assuming here that physchem and bio reanalyisus/multiyear datasets have the same enddate, this seems safe
+        bio_reanalysis_tstart, bio_reanalysis_tstop = copernicusmarine_dataset_timerange(dataset_id="cmems_mod_glo_bgc_my_0.25deg_P1D-m")
+        bio_reanalysis_int_tstart, bio_reanalysis_int_tstop = copernicusmarine_dataset_timerange(dataset_id="cmems_mod_glo_bgc_myint_0.25deg_P1D-m")
+        bio_forecast_tstart, bio_forecast_tstop = copernicusmarine_dataset_timerange(dataset_id="cmems_mod_glo_bgc-pft_anfc_0.25deg_P1D-m")
+    
+    # set current start/stop times dependent on whether we request phy/bio
+    if vartype=='phy':
+        reanalysis_tstart, reanalysis_tstop = phy_reanalysis_tstart, phy_reanalysis_tstop
+        reanalysis_int_tstart, reanalysis_int_tstop = phy_reanalysis_int_tstart, phy_reanalysis_int_tstop
+        forecast_tstart, forecast_tstop = phy_forecast_tstart, phy_forecast_tstop
+    if vartype=='bio' :
+        reanalysis_tstart, reanalysis_tstop = bio_reanalysis_tstart, bio_reanalysis_tstop
+        reanalysis_int_tstart, reanalysis_int_tstop = bio_reanalysis_int_tstart, bio_reanalysis_int_tstop
+        forecast_tstart, forecast_tstop = bio_forecast_tstart, bio_forecast_tstop
+        
     if (date_min >= reanalysis_tstart) & (date_max <= reanalysis_tstop):
         product = 'reanalysis'
     elif (date_min >= reanalysis_int_tstart) & (date_max <= reanalysis_int_tstop):
@@ -260,9 +284,16 @@ def copernicusmarine_get_product(date_min, date_max):
 def copernicusmarine_get_dataset_id(varkey, date_min, date_max):
     #TODO: maybe get dataset_id from 'copernicusmarine describe --include-datasets --contains <search_token>'
     
-    product = copernicusmarine_get_product(date_min, date_max)
-    
     if varkey in ['bottomT','tob','mlotst','siconc','sithick','so','thetao','uo','vo','usi','vsi','zos']: #for physchem
+        vartype = 'phy'
+    elif varkey in ['nppv','o2','talk','dissic','ph','spco2','no3','po4','si','fe','chl','phyc']: # for bio
+        vartype = 'bio'
+    else:
+        raise KeyError(f"unknown varkey for cmems: {varkey}")
+    
+    product = copernicusmarine_get_product(date_min, date_max, vartype)
+    
+    if vartype == 'phy': #for physchem
         # resolution is 1/12 degrees in lat/lon dimension, but a bit more/less in alternating cells
         if product == 'analysisforecast': # forecast: https://data.marine.copernicus.eu/product/GLOBAL_ANALYSISFORECAST_PHY_001_024/description
             if varkey in ['uo','vo']: # anfc datset is splitted over multiple urls
@@ -277,7 +308,7 @@ def copernicusmarine_get_dataset_id(varkey, date_min, date_max):
             dataset_id = 'cmems_mod_glo_phy_myint_0.083deg_P1D-m'
         else: # reanalysis: https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_PHY_001_030/description
             dataset_id = 'cmems_mod_glo_phy_my_0.083deg_P1D-m'
-    elif varkey in ['nppv','o2','talk','dissic','ph','spco2','no3','po4','si','fe','chl','phyc']: # for bio
+    elif vartype == 'bio': # for bio
         # resolution is 1/4 degrees
         if product == 'analysisforecast': # forecast: https://data.marine.copernicus.eu/product/GLOBAL_ANALYSISFORECAST_BGC_001_028/description
             if varkey in ['nppv','o2']:
@@ -295,7 +326,7 @@ def copernicusmarine_get_dataset_id(varkey, date_min, date_max):
         else: # reanalysis: https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_BGC_001_029/description
             dataset_id = 'cmems_mod_glo_bgc_my_0.25deg_P1D-m'
     else:
-        raise KeyError(f"unknown varkey for cmems: {varkey}")
+        raise ValueError(f"unknown vartype for cmems: {vartype}")
     return dataset_id
 
 
