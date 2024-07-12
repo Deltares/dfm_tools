@@ -83,15 +83,15 @@ def test_geodataframe_to_PolyFile_name_invalidtype(bnd_gdf):
 def test_geodataframe_to_PolyFile_name_incorrect(bnd_gdf):
     with pytest.raises(ValueError) as e:
         dfmt.geodataframe_to_PolyFile(bnd_gdf, name='1')
-    assert 'name should start with a letter' in str(e.value)
+    assert 'names in polyfile do not all start with a letter' in str(e.value)
     
     with pytest.raises(ValueError) as e:
         dfmt.geodataframe_to_PolyFile(bnd_gdf, name='-')
-    assert 'name should start with a letter' in str(e.value)
+    assert 'names in polyfile do not all start with a letter' in str(e.value)
     
     with pytest.raises(ValueError) as e:
         dfmt.geodataframe_to_PolyFile(bnd_gdf, name='')
-    assert 'name is not allowed to be an empty string' in str(e.value)
+    assert 'names in polyfile do not all start with a letter' in str(e.value)
 
 
 @pytest.mark.unittest

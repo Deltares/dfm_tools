@@ -1,3 +1,4 @@
+import os
 import glob
 import datetime as dt
 import numpy as np
@@ -16,14 +17,14 @@ from dfm_tools.hydrolib_helpers import (Dataset_to_TimeSeries,
                                         PolyFile_to_geodataframe_points, 
                                         get_ncbnd_construct,
                                         da_from_gdf_points,
-                                        maybe_convert_fews_to_dfmt)
+                                        maybe_convert_fews_to_dfmt,
+                                        validate_polyline_names)
 from dfm_tools.errors import OutOfRangeError
 
 __all__ = ["get_conversion_dict",
            "interpolate_tide_to_bc",
            "interpolate_tide_to_plipoints",
            "open_dataset_extra",
-           "interp_regularnc_to_plipoints",
            "interp_regularnc_to_plipointsDataset",
            "interp_uds_to_plipoints",
            "interp_hisnc_to_plipoints",
@@ -115,13 +116,56 @@ def get_conversion_dict(ncvarname_updates={}):
     return conversion_dict
 
 
-def interpolate_tide_to_bc(tidemodel, file_pli, component_list=None, nPoints=None, load=True):
-    gdf_points = read_polyfile_as_gdf_points(file_pli, nPoints=nPoints)
+def ext_add_boundary_object_per_polyline(ext_new:hcdfm.ExtModel, boundary_object:hcdfm.Boundary):
+    """
+    If the polyfile contains multiple polylines, only the first 
+    one will be used by DFLOW-FM for the boundary conditions.
+    This function will save each polyline as a separate polyfile 
+    and add duplicate boundary entries for each polyline to the extfile.
+    """
+    file_pli_main = boundary_object.locationfile.filepath
+    polyfile_obj = hcdfm.PolyFile(file_pli_main)
+    validate_polyline_names(polyfile_obj)
+    dir_output = os.path.dirname(file_pli_main)
+    for polyline_obj in polyfile_obj.objects:
+        if len(polyfile_obj.objects) > 1:
+            # copy to avoid location file to be the same for all duplicated boundary objects
+            boundary_object = boundary_object.copy()
+            # create a polyfile with a single plifile
+            polyfile_oneline_obj = hcdfm.PolyFile(objects=[polyline_obj])
+            file_pli_oneline = os.path.join(dir_output, f"{polyline_obj.metadata.name}.pli")
+            if str(file_pli_oneline) == str(file_pli_main):
+                raise ValueError("The names of one of the polylines in the polyfile is the "
+                                 "same as the polyfilename, resulting in the same filename")
+            polyfile_oneline_obj.save(file_pli_oneline)
+            # update locationfile to the plifile with a single polyline
+            boundary_object.locationfile = file_pli_oneline
+        # add boundary to extmodel
+        ext_new.boundary.append(boundary_object)
+
+
+def interpolate_tide_to_bc(ext_new: hcdfm.ExtModel, tidemodel, file_pli, component_list=None, load=True):
+    # read polyfile as geodataframe
+    polyfile_object = hcdfm.PolyFile(file_pli)
+    gdf_points = PolyFile_to_geodataframe_points(polyfile_object)
+    
+    # interpolate tidal components to plipoints
     data_interp = interpolate_tide_to_plipoints(tidemodel=tidemodel, gdf_points=gdf_points, 
                                                 component_list=component_list, load=load)
-    ForcingModel_object = plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
     
-    return ForcingModel_object
+    # convert interpolated xarray.Dataset to hydrolib ForcingModel and save as bc file
+    ForcingModel_object = plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
+    dir_output = os.path.dirname(file_pli)
+    file_bc_out = os.path.join(dir_output,f'tide_{tidemodel}.bc')
+    ForcingModel_object.save(filepath=file_bc_out)
+    
+    # generate hydrolib-core Boundary object to be appended to the ext file
+    boundary_object = hcdfm.Boundary(quantity='waterlevelbnd', #the FM quantity for tide is also waterlevelbnd
+                                      locationfile=file_pli,
+                                      forcingfile=ForcingModel_object)
+    
+    # add the boundary object to the ext file for each polyline in the polyfile
+    ext_add_boundary_object_per_polyline(ext_new=ext_new, boundary_object=boundary_object)
 
 
 def tidemodel_componentlist(tidemodel:str, convention:bool):
@@ -368,42 +412,6 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
     return data_xr_vars
 
 
-def read_polyfile_as_gdf_points(file_pli, nPoints=None):
-    # read polyfile
-    polyfile_object = hcdfm.PolyFile(file_pli)
-    
-    # warn if the polyfile contains multiple polylines
-    if len(polyfile_object.objects) > 1:
-        logger.warning(f"The polyfile {file_pli} contains multiple polylines. "
-                       "Only the first one will be used by DFLOW-FM for the boundary conditions.")
-        #TODO after issue UNST-7012 is properly solved, remove this warning
-    
-    # check if polyobj names in plifile are unique
-    polynames_pd = pd.Series([polyobj.metadata.name for polyobj in polyfile_object.objects])
-    if polynames_pd.duplicated().any():
-        raise ValueError(f'Duplicate polyobject names in polyfile {file_pli}, this is not allowed:\n{polynames_pd}')
-    
-    gdf_points = PolyFile_to_geodataframe_points(polyfile_object)
-    
-    # only use testset of n first points of polyfile
-    gdf_points = gdf_points.iloc[:nPoints]
-    return gdf_points
-
-
-def interp_regularnc_to_plipoints(data_xr_reg, file_pli, nPoints=None, load=True):
-
-    """
-    load: interpolation errors are only raised upon loading, so do this per default
-    """
-    # TODO: consider phasing out, this function is probably only used in 
-    # tests/examples/preprocess_interpolate_nc_to_bc.py and dfm_tools/modelbuilder.py
-    
-    gdf_points = read_polyfile_as_gdf_points(file_pli, nPoints=nPoints)
-    
-    data_interp = interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points=gdf_points, load=load)
-    return data_interp
-
-
 def interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points, load=True):
     
     ncbnd_construct = get_ncbnd_construct()
@@ -449,7 +457,7 @@ def interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points, load=True):
     return data_interp_loaded
 
 
-def interp_uds_to_plipoints(uds:xu.UgridDataset, gdf:geopandas.GeoDataFrame, nPoints:int=None) -> xr.Dataset:
+def interp_uds_to_plipoints(uds:xu.UgridDataset, gdf:geopandas.GeoDataFrame) -> xr.Dataset:
     """
     To interpolate an unstructured dataset (like a _map.nc file) read with xugrid to plipoint locations
     
@@ -459,8 +467,6 @@ def interp_uds_to_plipoints(uds:xu.UgridDataset, gdf:geopandas.GeoDataFrame, nPo
         dfm model output read using dfm_tools. Dims: mesh2d_nLayers, mesh2d_nInterfaces, time, mesh2d_nNodes, mesh2d_nFaces, mesh2d_nMax_face_nodes, mesh2d_nEdges.
     gdf : geopandas.GeoDataFrame (str/path is also supported)
         gdf with location, geometry (Point) and crs corresponding to model crs.
-    nPoints : int, optional
-        amount of points (None gives all). The default is None.
 
     Raises
     ------
@@ -481,7 +487,6 @@ def interp_uds_to_plipoints(uds:xu.UgridDataset, gdf:geopandas.GeoDataFrame, nPo
     if isinstance(gdf,(str,Path)): #TODO: align plipoints/gdf with other functions, now three input types are supported, but the interp_regularnc_to_plipoints requires paths to plifiles (and others also)
         gdf = PolyFile_to_geodataframe_points(hcdfm.PolyFile(gdf))
     
-    gdf = gdf.iloc[:nPoints]
     ds = uds.ugrid.sel_points(x=gdf.geometry.x, y=gdf.geometry.y)
     #TODO: drop mesh2d_face_x and mesh2d_face_y variables
     
