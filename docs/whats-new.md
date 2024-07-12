@@ -1,6 +1,6 @@
 # What's new
 
-## UNRELEASED
+## 0.24.0 (2024-07-12)
 
 ### Feat
 - improved usability of `dfmt.LineBuilder()` in [#854](https://github.com/Deltares/dfm_tools/pull/854)
