@@ -144,7 +144,7 @@ def ext_add_boundary_object_per_polyline(ext_new:hcdfm.ExtModel, boundary_object
         ext_new.boundary.append(boundary_object)
 
 
-def interpolate_tide_to_bc(ext_new: hcdfm.ExtModel, tidemodel, file_pli, component_list=None, nPoints=None, load=True):
+def interpolate_tide_to_bc(ext_new: hcdfm.ExtModel, tidemodel, file_pli, component_list=None, load=True):
     # read polyfile as geodataframe
     polyfile_object = hcdfm.PolyFile(file_pli)
     gdf_points = PolyFile_to_geodataframe_points(polyfile_object)
