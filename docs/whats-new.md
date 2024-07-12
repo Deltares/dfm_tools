@@ -8,6 +8,8 @@
 - updated CMEMS bcg multiyear dataset name in [#880](https://github.com/Deltares/dfm_tools/pull/880)
 - added CMEMS reananalysis-interim (myint) datasets to `dfmt.download_CMEMS()` in [#883](https://github.com/Deltares/dfm_tools/pull/883) and [#903](https://github.com/Deltares/dfm_tools/pull/903)
 - avoid duplicate and empty polyline names in `dfmt.geodataframe_to_PolyFile()` in [#896](https://github.com/Deltares/dfm_tools/pull/896)
+- support for multiple polylines per polyfile in `interpolate_tide_to_bc()` and `cmems_nc_to_bc()` in [#906](https://github.com/Deltares/dfm_tools/pull/906)
+- add to ext as part of `interpolate_tide_to_bc()`, it now requires `ext_new` and has no return value anymore in [#906](https://github.com/Deltares/dfm_tools/pull/906)
 
 ### Fix
 - cleanups for datasets retrieved with `dfmt.ssh_retrieve_data()` in [#867](https://github.com/Deltares/dfm_tools/pull/867)
