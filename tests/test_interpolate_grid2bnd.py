@@ -14,12 +14,12 @@ import xarray as xr
 import shapely
 import pandas as pd
 import geopandas as gpd
-from dfm_tools.interpolate_grid2bnd import (read_polyfile_as_gdf_points,
-                                            tidemodel_componentlist,
+from dfm_tools.interpolate_grid2bnd import (tidemodel_componentlist,
                                             components_translate_upper,
                                             get_ncbnd_construct,
                                             interp_regularnc_to_plipointsDataset,
                                             check_time_extent,
+                                            ext_add_boundary_object_per_polyline,
                                             )
 from dfm_tools.hydrolib_helpers import PolyFile_to_geodataframe_points
 import hydrolib.core.dflowfm as hcdfm
@@ -154,10 +154,10 @@ def test_plipointsDataset_fews_accepted():
     data_interp = xr.open_dataset(file_nc_fews)
     
     #convert plipointsDataset to hydrolib ForcingModel
-    ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
+    forcingmodel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
     
-    forcing0 = ForcingModel_object.forcing[0]
-    assert isinstance(ForcingModel_object, hcdfm.ForcingModel)
+    forcing0 = forcingmodel_object.forcing[0]
+    assert isinstance(forcingmodel_object, hcdfm.ForcingModel)
     assert isinstance(forcing0, hcdfm.T3D)
     assert forcing0.quantityunitpair[1].unit == 'ppt'
     
@@ -169,8 +169,12 @@ def test_plipointsDataset_fews_accepted():
 @pytest.mark.requireslocaldata
 def test_interpolate_nc_to_bc():
     file_pli = r'p:\archivedprojects\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli'
+    npoints = 3
     
-    gdf_points = read_polyfile_as_gdf_points(file_pli, nPoints=3)
+    # read polyfile as geodataframe
+    polyfile_object = hcdfm.PolyFile(file_pli)
+    gdf_points_all = PolyFile_to_geodataframe_points(polyfile_object)
+    gdf_points = gdf_points_all.iloc[:npoints]
     
     tstart = '2012-12-16 12:00'
     tstop = '2013-01-01 12:00'
@@ -183,10 +187,10 @@ def test_interpolate_nc_to_bc():
     data_interp = dfmt.interp_regularnc_to_plipointsDataset(data_xr_reg=data_xr_vars, gdf_points=gdf_points)
     
     #convert plipointsDataset to hydrolib ForcingModel
-    ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
+    forcingmodel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
     
-    forcing0 = ForcingModel_object.forcing[0]
-    assert isinstance(ForcingModel_object, hcdfm.ForcingModel)
+    forcing0 = forcingmodel_object.forcing[0]
+    assert isinstance(forcingmodel_object, hcdfm.ForcingModel)
     assert isinstance(forcing0, hcdfm.T3D)
     assert forcing0.quantityunitpair[1].unit == '1e-3'
     
@@ -397,11 +401,14 @@ def test_interp_regularnc_to_plipointsDataset_checkvardimnames():
 @pytest.mark.systemtest
 @pytest.mark.requireslocaldata
 def test_interpolate_tide_to_plipoints():
-    nPoints = 3# None #amount of Points to process per PolyObject in the plifile (use int for testing, use None for all Points)
+    npoints = 3# None #amount of Points to process per PolyObject in the plifile (use int for testing, use None for all Points)
     file_pli = r'p:\archivedprojects\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli'
     nanvalue = -999
     
-    gdf_points = read_polyfile_as_gdf_points(file_pli, nPoints=nPoints)
+    # read polyfile as geodataframe
+    polyfile_object = hcdfm.PolyFile(file_pli)
+    gdf_points_all = PolyFile_to_geodataframe_points(polyfile_object)
+    gdf_points = gdf_points_all.iloc[:npoints]
     
     tidemodel_list = ['tpxo80_opendap', 'FES2014', 'FES2012', 'EOT20', 'GTSMv4.1']#, 'GTSMv4.1_opendap']
     for tidemodel in tidemodel_list:
@@ -480,10 +487,13 @@ def test_read_polyfile_as_gdf_points():
     ncbnd_construct = get_ncbnd_construct()
     varn_pointname = ncbnd_construct['varn_pointname']
     
-    nPoints = 3
+    npoints = 3
     file_pli = r'p:\archivedprojects\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli'
     
-    gdf_points = read_polyfile_as_gdf_points(file_pli, nPoints=nPoints)
+    # read polyfile as geodataframe
+    polyfile_object = hcdfm.PolyFile(file_pli)
+    gdf_points_all = PolyFile_to_geodataframe_points(polyfile_object)
+    gdf_points = gdf_points_all.iloc[:npoints]
     
     reference = data_dcsm_gdf()
     
@@ -525,3 +535,72 @@ def test_interp_uds_to_plipoints():
     
     assert (np.abs(retrieved - expected) < 1e-8).all()
 
+
+def test_ext_add_boundary_object_per_polyline_onepolyline(tmp_path):
+    file_pli = os.path.join(tmp_path,'test_model.pli')
+    with open(file_pli,'w') as f:
+        f.write("""name1
+        2    2
+        1.0    2.0
+        3.0    4.0
+        """)
+    
+    # new ext
+    ext_new = hcdfm.ExtModel()
+    forcingmodel_object = hcdfm.ForcingModel()
+    boundary_object = hcdfm.Boundary(quantity='waterlevelbnd',
+                                     locationfile=file_pli,
+                                     forcingfile=forcingmodel_object)
+    ext_add_boundary_object_per_polyline(ext_new=ext_new, boundary_object=boundary_object)
+    assert len(ext_new.boundary) == 1
+    polyfile_names = [os.path.basename(x.locationfile.filepath) for x in ext_new.boundary]
+    assert polyfile_names == ['test_model.pli']
+
+
+def test_ext_add_boundary_object_per_polyline_twopolylines(tmp_path):
+    file_pli = os.path.join(tmp_path,'test_model.pli')
+    with open(file_pli,'w') as f:
+        f.write("""name1
+        2    2
+        1.0    2.0
+        3.0    4.0
+        name2
+        2    2
+        1.0    2.0
+        3.0    4.0
+        """)
+    
+    # new ext
+    ext_new = hcdfm.ExtModel()
+    forcingmodel_object = hcdfm.ForcingModel()
+    boundary_object = hcdfm.Boundary(quantity='waterlevelbnd',
+                                     locationfile=file_pli,
+                                     forcingfile=forcingmodel_object)
+    ext_add_boundary_object_per_polyline(ext_new=ext_new, boundary_object=boundary_object)
+    assert len(ext_new.boundary) == 2
+    polyfile_names = [os.path.basename(x.locationfile.filepath) for x in ext_new.boundary]
+    assert polyfile_names == ['name1.pli', 'name2.pli']
+
+
+def test_ext_add_boundary_object_per_polyline_wrong_name(tmp_path):
+    file_pli = os.path.join(tmp_path,'test_model.pli')
+    with open(file_pli,'w') as f:
+        f.write("""test_model
+        2    2
+        1.0    2.0
+        3.0    4.0
+        name2
+        2    2
+        1.0    2.0
+        3.0    4.0
+        """)
+    
+    # new ext
+    ext_new = hcdfm.ExtModel()
+    forcingmodel_object = hcdfm.ForcingModel()
+    boundary_object = hcdfm.Boundary(quantity='waterlevelbnd',
+                                     locationfile=file_pli,
+                                     forcingfile=forcingmodel_object)
+    with pytest.raises(ValueError) as e:
+        ext_add_boundary_object_per_polyline(ext_new=ext_new, boundary_object=boundary_object)
+    assert "The names of one of the polylines in the polyfile is the same as the polyfilename" in str(e.value)

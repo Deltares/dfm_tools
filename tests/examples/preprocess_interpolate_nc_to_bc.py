@@ -91,10 +91,13 @@ for file_pli in list_plifiles:
                                                    tstart=tstart, tstop=tstop,
                                                    conversion_dict=conversion_dict,
                                                    refdate_str=refdate_str)
-            #interpolate regulargridDataset to plipointsDataset
-            data_interp = dfmt.interp_regularnc_to_plipoints(data_xr_reg=data_xr_vars, file_pli=file_pli, #TODO: difference in .interp() with float vs da arguments: https://github.com/Deltares/dfm_tools/issues/287
-                                                             nPoints=nPoints) #argument for testing
-            #data_interp = data_interp.ffill(dim="node").bfill(dim="node") #to fill allnan plipoints with values from the neighbour point #TODO: this also fills the belowbed layers from one point onto another, so should be done after ffill/bfill in depth dimension. Currently all-nan arrays are replaced with .fillna(0)
+            # read polyfile as geodataframe
+            polyfile_object = hcdfm.PolyFile(file_pli)
+            gdf_points_all = dfmt.PolyFile_to_geodataframe_points(polyfile_object)
+            gdf_points = gdf_points_all.iloc[:nPoints]
+            # interpolate regulargridDataset to plipointsDataset
+            data_interp = dfmt.interp_regularnc_to_plipointsDataset(data_xr_reg=data_xr_vars, gdf_points=gdf_points, load=True)
+            # data_interp = data_interp.ffill(dim="node").bfill(dim="node") #to fill allnan plipoints with values from the neighbour point #TODO: this also fills the belowbed layers from one point onto another, so should be done after ffill/bfill in depth dimension. Currently all-nan arrays are replaced with .fillna(0)
             
             #convert plipointsDataset to hydrolib ForcingModel
             ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)

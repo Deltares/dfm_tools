@@ -117,22 +117,15 @@ ext_file_new = os.path.join(dir_output, f'{model_name}_new.ext')
 ext_new = hcdfm.ExtModel()
 
 # FES2014 tidal components bc file
-file_bc_basename = os.path.basename(poly_file).replace('.pli','')
 tidemodel = 'EOT20' # tidemodel: FES2014, FES2012, EOT20, GTSMv4.1, GTSMv4.1_opendap
-ForcingModel_object = dfmt.interpolate_tide_to_bc(tidemodel=tidemodel, file_pli=poly_file, component_list=None)
-file_bc_out = os.path.join(dir_output,f'tide_{file_bc_basename}_{tidemodel}.bc')
-ForcingModel_object.save(filepath=file_bc_out)
-boundary_object = hcdfm.Boundary(quantity='waterlevelbnd', #the FM quantity for tide is also waterlevelbnd
-                                 locationfile=poly_file,
-                                 forcingfile=ForcingModel_object)
-ext_new.boundary.append(boundary_object)
+dfmt.interpolate_tide_to_bc(ext_new=ext_new, tidemodel=tidemodel, file_pli=poly_file, component_list=None)
 
 # CMEMS - download
 # you can also add WAQ variables like 'no3' and 'phyc'
 # check dfmt.get_conversion_dict() for an overview of parameter/quantity names
 dir_output_data_cmems = os.path.join(dir_output_data, 'cmems')
 os.makedirs(dir_output_data_cmems, exist_ok=True)
-for varkey in ['zos','so','thetao','uo','vo','no3','phyc']:
+for varkey in ['zos','so','thetao','uo','vo','no3']:#,'phyc']: # TODO: phyc not available in reanalysis: https://github.com/Deltares/dfm_tools/issues/847
     dfmt.download_CMEMS(varkey=varkey,
                         longitude_min=lon_min, longitude_max=lon_max, latitude_min=lat_min, latitude_max=lat_max,
                         date_min=date_min, date_max=date_max,
@@ -144,7 +137,7 @@ for varkey in ['zos','so','thetao','uo','vo','no3','phyc']:
 # when supplying two waterlevelbnds to FM (tide and steric) with other quantities in between, dimrset>=2.24.00 is required
 # or else "ERROR  : update_ghostboundvals: not all ghost boundary flowlinks are being updated" is raised (https://issuetracker.deltares.nl/browse/UNST-7011).
 # Two waterlevelbnds need to share same physical plifile in order to be appended (https://issuetracker.deltares.nl/browse/UNST-5320).
-list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd','tracerbndNO3','tracerbndPON1']
+list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd','tracerbndNO3']#,'tracerbndPON1']
 dir_pattern = os.path.join(dir_output_data_cmems,'cmems_{ncvarname}_*.nc')
 ext_new = dfmt.cmems_nc_to_bc(ext_bnd=ext_new,
                               refdate_str=f'minutes since {ref_date} 00:00:00 +00:00',
