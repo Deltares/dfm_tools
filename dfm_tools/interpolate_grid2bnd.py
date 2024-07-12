@@ -17,7 +17,8 @@ from dfm_tools.hydrolib_helpers import (Dataset_to_TimeSeries,
                                         PolyFile_to_geodataframe_points, 
                                         get_ncbnd_construct,
                                         da_from_gdf_points,
-                                        maybe_convert_fews_to_dfmt)
+                                        maybe_convert_fews_to_dfmt,
+                                        validate_polyline_names)
 from dfm_tools.errors import OutOfRangeError
 
 __all__ = ["get_conversion_dict",
@@ -117,12 +118,15 @@ def get_conversion_dict(ncvarname_updates={}):
 
 def ext_add_boundary_object_per_polyline(ext_new:hcdfm.ExtModel, boundary_object:hcdfm.Boundary):
     """
-    If the polyfile contains multiple polylines, only the first one will be used by DFLOW-FM for the boundary conditions.
-    If the polyfile contains multiple polylines, this function will save each polyline as a separate polyfile 
+    If the polyfile contains multiple polylines, only the first 
+    one will be used by DFLOW-FM for the boundary conditions.
+    This function will save each polyline as a separate polyfile 
     and add duplicate boundary entries for each polyline to the extfile.
     """
-    polyfile_obj = hcdfm.PolyFile(boundary_object.locationfile.filepath)
-    dir_output = os.path.dirname(boundary_object.forcingfile.filepath)
+    file_pli_main = boundary_object.locationfile.filepath
+    polyfile_obj = hcdfm.PolyFile(file_pli_main)
+    validate_polyline_names(polyfile_obj)
+    dir_output = os.path.dirname(file_pli_main)
     for polyline_obj in polyfile_obj.objects:
         if len(polyfile_obj.objects) > 1:
             # copy to avoid location file to be the same for all duplicated boundary objects
@@ -130,6 +134,9 @@ def ext_add_boundary_object_per_polyline(ext_new:hcdfm.ExtModel, boundary_object
             # create a polyfile with a single plifile
             polyfile_oneline_obj = hcdfm.PolyFile(objects=[polyline_obj])
             file_pli_oneline = os.path.join(dir_output, f"{polyline_obj.metadata.name}.pli")
+            if str(file_pli_oneline) == str(file_pli_main):
+                raise ValueError("The names of one of the polylines in the polyfile is the "
+                                 "same as the polyfilename, resulting in the same filename")
             polyfile_oneline_obj.save(file_pli_oneline)
             # update locationfile to the plifile with a single polyline
             boundary_object.locationfile = file_pli_oneline

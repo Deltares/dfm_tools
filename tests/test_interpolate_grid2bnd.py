@@ -19,6 +19,7 @@ from dfm_tools.interpolate_grid2bnd import (tidemodel_componentlist,
                                             get_ncbnd_construct,
                                             interp_regularnc_to_plipointsDataset,
                                             check_time_extent,
+                                            ext_add_boundary_object_per_polyline,
                                             )
 from dfm_tools.hydrolib_helpers import PolyFile_to_geodataframe_points
 import hydrolib.core.dflowfm as hcdfm
@@ -534,3 +535,27 @@ def test_interp_uds_to_plipoints():
     
     assert (np.abs(retrieved - expected) < 1e-8).all()
 
+
+def test_ext_add_boundary_object_per_polyline(tmp_path):
+    file_pli = os.path.join(tmp_path,'test_model.pli')
+    with open(file_pli,'w') as f:
+        f.write("""name
+        2    2
+        1.0    2.0
+        3.0    4.0
+        name
+        2    2
+        1.0    2.0
+        3.0    4.0
+        """)
+    
+    # new ext
+    # ext_file_new = os.path.join(tmp_path, 'test_new.ext')
+    ext_new = hcdfm.ExtModel()
+    ForcingModel_object = hcdfm.ForcingModel()
+    boundary_object = hcdfm.Boundary(quantity='waterlevelbnd', #the FM quantity for tide is also waterlevelbnd
+                                     locationfile=file_pli,
+                                     forcingfile=ForcingModel_object)
+    ext_add_boundary_object_per_polyline(ext_new=ext_new, boundary_object=boundary_object)
+    assert len(ext_new.boundary) == 2
+    

@@ -227,6 +227,18 @@ def DataFrame_to_PolyObject(poly_pd,name,content=None):
     return polyobject
 
 
+def validate_polyline_names(polyfile_obj):
+    # TODO: not allowed to have empty or duplicated polyline names in a polyfile, this is not 
+    # catched by hydrolib-core: https://github.com/Deltares/HYDROLIB-core/issues/483
+    # therefore, we check it here
+    names = [x.metadata.name for x in polyfile_obj.objects]
+    if len(set(names)) != len(names):
+        raise ValueError(f'duplicate polyline names found in polyfile: {names}')
+    first_alpha = [x[0].isalpha() for x in names]
+    if not all(first_alpha):
+        raise ValueError(f'names in polyfile do not all start with a letter: {names}')
+
+
 def geodataframe_to_PolyFile(poly_gdf, name="L"):
     """
     convert a geopandas geodataframe with x/y columns (and optional others like z/data/comment) to a hydrolib PolyFile
@@ -235,10 +247,6 @@ def geodataframe_to_PolyFile(poly_gdf, name="L"):
     # catch some invalid occurences of name
     if not isinstance(name, str):
         raise TypeError("name should be a string")
-    if name == "":
-        raise ValueError("name is not allowed to be an empty string")
-    if not name[0].isalpha():
-        raise ValueError("name should start with a letter")
     
     # add name column if not present
     if 'name' not in poly_gdf.columns:
@@ -263,21 +271,13 @@ def geodataframe_to_PolyFile(poly_gdf, name="L"):
         pointsobj_list = poly_geom_df.T.apply(dict).tolist()
         for pnt in pointsobj_list:
             pnt['data'] = []
-        polyobject = hcdfm.PolyObject(metadata={'name':name_str,'n_rows':poly_geom_np.shape[0],'n_columns':poly_geom_np.shape[1]}, points=pointsobj_list)
-        #if content is not None: # TODO: add support for content
-        #    polyobject.description = {'content':content}
+        polyobject = hcdfm.PolyObject(metadata={'name':name_str,
+                                                'n_rows':poly_geom_np.shape[0],
+                                                'n_columns':poly_geom_np.shape[1]}, 
+                                      points=pointsobj_list)
         polyfile_obj.objects.append(polyobject)
     
-    # TODO: not allowed to have empty or duplicated polyline names in a polyfile, this is not 
-    # catched by hydrolib-core: https://github.com/Deltares/HYDROLIB-core/issues/483
-    # therefore, we check it here
-    names = [x.metadata.name for x in polyfile_obj.objects]
-    if len(set(names)) != len(names):
-        raise ValueError(f'duplicate polyline names found in polyfile: {names}')
-    first_alpha = [x[0].isalpha() for x in names]
-    if not all(first_alpha):
-        raise ValueError(f'names in polyfile do not all start with a letter: {names}')
-    
+    validate_polyline_names(polyfile_obj)
     return polyfile_obj
 
 
