@@ -536,26 +536,71 @@ def test_interp_uds_to_plipoints():
     assert (np.abs(retrieved - expected) < 1e-8).all()
 
 
-def test_ext_add_boundary_object_per_polyline(tmp_path):
+def test_ext_add_boundary_object_per_polyline_onepolyline(tmp_path):
     file_pli = os.path.join(tmp_path,'test_model.pli')
     with open(file_pli,'w') as f:
-        f.write("""name
-        2    2
-        1.0    2.0
-        3.0    4.0
-        name
+        f.write("""name1
         2    2
         1.0    2.0
         3.0    4.0
         """)
     
     # new ext
-    # ext_file_new = os.path.join(tmp_path, 'test_new.ext')
     ext_new = hcdfm.ExtModel()
     ForcingModel_object = hcdfm.ForcingModel()
-    boundary_object = hcdfm.Boundary(quantity='waterlevelbnd', #the FM quantity for tide is also waterlevelbnd
+    boundary_object = hcdfm.Boundary(quantity='waterlevelbnd',
+                                     locationfile=file_pli,
+                                     forcingfile=ForcingModel_object)
+    ext_add_boundary_object_per_polyline(ext_new=ext_new, boundary_object=boundary_object)
+    assert len(ext_new.boundary) == 1
+    polyfile_names = [os.path.basename(x.locationfile.filepath) for x in ext_new.boundary]
+    assert polyfile_names == ['test_model.pli']
+
+
+def test_ext_add_boundary_object_per_polyline_twopolylines(tmp_path):
+    file_pli = os.path.join(tmp_path,'test_model.pli')
+    with open(file_pli,'w') as f:
+        f.write("""name1
+        2    2
+        1.0    2.0
+        3.0    4.0
+        name2
+        2    2
+        1.0    2.0
+        3.0    4.0
+        """)
+    
+    # new ext
+    ext_new = hcdfm.ExtModel()
+    ForcingModel_object = hcdfm.ForcingModel()
+    boundary_object = hcdfm.Boundary(quantity='waterlevelbnd',
                                      locationfile=file_pli,
                                      forcingfile=ForcingModel_object)
     ext_add_boundary_object_per_polyline(ext_new=ext_new, boundary_object=boundary_object)
     assert len(ext_new.boundary) == 2
+    polyfile_names = [os.path.basename(x.locationfile.filepath) for x in ext_new.boundary]
+    assert polyfile_names == ['name1.pli', 'name2.pli']
+
+
+def test_ext_add_boundary_object_per_polyline_wrong_name(tmp_path):
+    file_pli = os.path.join(tmp_path,'test_model.pli')
+    with open(file_pli,'w') as f:
+        f.write("""test_model
+        2    2
+        1.0    2.0
+        3.0    4.0
+        name2
+        2    2
+        1.0    2.0
+        3.0    4.0
+        """)
     
+    # new ext
+    ext_new = hcdfm.ExtModel()
+    ForcingModel_object = hcdfm.ForcingModel()
+    boundary_object = hcdfm.Boundary(quantity='waterlevelbnd',
+                                     locationfile=file_pli,
+                                     forcingfile=ForcingModel_object)
+    with pytest.raises(ValueError) as e:
+        ext_add_boundary_object_per_polyline(ext_new=ext_new, boundary_object=boundary_object)
+    assert "The names of one of the polylines in the polyfile is the same as the polyfilename" in str(e.value)
