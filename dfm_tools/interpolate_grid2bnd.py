@@ -457,7 +457,7 @@ def interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points, load=True):
     return data_interp_loaded
 
 
-def interp_uds_to_plipoints(uds:xu.UgridDataset, gdf:geopandas.GeoDataFrame, nPoints:int=None) -> xr.Dataset:
+def interp_uds_to_plipoints(uds:xu.UgridDataset, gdf:geopandas.GeoDataFrame) -> xr.Dataset:
     """
     To interpolate an unstructured dataset (like a _map.nc file) read with xugrid to plipoint locations
     
@@ -467,8 +467,6 @@ def interp_uds_to_plipoints(uds:xu.UgridDataset, gdf:geopandas.GeoDataFrame, nPo
         dfm model output read using dfm_tools. Dims: mesh2d_nLayers, mesh2d_nInterfaces, time, mesh2d_nNodes, mesh2d_nFaces, mesh2d_nMax_face_nodes, mesh2d_nEdges.
     gdf : geopandas.GeoDataFrame (str/path is also supported)
         gdf with location, geometry (Point) and crs corresponding to model crs.
-    nPoints : int, optional
-        amount of points (None gives all). The default is None.
 
     Raises
     ------
@@ -489,7 +487,6 @@ def interp_uds_to_plipoints(uds:xu.UgridDataset, gdf:geopandas.GeoDataFrame, nPo
     if isinstance(gdf,(str,Path)): #TODO: align plipoints/gdf with other functions, now three input types are supported, but the interp_regularnc_to_plipoints requires paths to plifiles (and others also)
         gdf = PolyFile_to_geodataframe_points(hcdfm.PolyFile(gdf))
     
-    gdf = gdf.iloc[:nPoints]
     ds = uds.ugrid.sel_points(x=gdf.geometry.x, y=gdf.geometry.y)
     #TODO: drop mesh2d_face_x and mesh2d_face_y variables
     
