@@ -300,7 +300,7 @@ def check_time_extent(data_xr, tstart, tstop):
         raise OutOfRangeError(f'requested tstop {tstop} outside of available range {nc_tstart} to {nc_tstop}.')
 
 
-def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=None, refdate_str=None, reverse_depth=False, chunks=None):
+def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=None, refdate_str=None, chunks=None):
     """
     empty docstring
     """
@@ -404,11 +404,7 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
             if data_xr_vars[varn_depth].attrs['positive'] == 'down': #attribute appears in CMEMS, GFDL and CMCC, save to assume presence?
                 data_xr_vars[varn_depth] = -data_xr_vars[varn_depth]
                 data_xr_vars[varn_depth].attrs['positive'] = 'up'
-        #optional reversing depth dimension for comparison to coastserv
-        if reverse_depth:
-            print('> reversing depth dimension')
-            data_xr_vars = data_xr_vars.reindex({varn_depth:list(reversed(data_xr_vars[varn_depth]))})
-    
+
     return data_xr_vars
 
 
