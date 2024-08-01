@@ -1,5 +1,11 @@
 # What's new
 
+## UNRELEASED
+
+### Feat
+- moving dataset conversions from `dfmt.open_dataset_extra()` to `dfmt.interpolate_grid2bnd.ds_apply_conversions()` so it can also be used by other functions in [#913](https://github.com/Deltares/dfm_tools/pull/913)
+
+
 ## 0.24.0 (2024-07-12)
 
 ### Feat
