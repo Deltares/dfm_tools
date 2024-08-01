@@ -286,6 +286,7 @@ def interpolate_tide_to_plipoints(tidemodel, gdf_points, component_list=None, lo
 
 
 def check_time_extent(data_xr, tstart, tstop):
+    #convert tstart/tstop from str/dt.datetime/pd.Timestamp to pd.Timestamp. WARNING: when supplying '05-04-2016', monthfirst is assumed, so 2016-05-04 will be the result (may instead of april). So always supply yyyy-mm-dd datestrings
     tstart = pd.Timestamp(tstart)
     tstop = pd.Timestamp(tstop)
     
@@ -354,6 +355,26 @@ def ds_apply_conversions(data_xr, conversion_dict, quantity_list):
     return data_xr
 
 
+def get_quantity_list(quantity):
+    if quantity=='uxuyadvectionvelocitybnd': #T3Dvector
+        quantity_list = ['ux','uy']
+    elif isinstance(quantity, list):
+        quantity_list = quantity
+    else:
+        quantity_list = [quantity]
+    return quantity_list
+
+
+def get_ncvarname_list(quantity_list, conversion_dict):
+    # check existence of requested keys in conversion_dict
+    for quan in quantity_list:
+        if quan not in conversion_dict.keys():
+            raise KeyError(f"quantity '{quan}' not in conversion_dict, (case sensitive) options are: {str(list(conversion_dict.keys()))}")
+    
+    ncvarname_list = [conversion_dict[quan]['ncvarname'] for quan in quantity_list]
+    return ncvarname_list
+
+    
 def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=None, refdate_str=None, chunks=None):
     """
     empty docstring
@@ -362,23 +383,8 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
     if conversion_dict is None:
         conversion_dict = get_conversion_dict()
     
-    if quantity=='uxuyadvectionvelocitybnd': #T3Dvector
-        quantity_list = ['ux','uy']
-    elif isinstance(quantity, list):
-        quantity_list = quantity
-    else:
-        quantity_list = [quantity]
-    
-    # check existence of requested keys in conversion_dict
-    for quan in quantity_list:
-        if quan not in conversion_dict.keys():
-            raise KeyError(f"quantity '{quan}' not in conversion_dict, (case sensitive) options are: {str(list(conversion_dict.keys()))}")
-    
-    ncvarname_list = [conversion_dict[quan]['ncvarname'] for quan in quantity_list]
-    
-    #convert tstart/tstop from str/dt.datetime/pd.Timestamp to pd.Timestamp. WARNING: when supplying '05-04-2016', monthfirst is assumed, so 2016-05-04 will be the result (may instead of april).
-    tstart = pd.Timestamp(tstart)
-    tstop = pd.Timestamp(tstop)
+    quantity_list = get_quantity_list(quantity=quantity)
+    ncvarname_list = get_ncvarname_list(quantity_list=quantity_list, conversion_dict=conversion_dict)
     
     dir_pattern = [Path(str(dir_pattern).format(ncvarname=ncvarname)) for ncvarname in ncvarname_list]
     file_list_nc = []
@@ -391,18 +397,20 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
     
     data_xr = ds_apply_conversions(data_xr=data_xr, conversion_dict=conversion_dict, quantity_list=quantity_list)
     
-    check_time_extent(data_xr, tstart, tstop)
-    
-    #retrieve var(s) (after potential longitude conversion) (also selecting relevant times)
+    #retrieve var(s) (after potential longitude conversion)
     data_vars = list(data_xr.data_vars)
     bool_quanavailable = pd.Series(quantity_list).isin(data_vars)
     if not bool_quanavailable.all():
         quantity_list_notavailable = pd.Series(quantity_list).loc[~bool_quanavailable].tolist()
         raise KeyError(f'quantity {quantity_list_notavailable} not found in netcdf, available are: {data_vars}. Try updating conversion_dict to rename these variables.')
-    data_xr_vars = data_xr[quantity_list].sel(time=slice(tstart,tstop))
+    data_xr_vars = data_xr[quantity_list]
+    
+    # slice time
+    check_time_extent(data_xr, tstart, tstop)
+    data_xr_vars = data_xr_vars.sel(time=slice(tstart,tstop))
     # check time extent again to avoid issues with eg midday data being 
     # sliced to midnight times: https://github.com/Deltares/dfm_tools/issues/707
-    check_time_extent(data_xr_vars, tstart, tstop)
+    # check_time_extent(data_xr_vars, tstart, tstop) #TODO: uncomment this line
     
     #optional refdate changing
     if refdate_str is not None:
