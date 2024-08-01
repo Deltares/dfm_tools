@@ -286,6 +286,7 @@ def interpolate_tide_to_plipoints(tidemodel, gdf_points, component_list=None, lo
 
 
 def check_time_extent(data_xr, tstart, tstop):
+    #convert tstart/tstop from str/dt.datetime/pd.Timestamp to pd.Timestamp. WARNING: when supplying '05-04-2016', monthfirst is assumed, so 2016-05-04 will be the result (may instead of april). So always supply yyyy-mm-dd datestrings
     tstart = pd.Timestamp(tstart)
     tstop = pd.Timestamp(tstop)
     
@@ -300,50 +301,10 @@ def check_time_extent(data_xr, tstart, tstop):
         raise OutOfRangeError(f'requested tstop {tstop} outside of available range {nc_tstart} to {nc_tstop}.')
 
 
-def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=None, refdate_str=None, reverse_depth=False, chunks=None):
-    """
-    empty docstring
-    """
-    
+def ds_apply_conventions(data_xr):
     ncbnd_construct = get_ncbnd_construct()
     dimn_depth = ncbnd_construct['dimn_depth']
     varn_depth = ncbnd_construct['varn_depth']
-    
-    if conversion_dict is None:
-        conversion_dict = get_conversion_dict()
-    
-    if quantity=='uxuyadvectionvelocitybnd': #T3Dvector
-        quantity_list = ['ux','uy']
-    elif isinstance(quantity, list):
-        quantity_list = quantity
-    else:
-        quantity_list = [quantity]
-    
-    # check existence of requested keys in conversion_dict
-    for quan in quantity_list:
-        if quan not in conversion_dict.keys():
-            raise KeyError(f"quantity '{quan}' not in conversion_dict, (case sensitive) options are: {str(list(conversion_dict.keys()))}")
-    
-    ncvarname_list = [conversion_dict[quan]['ncvarname'] for quan in quantity_list]
-    
-    #convert tstart/tstop from str/dt.datetime/pd.Timestamp to pd.Timestamp. WARNING: when supplying '05-04-2016', monthfirst is assumed, so 2016-05-04 will be the result (may instead of april).
-    tstart = pd.Timestamp(tstart)
-    tstop = pd.Timestamp(tstop)
-    
-    dir_pattern = [Path(str(dir_pattern).format(ncvarname=ncvarname)) for ncvarname in ncvarname_list]
-    file_list_nc = []
-    for dir_pattern_one in dir_pattern:
-        file_list_nc = file_list_nc + glob.glob(str(dir_pattern_one))
-    list_pattern_names = [x.name for x in dir_pattern]
-    print(f'loading mfdataset of {len(file_list_nc)} files with pattern(s) {list_pattern_names}')
-    
-    data_xr = xr.open_mfdataset(file_list_nc, chunks=chunks, join="exact") #TODO: does chunks argument solve "PerformanceWarning: Slicing is producing a large chunk."? {'time':1} is not a convenient chunking to use for timeseries extraction
-    
-    for k,v in conversion_dict.items():
-        ncvarn = v['ncvarname']
-        if ncvarn in data_xr.variables.mapping.keys() and k in quantity_list: #k in quantity_list so phyc is not always renamed to tracerbndPON1 (first in conversion_dict)
-            data_xr = data_xr.rename({ncvarn:k})
-            print(f'variable {ncvarn} renamed to {k}')
     
     #rename dims and vars time/depth/lat/lon/x/y #TODO: this has to be phased out some time, or made as an argument or merged with conversion_dict?
     rename_dims_dict = {'depth':dimn_depth, # depth for CMEMS and many others
@@ -357,57 +318,110 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
             data_xr = data_xr.rename_vars({k:v})
             print(f'varname {k} renamed to {v}')
     
-    #get calendar and maybe convert_calendar, makes sure that nc_tstart/nc_tstop are of type pd._libs.tslibs.timestamps.Timestamp
+    # make depth positive up if not yet the case
+    if varn_depth in data_xr.coords:
+        if 'positive' in data_xr[varn_depth].attrs.keys():
+            if data_xr[varn_depth].attrs['positive'] == 'down': #attribute appears in CMEMS, GFDL and CMCC, save to assume presence?
+                data_xr[varn_depth] = -data_xr[varn_depth]
+                data_xr[varn_depth].attrs['positive'] = 'up'
+    
+    # get calendar and maybe convert_calendar, makes sure that nc_tstart/nc_tstop are of type pd._libs.tslibs.timestamps.Timestamp
     data_xr_calendar = data_xr['time'].dt.calendar
     if data_xr_calendar != 'proleptic_gregorian': #this is for instance the case in case of noleap (or 365_days) calendars from GFDL and CMCC
         units_copy = data_xr['time'].encoding['units']
         print(f'WARNING: calendar different than proleptic_gregorian found ({data_xr_calendar}), convert_calendar is called so check output carefully. It should be no issue for datasets with a monthly interval.')
         data_xr = data_xr.convert_calendar('standard') #TODO: does this not result in 29feb nan values in e.g. GFDL model? Check missing argument at https://docs.xarray.dev/en/stable/generated/xarray.Dataset.convert_calendar.html
         data_xr['time'].encoding['units'] = units_copy #put back dropped units
-        
-    check_time_extent(data_xr, tstart, tstop)
     
-    #360 to 180 conversion
+    # 360 to 180 conversion
     convert_360to180 = (data_xr['longitude'].to_numpy()>180).any() #TODO: replace to_numpy() with load()
     if convert_360to180: #TODO: make more flexible for models that eg pass -180/+180 crossing (add overlap at lon edges).
         data_xr.coords['longitude'] = (data_xr.coords['longitude'] + 180) % 360 - 180
         data_xr = data_xr.sortby(data_xr['longitude'])
+    return data_xr
+
+
+def ds_apply_conversion_dict(data_xr, conversion_dict, quantity_list):
+    # rename variables from conversion_dict
+    for k,v in conversion_dict.items():
+        ncvarn = v['ncvarname']
+        if ncvarn in data_xr.variables.mapping.keys() and k in quantity_list: #k in quantity_list so phyc is not always renamed to tracerbndPON1 (first in conversion_dict)
+            data_xr = data_xr.rename({ncvarn:k})
+            print(f'variable {ncvarn} renamed to {k}')
+
+    # optional conversion of units. Multiplications or other simple operatiors do not affect performance (dask.array(getitem) becomes dask.array(mul). With more complex operation it is better do do it on the interpolated array.
+    for quan in quantity_list: #TODO: maybe do unit conversion before interp or is that computationally heavy?
+        if 'conversion' in conversion_dict[quan].keys(): #if conversion is present, unit key must also be in conversion_dict
+            print(f'> converting units from [{data_xr[quan].attrs["units"]}] to [{conversion_dict[quan]["unit"]}]')
+            #print(f'attrs are discarded:\n{data_xr_vars[quan].attrs}')
+            data_xr[quan] = data_xr[quan] * conversion_dict[quan]['conversion'] #conversion drops all attributes of which units (which are changed anyway)
+            data_xr[quan].attrs['units'] = conversion_dict[quan]['unit'] #add unit attribute with resulting unit
+    return data_xr
+
+
+def get_quantity_list(quantity):
+    if quantity=='uxuyadvectionvelocitybnd': #T3Dvector
+        quantity_list = ['ux','uy']
+    elif isinstance(quantity, list):
+        quantity_list = quantity
+    else:
+        quantity_list = [quantity]
+    return quantity_list
+
+
+def get_ncvarname_list(quantity_list, conversion_dict):
+    # check existence of requested keys in conversion_dict
+    for quan in quantity_list:
+        if quan not in conversion_dict.keys():
+            raise KeyError(f"quantity '{quan}' not in conversion_dict, (case sensitive) options are: {str(list(conversion_dict.keys()))}")
     
-    #retrieve var(s) (after potential longitude conversion) (also selecting relevant times)
+    ncvarname_list = [conversion_dict[quan]['ncvarname'] for quan in quantity_list]
+    return ncvarname_list
+
+    
+def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=None, refdate_str=None, chunks=None):
+    """
+    empty docstring
+    """
+    
+    if conversion_dict is None:
+        conversion_dict = get_conversion_dict()
+    
+    quantity_list = get_quantity_list(quantity=quantity)
+    ncvarname_list = get_ncvarname_list(quantity_list=quantity_list, conversion_dict=conversion_dict)
+    
+    dir_pattern = [Path(str(dir_pattern).format(ncvarname=ncvarname)) for ncvarname in ncvarname_list]
+    file_list_nc = []
+    for dir_pattern_one in dir_pattern:
+        file_list_nc = file_list_nc + glob.glob(str(dir_pattern_one))
+    list_pattern_names = [x.name for x in dir_pattern]
+    print(f'loading mfdataset of {len(file_list_nc)} files with pattern(s) {list_pattern_names}')
+    
+    data_xr = xr.open_mfdataset(file_list_nc, chunks=chunks, join="exact") #TODO: does chunks argument solve "PerformanceWarning: Slicing is producing a large chunk."? {'time':1} is not a convenient chunking to use for timeseries extraction
+    
+    data_xr = ds_apply_conventions(data_xr=data_xr)
+    data_xr = ds_apply_conversion_dict(data_xr=data_xr, conversion_dict=conversion_dict, quantity_list=quantity_list)
+    
+    #retrieve var(s) (after potential longitude conversion)
     data_vars = list(data_xr.data_vars)
     bool_quanavailable = pd.Series(quantity_list).isin(data_vars)
     if not bool_quanavailable.all():
         quantity_list_notavailable = pd.Series(quantity_list).loc[~bool_quanavailable].tolist()
         raise KeyError(f'quantity {quantity_list_notavailable} not found in netcdf, available are: {data_vars}. Try updating conversion_dict to rename these variables.')
-    data_xr_vars = data_xr[quantity_list].sel(time=slice(tstart,tstop))
+    data_xr_vars = data_xr[quantity_list]
+    
+    # slice time
+    check_time_extent(data_xr, tstart, tstop)
+    data_xr_vars = data_xr_vars.sel(time=slice(tstart,tstop))
     # check time extent again to avoid issues with eg midday data being 
     # sliced to midnight times: https://github.com/Deltares/dfm_tools/issues/707
     check_time_extent(data_xr_vars, tstart, tstop)
-    
-    #optional conversion of units. Multiplications or other simple operatiors do not affect performance (dask.array(getitem) becomes dask.array(mul). With more complex operation it is better do do it on the interpolated array.
-    for quan in quantity_list: #TODO: maybe do unit conversion before interp or is that computationally heavy?
-        if 'conversion' in conversion_dict[quan].keys(): #if conversion is present, unit key must also be in conversion_dict
-            print(f'> converting units from [{data_xr_vars[quan].attrs["units"]}] to [{conversion_dict[quan]["unit"]}]')
-            #print(f'attrs are discarded:\n{data_xr_vars[quan].attrs}')
-            data_xr_vars[quan] = data_xr_vars[quan] * conversion_dict[quan]['conversion'] #conversion drops all attributes of which units (which are changed anyway)
-            data_xr_vars[quan].attrs['units'] = conversion_dict[quan]['unit'] #add unit attribute with resulting unit
     
     #optional refdate changing
     if refdate_str is not None:
         if 'long_name' in data_xr_vars.time.attrs: #for CMEMS it is 'hours since 1950-01-01', which would be wrong now #TODO: consider also removing attrs for depth/varname, since we would like to have salinitybnd/waterlevel instead of Salinity/sea_surface_height in xr plots?
             del data_xr_vars.time.attrs['long_name']
         data_xr_vars.time.encoding['units'] = refdate_str
-    
-    if varn_depth in data_xr_vars.coords:
-        #make positive up
-        if 'positive' in data_xr_vars[varn_depth].attrs.keys():
-            if data_xr_vars[varn_depth].attrs['positive'] == 'down': #attribute appears in CMEMS, GFDL and CMCC, save to assume presence?
-                data_xr_vars[varn_depth] = -data_xr_vars[varn_depth]
-                data_xr_vars[varn_depth].attrs['positive'] = 'up'
-        #optional reversing depth dimension for comparison to coastserv
-        if reverse_depth:
-            print('> reversing depth dimension')
-            data_xr_vars = data_xr_vars.reindex({varn_depth:list(reversed(data_xr_vars[varn_depth]))})
     
     return data_xr_vars
 
@@ -465,7 +479,7 @@ def interp_uds_to_plipoints(uds:xu.UgridDataset, gdf:geopandas.GeoDataFrame) -> 
     ----------
     uds : xu.UgridDataset
         dfm model output read using dfm_tools. Dims: mesh2d_nLayers, mesh2d_nInterfaces, time, mesh2d_nNodes, mesh2d_nFaces, mesh2d_nMax_face_nodes, mesh2d_nEdges.
-    gdf : geopandas.GeoDataFrame (str/path is also supported)
+    gdf : geopandas.GeoDataFrame
         gdf with location, geometry (Point) and crs corresponding to model crs.
 
     Raises
@@ -479,13 +493,12 @@ def interp_uds_to_plipoints(uds:xu.UgridDataset, gdf:geopandas.GeoDataFrame) -> 
         xr.Dataset with dims: node, time, z.
 
     """
+    # TODO: this function requires gdf with points, but the interp_regularnc_to_plipoints requires paths to plifiles (and others also)
+    
     facedim = uds.grid.face_dimension
     ncbnd_construct = get_ncbnd_construct()
     dimn_point = ncbnd_construct['dimn_point']
     varn_pointname = ncbnd_construct['varn_pointname']
-    
-    if isinstance(gdf,(str,Path)): #TODO: align plipoints/gdf with other functions, now three input types are supported, but the interp_regularnc_to_plipoints requires paths to plifiles (and others also)
-        gdf = PolyFile_to_geodataframe_points(hcdfm.PolyFile(gdf))
     
     ds = uds.ugrid.sel_points(x=gdf.geometry.x, y=gdf.geometry.y)
     #TODO: drop mesh2d_face_x and mesh2d_face_y variables
