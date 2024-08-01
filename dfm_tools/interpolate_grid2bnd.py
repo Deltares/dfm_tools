@@ -300,14 +300,64 @@ def check_time_extent(data_xr, tstart, tstop):
         raise OutOfRangeError(f'requested tstop {tstop} outside of available range {nc_tstart} to {nc_tstop}.')
 
 
+def ds_apply_conversions(data_xr, conversion_dict, quantity_list):
+    ncbnd_construct = get_ncbnd_construct()
+    dimn_depth = ncbnd_construct['dimn_depth']
+    varn_depth = ncbnd_construct['varn_depth']
+    
+    for k,v in conversion_dict.items():
+        ncvarn = v['ncvarname']
+        if ncvarn in data_xr.variables.mapping.keys() and k in quantity_list: #k in quantity_list so phyc is not always renamed to tracerbndPON1 (first in conversion_dict)
+            data_xr = data_xr.rename({ncvarn:k})
+            print(f'variable {ncvarn} renamed to {k}')
+
+    #rename dims and vars time/depth/lat/lon/x/y #TODO: this has to be phased out some time, or made as an argument or merged with conversion_dict?
+    rename_dims_dict = {'depth':dimn_depth, # depth for CMEMS and many others
+                        'lev':dimn_depth, # lev for GFDL
+                        'lon':'longitude','lat':'latitude'}
+    for k,v in rename_dims_dict.items():
+        if k in data_xr.dims and v not in data_xr.dims:
+            data_xr = data_xr.rename_dims({k:v})
+            print(f'dimension {k} renamed to {v}')
+        if k in data_xr.variables and v not in data_xr.variables:
+            data_xr = data_xr.rename_vars({k:v})
+            print(f'varname {k} renamed to {v}')
+    
+    #get calendar and maybe convert_calendar, makes sure that nc_tstart/nc_tstop are of type pd._libs.tslibs.timestamps.Timestamp
+    data_xr_calendar = data_xr['time'].dt.calendar
+    if data_xr_calendar != 'proleptic_gregorian': #this is for instance the case in case of noleap (or 365_days) calendars from GFDL and CMCC
+        units_copy = data_xr['time'].encoding['units']
+        print(f'WARNING: calendar different than proleptic_gregorian found ({data_xr_calendar}), convert_calendar is called so check output carefully. It should be no issue for datasets with a monthly interval.')
+        data_xr = data_xr.convert_calendar('standard') #TODO: does this not result in 29feb nan values in e.g. GFDL model? Check missing argument at https://docs.xarray.dev/en/stable/generated/xarray.Dataset.convert_calendar.html
+        data_xr['time'].encoding['units'] = units_copy #put back dropped units
+    
+    #360 to 180 conversion
+    convert_360to180 = (data_xr['longitude'].to_numpy()>180).any() #TODO: replace to_numpy() with load()
+    if convert_360to180: #TODO: make more flexible for models that eg pass -180/+180 crossing (add overlap at lon edges).
+        data_xr.coords['longitude'] = (data_xr.coords['longitude'] + 180) % 360 - 180
+        data_xr = data_xr.sortby(data_xr['longitude'])
+    
+    #optional conversion of units. Multiplications or other simple operatiors do not affect performance (dask.array(getitem) becomes dask.array(mul). With more complex operation it is better do do it on the interpolated array.
+    for quan in quantity_list: #TODO: maybe do unit conversion before interp or is that computationally heavy?
+        if 'conversion' in conversion_dict[quan].keys(): #if conversion is present, unit key must also be in conversion_dict
+            print(f'> converting units from [{data_xr[quan].attrs["units"]}] to [{conversion_dict[quan]["unit"]}]')
+            #print(f'attrs are discarded:\n{data_xr_vars[quan].attrs}')
+            data_xr[quan] = data_xr[quan] * conversion_dict[quan]['conversion'] #conversion drops all attributes of which units (which are changed anyway)
+            data_xr[quan].attrs['units'] = conversion_dict[quan]['unit'] #add unit attribute with resulting unit
+    
+    # make positive up if not yet the case
+    if varn_depth in data_xr.coords:
+        if 'positive' in data_xr[varn_depth].attrs.keys():
+            if data_xr[varn_depth].attrs['positive'] == 'down': #attribute appears in CMEMS, GFDL and CMCC, save to assume presence?
+                data_xr[varn_depth] = -data_xr[varn_depth]
+                data_xr[varn_depth].attrs['positive'] = 'up'
+    return data_xr
+
+
 def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=None, refdate_str=None, chunks=None):
     """
     empty docstring
     """
-    
-    ncbnd_construct = get_ncbnd_construct()
-    dimn_depth = ncbnd_construct['dimn_depth']
-    varn_depth = ncbnd_construct['varn_depth']
     
     if conversion_dict is None:
         conversion_dict = get_conversion_dict()
@@ -339,39 +389,9 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
     
     data_xr = xr.open_mfdataset(file_list_nc, chunks=chunks, join="exact") #TODO: does chunks argument solve "PerformanceWarning: Slicing is producing a large chunk."? {'time':1} is not a convenient chunking to use for timeseries extraction
     
-    for k,v in conversion_dict.items():
-        ncvarn = v['ncvarname']
-        if ncvarn in data_xr.variables.mapping.keys() and k in quantity_list: #k in quantity_list so phyc is not always renamed to tracerbndPON1 (first in conversion_dict)
-            data_xr = data_xr.rename({ncvarn:k})
-            print(f'variable {ncvarn} renamed to {k}')
+    data_xr = ds_apply_conversions(data_xr=data_xr, conversion_dict=conversion_dict, quantity_list=quantity_list)
     
-    #rename dims and vars time/depth/lat/lon/x/y #TODO: this has to be phased out some time, or made as an argument or merged with conversion_dict?
-    rename_dims_dict = {'depth':dimn_depth, # depth for CMEMS and many others
-                        'lev':dimn_depth, # lev for GFDL
-                        'lon':'longitude','lat':'latitude'}
-    for k,v in rename_dims_dict.items():
-        if k in data_xr.dims and v not in data_xr.dims:
-            data_xr = data_xr.rename_dims({k:v})
-            print(f'dimension {k} renamed to {v}')
-        if k in data_xr.variables and v not in data_xr.variables:
-            data_xr = data_xr.rename_vars({k:v})
-            print(f'varname {k} renamed to {v}')
-    
-    #get calendar and maybe convert_calendar, makes sure that nc_tstart/nc_tstop are of type pd._libs.tslibs.timestamps.Timestamp
-    data_xr_calendar = data_xr['time'].dt.calendar
-    if data_xr_calendar != 'proleptic_gregorian': #this is for instance the case in case of noleap (or 365_days) calendars from GFDL and CMCC
-        units_copy = data_xr['time'].encoding['units']
-        print(f'WARNING: calendar different than proleptic_gregorian found ({data_xr_calendar}), convert_calendar is called so check output carefully. It should be no issue for datasets with a monthly interval.')
-        data_xr = data_xr.convert_calendar('standard') #TODO: does this not result in 29feb nan values in e.g. GFDL model? Check missing argument at https://docs.xarray.dev/en/stable/generated/xarray.Dataset.convert_calendar.html
-        data_xr['time'].encoding['units'] = units_copy #put back dropped units
-        
     check_time_extent(data_xr, tstart, tstop)
-    
-    #360 to 180 conversion
-    convert_360to180 = (data_xr['longitude'].to_numpy()>180).any() #TODO: replace to_numpy() with load()
-    if convert_360to180: #TODO: make more flexible for models that eg pass -180/+180 crossing (add overlap at lon edges).
-        data_xr.coords['longitude'] = (data_xr.coords['longitude'] + 180) % 360 - 180
-        data_xr = data_xr.sortby(data_xr['longitude'])
     
     #retrieve var(s) (after potential longitude conversion) (also selecting relevant times)
     data_vars = list(data_xr.data_vars)
@@ -384,27 +404,12 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
     # sliced to midnight times: https://github.com/Deltares/dfm_tools/issues/707
     check_time_extent(data_xr_vars, tstart, tstop)
     
-    #optional conversion of units. Multiplications or other simple operatiors do not affect performance (dask.array(getitem) becomes dask.array(mul). With more complex operation it is better do do it on the interpolated array.
-    for quan in quantity_list: #TODO: maybe do unit conversion before interp or is that computationally heavy?
-        if 'conversion' in conversion_dict[quan].keys(): #if conversion is present, unit key must also be in conversion_dict
-            print(f'> converting units from [{data_xr_vars[quan].attrs["units"]}] to [{conversion_dict[quan]["unit"]}]')
-            #print(f'attrs are discarded:\n{data_xr_vars[quan].attrs}')
-            data_xr_vars[quan] = data_xr_vars[quan] * conversion_dict[quan]['conversion'] #conversion drops all attributes of which units (which are changed anyway)
-            data_xr_vars[quan].attrs['units'] = conversion_dict[quan]['unit'] #add unit attribute with resulting unit
-    
     #optional refdate changing
     if refdate_str is not None:
         if 'long_name' in data_xr_vars.time.attrs: #for CMEMS it is 'hours since 1950-01-01', which would be wrong now #TODO: consider also removing attrs for depth/varname, since we would like to have salinitybnd/waterlevel instead of Salinity/sea_surface_height in xr plots?
             del data_xr_vars.time.attrs['long_name']
         data_xr_vars.time.encoding['units'] = refdate_str
     
-    if varn_depth in data_xr_vars.coords:
-        #make positive up
-        if 'positive' in data_xr_vars[varn_depth].attrs.keys():
-            if data_xr_vars[varn_depth].attrs['positive'] == 'down': #attribute appears in CMEMS, GFDL and CMCC, save to assume presence?
-                data_xr_vars[varn_depth] = -data_xr_vars[varn_depth]
-                data_xr_vars[varn_depth].attrs['positive'] = 'up'
-
     return data_xr_vars
 
 

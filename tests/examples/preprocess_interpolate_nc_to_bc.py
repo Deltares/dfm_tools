@@ -27,6 +27,7 @@ dir_output = './test_interpolate_nc_to_bc_TEMP'
 list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd','tracerbndNO3','tide']
 #list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','tracerbndNO3']
 list_quantities = ['salinitybnd','tracerbndNO3','tide']
+list_quantities = ['salinitybnd','tracerbndNO3']
 #list_quantities = ['waterlevelbnd','salinitybnd','temperaturebnd','uxuyadvectionvelocitybnd','tracerbndNO3','tracerbndOpal','tracerbndDON','tide'] #also waq vars with same ncvarname, opal not available for GFDL and CMCC
 
 model = 'CMEMS' #CMEMS GFDL
