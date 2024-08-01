@@ -259,6 +259,7 @@ def open_partitioned_dataset(file_nc, decode_fillvals=False, remove_edges=True, 
 
 
 def open_dataset_curvilinear(file_nc,
+                             varn_lon='longitude',
                              varn_vert_lon='vertices_longitude', #'grid_x'
                              varn_vert_lat='vertices_latitude', #'grid_y'
                              ij_dims=['i','j'], #['N','M']
@@ -282,9 +283,10 @@ def open_dataset_curvilinear(file_nc,
     vertices_latitude = vertices_latitude.reshape(-1,vertices_latitude.shape[-1])
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
-    #convert from 0to360 to -180 to 180
+    # convert from 0to360 to -180 to 180
     if convert_360to180:
-        vertices_longitude = (vertices_longitude+180)%360 - 180 #TODO: check if uds.ugrid.to_nonperiodic() still works properly after doing this
+        vertices_longitude = (vertices_longitude+180)%360 - 180
+        ds[varn_lon] = (ds[varn_lon] + 180) % 360 - 180
     
     # face_xy = np.stack([longitude,latitude],axis=-1)
     # face_coords_x, face_coords_y = face_xy.T
