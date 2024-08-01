@@ -302,7 +302,6 @@ def check_time_extent(data_xr, tstart, tstop):
 
 
 def ds_apply_conventions(data_xr):
-    
     ncbnd_construct = get_ncbnd_construct()
     dimn_depth = ncbnd_construct['dimn_depth']
     varn_depth = ncbnd_construct['varn_depth']
@@ -340,7 +339,7 @@ def ds_apply_conventions(data_xr):
         data_xr.coords['longitude'] = (data_xr.coords['longitude'] + 180) % 360 - 180
         data_xr = data_xr.sortby(data_xr['longitude'])
     return data_xr
-    
+
 
 def ds_apply_conversion_dict(data_xr, conversion_dict, quantity_list):
     # rename variables from conversion_dict

@@ -20,6 +20,10 @@ from dfm_tools.interpolate_grid2bnd import (tidemodel_componentlist,
                                             interp_regularnc_to_plipointsDataset,
                                             check_time_extent,
                                             ext_add_boundary_object_per_polyline,
+                                            get_quantity_list,
+                                            get_ncvarname_list,
+                                            ds_apply_conventions,
+                                            ds_apply_conversion_dict,
                                             )
 from dfm_tools.hydrolib_helpers import PolyFile_to_geodataframe_points
 import hydrolib.core.dflowfm as hcdfm
@@ -251,14 +255,48 @@ def test_open_dataset_extra_correctdepths(tmp_path):
     ds_moretime.to_netcdf(file_nc)
     
     ds_moretime_import = dfmt.open_dataset_extra(dir_pattern=file_nc, quantity='salinitybnd', tstart='2020-01-01 12:00:00', tstop='2020-01-02 12:00:00')
+    assert len(ds_moretime_import.time) == 2
+
+
+@pytest.mark.unittest
+def test_ds_apply_conventions():
+    # generate datset with depths defined positive down
+    ds_moretime = cmems_dataset_4times()
+    ds_moretime['depth'] = -1 * ds_moretime['depth']
+    ds_moretime['depth'].attrs['positive'] = 'down'
+    ds_converted = ds_apply_conventions(data_xr=ds_moretime)
     
     ncbnd_construct = get_ncbnd_construct()
     varn_depth = ncbnd_construct['varn_depth']
-    depth_actual = ds_moretime_import[varn_depth].to_numpy()
-    depth_expected = ds_moretime['depth'].to_numpy()
+    dimn_depth = ncbnd_construct['dimn_depth']
+    assert varn_depth in ds_converted.variables
+    assert dimn_depth in ds_converted.dims
     
-    assert (np.abs(depth_actual - depth_expected) < 1e-9).all()
-    assert len(ds_moretime_import.time) == 2
+    depth_expected = np.array([-0.494025, -1.541375, -2.645669, -3.819495, -5.078224])
+    depth_actual = ds_converted[varn_depth].to_numpy()
+    assert np.allclose(depth_actual, depth_expected)
+    
+
+@pytest.mark.unittest
+def test_ds_apply_conversion_dict_rename():
+    conversion_dict = dfmt.get_conversion_dict()
+    ds_moretime = cmems_dataset_4times()
+    ds_converted = ds_apply_conversion_dict(data_xr=ds_moretime, conversion_dict=conversion_dict, quantity_list=['salinitybnd'])
+    assert 'so' in ds_moretime.data_vars
+    assert 'salinitybnd' in ds_converted.data_vars
+    assert np.allclose(ds_converted['salinitybnd'], ds_moretime['so'], equal_nan=True)
+
+
+@pytest.mark.unittest
+def test_ds_apply_conversion_dict_rename_and_factor():
+    conversion_dict = dfmt.get_conversion_dict()
+    ds_moretime = cmems_dataset_4times()
+    ds_moretime = ds_moretime.rename_vars({'so':'o2'})
+    ds_moretime['o2'] = ds_moretime['o2'].assign_attrs({'units':'dummy'})
+    ds_converted = ds_apply_conversion_dict(data_xr=ds_moretime, conversion_dict=conversion_dict, quantity_list=['tracerbndOXY'])
+    assert 'o2' in ds_moretime.data_vars
+    assert 'tracerbndOXY' in ds_converted.data_vars
+    assert np.allclose(ds_converted['tracerbndOXY'], ds_moretime['o2']*0.032, equal_nan=True)
 
 
 @pytest.mark.unittest
@@ -604,3 +642,24 @@ def test_ext_add_boundary_object_per_polyline_wrong_name(tmp_path):
     with pytest.raises(ValueError) as e:
         ext_add_boundary_object_per_polyline(ext_new=ext_new, boundary_object=boundary_object)
     assert "The names of one of the polylines in the polyfile is the same as the polyfilename" in str(e.value)
+
+
+def test_get_quantity_list():
+    quantity_list = get_quantity_list('uxuyadvectionvelocitybnd')
+    assert quantity_list == ['ux','uy']
+    quantity_list = get_quantity_list('salinitybnd')
+    assert quantity_list == ['salinitybnd']
+    quantity_list = get_quantity_list(['salinitybnd'])
+    assert quantity_list == ['salinitybnd']
+
+
+def test_get_ncvarname_list():
+    conversion_dict = dfmt.get_conversion_dict()
+    
+    ncvarname_list = get_ncvarname_list(quantity_list=['salinitybnd'], conversion_dict=conversion_dict)
+    assert ncvarname_list == ["so"]
+    
+    with pytest.raises(KeyError) as e:
+        get_ncvarname_list(quantity_list=['nonexistingbnd'], conversion_dict=conversion_dict)
+    assert "quantity 'nonexistingbnd' not in conversion_dict" in str(e.value)
+
