@@ -515,10 +515,11 @@ def interp_uds_to_plipoints(uds:xu.UgridDataset, gdf:geopandas.GeoDataFrame) -> 
         gdf_stats['missing'] = gdfpoint_inds_bool
         raise ValueError(f'requested {len(gdf)} points but resulted in ds with {ds.sizes[facedim]} points, missing points are probably outside of the uds model domain:\n{gdf_stats}')
 
+    # rename station dimname and varname (is index, are both mesh2d_nFaces to start with)
     ds = ds.rename({facedim:dimn_point}) # rename mesh2d_nFaces to plipoints
-    
-    ds[dimn_point] = xr.DataArray(gdf[varn_pointname].tolist(), dims=dimn_point) # change name of plipoint (node to gdf name)
-    
+    ds = ds.rename_vars({dimn_point:varn_pointname})
+    # change name of plipoint (node to gdf name)
+    ds[varn_pointname] = xr.DataArray(gdf[varn_pointname].tolist(), dims=dimn_point)
     return ds
 
 
