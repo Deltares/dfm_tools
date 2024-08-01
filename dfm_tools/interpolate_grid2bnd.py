@@ -415,7 +415,7 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
     data_xr_vars = data_xr_vars.sel(time=slice(tstart,tstop))
     # check time extent again to avoid issues with eg midday data being 
     # sliced to midnight times: https://github.com/Deltares/dfm_tools/issues/707
-    check_time_extent(data_xr_vars, tstart, tstop) # TODO: uncomment
+    check_time_extent(data_xr_vars, tstart, tstop)
     
     #optional refdate changing
     if refdate_str is not None:
