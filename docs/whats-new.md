@@ -4,6 +4,7 @@
 
 ### Feat
 - making `dfmt.open_dataset_extra()` more modular by partly moving it to separate private functions in [#913](https://github.com/Deltares/dfm_tools/pull/913)
+- added station_id variable to dataset returned by `dfmt.interp_uds_to_plipoints()` in [#914](https://github.com/Deltares/dfm_tools/pull/914)
 
 ### Fix
 - also apply convert_360to180 to longitude variable in `dfmt.open_dataset_curvilinear()` in [#913](https://github.com/Deltares/dfm_tools/pull/913)
