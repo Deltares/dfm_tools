@@ -566,6 +566,7 @@ def test_interp_uds_to_plipoints():
     
     #interpolate to plipoints
     ds_plipoints = dfmt.interp_uds_to_plipoints(uds=ds_atdepths, gdf=gdf) #workaround for plipoints out of the model domain
+    assert varn_pointname in ds_plipoints.coords
     
     retrieved = ds_plipoints.mesh2d_sa1.isel(time=-1).to_numpy()
     expected = np.array([[29.00111981, 28.99379263],
