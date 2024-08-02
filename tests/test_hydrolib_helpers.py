@@ -5,9 +5,13 @@ Created on Fri Oct 20 16:09:20 2023
 @author: veenstra
 """
 
+import os
 import pytest
+import numpy as np
+import geopandas as gpd
 import dfm_tools as dfmt
 import hydrolib.core.dflowfm as hcdfm
+from dfm_tools.hydrolib_helpers import get_ncbnd_construct
 
 
 @pytest.mark.unittest
@@ -135,3 +139,34 @@ def test_geodataframe_to_PolyFile_namecolumn_numeric_start(bnd_gdf):
     assert 'names in polyfile do not all start with a letter' in str(e.value)
 
 
+@pytest.mark.unittest
+def test_read_polyfile_as_gdf_points(tmp_path):
+    ncbnd_construct = get_ncbnd_construct()
+    varn_pointname = ncbnd_construct['varn_pointname']
+    
+    # write a dummy polyfile with first three points of reference file
+    # p:\archivedprojects\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli
+    poly_str = """DCSM-FM_OB_all_20181108
+    3    2
+    -9.25  43.0
+    -9.50  43.0
+    -9.75  43.0
+    """
+    file_pli = os.path.join(tmp_path, "dummy.pli")
+    with open(file_pli, "w") as f:
+        f.write(poly_str)
+    
+    # read polyfile as geodataframe
+    polyfile_object = hcdfm.PolyFile(file_pli)
+    gdf_points = dfmt.PolyFile_to_geodataframe_points(polyfile_object)
+    
+    reference_names = ['DCSM-FM_OB_all_20181108_0001', 'DCSM-FM_OB_all_20181108_0002', 'DCSM-FM_OB_all_20181108_0003']
+    reference_x = np.array([-9.25, -9.5 , -9.75])
+    reference_y = np.array([43., 43., 43.])
+    
+    assert isinstance(gdf_points, gpd.GeoDataFrame)
+    assert (gdf_points.geometry.type == "Point").all()
+    assert np.allclose(gdf_points.geometry.x.to_numpy(), reference_x)
+    assert np.allclose(gdf_points.geometry.y.to_numpy(), reference_y)
+    assert varn_pointname in gdf_points.columns
+    assert gdf_points[varn_pointname].tolist() == reference_names
