@@ -16,7 +16,6 @@ import pandas as pd
 import geopandas as gpd
 from dfm_tools.interpolate_grid2bnd import (tidemodel_componentlist,
                                             components_translate_upper,
-                                            get_ncbnd_construct,
                                             interp_regularnc_to_plipointsDataset,
                                             check_time_extent,
                                             ext_add_boundary_object_per_polyline,
@@ -25,7 +24,7 @@ from dfm_tools.interpolate_grid2bnd import (tidemodel_componentlist,
                                             ds_apply_conventions,
                                             ds_apply_conversion_dict,
                                             )
-from dfm_tools.hydrolib_helpers import PolyFile_to_geodataframe_points
+from dfm_tools.hydrolib_helpers import get_ncbnd_construct
 import hydrolib.core.dflowfm as hcdfm
 from dfm_tools.errors import OutOfRangeError
 
@@ -177,7 +176,7 @@ def test_interpolate_nc_to_bc():
     
     # read polyfile as geodataframe
     polyfile_object = hcdfm.PolyFile(file_pli)
-    gdf_points_all = PolyFile_to_geodataframe_points(polyfile_object)
+    gdf_points_all = dfmt.PolyFile_to_geodataframe_points(polyfile_object)
     gdf_points = gdf_points_all.iloc[:npoints]
     
     tstart = '2012-12-16 12:00'
@@ -211,7 +210,7 @@ def test_plipointsDataset_to_ForcingModel_drop_allnan_points():
     poly_object = dfmt.DataFrame_to_PolyObject(polyobject_pd, name="abc_bnd")
     polyfile_object = hcdfm.PolyFile()
     polyfile_object.objects.append(poly_object)
-    gdf_points = PolyFile_to_geodataframe_points(polyfile_object)
+    gdf_points = dfmt.PolyFile_to_geodataframe_points(polyfile_object)
     
     # actual cmems data
     no3_values = [[[       np.nan,        np.nan,        np.nan,        np.nan,
@@ -445,7 +444,7 @@ def test_interpolate_tide_to_plipoints():
     
     # read polyfile as geodataframe
     polyfile_object = hcdfm.PolyFile(file_pli)
-    gdf_points_all = PolyFile_to_geodataframe_points(polyfile_object)
+    gdf_points_all = dfmt.PolyFile_to_geodataframe_points(polyfile_object)
     gdf_points = gdf_points_all.iloc[:npoints]
     
     tidemodel_list = ['tpxo80_opendap', 'FES2014', 'FES2012', 'EOT20', 'GTSMv4.1']#, 'GTSMv4.1_opendap']
@@ -517,27 +516,6 @@ def test_interpolate_tide_to_forcingmodel():
     assert forcing0.quantityunitpair[1].quantity == 'waterlevelbnd amplitude'
     assert forcing0.quantityunitpair[2].unit == 'degrees'
     assert forcing0.quantityunitpair[2].quantity == 'waterlevelbnd phase'
-
-
-@pytest.mark.systemtest
-@pytest.mark.requireslocaldata
-def test_read_polyfile_as_gdf_points():
-    ncbnd_construct = get_ncbnd_construct()
-    varn_pointname = ncbnd_construct['varn_pointname']
-    
-    npoints = 3
-    file_pli = r'p:\archivedprojects\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli'
-    
-    # read polyfile as geodataframe
-    polyfile_object = hcdfm.PolyFile(file_pli)
-    gdf_points_all = PolyFile_to_geodataframe_points(polyfile_object)
-    gdf_points = gdf_points_all.iloc[:npoints]
-    
-    reference = data_dcsm_gdf()
-    
-    assert isinstance(gdf_points, gpd.GeoDataFrame)
-    assert (gdf_points.geometry == reference.geometry).all()
-    assert gdf_points[varn_pointname].tolist() == reference[varn_pointname].tolist()
 
 
 @pytest.mark.unittest
