@@ -140,7 +140,7 @@ def test_geodataframe_to_PolyFile_namecolumn_numeric_start(bnd_gdf):
 
 
 @pytest.mark.unittest
-def test_read_polyfile_as_gdf_points(tmp_path):
+def test_read_polyfile_as_gdf_points_linestrings(tmp_path):
     ncbnd_construct = get_ncbnd_construct()
     varn_pointname = ncbnd_construct['varn_pointname']
     
@@ -156,8 +156,10 @@ def test_read_polyfile_as_gdf_points(tmp_path):
     with open(file_pli, "w") as f:
         f.write(poly_str)
     
-    # read polyfile as geodataframe
+    # read polyfile with hydrolib-core
     polyfile_object = hcdfm.PolyFile(file_pli)
+    
+    # convert to geodataframe with points
     gdf_points = dfmt.PolyFile_to_geodataframe_points(polyfile_object)
     
     reference_names = ['DCSM-FM_OB_all_20181108_0001', 'DCSM-FM_OB_all_20181108_0002', 'DCSM-FM_OB_all_20181108_0003']
@@ -165,8 +167,25 @@ def test_read_polyfile_as_gdf_points(tmp_path):
     reference_y = np.array([43., 43., 43.])
     
     assert isinstance(gdf_points, gpd.GeoDataFrame)
+    assert len(gdf_points) == 3
     assert (gdf_points.geometry.type == "Point").all()
     assert np.allclose(gdf_points.geometry.x.to_numpy(), reference_x)
     assert np.allclose(gdf_points.geometry.y.to_numpy(), reference_y)
     assert varn_pointname in gdf_points.columns
     assert gdf_points[varn_pointname].tolist() == reference_names
+
+    # convert to geodataframe with linestrings
+    gdf_lines = dfmt.PolyFile_to_geodataframe_linestrings(polyfile_object)
+    line0_geom = gdf_lines.geometry.iloc[0]
+    
+    reference_names = ['DCSM-FM_OB_all_20181108']
+    reference_x = np.array([-9.25, -9.5 , -9.75])
+    reference_y = np.array([43., 43., 43.])
+    
+    assert isinstance(gdf_lines, gpd.GeoDataFrame)
+    assert len(gdf_lines) == 1
+    assert (gdf_lines.geometry.type == "LineString").all()
+    assert np.allclose(line0_geom.xy[0], reference_x)
+    assert np.allclose(line0_geom.xy[1], reference_y)
+    assert 'name' in gdf_lines.columns
+    assert gdf_lines['name'].tolist() == reference_names
