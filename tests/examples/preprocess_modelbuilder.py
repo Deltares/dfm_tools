@@ -79,19 +79,24 @@ dfmt.refine_basegrid(mk=mk_object, data_bathy_sel=data_bathy_sel, min_edge_size=
 
 #cutcells
 dfmt.meshkernel_delete_withcoastlines(mk=mk_object, res='h') #TODO: write used coastline to ldbfile?
-#TODO: illegalcells.pol necessary?
+#TODO: illegalcells.pol can be acquired with dfmt.meshkernel_get_illegalcells()
+
+#convert to xugrid
+xu_grid_uds = dfmt.meshkernel_to_UgridDataset(mk=mk_object, crs=crs)
 
 #TODO: cleanup grid necessary?
 # print('mk_object.mesh2d_get_obtuse_triangles_mass_centers()')
 # print(mk_object.mesh2d_get_obtuse_triangles_mass_centers().values)
 # print('mk_object.mesh2d_get_orthogonality()')
-# print(mk_object.mesh2d_get_orthogonality().values.max()) #TODO: couple back to uds, currently ordering mismatch: https://github.com/Deltares/MeshKernelPy/issues/72
+# print(mk_object.mesh2d_get_orthogonality().values.max())
 # print('mk_object.mesh2d_get_hanging_edges()')
 # print(mk_object.mesh2d_get_hanging_edges())
 # mk_object.mesh2d_delete_hanging_edges()
-
-#convert to xugrid
-xu_grid_uds = dfmt.meshkernel_to_UgridDataset(mk=mk_object, crs=crs)
+mk_ortho = mk_object.mesh2d_get_orthogonality()
+mk_ortho_vals = mk_ortho.values
+mk_ortho_vals[mk_ortho_vals==mk_ortho.geometry_separator] = 0 # or np.nan, but results in invisible edges (grey would be better)
+xu_grid_uds['orthogonality'] = xr.DataArray(mk_ortho_vals, dims=xu_grid_uds.grid.edge_dimension)
+xu_grid_uds['orthogonality'].ugrid.plot()
 
 #interp bathy
 data_bathy_interp = data_bathy_sel.interp(lon=xu_grid_uds.obj.mesh2d_node_x, lat=xu_grid_uds.obj.mesh2d_node_y)
