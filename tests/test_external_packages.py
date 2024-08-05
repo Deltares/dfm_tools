@@ -149,20 +149,18 @@ def test_xarray_decode_default_fillvals(tmp_path):
     file_out = os.path.join(tmp_path, 'temp_fnc_default_fillvals_map.nc')
     ds.to_netcdf(file_out)
     
+    # chunks=auto to avoid "UserWarning: The specified chunks separate the stored chunks along dimension "time" starting at index 1. This could degrade performance. Instead, consider rechunking after loading."
+    chunks = 'auto'
+
     #open dataset with decode_fillvals
-    try:
-        uds = dfmt.open_partitioned_dataset(file_out,decode_fillvals=False)
-    except Exception as e:
-        # this raises "ValueError: connectivity contains negative values"
+    with pytest.raises(ValueError) as e:
         # until xarray handles default fillvalues: https://github.com/Deltares/dfm_tools/issues/490
-        assert isinstance(e,ValueError)
-    if 'uds' in locals():
-        raise Exception("apparently xarray now decodes default fillvalues, so "
-                        "`dfmt.decode_default_fillvals()` can be removed if minimum xarray "
-                        "version is set as requirement")
-    
+        # if xarray handles default fillvalues, `dfmt.decode_default_fillvals()` can be removed if minimum xarray version is set as requirement
+        uds = dfmt.open_partitioned_dataset(file_out, decode_fillvals=False, chunks=chunks)
+    assert "connectivity contains negative values" in str(e.value)
+
     #this should be successful
-    uds2 = dfmt.open_partitioned_dataset(file_out,decode_fillvals=True)
+    uds2 = dfmt.open_partitioned_dataset(file_out, decode_fillvals=True, chunks=chunks)
     fnc_new = uds2.grid.face_node_connectivity
     
     assert fill_value_default in fnc_new
