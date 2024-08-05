@@ -161,8 +161,9 @@ def test_xarray_decode_default_fillvals(tmp_path):
                         "`dfmt.decode_default_fillvals()` can be removed if minimum xarray "
                         "version is set as requirement")
     
-    #this should be successful
-    uds2 = dfmt.open_partitioned_dataset(file_out,decode_fillvals=True)
+    # this should be successful
+    # added chunks=auto to avoid "UserWarning: The specified chunks separate the stored chunks along dimension "time" starting at index 1. This could degrade performance. Instead, consider rechunking after loading."
+    uds2 = dfmt.open_partitioned_dataset(file_out, decode_fillvals=True, chunks='auto')
     fnc_new = uds2.grid.face_node_connectivity
     
     assert fill_value_default in fnc_new
