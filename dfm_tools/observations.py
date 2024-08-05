@@ -694,7 +694,7 @@ def gesla3_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None,
     
     file_gesla = row.name
     with gesla3_zip.open(file_gesla, "r") as f:
-        data = pd.read_csv(f, comment='#', delim_whitespace = True,
+        data = pd.read_csv(f, comment='#', sep="\\s+",
                            names=["date", "time", "sea_level", "qc_flag", "use_flag"],
                            parse_dates=[[0, 1]], index_col=0)
     
