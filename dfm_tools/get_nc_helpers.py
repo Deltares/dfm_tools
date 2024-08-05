@@ -89,7 +89,7 @@ def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset), drop_tidal_times:bool = True
     """
     
     file_freqs = 'https://raw.githubusercontent.com/Deltares/hatyan/main/hatyan/data/data_foreman_frequencies.txt' #TODO: fix hatyan dependency (MSQM and M1 were also added, but file is not used by hatyan, so might disappear one day)
-    freqs_pd = pd.read_csv(file_freqs,names=['freq','dependents'],delim_whitespace=True,comment='#')
+    freqs_pd = pd.read_csv(file_freqs, names=['freq','dependents'], sep="\\s+", comment='#')
     freqs_pd['angfreq'] = freqs_pd['freq'] * 360 #deg/hr
     
     gridname = ds.grid.name
