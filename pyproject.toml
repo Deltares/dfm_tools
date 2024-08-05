@@ -36,8 +36,8 @@ dependencies = [
 	"netcdf4>=1.5.4",
 	#bottleneck<1.3.3 pip install fails in py39
 	"bottleneck>=1.3.3",
-	#xugrid<0.9.0 does not support partitioned 1d2d grids
-	"xugrid>=0.9.0",
+	#xugrid<0.11.0 does not use all meshkernel attrs (https://github.com/Deltares/xugrid/pull/250) and is not rechunking partitions (https://github.com/Deltares/xugrid/pull/253)
+	"xugrid>=0.11.0",
 	#cdsapi<0.7.0 supports credentials from environment variables
 	"cdsapi>=0.7.0",
 	#pydap<3.4.0 is from May 2017 and does not support newer python versions
