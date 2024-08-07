@@ -57,7 +57,6 @@ def test_cds_credentials_onlykey_envvars():
     os.environ["CDSAPI_KEY"] = cds_apikey
     
     cds_credentials()
-    
     set_cds_credentials_ifnot_none(cds_url, cds_apikey)
 
 
@@ -75,10 +74,9 @@ def test_cds_credentials_newurl_incorrectkey_rcfile():
     
     with pytest.raises(ValueError) as e:
         cds_credentials()
-    assert "Authentication failed" in str(e.value)
-    assert "The CDS/ECMWF apikey environment variables and rcfile were deleted" in str(e.value)
-    
     set_cds_credentials_ifnot_none(cds_url, cds_apikey)
+    assert "Authentication failed" in str(e.value)
+    assert "The CDS/ECMWF apikey environment variables and rcfile were deleted" in str(e.value)    
 
 
 @pytest.mark.unittest
@@ -90,10 +88,9 @@ def test_cds_credentials_newurl_incorrectkey_envvars():
     
     with pytest.raises(ValueError) as e:
         cds_credentials()
+    set_cds_credentials_ifnot_none(cds_url, cds_apikey)
     assert "Authentication failed" in str(e.value)
     assert "The CDS/ECMWF apikey environment variables and rcfile were deleted" in str(e.value)
-    
-    set_cds_credentials_ifnot_none(cds_url, cds_apikey)
 
 
 @pytest.mark.unittest
@@ -110,10 +107,9 @@ def test_cds_credentials_oldurl_incorrectkey_rcfile():
     
     with pytest.raises(ValueError) as e:
         cds_credentials()
+    set_cds_credentials_ifnot_none(cds_url, cds_apikey)
     assert "Authentication failed" in str(e.value) # should actually be "Old CDS URL found", but the url from the file is ignored, which is acceptable
     assert "The CDS/ECMWF apikey environment variables and rcfile were deleted" in str(e.value)
-    
-    set_cds_credentials_ifnot_none(cds_url, cds_apikey)
 
 
 @pytest.mark.unittest
@@ -125,10 +121,9 @@ def test_cds_credentials_oldurl_incorrectkey_envvars():
     
     with pytest.raises(ValueError) as e:
         cds_credentials()
+    set_cds_credentials_ifnot_none(cds_url, cds_apikey)
     assert "Old CDS URL found" in str(e.value)
     assert "The CDS/ECMWF apikey environment variables and rcfile were deleted" in str(e.value)
-    
-    set_cds_credentials_ifnot_none(cds_url, cds_apikey)
 
 
 @pytest.mark.unittest
@@ -145,10 +140,9 @@ def test_cds_credentials_newurl_oldkey_rcfile():
     
     with pytest.raises(ValueError) as e:
         cds_credentials()
+    set_cds_credentials_ifnot_none(cds_url, cds_apikey)
     assert "Old CDS API-key found (with :)" in str(e.value)
     assert "The CDS/ECMWF apikey environment variables and rcfile were deleted" in str(e.value)
-    
-    set_cds_credentials_ifnot_none(cds_url, cds_apikey)
 
 
 @pytest.mark.unittest
@@ -160,10 +154,9 @@ def test_cds_credentials_newurl_oldkey_envvars():
     
     with pytest.raises(ValueError) as e:
         cds_credentials()
+    set_cds_credentials_ifnot_none(cds_url, cds_apikey)
     assert "Old CDS API-key found (with :)" in str(e.value)
     assert "The CDS/ECMWF apikey environment variables and rcfile were deleted" in str(e.value)
-    
-    set_cds_credentials_ifnot_none(cds_url, cds_apikey)
 
 
 @pytest.mark.requiressecrets

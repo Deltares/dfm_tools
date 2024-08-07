@@ -174,7 +174,6 @@ def cds_remove_credentials_raise(reason=''):
     file_cds_credentials = cds_get_file()
     if os.path.isfile(file_cds_credentials):
         os.remove(file_cds_credentials)
-
     
     raise ValueError(f"{reason}. The CDS/ECMWF apikey environment variables and rcfile were deleted. Please try again.")
 
