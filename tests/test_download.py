@@ -11,6 +11,7 @@ import pandas as pd
 import cdsapi
 from dfm_tools.download import (cds_credentials,
                                 cds_set_credentials,
+                                cds_set_credentials_rcfile,
                                 cds_remove_credentials_raise,
                                 copernicusmarine_credentials,
                                 )
@@ -19,13 +20,7 @@ import xarray as xr
 import glob
 
 
-@pytest.mark.requiressecrets
-@pytest.mark.unittest
-def test_copernicusmarine_credentials():
-    copernicusmarine_credentials()
-
-
-def cds_get_url_key():
+def get_cds_url_key():
     try:
         cds_url, cds_apikey, _ = cdsapi.api.get_url_key_verify(url=None, key=None, verify=None)
     except Exception as e:
@@ -38,6 +33,11 @@ def cds_get_url_key():
     return cds_url, cds_apikey
 
 
+def set_cds_credentials_ifnot_none(cds_url, cds_apikey):
+    if None not in [cds_url, cds_apikey]:
+        cds_set_credentials(cds_url, cds_apikey)
+   
+
 @pytest.mark.requiressecrets
 @pytest.mark.unittest
 def test_cds_credentials():
@@ -47,7 +47,7 @@ def test_cds_credentials():
 @pytest.mark.requiressecrets
 @pytest.mark.unittest
 def test_cds_credentials_onlykey_envvars():
-    cds_url, cds_apikey = cds_get_url_key()
+    cds_url, cds_apikey = get_cds_url_key()
     
     # remove credentials envvars and file
     with pytest.raises(ValueError):
@@ -58,13 +58,12 @@ def test_cds_credentials_onlykey_envvars():
     
     cds_credentials()
     
-    if None not in [cds_url, cds_apikey]:
-        cds_set_credentials(cds_url, cds_apikey)
+    set_cds_credentials_ifnot_none(cds_url, cds_apikey)
 
 
 @pytest.mark.unittest
 def test_cds_credentials_newurl_incorrectkey_rcfile():
-    cds_url, cds_apikey = cds_get_url_key()
+    cds_url, cds_apikey = get_cds_url_key()
     
     # remove credentials envvars and file
     with pytest.raises(ValueError):
@@ -72,20 +71,19 @@ def test_cds_credentials_newurl_incorrectkey_rcfile():
     
     cds_url_temp = "https://cds-beta.climate.copernicus.eu/api"
     cds_apikey_temp = "INCORRECT-APIKEY"
-    cds_set_credentials(cds_url_temp, cds_apikey_temp)
+    cds_set_credentials_rcfile(cds_url_temp, cds_apikey_temp)
     
     with pytest.raises(ValueError) as e:
         cds_credentials()
     assert "Authentication failed" in str(e.value)
-    assert "The CDS apikey environment variables and file were deleted" in str(e.value)
+    assert "The CDS/ECMWF apikey environment variables and rcfile were deleted" in str(e.value)
     
-    if None not in [cds_url, cds_apikey]:
-        cds_set_credentials(cds_url, cds_apikey)
+    set_cds_credentials_ifnot_none(cds_url, cds_apikey)
 
 
 @pytest.mark.unittest
 def test_cds_credentials_newurl_incorrectkey_envvars():
-    cds_url, cds_apikey = cds_get_url_key()
+    cds_url, cds_apikey = get_cds_url_key()
     
     os.environ["CDSAPI_URL"] = "https://cds-beta.climate.copernicus.eu/api"
     os.environ["CDSAPI_KEY"] = "INCORRECT-APIKEY"
@@ -93,15 +91,14 @@ def test_cds_credentials_newurl_incorrectkey_envvars():
     with pytest.raises(ValueError) as e:
         cds_credentials()
     assert "Authentication failed" in str(e.value)
-    assert "The CDS apikey environment variables and file were deleted" in str(e.value)
+    assert "The CDS/ECMWF apikey environment variables and rcfile were deleted" in str(e.value)
     
-    if None not in [cds_url, cds_apikey]:
-        cds_set_credentials(cds_url, cds_apikey)
+    set_cds_credentials_ifnot_none(cds_url, cds_apikey)
 
 
 @pytest.mark.unittest
 def test_cds_credentials_oldurl_incorrectkey_rcfile():
-    cds_url, cds_apikey = cds_get_url_key()
+    cds_url, cds_apikey = get_cds_url_key()
     
     # remove credentials envvars and file
     with pytest.raises(ValueError):
@@ -109,20 +106,19 @@ def test_cds_credentials_oldurl_incorrectkey_rcfile():
     
     cds_url_temp = "https://cds.climate.copernicus.eu/api/v2"
     cds_apikey_temp = "INCORRECT-APIKEY"
-    cds_set_credentials(cds_url_temp, cds_apikey_temp)
+    cds_set_credentials_rcfile(cds_url_temp, cds_apikey_temp)
     
     with pytest.raises(ValueError) as e:
         cds_credentials()
-    assert "Old CDS URL found" in str(e.value)
-    assert "The CDS apikey environment variables and file were deleted" in str(e.value)
+    assert "Authentication failed" in str(e.value) # should actually be "Old CDS URL found", but the url from the file is ignored, which is acceptable
+    assert "The CDS/ECMWF apikey environment variables and rcfile were deleted" in str(e.value)
     
-    if None not in [cds_url, cds_apikey]:
-        cds_set_credentials(cds_url, cds_apikey)
+    set_cds_credentials_ifnot_none(cds_url, cds_apikey)
 
 
 @pytest.mark.unittest
 def test_cds_credentials_oldurl_incorrectkey_envvars():
-    cds_url, cds_apikey = cds_get_url_key()
+    cds_url, cds_apikey = get_cds_url_key()
     
     os.environ["CDSAPI_URL"] = "https://cds.climate.copernicus.eu/api/v2"
     os.environ["CDSAPI_KEY"] = "INCORRECT-APIKEY"
@@ -130,15 +126,14 @@ def test_cds_credentials_oldurl_incorrectkey_envvars():
     with pytest.raises(ValueError) as e:
         cds_credentials()
     assert "Old CDS URL found" in str(e.value)
-    assert "The CDS apikey environment variables and file were deleted" in str(e.value)
+    assert "The CDS/ECMWF apikey environment variables and rcfile were deleted" in str(e.value)
     
-    if None not in [cds_url, cds_apikey]:
-        cds_set_credentials(cds_url, cds_apikey)
+    set_cds_credentials_ifnot_none(cds_url, cds_apikey)
 
 
 @pytest.mark.unittest
 def test_cds_credentials_newurl_oldkey_rcfile():
-    cds_url, cds_apikey = cds_get_url_key()
+    cds_url, cds_apikey = get_cds_url_key()
     
     # remove credentials envvars and file
     with pytest.raises(ValueError):
@@ -146,20 +141,19 @@ def test_cds_credentials_newurl_oldkey_rcfile():
     
     cds_url_temp = "https://cds-beta.climate.copernicus.eu/api"
     cds_apikey_temp = "olduid:old-api-key"
-    cds_set_credentials(cds_url_temp, cds_apikey_temp)
+    cds_set_credentials_rcfile(cds_url_temp, cds_apikey_temp)
     
     with pytest.raises(ValueError) as e:
         cds_credentials()
     assert "Old CDS API-key found (with :)" in str(e.value)
-    assert "The CDS apikey environment variables and file were deleted" in str(e.value)
+    assert "The CDS/ECMWF apikey environment variables and rcfile were deleted" in str(e.value)
     
-    if None not in [cds_url, cds_apikey]:
-        cds_set_credentials(cds_url, cds_apikey)
+    set_cds_credentials_ifnot_none(cds_url, cds_apikey)
 
 
 @pytest.mark.unittest
 def test_cds_credentials_newurl_oldkey_envvars():
-    cds_url, cds_apikey = cds_get_url_key()
+    cds_url, cds_apikey = get_cds_url_key()
     
     os.environ["CDSAPI_URL"] = "https://cds-beta.climate.copernicus.eu/api"
     os.environ["CDSAPI_KEY"] = "olduid:old-api-key"
@@ -167,10 +161,15 @@ def test_cds_credentials_newurl_oldkey_envvars():
     with pytest.raises(ValueError) as e:
         cds_credentials()
     assert "Old CDS API-key found (with :)" in str(e.value)
-    assert "The CDS apikey environment variables and file were deleted" in str(e.value)
+    assert "The CDS/ECMWF apikey environment variables and rcfile were deleted" in str(e.value)
     
-    if None not in [cds_url, cds_apikey]:
-        cds_set_credentials(cds_url, cds_apikey)
+    set_cds_credentials_ifnot_none(cds_url, cds_apikey)
+
+
+@pytest.mark.requiressecrets
+@pytest.mark.unittest
+def test_copernicusmarine_credentials():
+    copernicusmarine_credentials()
 
 
 @pytest.mark.requiressecrets
