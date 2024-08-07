@@ -160,7 +160,8 @@ def cds_remove_credentials_raise(reason=''):
     """
     
     keys_toremove = ["CDSAPI_URL",
-                     "CDSAPI_KEY"]
+                     "CDSAPI_KEY",
+                     "CDSAPI_RC"]
     for key in keys_toremove:
         if key in os.environ.keys():
             os.environ.pop(key)
