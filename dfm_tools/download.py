@@ -91,63 +91,67 @@ def download_ERA5(varkey,
         c.retrieve(name='reanalysis-era5-single-levels', request=request_dict, target=file_out)
 
 
+def cds_credentials():
+    """
+    get cdsapikey from environment variables or file or query via getpass if necessary
+    """
+    # TODO: put this in a PR at https://github.com/ecmwf/cdsapi (https://github.com/ecmwf/cdsapi/blob/master/cdsapi/api.py#L303)
+    
+    try:
+        # gets url/key from env vars or ~/.cdsapirc file
+        cds_url, cds_apikey, _ = cdsapi.api.get_url_key_verify(url=None, key=None, verify=None)
+    except Exception as e:
+        if "Missing/incomplete configuration file" in str(e):
+            # query apikey if not present in file or envvars
+            print("Downloading CDS/ERA5 data requires a ECMWF API-key, copy your API-key/PAT from https://cds-beta.climate.copernicus.eu/profile (first register, login and accept the terms as documented in https://forum.ecmwf.int/t/step-by-step-instructions-on-how-to-download-data-using-new-climate-data-store-beta-cds-beta/3743/4). ")
+            cds_url = os.environ.get("CDSAPI_URL", "https://cds-beta.climate.copernicus.eu/api")
+            cds_apikey = getpass.getpass("\nEnter your ECMWF API-key/PAT (string with dashes): ")
+            cds_set_credentials(cds_url, cds_apikey)
+        else:
+            raise Exception(str(e))
+    
+    # remove cdsapirc file or env vars if the url/apikey are according to old format
+    if cds_url=="https://cds.climate.copernicus.eu/api/v2":
+        # to avoid "HTTPError: 401 Client Error: Unauthorized for url"
+        cds_remove_credentials_raise(reason='Old CDS URL found')
+    if ":" in cds_apikey:
+        # to avoid "Exception: Not Found" and "HTTPError: 404 Client Error: Not Found for url: https://cds-beta.climate.copernicus.eu/api/resources/dummy"
+        cds_remove_credentials_raise(reason='Old CDS API-key found (with :)')
+    
+    # remove cdsapirc file or env vars if the apikey is invalid
+    try:
+        # checks whether CDS apikey is in environment variable or ~/.cdsapirc file
+        c = cdsapi.Client()
+        # checks whether authentication is succesful (correct combination of url and apikey)
+        c.retrieve(name='dummy', request={})
+    except RuntimeError as e:
+        if "dataset dummy not found" in str(e):
+            # catching incorrect name, but authentication was successful
+            print('found ECMWF API-key and authorization successful')
+        elif "Authentication failed" in str(e):
+            cds_remove_credentials_raise(reason='Authentication failed')
+        else:
+            raise RuntimeError(e)
+
+
 def cds_get_file():
     file_cds_credentials = os.environ.get("CDSAPI_RC", os.path.expanduser("~/.cdsapirc"))
     return file_cds_credentials
 
 
-def cds_credentials():
-    """
-    get cdsapikey from environment variables or file or query via getpass if necessary
-    """
-    #TODO: put this in a PR at https://github.com/ecmwf/cdsapi (https://github.com/ecmwf/cdsapi/blob/master/cdsapi/api.py#L303)
-    cds_url = os.environ.get("CDSAPI_URL", "https://cds.climate.copernicus.eu/api/v2")
-    # set default/provided CDSAPI_URL back to environ for platforms like EDITO 
-    # that depend on environ (only CDSAPI_KEY has to be set in that case)
+def cds_set_credentials(cds_url, cds_apikey):
+    # set env vars
     os.environ["CDSAPI_URL"] = cds_url
-    cds_uid_apikey = os.environ.get("CDSAPI_KEY")
+    os.environ["CDSAPI_KEY"] = cds_apikey
     
-    # read credentials from file if it exists. This has higher precedence over env vars
+    # set ~/.cdsapirc file
     file_cds_credentials = cds_get_file()
-    if os.path.isfile(file_cds_credentials):
-        config = cdsapi.api.read_config(file_cds_credentials)
-        cds_url = config["url"]
-        cds_uid_apikey = config["key"]
-    
-    try:
-        # checks whether CDS apikey is in environment variable or ~/.cdsapirc file and if it is in correct format
-        c = cdsapi.Client()
-        # checks whether credentials (uid and apikey) are correct
-        c.retrieve(name="dummy", request={})
-    except Exception as e:
-        if "Missing/incomplete configuration file" in str(e):
-            # to catch "Exception: Missing/incomplete configuration file"
-            # query uid and apikey if not present
-            print("Downloading CDS/ERA5 data requires a CDS API key, copy your UID and API-key from https://cds.climate.copernicus.eu/user (first register, login and accept the terms). ")
-            cds_uid = getpass.getpass("\nEnter your CDS UID (six digits): ")
-            cds_apikey = getpass.getpass("\nEnter your CDS API-key (string with dashes): ")
-            cds_uid_apikey = f"{cds_uid}:{cds_apikey}"
-            os.environ["CDSAPI_URL"] = cds_url
-            os.environ["CDSAPI_KEY"] = cds_uid_apikey
-            with open(file_cds_credentials,'w') as fc:
-                fc.write(f'url: {cds_url}\n')
-                fc.write(f'key: {cds_uid_apikey}')
-            cds_credentials()
-        elif "not the correct format" in str(e):
-            # to catch "AssertionError: The cdsapi key provided is not the correct format, please ensure it conforms to: <UID>:<APIKEY>."
-            cds_remove_credentials()
-            raise Exception(f"{e}. The CDS apikey environment variables were deleted. Try again.")
-        elif "Authorization Required" in str(e):
-            cds_remove_credentials()
-            raise Exception("Authorization failed. The CDS apikey environment variables were deleted. Try again.")
-        elif "Resource dummy not found" in str(e):
-            # catching incorrect name, but authentication was successful
-            print('found CDS credentials and authorization successful')
-        else:
-            raise e
+    with open(file_cds_credentials,'w') as fc:
+        fc.write(f'url: {cds_url}\n')
+        fc.write(f'key: {cds_apikey}')
 
 
-def cds_remove_credentials():
+def cds_remove_credentials_raise(reason=''):
     """
     remove CDS url and uid:apikey environment variables and ~/.cdsapirc file
     environment variables defined in https://github.com/ecmwf/cdsapi/blob/main/cdsapi/api.py
@@ -162,6 +166,8 @@ def cds_remove_credentials():
     file_cds_credentials = cds_get_file()
     if os.path.isfile(file_cds_credentials):
         os.remove(file_cds_credentials)
+    
+    raise ValueError(f"{reason}. The CDS apikey environment variables and file were deleted. Please try again.")
 
 
 def download_CMEMS(varkey,
