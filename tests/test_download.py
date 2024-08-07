@@ -28,7 +28,7 @@ def get_cds_url_key():
             cds_url = None
             cds_apikey = None
         else:
-            raise Exception(e)
+            raise e
     
     return cds_url, cds_apikey
 

@@ -111,7 +111,7 @@ def cds_credentials():
             cds_apikey = getpass.getpass("\nEnter your ECMWF API-key (string with dashes): ")
             cds_set_credentials(cds_url, cds_apikey)
         else:
-            raise Exception(str(e))
+            raise e
     
     # remove cdsapirc file or env vars if the url/apikey are according to old format
     if cds_url=="https://cds.climate.copernicus.eu/api/v2":
@@ -134,7 +134,7 @@ def cds_credentials():
         elif "Authentication failed" in str(e):
             cds_remove_credentials_raise(reason='Authentication failed')
         else:
-            raise RuntimeError(e)
+            raise e
 
 
 def cds_get_file():
