@@ -99,7 +99,9 @@ def cds_credentials():
     
     try:
         # gets url/key from env vars or ~/.cdsapirc file
-        cds_url, cds_apikey, _ = cdsapi.api.get_url_key_verify(url=None, key=None, verify=None)
+        cds_url = os.environ.get("CDSAPI_URL", "https://cds-beta.climate.copernicus.eu/api")
+        cds_url, cds_apikey, _ = cdsapi.api.get_url_key_verify(url=cds_url, key=None, verify=None)
+        os.environ["CDSAPI_URL"] = cds_url
     except Exception as e:
         if "Missing/incomplete configuration file" in str(e):
             # query apikey if not present in file or envvars

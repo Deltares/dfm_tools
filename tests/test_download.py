@@ -11,6 +11,7 @@ import pandas as pd
 import cdsapi
 from dfm_tools.download import (cds_credentials,
                                 cds_set_credentials,
+                                cds_remove_credentials_raise,
                                 copernicusmarine_credentials,
                                 )
 import dfm_tools as dfmt
@@ -22,6 +23,23 @@ import glob
 @pytest.mark.unittest
 def test_cds_credentials():
     cds_credentials()
+
+
+@pytest.mark.requiressecrets
+@pytest.mark.unittest
+def test_cds_credentials_envvars_onlykey():
+    cds_url, cds_apikey, _ = cdsapi.api.get_url_key_verify(url=None, key=None, verify=None)
+    
+    # remove credentials envvars and file
+    with pytest.raises(ValueError):
+        cds_remove_credentials_raise()
+    
+    assert "CDSAPI_URL" not in os.environ.keys()
+    os.environ["CDSAPI_KEY"] = cds_apikey
+    
+    cds_credentials()
+    
+    cds_set_credentials(cds_url, cds_apikey)
 
 
 @pytest.mark.requiressecrets
