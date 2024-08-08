@@ -325,9 +325,10 @@ def open_dataset_curvilinear(file_nc,
     print('>> stacking ds i/j coordinates: ',end='') #fast
     dtstart = dt.datetime.now()
     face_dim = grid.face_dimension
-    ds_stacked = ds.stack({face_dim:ij_dims}).sel({face_dim:bool_combined}) #TODO: lev/time bnds are dropped, avoid this. maybe stack initial dataset since it would also simplify the rest of the function a bit
+    # TODO: lev/time bnds are dropped, avoid this. maybe stack initial dataset since it would also simplify the rest of the function a bit
+    ds_stacked = ds.stack({face_dim:ij_dims}).sel({face_dim:bool_combined})
     latlon_vars = [varn_lon, varn_lat, varn_vert_lon, varn_vert_lat]
-    ds_stacked = ds_stacked.drop_vars(ij_dims + latlon_vars) #TODO: solve "DeprecationWarning: Deleting a single level of a MultiIndex is deprecated", solved by removing mesh2d_nFaces variable
+    ds_stacked = ds_stacked.drop_vars(ij_dims + latlon_vars)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
     print('>> init uds: ',end='') #long
