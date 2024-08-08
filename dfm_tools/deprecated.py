@@ -99,3 +99,11 @@ def preprocess_hirlam(ds):
     """
     raise DeprecationWarning('the function dfmt.preprocess_hirlam() is deprecated, xarray now supports datasets with multidimensional coordinates.')
 
+
+def interp_regularnc_to_plipoints(ds):
+    """
+    deprecated
+    """
+    raise DeprecationWarning('the function dfmt.interp_regularnc_to_plipoints() is deprecated, '
+                             'use dfmt.interp_regularnc_to_plipointsDataset() instead with gdf_points '
+                             'as in https://github.com/Deltares/dfm_tools/issues/938')
