@@ -273,7 +273,7 @@ def open_dataset_curvilinear(file_nc,
     if 'chunks' not in kwargs:
         kwargs['chunks'] = {'time':1}
     
-    # data_vars='minimal' to avoid time dimension on vertices_latitude and others
+    # data_vars='minimal' to avoid time dimension on vertices_latitude and others when opening multiple files at once
     ds = xr.open_mfdataset(file_nc, data_vars="minimal", **kwargs)
     
     print('>> getting vertices from ds: ',end='')
@@ -286,7 +286,7 @@ def open_dataset_curvilinear(file_nc,
     
     # convert from 0to360 to -180 to 180
     if convert_360to180:
-        vertices_longitude = (vertices_longitude+180)%360 - 180
+        vertices_longitude = (vertices_longitude+180) % 360 - 180
         ds[varn_lon] = (ds[varn_lon] + 180) % 360 - 180
     
     # face_xy = np.stack([longitude,latitude],axis=-1)
