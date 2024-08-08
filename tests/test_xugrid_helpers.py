@@ -212,6 +212,6 @@ def test_open_dataset_curvilinear():
     uds = dfmt.open_dataset_curvilinear(file_nc, convert_360to180=True)
     
     # check absence of time dimension where it should not be: https://github.com/Deltares/dfm_tools/issues/928
-    uds.vertices_longitude.dims == ('vertices', 'mesh2d_nFaces')
+    assert uds.vertices_longitude.dims == ('vertices', 'mesh2d_nFaces')
     # check if all zero-sized cells were dropped: https://github.com/Deltares/dfm_tools/issues/926
     assert (uds.grid.area > 0).all()
