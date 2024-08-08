@@ -8,6 +8,7 @@
 
 ### Fix
 - also apply convert_360to180 to longitude variable in `dfmt.open_dataset_curvilinear()` in [#913](https://github.com/Deltares/dfm_tools/pull/913)
+- prevented adding of time dimension and dropped 0-sized cells in `dfmt.open_dataset_curvilinear()` in [#929](https://github.com/Deltares/dfm_tools/pull/929)
 
 
 ## 0.24.0 (2024-07-12)

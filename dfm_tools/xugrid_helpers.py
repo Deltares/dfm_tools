@@ -273,7 +273,8 @@ def open_dataset_curvilinear(file_nc,
     if 'chunks' not in kwargs:
         kwargs['chunks'] = {'time':1}
     
-    ds = xr.open_mfdataset(file_nc, **kwargs)
+    # data_vars='minimal' to avoid time dimension on vertices_latitude and others when opening multiple files at once
+    ds = xr.open_mfdataset(file_nc, data_vars="minimal", **kwargs)
     
     print('>> getting vertices from ds: ',end='')
     dtstart = dt.datetime.now()
@@ -285,7 +286,7 @@ def open_dataset_curvilinear(file_nc,
     
     # convert from 0to360 to -180 to 180
     if convert_360to180:
-        vertices_longitude = (vertices_longitude+180)%360 - 180
+        vertices_longitude = (vertices_longitude+180) % 360 - 180
         ds[varn_lon] = (ds[varn_lon] + 180) % 360 - 180
     
     # face_xy = np.stack([longitude,latitude],axis=-1)
@@ -331,6 +332,12 @@ def open_dataset_curvilinear(file_nc,
     dtstart = dt.datetime.now()
     uds = xu.UgridDataset(ds_stacked,grids=[grid])
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
+    
+    # drop 0-area cells (relevant for CMCC global datasets)
+    bool_zero_cell_size = uds.grid.area==0
+    if bool_zero_cell_size.any():
+        print(f"WARNING: dropping {bool_zero_cell_size.sum()} 0-sized cells from dataset")
+        uds = uds.isel({uds.grid.face_dimension: ~bool_zero_cell_size})
     
     #remove faces that link to node coordinates that are nan (occurs in waqua models)
     bool_faces_wnannodes = np.isnan(uds.grid.face_node_coordinates[:,:,0]).any(axis=1)
