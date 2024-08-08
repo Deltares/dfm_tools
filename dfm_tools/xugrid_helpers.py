@@ -336,7 +336,7 @@ def open_dataset_curvilinear(file_nc,
     # drop 0-area cells (relevant for CMCC global datasets)
     bool_zero_cell_size = uds.grid.area==0
     if bool_zero_cell_size.any():
-        print(f"dropping {bool_zero_cell_size.sum()} 0-sized cells from dataset")
+        print(f"WARNING: dropping {bool_zero_cell_size.sum()} 0-sized cells from dataset")
         uds = uds.isel({uds.grid.face_dimension: ~bool_zero_cell_size})
     
     #remove faces that link to node coordinates that are nan (occurs in waqua models)
