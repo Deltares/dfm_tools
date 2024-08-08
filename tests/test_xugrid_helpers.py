@@ -211,7 +211,12 @@ def test_open_dataset_curvilinear():
     file_nc = r'P:\archivedprojects\11206304-futuremares-rawdata-preps\data\CMIP6_BC\CMCC-ESM2\vo_Omon_CMCC-ESM2_historical_r1i1p1f1_gn_*.nc'
     uds = dfmt.open_dataset_curvilinear(file_nc, convert_360to180=True)
     
+    # check if vertices lat/lon and lat/lon variables are dropped: https://github.com/Deltares/dfm_tools/issues/930
+    assert set(uds.coords) == set(['lev', 'mesh2d_nFaces', 'time'])
+    assert set(uds.data_vars) == set(['lev_bnds', 'time_bnds', 'vo'])
+    
     # check absence of time dimension where it should not be: https://github.com/Deltares/dfm_tools/issues/928
-    assert uds.vertices_longitude.dims == ('vertices', 'mesh2d_nFaces')
+    assert uds.lev_bnds.dims == ('lev', 'bnds')
+    
     # check if all zero-sized cells were dropped: https://github.com/Deltares/dfm_tools/issues/926
     assert (uds.grid.area > 0).all()

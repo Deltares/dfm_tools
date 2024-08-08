@@ -260,6 +260,7 @@ def open_partitioned_dataset(file_nc, decode_fillvals=False, remove_edges=True, 
 
 def open_dataset_curvilinear(file_nc,
                              varn_lon='longitude',
+                             varn_lat='latitude',
                              varn_vert_lon='vertices_longitude', #'grid_x'
                              varn_vert_lat='vertices_latitude', #'grid_y'
                              ij_dims=['i','j'], #['N','M']
@@ -269,6 +270,7 @@ def open_dataset_curvilinear(file_nc,
     This is a first version of a function that creates a xugrid UgridDataset from a curvilinear dataset like CMCC. Curvilinear means in this case 2D lat/lon variables and i/j indexing. The CMCC dataset does contain vertices, which is essential for conversion to ugrid.
     It also works for WAQUA files that are converted with getdata
     """
+    # TODO: maybe get varn_lon/varn_lat automatically with cf-xarray (https://github.com/xarray-contrib/cf-xarray)
     
     if 'chunks' not in kwargs:
         kwargs['chunks'] = {'time':1}
@@ -287,7 +289,6 @@ def open_dataset_curvilinear(file_nc,
     # convert from 0to360 to -180 to 180
     if convert_360to180:
         vertices_longitude = (vertices_longitude+180) % 360 - 180
-        ds[varn_lon] = (ds[varn_lon] + 180) % 360 - 180
     
     # face_xy = np.stack([longitude,latitude],axis=-1)
     # face_coords_x, face_coords_y = face_xy.T
@@ -324,8 +325,10 @@ def open_dataset_curvilinear(file_nc,
     print('>> stacking ds i/j coordinates: ',end='') #fast
     dtstart = dt.datetime.now()
     face_dim = grid.face_dimension
-    ds_stacked = ds.stack({face_dim:ij_dims}).sel({face_dim:bool_combined}) #TODO: lev/time bnds are dropped, avoid this. maybe stack initial dataset since it would also simplify the rest of the function a bit
-    ds_stacked = ds_stacked.drop_vars(ij_dims+['mesh2d_nFaces']) #TODO: solve "DeprecationWarning: Deleting a single level of a MultiIndex is deprecated", solved by removing mesh2d_nFaces variable
+    # TODO: lev/time bnds are dropped, avoid this. maybe stack initial dataset since it would also simplify the rest of the function a bit
+    ds_stacked = ds.stack({face_dim:ij_dims}).sel({face_dim:bool_combined})
+    latlon_vars = [varn_lon, varn_lat, varn_vert_lon, varn_vert_lat]
+    ds_stacked = ds_stacked.drop_vars(ij_dims + latlon_vars)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
     print('>> init uds: ',end='') #long
