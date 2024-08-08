@@ -46,6 +46,7 @@ dependencies = [
 	"erddapy>=2.0.0",
 	#copernicusmarine<1.2.2 is not supported anymore according to https://stac.marine.copernicus.eu/mdsVersions.json
 	"copernicusmarine>=1.2.2",
+	"copernicusmarine<2.0.0", # TODO: remove when dfm_tools is adjusted to not-yet-released 2.0 version: https://github.com/Deltares/dfm_tools/issues/933
 	#rws-ddlpy<0.4.0 does not yet have `ddlpy.dataframe_to_xarray()`
 	"rws-ddlpy>=0.4.0",
 	#pooch<1.1.0 do not have attribute retrieve
