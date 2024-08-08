@@ -334,10 +334,12 @@ def ds_apply_conventions(data_xr):
         data_xr['time'].encoding['units'] = units_copy #put back dropped units
     
     # 360 to 180 conversion
-    convert_360to180 = (data_xr['longitude'].to_numpy()>180).any() #TODO: replace to_numpy() with load()
-    if convert_360to180: #TODO: make more flexible for models that eg pass -180/+180 crossing (add overlap at lon edges).
-        data_xr.coords['longitude'] = (data_xr.coords['longitude'] + 180) % 360 - 180
-        data_xr = data_xr.sortby(data_xr['longitude'])
+    if 'longitude' in data_xr.variables:
+        convert_360to180 = (data_xr['longitude'].to_numpy()>180).any() #TODO: replace to_numpy() with load()
+        if convert_360to180: #TODO: make more flexible for models that eg pass -180/+180 crossing (add overlap at lon edges).
+            data_xr.coords['longitude'] = (data_xr.coords['longitude'] + 180) % 360 - 180
+            data_xr = data_xr.sortby(data_xr['longitude'])
+    
     return data_xr
 
 
@@ -401,7 +403,7 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
     
     data_xr = ds_apply_conventions(data_xr=data_xr)
     data_xr = ds_apply_conversion_dict(data_xr=data_xr, conversion_dict=conversion_dict, quantity_list=quantity_list)
-    
+
     #retrieve var(s) (after potential longitude conversion)
     data_vars = list(data_xr.data_vars)
     bool_quanavailable = pd.Series(quantity_list).isin(data_vars)
