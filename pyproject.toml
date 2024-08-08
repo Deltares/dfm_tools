@@ -14,8 +14,8 @@ requires-python = ">=3.9"
 dependencies = [
 	#scipy<1.6.0 pip install fails in py39, is also 3 years old
 	"scipy>=1.6.0",
-	#numpy 1.21 is EOL since june 2023
-	"numpy>=1.22",
+	#numpy<1.23 is EOL since june 2024
+	"numpy>=1.23",
 	#contour colorbar on uniform values fails with matplotlib<3.7.0, several other features with matplotlib<3.6.0
 	"matplotlib>=3.7.0",
 	#pandas>=1.4 is required by xarray>=2023.3.0
