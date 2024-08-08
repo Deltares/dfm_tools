@@ -404,7 +404,7 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
     data_xr = ds_apply_conventions(data_xr=data_xr)
     data_xr = ds_apply_conversion_dict(data_xr=data_xr, conversion_dict=conversion_dict, quantity_list=quantity_list)
 
-    #retrieve var(s) (after potential longitude conversion)
+    # retrieve var(s) (after potential longitude conversion)
     data_vars = list(data_xr.data_vars)
     bool_quanavailable = pd.Series(quantity_list).isin(data_vars)
     if not bool_quanavailable.all():
