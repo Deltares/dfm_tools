@@ -203,3 +203,15 @@ def test_open_dataset_delft3d4():
 
     # test if plotting works, this is a basic validation of whether it is a proper ugrid dataset
     uds.umag.isel(time=-1, KMAXOUT_RESTR=-1).ugrid.plot()
+
+
+@pytest.mark.requireslocaldata
+@pytest.mark.unittest
+def test_open_dataset_curvilinear():
+    file_nc = r'P:\archivedprojects\11206304-futuremares-rawdata-preps\data\CMIP6_BC\CMCC-ESM2\vo_Omon_CMCC-ESM2_historical_r1i1p1f1_gn_*.nc'
+    uds = dfmt.open_dataset_curvilinear(file_nc, convert_360to180=True, data_vars="minimal")
+    
+    # check absence of time dimension where it should not be: https://github.com/Deltares/dfm_tools/issues/928
+    uds.vertices_longitude.dims == ('vertices', 'mesh2d_nFaces')
+    # check if all zero-sized cells were dropped: https://github.com/Deltares/dfm_tools/issues/926
+    assert (uds.grid.area > 0).all()

@@ -332,6 +332,12 @@ def open_dataset_curvilinear(file_nc,
     uds = xu.UgridDataset(ds_stacked,grids=[grid])
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
+    # drop 0-area cells (relevant for CMCC global datasets)
+    bool_zero_cell_size = uds.grid.area==0
+    if bool_zero_cell_size.any():
+        print(f"dropping {bool_zero_cell_size.sum()} 0-sized cells from dataset")
+        uds = uds.isel({uds.grid.face_dimension: ~bool_zero_cell_size})
+    
     #remove faces that link to node coordinates that are nan (occurs in waqua models)
     bool_faces_wnannodes = np.isnan(uds.grid.face_node_coordinates[:,:,0]).any(axis=1)
     if bool_faces_wnannodes.any():
