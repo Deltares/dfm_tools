@@ -108,9 +108,9 @@ def cds_credentials():
     """
     # TODO: put this in a PR at https://github.com/ecmwf/cdsapi
     
+    cds_url = os.environ.get("CDSAPI_URL", "https://cds-beta.climate.copernicus.eu/api")
     try:
         # set default for CDSAPI_URL envvar so it does not have to be supplied. This also ignores the URL in ~/.cdsapirc
-        cds_url = os.environ.get("CDSAPI_URL", "https://cds-beta.climate.copernicus.eu/api")
         os.environ["CDSAPI_URL"] = cds_url
         # gets url/key from env vars or ~/.cdsapirc file
         cds_url, cds_apikey, _ = cdsapi.api.get_url_key_verify(url=cds_url, key=None, verify=None)
@@ -118,7 +118,6 @@ def cds_credentials():
         if "Missing/incomplete configuration file" in str(e):
             # query apikey if not present in file or envvars
             print("Downloading CDS/ERA5 data requires a ECMWF API-key, copy your API-key from https://cds-beta.climate.copernicus.eu/profile (first register, login and accept the terms as documented in https://forum.ecmwf.int/t/step-by-step-instructions-on-how-to-download-data-using-new-climate-data-store-beta-cds-beta/3743/4). ")
-            cds_url = os.environ.get("CDSAPI_URL", "https://cds-beta.climate.copernicus.eu/api")
             cds_apikey = getpass.getpass("\nEnter your ECMWF API-key (string with dashes): ")
             cds_set_credentials(cds_url, cds_apikey)
         else:
