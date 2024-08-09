@@ -65,7 +65,10 @@ resolution = 300
 figsize = (16,7)
 
 #MAP RMM
-uds = dfmt.open_dataset_curvilinear(file_nc_map, varn_vert_lon='grid_x', varn_vert_lat='grid_y', ij_dims=['N','M'])
+uds = dfmt.open_dataset_curvilinear(file_nc_map, 
+                                    varn_lon='XZETA', varn_lat='YZETA',
+                                    varn_vert_lon='grid_x', varn_vert_lat='grid_y', 
+                                    ij_dims=['N','M'])
 uds_sel = uds.isel(TIME=timestep,LAYER=0)
 uds_rastered = dfmt.rasterize_ugrid(uds_sel,resolution=resolution)
 
