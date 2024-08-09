@@ -109,8 +109,16 @@ def preprocess_ERA5(ds):
     if 'valid_time' in ds.coords:
         ds = ds.rename({'valid_time':'time'})
     
-    # prevent incorrect scaling/offset when merging files
-    prevent_dtype_int(ds)
+    # Prevent writing to (incorrectly scaled) int, since it might mess up mfdataset (https://github.com/Deltares/dfm_tools/issues/239)
+    # By dropping scaling/offset encoding and converting to float32 (will result in a larger dataset)
+    # ERA5 datasets retrieved with the new CDS-beta are zipped float32 instead of scaled int, so this is only needed for backwards compatibility with old files.
+    for var in ds.data_vars:
+        if not set(['dtype','scale_factor','add_offset']).issubset(ds[var].encoding.keys()):
+            continue
+        # the _FillValue will still be -32767 (int default), but this is no issue for float32
+        ds[var].encoding.pop('scale_factor')
+        ds[var].encoding.pop('add_offset')
+        ds[var].encoding["dtype"] = "float32"
     
     return ds
 
@@ -122,37 +130,6 @@ def preprocess_woa(ds):
     ds.time.attrs['calendar'] = '360_day'
     ds = xr.decode_cf(ds) #decode_cf after adding 360_day calendar attribute
     return ds
-
-
-def prevent_dtype_int(ds, zlib:bool = True):
-    """
-    Prevent writing to int, since it might mess up mfdataset (https://github.com/Deltares/dfm_tools/issues/239)
-    Since floats are used instead of ints, the disksize of the dataset will be larger
-    zlib=True decreases the filesize again (approx same as int filesize), but writing this file is slower
-    """
-    
-    for var in ds.data_vars:
-        var_encoding = ds[var].encoding
-        if not set(['dtype','scale_factor','add_offset']).issubset(ds[var].encoding.keys()):
-            continue
-
-        if 'int' not in str(var_encoding['dtype']):
-            continue
-
-        # prevent incorrectly scaled integers by dropping scaling/offset encoding
-        ds[var].encoding.pop('scale_factor')
-        ds[var].encoding.pop('add_offset')
-        
-        # remove non-convention attribute
-        if 'missing_value' in ds[var].encoding.keys():
-            ds[var].encoding.pop('missing_value')
-
-        # reduce filesize with float32 instead of int and compression
-        ds[var].encoding["dtype"] = "float32"
-        if '_FillValue' in ds[var].encoding.keys():
-            float32_fillvalue = netCDF4.default_fillvals['f4']
-            ds[var].encoding['_FillValue'] = float32_fillvalue
-        ds[var].encoding["zlib"] = zlib
 
 
 def merge_meteofiles(file_nc:str, preprocess=None, 
