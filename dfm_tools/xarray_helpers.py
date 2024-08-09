@@ -7,7 +7,6 @@ import glob
 import pandas as pd
 import logging
 import numpy as np
-import netCDF4
 from dfm_tools.errors import OutOfRangeError
 
 __all__ = [
@@ -242,9 +241,6 @@ def merge_meteofiles(file_nc:str, preprocess=None,
         field_zerostart = data_xr.isel(time=[0,0])*0 #two times first field, set values to 0
         field_zerostart['time'] = [times_pd.index[0]-dt.timedelta(days=2),times_pd.index[0]-dt.timedelta(days=1)] #TODO: is one zero field not enough? (is replacing first field not also ok? (results in 1hr transition period)
         data_xr = xr.concat([field_zerostart,data_xr],dim='time',combine_attrs='no_conflicts') #combine_attrs argument prevents attrs from being dropped
-    
-    # converting from int16 with scalefac/offset to float32 with zlib, relevant for ERA5
-    prevent_dtype_int(data_xr)
     
     return data_xr
 
