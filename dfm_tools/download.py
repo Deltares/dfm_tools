@@ -89,17 +89,6 @@ def download_ERA5(varkey,
                         'format':'netcdf'}
         
         c.retrieve(name='reanalysis-era5-single-levels', request=request_dict, target=file_out)
-        
-        # rename dimension/variable valid_time to time
-        # https://forum.ecmwf.int/t/new-time-format-in-era5-netcdf-files/3796/5?u=jelmer_veenstra
-        # from netCDF4 import Dataset
-        # nc = Dataset(file_out,'a')
-        # if 'valid_time' in nc.variables.keys():
-        #     nc.renameVariable("valid_time","time")
-        # # if 'valid_time' in nc.dimensions.keys():
-        #     # nc.renameDimension("valid_time","time")
-        #     # TODO: for some reason this overwrites the time values with zeros: https://github.com/Unidata/netcdf4-python/issues/1357
-        # nc.close()
 
 
 def cds_credentials():
@@ -131,7 +120,8 @@ def cds_credentials():
         # to avoid "Exception: Not Found" and "HTTPError: 404 Client Error: Not Found for url: https://cds-beta.climate.copernicus.eu/api/resources/dummy"
         cds_remove_credentials_raise(reason='Old CDS API-key found (with :)')
     
-    # remove cdsapirc file or env vars if the apikey is invalid
+    # check if the authentication works
+    # TODO: requested "check authentication" method in https://github.com/ecmwf/cdsapi/issues/111
     try:
         # checks whether CDS apikey is in environment variable or ~/.cdsapirc file
         c = cdsapi.Client()
