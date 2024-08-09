@@ -8,21 +8,155 @@ Created on Thu Jun 22 09:41:49 2023
 import os
 import pytest
 import pandas as pd
-from dfm_tools.download import cds_credentials, copernicusmarine_credentials
+import cdsapi
+from dfm_tools.download import (cds_credentials,
+                                cds_set_credentials,
+                                cds_set_credentials_rcfile,
+                                cds_remove_credentials_raise,
+                                copernicusmarine_credentials,
+                                )
 import dfm_tools as dfmt
 import xarray as xr
 import glob
 
 
+def get_cds_url_key():
+    try:
+        cds_url, cds_apikey, _ = cdsapi.api.get_url_key_verify(url=None, key=None, verify=None)
+    except Exception as e:
+        if "Missing/incomplete configuration file" in str(e):
+            cds_url = None
+            cds_apikey = None
+        else:
+            raise e
+    
+    return cds_url, cds_apikey
+
+
+def set_cds_credentials_ifnot_none(cds_url, cds_apikey):
+    if None not in [cds_url, cds_apikey]:
+        cds_set_credentials(cds_url, cds_apikey)
+   
+
 @pytest.mark.requiressecrets
 @pytest.mark.unittest
 def test_cds_credentials():
-    # check if the credentials are present on this system
-    val = cds_credentials()
-    assert not val
+    cds_credentials()
+
+
+@pytest.mark.requiressecrets
+@pytest.mark.unittest
+def test_cds_credentials_onlykey_envvars():
+    cds_url, cds_apikey = get_cds_url_key()
     
-    # some platforms depend on environ for url/apikey, check if the default cdsapi_url is set after running cds_credentials()
-    assert "CDSAPI_URL" in os.environ.keys()
+    # remove credentials envvars and file
+    with pytest.raises(ValueError):
+        cds_remove_credentials_raise()
+    
+    assert "CDSAPI_URL" not in os.environ.keys()
+    os.environ["CDSAPI_KEY"] = cds_apikey
+    
+    cds_credentials()
+    set_cds_credentials_ifnot_none(cds_url, cds_apikey)
+
+
+@pytest.mark.unittest
+def test_cds_credentials_newurl_incorrectkey_rcfile():
+    cds_url, cds_apikey = get_cds_url_key()
+    
+    # remove credentials envvars and file
+    with pytest.raises(ValueError):
+        cds_remove_credentials_raise()
+    
+    cds_url_temp = "https://cds-beta.climate.copernicus.eu/api"
+    cds_apikey_temp = "INCORRECT-APIKEY"
+    cds_set_credentials_rcfile(cds_url_temp, cds_apikey_temp)
+    
+    with pytest.raises(ValueError) as e:
+        cds_credentials()
+    set_cds_credentials_ifnot_none(cds_url, cds_apikey)
+    assert "Authentication failed" in str(e.value)
+    assert "The CDS/ECMWF apikey environment variables and rcfile were deleted" in str(e.value)    
+
+
+@pytest.mark.unittest
+def test_cds_credentials_newurl_incorrectkey_envvars():
+    cds_url, cds_apikey = get_cds_url_key()
+    
+    os.environ["CDSAPI_URL"] = "https://cds-beta.climate.copernicus.eu/api"
+    os.environ["CDSAPI_KEY"] = "INCORRECT-APIKEY"
+    
+    with pytest.raises(ValueError) as e:
+        cds_credentials()
+    set_cds_credentials_ifnot_none(cds_url, cds_apikey)
+    assert "Authentication failed" in str(e.value)
+    assert "The CDS/ECMWF apikey environment variables and rcfile were deleted" in str(e.value)
+
+
+@pytest.mark.unittest
+def test_cds_credentials_oldurl_incorrectkey_rcfile():
+    cds_url, cds_apikey = get_cds_url_key()
+    
+    # remove credentials envvars and file
+    with pytest.raises(ValueError):
+        cds_remove_credentials_raise()
+    
+    cds_url_temp = "https://cds.climate.copernicus.eu/api/v2"
+    cds_apikey_temp = "INCORRECT-APIKEY"
+    cds_set_credentials_rcfile(cds_url_temp, cds_apikey_temp)
+    
+    with pytest.raises(ValueError) as e:
+        cds_credentials()
+    set_cds_credentials_ifnot_none(cds_url, cds_apikey)
+    assert "Authentication failed" in str(e.value) # should actually be "Old CDS URL found", but the url from the file is ignored, which is acceptable
+    assert "The CDS/ECMWF apikey environment variables and rcfile were deleted" in str(e.value)
+
+
+@pytest.mark.unittest
+def test_cds_credentials_oldurl_incorrectkey_envvars():
+    cds_url, cds_apikey = get_cds_url_key()
+    
+    os.environ["CDSAPI_URL"] = "https://cds.climate.copernicus.eu/api/v2"
+    os.environ["CDSAPI_KEY"] = "INCORRECT-APIKEY"
+    
+    with pytest.raises(ValueError) as e:
+        cds_credentials()
+    set_cds_credentials_ifnot_none(cds_url, cds_apikey)
+    assert "Old CDS URL found" in str(e.value)
+    assert "The CDS/ECMWF apikey environment variables and rcfile were deleted" in str(e.value)
+
+
+@pytest.mark.unittest
+def test_cds_credentials_newurl_oldkey_rcfile():
+    cds_url, cds_apikey = get_cds_url_key()
+    
+    # remove credentials envvars and file
+    with pytest.raises(ValueError):
+        cds_remove_credentials_raise()
+    
+    cds_url_temp = "https://cds-beta.climate.copernicus.eu/api"
+    cds_apikey_temp = "olduid:old-api-key"
+    cds_set_credentials_rcfile(cds_url_temp, cds_apikey_temp)
+    
+    with pytest.raises(ValueError) as e:
+        cds_credentials()
+    set_cds_credentials_ifnot_none(cds_url, cds_apikey)
+    assert "Old CDS API-key found (with :)" in str(e.value)
+    assert "The CDS/ECMWF apikey environment variables and rcfile were deleted" in str(e.value)
+
+
+@pytest.mark.unittest
+def test_cds_credentials_newurl_oldkey_envvars():
+    cds_url, cds_apikey = get_cds_url_key()
+    
+    os.environ["CDSAPI_URL"] = "https://cds-beta.climate.copernicus.eu/api"
+    os.environ["CDSAPI_KEY"] = "olduid:old-api-key"
+    
+    with pytest.raises(ValueError) as e:
+        cds_credentials()
+    set_cds_credentials_ifnot_none(cds_url, cds_apikey)
+    assert "Old CDS API-key found (with :)" in str(e.value)
+    assert "The CDS/ECMWF apikey environment variables and rcfile were deleted" in str(e.value)
 
 
 @pytest.mark.requiressecrets
@@ -40,9 +174,16 @@ def test_download_era5(file_nc_era5_pattern):
     assert len(file_list) == 2
     
     ds = xr.open_mfdataset(file_nc_era5_pattern)
-    assert ds.sizes["time"] == 1416
-    assert ds.time.to_pandas().iloc[0] == pd.Timestamp('2010-01-01')
-    assert ds.time.to_pandas().iloc[-1] == pd.Timestamp('2010-02-28 23:00')
+    timedim = 'time'
+    # datasets retrieved with new cds-beta have valid_time instead of time dimn/varn
+    # https://forum.ecmwf.int/t/new-time-format-in-era5-netcdf-files/3796/5?u=jelmer_veenstra
+    # TODO: can be removed after https://github.com/Unidata/netcdf4-python/issues/1357 or https://forum.ecmwf.int/t/3796 is fixed
+    if 'valid_time' in ds.dims: #TODO: can be removed if 
+        timedim = 'valid_time'
+    
+    assert ds.sizes[timedim] == 1416
+    assert ds[timedim].to_pandas().iloc[0] == pd.Timestamp('2010-01-01')
+    assert ds[timedim].to_pandas().iloc[-1] == pd.Timestamp('2010-02-28 23:00')
 
 
 @pytest.mark.requiressecrets
