@@ -5,12 +5,7 @@ Created on Tue Jan 23 17:12:48 2024
 @author: veenstra
 """
 
-
-import os
 import pytest
-import xarray as xr
-import numpy as np
-from dfm_tools.xarray_helpers import prevent_dtype_int
 import dfm_tools as dfmt
 import pandas as pd
 
