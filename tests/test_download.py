@@ -184,6 +184,12 @@ def test_download_era5(file_nc_era5_pattern):
     assert ds.sizes[timedim] == 1416
     assert ds[timedim].to_pandas().iloc[0] == pd.Timestamp('2010-01-01')
     assert ds[timedim].to_pandas().iloc[-1] == pd.Timestamp('2010-02-28 23:00')
+    
+    # check if there are no integers in the dataset anymore
+    # this was the case before CDS-beta in https://github.com/Deltares/dfm_tools/issues/239
+    msl_encoding = ds['msl'].encoding
+    assert str(msl_encoding['dtype']) == 'float32'
+    assert 'scale_factor' not in msl_encoding.keys()
 
 
 @pytest.mark.requiressecrets
