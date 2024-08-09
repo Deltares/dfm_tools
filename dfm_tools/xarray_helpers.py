@@ -105,7 +105,7 @@ def preprocess_ERA5(ds):
     
     # datasets retrieved with new cds-beta have valid_time instead of time dimn/varn
     # https://forum.ecmwf.int/t/new-time-format-in-era5-netcdf-files/3796/5?u=jelmer_veenstra
-    # TODO: can be removed until https://github.com/Unidata/netcdf4-python/issues/1357 or https://forum.ecmwf.int/t/3796 is fixed
+    # TODO: can be removed after https://github.com/Unidata/netcdf4-python/issues/1357 or https://forum.ecmwf.int/t/3796 is fixed
     if 'valid_time' in ds.coords:
         ds = ds.rename({'valid_time':'time'})
     
