@@ -174,6 +174,9 @@ def test_download_era5(file_nc_era5_pattern):
     assert len(file_list) == 2
     
     ds = xr.open_mfdataset(file_nc_era5_pattern)
+    
+    assert 'valid_time' in ds.dims # TODO: if this fails, remove the exception below and in preprocess_ERA5
+    
     timedim = 'time'
     # datasets retrieved with new cds-beta have valid_time instead of time dimn/varn
     # https://forum.ecmwf.int/t/new-time-format-in-era5-netcdf-files/3796/5?u=jelmer_veenstra
