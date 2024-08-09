@@ -175,7 +175,6 @@ def test_download_era5(file_nc_era5_pattern):
     
     ds = xr.open_mfdataset(file_nc_era5_pattern)
     timedim = 'time'
-    
     # datasets retrieved with new cds-beta have valid_time instead of time dimn/varn
     # https://forum.ecmwf.int/t/new-time-format-in-era5-netcdf-files/3796/5?u=jelmer_veenstra
     # TODO: can be removed after https://github.com/Unidata/netcdf4-python/issues/1357 or https://forum.ecmwf.int/t/3796 is fixed
