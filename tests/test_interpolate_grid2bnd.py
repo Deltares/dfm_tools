@@ -319,9 +319,8 @@ def test_open_dataset_extra_slightly_different_latlons(tmp_path):
     file_nc = tmp_path / 'temp_cmems_2day_*.nc'
     
     with pytest.raises(ValueError) as e:
-        ds = dfmt.open_dataset_extra(file_nc, quantity='salinitybnd', tstart='2020-01-01 12:00:00', tstop='2020-01-02 12:00:00')
-        # add assertion just to be safe, but the code will not reach here
-        assert ds.dims['longitude'] == ds1.dims['longitude']
+        dfmt.open_dataset_extra(file_nc, quantity='salinitybnd', tstart='2020-01-01 12:00:00', tstop='2020-01-02 12:00:00')
+    
     # ValueError: cannot align objects with join='exact' where index/labels/sizes are not equal along these coordinates (dimensions): 'longitude' ('longitude',)
     assert "cannot align objects with join='exact' " in str(e.value)
 
