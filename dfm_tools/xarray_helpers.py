@@ -185,8 +185,9 @@ def merge_meteofiles(file_nc:str, preprocess=None,
                                     **kwargs)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
-    #rename variables
-    if 'longitude' not in data_xr.variables: #TODO: make generic, comparable rename in rename_dims_dict in dfmt.open_dataset_extra()
+    # rename variables
+    # TODO: make generic, comparable rename in rename_dims_dict in dfmt.interpolate_grid2bnd.open_dataset_extra()
+    if 'longitude' not in data_xr.variables:
         if 'lon' in data_xr.variables:
             data_xr = data_xr.rename({'lon':'longitude', 'lat':'latitude'})
         elif 'x' in data_xr.variables:
@@ -194,7 +195,8 @@ def merge_meteofiles(file_nc:str, preprocess=None,
         else:
             raise KeyError('no longitude/latitude, lon/lat or x/y variables found in dataset')
     
-    #select time and do checks #TODO: check if calendar is standard/gregorian
+    # select time and do checks
+    # TODO: check if calendar is standard/gregorian
     data_xr = data_xr.sel(time=time_slice)
     if data_xr.get_index('time').duplicated().any():
         print('dropping duplicate timesteps')

@@ -21,6 +21,7 @@ from dfm_tools.interpolate_grid2bnd import (tidemodel_componentlist,
                                             ext_add_boundary_object_per_polyline,
                                             ds_apply_conventions,
                                             ds_apply_conversion_dict,
+                                            open_dataset_extra,
                                             )
 from dfm_tools.hydrolib_helpers import get_ncbnd_construct
 import hydrolib.core.dflowfm as hcdfm
@@ -184,7 +185,7 @@ def test_interpolate_nc_to_bc():
     dir_pattern = os.path.join(r'p:\1204257-dcsmzuno\data\CMEMS\nc\DCSM_allAvailableTimes',f'{ncvarname}_2012-12*.nc')
     
     #open regulargridDataset and do some basic stuff (time selection, renaming depth/lat/lon/varname, converting units, etc)
-    data_xr_vars = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity='salinitybnd', tstart=tstart, tstop=tstop)
+    data_xr_vars = open_dataset_extra(dir_pattern=dir_pattern, quantity='salinitybnd', tstart=tstart, tstop=tstop)
     #interpolate regulargridDataset to plipointsDataset
     data_interp = dfmt.interp_regularnc_to_plipointsDataset(data_xr_reg=data_xr_vars, gdf_points=gdf_points)
     
@@ -252,7 +253,7 @@ def test_open_dataset_extra_correctdepths(tmp_path):
     file_nc = tmp_path / 'temp_cmems_dummydata.nc'
     ds_moretime.to_netcdf(file_nc)
     
-    ds_moretime_import = dfmt.open_dataset_extra(dir_pattern=file_nc, quantity='salinitybnd', tstart='2020-01-01 12:00:00', tstop='2020-01-02 12:00:00')
+    ds_moretime_import = open_dataset_extra(dir_pattern=file_nc, quantity='salinitybnd', tstart='2020-01-01 12:00:00', tstop='2020-01-02 12:00:00')
     assert len(ds_moretime_import.time) == 2
 
 
@@ -319,7 +320,7 @@ def test_open_dataset_extra_slightly_different_latlons(tmp_path):
     file_nc = tmp_path / 'temp_cmems_2day_*.nc'
     
     with pytest.raises(ValueError) as e:
-        dfmt.open_dataset_extra(file_nc, quantity='salinitybnd', tstart='2020-01-01 12:00:00', tstop='2020-01-02 12:00:00')
+        open_dataset_extra(file_nc, quantity='salinitybnd', tstart='2020-01-01 12:00:00', tstop='2020-01-02 12:00:00')
     
     # ValueError: cannot align objects with join='exact' where index/labels/sizes are not equal along these coordinates (dimensions): 'longitude' ('longitude',)
     assert "cannot align objects with join='exact' " in str(e.value)

@@ -24,7 +24,6 @@ from dfm_tools.errors import OutOfRangeError
 __all__ = ["get_conversion_dict",
            "interpolate_tide_to_bc",
            "interpolate_tide_to_plipoints",
-           "open_dataset_extra",
            "interp_regularnc_to_plipointsDataset",
            "interp_uds_to_plipoints",
            "interp_hisnc_to_plipoints",
