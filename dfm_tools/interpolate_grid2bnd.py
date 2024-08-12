@@ -369,7 +369,7 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
     if conversion_dict is None:
         conversion_dict = get_conversion_dict()
     
-    file_list_nc = glob.glob(dir_pattern)
+    file_list_nc = glob.glob(str(dir_pattern))
     print(f'loading mfdataset of {len(file_list_nc)} files with pattern(s) {dir_pattern}')
     
     data_xr = xr.open_mfdataset(file_list_nc, chunks=chunks, join="exact") #TODO: does chunks argument solve "PerformanceWarning: Slicing is producing a large chunk."? {'time':1} is not a convenient chunking to use for timeseries extraction

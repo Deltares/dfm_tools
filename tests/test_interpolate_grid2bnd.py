@@ -180,7 +180,8 @@ def test_interpolate_nc_to_bc():
     tstart = '2012-12-16 12:00'
     tstop = '2013-01-01 12:00'
     
-    dir_pattern = os.path.join(r'p:\1204257-dcsmzuno\data\CMEMS\nc\DCSM_allAvailableTimes','{ncvarname}_2012-1*.nc')
+    ncvarname = 'so'
+    dir_pattern = os.path.join(r'p:\1204257-dcsmzuno\data\CMEMS\nc\DCSM_allAvailableTimes',f'{ncvarname}_2012-12*.nc')
     
     #open regulargridDataset and do some basic stuff (time selection, renaming depth/lat/lon/varname, converting units, etc)
     data_xr_vars = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity='salinitybnd', tstart=tstart, tstop=tstop)
@@ -317,13 +318,12 @@ def test_open_dataset_extra_slightly_different_latlons(tmp_path):
     ds2.to_netcdf(file_nc2)
     file_nc = tmp_path / 'temp_cmems_2day_*.nc'
     
-    try:
+    with pytest.raises(ValueError) as e:
         ds = dfmt.open_dataset_extra(file_nc, quantity='salinitybnd', tstart='2020-01-01 12:00:00', tstop='2020-01-02 12:00:00')
         # add assertion just to be safe, but the code will not reach here
         assert ds.dims['longitude'] == ds1.dims['longitude']
-    except ValueError:
-        # ValueError: cannot align objects with join='exact' where index/labels/sizes are not equal along these coordinates (dimensions): 'longitude' ('longitude',)
-        pass # this is expected, so pass
+    # ValueError: cannot align objects with join='exact' where index/labels/sizes are not equal along these coordinates (dimensions): 'longitude' ('longitude',)
+    assert "cannot align objects with join='exact' " in str(e.value)
 
 
 @pytest.mark.unittest
