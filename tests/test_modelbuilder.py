@@ -12,6 +12,29 @@ import pandas as pd
 import hydrolib.core.dflowfm as hcdfm
 import xarray as xr
 from dfm_tools.hydrolib_helpers import get_ncbnd_construct
+from dfm_tools.modelbuilder import get_quantity_list, get_ncvarname
+
+
+@pytest.mark.unittest
+def test_get_quantity_list():
+    quantity_list = get_quantity_list('uxuyadvectionvelocitybnd')
+    assert quantity_list == ['ux','uy']
+    quantity_list = get_quantity_list('salinitybnd')
+    assert quantity_list == ['salinitybnd']
+    quantity_list = get_quantity_list(['salinitybnd'])
+    assert quantity_list == ['salinitybnd']
+
+
+@pytest.mark.unittest
+def test_get_ncvarname_list():
+    conversion_dict = dfmt.get_conversion_dict()
+    
+    ncvarname = get_ncvarname(quantity='salinitybnd', conversion_dict=conversion_dict)
+    assert ncvarname == "so"
+    
+    with pytest.raises(KeyError) as e:
+        get_ncvarname(quantity='nonexistingbnd', conversion_dict=conversion_dict)
+    assert "quantity 'nonexistingbnd' not in conversion_dict" in str(e.value)
 
 
 @pytest.mark.systemtest

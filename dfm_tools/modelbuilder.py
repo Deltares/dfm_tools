@@ -21,24 +21,54 @@ __all__ = [
 logger = logging.getLogger(__name__)
 
 
+def get_quantity_list(quantity):
+    if quantity=='uxuyadvectionvelocitybnd': #T3Dvector
+        quantity_list = ['ux','uy']
+    elif isinstance(quantity, list):
+        quantity_list = quantity
+    else:
+        quantity_list = [quantity]
+    return quantity_list
+
+
+def get_ncvarname(quantity, conversion_dict):
+    # check existence of requested keys in conversion_dict
+    if quantity not in conversion_dict.keys():
+        raise KeyError(f"quantity '{quantity}' not in conversion_dict, (case sensitive) options are"
+                       f": {str(list(conversion_dict.keys()))}")
+    
+    ncvarname = conversion_dict[quantity]['ncvarname']
+    return ncvarname
+
+    
 def cmems_nc_to_bc(ext_bnd, list_quantities, tstart, tstop, file_pli, dir_pattern, dir_output, conversion_dict=None, refdate_str=None):
     #input examples in https://github.com/Deltares/dfm_tools/blob/main/tests/examples/preprocess_interpolate_nc_to_bc.py
     # TODO: rename ext_bnd to ext_new for consistency
     if conversion_dict is None:
         conversion_dict = dfmt.get_conversion_dict()
     
-    for quantity in list_quantities:
+    for quantity in list_quantities: # loop over salinitybnd/uxuyadvectionvelocitybnd/etc
         print(f'processing quantity: {quantity}')
         
         # times in cmems API are at midnight, so round to nearest outer midnight datetime
         tstart = pd.Timestamp(tstart).floor('1d')
         tstop = pd.Timestamp(tstop).ceil('1d')
         
-        #open regulargridDataset and do some basic stuff (time selection, renaming depth/lat/lon/varname, converting units, etc)
-        data_xr_vars = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity=quantity,
-                                               tstart=tstart, tstop=tstop,
-                                               conversion_dict=conversion_dict,
-                                               refdate_str=refdate_str)
+        quantity_list = get_quantity_list(quantity=quantity)
+        
+        for quantity_key in quantity_list: # loop over ux/uy
+            ncvarname = get_ncvarname(quantity=quantity_key, conversion_dict=conversion_dict)
+            dir_pattern_one = str(dir_pattern).format(ncvarname=ncvarname)
+            #open regulargridDataset and do some basic stuff (time selection, renaming depth/lat/lon/varname, converting units, etc)
+            data_xr_onevar = dfmt.open_dataset_extra(dir_pattern=dir_pattern_one, quantity=quantity_key,
+                                                     tstart=tstart, tstop=tstop,
+                                                     conversion_dict=conversion_dict,
+                                                     refdate_str=refdate_str)
+            if quantity_key == quantity_list[0]:
+                data_xr_vars = data_xr_onevar
+            else: # only relevant in case of ux/uy, others all have only one quantity
+                data_xr_vars[quantity_key] = data_xr_onevar[quantity_key]
+        
         # interpolate regulargridDataset to plipointsDataset
         polyfile_obj = hcdfm.PolyFile(file_pli)
         gdf_points = dfmt.PolyFile_to_geodataframe_points(polyfile_object=polyfile_obj)
@@ -83,9 +113,13 @@ def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, c
         elif quan_bnd=="salinitybnd":
             # 3D initialsalinity/initialtemperature fields are silently ignored
             # initial 3D conditions are only possible via nudging 1st timestep via quantity=nudge_salinity_temperature
-            data_xr = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity=["salinitybnd","temperaturebnd"],
+            data_xr = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity="salinitybnd",
                                               tstart=tstart_round, tstop=tstop_round,
                                               conversion_dict=conversion_dict)
+            data_xr_tem = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity="temperaturebnd",
+                                              tstart=tstart_round, tstop=tstop_round,
+                                              conversion_dict=conversion_dict)
+            data_xr["temperaturebnd"] = data_xr_tem["temperaturebnd"]
             data_xr = data_xr.rename_vars({"salinitybnd":"so", "temperaturebnd":"thetao"})
             quantity = "nudge_salinity_temperature"
             varname = None

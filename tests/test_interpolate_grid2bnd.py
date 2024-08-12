@@ -19,8 +19,6 @@ from dfm_tools.interpolate_grid2bnd import (tidemodel_componentlist,
                                             interp_regularnc_to_plipointsDataset,
                                             check_time_extent,
                                             ext_add_boundary_object_per_polyline,
-                                            get_quantity_list,
-                                            get_ncvarname_list,
                                             ds_apply_conventions,
                                             ds_apply_conversion_dict,
                                             )
@@ -621,24 +619,4 @@ def test_ext_add_boundary_object_per_polyline_wrong_name(tmp_path):
     with pytest.raises(ValueError) as e:
         ext_add_boundary_object_per_polyline(ext_new=ext_new, boundary_object=boundary_object)
     assert "The names of one of the polylines in the polyfile is the same as the polyfilename" in str(e.value)
-
-
-def test_get_quantity_list():
-    quantity_list = get_quantity_list('uxuyadvectionvelocitybnd')
-    assert quantity_list == ['ux','uy']
-    quantity_list = get_quantity_list('salinitybnd')
-    assert quantity_list == ['salinitybnd']
-    quantity_list = get_quantity_list(['salinitybnd'])
-    assert quantity_list == ['salinitybnd']
-
-
-def test_get_ncvarname_list():
-    conversion_dict = dfmt.get_conversion_dict()
-    
-    ncvarname_list = get_ncvarname_list(quantity_list=['salinitybnd'], conversion_dict=conversion_dict)
-    assert ncvarname_list == ["so"]
-    
-    with pytest.raises(KeyError) as e:
-        get_ncvarname_list(quantity_list=['nonexistingbnd'], conversion_dict=conversion_dict)
-    assert "quantity 'nonexistingbnd' not in conversion_dict" in str(e.value)
 
