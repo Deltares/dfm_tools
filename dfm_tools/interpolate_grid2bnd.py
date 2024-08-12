@@ -24,7 +24,6 @@ from dfm_tools.errors import OutOfRangeError
 __all__ = ["get_conversion_dict",
            "interpolate_tide_to_bc",
            "interpolate_tide_to_plipoints",
-           "open_dataset_extra",
            "interp_regularnc_to_plipointsDataset",
            "interp_uds_to_plipoints",
            "interp_hisnc_to_plipoints",
@@ -343,44 +342,24 @@ def ds_apply_conventions(data_xr):
     return data_xr
 
 
-def ds_apply_conversion_dict(data_xr, conversion_dict, quantity_list):
+def ds_apply_conversion_dict(data_xr, conversion_dict, quantity):
     # rename variables from conversion_dict
     for k,v in conversion_dict.items():
         ncvarn = v['ncvarname']
-        if ncvarn in data_xr.variables.mapping.keys() and k in quantity_list: #k in quantity_list so phyc is not always renamed to tracerbndPON1 (first in conversion_dict)
+        if ncvarn in data_xr.variables.mapping.keys() and k == quantity: #k in quantity_list so phyc is not always renamed to tracerbndPON1 (first in conversion_dict)
             data_xr = data_xr.rename({ncvarn:k})
             print(f'variable {ncvarn} renamed to {k}')
 
     # optional conversion of units. Multiplications or other simple operatiors do not affect performance (dask.array(getitem) becomes dask.array(mul). With more complex operation it is better do do it on the interpolated array.
-    for quan in quantity_list: #TODO: maybe do unit conversion before interp or is that computationally heavy?
-        if 'conversion' in conversion_dict[quan].keys(): #if conversion is present, unit key must also be in conversion_dict
-            print(f'> converting units from [{data_xr[quan].attrs["units"]}] to [{conversion_dict[quan]["unit"]}]')
-            #print(f'attrs are discarded:\n{data_xr_vars[quan].attrs}')
-            data_xr[quan] = data_xr[quan] * conversion_dict[quan]['conversion'] #conversion drops all attributes of which units (which are changed anyway)
-            data_xr[quan].attrs['units'] = conversion_dict[quan]['unit'] #add unit attribute with resulting unit
+    # TODO: maybe do unit conversion before interp or is that computationally heavy?
+    if 'conversion' in conversion_dict[quantity].keys(): #if conversion is present, unit key must also be in conversion_dict
+        print(f'> converting units from [{data_xr[quantity].attrs["units"]}] to [{conversion_dict[quantity]["unit"]}]')
+        #print(f'attrs are discarded:\n{data_xr_vars[quan].attrs}')
+        data_xr[quantity] = data_xr[quantity] * conversion_dict[quantity]['conversion'] #conversion drops all attributes of which units (which are changed anyway)
+        data_xr[quantity].attrs['units'] = conversion_dict[quantity]['unit'] #add unit attribute with resulting unit
     return data_xr
 
 
-def get_quantity_list(quantity):
-    if quantity=='uxuyadvectionvelocitybnd': #T3Dvector
-        quantity_list = ['ux','uy']
-    elif isinstance(quantity, list):
-        quantity_list = quantity
-    else:
-        quantity_list = [quantity]
-    return quantity_list
-
-
-def get_ncvarname_list(quantity_list, conversion_dict):
-    # check existence of requested keys in conversion_dict
-    for quan in quantity_list:
-        if quan not in conversion_dict.keys():
-            raise KeyError(f"quantity '{quan}' not in conversion_dict, (case sensitive) options are: {str(list(conversion_dict.keys()))}")
-    
-    ncvarname_list = [conversion_dict[quan]['ncvarname'] for quan in quantity_list]
-    return ncvarname_list
-
-    
 def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=None, refdate_str=None, chunks=None):
     """
     empty docstring
@@ -389,28 +368,16 @@ def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=Non
     if conversion_dict is None:
         conversion_dict = get_conversion_dict()
     
-    quantity_list = get_quantity_list(quantity=quantity)
-    ncvarname_list = get_ncvarname_list(quantity_list=quantity_list, conversion_dict=conversion_dict)
-    
-    dir_pattern = [Path(str(dir_pattern).format(ncvarname=ncvarname)) for ncvarname in ncvarname_list]
-    file_list_nc = []
-    for dir_pattern_one in dir_pattern:
-        file_list_nc = file_list_nc + glob.glob(str(dir_pattern_one))
-    list_pattern_names = [x.name for x in dir_pattern]
-    print(f'loading mfdataset of {len(file_list_nc)} files with pattern(s) {list_pattern_names}')
+    file_list_nc = glob.glob(str(dir_pattern))
+    print(f'loading mfdataset of {len(file_list_nc)} files with pattern(s) {dir_pattern}')
     
     data_xr = xr.open_mfdataset(file_list_nc, chunks=chunks, join="exact") #TODO: does chunks argument solve "PerformanceWarning: Slicing is producing a large chunk."? {'time':1} is not a convenient chunking to use for timeseries extraction
     
     data_xr = ds_apply_conventions(data_xr=data_xr)
-    data_xr = ds_apply_conversion_dict(data_xr=data_xr, conversion_dict=conversion_dict, quantity_list=quantity_list)
+    data_xr = ds_apply_conversion_dict(data_xr=data_xr, conversion_dict=conversion_dict, quantity=quantity)
 
     # retrieve var(s) (after potential longitude conversion)
-    data_vars = list(data_xr.data_vars)
-    bool_quanavailable = pd.Series(quantity_list).isin(data_vars)
-    if not bool_quanavailable.all():
-        quantity_list_notavailable = pd.Series(quantity_list).loc[~bool_quanavailable].tolist()
-        raise KeyError(f'quantity {quantity_list_notavailable} not found in netcdf, available are: {data_vars}. Try updating conversion_dict to rename these variables.')
-    data_xr_vars = data_xr[quantity_list]
+    data_xr_vars = data_xr[[quantity]]
     
     # slice time
     check_time_extent(data_xr, tstart, tstop)
