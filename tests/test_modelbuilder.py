@@ -48,10 +48,10 @@ def test_cmems_nc_to_ini_midnight_centered(tmp_path):
     ds2["time"] = ds2["time"] + pd.Timedelta(hours=12)
     
     dir_pattern = os.path.join(tmp_path, "temp_cmems_2day_*.nc")
-    file_nc1 = dir_pattern.replace("*","sal_p1")
-    file_nc2 = dir_pattern.replace("*","sal_p2")
-    file_nc3 = dir_pattern.replace("*","tem_p1")
-    file_nc4 = dir_pattern.replace("*","tem_p2")
+    file_nc1 = dir_pattern.replace("*","so_p1")
+    file_nc2 = dir_pattern.replace("*","so_p2")
+    file_nc3 = dir_pattern.replace("*","thetao_p1")
+    file_nc4 = dir_pattern.replace("*","thetao_p2")
     ds1.to_netcdf(file_nc1)
     ds2.to_netcdf(file_nc2)
     ds1.rename({"so":"thetao"}).to_netcdf(file_nc3)
@@ -59,11 +59,13 @@ def test_cmems_nc_to_ini_midnight_centered(tmp_path):
     
     ext_old = hcdfm.ExtOldModel()
     
+    dir_pattern_ncvarname = dir_pattern.replace("*","{ncvarname}*")
+    
     ext_old = dfmt.cmems_nc_to_ini(ext_old=ext_old,
                                    dir_output=tmp_path,
                                    list_quantities=["salinitybnd"],
                                    tstart="2020-01-01",
-                                   dir_pattern=dir_pattern)
+                                   dir_pattern=dir_pattern_ncvarname)
     
     file_expected = tmp_path / "nudge_salinity_temperature_2020-01-01_00-00-00.nc"
     
@@ -76,6 +78,7 @@ def test_cmems_nc_to_ini_midnight_centered(tmp_path):
     assert times_expected == times_actual
     
     assert "so" in ds_out.data_vars
+    assert "thetao" in ds_out.data_vars
     assert ds_out.so.isnull().sum().load() == 0
     
     ncbnd_construct = get_ncbnd_construct()

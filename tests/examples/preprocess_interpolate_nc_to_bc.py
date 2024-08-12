@@ -86,6 +86,8 @@ for file_pli in list_plifiles:
                     continue
                 dir_pattern = dir_pattern_waq
             
+            # TODO: open_dataset_extra only supports non-vector quantities after https://github.com/Deltares/dfm_tools/pull/946
+            # this means uxuyadvectionvelocitybnd has to be passed via ux/uy separately
             #open regulargridDataset and do some basic stuff (time selection, renaming depth/lat/lon/varname, converting units, etc)
             data_xr_vars = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity=quantity, #TODO: maybe replace renaming part with package CMCC/Lisa?
                                                    tstart=tstart, tstop=tstop,

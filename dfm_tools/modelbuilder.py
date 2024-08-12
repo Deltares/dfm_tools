@@ -110,13 +110,19 @@ def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, c
         if quan_bnd in ["temperaturebnd","uxuyadvectionvelocitybnd"]:
             # silently skipped, temperature is handled with salinity, uxuy not supported
             continue
-        elif quan_bnd=="salinitybnd":
+        
+        ncvarname = get_ncvarname(quantity=quan_bnd, conversion_dict=conversion_dict)
+        dir_pattern_one = dir_pattern.format(ncvarname=ncvarname)
+        
+        if quan_bnd=="salinitybnd":
             # 3D initialsalinity/initialtemperature fields are silently ignored
             # initial 3D conditions are only possible via nudging 1st timestep via quantity=nudge_salinity_temperature
-            data_xr = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity="salinitybnd",
+            data_xr = dfmt.open_dataset_extra(dir_pattern=dir_pattern_one, quantity="salinitybnd",
                                               tstart=tstart_round, tstop=tstop_round,
                                               conversion_dict=conversion_dict)
-            data_xr_tem = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity="temperaturebnd",
+            ncvarname_tem = get_ncvarname(quantity="temperaturebnd", conversion_dict=conversion_dict)
+            dir_pattern_tem = dir_pattern.format(ncvarname=ncvarname_tem)
+            data_xr_tem = dfmt.open_dataset_extra(dir_pattern=dir_pattern_tem, quantity="temperaturebnd",
                                               tstart=tstart_round, tstop=tstop_round,
                                               conversion_dict=conversion_dict)
             data_xr["temperaturebnd"] = data_xr_tem["temperaturebnd"]
@@ -124,12 +130,13 @@ def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, c
             quantity = "nudge_salinity_temperature"
             varname = None
         else:
-            data_xr = dfmt.open_dataset_extra(dir_pattern=dir_pattern, quantity=quan_bnd,
+            data_xr = dfmt.open_dataset_extra(dir_pattern=dir_pattern_one, quantity=quan_bnd,
                                               tstart=tstart_round, tstop=tstop_round,
                                               conversion_dict=conversion_dict)
             quantity = f'initial{quan_bnd.replace("bnd","")}'
             varname = quantity
             data_xr = data_xr.rename_vars({quan_bnd:quantity})
+
         
         # open_dataset_extra converted depths from positive down to positive up, including update of the "positive" attribute
         # TODO: this correctly updated attr negatively impacts model results when using netcdf inifields, so we revert it here
