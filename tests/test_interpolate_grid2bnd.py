@@ -278,7 +278,7 @@ def test_ds_apply_conventions():
 def test_ds_apply_conversion_dict_rename():
     conversion_dict = dfmt.get_conversion_dict()
     ds_moretime = cmems_dataset_4times()
-    ds_converted = ds_apply_conversion_dict(data_xr=ds_moretime, conversion_dict=conversion_dict, quantity_list=['salinitybnd'])
+    ds_converted = ds_apply_conversion_dict(data_xr=ds_moretime, conversion_dict=conversion_dict, quantity='salinitybnd')
     assert 'so' in ds_moretime.data_vars
     assert 'salinitybnd' in ds_converted.data_vars
     assert np.allclose(ds_converted['salinitybnd'], ds_moretime['so'], equal_nan=True)
@@ -290,7 +290,7 @@ def test_ds_apply_conversion_dict_rename_and_factor():
     ds_moretime = cmems_dataset_4times()
     ds_moretime = ds_moretime.rename_vars({'so':'o2'})
     ds_moretime['o2'] = ds_moretime['o2'].assign_attrs({'units':'dummy'})
-    ds_converted = ds_apply_conversion_dict(data_xr=ds_moretime, conversion_dict=conversion_dict, quantity_list=['tracerbndOXY'])
+    ds_converted = ds_apply_conversion_dict(data_xr=ds_moretime, conversion_dict=conversion_dict, quantity='tracerbndOXY')
     assert 'o2' in ds_moretime.data_vars
     assert 'tracerbndOXY' in ds_converted.data_vars
     assert np.allclose(ds_converted['tracerbndOXY'], ds_moretime['o2']*0.032, equal_nan=True)
