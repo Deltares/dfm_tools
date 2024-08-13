@@ -489,8 +489,6 @@ def interp_uds_to_plipoints(uds:xu.UgridDataset, gdf:geopandas.GeoDataFrame) -> 
         if edgedim not in uds[varn].dims and nodedim not in uds[varn].dims:
             ds[varn] = uds[varn]
     
-    #TODO: drop mesh2d_face_x and mesh2d_face_y variables
-    
     # rename station dimname and varname (is index, are both mesh2d_nFaces to start with)
     ds = ds.rename({facedim:dimn_point}) # rename mesh2d_nFaces to plipoints
     ds = ds.rename_vars({dimn_point:varn_pointname})
