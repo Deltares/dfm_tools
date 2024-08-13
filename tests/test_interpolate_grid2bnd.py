@@ -529,8 +529,9 @@ def test_interp_uds_to_plipoints():
     file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True)
     uds = dfmt.open_partitioned_dataset(file_nc)
     
-    gdf = gpd.GeoDataFrame(geometry=gpd.points_from_xy([51500,55000],[418800,421500]))
-    gdf[varn_pointname] = ['pt_0001','pt_0002']
+    # adding xy=[1,1] deliberately to test if there are nans included
+    gdf = gpd.GeoDataFrame(geometry=gpd.points_from_xy([51500,55000,1],[418800,421500,1]))
+    gdf[varn_pointname] = ['pt_0001','pt_0002','pt_0003']
     
     # fig, ax = plt.subplots()
     # uds.mesh2d_flowelem_bl.ugrid.plot(ax=ax)
@@ -543,12 +544,14 @@ def test_interp_uds_to_plipoints():
     #interpolate to plipoints
     ds_plipoints = dfmt.interp_uds_to_plipoints(uds=ds_atdepths, gdf=gdf) #workaround for plipoints out of the model domain
     assert varn_pointname in ds_plipoints.coords
+    assert 'depth' in ds_plipoints.coords # TODO: maybe should be z like ncbnd_construct['varn_depth'], although get_Dataset_atdepths() makes depth variable
     
     retrieved = ds_plipoints.mesh2d_sa1.isel(time=-1).to_numpy()
     expected = np.array([[29.00111981, 28.99379263],
-                         [28.95170139, 28.63716083]])
+                         [28.95170139, 28.63716083],
+                         [np.nan, np.nan]])
     
-    assert (np.abs(retrieved - expected) < 1e-8).all()
+    assert np.allclose(retrieved, expected, equal_nan=True)
 
 
 def test_ext_add_boundary_object_per_polyline_onepolyline(tmp_path):
