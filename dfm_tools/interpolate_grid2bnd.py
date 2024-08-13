@@ -465,25 +465,30 @@ def interp_uds_to_plipoints(uds:xu.UgridDataset, gdf:geopandas.GeoDataFrame) -> 
     # TODO: this function requires gdf with points, but the interp_regularnc_to_plipoints requires paths to plifiles (and others also)
     
     facedim = uds.grid.face_dimension
+    edgedim = uds.grid.edge_dimension
+    nodedim = uds.grid.node_dimension
     ncbnd_construct = get_ncbnd_construct()
     dimn_point = ncbnd_construct['dimn_point']
     varn_pointname = ncbnd_construct['varn_pointname']
     
-    ds = uds.ugrid.sel_points(x=gdf.geometry.x, y=gdf.geometry.y)
-    #TODO: drop mesh2d_face_x and mesh2d_face_y variables
+    # drop node/edge variables since they are not interpolated but 
+    # get an additional face dimension if some points are out of bounds
+    # TODO: revert after fixing https://github.com/Deltares/xugrid/issues/274
+    vars_without_facedim = []
+    for varn in uds.variables:
+        if facedim not in uds[varn].dims:
+            vars_without_facedim.append(varn)
+    uds_face = uds.drop(vars_without_facedim)
     
-    if len(gdf)!=ds.sizes[facedim]: #TODO: check this until https://github.com/Deltares/xugrid/issues/100 is solved, after that, make a testcase that checks only this if-statement
-        ds_points = geopandas.points_from_xy(ds.x,ds.y)
-        gdfpoint_inds_bool = pd.Series(index=range(len(gdf)))
-        gdfpoint_inds_bool[:] = True
-        for iR, gdf_row in gdf.iterrows():
-            gdf_point = gdf_row.geometry
-            if gdf_point in ds_points:
-                gdfpoint_inds_bool.iloc[iR] = False
-        gdf_stats = gdf.copy()
-        gdf_stats['missing'] = gdfpoint_inds_bool
-        raise ValueError(f'requested {len(gdf)} points but resulted in ds with {ds.sizes[facedim]} points, missing points are probably outside of the uds model domain:\n{gdf_stats}')
-
+    # interpolate to provided points
+    ds = uds_face.ugrid.sel_points(x=gdf.geometry.x, y=gdf.geometry.y)
+    
+    # re-add removed variables again, sometimes important for e.g. depth
+    # TODO: remove after fixing https://github.com/Deltares/xugrid/issues/274
+    for varn in vars_without_facedim:
+        if edgedim not in uds[varn].dims and nodedim not in uds[varn].dims:
+            ds[varn] = uds[varn]
+    
     # rename station dimname and varname (is index, are both mesh2d_nFaces to start with)
     ds = ds.rename({facedim:dimn_point}) # rename mesh2d_nFaces to plipoints
     ds = ds.rename_vars({dimn_point:varn_pointname})
