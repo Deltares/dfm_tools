@@ -7,6 +7,7 @@ import pandas as pd
 import meshkernel
 from dfm_tools.xarray_helpers import file_to_list
 from netCDF4 import default_fillvals
+import warnings
 
 __all__ = [
     "open_partitioned_dataset",
@@ -220,7 +221,10 @@ def open_partitioned_dataset(file_nc, decode_fillvals=False, remove_edges=True, 
     partitions = []
     for iF, file_nc_one in enumerate(file_nc_list):
         print(iF+1,end=' ')
-        ds = xr.open_mfdataset(file_nc_one, **kwargs)
+        # suppress chunking warning: https://github.com/Deltares/dfm_tools/issues/947
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=UserWarning)
+            ds = xr.open_mfdataset(file_nc_one, **kwargs)
         if decode_fillvals:
             ds = decode_default_fillvals(ds)
         if remove_edges:
