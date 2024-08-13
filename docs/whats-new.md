@@ -8,6 +8,7 @@
 - update private functions under `dfmt.download_ERA5()` to CDS-Beta (requires ECMWF apikey instead) in [#925](https://github.com/Deltares/dfm_tools/pull/925)
 - simplified prevention of int dtypes in `dfmt.preprocess_ERA5()` in [#943](https://github.com/Deltares/dfm_tools/pull/943)
 - simplified `dfmt.open_dataset_extra()` by dropping multi-quantity support in [#946](https://github.com/Deltares/dfm_tools/pull/946)
+- improved `dfmt.interp_uds_to_plipoints()` by supporting outofbound points and new xugrid version in [#948](https://github.com/Deltares/dfm_tools/pull/948)
 
 ### Fix
 - also apply convert_360to180 to longitude variable in `dfmt.open_dataset_curvilinear()` in [#913](https://github.com/Deltares/dfm_tools/pull/913)

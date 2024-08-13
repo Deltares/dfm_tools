@@ -42,7 +42,7 @@ ds_atdepths = dfmt.get_Dataset_atdepths(data_xr=uds, depths=depths_slice)
 ds_atdepths = ds_atdepths.rename({'depth_from_z0':'depth'})
 
 #interpolate to plipoints
-ds_plipoints = dfmt.interp_uds_to_plipoints(uds=ds_atdepths, gdf=gdf.drop(4)) #gdf.drop(4) #workaround for plipoints out of the model domain
+ds_plipoints = dfmt.interp_uds_to_plipoints(uds=ds_atdepths, gdf=gdf)
 fig,ax = plt.subplots()
 uds.mesh2d_flowelem_bl.ugrid.plot(ax=ax,center=False)
 gdf.plot(ax=ax)
