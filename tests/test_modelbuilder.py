@@ -11,7 +11,7 @@ import dfm_tools as dfmt
 import pandas as pd
 import hydrolib.core.dflowfm as hcdfm
 import xarray as xr
-from dfm_tools.hydrolib_helpers import get_ncbnd_construct
+import numpy as np
 from dfm_tools.modelbuilder import get_quantity_list, get_ncvarname
 
 
@@ -47,10 +47,6 @@ def test_cmems_nc_to_ini_midnight_centered(tmp_path):
     ds2 = cmems_dataset_4times().isel(time=slice(2,None))
     ds2["time"] = ds2["time"] + pd.Timedelta(hours=12)
     
-    #set lowest value to nan to check filling
-    ds1 = ds1.where(ds1.depth>-4)
-    
-    
     dir_pattern = os.path.join(tmp_path, "temp_cmems_2day_*.nc")
     file_nc1 = dir_pattern.replace("*","so_p1")
     file_nc2 = dir_pattern.replace("*","so_p2")
@@ -85,11 +81,11 @@ def test_cmems_nc_to_ini_midnight_centered(tmp_path):
     assert "thetao" in ds_out.data_vars
     assert ds_out.so.isnull().sum().load() == 0
     
-    ncbnd_construct = get_ncbnd_construct()
-    varn_depth = ncbnd_construct['varn_depth']
-    assert varn_depth in ds_out.coords
-    # the below is inconsistent since depth is actually defined positive up, but FM requires this for inifields: https://issuetracker.deltares.nl/browse/UNST-7455
-    assert ds_out[varn_depth].attrs['positive'] == 'down'
+    # check whether the cmems depth definition comes trough
+    assert 'depth' in ds_out.coords
+    depths_expected = np.array([-0.494025, -1.541375, -2.645669, -3.819495, -5.078224])
+    assert np.allclose(ds_out['depth'].to_numpy(), depths_expected)
+    assert ds_out['depth'].attrs['positive'] == 'up'
 
 
 @pytest.mark.unittest

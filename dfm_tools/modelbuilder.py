@@ -3,12 +3,14 @@ import logging
 import pandas as pd
 import dfm_tools as dfmt
 import datetime as dt
+import xarray as xr
 import hydrolib.core.dflowfm as hcdfm
 from hydrolib.core.dimr.models import DIMR, FMComponent, Start
 from hydrolib.core.utils import get_path_style_for_current_operating_system
 from dfm_tools.hydrolib_helpers import get_ncbnd_construct
 from dfm_tools.interpolate_grid2bnd import (ext_add_boundary_object_per_polyline,
                                             open_dataset_extra,
+                                            ds_apply_conversion_dict,
                                             )
             
 __all__ = [
@@ -97,6 +99,11 @@ def preprocess_ini_cmems_to_nc(**kwargs):
 
 
 def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, conversion_dict=None):
+    """
+    This makes quite specific 3D initial input files based on CMEMS data. delft3dfm is quite picky, 
+    so it works with CMEMS files because they have a depth variable with standard_name='depth'.
+    If this is not present, or dimensions are ordered differently, there will be an error or incorrect model results.
+    """
     
     if conversion_dict is None:
         conversion_dict = dfmt.get_conversion_dict()
@@ -119,35 +126,20 @@ def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, c
         if quan_bnd=="salinitybnd":
             # 3D initialsalinity/initialtemperature fields are silently ignored
             # initial 3D conditions are only possible via nudging 1st timestep via quantity=nudge_salinity_temperature
-            data_xr = open_dataset_extra(dir_pattern=dir_pattern_one, quantity="salinitybnd",
-                                         tstart=tstart_round, tstop=tstop_round,
-                                         conversion_dict=conversion_dict)
+            data_xr = xr.open_mfdataset(dir_pattern_one)
             ncvarname_tem = get_ncvarname(quantity="temperaturebnd", conversion_dict=conversion_dict)
             dir_pattern_tem = dir_pattern.format(ncvarname=ncvarname_tem)
-            data_xr_tem = open_dataset_extra(dir_pattern=dir_pattern_tem, quantity="temperaturebnd",
-                                             tstart=tstart_round, tstop=tstop_round,
-                                             conversion_dict=conversion_dict)
-            data_xr["temperaturebnd"] = data_xr_tem["temperaturebnd"]
-            data_xr = data_xr.rename_vars({"salinitybnd":"so", "temperaturebnd":"thetao"})
+            data_xr_tem = xr.open_mfdataset(dir_pattern_tem)
+            data_xr["thetao"] = data_xr_tem["thetao"]
             quantity = "nudge_salinity_temperature"
             varname = None
         else:
-            data_xr = open_dataset_extra(dir_pattern=dir_pattern_one, quantity=quan_bnd,
-                                         tstart=tstart_round, tstop=tstop_round,
-                                         conversion_dict=conversion_dict)
+            data_xr = xr.open_mfdataset(dir_pattern_one)
+            data_xr = ds_apply_conversion_dict(data_xr=data_xr, conversion_dict=conversion_dict, quantity=quan_bnd)
             quantity = f'initial{quan_bnd.replace("bnd","")}'
             varname = quantity
             data_xr = data_xr.rename_vars({quan_bnd:quantity})
 
-        
-        # open_dataset_extra converted depths from positive down to positive up, including update of the "positive" attribute
-        # TODO: this correctly updated attr negatively impacts model results when using netcdf inifields, so we revert it here
-        # https://issuetracker.deltares.nl/browse/UNST-7455
-        ncbnd_construct = get_ncbnd_construct()
-        varn_depth = ncbnd_construct['varn_depth']
-        if varn_depth in data_xr.coords:
-            data_xr[varn_depth].attrs['positive'] = 'down'
-        
         # subset two times. interp to tstart would be the proper way to do it, 
         # but FM needs two timesteps for nudge_salinity_temperature and initial waq vars
         data_xr = data_xr.sel(time=slice(tstart_round, tstop_round))
@@ -159,10 +151,7 @@ def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, c
         # then use bfill/ffill to fill nans at the edge for lat/lon/depth
         data_xr = data_xr.ffill(dim='latitude').bfill(dim='latitude')
         data_xr = data_xr.ffill(dim='longitude').bfill(dim='longitude')
-        if 'depth' in data_xr.dims:
-            data_xr = data_xr.ffill(dim='depth').bfill(dim='depth')
-        else:
-            data_xr = data_xr.ffill(dim='z').bfill(dim='z')
+        data_xr = data_xr.ffill(dim='depth').bfill(dim='depth')
 
         print('writing file')
         file_output = os.path.join(dir_output,f"{quantity}_{tstart_str}.nc")
