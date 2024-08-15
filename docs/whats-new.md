@@ -15,6 +15,7 @@
 - also apply convert_360to180 to longitude variable in `dfmt.open_dataset_curvilinear()` in [#913](https://github.com/Deltares/dfm_tools/pull/913)
 - prevented adding of time dimension and dropped 0-sized cells in `dfmt.open_dataset_curvilinear()` in [#929](https://github.com/Deltares/dfm_tools/pull/929)
 - dropping lat/lon/verts variables to maintain single source of truth in `dfmt.open_dataset_curvilinear()` in [#931](https://github.com/Deltares/dfm_tools/pull/931)
+- fix for 3D initial fields in `dfmt.cmems_nc_to_ini()` to avoid top layer values over the entire depth in [#955](https://github.com/Deltares/dfm_tools/pull/955)
 
 
 ## 0.24.0 (2024-07-12)
