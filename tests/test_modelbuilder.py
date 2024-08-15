@@ -47,6 +47,10 @@ def test_cmems_nc_to_ini_midnight_centered(tmp_path):
     ds2 = cmems_dataset_4times().isel(time=slice(2,None))
     ds2["time"] = ds2["time"] + pd.Timedelta(hours=12)
     
+    #set lowest value to nan to check filling
+    ds1 = ds1.where(ds1.depth>-4)
+    
+    
     dir_pattern = os.path.join(tmp_path, "temp_cmems_2day_*.nc")
     file_nc1 = dir_pattern.replace("*","so_p1")
     file_nc2 = dir_pattern.replace("*","so_p2")

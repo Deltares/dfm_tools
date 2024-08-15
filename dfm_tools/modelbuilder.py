@@ -159,8 +159,10 @@ def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, c
         # then use bfill/ffill to fill nans at the edge for lat/lon/depth
         data_xr = data_xr.ffill(dim='latitude').bfill(dim='latitude')
         data_xr = data_xr.ffill(dim='longitude').bfill(dim='longitude')
-        data_xr = data_xr.ffill(dim='depth').bfill(dim='depth')
-        
+        if 'depth' in data_xr.dims:
+            data_xr = data_xr.ffill(dim='depth').bfill(dim='depth')
+        else:
+            data_xr = data_xr.ffill(dim='z').bfill(dim='z')
 
         print('writing file')
         file_output = os.path.join(dir_output,f"{quantity}_{tstart_str}.nc")
