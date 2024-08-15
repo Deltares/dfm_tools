@@ -58,16 +58,20 @@ def cmems_dataset_notime():
                        [35.792107, np.nan,    np.nan],
                        [35.822628, np.nan,    np.nan]],
                                               
-                      [[35.781425, np.nan,    np.nan],
-                       [35.792107, np.nan,    np.nan],
-                       [35.789055, np.nan,    np.nan]]])
+                      [[np.nan, np.nan,    np.nan],
+                       [np.nan, np.nan,    np.nan],
+                       [np.nan, np.nan,    np.nan]]])
     ds['so'] = xr.DataArray(so_np,dims=('depth','latitude','longitude'))
     lons = [-9.6, -9.5, -9.4]
     lats = [42.9, 43.0, 43.1]
     depths = [-0.494025, -1.541375, -2.645669, -3.819495, -5.078224]
+    
+    depth_attrs = {'positive': 'up'}
+    
     ds['longitude'] = xr.DataArray(lons, dims=('longitude'))
     ds['latitude'] = xr.DataArray(lats, dims=('latitude'))
-    ds['depth'] = xr.DataArray(depths, dims=('depth'))
+    ds['depth'] = xr.DataArray(depths, dims=('depth')).assign_attrs(depth_attrs)
+    
     return ds
 
 
