@@ -171,12 +171,27 @@ def uds_auto_set_crs(uds : xu.UgridDataset):
         return
 
 
-def open_partitioned_dataset(file_nc, decode_fillvals=False, remove_edges=False, remove_ghost=True, **kwargs): 
+def open_partitioned_dataset(file_nc:str, decode_fillvals:bool = False, remove_edges:bool = False, remove_ghost:bool = True, **kwargs): 
     """
-    using xugrid to read and merge partitions, with some additional features (remaning old layerdim, timings, set zcc/zw as data_vars)
+    using xugrid to read and merge partitions, including support for delft3dfm mapformat1 
+    by renaming old layerdim. Furthermore some optional extensions like removal of hanging
+    edges and removal of ghost cells.
 
     Parameters
     ----------
+    file_nc : str
+        DESCRIPTION.
+    decode_fillvals : bool, optional
+        DESCRIPTION. The default is False.
+    remove_edges : bool, optional
+        Remove hanging edges from the mapfile, necessary to generate contour and contourf plots 
+        with xugrid. Can be enabled always, but takes some additional computation time. The default is False.
+    remove_ghost : bool, optional
+        Remove ghostcells from the partitions. This is also done by xugrid automatically 
+        upon merging, but then the domain numbers are not taken into account so 
+        the result will be different. The default is True.
+    **kwargs : TYPE
+        DESCRIPTION.
     file_nc : TYPE
         DESCRIPTION.
     kwargs : TYPE, optional

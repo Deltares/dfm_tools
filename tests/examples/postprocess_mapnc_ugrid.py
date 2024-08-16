@@ -17,8 +17,8 @@ import dfm_tools as dfmt
 dir_output = '.'
 
 file_nc_list = [dfmt.data.fm_curvedbend_map(return_filepath=True), # sigmalayer
-                # dfmt.data.fm_grevelingen_map(return_filepath=True), # zlayer
-                # r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0*_map.nc', # szigma fullgrid
+                dfmt.data.fm_grevelingen_map(return_filepath=True), # zlayer
+                r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0*_map.nc', # szigma fullgrid
                 r'p:\dflowfm\maintenance\JIRA\05000-05999\05477\c103_ws_3d_fourier\DFM_OUTPUT_westerscheldt01_0subst\westerscheldt01_0subst_map.nc', # zsigma model without fullgrid output but with new ocean_sigma_z_coordinate variable
                 # r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_207\results\RMM_dflowfm_0*_map.nc', # 2D model
                 # r'p:\archivedprojects\11203379-005-mwra-updated-bem\03_model\02_final\A72_ntsu0_kzlb2\DFM_OUTPUT_MB_02\MB_02_0*_map.nc', # zlayer
@@ -27,11 +27,9 @@ file_nc_list = [dfmt.data.fm_curvedbend_map(return_filepath=True), # sigmalayer
 for file_nc in file_nc_list:
     plt.close('all')
 
-    print('processing %s'%(os.path.basename(file_nc)))
-    basename = os.path.basename(file_nc).replace('.','').replace('_0*_','_0000_')
-    
-    uds = dfmt.open_partitioned_dataset(file_nc)
-    vars_pd = dfmt.get_ncvarproperties(uds)
+    # defaults (can be overwitten by file specific settings)
+    remove_edges = False
+    rename_dict = None
     
     if 'cb_3d_map' in file_nc:
         timestep = 72
@@ -71,6 +69,8 @@ for file_nc in file_nc_list:
         raster_res = 1000
         umag_clim = (None,0.1)
     elif 'DCSM-FM_0_5nm' in file_nc:
+        remove_edges = True
+        
         timestep = 365
         layno = 45
         sel_slice_x, sel_slice_y = slice(0,5), slice(50,55)
@@ -89,8 +89,8 @@ for file_nc in file_nc_list:
         raster_res = 0.3
         umag_clim = (None,1)
     elif 'westerscheldt01_0subst_map' in file_nc:
-        # open again with remove_edges=True to avoid ValueError: Invalid edge_node_connectivity. Run .validate_edge_node_connectivity().
-        uds = dfmt.open_partitioned_dataset(file_nc, remove_edges=True)
+        remove_edges = True
+        rename_dict = {'mesh2d_ucmag':'mesh2d_sa1'}
         
         timestep = 1
         layno = -2
@@ -105,7 +105,6 @@ for file_nc in file_nc_list:
         clim_sal = None
         crs = "EPSG:28992"
         raster_res = 2500
-        uds = uds.rename({'mesh2d_ucmag':'mesh2d_sa1'}) #rename variable to allow for hardcoded plotting
         umag_clim = None
     elif 'RMM_dflowfm' in file_nc:
         timestep = 365 #50
@@ -154,7 +153,20 @@ for file_nc in file_nc_list:
         umag_clim = (None,0.8)
     else:
         raise KeyError('ERROR: no settings provided for this mapfile')
-        
+    
+    
+    print('processing %s'%(os.path.basename(file_nc)))
+    basename = os.path.basename(file_nc).replace('.','').replace('_0*_','_0000_')
+    
+    uds = dfmt.open_partitioned_dataset(file_nc, remove_edges=remove_edges)
+    
+    # optionally rename variables to allow for hardcoded plotting
+    if rename_dict is not None:
+        uds = uds.rename(rename_dict)
+    
+    # get dataframe of variables
+    vars_pd = dfmt.get_ncvarproperties(uds)
+    
     
     print('plot grid from mapdata')
     fig, ax = plt.subplots()
@@ -176,7 +188,6 @@ for file_nc in file_nc_list:
     # line_array = dfmt.LineBuilder(ax=ax_input).line_array
     ax_input.plot(line_array[0,0],line_array[0,1],'bx',linewidth=3,markersize=10)
     ax_input.plot(line_array[:,0],line_array[:,1],'b',linewidth=3)
-
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_flowelem_bl'))
     if crs is not None:
@@ -226,7 +237,7 @@ for file_nc in file_nc_list:
     pc = uds['mesh2d_flowelem_bl'].ugrid.plot.contourf(ax=ax2, levels=11, cmap='jet', vmin=vmin, vmax=vmax)
     pc = uds['mesh2d_flowelem_bl'].ugrid.plot.contour(ax=ax3, levels=11, cmap='jet', vmin=vmin, vmax=vmax, add_colorbar=True)
     bl_raster = dfmt.rasterize_ugrid(uds['mesh2d_flowelem_bl'],resolution=raster_res) #rasterize ugrid uds/uda
-    # pc = bl_raster.plot(ax=ax4, cmap='jet', vmin=vmin, vmax=vmax) #plot with non-ugrid method
+    pc = bl_raster.plot(ax=ax4, cmap='jet', vmin=vmin, vmax=vmax) #plot with non-ugrid method
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,f'{basename}_gridbedcontour'))
     
