@@ -171,7 +171,7 @@ def uds_auto_set_crs(uds : xu.UgridDataset):
         return
 
 
-def open_partitioned_dataset(file_nc, decode_fillvals=False, remove_edges=True, remove_ghost=True, **kwargs): 
+def open_partitioned_dataset(file_nc, decode_fillvals=False, remove_edges=False, remove_ghost=True, **kwargs): 
     """
     using xugrid to read and merge partitions, with some additional features (remaning old layerdim, timings, set zcc/zw as data_vars)
 
@@ -179,7 +179,7 @@ def open_partitioned_dataset(file_nc, decode_fillvals=False, remove_edges=True, 
     ----------
     file_nc : TYPE
         DESCRIPTION.
-    kawrgs : TYPE, optional
+    kwargs : TYPE, optional
         arguments that are passed to xr.open_dataset. The chunks argument is set if not provided
         chunks={'time':1} increases performance significantly upon reading, but causes memory overloads when performing sum/mean/etc actions over time dimension (in that case 100/200 is better). The default is {'time':1}.
 

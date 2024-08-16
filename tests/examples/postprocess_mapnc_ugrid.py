@@ -30,8 +30,8 @@ for file_nc in file_nc_list:
     print('processing %s'%(os.path.basename(file_nc)))
     basename = os.path.basename(file_nc).replace('.','').replace('_0*_','_0000_')
     
-    data_frommap_merged = dfmt.open_partitioned_dataset(file_nc)
-    vars_pd = dfmt.get_ncvarproperties(data_frommap_merged)
+    uds = dfmt.open_partitioned_dataset(file_nc)
+    vars_pd = dfmt.get_ncvarproperties(uds)
     
     if 'cb_3d_map' in file_nc:
         timestep = 72
@@ -102,7 +102,7 @@ for file_nc in file_nc_list:
         clim_sal = None
         crs = "EPSG:28992"
         raster_res = 2500
-        data_frommap_merged = data_frommap_merged.rename({'mesh2d_ucmag':'mesh2d_sa1'}) #rename variable to allow for hardcoded plotting
+        uds = uds.rename({'mesh2d_ucmag':'mesh2d_sa1'}) #rename variable to allow for hardcoded plotting
         umag_clim = None
     elif 'RMM_dflowfm' in file_nc:
         timestep = 365 #50
@@ -136,6 +136,9 @@ for file_nc in file_nc_list:
         raster_res = 2500
         umag_clim = (None,0.5)
     elif 'MB_02_' in file_nc:
+        # open again with remove_edges=True to avoid ValueError: Invalid edge_node_connectivity. Run .validate_edge_node_connectivity().
+        uds = dfmt.open_partitioned_dataset(file_nc, remove_edges=True)
+        
         timestep = 10
         layno = 45
         sel_slice_x, sel_slice_y = slice(None,None), slice(None,None)
@@ -155,7 +158,7 @@ for file_nc in file_nc_list:
     
     print('plot grid from mapdata')
     fig, ax = plt.subplots()
-    pc = data_frommap_merged.grid.plot(edgecolor='crimson', linewidth=0.5)
+    pc = uds.grid.plot(edgecolor='crimson', linewidth=0.5)
     ax.set_xlabel('x')
     ax.set_ylabel('y')
     ax.set_aspect('equal')
@@ -166,7 +169,7 @@ for file_nc in file_nc_list:
     print('plot bedlevel')
     #get bedlevel and create plot with ugrid and cross section line
     fig, ax_input = plt.subplots()
-    pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot(cmap='jet') #TODO: default is edgecolor='face', should work even better with edgecolor='none', but that results in seethrough edges anyway, report to matplotlib?
+    pc = uds['mesh2d_flowelem_bl'].ugrid.plot(cmap='jet') #TODO: default is edgecolor='face', should work even better with edgecolor='none', but that results in seethrough edges anyway, report to matplotlib?
     pc.set_clim(clim_bl)
     ax_input.set_aspect('equal')
     # line_array is defined above, alternatively click a cross-section line_array in the figure interactively with dfmt.LineBuilder
@@ -192,21 +195,21 @@ for file_nc in file_nc_list:
     print('plot bedlevel in different coordinate systems')
     if crs == 'EPSG:28992':
         to_crs = 'EPSG:4326'
-        data_frommap_merged.ugrid.set_crs(crs)
-        data_frommap_merged_wgs84 = data_frommap_merged.ugrid.to_crs(to_crs)
+        uds.ugrid.set_crs(crs)
+        uds_wgs84 = uds.ugrid.to_crs(to_crs)
         fig, (ax1,ax2) = plt.subplots(2,1,figsize=(7,8))
-        data_frommap_merged["mesh2d_waterdepth"].isel(time=0).ugrid.plot(ax=ax1)
+        uds["mesh2d_waterdepth"].isel(time=0).ugrid.plot(ax=ax1)
         ctx.add_basemap(ax=ax1, source=None, crs=crs, attribution=False)
-        data_frommap_merged_wgs84["mesh2d_waterdepth"].isel(time=0).ugrid.plot(ax=ax2)
+        uds_wgs84["mesh2d_waterdepth"].isel(time=0).ugrid.plot(ax=ax2)
         ctx.add_basemap(ax=ax2, source=None, crs=to_crs, attribution=False)
         fig.tight_layout()
         fig.savefig(os.path.join(dir_output,f'{basename}_convertedcoords'))
     
     
     #ugrid sel via x/y
-    data_frommap_merged_sel = data_frommap_merged.ugrid.sel(x=sel_slice_x,y=sel_slice_y)
+    uds_sel = uds.ugrid.sel(x=sel_slice_x,y=sel_slice_y)
     fig, ax = plt.subplots()
-    pc = data_frommap_merged_sel['mesh2d_flowelem_bl'].ugrid.plot(ax=ax, linewidth=0.5, cmap='jet')
+    pc = uds_sel['mesh2d_flowelem_bl'].ugrid.plot(ax=ax, linewidth=0.5, cmap='jet')
     pc.set_clim(clim_bl)
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,f'{basename}_selxyslice'))
@@ -219,21 +222,21 @@ for file_nc in file_nc_list:
     else:
         vmin, vmax = clim_bl # vmin/vmax are necessary upon plot initialization (instead of pc.set_clim(clim_bl)) for proper colorbar, this is also matplotlib behaviour
     fig, ((ax1,ax2),(ax3,ax4)) = plt.subplots(2,2,figsize=(12,7),sharex=True,sharey=True)
-    pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot(ax=ax1, linewidth=0.5, cmap='jet', vmin=vmin, vmax=vmax)
-    pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot.contourf(ax=ax2, levels=11, cmap='jet', vmin=vmin, vmax=vmax)
-    pc = data_frommap_merged['mesh2d_flowelem_bl'].ugrid.plot.contour(ax=ax3, levels=11, cmap='jet', vmin=vmin, vmax=vmax, add_colorbar=True)
-    bl_raster = dfmt.rasterize_ugrid(data_frommap_merged['mesh2d_flowelem_bl'],resolution=raster_res) #rasterize ugrid uds/uda
-    pc = bl_raster.plot(ax=ax4, cmap='jet', vmin=vmin, vmax=vmax) #plot with non-ugrid method
+    pc = uds['mesh2d_flowelem_bl'].ugrid.plot(ax=ax1, linewidth=0.5, cmap='jet', vmin=vmin, vmax=vmax)
+    pc = uds['mesh2d_flowelem_bl'].ugrid.plot.contourf(ax=ax2, levels=11, cmap='jet', vmin=vmin, vmax=vmax)
+    pc = uds['mesh2d_flowelem_bl'].ugrid.plot.contour(ax=ax3, levels=11, cmap='jet', vmin=vmin, vmax=vmax, add_colorbar=True)
+    bl_raster = dfmt.rasterize_ugrid(uds['mesh2d_flowelem_bl'],resolution=raster_res) #rasterize ugrid uds/uda
+    # pc = bl_raster.plot(ax=ax4, cmap='jet', vmin=vmin, vmax=vmax) #plot with non-ugrid method
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,f'{basename}_gridbedcontour'))
     
     
     #filter for dry cells
-    bool_drycells = data_frommap_merged['mesh2d_s1']==data_frommap_merged['mesh2d_flowelem_bl']
-    data_frommap_merged['mesh2d_s1_filt'] = data_frommap_merged['mesh2d_s1'].where(~bool_drycells)
+    bool_drycells = uds['mesh2d_s1']==uds['mesh2d_flowelem_bl']
+    uds['mesh2d_s1_filt'] = uds['mesh2d_s1'].where(~bool_drycells)
     print('plot grid and values from mapdata (waterlevel on layer, 2dim, on cell centers)')
     fig, ax = plt.subplots()
-    pc = data_frommap_merged['mesh2d_s1_filt'].isel(time=timestep).ugrid.plot(cmap='jet')
+    pc = uds['mesh2d_s1_filt'].isel(time=timestep).ugrid.plot(cmap='jet')
     ax.set_aspect('equal')
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,f'{basename}_mesh2d_s1_filt'))
@@ -241,7 +244,7 @@ for file_nc in file_nc_list:
     
     print('calculating and plotting cross section')
     crs_tstart = dt.datetime.now() #start timer
-    xr_crs_ugrid = dfmt.polyline_mapslice(data_frommap_merged.isel(time=timestep), line_array)
+    xr_crs_ugrid = dfmt.polyline_mapslice(uds.isel(time=timestep), line_array)
     fig, ax = plt.subplots()
     xr_crs_ugrid['mesh2d_sa1'].ugrid.plot(cmap='jet')
     fig.tight_layout()
@@ -251,7 +254,7 @@ for file_nc in file_nc_list:
     
     print('plot grid and values from mapdata (salinity on layer, 3dim, on cell centers), on layer')
     fig, ax = plt.subplots()
-    pc = data_frommap_merged['mesh2d_sa1'].isel(time=timestep, mesh2d_nLayers=layno, nmesh2d_layer=layno, missing_dims='ignore').ugrid.plot(cmap='jet') #missing_dims='ignore' ignores .isel() on mesh2d_nLayers/nmesh2d_layer if that dimension is not present
+    pc = uds['mesh2d_sa1'].isel(time=timestep, mesh2d_nLayers=layno, nmesh2d_layer=layno, missing_dims='ignore').ugrid.plot(cmap='jet') #missing_dims='ignore' ignores .isel() on mesh2d_nLayers/nmesh2d_layer if that dimension is not present
     pc.set_clim(clim_sal)
     ax.set_aspect('equal')
     fig.tight_layout()
@@ -259,7 +262,7 @@ for file_nc in file_nc_list:
     
     
     print('plot grid and values from mapdata (salinity on layer, 3dim, on cell centers), on fixed depth(s)')
-    data_frommap_timesel = data_frommap_merged.isel(time=timestep)
+    data_frommap_timesel = uds.isel(time=timestep)
     data_frommap_timesel_atdepths = dfmt.get_Dataset_atdepths(data_xr=data_frommap_timesel, depths=-4, reference='z0') #depth w.r.t. z0/waterlevel/bedlevel (also possible to provide list of floats)
     fig, ax = plt.subplots()
     pc = data_frommap_timesel_atdepths['mesh2d_sa1'].ugrid.plot(cmap='jet') #TODO: dask\array\reductions.py:640: RuntimeWarning: All-NaN slice encountered
@@ -270,16 +273,16 @@ for file_nc in file_nc_list:
     
     
     print('plot grid and values from mapdata on net links (water/wind velocity on cell edges)')
-    if 'mesh2d_u1' in data_frommap_merged.data_vars: #for cb_3d_map and Grevelingen
+    if 'mesh2d_u1' in uds.data_vars: #for cb_3d_map and Grevelingen
         fig, ax = plt.subplots()
-        pc = data_frommap_merged['mesh2d_u1'].isel(time=timestep, mesh2d_nLayers=layno, nmesh2d_layer=layno, missing_dims='ignore').ugrid.plot(cmap='jet') #missing_dims='ignore' ignores .isel() on mesh2d_nLayers/nmesh2d_layer if that dimension is not present
+        pc = uds['mesh2d_u1'].isel(time=timestep, mesh2d_nLayers=layno, nmesh2d_layer=layno, missing_dims='ignore').ugrid.plot(cmap='jet') #missing_dims='ignore' ignores .isel() on mesh2d_nLayers/nmesh2d_layer if that dimension is not present
         ax.set_aspect('equal')
         fig.tight_layout()
         fig.savefig(os.path.join(dir_output,f'{basename}_edges'))
     
     
     print('plot velocity magnitude and quiver')
-    uds_quiv = data_frommap_merged.isel(time=-1, mesh2d_nLayers=-2, nmesh2d_layer=-2, missing_dims='ignore')
+    uds_quiv = uds.isel(time=-1, mesh2d_nLayers=-2, nmesh2d_layer=-2, missing_dims='ignore')
     varn_ucx, varn_ucy = 'mesh2d_ucx', 'mesh2d_ucy'
     magn_attrs = {'long_name':'velocity magnitude', 'units':'m/s'}
     uds_quiv['magn'] = np.sqrt(uds_quiv[varn_ucx]**2+uds_quiv[varn_ucy]**2).assign_attrs(magn_attrs)
@@ -296,14 +299,14 @@ for file_nc in file_nc_list:
     #TODO: add hovmoller to notebook. x='x' does not work for spherical models, since it is sorted by 's'
     print('hovmoller plot: mean salinity over depth along section_y over time')
     #ax.axhline(y=section_y, color="red")
-    data_frommap_merged_sel = data_frommap_merged.isel(time=slice(-30,None)).ugrid.sel(y=section_y)
+    uds_sel = uds.isel(time=slice(-30,None)).ugrid.sel(y=section_y)
     fig, ax = plt.subplots(figsize=(10,5.5))
-    if 'nmesh2d_layer' in data_frommap_merged_sel.dims:
-        slice_sa1 = data_frommap_merged_sel.mesh2d_sa1.mean(dim='nmesh2d_layer')
-    elif 'mesh2d_nLayers' in data_frommap_merged_sel.dims:
-        slice_sa1 = data_frommap_merged_sel.mesh2d_sa1.mean(dim='mesh2d_nLayers')
+    if 'nmesh2d_layer' in uds_sel.dims:
+        slice_sa1 = uds_sel.mesh2d_sa1.mean(dim='nmesh2d_layer')
+    elif 'mesh2d_nLayers' in uds_sel.dims:
+        slice_sa1 = uds_sel.mesh2d_sa1.mean(dim='mesh2d_nLayers')
     else:
-        slice_sa1 = data_frommap_merged_sel.mesh2d_sa1
+        slice_sa1 = uds_sel.mesh2d_sa1
     slice_sa1.plot(x='mesh2d_s',y='time')
     fig.tight_layout()
     fig.savefig(os.path.join(dir_output,f'{basename}_hovmoller'))

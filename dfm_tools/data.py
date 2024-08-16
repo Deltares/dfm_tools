@@ -157,7 +157,7 @@ def fm_westernscheldt_map(return_filepath:bool = False) -> xu.UgridDataset:
         return filepath
     
     #open as UgridDataset
-    uds = open_partitioned_dataset(filepath)
+    uds = open_partitioned_dataset(filepath, remove_edges=True)
     return uds
 
 
