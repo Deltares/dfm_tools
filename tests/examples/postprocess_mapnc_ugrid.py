@@ -17,8 +17,8 @@ import dfm_tools as dfmt
 dir_output = '.'
 
 file_nc_list = [dfmt.data.fm_curvedbend_map(return_filepath=True), # sigmalayer
-                dfmt.data.fm_grevelingen_map(return_filepath=True), # zlayer
-                r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0*_map.nc', # szigma fullgrid
+                # dfmt.data.fm_grevelingen_map(return_filepath=True), # zlayer
+                # r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0*_map.nc', # szigma fullgrid
                 r'p:\dflowfm\maintenance\JIRA\05000-05999\05477\c103_ws_3d_fourier\DFM_OUTPUT_westerscheldt01_0subst\westerscheldt01_0subst_map.nc', # zsigma model without fullgrid output but with new ocean_sigma_z_coordinate variable
                 # r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_207\results\RMM_dflowfm_0*_map.nc', # 2D model
                 # r'p:\archivedprojects\11203379-005-mwra-updated-bem\03_model\02_final\A72_ntsu0_kzlb2\DFM_OUTPUT_MB_02\MB_02_0*_map.nc', # zlayer
@@ -89,6 +89,9 @@ for file_nc in file_nc_list:
         raster_res = 0.3
         umag_clim = (None,1)
     elif 'westerscheldt01_0subst_map' in file_nc:
+        # open again with remove_edges=True to avoid ValueError: Invalid edge_node_connectivity. Run .validate_edge_node_connectivity().
+        uds = dfmt.open_partitioned_dataset(file_nc, remove_edges=True)
+        
         timestep = 1
         layno = -2
         sel_slice_x, sel_slice_y = slice(None,None), slice(None,None)
@@ -136,9 +139,6 @@ for file_nc in file_nc_list:
         raster_res = 2500
         umag_clim = (None,0.5)
     elif 'MB_02_' in file_nc:
-        # open again with remove_edges=True to avoid ValueError: Invalid edge_node_connectivity. Run .validate_edge_node_connectivity().
-        uds = dfmt.open_partitioned_dataset(file_nc, remove_edges=True)
-        
         timestep = 10
         layno = 45
         sel_slice_x, sel_slice_y = slice(None,None), slice(None,None)
