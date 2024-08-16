@@ -1,6 +1,6 @@
 # What's new
 
-## UNRELEASED
+## 0.25.0 (2024-08-16)
 
 ### Feat
 - making `dfmt.open_dataset_extra()` more modular by partly moving it to separate private functions in [#913](https://github.com/Deltares/dfm_tools/pull/913)
