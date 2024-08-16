@@ -354,9 +354,11 @@ def ds_apply_conversion_dict(data_xr, conversion_dict, quantity):
     # TODO: maybe do unit conversion before interp or is that computationally heavy?
     if 'conversion' in conversion_dict[quantity].keys(): #if conversion is present, unit key must also be in conversion_dict
         print(f'> converting units from [{data_xr[quantity].attrs["units"]}] to [{conversion_dict[quantity]["unit"]}]')
-        #print(f'attrs are discarded:\n{data_xr_vars[quan].attrs}')
-        data_xr[quantity] = data_xr[quantity] * conversion_dict[quantity]['conversion'] #conversion drops all attributes of which units (which are changed anyway)
-        data_xr[quantity].attrs['units'] = conversion_dict[quantity]['unit'] #add unit attribute with resulting unit
+        # conversion drops all attributes of which units (which are changed anyway)
+        data_xr[quantity] = data_xr[quantity] * conversion_dict[quantity]['conversion']
+        # add unit attribute with resulting unit
+        quantity_attrs = {'units': conversion_dict[quantity]['unit']}
+        data_xr[quantity] = data_xr[quantity].assign_attrs(quantity_attrs)
     return data_xr
 
 

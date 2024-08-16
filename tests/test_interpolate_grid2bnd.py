@@ -300,6 +300,7 @@ def test_ds_apply_conversion_dict_rename_and_factor():
     assert 'o2' in ds_moretime.data_vars
     assert 'tracerbndOXY' in ds_converted.data_vars
     assert np.allclose(ds_converted['tracerbndOXY'], ds_moretime['o2']*0.032, equal_nan=True)
+    assert ds_converted['tracerbndOXY'].attrs['units'] == 'g/m3'
 
 
 @pytest.mark.unittest
