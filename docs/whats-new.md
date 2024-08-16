@@ -10,6 +10,7 @@
 - simplified `dfmt.open_dataset_extra()` by dropping multi-quantity support and converted to private function in [#946](https://github.com/Deltares/dfm_tools/pull/946)
 - improved `dfmt.interp_uds_to_plipoints()` by supporting outofbound points and new xugrid version in [#948](https://github.com/Deltares/dfm_tools/pull/948)
 - neater chunking warning filter in `dfmt.open_partitioned_dataset()` in [#952](https://github.com/Deltares/dfm_tools/pull/952)
+- performance improvement of `dfmt.open_partitioned_dataset()` by setting `remove_edges=False` in [#960](https://github.com/Deltares/dfm_tools/pull/960)
 
 ### Fix
 - also apply convert_360to180 to longitude variable in `dfmt.open_dataset_curvilinear()` in [#913](https://github.com/Deltares/dfm_tools/pull/913)
