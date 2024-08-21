@@ -253,6 +253,9 @@ def open_partitioned_dataset(file_nc:str, decode_fillvals:bool = False, remove_e
         if remove_ghost: #TODO: this makes it way slower (at least for GTSM, although merging seems faster), but is necessary since values on overlapping cells are not always identical (eg in case of Venice ucmag)
             uds = remove_ghostcells(uds, file_nc_one)
         uds_auto_set_crs(uds)
+        # close the xarray dataset to limit memory usage (after applying any actions)
+        # https://github.com/Deltares/xugrid/issues/287
+        ds.close()
         partitions.append(uds)
     print(': ',end='')
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
