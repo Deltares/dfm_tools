@@ -126,7 +126,7 @@ def decode_default_fillvals(ds):
         if dtype_str not in default_fillvals.keys():
             continue
         varn_fillval = default_fillvals[dtype_str]
-        ds[varn] = ds.variables[varn].assign_attrs({'_FillValue':varn_fillval})
+        ds[varn] = ds[varn].assign_attrs({'_FillValue':varn_fillval})
         nfillattrs_added += 1
     print(f'[default_fillvals decoded for {nfillattrs_added} variables] ',end='')
     
