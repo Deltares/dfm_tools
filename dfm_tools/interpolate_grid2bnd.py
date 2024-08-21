@@ -478,7 +478,7 @@ def interp_uds_to_plipoints(uds:xu.UgridDataset, gdf:geopandas.GeoDataFrame) -> 
     # TODO: revert after fixing https://github.com/Deltares/xugrid/issues/274
     vars_without_facedim = []
     for varn in uds.variables:
-        if facedim not in uds[varn].dims:
+        if facedim not in uds.variables[varn].dims:
             vars_without_facedim.append(varn)
     uds_face = uds.drop(vars_without_facedim)
     
@@ -488,8 +488,9 @@ def interp_uds_to_plipoints(uds:xu.UgridDataset, gdf:geopandas.GeoDataFrame) -> 
     # re-add removed variables again, sometimes important for e.g. depth
     # TODO: remove after fixing https://github.com/Deltares/xugrid/issues/274
     for varn in vars_without_facedim:
-        if edgedim not in uds[varn].dims and nodedim not in uds[varn].dims:
-            ds[varn] = uds[varn]
+        vardims = uds.variables[varn].dims
+        if edgedim not in vardims and nodedim not in vardims:
+            ds[varn] = uds.variables[varn]
     
     # rename station dimname and varname (is index, are both mesh2d_nFaces to start with)
     ds = ds.rename({facedim:dimn_point}) # rename mesh2d_nFaces to plipoints

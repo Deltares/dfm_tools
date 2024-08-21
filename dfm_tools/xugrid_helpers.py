@@ -71,7 +71,7 @@ def remove_ghostcells(uds, fname): #TODO: remove ghostcells from output or align
     
     #drop ghostcells
     part_domainno_fromfname = int(part_domainno_fromfname)
-    da_domainno = uds[varn_domain]
+    da_domainno = uds.variables[varn_domain]
     idx = np.flatnonzero(da_domainno == part_domainno_fromfname)
     uds = uds.isel({uds.grid.face_dimension:idx})
     return uds
@@ -118,15 +118,15 @@ def decode_default_fillvals(ds):
     # TODO: this function can be removed when xarray does it automatically: https://github.com/Deltares/dfm_tools/issues/490
     
     nfillattrs_added = 0
-    for varn in ds.variables:
+    for varn in ds.variables.keys():
         # TODO: possible to get always_mask boolean with `netCDF4.Dataset(file_nc).variables[varn].always_mask`, but this seems to be always True for FM mapfiles
-        if '_FillValue' in ds[varn].encoding:
+        if '_FillValue' in ds.variables[varn].encoding:
             continue
-        dtype_str = ds[varn].dtype.str[1:]
+        dtype_str = ds.variables[varn].dtype.str[1:]
         if dtype_str not in default_fillvals.keys():
             continue
         varn_fillval = default_fillvals[dtype_str]
-        ds[varn] = ds[varn].assign_attrs({'_FillValue':varn_fillval})
+        ds[varn] = ds.variables[varn].assign_attrs({'_FillValue':varn_fillval})
         nfillattrs_added += 1
     print(f'[default_fillvals decoded for {nfillattrs_added} variables] ',end='')
     
@@ -144,10 +144,10 @@ def remove_nan_fillvalue_attrs(ds : (xr.Dataset, xu.UgridDataset)):
         ds = ds.obj
     
     count = 0
-    for varn in ds.variables:
-        if '_FillValue' in ds[varn].encoding:
-            if np.isnan(ds[varn].encoding['_FillValue']):
-                ds[varn].encoding.pop('_FillValue')
+    for varn in ds.variables.keys():
+        if '_FillValue' in ds.variables[varn].encoding:
+            if np.isnan(ds.variables[varn].encoding['_FillValue']):
+                ds.variables[varn].encoding.pop('_FillValue')
                 count += 1
     if count > 0:
         print(f"[{count} nan fillvalue attrs removed]", end="")
@@ -302,9 +302,9 @@ def open_dataset_curvilinear(file_nc,
     
     print('>> getting vertices from ds: ',end='')
     dtstart = dt.datetime.now()
-    vertices_longitude = ds[varn_vert_lon].to_numpy()
+    vertices_longitude = ds.variables[varn_vert_lon].to_numpy()
     vertices_longitude = vertices_longitude.reshape(-1,vertices_longitude.shape[-1])
-    vertices_latitude = ds[varn_vert_lat].to_numpy()
+    vertices_latitude = ds.variables[varn_vert_lat].to_numpy()
     vertices_latitude = vertices_latitude.reshape(-1,vertices_latitude.shape[-1])
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
