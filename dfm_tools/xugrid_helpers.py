@@ -147,7 +147,7 @@ def remove_nan_fillvalue_attrs(ds : (xr.Dataset, xu.UgridDataset)):
     for varn in ds.variables.keys():
         if '_FillValue' in ds.variables[varn].encoding:
             if np.isnan(ds.variables[varn].encoding['_FillValue']):
-                ds.variables[varn].encoding.pop('_FillValue')
+                ds[varn].encoding.pop('_FillValue')
                 count += 1
     if count > 0:
         print(f"[{count} nan fillvalue attrs removed]", end="")
