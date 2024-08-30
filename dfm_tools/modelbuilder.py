@@ -148,6 +148,10 @@ def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, c
         # but FM needs two timesteps for nudge_salinity_temperature and initial waq vars
         data_xr = data_xr.sel(time=slice(tstart_round, tstop_round))
         
+        # assert that there are at least two timesteps in the resulting dataset
+        # delft3dfm will crash if there is only one timestep
+        assert len(data_xr.time) >= 2
+        
         # fill nans, start with lat/lon to avoid values from shallow coastal areas in deep layers
         # first interpolate nans to get smooth filling of e.g. islands, this cannot fill nans at the edge of the dataset
         data_xr = data_xr.interpolate_na(dim='latitude').interpolate_na(dim='longitude')
