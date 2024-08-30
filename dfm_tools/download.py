@@ -102,7 +102,10 @@ def cds_credentials():
         # set default for CDSAPI_URL envvar so it does not have to be supplied. This also ignores the URL in ~/.cdsapirc
         os.environ["CDSAPI_URL"] = cds_url
         # gets url/key from env vars or ~/.cdsapirc file
-        cds_url, cds_apikey, _ = cdsapi.api.get_url_key_verify(url=cds_url, key=None, verify=None)
+        # cds_url, cds_apikey, _ = cdsapi.api.get_url_key_verify(url=cds_url, key=None, verify=None)
+        c = cdsapi.Client(url=cds_url)
+        cds_url = c.url
+        cds_apikey = c.key
     except Exception as e:
         if "Missing/incomplete configuration file" in str(e):
             # query apikey if not present in file or envvars
@@ -127,11 +130,11 @@ def cds_credentials():
         c = cdsapi.Client()
         # checks whether authentication is succesful (correct combination of url and apikey)
         c.retrieve(name='dummy', request={})
-    except RuntimeError as e:
-        if "dataset dummy not found" in str(e):
+    except Exception as e:
+        if "dummy not found" in str(e):  # Exception
             # catching incorrect name, but authentication was successful
             print('found ECMWF API-key and authorization successful')
-        elif "Authentication failed" in str(e):
+        elif "Authentication failed" in str(e):  # HTTPError
             cds_remove_credentials_raise(reason='Authentication failed')
         else:
             raise e

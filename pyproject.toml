@@ -38,8 +38,8 @@ dependencies = [
 	"bottleneck>=1.3.3",
 	#xugrid<0.11.2 sometimes fails on merged chunks that are inconsistent
 	"xugrid>=0.11.2",
-	#cdsapi<0.7.0 supports credentials from environment variables
-	"cdsapi>=0.7.0",
+	#cdsapi<0.7.2 has different error upon dummy dataset
+	"cdsapi>=0.7.2",
 	#pydap<3.4.0 is from May 2017 and does not support newer python versions
 	"pydap>=3.4.0",
 	#erddapy<2.0.0 does not support pandas>=2.0.0
