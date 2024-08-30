@@ -362,7 +362,7 @@ def ds_apply_conversion_dict(data_xr, conversion_dict, quantity):
     return data_xr
 
 
-def open_dataset_extra(dir_pattern, quantity, tstart, tstop, conversion_dict=None, refdate_str=None, chunks=None):
+def open_prepare_dataset(dir_pattern, quantity, tstart, tstop, conversion_dict=None, refdate_str=None, chunks=None):
     """
     empty docstring
     """

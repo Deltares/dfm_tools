@@ -28,6 +28,7 @@ def test_polyline_mapslice():
     assert np.isclose(uds_crs.grid.node_y.max(), 0.9261683648147339)
 
 
+@pytest.mark.unittest
 def test_get_dataset_atdepths_hisfile():
     
     file_nc = dfmt.data.fm_grevelingen_his(return_filepath=True)

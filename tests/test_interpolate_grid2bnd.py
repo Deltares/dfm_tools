@@ -21,7 +21,7 @@ from dfm_tools.interpolate_grid2bnd import (tidemodel_componentlist,
                                             ext_add_boundary_object_per_polyline,
                                             ds_apply_conventions,
                                             ds_apply_conversion_dict,
-                                            open_dataset_extra,
+                                            open_prepare_dataset,
                                             )
 from dfm_tools.hydrolib_helpers import get_ncbnd_construct
 import hydrolib.core.dflowfm as hcdfm
@@ -189,7 +189,7 @@ def test_interpolate_nc_to_bc():
     dir_pattern = os.path.join(r'p:\1204257-dcsmzuno\data\CMEMS\nc\DCSM_allAvailableTimes',f'{ncvarname}_2012-12*.nc')
     
     #open regulargridDataset and do some basic stuff (time selection, renaming depth/lat/lon/varname, converting units, etc)
-    data_xr_vars = open_dataset_extra(dir_pattern=dir_pattern, quantity='salinitybnd', tstart=tstart, tstop=tstop)
+    data_xr_vars = open_prepare_dataset(dir_pattern=dir_pattern, quantity='salinitybnd', tstart=tstart, tstop=tstop)
     #interpolate regulargridDataset to plipointsDataset
     data_interp = dfmt.interp_regularnc_to_plipointsDataset(data_xr_reg=data_xr_vars, gdf_points=gdf_points)
     
@@ -248,16 +248,16 @@ def test_plipointsDataset_to_ForcingModel_drop_allnan_points():
 
 
 @pytest.mark.systemtest
-def test_open_dataset_extra_correctdepths(tmp_path):
+def test_open_prepare_dataset_correctdepths(tmp_path):
     """
-    to validate open_dataset_extra behaviour for depths, in the past the depth values got lost and replaced by depth idx
+    to validate open_prepare_dataset behaviour for depths, in the past the depth values got lost and replaced by depth idx
     """
     
     ds_moretime = cmems_dataset_4times()
     file_nc = tmp_path / 'temp_cmems_dummydata.nc'
     ds_moretime.to_netcdf(file_nc)
     
-    ds_moretime_import = open_dataset_extra(dir_pattern=file_nc, quantity='salinitybnd', tstart='2020-01-01 12:00:00', tstop='2020-01-02 12:00:00')
+    ds_moretime_import = open_prepare_dataset(dir_pattern=file_nc, quantity='salinitybnd', tstart='2020-01-01 12:00:00', tstop='2020-01-02 12:00:00')
     assert len(ds_moretime_import.time) == 2
 
 
@@ -304,7 +304,7 @@ def test_ds_apply_conversion_dict_rename_and_factor():
 
 
 @pytest.mark.unittest
-def test_open_dataset_extra_slightly_different_latlons(tmp_path):
+def test_open_prepare_dataset_slightly_different_latlons(tmp_path):
     """
     to check whether an error is raised when trying to combine datasets with slightly 
     different coordinates: https://github.com/Deltares/dfm_tools/issues/574
@@ -325,7 +325,7 @@ def test_open_dataset_extra_slightly_different_latlons(tmp_path):
     file_nc = tmp_path / 'temp_cmems_2day_*.nc'
     
     with pytest.raises(ValueError) as e:
-        open_dataset_extra(file_nc, quantity='salinitybnd', tstart='2020-01-01 12:00:00', tstop='2020-01-02 12:00:00')
+        open_prepare_dataset(file_nc, quantity='salinitybnd', tstart='2020-01-01 12:00:00', tstop='2020-01-02 12:00:00')
     
     # ValueError: cannot align objects with join='exact' where index/labels/sizes are not equal along these coordinates (dimensions): 'longitude' ('longitude',)
     assert "cannot align objects with join='exact' " in str(e.value)
@@ -628,3 +628,7 @@ def test_ext_add_boundary_object_per_polyline_wrong_name(tmp_path):
         ext_add_boundary_object_per_polyline(ext_new=ext_new, boundary_object=boundary_object)
     assert "The names of one of the polylines in the polyfile is the same as the polyfilename" in str(e.value)
 
+
+def test_open_dataset_extra_deprecated():
+    with pytest.raises(DeprecationWarning):
+        dfmt.open_dataset_extra()

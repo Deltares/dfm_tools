@@ -9,7 +9,7 @@ from hydrolib.core.dimr.models import DIMR, FMComponent, Start
 from hydrolib.core.utils import get_path_style_for_current_operating_system
 from dfm_tools.hydrolib_helpers import get_ncbnd_construct
 from dfm_tools.interpolate_grid2bnd import (ext_add_boundary_object_per_polyline,
-                                            open_dataset_extra,
+                                            open_prepare_dataset,
                                             ds_apply_conversion_dict,
                                             )
             
@@ -64,10 +64,11 @@ def cmems_nc_to_bc(ext_bnd, list_quantities, tstart, tstop, file_pli, dir_patter
             ncvarname = get_ncvarname(quantity=quantity_key, conversion_dict=conversion_dict)
             dir_pattern_one = str(dir_pattern).format(ncvarname=ncvarname)
             #open regulargridDataset and do some basic stuff (time selection, renaming depth/lat/lon/varname, converting units, etc)
-            data_xr_onevar = open_dataset_extra(dir_pattern=dir_pattern_one, quantity=quantity_key,
-                                                tstart=tstart, tstop=tstop,
-                                                conversion_dict=conversion_dict,
-                                                refdate_str=refdate_str)
+            data_xr_onevar = open_prepare_dataset(dir_pattern=dir_pattern_one, 
+                                                  quantity=quantity_key,
+                                                  tstart=tstart, tstop=tstop,
+                                                  conversion_dict=conversion_dict,
+                                                  refdate_str=refdate_str)
             if quantity_key == quantity_list[0]:
                 data_xr_vars = data_xr_onevar
             else: # only relevant in case of ux/uy, others all have only one quantity
