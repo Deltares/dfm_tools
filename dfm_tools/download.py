@@ -109,7 +109,10 @@ def cds_credentials():
     except Exception as e:
         if "Missing/incomplete configuration file" in str(e):
             # query apikey if not present in file or envvars
-            print("Downloading CDS/ERA5 data requires a ECMWF API-key, copy your API-key from https://cds-beta.climate.copernicus.eu/profile (first register, login and accept the terms). More info in https://forum.ecmwf.int/t/3743). ")
+            print("Downloading CDS/ERA5 data requires a ECMWF API-key, copy "
+                  "your API-key from https://cds-beta.climate.copernicus.eu/profile "
+                  "(first register, login and accept the terms). "
+                  "More info in https://forum.ecmwf.int/t/3743.")
             cds_apikey = getpass.getpass("\nEnter your ECMWF API-key (string with dashes): ")
             cds_set_credentials(cds_url, cds_apikey)
         else:
