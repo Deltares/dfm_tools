@@ -188,6 +188,8 @@ def test_make_paths_relative(tmp_path):
 
 
 @pytest.mark.unittest
+@pytest.mark.requiressecrets
+@pytest.mark.timeout(60) # useful since CDS downloads are terribly slow sometimes, so skip in that case
 def test_preprocess_merge_meteofiles_era5_unsupported_varlist(file_nc_era5_pattern, tmp_path):
     ext_old = None # this won't be reached, so not relevant what to supply
     date_min = '2010-01-31'
