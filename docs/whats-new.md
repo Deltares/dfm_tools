@@ -6,6 +6,7 @@
 - properly assigning units attribute in `ds_apply_conversion_dict()` (it did not always stick) in [#965](https://github.com/Deltares/dfm_tools/pull/965)
 - skipping initialwaterlevel in `dfmt.cmems_nc_to_ini()` [#970](https://github.com/Deltares/dfm_tools/pull/970)
 - update to cdsapi 0.7.2 and properly catching error for dummy dataset in [#972](https://github.com/Deltares/dfm_tools/pull/972)
+- deprecated `dfmt.open_dataset_extra()` (partly replaced by `dfmt.open_prepare_dataset()`) in [#974](https://github.com/Deltares/dfm_tools/pull/974)
 
 
 ## 0.25.0 (2024-08-16)
