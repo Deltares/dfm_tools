@@ -6,10 +6,9 @@
 
 ## Recommended installation
 
-- python 3.11 is recommended, [python>=3.9 is required](https://github.com/Deltares/dfm_tools/issues/267), [python 3.13 not yet supported](https://github.com/Deltares/dfm_tools/issues/559)
-- download and install Anaconda from [anaconda.com](https://www.anaconda.com)
-- open Anaconda prompt
-- ``conda create --name dfm_tools_env python=3.11 git spyder -c conda-forge -y`` (``git`` and ``spyder`` are optional)
+- download Miniforge3 from [the miniforge github](https://github.com/conda-forge/miniforge?tab=readme-ov-file#download) and install it with the recommended settings.
+- open Miniforge Prompt
+- ``conda create --name dfm_tools_env python=3.11 git spyder -y`` (``git`` and ``spyder`` are optional)
 - ``conda activate dfm_tools_env``
 - install latest dfm_tools release (stable): ``pip install dfm_tools -U`` (the ``-U`` is for updating)
 - alternatively install most recent dfm_tools version from github (might be unstable): ``python -m pip install git+https://github.com/Deltares/dfm_tools``
