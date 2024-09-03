@@ -1,6 +1,6 @@
 # What's new
 
-## UNRELEASED
+## 0.26.0 (2024-09-03)
 
 ### Fix
 - properly assigning units attribute in `ds_apply_conversion_dict()` (it did not always stick) in [#965](https://github.com/Deltares/dfm_tools/pull/965)
