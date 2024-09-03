@@ -391,9 +391,11 @@ def forcinglike_to_Dataset(forcingobj, convertnan=False):
             if convertnan: #convert ffilled/bfilled values back to nan
                 deepestlayeridx = data_xr_var[varn_depth].to_numpy().argmin()
                 if deepestlayeridx==0: #sorted from deep to shallow layers
-                    bool_nandepths = (data_xr_var==data_xr_var.shift({varn_depth:-1})).all(dim='time')
+                    bool_eq_above = data_xr_var==data_xr_var.shift({varn_depth:-1})
                 else: #sorted from shallow to deep layers
-                    bool_nandepths = (data_xr_var==data_xr_var.shift({varn_depth:1})).all(dim='time')
+                    bool_eq_above = data_xr_var==data_xr_var.shift({varn_depth:1})
+                bool_eq_bottom = data_xr_var==data_xr_var.isel({varn_depth:deepestlayeridx})
+                bool_nandepths = (bool_eq_above & bool_eq_bottom).all(dim='time')
                 data_xr_var = data_xr_var.where(~bool_nandepths)
         if 'time' in dims:
             time_unit = forcingobj.quantityunitpair[0].unit.lower()
