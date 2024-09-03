@@ -111,8 +111,8 @@ def preprocess_ERA5(ds):
     # Prevent writing to (incorrectly scaled) int, since it might mess up mfdataset (https://github.com/Deltares/dfm_tools/issues/239)
     # By dropping scaling/offset encoding and converting to float32 (will result in a larger dataset)
     # ERA5 datasets retrieved with the new CDS-beta are zipped float32 instead of scaled int, so this is only needed for backwards compatibility with old files.
-    for var in ds.data_vars:
-        if not set(['dtype','scale_factor','add_offset']).issubset(ds[var].encoding.keys()):
+    for var in ds.data_vars.keys():
+        if not set(['dtype','scale_factor','add_offset']).issubset(ds.variables[var].encoding.keys()):
             continue
         # the _FillValue will still be -32767 (int default), but this is no issue for float32
         ds[var].encoding.pop('scale_factor')
@@ -315,7 +315,7 @@ def Dataset_varswithdim(ds,dimname): #TODO: dit zit ook in xugrid, wordt nu gebr
     
     varlist_keep = []
     for varname in ds.variables.keys():
-        if dimname in ds[varname].dims:
+        if dimname in ds.variables[varname].dims:
             varlist_keep.append(varname)
     ds = ds[varlist_keep]
     
