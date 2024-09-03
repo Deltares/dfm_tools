@@ -37,7 +37,7 @@ dependencies = [
 	#bottleneck<1.3.3 pip install fails in py39
 	"bottleneck>=1.3.3",
 	#xugrid<0.12.0 has sub-optimal performance because of accessing dataarrays of variables
-	"xugrid>=0.12.0,
+	"xugrid>=0.12.0",
 	#cdsapi<0.7.2 has different error upon dummy dataset
 	"cdsapi>=0.7.2",
 	#pydap<3.4.0 is from May 2017 and does not support newer python versions

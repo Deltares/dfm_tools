@@ -8,6 +8,7 @@
 - update to cdsapi 0.7.2 and properly catching error for dummy dataset in [#972](https://github.com/Deltares/dfm_tools/pull/972)
 - deprecated `dfmt.open_dataset_extra()` (partly replaced by `dfmt.open_prepare_dataset()`) in [#974](https://github.com/Deltares/dfm_tools/pull/974)
 - improved nan-conversion in `dfmt.forcinglike_to_Dataset()` in [#982](https://github.com/Deltares/dfm_tools/pull/982)
+- improved performance of `dfmt.open_partitioned_dataset()` for datasets with many variables in [#984](https://github.com/Deltares/dfm_tools/pull/984)
 
 
 ## 0.25.0 (2024-08-16)
