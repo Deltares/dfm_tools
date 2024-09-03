@@ -26,8 +26,8 @@ dependencies = [
 	"geopandas>=0.13.0",
 	#fiona<1.9 does not contain sql where filter
 	"fiona>=1.9",
-	#contextily<1.6.1 has unclear error message if tile cannot be fetched: https://github.com/geopandas/contextily/issues/247
-	"contextily>=1.6.1",
+	#contextily<1.6.2 has incorrect axis scaling: https://github.com/geopandas/contextily/issues/251
+	"contextily>=1.6.2",
 	#xarray<2023.9.0 does not support multidimensional coordinates (used in e.g. HIRLAM meteo data)
 	"xarray>=2023.9.0",
 	#dask version is aligned with xarray
@@ -38,8 +38,8 @@ dependencies = [
 	"bottleneck>=1.3.3",
 	#xugrid<0.11.2 sometimes fails on merged chunks that are inconsistent
 	"xugrid>=0.11.2",
-	#cdsapi<0.7.0 supports credentials from environment variables
-	"cdsapi>=0.7.0",
+	#cdsapi<0.7.2 has different error upon dummy dataset
+	"cdsapi>=0.7.2",
 	#pydap<3.4.0 is from May 2017 and does not support newer python versions
 	"pydap>=3.4.0",
 	#erddapy<2.0.0 does not support pandas>=2.0.0

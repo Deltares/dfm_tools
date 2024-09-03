@@ -186,7 +186,7 @@ def merge_meteofiles(file_nc:str, preprocess=None,
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
     # rename variables
-    # TODO: make generic, comparable rename in rename_dims_dict in dfmt.interpolate_grid2bnd.open_dataset_extra()
+    # TODO: make generic, comparable rename in rename_dims_dict in dfmt.interpolate_grid2bnd.open_prepare_dataset()
     if 'longitude' not in data_xr.variables:
         if 'lon' in data_xr.variables:
             data_xr = data_xr.rename({'lon':'longitude', 'lat':'latitude'})

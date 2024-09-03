@@ -12,8 +12,9 @@ import pandas as pd
 #TODO: many xarray_helpers tests are still in test_dfm_tools.py
 
 
-@pytest.mark.requiressecrets
 @pytest.mark.unittest
+@pytest.mark.requiressecrets
+@pytest.mark.timeout(60) # useful since CDS downloads are terribly slow sometimes, so skip in that case
 def test_merge_meteofiles(file_nc_era5_pattern):
     # file_nc_era5_pattern comes from file_nc_era5_pattern() in conftest.py
     ds = dfmt.merge_meteofiles(file_nc=file_nc_era5_pattern, 

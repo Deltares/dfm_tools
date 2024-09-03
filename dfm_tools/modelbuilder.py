@@ -9,7 +9,7 @@ from hydrolib.core.dimr.models import DIMR, FMComponent, Start
 from hydrolib.core.utils import get_path_style_for_current_operating_system
 from dfm_tools.hydrolib_helpers import get_ncbnd_construct
 from dfm_tools.interpolate_grid2bnd import (ext_add_boundary_object_per_polyline,
-                                            open_dataset_extra,
+                                            open_prepare_dataset,
                                             ds_apply_conversion_dict,
                                             )
             
@@ -64,10 +64,11 @@ def cmems_nc_to_bc(ext_bnd, list_quantities, tstart, tstop, file_pli, dir_patter
             ncvarname = get_ncvarname(quantity=quantity_key, conversion_dict=conversion_dict)
             dir_pattern_one = str(dir_pattern).format(ncvarname=ncvarname)
             #open regulargridDataset and do some basic stuff (time selection, renaming depth/lat/lon/varname, converting units, etc)
-            data_xr_onevar = open_dataset_extra(dir_pattern=dir_pattern_one, quantity=quantity_key,
-                                                tstart=tstart, tstop=tstop,
-                                                conversion_dict=conversion_dict,
-                                                refdate_str=refdate_str)
+            data_xr_onevar = open_prepare_dataset(dir_pattern=dir_pattern_one, 
+                                                  quantity=quantity_key,
+                                                  tstart=tstart, tstop=tstop,
+                                                  conversion_dict=conversion_dict,
+                                                  refdate_str=refdate_str)
             if quantity_key == quantity_list[0]:
                 data_xr_vars = data_xr_onevar
             else: # only relevant in case of ux/uy, others all have only one quantity
@@ -133,16 +134,23 @@ def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, c
             data_xr["thetao"] = data_xr_tem["thetao"]
             quantity = "nudge_salinity_temperature"
             varname = None
-        else:
+        elif "tracer" in quan_bnd:
             data_xr = xr.open_mfdataset(dir_pattern_one)
             data_xr = ds_apply_conversion_dict(data_xr=data_xr, conversion_dict=conversion_dict, quantity=quan_bnd)
             quantity = f'initial{quan_bnd.replace("bnd","")}'
             varname = quantity
             data_xr = data_xr.rename_vars({quan_bnd:quantity})
-
+        else:
+            # skip all other quantities since they are also not supported by delft3dfm
+            continue
+        
         # subset two times. interp to tstart would be the proper way to do it, 
         # but FM needs two timesteps for nudge_salinity_temperature and initial waq vars
         data_xr = data_xr.sel(time=slice(tstart_round, tstop_round))
+        
+        # assert that there are at least two timesteps in the resulting dataset
+        # delft3dfm will crash if there is only one timestep
+        assert len(data_xr.time) >= 2
         
         # fill nans, start with lat/lon to avoid values from shallow coastal areas in deep layers
         # first interpolate nans to get smooth filling of e.g. islands, this cannot fill nans at the edge of the dataset

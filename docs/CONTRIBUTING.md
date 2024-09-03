@@ -13,9 +13,9 @@
 ## Setup local developer environment
 
 - python 3.11 is recommended, [python>=3.9 is required](https://github.com/Deltares/dfm_tools/issues/267), [python 3.13 not yet supported](https://github.com/Deltares/dfm_tools/issues/559)
-- download and install Anaconda from [anaconda.com](https://www.anaconda.com)
-- open anaconda prompt and navigate to dfm_tools checkout folder, e.g. ``C:\DATA\dfm_tools``
-- ``conda create --name dfm_tools_env python=3.11 git spyder -c conda-forge -y`` (``git`` and ``spyder`` are optional)
+- download Miniforge3 from [the miniforge github](https://github.com/conda-forge/miniforge?tab=readme-ov-file#download) and install it with the recommended settings.
+- open Miniforge Prompt and navigate to the local checkout folder of the repository
+- ``conda create --name dfm_tools_env python=3.11 git spyder -y`` (``git`` and ``spyder`` are optional)
 - ``conda activate dfm_tools_env``
 - ``python -m pip install -e .[dev,docs,examples]`` (pip developer mode, any updates to the local folder are immediately available in your python. It also installs all requirements via pip, square brackets are to install optional dependency groups)
 - ``conda deactivate``
@@ -39,7 +39,7 @@
 
 ## Running the testbank
 
-- open anaconda prompt in local dfm_tools folder (e.g. ``C:\DATA\dfm_tools``)
+- open Miniforge Prompt and navigate to the local checkout folder of the repository
 - ``conda activate dfm_tools_env``
 - ``pytest`` (runs all tests)
 - ``pytest -m "not acceptance"``
@@ -49,7 +49,7 @@
 
 ## Generate documentation with sphinx
 
-- open anaconda prompt in local dfm_tools folder (e.g. ``C:\DATA\dfm_tools``)
+- open Miniforge Prompt and navigate to the local checkout folder of the repository
 - ``conda activate dfm_tools_env``
 - ``sphinx-build docs docs/_build``
 - this workflow automatically runs via Github Actions upon push to main
@@ -57,7 +57,7 @@
 ## Increase the dfm_tools version number
 
 - commit all changes via git
-- open anaconda prompt in local dfm_tools folder (e.g. ``C:\DATA\dfm_tools``)
+- open Miniforge Prompt and navigate to the local checkout folder of the repository
 - ``conda activate dfm_tools_env``
 - ``bumpversion major`` or ``bumpversion minor`` or ``bumpversion patch`` (changes version numbers in files and commits changes)
 - push changes with ``git push`` (from git bash window)

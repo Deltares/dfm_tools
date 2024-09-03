@@ -109,3 +109,6 @@ ENV/
 
 # github action env
 setup-miniconda-patched-environment.yml
+# pixi environments
+.pixi
+*.egg-info
