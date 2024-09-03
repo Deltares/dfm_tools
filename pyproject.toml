@@ -26,7 +26,7 @@ dependencies = [
 	"geopandas>=0.13.0",
 	#fiona<1.9 does not contain sql where filter
 	"fiona>=1.9",
-	#contextily<1.6.2 includes fix for axis scaling: https://github.com/geopandas/contextily/issues/251
+	#contextily<1.6.2 has incorrect axis scaling: https://github.com/geopandas/contextily/issues/251
 	"contextily>=1.6.2",
 	#xarray<2023.9.0 does not support multidimensional coordinates (used in e.g. HIRLAM meteo data)
 	"xarray>=2023.9.0",
