@@ -480,7 +480,7 @@ def interp_uds_to_plipoints(uds:xu.UgridDataset, gdf:geopandas.GeoDataFrame) -> 
     for varn in uds.variables:
         if facedim not in uds.variables[varn].dims:
             vars_without_facedim.append(varn)
-    uds_face = uds.drop(vars_without_facedim)
+    uds_face = uds.drop_vars(vars_without_facedim)
     
     # interpolate to provided points
     ds = uds_face.ugrid.sel_points(x=gdf.geometry.x, y=gdf.geometry.y)
