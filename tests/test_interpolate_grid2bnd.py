@@ -26,6 +26,7 @@ from dfm_tools.interpolate_grid2bnd import (tidemodel_componentlist,
 from dfm_tools.hydrolib_helpers import get_ncbnd_construct
 import hydrolib.core.dflowfm as hcdfm
 from dfm_tools.errors import OutOfRangeError
+import warnings
 
 
 def data_dcsm_gdf():
@@ -547,7 +548,6 @@ def test_interp_uds_to_plipoints():
     ds_atdepths = ds_atdepths.rename({'depth_from_z0':'depth'})
     
     #interpolate to plipoints
-    import warnings
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", UserWarning)
         ds_plipoints = dfmt.interp_uds_to_plipoints(uds=ds_atdepths, gdf=gdf) #workaround for plipoints out of the model domain
