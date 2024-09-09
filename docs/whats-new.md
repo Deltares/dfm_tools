@@ -1,6 +1,6 @@
 # What's new
 
-## UNRELEASED
+## 0.27.0 (2024-09-09)
 
 ### Fix
 - simplified `dfmt.meshkernel_to_UgridDataset()` by using new xugrid version in [#991](https://github.com/Deltares/dfm_tools/pull/991)
