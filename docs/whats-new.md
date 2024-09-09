@@ -1,5 +1,12 @@
 # What's new
 
+## UNRELEASED
+
+### Fix
+- simplified `dfmt.meshkernel_to_UgridDataset()` by using new xugrid version in [#991](https://github.com/Deltares/dfm_tools/pull/991)
+- updated `dfmt.uda_to_faces()` to accomodate for new fill_value of xugrid (this version includes fix for contour/contourf) [#992](https://github.com/Deltares/dfm_tools/pull/992)
+
+
 ## 0.26.0 (2024-09-03)
 
 ### Fix
@@ -9,7 +16,6 @@
 - deprecated `dfmt.open_dataset_extra()` (partly replaced by `dfmt.open_prepare_dataset()`) in [#974](https://github.com/Deltares/dfm_tools/pull/974)
 - improved nan-conversion in `dfmt.forcinglike_to_Dataset()` in [#982](https://github.com/Deltares/dfm_tools/pull/982)
 - improved performance of `dfmt.open_partitioned_dataset()` for datasets with many variables in [#984](https://github.com/Deltares/dfm_tools/pull/984)
-- simplified `dfmt.meshkernel_to_UgridDataset()` by using new xugrid version in [#991](https://github.com/Deltares/dfm_tools/pull/991)
 
 
 ## 0.25.0 (2024-08-16)
