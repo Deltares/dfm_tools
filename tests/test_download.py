@@ -181,7 +181,7 @@ def test_download_era5(file_nc_era5_pattern):
     # datasets retrieved with new cds-beta have valid_time instead of time dimn/varn
     # https://forum.ecmwf.int/t/new-time-format-in-era5-netcdf-files/3796/5?u=jelmer_veenstra
     # TODO: can be removed after https://github.com/Unidata/netcdf4-python/issues/1357 or https://forum.ecmwf.int/t/3796 is fixed
-    if 'valid_time' in ds.dims: #TODO: can be removed if 
+    if 'valid_time' in ds.dims:
         timedim = 'valid_time'
     
     assert ds.sizes[timedim] == 1416
