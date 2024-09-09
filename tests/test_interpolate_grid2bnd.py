@@ -547,7 +547,10 @@ def test_interp_uds_to_plipoints():
     ds_atdepths = ds_atdepths.rename({'depth_from_z0':'depth'})
     
     #interpolate to plipoints
-    ds_plipoints = dfmt.interp_uds_to_plipoints(uds=ds_atdepths, gdf=gdf) #workaround for plipoints out of the model domain
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", UserWarning)
+        ds_plipoints = dfmt.interp_uds_to_plipoints(uds=ds_atdepths, gdf=gdf) #workaround for plipoints out of the model domain
     assert varn_pointname in ds_plipoints.coords
     assert 'depth' in ds_plipoints.coords # TODO: maybe should be z like ncbnd_construct['varn_depth'], although get_Dataset_atdepths() makes depth variable
     
