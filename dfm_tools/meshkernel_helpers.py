@@ -185,17 +185,13 @@ def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, crs:(int,str) = None) -
         raise ValueError(f"crs has is_geographic={crs_is_geographic} and grid has is_geographic={grid_is_geographic}. This is not allowed.")
     
     # TODO: below is not correctly handled by xugrid yet, projected=False does not give is_geographic=True
-    # related issue is https://github.com/Deltares/dfm_tools/issues/686
+    # related issue is https://github.com/Deltares/xugrid/issues/187
     xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid, projected= not crs_is_geographic, crs=crs)
     
-    #convert 0-based to 1-based indices for connectivity variables like face_node_connectivity
+    # convert 0-based to 1-based indices for connectivity variables like face_node_connectivity
+    # this is required by delft3dfm
+    xu_grid.start_index = 1
     xu_grid_ds = xu_grid.to_dataset()
-    xu_grid_ds = xr.decode_cf(xu_grid_ds) #decode_cf is essential since it replaces fillvalues with nans
-    ds_idx = xu_grid_ds.filter_by_attrs(start_index=0)
-    for varn_conn in ds_idx.data_vars:
-        xu_grid_ds[varn_conn] += 1 #from startindex 0 to 1 (fillvalues are now nans)
-        xu_grid_ds[varn_conn].attrs["start_index"] += 1
-        xu_grid_ds[varn_conn].encoding["_FillValue"] = -1 #can be any value <=0, but not 0 is currently the most convenient for proper xugrid plots.
     
     # convert to uds and add attrs and crs
     xu_grid_uds = xu.UgridDataset(xu_grid_ds)
