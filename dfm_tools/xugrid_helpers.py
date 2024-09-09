@@ -515,7 +515,6 @@ def uda_to_faces(uda : xu.UgridDataArray) -> xu.UgridDataArray:
     reduce_dim = 'nMax_face_nodes' #arbitrary dimname that is reduced anyway
     dimn_nodes = grid.node_dimension
     dimn_edges = grid.edge_dimension
-    fill_value = grid.fill_value
     
     # construct indexing array
     if dimn_nodes in uda.dims:
@@ -536,7 +535,7 @@ def uda_to_faces(uda : xu.UgridDataArray) -> xu.UgridDataArray:
     uda = uda.chunk(chunks)
 
     indexer = xr.DataArray(indexer_np,dims=(dimn_faces,reduce_dim))
-    indexer_validbool = indexer!=fill_value
+    indexer_validbool = indexer!=-1
     indexer = indexer.where(indexer_validbool,-1)
     
     print(f'{dimn_notfaces_name}-to-face interpolation: ',end='')
