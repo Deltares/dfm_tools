@@ -252,12 +252,7 @@ def cmems_ssh_read_catalog(source, overwrite=True):
     bool_tidegauge = index_history_pd["file_name"].str.contains("/history/TG/")
     bool_slev = index_history_pd["parameters"].str.contains("SLEV")
     index_history_pd = index_history_pd.loc[bool_tidegauge & bool_slev]
-    
-    # drop andratx station, lat/lon vary over time in nrt dataset
-    # TODO: remove this exception when the CMEMS nrt dataset is cleaned up
-    bool_moving = index_history_pd["file_name"].str.contains("MO_TS_TG_ANDRATX")
-    index_history_pd = index_history_pd.loc[~bool_moving]
-    
+        
     # generate geom and geodataframe
     assert (index_history_pd["geospatial_lon_min"] == index_history_pd["geospatial_lon_max"]).all()
     assert (index_history_pd["geospatial_lat_min"] == index_history_pd["geospatial_lat_max"]).all()
@@ -597,17 +592,6 @@ def cmems_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None,
     
     # drop all unnecessary vars
     ds = ds.drop_vars(["SLEV_QC","TIME_QC","DEPH_QC","LATITUDE","LONGITUDE","STATION","POSITION"], errors="ignore")
-    
-    # check order of time variable
-    if not ds.time.to_pandas().index.is_monotonic_increasing:
-        # TODO: happens in some MO_TS_TG_RMN-* stations in NRT dataset, asked to fix
-        # Genova, Imperia, LaSpezia, Livorno, Ravenna, Venice
-        stat_name = row.loc["station_name_unique"]
-        print(f"[{stat_name} NOT MONOTONIC] ", end="")
-        del ds
-        os.remove(file_data_raw)
-        return
-        # ds = ds.sortby("time")
     
     # slice on time extent
     ds = ds.sel(time=slice(time_min, time_max))
