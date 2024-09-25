@@ -238,6 +238,21 @@ def test_download_hycom(tmp_path):
 
 @pytest.mark.requiressecrets
 @pytest.mark.unittest
+def test_download_era5_unsupported_varkey():
+    date_min = '2010-01-31'
+    date_max = '2010-02-01'
+    longitude_min, longitude_max, latitude_min, latitude_max =    2,   3,  51, 52 #test domain
+    varkey = 'unexisting'
+    with pytest.raises(KeyError) as e:
+        dfmt.download_ERA5(varkey, 
+                            longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
+                            date_min=date_min, date_max=date_max,
+                            dir_output='.', overwrite=True)
+    assert '"unexisting" not available' in str(e.value)
+
+
+@pytest.mark.requiressecrets
+@pytest.mark.unittest
 @pytest.mark.timeout(60) # useful since CDS downloads are terribly slow sometimes, so skip in that case
 def test_download_era5(file_nc_era5_pattern):
     # file_nc_era5_pattern comes from conftest.py
@@ -264,19 +279,3 @@ def test_download_era5(file_nc_era5_pattern):
     msl_encoding = ds['msl'].encoding
     assert str(msl_encoding['dtype']) == 'float32'
     assert 'scale_factor' not in msl_encoding.keys()
-
-
-@pytest.mark.requiressecrets
-@pytest.mark.unittest
-@pytest.mark.timeout(60) # useful since CDS downloads are terribly slow sometimes, so skip in that case
-def test_download_era5_unsupported_varkey():
-    date_min = '2010-01-31'
-    date_max = '2010-02-01'
-    longitude_min, longitude_max, latitude_min, latitude_max =    2,   3,  51, 52 #test domain
-    varkey = 'unexisting'
-    with pytest.raises(KeyError) as e:
-        dfmt.download_ERA5(varkey, 
-                            longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
-                            date_min=date_min, date_max=date_max,
-                            dir_output='.', overwrite=True)
-    assert '"unexisting" not available' in str(e.value)
