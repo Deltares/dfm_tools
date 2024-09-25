@@ -186,18 +186,18 @@ def test_make_paths_relative(tmp_path):
 
 
 @pytest.mark.unittest
-@pytest.mark.requiressecrets
-@pytest.mark.timeout(60) # useful since CDS downloads are terribly slow sometimes, so skip in that case
-def test_preprocess_merge_meteofiles_era5_unsupported_varlist(file_nc_era5_pattern, tmp_path):
+def test_preprocess_merge_meteofiles_era5_unsupported_varlist(tmp_path, ds_era5_empty):
+    file_nc = os.path.join(tmp_path,"era5_msl_empty.nc")
+    ds_era5_empty.to_netcdf(file_nc)
+    
     ext_old = None # this won't be reached, so not relevant what to supply
-    date_min = '2010-01-31'
-    date_max = '2010-02-01'
+    date_min = ds_era5_empty.time.to_pandas().iloc[0]
+    date_max = ds_era5_empty.time.to_pandas().iloc[-1]
     varlist_list = ['msl']
-    dir_output_data_era5 = os.path.dirname(file_nc_era5_pattern)
     with pytest.raises(KeyError) as e:
         ext_old = dfmt.preprocess_merge_meteofiles_era5(ext_old=ext_old,
                                                         varkey_list=varlist_list,
-                                                        dir_data=dir_output_data_era5,
+                                                        dir_data=tmp_path,
                                                         dir_output=tmp_path,
                                                         time_slice=slice(date_min, date_max))
     assert "is not supported by dfmt.preprocess_merge_meteofiles_era5" in str(e.value)
