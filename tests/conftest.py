@@ -7,6 +7,8 @@ Created on Thu May 16 15:51:44 2024
 import pytest
 import dfm_tools as dfmt
 import os
+import xarray as xr
+import pandas as pd
 
 
 @pytest.mark.requiressecrets
@@ -25,3 +27,13 @@ def file_nc_era5_pattern(tmp_path):
     # assert downloaded files
     file_nc_era5_pattern = os.path.join(tmp_path, "*.nc")
     return file_nc_era5_pattern
+
+
+@pytest.fixture
+def ds_era5_empty():
+    # create dummy dataset
+    ds_era5_empty = xr.Dataset()
+    ds_era5_empty['longitude'] = xr.DataArray()
+    time_data = pd.date_range('2010-01-31', '2010-02-01', freq="3h")
+    ds_era5_empty['time'] = xr.DataArray(time_data, dims='time')
+    return ds_era5_empty

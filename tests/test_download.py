@@ -76,7 +76,7 @@ def test_cds_credentials_newurl_incorrectkey_rcfile():
         cds_credentials()
     set_cds_credentials_ifnot_none(cds_url, cds_apikey)
     assert "Authentication failed" in str(e.value)
-    assert "The CDS/ECMWF apikey environment variables and rcfile were deleted" in str(e.value)    
+    assert "The CDS/ECMWF apikey file (~/.cdsapirc) was deleted" in str(e.value)    
 
 
 @pytest.mark.unittest
@@ -90,7 +90,7 @@ def test_cds_credentials_newurl_incorrectkey_envvars():
         cds_credentials()
     set_cds_credentials_ifnot_none(cds_url, cds_apikey)
     assert "Authentication failed" in str(e.value)
-    assert "The CDS/ECMWF apikey environment variables and rcfile were deleted" in str(e.value)
+    assert "The CDS/ECMWF apikey file (~/.cdsapirc) was deleted" in str(e.value)
 
 
 @pytest.mark.unittest
@@ -109,7 +109,7 @@ def test_cds_credentials_oldurl_incorrectkey_rcfile():
         cds_credentials()
     set_cds_credentials_ifnot_none(cds_url, cds_apikey)
     assert "Authentication failed" in str(e.value) # should actually be "Old CDS URL found", but the url from the file is ignored, which is acceptable
-    assert "The CDS/ECMWF apikey environment variables and rcfile were deleted" in str(e.value)
+    assert "The CDS/ECMWF apikey file (~/.cdsapirc) was deleted" in str(e.value)
 
 
 @pytest.mark.unittest
@@ -123,7 +123,7 @@ def test_cds_credentials_oldurl_incorrectkey_envvars():
         cds_credentials()
     set_cds_credentials_ifnot_none(cds_url, cds_apikey)
     assert "Old CDS URL found" in str(e.value)
-    assert "The CDS/ECMWF apikey environment variables and rcfile were deleted" in str(e.value)
+    assert "The CDS/ECMWF apikey file (~/.cdsapirc) was deleted" in str(e.value)
 
 
 @pytest.mark.unittest
@@ -142,7 +142,7 @@ def test_cds_credentials_newurl_oldkey_rcfile():
         cds_credentials()
     set_cds_credentials_ifnot_none(cds_url, cds_apikey)
     assert "Old CDS API-key found (with :)" in str(e.value)
-    assert "The CDS/ECMWF apikey environment variables and rcfile were deleted" in str(e.value)
+    assert "The CDS/ECMWF apikey file (~/.cdsapirc) was deleted" in str(e.value)
 
 
 @pytest.mark.unittest
@@ -156,59 +156,13 @@ def test_cds_credentials_newurl_oldkey_envvars():
         cds_credentials()
     set_cds_credentials_ifnot_none(cds_url, cds_apikey)
     assert "Old CDS API-key found (with :)" in str(e.value)
-    assert "The CDS/ECMWF apikey environment variables and rcfile were deleted" in str(e.value)
+    assert "The CDS/ECMWF apikey file (~/.cdsapirc) was deleted" in str(e.value)
 
 
 @pytest.mark.requiressecrets
 @pytest.mark.unittest
 def test_copernicusmarine_credentials():
     copernicusmarine_credentials()
-
-
-@pytest.mark.requiressecrets
-@pytest.mark.unittest
-@pytest.mark.timeout(60) # useful since CDS downloads are terribly slow sometimes, so skip in that case
-def test_download_era5(file_nc_era5_pattern):
-    # file_nc_era5_pattern comes from conftest.py
-    file_list = glob.glob(file_nc_era5_pattern)
-    assert len(file_list) == 2
-    
-    ds = xr.open_mfdataset(file_nc_era5_pattern)
-    
-    assert 'valid_time' in ds.dims # TODO: if this fails, remove the exception below and in preprocess_ERA5
-    
-    timedim = 'time'
-    # datasets retrieved with new cds-beta have valid_time instead of time dimn/varn
-    # https://forum.ecmwf.int/t/new-time-format-in-era5-netcdf-files/3796/5?u=jelmer_veenstra
-    # TODO: can be removed after https://github.com/Unidata/netcdf4-python/issues/1357 or https://forum.ecmwf.int/t/3796 is fixed
-    if 'valid_time' in ds.dims:
-        timedim = 'valid_time'
-    
-    assert ds.sizes[timedim] == 1416
-    assert ds[timedim].to_pandas().iloc[0] == pd.Timestamp('2010-01-01')
-    assert ds[timedim].to_pandas().iloc[-1] == pd.Timestamp('2010-02-28 23:00')
-    
-    # check if there are no integers in the dataset anymore
-    # this was the case before CDS-beta in https://github.com/Deltares/dfm_tools/issues/239
-    msl_encoding = ds['msl'].encoding
-    assert str(msl_encoding['dtype']) == 'float32'
-    assert 'scale_factor' not in msl_encoding.keys()
-
-
-@pytest.mark.requiressecrets
-@pytest.mark.unittest
-@pytest.mark.timeout(60) # useful since CDS downloads are terribly slow sometimes, so skip in that case
-def test_download_era5_unsupported_varkey():
-    date_min = '2010-01-31'
-    date_max = '2010-02-01'
-    longitude_min, longitude_max, latitude_min, latitude_max =    2,   3,  51, 52 #test domain
-    varkey = 'unexisting'
-    with pytest.raises(KeyError) as e:
-        dfmt.download_ERA5(varkey, 
-                            longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
-                            date_min=date_min, date_max=date_max,
-                            dir_output='.', overwrite=True)
-    assert '"unexisting" not available' in str(e.value)
 
 
 @pytest.mark.requiressecrets
@@ -280,3 +234,49 @@ def test_download_hycom(tmp_path):
     assert ds.sizes["time"] == 2
     assert ds.time.to_pandas().iloc[0] == pd.Timestamp('2010-01-01')
     assert ds.time.to_pandas().iloc[-1] == pd.Timestamp('2010-01-02')
+
+
+@pytest.mark.requiressecrets
+@pytest.mark.unittest
+def test_download_era5_unsupported_varkey():
+    date_min = '2010-01-31'
+    date_max = '2010-02-01'
+    longitude_min, longitude_max, latitude_min, latitude_max =    2,   3,  51, 52 #test domain
+    varkey = 'unexisting'
+    with pytest.raises(KeyError) as e:
+        dfmt.download_ERA5(varkey, 
+                            longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
+                            date_min=date_min, date_max=date_max,
+                            dir_output='.', overwrite=True)
+    assert '"unexisting" not available' in str(e.value)
+
+
+@pytest.mark.requiressecrets
+@pytest.mark.unittest
+@pytest.mark.era5slow # temporarily skip these on github
+@pytest.mark.timeout(60) # useful since CDS downloads are terribly slow sometimes, so skip in that case
+def test_download_era5(file_nc_era5_pattern):
+    # file_nc_era5_pattern comes from conftest.py
+    file_list = glob.glob(file_nc_era5_pattern)
+    assert len(file_list) == 2
+    
+    ds = xr.open_mfdataset(file_nc_era5_pattern)
+    
+    assert 'valid_time' in ds.dims # TODO: if this fails, remove the exception below and in preprocess_ERA5
+    
+    timedim = 'time'
+    # datasets retrieved with new cds-beta have valid_time instead of time dimn/varn
+    # https://forum.ecmwf.int/t/new-time-format-in-era5-netcdf-files/3796/5?u=jelmer_veenstra
+    # TODO: can be removed after https://github.com/Unidata/netcdf4-python/issues/1357 or https://forum.ecmwf.int/t/3796 is fixed
+    if 'valid_time' in ds.dims:
+        timedim = 'valid_time'
+    
+    assert ds.sizes[timedim] == 1416
+    assert ds[timedim].to_pandas().iloc[0] == pd.Timestamp('2010-01-01')
+    assert ds[timedim].to_pandas().iloc[-1] == pd.Timestamp('2010-02-28 23:00')
+    
+    # check if there are no integers in the dataset anymore
+    # this was the case before CDS-beta in https://github.com/Deltares/dfm_tools/issues/239
+    msl_encoding = ds['msl'].encoding
+    assert str(msl_encoding['dtype']) == 'float32'
+    assert 'scale_factor' not in msl_encoding.keys()

@@ -11,6 +11,7 @@ import getpass
 import shutil
 import subprocess
 import sys
+from requests import HTTPError
 
 __all__ = [
     "download_ERA5",
@@ -129,18 +130,11 @@ def cds_credentials():
     # check if the authentication works
     # TODO: requested "check authentication" method in https://github.com/ecmwf/cdsapi/issues/111
     try:
-        # checks whether CDS apikey is in environment variable or ~/.cdsapirc file
         c = cdsapi.Client()
-        # checks whether authentication is succesful (correct combination of url and apikey)
-        c.retrieve(name='dummy', request={})
-    except Exception as e:
-        if "dummy not found" in str(e):  # Exception
-            # catching incorrect name, but authentication was successful
-            print('found ECMWF API-key and authorization successful')
-        elif "Authentication failed" in str(e):  # HTTPError
-            cds_remove_credentials_raise(reason='Authentication failed')
-        else:
-            raise e
+        c.client.check_authentication()
+        print('found ECMWF API-key and authorization successful')
+    except HTTPError as e:
+        cds_remove_credentials_raise(reason=str(e))
 
 
 def cds_get_file():
@@ -181,7 +175,8 @@ def cds_remove_credentials_raise(reason=''):
     if os.path.isfile(file_cds_credentials):
         os.remove(file_cds_credentials)
     
-    raise ValueError(f"{reason}. The CDS/ECMWF apikey environment variables and rcfile were deleted. Please try again.")
+    raise ValueError(f"{reason}. The CDS/ECMWF apikey file (~/.cdsapirc) was deleted. "
+                     "Please try again and provide your apikey when prompted.")
 
 
 def download_CMEMS(varkey,
