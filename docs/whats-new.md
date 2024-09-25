@@ -2,6 +2,9 @@
 
 ## UNRELEASED
 
+### Fix
+- more robust CDS/ECMWF authentication check in [#1004](https://github.com/Deltares/dfm_tools/pull/1004)
+
 
 ## 0.27.0 (2024-09-09)
 
