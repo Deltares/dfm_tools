@@ -13,6 +13,7 @@ import hydrolib.core.dflowfm as hcdfm
 import xarray as xr
 import numpy as np
 from dfm_tools.modelbuilder import get_quantity_list, get_ncvarname
+from test_interpolate_grid2bnd import cmems_dataset_4times # TODO: create fixture
 
 
 @pytest.mark.unittest
@@ -39,9 +40,6 @@ def test_get_ncvarname_list():
 
 @pytest.mark.systemtest
 def test_cmems_nc_to_ini_midnight_centered(tmp_path):
-    
-    # TODO: create fixture
-    from tests.test_interpolate_grid2bnd import cmems_dataset_4times
     ds1 = cmems_dataset_4times().isel(time=slice(None,2))
     ds1["time"] = ds1["time"] + pd.Timedelta(hours=12)
     ds2 = cmems_dataset_4times().isel(time=slice(2,None))
