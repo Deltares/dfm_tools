@@ -110,6 +110,7 @@ markers = [
 	"acceptance: mark a test as acceptance. Used for non-functional requirements and data that needs to be human-verified",
 	"requireslocaldata: mark a test that cannot run on Github",
 	"requiressecrets: mark a test that requires environment variables to be set (e.g. via Github secrets)",
+	"era5slow: mark a test that causes timeout errors to prevent failing github testbanks due to badly performing cds-beta",
 ]
 
 [tool.flake8]
