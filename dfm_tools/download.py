@@ -351,8 +351,8 @@ def copernicusmarine_get_buffer(dataset_id):
         resolution = ds.latitude.attrs["step"]
         buffer = 2 * resolution
     except (AttributeError, KeyError, TypeError):
-        print("failed to automatically derive a buffer from the dataset, using buffer=0")
-        buffer = 0
+        print("failed to automatically derive a buffer from the dataset, using buffer=0.5")
+        buffer = 0.5
     return buffer
 
 
