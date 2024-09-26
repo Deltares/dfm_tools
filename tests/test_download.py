@@ -19,6 +19,7 @@ from dfm_tools.download import (cds_credentials,
 import dfm_tools as dfmt
 import xarray as xr
 import glob
+import numpy as np
 
 
 def get_cds_url_key():
@@ -171,7 +172,7 @@ def test_copernicusmarine_credentials():
 def test_copernicusmarine_get_buffer_notfound():
     dataset_id = 'cmems_obs-oc_glo_bgc-transp_my_l3-multi-4km_P1D'
     buffer = copernicusmarine_get_buffer(dataset_id)
-    assert buffer == 0.5
+    assert np.isclose(buffer, 0.5)
     
 
 @pytest.mark.requiressecrets
