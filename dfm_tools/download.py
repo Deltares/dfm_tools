@@ -122,7 +122,7 @@ def cds_credentials():
     # remove cdsapirc file or env vars if the url/apikey are according to old format
     old_urls = [
         "https://cds.climate.copernicus.eu/api/v2",
-        "https://cds-beta.climate.copernicus.eu/profile",
+        "https://cds-beta.climate.copernicus.eu/api",
         ]
     if cds_url in old_urls:
         # to avoid "HTTPError: 401 Client Error: Unauthorized for url"
