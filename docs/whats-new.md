@@ -1,9 +1,10 @@
 # What's new
 
-## UNRELEASED
+## 0.28.0 (2024-09-26)
 
 ### Fix
 - more robust CDS/ECMWF authentication check and support for new cdsapi versions in [#1004](https://github.com/Deltares/dfm_tools/pull/1004)
+- set default copernicusmarine buffer to 0.5 instead of 0 in [#1009](https://github.com/Deltares/dfm_tools/pull/1009)
 
 
 ## 0.27.0 (2024-09-09)
