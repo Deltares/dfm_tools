@@ -132,7 +132,6 @@ def cds_credentials():
         cds_remove_credentials_raise(reason='Old CDS API-key found (with :)')
     
     # check if the authentication works
-    # TODO: requested "check authentication" method in https://github.com/ecmwf/cdsapi/issues/111
     try:
         c = cdsapi.Client()
         c.client.check_authentication()
