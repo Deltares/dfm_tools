@@ -14,6 +14,7 @@ from dfm_tools.download import (cds_credentials,
                                 cds_set_credentials_rcfile,
                                 cds_remove_credentials_raise,
                                 copernicusmarine_credentials,
+                                copernicusmarine_get_buffer,
                                 )
 import dfm_tools as dfmt
 import xarray as xr
@@ -164,6 +165,14 @@ def test_cds_credentials_newurl_oldkey_envvars():
 def test_copernicusmarine_credentials():
     copernicusmarine_credentials()
 
+
+@pytest.mark.requiressecrets
+@pytest.mark.unittest
+def test_copernicusmarine_get_buffer_notfound():
+    dataset_id = 'cmems_obs-oc_glo_bgc-transp_my_l3-multi-4km_P1D'
+    buffer = copernicusmarine_get_buffer(dataset_id)
+    assert buffer == 0.5
+    
 
 @pytest.mark.requiressecrets
 @pytest.mark.unittest
