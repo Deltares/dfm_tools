@@ -98,20 +98,21 @@ def cds_credentials():
     """
     # TODO: put this in a PR at https://github.com/ecmwf/cdsapi
     
-    cds_url = os.environ.get("CDSAPI_URL", "https://cds-beta.climate.copernicus.eu/api")
-    try:
-        # set default for CDSAPI_URL envvar so it does not have to be supplied. This also ignores the URL in ~/.cdsapirc
+    if "CDSAPI_KEY" in os.environ.keys():
+        # in case of envvars, also set CDSAPI_URL envvar so it does not have to be supplied
+        cds_url = os.environ.get("CDSAPI_URL", "https://cds.climate.copernicus.eu/api")
         os.environ["CDSAPI_URL"] = cds_url
+    
+    try:
         # gets url/key from env vars or ~/.cdsapirc file
-        # cds_url, cds_apikey, _ = cdsapi.api.get_url_key_verify(url=cds_url, key=None, verify=None)
-        c = cdsapi.Client(url=cds_url)
+        c = cdsapi.Client()
         cds_url = c.url
         cds_apikey = c.key
     except Exception as e:
         if "Missing/incomplete configuration file" in str(e):
             # query apikey if not present in file or envvars
             print("Downloading CDS/ERA5 data requires a ECMWF API-key, copy "
-                  "your API-key from https://cds-beta.climate.copernicus.eu/profile "
+                  "your API-key from https://cds.climate.copernicus.eu/profile "
                   "(first register, login and accept the terms). "
                   "More info in https://forum.ecmwf.int/t/3743.")
             cds_apikey = getpass.getpass("\nEnter your ECMWF API-key (string with dashes): ")
@@ -120,15 +121,18 @@ def cds_credentials():
             raise e
     
     # remove cdsapirc file or env vars if the url/apikey are according to old format
-    if cds_url=="https://cds.climate.copernicus.eu/api/v2":
+    old_urls = [
+        "https://cds.climate.copernicus.eu/api/v2",
+        "https://cds-beta.climate.copernicus.eu/api",
+        ]
+    if cds_url in old_urls:
         # to avoid "HTTPError: 401 Client Error: Unauthorized for url"
         cds_remove_credentials_raise(reason='Old CDS URL found')
     if ":" in cds_apikey:
-        # to avoid "Exception: Not Found" and "HTTPError: 404 Client Error: Not Found for url: https://cds-beta.climate.copernicus.eu/api/resources/dummy"
+        # to avoid "AttributeError: 'Client' object has no attribute 'client'"
         cds_remove_credentials_raise(reason='Old CDS API-key found (with :)')
     
     # check if the authentication works
-    # TODO: requested "check authentication" method in https://github.com/ecmwf/cdsapi/issues/111
     try:
         c = cdsapi.Client()
         c.client.check_authentication()
