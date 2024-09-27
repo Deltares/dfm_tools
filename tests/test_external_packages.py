@@ -176,4 +176,10 @@ def test_ctx_add_basemap():
     try:
         ctx.add_basemap(ax=ax, crs="EPSG:4326", attribution=False)
     except HTTPError as e:
+        # servers are flaky so HTTPError is raised quite often
+        # this should not result in a failing dfm_tools test since it is just temporary
+        print(e)
+    except AttributeError as e:
+        # can be removed after fixing https://github.com/geopandas/contextily/issues/252
+        assert str(e) == "'NoneType' object has no attribute 'shape'"
         print(e)
