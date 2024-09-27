@@ -1,8 +1,8 @@
 # What's new
 
-## UNRELEASED
+## 0.29.0 (2024-09-27)
 
-### Fix
+### Feat
 - update from CDS-Beta to new CDS in [#1013](https://github.com/Deltares/dfm_tools/pull/1013)
 
 
