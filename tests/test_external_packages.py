@@ -183,3 +183,7 @@ def test_ctx_add_basemap():
         # can be removed after fixing https://github.com/geopandas/contextily/issues/252
         assert str(e) == "'NoneType' object has no attribute 'shape'"
         print(e)
+    except TypeError as e:
+        # can be removed after fixing https://github.com/geopandas/contextily/issues/252
+        assert "not 'NoneType'" in str(e)
+        print(e)
