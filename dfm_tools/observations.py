@@ -252,7 +252,13 @@ def cmems_ssh_read_catalog(source, overwrite=True):
     bool_tidegauge = index_history_pd["file_name"].str.contains("/history/TG/")
     bool_slev = index_history_pd["parameters"].str.contains("SLEV")
     index_history_pd = index_history_pd.loc[bool_tidegauge & bool_slev]
-        
+    
+    # drop andratx station, lat/lon vary over time in nrt dataset
+    # TODO: remove this exception when the CMEMS nrt dataset is cleaned up
+    if source == "cmems-nrt":
+        bool_moving = index_history_pd["file_name"].str.contains("MO_TS_TG_ANDRATX")
+        index_history_pd = index_history_pd.loc[~bool_moving]
+    
     # generate geom and geodataframe
     assert (index_history_pd["geospatial_lon_min"] == index_history_pd["geospatial_lon_max"]).all()
     assert (index_history_pd["geospatial_lat_min"] == index_history_pd["geospatial_lat_max"]).all()
