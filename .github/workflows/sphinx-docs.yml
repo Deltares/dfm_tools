@@ -2,7 +2,7 @@ name: sphinx-docs
 
 on:
   push:
-    branches: ["main"]
+    branches: [ main ]
 
 permissions:
   contents: read
@@ -14,7 +14,10 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: install pandoc
         # pip install is not seen somehow, so via choco
         run: |
