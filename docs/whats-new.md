@@ -4,6 +4,7 @@
 
 ### Fix
 - fixed cmems-nrt insitu again by dropping station with varying coordinates again in [#1023](https://github.com/Deltares/dfm_tools/pull/1023)
+- update executable paths in batfile created by `dfmt.create_model_exec_files()` in [#1030](https://github.com/Deltares/dfm_tools/pull/1030)
 
 
 ## 0.29.0 (2024-09-27)
