@@ -335,10 +335,10 @@ set MDU_file="{mdu_name}"
 set partitions={nproc}
 
 rem Partition the network and mdu
-call %dimrset_folder%\x64\dflowfm\scripts\run_dflowfm.bat "--partition:ndomains=%partitions%:icgsolver=6" %MDU_file%
+call %dimrset_folder%\x64\bin\run_dflowfm.bat "--partition:ndomains=%partitions%:icgsolver=6" %MDU_file%
 
 rem Execute the simulation
-call %dimrset_folder%\x64\dimr\scripts\run_dimr_parallel.bat %partitions% {dimr_name}
+call %dimrset_folder%\x64\bin\run_dimr_parallel.bat %partitions% {dimr_name}
 
 rem To prevent the DOS box from disappearing immediately: enable pause on the following line
 pause
