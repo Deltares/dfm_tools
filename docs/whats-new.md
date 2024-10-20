@@ -1,6 +1,6 @@
 # What's new
 
-## UNRELEASED
+## 0.30.0 (2024-10-20)
 
 ### Fix
 - fixed cmems-nrt insitu again by dropping station with varying coordinates again in [#1023](https://github.com/Deltares/dfm_tools/pull/1023)
