@@ -1,6 +1,6 @@
 # Contributing
 
-## Checkout dfm_tools git repository
+## Checkout git repository
 
 - this is just a suggestion, feel free to work with VScode or any other git-compatible workflow
 - download git from [git-scm.com](https://git-scm.com/download/win), install with default settings
@@ -54,7 +54,7 @@
 - ``sphinx-build docs docs/_build``
 - this workflow automatically runs via Github Actions upon push to main
 
-## Increase the dfm_tools version number
+## Increase the version number
 
 - commit all changes via git
 - open Miniforge Prompt and navigate to the local checkout folder of the repository
@@ -64,7 +64,7 @@
 
 ## Create release
 
-- make sure the ``main`` branch is up to date (important issues solved, all pullrequests and branches closed)
+- make sure the ``main`` branch is up to date (check pytest warnings, important issues solved, all pullrequests and branches closed)
 - bump the versionnumber with ``bumpversion minor``
 - update ``docs/whats-new.md`` and add a date to the current release heading
 - run local testbank
