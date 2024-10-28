@@ -2,6 +2,9 @@
 
 ## UNRELEASED
 
+### Fix
+- fixed CDS logging in for new users in `cds_credentials()` in [#1035](https://github.com/Deltares/dfm_tools/pull/1035)
+
 
 ## 0.30.0 (2024-10-20)
 

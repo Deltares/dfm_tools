@@ -20,6 +20,7 @@ import dfm_tools as dfmt
 import xarray as xr
 import glob
 import numpy as np
+from unittest.mock import patch
 
 
 def get_cds_url_key():
@@ -44,6 +45,21 @@ def set_cds_credentials_ifnot_none(cds_url, cds_apikey):
 @pytest.mark.unittest
 def test_cds_credentials():
     cds_credentials()
+
+
+@patch("getpass.getpass")
+def test_cds_credentials_prompt(getpass):
+    # backup credentials and remove credentials envvars and file
+    cds_url, cds_apikey = get_cds_url_key()
+    with pytest.raises(ValueError):
+        cds_remove_credentials_raise()
+    
+    # provide apikey to cds_credentials() prompt
+    getpass.return_value = cds_apikey
+    cds_credentials()
+
+    # restore credentials file/envvars
+    set_cds_credentials_ifnot_none(cds_url, cds_apikey)
 
 
 @pytest.mark.requiressecrets

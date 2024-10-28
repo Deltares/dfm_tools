@@ -11,7 +11,6 @@ import xarray as xr
 import pandas as pd
 
 
-@pytest.mark.requiressecrets
 @pytest.fixture
 def file_nc_era5_pattern(tmp_path):
     date_min = '2010-01-31'
