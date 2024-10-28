@@ -96,11 +96,12 @@ def cds_credentials():
     """
     get cdsapikey from environment variables or file or query via getpass if necessary
     """
-    # TODO: put this in a PR at https://github.com/ecmwf/cdsapi
+    cds_url_default = "https://cds.climate.copernicus.eu/api"
     
+    # TODO: put this in a PR at https://github.com/ecmwf/cdsapi
     if "CDSAPI_KEY" in os.environ.keys():
         # in case of envvars, also set CDSAPI_URL envvar so it does not have to be supplied
-        cds_url = os.environ.get("CDSAPI_URL", "https://cds.climate.copernicus.eu/api")
+        cds_url = os.environ.get("CDSAPI_URL", cds_url_default)
         os.environ["CDSAPI_URL"] = cds_url
     
     try:
@@ -115,6 +116,7 @@ def cds_credentials():
                   "your API-key from https://cds.climate.copernicus.eu/profile "
                   "(first register, login and accept the terms). "
                   "More info in https://forum.ecmwf.int/t/3743.")
+            cds_url = cds_url_default
             cds_apikey = getpass.getpass("\nEnter your ECMWF API-key (string with dashes): ")
             cds_set_credentials(cds_url, cds_apikey)
         else:
