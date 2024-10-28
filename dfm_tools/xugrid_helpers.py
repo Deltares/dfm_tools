@@ -190,8 +190,6 @@ def open_partitioned_dataset(file_nc:str, decode_fillvals:bool = False, remove_e
         Remove ghostcells from the partitions. This is also done by xugrid automatically 
         upon merging, but then the domain numbers are not taken into account so 
         the result will be different. The default is True.
-    **kwargs : TYPE
-        DESCRIPTION.
     file_nc : TYPE
         DESCRIPTION.
     kwargs : TYPE, optional
