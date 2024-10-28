@@ -47,7 +47,6 @@ def test_cds_credentials():
     cds_credentials()
 
 
-
 @patch("getpass.getpass")
 def test_cds_credentials_prompt(getpass):
     # backup credentials and remove credentials envvars and file
