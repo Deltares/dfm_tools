@@ -11,8 +11,31 @@
 
 A Python package for pre- and postprocessing D-FlowFM model input and output files. Contains convenience functions built on top of other packages like [xarray](https://github.com/pydata/xarray), [xugrid](https://github.com/Deltares/xugrid), [hydrolib-core](https://github.com/Deltares/HYDROLIB-core) and many more.
 
-## Information
+## Prerequisites
 
-- install with `pip install dfm_tools -U` (or [installation guide](https://deltares.github.io/dfm_tools/installation))
-- [online documentation](https://deltares.github.io/dfm_tools) with installation guide, tutorials/examples, API reference and contributing guide.
-- Bug or feature request? Create a [GitHub issue](https://github.com/Deltares/dfm_tools/issues)
+Ensure you have Python installed. Refer to the [official installation guide](https://deltares.github.io/dfm_tools/installation) for detailed prerequisites.
+
+## Installation Steps
+
+### Option 1: Install via pip
+
+Use the following command:
+
+```bash
+pip install dfm_tools -U
+```
+
+### Option 2: Manual Installation
+
+Refer to the [installation guide](https://deltares.github.io/dfm_tools/installation).
+
+## External Documents
+
+Explore additional documentation for the detail of this project.
+
+- [installation guide](https://deltares.github.io/dfm_tools/installation)
+- [online documentation](https://deltares.github.io/dfm_tools) with tutorials/examples, API reference and contributing guide.
+
+## Help and Support
+
+For FAQs, commonly encountered issues, or additional help, visit the [GitHub Issues Page](https://github.com/Deltares/dfm_tools/issues). For bug or feature request, create a [GitHub issue](https://github.com/Deltares/dfm_tools/issues).
