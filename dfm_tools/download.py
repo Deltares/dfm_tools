@@ -200,10 +200,6 @@ def download_CMEMS(varkey,
     # subset enough data in case of data with daily timesteps.
     date_min = pd.Timestamp(date_min).floor('1d')
     date_max = pd.Timestamp(date_max).ceil('1d')
-
-    # TODO: temporarily convert back to strings: https://github.com/mercator-ocean/copernicus-marine-toolbox/issues/261
-    date_min = date_min.isoformat()
-    date_max = date_max.isoformat()
     
     if dataset_id is None:
         dataset_id = copernicusmarine_get_dataset_id(varkey, date_min, date_max)
@@ -226,8 +222,10 @@ def download_CMEMS(varkey,
          maximum_longitude = longitude_max,
          minimum_latitude = latitude_min,
          maximum_latitude = latitude_max,
-         start_datetime = date_min,
-         end_datetime = date_max,
+         # temporarily convert back to strings because of https://github.com/mercator-ocean/copernicus-marine-toolbox/issues/261
+         # TODO: revert, see https://github.com/Deltares/dfm_tools/issues/1047
+         start_datetime = date_min.isoformat(),
+         end_datetime = date_max.isoformat(),
     )
     
     Path(dir_output).mkdir(parents=True, exist_ok=True)
