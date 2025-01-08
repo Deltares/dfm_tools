@@ -201,6 +201,10 @@ def download_CMEMS(varkey,
     date_min = pd.Timestamp(date_min).floor('1d')
     date_max = pd.Timestamp(date_max).ceil('1d')
 
+    # TODO: temporarily convert back to strings: https://github.com/mercator-ocean/copernicus-marine-toolbox/issues/261
+    date_min = date_min.isoformat()
+    date_max = date_max.isoformat()
+    
     if dataset_id is None:
         dataset_id = copernicusmarine_get_dataset_id(varkey, date_min, date_max)
     if buffer is None:
