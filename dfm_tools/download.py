@@ -373,9 +373,15 @@ def copernicusmarine_credentials():
     Login at copernicusmarine if user not logged in yet.
     Works via prompt, environment variables or credentials file.
     """
-    print("Downloading CMEMS data requires a Copernicus Marine username and password, "
-          "sign up for free at: https://data.marine.copernicus.eu/register.")
-    success = copernicusmarine.login(skip_if_user_logged_in=True)
+    # first check whether (valid) credentials are already present
+    success = copernicusmarine.login(check_credentials_valid=True)
+    if success:
+        return
+
+    # call the login function if no (valid) credentials present
+    success = copernicusmarine.login()
+
+    # raise if credentials are incorrect
     if not success:
         raise InvalidUsernameOrPassword("Invalid credentials, please try again")
 
