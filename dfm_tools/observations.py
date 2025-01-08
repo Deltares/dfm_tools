@@ -227,12 +227,10 @@ def cmems_ssh_read_catalog(source, overwrite=True):
         copernicusmarine_credentials()
         copernicusmarine.get(
             dataset_id=dataset_id,
-            service="files",
             index_parts=True,
             filter="*index_history.txt",
             output_directory=dir_index,
-            overwrite_output_data=True,
-            force_download=True,
+            overwrite=True,
             no_directories=True,
             )
     else:
@@ -567,11 +565,9 @@ def cmems_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None,
     copernicusmarine.get(
         dataset_id=dataset_id,
         dataset_part="history",
-        service="files",
         filter=url_file,
         output_directory=tempdir,
-        overwrite_output_data=True,
-        force_download=True,
+        overwrite=True,
         no_directories=True,
         disable_progress_bar=disable_progress_bar,
         )

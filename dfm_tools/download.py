@@ -200,7 +200,7 @@ def download_CMEMS(varkey,
     # subset enough data in case of data with daily timesteps.
     date_min = pd.Timestamp(date_min).floor('1d')
     date_max = pd.Timestamp(date_max).ceil('1d')
-
+    
     if dataset_id is None:
         dataset_id = copernicusmarine_get_dataset_id(varkey, date_min, date_max)
     if buffer is None:
@@ -222,8 +222,10 @@ def download_CMEMS(varkey,
          maximum_longitude = longitude_max,
          minimum_latitude = latitude_min,
          maximum_latitude = latitude_max,
-         start_datetime = date_min,
-         end_datetime = date_max,
+         # temporarily convert back to strings because of https://github.com/mercator-ocean/copernicus-marine-toolbox/issues/261
+         # TODO: revert, see https://github.com/Deltares/dfm_tools/issues/1047
+         start_datetime = date_min.isoformat(),
+         end_datetime = date_max.isoformat(),
     )
     
     Path(dir_output).mkdir(parents=True, exist_ok=True)
@@ -373,9 +375,15 @@ def copernicusmarine_credentials():
     Login at copernicusmarine if user not logged in yet.
     Works via prompt, environment variables or credentials file.
     """
-    print("Downloading CMEMS data requires a Copernicus Marine username and password, "
-          "sign up for free at: https://data.marine.copernicus.eu/register.")
-    success = copernicusmarine.login(skip_if_user_logged_in=True)
+    # first check whether (valid) credentials are already present
+    success = copernicusmarine.login(check_credentials_valid=True)
+    if success:
+        return
+
+    # call the login function if no (valid) credentials present
+    success = copernicusmarine.login()
+
+    # raise if credentials are incorrect
     if not success:
         raise InvalidUsernameOrPassword("Invalid credentials, please try again")
 
