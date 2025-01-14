@@ -226,31 +226,27 @@ def download_CMEMS(varkey,
          # TODO: revert, see https://github.com/Deltares/dfm_tools/issues/1047
          start_datetime = date_min.isoformat(),
          end_datetime = date_max.isoformat(),
+         # optimize chunking for downloading with daily frequency
+         # https://github.com/Deltares/dfm_tools/issues/1033
+         service="arco-geo-series",
+         chunk_size_limit=None,
     )
     
     Path(dir_output).mkdir(parents=True, exist_ok=True)
     
-    if freq is None:
-        date_str = f"{date_min.strftime('%Y%m%d')}_{date_max.strftime('%Y%m%d')}"
+    period_range = pd.period_range(date_min,date_max,freq=freq)
+    for date in period_range:
+        date_str = str(date)
         name_output = f'{file_prefix}{varkey}_{date_str}.nc'
         output_filename = Path(dir_output,name_output)
         if output_filename.is_file() and not overwrite:
-            print(f'"{name_output}" found and overwrite=False, returning.')
-            return
-        print(f'xarray writing netcdf file: {name_output}')
-        dataset.to_netcdf(output_filename)
-    else:
-        period_range = pd.period_range(date_min,date_max,freq=freq)
-        for date in period_range:
-            date_str = str(date)
-            name_output = f'{file_prefix}{varkey}_{date_str}.nc'
-            output_filename = Path(dir_output,name_output)
-            if output_filename.is_file() and not overwrite:
-                print(f'"{name_output}" found and overwrite=False, continuing.')
-                continue
-            dataset_perperiod = dataset.sel(time=slice(date_str, date_str))
-            print(f'xarray writing netcdf file: {name_output}')
-            dataset_perperiod.to_netcdf(output_filename)
+            print(f'"{name_output}" found and overwrite=False, continuing.')
+            continue
+        dataset_perperiod = dataset.sel(time=slice(date_str, date_str))
+        print(f'xarray writing netcdf file: {name_output}: ',end='')
+        dtstart = pd.Timestamp.now()
+        dataset_perperiod.to_netcdf(name_output)
+        print(f'{(pd.Timestamp.now()-dtstart).total_seconds():.2f} sec')
 
 
 def copernicusmarine_get_product(date_min, date_max, vartype):
