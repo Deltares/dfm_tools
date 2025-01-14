@@ -2,6 +2,10 @@
 
 ## UNRELEASED
 
+### Feat
+- updated to copernicusmarine v2 in [#1046](https://github.com/Deltares/dfm_tools/pull/1046)
+- optimized CMEMS download performance in [#1049](https://github.com/Deltares/dfm_tools/pull/1049)
+
 
 ## 0.31.0 (2024-10-28)
 
