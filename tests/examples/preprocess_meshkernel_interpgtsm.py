@@ -15,7 +15,7 @@ import datetime as dt
 
 ds_gebco = xr.open_dataset('p:\\metocean-data\\open\\GEBCO\\2022\\GEBCO_2022.nc')
 
-lat_max = -179 #TODO: 180
+lat_max = -174 #TODO: 180
 
 #extend gebco to lon=-180 and lat=90 to make interpolation on all left nodes and the top node possible
 ds_gebco = ds_gebco.reset_index(['lat','lon'])
