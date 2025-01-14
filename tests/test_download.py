@@ -15,6 +15,7 @@ from dfm_tools.download import (cds_credentials,
                                 cds_remove_credentials_raise,
                                 copernicusmarine_credentials,
                                 copernicusmarine_get_buffer,
+                                copernicusmarine_get_dataset_id,
                                 )
 import dfm_tools as dfmt
 import xarray as xr
@@ -229,16 +230,42 @@ def test_copernicusmarine_get_buffer_notfound():
 
 @pytest.mark.requiressecrets
 @pytest.mark.unittest
+def test_copernicusmarine_get_dataset_id():
+    date_min = pd.Timestamp('2010-01-01')
+    date_max = pd.Timestamp('2010-01-02')
+    date_args = dict(date_min=date_min, date_max=date_max)
+    dataset_id = copernicusmarine_get_dataset_id(varkey='bottomT', **date_args)
+    assert dataset_id == 'cmems_mod_glo_phy_my_0.083deg_P1D-m'
+    dataset_id = copernicusmarine_get_dataset_id(varkey='no3', **date_args)
+    assert dataset_id == 'cmems_mod_glo_bgc_my_0.25deg_P1D-m'
+    
+    date_min = pd.Timestamp.today()
+    date_max = pd.Timestamp.today() + pd.Timedelta(days=1)
+    date_args = dict(date_min=date_min, date_max=date_max)
+    
+    dataset_id = copernicusmarine_get_dataset_id(varkey='tob', **date_args)
+    assert dataset_id == 'cmems_mod_glo_phy_anfc_0.083deg_P1D-m'
+    dataset_id = copernicusmarine_get_dataset_id(varkey='no3', **date_args)
+    assert dataset_id == 'cmems_mod_glo_bgc-nut_anfc_0.25deg_P1D-m'
+
+
+@pytest.mark.requiressecrets
+@pytest.mark.unittest
 def test_download_cmems_my(tmp_path):
     date_min = '2010-01-01'
     date_max = '2010-01-02'
     longitude_min, longitude_max, latitude_min, latitude_max =    2,   3,  51, 52 #test domain
     varlist_cmems = ['bottomT','no3'] # avaliable variables differ per product, examples are ['bottomT','mlotst','siconc','sithick','so','thetao','uo','vo','usi','vsi','zos','no3']. More info on https://data.marine.copernicus.eu/products
+    dataset_id_dict = {'bottomT':'cmems_mod_glo_phy_my_0.083deg_P1D-m',
+                       'no3':'cmems_mod_glo_bgc_my_0.25deg_P1D-m'}
+    file_prefix = 'cmems_'
     for varkey in varlist_cmems:
-        file_prefix = 'cmems_'
+        dataset_id = dataset_id_dict[varkey]
         dfmt.download_CMEMS(varkey=varkey,
                             longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
                             date_min=date_min, date_max=date_max,
+                            # speed up tests by supplying datset_id and buffer
+                            dataset_id=dataset_id, buffer=0,
                             dir_output=tmp_path, file_prefix=file_prefix, overwrite=True)
     
     # assert downloaded files
@@ -256,11 +283,16 @@ def test_download_cmems_forecast(tmp_path):
     date_max = pd.Timestamp.today() + pd.Timedelta(days=1)
     longitude_min, longitude_max, latitude_min, latitude_max =    2,   3,  51, 52 #test domain
     varlist_cmems = ['tob','no3'] # avaliable variables differ per product, examples are ['bottomT','mlotst','siconc','sithick','so','thetao','uo','vo','usi','vsi','zos','no3']. More info on https://data.marine.copernicus.eu/products
+    dataset_id_dict = {'tob':'cmems_mod_glo_phy_anfc_0.083deg_P1D-m',
+                       'no3':'cmems_mod_glo_bgc-nut_anfc_0.25deg_P1D-m'}
+    file_prefix = 'cmems_'
     for varkey in varlist_cmems:
-        file_prefix = 'cmems_'
+        dataset_id = dataset_id_dict[varkey]
         dfmt.download_CMEMS(varkey=varkey,
                             longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
                             date_min=date_min, date_max=date_max,
+                            # speed up tests by supplying datset_id and buffer
+                            dataset_id=dataset_id, buffer=0,
                             dir_output=tmp_path, file_prefix=file_prefix, overwrite=True)
 
     # assert downloaded files

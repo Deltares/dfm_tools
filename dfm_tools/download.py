@@ -234,18 +234,18 @@ def download_CMEMS(varkey,
     
     Path(dir_output).mkdir(parents=True, exist_ok=True)
     
-    period_range = pd.period_range(date_min,date_max,freq=freq)
+    period_range = pd.period_range(date_min, date_max, freq=freq)
     for date in period_range:
         date_str = str(date)
         name_output = f'{file_prefix}{varkey}_{date_str}.nc'
-        output_filename = Path(dir_output,name_output)
+        output_filename = Path(dir_output, name_output)
         if output_filename.is_file() and not overwrite:
             print(f'"{name_output}" found and overwrite=False, continuing.')
             continue
         dataset_perperiod = dataset.sel(time=slice(date_str, date_str))
         print(f'xarray writing netcdf file: {name_output}: ',end='')
         dtstart = pd.Timestamp.now()
-        dataset_perperiod.to_netcdf(name_output)
+        dataset_perperiod.to_netcdf(output_filename)
         print(f'{(pd.Timestamp.now()-dtstart).total_seconds():.2f} sec')
 
 
