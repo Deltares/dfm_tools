@@ -1,6 +1,6 @@
 # What's new
 
-## UNRELEASED
+## 0.32.0 (2025-01-14)
 
 ### Feat
 - updated to copernicusmarine v2 in [#1046](https://github.com/Deltares/dfm_tools/pull/1046)
