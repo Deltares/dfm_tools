@@ -227,13 +227,9 @@ def test_copernicusmarine_get_buffer():
     buffer = copernicusmarine_get_buffer(dataset_id)
     assert np.isclose(buffer, 0.16666666)
 
-
-@pytest.mark.requiressecrets
-@pytest.mark.unittest
-def test_copernicusmarine_get_buffer_notfound():
     dataset_id = 'cmems_obs-oc_glo_bgc-transp_my_l3-multi-4km_P1D'
     buffer = copernicusmarine_get_buffer(dataset_id)
-    assert np.isclose(buffer, 0.5)
+    assert np.isclose(buffer, 0.0833333358168602)
 
 
 @pytest.mark.requiressecrets
