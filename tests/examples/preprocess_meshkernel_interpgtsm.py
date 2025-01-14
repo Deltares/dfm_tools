@@ -15,7 +15,7 @@ import datetime as dt
 
 ds_gebco = xr.open_dataset('p:\\metocean-data\\open\\GEBCO\\2022\\GEBCO_2022.nc')
 
-lat_max = -179 #TODO: 180
+lat_max = -179 # TODO: set to 180
 
 #extend gebco to lon=-180 and lat=90 to make interpolation on all left nodes and the top node possible
 ds_gebco = ds_gebco.reset_index(['lat','lon'])
@@ -30,7 +30,7 @@ nnodes = uds.dims[uds.grid.node_dimension]
 stepsize = 5 #20 seems optimal, 5 takes 900-1000 sec, 10 takes 500-600 sec, 20 takes 95 sec, 30 takes 377 sec
 print(f'interpolating GEBCO to {nnodes} nodes in 360/{stepsize}={360/stepsize} steps:')
 dtstart = dt.datetime.now()
-for i in range(-180, lat_max, stepsize):
+for i in range(-180, lat_max,stepsize):
     xslice = slice(i,i+stepsize)
     
     bool_nodeinslice = (uds.grid.node_coordinates[:,0] >= xslice.start) & (uds.grid.node_coordinates[:,0] < xslice.stop)
