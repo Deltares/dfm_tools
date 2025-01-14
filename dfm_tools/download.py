@@ -352,7 +352,7 @@ def copernicusmarine_get_dataset_id(varkey, date_min, date_max):
 def copernicusmarine_get_buffer(dataset_id):
     ds = copernicusmarine.open_dataset(dataset_id=dataset_id)
     try:
-        resolution = ds.latitude.attrs["step"]
+        resolution = ds.latitude.diff(dim='latitude').to_numpy().mean()
         buffer = 2 * resolution
     except (AttributeError, KeyError, TypeError):
         print("failed to automatically derive a buffer from the dataset, using buffer=0.5")
