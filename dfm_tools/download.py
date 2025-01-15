@@ -8,9 +8,6 @@ import copernicusmarine
 from copernicusmarine.core_functions.credentials_utils import InvalidUsernameOrPassword
 import cftime
 import getpass
-import shutil
-import subprocess
-import sys
 from requests import HTTPError
 
 __all__ = [
@@ -19,14 +16,17 @@ __all__ = [
     "download_OPeNDAP",
 ]
 
-# speed up copernicusmarine.open_dataset() with the following arguments
-# this optimizes chunking for downloading with daily frequency
-# https://github.com/Deltares/dfm_tools/issues/1033
-# also relevant to get time bounds
-# https://github.com/Deltares/dfm_tools/issues/1058
 COPERNICUSMARINE_OPTIMIZE_ARGS = dict(
+    # speed up copernicusmarine.open_dataset() with the following arguments
+    # this optimizes chunking for downloading with daily frequency
+    # https://github.com/Deltares/dfm_tools/issues/1033
+    # also relevant to get time bounds
+    # https://github.com/Deltares/dfm_tools/issues/1058
     service="arco-geo-series",
     chunk_size_limit=None,
+    # prevent the need for buffering time/spatial extent
+    # https://github.com/Deltares/dfm_tools/issues/1050
+    coordinates_selection_method='outside',
 )
 
 
@@ -198,31 +198,18 @@ def cds_remove_credentials_raise(reason=''):
 def download_CMEMS(varkey,
                    longitude_min, longitude_max, latitude_min, latitude_max, 
                    date_min, date_max, freq='D',
-                   dataset_id=None, buffer=None,
+                   dataset_id=None,
                    dir_output='.', file_prefix='', overwrite=False):
     """
     https://help.marine.copernicus.eu/en/articles/8283072-copernicus-marine-toolbox-api-subset
     """
     copernicusmarine_credentials()
     
-    # We floor/ceil the input timestamps to make sure we
-    # subset enough data in case of data with daily timesteps.
-    date_min = pd.Timestamp(date_min).floor('1d')
-    date_max = pd.Timestamp(date_max).ceil('1d')
-    
     if dataset_id is None:
         dataset_id = copernicusmarine_get_dataset_id(varkey, date_min, date_max)
-    if buffer is None:
-        buffer = copernicusmarine_get_buffer(dataset_id)
     # date_range with same start as stoptime is a bit tricky so we limit freqs: https://github.com/Deltares/dfm_tools/issues/720
     if freq not in ["D","M"]:
         raise ValueError(f"freq should be 'D' or 'M', not {freq}")
-    
-    # make sure the data fully covers more than the desired spatial extent
-    longitude_min -= buffer
-    longitude_max += buffer
-    latitude_min  -= buffer
-    latitude_max  += buffer
 
     dataset = copernicusmarine.open_dataset(
          dataset_id = dataset_id,
@@ -233,14 +220,19 @@ def download_CMEMS(varkey,
          maximum_latitude = latitude_max,
          # temporarily convert back to strings because of https://github.com/mercator-ocean/copernicus-marine-toolbox/issues/261
          # TODO: revert, see https://github.com/Deltares/dfm_tools/issues/1047
-         start_datetime = date_min.isoformat(),
-         end_datetime = date_max.isoformat(),
+         start_datetime = pd.Timestamp(date_min).isoformat(),
+         end_datetime = pd.Timestamp(date_max).isoformat(),
          **COPERNICUSMARINE_OPTIMIZE_ARGS,
     )
     
+
     Path(dir_output).mkdir(parents=True, exist_ok=True)
     
-    period_range = pd.period_range(date_min, date_max, freq=freq)
+    # get time extent from dataset, it can be different than requested
+    # due to coordinates_selection_method='outside'
+    start_datetime = dataset.time.isel(time=0).values
+    end_datetime = dataset.time.isel(time=-1).values
+    period_range = pd.period_range(start_datetime, end_datetime, freq=freq)
     for date in period_range:
         date_str = str(date)
         name_output = f'{file_prefix}{varkey}_{date_str}.nc'
@@ -353,20 +345,6 @@ def copernicusmarine_get_dataset_id(varkey, date_min, date_max):
     else:
         raise ValueError(f"unknown vartype for cmems: {vartype}")
     return dataset_id
-
-
-def copernicusmarine_get_buffer(dataset_id):
-    ds = copernicusmarine.open_dataset(
-        dataset_id=dataset_id,
-        **COPERNICUSMARINE_OPTIMIZE_ARGS,
-        )
-    try:
-        resolution = ds.latitude.diff(dim='latitude').to_numpy().mean()
-        buffer = 2 * resolution
-    except (AttributeError, KeyError, TypeError):
-        print("failed to automatically derive a buffer from the dataset, using buffer=0.5")
-        buffer = 0.5
-    return buffer
 
 
 def copernicusmarine_credentials():
