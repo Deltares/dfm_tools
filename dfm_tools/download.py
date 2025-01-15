@@ -224,7 +224,6 @@ def download_CMEMS(varkey,
          end_datetime = pd.Timestamp(date_max).isoformat(),
          **COPERNICUSMARINE_OPTIMIZE_ARGS,
     )
-    
 
     Path(dir_output).mkdir(parents=True, exist_ok=True)
     
