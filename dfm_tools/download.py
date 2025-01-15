@@ -19,6 +19,16 @@ __all__ = [
     "download_OPeNDAP",
 ]
 
+# speed up copernicusmerine.open_dataset() with the following arguments
+# this optimizes chunking for downloading with daily frequency
+# https://github.com/Deltares/dfm_tools/issues/1033
+# also relevant to get time bounds
+# https://github.com/Deltares/dfm_tools/issues/1058
+COPERNICUSMARINE_OPTIMIZE_ARGS = dict(
+    service="arco-geo-series",
+    chunk_size_limit=None,
+)
+
 
 def download_ERA5(varkey,
                   longitude_min, longitude_max, latitude_min, latitude_max, 
@@ -226,10 +236,7 @@ def download_CMEMS(varkey,
          # TODO: revert, see https://github.com/Deltares/dfm_tools/issues/1047
          start_datetime = date_min.isoformat(),
          end_datetime = date_max.isoformat(),
-         # optimize chunking for downloading with daily frequency
-         # https://github.com/Deltares/dfm_tools/issues/1033
-         service="arco-geo-series",
-         chunk_size_limit=None,
+         **COPERNICUSMARINE_OPTIMIZE_ARGS,
     )
     
     Path(dir_output).mkdir(parents=True, exist_ok=True)
@@ -398,7 +405,10 @@ def copernicusmarine_reset(update_package=False, remove_folder=False, overwrite_
 
 
 def copernicusmarine_dataset_timerange(dataset_id):
-    ds = copernicusmarine.open_dataset(dataset_id=dataset_id)
+    ds = copernicusmarine.open_dataset(
+        dataset_id=dataset_id,
+        **COPERNICUSMARINE_OPTIMIZE_ARGS
+        )
     ds_tstart = pd.Timestamp(ds.time.isel(time=0).values)
     ds_tstop = pd.Timestamp(ds.time.isel(time=-1).values)
     return ds_tstart, ds_tstop
