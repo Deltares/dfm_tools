@@ -19,7 +19,7 @@ __all__ = [
     "download_OPeNDAP",
 ]
 
-# speed up copernicusmerine.open_dataset() with the following arguments
+# speed up copernicusmarine.open_dataset() with the following arguments
 # this optimizes chunking for downloading with daily frequency
 # https://github.com/Deltares/dfm_tools/issues/1033
 # also relevant to get time bounds
@@ -357,7 +357,10 @@ def copernicusmarine_get_dataset_id(varkey, date_min, date_max):
 
 
 def copernicusmarine_get_buffer(dataset_id):
-    ds = copernicusmarine.open_dataset(dataset_id=dataset_id)
+    ds = copernicusmarine.open_dataset(
+        dataset_id=dataset_id,
+        **COPERNICUSMARINE_OPTIMIZE_ARGS,
+        )
     try:
         resolution = ds.latitude.diff(dim='latitude').to_numpy().mean()
         buffer = 2 * resolution
