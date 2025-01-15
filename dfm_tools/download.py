@@ -203,7 +203,6 @@ def download_CMEMS(varkey,
     """
     https://help.marine.copernicus.eu/en/articles/8283072-copernicus-marine-toolbox-api-subset
     """
-    copernicusmarine_remove_manual_credentials_file()
     copernicusmarine_credentials()
     
     # We floor/ceil the input timestamps to make sure we
@@ -370,12 +369,6 @@ def copernicusmarine_get_buffer(dataset_id):
     return buffer
 
 
-def copernicusmarine_remove_manual_credentials_file():
-    cmems_file_old = os.path.expanduser("~/CMEMS_credentials.txt")
-    if os.path.isfile(cmems_file_old):
-        os.remove(cmems_file_old)
-
-
 def copernicusmarine_credentials():
     """
     Login at copernicusmarine if user not logged in yet.
@@ -392,19 +385,6 @@ def copernicusmarine_credentials():
     # raise if credentials are incorrect
     if not success:
         raise InvalidUsernameOrPassword("Invalid credentials, please try again")
-
-
-def copernicusmarine_reset(update_package=False, remove_folder=False, overwrite_cache=True):
-    if update_package:
-        print("reset copernicusmarine: updating copernicusmarine")
-        subprocess.check_call(f"{sys.executable} -m pip install copernicusmarine -U")
-    if remove_folder:
-        dir_copernicusmarine = os.path.expanduser("~/.copernicusmarine")
-        print(f"reset copernicusmarine: removing {dir_copernicusmarine}, you will have to login again.")
-        shutil.rmtree(dir_copernicusmarine, ignore_errors=True)
-    if overwrite_cache:
-        print("reset copernicusmarine: overwriting copernicusmarine metadata cache (takes some time)")
-        subprocess.run("copernicusmarine describe --overwrite-metadata-cache")
 
 
 def copernicusmarine_dataset_timerange(dataset_id):
