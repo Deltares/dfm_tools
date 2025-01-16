@@ -4,6 +4,7 @@
 
 ### Feat
 - optimized performance for getting CMEMS time extents and spatial buffer in [#1059](https://github.com/Deltares/dfm_tools/pull/1059)
+- replaced buffer and floor/ceil with copernicusmarine `coordinates_selection_method`, this deprecated the `buffer` argument for `dfmt.download_CMEMS()` [#1061](https://github.com/Deltares/dfm_tools/pull/1061)
 
 
 ## 0.32.0 (2025-01-14)

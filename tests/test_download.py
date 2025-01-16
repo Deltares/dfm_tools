@@ -14,7 +14,6 @@ from dfm_tools.download import (cds_credentials,
                                 cds_set_credentials_rcfile,
                                 cds_remove_credentials_raise,
                                 copernicusmarine_credentials,
-                                copernicusmarine_get_buffer,
                                 copernicusmarine_get_dataset_id,
                                 )
 import dfm_tools as dfmt
@@ -222,31 +221,21 @@ def test_copernicusmarine_credentials():
 
 @pytest.mark.requiressecrets
 @pytest.mark.unittest
-def test_copernicusmarine_get_buffer():
-    dataset_id = 'cmems_mod_glo_phy_my_0.083deg_P1D-m'
-    buffer = copernicusmarine_get_buffer(dataset_id)
-    assert np.isclose(buffer, 0.16666666)
-
-    dataset_id = 'cmems_obs-oc_glo_bgc-transp_my_l3-multi-4km_P1D'
-    buffer = copernicusmarine_get_buffer(dataset_id)
-    assert np.isclose(buffer, 0.0833333358168602)
-
-
-@pytest.mark.requiressecrets
-@pytest.mark.unittest
 def test_copernicusmarine_get_dataset_id():
-    date_min = pd.Timestamp('2010-01-01')
-    date_max = pd.Timestamp('2010-01-02')
+    # with string datetimes, these are parsed to pandas timestamps in
+    # copernicusmarine_get_product()
+    date_min = '2010-01-01'
+    date_max = '2010-01-02'
     date_args = dict(date_min=date_min, date_max=date_max)
     dataset_id = copernicusmarine_get_dataset_id(varkey='bottomT', **date_args)
     assert dataset_id == 'cmems_mod_glo_phy_my_0.083deg_P1D-m'
     dataset_id = copernicusmarine_get_dataset_id(varkey='no3', **date_args)
     assert dataset_id == 'cmems_mod_glo_bgc_my_0.25deg_P1D-m'
     
+    # with pandas timestamps
     date_min = pd.Timestamp.today()
     date_max = pd.Timestamp.today() + pd.Timedelta(days=1)
     date_args = dict(date_min=date_min, date_max=date_max)
-    
     dataset_id = copernicusmarine_get_dataset_id(varkey='tob', **date_args)
     assert dataset_id == 'cmems_mod_glo_phy_anfc_0.083deg_P1D-m'
     dataset_id = copernicusmarine_get_dataset_id(varkey='no3', **date_args)
@@ -256,9 +245,11 @@ def test_copernicusmarine_get_dataset_id():
 @pytest.mark.requiressecrets
 @pytest.mark.unittest
 def test_download_cmems_my(tmp_path):
-    date_min = '2010-01-01'
-    date_max = '2010-01-02'
-    longitude_min, longitude_max, latitude_min, latitude_max =    2,   3,  51, 52 #test domain
+    # deliberately take inconvenient time/spatial subset to test if
+    # coordinates_selection_method='outside'
+    date_min = '2010-01-01 01:00'
+    date_max = '2010-01-01 23:00'
+    longitude_min, longitude_max, latitude_min, latitude_max =    2.001,   3.001,  51.001, 52.001 #test domain
     varlist_cmems = ['bottomT','no3'] # avaliable variables differ per product, examples are ['bottomT','mlotst','siconc','sithick','so','thetao','uo','vo','usi','vsi','zos','no3']. More info on https://data.marine.copernicus.eu/products
     dataset_id_dict = {'bottomT':'cmems_mod_glo_phy_my_0.083deg_P1D-m',
                        'no3':'cmems_mod_glo_bgc_my_0.25deg_P1D-m'}
@@ -269,15 +260,21 @@ def test_download_cmems_my(tmp_path):
                             longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
                             date_min=date_min, date_max=date_max,
                             # speed up tests by supplying datset_id and buffer
-                            dataset_id=dataset_id, buffer=0,
+                            dataset_id=dataset_id,
                             dir_output=tmp_path, file_prefix=file_prefix, overwrite=True)
     
     # assert downloaded files
     file_nc_pat = os.path.join(tmp_path, "*.nc")
     ds = xr.open_mfdataset(file_nc_pat)
+    for varn in varlist_cmems:
+        assert varn in set(ds.variables)
     assert ds.sizes["time"] == 2
     assert ds.time.to_pandas().iloc[0] == pd.Timestamp('2010-01-01')
     assert ds.time.to_pandas().iloc[-1] == pd.Timestamp('2010-01-02')
+    assert np.isclose(ds.longitude.to_numpy().min(), 2)
+    assert np.isclose(ds.longitude.to_numpy().max(), 3.25)
+    assert np.isclose(ds.latitude.to_numpy().min(), 51)
+    assert np.isclose(ds.latitude.to_numpy().max(), 52.25)
 
 
 @pytest.mark.requiressecrets
@@ -296,7 +293,7 @@ def test_download_cmems_forecast(tmp_path):
                             longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
                             date_min=date_min, date_max=date_max,
                             # speed up tests by supplying datset_id and buffer
-                            dataset_id=dataset_id, buffer=0,
+                            dataset_id=dataset_id,
                             dir_output=tmp_path, file_prefix=file_prefix, overwrite=True)
 
     # assert downloaded files
@@ -305,6 +302,10 @@ def test_download_cmems_forecast(tmp_path):
     assert ds.sizes["time"] == 3
     assert ds.time.to_pandas().iloc[0] == date_min.floor("D")
     assert ds.time.to_pandas().iloc[-1] == date_max.ceil("D")
+    assert np.isclose(ds.longitude.to_numpy().min(), 2)
+    assert np.isclose(ds.longitude.to_numpy().max(), 3)
+    assert np.isclose(ds.latitude.to_numpy().min(), 51)
+    assert np.isclose(ds.latitude.to_numpy().max(), 52)
 
 
 @pytest.mark.unittest
