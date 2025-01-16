@@ -247,13 +247,17 @@ def download_CMEMS(varkey,
 
 
 def copernicusmarine_get_product(date_min, date_max, vartype):
+    """
+    retrieve the time extents of reanalysis, reanalysis-interim and forecast
+    products. The time extents of phy and bio can be different, so they have
+    to be retrieved for both.
+    """
+    
     assert vartype in ['phy','bio']
     
     # convert requested times to pandas timestamps for >= and <= comparison
     date_min = pd.Timestamp(date_min)
     date_max = pd.Timestamp(date_max)
-    
-    # the time extents of phy and bio can be different so we have to retrieve them both
     
     # time extents as global variables, so they only has to be retreived once per download run (otherwise once per variable)
     global phy_reanalysis_tstart, phy_reanalysis_tstop
