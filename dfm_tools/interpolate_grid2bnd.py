@@ -381,24 +381,13 @@ def open_prepare_dataset(dir_pattern, quantity, tstart, tstop, conversion_dict=N
     # retrieve var(s) (after potential longitude conversion)
     data_xr_vars = data_xr[[quantity]]
     
-    # slice time
-    check_time_extent(data_xr, tstart, tstop)
-    
-    # define inclusive time indices
-    time_pd = data_xr_vars.time.to_pandas()
-    assert time_pd.index.is_monotonic_increasing
-    tstart_pd = pd.Timestamp(tstart)
-    tstop_pd = pd.Timestamp(tstop)
-    idx_tmin = ((time_pd - tstart_pd) > pd.Timedelta(0)).argmax() - 1
-    idx_tmax = ((time_pd - tstop_pd) < pd.Timedelta(0)).argmin() + 1
-    # check validity
-    assert idx_tmin in range(len(time_pd))
-    assert idx_tmax in range(len(time_pd))
-    data_xr_vars = data_xr_vars.isel(time=slice(idx_tmin,idx_tmax))
-    # check time extent again to avoid issues with eg midday data being 
-    # sliced to midnight times: https://github.com/Deltares/dfm_tools/issues/707
-    check_time_extent(data_xr_vars, tstart, tstop)
-    
+    # slice dataset to times outside of requested time range
+    data_xr_vars = _ds_sel_time_outside(
+        ds=data_xr_vars,
+        tstart=tstart,
+        tstop=tstop,
+        )
+        
     #optional refdate changing
     if refdate_str is not None:
         if 'long_name' in data_xr_vars.time.attrs: #for CMEMS it is 'hours since 1950-01-01', which would be wrong now #TODO: consider also removing attrs for depth/varname, since we would like to have salinitybnd/waterlevel instead of Salinity/sea_surface_height in xr plots?
@@ -406,6 +395,21 @@ def open_prepare_dataset(dir_pattern, quantity, tstart, tstop, conversion_dict=N
         data_xr_vars.time.encoding['units'] = refdate_str
     
     return data_xr_vars
+
+
+def _ds_sel_time_outside(ds: xr.Dataset, tstart, tstop) -> xr.Dataset:
+    """
+    Subset the dataset on time, making sure the requested times are always
+    included. If there is no exact match for start/end times, the previous/next
+    timestamp is taken as an extreme.
+    Inspired by copernicusmarine.download_functions.subset_xarray.py
+    """    
+    check_time_extent(ds, tstart, tstop)
+    external_minimum = ds.sel(time=tstart, method="pad")
+    external_maximum = ds.sel(time=tstop, method="backfill")
+    time_slice = slice(external_minimum.time.values, external_maximum.time.values)
+    ds_sel = ds.sel(time=time_slice) 
+    return ds_sel
 
 
 def interp_regularnc_to_plipointsDataset(data_xr_reg, gdf_points, load=True):

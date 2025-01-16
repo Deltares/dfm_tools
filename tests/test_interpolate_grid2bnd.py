@@ -9,6 +9,7 @@ import os
 import pytest
 import dfm_tools as dfmt
 import numpy as np
+import pandas as pd
 import datetime as dt
 import xarray as xr
 import shapely
@@ -22,6 +23,7 @@ from dfm_tools.interpolate_grid2bnd import (tidemodel_componentlist,
                                             ds_apply_conventions,
                                             ds_apply_conversion_dict,
                                             open_prepare_dataset,
+                                            _ds_sel_time_outside,
                                             )
 from dfm_tools.hydrolib_helpers import get_ncbnd_construct
 import hydrolib.core.dflowfm as hcdfm
@@ -248,6 +250,54 @@ def test_plipointsDataset_to_ForcingModel_drop_allnan_points():
     assert forcingmodel_object.forcing[1].name == 'abc_bnd_0004'
 
 
+def test_ds_sel_time_outside():
+    ds = cmems_dataset_4times()
+    
+    # exact outer bounds
+    tstart = "2019-12-31 12:00"
+    tstop = "2020-01-03 12:00"
+    ds_sel = _ds_sel_time_outside(ds, tstart, tstop)
+    assert ds_sel.time.values[0] <= pd.Timestamp(tstart)
+    assert ds_sel.time.values[1] > pd.Timestamp(tstart)
+    assert ds_sel.time.values[-2] < pd.Timestamp(tstop)
+    assert ds_sel.time.values[-1] >= pd.Timestamp(tstop)
+    assert len(ds_sel.time) == 4
+    
+    # exact inner bounds
+    tstart = "2020-01-01 12:00"
+    tstop = "2020-01-02 12:00"
+    ds_sel = _ds_sel_time_outside(ds, tstart, tstop)
+    assert ds_sel.time.values[0] <= pd.Timestamp(tstart)
+    assert ds_sel.time.values[1] > pd.Timestamp(tstart)
+    assert ds_sel.time.values[-2] < pd.Timestamp(tstop)
+    assert ds_sel.time.values[-1] >= pd.Timestamp(tstop)
+    assert len(ds_sel.time) == 2
+
+    # inexact inner bounds
+    tstart = "2020-01-01"
+    tstop = "2020-01-03"
+    ds_sel = _ds_sel_time_outside(ds, tstart, tstop)
+    assert ds_sel.time.values[0] <= pd.Timestamp(tstart)
+    assert ds_sel.time.values[1] > pd.Timestamp(tstart)
+    assert ds_sel.time.values[-2] < pd.Timestamp(tstop)
+    assert ds_sel.time.values[-1] >= pd.Timestamp(tstop)
+    assert len(ds_sel.time) == 4
+    
+    # tstart out of bounds
+    tstart = "2019-12-30 12:00"
+    tstop = "2020-01-03 12:00"
+    with pytest.raises(OutOfRangeError) as e:
+        _ds_sel_time_outside(ds, tstart, tstop)
+    assert "requested tstart 2019-12-30 12:00:00 outside" in str(e.value)
+    
+    # tstart out of bounds
+    tstart = "2019-12-31 12:00"
+    tstop = "2030-01-03 12:00"
+    with pytest.raises(OutOfRangeError) as e:
+        _ds_sel_time_outside(ds, tstart, tstop)
+    assert "requested tstop 2030-01-03 12:00:00 outside" in str(e.value)
+
+
 @pytest.mark.systemtest
 def test_open_prepare_dataset_correctdepths(tmp_path):
     """
@@ -258,14 +308,8 @@ def test_open_prepare_dataset_correctdepths(tmp_path):
     file_nc = tmp_path / 'temp_cmems_dummydata.nc'
     ds_moretime.to_netcdf(file_nc)
     
-    # test if outer times are included
-    ds_moretime_import = open_prepare_dataset(dir_pattern=file_nc, quantity='salinitybnd', tstart='2020-01-01', tstop='2020-01-02')
-    assert len(ds_moretime_import.time) == 3
-    
-    # test if min/max times can also be requested
-    # this should also be possible
-    ds_moretime_import = open_prepare_dataset(dir_pattern=file_nc, quantity='salinitybnd', tstart='2019-12-31 12:00', tstop='2020-01-03 12:00')
-    assert len(ds_moretime_import.time) == 4
+    ds_moretime_import = open_prepare_dataset(dir_pattern=file_nc, quantity='salinitybnd', tstart='2020-01-01 12:00', tstop='2020-01-02 12:00')
+    assert len(ds_moretime_import.time) == 2
 
 
 @pytest.mark.unittest
