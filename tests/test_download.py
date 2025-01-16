@@ -222,7 +222,8 @@ def test_copernicusmarine_credentials():
 @pytest.mark.requiressecrets
 @pytest.mark.unittest
 def test_copernicusmarine_get_dataset_id():
-    # string datetimes
+    # with string datetimes, these are parsed to pandas timestamps in
+    # copernicusmarine_get_product()
     date_min = '2010-01-01'
     date_max = '2010-01-02'
     date_args = dict(date_min=date_min, date_max=date_max)
@@ -231,7 +232,7 @@ def test_copernicusmarine_get_dataset_id():
     dataset_id = copernicusmarine_get_dataset_id(varkey='no3', **date_args)
     assert dataset_id == 'cmems_mod_glo_bgc_my_0.25deg_P1D-m'
     
-    # pandas timestamps
+    # with pandas timestamps
     date_min = pd.Timestamp.today()
     date_max = pd.Timestamp.today() + pd.Timedelta(days=1)
     date_args = dict(date_min=date_min, date_max=date_max)
