@@ -682,7 +682,12 @@ def gesla3_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None,
     with gesla3_zip.open(file_gesla, "r") as f:
         data = pd.read_csv(f, comment='#', sep="\\s+",
                            names=["date", "time", "sea_level", "qc_flag", "use_flag"],
-                           parse_dates=[[0, 1]], index_col=0)
+                           )
+    # set datetimes as index
+    dates = data.pop("date")
+    times = data.pop("time")
+    data_dt = dates + " " + times
+    data.index = pd.to_datetime(data_dt)
     
     # clean up time duplicates
     data.index.name = 'time'
