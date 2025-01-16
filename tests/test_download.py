@@ -130,18 +130,22 @@ def test_cds_credentials_oldurl_incorrectkey_rcfile():
     cds_apikey_temp = "INCORRECT-APIKEY"
     cds_set_credentials_rcfile(cds_url_temp, cds_apikey_temp)
     with pytest.raises(ValueError) as e:
-        cds_credentials()
+        with pytest.warns(UserWarning) as w:
+            cds_credentials()
     assert "Old CDS URL found" in str(e.value)
     assert "The CDS/ECMWF apikey file (~/.cdsapirc) was deleted" in str(e.value)
+    assert "404 Client Error: Not Found for url:" in str(w[0].message)
     
     # test
     cds_url_temp = "https://cds-beta.climate.copernicus.eu/api"
     cds_apikey_temp = "INCORRECT-APIKEY"
     cds_set_credentials_rcfile(cds_url_temp, cds_apikey_temp)
     with pytest.raises(ValueError) as e:
-        cds_credentials()
+        with pytest.warns(UserWarning) as w:
+            cds_credentials()
     assert "Old CDS URL found" in str(e.value)
     assert "The CDS/ECMWF apikey file (~/.cdsapirc) was deleted" in str(e.value)
+    assert "certificate verify failed" in str(w[0].message)
     
     # restore credentials file/envvars
     set_cds_credentials_ifnot_none(cds_url, cds_apikey)
@@ -158,17 +162,21 @@ def test_cds_credentials_oldurl_incorrectkey_envvars():
     os.environ["CDSAPI_URL"] = "https://cds.climate.copernicus.eu/api/v2"
     os.environ["CDSAPI_KEY"] = "INCORRECT-APIKEY"
     with pytest.raises(ValueError) as e:
-        cds_credentials()
+        with pytest.warns(UserWarning) as w:
+            cds_credentials()
     assert "Old CDS URL found" in str(e.value)
     assert "The CDS/ECMWF apikey file (~/.cdsapirc) was deleted" in str(e.value)
+    assert "404 Client Error: Not Found for url:" in str(w[0].message)
     
     # test
     os.environ["CDSAPI_URL"] = "https://cds-beta.climate.copernicus.eu/api"
     os.environ["CDSAPI_KEY"] = "INCORRECT-APIKEY"
     with pytest.raises(ValueError) as e:
-        cds_credentials()
+        with pytest.warns(UserWarning) as w:
+            cds_credentials()
     assert "Old CDS URL found" in str(e.value)
     assert "The CDS/ECMWF apikey file (~/.cdsapirc) was deleted" in str(e.value)
+    assert "certificate verify failed" in str(w[0].message)
 
     # restore credentials file/envvars
     set_cds_credentials_ifnot_none(cds_url, cds_apikey)
