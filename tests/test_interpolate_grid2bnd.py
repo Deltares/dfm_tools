@@ -258,8 +258,14 @@ def test_open_prepare_dataset_correctdepths(tmp_path):
     file_nc = tmp_path / 'temp_cmems_dummydata.nc'
     ds_moretime.to_netcdf(file_nc)
     
-    ds_moretime_import = open_prepare_dataset(dir_pattern=file_nc, quantity='salinitybnd', tstart='2020-01-01 12:00:00', tstop='2020-01-02 12:00:00')
-    assert len(ds_moretime_import.time) == 2
+    # test if outer times are included
+    ds_moretime_import = open_prepare_dataset(dir_pattern=file_nc, quantity='salinitybnd', tstart='2020-01-01', tstop='2020-01-02')
+    assert len(ds_moretime_import.time) == 3
+    
+    # test if min/max times can also be requested
+    # this should also be possible
+    ds_moretime_import = open_prepare_dataset(dir_pattern=file_nc, quantity='salinitybnd', tstart='2019-12-31 12:00', tstop='2020-01-03 12:00')
+    assert len(ds_moretime_import.time) == 4
 
 
 @pytest.mark.unittest

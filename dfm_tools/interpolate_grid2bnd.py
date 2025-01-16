@@ -383,7 +383,18 @@ def open_prepare_dataset(dir_pattern, quantity, tstart, tstop, conversion_dict=N
     
     # slice time
     check_time_extent(data_xr, tstart, tstop)
-    data_xr_vars = data_xr_vars.sel(time=slice(tstart,tstop))
+    
+    # define inclusive time indices
+    time_pd = data_xr_vars.time.to_pandas()
+    assert time_pd.index.is_monotonic_increasing
+    tstart_pd = pd.Timestamp(tstart)
+    tstop_pd = pd.Timestamp(tstop)
+    idx_tmin = ((time_pd - tstart_pd) > pd.Timedelta(0)).argmax() - 1
+    idx_tmax = ((time_pd - tstop_pd) < pd.Timedelta(0)).argmin() + 1
+    # check validity
+    assert idx_tmin in range(len(time_pd))
+    assert idx_tmax in range(len(time_pd))
+    data_xr_vars = data_xr_vars.isel(time=slice(idx_tmin,idx_tmax))
     # check time extent again to avoid issues with eg midday data being 
     # sliced to midnight times: https://github.com/Deltares/dfm_tools/issues/707
     check_time_extent(data_xr_vars, tstart, tstop)
