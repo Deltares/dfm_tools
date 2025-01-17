@@ -80,10 +80,12 @@ def cmems_nc_to_bc(ext_new, list_quantities, tstart, tstop, file_pli, dir_patter
         ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
         
         # generate boundary object for the ext file (quantity, pli-filename, bc-filename)
-        file_bc_out = os.path.join(dir_output,f'{quantity}_CMEMS.bc')
+        file_pli_name = polyfile_obj.filepath.stem
+        file_bc_out = os.path.join(dir_output,f'{quantity}_CMEMS_{file_pli_name}.bc')
         ForcingModel_object.save(filepath=file_bc_out)
         boundary_object = hcdfm.Boundary(quantity=quantity,
-                                         locationfile=file_pli, #placeholder, will be replaced later on
+                                         # locationfile is updated if multiple polylines in polyfile
+                                         locationfile=file_pli, 
                                          forcingfile=ForcingModel_object)
         
         # add the boundary object to the ext file for each polyline in the polyfile
