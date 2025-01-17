@@ -16,7 +16,7 @@ import contextily as ctx
 
 ## input
 model_name = 'Bonaire'
-dir_output = r'p:\11209231-003-bes-modellering\hydrodynamica\hackathon\preprocessing\ModelBuilderOutput_JV2'
+dir_output = f"{model_name}_model"
 path_style = 'windows' # windows / unix, making relative paths only works when path_style is equal to os
 overwrite = False # used for downloading of forcing data. Always set to True when changing the domain
 crs = 'EPSG:4326'
