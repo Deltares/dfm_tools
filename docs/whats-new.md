@@ -7,6 +7,9 @@
 - replaced buffer and floor/ceil with copernicusmarine `coordinates_selection_method`, this deprecated the `buffer` argument for `dfmt.download_CMEMS()` [#1061](https://github.com/Deltares/dfm_tools/pull/1061)
 - inclusive selection of outside timesteps in `open_prepare_dataset()` and thus in `cmems_nc_to_bc()` in [#1062](https://github.com/Deltares/dfm_tools/pull/1062)
 
+### Fix
+- fixed inexact latlon bbox in modelbuilder with `dfmt.meshkernel_get_bbox()` in [#1067](https://github.com/Deltares/dfm_tools/pull/1067)
+
 
 ## 0.32.0 (2025-01-14)
 

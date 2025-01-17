@@ -19,6 +19,7 @@ __all__ = [
     "meshkernel_delete_withgdf",
     "meshkernel_get_illegalcells",
     "meshkernel_to_UgridDataset",
+    "meshkernel_get_bbox",
     "make_basegrid",
     "refine_basegrid",
     "generate_bndpli_cutland",
@@ -351,6 +352,26 @@ def refine_basegrid(mk, data_bathy_sel, min_edge_size):
     return mk
 
 
+def meshkernel_get_outer_xycoords(mk:meshkernel.MeshKernel):
+    mesh_bnds = mk.mesh2d_get_mesh_boundaries_as_polygons()
+    xcoords = mesh_bnds.x_coordinates
+    ycoords = mesh_bnds.y_coordinates
+    if mesh_bnds.geometry_separator in xcoords:
+        # TODO: would be nice to get only the outer xycoords instead
+        # or to have easier selection of outer xycoords
+        raise Exception('use meshkernel_get_outer_xycoords() on an uncut grid')
+    return xcoords, ycoords
+
+    
+def meshkernel_get_bbox(mk:meshkernel.MeshKernel):
+    """
+    get the bbox of a meshkernel instance as (xmin, ymin, xmax, ymax)
+    """
+    xcoords, ycoords = meshkernel_get_outer_xycoords(mk)
+    bbox = (xcoords.min(), ycoords.min(), xcoords.max(), ycoords.max())
+    return bbox
+
+
 def generate_bndpli_cutland(mk:meshkernel.MeshKernel, res:str='f', min_area:float = 0, crs:(int,str) = None, buffer:float = 0):
     """
     Generate a boundary polyline from the meshkernel object and cut away the landward part.
@@ -375,15 +396,11 @@ def generate_bndpli_cutland(mk:meshkernel.MeshKernel, res:str='f', min_area:floa
         DESCRIPTION.
 
     """
-    
-    mesh_bnds = mk.mesh2d_get_mesh_boundaries_as_polygons()
-    if mesh_bnds.geometry_separator in mesh_bnds.x_coordinates:
-        raise Exception('use dfmt.generate_bndpli_cutland() on an uncut grid')
-    mesh_bnds_xy = np.c_[mesh_bnds.x_coordinates,mesh_bnds.y_coordinates]
-    
-    bbox = (mesh_bnds.x_coordinates.min(), mesh_bnds.y_coordinates.min(), mesh_bnds.x_coordinates.max(), mesh_bnds.y_coordinates.max())
+    bbox = meshkernel_get_bbox(mk)
     coastlines_gdf = get_coastlines_gdb(bbox=bbox, res=res, min_area=min_area, crs=crs)
     
+    xcoords,ycoords = meshkernel_get_outer_xycoords(mk)
+    mesh_bnds_xy = np.c_[xcoords,ycoords]
     meshbnd_ls = LineString(mesh_bnds_xy)
     coastlines_mp = MultiPolygon(coastlines_gdf.geometry.tolist())
     coastlines_mp = coastlines_mp.buffer(buffer)
