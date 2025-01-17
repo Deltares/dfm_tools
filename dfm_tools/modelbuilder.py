@@ -7,12 +7,11 @@ import xarray as xr
 import hydrolib.core.dflowfm as hcdfm
 from hydrolib.core.dimr.models import DIMR, FMComponent, Start
 from hydrolib.core.utils import get_path_style_for_current_operating_system
-from dfm_tools.hydrolib_helpers import get_ncbnd_construct
 from dfm_tools.interpolate_grid2bnd import (ext_add_boundary_object_per_polyline,
                                             open_prepare_dataset,
                                             ds_apply_conversion_dict,
                                             )
-            
+
 __all__ = [
     "cmems_nc_to_bc",
     "cmems_nc_to_ini",
@@ -44,10 +43,8 @@ def get_ncvarname(quantity, conversion_dict):
     ncvarname = conversion_dict[quantity]['ncvarname']
     return ncvarname
 
-    
-def cmems_nc_to_bc(ext_bnd, list_quantities, tstart, tstop, file_pli, dir_pattern, dir_output, conversion_dict=None, refdate_str=None):
-    #input examples in https://github.com/Deltares/dfm_tools/blob/main/tests/examples/preprocess_interpolate_nc_to_bc.py
-    # TODO: rename ext_bnd to ext_new for consistency
+
+def cmems_nc_to_bc(ext_new, list_quantities, tstart, tstop, file_pli, dir_pattern, dir_output, conversion_dict=None, refdate_str=None):
     if conversion_dict is None:
         conversion_dict = dfmt.get_conversion_dict()
     
@@ -83,16 +80,18 @@ def cmems_nc_to_bc(ext_bnd, list_quantities, tstart, tstop, file_pli, dir_patter
         ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
         
         # generate boundary object for the ext file (quantity, pli-filename, bc-filename)
-        file_bc_out = os.path.join(dir_output,f'{quantity}_CMEMS.bc')
+        file_pli_name = polyfile_obj.filepath.stem
+        file_bc_out = os.path.join(dir_output,f'{quantity}_CMEMS_{file_pli_name}.bc')
         ForcingModel_object.save(filepath=file_bc_out)
         boundary_object = hcdfm.Boundary(quantity=quantity,
-                                         locationfile=file_pli, #placeholder, will be replaced later on
+                                         # locationfile is updated if multiple polylines in polyfile
+                                         locationfile=file_pli, 
                                          forcingfile=ForcingModel_object)
         
         # add the boundary object to the ext file for each polyline in the polyfile
-        ext_add_boundary_object_per_polyline(ext_new=ext_bnd, boundary_object=boundary_object)
+        ext_add_boundary_object_per_polyline(ext_new=ext_new, boundary_object=boundary_object)
 
-    return ext_bnd
+    return ext_new
 
 
 def preprocess_ini_cmems_to_nc(**kwargs):
