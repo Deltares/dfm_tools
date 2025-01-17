@@ -44,10 +44,9 @@ def get_ncvarname(quantity, conversion_dict):
     ncvarname = conversion_dict[quantity]['ncvarname']
     return ncvarname
 
-    
-def cmems_nc_to_bc(ext_bnd, list_quantities, tstart, tstop, file_pli, dir_pattern, dir_output, conversion_dict=None, refdate_str=None):
+
+def cmems_nc_to_bc(ext_new, list_quantities, tstart, tstop, file_pli, dir_pattern, dir_output, conversion_dict=None, refdate_str=None):
     #input examples in https://github.com/Deltares/dfm_tools/blob/main/tests/examples/preprocess_interpolate_nc_to_bc.py
-    # TODO: rename ext_bnd to ext_new for consistency
     if conversion_dict is None:
         conversion_dict = dfmt.get_conversion_dict()
     
@@ -90,9 +89,9 @@ def cmems_nc_to_bc(ext_bnd, list_quantities, tstart, tstop, file_pli, dir_patter
                                          forcingfile=ForcingModel_object)
         
         # add the boundary object to the ext file for each polyline in the polyfile
-        ext_add_boundary_object_per_polyline(ext_new=ext_bnd, boundary_object=boundary_object)
+        ext_add_boundary_object_per_polyline(ext_new=ext_new, boundary_object=boundary_object)
 
-    return ext_bnd
+    return ext_new
 
 
 def preprocess_ini_cmems_to_nc(**kwargs):
