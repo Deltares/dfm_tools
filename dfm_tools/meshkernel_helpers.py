@@ -357,6 +357,8 @@ def meshkernel_get_outer_xycoords(mk:meshkernel.MeshKernel):
     xcoords = mesh_bnds.x_coordinates
     ycoords = mesh_bnds.y_coordinates
     if mesh_bnds.geometry_separator in xcoords:
+        # TODO: would be nice to get only the outer xycoords instead
+        # or to have easier selection of outer xycoords
         raise Exception('use meshkernel_get_outer_xycoords() on an uncut grid')
     return xcoords, ycoords
 
