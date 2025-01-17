@@ -308,6 +308,27 @@ def test_meshkernel_to_UgridDataset(tmp_path):
 
 
 @pytest.mark.unittest
+def test_meshkernel_get_bbox():
+    projection = ProjectionType.SPHERICAL
+    
+    # create basegrid
+    lon_min, lon_max, lat_min, lat_max = -6, 2, 48.5, 51.2
+    dxy = 0.5
+    make_grid_parameters = MakeGridParameters(origin_x=lon_min,
+                                              origin_y=lat_min,
+                                              upper_right_x=lon_max,
+                                              upper_right_y=lat_max,
+                                              block_size_x=dxy,
+                                              block_size_y=dxy)
+    mk = MeshKernel(projection=projection)
+    mk.curvilinear_compute_rectangular_grid_on_extension(make_grid_parameters)
+    mk.curvilinear_convert_to_mesh2d() #convert to ugrid/mesh2d
+    
+    bbox = dfmt.meshkernel_get_bbox(mk)
+    assert np.allclose(bbox, (-6.0, 48.5, 2.0, 51.40631301478466))
+
+    
+@pytest.mark.unittest
 def test_generate_bndpli_cutland():
     # domain, resolution and expected values
     params_all = [[-68.55, -68.05, 11.95, 12.4,    1, 99],
