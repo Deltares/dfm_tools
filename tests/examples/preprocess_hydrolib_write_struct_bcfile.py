@@ -17,7 +17,7 @@ file_struct = os.path.join(dir_out,'RMM_structures_j19.ini')
 structs = hcdfm.StructureModel(file_struct)
 list_structures = [struct.id for struct in structs.structure]
 
-ext_bnd = hcdfm.ExtModel()
+ext_new = hcdfm.ExtModel()
 ForcingModel_object = hcdfm.ForcingModel()
 
 arr_time = np.array([0,10,20,60])
@@ -49,10 +49,10 @@ for structname in list_structures:
                                          locationfile=Path(file_pli),
                                          forcingfile=ForcingModel_object,
                                          )
-        ext_bnd.boundary.append(boundary_object)
+        ext_new.boundary.append(boundary_object)
 
 
-# ext_bnd.save(Path(dir_out,'test_struct.ext')) #seems not necesary
+# ext_new.save(Path(dir_out,'test_struct.ext')) #seems not necesary
 
 
 #strmod = StructureModel(Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB_structbc\RMM_structures.ini'))

@@ -72,10 +72,10 @@ for sim in sims:
 
     ForcingModel_object.save(file_bc_output)
     
-# ext_bnd = ExtModel()
+# ext_new = ExtModel()
 # #generate boundary object for the ext file (quantity, pli-filename, bc-filename)
 # boundary_object = Boundary(quantity=quantity,
 #                             locationfile=Path(dir_output,file_pli.name),
 #                             forcingfile=ForcingModel_object,
 #                             )
-# ext_bnd.boundary.append(boundary_object)
+# ext_new.boundary.append(boundary_object)

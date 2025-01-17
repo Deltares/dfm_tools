@@ -145,8 +145,8 @@ def ext_add_boundary_object_per_polyline(ext_new:hcdfm.ExtModel, boundary_object
 
 def interpolate_tide_to_bc(ext_new: hcdfm.ExtModel, tidemodel, file_pli, component_list=None, load=True):
     # read polyfile as geodataframe
-    polyfile_object = hcdfm.PolyFile(file_pli)
-    gdf_points = PolyFile_to_geodataframe_points(polyfile_object)
+    polyfile_obj = hcdfm.PolyFile(file_pli)
+    gdf_points = PolyFile_to_geodataframe_points(polyfile_obj)
     
     # interpolate tidal components to plipoints
     data_interp = interpolate_tide_to_plipoints(tidemodel=tidemodel, gdf_points=gdf_points, 
@@ -155,7 +155,8 @@ def interpolate_tide_to_bc(ext_new: hcdfm.ExtModel, tidemodel, file_pli, compone
     # convert interpolated xarray.Dataset to hydrolib ForcingModel and save as bc file
     ForcingModel_object = plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
     dir_output = os.path.dirname(file_pli)
-    file_bc_out = os.path.join(dir_output,f'tide_{tidemodel}.bc')
+    file_pli_name = polyfile_obj.filepath.stem
+    file_bc_out = os.path.join(dir_output,f'tide_{tidemodel}_{file_pli_name}.bc')
     ForcingModel_object.save(filepath=file_bc_out)
     
     # generate hydrolib-core Boundary object to be appended to the ext file
