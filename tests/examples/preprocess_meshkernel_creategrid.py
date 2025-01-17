@@ -149,5 +149,33 @@ ctx.add_basemap(ax=ax, crs=crs, attribution=False)
 netfile = 'englishchannel_net.nc'
 xu_grid_uds.ugrid.to_netcdf(netfile)
 
+
+
+"""
+get illegal cells
+"""
+
+illegalcells_gdf = dfmt.meshkernel_get_illegalcells(mk=mk)
+
+
+"""
+others
+"""
+
+
 #TODO: small flow links in resulting grid
 
+#TODO: cleanup grid necessary?
+print('mk.mesh2d_get_obtuse_triangles_mass_centers()')
+print(mk.mesh2d_get_obtuse_triangles_mass_centers().values)
+print('mk.mesh2d_get_orthogonality()')
+print(mk.mesh2d_get_orthogonality().values.max())
+print('mk.mesh2d_get_hanging_edges()')
+print(mk.mesh2d_get_hanging_edges())
+mk.mesh2d_delete_hanging_edges()
+mk_ortho = mk.mesh2d_get_orthogonality()
+mk_ortho_vals = mk_ortho.values
+mk_ortho_vals[mk_ortho_vals==mk_ortho.geometry_separator] = 0 # or np.nan, but results in invisible edges (grey would be better)
+xu_grid_uds['orthogonality'] = xr.DataArray(mk_ortho_vals, dims=xu_grid_uds.grid.edge_dimension)
+fig, ax = plt.subplots(figsize=figsize)
+xu_grid_uds['orthogonality'].ugrid.plot(robust=True)
