@@ -16,3 +16,4 @@ A Python package for pre- and postprocessing D-FlowFM model input and output fil
 - install with `pip install dfm_tools -U` (or [installation guide](https://deltares.github.io/dfm_tools/installation))
 - [online documentation](https://deltares.github.io/dfm_tools) with installation guide, tutorials/examples, API reference and contributing guide.
 - Bug or feature request? Create a [GitHub issue](https://github.com/Deltares/dfm_tools/issues)
+- dfm_tools is updated regularly to keep up with all developments in packages it depends on, so make sure to update regularly. You can subscribe to dfm_tools updates via the "Watch" button of this repository (tip: only tick "Releases" to avoid spam)
