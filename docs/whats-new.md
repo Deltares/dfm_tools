@@ -1,6 +1,6 @@
 # What's new
 
-## UNRELEASED
+## 0.33.0 (2025-01-20)
 
 ### Feat
 - optimized performance for getting CMEMS time extents and spatial buffer in [#1059](https://github.com/Deltares/dfm_tools/pull/1059)
