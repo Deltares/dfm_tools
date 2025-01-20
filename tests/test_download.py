@@ -372,21 +372,19 @@ def test_download_era5(file_nc_era5_pattern):
     
     ds = xr.open_mfdataset(file_nc_era5_pattern)
     
-    assert 'valid_time' in ds.dims # TODO: if this fails, remove the exception below and in preprocess_ERA5
+    # datasets retrieved with intermediate CDS had expver dimension causing issues
+    assert 'expver' not in ds.dims # TODO: if this fails, update the docstring of preprocess_ERA5
     
-    timedim = 'time'
-    # datasets retrieved with new cds-beta have valid_time instead of time dimn/varn
-    # https://forum.ecmwf.int/t/new-time-format-in-era5-netcdf-files/3796/5?u=jelmer_veenstra
-    # TODO: can be removed after https://github.com/Unidata/netcdf4-python/issues/1357 or https://forum.ecmwf.int/t/3796 is fixed
-    if 'valid_time' in ds.dims:
-        timedim = 'valid_time'
+    # datasets retrieved with new CDS have valid_time instead of time dim/var
+    assert 'valid_time' in ds.dims # TODO: if this fails, remove the exception below and in preprocess_ERA5
+    timedim = 'valid_time'
     
     assert ds.sizes[timedim] == 1416
     assert ds[timedim].to_pandas().iloc[0] == pd.Timestamp('2010-01-01')
     assert ds[timedim].to_pandas().iloc[-1] == pd.Timestamp('2010-02-28 23:00')
     
-    # check if there are no integers in the dataset anymore
-    # this was the case before CDS-beta in https://github.com/Deltares/dfm_tools/issues/239
+    # datasets retrieved with new CDS are float32 instead of scaled ints
+    # ints raised problem in https://github.com/Deltares/dfm_tools/issues/239
     msl_encoding = ds['msl'].encoding
     assert str(msl_encoding['dtype']) == 'float32'
     assert 'scale_factor' not in msl_encoding.keys()
