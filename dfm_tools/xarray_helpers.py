@@ -96,25 +96,49 @@ def preprocess_hisnc(ds):
 
 def preprocess_ERA5(ds):
     """
-    Reduces the expver dimension in some of the ERA5 data (mtpr and other variables), which occurs in files with very recent data. The dimension contains the unvalidated data from the latest month in the second index in the expver dimension. The reduction is done with mean, but this is arbitrary, since there is only one valid value per timestep and the other one is nan.
-    """
-    if 'expver' in ds.dims:
-        # TODO: this drops int encoding which leads to unzipped float32 netcdf files: https://github.com/Deltares/dfm_tools/issues/781
-        ds = ds.mean(dim='expver')
+    Aligning ERA5 datasets before merging them. These operations are currently
+    (2025) only required when (also) using previously retrieved ERA5 data.
     
-    # datasets retrieved with new cds-beta have valid_time instead of time dimn/varn
-    # https://forum.ecmwf.int/t/new-time-format-in-era5-netcdf-files/3796/5?u=jelmer_veenstra
-    # TODO: can be removed after https://github.com/Unidata/netcdf4-python/issues/1357 or https://forum.ecmwf.int/t/3796 is fixed
+    In recent datasets retrieved from ERA5 the time dimension and variable are
+    now called valid_time. This is inconvenient since it causes issues when
+    merging with previously retrieved datasets. However, it is not necessary
+    for succesfully running a Delft3D FM simulation.
+    
+    Reducing the expver dimension: In the past, the expver dimension was
+    present if you downloaded ERA5 data that consisted of a mix of ERA5 and
+    ERA5T data. This dimension was also present in the data variables, so it
+    broke code. Therefore this dimension is reduced with a mean operation.
+    Any reduction operation would do the trick since there is only one valid
+    value per timestep and the other one is nan. In datasets downloaded
+    currently (2025) the expver dimension is not present anymore,
+    but anexpver variable is present defining whether the data comes
+    from ERA5 (1) or ERA5T (5).
+    
+    Removing scale_factor and add_offset: In the past, the ERA5 data was
+    supplied as integers with a scaling and offset that was different for
+    each downloaded file. This caused serious issues with merging files,
+    since the scaling/offset from the first file was assumed to be valid
+    for the others also, leading to invalid values. Only relevant for old
+    files. More info at https://github.com/Deltares/dfm_tools/issues/239.
+    """
+    
+    # datasets retrieved with new CDS have valid_time instead of time dim/var
+    # https://forum.ecmwf.int/t/new-time-format-in-era5-netcdf-files/3796/5
     if 'valid_time' in ds.coords:
         ds = ds.rename({'valid_time':'time'})
     
-    # Prevent writing to (incorrectly scaled) int, since it might mess up mfdataset (https://github.com/Deltares/dfm_tools/issues/239)
-    # By dropping scaling/offset encoding and converting to float32 (will result in a larger dataset)
-    # ERA5 datasets retrieved with the new CDS-beta are zipped float32 instead of scaled int, so this is only needed for backwards compatibility with old files.
+    # reduce the expver dimension (not present in newly retrieved files)
+    if 'expver' in ds.dims:
+        ds = ds.mean(dim='expver')
+    
+    # drop scaling/offset encoding if present and converting to float32. Not
+    # present in newly retrieved files, variables are zipped float32 instead
     for var in ds.data_vars.keys():
-        if not set(['dtype','scale_factor','add_offset']).issubset(ds.variables[var].encoding.keys()):
+        list_attrs = ['dtype','scale_factor','add_offset']
+        if not set(list_attrs).issubset(ds.variables[var].encoding.keys()):
             continue
-        # the _FillValue will still be -32767 (int default), but this is no issue for float32
+        # the _FillValue will still be -32767 (int default)
+        # this is no issue for float32
         ds[var].encoding.pop('scale_factor')
         ds[var].encoding.pop('add_offset')
         ds[var].encoding["dtype"] = "float32"
