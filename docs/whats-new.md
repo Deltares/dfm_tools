@@ -10,6 +10,7 @@
 ### Fix
 - fixed inexact latlon bbox in modelbuilder with `dfmt.meshkernel_get_bbox()` in [#1067](https://github.com/Deltares/dfm_tools/pull/1067)
 - included polyfile basename in bc-files from tide and cmems to prevent overwrite with multiple polyfiles in [#1071](https://github.com/Deltares/dfm_tools/pull/1071)
+- renamed `ext_bnd` argument to `ext_new` in `dfmt.cmems_nc_to_bc()` for consistency in [#1071](https://github.com/Deltares/dfm_tools/pull/1071)
 
 
 ## 0.32.0 (2025-01-14)
