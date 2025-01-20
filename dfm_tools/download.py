@@ -71,6 +71,9 @@ def download_ERA5(varkey,
         raise KeyError(f'"{varkey}" not available, choose from: {", ".join(variables_dict.keys())}')
     
     period_range = pd.period_range(date_min,date_max,freq='M')
+    if len(period_range) == 0:
+        raise ValueError(f"requested time extents ({date_min} to {date_max}) "
+                         "resulted in empty period_range")
     print(f'retrieving data from {period_range[0]} to {period_range[-1]} (freq={period_range.freq})')
     
     #make sure the data fully covers the desired spatial extent. Download 1 additional grid cell (resolution is 1/4 degrees) in both directions

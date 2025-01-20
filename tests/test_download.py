@@ -351,14 +351,33 @@ def test_download_hycom(tmp_path):
 def test_download_era5_unsupported_varkey():
     date_min = '2010-01-31'
     date_max = '2010-02-01'
-    longitude_min, longitude_max, latitude_min, latitude_max =    2,   3,  51, 52 #test domain
+    longitude_min, longitude_max, latitude_min, latitude_max = 2, 3, 51, 52
     varkey = 'unexisting'
     with pytest.raises(KeyError) as e:
-        dfmt.download_ERA5(varkey, 
-                            longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
-                            date_min=date_min, date_max=date_max,
-                            dir_output='.', overwrite=True)
+        dfmt.download_ERA5(
+            varkey, 
+            longitude_min=longitude_min, longitude_max=longitude_max,
+            latitude_min=latitude_min, latitude_max=latitude_max,
+            date_min=date_min, date_max=date_max,
+            dir_output='.', overwrite=True)
     assert '"unexisting" not available' in str(e.value)
+
+
+@pytest.mark.requiressecrets
+@pytest.mark.unittest
+def test_download_era5_incorrect_times():
+    date_min = '2010-01-01'
+    date_max = '2009-01-01'
+    longitude_min, longitude_max, latitude_min, latitude_max = 2, 3, 51, 52
+    varkey = 'msl'
+    with pytest.raises(ValueError) as e:
+        dfmt.download_ERA5(
+            varkey, 
+            longitude_min=longitude_min, longitude_max=longitude_max,
+            latitude_min=latitude_min, latitude_max=latitude_max,
+            date_min=date_min, date_max=date_max,
+            dir_output='.', overwrite=True)
+    assert 'resulted in empty period_range' in str(e.value)
 
 
 @pytest.mark.requiressecrets
