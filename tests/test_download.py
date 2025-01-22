@@ -254,7 +254,7 @@ def test_copernicusmarine_get_dataset_id():
 @pytest.mark.unittest
 def test_download_cmems_my(tmp_path):
     # deliberately take inconvenient time/spatial subset to test if
-    # coordinates_selection_method='outside'
+    # coordinates_selection_method='outside' works properly
     date_min = '2010-01-01 01:00'
     date_max = '2010-01-01 23:00'
     longitude_min, longitude_max, latitude_min, latitude_max =    2.001,   3.001,  51.001, 52.001 #test domain
@@ -330,7 +330,6 @@ def test_download_hycom(tmp_path):
         dataset_url = [f'https://tds.hycom.org/thredds/dodsC/GLBu0.08/expt_19.1/{year}' for year in period_range_years] #list is possible with hycom, since it uses xr.open_mfdataset()
         # temporary fix to avoid RuntimeError: NetCDF: file not found
         # https://github.com/Deltares/dfm_tools/issues/1048
-        dataset_url = dataset_url[0]
         file_prefix = 'hycom_'
         dfmt.download_OPeNDAP(dataset_url=dataset_url,
                               varkey=varkey,
