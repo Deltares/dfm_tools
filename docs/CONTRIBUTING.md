@@ -13,7 +13,7 @@
 ## Setup local developer environment
 
 - python 3.11 is recommended, [python>=3.9 is required](https://github.com/Deltares/dfm_tools/issues/267), [python 3.13 not yet supported](https://github.com/Deltares/dfm_tools/issues/559)
-- download Miniforge3 from [the miniforge github](https://github.com/conda-forge/miniforge?tab=readme-ov-file#download) and install it with the recommended settings.
+- download Miniforge3 from [conda-forge.org](https://conda-forge.org/miniforge) and install it with the recommended settings.
 - open Miniforge Prompt and navigate to the local checkout folder of the repository
 - `conda create --name dfm_tools_env python=3.11 git spyder -y` (`git` and `spyder` are optional)
 - `conda activate dfm_tools_env`
