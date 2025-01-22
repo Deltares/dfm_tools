@@ -6,7 +6,7 @@
 
 ## Recommended installation
 
-- download Miniforge3 from [the miniforge github](https://github.com/conda-forge/miniforge?tab=readme-ov-file#download) and install it with the recommended settings.
+- download Miniforge3 from [conda-forge.org](https://conda-forge.org/miniforge) and install it with the recommended settings.
 - open Miniforge Prompt
 - `conda create --name dfm_tools_env python=3.12 git spyder -y` (`git` and `spyder` are optional)
 - `conda activate dfm_tools_env`
