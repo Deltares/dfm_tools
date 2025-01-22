@@ -330,7 +330,6 @@ def test_download_hycom(tmp_path):
         dataset_url = [f'https://tds.hycom.org/thredds/dodsC/GLBu0.08/expt_19.1/{year}' for year in period_range_years] #list is possible with hycom, since it uses xr.open_mfdataset()
         # temporary fix to avoid RuntimeError: NetCDF: file not found
         # https://github.com/Deltares/dfm_tools/issues/1048
-        dataset_url = dataset_url[0]
         file_prefix = 'hycom_'
         dfmt.download_OPeNDAP(dataset_url=dataset_url,
                               varkey=varkey,
