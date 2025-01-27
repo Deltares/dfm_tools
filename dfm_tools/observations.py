@@ -30,6 +30,11 @@ __all__ = ["ssh_catalog_subset",
            "ssh_netcdf_overview",
            ]
 
+if os.name == "nt":
+    PDRIVE = "p:"
+else:
+    PDRIVE = "/p"
+
 
 def _make_hydrotools_consistent(ds):
     """
@@ -441,7 +446,7 @@ def psmsl_gnssir_ssh_read_catalog_gettimes(station_list_gpd):
 
 def gesla3_ssh_read_catalog(file_gesla3_meta=None, only_coastal=True):
     if file_gesla3_meta is None:
-        file_gesla3_meta = r"p:\1230882-emodnet_hrsm\data\GESLA3\GESLA3_ALL 2.csv"
+        file_gesla3_meta = os.path.join(PDRIVE, "1230882-emodnet_hrsm", "data", "GESLA3", "GESLA3_ALL 2.csv")
     
     if not os.path.isfile(file_gesla3_meta):
         raise FileNotFoundError(f"The 'file_gesla3_meta' file '{file_gesla3_meta}' was not found. "
@@ -662,11 +667,13 @@ def uhslc_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None):
 @functools.lru_cache
 def gesla3_cache_zipfile(file_gesla3_data=None):
     if file_gesla3_data is None:
-        file_gesla3_data = r"p:\1230882-emodnet_hrsm\data\GESLA3\GESLA3.0_ALL.zip"
-    
+        file_gesla3_data = os.path.join(PDRIVE, "1230882-emodnet_hrsm", "data", "GESLA3", "GESLA3.0_ALL.zip")
+
     if not os.path.isfile(file_gesla3_data):
-        raise FileNotFoundError(f"The 'file_gesla3_data' file '{file_gesla3_data}' was not found. "
-                                "You can download it from https://gesla787883612.wordpress.com/downloads and provide the path")
+        raise FileNotFoundError(
+            f"The 'file_gesla3_data' file '{file_gesla3_data}' was not found. "
+            "You can download it from https://gesla787883612.wordpress.com/"
+            "downloads and provide the path")
     
     gesla3_zip = ZipFile(file_gesla3_data)
     return gesla3_zip
