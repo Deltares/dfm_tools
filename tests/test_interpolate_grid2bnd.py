@@ -492,14 +492,8 @@ def test_interp_regularnc_to_plipointsDataset_checkvardimnames():
 @pytest.mark.systemtest
 @pytest.mark.requireslocaldata
 def test_interpolate_tide_to_plipoints():
-    npoints = 3# None #amount of Points to process per PolyObject in the plifile (use int for testing, use None for all Points)
-    file_pli = r'p:\archivedprojects\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli'
     nanvalue = -999
-    
-    # read polyfile as geodataframe
-    polyfile_object = hcdfm.PolyFile(file_pli)
-    gdf_points_all = dfmt.PolyFile_to_geodataframe_points(polyfile_object)
-    gdf_points = gdf_points_all.iloc[:npoints]
+    gdf_points = data_dcsm_gdf()
     
     tidemodel_list = ['tpxo80_opendap', 'FES2014', 'FES2012', 'EOT20', 'GTSMv4.1']#, 'GTSMv4.1_opendap']
     for tidemodel in tidemodel_list:
