@@ -2,6 +2,9 @@
 
 ## UNRELEASED
 
+### Fix
+- made p-drive paths for tide models and gesla3 work on linux also in [#1083](https://github.com/Deltares/dfm_tools/pull/1083)
+
 
 ## 0.33.0 (2025-01-20)
 
