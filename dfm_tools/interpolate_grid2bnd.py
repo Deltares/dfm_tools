@@ -33,7 +33,9 @@ __all__ = ["get_conversion_dict",
 logger = logging.getLogger(__name__)
 
 if os.name == "nt":
-    PDRIVE = "p:"
+    # windows drive letter should include trailing slash
+    # https://github.com/Deltares/dfm_tools/issues/1084
+    PDRIVE = "p:/"
 else:
     PDRIVE = "/p"
 
