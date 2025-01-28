@@ -38,12 +38,20 @@ def test_get_ncvarname_list():
     assert "quantity 'nonexistingbnd' not in conversion_dict" in str(e.value)
 
 
+@pytest.mark.parametrize("timecase", [pytest.param(x, id=x) for x in ['midnight','noon','monthly']])
 @pytest.mark.systemtest
-def test_cmems_nc_to_ini_midnight_centered(tmp_path):
+def test_cmems_nc_to_ini(tmp_path, timecase):
+    """
+    tests for midnight-centered data, noon-centered data and monthly timestamped data
+    """
     ds1 = cmems_dataset_4times().isel(time=slice(None,2))
-    ds1["time"] = ds1["time"] + pd.Timedelta(hours=12)
     ds2 = cmems_dataset_4times().isel(time=slice(2,None))
-    ds2["time"] = ds2["time"] + pd.Timedelta(hours=12)
+    if timecase == "midnight":
+        ds1["time"] = ds1["time"] + pd.Timedelta(hours=12)
+        ds2["time"] = ds2["time"] + pd.Timedelta(hours=12)
+    elif timecase == "monthly":
+        ds1["time"] = [pd.Timestamp("2019-11-01"), pd.Timestamp("2019-12-01")]
+        ds2["time"] = [pd.Timestamp("2020-01-01"), pd.Timestamp("2020-02-01")]
     
     dir_pattern = os.path.join(tmp_path, "temp_cmems_2day_*.nc")
     file_nc1 = dir_pattern.replace("*","so_p1")
@@ -67,8 +75,13 @@ def test_cmems_nc_to_ini_midnight_centered(tmp_path):
     
     file_expected = tmp_path / "nudge_salinity_temperature_2020-01-01_00-00-00.nc"
     
-    times_expected =  ['2020-01-01 00:00:00', '2020-01-02 00:00:00']
-    
+    if timecase == "midnight":
+        times_expected =  ['2020-01-01 00:00:00', '2020-01-02 00:00:00']
+    elif timecase == "noon":
+        times_expected =  ['2019-12-31 12:00:00', '2020-01-01 12:00:00']
+    elif timecase == "monthly":
+        times_expected =  ['2020-01-01 00:00:00', '2020-02-01 00:00:00']
+        
     assert os.path.exists(file_expected)
     ds_out = xr.open_dataset(file_expected)
     
