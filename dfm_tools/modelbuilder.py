@@ -111,6 +111,8 @@ def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, c
     
     tstart_pd = pd.Timestamp(tstart)
     tstart_str = tstart_pd.strftime("%Y-%m-%d_%H-%M-%S")
+    # tstop_pd is slightly higher than tstart_pd to ensure >1 timesteps in all cases
+    tstop_pd = tstart_pd + pd.Timedelta(hours=1)
     
     for quan_bnd in list_quantities:
         
@@ -143,8 +145,6 @@ def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, c
         
         # subset two times. interp to tstart would be the proper way to do it, 
         # but FM needs two timesteps for nudge_salinity_temperature and initial waq vars
-        # tstop_pd is slightly higher than tstart_pd to ensure >1 timesteps in all cases
-        tstop_pd = tstart_pd + pd.Timedelta(hours=1)
         data_xr = _ds_sel_time_outside(ds=data_xr, tstart=tstart_pd, tstop=tstop_pd)
         
         # assert that there are at least two timesteps in the resulting dataset
