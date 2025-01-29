@@ -19,7 +19,8 @@ dependencies = [
 	#matplotlib>=3.7.0 successfully creates contour colorbar on uniform values and has several other features
 	"matplotlib>=3.7.0",
 	#pandas>=1.4 is required by xarray>=2023.3.0
-	"pandas>=1.4.0",
+	#pandas>=1.5 might resolve futurewarnings in https://github.com/Deltares/dfm_tools/issues/1065
+	"pandas>=1.5.0",
 	#shapely>=2.0.0 fixes "AttributeError: module 'shapely' has no attribute 'GeometryType'"
 	"shapely>=2.0.0",
 	#geopandas>=0.13.0 supports shapely>=2.0.0
