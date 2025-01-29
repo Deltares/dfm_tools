@@ -3,6 +3,7 @@ import pandas as pd
 from pathlib import Path
 import xarray as xr
 from dfm_tools.errors import OutOfRangeError
+from dfm_tools.interpolate_grid2bnd import _ds_sel_time_outside
 import cdsapi
 import copernicusmarine
 from copernicusmarine.core_functions.credentials_utils import InvalidUsernameOrPassword
@@ -204,15 +205,32 @@ def download_CMEMS(varkey,
                    dataset_id=None,
                    dir_output='.', file_prefix='', overwrite=False):
     """
+    Download CMEMS data by providing varkey and optional dataset_id. If no
+    dataset_id is provided, it is automatically derived based on the varkey
+    and the requested period. For daily mean data, the dataset is automatically
+    shifted with 12 hours to convert start-of-interval to center-of-interval
+    timestamps.
+    
+    The requested spatial and time extents are automatically buffered to make
+    sure all requested values are included in the returned dataset. This
+    behaviour is more inclusive than the default xarray.Dataset.sel() method.
+    
+    The data is downloaded in files per day or month, depending on the freq
+    argument. When downloading monthly or yearly means make sure not to request
+    a higher freq, since that would result in many empty files.
+    
+    More info about copernicusmarine toolbox available at:
     https://help.marine.copernicus.eu/en/articles/8283072-copernicus-marine-toolbox-api-subset
+    
     """
     copernicusmarine_credentials()
     
     if dataset_id is None:
         dataset_id = copernicusmarine_get_dataset_id(varkey, date_min, date_max)
-    # date_range with same start as stoptime is a bit tricky so we limit freqs: https://github.com/Deltares/dfm_tools/issues/720
-    if freq not in ["D","M"]:
-        raise ValueError(f"freq should be 'D' or 'M', not {freq}")
+    # date_range with same start as stoptime is a bit tricky so we limit freqs
+    # https://github.com/Deltares/dfm_tools/issues/720
+    if freq not in ["D","M","Y"]:
+        raise ValueError(f"freq should be D/M/Y, not {freq}")
 
     dataset = copernicusmarine.open_dataset(
          dataset_id = dataset_id,
@@ -221,13 +239,15 @@ def download_CMEMS(varkey,
          maximum_longitude = longitude_max,
          minimum_latitude = latitude_min,
          maximum_latitude = latitude_max,
-         # temporarily convert back to strings because of https://github.com/mercator-ocean/copernicus-marine-toolbox/issues/261
-         # TODO: revert, see https://github.com/Deltares/dfm_tools/issues/1047
-         start_datetime = pd.Timestamp(date_min).isoformat(),
-         end_datetime = pd.Timestamp(date_max).isoformat(),
          **COPERNICUSMARINE_OPTIMIZE_ARGS,
     )
-
+    
+    # possibly shift times with 12 hours (to center-of-interval times)
+    dataset = copernicusmarine_dataset_timeshift(ds=dataset, dataset_id=dataset_id)
+    
+    # slice to outside times after opening dataset and correcting times
+    dataset = _ds_sel_time_outside(ds=dataset, tstart=date_min, tstop=date_max)
+    
     Path(dir_output).mkdir(parents=True, exist_ok=True)
     
     # get time extent from dataset, it can be different than requested
@@ -375,11 +395,23 @@ def copernicusmarine_credentials():
         raise InvalidUsernameOrPassword("Invalid credentials, please try again")
 
 
+def copernicusmarine_dataset_timeshift(ds, dataset_id):
+    """
+    correct daily means from start-of-interval to center-of-interval times
+    """
+    if "P1D-m" in dataset_id:
+        time_offset = pd.Timedelta(hours=12)
+        print(f"{time_offset} offset applied to copernicusmarine dataset")
+        ds["time"] = ds["time"] + time_offset
+    return ds
+
+
 def copernicusmarine_dataset_timerange(dataset_id):
     ds = copernicusmarine.open_dataset(
         dataset_id=dataset_id,
         **COPERNICUSMARINE_OPTIMIZE_ARGS
         )
+    ds = copernicusmarine_dataset_timeshift(ds, dataset_id)
     ds_tstart = pd.Timestamp(ds.time.isel(time=0).values)
     ds_tstop = pd.Timestamp(ds.time.isel(time=-1).values)
     return ds_tstart, ds_tstop
