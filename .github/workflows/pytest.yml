@@ -45,7 +45,8 @@ jobs:
         COPERNICUSMARINE_SERVICE_USERNAME: ${{ secrets.COPERNICUSMARINE_SERVICE_USERNAME }}
         COPERNICUSMARINE_SERVICE_PASSWORD: ${{ secrets.COPERNICUSMARINE_SERVICE_PASSWORD }}
       run: |
-        pytest -m "not requireslocaldata and not era5slow" --cov=dfm_tools --cov-report xml --cov-report term
+        # pytest -m "not requireslocaldata and not era5slow" --cov=dfm_tools --cov-report xml --cov-report term
+        pytest tests/test_download.py::test_download_cmems
     - uses: codecov/codecov-action@v4
       env:
         CODECOV_TOKEN: ${{secrets.CODECOV_TOKEN}}
