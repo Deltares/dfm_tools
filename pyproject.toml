@@ -112,7 +112,7 @@ markers = [
 	"era5slow: mark a test that causes timeout errors to prevent failing github testbanks due to badly performing cds-beta",
 ]
 filterwarnings = [
-    "error",
+    # "error", # results in pytest.PytestUnraisableExceptionWarning, https://github.com/Deltares/dfm_tools/issues/1065
 	# filter until fix of https://github.com/Deltares/HYDROLIB-core/issues/732
     # note the use of single quote below to denote "raw" strings in TOML
 	'ignore:datetime.datetime.utcnow\(\) is deprecated:DeprecationWarning',
