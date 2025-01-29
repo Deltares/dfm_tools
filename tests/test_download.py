@@ -250,7 +250,7 @@ def test_copernicusmarine_get_dataset_id():
     assert dataset_id == 'cmems_mod_glo_bgc-nut_anfc_0.25deg_P1D-m'
 
 
-@pytest.mark.parametrize("varkey", [pytest.param(x, id=x) for x in ['bottomT','no3','so','tob','phyc']])
+@pytest.mark.parametrize("varkey", [pytest.param(x, id=x) for x in ['bottomT','no3','so','tob']])
 @pytest.mark.requiressecrets
 @pytest.mark.unittest
 def test_download_cmems(tmp_path, varkey):
@@ -262,16 +262,20 @@ def test_download_cmems(tmp_path, varkey):
     the variables retrieved are arbitrary, but are present in the respective datasets
     avaliable variables differ per product, examples are ['bottomT','mlotst','siconc','sithick','so','thetao','uo','vo','usi','vsi','zos','no3'].
     More info on https://data.marine.copernicus.eu/products
+    
+    In the variable/dataset selection it is ensured to cover both
+    reanalysis and analysisforecasts, both daily and monthly means,
+    both bio and phy, both 0.25deg and 0.083deg spatial resolutions
+    and both variables including and excluding depth
     """
     
     # deliberately take inconvenient time/spatial subset to test if
     # coordinates_selection_method='outside' works properly
     longitude_min, longitude_max, latitude_min, latitude_max =    2.001,   3.001,  51.001, 52.001 #test domain
     dataset_id_dict = {'bottomT':'cmems_mod_glo_phy_my_0.083deg_P1D-m', # phy my daily mean no_depth
-                       'no3':'cmems_mod_glo_bgc_my_0.25deg_P1D-m', # bio my daily mean
-                       'so':'cmems_mod_glo_phy_my_0.083deg_P1M-m', # phy my monthly mean
-                       'tob':'cmems_mod_glo_phy_anfc_0.083deg_P1D-m', # phy anfc daily mean
-                       'phyc':'cmems_mod_glo_bgc-pft_anfc_0.25deg_P1D-m', # bio anfc daily mean
+                       'no3':'cmems_mod_glo_bgc_my_0.25deg_P1D-m', # bio my daily mean wi_depth
+                       'so':'cmems_mod_glo_phy_my_0.083deg_P1M-m', # phy my monthly mean wi_depth
+                       'tob':'cmems_mod_glo_phy_anfc_0.083deg_P1D-m', # phy anfc daily mean no_depth
                        }
     file_prefix = 'cmems_'
     dataset_id = dataset_id_dict[varkey]
@@ -306,13 +310,13 @@ def test_download_cmems(tmp_path, varkey):
                            'cmems_bottomT_2010-01-01.nc',
                            'cmems_bottomT_2010-01-02.nc',
                            ]
-    elif varkey in ['tob','phyc']:
+    elif varkey == 'tob':
         # daily mean, so offset of 12 hours is applied
         datetime_first = date_min.floor("12h")
         date_first = datetime_first.date()
         times_expected = [str(datetime_first + x*pd.Timedelta("1D")) for x in [0,1,2]]
         fnames_dates = [str(date_first + x*pd.Timedelta("1D")) for x in [0,1,2]]
-        fnames_expected = [f"cmems_{varkey}_{x}.nc" for x in fnames_dates]
+        fnames_expected = [f"cmems_tob_{x}.nc" for x in fnames_dates]
     
     if '0.25deg' in dataset_id:
         lon_max_exp = 3.25
