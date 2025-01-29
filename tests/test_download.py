@@ -338,6 +338,7 @@ def test_download_cmems(tmp_path, varkey):
     # open downloaded files
     file_nc_pat = os.path.join(tmp_path, f"{file_prefix}{varkey}*.nc")
     fname_list = [os.path.basename(x) for x in glob.glob(file_nc_pat)]
+    fname_list.sort()
     ds = xr.open_mfdataset(file_nc_pat)
     times_actual = ds.time.to_pandas().dt.strftime("%Y-%m-%d %H:%M:%S").tolist()
     
