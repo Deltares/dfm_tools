@@ -112,11 +112,11 @@ markers = [
 	"era5slow: mark a test that causes timeout errors to prevent failing github testbanks due to badly performing cds-beta",
 ]
 filterwarnings = [
-    "error",
+	"error",
 	# to make error work
 	"ignore::pytest.PytestUnraisableExceptionWarning",
 	# filter until fix of https://github.com/Deltares/HYDROLIB-core/issues/732
-    # note the use of single quote below to denote "raw" strings in TOML
+	# note the use of single quote below to denote "raw" strings in TOML
 	'ignore:datetime.datetime.utcnow\(\) is deprecated:DeprecationWarning',
 	# filter until fix of https://github.com/Deltares/xugrid/issues/312
 	"ignore:Arrays of 2-dimensional vectors are deprecated:DeprecationWarning",
