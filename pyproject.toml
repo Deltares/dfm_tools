@@ -114,9 +114,8 @@ markers = [
 filterwarnings = [
     "error",
 	# filter until fix of https://github.com/Deltares/HYDROLIB-core/issues/732
-	"ignore:datetime.datetime.utcnow:DeprecationWarning",
     # note the use of single quote below to denote "raw" strings in TOML
-    #'ignore:function ham\(\) is deprecated:DeprecationWarning',
+	'ignore:datetime.datetime.utcnow\(\) is deprecated:DeprecationWarning',
 ]
 
 [tool.flake8]
