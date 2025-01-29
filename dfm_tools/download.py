@@ -400,6 +400,7 @@ def copernicusmarine_dataset_timeshift(ds, dataset_id):
     correct daily means from start-of-interval to center-of-interval times.
     Only the daily data is currently corrected with an offset of 12 hours.
     This does not shift yearly, monthly, hourly, 3hourly or 6hourly data.
+    Also daily averaged datasets called *-d are not corrected.
     https://help.marine.copernicus.eu/en/articles/6820094-how-is-defined-the-nomenclature-of-copernicus-marine-data
     """
     if "P1D-m" in dataset_id:
@@ -407,7 +408,8 @@ def copernicusmarine_dataset_timeshift(ds, dataset_id):
         assert (ds["time"].to_pandas().dt.hour == 0).all()
         # add offset to correct from midnight to noon (center-of-interval)
         time_offset = pd.Timedelta(hours=12)
-        print(f"{time_offset} offset applied to copernicusmarine dataset")
+        print("daily averaged copernicusmarine dataset times were corrected "
+              "from midnight to noon by adding a 12-hour offset.")
         ds["time"] = ds["time"] + time_offset
     return ds
 
