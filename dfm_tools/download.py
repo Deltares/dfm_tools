@@ -408,7 +408,7 @@ def copernicusmarine_dataset_timeshift(ds, dataset_id):
         assert (ds["time"].to_pandas().dt.hour == 0).all()
         # add offset to correct from midnight to noon (center-of-interval)
         time_offset = pd.Timedelta(hours=12)
-        print("daily averaged copernicusmarine dataset times were corrected "
+        print("daily averaged copernicusmarine dataset was corrected "
               "from midnight to noon by adding a 12-hour offset.")
         ds["time"] = ds["time"] + time_offset
     return ds
