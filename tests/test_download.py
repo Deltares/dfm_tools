@@ -250,70 +250,106 @@ def test_copernicusmarine_get_dataset_id():
     assert dataset_id == 'cmems_mod_glo_bgc-nut_anfc_0.25deg_P1D-m'
 
 
+@pytest.mark.parametrize("varkey", [pytest.param(x, id=x) for x in ['bottomT','no3','so','tob','phyc']])
 @pytest.mark.requiressecrets
 @pytest.mark.unittest
-def test_download_cmems_my(tmp_path):
+def test_download_cmems(tmp_path, varkey):
+    """
+    Test whether downloading cmems data works properly.
+    Especially whether time/spatial extents are correct (buffered)
+    and whether daily means are corrected with a 12 hour offset.
+    
+    the variables retrieved are arbitrary, but are present in the respective datasets
+    avaliable variables differ per product, examples are ['bottomT','mlotst','siconc','sithick','so','thetao','uo','vo','usi','vsi','zos','no3'].
+    More info on https://data.marine.copernicus.eu/products
+    """
+    
     # deliberately take inconvenient time/spatial subset to test if
     # coordinates_selection_method='outside' works properly
-    date_min = '2010-01-01 01:00'
-    date_max = '2010-01-01 23:00'
     longitude_min, longitude_max, latitude_min, latitude_max =    2.001,   3.001,  51.001, 52.001 #test domain
-    varlist_cmems = ['bottomT','no3'] # avaliable variables differ per product, examples are ['bottomT','mlotst','siconc','sithick','so','thetao','uo','vo','usi','vsi','zos','no3']. More info on https://data.marine.copernicus.eu/products
-    dataset_id_dict = {'bottomT':'cmems_mod_glo_phy_my_0.083deg_P1D-m',
-                       'no3':'cmems_mod_glo_bgc_my_0.25deg_P1D-m'}
+    dataset_id_dict = {'bottomT':'cmems_mod_glo_phy_my_0.083deg_P1D-m', # phy my daily mean no_depth
+                       'no3':'cmems_mod_glo_bgc_my_0.25deg_P1D-m', # bio my daily mean
+                       'so':'cmems_mod_glo_phy_my_0.083deg_P1M-m', # phy my monthly mean
+                       'tob':'cmems_mod_glo_phy_anfc_0.083deg_P1D-m', # phy anfc daily mean
+                       'phyc':'cmems_mod_glo_bgc-pft_anfc_0.25deg_P1D-m', # bio anfc daily mean
+                       }
     file_prefix = 'cmems_'
-    for varkey in varlist_cmems:
-        dataset_id = dataset_id_dict[varkey]
-        dfmt.download_CMEMS(varkey=varkey,
-                            longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
-                            date_min=date_min, date_max=date_max,
-                            # speed up tests by supplying datset_id and buffer
-                            dataset_id=dataset_id,
-                            dir_output=tmp_path, file_prefix=file_prefix, overwrite=True)
+    dataset_id = dataset_id_dict[varkey]
+
+    if "_my_" in dataset_id:
+        date_min = '2010-01-01 01:00'
+        date_max = '2010-01-01 23:00'
+    elif "_anfc_"in dataset_id:
+        date_min = pd.Timestamp.today()
+        date_max = pd.Timestamp.today() + pd.Timedelta(days=1)
     
-    # assert downloaded files
-    file_nc_pat = os.path.join(tmp_path, "*.nc")
+    if varkey == 'so':
+        # monthly mean, times are at midnight (no offset applied)
+        times_expected = ['2010-01-01 00:00:00', '2010-02-01 00:00:00']
+        fnames_expected = ['cmems_so_2010-01.nc', 'cmems_so_2010-02.nc']
+    elif varkey == 'no3':
+        # daily mean, so offset of 12 hours is applied
+        times_expected = ['2009-12-31 12:00:00',
+                          '2010-01-01 12:00:00',
+                          '2010-01-02 12:00:00',
+                          ]
+        fnames_expected = ['cmems_no3_2009-12-31.nc',
+                           'cmems_no3_2010-01-01.nc',
+                           'cmems_no3_2010-01-02.nc',
+                           ]
+    elif varkey == 'bottomT':
+        # daily mean, so offset of 12 hours is applied
+        times_expected = ['2009-12-31 12:00:00',
+                          '2010-01-01 12:00:00',
+                          '2010-01-02 12:00:00']
+        fnames_expected = ['cmems_bottomT_2009-12-31.nc',
+                           'cmems_bottomT_2010-01-01.nc',
+                           'cmems_bottomT_2010-01-02.nc',
+                           ]
+    elif varkey in ['tob','phyc']:
+        # daily mean, so offset of 12 hours is applied
+        datetime_first = date_min.floor("12h")
+        date_first = datetime_first.date()
+        times_expected = [str(datetime_first + x*pd.Timedelta("1D")) for x in [0,1,2]]
+        fnames_dates = [str(date_first + x*pd.Timedelta("1D")) for x in [0,1,2]]
+        fnames_expected = [f"cmems_{varkey}_{x}.nc" for x in fnames_dates]
+    
+    if '0.25deg' in dataset_id:
+        lon_max_exp = 3.25
+        lat_max_exp = 52.25
+    elif '0.083deg' in dataset_id:
+        lon_max_exp = 3.08333
+        lat_max_exp = 52.083332
+    
+    if 'P1D-m' in dataset_id:
+        freq = "D"
+    elif 'P1M-m' in dataset_id:
+        # when downloading monthly means with daily freqs, we would get many
+        # empty files for dates other than the first day of the months.
+        freq = "M"
+    
+    dfmt.download_CMEMS(varkey=varkey,
+                        longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
+                        date_min=date_min, date_max=date_max, freq=freq,
+                        # speed up tests by supplying datset_id
+                        dataset_id=dataset_id,
+                        dir_output=tmp_path, file_prefix=file_prefix, overwrite=True)
+
+    # open downloaded files
+    file_nc_pat = os.path.join(tmp_path, f"{file_prefix}{varkey}*.nc")
+    fname_list = [os.path.basename(x) for x in glob.glob(file_nc_pat)]
     ds = xr.open_mfdataset(file_nc_pat)
-    for varn in varlist_cmems:
-        assert varn in set(ds.variables)
-    assert ds.sizes["time"] == 2
-    assert ds.time.to_pandas().iloc[0] == pd.Timestamp('2010-01-01')
-    assert ds.time.to_pandas().iloc[-1] == pd.Timestamp('2010-01-02')
+    times_actual = ds.time.to_pandas().dt.strftime("%Y-%m-%d %H:%M:%S").tolist()
+    
+    # assertions
+    assert varkey in set(ds.variables)
+    assert ds.sizes["time"] == len(times_expected)
+    assert fname_list == fnames_expected
+    assert times_actual == times_expected
     assert np.isclose(ds.longitude.to_numpy().min(), 2)
-    assert np.isclose(ds.longitude.to_numpy().max(), 3.25)
+    assert np.isclose(ds.longitude.to_numpy().max(), lon_max_exp)
     assert np.isclose(ds.latitude.to_numpy().min(), 51)
-    assert np.isclose(ds.latitude.to_numpy().max(), 52.25)
-
-
-@pytest.mark.requiressecrets
-@pytest.mark.unittest
-def test_download_cmems_forecast(tmp_path):
-    date_min = pd.Timestamp.today()
-    date_max = pd.Timestamp.today() + pd.Timedelta(days=1)
-    longitude_min, longitude_max, latitude_min, latitude_max =    2,   3,  51, 52 #test domain
-    varlist_cmems = ['tob','no3'] # avaliable variables differ per product, examples are ['bottomT','mlotst','siconc','sithick','so','thetao','uo','vo','usi','vsi','zos','no3']. More info on https://data.marine.copernicus.eu/products
-    dataset_id_dict = {'tob':'cmems_mod_glo_phy_anfc_0.083deg_P1D-m',
-                       'no3':'cmems_mod_glo_bgc-nut_anfc_0.25deg_P1D-m'}
-    file_prefix = 'cmems_'
-    for varkey in varlist_cmems:
-        dataset_id = dataset_id_dict[varkey]
-        dfmt.download_CMEMS(varkey=varkey,
-                            longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
-                            date_min=date_min, date_max=date_max,
-                            # speed up tests by supplying datset_id and buffer
-                            dataset_id=dataset_id,
-                            dir_output=tmp_path, file_prefix=file_prefix, overwrite=True)
-
-    # assert downloaded files
-    file_nc_pat = os.path.join(tmp_path, "*.nc")
-    ds = xr.open_mfdataset(file_nc_pat)
-    assert ds.sizes["time"] == 3
-    assert ds.time.to_pandas().iloc[0] == date_min.floor("D")
-    assert ds.time.to_pandas().iloc[-1] == date_max.ceil("D")
-    assert np.isclose(ds.longitude.to_numpy().min(), 2)
-    assert np.isclose(ds.longitude.to_numpy().max(), 3)
-    assert np.isclose(ds.latitude.to_numpy().min(), 51)
-    assert np.isclose(ds.latitude.to_numpy().max(), 52)
+    assert np.isclose(ds.latitude.to_numpy().max(), lat_max_exp)
 
 
 @pytest.mark.unittest

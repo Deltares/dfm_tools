@@ -400,6 +400,9 @@ def copernicusmarine_dataset_timeshift(ds, dataset_id):
     correct daily means from start-of-interval to center-of-interval times
     """
     if "P1D-m" in dataset_id:
+        # first check if dataset times are indeed at midnight (start-of-interval)
+        assert (ds["time"].to_pandas().dt.hour == 0).all()
+        # add offset to move to noon (center-of-interval)
         time_offset = pd.Timedelta(hours=12)
         print(f"{time_offset} offset applied to copernicusmarine dataset")
         ds["time"] = ds["time"] + time_offset
