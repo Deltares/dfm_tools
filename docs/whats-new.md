@@ -4,6 +4,7 @@
 
 ### Feat
 - usage of outside time buffer in `dfmt.cmems_nc_to_ini()` so noon-centered or monthly timestamps are also supported in [#1087](https://github.com/Deltares/dfm_tools/pull/1087)
+- correct CMEMS daily mean data ("P1D-m") from midnight to noon by adding a 12-hour offset in `dfmt.download_CMEMS()` in [#1088](https://github.com/Deltares/dfm_tools/pull/1088)
 
 ### Fix
 - made p-drive paths for tide models and gesla3 work on linux also in [#1083](https://github.com/Deltares/dfm_tools/pull/1083) and [#1085](https://github.com/Deltares/dfm_tools/pull/1085)
