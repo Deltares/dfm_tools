@@ -52,10 +52,6 @@ def cmems_nc_to_bc(ext_new, list_quantities, tstart, tstop, file_pli, dir_patter
     for quantity in list_quantities: # loop over salinitybnd/uxuyadvectionvelocitybnd/etc
         print(f'processing quantity: {quantity}')
         
-        # times in cmems API are at midnight, so round to nearest outer midnight datetime
-        tstart = pd.Timestamp(tstart).floor('1d')
-        tstop = pd.Timestamp(tstop).ceil('1d')
-        
         quantity_list = get_quantity_list(quantity=quantity)
         
         for quantity_key in quantity_list: # loop over ux/uy

@@ -40,6 +40,78 @@ def test_get_ncvarname_list():
 
 @pytest.mark.parametrize("timecase", [pytest.param(x, id=x) for x in ['midnight','noon','monthly']])
 @pytest.mark.systemtest
+def test_cmems_nc_to_bc(tmp_path, timecase):
+    """
+    tests for midnight-centered data, noon-centered data and monthly timestamped data
+    """
+    file_pli = os.path.join(tmp_path,'test_model.pli')
+    with open(file_pli,'w') as f:
+        f.write("""name
+                    2    2
+                    -9.6   42.9
+                    -9.5   43.0
+                    """)
+    
+    ds = cmems_dataset_4times()
+    if timecase == "midnight":
+        ds["time"] = ds["time"] + pd.Timedelta(hours=12)
+    elif timecase == "monthly":
+        ds["time"] = [pd.Timestamp("2019-11-01"),
+                      pd.Timestamp("2019-12-01"),
+                      pd.Timestamp("2020-01-01"),
+                      pd.Timestamp("2020-02-01")]
+    
+    dir_pattern = os.path.join(tmp_path, "temp_cmems_4day_so.nc")
+    file_nc = dir_pattern
+    ds.to_netcdf(file_nc)
+    
+    ext_new = hcdfm.ExtModel()
+    
+    ext_new = dfmt.cmems_nc_to_bc(ext_new=ext_new,
+                                  list_quantities=["salinitybnd"],
+                                  tstart="2020-01-01",
+                                  tstop="2020-01-03",
+                                  file_pli=file_pli,
+                                  dir_pattern=dir_pattern,
+                                  dir_output=tmp_path,
+                                  )
+    
+    file_expected = tmp_path / "salinitybnd_CMEMS_test_model.bc"
+        
+    if timecase == "midnight":
+        times_expected =  [
+            '2020-01-01 00:00:00',
+            '2020-01-02 00:00:00',
+            '2020-01-03 00:00:00',
+            ]
+    elif timecase == "noon":
+        times_expected =  [
+            '2019-12-31 12:00:00',
+            '2020-01-01 12:00:00',
+            '2020-01-02 12:00:00',
+            '2020-01-03 12:00:00',
+            ]
+    elif timecase == "monthly":
+        times_expected =  ['2020-01-01 00:00:00', '2020-02-01 00:00:00']
+    
+    assert os.path.exists(file_expected)
+    forcing_obj = hcdfm.ForcingModel(file_expected)
+    ds_out = dfmt.forcinglike_to_Dataset(forcing_obj.forcing[0])
+    actual_times = ds_out.time.to_pandas().dt.strftime("%Y-%m-%d %H:%M:%S").tolist()
+    assert actual_times == times_expected
+    
+    assert "salinitybnd" in ds_out.data_vars
+    assert ds_out.salinitybnd.isnull().sum().load() == 0
+    
+    # check whether the cmems depth definition comes trough
+    assert 'z' in ds_out.coords
+    depths_expected = np.array([-0.494025, -1.541375, -2.645669, -3.819495, -5.078224])
+    assert np.allclose(ds_out['z'].to_numpy(), depths_expected)
+    assert ds_out['z'].attrs['positive'] == 'up'
+
+
+@pytest.mark.parametrize("timecase", [pytest.param(x, id=x) for x in ['midnight','noon','monthly']])
+@pytest.mark.systemtest
 def test_cmems_nc_to_ini(tmp_path, timecase):
     """
     tests for midnight-centered data, noon-centered data and monthly timestamped data

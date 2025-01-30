@@ -13,7 +13,6 @@ import pandas as pd
 import datetime as dt
 import xarray as xr
 import shapely
-import pandas as pd
 import geopandas as gpd
 from dfm_tools.interpolate_grid2bnd import (tidemodel_componentlist,
                                             components_translate_upper,
@@ -65,6 +64,7 @@ def cmems_dataset_notime():
                        [np.nan, np.nan,    np.nan],
                        [np.nan, np.nan,    np.nan]]])
     ds['so'] = xr.DataArray(so_np,dims=('depth','latitude','longitude'))
+    ds['so'] = ds['so'].assign_attrs({"units":"dummyunit"})
     lons = [-9.6, -9.5, -9.4]
     lats = [42.9, 43.0, 43.1]
     depths = [-0.494025, -1.541375, -2.645669, -3.819495, -5.078224]
