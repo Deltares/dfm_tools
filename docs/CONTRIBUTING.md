@@ -68,7 +68,7 @@
 - create and checkout branch for release
 - bump the versionnumber with `bumpversion minor`
 - update `docs/whats-new.md` and add a date to the current release heading
-- run local testbank with `pytest -m "not era5slow and not requireslocaldata"`
+- run local testbank with `pytest -m "not requireslocaldata"`
 - local check with: `python -m build` and `twine check dist/*` ([does not work on WCF](https://github.com/pypa/setuptools/issues/4133))
 - commit+push to branch and merge PR
 - copy the dfm_tools version from [pyproject.toml](https://github.com/Deltares/dfm_tools/blob/main/pyproject.toml) (e.g. `0.11.0`)
