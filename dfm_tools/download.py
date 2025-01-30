@@ -10,12 +10,15 @@ from copernicusmarine.core_functions.credentials_utils import InvalidUsernameOrP
 import cftime
 import getpass
 from requests import HTTPError
+import logging
 
 __all__ = [
     "download_ERA5",
     "download_CMEMS",
     "download_OPeNDAP",
 ]
+
+logger = logging.getLogger(__name__)
 
 COPERNICUSMARINE_OPTIMIZE_ARGS = dict(
     # speed up copernicusmarine.open_dataset() with the following arguments
@@ -231,7 +234,8 @@ def download_CMEMS(varkey,
     # https://github.com/Deltares/dfm_tools/issues/720
     if freq not in ["D","M","Y"]:
         raise ValueError(f"freq should be D/M/Y, not {freq}")
-
+    print(f"downloading {varkey} from {dataset_id} with freq={freq}")
+    
     dataset = copernicusmarine.open_dataset(
          dataset_id = dataset_id,
          variables = [varkey],
@@ -263,7 +267,7 @@ def download_CMEMS(varkey,
             print(f'"{name_output}" found and overwrite=False, continuing.')
             continue
         dataset_perperiod = dataset.sel(time=slice(date_str, date_str))
-        print(f'xarray writing netcdf file: {name_output}: ',end='')
+        print(f'writing netcdf file: {name_output}: ',end='')
         dtstart = pd.Timestamp.now()
         dataset_perperiod.to_netcdf(output_filename)
         print(f'{(pd.Timestamp.now()-dtstart).total_seconds():.2f} sec')
@@ -408,8 +412,8 @@ def copernicusmarine_dataset_timeshift(ds, dataset_id):
         # check if dataset times are indeed at midnight (start-of-interval)
         assert (ds["time"].to_pandas().dt.hour == 0).all()
         # add offset to correct from midnight to noon (center-of-interval)
-        print("daily averaged copernicusmarine dataset was corrected "
-              "from midnight to noon by adding a 12-hour offset.")
+        print("corrected daily averaged dataset from midnight to noon by "
+              "adding a 12-hour offset.")
         ds["time"] = ds["time"] + pd.Timedelta(hours=12)
     return ds
 
