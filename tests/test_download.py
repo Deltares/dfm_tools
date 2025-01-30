@@ -284,8 +284,9 @@ def test_download_cmems(tmp_path, varkey):
         date_min = '2010-01-01 01:00'
         date_max = '2010-01-01 23:00'
     elif "_anfc_"in dataset_id:
-        date_min = pd.Timestamp.today()
-        date_max = pd.Timestamp.today() + pd.Timedelta(days=1)
+        date_today = pd.Timestamp.today().floor("1D")
+        date_min = date_today + pd.Timedelta(hours=1)
+        date_max = date_today + pd.Timedelta(hours=23)
     
     if varkey == 'so':
         # monthly mean, times are at midnight (no offset applied)
@@ -312,7 +313,7 @@ def test_download_cmems(tmp_path, varkey):
                            ]
     elif varkey == 'tob':
         # daily mean, so offset of 12 hours is applied
-        datetime_first = date_min.floor("12h")
+        datetime_first = date_today - pd.Timedelta(hours=12)
         date_first = datetime_first.date()
         times_expected = [str(datetime_first + x*pd.Timedelta("1D")) for x in [0,1,2]]
         fnames_dates = [str(date_first + x*pd.Timedelta("1D")) for x in [0,1,2]]
