@@ -22,6 +22,7 @@ For post-processing, the main sources of information are xarray and xugrid. For 
    :maxdepth: 2
 
    notebooks/postprocessing_example.ipynb
+   notebooks/postprocessing_example_delft3d4.ipynb
    notebooks/preprocessing_example_hydrolib.ipynb
    notebooks/modelbuilder_example.ipynb
    notebooks/subset_retrieve_sealevel_observations.ipynb
