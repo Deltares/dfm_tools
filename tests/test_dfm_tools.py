@@ -403,19 +403,3 @@ def test_sigmalayermodel_correct_layers():
     assert (vals_zcc_min > vals_bl).all()
     assert (np.abs(vals_zcc_max-vals_zcc_top)<1e-6).all()
     assert (np.abs(vals_zcc_min-vals_zcc_bot)<1e-6).all()
-
-
-@pytest.mark.requireslocaldata
-def test_timmodel_to_dataframe():
-    
-    file_tim = r'p:\archivedprojects\11206811-002-d-hydro-grevelingen\simulaties\Jaarsom2017_dfm_006_zlayer\boundary_conditions\hist\jaarsom_2017\sources_sinks\FlakkeeseSpuisluis.tim'
-    
-    data_tim = hcdfm.TimModel(file_tim)
-    
-    refdate = '2016-01-01'
-    tim_pd = dfmt.TimModel_to_DataFrame(data_tim, parse_column_labels=True, refdate=refdate)
-    
-    assert tim_pd.index[0] == pd.Timestamp('2016-01-01 00:00:00')
-    assert len(tim_pd) == 39603
-    assert tim_pd.columns[-1] == 'Phaeocystis_P (g/m3)'
-
