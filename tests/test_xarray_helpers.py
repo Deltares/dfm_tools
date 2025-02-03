@@ -8,8 +8,7 @@ Created on Tue Jan 23 17:12:48 2024
 import pytest
 import dfm_tools as dfmt
 import pandas as pd
-
-#TODO: many xarray_helpers tests are still in test_dfm_tools.py
+import xarray as xr
 
 
 @pytest.mark.unittest
@@ -26,3 +25,16 @@ def test_merge_meteofiles(file_nc_era5_pattern):
     assert ds.time.to_pandas().iloc[0] == pd.Timestamp('2010-01-30')
     assert ds.time.to_pandas().iloc[-1] == pd.Timestamp('2010-02-01 23:00')
     assert "msl" in ds.data_vars
+
+
+@pytest.mark.unittest
+def test_preprocess_hisnc():
+    """
+    not too much added value, but good to check dropping of duplicated labels
+    in this case it happens for source_sinks, not sure if this is useful here
+    """
+    file_nc = dfmt.data.fm_grevelingen_his(return_filepath=True)
+    ds1 = xr.open_dataset(file_nc)
+    ds2 = xr.open_mfdataset(file_nc, preprocess=dfmt.preprocess_hisnc)
+    assert ds1.sizes['source_sink'] == 46
+    assert ds2.sizes['source_sink'] == 1

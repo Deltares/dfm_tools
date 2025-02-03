@@ -15,7 +15,28 @@ from dfm_tools.xugrid_helpers import (remove_unassociated_edges,
                                       get_vertical_dimensions
                                       )
 
-#TODO: many xugrid_helpers tests are still in test_dfm_tools.py
+
+@pytest.mark.unittest
+def test_open_partitioned_dataset():
+    """
+    Checks whether ghost cells are properly taken care of by asserting shape
+    """
+    file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True)
+    data_xr_map = dfmt.open_partitioned_dataset(file_nc)
+    data_varsel = data_xr_map['mesh2d_sa1'].isel(time=2)
+    assert data_varsel.shape == (44796, 36)
+
+
+@pytest.mark.parametrize("file_nc, expected_size", [pytest.param(dfmt.data.fm_grevelingen_map(return_filepath=True), (44796, 4, 2), id='partitioned mapfile Grevelingen'),
+                                                    pytest.param(dfmt.data.fm_curvedbend_map(return_filepath=True), (550, 4, 2), id='mapfile curvedbend'),
+                                                    pytest.param(dfmt.data.fm_grevelingen_net(return_filepath=True), (44804,4,2), id='network Grevelingen')])
+@pytest.mark.unittest
+def test_facenodecoordinates_shape(file_nc, expected_size):
+    
+    uds = dfmt.open_partitioned_dataset(file_nc)
+    facenodecoordinates = uds.grid.face_node_coordinates
+    
+    assert facenodecoordinates.shape == expected_size
 
 
 @pytest.mark.unittest
