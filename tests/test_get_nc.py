@@ -312,47 +312,36 @@ def test_calc_dist_haversine():
     assert np.allclose(crs_dist_stops, crs_dist_stops_check)
 
 
+@pytest.mark.parametrize("sort", [pytest.param(x, id=f"sort={x}") for x in [False, True]])
 @pytest.mark.unittest
-def test_intersect_edges():
+def test_intersect_edges(sort):
     """
-    ordering of xu.ugrid2d.intersect_edges return arrays is wrong, but we test it here since this test will fail once sorting is fixed in xugrid or numba.celltree. If so, depracate dfmt.intersect_edges_withsort()
-    """
+    ordering of xu.ugrid2d.intersect_edges return arrays is wrong.
     
-    file_nc = dfmt.data.fm_curvedbend_map(return_filepath=True) #sigmalayer
-                    
-    line_array = np.array([[2084.67741935, 3353.02419355], #with linebend in cell en with line crossing same cell twice
-                           [2255.79637097, 3307.15725806],
-                           [2222.27822581, 3206.60282258],
-                           [2128.78024194, 3266.58266129]])
+    `sort=False` will fail once sorting is fixed in xugrid or numba.celltree.
+    If so, depracate dfmt.intersect_edges_withsort().
     
-    uds = dfmt.open_partitioned_dataset(file_nc)
+    `sort=True` tests dfmt.intersect_edges_withsort(), it includes sorting. The
+    line array clearly shows different ordering of the resulting face_index.
     
-    edges = np.stack([line_array[:-1],line_array[1:]],axis=1)
-    edge_index, face_index, intersections = uds.grid.intersect_edges(edges)
-    
-    assert (edge_index == np.array([0, 0, 0, 1, 1, 1, 2, 2])).all()
-    assert (face_index == np.array([ 91, 146, 147, 202, 147, 201, 146, 201])).all()
-
-
-@pytest.mark.unittest
-def test_intersect_edges_withsort():
-    """
-    ordering of xu.ugrid2d.intersect_edges return arrays is wrong, so dfmt.intersect_edges_withsort() combines it with sorting. The line array clearly shows different ordering of the resulting face_index array
+    Once intersect_edges is fixed, move this tests to test_xugrid_helpers.py
     """
     
-    file_nc = dfmt.data.fm_curvedbend_map(return_filepath=True) #sigmalayer
+    uds = dfmt.data.fm_curvedbend_map()
     
     line_array = np.array([[2084.67741935, 3353.02419355], #with linebend in cell en with line crossing same cell twice
                            [2255.79637097, 3307.15725806],
                            [2222.27822581, 3206.60282258],
                            [2128.78024194, 3266.58266129]])
     
-    uds = dfmt.open_partitioned_dataset(file_nc)
-    
     edges = np.stack([line_array[:-1],line_array[1:]],axis=1)
-    edge_index, face_index, intersections = intersect_edges_withsort(uds,edges)
+    if sort:
+        edge_index, face_index, intersections = intersect_edges_withsort(uds, edges)
+        expected_face_index = [ 91, 146, 147, 147, 202, 201, 201, 146]
+    else:
+        edge_index, face_index, intersections = uds.grid.intersect_edges(edges)
+        expected_face_index = [ 91, 146, 147, 202, 147, 201, 146, 201]
     
     assert (edge_index == np.array([0, 0, 0, 1, 1, 1, 2, 2])).all()
-    assert (face_index == np.array([ 91, 146, 147, 147, 202, 201, 201, 146])).all()
-
-
+    assert (face_index == np.array(expected_face_index)).all()
+    assert intersections.shape == (8, 2, 2)
