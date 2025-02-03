@@ -29,9 +29,6 @@ jobs:
       - name: Sphinx build
         run: |
           sphinx-build docs docs/_build
-      - uses: actions/upload-pages-artifact@v2
-        with:
-          path: docs/_build/
       - name: Deploy to Github Pages
         if: github.ref == 'refs/heads/main'
         uses: peaceiris/actions-gh-pages@v4
