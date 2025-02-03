@@ -31,7 +31,10 @@ def test_merge_meteofiles(file_nc_era5_pattern):
 def test_preprocess_hisnc():
     """
     not too much added value, but good to check dropping of duplicated labels
-    in this case it happens for source_sinks, not sure if this is useful here
+    in this case it happens for source_sinks, not sure if this is useful here.
+    More useful would be a hisfile with duplicated station names like
+    p:\\archivedprojects\\11206813-006-kpp2021_rmm-2d\\C_Work\\31_RMM_FMmodel
+    \\computations\\model_setup\\run_206\\results\\RMM_dflowfm_0000_his.nc
     """
     file_nc = dfmt.data.fm_grevelingen_his(return_filepath=True)
     ds1 = xr.open_dataset(file_nc)
