@@ -36,8 +36,8 @@ dependencies = [
 	"netcdf4>=1.5.4",
 	#bottleneck>=1.3.3 successfully pip installs in py39
 	"bottleneck>=1.3.3",
-	#xugrid>=0.12.1 fixed issue with fill_value and no flexible start_index
-	"xugrid>=0.12.1",
+	#xugrid>=0.12.1 fixes warnings, properly closes datasets and adds from_structured method
+	"xugrid>=0.12.2",
 	#cdsapi>=0.7.5 resolves many deprecationwarnings
 	"cdsapi>=0.7.5",
 	#pydap>=3.4.0 is the first with support for newer python versions
@@ -118,8 +118,6 @@ filterwarnings = [
 	# filter until fix of https://github.com/Deltares/HYDROLIB-core/issues/732
 	# note the use of single quote below to denote "raw" strings in TOML
 	'ignore:datetime.datetime.utcnow\(\) is deprecated:DeprecationWarning',
-	# filter until fix of https://github.com/Deltares/xugrid/issues/312
-	"ignore:Arrays of 2-dimensional vectors are deprecated:DeprecationWarning",
 ]
 
 [tool.flake8]
