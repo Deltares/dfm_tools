@@ -29,6 +29,9 @@ jobs:
       - name: Sphinx build
         run: |
           sphinx-build docs docs/_build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/_build/
 
   # Deploy the artifact to GitHub pages.
   # This is a separate job so that only actions/deploy-pages has the necessary permissions.
@@ -38,10 +41,9 @@ jobs:
     permissions:
       pages: write
       id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Deploy to Github Pages
-        if: github.ref == 'refs/heads/main'
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs/_build
+      - id: deployment
+        uses: actions/deploy-pages@v3
