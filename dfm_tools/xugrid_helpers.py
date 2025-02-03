@@ -345,7 +345,7 @@ def open_dataset_curvilinear(file_nc,
     # TODO: lev/time bnds are dropped, avoid this. maybe stack initial dataset since it would also simplify the rest of the function a bit
     ds_stacked = ds.stack({face_dim:ij_dims}).sel({face_dim:bool_combined})
     latlon_vars = [varn_lon, varn_lat, varn_vert_lon, varn_vert_lat]
-    ds_stacked = ds_stacked.drop_vars(ij_dims + latlon_vars)
+    ds_stacked = ds_stacked.drop_vars(ij_dims + latlon_vars + [face_dim])
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
     print('>> init uds: ',end='') #long
