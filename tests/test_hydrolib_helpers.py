@@ -196,7 +196,7 @@ def test_read_polyfile_as_gdf_points_linestrings(tmp_path):
 def test_timmodel_to_dataframe(tmp_path):
     # original data from p:\archivedprojects\11206811-002-d-hydro-grevelingen\simulaties\Jaarsom2017_dfm_006_zlayer\boundary_conditions\hist\jaarsom_2017\sources_sinks\FlakkeeseSpuisluis.tim
     file_tim = os.path.join(tmp_path, "FlakkeeseSpuisluis_dummy.tim")
-    data_tim = """* COLUMN_N=25 
+    str_tim = """* COLUMN_N=25 
      * COLUMN1=Time (min) since the reference date (2016-01-01)
      * COLUMN2=Flow discharge (m3/s), positive in
      * COLUMN3=Salinity (psu)
@@ -212,7 +212,7 @@ def test_timmodel_to_dataframe(tmp_path):
     6.56690e+05  -2.0781e+02   2.791250e+01   1.0250e+01
     """
     with open(file_tim, 'w') as f:
-        f.write(data_tim)
+        f.write(str_tim)
     
     data_tim = hcdfm.TimModel(file_tim)
     
@@ -222,3 +222,7 @@ def test_timmodel_to_dataframe(tmp_path):
     assert tim_pd.index[0] == pd.Timestamp(refdate)
     assert len(tim_pd) == 8
     assert tim_pd.columns[-1] == 'Temperature (deg)'
+    
+    data_tim_out = dfmt.DataFrame_to_TimModel(tim_pd, refdate=refdate)
+    assert len(data_tim_out.comments) == 4
+    assert len(data_tim_out.timeseries) == 8
