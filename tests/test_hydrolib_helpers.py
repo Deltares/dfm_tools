@@ -8,6 +8,7 @@ Created on Fri Oct 20 16:09:20 2023
 import os
 import pytest
 import numpy as np
+import pandas as pd
 import geopandas as gpd
 import dfm_tools as dfmt
 import hydrolib.core.dflowfm as hcdfm
@@ -189,3 +190,39 @@ def test_read_polyfile_as_gdf_points_linestrings(tmp_path):
     assert np.allclose(line0_geom.xy[1], reference_y)
     assert 'name' in gdf_lines.columns
     assert gdf_lines['name'].tolist() == reference_names
+
+
+@pytest.mark.unittest
+def test_timmodel_to_dataframe(tmp_path):
+    # original data from p:\archivedprojects\11206811-002-d-hydro-grevelingen\simulaties\Jaarsom2017_dfm_006_zlayer\boundary_conditions\hist\jaarsom_2017\sources_sinks\FlakkeeseSpuisluis.tim
+    file_tim = os.path.join(tmp_path, "FlakkeeseSpuisluis_dummy.tim")
+    str_tim = """* COLUMN_N=25 
+     * COLUMN1=Time (min) since the reference date (2016-01-01)
+     * COLUMN2=Flow discharge (m3/s), positive in
+     * COLUMN3=Salinity (psu)
+     * COLUMN4=Temperature (deg)
+    * Time(min)   Flow         Salinity       Temperature
+    0.00000e+00   0.0000e+00   2.883150e+01   8.4000e+00
+    6.56639e+05   0.0000e+00   2.826540e+01   1.0295e+01
+    6.56640e+05  -2.1468e+02   2.825750e+01   1.0300e+01
+    6.56650e+05  -2.1384e+02   2.808100e+01   1.0400e+01
+    6.56660e+05  -2.1384e+02   2.814450e+01   1.0350e+01
+    6.56670e+05  -2.1128e+02   2.789250e+01   1.0300e+01
+    6.56680e+05  -2.0955e+02   2.788500e+01   1.0350e+01
+    6.56690e+05  -2.0781e+02   2.791250e+01   1.0250e+01
+    """
+    with open(file_tim, 'w') as f:
+        f.write(str_tim)
+    
+    data_tim = hcdfm.TimModel(file_tim)
+    
+    refdate = '2016-01-01'
+    tim_pd = dfmt.TimModel_to_DataFrame(data_tim, parse_column_labels=True, refdate=refdate)
+    
+    assert tim_pd.index[0] == pd.Timestamp(refdate)
+    assert len(tim_pd) == 8
+    assert tim_pd.columns[-1] == 'Temperature (deg)'
+    
+    data_tim_out = dfmt.DataFrame_to_TimModel(tim_pd, refdate=refdate)
+    assert len(data_tim_out.comments) == 4
+    assert len(data_tim_out.timeseries) == 8
