@@ -17,9 +17,6 @@ jobs:
         python-version: ["3.9", "3.11", "3.12"]
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
-    concurrency:
-      group: ${{ github.workflow }}-${{ matrix.python-version }}-${{ github.ref }}
-      cancel-in-progress: true
 
     steps:
     - uses: actions/checkout@v4
