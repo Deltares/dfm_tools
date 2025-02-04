@@ -190,7 +190,7 @@ def fm_westernscheldt_rst(return_filepath:bool = False) -> xu.UgridDataset:
     dir_testdata = get_dir_testdata()
     
     #download data if not present
-    file_nc = os.path.join(dir_testdata,'westerscheldt01_0subst_20140101_004640_rst.nc.nc')
+    file_nc = os.path.join(dir_testdata,'westerscheldt01_0subst_20140101_004640_rst.nc')
     maybe_download_opendap_data(file_nc,dir_subfolder)
     
     #potentially only return filepath of downloaded file(s)

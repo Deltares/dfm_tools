@@ -35,15 +35,14 @@ def test_rename_waqvars():
     assert 'mesh2d_Chlfa' in uds.data_vars
 
 
-@pytest.mark.requireslocaldata
 @pytest.mark.unittest
 def test_rename_fouvars_regular():
-    file_nc_fou = r'p:\archivedprojects\11203379-005-mwra-updated-bem\03_model\02_final\A72_ntsu0_kzlb2\DFM_OUTPUT_MB_02_fou\MB_02_0000_fou.nc'
+    file_nc_fou = dfmt.data.fm_westernscheldt_fou(return_filepath=True)
     uds = dfmt.open_partitioned_dataset(file_nc_fou)
     uds_renamed = dfmt.rename_fouvars(uds)
     
-    assert 'mesh2d_tem_mean_20160201000000_20160301000000' in uds_renamed.data_vars
-    assert 'mesh2d_uy_mean_20160101000000_20170101000000' in uds_renamed.data_vars
+    assert 'mesh2d_ux_mean_20140101000000_20140101000600' in uds_renamed.data_vars
+    assert 'mesh2d_uy_mean_20140101000000_20140101000600' in uds_renamed.data_vars
     
     
 @pytest.mark.requireslocaldata
