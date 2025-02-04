@@ -26,13 +26,28 @@ def test_get_ncvarproperties():
     assert "projected_coordinate_system" in vars_pd.index
 
 
-@pytest.mark.requireslocaldata
 @pytest.mark.unittest
 def test_rename_waqvars():
-    file_nc = os.path.join(r'p:\archivedprojects\11203850-coastserv\06-Model\waq_model\simulations\run0_20200319\DFM_OUTPUT_kzn_waq', 'kzn_waq_0000_map.nc')
+    # originally tested with r'p:\archivedprojects\11203850-coastserv\06-Model\waq_model\simulations\run0_20200319\DFM_OUTPUT_kzn_waq\kzn_waq_0000_map.nc'
+    # but converted to a portable testcase by setting up a dummy dataset
+    file_nc = dfmt.data.fm_curvedbend_map(return_filepath=True)
     uds = dfmt.open_partitioned_dataset(file_nc)
+    
+    # add dummy waq variable
+    waq_attrs = {'mesh': 'mesh2d',
+     'location': 'face',
+     'cell_methods': 'mesh2d_nFaces: mean',
+     'long_name': 'Chlfa',
+     'units': '(mg/m3)',
+     'grid_mapping': 'wgs84',
+     'description': 'Chlfa - Chlorophyll-a concentration (mg/m3) in flow element'}
+    uds['mesh2d_water_quality_output_61'] = uds['mesh2d_flowelem_bl'].assign_attrs(waq_attrs)
+    uds['mesh2d_water_quality_output_62'] = uds['mesh2d_flowelem_bl'].assign_attrs(waq_attrs)
+    
     uds = dfmt.rename_waqvars(uds)
     assert 'mesh2d_Chlfa' in uds.data_vars
+    # in case of duplicates, only the first one is renamed
+    assert 'mesh2d_water_quality_output_62' in uds.data_vars
 
 
 @pytest.mark.unittest
