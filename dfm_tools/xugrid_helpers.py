@@ -225,6 +225,9 @@ def open_partitioned_dataset(file_nc:str, decode_fillvals:bool = False, remove_e
     
     if 'chunks' not in kwargs:
         kwargs['chunks'] = {'time':1}
+    if 'decode_timedelta' not in kwargs:
+        # avoid futurewarning: https://github.com/Deltares/dfm_tools/issues/1100
+        kwargs['decode_timedelta'] = False
     
     dtstart_all = dt.datetime.now()
     file_nc_list = file_to_list(file_nc)
