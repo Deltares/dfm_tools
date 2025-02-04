@@ -163,7 +163,48 @@ def fm_westernscheldt_map(return_filepath:bool = False) -> xu.UgridDataset:
     return uds
 
 
+def fm_westernscheldt_fou(return_filepath:bool = False) -> xu.UgridDataset:
+    # from p:\dflowfm\maintenance\JIRA\05000-05999\05477\c103_ws_3d_fourier
+    
+    dir_subfolder = 'DFM_westernscheldt_3D'
+    dir_testdata = get_dir_testdata()
+    
+    #download data if not present
+    file_nc = os.path.join(dir_testdata,'westerscheldt01_0subst_fou.nc')
+    maybe_download_opendap_data(file_nc,dir_subfolder)
+    
+    #potentially only return filepath of downloaded file(s)
+    filepath = file_nc
+    if return_filepath:
+        return filepath
+    
+    #open as UgridDataset
+    uds = open_partitioned_dataset(filepath, remove_edges=True)
+    return uds
+
+
+def fm_westernscheldt_rst(return_filepath:bool = False) -> xu.UgridDataset:
+    # from p:\dflowfm\maintenance\JIRA\05000-05999\05477\c103_ws_3d_fourier
+    
+    dir_subfolder = 'DFM_westernscheldt_3D'
+    dir_testdata = get_dir_testdata()
+    
+    #download data if not present
+    file_nc = os.path.join(dir_testdata,'westerscheldt01_0subst_20140101_004640_rst.nc.nc')
+    maybe_download_opendap_data(file_nc,dir_subfolder)
+    
+    #potentially only return filepath of downloaded file(s)
+    filepath = file_nc
+    if return_filepath:
+        return filepath
+    
+    #open as UgridDataset
+    uds = open_partitioned_dataset(filepath, remove_edges=True)
+    return uds
+
+
 def fm_westernscheldt_his(return_filepath:bool = False) -> xr.Dataset:
+    # from p:\dflowfm\maintenance\JIRA\05000-05999\05477\c103_ws_3d_fourier
     
     dir_subfolder = 'DFM_westernscheldt_3D'
     dir_testdata = get_dir_testdata()
