@@ -104,9 +104,15 @@ def download_ERA5(varkey,
                         'time':[f'{x:02d}:00' for x in range(0,23+1)], #all times/hours
                         'area':[latitude_max,longitude_min,latitude_min,longitude_max], # north, west, south, east. default: global - option not available through the Climate Data Store (CDS) web interface (for cmip data)
                         #'grid': [1.0, 1.0], # latitude/longitude grid: east-west (longitude) and north-south resolution (latitude). default: 0.25 x 0.25 - option not available through the Climate Data Store (CDS) web interface
-                        'format':'netcdf'}
+                        "data_format": "netcdf",
+                        "download_format": "unarchived",
+                        }
         
-        c.retrieve(name='reanalysis-era5-single-levels', request=request_dict, target=file_out)
+        resp = c.retrieve(
+            name='reanalysis-era5-single-levels', 
+            request=request_dict,
+            )
+        resp.download(target=file_out)
 
 
 def cds_credentials():
