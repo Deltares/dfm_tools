@@ -52,8 +52,8 @@ dependencies = [
 	"pooch>=1.1.0",
 	#hydrolib-core>=0.8.1 supports more mdu keywords, meshkernel v6, numpy v2 and python 3.13
 	"hydrolib-core>=0.8.1",
-	#meshkernel>=4.2.0 supports more gridded_samples dtypes and workarounds for non-orthogonal grids
-	"meshkernel>=4.2.0",
+	#meshkernel>=6.0.0 fix in global grid generation and retrieve polygons around non-orthogonal cells
+	"meshkernel>=6.0.0",
 ]
 classifiers = [
 	"Development Status :: 4 - Beta",
