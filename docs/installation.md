@@ -6,7 +6,7 @@
 
 ## Recommended installation
 
-- python 3.12 is recommended, [python>=3.9 is required](https://github.com/Deltares/dfm_tools/issues/267), [python 3.13 not yet supported](https://github.com/Deltares/dfm_tools/issues/559)
+- python 3.9 to 3.13 are supported, python 3.12 is recommended
 - download Miniforge3 from [conda-forge.org](https://conda-forge.org/miniforge) and install it with the recommended settings.
 - open Miniforge Prompt
 - `conda create --name dfm_tools_env python=3.12 git spyder -y` (`git` and `spyder` are optional)
