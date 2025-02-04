@@ -144,12 +144,14 @@ def fm_curvedbend_his(return_filepath:bool = False) -> xr.Dataset:
 
 
 def fm_westernscheldt_map(return_filepath:bool = False) -> xu.UgridDataset:
+    # from p:\dflowfm\maintenance\JIRA\05000-05999\05477\c103_ws_3d_fourier
     
+    dir_subfolder = 'DFM_westernscheldt_3D'
     dir_testdata = get_dir_testdata()
     
     #download data if not present
-    file_nc = os.path.join(dir_testdata,'westernscheldt_sph_map.nc')
-    maybe_download_opendap_data(file_nc)
+    file_nc = os.path.join(dir_testdata,'westerscheldt01_0subst_map.nc')
+    maybe_download_opendap_data(file_nc,dir_subfolder)
     
     #potentially only return filepath of downloaded file(s)
     filepath = file_nc
@@ -159,6 +161,25 @@ def fm_westernscheldt_map(return_filepath:bool = False) -> xu.UgridDataset:
     #open as UgridDataset
     uds = open_partitioned_dataset(filepath, remove_edges=True)
     return uds
+
+
+def fm_westernscheldt_his(return_filepath:bool = False) -> xr.Dataset:
+    
+    dir_subfolder = 'DFM_westernscheldt_3D'
+    dir_testdata = get_dir_testdata()
+    
+    #download data if not present
+    file_nc = os.path.join(dir_testdata,'westerscheldt01_0subst_his.nc')
+    maybe_download_opendap_data(file_nc,dir_subfolder)
+    
+    #potentially only return filepath of downloaded file(s)
+    filepath = file_nc
+    if return_filepath:
+        return filepath
+    
+    #open as xarray.Dataset
+    ds = xr.open_mfdataset(filepath,preprocess=preprocess_hisnc)
+    return ds
 
 
 def d3d_westernscheldt_trim(return_filepath:bool = False) -> xu.UgridDataset:

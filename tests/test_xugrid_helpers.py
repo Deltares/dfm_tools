@@ -45,8 +45,8 @@ def test_remove_unassociated_edges():
     ds = xr.open_dataset(file_nc)
     ds2 = remove_unassociated_edges(ds)
     
-    ds_edgedimsize = ds.sizes['nmesh2d_edge']
-    ds2_edgedimsize = ds2.sizes['nmesh2d_edge']
+    ds_edgedimsize = ds.sizes['mesh2d_nEdges']
+    ds2_edgedimsize = ds2.sizes['mesh2d_nEdges']
     
     assert ds2_edgedimsize == ds_edgedimsize-1
 
