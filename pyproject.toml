@@ -28,8 +28,8 @@ dependencies = [
 	"fiona>=1.9",
 	#contextily>=1.6.2 has fixed axis scaling: https://github.com/geopandas/contextily/issues/251
 	"contextily>=1.6.2",
-	#xarray>=2023.9.0 supports multidimensional coordinates (used in e.g. HIRLAM meteo data)
-	"xarray>=2023.9.0",
+	#xarray>=2024.7.0 includes fix for numpy v2: https://github.com/pydata/xarray/issues/9179
+	"xarray>=2024.7.0",
 	#dask version is aligned with xarray
 	"dask>=2023.9.0",
 	#netcdf4>=1.5.4 successfully pip installs in py39
