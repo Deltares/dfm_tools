@@ -14,8 +14,8 @@ requires-python = ">=3.9"
 dependencies = [
 	#scipy>=1.6.0 successfully pip installs in py39, is also 3 years old
 	"scipy>=1.6.0",
-	#numpy>=1.23 is first not-EOL since june 2024
-	"numpy>=1.23",
+	#numpy>=1.25 is first not-EOL since dec 2024
+	"numpy>=1.25",
 	#matplotlib>=3.7.0 successfully creates contour colorbar on uniform values and has several other features
 	"matplotlib>=3.7.0",
 	#pandas>=2.0.0 resolves futurewarnings in https://github.com/Deltares/dfm_tools/issues/1065
@@ -52,8 +52,8 @@ dependencies = [
 	"pooch>=1.1.0",
 	#hydrolib-core>=0.8.1 supports more mdu keywords, meshkernel v6, numpy v2 and python 3.13
 	"hydrolib-core>=0.8.1",
-	#meshkernel>=4.2.0 supports more gridded_samples dtypes and workarounds for non-orthogonal grids
-	"meshkernel>=4.2.0",
+	#meshkernel>=6.0.0 fix in global grid generation and get polygons around non-orthogonal cells
+	"meshkernel>=6.0.0",
 ]
 classifiers = [
 	"Development Status :: 4 - Beta",
@@ -118,6 +118,8 @@ filterwarnings = [
 	# filter until fix of https://github.com/Deltares/HYDROLIB-core/issues/732
 	# note the use of single quote below to denote "raw" strings in TOML
 	'ignore:datetime.datetime.utcnow\(\) is deprecated:DeprecationWarning',
+	# can be removed once py39 support is dropped since it seems to be resolved in erddapy 2.2.1
+	"ignore:np.find_common_type is deprecated:DeprecationWarning",
 ]
 
 [tool.flake8]
