@@ -229,22 +229,33 @@ def gshhs_coastlines_shp() -> str:
     
     dir_testdata = get_dir_testdata()
     
-    fname = 'gshhg-shp-2.3.7.zip'
-    filepath_zip = os.path.join(dir_testdata,fname)
-    dir_gshhs = os.path.join(dir_testdata,'gshhg-shp-2.3.7')
+    fname = 'gshhg-shp-2.3.7'
+    filepath_zip = os.path.join(dir_testdata, f"{fname}.zip")
+    dir_gshhs = os.path.join(dir_testdata, fname)
+    
+    def download_gshhs(url):
+        url_base = url.split("/")[2]
+        fname_zip = url.split('/')[-1]
+        print(f'downloading "{fname_zip}" from {url_base} to cachedir')
+        # use allow_redirects=False to enforce this url
+        resp = requests.get(url, allow_redirects=False)
+        resp.raise_for_status() #raise HTTPError if url not exists
+        return resp
     
     #download zipfile if not present
     if not os.path.exists(filepath_zip) and not os.path.exists(dir_gshhs):
-        file_url = f'https://www.ngdc.noaa.gov/mgg/shorelines/data/gshhg/latest/{fname}'
-        print(f'downloading "{fname}" from www.ngdc.noaa.gov to cachedir')
-        r = requests.get(file_url, allow_redirects=True)
-        r.raise_for_status() #raise HTTPError if url not exists
+        file_url = f'https://www.ngdc.noaa.gov/mgg/shorelines/data/gshhg/latest/{fname}.zip'
+        resp = download_gshhs(file_url)
+        if resp.is_redirect:
+            print("failed (redirected), trying different source")
+            file_url = f'https://www.soest.hawaii.edu/pwessel/gshhg/{fname}.zip'
+            resp = download_gshhs(file_url)
         with open(filepath_zip, 'wb') as f:
-            f.write(r.content)
+            f.write(resp.content)
 
     #unzip zipfile if unzipped folder not present
     if not os.path.exists(dir_gshhs):
-        print(f'unzipping "{fname}"')
+        print(f'unzipping "{fname}.zip"')
         with zipfile.ZipFile(filepath_zip, 'r') as zip_ref:
             zip_ref.extractall(dir_gshhs)
     
