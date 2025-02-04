@@ -108,7 +108,11 @@ def download_ERA5(varkey,
                         "download_format": "unarchived",
                         }
         
-        c.retrieve(name='reanalysis-era5-single-levels', request=request_dict, target=file_out)
+        resp = c.retrieve(
+            name='reanalysis-era5-single-levels', 
+            request=request_dict,
+            )
+        resp.download(target=file_out)
 
 
 def cds_credentials():
