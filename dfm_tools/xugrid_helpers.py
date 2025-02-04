@@ -648,9 +648,6 @@ def enrich_rst_with_map(ds_rst:xr.Dataset):
     fname_map = "_".join(fname_rst.split("_")[:-3]) + "_map.nc"
     file_nc_map = os.path.join(dir_output, fname_map)
     ds_map = xr.open_dataset(file_nc_map)
-    # to avoid cannot reindex or align along dimension 'mesh2d_nEdges' because of conflicting dimension sizes
-    # rst does not contain the unassociated edges
-    ds_map = remove_unassociated_edges(ds_map)
     
     # enrich rst file with topology variables from mapfile
     topology_varn = ds_map.ugrid_roles.topology[0]
