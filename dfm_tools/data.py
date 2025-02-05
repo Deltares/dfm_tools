@@ -4,7 +4,10 @@ import xarray as xr
 import xugrid as xu
 import pooch
 import zipfile
-from dfm_tools.xugrid_helpers import open_partitioned_dataset, open_dataset_delft3d4
+from dfm_tools.xugrid_helpers import (open_partitioned_dataset,
+                                      open_dataset_delft3d4,
+                                      enrich_rst_with_map,
+                                      )
 from dfm_tools.xarray_helpers import preprocess_hisnc
 
 __all__ = ["fm_grevelingen_map",
@@ -144,12 +147,14 @@ def fm_curvedbend_his(return_filepath:bool = False) -> xr.Dataset:
 
 
 def fm_westernscheldt_map(return_filepath:bool = False) -> xu.UgridDataset:
+    # from p:\dflowfm\maintenance\JIRA\05000-05999\05477\c103_ws_3d_fourier
     
+    dir_subfolder = 'DFM_westernscheldt_3D'
     dir_testdata = get_dir_testdata()
     
     #download data if not present
-    file_nc = os.path.join(dir_testdata,'westernscheldt_sph_map.nc')
-    maybe_download_opendap_data(file_nc)
+    file_nc = os.path.join(dir_testdata,'westerscheldt01_0subst_map.nc')
+    maybe_download_opendap_data(file_nc,dir_subfolder)
     
     #potentially only return filepath of downloaded file(s)
     filepath = file_nc
@@ -159,6 +164,66 @@ def fm_westernscheldt_map(return_filepath:bool = False) -> xu.UgridDataset:
     #open as UgridDataset
     uds = open_partitioned_dataset(filepath, remove_edges=True)
     return uds
+
+
+def fm_westernscheldt_fou(return_filepath:bool = False) -> xu.UgridDataset:
+    # from p:\dflowfm\maintenance\JIRA\05000-05999\05477\c103_ws_3d_fourier
+    
+    dir_subfolder = 'DFM_westernscheldt_3D'
+    dir_testdata = get_dir_testdata()
+    
+    #download data if not present
+    file_nc = os.path.join(dir_testdata,'westerscheldt01_0subst_fou.nc')
+    maybe_download_opendap_data(file_nc,dir_subfolder)
+    
+    #potentially only return filepath of downloaded file(s)
+    filepath = file_nc
+    if return_filepath:
+        return filepath
+    
+    #open as UgridDataset
+    uds = open_partitioned_dataset(filepath, remove_edges=True)
+    return uds
+
+
+def fm_westernscheldt_rst(return_filepath:bool = False) -> xu.UgridDataset:
+    # from p:\dflowfm\maintenance\JIRA\05000-05999\05477\c103_ws_3d_fourier
+    
+    dir_subfolder = 'DFM_westernscheldt_3D'
+    dir_testdata = get_dir_testdata()
+    
+    #download data if not present
+    file_nc = os.path.join(dir_testdata,'westerscheldt01_0subst_20140101_004640_rst.nc')
+    maybe_download_opendap_data(file_nc,dir_subfolder)
+    
+    #potentially only return filepath of downloaded file(s)
+    filepath = file_nc
+    if return_filepath:
+        return filepath
+    
+    #open as UgridDataset
+    uds = open_partitioned_dataset(filepath, preprocess=enrich_rst_with_map)
+    return uds
+
+
+def fm_westernscheldt_his(return_filepath:bool = False) -> xr.Dataset:
+    # from p:\dflowfm\maintenance\JIRA\05000-05999\05477\c103_ws_3d_fourier
+    
+    dir_subfolder = 'DFM_westernscheldt_3D'
+    dir_testdata = get_dir_testdata()
+    
+    #download data if not present
+    file_nc = os.path.join(dir_testdata,'westerscheldt01_0subst_his.nc')
+    maybe_download_opendap_data(file_nc,dir_subfolder)
+    
+    #potentially only return filepath of downloaded file(s)
+    filepath = file_nc
+    if return_filepath:
+        return filepath
+    
+    #open as xarray.Dataset
+    ds = xr.open_mfdataset(filepath,preprocess=preprocess_hisnc)
+    return ds
 
 
 def d3d_westernscheldt_trim(return_filepath:bool = False) -> xu.UgridDataset:
@@ -247,6 +312,8 @@ def gshhs_coastlines_shp() -> str:
         file_url = f'https://www.ngdc.noaa.gov/mgg/shorelines/data/gshhg/latest/{fname}.zip'
         resp = download_gshhs(file_url)
         if resp.is_redirect:
+            # get zipfile from USHLC in case of NOAA server maintenance
+            # https://github.com/Deltares/dfm_tools/issues/1111
             print("failed (redirected), trying different source")
             file_url = f'https://www.soest.hawaii.edu/pwessel/gshhg/{fname}.zip'
             resp = download_gshhs(file_url)

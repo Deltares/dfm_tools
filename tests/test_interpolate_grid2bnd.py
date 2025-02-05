@@ -175,40 +175,6 @@ def test_plipointsDataset_fews_accepted():
 
 
 @pytest.mark.systemtest
-@pytest.mark.requireslocaldata
-def test_interpolate_nc_to_bc():
-    file_pli = r'p:\archivedprojects\11208054-004-dcsm-fm\models\model_input\bnd_cond\pli\DCSM-FM_OB_all_20181108.pli'
-    npoints = 3
-    
-    # read polyfile as geodataframe
-    polyfile_object = hcdfm.PolyFile(file_pli)
-    gdf_points_all = dfmt.PolyFile_to_geodataframe_points(polyfile_object)
-    gdf_points = gdf_points_all.iloc[:npoints]
-    
-    tstart = '2012-12-16 12:00'
-    tstop = '2013-01-01 12:00'
-    
-    ncvarname = 'so'
-    dir_pattern = os.path.join(r'p:\1204257-dcsmzuno\data\CMEMS\nc\DCSM_allAvailableTimes',f'{ncvarname}_2012-12*.nc')
-    
-    #open regulargridDataset and do some basic stuff (time selection, renaming depth/lat/lon/varname, converting units, etc)
-    data_xr_vars = open_prepare_dataset(dir_pattern=dir_pattern, quantity='salinitybnd', tstart=tstart, tstop=tstop)
-    #interpolate regulargridDataset to plipointsDataset
-    data_interp = dfmt.interp_regularnc_to_plipointsDataset(data_xr_reg=data_xr_vars, gdf_points=gdf_points)
-    
-    #convert plipointsDataset to hydrolib ForcingModel
-    forcingmodel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
-    
-    forcing0 = forcingmodel_object.forcing[0]
-    assert isinstance(forcingmodel_object, hcdfm.ForcingModel)
-    assert isinstance(forcing0, hcdfm.T3D)
-    assert forcing0.quantityunitpair[1].unit == '1e-3'
-    
-    # test whether so was renamed to salinitybnd
-    assert forcing0.quantityunitpair[1].quantity == 'salinitybnd'
-
-
-@pytest.mark.systemtest
 def test_plipointsDataset_to_ForcingModel_drop_allnan_points():
     #construct polyfile gdf
     point_x = [-71.5, -71.5, -71.5, -71.5,]
@@ -232,6 +198,7 @@ def test_plipointsDataset_to_ForcingModel_drop_allnan_points():
              3.2138258e-05],
             [2.4448847e-05, 2.6705173e-05, 2.6929094e-05, 2.5548252e-05,
              2.5827681e-05]]]
+    
     ds = xr.Dataset()
     ds['longitude'] = xr.DataArray([-72.  , -71.75, -71.5 , -71.25, -71.  ], dims='longitude')
     ds['latitude'] = xr.DataArray([12.  , 12.25, 12.5 , 12.75, 13.  , 13.25], dims='latitude')

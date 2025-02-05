@@ -25,36 +25,36 @@ def test_zlayermodel_correct_layers():
     """
     
     file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True) #zlayer
-    data_frommap_merged = dfmt.open_partitioned_dataset(file_nc)
+    uds = dfmt.open_partitioned_dataset(file_nc)
     
     timestep = 3
     
-    data_frommap_timesel = data_frommap_merged.isel(time=timestep) #select data for all layers
-    data_frommap_merged_fullgrid = reconstruct_zw_zcc_fromz(data_frommap_timesel)
+    uds_timesel = uds.isel(time=timestep) #select data for all layers
+    uds_fullgrid = reconstruct_zw_zcc_fromz(uds_timesel)
     
-    vals_wl = data_frommap_merged_fullgrid['mesh2d_s1']
-    vals_bl = data_frommap_merged_fullgrid['mesh2d_flowelem_bl'].to_numpy()
+    vals_wl = uds_fullgrid['mesh2d_s1']
+    vals_bl = uds_fullgrid['mesh2d_flowelem_bl'].to_numpy()
     
-    vals_zw_max = data_frommap_merged_fullgrid['mesh2d_flowelem_zw'].max(dim='nmesh2d_interface')
-    vals_zw_min = data_frommap_merged_fullgrid['mesh2d_flowelem_zw'].min(dim='nmesh2d_interface')
+    vals_zw_max = uds_fullgrid['mesh2d_flowelem_zw'].max(dim='nmesh2d_interface')
+    vals_zw_min = uds_fullgrid['mesh2d_flowelem_zw'].min(dim='nmesh2d_interface')
     assert np.allclose(vals_zw_max, vals_wl)
     assert np.allclose(vals_zw_min, vals_bl)
     
     # check z-centers in one specific cell
-    zcc = data_frommap_merged_fullgrid['mesh2d_flowelem_zcc']
+    zcc = uds_fullgrid['mesh2d_flowelem_zcc']
     zcc_onecell = zcc.isel(nmesh2d_face=5000).load().fillna(-999)
     zcc_onecell_expected = np.array([-999]*32 + [ -4.1403    , -3.375     , -2.125, -0.84786265])
     assert np.allclose(zcc_onecell, zcc_onecell_expected)
     
     # check z-interfaces in one specific cell
-    zw = data_frommap_merged_fullgrid['mesh2d_flowelem_zw']
+    zw = uds_fullgrid['mesh2d_flowelem_zw']
     zw_onecell = zw.isel(nmesh2d_face=5000).load().fillna(-999)
     zw_onecell_expected = np.array([-999]*32 + [-4.2806, -4.0, -2.75, -1.5, -0.195725292])
     assert np.allclose(zw_onecell, zw_onecell_expected)
     
     # check if all non-dry centers are below waterlevel and above bed
-    vals_zcc_max = data_frommap_merged_fullgrid['mesh2d_flowelem_zcc'].max(dim='nmesh2d_layer').to_numpy()
-    vals_zcc_min = data_frommap_merged_fullgrid['mesh2d_flowelem_zcc'].min(dim='nmesh2d_layer').to_numpy()
+    vals_zcc_max = uds_fullgrid['mesh2d_flowelem_zcc'].max(dim='nmesh2d_layer').to_numpy()
+    vals_zcc_min = uds_fullgrid['mesh2d_flowelem_zcc'].min(dim='nmesh2d_layer').to_numpy()
     bool_dry = vals_wl == vals_bl
     assert ((vals_zcc_max < vals_wl) | bool_dry).all()
     assert ((vals_zcc_min > vals_bl) | bool_dry).all()
@@ -90,47 +90,47 @@ def test_zlayermodel_correct_layers_nanabovewl():
     assert np.allclose(zw_onecell, zw_onecell_expected)
 
 
-@pytest.mark.requireslocaldata
 @pytest.mark.unittest
 def test_zsigmalayermodel_correct_layers():
     """
     we assert top/max/min only, since zlayers can also be valid when the bottom layer contains nan values
     """
     
-    file_nc = r'p:\dflowfm\maintenance\JIRA\05000-05999\05477\c103_ws_3d_fourier\DFM_OUTPUT_westerscheldt01_0subst\westerscheldt01_0subst_map.nc' #zsigma model without fullgrid output but with new ocean_sigma_z_coordinate variable
-    data_frommap_merged = dfmt.open_partitioned_dataset(file_nc)
+    # zsigma model without fullgrid output but with new ocean_sigma_z_coordinate variable
+    file_nc = dfmt.data.fm_westernscheldt_map(return_filepath=True)
+    uds = dfmt.open_partitioned_dataset(file_nc)
     
     timestep = 1
     
-    data_frommap_timesel = data_frommap_merged.isel(time=timestep) #select data for all layers
-    data_frommap_merged_fullgrid = reconstruct_zw_zcc_fromzsigma(data_frommap_timesel)
+    uds_timesel = uds.isel(time=timestep) #select data for all layers
+    uds_fullgrid = reconstruct_zw_zcc_fromzsigma(uds_timesel)
     
-    vals_wl = data_frommap_merged_fullgrid['mesh2d_s1'].to_numpy()
-    vals_bl = data_frommap_merged_fullgrid['mesh2d_flowelem_bl'].to_numpy()
+    vals_wl = uds_fullgrid['mesh2d_s1'].to_numpy()
+    vals_bl = uds_fullgrid['mesh2d_flowelem_bl'].to_numpy()
 
     # check z-centers in one specific cell
-    zcc = data_frommap_merged_fullgrid['mesh2d_flowelem_zcc']
+    zcc = uds_fullgrid['mesh2d_flowelem_zcc']
     zcc_onecell = zcc.isel(mesh2d_nFaces=5000).load().fillna(-999)
     zcc_onecell_expected = np.array([-999, -999, -999, -4.86792313, -0.250909869])
     assert np.allclose(zcc_onecell, zcc_onecell_expected)
     
     # check z-interfaces in one specific cell
-    zw = data_frommap_merged_fullgrid['mesh2d_flowelem_zw']
+    zw = uds_fullgrid['mesh2d_flowelem_zw']
     zw_onecell = zw.isel(mesh2d_nFaces=5000).load().fillna(-999)
     zw_onecell_expected = np.array([-999., -999., -999.,   -7.17642976, -2.5594165, 2.05759676])
     assert np.allclose(zw_onecell, zw_onecell_expected)
     
-    vals_zw_max = data_frommap_merged_fullgrid['mesh2d_flowelem_zw'].max(dim='mesh2d_nInterfaces').to_numpy()
-    vals_zw_min = data_frommap_merged_fullgrid['mesh2d_flowelem_zw'].min(dim='mesh2d_nInterfaces').to_numpy()
-    vals_zw_top = data_frommap_merged_fullgrid['mesh2d_flowelem_zw'].isel(mesh2d_nInterfaces=-1).to_numpy()
+    vals_zw_max = uds_fullgrid['mesh2d_flowelem_zw'].max(dim='mesh2d_nInterfaces').to_numpy()
+    vals_zw_min = uds_fullgrid['mesh2d_flowelem_zw'].min(dim='mesh2d_nInterfaces').to_numpy()
+    vals_zw_top = uds_fullgrid['mesh2d_flowelem_zw'].isel(mesh2d_nInterfaces=-1).to_numpy()
     assert np.allclose(vals_zw_max, vals_wl)
     assert np.allclose(vals_zw_min, vals_bl)
     assert np.allclose(vals_zw_max, vals_zw_top)
 
     # check if all non-dry cell centers are below waterlevel and above bed
-    vals_zcc_max = data_frommap_merged_fullgrid['mesh2d_flowelem_zcc'].max(dim='mesh2d_nLayers').to_numpy()
-    vals_zcc_min = data_frommap_merged_fullgrid['mesh2d_flowelem_zcc'].min(dim='mesh2d_nLayers').to_numpy()
-    vals_zcc_top = data_frommap_merged_fullgrid['mesh2d_flowelem_zcc'].isel(mesh2d_nLayers=-1).to_numpy()
+    vals_zcc_max = uds_fullgrid['mesh2d_flowelem_zcc'].max(dim='mesh2d_nLayers').to_numpy()
+    vals_zcc_min = uds_fullgrid['mesh2d_flowelem_zcc'].min(dim='mesh2d_nLayers').to_numpy()
+    vals_zcc_top = uds_fullgrid['mesh2d_flowelem_zcc'].isel(mesh2d_nLayers=-1).to_numpy()
     bool_dry = vals_wl == vals_bl
     assert ((vals_zcc_max < vals_wl) | bool_dry).all()
     assert ((vals_zcc_min > vals_bl) | bool_dry).all()
@@ -148,24 +148,24 @@ def test_sigmalayermodel_correct_layers():
     timestep = 3
     
     data_frommap_timesel = data_frommap_merged.isel(time=timestep) #select data for all layers
-    data_frommap_merged_fullgrid = reconstruct_zw_zcc_fromsigma(data_frommap_timesel)
+    uds_fullgrid = reconstruct_zw_zcc_fromsigma(data_frommap_timesel)
     
-    vals_wl = data_frommap_merged_fullgrid['mesh2d_s1'].to_numpy()
-    vals_bl = data_frommap_merged_fullgrid['mesh2d_flowelem_bl'].to_numpy()
+    vals_wl = uds_fullgrid['mesh2d_s1'].to_numpy()
+    vals_bl = uds_fullgrid['mesh2d_flowelem_bl'].to_numpy()
 
-    vals_zw_max = data_frommap_merged_fullgrid['mesh2d_flowelem_zw'].max(dim='mesh2d_nInterfaces').to_numpy()
-    vals_zw_min = data_frommap_merged_fullgrid['mesh2d_flowelem_zw'].min(dim='mesh2d_nInterfaces').to_numpy()
-    vals_zw_top = data_frommap_merged_fullgrid['mesh2d_flowelem_zw'].isel(mesh2d_nInterfaces=-1).to_numpy()
-    vals_zw_bot = data_frommap_merged_fullgrid['mesh2d_flowelem_zw'].isel(mesh2d_nInterfaces=0).to_numpy()
+    vals_zw_max = uds_fullgrid['mesh2d_flowelem_zw'].max(dim='mesh2d_nInterfaces').to_numpy()
+    vals_zw_min = uds_fullgrid['mesh2d_flowelem_zw'].min(dim='mesh2d_nInterfaces').to_numpy()
+    vals_zw_top = uds_fullgrid['mesh2d_flowelem_zw'].isel(mesh2d_nInterfaces=-1).to_numpy()
+    vals_zw_bot = uds_fullgrid['mesh2d_flowelem_zw'].isel(mesh2d_nInterfaces=0).to_numpy()
     assert (np.abs(vals_zw_max-vals_wl)<1e-6).all()
     assert (np.abs(vals_zw_min-vals_bl)<1e-6).all()
     assert (np.abs(vals_zw_max-vals_zw_top)<1e-6).all()
     assert (np.abs(vals_zw_min-vals_zw_bot)<1e-6).all()
 
-    vals_zcc_max = data_frommap_merged_fullgrid['mesh2d_flowelem_zcc'].max(dim='mesh2d_nLayers').to_numpy()
-    vals_zcc_min = data_frommap_merged_fullgrid['mesh2d_flowelem_zcc'].min(dim='mesh2d_nLayers').to_numpy()
-    vals_zcc_top = data_frommap_merged_fullgrid['mesh2d_flowelem_zcc'].isel(mesh2d_nLayers=-1).to_numpy()
-    vals_zcc_bot = data_frommap_merged_fullgrid['mesh2d_flowelem_zcc'].isel(mesh2d_nLayers=0).to_numpy()
+    vals_zcc_max = uds_fullgrid['mesh2d_flowelem_zcc'].max(dim='mesh2d_nLayers').to_numpy()
+    vals_zcc_min = uds_fullgrid['mesh2d_flowelem_zcc'].min(dim='mesh2d_nLayers').to_numpy()
+    vals_zcc_top = uds_fullgrid['mesh2d_flowelem_zcc'].isel(mesh2d_nLayers=-1).to_numpy()
+    vals_zcc_bot = uds_fullgrid['mesh2d_flowelem_zcc'].isel(mesh2d_nLayers=0).to_numpy()
     assert (vals_zcc_max < vals_wl).all() # < works since there are no bl>0 in this model
     assert (vals_zcc_min > vals_bl).all()
     assert (np.abs(vals_zcc_max-vals_zcc_top)<1e-6).all()
