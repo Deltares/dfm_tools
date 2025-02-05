@@ -45,8 +45,8 @@ def test_remove_unassociated_edges():
     ds = xr.open_dataset(file_nc)
     ds2 = remove_unassociated_edges(ds)
     
-    ds_edgedimsize = ds.sizes['nmesh2d_edge']
-    ds2_edgedimsize = ds2.sizes['nmesh2d_edge']
+    ds_edgedimsize = ds.sizes['mesh2d_nEdges']
+    ds2_edgedimsize = ds2.sizes['mesh2d_nEdges']
     
     assert ds2_edgedimsize == ds_edgedimsize-1
 
@@ -104,21 +104,44 @@ def test_uds_auto_set_crs_none():
     assert uds.grid.is_geographic is False
 
 
-@pytest.mark.requireslocaldata
 @pytest.mark.unittest
 def test_uds_auto_set_crs_spherical():
-    file_nc = r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DCSM-FM_0_5nm_grid_20191202_depth_20181213_net.nc'
-    uds = dfmt.open_partitioned_dataset(file_nc)
-    assert uds.ugrid.crs['Mesh2D'] is not None
-    assert uds.ugrid.crs['Mesh2D'].to_epsg() == 4326
+    # using dummy dataset, was tested before with
+    # 'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DCSM-FM_0_5nm_grid_20191202_depth_20181213_net.nc'
+    file_nc = dfmt.data.fm_curvedbend_map(return_filepath=True)
+    def replace_crs(ds):
+        ds = ds.drop_vars('projected_coordinate_system')
+        spherical_attrs = {'name': 'WGS84',
+         'epsg': np.int32(4326),
+         'grid_mapping_name': 'latitude_longitude',
+         'EPSG_code': 'EPSG:4326',
+         }
+        ds['wgs84'] = xr.DataArray(0).assign_attrs(spherical_attrs)
+        return ds
+    uds = dfmt.open_partitioned_dataset(file_nc, preprocess=replace_crs)
+    assert uds.ugrid.crs['mesh2d'] is not None
+    assert uds.ugrid.crs['mesh2d'].to_epsg() == 4326
     assert uds.grid.is_geographic is True
 
 
-@pytest.mark.requireslocaldata
 @pytest.mark.unittest
-def test_open_2Dnetwork_with_1Dtopology():
-    file_nc = r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DCSM-FM_0_5nm_grid_20191202_depth_20181213_net.nc'
-    uds = dfmt.open_partitioned_dataset(file_nc)
+def test_open_2Dnetwork_with_1Dtopology(tmp_path):
+    file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True).replace('0*','0002')
+    
+    # save as new network with only the 1D information in the mesh_topology
+    mesh1d_attrs = {'cf_role': 'mesh_topology',
+     'long_name': 'Topology data of 1D network',
+     'topology_dimension': 1,
+     'node_coordinates': 'mesh2d_node_x mesh2d_node_y',
+     'node_dimension': 'nmesh2d_node',
+     'edge_node_connectivity': 'mesh2d_edge_nodes',
+     'edge_dimension': 'nmesh2d_edge'}
+    ds = xr.open_dataset(file_nc, decode_cf=False, decode_times=False, decode_coords=False)
+    ds['mesh2d'] = ds['mesh2d'].assign_attrs(mesh1d_attrs)
+    file_nc_out = os.path.join(tmp_path, "network_1d_net.nc")
+    ds.to_netcdf(file_nc_out)
+    
+    uds = dfmt.open_partitioned_dataset(file_nc_out)
     assert isinstance(uds.grid, xu.ugrid.ugrid1d.Ugrid1d)
     assert not hasattr(uds.grid, "face_node_connectivity")
     
@@ -129,7 +152,7 @@ def test_open_2Dnetwork_with_1Dtopology():
     # test projected attr, xugrid automatically sets standard_name 
     # based on projected property
     node_x = uds_withcellinfo.grid.to_dataset().mesh2d_node_x
-    assert node_x.attrs['standard_name'] == "longitude"
+    assert node_x.attrs['standard_name'] == "projection_x_coordinate"
 
 
 @pytest.mark.unittest
@@ -194,21 +217,23 @@ def test_uda_nodes_to_faces():
     assert hasattr(uda_face,'grid')
 
 
-@pytest.mark.requireslocaldata
 @pytest.mark.unittest
 def test_enrich_rst_with_map():
     """
-    this tests whether rst file is correctly enriched with map
-    by trying to plot a ugrid (face node) variable
+    this tests whether rst file is correctly enriched with map by trying to
+    plot a ugrid (face node) variable was tested before with
+    'p:\\archivedprojects\\11206811-002-kpp-veerse-meer\\model\\runs_2011-2012\\VM_WQ_3D_run9_c\\DFM_OUTPUT_VM_WQ_3D\\VM_WQ_3D_0000_20130101_000000_rst.nc'
+    
     """
     # mf1_rstfile (without topology var)
-    file_nc_rst = r'p:\archivedprojects\11206811-002-kpp-veerse-meer\model\runs_2011-2012\VM_WQ_3D_run9_c\DFM_OUTPUT_VM_WQ_3D\VM_WQ_3D_0000_20130101_000000_rst.nc'
+    
+    file_nc_rst = dfmt.data.fm_westernscheldt_rst(return_filepath=True)
     
     uds_rst = dfmt.open_partitioned_dataset(file_nc_rst, preprocess=dfmt.enrich_rst_with_map)
     
     uds_rst.s1.isel(time=0).ugrid.plot()
     
-    uda_rst = uds_rst['DetCS1']
+    uda_rst = uds_rst['s1']
     assert "mesh2d_face_x" in uda_rst.coords
 
 

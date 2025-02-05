@@ -17,6 +17,8 @@ def test_data_map():
                  dfmt.data.fm_grevelingen_net, 
                  dfmt.data.fm_curvedbend_map, 
                  dfmt.data.fm_westernscheldt_map, 
+                 dfmt.data.fm_westernscheldt_fou, 
+                 dfmt.data.fm_westernscheldt_rst, 
                  dfmt.data.d3d_westernscheldt_trim,
                  dfmt.data.d3d_curvedbend_trim]
     
@@ -31,6 +33,7 @@ def test_data_map():
 def test_data_his():
     func_list = [dfmt.data.fm_grevelingen_his, 
                  dfmt.data.fm_curvedbend_his,
+                 dfmt.data.fm_westernscheldt_his,
                  dfmt.data.d3d_curvedbend_trih]
     
     for func in func_list:
