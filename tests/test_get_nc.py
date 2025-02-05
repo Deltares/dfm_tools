@@ -345,3 +345,54 @@ def test_intersect_edges(sort):
     assert (edge_index == np.array([0, 0, 0, 1, 1, 1, 2, 2])).all()
     assert (face_index == np.array(expected_face_index)).all()
     assert intersections.shape == (8, 2, 2)
+
+
+@pytest.mark.unittest
+def test_rasterize_ugrid():
+    uds = dfmt.data.fm_curvedbend_map()
+    
+    # rasterize uds with resolution
+    ds = dfmt.rasterize_ugrid(uds, resolution=100)
+    ds_s1_sel = ds.mesh2d_s1.isel(time=-1, x=slice(None,4), y=slice(None,4))
+    expected_values = np.array([[0.99710127, 0.99663291, 0.99585074, 0.99469613],
+           [0.99431713, 0.99332472, 0.99181335, 0.98968208],
+           [0.99102747, 0.98969936, 0.98777662, 0.98510291],
+           [0.98731461, 0.98584209, 0.98372741, 0.98082678]])
+    assert np.allclose(ds_s1_sel, expected_values)
+
+    # rasterize uda with resolution
+    da = dfmt.rasterize_ugrid(uds.mesh2d_s1, resolution=100)
+    da_s1_sel = da.isel(time=-1, x=slice(None,4), y=slice(None,4))
+    assert np.allclose(da_s1_sel, expected_values)
+    
+    # rasterize uds with ds_like
+    xmin, ymin, xmax, ymax = 0, 0, 4000, 4000
+    d = 120
+    regx = np.arange(xmin + 0.5 * d, xmax, d)
+    regy = np.arange(ymin + 0.5 * d, ymax, d)
+    ds_like = xr.DataArray(np.empty((len(regy), len(regx))), {"y": regy, "x": regx}, ["y", "x"])
+    ds = dfmt.rasterize_ugrid(uds, ds_like=ds_like)
+    ds_s1_sel = ds.mesh2d_s1.isel(time=-1, x=slice(None,4), y=slice(None,3))
+    expected_values = np.array([[0.99710127, 0.99663291, 0.99585074, 0.99469613],
+           [0.99431713, 0.99332472, 0.99181335, 0.98968208],
+           [0.99102747, 0.98969936, 0.98777662, 0.98510291]])
+    assert np.allclose(ds_s1_sel, expected_values)
+
+    # assert TypeError
+    with pytest.raises(TypeError) as e:
+        dfmt.rasterize_ugrid(1)
+    assert "rasterize_ugrid expected" in str(e.value)
+
+
+@pytest.mark.unittest
+def test_plot_ztdata():
+    file_nc = dfmt.data.fm_grevelingen_his(return_filepath=True)
+    ds = xr.open_dataset(file_nc)#, preprocess=dfmt.preprocess_hisnc)
+    ds_sel = ds.isel(stations=-1)
+    
+    with pytest.raises(ValueError) as e:
+        dfmt.plot_ztdata(data_xr_sel=ds, varname='salinity')
+    assert "unexpected number of dimensions in requested" in str(e.value)
+    dfmt.plot_ztdata(data_xr_sel=ds_sel, varname='salinity')
+    dfmt.plot_ztdata(data_xr_sel=ds_sel, varname='salinity', only_contour=True)
+

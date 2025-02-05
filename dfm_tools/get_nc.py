@@ -535,7 +535,7 @@ def plot_ztdata(data_xr_sel, varname, ax=None, only_contour=False, **kwargs):
     if not ax: ax=plt.gca()
     
     if len(data_xr_sel[varname].shape) != 2:
-        raise ValueError(f'ERROR: unexpected number of dimensions in requested squeezed variable ({data_xr_sel[varname].shape}), first use data_xr.isel(stations=int) to select a single station') #TODO: can also have a different cause, improve message/testing?
+        raise ValueError(f'unexpected number of dimensions in requested squeezed variable ({data_xr_sel[varname].shape}), first use data_xr.isel(stations=int) to select a single station') #TODO: can also have a different cause, improve message/testing?
     
     #repair zvalues at wl/wl (filling nans and clipping to wl/bl). bfill replaces nan values with last valid value, this is necessary to enable pcolormesh to work. clip forces data to be within bl/wl
     #TODO: put clip in preproces_hisnc to make plotting easier?
