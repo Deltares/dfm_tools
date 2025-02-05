@@ -312,6 +312,8 @@ def gshhs_coastlines_shp() -> str:
         file_url = f'https://www.ngdc.noaa.gov/mgg/shorelines/data/gshhg/latest/{fname}.zip'
         resp = download_gshhs(file_url)
         if resp.is_redirect:
+            # get zipfile from USHLC in case of NOAA server maintenance
+            # https://github.com/Deltares/dfm_tools/issues/1111
             print("failed (redirected), trying different source")
             file_url = f'https://www.soest.hawaii.edu/pwessel/gshhg/{fname}.zip'
             resp = download_gshhs(file_url)
