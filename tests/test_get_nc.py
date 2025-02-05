@@ -189,21 +189,68 @@ def test_polyline_mapslice():
 
 
 @pytest.mark.unittest
+def test_get_dataset_atdepths_mapfile():
+    file_nc = dfmt.data.fm_curvedbend_map(return_filepath=True)
+    uds = dfmt.open_partitioned_dataset(file_nc)
+
+    # z0
+    depths = [-1,-4,0,-6]
+    uds_atdepths = dfmt.get_Dataset_atdepths(data_xr=uds, depths=depths, reference='z0')
+    tem_values = uds_atdepths.mesh2d_tem1.isel(time=-1, mesh2d_nFaces=10).to_numpy()
+    exp_values = np.array([np.nan, 15., 15., 15.])
+    assert uds_atdepths.mesh2d_tem1.shape == (73, 550, 4)
+    assert np.allclose(tem_values, exp_values, equal_nan=True)
+    assert np.isclose(uds_atdepths.mesh2d_tem1.sum(), 1511040)
+    
+    # waterlevel
+    depths = [-1,-4,0,-6]
+    uds_atdepths = dfmt.get_Dataset_atdepths(data_xr=uds, depths=depths, reference='waterlevel')
+    tem_values = uds_atdepths.mesh2d_tem1.isel(time=-1, mesh2d_nFaces=10).to_numpy()
+    exp_values = np.array([np.nan, 15., 15., np.nan])
+    assert uds_atdepths.mesh2d_tem1.shape == (73, 550, 4)
+    assert np.allclose(tem_values, exp_values, equal_nan=True)
+    assert np.isclose(uds_atdepths.mesh2d_tem1.sum(), 1204500)
+    
+    # bedlevel
+    depths = [-1,-4,0,-6]
+    uds_atdepths = dfmt.get_Dataset_atdepths(data_xr=uds, depths=depths, reference='bedlevel')
+    tem_values = uds_atdepths.mesh2d_tem1.isel(time=-1, mesh2d_nFaces=10).to_numpy()
+    exp_values = np.array([np.nan, np.nan, np.nan, 15.])
+    assert uds_atdepths.mesh2d_tem1.shape == (73, 550, 4)
+    assert np.allclose(tem_values, exp_values, equal_nan=True)
+    assert np.isclose(uds_atdepths.mesh2d_tem1.sum(), 602250)
+    
+    # single depth
+    depths = -4
+    uds_atdepths = dfmt.get_Dataset_atdepths(data_xr=uds, depths=depths, reference='z0')
+    tem_values = uds_atdepths.mesh2d_tem1.isel(time=-1, mesh2d_nFaces=10).to_numpy()
+    exp_values = 15.
+    assert uds_atdepths.mesh2d_tem1.shape == (73, 550)
+    assert np.isclose(tem_values, exp_values)
+    assert np.isclose(uds_atdepths.mesh2d_tem1.sum(), 602250)
+    
+    # nonexistent reference
+    with pytest.raises(KeyError) as e:
+        dfmt.get_Dataset_atdepths(data_xr=uds, depths=depths, reference='nonexistent')
+    assert 'unknown reference "nonexistent"' in str(e.value)
+
+
+@pytest.mark.unittest
 def test_get_dataset_atdepths_hisfile():
     
     file_nc = dfmt.data.fm_grevelingen_his(return_filepath=True)
     ds = xr.open_dataset(file_nc)#, preprocess=dfmt.preprocess_hisnc)
 
     depths = [-1,-4,0,-6]
-    data_fromhis_atdepths = dfmt.get_Dataset_atdepths(data_xr=ds, depths=depths, reference='z0')
-    data_xr_selzt = data_fromhis_atdepths.isel(stations=2).isel(time=slice(40,100))
+    uds_atdepths = dfmt.get_Dataset_atdepths(data_xr=ds, depths=depths, reference='z0')
+    uds_selzt = uds_atdepths.isel(stations=2).isel(time=slice(40,100))
 
-    tem_values = data_xr_selzt.temperature.isel(time=-1).to_numpy()
+    tem_values = uds_selzt.temperature.isel(time=-1).to_numpy()
     exp_values = np.array([5.81065253, 5.43289777, 5.36916911, 5.36916911])
 
-    assert data_xr_selzt.temperature.shape == (60,4)
+    assert uds_selzt.temperature.shape == (60,4)
     assert np.allclose(tem_values, exp_values)
-    assert np.isclose(data_xr_selzt.temperature.sum(), 1295.56826688)
+    assert np.isclose(uds_selzt.temperature.sum(), 1295.56826688)
 
 
 @pytest.mark.unittest
@@ -345,3 +392,54 @@ def test_intersect_edges(sort):
     assert (edge_index == np.array([0, 0, 0, 1, 1, 1, 2, 2])).all()
     assert (face_index == np.array(expected_face_index)).all()
     assert intersections.shape == (8, 2, 2)
+
+
+@pytest.mark.unittest
+def test_rasterize_ugrid():
+    uds = dfmt.data.fm_curvedbend_map()
+    
+    # rasterize uds with resolution
+    ds = dfmt.rasterize_ugrid(uds, resolution=100)
+    ds_s1_sel = ds.mesh2d_s1.isel(time=-1, x=slice(None,4), y=slice(None,4))
+    expected_values = np.array([[0.99710127, 0.99663291, 0.99585074, 0.99469613],
+           [0.99431713, 0.99332472, 0.99181335, 0.98968208],
+           [0.99102747, 0.98969936, 0.98777662, 0.98510291],
+           [0.98731461, 0.98584209, 0.98372741, 0.98082678]])
+    assert np.allclose(ds_s1_sel, expected_values)
+
+    # rasterize uda with resolution
+    da = dfmt.rasterize_ugrid(uds.mesh2d_s1, resolution=100)
+    da_s1_sel = da.isel(time=-1, x=slice(None,4), y=slice(None,4))
+    assert np.allclose(da_s1_sel, expected_values)
+    
+    # rasterize uds with ds_like
+    xmin, ymin, xmax, ymax = 0, 0, 4000, 4000
+    d = 120
+    regx = np.arange(xmin + 0.5 * d, xmax, d)
+    regy = np.arange(ymin + 0.5 * d, ymax, d)
+    ds_like = xr.DataArray(np.empty((len(regy), len(regx))), {"y": regy, "x": regx}, ["y", "x"])
+    ds = dfmt.rasterize_ugrid(uds, ds_like=ds_like)
+    ds_s1_sel = ds.mesh2d_s1.isel(time=-1, x=slice(None,4), y=slice(None,3))
+    expected_values = np.array([[0.99710127, 0.99663291, 0.99585074, 0.99469613],
+           [0.99431713, 0.99332472, 0.99181335, 0.98968208],
+           [0.99102747, 0.98969936, 0.98777662, 0.98510291]])
+    assert np.allclose(ds_s1_sel, expected_values)
+
+    # assert the TypeError
+    with pytest.raises(TypeError) as e:
+        dfmt.rasterize_ugrid(1)
+    assert "rasterize_ugrid expected" in str(e.value)
+
+
+@pytest.mark.unittest
+def test_plot_ztdata():
+    file_nc = dfmt.data.fm_grevelingen_his(return_filepath=True)
+    ds = xr.open_dataset(file_nc)#, preprocess=dfmt.preprocess_hisnc)
+    ds_sel = ds.isel(stations=-1)
+    
+    with pytest.raises(ValueError) as e:
+        dfmt.plot_ztdata(data_xr_sel=ds, varname='salinity')
+    assert "unexpected number of dimensions in requested" in str(e.value)
+    dfmt.plot_ztdata(data_xr_sel=ds_sel, varname='salinity')
+    dfmt.plot_ztdata(data_xr_sel=ds_sel, varname='salinity', only_contour=True)
+
