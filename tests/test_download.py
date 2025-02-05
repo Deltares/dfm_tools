@@ -239,6 +239,8 @@ def test_copernicusmarine_get_dataset_id():
     assert dataset_id == 'cmems_mod_glo_phy_my_0.083deg_P1D-m'
     dataset_id = copernicusmarine_get_dataset_id(varkey='no3', **date_args)
     assert dataset_id == 'cmems_mod_glo_bgc_my_0.25deg_P1D-m'
+    dataset_id = copernicusmarine_get_dataset_id(varkey='phyc', **date_args)
+    assert dataset_id == 'cmems_mod_glo_bgc_my_0.25deg_P1M-m'
     
     # with pandas timestamps
     date_min = pd.Timestamp.today()
