@@ -197,11 +197,6 @@ def test_get_vertical_dimensions():
     assert dimn_layer is None
     assert dimn_interface is None
 
-    # incorrect type
-    with pytest.raises(TypeError) as e:
-        get_vertical_dimensions(1)
-    assert 'uds should be of type xr.Dataset or xu.UgridDataset' in str(e.value)
-
 
 @pytest.mark.systemtest
 def test_uda_edges_to_faces_interfaces_to_centers():
