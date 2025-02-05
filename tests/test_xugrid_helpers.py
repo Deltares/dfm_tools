@@ -176,19 +176,26 @@ def test_get_vertical_dimensions():
     assert dimn_layer is None
     assert dimn_interface is None
    
-    # mapfile z
+    # mapfile
     file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True)
     uds = xu.open_dataset(file_nc.replace('0*','0002')) #partition 0002 of grevelingen contains both triangles as squares
     dimn_layer, dimn_interface = get_vertical_dimensions(uds)
     assert dimn_layer == "nmesh2d_layer"
     assert dimn_interface == "nmesh2d_interface"
 
-    # mapfile sigma
+    # mapfile
     file_nc = dfmt.data.fm_curvedbend_map(return_filepath=True)
     uds = xu.open_dataset(file_nc)
     dimn_layer, dimn_interface = get_vertical_dimensions(uds)
     assert dimn_layer == "mesh2d_nLayers"
     assert dimn_interface == "mesh2d_nInterfaces"
+
+    # networkfile (2D)
+    file_nc = dfmt.data.fm_grevelingen_net(return_filepath=True)
+    uds = xu.open_dataset(file_nc)
+    dimn_layer, dimn_interface = get_vertical_dimensions(uds)
+    assert dimn_layer is None
+    assert dimn_interface is None
 
     # incorrect type
     with pytest.raises(TypeError) as e:
