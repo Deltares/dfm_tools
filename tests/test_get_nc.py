@@ -189,21 +189,68 @@ def test_polyline_mapslice():
 
 
 @pytest.mark.unittest
+def test_get_dataset_atdepths_mapfile():
+    file_nc = dfmt.data.fm_curvedbend_map(return_filepath=True)
+    uds = dfmt.open_partitioned_dataset(file_nc)
+
+    # z0
+    depths = [-1,-4,0,-6]
+    uds_atdepths = dfmt.get_Dataset_atdepths(data_xr=uds, depths=depths, reference='z0')
+    tem_values = uds_atdepths.mesh2d_tem1.isel(time=-1, mesh2d_nFaces=10).to_numpy()
+    exp_values = np.array([np.nan, 15., 15., 15.])
+    assert uds_atdepths.mesh2d_tem1.shape == (73, 550, 4)
+    assert np.allclose(tem_values, exp_values, equal_nan=True)
+    assert np.isclose(uds_atdepths.mesh2d_tem1.sum(), 1511040)
+    
+    # waterlevel
+    depths = [-1,-4,0,-6]
+    uds_atdepths = dfmt.get_Dataset_atdepths(data_xr=uds, depths=depths, reference='waterlevel')
+    tem_values = uds_atdepths.mesh2d_tem1.isel(time=-1, mesh2d_nFaces=10).to_numpy()
+    exp_values = np.array([np.nan, 15., 15., np.nan])
+    assert uds_atdepths.mesh2d_tem1.shape == (73, 550, 4)
+    assert np.allclose(tem_values, exp_values, equal_nan=True)
+    assert np.isclose(uds_atdepths.mesh2d_tem1.sum(), 1204500)
+    
+    # bedlevel
+    depths = [-1,-4,0,-6]
+    uds_atdepths = dfmt.get_Dataset_atdepths(data_xr=uds, depths=depths, reference='bedlevel')
+    tem_values = uds_atdepths.mesh2d_tem1.isel(time=-1, mesh2d_nFaces=10).to_numpy()
+    exp_values = np.array([np.nan, np.nan, np.nan, 15.])
+    assert uds_atdepths.mesh2d_tem1.shape == (73, 550, 4)
+    assert np.allclose(tem_values, exp_values, equal_nan=True)
+    assert np.isclose(uds_atdepths.mesh2d_tem1.sum(), 602250)
+    
+    # single depth
+    depths = -4
+    uds_atdepths = dfmt.get_Dataset_atdepths(data_xr=uds, depths=depths, reference='z0')
+    tem_values = uds_atdepths.mesh2d_tem1.isel(time=-1, mesh2d_nFaces=10).to_numpy()
+    exp_values = 15.
+    assert uds_atdepths.mesh2d_tem1.shape == (73, 550)
+    assert np.isclose(tem_values, exp_values)
+    assert np.isclose(uds_atdepths.mesh2d_tem1.sum(), 602250)
+    
+    # nonexistent reference
+    with pytest.raises(KeyError) as e:
+        dfmt.get_Dataset_atdepths(data_xr=uds, depths=depths, reference='nonexistent')
+    assert 'unknown reference "nonexistent"' in str(e.value)
+
+
+@pytest.mark.unittest
 def test_get_dataset_atdepths_hisfile():
     
     file_nc = dfmt.data.fm_grevelingen_his(return_filepath=True)
     ds = xr.open_dataset(file_nc)#, preprocess=dfmt.preprocess_hisnc)
 
     depths = [-1,-4,0,-6]
-    data_fromhis_atdepths = dfmt.get_Dataset_atdepths(data_xr=ds, depths=depths, reference='z0')
-    data_xr_selzt = data_fromhis_atdepths.isel(stations=2).isel(time=slice(40,100))
+    uds_atdepths = dfmt.get_Dataset_atdepths(data_xr=ds, depths=depths, reference='z0')
+    uds_selzt = uds_atdepths.isel(stations=2).isel(time=slice(40,100))
 
-    tem_values = data_xr_selzt.temperature.isel(time=-1).to_numpy()
+    tem_values = uds_selzt.temperature.isel(time=-1).to_numpy()
     exp_values = np.array([5.81065253, 5.43289777, 5.36916911, 5.36916911])
 
-    assert data_xr_selzt.temperature.shape == (60,4)
+    assert uds_selzt.temperature.shape == (60,4)
     assert np.allclose(tem_values, exp_values)
-    assert np.isclose(data_xr_selzt.temperature.sum(), 1295.56826688)
+    assert np.isclose(uds_selzt.temperature.sum(), 1295.56826688)
 
 
 @pytest.mark.unittest

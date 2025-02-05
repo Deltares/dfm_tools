@@ -34,6 +34,9 @@ def get_vertical_dimensions(uds): #TODO: maybe add layer_dimension and interface
         >> found layer/interface dimensions in file: mesh2d_nLayers mesh2d_nInterfaces
     """
     
+    if not isinstance(uds,(xr.Dataset,xu.UgridDataset)):
+        raise TypeError(f'uds should be of type xr.Dataset or xu.UgridDataset, but is {type(uds)}')
+    
     if not hasattr(uds,'grid'): #early return in case of e.g. hisfile
         return None, None
         

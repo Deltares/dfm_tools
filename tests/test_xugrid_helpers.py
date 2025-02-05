@@ -168,6 +168,34 @@ def test_uda_edges_to_faces():
     assert hasattr(uda_face,'grid')
 
 
+@pytest.mark.unittest
+def test_get_vertical_dimensions():
+    # hisfile
+    ds = dfmt.data.fm_curvedbend_his()
+    dimn_layer, dimn_interface = get_vertical_dimensions(ds)
+    assert dimn_layer is None
+    assert dimn_interface is None
+   
+    # mapfile z
+    file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True)
+    uds = xu.open_dataset(file_nc.replace('0*','0002')) #partition 0002 of grevelingen contains both triangles as squares
+    dimn_layer, dimn_interface = get_vertical_dimensions(uds)
+    assert dimn_layer == "nmesh2d_layer"
+    assert dimn_interface == "nmesh2d_interface"
+
+    # mapfile sigma
+    file_nc = dfmt.data.fm_curvedbend_map(return_filepath=True)
+    uds = xu.open_dataset(file_nc)
+    dimn_layer, dimn_interface = get_vertical_dimensions(uds)
+    assert dimn_layer == "mesh2d_nLayers"
+    assert dimn_interface == "mesh2d_nInterfaces"
+
+    # incorrect type
+    with pytest.raises(TypeError) as e:
+        get_vertical_dimensions(1)
+    assert 'uds should be of type xr.Dataset or xu.UgridDataset' in str(e.value)
+
+
 @pytest.mark.systemtest
 def test_uda_edges_to_faces_interfaces_to_centers():
     file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True) #zlayer
