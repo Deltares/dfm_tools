@@ -116,6 +116,8 @@ filterwarnings = [
 	"error",
 	# to make error work
 	"ignore::pytest.PytestUnraisableExceptionWarning",
+	# filter expected warning from dfmt.get_dataset_atdepths()
+	"ignore:All-NaN slice encountered:RuntimeWarning",
 	# filter until fix of https://github.com/Deltares/HYDROLIB-core/issues/732
 	# note the use of single quote below to denote "raw" strings in TOML
 	'ignore:datetime.datetime.utcnow\(\) is deprecated:DeprecationWarning',

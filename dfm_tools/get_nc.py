@@ -389,9 +389,6 @@ def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str ='z0'):
         print(UserWarning('depth/layer dimension not found, probably 2D model, returning input Dataset')) #TODO: this can also be at depth, since slice will put parts of model dry (and allnan if below wl or below bl). Implement this
         return data_xr #early return
     
-    if not isinstance(data_xr,(xr.Dataset,xu.UgridDataset)):
-        raise TypeError(f'data_xr_map should be of type xr.Dataset, but is {type(data_xr)}')
-    
     #create depth xr.DataArray
     if isinstance(depths,(float,int)):
         depth_dims = ()
@@ -420,7 +417,7 @@ def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str ='z0'):
         data_bl = data_xr[varname_bl]
         zw_reference = data_xr[varname_zint] - data_bl
     else:
-        raise KeyError(f'unknown reference "{reference}" (possible are z0, waterlevel and bedlevel') #TODO: make enum?
+        raise KeyError(f'unknown reference "{reference}" (options are z0, waterlevel and bedlevel)')
     
     print('>> subsetting data on fixed depth in fullgrid z-data: ',end='')
     dtstart = dt.datetime.now()
@@ -535,7 +532,7 @@ def plot_ztdata(data_xr_sel, varname, ax=None, only_contour=False, **kwargs):
     if not ax: ax=plt.gca()
     
     if len(data_xr_sel[varname].shape) != 2:
-        raise ValueError(f'ERROR: unexpected number of dimensions in requested squeezed variable ({data_xr_sel[varname].shape}), first use data_xr.isel(stations=int) to select a single station') #TODO: can also have a different cause, improve message/testing?
+        raise ValueError(f'unexpected number of dimensions in requested squeezed variable ({data_xr_sel[varname].shape}), first use data_xr.isel(stations=int) to select a single station') #TODO: can also have a different cause, improve message/testing?
     
     #repair zvalues at wl/wl (filling nans and clipping to wl/bl). bfill replaces nan values with last valid value, this is necessary to enable pcolormesh to work. clip forces data to be within bl/wl
     #TODO: put clip in preproces_hisnc to make plotting easier?
