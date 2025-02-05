@@ -24,21 +24,6 @@ if os.path.exists(r"p:\1230882-emodnet_hrsm\data\GESLA3"):
 @pytest.mark.requiressecrets
 @pytest.mark.unittest
 @pytest.mark.parametrize("source", source_list)
-def test_ssh_catalog_subset_expected_fields(source):
-    fields_expected = ["geometry", "source", "country", 
-                       "station_name", "station_id", "station_name_unique"]
-    
-    ssc_catalog_gpd = dfmt.ssh_catalog_subset(source=source)
-    for field in fields_expected:
-        assert field in ssc_catalog_gpd.columns
-    if source not in ["ssc", "psmsl-gnssir", "rwsddl"]:
-        assert "time_ndays" in ssc_catalog_gpd.columns
-    assert ssc_catalog_gpd.crs.to_string()=='EPSG:4326'
-
-
-@pytest.mark.requiressecrets
-@pytest.mark.unittest
-@pytest.mark.parametrize("source", source_list)
 def test_ssh_catalog_subset(source):
     lon_min, lon_max, lat_min, lat_max = -6, 5, 48, 50.5 # france
     # lon_min, lon_max, lat_min, lat_max = 123, 148, 23, 47 # japan
@@ -46,8 +31,19 @@ def test_ssh_catalog_subset(source):
     # time_min, time_max = '2016-01-01','2016-06-01'
     time_min, time_max = '2020-01-01','2020-06-01'
     
-    source_list_notime = ["ssc","rwsddl"]
     ssc_catalog_gpd = dfmt.ssh_catalog_subset(source=source)
+    
+    # check the returned fields
+    fields_expected = ["geometry", "source", "country", 
+                       "station_name", "station_id", "station_name_unique"]
+    for field in fields_expected:
+        assert field in ssc_catalog_gpd.columns
+    if source not in ["ssc", "psmsl-gnssir", "rwsddl"]:
+        assert "time_ndays" in ssc_catalog_gpd.columns
+    assert ssc_catalog_gpd.crs.to_string()=='EPSG:4326'
+    
+    # do actual subset
+    source_list_notime = ["ssc","rwsddl"]
     if source in source_list_notime:
         ssc_catalog_gpd_sel = dfmt.ssh_catalog_subset(source=source,
                                                       lon_min=lon_min, lon_max=lon_max, 
