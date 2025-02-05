@@ -104,13 +104,23 @@ def test_uds_auto_set_crs_none():
     assert uds.grid.is_geographic is False
 
 
-@pytest.mark.requireslocaldata
 @pytest.mark.unittest
 def test_uds_auto_set_crs_spherical():
-    file_nc = r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DCSM-FM_0_5nm_grid_20191202_depth_20181213_net.nc'
-    uds = dfmt.open_partitioned_dataset(file_nc)
-    assert uds.ugrid.crs['Mesh2D'] is not None
-    assert uds.ugrid.crs['Mesh2D'].to_epsg() == 4326
+    # using dummy dataset, was tested before with
+    # 'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DCSM-FM_0_5nm_grid_20191202_depth_20181213_net.nc'
+    file_nc = dfmt.data.fm_curvedbend_map(return_filepath=True)
+    def replace_crs(ds):
+        ds = ds.drop_vars('projected_coordinate_system')
+        spherical_attrs = {'name': 'WGS84',
+         'epsg': np.int32(4326),
+         'grid_mapping_name': 'latitude_longitude',
+         'EPSG_code': 'EPSG:4326',
+         }
+        ds['wgs84'] = xr.DataArray(0).assign_attrs(spherical_attrs)
+        return ds
+    uds = dfmt.open_partitioned_dataset(file_nc, preprocess=replace_crs)
+    assert uds.ugrid.crs['mesh2d'] is not None
+    assert uds.ugrid.crs['mesh2d'].to_epsg() == 4326
     assert uds.grid.is_geographic is True
 
 
