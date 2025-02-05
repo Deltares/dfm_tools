@@ -649,6 +649,9 @@ def enrich_rst_with_map(ds_rst:xr.Dataset):
     file_nc_map = os.path.join(dir_output, fname_map)
     ds_map = xr.open_dataset(file_nc_map)
     
+    # remove unassociated edges from mapfile to align with rst file
+    ds_map = remove_unassociated_edges(ds_map)
+    
     # enrich rst file with topology variables from mapfile
     topology_varn = ds_map.ugrid_roles.topology[0]
     topo_var = ds_map[topology_varn]
@@ -665,10 +668,11 @@ def enrich_rst_with_map(ds_rst:xr.Dataset):
     ds_rst[fnc_varn] = ds_map[fnc_varn]
     
     # rename old dims
-    if 'nFlowElem' in ds_rst.dims and 'nNetElem' in ds_rst.dims:
-        ds_rst = ds_rst.rename({'nFlowElem':'nNetElem'})
     if 'nFlowLinkPts' in ds_rst.dims and 'nNetLinkPts' in ds_rst.dims:
         ds_rst = ds_rst.rename({'nFlowLinkPts':'nNetLinkPts'})
+    if 'nFlowElem' in ds_rst.dims:
+        facedim = topo_var.attrs["face_dimension"]
+        ds_rst = ds_rst.rename({'nFlowElem':facedim})
     if 'nNetElem' in ds_rst.dims:
         facedim = topo_var.attrs["face_dimension"]
         ds_rst = ds_rst.rename({'nNetElem':facedim})
