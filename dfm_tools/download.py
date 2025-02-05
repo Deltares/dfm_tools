@@ -236,10 +236,15 @@ def download_CMEMS(varkey,
     
     if dataset_id is None:
         dataset_id = copernicusmarine_get_dataset_id(varkey, date_min, date_max)
+    
     # date_range with same start as stoptime is a bit tricky so we limit freqs
     # https://github.com/Deltares/dfm_tools/issues/720
     if freq not in ["D","M","Y"]:
         raise ValueError(f"freq should be D/M/Y, not {freq}")
+    # prevent daily freq for datasets with monthly intervals
+    # to avoid downloading empty files
+    if "_P1M" in dataset_id and freq=="D":
+        freq = "M"
     print(f"downloading {varkey} from {dataset_id} with freq={freq}")
     
     dataset = copernicusmarine.open_dataset(
@@ -381,7 +386,13 @@ def copernicusmarine_get_dataset_id(varkey, date_min, date_max):
         elif product == 'reanalysis-interim': # reanalysis-interim: https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_BGC_001_029/description
             dataset_id = 'cmems_mod_glo_bgc_myint_0.25deg_P1D-m'
         else: # reanalysis: https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_BGC_001_029/description
-            dataset_id = 'cmems_mod_glo_bgc_my_0.25deg_P1D-m'
+            if varkey in ['chl', 'no3', 'nppv', 'o2', 'po4', 'si']:
+                dataset_id = 'cmems_mod_glo_bgc_my_0.25deg_P1D-m'
+            else:
+                # phyc/fe/ph/spco2 are not available in daily mean dataset
+                # use monthly mean dataset instead
+                # https://github.com/Deltares/dfm_tools/issues/622
+                dataset_id = 'cmems_mod_glo_bgc_my_0.25deg_P1M-m'
     else:
         raise ValueError(f"unknown vartype for cmems: {vartype}")
     return dataset_id
