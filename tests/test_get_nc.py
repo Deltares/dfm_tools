@@ -425,7 +425,7 @@ def test_rasterize_ugrid():
            [0.99102747, 0.98969936, 0.98777662, 0.98510291]])
     assert np.allclose(ds_s1_sel, expected_values)
 
-    # assert TypeError
+    # assert the TypeError
     with pytest.raises(TypeError) as e:
         dfmt.rasterize_ugrid(1)
     assert "rasterize_ugrid expected" in str(e.value)

@@ -417,7 +417,7 @@ def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str ='z0'):
         data_bl = data_xr[varname_bl]
         zw_reference = data_xr[varname_zint] - data_bl
     else:
-        raise KeyError(f'unknown reference "{reference}" (options are z0, waterlevel and bedlevel)') #TODO: make enum?
+        raise KeyError(f'unknown reference "{reference}" (options are z0, waterlevel and bedlevel)')
     
     print('>> subsetting data on fixed depth in fullgrid z-data: ',end='')
     dtstart = dt.datetime.now()
