@@ -281,6 +281,8 @@ def test_download_cmems(tmp_path, varkey):
                        }
     file_prefix = 'cmems_'
     dataset_id = dataset_id_dict[varkey]
+    # freq is converted from "D" to "M" automatically in for monthly datasets
+    freq = "D"
 
     if "_my_" in dataset_id:
         date_min = '2010-01-01 01:00'
@@ -327,14 +329,7 @@ def test_download_cmems(tmp_path, varkey):
     elif '0.083deg' in dataset_id:
         lon_max_exp = 3.08333
         lat_max_exp = 52.083332
-    
-    if 'P1D-m' in dataset_id:
-        freq = "D"
-    elif 'P1M-m' in dataset_id:
-        # when downloading monthly means with daily freqs, we would get many
-        # empty files for dates other than the first day of the months.
-        freq = "M"
-    
+        
     dfmt.download_CMEMS(varkey=varkey,
                         longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
                         date_min=date_min, date_max=date_max, freq=freq,
