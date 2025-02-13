@@ -14,6 +14,7 @@ from dfm_tools.interpolate_grid2bnd import (ext_add_boundary_object_per_polyline
                                             )
 
 __all__ = [
+    "constant_to_bc",
     "cmems_nc_to_bc",
     "cmems_nc_to_ini",
     "preprocess_ini_cmems_to_nc",
@@ -43,6 +44,43 @@ def get_ncvarname(quantity, conversion_dict):
     
     ncvarname = conversion_dict[quantity]['ncvarname']
     return ncvarname
+
+
+def constant_to_bc(ext_new: hcdfm.ExtModel, file_pli, constant=0):
+    """
+    Generate a boundary conditions file (.bc) with a constant waterlevel.
+    This can be used to enforce a know offset from zero, for instance to
+    account for sea level rise.
+    """
+    # read polyfile as geodataframe
+    polyfile_obj = hcdfm.PolyFile(file_pli)
+    plinames_list = [x.metadata.name for x in polyfile_obj.objects]
+    
+    # generate constant forcingmodel object
+    ForcingModel_object = hcdfm.ForcingModel()
+    for pliname in plinames_list:
+        locationname = f"{pliname}_0001"
+        qup = [hcdfm.QuantityUnitPair(quantity="waterlevelbnd", unit="m")]
+        Constant_object = hcdfm.Constant(
+            name=locationname,
+            quantityunitpair=qup,
+            datablock=[[constant]], 
+            )
+        ForcingModel_object.forcing.append(Constant_object)
+    
+    dir_output = os.path.dirname(file_pli)
+    file_pli_name = polyfile_obj.filepath.stem
+    file_bc_out = os.path.join(dir_output,f'waterlevel_constant_{file_pli_name}.bc')
+    ForcingModel_object.save(filepath=file_bc_out)
+    
+    # generate hydrolib-core Boundary object to be appended to the ext file
+    boundary_object = hcdfm.Boundary(quantity='waterlevelbnd', #the FM quantity for tide is also waterlevelbnd
+                                      locationfile=file_pli,
+                                      forcingfile=ForcingModel_object)
+    
+    # add the boundary object to the ext file for each polyline in the polyfile
+    ext_add_boundary_object_per_polyline(ext_new=ext_new, boundary_object=boundary_object)
+    return ext_new
 
 
 def cmems_nc_to_bc(ext_new, list_quantities, tstart, tstop, file_pli, dir_pattern, dir_output, conversion_dict=None, refdate_str=None):

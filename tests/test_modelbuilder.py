@@ -172,6 +172,24 @@ def test_cmems_nc_to_ini(tmp_path, timecase):
 
 
 @pytest.mark.unittest
+def test_constant_to_bc(tmp_path):
+    ext_new = hcdfm.ExtModel()
+    file_pli = tmp_path / "test.pli"
+    with open(file_pli,'w') as f:
+        f.write("""name1
+        2    2
+        1.0    2.0
+        3.0    4.0
+        name2
+        2    2
+        1.0    2.0
+        3.0    4.0
+        """)
+    ext_new = dfmt.constant_to_bc(ext_new=ext_new, file_pli=file_pli, constant=0.5)
+    ext_new.save(file_pli.replace(".pli",".ext"))
+    
+
+@pytest.mark.unittest
 def test_create_model_exec_files_none(tmp_path):
     mdu_file = tmp_path / "temp_test.mdu"
     file_dimr = tmp_path / "dimr_config.xml"
