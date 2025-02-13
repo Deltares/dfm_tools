@@ -38,6 +38,33 @@ def test_get_ncvarname_list():
     assert "quantity 'nonexistingbnd' not in conversion_dict" in str(e.value)
 
 
+@pytest.mark.unittest
+def test_constant_to_bc(tmp_path):
+    # generate pli with two polylines
+    file_pli = tmp_path / "test.pli"
+    with open(file_pli,'w') as f:
+        f.write("""name1
+        2    2
+        1.0    2.0
+        3.0    4.0
+        name2
+        2    2
+        1.0    2.0
+        3.0    4.0
+        """)
+    # generate ext and add constant forcing
+    ext_new = hcdfm.ExtModel()
+    _ = dfmt.constant_to_bc(ext_new=ext_new, file_pli=file_pli, constant=0.5)
+    # check file existence
+    file_bc = tmp_path / "waterlevelbnd_constant_test.bc"
+    assert os.path.exists(file_bc)
+    # check contents
+    forcing_obj = hcdfm.ForcingModel(file_bc)
+    assert len(forcing_obj.forcing) == 2
+    assert np.allclose(forcing_obj.forcing[0].datablock, [[0.5]])
+    assert np.allclose(forcing_obj.forcing[1].datablock, [[0.5]])
+
+
 @pytest.mark.parametrize("timecase", [pytest.param(x, id=x) for x in ['midnight','noon','monthly']])
 @pytest.mark.systemtest
 def test_cmems_nc_to_bc(tmp_path, timecase):
@@ -169,33 +196,6 @@ def test_cmems_nc_to_ini(tmp_path, timecase):
     depths_expected = np.array([-0.494025, -1.541375, -2.645669, -3.819495, -5.078224])
     assert np.allclose(ds_out['depth'].to_numpy(), depths_expected)
     assert ds_out['depth'].attrs['positive'] == 'up'
-
-
-@pytest.mark.unittest
-def test_constant_to_bc(tmp_path):
-    # generate pli with two polylines
-    file_pli = tmp_path / "test.pli"
-    with open(file_pli,'w') as f:
-        f.write("""name1
-        2    2
-        1.0    2.0
-        3.0    4.0
-        name2
-        2    2
-        1.0    2.0
-        3.0    4.0
-        """)
-    # generate ext and add constant forcing
-    ext_new = hcdfm.ExtModel()
-    _ = dfmt.constant_to_bc(ext_new=ext_new, file_pli=file_pli, constant=0.5)
-    # check file existence
-    file_bc = tmp_path / "waterlevelbnd_constant_test.bc"
-    assert os.path.exists(file_bc)
-    # check contents
-    forcing_obj = hcdfm.ForcingModel(file_bc)
-    assert len(forcing_obj.forcing) == 2
-    assert np.allclose(forcing_obj.forcing[0].datablock, [[0.5]])
-    assert np.allclose(forcing_obj.forcing[1].datablock, [[0.5]])
 
 
 @pytest.mark.unittest
