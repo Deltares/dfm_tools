@@ -19,7 +19,7 @@ dir_output = '.'
 file_nc_list = [dfmt.data.fm_curvedbend_map(return_filepath=True), # sigmalayer
                 dfmt.data.fm_grevelingen_map(return_filepath=True), # zlayer
                 r'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DFM_OUTPUT_DCSM-FM_0_5nm\DCSM-FM_0_5nm_0*_map.nc', # szigma fullgrid
-                r'p:\dflowfm\maintenance\JIRA\05000-05999\05477\c103_ws_3d_fourier\DFM_OUTPUT_westerscheldt01_0subst\westerscheldt01_0subst_map.nc', # zsigma model without fullgrid output but with new ocean_sigma_z_coordinate variable
+                dfmt.data.fm_westernscheldt_map(return_filepath=True), # zsigma model without fullgrid output but with new ocean_sigma_z_coordinate variable
                 # r'p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_207\results\RMM_dflowfm_0*_map.nc', # 2D model
                 # r'p:\archivedprojects\11203379-005-mwra-updated-bem\03_model\02_final\A72_ntsu0_kzlb2\DFM_OUTPUT_MB_02\MB_02_0*_map.nc', # zlayer
                 ]
