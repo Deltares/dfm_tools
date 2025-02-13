@@ -52,6 +52,8 @@ def constant_to_bc(ext_new: hcdfm.ExtModel, file_pli, constant=0):
     This can be used to enforce a know offset from zero, for instance to
     account for sea level rise.
     """
+    quantity = "waterlevelbnd"
+    
     # read polyfile as geodataframe
     polyfile_obj = hcdfm.PolyFile(file_pli)
     plinames_list = [x.metadata.name for x in polyfile_obj.objects]
@@ -60,7 +62,7 @@ def constant_to_bc(ext_new: hcdfm.ExtModel, file_pli, constant=0):
     ForcingModel_object = hcdfm.ForcingModel()
     for pliname in plinames_list:
         locationname = f"{pliname}_0001"
-        qup = [hcdfm.QuantityUnitPair(quantity="waterlevelbnd", unit="m")]
+        qup = [hcdfm.QuantityUnitPair(quantity=quantity, unit="m")]
         Constant_object = hcdfm.Constant(
             name=locationname,
             quantityunitpair=qup,
@@ -70,11 +72,11 @@ def constant_to_bc(ext_new: hcdfm.ExtModel, file_pli, constant=0):
     
     dir_output = os.path.dirname(file_pli)
     file_pli_name = polyfile_obj.filepath.stem
-    file_bc_out = os.path.join(dir_output,f'waterlevel_constant_{file_pli_name}.bc')
+    file_bc_out = os.path.join(dir_output,f'{quantity}_constant_{file_pli_name}.bc')
     ForcingModel_object.save(filepath=file_bc_out)
     
     # generate hydrolib-core Boundary object to be appended to the ext file
-    boundary_object = hcdfm.Boundary(quantity='waterlevelbnd', #the FM quantity for tide is also waterlevelbnd
+    boundary_object = hcdfm.Boundary(quantity=quantity,
                                       locationfile=file_pli,
                                       forcingfile=ForcingModel_object)
     
