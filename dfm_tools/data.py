@@ -309,14 +309,8 @@ def gshhs_coastlines_shp() -> str:
     
     #download zipfile if not present
     if not os.path.exists(filepath_zip) and not os.path.exists(dir_gshhs):
-        file_url = f'https://www.ngdc.noaa.gov/mgg/shorelines/data/gshhg/latest/{fname}.zip'
+        file_url = f'https://github.com/GenericMappingTools/gshhg-gmt/releases/download/2.3.7/{fname}.zip'
         resp = download_gshhs(file_url)
-        if resp.is_redirect:
-            # get zipfile from USHLC in case of NOAA server maintenance
-            # https://github.com/Deltares/dfm_tools/issues/1111
-            print("failed (redirected), trying different source")
-            file_url = f'https://www.soest.hawaii.edu/pwessel/gshhg/{fname}.zip'
-            resp = download_gshhs(file_url)
         with open(filepath_zip, 'wb') as f:
             f.write(resp.content)
 
