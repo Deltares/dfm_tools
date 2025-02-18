@@ -325,7 +325,7 @@ def convert_meteo_units(data_xr):
     #solar influx increase for beta=6%
     if 'ssr' in varkeys:
         print('ssr (solar influx) increase for beta=6%')
-        data_xr['ssr'] = data_xr['ssr'] *.94
+        data_xr['ssr'] = data_xr['ssr'] / 0.94
     
     return data_xr
 
