@@ -298,19 +298,20 @@ def gshhs_coastlines_shp() -> str:
     filepath_zip = os.path.join(dir_testdata, f"{fname}.zip")
     dir_gshhs = os.path.join(dir_testdata, fname)
     
-    def download_gshhs(url):
-        url_base = url.split("/")[2]
-        fname_zip = url.split('/')[-1]
-        print(f'downloading "{fname_zip}" from {url_base} to cachedir')
-        # use allow_redirects=False to enforce this url
-        resp = requests.get(url, allow_redirects=False)
-        resp.raise_for_status() #raise HTTPError if url not exists
-        return resp
     
     #download zipfile if not present
     if not os.path.exists(filepath_zip) and not os.path.exists(dir_gshhs):
-        file_url = f'https://github.com/GenericMappingTools/gshhg-gmt/releases/download/2.3.7/{fname}.zip'
-        resp = download_gshhs(file_url)
+        # Getting release information
+        # use allow_redirects=False to enforce this url
+        file_url_raw = f"https://github.com/GenericMappingTools/gshhg-gmt/releases/download/2.3.7/{fname}.zip"
+        url_base = file_url_raw.split("/")[2]
+        fname_zip = file_url_raw.split("/")[-1]
+        print(f'downloading {fname_zip} from {url_base} to cachedir')
+        resp_raw = requests.get(file_url_raw, allow_redirects=False)
+        resp_raw.raise_for_status() #raise HTTPError if url not exists
+        file_url = resp_raw.headers["Location"]
+        resp = requests.get(file_url, allow_redirects=False)
+        resp.raise_for_status() #raise HTTPError if url not exists
         with open(filepath_zip, 'wb') as f:
             f.write(resp.content)
 
