@@ -322,10 +322,10 @@ def convert_meteo_units(data_xr):
         print(f'converting {varkey_sel} unit from J/m2 to W/m2: [{current_unit}] to [{new_unit}]')
         data_xr[varkey_sel] = data_xr[varkey_sel] / 3600 # 3600s/h #TODO: 1W = 1J/s, so does not make sense?
         data_xr[varkey_sel].attrs['units'] = new_unit
-    #solar influx increase for beta=6%
+    #solar influx increase for beta=6% subtraction in DFM
     if 'ssr' in varkeys:
-        print('ssr (solar influx) increase for beta=6%')
-        data_xr['ssr'] = data_xr['ssr'] *.94
+        print('ssr (solar influx) increase for beta=6% subtraction in DflowFM')
+        data_xr['ssr'] = data_xr['ssr'] / 0.94
     
     return data_xr
 
