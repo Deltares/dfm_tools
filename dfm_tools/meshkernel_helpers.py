@@ -386,7 +386,7 @@ def refine_basegrid(
     mk.mesh2d_refine_based_on_gridded_samples(
         gridded_samples=gridded_samples,
         mesh_refinement_params=mesh_refinement_parameters,
-        use_nodal_refinement=True, # TODO: what does this do?
+        use_nodal_refinement=True,
         )
 
 
