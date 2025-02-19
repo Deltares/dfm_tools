@@ -31,8 +31,9 @@ def test_merge_meteofiles(file_nc_era5_pattern):
 
 @pytest.mark.unittest
 def test_file_to_list_pathlib_path():
-    file_nc = Path("path/to/dummy/dir")
-    _ = file_to_list(file_nc)
+    file_nc = dfmt.data.fm_curvedbend_his(return_filepath=True)
+    file_nc_list = file_to_list(Path(file_nc))
+    assert file_nc_list == [file_nc]
 
 
 @pytest.mark.unittest
