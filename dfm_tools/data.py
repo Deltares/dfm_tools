@@ -307,7 +307,7 @@ def gshhs_coastlines_shp() -> str:
         # raise HTTPError if url not exists
         resp.raise_for_status()
         return resp
-        
+    
     # download zipfile if not present
     if not os.path.exists(filepath_zip) and not os.path.exists(dir_gshhs):
         file_url = f"https://github.com/GenericMappingTools/gshhg-gmt/releases/download/2.3.7/{fname}.zip"
