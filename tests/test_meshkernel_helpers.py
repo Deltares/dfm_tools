@@ -90,13 +90,17 @@ def test_meshkernel_refine_basegrid():
         
         # basegrid
         mk_object = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, crs=crs)
+        mk_object_no_edge_size = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, crs=crs)
     
         # refine (fails if wrong type)
         min_edge_size = 300 #in meters
         dfmt.refine_basegrid(mk=mk_object, data_bathy_sel=data_bathy_sel, min_edge_size=min_edge_size)
+        dfmt.refine_basegrid(mk=mk_object_no_edge_size, data_bathy_sel=data_bathy_sel)
 
         assert len(mk_object.mesh2d_get().node_x) == 4074
         assert len(mk_object.mesh2d_get().face_nodes) == 17298
+        assert len(mk_object_no_edge_size.mesh2d_get().node_x) == 1806
+        assert len(mk_object_no_edge_size.mesh2d_get().face_nodes) == 7568
 
 
 @pytest.mark.unittest
