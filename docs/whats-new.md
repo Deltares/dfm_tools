@@ -9,6 +9,7 @@
 
 ### Fix
 - correct ssr conversion factor in `convert_meteo_units()` in [#1134](https://github.com/Deltares/dfm_tools/pull/1134)
+- support for `pathlib.Path` in `file_to_list()` in [#1139](https://github.com/Deltares/dfm_tools/pull/1139)
 
 
 ## 0.34.0 (2025-02-05)
