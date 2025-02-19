@@ -5,6 +5,7 @@
 ### Feat
 - add constant waterlevel offset with `dfmt.constant_to_bc()` in [#1130](https://github.com/Deltares/dfm_tools/pull/1130)
 - download GSHHS data from github instead in [#1132](https://github.com/Deltares/dfm_tools/pull/1132)
+- support multiple grid refinements via `kwargs` in`dfmt.refine_basegrid()` in [#1136](https://github.com/Deltares/dfm_tools/pull/1136)
 
 ### Fix
 - correct ssr conversion factor in `convert_meteo_units()` in [#1134](https://github.com/Deltares/dfm_tools/pull/1134)

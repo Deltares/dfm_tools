@@ -327,29 +327,67 @@ def make_basegrid(lon_min,lon_max,lat_min,lat_max,dx,dy,angle=0,
     return mk
 
 
-def refine_basegrid(mk, data_bathy_sel, min_edge_size):
+def refine_basegrid(
+        mk:meshkernel.MeshKernel,
+        data_bathy_sel:xr.DataArray,
+        **kwargs,
+        ):
     """
-    empty docstring
+    Refine the grid based on gridded bathymetry.
+
+    Parameters
+    ----------
+    mk : meshkernel.MeshKernel
+        The meshkernel instance containing the base grid. Updated in place.
+    data_bathy_sel : xr.DataArray
+        The bathymetry data used for the refinement. Is converted to 
+        meshkernel.GriddedSamples().
+    **kwargs : TYPE
+        Arguments passed on to meshkernel.MeshRefinementParameters(). Some
+        options from the meshkernelpy docs:
+        * min_edge_size (float): Minimum edge size. Meshkernelpy default is
+        `0.5`. Overwritten with 500 here.
+        * refinement_type (RefinementType): Refinement criterion type. 
+        Meshkernelpy default is `RefinementType.REFINEMENT_LEVELS`. Overwritten
+        with `RefinementType.WAVE_COURANT` here.
+        * smoothing_iterations (int, optional): The number of smoothing
+        iterations. Meshkernelpy default is `5`. Overwritten with 2 here.
+        * connect_hanging_nodes (bool): Whether to connect hanging nodes at the
+        end of the iteration. Meshkernelpy default is `True`. Set to False to
+        do multiple refinement steps (e.g. for multiple regions)
+        * max_courant_time (double, optional): Maximum courant time in seconds.
+        Meshkernelpy default is `120`.
+        
     """
     
+    if 'min_edge_size' not in kwargs:
+        # min_edge_size (float): Minimum edge size. Meshkernelpy default is 
+        # `0.5`. Overwrite with more sensible value for coastal models.
+        kwargs['min_edge_size'] = 500
+    if 'refinement_type' not in kwargs:
+        # Refinement criterion type. Meshkernelpy default is 
+        # `RefinementType.REFINEMENT_LEVELS`. 
+        kwargs['refinement_type'] = meshkernel.RefinementType.WAVE_COURANT
+    if 'smoothing_iterations' not in kwargs:
+        # The number of smoothing iterations. Meshkernelpy default is `5`.
+        kwargs['smoothing_iterations'] = 2
+
     lon_np = data_bathy_sel.lon.to_numpy()
     lat_np = data_bathy_sel.lat.to_numpy()
     values_np = data_bathy_sel.to_numpy().flatten()
-    gridded_samples = meshkernel.GriddedSamples(x_coordinates=lon_np,y_coordinates=lat_np,values=values_np)
-
+    gridded_samples = meshkernel.GriddedSamples(
+        x_coordinates=lon_np,
+        y_coordinates=lat_np,
+        values=values_np)
 
     #refinement
-    mesh_refinement_parameters = meshkernel.MeshRefinementParameters(min_edge_size=min_edge_size, #always in meters
-                                                                     refinement_type=meshkernel.RefinementType(1), #Wavecourant/1,
-                                                                     connect_hanging_nodes=True, #set to False to do multiple refinement steps (e.g. for multiple regions)
-                                                                     smoothing_iterations=2,
-                                                                     max_courant_time=120)
+    mesh_refinement_parameters = meshkernel.MeshRefinementParameters(**kwargs)
     
-    mk.mesh2d_refine_based_on_gridded_samples(gridded_samples=gridded_samples,
-                                               mesh_refinement_params=mesh_refinement_parameters,
-                                               use_nodal_refinement=True) #TODO: what does this do?
-    
-    return mk
+    mk.mesh2d_refine_based_on_gridded_samples(
+        gridded_samples=gridded_samples,
+        mesh_refinement_params=mesh_refinement_parameters,
+        use_nodal_refinement=True,
+        )
 
 
 def meshkernel_get_outer_xycoords(mk:meshkernel.MeshKernel):
