@@ -302,31 +302,26 @@ def gshhs_coastlines_shp() -> str:
         url_base = url.split("/")[2]
         fname_zip = url.split('/')[-1]
         print(f'downloading "{fname_zip}" from {url_base} to cachedir')
-        # use allow_redirects=False to enforce this url
-        resp = requests.get(url, allow_redirects=False)
-        resp.raise_for_status() #raise HTTPError if url not exists
+        # url is redirected to https://objects.githubusercontent.com
+        resp = requests.get(url, allow_redirects=True)
+        # raise HTTPError if url not exists
+        resp.raise_for_status()
         return resp
     
-    #download zipfile if not present
+    # download zipfile if not present
     if not os.path.exists(filepath_zip) and not os.path.exists(dir_gshhs):
-        file_url = f'https://www.ngdc.noaa.gov/mgg/shorelines/data/gshhg/latest/{fname}.zip'
+        file_url = f"https://github.com/GenericMappingTools/gshhg-gmt/releases/download/2.3.7/{fname}.zip"
         resp = download_gshhs(file_url)
-        if resp.is_redirect:
-            # get zipfile from USHLC in case of NOAA server maintenance
-            # https://github.com/Deltares/dfm_tools/issues/1111
-            print("failed (redirected), trying different source")
-            file_url = f'https://www.soest.hawaii.edu/pwessel/gshhg/{fname}.zip'
-            resp = download_gshhs(file_url)
         with open(filepath_zip, 'wb') as f:
             f.write(resp.content)
 
-    #unzip zipfile if unzipped folder not present
+    # unzip zipfile if unzipped folder not present
     if not os.path.exists(dir_gshhs):
         print(f'unzipping "{fname}.zip"')
         with zipfile.ZipFile(filepath_zip, 'r') as zip_ref:
             zip_ref.extractall(dir_gshhs)
     
-    #construct filepath list and check existence of shapefiles
+    # construct filepath list and check existence of shapefiles
     filepath_shp_list = [os.path.join(dir_gshhs,'GSHHS_shp',res,f'GSHHS_{res}_L1.shp') for res in ['f','h','i','l','c']]
     for filepath_shp in filepath_shp_list:
         assert os.path.exists(filepath_shp) #coastlines
