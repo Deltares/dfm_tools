@@ -62,7 +62,10 @@ dir_output = '.'
 os.makedirs(dir_output, exist_ok=True)
 
 file_nc = os.path.join(dir_data,fn_match_pattern)
+from dfm_tools.xarray_helpers import file_to_list
+file_nc_list = file_to_list(file_nc)
 
+dgfd
 data_xr_tsel = dfmt.merge_meteofiles(file_nc=file_nc, time_slice=time_slice, 
                                      add_global_overlap=False, #GTSM specific: extend data beyond -180 to 180 longitude
                                      zerostart=False, #GTSM specific: extend data with 0-value fields 1 and 2 days before all_tstart

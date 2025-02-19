@@ -32,6 +32,8 @@ def file_to_list(file_nc):
                 return list(filter(re.compile(pattern).search, strings))
             file_nc_list = glob_re(basename, glob.glob(os.path.join(dirname,f'*{ext}')))
         else:
+            # convert to string, since glob does not support pathlib.Path
+            file_nc = file_nc
             file_nc_list = glob.glob(file_nc)
         file_nc_list.sort()
     if len(file_nc_list)==0:

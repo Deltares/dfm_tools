@@ -7,8 +7,10 @@ Created on Tue Jan 23 17:12:48 2024
 
 import pytest
 import dfm_tools as dfmt
+from dfm_tools.xarray_helpers import file_to_list
 import pandas as pd
 import xarray as xr
+from pathlib import Path
 
 
 @pytest.mark.unittest
@@ -25,6 +27,20 @@ def test_merge_meteofiles(file_nc_era5_pattern):
     assert ds.time.to_pandas().iloc[0] == pd.Timestamp('2010-01-30')
     assert ds.time.to_pandas().iloc[-1] == pd.Timestamp('2010-02-01 23:00')
     assert "msl" in ds.data_vars
+
+
+@pytest.mark.unittest
+def test_file_to_list_pathlib_path():
+    file_nc = Path("path/to/dummy/dir")
+    _ = file_to_list(file_nc)
+
+
+@pytest.mark.unittest
+def test_file_to_list_empty_path():
+    file_nc = "path/to/dummy/dir"
+    with pytest.raises(FileNotFoundError) as e:
+        _ = file_to_list(file_nc)
+    assert "file(s) not found, empty file_nc_list" in str(e.value)
 
 
 @pytest.mark.unittest
