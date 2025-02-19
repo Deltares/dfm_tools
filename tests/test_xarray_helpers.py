@@ -44,6 +44,13 @@ def test_file_to_list_empty_path():
 
 
 @pytest.mark.unittest
+def test_file_to_list_already_list():
+    file_nc = dfmt.data.fm_curvedbend_his(return_filepath=True)
+    file_nc_list = file_to_list([file_nc])
+    assert file_nc_list == [file_nc]
+
+
+@pytest.mark.unittest
 def test_preprocess_hisnc():
     """
     not too much added value, but good to check dropping of duplicated labels
