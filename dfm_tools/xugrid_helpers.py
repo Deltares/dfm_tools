@@ -318,12 +318,25 @@ def open_dataset_curvilinear(file_nc,
     return uds
 
 
-def get_delft3d4_nanmask(x,y):
+def delft3d4_get_nanmask(x,y):
+    # -999.999 in kivu and 0.0 in curvedbend, both in westernscheldt
     bool_0 = (x==0) & (y==0)
     bool_1 = (x==-999) & (y==-999)
     bool_2 = (x==-999.999) & (y==-999.999)
     bool_mask = bool_0 | bool_1 | bool_2
     return bool_mask
+
+
+def delft3d4_stack_shifted_coords(da):
+    shift = 1
+    np_stacked = np.stack([
+        da, #ll
+        da.shift(MC=shift), #lr
+        da.shift(MC=shift, NC=shift), #ur
+        da.shift(NC=shift), #ul
+        ],axis=-1)
+    da_stacked = xr.DataArray(np_stacked, dims=("M","N","four"))
+    return da_stacked
 
 
 def open_dataset_delft3d4(file_nc, **kwargs):
@@ -333,104 +346,58 @@ def open_dataset_delft3d4(file_nc, **kwargs):
     
     ds = xr.open_dataset(file_nc, **kwargs)
     
+    XCOR_stacked = delft3d4_stack_shifted_coords(ds.XCOR)
+    YCOR_stacked = delft3d4_stack_shifted_coords(ds.YCOR)
+    mask_xy = delft3d4_get_nanmask(XCOR_stacked,YCOR_stacked)
+    ds['XCOR_stacked'] = XCOR_stacked.where(~mask_xy)
+    ds['YCOR_stacked'] = YCOR_stacked.where(~mask_xy)
+    
     if ('U1' in ds.data_vars) and ('V1' in ds.data_vars):
-        #mask u and v separately with 0 to avoid high velocities (cannot be nan, since (nan+value)/2= nan instead of value=2
+        # replace invalid values not with nan but with zero
+        # otherwise the spatial coverage is affected
         mask_u1 = (ds.U1==-999) | (ds.U1==-999.999)
         mask_v1 = (ds.V1==-999) | (ds.V1==-999.999)
-        u1_mn = ds.U1.where(~mask_u1,0)
-        v1_mn = ds.V1.where(~mask_v1,0)
+        u1_mn = ds.U1.where(~mask_u1, 0)
+        v1_mn = ds.V1.where(~mask_v1, 0)
         
-        #create combined uv mask (have to rename dimensions)
+        # minus 0.5 since padding=low so corner value is representative for previous face
+        # according to that logic, method=nearest might be better (or just rename the dims)
+        u1_mn_cen = u1_mn.interp(MC=u1_mn.MC-0.5, method='linear').rename({'MC':'M'})
+        v1_mn_cen = v1_mn.interp(NC=v1_mn.NC-0.5, method='linear').rename({'NC':'N'})
+        # since padding=low, just renaming the dims might even be better?
+        # u1_mn_cen = u1_mn.rename({'MC':'M'})
+        # v1_mn_cen = v1_mn.rename({'NC':'N'})
+        # >> could also be done with `ds = ds.swap_dims({"M":"MC","N":"NC"})`
+        
+        # create combined uv mask (have to rename dimensions)
         mask_u1_mn = mask_u1.rename({'MC':'M'})
         mask_v1_mn = mask_v1.rename({'NC':'N'})
         mask_uv1_mn = mask_u1_mn & mask_v1_mn
-
-        #average U1/V1 values to M/N
-        u1_mn = (u1_mn + u1_mn.shift(MC=1))/2 #TODO: or MC=-1
-        u1_mn = u1_mn.rename({'MC':'M'})
-        u1_mn = u1_mn.where(~mask_uv1_mn,np.nan) #replace temporary zeros with nan
-        v1_mn = (v1_mn + v1_mn.shift(NC=1))/2 #TODO: or NC=-1
-        v1_mn = v1_mn.rename({'NC':'N'})
-        v1_mn = v1_mn.where(~mask_uv1_mn,np.nan) #replace temporary zeros with nan
-        ds = ds.drop_vars(['U1','V1']) #to avoid creating large chunks, alternative is to overwrite the vars with the MN-averaged vars, but it requires passing and updating of attrs
+        # drop all actual missing cells
+        u1_mn_cen = u1_mn_cen.where(~mask_uv1_mn)
+        v1_mn_cen = v1_mn_cen.where(~mask_uv1_mn)
         
-        #compute ux/uy/umag/udir #TODO: add attrs to variables
+        # to avoid creating large chunks, alternative is to overwrite the vars with the MN-averaged vars, but it requires passing and updating of attrs
+        ds = ds.drop_vars(['U1','V1'])
+        
+        # compute ux/uy/umag/udir #TODO: add attrs to variables
         alfas_rad = np.deg2rad(ds.ALFAS)
-        vel_x = u1_mn*np.cos(alfas_rad) - v1_mn*np.sin(alfas_rad)
-        vel_y = u1_mn*np.sin(alfas_rad) + v1_mn*np.cos(alfas_rad)
+        vel_x = u1_mn_cen*np.cos(alfas_rad) - v1_mn_cen*np.sin(alfas_rad)
+        vel_y = u1_mn_cen*np.sin(alfas_rad) + v1_mn_cen*np.cos(alfas_rad)
         ds['ux'] = vel_x
         ds['uy'] = vel_y
         ds['umag'] = np.sqrt(vel_x**2 + vel_y**2)
         ds['udir'] = np.rad2deg(np.arctan2(vel_y, vel_x))%360
     
-    mn_slice = slice(1,None)
-    ds = ds.isel(M=mn_slice,N=mn_slice) #cut off first values of M/N (centers), since they are fillvalues and should have different size than MC/NC (corners)
-    
-    #find and set nans in XCOR/YCOR arrays
-    mask_xy = get_delft3d4_nanmask(ds.XCOR,ds.YCOR) #-999.999 in kivu and 0.0 in curvedbend, both in westernscheldt
-    ds['XCOR'] = ds.XCOR.where(~mask_xy)
-    ds['YCOR'] = ds.YCOR.where(~mask_xy)
-
-    #convert to ugrid
-    node_coords_x = ds.XCOR.to_numpy().ravel()
-    node_coords_y = ds.YCOR.to_numpy().ravel()
-    xcor_shape = ds.XCOR.shape
-    xcor_nvals = xcor_shape[0] * xcor_shape[1]
-    
-    #remove weird outlier values in kivu model
-    node_coords_x[node_coords_x<-1000] = np.nan
-    node_coords_y[node_coords_y<-1000] = np.nan
-    
-    #find nodes with nan coords
-    if not (np.isnan(node_coords_x) == np.isnan(node_coords_y)).all():
-        raise Exception('node_coords_xy do not have nans in same location')
-    nan_nodes_bool = np.isnan(node_coords_x)
-    node_coords_x = node_coords_x[~nan_nodes_bool]
-    node_coords_y = node_coords_y[~nan_nodes_bool]
-    
-    node_idx_square = -np.ones(xcor_nvals,dtype=int)
-    node_idx_nonans = np.arange((~nan_nodes_bool).sum())
-    node_idx_square[~nan_nodes_bool] = node_idx_nonans
-    node_idx = node_idx_square.reshape(xcor_shape)
-    face_node_connectivity = np.stack([node_idx[1:,:-1].ravel(), #ll
-                                       node_idx[1:,1:].ravel(), #lr
-                                       node_idx[:-1,1:].ravel(), #ur
-                                       node_idx[:-1,:-1].ravel(), #ul
-                                       ],axis=1)
-    
-    keep_faces_bool = (face_node_connectivity!=-1).sum(axis=1)==4
-    
-    face_node_connectivity = face_node_connectivity[keep_faces_bool]
-    
-    grid = xu.Ugrid2d(node_x=node_coords_x,
-                      node_y=node_coords_y,
-                      face_node_connectivity=face_node_connectivity,
-                      fill_value=-1,
-                      )
-    
-    face_dim = grid.face_dimension
-    ds_stacked = ds.stack({face_dim:('M','N')}).sel({face_dim:keep_faces_bool})
-    ds_stacked = ds_stacked.drop_vars(['M','N','mesh2d_nFaces'])
-    uds = xu.UgridDataset(ds_stacked,grids=[grid]) 
-    
-    uds = uds.drop_vars(['XCOR','YCOR','grid'])
-    uds = uds.drop_dims(['MC','NC']) #clean up dataset by dropping corner dims (drops also variabes with U/V masks and U/V/C bedlevel)
-    
-    # convert to xarray.Dataset to update/remove attrs
-    ds_temp = uds.ugrid.to_dataset()
-    
-    # set vertical dimensions attr
-    # TODO: would be more convenient to do within xu.Ugrid2d(): https://github.com/Deltares/xugrid/issues/195#issuecomment-2111841390
-    grid_attrs = {"vertical_dimensions": ds.grid.attrs["vertical_dimensions"]}
-    ds_temp["mesh2d"] = ds_temp["mesh2d"].assign_attrs(grid_attrs)
-
-    # drop attrs pointing to the removed grid variable (topology is now in mesh2d)
-    # TODO: this is not possible on the xu.UgridDataset directly
-    for varn in ds_temp.data_vars:
-        if "grid" in ds_temp[varn].attrs.keys():
-            del ds_temp[varn].attrs["grid"]
-
-    uds = xu.UgridDataset(ds_temp)
+    # use same dimensions for variables on cell corners and cells faces
+    # ds = ds.swap_dims({"M":"MC","N":"NC"})
+    topology = {"mesh2d":{"x":"M",
+                          "y":"N",
+                          "x_bounds":"XCOR_stacked",
+                          "y_bounds":"YCOR_stacked",
+                          }
+                }
+    uds = xu.UgridDataset.from_structured2d(ds, topology=topology)
     
     return uds
 
