@@ -65,10 +65,13 @@ resolution = 300
 figsize = (16,7)
 
 #MAP RMM
-uds = dfmt.open_dataset_curvilinear(file_nc_map, 
-                                    varn_lon='XZETA', varn_lat='YZETA',
-                                    varn_vert_lon='grid_x', varn_vert_lat='grid_y', 
-                                    ij_dims=['N','M'])
+uds = dfmt.open_dataset_curvilinear(
+    file_nc_map, 
+    x_dim='N',
+    y_dim='M',
+    x_bounds='grid_x',
+    y_bounds='grid_y', 
+    )
 uds_sel = uds.isel(TIME=timestep,LAYER=0)
 uds_rastered = dfmt.rasterize_ugrid(uds_sel,resolution=resolution)
 
@@ -77,6 +80,7 @@ pc = uds_sel.SEP.ugrid.plot(ax=ax, center=False, cmap='jet')
 pc.set_clim([0,3])
 ax.set_aspect('equal')
 fig.tight_layout()
+ax.set_xlim(80000, 90000)
 fig.savefig(os.path.join(dir_output,'waqua_RMM_map_wl'))
 
 fig, ax = plt.subplots(figsize=figsize)

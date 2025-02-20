@@ -279,97 +279,42 @@ def open_partitioned_dataset(file_nc:str, decode_fillvals:bool = False, remove_e
 
 
 def open_dataset_curvilinear(file_nc,
-                             varn_lon='longitude',
-                             varn_lat='latitude',
-                             varn_vert_lon='vertices_longitude', #'grid_x'
-                             varn_vert_lat='vertices_latitude', #'grid_y'
-                             ij_dims=['i','j'], #['N','M']
+                             x_dim='i', # N
+                             y_dim='j', # M
+                             x_bounds='vertices_longitude', # grid_x
+                             y_bounds='vertices_latitude', # grid_y
                              convert_360to180=False,
                              **kwargs):
     """
-    This is a first version of a function that creates a xugrid UgridDataset from a curvilinear dataset like CMCC. Curvilinear means in this case 2D lat/lon variables and i/j indexing. The CMCC dataset does contain vertices, which is essential for conversion to ugrid.
-    It also works for WAQUA files that are converted with getdata
+    Construct a UgridDataset from a curvilinear grid with 2D lat/lon variables
+    with i/j indexes/dims, including vertices variables. Works for curvilinear
+    datasets like CMCC and also for WAQUA files that are converted with getdata
     """
-    # TODO: maybe get varn_lon/varn_lat automatically with cf-xarray (https://github.com/xarray-contrib/cf-xarray)
     
     if 'chunks' not in kwargs:
         kwargs['chunks'] = {'time':1}
     
     # data_vars='minimal' to avoid time dimension on vertices_latitude and others when opening multiple files at once
-    ds = xr.open_mfdataset(file_nc, data_vars="minimal", **kwargs)
-    
-    print('>> getting vertices from ds: ',end='')
+    print('>> open_mfdataset: ',end='')
     dtstart = dt.datetime.now()
-    vertices_longitude = ds.variables[varn_vert_lon].to_numpy()
-    vertices_longitude = vertices_longitude.reshape(-1,vertices_longitude.shape[-1])
-    vertices_latitude = ds.variables[varn_vert_lat].to_numpy()
-    vertices_latitude = vertices_latitude.reshape(-1,vertices_latitude.shape[-1])
+    ds = xr.open_mfdataset(file_nc, data_vars="minimal", **kwargs)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
-    
+
     # convert from 0to360 to -180 to 180
     if convert_360to180:
-        vertices_longitude = (vertices_longitude+180) % 360 - 180
+        ds[x_bounds] = (ds[x_bounds]+180) % 360 - 180
     
-    # face_xy = np.stack([longitude,latitude],axis=-1)
-    # face_coords_x, face_coords_y = face_xy.T
-    #a,b = np.unique(face_xy,axis=0,return_index=True) #TODO: there are non_unique face_xy values, inconvenient
-    face_xy_vertices = np.stack([vertices_longitude,vertices_latitude],axis=-1)
-    face_xy_vertices_flat = face_xy_vertices.reshape(-1,2)
-    uniq,inv = np.unique(face_xy_vertices_flat, axis=0, return_inverse=True)
-    #len(uniq) = 104926 >> amount of unique node coords
-    #uniq.max() = 359.9654541015625 >> node_coords_xy
-    #len(inv) = 422816 >> is length of face_xy_vertices.reshape(-1,2)
-    #inv.max() = 104925 >> node numbers
-    node_coords_x, node_coords_y = uniq.T
+    topology = {"mesh2d":{"x":x_dim,
+                          "y":y_dim,
+                          "x_bounds":x_bounds,
+                          "y_bounds":y_bounds,
+                          }
+                }
     
-    face_node_connectivity = inv.reshape(face_xy_vertices.shape[:2]) #fnc.max() = 104925
-    
-    #remove all faces that have only 1 unique node (does not result in a valid grid) #TODO: not used yet except for print
-    fnc_all_duplicates = (face_node_connectivity.T==face_node_connectivity[:,0]).all(axis=0)
-    
-    #create bool of cells with duplicate nodes (some have 1 unique node, some 3, all these are dropped) #TODO: support also triangles?
-    fnc_closed = np.c_[face_node_connectivity,face_node_connectivity[:,0]]
-    fnc_has_duplicates = (np.diff(fnc_closed,axis=1)==0).any(axis=1)
-    
-    #only keep cells that have 4 unique nodes
-    bool_combined = ~fnc_has_duplicates
-    print(f'WARNING: dropping {fnc_has_duplicates.sum()} faces with duplicate nodes ({fnc_all_duplicates.sum()} with one unique node)')
-    face_node_connectivity = face_node_connectivity[bool_combined]
-    
-    grid = xu.Ugrid2d(node_x=node_coords_x,
-                      node_y=node_coords_y,
-                      face_node_connectivity=face_node_connectivity,
-                      fill_value=-1,
-                      )
-    
-    print('>> stacking ds i/j coordinates: ',end='') #fast
+    print('>> convert to xugrid.UgridDataset: ',end='')
     dtstart = dt.datetime.now()
-    face_dim = grid.face_dimension
-    # TODO: lev/time bnds are dropped, avoid this. maybe stack initial dataset since it would also simplify the rest of the function a bit
-    ds_stacked = ds.stack({face_dim:ij_dims}).sel({face_dim:bool_combined})
-    latlon_vars = [varn_lon, varn_lat, varn_vert_lon, varn_vert_lat]
-    ds_stacked = ds_stacked.drop_vars(ij_dims + latlon_vars + [face_dim])
+    uds = xu.UgridDataset.from_structured2d(ds, topology=topology)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
-    
-    print('>> init uds: ',end='') #long
-    dtstart = dt.datetime.now()
-    uds = xu.UgridDataset(ds_stacked,grids=[grid])
-    print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
-    
-    # drop 0-area cells (relevant for CMCC global datasets)
-    bool_zero_cell_size = uds.grid.area==0
-    if bool_zero_cell_size.any():
-        print(f"WARNING: dropping {bool_zero_cell_size.sum()} 0-sized cells from dataset")
-        uds = uds.isel({uds.grid.face_dimension: ~bool_zero_cell_size})
-    
-    #remove faces that link to node coordinates that are nan (occurs in waqua models)
-    bool_faces_wnannodes = np.isnan(uds.grid.face_node_coordinates[:,:,0]).any(axis=1)
-    if bool_faces_wnannodes.any():
-        print(f'>> drop {bool_faces_wnannodes.sum()} faces with nan nodecoordinates from uds: ',end='') #long
-        dtstart = dt.datetime.now()
-        uds = uds.sel({face_dim:~bool_faces_wnannodes})
-        print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
-    
     return uds
 
 
