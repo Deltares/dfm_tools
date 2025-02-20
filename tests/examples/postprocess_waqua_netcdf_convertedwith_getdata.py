@@ -80,7 +80,6 @@ pc = uds_sel.SEP.ugrid.plot(ax=ax, center=False, cmap='jet')
 pc.set_clim([0,3])
 ax.set_aspect('equal')
 fig.tight_layout()
-ax.set_xlim(80000, 90000)
 fig.savefig(os.path.join(dir_output,'waqua_RMM_map_wl'))
 
 fig, ax = plt.subplots(figsize=figsize)
