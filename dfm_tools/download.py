@@ -68,6 +68,7 @@ def download_ERA5(varkey,
                       'v10':'10m_v_component_of_wind',
                       'v10n':'10m_v_component_of_neutral_wind',
                       # mer and mtpr are now called avg_ie and avg_tprate
+                      # this is reverted in dfmt.preprocess_ERA5() after fixing
                       # https://github.com/Deltares/dfm_tools/issues/1140
                       'mer':'mean_evaporation_rate', 
                       'mtpr':'mean_total_precipitation_rate',
