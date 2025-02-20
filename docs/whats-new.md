@@ -1,6 +1,6 @@
 # What's new
 
-## UNRELEASED
+## 0.35.0 (2025-02-20)
 
 ### Feat
 - add constant waterlevel offset with `dfmt.constant_to_bc()` in [#1130](https://github.com/Deltares/dfm_tools/pull/1130)
