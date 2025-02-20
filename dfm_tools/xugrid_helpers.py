@@ -294,7 +294,8 @@ def open_dataset_curvilinear(file_nc,
     if 'chunks' not in kwargs:
         kwargs['chunks'] = {'time':1}
     
-    # data_vars='minimal' to avoid time dimension on vertices_latitude and others when opening multiple files at once
+    # data_vars='minimal' to avoid time dimension on vertices_latitude and
+    # others when opening multiple files at once
     print('>> open_mfdataset: ',end='')
     dtstart = dt.datetime.now()
     ds = xr.open_mfdataset(file_nc, data_vars="minimal", **kwargs)
