@@ -129,6 +129,14 @@ def preprocess_ERA5(ds):
     if 'valid_time' in ds.coords:
         ds = ds.rename({'valid_time':'time'})
     
+    # datasets retrieved from feb 2025 onwards have different mer/mtpr varnames
+    # convert back for backwards compatibility and clarity
+    # https://github.com/Deltares/dfm_tools/issues/1140
+    if 'avg_tprate' in ds.data_vars:
+        ds = ds.rename_vars({'avg_tprate':'mtpr'})
+    if 'avg_ie' in ds.data_vars:
+        ds = ds.rename_vars({'avg_ie':'mer'})
+    
     # reduce the expver dimension (not present in newly retrieved files)
     if 'expver' in ds.dims:
         ds = ds.mean(dim='expver')
