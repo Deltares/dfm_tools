@@ -67,7 +67,9 @@ def download_ERA5(varkey,
                       'u10n':'10m_u_component_of_neutral_wind',
                       'v10':'10m_v_component_of_wind',
                       'v10n':'10m_v_component_of_neutral_wind',
-                      'mer':'mean_evaporation_rate',
+                      # mer and mtpr are now called avg_ie and avg_tprate
+                      # https://github.com/Deltares/dfm_tools/issues/1140
+                      'mer':'mean_evaporation_rate', 
                       'mtpr':'mean_total_precipitation_rate',
                       'rhoao':'air_density_over_the_oceans',
                       }
