@@ -67,9 +67,12 @@ def download_ERA5(varkey,
                       'u10n':'10m_u_component_of_neutral_wind',
                       'v10':'10m_v_component_of_wind',
                       'v10n':'10m_v_component_of_neutral_wind',
-                      'mer':'mean_evaporation_rate',
+                      # mer and mtpr are now called avg_ie and avg_tprate
+                      # this is reverted in dfmt.preprocess_ERA5() after fixing
+                      # https://github.com/Deltares/dfm_tools/issues/1140
+                      'mer':'mean_evaporation_rate', 
                       'mtpr':'mean_total_precipitation_rate',
-                      'p140209':'air_density_over_the_oceans', # TODO: paramID might be replaced with shortname rhoao: https://jira.ecmwf.int/plugins/servlet/desk/portal/4/SD-82050
+                      'rhoao':'air_density_over_the_oceans',
                       }
     if varkey not in variables_dict.keys(): #TODO: how to get list of available vars? mean_sea_level_pressure and msl both return a dataset with msl varkey, but standard_name air_pressure_at_mean_sea_level returns an error
         raise KeyError(f'"{varkey}" not available, choose from: {", ".join(variables_dict.keys())}')
