@@ -349,8 +349,8 @@ def open_dataset_delft3d4(file_nc, **kwargs):
     xcor_stacked = delft3d4_stack_shifted_coords(ds.XCOR)
     ycor_stacked = delft3d4_stack_shifted_coords(ds.YCOR)
     mask_xy = delft3d4_get_nanmask(xcor_stacked,ycor_stacked)
-    ds['XCOR_stacked'] = xcor_stacked.where(~mask_xy)
-    ds['YCOR_stacked'] = ycor_stacked.where(~mask_xy)
+    ds['xcor_stacked'] = xcor_stacked.where(~mask_xy)
+    ds['ycor_stacked'] = ycor_stacked.where(~mask_xy)
     
     if ('U1' in ds.data_vars) and ('V1' in ds.data_vars):
         # replace invalid values not with nan but with zero
@@ -395,8 +395,8 @@ def open_dataset_delft3d4(file_nc, **kwargs):
     # ds = ds.swap_dims({"M":"MC","N":"NC"})
     topology = {"mesh2d":{"x":"M",
                           "y":"N",
-                          "x_bounds":"XCOR_stacked",
-                          "y_bounds":"YCOR_stacked",
+                          "x_bounds":"xcor_stacked",
+                          "y_bounds":"ycor_stacked",
                           }
                 }
     uds = xu.UgridDataset.from_structured2d(ds, topology=topology)
