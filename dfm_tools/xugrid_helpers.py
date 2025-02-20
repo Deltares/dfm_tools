@@ -346,11 +346,11 @@ def open_dataset_delft3d4(file_nc, **kwargs):
     
     ds = xr.open_dataset(file_nc, **kwargs)
     
-    XCOR_stacked = delft3d4_stack_shifted_coords(ds.XCOR)
-    YCOR_stacked = delft3d4_stack_shifted_coords(ds.YCOR)
-    mask_xy = delft3d4_get_nanmask(XCOR_stacked,YCOR_stacked)
-    ds['XCOR_stacked'] = XCOR_stacked.where(~mask_xy)
-    ds['YCOR_stacked'] = YCOR_stacked.where(~mask_xy)
+    xcor_stacked = delft3d4_stack_shifted_coords(ds.XCOR)
+    ycor_stacked = delft3d4_stack_shifted_coords(ds.YCOR)
+    mask_xy = delft3d4_get_nanmask(xcor_stacked,ycor_stacked)
+    ds['XCOR_stacked'] = xcor_stacked.where(~mask_xy)
+    ds['YCOR_stacked'] = ycor_stacked.where(~mask_xy)
     
     if ('U1' in ds.data_vars) and ('V1' in ds.data_vars):
         # replace invalid values not with nan but with zero
@@ -364,7 +364,7 @@ def open_dataset_delft3d4(file_nc, **kwargs):
         # according to that logic, method=nearest might be better (or just rename the dims)
         u1_mn_cen = u1_mn.interp(MC=u1_mn.MC-0.5, method='linear').rename({'MC':'M'})
         v1_mn_cen = v1_mn.interp(NC=v1_mn.NC-0.5, method='linear').rename({'NC':'N'})
-        # since padding=low, just renaming the dims might even be better?
+        # TODO: since padding=low, just renaming the dims might even be better?
         # u1_mn_cen = u1_mn.rename({'MC':'M'})
         # v1_mn_cen = v1_mn.rename({'NC':'N'})
         # >> could also be done with `ds = ds.swap_dims({"M":"MC","N":"NC"})`
@@ -377,10 +377,12 @@ def open_dataset_delft3d4(file_nc, **kwargs):
         u1_mn_cen = u1_mn_cen.where(~mask_uv1_mn)
         v1_mn_cen = v1_mn_cen.where(~mask_uv1_mn)
         
-        # to avoid creating large chunks, alternative is to overwrite the vars with the MN-averaged vars, but it requires passing and updating of attrs
+        # to avoid creating large chunks, alternative is to overwrite the vars
+        # with the MN-averaged vars, but it requires passing and updating of attrs
         ds = ds.drop_vars(['U1','V1'])
         
-        # compute ux/uy/umag/udir #TODO: add attrs to variables
+        # compute ux/uy/umag/udir
+        # TODO: add attrs to variables
         alfas_rad = np.deg2rad(ds.ALFAS)
         vel_x = u1_mn_cen*np.cos(alfas_rad) - v1_mn_cen*np.sin(alfas_rad)
         vel_y = u1_mn_cen*np.sin(alfas_rad) + v1_mn_cen*np.cos(alfas_rad)
@@ -389,7 +391,7 @@ def open_dataset_delft3d4(file_nc, **kwargs):
         ds['umag'] = np.sqrt(vel_x**2 + vel_y**2)
         ds['udir'] = np.rad2deg(np.arctan2(vel_y, vel_x))%360
     
-    # use same dimensions for variables on cell corners and cells faces
+    # TODO: consider using same dims for variables on cell corners and faces
     # ds = ds.swap_dims({"M":"MC","N":"NC"})
     topology = {"mesh2d":{"x":"M",
                           "y":"N",
