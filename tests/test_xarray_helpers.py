@@ -87,10 +87,11 @@ def test_merge_meteofiles(file_nc_era5_pattern):
     # file_nc_era5_pattern comes from file_nc_era5_pattern() in conftest.py
     # deliberately take time_slice.stop as a non-existing timestep to check
     # outside bounds
-    ds = dfmt.merge_meteofiles(file_nc=file_nc_era5_pattern, 
-                               preprocess=dfmt.preprocess_ERA5, 
-                               time_slice=slice("2010-01-30","2010-02-01 22:30")
-                               )
+    ds = dfmt.merge_meteofiles(
+        file_nc=file_nc_era5_pattern, 
+        preprocess=dfmt.preprocess_ERA5, 
+        time_slice=slice("2010-01-30","2010-02-01 22:30")
+        )
     assert ds.sizes["time"] == 72
     assert ds.time.to_pandas().iloc[0] == pd.Timestamp('2010-01-30')
     assert ds.time.to_pandas().iloc[-1] == pd.Timestamp('2010-02-01 23:00')
@@ -202,7 +203,7 @@ def test_merge_meteofiles_rename_latlon(ds_era5_empty, tmp_path):
             preprocess=dfmt.preprocess_ERA5, 
             time_slice=slice(date_min, date_max),
             )
-    assert "no longitude/latitude, lon/lat or x/y variables found in dataset" in str(e.value)
+    assert "no longitude/latitude, lon/lat or x/y variables" in str(e.value)
 
 
 @pytest.mark.unittest
