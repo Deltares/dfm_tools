@@ -12,6 +12,7 @@ from dfm_tools.errors import OutOfRangeError
 from dfm_tools.xarray_helpers import file_to_list
 import pandas as pd
 import xarray as xr
+import numpy as np
 from pathlib import Path
 
 
@@ -119,6 +120,78 @@ def test_merge_meteofiles_rename_latlon(ds_era5_empty, tmp_path):
             time_slice=slice(date_min, date_max),
             )
     assert "no longitude/latitude, lon/lat or x/y variables found in dataset" in str(e.value)
+
+
+@pytest.mark.unittest
+def test_merge_meteofiles_convert360to180(ds_era5_empty, tmp_path):
+    file_nc = os.path.join(tmp_path, "era5_msl_empty.nc")
+    lon_vals = np.arange(0, 360, 0.5) # from -180 to 179.5
+    ds_era5_empty = ds_era5_empty.drop_vars(['longitude'])
+    ds_era5_empty['longitude'] = xr.DataArray(lon_vals, dims='longitude')
+    ds_era5_empty.to_netcdf(file_nc)
+    file_nc_era5_pattern = os.path.join(tmp_path, "*.nc")
+    
+    date_min = "2010-01-31"
+    date_max = "2010-02-01"
+
+    # merge meteo
+    ds_merged = dfmt.merge_meteofiles(
+        file_nc=file_nc_era5_pattern,
+        preprocess=dfmt.preprocess_ERA5, 
+        time_slice=slice(date_min, date_max),
+        )
+    assert np.isclose(ds_era5_empty["longitude"][0], 0)
+    assert np.isclose(ds_era5_empty["longitude"][-1], 359.5)
+    assert np.isclose(ds_merged["longitude"][0], -180.0)
+    assert np.isclose(ds_merged["longitude"][-1], 179.5)
+ 
+@pytest.mark.unittest
+def test_merge_meteofiles_global_overlap(ds_era5_empty, tmp_path):
+    file_nc = os.path.join(tmp_path, "era5_msl_empty.nc")
+    lon_vals = np.arange(-180, 180, 0.5) # from -180 to 179.5
+    ds_era5_empty = ds_era5_empty.drop_vars(['longitude'])
+    ds_era5_empty['longitude'] = xr.DataArray(lon_vals, dims='longitude')
+    ds_era5_empty.to_netcdf(file_nc)
+    file_nc_era5_pattern = os.path.join(tmp_path, "*.nc")
+    
+    date_min = "2010-01-31"
+    date_max = "2010-02-01"
+
+    # merge meteo
+    ds_merged = dfmt.merge_meteofiles(
+        file_nc=file_nc_era5_pattern,
+        preprocess=dfmt.preprocess_ERA5, 
+        time_slice=slice(date_min, date_max),
+        add_global_overlap=True,
+        )
+    assert np.isclose(ds_era5_empty["longitude"][0], -180.0)
+    assert np.isclose(ds_era5_empty["longitude"][-1], 179.5)
+    assert np.isclose(ds_merged["longitude"][0], -181.0)
+    assert np.isclose(ds_merged["longitude"][-1], 181.0)
+ 
+
+@pytest.mark.unittest
+def test_merge_meteofiles_zerostart(ds_era5_empty, tmp_path):
+    file_nc = os.path.join(tmp_path, "era5_msl_empty.nc")
+    ds_era5_empty.to_netcdf(file_nc)
+    file_nc_era5_pattern = os.path.join(tmp_path, "*.nc")
+    
+    date_min = "2010-01-31"
+    date_max = "2010-02-01"
+
+    # merge meteo
+    ds_merged = dfmt.merge_meteofiles(
+        file_nc=file_nc_era5_pattern,
+        preprocess=dfmt.preprocess_ERA5, 
+        time_slice=slice(date_min, date_max),
+        zerostart=True,
+        )
+    assert len(ds_era5_empty.time) == 9
+    ds_time0 = ds_era5_empty.time.to_pandas().iloc[0]
+    assert ds_time0 == pd.Timestamp('2010-01-31 00:00:00')
+    assert len(ds_merged.time) == 11
+    ds_merged_time0 = ds_merged.time.to_pandas().iloc[0]
+    assert ds_merged_time0 == pd.Timestamp('2010-01-29 00:00:00')
 
 
 @pytest.mark.unittest
