@@ -8,6 +8,7 @@ import pandas as pd
 import logging
 import numpy as np
 from dfm_tools.errors import OutOfRangeError
+from dfm_tools.interpolate_grid2bnd import _ds_sel_time_outside
 
 __all__ = [
     "preprocess_hisnc",
@@ -198,7 +199,6 @@ def merge_meteofiles(file_nc:str, preprocess=None,
     #TODO: provide extfile example with fmquantity/ncvarname combinations and cleanup FM code: https://issuetracker.deltares.nl/browse/UNST-6453
     #TODO: add coordinate conversion (only valid for models with multidimensional lat/lon variables like HARMONIE and HIRLAM). This should work: ds_reproj = ds.set_crs(4326).to_crs(28992)
     #TODO: add CMCC etc from gtsmip repos (mainly calendar conversion)
-    #TODO: put conversions in separate function?
     #TODO: maybe add renaming like {'salinity':'so', 'water_temp':'thetao'} for hycom
        
     #woa workaround
@@ -229,28 +229,25 @@ def merge_meteofiles(file_nc:str, preprocess=None,
         else:
             raise KeyError('no longitude/latitude, lon/lat or x/y variables found in dataset')
     
-    # select time and do checks
-    # TODO: check if calendar is standard/gregorian
-    data_xr = data_xr.sel(time=time_slice)
+    # check for duplicated timesteps
     if data_xr.get_index('time').duplicated().any():
         print('dropping duplicate timesteps')
-        data_xr = data_xr.sel(time=~data_xr.get_index('time').duplicated()) #drop duplicate timesteps
+        # drop duplicate timesteps
+        data_xr = data_xr.sel(time=~data_xr.get_index('time').duplicated())
     
-    #check if there are times selected
-    if len(data_xr.time)==0:
-        raise OutOfRangeError(f'ERROR: no times selected, ds_text={data_xr.time[[0,-1]].to_numpy()} and time_slice={time_slice}')
+    # TODO: check if calendar is standard/gregorian
+    # check available times and select outside bounds
+    data_xr = _ds_sel_time_outside(
+        data_xr,
+        tstart=time_slice.start,
+        tstop=time_slice.stop,
+        )
     
     #check if there are no gaps (more than one unique timestep)
     times_pd = data_xr['time'].to_series()
     timesteps_uniq = times_pd.diff().iloc[1:].unique()
     if len(timesteps_uniq)>1:
-        raise Exception(f'ERROR: gaps found in selected dataset (are there sourcefiles missing?), unique timesteps (hour): {timesteps_uniq/1e9/3600}')
-    
-    #check if requested times are available in selected files (in times_pd)
-    if time_slice.start not in times_pd.index:
-        raise OutOfRangeError(f'ERROR: time_slice_start="{time_slice.start}" not in selected files, timerange: "{times_pd.index[0]}" to "{times_pd.index[-1]}"')
-    if time_slice.stop not in times_pd.index:
-        raise OutOfRangeError(f'ERROR: time_slice_stop="{time_slice.stop}" not in selected files, timerange: "{times_pd.index[0]}" to "{times_pd.index[-1]}"')
+        raise ValueError(f'gaps found in selected dataset (are there sourcefiles missing?), unique timesteps (hour): {timesteps_uniq/1e9/3600}')
     
     data_xr = convert_meteo_units(data_xr)
     

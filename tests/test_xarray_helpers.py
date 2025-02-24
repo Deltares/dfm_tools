@@ -5,8 +5,10 @@ Created on Tue Jan 23 17:12:48 2024
 @author: veenstra
 """
 
+import os
 import pytest
 import dfm_tools as dfmt
+from dfm_tools.errors import OutOfRangeError
 from dfm_tools.xarray_helpers import file_to_list
 import pandas as pd
 import xarray as xr
@@ -27,6 +29,46 @@ def test_merge_meteofiles(file_nc_era5_pattern):
     assert ds.time.to_pandas().iloc[0] == pd.Timestamp('2010-01-30')
     assert ds.time.to_pandas().iloc[-1] == pd.Timestamp('2010-02-01 23:00')
     assert "msl" in ds.data_vars
+
+
+@pytest.mark.unittest
+def test_merge_meteofiles_outofrange_times(ds_era5_empty, tmp_path):
+    file_nc = os.path.join(tmp_path, "era5_msl_empty.nc")
+    ds_era5_empty.to_netcdf(file_nc)
+    file_nc_era5_pattern = os.path.join(tmp_path, "*.nc")
+
+    date_min = "2030-01-01"
+    date_max = "2030-02-01"
+
+    # merge meteo
+    with pytest.raises(OutOfRangeError) as e:
+        _ = dfmt.merge_meteofiles(
+            file_nc=file_nc_era5_pattern,
+            preprocess=dfmt.preprocess_ERA5, 
+            time_slice=slice(date_min, date_max),
+            )
+    assert "requested tstop 2030-02-01 00:00:00 outside" in str(e.value)
+
+
+@pytest.mark.unittest
+def test_merge_meteofiles_duplicated_times(ds_era5_empty, tmp_path):
+    file_nc = os.path.join(tmp_path, "era5_msl_empty.nc")
+    ds = xr.concat([ds_era5_empty,ds_era5_empty], dim='time')
+    ds.to_netcdf(file_nc)
+    file_nc_era5_pattern = os.path.join(tmp_path, "*.nc")
+
+    date_min = "2010-01-31"
+    date_max = "2010-02-01"
+
+    # merge meteo
+    ds_merged = dfmt.merge_meteofiles(
+        file_nc=file_nc_era5_pattern,
+        preprocess=dfmt.preprocess_ERA5, 
+        time_slice=slice(date_min, date_max),
+        )
+    
+    assert len(ds.time) == 18
+    assert len(ds_merged.time) == 9
 
 
 @pytest.mark.unittest
