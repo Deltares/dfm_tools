@@ -147,6 +147,7 @@ def preprocess_ERA5(ds):
     if 'expver' in ds.dims:
         ds = ds.mean(dim='expver')
     # prevent "ValueError: coordinate 'expver' not present in all datasets"
+    # when merging old datasets (without expver coord) with new datasets
     if 'expver' in ds.coords:
         ds = ds.reset_coords(['expver'])
     
