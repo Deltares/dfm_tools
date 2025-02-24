@@ -7,7 +7,6 @@ import glob
 import pandas as pd
 import logging
 import numpy as np
-from dfm_tools.errors import OutOfRangeError
 from dfm_tools.interpolate_grid2bnd import _ds_sel_time_outside
 
 __all__ = [
