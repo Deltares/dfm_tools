@@ -274,7 +274,6 @@ def test_open_dataset_delft3d4():
     uds = dfmt.open_dataset_delft3d4(file_nc)
 
     assert "mesh2d" in uds.grid.to_dataset().data_vars
-    assert "vertical_dimensions" in uds.grid.attrs
     assert "grid" not in uds.data_vars
 
     # test if plotting works, this is a basic validation of whether it is a proper ugrid dataset
@@ -285,7 +284,14 @@ def test_open_dataset_delft3d4():
 @pytest.mark.unittest
 def test_open_dataset_curvilinear():
     file_nc = r'P:\archivedprojects\11206304-futuremares-rawdata-preps\data\CMIP6_BC\CMCC-ESM2\vo_Omon_CMCC-ESM2_historical_r1i1p1f1_gn_*.nc'
-    uds = dfmt.open_dataset_curvilinear(file_nc, convert_360to180=True)
+    uds = dfmt.open_dataset_curvilinear(
+        file_nc,
+        x_dim='i',
+        y_dim='j',
+        x_bounds='vertices_longitude',
+        y_bounds='vertices_latitude',
+        convert_360to180=True,
+        )
     
     # check if vertices lat/lon and lat/lon variables are dropped: https://github.com/Deltares/dfm_tools/issues/930
     assert set(uds.coords) == set(['lev', 'mesh2d_nFaces', 'time'])

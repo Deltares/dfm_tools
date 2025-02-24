@@ -340,12 +340,57 @@ def delft3d4_stack_shifted_coords(da):
     return da_stacked
 
 
+def delft3d4_convert_uv(ds):
+    # replace invalid values not with nan but with zero
+    # otherwise the spatial coverage is affected
+    mask_u1 = (ds.U1==-999) | (ds.U1==-999.999)
+    mask_v1 = (ds.V1==-999) | (ds.V1==-999.999)
+    u1_mn = ds.U1.where(~mask_u1, 0)
+    v1_mn = ds.V1.where(~mask_v1, 0)
+    
+    # minus 0.5 since padding=low so corner value is representative for previous face
+    # according to that logic, method=nearest might be better (or just rename the dims)
+    u1_mn_cen = u1_mn.interp(MC=u1_mn.MC-0.5, method='linear').rename({'MC':'M'})
+    v1_mn_cen = v1_mn.interp(NC=v1_mn.NC-0.5, method='linear').rename({'NC':'N'})
+    # TODO: since padding=low, just renaming the dims might even be better?
+    # u1_mn_cen = u1_mn.rename({'MC':'M'})
+    # v1_mn_cen = v1_mn.rename({'NC':'N'})
+    # >> could also be done with `ds = ds.swap_dims({"M":"MC","N":"NC"})`
+    
+    # create combined uv mask (have to rename dimensions)
+    mask_u1_mn = mask_u1.rename({'MC':'M'})
+    mask_v1_mn = mask_v1.rename({'NC':'N'})
+    mask_uv1_mn = mask_u1_mn & mask_v1_mn
+    # drop all actual missing cells
+    u1_mn_cen = u1_mn_cen.where(~mask_uv1_mn)
+    v1_mn_cen = v1_mn_cen.where(~mask_uv1_mn)
+    
+    # to avoid creating large chunks, alternative is to overwrite the vars
+    # with the MN-averaged vars, but it requires passing and updating of attrs
+    ds = ds.drop_vars(['U1','V1'])
+    
+    # compute ux/uy/umag/udir
+    # TODO: add attrs to variables
+    alfas_rad = np.deg2rad(ds.ALFAS)
+    vel_x = u1_mn_cen*np.cos(alfas_rad) - v1_mn_cen*np.sin(alfas_rad)
+    vel_y = u1_mn_cen*np.sin(alfas_rad) + v1_mn_cen*np.cos(alfas_rad)
+    ds['ux'] = vel_x
+    ds['uy'] = vel_y
+    ds['umag'] = np.sqrt(vel_x**2 + vel_y**2)
+    ds['udir'] = np.rad2deg(np.arctan2(vel_y, vel_x))%360
+    return ds
+
+
 def open_dataset_delft3d4(file_nc, **kwargs):
     
     if 'chunks' not in kwargs:
         kwargs['chunks'] = {'time':1}
     
     ds = xr.open_dataset(file_nc, **kwargs)
+    
+    # prevent grid variable that might be confused with uds.grid accessor
+    if 'grid' in ds.data_vars:
+        ds = ds.rename_vars({'grid':'grid_original'})
     
     xcor_stacked = delft3d4_stack_shifted_coords(ds.XCOR)
     ycor_stacked = delft3d4_stack_shifted_coords(ds.YCOR)
@@ -354,43 +399,7 @@ def open_dataset_delft3d4(file_nc, **kwargs):
     ds['ycor_stacked'] = ycor_stacked.where(~mask_xy)
     
     if ('U1' in ds.data_vars) and ('V1' in ds.data_vars):
-        # replace invalid values not with nan but with zero
-        # otherwise the spatial coverage is affected
-        mask_u1 = (ds.U1==-999) | (ds.U1==-999.999)
-        mask_v1 = (ds.V1==-999) | (ds.V1==-999.999)
-        u1_mn = ds.U1.where(~mask_u1, 0)
-        v1_mn = ds.V1.where(~mask_v1, 0)
-        
-        # minus 0.5 since padding=low so corner value is representative for previous face
-        # according to that logic, method=nearest might be better (or just rename the dims)
-        u1_mn_cen = u1_mn.interp(MC=u1_mn.MC-0.5, method='linear').rename({'MC':'M'})
-        v1_mn_cen = v1_mn.interp(NC=v1_mn.NC-0.5, method='linear').rename({'NC':'N'})
-        # TODO: since padding=low, just renaming the dims might even be better?
-        # u1_mn_cen = u1_mn.rename({'MC':'M'})
-        # v1_mn_cen = v1_mn.rename({'NC':'N'})
-        # >> could also be done with `ds = ds.swap_dims({"M":"MC","N":"NC"})`
-        
-        # create combined uv mask (have to rename dimensions)
-        mask_u1_mn = mask_u1.rename({'MC':'M'})
-        mask_v1_mn = mask_v1.rename({'NC':'N'})
-        mask_uv1_mn = mask_u1_mn & mask_v1_mn
-        # drop all actual missing cells
-        u1_mn_cen = u1_mn_cen.where(~mask_uv1_mn)
-        v1_mn_cen = v1_mn_cen.where(~mask_uv1_mn)
-        
-        # to avoid creating large chunks, alternative is to overwrite the vars
-        # with the MN-averaged vars, but it requires passing and updating of attrs
-        ds = ds.drop_vars(['U1','V1'])
-        
-        # compute ux/uy/umag/udir
-        # TODO: add attrs to variables
-        alfas_rad = np.deg2rad(ds.ALFAS)
-        vel_x = u1_mn_cen*np.cos(alfas_rad) - v1_mn_cen*np.sin(alfas_rad)
-        vel_y = u1_mn_cen*np.sin(alfas_rad) + v1_mn_cen*np.cos(alfas_rad)
-        ds['ux'] = vel_x
-        ds['uy'] = vel_y
-        ds['umag'] = np.sqrt(vel_x**2 + vel_y**2)
-        ds['udir'] = np.rad2deg(np.arctan2(vel_y, vel_x))%360
+        ds = delft3d4_convert_uv(ds)
     
     # TODO: consider using same dims for variables on cell corners and faces
     # ds = ds.swap_dims({"M":"MC","N":"NC"})
