@@ -247,7 +247,7 @@ def merge_meteofiles(file_nc:str, preprocess=None,
     times_pd = data_xr['time'].to_series()
     timesteps_uniq = times_pd.diff().iloc[1:].unique()
     if len(timesteps_uniq)>1:
-        raise ValueError(f'gaps found in selected dataset (are there sourcefiles missing?), unique timesteps (hour): {timesteps_uniq/1e9/3600}')
+        raise ValueError(f'time gaps found in selected dataset (missing sourcefiles?), unique timesteps (hour): {timesteps_uniq/1e9/3600}')
     
     data_xr = convert_meteo_units(data_xr)
     

@@ -75,6 +75,26 @@ def test_merge_meteofiles_duplicated_times(ds_era5_empty, tmp_path):
 
 
 @pytest.mark.unittest
+def test_merge_meteofiles_times_gap(ds_era5_empty, tmp_path):
+    file_nc = os.path.join(tmp_path, "era5_msl_empty.nc")
+    ds_era5_empty = ds_era5_empty.isel(time=[0,1,2,3,6,7,8])
+    ds_era5_empty.to_netcdf(file_nc)
+    file_nc_era5_pattern = os.path.join(tmp_path, "*.nc")
+
+    date_min = "2010-01-31"
+    date_max = "2010-02-01"
+
+    # merge meteo
+    with pytest.raises(ValueError) as e:
+        _ = dfmt.merge_meteofiles(
+            file_nc=file_nc_era5_pattern,
+            preprocess=dfmt.preprocess_ERA5, 
+            time_slice=slice(date_min, date_max),
+            )
+    assert "time gaps found in selected dataset" in str(e.value)
+
+
+@pytest.mark.unittest
 def test_merge_meteofiles_rename_latlon(ds_era5_empty, tmp_path):
     date_min = "2010-01-31"
     date_max = "2010-02-01"
