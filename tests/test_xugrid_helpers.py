@@ -284,17 +284,20 @@ def test_open_dataset_delft3d4():
 @pytest.mark.unittest
 def test_open_dataset_curvilinear():
     file_nc = r'P:\archivedprojects\11206304-futuremares-rawdata-preps\data\CMIP6_BC\CMCC-ESM2\vo_Omon_CMCC-ESM2_historical_r1i1p1f1_gn_*.nc'
-    uds = dfmt.open_dataset_curvilinear(
-        file_nc,
-        x_dim='i',
-        y_dim='j',
-        x_bounds='vertices_longitude',
-        y_bounds='vertices_latitude',
-        convert_360to180=True,
-        )
     
+    with pytest.warns(UserWarning) as w:
+        uds = dfmt.open_dataset_curvilinear(
+            file_nc,
+            x_dim='i',
+            y_dim='j',
+            x_bounds='vertices_longitude',
+            y_bounds='vertices_latitude',
+            convert_360to180=True,
+            )
+    assert "A UGRID2D face requires at least" in str(w[0].message)
+
     # check if vertices lat/lon and lat/lon variables are dropped: https://github.com/Deltares/dfm_tools/issues/930
-    assert set(uds.coords) == set(['lev', 'mesh2d_nFaces', 'time'])
+    assert set(uds.coords) == set(['latitude', 'longitude', 'lev', 'mesh2d_nFaces', 'time'])
     assert set(uds.data_vars) == set(['lev_bnds', 'time_bnds', 'vo'])
     
     # check absence of time dimension where it should not be: https://github.com/Deltares/dfm_tools/issues/928
