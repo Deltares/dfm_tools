@@ -21,9 +21,11 @@ from pathlib import Path
 @pytest.mark.timeout(60) # useful since CDS downloads are terribly slow sometimes, so skip in that case
 def test_merge_meteofiles(file_nc_era5_pattern):
     # file_nc_era5_pattern comes from file_nc_era5_pattern() in conftest.py
+    # deliberately take time_slice.stop as a non-existing timestep to check
+    # outside bounds
     ds = dfmt.merge_meteofiles(file_nc=file_nc_era5_pattern, 
                                preprocess=dfmt.preprocess_ERA5, 
-                               time_slice=slice("2010-01-30","2010-02-01")
+                               time_slice=slice("2010-01-30","2010-02-01 22:30")
                                )
     assert ds.sizes["time"] == 72
     assert ds.time.to_pandas().iloc[0] == pd.Timestamp('2010-01-30')
