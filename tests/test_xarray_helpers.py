@@ -74,6 +74,54 @@ def test_merge_meteofiles_duplicated_times(ds_era5_empty, tmp_path):
 
 
 @pytest.mark.unittest
+def test_merge_meteofiles_rename_latlon(ds_era5_empty, tmp_path):
+    date_min = "2010-01-31"
+    date_max = "2010-02-01"
+    
+    # lat/lon latitude/longitude vars
+    ds = ds_era5_empty.copy()
+    ds = ds.rename({'longitude':'lon', 'latitude':'lat'})
+    file_nc = os.path.join(tmp_path, "era5_lonlat_empty.nc")
+    ds.to_netcdf(file_nc)
+    file_nc_era5_pattern = file_nc.replace(".nc", "*.nc")
+    ds_merged = dfmt.merge_meteofiles(
+        file_nc=file_nc_era5_pattern,
+        preprocess=dfmt.preprocess_ERA5, 
+        time_slice=slice(date_min, date_max),
+        )
+    assert "longitude" in ds_merged.data_vars
+    assert "latitude" in ds_merged.data_vars
+    
+    # x/y latitude/longitude vars
+    ds = ds_era5_empty.copy()
+    ds = ds.rename({'longitude':'x', 'latitude':'y'})
+    file_nc = os.path.join(tmp_path, "era5_xy_empty.nc")
+    ds.to_netcdf(file_nc)
+    file_nc_era5_pattern = file_nc.replace(".nc", "*.nc")
+    ds_merged = dfmt.merge_meteofiles(
+        file_nc=file_nc_era5_pattern,
+        preprocess=dfmt.preprocess_ERA5, 
+        time_slice=slice(date_min, date_max),
+        )
+    assert "longitude" in ds_merged.data_vars
+    assert "latitude" in ds_merged.data_vars
+
+    # no latitude/longitude vars
+    ds = ds_era5_empty.copy()
+    ds = ds.drop_vars(['longitude', 'latitude'])
+    file_nc = os.path.join(tmp_path, "era5_none_empty.nc")
+    ds.to_netcdf(file_nc)
+    file_nc_era5_pattern = file_nc.replace(".nc", "*.nc")
+    with pytest.raises(KeyError) as e:
+        _ = dfmt.merge_meteofiles(
+            file_nc=file_nc_era5_pattern,
+            preprocess=dfmt.preprocess_ERA5, 
+            time_slice=slice(date_min, date_max),
+            )
+    assert "no longitude/latitude, lon/lat or x/y variables found in dataset" in str(e.value)
+
+
+@pytest.mark.unittest
 def test_file_to_list_pathlib_path():
     file_nc = dfmt.data.fm_curvedbend_his(return_filepath=True)
     file_nc_list = file_to_list(Path(file_nc))
