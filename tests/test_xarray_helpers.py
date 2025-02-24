@@ -17,6 +17,56 @@ from pathlib import Path
 
 
 @pytest.mark.unittest
+def test_preprocess_ERA5_expver_coord(ds_era5_empty):
+    data_expver = np.arange(len(ds_era5_empty.time))
+    ds_era5_empty['expver'] = xr.DataArray(data_expver, dims='time')
+    ds_era5_empty = ds_era5_empty.set_coords('expver')
+
+    ds = dfmt.preprocess_ERA5(ds_era5_empty)
+    assert "expver" in ds_era5_empty.coords
+    assert "expver" not in ds.coords
+
+
+@pytest.mark.unittest
+def test_preprocess_ERA5_expver_dim(ds_era5_empty):
+    ntimes = len(ds_era5_empty.time)
+    data_dummy = np.ones(shape=(ntimes,2))
+    ds_era5_empty['dummy'] = xr.DataArray(data_dummy, dims=('time','expver'))
+
+    ds = dfmt.preprocess_ERA5(ds_era5_empty)
+    assert "expver" in ds_era5_empty.dims
+    assert "expver" not in ds.dims
+
+
+@pytest.mark.unittest
+def test_preprocess_ERA5_mer_mtpr(ds_era5_empty):
+    ds_era5_empty['avg_tprate'] = xr.DataArray()
+    ds_era5_empty['avg_ie'] = xr.DataArray()
+    ds = dfmt.preprocess_ERA5(ds_era5_empty)
+    assert "avg_tprate" in ds_era5_empty.data_vars
+    assert "avg_ie" in ds_era5_empty.data_vars
+    assert "mtpr" in ds.data_vars
+    assert "mer" in ds.data_vars
+
+
+@pytest.mark.unittest
+def test_preprocess_ERA5_int32(ds_era5_empty):
+    ds_era5_empty['dummy_int'] = xr.DataArray()
+    ds_era5_empty['dummy_int'].encoding['dtype'] = 'int32'
+    ds_era5_empty['dummy_int'].encoding['scale_factor'] = 1
+    ds_era5_empty['dummy_int'].encoding['add_offset'] = 1
+    
+    ds = dfmt.preprocess_ERA5(ds_era5_empty)
+    
+    assert "dtype" in ds_era5_empty['dummy_int'].encoding.keys()
+    assert "scale_factor" in ds_era5_empty['dummy_int'].encoding.keys()
+    assert "add_offset" in ds_era5_empty['dummy_int'].encoding.keys()
+    assert "dtype" not in ds['dummy_int'].encoding.keys()
+    assert "scale_factor" not in ds['dummy_int'].encoding.keys()
+    assert "add_offset" not in ds['dummy_int'].encoding.keys()
+
+
+@pytest.mark.unittest
 @pytest.mark.requiressecrets
 @pytest.mark.era5slow # temporarily skip these on github
 @pytest.mark.timeout(60) # useful since CDS downloads are terribly slow sometimes, so skip in that case

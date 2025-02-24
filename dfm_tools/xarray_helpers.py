@@ -140,6 +140,9 @@ def preprocess_ERA5(ds):
     # reduce the expver dimension (not present in newly retrieved files)
     if 'expver' in ds.dims:
         ds = ds.mean(dim='expver')
+    # prevent "ValueError: coordinate 'expver' not present in all datasets"
+    if 'expver' in ds.coords:
+        ds = ds.reset_coords(['expver'])
     
     # drop scaling/offset encoding if present and converting to float32. Not
     # present in newly retrieved files, variables are zipped float32 instead
@@ -165,9 +168,11 @@ def preprocess_woa(ds):
     return ds
 
 
-def merge_meteofiles(file_nc:str, preprocess=None, 
-                     time_slice:slice = slice(None,None),
-                     add_global_overlap:bool = False, zerostart:bool = False,
+def merge_meteofiles(file_nc:str,
+                     time_slice:slice,
+                     preprocess = None, 
+                     add_global_overlap:bool = False,
+                     zerostart:bool = False,
                      **kwargs) -> xr.Dataset:
     """
     for merging for instance meteo files
@@ -179,8 +184,8 @@ def merge_meteofiles(file_nc:str, preprocess=None,
         DESCRIPTION.
     preprocess : TYPE, optional
         DESCRIPTION. The default is None.
-    time_slice : slice, optional
-        DESCRIPTION. The default is slice(None,None).
+    time_slice : slice
+        slice(tstart,tstop).
     add_global_overlap : bool, optional
         GTSM specific: extend data beyond -180 to 180 longitude. The default is False.
     zerostart : bool, optional
