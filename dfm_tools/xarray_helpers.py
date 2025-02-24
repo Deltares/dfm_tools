@@ -116,6 +116,12 @@ def preprocess_ERA5(ds):
     but anexpver variable is present defining whether the data comes
     from ERA5 (1) or ERA5T (5).
     
+    Converting expver from coordinate to data_variable: The old datafiles with
+    an expver dimension did not contain an expver variable. The new datafiles
+    do contain an expver variable, which is also set as a coordinate. Merging
+    old and new files is only possible if the coordinates are the same, so
+    the expver coordinate variable has to be converted to a data variable.
+    
     Removing scale_factor and add_offset: In the past, the ERA5 data was
     supplied as integers with a scaling and offset that was different for
     each downloaded file. This caused serious issues with merging files,
