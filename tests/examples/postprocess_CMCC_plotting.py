@@ -11,7 +11,6 @@ import dfm_tools as dfmt
 
 
 for varn in ['uo', 'vo', 'thetao']:
-    #TODO: for vo, solve "RuntimeWarning: divide by zero encountered in divide"
     file_nc = f'p:\\archivedprojects\\11206304-futuremares-rawdata-preps\\data\\CMIP6_BC\\CMCC-ESM2\\{varn}_Omon_CMCC-ESM2_ssp126_r1i1p1f1_gn_201501-203412.nc'
     
     uds = dfmt.open_dataset_curvilinear(
