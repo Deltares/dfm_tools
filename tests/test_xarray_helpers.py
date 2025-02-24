@@ -17,6 +17,17 @@ from pathlib import Path
 
 
 @pytest.mark.unittest
+def test_preprocess_ERA5_valid_time(ds_era5_empty):
+    ds_era5_empty = ds_era5_empty.rename(time="valid_time")
+
+    ds = dfmt.preprocess_ERA5(ds_era5_empty)
+    assert "valid_time" in ds_era5_empty.dims
+    assert "time" not in ds_era5_empty.dims
+    assert "valid_time" not in ds.dims
+    assert "time" in ds.dims
+
+
+@pytest.mark.unittest
 def test_preprocess_ERA5_expver_coord(ds_era5_empty):
     data_expver = np.arange(len(ds_era5_empty.time))
     ds_era5_empty['expver'] = xr.DataArray(data_expver, dims='time')
@@ -56,12 +67,14 @@ def test_preprocess_ERA5_int32(ds_era5_empty):
     ds_era5_empty['dummy_int'].encoding['scale_factor'] = 1
     ds_era5_empty['dummy_int'].encoding['add_offset'] = 1
     
-    ds = dfmt.preprocess_ERA5(ds_era5_empty)
-    
+    # assertions fail after preprocess_ERA5 (attrs are popped from input ds)
     assert "dtype" in ds_era5_empty['dummy_int'].encoding.keys()
     assert "scale_factor" in ds_era5_empty['dummy_int'].encoding.keys()
     assert "add_offset" in ds_era5_empty['dummy_int'].encoding.keys()
-    assert "dtype" not in ds['dummy_int'].encoding.keys()
+    
+    ds = dfmt.preprocess_ERA5(ds_era5_empty)
+    
+    assert ds['dummy_int'].encoding['dtype'] == 'float32'
     assert "scale_factor" not in ds['dummy_int'].encoding.keys()
     assert "add_offset" not in ds['dummy_int'].encoding.keys()
 
