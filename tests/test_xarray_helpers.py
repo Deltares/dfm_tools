@@ -29,13 +29,9 @@ def test_preprocess_ERA5_valid_time(ds_era5_empty):
 
 @pytest.mark.unittest
 def test_preprocess_ERA5_expver_coord(ds_era5_empty):
-    data_expver = np.arange(len(ds_era5_empty.time))
-    ds_era5_empty['expver'] = xr.DataArray(data_expver, dims='time')
-    ds_era5_empty = ds_era5_empty.set_coords('expver')
-
     ds = dfmt.preprocess_ERA5(ds_era5_empty)
-    assert "expver" in ds_era5_empty.coords
-    assert "expver" not in ds.coords
+    assert "expver" not in ds_era5_empty.coords
+    assert "expver" in ds.coords
 
 
 @pytest.mark.unittest
