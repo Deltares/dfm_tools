@@ -116,12 +116,6 @@ def preprocess_ERA5(ds):
     but anexpver variable is present defining whether the data comes
     from ERA5 (1) or ERA5T (5).
     
-    Converting expver from coordinate to data_variable: The old datafiles with
-    an expver dimension did not contain an expver variable. The new datafiles
-    do contain an expver variable, which is also set as a coordinate. Merging
-    old and new files is only possible if the coordinates are the same, so
-    the expver coordinate variable has to be converted to a data variable.
-    
     Removing scale_factor and add_offset: In the past, the ERA5 data was
     supplied as integers with a scaling and offset that was different for
     each downloaded file. This caused serious issues with merging files,
@@ -146,10 +140,6 @@ def preprocess_ERA5(ds):
     # reduce the expver dimension (not present in newly retrieved files)
     if 'expver' in ds.dims:
         ds = ds.mean(dim='expver')
-    # prevent "ValueError: coordinate 'expver' not present in all datasets"
-    # when merging old datasets (without expver coord) with new datasets
-    if 'expver' in ds.coords:
-        ds = ds.reset_coords(['expver'])
     
     # drop scaling/offset encoding if present and converting to float32. Not
     # present in newly retrieved files, variables are zipped float32 instead
@@ -220,9 +210,6 @@ def merge_meteofiles(file_nc:str,
 
     file_nc_list = file_to_list(file_nc)
     
-    if 'chunks' not in kwargs:
-        kwargs['chunks'] = 'auto'
-
     print(f'>> opening multifile dataset of {len(file_nc_list)} files (can take a while with lots of files): ',end='')
     dtstart = dt.datetime.now()
     with dask.config.set(**{'array.slicing.split_large_chunks': True}):
