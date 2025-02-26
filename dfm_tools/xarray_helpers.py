@@ -116,6 +116,12 @@ def preprocess_ERA5(ds):
     but anexpver variable is present defining whether the data comes
     from ERA5 (1) or ERA5T (5).
     
+    Adding expver coordinate if missing: The old datafiles did not contain an
+    expver variable (sometimes did contain an expver dim). The new datafiles
+    do contain an expver coordinate variable. Merging old and new files is only
+    possible if the coordinates are the same, so add a expver coordinate
+    variable to the old files with empty values.
+    
     Removing scale_factor and add_offset: In the past, the ERA5 data was
     supplied as integers with a scaling and offset that was different for
     each downloaded file. This caused serious issues with merging files,
@@ -140,6 +146,16 @@ def preprocess_ERA5(ds):
     # reduce the expver dimension (not present in newly retrieved files)
     if 'expver' in ds.dims:
         ds = ds.mean(dim='expver')
+    
+    # add empty expver coordinate to old files if not present to prevent
+    # "ValueError: coordinate 'expver' not present in all datasets"
+    # when merging old datasets (without expver coord) with new datasets
+    # has to be <U4 to avoid "NotImplementedError: Can not use auto rechunking
+    # with object dtype"
+    if 'expver' not in ds.variables:
+        data_expver = np.empty(shape=(len(ds.time)), dtype='<U4')
+        ds['expver'] = xr.DataArray(data=data_expver, dims='time')
+        ds = ds.set_coords('expver')
     
     # drop scaling/offset encoding if present and converting to float32. Not
     # present in newly retrieved files, variables are zipped float32 instead
@@ -209,6 +225,17 @@ def merge_meteofiles(file_nc:str,
         decode_cf = True        
 
     file_nc_list = file_to_list(file_nc)
+
+    if 'chunks' not in kwargs:
+        kwargs['chunks'] = 'auto'
+    if 'data_vars' not in kwargs:
+        # avoid time dimension on other variables
+        # enforce error in case of conflicting variables
+        kwargs['data_vars'] = 'minimal'
+    if 'join' not in kwargs:
+        # forbid slightly changed lat/lon values
+        # enforce alignment error if expver is not present in all datasets 
+        kwargs['join'] = 'exact'
 
     print(f'>> opening multifile dataset of {len(file_nc_list)} files (can take a while with lots of files): ',end='')
     dtstart = dt.datetime.now()
