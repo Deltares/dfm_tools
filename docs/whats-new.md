@@ -2,6 +2,9 @@
 
 ## UNRELEASED
 
+### Fix
+- improved performance of `dfmt.merge_meteofiles()` by adding xarray arguments and ensuring alignment in [#1148](https://github.com/Deltares/dfm_tools/pull/1148)
+
 
 ## 0.35.0 (2025-02-20)
 
