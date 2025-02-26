@@ -209,7 +209,7 @@ def merge_meteofiles(file_nc:str,
         decode_cf = True        
 
     file_nc_list = file_to_list(file_nc)
-    
+
     print(f'>> opening multifile dataset of {len(file_nc_list)} files (can take a while with lots of files): ',end='')
     dtstart = dt.datetime.now()
     with dask.config.set(**{'array.slicing.split_large_chunks': True}):
