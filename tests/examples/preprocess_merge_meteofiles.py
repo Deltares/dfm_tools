@@ -65,8 +65,6 @@ file_nc = os.path.join(dir_data,fn_match_pattern)
 
 data_xr_tsel = dfmt.merge_meteofiles(file_nc=file_nc,
                                      time_slice=time_slice, 
-                                     add_global_overlap=False, #GTSM specific: extend data beyond -180 to 180 longitude
-                                     zerostart=False, #GTSM specific: extend data with 0-value fields 1 and 2 days before all_tstart
                                      **kwargs)
 
 #write to netcdf file
