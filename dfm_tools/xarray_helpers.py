@@ -1,7 +1,6 @@
 import os
 import re
 import xarray as xr
-import dask
 import datetime as dt
 import glob
 import pandas as pd
@@ -188,8 +187,8 @@ def merge_meteofiles(file_nc:str,
                      zerostart:bool = False,
                      **kwargs) -> xr.Dataset:
     """
-    for merging for instance meteo files
-    x/y and lon/lat are renamed to longitude/latitude #TODO: is this desireable?
+    Merging of meteo files. Variables/coordinates x/y and lon/lat are renamed
+    to longitude/latitude.
 
     Parameters
     ----------
@@ -213,20 +212,18 @@ def merge_meteofiles(file_nc:str,
 
     """
     #TODO: add ERA5 conversions and features from hydro_tools\ERA5\ERA52DFM.py (except for varRhoair_alt, request FM support for varying airpressure: https://issuetracker.deltares.nl/browse/UNST-6593)
-    #TODO: provide extfile example with fmquantity/ncvarname combinations and cleanup FM code: https://issuetracker.deltares.nl/browse/UNST-6453
     #TODO: add coordinate conversion (only valid for models with multidimensional lat/lon variables like HARMONIE and HIRLAM). This should work: ds_reproj = ds.set_crs(4326).to_crs(28992)
     #TODO: add CMCC etc from gtsmip repos (mainly calendar conversion)
     #TODO: maybe add renaming like {'salinity':'so', 'water_temp':'thetao'} for hycom
        
-    #woa workaround
+    # woa workaround
     if preprocess == preprocess_woa:
         decode_cf = False
     else:
         decode_cf = True        
 
-    file_nc_list = file_to_list(file_nc)
-
     if 'chunks' not in kwargs:
+        # enable dask chunking
         kwargs['chunks'] = 'auto'
     if 'data_vars' not in kwargs:
         # avoid time dimension on other variables
@@ -237,14 +234,13 @@ def merge_meteofiles(file_nc:str,
         # enforce alignment error if expver is not present in all datasets 
         kwargs['join'] = 'exact'
 
+    file_nc_list = file_to_list(file_nc)
     print(f'>> opening multifile dataset of {len(file_nc_list)} files (can take a while with lots of files): ',end='')
     dtstart = dt.datetime.now()
-    with dask.config.set(**{'array.slicing.split_large_chunks': True}):
-        # using dask option to avoid large chunks which speeds up the merging/writing process
-        data_xr = xr.open_mfdataset(file_nc_list,
-                                    preprocess=preprocess,
-                                    decode_cf=decode_cf,
-                                    **kwargs)
+    data_xr = xr.open_mfdataset(file_nc_list,
+                                preprocess=preprocess,
+                                decode_cf=decode_cf,
+                                **kwargs)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
     # rename variables
@@ -275,7 +271,10 @@ def merge_meteofiles(file_nc:str,
     times_pd = data_xr['time'].to_series()
     timesteps_uniq = times_pd.diff().iloc[1:].unique()
     if len(timesteps_uniq)>1:
-        raise ValueError(f'time gaps found in selected dataset (missing sourcefiles?), unique timesteps (hour): {timesteps_uniq/1e9/3600}')
+        raise ValueError(
+            'time gaps found in selected dataset (missing files?), '
+            f'unique timesteps (hour): {timesteps_uniq/1e9/3600}'
+            )
     
     data_xr = convert_meteo_units(data_xr)
     
