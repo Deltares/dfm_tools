@@ -1,13 +1,12 @@
 import os
 import re
 import xarray as xr
-import dask
 import datetime as dt
 import glob
 import pandas as pd
 import logging
 import numpy as np
-from dfm_tools.errors import OutOfRangeError
+from dfm_tools.interpolate_grid2bnd import _ds_sel_time_outside
 
 __all__ = [
     "preprocess_hisnc",
@@ -181,13 +180,15 @@ def preprocess_woa(ds):
     return ds
 
 
-def merge_meteofiles(file_nc:str, preprocess=None, 
-                     time_slice:slice = slice(None,None),
-                     add_global_overlap:bool = False, zerostart:bool = False,
+def merge_meteofiles(file_nc:str,
+                     time_slice:slice,
+                     preprocess = None, 
+                     add_global_overlap:bool = False,
+                     zerostart:bool = False,
                      **kwargs) -> xr.Dataset:
     """
-    for merging for instance meteo files
-    x/y and lon/lat are renamed to longitude/latitude #TODO: is this desireable?
+    Merging of meteo files. Variables/coordinates x/y and lon/lat are renamed
+    to longitude/latitude.
 
     Parameters
     ----------
@@ -195,8 +196,8 @@ def merge_meteofiles(file_nc:str, preprocess=None,
         DESCRIPTION.
     preprocess : TYPE, optional
         DESCRIPTION. The default is None.
-    time_slice : slice, optional
-        DESCRIPTION. The default is slice(None,None).
+    time_slice : slice
+        slice(tstart,tstop).
     add_global_overlap : bool, optional
         GTSM specific: extend data beyond -180 to 180 longitude. The default is False.
     zerostart : bool, optional
@@ -211,21 +212,18 @@ def merge_meteofiles(file_nc:str, preprocess=None,
 
     """
     #TODO: add ERA5 conversions and features from hydro_tools\ERA5\ERA52DFM.py (except for varRhoair_alt, request FM support for varying airpressure: https://issuetracker.deltares.nl/browse/UNST-6593)
-    #TODO: provide extfile example with fmquantity/ncvarname combinations and cleanup FM code: https://issuetracker.deltares.nl/browse/UNST-6453
     #TODO: add coordinate conversion (only valid for models with multidimensional lat/lon variables like HARMONIE and HIRLAM). This should work: ds_reproj = ds.set_crs(4326).to_crs(28992)
     #TODO: add CMCC etc from gtsmip repos (mainly calendar conversion)
-    #TODO: put conversions in separate function?
     #TODO: maybe add renaming like {'salinity':'so', 'water_temp':'thetao'} for hycom
        
-    #woa workaround
+    # woa workaround
     if preprocess == preprocess_woa:
         decode_cf = False
     else:
         decode_cf = True        
 
-    file_nc_list = file_to_list(file_nc)
-
     if 'chunks' not in kwargs:
+        # enable dask chunking
         kwargs['chunks'] = 'auto'
     if 'data_vars' not in kwargs:
         # avoid time dimension on other variables
@@ -236,14 +234,13 @@ def merge_meteofiles(file_nc:str, preprocess=None,
         # enforce alignment error if expver is not present in all datasets 
         kwargs['join'] = 'exact'
 
+    file_nc_list = file_to_list(file_nc)
     print(f'>> opening multifile dataset of {len(file_nc_list)} files (can take a while with lots of files): ',end='')
     dtstart = dt.datetime.now()
-    with dask.config.set(**{'array.slicing.split_large_chunks': True}):
-        # using dask option to avoid large chunks which speeds up the merging/writing process
-        data_xr = xr.open_mfdataset(file_nc_list,
-                                    preprocess=preprocess,
-                                    decode_cf=decode_cf,
-                                    **kwargs)
+    data_xr = xr.open_mfdataset(file_nc_list,
+                                preprocess=preprocess,
+                                decode_cf=decode_cf,
+                                **kwargs)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
     # rename variables
@@ -256,28 +253,28 @@ def merge_meteofiles(file_nc:str, preprocess=None,
         else:
             raise KeyError('no longitude/latitude, lon/lat or x/y variables found in dataset')
     
-    # select time and do checks
-    # TODO: check if calendar is standard/gregorian
-    data_xr = data_xr.sel(time=time_slice)
+    # check for duplicated timesteps
     if data_xr.get_index('time').duplicated().any():
         print('dropping duplicate timesteps')
-        data_xr = data_xr.sel(time=~data_xr.get_index('time').duplicated()) #drop duplicate timesteps
+        # drop duplicate timesteps
+        data_xr = data_xr.sel(time=~data_xr.get_index('time').duplicated())
     
-    #check if there are times selected
-    if len(data_xr.time)==0:
-        raise OutOfRangeError(f'ERROR: no times selected, ds_text={data_xr.time[[0,-1]].to_numpy()} and time_slice={time_slice}')
+    # TODO: check if calendar is standard/gregorian
+    # check available times and select outside bounds
+    data_xr = _ds_sel_time_outside(
+        data_xr,
+        tstart=time_slice.start,
+        tstop=time_slice.stop,
+        )
     
     #check if there are no gaps (more than one unique timestep)
     times_pd = data_xr['time'].to_series()
     timesteps_uniq = times_pd.diff().iloc[1:].unique()
     if len(timesteps_uniq)>1:
-        raise Exception(f'ERROR: gaps found in selected dataset (are there sourcefiles missing?), unique timesteps (hour): {timesteps_uniq/1e9/3600}')
-    
-    #check if requested times are available in selected files (in times_pd)
-    if time_slice.start not in times_pd.index:
-        raise OutOfRangeError(f'ERROR: time_slice_start="{time_slice.start}" not in selected files, timerange: "{times_pd.index[0]}" to "{times_pd.index[-1]}"')
-    if time_slice.stop not in times_pd.index:
-        raise OutOfRangeError(f'ERROR: time_slice_stop="{time_slice.stop}" not in selected files, timerange: "{times_pd.index[0]}" to "{times_pd.index[-1]}"')
+        raise ValueError(
+            'time gaps found in selected dataset (missing files?), '
+            f'unique timesteps (hour): {timesteps_uniq/1e9/3600}'
+            )
     
     data_xr = convert_meteo_units(data_xr)
     

@@ -313,4 +313,3 @@ def test_preprocess_merge_meteofiles_era5_unsupported_varlist(tmp_path, ds_era5_
                                                         dir_output=tmp_path,
                                                         time_slice=slice(date_min, date_max))
     assert "is not supported by dfmt.preprocess_merge_meteofiles_era5" in str(e.value)
-
