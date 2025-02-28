@@ -430,7 +430,10 @@ def test_download_era5(file_nc_era5_pattern):
     ds = xr.open_mfdataset(file_nc_era5_pattern)
     
     # datasets retrieved with intermediate CDS had expver dimension causing issues
-    assert 'expver' not in ds.dims # TODO: if this fails, update the docstring of preprocess_ERA5
+    # if this fails, update the docstring of preprocess_ERA5
+    assert 'expver' not in ds.dims
+    # if this fails, update preprocess_ERA5 to not add coordinate varialbe
+    assert 'expver' in ds.coords
     
     # datasets retrieved with new CDS have valid_time instead of time dim/var
     assert 'valid_time' in ds.dims # TODO: if this fails, remove the exception below and in preprocess_ERA5

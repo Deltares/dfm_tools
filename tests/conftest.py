@@ -33,6 +33,7 @@ def ds_era5_empty():
     # create dummy dataset
     ds_era5_empty = xr.Dataset()
     ds_era5_empty['longitude'] = xr.DataArray()
+    ds_era5_empty['latitude'] = xr.DataArray()
     time_data = pd.date_range('2010-01-31', '2010-02-01', freq="3h")
     ds_era5_empty['time'] = xr.DataArray(time_data, dims='time')
     return ds_era5_empty

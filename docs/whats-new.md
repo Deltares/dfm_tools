@@ -4,6 +4,7 @@
 
 ### Fix
 - improved performance of `dfmt.merge_meteofiles()` by adding xarray arguments and ensuring alignment in [#1148](https://github.com/Deltares/dfm_tools/pull/1148)
+- proper time slicing and out of bounds error of `dfmt.merge_meteofiles()` in [#1149](https://github.com/Deltares/dfm_tools/pull/1149)
 
 
 ## 0.35.0 (2025-02-20)
