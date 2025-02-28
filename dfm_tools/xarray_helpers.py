@@ -182,9 +182,7 @@ def preprocess_woa(ds):
 
 def merge_meteofiles(file_nc:str,
                      time_slice:slice,
-                     preprocess = None, 
-                     add_global_overlap:bool = False,
-                     zerostart:bool = False,
+                     preprocess = None,
                      **kwargs) -> xr.Dataset:
     """
     Merging of meteo files. Variables/coordinates x/y and lon/lat are renamed
@@ -198,10 +196,6 @@ def merge_meteofiles(file_nc:str,
         DESCRIPTION. The default is None.
     time_slice : slice
         slice(tstart,tstop).
-    add_global_overlap : bool, optional
-        GTSM specific: extend data beyond -180 to 180 longitude. The default is False.
-    zerostart : bool, optional
-        GTSM specific: extend data with 0-value fields 1 and 2 days before time_slice.start. The default is False.
     kwargs : dict, optional
         arguments for xr.open_mfdataset() like `chunks` to prevent large chunks and resulting memory issues.
 
@@ -284,29 +278,11 @@ def merge_meteofiles(file_nc:str,
         lon_newvar = (data_xr.coords['longitude'] + 180) % 360 - 180
         data_xr.coords['longitude'] = lon_newvar.assign_attrs(data_xr['longitude'].attrs) #this re-adds original attrs
         data_xr = data_xr.sortby(data_xr['longitude'])
-    
-    #GTSM specific addition for longitude overlap
-    if add_global_overlap: # assumes -180 to ~+179.75 (full global extent, but no overlap). Does not seem to mess up results for local models.
-        if len(data_xr.longitude.values) != len(np.unique(data_xr.longitude.values%360)):
-            raise Exception(f'add_global_overlap=True, but there are already overlapping longitude values: {data_xr.longitude}')
-        overlap_ltor = data_xr.sel(longitude=data_xr.longitude<=-179)
-        overlap_ltor['longitude'] = overlap_ltor['longitude'] + 360
-        overlap_rtol = data_xr.sel(longitude=data_xr.longitude>=179)
-        overlap_rtol['longitude'] = overlap_rtol['longitude'] - 360
-        data_xr = xr.concat([data_xr,overlap_ltor,overlap_rtol],dim='longitude').sortby('longitude')
-    
-    # GTSM specific addition for zerovalues during spinup
-    # doing this drops all encoding from variables, causing them to be converted into floats
-    if zerostart:
-        field_zerostart = data_xr.isel(time=[0,0])*0 #two times first field, set values to 0
-        field_zerostart['time'] = [times_pd.index[0]-dt.timedelta(days=2),times_pd.index[0]-dt.timedelta(days=1)] #TODO: is one zero field not enough? (is replacing first field not also ok? (results in 1hr transition period)
-        data_xr = xr.concat([field_zerostart,data_xr],dim='time',combine_attrs='no_conflicts') #combine_attrs argument prevents attrs from being dropped
-    
+
     return data_xr
 
 
 def convert_meteo_units(data_xr):
-    
     #TODO: check conversion implementation with hydro_tools\ERA5\ERA52DFM.py
     #TODO: keep/update attrs
     #TODO: reduce code complexity
