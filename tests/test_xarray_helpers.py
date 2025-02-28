@@ -98,7 +98,7 @@ def test_merge_meteofiles(file_nc_era5_pattern):
 def test_merge_meteofiles_outofrange_times(ds_era5_empty, tmp_path):
     file_nc = os.path.join(tmp_path, "era5_msl_empty.nc")
     ds_era5_empty.to_netcdf(file_nc)
-    file_nc_era5_pattern = os.path.join(tmp_path, "*.nc")
+    file_nc_pat = os.path.join(tmp_path, "*.nc")
 
     date_min = "2030-01-01"
     date_max = "2030-02-01"
@@ -106,7 +106,7 @@ def test_merge_meteofiles_outofrange_times(ds_era5_empty, tmp_path):
     # merge meteo
     with pytest.raises(OutOfRangeError) as e:
         _ = dfmt.merge_meteofiles(
-            file_nc=file_nc_era5_pattern,
+            file_nc=file_nc_pat,
             preprocess=dfmt.preprocess_ERA5, 
             time_slice=slice(date_min, date_max),
             )
@@ -118,14 +118,14 @@ def test_merge_meteofiles_duplicated_times(ds_era5_empty, tmp_path):
     file_nc = os.path.join(tmp_path, "era5_msl_empty.nc")
     ds = xr.concat([ds_era5_empty,ds_era5_empty], dim='time')
     ds.to_netcdf(file_nc)
-    file_nc_era5_pattern = os.path.join(tmp_path, "*.nc")
+    file_nc_pat = os.path.join(tmp_path, "*.nc")
 
     date_min = "2010-01-31"
     date_max = "2010-02-01"
 
     # merge meteo
     ds_merged = dfmt.merge_meteofiles(
-        file_nc=file_nc_era5_pattern,
+        file_nc=file_nc_pat,
         preprocess=dfmt.preprocess_ERA5, 
         time_slice=slice(date_min, date_max),
         )
@@ -139,7 +139,7 @@ def test_merge_meteofiles_times_gap(ds_era5_empty, tmp_path):
     file_nc = os.path.join(tmp_path, "era5_msl_empty.nc")
     ds_era5_empty = ds_era5_empty.isel(time=[0,1,2,3,6,7,8])
     ds_era5_empty.to_netcdf(file_nc)
-    file_nc_era5_pattern = os.path.join(tmp_path, "*.nc")
+    file_nc_pat = os.path.join(tmp_path, "*.nc")
 
     date_min = "2010-01-31"
     date_max = "2010-02-01"
@@ -147,7 +147,7 @@ def test_merge_meteofiles_times_gap(ds_era5_empty, tmp_path):
     # merge meteo
     with pytest.raises(ValueError) as e:
         _ = dfmt.merge_meteofiles(
-            file_nc=file_nc_era5_pattern,
+            file_nc=file_nc_pat,
             preprocess=dfmt.preprocess_ERA5, 
             time_slice=slice(date_min, date_max),
             )
@@ -164,9 +164,9 @@ def test_merge_meteofiles_rename_latlon(ds_era5_empty, tmp_path):
     ds = ds.rename({'longitude':'lon', 'latitude':'lat'})
     file_nc = os.path.join(tmp_path, "era5_lonlat_empty.nc")
     ds.to_netcdf(file_nc)
-    file_nc_era5_pattern = file_nc.replace(".nc", "*.nc")
+    file_nc_pat = file_nc.replace(".nc", "*.nc")
     ds_merged = dfmt.merge_meteofiles(
-        file_nc=file_nc_era5_pattern,
+        file_nc=file_nc_pat,
         preprocess=dfmt.preprocess_ERA5, 
         time_slice=slice(date_min, date_max),
         )
@@ -178,9 +178,9 @@ def test_merge_meteofiles_rename_latlon(ds_era5_empty, tmp_path):
     ds = ds.rename({'longitude':'x', 'latitude':'y'})
     file_nc = os.path.join(tmp_path, "era5_xy_empty.nc")
     ds.to_netcdf(file_nc)
-    file_nc_era5_pattern = file_nc.replace(".nc", "*.nc")
+    file_nc_pat = file_nc.replace(".nc", "*.nc")
     ds_merged = dfmt.merge_meteofiles(
-        file_nc=file_nc_era5_pattern,
+        file_nc=file_nc_pat,
         preprocess=dfmt.preprocess_ERA5, 
         time_slice=slice(date_min, date_max),
         )
@@ -192,10 +192,10 @@ def test_merge_meteofiles_rename_latlon(ds_era5_empty, tmp_path):
     ds = ds.drop_vars(['longitude', 'latitude'])
     file_nc = os.path.join(tmp_path, "era5_none_empty.nc")
     ds.to_netcdf(file_nc)
-    file_nc_era5_pattern = file_nc.replace(".nc", "*.nc")
+    file_nc_pat = file_nc.replace(".nc", "*.nc")
     with pytest.raises(KeyError) as e:
         _ = dfmt.merge_meteofiles(
-            file_nc=file_nc_era5_pattern,
+            file_nc=file_nc_pat,
             preprocess=dfmt.preprocess_ERA5, 
             time_slice=slice(date_min, date_max),
             )
@@ -209,14 +209,14 @@ def test_merge_meteofiles_convert360to180(ds_era5_empty, tmp_path):
     ds_era5_empty = ds_era5_empty.drop_vars(['longitude'])
     ds_era5_empty['longitude'] = xr.DataArray(lon_vals, dims='longitude')
     ds_era5_empty.to_netcdf(file_nc)
-    file_nc_era5_pattern = os.path.join(tmp_path, "*.nc")
+    file_nc_pat = os.path.join(tmp_path, "*.nc")
     
     date_min = "2010-01-31"
     date_max = "2010-02-01"
 
     # merge meteo
     ds_merged = dfmt.merge_meteofiles(
-        file_nc=file_nc_era5_pattern,
+        file_nc=file_nc_pat,
         preprocess=dfmt.preprocess_ERA5, 
         time_slice=slice(date_min, date_max),
         )
@@ -232,14 +232,14 @@ def test_merge_meteofiles_global_overlap(ds_era5_empty, tmp_path):
     ds_era5_empty = ds_era5_empty.drop_vars(['longitude'])
     ds_era5_empty['longitude'] = xr.DataArray(lon_vals, dims='longitude')
     ds_era5_empty.to_netcdf(file_nc)
-    file_nc_era5_pattern = os.path.join(tmp_path, "*.nc")
+    file_nc_pat = os.path.join(tmp_path, "*.nc")
     
     date_min = "2010-01-31"
     date_max = "2010-02-01"
 
     # merge meteo
     ds_merged = dfmt.merge_meteofiles(
-        file_nc=file_nc_era5_pattern,
+        file_nc=file_nc_pat,
         preprocess=dfmt.preprocess_ERA5, 
         time_slice=slice(date_min, date_max),
         add_global_overlap=True,
@@ -254,14 +254,14 @@ def test_merge_meteofiles_global_overlap(ds_era5_empty, tmp_path):
 def test_merge_meteofiles_zerostart(ds_era5_empty, tmp_path):
     file_nc = os.path.join(tmp_path, "era5_msl_empty.nc")
     ds_era5_empty.to_netcdf(file_nc)
-    file_nc_era5_pattern = os.path.join(tmp_path, "*.nc")
+    file_nc_pat = os.path.join(tmp_path, "*.nc")
     
     date_min = "2010-01-31"
     date_max = "2010-02-01"
 
     # merge meteo
     ds_merged = dfmt.merge_meteofiles(
-        file_nc=file_nc_era5_pattern,
+        file_nc=file_nc_pat,
         preprocess=dfmt.preprocess_ERA5, 
         time_slice=slice(date_min, date_max),
         zerostart=True,
