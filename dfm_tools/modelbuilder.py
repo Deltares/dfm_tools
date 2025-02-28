@@ -232,8 +232,7 @@ def preprocess_merge_meteofiles_era5(ext_old, varkey_list, dir_data, dir_output,
         data_xr_tsel = dfmt.merge_meteofiles(file_nc=file_nc,
                                              time_slice=time_slice, 
                                              preprocess=preprocess,
-                                             add_global_overlap=False, #GTSM specific: extend data beyond -180 to 180 longitude
-                                             zerostart=False) #GTSM specific: extend data with 0-value fields 1 and 2 days before all_tstart
+                                             )
         
         #write to netcdf file
         print('>> writing file (can take a while): ',end='')
