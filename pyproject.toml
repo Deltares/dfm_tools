@@ -87,7 +87,6 @@ dev = [
 ]
 docs = [
 	"sphinx>=1.8.1",
-	"sphinx<8.2.0", # temporary upper limit until fix of https://github.com/Deltares/dfm_tools/issues/1137
 	"sphinx_mdinclude",
 	"nbsphinx",
 	"pydata-sphinx-theme",
