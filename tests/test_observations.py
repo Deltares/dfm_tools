@@ -15,7 +15,7 @@ from dfm_tools.observations import (ssc_sscid_from_otherid,
                                     )
 
 source_list = ["uhslc-fast", "uhslc-rqds", "psmsl-gnssir", "ssc", "ioc", "rwsddl", 
-               "cmems", "cmems-nrt"] # cmems requires credentials
+               "cmems", "cmems-nrt", "gtsm-era5-cds"] # cmems and gtsm-era5-cds require credentials
 if os.path.exists(r"p:\1230882-emodnet_hrsm\data\GESLA3"):
     # not possible without p-drive connection
     source_list += ["gesla3"]
@@ -43,7 +43,7 @@ def test_ssh_catalog_subset(source):
     assert ssc_catalog_gpd.crs.to_string()=='EPSG:4326'
     
     # do actual subset
-    source_list_notime = ["ssc","rwsddl"]
+    source_list_notime = ["ssc","rwsddl","gtsm-era5-cds"]
     if source in source_list_notime:
         ssc_catalog_gpd_sel = dfmt.ssh_catalog_subset(source=source,
                                                       lon_min=lon_min, lon_max=lon_max, 
