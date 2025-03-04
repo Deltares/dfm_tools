@@ -7,7 +7,8 @@ import pandas as pd
 import logging
 import numpy as np
 from dfm_tools.interpolate_grid2bnd import _ds_sel_time_outside
-
+from scipy.ndimage import distance_transform_edt
+    
 __all__ = [
     "preprocess_hisnc",
     "preprocess_ERA5",
@@ -357,3 +358,6 @@ def Dataset_varswithdim(ds,dimname): #TODO: dit zit ook in xugrid, wordt nu gebr
     return ds
 
 
+## @huite
+## please commit your `_nearest()` and `interpolate_na_scipy_pervar()` code from this issue here
+## https://github.com/Deltares/dfm_tools/issues/1021#issuecomment-2696987941
