@@ -279,16 +279,40 @@ def open_partitioned_dataset(file_nc:str, decode_fillvals:bool = False, remove_e
 
 
 def open_dataset_curvilinear(file_nc,
-                             x_dim='i', # N
-                             y_dim='j', # M
-                             x_bounds='vertices_longitude', # grid_x
-                             y_bounds='vertices_latitude', # grid_y
-                             convert_360to180=False,
-                             **kwargs):
+                             x_dim:str,
+                             y_dim:str,
+                             x_bounds:str,
+                             y_bounds:str,
+                             convert_360to180:bool = False ,
+                             **kwargs) -> xu.UgridDataset:
     """
     Construct a UgridDataset from a curvilinear grid with 2D lat/lon variables
     with i/j indexes/dims, including vertices variables. Works for curvilinear
     datasets like CMCC and also for WAQUA files that are converted with getdata
+
+    Parameters
+    ----------
+    file_nc : str or path
+        DESCRIPTION.
+    x_dim : str
+        The x-dimension, like lon, i or N.
+    y_dim : str
+        The y-dimension, like lat, j or M.
+    x_bounds : str
+        The variable with the x-bounds, like vertices_longitude or grid_x.
+    y_bounds : str
+        The variable with the y-bounds, like vertices_latitude or grid_y.
+    convert_360to180 : bool, optional
+        Whether to convert from a 0 to 360 degree global model to a -180 to 180
+        degree global model. The default is False.
+    **kwargs : TYPE
+        additional arguments are passed on to xr.open_mfdataset().
+
+    Returns
+    -------
+    uds : xu.UgridDataset
+        The resulting ugrid dataset.
+
     """
     
     if 'chunks' not in kwargs:
@@ -309,7 +333,7 @@ def open_dataset_curvilinear(file_nc,
                           "y":y_dim,
                           "x_bounds":x_bounds,
                           "y_bounds":y_bounds,
-                          }
+                          },
                 }
     
     print('>> convert to xugrid.UgridDataset: ',end='')
