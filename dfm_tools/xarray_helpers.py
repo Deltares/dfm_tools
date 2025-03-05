@@ -7,7 +7,8 @@ import pandas as pd
 import logging
 import numpy as np
 from dfm_tools.interpolate_grid2bnd import _ds_sel_time_outside
-
+from scipy.ndimage import distance_transform_edt
+    
 __all__ = [
     "preprocess_hisnc",
     "preprocess_ERA5",
@@ -357,3 +358,30 @@ def Dataset_varswithdim(ds,dimname): #TODO: dit zit ook in xugrid, wordt nu gebr
     return ds
 
 
+def _nearest(a):
+    nans = np.isnan(a)
+    if not nans.any():
+        return a.copy()
+    indices = distance_transform_edt(
+        input=np.isnan(a),
+        return_distances=False,
+        return_indices=True,
+    )
+    return a[tuple(indices)]
+
+
+def interpolate_na_multidim(da, dim, keep_attrs=True):
+    """
+    Interpolate_na for multiple dimensions at once. Since it 
+    """
+    arr = xr.apply_ufunc(
+        _nearest,
+        da,
+        input_core_dims=[dim],
+        output_core_dims=[dim],
+        output_dtypes=[da.dtype],
+        dask="parallelized",
+        vectorize=True,
+        keep_attrs=keep_attrs,
+    ).transpose(*da.dims)
+    return arr

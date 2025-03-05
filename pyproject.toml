@@ -36,8 +36,8 @@ dependencies = [
 	"netcdf4>=1.5.4",
 	#bottleneck>=1.3.3 successfully pip installs in py39
 	"bottleneck>=1.3.3",
-	#xugrid>=0.12.1 fixes warnings, properly closes datasets and adds from_structured method
-	"xugrid>=0.12.2",
+	#xugrid>=0.12.4 improved from_structured2d
+	"xugrid>=0.12.4",
 	#cdsapi>=0.7.5 resolves many deprecationwarnings
 	"cdsapi>=0.7.5",
 	#pydap>=3.4.0 is the first with support for newer python versions
@@ -87,7 +87,6 @@ dev = [
 ]
 docs = [
 	"sphinx>=1.8.1",
-	"sphinx<8.2.0", # temporary upper limit until fix of https://github.com/Deltares/dfm_tools/issues/1137
 	"sphinx_mdinclude",
 	"nbsphinx",
 	"pydata-sphinx-theme",
@@ -124,6 +123,8 @@ filterwarnings = [
 	'ignore:datetime.datetime.utcnow\(\) is deprecated:DeprecationWarning',
 	# can be removed once py39 support is dropped since it seems to be resolved in erddapy 2.2.1
 	"ignore:np.find_common_type is deprecated:DeprecationWarning",
+	# for open_dataset_delft3d4()
+	"ignore:A UGRID2D face requires at least three unique non-collinear vertices:UserWarning",
 ]
 
 [tool.flake8]
