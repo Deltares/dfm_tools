@@ -515,6 +515,7 @@ def test_interp_uds_to_plipoints():
     assert np.allclose(retrieved, expected, equal_nan=True)
 
 
+@pytest.mark.unittest
 def test_ext_add_boundary_object_per_polyline_onepolyline(tmp_path):
     file_pli = os.path.join(tmp_path,'test_model.pli')
     with open(file_pli,'w') as f:
@@ -536,6 +537,7 @@ def test_ext_add_boundary_object_per_polyline_onepolyline(tmp_path):
     assert polyfile_names == ['test_model.pli']
 
 
+@pytest.mark.unittest
 def test_ext_add_boundary_object_per_polyline_twopolylines(tmp_path):
     file_pli = os.path.join(tmp_path,'test_model.pli')
     with open(file_pli,'w') as f:
@@ -561,6 +563,7 @@ def test_ext_add_boundary_object_per_polyline_twopolylines(tmp_path):
     assert polyfile_names == ['name1.pli', 'name2.pli']
 
 
+@pytest.mark.unittest
 def test_ext_add_boundary_object_per_polyline_wrong_name(tmp_path):
     file_pli = os.path.join(tmp_path,'test_model.pli')
     with open(file_pli,'w') as f:
@@ -585,6 +588,47 @@ def test_ext_add_boundary_object_per_polyline_wrong_name(tmp_path):
     assert "The names of one of the polylines in the polyfile is the same as the polyfilename" in str(e.value)
 
 
+@pytest.mark.unittest
 def test_open_dataset_extra_deprecated():
     with pytest.raises(DeprecationWarning):
         dfmt.open_dataset_extra()
+
+
+@pytest.mark.unittest
+def test_interp_hisnc_to_plipoints(tmp_path):
+    ncbnd_construct = get_ncbnd_construct()
+    dimn_point = ncbnd_construct['dimn_point']
+    
+    file_pli = os.path.join(tmp_path,'grev_internal.pli')
+    with open(file_pli,'w') as f:
+        f.write("""grev_internal
+        4    2
+        51655.45  420059.29
+        55133.26  421410.41
+        59848.92  422508.19
+        61676.24  417399.27
+        """)
+
+    ds_his = dfmt.data.fm_grevelingen_his()
+    da = ds_his[['waterlevel']]
+
+    ds_interp = dfmt.interp_hisnc_to_plipoints(data_xr_his=da, file_pli=file_pli, kdtree_k=4)
+    assert ds_interp.sizes[dimn_point] == 4
+    assert ds_interp.sizes["time"] == 145
+
+    last_points = ds_interp.waterlevel.isel(time=-1).to_numpy()
+    last_points_expected = np.array(
+        [-0.20098736, -0.19833495, -0.19681664, -0.19467336]
+        )
+    assert np.allclose(last_points, last_points_expected)
+    pointnames_np = ds_interp.station_id.to_numpy()
+    pointnames = [str(x) for x in pointnames_np]
+    pointnames_expected = [
+        'grev_internal_0001',
+        'grev_internal_0002',
+        'grev_internal_0003',
+        'grev_internal_0004',
+        ]
+    assert pointnames == pointnames_expected
+    
+    assert set(ds_interp.coords) == set(['lat', 'lon', 'station_id', 'time'])
