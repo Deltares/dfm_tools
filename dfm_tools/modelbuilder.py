@@ -12,6 +12,7 @@ from dfm_tools.interpolate_grid2bnd import (ext_add_boundary_object_per_polyline
                                             ds_apply_conversion_dict,
                                             _ds_sel_time_outside,
                                             )
+from dfm_tools.xarray_helpers import interpolate_na_multidim
 
 __all__ = [
     "constant_to_bc",
@@ -132,14 +133,24 @@ def cmems_nc_to_bc(ext_new, list_quantities, tstart, tstop, file_pli, dir_patter
 
 
 def preprocess_ini_cmems_to_nc(**kwargs):
-    raise DeprecationWarning("`dfmt.preprocess_ini_cmems_to_nc()` was deprecated, use `cmems_nc_to_ini()` instead")
+    raise DeprecationWarning("`dfmt.preprocess_ini_cmems_to_nc()` was "
+                             "deprecated, use `cmems_nc_to_ini()` instead")
 
 
-def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, conversion_dict=None):
+def cmems_nc_to_ini(
+        ext_old,
+        dir_output,
+        list_quantities,
+        tstart,
+        dir_pattern,
+        conversion_dict=None,
+        ):
     """
-    This makes quite specific 3D initial input files based on CMEMS data. delft3dfm is quite picky, 
-    so it works with CMEMS files because they have a depth variable with standard_name='depth'.
-    If this is not present, or dimensions are ordered differently, there will be an error or incorrect model results.
+    This makes quite specific 3D initial input files based on CMEMS data.
+    delft3dfm is quite picky, so it works with CMEMS files because they have a
+    depth variable with standard_name='depth'. If this is not present, or
+    dimensions are ordered differently, there will be an error or incorrect
+    model results.
     """
     
     if conversion_dict is None:
@@ -147,23 +158,32 @@ def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, c
     
     tstart_pd = pd.Timestamp(tstart)
     tstart_str = tstart_pd.strftime("%Y-%m-%d_%H-%M-%S")
-    # tstop_pd is slightly higher than tstart_pd to ensure >1 timesteps in all cases
+    # tstop_pd is slightly higher than tstart_pd to ensure >1 timesteps in all
+    # cases
     tstop_pd = tstart_pd + pd.Timedelta(hours=1)
     
     for quan_bnd in list_quantities:
         
         if quan_bnd in ["temperaturebnd","uxuyadvectionvelocitybnd"]:
-            # silently skipped, temperature is handled with salinity, uxuy not supported
+            # silently skipped, temperature is handled with salinity,
+            # uxuy is not supported
             continue
         
-        ncvarname = get_ncvarname(quantity=quan_bnd, conversion_dict=conversion_dict)
+        ncvarname = get_ncvarname(
+            quantity=quan_bnd,
+            conversion_dict=conversion_dict,
+            )
         dir_pattern_one = dir_pattern.format(ncvarname=ncvarname)
         
         if quan_bnd=="salinitybnd":
             # 3D initialsalinity/initialtemperature fields are silently ignored
-            # initial 3D conditions are only possible via nudging 1st timestep via quantity=nudge_salinity_temperature
+            # initial 3D conditions are only possible via nudging 1st timestep
+            # via quantity=nudge_salinity_temperature
             data_xr = xr.open_mfdataset(dir_pattern_one)
-            ncvarname_tem = get_ncvarname(quantity="temperaturebnd", conversion_dict=conversion_dict)
+            ncvarname_tem = get_ncvarname(
+                quantity="temperaturebnd",
+                conversion_dict=conversion_dict,
+                )
             dir_pattern_tem = dir_pattern.format(ncvarname=ncvarname_tem)
             data_xr_tem = xr.open_mfdataset(dir_pattern_tem)
             data_xr["thetao"] = data_xr_tem["thetao"]
@@ -171,42 +191,49 @@ def cmems_nc_to_ini(ext_old, dir_output, list_quantities, tstart, dir_pattern, c
             varname = None
         elif "tracer" in quan_bnd:
             data_xr = xr.open_mfdataset(dir_pattern_one)
-            data_xr = ds_apply_conversion_dict(data_xr=data_xr, conversion_dict=conversion_dict, quantity=quan_bnd)
+            data_xr = ds_apply_conversion_dict(
+                data_xr=data_xr,
+                conversion_dict=conversion_dict,
+                quantity=quan_bnd,
+                )
             quantity = f'initial{quan_bnd.replace("bnd","")}'
             varname = quantity
             data_xr = data_xr.rename_vars({quan_bnd:quantity})
         else:
-            # skip all other quantities since they are also not supported by delft3dfm
+            # skip all other quantities since they are also not supported by
+            # delft3dfm
             continue
         
         # subset two times. interp to tstart would be the proper way to do it, 
-        # but FM needs two timesteps for nudge_salinity_temperature and initial waq vars
-        data_xr = _ds_sel_time_outside(ds=data_xr, tstart=tstart_pd, tstop=tstop_pd)
+        # but FM needs two timesteps for nudge_salinity_temperature and initial
+        # waq vars
+        data_xr = _ds_sel_time_outside(
+            ds=data_xr, tstart=tstart_pd, tstop=tstop_pd,
+            )
         
         # assert that there are at least two timesteps in the resulting dataset
         # delft3dfm will crash if there is only one timestep
         assert len(data_xr.time) >= 2
+    
+        # interpolate_na for all data_vars, first over lat/lon, then over depth
+        for var in data_xr.data_vars:
+            data_xr[var] = interpolate_na_multidim(data_xr[var], ["latitude", 
+                                                                  "longitude"])
+            data_xr[var] = interpolate_na_multidim(data_xr[var], ["depth"])
         
-        # fill nans, start with lat/lon to avoid values from shallow coastal areas in deep layers
-        # first interpolate nans to get smooth filling of e.g. islands, this cannot fill nans at the edge of the dataset
-        data_xr = data_xr.interpolate_na(dim='latitude').interpolate_na(dim='longitude')
-        
-        # then use bfill/ffill to fill nans at the edge for lat/lon/depth
-        data_xr = data_xr.ffill(dim='latitude').bfill(dim='latitude')
-        data_xr = data_xr.ffill(dim='longitude').bfill(dim='longitude')
-        data_xr = data_xr.ffill(dim='depth').bfill(dim='depth')
-
         print('writing file')
         file_output = os.path.join(dir_output,f"{quantity}_{tstart_str}.nc")
         data_xr.to_netcdf(file_output)
         
         #append forcings to ext
-        forcing_saltem = hcdfm.ExtOldForcing(quantity=quantity,
-                                             varname=varname,
-                                             filename=file_output,
-                                             filetype=hcdfm.ExtOldFileType.NetCDFGridData,
-                                             method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
-                                             operand=hcdfm.Operand.override) #O
+        forcing_saltem = hcdfm.ExtOldForcing(
+            quantity=quantity,
+            varname=varname,
+            filename=file_output,
+            filetype=hcdfm.ExtOldFileType.NetCDFGridData,
+            method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+            operand=hcdfm.Operand.override, #O
+            )
         ext_old.forcing.append(forcing_saltem)
     
     return ext_old

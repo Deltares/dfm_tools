@@ -370,7 +370,10 @@ def _nearest(a):
     return a[tuple(indices)]
 
 
-def interpolate_na_scipy_pervar(da, dim, keep_attrs=True):
+def interpolate_na_multidim(da, dim, keep_attrs=True):
+    """
+    Interpolate_na for multiple dimensions at once. Since it 
+    """
     arr = xr.apply_ufunc(
         _nearest,
         da,
@@ -382,11 +385,3 @@ def interpolate_na_scipy_pervar(da, dim, keep_attrs=True):
         keep_attrs=keep_attrs,
     ).transpose(*da.dims)
     return arr
-
-
-def interpolate_na_scipy(ds):
-    ds = ds.copy()
-    for var in ds.data_vars:
-        ds[var] = interpolate_na_scipy_pervar(ds[var], ["latitude", "longitude"])#, method="nearest")
-        ds[var] = interpolate_na_scipy_pervar(ds[var], ["depth"])#, method="nearest")
-    return ds
