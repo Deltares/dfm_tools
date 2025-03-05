@@ -30,6 +30,7 @@ from dfm_tools.errors import OutOfRangeError
 import warnings
 
 
+@pytest.mark.unittest
 def test_check_time_extent(cmems_dataset_4times):
     ds = cmems_dataset_4times
     
