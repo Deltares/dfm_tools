@@ -24,6 +24,7 @@ import fiona
 import copernicusmarine
 import cdsapi
 from datetime import datetime
+from dfm_tools.data import get_dir_testdata
 
 __all__ = ["ssh_catalog_subset",
            "ssh_catalog_toxynfile",
@@ -551,12 +552,11 @@ def rwsddl_ssh_read_catalog(meta_dict=None):
     return ddl_slev_gdf
 
 
-def gtsm_era5_cds_read_catalog():
+def gtsm_era5_cds_ssh_read_catalog():
     
     # There is no catalog file available via API, instead we load a text file containing coordinates of gtsm-era5 output points (that are available on CDS)
-    url = "https://raw.githubusercontent.com/VU-IVM/gtsm3-era5-nrt/refs/heads/main/04_supplementary_data/GTSM_output_locations_list.txt"
-    station_list_pd = pd.read_csv(url,sep="\t",header=None)
-    station_list_pd.columns = ['station_id','lon','lat','station_name']
+    url = "https://raw.githubusercontent.com/VU-IVM/gtsm3-era5-nrt/refs/heads/main/04_supplementary_data/GTSM_output_locations_list.csv"
+    station_list_pd = pd.read_csv(url,sep="\t")
     
     # generate geom and geodataframe and remove the old columns
     geom = [Point(x["lon"], x["lat"]) for irow, x in station_list_pd.iterrows()]
@@ -566,6 +566,8 @@ def gtsm_era5_cds_read_catalog():
     
     stat_names = "gtsm-era5-" + station_list_gpd['station_id'].astype(str) + "-" + station_list_gpd['station_name']
     station_list_gpd["station_name_unique"] = stat_names
+    station_list_gpd["country"] = 'global'
+
     return station_list_gpd  
 
 
@@ -869,19 +871,17 @@ def rwsddl_ssh_retrieve_data(row, dir_output, time_min, time_max):
     return ds
 
 
-def gtsm_era5_cds_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max):
+def gtsm_era5_cds_ssh_retrieve_data(row, dir_output, time_min, time_max):
     """
     Retrieve data from Climate Data Store
-    Can only retrieve entire files, subsetting is done during reconstruction
+    Can only retrieve entire files, subsetting for time and stations is done after download
+    The function checks if the files have already been downloaded to cache
     """
-
+    
     if time_min is None or time_max is None:
         raise ValueError("cannot supply None for 'time_min' or 'time_max' to 'gtsm_era5_cds_retrieve_data()'")
     
-    tempdir = tempfile.gettempdir()
-
-    # Make connection with CDS via API (assumes URL and KEY already stored in .cdsapirc file)
-    c = cdsapi.Client()
+    dir_cache = get_dir_testdata()
 
     # Define timeframe of the request as lists of years and months
     time_min_dt = datetime.strptime(time_min, '%Y-%m-%d')
@@ -899,40 +899,42 @@ def gtsm_era5_cds_retrieve_data(ssh_catalog_gpd, dir_output, time_min, time_max)
             months.append(list(range(1, 13)))
         months.append(list(range(1, time_max_dt.month)))
 
-    # Retrieve data via an API request
-    filelist = []
+    # Retrieve data via an API request and extract archive - for files not found in the cache
     for yy,year in enumerate(years):
-        filename = os.path.join(tempdir, f'gtsm_era5_{year}.zip')
-        c.retrieve(
-            'sis-water-level-change-timeseries-cmip6',
-            {
-                'variable': 'total_water_level',
-                'experiment': 'reanalysis',
-                'temporal_aggregation': 'hourly',
-                'year': str(year),
-                'month': [str(x).zfill(2) for x in months[yy]],
-                'format': 'zip',
-            }, 
-            filename)
-        filelist.append(filename)
+        for mm,month in enumerate(months[yy]):
+            filename = os.path.join(dir_cache, f'reanalysis_waterlevel_hourly_{year}_{month:02}_v2.nc')
+            if not os.path.isfile(filename):
+                print('... retrieving GTSM-ERA5 data for %i, month %i' % (year,month))    
+                tmp_zipfile = os.path.join(dir_cache, f'gtsm_era5_{year}_{month:02}.zip')
 
-    # extract the files from zip archives and delete the original zip files
-    extracted = []
-    for filename in filelist:
-        with ZipFile(filename, 'r') as zip_ref:
-            extracted += zip_ref.namelist()
-            zip_ref.extractall(tempdir)
-        os.remove(filename)
+                # Make connection with CDS via API (assumes URL and KEY already stored in .cdsapirc file)
+                c = cdsapi.Client() 
+                c.retrieve(
+                    'sis-water-level-change-timeseries-cmip6',
+                    {
+                        'variable': 'total_water_level',
+                        'experiment': 'reanalysis',
+                        'temporal_aggregation': 'hourly',
+                        'year': str(year),
+                        'month': [str(x).zfill(2) for x in months[yy]],
+                        'format': 'zip',
+                    }, 
+                    tmp_zipfile)
+            
+                with ZipFile(tmp_zipfile, 'r') as zip_ref:
+                    zip_ref.extractall(dir_cache)
+                os.remove(tmp_zipfile)
 
     # open dataset
-    ds = xr.open_mfdataset([os.path.join(tempdir, x) for x in extracted])
+    ds = xr.open_mfdataset(os.path.join(dir_cache, f'reanalysis_waterlevel_hourly_*_v2.nc'))
     
     # slice on time extent
     ds = ds.sel(time=slice(time_min, time_max))
 
     # subset stations
-    ds = ds.sel(stations=ssh_catalog_gpd['station_id'].values)
-    return ds
+    ds_station = ds.sel(stations=row['station_id']); ds.close()
+    ds_station = ds_station.drop_vars({'station_x_coordinate','station_y_coordinate','stations'})
+    return ds_station
 
   
 def ssh_catalog_subset(source=None,
@@ -953,7 +955,7 @@ def ssh_catalog_subset(source=None,
                    "uhslc-rqds": uhslc_rqds_ssh_read_catalog,
                    "psmsl-gnssir": psmsl_gnssir_ssh_read_catalog,
                    "rwsddl": rwsddl_ssh_read_catalog,
-                   "gtsm-era5-cds": gtsm_era5_cds_read_catalog,
+                   "gtsm-era5-cds": gtsm_era5_cds_ssh_read_catalog,
                    }
     
     if source not in ssh_sources.keys():
@@ -999,7 +1001,7 @@ def ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
                    "uhslc-rqds": uhslc_ssh_retrieve_data,
                    "psmsl-gnssir": psmsl_gnssir_ssh_retrieve_data,
                    "rwsddl": rwsddl_ssh_retrieve_data,
-                   "gtsm-era5-cds": gtsm_era5_cds_retrieve_data,
+                   "gtsm-era5-cds": gtsm_era5_cds_ssh_retrieve_data,
                    }
     
     if source not in ssh_sources.keys():
@@ -1011,28 +1013,22 @@ def ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
     # retrieve
     print(f"retrieving data for {len(ssh_catalog_gpd)} {source} stations:", end=" ")
 
-    if source == 'gtsm-era5-cds': # exception: gtsm-era5-cds data is downloaded for all stations at once
-        ds = gtsm_era5_cds_retrieve_data(ssh_catalog_gpd, dir_output, time_min=time_min, time_max=time_max, **kwargs)
-        file_out = os.path.join(dir_output, f"gtsm-era5-cds.nc")
-        ds.to_netcdf(file_out)
-        del ds
-    else: # all other sources
-        for idx_arbitrary, row in ssh_catalog_gpd.iterrows():
-            irow = ssh_catalog_gpd.index.tolist().index(idx_arbitrary)
-            print(irow+1, end=" ")
-            ds = retrieve_data_func(row, dir_output, time_min=time_min, time_max=time_max, **kwargs)
-            if ds is None:
-                print("[NODATA] ",end="")
-                continue
-        
+    for idx_arbitrary, row in ssh_catalog_gpd.iterrows():
+        irow = ssh_catalog_gpd.index.tolist().index(idx_arbitrary)
+        print(irow+1, end=" ")
+        ds = retrieve_data_func(row, dir_output, time_min=time_min, time_max=time_max, **kwargs)
+        if ds is None:
+            print("[NODATA] ",end="")
+            continue
+    
         # assign attrs from station catalog row
         ds = ds.assign_attrs(station_name=row["station_name"],
-                             station_id=row["station_id"],
-                             station_name_unique=row["station_name_unique"],
-                             longitude=row.geometry.x,
-                             latitude=row.geometry.y,
-                             country=row["country"],
-                             source=row["source"])
+                                station_id=row["station_id"],
+                                station_name_unique=row["station_name_unique"],
+                                longitude=row.geometry.x,
+                                latitude=row.geometry.y,
+                                country=row["country"],
+                                source=row["source"])
         
         ds["waterlevel"] = ds["waterlevel"].astype("float32")
         _make_hydrotools_consistent(ds)

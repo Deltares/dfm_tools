@@ -38,7 +38,7 @@ def test_ssh_catalog_subset(source):
                        "station_name", "station_id", "station_name_unique"]
     for field in fields_expected:
         assert field in ssc_catalog_gpd.columns
-    if source not in ["ssc", "psmsl-gnssir", "rwsddl"]:
+    if source not in ["ssc", "psmsl-gnssir", "rwsddl","gtsm-era5-cds"]:
         assert "time_ndays" in ssc_catalog_gpd.columns
     assert ssc_catalog_gpd.crs.to_string()=='EPSG:4326'
     
@@ -80,7 +80,7 @@ def test_ssh_retrieve_data(source, tmp_path):
     index_dict = {"uhslc-fast":0, "uhslc-rqds":2, 
                   "psmsl-gnssir":0, "ioc":0, "rwsddl":0, 
                   "cmems":0, "cmems-nrt":0, # cmems requires credentials
-                  "gesla3":0}
+                  "gesla3":0, "gtsm-era5-cds":0}
     index = index_dict[source]
     ssc_catalog_gpd_sel = ssc_catalog_gpd.iloc[index:index+1]
     
