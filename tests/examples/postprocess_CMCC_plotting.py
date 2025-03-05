@@ -10,13 +10,20 @@ plt.close('all')
 import dfm_tools as dfmt
 
 
-for varn in ['uo', 'vo','thetao']:
-    #TODO: for vo, solve "RuntimeWarning: divide by zero encountered in divide"
+for varn in ['uo', 'vo', 'thetao']:
     file_nc = f'p:\\archivedprojects\\11206304-futuremares-rawdata-preps\\data\\CMIP6_BC\\CMCC-ESM2\\{varn}_Omon_CMCC-ESM2_ssp126_r1i1p1f1_gn_201501-203412.nc'
     
-    uds = dfmt.open_dataset_curvilinear(file_nc, convert_360to180=True) #TODO: check TODO in this function for improvements #TODO: plot_coastlines gives wrong result when axis from 0-360
+    uds = dfmt.open_dataset_curvilinear(
+        file_nc,
+        x_dim='i',
+        y_dim='j',
+        x_bounds='vertices_longitude',
+        y_bounds='vertices_latitude',
+        convert_360to180=True,
+        )
     uds = uds.ugrid.to_nonperiodic(xmax=180)
-    uds = uds.ugrid.sel(x=slice(-15,30), y=slice(30,70)) #slice to europe (arbitrary, but to visualy compare grids)
+    # slice to europe (arbitrary, but to visualy compare grids)
+    uds = uds.ugrid.sel(x=slice(-15,30), y=slice(30,70))
     
     fig, ax = plt.subplots()
     uds[varn].isel(time=0,lev=0).ugrid.plot(center=False)
