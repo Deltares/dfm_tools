@@ -124,6 +124,8 @@ filterwarnings = [
 	'ignore:datetime.datetime.utcnow\(\) is deprecated:DeprecationWarning',
 	# can be removed once py39 support is dropped since it seems to be resolved in erddapy 2.2.1
 	"ignore:np.find_common_type is deprecated:DeprecationWarning",
+	# for open_dataset_delft3d4()
+	"ignore:A UGRID2D face requires at least three unique non-collinear vertices:UserWarning",
 ]
 
 [tool.flake8]

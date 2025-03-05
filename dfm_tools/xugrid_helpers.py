@@ -372,10 +372,14 @@ def delft3d4_convert_uv(ds):
     u1_mn = ds.U1.where(~mask_u1, 0)
     v1_mn = ds.V1.where(~mask_v1, 0)
     
-    # minus 0.5 since padding=low so corner value is representative for previous face
-    # according to that logic, method=nearest might be better (or just rename the dims)
-    u1_mn_cen = u1_mn.interp(MC=u1_mn.MC-0.5, method='linear').rename({'MC':'M'})
-    v1_mn_cen = v1_mn.interp(NC=v1_mn.NC-0.5, method='linear').rename({'NC':'N'})
+    # minus 0.5 since padding=low so corner value is representative for
+    # previous face according to that logic, method=nearest might be better
+    # (or just rename the dims)
+    u1_mn_cen = u1_mn.interp(MC=u1_mn.MC-0.5, method='linear')
+    v1_mn_cen = v1_mn.interp(NC=v1_mn.NC-0.5, method='linear')
+    # rename corner dims to center dims since we shifted them with 0.5
+    u1_mn_cen = u1_mn_cen.rename({'MC':'M'})
+    v1_mn_cen = v1_mn_cen.rename({'NC':'N'})
     # TODO: since padding=low, just renaming the dims might even be better?
     # u1_mn_cen = u1_mn.rename({'MC':'M'})
     # v1_mn_cen = v1_mn.rename({'NC':'N'})
@@ -405,7 +409,31 @@ def delft3d4_convert_uv(ds):
     return ds
 
 
-def open_dataset_delft3d4(file_nc, **kwargs):
+def open_dataset_delft3d4(file_nc, **kwargs) -> xu.UgridDataset:
+    """
+    Reads in a Delft3D4 netcdf outputfile (curvilinear/staggered) as a ugrid
+    (xugrid.UgridDataset) dataset. This is a Delft3D4 specific version of
+    dfmt.open_dataset_curvilinear().
+    
+    To get Delft3D4 to write netCDF output instead of .dat files, add these
+    lines to your model settings file (.mdf):
+    
+    - FlNcdf=#maphis#
+    - ncFormat=4
+
+    Parameters
+    ----------
+    file_nc : str or path
+        DESCRIPTION.
+    **kwargs : TYPE
+        additional arguments are passed on to xr.open_mfdataset().
+
+    Returns
+    -------
+    uds : xu.UgridDataset
+        The resulting ugrid dataset.
+
+    """
     
     if 'chunks' not in kwargs:
         kwargs['chunks'] = {'time':1}
@@ -440,7 +468,8 @@ def open_dataset_delft3d4(file_nc, **kwargs):
 
 def uda_to_faces(uda : xu.UgridDataArray) -> xu.UgridDataArray:
     """
-    Interpolates a ugrid variable (xu.DataArray) with a node or edge dimension to the faces by averaging the 3/4 nodes/edges around each face.
+    Interpolates a ugrid variable (xu.DataArray) with a node or edge dimension
+    to the faces by averaging the 3/4 nodes/edges around each face.
     
     Parameters
     ----------
@@ -478,8 +507,9 @@ def uda_to_faces(uda : xu.UgridDataArray) -> xu.UgridDataArray:
         print(f'provided uda/variable "{uda.name}" does not have an node or edge dimension, returning unchanged uda')
         return uda
     
-    # rechunk to make sure the node/edge dimension is not chunked, otherwise we will 
-    # get "PerformanceWarning: Slicing with an out-of-order index is generating 384539 times more chunks."
+    # rechunk to make sure the node/edge dimension is not chunked, otherwise we
+    # will get "PerformanceWarning: Slicing with an out-of-order index is
+    # generating 384539 times more chunks."
     chunks = {dimn_notfaces:-1}
     uda = uda.chunk(chunks)
 
@@ -499,7 +529,8 @@ def uda_to_faces(uda : xu.UgridDataArray) -> xu.UgridDataArray:
     uda_face_allnodes = xu.UgridDataArray(uda_face_allnodes_ds,grid=grid)
     
     # replace nonexistent nodes/edges with nan
-    uda_face_allnodes = uda_face_allnodes.where(indexer_validbool) #replace all values for fillvalue nodes/edges (-1) with nan
+    # replace all values for fillvalue nodes/edges (-1) with nan
+    uda_face_allnodes = uda_face_allnodes.where(indexer_validbool)
     # average node/edge values per face
     uda_face = uda_face_allnodes.mean(dim=reduce_dim,keep_attrs=True)
     #update attrs from node/edge to face
