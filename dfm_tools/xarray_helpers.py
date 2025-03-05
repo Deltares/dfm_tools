@@ -358,6 +358,35 @@ def Dataset_varswithdim(ds,dimname): #TODO: dit zit ook in xugrid, wordt nu gebr
     return ds
 
 
-## @huite
-## please commit your `_nearest()` and `interpolate_na_scipy_pervar()` code from this issue here
-## https://github.com/Deltares/dfm_tools/issues/1021#issuecomment-2696987941
+def _nearest(a):
+    nans = np.isnan(a)
+    if not nans.any():
+        return a.copy()
+    indices = distance_transform_edt(
+        input=np.isnan(a),
+        return_distances=False,
+        return_indices=True,
+    )
+    return a[tuple(indices)]
+
+
+def interpolate_na_scipy_pervar(da, dim, keep_attrs=True):
+    arr = xr.apply_ufunc(
+        _nearest,
+        da,
+        input_core_dims=[dim],
+        output_core_dims=[dim],
+        output_dtypes=[da.dtype],
+        dask="parallelized",
+        vectorize=True,
+        keep_attrs=keep_attrs,
+    ).transpose(*da.dims)
+    return arr
+
+
+def interpolate_na_scipy(ds):
+    ds = ds.copy()
+    for var in ds.data_vars:
+        ds[var] = interpolate_na_scipy_pervar(ds[var], ["latitude", "longitude"])#, method="nearest")
+        ds[var] = interpolate_na_scipy_pervar(ds[var], ["depth"])#, method="nearest")
+    return ds
