@@ -30,64 +30,9 @@ from dfm_tools.errors import OutOfRangeError
 import warnings
 
 
-def data_dcsm_gdf():
-    # dummy gdf
-    points_x = [-9.25, -9.5, -9.75]
-    points_y = [43, 43, 43]
-    points_n = [f'DCSM-FM_OB_all_20181108_{i+1:04d}' for i in range(3)]
-    geom = gpd.points_from_xy(x=points_x, y=points_y)
-    gdf_points = gpd.GeoDataFrame(geometry=geom, crs='EPSG:4326')
-    gdf_points['station_id'] = points_n
-    return gdf_points
-
-
-def cmems_dataset_notime():
-    # use hardcoded depth varname/dimname to simulate CMEMS dataset
-    ds = xr.Dataset()
-    so_np = np.array([[[35.819576, 35.82568 , 35.82873 ],
-                       [35.819576, 35.824154, 35.831783],
-                       [35.822628, 35.824154, 35.82873 ]],
-                      
-                      [[35.802788, 35.80584 , 35.815   ],
-                       [35.815   , 35.810417, 35.821102],
-                       [35.824154, 35.813473, 35.81805 ]],
-                      
-                      [[35.786003, 35.789055, np.nan],
-                       [35.807365, 35.796684, np.nan],
-                       [35.824154, 35.80584 , np.nan]],
-                      
-                      [[35.776848, np.nan,    np.nan],
-                       [35.792107, np.nan,    np.nan],
-                       [35.822628, np.nan,    np.nan]],
-                                              
-                      [[np.nan, np.nan,    np.nan],
-                       [np.nan, np.nan,    np.nan],
-                       [np.nan, np.nan,    np.nan]]])
-    ds['so'] = xr.DataArray(so_np,dims=('depth','latitude','longitude'))
-    ds['so'] = ds['so'].assign_attrs({"units":"dummyunit"})
-    lons = [-9.6, -9.5, -9.4]
-    lats = [42.9, 43.0, 43.1]
-    depths = [-0.494025, -1.541375, -2.645669, -3.819495, -5.078224]
-    
-    depth_attrs = {'positive': 'up'}
-    
-    ds['longitude'] = xr.DataArray(lons, dims=('longitude'))
-    ds['latitude'] = xr.DataArray(lats, dims=('latitude'))
-    ds['depth'] = xr.DataArray(depths, dims=('depth')).assign_attrs(depth_attrs)
-    
-    return ds
-
-
-def cmems_dataset_4times():
-    ds_notime = cmems_dataset_notime()
-    ds = xr.concat(4*[ds_notime.expand_dims('time')],dim='time')
-    ds['time'] = xr.DataArray([-12,12,36,60],dims='time').assign_attrs({'standard_name':'time','units':'hours since 2020-01-01'})
-    ds = xr.decode_cf(ds)
-    return ds
-
-
-def test_check_time_extent():
-    ds = cmems_dataset_4times()
+@pytest.mark.unittest
+def test_check_time_extent(cmems_dataset_4times):
+    ds = cmems_dataset_4times
     
     # prior to ds timerange
     try:
@@ -217,8 +162,8 @@ def test_plipointsDataset_to_ForcingModel_drop_allnan_points():
     assert forcingmodel_object.forcing[1].name == 'abc_bnd_0004'
 
 
-def test_ds_sel_time_outside():
-    ds = cmems_dataset_4times()
+def test_ds_sel_time_outside(cmems_dataset_4times):
+    ds = cmems_dataset_4times
     
     # exact outer bounds
     tstart = "2019-12-31 12:00"
@@ -266,12 +211,12 @@ def test_ds_sel_time_outside():
 
 
 @pytest.mark.systemtest
-def test_open_prepare_dataset_correctdepths(tmp_path):
+def test_open_prepare_dataset_correctdepths(tmp_path, cmems_dataset_4times):
     """
     to validate open_prepare_dataset behaviour for depths, in the past the depth values got lost and replaced by depth idx
     """
     
-    ds_moretime = cmems_dataset_4times()
+    ds_moretime = cmems_dataset_4times
     file_nc = tmp_path / 'temp_cmems_dummydata.nc'
     ds_moretime.to_netcdf(file_nc)
     
@@ -280,9 +225,9 @@ def test_open_prepare_dataset_correctdepths(tmp_path):
 
 
 @pytest.mark.unittest
-def test_ds_apply_conventions():
+def test_ds_apply_conventions(cmems_dataset_4times):
     # generate datset with depths defined positive down
-    ds_moretime = cmems_dataset_4times()
+    ds_moretime = cmems_dataset_4times
     ds_moretime['depth'] = -1 * ds_moretime['depth']
     ds_moretime['depth'].attrs['positive'] = 'down'
     ds_converted = ds_apply_conventions(data_xr=ds_moretime)
@@ -299,9 +244,9 @@ def test_ds_apply_conventions():
     
 
 @pytest.mark.unittest
-def test_ds_apply_conversion_dict_rename():
+def test_ds_apply_conversion_dict_rename(cmems_dataset_4times):
     conversion_dict = dfmt.get_conversion_dict()
-    ds_moretime = cmems_dataset_4times()
+    ds_moretime = cmems_dataset_4times
     ds_converted = ds_apply_conversion_dict(data_xr=ds_moretime, conversion_dict=conversion_dict, quantity='salinitybnd')
     assert 'so' in ds_moretime.data_vars
     assert 'salinitybnd' in ds_converted.data_vars
@@ -309,9 +254,9 @@ def test_ds_apply_conversion_dict_rename():
 
 
 @pytest.mark.unittest
-def test_ds_apply_conversion_dict_rename_and_factor():
+def test_ds_apply_conversion_dict_rename_and_factor(cmems_dataset_4times):
     conversion_dict = dfmt.get_conversion_dict()
-    ds_moretime = cmems_dataset_4times()
+    ds_moretime = cmems_dataset_4times
     ds_moretime = ds_moretime.rename_vars({'so':'o2'})
     ds_moretime['o2'] = ds_moretime['o2'].assign_attrs({'units':'dummy'})
     ds_converted = ds_apply_conversion_dict(data_xr=ds_moretime, conversion_dict=conversion_dict, quantity='tracerbndOXY')
@@ -322,14 +267,14 @@ def test_ds_apply_conversion_dict_rename_and_factor():
 
 
 @pytest.mark.unittest
-def test_open_prepare_dataset_slightly_different_latlons(tmp_path):
+def test_open_prepare_dataset_slightly_different_latlons(tmp_path, cmems_dataset_4times):
     """
     to check whether an error is raised when trying to combine datasets with slightly 
     different coordinates: https://github.com/Deltares/dfm_tools/issues/574
     
     """
-    ds1 = cmems_dataset_4times().isel(time=slice(None,2))
-    ds2 = cmems_dataset_4times().isel(time=slice(2,None))
+    ds1 = cmems_dataset_4times.isel(time=slice(None,2))
+    ds2 = cmems_dataset_4times.isel(time=slice(2,None))
     
     # deliberately alter longitude coordinate slightly
     ds_lon = ds1.longitude.to_numpy().copy()
@@ -350,7 +295,7 @@ def test_open_prepare_dataset_slightly_different_latlons(tmp_path):
 
 
 @pytest.mark.unittest
-def test_interp_regularnc_to_plipointsDataset():
+def test_interp_regularnc_to_plipointsDataset(cmems_dataset_notime):
     """
     Linear interpolation to a new dimension in dfmt.interp_regularnc_to_plipoints() 
     resulted in unexpected nan values since scipy 1.10.0.
@@ -369,7 +314,7 @@ def test_interp_regularnc_to_plipointsDataset():
     varn_depth = ncbnd_construct['varn_depth']
     varn_pointname = ncbnd_construct['varn_pointname']
     
-    ds = cmems_dataset_notime()
+    ds = cmems_dataset_notime.copy()
     ds = ds.rename_dims({'depth':dimn_depth})
     ds = ds.rename_vars({'depth':varn_depth})
     so_np = ds['so'].to_numpy()
@@ -422,10 +367,7 @@ def test_interp_regularnc_to_plipointsDataset():
 
 
 @pytest.mark.unittest
-def test_interp_regularnc_to_plipointsDataset_checkvardimnames():
-    """
-    """
-    
+def test_interp_regularnc_to_plipointsDataset_checkvardimnames(cmems_dataset_notime):
     ncbnd_construct = get_ncbnd_construct()
     dimn_point = ncbnd_construct['dimn_point']
     dimn_depth = ncbnd_construct['dimn_depth']
@@ -434,7 +376,7 @@ def test_interp_regularnc_to_plipointsDataset_checkvardimnames():
     varn_pointy = ncbnd_construct['varn_pointy']
     varn_pointname = ncbnd_construct['varn_pointname']
     
-    ds = cmems_dataset_notime()
+    ds = cmems_dataset_notime.copy()
     ds = ds.rename_dims({'depth':dimn_depth})
     ds = ds.rename_vars({'depth':varn_depth})
     lons = ds['longitude'].to_numpy()
@@ -458,9 +400,9 @@ def test_interp_regularnc_to_plipointsDataset_checkvardimnames():
 
 @pytest.mark.systemtest
 @pytest.mark.requireslocaldata
-def test_interpolate_tide_to_plipoints():
+def test_interpolate_tide_to_plipoints(data_dcsm_gdf):
     nanvalue = -999
-    gdf_points = data_dcsm_gdf()
+    gdf_points = data_dcsm_gdf
     
     tidemodel_list = ['tpxo80_opendap', 'FES2014', 'FES2012', 'EOT20', 'GTSMv4.1']#, 'GTSMv4.1_opendap']
     for tidemodel in tidemodel_list:
@@ -507,7 +449,7 @@ def test_interpolate_tide_to_plipoints():
 
     
 @pytest.mark.unittest
-def test_interpolate_tide_to_forcingmodel():
+def test_interpolate_tide_to_forcingmodel(data_dcsm_gdf):
     """
     This tests adds to test_interpolate_tide_to_plipoints, since it also interpolates to ForcingModel
     Furthermore, it runs on Github since it does not depend on local data
@@ -515,7 +457,7 @@ def test_interpolate_tide_to_forcingmodel():
     
     tidemodel = 'tpxo80_opendap'
     component_list = ['M2']
-    gdf_points = data_dcsm_gdf()
+    gdf_points = data_dcsm_gdf
 
     data_interp = dfmt.interpolate_tide_to_plipoints(tidemodel=tidemodel, gdf_points=gdf_points, 
                                                      component_list=component_list, load=True)

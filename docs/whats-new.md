@@ -2,6 +2,9 @@
 
 ## UNRELEASED
 
+### Feat
+- improved interpolation and extrapolation in `dfmt.cmems_nc_to_ini()` in [#1152](https://github.com/Deltares/dfm_tools/pull/1152)
+
 ### Fix
 - improved performance of `dfmt.merge_meteofiles()` by adding xarray arguments and ensuring alignment in [#1148](https://github.com/Deltares/dfm_tools/pull/1148)
 - proper time slicing and out of bounds error of `dfmt.merge_meteofiles()` in [#1149](https://github.com/Deltares/dfm_tools/pull/1149)
