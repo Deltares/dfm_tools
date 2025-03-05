@@ -14,6 +14,7 @@ import pandas as pd
 import xarray as xr
 import numpy as np
 from pathlib import Path
+from dfm_tools.xarray_helpers import interpolate_na_multidim
 
 
 @pytest.mark.unittest
@@ -262,3 +263,34 @@ def test_preprocess_hisnc():
     ds2 = xr.open_mfdataset(file_nc, preprocess=dfmt.preprocess_hisnc)
     assert ds1.sizes['source_sink'] == 46
     assert ds2.sizes['source_sink'] == 1
+
+
+@pytest.mark.unittest
+def test_interpolate_na_multidim(cmems_dataset_notime):
+    ds = cmems_dataset_notime.copy()
+    for var in ds.data_vars:
+        ds[var] = interpolate_na_multidim(ds[var], ["latitude", 
+                                                    "longitude"])
+        ds[var] = interpolate_na_multidim(ds[var], ["depth"])
+
+    expected_vals = np.array(
+        [[[35.819576, 35.82568 , 35.82873 ],
+        [35.819576, 35.824154, 35.831783],
+        [35.822628, 35.824154, 35.82873 ]],
+
+       [[35.802788, 35.80584 , 35.815   ],
+        [35.815   , 35.810417, 35.821102],
+        [35.824154, 35.813473, 35.81805 ]],
+
+       [[35.786003, 35.789055, 35.789055],
+        [35.807365, 35.796684, 35.796684],
+        [35.824154, 35.80584 , 35.80584 ]],
+
+       [[35.776848, 35.776848, 35.776848],
+        [35.792107, 35.792107, 35.792107],
+        [35.822628, 35.822628, 35.822628]],
+
+       [[35.776848, 35.776848, 35.776848],
+        [35.792107, 35.792107, 35.792107],
+        [35.822628, 35.822628, 35.822628]]])
+    assert np.allclose(ds.so.to_numpy(), expected_vals)
