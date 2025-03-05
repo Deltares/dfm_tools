@@ -267,10 +267,13 @@ def test_preprocess_hisnc():
 
 @pytest.mark.unittest
 def test_interpolate_na_multidim(cmems_dataset_notime):
+    """
+    check if the interpolation works as expected
+    """
+    
     ds = cmems_dataset_notime.copy()
     for var in ds.data_vars:
-        ds[var] = interpolate_na_multidim(ds[var], ["latitude", 
-                                                    "longitude"])
+        ds[var] = interpolate_na_multidim(ds[var], ["latitude", "longitude"])
         ds[var] = interpolate_na_multidim(ds[var], ["depth"])
 
     expected_vals = np.array(

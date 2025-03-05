@@ -30,18 +30,8 @@ from dfm_tools.errors import OutOfRangeError
 import warnings
 
 
-
-
-def cmems_dataset_4times(cmems_dataset_notime):
-    ds_notime = cmems_dataset_notime.copy()
-    ds = xr.concat(4*[ds_notime.expand_dims('time')],dim='time')
-    ds['time'] = xr.DataArray([-12,12,36,60],dims='time').assign_attrs({'standard_name':'time','units':'hours since 2020-01-01'})
-    ds = xr.decode_cf(ds)
-    return ds
-
-
-def test_check_time_extent():
-    ds = cmems_dataset_4times()
+def test_check_time_extent(cmems_dataset_4times):
+    ds = cmems_dataset_4times
     
     # prior to ds timerange
     try:
@@ -171,8 +161,8 @@ def test_plipointsDataset_to_ForcingModel_drop_allnan_points():
     assert forcingmodel_object.forcing[1].name == 'abc_bnd_0004'
 
 
-def test_ds_sel_time_outside():
-    ds = cmems_dataset_4times()
+def test_ds_sel_time_outside(cmems_dataset_4times):
+    ds = cmems_dataset_4times
     
     # exact outer bounds
     tstart = "2019-12-31 12:00"
@@ -220,12 +210,12 @@ def test_ds_sel_time_outside():
 
 
 @pytest.mark.systemtest
-def test_open_prepare_dataset_correctdepths(tmp_path):
+def test_open_prepare_dataset_correctdepths(tmp_path, cmems_dataset_4times):
     """
     to validate open_prepare_dataset behaviour for depths, in the past the depth values got lost and replaced by depth idx
     """
     
-    ds_moretime = cmems_dataset_4times()
+    ds_moretime = cmems_dataset_4times
     file_nc = tmp_path / 'temp_cmems_dummydata.nc'
     ds_moretime.to_netcdf(file_nc)
     
@@ -234,9 +224,9 @@ def test_open_prepare_dataset_correctdepths(tmp_path):
 
 
 @pytest.mark.unittest
-def test_ds_apply_conventions():
+def test_ds_apply_conventions(cmems_dataset_4times):
     # generate datset with depths defined positive down
-    ds_moretime = cmems_dataset_4times()
+    ds_moretime = cmems_dataset_4times
     ds_moretime['depth'] = -1 * ds_moretime['depth']
     ds_moretime['depth'].attrs['positive'] = 'down'
     ds_converted = ds_apply_conventions(data_xr=ds_moretime)
@@ -253,9 +243,9 @@ def test_ds_apply_conventions():
     
 
 @pytest.mark.unittest
-def test_ds_apply_conversion_dict_rename():
+def test_ds_apply_conversion_dict_rename(cmems_dataset_4times):
     conversion_dict = dfmt.get_conversion_dict()
-    ds_moretime = cmems_dataset_4times()
+    ds_moretime = cmems_dataset_4times
     ds_converted = ds_apply_conversion_dict(data_xr=ds_moretime, conversion_dict=conversion_dict, quantity='salinitybnd')
     assert 'so' in ds_moretime.data_vars
     assert 'salinitybnd' in ds_converted.data_vars
@@ -263,9 +253,9 @@ def test_ds_apply_conversion_dict_rename():
 
 
 @pytest.mark.unittest
-def test_ds_apply_conversion_dict_rename_and_factor():
+def test_ds_apply_conversion_dict_rename_and_factor(cmems_dataset_4times):
     conversion_dict = dfmt.get_conversion_dict()
-    ds_moretime = cmems_dataset_4times()
+    ds_moretime = cmems_dataset_4times
     ds_moretime = ds_moretime.rename_vars({'so':'o2'})
     ds_moretime['o2'] = ds_moretime['o2'].assign_attrs({'units':'dummy'})
     ds_converted = ds_apply_conversion_dict(data_xr=ds_moretime, conversion_dict=conversion_dict, quantity='tracerbndOXY')
@@ -276,14 +266,14 @@ def test_ds_apply_conversion_dict_rename_and_factor():
 
 
 @pytest.mark.unittest
-def test_open_prepare_dataset_slightly_different_latlons(tmp_path):
+def test_open_prepare_dataset_slightly_different_latlons(tmp_path, cmems_dataset_4times):
     """
     to check whether an error is raised when trying to combine datasets with slightly 
     different coordinates: https://github.com/Deltares/dfm_tools/issues/574
     
     """
-    ds1 = cmems_dataset_4times().isel(time=slice(None,2))
-    ds2 = cmems_dataset_4times().isel(time=slice(2,None))
+    ds1 = cmems_dataset_4times.isel(time=slice(None,2))
+    ds2 = cmems_dataset_4times.isel(time=slice(2,None))
     
     # deliberately alter longitude coordinate slightly
     ds_lon = ds1.longitude.to_numpy().copy()

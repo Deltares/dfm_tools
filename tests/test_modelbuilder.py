@@ -13,7 +13,6 @@ import hydrolib.core.dflowfm as hcdfm
 import xarray as xr
 import numpy as np
 from dfm_tools.modelbuilder import get_quantity_list, get_ncvarname
-from test_interpolate_grid2bnd import cmems_dataset_4times # TODO: create fixture
 
 
 @pytest.mark.unittest
@@ -67,7 +66,7 @@ def test_constant_to_bc(tmp_path):
 
 @pytest.mark.parametrize("timecase", [pytest.param(x, id=x) for x in ['midnight','noon','monthly']])
 @pytest.mark.systemtest
-def test_cmems_nc_to_bc(tmp_path, timecase):
+def test_cmems_nc_to_bc(tmp_path, timecase, cmems_dataset_4times):
     """
     tests for midnight-centered data, noon-centered data and monthly timestamped data
     """
@@ -79,7 +78,7 @@ def test_cmems_nc_to_bc(tmp_path, timecase):
                     -9.5   43.0
                     """)
     
-    ds = cmems_dataset_4times()
+    ds = cmems_dataset_4times
     if timecase == "midnight":
         ds["time"] = ds["time"] + pd.Timedelta(hours=12)
     elif timecase == "monthly":
@@ -139,12 +138,12 @@ def test_cmems_nc_to_bc(tmp_path, timecase):
 
 @pytest.mark.parametrize("timecase", [pytest.param(x, id=x) for x in ['midnight','noon','monthly']])
 @pytest.mark.systemtest
-def test_cmems_nc_to_ini(tmp_path, timecase):
+def test_cmems_nc_to_ini(tmp_path, timecase, cmems_dataset_4times):
     """
     tests for midnight-centered data, noon-centered data and monthly timestamped data
     """
-    ds1 = cmems_dataset_4times().isel(time=slice(None,2))
-    ds2 = cmems_dataset_4times().isel(time=slice(2,None))
+    ds1 = cmems_dataset_4times.isel(time=slice(None,2))
+    ds2 = cmems_dataset_4times.isel(time=slice(2,None))
     if timecase == "midnight":
         ds1["time"] = ds1["time"] + pd.Timedelta(hours=12)
         ds2["time"] = ds2["time"] + pd.Timedelta(hours=12)

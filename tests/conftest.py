@@ -65,6 +65,16 @@ def cmems_dataset_notime():
 
 
 @pytest.fixture
+def cmems_dataset_4times(cmems_dataset_notime):
+    ds_notime = cmems_dataset_notime.copy()
+    ds = xr.concat(4*[ds_notime.expand_dims('time')],dim='time')
+    ds['time'] = xr.DataArray([-12,12,36,60],dims='time').assign_attrs({'standard_name':'time','units':'hours since 2020-01-01'})
+    ds = xr.decode_cf(ds)
+    cmems_dataset_4times = ds
+    return cmems_dataset_4times
+
+
+@pytest.fixture
 def file_nc_era5_pattern(tmp_path):
     date_min = '2010-01-31'
     date_max = '2010-02-01'
