@@ -163,10 +163,13 @@ def cmems_nc_to_ini(
     tstop_pd = tstart_pd + pd.Timedelta(hours=1)
     
     for quan_bnd in list_quantities:
-        
-        if quan_bnd in ["temperaturebnd","uxuyadvectionvelocitybnd"]:
-            # silently skipped, temperature is handled with salinity,
-            # uxuy is not supported
+        if (quan_bnd != "salinitybnd") and not quan_bnd.startswith("tracer"):
+            # quantities other than salinitybnd, temperaturebnd and tracer* are
+            # silently skipped since they are also not supported by delft3dfm
+            # temperaturebnd is handled with salinity
+            # uxuyadvectionvelocitybnd is not supported
+            print(f"quantity {quan_bnd} is not supported by cmems_nc_to_ini, "
+                   "silently skipped")
             continue
         
         ncvarname = get_ncvarname(
@@ -176,6 +179,7 @@ def cmems_nc_to_ini(
         dir_pattern_one = dir_pattern.format(ncvarname=ncvarname)
         
         if quan_bnd=="salinitybnd":
+            # this also handles temperaturebnd
             # 3D initialsalinity/initialtemperature fields are silently ignored
             # initial 3D conditions are only possible via nudging 1st timestep
             # via quantity=nudge_salinity_temperature
@@ -189,7 +193,7 @@ def cmems_nc_to_ini(
             data_xr["thetao"] = data_xr_tem["thetao"]
             quantity = "nudge_salinity_temperature"
             varname = None
-        elif "tracer" in quan_bnd:
+        elif quan_bnd.startswith("tracer"):
             data_xr = xr.open_mfdataset(dir_pattern_one)
             data_xr = ds_apply_conversion_dict(
                 data_xr=data_xr,
@@ -199,10 +203,6 @@ def cmems_nc_to_ini(
             quantity = f'initial{quan_bnd.replace("bnd","")}'
             varname = quantity
             data_xr = data_xr.rename_vars({quan_bnd:quantity})
-        else:
-            # skip all other quantities since they are also not supported by
-            # delft3dfm
-            continue
         
         # subset two times. interp to tstart would be the proper way to do it, 
         # but FM needs two timesteps for nudge_salinity_temperature and initial

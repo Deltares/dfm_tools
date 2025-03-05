@@ -197,6 +197,56 @@ def test_cmems_nc_to_ini(tmp_path, timecase, cmems_dataset_4times):
     assert ds_out['depth'].attrs['positive'] == 'up'
 
 
+@pytest.mark.systemtest
+def test_cmems_nc_to_ini_tracer(tmp_path, cmems_dataset_4times):
+    """
+    coverage for initialtracer
+    """
+    ds = cmems_dataset_4times
+    ds = ds.rename({"so":"no3"})
+    file_nc = os.path.join(tmp_path, "temp_cmems_4day_no3.nc")
+    ds.to_netcdf(file_nc)
+    
+    ext_old = hcdfm.ExtOldModel()
+    
+    ext_old = dfmt.cmems_nc_to_ini(ext_old=ext_old,
+                                   dir_output=tmp_path,
+                                   list_quantities=["tracerbndNO3"],
+                                   tstart="2020-01-01",
+                                   dir_pattern=file_nc)
+    
+    file_expected = tmp_path / "initialtracerNO3_2020-01-01_00-00-00.nc"
+    
+    times_expected =  ['2019-12-31 12:00:00', '2020-01-01 12:00:00']
+        
+    assert os.path.exists(file_expected)
+    ds_out = xr.open_dataset(file_expected)
+    
+    times_actual = ds_out.time.to_pandas().dt.strftime("%Y-%m-%d %H:%M:%S").tolist()
+    assert times_expected == times_actual
+    
+    assert "initialtracerNO3" in ds_out.data_vars
+    assert ds_out.initialtracerNO3.isnull().sum().load() == 0
+    assert 'depth' in ds_out.coords
+
+
+@pytest.mark.unittest
+def test_cmems_nc_to_ini_skipped():
+    list_quantities = ["temperaturebnd",
+                       "ux",
+                       "uxuyadvectionvelocitybnd",
+                       "nonexisting",
+                       ]
+    
+    _ = dfmt.cmems_nc_to_ini(
+        ext_old=None, # dummy since it is not reached
+        dir_output=None, # dummy since it is not reached
+        list_quantities=list_quantities,
+        tstart="2020-01-01",
+        dir_pattern=None, # dummy since it is not reached
+        )
+
+
 @pytest.mark.unittest
 def test_create_model_exec_files_none(tmp_path):
     mdu_file = tmp_path / "temp_test.mdu"
