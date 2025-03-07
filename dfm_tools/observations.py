@@ -568,9 +568,9 @@ def gtsm_era5_cds_ssh_read_catalog():
     station_list_gpd["country"] = ""
     time_start = pd.Timestamp('1950-01-01')
     time_end = pd.Timestamp('2024-12-31')
-    station_list_pd["start_date_time"] = time_start
-    station_list_pd["end_date_time"] = time_end
-    station_list_pd["time_ndays"] = (time_end - time_start).total_seconds()/3600/24
+    station_list_gpd["start_date_time"] = time_start
+    station_list_gpd["end_date_time"] = time_end
+    station_list_gpd["time_ndays"] = (time_end - time_start).total_seconds()/3600/24
 
     return station_list_gpd  
 
