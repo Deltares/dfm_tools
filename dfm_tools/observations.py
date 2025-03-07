@@ -23,7 +23,6 @@ import shutil
 import fiona
 import copernicusmarine
 import cdsapi
-from datetime import datetime
 from dfm_tools.data import get_dir_testdata
 
 __all__ = ["ssh_catalog_subset",
@@ -566,7 +565,12 @@ def gtsm_era5_cds_ssh_read_catalog():
     
     stat_names = "gtsm-era5-" + station_list_gpd['station_id'].astype(str) + "-" + station_list_gpd['station_name']
     station_list_gpd["station_name_unique"] = stat_names
-    station_list_gpd["country"] = 'global'
+    station_list_gpd["country"] = ""
+    time_start = pd.Timestamp('1950-01-01')
+    time_end = pd.Timestamp('2024-12-31')
+    station_list_pd["start_date_time"] = time_start
+    station_list_pd["end_date_time"] = time_end
+    station_list_pd["time_ndays"] = (time_end - time_start).total_seconds()/3600/24
 
     return station_list_gpd  
 
@@ -871,62 +875,55 @@ def rwsddl_ssh_retrieve_data(row, dir_output, time_min, time_max):
     return ds
 
 
-def gtsm_era5_cds_ssh_retrieve_data(row, dir_output, time_min, time_max):
+def gtsm_era5_cds_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None):
     """
     Retrieve data from Climate Data Store
     Can only retrieve entire files, subsetting for time and stations is done after download
     The function checks if the files have already been downloaded to cache
     """
     
-    if time_min is None or time_max is None:
-        raise ValueError("cannot supply None for 'time_min' or 'time_max' to 'gtsm_era5_cds_retrieve_data()'")
-    
-    dir_cache = get_dir_testdata()
+    if time_min == None:
+        time_min = row['start_date_time']
+    if time_max == None:
+        time_max = row['end_date_time']
 
-    # Define timeframe of the request as lists of years and months
-    time_min_dt = datetime.strptime(time_min, '%Y-%m-%d')
-    time_max_dt = datetime.strptime(time_max, '%Y-%m-%d')
-    if time_max_dt.year == time_min_dt.year: # dates within one year
-        years = [time_max_dt.year]
-        months = [list(range(time_min_dt.month, time_max_dt.month+1))]
-    elif (time_max_dt.year - time_min_dt.year) == 1: # dates across the year boundary
-        years = [time_min_dt.year, time_max_dt.year]
-        months = [list(range(time_min_dt.month, 13)), list(range(1, time_max_dt.month))]
-    elif (time_max_dt.year - time_min_dt.year) > 1: # dates span multiple years
-        years = list(range(time_min_dt.year, time_max_dt.year+1))
-        months = [list(range(time_min_dt.month, 13))]
-        for yy in years[1:-1]:
-            months.append(list(range(1, 13)))
-        months.append(list(range(1, time_max_dt.month)))
+    dir_cache = get_dir_testdata()
+    dir_cache_gtsm = os.path.join(dir_cache,'gtsm_era5_cds')
+    if not os.path.isdir(dir_cache_gtsm):
+        os.mkdir(dir_cache_gtsm)
+
+    # Get a list of all monthly time periods within the time range
+    time_periods = pd.period_range(start=time_min, end=time_max, freq='M')
 
     # Retrieve data via an API request and extract archive - for files not found in the cache
-    for yy,year in enumerate(years):
-        for mm,month in enumerate(months[yy]):
-            filename = os.path.join(dir_cache, f'reanalysis_waterlevel_hourly_{year}_{month:02}_v2.nc')
-            if not os.path.isfile(filename):
-                print('... retrieving GTSM-ERA5 data for %i, month %i' % (year,month))    
-                tmp_zipfile = os.path.join(dir_cache, f'gtsm_era5_{year}_{month:02}.zip')
+    for ii, period in enumerate(time_periods):
+        filename = os.path.join(dir_cache_gtsm, f'reanalysis_waterlevel_hourly_{period.year}_{period.month:02}_v2.nc')
+        if os.path.isfile(filename):
+            continue
 
-                # Make connection with CDS via API (assumes URL and KEY already stored in .cdsapirc file)
-                c = cdsapi.Client() 
-                c.retrieve(
-                    'sis-water-level-change-timeseries-cmip6',
-                    {
-                        'variable': 'total_water_level',
-                        'experiment': 'reanalysis',
-                        'temporal_aggregation': 'hourly',
-                        'year': str(year),
-                        'month': [str(x).zfill(2) for x in months[yy]],
-                        'format': 'zip',
-                    }, 
-                    tmp_zipfile)
-            
-                with ZipFile(tmp_zipfile, 'r') as zip_ref:
-                    zip_ref.extractall(dir_cache)
-                os.remove(tmp_zipfile)
+        print('... retrieving GTSM-ERA5 data for %i, month %i' % (period.year, period.month))    
+        tmp_zipfile = os.path.join(dir_cache_gtsm, f'gtsm_era5_{period.year}_{period.month:02}.zip')
+
+        # Make connection with CDS via API (assumes URL and KEY already stored in .cdsapirc file)
+        c = cdsapi.Client() 
+        c.retrieve(
+            'sis-water-level-change-timeseries-cmip6',
+            {
+                'variable': 'total_water_level',
+                'experiment': 'reanalysis',
+                'temporal_aggregation': 'hourly',
+                'year': str(period.year),
+                'month': str(period.month).zfill(2),
+                'format': 'zip',
+            }, 
+            tmp_zipfile)
+    
+        with ZipFile(tmp_zipfile, 'r') as zip_ref:
+            zip_ref.extractall(dir_cache_gtsm)
+        os.remove(tmp_zipfile)
 
     # open dataset
-    ds = xr.open_mfdataset(os.path.join(dir_cache, f'reanalysis_waterlevel_hourly_*_v2.nc'))
+    ds = xr.open_mfdataset(os.path.join(dir_cache_gtsm, 'reanalysis_waterlevel_hourly_*_v2.nc'), data_vars='minimal',join='exact')
     
     # slice on time extent
     ds = ds.sel(time=slice(time_min, time_max))
@@ -1012,7 +1009,6 @@ def ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
     
     # retrieve
     print(f"retrieving data for {len(ssh_catalog_gpd)} {source} stations:", end=" ")
-
     for idx_arbitrary, row in ssh_catalog_gpd.iterrows():
         irow = ssh_catalog_gpd.index.tolist().index(idx_arbitrary)
         print(irow+1, end=" ")
@@ -1023,12 +1019,12 @@ def ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
     
         # assign attrs from station catalog row
         ds = ds.assign_attrs(station_name=row["station_name"],
-                                station_id=row["station_id"],
-                                station_name_unique=row["station_name_unique"],
-                                longitude=row.geometry.x,
-                                latitude=row.geometry.y,
-                                country=row["country"],
-                                source=row["source"])
+                            station_id=row["station_id"],
+                            station_name_unique=row["station_name_unique"],
+                            longitude=row.geometry.x,
+                            latitude=row.geometry.y,
+                            country=row["country"],
+                            source=row["source"])
         
         ds["waterlevel"] = ds["waterlevel"].astype("float32")
         _make_hydrotools_consistent(ds)

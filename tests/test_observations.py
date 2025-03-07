@@ -38,12 +38,12 @@ def test_ssh_catalog_subset(source):
                        "station_name", "station_id", "station_name_unique"]
     for field in fields_expected:
         assert field in ssc_catalog_gpd.columns
-    if source not in ["ssc", "psmsl-gnssir", "rwsddl","gtsm-era5-cds"]:
+    if source not in ["ssc", "psmsl-gnssir", "rwsddl"]:
         assert "time_ndays" in ssc_catalog_gpd.columns
     assert ssc_catalog_gpd.crs.to_string()=='EPSG:4326'
     
     # do actual subset
-    source_list_notime = ["ssc","rwsddl","gtsm-era5-cds"]
+    source_list_notime = ["ssc","rwsddl"]
     if source in source_list_notime:
         ssc_catalog_gpd_sel = dfmt.ssh_catalog_subset(source=source,
                                                       lon_min=lon_min, lon_max=lon_max, 

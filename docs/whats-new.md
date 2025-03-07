@@ -4,7 +4,7 @@
 
 ### Feat
 - improved interpolation and extrapolation in `dfmt.cmems_nc_to_ini()` in [#1152](https://github.com/Deltares/dfm_tools/pull/1152)
-- added gtsm-era5-cds data as a source of observations in [#1121](https://github.com/Deltares/dfm_tools/issues/1121).
+- added gtsm-era5-cds data as a source of observations to functions `dfmt.ssh_catalog_subset()` and `dfmt.ssh_retrieve_data()` in [#1121](https://github.com/Deltares/dfm_tools/issues/1121).
 
 ### Fix
 - improved performance of `dfmt.merge_meteofiles()` by adding xarray arguments and ensuring alignment in [#1148](https://github.com/Deltares/dfm_tools/pull/1148)
