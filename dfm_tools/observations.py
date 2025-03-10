@@ -568,8 +568,8 @@ def gtsm_era5_cds_ssh_read_catalog():
     station_list_gpd["country"] = ""
     time_start = pd.Timestamp('1950-01-01')
     time_end = pd.Timestamp('2024-12-31')
-    station_list_gpd["start_date_time"] = time_start
-    station_list_gpd["end_date_time"] = time_end
+    station_list_gpd["time_min"] = time_start
+    station_list_gpd["time_max"] = time_end
     station_list_gpd["time_ndays"] = (time_end - time_start).total_seconds()/3600/24
 
     return station_list_gpd  
@@ -883,9 +883,9 @@ def gtsm_era5_cds_ssh_retrieve_data(row, dir_output, time_min=None, time_max=Non
     """
     
     if time_min == None:
-        time_min = row['start_date_time']
+        time_min = row['time_min']
     if time_max == None:
-        time_max = row['end_date_time']
+        time_max = row['time_max']
 
     dir_cache = get_dir_testdata()
     dir_cache_gtsm = os.path.join(dir_cache,'gtsm_era5_cds')
