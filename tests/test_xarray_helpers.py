@@ -226,6 +226,37 @@ def test_merge_meteofiles_convert360to180(ds_era5_empty, tmp_path):
     assert np.isclose(ds_merged["longitude"][0], -180.0)
     assert np.isclose(ds_merged["longitude"][-1], 179.5)
  
+    
+@pytest.mark.unittest
+def test_merge_meteofiles_number_coordinate(ds_era5_empty, tmp_path):
+    """
+    The number coordinate value does not cause issues per definition. However, when it
+    is present in the first and last files of a set of files, but not in the
+    intermediate ones, we get "ValueError: 'number' not present in all datasets and 
+    coords='different'. [...]". For more details, see
+    https://github.com/Deltares/dfm_tools/issues/1156.
+    coords='minimal was added to '
+    """
+    ds1 = ds_era5_empty.isel(time=slice(None,3))
+    ds2 = ds_era5_empty.isel(time=slice(3,6))
+    ds3 = ds_era5_empty.isel(time=slice(6,None))
+    ds1['number'] = 0
+    ds1 = ds1.set_coords('number')
+    ds3['number'] = 0
+    ds3 = ds3.set_coords('number')
+    ds1.to_netcdf(os.path.join(tmp_path, "file1.nc"))
+    ds2.to_netcdf(os.path.join(tmp_path, "file2.nc"))
+    ds3.to_netcdf(os.path.join(tmp_path, "file3.nc"))
+    
+    time_slice = slice('2010-01-31','2010-02-01')
+    file_nc = os.path.join(tmp_path, "*.nc")
+    kwargs = dict(preprocess=dfmt.preprocess_ERA5)
+    _ = dfmt.merge_meteofiles(
+        file_nc=file_nc,
+        time_slice=time_slice, 
+        **kwargs,
+        )
+    
 
 @pytest.mark.unittest
 def test_file_to_list_pathlib_path():

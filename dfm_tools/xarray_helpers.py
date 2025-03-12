@@ -224,6 +224,9 @@ def merge_meteofiles(file_nc:str,
         # avoid time dimension on other variables
         # enforce error in case of conflicting variables
         kwargs['data_vars'] = 'minimal'
+    if 'coords' not in kwargs:
+        # support number coordinate variable in some of the ERA5 datasets
+        kwargs['coords'] = 'minimal'
     if 'join' not in kwargs:
         # forbid slightly changed lat/lon values
         # enforce alignment error if expver is not present in all datasets 
