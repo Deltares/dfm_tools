@@ -235,6 +235,7 @@ def test_merge_meteofiles_number_coordinate(ds_era5_empty, tmp_path):
     intermediate ones, we get "ValueError: 'number' not present in all datasets and 
     coords='different'. [...]". For more details, see
     https://github.com/Deltares/dfm_tools/issues/1156.
+    coords='minimal was added to '
     """
     ds1 = ds_era5_empty.isel(time=slice(None,3))
     ds2 = ds_era5_empty.isel(time=slice(3,6))
@@ -250,10 +251,11 @@ def test_merge_meteofiles_number_coordinate(ds_era5_empty, tmp_path):
     time_slice = slice('2010-01-31','2010-02-01')
     file_nc = os.path.join(tmp_path, "*.nc")
     kwargs = dict(preprocess=dfmt.preprocess_ERA5)
-    data_xr_tsel = dfmt.merge_meteofiles(file_nc=file_nc,
-                                         time_slice=time_slice, 
-                                         # coords='minimal',
-                                         **kwargs)
+    _ = dfmt.merge_meteofiles(
+        file_nc=file_nc,
+        time_slice=time_slice, 
+        **kwargs,
+        )
     
 
 @pytest.mark.unittest
