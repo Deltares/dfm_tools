@@ -7,7 +7,7 @@ import geopandas as gpd
 from shapely import Point
 import os
 import xarray as xr
-from dfm_tools.download import copernicusmarine_credentials
+from dfm_tools.download import copernicusmarine_credentials, cds_credentials
 from dfm_tools.data import get_dir_testdata
 from erddapy import ERDDAP
 import requests
@@ -551,7 +551,7 @@ def rwsddl_ssh_read_catalog(meta_dict=None):
     return ddl_slev_gdf
 
 
-def gtsm_era5_cds_ssh_read_catalog():
+def gtsm3_era5_cds_ssh_read_catalog():
     
     # There is no catalog file available via API, instead we load a text file containing coordinates of gtsm-era5 output points (that are available on CDS)
     url = "https://raw.githubusercontent.com/VU-IVM/gtsm3-era5-nrt/refs/heads/main/04_supplementary_data/GTSM_output_locations_list.csv"
@@ -563,7 +563,7 @@ def gtsm_era5_cds_ssh_read_catalog():
     drop_list = ["lon","lat"]
     station_list_gpd = station_list_gpd.drop(drop_list, axis=1)
     
-    stat_names = "gtsm-era5-" + station_list_gpd['station_id'].astype(str) + "-" + station_list_gpd['station_name']
+    stat_names = "gtsm3-era5-" + station_list_gpd['station_id'].astype(str) + "-" + station_list_gpd['station_name']
     station_list_gpd["station_name_unique"] = stat_names
     station_list_gpd["country"] = ""
     time_start = pd.Timestamp('1950-01-01')
@@ -875,7 +875,7 @@ def rwsddl_ssh_retrieve_data(row, dir_output, time_min, time_max):
     return ds
 
 
-def gtsm_era5_cds_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None):
+def gtsm3_era5_cds_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None, time_freq='hourly', variable='waterlevel'):
     """
     Retrieve data from Climate Data Store
     Can only retrieve entire files, subsetting for time and stations is done after download
@@ -888,30 +888,40 @@ def gtsm_era5_cds_ssh_retrieve_data(row, dir_output, time_min=None, time_max=Non
         time_max = row['time_max']
 
     dir_cache = get_dir_testdata()
-    dir_cache_gtsm = os.path.join(dir_cache,'gtsm_era5_cds')
-    if not os.path.isdir(dir_cache_gtsm):
-        os.mkdir(dir_cache_gtsm)
+    dir_cache_gtsm = os.path.join(dir_cache,'gtsm3_era5_cds')
+    os.makedirs(dir_cache_gtsm, exist_ok=True)
 
     # Get a list of all monthly time periods within the time range
     time_periods = pd.period_range(start=time_min, end=time_max, freq='M')
 
     # Retrieve data via an API request and extract archive - for files not found in the cache
     for ii, period in enumerate(time_periods):
-        filename = os.path.join(dir_cache_gtsm, f'reanalysis_waterlevel_hourly_{period.year}_{period.month:02}_v2.nc')
+        filename = os.path.join(dir_cache_gtsm, f'reanalysis_{variable}_{time_freq.replace('_','')}_{period.year}_{period.month:02}_v2.nc')
         if os.path.isfile(filename):
             continue
 
-        print('... retrieving GTSM-ERA5 data for %i, month %i' % (period.year, period.month))    
+        print(f'retrieving GTSM-ERA5 data for {period}')    
         tmp_zipfile = os.path.join(dir_cache_gtsm, f'gtsm_era5_{period.year}_{period.month:02}.zip')
 
+        if variable=='waterlevel':
+            varname_cds = 'total_water_level'
+        elif variable=='surge':
+            varname_cds = 'storm_surge_residual'
+        else:
+            raise ValueError(f"variable for retrieving gtsm3-era5-cds data should be one of {['waterlevel','surge']}, received '{variable}'")
+
+        if time_freq not in ['10_min', 'hourly']:
+            raise ValueError(f"time frequency for retrieving gtsm3-era5-cds data should be one of {['10_min','hourly']}, received '{time_freq}'")
+
         # Make connection with CDS via API (assumes URL and KEY already stored in .cdsapirc file)
+        cds_credentials()
         c = cdsapi.Client() 
         c.retrieve(
             'sis-water-level-change-timeseries-cmip6',
             {
-                'variable': 'total_water_level',
+                'variable': varname_cds,
                 'experiment': 'reanalysis',
-                'temporal_aggregation': 'hourly',
+                'temporal_aggregation': time_freq,
                 'year': str(period.year),
                 'month': str(period.month).zfill(2),
                 'format': 'zip',
@@ -923,7 +933,7 @@ def gtsm_era5_cds_ssh_retrieve_data(row, dir_output, time_min=None, time_max=Non
         os.remove(tmp_zipfile)
 
     # open dataset
-    ds = xr.open_mfdataset(os.path.join(dir_cache_gtsm, 'reanalysis_waterlevel_hourly_*_v2.nc'), data_vars='minimal',join='exact')
+    ds = xr.open_mfdataset(os.path.join(dir_cache_gtsm, f'reanalysis_{variable}_{time_freq.replace('_','')}_*_v2.nc'), data_vars='minimal',join='exact')
     
     # slice on time extent
     ds = ds.sel(time=slice(time_min, time_max))
@@ -952,7 +962,7 @@ def ssh_catalog_subset(source=None,
                    "uhslc-rqds": uhslc_rqds_ssh_read_catalog,
                    "psmsl-gnssir": psmsl_gnssir_ssh_read_catalog,
                    "rwsddl": rwsddl_ssh_read_catalog,
-                   "gtsm-era5-cds": gtsm_era5_cds_ssh_read_catalog,
+                   "gtsm3-era5-cds": gtsm3_era5_cds_ssh_read_catalog,
                    }
     
     if source not in ssh_sources.keys():
@@ -998,7 +1008,7 @@ def ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
                    "uhslc-rqds": uhslc_ssh_retrieve_data,
                    "psmsl-gnssir": psmsl_gnssir_ssh_retrieve_data,
                    "rwsddl": rwsddl_ssh_retrieve_data,
-                   "gtsm-era5-cds": gtsm_era5_cds_ssh_retrieve_data,
+                   "gtsm3-era5-cds": gtsm3_era5_cds_ssh_retrieve_data,
                    }
     
     if source not in ssh_sources.keys():
@@ -1026,6 +1036,10 @@ def ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
                             country=row["country"],
                             source=row["source"])
         
+        # TODO: how to distinguish waterlevel from surge (gtsm3-era5-cds) when saving the data?
+        if 'surge' in ds.keys():
+            ds = ds.rename({'surge':'waterlevel'})
+
         ds["waterlevel"] = ds["waterlevel"].astype("float32")
         _make_hydrotools_consistent(ds)
         
