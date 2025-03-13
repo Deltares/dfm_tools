@@ -896,7 +896,7 @@ def gtsm3_era5_cds_ssh_retrieve_data(row, dir_output, time_min=None, time_max=No
 
     # Retrieve data via an API request and extract archive - for files not found in the cache
     for ii, period in enumerate(time_periods):
-        filename = os.path.join(dir_cache_gtsm, f'reanalysis_{variable}_{time_freq.replace('_','')}_{period.year}_{period.month:02}_v2.nc')
+        filename = os.path.join(dir_cache_gtsm, f'reanalysis_{variable}_{time_freq.replace("_","")}_{period.year}_{period.month:02}_v2.nc')
         if os.path.isfile(filename):
             continue
 
@@ -933,7 +933,7 @@ def gtsm3_era5_cds_ssh_retrieve_data(row, dir_output, time_min=None, time_max=No
         os.remove(tmp_zipfile)
 
     # open dataset
-    ds = xr.open_mfdataset(os.path.join(dir_cache_gtsm, f'reanalysis_{variable}_{time_freq.replace('_','')}_*_v2.nc'), data_vars='minimal',join='exact')
+    ds = xr.open_mfdataset(os.path.join(dir_cache_gtsm, f'reanalysis_{variable}_{time_freq.replace("_","")}_*_v2.nc'), data_vars='minimal',join='exact')
     
     # slice on time extent
     ds = ds.sel(time=slice(time_min, time_max))
