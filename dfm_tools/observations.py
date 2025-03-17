@@ -23,7 +23,8 @@ import shutil
 import fiona
 import copernicusmarine
 import cdsapi
-from dfm_tools.data import get_dir_testdata
+import logging
+cm_logger = logging.getLogger("copernicusmarine")
 
 __all__ = ["ssh_catalog_subset",
            "ssh_catalog_toxynfile",
@@ -234,6 +235,8 @@ def cmems_ssh_read_catalog(source, overwrite=True):
     if not os.path.exists(file_index) or overwrite:
         #TODO: downloading all index files since filter does not work, can be avoided?
         copernicusmarine_credentials()
+        prev_lev = cm_logger.level
+        cm_logger.setLevel("WARNING")
         copernicusmarine.get(
             dataset_id=dataset_id,
             index_parts=True,
@@ -241,7 +244,9 @@ def cmems_ssh_read_catalog(source, overwrite=True):
             output_directory=dir_index,
             overwrite=True,
             no_directories=True,
+            disable_progress_bar=True,
             )
+        cm_logger.setLevel(prev_lev)
     else:
         print(f"CMEMS insitu catalog for dataset_id='{dataset_id}' is already present and overwrite=False")
     
@@ -581,8 +586,8 @@ def gtsm3_era5_cds_ssh_read_catalog():
     return station_list_gpd  
 
 
-def cmems_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None, 
-                            level="WARNING", disable_progress_bar=True):
+def cmems_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None,
+                            level="WARNING"):
     """
     Retrieve data from copernicusmarine files service
     Can only retrieve entire files, subsetting is done during reconstruction
@@ -599,8 +604,8 @@ def cmems_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None,
     
     copernicusmarine_credentials()
     
-    import logging
-    logging.getLogger("copernicus_marine_root_logger").setLevel(level)
+    prev_lev = cm_logger.level
+    cm_logger.setLevel(level)
     copernicusmarine.get(
         dataset_id=dataset_id,
         dataset_part="history",
@@ -608,8 +613,9 @@ def cmems_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None,
         output_directory=tempdir,
         overwrite=True,
         no_directories=True,
-        disable_progress_bar=disable_progress_bar,
+        disable_progress_bar=True,
         )
+    cm_logger.setLevel(prev_lev)
     
     file_data_org = os.path.join(tempdir, os.path.basename(url_file))
     random_suffix = str(pd.Timestamp.now().microsecond)[0]
