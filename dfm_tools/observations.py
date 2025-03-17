@@ -24,7 +24,7 @@ import fiona
 import copernicusmarine
 import cdsapi
 import logging
-cm_logger = logging.getLogger("copernicusmarine")
+
 
 __all__ = ["ssh_catalog_subset",
            "ssh_catalog_toxynfile",
@@ -39,6 +39,8 @@ if os.name == "nt":
     PDRIVE = "p:/"
 else:
     PDRIVE = "/p"
+
+CM_LOGGER = logging.getLogger("copernicusmarine")
 
 
 def _make_hydrotools_consistent(ds):
@@ -234,9 +236,9 @@ def cmems_ssh_read_catalog(source, overwrite=True):
     
     if not os.path.exists(file_index) or overwrite:
         #TODO: downloading all index files since filter does not work, can be avoided?
+        prev_lev = CM_LOGGER.level
+        CM_LOGGER.setLevel("WARNING")
         copernicusmarine_credentials()
-        prev_lev = cm_logger.level
-        cm_logger.setLevel("WARNING")
         copernicusmarine.get(
             dataset_id=dataset_id,
             index_parts=True,
@@ -246,7 +248,7 @@ def cmems_ssh_read_catalog(source, overwrite=True):
             no_directories=True,
             disable_progress_bar=True,
             )
-        cm_logger.setLevel(prev_lev)
+        CM_LOGGER.setLevel(prev_lev)
     else:
         print(f"CMEMS insitu catalog for dataset_id='{dataset_id}' is already present and overwrite=False")
     
@@ -602,10 +604,9 @@ def cmems_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None,
     tempdir = tempfile.gettempdir()
     url_file = row["file_name"]
     
+    prev_lev = CM_LOGGER.level
+    CM_LOGGER.setLevel(level)
     copernicusmarine_credentials()
-    
-    prev_lev = cm_logger.level
-    cm_logger.setLevel(level)
     copernicusmarine.get(
         dataset_id=dataset_id,
         dataset_part="history",
@@ -615,7 +616,7 @@ def cmems_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None,
         no_directories=True,
         disable_progress_bar=True,
         )
-    cm_logger.setLevel(prev_lev)
+    CM_LOGGER.setLevel(prev_lev)
     
     file_data_org = os.path.join(tempdir, os.path.basename(url_file))
     random_suffix = str(pd.Timestamp.now().microsecond)[0]
@@ -1060,10 +1061,6 @@ def ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
                              country=row["country"],
                              source=row["source"])
         
-        # TODO: how to distinguish waterlevel from surge (gtsm3-era5-cds) when saving the data?
-        if 'surge' in ds.keys():
-            ds = ds.rename({'surge':'waterlevel'})
-
         ds["waterlevel"] = ds["waterlevel"].astype("float32")
         _make_hydrotools_consistent(ds)
         
