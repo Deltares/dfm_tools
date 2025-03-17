@@ -15,7 +15,9 @@ from dfm_tools.observations import (ssc_sscid_from_otherid,
                                     )
 
 source_list = ["uhslc-fast", "uhslc-rqds", "psmsl-gnssir", "ssc", "ioc", "rwsddl", 
-               "cmems", "cmems-nrt", "gtsm3-era5-cds"] # cmems and gtsm3-era5-cds require credentials
+               "cmems", "cmems-nrt", # requires CMEMS credentials
+               "gtsm3-era5-cds", # requires CDS credentials
+               ] 
 if os.path.exists(r"p:\1230882-emodnet_hrsm\data\GESLA3"):
     # not possible without p-drive connection
     source_list += ["gesla3"]
@@ -79,8 +81,10 @@ def test_ssh_retrieve_data(source, tmp_path):
     
     index_dict = {"uhslc-fast":0, "uhslc-rqds":2, 
                   "psmsl-gnssir":0, "ioc":0, "rwsddl":0, 
-                  "cmems":0, "cmems-nrt":0, # cmems requires credentials
-                  "gesla3":0, "gtsm3-era5-cds":0}
+                  "cmems":0, "cmems-nrt":0, # requires CMEMS credentials
+                  "gtsm3-era5-cds":0, # requires CDS credentials
+                  "gesla3":0,
+                  }
     index = index_dict[source]
     ssc_catalog_gpd_sel = ssc_catalog_gpd.iloc[index:index+1]
     

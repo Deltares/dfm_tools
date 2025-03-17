@@ -889,8 +889,8 @@ def gtsm3_era5_cds_ssh_retrieve_data(row,
                                      dir_output,
                                      time_min=None,
                                      time_max=None,
-                                     time_freq='hourly',
-                                     variable='waterlevel'):
+                                     time_freq='10_min',
+                                     ):
     """
     Retrieve data from Climate Data Store. Can only retrieve entire files, subsetting
     for time and stations is done after download. The function checks if the files have
@@ -908,31 +908,25 @@ def gtsm3_era5_cds_ssh_retrieve_data(row,
 
     # Get a list of all monthly time periods within the time range
     time_periods = pd.period_range(start=time_min, end=time_max, freq='M')
-
+    
+    time_freq_cds_str = time_freq.replace("_","")
     file_pat = os.path.join(dir_cache_gtsm,
-                            f'reanalysis_{variable}_{time_freq}_*_v2.nc',
+                            f'reanalysis_waterlevel_{time_freq_cds_str}_*_v2.nc',
                             )
     # Retrieve data via an API request and extract archive (if not found in the cache)
     for period in time_periods:
-        filename = file_pat.replace("*",period)
+        period_cds_str = str(period).replace("-","_")
+        filename = file_pat.replace("*", period_cds_str)
         if os.path.isfile(filename):
             continue
 
         print(f'retrieving GTSM3-ERA5-CDS data for {period}')
         tmp_zipfile = filename.replace(".nc",".zip")
 
-        if variable=='waterlevel':
-            varname_cds = 'total_water_level'
-        elif variable=='surge':
-            varname_cds = 'storm_surge_residual'
-        else:
-            raise ValueError(f"variable for retrieving gtsm3-era5-cds data should be "
-                             f"one of {['waterlevel','surge']}, received '{variable}'.")
-
         if time_freq not in ['10_min', 'hourly']:
             raise ValueError(
-                f"time frequency for retrieving gtsm3-era5-cds data should be one of "
-                f"{['10_min','hourly']}, received '{time_freq}'")
+                "time frequency for retrieving gtsm3-era5-cds data should be one of "
+                f"['10_min','hourly'], received '{time_freq}'")
 
         # prompt for CDS credentials if /.cdsapirc file is not present
         cds_credentials()
@@ -941,7 +935,7 @@ def gtsm3_era5_cds_ssh_retrieve_data(row,
         c.retrieve(
             'sis-water-level-change-timeseries-cmip6',
             {
-                'variable': varname_cds,
+                'variable': "total_water_level",
                 'experiment': 'reanalysis',
                 'temporal_aggregation': time_freq,
                 'year': str(period.year),
