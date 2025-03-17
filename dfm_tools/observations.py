@@ -909,9 +909,8 @@ def gtsm3_era5_cds_ssh_retrieve_data(row,
     # Get a list of all monthly time periods within the time range
     time_periods = pd.period_range(start=time_min, end=time_max, freq='M')
 
-    time_freq_clean = time_freq.replace("_","")
     file_pat = os.path.join(dir_cache_gtsm,
-                            f'reanalysis_{variable}_{time_freq_clean}_*_v2.nc',
+                            f'reanalysis_{variable}_{time_freq}_*_v2.nc',
                             )
     # Retrieve data via an API request and extract archive (if not found in the cache)
     for period in time_periods:
@@ -935,8 +934,9 @@ def gtsm3_era5_cds_ssh_retrieve_data(row,
                 f"time frequency for retrieving gtsm3-era5-cds data should be one of "
                 f"{['10_min','hourly']}, received '{time_freq}'")
 
-        # Make connection with CDS via API
+        # prompt for CDS credentials if /.cdsapirc file is not present
         cds_credentials()
+        # Make connection with CDS via API
         c = cdsapi.Client() 
         c.retrieve(
             'sis-water-level-change-timeseries-cmip6',
