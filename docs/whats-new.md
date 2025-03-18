@@ -1,6 +1,6 @@
 # What's new
 
-## UNRELEASED
+## 0.36.0 (2025-03-18)
 
 ### Feat
 - improved interpolation and extrapolation in `dfmt.cmems_nc_to_ini()` in [#1152](https://github.com/Deltares/dfm_tools/pull/1152)
