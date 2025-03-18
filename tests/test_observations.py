@@ -13,9 +13,14 @@ import dfm_tools as dfmt
 from dfm_tools.observations import (ssc_sscid_from_otherid,
                                     ssc_ssh_subset_groups,
                                     )
+from dfm_tools.observations import (gtsm3_era5_cds_ssh_read_catalog,
+                                    gtsm3_era5_cds_ssh_retrieve_data,
+                                    )
 
 source_list = ["uhslc-fast", "uhslc-rqds", "psmsl-gnssir", "ssc", "ioc", "rwsddl", 
-               "cmems", "cmems-nrt"] # cmems requires credentials
+               "cmems", "cmems-nrt", # requires CMEMS credentials
+               "gtsm3-era5-cds", # requires CDS credentials
+               ] 
 if os.path.exists(r"p:\1230882-emodnet_hrsm\data\GESLA3"):
     # not possible without p-drive connection
     source_list += ["gesla3"]
@@ -39,6 +44,8 @@ def test_ssh_catalog_subset(source):
     for field in fields_expected:
         assert field in ssc_catalog_gpd.columns
     if source not in ["ssc", "psmsl-gnssir", "rwsddl"]:
+        assert "time_min" in ssc_catalog_gpd.columns
+        assert "time_max" in ssc_catalog_gpd.columns
         assert "time_ndays" in ssc_catalog_gpd.columns
     assert ssc_catalog_gpd.crs.to_string()=='EPSG:4326'
     
@@ -79,8 +86,10 @@ def test_ssh_retrieve_data(source, tmp_path):
     
     index_dict = {"uhslc-fast":0, "uhslc-rqds":2, 
                   "psmsl-gnssir":0, "ioc":0, "rwsddl":0, 
-                  "cmems":0, "cmems-nrt":0, # cmems requires credentials
-                  "gesla3":0}
+                  "cmems":0, "cmems-nrt":0, # requires CMEMS credentials
+                  "gtsm3-era5-cds":0, # requires CDS credentials
+                  "gesla3":0,
+                  }
     index = index_dict[source]
     ssc_catalog_gpd_sel = ssc_catalog_gpd.iloc[index:index+1]
     
@@ -155,3 +164,17 @@ def test_ssh_catalog_tokmlfile(tmp_path):
     dfmt.ssh_catalog_tokmlfile(ssc_catalog_gpd, file_xyn)
     assert os.path.isfile(file_xyn)
 
+
+@pytest.mark.unittest
+def test_gtsm3_era5_cds_ssh_retrieve_data_invalidfreq_nonetimes():
+    df = gtsm3_era5_cds_ssh_read_catalog()
+    
+    with pytest.raises(ValueError) as e:
+        gtsm3_era5_cds_ssh_retrieve_data(
+            row=df.iloc[0],
+            dir_output=".",
+            time_min=None,
+            time_max=None,
+            time_freq='10min',
+            )
+    assert "time frequency for retrieving gtsm3-era5-cds data should" in str(e.value)
