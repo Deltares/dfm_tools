@@ -12,7 +12,6 @@ from scipy.ndimage import distance_transform_edt
 __all__ = [
     "preprocess_hisnc",
     "preprocess_ERA5",
-    "preprocess_woa",
     "merge_meteofiles",
     "Dataset_varswithdim",
 ]
@@ -43,7 +42,9 @@ def file_to_list(file_nc):
 
 def preprocess_hisnc(ds):
     """
-    Look for dim/coord combination and use this for Dataset.set_index(), to enable station/gs/crs/laterals label based indexing. If duplicate labels are found (like duplicate stations), these are dropped to avoid indexing issues.
+    Look for dim/coord combination and use this for Dataset.set_index(), to enable
+    station/gs/crs/laterals label based indexing. If duplicate labels are found
+    (like duplicate stations), these are dropped to avoid indexing issues.
     
     Parameters
     ----------
@@ -59,24 +60,30 @@ def preprocess_hisnc(ds):
 
     """
     
-    #generate dim_coord_dict to set indexes, this will be something like {'stations':'station_name','cross_section':'cross_section_name'} after loop
+    # generate dim_coord_dict to set indexes, this will be something like 
+    # {'stations':'station_name','cross_section':'cross_section_name'} after loop
     dim_coord_dict = {}
     for ds_coord in ds.coords.keys():
         ds_coord_dtype = ds[ds_coord].dtype
-        ds_coord_dim = ds[ds_coord].dims[0] #these vars always have only one dim
-        if ds_coord_dtype.str.startswith('|S'): #these are station/crs/laterals/gs names/ids
+        # these vars always have only one dim
+        ds_coord_dim = ds[ds_coord].dims[0]
+        # these are station/crs/laterals/gs names/ids
+        if ds_coord_dtype.str.startswith('|S'):
             dim_coord_dict[ds_coord_dim] = ds_coord
     
     #loop over dimensions and set corresponding coordinates/variables from dim_coord_dict as their index
     for dim in dim_coord_dict.keys():
         coord = dim_coord_dict[dim]
-        ds[coord] = ds[coord].load().str.decode('utf-8',errors='ignore').str.strip() #.load() is essential to convert not only first letter of string.
+        # .load() is essential to convert not only first letter of string.
+        ds[coord] = ds[coord].load().str.decode('utf-8',errors='ignore').str.strip()
         ds = ds.set_index({dim:coord})
         
-        #drop duplicate indices (stations/crs/gs), this avoids "InvalidIndexError: Reindexing only valid with uniquely valued Index objects"
+        # drop duplicate indices (stations/crs/gs), this avoids 
+        # "InvalidIndexError: Reindexing only valid with uniquely valued Index objects"
         duplicated_keepfirst = ds[dim].to_series().duplicated(keep='first')
         if duplicated_keepfirst.sum()>0:
-            print(f'dropping {duplicated_keepfirst.sum()} duplicate "{coord}" labels to avoid InvalidIndexError')
+            print(f'dropping {duplicated_keepfirst.sum()} duplicate "{coord}" labels '
+                  'to avoid InvalidIndexError')
             ds = ds[{dim:~duplicated_keepfirst}]
 
     #check dflowfm version/date and potentially raise warning about incorrect layers
@@ -85,9 +92,11 @@ def preprocess_hisnc(ds):
         source_attr_version = source_attr.split(', ')[1]
         source_attr_date = source_attr.split(', ')[2]
         if pd.Timestamp(source_attr_date) < dt.datetime(2020,11,28):
-            logger.warning('Your model was run with a D-FlowFM version from before 28-10-2020 '
-                           f'({source_attr_version} from {source_attr_date}), the layers in the hisfile are incorrect. '
-                           'Check UNST-2920 and UNST-3024 for more information, it was fixed from OSS 67858.')
+            logger.warning(
+                'Your model was run with a D-FlowFM version from before 28-10-2020 '
+                f'({source_attr_version} from {source_attr_date}), the layers in the '
+                'hisfile are incorrect. Check UNST-2920 and UNST-3024 for more '
+                'information, it was fixed from OSS 67858.')
     except KeyError: #no source attr present in hisfile, cannot check version
         pass
     except IndexError: #contains no ', '
@@ -172,15 +181,6 @@ def preprocess_ERA5(ds):
     return ds
 
 
-def preprocess_woa(ds):
-    """
-    WOA time units is 'months since 0000-01-01 00:00:00' and calendar is not set (360_day is the only calendar that supports that unit in xarray)
-    """
-    ds.time.attrs['calendar'] = '360_day'
-    ds = xr.decode_cf(ds) #decode_cf after adding 360_day calendar attribute
-    return ds
-
-
 def merge_meteofiles(file_nc:str,
                      time_slice:slice,
                      preprocess = None,
@@ -198,7 +198,8 @@ def merge_meteofiles(file_nc:str,
     time_slice : slice
         slice(tstart,tstop).
     kwargs : dict, optional
-        arguments for xr.open_mfdataset() like `chunks` to prevent large chunks and resulting memory issues.
+        arguments for xr.open_mfdataset() like `chunks` to prevent large chunks and 
+        resulting memory issues.
 
     Returns
     -------
@@ -206,16 +207,12 @@ def merge_meteofiles(file_nc:str,
         Merged meteo dataset.
 
     """
-    #TODO: add ERA5 conversions and features from hydro_tools\ERA5\ERA52DFM.py (except for varRhoair_alt, request FM support for varying airpressure: https://issuetracker.deltares.nl/browse/UNST-6593)
-    #TODO: add coordinate conversion (only valid for models with multidimensional lat/lon variables like HARMONIE and HIRLAM). This should work: ds_reproj = ds.set_crs(4326).to_crs(28992)
+    #TODO: add ERA5 conversions and features from hydro_tools\ERA5\ERA52DFM.py (except
+    # for varRhoair_alt, request FM support for varying airpressure: https://issuetracker.deltares.nl/browse/UNST-6593)
+    #TODO: add coordinate conversion (only valid for models with multidimensional 
+    # lat/lon variables like HARMONIE and HIRLAM). This should work: ds_reproj = ds.set_crs(4326).to_crs(28992)
     #TODO: add CMCC etc from gtsmip repos (mainly calendar conversion)
     #TODO: maybe add renaming like {'salinity':'so', 'water_temp':'thetao'} for hycom
-       
-    # woa workaround
-    if preprocess == preprocess_woa:
-        decode_cf = False
-    else:
-        decode_cf = True        
 
     if 'chunks' not in kwargs:
         # enable dask chunking
@@ -233,23 +230,27 @@ def merge_meteofiles(file_nc:str,
         kwargs['join'] = 'exact'
 
     file_nc_list = file_to_list(file_nc)
-    print(f'>> opening multifile dataset of {len(file_nc_list)} files (can take a while with lots of files): ',end='')
+    print((f'>> opening multifile dataset of {len(file_nc_list)} files (can take a '
+           'while with lots of files): '),
+          end='')
     dtstart = dt.datetime.now()
     data_xr = xr.open_mfdataset(file_nc_list,
                                 preprocess=preprocess,
-                                decode_cf=decode_cf,
                                 **kwargs)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
     # rename variables
-    # TODO: make generic, comparable rename in rename_dims_dict in dfmt.interpolate_grid2bnd.open_prepare_dataset()
+    # TODO: make generic, comparable rename in rename_dims_dict in 
+    # dfmt.interpolate_grid2bnd.open_prepare_dataset()
     if 'longitude' not in data_xr.variables:
         if 'lon' in data_xr.variables:
             data_xr = data_xr.rename({'lon':'longitude', 'lat':'latitude'})
         elif 'x' in data_xr.variables:
             data_xr = data_xr.rename({'x':'longitude', 'y':'latitude'})
         else:
-            raise KeyError('no longitude/latitude, lon/lat or x/y variables found in dataset')
+            raise KeyError(
+                'no longitude/latitude, lon/lat or x/y variables found in dataset'
+                )
     
     # check for duplicated timesteps
     if data_xr.get_index('time').duplicated().any():
@@ -280,7 +281,8 @@ def merge_meteofiles(file_nc:str,
     convert_360to180 = (data_xr['longitude'].to_numpy()>180).any()
     if convert_360to180: #TODO: make more flexible for models that eg pass -180/+180 crossing (add overlap at lon edges).
         lon_newvar = (data_xr.coords['longitude'] + 180) % 360 - 180
-        data_xr.coords['longitude'] = lon_newvar.assign_attrs(data_xr['longitude'].attrs) #this re-adds original attrs
+        # this re-adds original attrs
+        data_xr.coords['longitude'] = lon_newvar.assign_attrs(data_xr['longitude'].attrs)
         data_xr = data_xr.sortby(data_xr['longitude'])
 
     return data_xr
@@ -302,7 +304,8 @@ def convert_meteo_units(data_xr):
     varkeys = data_xr.variables.mapping.keys()
     
     #convert Kelvin to Celcius
-    for varkey_sel in ['air_temperature','dew_point_temperature','d2m','t2m']: # 2 meter dewpoint temparature / 2 meter temperature
+    # 2 meter dewpoint temparature / 2 meter temperature
+    for varkey_sel in ['air_temperature','dew_point_temperature','d2m','t2m']:
         if varkey_sel not in varkeys:
             continue
         current_unit = get_unit(data_xr[varkey_sel])
@@ -345,10 +348,12 @@ def convert_meteo_units(data_xr):
     return data_xr
 
 
-def Dataset_varswithdim(ds,dimname): #TODO: dit zit ook in xugrid, wordt nu gebruikt in hisfile voorbeeldscript en kan handig zijn, maar misschien die uit xugrid gebruiken?
+def Dataset_varswithdim(ds,dimname):
     """
     empty docstring
     """
+    # TODO: dit zit ook in xugrid, wordt nu gebruikt in hisfile voorbeeldscript en kan
+    # handig zijn, maar misschien die uit xugrid gebruiken?
     if dimname not in ds.dims:
         raise KeyError(f'dimension {dimname} not in dataset, available are: {list(ds.dims)}')
     
