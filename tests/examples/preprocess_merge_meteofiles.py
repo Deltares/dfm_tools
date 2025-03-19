@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 plt.close('all')
 import dfm_tools as dfmt
 
-mode = 'ERA5_heat_model' # 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HARMONIE' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall' 'WOA'
+mode = 'ERA5_heat_model' # 'HIRLAM_meteo' 'HIRLAM_meteo-heatflux' 'HARMONIE' 'ERA5_wind_pressure' 'ERA5_heat_model' 'ERA5_radiation' 'ERA5_rainfall'
 
 if 'HIRLAM' in mode:
     if mode == 'HIRLAM_meteo': #1year voor meteo crasht (HIRLAM72_*\\h72_*) door conflicting dimension sizes, sourcefolders opruimen? meteo_heatflux folders zijn schoner dus daar werkt het wel
@@ -49,12 +49,6 @@ elif 'ERA5' in mode:
     kwargs = dict(preprocess=dfmt.preprocess_ERA5) # additional keyword arguments for xarray.open_mfdataset. dfmt.preprocess_ERA5: reduce expver dimension if present and prevent dtype int
     time_slice = slice('2013-12-30','2014-01-01')
     #time_slice = slice('2005-01-01','2022-01-01') #for performance checking, was 12 minutes (for which varkey_list?)
-elif mode == 'WOA':
-    dir_data = r'p:\1204257-dcsmzuno\data\WOA13'
-    fn_match_pattern = 'woa13_decav_s*.nc'
-    file_out_prefix = 'woa13_decav_s_'
-    kwargs = dict(preprocess=dfmt.preprocess_woa) # additional keyword arguments for xarray.open_mfdataset. dfmt.preprocess_woa: add 360-day calendar unit to time attrs before decode_cf
-    time_slice = slice('0000-01-16','0000-03-16')
 else:
     raise KeyError('ERROR: wrong mode %s'%(mode))
 
@@ -70,7 +64,7 @@ data_xr_tsel = dfmt.merge_meteofiles(file_nc=file_nc,
 #write to netcdf file
 print('>> writing file (can take a while): ',end='')
 dtstart = dt.datetime.now()
-times_pd = data_xr_tsel['time'].to_series() #used to not work for woa 360_day calendar, .to_numpy() did the trick
+times_pd = data_xr_tsel['time'].to_series()
 time_start_str = times_pd.iloc[0].strftime("%Y%m%d")
 time_stop_str = times_pd.iloc[-1].strftime("%Y%m%d")
 file_out = os.path.join(dir_output, f'{file_out_prefix}{time_start_str}to{time_stop_str}_{mode}.nc')
