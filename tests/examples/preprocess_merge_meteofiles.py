@@ -57,9 +57,7 @@ os.makedirs(dir_output, exist_ok=True)
 
 file_nc = os.path.join(dir_data,fn_match_pattern)
 
-data_xr_tsel = dfmt.merge_meteofiles(file_nc=file_nc,
-                                     time_slice=time_slice, 
-                                     **kwargs)
+data_xr_tsel = dfmt.merge_meteofiles(file_nc=file_nc, time_slice=time_slice, **kwargs)
 
 #write to netcdf file
 print('>> writing file (can take a while): ',end='')
