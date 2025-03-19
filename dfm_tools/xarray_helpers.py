@@ -240,14 +240,17 @@ def merge_meteofiles(file_nc:str,
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
     # rename variables
-    # TODO: make generic, comparable rename in rename_dims_dict in dfmt.interpolate_grid2bnd.open_prepare_dataset()
+    # TODO: make generic, comparable rename in rename_dims_dict in 
+    # dfmt.interpolate_grid2bnd.open_prepare_dataset()
     if 'longitude' not in data_xr.variables:
         if 'lon' in data_xr.variables:
             data_xr = data_xr.rename({'lon':'longitude', 'lat':'latitude'})
         elif 'x' in data_xr.variables:
             data_xr = data_xr.rename({'x':'longitude', 'y':'latitude'})
         else:
-            raise KeyError('no longitude/latitude, lon/lat or x/y variables found in dataset')
+            raise KeyError(
+                'no longitude/latitude, lon/lat or x/y variables found in dataset'
+                )
     
     # check for duplicated timesteps
     if data_xr.get_index('time').duplicated().any():
