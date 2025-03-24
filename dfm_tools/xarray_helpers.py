@@ -291,7 +291,6 @@ def merge_meteofiles(file_nc:str,
 def convert_meteo_units(data_xr):
     #TODO: check conversion implementation with hydro_tools\ERA5\ERA52DFM.py
     #TODO: assert old unit instead of always converting
-    #TODO: keep/update attrs
     #TODO: reduce code complexity
     
     # copy to avoid changing input dataset
