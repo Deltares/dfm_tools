@@ -76,6 +76,9 @@ def cmems_dataset_4times(cmems_dataset_notime):
 
 @pytest.fixture
 def file_nc_era5_pattern(tmp_path):
+    """
+    requires CDS credentials
+    """
     date_min = '2010-01-31'
     date_max = '2010-02-01'
     longitude_min, longitude_max, latitude_min, latitude_max =    2,   3,  51, 52 #test domain

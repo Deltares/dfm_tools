@@ -14,7 +14,9 @@ import pandas as pd
 import xarray as xr
 import numpy as np
 from pathlib import Path
-from dfm_tools.xarray_helpers import interpolate_na_multidim
+from dfm_tools.xarray_helpers import (interpolate_na_multidim,
+                                      convert_meteo_units,
+                                      )
 
 
 @pytest.mark.unittest
@@ -328,3 +330,34 @@ def test_interpolate_na_multidim(cmems_dataset_notime):
         [35.792107, 35.792107, 35.792107],
         [35.822628, 35.822628, 35.822628]]])
     assert np.allclose(ds.so.to_numpy(), expected_vals)
+
+
+@pytest.mark.unittest
+def test_convert_meteo_units(cmems_dataset_4times):
+    """
+    check whether the conversion of the data works as expected.
+    check whether the encoding and long_name attr are retained.
+    """
+    ds_so = cmems_dataset_4times.copy()
+    encoding_dict = {"dtype":"float32"}
+    attrs_dict = {
+        "units":"dummy",
+        "long_name":"some long name of var",
+        }
+    ds_so.so.encoding = encoding_dict
+    ds_so.so.attrs = attrs_dict
+    
+    ds_mer = ds_so.rename_vars({"so":"mer"})
+    ds_conv = convert_meteo_units(ds_mer)
+    
+    # check the conversion of the values
+    assert np.allclose(ds_conv.mer, ds_mer.mer * 86400, equal_nan=True)
+    
+    # check if encoding is not removed from original dataset
+    assert ds_mer.mer.encoding == encoding_dict
+    # check if encoding is maintained on output dataset
+    assert ds_conv.mer.encoding == encoding_dict
+    # assert attributes
+    attrs_new = attrs_dict.copy()
+    attrs_new.update({'units': 'mm/day'})
+    assert ds_conv.mer.attrs == attrs_new
