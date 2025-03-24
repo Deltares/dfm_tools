@@ -358,7 +358,7 @@ def test_convert_meteo_units(cmems_dataset_4times):
     assert ds_mer.mer.encoding == encoding_dict
     # check if encoding is maintained on output dataset
     assert ds_conv.mer.encoding == encoding_dict
-    # assert attributes
+    # assert the attributes
     attrs_new = attrs_dict.copy()
     attrs_new.update({'units': 'mm/day'})
     assert ds_conv.mer.attrs == attrs_new
