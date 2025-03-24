@@ -337,6 +337,7 @@ def test_convert_meteo_units(cmems_dataset_4times):
     """
     check whether the conversion of the data works as expected.
     check whether the encoding and long_name attr are retained.
+    https://github.com/Deltares/dfm_tools/issues/1162
     """
     ds_so = cmems_dataset_4times.copy()
     encoding_dict = {"dtype":"float32"}
