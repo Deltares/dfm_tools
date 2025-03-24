@@ -2,6 +2,9 @@
 
 ## UNRELEASED
 
+### Fix
+- retain encoding and long_name attribute also for variables converted with `convert_meteo_units()` in `dfmt.merge_meteofiles()` in [#1164](https://github.com/Deltares/dfm_tools/pull/1164)
+
 ### Deprecated
 - removed `dfmt.preprocess_woa` since WOA merging fails and is not used in [#1161](https://github.com/Deltares/dfm_tools/pull/1161)
 

@@ -291,61 +291,68 @@ def merge_meteofiles(file_nc:str,
 def convert_meteo_units(data_xr):
     #TODO: check conversion implementation with hydro_tools\ERA5\ERA52DFM.py
     #TODO: assert old unit instead of always converting
-    #TODO: keep/update attrs
     #TODO: reduce code complexity
     
-    def get_unit(data_xr_var):
-        if 'units' in data_xr_var.attrs.keys():
-            unit = data_xr_var.attrs["units"]
+    # copy to avoid changing input dataset
+    ds = data_xr.copy()
+    
+    def get_unit(da):
+        if 'units' in da.attrs.keys():
+            unit = da.attrs["units"]
         else:
             unit = '-'
         return unit
     
-    varkeys = data_xr.variables.mapping.keys()
+    varkeys = ds.data_vars.keys()
     
     #convert Kelvin to Celcius
     # 2 meter dewpoint temparature / 2 meter temperature
     for varkey_sel in ['air_temperature','dew_point_temperature','d2m','t2m']:
         if varkey_sel not in varkeys:
             continue
-        current_unit = get_unit(data_xr[varkey_sel])
+        current_unit = get_unit(ds[varkey_sel])
         new_unit = 'C'
         print(f'converting {varkey_sel} unit from Kelvin to Celcius: [{current_unit}] to [{new_unit}]')
-        data_xr[varkey_sel] = data_xr[varkey_sel] - 273.15
-        data_xr[varkey_sel].attrs['units'] = new_unit
+        ds[varkey_sel] = ds[varkey_sel] - 273.15
+        ds[varkey_sel].attrs['units'] = new_unit
     #convert fraction to percentage
     for varkey_sel in ['cloud_area_fraction','tcc']: #total cloud cover
         if varkey_sel not in varkeys:
             continue
-        current_unit = get_unit(data_xr[varkey_sel])
+        current_unit = get_unit(ds[varkey_sel])
         new_unit = '%' #unit is soms al %
         print(f'converting {varkey_sel} unit from fraction to percentage: [{current_unit}] to [{new_unit}]')
-        data_xr[varkey_sel] = data_xr[varkey_sel] * 100
-        data_xr[varkey_sel].attrs['units'] = new_unit
+        ds[varkey_sel] = ds[varkey_sel] * 100
+        ds[varkey_sel].attrs['units'] = new_unit
     #convert kg/m2/s to mm/day
     for varkey_sel in ['mer','mtpr']: #mean evaporation rate / mean total precipitation rate
         if varkey_sel not in varkeys:
             continue
-        current_unit = get_unit(data_xr[varkey_sel])
+        current_unit = get_unit(ds[varkey_sel])
         new_unit = 'mm/day'
         print(f'converting {varkey_sel} unit from kg/m2/s to mm/day: [{current_unit}] to [{new_unit}]')
-        data_xr[varkey_sel] = data_xr[varkey_sel] * 86400 # kg/m2/s to mm/day (assuming rho_water=1000)
-        data_xr[varkey_sel].attrs['units'] = new_unit
+        ds[varkey_sel] = ds[varkey_sel] * 86400 # kg/m2/s to mm/day (assuming rho_water=1000)
+        ds[varkey_sel].attrs['units'] = new_unit
     #convert J/m2 to W/m2
     for varkey_sel in ['ssr','strd']: #solar influx (surface_net_solar_radiation) / surface_thermal_radiation_downwards
         if varkey_sel not in varkeys:
             continue
-        current_unit = get_unit(data_xr[varkey_sel])
+        current_unit = get_unit(ds[varkey_sel])
         new_unit = 'W m**-2'
         print(f'converting {varkey_sel} unit from J/m2 to W/m2: [{current_unit}] to [{new_unit}]')
-        data_xr[varkey_sel] = data_xr[varkey_sel] / 3600 # 3600s/h #TODO: 1W = 1J/s, so does not make sense?
-        data_xr[varkey_sel].attrs['units'] = new_unit
+        ds[varkey_sel] = ds[varkey_sel] / 3600 # 3600s/h #TODO: 1W = 1J/s, so does not make sense?
+        ds[varkey_sel].attrs['units'] = new_unit
     #solar influx increase for beta=6% subtraction in DFM
     if 'ssr' in varkeys:
         print('ssr (solar influx) increase for beta=6% subtraction in DflowFM')
-        data_xr['ssr'] = data_xr['ssr'] / 0.94
+        ds['ssr'] = ds['ssr'] / 0.94
     
-    return data_xr
+    # restore attrs and encoding of data_vars
+    for varkey in varkeys:
+        ds[varkey].attrs["long_name"] = data_xr[varkey].attrs["long_name"]
+        ds[varkey].encoding = data_xr[varkey].encoding
+    
+    return ds
 
 
 def Dataset_varswithdim(ds,dimname):
