@@ -173,8 +173,8 @@ def test_merge_meteofiles_rename_latlon(ds_era5_empty, tmp_path):
         preprocess=dfmt.preprocess_ERA5, 
         time_slice=slice(date_min, date_max),
         )
-    assert "longitude" in ds_merged.data_vars
-    assert "latitude" in ds_merged.data_vars
+    assert "longitude" in ds_merged.coords
+    assert "latitude" in ds_merged.coords
     
     # x/y latitude/longitude vars
     ds = ds_era5_empty.copy()
@@ -187,8 +187,8 @@ def test_merge_meteofiles_rename_latlon(ds_era5_empty, tmp_path):
         preprocess=dfmt.preprocess_ERA5, 
         time_slice=slice(date_min, date_max),
         )
-    assert "longitude" in ds_merged.data_vars
-    assert "latitude" in ds_merged.data_vars
+    assert "longitude" in ds_merged.coords
+    assert "latitude" in ds_merged.coords
 
     # no latitude/longitude vars
     ds = ds_era5_empty.copy()
