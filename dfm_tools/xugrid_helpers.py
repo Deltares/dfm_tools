@@ -493,6 +493,7 @@ def uda_to_faces(uda : xu.UgridDataArray) -> xu.UgridDataArray:
         return uda
     
     # couple to faces and take mean
+    print('to_face() interpolation: ',end='')
     dtstart = dt.datetime.now()
     uda_face = uda.ugrid.to_face().mean(dim="nmax", keep_attrs=True)
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
