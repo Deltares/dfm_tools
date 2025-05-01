@@ -10,7 +10,7 @@ description = "dfm_tools are pre- and post-processing tools for Delft3D FM"
 readme = "README.md"
 keywords = ["dfm_tools", "D-FlowFM", "D-HYDRO", "post-processing", "pre-processing", "mapfiles", "hisfiles", "modelbuilder"]
 license = { text = "LGPLv3" }
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
 	#scipy>=1.6.0 successfully pip installs in py39, is also 3 years old
 	"scipy>=1.6.0",
