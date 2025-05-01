@@ -153,6 +153,8 @@ def cmems_nc_to_ini(
     model results.
     """
     
+    xr_kwargs = {"join":"exact", "data_vars":"minimal"}
+    
     if conversion_dict is None:
         conversion_dict = dfmt.get_conversion_dict()
     
@@ -183,18 +185,18 @@ def cmems_nc_to_ini(
             # 3D initialsalinity/initialtemperature fields are silently ignored
             # initial 3D conditions are only possible via nudging 1st timestep
             # via quantity=nudge_salinity_temperature
-            data_xr = xr.open_mfdataset(dir_pattern_one)
+            data_xr = xr.open_mfdataset(dir_pattern_one, **xr_kwargs)
             ncvarname_tem = get_ncvarname(
                 quantity="temperaturebnd",
                 conversion_dict=conversion_dict,
                 )
             dir_pattern_tem = dir_pattern.format(ncvarname=ncvarname_tem)
-            data_xr_tem = xr.open_mfdataset(dir_pattern_tem)
+            data_xr_tem = xr.open_mfdataset(dir_pattern_tem, **xr_kwargs)
             data_xr["thetao"] = data_xr_tem["thetao"]
             quantity = "nudge_salinity_temperature"
             varname = None
         elif quan_bnd.startswith("tracer"):
-            data_xr = xr.open_mfdataset(dir_pattern_one)
+            data_xr = xr.open_mfdataset(dir_pattern_one, **xr_kwargs)
             data_xr = ds_apply_conversion_dict(
                 data_xr=data_xr,
                 conversion_dict=conversion_dict,
