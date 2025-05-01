@@ -42,8 +42,8 @@ dependencies = [
 	"cdsapi>=0.7.5",
 	#pydap>=3.4.0 is the first with support for newer python versions
 	"pydap>=3.4.0",
-	#erddapy>=2.0.0 supports pandas>=2.0.0
-	"erddapy>=2.0.0",
+	#erddapy>=2.2.1 fixes np.find_common_type DeprecationWarning
+	"erddapy>=2.2.1",
 	#copernicusmarine>=2.0.0 has breaking changes compared to v1
 	"copernicusmarine>=2.0.0",
 	#rws-ddlpy>=0.6.0 `ddlpy.measurements_amount()` returns all amounts
