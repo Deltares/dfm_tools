@@ -21,7 +21,7 @@ source_list = ["uhslc-fast", "uhslc-rqds", "psmsl-gnssir", "ssc", "ioc", "rwsddl
                "cmems", "cmems-nrt", # requires CMEMS credentials
                "gtsm3-era5-cds", # requires CDS credentials
                ] 
-if os.path.exists(r"p:\1230882-emodnet_hrsm\data\GESLA3"):
+if os.path.exists(r"p:\metocean-data\licensed\GESLA3"):
     # not possible without p-drive connection
     source_list += ["gesla3"]
 

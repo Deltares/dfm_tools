@@ -125,6 +125,8 @@ filterwarnings = [
 	"ignore:np.find_common_type is deprecated:DeprecationWarning",
 	# for open_dataset_delft3d4()
 	"ignore:A UGRID2D face requires at least three unique non-collinear vertices:UserWarning",
+	# until fix in https://github.com/geopandas/geopandas/pull/3453 is released (geopandas>1.0.1)
+	"ignore:The 'shapely.geos' module is deprecated:DeprecationWarning"
 ]
 
 [tool.flake8]
