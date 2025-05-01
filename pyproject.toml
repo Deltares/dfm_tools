@@ -32,8 +32,8 @@ dependencies = [
 	"xarray>=2024.7.0",
 	#dask 2025.1.0 is required by xugrid: https://github.com/Deltares/xugrid/pull/350#issuecomment-2809652618
 	"dask>=2025.1.0",
-	#netcdf4>=1.6.3 is the first version to support py310
-	"netcdf4>=1.6.3",
+	#netcdf4>=1.6.4 fixes I/O failure for opendap: https://github.com/Unidata/netcdf4-python/issues/1246
+	"netcdf4>=1.6.4",
 	#bottleneck>=1.3.8 is the first version to support py310
 	"bottleneck>=1.3.8",
 	#xugrid>=0.14.0 added uda.ugrid.to_face method
