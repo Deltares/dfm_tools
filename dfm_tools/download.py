@@ -27,7 +27,7 @@ COPERNICUSMARINE_OPTIMIZE_ARGS = dict(
     # also relevant to get time bounds
     # https://github.com/Deltares/dfm_tools/issues/1058
     service="arco-geo-series",
-    chunk_size_limit=None,
+    chunk_size_limit=0,
     # prevent the need for buffering time/spatial extent
     # https://github.com/Deltares/dfm_tools/issues/1050
     coordinates_selection_method='outside',
