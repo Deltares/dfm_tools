@@ -6,6 +6,7 @@
 - retain encoding and long_name attribute also for variables converted with `convert_meteo_units()` in `dfmt.merge_meteofiles()` in [#1164](https://github.com/Deltares/dfm_tools/pull/1164)
 - updated GESLA3 datasource in [#1173](https://github.com/Deltares/dfm_tools/pull/1173)
 - stricter merging of datasets in `dfmt.cmems_nc_to_ini()` [#1174](https://github.com/Deltares/dfm_tools/pull/1174)
+- support for copernicusmarine 2.1.0 in [#1180](https://github.com/Deltares/dfm_tools/pull/1180)
 
 ### Deprecated
 - removed `dfmt.preprocess_woa` since WOA merging fails and is not used in [#1161](https://github.com/Deltares/dfm_tools/pull/1161)
