@@ -62,7 +62,7 @@ def test_ssh_catalog_subset(source):
                                                       time_min=time_min, time_max=time_max)
     assert len(ssc_catalog_gpd) > len(ssc_catalog_gpd_sel)
     
-    # check if statoin names/ids can be converted to S64 as done in
+    # check if station names/ids can be converted to S64 as done in
     # dfm_tools.observations._make_hydrotools_consistent()
     # fixed for uhslc-fast in https://github.com/Deltares/dfm_tools/issues/1172
     # ssc still has accents but does not have data so .astype("S64") will not be called
