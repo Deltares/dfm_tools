@@ -61,6 +61,15 @@ def test_ssh_catalog_subset(source):
                                                       lat_min=lat_min, lat_max=lat_max, 
                                                       time_min=time_min, time_max=time_max)
     assert len(ssc_catalog_gpd) > len(ssc_catalog_gpd_sel)
+    
+    # check if station names/ids can be converted to S64 as done in
+    # dfm_tools.observations._make_hydrotools_consistent()
+    # fixed for uhslc-fast in https://github.com/Deltares/dfm_tools/issues/1172
+    # ssc still has accents but does not have data so .astype("S64") will not be called
+    if source not in ["ssc"]:
+        ssc_catalog_gpd["station_name"].astype("S64")
+        ssc_catalog_gpd["station_id"].astype("S64")
+        ssc_catalog_gpd["station_name_unique"].astype("S64")
 
 
 @pytest.mark.requiressecrets

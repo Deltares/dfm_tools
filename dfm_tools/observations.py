@@ -327,10 +327,15 @@ def uhslc_ssh_read_catalog(source):
     uhslc_gpd["time_min"] = pd.to_datetime(time_min)
     uhslc_gpd["time_max"] = pd.to_datetime(time_max)
     
-    uhslc_gpd["station_name"] = uhslc_gpd['name']
-    uhslc_gpd["station_id"] = uhslc_gpd['uhslc_id']
+    # remove accents from station names
+    # https://github.com/Deltares/dfm_tools/issues/1172
+    uhslc_gpd["name"] = uhslc_gpd["name"].apply(lambda x: _remove_accents(x))
+    
+    # define name/id columns
     stat_names = source + "-" + uhslc_gpd['uhslc_id'].apply(lambda x: f"{x:03d}")
     uhslc_gpd["station_name_unique"] = stat_names
+    rename_dict = {"name": "station_name", "uhslc_id": "station_id"}
+    uhslc_gpd = uhslc_gpd.rename(rename_dict, axis=1)
     
     uhslc_gpd["time_ndays"] = (uhslc_gpd['time_max'] - uhslc_gpd['time_min']).dt.total_seconds()/3600/24
     return uhslc_gpd
