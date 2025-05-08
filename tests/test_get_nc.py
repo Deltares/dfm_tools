@@ -173,6 +173,17 @@ def test_sigmalayermodel_correct_layers():
 
 
 @pytest.mark.unittest
+def test_sigmalayermodel_sigmavars_as_coords():
+    """
+    Check if sigma layers are also found in case of sigma-vars as coordinates
+    https://github.com/Deltares/dfm_tools/issues/1168
+    """
+    uds = dfmt.data.fm_curvedbend_map() #sigmalayer
+    uds = uds.set_coords(["mesh2d_layer_sigma","mesh2d_interface_sigma"])
+    _ = dfmt.reconstruct_zw_zcc(uds)
+
+
+@pytest.mark.unittest
 def test_polyline_mapslice():
     uds = dfmt.data.fm_curvedbend_map()
     timestep = 72
