@@ -473,13 +473,9 @@ def uda_to_faces(uda : xu.UgridDataArray) -> xu.UgridDataArray:
     
     Parameters
     ----------
-    uda_node : xu.UgridDataArray
+    uda : xu.UgridDataArray
         DESCRIPTION.
 
-    Raises
-    ------
-    KeyError
-        DESCRIPTION.
 
     Returns
     -------
@@ -490,53 +486,21 @@ def uda_to_faces(uda : xu.UgridDataArray) -> xu.UgridDataArray:
     grid = uda.grid
     
     dimn_faces = grid.face_dimension
-    reduce_dim = 'nMax_face_nodes' #arbitrary dimname that is reduced anyway
-    dimn_nodes = grid.node_dimension
-    dimn_edges = grid.edge_dimension
     
     # construct indexing array
-    if dimn_nodes in uda.dims:
-        dimn_notfaces_name = "node"
-        dimn_notfaces = dimn_nodes
-        indexer_np = grid.face_node_connectivity
-    elif dimn_edges in uda.dims:
-        dimn_notfaces_name = "edge"
-        dimn_notfaces = dimn_edges
-        indexer_np = grid.face_edge_connectivity
-    else:
+    if dimn_faces in uda.dims:
         print(f'provided uda/variable "{uda.name}" does not have an node or edge dimension, returning unchanged uda')
         return uda
     
-    # rechunk to make sure the node/edge dimension is not chunked, otherwise we
-    # will get "PerformanceWarning: Slicing with an out-of-order index is
-    # generating 384539 times more chunks."
-    chunks = {dimn_notfaces:-1}
-    uda = uda.chunk(chunks)
-
-    indexer = xr.DataArray(indexer_np,dims=(dimn_faces,reduce_dim))
-    indexer_validbool = indexer!=-1
-    indexer = indexer.where(indexer_validbool,-1)
-    
-    print(f'{dimn_notfaces_name}-to-face interpolation: ',end='')
+    # couple to faces and take mean
+    print('to_face() interpolation: ',end='')
     dtstart = dt.datetime.now()
-    # for each face, select all corresponding node/edge values
-    # we do this via stack and unstack since 2D indexing does not
-    # properly work in dask yet: https://github.com/dask/dask/pull/10237
-    # this process converts the xu.UgridDataArray to a xr.DataArray, so we convert it back
-    indexer_stacked = indexer.stack(__tmp_dim__=(dimn_faces, reduce_dim))
-    uda_face_allnodes_ds_stacked = uda.isel({dimn_notfaces: indexer_stacked})
-    uda_face_allnodes_ds = uda_face_allnodes_ds_stacked.unstack("__tmp_dim__")
-    uda_face_allnodes = xu.UgridDataArray(uda_face_allnodes_ds,grid=grid)
-    
-    # replace nonexistent nodes/edges with nan
-    # replace all values for fillvalue nodes/edges (-1) with nan
-    uda_face_allnodes = uda_face_allnodes.where(indexer_validbool)
-    # average node/edge values per face
-    uda_face = uda_face_allnodes.mean(dim=reduce_dim,keep_attrs=True)
+    uda_face = uda.ugrid.to_face().mean(dim="nmax", keep_attrs=True)
+    print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
+
     #update attrs from node/edge to face
     face_attrs = {'location': 'face', 'cell_methods': f'{dimn_faces}: mean'}
     uda_face = uda_face.assign_attrs(face_attrs)
-    print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
     
     return uda_face
 
