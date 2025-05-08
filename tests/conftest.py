@@ -103,4 +103,8 @@ def ds_era5_empty():
     ds_era5_empty = ds_era5_empty.set_coords(["longitude","latitude"])
     time_data = pd.date_range('2010-01-31', '2010-02-01', freq="3h")
     ds_era5_empty['time'] = xr.DataArray(time_data, dims='time')
+    # empty msl array with incorrect dims
+    msl_attrs = {"long_name":"pressure", "units":"Pa"}
+    msl_data = time_data.values.astype(float)
+    ds_era5_empty['msl'] = xr.DataArray(msl_data, dims='time').assign_attrs(msl_attrs)
     return ds_era5_empty

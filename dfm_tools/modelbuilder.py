@@ -263,6 +263,13 @@ def preprocess_merge_meteofiles_era5(ext_old, varkey_list, dir_data, dir_output,
                                              preprocess=preprocess,
                                              )
         
+        # check if all variables are present in merged netcdf
+        if not set(varkey_list).issubset(data_xr_tsel):
+            raise KeyError(
+                f"Requested variables ({varkey_list}) are not all present in the "
+                f"merged dataset ({list(data_xr_tsel.data_vars)})."
+                )
+        
         #write to netcdf file
         print('>> writing file (can take a while): ',end='')
         dtstart = dt.datetime.now()

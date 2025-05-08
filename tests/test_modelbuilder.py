@@ -362,3 +362,21 @@ def test_preprocess_merge_meteofiles_era5_unsupported_varlist(tmp_path, ds_era5_
                                                         dir_output=tmp_path,
                                                         time_slice=slice(date_min, date_max))
     assert "is not supported by dfmt.preprocess_merge_meteofiles_era5" in str(e.value)
+
+
+@pytest.mark.unittest
+def test_preprocess_merge_meteofiles_era5_incomplete_input(tmp_path, ds_era5_empty):
+    file_nc = os.path.join(tmp_path,"era5_msl_empty.nc")
+    ds_era5_empty.to_netcdf(file_nc)
+    
+    ext_old = None # this won't be reached, so not relevant what to supply
+    date_min = ds_era5_empty.time.to_pandas().iloc[0]
+    date_max = ds_era5_empty.time.to_pandas().iloc[-1]
+    varlist_list = ['msl','u10n','v10n','chnk']
+    with pytest.raises(KeyError) as e:
+        ext_old = dfmt.preprocess_merge_meteofiles_era5(ext_old=ext_old,
+                                                        varkey_list=varlist_list,
+                                                        dir_data=tmp_path,
+                                                        dir_output=tmp_path,
+                                                        time_slice=slice(date_min, date_max))
+    assert "are not all present in the merged dataset (['msl'])." in str(e.value)

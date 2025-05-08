@@ -11,6 +11,7 @@ This release drops support for Python 3.9.
 - support for copernicusmarine 2.1.0 in [#1180](https://github.com/Deltares/dfm_tools/pull/1180)
 - also construct sigmalayers when sigma-variables are coordinates [#1183](https://github.com/Deltares/dfm_tools/pull/1183)
 - improved performance of `dfmt.uda_to_faces()` by using xugrid alternative in [#1177](https://github.com/Deltares/dfm_tools/pull/1177)
+- check if all requested variables are present in merged dataset in `dfmt.preprocess_merge_meteofiles_era5()` in [#1184](https://github.com/Deltares/dfm_tools/pull/1184)
 
 ### Deprecated
 - removed `dfmt.preprocess_woa` since WOA merging fails and is not used in [#1161](https://github.com/Deltares/dfm_tools/pull/1161)
