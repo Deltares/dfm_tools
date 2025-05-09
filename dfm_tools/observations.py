@@ -41,6 +41,7 @@ else:
     PDRIVE = "/p"
 
 CM_LOGGER = logging.getLogger("copernicusmarine")
+logger = logging.getLogger(__name__)
 
 
 def _make_hydrotools_consistent(ds):
@@ -67,8 +68,18 @@ def _make_hydrotools_consistent(ds):
 
 
 def _remove_accents(input_str):
-    nfkd_form = unicodedata.normalize('NFKD', input_str)
+    # replace characters that otherwise would be dropped
+    input_str_replaced = input_str.replace('ø','o')
+    
+    # convert string to ascii-only
+    nfkd_form = unicodedata.normalize('NFKD', input_str_replaced)
     only_ascii = nfkd_form.encode('ASCII', 'ignore').decode('ASCII')
+    
+    # warn if characters were dropped
+    if len(input_str) != len(only_ascii):
+        logger.warning(
+            f"_remove_accents() dropped characters: '{input_str}' became '{only_ascii}'"
+            )
     return only_ascii
 
 
@@ -94,7 +105,9 @@ def ssc_sscid_from_otherid(group_id, groupname):
     if bool_strinseries.sum() < 1:
         raise ValueError('sscid not found for id %s in group %s'%(group_id, groupname))
     if bool_strinseries.sum() > 1:
-        raise ValueError('More than 1 sscid found for id %s in group %s:\n%s'%(group_id, groupname, ssc_catalog_pd.loc[bool_strinseries,['name','country', 'geo:lat', 'geo:lon',groupname]]))
+        columns = ['name','country', 'geo:lat', 'geo:lon', groupname]
+        subset = ssc_catalog_pd.loc[bool_strinseries, columns]
+        raise ValueError(f'More than 1 sscid found for id {group_id} in group {groupname}:\n{subset}')
     
     sscid = ssc_catalog_pd.loc[bool_strinseries].index[0]
     return sscid
@@ -123,89 +136,84 @@ def ssc_ssh_read_catalog():
     station list: https://www.ioc-sealevelmonitoring.org/ssc/
     """
     
+    #TODO: country column has 2-digit codes instead of 3
     url_json = 'https://www.ioc-sealevelmonitoring.org/ssc/service.php?format=json'
     ssc_catalog_pd = pd.read_json(url_json)
-    
-    #TODO: country column has 2-digit codes instead of 3
     
     #convert all cells with ids to list of strings or NaN
     for colname in ['psmsl','ioc','ptwc','gloss','uhslc','sonel_gps','sonel_tg']:
         ssc_catalog_pd[colname] = ssc_catalog_pd[colname].apply(lambda x: x if isinstance(x,list) else [] if x is np.nan else [x])
     
-    ssc_catalog_pd['station_name'] = ssc_catalog_pd['name']
-    ssc_catalog_pd['station_id'] = ssc_catalog_pd['ssc_id']
-    
-    #generate station_name_fname (remove all non numeric/letter characters and replace by -, strip '-' from begin/end, set ssc_id as prefix)
-    ssc_catalog_pd['station_name_fname'] = ssc_catalog_pd['name'].str.replace('ø','o') # necessary since otherwise these letters are dropped with remove_accents()
-    ssc_catalog_pd['station_name_fname'] = ssc_catalog_pd['station_name_fname'].apply(lambda x: _remove_accents(x)) #remove accents from letters
-    bool_somethingdropped = (ssc_catalog_pd['station_name_fname'].str.len() != ssc_catalog_pd['name'].str.len())
-    if bool_somethingdropped.any():
-        raise Exception('lengths mismatch, characters were dropped:\n%s'%(ssc_catalog_pd.loc[bool_somethingdropped,['name','station_name_fname']]))
-    ssc_catalog_pd['station_name_fname'] = ssc_catalog_pd['station_name_fname'].apply(lambda x: re.sub("[^0-9a-zA-Z]+", "-", x)) #replace comma and brackets with dash
-    ssc_catalog_pd['station_name_fname'] = ssc_catalog_pd['station_name_fname'].str.strip('-') #remove first/last dash from name if present
-    col = ssc_catalog_pd.pop('station_name_fname')
-    ssc_catalog_pd.insert(3, col.name, col)
-    ssc_catalog_pd['station_name_unique'] = ssc_catalog_pd['ssc_id']+'_'+ssc_catalog_pd['station_name_fname']
+    # generate station_name_unique from name
+    station_name_clean = ssc_catalog_pd['name']
+    # remove accents
+    station_name_clean = station_name_clean.apply(lambda x: _remove_accents(x))
+    # replace all non-alphanumeric characters and with dash
+    station_name_clean = station_name_clean.apply(lambda x: re.sub("[^0-9a-zA-Z]+", "-", x))
+    # remove first/last dash from name if present
+    station_name_clean = station_name_clean.str.strip('-')
+    ssc_catalog_pd['station_name_unique'] = ssc_catalog_pd['ssc_id'] + '_' + station_name_clean
     
     #set ssc_id as index
     ssc_catalog_pd = ssc_catalog_pd.set_index('ssc_id',drop=False)
-    
-    #convert datetimestrings to datetime values, check for new ones
-    # last_retrieve = dt.date(2023,2,22)
-    # SSC_catalog_pd['dcterms:modified'] = pd.to_datetime(SSC_catalog_pd['dcterms:modified'])#.dt.to_pydatetime()
-    # bool_newstations = SSC_catalog_pd['dcterms:modified'] > pd.Timestamp(last_retrieve,tzinfo=pytz.UTC)#,tzinfo=dt.datetime.tzname('GMT'))
-    # num_newstations = bool_newstations.sum()
-    # if num_newstations > 0:
-    #     raise Exception('Caution, %i new stations since last retrieve on %s:\n%s'%(num_newstations, last_retrieve, SSC_catalog_pd.loc[bool_newstations.values,['name','dcterms:modified']]))
-    
-    # remove 64 DART stations (Deep-ocean Assessment and Reporting of Tsunamis)
-    # SSC_catalog_pd = SSC_catalog_pd.loc[~SSC_catalog_pd['name'].str.startswith('DART ')]
     
     # generate geom and geodataframe
     geom = [Point(x["geo:lon"], x["geo:lat"]) for irow, x in ssc_catalog_pd.iterrows()]
     ssc_catalog_gpd = gpd.GeoDataFrame(data=ssc_catalog_pd, geometry=geom, crs='EPSG:4326')
     ssc_catalog_gpd = ssc_catalog_gpd.drop(["geo:lon","geo:lat"], axis=1)
     
-    # compare coordinates of station metadata with coordinates of IOC/UHSLC linked stations
-    if 0: 
-        for station_ssc_id, row in ssc_catalog_gpd.iterrows():
-            idx = ssc_catalog_gpd.index.tolist().index(station_ssc_id)
-            print(f'station {idx+1} of {len(ssc_catalog_gpd)}: {station_ssc_id}')
-            ssc_catalog_pd_stat_ioc_uhslc = ssc_catalog_gpd.loc[station_ssc_id,['ioc','uhslc']]
-    
-            url_station = f'https://www.ioc-sealevelmonitoring.org/ssc/stationdetails.php?id={station_ssc_id}'
-            url_response = urlopen(url_station)
-            url_response_read = url_response.read()
-            
-            station_meta_lon = ssc_catalog_gpd.loc[station_ssc_id].geometry.x
-            station_meta_lat = ssc_catalog_gpd.loc[station_ssc_id].geometry.y
-    
-            if (ssc_catalog_pd_stat_ioc_uhslc.str.len()==0).all(): #skip station if no IOC/UHSLC id present (after retrieval of precise coordinate)
-                continue
-            # fix html, fetch last matched table and set row with codes/location/lat/lon/sensors as column names
-            # TODO: report missing <tr> to VLIZ?
-            url_response_read_fixed = url_response_read.replace(b' colspan="100%"',b'').replace(b'<td><a href',b'<tr><td><a href')
-            table2 = pd.read_html(url_response_read_fixed, match='Linked codes', header=0)
-            tab_linked = table2[-1]
-            tab_linked.columns = tab_linked.iloc[0]
+    rename_dict = {"name": "station_name", "ssc_id": "station_id"}
+    ssc_catalog_gpd = ssc_catalog_gpd.rename(rename_dict, axis=1)
+    return ssc_catalog_gpd
 
-            #loop over IOC/UHSLC linked stations
-            bool_tocheck = tab_linked["Codes"].str.contains('UHSLC') | tab_linked["Codes"].str.contains('IOC')
-            if bool_tocheck.sum()==0:
-                continue
-            tab_linked_tocheck = tab_linked.loc[bool_tocheck]
-            station_check_dict = {}
-            station_check_dist_all = []
-            for _, row in tab_linked_tocheck.iterrows():
-                station_check_lat = float(row['Latitude'])
-                station_check_lon = float(row['Longitude'])
-                station_check_dist = np.sqrt((station_meta_lat-station_check_lat)**2+(station_meta_lon-station_check_lon)**2)
-                station_check_dist_all.append(station_check_dist)
-                station_check_dict[row['Codes']] = [station_check_dist,station_check_lat,station_check_lon]
-            ssc_catalog_gpd.loc[station_ssc_id,'dist_dict'] = [station_check_dict]
-            ssc_catalog_gpd.loc[station_ssc_id,'dist_min'] = np.min(station_check_dist_all)
-            ssc_catalog_gpd.loc[station_ssc_id,'dist_max'] = np.max(station_check_dist_all)
 
+def ssc_add_linked_stations(ssc_catalog_gpd):
+    """
+    Find xy-coordinates of UHSLC/IOC stations that are linked to the SSC stations.
+    Including the min/max distance between them.
+    This is a private function, only kept for convenience, but has no role in dfm_tools.
+    """
+    ssc_catalog_gpd = ssc_catalog_gpd.copy()
+    
+    for station_ssc_id, row in ssc_catalog_gpd.iterrows():
+        idx = ssc_catalog_gpd.index.tolist().index(station_ssc_id)
+        print(f'station {idx+1} of {len(ssc_catalog_gpd)}: {station_ssc_id}')
+        ssc_catalog_pd_stat_ioc_uhslc = ssc_catalog_gpd.loc[station_ssc_id,['ioc','uhslc']]
+        
+        # skip station if no IOC/UHSLC id present (after retrieval of precise coordinate)
+        if (ssc_catalog_pd_stat_ioc_uhslc.str.len()==0).all():
+            continue
+
+        url_station = f'https://www.ioc-sealevelmonitoring.org/ssc/stationdetails.php?id={station_ssc_id}'
+        url_response = urlopen(url_station)
+        url_response_read = url_response.read()
+        
+        x1 = ssc_catalog_gpd.loc[station_ssc_id].geometry.x
+        y1 = ssc_catalog_gpd.loc[station_ssc_id].geometry.y
+
+        # fix html, fetch last matched table and set row with codes/location/lat/lon/sensors as column names
+        # TODO: report missing <tr> to VLIZ?
+        url_response_read_fixed = url_response_read.replace(b' colspan="100%"',b'').replace(b'<td><a href',b'<tr><td><a href')
+        table2 = pd.read_html(url_response_read_fixed, match='Linked codes', header=0)
+        tab_linked = table2[-1]
+        tab_linked.columns = tab_linked.iloc[0]
+
+        #loop over IOC/UHSLC linked stations
+        bool_tocheck = tab_linked["Codes"].str.contains('UHSLC') | tab_linked["Codes"].str.contains('IOC')
+        if bool_tocheck.sum()==0:
+            continue
+        tab_linked_tocheck = tab_linked.loc[bool_tocheck]
+        station_check_dict = {}
+        station_check_dist_all = []
+        for _, tabrow in tab_linked_tocheck.iterrows():
+            x2 = float(tabrow['Longitude'])
+            y2 = float(tabrow['Latitude'])
+            dist = ((x2-x1)**2 + (y2-y1)**2) **0.5
+            station_check_dist_all.append(dist)
+            station_check_dict[tabrow['Codes']] = [x2, y2, dist]
+        ssc_catalog_gpd.loc[station_ssc_id,'dist_dict'] = [station_check_dict]
+        ssc_catalog_gpd.loc[station_ssc_id,'dist_min'] = np.min(station_check_dist_all)
+        ssc_catalog_gpd.loc[station_ssc_id,'dist_max'] = np.max(station_check_dist_all)
     return ssc_catalog_gpd
 
 

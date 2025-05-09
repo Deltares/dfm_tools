@@ -9,13 +9,17 @@ import os
 import pytest
 import glob
 import ddlpy
+import numpy as np
 import dfm_tools as dfmt
-from dfm_tools.observations import (ssc_sscid_from_otherid,
+from dfm_tools.observations import (ssc_ssh_read_catalog,
+                                    ssc_add_linked_stations,
+                                    ssc_sscid_from_otherid,
                                     ssc_ssh_subset_groups,
-                                    )
-from dfm_tools.observations import (gtsm3_era5_cds_ssh_read_catalog,
+                                    gtsm3_era5_cds_ssh_read_catalog,
                                     gtsm3_era5_cds_ssh_retrieve_data,
+                                    _remove_accents,
                                     )
+import logging
 
 source_list = ["uhslc-fast", "uhslc-rqds", "psmsl-gnssir", "ssc", "ioc", "rwsddl", 
                "cmems", "cmems-nrt", # requires CMEMS credentials
@@ -159,6 +163,16 @@ def test_ssc_ssh_subset_groups():
 
 
 @pytest.mark.unittest
+def test_ssc_add_linked_stations():
+    ssc_catalog_gpd = ssc_ssh_read_catalog()
+    bb = ssc_add_linked_stations(ssc_catalog_gpd.iloc[:4])
+    dist_dict = bb.loc["SSC-abas", "dist_dict"][0]
+    assert set(dist_dict.keys()) == set({'IOC: abas', 'UHSLC: 347'})
+    assert np.isclose(bb.loc["SSC-abas", "dist_min"], 0.00047381430963381466)
+    assert np.isclose(bb.loc["SSC-abas", "dist_max"], 0.0074595241134952145)
+
+
+@pytest.mark.unittest
 def test_ssh_catalog_toxynfile(tmp_path):
     ssc_catalog_gpd = dfmt.ssh_catalog_subset(source="ssc")
     file_xyn = tmp_path / 'test_ssc_obs.xyn'
@@ -187,3 +201,15 @@ def test_gtsm3_era5_cds_ssh_retrieve_data_invalidfreq_nonetimes():
             time_freq='10min',
             )
     assert "time frequency for retrieving gtsm3-era5-cds data should" in str(e.value)
+
+
+@pytest.mark.unittest
+def test_remove_accents(caplog):
+    # ø is a non-ascii character replaced by o in the function, to avoid dropping
+    output_str = _remove_accents("Måløy")
+    assert output_str == "Maloy"
+    
+    # ð is a non-ascii character that is not accounted for in the function, so it is dropped
+    with caplog.at_level(logging.WARNING):
+        _remove_accents("Måløyð")
+    assert "_remove_accents() dropped characters: 'Måløyð' became 'Maloy'" in caplog.text
