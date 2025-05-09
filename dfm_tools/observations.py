@@ -1082,7 +1082,9 @@ def ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
         
         stat_name = ds.attrs["station_name_unique"]
         file_out = os.path.join(dir_output, f"{stat_name}.nc")
-        ds.to_netcdf(file_out)
+        # format NETCDF4_CLASSIC significantly reduces netcdf file size
+        # in case of <U1 and <U2 variables
+        ds.to_netcdf(file_out, format="NETCDF4_CLASSIC")
         del ds
     print()
 
