@@ -9,6 +9,7 @@ import os
 import pytest
 import glob
 import ddlpy
+import numpy as np
 import dfm_tools as dfmt
 from dfm_tools.observations import (ssc_ssh_read_catalog,
                                     ssc_add_linked_stations,
@@ -167,7 +168,9 @@ def test_ssc_add_linked_stations():
     bb = ssc_add_linked_stations(ssc_catalog_gpd.iloc[:4])
     dist_dict = bb.loc["SSC-abas", "dist_dict"][0]
     assert set(dist_dict.keys()) == set({'IOC: abas', 'UHSLC: 347'})
-    
+    assert np.isclose(bb.loc["SSC-abas", "dist_min"], 0.00047381430963381466)
+    assert np.isclose(bb.loc["SSC-abas", "dist_max"], 0.0074595241134952145)
+
 
 @pytest.mark.unittest
 def test_ssh_catalog_toxynfile(tmp_path):
