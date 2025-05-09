@@ -164,12 +164,12 @@ def test_ssc_ssh_subset_groups():
 
 @pytest.mark.unittest
 def test_ssc_add_linked_stations():
-    ssc_catalog_gpd = ssc_ssh_read_catalog()
-    bb = ssc_add_linked_stations(ssc_catalog_gpd.iloc[:4])
-    dist_dict = bb.loc["SSC-abas", "dist_dict"][0]
+    ssc_catalog_gpd = ssc_ssh_read_catalog(linked_stations=True)
+    abas_row = ssc_catalog_gpd.loc["SSC-abas"]
+    dist_dict = abas_row["dist_dict"][0]
     assert set(dist_dict.keys()) == set({'IOC: abas', 'UHSLC: 347'})
-    assert np.isclose(bb.loc["SSC-abas", "dist_min"], 0.00047381430963381466)
-    assert np.isclose(bb.loc["SSC-abas", "dist_max"], 0.0074595241134952145)
+    assert np.isclose(abas_row["dist_min"], 0.00047381430963381466)
+    assert np.isclose(abas_row["dist_max"], 0.0074595241134952145)
 
 
 @pytest.mark.unittest

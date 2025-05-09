@@ -19,6 +19,9 @@ This release drops support for Python 3.9.
 - removed `dfmt.preprocess_woa` since WOA merging fails and is not used in [#1161](https://github.com/Deltares/dfm_tools/pull/1161)
 - support for python 3.9 is dropped in [#1177](https://github.com/Deltares/dfm_tools/pull/1177)
 
+### Feat
+- added cross-referencing SSC/IOC/UHSLC stations and distances in `ssc_ssh_read_catalog()` in [#1191](https://github.com/Deltares/dfm_tools/pull/1191)
+
 
 ## 0.36.0 (2025-03-18)
 

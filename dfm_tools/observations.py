@@ -131,7 +131,7 @@ def ssc_ssh_subset_groups(groups, ssc_catalog_gpd=None):
     return ssc_catalog_gpd
 
 
-def ssc_ssh_read_catalog():
+def ssc_ssh_read_catalog(linked_stations=False):
     """
     The SSC catalog contains e.g. UHSLC and GLOSS ids, this can be used
     for unique station naming across several observation datasets
@@ -168,60 +168,49 @@ def ssc_ssh_read_catalog():
     
     rename_dict = {"name": "station_name", "ssc_id": "station_id"}
     ssc_catalog_gpd = ssc_catalog_gpd.rename(rename_dict, axis=1)
+    
+    if linked_stations:
+        ssc_catalog_gpd = ssc_add_linked_stations(ssc_catalog_gpd)
     return ssc_catalog_gpd
 
 
 def ssc_add_linked_stations(ssc_catalog_gpd):
     """
-    Find xy-coordinates of UHSLC/IOC stations that are linked to the SSC stations.
-    Including the min/max distance between them.
-    This is a private function, only kept for convenience, but has no role in dfm_tools.
+    Find xy-coordinates of UHSLC/IOC stations that are linked to the SSC stations,
+    including the min/max distance between them.
     """
-    # TODO: these html files are not meant for parsing, so retrieve coordinates from
-    # original sources instead. Alternatively it might be added to the SSC station json
-    # in the future
-    
-    ssc_catalog_gpd = ssc_catalog_gpd.copy()
-    
+    # getting linked catalogs
+    uhslc_catalog_gpd = _uhslc_get_json()
+    # uhslc index is dtype int but we use loc with dtype str
+    uhslc_catalog_gpd.index = uhslc_catalog_gpd.index.astype(str)
+    ioc_catalog_gpd = _ioc_get_json(showall="all")
+    # dropping duplicated code/geometry combinations
+    ioc_catalog_gpd = ioc_catalog_gpd.drop_duplicates(['Code','geometry'])
+
+    linked_dict = {"ioc": ioc_catalog_gpd,
+                   "uhslc": uhslc_catalog_gpd,
+                   }
     for station_ssc_id, row in ssc_catalog_gpd.iterrows():
-        idx = ssc_catalog_gpd.index.tolist().index(station_ssc_id)
-        print(f'station {idx+1} of {len(ssc_catalog_gpd)}: {station_ssc_id}')
-        ssc_catalog_pd_stat_ioc_uhslc = ssc_catalog_gpd.loc[station_ssc_id,['ioc','uhslc']]
+        x1 = row["geometry"].x
+        y1 = row["geometry"].y
         
-        # skip station if no IOC/UHSLC id present (after retrieval of precise coordinate)
-        if (ssc_catalog_pd_stat_ioc_uhslc.str.len()==0).all():
-            continue
-
-        url_station = f'https://www.ioc-sealevelmonitoring.org/ssc/stationdetails.php?id={station_ssc_id}'
-        url_response = urlopen(url_station)
-        url_response_read = url_response.read()
-        
-        x1 = ssc_catalog_gpd.loc[station_ssc_id].geometry.x
-        y1 = ssc_catalog_gpd.loc[station_ssc_id].geometry.y
-
-        # fix html, fetch last matched table and set row with codes/location/lat/lon/sensors as column names
-        # TODO: report missing <tr> to VLIZ?
-        url_response_read_fixed = url_response_read.replace(b' colspan="100%"',b'').replace(b'<td><a href',b'<tr><td><a href')
-        table2 = pd.read_html(url_response_read_fixed, match='Linked codes', header=0)
-        tab_linked = table2[-1]
-        tab_linked.columns = tab_linked.iloc[0]
-
-        #loop over IOC/UHSLC linked stations
-        bool_tocheck = tab_linked["Codes"].str.contains('UHSLC') | tab_linked["Codes"].str.contains('IOC')
-        if bool_tocheck.sum()==0:
-            continue
-        tab_linked_tocheck = tab_linked.loc[bool_tocheck]
         station_check_dict = {}
         station_check_dist_all = []
-        for _, tabrow in tab_linked_tocheck.iterrows():
-            x2 = float(tabrow['Longitude'])
-            y2 = float(tabrow['Latitude'])
-            dist = ((x2-x1)**2 + (y2-y1)**2) **0.5
-            station_check_dist_all.append(dist)
-            station_check_dict[tabrow['Codes']] = [x2, y2, dist]
-        ssc_catalog_gpd.loc[station_ssc_id,'dist_dict'] = [station_check_dict]
-        ssc_catalog_gpd.loc[station_ssc_id,'dist_min'] = np.min(station_check_dist_all)
-        ssc_catalog_gpd.loc[station_ssc_id,'dist_max'] = np.max(station_check_dist_all)
+        for linked_name, linked_gpd in linked_dict.items():
+            for linked_id in row[linked_name]:
+                geom = linked_gpd.loc[linked_id]["geometry"]
+                x2 = geom.x
+                y2 = geom.y
+                dist = ((x2-x1)**2 + (y2-y1)**2) **0.5
+                station_check_dist_all.append(dist)
+                station_key = f"{linked_name.upper()}: {linked_id}"
+                station_check_dict[station_key] = [x2, y2, dist]
+        
+        if station_check_dict:
+            # add additional columns if station_check_dict is not empty
+            ssc_catalog_gpd.loc[station_ssc_id,'dist_dict'] = [station_check_dict]
+            ssc_catalog_gpd.loc[station_ssc_id,'dist_min'] = np.min(station_check_dist_all)
+            ssc_catalog_gpd.loc[station_ssc_id,'dist_max'] = np.max(station_check_dist_all)
     return ssc_catalog_gpd
 
 
@@ -318,10 +307,7 @@ def cmems_ssh_read_catalog(source, overwrite=True):
     return index_history_gpd
 
 
-def uhslc_ssh_read_catalog(source):
-    # TODO: country is "New Zealand" and country_code is 554. We would like country/country_code=NZL
-    # TODO: maybe use min of rqds and max of fast for time subsetting
-    # TODO: maybe enable merging of datasets?
+def _uhslc_get_json():
     uhslc_gpd = gpd.read_file("https://uhslc.soest.hawaii.edu/data/meta.geojson", engine="fiona")
     
     for drop_col in ["rq_basin", "rq_versions"]:
@@ -334,6 +320,14 @@ def uhslc_ssh_read_catalog(source):
     from shapely import Point
     geom_shift = [Point(((pnt.x + 180)%360 - 180), pnt.y) for pnt in uhslc_gpd.geometry]
     uhslc_gpd.geometry = geom_shift
+    return uhslc_gpd
+
+
+def uhslc_ssh_read_catalog(source):
+    # TODO: country is "New Zealand" and country_code is 554. We would like country/country_code=NZL
+    # TODO: maybe use min of rqds and max of fast for time subsetting
+    # TODO: maybe enable merging of datasets?
+    uhslc_gpd = _uhslc_get_json()
     
     timespan_dict = {"uhslc-fast":"fd_span", "uhslc-rqds":"rq_span"}
     timespan_var = timespan_dict[source]
@@ -367,6 +361,28 @@ def uhslc_fast_ssh_read_catalog():
     return uhslc_gpd
 
 
+def _ioc_get_json(showall="a"):
+    """
+    howto available at https://www.ioc-sealevelmonitoring.org/service.php?query=help
+    """
+    url_json = f'https://www.ioc-sealevelmonitoring.org/service.php?query=stationlist&showall={showall}'
+    resp = requests.get(url_json)
+    if resp.status_code==404: #continue to next station if not found
+        raise Exception(f'url 404: {resp.text}')
+    resp_json = resp.json()
+    ioc_catalog_pd = pd.DataFrame.from_dict(resp_json)
+    
+    #set ssc_id as index
+    ioc_catalog_pd = ioc_catalog_pd.set_index('Code',drop=False)
+    
+    # generate geom and geodataframe and remove the old columns
+    geom = [Point(x["lon"], x["lat"]) for irow, x in ioc_catalog_pd.iterrows()]
+    ioc_catalog_gpd = gpd.GeoDataFrame(data=ioc_catalog_pd, geometry=geom, crs='EPSG:4326')
+    drop_list = ["Lon","lat","lon","lat"]
+    ioc_catalog_gpd = ioc_catalog_gpd.drop(drop_list, axis=1)
+    return ioc_catalog_gpd
+
+
 def ioc_ssh_read_catalog(drop_uhslc=True, drop_dart=True, drop_nonutc=True):
     """
     Generates a list of all active IOC stations (showall=a).
@@ -376,27 +392,12 @@ def ioc_ssh_read_catalog(drop_uhslc=True, drop_dart=True, drop_nonutc=True):
     """
     #TODO: "Code" contains more station codes than "code", what is the difference?
     #TODO: "Location" contains full name, but contains spaces etcetera, retrieve from SSC instead?
-    
-    url_json = 'https://www.ioc-sealevelmonitoring.org/service.php?query=stationlist&showall=a'
-    resp = requests.get(url_json)
-    if resp.status_code==404: #continue to next station if not found
-        raise Exception(f'url 404: {resp.text}')    
-    resp_json = resp.json()
-    ioc_catalog_pd = pd.DataFrame.from_dict(resp_json)
-    
-    #set ssc_id as index
-    ioc_catalog_pd = ioc_catalog_pd.set_index('Code',drop=False)
+    ioc_catalog_gpd = _ioc_get_json(showall="a")
     
     #derive start/stop times indications from metadata
-    ioc_catalog_pd["time_min"] = pd.to_datetime(ioc_catalog_pd["date_created"])
-    ioc_catalog_pd["time_max"] = pd.to_datetime(ioc_catalog_pd["lasttime"])
-    
-    # generate geom and geodataframe and remove the old columns
-    geom = [Point(x["lon"], x["lat"]) for irow, x in ioc_catalog_pd.iterrows()]
-    ioc_catalog_gpd = gpd.GeoDataFrame(data=ioc_catalog_pd, geometry=geom, crs='EPSG:4326')
-    drop_list = ["Lon","lat","lon","lat"]
-    ioc_catalog_gpd = ioc_catalog_gpd.drop(drop_list, axis=1)
-    
+    ioc_catalog_gpd["time_min"] = pd.to_datetime(ioc_catalog_gpd["date_created"])
+    ioc_catalog_gpd["time_max"] = pd.to_datetime(ioc_catalog_gpd["lasttime"])
+        
     ioc_catalog_gpd["station_name"] = ioc_catalog_gpd['Code']
     ioc_catalog_gpd["station_id"] = ioc_catalog_gpd['Code']
     stat_names = "ioc-" + ioc_catalog_gpd['Code'] + "-" + ioc_catalog_gpd['code'].astype(str)
