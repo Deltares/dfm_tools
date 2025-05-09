@@ -178,6 +178,8 @@ def ssc_add_linked_stations(ssc_catalog_gpd):
     This is a private function, only kept for convenience, but has no role in dfm_tools.
     """
     ssc_catalog_gpd = ssc_catalog_gpd.copy()
+    
+    # getting linked catalogs
     uhslc_catalog_gpd = _uhslc_get_json()
     # uhslc index is dtype int but we use loc with dtype str
     uhslc_catalog_gpd.index = uhslc_catalog_gpd.index.astype(str)
@@ -185,15 +187,17 @@ def ssc_add_linked_stations(ssc_catalog_gpd):
     # dropping duplicated code/geometry combinations
     ioc_catalog_gpd = ioc_catalog_gpd.drop_duplicates(['Code','geometry'])
     
+    
+    
+    linked_dict = {"ioc": ioc_catalog_gpd,
+                   "uhslc": uhslc_catalog_gpd,
+                   }
     for station_ssc_id, row in ssc_catalog_gpd.iterrows():
         x1 = row["geometry"].x
         y1 = row["geometry"].y
         
         station_check_dict = {}
         station_check_dist_all = []
-        linked_dict = {"ioc": ioc_catalog_gpd,
-                       "uhslc": uhslc_catalog_gpd,
-                       }
         for linked_name, linked_gpd in linked_dict.items():
             for linked_id in row[linked_name]:
                 geom = linked_gpd.loc[linked_id]["geometry"]
