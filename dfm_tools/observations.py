@@ -177,6 +177,10 @@ def ssc_add_linked_stations(ssc_catalog_gpd):
     Including the min/max distance between them.
     This is a private function, only kept for convenience, but has no role in dfm_tools.
     """
+    # TODO: these html files are not meant for parsing, so retrieve coordinates from
+    # original sources instead. Alternatively it might be added to the SSC station json
+    # in the future
+    
     ssc_catalog_gpd = ssc_catalog_gpd.copy()
     
     for station_ssc_id, row in ssc_catalog_gpd.iterrows():
