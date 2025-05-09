@@ -105,7 +105,9 @@ def ssc_sscid_from_otherid(group_id, groupname):
     if bool_strinseries.sum() < 1:
         raise ValueError('sscid not found for id %s in group %s'%(group_id, groupname))
     if bool_strinseries.sum() > 1:
-        raise ValueError('More than 1 sscid found for id %s in group %s:\n%s'%(group_id, groupname, ssc_catalog_pd.loc[bool_strinseries,['name','country', 'geo:lat', 'geo:lon',groupname]]))
+        columns = ['name','country', 'geo:lat', 'geo:lon', groupname]
+        subset = ssc_catalog_pd.loc[bool_strinseries, columns]
+        raise ValueError(f'More than 1 sscid found for id {group_id} in group {groupname}:\n{subset}')
     
     sscid = ssc_catalog_pd.loc[bool_strinseries].index[0]
     return sscid
