@@ -65,6 +65,10 @@ def _make_hydrotools_consistent(ds):
     y_attrs = dict(standard_name='latitude', units='degrees_north')
     ds["station_x_coordinate"] = xr.DataArray(ds.attrs["longitude"]).assign_attrs(x_attrs)
     ds["station_y_coordinate"] = xr.DataArray(ds.attrs["latitude"]).assign_attrs(y_attrs)
+    # set waterlevel coords
+    coords = ["station_name", "station_id", "station_x_coordinate", "station_y_coordinate"]
+    ds = ds.set_coords(coords)
+    return ds
 
 
 def _remove_accents(input_str):
@@ -173,6 +177,10 @@ def ssc_add_linked_stations(ssc_catalog_gpd):
     Including the min/max distance between them.
     This is a private function, only kept for convenience, but has no role in dfm_tools.
     """
+    # TODO: these html files are not meant for parsing, so retrieve coordinates from
+    # original sources instead. Alternatively it might be added to the SSC station json
+    # in the future
+    
     ssc_catalog_gpd = ssc_catalog_gpd.copy()
     
     for station_ssc_id, row in ssc_catalog_gpd.iterrows():
@@ -1074,11 +1082,13 @@ def ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
                              source=row["source"])
         
         ds["waterlevel"] = ds["waterlevel"].astype("float32")
-        _make_hydrotools_consistent(ds)
+        ds = _make_hydrotools_consistent(ds)
         
         stat_name = ds.attrs["station_name_unique"]
         file_out = os.path.join(dir_output, f"{stat_name}.nc")
-        ds.to_netcdf(file_out)
+        # format NETCDF4_CLASSIC significantly reduces netcdf file size
+        # in case of <U1 and <U2 variables
+        ds.to_netcdf(file_out, format="NETCDF4_CLASSIC")
         del ds
     print()
 
