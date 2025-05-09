@@ -131,7 +131,7 @@ def ssc_ssh_subset_groups(groups, ssc_catalog_gpd=None):
     return ssc_catalog_gpd
 
 
-def ssc_ssh_read_catalog():
+def ssc_ssh_read_catalog(linked_stations=False):
     """
     The SSC catalog contains e.g. UHSLC and GLOSS ids, this can be used
     for unique station naming across several observation datasets
@@ -168,17 +168,17 @@ def ssc_ssh_read_catalog():
     
     rename_dict = {"name": "station_name", "ssc_id": "station_id"}
     ssc_catalog_gpd = ssc_catalog_gpd.rename(rename_dict, axis=1)
+    
+    if linked_stations:
+        ssc_catalog_gpd = ssc_add_linked_stations(ssc_catalog_gpd)
     return ssc_catalog_gpd
 
 
 def ssc_add_linked_stations(ssc_catalog_gpd):
     """
-    Find xy-coordinates of UHSLC/IOC stations that are linked to the SSC stations.
-    Including the min/max distance between them.
-    This is a private function, only kept for convenience, but has no role in dfm_tools.
+    Find xy-coordinates of UHSLC/IOC stations that are linked to the SSC stations,
+    including the min/max distance between them.
     """
-    ssc_catalog_gpd = ssc_catalog_gpd.copy()
-    
     # getting linked catalogs
     uhslc_catalog_gpd = _uhslc_get_json()
     # uhslc index is dtype int but we use loc with dtype str
@@ -186,9 +186,7 @@ def ssc_add_linked_stations(ssc_catalog_gpd):
     ioc_catalog_gpd = _ioc_get_json(showall="all")
     # dropping duplicated code/geometry combinations
     ioc_catalog_gpd = ioc_catalog_gpd.drop_duplicates(['Code','geometry'])
-    
-    
-    
+
     linked_dict = {"ioc": ioc_catalog_gpd,
                    "uhslc": uhslc_catalog_gpd,
                    }
