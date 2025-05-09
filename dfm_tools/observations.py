@@ -209,7 +209,6 @@ def ssc_add_linked_stations(ssc_catalog_gpd):
         if station_check_dict:
             # add additional columns if station_check_dict is not empty
             ssc_catalog_gpd.loc[station_ssc_id,'dist_dict'] = [station_check_dict]
-            ssc_catalog_gpd.loc[station_ssc_id,'dist_min'] = np.min(station_check_dist_all)
             ssc_catalog_gpd.loc[station_ssc_id,'dist_max'] = np.max(station_check_dist_all)
     return ssc_catalog_gpd
 
