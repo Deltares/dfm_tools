@@ -21,7 +21,7 @@ from dfm_tools.observations import (ssc_ssh_read_catalog,
                                     )
 import logging
 
-source_list = ["uhslc-fast", "uhslc-rqds", "psmsl-gnssir", "ssc", "ioc", "rwsddl", 
+source_list = ["uhslc", "psmsl-gnssir", "ssc", "ioc", "rwsddl", 
                "cmems", "cmems-nrt", # requires CMEMS credentials
                "gtsm3-era5-cds", # requires CDS credentials
                ] 
@@ -68,7 +68,7 @@ def test_ssh_catalog_subset(source):
     
     # check if station names/ids can be converted to S64 as done in
     # dfm_tools.observations._make_hydrotools_consistent()
-    # fixed for uhslc-fast in https://github.com/Deltares/dfm_tools/issues/1172
+    # fixed for uhslc in https://github.com/Deltares/dfm_tools/issues/1172
     # ssc still has accents but does not have data so .astype("S64") will not be called
     if source not in ["ssc"]:
         ssc_catalog_gpd["station_name"].astype("S64")
@@ -84,11 +84,7 @@ def test_ssh_retrieve_data(source, tmp_path):
     if source=="ssc":
         return
     
-    if source=="uhslc-rqds":
-        # 2020 not available in uhslc-rqds yet
-        time_min, time_max = '2018-01-01','2018-02-01'
-    else:
-        time_min, time_max = '2020-01-01','2020-02-01'
+    time_min, time_max = '2020-01-01','2020-02-01'
     
     ssc_catalog_gpd = dfmt.ssh_catalog_subset(source=source)
     if source=="rwsddl":
@@ -97,7 +93,7 @@ def test_ssh_retrieve_data(source, tmp_path):
         bool_hoekvhld = ssc_catalog_gpd["Code"].isin(["HOEKVHLD"])
         ssc_catalog_gpd = ssc_catalog_gpd.loc[bool_hoekvhld]
     
-    index_dict = {"uhslc-fast":0, "uhslc-rqds":2, 
+    index_dict = {"uhslc":2, 
                   "psmsl-gnssir":0, "ioc":0, "rwsddl":0, 
                   "cmems":0, "cmems-nrt":0, # requires CMEMS credentials
                   "gtsm3-era5-cds":0, # requires CDS credentials
