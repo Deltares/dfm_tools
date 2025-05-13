@@ -673,45 +673,29 @@ def cmems_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None,
     return ds
 
 
-def uhslc_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None):
+def _preprocess_uhslc_erddap(ds):
+    # drop rowSize before merging to avoid conflicts
+    ds = ds.drop_vars("rowSize")
     
-    # TODO: maybe merge rqds/fast datasets automatically
-    # TODO: 5 meter offset?
-    
-    # docs from https://ioos.github.io/erddapy/ and https://ioos.github.io/erddapy/02-extras-output.html#
-    
-    # setup server connection, this takes no time so does not have to be cached
-    server = "https://uhslc.soest.hawaii.edu/erddap"
-    e = ERDDAP(server=server, protocol="tabledap", response="nc") #opendap is way slower than nc/csv/html
-    
-    dataset_id_dict = {"uhslc-fast":"global_hourly_fast",
-                       "uhslc-rqds":"global_hourly_rqds"}
-    
-    uhslc_id = row.name
-    source = row["source"]
-    dataset_id = dataset_id_dict[source]
-    e.dataset_id = dataset_id
-    
-    # set erddap constraints
-    e.constraints = {}
-    e.constraints["uhslc_id="] = uhslc_id
-    if time_min is not None:
-        e.constraints["time>="] = pd.Timestamp(time_min)
-    if time_max is not None:
-        e.constraints["time<="] = pd.Timestamp(time_max)
-    
-    from httpx import HTTPError
-    try:
-        ds = e.to_xarray()
-    except HTTPError:
-        # no data so early return
-        return
+    # dropping all geospatial attrs since they are not always consistent
+    # UHSLC_ID=9 has geospatial_lat_min=-9.425 and geospatial_lat_max=-9.421
+    # https://github.com/Deltares/dfm_tools/issues/1192
+    lon_attrs = ["geospatial_lon_min", "geospatial_lon_max", "Easternmost_Easting", "Westernmost_Easting"]
+    lat_attrs = ["geospatial_lat_min", "geospatial_lat_max", "Northernmost_Northing", "Southernmost_Northing"]
+    for attr in lon_attrs+lat_attrs:
+        ds.attrs.pop(attr, None)
+    ds = ds.drop(["latitude","longitude"], errors='ignore')
+
+    # reduce dataset size by reducing all constant variables defined for each timestep
+    constant_vars = ['station_name', 'station_country', 'station_country_code', 'gloss_id', 'ssc_id', 'last_rq_date']
+    reduce_vars = set(ds.variables).intersection(constant_vars)
+    logging.debug(f"UHSLC reducing variables {reduce_vars}")
+    for var in reduce_vars:
+        ds[var] = ds[var].max(dim='obs')
     
     # reduce timeseries dimension
     assert ds.sizes["timeseries"] == 1
     ds = ds.max(dim="timeseries", keep_attrs=True)
-    # check if lat/lon variables were also dropped, these are already present as attrs
-    assert "latitude" not in ds.variables
     
     # change units to meters
     with xr.set_options(keep_attrs=True):
@@ -722,7 +706,63 @@ def uhslc_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None):
     
     # set time index
     ds = ds.set_index(obs="time").rename(obs="time")
-    ds['time'] = ds.time.dt.round('s') #round to seconds
+    # round times to seconds, should probably not be necessary
+    ds['time'] = ds.time.dt.round('s')
+
+    return ds
+
+
+def uhslc_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None):
+    # docs from https://ioos.github.io/erddapy/ and https://ioos.github.io/erddapy/02-extras-output.html#
+    
+    # setup server connection, this takes no time so does not have to be cached
+    server = "https://uhslc.soest.hawaii.edu/erddap"
+    e = ERDDAP(server=server, protocol="tabledap", response="nc") #opendap is way slower than nc/csv/html
+    
+    # set erddap constraints
+    e.constraints = {}
+    uhslc_id = row.name
+    e.constraints["uhslc_id="] = uhslc_id
+    if time_min is not None:
+        e.constraints["time>="] = pd.Timestamp(time_min)
+    if time_max is not None:
+        e.constraints["time<="] = pd.Timestamp(time_max)
+    
+    from httpx import HTTPError
+    ds_list = []
+    try:
+        e.dataset_id = "global_hourly_rqds"
+        ds_rqds = e.to_xarray()
+        ds_rqds = _preprocess_uhslc_erddap(ds_rqds)
+        ds_list.append(ds_rqds)
+    except HTTPError:
+        pass
+    try:
+        e.dataset_id = "global_hourly_fast"
+        ds_fast = e.to_xarray()
+        ds_fast = _preprocess_uhslc_erddap(ds_fast)
+        ds_list.append(ds_fast)
+    except HTTPError:
+        pass
+    
+    # return early if no data present
+    if len(ds_list) == 0:
+        return
+    
+    # merge/concat: coords/data_vars/compat/combine_attrs make sure errors are raised
+    # if the datasets are not equal enough. All inequalities should be resolved by
+    # _preprocess_uhslc_erddap() so there should be no error.
+    ds = xr.concat(
+        ds_list,
+        dim='time',
+        coords='minimal',
+        data_vars='minimal',
+        compat='equals',
+        combine_attrs='drop_conflicts',
+        )
+    
+    # drop duplicates, keep=first keeps rqds, sort by time
+    ds = ds.drop_duplicates(dim='time', keep='first').sortby('time')
     return ds
 
 
