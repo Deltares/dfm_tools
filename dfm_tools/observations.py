@@ -325,15 +325,16 @@ def _uhslc_get_json():
 
 def uhslc_ssh_read_catalog(source):
     # TODO: country is "New Zealand" and country_code is 554. We would like country/country_code=NZL
-    # TODO: maybe use min of rqds and max of fast for time subsetting
-    # TODO: maybe enable merging of datasets?
     uhslc_gpd = _uhslc_get_json()
     
-    timespan_dict = {"uhslc-fast":"fd_span", "uhslc-rqds":"rq_span"}
-    timespan_var = timespan_dict[source]
-    time_min = uhslc_gpd[timespan_var].apply(lambda x: x["oldest"])
-    time_max = uhslc_gpd[timespan_var].apply(lambda x: x["latest"])
-    uhslc_gpd = uhslc_gpd.loc[~time_min.isnull()].copy()
+    time_min_rq = uhslc_gpd["rq_span"].apply(lambda x: x["oldest"])
+    time_max_rq = uhslc_gpd["rq_span"].apply(lambda x: x["latest"])
+    time_min_fd = uhslc_gpd["fd_span"].apply(lambda x: x["oldest"])
+    time_max_fd = uhslc_gpd["fd_span"].apply(lambda x: x["latest"])
+    # combine time extents, replace None with values from other dataset. Inversed order
+    # for min/max, resulting in the max of max and the min of min.
+    time_min = time_min_rq.fillna(time_min_fd)
+    time_max = time_max_fd.fillna(time_max_rq)
     uhslc_gpd["time_min"] = pd.to_datetime(time_min)
     uhslc_gpd["time_max"] = pd.to_datetime(time_max)
     
@@ -677,9 +678,9 @@ def _preprocess_uhslc_erddap(ds):
     # drop rowSize before merging to avoid conflicts
     ds = ds.drop_vars("rowSize")
     
-    # dropping all geospatial attrs since they are not always consistent
+    # dropping all geospatial vars/attrs since they are not always consistent
     # UHSLC_ID=9 has geospatial_lat_min=-9.425 and geospatial_lat_max=-9.421
-    # https://github.com/Deltares/dfm_tools/issues/1192
+    # more info: https://github.com/Deltares/dfm_tools/issues/1192
     lon_attrs = ["geospatial_lon_min", "geospatial_lon_max", "Easternmost_Easting", "Westernmost_Easting"]
     lat_attrs = ["geospatial_lat_min", "geospatial_lat_max", "Northernmost_Northing", "Southernmost_Northing"]
     for attr in lon_attrs+lat_attrs:
@@ -1044,8 +1045,7 @@ def ssh_catalog_subset(source=None,
                    "ioc": ioc_ssh_read_catalog,
                    "cmems": cmems_my_ssh_read_catalog,
                    "cmems-nrt": cmems_nrt_ssh_read_catalog,
-                   "uhslc-fast": uhslc_fast_ssh_read_catalog,
-                   "uhslc-rqds": uhslc_rqds_ssh_read_catalog,
+                   "uhslc": uhslc_fast_ssh_read_catalog,
                    "psmsl-gnssir": psmsl_gnssir_ssh_read_catalog,
                    "rwsddl": rwsddl_ssh_read_catalog,
                    "gtsm3-era5-cds": gtsm3_era5_cds_ssh_read_catalog,
@@ -1090,8 +1090,7 @@ def ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
                    "ioc": ioc_ssh_retrieve_data,
                    "cmems": cmems_ssh_retrieve_data,
                    "cmems-nrt": cmems_ssh_retrieve_data,
-                   "uhslc-fast": uhslc_ssh_retrieve_data,
-                   "uhslc-rqds": uhslc_ssh_retrieve_data,
+                   "uhslc": uhslc_ssh_retrieve_data,
                    "psmsl-gnssir": psmsl_gnssir_ssh_retrieve_data,
                    "rwsddl": rwsddl_ssh_retrieve_data,
                    "gtsm3-era5-cds": gtsm3_era5_cds_ssh_retrieve_data,
