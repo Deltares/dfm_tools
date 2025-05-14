@@ -308,7 +308,10 @@ def cmems_ssh_read_catalog(source, overwrite=True):
 
 
 def _uhslc_get_json():
-    uhslc_gpd = gpd.read_file("https://uhslc.soest.hawaii.edu/data/meta.geojson", engine="fiona")
+    uhslc_gpd = gpd.read_file(
+        "https://uhslc.soest.hawaii.edu/data/meta.geojson",
+        engine="fiona"
+        )
     
     for drop_col in ["rq_basin", "rq_versions"]:
         if drop_col in uhslc_gpd.columns:
@@ -316,48 +319,41 @@ def _uhslc_get_json():
     
     uhslc_gpd = uhslc_gpd.set_index('uhslc_id', drop=False)
     
-    # shift from 0to360 to -180to180
+    # shift from 0to360 to -180to180, round off to avoid 134.463+180=314.46299999999997
+    def _lon_360_to_180(lon):
+        return round((lon + 180)%360 - 180, 10)
     from shapely import Point
-    geom_shift = [Point(((pnt.x + 180)%360 - 180), pnt.y) for pnt in uhslc_gpd.geometry]
+    geom_shift = [Point(_lon_360_to_180(pnt.x), pnt.y) for pnt in uhslc_gpd.geometry]
     uhslc_gpd.geometry = geom_shift
     return uhslc_gpd
 
 
-def uhslc_ssh_read_catalog(source):
+def uhslc_ssh_read_catalog():
     # TODO: country is "New Zealand" and country_code is 554. We would like country/country_code=NZL
-    # TODO: maybe use min of rqds and max of fast for time subsetting
-    # TODO: maybe enable merging of datasets?
     uhslc_gpd = _uhslc_get_json()
     
-    timespan_dict = {"uhslc-fast":"fd_span", "uhslc-rqds":"rq_span"}
-    timespan_var = timespan_dict[source]
-    time_min = uhslc_gpd[timespan_var].apply(lambda x: x["oldest"])
-    time_max = uhslc_gpd[timespan_var].apply(lambda x: x["latest"])
-    uhslc_gpd = uhslc_gpd.loc[~time_min.isnull()].copy()
-    uhslc_gpd["time_min"] = pd.to_datetime(time_min)
-    uhslc_gpd["time_max"] = pd.to_datetime(time_max)
+    time_min_rq = pd.to_datetime(uhslc_gpd["rq_span"].apply(lambda x: x["oldest"]))
+    time_max_rq = pd.to_datetime(uhslc_gpd["rq_span"].apply(lambda x: x["latest"]))
+    time_min_fd = pd.to_datetime(uhslc_gpd["fd_span"].apply(lambda x: x["oldest"]))
+    time_max_fd = pd.to_datetime(uhslc_gpd["fd_span"].apply(lambda x: x["latest"]))
+    # take the max of max and the min of min
+    time_min = pd.concat([time_min_rq, time_min_fd], axis=1).min(axis=1)
+    time_max = pd.concat([time_max_rq, time_max_fd], axis=1).max(axis=1)
+    uhslc_gpd["time_min"] = time_min
+    uhslc_gpd["time_max"] = time_max
     
     # remove accents from station names
     # https://github.com/Deltares/dfm_tools/issues/1172
     uhslc_gpd["name"] = uhslc_gpd["name"].apply(lambda x: _remove_accents(x))
     
     # define name/id columns
-    stat_names = source + "-" + uhslc_gpd['uhslc_id'].apply(lambda x: f"{x:03d}")
+    stat_names = "uhslc-" + uhslc_gpd['uhslc_id'].apply(lambda x: f"{x:03d}")
     uhslc_gpd["station_name_unique"] = stat_names
     rename_dict = {"name": "station_name", "uhslc_id": "station_id"}
     uhslc_gpd = uhslc_gpd.rename(rename_dict, axis=1)
     
-    uhslc_gpd["time_ndays"] = (uhslc_gpd['time_max'] - uhslc_gpd['time_min']).dt.total_seconds()/3600/24
-    return uhslc_gpd
-
-
-def uhslc_rqds_ssh_read_catalog():
-    uhslc_gpd = uhslc_ssh_read_catalog(source="uhslc-rqds")
-    return uhslc_gpd
-
-
-def uhslc_fast_ssh_read_catalog():
-    uhslc_gpd = uhslc_ssh_read_catalog(source="uhslc-fast")
+    time_diff = uhslc_gpd['time_max'] - uhslc_gpd['time_min']
+    uhslc_gpd["time_ndays"] = time_diff.dt.total_seconds()/3600/24
     return uhslc_gpd
 
 
@@ -673,45 +669,33 @@ def cmems_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None,
     return ds
 
 
-def uhslc_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None):
+def _preprocess_uhslc_erddap(ds):
+    # drop rowSize before merging to avoid conflicts
+    ds = ds.drop_vars("rowSize")
     
-    # TODO: maybe merge rqds/fast datasets automatically
-    # TODO: 5 meter offset?
+    # dropping all geospatial vars/attrs since they are not always consistent
+    # UHSLC_ID=7 has ds_rqds.latitude=7.333 and ds_fast.latitude=7.33
+    # UHSLC_ID=9 has geospatial_lat_min=-9.425 and geospatial_lat_max=-9.421
+    # more info: https://github.com/Deltares/dfm_tools/issues/1192
+    lon_attrs = ["geospatial_lon_min", "geospatial_lon_max", "Easternmost_Easting", "Westernmost_Easting"]
+    lat_attrs = ["geospatial_lat_min", "geospatial_lat_max", "Northernmost_Northing", "Southernmost_Northing"]
+    for attr in lon_attrs+lat_attrs:
+        ds.attrs.pop(attr, None)
+    ds = ds.drop_vars(["latitude", "longitude"], errors='ignore')
     
-    # docs from https://ioos.github.io/erddapy/ and https://ioos.github.io/erddapy/02-extras-output.html#
-    
-    # setup server connection, this takes no time so does not have to be cached
-    server = "https://uhslc.soest.hawaii.edu/erddap"
-    e = ERDDAP(server=server, protocol="tabledap", response="nc") #opendap is way slower than nc/csv/html
-    
-    dataset_id_dict = {"uhslc-fast":"global_hourly_fast",
-                       "uhslc-rqds":"global_hourly_rqds"}
-    
-    uhslc_id = row.name
-    source = row["source"]
-    dataset_id = dataset_id_dict[source]
-    e.dataset_id = dataset_id
-    
-    # set erddap constraints
-    e.constraints = {}
-    e.constraints["uhslc_id="] = uhslc_id
-    if time_min is not None:
-        e.constraints["time>="] = pd.Timestamp(time_min)
-    if time_max is not None:
-        e.constraints["time<="] = pd.Timestamp(time_max)
-    
-    from httpx import HTTPError
-    try:
-        ds = e.to_xarray()
-    except HTTPError:
-        # no data so early return
-        return
+    # drop station_name since it conflicts between rqds and fast uhslc_id 53/108/more
+    ds = ds.drop_vars(["station_name"], errors='ignore')
+
+    # reduce dataset size by reducing all constant variables defined for each timestep
+    constant_vars = ['station_country', 'station_country_code', 'gloss_id', 'ssc_id', 'last_rq_date']
+    reduce_vars = set(ds.variables).intersection(constant_vars)
+    logging.debug(f"UHSLC reducing variables {reduce_vars}")
+    for var in reduce_vars:
+        ds[var] = ds[var].max(dim='obs')
     
     # reduce timeseries dimension
     assert ds.sizes["timeseries"] == 1
     ds = ds.max(dim="timeseries", keep_attrs=True)
-    # check if lat/lon variables were also dropped, these are already present as attrs
-    assert "latitude" not in ds.variables
     
     # change units to meters
     with xr.set_options(keep_attrs=True):
@@ -722,7 +706,91 @@ def uhslc_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None):
     
     # set time index
     ds = ds.set_index(obs="time").rename(obs="time")
-    ds['time'] = ds.time.dt.round('s') #round to seconds
+    # round times to seconds, should probably not be necessary
+    ds['time'] = ds.time.dt.round('s')
+    return ds
+
+def _uhslc_raise_non_404(err):
+    """
+    only raises HTTPError with code!=404, so at least two errors are filtered/accepted
+    and let the code continue without breaking.
+    
+    *** httpx.HTTPError: Error {
+        code=404;
+        message="Not Found: Your query produced no matching results. (nRows = 0)";
+    }
+    
+    *** httpx.HTTPError: Error {
+        code=404;
+        message="Not Found: Your query produced no matching results. 
+        (time>=3000-01-01T00:00:00Z is outside of the variable's actual_range: 
+         1846-01-04T00:00:00Z to 2023-12-31T22:59:59Z)";
+    }
+    
+    Any other errors, like timeouts (504) or outages (503), are still raised.
+    """
+    if not "code=404" in str(err):
+        raise
+
+
+def uhslc_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None):
+    # docs from https://ioos.github.io/erddapy/ and https://ioos.github.io/erddapy/02-extras-output.html#
+    
+    # setup server connection, this takes no time so does not have to be cached
+    # opendap is way slower than nc/csv/html
+    server = "https://uhslc.soest.hawaii.edu/erddap"
+    e = ERDDAP(server=server, protocol="tabledap", response="nc")
+    
+    # set erddap constraints
+    e.constraints = {}
+    uhslc_id = row.name
+    e.constraints["uhslc_id="] = uhslc_id
+    if time_min is not None:
+        e.constraints["time>="] = pd.Timestamp(time_min)
+    if time_max is not None:
+        e.constraints["time<="] = pd.Timestamp(time_max)
+    
+    from httpx import HTTPError
+    ds_list = []
+    try:
+        e.dataset_id = "global_hourly_rqds"
+        ds_rqds = e.to_xarray()
+        ds_rqds = _preprocess_uhslc_erddap(ds_rqds)
+        ds_list.append(ds_rqds)
+    except HTTPError as err:
+        _uhslc_raise_non_404(err)
+    try:
+        e.dataset_id = "global_hourly_fast"
+        ds_fast = e.to_xarray()
+        ds_fast = _preprocess_uhslc_erddap(ds_fast)
+        ds_list.append(ds_fast)
+    except HTTPError as err:
+        _uhslc_raise_non_404(err)
+    
+    # return early if no data present
+    if len(ds_list) == 0:
+        return
+    
+    # merge/concat: coords/data_vars/compat/combine_attrs make sure errors are raised
+    # if the datasets are not equal enough. All inequalities should be resolved by
+    # _preprocess_uhslc_erddap() so there should be no error.
+    ds = xr.concat(
+        ds_list,
+        dim='time',
+        coords='minimal',
+        data_vars='minimal',
+        compat='equals',
+        combine_attrs='drop_conflicts',
+        )
+    
+    # drop duplicates, keep=first keeps rqds, sort by time
+    ds = ds.drop_duplicates(dim='time', keep='first').sortby('time')
+    
+    # re-add some important conflicting attributes that were dropped by xr.concat
+    if len(ds_list) == 2:
+        for attr in ["acknowledgement", "processing_level", "title"]:
+            ds.attrs[f"{attr}_rqds"] = ds_rqds.attrs[attr]
+            ds.attrs[f"{attr}_fast"] = ds_fast.attrs[attr]
     return ds
 
 
@@ -1004,8 +1072,7 @@ def ssh_catalog_subset(source=None,
                    "ioc": ioc_ssh_read_catalog,
                    "cmems": cmems_my_ssh_read_catalog,
                    "cmems-nrt": cmems_nrt_ssh_read_catalog,
-                   "uhslc-fast": uhslc_fast_ssh_read_catalog,
-                   "uhslc-rqds": uhslc_rqds_ssh_read_catalog,
+                   "uhslc": uhslc_ssh_read_catalog,
                    "psmsl-gnssir": psmsl_gnssir_ssh_read_catalog,
                    "rwsddl": rwsddl_ssh_read_catalog,
                    "gtsm3-era5-cds": gtsm3_era5_cds_ssh_read_catalog,
@@ -1050,8 +1117,7 @@ def ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
                    "ioc": ioc_ssh_retrieve_data,
                    "cmems": cmems_ssh_retrieve_data,
                    "cmems-nrt": cmems_ssh_retrieve_data,
-                   "uhslc-fast": uhslc_ssh_retrieve_data,
-                   "uhslc-rqds": uhslc_ssh_retrieve_data,
+                   "uhslc": uhslc_ssh_retrieve_data,
                    "psmsl-gnssir": psmsl_gnssir_ssh_retrieve_data,
                    "rwsddl": rwsddl_ssh_retrieve_data,
                    "gtsm3-era5-cds": gtsm3_era5_cds_ssh_retrieve_data,
