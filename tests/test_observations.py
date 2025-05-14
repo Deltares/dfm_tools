@@ -93,14 +93,7 @@ def test_ssh_retrieve_data(source, tmp_path):
         bool_hoekvhld = ssc_catalog_gpd["Code"].isin(["HOEKVHLD"])
         ssc_catalog_gpd = ssc_catalog_gpd.loc[bool_hoekvhld]
     
-    index_dict = {"uhslc":2, 
-                  "psmsl-gnssir":0, "ioc":0, "rwsddl":0, 
-                  "cmems":0, "cmems-nrt":0, # requires CMEMS credentials
-                  "gtsm3-era5-cds":0, # requires CDS credentials
-                  "gesla3":0,
-                  }
-    index = index_dict[source]
-    ssc_catalog_gpd_sel = ssc_catalog_gpd.iloc[index:index+1]
+    ssc_catalog_gpd_sel = ssc_catalog_gpd.iloc[[0]]
     
     dfmt.ssh_retrieve_data(ssc_catalog_gpd_sel, dir_output=tmp_path, 
                            time_min=time_min, time_max=time_max)
