@@ -710,6 +710,28 @@ def _preprocess_uhslc_erddap(ds):
     ds['time'] = ds.time.dt.round('s')
     return ds
 
+def _uhslc_raise_non_404(err):
+    """
+    only raises HTTPError with code!=404, so at least two errors are filtered/accepted
+    and let the code continue without breaking.
+    
+    *** httpx.HTTPError: Error {
+        code=404;
+        message="Not Found: Your query produced no matching results. (nRows = 0)";
+    }
+    
+    *** httpx.HTTPError: Error {
+        code=404;
+        message="Not Found: Your query produced no matching results. 
+        (time>=3000-01-01T00:00:00Z is outside of the variable's actual_range: 
+         1846-01-04T00:00:00Z to 2023-12-31T22:59:59Z)";
+    }
+    
+    Any other errors, like timeouts (504) or outages (503), are still raised.
+    """
+    if not "code=404" in str(err):
+        raise
+
 
 def uhslc_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None):
     # docs from https://ioos.github.io/erddapy/ and https://ioos.github.io/erddapy/02-extras-output.html#
@@ -735,15 +757,15 @@ def uhslc_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None):
         ds_rqds = e.to_xarray()
         ds_rqds = _preprocess_uhslc_erddap(ds_rqds)
         ds_list.append(ds_rqds)
-    except HTTPError:
-        pass
+    except HTTPError as err:
+        _uhslc_raise_non_404(err)
     try:
         e.dataset_id = "global_hourly_fast"
         ds_fast = e.to_xarray()
         ds_fast = _preprocess_uhslc_erddap(ds_fast)
         ds_list.append(ds_fast)
-    except HTTPError:
-        pass
+    except HTTPError as err:
+        _uhslc_raise_non_404(err)
     
     # return early if no data present
     if len(ds_list) == 0:
