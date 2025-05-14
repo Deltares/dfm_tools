@@ -308,7 +308,10 @@ def cmems_ssh_read_catalog(source, overwrite=True):
 
 
 def _uhslc_get_json():
-    uhslc_gpd = gpd.read_file("https://uhslc.soest.hawaii.edu/data/meta.geojson", engine="fiona")
+    uhslc_gpd = gpd.read_file(
+        "https://uhslc.soest.hawaii.edu/data/meta.geojson",
+        engine="fiona"
+        )
     
     for drop_col in ["rq_basin", "rq_versions"]:
         if drop_col in uhslc_gpd.columns:
@@ -316,49 +319,41 @@ def _uhslc_get_json():
     
     uhslc_gpd = uhslc_gpd.set_index('uhslc_id', drop=False)
     
-    # shift from 0to360 to -180to180
+    # shift from 0to360 to -180to180, round off to avoid 134.463+180=314.46299999999997
+    def _lon_360_to_180(lon):
+        return round((lon + 180)%360 - 180, 10)
     from shapely import Point
-    geom_shift = [Point(((pnt.x + 180)%360 - 180), pnt.y) for pnt in uhslc_gpd.geometry]
+    geom_shift = [Point(_lon_360_to_180(pnt.x), pnt.y) for pnt in uhslc_gpd.geometry]
     uhslc_gpd.geometry = geom_shift
     return uhslc_gpd
 
 
-def uhslc_ssh_read_catalog(source):
+def uhslc_ssh_read_catalog():
     # TODO: country is "New Zealand" and country_code is 554. We would like country/country_code=NZL
     uhslc_gpd = _uhslc_get_json()
     
-    time_min_rq = uhslc_gpd["rq_span"].apply(lambda x: x["oldest"])
-    time_max_rq = uhslc_gpd["rq_span"].apply(lambda x: x["latest"])
-    time_min_fd = uhslc_gpd["fd_span"].apply(lambda x: x["oldest"])
-    time_max_fd = uhslc_gpd["fd_span"].apply(lambda x: x["latest"])
-    # combine time extents, replace None with values from other dataset. Inversed order
-    # for min/max, resulting in the max of max and the min of min.
-    time_min = time_min_rq.fillna(time_min_fd)
-    time_max = time_max_fd.fillna(time_max_rq)
-    uhslc_gpd["time_min"] = pd.to_datetime(time_min)
-    uhslc_gpd["time_max"] = pd.to_datetime(time_max)
+    time_min_rq = pd.to_datetime(uhslc_gpd["rq_span"].apply(lambda x: x["oldest"]))
+    time_max_rq = pd.to_datetime(uhslc_gpd["rq_span"].apply(lambda x: x["latest"]))
+    time_min_fd = pd.to_datetime(uhslc_gpd["fd_span"].apply(lambda x: x["oldest"]))
+    time_max_fd = pd.to_datetime(uhslc_gpd["fd_span"].apply(lambda x: x["latest"]))
+    # take the max of max and the min of min
+    time_min = pd.concat([time_min_rq, time_min_fd], axis=1).min(axis=1)
+    time_max = pd.concat([time_max_rq, time_max_fd], axis=1).max(axis=1)
+    uhslc_gpd["time_min"] = time_min
+    uhslc_gpd["time_max"] = time_max
     
     # remove accents from station names
     # https://github.com/Deltares/dfm_tools/issues/1172
     uhslc_gpd["name"] = uhslc_gpd["name"].apply(lambda x: _remove_accents(x))
     
     # define name/id columns
-    stat_names = source + "-" + uhslc_gpd['uhslc_id'].apply(lambda x: f"{x:03d}")
+    stat_names = "uhslc-" + uhslc_gpd['uhslc_id'].apply(lambda x: f"{x:03d}")
     uhslc_gpd["station_name_unique"] = stat_names
     rename_dict = {"name": "station_name", "uhslc_id": "station_id"}
     uhslc_gpd = uhslc_gpd.rename(rename_dict, axis=1)
     
-    uhslc_gpd["time_ndays"] = (uhslc_gpd['time_max'] - uhslc_gpd['time_min']).dt.total_seconds()/3600/24
-    return uhslc_gpd
-
-
-def uhslc_rqds_ssh_read_catalog():
-    uhslc_gpd = uhslc_ssh_read_catalog(source="uhslc-rqds")
-    return uhslc_gpd
-
-
-def uhslc_fast_ssh_read_catalog():
-    uhslc_gpd = uhslc_ssh_read_catalog(source="uhslc-fast")
+    time_diff = uhslc_gpd['time_max'] - uhslc_gpd['time_min']
+    uhslc_gpd["time_ndays"] = time_diff.dt.total_seconds()/3600/24
     return uhslc_gpd
 
 
@@ -679,13 +674,14 @@ def _preprocess_uhslc_erddap(ds):
     ds = ds.drop_vars("rowSize")
     
     # dropping all geospatial vars/attrs since they are not always consistent
+    # UHSLC_ID=7 has ds_rqds.latitude=7.333 and ds_fast.latitude=7.33
     # UHSLC_ID=9 has geospatial_lat_min=-9.425 and geospatial_lat_max=-9.421
     # more info: https://github.com/Deltares/dfm_tools/issues/1192
     lon_attrs = ["geospatial_lon_min", "geospatial_lon_max", "Easternmost_Easting", "Westernmost_Easting"]
     lat_attrs = ["geospatial_lat_min", "geospatial_lat_max", "Northernmost_Northing", "Southernmost_Northing"]
     for attr in lon_attrs+lat_attrs:
         ds.attrs.pop(attr, None)
-    ds = ds.drop(["latitude","longitude"], errors='ignore')
+    ds = ds.drop_vars(["latitude","longitude"], errors='ignore')
 
     # reduce dataset size by reducing all constant variables defined for each timestep
     constant_vars = ['station_name', 'station_country', 'station_country_code', 'gloss_id', 'ssc_id', 'last_rq_date']
@@ -709,7 +705,6 @@ def _preprocess_uhslc_erddap(ds):
     ds = ds.set_index(obs="time").rename(obs="time")
     # round times to seconds, should probably not be necessary
     ds['time'] = ds.time.dt.round('s')
-
     return ds
 
 
@@ -1045,7 +1040,7 @@ def ssh_catalog_subset(source=None,
                    "ioc": ioc_ssh_read_catalog,
                    "cmems": cmems_my_ssh_read_catalog,
                    "cmems-nrt": cmems_nrt_ssh_read_catalog,
-                   "uhslc": uhslc_fast_ssh_read_catalog,
+                   "uhslc": uhslc_ssh_read_catalog,
                    "psmsl-gnssir": psmsl_gnssir_ssh_read_catalog,
                    "rwsddl": rwsddl_ssh_read_catalog,
                    "gtsm3-era5-cds": gtsm3_era5_cds_ssh_read_catalog,
