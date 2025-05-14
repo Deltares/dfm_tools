@@ -16,14 +16,16 @@ This release drops support for Python 3.9.
 - improved performance of `dfmt.uda_to_faces()` by using xugrid alternative in [#1177](https://github.com/Deltares/dfm_tools/pull/1177)
 - check if all requested variables are present in merged dataset in `dfmt.preprocess_merge_meteofiles_era5()` in [#1184](https://github.com/Deltares/dfm_tools/pull/1184)
 - remove accents from UHSLC-fast insitu catalog so `S64` datatype can be applied in `_make_hydrotools_consistent()` in [#1186](https://github.com/Deltares/dfm_tools/pull/1186)
-- set coords and reduce filesize of retrieved observations in `dfmt.ssh_retrieve_data()` in [#1189](https://github.com/Deltares/dfm_tools/pull/1189)
 
 ### Deprecated
 - removed `dfmt.preprocess_woa` since WOA merging fails and is not used in [#1161](https://github.com/Deltares/dfm_tools/pull/1161)
 - support for python 3.9 is dropped in [#1177](https://github.com/Deltares/dfm_tools/pull/1177)
+- sources "uhslc-fast" and "uhslc-rqds" in `dfmt.ssh_catalog_subset()` and `dfmt.ssh_retrieve_data()` in favor of "uhslc" in [#1193](https://github.com/Deltares/dfm_tools/pull/1193)
 
 ### Feat
 - added cross-referencing SSC/IOC/UHSLC stations and distances in `ssc_ssh_read_catalog()` in [#1191](https://github.com/Deltares/dfm_tools/pull/1191)
+- set coords and reduce filesize of retrieved observations in `dfmt.ssh_retrieve_data()` in [#1189](https://github.com/Deltares/dfm_tools/pull/1189)
+- auto-merging of uhslc fast and rqds datasets in `dfmt.ssh_retrieve_data()` in [#1193](https://github.com/Deltares/dfm_tools/pull/1193)
 
 
 ## 0.36.0 (2025-03-18)
