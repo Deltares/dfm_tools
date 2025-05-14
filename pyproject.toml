@@ -18,12 +18,12 @@ dependencies = [
 	"numpy>=1.25",
 	#matplotlib>=3.7.0 successfully creates contour colorbar on uniform values and has several other features
 	"matplotlib>=3.7.0",
-	#pandas>=2.0.2 fixes numpy deprecationwarning: https://github.com/pandas-dev/pandas/issues/53236
-	"pandas>=2.0.2",
+	#pandas>=2.1.2 Dataframe/Series containing [dict] is a list instead of a dict from here onwards: https://github.com/Deltares/dfm_tools/issues/1194
+	"pandas>=2.1.2",
 	#shapely>=2.0.0 fixes "AttributeError: module 'shapely' has no attribute 'GeometryType'"
 	"shapely>=2.0.0",
-	#geopandas>=0.13.0 supports shapely>=2.0.0
-	"geopandas>=0.13.0",
+	#geopandas>=0.14.0 resolves SeriesApply FutureWarning: https://github.com/Deltares/dfm_tools/issues/1194
+	"geopandas>=0.14.0",
 	#fiona>=1.9 contains sql where filter
 	"fiona>=1.9",
 	#contextily>=1.6.2 has fixed axis scaling: https://github.com/geopandas/contextily/issues/251
