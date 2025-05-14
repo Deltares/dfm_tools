@@ -759,6 +759,12 @@ def uhslc_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None):
     
     # drop duplicates, keep=first keeps rqds, sort by time
     ds = ds.drop_duplicates(dim='time', keep='first').sortby('time')
+    
+    # re-add some important conflicting attributes that were dropped by xr.concat
+    if len(ds_list) == 2:
+        for attr in ["acknowledgement", "processing_level", "title"]:
+            ds.attrs[f"{attr}_rqds"] = ds_rqds.attrs[attr]
+            ds.attrs[f"{attr}_fast"] = ds_fast.attrs[attr]
     return ds
 
 
