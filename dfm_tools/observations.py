@@ -681,10 +681,13 @@ def _preprocess_uhslc_erddap(ds):
     lat_attrs = ["geospatial_lat_min", "geospatial_lat_max", "Northernmost_Northing", "Southernmost_Northing"]
     for attr in lon_attrs+lat_attrs:
         ds.attrs.pop(attr, None)
-    ds = ds.drop_vars(["latitude","longitude"], errors='ignore')
+    ds = ds.drop_vars(["latitude", "longitude"], errors='ignore')
+    
+    # drop station_name since it conflicts between rqds and fast uhslc_id 53/108/more
+    ds = ds.drop_vars(["station_name"], errors='ignore')
 
     # reduce dataset size by reducing all constant variables defined for each timestep
-    constant_vars = ['station_name', 'station_country', 'station_country_code', 'gloss_id', 'ssc_id', 'last_rq_date']
+    constant_vars = ['station_country', 'station_country_code', 'gloss_id', 'ssc_id', 'last_rq_date']
     reduce_vars = set(ds.variables).intersection(constant_vars)
     logging.debug(f"UHSLC reducing variables {reduce_vars}")
     for var in reduce_vars:
