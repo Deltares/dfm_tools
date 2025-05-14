@@ -715,8 +715,9 @@ def uhslc_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None):
     # docs from https://ioos.github.io/erddapy/ and https://ioos.github.io/erddapy/02-extras-output.html#
     
     # setup server connection, this takes no time so does not have to be cached
+    # opendap is way slower than nc/csv/html
     server = "https://uhslc.soest.hawaii.edu/erddap"
-    e = ERDDAP(server=server, protocol="tabledap", response="nc") #opendap is way slower than nc/csv/html
+    e = ERDDAP(server=server, protocol="tabledap", response="nc")
     
     # set erddap constraints
     e.constraints = {}
