@@ -20,7 +20,7 @@ This release drops support for Python 3.9.
 ### Deprecated
 - removed `dfmt.preprocess_woa` since WOA merging fails and is not used in [#1161](https://github.com/Deltares/dfm_tools/pull/1161)
 - support for python 3.9 is dropped in [#1177](https://github.com/Deltares/dfm_tools/pull/1177)
-- sources "uhslc-fast" and "uhslc-rqds" in `dfmt.ssh_catalog_subset()` and `dfmt.ssh_retrieve_data()` in favor of "uhslc" in [#1193](https://github.com/Deltares/dfm_tools/pull/1193)
+- deprecated sources "uhslc-fast" and "uhslc-rqds" in `dfmt.ssh_catalog_subset()` and `dfmt.ssh_retrieve_data()` in favor of "uhslc" in [#1193](https://github.com/Deltares/dfm_tools/pull/1193)
 
 ### Feat
 - added cross-referencing SSC/IOC/UHSLC stations and distances in `ssc_ssh_read_catalog()` in [#1191](https://github.com/Deltares/dfm_tools/pull/1191)
