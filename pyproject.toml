@@ -61,7 +61,7 @@ classifiers = [
 	"Intended Audience :: Science/Research",
 	"Operating System :: OS Independent",
 	"Topic :: Scientific/Engineering :: Information Analysis",
-	"License-Expression: LGPL-3.0",
+	"License-Expression :: LGPL-3.0",
 	"Programming Language :: Python",
 	"Programming Language :: Python :: 3",
 	"Programming Language :: Python :: 3.10",
