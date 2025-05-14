@@ -4,12 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dfm_tools"
-version = "0.36.1"
+version = "0.37.0"
 maintainers = [{ name = "Jelmer Veenstra", email = "jelmer.veenstra@deltares.nl" }]
 description = "dfm_tools are pre- and post-processing tools for Delft3D FM"
 readme = "README.md"
 keywords = ["dfm_tools", "D-FlowFM", "D-HYDRO", "post-processing", "pre-processing", "mapfiles", "hisfiles", "modelbuilder"]
-license = { text = "LGPLv3" }
+license = "LGPL-3.0"
+license-files = ["LICENSE"]
 requires-python = ">=3.10"
 dependencies = [
 	#scipy>=1.13.0 is the first version to support py310 (1.8.0 also) and including numpy v2 support
@@ -60,7 +61,7 @@ classifiers = [
 	"Intended Audience :: Science/Research",
 	"Operating System :: OS Independent",
 	"Topic :: Scientific/Engineering :: Information Analysis",
-	"License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
+	"License-Expression: LGPL-3.0",
 	"Programming Language :: Python",
 	"Programming Language :: Python :: 3",
 	"Programming Language :: Python :: 3.10",

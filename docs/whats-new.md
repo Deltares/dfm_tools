@@ -1,6 +1,6 @@
 # What's new
 
-## UNRELEASED
+## 0.37.0 (2025-05-14)
 
 This release drops support for Python 3.9.
 
