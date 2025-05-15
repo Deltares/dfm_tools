@@ -12,7 +12,6 @@ import ddlpy
 import numpy as np
 import dfm_tools as dfmt
 from dfm_tools.observations import (ssc_ssh_read_catalog,
-                                    ssc_add_linked_stations,
                                     ssc_sscid_from_otherid,
                                     ssc_ssh_subset_groups,
                                     gtsm3_era5_cds_ssh_read_catalog,

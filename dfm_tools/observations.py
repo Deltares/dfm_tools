@@ -186,6 +186,9 @@ def ssc_add_linked_stations(ssc_catalog_gpd):
     ioc_catalog_gpd = _ioc_get_json(showall="all")
     # dropping duplicated code/geometry combinations
     ioc_catalog_gpd = ioc_catalog_gpd.drop_duplicates(['Code','geometry'])
+    # ioc ids are not case sensitive, so convert entire IOC index to lowercase and 
+    # convert linked_id to lowercase to avoid KeyError
+    ioc_catalog_gpd.index = ioc_catalog_gpd.index.str.lower()
 
     linked_dict = {"ioc": ioc_catalog_gpd,
                    "uhslc": uhslc_catalog_gpd,
@@ -198,6 +201,7 @@ def ssc_add_linked_stations(ssc_catalog_gpd):
         station_check_dist_all = []
         for linked_name, linked_gpd in linked_dict.items():
             for linked_id in row[linked_name]:
+                linked_id = linked_id.lower()
                 geom = linked_gpd.loc[linked_id]["geometry"]
                 x2 = geom.x
                 y2 = geom.y
