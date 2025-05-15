@@ -609,7 +609,7 @@ def gtsm3_era5_cds_ssh_read_catalog():
     return station_list_gpd  
 
 
-def cmems_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None,
+def cmems_ssh_retrieve_data(row, time_min=None, time_max=None,
                             level="WARNING"):
     """
     Retrieve data from copernicusmarine files service
@@ -737,7 +737,7 @@ def _uhslc_raise_non_404(err):
         raise
 
 
-def uhslc_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None):
+def uhslc_ssh_retrieve_data(row, time_min=None, time_max=None):
     # docs from https://ioos.github.io/erddapy/ and https://ioos.github.io/erddapy/02-extras-output.html#
     
     # setup server connection, this takes no time so does not have to be cached
@@ -813,7 +813,7 @@ def gesla3_cache_zipfile(file_gesla3_data=None):
     return gesla3_zip
 
 
-def gesla3_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None,
+def gesla3_ssh_retrieve_data(row, time_min=None, time_max=None,
                              file_gesla3_data=None):
     
     # get cached gesla3 zipfile instance
@@ -852,7 +852,7 @@ def gesla3_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None,
     return ds
 
 
-def ioc_ssh_retrieve_data(row, dir_output, time_min, time_max, subset_hourly=False):
+def ioc_ssh_retrieve_data(row, time_min, time_max, subset_hourly=False):
     
     # https://www.ioc-sealevelmonitoring.org/service.php?query=help
     
@@ -906,7 +906,7 @@ def ioc_ssh_retrieve_data(row, dir_output, time_min, time_max, subset_hourly=Fal
     return ds
 
 
-def psmsl_gnssir_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None):
+def psmsl_gnssir_ssh_retrieve_data(row, time_min=None, time_max=None):
     
     # https://psmsl.org/data/gnssir/gnssir_daily_means.html
     # https://psmsl.org/data/gnssir/gnssir_example.html (also contains IOC retrieval example)
@@ -933,7 +933,7 @@ def psmsl_gnssir_ssh_retrieve_data(row, dir_output, time_min=None, time_max=None
     return ds
 
 
-def rwsddl_ssh_retrieve_data(row, dir_output, time_min, time_max):
+def rwsddl_ssh_retrieve_data(row, time_min, time_max):
     
     if time_min is None or time_max is None:
         raise ValueError("cannot supply None for 'time_min' or 'time_max' to 'rwsddl_ssh_retrieve_data()'")
@@ -986,7 +986,6 @@ def rwsddl_ssh_retrieve_data(row, dir_output, time_min, time_max):
 
 
 def gtsm3_era5_cds_ssh_retrieve_data(row,
-                                     dir_output,
                                      time_min=None,
                                      time_max=None,
                                      time_freq='10_min',
@@ -1138,7 +1137,7 @@ def ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
     for idx_arbitrary, row in ssh_catalog_gpd.iterrows():
         irow = ssh_catalog_gpd.index.tolist().index(idx_arbitrary)
         print(irow+1, end=" ")
-        ds = retrieve_data_func(row, dir_output, time_min=time_min, time_max=time_max, **kwargs)
+        ds = retrieve_data_func(row, time_min=time_min, time_max=time_max, **kwargs)
         if ds is None:
             print("[NODATA] ",end="")
             continue

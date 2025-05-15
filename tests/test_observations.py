@@ -183,7 +183,6 @@ def test_gtsm3_era5_cds_ssh_retrieve_data_invalidfreq_nonetimes():
     with pytest.raises(ValueError) as e:
         gtsm3_era5_cds_ssh_retrieve_data(
             row=df.iloc[0],
-            dir_output=".",
             time_min=None,
             time_max=None,
             time_freq='10min',
