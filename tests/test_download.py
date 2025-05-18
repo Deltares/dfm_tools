@@ -132,7 +132,7 @@ def test_cds_credentials_oldurl_incorrectkey_rcfile():
     with pytest.raises(ValueError) as e:
         with pytest.warns(UserWarning) as w:
             cds_credentials()
-    assert "Old CDS URL found" in str(e.value)
+    assert "This means an old/incorrect CDSAPI URL was found" in str(e.value)
     assert "The CDS/ECMWF apikey file (~/.cdsapirc) was deleted" in str(e.value)
     assert "404 Client Error: Not Found for url:" in str(w[0].message)
     
@@ -143,7 +143,7 @@ def test_cds_credentials_oldurl_incorrectkey_rcfile():
     with pytest.raises(ValueError) as e:
         with pytest.warns(UserWarning) as w:
             cds_credentials()
-    assert "Old CDS URL found" in str(e.value)
+    assert "This means an old CDSAPI URL was found" in str(e.value)
     assert "The CDS/ECMWF apikey file (~/.cdsapirc) was deleted" in str(e.value)
     assert "certificate verify failed" in str(w[0].message)
     
@@ -164,7 +164,7 @@ def test_cds_credentials_oldurl_incorrectkey_envvars():
     with pytest.raises(ValueError) as e:
         with pytest.warns(UserWarning) as w:
             cds_credentials()
-    assert "Old CDS URL found" in str(e.value)
+    assert "This means an old/incorrect CDSAPI URL was found" in str(e.value)
     assert "The CDS/ECMWF apikey file (~/.cdsapirc) was deleted" in str(e.value)
     assert "404 Client Error: Not Found for url:" in str(w[0].message)
     
@@ -174,7 +174,7 @@ def test_cds_credentials_oldurl_incorrectkey_envvars():
     with pytest.raises(ValueError) as e:
         with pytest.warns(UserWarning) as w:
             cds_credentials()
-    assert "Old CDS URL found" in str(e.value)
+    assert "This means an old CDSAPI URL was found" in str(e.value)
     assert "The CDS/ECMWF apikey file (~/.cdsapirc) was deleted" in str(e.value)
     assert "certificate verify failed" in str(w[0].message)
 
@@ -195,7 +195,7 @@ def test_cds_credentials_newurl_oldkey_rcfile():
     cds_set_credentials_rcfile(cds_url_temp, cds_apikey_temp)
     with pytest.raises(ValueError) as e:
         cds_credentials()
-    assert "Old CDS API-key found (with :)" in str(e.value)
+    assert "This means an old CDSAPI KEY was found (with :)" in str(e.value)
     assert "The CDS/ECMWF apikey file (~/.cdsapirc) was deleted" in str(e.value)
     
     # restore credentials file/envvars
@@ -214,7 +214,7 @@ def test_cds_credentials_newurl_oldkey_envvars():
     os.environ["CDSAPI_KEY"] = "olduid:old-api-key"
     with pytest.raises(ValueError) as e:
         cds_credentials()
-    assert "Old CDS API-key found (with :)" in str(e.value)
+    assert "This means an old CDSAPI KEY was found (with :)" in str(e.value)
     assert "The CDS/ECMWF apikey file (~/.cdsapirc) was deleted" in str(e.value)
     
     # restore credentials file/envvars
