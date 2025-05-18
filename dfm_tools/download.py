@@ -10,6 +10,7 @@ from copernicusmarine.core_functions.credentials_utils import InvalidUsernameOrP
 import cftime
 import getpass
 from requests import HTTPError
+from requests.exceptions import SSLError
 import logging
 
 __all__ = [
@@ -133,8 +134,6 @@ def cds_credentials():
     try:
         # gets url/key from env vars or ~/.cdsapirc file
         c = cdsapi.Client()
-        cds_url = c.url
-        cds_apikey = c.key
     except Exception as e:
         if "Missing/incomplete configuration file" in str(e):
             # query apikey if not present in file or envvars
@@ -145,28 +144,31 @@ def cds_credentials():
             cds_url = cds_url_default
             cds_apikey = getpass.getpass("\nEnter your ECMWF API-key (string with dashes): ")
             cds_set_credentials(cds_url, cds_apikey)
+            c = cdsapi.Client()
         else:
             raise e
     
-    # remove cdsapirc file or env vars if the url/apikey are according to old format
-    old_urls = [
-        "https://cds.climate.copernicus.eu/api/v2",
-        "https://cds-beta.climate.copernicus.eu/api",
-        ]
-    if cds_url in old_urls:
-        # to avoid "HTTPError: 401 Client Error: Unauthorized for url"
-        cds_remove_credentials_raise(reason='Old CDS URL found')
-    if ":" in cds_apikey:
-        # to avoid "AttributeError: 'Client' object has no attribute 'client'"
-        cds_remove_credentials_raise(reason='Old CDS API-key found (with :)')
-    
-    # check if the authentication works
+    # check if the authentication works and catch some exceptions that occur
+    # with old or incorrect cdsapi urls or keys
     try:
-        c = cdsapi.Client()
+        # c = cdsapi.Client()
         c.client.check_authentication()
         print('found ECMWF API-key and authorization successful')
-    except HTTPError as e:
-        cds_remove_credentials_raise(reason=str(e))
+    except AttributeError as e:
+        #"AttributeError: 'Client' object has no attribute 'client'"
+        reason = str(e) + ". This means an old CDSAPI KEY was found (with :)"
+        cds_remove_credentials_raise(reason=reason)
+    except (HTTPError, SSLError) as e:
+        reason = str(e)
+        if "SSLError" in str(e):
+            # SSLError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: 
+            # self-signed certificate (_ssl.c:1000)
+            reason += ". This means an old CDSAPI URL was found (with cds-beta)"
+        elif "404 Client Error: Not Found for url:" in str(e):
+            # HTTPError: 404 Client Error: Not Found for url: https://cds.climate.
+            # copernicus.eu/api/v2/profiles/v1/account/verification/pat
+            reason += "This means an old/incorrect CDSAPI URL was found (e.g. with v2)"
+        cds_remove_credentials_raise(reason=reason)
 
 
 def cds_get_file():
