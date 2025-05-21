@@ -712,11 +712,23 @@ def _preprocess_uhslc_erddap(ds):
     ds = ds.set_index(obs="time").rename(obs="time")
     # round times to seconds, should probably not be necessary
     ds['time'] = ds.time.dt.round('s')
+    
+    # rename some important conflicting attributes to avoid dropping by xr.concat
+    dsid = ds.attrs["id"] # global_hourly_rqds/global_hourly_fast
+    dsid_short = dsid.split("_")[-1] # rqds/fast
+    for attr in ["acknowledgement", "processing_level", "title"]:
+        ds.attrs[f"{attr}_{dsid_short}"] = ds.attrs.pop(attr)
+
     return ds
 
-def _uhslc_raise_non_404(err):
+
+def _uhslc_ssh_retrieve_data_oneds(e, ds_list):
     """
-    only raises HTTPError with code!=404, so at least two errors are filtered/accepted
+    retrieve rqds/fast dataset by calling ERDDAP.to_xarray(). If this succeeds the
+    dataset is preprocessed and appended to ds_list.
+    
+    It is also possible that the request fails with a HTTPError. In that case
+    only raise a HTTPError with code!=404, so at least two errors are filtered/accepted
     and let the code continue without breaking.
     
     *** httpx.HTTPError: Error {
@@ -731,13 +743,22 @@ def _uhslc_raise_non_404(err):
          1846-01-04T00:00:00Z to 2023-12-31T22:59:59Z)";
     }
     
-    Any other errors, like timeouts (504) or outages (503), are still raised.
+    Any other HTTPErrors like timeouts (504) or outages (503), are still raised.
+    This also goes for any other Exception.
+    
+    In all error-cases, nothing is appended to ds_list.
     """
-    if not "code=404" in str(err):
-        raise
+    from httpx import HTTPError
+    try:
+        ds = e.to_xarray()
+        ds = _preprocess_uhslc_erddap(ds)
+        ds_list.append(ds)
+    except HTTPError as err:
+        if not "code=404" in str(err):
+            raise
 
 
-def uhslc_ssh_retrieve_data(row, time_min=None, time_max=None):
+def uhslc_ssh_retrieve_data(row, time_min=None, time_max=None, include_rqds=True, include_fast=True):
     # docs from https://ioos.github.io/erddapy/ and https://ioos.github.io/erddapy/02-extras-output.html#
     
     # setup server connection, this takes no time so does not have to be cached
@@ -754,22 +775,13 @@ def uhslc_ssh_retrieve_data(row, time_min=None, time_max=None):
     if time_max is not None:
         e.constraints["time<="] = pd.Timestamp(time_max)
     
-    from httpx import HTTPError
     ds_list = []
-    try:
+    if include_rqds:
         e.dataset_id = "global_hourly_rqds"
-        ds_rqds = e.to_xarray()
-        ds_rqds = _preprocess_uhslc_erddap(ds_rqds)
-        ds_list.append(ds_rqds)
-    except HTTPError as err:
-        _uhslc_raise_non_404(err)
-    try:
+        _uhslc_ssh_retrieve_data_oneds(e, ds_list)
+    if include_fast:
         e.dataset_id = "global_hourly_fast"
-        ds_fast = e.to_xarray()
-        ds_fast = _preprocess_uhslc_erddap(ds_fast)
-        ds_list.append(ds_fast)
-    except HTTPError as err:
-        _uhslc_raise_non_404(err)
+        _uhslc_ssh_retrieve_data_oneds(e, ds_list)
     
     # return early if no data present
     if len(ds_list) == 0:
@@ -789,12 +801,6 @@ def uhslc_ssh_retrieve_data(row, time_min=None, time_max=None):
     
     # drop duplicates, keep=first keeps rqds, sort by time
     ds = ds.drop_duplicates(dim='time', keep='first').sortby('time')
-    
-    # re-add some important conflicting attributes that were dropped by xr.concat
-    if len(ds_list) == 2:
-        for attr in ["acknowledgement", "processing_level", "title"]:
-            ds.attrs[f"{attr}_rqds"] = ds_rqds.attrs[attr]
-            ds.attrs[f"{attr}_fast"] = ds_fast.attrs[attr]
     return ds
 
 

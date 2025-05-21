@@ -5,6 +5,9 @@
 ### Fix
 - made SSC linked stations in `ssc_add_linked_stations()` case-insensitive in [#6b3949f](https://github.com/Deltares/dfm_tools/commit/6b3949fdac152016b4c5f043f514ffd72c9f5e6e)
 
+### Feat
+- enable separate retrieval of UHSLC rqds/fast observationdata again in `dfmt.ssh_retrieve_data()` (via `uhslc_ssh_retrieve_data()`) in [#1205](https://github.com/Deltares/dfm_tools/pull/1205)
+
 
 ## 0.37.0 (2025-05-14)
 
