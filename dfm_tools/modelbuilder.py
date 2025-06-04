@@ -6,7 +6,7 @@ import datetime as dt
 import xarray as xr
 import hydrolib.core.dflowfm as hcdfm
 from hydrolib.core.dimr.models import DIMR, FMComponent, Start
-from hydrolib.core.base.utils import get_path_style_for_current_operating_system
+from hydrolib.core.utils import get_path_style_for_current_operating_system
 from dfm_tools.interpolate_grid2bnd import (ext_add_boundary_object_per_polyline,
                                             open_prepare_dataset,
                                             ds_apply_conversion_dict,
