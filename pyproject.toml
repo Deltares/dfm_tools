@@ -51,8 +51,8 @@ dependencies = [
 	"rws-ddlpy>=0.6.0",
 	#pooch>=1.1.0 has attribute retrieve
 	"pooch>=1.1.0",
-	#hydrolib-core>=0.8.1 supports more mdu keywords, meshkernel v6, numpy v2 and python 3.13
-	"hydrolib-core>=0.8.1",
+	#hydrolib-core>=0.9.1 has different location for private function
+	"hydrolib-core>=0.9.1",
 	#meshkernel>=6.0.0 fix in global grid generation and get polygons around non-orthogonal cells
 	"meshkernel>=6.0.0",
 ]
