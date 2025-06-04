@@ -53,8 +53,8 @@ dependencies = [
 	"pooch>=1.1.0",
 	#hydrolib-core>=0.9.1 has different location for private function
 	"hydrolib-core>=0.9.1",
-	#meshkernel>=6.0.0 fix in global grid generation and get polygons around non-orthogonal cells
-	"meshkernel>=6.0.0",
+	#meshkernel>=7.0.0 align with hydrolib-core mk version
+	"meshkernel>=7.0.0",
 ]
 classifiers = [
 	"Development Status :: 4 - Beta",
