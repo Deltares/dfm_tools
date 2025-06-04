@@ -4,9 +4,9 @@ import pandas as pd
 import dfm_tools as dfmt
 import datetime as dt
 import xarray as xr
+import platform
 import hydrolib.core.dflowfm as hcdfm
 from hydrolib.core.dimr.models import DIMR, FMComponent, Start
-from hydrolib.core.base.utils import get_path_style_for_current_operating_system
 from dfm_tools.interpolate_grid2bnd import (ext_add_boundary_object_per_polyline,
                                             open_prepare_dataset,
                                             ds_apply_conversion_dict,
@@ -373,7 +373,8 @@ def create_model_exec_files(file_mdu, nproc=1, dimrset_folder=None, path_style=N
     
     # continue with dimrset_folder which is not None or 'docker'
     if path_style is None:
-        path_style = get_path_style_for_current_operating_system().value
+        # set the system name as the path_style (lowercase)
+        path_style = platform.system().lower()
     
     if path_style == 'windows':
         generate_bat_file(dimr_model=dimr_model, dimrset_folder=dimrset_folder)
