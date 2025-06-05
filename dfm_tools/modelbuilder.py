@@ -283,6 +283,13 @@ def preprocess_merge_meteofiles_era5(
                 "of supporting separate quantities. Provide a list of strings instead."
                 )
         
+        if varkey not in dict_varkey_quantities.keys():
+            raise NotImplementedError(
+                f"The varkey '{varkey}' is not supported yet by "
+                "dfmt.preprocess_merge_meteofiles_era5(), please create a dfm_tools "
+                "issue if you need this."
+                )
+        
         fn_match_pattern = f'era5_{varkey}_*.nc'
         file_nc = os.path.join(dir_data, fn_match_pattern)
         
@@ -298,13 +305,6 @@ def preprocess_merge_meteofiles_era5(
             raise KeyError(
                 f"Requested variable ({varkey}) is not present in the "
                 f"merged dataset ({list(ds.data_vars)})."
-                )
-        
-        if varkey not in dict_varkey_quantities.keys():
-            raise NotImplementedError(
-                f"The varkey '{varkey}' is not supported yet by "
-                "dfmt.preprocess_merge_meteofiles_era5(), please create a dfm_tools "
-                "issue if you need this."
                 )
         
         # write to netcdf file
