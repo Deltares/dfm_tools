@@ -36,7 +36,9 @@ def file_to_list(file_nc):
             file_nc_list = glob.glob(file_nc)
         file_nc_list.sort()
     if len(file_nc_list)==0:
-        raise FileNotFoundError('file(s) not found, empty file_nc_list')
+        raise FileNotFoundError(
+            f"No files found for pattern '{file_nc}'."
+            )
     return file_nc_list
 
 

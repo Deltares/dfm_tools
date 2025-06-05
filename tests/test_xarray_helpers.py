@@ -272,7 +272,7 @@ def test_file_to_list_empty_path():
     file_nc = "path/to/dummy/dir"
     with pytest.raises(FileNotFoundError) as e:
         _ = file_to_list(file_nc)
-    assert "file(s) not found, empty file_nc_list" in str(e.value)
+    assert f"No files found for pattern '{file_nc}'." in str(e.value)
 
 
 @pytest.mark.unittest

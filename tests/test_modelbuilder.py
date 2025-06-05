@@ -347,36 +347,75 @@ def test_make_paths_relative(tmp_path):
 
 
 @pytest.mark.unittest
+def test_preprocess_merge_meteofiles_era5(tmp_path, ds_era5_empty):
+    file_nc = os.path.join(tmp_path,"era5_msl_empty.nc")
+    ds_era5_empty.to_netcdf(file_nc)
+    
+    ext_old = hcdfm.ExtOldModel()
+    date_min = ds_era5_empty.time.to_pandas().iloc[0]
+    date_max = ds_era5_empty.time.to_pandas().iloc[-1]
+    varlist_list = ['msl']
+    ext_old = dfmt.preprocess_merge_meteofiles_era5(
+        ext_old=ext_old,
+        varkey_list=varlist_list,
+        dir_data=tmp_path,
+        dir_output=tmp_path,
+        time_slice=slice(date_min, date_max),
+        )
+
+
+@pytest.mark.unittest
 def test_preprocess_merge_meteofiles_era5_unsupported_varlist(tmp_path, ds_era5_empty):
     file_nc = os.path.join(tmp_path,"era5_msl_empty.nc")
     ds_era5_empty.to_netcdf(file_nc)
     
-    ext_old = None # this won't be reached, so not relevant what to supply
+    ext_old = hcdfm.ExtOldModel()
     date_min = ds_era5_empty.time.to_pandas().iloc[0]
     date_max = ds_era5_empty.time.to_pandas().iloc[-1]
-    varlist_list = ['msl']
-    with pytest.raises(KeyError) as e:
+    varlist_list = [['msl']]
+    with pytest.raises(TypeError) as e:
         ext_old = dfmt.preprocess_merge_meteofiles_era5(ext_old=ext_old,
                                                         varkey_list=varlist_list,
                                                         dir_data=tmp_path,
                                                         dir_output=tmp_path,
                                                         time_slice=slice(date_min, date_max))
-    assert "is not supported by dfmt.preprocess_merge_meteofiles_era5" in str(e.value)
+    error_msg = (
+        "varkey_list should not contain lists, support was dropped in favour of "
+        "supporting separate quantities. Provide a list of strings instead")
+    assert error_msg in str(e.value)
 
 
 @pytest.mark.unittest
-def test_preprocess_merge_meteofiles_era5_incomplete_input(tmp_path, ds_era5_empty):
+def test_preprocess_merge_meteofiles_era5_unsupported_varkey(tmp_path, ds_era5_empty):
     file_nc = os.path.join(tmp_path,"era5_msl_empty.nc")
     ds_era5_empty.to_netcdf(file_nc)
     
-    ext_old = None # this won't be reached, so not relevant what to supply
+    ext_old = hcdfm.ExtOldModel()
     date_min = ds_era5_empty.time.to_pandas().iloc[0]
     date_max = ds_era5_empty.time.to_pandas().iloc[-1]
-    varlist_list = ['msl','u10n','v10n','chnk']
-    with pytest.raises(KeyError) as e:
+    varlist_list = ['msla']
+    with pytest.raises(NotImplementedError) as e:
         ext_old = dfmt.preprocess_merge_meteofiles_era5(ext_old=ext_old,
                                                         varkey_list=varlist_list,
                                                         dir_data=tmp_path,
                                                         dir_output=tmp_path,
                                                         time_slice=slice(date_min, date_max))
-    assert "are not all present in the merged dataset (['msl'])." in str(e.value)
+    assert "The varkey 'msla' is not supported yet by" in str(e.value)
+
+
+@pytest.mark.unittest
+def test_preprocess_merge_meteofiles_era5_missing_files(tmp_path, ds_era5_empty):
+    file_nc = os.path.join(tmp_path,"era5_msl_empty.nc")
+    ds_era5_empty.to_netcdf(file_nc)
+    
+    ext_old = hcdfm.ExtOldModel()
+    date_min = ds_era5_empty.time.to_pandas().iloc[0]
+    date_max = ds_era5_empty.time.to_pandas().iloc[-1]
+    varlist_list = ['rhoao']
+    with pytest.raises(FileNotFoundError) as e:
+        ext_old = dfmt.preprocess_merge_meteofiles_era5(ext_old=ext_old,
+                                                        varkey_list=varlist_list,
+                                                        dir_data=tmp_path,
+                                                        dir_output=tmp_path,
+                                                        time_slice=slice(date_min, date_max))
+    assert "No files found for pattern" in str(e.value)
