@@ -241,7 +241,16 @@ def cmems_nc_to_ini(
     return ext_old
 
 
-def preprocess_merge_meteofiles_era5(ext_old, varkey_list, dir_data, dir_output, time_slice):
+def preprocess_merge_meteofiles_era5(
+        ext_old,
+        varkey_list,
+        dir_data,
+        dir_output,
+        time_slice,
+        ):
+    """
+    Merge ERA5 data per variable for the requested time period.
+    """
     if not os.path.exists(dir_output):
         os.makedirs(dir_output)
     
@@ -254,9 +263,9 @@ def preprocess_merge_meteofiles_era5(ext_old, varkey_list, dir_data, dir_output,
         # 'sshf':'surface_sensible_heat_flux',
         # 'str':'surface_net_thermal_radiation',
         'chnk':'charnock',
-        # 'd2m':'2m_dewpoint_temperature',
-        # 't2m':'2m_temperature',
-        # 'tcc':'total_cloud_cover',
+        'd2m':'dewpoint',
+        't2m':'airtemperature',
+        'tcc':'cloudiness',
         'msl':'airpressure',
         'u10':'windx',
         'u10n':'windx',
@@ -277,10 +286,11 @@ def preprocess_merge_meteofiles_era5(ext_old, varkey_list, dir_data, dir_output,
         fn_match_pattern = f'era5_{varkey}_*.nc'
         file_nc = os.path.join(dir_data, fn_match_pattern)
         
-        ds = dfmt.merge_meteofiles(file_nc=file_nc,
-                                             time_slice=time_slice, 
-                                             preprocess=dfmt.preprocess_ERA5,
-                                             )
+        ds = dfmt.merge_meteofiles(
+            file_nc=file_nc,
+            time_slice=time_slice, 
+            preprocess=dfmt.preprocess_ERA5,
+            )
         
         # check if the variable is present in merged netcdf. This could go wrong for
         # avg_tprate and avg_ie that are renamed to mtpr and mer in preprocess_ERA5
@@ -303,7 +313,9 @@ def preprocess_merge_meteofiles_era5(ext_old, varkey_list, dir_data, dir_output,
         times_pd = ds['time'].to_series()
         time_start_str = times_pd.iloc[0].strftime("%Y%m%d")
         time_stop_str = times_pd.iloc[-1].strftime("%Y%m%d")
-        file_out = os.path.join(dir_output, f'era5_{varkey}_{time_start_str}to{time_stop_str}_ERA5.nc')
+        file_out = os.path.join(
+            dir_output, f'era5_{varkey}_{time_start_str}to{time_stop_str}_ERA5.nc'
+            )
         ds.to_netcdf(file_out)
         print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
            
