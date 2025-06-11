@@ -477,6 +477,12 @@ fi
     # run_docker.sh requires unix file endings, so we use newline='\n'
     with open(file_docker, 'w', newline='\n') as f:
         f.write(docker_str)
+    # to avoid confusion, the script with this contents was renamed to run_model.sh
+    # in the 2025.02 docker examples (or actually run_example.sh). The run_docker.sh 
+    # now contains the actual `docker run` command.
+    file_docker2 = os.path.join(dirname, "run_model.sh")
+    with open(file_docker2, 'w', newline='\n') as f:
+        f.write(docker_str)
 
 
 def make_paths_relative(mdu_file:str):
