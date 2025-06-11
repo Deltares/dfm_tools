@@ -446,7 +446,7 @@ def generate_docker_file(dimr_model):
 # `docker login containers.deltares.nl` with your MyDeltares email address and CLI secret as credentials
 # `docker pull containers.deltares.nl/delft3d/delft3dfm:release-2025.02`
 # Run this run_model.sh script with docker via:
-# docker run -v "[absolute_path_to_model_folder]:/data" -it containers.deltares.nl/delft3d/delft3dfm:release-2025.02 /data/run_model.sh
+# docker run -v "[absolute_path_to_model_folder]:/data" --shm-size 4G -it containers.deltares.nl/delft3d/delft3dfm:release-2025.02 /data/run_model.sh
 
 # stop after an error occured
 set -e
