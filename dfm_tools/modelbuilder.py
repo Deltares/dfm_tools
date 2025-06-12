@@ -439,7 +439,7 @@ def generate_docker_file(dimr_model):
     docker_str = fr"""#!/bin/bash
 # To start DIMR, execute this script
 
-# HOW TO RUN A MODEL WITH DOCKER
+# HOW TO RUN A MODEL WITH DOCKER (from delft3dfm 2025.02)
 # Create a MyDeltares account at containers.deltares.nl
 # Request access to the Delft3D Docker repository on Harbor via black-ops@deltares.nl
 # Get your CLI secret from your account settings at containers.deltares.nl
