@@ -74,6 +74,20 @@ def test_uds_add_crs_attrs_spherical():
 
 
 @pytest.mark.unittest
+def test_meshkernel_make_basegrid():
+    # domain and resolution
+    lon_min, lon_max, lat_min, lat_max = -68.55, -67.9, 11.8, 12.6
+    dxy = 0.05
+    crs = 'EPSG:4326'
+
+    # basegrid
+    mk_object = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, crs=crs)
+    
+    assert len(mk_object.mesh2d_get().node_x) == 252
+    assert len(mk_object.mesh2d_get().face_nodes) == 884
+
+
+@pytest.mark.unittest
 def test_meshkernel_refine_basegrid():
     # domain and resolution
     lon_min, lon_max, lat_min, lat_max = -68.55, -67.9, 11.8, 12.6
