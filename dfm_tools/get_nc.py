@@ -275,8 +275,6 @@ def reconstruct_zw_zcc_fromzsigma(uds):
     
     # for levels k where sigma(k) has a defined value and zlev(k) is not defined:
     # z(n,k,j,i) = eta(n,j,i) + sigma(k)*(min(depth_c,depth(j,i))+eta(n,j,i))
-    # clip percentages to >=0 to avoid sigmalayers going down from zsigma-interface
-    # more info: https://github.com/Deltares/dfm_tools/issues/1218
     zw_sigmapart = uds_eta + uds_sigma_int*(uds_depth.clip(max=uds_depth_c) + uds_eta)
     # zcc_sigmapart = uds_eta + uds_sigma_lay*(uds_depth.clip(max=uds_depth_c)+uds_eta)
     # for levels k where zlev(k) has a defined value and sigma(k) is not defined: 
@@ -291,6 +289,7 @@ def reconstruct_zw_zcc_fromzsigma(uds):
     bool_belowbed = zw.shift({dimn_interfaces:-1}) <= -uds_depth
     zw = zw.where(~bool_belowbed)
     # correction: set interfaces above wl to nan (keeping the interface at the wl with shift)
+    # required for waterlevels < zsigma-interface: https://github.com/Deltares/dfm_tools/issues/1218
     bool_abovewl = zw.shift({dimn_interfaces:1}) >= uds_eta
     zw = zw.where(~bool_abovewl)
 
