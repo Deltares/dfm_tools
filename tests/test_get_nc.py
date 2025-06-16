@@ -110,15 +110,29 @@ def test_zsigmalayermodel_correct_layers():
 
     # check z-centers in one specific cell
     zcc = uds_fullgrid['mesh2d_flowelem_zcc']
-    zcc_onecell = zcc.isel(mesh2d_nFaces=5000).load().fillna(-999)
-    zcc_onecell_expected = np.array([-999, -999, -999, -4.86792313, -0.250909869])
-    assert np.allclose(zcc_onecell, zcc_onecell_expected)
+    zcc_onecell = zcc.isel(mesh2d_nFaces=1971).to_numpy()
+    zcc_onecell_expected = np.array([
+        -53.01460424, -41.12246997, -29.23033569, -16.92690695,-4.21218375]
+        )
+    assert np.allclose(zcc_onecell, zcc_onecell_expected, equal_nan=True)
+    zcc_onecell = zcc.isel(mesh2d_nFaces=5000).to_numpy()
+    zcc_onecell_expected = np.array(
+        [np.nan, np.nan, np.nan, -4.86792313, -0.250909869]
+        )
+    assert np.allclose(zcc_onecell, zcc_onecell_expected, equal_nan=True)
     
     # check z-interfaces in one specific cell
     zw = uds_fullgrid['mesh2d_flowelem_zw']
-    zw_onecell = zw.isel(mesh2d_nFaces=5000).load().fillna(-999)
-    zw_onecell_expected = np.array([-999., -999., -999.,   -7.17642976, -2.5594165, 2.05759676])
-    assert np.allclose(zw_onecell, zw_onecell_expected)
+    zw_onecell = zw.isel(mesh2d_nFaces=1971).to_numpy()
+    zw_onecell_expected = np.array(
+        [-58.96067138, -47.0685371, -35.17640283, -23.28426855, -10.56954535, 2.14517785]
+        )
+    assert np.allclose(zw_onecell, zw_onecell_expected, equal_nan=True)
+    zw_onecell = zw.isel(mesh2d_nFaces=5000).to_numpy()
+    zw_onecell_expected = np.array(
+        [np.nan, np.nan, np.nan, -7.17642976, -2.5594165, 2.05759676]
+        )
+    assert np.allclose(zw_onecell, zw_onecell_expected, equal_nan=True)
     
     vals_zw_max = uds_fullgrid['mesh2d_flowelem_zw'].max(dim='mesh2d_nInterfaces').to_numpy()
     vals_zw_min = uds_fullgrid['mesh2d_flowelem_zw'].min(dim='mesh2d_nInterfaces').to_numpy()
