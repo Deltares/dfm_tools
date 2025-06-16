@@ -152,6 +152,59 @@ def test_zsigmalayermodel_correct_layers():
 
 
 @pytest.mark.unittest
+def test_zsigmalayermodel_s1_below_interface():
+    """
+    reconstruction for zsigmalayers failed before if the waterlevel was lower than
+    the z-sigma-interface: https://github.com/Deltares/dfm_tools/issues/1218
+    """
+    
+    # zsigma model without fullgrid output but with new ocean_sigma_z_coordinate variable
+    file_nc = dfmt.data.fm_westernscheldt_map(return_filepath=True)
+    uds = dfmt.open_partitioned_dataset(file_nc)
+    
+    # set the waterlevel to be below the z-sigma-interface
+    # make sure that it is not below the bed level
+    uds['mesh2d_s1'] = (uds['mesh2d_s1'] - 30).clip(min=uds['mesh2d_flowelem_bl'])
+    
+    uds_timesel = uds.isel(time=-1) #select data for all layers
+    uds_fullgrid = reconstruct_zw_zcc_fromzsigma(uds_timesel)
+    
+    vals_wl = uds_fullgrid['mesh2d_s1'].to_numpy()
+    vals_bl = uds_fullgrid['mesh2d_flowelem_bl'].to_numpy()
+    
+    # check z-centers in one specific cell
+    zcc = uds_fullgrid['mesh2d_flowelem_zcc']
+    zcc_onecell = zcc.isel(mesh2d_nFaces=1971).to_numpy()
+    zcc_onecell_expected = np.array(
+        [-53.01460424, -41.12246997, -31.51561249, -27.85482215, -27.85482215])
+    assert np.allclose(zcc_onecell, zcc_onecell_expected, equal_nan=True)
+    
+    # check z-interfaces in one specific cell
+    zw = uds_fullgrid['mesh2d_flowelem_zw']
+    zw_onecell = zw.isel(mesh2d_nFaces=1971).to_numpy()
+    zw_onecell_expected = np.array(
+        [-58.96067138, -47.0685371, -35.17640283, -27.85482215, -27.85482215, -27.85482215]
+        )
+    assert np.allclose(zw_onecell, zw_onecell_expected, equal_nan=True)
+    
+    vals_zw_max = uds_fullgrid['mesh2d_flowelem_zw'].max(dim='mesh2d_nInterfaces').to_numpy()
+    vals_zw_min = uds_fullgrid['mesh2d_flowelem_zw'].min(dim='mesh2d_nInterfaces').to_numpy()
+    vals_zw_top = uds_fullgrid['mesh2d_flowelem_zw'].isel(mesh2d_nInterfaces=-1).to_numpy()
+    assert np.allclose(vals_zw_max, vals_wl)
+    assert np.allclose(vals_zw_min, vals_bl)
+    assert np.allclose(vals_zw_max, vals_zw_top)
+    
+    # check if all non-dry cell centers are below waterlevel and above bed
+    vals_zcc_max = uds_fullgrid['mesh2d_flowelem_zcc'].max(dim='mesh2d_nLayers').to_numpy()
+    vals_zcc_min = uds_fullgrid['mesh2d_flowelem_zcc'].min(dim='mesh2d_nLayers').to_numpy()
+    vals_zcc_top = uds_fullgrid['mesh2d_flowelem_zcc'].isel(mesh2d_nLayers=-1).to_numpy()
+    bool_dry = vals_wl == vals_bl
+    assert ((vals_zcc_max.round(8) <= vals_wl.round(8)) | bool_dry).all()
+    assert ((vals_zcc_min > vals_bl) | bool_dry).all()
+    assert (np.isclose(vals_zcc_max, vals_zcc_top) | bool_dry).all()
+
+
+@pytest.mark.unittest
 def test_sigmalayermodel_correct_layers():
     """
     we assert top/bot/max/min, since max/top and min/bottom sigmalayers are always aligned and do not contain nans
