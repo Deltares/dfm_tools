@@ -146,9 +146,9 @@ def test_zsigmalayermodel_correct_layers():
     vals_zcc_min = uds_fullgrid['mesh2d_flowelem_zcc'].min(dim='mesh2d_nLayers').to_numpy()
     vals_zcc_top = uds_fullgrid['mesh2d_flowelem_zcc'].isel(mesh2d_nLayers=-1).to_numpy()
     bool_dry = vals_wl == vals_bl
-    assert ((vals_zcc_max < vals_wl) | bool_dry).all()
-    assert ((vals_zcc_min > vals_bl) | bool_dry).all()
-    assert (np.isclose(vals_zcc_max, vals_zcc_top) | bool_dry).all()
+    assert (vals_zcc_max[~bool_dry] < vals_wl[~bool_dry]).all()
+    assert (vals_zcc_min[~bool_dry] > vals_bl[~bool_dry]).all()
+    assert np.allclose(vals_zcc_max[~bool_dry], vals_zcc_top[~bool_dry])
 
 
 @pytest.mark.unittest
@@ -192,16 +192,22 @@ def test_zsigmalayermodel_s1_below_interface():
     vals_zw_top = uds_fullgrid['mesh2d_flowelem_zw'].isel(mesh2d_nInterfaces=-1).to_numpy()
     assert np.allclose(vals_zw_max, vals_wl)
     assert np.allclose(vals_zw_min, vals_bl)
-    assert np.allclose(vals_zw_max, vals_zw_top)
+    # top layer and max z are not equal anymore because of nans in top layer, exclude nans
+    bool_nan_toplayer = np.isnan(vals_zw_top)
+    assert np.allclose(vals_zw_max[~bool_nan_toplayer], vals_zw_top[~bool_nan_toplayer])
     
     # check if all non-dry cell centers are below waterlevel and above bed
     vals_zcc_max = uds_fullgrid['mesh2d_flowelem_zcc'].max(dim='mesh2d_nLayers').to_numpy()
     vals_zcc_min = uds_fullgrid['mesh2d_flowelem_zcc'].min(dim='mesh2d_nLayers').to_numpy()
     vals_zcc_top = uds_fullgrid['mesh2d_flowelem_zcc'].isel(mesh2d_nLayers=-1).to_numpy()
     bool_dry = vals_wl == vals_bl
-    assert ((vals_zcc_max.round(8) <= vals_wl.round(8)) | bool_dry).all()
-    assert ((vals_zcc_min > vals_bl) | bool_dry).all()
-    assert (np.isclose(vals_zcc_max, vals_zcc_top) | bool_dry).all()
+    assert (vals_zcc_max[~bool_dry] <= vals_wl[~bool_dry]).all()
+    assert (vals_zcc_min[~bool_dry] > vals_bl[~bool_dry]).all()
+    assert np.allclose(
+        vals_zcc_max[~bool_nan_toplayer],
+        vals_zcc_top[~bool_nan_toplayer],
+        equal_nan=True
+        )
 
 
 @pytest.mark.unittest
