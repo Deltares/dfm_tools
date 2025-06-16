@@ -176,14 +176,14 @@ def test_zsigmalayermodel_s1_below_interface():
     zcc = uds_fullgrid['mesh2d_flowelem_zcc']
     zcc_onecell = zcc.isel(mesh2d_nFaces=1971).to_numpy()
     zcc_onecell_expected = np.array(
-        [-53.01460424, -41.12246997, -31.51561249, -27.85482215, -27.85482215])
+        [-53.01460424, -41.12246997, -31.51561249, np.nan, np.nan])
     assert np.allclose(zcc_onecell, zcc_onecell_expected, equal_nan=True)
     
     # check z-interfaces in one specific cell
     zw = uds_fullgrid['mesh2d_flowelem_zw']
     zw_onecell = zw.isel(mesh2d_nFaces=1971).to_numpy()
     zw_onecell_expected = np.array(
-        [-58.96067138, -47.0685371, -35.17640283, -27.85482215, -27.85482215, -27.85482215]
+        [-58.96067138, -47.0685371, -35.17640283, -27.85482215, np.nan, np.nan]
         )
     assert np.allclose(zw_onecell, zw_onecell_expected, equal_nan=True)
     
