@@ -248,22 +248,25 @@ def reconstruct_zw_zcc_fromz(uds):
 
 def reconstruct_zw_zcc_fromzsigma(uds):
     """
-    reconstruct full grid output (time/face-varying z-values) for zsigmavalue model without full grid output. Implemented in https://issuetracker.deltares.nl/browse/UNST-5477
-    based on https://cfconventions.org/cf-conventions/cf-conventions.html#_ocean_sigma_over_z_coordinate
+    Reconstruct full grid output (time/face-varying z-values) for zsigmavalue model
+    without full grid output. Implemented in FM kernel with
+    https://issuetracker.deltares.nl/browse/UNST-5477. The reconstruction is based on
+    https://cfconventions.org/cf-conventions/cf-conventions.html#_ocean_sigma_over_z_coordinate
     """
     
     dimn_layer, dimn_interfaces = get_vertical_dimensions(uds)
     gridname = uds.grid.name
     
-    # temporarily decode default fillvalues
-    # TODO: xarray only decodes explicitly set fillvalues: https://github.com/Deltares/dfm_tools/issues/490
-    uds = xu.UgridDataset(decode_default_fillvals(uds.obj),grids=uds.grids)
+    # TODO: temporarily decode default fillvalues, xarray only decodes explicitly set
+    # fillvalues: https://github.com/Deltares/dfm_tools/issues/490
+    uds = xu.UgridDataset(decode_default_fillvals(uds.obj), grids=uds.grids)
     
     osz_formulaterms_int_dict = get_formula_terms(uds,varn_contains='interface')
     # osz_formulaterms_lay_dict = get_formula_terms(uds,varn_contains='layer')
     
     uds_eta = uds[osz_formulaterms_int_dict['eta']] #mesh2d_s1
-    uds_depth = uds[osz_formulaterms_int_dict['depth']] #mesh2d_bldepth: positive version of mesh2d_flowelem_bl, but this one is always in file
+    # mesh2d_bldepth positive version of mesh2d_flowelem_bl (but always present)
+    uds_depth = uds[osz_formulaterms_int_dict['depth']] #mesh2d_bldepth
     uds_depth_c = uds[osz_formulaterms_int_dict['depth_c']] #mesh2d_sigmazdepth
     uds_zlev_int = uds[osz_formulaterms_int_dict['zlev']] #mesh2d_interface_z
     uds_sigma_int = uds[osz_formulaterms_int_dict['sigma']] #mesh2d_interface_sigma
@@ -272,20 +275,26 @@ def reconstruct_zw_zcc_fromzsigma(uds):
     
     # for levels k where sigma(k) has a defined value and zlev(k) is not defined:
     # z(n,k,j,i) = eta(n,j,i) + sigma(k)*(min(depth_c,depth(j,i))+eta(n,j,i))
-    zw_sigmapart = uds_eta + uds_sigma_int*(uds_depth.clip(max=uds_depth_c)+uds_eta)
+    zw_sigmapart = uds_eta + uds_sigma_int*(uds_depth.clip(max=uds_depth_c) + uds_eta)
     # zcc_sigmapart = uds_eta + uds_sigma_lay*(uds_depth.clip(max=uds_depth_c)+uds_eta)
     # for levels k where zlev(k) has a defined value and sigma(k) is not defined: 
     # z(n,k,j,i) = zlev(k)
-    zw_zpart = uds_zlev_int.clip(min=-uds_depth) #added clipping of zvalues with bedlevel
-    # zcc_zpart = uds_zlev_lay.clip(min=-uds_depth) #added clipping of zvalues with bedlevel
+    # clip zvalues with bedlevel and waterlevel
+    zw_zpart = uds_zlev_int.clip(min=-uds_depth, max=uds_eta)
+    # zcc_zpart = uds_zlev_lay.clip(min=-uds_depth)
     zw = zw_sigmapart.fillna(zw_zpart)
     # zcc = zcc_sigmapart.fillna(zcc_zpart)
     
-    # correction: set interfaces below bed to nan (keeping the interface at the bed with shift)
+    # correction: set interfaces below bed to nan (shift preserves interface at the bed)
     bool_belowbed = zw.shift({dimn_interfaces:-1}) <= -uds_depth
     zw = zw.where(~bool_belowbed)
-    
-    # correction: set centers to values in between interfaces (and reshape+rename from int to cent dim)
+    # correction: set interfaces above wl to nan (keeping the interface at the wl with shift)
+    # required for waterlevels < zsigma-interface: https://github.com/Deltares/dfm_tools/issues/1218
+    bool_abovewl = zw.shift({dimn_interfaces:1}) >= uds_eta
+    zw = zw.where(~bool_abovewl)
+
+    # correction: set centers to values in between interfaces
+    # and reshape+rename from interfaces to centers dimension
     zcc = zw.rolling({dimn_interfaces:2}).mean()
     zcc = zcc.isel({dimn_interfaces:slice(1,None)}).rename({dimn_interfaces:dimn_layer})
     
