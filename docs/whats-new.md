@@ -8,6 +8,7 @@
 
 ### Feat
 - enable separate retrieval of UHSLC rqds/fast observationdata again in `dfmt.ssh_retrieve_data()` (via `uhslc_ssh_retrieve_data()`) in [#1205](https://github.com/Deltares/dfm_tools/pull/1205)
+- separate ERA5 quantities (supported from Delft3D-FM 2024.02) in [#1211](https://github.com/Deltares/dfm_tools/pull/1211)
 
 
 ## 0.37.0 (2025-05-14)
