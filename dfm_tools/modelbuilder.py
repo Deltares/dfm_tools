@@ -423,14 +423,14 @@ pause
 
 def generate_docker_file(dimr_model):
     """
-    generate run_docker.sh file for running on windows or unix with docker
+    generate run_model.sh file for running on windows or unix with docker
     """
     
     if dimr_model.filepath is None:
         raise Exception('first save the dimr_model before passing it to generate_bat_file')
     
     dirname = os.path.dirname(dimr_model.filepath)
-    file_docker = os.path.join(dirname, "run_docker.sh")
+    file_docker = os.path.join(dirname, "run_model.sh")
     docker_name = os.path.basename(file_docker)
     
     dimr_name = os.path.basename(dimr_model.filepath)
@@ -438,14 +438,16 @@ def generate_docker_file(dimr_model):
     nproc = dimr_model.component[0].process
     
     docker_str = fr"""#!/bin/bash
-# export OMP_NUM_THREADS=1 # not sure what for
-export I_MPI_FABRICS=shm # required on windows
+# To start DIMR, execute this script
 
-# first pull or load a docker container
-# docker pull deltares/delft3dfm
-# docker load -i <file.tar>
-# RUN THIS run_docker.sh FILE ON COMMAND LINE WITH (shm-size and ulimit seem optional):
-# docker run -v /path/to/dimr:/data -t deltares/delft3dfm:latest /data/run_docker.sh --shm-size=4gb --ulimit stack=-1
+# HOW TO RUN A MODEL WITH DOCKER (from delft3dfm 2025.02)
+# Create a MyDeltares account at containers.deltares.nl
+# Request access to the Delft3D Docker repository on Harbor via black-ops@deltares.nl
+# Get your CLI secret from your account settings at containers.deltares.nl
+# `docker login containers.deltares.nl` with your MyDeltares email address and CLI secret as credentials
+# `docker pull containers.deltares.nl/delft3d/delft3dfm:release-2025.02`
+# Run this run_model.sh script with docker via:
+# docker run -v "[absolute_path_to_model_folder]:/data" --shm-size 4G -it containers.deltares.nl/delft3d/delft3dfm:release-2025.02 /data/run_model.sh
 
 # stop after an error occured
 set -e
@@ -453,11 +455,11 @@ set -e
 # set number of partitions
 nPart={nproc}
 
-# location of the binaries inside Docker image
-delft3d=/opt/delft3dfm_latest/lnx64
-
 # DIMR input-file; must already exist!
 dimrFile={dimr_name}
+
+# Folder with the MDU file, relative to the location of this script
+mduFolder=.
 
 # Replace number of processes in DIMR file
 PROCESSSTR="$(seq -s " " 0 $((nPart-1)))"
@@ -468,21 +470,17 @@ sed -i "s/\(<process.*>\)[^<>]*\(<\/process.*\)/\1$PROCESSSTR\2/" $dimrFile
 mduFile={mdu_name}
 
 if [ "$nPart" == "1" ]; then
-    $delft3d/bin/run_dimr.sh -m $dimrFile
+    run_dimr.sh -m $dimrFile
 else
-    $delft3d/bin/run_dflowfm.sh --partition:ndomains=$nPart:icgsolver=6 $mduFile
-    $delft3d/bin/run_dimr.sh -c $nPart -m $dimrFile
+    pushd $mduFolder
+        run_dflowfm.sh --partition:ndomains=$nPart:icgsolver=6 $mduFile
+    popd
+    run_dimr.sh -c $nPart -m $dimrFile
 fi
 """
     print(f"writing {docker_name}")
-    # run_docker.sh requires unix file endings, so we use newline='\n'
+    # run_model.sh requires unix file endings, so we use newline='\n'
     with open(file_docker, 'w', newline='\n') as f:
-        f.write(docker_str)
-    # to avoid confusion, the script with this contents was renamed to run_model.sh
-    # in the 2025.02 docker examples (or actually run_example.sh). The run_docker.sh 
-    # now contains the actual `docker run` command.
-    file_docker2 = os.path.join(dirname, "run_model.sh")
-    with open(file_docker2, 'w', newline='\n') as f:
         f.write(docker_str)
 
 

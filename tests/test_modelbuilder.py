@@ -271,7 +271,7 @@ def test_create_model_exec_files_none(tmp_path):
 def test_create_model_exec_files_docker(tmp_path):
     mdu_file = tmp_path / "temp_test.mdu"
     file_dimr = tmp_path / "dimr_config.xml"
-    file_docker = tmp_path / "run_docker.sh"
+    file_docker = tmp_path / "run_model.sh"
     
     nproc = 1 # number of processes
     dimrset_folder = "docker"
