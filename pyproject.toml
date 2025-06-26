@@ -51,8 +51,8 @@ dependencies = [
 	"rws-ddlpy>=0.6.0",
 	#pooch>=1.1.0 has attribute retrieve
 	"pooch>=1.1.0",
-	#hydrolib-core>=0.8.1 supports more mdu keywords, meshkernel v6, numpy v2 and python 3.13
-	"hydrolib-core>=0.8.1",
+	#hydrolib-core>=0.9.2 support meshkernel v8
+	"hydrolib-core>=0.9.2",
 	#meshkernel>=8.1.2 constant dx/dy for spherical grid generation
 	"meshkernel>=8.1.2",
 ]
