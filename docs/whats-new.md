@@ -1,6 +1,6 @@
 # What's new
 
-## UNRELEASED
+## 0.38.0 (2025-06-26)
 
 ### Fix
 - made SSC linked stations in `ssc_add_linked_stations()` case-insensitive in [#6b3949f](https://github.com/Deltares/dfm_tools/commit/6b3949fdac152016b4c5f043f514ffd72c9f5e6e)
