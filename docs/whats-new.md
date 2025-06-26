@@ -5,9 +5,12 @@
 ### Fix
 - made SSC linked stations in `ssc_add_linked_stations()` case-insensitive in [#6b3949f](https://github.com/Deltares/dfm_tools/commit/6b3949fdac152016b4c5f043f514ffd72c9f5e6e)
 - avoid usage of moved private hydrolib-core function in [#1210](https://github.com/Deltares/dfm_tools/pull/1210)
+- fixed z-sigma layer reconstruction for waterlevels below the z-sigma-interface in [#1219](https://github.com/Deltares/dfm_tools/pull/1219)
 
 ### Feat
 - enable separate retrieval of UHSLC rqds/fast observationdata again in `dfmt.ssh_retrieve_data()` (via `uhslc_ssh_retrieve_data()`) in [#1205](https://github.com/Deltares/dfm_tools/pull/1205)
+- separate ERA5 quantities (supported from Delft3D-FM 2024.02) in [#1211](https://github.com/Deltares/dfm_tools/pull/1211)
+- updated docker run script to efficiently work with Delft3D-FM 2025.02 (and later) docker containers in [#1216](https://github.com/Deltares/dfm_tools/pull/1216)
 
 
 ## 0.37.0 (2025-05-14)
