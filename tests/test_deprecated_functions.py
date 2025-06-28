@@ -13,4 +13,4 @@ def test_deprecated_functions():
         if func.startswith("__"):
             continue
         with pytest.raises(DeprecationWarning):
-            exec(f"dfmt.deprecated_functions.{func}()")
+            exec(f"dfmt.{func}()")

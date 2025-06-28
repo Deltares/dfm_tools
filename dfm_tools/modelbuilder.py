@@ -18,7 +18,6 @@ __all__ = [
     "constant_to_bc",
     "cmems_nc_to_bc",
     "cmems_nc_to_ini",
-    "preprocess_ini_cmems_to_nc",
     "preprocess_merge_meteofiles_era5",
     "create_model_exec_files",
     "make_paths_relative",
@@ -130,11 +129,6 @@ def cmems_nc_to_bc(ext_new, list_quantities, tstart, tstop, file_pli, dir_patter
         ext_add_boundary_object_per_polyline(ext_new=ext_new, boundary_object=boundary_object)
 
     return ext_new
-
-
-def preprocess_ini_cmems_to_nc(**kwargs):
-    raise DeprecationWarning("`dfmt.preprocess_ini_cmems_to_nc()` was "
-                             "deprecated, use `cmems_nc_to_ini()` instead")
 
 
 def cmems_nc_to_ini(

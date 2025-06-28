@@ -65,3 +65,8 @@ def interp_regularnc_to_plipoints(ds=None):
 
 def open_dataset_extra(**kwargs):
     raise DeprecationWarning('the function dfmt.open_dataset_extra() is deprecated, dfmt.open_prepare_dataset() is similar but does not support multiple quantities at once')
+
+
+def preprocess_ini_cmems_to_nc(**kwargs):
+    raise DeprecationWarning("`dfmt.preprocess_ini_cmems_to_nc()` was "
+                             "deprecated, use `cmems_nc_to_ini()` instead")
