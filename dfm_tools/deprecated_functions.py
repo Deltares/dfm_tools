@@ -54,14 +54,19 @@ def generate_bndpli(**kwargs):
     raise DeprecationWarning('the function dfmt.generate_bndpli() is deprecated, please use dfmt.generate_bndpli_cutland() instead.')
 
 
-def preprocess_hirlam(ds):
+def preprocess_hirlam(ds=None):
     raise DeprecationWarning('the function dfmt.preprocess_hirlam() is deprecated, xarray now supports datasets with multidimensional coordinates.')
 
 
-def interp_regularnc_to_plipoints(ds):
+def interp_regularnc_to_plipoints(ds=None):
     raise DeprecationWarning('the function dfmt.interp_regularnc_to_plipoints() is deprecated, '
                              'use dfmt.interp_regularnc_to_plipointsDataset() instead with gdf_points '
                              'as in https://github.com/Deltares/dfm_tools/issues/938')
 
 def open_dataset_extra(**kwargs):
     raise DeprecationWarning('the function dfmt.open_dataset_extra() is deprecated, dfmt.open_prepare_dataset() is similar but does not support multiple quantities at once')
+
+
+def preprocess_ini_cmems_to_nc(**kwargs):
+    raise DeprecationWarning("`dfmt.preprocess_ini_cmems_to_nc()` was "
+                             "deprecated, use `cmems_nc_to_ini()` instead")
