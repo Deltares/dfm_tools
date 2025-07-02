@@ -211,11 +211,11 @@ def cmems_nc_to_ini(
         # delft3dfm will crash if there is only one timestep
         assert len(data_xr.time) >= 2
     
-        # interpolate_na for all data_vars, first over lat/lon, then over depth
+        # interpolate_na for all data_vars, first over depth, then over lat/lon
         for var in data_xr.data_vars:
+            data_xr[var] = interpolate_na_multidim(data_xr[var], ["depth"])
             data_xr[var] = interpolate_na_multidim(data_xr[var], ["latitude", 
                                                                   "longitude"])
-            data_xr[var] = interpolate_na_multidim(data_xr[var], ["depth"])
         
         print('writing file')
         file_output = os.path.join(dir_output,f"{quantity}_{tstart_str}.nc")
