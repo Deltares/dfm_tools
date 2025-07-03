@@ -12,7 +12,7 @@ class LineBuilder:
     - ctrl+rightmouseclick to remove the last point of the line
     - ctrl+doublemouseclick to finish and let the script continue
     """
-    def __init__(self, ax=None):
+    def __init__(self, ax=None, block=True):
         print("draw a line in the figure interactively: ctrl+click to add point, ctrl+rightclick to undo, ctrl+doubleclick to finish")
         
         # get current axis if not provided
@@ -28,8 +28,10 @@ class LineBuilder:
         # register both button press events and key press events
         self.cid_button = self.line.figure.canvas.mpl_connect('button_press_event', self)
         self.cid_key = self.line.figure.canvas.mpl_connect('key_press_event', self)
-        # start a blocking event loop to prevent continuation of the script where LineBuilder was called
-        self.line.figure.canvas.start_event_loop()
+        if block:
+            # start a blocking event loop to prevent continuation of the script where LineBuilder was called
+            # for pytest it is important to not call this line
+            self.line.figure.canvas.start_event_loop()
     
     @property
     def line_array(self):
