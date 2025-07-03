@@ -797,7 +797,7 @@ def uhslc_ssh_retrieve_data(row, time_min=None, time_max=None, include_rqds=True
 
 
 @functools.lru_cache
-def gesla3_cache_zipfile(file_gesla3_data=None):
+def gesla3_cache_zipfile():
     file_gesla3_data = os.path.join(settings.PATH_GESLA3, "GESLA3.0_ALL.zip")
 
     if not os.path.isfile(file_gesla3_data):
