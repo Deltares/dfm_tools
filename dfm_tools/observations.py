@@ -811,11 +811,10 @@ def gesla3_cache_zipfile():
     return gesla3_zip
 
 
-def gesla3_ssh_retrieve_data(row, time_min=None, time_max=None,
-                             file_gesla3_data=None):
+def gesla3_ssh_retrieve_data(row, time_min=None, time_max=None):
     
     # get cached gesla3 zipfile instance
-    gesla3_zip = gesla3_cache_zipfile(file_gesla3_data=file_gesla3_data)
+    gesla3_zip = gesla3_cache_zipfile()
     
     file_gesla = row.name
     with gesla3_zip.open(file_gesla, "r") as f:
