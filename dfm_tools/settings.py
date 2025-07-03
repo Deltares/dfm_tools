@@ -21,7 +21,7 @@ else:
 # however, there is no validation whatsoever, so beware of typos
 
 # tide models
-PATH_FES2012 = Path(PDRIVE, 'metocean-data', 'open', 'FES2012', 'data','*_FES2012_SLEV.nc') # is eigenlijk ook licensed
+PATH_FES2012 = Path(PDRIVE, 'metocean-data', 'open', 'FES2012', 'data','*_FES2012_SLEV.nc') # is probably also licensed
 PATH_FES2014 = Path(PDRIVE, 'metocean-data', 'licensed', 'FES2014', '*.nc') # ocean_tide_extrapolated
 PATH_EOT20 = Path(PDRIVE, 'metocean-data', 'open', 'EOT20', 'ocean_tides','*_ocean_eot20.nc')
 PATH_GTSMv41 = Path(PDRIVE, '1230882-emodnet_hrsm', 'GTSMv3.0EMODnet', 'EMOD_MichaelTUM_yearcomponents', 'GTSMv4.1_yeartide_2014_2.20.06', 'compare_fouhis_fouxyz_v4', 'GTSMv4.1_tide_2014_*_rasterized.nc')
