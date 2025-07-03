@@ -802,9 +802,10 @@ def gesla3_cache_zipfile():
 
     if not os.path.isfile(file_gesla3_data):
         raise FileNotFoundError(
-            f"The 'file_gesla3_data' file '{file_gesla3_data}' was not found. "
-            "You can download it from https://gesla787883612.wordpress.com/"
-            "downloads and provide the path")
+            f"The 'file_gesla3_data' file '{file_gesla3_data}' was not found. You can "
+            "download it from https://gesla787883612.wordpress.com/downloads and provide "
+            "the path: `import dfm_tools as dfmt; dfmt.settings.PATH_GESLA3 = 'path/to/gesla3'`"
+            )
     
     gesla3_zip = ZipFile(file_gesla3_data)
     return gesla3_zip
