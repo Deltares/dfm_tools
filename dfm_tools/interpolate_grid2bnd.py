@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 import xugrid as xu
-from pathlib import Path
 from scipy.spatial import KDTree
 import logging
 import hydrolib.core.dflowfm as hcdfm
@@ -20,6 +19,7 @@ from dfm_tools.hydrolib_helpers import (Dataset_to_TimeSeries,
                                         maybe_convert_fews_to_dfmt,
                                         validate_polyline_names)
 from dfm_tools.errors import OutOfRangeError
+from dfm_tools import settings
 
 __all__ = ["get_conversion_dict",
            "interpolate_tide_to_bc",
@@ -31,13 +31,6 @@ __all__ = ["get_conversion_dict",
     ]
 
 logger = logging.getLogger(__name__)
-
-if os.name == "nt":
-    # windows drive letter should include trailing slash
-    # https://github.com/Deltares/dfm_tools/issues/1084
-    PDRIVE = "p:/"
-else:
-    PDRIVE = "/p"
 
 
 def get_conversion_dict(ncvarname_updates={}):
@@ -212,13 +205,15 @@ def interpolate_tide_to_plipoints(tidemodel, gdf_points, component_list=None, lo
     empty docstring
     """
     
-    dir_pattern_dict = {'FES2014': Path(PDRIVE, 'metocean-data', 'licensed', 'FES2014', '*.nc'), #ocean_tide_extrapolated
-                        'FES2012': Path(PDRIVE, 'metocean-data', 'open', 'FES2012', 'data','*_FES2012_SLEV.nc'), #is eigenlijk ook licensed
-                        'EOT20': Path(PDRIVE, 'metocean-data', 'open', 'EOT20', 'ocean_tides','*_ocean_eot20.nc'),
-                        'GTSMv4.1': Path(PDRIVE, '1230882-emodnet_hrsm', 'GTSMv3.0EMODnet', 'EMOD_MichaelTUM_yearcomponents', 'GTSMv4.1_yeartide_2014_2.20.06', 'compare_fouhis_fouxyz_v4', 'GTSMv4.1_tide_2014_*_rasterized.nc'),
-                        'GTSMv4.1_opendap': 'https://opendap.deltares.nl/thredds/dodsC/opendap/deltares/GTSM/GTSMv4.1_tide/GTSMv4.1_tide_2014_*_rasterized.nc',
-                        'tpxo80_opendap':'https://opendap.deltares.nl/thredds/dodsC/opendap/deltares/delftdashboard/tidemodels/tpxo80/tpxo80.nc',
-                        }
+    dir_pattern_dict = {
+        'FES2014': settings.PATH_FES2014,
+        'FES2012': settings.PATH_FES2012,
+        'EOT20': settings.PATH_EOT20,
+        'GTSMv4.1': settings.PATH_GTSMv41,
+        'GTSMv4.1_opendap': settings.PATH_GTSMv41_opendap,
+        'tpxo80_opendap': settings.PATH_tpxo80_opendap,
+        }
+    
     if tidemodel not in dir_pattern_dict.keys():
         raise KeyError(f"Invalid tidemodel '{tidemodel}', options are: {str(list(dir_pattern_dict.keys()))}")
         
