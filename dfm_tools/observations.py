@@ -24,7 +24,7 @@ import fiona
 import copernicusmarine
 import cdsapi
 import logging
-
+from dfm_tools import settings
 
 __all__ = ["ssh_catalog_subset",
            "ssh_catalog_toxynfile",
@@ -32,13 +32,6 @@ __all__ = ["ssh_catalog_subset",
            "ssh_retrieve_data",
            "ssh_netcdf_overview",
            ]
-
-if os.name == "nt":
-    # windows drive letter should include trailing slash
-    # https://github.com/Deltares/dfm_tools/issues/1084
-    PDRIVE = "p:/"
-else:
-    PDRIVE = "/p"
 
 CM_LOGGER = logging.getLogger("copernicusmarine")
 logger = logging.getLogger(__name__)
@@ -476,9 +469,8 @@ def psmsl_gnssir_ssh_read_catalog_gettimes(station_list_gpd):
 
     return station_list_gpd
 
-def gesla3_ssh_read_catalog(file_gesla3_meta=None, only_coastal=True):
-    if file_gesla3_meta is None:
-        file_gesla3_meta = os.path.join(PDRIVE, "metocean-data", "licensed", "GESLA3", "GESLA3_ALL 2.csv")
+def gesla3_ssh_read_catalog(only_coastal=True):
+    file_gesla3_meta = os.path.join(settings.PATH_GESLA3, "GESLA3_ALL 2.csv")
     
     if not os.path.isfile(file_gesla3_meta):
         raise FileNotFoundError(f"The 'file_gesla3_meta' file '{file_gesla3_meta}' was not found. "
@@ -806,8 +798,7 @@ def uhslc_ssh_retrieve_data(row, time_min=None, time_max=None, include_rqds=True
 
 @functools.lru_cache
 def gesla3_cache_zipfile(file_gesla3_data=None):
-    if file_gesla3_data is None:
-        file_gesla3_data = os.path.join(PDRIVE, "metocean-data", "licensed", "GESLA3", "GESLA3.0_ALL.zip")
+    file_gesla3_data = os.path.join(settings.PATH_GESLA3, "GESLA3.0_ALL.zip")
 
     if not os.path.isfile(file_gesla3_data):
         raise FileNotFoundError(
