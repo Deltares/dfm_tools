@@ -5,6 +5,7 @@
 ### Feat
 - extrapolate depth first in `dfmt.cmems_nc_to_ini()` in [#1231](https://github.com/Deltares/dfm_tools/pull/1231)
 - avoid longpaths error in VSCode by removing direct fiona import in [#1239](https://github.com/Deltares/dfm_tools/pull/1239)
+- make all paths in dfm_tools settable in [#1235](https://github.com/Deltares/dfm_tools/pull/1235)
 
 
 ## 0.38.0 (2025-06-26)
