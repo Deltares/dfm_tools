@@ -20,7 +20,6 @@ import glob
 import matplotlib.pyplot as plt
 import matplotlib.dates as md
 import shutil
-import fiona
 import copernicusmarine
 import cdsapi
 import logging
@@ -1175,13 +1174,6 @@ def ssh_catalog_tokmlfile(ssc_catalog_gpd, file_kml):
     """
     converts a ssh_catalog to a kml file for easy visualisation in google earth
     """
-    # Enable fiona driver
-    # TODO: gpd sometimes fails with "AttributeError: 'NoneType' object has no attribute 'drvsupport'" 
-    # gpd.io.file.fiona.drvsupport.supported_drivers['KML'] = 'rw' # 
-    # gpd.io.file.fiona.drvsupport.supported_drivers['LIBKML'] = 'rw'
-    fiona.supported_drivers['KML'] = 'rw'
-    fiona.supported_drivers['LIBKML'] = 'rw'
-    
     #select only names and geometry column to reduce file size
     ssc_catalog_gpd_minimal = ssc_catalog_gpd[["station_name_unique","geometry"]]
     # rename to "name" results in a label in Google Earth
