@@ -171,9 +171,9 @@ def test_ssh_catalog_toxynfile(tmp_path):
 @pytest.mark.unittest
 def test_ssh_catalog_tokmlfile(tmp_path):
     ssc_catalog_gpd = dfmt.ssh_catalog_subset(source="ssc")
-    file_xyn = tmp_path / 'test_ssc.kml'
-    dfmt.ssh_catalog_tokmlfile(ssc_catalog_gpd, file_xyn)
-    assert os.path.isfile(file_xyn)
+    file_kml = tmp_path / 'test_ssc.kml'
+    dfmt.ssh_catalog_tokmlfile(ssc_catalog_gpd, file_kml)
+    assert os.path.isfile(file_kml)
 
 
 @pytest.mark.unittest
