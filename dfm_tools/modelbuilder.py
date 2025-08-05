@@ -114,7 +114,7 @@ def cmems_nc_to_bc(ext_new, list_quantities, tstart, tstop, file_pli, dir_patter
         gdf_points = dfmt.PolyFile_to_geodataframe_points(polyfile_object=polyfile_obj)
         data_interp = dfmt.interp_regularnc_to_plipointsDataset(data_xr_reg=data_xr_vars, gdf_points=gdf_points, load=True)
         # round to 5 decimal digits to save diskspace
-        data_interp = data_interp.round(5)
+        data_interp = data_interp.round(6)
         
         #convert plipointsDataset to hydrolib ForcingModel
         ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
