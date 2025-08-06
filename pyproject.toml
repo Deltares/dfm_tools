@@ -122,6 +122,9 @@ filterwarnings = [
 	'ignore:datetime.datetime.utcnow\(\) is deprecated:DeprecationWarning',
 	# for dfmt.open_dataset_delft3d4() and dfmt.open_dataset_curvilinear()
 	"ignore:A UGRID2D face requires at least three unique non-collinear vertices:UserWarning",
+	# temporarily ignore numpy incompatibility: https://github.com/Deltares/dfm_tools/issues/1243
+	# this warning broke github tests for python 3.11, 3.12 and 3.13
+	"ignore:numpy.ndarray size changed:RuntimeWarning",
 ]
 
 [tool.flake8]
