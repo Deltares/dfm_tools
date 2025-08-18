@@ -994,6 +994,7 @@ def gtsm3_era5_cds_ssh_retrieve_data(row,
     for time and stations is done after download. The function checks if the files have
     already been downloaded to cache.
     """
+    cds_version = 'v3'
     
     if time_min is None:
         time_min = row['time_min']
@@ -1008,9 +1009,10 @@ def gtsm3_era5_cds_ssh_retrieve_data(row,
     time_periods = pd.period_range(start=time_min, end=time_max, freq='M')
     
     time_freq_cds_str = time_freq.replace("_","")
-    file_pat = os.path.join(dir_cache_gtsm,
-                            f'reanalysis_waterlevel_{time_freq_cds_str}_*_v2.nc',
-                            )
+    file_pat = os.path.join(
+        dir_cache_gtsm,
+        f'reanalysis_waterlevel_{time_freq_cds_str}_*_{cds_version}.nc',
+        )
     # Retrieve data via an API request and extract archive (if not found in the cache)
     for period in time_periods:
         period_cds_str = str(period).replace("-","_")
@@ -1038,7 +1040,7 @@ def gtsm3_era5_cds_ssh_retrieve_data(row,
                 'temporal_aggregation': time_freq,
                 'year': str(period.year),
                 'month': str(period.month).zfill(2),
-                'version': 'v3',
+                'version': cds_version,
                 'format': 'zip',
             }, 
             tmp_zipfile)
