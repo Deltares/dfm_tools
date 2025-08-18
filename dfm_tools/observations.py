@@ -1038,6 +1038,7 @@ def gtsm3_era5_cds_ssh_retrieve_data(row,
                 'temporal_aggregation': time_freq,
                 'year': str(period.year),
                 'month': str(period.month).zfill(2),
+                'version': 'v3',
                 'format': 'zip',
             }, 
             tmp_zipfile)
