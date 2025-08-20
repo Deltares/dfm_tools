@@ -230,6 +230,9 @@ def merge_meteofiles(file_nc:str,
         # forbid slightly changed lat/lon values
         # enforce alignment error if expver is not present in all datasets 
         kwargs['join'] = 'exact'
+    if 'compat' not in kwargs:
+        # set new default to avoid warning: https://github.com/pydata/xarray/pull/10062
+        kwargs['compat'] = 'override'
 
     file_nc_list = file_to_list(file_nc)
     print((f'>> opening multifile dataset of {len(file_nc_list)} files (can take a '
