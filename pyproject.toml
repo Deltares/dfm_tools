@@ -25,8 +25,6 @@ dependencies = [
 	"shapely>=2.0.0",
 	#geopandas>=1.1.0 resolves shapely.geos DeprecationWarning: https://github.com/geopandas/geopandas/pull/3453 
 	"geopandas>=1.1.0",
-	#fiona>=1.9 contains sql where filter
-	"fiona>=1.9",
 	#contextily>=1.6.2 has fixed axis scaling: https://github.com/geopandas/contextily/issues/251
 	"contextily>=1.6.2",
 	#xarray>=2024.7.0 includes fix for numpy v2: https://github.com/pydata/xarray/issues/9179
@@ -122,6 +120,9 @@ filterwarnings = [
 	'ignore:datetime.datetime.utcnow\(\) is deprecated:DeprecationWarning',
 	# for dfmt.open_dataset_delft3d4() and dfmt.open_dataset_curvilinear()
 	"ignore:A UGRID2D face requires at least three unique non-collinear vertices:UserWarning",
+	# temporarily ignore numpy incompatibility: https://github.com/Deltares/dfm_tools/issues/1243
+	# this warning broke github tests for python 3.11, 3.12 and 3.13
+	"ignore:numpy.ndarray size changed:RuntimeWarning",
 ]
 
 [tool.flake8]
