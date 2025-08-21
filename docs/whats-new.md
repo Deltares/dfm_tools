@@ -1,6 +1,6 @@
 # What's new
 
-## UNRELEASED 
+## 0.39.0 (2025-08-21)
 
 ### Feat
 - extrapolate depth first in `dfmt.cmems_nc_to_ini()` in [#1231](https://github.com/Deltares/dfm_tools/pull/1231)
