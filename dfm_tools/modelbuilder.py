@@ -103,6 +103,7 @@ def cmems_nc_to_bc(ext_new, list_quantities, tstart, tstop, file_pli, dir_patter
                                                   tstart=tstart, tstop=tstop,
                                                   conversion_dict=conversion_dict,
                                                   refdate_str=refdate_str)
+            
             if quantity_key == quantity_list[0]:
                 data_xr_vars = data_xr_onevar
             else: # only relevant in case of ux/uy, others all have only one quantity
@@ -112,6 +113,8 @@ def cmems_nc_to_bc(ext_new, list_quantities, tstart, tstop, file_pli, dir_patter
         polyfile_obj = hcdfm.PolyFile(file_pli)
         gdf_points = dfmt.PolyFile_to_geodataframe_points(polyfile_object=polyfile_obj)
         data_interp = dfmt.interp_regularnc_to_plipointsDataset(data_xr_reg=data_xr_vars, gdf_points=gdf_points, load=True)
+        # round to 6 decimal digits to save diskspace
+        data_interp = data_interp.round(6)
         
         #convert plipointsDataset to hydrolib ForcingModel
         ForcingModel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
