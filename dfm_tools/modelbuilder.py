@@ -150,6 +150,9 @@ def cmems_nc_to_ini(
     model results.
     """
     
+    if not isinstance(dir_pattern, list):
+        dir_pattern = [dir_pattern]
+    
     xr_kwargs = {"join":"exact", "data_vars":"minimal"}
     
     if conversion_dict is None:
@@ -175,7 +178,7 @@ def cmems_nc_to_ini(
             quantity=quan_bnd,
             conversion_dict=conversion_dict,
             )
-        dir_pattern_one = dir_pattern.format(ncvarname=ncvarname)
+        dir_pattern_one = [x.format(ncvarname=ncvarname) for x in dir_pattern]
         
         if quan_bnd=="salinitybnd":
             # this also handles temperaturebnd
@@ -187,7 +190,7 @@ def cmems_nc_to_ini(
                 quantity="temperaturebnd",
                 conversion_dict=conversion_dict,
                 )
-            dir_pattern_tem = dir_pattern.format(ncvarname=ncvarname_tem)
+            dir_pattern_tem = [x.format(ncvarname=ncvarname_tem) for x in dir_pattern]
             data_xr_tem = xr.open_mfdataset(dir_pattern_tem, **xr_kwargs)
             data_xr["thetao"] = data_xr_tem["thetao"]
             quantity = "nudge_salinity_temperature"
