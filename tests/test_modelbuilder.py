@@ -209,11 +209,12 @@ def test_cmems_nc_to_ini_tracer(tmp_path, cmems_dataset_4times):
     
     ext_old = hcdfm.ExtOldModel()
     
+    # provide list to dir_pattern to also cover the list case in format_path
     ext_old = dfmt.cmems_nc_to_ini(ext_old=ext_old,
                                    dir_output=tmp_path,
                                    list_quantities=["tracerbndNO3"],
                                    tstart="2020-01-01",
-                                   dir_pattern=file_nc)
+                                   dir_pattern=[file_nc])
     
     file_expected = tmp_path / "initialtracerNO3_2020-01-01_00-00-00.nc"
     
