@@ -92,7 +92,13 @@ def test_ssh_retrieve_data(source, tmp_path):
         bool_hoekvhld = ssc_catalog_gpd["Code"].isin(["HOEKVHLD"])
         ssc_catalog_gpd = ssc_catalog_gpd.loc[bool_hoekvhld]
     
-    ssc_catalog_gpd_sel = ssc_catalog_gpd.iloc[[0]]
+    if source == "ioc":
+        # stat_index=0 fails since 2025-08-15 since AMTSI was added
+        # this station has only data from that date onwards
+        stat_index = 2
+    else:
+        stat_index = 0
+    ssc_catalog_gpd_sel = ssc_catalog_gpd.iloc[[stat_index]]
     
     dfmt.ssh_retrieve_data(ssc_catalog_gpd_sel, dir_output=tmp_path, 
                            time_min=time_min, time_max=time_max)
