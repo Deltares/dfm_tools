@@ -12,6 +12,7 @@ from shapely import MultiPolygon, LineString, MultiLineString
 from shapely.ops import linemerge
 from itertools import groupby
 from shapely import Polygon
+from meshkernel import GeometryList
 
 __all__ = [
     "meshkernel_delete_withcoastlines",
@@ -330,6 +331,7 @@ def make_basegrid(lon_min,lon_max,lat_min,lat_max,dx,dy,angle=0,
 def refine_basegrid(
         mk:meshkernel.MeshKernel,
         data_bathy_sel:xr.DataArray,
+        polygon: GeometryList = GeometryList(),
         **kwargs,
         ):
     """
@@ -342,6 +344,10 @@ def refine_basegrid(
     data_bathy_sel : xr.DataArray
         The bathymetry data used for the refinement. Is converted to 
         meshkernel.GriddedSamples().
+    polygon : GeometryList, optional
+        A polygon in the format of meshkernel.GeometryList. Grid refinement will only
+        happen within the specified polygon. The default is an empty GeometryList(),
+        resulting in refinement everywhere.
     **kwargs : TYPE
         Arguments passed on to meshkernel.MeshRefinementParameters(). Some
         options from the meshkernelpy docs:
@@ -387,6 +393,7 @@ def refine_basegrid(
         gridded_samples=gridded_samples,
         mesh_refinement_params=mesh_refinement_parameters,
         use_nodal_refinement=True,
+        polygon=polygon,
         )
 
 
