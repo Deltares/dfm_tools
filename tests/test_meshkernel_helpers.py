@@ -106,7 +106,7 @@ def test_meshkernel_refine_basegrid():
         mk_object = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, crs=crs)
         mk_object_no_edge_size = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, crs=crs)
         mk_object_not_connect = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, crs=crs)
-    
+        
         # refine (fails if wrong type)
         min_edge_size = 300 #in meters
         dfmt.refine_basegrid(mk=mk_object, data_bathy_sel=data_bathy_sel, min_edge_size=min_edge_size)
@@ -119,6 +119,48 @@ def test_meshkernel_refine_basegrid():
         assert len(mk_object_no_edge_size.mesh2d_get().face_nodes) == 7290
         assert len(mk_object_not_connect.mesh2d_get().node_x) == 1738
         assert len(mk_object_not_connect.mesh2d_get().face_nodes) == 6640
+
+
+@pytest.mark.unittest
+def test_meshkernel_refine_basegrid_within_polygon():
+    # domain and resolution
+    lon_min, lon_max, lat_min, lat_max = -68.55, -67.9, 11.8, 12.6
+    dxy = 0.05
+    crs = 'EPSG:4326'
+
+    # grid generation and refinement with GEBCO bathymetry
+    file_nc_bathy = r'https://opendap.deltares.nl/thredds/dodsC/opendap/deltares/Delft3D/netcdf_example_files/GEBCO_2022/GEBCO_2022_coarsefac08.nc'
+    data_bathy = xr.open_dataset(file_nc_bathy)
+    data_bathy_sel = data_bathy.sel(lon=slice(lon_min,lon_max),lat=slice(lat_min,lat_max)).elevation
+
+    data_bathy_sel.plot()
+    # basegrid
+    mk_object = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, crs=crs)
+    mk_object_withinpol = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, crs=crs)
+    
+    # polygon
+    line_array = np.array(
+        [[-68.4374835 ,  12.13974761],
+           [-68.06816694,  12.414679],
+           [-68.05551911,  11.98644083],
+           [-68.39954002,  11.95429586],
+           [-68.42230611,  12.10512995],
+           [-68.4374835 ,  12.13974761],
+           ])
+    polygon = GeometryList(
+        x_coordinates=line_array[:,0],
+        y_coordinates=line_array[:,1],
+        )
+    
+    # refine
+    min_edge_size = 300 #in meters
+    dfmt.refine_basegrid(mk=mk_object, data_bathy_sel=data_bathy_sel, min_edge_size=min_edge_size)
+    dfmt.refine_basegrid(mk=mk_object_withinpol, data_bathy_sel=data_bathy_sel, min_edge_size=min_edge_size, polygon=polygon)
+
+    assert len(mk_object.mesh2d_get().node_x) == 4017
+    assert len(mk_object.mesh2d_get().face_nodes) == 17060
+    assert len(mk_object_withinpol.mesh2d_get().node_x) == 1878
+    assert len(mk_object_withinpol.mesh2d_get().face_nodes) == 7976
 
 
 @pytest.mark.unittest
