@@ -404,9 +404,12 @@ def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str ='z0'):
     else:
         depths = np.unique(depths) #array of unique+sorted floats/ints
         depth_dims = (depth_vardimname)
-    depths_xr = xr.DataArray(depths,dims=depth_dims,attrs={'units':'m',
-                                                           'reference':f'model_{reference}',
-                                                           'positive':'up'}) #TODO: make more in line with CMEMS etc
+    # TODO: make more in line with CMEMS etc
+    depths_xr = xr.DataArray(
+        depths,
+        dims=depth_dims,
+        attrs={'units':'m', 'reference':f'model_{reference}', 'positive':'up'}
+        )
     
     #potentially construct fullgrid info (zcc/zw)
     if dimn_layer is not None: #D-FlowFM mapfile
@@ -422,7 +425,8 @@ def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str ='z0'):
         zw_reference = data_xr[varname_zint] - data_wl
     elif reference=='bedlevel':
         if varname_bl not in data_xr.variables:
-            raise KeyError(f'get_Dataset_atdepths() called with reference=bedlevel, but {varname_bl} variable not present') #TODO: in case of zsigma/sigma it can also be -mesh2d_bldepth
+            # TODO: in case of zsigma/sigma it can also be -mesh2d_bldepth
+            raise KeyError(f'get_Dataset_atdepths() called with reference=bedlevel, but {varname_bl} variable not present')
         data_bl = data_xr[varname_bl]
         zw_reference = data_xr[varname_zint] - data_bl
     else:
@@ -431,20 +435,30 @@ def get_Dataset_atdepths(data_xr:xu.UgridDataset, depths, reference:str ='z0'):
     print('>> subsetting data on fixed depth in fullgrid z-data: ',end='')
     dtstart = dt.datetime.now()
     
-    #get layerbool via z-interface value (zw), check which celltop-interfaces are above/on depth and which which cellbottom-interfaces are below/on depth
+    # get layerbool via z-interface value (zw), check which celltop-interfaces are 
+    # above/on depth and which which cellbottom-interfaces are below/on depth
     bool_topinterface_abovedepth = zw_reference.isel({dimname_layw:slice(1,None)}) >= depths_xr
     bool_botinterface_belowdepth = zw_reference.isel({dimname_layw:slice(None,-1)}) <= depths_xr
-    bool_topbotinterface_arounddepth = bool_topinterface_abovedepth & bool_botinterface_belowdepth #this bool also automatically excludes all values below bed and above wl
-    bool_topbotinterface_arounddepth = bool_topbotinterface_arounddepth.rename({dimname_layw:dimname_layc}) #correct dimname for interfaces to centers
+    # reset coords to avoid unneccesary and expensive alignment of coordinates
+    bool_topinterface_abovedepth = bool_topinterface_abovedepth.reset_coords(drop=True)
+    bool_botinterface_belowdepth = bool_botinterface_belowdepth.reset_coords(drop=True)
+    # top&bot combination automatically excludes all values below bed and above wl
+    bool_topbotinterface_arounddepth = bool_topinterface_abovedepth & bool_botinterface_belowdepth
+    # correct dimname for interfaces to centers
+    bool_topbotinterface_arounddepth = bool_topbotinterface_arounddepth.rename({dimname_layw:dimname_layc})
     
-    #subset variables that have no, time, face and/or layer dims, slice only variables with all three dims (and add to subset)
-    bool_dims = [x for x in bool_topbotinterface_arounddepth.dims if x!=depth_vardimname] #exclude depth_vardimname (present if multiple depths supplied), since it is not present in pre-slice variables
+    # subset variables that have no, time, face and/or layer dims, slice only variables with all three dims (and add to subset)
+    # exclude depth_vardimname (present if multiple depths supplied), since it is not present in pre-slice variables
+    bool_dims = [x for x in bool_topbotinterface_arounddepth.dims if x!=depth_vardimname]
     variables_toslice = [var for var in data_xr.data_vars if set(bool_dims).issubset(data_xr[var].dims)]
     
-    #actual slicing with .where().max()
-    ds_atdepths = data_xr[variables_toslice].where(bool_topbotinterface_arounddepth).max(dim=dimname_layc,keep_attrs=True) #set all layers but one to nan, followed by an arbitrary reduce (max in this case) #TODO: check if attributes should be passed/altered
-    #TODO: suppress warning (upon plotting/load/etc): "C:\Users\veenstra\Anaconda3\envs\dfm_tools_env\lib\site-packages\dask\array\reductions.py:640: RuntimeWarning: All-NaN slice encountered" >> already merged in xarray: https://github.com/dask/dask/pull/9916
-    ds_atdepths = ds_atdepths.drop_dims([dimname_layw,dimname_layc],errors='ignore') #dropping interface dim if it exists, since it does not correspond to new depths dim
+    # actual slicing with .where().max()
+    # set all layers but one to nan, followed by an arbitrary reduce (max in this case)
+    # TODO: check if attributes should be passed/altered
+    ds_atdepths = data_xr[variables_toslice].where(bool_topbotinterface_arounddepth).max(dim=dimname_layc,keep_attrs=True)
+    # TODO: suppress warning (upon plotting/load/etc): "...\lib\site-packages\dask\array\reductions.py:640: RuntimeWarning: All-NaN slice encountered"
+    # dropping interface dim if it exists, since it does not correspond to new depths dim
+    ds_atdepths = ds_atdepths.drop_dims([dimname_layw,dimname_layc],errors='ignore')
     
     #add depth as coordinate var
     ds_atdepths[depth_vardimname] = depths_xr
