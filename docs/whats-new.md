@@ -5,6 +5,7 @@
 ### Feat
 - support for list of files in `dfmt.cmems_nc_to_ini()` for better performance in [#1258](https://github.com/Deltares/dfm_tools/pull/1258)
 - added polygon argument to `dfmt.refine_basegrid()` in [#1262](https://github.com/Deltares/dfm_tools/pull/1262)
+- performance improvement for `dfmt.get_Dataset_atdepths()` in [#1264](https://github.com/Deltares/dfm_tools/pull/1264)
 
 
 ## 0.39.0 (2025-08-21)
