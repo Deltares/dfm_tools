@@ -245,7 +245,8 @@ def interpolate_tide_to_plipoints(tidemodel, gdf_points, component_list=None, lo
         return ds
     
     if tidemodel=='tpxo80_opendap':
-        ds = xr.open_dataset(dir_pattern)
+        # TODO: temporary enforcement of netcdf4 engine, to be removed in https://github.com/Deltares/dfm_tools/issues/1271
+        ds = xr.open_dataset(dir_pattern, engine="netcdf4")
         bool_land = ds.depth==0
         ds['tidal_amplitude_h'] = ds['tidal_amplitude_h'].where(~bool_land).assign_attrs({'units':'m'})
         ds['tidal_phase_h'] = ds['tidal_phase_h'].where(~bool_land).assign_attrs({'units':'degrees'})
@@ -264,7 +265,8 @@ def interpolate_tide_to_plipoints(tidemodel, gdf_points, component_list=None, lo
     else:
         #use open_mfdataset() with preprocess argument to open all requested tide files into one Dataset
         file_list_nc = [str(dir_pattern).replace('*',component_tidemodel_translate_dict[comp]) for comp in component_list]
-        data_xrsel = xr.open_mfdataset(file_list_nc, combine='nested', concat_dim='compno', preprocess=extract_component)
+        # TODO: temporary enforcement of netcdf4 engine, to be removed in https://github.com/Deltares/dfm_tools/issues/1271
+        data_xrsel = xr.open_mfdataset(file_list_nc, combine='nested', concat_dim='compno', preprocess=extract_component, engine="netcdf4")
     
     data_xrsel = data_xrsel.rename({'lon':'longitude','lat':'latitude'})
 

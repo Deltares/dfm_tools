@@ -96,7 +96,8 @@ def test_meshkernel_refine_basegrid():
 
     # grid generation and refinement with GEBCO bathymetry
     file_nc_bathy = r'https://opendap.deltares.nl/thredds/dodsC/opendap/deltares/Delft3D/netcdf_example_files/GEBCO_2022/GEBCO_2022_coarsefac08.nc'
-    data_bathy = xr.open_dataset(file_nc_bathy)
+    # TODO: temporary enforcement of netcdf4 engine, to be removed in https://github.com/Deltares/dfm_tools/issues/1271
+    data_bathy = xr.open_dataset(file_nc_bathy, engine="netcdf4")
     
     for dtype in ["float64", "float32", "int32", "int16"]:
         data_bathy_sel = data_bathy.sel(lon=slice(lon_min,lon_max),lat=slice(lat_min,lat_max)).elevation
@@ -130,7 +131,8 @@ def test_meshkernel_refine_basegrid_within_polygon():
 
     # grid generation and refinement with GEBCO bathymetry
     file_nc_bathy = r'https://opendap.deltares.nl/thredds/dodsC/opendap/deltares/Delft3D/netcdf_example_files/GEBCO_2022/GEBCO_2022_coarsefac08.nc'
-    data_bathy = xr.open_dataset(file_nc_bathy)
+    # TODO: temporary enforcement of netcdf4 engine, to be removed in https://github.com/Deltares/dfm_tools/issues/1271
+    data_bathy = xr.open_dataset(file_nc_bathy, engine="netcdf4")
     data_bathy_sel = data_bathy.sel(lon=slice(lon_min,lon_max),lat=slice(lat_min,lat_max)).elevation
 
     data_bathy_sel.plot()
