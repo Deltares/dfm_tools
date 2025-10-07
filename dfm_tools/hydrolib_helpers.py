@@ -144,38 +144,48 @@ def Dataset_to_T3D(datablock_xr):
 
 def Dataset_to_TimeSeries(datablock_xr):
     """
-    convert an xarray.DataArray or xarray.Dataset with time dimension to a hydrolib TimeSeries object
+    convert an xarray.DataArray or xarray.Dataset with time dimension to a hydrolib
+    TimeSeries object
     """
     
     if not isinstance(datablock_xr,(xr.DataArray,xr.Dataset)):
-        raise TypeError(f'Dataset_to_TimeSeries expects xr.DataArray or xr.Dataset, not {type(datablock_xr)}')
+        raise TypeError(f'Dataset_to_TimeSeries() expects xr.DataArray or xr.Dataset, not {type(datablock_xr)}')
+    if isinstance(datablock_xr, xr.DataArray): #convert DataArray to Dataset
+        datablock_xr = datablock_xr.to_dataset()
     
-    if isinstance(datablock_xr,xr.Dataset): #convert Dataset to DataArray
-        data_vars = list(datablock_xr.data_vars)
-        if len(data_vars)!=1:
-            raise ValueError('more than one variable supplied in Dataset, not yet possible') #TODO: add support for multiple quantities and for vectors
-        datablock_xr = datablock_xr[data_vars[0]]
+    ntimesteps = len(datablock_xr.time)
+    ndatavars = len(datablock_xr.data_vars)
+    datablock_np = np.empty(shape=(ntimesteps, ndatavars))
+    quplist = []
+    for idv, data_var in enumerate(datablock_xr.data_vars):
+        da = datablock_xr[data_var]
+        #TODO: clean up these first lines of code and add description to docstring?
+        locationname = da.attrs['locationname']
+        bcvarname = da.name
+        refdate_str = da.time.encoding['units']
+        
+        if da.dims != ('time',):
+            raise ValueError(f"xr.DataArray has dimensions {datablock_xr.dims} while ('time') is expected")
+        
+        #get datablock and concatenate with relative time data
+        datablock_np_one = da.to_numpy()
+        datablock_np[:,idv] = datablock_np_one
+        timevar_sel_rel = date2num(
+            pd.DatetimeIndex(datablock_xr.time.to_numpy()).to_pydatetime(),
+            units=refdate_str,
+            calendar='standard',
+            )
+        quplist.append(hcdfm.QuantityUnitPair(quantity=bcvarname, unit=da.attrs['units']))
     
-    #TODO: clean up these first lines of code and add description to docstring?
-    locationname = datablock_xr.attrs['locationname']
-    bcvarname = datablock_xr.name
-    refdate_str = datablock_xr.time.encoding['units']
-    
-    if datablock_xr.dims != ('time',):
-        raise ValueError(f"datablock_xr provided to DataArray_to_TimeSeries has dimensions {datablock_xr.dims} while ('time') is expected")
-    
-    #get datablock and concatenate with relative time data
-    datablock_np = datablock_xr.to_numpy()[:,np.newaxis]
-    timevar_sel_rel = date2num(pd.DatetimeIndex(datablock_xr.time.to_numpy()).to_pydatetime(),units=refdate_str,calendar='standard')
-    datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis],datablock_np],axis=1)
-    
+    datablock_incltime = np.concatenate([timevar_sel_rel[:,np.newaxis], datablock_np], axis=1)
+    quplist_incltime = [hcdfm.QuantityUnitPair(quantity="time", unit=refdate_str)] + quplist
     # Each .bc file can contain 1 or more timeseries, in this case one for each support point
-    TimeSeries_object = hcdfm.TimeSeries(name=locationname,
-                                         quantityunitpair=[hcdfm.QuantityUnitPair(quantity="time", unit=refdate_str),
-                                                           hcdfm.QuantityUnitPair(quantity=bcvarname, unit=datablock_xr.attrs['units'])],
-                                         timeinterpolation='linear', #TODO: make userdefined via attrs?
-                                         datablock=datablock_incltime.tolist(), 
-                                         )
+    TimeSeries_object = hcdfm.TimeSeries(
+        name=locationname,
+        quantityunitpair=quplist_incltime,
+        timeinterpolation='linear', #TODO: make userdefined via attrs?
+        datablock=datablock_incltime.tolist(), 
+        )
     return TimeSeries_object
 
 

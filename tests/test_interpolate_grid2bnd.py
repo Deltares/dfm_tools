@@ -120,6 +120,25 @@ def test_plipointsDataset_fews_accepted():
 
 
 @pytest.mark.systemtest
+def test_plipointsDataset_to_ForcingModel(cmems_dataset_4times, data_dcsm_gdf):
+    ds = cmems_dataset_4times.copy()
+    ds["longitude"] = [-9.8, -9.5, -9.2]
+    # convert so to 2D variable to enforce calling Dataset_to_TimeSeries()
+    ds["so"] = ds["so"].max(dim="depth", keep_attrs=True)
+    # add second data variable to also test if this works
+    ds["thetao"] = ds["so"].copy()
+    data_interp = interp_regularnc_to_plipointsDataset(data_xr_reg=ds, gdf_points=data_dcsm_gdf)
+    forcingmodel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
+    
+    assert len(forcingmodel_object.forcing) == 3 # locations
+    # time salinitybnd
+    assert len(forcingmodel_object.forcing[0].quantityunitpair) == 3
+    quan_present = [x.quantity for x in forcingmodel_object.forcing[0].quantityunitpair]
+    quan_expected = ['time', 'so', 'thetao']
+    assert quan_present == quan_expected
+    
+    
+@pytest.mark.systemtest
 def test_plipointsDataset_to_ForcingModel_drop_allnan_points():
     #construct polyfile gdf
     point_x = [-71.5, -71.5, -71.5, -71.5,]
