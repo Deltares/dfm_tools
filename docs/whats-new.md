@@ -1,6 +1,6 @@
 # What's new
 
-## UNRELEASED
+## 0.40.0 (2025-10-08)
 
 ### Feat
 - support for list of files in `dfmt.cmems_nc_to_ini()` for better performance in [#1258](https://github.com/Deltares/dfm_tools/pull/1258)
