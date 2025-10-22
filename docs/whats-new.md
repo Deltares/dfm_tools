@@ -2,6 +2,9 @@
 
 ## UNRELEASED 
 
+### Fix
+- removed references to soon to be discontinued CMEMS multiyear-interim datasets [#1279](https://github.com/Deltares/dfm_tools/pull/1279)
+
 
 ## 0.40.0 (2025-10-08)
 
