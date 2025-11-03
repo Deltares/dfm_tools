@@ -87,16 +87,8 @@ def test_geodataframe_to_PolyFile_name_invalidtype(bnd_gdf):
 @pytest.mark.unittest
 def test_geodataframe_to_PolyFile_name_incorrect(bnd_gdf):
     with pytest.raises(ValueError) as e:
-        dfmt.geodataframe_to_PolyFile(bnd_gdf, name='1')
-    assert 'names in polyfile do not all start with a letter' in str(e.value)
-    
-    with pytest.raises(ValueError) as e:
-        dfmt.geodataframe_to_PolyFile(bnd_gdf, name='-')
-    assert 'names in polyfile do not all start with a letter' in str(e.value)
-    
-    with pytest.raises(ValueError) as e:
         dfmt.geodataframe_to_PolyFile(bnd_gdf, name='')
-    assert 'names in polyfile do not all start with a letter' in str(e.value)
+    assert 'polyline names are not all 2 characters or longer' in str(e.value)
 
 
 @pytest.mark.unittest
@@ -129,7 +121,7 @@ def test_geodataframe_to_PolyFile_namecolumn_duplicated_names(bnd_gdf):
     bnd_gdf['name'] = ''
     with pytest.raises(ValueError) as e:
         dfmt.geodataframe_to_PolyFile(bnd_gdf)
-    assert "duplicate polyline names found in polyfile" in str(e.value)
+    assert "polyline names are not all 2 characters or longer" in str(e.value)
 
 
 @pytest.mark.unittest
@@ -137,7 +129,7 @@ def test_geodataframe_to_PolyFile_namecolumn_numeric_start(bnd_gdf):
     bnd_gdf['name'] = ['1','2']
     with pytest.raises(ValueError) as e:
         dfmt.geodataframe_to_PolyFile(bnd_gdf)
-    assert 'names in polyfile do not all start with a letter' in str(e.value)
+    assert 'polyline names are not all 2 characters or longer' in str(e.value)
 
 
 @pytest.mark.unittest
