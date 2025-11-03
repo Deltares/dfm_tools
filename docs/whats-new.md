@@ -1,10 +1,11 @@
 # What's new
 
-## UNRELEASED 
+## 0.42.0 (2025-11-03)
 
 ### Fix
 - removed references to soon to be discontinued CMEMS multiyear-interim datasets in [#1279](https://github.com/Deltares/dfm_tools/pull/1279)
 - allow for polyline names starting with numeric characters in [#1281](https://github.com/Deltares/dfm_tools/pull/1281)
+- avoid writing of mdu keywords that are obsolete in Delft3D FM 2026.01 in [#1283](https://github.com/Deltares/dfm_tools/issues/1283)
 
 
 ## 0.40.0 (2025-10-08)
