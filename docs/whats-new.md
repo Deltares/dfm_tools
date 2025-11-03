@@ -1,5 +1,8 @@
 # What's new
 
+## UNRELEASED
+
+
 ## 0.42.0 (2025-11-03)
 
 ### Fix
