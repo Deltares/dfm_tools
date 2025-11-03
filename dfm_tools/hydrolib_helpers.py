@@ -238,15 +238,24 @@ def DataFrame_to_PolyObject(poly_pd,name,content=None):
 
 
 def validate_polyline_names(polyfile_obj):
-    # TODO: not allowed to have empty or duplicated polyline names in a polyfile, this is not 
+    # TODO: not allowed to have too short or duplicated polyline names in a polyfile, this is not 
     # catched by hydrolib-core: https://github.com/Deltares/HYDROLIB-core/issues/483
     # therefore, we check it here
     names = [x.metadata.name for x in polyfile_obj.objects]
-    if len(set(names)) != len(names):
-        raise ValueError(f'duplicate polyline names found in polyfile: {names}')
-    first_alpha = [x[0].isalpha() for x in names]
-    if not all(first_alpha):
-        raise ValueError(f'names in polyfile do not all start with a letter: {names}')
+    names_pd = pd.Series(names)
+    
+    bool_tooshort = names_pd.str.len() < 2
+    if bool_tooshort.any():
+        raise ValueError(
+            'polyline names are not all 2 characters or longer:\n'
+            f'{names_pd.loc[bool_tooshort]}'
+            )
+    bool_duplicated = names_pd.duplicated(keep=False)
+    if bool_duplicated.any():
+        raise ValueError(
+            'duplicate polyline names found in polyfile:\n'
+            f'{names_pd.loc[bool_duplicated]}'
+            )
 
 
 def geodataframe_to_PolyFile(poly_gdf, name="L"):

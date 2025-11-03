@@ -3,7 +3,8 @@
 ## UNRELEASED 
 
 ### Fix
-- removed references to soon to be discontinued CMEMS multiyear-interim datasets [#1279](https://github.com/Deltares/dfm_tools/pull/1279)
+- removed references to soon to be discontinued CMEMS multiyear-interim datasets in [#1279](https://github.com/Deltares/dfm_tools/pull/1279)
+- allow for polyline names starting with numeric characters in [#1281](https://github.com/Deltares/dfm_tools/pull/1281)
 
 
 ## 0.40.0 (2025-10-08)
