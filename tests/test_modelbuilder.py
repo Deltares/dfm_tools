@@ -420,3 +420,22 @@ def test_preprocess_merge_meteofiles_era5_missing_files(tmp_path, ds_era5_empty)
                                                         dir_output=tmp_path,
                                                         time_slice=slice(date_min, date_max))
     assert "No files found for pattern" in str(e.value)
+
+
+@pytest.mark.unittest
+def test_preprocess_merge_meteofiles_era5_ssr_warning(tmp_path, ds_era5_empty):
+    file_nc = os.path.join(tmp_path,"era5_ssr_empty.nc")
+    ds_era5_empty = ds_era5_empty.rename_vars(msl="ssr")
+    ds_era5_empty.to_netcdf(file_nc)
+    
+    ext_old = hcdfm.ExtOldModel()
+    date_min = ds_era5_empty.time.to_pandas().iloc[0]
+    date_max = ds_era5_empty.time.to_pandas().iloc[-1]
+    varlist_list = ['ssr']
+    with pytest.raises(FileNotFoundError) as e:
+        ext_old = dfmt.preprocess_merge_meteofiles_era5(ext_old=ext_old,
+                                                        varkey_list=varlist_list,
+                                                        dir_data=tmp_path,
+                                                        dir_output=tmp_path,
+                                                        time_slice=slice(date_min, date_max))
+    # TODO: this test should emit a warning, assert for it here
