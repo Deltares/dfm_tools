@@ -10,6 +10,9 @@
 - allow for polyline names starting with numeric characters in [#1281](https://github.com/Deltares/dfm_tools/pull/1281)
 - avoid writing of mdu keywords that are obsolete in Delft3D FM 2026.01 in [#1283](https://github.com/Deltares/dfm_tools/issues/1283)
 
+### Deprecated
+- removed poorly written and hycom-specific `dfmt.download_OPeNDAP()` in [#1289](https://github.com/Deltares/dfm_tools/pull/1289)
+
 
 ## 0.40.0 (2025-10-08)
 
