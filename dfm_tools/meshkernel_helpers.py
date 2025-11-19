@@ -108,7 +108,7 @@ def meshkernel_delete_withgdf(mk:meshkernel.MeshKernel, coastlines_gdf:gpd.GeoDa
         xx = np.array(xx)
         yy = np.array(yy)
         
-        delete_pol_geom = meshkernel.GeometryList(x_coordinates=xx, y_coordinates=yy) #TODO: .copy()/to_numpy() makes the array contiguous in memory, which is necessary for meshkernel.mesh2d_delete()
+        delete_pol_geom = meshkernel.GeometryList(x_coordinates=xx, y_coordinates=yy)
         mk.mesh2d_delete(geometry_list=delete_pol_geom, 
                          delete_option=meshkernel.DeleteMeshOption.INSIDE_NOT_INTERSECTED,
                          invert_deletion=False)
