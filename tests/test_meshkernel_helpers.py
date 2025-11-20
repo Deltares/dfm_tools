@@ -298,6 +298,7 @@ def test_meshkernel_get_illegalcells():
     illegalcells_gdf = dfmt.meshkernel_get_illegalcells(mk)
     # assert number of polygons
     # TODO: this should be 2, but at the moment a polygon is created for all originally deleted gridcells
+    # https://github.com/Deltares/MeshKernelPy/issues/253
     assert len(illegalcells_gdf) == 6
     # assert number of points per polygon
     # assert (illegalcells_gdf.geometry.apply(lambda x: len(x.exterior.xy[0])) == 7).all()
