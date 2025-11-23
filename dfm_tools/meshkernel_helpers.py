@@ -27,6 +27,17 @@ __all__ = [
     "interpolate_bndpli",
     ]
 
+def meshkernel_get_bbox(mk:meshkernel.MeshKernel):
+    """
+    get the bbox of a meshkernel instance as (xmin, ymin, xmax, ymax)
+    """
+    mesh2d = mk.mesh2d_get()
+    xcoords = mesh2d.node_x
+    ycoords = mesh2d.node_y
+    bbox = (xcoords.min(), ycoords.min(), xcoords.max(), ycoords.max())
+    return bbox
+
+
 def meshkernel_delete_withcoastlines(mk:meshkernel.MeshKernel, res:str='f', min_area:float = 0, crs:(int,str) = None):
     """
     Wrapper around meshkernel_delete_withgdf, which automatically gets the bbox from the meshkernel object and retrieves the coastlines_gdf.
@@ -48,10 +59,7 @@ def meshkernel_delete_withcoastlines(mk:meshkernel.MeshKernel, res:str='f', min_
 
     """
     
-    mesh_bnds = mk.mesh2d_get_mesh_boundaries_as_polygons()
-    
-    bbox = (mesh_bnds.x_coordinates.min(), mesh_bnds.y_coordinates.min(), mesh_bnds.x_coordinates.max(), mesh_bnds.y_coordinates.max())
-    
+    bbox = meshkernel_get_bbox(mk)
     coastlines_gdf = get_coastlines_gdb(bbox=bbox, res=res, min_area=min_area, crs=crs)
     
     meshkernel_delete_withgdf(mk, coastlines_gdf)
@@ -76,8 +84,7 @@ def meshkernel_delete_withshp(mk:meshkernel.MeshKernel, coastlines_shp:str, crs:
     
     """
         
-    mesh_bnds = mk.mesh2d_get_mesh_boundaries_as_polygons()
-    bbox = (mesh_bnds.x_coordinates.min(), mesh_bnds.y_coordinates.min(), mesh_bnds.x_coordinates.max(), mesh_bnds.y_coordinates.max())
+    bbox = meshkernel_get_bbox(mk)
     coastlines_gdb = gpd.read_file(coastlines_shp, bbox=bbox)
     
     if crs:
@@ -408,15 +415,6 @@ def meshkernel_get_outer_xycoords(mk:meshkernel.MeshKernel):
     return xcoords, ycoords
 
     
-def meshkernel_get_bbox(mk:meshkernel.MeshKernel):
-    """
-    get the bbox of a meshkernel instance as (xmin, ymin, xmax, ymax)
-    """
-    xcoords, ycoords = meshkernel_get_outer_xycoords(mk)
-    bbox = (xcoords.min(), ycoords.min(), xcoords.max(), ycoords.max())
-    return bbox
-
-
 def generate_bndpli_cutland(mk:meshkernel.MeshKernel, res:str='f', min_area:float = 0, crs:(int,str) = None, buffer:float = 0):
     """
     Generate a boundary polyline from the meshkernel object and cut away the landward part.

@@ -2,6 +2,9 @@
 
 ## UNRELEASED
 
+### Fix
+- robustly retrieving bbox in `dfmt.meshkernel_get_bbox()` in [#1292](https://github.com/Deltares/dfm_tools/pull/1292)
+
 
 ## 0.42.0 (2025-11-03)
 
