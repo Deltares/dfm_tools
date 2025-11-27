@@ -635,8 +635,7 @@ def cmems_ssh_retrieve_data(row, time_min=None, time_max=None,
     os.rename(file_data_org, file_data_raw)
     
     # reconstruct this dataset (including time subsetting) and write again
-    # TODO: temporary enforcement of netcdf4 engine, to be removed in https://github.com/Deltares/dfm_tools/issues/1269
-    ds = xr.open_dataset(file_data_raw, engine="netcdf4")
+    ds = xr.open_dataset(file_data_raw)
     
     # reduce DEPTH dimension if present (nrt dataset)
     if "DEPTH" in ds.dims:
