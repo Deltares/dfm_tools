@@ -51,8 +51,8 @@ dependencies = [
 	"rws-ddlpy>=0.6.0",
 	#pooch>=1.1.0 has attribute retrieve
 	"pooch>=1.1.0",
-	#hydrolib-core>=0.9.9 removed obsolete keywords to avoid model crash with 2026.01
-	"hydrolib-core>=0.9.9",
+	#hydrolib-core>=0.10.0 added support for quantity netsolarradiation
+	"hydrolib-core>=0.10.0",
 	#meshkernel>=8.2.1 supports illegalcells via the face-node-connectivity
 	"meshkernel>=8.2.1",
 ]
