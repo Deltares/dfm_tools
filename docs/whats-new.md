@@ -6,6 +6,7 @@
 - robustly retrieving bbox in `dfmt.meshkernel_get_bbox()` in [#1292](https://github.com/Deltares/dfm_tools/pull/1292)
 - simpler parsing of uhslc geojson after pyogrio update in [#1294](https://github.com/Deltares/dfm_tools/pull/1294)
 - update for `dfmt.meshkernel_get_illegalcells()` to align with new meshkernel version in [#909](https://github.com/Deltares/dfm_tools/issues/909)
+- only include illegalcells up to 6 edges in `dfmt.meshkernel_get_illegalcells()` in [#1296](https://github.com/Deltares/dfm_tools/pull/1296)
 
 
 ## 0.42.0 (2025-11-03)
