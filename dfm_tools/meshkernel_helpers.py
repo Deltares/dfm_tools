@@ -126,6 +126,7 @@ def meshkernel_get_illegalcells(mk):
     # TODO: remove this after fixing https://github.com/Deltares/MeshKernelPy/issues/253
     mk2 = MeshKernel(projection=mk.get_projection())
     mk2.mesh2d_set(mk.mesh2d_get())
+    
     # get illegalcells from meshkernel instance
     illegalcells_geom = mk2.mesh2d_get_mesh_inner_boundaries_as_polygons()
     # convert xy coords to numpy array
