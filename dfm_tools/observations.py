@@ -306,12 +306,6 @@ def cmems_ssh_read_catalog(source, overwrite=True):
 def _uhslc_get_json():
     uhslc_gpd = gpd.read_file("https://uhslc.soest.hawaii.edu/data/meta.geojson")
     
-    # manual json decoding since pygrio does not do this like fiona
-    # https://github.com/geopandas/pyogrio/issues/445#issuecomment-2215373095
-    import json
-    uhslc_gpd["rq_span"] = uhslc_gpd.rq_span.apply(json.loads)
-    uhslc_gpd["fd_span"] = uhslc_gpd.fd_span.apply(json.loads)
-    
     for drop_col in ["rq_basin", "rq_versions"]:
         if drop_col in uhslc_gpd.columns:
             uhslc_gpd = uhslc_gpd.drop(drop_col, axis=1)
