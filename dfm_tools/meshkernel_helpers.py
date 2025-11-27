@@ -135,6 +135,12 @@ def meshkernel_get_illegalcells(mk):
     # convert to geodataframe of Polygons
     list_polygons = [Polygon(xylist) for xylist in xy_lists]
     illegalcells_gdf = gpd.GeoDataFrame(geometry=list_polygons)
+    
+    # only include polygons around cells up to 6 edges/nodes (polygon of 7 points)
+    # larger "cells" are not considered as cells by the FM kernel and meshkernel
+    pol_npoints = illegalcells_gdf.count_coordinates()
+    bool_illegal = pol_npoints <= 7
+    illegalcells_gdf = illegalcells_gdf.loc[bool_illegal]
     return illegalcells_gdf
 
 
