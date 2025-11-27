@@ -230,12 +230,11 @@ def test_meshkernel_delete_withgdf():
 
 
 @pytest.mark.unittest
-def test_meshkernel_get_illegalcells():    
-    # input params
+def test_meshkernel_get_illegalcells():
+    # based on code in https://github.com/Deltares/MeshKernelPy/issues/253
     lon_min, lon_max, lat_min, lat_max = 147.75, 147.9, -40.4, -40.25
-    dxy = 0.05 #0.05
+    dxy = 0.05
     
-    # grid generation and refinement with GEBCO bathymetry
     # create base grid
     projection = ProjectionType.SPHERICAL
     make_grid_parameters = MakeGridParameters(angle=0,
@@ -262,7 +261,6 @@ def test_meshkernel_get_illegalcells():
     values_np = gebco_elev.flatten()
     gridded_samples = GriddedSamples(x_coordinates=lon_np,y_coordinates=lat_np,values=values_np)
     
-    
     #refinement
     mesh_refinement_parameters = MeshRefinementParameters(min_edge_size=min_edge_size, #always in meters
                                                           refinement_type=RefinementType(1), #Wavecourant/1,
@@ -275,24 +273,45 @@ def test_meshkernel_get_illegalcells():
                                               )    
     # cutcells
     geometry_separator = -999
-    xx = np.array([147.83625 , 147.839556, 147.855833, 147.877528, 147.904139,
+    # removes two square cells (resulting in 1 illegalcell)
+    xx1, yy1 = np.array([[147.77326613, -40.30182344],
+           [147.79012097, -40.30091608],
+           [147.78967742, -40.32541485],
+           [147.77237903, -40.32586853],
+           [147.77326613, -40.30182344]]).T
+    
+    # removes some grid from the side
+    xx2, yy2 = np.array([[147.89701613, -40.34038632],
+           [147.95068548, -40.33675687],
+           [147.95245968, -40.40208693],
+           [147.89790323, -40.40299429],
+           [147.89701613, -40.34038632]]).T
+    
+    # removes two triangular and one square cell (resulting in 1 illegalcell)
+    xx3 = np.array([147.76125 , 147.764556, 147.780833, 147.802528, 147.829139,
+           147.836222, 147.810861, 147.774111, 147.78125 , 147.76125 ])
+    yy3 = np.array([-40.253028, -40.249667, -40.241778, -40.25425 , -40.239222,
+           -40.249639, -40.274278, -40.272611, -40.257222, -40.253028])
+    
+    # removes a large inner part of the grid (resulting in a hole, not an illegalcell)
+    xx4 = np.array([147.83625 , 147.839556, 147.855833, 147.877528, 147.904139,
             147.911222, 147.885861, 147.849111, 147.85625 , 147.83625 ])
-    yy = np.array([-40.305028, -40.301667, -40.293778, -40.30625 , -40.291222,
-            -40.301639, -40.326278, -40.324611, -40.309222, -40.305028])
-    # update yy to still generate two illegalcells after changing 
-    yy += 0.052
-    xx = np.concatenate([xx-0.075, [geometry_separator], xx])
-    yy = np.concatenate([yy, [geometry_separator], yy])
-    delete_pol_geom = GeometryList(x_coordinates=xx, y_coordinates=yy, geometry_separator=geometry_separator)
-    mk.mesh2d_delete(geometry_list=delete_pol_geom, 
-                     delete_option=DeleteMeshOption.INSIDE_NOT_INTERSECTED,
-                     invert_deletion=False)
+    yy4 = np.array([-40.305028, -40.301667, -40.293778, -40.30625 , -40.291222,
+            -40.301639, -40.326278-0.05, -40.324611-0.05, -40.309222, -40.305028]) + 0.052
+    
+    xx_list = [xx1, xx2, xx3, xx4]
+    yy_list = [yy1, yy2, yy3, yy4]
+    for xx, yy in zip(xx_list, yy_list):
+        delete_pol_geom = GeometryList(x_coordinates=xx, y_coordinates=yy, geometry_separator=geometry_separator)
+        mk.mesh2d_delete(geometry_list=delete_pol_geom, 
+                         delete_option=DeleteMeshOption.INSIDE_NOT_INTERSECTED,
+                         invert_deletion=False)
     
     # assert the number of nodes and faces to check if we get illegalcells as expected
     m2d = mk.mesh2d_get()
-    assert m2d.node_x.shape == (269,)
-    assert m2d.face_x.shape == (300,) # (302,) including the illegalcells
-    assert m2d.face_nodes.shape == (1093,) # (1105,) including the illegalcells
+    assert m2d.node_x.shape == (236,)
+    assert m2d.face_x.shape == (246,)
+    assert m2d.face_nodes.shape == (892,)
 
     # derive illegalcells as geodataframe
     illegalcells_gdf = dfmt.meshkernel_get_illegalcells(mk)
