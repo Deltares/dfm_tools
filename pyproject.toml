@@ -25,6 +25,8 @@ dependencies = [
 	"shapely>=2.0.0",
 	#geopandas>=1.1.0 resolves shapely.geos DeprecationWarning: https://github.com/geopandas/geopandas/pull/3453 
 	"geopandas>=1.1.0",
+	#pyogrio>=0.12.0 parses JSON fields as dicts/lists. pyogrio is a dependency for geopandas, was fiona before
+	"pyogrio>=0.12.0",
 	#contextily>=1.6.2 has fixed axis scaling: https://github.com/geopandas/contextily/issues/251
 	"contextily>=1.6.2",
 	#xarray>=2024.7.0 includes fix for numpy v2: https://github.com/pydata/xarray/issues/9179
@@ -51,8 +53,8 @@ dependencies = [
 	"pooch>=1.1.0",
 	#hydrolib-core>=0.10.0 added support for quantity netsolarradiation
 	"hydrolib-core>=0.10.0",
-	#meshkernel>=8.1.3 supports grid refinement based on bathymetry within polygon
-	"meshkernel>=8.1.3",
+	#meshkernel>=8.2.1 supports illegalcells via the face-node-connectivity
+	"meshkernel>=8.2.1",
 ]
 classifiers = [
 	"Development Status :: 4 - Beta",

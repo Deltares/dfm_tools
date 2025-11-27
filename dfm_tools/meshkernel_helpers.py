@@ -12,7 +12,7 @@ from shapely import MultiPolygon, LineString, MultiLineString
 from shapely.ops import linemerge
 from itertools import groupby
 from shapely import Polygon
-from meshkernel import GeometryList
+from meshkernel import GeometryList, MeshKernel
 
 __all__ = [
     "meshkernel_delete_withcoastlines",
@@ -122,8 +122,12 @@ def meshkernel_delete_withgdf(mk:meshkernel.MeshKernel, coastlines_gdf:gpd.GeoDa
 
 
 def meshkernel_get_illegalcells(mk):
+    # first reset the mesh to get a blended inner boundary
+    # TODO: remove this after fixing https://github.com/Deltares/MeshKernelPy/issues/253
+    mk2 = MeshKernel(projection=mk.get_projection())
+    mk2.mesh2d_set(mk.mesh2d_get())
     # get illegalcells from meshkernel instance
-    illegalcells_geom = mk.mesh2d_get_face_polygons(num_edges=6)
+    illegalcells_geom = mk2.mesh2d_get_mesh_inner_boundaries_as_polygons()
     # convert xy coords to numpy array
     illegalcells_np = np.c_[illegalcells_geom.x_coordinates, illegalcells_geom.y_coordinates]
     # split illegalcells array based on the geomtry_separator
