@@ -53,8 +53,8 @@ dependencies = [
 	"pooch>=1.1.0",
 	#hydrolib-core>=0.9.9 removed obsolete keywords to avoid model crash with 2026.01
 	"hydrolib-core>=0.9.9",
-	#meshkernel>=8.1.3 supports grid refinement based on bathymetry within polygon
-	"meshkernel>=8.1.3",
+	#meshkernel>=8.2.1 supports illegalcells via the face-node-connectivity
+	"meshkernel>=8.2.1",
 ]
 classifiers = [
 	"Development Status :: 4 - Beta",

@@ -280,7 +280,6 @@ def test_meshkernel_get_illegalcells():
     yy = np.array([-40.305028, -40.301667, -40.293778, -40.30625 , -40.291222,
             -40.301639, -40.326278, -40.324611, -40.309222, -40.305028])
     # update yy to still generate two illegalcells after changing 
-    # mk.curvilinear_compute_rectangular_grid_on_extension()
     yy += 0.052
     xx = np.concatenate([xx-0.075, [geometry_separator], xx])
     yy = np.concatenate([yy, [geometry_separator], yy])
@@ -289,9 +288,14 @@ def test_meshkernel_get_illegalcells():
                      delete_option=DeleteMeshOption.INSIDE_NOT_INTERSECTED,
                      invert_deletion=False)
     
+    # assert the number of nodes and faces to check if we get illegalcells as expected
+    m2d = mk.mesh2d_get()
+    assert m2d.node_x.shape == (269,)
+    assert m2d.face_x.shape == (300,) # (302,) including the illegalcells
+    assert m2d.face_nodes.shape == (1093,) # (1105,) including the illegalcells
+
     # derive illegalcells as geodataframe
     illegalcells_gdf = dfmt.meshkernel_get_illegalcells(mk)
-    
     # assert number of polygons
     assert len(illegalcells_gdf) == 2
     # assert number of points per polygon
