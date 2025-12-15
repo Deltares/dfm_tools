@@ -943,7 +943,7 @@ def rwsddl_ssh_retrieve_data(row, time_min, time_max):
         return
     
     # minimize disk usage of StatuswaardeLijst by converting to U1
-    varn_status = "WaarnemingMetadata.StatuswaardeLijst"
+    varn_status = "WaarnemingMetadata.Statuswaarde"
     status_dict = {"O":"Ongecontroleerd",
                    "G":"Gecontroleerd",
                    "D":"Definitief"}
@@ -951,26 +951,18 @@ def rwsddl_ssh_retrieve_data(row, time_min, time_max):
         measurements[varn_status] = measurements[varn_status].str.replace(v, k)
     
     # convert to xarray (dropping some constant columns)
-    drop_if_constant = ["WaarnemingMetadata.OpdrachtgevendeInstantieLijst",
-                        "WaarnemingMetadata.BemonsteringshoogteLijst",
-                        "WaarnemingMetadata.ReferentievlakLijst",
-                        "AquoMetadata_MessageID",
-                        "BioTaxonType", 
-                        "BemonsteringsSoort.Code",
-                        "Compartiment.Code",
-                        "Eenheid.Code",
-                        "Grootheid.Code",
-                        "Hoedanigheid.Code",
-                        "WaardeBepalingsmethode.Code",
-                        "MeetApparaat.Code",
-                        ]
-    ds = ddlpy.dataframe_to_xarray(measurements, drop_if_constant)
+    always_preserve = [
+        "Meetwaarde.Waarde_Numeriek",
+        "WaarnemingMetadata.Kwaliteitswaardecode",
+        "WaarnemingMetadata.Statuswaarde",
+        ]
+    ds = ddlpy.dataframe_to_xarray(df=measurements, always_preserve=always_preserve)
     
     ds[varn_status] = ds[varn_status].assign_attrs(status_dict)
     
     rename_dict = {'Meetwaarde.Waarde_Numeriek':'waterlevel',
-                   'WaarnemingMetadata.KwaliteitswaardecodeLijst':'qc',
-                   'WaarnemingMetadata.StatuswaardeLijst':'status'}
+                   'WaarnemingMetadata.Kwaliteitswaardecode':'qc',
+                   'WaarnemingMetadata.Statuswaarde':'status'}
     ds = ds.rename_vars(rename_dict)
     
     # convert meters to cm
