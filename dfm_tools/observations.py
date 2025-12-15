@@ -502,8 +502,8 @@ def gesla3_ssh_read_catalog(only_coastal=True):
 
 
 def rwsddl_ssh_meta_dict():
-    # combination for measured waterlevels
-    meta_dict = {'Grootheid.Code':'WATHTE', 'Groepering.Code':'NVT'}
+    # combination for measured waterlevels (no astro, no extremes)
+    meta_dict = {'ProcesType':'meting', 'Grootheid.Code':'WATHTE', 'Groepering.Code':''}
     return meta_dict
 
 
@@ -546,9 +546,13 @@ def rwsddl_ssh_read_catalog(meta_dict=None):
     # add "Code" index as column and reset the index
     selected = selected.reset_index()
     
-    xcoords = selected["X"]
-    ycoords = selected["Y"]
+    xcoords = selected["Lon"]
+    ycoords = selected["Lat"]
     epsg_all = selected["Coordinatenstelsel"]
+    # TODO: manually replacing crs name with epsg, the old waterwebservices had epsg in
+    # this column, would be great if new wws also has this.
+    # https://github.com/Rijkswaterstaat/WaterWebservices/issues/20
+    epsg_all = epsg_all.replace("ETRS89", "4258")
     epsg_uniq = epsg_all.unique()
     if len(epsg_uniq)>1:
         raise ValueError(f"multiple EPSG codes in one LocatieLijst not supported: {epsg_uniq.tolist()}")
@@ -939,7 +943,7 @@ def rwsddl_ssh_retrieve_data(row, time_min, time_max):
         return
     
     # minimize disk usage of StatuswaardeLijst by converting to U1
-    varn_status = "WaarnemingMetadata.StatuswaardeLijst"
+    varn_status = "WaarnemingMetadata.Statuswaarde"
     status_dict = {"O":"Ongecontroleerd",
                    "G":"Gecontroleerd",
                    "D":"Definitief"}
@@ -947,26 +951,18 @@ def rwsddl_ssh_retrieve_data(row, time_min, time_max):
         measurements[varn_status] = measurements[varn_status].str.replace(v, k)
     
     # convert to xarray (dropping some constant columns)
-    drop_if_constant = ["WaarnemingMetadata.OpdrachtgevendeInstantieLijst",
-                        "WaarnemingMetadata.BemonsteringshoogteLijst",
-                        "WaarnemingMetadata.ReferentievlakLijst",
-                        "AquoMetadata_MessageID",
-                        "BioTaxonType", 
-                        "BemonsteringsSoort.Code",
-                        "Compartiment.Code",
-                        "Eenheid.Code",
-                        "Grootheid.Code",
-                        "Hoedanigheid.Code",
-                        "WaardeBepalingsmethode.Code",
-                        "MeetApparaat.Code",
-                        ]
-    ds = ddlpy.dataframe_to_xarray(measurements, drop_if_constant)
+    always_preserve = [
+        "Meetwaarde.Waarde_Numeriek",
+        "WaarnemingMetadata.Kwaliteitswaardecode",
+        "WaarnemingMetadata.Statuswaarde",
+        ]
+    ds = ddlpy.dataframe_to_xarray(df=measurements, always_preserve=always_preserve)
     
     ds[varn_status] = ds[varn_status].assign_attrs(status_dict)
     
     rename_dict = {'Meetwaarde.Waarde_Numeriek':'waterlevel',
-                   'WaarnemingMetadata.KwaliteitswaardecodeLijst':'qc',
-                   'WaarnemingMetadata.StatuswaardeLijst':'status'}
+                   'WaarnemingMetadata.Kwaliteitswaardecode':'qc',
+                   'WaarnemingMetadata.Statuswaarde':'status'}
     ds = ds.rename_vars(rename_dict)
     
     # convert meters to cm

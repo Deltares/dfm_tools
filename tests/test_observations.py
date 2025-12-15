@@ -89,7 +89,7 @@ def test_ssh_retrieve_data(source, tmp_path):
     if source=="rwsddl":
         # order of rows in rwsddl locations dataframe is python-version-dependent
         # make sure we always test on the same hist station (no realtime data)
-        bool_hoekvhld = ssc_catalog_gpd["Code"].isin(["HOEKVHLD"])
+        bool_hoekvhld = ssc_catalog_gpd["Code"].isin(["hoekvanholland"])
         ssc_catalog_gpd = ssc_catalog_gpd.loc[bool_hoekvhld]
     
     if source == "ioc":
@@ -115,8 +115,9 @@ def test_ssh_netcdf_overview(tmp_path):
     
     # order of rows in rwsddl locations dataframe is python-version-dependent
     # make sure we always test on the same hist station (no realtime data)
-    bool_hoekvhld = ssc_catalog_gpd["Code"].isin(["HOEKVHLD"])
+    bool_hoekvhld = ssc_catalog_gpd["Code"].isin(["hoekvanholland"])
     ssc_catalog_gpd_sel = ssc_catalog_gpd.loc[bool_hoekvhld]
+    assert len(ssc_catalog_gpd_sel) == 1
     
     dfmt.ssh_retrieve_data(ssc_catalog_gpd_sel, dir_output=tmp_path, 
                            time_min=time_min, time_max=time_max)
@@ -131,11 +132,14 @@ def test_ssh_netcdf_overview(tmp_path):
 def test_rwsddl_ssh_get_time_max():
     locations = ddlpy.locations()
     bool_hoedanigheid = locations['Hoedanigheid.Code'].isin(['NAP'])
-    bool_stations = locations.index.isin(['HOEKVHLD', 'IJMDBTHVN','SCHEVNGN'])
+    bool_stations = locations.index.isin(['hoekvanholland', 'ijmuiden.buitenhaven','scheveningen'])
+    bool_procestype = locations['ProcesType'].isin(['meting'])
     bool_grootheid = locations['Grootheid.Code'].isin(['WATHTE'])
-    bool_groepering = locations['Groepering.Code'].isin(['NVT'])
-    selected = locations.loc[bool_grootheid & bool_hoedanigheid & bool_groepering & bool_stations]
+    bool_groepering = locations['Groepering.Code'].isin([''])
+    selected = locations.loc[bool_procestype & bool_grootheid & bool_hoedanigheid & bool_groepering & bool_stations]
     selected_withtimemax = dfmt.observations.rwsddl_ssh_get_time_max(selected)
+    assert len(selected) == 3
+    assert len(selected_withtimemax) == 3
     assert "time_max" not in selected.columns
     assert "time_max" in selected_withtimemax.columns
 

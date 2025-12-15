@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dfm_tools"
-version = "0.42.1"
+version = "0.43.1"
 maintainers = [{ name = "Jelmer Veenstra", email = "jelmer.veenstra@deltares.nl" }]
 description = "dfm_tools are pre- and post-processing tools for Delft3D FM"
 readme = "README.md"
@@ -47,8 +47,8 @@ dependencies = [
 	"erddapy>=2.0.2",
 	#copernicusmarine>=2.0.0 has breaking changes compared to v1
 	"copernicusmarine>=2.0.0",
-	#rws-ddlpy>=0.6.0 `ddlpy.measurements_amount()` returns all amounts
-	"rws-ddlpy>=0.6.0",
+	#rws-ddlpy>=0.8.0 connects to new RWS waterwebservices/ddapi20
+	"rws-ddlpy>=0.8.0",
 	#pooch>=1.1.0 has attribute retrieve
 	"pooch>=1.1.0",
 	#hydrolib-core>=0.10.0 added support for quantity netsolarradiation
