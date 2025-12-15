@@ -2,6 +2,9 @@
 
 ## UNRELEASED
 
+# Feat
+- update to new RWS Waterwebservices (and ddlpy) in [#1301](https://github.com/Deltares/dfm_tools/pull/1301)
+
 
 ## 0.43.0 (2025-11-27)
 
