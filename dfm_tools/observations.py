@@ -502,8 +502,8 @@ def gesla3_ssh_read_catalog(only_coastal=True):
 
 
 def rwsddl_ssh_meta_dict():
-    # combination for measured waterlevels
-    meta_dict = {'Grootheid.Code':'WATHTE', 'Groepering.Code':'NVT'}
+    # combination for measured waterlevels (no astro, no extremes)
+    meta_dict = {'ProcesType':'meting', 'Grootheid.Code':'WATHTE', 'Groepering.Code':''}
     return meta_dict
 
 
@@ -546,9 +546,13 @@ def rwsddl_ssh_read_catalog(meta_dict=None):
     # add "Code" index as column and reset the index
     selected = selected.reset_index()
     
-    xcoords = selected["X"]
-    ycoords = selected["Y"]
+    xcoords = selected["Lon"]
+    ycoords = selected["Lat"]
     epsg_all = selected["Coordinatenstelsel"]
+    # TODO: manually replacing crs name with epsg, the old waterwebservices had epsg in
+    # this column, would be great if new wws also has this.
+    # https://github.com/Rijkswaterstaat/WaterWebservices/issues/20
+    epsg_all = epsg_all.replace("ETRS89", "4258")
     epsg_uniq = epsg_all.unique()
     if len(epsg_uniq)>1:
         raise ValueError(f"multiple EPSG codes in one LocatieLijst not supported: {epsg_uniq.tolist()}")
