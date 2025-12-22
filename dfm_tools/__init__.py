@@ -4,7 +4,7 @@ Pre- and postprocessing D-FlowFM model input and output files
 
 __author__ = """Jelmer Veenstra"""
 __email__ = "jelmer.veenstra@deltares.nl"
-__version__ = "0.43.1"
+__version__ = "0.44.0"
 
 from dfm_tools.deprecated_functions import *
 from dfm_tools.download import *

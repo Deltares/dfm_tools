@@ -8,5 +8,5 @@ authors:
     orcid: https://orcid.org/0000-0002-6349-818X
 title: "dfm_tools: A Python package for pre- and postprocessing D-FlowFM model input and output files"
 type: software
-version: 0.43.1
+version: 0.44.0
 doi: https://doi.org/10.5281/zenodo.7857393

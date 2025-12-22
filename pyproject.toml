@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dfm_tools"
-version = "0.43.1"
+version = "0.44.0"
 maintainers = [{ name = "Jelmer Veenstra", email = "jelmer.veenstra@deltares.nl" }]
 description = "dfm_tools are pre- and post-processing tools for Delft3D FM"
 readme = "README.md"
