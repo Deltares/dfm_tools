@@ -366,7 +366,7 @@ def test_meshkernel_to_UgridDataset(tmp_path):
     assert 0 not in ds_out.mesh2d_face_nodes.to_numpy()
     assert ds_out.mesh2d_face_nodes.to_numpy().min() == -1
     assert ds_out.mesh2d_face_nodes.to_numpy().max() == 529
-    assert "wgs84" in ds_out.variables
+    assert "mesh2d_crs" in ds_out.variables
 
 
 @pytest.mark.unittest

@@ -92,36 +92,37 @@ def test_uds_auto_set_crs_cartesian():
     file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True).replace('0*','0002')
     uds = dfmt.open_partitioned_dataset(file_nc)
     assert uds.ugrid.crs['mesh2d'] is not None
-    assert uds.ugrid.crs['mesh2d'].to_epsg() == 28992
     assert uds.grid.is_geographic is False
+    ds = uds.ugrid.to_dataset()
+    assert ds['mesh2d_crs'].attrs["name"] == 'Amersfoort / RD New'
+    assert ds['mesh2d_crs'].attrs["epsg"] == 28992
+    assert "grid_mapping_name" not in ds['mesh2d_crs'].attrs.keys()
 
 
 @pytest.mark.unittest
 def test_uds_auto_set_crs_none():
     file_nc = dfmt.data.fm_curvedbend_map(return_filepath=True)
     uds = dfmt.open_partitioned_dataset(file_nc)
-    assert uds.ugrid.crs['mesh2d'] is None
+    assert uds.ugrid.crs['mesh2d'] is not None
     assert uds.grid.is_geographic is False
+    ds = uds.ugrid.to_dataset()
+    assert ds['mesh2d_crs'].attrs["name"] == 'Unknown projected'
+    assert ds['mesh2d_crs'].attrs["epsg"] == 0
+    assert ds['mesh2d_crs'].attrs["grid_mapping_name"] == 'Unknown projected'
 
 
 @pytest.mark.unittest
 def test_uds_auto_set_crs_spherical():
-    # using dummy dataset, was tested before with
-    # 'p:\1204257-dcsmzuno\2006-2012\3D-DCSM-FM\A18b_ntsu1\DCSM-FM_0_5nm_grid_20191202_depth_20181213_net.nc'
-    file_nc = dfmt.data.fm_curvedbend_map(return_filepath=True)
-    def replace_crs(ds):
-        ds = ds.drop_vars('projected_coordinate_system')
-        spherical_attrs = {'name': 'WGS84',
-         'epsg': np.int32(4326),
-         'grid_mapping_name': 'latitude_longitude',
-         'EPSG_code': 'EPSG:4326',
-         }
-        ds['wgs84'] = xr.DataArray(0).assign_attrs(spherical_attrs)
-        return ds
-    uds = dfmt.open_partitioned_dataset(file_nc, preprocess=replace_crs)
+    file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True).replace('0*','0002')
+    uds = dfmt.open_partitioned_dataset(file_nc)
+    uds = uds.ugrid.to_crs('EPSG:4326')
+    
     assert uds.ugrid.crs['mesh2d'] is not None
-    assert uds.ugrid.crs['mesh2d'].to_epsg() == 4326
     assert uds.grid.is_geographic is True
+    ds = uds.ugrid.to_dataset()
+    assert ds['mesh2d_crs'].attrs["name"] == 'WGS 84'
+    assert ds['mesh2d_crs'].attrs["epsg"] == 4326
+    assert ds['mesh2d_crs'].attrs["grid_mapping_name"] == 'latitude_longitude'
 
 
 @pytest.mark.unittest
@@ -292,6 +293,7 @@ def test_open_dataset_curvilinear():
         x_bounds='vertices_longitude',
         y_bounds='vertices_latitude',
         convert_360to180=True,
+        compat="no_conflicts"
         )
 
     # check if vertices lat/lon and lat/lon variables are dropped: https://github.com/Deltares/dfm_tools/issues/930
