@@ -88,7 +88,7 @@ def test_remove_nan_fillvalue_attrs(tmp_path):
 
 
 @pytest.mark.unittest
-def test_uds_auto_set_crs_cartesian():
+def test_xugrid_crs_cartesian():
     file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True).replace('0*','0002')
     uds = dfmt.open_partitioned_dataset(file_nc)
     assert uds.ugrid.crs['mesh2d'] is not None
@@ -100,7 +100,7 @@ def test_uds_auto_set_crs_cartesian():
 
 
 @pytest.mark.unittest
-def test_uds_auto_set_crs_none():
+def test_xugrid_crs_none():
     file_nc = dfmt.data.fm_curvedbend_map(return_filepath=True)
     uds = dfmt.open_partitioned_dataset(file_nc)
     assert uds.ugrid.crs['mesh2d'] is not None
@@ -112,7 +112,7 @@ def test_uds_auto_set_crs_none():
 
 
 @pytest.mark.unittest
-def test_uds_auto_set_crs_spherical():
+def test_xugrid_crs_spherical():
     file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True).replace('0*','0002')
     uds = dfmt.open_partitioned_dataset(file_nc)
     uds = uds.ugrid.to_crs('EPSG:4326')
