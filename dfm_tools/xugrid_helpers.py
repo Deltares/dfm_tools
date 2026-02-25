@@ -153,24 +153,6 @@ def remove_nan_fillvalue_attrs(ds : (xr.Dataset, xu.UgridDataset)):
         print(f"[{count} nan fillvalue attrs removed]", end="")
 
 
-def uds_auto_set_crs(uds : xu.UgridDataset):
-    # FM-mapfiles contain wgs84/projected_coordinate_system variables with epsg attr, xugrid has .crs property
-    # TODO: parse+set crs in xugrid instead: https://github.com/Deltares/xugrid/issues/42
-    # also adjusting projected_coordinate_system/wgs84 when using set_crs/to_crs
-    
-    uds_epsg = uds.filter_by_attrs(epsg=lambda v: v is not None)
-    if len(uds_epsg.data_vars) != 1:
-        return
-    
-    crs_varn = list(uds_epsg.data_vars)[0]
-    epsg = uds[crs_varn].attrs["epsg"]
-    from pyproj.exceptions import CRSError
-    try:
-        uds.ugrid.set_crs(epsg)
-    except CRSError:
-        return
-
-
 def open_partitioned_dataset(file_nc:str, decode_fillvals:bool = False, remove_edges:bool = False, remove_ghost:bool = True, **kwargs): 
     """
     using xugrid to read and merge partitions, including support for delft3dfm mapformat1 
@@ -253,7 +235,6 @@ def open_partitioned_dataset(file_nc:str, decode_fillvals:bool = False, remove_e
         uds = xu.core.wrap.UgridDataset(ds)
         if remove_ghost: #TODO: this makes it way slower (at least for GTSM, although merging seems faster), but is necessary since values on overlapping cells are not always identical (eg in case of Venice ucmag)
             uds = remove_ghostcells(uds, file_nc_one)
-        uds_auto_set_crs(uds)
         partitions.append(uds)
     print(': ',end='')
     print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')

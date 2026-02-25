@@ -12,8 +12,7 @@ import xarray as xr
 import numpy as np
 import geopandas as gpd
 from shapely.geometry import Polygon
-from dfm_tools.meshkernel_helpers import (geographic_to_meshkernel_projection, 
-                                          uds_add_crs_attrs,
+from dfm_tools.meshkernel_helpers import (geographic_to_meshkernel_projection,
                                           crs_to_isgeographic
                                           )
 from meshkernel import (ProjectionType, MakeGridParameters, MeshKernel, 
@@ -40,37 +39,6 @@ def test_crs_to_isgeographic():
     
     is_geographic = crs_to_isgeographic(None)
     assert is_geographic is False
-
-
-@pytest.mark.unittest
-def test_uds_add_crs_attrs_cartesian():
-    uds = xu.data.adh_san_diego()
-    crs='EPSG:28992' # this is not the correct crs for this model, but that does not matter
-    uds.ugrid.set_crs(crs)
-    uds_add_crs_attrs(uds)
-    
-    assert "projected_coordinate_system" in uds.data_vars
-    crs_attrs = uds["projected_coordinate_system"].attrs
-    assert crs_attrs["name"] == "Amersfoort / RD New"
-    assert crs_attrs["epsg"] == 28992
-    assert crs_attrs["EPSG_code"] == "EPSG:28992"
-    assert "grid_mapping_name" not in crs_attrs.keys()
-
-
-@pytest.mark.unittest
-def test_uds_add_crs_attrs_spherical():
-    uds = xu.data.adh_san_diego()
-    crs='EPSG:4326' # this is not the correct crs for this model, but that does not matter
-    uds.ugrid.set_crs(crs)
-    uds_add_crs_attrs(uds)
-    
-    assert "wgs84" in uds.data_vars
-    crs_attrs = uds["wgs84"].attrs
-    assert crs_attrs["name"] == "WGS 84"
-    assert crs_attrs["epsg"] == 4326
-    assert crs_attrs["EPSG_code"] == "EPSG:4326"
-    assert "grid_mapping_name" in crs_attrs.keys()
-    assert crs_attrs["grid_mapping_name"] == "latitude_longitude"
 
 
 @pytest.mark.unittest
