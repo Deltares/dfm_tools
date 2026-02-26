@@ -203,9 +203,8 @@ def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, crs:(int,str) = None) -
     if crs_is_geographic != grid_is_geographic:
         raise ValueError(f"crs has is_geographic={crs_is_geographic} and grid has is_geographic={grid_is_geographic}. This is not allowed.")
     
-    # TODO: below is not correctly handled by xugrid yet, projected=False does not give is_geographic=True
-    # related issue is https://github.com/Deltares/xugrid/issues/187
-    xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid, projected= not crs_is_geographic, crs=crs)
+    # convert meshkernel to Ugrid2d
+    xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid, crs=crs)
     
     # convert 0-based to 1-based indices for connectivity variables like face_node_connectivity
     # this is required by delft3dfm
