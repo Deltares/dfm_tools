@@ -218,7 +218,6 @@ def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, crs:(int,str) = None) -
     uds = uds.ugrid.assign_node_coords()
     
     uds = uds.assign_attrs({
-        #'Conventions': 'CF-1.8 UGRID-1.0 Deltares-0.10', #TODO: conventions come from xugrid, so this line is probably not necessary
         'institution': 'Deltares',
         'references': 'https://www.deltares.nl',
         'source': f'Created with meshkernel {meshkernel.__version__}, xugrid {xu.__version__} and dfm_tools {__version__}',
