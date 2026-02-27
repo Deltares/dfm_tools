@@ -194,40 +194,41 @@ def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, crs:(int,str) = None) -
 
     """
     
-    crs_is_geographic = crs_to_isgeographic(crs)
-    
-    mesh2d_grid = mk.mesh2d_get()
-    
     #check if both crs and grid are geograpic or not
     #TODO: do this in xugrid: https://github.com/Deltares/xugrid/issues/188
+    crs_is_geographic = crs_to_isgeographic(crs)
     grid_is_geographic = meshkernel_is_geographic(mk)
     if crs_is_geographic != grid_is_geographic:
         raise ValueError(f"crs has is_geographic={crs_is_geographic} and grid has is_geographic={grid_is_geographic}. This is not allowed.")
     
+    mesh2d_grid = mk.mesh2d_get()
     # TODO: below is not correctly handled by xugrid yet, projected=False does not give is_geographic=True
     # related issue is https://github.com/Deltares/xugrid/issues/187
-    xu_grid = xu.Ugrid2d.from_meshkernel(mesh2d_grid, projected= not crs_is_geographic, crs=crs)
+    xu_ugrid2d = xu.Ugrid2d.from_meshkernel(mesh2d_grid, projected= not crs_is_geographic, crs=crs)
     
     # convert 0-based to 1-based indices for connectivity variables like face_node_connectivity
     # this is required by delft3dfm
-    xu_grid.start_index = 1
-    xu_grid_ds = xu_grid.to_dataset()
+    xu_ugrid2d.start_index = 1
     
     # convert to uds and add attrs and crs
-    xu_grid_uds = xu.UgridDataset(xu_grid_ds)
+    uds = xu.UgridDataset(grids=[xu_ugrid2d])
     
-    xu_grid_uds = xu_grid_uds.assign_attrs({#'Conventions': 'CF-1.8 UGRID-1.0 Deltares-0.10', #TODO: conventions come from xugrid, so this line is probably not necessary
-                                          'institution': 'Deltares',
-                                          'references': 'https://www.deltares.nl',
-                                          'source': f'Created with meshkernel {meshkernel.__version__}, xugrid {xu.__version__} and dfm_tools {__version__}',
-                                          'history': 'Created on %s, %s'%(dt.datetime.now().strftime('%Y-%m-%dT%H:%M:%S%z'),getpass.getuser()), #TODO: add timezone
-                                          })
+    # temporarily assign_node_coords to avoid conversion to xr.Dataset when calling .assign_attrs()
+    # TODO: to be fixed in https://github.com/Deltares/xugrid/issues/412
+    uds = uds.ugrid.assign_node_coords()
+    
+    uds = uds.assign_attrs({
+        'institution': 'Deltares',
+        'references': 'https://www.deltares.nl',
+        'source': f'Created with meshkernel {meshkernel.__version__}, xugrid {xu.__version__} and dfm_tools {__version__}',
+        'history': 'Created on %s, %s'%(dt.datetime.now().strftime('%Y-%m-%dT%H:%M:%S%z'),getpass.getuser()), #TODO: add timezone
+        })
     
     # add crs including attrs
     if crs is not None:
-        xu_grid_uds.ugrid.set_crs(crs)
-        uds_add_crs_attrs(xu_grid_uds)
-    return xu_grid_uds
+        uds.ugrid.set_crs(crs)
+        uds_add_crs_attrs(uds)
+    return uds
 
 
 def uds_get_crs(uds):
