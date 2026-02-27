@@ -213,6 +213,10 @@ def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, crs:(int,str) = None) -
     # convert to uds and add attrs and crs
     uds = xu.UgridDataset(grids=[xu_ugrid2d])
     
+    # temporarily assign_node_coords to avoid conversion to xr.Dataset when calling .assign_attrs()
+    # TODO: to be fixed in https://github.com/Deltares/xugrid/issues/412
+    uds = uds.ugrid.assign_node_coords()
+    
     uds = uds.assign_attrs({
         #'Conventions': 'CF-1.8 UGRID-1.0 Deltares-0.10', #TODO: conventions come from xugrid, so this line is probably not necessary
         'institution': 'Deltares',
