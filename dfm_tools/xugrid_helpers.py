@@ -576,6 +576,12 @@ def enrich_rst_with_map(ds_rst:xr.Dataset):
     # remove unassociated edges from mapfile to align with rst file
     ds_map = remove_unassociated_edges(ds_map)
     
+    # enrich rst file with crs variables from mapfile
+    # like projected_coordinate_system/wgs84/mesh1d_crs/mesh2d_crs
+    grid_mapping_names = ds_map.ugrid_roles.grid_mapping_names.values()
+    for var in grid_mapping_names:
+        ds_rst[var] = ds_map[var]
+    
     # enrich rst file with topology variables from mapfile
     topology_varn = ds_map.ugrid_roles.topology[0]
     topo_var = ds_map[topology_varn]
