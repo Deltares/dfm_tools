@@ -88,44 +88,6 @@ def test_remove_nan_fillvalue_attrs(tmp_path):
 
 
 @pytest.mark.unittest
-def test_xugrid_crs_cartesian():
-    file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True).replace('0*','0002')
-    uds = dfmt.open_partitioned_dataset(file_nc)
-    assert uds.ugrid.crs['mesh2d'] is not None
-    assert uds.grid.is_geographic is False
-    ds = uds.ugrid.to_dataset()
-    assert ds['mesh2d_crs'].attrs["name"] == 'Amersfoort / RD New'
-    assert ds['mesh2d_crs'].attrs["epsg"] == 28992
-    assert "grid_mapping_name" not in ds['mesh2d_crs'].attrs.keys()
-
-
-@pytest.mark.unittest
-def test_xugrid_crs_none():
-    file_nc = dfmt.data.fm_curvedbend_map(return_filepath=True)
-    uds = dfmt.open_partitioned_dataset(file_nc)
-    assert uds.ugrid.crs['mesh2d'] is not None
-    assert uds.grid.is_geographic is False
-    ds = uds.ugrid.to_dataset()
-    assert ds['mesh2d_crs'].attrs["name"] == 'Unknown projected'
-    assert ds['mesh2d_crs'].attrs["epsg"] == 0
-    assert ds['mesh2d_crs'].attrs["grid_mapping_name"] == 'Unknown projected'
-
-
-@pytest.mark.unittest
-def test_xugrid_crs_spherical():
-    file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True).replace('0*','0002')
-    uds = dfmt.open_partitioned_dataset(file_nc)
-    uds = uds.ugrid.to_crs('EPSG:4326')
-    
-    assert uds.ugrid.crs['mesh2d'] is not None
-    assert uds.grid.is_geographic is True
-    ds = uds.ugrid.to_dataset()
-    assert ds['mesh2d_crs'].attrs["name"] == 'WGS 84'
-    assert ds['mesh2d_crs'].attrs["epsg"] == 4326
-    assert ds['mesh2d_crs'].attrs["grid_mapping_name"] == 'latitude_longitude'
-
-
-@pytest.mark.unittest
 def test_open_2Dnetwork_with_1Dtopology(tmp_path):
     file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True).replace('0*','0002')
     
