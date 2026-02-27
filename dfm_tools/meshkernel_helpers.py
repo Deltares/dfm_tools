@@ -176,8 +176,8 @@ def meshkernel_is_geographic(mk):
 
 def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, crs:(int,str) = None) -> xu.UgridDataset:
     """
-    Convert a meshkernel object to a UgridDataset, including a variable with the crs (used by dflowfm to distinguish spherical/cartesian networks).
-    The UgridDataset enables bathymetry interpolation and writing to netfile.
+    Convert a meshkernel object to a UgridDataset. The UgridDataset enables bathymetry
+    interpolation and writing to netfile.
 
     Parameters
     ----------
@@ -194,15 +194,13 @@ def meshkernel_to_UgridDataset(mk:meshkernel.MeshKernel, crs:(int,str) = None) -
     """
     
     #check if both crs and grid are geograpic or not
-    #TODO: do this in xugrid: https://github.com/Deltares/xugrid/issues/188
     crs_is_geographic = crs_to_isgeographic(crs)
     grid_is_geographic = meshkernel_is_geographic(mk)
     if crs_is_geographic != grid_is_geographic:
         raise ValueError(f"crs has is_geographic={crs_is_geographic} and grid has is_geographic={grid_is_geographic}. This is not allowed.")
     
+    # convert meshkernel to Ugrid2d
     mesh2d_grid = mk.mesh2d_get()
-    # TODO: below is not correctly handled by xugrid yet, projected=False does not give is_geographic=True
-    # related issue is https://github.com/Deltares/xugrid/issues/187
     xu_ugrid2d = xu.Ugrid2d.from_meshkernel(mesh2d_grid, crs=crs)
     
     # convert 0-based to 1-based indices for connectivity variables like face_node_connectivity
