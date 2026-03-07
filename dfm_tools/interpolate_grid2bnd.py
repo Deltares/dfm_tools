@@ -485,8 +485,6 @@ def interp_uds_to_plipoints(uds:xu.UgridDataset, gdf:geopandas.GeoDataFrame) -> 
     # TODO: this function requires gdf with points, but the interp_regularnc_to_plipoints requires paths to plifiles (and others also)
     
     facedim = uds.grid.face_dimension
-    edgedim = uds.grid.edge_dimension
-    nodedim = uds.grid.node_dimension
     ncbnd_construct = get_ncbnd_construct()
     dimn_point = ncbnd_construct['dimn_point']
     varn_pointname = ncbnd_construct['varn_pointname']
