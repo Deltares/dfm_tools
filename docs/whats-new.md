@@ -2,6 +2,16 @@
 
 ## UNRELEASED
 
+
+## 0.45.0 (2026-03-07)
+
+# Feat
+- proper behaviour of crs attributes and is_projected/is_geometric by using new xugrid approach instead in [#1319](https://github.com/Deltares/dfm_tools/pull/1319)
+- properly dropping topology dimension in `dfmt.interp_uds_to_plipoints()` using new xugrid approach in [#1322](https://github.com/Deltares/dfm_tools/pull/1322)
+
+
+## 0.44.0 (2025-12-22)
+
 # Feat
 - update to new RWS Waterwebservices (and ddlpy) in [#1301](https://github.com/Deltares/dfm_tools/pull/1301)
 
