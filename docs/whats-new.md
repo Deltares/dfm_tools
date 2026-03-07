@@ -1,6 +1,6 @@
 # What's new
 
-## UNRELEASED
+## 0.45.0 (2026-03-07)
 
 # Feat
 - proper behaviour of crs attributes and is_projected/is_geometric by using new xugrid approach instead in [#1319](https://github.com/Deltares/dfm_tools/pull/1319)
