@@ -110,7 +110,7 @@ def test_xugrid_opendataset_ugridplot_contour_with_colorbar():
 def test_xugrid_crs_cartesian():
     """
     adding crs attrs was moved from dfm_tools to xugrid in https://github.com/Deltares/xugrid/pull/410
-    (xugrid>0.14.3) and https://github.com/Deltares/dfm_tools/issues/1310 (dfm_tools>=0.45.0)
+    (xugrid>=0.15.0) and https://github.com/Deltares/dfm_tools/issues/1310 (dfm_tools>=0.45.0)
     this test is therfore not needed anymore, but kept as external packages test for a while
     just to make sure the proper xugrid version is installed (which is also defined in the toml, but still)
     """
@@ -128,7 +128,7 @@ def test_xugrid_crs_cartesian():
 def test_xugrid_crs_none():
     """
     adding crs attrs was moved from dfm_tools to xugrid in https://github.com/Deltares/xugrid/pull/410
-    (xugrid>0.14.3) and https://github.com/Deltares/dfm_tools/issues/1310 (dfm_tools>=0.45.0)
+    (xugrid>=0.15.0) and https://github.com/Deltares/dfm_tools/issues/1310 (dfm_tools>=0.45.0)
     this test is therfore not needed anymore, but kept as external packages test for a while
     just to make sure the proper xugrid version is installed (which is also defined in the toml, but still)
     """
@@ -146,7 +146,7 @@ def test_xugrid_crs_none():
 def test_xugrid_crs_spherical():
     """
     adding crs attrs was moved from dfm_tools to xugrid in https://github.com/Deltares/xugrid/pull/410
-    (xugrid>0.14.3) and https://github.com/Deltares/dfm_tools/issues/1310 (dfm_tools>=0.45.0)
+    (xugrid>=0.15.0) and https://github.com/Deltares/dfm_tools/issues/1310 (dfm_tools>=0.45.0)
     this test is therfore not needed anymore, but kept as external packages test for a while
     just to make sure the proper xugrid version is installed (which is also defined in the toml, but still)
     """
