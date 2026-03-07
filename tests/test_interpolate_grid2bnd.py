@@ -532,6 +532,11 @@ def test_interp_uds_to_plipoints():
                          [np.nan, np.nan]])
     
     assert np.allclose(retrieved, expected, equal_nan=True)
+    
+    # check if all topology dimensions were dropped
+    assert uds.grid.node_dimension not in ds_plipoints.dims
+    assert uds.grid.edge_dimension not in ds_plipoints.dims
+    assert uds.grid.face_dimension not in ds_plipoints.dims
 
 
 @pytest.mark.unittest
