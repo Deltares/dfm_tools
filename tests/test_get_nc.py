@@ -11,7 +11,6 @@ import dfm_tools as dfmt
 import xarray as xr
 from dfm_tools.get_nc import (calc_dist_pythagoras,
                               calc_dist_haversine,
-                              intersect_edges_withsort,
                               reconstruct_zw_zcc_fromz,
                               reconstruct_zw_zcc_fromzsigma,
                               reconstruct_zw_zcc_fromsigma
@@ -443,9 +442,8 @@ def test_calc_dist_haversine():
     assert np.allclose(crs_dist_stops, crs_dist_stops_check)
 
 
-@pytest.mark.parametrize("sort", [pytest.param(x, id=f"sort={x}") for x in [False, True]])
 @pytest.mark.unittest
-def test_intersect_edges(sort):
+def test_intersect_edges():
     """
     ordering of xu.ugrid2d.intersect_edges return arrays is wrong.
     
@@ -466,12 +464,8 @@ def test_intersect_edges(sort):
                            [2128.78024194, 3266.58266129]])
     
     edges = np.stack([line_array[:-1],line_array[1:]],axis=1)
-    if sort:
-        edge_index, face_index, intersections = intersect_edges_withsort(uds, edges)
-        expected_face_index = [ 91, 146, 147, 147, 202, 201, 201, 146]
-    else:
-        edge_index, face_index, intersections = uds.grid.intersect_edges(edges)
-        expected_face_index = [ 91, 146, 147, 202, 147, 201, 146, 201]
+    edge_index, face_index, intersections = uds.grid.intersect_edges(edges)
+    expected_face_index = [ 91, 146, 147, 147, 202, 201, 201, 146]
     
     assert (edge_index == np.array([0, 0, 0, 1, 1, 1, 2, 2])).all()
     assert (face_index == np.array(expected_face_index)).all()
