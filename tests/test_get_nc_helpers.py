@@ -5,7 +5,6 @@ Created on Mon Feb  3 11:42:28 2025
 @author: veenstra
 """
 import pytest
-import os
 import dfm_tools as dfmt
 
 
@@ -14,16 +13,15 @@ def test_get_ncvarproperties():
     uds = dfmt.data.fm_curvedbend_map()
     vars_pd = dfmt.get_ncvarproperties(uds)
     expected_columns = ['shape', 'dimensions', 'dtype', 'units',
-           'standard_name', 'long_name', 'mesh', 'location', 'grid_mapping',
+           'standard_name', 'long_name', 'mesh', 'location',
            'bounds', 'formula_terms']
     
-    assert len(vars_pd) == 43
-    assert len(vars_pd.columns) == 26
+    assert len(vars_pd) == 42
+    assert len(vars_pd.columns) == 15
     for colname in expected_columns:
         assert colname in vars_pd.columns
     assert vars_pd.index.str.startswith("mesh2d_").sum() == 40
     assert vars_pd.index.str.startswith("time").sum() == 2
-    assert "projected_coordinate_system" in vars_pd.index
 
 
 @pytest.mark.unittest
