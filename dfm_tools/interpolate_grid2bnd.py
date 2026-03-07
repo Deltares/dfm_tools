@@ -485,30 +485,12 @@ def interp_uds_to_plipoints(uds:xu.UgridDataset, gdf:geopandas.GeoDataFrame) -> 
     # TODO: this function requires gdf with points, but the interp_regularnc_to_plipoints requires paths to plifiles (and others also)
     
     facedim = uds.grid.face_dimension
-    edgedim = uds.grid.edge_dimension
-    nodedim = uds.grid.node_dimension
     ncbnd_construct = get_ncbnd_construct()
     dimn_point = ncbnd_construct['dimn_point']
     varn_pointname = ncbnd_construct['varn_pointname']
     
-    # drop node/edge variables since they are not interpolated but 
-    # get an additional face dimension if some points are out of bounds
-    # TODO: revert after fixing https://github.com/Deltares/xugrid/issues/274
-    vars_without_facedim = []
-    for varn in uds.variables:
-        if facedim not in uds.variables[varn].dims:
-            vars_without_facedim.append(varn)
-    uds_face = uds.drop_vars(vars_without_facedim)
-    
     # interpolate to provided points
-    ds = uds_face.ugrid.sel_points(x=gdf.geometry.x, y=gdf.geometry.y)
-    
-    # re-add removed variables again, sometimes important for e.g. depth
-    # TODO: remove after fixing https://github.com/Deltares/xugrid/issues/274
-    for varn in vars_without_facedim:
-        vardims = uds.variables[varn].dims
-        if edgedim not in vardims and nodedim not in vardims:
-            ds[varn] = uds.variables[varn]
+    ds = uds.ugrid.sel_points(x=gdf.geometry.x, y=gdf.geometry.y)
     
     # rename station dimname and varname (is index, are both mesh2d_nFaces to start with)
     ds = ds.rename({facedim:dimn_point}) # rename mesh2d_nFaces to plipoints
