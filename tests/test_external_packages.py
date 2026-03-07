@@ -107,6 +107,62 @@ def test_xugrid_opendataset_ugridplot_contour_with_colorbar():
 
 
 @pytest.mark.unittest
+def test_xugrid_crs_cartesian():
+    """
+    adding crs attrs was moved from dfm_tools to xugrid in https://github.com/Deltares/xugrid/pull/410
+    (xugrid>=0.15.0) and https://github.com/Deltares/dfm_tools/issues/1310 (dfm_tools>=0.45.0)
+    this test is therfore not needed anymore, but kept as external packages test for a while
+    just to make sure the proper xugrid version is installed (which is also defined in the toml, but still)
+    """
+    file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True).replace('0*','0002')
+    uds = dfmt.open_partitioned_dataset(file_nc)
+    assert uds.ugrid.crs['mesh2d'] is not None
+    assert uds.grid.is_geographic is False
+    ds = uds.ugrid.to_dataset()
+    assert ds['mesh2d_crs'].attrs["name"] == 'Amersfoort / RD New'
+    assert ds['mesh2d_crs'].attrs["epsg"] == 28992
+    assert "grid_mapping_name" not in ds['mesh2d_crs'].attrs.keys()
+
+
+@pytest.mark.unittest
+def test_xugrid_crs_none():
+    """
+    adding crs attrs was moved from dfm_tools to xugrid in https://github.com/Deltares/xugrid/pull/410
+    (xugrid>=0.15.0) and https://github.com/Deltares/dfm_tools/issues/1310 (dfm_tools>=0.45.0)
+    this test is therfore not needed anymore, but kept as external packages test for a while
+    just to make sure the proper xugrid version is installed (which is also defined in the toml, but still)
+    """
+    file_nc = dfmt.data.fm_curvedbend_map(return_filepath=True)
+    uds = dfmt.open_partitioned_dataset(file_nc)
+    assert uds.ugrid.crs['mesh2d'] is not None
+    assert uds.grid.is_geographic is False
+    ds = uds.ugrid.to_dataset()
+    assert ds['mesh2d_crs'].attrs["name"] == 'Unknown projected'
+    assert ds['mesh2d_crs'].attrs["epsg"] == 0
+    assert ds['mesh2d_crs'].attrs["grid_mapping_name"] == 'Unknown projected'
+
+
+@pytest.mark.unittest
+def test_xugrid_crs_spherical():
+    """
+    adding crs attrs was moved from dfm_tools to xugrid in https://github.com/Deltares/xugrid/pull/410
+    (xugrid>=0.15.0) and https://github.com/Deltares/dfm_tools/issues/1310 (dfm_tools>=0.45.0)
+    this test is therfore not needed anymore, but kept as external packages test for a while
+    just to make sure the proper xugrid version is installed (which is also defined in the toml, but still)
+    """
+    file_nc = dfmt.data.fm_grevelingen_map(return_filepath=True).replace('0*','0002')
+    uds = dfmt.open_partitioned_dataset(file_nc)
+    uds = uds.ugrid.to_crs('EPSG:4326')
+    
+    assert uds.ugrid.crs['mesh2d'] is not None
+    assert uds.grid.is_geographic is True
+    ds = uds.ugrid.to_dataset()
+    assert ds['mesh2d_crs'].attrs["name"] == 'WGS 84'
+    assert ds['mesh2d_crs'].attrs["epsg"] == 4326
+    assert ds['mesh2d_crs'].attrs["grid_mapping_name"] == 'latitude_longitude'
+
+
+@pytest.mark.unittest
 def test_xarray_pandas_resample():
     """
     this one fails with xarray<2023.3.0 (required for test_opendataset_ugridplot()) and pandas>1.5.3: https://github.com/Deltares/xugrid/issues/78#issuecomment-1597723955

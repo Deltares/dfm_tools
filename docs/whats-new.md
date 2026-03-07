@@ -2,6 +2,9 @@
 
 ## UNRELEASED
 
+# Feat
+- proper behaviour of crs attributes by using new xugrid approach instead in [#1319](https://github.com/Deltares/dfm_tools/pull/1319)
+
 
 ## 0.44.0 (2025-12-22)
 
