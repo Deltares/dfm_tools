@@ -4,6 +4,7 @@ import numpy as np
 import xarray as xr
 from cftime import date2num
 import hydrolib.core.dflowfm as hcdfm
+from hydrolib.core.dflowfm.tim.models import TimRecord
 import datetime as dt
 import geopandas
 from shapely.geometry import LineString
@@ -310,7 +311,7 @@ def DataFrame_to_TimModel(tim_pd, refdate:(dt.datetime, pd.Timestamp, str)):
     
     data_tim = tim_pd.values.tolist()
     times_tim = ((tim_pd.index - refdate_pd).total_seconds()/60).tolist()
-    dict_tim = [hcdfm.TimRecord(time=t,data=d) for t,d in zip(times_tim,data_tim)]
+    dict_tim = [TimRecord(time=t,data=d) for t,d in zip(times_tim,data_tim)]
     
     comments_datacols = tim_pd.columns.tolist()
     comments = [tim_pd.index.name] + comments_datacols
