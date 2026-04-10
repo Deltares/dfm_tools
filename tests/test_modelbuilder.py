@@ -13,6 +13,7 @@ import hydrolib.core.dflowfm as hcdfm
 import xarray as xr
 import numpy as np
 from dfm_tools.modelbuilder import get_quantity_list, get_ncvarname
+import logging
 
 
 @pytest.mark.unittest
@@ -420,3 +421,31 @@ def test_preprocess_merge_meteofiles_era5_missing_files(tmp_path, ds_era5_empty)
                                                         dir_output=tmp_path,
                                                         time_slice=slice(date_min, date_max))
     assert "No files found for pattern" in str(e.value)
+
+
+@pytest.mark.unittest
+def test_preprocess_merge_meteofiles_era5_ssr_warning(tmp_path, ds_era5_empty, caplog):
+    """
+    this test is to make sure this code emits a warning about ssr
+    without caplog the code actually raises an error, which is not considered here.
+    this is due to the fact that we are trying to concatenate an empty dataset here
+    ValueError "Could not find any dimension coordinates to use to order the datasets for concatenation"
+    """
+    file_nc = os.path.join(tmp_path,"era5_ssr_empty.nc")
+    ds_era5_empty = ds_era5_empty.rename_vars(msl="ssr")
+    ds_era5_empty.to_netcdf(file_nc)
+    
+    ext_old = hcdfm.ExtOldModel()
+    date_min = ds_era5_empty.time.to_pandas().iloc[0]
+    date_max = ds_era5_empty.time.to_pandas().iloc[-1]
+    varlist_list = ['ssr']
+    # with pytest.raises(ValueError) as e:
+    with caplog.at_level(logging.WARNING):
+        ext_old = dfmt.preprocess_merge_meteofiles_era5(
+            ext_old=ext_old,
+            varkey_list=varlist_list,
+            dir_data=tmp_path,
+            dir_output=tmp_path,
+            time_slice=slice(date_min, date_max),
+            )
+    assert "you are using ssr/netsolarradiation, beware that this quantity only exists in Delft3D-FM 2026.01 and above" in caplog.text

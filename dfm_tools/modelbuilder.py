@@ -260,7 +260,7 @@ def preprocess_merge_meteofiles_era5(
     
     # TODO: align with variables_dict from dfmt.download_ERA5()
     dict_varkey_quantities = {
-        'ssr':'solarradiation',
+        'ssr':'netsolarradiation',
         # 'sst':'sea_surface_temperature',
         'strd':'longwaveradiation',
         # 'slhf':'surface_latent_heat_flux',
@@ -280,6 +280,7 @@ def preprocess_merge_meteofiles_era5(
         'rhoao':'airdensity',
         }
     
+    
     for varkey in varkey_list:
         if isinstance(varkey, list):
             raise TypeError(
@@ -292,6 +293,14 @@ def preprocess_merge_meteofiles_era5(
                 f"The varkey '{varkey}' is not supported yet by "
                 "dfmt.preprocess_merge_meteofiles_era5(), please create a dfm_tools "
                 "issue if you need this."
+                )
+        
+        # TODO: remove this warning after a while, it was implemented in
+        # https://github.com/Deltares/dfm_tools/issues/1253
+        if varkey == "ssr":
+            logger.warning(
+                "you are using ssr/netsolarradiation, beware that this "
+                "quantity only exists in Delft3D-FM 2026.01 and above."
                 )
         
         fn_match_pattern = f'era5_{varkey}_*.nc'
