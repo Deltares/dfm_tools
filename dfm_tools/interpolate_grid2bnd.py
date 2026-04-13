@@ -129,7 +129,7 @@ def ext_add_boundary_object_per_polyline(ext_new:hcdfm.ExtModel, boundary_object
     for polyline_obj in polyfile_obj.objects:
         if len(polyfile_obj.objects) > 1:
             # copy to avoid location file to be the same for all duplicated boundary objects
-            boundary_object = boundary_object.copy()
+            boundary_object = boundary_object.model_copy()
             # create a polyfile with a single plifile
             polyfile_oneline_obj = hcdfm.PolyFile(objects=[polyline_obj])
             file_pli_oneline = os.path.join(dir_output, f"{polyline_obj.metadata.name}.pli")
