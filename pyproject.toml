@@ -15,8 +15,8 @@ requires-python = ">=3.10"
 dependencies = [
 	#scipy>=1.13.0 is the first version to support py310 (1.8.0 also) and including numpy v2 support
 	"scipy>=1.13.0",
-	#numpy>=1.25 is first not-EOL since dec 2024
-	"numpy>=1.25",
+	#numpy>=2.0.0 is first not-EOL in april 2026
+	"numpy>=2.0.0",
 	#matplotlib>=3.10.7 resolves pyparsing warnings by pinning pyparsing version: https://github.com/Deltares/dfm_tools/issues/1314
 	"matplotlib>=3.10.7",
 	#pandas>=2.1.2 Dataframe/Series containing [dict] is a list instead of a dict from here onwards: https://github.com/Deltares/dfm_tools/issues/1194
