@@ -68,5 +68,11 @@ def open_dataset_extra(**kwargs):
 
 
 def preprocess_ini_cmems_to_nc(**kwargs):
-    raise DeprecationWarning("`dfmt.preprocess_ini_cmems_to_nc()` was "
-                             "deprecated, use `cmems_nc_to_ini()` instead")
+    raise DeprecationWarning(
+        "`dfmt.preprocess_ini_cmems_to_nc()` was deprecated, use `cmems_nc_to_ini()` instead")
+
+def velovect(**kwargs):
+    raise DeprecationWarning(
+        "`dfmt.velovect()` was deprecated, use the UltraPlot package instead. More info"
+        "in https://github.com/Deltares/dfm_tools/issues/294."
+        )
