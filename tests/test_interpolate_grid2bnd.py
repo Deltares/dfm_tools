@@ -157,6 +157,7 @@ def test_plipointsDataset_to_ForcingModel_vector(cmems_dataset_4times, data_dcsm
     assert isinstance(for0_qup0, QuantityUnitPair)
     for0_qup1 = forcingmodel_object.forcing[0].quantityunitpair[1]
     assert isinstance(for0_qup1, VectorQuantityUnitPairs)
+    
     quan_list = []
     for qup in forcingmodel_object.forcing[0].quantityunitpair:
         if isinstance(qup, VectorQuantityUnitPairs):
@@ -164,6 +165,8 @@ def test_plipointsDataset_to_ForcingModel_vector(cmems_dataset_4times, data_dcsm
                 quan_list.append(qup_one.quantity)
         else:
             quan_list.append(qup.quantity)
+    expected_quan_amount = ds.sizes["z"] * 2 + 1
+    assert len(quan_list) == expected_quan_amount
     quan_expected = set(['time', 'ux', 'uy'])
     assert set(quan_list) == quan_expected
 
