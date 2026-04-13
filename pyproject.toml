@@ -33,8 +33,8 @@ dependencies = [
 	"xarray>=2024.7.0",
 	#dask 2025.1.0 is required by xugrid: https://github.com/Deltares/xugrid/pull/350#issuecomment-2809652618
 	"dask>=2025.1.0",
-	#netcdf4>=1.6.4 fixes I/O failure for opendap: https://github.com/Unidata/netcdf4-python/issues/1246
-	"netcdf4>=1.6.4",
+	#netcdf4>=1.7.2 supports numpy 2: https://github.com/Deltares/dfm_tools/issues/1330
+	"netcdf4>=1.7.2",
 	#bottleneck>=1.5.0 supports numpy 2: https://github.com/Deltares/dfm_tools/issues/1330
 	"bottleneck>=1.5.0",
 	#xugrid>=0.15.0 consistent projected/geographic properties and crs attributes in the resulting datasets
