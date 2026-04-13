@@ -5,6 +5,7 @@ import xarray as xr
 from cftime import date2num
 import hydrolib.core.dflowfm as hcdfm
 from hydrolib.core.dflowfm.tim.models import TimRecord
+from hydrolib.core.dflowfm.bc.models import VectorQuantityUnitPairs
 import datetime as dt
 import geopandas
 from shapely.geometry import LineString
@@ -121,7 +122,7 @@ def Dataset_to_T3D(datablock_xr):
     verticalpositions_idx = np.arange(data_xr_var0[varn_depth].size)+1
     if vector: #vector T3D object
         QUP_quan_list = [hcdfm.QuantityUnitPair(quantity=quan, unit=data_xr_var0.attrs['units'], vertpositionindex=iVP) for iVP in verticalpositions_idx for quan in data_vars]
-        QUP_quan_vector = hcdfm.VectorQuantityUnitPairs(vectorname='uxuyadvectionvelocitybnd', #TODO: vectorname from global attr? (then also support other vectors which is not necessary)
+        QUP_quan_vector = VectorQuantityUnitPairs(vectorname='uxuyadvectionvelocitybnd', #TODO: vectorname from global attr? (then also support other vectors which is not necessary)
                                                   elementname=data_vars,
                                                   quantityunitpair=QUP_quan_list)
         quantityunitpair = [hcdfm.QuantityUnitPair(quantity="time", unit=refdate_str)]+[QUP_quan_vector]

@@ -26,6 +26,7 @@ from dfm_tools.interpolate_grid2bnd import (tidemodel_componentlist,
                                             )
 from dfm_tools.hydrolib_helpers import get_ncbnd_construct
 import hydrolib.core.dflowfm as hcdfm
+from hydrolib.core.dflowfm.bc.models import VectorQuantityUnitPairs, QuantityUnitPair
 from dfm_tools.errors import OutOfRangeError
 import warnings
 
@@ -136,8 +137,37 @@ def test_plipointsDataset_to_ForcingModel(cmems_dataset_4times, data_dcsm_gdf):
     quan_present = [x.quantity for x in forcingmodel_object.forcing[0].quantityunitpair]
     quan_expected = ['time', 'so', 'thetao']
     assert quan_present == quan_expected
+
+
+@pytest.mark.unittest
+def test_plipointsDataset_to_ForcingModel_vector(cmems_dataset_4times, data_dcsm_gdf):
+    # this covers the vector=True path in dfm_tools.hydrolib_helpers.Dataset_to_T3D
+    ds = cmems_dataset_4times.copy()
+    ds["longitude"] = [-9.8, -9.5, -9.2]
+    # add second data variable to also test if this works
+    ds["thetao"] = ds["so"].copy()
+    ds = ds.rename(so="ux", thetao="uy", depth="z")
+    data_interp = interp_regularnc_to_plipointsDataset(data_xr_reg=ds, gdf_points=data_dcsm_gdf)
+    forcingmodel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
     
-    
+    assert len(forcingmodel_object.forcing) == 3 # locations
+    # time salinitybnd
+    assert len(forcingmodel_object.forcing[0].quantityunitpair) == 2
+    for0_qup0 = forcingmodel_object.forcing[0].quantityunitpair[0]
+    assert isinstance(for0_qup0, QuantityUnitPair)
+    for0_qup1 = forcingmodel_object.forcing[0].quantityunitpair[1]
+    assert isinstance(for0_qup1, VectorQuantityUnitPairs)
+    quan_list = []
+    for qup in forcingmodel_object.forcing[0].quantityunitpair:
+        if isinstance(qup, VectorQuantityUnitPairs):
+            for qup_one in qup.quantityunitpair:
+                quan_list.append(qup_one.quantity)
+        else:
+            quan_list.append(qup.quantity)
+    quan_expected = set(['time', 'ux', 'uy'])
+    assert set(quan_list) == quan_expected
+
+
 @pytest.mark.systemtest
 def test_plipointsDataset_to_ForcingModel_drop_allnan_points():
     #construct polyfile gdf
