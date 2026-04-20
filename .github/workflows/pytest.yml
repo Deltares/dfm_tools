@@ -20,7 +20,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     concurrency:
-      group: ${{ github.workflow }}-${{ matrix.python-version }}-${{ github.ref }}
+      group: ${{ github.workflow }}-${{ matrix.os }}-${{ matrix.python-version }}-${{ github.ref }}
       cancel-in-progress: true
 
     steps:
