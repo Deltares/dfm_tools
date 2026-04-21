@@ -29,8 +29,8 @@ dependencies = [
 	"pyogrio>=0.12.0",
 	#contextily>=1.6.2 has fixed axis scaling: https://github.com/geopandas/contextily/issues/251
 	"contextily>=1.6.2",
-	#xarray>=2025.8.0 supports StringDtype: https://github.com/Deltares/dfm_tools/issues/1325
-	"xarray>=2025.8.0",
+	#xarray>=2024.7.0 includes fix for numpy v2: https://github.com/pydata/xarray/issues/9179
+	"xarray>=2024.7.0",
 	#dask 2025.1.0 is required by xugrid: https://github.com/Deltares/xugrid/pull/350#issuecomment-2809652618
 	"dask>=2025.1.0",
 	#netcdf4>=1.7.2 supports numpy 2: https://github.com/Deltares/dfm_tools/issues/1330
