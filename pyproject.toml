@@ -20,8 +20,7 @@ dependencies = [
 	#matplotlib>=3.10.7 resolves pyparsing warnings by pinning pyparsing version: https://github.com/Deltares/dfm_tools/issues/1314
 	"matplotlib>=3.10.7",
 	#pandas>=2.2.2 supports numpy 2: https://github.com/Deltares/dfm_tools/issues/1330
-	# TODO: add support for pandas 3 in https://github.com/Deltares/dfm_tools/issues/1325
-	"pandas>=2.2.2, <3",
+	"pandas>=2.2.2",
 	#shapely>=2.1.1 supports numpy 2: https://github.com/Deltares/dfm_tools/issues/1330
 	"shapely>=2.1.1",
 	#geopandas>=1.1.0 resolves shapely.geos DeprecationWarning: https://github.com/geopandas/geopandas/pull/3453 
