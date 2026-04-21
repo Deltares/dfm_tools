@@ -970,7 +970,7 @@ def rwsddl_ssh_retrieve_data(row, time_min, time_max):
     if eenheid != 'cm':
         raise Exception("unexpected unit")
     ds['waterlevel'] = ds['waterlevel'].assign_attrs(units="m")
-    ds['waterlevel'] /= 100 #convert from cm to m
+    ds['waterlevel'] = ds['waterlevel'] / 100 #convert from cm to m
     return ds
 
 
