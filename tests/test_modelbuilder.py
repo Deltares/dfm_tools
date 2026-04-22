@@ -79,7 +79,7 @@ def test_cmems_nc_to_bc(tmp_path, timecase, cmems_dataset_4times):
                     -9.5   43.0
                     """)
     
-    ds = cmems_dataset_4times
+    ds = cmems_dataset_4times.copy()
     if timecase == "midnight":
         ds["time"] = ds["time"] + pd.Timedelta(hours=12)
     elif timecase == "monthly":
