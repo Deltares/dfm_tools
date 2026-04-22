@@ -66,9 +66,7 @@ def test_meshkernel_refine_basegrid():
     file_nc_bathy = r'https://opendap.deltares.nl/thredds/dodsC/opendap/deltares/Delft3D/netcdf_example_files/GEBCO_2022/GEBCO_2022_coarsefac08.nc'
     data_bathy = xr.open_dataset(file_nc_bathy)
     
-    # for dtype in ["float64", "float32", "int32", "int16"]:
     data_bathy_sel = data_bathy.sel(lon=slice(lon_min,lon_max),lat=slice(lat_min,lat_max)).elevation
-    # data_bathy_sel = data_bathy_sel.astype(dtype=dtype)
     
     # basegrid
     mk_object = dfmt.make_basegrid(lon_min, lon_max, lat_min, lat_max, dx=dxy, dy=dxy, crs=crs)
