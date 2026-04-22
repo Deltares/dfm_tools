@@ -20,14 +20,13 @@ def get_ncvarproperties(data_xr):
     list_varattrs_pd = []
     for varkey in nc_varkeys:
         varattrs_pd = pd.DataFrame({varkey:data_xr.variables.mapping[varkey].attrs}).T
-        varattrs_pd[['shape','dimensions','dtype']] = 3*[''] #set dtype as str (float will raise an error when putting tuple in there)
+        varattrs_pd[['shape','dimensions','dtype']] = None
         varattrs_pd.at[varkey,'shape'] = data_xr[varkey].shape
         varattrs_pd.at[varkey,'dimensions'] = data_xr.variables[varkey].dims
         varattrs_pd.at[varkey,'dtype'] = data_xr.variables[varkey].dtype
         list_varattrs_pd.append(varattrs_pd)
     
     vars_pd = pd.concat(list_varattrs_pd,axis=0)
-    vars_pd[vars_pd.isnull()] = '' #avoid nan values
     
     data_xr.close()
 

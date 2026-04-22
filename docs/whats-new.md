@@ -2,16 +2,19 @@
 
 ## UNRELEASED
 
+# Feat
+- support for hydrolib-core v1 in [#1326](https://github.com/Deltares/dfm_tools/issues/1326)
+- support for pandas 3 in [#1340](https://github.com/Deltares/dfm_tools/pull/1340)
+
+# Deprecated
+- removed `dfmt.velovect()` as it is preceded by UltraPlots `curved_quiver` in [#1328](https://github.com/Deltares/dfm_tools/pull/1328)
+
 
 ## 0.45.0 (2026-03-07)
 
 # Feat
 - proper behaviour of crs attributes and is_projected/is_geometric by using new xugrid approach instead in [#1319](https://github.com/Deltares/dfm_tools/pull/1319)
 - properly dropping topology dimension in `dfmt.interp_uds_to_plipoints()` using new xugrid approach in [#1322](https://github.com/Deltares/dfm_tools/pull/1322)
-- support for hydrolib-core v1 in [#1326](https://github.com/Deltares/dfm_tools/issues/1326)
-
-# Deprecated
-- removed `dfmt.velovect()` as it is preceded by UltraPlots `curved_quiver` in [#1328](https://github.com/Deltares/dfm_tools/pull/1328)
 
 
 ## 0.44.0 (2025-12-22)

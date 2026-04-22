@@ -316,8 +316,9 @@ def refine_basegrid(
         # The number of smoothing iterations. Meshkernelpy default is `5`.
         kwargs['smoothing_iterations'] = 2
 
-    lon_np = data_bathy_sel.lon.to_numpy()
-    lat_np = data_bathy_sel.lat.to_numpy()
+    # .copy() is needed to avoid "readonly arrays unsupported" TypeError since pandas 3
+    lon_np = data_bathy_sel.lon.to_numpy().copy()
+    lat_np = data_bathy_sel.lat.to_numpy().copy()
     values_np = data_bathy_sel.to_numpy().flatten()
     gridded_samples = meshkernel.GriddedSamples(
         x_coordinates=lon_np,
