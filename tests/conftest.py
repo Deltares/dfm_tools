@@ -13,7 +13,7 @@ import numpy as np
 import geopandas as gpd
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def data_dcsm_gdf():
     # dummy gdf
     points_x = [-9.25, -9.5, -9.75]
@@ -26,7 +26,7 @@ def data_dcsm_gdf():
     return data_dcsm_gdf
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def cmems_dataset_notime():
     # use hardcoded depth varname/dimname to simulate CMEMS dataset
     ds = xr.Dataset()
@@ -64,7 +64,7 @@ def cmems_dataset_notime():
     return cmems_dataset_notime
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def cmems_dataset_4times(cmems_dataset_notime):
     ds_notime = cmems_dataset_notime.copy()
     ds = xr.concat(4*[ds_notime.expand_dims('time')],dim='time')
@@ -74,7 +74,7 @@ def cmems_dataset_4times(cmems_dataset_notime):
     return cmems_dataset_4times
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def file_nc_era5_pattern(tmp_path):
     """
     requires CDS credentials
@@ -94,7 +94,7 @@ def file_nc_era5_pattern(tmp_path):
     return file_nc_era5_pattern
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def ds_era5_empty():
     # create dummy dataset
     ds_era5_empty = xr.Dataset()
