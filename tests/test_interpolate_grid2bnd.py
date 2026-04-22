@@ -26,6 +26,7 @@ from dfm_tools.interpolate_grid2bnd import (tidemodel_componentlist,
                                             )
 from dfm_tools.hydrolib_helpers import get_ncbnd_construct
 import hydrolib.core.dflowfm as hcdfm
+from hydrolib.core.dflowfm.bc.models import VectorQuantityUnitPairs, QuantityUnitPair
 from dfm_tools.errors import OutOfRangeError
 import warnings
 
@@ -136,8 +137,40 @@ def test_plipointsDataset_to_ForcingModel(cmems_dataset_4times, data_dcsm_gdf):
     quan_present = [x.quantity for x in forcingmodel_object.forcing[0].quantityunitpair]
     quan_expected = ['time', 'so', 'thetao']
     assert quan_present == quan_expected
+
+
+@pytest.mark.unittest
+def test_plipointsDataset_to_ForcingModel_vector(cmems_dataset_4times, data_dcsm_gdf):
+    # this covers the vector=True path in dfm_tools.hydrolib_helpers.Dataset_to_T3D
+    ds = cmems_dataset_4times.copy()
+    ds["longitude"] = [-9.8, -9.5, -9.2]
+    # add second data variable to also test if this works
+    ds["thetao"] = ds["so"].copy()
+    ds = ds.rename(so="ux", thetao="uy", depth="z")
+    data_interp = interp_regularnc_to_plipointsDataset(data_xr_reg=ds, gdf_points=data_dcsm_gdf)
+    forcingmodel_object = dfmt.plipointsDataset_to_ForcingModel(plipointsDataset=data_interp)
     
+    assert len(forcingmodel_object.forcing) == 3 # locations
+    # time salinitybnd
+    assert len(forcingmodel_object.forcing[0].quantityunitpair) == 2
+    for0_qup0 = forcingmodel_object.forcing[0].quantityunitpair[0]
+    assert isinstance(for0_qup0, QuantityUnitPair)
+    for0_qup1 = forcingmodel_object.forcing[0].quantityunitpair[1]
+    assert isinstance(for0_qup1, VectorQuantityUnitPairs)
     
+    quan_list = []
+    for qup in forcingmodel_object.forcing[0].quantityunitpair:
+        if isinstance(qup, VectorQuantityUnitPairs):
+            for qup_one in qup.quantityunitpair:
+                quan_list.append(qup_one.quantity)
+        else:
+            quan_list.append(qup.quantity)
+    expected_quan_amount = ds.sizes["z"] * 2 + 1
+    assert len(quan_list) == expected_quan_amount
+    quan_expected = set(['time', 'ux', 'uy'])
+    assert set(quan_list) == quan_expected
+
+
 @pytest.mark.systemtest
 def test_plipointsDataset_to_ForcingModel_drop_allnan_points():
     #construct polyfile gdf
@@ -246,7 +279,7 @@ def test_open_prepare_dataset_correctdepths(tmp_path, cmems_dataset_4times):
 @pytest.mark.unittest
 def test_ds_apply_conventions(cmems_dataset_4times):
     # generate datset with depths defined positive down
-    ds_moretime = cmems_dataset_4times
+    ds_moretime = cmems_dataset_4times.copy()
     ds_moretime['depth'] = -1 * ds_moretime['depth']
     ds_moretime['depth'].attrs['positive'] = 'down'
     ds_converted = ds_apply_conventions(data_xr=ds_moretime)
@@ -265,7 +298,7 @@ def test_ds_apply_conventions(cmems_dataset_4times):
 @pytest.mark.unittest
 def test_ds_apply_conversion_dict_rename(cmems_dataset_4times):
     conversion_dict = dfmt.get_conversion_dict()
-    ds_moretime = cmems_dataset_4times
+    ds_moretime = cmems_dataset_4times.copy()
     ds_converted = ds_apply_conversion_dict(data_xr=ds_moretime, conversion_dict=conversion_dict, quantity='salinitybnd')
     assert 'so' in ds_moretime.data_vars
     assert 'salinitybnd' in ds_converted.data_vars
@@ -275,7 +308,7 @@ def test_ds_apply_conversion_dict_rename(cmems_dataset_4times):
 @pytest.mark.unittest
 def test_ds_apply_conversion_dict_rename_and_factor(cmems_dataset_4times):
     conversion_dict = dfmt.get_conversion_dict()
-    ds_moretime = cmems_dataset_4times
+    ds_moretime = cmems_dataset_4times.copy()
     ds_moretime = ds_moretime.rename_vars({'so':'o2'})
     ds_moretime['o2'] = ds_moretime['o2'].assign_attrs({'units':'dummy'})
     ds_converted = ds_apply_conversion_dict(data_xr=ds_moretime, conversion_dict=conversion_dict, quantity='tracerbndOXY')

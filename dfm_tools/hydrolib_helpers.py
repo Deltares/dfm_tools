@@ -4,6 +4,8 @@ import numpy as np
 import xarray as xr
 from cftime import date2num
 import hydrolib.core.dflowfm as hcdfm
+from hydrolib.core.dflowfm.tim.models import TimRecord
+from hydrolib.core.dflowfm.bc.models import VectorQuantityUnitPairs
 import datetime as dt
 import geopandas
 from shapely.geometry import LineString
@@ -120,7 +122,7 @@ def Dataset_to_T3D(datablock_xr):
     verticalpositions_idx = np.arange(data_xr_var0[varn_depth].size)+1
     if vector: #vector T3D object
         QUP_quan_list = [hcdfm.QuantityUnitPair(quantity=quan, unit=data_xr_var0.attrs['units'], vertpositionindex=iVP) for iVP in verticalpositions_idx for quan in data_vars]
-        QUP_quan_vector = hcdfm.VectorQuantityUnitPairs(vectorname='uxuyadvectionvelocitybnd', #TODO: vectorname from global attr? (then also support other vectors which is not necessary)
+        QUP_quan_vector = VectorQuantityUnitPairs(vectorname='uxuyadvectionvelocitybnd', #TODO: vectorname from global attr? (then also support other vectors which is not necessary)
                                                   elementname=data_vars,
                                                   quantityunitpair=QUP_quan_list)
         quantityunitpair = [hcdfm.QuantityUnitPair(quantity="time", unit=refdate_str)]+[QUP_quan_vector]
@@ -310,7 +312,7 @@ def DataFrame_to_TimModel(tim_pd, refdate:(dt.datetime, pd.Timestamp, str)):
     
     data_tim = tim_pd.values.tolist()
     times_tim = ((tim_pd.index - refdate_pd).total_seconds()/60).tolist()
-    dict_tim = [hcdfm.TimRecord(time=t,data=d) for t,d in zip(times_tim,data_tim)]
+    dict_tim = [TimRecord(time=t,data=d) for t,d in zip(times_tim,data_tim)]
     
     comments_datacols = tim_pd.columns.tolist()
     comments = [tim_pd.index.name] + comments_datacols

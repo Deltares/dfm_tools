@@ -7,6 +7,7 @@ import xarray as xr
 import platform
 import hydrolib.core.dflowfm as hcdfm
 from hydrolib.core.dimr.models import DIMR, FMComponent, Start
+from hydrolib.core.dflowfm.extold.models import ExtOldFileType, ExtOldMethod
 from dfm_tools.interpolate_grid2bnd import (ext_add_boundary_object_per_polyline,
                                             open_prepare_dataset,
                                             ds_apply_conversion_dict,
@@ -236,8 +237,8 @@ def cmems_nc_to_ini(
             quantity=quantity,
             varname=varname,
             filename=file_output,
-            filetype=hcdfm.ExtOldFileType.NetCDFGridData,
-            method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+            filetype=ExtOldFileType.NetCDFGridData,
+            method=ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
             operand=hcdfm.Operand.override, #O
             )
         ext_old.forcing.append(forcing_saltem)
@@ -346,8 +347,8 @@ def preprocess_merge_meteofiles_era5(
             quantity=quantity,
             filename=file_out,
             varname=varkey,
-            filetype=hcdfm.ExtOldFileType.NetCDFGridData, #11
-            method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+            filetype=ExtOldFileType.NetCDFGridData, #11
+            method=ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
             operand=operand,
             )
         ext_old.forcing.append(forcing_meteo)
@@ -513,7 +514,9 @@ def make_paths_relative(mdu_file:str):
 
     """
     dir_model = os.path.dirname(mdu_file)
-    mdu_existing = hcdfm.FMModel(mdu_file, recurse=False)
+    # TODO: temporarily use recurse=True, to be fixed in
+    # https://github.com/Deltares/dfm_tools/issues/1329
+    mdu_existing = hcdfm.FMModel(mdu_file, recurse=True)
     file_list = [mdu_file]
     ext_old = mdu_existing.external_forcing.extforcefile
     if ext_old is not None:

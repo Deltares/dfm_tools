@@ -10,6 +10,7 @@ import pytest
 import dfm_tools as dfmt
 import pandas as pd
 import hydrolib.core.dflowfm as hcdfm
+from hydrolib.core.dflowfm.extold.models import ExtOldFileType, ExtOldMethod
 import xarray as xr
 import numpy as np
 from dfm_tools.modelbuilder import get_quantity_list, get_ncvarname
@@ -79,7 +80,7 @@ def test_cmems_nc_to_bc(tmp_path, timecase, cmems_dataset_4times):
                     -9.5   43.0
                     """)
     
-    ds = cmems_dataset_4times
+    ds = cmems_dataset_4times.copy()
     if timecase == "midnight":
         ds["time"] = ds["time"] + pd.Timedelta(hours=12)
     elif timecase == "monthly":
@@ -315,8 +316,8 @@ def test_make_paths_relative(tmp_path):
     ext_old = hcdfm.ExtOldModel()
     forcing_old = hcdfm.ExtOldForcing(quantity='airpressure_windx_windy_charnock',
                                       filename=file_pli,
-                                      filetype=hcdfm.ExtOldFileType.NetCDFGridData, #11
-                                      method=hcdfm.ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+                                      filetype=ExtOldFileType.NetCDFGridData, #11
+                                      method=ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
                                       operand=hcdfm.Operand.override) #O
     ext_old.forcing.append(forcing_old)
     ext_old.save(filepath=ext_file_old)

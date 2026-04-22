@@ -2,6 +2,13 @@
 
 ## UNRELEASED
 
+# Feat
+- support for hydrolib-core v1 in [#1326](https://github.com/Deltares/dfm_tools/issues/1326)
+- support for pandas 3 in [#1340](https://github.com/Deltares/dfm_tools/pull/1340)
+
+# Deprecated
+- removed `dfmt.velovect()` as it is preceded by UltraPlots `curved_quiver` in [#1328](https://github.com/Deltares/dfm_tools/pull/1328)
+
 
 ## 0.45.0 (2026-03-07)
 
