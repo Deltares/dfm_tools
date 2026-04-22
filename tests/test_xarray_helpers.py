@@ -21,6 +21,7 @@ from dfm_tools.xarray_helpers import (interpolate_na_multidim,
 
 @pytest.mark.unittest
 def test_preprocess_era5_valid_time(ds_era5_empty):
+    ds_era5_empty = ds_era5_empty.copy()
     ds_era5_empty = ds_era5_empty.rename(time="valid_time")
 
     ds = dfmt.preprocess_ERA5(ds_era5_empty)
@@ -32,6 +33,7 @@ def test_preprocess_era5_valid_time(ds_era5_empty):
 
 @pytest.mark.unittest
 def test_preprocess_era5_expver_coord(ds_era5_empty):
+    ds_era5_empty = ds_era5_empty.copy()
     ds = dfmt.preprocess_ERA5(ds_era5_empty)
     assert "expver" not in ds_era5_empty.coords
     assert "expver" in ds.coords
@@ -39,6 +41,7 @@ def test_preprocess_era5_expver_coord(ds_era5_empty):
 
 @pytest.mark.unittest
 def test_preprocess_era5_expver_dim(ds_era5_empty):
+    ds_era5_empty = ds_era5_empty.copy()
     ntimes = len(ds_era5_empty.time)
     data_dummy = np.ones(shape=(ntimes,2))
     ds_era5_empty['dummy'] = xr.DataArray(data_dummy, dims=('time','expver'))
@@ -50,6 +53,7 @@ def test_preprocess_era5_expver_dim(ds_era5_empty):
 
 @pytest.mark.unittest
 def test_preprocess_era5_mer_mtpr(ds_era5_empty):
+    ds_era5_empty = ds_era5_empty.copy()
     ds_era5_empty['avg_tprate'] = xr.DataArray()
     ds_era5_empty['avg_ie'] = xr.DataArray()
     ds = dfmt.preprocess_ERA5(ds_era5_empty)
@@ -61,6 +65,7 @@ def test_preprocess_era5_mer_mtpr(ds_era5_empty):
 
 @pytest.mark.unittest
 def test_preprocess_era5_int32(ds_era5_empty):
+    ds_era5_empty = ds_era5_empty.copy()
     ds_era5_empty['dummy_int'] = xr.DataArray()
     ds_era5_empty['dummy_int'].encoding['dtype'] = 'int32'
     ds_era5_empty['dummy_int'].encoding['scale_factor'] = 1

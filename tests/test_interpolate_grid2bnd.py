@@ -279,7 +279,7 @@ def test_open_prepare_dataset_correctdepths(tmp_path, cmems_dataset_4times):
 @pytest.mark.unittest
 def test_ds_apply_conventions(cmems_dataset_4times):
     # generate datset with depths defined positive down
-    ds_moretime = cmems_dataset_4times
+    ds_moretime = cmems_dataset_4times.copy()
     ds_moretime['depth'] = -1 * ds_moretime['depth']
     ds_moretime['depth'].attrs['positive'] = 'down'
     ds_converted = ds_apply_conventions(data_xr=ds_moretime)
@@ -298,7 +298,7 @@ def test_ds_apply_conventions(cmems_dataset_4times):
 @pytest.mark.unittest
 def test_ds_apply_conversion_dict_rename(cmems_dataset_4times):
     conversion_dict = dfmt.get_conversion_dict()
-    ds_moretime = cmems_dataset_4times
+    ds_moretime = cmems_dataset_4times.copy()
     ds_converted = ds_apply_conversion_dict(data_xr=ds_moretime, conversion_dict=conversion_dict, quantity='salinitybnd')
     assert 'so' in ds_moretime.data_vars
     assert 'salinitybnd' in ds_converted.data_vars
@@ -308,7 +308,7 @@ def test_ds_apply_conversion_dict_rename(cmems_dataset_4times):
 @pytest.mark.unittest
 def test_ds_apply_conversion_dict_rename_and_factor(cmems_dataset_4times):
     conversion_dict = dfmt.get_conversion_dict()
-    ds_moretime = cmems_dataset_4times
+    ds_moretime = cmems_dataset_4times.copy()
     ds_moretime = ds_moretime.rename_vars({'so':'o2'})
     ds_moretime['o2'] = ds_moretime['o2'].assign_attrs({'units':'dummy'})
     ds_converted = ds_apply_conversion_dict(data_xr=ds_moretime, conversion_dict=conversion_dict, quantity='tracerbndOXY')
