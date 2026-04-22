@@ -370,10 +370,6 @@ def convert_meteo_units(data_xr):
         # 3600s/h #TODO: 1W = 1J/s, so does not make sense?
         ds[varkey_sel] = ds[varkey_sel] / 3600
         ds[varkey_sel].attrs['units'] = new_unit
-    #solar influx increase for beta=6% subtraction in DFM
-    if 'ssr' in varkeys:
-        print('ssr (solar influx) increase for beta=6% subtraction in DflowFM')
-        ds['ssr'] = ds['ssr'] / 0.94
     
     # restore attrs and encoding of data_vars
     for varkey in varkeys:
