@@ -61,6 +61,7 @@ def test_preprocess_era5_mer_mtpr(ds_era5_empty):
 
 @pytest.mark.unittest
 def test_preprocess_era5_int32(ds_era5_empty):
+    ds_era5_empty = ds_era5_empty.copy()
     ds_era5_empty['dummy_int'] = xr.DataArray()
     ds_era5_empty['dummy_int'].encoding['dtype'] = 'int32'
     ds_era5_empty['dummy_int'].encoding['scale_factor'] = 1
