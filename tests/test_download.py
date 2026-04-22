@@ -392,7 +392,7 @@ def test_download_era5_incorrect_times():
 @pytest.mark.requiressecrets
 @pytest.mark.unittest
 @pytest.mark.era5slow # temporarily skip these on github
-@pytest.mark.timeout(60) # useful since CDS downloads are terribly slow sometimes, so skip in that case
+@pytest.mark.timeout(90) # useful since CDS downloads are terribly slow sometimes, so skip in that case
 def test_download_era5(file_nc_era5_pattern):
     # file_nc_era5_pattern comes from conftest.py
     file_list = glob.glob(file_nc_era5_pattern)

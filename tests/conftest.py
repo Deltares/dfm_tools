@@ -75,10 +75,11 @@ def cmems_dataset_4times(cmems_dataset_notime):
 
 
 @pytest.fixture(scope="session")
-def file_nc_era5_pattern(tmp_path):
+def file_nc_era5_pattern(tmp_path_factory):
     """
     requires CDS credentials
     """
+    dir_output = tmp_path_factory.mktemp('outdir')
     date_min = '2010-01-31'
     date_max = '2010-02-01'
     longitude_min, longitude_max, latitude_min, latitude_max =    2,   3,  51, 52 #test domain
@@ -87,10 +88,10 @@ def file_nc_era5_pattern(tmp_path):
         dfmt.download_ERA5(varkey, 
                            longitude_min=longitude_min, longitude_max=longitude_max, latitude_min=latitude_min, latitude_max=latitude_max,
                            date_min=date_min, date_max=date_max,
-                           dir_output=tmp_path, overwrite=True)
+                           dir_output=dir_output, overwrite=True)
     
     # assert downloaded files
-    file_nc_era5_pattern = os.path.join(tmp_path, "*.nc")
+    file_nc_era5_pattern = os.path.join(dir_output, "*.nc")
     return file_nc_era5_pattern
 
 
