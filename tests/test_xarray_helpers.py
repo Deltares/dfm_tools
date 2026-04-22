@@ -86,7 +86,7 @@ def test_preprocess_era5_int32(ds_era5_empty):
 @pytest.mark.unittest
 @pytest.mark.requiressecrets
 @pytest.mark.era5slow # temporarily skip these on github
-@pytest.mark.timeout(90) # useful since CDS downloads are terribly slow sometimes, so skip in that case
+@pytest.mark.timeout(60) # useful since CDS downloads are terribly slow sometimes, so skip in that case
 def test_merge_meteofiles(file_nc_era5_pattern):
     # file_nc_era5_pattern comes from file_nc_era5_pattern() in conftest.py
     # deliberately take time_slice.stop as a non-existing timestep to check
