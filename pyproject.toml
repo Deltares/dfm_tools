@@ -172,10 +172,10 @@ pandoc = "*"
 
 # Define environments to combine features
 [tool.pixi.environments]
-default = { features = ["py314", "dev", "docs", "examples"]}
+default = { features = ["py314", "dev", "docs", "examples", "test"]}
 
-py310 = { features = ["py310", "dev"]}
-py311 = { features = ["py311", "dev"]}
-py312 = { features = ["py312", "dev"]}
-py313 = { features = ["py313", "dev"]}
-py314 = { features = ["py314", "dev"]}
+py310 = { features = ["py310", "dev", "test"]}
+py311 = { features = ["py311", "dev", "test"]}
+py312 = { features = ["py312", "dev", "test"]}
+py313 = { features = ["py313", "dev", "test"]}
+py314 = { features = ["py314", "dev", "test"]}

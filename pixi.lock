@@ -3123,7 +3123,7 @@ packages:
 - pypi: ./
   name: dfm-tools
   version: 0.45.1
-  sha256: fa3a2754168df8c2315f80d064bbae91e3ddc8a818d645261e6a31733a10ddde
+  sha256: 093efa0ae93721ccb8dc2bfddcfa68ddf3d52ed4b1893bd96215f94151096a9b
   requires_dist:
   - scipy>=1.13.0
   - numpy>=2.0.0
