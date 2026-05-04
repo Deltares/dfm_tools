@@ -130,3 +130,52 @@ filterwarnings = [
 
 [tool.flake8]
 exclude = "docs"
+
+[tool.black]
+line-length = 88
+target-version = ['py312']
+
+## Pixi related entries
+[tool.pixi.workspace]
+channels  = ["conda-forge"]
+platforms = ["linux-64", "win-64"]
+
+[tool.pixi.feature.test.tasks]
+test = { cmd = ["pytest", "--cov=dfm_tools", "--cov-report=xml", "--cov-report=term"] }
+
+[tool.pixi.feature.docs.tasks]
+docs-build = { cmd = ["sphinx-build", "docs", "docs/_build"] }
+
+# Install your code in editable mode, dependencies here are installed in all environments
+# Takes the dependencies from pyproject.toml, which will be overridden in the features below.
+[tool.pixi.pypi-dependencies]
+dfm_tools = { path = ".", editable = true }
+
+# Define features for different Python versions and Hydromt versions
+[tool.pixi.feature.py310.dependencies]
+python = "3.10.*"
+
+[tool.pixi.feature.py311.dependencies]
+python = "3.11.*"
+
+[tool.pixi.feature.py312.dependencies]
+python = "3.12.*"
+
+[tool.pixi.feature.py313.dependencies]
+python = "3.13.*"
+
+[tool.pixi.feature.py314.dependencies]
+python = "3.14.*"
+
+[tool.pixi.feature.docs.dependencies]
+pandoc = "*"
+
+# Define environments to combine features
+[tool.pixi.environments]
+default = { features = ["py314", "dev", "docs", "examples"]}
+
+py310 = { features = ["py310", "dev"]}
+py311 = { features = ["py311", "dev"]}
+py312 = { features = ["py312", "dev"]}
+py313 = { features = ["py313", "dev"]}
+py314 = { features = ["py314", "dev"]}
