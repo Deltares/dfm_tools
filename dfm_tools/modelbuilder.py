@@ -523,4 +523,3 @@ def make_paths_relative(mdu_file:str):
         filedata = filedata.replace(dir_model.replace('\\','/')+'/', '')
         with open(filename, 'w') as file:
             file.write(filedata)
-

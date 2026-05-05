@@ -93,4 +93,3 @@ for file_pli in file_pli_list:
     print('saving bc file')
     ForcingModel_object.save(filepath=file_bc_out) #TODO REPORT: writing itself is fast, but takes quite a while to start writing (probably because of conversion)
     print('done')
-

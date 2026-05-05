@@ -8,9 +8,9 @@ Created on Wed Oct 27 21:56:54 2021
 RMM testmodel: convert all waqua output to netcdf after completion of the run by adding this to siminp file:
     NETCDFOUTPUT
       MAPS
-    	OUTPUTNAME = 'nc_map.nc'
+        OUTPUTNAME = 'nc_map.nc'
       HISTORIES
-    	OUTPUTNAME = 'nc_his.nc'
+        OUTPUTNAME = 'nc_his.nc'
       OPTIONS
         MAPEXTRA = 'HZETA,VICO'
         HISEXTRA = 'Z0'
@@ -107,5 +107,3 @@ ax.set_ylabel('%s (%s)'%(data_nc_ZWL.attrs['long_name'], data_nc_ZWL.attrs['unit
 time_ext = data_nc_ZWL.TIME[[0,-1]].to_numpy()
 ax.set_xlim(time_ext)
 plt.savefig(os.path.join(dir_output,'waqua_RMM_his_ZWL'))
-
-

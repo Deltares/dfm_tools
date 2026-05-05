@@ -520,4 +520,3 @@ def test_plot_ztdata():
     assert "unexpected number of dimensions in requested" in str(e.value)
     dfmt.plot_ztdata(data_xr_sel=ds_sel, varname='salinity')
     dfmt.plot_ztdata(data_xr_sel=ds_sel, varname='salinity', only_contour=True)
-
