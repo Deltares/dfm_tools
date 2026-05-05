@@ -79,6 +79,7 @@ Issues = "https://github.com/deltares/dfm_tools/issues"
 dev = [
 	"bump2version>=0.5.11",
 	"flake8",
+	"flake8-pyproject", # required to read the config from pyproject.toml
 	"pytest",
 	"pytest-cov",
 	"pytest-timeout",
@@ -129,7 +130,7 @@ filterwarnings = [
 ]
 
 [tool.flake8]
-exclude = "docs"
+exclude = "docs,.pixi"
 
 [tool.black]
 line-length = 88
