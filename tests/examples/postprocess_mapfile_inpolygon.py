@@ -142,4 +142,3 @@ dfmt.plot_coastlines(ax=ax,res='i')
 ax.grid()
 ## SPM:
 area_shp.plot(column='average_SPM_gro', ax=ax, legend=True, vmin=0, vmax=8)
-

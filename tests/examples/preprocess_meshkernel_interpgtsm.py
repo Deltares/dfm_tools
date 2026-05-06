@@ -47,8 +47,3 @@ print(uds['NetNode_z'].isnull().sum()) #check if there are missing z-values
 #uds.NetNode_z.ugrid.plot(center=False)
 
 print(f'{(dt.datetime.now()-dtstart).total_seconds():.2f} sec')
-
-
-
-
-

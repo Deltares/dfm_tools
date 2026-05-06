@@ -183,4 +183,3 @@ def plot_borders(ax=None, res:str='h', crs=None, **kwargs):
     
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
-

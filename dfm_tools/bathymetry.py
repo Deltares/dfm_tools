@@ -98,4 +98,3 @@ def read_asc(file_asc:str) -> xr.Dataset:
     ds_asc['data'] = xr.DataArray(asc_np, dims=('lat','lon'))
     ds_asc = ds_asc.assign_attrs(header_dict)
     return ds_asc
-

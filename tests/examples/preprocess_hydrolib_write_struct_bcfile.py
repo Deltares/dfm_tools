@@ -56,4 +56,3 @@ for structname in list_structures:
 
 
 #strmod = StructureModel(Path(r'p:\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB_structbc\RMM_structures.ini'))
-

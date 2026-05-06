@@ -333,4 +333,3 @@ def gshhs_coastlines_shp() -> str:
         assert os.path.exists(filepath_shp) #coastlines
     
     return dir_gshhs
-

@@ -118,5 +118,3 @@ for varname in varname_list:
 
 print('writing to netcdf')
 data_xr_out.to_netcdf(file_nc_out)
-
-
