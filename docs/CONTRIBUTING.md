@@ -31,6 +31,21 @@ pixi run -e default test
 pixi run -e default pytest
 ```
 
+Most of the time it is smart to skip the acceptance tests (the scripts in [the examples folder](https://github.com/Deltares/dfm_tools/tree/main/tests/examples)), since these are quite slow:
+```
+pixi run test -m "not acceptance"
+```
+
+Or even better, to exclude all tests that require local (P-drive) data (the examples/acceptancetests and a bit more tests), which might also be slow. This is also the selection of tests that runs on github:
+```
+pixi run test -m "not requireslocaldata"
+```
+
+Additionally, it might be smart to also skip the slow ERA5 tests since they will crash the entire test workflow on windows when taking too long:
+```
+pixi run test -m "not requireslocaldata and not era5slow"
+```
+
 ## Updating the lockfile
 
 If you add any dependencies or change anything in the package configuration, you have to update the lockfile. This is also done (if needed) when running other pixi commands:
