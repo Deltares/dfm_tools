@@ -152,6 +152,31 @@ docs-build = { cmd = ["sphinx-build", "docs", "docs/_build"] }
 [tool.pixi.pypi-dependencies]
 dfm_tools = { path = ".", editable = true }
 
+[tool.pixi.feature.minimal.pypi-dependencies]
+# the versions are a manual copy of [project.dependencies],
+# but with == to test with the lowest versions of direct dependencies
+scipy = "==1.13.0"
+numpy = "==2.0.0"
+matplotlib = "==3.10.7"
+pandas = "==2.2.2"
+shapely = "==2.1.1"
+geopandas = "==1.1.0"
+pyogrio = "==0.12.0"
+contextily = "==1.6.2"
+xarray = "==2024.7.0"
+dask = "==2025.1.0"
+netcdf4 = "==1.7.2"
+bottleneck = "==1.5.0"
+xugrid = "==0.15.2"
+cdsapi = "==0.7.5"
+pydap = "==3.4.0"
+erddapy = "==2.0.2"
+copernicusmarine = "==2.0.0"
+rws-ddlpy = "==0.9.3"
+pooch = "==1.1.0"
+hydrolib-core = "==1.0.0"
+meshkernel = "==8.2.1"
+
 # Define features for different Python versions and Hydromt versions
 [tool.pixi.feature.py310.dependencies]
 python = "3.10.*"
@@ -180,3 +205,5 @@ py311 = { features = ["py311", "dev", "test"]}
 py312 = { features = ["py312", "dev", "test"]}
 py313 = { features = ["py313", "dev", "test"]}
 py314 = { features = ["py314", "dev", "test"]}
+
+py310-mindeps = { features = ["py310", "dev", "test", "minimal"]}
