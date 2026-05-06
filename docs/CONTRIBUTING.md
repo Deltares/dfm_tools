@@ -22,7 +22,7 @@ pixi install
 
 Any other environments will be installed/updated when you use them for instance when running the tests.
 
-## Test
+## Running the tests
 
 Running the tests can be done within any of the environment specified in the pyproject.toml (defaults to `default`):
 
