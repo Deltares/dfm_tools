@@ -505,9 +505,7 @@ def make_paths_relative(mdu_file:str):
 
     """
     dir_model = os.path.dirname(mdu_file)
-    # TODO: temporarily use recurse=True, to be fixed in
-    # https://github.com/Deltares/dfm_tools/issues/1329
-    mdu_existing = hcdfm.FMModel(mdu_file, recurse=True)
+    mdu_existing = hcdfm.FMModel(mdu_file, recurse=False)
     file_list = [mdu_file]
     ext_old = mdu_existing.external_forcing.extforcefile
     if ext_old is not None:
