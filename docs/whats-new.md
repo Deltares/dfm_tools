@@ -3,7 +3,7 @@
 ## UNRELEASED
 
 # Feat
-- support for hydrolib-core v1 in [#1326](https://github.com/Deltares/dfm_tools/issues/1326)
+- support for hydrolib-core v1 in [#1326](https://github.com/Deltares/dfm_tools/issues/1326) and [1351](https://github.com/Deltares/dfm_tools/pull/1351)
 - support for pandas 3 in [#1340](https://github.com/Deltares/dfm_tools/pull/1340)
 
 # Deprecated
