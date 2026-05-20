@@ -91,8 +91,8 @@ pixi run docs-build
 - bump the versionnumber with `pixi run bumpversion minor`
 - update the lockfile with `pixi lock`
 - update `docs/whats-new.md` and add a date to the current release heading
-- run local testbank with `pytest -m "not requireslocaldata"`
-- local check with: `python -m build` and `twine check dist/*` ([does not work on WCF](https://github.com/pypa/setuptools/issues/4133))
+- run local testbank with `pixi run pytest -m "not requireslocaldata"`
+- local check with: `pixi run python -m build` and `pixi run twine check dist/*` ([does not work on WCF](https://github.com/pypa/setuptools/issues/4133))
 - commit+push to branch and merge PR
 - copy the dfm_tools version from [pyproject.toml](https://github.com/Deltares/dfm_tools/blob/main/pyproject.toml) (e.g. `0.11.0`)
 - create a [new release](https://github.com/Deltares/dfm_tools/releases/new)
