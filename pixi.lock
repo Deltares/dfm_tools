@@ -3546,8 +3546,8 @@ packages:
   requires_python: '>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*'
 - pypi: ./
   name: dfm-tools
-  version: 0.45.1
-  sha256: a428efe3e8fe4ef1816f5109b42a1788917b19aad64092e1b8bdb85d38811d01
+  version: 0.46.0
+  sha256: aff4e0c6cad2875a3a632b98e0a77bd7a239039f7f7472ca09a07027f305a4d0
   requires_dist:
   - scipy>=1.13.0
   - numpy>=2.0.0
