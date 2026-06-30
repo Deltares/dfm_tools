@@ -466,13 +466,32 @@ def psmsl_gnssir_ssh_read_catalog_gettimes(station_list_gpd):
     return station_list_gpd
 
 def gesla3_ssh_read_catalog(only_coastal=True):
-    file_gesla3_meta = os.path.join(settings.PATH_GESLA3, "GESLA3_ALL 2.csv")
+    file_gesla_meta = os.path.join(settings.PATH_GESLA3, "GESLA3_ALL 2.csv")
+    station_list_gpd = gesla_ssh_read_catalog(
+        file_gesla_meta=file_gesla_meta,
+        only_coastal=only_coastal,
+    )
+    return station_list_gpd
+
+
+def gesla4_ssh_read_catalog(only_coastal=True):
+    file_gesla_meta = os.path.join(settings.PATH_GESLA4, "GESLA4_ALL.csv")
+    station_list_gpd = gesla_ssh_read_catalog(
+        file_gesla_meta=file_gesla_meta,
+        only_coastal=only_coastal,
+    )
+    return station_list_gpd
+
+
+def gesla_ssh_read_catalog(file_gesla_meta, only_coastal=True):
+    if not os.path.isfile(file_gesla_meta):
+        raise FileNotFoundError(
+            f"The 'file_gesla_meta' file '{file_gesla_meta}' was not found. You can "
+            "download it from https://gesla787883612.wordpress.com/downloads and "
+            "provide the path via settings.PATH_GESLA3 or settings.PATH_GESLA4."
+        )
     
-    if not os.path.isfile(file_gesla3_meta):
-        raise FileNotFoundError(f"The 'file_gesla3_meta' file '{file_gesla3_meta}' was not found. "
-                                "You can download it from https://gesla787883612.wordpress.com/downloads and provide the path")
-    
-    station_list_pd = pd.read_csv(file_gesla3_meta)
+    station_list_pd = pd.read_csv(file_gesla_meta)
     station_list_pd.columns = [c.replace(" ", "_").replace("(", "").replace(")", "").replace("/", "_").lower() for c in station_list_pd.columns]
     station_list_pd = station_list_pd.set_index('file_name', drop=False)
     station_list_pd["start_date_time"] = pd.to_datetime(station_list_pd["start_date_time"])
@@ -1064,6 +1083,7 @@ def ssh_catalog_subset(source=None,
     
     ssh_sources = {"ssc": ssc_ssh_read_catalog,
                    "gesla3": gesla3_ssh_read_catalog,
+                   "gesla4": gesla4_ssh_read_catalog,
                    "ioc": ioc_ssh_read_catalog,
                    "cmems": cmems_my_ssh_read_catalog,
                    "cmems-nrt": cmems_nrt_ssh_read_catalog,
