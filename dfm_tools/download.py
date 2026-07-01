@@ -51,29 +51,32 @@ def download_ERA5(varkey,
     # import cdsapi and create a Client instance # https://cds.climate.copernicus.eu/api-how-to
     c = cdsapi.Client()
 
-    #dictionary with ERA5 variables #this is not actively used
-    variables_dict = {'ssr':'surface_net_solar_radiation',
-                      'sst':'sea_surface_temperature',
-                      'strd':'surface_thermal_radiation_downwards',
-                      'slhf':'surface_latent_heat_flux',
-                      'sshf':'surface_sensible_heat_flux',
-                      'str':'surface_net_thermal_radiation',
-                      'chnk':'charnock',
-                      'd2m':'2m_dewpoint_temperature',
-                      't2m':'2m_temperature',
-                      'tcc':'total_cloud_cover',
-                      'msl':'mean_sea_level_pressure',
-                      'u10':'10m_u_component_of_wind',
-                      'u10n':'10m_u_component_of_neutral_wind',
-                      'v10':'10m_v_component_of_wind',
-                      'v10n':'10m_v_component_of_neutral_wind',
-                      # mer and mtpr are now called avg_ie and avg_tprate
-                      # this is reverted in dfmt.preprocess_ERA5() after fixing
-                      # https://github.com/Deltares/dfm_tools/issues/1140
-                      'mer':'mean_evaporation_rate', 
-                      'mtpr':'mean_total_precipitation_rate',
-                      'rhoao':'air_density_over_the_oceans',
-                      }
+    # dictionary with ERA5 variables
+    variables_dict = {
+        'ssrd':'surface_solar_radiation_downwards',
+        'ssr':'surface_net_solar_radiation',
+        'sst':'sea_surface_temperature',
+        'strd':'surface_thermal_radiation_downwards',
+        'slhf':'surface_latent_heat_flux',
+        'sshf':'surface_sensible_heat_flux',
+        'str':'surface_net_thermal_radiation',
+        'chnk':'charnock',
+        'd2m':'2m_dewpoint_temperature',
+        't2m':'2m_temperature',
+        'tcc':'total_cloud_cover',
+        'msl':'mean_sea_level_pressure',
+        'u10':'10m_u_component_of_wind',
+        'u10n':'10m_u_component_of_neutral_wind',
+        'v10':'10m_v_component_of_wind',
+        'v10n':'10m_v_component_of_neutral_wind',
+        # mer and mtpr are now called avg_ie and avg_tprate
+        # this is reverted in dfmt.preprocess_ERA5() after fixing
+        # https://github.com/Deltares/dfm_tools/issues/1140
+        'mer':'mean_evaporation_rate',
+        'mtpr':'mean_total_precipitation_rate',
+        'rhoao':'air_density_over_the_oceans',
+    }
+
     if varkey not in variables_dict.keys(): #TODO: how to get list of available vars? mean_sea_level_pressure and msl both return a dataset with msl varkey, but standard_name air_pressure_at_mean_sea_level returns an error
         raise KeyError(f'"{varkey}" not available, choose from: {", ".join(variables_dict.keys())}')
     
