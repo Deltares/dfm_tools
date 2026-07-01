@@ -4,6 +4,7 @@
 
 # Feat
 - added support for GESLA4 in [#1357](https://github.com/Deltares/dfm_tools/pull/1357)
+- support for both solarradiation and netsolarradiation in [#1287](https://github.com/Deltares/dfm_tools/pull/1287)
 
 
 ## 0.46.0 (2026-05-20)
