@@ -23,6 +23,6 @@ jobs:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
       run: |
-        python -m build
-        twine check dist/*
-        twine upload dist/*
+        pixi run python -m build
+        pixi run twine check dist/*
+        pixi run twine upload dist/*
