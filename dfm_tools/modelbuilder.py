@@ -261,6 +261,7 @@ def preprocess_merge_meteofiles_era5(
     
     # TODO: align with variables_dict from dfmt.download_ERA5()
     dict_varkey_quantities = {
+        'ssrd':'solarradiation',
         'ssr':'netsolarradiation',
         # 'sst':'sea_surface_temperature',
         'strd':'longwaveradiation',
@@ -280,7 +281,7 @@ def preprocess_merge_meteofiles_era5(
         'mtpr':'rainfall_rate',
         'rhoao':'airdensity',
         }
-    
+
     
     for varkey in varkey_list:
         if isinstance(varkey, list):
