@@ -18,15 +18,20 @@ from dfm_tools.observations import (ssc_ssh_read_catalog,
                                     gtsm3_era5_cds_ssh_retrieve_data,
                                     _remove_accents,
                                     )
+from dfm_tools import settings
 import logging
 
 source_list = ["uhslc", "psmsl-gnssir", "ssc", "ioc", "rwsddl", 
                "cmems", "cmems-nrt", # requires CMEMS credentials
                "gtsm3-era5-cds", # requires CDS credentials
-               ] 
-if os.path.exists(r"p:\metocean-data\licensed\GESLA3"):
-    # not possible without p-drive connection
+               ]
+
+if os.path.exists(settings.PATH_GESLA3):
+    # not possible without p-drive connection or local download
     source_list += ["gesla3"]
+if os.path.exists(settings.PATH_GESLA4):
+    # not possible without p-drive connection or local download
+    source_list += ["gesla4"]
 
 
 @pytest.mark.requiressecrets
@@ -126,6 +131,17 @@ def test_ssh_netcdf_overview(tmp_path):
     assert os.path.isdir(os.path.join(tmp_path, "overview"))
     assert os.path.isfile(os.path.join(tmp_path, "overview", "overview_availability_001_001.png"))
     assert os.path.isfile(os.path.join(tmp_path, "overview", "waterlevel_data_netcdf_overview.csv"))
+
+
+@pytest.mark.unittest
+def test_ssh_catalog_subset_gesla_not_found():
+    gesla4_path_old = settings.PATH_GESLA4
+    settings.PATH_GESLA4 = 'path/to/gesla4' # not existent
+    msg = r"The GESLA file .*GESLA4_ALL.csv' was not found"
+    with pytest.raises(FileNotFoundError, match=msg):
+        _ = dfmt.ssh_catalog_subset(source='gesla4')
+    # restore setting
+    settings.PATH_GESLA4 = gesla4_path_old
 
 
 @pytest.mark.unittest

@@ -2,6 +2,9 @@
 
 ## UNRELEASED
 
+# Feat
+- added support for GESLA4 in [#1357](https://github.com/Deltares/dfm_tools/pull/1357)
+
 
 ## 0.46.0 (2026-05-20)
 

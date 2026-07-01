@@ -30,3 +30,4 @@ PATH_tpxo80_opendap = 'https://opendap.deltares.nl/thredds/dodsC/opendap/deltare
 
 # observation data
 PATH_GESLA3 = Path(PDRIVE, "metocean-data", "licensed", "GESLA3")
+PATH_GESLA4 = Path(PDRIVE, "metocean-data", "licensed", "GESLA4")

@@ -34,7 +34,11 @@ __all__ = ["ssh_catalog_subset",
 
 CM_LOGGER = logging.getLogger("copernicusmarine")
 logger = logging.getLogger(__name__)
-
+GESLA_MSG = (
+    "The GESLA file '{file_gesla}' was not found. You can download it from "
+    "https://gesla787883612.wordpress.com/downloads and provide the folder path: "
+    "`import dfm_tools as dfmt; dfmt.settings.PATH_GESLA4 = 'path/to/gesla4'`"
+)
 
 def _make_hydrotools_consistent(ds):
     """
@@ -466,13 +470,28 @@ def psmsl_gnssir_ssh_read_catalog_gettimes(station_list_gpd):
     return station_list_gpd
 
 def gesla3_ssh_read_catalog(only_coastal=True):
-    file_gesla3_meta = os.path.join(settings.PATH_GESLA3, "GESLA3_ALL 2.csv")
-    
-    if not os.path.isfile(file_gesla3_meta):
-        raise FileNotFoundError(f"The 'file_gesla3_meta' file '{file_gesla3_meta}' was not found. "
-                                "You can download it from https://gesla787883612.wordpress.com/downloads and provide the path")
-    
-    station_list_pd = pd.read_csv(file_gesla3_meta)
+    file_gesla_meta = os.path.join(settings.PATH_GESLA3, "GESLA3_ALL 2.csv")
+    station_list_gpd = gesla_ssh_read_catalog(
+        file_gesla_meta=file_gesla_meta,
+        only_coastal=only_coastal,
+    )
+    return station_list_gpd
+
+
+def gesla4_ssh_read_catalog(only_coastal=True):
+    file_gesla_meta = os.path.join(settings.PATH_GESLA4, "GESLA4_ALL.csv")
+    station_list_gpd = gesla_ssh_read_catalog(
+        file_gesla_meta=file_gesla_meta,
+        only_coastal=only_coastal,
+    )
+    return station_list_gpd
+
+
+def gesla_ssh_read_catalog(file_gesla_meta, only_coastal=True):
+    if not os.path.isfile(file_gesla_meta):
+        raise FileNotFoundError(GESLA_MSG.format(file_gesla=file_gesla_meta))
+
+    station_list_pd = pd.read_csv(file_gesla_meta)
     station_list_pd.columns = [c.replace(" ", "_").replace("(", "").replace(")", "").replace("/", "_").lower() for c in station_list_pd.columns]
     station_list_pd = station_list_pd.set_index('file_name', drop=False)
     station_list_pd["start_date_time"] = pd.to_datetime(station_list_pd["start_date_time"])
@@ -611,7 +630,7 @@ def cmems_ssh_retrieve_data(row, time_min=None, time_max=None,
     """
     
     # get source from gdf
-    source = row['source']
+    source = row["source"]
     dataset_id = get_cmems_dataset_id(source)
 
     tempdir = tempfile.gettempdir()
@@ -797,27 +816,28 @@ def uhslc_ssh_retrieve_data(row, time_min=None, time_max=None, include_rqds=True
 
 
 @functools.lru_cache
-def gesla3_cache_zipfile():
-    file_gesla3_data = os.path.join(settings.PATH_GESLA3, "GESLA3.0_ALL.zip")
+def gesla_cache_zipfile(source):
+    if source == "gesla3":
+        file_gesla_data = os.path.join(settings.PATH_GESLA3, "GESLA3.0_ALL.zip")
+    elif source == "gesla4":
+        file_gesla_data = os.path.join(settings.PATH_GESLA4, "GESLA4_ALL.zip")
+    else:
+        raise ValueError(f"invalid GELSA source: {source}")
 
-    if not os.path.isfile(file_gesla3_data):
-        raise FileNotFoundError(
-            f"The 'file_gesla3_data' file '{file_gesla3_data}' was not found. You can "
-            "download it from https://gesla787883612.wordpress.com/downloads and provide "
-            "the path: `import dfm_tools as dfmt; dfmt.settings.PATH_GESLA3 = 'path/to/gesla3'`"
-            )
-    
-    gesla3_zip = ZipFile(file_gesla3_data)
-    return gesla3_zip
+    if not os.path.isfile(file_gesla_data):
+        raise FileNotFoundError(GESLA_MSG.format(file_gesla=file_gesla_data))
+
+    gesla_zip = ZipFile(file_gesla_data)
+    return gesla_zip
 
 
-def gesla3_ssh_retrieve_data(row, time_min=None, time_max=None):
-    
-    # get cached gesla3 zipfile instance
-    gesla3_zip = gesla3_cache_zipfile()
-    
+def gesla_ssh_retrieve_data(row, time_min=None, time_max=None):
+    source = row["source"]
+    # get cached gesla3/gesla4 zipfile instance
+    gesla_zip = gesla_cache_zipfile(source=source)
+
     file_gesla = row.name
-    with gesla3_zip.open(file_gesla, "r") as f:
+    with gesla_zip.open(file_gesla, "r") as f:
         data = pd.read_csv(f, comment='#', sep="\\s+",
                            names=["date", "time", "sea_level", "qc_flag", "use_flag"],
                            )
@@ -1064,6 +1084,7 @@ def ssh_catalog_subset(source=None,
     
     ssh_sources = {"ssc": ssc_ssh_read_catalog,
                    "gesla3": gesla3_ssh_read_catalog,
+                   "gesla4": gesla4_ssh_read_catalog,
                    "ioc": ioc_ssh_read_catalog,
                    "cmems": cmems_my_ssh_read_catalog,
                    "cmems-nrt": cmems_nrt_ssh_read_catalog,
@@ -1108,7 +1129,8 @@ def ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
         raise Exception("A ssh_catalog_gpd with multiple unique 'source' values was passed to ssh_retrieve_data(), this is not supported.")
     source = source_list[0]
     
-    ssh_sources = {"gesla3": gesla3_ssh_retrieve_data,
+    ssh_sources = {"gesla3": gesla_ssh_retrieve_data,
+                   "gesla4": gesla_ssh_retrieve_data,
                    "ioc": ioc_ssh_retrieve_data,
                    "cmems": cmems_ssh_retrieve_data,
                    "cmems-nrt": cmems_ssh_retrieve_data,
