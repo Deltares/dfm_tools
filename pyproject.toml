@@ -201,6 +201,8 @@ pandoc = "*"
 [tool.pixi.environments]
 default = { features = ["py314", "dev", "docs", "examples", "test"]}
 
+dev = { features = ["py314", "dev"]}
+
 py310 = { features = ["py310", "dev", "test"]}
 py311 = { features = ["py311", "dev", "test"]}
 py312 = { features = ["py312", "dev", "test"]}
