@@ -3,8 +3,18 @@
 ## UNRELEASED
 
 # Feat
-- support for hydrolib-core v1 in [#1326](https://github.com/Deltares/dfm_tools/issues/1326)
+- added support for GESLA4 in [#1357](https://github.com/Deltares/dfm_tools/pull/1357)
+
+
+## 0.46.0 (2026-05-20)
+
+# Feat
+- added support for python 3.14 in [#1335](https://github.com/Deltares/dfm_tools/pull/1335)
+- support for hydrolib-core v1 in [#1326](https://github.com/Deltares/dfm_tools/issues/1326) and [1351](https://github.com/Deltares/dfm_tools/pull/1351)
 - support for pandas 3 in [#1340](https://github.com/Deltares/dfm_tools/pull/1340)
+
+# Fix
+- proper CRS support with xugrid>=0.15.2 in [#1337](https://github.com/Deltares/dfm_tools/pull/1337)
 
 # Deprecated
 - removed `dfmt.velovect()` as it is preceded by UltraPlots `curved_quiver` in [#1328](https://github.com/Deltares/dfm_tools/pull/1328)

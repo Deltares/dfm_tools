@@ -35,4 +35,3 @@ ax.set_title('1D network')
 fig,ax = plt.subplots()
 uds_withcellinfo.NetNode_z.ugrid.plot(ax=ax)
 ax.set_title('2D network')
-

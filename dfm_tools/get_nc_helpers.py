@@ -165,4 +165,3 @@ def rename_fouvars(ds:(xr.Dataset,xu.UgridDataset), drop_tidal_times:bool = True
     
     ds = ds.rename(rename_dict)
     return ds
-

@@ -86,4 +86,3 @@ for iEB, extbnd in enumerate(ext_boundaries+ext_laterals):
 
 # file_dimr = r"p:\archivedprojects\11206813-006-kpp2021_rmm-2d\C_Work\31_RMM_FMmodel\computations\model_setup\run_206_HYDROLIB\dimr_config.xml"
 # dimr = DIMR(file_dimr, recurse=False)
-

@@ -54,4 +54,3 @@ for i in range(1,24,8):
     fig,ax = plt.subplots()
     ds_plipoints.mesh2d_sa1.isel(node=i).T.plot(ax=ax)
     ax.set_ylim(-30,1)
-

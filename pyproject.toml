@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dfm_tools"
-version = "0.45.1"
+version = "0.46.1"
 maintainers = [{ name = "Jelmer Veenstra", email = "jelmer.veenstra@deltares.nl" }]
 description = "dfm_tools are pre- and post-processing tools for Delft3D FM"
 readme = "README.md"
@@ -51,8 +51,9 @@ dependencies = [
 	"rws-ddlpy>=0.9.3",
 	#pooch>=1.1.0 has attribute retrieve
 	"pooch>=1.1.0",
-	#hydrolib-core>=1.0.0 has new Pydantic API, support for pandas 3 and support for Python 3.14
-	"hydrolib-core>=1.0.0",
+    # hydrolib-core>=1.0.0 has new Pydantic API, support for pandas 3 and support for Python 3.14
+    # hydrolib-core>=1.0.1 reverts some incompatibilties introduced in v1
+    "hydrolib-core>=1.0.1",
 	#meshkernel>=8.2.1 supports illegalcells via the face-node-connectivity
 	"meshkernel>=8.2.1",
 ]
@@ -79,6 +80,7 @@ Issues = "https://github.com/deltares/dfm_tools/issues"
 dev = [
 	"bump2version>=0.5.11",
 	"flake8",
+	"flake8-pyproject", # required to read the config from pyproject.toml
 	"pytest",
 	"pytest-cov",
 	"pytest-timeout",
@@ -118,7 +120,7 @@ filterwarnings = [
 	"ignore::pytest.PytestUnraisableExceptionWarning",
 	# filter expected warning from dfmt.get_dataset_atdepths()
 	"ignore:All-NaN slice encountered:RuntimeWarning",
-	# filter until fix of https://github.com/Deltares/HYDROLIB-core/issues/732
+	# filter until fix of https://github.com/Deltares/HYDROLIB-core/issues/1098
 	# note the use of single quote below to denote "raw" strings in TOML
 	'ignore:datetime.datetime.utcnow\(\) is deprecated:DeprecationWarning',
 	# for dfmt.open_dataset_delft3d4() and dfmt.open_dataset_curvilinear()
@@ -129,4 +131,80 @@ filterwarnings = [
 ]
 
 [tool.flake8]
-exclude = "docs"
+exclude = "docs,.pixi"
+
+[tool.black]
+line-length = 88
+target-version = ['py312']
+
+## Pixi related entries
+[tool.pixi.workspace]
+channels  = ["conda-forge"]
+platforms = ["linux-64", "win-64"]
+
+[tool.pixi.feature.test.tasks]
+test = { cmd = ["pytest", "--cov=dfm_tools", "--cov-report=xml", "--cov-report=term"] }
+
+[tool.pixi.feature.docs.tasks]
+docs-build = { cmd = ["sphinx-build", "docs", "docs/_build"] }
+
+# Install your code in editable mode, dependencies here are installed in all environments
+# Takes the dependencies from pyproject.toml, which will be overridden in the features below.
+[tool.pixi.pypi-dependencies]
+dfm_tools = { path = ".", editable = true }
+
+[tool.pixi.feature.minimal.pypi-dependencies]
+# the versions are a manual copy of [project.dependencies],
+# but with == to test with the lowest versions of direct dependencies
+scipy = "==1.13.0"
+numpy = "==2.0.0"
+matplotlib = "==3.10.7"
+pandas = "==2.2.2"
+shapely = "==2.1.1"
+geopandas = "==1.1.0"
+pyogrio = "==0.12.0"
+contextily = "==1.6.2"
+xarray = "==2024.7.0"
+dask = "==2025.1.0"
+netcdf4 = "==1.7.2"
+bottleneck = "==1.5.0"
+xugrid = "==0.15.2"
+cdsapi = "==0.7.5"
+pydap = "==3.4.0"
+erddapy = "==2.0.2"
+copernicusmarine = "==2.0.0"
+rws-ddlpy = "==0.9.3"
+pooch = "==1.1.0"
+hydrolib-core = "==1.0.1"
+meshkernel = "==8.2.1"
+
+# Define features for different Python versions and Hydromt versions
+[tool.pixi.feature.py310.dependencies]
+python = "3.10.*"
+
+[tool.pixi.feature.py311.dependencies]
+python = "3.11.*"
+
+[tool.pixi.feature.py312.dependencies]
+python = "3.12.*"
+
+[tool.pixi.feature.py313.dependencies]
+python = "3.13.*"
+
+[tool.pixi.feature.py314.dependencies]
+python = "3.14.*"
+
+[tool.pixi.feature.docs.dependencies]
+pandoc = "*"
+
+# Define environments to combine features
+[tool.pixi.environments]
+default = { features = ["py314", "dev", "docs", "examples", "test"]}
+
+py310 = { features = ["py310", "dev", "test"]}
+py311 = { features = ["py311", "dev", "test"]}
+py312 = { features = ["py312", "dev", "test"]}
+py313 = { features = ["py313", "dev", "test"]}
+py314 = { features = ["py314", "dev", "test"]}
+
+py310-mindeps = { features = ["py310", "dev", "test", "minimal"]}

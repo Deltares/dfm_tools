@@ -1,25 +1,66 @@
-# Contributing
+# Developer's guide
 
-## Checkout git repository
+With the following steps you can install dfm_tools as a developer so you have access to latest version on github and can make changes to the code.
 
-- this is just a suggestion, feel free to work with VScode or any other git-compatible workflow
-- download git from [git-scm.com](https://git-scm.com/download/win), install with default settings
-- open git bash window where you want to clone the dfm_tools github repository (e.g. `C:\DATA\`)
-- `git clone https://github.com/deltares/dfm_tools` (creates a folder dfm_tools with the checked out repository)
-- `cd dfm_tools`
-- optional: `git config --global user.email [emailaddress]`
-- optional: `git config --global user.name [username]`
+## Install
 
-## Setup local developer environment
+First, install Pixi: https://pixi.prefix.dev/latest/installation
 
-- python 3.10 to 3.13 are supported
-- download Miniforge3 from [conda-forge.org](https://conda-forge.org/miniforge) and install it with the recommended settings.
-- open Miniforge Prompt and navigate to the local checkout folder of the repository
-- `conda create --name dfm_tools_env python=3.12 git spyder -y` (`git` and `spyder` are optional)
-- `conda activate dfm_tools_env`
-- `python -m pip install -e .[dev,docs,examples]` (pip developer mode, any updates to the local folder are immediately available in your python. It also installs all requirements via pip, square brackets are to install optional dependency groups)
-- `conda deactivate`
-- to remove dfm_tools_env when necessary: `conda remove -n dfm_tools_env --all`
+Then, clone the dfm_tools ``git`` repo from [github](https://github.com/Deltares/dfm_tools), then navigate into the code folder (where the pyproject.toml is located):
+```
+git clone https://github.com/Deltares/dfm_tools.git
+cd dfm_tools
+```
+
+If git is not recognized as a command, first install Git from https://git-scm.com/install. VSCode and PyCharm should be bundled with a git extension so a manual installation is not always necessary.
+
+Then, create and activate a new pixi environment. This includes a developers installation of dfm_tools and the default environment as specified in pyproject.toml:
+
+```
+pixi install
+```
+
+Any other environments will be installed/updated when you use them for instance when running the tests.
+
+## Running the tests
+
+Running the tests can be done within any of the environment specified in the pyproject.toml (defaults to `default`):
+
+```
+pixi run -e default test
+pixi run -e default pytest
+```
+
+Most of the time it is smart to skip the acceptance tests (the scripts in [the examples folder](https://github.com/Deltares/dfm_tools/tree/main/tests/examples)), since these are quite slow:
+```
+pixi run test -m "not acceptance"
+```
+
+Or even better, to exclude all tests that require local (P-drive) data (the examples/acceptancetests and a bit more tests), which might also be slow. This is also the selection of tests that runs on github:
+```
+pixi run test -m "not requireslocaldata"
+```
+
+Additionally, it might be smart to also skip the slow ERA5 tests since they will crash the entire test workflow on windows when taking too long:
+```
+pixi run test -m "not requireslocaldata and not era5slow"
+```
+
+## Updating the lockfile
+
+If you add any dependencies or change anything in the package configuration, you have to update the lockfile. This is also done (if needed) when running other pixi commands:
+
+```
+pixi lock
+```
+
+## Generating the docs
+
+Generating the docs is added as a pixi task, which executes sphinx-build:
+
+```
+pixi run docs-build
+```
 
 ## Contributing
 
@@ -37,39 +78,21 @@
 - request a review on the pull request
 - after review, squash+merge the branch into main
 
-## Running the testbank
-
-- open Miniforge Prompt and navigate to the local checkout folder of the repository
-- `conda activate dfm_tools_env`
-- `pytest` (runs all tests)
-- `pytest -m "not acceptance"`
-- `pytest -m acceptance` (runs the acceptance tests, which are the scripts in [the examples folder](https://github.com/Deltares/dfm_tools/tree/main/tests/examples))
-- `pytest -m "not requireslocaldata"` (this is what runs on github)
-- this workflow automatically runs via Github Actions upon push and pullrequest to main
-
-## Generate documentation with sphinx
-
-- open Miniforge Prompt and navigate to the local checkout folder of the repository
-- `conda activate dfm_tools_env`
-- `sphinx-build docs docs/_build`
-- this workflow automatically runs via Github Actions upon push to main
-
 ## Increase the version number
 
 - commit all changes via git
-- open Miniforge Prompt and navigate to the local checkout folder of the repository
-- `conda activate dfm_tools_env`
-- `bumpversion major` or `bumpversion minor` or `bumpversion patch` (changes version numbers in files and commits changes)
-- push changes with `git push` (from git bash window)
+- `pixi run bumpversion major` (or `minor` or `patch`) (changes version numbers in files and commits changes)
+- push changes with `git push` (from git bash window/terminal)
 
 ## Create release
 
 - make sure the `main` branch is up to date (check pytest warnings, important issues solved, all pullrequests and branches closed)
 - create and checkout branch for release
-- bump the versionnumber with `bumpversion minor`
+- bump the versionnumber with `pixi run bumpversion minor`
+- update the lockfile with `pixi lock`
 - update `docs/whats-new.md` and add a date to the current release heading
-- run local testbank with `pytest -m "not requireslocaldata"`
-- local check with: `python -m build` and `twine check dist/*` ([does not work on WCF](https://github.com/pypa/setuptools/issues/4133))
+- run local testbank with `pixi run pytest -m "not requireslocaldata"`
+- local check with: `pixi run python -m build` and `pixi run twine check dist/*` ([does not work on WCF](https://github.com/pypa/setuptools/issues/4133))
 - commit+push to branch and merge PR
 - copy the dfm_tools version from [pyproject.toml](https://github.com/Deltares/dfm_tools/blob/main/pyproject.toml) (e.g. `0.11.0`)
 - create a [new release](https://github.com/Deltares/dfm_tools/releases/new)
@@ -78,18 +101,13 @@
 - click `Generate release notes` and replace the `What's Changed` info by a tagged link to `docs/whats-new.md`
 - if all is set, click `Publish release`
 - a release is created and the github action publishes it [on PyPI](https://pypi.org/project/dfm-tools)
-- post-release: commit+push `bumpversion patch` and `UNRELEASED` header in `docs/whats-new.md` to distinguish between release and dev version
+- post-release: commit+push `pixi run bumpversion patch`, `pixi lock` and add `UNRELEASED` header in `docs/whats-new.md` to distinguish between release and dev version
 
 ## What are all these packages for?
 
 - shapely for slicing 2D/3D data
 - geopandas for shapefile related operations
 - contextily for satellite imagery on plots, faster than cartopy
-- xarray developers advise to install dependecies dask/netCDF4/bottleneck
+- xarray developers advise to install dependecies dask/netCDF4/bottleneck for io and performance
 - xugrid: wrapper around xarray by Huite Bootsma, for ugrid support
 - cdsapi/pydap: to download ERA5 and CMEMS data
-
-## Potential spyder issues
-
-- Qt error upon launching Spyder?: remove the system/user environment variable 'qt_plugin_path' set by an old Delft3D4 installation procedure.
-- netCDF4 DLL error upon import in Spyder?: [remove Anaconda paths from the Path user environment variable](https://github.com/spyder-ide/spyder/issues/19220)
