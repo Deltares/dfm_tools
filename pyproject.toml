@@ -27,8 +27,8 @@ dependencies = [
 	"geopandas>=1.1.0",
 	#pyogrio>=0.12.0 parses JSON fields as dicts/lists. pyogrio is a dependency for geopandas, was fiona before
 	"pyogrio>=0.12.0",
-	#contextily>=1.6.2 has fixed axis scaling: https://github.com/geopandas/contextily/issues/251
-	"contextily>=1.6.2",
+	#contextily>=1.7.1 fixed confusing errors due to None propagation: https://github.com/geopandas/contextily/issues/252
+	"contextily>=1.7.1",
 	#xarray>=2024.7.0 includes fix for numpy v2: https://github.com/pydata/xarray/issues/9179
 	"xarray>=2024.7.0",
 	#dask 2025.1.0 is required by xugrid: https://github.com/Deltares/xugrid/pull/350#issuecomment-2809652618
@@ -163,7 +163,7 @@ pandas = "==2.2.2"
 shapely = "==2.1.1"
 geopandas = "==1.1.0"
 pyogrio = "==0.12.0"
-contextily = "==1.6.2"
+contextily = "==1.7.1"
 xarray = "==2024.7.0"
 dask = "==2025.1.0"
 netcdf4 = "==1.7.2"
