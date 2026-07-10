@@ -122,6 +122,7 @@ filterwarnings = [
 	"ignore:All-NaN slice encountered:RuntimeWarning",
 	# filter until fix of https://github.com/Deltares/HYDROLIB-core/issues/1098
 	# note the use of single quote below to denote "raw" strings in TOML
+	# remove again in https://github.com/Deltares/dfm_tools/issues/1366
 	'ignore:datetime.datetime.utcnow\(\) is deprecated:DeprecationWarning',
 	# for dfmt.open_dataset_delft3d4() and dfmt.open_dataset_curvilinear()
 	"ignore:A UGRID2D face requires at least three unique non-collinear vertices:UserWarning",
