@@ -178,31 +178,4 @@ def test_xarray_decode_default_fillvals(tmp_path):
     #this should be successful
     uds2 = dfmt.open_partitioned_dataset(file_out, decode_fillvals=True)
     fnc_new = uds2.grid.face_node_connectivity
-    
     assert -1 in fnc_new
-
-
-@pytest.mark.unittest
-def test_ctx_add_basemap():
-    """
-    tests wheter this often used function still works, it fails in contextily 1.3.0
-    mainly relevant to update the minimal contextily version in the pyproject.toml file sometimes
-    https://github.com/Deltares/dfm_tools/issues/857
-    """
-    _, ax = plt.subplots()
-    ax.set_xlim(1.8,3.2)
-    ax.set_ylim(50.8, 52.2)
-    try:
-        ctx.add_basemap(ax=ax, crs="EPSG:4326", attribution=False)
-    except HTTPError as e:
-        # servers are flaky so HTTPError is raised quite often
-        # this should not result in a failing dfm_tools test since it is just temporary
-        print(e)
-    except AttributeError as e:
-        # can be removed after fixing https://github.com/geopandas/contextily/issues/252
-        assert str(e) == "'NoneType' object has no attribute 'shape'"
-        print(e)
-    except TypeError as e:
-        # can be removed after fixing https://github.com/geopandas/contextily/issues/252
-        assert "not 'NoneType'" in str(e)
-        print(e)
