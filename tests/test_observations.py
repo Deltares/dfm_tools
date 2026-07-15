@@ -80,6 +80,58 @@ def test_ssh_catalog_subset(source):
         ssc_catalog_gpd["station_name_unique"].astype("S64")
 
 
+def test_ssh_catalog_subset_different_inputs():
+    lon_min, lon_max, lat_min, lat_max = -6, 5, 48, 50.5  # france
+    time_min, time_max = '2020-01-01', '2020-06-01'
+
+    ssc_catalog_gpd = dfmt.ssh_catalog_subset(source="uhslc")
+    # has len 598 on 15 July 2026 but probably changes in the future
+    assert len(ssc_catalog_gpd) >= 590
+
+    ssc_catalog_gpd_lon = dfmt.ssh_catalog_subset(
+        source="uhslc",
+        lon_min=lon_min, lon_max=lon_max,
+    )
+    # has len 9 on 15 July 2026 but probably changes in the future
+    assert len(ssc_catalog_gpd_lon) >= 9
+
+    ssc_catalog_gpd_lonlat = dfmt.ssh_catalog_subset(
+        source="uhslc",
+        lon_min=lon_min, lon_max=lon_max,
+        lat_min=lat_min, lat_max=lat_max,
+    )
+    # has len 2 on 15 July 2026 but probably changes in the future
+    # uhslc_id   time_min   time_max
+    # 294      1915-04-22 2016-12-31
+    # 822      1846-01-04 2026-04-30
+    assert len(ssc_catalog_gpd_lonlat) >= 2
+
+    ssc_catalog_gpd_all = dfmt.ssh_catalog_subset(
+        source="uhslc",
+        lon_min=lon_min, lon_max=lon_max,
+        lat_min=lat_min, lat_max=lat_max,
+        time_min=time_min, time_max=time_max,
+    )
+    # has len 1 on 15 July 2026 but probably changes in the future
+    # uhslc_id   time_min   time_max
+    # 822      1846-01-04 2026-04-30
+    assert len(ssc_catalog_gpd_all) >= 1
+
+    ssc_catalog_gpd_timemin = dfmt.ssh_catalog_subset(
+        source="uhslc",
+        time_min=time_min,
+    )
+    # has len 349 on 15 July 2026 but probably changes in the future
+    assert len(ssc_catalog_gpd_timemin) >= 340
+
+    ssc_catalog_gpd_timemax = dfmt.ssh_catalog_subset(
+        source="uhslc",
+        time_max=time_max,
+    )
+    # has len 573 on 15 July 2026 but probably changes in the future
+    assert len(ssc_catalog_gpd_timemax) >= 570
+
+
 @pytest.mark.requiressecrets
 @pytest.mark.unittest
 @pytest.mark.parametrize("source", source_list)
