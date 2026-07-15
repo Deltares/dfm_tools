@@ -1105,16 +1105,28 @@ def ssh_catalog_subset(source=None,
     # spatial subsetting and sort again: https://github.com/geopandas/geopandas/issues/2937
     ssh_catalog_gpd = ssh_catalog_gpd.clip((lon_min, lat_min, lon_max, lat_max))
     ssh_catalog_gpd = ssh_catalog_gpd.sort_index()
-    
-    if None not in [time_min, time_max]:
-        if source=="psmsl-gnssir":
-            ssh_catalog_gpd = psmsl_gnssir_ssh_read_catalog_gettimes(ssh_catalog_gpd)
-        if "time_min" not in ssh_catalog_gpd.columns:
-            raise KeyError(f"ssh_catalog_gpd for source='{source}' does not contain time_min and time_max, no time subsetting possible.")
+
+    # early return if no filtering on time extents is requested
+    if time_min is None and time_max is None:
+        return ssh_catalog_gpd
+
+    # prepare filtering on time extents
+    if source=="psmsl-gnssir":
+        ssh_catalog_gpd = psmsl_gnssir_ssh_read_catalog_gettimes(ssh_catalog_gpd)
+    if "time_min" not in ssh_catalog_gpd.columns:
+        raise KeyError(f"ssh_catalog_gpd for source='{source}' does not contain time_min and time_max, no time subsetting possible.")
+
+    # filter on time extents
+    if time_min is None:
+        intime_bool = ssh_catalog_gpd['time_min']<time_max
+    elif time_max is None:
+        intime_bool = ssh_catalog_gpd['time_max']>time_min
+    else:
         intime_bool = ((ssh_catalog_gpd['time_min']<time_max) &
                        (ssh_catalog_gpd['time_max']>time_min)
                        )
-        ssh_catalog_gpd = ssh_catalog_gpd.loc[intime_bool].copy()
+    ssh_catalog_gpd = ssh_catalog_gpd.loc[intime_bool].copy()
+
     return ssh_catalog_gpd
 
 
