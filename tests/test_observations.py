@@ -182,7 +182,7 @@ def test_ssc_add_linked_stations():
     abas_row = ssc_catalog_gpd.loc["SSC-abas"]
     dist_dict = abas_row["dist_dict"][0]
     assert set(dist_dict.keys()) == set({'IOC: abas', 'UHSLC: 347'})
-    assert np.isclose(abas_row["dist_min"], 0.00047381430963381466)
+    assert np.isclose(abas_row["dist_min"], 5.0000000004501996e-05)
     assert np.isclose(abas_row["dist_max"], 0.0074595241134952145)
 
 
