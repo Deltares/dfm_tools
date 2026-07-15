@@ -69,14 +69,14 @@ def _make_hydrotools_consistent(ds):
 
 def _remove_accents(input_str):
     # replace characters that otherwise would be dropped
-    input_str_replaced = input_str.replace('ø','o')
+    input_str_replaced = input_str.replace('ø','o').replace('æ','ae')
     
     # convert string to ascii-only
     nfkd_form = unicodedata.normalize('NFKD', input_str_replaced)
     only_ascii = nfkd_form.encode('ASCII', 'ignore').decode('ASCII')
     
     # warn if characters were dropped
-    if len(input_str) != len(only_ascii):
+    if len(input_str) > len(only_ascii):
         logger.warning(
             f"_remove_accents() dropped characters: '{input_str}' became '{only_ascii}'"
             )
