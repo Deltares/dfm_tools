@@ -251,8 +251,47 @@ def test_sigmalayermodel_sigmavars_as_coords():
     https://github.com/Deltares/dfm_tools/issues/1168
     """
     uds = dfmt.data.fm_curvedbend_map() #sigmalayer
+
+    # make sure that fullgrid is not yet present
+    assert "mesh2d_flowelem_zcc" not in uds.variables
+    assert "mesh2d_flowelem_zw" not in uds.variables
+
+    # call the reconstruction after first setting the source variables as coords
     uds = uds.set_coords(["mesh2d_layer_sigma","mesh2d_interface_sigma"])
-    _ = dfmt.reconstruct_zw_zcc(uds)
+    uds = dfmt.reconstruct_zw_zcc(uds)
+
+    # check if fullgrid was reconstructed
+    assert "mesh2d_flowelem_zcc" in uds.variables
+    assert "mesh2d_flowelem_zw" in uds.variables
+
+@pytest.mark.unittest
+def test_zsigmalayermodel_zsigmavars_as_coords():
+    """
+    Newer zsigma layer models have the zsigma variables stored as coordinate variables.
+    Recognizing those models as zsigma failed in reconstruct_zw_zcc(), more info in
+    https://github.com/Deltares/dfm_tools/issues/1375
+    """
+    file_nc = dfmt.data.fm_westernscheldt_map(return_filepath=True)
+    uds = dfmt.open_partitioned_dataset(file_nc)
+
+    # make sure that fullgrid is not yet present
+    assert "mesh2d_flowelem_zcc" not in uds.variables
+    assert "mesh2d_flowelem_zw" not in uds.variables
+
+    # call the reconstruction after first setting the source variables as coords
+    uds = uds.set_coords(["mesh2d_layer_sigma_z", "mesh2d_interface_sigma_z"])
+    uds = dfmt.reconstruct_zw_zcc(uds)
+
+    # check if fullgrid was reconstructed
+    assert "mesh2d_flowelem_zcc" in uds.variables
+    assert "mesh2d_flowelem_zw" in uds.variables
+
+    # check if the reconstruction was done properly, it failed before since the model
+    # was seen as a sigma model and the rsulting zcoords were as follows
+    # [ 1.00285949e+38  1.00285949e+38  1.00285949e+38 -7.04467627e+00 -2.01489209e+00]
+    zcoords = uds.isel(time=0, mesh2d_nFaces=0).mesh2d_flowelem_zcc.to_numpy()
+    expected = np.array([np.nan, np.nan, np.nan, -7.04467627, -2.01489209])
+    assert np.allclose(zcoords, expected, equal_nan=True)
 
 
 @pytest.mark.unittest
