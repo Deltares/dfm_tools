@@ -51,9 +51,8 @@ dependencies = [
 	"rws-ddlpy>=0.9.3",
 	#pooch>=1.1.0 has attribute retrieve
 	"pooch>=1.1.0",
-    # hydrolib-core>=1.0.0 has new Pydantic API, support for pandas 3 and support for Python 3.14
-    # hydrolib-core>=1.0.1 reverts some incompatibilties introduced in v1
-    "hydrolib-core>=1.0.1",
+    # hydrolib-core>=1.4 is latest version with most up to date extforce status/warnings
+    "hydrolib-core>=1.4",
 	#meshkernel>=8.2.1 supports illegalcells via the face-node-connectivity
 	"meshkernel>=8.2.1",
 ]
@@ -120,10 +119,6 @@ filterwarnings = [
 	"ignore::pytest.PytestUnraisableExceptionWarning",
 	# filter expected warning from dfmt.get_dataset_atdepths()
 	"ignore:All-NaN slice encountered:RuntimeWarning",
-	# filter until fix of https://github.com/Deltares/HYDROLIB-core/issues/1098
-	# note the use of single quote below to denote "raw" strings in TOML
-	# remove again in https://github.com/Deltares/dfm_tools/issues/1366
-	'ignore:datetime.datetime.utcnow\(\) is deprecated:DeprecationWarning',
 	# for dfmt.open_dataset_delft3d4() and dfmt.open_dataset_curvilinear()
 	"ignore:A UGRID2D face requires at least three unique non-collinear vertices:UserWarning",
 	# temporarily ignore numpy incompatibility: https://github.com/Deltares/dfm_tools/issues/1243
@@ -176,7 +171,7 @@ erddapy = "==2.0.2"
 copernicusmarine = "==2.0.0"
 rws-ddlpy = "==0.9.3"
 pooch = "==1.1.0"
-hydrolib-core = "==1.0.1"
+hydrolib-core = "==1.4.0"
 meshkernel = "==8.2.1"
 
 # Define features for different Python versions and Hydromt versions
