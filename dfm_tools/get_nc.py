@@ -308,7 +308,7 @@ def reconstruct_zw_zcc(uds:xu.UgridDataset):
     #reconstruct zw/zcc variables (if not in file) and treat as fullgrid mapfile from here
     if varname_zint in uds.variables: #fullgrid info already available, so continuing
         print(f'zw/zcc (fullgrid) values already present in Dataset in variable {varname_zint}')
-    elif len(uds.filter_by_attrs(standard_name='ocean_sigma_z_coordinate')) != 0:
+    elif len(uds.reset_coords().filter_by_attrs(standard_name='ocean_sigma_z_coordinate')) != 0:
         print('zsigma-layer model, computing zw/zcc (fullgrid) values and treat as fullgrid model from here')
         uds = reconstruct_zw_zcc_fromzsigma(uds)
     elif len(uds.reset_coords().filter_by_attrs(standard_name='ocean_sigma_coordinate')) != 0:

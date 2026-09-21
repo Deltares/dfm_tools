@@ -2,6 +2,12 @@
 
 ## UNRELEASED
 
+# Feat
+- support for hydrolib-core v1.1+ (new extforcefile) [#1379](https://github.com/Deltares/dfm_tools/pull/1379)
+
+# Fix
+- fixed layer reconstruction for zsgima models in [#1378](https://github.com/Deltares/dfm_tools/pull/1378)
+
 
 ## 0.47.0 (2026-07-01)
 
