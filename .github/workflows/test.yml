@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['py310', 'py311', 'py312', 'py313', 'py314']
+        python-version: ['py311', 'py312', 'py313', 'py314']
         os: [ubuntu-latest] #, windows-latest]
 
     name: py-${{ matrix.python-version }} ${{ matrix.os }}
