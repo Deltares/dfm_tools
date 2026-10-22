@@ -50,6 +50,6 @@ jobs:
         run: |
           pixi run --locked -e ${{ matrix.python-version }} test -m "not requireslocaldata"
 
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v7
         env:
           CODECOV_TOKEN: ${{secrets.CODECOV_TOKEN}}
