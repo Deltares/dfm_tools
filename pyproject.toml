@@ -11,7 +11,7 @@ readme = "README.md"
 keywords = ["dfm_tools", "D-FlowFM", "D-HYDRO", "post-processing", "pre-processing", "mapfiles", "hisfiles", "modelbuilder"]
 license = "LGPL-3.0"
 license-files = ["LICENSE"]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
 	#scipy>=1.13.0 is the first version to support py310 (1.8.0 also) and including numpy v2 support
 	"scipy>=1.13.0",
@@ -33,8 +33,8 @@ dependencies = [
 	"xarray>=2024.7.0",
 	#dask 2025.1.0 is required by xugrid: https://github.com/Deltares/xugrid/pull/350#issuecomment-2809652618
 	"dask>=2025.1.0",
-	#netcdf4>=1.7.2 supports numpy 2: https://github.com/Deltares/dfm_tools/issues/1330
-	"netcdf4>=1.7.2",
+	#netcdf4>=1.7.5 resolves numpy 2.5 shape warning
+	"netcdf4>=1.7.5",
 	#bottleneck>=1.5.0 supports numpy 2: https://github.com/Deltares/dfm_tools/issues/1330
 	"bottleneck>=1.5.0",
 	# xugrid>=0.15.3 has improved handling of nonperiodic-to-periodic grids
@@ -63,7 +63,6 @@ classifiers = [
 	"Topic :: Scientific/Engineering :: Information Analysis",
 	"Programming Language :: Python",
 	"Programming Language :: Python :: 3",
-	"Programming Language :: Python :: 3.10",
 	"Programming Language :: Python :: 3.11",
 	"Programming Language :: Python :: 3.12",
 	"Programming Language :: Python :: 3.13",
@@ -121,9 +120,6 @@ filterwarnings = [
 	"ignore:All-NaN slice encountered:RuntimeWarning",
 	# for dfmt.open_dataset_delft3d4() and dfmt.open_dataset_curvilinear()
 	"ignore:A UGRID2D face requires at least three unique non-collinear vertices:UserWarning",
-	# temporarily ignore numpy incompatibility: https://github.com/Deltares/dfm_tools/issues/1243
-	# this warning broke github tests for python 3.11, 3.12 and 3.13
-	"ignore:numpy.ndarray size changed:RuntimeWarning",
 ]
 
 [tool.flake8]
@@ -162,7 +158,7 @@ pyogrio = "==0.12.0"
 contextily = "==1.7.1"
 xarray = "==2024.7.0"
 dask = "==2025.1.0"
-netcdf4 = "==1.7.2"
+netcdf4 = "==1.7.5"
 bottleneck = "==1.5.0"
 xugrid = "==0.15.3"
 cdsapi = "==0.7.5"
@@ -175,9 +171,6 @@ hydrolib-core = "==1.4.0"
 meshkernel = "==8.2.1"
 
 # Define features for different Python versions and Hydromt versions
-[tool.pixi.feature.py310.dependencies]
-python = "3.10.*"
-
 [tool.pixi.feature.py311.dependencies]
 python = "3.11.*"
 
@@ -199,10 +192,9 @@ default = { features = ["py314", "dev", "docs", "examples", "test"]}
 
 dev = { features = ["py314", "dev"]}
 
-py310 = { features = ["py310", "dev", "test"]}
 py311 = { features = ["py311", "dev", "test"]}
 py312 = { features = ["py312", "dev", "test"]}
 py313 = { features = ["py313", "dev", "test"]}
 py314 = { features = ["py314", "dev", "test"]}
 
-py310-mindeps = { features = ["py310", "dev", "test", "minimal"]}
+py311-mindeps = { features = ["py311", "dev", "test", "minimal"]}
