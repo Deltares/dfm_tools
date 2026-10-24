@@ -25,10 +25,10 @@ jobs:
       cancel-in-progress: true
 
     steps:
-      - uses: actions/checkout@v6
-      - uses: prefix-dev/setup-pixi@v0.9.4
+      - uses: actions/checkout@v7
+      - uses: prefix-dev/setup-pixi@v0.11.2
         with:
-          pixi-version: "v0.70.2"
+          pixi-version: "v0.83.0"
           environments: ${{ matrix.python-version }}
 
       - name: List env contents
