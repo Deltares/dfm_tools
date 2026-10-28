@@ -4,9 +4,11 @@
 
 # Feat
 - support for hydrolib-core v1.1+ (new extforcefile) [#1379](https://github.com/Deltares/dfm_tools/pull/1379)
+- `dfmt.ssh_retrieve_data()` now returns xarray Dataset for the first station if `dir_output=None` in [#1388](https://github.com/Deltares/dfm_tools/pull/1388)
 
 # Fix
 - fixed layer reconstruction for zsgima models in [#1378](https://github.com/Deltares/dfm_tools/pull/1378)
+- improved UHSLC data retrieval by filtering the quality flag in [#1388](https://github.com/Deltares/dfm_tools/pull/1388)
 
 
 ## 0.47.0 (2026-07-01)
