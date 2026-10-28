@@ -1207,7 +1207,7 @@ def ssh_retrieve_data(
         stat_name = ds.attrs["station_name_unique"]
         if dir_output is None:
             print()
-            print(">> dir_output=None, so early return by returning first station as xarray Dataset.")
+            print(">> dir_output=None, so returning first station as xarray Dataset.")
             return ds
         os.makedirs(dir_output, exist_ok=True)
         file_out = os.path.join(dir_output, f"{stat_name}.nc")
