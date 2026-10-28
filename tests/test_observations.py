@@ -12,6 +12,8 @@ import ddlpy
 import numpy as np
 import xarray as xr
 import dfm_tools as dfmt
+from httpx import HTTPError
+from erddapy import ERDDAP
 from dfm_tools.observations import (ssc_ssh_read_catalog,
                                     ssc_sscid_from_otherid,
                                     ssc_ssh_subset_groups,
@@ -324,3 +326,19 @@ def test_remove_accents(caplog):
     with caplog.at_level(logging.WARNING):
         _remove_accents("Måløyð")
     assert "_remove_accents() dropped characters: 'Måløyð' became 'Maloy'" in caplog.text
+
+
+def test_uhslc_quality_values():
+    # since https://github.com/Deltares/dfm_tools/issues/1368 the UHSLC data is
+    # filtered on quality code 3/4 (fast/rqds). This test is to make sure the actual
+    # range of the quality code is still 3-4 and not other values.
+    server = "https://uhslc.soest.hawaii.edu/erddap"
+    e = ERDDAP(server=server, protocol="tabledap", response="nc")
+
+    # set erddap constraints
+    e.dataset_id = "global_hourly_fast"
+    e.constraints = {}
+    e.constraints["quality="] = 1
+    with pytest.raises(HTTPError) as err:
+        e.to_xarray()
+    assert "quality=1 is outside of the variable's actual_range: 3 to 4" in str(err.value)
