@@ -731,6 +731,9 @@ def _preprocess_uhslc_erddap(ds):
     for attr in ["acknowledgement", "processing_level", "title"]:
         ds.attrs[f"{attr}_{dsid_short}"] = ds.attrs.pop(attr)
 
+    # drop duplicates and sort by time
+    ds = ds.drop_duplicates(dim='time', keep='first').sortby('time')
+
     return ds
 
 
@@ -818,8 +821,6 @@ def uhslc_ssh_retrieve_data(row, time_min=None, time_max=None, include_rqds=True
         combine_attrs='drop_conflicts',
         )
     
-    # drop duplicates, keep=first keeps rqds, sort by time
-    ds = ds.drop_duplicates(dim='time', keep='first').sortby('time')
     return ds
 
 
