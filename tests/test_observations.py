@@ -10,7 +10,10 @@ import pytest
 import glob
 import ddlpy
 import numpy as np
+import xarray as xr
 import dfm_tools as dfmt
+from httpx import HTTPError
+from erddapy import ERDDAP
 from dfm_tools.observations import (ssc_ssh_read_catalog,
                                     ssc_sscid_from_otherid,
                                     ssc_ssh_subset_groups,
@@ -164,6 +167,51 @@ def test_ssh_retrieve_data(source, tmp_path):
 
 
 @pytest.mark.unittest
+def test_ssh_retrieve_data_empty_catalog(tmp_path):
+    cat = dfmt.ssh_catalog_subset(source="ssc")
+    cat = cat.iloc[:0]
+    msg = "empty ssh_catalog_gpd provided to ssh_retrieve_data"
+    with pytest.raises(ValueError, match=msg):
+        dfmt.ssh_retrieve_data(cat, dir_output=tmp_path)
+
+
+@pytest.mark.unittest
+def test_ssh_retrieve_data_invalid_source(tmp_path):
+    cat = dfmt.ssh_catalog_subset(source="ssc")
+    cat["source"] = "invalid"
+    msg = r"source for ssh_retrieve_data should be one of "
+    with pytest.raises(ValueError, match=msg):
+        dfmt.ssh_retrieve_data(cat, dir_output=tmp_path)
+
+
+@pytest.mark.unittest
+def test_ssh_retrieve_data_return_xarray():
+    cat = dfmt.ssh_catalog_subset(source="uhslc")
+    cat = cat.iloc[:1]
+    ds = dfmt.ssh_retrieve_data(
+        cat,
+        dir_output=None,
+        include_fast=False,
+        time_min="2020-01-01",
+        time_max="2020-01-02",
+    )
+    assert isinstance(ds, xr.Dataset)
+
+@pytest.mark.unittest
+def test_ssh_retrieve_data_return_xarray():
+    cat = dfmt.ssh_catalog_subset(source="uhslc")
+    cat = cat.iloc[:1]
+    ds = dfmt.ssh_retrieve_data(
+        cat,
+        dir_output=None,
+        include_fast=False,
+        time_min="2020-01-01",
+        time_max="2020-01-02",
+    )
+    assert isinstance(ds, xr.Dataset)
+
+
+@pytest.mark.unittest
 def test_ssh_netcdf_overview(tmp_path):
     source = "rwsddl"
     time_min, time_max = '2020-01-01','2020-01-05'
@@ -278,3 +326,19 @@ def test_remove_accents(caplog):
     with caplog.at_level(logging.WARNING):
         _remove_accents("Måløyð")
     assert "_remove_accents() dropped characters: 'Måløyð' became 'Maloy'" in caplog.text
+
+
+def test_uhslc_quality_values():
+    # since https://github.com/Deltares/dfm_tools/issues/1368 the UHSLC data is
+    # filtered on quality code 3/4 (fast/rqds). This test is to make sure the actual
+    # range of the quality code is still 3-4 and not other values.
+    server = "https://uhslc.soest.hawaii.edu/erddap"
+    e = ERDDAP(server=server, protocol="tabledap", response="nc")
+
+    # set erddap constraints
+    e.dataset_id = "global_hourly_fast"
+    e.constraints = {}
+    e.constraints["quality="] = 1
+    with pytest.raises(HTTPError) as err:
+        e.to_xarray()
+    assert "quality=1 is outside of the variable's actual_range: 3 to 4" in str(err.value)
