@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['py310', 'py311', 'py312', 'py313', 'py314']
+        python-version: ['py311', 'py312', 'py313', 'py314']
         os: [ubuntu-latest] #, windows-latest]
 
     name: py-${{ matrix.python-version }} ${{ matrix.os }}
@@ -25,10 +25,10 @@ jobs:
       cancel-in-progress: true
 
     steps:
-      - uses: actions/checkout@v6
-      - uses: prefix-dev/setup-pixi@v0.9.4
+      - uses: actions/checkout@v7
+      - uses: prefix-dev/setup-pixi@v0.11.2
         with:
-          pixi-version: "v0.70.2"
+          pixi-version: "v0.83.0"
           environments: ${{ matrix.python-version }}
 
       - name: List env contents
@@ -50,6 +50,6 @@ jobs:
         run: |
           pixi run --locked -e ${{ matrix.python-version }} test -m "not requireslocaldata"
 
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v7
         env:
           CODECOV_TOKEN: ${{secrets.CODECOV_TOKEN}}
