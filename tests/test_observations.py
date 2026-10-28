@@ -10,6 +10,7 @@ import pytest
 import glob
 import ddlpy
 import numpy as np
+import xarray as xr
 import dfm_tools as dfmt
 from dfm_tools.observations import (ssc_ssh_read_catalog,
                                     ssc_sscid_from_otherid,
@@ -161,6 +162,51 @@ def test_ssh_retrieve_data(source, tmp_path):
                            time_min=time_min, time_max=time_max)
     nc_list = glob.glob(os.path.join(tmp_path, "*.nc"))
     assert len(nc_list)==1
+
+
+@pytest.mark.unittest
+def test_ssh_retrieve_data_empty_catalog(tmp_path):
+    cat = dfmt.ssh_catalog_subset(source="ssc")
+    cat = cat.iloc[:0]
+    msg = "empty ssh_catalog_gpd provided to ssh_retrieve_data"
+    with pytest.raises(ValueError, match=msg):
+        dfmt.ssh_retrieve_data(cat, dir_output=tmp_path)
+
+
+@pytest.mark.unittest
+def test_ssh_retrieve_data_invalid_source(tmp_path):
+    cat = dfmt.ssh_catalog_subset(source="ssc")
+    cat["source"] = "invalid"
+    msg = r"source for ssh_retrieve_data should be one of "
+    with pytest.raises(ValueError, match=msg):
+        dfmt.ssh_retrieve_data(cat, dir_output=tmp_path)
+
+
+@pytest.mark.unittest
+def test_ssh_retrieve_data_return_xarray():
+    cat = dfmt.ssh_catalog_subset(source="uhslc")
+    cat = cat.iloc[:1]
+    ds = dfmt.ssh_retrieve_data(
+        cat,
+        dir_output=None,
+        include_fast=False,
+        time_min="2020-01-01",
+        time_max="2020-01-02",
+    )
+    assert isinstance(ds, xr.Dataset)
+
+@pytest.mark.unittest
+def test_ssh_retrieve_data_return_xarray():
+    cat = dfmt.ssh_catalog_subset(source="uhslc")
+    cat = cat.iloc[:1]
+    ds = dfmt.ssh_retrieve_data(
+        cat,
+        dir_output=None,
+        include_fast=False,
+        time_min="2020-01-01",
+        time_max="2020-01-02",
+    )
+    assert isinstance(ds, xr.Dataset)
 
 
 @pytest.mark.unittest
