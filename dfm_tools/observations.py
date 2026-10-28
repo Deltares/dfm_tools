@@ -699,6 +699,7 @@ def _preprocess_uhslc_erddap(ds):
     ds = ds.drop_vars(["latitude", "longitude"], errors='ignore')
     
     # drop station_name since it conflicts between rqds and fast uhslc_id 53/108/more
+    # this might not be needed anymore after the July 2026 update of the UHSLC database
     ds = ds.drop_vars(["station_name"], errors='ignore')
 
     # reduce dataset size by reducing all constant variables defined for each timestep
@@ -771,7 +772,7 @@ def _uhslc_ssh_retrieve_data_oneds(e, ds_list):
 
 def uhslc_ssh_retrieve_data(row, time_min=None, time_max=None, include_rqds=True, include_fast=True):
     # docs from https://ioos.github.io/erddapy/ and https://ioos.github.io/erddapy/02-extras-output.html#
-    
+
     # setup server connection, this takes no time so does not have to be cached
     # opendap is way slower than nc/csv/html
     server = "https://uhslc.soest.hawaii.edu/erddap"
@@ -785,13 +786,20 @@ def uhslc_ssh_retrieve_data(row, time_min=None, time_max=None, include_rqds=True
         e.constraints["time>="] = pd.Timestamp(time_min)
     if time_max is not None:
         e.constraints["time<="] = pd.Timestamp(time_max)
-    
+
+    # fast dataset contains both rqds (quality=4) and fast (quality=3) data, rqds
+    # dataset only contains rqds (quality=4) data and often  more then the fast
+    # dataset. Therefore, add the quality filter to both datasets to make sure to
+    # only retrieve data of the correct quality from each dataset. More information
+    # in https://github.com/Deltares/dfm_tools/issues/1368.
     ds_list = []
     if include_rqds:
         e.dataset_id = "global_hourly_rqds"
+        e.constraints["quality="] = 4
         _uhslc_ssh_retrieve_data_oneds(e, ds_list)
     if include_fast:
         e.dataset_id = "global_hourly_fast"
+        e.constraints["quality="] = 3
         _uhslc_ssh_retrieve_data_oneds(e, ds_list)
     
     # return early if no data present
@@ -1130,9 +1138,26 @@ def ssh_catalog_subset(source=None,
     return ssh_catalog_gpd
 
 
-def ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
-                      **kwargs):
-    
+def ssh_retrieve_data(
+        ssh_catalog_gpd, dir_output=None, time_min=None, time_max=None,
+        **kwargs,
+):
+    """
+
+    Args:
+        ssh_catalog_gpd: pd.DataFrame retrieved by `ssh_catalog_subset()`, this
+         defines which stations to retrieve.
+        dir_output: output directory to write the retrieved data to, one file for each
+         station. If dir_output is None, the retrieved data for the first station will
+          be returned as xarray.Dataset instead (for testing/comparing data).
+        time_min: for time subsetting. Default is None.
+        time_max: for time subsetting. Default is None.
+        **kwargs: arguments to be passed to the source-specific retrieval functions.
+
+    Returns:
+        xr.Dataset if dir_output=None, otherwise None (data is then written to file).
+
+    """
     if ssh_catalog_gpd.empty:
         raise ValueError("empty ssh_catalog_gpd provided to ssh_retrieve_data")
     
@@ -1156,8 +1181,7 @@ def ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
         raise ValueError(f"source for ssh_retrieve_data should be one of {list(ssh_sources.keys())}, recieved '{source}'")
     
     retrieve_data_func = ssh_sources[source]
-    os.makedirs(dir_output, exist_ok=True)
-    
+
     # retrieve
     print(f"retrieving data for {len(ssh_catalog_gpd)} {source} stations:", end=" ")
     for idx_arbitrary, row in ssh_catalog_gpd.iterrows():
@@ -1181,6 +1205,11 @@ def ssh_retrieve_data(ssh_catalog_gpd, dir_output, time_min=None, time_max=None,
         ds = _make_hydrotools_consistent(ds)
         
         stat_name = ds.attrs["station_name_unique"]
+        if dir_output is None:
+            print()
+            print(">> dir_output=None, so early return by returning first station as xarray Dataset.")
+            return ds
+        os.makedirs(dir_output, exist_ok=True)
         file_out = os.path.join(dir_output, f"{stat_name}.nc")
         # format NETCDF4_CLASSIC significantly reduces netcdf file size
         # in case of <U1 and <U2 variables
