@@ -53,8 +53,8 @@ dependencies = [
 	"pooch>=1.1.0",
     # hydrolib-core>=1.6 is latest version with most up to date extforce status/warnings and stricter validation and no obsolete mdu keywords for delft3dfm 2027.01
     "hydrolib-core>=1.6",
-    #meshkernel>=8.3.0 supports interpolation of arbitrary properties like bathymetry
-    "meshkernel>=8.3.0",
+    #meshkernel>=8.4.0 improved triangular meshes, correct internal boundaries, correct xy coords in geomertrylists, global grid extends to the poles
+    "meshkernel>=8.4.0",
 ]
 classifiers = [
 	"Development Status :: 4 - Beta",
@@ -168,7 +168,7 @@ copernicusmarine = "==2.0.0"
 rws-ddlpy = "==0.9.3"
 pooch = "==1.1.0"
 hydrolib-core = "==1.6.0"
-meshkernel = "==8.3.0"
+meshkernel = "==8.4.0"
 
 # Define features for different Python versions and Hydromt versions
 [tool.pixi.feature.py311.dependencies]
