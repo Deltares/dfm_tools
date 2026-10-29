@@ -47,8 +47,8 @@ dependencies = [
 	"erddapy>=2.0.2",
 	#copernicusmarine>=2.0.0 has breaking changes compared to v1
 	"copernicusmarine>=2.0.0",
-	#rws-ddlpy>=0.9.3 added caching for ddlpy.locations() including dependency
-	"rws-ddlpy>=0.9.3",
+	#rws-ddlpy>=0.11.0 enforced conversion of strings to char arrays and exposed and updated default catalog filter
+	"rws-ddlpy>=0.11.0",
 	#pooch>=1.1.0 has attribute retrieve
 	"pooch>=1.1.0",
     # hydrolib-core>=1.6 is latest version with most up to date extforce status/warnings and stricter validation and no obsolete mdu keywords for delft3dfm 2027.01
@@ -165,7 +165,7 @@ cdsapi = "==0.7.5"
 pydap = "==3.4.0"
 erddapy = "==2.0.2"
 copernicusmarine = "==2.0.0"
-rws-ddlpy = "==0.9.3"
+rws-ddlpy = "==0.11.0"
 pooch = "==1.1.0"
 hydrolib-core = "==1.6.0"
 meshkernel = "==8.4.0"
