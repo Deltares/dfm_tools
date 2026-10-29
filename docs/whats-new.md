@@ -2,6 +2,9 @@
 
 ## UNRELEASED
 
+# Feat
+- updated `gesla4` observation source to GESLA4.1 in [#1399](https://github.com/Deltares/dfm_tools/pull/1399)
+
 
 ## 0.48.0 (2026-10-29)
 This version supports Python 3.11 and up and is compatible with hydrolib-core v1+.
