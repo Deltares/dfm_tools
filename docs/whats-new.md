@@ -11,7 +11,7 @@ This version supports Python 3.11 and up and is compatible with hydrolib-core v1
 - `dfmt.ssh_retrieve_data()` now returns xarray Dataset for the first station if `dir_output=None` in [#1388](https://github.com/Deltares/dfm_tools/pull/1388)
 
 # Fix
-- fixed observations time subsetting in [#1373)](https://github.com/Deltares/dfm_tools/pull/1373)
+- fixed observations time subsetting in [#1373](https://github.com/Deltares/dfm_tools/pull/1373)
 - fixed layer reconstruction for zsgima models in [#1378](https://github.com/Deltares/dfm_tools/pull/1378)
 - improved UHSLC data retrieval by filtering the quality flag in [#1388](https://github.com/Deltares/dfm_tools/pull/1388)
 
