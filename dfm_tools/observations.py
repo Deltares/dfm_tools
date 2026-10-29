@@ -479,7 +479,7 @@ def gesla3_ssh_read_catalog(only_coastal=True):
 
 
 def gesla4_ssh_read_catalog(only_coastal=True):
-    file_gesla_meta = os.path.join(settings.PATH_GESLA4, "GESLA4_ALL.csv")
+    file_gesla_meta = os.path.join(settings.PATH_GESLA4, "GESLA4-1_ALL.csv")
     station_list_gpd = gesla_ssh_read_catalog(
         file_gesla_meta=file_gesla_meta,
         only_coastal=only_coastal,
@@ -829,7 +829,7 @@ def gesla_cache_zipfile(source):
     if source == "gesla3":
         file_gesla_data = os.path.join(settings.PATH_GESLA3, "GESLA3.0_ALL.zip")
     elif source == "gesla4":
-        file_gesla_data = os.path.join(settings.PATH_GESLA4, "GESLA4_ALL.zip")
+        file_gesla_data = os.path.join(settings.PATH_GESLA4, "GESLA4.1_ALL.zip")
     else:
         raise ValueError(f"invalid GELSA source: {source}")
 
