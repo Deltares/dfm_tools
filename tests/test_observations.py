@@ -237,7 +237,7 @@ def test_ssh_netcdf_overview(tmp_path):
 def test_ssh_catalog_subset_gesla_not_found():
     gesla4_path_old = settings.PATH_GESLA4
     settings.PATH_GESLA4 = 'path/to/gesla4' # not existent
-    msg = r"The GESLA file .*GESLA4_ALL.csv' was not found"
+    msg = r"The GESLA file .*GESLA4.1_ALL.csv' was not found"
     with pytest.raises(FileNotFoundError, match=msg):
         _ = dfmt.ssh_catalog_subset(source='gesla4')
     # restore setting
