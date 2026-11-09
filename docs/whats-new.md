@@ -4,6 +4,7 @@
 
 # Feat
 - updated `gesla4` observation source to GESLA4.1 in [#1399](https://github.com/Deltares/dfm_tools/pull/1399)
+- added `gesla` ERDDAP as observation source in [#1402](https://github.com/Deltares/dfm_tools/pull/1402)
 
 
 ## 0.48.0 (2026-10-29)
