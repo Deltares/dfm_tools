@@ -24,7 +24,8 @@ from dfm_tools.observations import (ssc_ssh_read_catalog,
 from dfm_tools import settings
 import logging
 
-source_list = ["uhslc", "psmsl-gnssir", "ssc", "ioc", "rwsddl", 
+source_list = ["uhslc", "psmsl-gnssir", "ssc", "ioc", "rwsddl",
+               "gesla",
                "cmems", "cmems-nrt", # requires CMEMS credentials
                "gtsm3-era5-cds", # requires CDS credentials
                ]
