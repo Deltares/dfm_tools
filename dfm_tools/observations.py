@@ -471,7 +471,7 @@ def psmsl_gnssir_ssh_read_catalog_gettimes(station_list_gpd):
 
 def gesla3_ssh_read_catalog(only_coastal=True):
     file_gesla_meta = os.path.join(settings.PATH_GESLA3, "GESLA3_ALL 2.csv")
-    station_list_gpd = gesla_ssh_read_catalog(
+    station_list_gpd = read_gesla_csv(
         file_gesla_meta=file_gesla_meta,
         only_coastal=only_coastal,
     )
@@ -480,18 +480,28 @@ def gesla3_ssh_read_catalog(only_coastal=True):
 
 def gesla4_ssh_read_catalog(only_coastal=True):
     file_gesla_meta = os.path.join(settings.PATH_GESLA4, "GESLA4-1_ALL.csv")
-    station_list_gpd = gesla_ssh_read_catalog(
+    station_list_gpd = read_gesla_csv(
         file_gesla_meta=file_gesla_meta,
         only_coastal=only_coastal,
     )
     return station_list_gpd
 
 
-def gesla_ssh_read_catalog(file_gesla_meta, only_coastal=True):
-    if not os.path.isfile(file_gesla_meta):
+def gesla_ssh_read_catalog(only_coastal=True):
+    file_gesla_meta = "https://d2lyy96te42c83.cloudfront.net/v4-1/metadata/GESLA4-1_ALL.csv"
+    station_list_gpd = read_gesla_csv(
+        file_gesla_meta=file_gesla_meta,
+        only_coastal=only_coastal,
+    )
+    return station_list_gpd
+
+
+def read_gesla_csv(file_gesla_meta, only_coastal=True):
+    try:
+        station_list_pd = pd.read_csv(file_gesla_meta)
+    except FileNotFoundError:
         raise FileNotFoundError(GESLA_MSG.format(file_gesla=file_gesla_meta))
 
-    station_list_pd = pd.read_csv(file_gesla_meta)
     station_list_pd.columns = [c.replace(" ", "_").replace("(", "").replace(")", "").replace("/", "_").lower() for c in station_list_pd.columns]
     station_list_pd = station_list_pd.set_index('file_name', drop=False)
     station_list_pd["start_date_time"] = pd.to_datetime(station_list_pd["start_date_time"])
@@ -840,7 +850,7 @@ def gesla_cache_zipfile(source):
     return gesla_zip
 
 
-def gesla_ssh_retrieve_data(row, time_min=None, time_max=None):
+def gesla34_ssh_retrieve_data(row, time_min=None, time_max=None):
     source = row["source"]
     # get cached gesla3/gesla4 zipfile instance
     gesla_zip = gesla_cache_zipfile(source=source)
@@ -875,6 +885,43 @@ def gesla_ssh_retrieve_data(row, time_min=None, time_max=None):
     
     # filter bad quality data
     ds = ds.where(ds.qc_flag==1)
+    return ds
+
+
+def _preprocess_gesla_erddap(ds):
+    ds = ds.set_index(obs="time").rename(obs="time")
+    # round times to seconds, should probably not be necessary
+    ds['time'] = ds.time.dt.round('s')
+    ds = ds.rename(sea_level="waterlevel")
+    return ds
+
+
+def gesla_ssh_retrieve_data(row, time_min=None, time_max=None):
+    # docs from https://ioos.github.io/erddapy/ and https://ioos.github.io/erddapy/02-extras-output.html#
+
+    # setup server connection, this takes no time so does not have to be cached
+    # opendap is way slower than nc/csv/html
+    server = "https://uhslc.soest.hawaii.edu/erddap"
+    e = ERDDAP(server=server, protocol="tabledap", response="nc")
+
+    # set erddap constraints
+    e.constraints = {}
+    # only retrieve data that should be used according to GESLA
+    # (1 = use, 2 = do not use)
+    e.constraints["flag2="] = 1
+    # the file name (e.g. aasiaat-aas-grl-gloss) is not part of the GESLA erddap
+    # dataset variables, so we have to use its components as constraints.
+    e.constraints["station_name="] = row.site_name
+    e.constraints["station_code="] = row.site_code
+    e.constraints["station_country_code="] = row.country
+    e.constraints["agency_id="] = row.contributor_abbreviated
+    if time_min is not None:
+        e.constraints["time>="] = pd.Timestamp(time_min)
+    if time_max is not None:
+        e.constraints["time<="] = pd.Timestamp(time_max)
+
+    e.dataset_id = "global_hourly_gesla"
+    ds = _preprocess_gesla_erddap(e.to_xarray())
     return ds
 
 
@@ -1094,6 +1141,7 @@ def ssh_catalog_subset(source=None,
     ssh_sources = {"ssc": ssc_ssh_read_catalog,
                    "gesla3": gesla3_ssh_read_catalog,
                    "gesla4": gesla4_ssh_read_catalog,
+                   "gesla": gesla_ssh_read_catalog,
                    "ioc": ioc_ssh_read_catalog,
                    "cmems": cmems_my_ssh_read_catalog,
                    "cmems-nrt": cmems_nrt_ssh_read_catalog,
@@ -1167,8 +1215,9 @@ def ssh_retrieve_data(
         raise Exception("A ssh_catalog_gpd with multiple unique 'source' values was passed to ssh_retrieve_data(), this is not supported.")
     source = source_list[0]
     
-    ssh_sources = {"gesla3": gesla_ssh_retrieve_data,
-                   "gesla4": gesla_ssh_retrieve_data,
+    ssh_sources = {"gesla3": gesla34_ssh_retrieve_data,
+                   "gesla4": gesla34_ssh_retrieve_data,
+                   "gesla": gesla_ssh_retrieve_data,
                    "ioc": ioc_ssh_retrieve_data,
                    "cmems": cmems_ssh_retrieve_data,
                    "cmems-nrt": cmems_ssh_retrieve_data,
