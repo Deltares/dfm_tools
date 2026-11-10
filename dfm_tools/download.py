@@ -418,8 +418,7 @@ def copernicusmarine_dataset_timeshift(ds, dataset_id):
     Also daily averaged datasets called *-d are not corrected.
     https://help.marine.copernicus.eu/en/articles/6820094-how-is-defined-the-nomenclature-of-copernicus-marine-data
     """
-    if "P1D-m" in dataset_id or dataset_id.endswith("rean-d"):
-        # TODO: remove rean-d https://github.com/Deltares/dfm_tools/issues/1090
+    if "P1D-m" in dataset_id:
         # check if dataset times are indeed at midnight (start-of-interval)
         assert (ds["time"].to_pandas().dt.hour == 0).all()
         # add offset to correct from midnight to noon (center-of-interval)
