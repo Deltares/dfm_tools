@@ -115,7 +115,7 @@ def get_conversion_dict(ncvarname_updates={}):
     return conversion_dict
 
 
-def ext_add_boundary_object_per_polyline(ext_new:hcdfm.ExtModel, boundary_object:hcdfm.Boundary):
+def ext_add_boundary_object_per_polyline(extmodel:hcdfm.ExtModel, boundary_object:hcdfm.Boundary):
     """
     If the polyfile contains multiple polylines, only the first 
     one will be used by DFLOW-FM for the boundary conditions.
@@ -140,10 +140,10 @@ def ext_add_boundary_object_per_polyline(ext_new:hcdfm.ExtModel, boundary_object
             # update locationfile to the plifile with a single polyline
             boundary_object.locationfile = file_pli_oneline
         # add boundary to extmodel
-        ext_new.boundary.append(boundary_object)
+        extmodel.boundary.append(boundary_object)
 
 
-def interpolate_tide_to_bc(ext_new: hcdfm.ExtModel, tidemodel, file_pli, component_list=None, load=True):
+def interpolate_tide_to_bc(extmodel: hcdfm.ExtModel, tidemodel, file_pli, component_list=None, load=True):
     # read polyfile as geodataframe
     polyfile_obj = hcdfm.PolyFile(file_pli)
     gdf_points = PolyFile_to_geodataframe_points(polyfile_obj)
@@ -165,7 +165,7 @@ def interpolate_tide_to_bc(ext_new: hcdfm.ExtModel, tidemodel, file_pli, compone
                                       forcingfile=ForcingModel_object)
     
     # add the boundary object to the ext file for each polyline in the polyfile
-    ext_add_boundary_object_per_polyline(ext_new=ext_new, boundary_object=boundary_object)
+    ext_add_boundary_object_per_polyline(extmodel=extmodel, boundary_object=boundary_object)
 
 
 def tidemodel_componentlist(tidemodel:str, convention:bool):

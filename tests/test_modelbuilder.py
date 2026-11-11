@@ -54,8 +54,8 @@ def test_constant_to_bc(tmp_path):
         3.0    4.0
         """)
     # generate ext and add constant forcing
-    ext_new = hcdfm.ExtModel()
-    _ = dfmt.constant_to_bc(ext_new=ext_new, file_pli=file_pli, constant=0.5)
+    extmodel = hcdfm.ExtModel()
+    _ = dfmt.constant_to_bc(extmodel=extmodel, file_pli=file_pli, constant=0.5)
     # check file existence
     file_bc = tmp_path / "waterlevelbnd_constant_test.bc"
     assert os.path.exists(file_bc)
@@ -93,9 +93,9 @@ def test_cmems_nc_to_bc(tmp_path, timecase, cmems_dataset_4times):
     file_nc = dir_pattern
     ds.to_netcdf(file_nc)
     
-    ext_new = hcdfm.ExtModel()
+    extmodel = hcdfm.ExtModel()
     
-    ext_new = dfmt.cmems_nc_to_bc(ext_new=ext_new,
+    extmodel = dfmt.cmems_nc_to_bc(extmodel=extmodel,
                                   list_quantities=["salinitybnd"],
                                   tstart="2020-01-01",
                                   tstop="2020-01-03",
@@ -163,17 +163,19 @@ def test_cmems_nc_to_ini(tmp_path, timecase, cmems_dataset_4times):
     ds1.rename({"so":"thetao"}).to_netcdf(file_nc3)
     ds2.rename({"so":"thetao"}).to_netcdf(file_nc4)
     
-    ext_new = hcdfm.ExtModel()
+    extmodel = hcdfm.ExtModel()
     
     dir_pattern_ncvarname = dir_pattern.replace("*","{ncvarname}*")
     
-    ext_new = dfmt.cmems_nc_to_ini(ext_new=ext_new,
-                                   dir_output=tmp_path,
-                                   list_quantities=["salinitybnd"],
-                                   tstart="2020-01-01",
-                                   dir_pattern=dir_pattern_ncvarname)
+    extmodel = dfmt.cmems_nc_to_ini(
+        extmodel=extmodel,
+        dir_output=tmp_path,
+        list_quantities=["salinitybnd"],
+        tstart="2020-01-01",
+        dir_pattern=dir_pattern_ncvarname,
+    )
     
-    file_expected = tmp_path / "nudge_salinity_temperature_2020-01-01_00-00-00.nc"
+    file_expected = tmp_path / "nudgeSalinityTemperature_2020-01-01_00-00-00.nc"
     
     if timecase == "midnight":
         times_expected =  ['2020-01-01 00:00:00', '2020-01-02 00:00:00']
@@ -209,10 +211,10 @@ def test_cmems_nc_to_ini_tracer(tmp_path, cmems_dataset_4times):
     file_nc = os.path.join(tmp_path, "temp_cmems_4day_no3.nc")
     ds.to_netcdf(file_nc)
     
-    ext_new = hcdfm.ExtModel()
+    extmodel = hcdfm.ExtModel()
     
     # provide list to dir_pattern to also cover the list case in format_path
-    ext_new = dfmt.cmems_nc_to_ini(ext_new=ext_new,
+    extmodel = dfmt.cmems_nc_to_ini(extmodel=extmodel,
                                    dir_output=tmp_path,
                                    list_quantities=["tracerbndNO3"],
                                    tstart="2020-01-01",
@@ -242,7 +244,7 @@ def test_cmems_nc_to_ini_skipped():
                        ]
     
     _ = dfmt.cmems_nc_to_ini(
-        ext_new=None, # dummy since it is not reached
+        extmodel=None, # dummy since it is not reached
         dir_output=None, # dummy since it is not reached
         list_quantities=list_quantities,
         tstart="2020-01-01",
@@ -303,14 +305,14 @@ def test_make_paths_relative(tmp_path):
     
     # new ext
     ext_file_new = os.path.join(tmp_path, 'test_new.ext')
-    ext_new = hcdfm.ExtModel()
+    extmodel = hcdfm.ExtModel()
     ForcingModel_object = hcdfm.ForcingModel()
     boundary_object = hcdfm.Boundary(
         quantity='waterlevelbnd', #the FM quantity for tide is also waterlevelbnd
         locationFile=file_pli,
         forcingfile=ForcingModel_object,
     )
-    ext_new.boundary.append(boundary_object)
+    extmodel.boundary.append(boundary_object)
 
     # old ext
     spatial = hcdfm.ext.Spatial(
@@ -320,14 +322,14 @@ def test_make_paths_relative(tmp_path):
         interpolationmethod=InterpolationMethod.linear_space_time,
         operand=hcdfm.Operand.override,
     )
-    ext_new.spatial.append(spatial)
-    ext_new.save(filepath=ext_file_new)
+    extmodel.spatial.append(spatial)
+    extmodel.save(filepath=ext_file_new)
 
     # initialize mdu file, update settings and save
     mdu_file = os.path.join(tmp_path, 'test_model.mdu')
     mdu = hcdfm.FMModel()
     mdu.geometry.fixedweirfile = file_pli
-    mdu.external_forcing.extforcefilenew = ext_new
+    mdu.external_forcing.extforcefilenew = extmodel
     mdu.save(mdu_file)
     
     # make relative and test
@@ -350,12 +352,12 @@ def test_preprocess_merge_meteofiles_era5(tmp_path, ds_era5_empty):
     file_nc = os.path.join(tmp_path,"era5_msl_empty.nc")
     ds_era5_empty.to_netcdf(file_nc)
     
-    ext_new = hcdfm.ExtModel()
+    extmodel = hcdfm.ExtModel()
     date_min = ds_era5_empty.time.to_pandas().iloc[0]
     date_max = ds_era5_empty.time.to_pandas().iloc[-1]
     varlist_list = ['msl']
-    ext_new = dfmt.preprocess_merge_meteofiles_era5(
-        ext_new=ext_new,
+    extmodel = dfmt.preprocess_merge_meteofiles_era5(
+        extmodel=extmodel,
         varkey_list=varlist_list,
         dir_data=tmp_path,
         dir_output=tmp_path,
@@ -368,12 +370,12 @@ def test_preprocess_merge_meteofiles_era5_unsupported_varlist(tmp_path, ds_era5_
     file_nc = os.path.join(tmp_path,"era5_msl_empty.nc")
     ds_era5_empty.to_netcdf(file_nc)
     
-    ext_new = hcdfm.ExtModel()
+    extmodel = hcdfm.ExtModel()
     date_min = ds_era5_empty.time.to_pandas().iloc[0]
     date_max = ds_era5_empty.time.to_pandas().iloc[-1]
     varlist_list = [['msl']]
     with pytest.raises(TypeError) as e:
-        ext_new = dfmt.preprocess_merge_meteofiles_era5(ext_new=ext_new,
+        extmodel = dfmt.preprocess_merge_meteofiles_era5(extmodel=extmodel,
                                                         varkey_list=varlist_list,
                                                         dir_data=tmp_path,
                                                         dir_output=tmp_path,
@@ -389,12 +391,12 @@ def test_preprocess_merge_meteofiles_era5_unsupported_varkey(tmp_path, ds_era5_e
     file_nc = os.path.join(tmp_path,"era5_msl_empty.nc")
     ds_era5_empty.to_netcdf(file_nc)
     
-    ext_new = hcdfm.ExtModel()
+    extmodel = hcdfm.ExtModel()
     date_min = ds_era5_empty.time.to_pandas().iloc[0]
     date_max = ds_era5_empty.time.to_pandas().iloc[-1]
     varlist_list = ['msla']
     with pytest.raises(NotImplementedError) as e:
-        ext_new = dfmt.preprocess_merge_meteofiles_era5(ext_new=ext_new,
+        extmodel = dfmt.preprocess_merge_meteofiles_era5(extmodel=extmodel,
                                                         varkey_list=varlist_list,
                                                         dir_data=tmp_path,
                                                         dir_output=tmp_path,
@@ -407,12 +409,12 @@ def test_preprocess_merge_meteofiles_era5_missing_files(tmp_path, ds_era5_empty)
     file_nc = os.path.join(tmp_path,"era5_msl_empty.nc")
     ds_era5_empty.to_netcdf(file_nc)
     
-    ext_new = hcdfm.ExtModel()
+    extmodel = hcdfm.ExtModel()
     date_min = ds_era5_empty.time.to_pandas().iloc[0]
     date_max = ds_era5_empty.time.to_pandas().iloc[-1]
     varlist_list = ['rhoao']
     with pytest.raises(FileNotFoundError) as e:
-        ext_new = dfmt.preprocess_merge_meteofiles_era5(ext_new=ext_new,
+        extmodel = dfmt.preprocess_merge_meteofiles_era5(extmodel=extmodel,
                                                         varkey_list=varlist_list,
                                                         dir_data=tmp_path,
                                                         dir_output=tmp_path,
@@ -432,14 +434,14 @@ def test_preprocess_merge_meteofiles_era5_ssr_warning(tmp_path, ds_era5_empty, c
     ds_era5_empty = ds_era5_empty.rename_vars(msl="ssr")
     ds_era5_empty.to_netcdf(file_nc)
     
-    ext_new = hcdfm.ExtModel()
+    extmodel = hcdfm.ExtModel()
     date_min = ds_era5_empty.time.to_pandas().iloc[0]
     date_max = ds_era5_empty.time.to_pandas().iloc[-1]
     varlist_list = ['ssr']
     # with pytest.raises(ValueError) as e:
     with caplog.at_level(logging.WARNING):
-        ext_new = dfmt.preprocess_merge_meteofiles_era5(
-            ext_new=ext_new,
+        extmodel = dfmt.preprocess_merge_meteofiles_era5(
+            extmodel=extmodel,
             varkey_list=varlist_list,
             dir_data=tmp_path,
             dir_output=tmp_path,

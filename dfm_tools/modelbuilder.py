@@ -47,7 +47,7 @@ def get_ncvarname(quantity, conversion_dict):
     return ncvarname
 
 
-def constant_to_bc(ext_new: hcdfm.ExtModel, file_pli, constant=0):
+def constant_to_bc(extmodel: hcdfm.ExtModel, file_pli, constant=0):
     """
     Generate a boundary conditions file (.bc) with a constant waterlevel.
     This can be used to enforce a know offset from zero, for instance to
@@ -85,13 +85,13 @@ def constant_to_bc(ext_new: hcdfm.ExtModel, file_pli, constant=0):
     
     # add the boundary object to the ext file for each polyline in the polyfile
     ext_add_boundary_object_per_polyline(
-        ext_new=ext_new,
+        extmodel=extmodel,
         boundary_object=boundary_object,
     )
-    return ext_new
+    return extmodel
 
 
-def cmems_nc_to_bc(ext_new, list_quantities, tstart, tstop, file_pli, dir_pattern, dir_output, conversion_dict=None, refdate_str=None):
+def cmems_nc_to_bc(extmodel, list_quantities, tstart, tstop, file_pli, dir_pattern, dir_output, conversion_dict=None, refdate_str=None):
     if conversion_dict is None:
         conversion_dict = dfmt.get_conversion_dict()
     
@@ -135,13 +135,13 @@ def cmems_nc_to_bc(ext_new, list_quantities, tstart, tstop, file_pli, dir_patter
                                          forcingfile=ForcingModel_object)
         
         # add the boundary object to the ext file for each polyline in the polyfile
-        ext_add_boundary_object_per_polyline(ext_new=ext_new, boundary_object=boundary_object)
+        ext_add_boundary_object_per_polyline(extmodel=extmodel, boundary_object=boundary_object)
 
-    return ext_new
+    return extmodel
 
 
 def cmems_nc_to_ini(
-        ext_new,
+        extmodel,
         dir_output,
         list_quantities,
         tstart,
@@ -246,13 +246,13 @@ def cmems_nc_to_ini(
             interpolationmethod=InterpolationMethod.linear_space_time,
             operand=hcdfm.Operand.override,
             )
-        ext_new.spatial.append(forcing_saltem)
+        extmodel.spatial.append(forcing_saltem)
     
-    return ext_new
+    return extmodel
 
 
 def preprocess_merge_meteofiles_era5(
-        ext_new,
+        extmodel,
         varkey_list,
         dir_data,
         dir_output,
@@ -340,7 +340,7 @@ def preprocess_merge_meteofiles_era5(
            
         quantity = dict_varkey_quantities[varkey]
         
-        current_ext_quantities = [x.quantity for x in ext_new.spatial]
+        current_ext_quantities = [x.quantity for x in extmodel.spatial]
         operand = hcdfm.Operand.override
         if quantity in current_ext_quantities:
             logger.info(
@@ -357,9 +357,9 @@ def preprocess_merge_meteofiles_era5(
             operand=operand,
             )
 
-        ext_new.spatial.append(forcing_meteo)
+        extmodel.spatial.append(forcing_meteo)
 
-    return ext_new
+    return extmodel
 
 
 def create_model_exec_files(file_mdu, nproc=1, dimrset_folder=None, path_style=None):
@@ -525,9 +525,9 @@ def make_paths_relative(mdu_file:str):
     ext_old = mdu_existing.external_forcing.extforcefile
     if ext_old is not None:
         file_list.append(ext_old.filepath)
-    ext_new = mdu_existing.external_forcing.extforcefilenew
-    if ext_new is not None:
-        file_list.append(ext_new.filepath)
+    extmodel = mdu_existing.external_forcing.extforcefilenew
+    if extmodel is not None:
+        file_list.append(extmodel.filepath)
     for filename in file_list:
         if filename is None:
             continue
