@@ -162,7 +162,10 @@ def cmems_nc_to_ini(
     dimensions are ordered differently, there will be an error or incorrect
     model results.
     """
-    
+    logger.warning(
+        "you are writing 3D initial conditions to the new extforcefile, note that "
+        "this is only possible in Delft3D-FM 2027.01 and above."
+    )
     def format_path(path, ncvarname):
         if isinstance(dir_pattern, list):
             path = [x.format(ncvarname=ncvarname) for x in path]
@@ -269,6 +272,10 @@ def preprocess_merge_meteofiles_era5(
     """
     Merge ERA5 data per variable for the requested time period.
     """
+    logger.warning(
+        "you are writing meteo/spatial quantities to the new extforcefile, note that "
+        "this is only possible in Delft3D-FM 2027.01 and above."
+    )
     if not os.path.exists(dir_output):
         os.makedirs(dir_output)
     
