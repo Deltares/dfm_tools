@@ -164,7 +164,7 @@ def cmems_nc_to_ini(
     """
     logger.warning(
         "you are writing 3D initial conditions to the new extforcefile, note that "
-        "this is only supported in Delft3D-FM 2027.01 and above."
+        "this is only supported in Delft3D-FM 2027.01 (DIMRset 2.31.24) and above."
     )
     def format_path(path, ncvarname):
         if isinstance(dir_pattern, list):
@@ -274,7 +274,7 @@ def preprocess_merge_meteofiles_era5(
     """
     logger.warning(
         "you are writing meteo/spatial quantities to the new extforcefile, note that "
-        "this is only supported in Delft3D-FM 2027.01 and above."
+        "this is only supported in Delft3D-FM 2027.01 (DIMRset 2.31.24) and above."
     )
     if not os.path.exists(dir_output):
         os.makedirs(dir_output)
