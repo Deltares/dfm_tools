@@ -315,15 +315,7 @@ def preprocess_merge_meteofiles_era5(
                 "dfmt.preprocess_merge_meteofiles_era5(), please create a dfm_tools "
                 "issue if you need this."
                 )
-        
-        # TODO: remove this warning after a while, it was implemented in
-        # https://github.com/Deltares/dfm_tools/issues/1253
-        if varkey == "ssr":
-            logger.warning(
-                "you are using ssr/netsolarradiation, beware that this "
-                "quantity only exists in Delft3D-FM 2026.01 and above."
-                )
-        
+
         fn_match_pattern = f'era5_{varkey}_*.nc'
         file_nc = os.path.join(dir_data, fn_match_pattern)
         
