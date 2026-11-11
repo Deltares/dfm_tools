@@ -1,3 +1,33 @@
+from typing import Any, Callable, Dict
+import functools
+
+DEPRECATED_OPTIONS_EXTOLD_DICT = {
+    'ext_old': 'extmodel',
+    'ext_new': 'extmodel',
+}
+
+
+def deprecated_python_option(**aliases: str) -> Callable:
+    def deco(f: Callable):
+        @functools.wraps(f)
+        def wrapper(*args, **kwargs):
+            check_old_kwargs(f.__name__, kwargs, aliases)
+            return f(*args, **kwargs)
+        return wrapper
+    return deco
+
+
+def check_old_kwargs(
+    func_name: str, kwargs: Dict[str, Any], aliases: Dict[str, str]
+):
+    for alias, new in aliases.items():
+        if alias in kwargs:
+            message = f"Argument '{alias}' has been deprecated for {func_name}()"
+            if new is not None:
+                message += f", use '{new}' instead"
+            raise DeprecationWarning(message)
+
+
 def get_ncmodeldata(file_nc=None, varname=None, timestep=None, layer=None, depth=None, station=None, multipart=None, get_linkedgridinfo=False, silent=False):
     raise DeprecationWarning('dfmt.get_ncmodeldata() is deprecated, use `uds = dfmt.open_partitioned_dataset(file_nc)` instead: https://github.com/Deltares/dfm_tools/blob/main/notebooks/postprocessing_example.ipynb')
 

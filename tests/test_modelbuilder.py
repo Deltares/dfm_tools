@@ -448,3 +448,16 @@ def test_preprocess_merge_meteofiles_era5_ssr_warning(tmp_path, ds_era5_empty, c
             time_slice=slice(date_min, date_max),
             )
     assert "you are using ssr/netsolarradiation, beware that this quantity only exists in Delft3D-FM 2026.01 and above" in caplog.text
+
+
+def test_modelbuilder_deprecated_extold():
+    with pytest.raises(DeprecationWarning):
+        dfmt.interpolate_tide_to_bc(ext_new=None)
+    with pytest.raises(DeprecationWarning):
+        dfmt.constant_to_bc(ext_new=None)
+    with pytest.raises(DeprecationWarning):
+        dfmt.cmems_nc_to_bc(ext_new=None)
+    with pytest.raises(DeprecationWarning):
+        dfmt.cmems_nc_to_ini(ext_old=None)
+    with pytest.raises(DeprecationWarning):
+        dfmt.preprocess_merge_meteofiles_era5(ext_old=None)

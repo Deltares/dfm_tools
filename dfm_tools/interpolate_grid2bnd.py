@@ -20,6 +20,10 @@ from dfm_tools.hydrolib_helpers import (Dataset_to_TimeSeries,
                                         validate_polyline_names)
 from dfm_tools.errors import OutOfRangeError
 from dfm_tools import settings
+from dfm_tools.deprecated_functions import (
+    deprecated_python_option,
+    DEPRECATED_OPTIONS_EXTOLD_DICT,
+)
 
 __all__ = ["get_conversion_dict",
            "interpolate_tide_to_bc",
@@ -115,7 +119,7 @@ def get_conversion_dict(ncvarname_updates={}):
     return conversion_dict
 
 
-def ext_add_boundary_object_per_polyline(extmodel:hcdfm.ExtModel, boundary_object:hcdfm.Boundary):
+def ext_add_boundary_object_per_polyline(extmodel: hcdfm.ExtModel, boundary_object: hcdfm.Boundary):
     """
     If the polyfile contains multiple polylines, only the first 
     one will be used by DFLOW-FM for the boundary conditions.
@@ -143,6 +147,7 @@ def ext_add_boundary_object_per_polyline(extmodel:hcdfm.ExtModel, boundary_objec
         extmodel.boundary.append(boundary_object)
 
 
+@deprecated_python_option(**DEPRECATED_OPTIONS_EXTOLD_DICT)
 def interpolate_tide_to_bc(extmodel: hcdfm.ExtModel, tidemodel, file_pli, component_list=None, load=True):
     # read polyfile as geodataframe
     polyfile_obj = hcdfm.PolyFile(file_pli)

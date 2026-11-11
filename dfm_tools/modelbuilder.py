@@ -14,6 +14,10 @@ from dfm_tools.interpolate_grid2bnd import (ext_add_boundary_object_per_polyline
                                             _ds_sel_time_outside,
                                             )
 from dfm_tools.xarray_helpers import interpolate_na_multidim
+from dfm_tools.deprecated_functions import (
+    deprecated_python_option,
+    DEPRECATED_OPTIONS_EXTOLD_DICT,
+)
 
 __all__ = [
     "constant_to_bc",
@@ -47,6 +51,7 @@ def get_ncvarname(quantity, conversion_dict):
     return ncvarname
 
 
+@deprecated_python_option(**DEPRECATED_OPTIONS_EXTOLD_DICT)
 def constant_to_bc(extmodel: hcdfm.ExtModel, file_pli, constant=0):
     """
     Generate a boundary conditions file (.bc) with a constant waterlevel.
@@ -91,6 +96,7 @@ def constant_to_bc(extmodel: hcdfm.ExtModel, file_pli, constant=0):
     return extmodel
 
 
+@deprecated_python_option(**DEPRECATED_OPTIONS_EXTOLD_DICT)
 def cmems_nc_to_bc(extmodel, list_quantities, tstart, tstop, file_pli, dir_pattern, dir_output, conversion_dict=None, refdate_str=None):
     if conversion_dict is None:
         conversion_dict = dfmt.get_conversion_dict()
@@ -140,6 +146,7 @@ def cmems_nc_to_bc(extmodel, list_quantities, tstart, tstop, file_pli, dir_patte
     return extmodel
 
 
+@deprecated_python_option(**DEPRECATED_OPTIONS_EXTOLD_DICT)
 def cmems_nc_to_ini(
         extmodel,
         dir_output,
@@ -251,6 +258,7 @@ def cmems_nc_to_ini(
     return extmodel
 
 
+@deprecated_python_option(**DEPRECATED_OPTIONS_EXTOLD_DICT)
 def preprocess_merge_meteofiles_era5(
         extmodel,
         varkey_list,
