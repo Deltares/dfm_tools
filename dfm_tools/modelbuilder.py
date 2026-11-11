@@ -7,7 +7,7 @@ import xarray as xr
 import platform
 import hydrolib.core.dflowfm as hcdfm
 from hydrolib.core.dimr.models import DIMR, FMComponent, Start
-from hydrolib.core.dflowfm.extold.models import ExtOldFileType, ExtOldMethod
+from hydrolib.core.dflowfm.common.models import DataFileType, InterpolationMethod
 from dfm_tools.interpolate_grid2bnd import (ext_add_boundary_object_per_polyline,
                                             open_prepare_dataset,
                                             ds_apply_conversion_dict,
@@ -77,12 +77,17 @@ def constant_to_bc(ext_new: hcdfm.ExtModel, file_pli, constant=0):
     ForcingModel_object.save(filepath=file_bc_out)
     
     # generate hydrolib-core Boundary object to be appended to the ext file
-    boundary_object = hcdfm.Boundary(quantity=quantity,
-                                      locationfile=file_pli,
-                                      forcingfile=ForcingModel_object)
+    boundary_object = hcdfm.Boundary(
+        quantity=quantity,
+        locationfile=file_pli,
+        forcingfile=ForcingModel_object,
+    )
     
     # add the boundary object to the ext file for each polyline in the polyfile
-    ext_add_boundary_object_per_polyline(ext_new=ext_new, boundary_object=boundary_object)
+    ext_add_boundary_object_per_polyline(
+        ext_new=ext_new,
+        boundary_object=boundary_object,
+    )
     return ext_new
 
 
@@ -136,7 +141,7 @@ def cmems_nc_to_bc(ext_new, list_quantities, tstart, tstop, file_pli, dir_patter
 
 
 def cmems_nc_to_ini(
-        ext_old,
+        ext_new,
         dir_output,
         list_quantities,
         tstart,
@@ -189,7 +194,7 @@ def cmems_nc_to_ini(
             # this also handles temperaturebnd
             # 3D initialsalinity/initialtemperature fields are silently ignored
             # initial 3D conditions are only possible via nudging 1st timestep
-            # via quantity=nudge_salinity_temperature
+            # via quantity=nudgeSalinityTemperature
             data_xr = xr.open_mfdataset(dir_pattern_one, **xr_kwargs)
             ncvarname_tem = get_ncvarname(
                 quantity="temperaturebnd",
@@ -198,7 +203,7 @@ def cmems_nc_to_ini(
             dir_pattern_tem = format_path(dir_pattern, ncvarname=ncvarname_tem)
             data_xr_tem = xr.open_mfdataset(dir_pattern_tem, **xr_kwargs)
             data_xr["thetao"] = data_xr_tem["thetao"]
-            quantity = "nudge_salinity_temperature"
+            quantity = "nudgeSalinityTemperature"
             varname = None
         elif quan_bnd.startswith("tracer"):
             data_xr = xr.open_mfdataset(dir_pattern_one, **xr_kwargs)
@@ -212,7 +217,7 @@ def cmems_nc_to_ini(
             data_xr = data_xr.rename_vars({quan_bnd:quantity})
         
         # subset two times. interp to tstart would be the proper way to do it, 
-        # but FM needs two timesteps for nudge_salinity_temperature and initial
+        # but FM needs two timesteps for nudgeSalinityTemperature and initial
         # waq vars
         data_xr = _ds_sel_time_outside(
             ds=data_xr, tstart=tstart_pd, tstop=tstop_pd,
@@ -233,21 +238,21 @@ def cmems_nc_to_ini(
         data_xr.to_netcdf(file_output)
         
         #append forcings to ext
-        forcing_saltem = hcdfm.ExtOldForcing(
+        forcing_saltem = hcdfm.ext.Spatial(
             quantity=quantity,
-            varname=varname,
-            filename=file_output,
-            filetype=ExtOldFileType.NetCDFGridData,
-            method=ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
-            operand=hcdfm.Operand.override, #O
+            datafile=file_output,
+            datafiletype=DataFileType.netcdf,
+            datavariablename=varname,
+            interpolationmethod=InterpolationMethod.linear_space_time,
+            operand=hcdfm.Operand.override,
             )
-        ext_old.forcing.append(forcing_saltem)
+        ext_new.spatial.append(forcing_saltem)
     
-    return ext_old
+    return ext_new
 
 
 def preprocess_merge_meteofiles_era5(
-        ext_old,
+        ext_new,
         varkey_list,
         dir_data,
         dir_output,
@@ -335,25 +340,26 @@ def preprocess_merge_meteofiles_era5(
            
         quantity = dict_varkey_quantities[varkey]
         
-        current_ext_quantities = [x.quantity for x in ext_old.forcing]
-        operand = hcdfm.Operand.override # O
+        current_ext_quantities = [x.quantity for x in ext_new.spatial]
+        operand = hcdfm.Operand.override
         if quantity in current_ext_quantities:
             logger.info(
                 f"quantity {quantity} already found in ext file, using operand=+"
                 )
-            operand = hcdfm.Operand.add # +
+            operand = hcdfm.Operand.add
         
-        forcing_meteo = hcdfm.ExtOldForcing(
+        forcing_meteo = hcdfm.ext.Spatial(
             quantity=quantity,
-            filename=file_out,
-            varname=varkey,
-            filetype=ExtOldFileType.NetCDFGridData, #11
-            method=ExtOldMethod.InterpolateTimeAndSpaceSaveWeights, #3
+            datafile=file_out,
+            datavariablename=varkey,
+            datafiletype=DataFileType.netcdf,
+            interpolationmethod=InterpolationMethod.linear_space_time,
             operand=operand,
             )
-        ext_old.forcing.append(forcing_meteo)
 
-    return ext_old
+        ext_new.spatial.append(forcing_meteo)
+
+    return ext_new
 
 
 def create_model_exec_files(file_mdu, nproc=1, dimrset_folder=None, path_style=None):
