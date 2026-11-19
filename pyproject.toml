@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dfm_tools"
-version = "0.48.0"
+dynamic = ["version"]
 maintainers = [{ name = "Jelmer Veenstra", email = "jelmer.veenstra@deltares.nl" }]
 description = "dfm_tools are pre- and post-processing tools for Delft3D FM"
 readme = "README.md"
@@ -76,7 +76,6 @@ Issues = "https://github.com/deltares/dfm_tools/issues"
 
 [project.optional-dependencies]
 dev = [
-	"bump2version>=0.5.11",
 	"flake8",
 	"flake8-pyproject", # required to read the config from pyproject.toml
 	"pytest",
@@ -99,6 +98,9 @@ examples = [
 
 [tool.setuptools]
 packages = ["dfm_tools"]
+
+[tool.setuptools.dynamic]
+version = {attr = "dfm_tools.__version__"}
 
 [tool.pytest.ini_options]
 console_output_style = "count"
